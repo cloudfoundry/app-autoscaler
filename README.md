@@ -17,6 +17,11 @@ System requirements:
 * [Apache couchdb][c] 
 * cf command line version 6 
 
+Database requirement:
+
+The `CF-AutoScaler` uses Apache couchdb as the backend data store. You can have your own database installation from [here][c] or use an exisiting couchdb service, for example [Cloudant][e]
+
+
 Requirements of Cloudfoudry access: 
 
 * To register `CF-AutoScaler` service, you need a valid Cloudfoundry UAA user id.
@@ -101,5 +106,6 @@ This project is released under version 2.0 of the [Apache License][l].
 [b]: https://maven.apache.org/
 [c]: http://couchdb.apache.org/
 [d]: http://www.eclipse.org/m2e/
+[e]: http://www.cloudant.com
 [l]: https://www.apache.org/licenses/LICENSE-2.0
 
