@@ -1,0 +1,54 @@
+{
+    "instanceMinCount": 1,
+    "instanceMaxCount": 5,
+    "policyTriggers": [
+        {
+            "metricType": "JVMHeapUsage",
+            "statWindow": 300,
+            "breachDuration": 36001,
+            "lowerThreshold": 30,
+            "upperThreshold": 80,
+            "instanceStepCountDown": 1,
+            "instanceStepCountUp": 2,
+            "stepDownCoolDownSecs": 600,
+            "stepUpCoolDownSecs": 600
+        },
+        {
+            "metricType": "ResponseTime",
+            "statWindow": 300,
+            "breachDuration": 600,
+            "lowerThreshold": 30,
+            "upperThreshold": 80,
+            "instanceStepCountDown": 1,
+            "instanceStepCountUp": 2,
+            "stepDownCoolDownSecs": 600,
+            "stepUpCoolDownSecs": 600
+        }
+    ],
+    "timezone": "(GMT +08:00) Asia/Shanghai",
+    "recurringSchedule": [
+        {
+            "startTime": "00:00",
+            "endTime": "23:59",
+            "repeatOn": "[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\"]",
+            "minInstCount": "1",
+            "maxInstCount": "5"
+        }
+    ],
+    "specificDate": [
+        {
+            "startDate": "2015-06-19",
+            "startTime": "00:00",
+            "endDate": "2015-06-19",
+            "endTime": "23:59",
+            "minInstCount": "1"
+        },
+        {
+            "startDate": "2015-06-28",
+            "startTime": "00:00",
+            "endDate": "2015-06-28",
+            "endTime": "23:59",
+            "minInstCount": "1"
+        }
+    ]
+}
