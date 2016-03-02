@@ -321,6 +321,13 @@ function doCheckScaleByMetrics(){
     echo " >>> Test Dynamic Scaling-out with Metric: Memory"
     local returncode=0
 
+    echo " >>> Please create an application whose memory allocation will be varied by workload. "
+    echo " >>> Please input the file path of the application package: " 
+    read customizedAppFilePath
+
+    echo " >>> Push the application $customizedAppFilePath "
+    cf push  $TestAPP_NAME -p $customizedAppFilePath  --random-route 
+
     cf scale $TestAPP_NAME -i 1 > /dev/stderr
     setup_PublicAPI_TestConfig > /dev/stderr
     policy_url="$API_url/v1/autoscaler/apps/$app_guid/policy" 
@@ -374,15 +381,15 @@ function doCheckScaleByMetrics(){
 function setScheduleTime(){
     local fileName=$1
     if [ "$(uname)" == "Darwin" ]; then
-        startDateValue=`date "+%Y-%m-%d"`
-        endDateValue=`date "+%Y-%m-%d"`
-        startTimeValue=`date "+%H:%M"` 
-        endTimeValue=`date -v +2M "+%H:%M"`       
+        startDateValue=`date -u "+%Y-%m-%d"`
+        endDateValue=`date -u "+%Y-%m-%d"`
+        startTimeValue=`date -u "+%H:%M"` 
+        endTimeValue=`date -u -v +2M "+%H:%M"`       
     elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
-        startDateValue=`date "+%Y-%m-%d"`
-        endDateValue=`date "+%Y-%m-%d"`
-        startTimeValue=`date "+%H:%M"`
-        endTimeValue=`date -d "2 minutes" "+%H:%M"`  
+        startDateValue=`date -u "+%Y-%m-%d"`
+        endDateValue=`date -u "+%Y-%m-%d"`
+        startTimeValue=`date -u "+%H:%M"`
+        endTimeValue=`date -d -u "2 minutes" "+%H:%M"`  
     fi
 
     if [ "$(uname)" == "Darwin" ]; then

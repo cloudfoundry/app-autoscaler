@@ -63,7 +63,8 @@ function invokeTestWithOutput(){
 
 if  [ $# -lt 6 ]
 then 
-	echo "Missing parameter .."
+	echo -e  "Usages: launchTest.sh <serviceName> <cf domain> <cf username> <cf password> <org> <space>"
+	echo -e  "i.e. launchTest.sh CF-AutoScaler bosh-lite.com admin admin org space"
 	exit -1
 fi
 

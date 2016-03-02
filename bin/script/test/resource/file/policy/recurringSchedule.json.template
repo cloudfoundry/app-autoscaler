@@ -14,7 +14,7 @@
             "stepUpCoolDownSecs": 120
         }
     ],
-    "timezone": "(GMT +08:00) Asia/Shanghai",
+    "timezone": "(GMT +00:00) UTC",
     "recurringSchedule": [
         {
             "startTime": "{startTimeValue}",
