@@ -2,28 +2,14 @@ package org.cloudfoundry.autoscaler.api.rest;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Arrays;
-import java.util.ArrayList;
 import java.util.Date;  
-import java.text.SimpleDateFormat;
-import java.text.ParseException;
-import java.util.TimeZone;
-import java.util.UUID;
-import java.util.Comparator;
-import java.util.Collections;
-import java.util.ListIterator;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
-import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -31,17 +17,13 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.HeaderParam;
-import javax.ws.rs.core.MediaType;
 
 
 //support Client API
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.representation.Form;
 
 import org.apache.log4j.Logger;
 
@@ -111,16 +93,11 @@ public class PublicRestApi {
 	    String policyId;
 	    String server_url;
 	    String request_url;
-	    String accessToken;
-	    String accessTokenExpireInterval; 
 	    Map<String, String> service_info;
 		try{
 		     service_info = getserverinfo(app_id);
 	         server_url = service_info.get("server_url");
-	         accessToken = service_info.get("accessToken");
 	         policyId = service_info.get("policyId");
-	         accessToken = service_info.get("accessToken");
-	         accessTokenExpireInterval = service_info.get("accessTokenExpireInterval");
 	     
 		}
 		catch (CloudException e) {
@@ -171,7 +148,6 @@ public class PublicRestApi {
 			return RestApiResponseHandler.getResponseInputJsonFormatError(e, LocaleUtil.getLocale(httpServletRequest));
 		}
 		catch (Exception e){
-		    //return RestApiResponseHandler.getResponseBadRequest("{\"error\":" + "\"" + "failed to parse json information" + "\"}");
 			return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_parse_input_json_context, e), LocaleUtil.getLocale(httpServletRequest));
 		}
 		
@@ -192,25 +168,17 @@ public class PublicRestApi {
 			    }
 			    else{
 			    	String response_body = response.getEntity(String.class);
-			    	int status_code = response.getStatus();
-			    	if (response.getStatus() == HttpServletResponse.SC_BAD_REQUEST) { //to_do dup this check to other API
-			    	    Map<String, String> error = objectMapper.readValue(response_body, Map.class);
-			    	    //return RestApiResponseHandler.getResponseBadRequest(error.get("error").toString());
+			    	if (response.getStatus() == HttpServletResponse.SC_BAD_REQUEST) { 
                         logger.info("Get back-end server bad request error  : " + response.getStatus() + " with response body: " + response_body);
-                        //return RestApiResponseHandler.getResponseInternalServerError("Internal server error happended");
                         return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_create_policy_in_Create_Policy_context), LocaleUtil.getLocale(httpServletRequest));
 			    	}else{
 			    		logger.info("Get back-end server error  : " + response.getStatus() + " with response body: " + response_body);
-			    		//return RestApiResponseHandler.getResponseBadRequest("{\"error\":" + "\"" + "server error happened" + "\"}");
-			    		//return RestApiResponseHandler.getResponseInternalServerError("Back-End internal server error happend");
 			    		return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_create_policy_in_Create_Policy_context), LocaleUtil.getLocale(httpServletRequest));
 			    	}
 			    }
 			}
 			  catch (Exception e){
 				logger.info("error in update policy : " + e.getMessage());
-				//return RestApiResponseHandler.getResponseBadRequest("{\"error\":" + "\"" + "service information is not correct" + "\"}");
-				//return RestApiResponseHandler.getResponseInternalServerError("Internal server error happend");
 				return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_create_policy_in_Create_Policy_context, e), LocaleUtil.getLocale(httpServletRequest));
 			}		
 		}
@@ -228,18 +196,12 @@ public class PublicRestApi {
 			    }
 			    else{
 			    	response_body = response.getEntity(String.class);
-			    	int status_code = response.getStatus();
-			        if (response.getStatus() == HttpServletResponse.SC_BAD_REQUEST) { //to_do dup this check to other API
-			    	    Map<String, String> error = objectMapper.readValue(response_body, Map.class);
-			    	    //return RestApiResponseHandler.getResponseBadRequest(error.get("error").toString());
+			        if (response.getStatus() == HttpServletResponse.SC_BAD_REQUEST) { 
                         logger.info("Get back-end server bad request error  : " + response.getStatus() + " with response body: " + response_body);
-                        //return RestApiResponseHandler.getResponseInternalServerError("Internal server error happended");
                         return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_create_policy_in_Create_Policy_context), LocaleUtil.getLocale(httpServletRequest));
 			    	}
 			    	else{
 			    		logger.info("Get back-end server error  : " + response.getStatus() + " with response body: " + response_body);
-			    		//return RestApiResponseHandler.getResponseBadRequest("{\"error\":" + "\"" + "server error happened" + "\"}");
-			    		//return RestApiResponseHandler.getResponseInternalServerError("Back-End internal server error happend");
 			    		return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_create_policy_in_Create_Policy_context), LocaleUtil.getLocale(httpServletRequest));
 			    	}
 			    }
@@ -249,7 +211,6 @@ public class PublicRestApi {
 			    String new_jsonstring = "{\"policyId\":" + "\"" + policyId + "\"," + "\"state\":" + "\"" + "enabled"+"\"}";
 			    response = webResource.header("Authorization", "Basic " + authorization).accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON).put(ClientResponse.class, new_jsonstring);
 			    response_body = response.getEntity(String.class);
-			    body_map = objectMapper.readValue(response_body, Map.class);
 		    	if (response.getStatus() == HttpServletResponse.SC_OK) //attach OK
 			    {
 			    	return RestApiResponseHandler.getResponseCreatedOk("{\"policyId\":" + "\"" + policyId + "\"}");
@@ -257,24 +218,16 @@ public class PublicRestApi {
 			    else{
 			    	//return RestApiResponseHandler.getResponseBadRequest(body_map.get("error").toString());
 			    	response_body = response.getEntity(String.class);
-			    	int status_code = response.getStatus();
-			    	if (response.getStatus() == HttpServletResponse.SC_BAD_REQUEST) { //to_do dup this check to other API
-			    	    Map<String, String> error = objectMapper.readValue(response_body, Map.class);
-			    	    //return RestApiResponseHandler.getResponseBadRequest(error.get("error").toString());
+			    	if (response.getStatus() == HttpServletResponse.SC_BAD_REQUEST) { 
                         logger.info("Get back-end server bad request error  : " + response.getStatus() + " with response body: " + response_body);
-                        //return RestApiResponseHandler.getResponseInternalServerError("Internal server error happended");
                         return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_create_policy_in_Create_Policy_context), LocaleUtil.getLocale(httpServletRequest));
 			    	}else{
 			    		logger.info("Get back-end server error  : " + response.getStatus() + " with response body: " + response_body);
-			    		//return RestApiResponseHandler.getResponseBadRequest("{\"error\":" + "\"" + "server error happened" + "\"}");
-			    		//return RestApiResponseHandler.getResponseInternalServerError("Back-End internal server error happend");
 			    		return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_create_policy_in_Create_Policy_context), LocaleUtil.getLocale(httpServletRequest));
 			    	}
 			    }
 			} catch (Exception e){
-			         //return RestApiResponseHandler.getResponseBadRequest("{\"error\":" + "\"" + "failed to create policy" + "\"}");
 					logger.info("error in create policy and attach : " + e.getMessage());
-					//return RestApiResponseHandler.getResponseInternalServerError("Internal server error happend");
 					return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_create_policy_in_Create_Policy_context, e), LocaleUtil.getLocale(httpServletRequest));
 			}
         }
@@ -292,19 +245,11 @@ public class PublicRestApi {
 	    Client client = RestUtil.getHTTPSRestClient();
 	    String policyId;
 	    String server_url;
-	    String service_id;
 	    String request_url;
-	    String status;
-	    String accessToken;
-	    String accessTokenExpireInterval; 
 		try{
 		     Map<String, String> service_info = getserverinfo(app_id);
 	         server_url = service_info.get("server_url");
-	         accessToken = service_info.get("accessToken");
-	         accessTokenExpireInterval = service_info.get("accessTokenExpireInterval");
-	         service_id = service_info.get("service_id");
 	         policyId = service_info.get("policyId");	
-	         status = service_info.get("status");
 		}
 		catch (CloudException e) {
   			return RestApiResponseHandler.getResponseCloudError(e, LocaleUtil.getLocale(httpServletRequest));
@@ -332,23 +277,15 @@ public class PublicRestApi {
 				//detach app and policy
 				request_url = server_url + "/resources/apps/" + app_id + "?policyId=" + policyId + "&state=disabled";
 				WebResource webResource = client.resource(request_url);
-				//manually handle input json instead of call handleInput2
-				//String new_jsonstring = "{\"policyId\":" + "\"" + policyId + "\"," + "\"state\":" + "\"" + "disabled"+"\"}";
 				String authorization = ConfigManager.getInternalAuthToken();
 				ClientResponse response = webResource.header("Authorization", "Basic " + authorization).accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON).delete(ClientResponse.class);
 			    if (response.getStatus() != HttpServletResponse.SC_OK) {//update OK
 			    	String response_body = response.getEntity(String.class);
-			    	int status_code = response.getStatus();
-			    	if (response.getStatus() == HttpServletResponse.SC_BAD_REQUEST) { //to_do dup this check to other API
-			    	    Map<String, String> error = objectMapper.readValue(response_body, Map.class);
-			    	    //return RestApiResponseHandler.getResponseBadRequest(error.get("error").toString());
+			    	if (response.getStatus() == HttpServletResponse.SC_BAD_REQUEST) { 
                         logger.info("Get back-end server bad request error  : " + response.getStatus() + " with response body: " + response_body);
-                        //return RestApiResponseHandler.getResponseInternalServerError("Internal server error happended");
                         return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_detach_policy_in_Delete_Policy_context), LocaleUtil.getLocale(httpServletRequest));
 			    	}else{
 			    		logger.info("Get back-end server error  : " + response.getStatus() + " with response body: " + response_body);
-			    		//return RestApiResponseHandler.getResponseBadRequest("{\"error\":" + "\"" + "server error happened" + "\"}");
-			    		//return RestApiResponseHandler.getResponseInternalServerError("Back-End internal server error happend");
 			    		return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_detach_policy_in_Delete_Policy_context), LocaleUtil.getLocale(httpServletRequest));
 			    	}
 			    }
@@ -364,30 +301,21 @@ public class PublicRestApi {
 			    }
 			    else{
 			    	String response_body = response.getEntity(String.class);
-			    	int status_code = response.getStatus();
-			    	if (response.getStatus() == HttpServletResponse.SC_BAD_REQUEST) { //to_do dup this check to other API
-			    	    Map<String, String> error = objectMapper.readValue(response_body, Map.class);
-			    	    //return RestApiResponseHandler.getResponseBadRequest(error.get("error").toString());
+			    	if (response.getStatus() == HttpServletResponse.SC_BAD_REQUEST) { 
                         logger.info("Get back-end server bad request error  : " + response.getStatus() + " with response body: " + response_body);
-                        //return RestApiResponseHandler.getResponseInternalServerError("Internal server error happended");
                         return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_delete_policy_in_Delete_Policy_context), LocaleUtil.getLocale(httpServletRequest));
 			    	}else{
 			    		logger.info("Get back-end server error  : " + response.getStatus() + " with response body: " + response_body);
-			    		//return RestApiResponseHandler.getResponseBadRequest("{\"error\":" + "\"" + "server error happened" + "\"}");
-			    		//return RestApiResponseHandler.getResponseInternalServerError("Back-End internal server error happend");
 			    		return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_delete_policy_in_Delete_Policy_context), LocaleUtil.getLocale(httpServletRequest));
 			    	}
 			    }
 			} catch (Exception e){
-				//return RestApiResponseHandler.getResponseBadRequest("{\"error\":" + "\"" + "service information is not correct" + "\"}");
 				logger.info("error in delete policy : " + e.getMessage());
-				//return RestApiResponseHandler.getResponseInternalServerError("Internal server error happend");
 				return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_delete_policy_in_Delete_Policy_context, e), LocaleUtil.getLocale(httpServletRequest));
 			}
 			
 		}
 		else { // Can not find policyId for this application
-           //return RestApiResponseHandler.getResponseNotFound("{\"error\":" + "\"" + "no policy for this application can be found" + "\"}");
 		   return RestApiResponseHandler.getResponsePolicyNotExistError(new PolicyNotExistException(app_id), LocaleUtil.getLocale(httpServletRequest));
        }
        
@@ -404,18 +332,12 @@ public class PublicRestApi {
 	    Client client = RestUtil.getHTTPSRestClient();
 	    String policyId;
 	    String server_url;
-	    String service_id;
 	    String request_url;
 	    String status;
-	    String accessToken;
-	    String accessTokenExpireInterval; 
 	    Map<String, String> service_info;
 		try{
 		     service_info = getserverinfo(app_id);
 	         server_url = service_info.get("server_url");
-	         accessToken = service_info.get("accessToken");
-	         accessTokenExpireInterval = service_info.get("accessTokenExpireInterval");
-	         service_id = service_info.get("service_id");
 	         policyId = service_info.get("policyId");	
 	         status = service_info.get("status");
 		} 
@@ -457,17 +379,11 @@ public class PublicRestApi {
 			    }
 			    else{
 			    	String response_body = response.getEntity(String.class);
-			    	int status_code = response.getStatus();
-			    	if (response.getStatus() == HttpServletResponse.SC_BAD_REQUEST) { //to_do dup this check to other API
-			    	    Map<String, String> error = objectMapper.readValue(response_body, Map.class);
-			    	    //return RestApiResponseHandler.getResponseBadRequest(error.get("error").toString());
+			    	if (response.getStatus() == HttpServletResponse.SC_BAD_REQUEST) { 
                         logger.info("Get back-end server bad request error  : " + response.getStatus() + " with response body: " + response_body);
-                        //return RestApiResponseHandler.getResponseInternalServerError("Internal server error happended");
                         return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_Get_Policy_context), LocaleUtil.getLocale(httpServletRequest));
 			    	}else{
 			    		logger.info("Get back-end server error  : " + response.getStatus() + " with response body: " + response_body);
-			    		//return RestApiResponseHandler.getResponseBadRequest("{\"error\":" + "\"" + "server error happened" + "\"}");
-			    		//return RestApiResponseHandler.getResponseInternalServerError("Back-End internal server error happend");
 			    		return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_Get_Policy_context), LocaleUtil.getLocale(httpServletRequest));
 			    	}
 			    }
@@ -480,15 +396,12 @@ public class PublicRestApi {
 				return RestApiResponseHandler.getResponseOutputJsonFormatError(e, LocaleUtil.getLocale(httpServletRequest));
 			}
 			catch (Exception e){
-				//return RestApiResponseHandler.getResponseBadRequest("{\"error\":" + "\"" + "service information is not correct" + "\"}");
 				logger.info("error in get policy : " + e.getMessage());
-				//return RestApiResponseHandler.getResponseInternalServerError("Internal server error happend");
 				return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_Get_Policy_context, e), LocaleUtil.getLocale(httpServletRequest));
 			}
 			
 		}
-		else { // Can not find policyId for this application
-           //return RestApiResponseHandler.getResponseNotFound("{\"error\":" + "\"" + "no policy for this application can be found" + "\"}");
+		else { 
 			return RestApiResponseHandler.getResponsePolicyNotExistError(new PolicyNotExistException(app_id), LocaleUtil.getLocale(httpServletRequest));
        }
 	}
@@ -505,20 +418,12 @@ public class PublicRestApi {
 	    Client client = RestUtil.getHTTPSRestClient();
 	    String policyId;
 	    String server_url;
-	    String service_id;
 	    String request_url;
-	    String status;
-	    String accessToken;
-	    String accessTokenExpireInterval;
 	    Map<String, String> service_info;
 		try{
 		     service_info = getserverinfo(app_id);
 	         server_url = service_info.get("server_url");
-	         accessToken = service_info.get("accessToken");
-	         accessTokenExpireInterval = service_info.get("accessTokenExpireInterval");
-	         service_id = service_info.get("service_id");
-	         policyId = service_info.get("policyId");	
-	         status = service_info.get("status");
+	         policyId = service_info.get("policyId");
 		} 
 		catch (CloudException e) {
   			return RestApiResponseHandler.getResponseCloudError(e, LocaleUtil.getLocale(httpServletRequest));
@@ -575,31 +480,22 @@ public class PublicRestApi {
 			    }
 			    else{
 			    	String response_body = response.getEntity(String.class);
-			    	int status_code = response.getStatus();
-			    	if (response.getStatus() == HttpServletResponse.SC_BAD_REQUEST) { //to_do dup this check to other API
-			    	    Map<String, String> error = objectMapper.readValue(response_body, Map.class);
-			    	    //return RestApiResponseHandler.getResponseBadRequest(error.get("error").toString());
+			    	if (response.getStatus() == HttpServletResponse.SC_BAD_REQUEST) { 
                         logger.info("Get back-end server bad request error  : " + response.getStatus() + " with response body: " + response_body);
-                        //return RestApiResponseHandler.getResponseInternalServerError("Internal server error happended");
                         return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_Enable_Policy_context), LocaleUtil.getLocale(httpServletRequest));
 			    	}else{
 			    		logger.info("Get back-end server error  : " + response.getStatus() + " with response body: " + response_body);
-			    		//return RestApiResponseHandler.getResponseBadRequest("{\"error\":" + "\"" + "server error happened" + "\"}");
-			    		//return RestApiResponseHandler.getResponseInternalServerError("Back-End internal server error happend");
 			    		return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_Enable_Policy_context), LocaleUtil.getLocale(httpServletRequest));
 			    	}
 			    }
 				
 			} catch (Exception e){
-				//return RestApiResponseHandler.getResponseBadRequest("{\"error\":" + "\"" + "service information is not correct" + "\"}");
 				logger.info("error in enable policy : " + e.getMessage());
-				//return RestApiResponseHandler.getResponseInternalServerError("Internal server error happend");
 				return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_Enable_Policy_context, e), LocaleUtil.getLocale(httpServletRequest));
 			}
 			
 		}
-		else { // Can not find policyId for this application
-           //return RestApiResponseHandler.getResponseNotFound("{\"error\":" + "\"" + "no policy for this application can be found" + "\"}");
+		else { 
 			return RestApiResponseHandler.getResponsePolicyNotExistError(new PolicyNotExistException(app_id), LocaleUtil.getLocale(httpServletRequest));
        }
        
@@ -618,11 +514,9 @@ public class PublicRestApi {
 		     Map<String, String> service_info = getserverinfo(app_id);
 		     policyStatus = service_info.get("status");
 		     if ((policyStatus != null) && (policyStatus.length() > 0)){
-		     // setJSESSIONID(service_info.get(SSOConstant.SESSIONID)); getserverinfo set Token Session Id already
-		     //return RestApiResponseHandler.getResponseJsonOk("{\"status\":" + "\"" + service_info.get("status").toUpperCase() + "\"}");
 		    	 return RestApiResponseHandler.getResponseJsonOk("{\"status\":" + "\"" + policyStatus.toUpperCase() + "\"}");
 		     }
-		     else { // Can not find policyId for this application
+		     else { 
 		    	 return RestApiResponseHandler.getResponsePolicyNotExistError(new PolicyNotExistException(app_id), LocaleUtil.getLocale(httpServletRequest));
 		     }
 		}
@@ -655,22 +549,14 @@ public class PublicRestApi {
 		
 		//get infor from app_id
 	    Client client = RestUtil.getHTTPSRestClient();
-	    String policyId;
 	    String server_url;
-	    String service_id;
 	    String request_url;
-	    String status;
-	    String accessToken; 
-	    String accessTokenExpireInterval; 
+	    String policyId;
 	    Map<String, String> service_info;
 		try{
 		     service_info = getserverinfo(app_id);
 	         server_url = service_info.get("server_url");
-	         accessToken = service_info.get("accessToken");
-	         accessTokenExpireInterval = service_info.get("accessTokenExpireInterval");
-	         service_id = service_info.get("service_id");
 	         policyId = service_info.get("policyId");	
-	         status = service_info.get("status");
 		} 
 		catch (CloudException e) {
   			return RestApiResponseHandler.getResponseCloudError(e, LocaleUtil.getLocale(httpServletRequest));
@@ -690,11 +576,9 @@ public class PublicRestApi {
 		} 
 		
 		//validate and transform the input	
-
-		//build request to current autoscaling server instance
-		/* debug
+ 
 		if ((policyId != null)  && !(policyId.equals("null")) && (policyId.length() > 0)) //get policy information
-		{*/
+		{
 			try{
                 //get scaling history information
 				long now = new Date().getTime(); 
@@ -746,17 +630,11 @@ public class PublicRestApi {
 			    }
 			    else{
 			    	String response_body = response.getEntity(String.class);
-			    	int status_code = response.getStatus();
-			    	if (response.getStatus() == HttpServletResponse.SC_BAD_REQUEST) { //to_do dup this check to other API
-			    	    Map<String, String> error = objectMapper.readValue(response_body, Map.class);
-			    	    //return RestApiResponseHandler.getResponseBadRequest(error.get("error").toString());
+			    	if (response.getStatus() == HttpServletResponse.SC_BAD_REQUEST) { 
                         logger.info("Get back-end server bad request error  : " + response.getStatus() + " with response body: " + response_body);
-                        //return RestApiResponseHandler.getResponseInternalServerError("Internal server error happended");
                         return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_Get_Scaling_History_context), LocaleUtil.getLocale(httpServletRequest));
 			    	}else{
 			    		logger.info("Get back-end server error  : " + response.getStatus() + " with response body: " + response_body);
-			    		//return RestApiResponseHandler.getResponseBadRequest("{\"error\":" + "\"" + "server error happened" + "\"}");
-			    		//return RestApiResponseHandler.getResponseInternalServerError("Back-End internal server error happend");
 			    		return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_Get_Scaling_History_context), LocaleUtil.getLocale(httpServletRequest));
 			    	}
 			    }
@@ -769,17 +647,13 @@ public class PublicRestApi {
 				return RestApiResponseHandler.getResponseOutputJsonFormatError(e, LocaleUtil.getLocale(httpServletRequest));
 			}
 			catch (Exception e){
-				//return RestApiResponseHandler.getResponseBadRequest("{\"error\":" + "\"" + "service information is not correct" + "\"}");
 				logger.info("error in get history : " + e.getMessage());
-				//return RestApiResponseHandler.getResponseInternalServerError("Internal server error happend");
 				return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_Get_Scaling_History_context, e), LocaleUtil.getLocale(httpServletRequest));
 			}
-		/*	debug
 		}
-		else { // Can not find policyId for this application
-          // return RestApiResponseHandler.getResponseNotFound("{\"error\":" + "\"" + "no policy for this application can be found" + "\"}");
+		else { 
 			return RestApiResponseHandler.getResponsePolicyNotExistError(new PolicyNotExistException(app_id), LocaleUtil.getLocale(httpServletRequest));
-       }*/
+       }
 	}
 	
 	@GET
@@ -796,18 +670,12 @@ public class PublicRestApi {
 	    String server_url;
 	    String service_id;
 	    String request_url;
-	    String status;
-	    String accessToken;
-	    String accessTokenExpireInterval; 
 	    Map<String, String> service_info;
 		try{
 		     service_info = getserverinfo(app_id);
 	         server_url = service_info.get("server_url");
-	         accessToken = service_info.get("accessToken");
-	         accessTokenExpireInterval = service_info.get("accessTokenExpireInterval");
 	         service_id = service_info.get("service_id");
 	         policyId = service_info.get("policyId");	
-	         status = service_info.get("status");
 		}
 		catch (CloudException e) {
   			return RestApiResponseHandler.getResponseCloudError(e, LocaleUtil.getLocale(httpServletRequest));
@@ -826,75 +694,72 @@ public class PublicRestApi {
 			return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_retrieve_application_service_information_context, e), LocaleUtil.getLocale(httpServletRequest));
 		}
 		
-		//validate and transform the input
 		
-
-		try{
-            //get metrics data information
-			long newerThan=0, timeRange=0;
-			
-			if (!ValidateUtil.isNull(startTime)){
-			    newerThan = Long.parseLong(startTime);
-			} 
-			
-			if (!ValidateUtil.isNull(endTime)){
-				timeRange = (Long.parseLong(endTime) - newerThan)/(60*1000);
-			} 
-			long now = new Date().getTime(); 
-	    	
-			//TimeRange is in form of minutes
-	        if (timeRange <= 0)  //not specify endTime (==0) or endTime is earlier than startTime (<0)
-	            timeRange = Constants.DASHBORAD_TIME_RANGE;
-
-	        if (newerThan == 0) {
-	            newerThan = now  - timeRange * 60 * 1000; 
-				//when startTime not specify and endtime is later than now, newerThan might be negative
-				if (newerThan <= 0)
-					newerThan = 0;
-	        }
-	        
-
-		    request_url = server_url + "/services/metrics/" + service_id + "/"+ app_id + "?newerThan=" + newerThan + "&timeRange=" + timeRange ;
-		    WebResource webResource = client.resource(request_url);
-		    String authorization = ConfigManager.getInternalAuthToken();
-		    ClientResponse response = webResource.header("Authorization", "Basic " + authorization).accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
-		    if (response.getStatus() == HttpServletResponse.SC_OK) //get OK
-		    {
-		    	String result = response.getEntity(String.class);
-		    	Map<String, String> check_result = ValidateUtil.handleOutput(DataType.GET_METRICS_RESPONSE, result, new HashMap<String, String>(), service_info, httpServletRequest);
-				if (check_result.get("result") != "OK")
-					 return RestApiResponseHandler.getResponseBadRequest(check_result.get("error_message"));
-			    return RestApiResponseHandler.getResponseJsonOk(check_result.get("json"));
-		    }
-		    else{
-		    	String response_body = response.getEntity(String.class);
-		    	int status_code = response.getStatus();
-		    	if (response.getStatus() == HttpServletResponse.SC_BAD_REQUEST) { //to_do dup this check to other API
-		    	    Map<String, String> error = objectMapper.readValue(response_body, Map.class);
-		    	    //return RestApiResponseHandler.getResponseBadRequest(error.get("error").toString());
-                    logger.info("Get back-end server bad request error  : " + response.getStatus() + " with response body: " + response_body);
-                    //return RestApiResponseHandler.getResponseInternalServerError("Internal server error happended");
-                    return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_Get_Metric_Data_context), LocaleUtil.getLocale(httpServletRequest));
-		    	}else{
-		    		logger.info("Get back-end server error  : " + response.getStatus() + " with response body: " + response_body);
-		    		//return RestApiResponseHandler.getResponseBadRequest("{\"error\":" + "\"" + "server error happened" + "\"}");
-		    		//return RestApiResponseHandler.getResponseInternalServerError("Back-End internal server error happend");
-		    		return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_Get_Metric_Data_context), LocaleUtil.getLocale(httpServletRequest));
-		    	}
-		    }
-			
+		if ((policyId != null)  && !(policyId.equals("null")) && (policyId.length() > 0)) //get policy information
+		{
+			try{
+	            //get metrics data information
+				long newerThan=0, timeRange=0;
+				
+				if (!ValidateUtil.isNull(startTime)){
+				    newerThan = Long.parseLong(startTime);
+				} 
+				
+				if (!ValidateUtil.isNull(endTime)){
+					timeRange = (Long.parseLong(endTime) - newerThan)/(60*1000);
+				} 
+				long now = new Date().getTime(); 
+		    	
+				//TimeRange is in form of minutes
+		        if (timeRange <= 0)  //not specify endTime (==0) or endTime is earlier than startTime (<0)
+		            timeRange = Constants.DASHBORAD_TIME_RANGE;
+	
+		        if (newerThan == 0) {
+		            newerThan = now  - timeRange * 60 * 1000; 
+					//when startTime not specify and endtime is later than now, newerThan might be negative
+					if (newerThan <= 0)
+						newerThan = 0;
+		        }
+		        
+	
+			    request_url = server_url + "/services/metrics/" + service_id + "/"+ app_id + "?newerThan=" + newerThan + "&timeRange=" + timeRange ;
+			    WebResource webResource = client.resource(request_url);
+			    String authorization = ConfigManager.getInternalAuthToken();
+			    ClientResponse response = webResource.header("Authorization", "Basic " + authorization).accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
+			    if (response.getStatus() == HttpServletResponse.SC_OK) //get OK
+			    {
+			    	String result = response.getEntity(String.class);
+			    	Map<String, String> check_result = ValidateUtil.handleOutput(DataType.GET_METRICS_RESPONSE, result, new HashMap<String, String>(), service_info, httpServletRequest);
+					if (check_result.get("result") != "OK")
+						 return RestApiResponseHandler.getResponseBadRequest(check_result.get("error_message"));
+				    return RestApiResponseHandler.getResponseJsonOk(check_result.get("json"));
+			    }
+			    else{
+			    	String response_body = response.getEntity(String.class);
+			    	if (response.getStatus() == HttpServletResponse.SC_BAD_REQUEST) { 
+	                    logger.info("Get back-end server bad request error  : " + response.getStatus() + " with response body: " + response_body);
+	                    return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_Get_Metric_Data_context), LocaleUtil.getLocale(httpServletRequest));
+			    	}else{
+			    		logger.info("Get back-end server error  : " + response.getStatus() + " with response body: " + response_body);
+			    		return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_Get_Metric_Data_context), LocaleUtil.getLocale(httpServletRequest));
+			    	}
+			    }
+				
+			}
+			catch (OutputJSONParseErrorException e){
+				return RestApiResponseHandler.getResponseOutputJsonParseError(e, LocaleUtil.getLocale(httpServletRequest));
+			}
+			catch (OutputJSONFormatErrorException e){
+				return RestApiResponseHandler.getResponseOutputJsonFormatError(e, LocaleUtil.getLocale(httpServletRequest));
+			}
+			catch (Exception e){
+				logger.info("error in get metric : " + e.getMessage());
+				return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_Get_Metric_Data_context, e), LocaleUtil.getLocale(httpServletRequest));
+			}
 		}
-		catch (OutputJSONParseErrorException e){
-			return RestApiResponseHandler.getResponseOutputJsonParseError(e, LocaleUtil.getLocale(httpServletRequest));
-		}
-		catch (OutputJSONFormatErrorException e){
-			return RestApiResponseHandler.getResponseOutputJsonFormatError(e, LocaleUtil.getLocale(httpServletRequest));
-		}
-		catch (Exception e){
-			logger.info("error in get metric : " + e.getMessage());
-			//return RestApiResponseHandler.getResponseInternalServerError("Internal server error happend");
-			return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_Get_Metric_Data_context, e), LocaleUtil.getLocale(httpServletRequest));
-		}
+		else { 
+			return RestApiResponseHandler.getResponsePolicyNotExistError(new PolicyNotExistException(app_id), LocaleUtil.getLocale(httpServletRequest));
+       }
 
 	}
 	
@@ -919,8 +784,6 @@ public class PublicRestApi {
 		     Map jobj = objectMapper.readValue(response, Map.class);
 		     serviceInfo.put("service_id", (String)credentials.get("service_id"));
 		     serviceInfo.put("server_url",(String)credentials.get("url"));
-		     serviceInfo.put("accessToken", CloudFoundryManager.getInstance().getAccessToken());
-		     serviceInfo.put("accessTokenExpireInterval", "" + CloudFoundryManager.getInstance().getAccessTokenExpireInterval());
 		     serviceInfo.put("policyId", (String)jobj.get("policyId"));
 		     serviceInfo.put("appType", (String)jobj.get("type"));
 		     serviceInfo.put("status", (String)jobj.get("state"));
