@@ -83,8 +83,8 @@ If you launch `CF-AutoScaler` with Tomcat server in Eclispe & plugin [M2eclipse]
 You can register `CF-AutoScaler` with command:
 
 ```shell
-cf create-service-broker `CF-AutoScaler` brokerUserName brokerPassword brokerURI
-cf enable-service-access `CF-AutoScaler`
+cf create-service-broker CF-AutoScaler brokerUserName brokerPassword brokerURI
+cf enable-service-access CF-AutoScaler
 ```
 
 ### Use `CF-AutoScaler` 
