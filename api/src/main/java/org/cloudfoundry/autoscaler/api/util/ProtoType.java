@@ -45,7 +45,6 @@ import org.hibernate.validator.HibernateValidatorConfiguration;
 import org.hibernate.validator.cfg.defs.MinDef;
 import org.hibernate.validator.cfg.defs.MaxDef;
 import org.hibernate.validator.cfg.defs.NotNullDef;
-import org.hibernate.validator.cfg.defs.ScriptAssertDef;
 
 
 
@@ -81,12 +80,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.cloudfoundry.autoscaler.api.util.LocaleSpecificMessageInterpolator;
 import  org.cloudfoundry.autoscaler.api.Constants;
 
@@ -1886,20 +1880,22 @@ public class ProtoType {
 		 logger.debug("mulit trigger range: " + mulit_range.toString());
 		 for (String class_type : mulit_range.keySet()){
 			 Map<String, Map<String, Map<String, String>>> range = mulit_range.get(class_type);
-
+			 Class<?> class_obj=null;
+			 if (class_type.equals("trigger_Memory")) //only one metricType supported now
+				 class_obj = PolicyTrigger.class;
 			 for (String key : range.keySet()) {
 				 Map<String, Map<String, String>> value = range.get(key);
 				 for(String value_key : value.keySet()){
 					 Map<String, String> value_item = value.get(value_key);
 					 ConstraintMapping mapping = new ConstraintMapping();
 					 if (value_key.endsWith("Min")){
-						 mapping.type(PolicyTrigger.class).property(key, ElementType.FIELD).constraint( new MinDef().value(Integer.parseInt(value_item.get("value"))).message(value_item.get("message")));
+						 mapping.type(class_obj).property(key, ElementType.FIELD).constraint( new MinDef().value(Integer.parseInt(value_item.get("value"))).message(value_item.get("message")));
 					 }
 					 else if(value_key.endsWith("Max")){
-						 mapping.type(PolicyTrigger.class).property(key, ElementType.FIELD).constraint( new MaxDef().value(Integer.parseInt(value_item.get("value"))).message(value_item.get("message")));
+						 mapping.type(class_obj).property(key, ElementType.FIELD).constraint( new MaxDef().value(Integer.parseInt(value_item.get("value"))).message(value_item.get("message")));
 					 }
 					 else if(value_key.endsWith("NotNull")){
-						 mapping.type(PolicyTrigger.class).property(key, ElementType.FIELD).constraint( new NotNullDef().message(value_item.get("message")));
+						 mapping.type(class_obj).property(key, ElementType.FIELD).constraint( new NotNullDef().message(value_item.get("message")));
 					 }
 					 config.addMapping( mapping );
 				 }

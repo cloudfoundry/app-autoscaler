@@ -124,21 +124,7 @@ public final class Constants {
     public static final String DISPLAY_APP_TYPE_DEFAULT = "default";
 
     //metric.* related entries defined in config.properties
-	public static final String METRIC_WILDCARD = "*";
-	public static final String METRIC_SEPERATOR = "_";
-	public static final String METRIC_PREFIX = "metric";
-	public static final String METRIC_SOURCE = "source";
-	public static final String METRIC_SOURCE_AGENT = "agent";
-	public static final String METRIC_SOURCE_POLLER = "poller";
-	public static final String METRIC_SOURCE_STATUS = "enabled";
-	public static final String METRIC_SOURCE_TYPE = "type";
 	public static final String REPORT_INTERVAL = "reportInterval";
-	public static final String PERSIST_TIME = "persistTimeInDb";
-	public static final String METRICS_CONFIG = "metricsConfig";
-
-	//cf state of an app, the valid value is "started" and "stopped"
-	public static final String CF_APPLICATION_STATE_STARTED = "STARTED";
-	public static final String CF_APPLICATION_STATE_STOPPED = "STOPPED";
 
 	//Policy data range
 	public static final String[] timezones = new String[] {
@@ -757,18 +743,8 @@ public final class Constants {
             put(DISPLAY_APP_TYPE_DEFAULT, APP_TYPE_DEFAULT);
 	    }
 	};
-	public static String INTERNAL_METRIC_TYPE_JVMHEAPUSAGE = "HeapMemory";
 	public static String INTERNAL_METRIC_TYPE_MEMORY = "Memory";
-	public static String INTERNAL_METRIC_TYPE_THROUGHPUT = "Throughput";
-	public static String INTERNAL_METRIC_TYPE_RESPONSETIME = "ResponseTime";
-	public static String INTERNAL_METRIC_TYPE_EVENTLOOPLATENCY = "EventLoopLatency";
-	public static String INTERNAL_METRIC_TYPE_NODEJSHEAPMEMORY = "NODEJSHeapMemory";
-	public static String METRIC_TYPE_JVMHEAPUSAGE = "JVMHeapUsage";
 	public static String METRIC_TYPE_MEMORY = "Memory";
-	public static String METRIC_TYPE_THROUGHPUT = "Throughput";
-	public static String METRIC_TYPE_RESPONSETIME = "ResponseTime";
-	public static String METRIC_TYPE_EVENTLOOPLATENCY = "EventLoopLatency";
-	public static String METRIC_TYPE_HEAPUSAGE = "HeapUsage";
 	public static String[] metrictype = {METRIC_TYPE_MEMORY};
 	public static String[] APPTYPE={
 		 APP_TYPE_JAVA, APP_TYPE_RUBY, APP_TYPE_RUBY_SINATRA, APP_TYPE_RUBY_ON_RAILS, APP_TYPE_NODEJS,
@@ -789,12 +765,7 @@ public final class Constants {
 	public static Map<String, String> metricType_mapping = new HashMap<String, String>() //server metric string to metricType
 	{
 	    {
-	        put(INTERNAL_METRIC_TYPE_JVMHEAPUSAGE, METRIC_TYPE_JVMHEAPUSAGE);
 	        put(INTERNAL_METRIC_TYPE_MEMORY, METRIC_TYPE_MEMORY);
-	        put(INTERNAL_METRIC_TYPE_THROUGHPUT, METRIC_TYPE_THROUGHPUT);
-	        put(INTERNAL_METRIC_TYPE_RESPONSETIME, METRIC_TYPE_RESPONSETIME);
-	        put(INTERNAL_METRIC_TYPE_EVENTLOOPLATENCY, METRIC_TYPE_EVENTLOOPLATENCY);
-	        put(INTERNAL_METRIC_TYPE_NODEJSHEAPMEMORY, METRIC_TYPE_HEAPUSAGE);
 	    }
 	};
 	public static int REPORTINTERVAL = ConfigManager.getInt(Constants.REPORT_INTERVAL, 60);
@@ -804,18 +775,8 @@ public final class Constants {
 //	public static int value_min_cooldown = REPORTINTERVAL;
 	public static int value_min_stepDownCoolDownSecs = REPORTINTERVAL;
 	public static int value_min_stepUpCoolDownSecs = REPORTINTERVAL;
-	public static int value_min_lowerThreshold_JVMHeapUsage = 1;
-	public static String value_min_upperThreshold_JVMHeapUsage= "x"; //this for cmd line tool
 	public static int value_min_lowerThreshold_Memory = 1;
-	public static String value_min_upperThreshold_Memory= "x"; //this for cmd line tool
-	public static int value_min_lowerThreshold_Throughput = 1;
-	public static String value_min_upperThreshold_Throughput= "x"; //this for cmd line tool
-	public static int value_min_lowerThreshold_ResponseTime = 1;
-	public static String value_min_upperThreshold_ResponseTime= "x"; //this for cmd line tool
-	public static int value_min_lowerThreshold_EventLoopLatency = 1;
-	public static String value_min_upperThreshold_EventLoopLatency= "x"; //this for cmd line tool
-	public static int value_min_lowerThreshold_HeapUsage = 1;
-	public static String value_min_upperThreshold_HeapUsage= "x"; //this for cmd line tool
+	public static String value_min_upperThreshold_Memory= "x"; 
 	public static int value_min_instanceStepCountDown = 1;
 	public static int value_min_instanceStepCountUp = 1;
 	public static int metricTimeRange = REPORTINTERVAL * 60 /60; //Given the unit of reportInterval is seconds, we need to /60 to get the value for unit "minutes". Then multiple with 60 as we need 60 points in the chart.
@@ -826,18 +787,8 @@ public final class Constants {
 	//public static int value_default_cooldown = 600;
 	public static int value_default_stepDownCoolDownSecs = 600;
 	public static int value_default_stepUpCoolDownSecs = 600;
-	public static int value_default_lowerThreshold_JVMHeapUsage = 30;
-	public static int value_default_upperThreshold_JVMHeapUsage= 80;
 	public static int value_default_lowerThreshold_Memory = 30;
 	public static int value_default_upperThreshold_Memory= 80;
-	public static int value_default_lowerThreshold_Throughput = 30;
-	public static int value_default_upperThreshold_Throughput= 80;
-	public static int value_default_lowerThreshold_ResponseTime = 30;
-	public static int value_default_upperThreshold_ResponseTime= 80;
-	public static int value_default_lowerThreshold_EventLoopLatency = 30;
-	public static int value_default_upperThreshold_EventLoopLatency= 80;
-	public static int value_default_lowerThreshold_HeapUsage = 30;
-	public static int value_default_upperThreshold_HeapUsage= 80;
 	public static int value_default_instanceStepCountDown = 1;
 	public static int value_default_instanceStepCountUp = 1;
 	public static int value_max_statwindow = 3600;
@@ -845,38 +796,10 @@ public final class Constants {
 //	public static int value_max_cooldown = 3600;
 	public static int value_max_stepDownCoolDownSecs = 3600;
 	public static int value_max_stepUpCoolDownSecs = 3600;
-	public static int value_max_lowerThreshold_JVMHeapUsage = 100;
-	public static int value_max_upperThreshold_JVMHeapUsage= 100;
 	public static int value_max_lowerThreshold_Memory = 100;
 	public static int value_max_upperThreshold_Memory= 100;
-	public static String value_max_lowerThreshold_Throughput = "x";
-	public static String value_max_upperThreshold_Throughput= "x";
-	public static String value_max_lowerThreshold_ResponseTime = "x";
-	public static String value_max_upperThreshold_ResponseTime= "x";
-	public static String value_max_lowerThreshold_EventLoopLatency = "x";
-	public static String value_max_upperThreshold_EventLoopLatency= "x";
-	public static int value_max_lowerThreshold_HeapUsage = 100;
-	public static int value_max_upperThreshold_HeapUsage= 100;
-	public static String value_max_instanceStepCountDown = "x"; //this for cmd line tool
-	public static String value_max_instanceStepCountUp = "x"; //this for cmd line tool
-	public static String unit_statwindow = "seconds";
-	public static String unit_breachDuration = "seconds";
-	public static String unit_stepDownCoolDownSecs = "seconds";
-	public static String unit_stepUpCoolDownSecs = "seconds";
-	public static String unit_lowerThreshold_JVMHeapUsage = "%";
-	public static String unit_upperThreshold_JVMHeapUsage= "%";
-	public static String unit_lowerThreshold_Memory = "%";
-	public static String unit_upperThreshold_Memory= "%";
-	public static String unit_lowerThreshold_Throughput = "RPS";
-	public static String unit_upperThreshold_Throughput= "RPS";
-	public static String unit_lowerThreshold_ResponseTime = "ms";
-	public static String unit_upperThreshold_ResponseTime= "ms";
-	public static String unit_lowerThreshold_EventLoopLatency = "ms";
-	public static String unit_lowerThreshold_HeapUsage = "%";
-	public static String unit_upperThreshold_HeapUsage= "%";
-	public static String unit_upperThreshold_EventLoopLatency= "ms";
-	public static String unit_instanceStepCountDown = "instance(s)"; //this for cmd line tool
-	public static String unit_instanceStepCountUp = "instance(s)"; //this for cmd line tool
+	public static String value_max_instanceStepCountDown = "x"; 
+	public static String value_max_instanceStepCountUp = "x"; 
 	public static String TRIGGER_STATWINDOW = "statWindow";
 	public static String TRIGGER_BREACHDURATION = "breachDuration";
 	public static String TRIGGER_LOWERTHRESHOLD = "lowerThreshold";
@@ -989,24 +912,6 @@ public final class Constants {
        Map<String, Map<String, String>> item = null;
        Map<String, String> subitem = null;
 
-       item = new HashMap<String, Map<String, String>>();
-       subitem = new HashMap<String, String>();
-       subitem.put("value", String.valueOf(value_min_lowerThreshold_JVMHeapUsage));
-       subitem.put("message", "{PolicyTrigger.lowerThreshold.Min}");
-       item.put("JVMHeapUsage_lowerThreshold_Min", subitem);
-       subitem = new HashMap<String, String>();
-       subitem.put("value", String.valueOf(value_max_lowerThreshold_JVMHeapUsage));
-       subitem.put("message", "{PolicyTrigger.lowerThreshold.Max}");
-       item.put("JVMHeapUsage_lowerThreshold_Max", subitem);
-       subitem = new HashMap<String, String>();
-       subitem.put("value", String.valueOf(1)); // hard coded instead of value_min_upperThreshold_JVMHeapUsage
-       subitem.put("message", "{PolicyTrigger.upperThreshold.Min}");
-       item.put("JVMHeapUsage_upperThreshold_Min", subitem);
-       subitem = new HashMap<String, String>();
-       subitem.put("value", String.valueOf(value_max_upperThreshold_JVMHeapUsage));
-       subitem.put("message", "{PolicyTrigger.upperThreshold.Max}");
-       item.put("JVMHeapUsage_upperThreshold_Max", subitem);
-       range.put("JVMHeapUsage", item);
 
        item = new HashMap<String, Map<String, String>>();
        subitem = new HashMap<String, String>();
@@ -1027,94 +932,6 @@ public final class Constants {
        item.put("Memory_upperThreshold_Max", subitem);
        range.put("Memory", item);
 
-       item = new HashMap<String, Map<String, String>>();
-       subitem = new HashMap<String, String>();
-       subitem.put("value", String.valueOf(value_min_lowerThreshold_Throughput));
-       subitem.put("message", "{PolicyTrigger.lowerThreshold.Min}");
-       item.put("Throughput_lowerThreshold_Min", subitem);
-       /* No max value
-       subitem = new HashMap<String, String>();
-       subitem.put("value", String.valueOf(value_max_lowerThreshold_Throughput));
-       subitem.put("message", "{PolicyTrigger.lowerThreshold.Max}");
-       item.put("Throughput_lowerThreshold_Max", subitem);
-       */
-       subitem = new HashMap<String, String>();
-       subitem.put("value", String.valueOf(1)); // hard coded instead of value_min_upperThreshold_Throughput
-       subitem.put("message", "{PolicyTrigger.upperThreshold.Min}");
-       item.put("Throughput_upperThreshold_Min", subitem);
-       /* No max value
-       subitem = new HashMap<String, String>();
-       subitem.put("value", String.valueOf(value_max_lowerThreshold_Throughput));
-       subitem.put("message", "{PolicyTrigger.upperThreshold.Max}");
-       item.put("Throughput_upperThreshold_Max", subitem);
-       */
-       range.put("Throughput", item);
-
-       item = new HashMap<String, Map<String, String>>();
-       subitem = new HashMap<String, String>();
-       subitem.put("value", String.valueOf(value_min_lowerThreshold_ResponseTime));
-       subitem.put("message", "{PolicyTrigger.lowerThreshold.Min}");
-       item.put("ResponseTime_lowerThreshold_Min", subitem);
-       /* No max value
-       subitem = new HashMap<String, String>();
-       subitem.put("value", String.valueOf(value_max_lowerThreshold_ResponseTime));
-       subitem.put("message", "{PolicyTrigger.lowerThreshold.Max}");
-       item.put("ResponseTime_lowerThreshold_Max", subitem);
-       */
-       subitem = new HashMap<String, String>();
-       subitem.put("value", String.valueOf(1)); // hard coded instead of value_max_upperThreshold_ResponseTime
-       subitem.put("message", "{PolicyTrigger.upperThreshold.Min}");
-       item.put("ResponseTime_upperThreshold_Min", subitem);
-       /* No max value
-       subitem = new HashMap<String, String>();
-       subitem.put("value", String.valueOf(value_max_upperThreshold_ResponseTime));
-       subitem.put("message", "{PolicyTrigger.upperThreshold.Max}");
-       item.put("ResponseTime_upperThreshold_Max", subitem);
-       */
-       range.put("ResponseTime", item);
-
-       item = new HashMap<String, Map<String, String>>();
-       subitem = new HashMap<String, String>();
-       subitem.put("value", String.valueOf(value_min_lowerThreshold_EventLoopLatency));
-       subitem.put("message", "{PolicyTrigger.lowerThreshold.Min}");
-       item.put("EventLoopLatency_lowerThreshold_Min", subitem);
-       /* No max value
-       subitem = new HashMap<String, String>();
-       subitem.put("value", String.valueOf(value_max_lowerThreshold_EventLoopLatency));
-       subitem.put("message", "{PolicyTrigger.lowerThreshold.Max}");
-       item.put("EventLoopLatency_lowerThreshold_Max", subitem);
-       */
-       subitem = new HashMap<String, String>();
-       subitem.put("value", String.valueOf(1)); // hard coded instead of value_max_upperThreshold_EventLoopLatency
-       subitem.put("message", "{PolicyTrigger.upperThreshold.Min}");
-       item.put("EventLoopLatency_upperThreshold_Min", subitem);
-       /* No max value
-       subitem = new HashMap<String, String>();
-       subitem.put("value", String.valueOf(value_max_upperThreshold_EventLoopLatency));
-       subitem.put("message", "{PolicyTrigger.upperThreshold.Max}");
-       item.put("EventLoopLatency_upperThreshold_Max", subitem);
-       */
-       range.put("EventLoopLatency", item);
-
-       item = new HashMap<String, Map<String, String>>();
-       subitem = new HashMap<String, String>();
-       subitem.put("value", String.valueOf(value_min_lowerThreshold_HeapUsage));
-       subitem.put("message", "{PolicyTrigger.lowerThreshold.Min}");
-       item.put("HeapUsage_lowerThreshold_Min", subitem);
-       subitem = new HashMap<String, String>();
-       subitem.put("value", String.valueOf(value_max_lowerThreshold_HeapUsage));
-       subitem.put("message", "{PolicyTrigger.lowerThreshold.Max}");
-       item.put("HeapUsage_lowerThreshold_Max", subitem);
-       subitem = new HashMap<String, String>();
-       subitem.put("value", String.valueOf(1)); // hard coded instead of value_min_upperThreshold_HeapUsage
-       subitem.put("message", "{PolicyTrigger.upperThreshold.Min}");
-       item.put("HeapUsage_upperThreshold_Min", subitem);
-       subitem = new HashMap<String, String>();
-       subitem.put("value", String.valueOf(value_max_upperThreshold_HeapUsage));
-       subitem.put("message", "{PolicyTrigger.upperThreshold.Max}");
-       item.put("HeapUsage_upperThreshold_Max", subitem);
-       range.put("HeapUsage", item);
-
        return range;
     }
 
@@ -1127,31 +944,6 @@ public final class Constants {
         Map<String, Map<String, String>> item = null;
         Map<String, String> subitem = null;
 
-        item = new HashMap<String, Map<String, String>>();
-        subitem = new HashMap<String, String>();
-        subitem.put("value", String.valueOf(value_min_lowerThreshold_JVMHeapUsage));
-        subitem.put("message", "{PolicyTrigger.lowerThreshold.Min}");
-        item.put("lowerThreshold_Min", subitem);
-        subitem = new HashMap<String, String>();
-        subitem.put("value", String.valueOf(value_max_lowerThreshold_JVMHeapUsage));
-        subitem.put("message", "{PolicyTrigger.lowerThreshold.Max}");
-        item.put("lowerThreshold_Max", subitem);
-        range.put("lowerThreshold", item);
-
-        item = new HashMap<String, Map<String, String>>();
-        subitem = new HashMap<String, String>();
-        subitem.put("value", String.valueOf(1)); // hard coded instead of value_min_upperThreshold_JVMHeapUsage
-        subitem.put("message", "{PolicyTrigger.upperThreshold.Min}");
-        item.put("upperThreshold_Min", subitem);
-        subitem = new HashMap<String, String>();
-        subitem.put("value", String.valueOf(value_max_upperThreshold_JVMHeapUsage));
-        subitem.put("message", "{PolicyTrigger.upperThreshold.Max}");
-        item.put("upperThreshold_Max", subitem);
-        range.put("upperThreshold", item);
-
-        mulit_range.put("trigger_JVMHeapUsage", range);
-
-        range = getTriggerRange();
 
         item = new HashMap<String, Map<String, String>>();
         subitem = new HashMap<String, String>();
@@ -1177,86 +969,6 @@ public final class Constants {
 
         mulit_range.put("trigger_Memory", range);
 
-        range = getTriggerRange();
-
-        item = new HashMap<String, Map<String, String>>();
-        subitem = new HashMap<String, String>();
-        subitem.put("value", String.valueOf(value_min_lowerThreshold_Throughput));
-        subitem.put("message", "{PolicyTrigger.lowerThreshold.Min}");
-        item.put("lowerThreshold_Min", subitem);
-        range.put("lowerThreshold", item);
-
-        item = new HashMap<String, Map<String, String>>();
-        subitem = new HashMap<String, String>();
-        subitem.put("value", String.valueOf(1)); // hard coded instead of value_min_upperThreshold_Throughput
-        subitem.put("message", "{PolicyTrigger.upperThreshold.Min}");
-        item.put("upperThreshold_Min", subitem);
-        range.put("upperThreshold", item);
-
-        mulit_range.put("trigger_Throughput", range);
-
-        range = getTriggerRange();
-
-        item = new HashMap<String, Map<String, String>>();
-        subitem = new HashMap<String, String>();
-        subitem.put("value", String.valueOf(value_min_lowerThreshold_ResponseTime));
-        subitem.put("message", "{PolicyTrigger.lowerThreshold.Min}");
-        item.put("lowerThreshold_Min", subitem);
-        range.put("lowerThreshold", item);
-
-        item = new HashMap<String, Map<String, String>>();
-        subitem = new HashMap<String, String>();
-        subitem.put("value", String.valueOf(1)); // hard coded instead of value_max_upperThreshold_ResponseTime
-        subitem.put("message", "{PolicyTrigger.upperThreshold.Min}");
-        item.put("upperThreshold_Min", subitem);
-        range.put("upperThreshold", item);
-
-        mulit_range.put("trigger_ResponseTime", range);
-
-        range = getTriggerRange();
-
-        item = new HashMap<String, Map<String, String>>();
-        subitem = new HashMap<String, String>();
-        subitem.put("value", String.valueOf(value_min_lowerThreshold_EventLoopLatency));
-        subitem.put("message", "{PolicyTrigger.lowerThreshold.Min}");
-        item.put("lowerThreshold_Min", subitem);
-        range.put("lowerThreshold", item);
-
-        item = new HashMap<String, Map<String, String>>();
-        subitem = new HashMap<String, String>();
-        subitem.put("value", String.valueOf(1)); // hard coded instead of value_max_upperThreshold_EventLoopLatency
-        subitem.put("message", "{PolicyTrigger.upperThreshold.Min}");
-        item.put("upperThreshold_Min", subitem);
-        range.put("upperThreshold", item);
-
-        mulit_range.put("trigger_EventLoopLatency", range);
-
-        range = getTriggerRange();
-
-        item = new HashMap<String, Map<String, String>>();
-        subitem = new HashMap<String, String>();
-        subitem.put("value", String.valueOf(value_min_lowerThreshold_HeapUsage));
-        subitem.put("message", "{PolicyTrigger.lowerThreshold.Min}");
-        item.put("lowerThreshold_Min", subitem);
-        subitem = new HashMap<String, String>();
-        subitem.put("value", String.valueOf(value_max_lowerThreshold_HeapUsage));
-        subitem.put("message", "{PolicyTrigger.lowerThreshold.Max}");
-        item.put("lowerThreshold_Max", subitem);
-        range.put("lowerThreshold", item);
-
-        item = new HashMap<String, Map<String, String>>();
-        subitem = new HashMap<String, String>();
-        subitem.put("value", String.valueOf(1)); // hard coded instead of value_min_upperThreshold_HeapUsage
-        subitem.put("message", "{PolicyTrigger.upperThreshold.Min}");
-        item.put("upperThreshold_Min", subitem);
-        subitem = new HashMap<String, String>();
-        subitem.put("value", String.valueOf(value_max_upperThreshold_HeapUsage));
-        subitem.put("message", "{PolicyTrigger.upperThreshold.Max}");
-        item.put("upperThreshold_Max", subitem);
-        range.put("upperThreshold", item);
-
-        mulit_range.put("trigger_HeapUsage", range);
-
         return mulit_range;
     }
 
@@ -1272,80 +984,6 @@ public final class Constants {
     	value_min_stepUpCoolDownSecs = REPORTINTERVAL;
     	value_min_stepDownCoolDownSecs = REPORTINTERVAL;
     	metricTimeRange = REPORTINTERVAL * 60 /60;
-    }
-
-    public static String updateDefaultJSON(String json_file) throws JsonParseException, JsonMappingException, IOException
-    {
-     	JsonNode top = mapper.readTree(json_file);
-        Iterator<Entry<String, JsonNode>> policy_items= top.fields();
-		while (policy_items.hasNext()){
-			Entry<String, JsonNode> policy_item = policy_items.next();
-			String item_name = policy_item.getKey();
-			logger.info("item_name: " + item_name);
-			JsonNode item_value = policy_item.getValue();
-			if(item_name.equals("policyTriggers")) {
-				for(JsonNode policyTrigger : item_value) { //only one
-		           /* "statWindow": "300,120,3600",
-		            "breachDuration": "600,120,3600",
-		            "lowerThreshold": "30,1,100",
-		            "upperThreshold": "80,x,100",
-		            "instanceStepCountDown": "1,1,x",
-		            "instanceStepCountUp": "1,1,x",
-		            "stepDownCoolDownSecs": "600,120,3600",
-		            "stepUpCoolDownSecs": "600,120,3600" */
-					((ObjectNode)policyTrigger).put("statWindow", value_default_statwindow + "," + value_min_statwindow + "," + value_max_statwindow+ "," + unit_statwindow);
-					((ObjectNode)policyTrigger).put("breachDuration", value_default_breachDuration + "," + value_min_breachDuration + "," + value_max_breachDuration + "," + unit_breachDuration);
-					//((ObjectNode)policyTrigger).put("lowerThreshold", value_default_lowerThreshold + "," + value_min_lowerThreshold + "," + value_max_lowerThreshold);
-					//((ObjectNode)policyTrigger).put("upperThreshold", value_default_upperThreshold + "," + value_min_upperThreshold + "," + value_max_upperThreshold);
-					((ObjectNode)policyTrigger).put("instanceStepCountDown", value_default_instanceStepCountDown + "," + value_min_instanceStepCountDown + "," + value_max_instanceStepCountDown + "," + unit_instanceStepCountDown);
-					((ObjectNode)policyTrigger).put("instanceStepCountUp", value_default_instanceStepCountUp + "," + value_min_instanceStepCountUp + "," + value_max_instanceStepCountUp + "," + unit_instanceStepCountUp);
-					((ObjectNode)policyTrigger).put("stepDownCoolDownSecs", value_default_stepDownCoolDownSecs + "," + value_min_stepDownCoolDownSecs + "," + value_max_stepDownCoolDownSecs + "," + unit_stepDownCoolDownSecs);
-					((ObjectNode)policyTrigger).put("stepUpCoolDownSecs", value_default_stepUpCoolDownSecs + "," + value_min_stepUpCoolDownSecs + "," + value_max_stepUpCoolDownSecs + "," + unit_stepUpCoolDownSecs);
-					ObjectNode ThresholdjNode = mapper.createObjectNode();
-					ObjectNode jNode = mapper.createObjectNode();
-					jNode.put("lowerThreshold", value_default_lowerThreshold_JVMHeapUsage + "," + value_min_lowerThreshold_JVMHeapUsage + "," + value_max_lowerThreshold_JVMHeapUsage + "," + unit_lowerThreshold_JVMHeapUsage);
-					jNode.put("upperThreshold", value_default_upperThreshold_JVMHeapUsage + "," + value_min_upperThreshold_JVMHeapUsage + "," + value_max_upperThreshold_JVMHeapUsage + "," + unit_upperThreshold_JVMHeapUsage);
-					ThresholdjNode.put("JVMHeapUsage", jNode);
-					jNode = mapper.createObjectNode();
-					jNode.put("lowerThreshold", value_default_lowerThreshold_Memory + "," + value_min_lowerThreshold_Memory + "," + value_max_lowerThreshold_Memory + "," + unit_lowerThreshold_Memory);
-					jNode.put("upperThreshold", value_default_upperThreshold_Memory + "," + value_min_upperThreshold_Memory + "," + value_max_upperThreshold_Memory + "," + unit_upperThreshold_Memory);
-					ThresholdjNode.put("Memory", jNode);
-					jNode = mapper.createObjectNode();
-					jNode.put("lowerThreshold", value_default_lowerThreshold_Throughput + "," + value_min_lowerThreshold_Throughput + "," + value_max_lowerThreshold_Throughput + "," + unit_lowerThreshold_Throughput);
-					jNode.put("upperThreshold", value_default_upperThreshold_Throughput + "," + value_min_upperThreshold_Throughput + "," + value_max_upperThreshold_Throughput + "," + unit_upperThreshold_Throughput);
-					ThresholdjNode.put("Throughput", jNode);
-					jNode = mapper.createObjectNode();
-					jNode.put("lowerThreshold", value_default_lowerThreshold_ResponseTime + "," + value_min_lowerThreshold_ResponseTime + "," + value_max_lowerThreshold_ResponseTime + "," + unit_lowerThreshold_ResponseTime);
-					jNode.put("upperThreshold", value_default_upperThreshold_ResponseTime + "," + value_min_upperThreshold_ResponseTime + "," + value_max_upperThreshold_ResponseTime + "," + unit_upperThreshold_ResponseTime);
-					ThresholdjNode.put("ResponseTime", jNode);
-					jNode = mapper.createObjectNode();
-					jNode.put("lowerThreshold", value_default_lowerThreshold_EventLoopLatency + "," + value_min_lowerThreshold_EventLoopLatency + "," + value_max_lowerThreshold_EventLoopLatency + "," + unit_lowerThreshold_EventLoopLatency);
-					jNode.put("upperThreshold", value_default_upperThreshold_EventLoopLatency + "," + value_min_upperThreshold_EventLoopLatency + "," + value_max_upperThreshold_EventLoopLatency + "," + unit_upperThreshold_EventLoopLatency);
-					ThresholdjNode.put("EventLoopLatency", jNode);
-					jNode = mapper.createObjectNode();
-					jNode.put("lowerThreshold", value_default_lowerThreshold_HeapUsage + "," + value_min_lowerThreshold_HeapUsage + "," + value_max_lowerThreshold_HeapUsage + "," + unit_lowerThreshold_HeapUsage);
-					jNode.put("upperThreshold", value_default_upperThreshold_HeapUsage + "," + value_min_upperThreshold_HeapUsage + "," + value_max_upperThreshold_HeapUsage + "," + unit_upperThreshold_HeapUsage);
-					ThresholdjNode.put("HeapUsage", jNode);
-					((ObjectNode)policyTrigger).put("thresholds", ThresholdjNode);
-				}
-			}
-			else if(item_name.equals("AppType-Metric-Mapping")) {
-				for (String appType : appType_metric_mapping.keySet()) {
-					String [] metric_list = appType_metric_mapping.get(appType);
-					if (!(appType.equals("default"))){
-					    //appType = appType.substring(0, 1).toUpperCase() + appType.substring(1);
-						appType = appType_Display_mapping.get(appType);
-					}
-				    JsonNodeFactory factory = JsonNodeFactory.instance;
-				    ArrayNode aaData = new ArrayNode(factory);
-				    for (String metric : metric_list) {
-				    	aaData.add(metric);
-				    }
-				    ((ObjectNode)item_value).put(appType, aaData);
-				}
-			}
-		}
-    	return top.toString();
     }
 
     public static String [] getMetricTypeByAppType(String appType) { //throws JsonProcessingException {
