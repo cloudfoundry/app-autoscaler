@@ -107,5 +107,5 @@ This project is released under version 2.0 of the [Apache License][l].
 [c]: http://couchdb.apache.org/
 [d]: http://www.eclipse.org/m2e/
 [e]: http://www.cloudant.com
-[l]: LICENSE.txt
+[l]: LICENSE
 
