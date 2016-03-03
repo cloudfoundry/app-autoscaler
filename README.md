@@ -93,7 +93,7 @@ Now, you can play with `CF-AutoScaler`.
 Firstly create a `CF-AutoScaler` service, and bind to you application
 
 ``` shell
-cf create-service `CF-AutoScaler` free <service_instance>
+cf create-service CF-AutoScaler free <service_instance>
 cf bind-service <app> <service_instance>
 ```
 
