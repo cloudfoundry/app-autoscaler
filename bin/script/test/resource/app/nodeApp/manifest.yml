@@ -1,0 +1,8 @@
+applications:
+- path: .
+  memory: 600M
+  instances: 1
+  domain: bosh-lite.com
+  name: helloAutoScaler
+  host: helloAutoScaler
+  disk_quota: 1024M
