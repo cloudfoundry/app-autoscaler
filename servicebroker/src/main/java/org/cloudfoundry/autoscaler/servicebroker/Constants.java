@@ -34,12 +34,12 @@ public final class Constants {
 	public static final String PROXY_PORT = "port";
 	
     public enum MESSAGE_KEY {
-    	 ParseJSONError, ServerUrlMappingNotFound, AlreadyBindedAnotherService, BindServiceFail, 
-    	 DeleteServiceFail, UnbindServiceFail, EnableServiceFail,QueryServiceEnabledInfoFail;
+    	 ParseJSONError(499), ServerUrlMappingNotFound(499), AlreadyBindedAnotherService(499), BindServiceFail(499), 
+    	 UnbindServiceFail(499), DeleteServiceFail, EnableServiceFail,QueryServiceEnabledInfoFail;
+    	 
    	  	 private int errorCode;
-
    	  	 private MESSAGE_KEY() {
-      	      this.errorCode = 499;
+      	      this.errorCode = 500;
       	 }
 
    	  	 private MESSAGE_KEY(int errorCode) {

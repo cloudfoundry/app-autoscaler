@@ -10,7 +10,6 @@ public class ServiceApplication extends Application {
 	public Set<Class<?>> getClasses() {
 		Set<Class<?>> classes = new HashSet<Class<?>>();
 		classes.add(AutoScalingServiceBrokerRest.class);
-		classes.add(OperationRest.class);
 		return classes;
 	}
 	

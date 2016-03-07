@@ -84,17 +84,7 @@ public class ConfigManager {
     }
 
     public static double getDouble(String key) {
-        String stringValue = get(key);
-        if (stringValue != null) {
-            try {
-                double doubleValue = Double.parseDouble(stringValue);
-                return doubleValue;
-            } catch (Exception e) {
-                // ignore
-            }
-        }
-
-        return 0.0;
+    	return getDouble(key, 0.0);
     }
 
     public static int getInt(String key, int defaultValue) {
@@ -112,17 +102,7 @@ public class ConfigManager {
     }
 
     public static int getInt(String key) {
-        String stringValue = get(key);
-        if (stringValue != null) {
-            try {
-                int intValue = Integer.parseInt(stringValue);
-                return intValue;
-            } catch (Exception e) {
-                // ingore
-            }
-        }
-
-        return 0;
+    	return getInt(key, 0);
     }
 
     public static long getLong(String key, long defaultValue) {
@@ -140,17 +120,7 @@ public class ConfigManager {
     }
 
     public static long getLong(String key) {
-        String stringValue = get(key);
-        if (stringValue != null) {
-            try {
-                long longValue = Long.parseLong(stringValue);
-                return longValue;
-            } catch (Exception e) {
-                // ignore
-            }
-        }
-
-        return 0;
+    	return getLong(key, 0L);
     }
 
     public static boolean getBoolean(String key, boolean defaultValue) {
@@ -167,14 +137,10 @@ public class ConfigManager {
     }    
     
 	public static Boolean getBoolean(String key) {
-		String stringValue = get(key);
-		if (stringValue != null && !stringValue.isEmpty()) {
-			return Boolean.parseBoolean(stringValue);
-		}
-		return false;
+		return getBoolean(key, false);
 	}
 
-
+	
     public static String getDecryptedString(String key) {
 		try {
 			byte[] decryptSecret = Base64.decode(ConfigManager.get(key));
@@ -184,6 +150,7 @@ public class ConfigManager {
 		} 
 		return null;
     }
+    
     public static String getInternalAuthToken(){
     	String internalAuthUserName = ConfigManager.get("internalAuthUsername");
 		String internalAuthPassword = ConfigManager.get("internalAuthPassword");
@@ -195,6 +162,8 @@ public class ConfigManager {
 		} 
 		return null;
     }
+    
+    
 	public static JSONObject parseCFEnv(String serviceName){
         JSONObject credentials = null;
         String serviceInfo = System.getenv("VCAP_SERVICES");
