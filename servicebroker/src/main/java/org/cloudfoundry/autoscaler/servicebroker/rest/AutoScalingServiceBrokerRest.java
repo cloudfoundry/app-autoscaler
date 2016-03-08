@@ -1,7 +1,5 @@
 package org.cloudfoundry.autoscaler.servicebroker.rest;
 
-import java.io.IOException;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;

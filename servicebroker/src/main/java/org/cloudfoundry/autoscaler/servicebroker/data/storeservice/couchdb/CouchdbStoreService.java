@@ -205,15 +205,22 @@ public class CouchdbStoreService implements IDataStoreService {
 				.enableSSL(enableSSL);
 
 		if (username != null && !username.isEmpty() && password != null && !password.isEmpty() ) {
-			builder = builder.username(username).password(password);
+	    	builder = builder.username(username).password(password);
 		}
-
+		
 		CouchDbInstance dbInstance = new StdCouchDbInstance(builder.build());
-		CouchDbConnector couchDB = new StdCouchDbConnector(dbName, dbInstance);
+		//CouchDbConnector couchDB = new StdCouchDbConnector(dbName, dbInstance);
 
+        if (!dbInstance.checkIfDbExists(dbName))
+        	dbInstance.createDatabase(dbName);
+        CouchDbConnector couchDB = dbInstance.createConnector(dbName, true);  
+		
 		return couchDB;
 		
 	}
+	
+	
+	
 
 
 
