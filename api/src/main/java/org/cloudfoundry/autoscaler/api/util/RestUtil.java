@@ -112,41 +112,6 @@ public class RestUtil {
 	}
     
     
-
-//    public static void setupToTrustSelfSignedCert() throws NoSuchAlgorithmException, KeyManagementException {
-//        TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
-//            public java.security.cert.X509Certificate[] getAcceptedIssuers() {
-//                return null;
-//            }
-//
-//            @Override
-//            public void checkClientTrusted(java.security.cert.X509Certificate[] arg0, String arg1)
-//                    throws CertificateException {
-//
-//            }
-//
-//            @Override
-//            public void checkServerTrusted(java.security.cert.X509Certificate[] arg0, String arg1)
-//                    throws CertificateException {
-//            }
-//        } };
-//
-//        SSLContext context = SSLContext.getInstance("TLS");
-//        context.init(null, trustAllCerts, new SecureRandom());
-//        HttpsURLConnection.setDefaultSSLSocketFactory(context.getSocketFactory());
-//
-//        ClientConfig config = new DefaultClientConfig();
-//        config.getProperties().put(HTTPSProperties.PROPERTY_HTTPS_PROPERTIES,
-//                new HTTPSProperties(new HostnameVerifier() {
-//
-//                    @Override
-//                    public boolean verify(String arg0, SSLSession arg1) {
-//                        return false;
-//                    }
-//
-//                }, context));
-//    }
-    
 	public static boolean isHTTPS(String url) {
 		return url != null && url.startsWith("https");
 	}

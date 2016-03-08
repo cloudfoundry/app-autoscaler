@@ -38,7 +38,6 @@ public class RestApiResponseHandler {
 	static {
 	    cc = new CacheControl();
 	    cc.setNoCache(true);
-	    //cc.setNoStore(true);
 	    cc.setNoTransform(true);
 	    cc.setPrivate(true);
 	}
@@ -160,12 +159,6 @@ public class RestApiResponseHandler {
         return Response.status(Response.Status.BAD_REQUEST).entity(getErrorJsonString(msg)).build();
 	}
 
-//	public static Response getResponseAppExists(AppExistsException e)
-//	{
-//		String msg = "App already exists: "+e.getAppId();
-//		logger.warn(msg,e);
-//        return Response.status(Response.Status.BAD_REQUEST).entity(getErrorJsonString(msg)).build();
-//	}
 
 	public static Response getResponseAppNotFound(AppNotFoundException e, Locale locale)
 	{
@@ -254,13 +247,7 @@ public class RestApiResponseHandler {
 		String msg = MessageUtil.getMessageString(MessageUtil.RestResponseErrorMsg_policy_not_exist_error, locale, e.getAppId());
         return Response.status(Response.Status.NOT_FOUND).entity(getErrorJsonString(msg)).build();
 	}
-	
-/*	public static Response getResponseMonitorServiceError(MonitorServiceException e, Locale locale)
-	{
-		String msg = MessageUtil.getMessageString(MessageUtil.RestResponseErrorMsg_monitor_service, locale, e.toString());
-		logger.error(msg,e);
-        return Response.status(Response.Status.BAD_REQUEST).entity(getErrorJsonString(msg)).build();
-	}*/
+
 	
 	public static Response getResponseMetricNotSupportedError(MetricNotSupportedException e, Locale locale)
 	{
@@ -282,13 +269,7 @@ public class RestApiResponseHandler {
 		logger.error(msg,e);
         return Response.status(Response.Status.BAD_REQUEST).entity(getErrorJsonString(msg)).build();		
 	}
-	
-//	public static Response getResponseNoMonitorServiceBoundError(NoMonitorServiceBoundException e, Locale locale)
-//	{
-//		String msg = "Please connect the Application Monitoring add-on before you proceed the current operation.";
-//		logger.error(msg,e);
-//        return Response.status(Response.Status.BAD_REQUEST).entity(getErrorJsonString(msg)).build();
-//	}
+
 	
 	public static Response getResponseBSSError(BssServiceException e, Locale locale)
 	{
