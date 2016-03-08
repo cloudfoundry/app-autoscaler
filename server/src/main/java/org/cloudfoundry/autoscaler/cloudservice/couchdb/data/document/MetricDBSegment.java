@@ -9,7 +9,11 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 @TypeDiscriminator ("doc.type=='MetricDBSegment'")
 public class MetricDBSegment extends TypedCouchDbDocument implements Comparable  {
-    private long startTimestamp;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private long startTimestamp;
     private long endTimestamp;
     private String metricDBPostfix;
     private int segmentSeq;  

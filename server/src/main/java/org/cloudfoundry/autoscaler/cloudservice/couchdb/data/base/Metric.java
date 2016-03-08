@@ -7,7 +7,11 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Metric implements Serializable, Cloneable {
-    private String name;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private String name;
     private String value;
     private String category;
     private String group;

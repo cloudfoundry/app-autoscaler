@@ -6,9 +6,6 @@ public class TriggerNotFoundException extends Exception{
 		super(message);
 	}
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 5773025544116186465L;
 
 

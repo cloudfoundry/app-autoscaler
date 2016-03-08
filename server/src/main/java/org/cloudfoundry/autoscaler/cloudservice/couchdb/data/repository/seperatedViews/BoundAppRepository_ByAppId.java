@@ -16,8 +16,7 @@ public class BoundAppRepository_ByAppId extends TypedCouchDbRepositorySupport<Bo
     }
 
     public BoundApp findByAppId(String appId) throws Exception {
-        ComplexKey key = ComplexKey.of( appId);
-		List<BoundApp> apps = queryView("by_appId", ComplexKey.of(appId));
+        List<BoundApp> apps = queryView("by_appId", ComplexKey.of(appId));
 		if (apps == null || apps.size() == 0){
 			return null;
 		}

@@ -82,9 +82,6 @@ public class ApplicationRestApi {
     	logger.info("Detach policy for application " + appId + ". policyId: " + policyId + " state: " + state);    	
 		ApplicationManager appManager = ApplicationManagerImpl.getInstance();
 		try {
-			//JSONObject jsonObj = new JSONObject(jsonString);
-			//String policyId = (String)jsonObj.get("policyId");
-			//String state = (String)jsonObj.get("state");
 			appManager.detachPolicy(appId, policyId, state);
 		} catch (DataStoreException e) {
 
@@ -156,7 +153,6 @@ public class ApplicationRestApi {
             if (applications == null) {
             	return RestApiResponseHandler.getResponse(Status.CREATED, jsonArray.toString());
             }
-            CloudApplicationManager cm = CloudApplicationManager.getInstance();
             //
             for (Application app : applications) {
                 JSONObject jsonObj = new JSONObject();

@@ -34,11 +34,8 @@ public class ScheduledServiceUtil {
 			String timezoneId = scheduledPolicy.getTimezone();
 			TimeZone curTimeZone = TimeZone.getDefault();
 			TimeZone policyTimeZone = TimeZone.getDefault();
-			boolean sameZone = true;
 			policyTimeZone = TimeZoneUtil.parseTimeZoneId(timezoneId);
-			sameZone = TimeZoneUtil.isParallel(policyTimeZone, curTimeZone);
 			if (ScheduledType.RECURRING.name().equals(scheduledType)) {
-				Calendar calendar = Calendar.getInstance();
 				Date startTime = new SimpleDateFormat(ScheduledPolicy.recurringDateFormat).parse(scheduledPolicy.getStartTime());
 				
 				Date endTime = new SimpleDateFormat(ScheduledPolicy.recurringDateFormat).parse(scheduledPolicy.getEndTime());

@@ -23,7 +23,6 @@ import com.sun.jersey.api.client.WebResource;
  * 
  * Utility methods
  * 
- * @author paolo
  * 
  */
 public class AppUtils {
@@ -91,9 +90,6 @@ public class AppUtils {
 			WebResource webResource = Client.create().resource(url);
 			String response = webResource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON).
 					header("Authorization", "Bearer " + access_token).get(String.class);
-//			res = client.resource(url).accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON)
-//					.header("Authorization", "Bearer " + access_token);
-//			String response = res.get(String.class);
 			logger.debug( ">>>" + response);
 
 			JSONObject jobj = new JSONObject(response);

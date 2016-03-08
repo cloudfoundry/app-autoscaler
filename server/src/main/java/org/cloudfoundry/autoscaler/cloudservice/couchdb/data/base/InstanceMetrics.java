@@ -9,7 +9,11 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class InstanceMetrics implements Serializable, Cloneable {
-    private long timestamp;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private long timestamp;
     private int instanceIndex;
     private String instanceId;
     private List<Metric> metrics = new LinkedList<Metric>();

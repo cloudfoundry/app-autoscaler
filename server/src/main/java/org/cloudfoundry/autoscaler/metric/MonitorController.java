@@ -242,7 +242,6 @@ public class MonitorController implements Runnable {
     
     private AppInstanceMetrics filterAppInstanceMetricsForEvaluation(AppInstanceMetrics appInstanceMetrics, String dataSource) {
     	String appId = appInstanceMetrics.getAppId(); 
-    	String appType = appInstanceMetrics.getAppType();
     	Set<String> enabledMetrics = ConfigService.getInstance().getEnabledMetric( getAppType(appId),  dataSource, appId);
     	//if no enabled metric for this data source
         if (enabledMetrics == null) {
@@ -299,7 +298,6 @@ public class MonitorController implements Runnable {
     //if poller enabled, the poller metrics will be stored to DB directly
     public void addAppInstanceMetrics(AppInstanceMetrics appInstanceMetrics, String dataSource) {
         String appId = appInstanceMetrics.getAppId();
-        String appType = appInstanceMetrics.getAppType();
         ApplicationMetrics appMetrics = appMetricsMap.get(appId);
 
         if (appMetrics == null) {// no active record for this app, 
@@ -350,15 +348,6 @@ public class MonitorController implements Runnable {
     	
     }
     
-
-    private String getServiceId(String appId) {
-        String serviceId = null;
-        BoundApp boundApp = boundAppMap.get(appId);
-        if (boundApp != null) {
-            serviceId = boundApp.getServiceId();
-        }
-        return serviceId;
-    }
 
     public void setStopProcessing() {
         this.processingStoped = true;

@@ -8,6 +8,11 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @TypeDiscriminator ("doc.type=='ApplicationInstance_inBroker'")
 public class ApplicationInstance extends TypedCouchDbDocument {
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
 	public static enum ApplicationInstanceState{
 		Creating, Registering, Bound, Unregistering, Removing
 	}

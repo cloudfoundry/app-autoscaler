@@ -14,7 +14,12 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 //@JsonIgnoreProperties(value = { "appId", "appName", "appType", "serviceId" })  
 public class AppMetricPerInstance extends InstanceMetrics  implements Serializable{
     
-    @JsonIgnore
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	@JsonIgnore
     
     private String appId;
 
