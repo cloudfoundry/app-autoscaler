@@ -2,22 +2,17 @@ package org.cloudfoundry.autoscaler.api.util;
 
 
 import java.io.IOException;
-import java.net.URL;
-import java.net.URLEncoder;
 import java.util.Iterator;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.core.MediaType;
 
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 
 import org.apache.log4j.Logger;
-
-import org.apache.commons.codec.binary.Base64;
 
 import org.cloudfoundry.autoscaler.api.Constants;
 import org.cloudfoundry.autoscaler.api.util.RestUtil;

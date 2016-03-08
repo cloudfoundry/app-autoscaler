@@ -1,19 +1,9 @@
 package org.cloudfoundry.autoscaler.api;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
+
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.List;
-import java.util.Set;
-import java.util.Map.Entry;
-import java.util.ArrayList;
-import java.util.HashSet;
 
 
 
@@ -22,84 +12,18 @@ import java.util.HashSet;
 
 import org.apache.log4j.Logger;
 
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import org.cloudfoundry.autoscaler.api.rest.PublicRestApi;
 import org.cloudfoundry.autoscaler.api.util.ConfigManager;
 
 public final class Constants {
-
-	private static final ObjectMapper mapper = new ObjectMapper();
-
-    public static final String APP_ID = "appID";
-    public static final String APP_NAME = "appName";
-    public static final String APPS = "apps";
-    public static final String WARDEN_IP = "wardenIP";
-    public static final String INSTANCE_INDEX = "instanceIndex";
-    public static final String FLAG = "flag";
-
-    public static final String DEA = "dea";
-    public static final String ZONE = "zone";
-    public static final String INSTANCES = "instances";
-
-    public static final String POLICY_COOLDOWN = "policy.cooldown";
-    public static final String POLICY_DURATION = "policy.duration";
-    public static final String MIN_INSTANCES = "policy.min_instances";
-    public static final String MAX_INSTANCES = "policy.max_instances";
-    public static final String THRESHOLD_LOW = "policy.threshold.low.";
-    public static final String THRESHOLD_HIGH = "policy.threshold.high.";
-
-    public static final String ZONES = "zones";
-    public static final String TYPE = "type";
-    public static final String MAX = "max";
-    public static final String MIN = "min";
-    public static final String POLICIES = "policies";
-    public static final String COOL_DOWN = "cool_down";
-    public static final String DURATION = "duration";
-
+	private static final String CLASS_NAME = Constants.class.getName();
+	private static final Logger logger     = Logger.getLogger(CLASS_NAME);
+	
     public static final int DASHBORAD_TIME_RANGE = 30;
-
-    //metric db rollout frequency
-    public static final String HOURLY = "hourly";
-    public static final String DAILY = "daily";
-    public static final String WEEKLY = "weekly";
-    public static final String MONTHLY = "monthly";
-    public static final String CUSTOM = "custom";
-    public static final String CONTINUOUS = "continuously";
-
-    // config keys
-    public static final String POLICY_CONNECT_TIMEOUT = "policy.connect.timeout";
-    public static final String POLICY_RETRY_LATENCY = "policy.retry.latency";
-
-
-    public static final String USERNAME = "cfClientId";
-    public static final String PASSWORD = "cfClientSecretBase64Encoded";
+    
+    public static final String USERNAME = "cf.client.id";
+    public static final String PASSWORD = "cf.client.secret";
     public static final String CFURL = "cfUrl";
-
-    public static final String SUBJECT_DEPLOYMENT = "subject.deployment";
-    public static final String NATS_PORT = "nats.port";
-    public static final String NATS_HOST = "nats.host";
-    public static final String NATS_USER = "nats.user";
-    public static final String NATS_PASS = "nats.pass";
-    public static final String WAITTIME_DEPLOYMENT = "waittime.deployment";
-
-    public static final String GUID = "guid";
-    public static final String RESOURCES = "resources";
-    public static final String ENTITY = "entity";
-    public static final String METADATA = "metadata";
-    public static final String NAME = "name";
-    public static final String METRICS_PROCESSORS = "metrics.processors";
-    public static final String METRICS_ACTIONS = "metrics.actions";
-
-    public static final String POLLING_INTERVAL = "reportInterval";
-    public static final String POLLING_WAIT = "pollingWaitbeforestart";
-    public static final String POLLER_THREAD_COUNT = "pollerThreadCount";
-
+   
     public static final String APP_TYPE_JAVA = "java";
     public static final String APP_TYPE_RUBY = "ruby";
     public static final String APP_TYPE_RUBY_SINATRA = "ruby_sinatra";
@@ -711,38 +635,7 @@ public final class Constants {
 	           "(GMT +14:00) Etc/GMT-14",
 	           "(GMT +14:00) Pacific/Kiritimati"};
 
-	private static final String CLASS_NAME = Constants.class.getName();
-	private static final Logger logger     = Logger.getLogger(CLASS_NAME);
-	public static Map<String, String> appType_Display_mapping = new HashMap<String, String>() //server metric string to metricType
-	{
-	    {
-            put(APP_TYPE_JAVA, DISPLAY_APP_TYPE_JAVA);
-            put(APP_TYPE_RUBY, DISPLAY_APP_TYPE_RUBY);
-            put(APP_TYPE_RUBY_SINATRA, DISPLAY_APP_TYPE_RUBY_SINATRA);
-            put(APP_TYPE_RUBY_ON_RAILS, DISPLAY_APP_TYPE_RUBY_ON_RAILS);
-            put(APP_TYPE_NODEJS, DISPLAY_APP_TYPE_NODEJS);
-            put(APP_TYPE_GO, DISPLAY_APP_TYPE_GO);
-            put(APP_TYPE_PHP, DISPLAY_APP_TYPE_PHP);
-            put(APP_TYPE_PYTHON, DISPLAY_APP_TYPE_PYTHON);
-            put(APP_TYPE_DOTNET, DISPLAY_APP_TYPE_DOTNET);
-            put(APP_TYPE_DEFAULT, DISPLAY_APP_TYPE_DEFAULT);
-	    }
-	};
-	public static Map<String, String> Display_appType_mapping = new HashMap<String, String>() //server metric string to metricType
-	{
-	    {
-            put(DISPLAY_APP_TYPE_JAVA, APP_TYPE_JAVA);
-            put(DISPLAY_APP_TYPE_RUBY, APP_TYPE_RUBY);
-            put(DISPLAY_APP_TYPE_RUBY_SINATRA, APP_TYPE_RUBY_SINATRA);
-            put(DISPLAY_APP_TYPE_RUBY_ON_RAILS, APP_TYPE_RUBY_ON_RAILS);
-            put(DISPLAY_APP_TYPE_NODEJS, APP_TYPE_NODEJS);
-            put(DISPLAY_APP_TYPE_GO, APP_TYPE_GO);
-            put(DISPLAY_APP_TYPE_PHP, APP_TYPE_PHP);
-            put(DISPLAY_APP_TYPE_PYTHON, APP_TYPE_PYTHON);
-            put(DISPLAY_APP_TYPE_DOTNET, APP_TYPE_DOTNET);
-            put(DISPLAY_APP_TYPE_DEFAULT, APP_TYPE_DEFAULT);
-	    }
-	};
+
 	public static String INTERNAL_METRIC_TYPE_MEMORY = "Memory";
 	public static String METRIC_TYPE_MEMORY = "Memory";
 	public static String[] metrictype = {METRIC_TYPE_MEMORY};
@@ -772,11 +665,9 @@ public final class Constants {
 	public static int value_metric_refresh_interval = REPORTINTERVAL * 1000;
 	public static int value_min_statwindow = REPORTINTERVAL;
 	public static int value_min_breachDuration = REPORTINTERVAL;
-//	public static int value_min_cooldown = REPORTINTERVAL;
 	public static int value_min_stepDownCoolDownSecs = REPORTINTERVAL;
 	public static int value_min_stepUpCoolDownSecs = REPORTINTERVAL;
 	public static int value_min_lowerThreshold_Memory = 1;
-	public static String value_min_upperThreshold_Memory= "x"; 
 	public static int value_min_instanceStepCountDown = 1;
 	public static int value_min_instanceStepCountUp = 1;
 	public static int metricTimeRange = REPORTINTERVAL * 60 /60; //Given the unit of reportInterval is seconds, we need to /60 to get the value for unit "minutes". Then multiple with 60 as we need 60 points in the chart.
@@ -784,7 +675,6 @@ public final class Constants {
 	public static String value_nolimit = "nolimit";
 	public static int value_default_statwindow = 300;
 	public static int value_default_breachDuration = 600;
-	//public static int value_default_cooldown = 600;
 	public static int value_default_stepDownCoolDownSecs = 600;
 	public static int value_default_stepUpCoolDownSecs = 600;
 	public static int value_default_lowerThreshold_Memory = 30;
@@ -793,13 +683,10 @@ public final class Constants {
 	public static int value_default_instanceStepCountUp = 1;
 	public static int value_max_statwindow = 3600;
 	public static int value_max_breachDuration = 3600;
-//	public static int value_max_cooldown = 3600;
 	public static int value_max_stepDownCoolDownSecs = 3600;
 	public static int value_max_stepUpCoolDownSecs = 3600;
 	public static int value_max_lowerThreshold_Memory = 100;
 	public static int value_max_upperThreshold_Memory= 100;
-	public static String value_max_instanceStepCountDown = "x"; 
-	public static String value_max_instanceStepCountUp = "x"; 
 	public static String TRIGGER_STATWINDOW = "statWindow";
 	public static String TRIGGER_BREACHDURATION = "breachDuration";
 	public static String TRIGGER_LOWERTHRESHOLD = "lowerThreshold";
@@ -980,15 +867,13 @@ public final class Constants {
     	value_metric_refresh_interval = REPORTINTERVAL * 1000;
     	value_min_statwindow = REPORTINTERVAL;
     	value_min_breachDuration = REPORTINTERVAL;
-    	//value_min_cooldown = REPORTINTERVAL;
     	value_min_stepUpCoolDownSecs = REPORTINTERVAL;
     	value_min_stepDownCoolDownSecs = REPORTINTERVAL;
     	metricTimeRange = REPORTINTERVAL * 60 /60;
     }
 
-    public static String [] getMetricTypeByAppType(String appType) { //throws JsonProcessingException {
+    public static String [] getMetricTypeByAppType(String appType) { 
     	logger.debug("getMetricTypeByAppType for appType: " + appType);
-    	//logger.info("current appType_metric_mapping :" + mapper.writeValueAsString(appType_metric_mapping));
     	if (Arrays.asList(APPTYPE).contains(appType)) {
     		String [] specified_metric = (String [])appType_metric_mapping.get(appType);
     		if (specified_metric != null){

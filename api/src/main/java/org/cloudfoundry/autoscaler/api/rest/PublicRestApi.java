@@ -27,11 +27,7 @@ import com.sun.jersey.api.client.WebResource;
 
 import org.apache.log4j.Logger;
 
-//import org.codehaus.jackson.map.ObjectMapper;
-//import org.codehaus.jackson.JsonNode;
-//import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.JsonNode;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.json.JSONObject;
@@ -216,7 +212,6 @@ public class PublicRestApi {
 			    	return RestApiResponseHandler.getResponseCreatedOk("{\"policyId\":" + "\"" + policyId + "\"}");
 			    }
 			    else{
-			    	//return RestApiResponseHandler.getResponseBadRequest(body_map.get("error").toString());
 			    	response_body = response.getEntity(String.class);
 			    	if (response.getStatus() == HttpServletResponse.SC_BAD_REQUEST) { 
                         logger.info("Get back-end server bad request error  : " + response.getStatus() + " with response body: " + response_body);
@@ -456,7 +451,6 @@ public class PublicRestApi {
 			return RestApiResponseHandler.getResponseInputJsonFormatError(e, LocaleUtil.getLocale(httpServletRequest));
 		}
 		catch (Exception e){
-		    //return RestApiResponseHandler.getResponseBadRequest("{\"error\":" + "\"" + "failed to parse json information" + "\"}");
 			return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_parse_input_json_context, e), LocaleUtil.getLocale(httpServletRequest));
 		}
 		

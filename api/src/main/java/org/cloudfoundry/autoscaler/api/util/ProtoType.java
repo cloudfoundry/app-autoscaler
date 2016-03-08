@@ -87,7 +87,6 @@ import  org.cloudfoundry.autoscaler.api.Constants;
 public class ProtoType {
 	private static final String CLASS_NAME = ProtoType.class.getName();
 	private static final Logger logger     = Logger.getLogger(CLASS_NAME);
-	//private static final ObjectMapper mapper = new ObjectMapper().configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 	private static final ObjectMapper new_mapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 			                                                         .configure(DeserializationFeature.ACCEPT_FLOAT_AS_INT, false)
 			                                                         .configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, true);
@@ -121,13 +120,12 @@ public class ProtoType {
 	    return hashMap;
 	}
 
-    //compare based on String or time in format "HH:mm"
-	static class MapComparator1 implements Comparator<Map<String, String>>
+	static class CommonComparator implements Comparator<Map<String, String>>
 	{
 		private String key;
 	    private String keyType;
 
-	    public MapComparator1(String key, String keyType)
+	    public CommonComparator(String key, String keyType)
 	    {
 	    	this.key = key;
 	        this.keyType = keyType;
@@ -197,13 +195,13 @@ public class ProtoType {
 	}
 
 	//Datetime compare in format yyyy-MM-dd HH:mm
-	static class MapComparator2 implements Comparator<Map<String, String>>
+	static class DateTimeComparator implements Comparator<Map<String, String>>
 	{
 		private String key1;
 		private String key2;
 	    private String keyType;
 
-	    public MapComparator2(String key1, String key2, String keyType)
+	    public DateTimeComparator(String key1, String key2, String keyType)
 	    {
 	    	this.key1 = key1;
 	    	this.key2 = key2;
@@ -219,7 +217,6 @@ public class ProtoType {
 	        String secondValue_key1 = second.get(key1);
 	        String secondValue_key2 = second.get(key2);
 	        if(keyType.equals("DateTime")){ //assume date in key1 and time in key2
-	        	int datecompare, timecompare;
 
 	        	SimpleDateFormat dateformat = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 	        	dateformat.setLenient(false);
@@ -248,40 +245,7 @@ public class ProtoType {
 	        return -2;
 	    }
 	}
-	//Timestamp or other long type compare
-	static class MapComparator3 implements Comparator<Map<String, Object>>
-	{
-		private String key;
-	    private String keyType;
 
-	    public MapComparator3(String key, String keyType)
-	    {
-	    	this.key = key;
-	        this.keyType = keyType;
-	    }
-
-	    public int compare(Map<String, Object> first,
-	                       Map<String, Object> second)
-	    {
-	        // TODO: Null checking, both for maps and values
-	        Object firstValue = first.get(key);
-	        Object secondValue = second.get(key);
-	        if (keyType.equals("long")){
-	        	long first_value = Long.valueOf(firstValue.toString());
-	        	long second_value = Long.valueOf(secondValue.toString());
-
-	        	if (first_value < second_value)
-	        		return -1;
-	        	else if(first_value == second_value)
-	        		return 0;
-	        	else
-	        		return 1;
-
-	        }
-
-	        return -2;
-	    }
-	}
 
 	public static class JsonObjectComparator implements Comparator<JsonNode> {
 		private final String fieldName;
@@ -300,7 +264,6 @@ public class ProtoType {
 		    valA = map_a.get(fieldName);
 		    valB = map_b.get(fieldName);
 
-		    int comp = 0;
 		    if (fieldType.equals("long")){
 		    	long val_a = Long.parseLong(valA.toString());
 		    	long val_b = Long.parseLong(valB.toString());
@@ -317,31 +280,23 @@ public class ProtoType {
 	}
 
 
-	public static class PolicyTrigger {//extends PolicyTrigger {
+	public static class PolicyTrigger {
 
 		@NotNull(message="{PolicyTrigger.metricType.NotNull}")
 		private String   metricType            = null;
 
 		//the following NotNull does not work as Jackson will alway set 0 if not present
 		@NotNull(message="{PolicyTrigger.statWindow.NotNull}")
-		//@Min(value=30, message="{PolicyTrigger.statWindow.Min}")
-		//@Max(value=1800, message="{PolicyTrigger.statWindow.Max}")
 		private int      statWindow = getTriggerDefaultInt("statWindow");
 
 		@NotNull(message="{PolicyTrigger.breachDuration.NotNull}")
-		//@Min(value=30, message="{PolicyTrigger.breachDuration.Min}")
-		//@Max(value=36000, message="{PolicyTrigger.breachDuration.Max}")
 		private int      breachDuration = getTriggerDefaultInt("breachDuration");
 
 		@NotNull(message="{PolicyTrigger.lowerThreshold.NotNull}")
-		//@Min(value=1, message="{PolicyTrigger.lowerThreshold.Min}")
-		//@Max(value=99, message="{PolicyTrigger.lowerThreshold.Max}")
 		private int      lowerThreshold = -1;//getTriggerDefaultInt("lowerThreshold");
 		private boolean lowerThreshold_set = false;
 
 		@NotNull(message="{PolicyTrigger.upperThreshold.NotNull}")
-		//@Min(value=1, message="{PolicyTrigger.upperThreshold.Min}")
-		//@Max(value=99, message="{PolicyTrigger.upperThreshold.Max}")
 		private int      upperThreshold = -1;//getTriggerDefaultInt("upperThreshold");
 		private boolean upperThreshold_set = false;
 
@@ -352,13 +307,9 @@ public class ProtoType {
 		private int      instanceStepCountUp = getTriggerDefaultInt("instanceStepCountUp");
 
 		@NotNull(message="{PolicyTrigger.stepDownCoolDownSecs.NotNull}")
-		//@Min(value=30, message="{PolicyTrigger.stepDownCoolDownSecs.Min}")
-		//@Max(value=3600, message="{PolicyTrigger.stepDownCoolDownSecs.Max}")
 		private int      stepDownCoolDownSecs = getTriggerDefaultInt("stepDownCoolDownSecs");
 
 		@NotNull(message="{PolicyTrigger.stepUpCoolDownSecs.NotNull}")
-		//@Min(value=30, message="{PolicyTrigger.stepUpCoolDownSecs.Min}")
-		//@Max(value=3600, message="{PolicyTrigger.stepUpCoolDownSecs.Max}")
 		private int      stepUpCoolDownSecs    = getTriggerDefaultInt("stepUpCoolDownSecs");
 
 		public int getTriggerDefaultInt(String key) {
@@ -604,7 +555,6 @@ public class ProtoType {
  	        	Date second = dateformat.parse(secondDateTime, position);
  	        	if (( second == null) || (position.getIndex() != secondDateTime.length()))
  	        		return false;
-				//return !(dateformat.parse(firstDateTime).after(dateformat.parse(secondDateTime)));
  	        	return first.before(second);
 			} catch (Exception e) {
 				logger.info(e.getMessage());
@@ -692,7 +642,7 @@ public class ProtoType {
 			    else
 			    	return false;
 			}
-			else { //timezone does not exist
+			else { 
 				logger.debug("timezone is empty in schedules");//debug
                 return false; //timezone must be specified in Schedule
             }
@@ -739,14 +689,8 @@ public class ProtoType {
 
 		private int      instanceMaxCount;
 
-		private String timezone;
-
-		private List<PolicyTrigger> policyTriggers;//hold the trigger without/with unknown metricType
-
-		private List<recurringSchedule> recurringSchedule;
-
-		private List<specificDate> specificDate;
-
+		private List<PolicyTrigger> policyTriggers;
+		
 		private Schedule schedules;
 
 
@@ -767,14 +711,6 @@ public class ProtoType {
 			this.instanceMaxCount = instanceMaxCount;
 		}
 
-		public String getTimezone() {
-			return this.timezone;
-		}
-
-		public void setTimezone(String timezone) {
-			this.timezone = timezone;
-		}
-
         public List<PolicyTrigger> getPolicyTriggers() {
         	return this.policyTriggers;
         }
@@ -782,22 +718,6 @@ public class ProtoType {
         public void setPolicyTriggers(List<PolicyTrigger> policyTriggers) {
         	this.policyTriggers = policyTriggers;
         }
-
-		public List<recurringSchedule> getRecurringSchedule() {
-			return this.recurringSchedule;
-		}
-
-		public void setRecurringSchedule(List<recurringSchedule> recurringSchedule) {
-			this.recurringSchedule = recurringSchedule;
-		}
-
-		public List<specificDate> getSpecificDate() {
-			return this.specificDate;
-		}
-
-		public void setSpecificDate(List<specificDate> specificDate) {
-			this.specificDate = specificDate;
-		}
 
 		public Schedule getSchedules() {
 			return this.schedules;
@@ -818,30 +738,21 @@ public class ProtoType {
 		@Min(value=1, message="{Policy.instanceMaxCount.Min}")
 		private int      instanceMaxCount;
 
-		private String timezone;
-
 		@NotNull(message="{Policy.policyTriggers.NotNull}")
 		@Valid
 		private List<PolicyTrigger> policyTriggers;
 
-		@Valid
+		private String timezone;
+
 		private List<recurringSchedule> recurringSchedule;
 
-		@Valid
 		private List<specificDate> specificDate;
-
+		
 		@Valid
 		private Schedule schedules;
 
 		private String appType; // for Bean Validation only
 
-/*		@AssertTrue(message="{Policy.instanceMinCount.NotNull}")
-		private boolean isInstanceMinCountNotNull(){
-			if (this.instanceMinCount == null)
-				return false;
-			else
-				return true;
-		}*/
 
 		@AssertTrue(message="{Policy.policyTriggers.NotNull}")
 		private boolean isPolicyTriggersNotNull() {
@@ -850,24 +761,6 @@ public class ProtoType {
 			return true;
 		}
 
-		@AssertTrue(message="{Policy.isTimeZoneValid.AssertTrue}")
-		private boolean isTimeZoneValid() {
-			if ((null != this.timezone) && (this.timezone.trim().length() != 0)) {
-				logger.info("timezone is not empty: " + this.timezone); //debug
-				Set<String> timezoneset = new HashSet<String>(Arrays.asList(Constants.timezones));
-			    if(timezoneset.contains(this.timezone))
-			    	return true;
-			    else
-			    	return false;
-			}
-			else { //timezone does not exist
-				logger.info("timezone is empty"); //debug
-                    if (((null != this.recurringSchedule) && (this.recurringSchedule.size() > 0)) || ((null != this.specificDate) && (this.specificDate.size() > 0 )) ){
-                        return false; //timezone must be specified when we have calendar-based scaling settings
-                    }
-            }
-		    return true;
-		}
 
 		@AssertTrue(message="{Policy.isInstanceCountValid.AssertTrue}")
 		private boolean isInstanceCountValid() {
@@ -876,11 +769,6 @@ public class ProtoType {
 
 		//@AssertTrue(message="{Policy.isRecurringScheduleMinInstanceCountValid.AssertTrue}")
 		private boolean isRecurringScheduleMinInstanceCountValid() {
-			if  (recurringSchedule != null ) {
-				for(recurringSchedule rs : recurringSchedule)
-					if (rs.minInstCount < this.instanceMinCount)
-						return false;
-			}
 			if ((schedules != null) && (schedules.recurringSchedule != null)) { //need not to check size as foreach loop can handle this
 				for(recurringSchedule rs : schedules.recurringSchedule)
 					if (rs.minInstCount < this.instanceMinCount)
@@ -891,11 +779,7 @@ public class ProtoType {
 
 		//@AssertTrue(message="{Policy.isSpecificDateMinInstanceCountValid.AssertTrue}")
 		private boolean isSpecificDateMinInstanceCountValid() {
-			if  (specificDate != null) {
-				for(specificDate sd : specificDate)
-					if (sd.minInstCount < this.instanceMinCount)
-						return false;
-			}
+
 			if ((schedules != null) && (schedules.specificDate != null)) { //need not to check size as the foreach loop can handle this
 				for(specificDate sd : schedules.specificDate)
 					if (sd.minInstCount < this.instanceMinCount)
@@ -906,11 +790,6 @@ public class ProtoType {
 
 		//@AssertTrue(message="{Policy.isRecurringScheduleMaxInstanceCountValid.AssertTrue}")
 		private boolean isRecurringScheduleMaxInstanceCountValid() {
-			if (recurringSchedule != null ) {
-				for(recurringSchedule rs : recurringSchedule)
-					if (rs.maxInstCount > this.instanceMaxCount)
-						return false;
-			}
 			if ((schedules != null) && (schedules.recurringSchedule != null)) { // need not to check size as the foreach loop can handle this
 				for(recurringSchedule rs : schedules.recurringSchedule)
 					if (rs.maxInstCount > this.instanceMaxCount)
@@ -921,11 +800,6 @@ public class ProtoType {
 
 		//@AssertTrue(message="{Policy.isSpecificDateMaxInstanceCountValid.AssertTrue}")
 		private boolean isSpecificDateMaxInstanceCountValid() {
-			if (specificDate != null )  {
-				for(specificDate sd : specificDate)
-					if (sd.maxInstCount > this.instanceMaxCount)
-						return false;
-			}
 			if ((schedules != null) && (schedules.specificDate != null)) { //need not to check size as the foreach loop can handle this
 				for(specificDate sd : schedules.specificDate)
 					if (sd.maxInstCount > this.instanceMaxCount)
@@ -934,8 +808,6 @@ public class ProtoType {
 			return true;
 		}
 
-		// with new structure of Policy we define like this, we can not check duplicated metricType trigger, as the late will overwrite previous one
-		//@AssertTrue(message="{Policy.isMetricTypeValid.AssertTrue}")
 		@AssertTrue(message="{PolicyTrigger.ismetricTypeValid.AssertTrue}")
 		private boolean isMetricTypeValid() {
 			for (PolicyTrigger trigger : this.policyTriggers){
@@ -990,9 +862,6 @@ public class ProtoType {
 
 		@AssertTrue(message="{Policy.isRecurringScheduleTimeValid.AssertTrue}")
 		private boolean isRecurringScheduleTimeValid() {
-			if (RecurringScheduleTimeValid(this.recurringSchedule) == false) {
-				return false;
-			}
 			if ((this.schedules != null) && (RecurringScheduleTimeValid(this.schedules.recurringSchedule) == false)) {
 				return false;
 			}
@@ -1008,7 +877,7 @@ public class ProtoType {
 				recurringScheduleList.add(map);
 			}
 			//sort based on startTime
-			Collections.sort(recurringScheduleList, new MapComparator1("startTime", "Time"));
+			Collections.sort(recurringScheduleList, new CommonComparator("startTime", "Time"));
 
 			for(int index=0; index <recurringScheduleList.size()-1; index++ ){
 				Map<String, String> now = recurringScheduleList.get(index);
@@ -1055,9 +924,6 @@ public class ProtoType {
 
 		@AssertTrue(message="{Policy.isSpecificDateTimeValid.AssertTrue}")
 		private boolean isSpecificDateTimeValid() {
-			if (SpecificDateTimeValid(this.specificDate) == false) {
-				return false;
-			}
 			if ((this.schedules != null) && (SpecificDateTimeValid(this.schedules.specificDate) == false)) {
 				return false;
 			}
@@ -1072,7 +938,7 @@ public class ProtoType {
 				specificDateList.add(map);
 			}
 			//sort based on startDateTime
-			Collections.sort(specificDateList, new MapComparator2("startDate", "startTime", "DateTime"));
+			Collections.sort(specificDateList, new DateTimeComparator("startDate", "startTime", "DateTime"));
 
 			for(int index=0; index <specificDateList.size()-1; index++ ){
 				Map<String, String> now = specificDateList.get(index);
@@ -1105,20 +971,6 @@ public class ProtoType {
 			return true;
 		}
 
-		@AssertTrue(message="{Policy.isScheduleValid.AssertTrue}") //debug
-		private boolean isScheduleValid() {
-			boolean new_style = false;
-			boolean old_style = false;
-			if (((this.recurringSchedule != null) && this.recurringSchedule.size() > 0) || ((this.specificDate != null) && (this.specificDate.size() > 0)) || (this.timezone != null)) {
-				old_style = true;
-			}
-			if (this.schedules != null) {
-				new_style = true;
-			}
-			if (new_style && old_style)
-				return false;
-			return true;
-		}
 
 		public int getInstanceMinCount() {
 			return instanceMinCount;
@@ -1128,11 +980,6 @@ public class ProtoType {
 			this.instanceMinCount = instanceMinCount;
 		}
 
-		/*		@JsonCreator
-		public void Policy(@JsonProperty(value="instanceMinCount", required=true) int instanceMinCount) {
-			this.instanceMinCount = instanceMinCount;
-		}*/
-
 		public int getInstanceMaxCount() {
 			return instanceMaxCount;
 		}
@@ -1140,7 +987,7 @@ public class ProtoType {
 		public void setInstanceMaxCount(int instanceMaxCount) {
 			this.instanceMaxCount = instanceMaxCount;
 		}
-
+		
 		public String getTimezone() {
 			return this.timezone;
 		}
@@ -1148,7 +995,6 @@ public class ProtoType {
 		public void setTimezone(String timezone) {
 			this.timezone = timezone;
 		}
-
 
         public List<PolicyTrigger> getPolicyTriggers() {
         	return this.policyTriggers;
@@ -1189,37 +1035,18 @@ public class ProtoType {
 		public void setAppType(String appType) {
 			this.appType = appType;
 		}
-		//this should never be called before validation
+		//called after validation
 		public TransferedPolicy setMaxInstCount() {
-			if ( this.recurringSchedule != null ){
-				for(recurringSchedule rs : this.recurringSchedule){
-					//if(rs.maxInstCount == -1)  //after validation if it's still -1, it only means it's not set in the original json
-					if(rs.maxInstCount_set == false) //we use this mark to test if maxInstCount specified in the JSON
-						rs.maxInstCount = this.instanceMaxCount;
-				}
-			}
-			if ((this.schedules != null) && (this.schedules.recurringSchedule != null)) { //need not to check size as foreach loop can handle this
+			if ((this.schedules != null) && (this.schedules.recurringSchedule != null)) { 
 				for(recurringSchedule rs : this.schedules.recurringSchedule){
-					//if(rs.maxInstCount == -1)  //after validation if it's still -1, it only means it's not set in the original json
-					if(rs.maxInstCount_set == false) //we use this mark to test if maxInstCount specified in the JSON
+					if(rs.maxInstCount_set == false) //maxInstCount is not specified in the JSON
 						rs.maxInstCount = this.instanceMaxCount;
 				}
-			}
-			if ( this.specificDate != null ){
-				for(specificDate sd : this.specificDate){
-					//if(sd.maxInstCount == -1)  //after validation if it's still -1, it only means it's not set in the original json
-					if(sd.maxInstCount_set == false) //we use this mark to test if maxInstCount specified in the JSON
-						sd.maxInstCount = this.instanceMaxCount;
-				}
-			}
-			if ((this.schedules != null) && (this.schedules.specificDate != null)) { //need not to check size as foreach loop can handle this
 				for(specificDate sd : this.schedules.specificDate){
-					//if(sd.maxInstCount == -1)  //after validation if it's still -1, it only means it's not set in the original json
-					if(sd.maxInstCount_set == false) //we use this mark to test if maxInstCount specified in the JSON
+					if(sd.maxInstCount_set == false) //maxInstCount is not specified in the JSON
 						sd.maxInstCount = this.instanceMaxCount;
 				}
 			}
-			//return  new_mapper.writeValueAsString(this);
 			return this;
 		}
 
@@ -1229,24 +1056,12 @@ public class ProtoType {
 				if (this.schedules == null){
 					this.schedules = new Schedule();
 				}
-				/*
-				this.schedules.recurringSchedule = new ArrayList<recurringSchedule>();
-				for(recurringSchedule rs : this.recurringSchedule){
-					this.schedules.recurringSchedule.add(rs);
-				}*/
 				this.schedules.setRecurringSchedule(this.recurringSchedule);
-				//this.schedules.recurringSchedule = this.recurringSchedule;
 			}
 			if ((this.specificDate != null) && (this.specificDate.size() >0)) {
 				if (this.schedules == null)
 					this.schedules = new Schedule();
 				this.schedules.setSpecificDate(this.specificDate);
-				/*
-				this.schedules.specificDate = new ArrayList<specificDate>();
-				for(specificDate sd : this.specificDate){
-					this.schedules.specificDate.add(sd);
-				}*/
-				//this.schedules.specificDate = this.specificDate;
 			}
 			if ((null != this.timezone) && (this.timezone.trim().length() != 0)) {
 				if (this.schedules == null)
@@ -1257,9 +1072,9 @@ public class ProtoType {
 		}
 
 		public String transformInput() throws JsonParseException, JsonMappingException, IOException{
-			if (this.schedules != null) {   //debug need to check output json to see if null field are not encoded
+			if (this.schedules != null) {   
 				this.timezone = this.schedules.timezone;
-				this.recurringSchedule = this.schedules.recurringSchedule;  //debug why we don't need to call setter here while transformSchedules() can not
+				this.recurringSchedule = this.schedules.recurringSchedule;  
 				this.specificDate = this.schedules.specificDate;
 				this.schedules = null;
 			}
@@ -1270,7 +1085,7 @@ public class ProtoType {
 		public String transformOutput(Map<String, String> supplyment, Map<String, String> service_info) throws JsonParseException, JsonMappingException, IOException{
 
 			String current_json =  new_mapper.writeValueAsString(this);
-			current_json = TransferedPolicy.transfer_back(current_json, service_info);
+			current_json = TransferedPolicy.unpackServiceInfo(current_json, service_info);
 			JsonNode top = new_mapper.readTree(current_json);
 			for(String key : supplyment.keySet()) {
 				((ObjectNode)top).put(key, supplyment.get(key));
@@ -1287,17 +1102,11 @@ public class ProtoType {
 				String nodestring = topNode.getKey();
 				JsonNode subNode = topNode.getValue();
 
-				//JsonNodeFactory nodeFactory = JsonNodeFactory.instance;
-				//ObjectNode schedulesnode = nodeFactory.objectNode();
-
 				if(nodestring.equals("recurringSchedule")){
 					has_recurringSchedule = true;
-					//schedulesnode.put("recurringSchedule", subNode);
 				}else if (nodestring.equals("specificDate")){
-					//schedulesnode.put("specificDate", subNode);
 					has_specificDate = true;
 				}else if (nodestring.equals("timezone")){
-					//schedulesnode.put("timezone", subNode);
 					has_timezone = true;
 				}else if (nodestring.equals("policyTriggers")){
 					for(JsonNode triggerNode : subNode) {
@@ -1315,71 +1124,34 @@ public class ProtoType {
 				}
 		    }
 
-			//if (schedulesnode.size() > 0)
-			//	((ObjectNode)top).put("schedules", schedulesnode);
 		    if (has_recurringSchedule)
-				((ObjectNode)top).remove("recurringSchedule"); //it should be already in schedules
+				((ObjectNode)top).remove("recurringSchedule"); 
 		    if (has_specificDate)
-				((ObjectNode)top).remove("specificDate"); //it should be already in schedules
+				((ObjectNode)top).remove("specificDate"); 
 		    if (has_timezone)
-				((ObjectNode)top).remove("timezone"); //it should be already in schedules
-			//}
+				((ObjectNode)top).remove("timezone"); 
 
 		    return top.toString();
-
-
-/*			Map<String, String> obj_map = Obj2Map(this);
-			Map<String, String> new_map = new HashMap<String, String>();
-			List<Map<String, String>> recurringScheduleList = new ArrayList<Map<String, String>>();
-			List<Map<String, String>> specificDateList = new ArrayList<Map<String, String>>();
-			for (String key : obj_map.keySet()) {
-				if (!(key.equals("recurringSchedule")) && !(key.equals("specificDate"))) {
-					new_map.put(key, obj_map.get(key));
-				}
-			}
-			for(recurringSchedule rs : this.recurringSchedule){
-				Map<String, String> rs_map = Obj2Map(rs);
-				rs_map.put("type", "RECURRING");
-				recurringScheduleList.add(rs_map);
-			}
-			for(specificDate sd : this.specificDate){
-				Map<String, String> sd_map = Obj2Map(sd);
-				sd_map.put("type", "SPECIALDATE");
-				specificDateList.add(sd_map);
-			}
-			new_map.put("recurringSchedule", recurringScheduleList.toString());
-			new_map.put("specificDate", specificDateList.toString());
-			for(String key : supplyment.keySet()) {
-				new_map.put(key, supplyment.get(key));
-			}
-			return  new_mapper.writeValueAsString(new_map); */
-
 
 		}
 
 
-		public static String transfer(String current_json, Map<String, String> service_info) throws JsonParseException, JsonMappingException, IOException {
-			String new_string = current_json;
+		public static String packServiceInfo(String current_json, Map<String, String> service_info) throws JsonParseException, JsonMappingException, IOException {
 
-			JsonNode top = new_mapper.readTree(current_json);
-			JsonNode new_top = new_mapper.readTree(new_string);
+			JsonNode new_top = new_mapper.readTree(current_json);
 
 			String appType = service_info.get("appType");
 			if (appType != null) {
 				((ObjectNode)new_top).put("appType", appType);
 			}
-			//return new_top.toString();
 			return new_mapper.writeValueAsString(new_top);
 		}
 
-		public static String transfer_back(String current_json, Map<String, String> service_info) throws JsonParseException, JsonMappingException, IOException {
-			String new_string = current_json;
+		public static String unpackServiceInfo(String current_json, Map<String, String> service_info) throws JsonParseException, JsonMappingException, IOException {
 
-			JsonNode top = new_mapper.readTree(current_json);
-			JsonNode new_top = new_mapper.readTree(new_string);
+			JsonNode new_top = new_mapper.readTree(current_json);
 
 			((ObjectNode)new_top).remove("appType");
-			//return new_top.toString();
 			return new_mapper.writeValueAsString(new_top);
 		}
 
@@ -1801,35 +1573,6 @@ public class ProtoType {
 		}
 
 		public String transformOutput() throws JsonParseException, JsonMappingException, IOException{
-
-/*			List<Map<String, String>> metricdatalist  = new ArrayList<Map<String, String>>();
-			for (MetricData metricdata : this.data){
-				Map<String, String> data_map = Obj2Map(metricdata);
-				metricdatalist.add(data_map);
-			}
-
-			Collections.sort(metricdatalist, new MapComparator1("timestamp", "long"));
-
-			List<Map<String, String>> sub_list;
-		    long last_timestamp;
-		    int max_len = Integer.parseInt(ConfigManager.get("maxMetricRecord"));
-		    logger.info("Current maxMetricRecord returned is " + max_len + " and current number of metric record is " + metricdatalist.size());
-		    if(metricdatalist.size() > max_len){
-		    	sub_list = metricdatalist.subList(0, max_len);
-		    	last_timestamp = Long.valueOf(metricdatalist.get(max_len-1).get("timestamp"));
-		    }
-		    else {
-		    	sub_list = metricdatalist;
-		    	last_timestamp = 0;
-		    }
-		    ObjectNode jNode = new_mapper.createObjectNode();
-		    jNode.put("data", new_mapper.convertValue(sub_list, JsonNode.class));
-		    jNode.put("timestamp", last_timestamp);
-
-
-		    return jNode.asText();*/
-
-
 			String current_json =  new_mapper.writeValueAsString(this.data);
 			JsonNode top = new_mapper.readTree(current_json);
 			JsonObjectComparator comparator = new JsonObjectComparator("timestamp", "long");
@@ -1930,13 +1673,9 @@ public class ProtoType {
 				        default: break;
 					}
 				} else if (nodestring.equals("trigger")){
-					//Iterator<JsonNode> trigger_elements = subNode.elements();
 					Iterator<Entry<String, JsonNode>> trigger_items= subNode.fields();
-					//while (trigger_elements.hasNext()){
 					while (trigger_items.hasNext()){
-						//JsonNode trigger_element = trigger_elements.next();
 						Entry<String, JsonNode> item_node = trigger_items.next();
-						//Iterator<Entry<String, JsonNode>> trigger_items= trigger_element.fields();
 						String item_name = item_node.getKey();
 						JsonNode item_value = item_node.getValue();
 						if(item_name.equals("triggerType")){
@@ -1948,21 +1687,6 @@ public class ProtoType {
 						        default: break;
 							}
 						}
-						/*
-						while(trigger_items.hasNext()){
-							Entry<String, JsonNode> trigger_item = trigger_items.next();
-							String trigger_key = trigger_item.getKey();
-							JsonNode trigger_value = trigger_item.getValue();
-							if(trigger_key.equals("triggerType")){
-								switch(trigger_value.asInt()){
-									case 0: ((ObjectNode)trigger_element).put("triggerType", "MonitorEvent");
-		    	                            break;
-						        	case 1: ((ObjectNode)trigger_element).put("triggerType", "PolicyChange");
-						        	        break;
-							        default: break;
-								}
-							}
-						}*/
 					}
 				} else if (nodestring.equals("instances")){
 					instances = subNode.asInt();
@@ -2010,13 +1734,6 @@ public class ProtoType {
 	    jNode.put("timestamp", last_timestamp);
 		return jNode.toString();
 
-		/*
-	    Map<String, Object> new_result = new HashMap<String, Object>();
-	    new_result.put("data", sub_list);
-	    new_result.put("timestamp", last_timestamp);
-
-		return  new_mapper.writeValueAsString(new_result);
-		*/
 	}
 
 
@@ -2027,7 +1744,7 @@ public class ProtoType {
 		 result.put("valid", false);
 		 logger.info("received policy : " + jsonString); //debug
 		 Policy oldpolicy = new_mapper.readValue(jsonString, Policy.class); //for syntax error check
-		 String transfered_json = TransferedPolicy.transfer(jsonString, service_info);
+		 String transfered_json = TransferedPolicy.packServiceInfo(jsonString, service_info);
 		 logger.info("transfered policy after update with service_information : " + transfered_json); //debug
 		 TransferedPolicy policy = new_mapper.readValue(transfered_json, TransferedPolicy.class);
 		 logger.info("we get policy as " + (Obj2Map(policy)).toString());//debug
@@ -2035,10 +1752,6 @@ public class ProtoType {
 		 policy = policy.setMaxInstCount();
 		 HibernateValidatorConfiguration config = ProtoType.getPolicyRange();
 		 ValidatorFactory vf = config.buildValidatorFactory();
-		 //Validator validator = factory.getValidator();
-
-		 //ValidatorFactory vf = Validation.buildDefaultValidatorFactory();
-		 //Validator validator = vf.getValidator();
 		 Locale locale = LocaleUtil.getLocale(httpServletRequest);
 		 MessageInterpolator interpolator = new LocaleSpecificMessageInterpolator(vf.getMessageInterpolator(), locale);
 		 Validator validator = vf.usingContext().messageInterpolator(interpolator).getValidator();
@@ -2053,7 +1766,7 @@ public class ProtoType {
 
 		 String new_json = policy.transformInput();
 		 logger.info("policy before trigger back : " + new_json); //debug
-		 new_json = TransferedPolicy.transfer_back(new_json, service_info);
+		 new_json = TransferedPolicy.unpackServiceInfo(new_json, service_info);
 		 result.put("valid", true);
 		 logger.info("send out policy: " + new_json); //debug
 		 result.put("new_json", new_json);
@@ -2065,13 +1778,11 @@ public class ProtoType {
 		 Map<String, Object> result = new HashMap<String, Object>();
 		 result.put("valid", false);
 		 logger.info("received json: " + jsonString); 
-		 String transfered_json = TransferedPolicy.transfer(jsonString, service_info);
+		 String transfered_json = TransferedPolicy.packServiceInfo(jsonString, service_info);
 		 logger.info("transfered policy after update with service_information : " + transfered_json); //debug
 		 TransferedPolicy policy = new_mapper.readValue(transfered_json, TransferedPolicy.class);
 		 logger.info("we get policy as " + (Obj2Map(policy)).toString());//debug
 		 ValidatorFactory vf = Validation.buildDefaultValidatorFactory();
-		 //Validator validator = vf.getValidator();
-		 //here don't call getPolicyRange and strictly check value range as in parsePolicy
 		 Locale locale = LocaleUtil.getLocale(httpServletRequest);
 		 MessageInterpolator interpolator = new LocaleSpecificMessageInterpolator(vf.getMessageInterpolator(), locale);
 		 Validator validator = vf.usingContext().messageInterpolator(interpolator).getValidator();

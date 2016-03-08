@@ -1,7 +1,6 @@
 package org.cloudfoundry.autoscaler.api.filter;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -21,12 +20,10 @@ import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.api.util.CloudFoundryManager;
 import org.cloudfoundry.autoscaler.api.util.SecurityCheckStatus;
 import org.cloudfoundry.autoscaler.api.util.AuthenticationTool;
-import org.cloudfoundry.autoscaler.api.util.ConfigManager;
 import org.cloudfoundry.autoscaler.api.util.LocaleUtil;
 import org.cloudfoundry.autoscaler.api.util.RestApiResponseHandler;
 import org.cloudfoundry.autoscaler.api.exceptions.AppNotFoundException;
 import org.cloudfoundry.autoscaler.api.exceptions.AppInfoNotFoundException;
-import com.sun.jersey.core.util.Base64;
 /**
  * Servlet Filter implementation class SSOFilter
  */
