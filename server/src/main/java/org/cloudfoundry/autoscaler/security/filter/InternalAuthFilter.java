@@ -13,8 +13,9 @@ import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.metric.util.ConfigManager;
+
+import com.sun.jersey.core.util.Base64;
 
 
 /**
@@ -25,9 +26,11 @@ import org.cloudfoundry.autoscaler.metric.util.ConfigManager;
 public class InternalAuthFilter implements Filter {
 
 
-    private static final String token = ConfigManager.get("internalAuthTokenBase64Encoded");
+    private static final String internalAuthUserName = ConfigManager.get("internalAuthUsername");
+    private static final String internalAuthPassword = ConfigManager.get("internalAuthPassword");
+    private static final String token = "Basic " + new String(Base64.encode((internalAuthUserName + ":" + internalAuthPassword).getBytes()));
 
-    /**
+	/**
      * Default constructor.
      */
     public InternalAuthFilter() {
@@ -50,9 +53,8 @@ public class InternalAuthFilter implements Filter {
         boolean authorized = false;
 
         String authorization = req.getHeader("Authorization");
-        if (authorization != null && authorization.startsWith("Basic")) {
-            String requestToken = authorization.substring("Basic".length()).trim();
-            if (token.equals(requestToken)) {
+        if (authorization != null) {
+            if (token.equalsIgnoreCase(authorization)) {
                 authorized = true;
                 chain.doFilter(request, response);
             }

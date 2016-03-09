@@ -77,40 +77,12 @@ function getDefaultConfig() {
 	echo $value
 }
 
-function getDefaultConfigBase64Decoded() {
-	local key=$1
-	local filename=$2
-	local value;
-	if [ -z $filename ]; then
-		value=$(cat ${basedir}/default.properties \
-					$AutoScalingServerProfileDIR/$profile.properties \
-					$AutoScalingAPIProfileDIR/$profile.properties \
-					$AutoScalingBrokerProfileDIR/$profile.properties \
-					| grep "$key"  | head -n 1  | awk -F "$key=" '{print $2}'| sed -e 's/\\//g')
-	else
-		value=$(cat $filename | grep "$key"  | head -n 1  | awk -F "$key=" '{print $2}' | sed -e 's/\\//g')
-	fi
-
-
-	if [ "$SHELL" == "mac" ]; then
-		echo `echo -n $value | base64 -D`
-	else
-		echo `echo -n $value | base64 -d`
-	fi
-	
-}
 
 function showConfigValue() {
 	echo "$1="`getDefaultConfig $1 $2`
 }
 
-function showConfigValueBase64Encoded() {
-	if [ -z "$3" ]; then
-		echo "$1="`getDefaultConfigBase64Decoded $1 $2`
-	else
-		echo "$3="`getDefaultConfigBase64Decoded $1 $2`
-	fi
-}
+
 
 function readConfigValue() {
 	local key=$1
@@ -127,24 +99,6 @@ function readConfigValue() {
 		inputValue=$defaultValue
 	fi
 	echo $inputValue
-
-}
-
-function readConfigValueBase64Encoded() {
-	local key=$1
-	local description=$2
-	local defaultValue=$3
-	local prompt;
-	if [ -z $defaultValue ]; then
-		defaultValue=`getDefaultConfigBase64Decoded $key`
-	fi 
-	prompt=`promptInput "$description" $defaultValue`
-	
-	read -p "$prompt" inputValue
-	if [ -z $inputValue ]; then
-		inputValue=$defaultValue
-	fi
-	echo `echo -n $inputValue | base64`
 
 }
 

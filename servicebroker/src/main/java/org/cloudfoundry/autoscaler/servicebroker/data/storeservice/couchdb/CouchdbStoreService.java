@@ -3,11 +3,9 @@ package org.cloudfoundry.autoscaler.servicebroker.data.storeservice.couchdb;
 import java.net.MalformedURLException;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
-import org.cloudfoundry.autoscaler.servicebroker.Constants;
 import org.cloudfoundry.autoscaler.servicebroker.data.entity.ApplicationInstance;
 import org.cloudfoundry.autoscaler.servicebroker.data.entity.ServiceInstance;
 import org.cloudfoundry.autoscaler.servicebroker.data.entity.dao.ApplicationInstanceDAO;
@@ -21,7 +19,6 @@ import org.ektorp.CouchDbConnector;
 import org.ektorp.CouchDbInstance;
 import org.ektorp.http.StdHttpClient;
 import org.ektorp.http.StdHttpClient.Builder;
-import org.ektorp.impl.StdCouchDbConnector;
 import org.ektorp.impl.StdCouchDbInstance;
 
 
@@ -190,7 +187,7 @@ public class CouchdbStoreService implements IDataStoreService {
 	private CouchDbConnector initConnection() throws MalformedURLException, ProxyInitilizedFailedException {
 		
     	String username = ConfigManager.get("couchdbUsername");
-    	String password = ConfigManager.getDecryptedString("couchdbPasswordBase64Encoded");
+    	String password = ConfigManager.get("couchdbPassword");
     	String host = ConfigManager.get("couchdbHost");
     	int port = ConfigManager.getInt("couchdbPort");
     	int timeout = ConfigManager.getInt("couchdbTimeout");
@@ -209,7 +206,6 @@ public class CouchdbStoreService implements IDataStoreService {
 		}
 		
 		CouchDbInstance dbInstance = new StdCouchDbInstance(builder.build());
-		//CouchDbConnector couchDB = new StdCouchDbConnector(dbName, dbInstance);
 
         if (!dbInstance.checkIfDbExists(dbName))
         	dbInstance.createDatabase(dbName);

@@ -457,15 +457,7 @@ public class CloudFoundryManager {
     }
 
     private static String getSecretKey() {
-        String encryptSecret = ConfigManager.get("cfClientSecretBase64Encoded");
-
-        byte[] decryptSecret = com.sun.jersey.core.util.Base64.decode(encryptSecret);
-        try {
-            return new String(decryptSecret, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            logger.info("Unsupport Encoding UTF-8");
-            return null;
-        }
+    	return ConfigManager.get("cfClientSecret");
     }
 
     public String getAppIdByOrgSpaceAppName(String org, String space, String appName) throws Exception {

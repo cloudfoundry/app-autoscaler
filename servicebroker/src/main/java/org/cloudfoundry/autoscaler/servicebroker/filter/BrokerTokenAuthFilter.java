@@ -30,8 +30,8 @@ public class BrokerTokenAuthFilter implements Filter {
 	
     private static boolean checkAuthorization(HttpServletRequest httpServletRequest) {
         String authorization = httpServletRequest.getHeader("Authorization");
-        if (authorization != null && authorization.startsWith("Basic")) {;
-            if (authorization.equals(brokerCredential)) 
+        if (authorization != null) {;
+            if (authorization.equalsIgnoreCase(brokerCredential)) 
                 return true;
         }
         return false;

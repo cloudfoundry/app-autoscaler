@@ -8,20 +8,15 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.log4j.Logger;
+import org.cloudfoundry.autoscaler.api.Constants;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
-
-import org.apache.log4j.Logger;
-
-import org.cloudfoundry.autoscaler.api.Constants;
-import org.cloudfoundry.autoscaler.api.util.RestUtil;
-import org.cloudfoundry.autoscaler.api.util.ConfigManager;
-
-
-import org.json.JSONArray;
-import org.json.JSONObject;
-import org.json.JSONException;
 
 public class AuthenticationTool {
 	private static final Logger logger = Logger.getLogger(AuthenticationTool.class);

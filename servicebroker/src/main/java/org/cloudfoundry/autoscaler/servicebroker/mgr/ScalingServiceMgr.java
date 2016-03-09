@@ -1,6 +1,5 @@
 package org.cloudfoundry.autoscaler.servicebroker.mgr;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -44,11 +43,7 @@ public class ScalingServiceMgr {
     }
 	
 	private ScalingServiceMgr() {
-		try {
 			initServerUrlList(); 
-		} catch (Exception e) {
-			logger.error ("Invalid configuration setting for server url", e);
-		}
 	}
 	
     public String createService(String serviceId, String orgId, String spaceId) {
@@ -106,12 +101,11 @@ public class ScalingServiceMgr {
     			
     }
     
-	private void initServerUrlList() throws java.lang.IllegalArgumentException {
+	private void initServerUrlList() {
 		serverUrlList.clear();
 		String defaultHttpProtocol = ConfigManager.get(Constants.CONFIG_ENTRY_HTTP_PROTOCOL, "http");
 		String[] serverList =  ConfigManager.get(Constants.CONFIG_ENTRY_SERVER_URI_LIST).split(",");
 		for (String server : serverList) {
-			URI serverURI = URI.create(server);
 			if (!(server.startsWith("https://") || server.startsWith("http://"))){
 				serverUrlList.add(defaultHttpProtocol + "://" + server.trim());
 			} else  {
@@ -121,7 +115,6 @@ public class ScalingServiceMgr {
 
 		String[] apiList = ConfigManager.get(Constants.CONFIG_ENTRY_API_SERVER_URI).split(",");	
 		apiServerUrl = apiList[0].trim();
-		URI apiServerURI = URI.create(apiServerUrl);
 		if (!(apiServerUrl.startsWith("https://") || apiServerUrl.startsWith("http://")))
 			apiServerUrl = defaultHttpProtocol + "://" + apiServerUrl;
 	

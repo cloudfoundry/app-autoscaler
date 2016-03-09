@@ -6,13 +6,11 @@ import org.cloudfoundry.autoscaler.servicebroker.data.entity.ApplicationInstance
 import org.cloudfoundry.autoscaler.servicebroker.data.entity.dao.ApplicationInstanceDAO;
 import org.ektorp.CouchDbConnector;
 import org.ektorp.support.GenerateView;
-import org.ektorp.support.View;
 
 
 public class ApplicationInstanceDAOImpl extends CommonDAOImpl implements ApplicationInstanceDAO{
 
-  //  @View ( name = "by_appId", map = "function(doc) { if(doc.type== '' && doc.appId) {emit(doc.appId, doc._id)} }")
-	private static class ApplicationInstanceRepository_ByAppId extends TypedCouchdbRepositorySupport<ApplicationInstance>{
+ 	private static class ApplicationInstanceRepository_ByAppId extends TypedCouchdbRepositorySupport<ApplicationInstance>{
 
 		public ApplicationInstanceRepository_ByAppId(CouchDbConnector db) {
 			super(ApplicationInstance.class, db, "ApplicationInstance_ByAppId");
@@ -24,8 +22,8 @@ public class ApplicationInstanceDAOImpl extends CommonDAOImpl implements Applica
 	    	return  queryView("by_appId", appId);
 	    }
 	}                                                    
-    //@View ( name = "by_bindingId", map = "function(doc) { if(doc.type=='ApplicationInstance_inBroker' && doc.bindingId) {emit(doc.bindingId, doc._id)} }")
-	private static class ApplicationInstanceRepository_ByBindingId extends TypedCouchdbRepositorySupport<ApplicationInstance>{
+    
+ 	private static class ApplicationInstanceRepository_ByBindingId extends TypedCouchdbRepositorySupport<ApplicationInstance>{
 
 		public ApplicationInstanceRepository_ByBindingId(CouchDbConnector db) {
 			super(ApplicationInstance.class, db, "ApplicationInstance_ByBindingId");
@@ -37,8 +35,9 @@ public class ApplicationInstanceDAOImpl extends CommonDAOImpl implements Applica
 			return queryView("by_bindingId", bindingId);
 		}
 	}                                         
-    //@View ( name = "by_serviceId", map = "function(doc) { if(doc.type=='ApplicationInstance_inBroker' && doc.serviceId) {emit(doc.serviceId, doc._id)} }")
-	private static class ApplicationInstanceRepository_ByServiceId extends TypedCouchdbRepositorySupport<ApplicationInstance>{
+   
+    
+ 	private static class ApplicationInstanceRepository_ByServiceId extends TypedCouchdbRepositorySupport<ApplicationInstance>{
 
 		public ApplicationInstanceRepository_ByServiceId(CouchDbConnector db) {
 			super(ApplicationInstance.class, db, "ApplicationInstance_ByServiceId");
@@ -52,16 +51,6 @@ public class ApplicationInstanceDAOImpl extends CommonDAOImpl implements Applica
 		
 	}                                        
 	
-	@View ( name = "without_appId", map = "function(doc) { if(doc.type=='ApplicationInstance_inBroker' && !doc.appId) {emit(doc._id)} }")
-	private static class ApplicationInstanceRepository_WithoutAppId extends TypedCouchdbRepositorySupport<ApplicationInstance>{
-
-		public ApplicationInstanceRepository_WithoutAppId(CouchDbConnector db) {
-			super(ApplicationInstance.class, db, "ApplicationInstance_WithoutAppId");
-			initStandardDesignDocument();
-		}
-
-	}	
-	
 	private	ApplicationInstanceRepository_ByAppId appRepo_byAppId = null;
 	private ApplicationInstanceRepository_ByBindingId appRepo_byBindingId = null;
 	private	ApplicationInstanceRepository_ByServiceId appRepo_byServiceId = null;
@@ -72,6 +61,8 @@ public class ApplicationInstanceDAOImpl extends CommonDAOImpl implements Applica
 		appRepo_byServiceId = new ApplicationInstanceRepository_ByServiceId(db);
 	}
 
+
+	@SuppressWarnings("unchecked")
 	@Override
 	public <T> TypedCouchdbRepositorySupport<T> getDefaultRepo() {
 		return (TypedCouchdbRepositorySupport<T>) this.appRepo_byAppId;

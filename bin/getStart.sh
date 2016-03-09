@@ -12,7 +12,6 @@ fi
 promptHint "Prerequisite software:"
 echo " >>> Maven 3.0 or above"
 echo " >>> cf v6 or above"
-echo " >>> Command \"base64\" supported in SHELL"
 echo " >>> Commond \"curl\" supported in SHELL "
 
 promptHint "Step 1: Configure $componentName"

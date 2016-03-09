@@ -5,13 +5,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-
-
-
-
-
 import org.apache.log4j.Logger;
-
 import org.cloudfoundry.autoscaler.api.util.ConfigManager;
 
 public final class Constants {
@@ -20,8 +14,8 @@ public final class Constants {
 	
     public static final int DASHBORAD_TIME_RANGE = 30;
     
-    public static final String USERNAME = "cf.client.id";
-    public static final String PASSWORD = "cf.client.secret";
+    public static final String USERNAME = "cfClientId";
+    public static final String PASSWORD = "cfClientSecret";
     public static final String CFURL = "cfUrl";
    
     public static final String APP_TYPE_JAVA = "java";
