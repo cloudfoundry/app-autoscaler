@@ -571,8 +571,6 @@ public class PublicRestApi {
 		
 		//validate and transform the input	
  
-		if ((policyId != null)  && !(policyId.equals("null")) && (policyId.length() > 0)) //get policy information
-		{
 			try{
                 //get scaling history information
 				long now = new Date().getTime(); 
@@ -644,10 +642,7 @@ public class PublicRestApi {
 				logger.info("error in get history : " + e.getMessage());
 				return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_Get_Scaling_History_context, e), LocaleUtil.getLocale(httpServletRequest));
 			}
-		}
-		else { 
-			return RestApiResponseHandler.getResponsePolicyNotExistError(new PolicyNotExistException(app_id), LocaleUtil.getLocale(httpServletRequest));
-       }
+
 	}
 	
 	@GET
@@ -689,8 +684,7 @@ public class PublicRestApi {
 		}
 		
 		
-		if ((policyId != null)  && !(policyId.equals("null")) && (policyId.length() > 0)) //get policy information
-		{
+
 			try{
 	            //get metrics data information
 				long newerThan=0, timeRange=0;
@@ -750,10 +744,7 @@ public class PublicRestApi {
 				logger.info("error in get metric : " + e.getMessage());
 				return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_Get_Metric_Data_context, e), LocaleUtil.getLocale(httpServletRequest));
 			}
-		}
-		else { 
-			return RestApiResponseHandler.getResponsePolicyNotExistError(new PolicyNotExistException(app_id), LocaleUtil.getLocale(httpServletRequest));
-       }
+
 
 	}
 	
