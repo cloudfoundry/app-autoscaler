@@ -44,7 +44,7 @@ public final class Constants {
     
     
     public static final String USERNAME = "cfClientId";
-    public static final String PASSWORD = "cfClientSecretBase64Encoded";
+    public static final String PASSWORD = "cfClientSecret";
     public static final String CFURL = "cfUrl";
 
     public static final String SUBJECT_DEPLOYMENT = "subject.deployment";

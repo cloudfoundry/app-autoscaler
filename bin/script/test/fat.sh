@@ -254,7 +254,6 @@ function test_Policy_API() {
    ((returncode+=$?))
     do_delete_policy 
 
-    echo "====== Test for Create/Get/Update/Delete Policy API Succeed =============="
     cleanup_PublicAPI_TestConfig
     return $returncode
 
@@ -269,8 +268,7 @@ function test_Metric_API() {
     echo "====== Test for Get Metric API =============="
     do_get_metric
     returncode=$?
-    echo "====== Test for Get Metric API Succeed =============="
-
+ 
     cleanup_PublicAPI_TestConfig
     return $returncode
 }
@@ -284,8 +282,7 @@ function test_History_API() {
     echo "====== Test for Get History API =============="
     do_get_scaling_history
     returncode=$?
-    echo "====== Test for Get History API Succeed =============="
-
+ 
     cleanup_PublicAPI_TestConfig
     return $returncode
 }

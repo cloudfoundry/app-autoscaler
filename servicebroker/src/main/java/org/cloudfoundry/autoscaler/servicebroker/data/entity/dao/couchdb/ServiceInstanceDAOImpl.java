@@ -6,7 +6,6 @@ import org.cloudfoundry.autoscaler.servicebroker.data.entity.ServiceInstance;
 import org.cloudfoundry.autoscaler.servicebroker.data.entity.dao.ServiceInstanceDAO;
 import org.ektorp.CouchDbConnector;
 import org.ektorp.ViewQuery;
-import org.ektorp.support.GenerateView;
 import org.ektorp.support.View;
 
 
@@ -51,6 +50,7 @@ public class ServiceInstanceDAOImpl extends CommonDAOImpl implements ServiceInst
 		serviceRepo_byServiceId = new ServiceInstanceRepository_ByServiceId(db);
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public <T> TypedCouchdbRepositorySupport<T> getDefaultRepo() {
 		return (TypedCouchdbRepositorySupport<T>) this.serviceRepo_byServiceId;

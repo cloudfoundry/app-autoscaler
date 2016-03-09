@@ -2,9 +2,9 @@ package org.cloudfoundry.autoscaler.api.filter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.Map;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
@@ -16,14 +16,13 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
-
-import org.cloudfoundry.autoscaler.api.util.CloudFoundryManager;
-import org.cloudfoundry.autoscaler.api.util.SecurityCheckStatus;
+import org.cloudfoundry.autoscaler.api.exceptions.AppInfoNotFoundException;
+import org.cloudfoundry.autoscaler.api.exceptions.AppNotFoundException;
 import org.cloudfoundry.autoscaler.api.util.AuthenticationTool;
+import org.cloudfoundry.autoscaler.api.util.CloudFoundryManager;
 import org.cloudfoundry.autoscaler.api.util.LocaleUtil;
 import org.cloudfoundry.autoscaler.api.util.RestApiResponseHandler;
-import org.cloudfoundry.autoscaler.api.exceptions.AppNotFoundException;
-import org.cloudfoundry.autoscaler.api.exceptions.AppInfoNotFoundException;
+import org.cloudfoundry.autoscaler.api.util.SecurityCheckStatus;
 /**
  * Servlet Filter implementation class SSOFilter
  */

@@ -38,17 +38,16 @@ import org.cloudfoundry.autoscaler.event.ScalingHistoryFilter;
 import org.cloudfoundry.autoscaler.exceptions.DataStoreException;
 import org.cloudfoundry.autoscaler.exceptions.PolicyNotFoundException;
 import org.cloudfoundry.autoscaler.metric.util.ConfigManager;
-import org.cloudfoundry.autoscaler.metric.util.DBAccessInfoManager;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class CouchdbStorageService implements AutoScalingDataStore {
     private static final Logger logger = Logger.getLogger(CouchdbStorageService.class);
 
-	private static final String username = DBAccessInfoManager.getInstance().getUsername();
-	private static final String password = DBAccessInfoManager.getInstance().getPassword();
-	private static final String host = DBAccessInfoManager.getInstance().getHost();
-	private static final int port = DBAccessInfoManager.getInstance().getPort();
+    private static final String username =ConfigManager.get("couchdbUsername");
+	private static final String password =  ConfigManager.get("couchdbPassword");
+	private static final String host = ConfigManager.get("couchdbHost");
+	private static final int port = ConfigManager.getInt("couchdbPort");
 	private static final boolean enableSSL = false;
     private static final int timeout = ConfigManager.getInt("couchdbTimeout");
  

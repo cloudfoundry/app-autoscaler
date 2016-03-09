@@ -54,19 +54,18 @@ echo " >>> Now, you can edit the entries according to your runtime envrionment"
 cfUrl=`readConfigValue cfUrl "Cloudfoundry API URL in which you want to register $serviceName service "`
 cfDomain=${cfUrl##"api."}
 cfClientID=`readConfigValue cfClientId "CF Client ID for $cfDomain"`
-cfClientSecretBase64Encoded=`readConfigValueBase64Encoded cfClientSecretBase64Encoded "CF Client Secret for $cfDomain"`
+cfClientSecret=`readConfigValue cfClientSecret "CF Client Secret for $cfDomain"`
 
 couchdbHost=`readConfigValue couchdbHost "Hostname of Couchdb"`
 couchdbPort=`readConfigValue couchdbPort "Port of Couchdb"`
 couchdbUsername=`readConfigValue couchdbUsername "Username of Couchdb"`
-couchdbPasswordBase64Encoded=`readConfigValueBase64Encoded couchdbPasswordBase64Encoded "Password of Couchdb"`
+couchdbPassword=`readConfigValue couchdbPassword "Password of Couchdb"`
 
 brokerUsername=`readConfigValue brokerUsername "Broker username to register service"`
 brokerPassword=`readConfigValue brokerPassword "Broker password to register service"`
 
 internalAuthUsername=`readConfigValue internalAuthUsername "The username for http-basic authorization between different project of $componentName"`
 internalAuthPassword=`readConfigValue internalAuthPassword "The password for http-basic authorization between different project of $componentName"`
-internalAuthTokenBase64Encoded=`echo -n "$internalAuthUsername:$internalAuthPassword" | base64 `
 
 while true; do
     read -p " Would you like to host $componentName applications on Cloudfoundry? (default: y): "  onCloud
@@ -90,24 +89,24 @@ done
 function setConfiguration() {
 setProperties ${AutoScalingServerProjectDirName} cfUrl ${cfUrl}
 setProperties ${AutoScalingServerProjectDirName} cfClientId ${cfClientID}
-setProperties ${AutoScalingServerProjectDirName} cfClientSecretBase64Encoded ${cfClientSecretBase64Encoded}
+setProperties ${AutoScalingServerProjectDirName} cfClientSecret ${cfClientSecret}
 setProperties ${AutoScalingServerProjectDirName} couchdbHost ${couchdbHost}
 setProperties ${AutoScalingServerProjectDirName} couchdbPort ${couchdbPort}
 setProperties ${AutoScalingServerProjectDirName} couchdbUsername ${couchdbUsername}
-setProperties ${AutoScalingServerProjectDirName} couchdbPasswordBase64Encoded ${couchdbPasswordBase64Encoded}
-setProperties ${AutoScalingServerProjectDirName} internalAuthTokenBase64Encoded ${internalAuthTokenBase64Encoded}
+setProperties ${AutoScalingServerProjectDirName} couchdbPassword ${couchdbPassword}
+setProperties ${AutoScalingServerProjectDirName} internalAuthToken ${internalAuthToken}
 
 
 setProperties ${AutoScalingAPIProjectDirName} cfUrl ${cfUrl}
 setProperties ${AutoScalingAPIProjectDirName} cfClientId ${cfClientID}
-setProperties ${AutoScalingAPIProjectDirName} cfClientSecretBase64Encoded ${cfClientSecretBase64Encoded}
+setProperties ${AutoScalingAPIProjectDirName} cfClientSecret ${cfClientSecret}
 setProperties ${AutoScalingAPIProjectDirName} internalAuthUsername ${internalAuthUsername}
 setProperties ${AutoScalingAPIProjectDirName} internalAuthPassword ${internalAuthPassword}
 
 setProperties ${AutoScalingBrokerProjectDirName} couchdbHost ${couchdbHost}
 setProperties ${AutoScalingBrokerProjectDirName} couchdbPort ${couchdbPort}
 setProperties ${AutoScalingBrokerProjectDirName} couchdbUsername ${couchdbUsername}
-setProperties ${AutoScalingBrokerProjectDirName} couchdbPasswordBase64Encoded ${couchdbPasswordBase64Encoded}
+setProperties ${AutoScalingBrokerProjectDirName} couchdbPassword ${couchdbPassword}
 setProperties ${AutoScalingBrokerProjectDirName} brokerUsername ${brokerUsername}
 setProperties ${AutoScalingBrokerProjectDirName} brokerPassword ${brokerPassword}
 
@@ -123,18 +122,20 @@ function showConfiguration() {
 promptHint " >>> display $componentName $AutoScalingServerProjectDirName configuration: "
 showConfigValue cfUrl ${AutoScalingServerProfileDIR}/$profile.properties
 showConfigValue cfClientId ${AutoScalingServerProfileDIR}/$profile.properties
-showConfigValueBase64Encoded cfClientSecretBase64Encoded ${AutoScalingServerProfileDIR}/$profile.properties cfClientSecret
+showConfigValue cfClientSecret ${AutoScalingServerProfileDIR}/$profile.properties cfClientSecret
 showConfigValue couchdbHost ${AutoScalingServerProfileDIR}/$profile.properties
 showConfigValue couchdbPort ${AutoScalingServerProfileDIR}/$profile.properties
 showConfigValue couchdbUsername ${AutoScalingServerProfileDIR}/$profile.properties
-showConfigValueBase64Encoded couchdbPasswordBase64Encoded ${AutoScalingServerProfileDIR}/$profile.properties couchdbPassword
-showConfigValueBase64Encoded internalAuthTokenBase64Encoded ${AutoScalingServerProfileDIR}/$profile.properties internalAuthToken
+showConfigValue couchdbPassword ${AutoScalingServerProfileDIR}/$profile.properties couchdbPassword
+showConfigValue internalAuthUsername ${AutoScalingServerProfileDIR}/$profile.properties
+showConfigValue internalAuthPassword ${AutoScalingServerProfileDIR}/$profile.properties
+
 
 
 promptHint " >>> display $componentName $AutoScalingAPIProjectDirName configuration: "
 showConfigValue cfUrl ${AutoScalingAPIProfileDIR}/$profile.properties
 showConfigValue cfClientId ${AutoScalingAPIProfileDIR}/$profile.properties
-showConfigValueBase64Encoded cfClientSecretBase64Encoded ${AutoScalingAPIProfileDIR}/$profile.properties cfClientSecret
+showConfigValue cfClientSecret ${AutoScalingAPIProfileDIR}/$profile.properties cfClientSecret
 showConfigValue internalAuthUsername ${AutoScalingAPIProfileDIR}/$profile.properties
 showConfigValue internalAuthPassword ${AutoScalingAPIProfileDIR}/$profile.properties
 
@@ -142,7 +143,7 @@ promptHint " >>> display $componentName $AutoScalingBrokerProjectDirName configu
 showConfigValue couchdbHost ${AutoScalingBrokerProfileDIR}/$profile.properties
 showConfigValue couchdbPort ${AutoScalingBrokerProfileDIR}/$profile.properties
 showConfigValue couchdbUsername ${AutoScalingBrokerProfileDIR}/$profile.properties
-showConfigValueBase64Encoded couchdbPasswordBase64Encoded ${AutoScalingBrokerProfileDIR}/$profile.properties couchdbPassword
+showConfigValue couchdbPassword ${AutoScalingBrokerProfileDIR}/$profile.properties couchdbPassword
 
 showConfigValue brokerUsername ${AutoScalingBrokerProfileDIR}/$profile.properties
 showConfigValue brokerPassword ${AutoScalingBrokerProfileDIR}/$profile.properties

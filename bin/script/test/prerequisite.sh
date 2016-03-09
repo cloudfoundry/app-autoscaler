@@ -44,14 +44,27 @@ function do_pushApp() {
             return 254
         fi
     echo "============== Push App successfully================================="
+}
 
+function do_pushApp_nostart() {
 
+    echo "============== Push App ============================================"
+        cf app $TestAPP_NAME
+        if [ $? -eq 0 ]; then
+            cf delete $TestApp_
+        fi
+        cf push  $TestAPP_NAME -p $APP_FILE  --random-route --no-start
+        if [ $? -ne 0 ]; then
+            echo "Fail to push application."
+            return 254
+        fi
+    echo "============== Push App successfully================================="
 }
 
 function setup_TestEnv() {
     do_login
     do_cleanenv
-    do_pushApp
+    do_pushApp_nostart
 }
 
 

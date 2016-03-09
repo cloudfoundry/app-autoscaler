@@ -3,16 +3,11 @@ package org.cloudfoundry.autoscaler.servicebroker.mgr;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
-import org.cloudfoundry.autoscaler.servicebroker.Constants;
-import org.cloudfoundry.autoscaler.servicebroker.exception.ProxyInitilizedFailedException;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -140,23 +135,12 @@ public class ConfigManager {
 		return getBoolean(key, false);
 	}
 
-	
-    public static String getDecryptedString(String key) {
-		try {
-			byte[] decryptSecret = Base64.decode(ConfigManager.get(key));
-			 return new String(decryptSecret,"UTF-8");
-		} catch (UnsupportedEncodingException e) {
-			logger.error("Fail to decrypt for " + key + " with exception " + e.getMessage());
-		} 
-		return null;
-    }
-    
     public static String getInternalAuthToken(){
     	String internalAuthUserName = ConfigManager.get("internalAuthUsername");
 		String internalAuthPassword = ConfigManager.get("internalAuthPassword");
     	try {    		
-			byte[] decryptSecret = Base64.encode(internalAuthUserName + ":" + internalAuthPassword);
-			 return new String(decryptSecret,"UTF-8");
+			byte[] authToken = Base64.encode(internalAuthUserName + ":" + internalAuthPassword);
+			 return new String(authToken,"UTF-8");
 		} catch (UnsupportedEncodingException e) {
 			logger.error("Fail to encrypt for " + internalAuthUserName + ":" + internalAuthPassword + " with exception " + e.getMessage());
 		} 
@@ -172,7 +156,6 @@ public class ConfigManager {
         		// foundry
         		JSONObject jsonServices = new JSONObject(serviceInfo);
 
-        		@SuppressWarnings("unchecked")
         		Set<String> keyset = jsonServices.keySet();
         		for (String key : keyset) {
         			if (key.startsWith(serviceName)) {

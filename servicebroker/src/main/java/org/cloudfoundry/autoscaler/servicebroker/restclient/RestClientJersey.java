@@ -1,15 +1,11 @@
 package org.cloudfoundry.autoscaler.servicebroker.restclient;
 
 import java.io.IOException;
-import java.net.Authenticator;
 import java.net.HttpURLConnection;
-import java.net.InetSocketAddress;
-import java.net.PasswordAuthentication;
 import java.net.Proxy;
 import java.net.URL;
 import java.security.SecureRandom;
 import java.security.cert.CertificateException;
-import java.util.Map;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -20,7 +16,6 @@ import javax.ws.rs.core.Cookie;
 import javax.ws.rs.core.MediaType;
 
 import org.apache.log4j.Logger;
-import org.cloudfoundry.autoscaler.servicebroker.Constants;
 import org.cloudfoundry.autoscaler.servicebroker.exception.ProxyInitilizedFailedException;
 import org.cloudfoundry.autoscaler.servicebroker.mgr.ConfigManager;
 
@@ -38,8 +33,6 @@ public class RestClientJersey implements IRestClient {
 	private static final RestClientJersey instance = new RestClientJersey();
 
 	private static Client  client = null;
-	//	private static Client httpsRESTClient = null;
-	//	private static Client httpRESTClient = null;
 
 	private RestClientJersey() {
 	}
@@ -178,28 +171,9 @@ public class RestClientJersey implements IRestClient {
 	}
 
 	private class ConnectionFactory implements HttpURLConnectionFactory {
-
 		Proxy proxy = null;
-		String proxyUsername = null;
-		String proxyPassword = null;
 
 		public ConnectionFactory() {
-		}
-
-		public ConnectionFactory(String proxyHost, Integer proxyPort) {
-			proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
-		}
-
-		public ConnectionFactory(String proxyHost, Integer proxyPort, final String proxyUsername, final String proxyPassword) {
-			this.proxyUsername = proxyUsername;
-			this.proxyPassword = proxyPassword;
-			proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));	    		
-			Authenticator authenticator = new Authenticator() {
-				public PasswordAuthentication getPasswordAuthentication() {
-					return (new PasswordAuthentication(proxyUsername, proxyPassword.toCharArray()));
-				}
-			};
-			Authenticator.setDefault(authenticator);	        
 		}
 
 		@Override
