@@ -11,7 +11,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @TypeDiscriminator ("doc.type=='TriggerRecord'")
 public class TriggerRecord extends TypedCouchDbDocument {
 
-    @JsonProperty("_id")
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	@JsonProperty("_id")
     private String id;
 
     private String appName;

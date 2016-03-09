@@ -14,7 +14,11 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 @JsonSerialize(include = JsonSerialize.Inclusion.NON_NULL)
 @TypeDiscriminator ("doc.type=='AppInstanceMetrics'")
 public class AppInstanceMetrics extends TypedCouchDbDocument implements Serializable, Cloneable{
-    private String appId;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private String appId;
     private String appName;
     private String appType;
     private String serviceId;

@@ -5,8 +5,6 @@ import org.cloudfoundry.autoscaler.application.ApplicationManagerImpl;
 import org.cloudfoundry.autoscaler.policy.PolicyManagerImpl;
 
 public class PurgeLocalCacheThread implements Runnable {
-    private static final Logger logger = Logger.getLogger(PurgeLocalCacheThread.class);
-  
     public PurgeLocalCacheThread() {
     }
 

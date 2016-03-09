@@ -4,7 +4,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.TimeZone;
 
-import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.document.AppAutoScaleState;
 import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.document.ScalingHistory;
 import org.cloudfoundry.autoscaler.exceptions.DataStoreException;
@@ -18,9 +17,7 @@ import org.cloudfoundry.autoscaler.util.TimeZoneUtil;
  *
  */
 public class ScalingHistoryManager {
-    private static final String CLASS_NAME = ScalingHistoryManager.class.getName();
-    private static final Logger logger = Logger.getLogger(CLASS_NAME);
-	public static final ScalingHistoryManager instance = new ScalingHistoryManager();
+    public static final ScalingHistoryManager instance = new ScalingHistoryManager();
 	private ScalingHistoryManager(){
 		
 	}

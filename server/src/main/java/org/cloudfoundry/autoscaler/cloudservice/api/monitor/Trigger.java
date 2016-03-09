@@ -16,7 +16,11 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Trigger implements Serializable {
-    public static final String METRIC_CPU = "CPU";
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	public static final String METRIC_CPU = "CPU";
     public static final String METRIC_CPU_NUM = "METRIC_CPU_NUM";
     public static final String METRIC_MEM = "Memory";
 

@@ -7,7 +7,11 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @TypeDiscriminator ("doc.type=='BoundApp'")
 public class BoundApp  extends TypedCouchDbDocument  {
-    private String appId;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private String appId;
     private String serviceId;
     private String appType;
     private String appName;

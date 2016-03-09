@@ -127,7 +127,6 @@ public class ApplicationMetrics {
 		// use poller metric as the criterion to merge data and store to DB when
 		// necessary.
 		for (Entry<Integer, InstanceMetrics> metricEntry : pollerMetricsMap.entrySet()) {
-			int instanceIndex = metricEntry.getKey();
 			InstanceMetrics pollerInstanceMetric = metricEntry.getValue();
 
 			// discard this entry if pollerInstanceMetric is null;

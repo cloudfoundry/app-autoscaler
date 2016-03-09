@@ -56,8 +56,6 @@ public class StateMonitor {
 	private boolean isCPURequired;
 	private boolean isPollerMemRequired;
 	
-	private boolean shouldStop = true;
-	
 	private long prevTriggerEvalTime = 0;
 	
 	
@@ -395,7 +393,6 @@ public class StateMonitor {
 		return true;
 	}
 	public void stopMonitor() {
-		this.shouldStop = true;
 	}
 
 	/**

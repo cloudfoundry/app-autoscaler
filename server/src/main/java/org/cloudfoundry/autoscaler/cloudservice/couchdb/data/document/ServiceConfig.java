@@ -12,7 +12,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @TypeDiscriminator ("doc.type=='ServiceConfig'")
 public class ServiceConfig extends TypedCouchDbDocument {
 
-    @JsonProperty("_id")
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	@JsonProperty("_id")
     private String serviceId;
     private long persistTimeInDb = 3600;// seconds
     

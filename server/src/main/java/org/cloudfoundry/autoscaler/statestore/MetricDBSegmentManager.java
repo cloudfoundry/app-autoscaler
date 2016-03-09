@@ -5,15 +5,13 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.TimeZone;
 
-import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.Constants;
 import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.document.MetricDBSegment;
 import org.cloudfoundry.autoscaler.metric.util.ConfigManager;
 
 public class MetricDBSegmentManager {
 
-    private static final Logger logger = Logger.getLogger(MetricDBSegmentManager.class);
-	private static final String rolloutFrequency = ConfigManager.get("couchdbMetricDBRolloutFrequency");
+    private static final String rolloutFrequency = ConfigManager.get("couchdbMetricDBRolloutFrequency");
 	private static final int rolloutFrequencyCustomValue = 5;
 	private static final TimeZone UTC = TimeZone.getTimeZone("UTC"); 
 

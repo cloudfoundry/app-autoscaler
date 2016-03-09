@@ -5,7 +5,11 @@ import org.ektorp.support.TypeDiscriminator;
 @TypeDiscriminator ("doc.type=='ServiceInstance_inBroker'")
 public class ServiceInstanceInBroker extends TypedCouchDbDocument {
     
-    private String serverUrl;
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+	private String serverUrl;
     private String orgId;
 	private String spaceId;
 

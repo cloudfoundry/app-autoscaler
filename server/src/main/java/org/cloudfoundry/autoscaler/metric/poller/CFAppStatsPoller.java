@@ -196,7 +196,6 @@ public class CFAppStatsPoller implements Runnable {
 
                     List<Metric> metrics = new LinkedList<Metric>();
                     metrics.add(metricMem);
-//                  metrics.add(metricMemQuota);
                     metrics.add(metricCpu);      
                     
                     instanceMetric.setMetrics(metrics);

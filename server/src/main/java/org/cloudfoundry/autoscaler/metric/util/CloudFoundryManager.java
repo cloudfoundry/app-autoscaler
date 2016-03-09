@@ -166,49 +166,6 @@ public class CloudFoundryManager {
          return  new JSONObject(response);
     	
     }
-    public static Map<String,String> getProxyVariableMap() throws Exception{
-    	
-    	Map<String, String> map = new HashMap<String, String>();
-    	Map<String,String> jo = System.getenv();
-    	String proxyStr = null;
-    	
-    	//handle the upper case of the env setting
-    	for (Entry<String, String> entry : jo.entrySet()){
-    		if (entry.getKey().equalsIgnoreCase("http_proxy")) {
-    			proxyStr = entry.getValue();
-    			break;
-    		} else if (entry.getKey().equalsIgnoreCase("https_proxy")) {
-    			//using https setting temporarily, but will be replaced by the http proxy setting if exists.
-    			proxyStr = entry.getValue();
-    		}
-    	}
-
-    	if (proxyStr == null || proxyStr.isEmpty())
-    		throw new Exception("Proxy information is null!");
-    	
-    	URI proxyURI = URI.create(proxyStr);
-		
-    	if (proxyURI.getHost() == null) {
-    		throw new Exception("Proxy information is invalid!");
-    	} else {
-    		map.put(HOST, proxyURI.getHost());
-    	}
-    	
-    	if (proxyURI.getPort() ==  -1) {
-    		map.put(PORT, "80");
-    	} else {
-    		map.put(PORT, String.valueOf(proxyURI.getPort()));
-    	}
-
-    	if (proxyURI.getUserInfo() != null) {
-    		String[] userInfo = proxyURI.getUserInfo().split(":");
-    		map.put(USERNAME, userInfo[0]);
-    		map.put(PASSWORD, userInfo[1]);
-    	}
-    	
-    	return map;
-    	
-    }
     // get application statistics
     public List<CloudAppInstance> getAppStatsExtByAppId(String appId) throws Exception {
 

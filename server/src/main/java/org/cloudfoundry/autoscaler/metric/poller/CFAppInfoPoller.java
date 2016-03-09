@@ -16,8 +16,6 @@ import org.cloudfoundry.autoscaler.metric.util.ConfigManager;
 public class CFAppInfoPoller implements Runnable {
     private static final Logger logger = Logger.getLogger(CFAppInfoPoller.class);
 
-    // in seconds
-    private static final int DEFAULT_INTERVAL = 10;
     private static final int MAX_RETRY=10;
     private volatile boolean cancelled = false;
 

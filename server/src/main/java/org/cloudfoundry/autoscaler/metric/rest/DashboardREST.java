@@ -44,12 +44,7 @@ public class DashboardREST {
     public Response getAppMetricsLastestData(@PathParam("serviceId") String serviceId, @QueryParam("appId") String appId) {
         try {
         	
-            AutoScalingDataStore dataStore = AutoScalingDataStoreFactory.getAutoScalingDataStore();
-	    	
-			
-			
-        	
-			List<AppInstanceMetrics> stats = new ArrayList<AppInstanceMetrics>();
+            List<AppInstanceMetrics> stats = new ArrayList<AppInstanceMetrics>();
             MonitorController controller = MonitorController.getInstance();
             Collection<BoundApp> apps = controller.getSerivceBoundApps(serviceId);
             if (apps != null && apps.size() > 0) {

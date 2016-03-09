@@ -8,6 +8,10 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @TypeDiscriminator ("doc.type=='ServiceInstance_inBroker'")
 public class ServiceInstance extends TypedCouchDbDocument  {
     
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
 	private String serviceId;
     private String serverUrl;
     private String orgId;
