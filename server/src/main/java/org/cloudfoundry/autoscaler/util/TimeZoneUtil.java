@@ -20,10 +20,5 @@ public class TimeZoneUtil {
 		}
 		return zone;
 	}
-	public static boolean isParallel(TimeZone zone1, TimeZone zone2){
-		long time = System.currentTimeMillis();
-		return zone1.getOffset(time) == zone2.getOffset(time);
-		
-	}
 
 }
