@@ -289,18 +289,28 @@ function test_History_API() {
 
 
 function checkInstance(){
+    targetNum=2
+    if [ "$#" -eq 1 ];then
+        targetNum=1       
+    fi
     echo  -e "\nChecking app instances :"                                                                                                        
     for (( i=0; i<10; i++ )) ;                                                                                                                      
-        do                                                                                                                                              
+        do    
+            echo "cf app $TestAPP_NAME"                                                                                                                                          
             instances=`cf app $TestAPP_NAME  |grep 'instances:' | awk '{ print $2 }'`                                                                      
             echo "  >>> `date` Running instance number: $instances"                                                                                                 
                 runninginstances=`echo $instances | awk -F '/' '{print $1}'`            
             if [ -z "$runninginstances" ]; then
-                echo " >>> `date` Fail to get running instances number"                                                                                                                                                                                                                                                           
+                echo " >>> `date` Fail to get running instances number"    
+            elif [ $targetNum -eq 1 ];then
+                if [ $runninginstances -eq 1 ];then                                                                                                                   
+                break                                                                                                                                       
+                fi                                                                                                                                                                                                                                                          
             elif [ $runninginstances -gt 1 ];then                                                                                                                   
                 break                                                                                                                                       
-            fi                                                                                                                                            
-            sleep 120                                                                                                                                     
+            fi           
+            sleep 120   
+                                                                                                                                                                                                                                                                                                 
         done                                                                                                                                            
                                                                                                                                                    
     if [ $i -ge 10 ]; then                                                                                                                          
@@ -310,21 +320,12 @@ function checkInstance(){
     fi              
 }
 
-
-
-
 function doCheckScaleByMetrics(){
 
     echo " >>> Test Dynamic Scaling-out with Metric: Memory"
     local returncode=0
-
-    echo " >>> Please create an application whose memory allocation will be varied by workload. "
-    echo " >>> Please input the file path of the application package: " 
-    read customizedAppFilePath
-
-    echo " >>> Push the application $customizedAppFilePath "
-    cf push  $TestAPP_NAME -p $customizedAppFilePath  --random-route 
-
+    echo " >>> Push the application $DYNAMIC_APP_FILE "
+    cf push  $TestAPP_NAME -p $DYNAMIC_APP_FILE -m $Default_Memory  --random-route 
     cf scale $TestAPP_NAME -i 1 > /dev/stderr
     setup_PublicAPI_TestConfig > /dev/stderr
     policy_url="$API_url/v1/autoscaler/apps/$app_guid/policy" 
@@ -333,18 +334,37 @@ function doCheckScaleByMetrics(){
     do_create_policy ${Resource_DIR}/file/policy/dynamic.json  > /dev/stderr
     ((returncode+=$?))
 
-    echo " >>> The app $TestAPP_NAME will be scaled out according to policy:  "
+    echo " >>> The app $TestAPP_NAME will be scaled out and scaled in according to policy:  "
     cat ${Resource_DIR}/file/policy/dynamic.json 
 
-    echo 
-    echo " >>> Now please add workload to $TestAPP_NAME Manually to trigger scaling." 
-    echo " >>> Press Any key once the workload reaches a  proper value " 
-    read y
-
+    echo " >>> The scaling out testing is doing." 
     startTime=`date "+%H:%M"` 
      ((startTimestamp=$(date +%s)\*1000))
     echo " >>> The script below will detect application instance change for about 20 minutes." 
-    checkInstance
+    appUrl=`cf app $TestAPP_NAME | grep "urls" | awk -F ':'  '{print $2}'`
+    for((i=1;i<=999999;i++))
+    do
+        curl -s "{$appUrl}?cmd=add&mode=normal&num=5000" > /dev/stderr
+        curl -s "{$appUrl}?cmd=remove&mode=normal&num=200" > /dev/stderr
+        mod=$(($i%1000))
+        if [ $mod -eq 0 ];then
+            checkInstance 
+            scaleResult=$?
+            if [ $scaleResult -eq 0 ];then
+                echo '>>>The app scaled out successfully'
+                break
+            fi
+        fi
+    done
+    ((returncode+=$?))
+    echo ">>> The scaling in test is doing."
+    cf restart $TestAPP_NAME >> /dev/stderr
+    cf scale $TestAPP_NAME -i 2 > /dev/stderr
+    checkInstance 1
+    scaleResult=$?
+    if [ $scaleResult -eq 0 ];then
+        echo ">>> The app scaled in successfully!"
+    fi
     ((returncode+=$?))
     endTime=`date "+%H:%M"` 
      ((endTimestamp=$(date +%s)\*1000))

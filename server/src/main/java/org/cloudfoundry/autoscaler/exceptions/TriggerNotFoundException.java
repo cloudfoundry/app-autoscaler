@@ -1,4 +1,4 @@
-package org.cloudfoundry.autoscaler.metric.exceptions;
+package org.cloudfoundry.autoscaler.exceptions;
 
 public class TriggerNotFoundException extends Exception{
 	public final static String ERROR_CODE = "TRIGGER_NOT_FOUND";

@@ -5,9 +5,9 @@ import javax.ws.rs.core.MediaType;
 import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.cloudservice.api.monitor.Trigger;
 import org.cloudfoundry.autoscaler.exceptions.MonitorServiceException;
+import org.cloudfoundry.autoscaler.exceptions.TriggerNotFoundException;
 import org.cloudfoundry.autoscaler.exceptions.TriggerNotSubscribedException;
 import org.cloudfoundry.autoscaler.metric.MonitorController;
-import org.cloudfoundry.autoscaler.metric.exceptions.TriggerNotFoundException;
 
 import com.sun.jersey.api.client.WebResource;
 

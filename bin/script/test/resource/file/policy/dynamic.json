@@ -9,7 +9,7 @@
             "lowerThreshold": 30,
             "upperThreshold": 80,
             "instanceStepCountDown": 1,
-            "instanceStepCountUp": 2,
+            "instanceStepCountUp": 1,
             "stepDownCoolDownSecs": 120,
             "stepUpCoolDownSecs": 120
         }

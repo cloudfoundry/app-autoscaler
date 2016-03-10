@@ -10,7 +10,8 @@ function setup_TestConfig() {
 
     Resource_DIR="$basedir/resource"
     APP_FILE="${Resource_DIR}/app/HelloWorldJavaWeb.war"
-
+    DYNAMIC_APP_FILE="${Resource_DIR}/app/nodeApp/"
+    Default_Memory="700m"
     logfile=${basedir}/"fat.log"
 }
 

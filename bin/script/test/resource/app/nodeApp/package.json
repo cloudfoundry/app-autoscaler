@@ -3,7 +3,7 @@
 	"version": "0.0.1",
 	"description": "A sample nodejs app for AutoScaler",
 	"scripts": {
-		"start": "node --max-old-space-size=500 test.js"
+		"start": "node --max-old-space-size=600 test.js"
 	},
 	"dependencies": {
 	},
