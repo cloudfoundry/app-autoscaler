@@ -1,13 +1,10 @@
 package org.cloudfoundry.autoscaler.metric.util;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import javax.ws.rs.core.MediaType;
@@ -15,7 +12,7 @@ import javax.ws.rs.core.MediaType;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.Constants;
-import org.cloudfoundry.autoscaler.cloudservice.manager.exceptions.CloudException;
+import org.cloudfoundry.autoscaler.exceptions.CloudException;
 import org.cloudfoundry.autoscaler.metric.data.CFInstanceStats;
 import org.cloudfoundry.autoscaler.metric.data.CFInstanceStats.Usage;
 import org.cloudfoundry.autoscaler.metric.data.CloudAppInstance;

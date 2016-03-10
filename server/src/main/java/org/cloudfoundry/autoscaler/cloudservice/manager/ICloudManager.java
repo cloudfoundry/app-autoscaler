@@ -2,9 +2,8 @@ package org.cloudfoundry.autoscaler.cloudservice.manager;
 
 
 import java.util.Map;
-
-import org.cloudfoundry.autoscaler.cloudservice.manager.exceptions.AppNotFoundException;
-import org.cloudfoundry.autoscaler.cloudservice.manager.exceptions.CloudException;
+import org.cloudfoundry.autoscaler.exceptions.AppNotFoundException;
+import org.cloudfoundry.autoscaler.exceptions.CloudException;
 
 
 public interface ICloudManager

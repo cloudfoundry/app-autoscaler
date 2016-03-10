@@ -25,7 +25,6 @@ import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.document.BoundApp;
 import org.cloudfoundry.autoscaler.metric.MonitorController;
 import org.cloudfoundry.autoscaler.metric.config.ConfigService;
 import org.cloudfoundry.autoscaler.metric.data.ApplicationMetrics;
-import org.cloudfoundry.autoscaler.statestore.AutoScalingDataStore;
 import org.cloudfoundry.autoscaler.statestore.AutoScalingDataStoreFactory;
 import org.cloudfoundry.autoscaler.util.RestApiResponseHandler;
 

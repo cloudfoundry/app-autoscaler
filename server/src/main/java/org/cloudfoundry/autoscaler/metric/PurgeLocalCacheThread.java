@@ -1,6 +1,5 @@
 package org.cloudfoundry.autoscaler.metric;
 
-import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.application.ApplicationManagerImpl;
 import org.cloudfoundry.autoscaler.policy.PolicyManagerImpl;
 

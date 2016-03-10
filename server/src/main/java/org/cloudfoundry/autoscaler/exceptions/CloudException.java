@@ -1,4 +1,4 @@
-package org.cloudfoundry.autoscaler.cloudservice.manager.exceptions;
+package org.cloudfoundry.autoscaler.exceptions;
 
 
 public class CloudException extends Exception

@@ -51,10 +51,6 @@ public class ConfigService {
 		if (appId == null)
 			return defaultConfig;
 
-//		for debug only
-//		boolean isCPURequired = true;
-//		boolean isPollerMemRequired = true;
-
 		boolean isCPURequired = isCPURequired(appId);;
 		boolean isPollerMemRequired = isPollerMemRequired(appId);
 		

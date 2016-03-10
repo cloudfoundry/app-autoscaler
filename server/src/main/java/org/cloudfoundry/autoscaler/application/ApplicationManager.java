@@ -6,8 +6,8 @@ import java.util.List;
 
 import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.document.Application;
 import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.document.AutoScalerPolicy;
-import org.cloudfoundry.autoscaler.cloudservice.manager.exceptions.CloudException;
 import org.cloudfoundry.autoscaler.exceptions.AppNotFoundException;
+import org.cloudfoundry.autoscaler.exceptions.CloudException;
 import org.cloudfoundry.autoscaler.exceptions.DataStoreException;
 import org.cloudfoundry.autoscaler.exceptions.MetricNotSupportedException;
 import org.cloudfoundry.autoscaler.exceptions.MonitorServiceException;

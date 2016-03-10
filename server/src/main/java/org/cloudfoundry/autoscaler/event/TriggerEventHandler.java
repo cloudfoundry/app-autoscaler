@@ -15,9 +15,9 @@ import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.base.AutoScalerPoli
 import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.document.AppAutoScaleState;
 import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.document.Application;
 import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.document.AutoScalerPolicy;
-import org.cloudfoundry.autoscaler.cloudservice.manager.exceptions.CloudException;
 import org.cloudfoundry.autoscaler.cloudservice.manager.util.CloudFoundryErrorCode;
 import org.cloudfoundry.autoscaler.exceptions.AppNotFoundException;
+import org.cloudfoundry.autoscaler.exceptions.CloudException;
 import org.cloudfoundry.autoscaler.exceptions.DataStoreException;
 import org.cloudfoundry.autoscaler.exceptions.NoAttachedPolicyException;
 import org.cloudfoundry.autoscaler.exceptions.PolicyNotFoundException;
@@ -201,7 +201,7 @@ public class TriggerEventHandler {
 	private boolean validateInstanceCounts() throws Exception{
 		try {
 			currentInstances =  CloudFoundryManager.getInstance().getAppInstancesByAppId(appId);
-		} catch (org.cloudfoundry.autoscaler.cloudservice.manager.exceptions.AppNotFoundException e) {
+		} catch (AppNotFoundException e) {
 			throw new AppNotFoundException("Application " + appId
 					+ " can not be found.");
 		} catch (CloudException e) {
