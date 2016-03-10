@@ -43,7 +43,7 @@ import org.cloudfoundry.autoscaler.api.util.ValidateUtil.DataType;
 import org.cloudfoundry.autoscaler.api.exceptions.CloudException;
 import org.cloudfoundry.autoscaler.api.exceptions.AppNotFoundException;
 import org.cloudfoundry.autoscaler.api.exceptions.AppInfoNotFoundException;
-import org.cloudfoundry.autoscaler.api.exceptions.PolicyNotExistException;
+import org.cloudfoundry.autoscaler.api.exceptions.PolicyNotFoundException;
 import org.cloudfoundry.autoscaler.api.exceptions.ServiceNotFoundException;
 import org.cloudfoundry.autoscaler.api.exceptions.InternalServerErrorException;
 import org.cloudfoundry.autoscaler.api.exceptions.InputJSONParseErrorException;
@@ -84,7 +84,7 @@ public class PublicRestApi {
 	{
 		logger.info("Received JSON String of policy content: "+jsonString);
 	
-		//get infor from app_id
+		 
 	    Client client = RestUtil.getHTTPSRestClient();
 	    String policyId;
 	    String server_url;
@@ -126,7 +126,7 @@ public class PublicRestApi {
 		catch (AppInfoNotFoundException e){
 			return RestApiResponseHandler.getResponseAppInfoNotFound(e, LocaleUtil.getLocale(httpServletRequest));
 		}
-		catch (Exception e){  //should not happend if SSO filter process has been passed
+		catch (Exception e){  
 			logger.info("error in getOrgSpaceByAppId: " + e.getMessage());
 			return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_retrieve_org_sapce_information_context, e), LocaleUtil.getLocale(httpServletRequest));
 		}
@@ -236,7 +236,7 @@ public class PublicRestApi {
 	{
 		logger.info("Received JSON String of policy content: "+jsonString);
 		
-		//get infor from app_id
+		 
 	    Client client = RestUtil.getHTTPSRestClient();
 	    String policyId;
 	    String server_url;
@@ -263,13 +263,10 @@ public class PublicRestApi {
 			return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_retrieve_application_service_information_context, e), LocaleUtil.getLocale(httpServletRequest));
 		}  
 		
-		//validate and transform the input	
-		
-		//build request to current autoscaling server instance
 		if ((policyId != null)  && !(policyId.equals("null")) && (policyId.length() > 0)) //try to detach the application and policy, then delete the policy
 		{
 			try{
-				//detach app and policy
+				//detach application and policy
 				request_url = server_url + "/resources/apps/" + app_id + "?policyId=" + policyId + "&state=disabled";
 				WebResource webResource = client.resource(request_url);
 				String authorization = ConfigManager.getInternalAuthToken();
@@ -311,7 +308,7 @@ public class PublicRestApi {
 			
 		}
 		else { // Can not find policyId for this application
-		   return RestApiResponseHandler.getResponsePolicyNotExistError(new PolicyNotExistException(app_id), LocaleUtil.getLocale(httpServletRequest));
+		   return RestApiResponseHandler.getResponsePolicyNotExistError(new PolicyNotFoundException(app_id), LocaleUtil.getLocale(httpServletRequest));
        }
        
 	}
@@ -323,7 +320,6 @@ public class PublicRestApi {
     public Response getPolicy(@Context final HttpServletRequest httpServletRequest, @PathParam("app_id") String app_id)
 	{
 		
-		//get infor from app_id
 	    Client client = RestUtil.getHTTPSRestClient();
 	    String policyId;
 	    String server_url;
@@ -397,7 +393,7 @@ public class PublicRestApi {
 			
 		}
 		else { 
-			return RestApiResponseHandler.getResponsePolicyNotExistError(new PolicyNotExistException(app_id), LocaleUtil.getLocale(httpServletRequest));
+			return RestApiResponseHandler.getResponsePolicyNotExistError(new PolicyNotFoundException(app_id), LocaleUtil.getLocale(httpServletRequest));
        }
 	}
 	
@@ -409,7 +405,7 @@ public class PublicRestApi {
 	{
 		logger.info("Received JSON String of policy content: "+jsonString);
 		
-		//get infor from app_id
+		 
 	    Client client = RestUtil.getHTTPSRestClient();
 	    String policyId;
 	    String server_url;
@@ -490,7 +486,7 @@ public class PublicRestApi {
 			
 		}
 		else { 
-			return RestApiResponseHandler.getResponsePolicyNotExistError(new PolicyNotExistException(app_id), LocaleUtil.getLocale(httpServletRequest));
+			return RestApiResponseHandler.getResponsePolicyNotExistError(new PolicyNotFoundException(app_id), LocaleUtil.getLocale(httpServletRequest));
        }
        
 	}	
@@ -502,7 +498,7 @@ public class PublicRestApi {
     public Response getPolicyStatus(@Context final HttpServletRequest httpServletRequest, @PathParam("app_id") String app_id)
 	{
 		
-		//get infor from app_id
+		 
 		String policyStatus;
 		try{
 		     Map<String, String> service_info = getserverinfo(app_id);
@@ -511,7 +507,7 @@ public class PublicRestApi {
 		    	 return RestApiResponseHandler.getResponseJsonOk("{\"status\":" + "\"" + policyStatus.toUpperCase() + "\"}");
 		     }
 		     else { 
-		    	 return RestApiResponseHandler.getResponsePolicyNotExistError(new PolicyNotExistException(app_id), LocaleUtil.getLocale(httpServletRequest));
+		    	 return RestApiResponseHandler.getResponsePolicyNotExistError(new PolicyNotFoundException(app_id), LocaleUtil.getLocale(httpServletRequest));
 		     }
 		}
 		catch (CloudException e) {
@@ -541,16 +537,14 @@ public class PublicRestApi {
     		@QueryParam ("startTime") String startTime, @QueryParam ("endTime") String endTime)
 	{
 		
-		//get infor from app_id
+		 
 	    Client client = RestUtil.getHTTPSRestClient();
 	    String server_url;
 	    String request_url;
-	    String policyId;
 	    Map<String, String> service_info;
 		try{
 		     service_info = getserverinfo(app_id);
 	         server_url = service_info.get("server_url");
-	         policyId = service_info.get("policyId");	
 		} 
 		catch (CloudException e) {
   			return RestApiResponseHandler.getResponseCloudError(e, LocaleUtil.getLocale(httpServletRequest));
@@ -653,9 +647,7 @@ public class PublicRestApi {
     		@QueryParam ("startTime") String startTime, @QueryParam ("endTime") String endTime)
 	{
 
-		//get infor from app_id
 	    Client client = RestUtil.getHTTPSRestClient();
-	    String policyId;
 	    String server_url;
 	    String service_id;
 	    String request_url;
@@ -664,7 +656,6 @@ public class PublicRestApi {
 		     service_info = getserverinfo(app_id);
 	         server_url = service_info.get("server_url");
 	         service_id = service_info.get("service_id");
-	         policyId = service_info.get("policyId");	
 		}
 		catch (CloudException e) {
   			return RestApiResponseHandler.getResponseCloudError(e, LocaleUtil.getLocale(httpServletRequest));
@@ -686,7 +677,6 @@ public class PublicRestApi {
 		
 
 			try{
-	            //get metrics data information
 				long newerThan=0, timeRange=0;
 				
 				if (!ValidateUtil.isNull(startTime)){
@@ -752,8 +742,8 @@ public class PublicRestApi {
 		Map <String, String> serviceInfo = new HashMap<String, String>();
 
 	    try{
-	    	String service_name = ConfigManager.get("scalingServiceName", "CF-AutoScaler"); //might be public or dedicate 
-		    Map service_info = CloudFoundryManager.getInstance().getServiceInfo(app_id, service_name);
+	    	 String service_name = ConfigManager.get("scalingServiceName", "CF-AutoScaler"); 
+		     Map service_info = CloudFoundryManager.getInstance().getServiceInfo(app_id, service_name);
 		     Map credentials = (Map) service_info.get("credentials");
 		     String request_url = (String)credentials.get("url") + "/resources/apps/" + app_id + "?serviceid=" + (String)credentials.get("service_id");
 		     logger.info("request_url: " + request_url);

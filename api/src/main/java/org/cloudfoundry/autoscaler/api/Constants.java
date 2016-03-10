@@ -649,12 +649,6 @@ public final class Constants {
 	        put(APP_TYPE_DEFAULT, DEFAULT_METRICS);
 	    }
 	};
-	public static Map<String, String> metricType_mapping = new HashMap<String, String>() //server metric string to metricType
-	{
-	    {
-	        put(INTERNAL_METRIC_TYPE_MEMORY, METRIC_TYPE_MEMORY);
-	    }
-	};
 	public static int REPORTINTERVAL = ConfigManager.getInt(Constants.REPORT_INTERVAL, 60);
 	public static int value_metric_refresh_interval = REPORTINTERVAL * 1000;
 	public static int value_min_statwindow = REPORTINTERVAL;
@@ -667,7 +661,7 @@ public final class Constants {
 	public static int metricTimeRange = REPORTINTERVAL * 60 /60; //Given the unit of reportInterval is seconds, we need to /60 to get the value for unit "minutes". Then multiple with 60 as we need 60 points in the chart.
 	public static int metricTimeRangeByMilliseconds = metricTimeRange * 60 * 1000;
 	public static String value_nolimit = "nolimit";
-	public static int value_default_statwindow = 300;
+	public static int value_default_statWindow = 300;
 	public static int value_default_breachDuration = 600;
 	public static int value_default_stepDownCoolDownSecs = 600;
 	public static int value_default_stepUpCoolDownSecs = 600;
@@ -692,7 +686,7 @@ public final class Constants {
 	public static Map<String, Integer> trigger_default = new HashMap<String, Integer>() //server metric string to metricType
 	{
 	    {
-	        put(TRIGGER_STATWINDOW, value_default_statwindow);
+	        put(TRIGGER_STATWINDOW, value_default_statWindow);
 	        put(TRIGGER_BREACHDURATION, value_default_breachDuration);
 	        put(TRIGGER_LOWERTHRESHOLD, value_default_lowerThreshold_Memory);
 	        put(TRIGGER_UPPERTHRESHOLD, value_default_upperThreshold_Memory);
@@ -702,15 +696,6 @@ public final class Constants {
 	        put(TRIGGER_STEPUPCOOLDOWN, value_default_stepUpCoolDownSecs);
 	    }
 	};
-
-	/*design of default policy, especially PolicyTrigger part
-	 0) field variable are all timely and authoritative value for use, not the default.json
-	 1) field variable here is given the value as the default value for range(min/max) or default value here if default.json is not found
-	 2) default json can update some range information(max, default) by set the default.json, but for min, as they are always impact from report interval from server, that setting does not work in default.json
-	 3) Server will update report interval and so the min value of some field are refreshed, as this refresh happen before the call to server, that range information will refresh before bean validation
-	 4) If multi-server does not have the same value of report interval, the last value got take effect, that's bad. that the situation we don't handle now
-	 5) local_default return the current default.json updated with latest trigger settings
-	 */
 
     public static Map<String, Map<String, Map<String, String>>> getTriggerRange()
     {
@@ -783,9 +768,6 @@ public final class Constants {
        return range;
     }
 
-    //better design is not transfer this Map as it (its structure) become part of the protocol between user and designer, which is a violation of encapsulation
-    // And we can create a getThreshold(String Threshold(lowerThreshold/upperThreshold, String metricType, String key(Min/Max/default)) ) and return just variable
-    // like value_max_lowerThreshold_JVMHeapUsage, and getTriggerDefaultThresholdsInt() can just call getThreshold instead
     public static Map<String, Map<String, Map<String, String>>> getThresholdRange()
     {
        Map<String, Map<String, Map<String, String>>> range=null;

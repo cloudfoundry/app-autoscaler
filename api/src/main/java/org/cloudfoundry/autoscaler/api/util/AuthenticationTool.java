@@ -9,7 +9,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
-import org.cloudfoundry.autoscaler.api.Constants;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -26,6 +25,12 @@ public class AuthenticationTool {
     private String cloudControllerEndpoint;
     private boolean isSslSupported = true;
     private static AuthenticationTool instance;
+    
+    public enum SecurityCheckStatus {
+        SECURITY_CHECK_SSO,        //internal state, request will be redirected to somewhere else. 
+        SECURITY_CHECK_COMPLETE,    //final state, check is successful and user data being written into session. 
+        SECURITY_CHECK_ERROR        //final state, request is redirected to error page.
+    }
 
     private AuthenticationTool(){
    		this.restClient= RestUtil.getHTTPSRestClient();
@@ -48,25 +53,6 @@ public class AuthenticationTool {
     public void setSslSupported(boolean isSslSupported) {
         this.isSslSupported = isSslSupported;
     }
-    
-    private static String getCfTarget() {
-
-        String ApplicationEnvString = System.getenv("VCAP_APPLICATION");
-		if (ApplicationEnvString != null) {
-		    JSONObject applicationEnv = new JSONObject(ApplicationEnvString);
-		    JSONArray applicationUris = (JSONArray) applicationEnv.get("application_uris");
-		    if (applicationUris.length() > 0) {
-		        String applicationUri = (String) applicationUris.get(0);
-		        String cfUrl = applicationUri.substring(applicationUri.indexOf(".") + 1);
-		        logger.debug("set cfUrl value with VCAP_APPLICATION: " + cfUrl);
-		        return "api." + cfUrl;
-		    }
-		}
-
-        // if not deployed in Cloud
-        return ConfigManager.get(Constants.CFURL);
-
-    }
    
     public String getUaaEndpoint(HttpServletRequest request) throws IOException, ServletException{
         if(uaaEndpoint != null) {
@@ -80,21 +66,7 @@ public class AuthenticationTool {
         this.uaaEndpoint = uaaEndpoint;
     }
 
-
-    /**
-     * Sample PDU: 
-     * {
-     *  "user_id":"4921645b-bc4d-4766-9636-f2bce956c14d",
-     *  "user_name":"marissa",
-     *  "given_name":"Marissa",
-     *  "family_name":"Bloggs",
-     *  "name":"Marissa Bloggs",
-     *  "email":"marissa@test.org"
-     * }
-     */
     private JSONObject getCurrentUserInfo(String token, String userInfoEndpoint) throws ServletException {
-        ClientResponse response; 
-        
         String authorization = "bearer " + token;  
         
         WebResource resource = restClient.resource(userInfoEndpoint);
@@ -111,7 +83,6 @@ public class AuthenticationTool {
     }
     
     private boolean isUserOwnedSpace(String ccEndpoint, String url, String token, String spaceId) throws ServletException {
-        ClientResponse response; 
         WebResource resource;           
 
         resource = restClient.resource(ccEndpoint + url);
@@ -125,7 +96,6 @@ public class AuthenticationTool {
             throw new ServletException("Parsing response from space info failed: " + rawSpacesInfo);
         }
 
-        
         JSONArray spaces = (JSONArray) spacesInfo.get("resources");
         if ((spaces != null) && (spaces.length() > 0)) {
             Iterator<?> iterSpaces = spaces.iterator();

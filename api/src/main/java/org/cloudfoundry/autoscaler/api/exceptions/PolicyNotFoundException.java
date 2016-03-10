@@ -1,34 +1,26 @@
 package org.cloudfoundry.autoscaler.api.exceptions;
 
-
-public class PolicyNotFoundException extends Exception
-{
-
+public class PolicyNotFoundException extends Exception{
 	private static final long serialVersionUID = 1L;
 
-	private String policyName;
-	
-	public PolicyNotFoundException() {
-		super();
-	}
+	private String appId;
 	
 	public PolicyNotFoundException(String id) {
 		super();
-		policyName = id;
+		appId = id;
 	}
 	  
 	public PolicyNotFoundException(String id, String message) {
 		super(message);
-		policyName = id;
+		appId = id;
 	}
 	
 	public PolicyNotFoundException(String id, Throwable cause) {
 		super(cause);
-		policyName = id;
+		appId = id;
 	}
-	
-	public String getPolicyId() {
-		return policyName;
+ 
+	public String getAppId() {
+		return appId;
 	}
-	
 }

@@ -11,16 +11,7 @@ import javax.ws.rs.core.Response;
 
 import org.json.JSONObject;
 import org.cloudfoundry.autoscaler.api.exceptions.AppInfoNotFoundException;
-import org.cloudfoundry.autoscaler.api.exceptions.AppListNotEmptyException;
 import org.cloudfoundry.autoscaler.api.exceptions.AppNotFoundException;
-import org.cloudfoundry.autoscaler.api.exceptions.BssServiceException;
-import org.cloudfoundry.autoscaler.api.exceptions.DataStoreException;
-import org.cloudfoundry.autoscaler.api.exceptions.MetricNotSupportedException;
-import org.cloudfoundry.autoscaler.api.exceptions.MonitorServiceException;
-import org.cloudfoundry.autoscaler.api.exceptions.NoAttachedPolicyException;
-import org.cloudfoundry.autoscaler.api.exceptions.NoMonitorServiceBoundException;
-import org.cloudfoundry.autoscaler.api.exceptions.PolicyExistsException;
-import org.cloudfoundry.autoscaler.api.exceptions.PolicyNotExistException;
 import org.cloudfoundry.autoscaler.api.exceptions.PolicyNotFoundException;
 import org.cloudfoundry.autoscaler.api.exceptions.CloudException;
 import org.cloudfoundry.autoscaler.api.exceptions.ServiceNotFoundException;
@@ -138,28 +129,6 @@ public class RestApiResponseHandler {
         return Response.status(Response.Status.BAD_REQUEST).entity(getErrorJsonString(msg)).build();
 	}
 
-	public static Response getResponseConfigExists(PolicyExistsException e, Locale locale)
-	{
-		String msg = MessageUtil.getMessageString(MessageUtil.RestResponseErrorMsg_config_exist_error, locale, e.getConfigId());
-		logger.warn(msg,e);
-        return Response.status(Response.Status.BAD_REQUEST).entity(getErrorJsonString(msg)).build();
-	}
-
-	public static Response getResponsePolicyNotFound(PolicyNotFoundException e, Locale locale)
-	{
-		String msg = MessageUtil.getMessageString(MessageUtil.RestResponseErrorMsg_policy_not_found_error, locale, e.getPolicyId());
-		logger.warn(msg,e);
-        return Response.status(Response.Status.NOT_FOUND).entity(getErrorJsonString(msg)).build();
-	}
-
-	public static Response getResponseAppListNotEmpty(AppListNotEmptyException e, Locale locale)
-	{
-		String msg = MessageUtil.getMessageString(MessageUtil.RestResponseErrorMsg_applist_not_empty_error, locale, e.getConfigId());
-		logger.warn(msg,e);
-        return Response.status(Response.Status.BAD_REQUEST).entity(getErrorJsonString(msg)).build();
-	}
-
-
 	public static Response getResponseAppNotFound(AppNotFoundException e, Locale locale)
 	{
 		String msg = MessageUtil.getMessageString(MessageUtil.RestResponseErrorMsg_app_not_found_error, locale, e.getAppId());
@@ -241,41 +210,11 @@ public class RestApiResponseHandler {
         return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(getErrorJsonString(msg)).build();
 	}
 	
-	public static Response getResponsePolicyNotExistError(PolicyNotExistException e, Locale locale)
+	public static Response getResponsePolicyNotExistError(PolicyNotFoundException e, Locale locale)
 	{
 		logger.error(e.getMessage());
 		String msg = MessageUtil.getMessageString(MessageUtil.RestResponseErrorMsg_policy_not_exist_error, locale, e.getAppId());
         return Response.status(Response.Status.NOT_FOUND).entity(getErrorJsonString(msg)).build();
-	}
-
-	
-	public static Response getResponseMetricNotSupportedError(MetricNotSupportedException e, Locale locale)
-	{
-		String msg = MessageUtil.getMessageString(MessageUtil.RestResponseErrorMsg_metric_not_supported_error, locale, e.toString());
-		logger.error(msg,e);
-        return Response.status(Response.Status.BAD_REQUEST).entity(getErrorJsonString(msg)).build();
-	}
-	
-	public static Response getResponseDataStoreError(DataStoreException e, Locale locale){
-
-		String msg = MessageUtil.getMessageString(MessageUtil.RestResponseErrorMsg_database_error, locale, e.toString());
-		logger.error(msg,e);
-        return Response.status(Response.Status.BAD_REQUEST).entity(getErrorJsonString(msg)).build();		
-	}
-	
-	public static Response getResponseNoAttachedPolicyError(NoAttachedPolicyException e, Locale locale){
-		
-		String msg = MessageUtil.getMessageString(MessageUtil.RestResponseErrorMsg_no_attached_policy_error, locale);
-		logger.error(msg,e);
-        return Response.status(Response.Status.BAD_REQUEST).entity(getErrorJsonString(msg)).build();		
-	}
-
-	
-	public static Response getResponseBSSError(BssServiceException e, Locale locale)
-	{
-		String msg = MessageUtil.getMessageString(MessageUtil.RestResponseErrorMsg_call_bss_fail_error, locale);
-		logger.error(msg,e);
-        return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(getErrorJsonString(msg)).build();
 	}
 	
 	public static String getErrorJsonString(String errDesc)

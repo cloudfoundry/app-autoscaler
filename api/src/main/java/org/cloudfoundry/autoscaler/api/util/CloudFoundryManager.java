@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.ws.rs.core.MediaType;
 
@@ -16,7 +15,6 @@ import org.cloudfoundry.autoscaler.api.exceptions.AppInfoNotFoundException;
 import org.cloudfoundry.autoscaler.api.exceptions.AppNotFoundException;
 import org.cloudfoundry.autoscaler.api.exceptions.CloudException;
 import org.cloudfoundry.autoscaler.api.exceptions.ServiceNotFoundException;
-import org.cloudfoundry.autoscaler.api.util.CFInstanceStats.Usage;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -43,18 +41,6 @@ public class CloudFoundryManager {
     private String cfSecretKey;
     private Client restClient;
 
-    
-    private static  String[][] appTypeMapper = { 
-		{Constants.APP_TYPE_JAVA, "(?i).*Liberty.*"},
-		{Constants.APP_TYPE_RUBY_ON_RAILS, "(?i).*Ruby/Rails.*"},
-		{Constants.APP_TYPE_RUBY_SINATRA,"(?i).*Ruby/Rack.*"},
-		{Constants.APP_TYPE_RUBY, "(?i).*Ruby.*"},
-		{Constants.APP_TYPE_NODEJS, "(?i).*(Node\\.js|nodejs).*"},
-		{Constants.APP_TYPE_GO, "(?i).*go.*"},
-		{Constants.APP_TYPE_PHP, "(?i).*php.*"},
-		{Constants.APP_TYPE_PYTHON, "(?i).*python.*"},
-		{Constants.APP_TYPE_DOTNET, "(?i).*dotnet.*"},
-    };
     
     private static volatile CloudFoundryManager instance;
 
@@ -99,7 +85,6 @@ public class CloudFoundryManager {
             byte[] authEncBytes = Base64.encodeBase64(authString.getBytes());
             String authStringEnc = new String(authEncBytes);
             Map jobj = new ObjectMapper().readValue(response, Map.class);
-            // String authorization_endpoint = (String) jobj.get("token_endpoint");
             String authorization_endpoint = (String) jobj.get("authorization_endpoint");
 
             logger.debug(">>>" + authorization_endpoint);
@@ -122,119 +107,6 @@ public class CloudFoundryManager {
             logger.debug(">>>" + accessToken);
   
 
-    }
-    
-    //force to refresh accessToken
-    public Map<String, Object> refreshToken() throws Exception {
-    	logger.info("refershToken >>>>>>>>>>>>>>>>>>>>");
-    	Map<String, Object> result = new HashMap<String, Object>();
-    	loginWithClientId();
-    	result.put("accessToken", getAccessToken());
-    	result.put("accessTokenExpireInterval", getAccessTokenExpireInterval());
-    	return result;
-    }
-   
-    public String getAccessToken() {
-    	return accessToken;
-    }
-    
-    public long getAccessTokenExpireInterval() {
-    	long now = System.currentTimeMillis();
-    	return this.accessTokenExpireTime - 5 * 60 * 1000 - now;
-    	
-    }
-    
-    // get application statistics
-    public List<CloudAppInstance> getAppStatsExtByAppId(String appId) throws Exception {
-
-        logger.debug("Calling CF to get stats of app " + appId);
-        List<CFInstanceStats> statsList = getApplicationStatsByAppId(appId);
-        if (statsList == null) {
-            //logger.error("CloudFoundryManager.getAppStatsExtByAppId() Error getting stats from CF client");
-            return null;
-        }
-        ArrayList<CloudAppInstance> resultList = new ArrayList<CloudAppInstance>();
-        for (CFInstanceStats instStats : statsList) {
-            double cpuPerc = 0;
-            double memMB = 0;
-            Usage instUsage = instStats.getUsage();
-            double memQuotaMB = instStats.getMemQuota() / (1024.0 * 1024.0);
-            long timestamp = System.currentTimeMillis();
-            if (instUsage != null) {
-                cpuPerc = 100 * instUsage.getCpu();
-                memMB = instUsage.getMem() / (1024.0 * 1024.0);
-                timestamp = instUsage.getTime().getTime();
-            }
-            CloudAppInstance resultStats = new CloudAppInstance(instStats.getId(), instStats.getHost(),
-                    instStats.getCores(), cpuPerc, memMB, memQuotaMB, timestamp);
-            logger.debug(String.format("inst = %16s  cores = %2d  cpu = %6.1f %%  mem = %6.1f MB mem_quota = %6.1f MB",
-                    instStats.getId(), instStats.getCores(), cpuPerc, memMB, memQuotaMB));
-            resultList.add(resultStats);
-        }
-        return resultList;
-
-    }
-
-    private List<CFInstanceStats> getApplicationStatsByAppId(String appId) throws IOException {
-        List<CFInstanceStats> statsList = new ArrayList<CFInstanceStats>();
-        String url = this.target + "/v2/apps/" + appId + "/stats";
-
-        WebResource webResource = restClient.resource(url);
-        String response = webResource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON)
-                .header("Authorization", "Bearer " + this.accessToken).get(String.class);
-
-        JSONObject jsonObj = new JSONObject(response);
-        Set<String> keys = jsonObj.keySet();
-        logger.debug(String.format("%d instances for app %s", keys.size(), appId));
-        for (String key : keys) {
-            JSONObject jsonStats = (JSONObject)jsonObj.get(key);
-
-            Map<String, Object> attributes = new HashMap<String, Object>();
-
-            String state = (String) jsonStats.get("state");
-            // only count in RUNNING instance
-            if (!InstanceState.RUNNING.equals(InstanceState.valueOf(state))) {
-            	logger.warn(String.format("instace %s of %s is not RUNNING: %s ", key, appId, state));
-                continue;
-            }
-            attributes.put("state", state);
-
-            Map<String, Object> statsMap = new HashMap<String, Object>();
-            JSONObject statsObj = (JSONObject) jsonStats.get("stats");
-            statsMap.put("name", statsObj.get("name"));
-            statsMap.put("host", statsObj.get("host"));
-            statsMap.put("port", statsObj.get("port"));
-            statsMap.put("uptime", Double.parseDouble(statsObj.get("uptime").toString()));
-            statsMap.put("mem_quota", statsObj.get("mem_quota"));
-            statsMap.put("disk_quota", statsObj.get("disk_quota"));
-            statsMap.put("fds_quota", statsObj.get("fds_quota"));
-
-            Map<String, Object> usageMap = new HashMap<String, Object>();
-            JSONObject usageObj = (JSONObject) statsObj.get("usage");
-            usageMap.put("time", usageObj.get("time"));
-            usageMap.put("cpu", Double.parseDouble(usageObj.get("cpu").toString()));
-            usageMap.put("mem", Double.parseDouble(usageObj.get("mem").toString()));
-            usageMap.put("disk", Integer.parseInt(usageObj.get("disk").toString()));
-
-            statsMap.put("usage", usageMap);
-
-            attributes.put("stats", statsMap);
-
-            CFInstanceStats stats = new CFInstanceStats(key, attributes);
-            statsList.add(stats);
-        }
-
-        if (statsList.size() == 0) {
-            statsList = null;
-        }
-        return statsList;
-    }
-
-    
-    public int getRunningInstances(String appId) throws Exception{
-
-        Map appJsonMap = this.getApplicationRunnningStanceByAppId(appId);
-        return  Integer.parseInt(appJsonMap.get("running_instances").toString());
     }
     
     public Map getServiceInfo(String appId, String serviceName) throws Exception {
@@ -285,9 +157,6 @@ public class CloudFoundryManager {
             WebResource webResource = restClient.resource(url);
             String response = webResource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON)
                     .header("Authorization", "Bearer " + this.accessToken).get(String.class);
-            // res = client.resource(url).accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON)
-            // .header("Authorization", "Bearer " + access_token);
-            // String response = res.get(String.class);
             logger.info(">>>" + response);
 
             JSONObject jobj = new JSONObject(response);
@@ -325,11 +194,6 @@ public class CloudFoundryManager {
             String url = this.target + "/v2/spaces?q=app_guid:" + appId;
             logger.info("connecting to URL:" + url);
             WebResource webResource = restClient.resource(url);
-            //String response = webResource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON)
-              //      .header("Authorization", "Bearer " + this.accessToken).get(String.class);
-            // res = client.resource(url).accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON)
-            // .header("Authorization", "Bearer " + access_token);
-            // String response = res.get(String.class);
             ClientResponse cr = webResource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON)
                            .header("Authorization", "Bearer " + this.accessToken).get(ClientResponse.class);
 	        if (cr.getStatus() == 404) { //404 will never be returned
@@ -340,17 +204,14 @@ public class CloudFoundryManager {
             JSONObject jobj = new JSONObject(response);
             JSONArray jarray = (JSONArray) jobj.get("resources");
             if (jarray.length() == 0) {
-                //throw new Exception("Could not find matching organization for app: " + appId);
                 throw new AppNotFoundException(appId, "Could not find matching space for app");
             }
             if (jarray.length() != 1) {
-                //throw new Exception("Could not find matching space for app: " + appId);
             	throw new AppInfoNotFoundException(appId, "Could not find specfic matching space for app");
             }
             spaceGuid = (String) ((JSONObject) ((JSONObject) jarray.get(0)).get("metadata")).get("guid");
             spaceName = (String) ((JSONObject) ((JSONObject) jarray.get(0)).get("entity")).get("name");
             if (spaceGuid == null || spaceName == null) {
-                //throw new Exception("Could not find  space for app: " + appId);
             	throw new AppInfoNotFoundException(appId, "Could not find  space for app");
             }
         }
@@ -369,11 +230,6 @@ public class CloudFoundryManager {
             String url = this.target + "/v2/organizations?q=space_guid:" + spaceGuid;
             logger.debug("connecting to URL:" + url);
             WebResource webResource = restClient.resource(url);
-            //String response = webResource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON)
-                   // .header("Authorization", "Bearer " + this.accessToken).get(String.class);
-            // res = client.resource(url).accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON)
-            // .header("Authorization", "Bearer " + access_token);
-            // String response = res.get(String.class);
             ClientResponse cr = webResource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON)
                       .header("Authorization", "Bearer " + this.accessToken).get(ClientResponse.class);
             if (cr.getStatus() == 404) { //404 will never be returned
@@ -384,11 +240,9 @@ public class CloudFoundryManager {
             JSONObject jobj = new JSONObject(response);
             JSONArray jarray = (JSONArray) jobj.get("resources");
             if (jarray.length() == 0) {
-                //throw new Exception("Could not find matching organization for app: " + appId);
                 throw new AppNotFoundException(appId, "Could not find matching organization for app");
             }
             if (jarray.length() != 1) {
-                //throw new Exception("Could not find matching organization for app: " + appId);
                 throw new AppInfoNotFoundException(appId, "Could not find specfic matching organization for app");
             }
             String orgGuid = (String) ((JSONObject) ((JSONObject) jarray.get(0)).get("metadata")).get("guid");
@@ -416,49 +270,6 @@ public class CloudFoundryManager {
         }
 
         return result;
-    }
-    
-    
-    public String getAppNameByAppId(String appId) throws Exception {
-        return getAppInfoByAppId(appId)[0];
-    }
-    
-    public String[] getAppNameAndType(String appId) throws Exception {
-        String [] appInfo = getAppInfoByAppId(appId);
-        return new String[] {appInfo[0], appInfo[1]};
-    }
-    
-    public String getAppType(String appId) throws Exception {
-        return getAppInfoByAppId(appId)[1];
-    }
-
-    public String getAppMemQuotaByAppId(String appId) throws Exception {
-        return getAppInfoByAppId(appId)[2];
-    }
-
-    public String getAppStateByAppId(String appId) throws Exception {
-        return getAppInfoByAppId(appId)[3];
-    }
-    
-    public int getAppInstancesByAppId(String appId) throws Exception {
-        return Integer.parseInt(getAppInfoByAppId(appId)[4]);
-    }
-    
-    
-    public String[] getAppInfoByAppId(String appId) throws Exception  {
-        Map appJsonMap = this.getApplicationByAppId(appId);
-        Map entity = (Map) appJsonMap.get("entity");
-        String detectedBuildpack = (String) entity.get("detected_buildpack");
-        if (detectedBuildpack == null) {
-            detectedBuildpack = (String) entity.get("buildpack");
-        }
-        
-        String name = entity.get("name").toString();
-        String memQuota = entity.get("memory").toString();
-        String state = entity.get("state").toString();
-        String instances = entity.get("instances").toString();
-        return new String[] { name, deduceAppTypeFromBuildpack(detectedBuildpack), memQuota, state, instances};
-        
     }
     
     public boolean check_token(String token) throws Exception {
@@ -499,34 +310,14 @@ public class CloudFoundryManager {
 
         return new ObjectMapper().readValue(response, Map.class);
             
-    }    
-    
-    private Map getApplicationByAppId(String appId) throws Exception {
-        String url = this.target + "/v2/apps/" + appId;
-        logger.debug("url:" + url);
-        WebResource webResource = restClient.resource(url);
-        String response = webResource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON)
-                .header("Authorization", "Bearer " + this.accessToken).get(String.class);
-        return new ObjectMapper().readValue(response, Map.class);
     }
-    
-    private Map getApplicationRunnningStanceByAppId(String appId) throws Exception {
-        String url = this.target + "/v2/apps/" + appId + "/summary";
-        logger.debug("url:" + url);
-        WebResource webResource = restClient.resource(url);
-        String response = webResource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON)
-                .header("Authorization", "Bearer " + this.accessToken).get(String.class);
-        return new ObjectMapper().readValue(response, Map.class);
-    }
+
     
     private Map getApplicationEnvByAppId(String appId) throws Exception {
     	try {
 	        String url = this.target + "/v2/apps/" + appId + "/env";
 	        logger.debug("url:" + url);
 	        WebResource webResource = restClient.resource(url);
-	        /*
-	        String response = webResource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON)
-	                .header("Authorization", "Bearer " + this.accessToken).get(String.class); */
 
 	        ClientResponse cr = webResource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON)
 	                .header("Authorization", "Bearer " + this.accessToken).get(ClientResponse.class);
@@ -607,21 +398,6 @@ public class CloudFoundryManager {
         return appId;
     }
 
-    public String deduceAppTypeFromBuildpack(String detectedBuildpack) {
-        String appType = Constants.APP_TYPE_UNKNOWN;
-        
-        if (detectedBuildpack != null){
-        	for (int i = 0; i < appTypeMapper.length; i++) {
-        		if (detectedBuildpack.matches(appTypeMapper[i][1])) {
-        			appType = appTypeMapper[i][0];
-        			break;
-        		}
-        	}
-        } else
-        	return ""; //return "" when detectedBuildpack == null (not staging correctly)
-        
-        return appType;
-    }
 
     private String getIdFromJson(String json, String name) throws Exception {
         Map jsonMap = new ObjectMapper().readValue(json, Map.class);
@@ -638,35 +414,6 @@ public class CloudFoundryManager {
         return id;
     }
 
-    
-	public void updateInstances(String appId, int instances)  throws CloudException {
-		String restUrl = this.target + "/v2/apps/{appId}?instances={instances}";
-		restUrl = restUrl.replace("{appId}", appId).replace("{instances}",
-				String.valueOf(instances));
-		JSONObject jsonObj = new JSONObject();
-		jsonObj.put("instances", instances);
-		WebResource webResource = restClient.resource(restUrl);
-		ClientResponse response = webResource
-			.accept(MediaType.APPLICATION_JSON)
-			.type(MediaType.APPLICATION_JSON)
-			.header("Authorization", "Bearer " + accessToken)
-			.put(ClientResponse.class, jsonObj.toString());
-		int status = response.getStatus();
-		if (String.valueOf(status).startsWith("2")) {
-			return;
-		}
-		String content = response.getEntity(String.class);
-		JSONObject json = new JSONObject(content);
-		String errorCode = (String)json.get("error_code");
-		String description = (String)json.get("description");
-		logger.error(description);
-		throw new CloudException(errorCode, description);
-	}
-    
-
-
-	
-    
     
 }
 
