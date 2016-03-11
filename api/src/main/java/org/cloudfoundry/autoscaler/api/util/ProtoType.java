@@ -1,37 +1,41 @@
 package org.cloudfoundry.autoscaler.api.util;
 
+import java.io.IOException;
+import java.lang.annotation.ElementType;
+import java.lang.reflect.Method;
+import java.text.ParsePosition;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.Iterator;
-import java.util.Date;
-import java.text.ParsePosition;
-import java.text.SimpleDateFormat;
-import java.io.IOException;
-import java.lang.reflect.Method;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Min;
-import javax.validation.constraints.Max;
-import javax.validation.constraints.AssertTrue;
-import javax.validation.Valid;
+import javax.validation.ConstraintViolation;
 import javax.validation.MessageInterpolator;
-import javax.validation.ValidatorFactory;
+import javax.validation.Valid;
 import javax.validation.Validation;
 import javax.validation.Validator;
-import javax.validation.ConstraintViolation;
+import javax.validation.ValidatorFactory;
+import javax.validation.constraints.AssertTrue;
+import javax.validation.constraints.Max;
+import javax.validation.constraints.Min;
+import javax.validation.constraints.NotNull;
 
 import org.apache.log4j.Logger;
+import  org.cloudfoundry.autoscaler.api.Constants;
+import org.hibernate.validator.HibernateValidator;
+import org.hibernate.validator.HibernateValidatorConfiguration;
 
 //import org.codehaus.jackson.JsonParseException;
 //import org.codehaus.jackson.map.JsonMappingException;
@@ -41,48 +45,19 @@ import org.apache.log4j.Logger;
 //import org.codehaus.jackson.JsonNode;
 
 import org.hibernate.validator.cfg.ConstraintMapping;
-import org.hibernate.validator.HibernateValidatorConfiguration;
-import org.hibernate.validator.cfg.defs.MinDef;
 import org.hibernate.validator.cfg.defs.MaxDef;
+import org.hibernate.validator.cfg.defs.MinDef;
 import org.hibernate.validator.cfg.defs.NotNullDef;
 
-
-
-import java.lang.annotation.ElementType;
-
-import org.hibernate.validator.HibernateValidator;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.JavaType;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.core.JsonParseException;
-import org.cloudfoundry.autoscaler.api.util.LocaleSpecificMessageInterpolator;
-import  org.cloudfoundry.autoscaler.api.Constants;
 
 public class ProtoType {
 	private static final String CLASS_NAME = ProtoType.class.getName();
@@ -96,7 +71,7 @@ public class ProtoType {
 	public static Map<String, String> Obj2Map(Object obj) {
 		Map<String, String> hashMap = new HashMap<String, String>();
 		try {
-			Class c = obj.getClass();
+			Class<? extends Object> c = obj.getClass();
 			Method m[] = c.getDeclaredMethods();
 			for (int i = 0; i < m.length; i++) {
 			    if (m[i].getName().indexOf("get")==0) {
@@ -316,6 +291,7 @@ public class ProtoType {
 			return Constants.getTriggerDefaultInt(key);
 		}
 
+		//TODO: fix this
 		@AssertTrue(message="{PolicyTrigger.ismetricTypeValid.AssertTrue}")
 		private boolean ismetricTypeValid() {
 		    String[] metrictype = Constants.metrictype;
@@ -885,7 +861,7 @@ public class ProtoType {
 				 if (now.get("startTime").equals(next.get("startTime"))){ //startTime overlap, so check if repeatOn overlap
 					 String [] now_repeatOn_values = now.get("repeatOn").replace("\"", "").replace("[", "").replace("]", "").split(",");
 		    		 String [] next_repeatOn_values = next.get("repeatOn").replace("\"", "").replace("[", "").replace("]", "").split(",");
-		    		 Set<String> next_set = new HashSet(Arrays.asList(next_repeatOn_values));
+		    		 Set<String> next_set = new HashSet<String>(Arrays.asList(next_repeatOn_values));
 		    		 for (String day : now_repeatOn_values) {
 		    			 if (next_set.contains(day)){
 		    				 return false;
@@ -907,7 +883,7 @@ public class ProtoType {
 						 if(!(now_end_time.before(next_start_time))) { //time range overlap, now needs to check repeatOn to see if overlap exists
 							 String [] now_repeatOn_values = now.get("repeatOn").replace("\"", "").replace("[", "").replace("]", "").split(",");
 				    		 String [] next_repeatOn_values = next.get("repeatOn").replace("\"", "").replace("[", "").replace("]", "").split(",");
-				    		 Set<String> next_set = new HashSet(Arrays.asList(next_repeatOn_values));
+				    		 Set<String> next_set = new HashSet<String>(Arrays.asList(next_repeatOn_values));
 				    		 for (String day : now_repeatOn_values) {
 				    			 if (next_set.contains(day)){
 				    				 return false;
