@@ -10,7 +10,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
  * defined in the fields of Tigger, If not, it ignores the condition defined in the fields of Trigger but uses those
  * defined in the conditionList
  * 
- * @author Peter, Shicong
+ *
  * 
  */
 
@@ -21,7 +21,6 @@ public class Trigger implements Serializable {
 	 */
 	private static final long serialVersionUID = 1L;
 	public static final String METRIC_CPU = "CPU";
-    public static final String METRIC_CPU_NUM = "METRIC_CPU_NUM";
     public static final String METRIC_MEM = "Memory";
 
     public static final String THRESHOLD_TYPE_LARGER_THAN = "larger_than";
@@ -36,7 +35,6 @@ public class Trigger implements Serializable {
     private String triggerId = "0";
     private String metric = METRIC_CPU;
     private String windowStatType = AGGREGATE_TYPE_AVG;
-    // private String instanceStatType = AGGREGATE_TYPE_AVG;
     private int statWindowSecs = 60;
     private int breachDurationSecs = 60;
     private double metricThreshold = 70;

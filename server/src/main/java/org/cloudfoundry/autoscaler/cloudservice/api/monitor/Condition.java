@@ -4,7 +4,7 @@ package org.cloudfoundry.autoscaler.cloudservice.api.monitor;
  * Defines a condition that can be concatenated as a boolean expression in Trigger for joint evaluation
  * Note: 	1) Conditions are evaluated according to their nature order in conditionList of Trigger;
  * 			2) No association is supported at this point.
- * @author Shicong
+ * 
  *
  */
 public class Condition {
