@@ -1,14 +1,11 @@
 package org.cloudfoundry.autoscaler;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
-import org.cloudfoundry.autoscaler.exceptions.MonitorServiceException;
-import org.cloudfoundry.autoscaler.exceptions.NoMonitorServiceBoundException;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -63,47 +60,8 @@ public class AutoScalerEnv {
 		return mongoProperties;
 	}
 
-	/**
-	 * Gets monitor servie url by appId.
-	 * 
-	 * @return
-	 * @throws MonitorServiceException 
-	 * @throws NoMonitorServiceBoundException 
-	 * @throws IOException 
-	 */
-
 	
-	public static Map<String, String> getMonitorServiceCredentials(){
-        String serviceInfo = System.getenv("VCAP_SERVICES");
-		if (serviceInfo != null && !"".equals(serviceInfo)) {
-			JSONObject jsonServices;
-
-			jsonServices = new JSONObject(serviceInfo);
-
-			@SuppressWarnings("unchecked")
-			Set<String> keySet = jsonServices.keySet();
-			JSONObject monitorCredentials = null;
-			for (String key: keySet) {
-				if (key.startsWith("AppWatch")) {
-					JSONArray jsonArray = (JSONArray) jsonServices.get(key);
-					JSONObject jsonService = (JSONObject) jsonArray.get(0);
-					monitorCredentials = (JSONObject) jsonService
-							.get("credentials");
-					break;
-				} 
-			}
-			if (monitorCredentials != null) {
-				monitorProperties.put("url", monitorCredentials.get("url").toString());
-			}
-		}
-		if (monitorProperties.get("url") == null)
-			monitorProperties.put("url", "http://localhost:9090/com.ibm.ws.icap.monitor.service_ng");
-		return monitorProperties;
-	}
-	private static String tempEnvVar;
-	public static final String TempAutoScalingServiceUrl = ((tempEnvVar=System.getenv("autoscalerURL"))!=null) ? tempEnvVar : "http://localhost:9080/autoscaler"; 
-	public static final String TempMonitorServiceUrl     = ((tempEnvVar=monitorProperties.get("url"))!=null) ? tempEnvVar : "http://localhost:9090/com.ibm.ws.icap.monitor.service_ng"; 
-	public static final String TempCfStatsServiceUrl     = ((tempEnvVar=System.getenv("cf_stats_pollerURL"))!=null) ? tempEnvVar : "http://localhost:9080/cf_stats_poller";
+	private static String tempEnvVar; 
 	public static final int    DbPort                    = ((tempEnvVar=mongoProperties.get("port"))!=null) ? Integer.parseInt(tempEnvVar) : 27017;
 	public static final String DbUserName                = ((tempEnvVar=mongoProperties.get("username"))!=null) ? tempEnvVar : "";
 	public static final String DbPassword                = ((tempEnvVar=mongoProperties.get("password"))!=null) ? tempEnvVar : "";

@@ -5,7 +5,7 @@ import java.util.UUID;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.cloudfoundry.autoscaler.ErrorCode;
+import org.cloudfoundry.autoscaler.Constants;
 import org.cloudfoundry.autoscaler.ScalingStateMonitor;
 import org.cloudfoundry.autoscaler.ScalingStateMonitorTask;
 import org.cloudfoundry.autoscaler.application.ApplicationManager;
@@ -15,7 +15,6 @@ import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.base.AutoScalerPoli
 import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.document.AppAutoScaleState;
 import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.document.Application;
 import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.document.AutoScalerPolicy;
-import org.cloudfoundry.autoscaler.cloudservice.manager.util.CloudFoundryErrorCode;
 import org.cloudfoundry.autoscaler.exceptions.AppNotFoundException;
 import org.cloudfoundry.autoscaler.exceptions.CloudException;
 import org.cloudfoundry.autoscaler.exceptions.DataStoreException;
@@ -292,11 +291,11 @@ public class TriggerEventHandler {
 			return true; //successfully to trigger scaling
 		} catch (CloudException e2) {
 			String errorCode = e2.getErrorCode();
-			if (CloudFoundryErrorCode.MemoryQuotaExceeded.equals(errorCode)) {
+			if (Constants.MemoryQuotaExceeded.equals(errorCode)) {
 				logger.error("Failed to scale application "
 						+ appId + ". You have exceeded your organization's memory limit.");
 			} else {
-				errorCode = ErrorCode.CloudFoundryInternalError;
+				errorCode = Constants.CloudFoundryInternalError;
 				logger.error("Failed to scale application " + appId + "." + e2.getMessage());
 			}
 			stateManager.setScalingStateFailed(appId, triggerId,

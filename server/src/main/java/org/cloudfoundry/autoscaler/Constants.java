@@ -103,7 +103,8 @@ public final class Constants {
 	//cf state of an app, the valid value is "started" and "stopped"
 	public static final String CF_APPLICATION_STATE_STARTED = "STARTED";
 	public static final String CF_APPLICATION_STATE_STOPPED = "STOPPED";
-
+	public final static String MemoryQuotaExceeded = "CF-AppMemoryQuotaExceeded";
+	public final static String CloudFoundryInternalError = "CloudFoundryInternalError"; // CloudFoundry error
 	   public enum MESSAGE_KEY {
 	    	RestResponseErrorMsg_build_JSON_error, 
 	    	RestResponseErrorMsg_parse_JSON_error,

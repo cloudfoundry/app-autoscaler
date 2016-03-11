@@ -2,7 +2,7 @@ package org.cloudfoundry.autoscaler.event;
 
 
 import org.apache.log4j.Logger;
-import org.cloudfoundry.autoscaler.ErrorCode;
+import org.cloudfoundry.autoscaler.Constants;
 import org.cloudfoundry.autoscaler.application.CloudApplicationManager;
 import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.base.AutoScalerPolicyTrigger;
 import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.document.AppAutoScaleState;
@@ -244,7 +244,7 @@ public class ScalingStateManager {
 				int instances = manager.getInstances(appId);
 				if (instances != history.getInstances()) {
 
-					String errorCode = ErrorCode.CloudFoundryInternalError;
+					String errorCode = Constants.CloudFoundryInternalError;
 					history.setStatus(ScalingStateManager.SCALING_STATE_FAILED);
 					history.setErrorCode(errorCode);
 					history.setInstances(instances);

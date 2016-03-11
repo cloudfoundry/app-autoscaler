@@ -124,7 +124,7 @@ public class TriggerSubscriber {
 	private String getCallbackUrl(){
 		String appUrl = AutoScalerEnv.getApplicationUrl();
 		if (appUrl == null)
-			appUrl = "http://localhost:9080/com.ibm.ws.icap.autoscaling";// Just for test usage, should be deleted.// TODO
+			appUrl = "http://localhost:8080/server";// Just for test usage, should be deleted.// TODO
 		String callbackUrl = appUrl + CALLBACK_REST_URI;
 		return callbackUrl;
 	}
