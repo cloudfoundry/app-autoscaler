@@ -61,7 +61,7 @@ The AutoScaler has three components, all of them are Java Web Application:
 All these 3 components are configured through Maven profiles. You need to create your own profile according to your runtime environment, and then package the projects to .war file. Here is an example:
 
 * Assuming you are using "sample" profile, edit the properties in {project}/profiles/sample.properties for `api` , `servicebroker`, `server`
-* Run `mvn clean package` to create *.war file which would be found in folder {project}/target
+* Run `mvn clean package -Psample -DskipTests` to create *.war file which would be found in folder {project}/target
 
 ### Launch Runtime
 As an Java web application, you can launch the components of `CF-AutoScaler` with Tomcat directly or push to CloudFoundry.
