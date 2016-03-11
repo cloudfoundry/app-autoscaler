@@ -85,10 +85,7 @@ public class TriggerRecordRepositoryCollection extends
 	public Map<String, List<TriggerRecord>> getAllTriggers(String serverName)
 			throws Exception {
 		Map<String, List<TriggerRecord>> triggersMap = new HashMap<String, List<TriggerRecord>>();
-
-		List<TriggerRecord> records = findByServerName(serverName); // will add
-																	// this line
-																	// later
+		List<TriggerRecord> records = findByServerName(serverName); 
 		for (TriggerRecord record : records) {
 			String key = record.getId();
 			List<TriggerRecord> recordList = triggersMap.get(key);

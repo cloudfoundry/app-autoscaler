@@ -190,7 +190,6 @@ public class ApplicationManagerImpl implements ApplicationManager {
 		String scheduleType = policy.getCurrentScheduleType();
 		String timeZone = policy.getTimezone();
 		String startTimeStr = policy.getCurrentScheduleStartTime();
-//		String dayOfWeekStr = policy.getCurrentScheduleRepeatCycle();
 		Long startTime = null;
 		Integer dayOfWeek = null;
 		if(null != startTimeStr && !"".equals(startTimeStr)&& null != scheduleType && !"".equals(scheduleType))

@@ -36,14 +36,10 @@ public class ScheduledServiceUtil {
 			TimeZone policyTimeZone = TimeZone.getDefault();
 			policyTimeZone = TimeZoneUtil.parseTimeZoneId(timezoneId);
 			if (ScheduledType.RECURRING.name().equals(scheduledType)) {
-				Date startTime = new SimpleDateFormat(ScheduledPolicy.recurringDateFormat).parse(scheduledPolicy.getStartTime());
-				
-				Date endTime = new SimpleDateFormat(ScheduledPolicy.recurringDateFormat).parse(scheduledPolicy.getEndTime());
-				
+				Date startTime = new SimpleDateFormat(ScheduledPolicy.recurringDateFormat).parse(scheduledPolicy.getStartTime());				
+				Date endTime = new SimpleDateFormat(ScheduledPolicy.recurringDateFormat).parse(scheduledPolicy.getEndTime());				
 				startTime = new Date(startTime.getTime() - policyTimeZone.getOffset(System.currentTimeMillis()) + curTimeZone.getOffset(System.currentTimeMillis()));
 				endTime = new Date(endTime.getTime() - policyTimeZone.getOffset(System.currentTimeMillis()) + curTimeZone.getOffset(System.currentTimeMillis()));
-				
-				
 				Date startTimewithDay = generateTime(current, 0, startTime);
 				Date endTimewithDay = generateTime(current, 0, endTime);
 				String repeatCycle = scheduledPolicy.getRepeatCycle();
