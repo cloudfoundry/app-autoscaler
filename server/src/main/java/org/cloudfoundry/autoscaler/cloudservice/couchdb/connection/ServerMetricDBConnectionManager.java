@@ -1,46 +1,40 @@
 package org.cloudfoundry.autoscaler.cloudservice.couchdb.connection;
 
 import org.apache.log4j.Logger;
-import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.repository.collection.AppInstanceMetricsRepositoryCollection;
+import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.dao.AppInstanceMetricsDAO;
+import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.dao.couchdb.AppInstanceMetricsDAOImpl;
 
-
-public class ServerMetricDBConnectionManager 
-{
+public class ServerMetricDBConnectionManager {
 
 	private static final Logger logger = Logger.getLogger(ServerMetricDBConnectionManager.class);
-	private CouchDbConnectionManager dbConnection; 
+	private CouchDbConnectionManager dbConnection;
 
-	private AppInstanceMetricsRepositoryCollection appInstanceMetricRepo;
+	private AppInstanceMetricsDAO appInstanceMetricDao;
 
-	public ServerMetricDBConnectionManager(String dbName, String userName, String password, String host, int port, boolean enableSSL, int timeout) {
+	public ServerMetricDBConnectionManager(String dbName, String userName, String password, String host, int port,
+			boolean enableSSL, int timeout) {
 		this(dbName, userName, password, host, port, enableSSL, timeout, false);
 	}
 
-
-	public ServerMetricDBConnectionManager(String dbName, String userName, String password, String host, int port, boolean enableSSL, int timeout, boolean initDesignDocument) {
-		try
-		{
-			dbConnection = new CouchDbConnectionManager(dbName,userName, password, host, port, enableSSL, timeout);
-			appInstanceMetricRepo = new AppInstanceMetricsRepositoryCollection(dbConnection.getDb() , initDesignDocument);
-		}
-		catch(Exception e)
-		{
-			logger.error(e.getMessage(),e);
+	public ServerMetricDBConnectionManager(String dbName, String userName, String password, String host, int port,
+			boolean enableSSL, int timeout, boolean initDesignDocument) {
+		try {
+			dbConnection = new CouchDbConnectionManager(dbName, userName, password, host, port, enableSSL, timeout);
+			appInstanceMetricDao = new AppInstanceMetricsDAOImpl(dbConnection.getDb(), initDesignDocument);
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
 		}
 	}
-	
 
-	public AppInstanceMetricsRepositoryCollection getAppInstanceMetricRepo() {
-		return appInstanceMetricRepo;
+	public AppInstanceMetricsDAO getAppInstanceMetricDao() {
+		return appInstanceMetricDao;
 	}
 
-
-	public void setAppInstanceMetricRepo(
-			AppInstanceMetricsRepositoryCollection appInstanceMetricRepo) {
-		this.appInstanceMetricRepo = appInstanceMetricRepo;
+	public void setAppInstanceMetricDao(AppInstanceMetricsDAO appInstanceMetricDao) {
+		this.appInstanceMetricDao = appInstanceMetricDao;
 	}
 
-	public boolean deleteMetricDB(String dbName){
+	public boolean deleteMetricDB(String dbName) {
 		return dbConnection.deleteDB(dbName);
 	}
 

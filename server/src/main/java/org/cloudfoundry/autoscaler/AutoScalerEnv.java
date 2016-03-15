@@ -15,7 +15,6 @@ import org.json.JSONObject;
 public class AutoScalerEnv {
 	
 	private static Map<String, String> mongoProperties = new HashMap<String, String>();
-	private static Map<String, String> monitorProperties = new HashMap<String, String>();
 	private static final Logger logger     = Logger.getLogger(AutoScalerEnv.class.getName());
 	private static String serverName = null;
 	

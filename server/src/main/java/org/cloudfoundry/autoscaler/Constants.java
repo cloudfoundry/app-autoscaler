@@ -37,22 +37,11 @@ public final class Constants {
     public static final String MONTHLY = "monthly";
     public static final String CUSTOM = "custom";
     public static final String CONTINUOUS = "continuously";
-
-    // config keys
-    public static final String POLICY_CONNECT_TIMEOUT = "policy.connect.timeout";
-    public static final String POLICY_RETRY_LATENCY = "policy.retry.latency";
     
     
     public static final String USERNAME = "cfClientId";
     public static final String PASSWORD = "cfClientSecret";
     public static final String CFURL = "cfUrl";
-
-    public static final String SUBJECT_DEPLOYMENT = "subject.deployment";
-    public static final String NATS_PORT = "nats.port";
-    public static final String NATS_HOST = "nats.host";
-    public static final String NATS_USER = "nats.user";
-    public static final String NATS_PASS = "nats.pass";
-    public static final String WAITTIME_DEPLOYMENT = "waittime.deployment";
 
     public static final String GUID = "guid";
     public static final String RESOURCES = "resources";
