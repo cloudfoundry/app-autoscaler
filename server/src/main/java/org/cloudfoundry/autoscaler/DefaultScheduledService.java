@@ -6,9 +6,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.document.AutoScalerPolicy;
-import org.cloudfoundry.autoscaler.policy.PolicyManager;
-import org.cloudfoundry.autoscaler.policy.PolicyManagerImpl;
+import org.cloudfoundry.autoscaler.data.couchdb.document.AutoScalerPolicy;
+import org.cloudfoundry.autoscaler.manager.PolicyManager;
+import org.cloudfoundry.autoscaler.manager.PolicyManagerImpl;
 import org.cloudfoundry.autoscaler.util.ScheduledServiceUtil;
 
 public class DefaultScheduledService implements ScheduledService{

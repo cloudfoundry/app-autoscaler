@@ -12,7 +12,7 @@ import javax.ws.rs.core.Response;
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.repository.template.CouchDBConnectionProfile;
+import org.cloudfoundry.autoscaler.data.couchdb.dao.base.CouchDBConnectionProfile;
 import org.cloudfoundry.autoscaler.metric.util.ConfigManager;
 import org.cloudfoundry.autoscaler.util.RestApiResponseHandler;
 import org.json.JSONObject;

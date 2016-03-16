@@ -14,10 +14,10 @@ import javax.ws.rs.core.Response;
 
 import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.Constants.MESSAGE_KEY;
-import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.document.ScalingHistory;
-import org.cloudfoundry.autoscaler.event.ScalingHistoryFilter;
-import org.cloudfoundry.autoscaler.event.ScalingHistoryManager;
+import org.cloudfoundry.autoscaler.data.couchdb.document.ScalingHistory;
 import org.cloudfoundry.autoscaler.exceptions.DataStoreException;
+import org.cloudfoundry.autoscaler.manager.ScalingHistoryFilter;
+import org.cloudfoundry.autoscaler.manager.ScalingHistoryManager;
 import org.cloudfoundry.autoscaler.util.RestApiResponseHandler;
 import org.cloudfoundry.autoscaler.util.ValidateUtil;
 import org.json.JSONObject;

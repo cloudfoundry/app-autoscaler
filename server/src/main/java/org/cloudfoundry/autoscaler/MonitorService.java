@@ -1,15 +1,11 @@
 package org.cloudfoundry.autoscaler;
 
-import javax.ws.rs.core.MediaType;
-
 import org.apache.log4j.Logger;
-import org.cloudfoundry.autoscaler.cloudservice.api.monitor.Trigger;
+import org.cloudfoundry.autoscaler.bean.Trigger;
 import org.cloudfoundry.autoscaler.exceptions.MonitorServiceException;
 import org.cloudfoundry.autoscaler.exceptions.TriggerNotFoundException;
 import org.cloudfoundry.autoscaler.exceptions.TriggerNotSubscribedException;
 import org.cloudfoundry.autoscaler.metric.MonitorController;
-
-import com.sun.jersey.api.client.WebResource;
 
 
 public class MonitorService
@@ -17,7 +13,6 @@ public class MonitorService
 	private static final Logger logger     = Logger.getLogger(MonitorService.class.getName());
 
 	
-	private WebResource     resourceStatus;
 	public MonitorService(String appId) throws MonitorServiceException
 	{
 		
@@ -47,11 +42,5 @@ public class MonitorService
 		return true;
 	}
 	
-	public void status()
-	{
-		logger.info("MonitorService.status() issuing a get");
-		String postResult = resourceStatus.accept(MediaType.APPLICATION_JSON).get(String.class);
-		logger.info("MonitorService.status() get result: "+postResult);
 	
-	}
 }

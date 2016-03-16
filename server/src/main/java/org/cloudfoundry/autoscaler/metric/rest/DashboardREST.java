@@ -18,14 +18,14 @@ import javax.ws.rs.core.Response.Status;
 
 import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.Constants;
-import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.base.InstanceMetrics;
-import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.base.Metric;
-import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.document.AppInstanceMetrics;
-import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.document.BoundApp;
+import org.cloudfoundry.autoscaler.bean.InstanceMetrics;
+import org.cloudfoundry.autoscaler.bean.Metric;
+import org.cloudfoundry.autoscaler.data.couchdb.AutoScalingDataStoreFactory;
+import org.cloudfoundry.autoscaler.data.couchdb.document.AppInstanceMetrics;
+import org.cloudfoundry.autoscaler.data.couchdb.document.BoundApp;
 import org.cloudfoundry.autoscaler.metric.MonitorController;
-import org.cloudfoundry.autoscaler.metric.config.ConfigService;
-import org.cloudfoundry.autoscaler.metric.data.ApplicationMetrics;
-import org.cloudfoundry.autoscaler.statestore.AutoScalingDataStoreFactory;
+import org.cloudfoundry.autoscaler.metric.bean.ApplicationMetrics;
+import org.cloudfoundry.autoscaler.metric.util.MetricConfigManager;
 import org.cloudfoundry.autoscaler.util.RestApiResponseHandler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -129,7 +129,7 @@ public class DashboardREST {
         	
             responseMap.put("data", stats);
 
-            ConfigService configService = ConfigService.getInstance();
+            MetricConfigManager configService = MetricConfigManager.getInstance();
             String appType = null;
             BoundApp boundApp = MonitorController.getInstance().getBoundApp(serviceId, appId);
             if (boundApp != null) {
@@ -156,7 +156,7 @@ public class DashboardREST {
     	try {	
     	   Map<String, Object> responseMap = new HashMap<String, Object>();
 
-            ConfigService configService = ConfigService.getInstance();
+            MetricConfigManager configService = MetricConfigManager.getInstance();
    
             Map<String, Object> configMap = configService.loadDefaultConfig(appType);
             responseMap.put("config", configMap);

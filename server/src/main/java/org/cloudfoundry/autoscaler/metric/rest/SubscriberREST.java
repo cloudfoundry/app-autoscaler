@@ -11,7 +11,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.log4j.Logger;
-import org.cloudfoundry.autoscaler.cloudservice.api.monitor.Trigger;
+import org.cloudfoundry.autoscaler.bean.Trigger;
 import org.cloudfoundry.autoscaler.exceptions.TriggerNotFoundException;
 import org.cloudfoundry.autoscaler.metric.MonitorController;
 import org.cloudfoundry.autoscaler.util.RestApiResponseHandler;

@@ -2,7 +2,7 @@ package org.cloudfoundry.autoscaler;
 
 import java.text.ParseException;
 
-import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.document.AutoScalerPolicy;
+import org.cloudfoundry.autoscaler.data.couchdb.document.AutoScalerPolicy;
 
 
 

@@ -20,16 +20,16 @@ import javax.ws.rs.core.Response.Status;
 
 import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.Constants.MESSAGE_KEY;
-import org.cloudfoundry.autoscaler.application.ApplicationManager;
-import org.cloudfoundry.autoscaler.application.ApplicationManagerImpl;
-import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.document.Application;
+import org.cloudfoundry.autoscaler.data.couchdb.document.Application;
 import org.cloudfoundry.autoscaler.exceptions.CloudException;
 import org.cloudfoundry.autoscaler.exceptions.DataStoreException;
 import org.cloudfoundry.autoscaler.exceptions.MetricNotSupportedException;
 import org.cloudfoundry.autoscaler.exceptions.MonitorServiceException;
 import org.cloudfoundry.autoscaler.exceptions.PolicyNotFoundException;
-import org.cloudfoundry.autoscaler.metric.config.ConfigService;
+import org.cloudfoundry.autoscaler.manager.ApplicationManager;
+import org.cloudfoundry.autoscaler.manager.ApplicationManagerImpl;
 import org.cloudfoundry.autoscaler.metric.util.CloudFoundryManager;
+import org.cloudfoundry.autoscaler.metric.util.MetricConfigManager;
 import org.cloudfoundry.autoscaler.util.RestApiResponseHandler;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -121,7 +121,7 @@ public class ApplicationRestApi {
 			json.put("policyId", app.getPolicyId());
 			json.put("state", app.getPolicyState());
 			
-			ConfigService configService = ConfigService.getInstance();
+			MetricConfigManager configService = MetricConfigManager.getInstance();
             Map<String, Object> configMap = configService.loadDefaultConfig(appType, appId);
             json.put("config", configMap);
 			return RestApiResponseHandler.getResponseOk(objectMapper.writeValueAsString(json));

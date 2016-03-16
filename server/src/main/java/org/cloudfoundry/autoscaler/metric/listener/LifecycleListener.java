@@ -11,15 +11,15 @@ import javax.servlet.annotation.WebListener;
 
 import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.ScalingScheduledServiceFactory;
-import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.document.BoundApp;
-import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.document.TriggerRecord;
-import org.cloudfoundry.autoscaler.event.ScalingStateManager;
+import org.cloudfoundry.autoscaler.data.AutoScalingDataStore;
+import org.cloudfoundry.autoscaler.data.couchdb.AutoScalingDataStoreFactory;
+import org.cloudfoundry.autoscaler.data.couchdb.document.BoundApp;
+import org.cloudfoundry.autoscaler.data.couchdb.document.TriggerRecord;
+import org.cloudfoundry.autoscaler.manager.PolicyManager;
+import org.cloudfoundry.autoscaler.manager.PolicyManagerImpl;
+import org.cloudfoundry.autoscaler.manager.ScalingStateManager;
 import org.cloudfoundry.autoscaler.metric.MonitorController;
 import org.cloudfoundry.autoscaler.metric.poller.CFPollerManager;
-import org.cloudfoundry.autoscaler.policy.PolicyManager;
-import org.cloudfoundry.autoscaler.policy.PolicyManagerImpl;
-import org.cloudfoundry.autoscaler.statestore.AutoScalingDataStore;
-import org.cloudfoundry.autoscaler.statestore.AutoScalingDataStoreFactory;
 
 /**
  * Application Lifecycle Listener implementation class LifecycleListener

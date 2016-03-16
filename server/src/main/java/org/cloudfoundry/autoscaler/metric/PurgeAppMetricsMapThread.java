@@ -6,8 +6,8 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.Constants;
-import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.base.InstanceMetrics;
-import org.cloudfoundry.autoscaler.metric.data.ApplicationMetrics;
+import org.cloudfoundry.autoscaler.bean.InstanceMetrics;
+import org.cloudfoundry.autoscaler.metric.bean.ApplicationMetrics;
 import org.cloudfoundry.autoscaler.metric.util.CloudFoundryManager;
 import org.cloudfoundry.autoscaler.metric.util.ConfigManager;
 

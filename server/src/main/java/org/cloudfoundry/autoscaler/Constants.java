@@ -1,7 +1,7 @@
 package org.cloudfoundry.autoscaler;
 
 public final class Constants {
-
+	public static final String VCAP_APPLICATION_ENV = "VCAP_APPLICATION";
     public static final String APP_ID = "appID";
     public static final String APP_NAME = "appName";
     public static final String APPS = "apps";

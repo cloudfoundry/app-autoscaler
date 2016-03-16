@@ -13,8 +13,8 @@ import javax.ws.rs.core.Response;
 
 import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.Constants.MESSAGE_KEY;
-import org.cloudfoundry.autoscaler.cloudservice.api.autoscale.MonitorTriggerEvent;
-import org.cloudfoundry.autoscaler.event.ScalingEventManager;
+import org.cloudfoundry.autoscaler.bean.MonitorTriggerEvent;
+import org.cloudfoundry.autoscaler.manager.ScalingEventManager;
 import org.cloudfoundry.autoscaler.util.RestApiResponseHandler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;

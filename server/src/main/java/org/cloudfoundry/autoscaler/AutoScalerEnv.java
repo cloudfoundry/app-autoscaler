@@ -1,9 +1,6 @@
 package org.cloudfoundry.autoscaler;
 
-import java.util.HashMap;
 import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
 
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
@@ -13,61 +10,9 @@ import org.json.JSONObject;
 
 @SuppressWarnings("rawtypes")
 public class AutoScalerEnv {
-	
-	private static Map<String, String> mongoProperties = new HashMap<String, String>();
 	private static final Logger logger     = Logger.getLogger(AutoScalerEnv.class.getName());
 	private static String serverName = null;
 	
-	public static Map<String, String> getMongodbCredentials(){
-        String[] propertyNames = new String[] { "host", "port", "db", "username", "password" };
-        String serviceInfo = System.getenv("VCAP_SERVICES");
-        logger.debug( "VCAP_SERVICES=" + serviceInfo);
-		if (serviceInfo != null && !"".equals(serviceInfo)) {
-			JSONObject jsonServices;
-
-			jsonServices = new JSONObject(serviceInfo);
-
-			@SuppressWarnings("unchecked")
-			Set<String> keySet = jsonServices.keySet();
-			JSONObject mongoCredentials = null;
-			for (String key: keySet) {
-				if (key.startsWith("mongodb")) {
-					JSONArray jsonArray = (JSONArray) jsonServices.get(key);
-					JSONObject jsonService = (JSONObject) jsonArray.get(0);
-					mongoCredentials = (JSONObject) jsonService
-							.get("credentials");
-					break;
-				} 
-			}
-			if (mongoCredentials != null) {
-				for (int i = 0; i < propertyNames.length; i++) {
-
-					String name = propertyNames[i];
-					mongoProperties.put(name, mongoCredentials.get(name)
-							.toString());
-				}
-			}
-		} 
-		if (mongoProperties.get("host") == null){
-			//set default properties
-			mongoProperties.put("host", "127.0.0.1");
-			mongoProperties.put("port", "27017");
-			mongoProperties.put("username", "");
-			mongoProperties.put("password", "");
-			mongoProperties.put("db", "autoscaling");
-		}
-		return mongoProperties;
-	}
-
-	
-	private static String tempEnvVar; 
-	public static final int    DbPort                    = ((tempEnvVar=mongoProperties.get("port"))!=null) ? Integer.parseInt(tempEnvVar) : 27017;
-	public static final String DbUserName                = ((tempEnvVar=mongoProperties.get("username"))!=null) ? tempEnvVar : "";
-	public static final String DbPassword                = ((tempEnvVar=mongoProperties.get("password"))!=null) ? tempEnvVar : "";
-	public static final String defaultCfApiHost          = ((tempEnvVar=System.getenv("defaultCfApiHost"))!=null) ? tempEnvVar : "";
-	public static final String defaultCfUser             = ((tempEnvVar=System.getenv("defaultCfUser"))!=null) ? tempEnvVar : "";
-	public static final String defaultCfPassword         = ((tempEnvVar=System.getenv("defaultCfPassword"))!=null) ? tempEnvVar : "";
-	private static final String VCAP_APPLICATION_ENV = "VCAP_APPLICATION";
 
 		
 	/**
@@ -97,7 +42,7 @@ public class AutoScalerEnv {
 		return serverName;
 	}
 	public static AppEnv getApplicationEnv(){
-		String applicationEnv = System.getenv(VCAP_APPLICATION_ENV);
+		String applicationEnv = System.getenv(Constants.VCAP_APPLICATION_ENV);
 		if (applicationEnv == null)
 			return null;
 		AppEnv appEnv = new AppEnv();
@@ -116,6 +61,5 @@ public class AutoScalerEnv {
 		}
 		return appEnv;
 	}
-
 
 }

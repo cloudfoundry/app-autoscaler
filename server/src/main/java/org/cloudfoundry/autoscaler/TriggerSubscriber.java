@@ -4,9 +4,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
-import org.cloudfoundry.autoscaler.cloudservice.api.monitor.Trigger;
-import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.base.AutoScalerPolicyTrigger;
-import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.document.AutoScalerPolicy;
+import org.cloudfoundry.autoscaler.bean.AutoScalerPolicyTrigger;
+import org.cloudfoundry.autoscaler.bean.Trigger;
+import org.cloudfoundry.autoscaler.data.couchdb.document.AutoScalerPolicy;
 import org.cloudfoundry.autoscaler.exceptions.MetricNotSupportedException;
 import org.cloudfoundry.autoscaler.exceptions.MonitorServiceException;
 import org.cloudfoundry.autoscaler.exceptions.TriggerNotSubscribedException;

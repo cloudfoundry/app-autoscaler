@@ -15,14 +15,14 @@ import javax.ws.rs.core.Response.Status;
 
 import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.Constants.MESSAGE_KEY;
-import org.cloudfoundry.autoscaler.application.ApplicationManager;
-import org.cloudfoundry.autoscaler.application.ApplicationManagerImpl;
-import org.cloudfoundry.autoscaler.application.NewAppRequestEntity;
 import org.cloudfoundry.autoscaler.exceptions.DataStoreException;
 import org.cloudfoundry.autoscaler.exceptions.MetricNotSupportedException;
 import org.cloudfoundry.autoscaler.exceptions.MonitorServiceException;
 import org.cloudfoundry.autoscaler.exceptions.NoAttachedPolicyException;
 import org.cloudfoundry.autoscaler.exceptions.PolicyNotFoundException;
+import org.cloudfoundry.autoscaler.manager.ApplicationManager;
+import org.cloudfoundry.autoscaler.manager.ApplicationManagerImpl;
+import org.cloudfoundry.autoscaler.manager.NewAppRequestEntity;
 import org.cloudfoundry.autoscaler.metric.MonitorController;
 import org.cloudfoundry.autoscaler.util.RestApiResponseHandler;
 

@@ -12,15 +12,15 @@ import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.Constants;
-import org.cloudfoundry.autoscaler.cloudservice.api.autoscale.MonitorTriggerEvent;
-import org.cloudfoundry.autoscaler.cloudservice.api.monitor.Condition.AggregationType;
-import org.cloudfoundry.autoscaler.cloudservice.api.monitor.Trigger;
-import org.cloudfoundry.autoscaler.cloudservice.api.monitor.Trigger.ThresholdUnit;
-import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.base.InstanceMetrics;
-import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.base.Metric;
-import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.document.AppInstanceMetrics;
-import org.cloudfoundry.autoscaler.metric.data.Statistic;
-import org.cloudfoundry.autoscaler.metric.data.Tuple;
+import org.cloudfoundry.autoscaler.bean.InstanceMetrics;
+import org.cloudfoundry.autoscaler.bean.Metric;
+import org.cloudfoundry.autoscaler.bean.MonitorTriggerEvent;
+import org.cloudfoundry.autoscaler.bean.Trigger;
+import org.cloudfoundry.autoscaler.bean.Condition.AggregationType;
+import org.cloudfoundry.autoscaler.bean.Trigger.ThresholdUnit;
+import org.cloudfoundry.autoscaler.data.couchdb.document.AppInstanceMetrics;
+import org.cloudfoundry.autoscaler.metric.bean.Statistic;
+import org.cloudfoundry.autoscaler.metric.bean.Tuple;
 import org.cloudfoundry.autoscaler.metric.util.ConfigManager;
 
 /**

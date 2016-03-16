@@ -9,15 +9,15 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.Constants;
-import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.base.InstanceMetrics;
-import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.base.Metric;
-import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.document.AppInstanceMetrics;
+import org.cloudfoundry.autoscaler.bean.InstanceMetrics;
+import org.cloudfoundry.autoscaler.bean.Metric;
+import org.cloudfoundry.autoscaler.data.couchdb.document.AppInstanceMetrics;
 import org.cloudfoundry.autoscaler.metric.MonitorController;
 import org.cloudfoundry.autoscaler.metric.NamedThreadFactory;
-import org.cloudfoundry.autoscaler.metric.config.ConfigService;
-import org.cloudfoundry.autoscaler.metric.data.CloudAppInstance;
+import org.cloudfoundry.autoscaler.metric.bean.CloudAppInstance;
 import org.cloudfoundry.autoscaler.metric.util.CloudFoundryManager;
 import org.cloudfoundry.autoscaler.metric.util.ConfigManager;
+import org.cloudfoundry.autoscaler.metric.util.MetricConfigManager;
 
 @SuppressWarnings({ "rawtypes" })
 public class CFAppStatsPoller implements Runnable {
@@ -110,7 +110,7 @@ public class CFAppStatsPoller implements Runnable {
 				//check whether the poller need to be launched.  
 				//if an app is bounded without staging correctly, the recognized app type might be wrong, then the poller is launched by default.
 				//once the app is staged correctly, the app type is recognized. If no poller defined, we should stop the poller. 
-		    	if (ConfigService.getInstance().getEnabledMetric(appType, Constants.METRIC_SOURCE_POLLER, appId) == null){
+		    	if (MetricConfigManager.getInstance().getEnabledMetric(appType, Constants.METRIC_SOURCE_POLLER, appId) == null){
 		    		logger.debug(new StringBuilder().append(appId).append(" : poller is removed since no required poller metric defined."));
 		    		controller.removePoller(appId);
 		    		return;

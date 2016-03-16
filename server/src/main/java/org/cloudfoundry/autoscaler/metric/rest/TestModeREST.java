@@ -15,9 +15,9 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.log4j.Logger;
-import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.base.Metric;
+import org.cloudfoundry.autoscaler.bean.Metric;
 import org.cloudfoundry.autoscaler.metric.MonitorController;
-import org.cloudfoundry.autoscaler.metric.data.ApplicationMetrics;
+import org.cloudfoundry.autoscaler.metric.bean.ApplicationMetrics;
 import org.cloudfoundry.autoscaler.metric.util.CloudFoundryManager;
 import org.cloudfoundry.autoscaler.util.RestApiResponseHandler;
 import org.json.JSONObject;

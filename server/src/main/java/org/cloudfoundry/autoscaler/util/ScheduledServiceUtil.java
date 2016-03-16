@@ -9,16 +9,16 @@ import java.util.Map;
 import java.util.TimeZone;
 
 import org.apache.log4j.Logger;
-import org.cloudfoundry.autoscaler.application.ApplicationManager;
-import org.cloudfoundry.autoscaler.application.ApplicationManagerImpl;
-import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.document.Application;
-import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.document.AutoScalerPolicy;
-import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.document.ScheduledPolicy;
-import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.document.ScheduledPolicy.ScheduledType;
+import org.cloudfoundry.autoscaler.data.couchdb.document.Application;
+import org.cloudfoundry.autoscaler.data.couchdb.document.AutoScalerPolicy;
+import org.cloudfoundry.autoscaler.data.couchdb.document.ScheduledPolicy;
+import org.cloudfoundry.autoscaler.data.couchdb.document.ScheduledPolicy.ScheduledType;
 import org.cloudfoundry.autoscaler.exceptions.DataStoreException;
 import org.cloudfoundry.autoscaler.exceptions.PolicyNotFoundException;
-import org.cloudfoundry.autoscaler.policy.PolicyManager;
-import org.cloudfoundry.autoscaler.policy.PolicyManagerImpl;
+import org.cloudfoundry.autoscaler.manager.ApplicationManager;
+import org.cloudfoundry.autoscaler.manager.ApplicationManagerImpl;
+import org.cloudfoundry.autoscaler.manager.PolicyManager;
+import org.cloudfoundry.autoscaler.manager.PolicyManagerImpl;
 
 public class ScheduledServiceUtil {
 	private static final String CLASS_NAME = ScheduledServiceUtil.class.getName();

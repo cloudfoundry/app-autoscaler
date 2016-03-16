@@ -20,14 +20,6 @@
 			<param-value>org.cloudfoundry.autoscaler.ServiceApplication</param-value>
 		</init-param>
 	</servlet>
-	<servlet>
-		<servlet-name>ServiceV1</servlet-name>
-		<servlet-class>com.sun.jersey.spi.container.servlet.ServletContainer</servlet-class>
-		<init-param>
-			<param-name>javax.ws.rs.Application</param-name>
-			<param-value>org.cloudfoundry.autoscaler.server.rest.v1.ServiceApplication</param-value>
-		</init-param>
-	</servlet>	
 	<servlet-mapping>
 		<servlet-name>MetricService</servlet-name>
 		<url-pattern>/services/*</url-pattern>
@@ -35,15 +27,7 @@
 	<servlet-mapping>
 		<servlet-name>ScalingService</servlet-name>
 		<url-pattern>/resources/*</url-pattern>
-	</servlet-mapping>
-	<servlet-mapping>
-		<servlet-name>ServiceV1</servlet-name>
-		<url-pattern>/v1/*</url-pattern>
-	</servlet-mapping>
-	
-	 
-	
-	  
+	</servlet-mapping>	  
 	<session-config>
 	 <session-timeout> 300 </session-timeout>
 	 <cookie-config>

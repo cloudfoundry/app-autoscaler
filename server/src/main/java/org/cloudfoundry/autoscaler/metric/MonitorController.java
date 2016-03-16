@@ -20,21 +20,21 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.Constants;
-import org.cloudfoundry.autoscaler.cloudservice.api.autoscale.MonitorTriggerEvent;
-import org.cloudfoundry.autoscaler.cloudservice.api.monitor.Trigger;
-import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.base.InstanceMetrics;
-import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.base.Metric;
-import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.document.AppInstanceMetrics;
-import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.document.BoundApp;
-import org.cloudfoundry.autoscaler.event.ScalingEventManager;
+import org.cloudfoundry.autoscaler.bean.InstanceMetrics;
+import org.cloudfoundry.autoscaler.bean.Metric;
+import org.cloudfoundry.autoscaler.bean.MonitorTriggerEvent;
+import org.cloudfoundry.autoscaler.bean.Trigger;
+import org.cloudfoundry.autoscaler.data.AutoScalingDataStore;
+import org.cloudfoundry.autoscaler.data.couchdb.AutoScalingDataStoreFactory;
+import org.cloudfoundry.autoscaler.data.couchdb.document.AppInstanceMetrics;
+import org.cloudfoundry.autoscaler.data.couchdb.document.BoundApp;
 import org.cloudfoundry.autoscaler.exceptions.TriggerNotFoundException;
-import org.cloudfoundry.autoscaler.metric.config.ConfigService;
-import org.cloudfoundry.autoscaler.metric.data.ApplicationMetrics;
+import org.cloudfoundry.autoscaler.manager.ScalingEventManager;
+import org.cloudfoundry.autoscaler.metric.bean.ApplicationMetrics;
 import org.cloudfoundry.autoscaler.metric.poller.CFPollerManager;
 import org.cloudfoundry.autoscaler.metric.util.CloudFoundryManager;
 import org.cloudfoundry.autoscaler.metric.util.ConfigManager;
-import org.cloudfoundry.autoscaler.statestore.AutoScalingDataStore;
-import org.cloudfoundry.autoscaler.statestore.AutoScalingDataStoreFactory;
+import org.cloudfoundry.autoscaler.metric.util.MetricConfigManager;
 
 /**
  * 
@@ -183,7 +183,7 @@ public class MonitorController implements Runnable {
 	public void addPoller(String appId) {
 
 		// if poller is not defined as a metric source
-		if (ConfigService.getInstance().getEnabledMetric(getAppType(appId), Constants.METRIC_SOURCE_POLLER,
+		if (MetricConfigManager.getInstance().getEnabledMetric(getAppType(appId), Constants.METRIC_SOURCE_POLLER,
 				appId) == null) {
 			// if no app info record in appMetric map
 			if (appMetricsMap.get(appId) == null) {
@@ -201,7 +201,7 @@ public class MonitorController implements Runnable {
 	public void removePoller(String appId) {
 
 		// if poller is defined as a metric source
-		if (ConfigService.getInstance().getEnabledMetric(getAppType(appId), Constants.METRIC_SOURCE_POLLER,
+		if (MetricConfigManager.getInstance().getEnabledMetric(getAppType(appId), Constants.METRIC_SOURCE_POLLER,
 				appId) != null) {
 			CFPollerManager.getInstance().removePoller(appId);
 		}
@@ -232,7 +232,7 @@ public class MonitorController implements Runnable {
 	private AppInstanceMetrics filterAppInstanceMetricsForEvaluation(AppInstanceMetrics appInstanceMetrics,
 			String dataSource) {
 		String appId = appInstanceMetrics.getAppId();
-		Set<String> enabledMetrics = ConfigService.getInstance().getEnabledMetric(getAppType(appId), dataSource, appId);
+		Set<String> enabledMetrics = MetricConfigManager.getInstance().getEnabledMetric(getAppType(appId), dataSource, appId);
 		// if no enabled metric for this data source
 		if (enabledMetrics == null) {
 			return null;

@@ -1,7 +1,7 @@
 package org.cloudfoundry.autoscaler.metric;
 
-import org.cloudfoundry.autoscaler.application.ApplicationManagerImpl;
-import org.cloudfoundry.autoscaler.policy.PolicyManagerImpl;
+import org.cloudfoundry.autoscaler.manager.ApplicationManagerImpl;
+import org.cloudfoundry.autoscaler.manager.PolicyManagerImpl;
 
 public class PurgeLocalCacheThread implements Runnable {
     public PurgeLocalCacheThread() {

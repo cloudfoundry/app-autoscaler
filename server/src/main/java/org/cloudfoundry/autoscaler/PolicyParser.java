@@ -2,7 +2,7 @@ package org.cloudfoundry.autoscaler;
 
 import java.io.IOException;
 
-import org.cloudfoundry.autoscaler.cloudservice.couchdb.data.document.AutoScalerPolicy;
+import org.cloudfoundry.autoscaler.data.couchdb.document.AutoScalerPolicy;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
