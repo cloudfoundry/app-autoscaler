@@ -63,7 +63,7 @@ All these 3 components are configured through Maven profiles. You need to create
 * Assuming you are using "sample" profile, edit the properties in {project}/profiles/sample.properties for `api` , `servicebroker`, `server`
 * Run `mvn clean package -Psample -DskipTests` to create *.war file which would be found in folder {project}/target
 
-### Launch Runtime
+### Deploy and Run
 As an Java web application, you can launch the components of `CF-AutoScaler` with Tomcat directly or push to CloudFoundry.
 
 Please note the runtime environment must use the below settings you configured in `servicebroker`/profiles/{profile}.properties.
