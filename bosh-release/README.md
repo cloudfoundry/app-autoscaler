@@ -14,7 +14,7 @@ The release has the following jobs:
 * `as_server`: provides the core functions of metrics collection, evaluation and action taken, running as a web application
 * `couchdb`: the database tier for data persistency
 
-packages:
+###packages:
 
 * jre : `as_broker`,  `as_server`, `as_api`
 * tomcat:  `as_broker`,  `as_api`, `as_server`
