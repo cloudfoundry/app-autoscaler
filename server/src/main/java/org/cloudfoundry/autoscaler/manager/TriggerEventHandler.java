@@ -58,6 +58,9 @@ public class TriggerEventHandler {
 
 
 	public TriggerEventHandler() {
+		this.approximateCooldownSetting = 0l;
+		this.approximateLastScalingActionTimeStamps = 0l;
+		this.busyTimestamp = 0l;
 	}
 
 	public TriggerEventHandler(MonitorTriggerEvent event)
