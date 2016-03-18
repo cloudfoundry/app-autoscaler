@@ -47,7 +47,7 @@ func (po *PluginAutoScaler) GetMetadata() plugin.PluginMetadata {
 			{
 				Name: "as-detach-policy",
 				Alias: "asdp",
-				HelpText: "detach and delete the auto-scaling policy from the application",
+				HelpText: "Detach and delete the auto-scaling policy from the application",
 				UsageDetails: plugin.Usage{
 					Usage: "cf as-detach-policy APP_NAME", 
 				},	
@@ -55,7 +55,7 @@ func (po *PluginAutoScaler) GetMetadata() plugin.PluginMetadata {
 			{
 				Name: "as-enable-policy",
 				Alias: "aseap",
-				HelpText: "resume the enforcement of the auto-scaling policy",
+				HelpText: "Resume the enforcement of the auto-scaling policy",
 				UsageDetails: plugin.Usage{
 					Usage: "cf as-enable-policy APP_NAME", 
 				},	
@@ -63,7 +63,7 @@ func (po *PluginAutoScaler) GetMetadata() plugin.PluginMetadata {
 			{
 				Name: "as-disable-policy",
 				Alias: "asdap",
-				HelpText: "suspend the auto-scaling policy temporarily",
+				HelpText: "Suspend the auto-scaling policy temporarily",
 				UsageDetails: plugin.Usage{
 					Usage: "cf as-disable-policy APP_NAME", 
 				},	
