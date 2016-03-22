@@ -29,6 +29,7 @@ import org.apache.log4j.Logger;
 
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import org.json.JSONObject;
 
@@ -37,9 +38,9 @@ import org.cloudfoundry.autoscaler.api.util.ConfigManager;
 import org.cloudfoundry.autoscaler.api.util.CloudFoundryManager;
 import org.cloudfoundry.autoscaler.api.util.RestApiResponseHandler;
 import org.cloudfoundry.autoscaler.api.util.RestUtil;
+import org.cloudfoundry.autoscaler.api.validation.ValidateUtil;
+import org.cloudfoundry.autoscaler.api.validation.ValidateUtil.DataType;
 import org.cloudfoundry.autoscaler.api.util.LocaleUtil;
-import org.cloudfoundry.autoscaler.api.util.ValidateUtil;
-import org.cloudfoundry.autoscaler.api.util.ValidateUtil.DataType;
 import org.cloudfoundry.autoscaler.api.exceptions.CloudException;
 import org.cloudfoundry.autoscaler.api.exceptions.AppNotFoundException;
 import org.cloudfoundry.autoscaler.api.exceptions.AppInfoNotFoundException;
@@ -149,7 +150,7 @@ public class PublicRestApi {
 		
 		String new_json = check_result.get("json");
 		
-		//build request to current autoscaling server instance
+		//build request to current auto-scaling server instance
 		if ((policyId != null)  && !(policyId.equals("null")) && (policyId.length() > 0)) //Update existing policy
 		{
 			logger.info("policyId: " + policyId + " already exist, now we update it");
@@ -186,9 +187,9 @@ public class PublicRestApi {
 		    	String authorization = ConfigManager.getInternalAuthToken();
 				ClientResponse response = webResource.header("Authorization", "Basic " + authorization).accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON).post(ClientResponse.class, new_json);
 				String response_body = response.getEntity(String.class);
-		    	Map<String, String> body_map = objectMapper.readValue(response_body, Map.class);
+		    	JsonNode body_map = objectMapper.readTree(response_body);
 			    if (response.getStatus() == HttpServletResponse.SC_CREATED) {
-			    	policyId = body_map.get("policyId");
+			    	policyId = body_map.get("policyId").asText();
 			    }
 			    else{
 			    	response_body = response.getEntity(String.class);
@@ -452,11 +453,11 @@ public class PublicRestApi {
 		
 		String new_json = check_result.get("json");
 		
-		//build request to current autoscaling server instance
+		//build request to current autos－scaling server instance
 		if ((policyId != null) && !(policyId.equals("null")) && (policyId.length() > 0)) //get policy information
 		{
 			try{
-                //update policy enablement, the same as attach
+                //update policy status, the same as attach
 			    request_url = server_url + "/resources/apps/" + app_id;
 			    WebResource webResource = client.resource(request_url);
 			    //debug should call handleInput2()
@@ -464,7 +465,7 @@ public class PublicRestApi {
 		    	json.put("policyId", policyId);
 		    	String authorization = ConfigManager.getInternalAuthToken();
 			    ClientResponse response = webResource.header("Authorization", "Basic " + authorization).accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON).put(ClientResponse.class, json.toString());
-			    if (response.getStatus() == HttpServletResponse.SC_OK) //enbale OK
+			    if (response.getStatus() == HttpServletResponse.SC_OK) //enable OK
 			    {
 			    	return RestApiResponseHandler.getResponseJsonOk("{}");
 			    }
@@ -743,9 +744,9 @@ public class PublicRestApi {
 
 	    try{
 	    	 String service_name = ConfigManager.get("scalingServiceName", "CF-AutoScaler"); 
-		     Map service_info = CloudFoundryManager.getInstance().getServiceInfo(app_id, service_name);
-		     Map credentials = (Map) service_info.get("credentials");
-		     String request_url = (String)credentials.get("url") + "/resources/apps/" + app_id + "?serviceid=" + (String)credentials.get("service_id");
+		     JsonNode service_info = CloudFoundryManager.getInstance().getServiceInfo(app_id, service_name);
+		     JsonNode credentials = service_info.get("credentials");
+		     String request_url = credentials.get("url").asText() + "/resources/apps/" + app_id + "?serviceid=" + credentials.get("service_id").asText();
 		     logger.info("request_url: " + request_url);
 		     Client client = RestUtil.getHTTPSRestClient();
 		     WebResource webResource = client.resource(request_url);
@@ -753,15 +754,19 @@ public class PublicRestApi {
 		     ClientResponse cr = webResource.header("Authorization", "Basic " + authorization).accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
 		     int status_code = cr.getStatus();
 		     logger.info(">>>>>> Got status_code: " + status_code + " from Server in getserverinfo ");
-		    
+		     if (status_code != HttpServletResponse.SC_OK)
+		    	 if (status_code == HttpServletResponse.SC_UNAUTHORIZED)
+		    		 throw new InternalAuthenticationException("get Application information");
+		    	 else
+		    	     throw new CloudException();
 		     String response = cr.getEntity(String.class);
 		     logger.info(">>>" + response);
-		     Map jobj = objectMapper.readValue(response, Map.class);
-		     serviceInfo.put("service_id", (String)credentials.get("service_id"));
-		     serviceInfo.put("server_url",(String)credentials.get("url"));
-		     serviceInfo.put("policyId", (String)jobj.get("policyId"));
-		     serviceInfo.put("appType", (String)jobj.get("type"));
-		     serviceInfo.put("status", (String)jobj.get("state"));
+		     JsonNode jobj = objectMapper.readTree(response);
+		     serviceInfo.put("service_id", credentials.get("service_id").asText());
+		     serviceInfo.put("server_url", credentials.get("url").asText());
+		     serviceInfo.put("policyId", jobj.get("policyId").asText());
+		     serviceInfo.put("appType", jobj.get("type").asText());
+		     serviceInfo.put("status", jobj.get("state").asText());
 		  
 		     return serviceInfo;  
 	    	

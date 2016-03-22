@@ -150,7 +150,6 @@ public class AuthenticationTool {
 
         JSONObject userInfo = getCurrentUserInfo(token, userInfoEndpoint);
         String userId = userInfo.get("user_id").toString();
-        //String userId = "2578cb84-a4b5-46e6-b61a-6d62066799c6";
         if (isSpaceUser(ccEndpoint, token, userId, space_id)) {
         	return SecurityCheckStatus.SECURITY_CHECK_COMPLETE;
         } else
