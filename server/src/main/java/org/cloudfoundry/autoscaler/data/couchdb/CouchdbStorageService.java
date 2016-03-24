@@ -38,7 +38,7 @@ import org.cloudfoundry.autoscaler.data.couchdb.document.TriggerRecord;
 import org.cloudfoundry.autoscaler.exceptions.DataStoreException;
 import org.cloudfoundry.autoscaler.exceptions.PolicyNotFoundException;
 import org.cloudfoundry.autoscaler.manager.ScalingHistoryFilter;
-import org.cloudfoundry.autoscaler.metric.util.ConfigManager;
+import org.cloudfoundry.autoscaler.util.ConfigManager;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 

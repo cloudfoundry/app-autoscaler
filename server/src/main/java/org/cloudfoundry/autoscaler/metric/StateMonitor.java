@@ -21,7 +21,7 @@ import org.cloudfoundry.autoscaler.bean.Trigger.ThresholdUnit;
 import org.cloudfoundry.autoscaler.data.couchdb.document.AppInstanceMetrics;
 import org.cloudfoundry.autoscaler.metric.bean.Statistic;
 import org.cloudfoundry.autoscaler.metric.bean.Tuple;
-import org.cloudfoundry.autoscaler.metric.util.ConfigManager;
+import org.cloudfoundry.autoscaler.util.ConfigManager;
 
 /**
  * A state monitor is created for each application This class needs to be

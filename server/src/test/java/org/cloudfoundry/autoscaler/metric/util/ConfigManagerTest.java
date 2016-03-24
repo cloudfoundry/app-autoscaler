@@ -2,6 +2,7 @@ package org.cloudfoundry.autoscaler.metric.util;
 
 import static org.junit.Assert.assertEquals;
 
+import org.cloudfoundry.autoscaler.util.ConfigManager;
 import org.junit.Test;
 
 public class ConfigManagerTest {

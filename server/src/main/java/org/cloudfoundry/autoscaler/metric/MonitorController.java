@@ -32,9 +32,9 @@ import org.cloudfoundry.autoscaler.exceptions.TriggerNotFoundException;
 import org.cloudfoundry.autoscaler.manager.ScalingEventManager;
 import org.cloudfoundry.autoscaler.metric.bean.ApplicationMetrics;
 import org.cloudfoundry.autoscaler.metric.poller.CFPollerManager;
-import org.cloudfoundry.autoscaler.metric.util.CloudFoundryManager;
-import org.cloudfoundry.autoscaler.metric.util.ConfigManager;
-import org.cloudfoundry.autoscaler.metric.util.MetricConfigManager;
+import org.cloudfoundry.autoscaler.util.CloudFoundryManager;
+import org.cloudfoundry.autoscaler.util.ConfigManager;
+import org.cloudfoundry.autoscaler.util.MetricConfigManager;
 
 /**
  * 

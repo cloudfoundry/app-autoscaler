@@ -9,8 +9,8 @@ import org.cloudfoundry.autoscaler.Constants;
 import org.cloudfoundry.autoscaler.data.couchdb.document.AppInstanceMetrics;
 import org.cloudfoundry.autoscaler.metric.MonitorController;
 import org.cloudfoundry.autoscaler.metric.NamedThreadFactory;
-import org.cloudfoundry.autoscaler.metric.util.CloudFoundryManager;
-import org.cloudfoundry.autoscaler.metric.util.ConfigManager;
+import org.cloudfoundry.autoscaler.util.CloudFoundryManager;
+import org.cloudfoundry.autoscaler.util.ConfigManager;
 
 @SuppressWarnings({ "rawtypes" })
 public class CFAppInfoPoller implements Runnable {

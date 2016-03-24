@@ -13,7 +13,7 @@ import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.cloudfoundry.autoscaler.metric.util.ConfigManager;
+import org.cloudfoundry.autoscaler.util.ConfigManager;
 
 import com.sun.jersey.core.util.Base64;
 

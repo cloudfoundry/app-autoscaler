@@ -1,4 +1,4 @@
-package org.cloudfoundry.autoscaler.metric.util;
+package org.cloudfoundry.autoscaler.util;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -17,7 +17,6 @@ import org.cloudfoundry.autoscaler.metric.bean.CFInstanceStats;
 import org.cloudfoundry.autoscaler.metric.bean.CloudAppInstance;
 import org.cloudfoundry.autoscaler.metric.bean.InstanceState;
 import org.cloudfoundry.autoscaler.metric.bean.CFInstanceStats.Usage;
-import org.cloudfoundry.autoscaler.util.RestUtil;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;

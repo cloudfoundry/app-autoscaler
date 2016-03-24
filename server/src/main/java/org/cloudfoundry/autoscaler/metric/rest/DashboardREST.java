@@ -25,7 +25,7 @@ import org.cloudfoundry.autoscaler.data.couchdb.document.AppInstanceMetrics;
 import org.cloudfoundry.autoscaler.data.couchdb.document.BoundApp;
 import org.cloudfoundry.autoscaler.metric.MonitorController;
 import org.cloudfoundry.autoscaler.metric.bean.ApplicationMetrics;
-import org.cloudfoundry.autoscaler.metric.util.MetricConfigManager;
+import org.cloudfoundry.autoscaler.util.MetricConfigManager;
 import org.cloudfoundry.autoscaler.util.RestApiResponseHandler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;

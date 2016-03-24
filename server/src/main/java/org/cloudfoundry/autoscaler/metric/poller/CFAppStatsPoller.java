@@ -15,9 +15,9 @@ import org.cloudfoundry.autoscaler.data.couchdb.document.AppInstanceMetrics;
 import org.cloudfoundry.autoscaler.metric.MonitorController;
 import org.cloudfoundry.autoscaler.metric.NamedThreadFactory;
 import org.cloudfoundry.autoscaler.metric.bean.CloudAppInstance;
-import org.cloudfoundry.autoscaler.metric.util.CloudFoundryManager;
-import org.cloudfoundry.autoscaler.metric.util.ConfigManager;
-import org.cloudfoundry.autoscaler.metric.util.MetricConfigManager;
+import org.cloudfoundry.autoscaler.util.CloudFoundryManager;
+import org.cloudfoundry.autoscaler.util.ConfigManager;
+import org.cloudfoundry.autoscaler.util.MetricConfigManager;
 
 @SuppressWarnings({ "rawtypes" })
 public class CFAppStatsPoller implements Runnable {

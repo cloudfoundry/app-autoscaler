@@ -1,4 +1,4 @@
-package org.cloudfoundry.autoscaler.metric.util;
+package org.cloudfoundry.autoscaler.util;
 
 import java.util.HashMap;
 import java.util.HashSet;

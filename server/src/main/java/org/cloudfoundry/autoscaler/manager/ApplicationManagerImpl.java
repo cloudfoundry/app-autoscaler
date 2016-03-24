@@ -2,26 +2,17 @@
 
 package org.cloudfoundry.autoscaler.manager;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.TimeZone;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.Constants;
-import org.cloudfoundry.autoscaler.ScalingStateMonitor;
-import org.cloudfoundry.autoscaler.ScalingStateMonitorTask;
 import org.cloudfoundry.autoscaler.TriggerSubscriber;
 import org.cloudfoundry.autoscaler.data.AutoScalingDataStore;
 import org.cloudfoundry.autoscaler.data.couchdb.AutoScalingDataStoreFactory;
 import org.cloudfoundry.autoscaler.data.couchdb.document.Application;
 import org.cloudfoundry.autoscaler.data.couchdb.document.AutoScalerPolicy;
-import org.cloudfoundry.autoscaler.data.couchdb.document.ScheduledPolicy;
-import org.cloudfoundry.autoscaler.data.couchdb.document.ScheduledPolicy.ScheduledType;
 import org.cloudfoundry.autoscaler.exceptions.AppNotFoundException;
 import org.cloudfoundry.autoscaler.exceptions.CloudException;
 import org.cloudfoundry.autoscaler.exceptions.DataStoreException;
@@ -30,8 +21,7 @@ import org.cloudfoundry.autoscaler.exceptions.MonitorServiceException;
 import org.cloudfoundry.autoscaler.exceptions.NoAttachedPolicyException;
 import org.cloudfoundry.autoscaler.exceptions.PolicyNotFoundException;
 import org.cloudfoundry.autoscaler.exceptions.TriggerNotSubscribedException;
-import org.cloudfoundry.autoscaler.metric.util.CloudFoundryManager;
-import org.cloudfoundry.autoscaler.util.ScheduledServiceUtil;
+import org.cloudfoundry.autoscaler.util.CloudFoundryManager;
 /**
  * Implements the interface ApplicationManager
  * 
@@ -177,111 +167,9 @@ public class ApplicationManagerImpl implements ApplicationManager {
 				.getAutoScalingDataStore();
 		return dataStore.getApplications(serviceId);
 	}
-
 	public void handleInstancesByPolicy(String appId, AutoScalerPolicy policy) throws Exception{
-		int minCount = policy.getCurrentInstanceMinCount();
-		int maxCount = policy.getCurrentInstanceMaxCount();
-		String scheduleType = policy.getCurrentScheduleType();
-		String timeZone = policy.getTimezone();
-		String startTimeStr = policy.getCurrentScheduleStartTime();
-		Long startTime = null;
-		Integer dayOfWeek = null;
-		if(null != startTimeStr && !"".equals(startTimeStr)&& null != scheduleType && !"".equals(scheduleType))
-		{
-			if(ScheduledType.RECURRING.name().equals(scheduleType))
-			{
-				try {
-					startTime = new SimpleDateFormat(ScheduledPolicy.recurringDateFormat).parse(startTimeStr).getTime();
-				} catch (ParseException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				dayOfWeek = ScheduledServiceUtil.dayOfWeek(new Date());
-			}
-			else if(ScheduledType.SPECIALDATE.name().equals(scheduleType))
-			{
-				try {
-					startTime = new SimpleDateFormat(ScheduledPolicy.specialDateDateFormat).parse(startTimeStr).getTime();
-				} catch (ParseException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-			
-			TimeZone curTimeZone = TimeZone.getDefault();
-			TimeZone policyTimeZone = TimeZone.getDefault();
-			String zoneName = "";
-			if(null != timeZone && !"".equals(timeZone))
-			{
-				timeZone = timeZone.trim().replaceAll("\\s+", "");
-				int index1 = timeZone.indexOf("(");
-				int index2 = timeZone.indexOf(")");
-				if(index2 >= 0)
-				{
-					zoneName = timeZone.substring(index2+1, timeZone.length()).trim();
-				}
-				else
-				{
-					if(index2 > index1)
-					{
-						zoneName = timeZone.substring(index1+1, index2);
-						
-					}
-				}
-				policyTimeZone = TimeZone.getTimeZone(zoneName);
-			}
-			startTime = startTime - policyTimeZone.getRawOffset() + curTimeZone.getRawOffset();
-		}
-		CloudApplicationManager manager = CloudApplicationManager.getInstance();
-		ScalingStateManager stateManager = ScalingStateManager.getInstance();
-		int instances =  manager.getInstances(appId);
-		int newCount = instances;
-		boolean shouldAdjust = false;
-		if (instances < minCount) {
-			logger.info("The number of application instances is less than minimum instances limitation. Start scaling out.");
-			newCount = minCount;
-			shouldAdjust = true;
-		} else if (instances > maxCount) {
-			logger.info("The number of application instances is greater than minimum instances limitation. Start scaling in.");
-			newCount = maxCount;
-			shouldAdjust = true;
-		}
-		
-		if (shouldAdjust) {
-				String actionUUID = UUID.randomUUID().toString();
-				if (stateManager.setScalingStateRealizing(appId, null, instances,
-						newCount, null,
-						TriggerEventHandler.TRIGGER_TYPE_POLICY_CHANGED, actionUUID, scheduleType,timeZone, startTime, dayOfWeek)) {
-					try {
-						//start scaling until update appState successfully
-						manager.scaleApplication(appId, newCount);
-						ScalingStateMonitorTask task = new ScalingStateMonitorTask(appId, newCount, actionUUID);
-						ScalingStateMonitor.getInstance().monitor(task);
-					} catch (CloudException e2) {
-						String errorCode = e2.getErrorCode();
-						if (Constants.MemoryQuotaExceeded.equals(errorCode)){
-							logger.error("Failed to scale application " + appId + ". You have exceeded your organization's memory limit.");
-						}else{
-							errorCode = Constants.CloudFoundryInternalError;
-							logger.error("Failed to scale application " + appId + "." + e2.getMessage());
-						}
-						int currentInstances = manager.getInstances(appId);
-						stateManager.setScalingStateFailed(appId, null,
-								currentInstances, currentInstances, null,
-								TriggerEventHandler.TRIGGER_TYPE_POLICY_CHANGED, errorCode, actionUUID, scheduleType,timeZone, startTime, dayOfWeek);
-							
-					}catch (Exception e) {
-						logger.error( "Failed to update application " + appId + " to scaling state." + e.getMessage(), e);
-						int currentInstances = manager.getInstances(appId);
-						stateManager.setScalingStateFailed(appId, null,
-								currentInstances, currentInstances, null,
-								TriggerEventHandler.TRIGGER_TYPE_POLICY_CHANGED, e.getMessage(), actionUUID, scheduleType,timeZone, startTime, dayOfWeek);
-						
-						return;
-					}
-				}
-		
-		}
+		ApplicationScaleManager manager = ApplicationScaleManagerImpl.getInstance();
+		manager.doScaleBySchedule(appId, policy);
 	}
 	@Override
 	public Application getApplication(String appId) throws DataStoreException, CloudException {
