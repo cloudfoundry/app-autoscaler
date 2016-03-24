@@ -1,4 +1,4 @@
-package org.cloudfoundry.autoscaler;
+package org.cloudfoundry.autoscaler.manager;
 
 import java.util.List;
 import java.util.Map;
@@ -9,7 +9,10 @@ import org.cloudfoundry.autoscaler.bean.Trigger;
 import org.cloudfoundry.autoscaler.data.couchdb.document.AutoScalerPolicy;
 import org.cloudfoundry.autoscaler.exceptions.MetricNotSupportedException;
 import org.cloudfoundry.autoscaler.exceptions.MonitorServiceException;
+import org.cloudfoundry.autoscaler.exceptions.TriggerNotFoundException;
 import org.cloudfoundry.autoscaler.exceptions.TriggerNotSubscribedException;
+import org.cloudfoundry.autoscaler.metric.monitor.MonitorController;
+import org.cloudfoundry.autoscaler.util.AutoScalerEnvUtil;
 import org.cloudfoundry.autoscaler.util.IcapMonitorMetricsMapper;
 
 /**
@@ -18,17 +21,15 @@ import org.cloudfoundry.autoscaler.util.IcapMonitorMetricsMapper;
  * 
  * 
  */
-public class TriggerSubscriber {
+public class TriggerManager {
 	private static final Logger logger = Logger
-			.getLogger(TriggerSubscriber.class.getName());
-	private MonitorService monitorService;
+			.getLogger(TriggerManager.class.getName());
 	private static final String CALLBACK_REST_URI = "/resources/events";
 	private String appId = null;
 	private AutoScalerPolicy policy = null;
-	public TriggerSubscriber(String appId, AutoScalerPolicy policy) throws MonitorServiceException {
+	public TriggerManager(String appId, AutoScalerPolicy policy) throws MonitorServiceException {
 		this.appId = appId;
 		this.policy = policy;
-		monitorService = new MonitorService(appId);
 	}
 
 	/**
@@ -69,12 +70,12 @@ public class TriggerSubscriber {
 				AutoScalerPolicyTrigger.TriggerId_UpperThreshold);
 		lowTrigger.setAppId(appId);
 		upperTrigger.setAppId(appId);
-		monitorService.subscribe(lowTrigger);
-		monitorService.subscribe(upperTrigger);
+		this.subscribe(lowTrigger);
+		this.subscribe(upperTrigger);
 	}
 
 	private void unsubscribeTrigger(String appId) throws MonitorServiceException, TriggerNotSubscribedException {
-		monitorService.unsubscribe(appId);
+		this.unsubscribe(appId);
 	}
 
 	/*****************************************************************************************************************
@@ -122,10 +123,33 @@ public class TriggerSubscriber {
 	}
 	
 	private String getCallbackUrl(){
-		String appUrl = AutoScalerEnv.getApplicationUrl();
+		String appUrl = AutoScalerEnvUtil.getApplicationUrl();
 		if (appUrl == null)
 			appUrl = "http://localhost:8080/server";// Just for test usage, should be deleted.// TODO
 		String callbackUrl = appUrl + CALLBACK_REST_URI;
 		return callbackUrl;
+	}
+	public boolean subscribe(Trigger trigger) throws MonitorServiceException
+	{
+		try {
+			logger.info("Add triggers for application " + trigger.getAppId());
+			MonitorController.getInstance().addTrigger(trigger);
+		} catch (Exception e) {
+			throw new MonitorServiceException("Failed to subscribe triggers", e);
+		}
+		return true;
+	}
+	
+	public boolean unsubscribe( String appId) throws MonitorServiceException, TriggerNotSubscribedException
+	{
+
+		logger.info("Remove triggers of application " + appId);
+		try {
+			logger.info("Remove triggers of application " + appId);
+			MonitorController.getInstance().removeTrigger(appId);
+		} catch (TriggerNotFoundException e) {
+			throw new TriggerNotSubscribedException("Triggers are not found for application " + appId);
+		}
+		return true;
 	}
 }

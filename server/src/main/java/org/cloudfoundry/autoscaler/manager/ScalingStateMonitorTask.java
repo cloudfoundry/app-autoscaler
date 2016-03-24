@@ -1,4 +1,4 @@
-package org.cloudfoundry.autoscaler;
+package org.cloudfoundry.autoscaler.manager;
 
 public class ScalingStateMonitorTask {
 	private String appId;

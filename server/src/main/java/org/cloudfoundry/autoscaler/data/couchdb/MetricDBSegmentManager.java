@@ -5,7 +5,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.TimeZone;
 
-import org.cloudfoundry.autoscaler.Constants;
+import org.cloudfoundry.autoscaler.constant.Constants;
 import org.cloudfoundry.autoscaler.data.couchdb.document.MetricDBSegment;
 import org.cloudfoundry.autoscaler.util.ConfigManager;
 

@@ -1,4 +1,4 @@
-package org.cloudfoundry.autoscaler;
+package org.cloudfoundry.autoscaler.manager;
 
 import java.util.Iterator;
 import java.util.concurrent.BlockingQueue;
@@ -9,7 +9,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.exceptions.AppNotFoundException;
 import org.cloudfoundry.autoscaler.exceptions.CloudException;
-import org.cloudfoundry.autoscaler.manager.ScalingStateManager;
 import org.cloudfoundry.autoscaler.util.CloudFoundryManager;
 
 public class ScalingStateMonitor implements Runnable{

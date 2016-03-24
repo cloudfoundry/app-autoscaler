@@ -1,4 +1,4 @@
-package org.cloudfoundry.autoscaler.metric;
+package org.cloudfoundry.autoscaler.metric.monitor;
 
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;

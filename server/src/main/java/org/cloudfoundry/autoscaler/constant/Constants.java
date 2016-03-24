@@ -1,4 +1,4 @@
-package org.cloudfoundry.autoscaler;
+package org.cloudfoundry.autoscaler.constant;
 
 public final class Constants {
 	public static final String VCAP_APPLICATION_ENV = "VCAP_APPLICATION";

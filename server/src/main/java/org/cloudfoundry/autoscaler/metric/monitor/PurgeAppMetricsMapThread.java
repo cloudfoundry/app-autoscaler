@@ -1,12 +1,12 @@
-package org.cloudfoundry.autoscaler.metric;
+package org.cloudfoundry.autoscaler.metric.monitor;
 
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 
 import org.apache.log4j.Logger;
-import org.cloudfoundry.autoscaler.Constants;
 import org.cloudfoundry.autoscaler.bean.InstanceMetrics;
+import org.cloudfoundry.autoscaler.constant.Constants;
 import org.cloudfoundry.autoscaler.metric.bean.ApplicationMetrics;
 import org.cloudfoundry.autoscaler.util.CloudFoundryManager;
 import org.cloudfoundry.autoscaler.util.ConfigManager;

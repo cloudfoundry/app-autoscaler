@@ -13,7 +13,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.apache.log4j.Logger;
-import org.cloudfoundry.autoscaler.Constants.MESSAGE_KEY;
+import org.cloudfoundry.autoscaler.constant.Constants.MESSAGE_KEY;
 import org.cloudfoundry.autoscaler.data.couchdb.document.ScalingHistory;
 import org.cloudfoundry.autoscaler.exceptions.DataStoreException;
 import org.cloudfoundry.autoscaler.manager.ScalingHistoryFilter;

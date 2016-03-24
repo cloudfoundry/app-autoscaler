@@ -1,16 +1,18 @@
-package org.cloudfoundry.autoscaler;
+package org.cloudfoundry.autoscaler.util;
 
 import java.util.Iterator;
 
 import org.apache.log4j.Logger;
+import org.cloudfoundry.autoscaler.bean.AppEnv;
+import org.cloudfoundry.autoscaler.constant.Constants;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
 
 
 @SuppressWarnings("rawtypes")
-public class AutoScalerEnv {
-	private static final Logger logger     = Logger.getLogger(AutoScalerEnv.class.getName());
+public class AutoScalerEnvUtil {
+	private static final Logger logger     = Logger.getLogger(AutoScalerEnvUtil.class.getName());
 	private static String serverName = null;
 	
 

@@ -7,8 +7,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
-import org.cloudfoundry.autoscaler.Constants;
-import org.cloudfoundry.autoscaler.TriggerSubscriber;
+import org.cloudfoundry.autoscaler.constant.Constants;
 import org.cloudfoundry.autoscaler.data.AutoScalingDataStore;
 import org.cloudfoundry.autoscaler.data.couchdb.AutoScalingDataStoreFactory;
 import org.cloudfoundry.autoscaler.data.couchdb.document.Application;
@@ -90,7 +89,7 @@ public class ApplicationManagerImpl implements ApplicationManager {
 						"Error happens when handle instance number by policy. ",
 						e);
 			}
-			TriggerSubscriber tr = new TriggerSubscriber(appId, policy);
+			TriggerManager tr = new TriggerManager(appId, policy);
 			// subscribe trigger
 			tr.subscribeTriggers();
 		}
@@ -109,7 +108,7 @@ public class ApplicationManagerImpl implements ApplicationManager {
 		if (app!=null){
 		try {
 
-				TriggerSubscriber tr = new TriggerSubscriber(app.getAppId(), null);
+				TriggerManager tr = new TriggerManager(app.getAppId(), null);
 				tr.unSubscribeTriggers();
 			
 			} catch (TriggerNotSubscribedException e) {
@@ -150,7 +149,7 @@ public class ApplicationManagerImpl implements ApplicationManager {
 		} catch (Exception e) {
 			logger.warn( "Error happens when handle handle instance number by policy. ", e);
 		}
-		TriggerSubscriber tr = new TriggerSubscriber(appId, policy);
+		TriggerManager tr = new TriggerManager(appId, policy);
 		try {
 			tr.unSubscribeTriggers();
 		} catch (TriggerNotSubscribedException e) {
@@ -219,7 +218,7 @@ public class ApplicationManagerImpl implements ApplicationManager {
 			applicationCache.put(appId,app);
 			PolicyManager policyManager = PolicyManagerImpl.getInstance();
 			AutoScalerPolicy policy = policyManager.getPolicyById(policyId);
-			TriggerSubscriber tr = new TriggerSubscriber(appId, policy);
+			TriggerManager tr = new TriggerManager(appId, policy);
 			try {
 				tr.unSubscribeTriggers();
 			} catch (TriggerNotSubscribedException e) {

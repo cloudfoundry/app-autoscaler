@@ -8,11 +8,9 @@ import java.util.UUID;
 import java.text.SimpleDateFormat;
 
 import org.apache.log4j.Logger;
-import org.cloudfoundry.autoscaler.Constants;
-import org.cloudfoundry.autoscaler.ScalingStateMonitor;
-import org.cloudfoundry.autoscaler.ScalingStateMonitorTask;
 import org.cloudfoundry.autoscaler.bean.AutoScalerPolicyTrigger;
 import org.cloudfoundry.autoscaler.bean.MonitorTriggerEvent;
+import org.cloudfoundry.autoscaler.constant.Constants;
 import org.cloudfoundry.autoscaler.data.AutoScalingDataStore;
 import org.cloudfoundry.autoscaler.data.couchdb.AutoScalingDataStoreFactory;
 import org.cloudfoundry.autoscaler.data.couchdb.document.AppAutoScaleState;
@@ -25,10 +23,10 @@ import org.cloudfoundry.autoscaler.exceptions.CloudException;
 import org.cloudfoundry.autoscaler.exceptions.DataStoreException;
 import org.cloudfoundry.autoscaler.exceptions.NoAttachedPolicyException;
 import org.cloudfoundry.autoscaler.exceptions.PolicyNotFoundException;
+import org.cloudfoundry.autoscaler.schedule.ScheduledServiceUtil;
 import org.cloudfoundry.autoscaler.util.CloudFoundryManager;
 import org.cloudfoundry.autoscaler.util.ConfigManager;
 import org.cloudfoundry.autoscaler.util.IcapMonitorMetricsMapper;
-import org.cloudfoundry.autoscaler.util.ScheduledServiceUtil;
 
 public class ApplicationScaleManagerImpl implements ApplicationScaleManager{
 	private static ApplicationScaleManagerImpl instance = new ApplicationScaleManagerImpl();

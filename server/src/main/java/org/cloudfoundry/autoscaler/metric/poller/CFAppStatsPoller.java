@@ -8,13 +8,13 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
-import org.cloudfoundry.autoscaler.Constants;
 import org.cloudfoundry.autoscaler.bean.InstanceMetrics;
 import org.cloudfoundry.autoscaler.bean.Metric;
+import org.cloudfoundry.autoscaler.constant.Constants;
 import org.cloudfoundry.autoscaler.data.couchdb.document.AppInstanceMetrics;
-import org.cloudfoundry.autoscaler.metric.MonitorController;
-import org.cloudfoundry.autoscaler.metric.NamedThreadFactory;
 import org.cloudfoundry.autoscaler.metric.bean.CloudAppInstance;
+import org.cloudfoundry.autoscaler.metric.monitor.MonitorController;
+import org.cloudfoundry.autoscaler.metric.monitor.NamedThreadFactory;
 import org.cloudfoundry.autoscaler.util.CloudFoundryManager;
 import org.cloudfoundry.autoscaler.util.ConfigManager;
 import org.cloudfoundry.autoscaler.util.MetricConfigManager;

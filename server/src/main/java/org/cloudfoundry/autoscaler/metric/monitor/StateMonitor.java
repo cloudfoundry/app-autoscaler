@@ -1,4 +1,4 @@
-package org.cloudfoundry.autoscaler.metric;
+package org.cloudfoundry.autoscaler.metric.monitor;
 
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -11,13 +11,13 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import org.apache.log4j.Logger;
-import org.cloudfoundry.autoscaler.Constants;
 import org.cloudfoundry.autoscaler.bean.InstanceMetrics;
 import org.cloudfoundry.autoscaler.bean.Metric;
 import org.cloudfoundry.autoscaler.bean.MonitorTriggerEvent;
 import org.cloudfoundry.autoscaler.bean.Trigger;
 import org.cloudfoundry.autoscaler.bean.Condition.AggregationType;
 import org.cloudfoundry.autoscaler.bean.Trigger.ThresholdUnit;
+import org.cloudfoundry.autoscaler.constant.Constants;
 import org.cloudfoundry.autoscaler.data.couchdb.document.AppInstanceMetrics;
 import org.cloudfoundry.autoscaler.metric.bean.Statistic;
 import org.cloudfoundry.autoscaler.metric.bean.Tuple;

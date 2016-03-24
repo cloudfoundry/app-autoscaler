@@ -1,4 +1,4 @@
-package org.cloudfoundry.autoscaler;
+package org.cloudfoundry.autoscaler.schedule;
 
 import java.text.ParseException;
 import java.util.List;
@@ -9,7 +9,6 @@ import java.util.concurrent.TimeUnit;
 import org.cloudfoundry.autoscaler.data.couchdb.document.AutoScalerPolicy;
 import org.cloudfoundry.autoscaler.manager.PolicyManager;
 import org.cloudfoundry.autoscaler.manager.PolicyManagerImpl;
-import org.cloudfoundry.autoscaler.util.ScheduledServiceUtil;
 
 public class DefaultScheduledService implements ScheduledService{
 

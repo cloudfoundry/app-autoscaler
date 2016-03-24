@@ -1,4 +1,4 @@
-package org.cloudfoundry.autoscaler.metric;
+package org.cloudfoundry.autoscaler.metric.monitor;
 
 import org.cloudfoundry.autoscaler.manager.ApplicationManagerImpl;
 import org.cloudfoundry.autoscaler.manager.PolicyManagerImpl;

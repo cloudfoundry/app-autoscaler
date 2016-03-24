@@ -1,4 +1,4 @@
-package org.cloudfoundry.autoscaler.metric;
+package org.cloudfoundry.autoscaler.metric.monitor;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -19,11 +19,11 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.log4j.Logger;
-import org.cloudfoundry.autoscaler.Constants;
 import org.cloudfoundry.autoscaler.bean.InstanceMetrics;
 import org.cloudfoundry.autoscaler.bean.Metric;
 import org.cloudfoundry.autoscaler.bean.MonitorTriggerEvent;
 import org.cloudfoundry.autoscaler.bean.Trigger;
+import org.cloudfoundry.autoscaler.constant.Constants;
 import org.cloudfoundry.autoscaler.data.AutoScalingDataStore;
 import org.cloudfoundry.autoscaler.data.couchdb.AutoScalingDataStoreFactory;
 import org.cloudfoundry.autoscaler.data.couchdb.document.AppInstanceMetrics;

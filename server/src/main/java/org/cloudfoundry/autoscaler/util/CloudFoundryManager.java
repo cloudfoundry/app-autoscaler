@@ -11,7 +11,7 @@ import javax.ws.rs.core.MediaType;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
-import org.cloudfoundry.autoscaler.Constants;
+import org.cloudfoundry.autoscaler.constant.Constants;
 import org.cloudfoundry.autoscaler.exceptions.CloudException;
 import org.cloudfoundry.autoscaler.metric.bean.CFInstanceStats;
 import org.cloudfoundry.autoscaler.metric.bean.CloudAppInstance;

@@ -16,7 +16,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.log4j.Logger;
-import org.cloudfoundry.autoscaler.metric.MonitorController;
+import org.cloudfoundry.autoscaler.metric.monitor.MonitorController;
 import org.cloudfoundry.autoscaler.util.RestApiResponseHandler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;

@@ -12,7 +12,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.log4j.Logger;
-import org.cloudfoundry.autoscaler.AutoScalerEnv;
 import org.cloudfoundry.autoscaler.bean.Trigger;
 import org.cloudfoundry.autoscaler.data.AutoScalingDataStore;
 import org.cloudfoundry.autoscaler.data.couchdb.connection.manager.ServerDAOManager;
@@ -38,6 +37,7 @@ import org.cloudfoundry.autoscaler.data.couchdb.document.TriggerRecord;
 import org.cloudfoundry.autoscaler.exceptions.DataStoreException;
 import org.cloudfoundry.autoscaler.exceptions.PolicyNotFoundException;
 import org.cloudfoundry.autoscaler.manager.ScalingHistoryFilter;
+import org.cloudfoundry.autoscaler.util.AutoScalerEnvUtil;
 import org.cloudfoundry.autoscaler.util.ConfigManager;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -57,7 +57,7 @@ public class CouchdbStorageService implements AutoScalingDataStore {
 	private static final boolean initDesignDocument = ConfigManager.getBoolean("couchdbDBInitDesignDocument", true);
 	private static final long metricDBStaleTime = ConfigManager.getInt("couchdbMetricDBStaleAfter") * 1000 * 60L;
 	private static final ObjectMapper mapper = new ObjectMapper();
-	private static final String serverName = AutoScalerEnv.getServerName();
+	private static final String serverName = AutoScalerEnvUtil.getServerName();
 
 	private TriggerRecordDAO triggerRecordDao;
 	private BoundAppDAO boundAppDao;
@@ -227,7 +227,7 @@ public class CouchdbStorageService implements AutoScalingDataStore {
 			triggerRecordDao.remove(existingRecord);
 		}
 
-		triggerRecord.setServerName(AutoScalerEnv.getServerName());
+		triggerRecord.setServerName(AutoScalerEnvUtil.getServerName());
 		triggerRecordDao.add(triggerRecord);
 	}
 

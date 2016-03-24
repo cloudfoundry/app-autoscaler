@@ -23,8 +23,8 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.log4j.Logger;
-import org.cloudfoundry.autoscaler.Constants.MESSAGE_KEY;
 import org.cloudfoundry.autoscaler.bean.AutoScalerPolicyTrigger;
+import org.cloudfoundry.autoscaler.constant.Constants.MESSAGE_KEY;
 import org.cloudfoundry.autoscaler.data.couchdb.document.Application;
 import org.cloudfoundry.autoscaler.data.couchdb.document.AutoScalerPolicy;
 import org.cloudfoundry.autoscaler.data.couchdb.document.ScheduledPolicy;

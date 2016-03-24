@@ -2,8 +2,8 @@ package org.cloudfoundry.autoscaler.manager;
 
 
 import org.apache.log4j.Logger;
-import org.cloudfoundry.autoscaler.Constants;
 import org.cloudfoundry.autoscaler.bean.AutoScalerPolicyTrigger;
+import org.cloudfoundry.autoscaler.constant.Constants;
 import org.cloudfoundry.autoscaler.data.AutoScalingDataStore;
 import org.cloudfoundry.autoscaler.data.couchdb.AutoScalingDataStoreFactory;
 import org.cloudfoundry.autoscaler.data.couchdb.document.AppAutoScaleState;

@@ -1,4 +1,4 @@
-package org.cloudfoundry.autoscaler;
+package org.cloudfoundry.autoscaler.schedule;
 
 public class ScalingScheduledServiceFactory {
 

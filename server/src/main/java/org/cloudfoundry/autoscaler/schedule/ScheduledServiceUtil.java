@@ -1,4 +1,4 @@
-package org.cloudfoundry.autoscaler.util;
+package org.cloudfoundry.autoscaler.schedule;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -19,6 +19,7 @@ import org.cloudfoundry.autoscaler.manager.ApplicationManager;
 import org.cloudfoundry.autoscaler.manager.ApplicationManagerImpl;
 import org.cloudfoundry.autoscaler.manager.PolicyManager;
 import org.cloudfoundry.autoscaler.manager.PolicyManagerImpl;
+import org.cloudfoundry.autoscaler.util.TimeZoneUtil;
 
 public class ScheduledServiceUtil {
 	private static final String CLASS_NAME = ScheduledServiceUtil.class.getName();

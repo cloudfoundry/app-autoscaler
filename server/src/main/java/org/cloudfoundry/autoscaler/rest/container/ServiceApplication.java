@@ -1,5 +1,5 @@
 
-package org.cloudfoundry.autoscaler;
+package org.cloudfoundry.autoscaler.rest.container;
 
 import java.util.HashSet;
 import java.util.Set;
