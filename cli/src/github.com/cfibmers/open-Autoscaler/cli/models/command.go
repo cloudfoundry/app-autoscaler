@@ -4,7 +4,6 @@ import (
 	"github.com/codegangsta/cli"
 )
 
-
 type CommandMetadata struct {
 	Name        string
 	Alias       string
@@ -12,7 +11,6 @@ type CommandMetadata struct {
 	Usage       string
 	Flags       []cli.Flag
 }
-
 
 type Command interface {
 	Metadata() CommandMetadata
