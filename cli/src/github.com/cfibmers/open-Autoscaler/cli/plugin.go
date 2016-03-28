@@ -1,19 +1,52 @@
 package main
 
 import (
-	"fmt"
 	"github.com/cloudfoundry/cli/plugin"
+	"github.com/codegangsta/cli"
+
+	"github.com/cfibmers/open-Autoscaler/cli/context"
+	"github.com/cfibmers/open-Autoscaler/cli/registry"
 )
 
 type PluginAutoScaler struct {
 }
 
+var _COMMAND_HELP = "NAME:" + `
+   {{.Name}} - {{.Description}}{{with .ShortName}}
 
-func (p *PluginAutoScaler) Run(cliConnection plugin.CliConnection, args []string) {
-	fmt.Printf("Run autoscaler command: %s \n", args)
+` + "ALIAS:" + `
+   {{.}}{{end}}
+
+` + "USAGE:" + `
+   {{.Usage}}
+{{with .Flags}}
+
+` + "OPTIONS:" + `
+{{range .}}   {{.}}
+{{end}}{{end}}
+`
+
+func main() {
+	plugin.Start(new(PluginAutoScaler))
 }
 
-func (po *PluginAutoScaler) GetMetadata() plugin.PluginMetadata {
+func (p *PluginAutoScaler) Run(cliConnection plugin.CliConnection, args []string) {
+	if args[0] == "CLI-MESSAGE-UNINSTALL" {
+		return
+	}
+	context.Init(cliConnection)
+	context.CheckPrerequisties()
+
+	app := cli.NewApp()
+	app.Name = "AutoScaler"
+	app.Usage = "Manage auto-scaling service"
+	app.Version = "0.0.1"
+	app.Commands = registry.GetCliCommands()
+	cli.CommandHelpTemplate = _COMMAND_HELP
+	app.Run(append([]string{"auto-AutoScaler"}, args...))
+}
+
+func (p *PluginAutoScaler) GetMetadata() plugin.PluginMetadata {
 	return plugin.PluginMetadata{
 		Name: "AutoScaler",
 		Version: plugin.VersionType{
@@ -21,67 +54,6 @@ func (po *PluginAutoScaler) GetMetadata() plugin.PluginMetadata {
 			Minor: 0,
 			Build: 1,
 		},
-		Commands: []plugin.Command{
-			{
-				Name: "as-policy",
-				Alias: "asp",
-				HelpText: "Show the auto-scaling policy of the application",
-				UsageDetails: plugin.Usage{
-					Usage: "cf as-policy APP_NAME [--json]", 
-					Options: map[string]string{
-						"json": "show the policy in json format",
-					},
-				},	
-			},
-			{
-				Name: "as-attach-policy",
-				Alias: "asap",
-				HelpText: "Attach an auto-scaling policy to the application",
-				UsageDetails: plugin.Usage{
-					Usage: "cf as-attach-policy APP_NAME -p POLICY_FILE", 
-					Options: map[string]string{
-						"p": "the name of the policy file in JSON, if 'policy.json' in the current directory is not used",
-					},
-				},	
-			},
-			{
-				Name: "as-detach-policy",
-				Alias: "asdp",
-				HelpText: "detach and delete the auto-scaling policy from the application",
-				UsageDetails: plugin.Usage{
-					Usage: "cf as-detach-policy APP_NAME", 
-				},	
-			},
-			{
-				Name: "as-enable-policy",
-				Alias: "aseap",
-				HelpText: "resume the enforcement of the auto-scaling policy",
-				UsageDetails: plugin.Usage{
-					Usage: "cf as-enable-policy APP_NAME", 
-				},	
-			},
-			{
-				Name: "as-disable-policy",
-				Alias: "asdap",
-				HelpText: "suspend the auto-scaling policy temporarily",
-				UsageDetails: plugin.Usage{
-					Usage: "cf as-disable-policy APP_NAME", 
-				},	
-			},
-			{
-				Name: "as-history",
-				Alias: "ash",
-				HelpText: "Query the auto-caling history",
-				UsageDetails: plugin.Usage{
-					Usage: "cf as-history APP_NAME --start-time START --end-time END --json", 
-					Options: map[string]string{
-						"--start-time": "the start time of the query, in format 'yyyy-MM-ddTHH:mm:ss+/-hhmm' or 'yyyy-MM-ddTHH:mm:ssZ'",
-						"--end-time": "the end time of the query, in format 'yyyy-MM-ddTHH:mm:ss+/-hhmm' or 'yyyy-MM-ddTHH:mm:ssZ'",
-						"--json": "show the history in JSON format",
-					},
-				},	
-			},
-
-		},
+		Commands: registry.GetPluginCommandsMetadata(),
 	}
 }
