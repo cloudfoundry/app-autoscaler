@@ -64,7 +64,7 @@ public class PublicRestApi {
 	
     public static PublicRestApi getInstance() throws Exception {
         if (instance == null) {
-        	synchronized (CloudFoundryManager.class) {
+        	synchronized (PublicRestApi.class) {
         		if (instance == null) 
         			instance = new PublicRestApi();
         	}
@@ -81,7 +81,7 @@ public class PublicRestApi {
 	@Path("/{app_id}/policy")
     @Consumes(MediaType.APPLICATION_JSON)
 	@Produces (MediaType.APPLICATION_JSON)
-    public Response createPolicy(@Context final HttpServletRequest httpServletRequest, @PathParam("app_id") String app_id, String jsonString)
+    public Response createPolicy(final HttpServletRequest httpServletRequest, @PathParam("app_id") String app_id, String jsonString)
 	{
 		logger.info("Received JSON String of policy content: "+jsonString);
 	
@@ -233,7 +233,7 @@ public class PublicRestApi {
 	@Path("/{app_id}/policy")
    // @Consumes(MediaType.APPLICATION_JSON)
 	@Produces (MediaType.APPLICATION_JSON)
-    public Response deletePolicy(@Context final HttpServletRequest httpServletRequest, @PathParam("app_id") String app_id, String jsonString)
+    public Response deletePolicy(final HttpServletRequest httpServletRequest, @PathParam("app_id") String app_id, String jsonString)
 	{
 		logger.info("Received JSON String of policy content: "+jsonString);
 		
@@ -318,7 +318,7 @@ public class PublicRestApi {
 	@Path("/{app_id}/policy")
     //@Consumes(MediaType.APPLICATION_JSON)
 	@Produces (MediaType.APPLICATION_JSON)
-    public Response getPolicy(@Context final HttpServletRequest httpServletRequest, @PathParam("app_id") String app_id)
+    public Response getPolicy(final HttpServletRequest httpServletRequest, @PathParam("app_id") String app_id)
 	{
 		
 	    Client client = RestUtil.getHTTPSRestClient();
@@ -402,7 +402,7 @@ public class PublicRestApi {
 	@Path("/{app_id}/policy/status")
     @Consumes(MediaType.APPLICATION_JSON)
 	@Produces (MediaType.APPLICATION_JSON)
-    public Response enablePolicy(@Context final HttpServletRequest httpServletRequest, @PathParam("app_id") String app_id, String jsonString)
+    public Response enablePolicy(final HttpServletRequest httpServletRequest, @PathParam("app_id") String app_id, String jsonString)
 	{
 		logger.info("Received JSON String of policy content: "+jsonString);
 		
@@ -496,7 +496,7 @@ public class PublicRestApi {
 	@Path("/{app_id}/policy/status")
     //@Consumes(MediaType.APPLICATION_JSON)
 	@Produces (MediaType.APPLICATION_JSON)
-    public Response getPolicyStatus(@Context final HttpServletRequest httpServletRequest, @PathParam("app_id") String app_id)
+    public Response getPolicyStatus(final HttpServletRequest httpServletRequest, @PathParam("app_id") String app_id)
 	{
 		
 		 
@@ -534,7 +534,7 @@ public class PublicRestApi {
 	@Path("/{app_id}/scalinghistory")
     //@Consumes(MediaType.APPLICATION_JSON)
 	@Produces (MediaType.APPLICATION_JSON)
-    public Response getHistory(@Context final HttpServletRequest httpServletRequest, @PathParam("app_id") String app_id, 
+    public Response getHistory(final HttpServletRequest httpServletRequest, @PathParam("app_id") String app_id, 
     		@QueryParam ("startTime") String startTime, @QueryParam ("endTime") String endTime)
 	{
 		
@@ -644,7 +644,7 @@ public class PublicRestApi {
 	@Path("/{app_id}/metrics")
     //@Consumes(MediaType.APPLICATION_JSON)
 	@Produces (MediaType.APPLICATION_JSON)
-    public Response getMetrics(@Context final HttpServletRequest httpServletRequest, @PathParam("app_id") String app_id, 
+    public Response getMetrics(final HttpServletRequest httpServletRequest, @PathParam("app_id") String app_id, 
     		@QueryParam ("startTime") String startTime, @QueryParam ("endTime") String endTime)
 	{
 

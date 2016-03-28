@@ -25,7 +25,7 @@ import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 
 import org.apache.log4j.Logger;
-import  org.cloudfoundry.autoscaler.api.Constants;
+import org.cloudfoundry.autoscaler.api.Constants;
 import org.cloudfoundry.autoscaler.api.util.ConfigManager;
 import org.cloudfoundry.autoscaler.api.util.LocaleSpecificMessageInterpolator;
 import org.cloudfoundry.autoscaler.api.util.LocaleUtil;
