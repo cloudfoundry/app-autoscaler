@@ -209,7 +209,11 @@
 			<version>1.0.0.GA</version>
 		</dependency>
 
-
+        <dependency>
+	        <groupId>org.springframework</groupId>
+	        <artifactId>spring-test</artifactId>
+	        <version>4.2.5.RELEASE</version>
+        </dependency>
 
 
 	</dependencies>

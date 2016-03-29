@@ -1,9 +1,7 @@
 package org.cloudfoundry.autoscaler.api.util;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.ws.rs.core.MediaType;
@@ -20,12 +18,14 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
+
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.representation.Form;
 
-@SuppressWarnings({ "rawtypes", "unchecked" })
+
 public class CloudFoundryManager {
     private static final Logger logger = Logger.getLogger(CloudFoundryManager.class);
     public static final String ORG_NAME = "ORG_NAME";
@@ -84,8 +84,8 @@ public class CloudFoundryManager {
             String authString = cfClientId + ":" + cfSecretKey;
             byte[] authEncBytes = Base64.encodeBase64(authString.getBytes());
             String authStringEnc = new String(authEncBytes);
-            Map jobj = new ObjectMapper().readValue(response, Map.class);
-            String authorization_endpoint = (String) jobj.get("authorization_endpoint");
+            JsonNode jobj = new ObjectMapper().readTree(response);
+            String authorization_endpoint = jobj.get("authorization_endpoint").asText();
 
             logger.debug(">>>" + authorization_endpoint);
             webResource = restClient.resource(authorization_endpoint + "/oauth/token");
@@ -98,9 +98,9 @@ public class CloudFoundryManager {
                             "grant_type=client_credentials&client_id=" + cfClientId + "&client_secret=" + cfSecretKey);
             response = cr.getEntity(String.class);
             logger.debug(">>>" + response);
-            jobj = new ObjectMapper().readValue(response, Map.class);
+            jobj = new ObjectMapper().readTree(response);
 
-            accessToken = (String) jobj.get("access_token");
+            accessToken = jobj.get("access_token").asText();
             long expire_in = Long.parseLong(jobj.get("expires_in").toString());
             accessTokenExpireTime = System.currentTimeMillis() + expire_in * 1000;
 
@@ -109,22 +109,25 @@ public class CloudFoundryManager {
 
     }
     
-    public Map getServiceInfo(String appId, String serviceName) throws Exception {
+    public JsonNode getServiceInfo(String appId, String serviceName) throws Exception {
     	 try{
-    	        Map appEnvJsonMap = this.getApplicationEnvByAppId(appId);
+    	        JsonNode appEnvJsonMap = this.getApplicationEnvByAppId(appId);
     	        logger.debug("appEnvJsonMap:" + appEnvJsonMap.toString());
-    	        Map sys_env = (Map) appEnvJsonMap.get("system_env_json");
+    	        JsonNode sys_env = appEnvJsonMap.get("system_env_json");
     	        logger.debug("sys_env:" + sys_env.toString());
-    	        Map application_env = (Map)appEnvJsonMap.get("application_env_json");
+    	        JsonNode application_env = appEnvJsonMap.get("application_env_json");
     	        logger.debug("application_env:" + application_env.toString());
-    	        Map vcap_application = (Map)application_env.get("VCAP_APPLICATION");
+    	        JsonNode vcap_application = application_env.get("VCAP_APPLICATION");
     	        logger.debug("vcap_application:" + vcap_application.toString());
-    	        String application_name = (String) vcap_application.get("application_name");
+    	        String application_name = vcap_application.get("application_name").asText();
     	        logger.debug("application_name:" + application_name);
 
-	            Map vcap_service = (Map) sys_env.get("VCAP_SERVICES");
+    	        JsonNode vcap_service = sys_env.get("VCAP_SERVICES");
 	            logger.debug("vcap_service:" + vcap_service.toString());
-	            Map service_map = (Map)((ArrayList<Map>) vcap_service.get(serviceName)).get(0);
+	            JSONObject vcap_service_jobj = new JSONObject(vcap_service.toString());
+	            JSONArray services = (JSONArray) vcap_service_jobj.get(serviceName);
+	            JSONObject service_map_jobj = services.getJSONObject(0);
+	            JsonNode service_map = new ObjectMapper().readTree(service_map_jobj.toString());
     	        return service_map;
 
     	  }  
@@ -296,11 +299,11 @@ public class CloudFoundryManager {
     }
     
     public String getUAAendpoint() throws Exception {
-    	Map InfoMap = this.getCfInfo();
-    	return (String) InfoMap.get("authorization_endpoint");
+    	JsonNode InfoMap = this.getCfInfo();
+    	return InfoMap.get("authorization_endpoint").asText();
     }
     
-    private Map getCfInfo() throws Exception {
+    private JsonNode getCfInfo() throws Exception {
     	String infoUrl = target + "/info";
         logger.debug("connecting to URL:" + infoUrl);
         WebResource webResource = restClient.resource(infoUrl);
@@ -308,12 +311,12 @@ public class CloudFoundryManager {
                 .get(String.class);
         logger.debug(">>>" + response);
 
-        return new ObjectMapper().readValue(response, Map.class);
+        return new ObjectMapper().readTree(response);
             
     }
 
     
-    private Map getApplicationEnvByAppId(String appId) throws Exception {
+    private JsonNode getApplicationEnvByAppId(String appId) throws Exception {
     	try {
 	        String url = this.target + "/v2/apps/" + appId + "/env";
 	        logger.debug("url:" + url);
@@ -325,7 +328,7 @@ public class CloudFoundryManager {
 	        	throw new AppNotFoundException(appId);
 	        }
 	        String response = cr.getEntity(String.class);
-	        return new ObjectMapper().readValue(response, Map.class);
+	        return new ObjectMapper().readTree(response);
     	} catch (IOException e) {
 			throw new CloudException(e);
 		}
@@ -400,14 +403,13 @@ public class CloudFoundryManager {
 
 
     private String getIdFromJson(String json, String name) throws Exception {
-        Map jsonMap = new ObjectMapper().readValue(json, Map.class);
         String id = null;
-        List records = (List) jsonMap.get("resources");
-        for (Object record : records) {
-            Map metadata = (Map) ((Map) record).get("metadata");
-            Map entity = (Map) ((Map) record).get("entity");
-            if (name.equals(entity.get("name"))) {
-                id = metadata.get("guid").toString();
+        JSONObject jsonMap = new JSONObject(json);
+        JSONArray records = (JSONArray)jsonMap.get("resources");
+        for (int index = 0; index < records.length(); index++) {
+            id = (String) ((JSONObject) ((JSONObject) records.get(index)).get("metadata")).get("guid");
+            String Name = (String) ((JSONObject) ((JSONObject) records.get(index)).get("entity")).get("name");
+            if (name.equals(Name)) {
                 break;
             }
         }
