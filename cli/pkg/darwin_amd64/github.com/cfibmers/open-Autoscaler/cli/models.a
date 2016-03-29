@@ -1,238 +1,0 @@
-!<arch>
-__.PKGDEF       0           0     0     644     32214     `
-go object darwin amd64 go1.5 X:none
-build id "6a3252e1001b3a4574707771b287b3916f6cc49c"
-
-$$
-package models
-	import runtime "runtime"
-	import cli "github.com/codegangsta/cli"
-	import flag "flag" // indirect
-	type @"flag".Value interface { Set(? string) (? error); String() (? string) }
-	type @"flag".Flag struct { Name string; Usage string; Value @"flag".Value; DefValue string }
-	type @"flag".ErrorHandling int
-	import io "io" // indirect
-	type @"io".Writer interface { Write(@"io".p []byte) (@"io".n int, @"io".err error) }
-	import time "time" // indirect
-	type @"time".Duration int64
-	func (@"time".d·2 @"time".Duration) Hours () (? float64) { var @"time".hour·3 @"time".Duration; ; @"time".hour·3 = @"time".d·2 / @"time".Duration(0x34630b8a000); var @"time".nsec·4 @"time".Duration; ; @"time".nsec·4 = @"time".d·2 % @"time".Duration(0x34630b8a000); return float64(@"time".hour·3) + float64(@"time".nsec·4) * 8190022623310637111963488201822504381538623676021880892417778544696899264837610290203272971060556344039023584360473938041055625214280336402169897364226048p-553 }
-	func (@"time".d·2 @"time".Duration) Minutes () (? float64) { var @"time".min·3 @"time".Duration; ; @"time".min·3 = @"time".d·2 / @"time".Duration(0xdf8475800); var @"time".nsec·4 @"time".Duration; ; @"time".nsec·4 = @"time".d·2 % @"time".Duration(0xdf8475800); return float64(@"time".min·3) + float64(@"time".nsec·4) * 7678146209353722106395056769533233877065564876941352542109479049699919628723768656821910653339403201031675627614471533358284117434246264392176261853609984p-547 }
-	func (@"time".d·2 @"time".Duration) Nanoseconds () (? int64) { return int64(@"time".d·2) }
-	func (@"time".d·2 @"time".Duration) Seconds () (? float64) { var @"time".sec·3 @"time".Duration; ; @"time".sec·3 = @"time".d·2 / @"time".Duration(0x3b9aca00); var @"time".nsec·4 @"time".Duration; ; @"time".nsec·4 = @"time".d·2 % @"time".Duration(0x3b9aca00); return float64(@"time".sec·3) + float64(@"time".nsec·4) * 7198262071269114660816079141112770740375861891461678802759824945047098083990024106014198994535558872472104883612039846078596891298747423852523262413111296p-541 }
-	func (@"time".d·2 @"time".Duration) String () (? string)
-	type @"flag".FlagSet struct { Usage func(); @"flag".name string; @"flag".parsed bool; @"flag".actual map[string]*@"flag".Flag; @"flag".formal map[string]*@"flag".Flag; @"flag".args []string; @"flag".errorHandling @"flag".ErrorHandling; @"flag".output @"io".Writer }
-	func (@"flag".f·2 *@"flag".FlagSet "esc:0x32") Arg (@"flag".i·3 int) (? string) { if @"flag".i·3 < 0x0 || @"flag".i·3 >= len(@"flag".f·2.@"flag".args) { return "" }; return @"flag".f·2.@"flag".args[@"flag".i·3] }
-	func (@"flag".f·2 *@"flag".FlagSet "esc:0x22") Args () (? []string) { return @"flag".f·2.@"flag".args }
-	func (@"flag".f·2 *@"flag".FlagSet "esc:0x9") Bool (@"flag".name·3 string, @"flag".value·4 bool, @"flag".usage·5 string) (? *bool)
-	func (@"flag".f·1 *@"flag".FlagSet "esc:0x9") BoolVar (@"flag".p·2 *bool, @"flag".name·3 string, @"flag".value·4 bool, @"flag".usage·5 string)
-	func (@"flag".f·2 *@"flag".FlagSet "esc:0x9") Duration (@"flag".name·3 string, @"flag".value·4 @"time".Duration, @"flag".usage·5 string) (? *@"time".Duration)
-	func (@"flag".f·1 *@"flag".FlagSet "esc:0x9") DurationVar (@"flag".p·2 *@"time".Duration, @"flag".name·3 string, @"flag".value·4 @"time".Duration, @"flag".usage·5 string)
-	func (@"flag".f·2 *@"flag".FlagSet "esc:0x9") Float64 (@"flag".name·3 string, @"flag".value·4 float64, @"flag".usage·5 string) (? *float64)
-	func (@"flag".f·1 *@"flag".FlagSet "esc:0x9") Float64Var (@"flag".p·2 *float64, @"flag".name·3 string, @"flag".value·4 float64, @"flag".usage·5 string)
-	func (@"flag".f·1 *@"flag".FlagSet "esc:0x1") Init (@"flag".name·2 string, @"flag".errorHandling·3 @"flag".ErrorHandling) { @"flag".f·1.@"flag".name = @"flag".name·2; @"flag".f·1.@"flag".errorHandling = @"flag".errorHandling·3 }
-	func (@"flag".f·2 *@"flag".FlagSet "esc:0x9") Int (@"flag".name·3 string, @"flag".value·4 int, @"flag".usage·5 string) (? *int)
-	func (@"flag".f·2 *@"flag".FlagSet "esc:0x9") Int64 (@"flag".name·3 string, @"flag".value·4 int64, @"flag".usage·5 string) (? *int64)
-	func (@"flag".f·1 *@"flag".FlagSet "esc:0x9") Int64Var (@"flag".p·2 *int64, @"flag".name·3 string, @"flag".value·4 int64, @"flag".usage·5 string)
-	func (@"flag".f·1 *@"flag".FlagSet "esc:0x9") IntVar (@"flag".p·2 *int, @"flag".name·3 string, @"flag".value·4 int, @"flag".usage·5 string)
-	func (@"flag".f·2 *@"flag".FlagSet "esc:0x1") Lookup (@"flag".name·3 string "esc:0x1") (? *@"flag".Flag) { return @"flag".f·2.@"flag".formal[@"flag".name·3] }
-	func (@"flag".f·2 *@"flag".FlagSet "esc:0x1") NArg () (? int) { return len(@"flag".f·2.@"flag".args) }
-	func (@"flag".f·2 *@"flag".FlagSet "esc:0x1") NFlag () (? int) { return len(@"flag".f·2.@"flag".actual) }
-	func (@"flag".f·2 *@"flag".FlagSet "esc:0x9") Parse (@"flag".arguments·3 []string) (? error)
-	func (@"flag".f·2 *@"flag".FlagSet "esc:0x1") Parsed () (? bool) { return @"flag".f·2.@"flag".parsed }
-	func (@"flag".f·1 *@"flag".FlagSet "esc:0x9") PrintDefaults ()
-	func (@"flag".f·2 *@"flag".FlagSet "esc:0x1") Set (@"flag".name·3 string, @"flag".value·4 string) (? error)
-	func (@"flag".f·1 *@"flag".FlagSet "esc:0x1") SetOutput (@"flag".output·2 @"io".Writer) { @"flag".f·1.@"flag".output = @"flag".output·2 }
-	func (@"flag".f·2 *@"flag".FlagSet "esc:0x9") String (@"flag".name·3 string, @"flag".value·4 string, @"flag".usage·5 string) (? *string)
-	func (@"flag".f·1 *@"flag".FlagSet "esc:0x9") StringVar (@"flag".p·2 *string, @"flag".name·3 string, @"flag".value·4 string, @"flag".usage·5 string)
-	func (@"flag".f·2 *@"flag".FlagSet "esc:0x9") Uint (@"flag".name·3 string, @"flag".value·4 uint, @"flag".usage·5 string) (? *uint)
-	func (@"flag".f·2 *@"flag".FlagSet "esc:0x9") Uint64 (@"flag".name·3 string, @"flag".value·4 uint64, @"flag".usage·5 string) (? *uint64)
-	func (@"flag".f·1 *@"flag".FlagSet "esc:0x9") Uint64Var (@"flag".p·2 *uint64, @"flag".name·3 string, @"flag".value·4 uint64, @"flag".usage·5 string)
-	func (@"flag".f·1 *@"flag".FlagSet "esc:0x9") UintVar (@"flag".p·2 *uint, @"flag".name·3 string, @"flag".value·4 uint, @"flag".usage·5 string)
-	func (@"flag".f·1 *@"flag".FlagSet "esc:0x9") Var (@"flag".value·2 @"flag".Value, @"flag".name·3 string, @"flag".usage·4 string)
-	func (@"flag".f·1 *@"flag".FlagSet "esc:0x9") Visit (@"flag".fn·2 func(? *@"flag".Flag) "esc:0x1")
-	func (@"flag".f·1 *@"flag".FlagSet "esc:0x9") VisitAll (@"flag".fn·2 func(? *@"flag".Flag) "esc:0x1")
-	func (@"flag".f·2 *@"flag".FlagSet "esc:0x9") @"flag".failf (@"flag".format·3 string "esc:0x9", @"flag".a·4 ...interface {} "esc:0x9") (? error)
-	func (@"flag".f·2 *@"flag".FlagSet "esc:0x22") @"flag".out () (? @"io".Writer) { if @"flag".f·2.@"flag".output == nil { return @"os".Stderr }; return @"flag".f·2.@"flag".output }
-	func (@"flag".f·3 *@"flag".FlagSet "esc:0x9") @"flag".parseOne () (? bool, ? error)
-	func (@"flag".f·1 *@"flag".FlagSet "esc:0x9") @"flag".usage ()
-	type @"github.com/codegangsta/cli".Flag interface { Apply(? *@"flag".FlagSet); String() (? string); @"github.com/codegangsta/cli".getName() (? string) }
-	type @"".CommandMetadata struct { Name string; Alias string; Description string; Usage string; Flags []@"github.com/codegangsta/cli".Flag }
-	type @"github.com/codegangsta/cli".Command struct { Name string; ShortName string; Aliases []string; Usage string; Description string; BashComplete func(@"github.com/codegangsta/cli".context *@"github.com/codegangsta/cli".Context); Before func(@"github.com/codegangsta/cli".context *@"github.com/codegangsta/cli".Context) (? error); After func(@"github.com/codegangsta/cli".context *@"github.com/codegangsta/cli".Context) (? error); Action func(@"github.com/codegangsta/cli".context *@"github.com/codegangsta/cli".Context); Subcommands []@"github.com/codegangsta/cli".Command; Flags []@"github.com/codegangsta/cli".Flag; SkipFlagParsing bool; HideHelp bool }
-	func (@"github.com/codegangsta/cli".c·2 @"github.com/codegangsta/cli".Command) HasName (@"github.com/codegangsta/cli".name·3 string "esc:0x1") (? bool)
-	func (@"github.com/codegangsta/cli".c·2 @"github.com/codegangsta/cli".Command) Names () (? []string) { var @"github.com/codegangsta/cli".names·3 []string; ; @"github.com/codegangsta/cli".names·3 = ([]string{ 0x0:@"github.com/codegangsta/cli".c·2.Name }); if @"github.com/codegangsta/cli".c·2.ShortName != "" { @"github.com/codegangsta/cli".names·3 = append(@"github.com/codegangsta/cli".names·3, @"github.com/codegangsta/cli".c·2.ShortName) }; return append(@"github.com/codegangsta/cli".names·3, @"github.com/codegangsta/cli".c·2.Aliases...) }
-	func (@"github.com/codegangsta/cli".c·2 @"github.com/codegangsta/cli".Command) Run (@"github.com/codegangsta/cli".ctx·3 *@"github.com/codegangsta/cli".Context) (? error)
-	func (@"github.com/codegangsta/cli".c·2 @"github.com/codegangsta/cli".Command) @"github.com/codegangsta/cli".startApp (@"github.com/codegangsta/cli".ctx·3 *@"github.com/codegangsta/cli".Context) (? error)
-	type @"time".zone struct { @"time".name string; @"time".offset int; @"time".isDST bool }
-	type @"time".zoneTrans struct { @"time".when int64; @"time".index uint8; @"time".isstd bool; @"time".isutc bool }
-	type @"time".Location struct { @"time".name string; @"time".zone []@"time".zone; @"time".tx []@"time".zoneTrans; @"time".cacheStart int64; @"time".cacheEnd int64; @"time".cacheZone *@"time".zone }
-	func (@"time".l·2 *@"time".Location "esc:0x22") String () (? string)
-	func (@"time".l·2 *@"time".Location "esc:0x1") @"time".firstZoneUsed () (? bool)
-	func (@"time".l·2 *@"time".Location "esc:0x12") @"time".get () (? *@"time".Location)
-	func (@"time".l·6 *@"time".Location "esc:0x32") @"time".lookup (@"time".sec·7 int64) (@"time".name·1 string, @"time".offset·2 int, @"time".isDST·3 bool, @"time".start·4 int64, @"time".end·5 int64)
-	func (@"time".l·2 *@"time".Location "esc:0x1") @"time".lookupFirstZone () (? int)
-	func (@"time".l·4 *@"time".Location "esc:0x1") @"time".lookupName (@"time".name·5 string "esc:0x1", @"time".unix·6 int64) (@"time".offset·1 int, @"time".isDST·2 bool, @"time".ok·3 bool)
-	type @"time".Month int
-	func (@"time".m·2 @"time".Month) String () (? string) { return @"time".months[@"time".m·2 - @"time".Month(0x1)] }
-	type @"time".Weekday int
-	func (@"time".d·2 @"time".Weekday) String () (? string) { return @"time".days[@"time".d·2] }
-	type @"time".Time struct { @"time".sec int64; @"time".nsec int32; @"time".loc *@"time".Location }
-	func (@"time".t·2 @"time".Time "esc:0x12") Add (@"time".d·3 @"time".Duration) (? @"time".Time) { @"time".t·2.@"time".sec += int64(@"time".d·3 / @"time".Duration(0x3b9aca00)); var @"time".nsec·4 int32; ; @"time".nsec·4 = int32(@"time".t·2.@"time".nsec) + int32(@"time".d·3 % @"time".Duration(0x3b9aca00)); if @"time".nsec·4 >= 0x3b9aca00 { @"time".t·2.@"time".sec++; @"time".nsec·4 -= 0x3b9aca00 } else { if @"time".nsec·4 < 0x0 { @"time".t·2.@"time".sec--; @"time".nsec·4 += 0x3b9aca00 } }; @"time".t·2.@"time".nsec = @"time".nsec·4; return @"time".t·2 }
-	func (@"time".t·2 @"time".Time "esc:0x12") AddDate (@"time".years·3 int, @"time".months·4 int, @"time".days·5 int) (? @"time".Time)
-	func (@"time".t·2 @"time".Time "esc:0x1") After (@"time".u·3 @"time".Time "esc:0x1") (? bool) { return @"time".t·2.@"time".sec > @"time".u·3.@"time".sec || @"time".t·2.@"time".sec == @"time".u·3.@"time".sec && @"time".t·2.@"time".nsec > @"time".u·3.@"time".nsec }
-	func (@"time".t·2 @"time".Time "esc:0x9") AppendFormat (@"time".b·3 []byte "esc:0x1a", @"time".layout·4 string "esc:0x9") (? []byte)
-	func (@"time".t·2 @"time".Time "esc:0x1") Before (@"time".u·3 @"time".Time "esc:0x1") (? bool) { return @"time".t·2.@"time".sec < @"time".u·3.@"time".sec || @"time".t·2.@"time".sec == @"time".u·3.@"time".sec && @"time".t·2.@"time".nsec < @"time".u·3.@"time".nsec }
-	func (@"time".t·4 @"time".Time "esc:0x1") Clock () (@"time".hour·1 int, @"time".min·2 int, @"time".sec·3 int)
-	func (@"time".t·4 @"time".Time "esc:0x1") Date () (@"time".year·1 int, @"time".month·2 @"time".Month, @"time".day·3 int)
-	func (@"time".t·2 @"time".Time "esc:0x1") Day () (? int)
-	func (@"time".t·2 @"time".Time "esc:0x1") Equal (@"time".u·3 @"time".Time "esc:0x1") (? bool) { return @"time".t·2.@"time".sec == @"time".u·3.@"time".sec && @"time".t·2.@"time".nsec == @"time".u·3.@"time".nsec }
-	func (@"time".t·2 @"time".Time "esc:0x9") Format (@"time".layout·3 string "esc:0x9") (? string)
-	func (@"time".t·2 *@"time".Time "esc:0x1") GobDecode (@"time".data·3 []byte "esc:0x1") (? error)
-	func (@"time".t·3 @"time".Time "esc:0x1") GobEncode () (? []byte, ? error)
-	func (@"time".t·2 @"time".Time "esc:0x1") Hour () (? int)
-	func (@"time".t·3 @"time".Time "esc:0x1") ISOWeek () (@"time".year·1 int, @"time".week·2 int)
-	func (@"time".t·2 @"time".Time "esc:0x12") In (@"time".loc·3 *@"time".Location "esc:0x12") (? @"time".Time)
-	func (@"time".t·2 @"time".Time "esc:0x1") IsZero () (? bool) { return @"time".t·2.@"time".sec == 0x0 && @"time".t·2.@"time".nsec == 0x0 }
-	func (@"time".t·2 @"time".Time "esc:0x12") Local () (? @"time".Time) { @"time".t·2.@"time".loc = @"time".Local; return @"time".t·2 }
-	func (@"time".t·2 @"time".Time "esc:0x12") Location () (? *@"time".Location) { var @"time".l·3 *@"time".Location; ; @"time".l·3 = @"time".t·2.@"time".loc; if @"time".l·3 == nil { @"time".l·3 = @"time".UTC }; return @"time".l·3 }
-	func (@"time".t·3 @"time".Time "esc:0x1") MarshalBinary () (? []byte, ? error)
-	func (@"time".t·3 @"time".Time "esc:0x9") MarshalJSON () (? []byte, ? error)
-	func (@"time".t·3 @"time".Time "esc:0x9") MarshalText () (? []byte, ? error)
-	func (@"time".t·2 @"time".Time "esc:0x1") Minute () (? int)
-	func (@"time".t·2 @"time".Time "esc:0x1") Month () (? @"time".Month)
-	func (@"time".t·2 @"time".Time "esc:0x1") Nanosecond () (? int) { return int(@"time".t·2.@"time".nsec) }
-	func (@"time".t·2 @"time".Time "esc:0x12") Round (@"time".d·3 @"time".Duration) (? @"time".Time)
-	func (@"time".t·2 @"time".Time "esc:0x1") Second () (? int)
-	func (@"time".t·2 @"time".Time "esc:0x9") String () (? string)
-	func (@"time".t·2 @"time".Time "esc:0x1") Sub (@"time".u·3 @"time".Time "esc:0x1") (? @"time".Duration)
-	func (@"time".t·2 @"time".Time "esc:0x12") Truncate (@"time".d·3 @"time".Duration) (? @"time".Time)
-	func (@"time".t·2 @"time".Time "esc:0x12") UTC () (? @"time".Time) { @"time".t·2.@"time".loc = @"time".UTC; return @"time".t·2 }
-	func (@"time".t·2 @"time".Time "esc:0x1") Unix () (? int64) { return @"time".t·2.@"time".sec + -0xe7791f700 }
-	func (@"time".t·2 @"time".Time "esc:0x1") UnixNano () (? int64) { return (@"time".t·2.@"time".sec + -0xe7791f700) * 0x3b9aca00 + int64(@"time".t·2.@"time".nsec) }
-	func (@"time".t·2 *@"time".Time "esc:0x1") UnmarshalBinary (@"time".data·3 []byte "esc:0x1") (? error)
-	func (@"time".t·2 *@"time".Time "esc:0x1") UnmarshalJSON (@"time".data·3 []byte "esc:0x1") (@"time".err·1 error)
-	func (@"time".t·2 *@"time".Time "esc:0x1") UnmarshalText (@"time".data·3 []byte "esc:0x1") (@"time".err·1 error)
-	func (@"time".t·2 @"time".Time "esc:0x1") Weekday () (? @"time".Weekday)
-	func (@"time".t·2 @"time".Time "esc:0x1") Year () (? int)
-	func (@"time".t·2 @"time".Time "esc:0x1") YearDay () (? int)
-	func (@"time".t·3 @"time".Time "esc:0x32") Zone () (@"time".name·1 string, @"time".offset·2 int)
-	func (@"time".t·2 @"time".Time "esc:0x1") @"time".abs () (? uint64)
-	func (@"time".t·5 @"time".Time "esc:0x1") @"time".date (@"time".full·6 bool) (@"time".year·1 int, @"time".month·2 @"time".Month, @"time".day·3 int, @"time".yday·4 int)
-	func (@"time".t·4 @"time".Time "esc:0x32") @"time".locabs () (@"time".name·1 string, @"time".offset·2 int, @"time".abs·3 uint64)
-	type @"github.com/codegangsta/cli".Author struct { Name string; Email string }
-	func (@"github.com/codegangsta/cli".a·2 @"github.com/codegangsta/cli".Author) String () (? string)
-	type @"github.com/codegangsta/cli".App struct { Name string; Usage string; Version string; Commands []@"github.com/codegangsta/cli".Command; Flags []@"github.com/codegangsta/cli".Flag; EnableBashCompletion bool; HideHelp bool; HideVersion bool; BashComplete func(@"github.com/codegangsta/cli".context *@"github.com/codegangsta/cli".Context); Before func(@"github.com/codegangsta/cli".context *@"github.com/codegangsta/cli".Context) (? error); After func(@"github.com/codegangsta/cli".context *@"github.com/codegangsta/cli".Context) (? error); Action func(@"github.com/codegangsta/cli".context *@"github.com/codegangsta/cli".Context); CommandNotFound func(@"github.com/codegangsta/cli".context *@"github.com/codegangsta/cli".Context, @"github.com/codegangsta/cli".command string); Compiled @"time".Time; Authors []@"github.com/codegangsta/cli".Author; Author string; Email string; Writer @"io".Writer }
-	func (@"github.com/codegangsta/cli".a·2 *@"github.com/codegangsta/cli".App "esc:0x2a") Command (@"github.com/codegangsta/cli".name·3 string "esc:0x1") (? *@"github.com/codegangsta/cli".Command)
-	func (@"github.com/codegangsta/cli".a·2 *@"github.com/codegangsta/cli".App) Run (@"github.com/codegangsta/cli".arguments·3 []string) (@"github.com/codegangsta/cli".err·1 error)
-	func (@"github.com/codegangsta/cli".a·1 *@"github.com/codegangsta/cli".App) RunAndExitOnError ()
-	func (@"github.com/codegangsta/cli".a·2 *@"github.com/codegangsta/cli".App) RunAsSubcommand (@"github.com/codegangsta/cli".ctx·3 *@"github.com/codegangsta/cli".Context) (@"github.com/codegangsta/cli".err·1 error)
-	func (@"github.com/codegangsta/cli".a·1 *@"github.com/codegangsta/cli".App "esc:0x9") @"github.com/codegangsta/cli".appendFlag (@"github.com/codegangsta/cli".flag·2 @"github.com/codegangsta/cli".Flag)
-	func (@"github.com/codegangsta/cli".a·2 *@"github.com/codegangsta/cli".App "esc:0x1") @"github.com/codegangsta/cli".hasFlag (@"github.com/codegangsta/cli".flag·3 @"github.com/codegangsta/cli".Flag "esc:0x1") (? bool)
-	type @"github.com/codegangsta/cli".Args []string
-	func (@"github.com/codegangsta/cli".a·2 @"github.com/codegangsta/cli".Args "esc:0x22") First () (? string) { return @"github.com/codegangsta/cli".a·2.Get(0x0) }
-	func (@"github.com/codegangsta/cli".a·2 @"github.com/codegangsta/cli".Args "esc:0x22") Get (@"github.com/codegangsta/cli".n·3 int) (? string) { if len(@"github.com/codegangsta/cli".a·2) > @"github.com/codegangsta/cli".n·3 { return @"github.com/codegangsta/cli".a·2[@"github.com/codegangsta/cli".n·3] }; return "" }
-	func (@"github.com/codegangsta/cli".a·2 @"github.com/codegangsta/cli".Args "esc:0x1") Present () (? bool) { return len(@"github.com/codegangsta/cli".a·2) != 0x0 }
-	func (@"github.com/codegangsta/cli".a·2 @"github.com/codegangsta/cli".Args "esc:0x9") Swap (@"github.com/codegangsta/cli".from·3 int, @"github.com/codegangsta/cli".to·4 int) (? error) { if @"github.com/codegangsta/cli".from·3 >= len(@"github.com/codegangsta/cli".a·2) || @"github.com/codegangsta/cli".to·4 >= len(@"github.com/codegangsta/cli".a·2) { return @"errors".New("index out of range") }; @"github.com/codegangsta/cli".a·2[@"github.com/codegangsta/cli".from·3], @"github.com/codegangsta/cli".a·2[@"github.com/codegangsta/cli".to·4] = @"github.com/codegangsta/cli".a·2[@"github.com/codegangsta/cli".to·4], @"github.com/codegangsta/cli".a·2[@"github.com/codegangsta/cli".from·3]; return nil }
-	func (@"github.com/codegangsta/cli".a·2 @"github.com/codegangsta/cli".Args "esc:0x12") Tail () (? []string) { if len(@"github.com/codegangsta/cli".a·2) >= 0x2 { return ([]string)(@"github.com/codegangsta/cli".a·2)[0x1:] }; return ([]string{  }) }
-	type @"github.com/codegangsta/cli".Context struct { App *@"github.com/codegangsta/cli".App; Command @"github.com/codegangsta/cli".Command; @"github.com/codegangsta/cli".flagSet *@"flag".FlagSet; @"github.com/codegangsta/cli".globalSet *@"flag".FlagSet; @"github.com/codegangsta/cli".setFlags map[string]bool; @"github.com/codegangsta/cli".globalSetFlags map[string]bool }
-	func (@"github.com/codegangsta/cli".c·2 *@"github.com/codegangsta/cli".Context "esc:0x32") Args () (? @"github.com/codegangsta/cli".Args) { var @"github.com/codegangsta/cli".args·3 @"github.com/codegangsta/cli".Args; ; @"github.com/codegangsta/cli".args·3 = @"github.com/codegangsta/cli".Args(@"github.com/codegangsta/cli".c·2.@"github.com/codegangsta/cli".flagSet.Args()); return @"github.com/codegangsta/cli".args·3 }
-	func (@"github.com/codegangsta/cli".c·2 *@"github.com/codegangsta/cli".Context "esc:0x1") Bool (@"github.com/codegangsta/cli".name·3 string "esc:0x1") (? bool)
-	func (@"github.com/codegangsta/cli".c·2 *@"github.com/codegangsta/cli".Context "esc:0x1") BoolT (@"github.com/codegangsta/cli".name·3 string "esc:0x1") (? bool)
-	func (@"github.com/codegangsta/cli".c·2 *@"github.com/codegangsta/cli".Context "esc:0x1") Duration (@"github.com/codegangsta/cli".name·3 string "esc:0x1") (? @"time".Duration)
-	func (@"github.com/codegangsta/cli".c·2 *@"github.com/codegangsta/cli".Context "esc:0x9") FlagNames () (@"github.com/codegangsta/cli".names·1 []string)
-	func (@"github.com/codegangsta/cli".c·2 *@"github.com/codegangsta/cli".Context "esc:0x1") Float64 (@"github.com/codegangsta/cli".name·3 string "esc:0x1") (? float64)
-	func (@"github.com/codegangsta/cli".c·2 *@"github.com/codegangsta/cli".Context "esc:0x1") Generic (@"github.com/codegangsta/cli".name·3 string "esc:0x1") (? interface {}) { return @"github.com/codegangsta/cli".lookupGeneric(@"github.com/codegangsta/cli".name·3, @"github.com/codegangsta/cli".c·2.@"github.com/codegangsta/cli".flagSet) }
-	func (@"github.com/codegangsta/cli".c·2 *@"github.com/codegangsta/cli".Context "esc:0x1") GlobalBool (@"github.com/codegangsta/cli".name·3 string "esc:0x1") (? bool)
-	func (@"github.com/codegangsta/cli".c·2 *@"github.com/codegangsta/cli".Context "esc:0x1") GlobalDuration (@"github.com/codegangsta/cli".name·3 string "esc:0x1") (? @"time".Duration)
-	func (@"github.com/codegangsta/cli".c·2 *@"github.com/codegangsta/cli".Context "esc:0x9") GlobalFlagNames () (@"github.com/codegangsta/cli".names·1 []string)
-	func (@"github.com/codegangsta/cli".c·2 *@"github.com/codegangsta/cli".Context "esc:0x1") GlobalGeneric (@"github.com/codegangsta/cli".name·3 string "esc:0x1") (? interface {}) { return @"github.com/codegangsta/cli".lookupGeneric(@"github.com/codegangsta/cli".name·3, @"github.com/codegangsta/cli".c·2.@"github.com/codegangsta/cli".globalSet) }
-	func (@"github.com/codegangsta/cli".c·2 *@"github.com/codegangsta/cli".Context "esc:0x1") GlobalInt (@"github.com/codegangsta/cli".name·3 string "esc:0x1") (? int)
-	func (@"github.com/codegangsta/cli".c·2 *@"github.com/codegangsta/cli".Context "esc:0x1") GlobalIntSlice (@"github.com/codegangsta/cli".name·3 string "esc:0x1") (? []int) { return @"github.com/codegangsta/cli".lookupIntSlice(@"github.com/codegangsta/cli".name·3, @"github.com/codegangsta/cli".c·2.@"github.com/codegangsta/cli".globalSet) }
-	func (@"github.com/codegangsta/cli".c·2 *@"github.com/codegangsta/cli".Context "esc:0x9") GlobalIsSet (@"github.com/codegangsta/cli".name·3 string "esc:0x1") (? bool)
-	func (@"github.com/codegangsta/cli".c·2 *@"github.com/codegangsta/cli".Context "esc:0x1") GlobalString (@"github.com/codegangsta/cli".name·3 string "esc:0x1") (? string)
-	func (@"github.com/codegangsta/cli".c·2 *@"github.com/codegangsta/cli".Context "esc:0x1") GlobalStringSlice (@"github.com/codegangsta/cli".name·3 string "esc:0x1") (? []string) { return @"github.com/codegangsta/cli".lookupStringSlice(@"github.com/codegangsta/cli".name·3, @"github.com/codegangsta/cli".c·2.@"github.com/codegangsta/cli".globalSet) }
-	func (@"github.com/codegangsta/cli".c·2 *@"github.com/codegangsta/cli".Context "esc:0x1") Int (@"github.com/codegangsta/cli".name·3 string "esc:0x1") (? int)
-	func (@"github.com/codegangsta/cli".c·2 *@"github.com/codegangsta/cli".Context "esc:0x1") IntSlice (@"github.com/codegangsta/cli".name·3 string "esc:0x1") (? []int) { return @"github.com/codegangsta/cli".lookupIntSlice(@"github.com/codegangsta/cli".name·3, @"github.com/codegangsta/cli".c·2.@"github.com/codegangsta/cli".flagSet) }
-	func (@"github.com/codegangsta/cli".c·2 *@"github.com/codegangsta/cli".Context "esc:0x9") IsSet (@"github.com/codegangsta/cli".name·3 string "esc:0x1") (? bool)
-	func (@"github.com/codegangsta/cli".c·2 *@"github.com/codegangsta/cli".Context "esc:0x1") NumFlags () (? int) { return @"github.com/codegangsta/cli".c·2.@"github.com/codegangsta/cli".flagSet.NFlag() }
-	func (@"github.com/codegangsta/cli".c·2 *@"github.com/codegangsta/cli".Context "esc:0x1") String (@"github.com/codegangsta/cli".name·3 string "esc:0x1") (? string)
-	func (@"github.com/codegangsta/cli".c·2 *@"github.com/codegangsta/cli".Context "esc:0x1") StringSlice (@"github.com/codegangsta/cli".name·3 string "esc:0x1") (? []string) { return @"github.com/codegangsta/cli".lookupStringSlice(@"github.com/codegangsta/cli".name·3, @"github.com/codegangsta/cli".c·2.@"github.com/codegangsta/cli".flagSet) }
-	type @"".Command interface { Metadata() (? @"".CommandMetadata); Run(? *@"github.com/codegangsta/cli".Context) }
-	func @"".init ()
-	import os "os" // indirect
-	type @"os".dirInfo struct { @"os".buf []byte; @"os".nbuf int; @"os".bufp int }
-	type @"os".file struct { @"os".fd int; @"os".name string; @"os".dirinfo *@"os".dirInfo; @"os".nepipe int32 }
-	func (@"os".file·2 *@"os".file) @"os".close () (? error)
-	type @"os".FileMode uint32
-	func (@"os".m·2 @"os".FileMode) IsDir () (? bool) { return @"os".m·2 & @"os".FileMode(0x80000000) != @"os".FileMode(0x0) }
-	func (@"os".m·2 @"os".FileMode) IsRegular () (? bool) { return @"os".m·2 & @"os".FileMode(0x8f000000) == @"os".FileMode(0x0) }
-	func (@"os".m·2 @"os".FileMode) Perm () (? @"os".FileMode) { return @"os".m·2 & @"os".FileMode(0x1ff) }
-	func (@"os".m·2 @"os".FileMode) String () (? string)
-	type @"os".FileInfo interface { IsDir() (? bool); ModTime() (? @"time".Time); Mode() (? @"os".FileMode); Name() (? string); Size() (? int64); Sys() (? interface {}) }
-	type @"os".File struct { @"os".? *@"os".file }
-	func (@"os".f·2 *@"os".File "esc:0x22") Chdir () (? error)
-	func (@"os".f·2 *@"os".File "esc:0x22") Chmod (@"os".mode·3 @"os".FileMode) (? error)
-	func (@"os".f·2 *@"os".File "esc:0x22") Chown (@"os".uid·3 int, @"os".gid·4 int) (? error)
-	func (@"os".f·2 *@"os".File "esc:0x9") Close () (? error)
-	func (@"os".f·2 *@"os".File "esc:0x1") Fd () (? uintptr) { if @"os".f·2 == nil { return 0xffffffffffffffff }; return uintptr(@"os".f·2.@"os".file.@"os".fd) }
-	func (@"os".f·2 *@"os".File "esc:0x32") Name () (? string) { return @"os".f·2.@"os".file.@"os".name }
-	func (@"os".f·3 *@"os".File "esc:0x102") Read (@"os".b·4 []byte "esc:0x1") (@"os".n·1 int, @"os".err·2 error)
-	func (@"os".f·3 *@"os".File "esc:0x102") ReadAt (@"os".b·4 []byte "esc:0x1", @"os".off·5 int64) (@"os".n·1 int, @"os".err·2 error)
-	func (@"os".f·3 *@"os".File "esc:0x1") Readdir (@"os".n·4 int) (@"os".fi·1 []@"os".FileInfo, @"os".err·2 error)
-	func (@"os".f·3 *@"os".File "esc:0x1") Readdirnames (@"os".n·4 int) (@"os".names·1 []string, @"os".err·2 error)
-	func (@"os".f·3 *@"os".File "esc:0x102") Seek (@"os".offset·4 int64, @"os".whence·5 int) (@"os".ret·1 int64, @"os".err·2 error)
-	func (@"os".f·3 *@"os".File "esc:0x10a") Stat () (? @"os".FileInfo, ? error)
-	func (@"os".f·2 *@"os".File "esc:0x1") Sync () (? error)
-	func (@"os".f·2 *@"os".File "esc:0x22") Truncate (@"os".size·3 int64) (? error)
-	func (@"os".f·3 *@"os".File "esc:0x10a") Write (@"os".b·4 []byte "esc:0x1") (@"os".n·1 int, @"os".err·2 error)
-	func (@"os".f·3 *@"os".File "esc:0x102") WriteAt (@"os".b·4 []byte "esc:0x1", @"os".off·5 int64) (@"os".n·1 int, @"os".err·2 error)
-	func (@"os".f·3 *@"os".File "esc:0x10a") WriteString (@"os".s·4 string "esc:0x1") (@"os".n·1 int, @"os".err·2 error)
-	func (@"os".f·3 *@"os".File "esc:0x1") @"os".pread (@"os".b·4 []byte "esc:0x1", @"os".off·5 int64) (@"os".n·1 int, @"os".err·2 error)
-	func (@"os".f·3 *@"os".File "esc:0x1") @"os".pwrite (@"os".b·4 []byte "esc:0x1", @"os".off·5 int64) (@"os".n·1 int, @"os".err·2 error)
-	func (@"os".f·3 *@"os".File "esc:0x1") @"os".read (@"os".b·4 []byte "esc:0x1") (@"os".n·1 int, @"os".err·2 error)
-	func (@"os".f·3 *@"os".File "esc:0x1") @"os".readdir (@"os".n·4 int) (@"os".fi·1 []@"os".FileInfo, @"os".err·2 error)
-	func (@"os".f·3 *@"os".File "esc:0x1") @"os".readdirnames (@"os".n·4 int) (@"os".names·1 []string, @"os".err·2 error)
-	func (@"os".f·3 *@"os".File "esc:0x1") @"os".seek (@"os".offset·4 int64, @"os".whence·5 int) (@"os".ret·1 int64, @"os".err·2 error)
-	func (@"os".f·3 *@"os".File "esc:0x1") @"os".write (@"os".b·4 []byte "esc:0x1") (@"os".n·1 int, @"os".err·2 error)
-	var @"os".Stderr *@"os".File
-	var @"time".months [12]string
-	var @"time".days [7]string
-	var @"time".Local *@"time".Location
-	var @"time".UTC *@"time".Location
-	import errors "errors" // indirect
-	func @"errors".New (@"errors".text·2 string) (? error) { return (&@"errors".errorString{ @"errors".s:@"errors".text·2 }) }
-	func @"github.com/codegangsta/cli".lookupGeneric (@"github.com/codegangsta/cli".name·2 string "esc:0x1", @"github.com/codegangsta/cli".set·3 *@"flag".FlagSet "esc:0x1") (? interface {}) { var @"github.com/codegangsta/cli".f·4 *@"flag".Flag; ; @"github.com/codegangsta/cli".f·4 = @"github.com/codegangsta/cli".set·3.Lookup(@"github.com/codegangsta/cli".name·2); if @"github.com/codegangsta/cli".f·4 != nil { return @"github.com/codegangsta/cli".f·4.Value }; return nil }
-	func @"github.com/codegangsta/cli".lookupIntSlice (@"github.com/codegangsta/cli".name·2 string "esc:0x1", @"github.com/codegangsta/cli".set·3 *@"flag".FlagSet "esc:0x1") (? []int) { var @"github.com/codegangsta/cli".f·4 *@"flag".Flag; ; @"github.com/codegangsta/cli".f·4 = @"github.com/codegangsta/cli".set·3.Lookup(@"github.com/codegangsta/cli".name·2); if @"github.com/codegangsta/cli".f·4 != nil { return @"github.com/codegangsta/cli".f·4.Value.(*@"github.com/codegangsta/cli".IntSlice).Value() }; return nil }
-	func @"github.com/codegangsta/cli".lookupStringSlice (@"github.com/codegangsta/cli".name·2 string "esc:0x1", @"github.com/codegangsta/cli".set·3 *@"flag".FlagSet "esc:0x1") (? []string) { var @"github.com/codegangsta/cli".f·4 *@"flag".Flag; ; @"github.com/codegangsta/cli".f·4 = @"github.com/codegangsta/cli".set·3.Lookup(@"github.com/codegangsta/cli".name·2); if @"github.com/codegangsta/cli".f·4 != nil { return @"github.com/codegangsta/cli".f·4.Value.(*@"github.com/codegangsta/cli".StringSlice).Value() }; return nil }
-	type @"errors".errorString struct { @"errors".s string }
-	func (@"errors".e·2 *@"errors".errorString "esc:0x22") Error () (? string) { return @"errors".e·2.@"errors".s }
-	type @"github.com/codegangsta/cli".IntSlice []int
-	func (@"github.com/codegangsta/cli".f·2 *@"github.com/codegangsta/cli".IntSlice "esc:0x9") Set (@"github.com/codegangsta/cli".value·3 string) (? error)
-	func (@"github.com/codegangsta/cli".f·2 *@"github.com/codegangsta/cli".IntSlice "esc:0x9") String () (? string)
-	func (@"github.com/codegangsta/cli".f·2 *@"github.com/codegangsta/cli".IntSlice "esc:0x22") Value () (? []int) { return *@"github.com/codegangsta/cli".f·2 }
-	type @"github.com/codegangsta/cli".StringSlice []string
-	func (@"github.com/codegangsta/cli".f·2 *@"github.com/codegangsta/cli".StringSlice "esc:0x9") Set (@"github.com/codegangsta/cli".value·3 string) (? error) { *@"github.com/codegangsta/cli".f·2 = append(*@"github.com/codegangsta/cli".f·2, @"github.com/codegangsta/cli".value·3); return nil }
-	func (@"github.com/codegangsta/cli".f·2 *@"github.com/codegangsta/cli".StringSlice "esc:0x9") String () (? string)
-	func (@"github.com/codegangsta/cli".f·2 *@"github.com/codegangsta/cli".StringSlice "esc:0x22") Value () (? []string) { return *@"github.com/codegangsta/cli".f·2 }
-
-$$
-_go_.o          0           0     0     644     9289      `
-go object darwin amd64 go1.5 X:none
-
-!
-  go13ld8github.com/codegangsta/cli.a �"".init  �  �eH�%    H;av4�    �� t�    ��u��    �    �    �    ��    �
-      $  "".initdone·   <  "".initdone·   R
-  "runtime.throwinit   b "".initdone·   n
-  >github.com/codegangsta/cli.init   z "".initdone·   �
-  0runtime.morestack_noctxt        P P *P 
- (( Tgclocals·33cdeccccebe80329f1fdbee7f5874cb Tgclocals·33cdeccccebe80329f1fdbee7f5874cb   �/Users/yangbo/workspace/java_workspace/open-Autoscaler/cli/src/github.com/cfibmers/open-Autoscaler/cli/models/command.go�&"".Command.Metadata �  �eH�%    H�D$�H;AvyH��   H�Y H��tH��$�   H9;uH�#H��$�   1�H����    H��$�   H�$H��$�   H�[ ��H�\$H�|$`H���    H�t$`H��$�   �    H�ĸ   ��    �i���
-      �
-�  runtime.duffzero   �       �
-�  runtime.duffcopy   �
-�  runtime.duffcopy   �
-  0runtime.morestack_noctxt   ��  "".autotmp_0000 �.type."".CommandMetadata "".~r0  .type."".CommandMetadata ""..this  type."".Command �q�� � � 
- _A Tgclocals·2a01facd3bb3521c26fbed2d1830cb37 Tgclocals·55b93fc8500931e797aa082d87ba0d9e   <autogenerated>�"".Command.Run �  �eH�%    H;av=H��H�Y H��tH�|$H9;uH�#H�\$(H�\$H�\$ H�$H�\$H�[(��H����    �
-      �       �
-  0runtime.morestack_noctxt   0   ""..anon0  Ptype.*github.com/codegangsta/cli.Context ""..this  type."".Command  8  ` ` 
- E Tgclocals·5c5a9f3dff47a8940bdc317b9324ac2a Tgclocals·33cdeccccebe80329f1fdbee7f5874cb   <autogenerated>�Tgclocals·33cdeccccebe80329f1fdbee7f5874cb           �Tgclocals·33cdeccccebe80329f1fdbee7f5874cb           �0"".initdone·  type.uint8   �"".init·f              "".init   �"runtime.gcbits.01    �4go.string.hdr."[]cli.Flag"             
-          ,go.string."[]cli.Flag"   �,go.string."[]cli.Flag"    []cli.Flag  �Ltype.[]github.com/codegangsta/cli.Flag �  �              �F�8                                                         0�  runtime.algarray   @  "runtime.gcbits.01   P  4go.string.hdr."[]cli.Flag"   p  ^go.weak.type.*[]github.com/codegangsta/cli.Flag   �  "runtime.zerovalue   �  Htype.github.com/codegangsta/cli.Flag   �pgo.typelink.[]cli.Flag	[]github.com/codegangsta/cli.Flag              Ltype.[]github.com/codegangsta/cli.Flag   �Ngo.string.hdr."*models.CommandMetadata"                       Fgo.string."*models.CommandMetadata"   �Fgo.string."*models.CommandMetadata" 0  0*models.CommandMetadata  �0type.*"".CommandMetadata  �  �              �е� 6                                                        0�  runtime.algarray   @  "runtime.gcbits.01   P  Ngo.string.hdr."*models.CommandMetadata"   p  Bgo.weak.type.**"".CommandMetadata   �  "runtime.zerovalue   �  .type."".CommandMetadata   �&runtime.gcbits.5501   U �Lgo.string.hdr."models.CommandMetadata"                       Dgo.string."models.CommandMetadata"   �Dgo.string."models.CommandMetadata" 0  .models.CommandMetadata  �(go.string.hdr."Name"                        go.string."Name"   � go.string."Name"   
-Name  �*go.string.hdr."Alias"                       "go.string."Alias"   �"go.string."Alias"   Alias  �6go.string.hdr."Description"                       .go.string."Description"   �.go.string."Description"    Description  �*go.string.hdr."Usage"                       "go.string."Usage"   �"go.string."Usage"   Usage  �*go.string.hdr."Flags"                       "go.string."Flags"   �"go.string."Flags"   Flags  �>go.string.hdr."CommandMetadata"                       6go.string."CommandMetadata"   �6go.string."CommandMetadata"     CommandMetadata  �|go.string.hdr."github.com/cfibmers/open-Autoscaler/cli/models"             .          tgo.string."github.com/cfibmers/open-Autoscaler/cli/models"   �tgo.string."github.com/cfibmers/open-Autoscaler/cli/models" `  ^github.com/cfibmers/open-Autoscaler/cli/models  �"go.importpath."".             .          tgo.string."github.com/cfibmers/open-Autoscaler/cli/models"   �.type."".CommandMetadata  �  �X       H       �-                                                                                                                                                                                                                              0                                       @                                               (0�  runtime.algarray   @  &runtime.gcbits.5501   P  Lgo.string.hdr."models.CommandMetadata"   p  0type.*"".CommandMetadata   �  "runtime.zerovalue   �� .type."".CommandMetadata   �  (go.string.hdr."Name"   �  type.string   �  *go.string.hdr."Alias"   �  type.string   �  6go.string.hdr."Description"   �  type.string   �  *go.string.hdr."Usage"   �  type.string   �  *go.string.hdr."Flags"   �  Ltype.[]github.com/codegangsta/cli.Flag   `� .type."".CommandMetadata   �  >go.string.hdr."CommandMetadata"   �  "go.importpath."".   �� .type."".CommandMetadata   �Tgclocals·55b93fc8500931e797aa082d87ba0d9e              �Tgclocals·2a01facd3bb3521c26fbed2d1830cb37             �Tgclocals·33cdeccccebe80329f1fdbee7f5874cb           �Tgclocals·5c5a9f3dff47a8940bdc317b9324ac2a             �Zgo.string.hdr."func() models.CommandMetadata"                       Rgo.string."func() models.CommandMetadata"   �Rgo.string."func() models.CommandMetadata" @  <func() models.CommandMetadata  �<type.func() "".CommandMetadata �  �              �Ib� 3                                                                                                              0�  runtime.algarray   @  "runtime.gcbits.01   P  Zgo.string.hdr."func() models.CommandMetadata"   p  Ngo.weak.type.*func() "".CommandMetadata   �  "runtime.zerovalue   �� <type.func() "".CommandMetadata   �� <type.func() "".CommandMetadata   �  .type."".CommandMetadata   ��go.typelink.func() models.CommandMetadata	func() "".CommandMetadata              <type.func() "".CommandMetadata   �Dgo.string.hdr."func(*cli.Context)"                       <go.string."func(*cli.Context)"   �<go.string."func(*cli.Context)" 0  &func(*cli.Context)  �\type.func(*github.com/codegangsta/cli.Context) �  �              �cn 3                                                                                                              0�  runtime.algarray   @  "runtime.gcbits.01   P  Dgo.string.hdr."func(*cli.Context)"   p  ngo.weak.type.*func(*github.com/codegangsta/cli.Context)   �  "runtime.zerovalue   �� \type.func(*github.com/codegangsta/cli.Context)   �� \type.func(*github.com/codegangsta/cli.Context)   �  Ptype.*github.com/codegangsta/cli.Context   ��go.typelink.func(*cli.Context)	func(*github.com/codegangsta/cli.Context)              \type.func(*github.com/codegangsta/cli.Context)   �>go.string.hdr."*models.Command"                       6go.string."*models.Command"   �6go.string."*models.Command"     *models.Command  � type.*"".Command  �  �              bNEj 6                                                        0�  runtime.algarray   @  "runtime.gcbits.01   P  >go.string.hdr."*models.Command"   p  2go.weak.type.**"".Command   �  "runtime.zerovalue   �  type."".Command   �"runtime.gcbits.03    �<go.string.hdr."models.Command"                       4go.string."models.Command"   �4go.string."models.Command"    models.Command  �0go.string.hdr."Metadata"                       (go.string."Metadata"   �(go.string."Metadata"    Metadata  �&go.string.hdr."Run"                       go.string."Run"   �go.string."Run"   Run  �.go.string.hdr."Command"                       &go.string."Command"   �&go.string."Command"   Command  �type."".Command  �  �              ��t�                                                                                                                                                               0�  runtime.algarray   @  "runtime.gcbits.03   P  <go.string.hdr."models.Command"   p   type.*"".Command   �  "runtime.zerovalue   �� type."".Command   �  0go.string.hdr."Metadata"   �  <type.func() "".CommandMetadata   �  &go.string.hdr."Run"   �  \type.func(*github.com/codegangsta/cli.Context)   `� type."".Command   �  .go.string.hdr."Command"   �  "go.importpath."".   �� type."".Command   �.go.string.hdr."runtime"                       &go.string."runtime"   �&go.string."runtime"   runtime  �,go.importpath.runtime.                       &go.string."runtime"   �Tgo.string.hdr."github.com/codegangsta/cli"                       Lgo.string."github.com/codegangsta/cli"   �Lgo.string."github.com/codegangsta/cli" @  6github.com/codegangsta/cli  �Rgo.importpath.github.com/codegangsta/cli.                       Lgo.string."github.com/codegangsta/cli"   �,"".Command.Metadata·f              &"".Command.Metadata   �""".Command.Run·f              "".Command.Run   �"runtime.zerovalue      ��go13ld 

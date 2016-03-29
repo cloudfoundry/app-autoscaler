@@ -1,310 +1,0 @@
-!<arch>
-__.PKGDEF       0           0     0     644     44019     `
-go object darwin amd64 go1.5 X:none
-build id "5fecd471be314e2ca7018560da6f22550a140d7b"
-
-$$
-package context
-	import runtime "runtime"
-	import terminal "github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal"
-	import plugin "github.com/cloudfoundry/cli/plugin"
-	import plugin_models "github.com/cloudfoundry/cli/plugin/models"
-	import time "time" // indirect
-	type @"time".zone struct { @"time".name string; @"time".offset int; @"time".isDST bool }
-	type @"time".zoneTrans struct { @"time".when int64; @"time".index uint8; @"time".isstd bool; @"time".isutc bool }
-	type @"time".Location struct { @"time".name string; @"time".zone []@"time".zone; @"time".tx []@"time".zoneTrans; @"time".cacheStart int64; @"time".cacheEnd int64; @"time".cacheZone *@"time".zone }
-	func (@"time".lÂ·2 *@"time".Location "esc:0x22") String () (? string)
-	func (@"time".lÂ·2 *@"time".Location "esc:0x1") @"time".firstZoneUsed () (? bool)
-	func (@"time".lÂ·2 *@"time".Location "esc:0x12") @"time".get () (? *@"time".Location)
-	func (@"time".lÂ·6 *@"time".Location "esc:0x32") @"time".lookup (@"time".secÂ·7 int64) (@"time".nameÂ·1 string, @"time".offsetÂ·2 int, @"time".isDSTÂ·3 bool, @"time".startÂ·4 int64, @"time".endÂ·5 int64)
-	func (@"time".lÂ·2 *@"time".Location "esc:0x1") @"time".lookupFirstZone () (? int)
-	func (@"time".lÂ·4 *@"time".Location "esc:0x1") @"time".lookupName (@"time".nameÂ·5 string "esc:0x1", @"time".unixÂ·6 int64) (@"time".offsetÂ·1 int, @"time".isDSTÂ·2 bool, @"time".okÂ·3 bool)
-	type @"time".Duration int64
-	func (@"time".dÂ·2 @"time".Duration) Hours () (? float64) { var @"time".hourÂ·3 @"time".Duration; ; @"time".hourÂ·3 = @"time".dÂ·2 / @"time".Duration(0x34630b8a000); var @"time".nsecÂ·4 @"time".Duration; ; @"time".nsecÂ·4 = @"time".dÂ·2 % @"time".Duration(0x34630b8a000); return float64(@"time".hourÂ·3) + float64(@"time".nsecÂ·4) * 8190022623310637111963488201822504381538623676021880892417778544696899264837610290203272971060556344039023584360473938041055625214280336402169897364226048p-553 }
-	func (@"time".dÂ·2 @"time".Duration) Minutes () (? float64) { var @"time".minÂ·3 @"time".Duration; ; @"time".minÂ·3 = @"time".dÂ·2 / @"time".Duration(0xdf8475800); var @"time".nsecÂ·4 @"time".Duration; ; @"time".nsecÂ·4 = @"time".dÂ·2 % @"time".Duration(0xdf8475800); return float64(@"time".minÂ·3) + float64(@"time".nsecÂ·4) * 7678146209353722106395056769533233877065564876941352542109479049699919628723768656821910653339403201031675627614471533358284117434246264392176261853609984p-547 }
-	func (@"time".dÂ·2 @"time".Duration) Nanoseconds () (? int64) { return int64(@"time".dÂ·2) }
-	func (@"time".dÂ·2 @"time".Duration) Seconds () (? float64) { var @"time".secÂ·3 @"time".Duration; ; @"time".secÂ·3 = @"time".dÂ·2 / @"time".Duration(0x3b9aca00); var @"time".nsecÂ·4 @"time".Duration; ; @"time".nsecÂ·4 = @"time".dÂ·2 % @"time".Duration(0x3b9aca00); return float64(@"time".secÂ·3) + float64(@"time".nsecÂ·4) * 7198262071269114660816079141112770740375861891461678802759824945047098083990024106014198994535558872472104883612039846078596891298747423852523262413111296p-541 }
-	func (@"time".dÂ·2 @"time".Duration) String () (? string)
-	type @"time".Month int
-	func (@"time".mÂ·2 @"time".Month) String () (? string) { return @"time".months[@"time".mÂ·2 - @"time".Month(0x1)] }
-	type @"time".Weekday int
-	func (@"time".dÂ·2 @"time".Weekday) String () (? string) { return @"time".days[@"time".dÂ·2] }
-	type @"time".Time struct { @"time".sec int64; @"time".nsec int32; @"time".loc *@"time".Location }
-	func (@"time".tÂ·2 @"time".Time "esc:0x12") Add (@"time".dÂ·3 @"time".Duration) (? @"time".Time) { @"time".tÂ·2.@"time".sec += int64(@"time".dÂ·3 / @"time".Duration(0x3b9aca00)); var @"time".nsecÂ·4 int32; ; @"time".nsecÂ·4 = int32(@"time".tÂ·2.@"time".nsec) + int32(@"time".dÂ·3 % @"time".Duration(0x3b9aca00)); if @"time".nsecÂ·4 >= 0x3b9aca00 { @"time".tÂ·2.@"time".sec++; @"time".nsecÂ·4 -= 0x3b9aca00 } else { if @"time".nsecÂ·4 < 0x0 { @"time".tÂ·2.@"time".sec--; @"time".nsecÂ·4 += 0x3b9aca00 } }; @"time".tÂ·2.@"time".nsec = @"time".nsecÂ·4; return @"time".tÂ·2 }
-	func (@"time".tÂ·2 @"time".Time "esc:0x12") AddDate (@"time".yearsÂ·3 int, @"time".monthsÂ·4 int, @"time".daysÂ·5 int) (? @"time".Time)
-	func (@"time".tÂ·2 @"time".Time "esc:0x1") After (@"time".uÂ·3 @"time".Time "esc:0x1") (? bool) { return @"time".tÂ·2.@"time".sec > @"time".uÂ·3.@"time".sec || @"time".tÂ·2.@"time".sec == @"time".uÂ·3.@"time".sec && @"time".tÂ·2.@"time".nsec > @"time".uÂ·3.@"time".nsec }
-	func (@"time".tÂ·2 @"time".Time "esc:0x9") AppendFormat (@"time".bÂ·3 []byte "esc:0x1a", @"time".layoutÂ·4 string "esc:0x9") (? []byte)
-	func (@"time".tÂ·2 @"time".Time "esc:0x1") Before (@"time".uÂ·3 @"time".Time "esc:0x1") (? bool) { return @"time".tÂ·2.@"time".sec < @"time".uÂ·3.@"time".sec || @"time".tÂ·2.@"time".sec == @"time".uÂ·3.@"time".sec && @"time".tÂ·2.@"time".nsec < @"time".uÂ·3.@"time".nsec }
-	func (@"time".tÂ·4 @"time".Time "esc:0x1") Clock () (@"time".hourÂ·1 int, @"time".minÂ·2 int, @"time".secÂ·3 int)
-	func (@"time".tÂ·4 @"time".Time "esc:0x1") Date () (@"time".yearÂ·1 int, @"time".monthÂ·2 @"time".Month, @"time".dayÂ·3 int)
-	func (@"time".tÂ·2 @"time".Time "esc:0x1") Day () (? int)
-	func (@"time".tÂ·2 @"time".Time "esc:0x1") Equal (@"time".uÂ·3 @"time".Time "esc:0x1") (? bool) { return @"time".tÂ·2.@"time".sec == @"time".uÂ·3.@"time".sec && @"time".tÂ·2.@"time".nsec == @"time".uÂ·3.@"time".nsec }
-	func (@"time".tÂ·2 @"time".Time "esc:0x9") Format (@"time".layoutÂ·3 string "esc:0x9") (? string)
-	func (@"time".tÂ·2 *@"time".Time "esc:0x1") GobDecode (@"time".dataÂ·3 []byte "esc:0x1") (? error)
-	func (@"time".tÂ·3 @"time".Time "esc:0x1") GobEncode () (? []byte, ? error)
-	func (@"time".tÂ·2 @"time".Time "esc:0x1") Hour () (? int)
-	func (@"time".tÂ·3 @"time".Time "esc:0x1") ISOWeek () (@"time".yearÂ·1 int, @"time".weekÂ·2 int)
-	func (@"time".tÂ·2 @"time".Time "esc:0x12") In (@"time".locÂ·3 *@"time".Location "esc:0x12") (? @"time".Time)
-	func (@"time".tÂ·2 @"time".Time "esc:0x1") IsZero () (? bool) { return @"time".tÂ·2.@"time".sec == 0x0 && @"time".tÂ·2.@"time".nsec == 0x0 }
-	func (@"time".tÂ·2 @"time".Time "esc:0x12") Local () (? @"time".Time) { @"time".tÂ·2.@"time".loc = @"time".Local; return @"time".tÂ·2 }
-	func (@"time".tÂ·2 @"time".Time "esc:0x12") Location () (? *@"time".Location) { var @"time".lÂ·3 *@"time".Location; ; @"time".lÂ·3 = @"time".tÂ·2.@"time".loc; if @"time".lÂ·3 == nil { @"time".lÂ·3 = @"time".UTC }; return @"time".lÂ·3 }
-	func (@"time".tÂ·3 @"time".Time "esc:0x1") MarshalBinary () (? []byte, ? error)
-	func (@"time".tÂ·3 @"time".Time "esc:0x9") MarshalJSON () (? []byte, ? error)
-	func (@"time".tÂ·3 @"time".Time "esc:0x9") MarshalText () (? []byte, ? error)
-	func (@"time".tÂ·2 @"time".Time "esc:0x1") Minute () (? int)
-	func (@"time".tÂ·2 @"time".Time "esc:0x1") Month () (? @"time".Month)
-	func (@"time".tÂ·2 @"time".Time "esc:0x1") Nanosecond () (? int) { return int(@"time".tÂ·2.@"time".nsec) }
-	func (@"time".tÂ·2 @"time".Time "esc:0x12") Round (@"time".dÂ·3 @"time".Duration) (? @"time".Time)
-	func (@"time".tÂ·2 @"time".Time "esc:0x1") Second () (? int)
-	func (@"time".tÂ·2 @"time".Time "esc:0x9") String () (? string)
-	func (@"time".tÂ·2 @"time".Time "esc:0x1") Sub (@"time".uÂ·3 @"time".Time "esc:0x1") (? @"time".Duration)
-	func (@"time".tÂ·2 @"time".Time "esc:0x12") Truncate (@"time".dÂ·3 @"time".Duration) (? @"time".Time)
-	func (@"time".tÂ·2 @"time".Time "esc:0x12") UTC () (? @"time".Time) { @"time".tÂ·2.@"time".loc = @"time".UTC; return @"time".tÂ·2 }
-	func (@"time".tÂ·2 @"time".Time "esc:0x1") Unix () (? int64) { return @"time".tÂ·2.@"time".sec + -0xe7791f700 }
-	func (@"time".tÂ·2 @"time".Time "esc:0x1") UnixNano () (? int64) { return (@"time".tÂ·2.@"time".sec + -0xe7791f700) * 0x3b9aca00 + int64(@"time".tÂ·2.@"time".nsec) }
-	func (@"time".tÂ·2 *@"time".Time "esc:0x1") UnmarshalBinary (@"time".dataÂ·3 []byte "esc:0x1") (? error)
-	func (@"time".tÂ·2 *@"time".Time "esc:0x1") UnmarshalJSON (@"time".dataÂ·3 []byte "esc:0x1") (@"time".errÂ·1 error)
-	func (@"time".tÂ·2 *@"time".Time "esc:0x1") UnmarshalText (@"time".dataÂ·3 []byte "esc:0x1") (@"time".errÂ·1 error)
-	func (@"time".tÂ·2 @"time".Time "esc:0x1") Weekday () (? @"time".Weekday)
-	func (@"time".tÂ·2 @"time".Time "esc:0x1") Year () (? int)
-	func (@"time".tÂ·2 @"time".Time "esc:0x1") YearDay () (? int)
-	func (@"time".tÂ·3 @"time".Time "esc:0x32") Zone () (@"time".nameÂ·1 string, @"time".offsetÂ·2 int)
-	func (@"time".tÂ·2 @"time".Time "esc:0x1") @"time".abs () (? uint64)
-	func (@"time".tÂ·5 @"time".Time "esc:0x1") @"time".date (@"time".fullÂ·6 bool) (@"time".yearÂ·1 int, @"time".monthÂ·2 @"time".Month, @"time".dayÂ·3 int, @"time".ydayÂ·4 int)
-	func (@"time".tÂ·4 @"time".Time "esc:0x32") @"time".locabs () (@"time".nameÂ·1 string, @"time".offsetÂ·2 int, @"time".absÂ·3 uint64)
-	type @"github.com/cloudfoundry/cli/plugin/models".GetApp_Stack struct { Guid string; Name string; Description string }
-	type @"github.com/cloudfoundry/cli/plugin/models".GetApp_AppInstanceFields struct { State string; Details string; Since @"time".Time; CpuUsage float64; DiskQuota int64; DiskUsage int64; MemQuota int64; MemUsage int64 }
-	type @"github.com/cloudfoundry/cli/plugin/models".GetApp_DomainFields struct { Guid string; Name string }
-	type @"github.com/cloudfoundry/cli/plugin/models".GetApp_RouteSummary struct { Guid string; Host string; Domain @"github.com/cloudfoundry/cli/plugin/models".GetApp_DomainFields }
-	type @"github.com/cloudfoundry/cli/plugin/models".GetApp_ServiceSummary struct { Guid string; Name string }
-	type @"github.com/cloudfoundry/cli/plugin/models".GetAppModel struct { Guid string; Name string; BuildpackUrl string; Command string; Diego bool; DetectedStartCommand string; DiskQuota int64; EnvironmentVars map[string]interface {}; InstanceCount int; Memory int64; RunningInstances int; HealthCheckTimeout int; State string; SpaceGuid string; PackageUpdatedAt *@"time".Time; PackageState string; StagingFailedReason string; AppPorts []int; Stack *@"github.com/cloudfoundry/cli/plugin/models".GetApp_Stack; Instances []@"github.com/cloudfoundry/cli/plugin/models".GetApp_AppInstanceFields; Routes []@"github.com/cloudfoundry/cli/plugin/models".GetApp_RouteSummary; Services []@"github.com/cloudfoundry/cli/plugin/models".GetApp_ServiceSummary }
-	type @"github.com/cloudfoundry/cli/plugin/models".GetAppsDomainFields struct { Guid string; Name string; OwningOrganizationGuid string; Shared bool }
-	type @"github.com/cloudfoundry/cli/plugin/models".GetAppsRouteSummary struct { Guid string; Host string; Domain @"github.com/cloudfoundry/cli/plugin/models".GetAppsDomainFields }
-	type @"github.com/cloudfoundry/cli/plugin/models".GetAppsModel struct { Name string; Guid string; State string; TotalInstances int; RunningInstances int; Memory int64; DiskQuota int64; Routes []@"github.com/cloudfoundry/cli/plugin/models".GetAppsRouteSummary; AppPorts []int }
-	type @"github.com/cloudfoundry/cli/plugin/models".QuotaFields struct { Guid string; Name string; MemoryLimit int64; InstanceMemoryLimit int64; RoutesLimit int; ServicesLimit int; NonBasicServicesAllowed bool }
-	type @"github.com/cloudfoundry/cli/plugin/models".OrganizationFields struct { Guid string; Name string; QuotaDefinition @"github.com/cloudfoundry/cli/plugin/models".QuotaFields }
-	type @"github.com/cloudfoundry/cli/plugin/models".Organization struct { ? @"github.com/cloudfoundry/cli/plugin/models".OrganizationFields }
-	type @"github.com/cloudfoundry/cli/plugin/models".SpaceFields struct { Guid string; Name string }
-	type @"github.com/cloudfoundry/cli/plugin/models".Space struct { ? @"github.com/cloudfoundry/cli/plugin/models".SpaceFields }
-	type @"github.com/cloudfoundry/cli/plugin/models".GetOrg_Space struct { Guid string; Name string }
-	type @"github.com/cloudfoundry/cli/plugin/models".GetOrg_Domains struct { Guid string; Name string; OwningOrganizationGuid string; Shared bool }
-	type @"github.com/cloudfoundry/cli/plugin/models".GetOrg_SpaceQuota struct { Guid string; Name string; MemoryLimit int64; InstanceMemoryLimit int64; RoutesLimit int; ServicesLimit int; NonBasicServicesAllowed bool }
-	type @"github.com/cloudfoundry/cli/plugin/models".GetOrg_Model struct { Guid string; Name string; QuotaDefinition @"github.com/cloudfoundry/cli/plugin/models".QuotaFields; Spaces []@"github.com/cloudfoundry/cli/plugin/models".GetOrg_Space; Domains []@"github.com/cloudfoundry/cli/plugin/models".GetOrg_Domains; SpaceQuotas []@"github.com/cloudfoundry/cli/plugin/models".GetOrg_SpaceQuota }
-	type @"github.com/cloudfoundry/cli/plugin/models".GetOrgUsers_Model struct { Guid string; Username string; IsAdmin bool; Roles []string }
-	type @"github.com/cloudfoundry/cli/plugin/models".GetOrgs_Model struct { Guid string; Name string }
-	type @"github.com/cloudfoundry/cli/plugin/models".GetService_ServiceFields struct { Name string; DocumentationUrl string }
-	type @"github.com/cloudfoundry/cli/plugin/models".GetService_ServicePlan struct { Name string; Guid string }
-	type @"github.com/cloudfoundry/cli/plugin/models".GetService_LastOperation struct { Type string; State string; Description string; CreatedAt string; UpdatedAt string }
-	type @"github.com/cloudfoundry/cli/plugin/models".GetService_Model struct { Guid string; Name string; DashboardUrl string; IsUserProvided bool; ServiceOffering @"github.com/cloudfoundry/cli/plugin/models".GetService_ServiceFields; ServicePlan @"github.com/cloudfoundry/cli/plugin/models".GetService_ServicePlan; LastOperation @"github.com/cloudfoundry/cli/plugin/models".GetService_LastOperation }
-	type @"github.com/cloudfoundry/cli/plugin/models".GetServices_ServicePlan struct { Guid string; Name string }
-	type @"github.com/cloudfoundry/cli/plugin/models".GetServices_ServiceFields struct { Name string }
-	type @"github.com/cloudfoundry/cli/plugin/models".GetServices_LastOperation struct { Type string; State string }
-	type @"github.com/cloudfoundry/cli/plugin/models".GetServices_Model struct { Guid string; Name string; ServicePlan @"github.com/cloudfoundry/cli/plugin/models".GetServices_ServicePlan; Service @"github.com/cloudfoundry/cli/plugin/models".GetServices_ServiceFields; LastOperation @"github.com/cloudfoundry/cli/plugin/models".GetServices_LastOperation; ApplicationNames []string; IsUserProvided bool }
-	type @"github.com/cloudfoundry/cli/plugin/models".GetSpaces_Model struct { Guid string; Name string }
-	type @"github.com/cloudfoundry/cli/plugin/models".GetSpace_Orgs struct { Guid string; Name string }
-	type @"github.com/cloudfoundry/cli/plugin/models".GetSpace_Apps struct { Name string; Guid string }
-	type @"github.com/cloudfoundry/cli/plugin/models".GetSpace_ServiceInstance struct { Guid string; Name string }
-	type @"github.com/cloudfoundry/cli/plugin/models".GetSpace_Domains struct { Guid string; Name string; OwningOrganizationGuid string; Shared bool }
-	type @"github.com/cloudfoundry/cli/plugin/models".GetSpace_SecurityGroup struct { Name string; Guid string; Rules []map[string]interface {} }
-	type @"github.com/cloudfoundry/cli/plugin/models".GetSpace_SpaceQuota struct { Guid string; Name string; MemoryLimit int64; InstanceMemoryLimit int64; RoutesLimit int; ServicesLimit int; NonBasicServicesAllowed bool }
-	type @"github.com/cloudfoundry/cli/plugin/models".GetSpace_Model struct { ? @"github.com/cloudfoundry/cli/plugin/models".GetSpaces_Model; Organization @"github.com/cloudfoundry/cli/plugin/models".GetSpace_Orgs; Applications []@"github.com/cloudfoundry/cli/plugin/models".GetSpace_Apps; ServiceInstances []@"github.com/cloudfoundry/cli/plugin/models".GetSpace_ServiceInstance; Domains []@"github.com/cloudfoundry/cli/plugin/models".GetSpace_Domains; SecurityGroups []@"github.com/cloudfoundry/cli/plugin/models".GetSpace_SecurityGroup; SpaceQuota @"github.com/cloudfoundry/cli/plugin/models".GetSpace_SpaceQuota }
-	type @"github.com/cloudfoundry/cli/plugin/models".GetSpaceUsers_Model struct { Guid string; Username string; IsAdmin bool; Roles []string }
-	type @"github.com/cloudfoundry/cli/plugin".CliConnection interface { AccessToken() (? string, ? error); ApiEndpoint() (? string, ? error); ApiVersion() (? string, ? error); CliCommand(@"github.com/cloudfoundry/cli/plugin".args ...string) (? []string, ? error); CliCommandWithoutTerminalOutput(@"github.com/cloudfoundry/cli/plugin".args ...string) (? []string, ? error); DopplerEndpoint() (? string, ? error); GetApp(? string) (? @"github.com/cloudfoundry/cli/plugin/models".GetAppModel, ? error); GetApps() (? []@"github.com/cloudfoundry/cli/plugin/models".GetAppsModel, ? error); GetCurrentOrg() (? @"github.com/cloudfoundry/cli/plugin/models".Organization, ? error); GetCurrentSpace() (? @"github.com/cloudfoundry/cli/plugin/models".Space, ? error); GetOrg(? string) (? @"github.com/cloudfoundry/cli/plugin/models".GetOrg_Model, ? error); GetOrgUsers(? string, ? ...string) (? []@"github.com/cloudfoundry/cli/plugin/models".GetOrgUsers_Model, ? error); GetOrgs() (? []@"github.com/cloudfoundry/cli/plugin/models".GetOrgs_Model, ? error); GetService(? string) (? @"github.com/cloudfoundry/cli/plugin/models".GetService_Model, ? error); GetServices() (? []@"github.com/cloudfoundry/cli/plugin/models".GetServices_Model, ? error); GetSpace(? string) (? @"github.com/cloudfoundry/cli/plugin/models".GetSpace_Model, ? error); GetSpaceUsers(? string, ? string) (? []@"github.com/cloudfoundry/cli/plugin/models".GetSpaceUsers_Model, ? error); GetSpaces() (? []@"github.com/cloudfoundry/cli/plugin/models".GetSpaces_Model, ? error); HasAPIEndpoint() (? bool, ? error); HasOrganization() (? bool, ? error); HasSpace() (? bool, ? error); IsLoggedIn() (? bool, ? error); IsSSLDisabled() (? bool, ? error); LoggregatorEndpoint() (? string, ? error); UserEmail() (? string, ? error); UserGuid() (? string, ? error); Username() (? string, ? error) }
-	import cli "github.com/codegangsta/cli" // indirect
-	import flag "flag" // indirect
-	type @"flag".Value interface { Set(? string) (? error); String() (? string) }
-	type @"flag".Flag struct { Name string; Usage string; Value @"flag".Value; DefValue string }
-	type @"flag".ErrorHandling int
-	import io "io" // indirect
-	type @"io".Writer interface { Write(@"io".p []byte) (@"io".n int, @"io".err error) }
-	type @"flag".FlagSet struct { Usage func(); @"flag".name string; @"flag".parsed bool; @"flag".actual map[string]*@"flag".Flag; @"flag".formal map[string]*@"flag".Flag; @"flag".args []string; @"flag".errorHandling @"flag".ErrorHandling; @"flag".output @"io".Writer }
-	func (@"flag".fÂ·2 *@"flag".FlagSet "esc:0x32") Arg (@"flag".iÂ·3 int) (? string) { if @"flag".iÂ·3 < 0x0 || @"flag".iÂ·3 >= len(@"flag".fÂ·2.@"flag".args) { return "" }; return @"flag".fÂ·2.@"flag".args[@"flag".iÂ·3] }
-	func (@"flag".fÂ·2 *@"flag".FlagSet "esc:0x22") Args () (? []string) { return @"flag".fÂ·2.@"flag".args }
-	func (@"flag".fÂ·2 *@"flag".FlagSet "esc:0x9") Bool (@"flag".nameÂ·3 string, @"flag".valueÂ·4 bool, @"flag".usageÂ·5 string) (? *bool)
-	func (@"flag".fÂ·1 *@"flag".FlagSet "esc:0x9") BoolVar (@"flag".pÂ·2 *bool, @"flag".nameÂ·3 string, @"flag".valueÂ·4 bool, @"flag".usageÂ·5 string)
-	func (@"flag".fÂ·2 *@"flag".FlagSet "esc:0x9") Duration (@"flag".nameÂ·3 string, @"flag".valueÂ·4 @"time".Duration, @"flag".usageÂ·5 string) (? *@"time".Duration)
-	func (@"flag".fÂ·1 *@"flag".FlagSet "esc:0x9") DurationVar (@"flag".pÂ·2 *@"time".Duration, @"flag".nameÂ·3 string, @"flag".valueÂ·4 @"time".Duration, @"flag".usageÂ·5 string)
-	func (@"flag".fÂ·2 *@"flag".FlagSet "esc:0x9") Float64 (@"flag".nameÂ·3 string, @"flag".valueÂ·4 float64, @"flag".usageÂ·5 string) (? *float64)
-	func (@"flag".fÂ·1 *@"flag".FlagSet "esc:0x9") Float64Var (@"flag".pÂ·2 *float64, @"flag".nameÂ·3 string, @"flag".valueÂ·4 float64, @"flag".usageÂ·5 string)
-	func (@"flag".fÂ·1 *@"flag".FlagSet "esc:0x1") Init (@"flag".nameÂ·2 string, @"flag".errorHandlingÂ·3 @"flag".ErrorHandling) { @"flag".fÂ·1.@"flag".name = @"flag".nameÂ·2; @"flag".fÂ·1.@"flag".errorHandling = @"flag".errorHandlingÂ·3 }
-	func (@"flag".fÂ·2 *@"flag".FlagSet "esc:0x9") Int (@"flag".nameÂ·3 string, @"flag".valueÂ·4 int, @"flag".usageÂ·5 string) (? *int)
-	func (@"flag".fÂ·2 *@"flag".FlagSet "esc:0x9") Int64 (@"flag".nameÂ·3 string, @"flag".valueÂ·4 int64, @"flag".usageÂ·5 string) (? *int64)
-	func (@"flag".fÂ·1 *@"flag".FlagSet "esc:0x9") Int64Var (@"flag".pÂ·2 *int64, @"flag".nameÂ·3 string, @"flag".valueÂ·4 int64, @"flag".usageÂ·5 string)
-	func (@"flag".fÂ·1 *@"flag".FlagSet "esc:0x9") IntVar (@"flag".pÂ·2 *int, @"flag".nameÂ·3 string, @"flag".valueÂ·4 int, @"flag".usageÂ·5 string)
-	func (@"flag".fÂ·2 *@"flag".FlagSet "esc:0x1") Lookup (@"flag".nameÂ·3 string "esc:0x1") (? *@"flag".Flag) { return @"flag".fÂ·2.@"flag".formal[@"flag".nameÂ·3] }
-	func (@"flag".fÂ·2 *@"flag".FlagSet "esc:0x1") NArg () (? int) { return len(@"flag".fÂ·2.@"flag".args) }
-	func (@"flag".fÂ·2 *@"flag".FlagSet "esc:0x1") NFlag () (? int) { return len(@"flag".fÂ·2.@"flag".actual) }
-	func (@"flag".fÂ·2 *@"flag".FlagSet "esc:0x9") Parse (@"flag".argumentsÂ·3 []string) (? error)
-	func (@"flag".fÂ·2 *@"flag".FlagSet "esc:0x1") Parsed () (? bool) { return @"flag".fÂ·2.@"flag".parsed }
-	func (@"flag".fÂ·1 *@"flag".FlagSet "esc:0x9") PrintDefaults ()
-	func (@"flag".fÂ·2 *@"flag".FlagSet "esc:0x1") Set (@"flag".nameÂ·3 string, @"flag".valueÂ·4 string) (? error)
-	func (@"flag".fÂ·1 *@"flag".FlagSet "esc:0x1") SetOutput (@"flag".outputÂ·2 @"io".Writer) { @"flag".fÂ·1.@"flag".output = @"flag".outputÂ·2 }
-	func (@"flag".fÂ·2 *@"flag".FlagSet "esc:0x9") String (@"flag".nameÂ·3 string, @"flag".valueÂ·4 string, @"flag".usageÂ·5 string) (? *string)
-	func (@"flag".fÂ·1 *@"flag".FlagSet "esc:0x9") StringVar (@"flag".pÂ·2 *string, @"flag".nameÂ·3 string, @"flag".valueÂ·4 string, @"flag".usageÂ·5 string)
-	func (@"flag".fÂ·2 *@"flag".FlagSet "esc:0x9") Uint (@"flag".nameÂ·3 string, @"flag".valueÂ·4 uint, @"flag".usageÂ·5 string) (? *uint)
-	func (@"flag".fÂ·2 *@"flag".FlagSet "esc:0x9") Uint64 (@"flag".nameÂ·3 string, @"flag".valueÂ·4 uint64, @"flag".usageÂ·5 string) (? *uint64)
-	func (@"flag".fÂ·1 *@"flag".FlagSet "esc:0x9") Uint64Var (@"flag".pÂ·2 *uint64, @"flag".nameÂ·3 string, @"flag".valueÂ·4 uint64, @"flag".usageÂ·5 string)
-	func (@"flag".fÂ·1 *@"flag".FlagSet "esc:0x9") UintVar (@"flag".pÂ·2 *uint, @"flag".nameÂ·3 string, @"flag".valueÂ·4 uint, @"flag".usageÂ·5 string)
-	func (@"flag".fÂ·1 *@"flag".FlagSet "esc:0x9") Var (@"flag".valueÂ·2 @"flag".Value, @"flag".nameÂ·3 string, @"flag".usageÂ·4 string)
-	func (@"flag".fÂ·1 *@"flag".FlagSet "esc:0x9") Visit (@"flag".fnÂ·2 func(? *@"flag".Flag) "esc:0x1")
-	func (@"flag".fÂ·1 *@"flag".FlagSet "esc:0x9") VisitAll (@"flag".fnÂ·2 func(? *@"flag".Flag) "esc:0x1")
-	func (@"flag".fÂ·2 *@"flag".FlagSet "esc:0x9") @"flag".failf (@"flag".formatÂ·3 string "esc:0x9", @"flag".aÂ·4 ...interface {} "esc:0x9") (? error)
-	func (@"flag".fÂ·2 *@"flag".FlagSet "esc:0x22") @"flag".out () (? @"io".Writer) { if @"flag".fÂ·2.@"flag".output == nil { return @"os".Stderr }; return @"flag".fÂ·2.@"flag".output }
-	func (@"flag".fÂ·3 *@"flag".FlagSet "esc:0x9") @"flag".parseOne () (? bool, ? error)
-	func (@"flag".fÂ·1 *@"flag".FlagSet "esc:0x9") @"flag".usage ()
-	type @"github.com/codegangsta/cli".Flag interface { Apply(? *@"flag".FlagSet); String() (? string); @"github.com/codegangsta/cli".getName() (? string) }
-	type @"github.com/codegangsta/cli".Command struct { Name string; ShortName string; Aliases []string; Usage string; Description string; BashComplete func(@"github.com/codegangsta/cli".context *@"github.com/codegangsta/cli".Context); Before func(@"github.com/codegangsta/cli".context *@"github.com/codegangsta/cli".Context) (? error); After func(@"github.com/codegangsta/cli".context *@"github.com/codegangsta/cli".Context) (? error); Action func(@"github.com/codegangsta/cli".context *@"github.com/codegangsta/cli".Context); Subcommands []@"github.com/codegangsta/cli".Command; Flags []@"github.com/codegangsta/cli".Flag; SkipFlagParsing bool; HideHelp bool }
-	func (@"github.com/codegangsta/cli".cÂ·2 @"github.com/codegangsta/cli".Command) HasName (@"github.com/codegangsta/cli".nameÂ·3 string "esc:0x1") (? bool)
-	func (@"github.com/codegangsta/cli".cÂ·2 @"github.com/codegangsta/cli".Command) Names () (? []string) { var @"github.com/codegangsta/cli".namesÂ·3 []string; ; @"github.com/codegangsta/cli".namesÂ·3 = ([]string{ 0x0:@"github.com/codegangsta/cli".cÂ·2.Name }); if @"github.com/codegangsta/cli".cÂ·2.ShortName != "" { @"github.com/codegangsta/cli".namesÂ·3 = append(@"github.com/codegangsta/cli".namesÂ·3, @"github.com/codegangsta/cli".cÂ·2.ShortName) }; return append(@"github.com/codegangsta/cli".namesÂ·3, @"github.com/codegangsta/cli".cÂ·2.Aliases...) }
-	func (@"github.com/codegangsta/cli".cÂ·2 @"github.com/codegangsta/cli".Command) Run (@"github.com/codegangsta/cli".ctxÂ·3 *@"github.com/codegangsta/cli".Context) (? error)
-	func (@"github.com/codegangsta/cli".cÂ·2 @"github.com/codegangsta/cli".Command) @"github.com/codegangsta/cli".startApp (@"github.com/codegangsta/cli".ctxÂ·3 *@"github.com/codegangsta/cli".Context) (? error)
-	type @"github.com/codegangsta/cli".Author struct { Name string; Email string }
-	func (@"github.com/codegangsta/cli".aÂ·2 @"github.com/codegangsta/cli".Author) String () (? string)
-	type @"github.com/codegangsta/cli".App struct { Name string; Usage string; Version string; Commands []@"github.com/codegangsta/cli".Command; Flags []@"github.com/codegangsta/cli".Flag; EnableBashCompletion bool; HideHelp bool; HideVersion bool; BashComplete func(@"github.com/codegangsta/cli".context *@"github.com/codegangsta/cli".Context); Before func(@"github.com/codegangsta/cli".context *@"github.com/codegangsta/cli".Context) (? error); After func(@"github.com/codegangsta/cli".context *@"github.com/codegangsta/cli".Context) (? error); Action func(@"github.com/codegangsta/cli".context *@"github.com/codegangsta/cli".Context); CommandNotFound func(@"github.com/codegangsta/cli".context *@"github.com/codegangsta/cli".Context, @"github.com/codegangsta/cli".command string); Compiled @"time".Time; Authors []@"github.com/codegangsta/cli".Author; Author string; Email string; Writer @"io".Writer }
-	func (@"github.com/codegangsta/cli".aÂ·2 *@"github.com/codegangsta/cli".App "esc:0x2a") Command (@"github.com/codegangsta/cli".nameÂ·3 string "esc:0x1") (? *@"github.com/codegangsta/cli".Command)
-	func (@"github.com/codegangsta/cli".aÂ·2 *@"github.com/codegangsta/cli".App) Run (@"github.com/codegangsta/cli".argumentsÂ·3 []string) (@"github.com/codegangsta/cli".errÂ·1 error)
-	func (@"github.com/codegangsta/cli".aÂ·1 *@"github.com/codegangsta/cli".App) RunAndExitOnError ()
-	func (@"github.com/codegangsta/cli".aÂ·2 *@"github.com/codegangsta/cli".App) RunAsSubcommand (@"github.com/codegangsta/cli".ctxÂ·3 *@"github.com/codegangsta/cli".Context) (@"github.com/codegangsta/cli".errÂ·1 error)
-	func (@"github.com/codegangsta/cli".aÂ·1 *@"github.com/codegangsta/cli".App "esc:0x9") @"github.com/codegangsta/cli".appendFlag (@"github.com/codegangsta/cli".flagÂ·2 @"github.com/codegangsta/cli".Flag)
-	func (@"github.com/codegangsta/cli".aÂ·2 *@"github.com/codegangsta/cli".App "esc:0x1") @"github.com/codegangsta/cli".hasFlag (@"github.com/codegangsta/cli".flagÂ·3 @"github.com/codegangsta/cli".Flag "esc:0x1") (? bool)
-	type @"github.com/codegangsta/cli".Args []string
-	func (@"github.com/codegangsta/cli".aÂ·2 @"github.com/codegangsta/cli".Args "esc:0x22") First () (? string) { return @"github.com/codegangsta/cli".aÂ·2.Get(0x0) }
-	func (@"github.com/codegangsta/cli".aÂ·2 @"github.com/codegangsta/cli".Args "esc:0x22") Get (@"github.com/codegangsta/cli".nÂ·3 int) (? string) { if len(@"github.com/codegangsta/cli".aÂ·2) > @"github.com/codegangsta/cli".nÂ·3 { return @"github.com/codegangsta/cli".aÂ·2[@"github.com/codegangsta/cli".nÂ·3] }; return "" }
-	func (@"github.com/codegangsta/cli".aÂ·2 @"github.com/codegangsta/cli".Args "esc:0x1") Present () (? bool) { return len(@"github.com/codegangsta/cli".aÂ·2) != 0x0 }
-	func (@"github.com/codegangsta/cli".aÂ·2 @"github.com/codegangsta/cli".Args "esc:0x9") Swap (@"github.com/codegangsta/cli".fromÂ·3 int, @"github.com/codegangsta/cli".toÂ·4 int) (? error) { if @"github.com/codegangsta/cli".fromÂ·3 >= len(@"github.com/codegangsta/cli".aÂ·2) || @"github.com/codegangsta/cli".toÂ·4 >= len(@"github.com/codegangsta/cli".aÂ·2) { return @"errors".New("index out of range") }; @"github.com/codegangsta/cli".aÂ·2[@"github.com/codegangsta/cli".fromÂ·3], @"github.com/codegangsta/cli".aÂ·2[@"github.com/codegangsta/cli".toÂ·4] = @"github.com/codegangsta/cli".aÂ·2[@"github.com/codegangsta/cli".toÂ·4], @"github.com/codegangsta/cli".aÂ·2[@"github.com/codegangsta/cli".fromÂ·3]; return nil }
-	func (@"github.com/codegangsta/cli".aÂ·2 @"github.com/codegangsta/cli".Args "esc:0x12") Tail () (? []string) { if len(@"github.com/codegangsta/cli".aÂ·2) >= 0x2 { return ([]string)(@"github.com/codegangsta/cli".aÂ·2)[0x1:] }; return ([]string{  }) }
-	type @"github.com/codegangsta/cli".Context struct { App *@"github.com/codegangsta/cli".App; Command @"github.com/codegangsta/cli".Command; @"github.com/codegangsta/cli".flagSet *@"flag".FlagSet; @"github.com/codegangsta/cli".globalSet *@"flag".FlagSet; @"github.com/codegangsta/cli".setFlags map[string]bool; @"github.com/codegangsta/cli".globalSetFlags map[string]bool }
-	func (@"github.com/codegangsta/cli".cÂ·2 *@"github.com/codegangsta/cli".Context "esc:0x32") Args () (? @"github.com/codegangsta/cli".Args) { var @"github.com/codegangsta/cli".argsÂ·3 @"github.com/codegangsta/cli".Args; ; @"github.com/codegangsta/cli".argsÂ·3 = @"github.com/codegangsta/cli".Args(@"github.com/codegangsta/cli".cÂ·2.@"github.com/codegangsta/cli".flagSet.Args()); return @"github.com/codegangsta/cli".argsÂ·3 }
-	func (@"github.com/codegangsta/cli".cÂ·2 *@"github.com/codegangsta/cli".Context "esc:0x1") Bool (@"github.com/codegangsta/cli".nameÂ·3 string "esc:0x1") (? bool)
-	func (@"github.com/codegangsta/cli".cÂ·2 *@"github.com/codegangsta/cli".Context "esc:0x1") BoolT (@"github.com/codegangsta/cli".nameÂ·3 string "esc:0x1") (? bool)
-	func (@"github.com/codegangsta/cli".cÂ·2 *@"github.com/codegangsta/cli".Context "esc:0x1") Duration (@"github.com/codegangsta/cli".nameÂ·3 string "esc:0x1") (? @"time".Duration)
-	func (@"github.com/codegangsta/cli".cÂ·2 *@"github.com/codegangsta/cli".Context "esc:0x9") FlagNames () (@"github.com/codegangsta/cli".namesÂ·1 []string)
-	func (@"github.com/codegangsta/cli".cÂ·2 *@"github.com/codegangsta/cli".Context "esc:0x1") Float64 (@"github.com/codegangsta/cli".nameÂ·3 string "esc:0x1") (? float64)
-	func (@"github.com/codegangsta/cli".cÂ·2 *@"github.com/codegangsta/cli".Context "esc:0x1") Generic (@"github.com/codegangsta/cli".nameÂ·3 string "esc:0x1") (? interface {}) { return @"github.com/codegangsta/cli".lookupGeneric(@"github.com/codegangsta/cli".nameÂ·3, @"github.com/codegangsta/cli".cÂ·2.@"github.com/codegangsta/cli".flagSet) }
-	func (@"github.com/codegangsta/cli".cÂ·2 *@"github.com/codegangsta/cli".Context "esc:0x1") GlobalBool (@"github.com/codegangsta/cli".nameÂ·3 string "esc:0x1") (? bool)
-	func (@"github.com/codegangsta/cli".cÂ·2 *@"github.com/codegangsta/cli".Context "esc:0x1") GlobalDuration (@"github.com/codegangsta/cli".nameÂ·3 string "esc:0x1") (? @"time".Duration)
-	func (@"github.com/codegangsta/cli".cÂ·2 *@"github.com/codegangsta/cli".Context "esc:0x9") GlobalFlagNames () (@"github.com/codegangsta/cli".namesÂ·1 []string)
-	func (@"github.com/codegangsta/cli".cÂ·2 *@"github.com/codegangsta/cli".Context "esc:0x1") GlobalGeneric (@"github.com/codegangsta/cli".nameÂ·3 string "esc:0x1") (? interface {}) { return @"github.com/codegangsta/cli".lookupGeneric(@"github.com/codegangsta/cli".nameÂ·3, @"github.com/codegangsta/cli".cÂ·2.@"github.com/codegangsta/cli".globalSet) }
-	func (@"github.com/codegangsta/cli".cÂ·2 *@"github.com/codegangsta/cli".Context "esc:0x1") GlobalInt (@"github.com/codegangsta/cli".nameÂ·3 string "esc:0x1") (? int)
-	func (@"github.com/codegangsta/cli".cÂ·2 *@"github.com/codegangsta/cli".Context "esc:0x1") GlobalIntSlice (@"github.com/codegangsta/cli".nameÂ·3 string "esc:0x1") (? []int) { return @"github.com/codegangsta/cli".lookupIntSlice(@"github.com/codegangsta/cli".nameÂ·3, @"github.com/codegangsta/cli".cÂ·2.@"github.com/codegangsta/cli".globalSet) }
-	func (@"github.com/codegangsta/cli".cÂ·2 *@"github.com/codegangsta/cli".Context "esc:0x9") GlobalIsSet (@"github.com/codegangsta/cli".nameÂ·3 string "esc:0x1") (? bool)
-	func (@"github.com/codegangsta/cli".cÂ·2 *@"github.com/codegangsta/cli".Context "esc:0x1") GlobalString (@"github.com/codegangsta/cli".nameÂ·3 string "esc:0x1") (? string)
-	func (@"github.com/codegangsta/cli".cÂ·2 *@"github.com/codegangsta/cli".Context "esc:0x1") GlobalStringSlice (@"github.com/codegangsta/cli".nameÂ·3 string "esc:0x1") (? []string) { return @"github.com/codegangsta/cli".lookupStringSlice(@"github.com/codegangsta/cli".nameÂ·3, @"github.com/codegangsta/cli".cÂ·2.@"github.com/codegangsta/cli".globalSet) }
-	func (@"github.com/codegangsta/cli".cÂ·2 *@"github.com/codegangsta/cli".Context "esc:0x1") Int (@"github.com/codegangsta/cli".nameÂ·3 string "esc:0x1") (? int)
-	func (@"github.com/codegangsta/cli".cÂ·2 *@"github.com/codegangsta/cli".Context "esc:0x1") IntSlice (@"github.com/codegangsta/cli".nameÂ·3 string "esc:0x1") (? []int) { return @"github.com/codegangsta/cli".lookupIntSlice(@"github.com/codegangsta/cli".nameÂ·3, @"github.com/codegangsta/cli".cÂ·2.@"github.com/codegangsta/cli".flagSet) }
-	func (@"github.com/codegangsta/cli".cÂ·2 *@"github.com/codegangsta/cli".Context "esc:0x9") IsSet (@"github.com/codegangsta/cli".nameÂ·3 string "esc:0x1") (? bool)
-	func (@"github.com/codegangsta/cli".cÂ·2 *@"github.com/codegangsta/cli".Context "esc:0x1") NumFlags () (? int) { return @"github.com/codegangsta/cli".cÂ·2.@"github.com/codegangsta/cli".flagSet.NFlag() }
-	func (@"github.com/codegangsta/cli".cÂ·2 *@"github.com/codegangsta/cli".Context "esc:0x1") String (@"github.com/codegangsta/cli".nameÂ·3 string "esc:0x1") (? string)
-	func (@"github.com/codegangsta/cli".cÂ·2 *@"github.com/codegangsta/cli".Context "esc:0x1") StringSlice (@"github.com/codegangsta/cli".nameÂ·3 string "esc:0x1") (? []string) { return @"github.com/codegangsta/cli".lookupStringSlice(@"github.com/codegangsta/cli".nameÂ·3, @"github.com/codegangsta/cli".cÂ·2.@"github.com/codegangsta/cli".flagSet) }
-	type @"github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal".Table interface { Add(@"github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal".row ...string); Print() }
-	type @"github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal".UI interface { Ask(@"github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal".prompt string, @"github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal".args ...interface {}) (@"github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal".answer string); AskForPassword(@"github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal".prompt string, @"github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal".args ...interface {}) (@"github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal".answer string); Confirm(@"github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal".message string, @"github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal".args ...interface {}) (? bool); FailWithUsage(@"github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal".context *@"github.com/codegangsta/cli".Context); Failed(@"github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal".message string, @"github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal".args ...interface {}); Ok(); Prompt(@"github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal".message string, @"github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal".args ...interface {}); Say(@"github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal".message string, @"github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal".args ...interface {}); Table(@"github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal".headers []string) (? @"github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal".Table); Warn(@"github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal".message string, @"github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal".args ...interface {}); Writer() (? @"io".Writer) }
-	type @"".CommandContext struct { @"".cliConn @"github.com/cloudfoundry/cli/plugin".CliConnection; @"".ui @"github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal".UI }
-	func @"".Init (@"".cliConnectionÂ·1 @"github.com/cloudfoundry/cli/plugin".CliConnection) { @"".context = (&@"".CommandContext{ @"".cliConn:@"".cliConnectionÂ·1, @"".ui:@"github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal".StdUI }) }
-	func @"".UI () (? @"github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal".UI) { return @"".context.@"".ui }
-	func @"".CheckPrerequisties ()
-	func @"".AccessToken () (? string)
-	func @"".Org () (? @"github.com/cloudfoundry/cli/plugin/models".Organization)
-	func @"".Space () (? @"github.com/cloudfoundry/cli/plugin/models".Space)
-	func @"".init ()
-	var @"time".months [12]string
-	var @"time".days [7]string
-	var @"time".Local *@"time".Location
-	var @"time".UTC *@"time".Location
-	import os "os" // indirect
-	type @"os".dirInfo struct { @"os".buf []byte; @"os".nbuf int; @"os".bufp int }
-	type @"os".file struct { @"os".fd int; @"os".name string; @"os".dirinfo *@"os".dirInfo; @"os".nepipe int32 }
-	func (@"os".fileÂ·2 *@"os".file) @"os".close () (? error)
-	type @"os".FileMode uint32
-	func (@"os".mÂ·2 @"os".FileMode) IsDir () (? bool) { return @"os".mÂ·2 & @"os".FileMode(0x80000000) != @"os".FileMode(0x0) }
-	func (@"os".mÂ·2 @"os".FileMode) IsRegular () (? bool) { return @"os".mÂ·2 & @"os".FileMode(0x8f000000) == @"os".FileMode(0x0) }
-	func (@"os".mÂ·2 @"os".FileMode) Perm () (? @"os".FileMode) { return @"os".mÂ·2 & @"os".FileMode(0x1ff) }
-	func (@"os".mÂ·2 @"os".FileMode) String () (? string)
-	type @"os".FileInfo interface { IsDir() (? bool); ModTime() (? @"time".Time); Mode() (? @"os".FileMode); Name() (? string); Size() (? int64); Sys() (? interface {}) }
-	type @"os".File struct { @"os".? *@"os".file }
-	func (@"os".fÂ·2 *@"os".File "esc:0x22") Chdir () (? error)
-	func (@"os".fÂ·2 *@"os".File "esc:0x22") Chmod (@"os".modeÂ·3 @"os".FileMode) (? error)
-	func (@"os".fÂ·2 *@"os".File "esc:0x22") Chown (@"os".uidÂ·3 int, @"os".gidÂ·4 int) (? error)
-	func (@"os".fÂ·2 *@"os".File "esc:0x9") Close () (? error)
-	func (@"os".fÂ·2 *@"os".File "esc:0x1") Fd () (? uintptr) { if @"os".fÂ·2 == nil { return 0xffffffffffffffff }; return uintptr(@"os".fÂ·2.@"os".file.@"os".fd) }
-	func (@"os".fÂ·2 *@"os".File "esc:0x32") Name () (? string) { return @"os".fÂ·2.@"os".file.@"os".name }
-	func (@"os".fÂ·3 *@"os".File "esc:0x102") Read (@"os".bÂ·4 []byte "esc:0x1") (@"os".nÂ·1 int, @"os".errÂ·2 error)
-	func (@"os".fÂ·3 *@"os".File "esc:0x102") ReadAt (@"os".bÂ·4 []byte "esc:0x1", @"os".offÂ·5 int64) (@"os".nÂ·1 int, @"os".errÂ·2 error)
-	func (@"os".fÂ·3 *@"os".File "esc:0x1") Readdir (@"os".nÂ·4 int) (@"os".fiÂ·1 []@"os".FileInfo, @"os".errÂ·2 error)
-	func (@"os".fÂ·3 *@"os".File "esc:0x1") Readdirnames (@"os".nÂ·4 int) (@"os".namesÂ·1 []string, @"os".errÂ·2 error)
-	func (@"os".fÂ·3 *@"os".File "esc:0x102") Seek (@"os".offsetÂ·4 int64, @"os".whenceÂ·5 int) (@"os".retÂ·1 int64, @"os".errÂ·2 error)
-	func (@"os".fÂ·3 *@"os".File "esc:0x10a") Stat () (? @"os".FileInfo, ? error)
-	func (@"os".fÂ·2 *@"os".File "esc:0x1") Sync () (? error)
-	func (@"os".fÂ·2 *@"os".File "esc:0x22") Truncate (@"os".sizeÂ·3 int64) (? error)
-	func (@"os".fÂ·3 *@"os".File "esc:0x10a") Write (@"os".bÂ·4 []byte "esc:0x1") (@"os".nÂ·1 int, @"os".errÂ·2 error)
-	func (@"os".fÂ·3 *@"os".File "esc:0x102") WriteAt (@"os".bÂ·4 []byte "esc:0x1", @"os".offÂ·5 int64) (@"os".nÂ·1 int, @"os".errÂ·2 error)
-	func (@"os".fÂ·3 *@"os".File "esc:0x10a") WriteString (@"os".sÂ·4 string "esc:0x1") (@"os".nÂ·1 int, @"os".errÂ·2 error)
-	func (@"os".fÂ·3 *@"os".File "esc:0x1") @"os".pread (@"os".bÂ·4 []byte "esc:0x1", @"os".offÂ·5 int64) (@"os".nÂ·1 int, @"os".errÂ·2 error)
-	func (@"os".fÂ·3 *@"os".File "esc:0x1") @"os".pwrite (@"os".bÂ·4 []byte "esc:0x1", @"os".offÂ·5 int64) (@"os".nÂ·1 int, @"os".errÂ·2 error)
-	func (@"os".fÂ·3 *@"os".File "esc:0x1") @"os".read (@"os".bÂ·4 []byte "esc:0x1") (@"os".nÂ·1 int, @"os".errÂ·2 error)
-	func (@"os".fÂ·3 *@"os".File "esc:0x1") @"os".readdir (@"os".nÂ·4 int) (@"os".fiÂ·1 []@"os".FileInfo, @"os".errÂ·2 error)
-	func (@"os".fÂ·3 *@"os".File "esc:0x1") @"os".readdirnames (@"os".nÂ·4 int) (@"os".namesÂ·1 []string, @"os".errÂ·2 error)
-	func (@"os".fÂ·3 *@"os".File "esc:0x1") @"os".seek (@"os".offsetÂ·4 int64, @"os".whenceÂ·5 int) (@"os".retÂ·1 int64, @"os".errÂ·2 error)
-	func (@"os".fÂ·3 *@"os".File "esc:0x1") @"os".write (@"os".bÂ·4 []byte "esc:0x1") (@"os".nÂ·1 int, @"os".errÂ·2 error)
-	var @"os".Stderr *@"os".File
-	import errors "errors" // indirect
-	func @"errors".New (@"errors".textÂ·2 string) (? error) { return (&@"errors".errorString{ @"errors".s:@"errors".textÂ·2 }) }
-	func @"github.com/codegangsta/cli".lookupGeneric (@"github.com/codegangsta/cli".nameÂ·2 string "esc:0x1", @"github.com/codegangsta/cli".setÂ·3 *@"flag".FlagSet "esc:0x1") (? interface {}) { var @"github.com/codegangsta/cli".fÂ·4 *@"flag".Flag; ; @"github.com/codegangsta/cli".fÂ·4 = @"github.com/codegangsta/cli".setÂ·3.Lookup(@"github.com/codegangsta/cli".nameÂ·2); if @"github.com/codegangsta/cli".fÂ·4 != nil { return @"github.com/codegangsta/cli".fÂ·4.Value }; return nil }
-	func @"github.com/codegangsta/cli".lookupIntSlice (@"github.com/codegangsta/cli".nameÂ·2 string "esc:0x1", @"github.com/codegangsta/cli".setÂ·3 *@"flag".FlagSet "esc:0x1") (? []int) { var @"github.com/codegangsta/cli".fÂ·4 *@"flag".Flag; ; @"github.com/codegangsta/cli".fÂ·4 = @"github.com/codegangsta/cli".setÂ·3.Lookup(@"github.com/codegangsta/cli".nameÂ·2); if @"github.com/codegangsta/cli".fÂ·4 != nil { return @"github.com/codegangsta/cli".fÂ·4.Value.(*@"github.com/codegangsta/cli".IntSlice).Value() }; return nil }
-	func @"github.com/codegangsta/cli".lookupStringSlice (@"github.com/codegangsta/cli".nameÂ·2 string "esc:0x1", @"github.com/codegangsta/cli".setÂ·3 *@"flag".FlagSet "esc:0x1") (? []string) { var @"github.com/codegangsta/cli".fÂ·4 *@"flag".Flag; ; @"github.com/codegangsta/cli".fÂ·4 = @"github.com/codegangsta/cli".setÂ·3.Lookup(@"github.com/codegangsta/cli".nameÂ·2); if @"github.com/codegangsta/cli".fÂ·4 != nil { return @"github.com/codegangsta/cli".fÂ·4.Value.(*@"github.com/codegangsta/cli".StringSlice).Value() }; return nil }
-	var @"".context *@"".CommandContext
-	var @"github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal".StdUI @"github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal".UI
-	type @"errors".errorString struct { @"errors".s string }
-	func (@"errors".eÂ·2 *@"errors".errorString "esc:0x22") Error () (? string) { return @"errors".eÂ·2.@"errors".s }
-	type @"github.com/codegangsta/cli".IntSlice []int
-	func (@"github.com/codegangsta/cli".fÂ·2 *@"github.com/codegangsta/cli".IntSlice "esc:0x9") Set (@"github.com/codegangsta/cli".valueÂ·3 string) (? error)
-	func (@"github.com/codegangsta/cli".fÂ·2 *@"github.com/codegangsta/cli".IntSlice "esc:0x9") String () (? string)
-	func (@"github.com/codegangsta/cli".fÂ·2 *@"github.com/codegangsta/cli".IntSlice "esc:0x22") Value () (? []int) { return *@"github.com/codegangsta/cli".fÂ·2 }
-	type @"github.com/codegangsta/cli".StringSlice []string
-	func (@"github.com/codegangsta/cli".fÂ·2 *@"github.com/codegangsta/cli".StringSlice "esc:0x9") Set (@"github.com/codegangsta/cli".valueÂ·3 string) (? error) { *@"github.com/codegangsta/cli".fÂ·2 = append(*@"github.com/codegangsta/cli".fÂ·2, @"github.com/codegangsta/cli".valueÂ·3); return nil }
-	func (@"github.com/codegangsta/cli".fÂ·2 *@"github.com/codegangsta/cli".StringSlice "esc:0x9") String () (? string)
-	func (@"github.com/codegangsta/cli".fÂ·2 *@"github.com/codegangsta/cli".StringSlice "esc:0x22") Value () (? []string) { return *@"github.com/codegangsta/cli".fÂ·2 }
-
-$$
- _go_.o          0           0     0     644     14042     `
-go object darwin amd64 go1.5 X:none
-
-!
-  go13ldxgithub.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal.aHgithub.com/cloudfoundry/cli/plugin.aVgithub.com/cloudfoundry/cli/plugin/models.a ş"".Init  À  ¤eH‹%    H;a†µ   HƒìH    H‰$è    H‹D$H‰D$H‹l$ H‰(H‹l$(€=     uhH‰hH‹-    H‰hH‹-    €=     u0H‰h€=     uH‰    HƒÄÃH-    H‰,$H‰D$è    ëäL@L‰$H‰l$è    H‹D$ë»L@L‰$H‰l$è    H‹D$ëƒè    é.ÿÿÿ
-      4  ,type."".CommandContext   F
-  "runtime.newobject   € 6runtime.writeBarrierEnabled   œ  €github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal.StdUI   ² €github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal.StdUI   ¾ 6runtime.writeBarrierEnabled   Ø 6runtime.writeBarrierEnabled   ì  "".context   „  "".context    
-  .runtime.writebarrierptr   È
-  .runtime.writebarrierptr   ú
-  .runtime.writebarrierptr   ’
-  0runtime.morestack_noctxt    0  "".autotmp_0000 .type.*"".CommandContext  "".cliConnection  jtype.github.com/cloudfoundry/cli/plugin.CliConnection 0g/0a à *&S  "= TgclocalsÂ·2f2d69f12d345ece4be5273d9b84f0bb TgclocalsÂ·0c8aa8e80191a30eac23f1a218103f16   ò/Users/yangbo/workspace/java_workspace/open-Autoscaler/cli/src/github.com/cfibmers/open-Autoscaler/cli/context/context.goş
-"".UI  `  L1ÛH‹    Hƒû tH‹kH‰l$H‹kH‰l$Ã‰ëé
-  "".context       "".~r0  „type.github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal.UI 0 0 
-4.  TgclocalsÂ·23e8278e2b69a3a75fa59b23c49ed6ad TgclocalsÂ·33cdeccccebe80329f1fdbee7f5874cb   ò/Users/yangbo/workspace/java_workspace/open-Autoscaler/cli/src/github.com/cfibmers/open-Autoscaler/cli/context/context.goş*"".CheckPrerequisties  À  ¦eH‹%    H;a†6  HƒìPH‹    Hƒû „  H‹H‹kH‰l$HH‰,$H‰L$@H‹™È   ÿÓ¶\$€û uSH‹    Hƒû „Ú   H‹KH‹kH    H‰\$HÇD$,   1ÛH‰\$H‰\$ H‰\$(H‰l$8H‰,$H‰L$0H‹Y@ÿÓH‹    Hƒû „€   H‹H‹kH‰l$HH‰,$H‰L$@H‹™À   ÿÓ¶\$€û uOH‹    Hƒû tGH‹KH‹kH    H‰\$HÇD$   1ÛH‰\$H‰\$ H‰\$(H‰l$8H‰,$H‰L$0H‹Y@ÿÓHƒÄPÃ‰ëµ‰éyÿÿÿ‰éÿÿÿ‰éßşÿÿè    é­şÿÿ
-      4  "".context   ˆ       ¦  "".context   Ø  pgo.string."Please log in before using auto-scaling cli."   Â       Ì  "".context           ¾  "".context   è  Pgo.string."Please target a space first."   Ò       ”
-  0runtime.morestack_noctxt         ˜Ÿ 0 à .<9S9O  Dœ TgclocalsÂ·33cdeccccebe80329f1fdbee7f5874cb TgclocalsÂ·a8eabfc4a4514ed6b3b0c61e9680e440   ò/Users/yangbo/workspace/java_workspace/open-Autoscaler/cli/src/github.com/cfibmers/open-Autoscaler/cli/context/context.goş"".AccessToken  À  ¾eH‹%    H;a†  Hì€   1ÛH‰œ$ˆ   H‰œ$   H‹    Hƒû „Ñ   H‹H‹kH‰l$hH‰,$H‰L$`H‹Y ÿÓH‹\$H‰\$0H‹\$H‰\$8H‹D$H‹L$ Hƒø tlH‰L$HH‰$H‰D$@H‹X ÿÓH‹t$H‹T$H‹    Hƒû tcH‹KH‹kH‰t$pH‰t$H‰T$xH‰T$1ÛH‰\$H‰\$ H‰\$(H‰l$XH‰,$H‰L$PH‹Y@ÿÓH‹\$0H‰œ$ˆ   H‹\$8H‰œ$   HÄ€   Ã‰ë™‰é(ÿÿÿè    éáşÿÿ
-      ^  "".context   ¬       œ       º  "".context   Ì       ¬
-  0runtime.morestack_noctxt    €  "".autotmp_0005 type.string "".err type.error "".token Ÿtype.string "".~r0  type.string €ïÿ€   "N,Jl"  V8’ TgclocalsÂ·c55cf99de9cdd8c8202a466952fa1a45 TgclocalsÂ·488efd5564b22aec1294e68943e642b4   ò/Users/yangbo/workspace/java_workspace/open-Autoscaler/cli/src/github.com/cfibmers/open-Autoscaler/cli/context/context.goş"".Org  €  òeH‹%    H„$XÿÿÿH;A†  Hì(  H¼$0  1ÀHƒÇèè    H‹    Hƒû „â   H‹H‹kH‰¬$¨   H‰,$H‰Œ$    H‹Y`ÿÓH¼$À   Ht$è    H‹D$pH‹L$xHƒø t~H‰Œ$ˆ   H‰$H‰„$€   H‹X ÿÓH‹t$H‹T$H‹    Hƒû tjH‹KH‹kH‰´$°   H‰t$H‰”$¸   H‰T$1ÛH‰\$H‰\$ H‰\$(H‰¬$˜   H‰,$H‰Œ$   H‹Y@ÿÓH´$À   H¼$0  è    HÄ(  Ã‰ë’‰éÿÿÿè    éÇşÿÿ
-      b
-¾  runtime.duffzero   p  "".context   Ê       ê
-”  runtime.duffcopy   Â       à  "".context   Š       °
-”  runtime.duffcopy   à
-  0runtime.morestack_noctxt   ĞĞ  "".autotmp_0008 ïtype.string "".err Ïtype.error "".org Ïvtype.github.com/cloudfoundry/cli/plugin/models.Organization "".~r0  vtype.github.com/cloudfoundry/cli/plugin/models.Organization "ĞÏĞ À "`5N~  e<Ÿ TgclocalsÂ·9d5ba5fd6d2488fbf4dc0adbfd475ea9 TgclocalsÂ·f6231e34a9baf7e408a2176a20ec2a68   ò/Users/yangbo/workspace/java_workspace/open-Autoscaler/cli/src/github.com/cfibmers/open-Autoscaler/cli/context/context.goş"".Space  €  öeH‹%    HD$èH;A†Y  Hì˜   1ÛH‰œ$    H‰œ$¨   H‰œ$°   H‰œ$¸   H‹    Hƒû „  H‹H‹kH‰l$`H‰,$H‰L$XH‹YhÿÓH‹\$H‰\$xH‹\$H‰œ$€   H‹\$H‰œ$ˆ   H‹\$ H‰œ$   H‹D$(H‹L$0Hƒø tpH‰L$@H‰$H‰D$8H‹X ÿÓH‹t$H‹T$H‹    Hƒû „†   H‹KH‹kH‰t$hH‰t$H‰T$pH‰T$1ÛH‰\$H‰\$ H‰\$(H‰l$PH‰,$H‰L$HH‹Y@ÿÓH‹\$xH‰œ$    H‹œ$€   H‰œ$¨   H‹œ$ˆ   H‰œ$°   H‹œ$   H‰œ$¸   HÄ˜   Ã‰ésÿÿÿ‰éáşÿÿè    é…şÿÿ
-      ˆ  "".context   Ö       €         "".context   ¸       ä
-  0runtime.morestack_noctxt   @°  "".autotmp_0011 _type.string "".err ¿type.error "".space ?htype.github.com/cloudfoundry/cli/plugin/models.Space "".~r0  htype.github.com/cloudfoundry/cli/plugin/models.Space °Ã¯° € "pAgpE  kUÀ TgclocalsÂ·64ca935d1a2110a30e2d604686188539 TgclocalsÂ·728b5b00350474a5d5a5578b93dfe5de   ò/Users/yangbo/workspace/java_workspace/open-Autoscaler/cli/src/github.com/cfibmers/open-Autoscaler/cli/context/context.goş"".init  À  ¨eH‹%    H;av>¶    €û t¶    €ûuÃè    Æ    è    è    è    Æ    Ãè    ë¬
-      $  "".initdoneÂ·   <  "".initdoneÂ·   R
-  "runtime.throwinit   b "".initdoneÂ·   n
-  ~github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal.init   x
-  Ngithub.com/cloudfoundry/cli/plugin.init   ‚
-  \github.com/cloudfoundry/cli/plugin/models.init    "".initdoneÂ·   œ
-  0runtime.morestack_noctxt        ` ` |` 
- (8 TgclocalsÂ·33cdeccccebe80329f1fdbee7f5874cb TgclocalsÂ·33cdeccccebe80329f1fdbee7f5874cb   ò/Users/yangbo/workspace/java_workspace/open-Autoscaler/cli/src/github.com/cfibmers/open-Autoscaler/cli/context/context.goş8type..hash."".CommandContext    ŒeH‹%    H;avmHƒìH‹\$ H‰$Hƒ<$ tPH‹\$(H‰\$è    H‹D$H‹\$ H‰$Hƒ<$ t#Hƒ$H‰D$(H‰D$è    H‹\$H‰\$0HƒÄÃ‰%    ëÔ‰%    ë§è    ézÿÿÿ
-      \
-  "runtime.interhash   ®
-  "runtime.interhash   ú
-  0runtime.morestack_noctxt   00  "".~r2  type.uintptr "".h type.uintptr "".p  .type.*"".CommandContext 0V/0&   
- -c TgclocalsÂ·0b86ef39f3fed835f14ba5f4d7c62fa2 TgclocalsÂ·33cdeccccebe80329f1fdbee7f5874cb   ò/Users/yangbo/workspace/java_workspace/open-Autoscaler/cli/src/github.com/cfibmers/open-Autoscaler/cli/context/context.goş4type..eq."".CommandContext à  ÜeH‹%    H;a†  HƒìhH‹\$xHƒû „÷   H‹H‹sH‹\$pHƒû „Ú   H‹H‹SH9È…½   H‰D$HH‰$H‰T$PH‰T$H‰L$XH‰L$H‰t$`H‰t$è    ¶\$ €û „ƒ   H‹\$xHƒû ttH‹KH‹sH‹\$pHƒû t]H‹CH‹SH9ÈuCH‰D$(H‰$H‰T$0H‰T$H‰L$8H‰L$H‰t$@H‰t$è    ¶\$ €û tÆ„$€   HƒÄhÃÆ„$€    HƒÄhÃ‰ëŸ‰ëˆÆ„$€    HƒÄhÃ‰éÿÿÿ‰éÿÿÿè    éÒşÿÿ
-      è
-  runtime.ifaceeq   ²
-  runtime.ifaceeq   Ê
-  0runtime.morestack_noctxt   0Ğ  "".autotmp_0017 „type.github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal.UI "".autotmp_0016 _„type.github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal.UI "".autotmp_0015 ?jtype.github.com/cloudfoundry/cli/plugin.CliConnection "".autotmp_0014 jtype.github.com/cloudfoundry/cli/plugin.CliConnection "".~r2  type.bool "".q .type.*"".CommandContext "".p  .type.*"".CommandContext 2ĞÜÏĞÏĞÏĞ ° °  s½ TgclocalsÂ·3bb21ca8fe1d99a3e492463bd711418a TgclocalsÂ·895d0569a38a56443b84805daa09d838   ò/Users/yangbo/workspace/java_workspace/open-Autoscaler/cli/src/github.com/cfibmers/open-Autoscaler/cli/context/context.goşTgclocalsÂ·0c8aa8e80191a30eac23f1a218103f16                   şTgclocalsÂ·2f2d69f12d345ece4be5273d9b84f0bb                  şTgclocalsÂ·33cdeccccebe80329f1fdbee7f5874cb           şTgclocalsÂ·23e8278e2b69a3a75fa59b23c49ed6ad              şxgo.string.hdr."Please log in before using auto-scaling cli."             ,          pgo.string."Please log in before using auto-scaling cli."   şpgo.string."Please log in before using auto-scaling cli." `  ZPlease log in before using auto-scaling cli.  şXgo.string.hdr."Please target a space first."                       Pgo.string."Please target a space first."   şPgo.string."Please target a space first." @  :Please target a space first.  şTgclocalsÂ·a8eabfc4a4514ed6b3b0c61e9680e440              şTgclocalsÂ·33cdeccccebe80329f1fdbee7f5874cb           şTgclocalsÂ·488efd5564b22aec1294e68943e642b4        
-           şTgclocalsÂ·c55cf99de9cdd8c8202a466952fa1a45                    şTgclocalsÂ·f6231e34a9baf7e408a2176a20ec2a68                U   şTgclocalsÂ·9d5ba5fd6d2488fbf4dc0adbfd475ea9                    şTgclocalsÂ·728b5b00350474a5d5a5578b93dfe5de                   şTgclocalsÂ·64ca935d1a2110a30e2d604686188539                    şTgclocalsÂ·33cdeccccebe80329f1fdbee7f5874cb           şTgclocalsÂ·33cdeccccebe80329f1fdbee7f5874cb           ş."".context  .type.*"".CommandContext   ş0"".initdoneÂ·  type.uint8   ş"".InitÂ·f              "".Init   ş"".UIÂ·f              
-"".UI   ş0"".CheckPrerequistiesÂ·f              *"".CheckPrerequisties   ş""".AccessTokenÂ·f              "".AccessToken   ş"".OrgÂ·f              "".Org   ş"".SpaceÂ·f              "".Space   ş"".initÂ·f              "".init   şTgclocalsÂ·33cdeccccebe80329f1fdbee7f5874cb           şTgclocalsÂ·0b86ef39f3fed835f14ba5f4d7c62fa2             şTgclocalsÂ·895d0569a38a56443b84805daa09d838              şTgclocalsÂ·3bb21ca8fe1d99a3e492463bd711418a             ş@type..hashfunc."".CommandContext              8type..hash."".CommandContext   ş<type..eqfunc."".CommandContext              4type..eq."".CommandContext   ş6type..alg."".CommandContext                        @type..hashfunc."".CommandContext     <type..eqfunc."".CommandContext   ş"runtime.gcbits.01    şNgo.string.hdr."*context.CommandContext"                       Fgo.string."*context.CommandContext"   şFgo.string."*context.CommandContext" 0  0*context.CommandContext  ş.type.*"".CommandContext                    ácşP 6                                                        0   runtime.algarray   @  "runtime.gcbits.01   P  Ngo.string.hdr."*context.CommandContext"   p  @go.weak.type.**"".CommandContext   €  "runtime.zerovalue     ,type."".CommandContext   ş"runtime.gcbits.0f    şLgo.string.hdr."context.CommandContext"                       Dgo.string."context.CommandContext"   şDgo.string."context.CommandContext" 0  .context.CommandContext  ş.go.string.hdr."cliConn"                       &go.string."cliConn"   ş&go.string."cliConn"   cliConn  ş~go.string.hdr."github.com/cfibmers/open-Autoscaler/cli/context"             /          vgo.string."github.com/cfibmers/open-Autoscaler/cli/context"   şvgo.string."github.com/cfibmers/open-Autoscaler/cli/context" `  `github.com/cfibmers/open-Autoscaler/cli/context  ş"go.importpath."".             /          vgo.string."github.com/cfibmers/open-Autoscaler/cli/context"   ş$go.string.hdr."ui"                       go.string."ui"   şgo.string."ui"   ui  ş<go.string.hdr."CommandContext"                       4go.string."CommandContext"   ş4go.string."CommandContext"    CommandContext  ş,type."".CommandContext  °  °                	c                                                                                                                                                                                               0  6type..alg."".CommandContext   @  "runtime.gcbits.0f   P  Lgo.string.hdr."context.CommandContext"   p  .type.*"".CommandContext   €  "runtime.zerovalue   À ,type."".CommandContext   À  .go.string.hdr."cliConn"   Ğ  "go.importpath."".   à  jtype.github.com/cloudfoundry/cli/plugin.CliConnection     $go.string.hdr."ui"      "go.importpath."".   °  „type.github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal.UI   `à ,type."".CommandContext   à  <go.string.hdr."CommandContext"   ğ  "go.importpath."".   €° ,type."".CommandContext   ş.go.string.hdr."runtime"                       &go.string."runtime"   ş&go.string."runtime"   runtime  ş,go.importpath.runtime.                       &go.string."runtime"   ş”go.string.hdr."github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal"             :          Œgo.string."github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal"   şŒgo.string."github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal" €  vgithub.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal  ş’go.importpath.github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal.             :          Œgo.string."github.ibm.com/Bluemix/bluemix-cli-common/bluemix/terminal"   şdgo.string.hdr."github.com/cloudfoundry/cli/plugin"             "          \go.string."github.com/cloudfoundry/cli/plugin"   ş\go.string."github.com/cloudfoundry/cli/plugin" P  Fgithub.com/cloudfoundry/cli/plugin  şbgo.importpath.github.com/cloudfoundry/cli/plugin.             "          \go.string."github.com/cloudfoundry/cli/plugin"   şrgo.string.hdr."github.com/cloudfoundry/cli/plugin/models"             )          jgo.string."github.com/cloudfoundry/cli/plugin/models"   şjgo.string."github.com/cloudfoundry/cli/plugin/models" `  Tgithub.com/cloudfoundry/cli/plugin/models  şpgo.importpath.github.com/cloudfoundry/cli/plugin/models.             )          jgo.string."github.com/cloudfoundry/cli/plugin/models"   ş>type..hash."".CommandContextÂ·f              8type..hash."".CommandContext   ş:type..eq."".CommandContextÂ·f              4type..eq."".CommandContext   ş"runtime.zerovalue      ÿÿgo13ld
