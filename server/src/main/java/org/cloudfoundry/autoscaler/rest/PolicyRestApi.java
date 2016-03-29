@@ -179,6 +179,19 @@ public class PolicyRestApi {
             return RestApiResponseHandler.getResponseError(MESSAGE_KEY.RestResponseErrorMsg_database_error, e, httpServletRequest.getLocale());
 		}
 	}
+	/**
+     * Gets a policy
+     * @param policyId
+     * @return
+     */
+	@GET
+	@Path("/getTest")
+	@Produces (MediaType.APPLICATION_JSON)
+   public Response testGet(@Context final HttpServletRequest httpServletRequest)
+	{
+		
+			return RestApiResponseHandler.getResponseOk();
+	}
 		  
     /**
      * Deletes a policy
