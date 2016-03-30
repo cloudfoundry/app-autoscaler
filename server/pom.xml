@@ -178,6 +178,11 @@
 		</dependency>
 		<!-- for JUNIT TEST -->
 		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-core</artifactId>
+			<version>2.0.44-beta</version>
+		</dependency>
+		<dependency>
 			<groupId>com.sun.jersey.jersey-test-framework</groupId>
 			<artifactId>jersey-test-framework-grizzly2</artifactId>
 			<version>1.17</version>
