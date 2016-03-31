@@ -70,9 +70,15 @@ public class CloudFoundryManager {
 
     private CloudFoundryManager() {
         this.cfClientId = getClientId();
-        this.cfSecretKey = getSecretKey();
-        this.target = "https://" + getCFAPIUrl();
+        this.cfSecretKey = getSecretKey();        
    		this.restClient= RestUtil.getHTTPSRestClient();
+   		String cfUrlTemp = getCFAPIUrl();
+   		if(!cfUrlTemp.startsWith("http://") || cfUrlTemp.startsWith("https://")){
+   			this.target = "https://" + getCFAPIUrl();
+   		}
+   		else{
+   			this.target = getCFAPIUrl();
+   		}
     }
 
     public static CloudFoundryManager getInstance() throws Exception {
@@ -152,15 +158,6 @@ public class CloudFoundryManager {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-    }
-    public JSONObject getRunningEnvVariableGroup()throws Exception{
-    	 String url = this.target + "/v2/config/environment_variable_groups/running";
-         logger.debug("url:" + url);
-         WebResource webResource = restClient.resource(url);
-         String response = webResource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON)
-                 .header("Authorization", "Bearer " + this.accessToken).get(String.class);
-         return  new JSONObject(response);
-    	
     }
     // get application statistics
     public List<CloudAppInstance> getAppStatsExtByAppId(String appId) throws Exception {
@@ -255,41 +252,7 @@ public class CloudFoundryManager {
         return  Integer.parseInt(appJsonMap.get("running_instances").toString());
     }
     
-    public Map<String, String> findOrgSpaceForApp(String appName, String appVersion) throws Exception {
-
-        String appGuid = null;
-        
-        // Query to find matching apps (with same name, but may belong to other spaces/orgs, then match on version)
-        try {
-            String url = this.target + "/v2/apps?q=name:" + appName;
-            logger.info("connecting to URL:" + url);
-            WebResource webResource = restClient.resource(url);
-            String response = webResource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON)
-                    .header("Authorization", "Bearer " + this.accessToken).get(String.class);
-            
-            logger.info(">>>" + response);
-
-            JSONObject jobj = new JSONObject(response);
-            JSONArray jarray = (JSONArray) jobj.get("resources");
-            appGuid = null;
-            for (Object obj : jarray) {
-                String version = (String) ((JSONObject) ((JSONObject) obj).get("entity")).get("version");
-                logger.info(">>>> " + version);
-                if (appVersion.equals(version)) {
-                    appGuid = (String) ((JSONObject) ((JSONObject) obj).get("metadata")).get("guid");
-                    break;
-                }
-            }
-            if (appGuid == null) {
-                throw new Exception("Could not find GUID for app: " + appName);
-            }
-        } catch (Exception e) {
-            throw new Exception("appId=" + appName + " " + e.getMessage());
-        }
-
-  
-        return getOrgSpaceByAppId(appGuid);
-    }
+    
 
 
     public Map<String, String> getOrgSpaceByAppId(String appId) throws Exception {
