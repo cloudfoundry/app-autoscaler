@@ -47,8 +47,14 @@ public class CloudFoundryManager {
     private CloudFoundryManager() {
         this.cfClientId = getClientId();
         this.cfSecretKey = getSecretKey();
-        this.target = "https://" + getCFAPIUrl();
    		this.restClient= RestUtil.getHTTPSRestClient();
+   		String cfUrlTemp = getCFAPIUrl();
+   		if(!cfUrlTemp.startsWith("http://") || cfUrlTemp.startsWith("https://")){
+   			this.target = "https://" + getCFAPIUrl();
+   		}
+   		else{
+   			this.target = getCFAPIUrl();
+   		}
     }
 
     public static CloudFoundryManager getInstance() throws Exception {
