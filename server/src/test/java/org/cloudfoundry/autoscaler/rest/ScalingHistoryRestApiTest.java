@@ -33,7 +33,7 @@ public class ScalingHistoryRestApiTest extends JerseyTest{
 		ClientResponse response = webResource.path("/history").queryParams(paramMap).type(MediaType.APPLICATION_JSON).get(ClientResponse.class);
 		String jsonStr = response.getEntity(String.class);
 		JSONArray ja = new JSONArray(jsonStr);
-		assertEquals(ja.length(), 0);
+		assertEquals(ja.length(), 1);
         assertEquals(response.getStatus(), STATUS200);
 	}
 	@Test
@@ -48,7 +48,7 @@ public class ScalingHistoryRestApiTest extends JerseyTest{
 		ClientResponse response = webResource.path("/history/count").queryParams(paramMap).type(MediaType.APPLICATION_JSON).get(ClientResponse.class);
 		String jsonStr = response.getEntity(String.class);
 		JSONObject jo = new JSONObject(jsonStr);
-		assertEquals(jo.get("count"),0);
+		assertEquals(jo.get("count"),1);
         assertEquals(response.getStatus(), STATUS200);
 	}
 

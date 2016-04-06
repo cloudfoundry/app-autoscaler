@@ -1,4 +1,4 @@
-package org.cloudfoundry.autoscaler.rest.mock;
+package org.cloudfoundry.autoscaler.rest.mock.cc;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;

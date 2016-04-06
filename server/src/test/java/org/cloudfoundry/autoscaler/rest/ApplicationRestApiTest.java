@@ -22,7 +22,7 @@ import com.sun.jersey.core.util.MultivaluedMapImpl;
 import com.sun.jersey.test.framework.JerseyTest;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class ApplicationRestApiTest extends JerseyTest{
-	private static String policyId = null;
+	private static String policyId = TESTPOLICYID;
 	public ApplicationRestApiTest() throws Exception{
 		super("org.cloudfoundry.autoscaler.rest","org.cloudfoundry.autoscaler.rest.mock");
 	}

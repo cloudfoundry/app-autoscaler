@@ -24,7 +24,7 @@ import com.sun.jersey.test.framework.JerseyTest;
 public class SubscriberRESTTest extends JerseyTest{
 	private static final ObjectMapper mapper = new ObjectMapper();
 	public SubscriberRESTTest(){
-		super("org.cloudfoundry.autoscaler.metric.rest");
+		super("org.cloudfoundry.autoscaler.metric.rest","org.cloudfoundry.autoscaler.rest.mock");
 	}
 	@Test
 	public void test001AddTrigger() throws UniformInterfaceException, ClientHandlerException, JsonProcessingException{
