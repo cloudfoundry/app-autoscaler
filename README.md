@@ -1,5 +1,7 @@
 <link href="https://raw.github.com/clownfart/Markdown-CSS/master/markdown.css" rel="stylesheet"></link>
-# CloudFoundry AutoScaler
+# CF-AutoScaler
+
+This is an incubation project for Cloud Foundry. You can follow the development progress on [Pivotal Tracker][t].
 
 The `CF-AutoScaler` provides the capability to adjust the computation resources for CloudFoundry applications through
 
@@ -108,4 +110,5 @@ This project is released under version 2.0 of the [Apache License][l].
 [d]: http://www.eclipse.org/m2e/
 [e]: http://www.cloudant.com
 [l]: LICENSE
+[t]: https://www.pivotaltracker.com/projects/1566795
 
