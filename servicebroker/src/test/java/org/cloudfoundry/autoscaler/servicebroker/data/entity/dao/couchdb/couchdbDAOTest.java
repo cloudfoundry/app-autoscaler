@@ -9,38 +9,49 @@ import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.servicebroker.data.entity.ApplicationInstance;
 import org.cloudfoundry.autoscaler.servicebroker.data.entity.ServiceInstance;
 import org.cloudfoundry.autoscaler.servicebroker.data.storeservice.couchdb.CouchdbStoreService;
-import org.cloudfoundry.autoscaler.servicebroker.test.util.TestConstants;
+import org.cloudfoundry.autoscaler.servicebroker.rest.mock.couchdb.CouchDBDocumentManager;
+
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.*;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.sun.jersey.test.framework.JerseyTest;
+
 
 /**
  *
  */
-public class couchdbDAOTest {
+public class couchdbDAOTest extends JerseyTest{
 
     private static final Logger logger = Logger.getLogger(couchdbDAOTest.class);
 
     private static ApplicationInstanceDAOImpl applicationStore;
     private static ServiceInstanceDAOImpl serviceStore;
+    public  couchdbDAOTest() throws Exception{
+		super("org.cloudfoundry.autoscaler.servicebroker.rest.mock.couchdb");
+		 initConnection();
+	}
+//    @BeforeClass
+//    public static void setUpBeforeClass() throws Exception {
+//        initConnection();
+//    }
 
-    @BeforeClass
-    public static void setUpBeforeClass() throws Exception {
-        initConnection();
-    }
-
- 
+    @Override
+	public void tearDown() throws Exception{
+		super.tearDown();
+		CouchDBDocumentManager.getInstance().initDocuments();
+	}
     @Test
     public void applicationInstanceTest() throws InterruptedException {
         final String m = "applicationInstanceTest";
         logger.info(m + " started");
 
         ApplicationInstance application = new ApplicationInstance();
-        application.setAppId(TestConstants.TEST_APPLICATION_ID);
-        application.setBindingId(TestConstants.TEST_BINDING_ID);
-        application.setServiceId(TestConstants.TEST_SERVICE_ID);
+        application.setAppId(TESTAPPID);
+        application.setBindingId(TESTBINDINGID);
+        application.setServiceId(TESTSERVICEID);
 
         //add & get
         applicationStore.add(application);
@@ -99,10 +110,10 @@ public class couchdbDAOTest {
         logger.info(m + " started");
 
         ServiceInstance service = new ServiceInstance();
-        service.setServiceId(TestConstants.TEST_SERVICE_ID);
-        service.setOrgId(TestConstants.TEST_ORG_ID);
-        service.setSpaceId(TestConstants.TEST_SPACE_ID);
-        service.setServerUrl(TestConstants.TEST_SERVER_URL);
+        service.setServiceId(TESTSERVICEID);
+        service.setOrgId(TESTORGID);
+        service.setSpaceId(TESTSPACEID);
+        service.setServerUrl(TESTSERVERURL);
 
         //add & get
         serviceStore.add(service);

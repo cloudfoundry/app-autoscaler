@@ -95,18 +95,6 @@ public class TestModeREST extends Application {
         	return RestApiResponseHandler.getResponse(Status.INTERNAL_SERVER_ERROR);
         }
     }
-    @Path("/testAccessToken")
-    @GET
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Response testAccessToken(){
-    	try{
-    		return RestApiResponseHandler.getResponseOk();
-    	}
-    	catch(Exception e){
-    		logger.error(e.getMessage(), e);
-    		return RestApiResponseHandler.getResponse(Status.INTERNAL_SERVER_ERROR);
-    	}
-    }
 
     
 }

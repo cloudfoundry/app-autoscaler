@@ -223,7 +223,7 @@ public class CouchdbStorageService implements AutoScalingDataStore {
 		TriggerRecord triggerRecord = new TriggerRecord(t.getAppName(), t);
 		TriggerRecord existingRecord = null;
 		existingRecord = (TriggerRecord) triggerRecordDao.get(triggerRecord.getId());
-		if (existingRecord != null) {
+		if (existingRecord != null && existingRecord.getAppId() != null) {
 			triggerRecordDao.remove(existingRecord);
 		}
 

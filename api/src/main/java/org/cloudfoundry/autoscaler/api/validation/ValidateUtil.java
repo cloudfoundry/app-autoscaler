@@ -1,7 +1,6 @@
-package org.cloudfoundry.autoscaler.api.util;
+package org.cloudfoundry.autoscaler.api.validation;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -12,12 +11,13 @@ import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 
-import org.cloudfoundry.autoscaler.api.util.ProtoType;
 import org.cloudfoundry.autoscaler.api.exceptions.InputJSONParseErrorException;
 import org.cloudfoundry.autoscaler.api.exceptions.InputJSONFormatErrorException;
 import org.cloudfoundry.autoscaler.api.exceptions.OutputJSONFormatErrorException;
 import org.cloudfoundry.autoscaler.api.exceptions.OutputJSONParseErrorException;
+import org.cloudfoundry.autoscaler.api.util.MessageUtil;
 
 public class ValidateUtil {
 	private static final String CLASS_NAME = ValidateUtil.class.getName();
@@ -44,14 +44,14 @@ public class ValidateUtil {
 		
 		if(datatype == DataType.CREATE_REQUEST){
 		    try {
-				Map<String, Object> parse_result = ProtoType.parsePolicy(jsonData, service_info, httpServletRequest);
-				if (Boolean.valueOf(parse_result.get("valid").toString()) == false) {
-					List<String> violation_message = (List<String>)parse_result.get("violation_message");
-					if (violation_message.size() > 0 ) {
-						throw new InputJSONFormatErrorException(MessageUtil.RestResponseErrorMsg_Create_Update_Policy_context, violation_message.get(0));
+				JsonNode parse_result = BeanValidation.parsePolicy(jsonData, service_info, httpServletRequest);
+				if (parse_result.get("valid").asBoolean() == false) {
+					JsonNode violation_message = parse_result.get("violation_message");
+					if ((violation_message.isArray()) && (violation_message.size() > 0 )) {
+						throw new InputJSONFormatErrorException(MessageUtil.RestResponseErrorMsg_Create_Update_Policy_context, violation_message.get(0).asText());
 					}
 				}
-				new_json = (String)parse_result.get("new_json");
+				new_json = parse_result.get("new_json").asText();
 		    } 
 		    catch (InputJSONFormatErrorException e) {
 		    	throw e;
@@ -72,14 +72,14 @@ public class ValidateUtil {
 		}
 		else if (datatype == DataType.ENABLE_REQUEST){
 			try {
-				Map<String, Object> parse_result = ProtoType.parsePolicyEnable(jsonData, httpServletRequest);
-				if (Boolean.valueOf(parse_result.get("valid").toString()) == false) {
-					List<String> violation_message = (List<String>)parse_result.get("violation_message");
-					if (violation_message.size() > 0 ) {
-						throw new InputJSONFormatErrorException(MessageUtil.RestResponseErrorMsg_Enable_Policy_context, violation_message.get(0));
+				JsonNode parse_result = BeanValidation.parsePolicyEnable(jsonData, httpServletRequest);
+				if (parse_result.get("valid").asBoolean() == false) {
+					JsonNode violation_message = parse_result.get("violation_message");
+					if ((violation_message.isArray()) && (violation_message.size() > 0 )) {
+						throw new InputJSONFormatErrorException(MessageUtil.RestResponseErrorMsg_Enable_Policy_context, violation_message.get(0).asText());
 					}
 				}
-				new_json = (String)parse_result.get("new_json");
+				new_json = parse_result.get("new_json").asText();
 			}
 		    catch (InputJSONFormatErrorException e) {
 		    	throw e;
@@ -112,14 +112,14 @@ public class ValidateUtil {
 		//should define where to bypass the validation, like in this case
 		if (datatype == DataType.GET_RESPONSE){
 			try {
-				Map<String, Object> parse_result = ProtoType.parsePolicyOutput(jsonData, supplyment, service_info, httpServletRequest);
-				if (Boolean.valueOf(parse_result.get("valid").toString()) == false) {
-					List<String> violation_message = (List<String>)parse_result.get("violation_message");
-					if (violation_message.size() > 0 ) {
-						throw new OutputJSONFormatErrorException(MessageUtil.RestResponseErrorMsg_Get_Policy_context, violation_message.get(0));
+				JsonNode parse_result = BeanValidation.parsePolicyOutput(jsonData, supplyment, service_info, httpServletRequest);
+				if (parse_result.get("valid").asBoolean() == false) {
+					JsonNode violation_message = parse_result.get("violation_message");
+					if ((violation_message.isArray()) && (violation_message.size() > 0 )) {
+						throw new OutputJSONFormatErrorException(MessageUtil.RestResponseErrorMsg_Get_Policy_context, violation_message.get(0).asText());
 					}
 				}
-				new_json = (String)parse_result.get("new_json");
+				new_json = parse_result.get("new_json").asText();
 			}  
 		    catch (OutputJSONFormatErrorException e) {
 		    	throw e;
@@ -136,14 +136,14 @@ public class ValidateUtil {
 			}			 
 		} else if (datatype == DataType.GET_HISTORY_RESPONSE){
 			try {
-				Map<String, Object> parse_result = ProtoType.parseScalingHistory(jsonData, httpServletRequest);
-				if (Boolean.valueOf(parse_result.get("valid").toString()) == false) {
-					List<String> violation_message = (List<String>)parse_result.get("violation_message");
-					if (violation_message.size() > 0 ) {
-						throw new OutputJSONFormatErrorException(MessageUtil.RestResponseErrorMsg_Get_Scaling_History_context, violation_message.get(0));
+				JsonNode parse_result = BeanValidation.parseScalingHistory(jsonData, httpServletRequest);
+				if (parse_result.get("valid").asBoolean() == false) {
+					JsonNode violation_message = parse_result.get("violation_message");
+					if ((violation_message.isArray()) && (violation_message.size() > 0 )) {
+						throw new OutputJSONFormatErrorException(MessageUtil.RestResponseErrorMsg_Get_Scaling_History_context, violation_message.get(0).asText());
 					}
 				}
-				new_json = (String)parse_result.get("new_json");
+				new_json = parse_result.get("new_json").asText();
 			}  
 		    catch (OutputJSONFormatErrorException e) {
 		    	throw e;
@@ -160,14 +160,14 @@ public class ValidateUtil {
 			}			 
 		} else if (datatype == DataType.GET_METRICS_RESPONSE){
 			try {
-				Map<String, Object> parse_result = ProtoType.parseMetrics(jsonData, httpServletRequest);
+				JsonNode parse_result = BeanValidation.parseMetrics(jsonData, httpServletRequest);
 				if (Boolean.valueOf(parse_result.get("valid").toString()) == false) {
-					List<String> violation_message = (List<String>)parse_result.get("violation_message");
-					if (violation_message.size() > 0 ) {
-						throw new OutputJSONFormatErrorException(MessageUtil.RestResponseErrorMsg_Get_Metric_Data_context, violation_message.get(0));
+					JsonNode violation_message = parse_result.get("violation_message");
+					if ((violation_message.isArray()) && (violation_message.size() > 0 )) {
+						throw new OutputJSONFormatErrorException(MessageUtil.RestResponseErrorMsg_Get_Metric_Data_context, violation_message.get(0).asText());
 					}
 				}
-				new_json = (String)parse_result.get("new_json");
+				new_json = parse_result.get("new_json").asText();
 			}   
 		    catch (OutputJSONFormatErrorException e) {
 		    	throw e;
