@@ -1,4 +1,4 @@
-package org.cloudfoundry.autoscaler.test.constant;
+package org.cloudfoundry.autoscaler.servicebroker.test.constant;
 
 public class Constants {
 	

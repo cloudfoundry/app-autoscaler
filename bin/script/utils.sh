@@ -145,7 +145,8 @@ function packageMavenProject() {
 	local warFileName=$1
 
 	cd $projectDirName
-	mvn clean package -P$profile > build.log
+	mvn test -Punittest
+	mvn clean package -P$profile -Dmaven.test.skip=true > build.log
 	if [ $? -eq 0 ]; then
 		echo " >>> Package $projectDirName/build/$warFileName.war Successfully" 
 	else

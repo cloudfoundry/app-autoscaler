@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 
 import javax.ws.rs.core.MediaType;
 
+import org.cloudfoundry.autoscaler.rest.mock.couchdb.CouchDBDocumentManager;
 import org.junit.Test;
 
 import com.sun.jersey.api.client.ClientResponse;
@@ -17,7 +18,11 @@ public class ServerStatsRestApiTest extends JerseyTest{
 	public ServerStatsRestApiTest() throws Exception{
 		super("org.cloudfoundry.autoscaler.rest");
 	}
-	
+	@Override
+	public void tearDown() throws Exception{
+		super.tearDown();
+		CouchDBDocumentManager.getInstance().initDocuments();
+	}
 	@Test
 	public void testGetServerStats(){
 		WebResource webResource = resource();

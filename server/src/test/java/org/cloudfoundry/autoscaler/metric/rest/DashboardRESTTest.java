@@ -10,6 +10,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.cloudfoundry.autoscaler.bean.Metric;
+import org.cloudfoundry.autoscaler.rest.mock.couchdb.CouchDBDocumentManager;
 import org.junit.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -23,6 +24,11 @@ public class DashboardRESTTest extends JerseyTest{
 	
 	public DashboardRESTTest(){
 		super("org.cloudfoundry.autoscaler.metric.rest","org.cloudfoundry.autoscaler.rest.mock");
+	}
+	@Override
+	public void tearDown() throws Exception{
+		super.tearDown();
+		CouchDBDocumentManager.getInstance().initDocuments();
 	}
 	@Test
 	public void testGetAppMetricsLastestData(){

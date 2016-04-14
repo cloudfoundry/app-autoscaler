@@ -49,12 +49,12 @@
 
 	<profiles>
 		<profile>
-			<id>sample</id>
+			<id>unittest</id>
 			<activation>
 				<activeByDefault>true</activeByDefault>
 			</activation>
 			<properties>
-				<build.profile.id>sample</build.profile.id>
+				<build.profile.id>unittest</build.profile.id>
 			</properties>
 		</profile>
 	</profiles>

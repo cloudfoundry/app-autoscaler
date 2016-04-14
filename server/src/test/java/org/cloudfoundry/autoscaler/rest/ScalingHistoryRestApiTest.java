@@ -6,8 +6,10 @@ import static org.junit.Assert.assertEquals;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 
+import org.cloudfoundry.autoscaler.rest.mock.couchdb.CouchDBDocumentManager;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.junit.AfterClass;
 import org.junit.Test;
 
 import com.sun.jersey.api.client.ClientResponse;
@@ -20,14 +22,18 @@ public class ScalingHistoryRestApiTest extends JerseyTest{
 	public ScalingHistoryRestApiTest() throws Exception{
 		super("org.cloudfoundry.autoscaler.rest");
 	}
-	
+	@Override
+	public void tearDown() throws Exception{
+		super.tearDown();
+		CouchDBDocumentManager.getInstance().initDocuments();
+	}
 	@Test
 	public void testGetHistoryList(){
 		WebResource webResource = resource();
 		MultivaluedMap<String, String> paramMap = new MultivaluedMapImpl();
 		paramMap.add("appId", TESTAPPID);
-		paramMap.add("startTime", String.valueOf(System.currentTimeMillis() - 1000 * 60 * 30));
-		paramMap.add("endTime", String.valueOf(System.currentTimeMillis()));
+		paramMap.add("startTime", String.valueOf(0));
+		paramMap.add("endTime", String.valueOf(System.currentTimeMillis() * 2));
 		paramMap.add("status", "3");
 		paramMap.add("scaleType", "scaleIn");
 		ClientResponse response = webResource.path("/history").queryParams(paramMap).type(MediaType.APPLICATION_JSON).get(ClientResponse.class);
@@ -41,8 +47,8 @@ public class ScalingHistoryRestApiTest extends JerseyTest{
 		WebResource webResource = resource();
 		MultivaluedMap<String, String> paramMap = new MultivaluedMapImpl();
 		paramMap.add("appId", TESTAPPID);
-		paramMap.add("startTime", String.valueOf(System.currentTimeMillis() - 1000 * 60 * 30));
-		paramMap.add("endTime", String.valueOf(System.currentTimeMillis()));
+		paramMap.add("startTime", String.valueOf(0));
+		paramMap.add("endTime", String.valueOf(System.currentTimeMillis() * 2));
 		paramMap.add("status", "3");
 		paramMap.add("scaleType", "scaleIn");
 		ClientResponse response = webResource.path("/history/count").queryParams(paramMap).type(MediaType.APPLICATION_JSON).get(ClientResponse.class);

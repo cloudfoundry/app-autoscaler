@@ -20,7 +20,6 @@ public class RestApiResponseHandlerTest {
 		cc.setNoTransform(true);
 		cc.setPrivate(true);
 		assertEquals(RestApiResponseHandler.getResponseOk().getStatus(), 200);
-		System.out.println(RestApiResponseHandler.getResponseOk("String for Test").equals(RestApiResponseHandler.getResponseOk("String for Test")));
 		assertEquals(RestApiResponseHandler.getResponseOk("String for Test").getStatus() , (Response.ok("String for test").cacheControl(cc).build().getStatus()));
 		JSONObject jo = new JSONObject();
 		jo.put("status", 200);

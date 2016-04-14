@@ -6,6 +6,7 @@ import static org.junit.Assert.assertEquals;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 
+import org.cloudfoundry.autoscaler.rest.mock.couchdb.CouchDBDocumentManager;
 import org.json.JSONObject;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -21,7 +22,11 @@ public class BrokerCallBackRestTest extends JerseyTest{
 	public BrokerCallBackRestTest() throws Exception{
 		super("org.cloudfoundry.autoscaler.rest");
 	}
-	
+	@Override
+	public void tearDown() throws Exception{
+		super.tearDown();
+		CouchDBDocumentManager.getInstance().initDocuments();
+	}
 	@Test
 	public void test001RegisterApplication(){
 		WebResource webResource = resource();
