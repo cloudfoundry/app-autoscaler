@@ -70,7 +70,7 @@ public class PublicRestApiTest extends JerseyTest{
 		assertEquals(response.getStatus(), STATUS200);
 	}
 	public static String getPolicyContent(){
-		BufferedReader br = new BufferedReader(new InputStreamReader(PublicRestApiTest.class.getResourceAsStream("policy.json")));
+		BufferedReader br = new BufferedReader(new InputStreamReader(PublicRestApiTest.class.getResourceAsStream("/policy.json")));
 		String tmp = "";
 		String policyStr = "";
 		try {
