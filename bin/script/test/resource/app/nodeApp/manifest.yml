@@ -1,8 +1,0 @@
-applications:
-- path: .
-  memory: 700M
-  instances: 1
-  domain: ng.bluemix.net
-  name: helloAutoScaler
-  host: helloAutoScaler
-  disk_quota: 1024M

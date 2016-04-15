@@ -1,3 +1,5 @@
 /RemoteSystemsTempFiles
 /.DS_Store
 /.metadata
+/pkg/
+/bin/ginkgo

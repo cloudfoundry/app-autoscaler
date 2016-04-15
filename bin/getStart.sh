@@ -26,8 +26,8 @@ promptHint "Step 3: Setup $componentName Runtime Environment"
 source $basedir/script/setupRuntimeEnv.sh
 setupRuntimeEnv
 
-promptHint "Step 4: Verify $componentName"
-source $basedir/script/verificationTest.sh
-verificationTest
+# promptHint "Step 4: Verify $componentName"
+# source $basedir/script/verificationTest.sh
+# verificationTest
 
 exit 0
