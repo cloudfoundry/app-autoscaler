@@ -56,6 +56,12 @@
 				<build.profile.id>unittest</build.profile.id>
 			</properties>
 		</profile>
+		<profile>
+			<id>test</id>
+			<properties>
+				<build.profile.id>test</build.profile.id>
+			</properties>
+		</profile>
 	</profiles>
 
 

@@ -58,12 +58,18 @@
 				<build.profile.id>unittest</build.profile.id>
 			</properties>
 		</profile>
+		<profile>
+			<id>test</id>
+			<properties>
+				<build.profile.id>test</build.profile.id>
+			</properties>
+		</profile>
 	</profiles>
 
 
 	<dependencies>
-	
-	  	<!--  compile & runtime dependency  -->
+
+		<!-- compile & runtime dependency -->
 		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>javax.servlet-api</artifactId>
@@ -178,8 +184,8 @@
 			<artifactId>slf4j-log4j12</artifactId>
 			<version>1.6.6</version>
 		</dependency>
-		
-		<!--  Test dependency  -->
+
+		<!-- Test dependency -->
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
@@ -191,14 +197,13 @@
 			<groupId>com.sun.jersey.jersey-test-framework</groupId>
 			<artifactId>jersey-test-framework-grizzly2</artifactId>
 			<version>1.17</version>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.sun.jersey.jersey-test-framework</groupId>
 			<artifactId>jersey-test-framework-core</artifactId>
 			<version>1.17</version>
+			<scope>test</scope>
 		</dependency>
-		
-
-
 	</dependencies>
 </project>
