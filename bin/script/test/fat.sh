@@ -238,7 +238,7 @@ function test_Policy_API() {
 
     local returncode=0
     ((returncode+=$?))
-    policy_url="$API_url/v1/autoscaler/apps/$app_guid/policy" 
+    policy_url="$API_url/v1/apps/$app_guid/policy" 
     echo "====== Test for Create/Get/Update/Delete Policy API =============="
     do_delete_policy 
     ((returncode+=$?))
@@ -264,7 +264,7 @@ function test_Metric_API() {
     setup_PublicAPI_TestConfig
 
     local returncode=0;
-    metrics_cf_url="$API_url/v1/autoscaler/apps/$app_guid/metrics"
+    metrics_cf_url="$API_url/v1/apps/$app_guid/metrics"
     echo "====== Test for Get Metric API =============="
     do_get_metric
     returncode=$?
@@ -278,7 +278,7 @@ function test_History_API() {
     setup_PublicAPI_TestConfig
     
     local returncode=0
-    history_cf_url="$API_url/v1/autoscaler/apps/$app_guid/scalinghistory"
+    history_cf_url="$API_url/v1/apps/$app_guid/scalinghistory"
     echo "====== Test for Get History API =============="
     do_get_scaling_history
     returncode=$?
@@ -328,7 +328,7 @@ function doCheckScaleByMetrics(){
     cf push  $TestAPP_NAME -p $DYNAMIC_APP_FILE -m $Default_Memory  --random-route 
     cf scale $TestAPP_NAME -i 1 > /dev/stderr
     setup_PublicAPI_TestConfig > /dev/stderr
-    policy_url="$API_url/v1/autoscaler/apps/$app_guid/policy" 
+    policy_url="$API_url/v1/apps/$app_guid/policy" 
     do_delete_policy  > /dev/stderr
     ((returncode+=$?))
     do_create_policy ${Resource_DIR}/file/policy/dynamic.json  > /dev/stderr
@@ -370,7 +370,7 @@ function doCheckScaleByMetrics(){
      ((endTimestamp=$(date +%s)\*1000))
 
     setup_PublicAPI_TestConfig > /dev/stderr
-    metrics_cf_url="$API_url/v1/autoscaler/apps/$app_guid/metrics?startTime=$startTimestamp&endTime=$endTimestamp"
+    metrics_cf_url="$API_url/v1/apps/$app_guid/metrics?startTime=$startTimestamp&endTime=$endTimestamp"
     do_get_metric  > /dev/stderr  
     ((returncode+=$?))
 
@@ -379,7 +379,7 @@ function doCheckScaleByMetrics(){
     echo
 
     setup_PublicAPI_TestConfig > /dev/stderr
-    history_cf_url="$API_url/v1/autoscaler/apps/$app_guid/scalinghistory?startTime=$startTimestamp&endTime=$endTimestamp"   
+    history_cf_url="$API_url/v1/apps/$app_guid/scalinghistory?startTime=$startTimestamp&endTime=$endTimestamp"   
     do_get_scaling_history  > /dev/stderr    
     ((returncode+=$?))
 
@@ -435,7 +435,7 @@ function doCheckScaleByRecurringSchedule(){
 
     echo " >>> Test Scaling with Schedule: "
     setup_PublicAPI_TestConfig > /dev/stderr
-    policy_url="$API_url/v1/autoscaler/apps/$app_guid/policy" 
+    policy_url="$API_url/v1/apps/$app_guid/policy" 
     do_delete_policy  > /dev/stderr
     ((returncode+=$?))
     do_create_policy $schedulePolicy > /dev/stderr
@@ -454,7 +454,7 @@ function doCheckScaleByRecurringSchedule(){
    
 
     setup_PublicAPI_TestConfig > /dev/stderr
-    history_cf_url="$API_url/v1/autoscaler/apps/$app_guid/scalinghistory?startTime=$startTimestamp&endTime=$endTimestamp"   
+    history_cf_url="$API_url/v1/apps/$app_guid/scalinghistory?startTime=$startTimestamp&endTime=$endTimestamp"   
     do_get_scaling_history  > /dev/stderr    
     ((returncode+=$?))
 

@@ -30,43 +30,43 @@ public class PublicRestApiTest extends JerseyTest{
 	public void createPolicyTest() throws Exception{
 		WebResource webResource = resource();
 		String policyStr = getPolicyContent();
-		ClientResponse response = webResource.path("/apps/" + TESTAPPID + "/policy").type(MediaType.APPLICATION_JSON).put(ClientResponse.class,policyStr);
+		ClientResponse response = webResource.path("/v1/apps/" + TESTAPPID + "/policy").type(MediaType.APPLICATION_JSON).put(ClientResponse.class,policyStr);
         assertEquals(response.getStatus(), STATUS200);
 	}
 	@Test
 	public void deletePolicyTest(){
 		WebResource webResource = resource();
-		ClientResponse response = webResource.path("/apps/" + TESTAPPID + "/policy").type(MediaType.APPLICATION_JSON).delete(ClientResponse.class);
+		ClientResponse response = webResource.path("/v1/apps/" + TESTAPPID + "/policy").type(MediaType.APPLICATION_JSON).delete(ClientResponse.class);
 		assertEquals(response.getStatus(), STATUS200);
 	}
 	@Test
 	public void getPolicyTest(){
 		WebResource webResource = resource();
-		ClientResponse response = webResource.path("/apps/" + TESTAPPID + "/policy").type(MediaType.APPLICATION_JSON).get(ClientResponse.class);
+		ClientResponse response = webResource.path("/v1/apps/" + TESTAPPID + "/policy").type(MediaType.APPLICATION_JSON).get(ClientResponse.class);
 		assertEquals(response.getStatus(), STATUS200);
 	}
 	@Test
 	public void enablePolicyTest(){
 		WebResource webResource = resource();
-		ClientResponse response = webResource.path("/apps/" + TESTAPPID + "/policy/status").type(MediaType.APPLICATION_JSON).put(ClientResponse.class,"{ \"enable\": true}");
+		ClientResponse response = webResource.path("/v1/apps/" + TESTAPPID + "/policy/status").type(MediaType.APPLICATION_JSON).put(ClientResponse.class,"{ \"enable\": true}");
 		assertEquals(response.getStatus(), STATUS200);
 	}
 	@Test
 	public void getPolicyStatusTest(){
 		WebResource webResource = resource();
-		ClientResponse response = webResource.path("/apps/" + TESTAPPID + "/policy/status").type(MediaType.APPLICATION_JSON).get(ClientResponse.class);
+		ClientResponse response = webResource.path("/v1/apps/" + TESTAPPID + "/policy/status").type(MediaType.APPLICATION_JSON).get(ClientResponse.class);
 		assertEquals(response.getStatus(), STATUS200);
 	}
 	@Test
 	public void getHistoryTest(){
 		WebResource webResource = resource();
-		ClientResponse response = webResource.path("/apps/" + TESTAPPID + "/scalinghistory").type(MediaType.APPLICATION_JSON).get(ClientResponse.class);
+		ClientResponse response = webResource.path("/v1/apps/" + TESTAPPID + "/scalinghistory").type(MediaType.APPLICATION_JSON).get(ClientResponse.class);
 		assertEquals(response.getStatus(), STATUS200);
 	}
 	@Test
 	public void getMetricsTest(){
 		WebResource webResource = resource();
-		ClientResponse response = webResource.path("/apps/" + TESTAPPID + "/metrics").type(MediaType.APPLICATION_JSON).get(ClientResponse.class);
+		ClientResponse response = webResource.path("/v1/apps/" + TESTAPPID + "/metrics").type(MediaType.APPLICATION_JSON).get(ClientResponse.class);
 		assertEquals(response.getStatus(), STATUS200);
 	}
 	public static String getPolicyContent(){
