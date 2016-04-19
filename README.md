@@ -38,6 +38,20 @@ The AutoScaler has three components, all of them them are Java Web Applications.
 * `servicebroker`: implements the [Cloudfoundry service broker API][k]
 * `server`: the backend engine of `CF-AutoScaler`
 
+
+
+`CF-AutoScaler` invokes Cloud controller API to trigger scaling on target application. To achieve this, a UAA client id with  authorities `cloud_controller.read,cloud_controller.admin` is needed for the CloudFoundry environment `CF-AutoScaler` is registered with. You can create it using UAA command line client, make sure the client ID and secret are the ones you configured in the maven profile when you package the .war files
+
+```shell
+uaac target http://uaa.<cf-domain>
+uaac token client get admin -s <cf uaa admin secret> 
+uaac client add cf-autoscaler-client \
+	--name cf-autoscaler \
+    --authorized_grant_types client_credentials \
+    --authorities cloud_controller.read,cloud_controller.admin \
+    --secret cf-autoscaler-client-secret
+```
+
 The following sections describe how to test, deploy and run `CF-AutoScaler` service manually. You can also use script `./bin/getStart.sh` to complete all these steps.
 
 
@@ -129,21 +143,7 @@ The deployment assumes that there is a couchdb available with the same host, por
 
 ### Register `CF-AutoScaler` service broker
 
-
-`CF-AutoScaler` invokes Cloud controller API to trigger scaling on target application. To achieve this, a UAA client id with  authorities `cloud_controller.read,cloud_controller.admin` is needed. You can create it using UAA command line client, make sure the client ID and secret are the ones you configured in the maven profile when you package the .war files
-
-```shell
-uaac target http://uaa.<cf-domain>
-uaac token client get admin -s <cf uaa admin secret> 
-uaac client add cf-autoscaler-client \
-	--name cf-autoscaler \
-    --authorized_grant_types client_credentials \
-    --authorities cloud_controller.read,cloud_controller.admin \
-    --secret cf-autoscaler-client-secret
-```
-
-
-Then you can register `CF-AutoScaler` with `cf` command line. Again make sure the service broker name, username and password are the ones you configured in the maven profile.
+You can register `CF-AutoScaler` with `cf` command line. Again make sure the service broker name, username and password are the ones you configured in the maven profile.
 
 ```shell
 cf create-service-broker CF-AutoScaler brokerUserName brokerPassword brokerURI

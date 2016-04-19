@@ -11,8 +11,8 @@ fi
 
 promptHint "Prerequisite software:"
 echo " >>> Maven 3.0 or above"
-echo " >>> cf v6 or above"
-echo " >>> Commond \"curl\" supported in SHELL "
+echo " >>> CloudFoundry command line 'cf' v6 or above"
+echo " >>> \"curl\" supported in SHELL "
 
 promptHint "Step 1: Configure $componentName"
 source $basedir/script/configProject.sh
