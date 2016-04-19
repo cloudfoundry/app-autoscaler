@@ -16,14 +16,14 @@ Policy Management APIs:
 ============================================
 Policy are configurations of scaling rules that Autoscaler service used to specify the conditions in which certain scaling activities are triggered. 
 
-Create/Update Policy: ``PUT /v1/autoscaler/apps/<app_id>/policy/``
+Create/Update Policy: ``PUT /v1/apps/<app_id>/policy/``
 --------------------------------
 Create a new Auto-scaling policy or update the existing policy for your application. In this API, you need to supply a policy in JSON format.
 
-* Request: ``PUT /v1/autoscaler/apps/<app_id>/policy/``
+* Request: ``PUT /v1/apps/<app_id>/policy/``
 
 =============== ======================================================
-Request         ``PUT /v1/autoscaler/apps/<app_id>/policy/``
+Request         ``PUT /v1/apps/<app_id>/policy/``
 Authorization   Authorization: Bearer Token of ``AccessToken`` 
 Headers         ``Content-Type: application/json`` and ``Accept: application/json``
 Parameters      app_id: the GUID of the application
@@ -117,14 +117,14 @@ Fields            *Available Fields* ::
                      timezone        - String                         -  Optional   - Timezone setting for the dates/times (See Appendix for available values)
 
 
-Delete Policy: ``DELETE /v1/autoscaler/apps/:app_id/policy/``
+Delete Policy: ``DELETE /v1/apps/:app_id/policy/``
 --------------------------------
 Delete the existing policy from your application
 
-* Request: ``DELETE /v1/autoscaler/apps/<app_id>/policy/``
+* Request: ``DELETE /v1/apps/<app_id>/policy/``
 
 =============== =================================================
-Request         ``DELETE /v1/autoscaler/apps/:app_id/policy/``
+Request         ``DELETE /v1/apps/:app_id/policy/``
 Authorization   Authorization: Bearer Token of ``AccessToken`` 
 Headers         ``Accept: application/json``
 Parameters      app_id: the GUID of application
@@ -150,14 +150,14 @@ Response Body     Successful Response
 
 =============== =================================================
 
-Get Policy: ``GET /v1/autoscaler/apps/<app_id>/policy/``
+Get Policy: ``GET /v1/apps/<app_id>/policy/``
 --------------------------------
 Get existing policy of your application
 
-* Request: ``GET /v1/autoscaler/apps/<app_id>/policy/``
+* Request: ``GET /v1/apps/<app_id>/policy/``
 
 =============== ====================================================================
-Request         ``GET /v1/autoscaler/apps/<app_id>/policy/``
+Request         ``GET /v1/apps/<app_id>/policy/``
 Authorization   Authorization: Bearer Token of ``AccessToken``
 Headers         ``Accept: application/json``
 Parameters      app_id: the GUID of the application
@@ -253,14 +253,14 @@ Policy Status APIs:
 ============================================
 You can use these APIs to enable/disable the policy or check current policy status
 
-Enable/Disable policy: ``PUT /v1/autoscaler/apps/:app_id/policy/status/``
+Enable/Disable policy: ``PUT /v1/apps/:app_id/policy/status/``
 --------------------------------
 Enable the suspended policy or disable the policy temporarily
 
-* Request: ``PUT /v1/autoscaler/apps/:app_id/policy/status/``
+* Request: ``PUT /v1/apps/:app_id/policy/status/``
 
 =============== =================================================
-Request         ``PUT /v1/autoscaler/apps/:app_id/policy/status/``
+Request         ``PUT /v1/apps/:app_id/policy/status/``
 Authorization   Authorization: Bearer Token of ``AccessToken``
 Headers         ``Accept: application/json``
 Parameters      app_id: the GUID of the application
@@ -286,14 +286,14 @@ Response Body     Successful Response
 
 =============== =================================================
 
-Get policy status: ``GET /v1/autoscaler/apps/:app_id/policy/status/``
+Get policy status: ``GET /v1/apps/:app_id/policy/status/``
 --------------------------------
 Get the policy status of your application
 
-* Request: ``GET /v1/autoscaler/apps/:app_id/policy/status/``
+* Request: ``GET /v1/apps/:app_id/policy/status/``
 
 =============== =================================================
-Request         ``GET /v1/autoscaler/apps/:app_id/policy/status/``
+Request         ``GET /v1/apps/:app_id/policy/status/``
 Authorization   Authorization: Bearer Token of ``AccessToken``
 Headers         ``Accept: application/json``
 Parameters      app_id: the GUID of application
@@ -325,14 +325,14 @@ Scaling Data Management APIs:
 ============================================
 You can use these APIs to retrieve scaling history and metric data
 
-Get autoscaling history: ``GET /v1/autoscaler/apps/<app_id>/scalinghistory/?startTime={startTime}&endTime={endTime}``
+Get autoscaling history: ``GET /v1/apps/<app_id>/scalinghistory/?startTime={startTime}&endTime={endTime}``
 --------------------------------
 Get scaling history of your application
 
-* Request: ``GET /v1/autoscaler/apps/<app_id>/scalinghistory/?startTime={startTime}&endTime={endTime}``
+* Request: ``GET /v1/apps/<app_id>/scalinghistory/?startTime={startTime}&endTime={endTime}``
 
 =============== =================================================
-Request         ``GET /v1/autoscaler/apps/<app_id>/scalinghistory/?startTime={startTime}&endTime={endTime}``
+Request         ``GET /v1/apps/<app_id>/scalinghistory/?startTime={startTime}&endTime={endTime}``
 Authorization   Authorization: Bearer Token of ``AccessToken``
 Headers         ``Accept: application/json``
 Parameters      app_id: the GUID of the application. startTime and endTime are the timestamp in millisecond to specify the time range of scaling action 
@@ -408,14 +408,14 @@ Fields            *Available Fields* ::
 
 =============== =================================================
 
-Get Scaling metrics: ``GET /v1/autoscaler/apps/:app_id/metrics?startTime={startTime}&endTime={endTime}``
+Get Scaling metrics: ``GET /v1/apps/:app_id/metrics?startTime={startTime}&endTime={endTime}``
 --------------------------------
 Get scaling metric data
 
-* Request: ``GET /v1/autoscaler/apps/:app_id/metrics?startTime={startTime}&endTime={endTime}``
+* Request: ``GET /v1/apps/:app_id/metrics?startTime={startTime}&endTime={endTime}``
 
 =============== =================================================
-Request         ``GET /v1/autoscaler/apps/:app_id/metrics?startTime={startTime}&endTime={endTime}``
+Request         ``GET /v1/apps/:app_id/metrics?startTime={startTime}&endTime={endTime}``
 Authorization   Authorization: Bearer Token of ``AccessToken``
 Headers         ``Accept: application/json``
 Parameters      app_id: the GUID of the application time stamp in millisecond to specify the time range of metric data 

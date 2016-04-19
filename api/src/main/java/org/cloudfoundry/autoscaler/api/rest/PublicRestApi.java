@@ -55,7 +55,7 @@ import org.cloudfoundry.autoscaler.api.exceptions.InternalAuthenticationExceptio
 import org.cloudfoundry.autoscaler.api.util.MessageUtil;
 
 
-@Path("/apps")
+@Path("/v1/apps")
 public class PublicRestApi {
 	private static final String CLASS_NAME = PublicRestApi.class.getName();
 	private static final Logger logger     = Logger.getLogger(CLASS_NAME);

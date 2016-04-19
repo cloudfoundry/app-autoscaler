@@ -11,7 +11,7 @@
 	</servlet>
 	<servlet-mapping>
 		<servlet-name>PublicService</servlet-name>
-		<url-pattern>/v1/autoscaler/*</url-pattern>
+		<url-pattern>/*</url-pattern>
 	</servlet-mapping>
 	<filter>
 		<filter-name>AuthenticationFilter</filter-name>
@@ -19,7 +19,7 @@
 	</filter>
 	<filter-mapping>
 		<filter-name>AuthenticationFilter</filter-name>
-		<url-pattern>/v1/autoscaler/*</url-pattern>
+		<url-pattern>/*</url-pattern>
 	</filter-mapping>		
 	<session-config>
 	 <session-timeout> 300 </session-timeout>
