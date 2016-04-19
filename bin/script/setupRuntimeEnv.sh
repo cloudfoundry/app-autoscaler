@@ -71,12 +71,12 @@ cf login -a https://api.$cfDomain -u $cfUsername -p $cfPassword -o $org -s $spac
 cf marketplace -s $serviceName
 
 if [ $? -ne 0 ]; then
-	echo "cf create-service-broker $componentName <brokerUserName> <brokerPassword> $brokerURI"
-	cf create-service-broker $componentName $brokerUsername $brokerPassword $brokerURI
+	echo "cf create-service-broker $serviceName<brokerUserName> <brokerPassword> $brokerURI"
+	cf create-service-broker $serviceName $brokerUsername $brokerPassword $brokerURI
 	cf enable-service-access $serviceName
 else 
-	echo "cf update-service-broker $componentName <brokerUserName> <brokerPassword> $brokerURI"
-	cf update-service-broker $componentName $brokerUsername $brokerPassword $brokerURI
+	echo "cf update-service-broker $serviceName <brokerUserName> <brokerPassword> $brokerURI"
+	cf update-service-broker $serviceName $brokerUsername $brokerPassword $brokerURI
 fi
 }
 
