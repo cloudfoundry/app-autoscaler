@@ -3,9 +3,9 @@ source ${basedir}/script/utils.sh
 
 
 function createProfile(){
-read -p " >>> Define customized Maven profile name: (default: test): " profile
+read -p " >>> Define customized Maven profile name (default: sample): " profile
 if [ -z "$profile" ]; then
-	profile="test"
+	profile="sample"
 fi
 
 profileExist=true;
