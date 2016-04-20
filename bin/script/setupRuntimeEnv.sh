@@ -10,14 +10,14 @@ if [ -z $onCloud ]; then
 
 	serverURIList=`getDefaultConfig serverURIList ${AutoScalingBrokerProfileDIR}/$profile.properties`
 	apiServerURI=`getDefaultConfig apiServerURI ${AutoScalingBrokerProfileDIR}/$profile.properties`
-	
+
 	if [[ $apiServerURI == ${AutoScalingAPIName}.* ]]; then
 		onCloud="y";
 		hostingCustomDomain=${apiServerURI##"`eval echo $AutoScalingAPIName`."};
 		hostingCFDomain=`readConfigValue hostingCFDomain "CF domain to host $componentName applications" $hostingCustomDomain`;
 	else
 		onCloud="n";
-	fi 
+	fi
 fi
 
 }
@@ -30,7 +30,7 @@ if [ $onCloud == "n" ]; then
 	echo " serverURIList : $serverURIList"
 	echo " apiServerURI : $apiServerURI"
     read -p "Press Any key to continue when runtime environment is launched ... " input
-   
+
 else
 	echo " >>> Now, the script will push $componentName to $hostingCFDomain"
 	echo " >>> Please input the access info for api.$hostingCFDomain "
@@ -44,7 +44,7 @@ else
 	pushMavenPackageToCF ${AutoScalingServerName} ${AutoScalingServerProjectDirName}
 	pushMavenPackageToCF ${AutoScalingAPIName} ${AutoScalingAPIProjectDirName}
 	pushMavenPackageToCF ${AutoScalingBrokerName} ${AutoScalingBrokerProjectDirName}
-	
+
 fi
 
 }
@@ -71,10 +71,10 @@ cf login -a https://api.$cfDomain -u $cfUsername -p $cfPassword -o $org -s $spac
 cf marketplace -s $serviceName
 
 if [ $? -ne 0 ]; then
-	echo "cf create-service-broker $serviceName<brokerUserName> <brokerPassword> $brokerURI"
+	echo "cf create-service-broker $serviceName <brokerUserName> <brokerPassword> $brokerURI"
 	cf create-service-broker $serviceName $brokerUsername $brokerPassword $brokerURI
 	cf enable-service-access $serviceName
-else 
+else
 	echo "cf update-service-broker $serviceName <brokerUserName> <brokerPassword> $brokerURI"
 	cf update-service-broker $serviceName $brokerUsername $brokerPassword $brokerURI
 fi

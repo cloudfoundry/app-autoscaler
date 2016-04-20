@@ -3,22 +3,22 @@
 
 This is an incubation project for Cloud Foundry. You can follow the development progress on [Pivotal Tracker][t].
 
-The `CF-AutoScaler` provides the capability to adjust the computation resources for CloudFoundry applications through
+The `CF-AutoScaler` provides the capability to adjust the computation resources for Cloud Foundry applications through
 
 * Dynamic scaling based on application performance metrics
 * Scheduled scaling based on time
 
-The `CF-AutoScaler` is provided as a Cloud Foundry service offering. Any application bound with `CF-AutoScaler` service will be able to use it. 
+The `CF-AutoScaler` is provided as a Cloud Foundry service offering. Any application bound with `CF-AutoScaler` service will be able to use it.
 
 ## Get Started
 
 System requirements:
 
-* Java 7 or above
+* Java 8 or above
 * [Apache Maven][b] 3
-* [Apache couchdb][c] 
-* [CloudFoundry cf command line] [f]
-* [CloudFoundry UAA command line client][u]
+* [Apache couchdb][c]
+* [Cloud Foundry cf command line] [f]
+* [Cloud Foundry UAA command line client][u]
 
 Database requirement:
 
@@ -32,19 +32,19 @@ To get started, clone this project:
     $ cd open-Autoscaler
 ```
 
-The AutoScaler has three components, all of them them are Java Web Applications. 
+The AutoScaler has three components, all of them them are Java Web Applications.
 
 * `api` : provides public APIs to manage scaling policy, retrive application metrics, and scaling history. See details in [API_usage.rst][a]
-* `servicebroker`: implements the [Cloudfoundry service broker API][k]
+* `servicebroker`: implements the [Cloud Foundry service broker API][k]
 * `server`: the backend engine of `CF-AutoScaler`
 
 
 
-`CF-AutoScaler` invokes Cloud controller API to trigger scaling on target application. To achieve this, a UAA client id with  authorities `cloud_controller.read,cloud_controller.admin` is needed for the CloudFoundry environment `CF-AutoScaler` is registered with. You can create it using UAA command line client, make sure the client ID and secret are the ones you configured in the maven profile when you package the .war files
+`CF-AutoScaler` invokes Cloud controller API to trigger scaling on target application. To achieve this, a UAA client id with  authorities `cloud_controller.read,cloud_controller.admin` is needed for the Cloud Foundry environment `CF-AutoScaler` is registered with. You can create it using UAA command line client, make sure the client ID and secret are the ones you configured in the maven profile when you package the .war files
 
 ```shell
 uaac target http://uaa.<cf-domain>
-uaac token client get admin -s <cf uaa admin secret> 
+uaac token client get admin -s <cf uaa admin secret>
 uaac client add cf-autoscaler-client \
 	--name cf-autoscaler \
     --authorized_grant_types client_credentials \
@@ -66,12 +66,12 @@ cd servicebroker
 mvn test -Punittest
 ```
 
-### Configure and Package 
+### Configure and Package
 
 
 All the `CF-AutoScaler` components are configured through Maven profiles. You need to create your own profile according to the settings of the runtime environment that these components will be deployed to.
 
-CloudFoundry settings
+Cloud Foundry settings
 
 ```
 cfUrl=api.bosh-lite.com
@@ -79,7 +79,7 @@ cfClientId=cf-autoscaler-client
 cfClientSecret=cf-autoscaler-client-secret
 ```
 
-Service borker settings
+Service broker settings
 
 ```
 service.name=CF-AutoScaler
@@ -87,7 +87,7 @@ brokerUsername=admin
 brokerPassword=admin
 ```
 
-Scaling Server URL and protocol settings 
+Scaling Server URL and protocol settings
 
 ```
 serverURIList=AutoScaling.bosh-lite.com
@@ -132,7 +132,7 @@ mvn clean package -Psample -DskipTests
 
 ### Deploy `CF-AutoScaler` service
 
-You can push the .war package of each `CF-AutoScaler` component to CloudFoundry to get `CF-AutoScaler` service deployed. Please note you need to use the URLs you configured in `servicebroker/profiles/{profile}.properties` as the routes of CF-AutoScaler server and API server. 
+You can push the .war package of each `CF-AutoScaler` component to Cloud Foundry to get `CF-AutoScaler` service deployed. Please note you need to use the URLs you configured in `servicebroker/profiles/{profile}.properties` as the routes of CF-AutoScaler server and API server.
 
 ```shell
 serverURIList=AutoScaling.bosh-lite.com
@@ -152,9 +152,9 @@ cf enable-service-access CF-AutoScaler
 
 ## Test 'CF-AutoScaler' deployment
 
-Run `bin/script/test/launchTest.sh` to test your deployements including service creat/delete/bind/unbind, scaling APIs, metrics and schedule based scaling using sample applications.
+Run `bin/script/test/launchTest.sh` to test your deployements including service provision/deprovision/bind/unbind, scaling APIs, metrics and schedule based scaling using sample applications.
 
-## Use `CF-AutoScaler` 
+## Use `CF-AutoScaler`
 
 Now, you can play with `CF-AutoScaler`.
 Firstly create a `CF-AutoScaler` service, and bind to you application
@@ -164,7 +164,7 @@ cf create-service CF-AutoScaler free <service_instance>
 cf bind-service <app> <service_instance>
 ```
 
-Then refer to [API_usage.rst][a] to manage the scaling policy of your application, retrieve metrics and scaling histories. 
+Then refer to [API_usage.rst][a] to manage the scaling policy of your application, retrieve metrics and scaling histories.
 
 
 ## License
@@ -182,4 +182,3 @@ This project is released under version 2.0 of the [Apache License][l].
 [l]: LICENSE
 [t]: https://www.pivotaltracker.com/projects/1566795
 [u]: https://github.com/cloudfoundry/cf-uaac
-
