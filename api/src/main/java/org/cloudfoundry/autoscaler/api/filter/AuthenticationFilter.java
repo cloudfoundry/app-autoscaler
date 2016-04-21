@@ -22,6 +22,7 @@ import org.cloudfoundry.autoscaler.api.util.AuthenticationTool;
 import org.cloudfoundry.autoscaler.api.util.AuthenticationTool.SecurityCheckStatus;
 import org.cloudfoundry.autoscaler.api.util.CloudFoundryManager;
 import org.cloudfoundry.autoscaler.api.util.LocaleUtil;
+import org.cloudfoundry.autoscaler.api.util.MessageUtil;
 import org.cloudfoundry.autoscaler.api.util.RestApiResponseHandler;
 /**
  * Servlet Filter implementation class SSOFilter
@@ -74,6 +75,13 @@ public class AuthenticationFilter implements Filter {
     				HttpServletResponse resp = (HttpServletResponse)response;
     				resp.sendError(HttpServletResponse.SC_BAD_REQUEST, RestApiResponseHandler.getErrorMessage(new AppNotFoundException(e.getAppId()), LocaleUtil.getLocale(httpServletRequest)));
     				return;
+    			}
+    			catch (NullPointerException e){
+    				logger.error("login UAA with client ID and secret failed");
+    				HttpServletRequest httpServletRequest = (HttpServletRequest)request;
+    				HttpServletResponse resp = (HttpServletResponse)response;
+    				resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, MessageUtil.getMessageString(MessageUtil.RestResponseErrorMsg_internal_server_error, LocaleUtil.getLocale(httpServletRequest)));
+    				return;    				
     			}
     			catch (Exception e){
         			//throw new ServletException("appId=" + appGuid + " " + e.getMessage());
