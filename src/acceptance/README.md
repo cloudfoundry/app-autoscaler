@@ -16,7 +16,7 @@ and should not modify the CF state in such a way as to impact other tests.
 
 Set up your golang development environment, per [golang.org](http://golang.org/doc/install).
 
-See [cf CLI](https://github.com/cloudfoundry/cli) for instructions on installing the go version of `cf`.
+See [cf CLI](https://github.com/cloudfoundry/cli) for instructions on installing the go version of `cf`. Recommend version v6.17.0+
 
 Make sure that the go version of `cf` is accessible in your `$PATH`.
 
