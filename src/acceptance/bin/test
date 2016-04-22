@@ -4,7 +4,7 @@ set -e -x
 
 bin_dir=$(dirname "${BASH_SOURCE[0]}")
 
-pushd "${bin_dir}/../.." > /dev/null
+pushd "${bin_dir}/../../.." > /dev/null
   project_gopath=$PWD
 popd > /dev/null
 
