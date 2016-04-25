@@ -286,34 +286,32 @@ public class ApplicationScaleManagerImpl implements ApplicationScaleManager{
 	private boolean validateInstanceCounts(String appId,AutoScalerPolicy policy,String triggerId, Integer currentInstanceCount) throws Exception{
 		int minCount = policy.getCurrentInstanceMinCount();
 		int maxCount = policy.getCurrentInstanceMaxCount();
+		boolean validScaling = false;
 		if(null == triggerId){
-			if (currentInstanceCount >= minCount && currentInstanceCount <=maxCount) {
-				logger.info("The number of application instances is greater than minimum instances limitation and less than maximum instances limitation.");
-				return false;
-			} else if(currentInstanceCount >= maxCount){
-				logger.info("The number of application instances is greater than maximum instances limitation. Start scaling in.");
-				return true;
-			}else{
-				logger.info("The number of application instances is less than minimum instances limitation. Start scaling out.");
-				return true;
-			}
+			/** Trigger by the min/max instance definition changed in policy **/
+			if (currentInstanceCount < minCount || currentInstanceCount > maxCount) {
+				logger.debug(String.format("The current instance count of app %s is %d which beyond the valid instance scope [ %d, %d]" ,  
+						appId, currentInstanceCount, minCount, maxCount));
+				validScaling = true;
+			} 
 		}
 		else{
-			/** Check minimum count and maximum count **/
+			/** Trigger by dynamic scale. Check minimum count and maximum count **/
 			if (AutoScalerPolicyTrigger.TriggerId_LowerThreshold.equals(triggerId)
 					&& currentInstanceCount <= minCount) {
-				logger.debug("False: Min count reached. No scaling in action.");
-				return false;
+				logger.debug(String.format("Invalid scaling event %s for app %s, since the Min instance count reached", 
+						triggerId, appId));
 			} else if (AutoScalerPolicyTrigger.TriggerId_UpperThreshold
 					.equals(triggerId)
 					&& currentInstanceCount >= maxCount) {
-				logger.debug("False: Max count reached. No scaling out action.");
-				return false;
-			} 
+				logger.debug(String.format("Invalid scaling event %s for app %s, since the Max instance count reached", 
+						triggerId, appId));
+			}  else {
+				validScaling = true;
+			}
 		}
 		
-		
-		return true;
+		return validScaling;
 		
 	}
 	private int getCurrentInstanceCount(String appId) throws Exception{
