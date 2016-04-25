@@ -8,7 +8,12 @@ pushd "${bin_dir}/../../.." > /dev/null
   project_gopath=$PWD
 popd > /dev/null
 
-export GOPATH="${project_gopath}":$GOPATH
+
+if [ -z "$GOPATH" ] ; then
+	export GOPATH="${project_gopath}"
+else
+	export GOPATH="${project_gopath}":$GOPATH
+fi
 export PATH="${project_gopath}/bin":$PATH
 
 go install -v github.com/onsi/ginkgo/ginkgo
