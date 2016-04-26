@@ -14,8 +14,8 @@ public final class Constants {
 	
     public static final int DASHBORAD_TIME_RANGE = 30;
     
-    public static final String USERNAME = "cfClientId";
-    public static final String PASSWORD = "cfClientSecret";
+    public static final String CLIENT_ID = "cfClientId";
+    public static final String CLIENT_SECRET = "cfClientSecret";
     public static final String CFURL = "cfUrl";
    
     public static final String APP_TYPE_JAVA = "java";
@@ -643,7 +643,10 @@ public final class Constants {
 	public static String[] DEFAULT_METRICS = {METRIC_TYPE_MEMORY};
 	public static Map<String,String[]> appType_metric_mapping = new HashMap<String, String[]>()
 	{
-	    {
+
+		private static final long serialVersionUID = 1L;
+
+		{
 	        put(APP_TYPE_JAVA, JAVA_METRICS);
 	        put(APP_TYPE_NODEJS, NODEJS_METRICS);
 	        put(APP_TYPE_DEFAULT, DEFAULT_METRICS);
@@ -685,7 +688,9 @@ public final class Constants {
 	public static String TRIGGER_STEPUPCOOLDOWN = "stepUpCoolDownSecs";
 	public static Map<String, Integer> trigger_default = new HashMap<String, Integer>() //server metric string to metricType
 	{
-	    {
+		private static final long serialVersionUID = 1L;
+
+		{
 	        put(TRIGGER_STATWINDOW, value_default_statWindow);
 	        put(TRIGGER_BREACHDURATION, value_default_breachDuration);
 	        put(TRIGGER_LOWERTHRESHOLD, value_default_lowerThreshold_Memory);

@@ -2,6 +2,7 @@ package org.cloudfoundry.autoscaler.api.rest.mock.cc;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.FormParam;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -13,6 +14,8 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.cloudfoundry.autoscaler.api.Constants;
+import org.cloudfoundry.autoscaler.api.util.ConfigManager;
 import org.cloudfoundry.autoscaler.api.util.RestApiResponseHandler;
 import static org.cloudfoundry.autoscaler.api.test.constant.Constants.*;
 import org.json.JSONObject;
@@ -42,7 +45,7 @@ public class CloudControllerRestApi {
 		jo.put("version", "1.0");
 		jo.put("description", "openAutoScaler");
 		jo.put("authorization_endpoint", "http://localhost:9998");
-		jo.put("token_endpoint", "https://uaa.stage1.ng.bluemix.net");
+		jo.put("token_endpoint", "https://localhost:9998");
 		jo.put("allow_debug", "true");
 		return RestApiResponseHandler.getResponseOk(jo.toString());
 
@@ -60,7 +63,10 @@ public class CloudControllerRestApi {
 	@Path("/oauth/token")
 	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response getToken(@Context final HttpServletRequest httpServletRequest, String jsonString) {
+	public Response getToken(@Context final HttpServletRequest httpServletRequest, 
+			@FormParam("grant_type") final String grantType,
+			@FormParam("client_id") final String clientId,
+			@FormParam("client_secret") final String clientSecret) {
 		// {
 		// "access_token":
 		// "eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIwY2JlNjKSJjsmJSFAjfsnkJWOAlsgaNSmMS1kZDExLTRlZDMtOGI0Zi1iN2U4MDRiOTc3MGIiLCJzdWIiOiJvZXJ1bnRpbWVfYWRtaW4iLCJhdXRob3JpdGllcyI6WyJjbG91ZF9jb250cm9sbGVyLnJlYWQiLCJjbG91ZF9jb250cm9sbGVyLndyaXRlIiwidWFhLnJlc291cmNlIiwib3BlbmlkIiwiZG9wcGxlci5maXJlaG9zZSIsInNjaW0ucmVhZCIsImNsb3VkX2NvbnRyb2xsZXIuYWRtaW4iXSwic2NvcGUiOlsiY2xvdWRfY29udHJvbGxlci5yZWFkIiwiY2xvdWRfY29udHJvbGxlci53cml0ZSIsInVhYS5yZXNvdXJjZSIsIm9wZW5pZCIsImRvcHBsZXIuZmlyZWhvc2UiLCJzY2ltLnJlYWQiLCJjbG91ZF9jb250cm9sbGVyLmFkbWluIl0sImNsaWVudF9pZCI6Im9lcnVudGltZV9hZG1pbiIsImNpZCI6Im9lcnVudGltZV9hZG1pbiIsImF6cCI6Im9lcnVudGltZV9hZG1pbiIsImdyYW50X3R5cGUiOiJjbGllbnRfY3JlZGVudGlhbHMiLCJyZXZfc2lnIjoiNDkyYjgwOGMiLCJpYXQiOjE0NTkyNDQwNjksImV4cCI6MTQ1OTI4NzI2OSwiaXNzIjoiaHR0cHM6Ly91YWEuc3RhZ2UxLm5nLmJsdWVtaXgubmV0L29hdXRoL3Rva2VuIiwiemlkIjoidWFhIiwiYXVkIjpbIm9lcnVudGltZV9hZG1pbiIsImNsb3VkX2NvbnRyb2xsZXIiLCJ1YWEiLCJvcGVuaWQiLCJkb3BwbGVyIiwic2NpbSJdfQ.cA1kWFYkVu1Ll8I_khJADUONgXh6_ip45yF8PSrxIxc",
@@ -69,8 +75,15 @@ public class CloudControllerRestApi {
 		// "scope": "cloud_controller.read cloud_controller.write uaa.resource
 		// openid doppler.firehose scim.read cloud_controller.admin",
 		// "jti": "0cbe67f1-dd11-4ed3-8b4f-b7e804b9770b"
-		// }
-
+		// }		httpServletRequest.getP
+		
+		if ( (grantType == null ) || (clientId == null) || (clientSecret == null) 
+			|| !grantType.equals("client_credentials") || !clientId.equals(ConfigManager.get(Constants.CLIENT_ID)) 
+			||  !clientSecret.equals(ConfigManager.get(Constants.CLIENT_SECRET))){
+			return RestApiResponseHandler.getResponseUnauthorized("An Authentication object with grant type:'" + grantType + "', "
+							+ "client_id:'" + clientId + "' was not found in the SecurityContext");			
+		}
+		
 		JSONObject jo = new JSONObject();
 		jo.put("access_token", "eyJhbGciOiJIUzI1NiJ9");
 		jo.put("token_type", "bearer");

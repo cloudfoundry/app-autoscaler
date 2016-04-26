@@ -2,25 +2,17 @@ package org.cloudfoundry.autoscaler.api.rest.mock.serverapi;
 
 import static org.cloudfoundry.autoscaler.api.test.constant.Constants.TESTAPPID;
 import static org.cloudfoundry.autoscaler.api.test.constant.Constants.TESTAPPNAME;
-import static org.cloudfoundry.autoscaler.api.test.constant.Constants.TESTPOLICYID;
 import static org.cloudfoundry.autoscaler.api.test.constant.Constants.TESTSERVICEID;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.cloudfoundry.autoscaler.api.util.RestApiResponseHandler;
-import org.json.JSONObject;
 
 @Path("/services")
 public class ServerMetricsRestApi {

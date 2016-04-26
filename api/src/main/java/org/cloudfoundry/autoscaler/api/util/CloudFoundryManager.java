@@ -11,6 +11,7 @@ import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.api.Constants;
 import org.cloudfoundry.autoscaler.api.exceptions.AppInfoNotFoundException;
 import org.cloudfoundry.autoscaler.api.exceptions.AppNotFoundException;
+import org.cloudfoundry.autoscaler.api.exceptions.ClientIDLoginFailedException;
 import org.cloudfoundry.autoscaler.api.exceptions.CloudException;
 import org.cloudfoundry.autoscaler.api.exceptions.ServiceNotFoundException;
 import org.json.JSONArray;
@@ -44,19 +45,23 @@ public class CloudFoundryManager {
     
     private static volatile CloudFoundryManager instance;
 
-    private CloudFoundryManager() {
-        this.cfClientId = getClientId();
-        this.cfSecretKey = getSecretKey();
-   		this.restClient= RestUtil.getHTTPSRestClient();
-   		String cfUrlTemp = getCFAPIUrl();
-   		if(!cfUrlTemp.startsWith("http://") || cfUrlTemp.startsWith("https://")){
-   			this.target = "https://" + getCFAPIUrl();
-   		}
-   		else{
-   			this.target = getCFAPIUrl();
-   		}
+    public CloudFoundryManager() {
+    	this(getClientId(), getSecretKey(), getCFAPIUrl());
     }
 
+    public CloudFoundryManager(String clientId, String clientSecret, String cfUrl) {
+        this.cfClientId = clientId;
+        this.cfSecretKey = clientSecret;
+   		this.restClient= RestUtil.getHTTPSRestClient();
+   		if(!cfUrl.startsWith("http://") || cfUrl.startsWith("https://")){
+   			this.target = "https://" + cfUrl;
+   		}
+   		else{
+   			this.target = cfUrl;
+   		}
+    }
+    
+    
     public static CloudFoundryManager getInstance() throws Exception {
         if (instance == null) {
         	synchronized (CloudFoundryManager.class) {
@@ -70,7 +75,7 @@ public class CloudFoundryManager {
     
    
 
-    private void login() throws Exception {
+    public void login() throws Exception {
         long now = System.currentTimeMillis();
         // log in again if the accessToken expires
         if (accessToken == null || now >= this.accessTokenExpireTime - 5 * 60 * 1000) {
@@ -83,36 +88,42 @@ public class CloudFoundryManager {
         String infoUrl = target + "/info";
         logger.debug("connecting to URL:" + infoUrl);
         WebResource webResource = restClient.resource(infoUrl);
-        String response = webResource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON)
-                .get(String.class);
+        String response = webResource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON).get(String.class);
         logger.debug(">>>" + response);
 
-            String authString = cfClientId + ":" + cfSecretKey;
-            byte[] authEncBytes = Base64.encodeBase64(authString.getBytes());
-            String authStringEnc = new String(authEncBytes);
-            JsonNode jobj = new ObjectMapper().readTree(response);
-            String authorization_endpoint = jobj.get("authorization_endpoint").asText();
+        String authString = cfClientId + ":" + cfSecretKey;
+        byte[] authEncBytes = Base64.encodeBase64(authString.getBytes());
+        String authStringEnc = new String(authEncBytes);
+        JsonNode jobj = new ObjectMapper().readTree(response);
+        String authorization_endpoint = jobj.get("authorization_endpoint").asText();
 
-            logger.debug(">>>" + authorization_endpoint);
-            webResource = restClient.resource(authorization_endpoint + "/oauth/token");
-            ClientResponse cr = webResource
+        logger.debug(">>>" + authorization_endpoint);
+        webResource = restClient.resource(authorization_endpoint + "/oauth/token");
+        ClientResponse cr = webResource
                     .accept(MediaType.APPLICATION_JSON)
                     .type(MediaType.APPLICATION_FORM_URLENCODED)
                     .header("charset", "utf-8")
                     .header("authorization", "Basic " + authStringEnc)
                     .post(ClientResponse.class,
                             "grant_type=client_credentials&client_id=" + cfClientId + "&client_secret=" + cfSecretKey);
-            response = cr.getEntity(String.class);
-            logger.debug(">>>" + response);
-            jobj = new ObjectMapper().readTree(response);
 
-            accessToken = jobj.get("access_token").asText();
-            long expire_in = Long.parseLong(jobj.get("expires_in").toString());
-            accessTokenExpireTime = System.currentTimeMillis() + expire_in * 1000;
-
-            logger.debug(">>>" + accessToken);
+        if ( cr.getStatus() == 200) {
+        	response = cr.getEntity(String.class);
+        	logger.debug(">>>" + response);
+	            
+        	jobj = new ObjectMapper().readTree(response);
+	
+        	accessToken = jobj.get("access_token").asText();
+        	long expire_in = Long.parseLong(jobj.get("expires_in").toString());
+        	accessTokenExpireTime = System.currentTimeMillis() + expire_in * 1000;
+	
+        	logger.debug(">>>" + accessToken);
+	        return ;
+            }
+        else {
+        	throw new ClientIDLoginFailedException(cfClientId, cr.getClientResponseStatus().toString());
+        }
   
-
     }
     
     public JsonNode getServiceInfo(String appId, String serviceName) throws Exception {
@@ -373,11 +384,11 @@ public class CloudFoundryManager {
     }
 
     private static String getClientId() {
-        return ConfigManager.get("cfClientId");
+        return ConfigManager.get(Constants.CLIENT_ID);
     }
 
     private static String getSecretKey() {
-        return ConfigManager.get("cfClientSecret");
+        return ConfigManager.get(Constants.CLIENT_SECRET);
     }
 
     public String getAppIdByOrgSpaceAppName(String org, String space, String appName) throws Exception {
