@@ -3,7 +3,6 @@ package org.cloudfoundry.autoscaler.api.util;
 import static org.junit.Assert.assertEquals;
 
 import org.cloudfoundry.autoscaler.api.util.MessageUtil;
-import org.cloudfoundry.autoscaler.api.util.LocaleUtil;
 import org.junit.Test;
 import java.util.Locale;
 

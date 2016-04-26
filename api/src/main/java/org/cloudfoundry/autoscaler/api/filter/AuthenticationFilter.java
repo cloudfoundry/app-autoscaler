@@ -18,10 +18,12 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.api.exceptions.AppInfoNotFoundException;
 import org.cloudfoundry.autoscaler.api.exceptions.AppNotFoundException;
+import org.cloudfoundry.autoscaler.api.exceptions.ClientIDLoginFailedException;
 import org.cloudfoundry.autoscaler.api.util.AuthenticationTool;
 import org.cloudfoundry.autoscaler.api.util.AuthenticationTool.SecurityCheckStatus;
 import org.cloudfoundry.autoscaler.api.util.CloudFoundryManager;
 import org.cloudfoundry.autoscaler.api.util.LocaleUtil;
+import org.cloudfoundry.autoscaler.api.util.MessageUtil;
 import org.cloudfoundry.autoscaler.api.util.RestApiResponseHandler;
 /**
  * Servlet Filter implementation class SSOFilter
@@ -75,8 +77,14 @@ public class AuthenticationFilter implements Filter {
     				resp.sendError(HttpServletResponse.SC_BAD_REQUEST, RestApiResponseHandler.getErrorMessage(new AppNotFoundException(e.getAppId()), LocaleUtil.getLocale(httpServletRequest)));
     				return;
     			}
+    			catch ( ClientIDLoginFailedException e){
+    				logger.error("login UAA with client ID " + e.getClientID() + " failed");
+    				HttpServletRequest httpServletRequest = (HttpServletRequest)request;
+    				HttpServletResponse resp = (HttpServletResponse)response;
+    				resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, MessageUtil.getMessageString(MessageUtil.RestResponseErrorMsg_internal_server_error, LocaleUtil.getLocale(httpServletRequest)));
+    				return;    				   				
+    			}
     			catch (Exception e){
-        			//throw new ServletException("appId=" + appGuid + " " + e.getMessage());
         			logger.error("Get exception: " + e.getClass().getName() + " with message " + e.getMessage());
         			HttpServletResponse resp = (HttpServletResponse)response;
                     resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);

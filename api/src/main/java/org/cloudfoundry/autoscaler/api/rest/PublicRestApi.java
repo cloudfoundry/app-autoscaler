@@ -43,6 +43,7 @@ import org.cloudfoundry.autoscaler.api.validation.ValidateUtil.DataType;
 import org.cloudfoundry.autoscaler.api.util.LocaleUtil;
 import org.cloudfoundry.autoscaler.api.exceptions.CloudException;
 import org.cloudfoundry.autoscaler.api.exceptions.AppNotFoundException;
+import org.cloudfoundry.autoscaler.api.exceptions.ClientIDLoginFailedException;
 import org.cloudfoundry.autoscaler.api.exceptions.AppInfoNotFoundException;
 import org.cloudfoundry.autoscaler.api.exceptions.PolicyNotFoundException;
 import org.cloudfoundry.autoscaler.api.exceptions.ServiceNotFoundException;
@@ -109,6 +110,10 @@ public class PublicRestApi {
 		catch (InternalAuthenticationException e) {
 			return RestApiResponseHandler.getResponseInternalAuthenticationFail(e, LocaleUtil.getLocale(httpServletRequest));
 		}
+		catch (ClientIDLoginFailedException e){
+			logger.error("login UAA with client ID " + e.getClientID() + " failed");
+			return RestApiResponseHandler.getResponseInternalServerError(MessageUtil.getMessageString(MessageUtil.RestResponseErrorMsg_internal_server_error, LocaleUtil.getLocale(httpServletRequest)));    				   				
+		}
 		catch (Exception e) {
 			logger.info("error in getserverinfo: " + e.getMessage());
 			return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_retrieve_application_service_information_context, e), LocaleUtil.getLocale(httpServletRequest));
@@ -127,6 +132,11 @@ public class PublicRestApi {
 		catch (AppInfoNotFoundException e){
 			return RestApiResponseHandler.getResponseAppInfoNotFound(e, LocaleUtil.getLocale(httpServletRequest));
 		}
+		catch (ClientIDLoginFailedException e){
+			logger.error("login UAA with client ID " + e.getClientID() + " failed");
+			return RestApiResponseHandler.getResponseInternalServerError(MessageUtil.getMessageString(MessageUtil.RestResponseErrorMsg_internal_server_error, LocaleUtil.getLocale(httpServletRequest)));    				   				
+		}
+
 		catch (Exception e){  
 			logger.info("error in getOrgSpaceByAppId: " + e.getMessage());
 			return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_retrieve_org_sapce_information_context, e), LocaleUtil.getLocale(httpServletRequest));
@@ -259,6 +269,10 @@ public class PublicRestApi {
 		catch (InternalAuthenticationException e) {
 			return RestApiResponseHandler.getResponseInternalAuthenticationFail(e, LocaleUtil.getLocale(httpServletRequest));
 		}
+		catch (ClientIDLoginFailedException e){
+			logger.error("login UAA with client ID " + e.getClientID() + " failed");
+			return RestApiResponseHandler.getResponseInternalServerError(MessageUtil.getMessageString(MessageUtil.RestResponseErrorMsg_internal_server_error, LocaleUtil.getLocale(httpServletRequest)));    				   				
+		}
 		catch (Exception e) {
 			logger.info("error in getserverinfo: " + e.getMessage());
 			return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_retrieve_application_service_information_context, e), LocaleUtil.getLocale(httpServletRequest));
@@ -345,6 +359,10 @@ public class PublicRestApi {
 		catch (InternalAuthenticationException e) {
 			return RestApiResponseHandler.getResponseInternalAuthenticationFail(e, LocaleUtil.getLocale(httpServletRequest));
 		}
+		catch (ClientIDLoginFailedException e){
+			logger.error("login UAA with client ID " + e.getClientID() + " failed");
+			return RestApiResponseHandler.getResponseInternalServerError(MessageUtil.getMessageString(MessageUtil.RestResponseErrorMsg_internal_server_error, LocaleUtil.getLocale(httpServletRequest)));    				   				
+		}
 		catch (Exception e) {
 			logger.info("error in getserverinfo: " + e.getMessage());
 			return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_retrieve_application_service_information_context, e), LocaleUtil.getLocale(httpServletRequest));
@@ -428,6 +446,10 @@ public class PublicRestApi {
 		}
 		catch (InternalAuthenticationException e) {
 			return RestApiResponseHandler.getResponseInternalAuthenticationFail(e, LocaleUtil.getLocale(httpServletRequest));
+		}
+		catch (ClientIDLoginFailedException e){
+			logger.error("login UAA with client ID " + e.getClientID() + " failed");
+			return RestApiResponseHandler.getResponseInternalServerError(MessageUtil.getMessageString(MessageUtil.RestResponseErrorMsg_internal_server_error, LocaleUtil.getLocale(httpServletRequest)));    				   				
 		}
 		catch (Exception e) {
 			logger.info("error in getserverinfo: " + e.getMessage());
@@ -523,6 +545,10 @@ public class PublicRestApi {
 		catch (InternalAuthenticationException e) {
 			return RestApiResponseHandler.getResponseInternalAuthenticationFail(e, LocaleUtil.getLocale(httpServletRequest));
 		}
+		catch (ClientIDLoginFailedException e){
+			logger.error("login UAA with client ID " + e.getClientID() + " failed");
+			return RestApiResponseHandler.getResponseInternalServerError(MessageUtil.getMessageString(MessageUtil.RestResponseErrorMsg_internal_server_error, LocaleUtil.getLocale(httpServletRequest)));    				   				
+		}
 		catch (Exception e) {
 			logger.info("error in getserverinfo: " + e.getMessage());
 			return RestApiResponseHandler.getResponseInternalServerError(new InternalServerErrorException(MessageUtil.RestResponseErrorMsg_retrieve_application_service_information_context, e), LocaleUtil.getLocale(httpServletRequest));
@@ -558,6 +584,10 @@ public class PublicRestApi {
 		}
 		catch (InternalAuthenticationException e) {
 			return RestApiResponseHandler.getResponseInternalAuthenticationFail(e, LocaleUtil.getLocale(httpServletRequest));
+		}
+		catch (ClientIDLoginFailedException e){
+			logger.error("login UAA with client ID " + e.getClientID() + " failed");
+			return RestApiResponseHandler.getResponseInternalServerError(MessageUtil.getMessageString(MessageUtil.RestResponseErrorMsg_internal_server_error, LocaleUtil.getLocale(httpServletRequest)));    				   				
 		}
 		catch (Exception e) {
 			logger.info("error in getserverinfo: " + e.getMessage());
@@ -669,6 +699,10 @@ public class PublicRestApi {
 		}
 		catch (InternalAuthenticationException e) {
 			return RestApiResponseHandler.getResponseInternalAuthenticationFail(e, LocaleUtil.getLocale(httpServletRequest));
+		}
+		catch (ClientIDLoginFailedException e){
+			logger.error("login UAA with client ID " + e.getClientID() + " failed");
+			return RestApiResponseHandler.getResponseInternalServerError(MessageUtil.getMessageString(MessageUtil.RestResponseErrorMsg_internal_server_error, LocaleUtil.getLocale(httpServletRequest)));    				   				
 		}
 		catch (Exception e) {
 			logger.info("error in getserverinfo: " + e.getMessage());
@@ -786,6 +820,10 @@ public class PublicRestApi {
 	    catch (ServiceNotFoundException e){
 	    	throw new ServiceNotFoundException(e.getServiceName(), e.getAppId());
 	    }
+		catch (ClientIDLoginFailedException e){
+			throw e ;
+		}
+
 	    catch (Exception e) {
 	    	logger.error(e.getMessage(), e);
 	    	return null;

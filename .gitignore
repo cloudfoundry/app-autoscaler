@@ -3,3 +3,4 @@
 /.metadata
 /pkg/
 /bin/ginkgo
+/.recommenders
