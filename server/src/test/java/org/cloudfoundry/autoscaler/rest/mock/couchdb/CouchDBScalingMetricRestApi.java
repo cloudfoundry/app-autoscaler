@@ -60,6 +60,14 @@ public class CouchDBScalingMetricRestApi {
 	}
 
 	@DELETE
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getSpacesApplications(@Context final HttpServletRequest httpServletRequest,
+			 @QueryParam("rev") final String rev) {
+		String jsonStr = "{\"ok\": true,\"id\": \"2d642054-5675-44b2-9304-af58b1648365\",\"rev\": \"3-24c637da3fa1164b1a5fe05a35456e1c\"}";
+		return RestApiResponseHandler.getResponseOk(jsonStr);
+
+	}
+	@DELETE
 	@Path("/{docId}")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getSpacesApplications(@Context final HttpServletRequest httpServletRequest,
@@ -68,7 +76,6 @@ public class CouchDBScalingMetricRestApi {
 		return RestApiResponseHandler.getResponseOk(jsonStr);
 
 	}
-
 	@PUT
 	@Path("/{docId}")
 	@Consumes(MediaType.APPLICATION_JSON)

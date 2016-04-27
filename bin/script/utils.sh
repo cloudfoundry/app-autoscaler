@@ -146,6 +146,12 @@ function packageMavenProject() {
 
 	cd $projectDirName
 	mvn test -Punittest
+	if [[ $? -eq 0 ]]; then
+		echo ">>>>>>>>>>>>> Unit test Successfully"
+	else 
+		echo ">>>>>>>>>>>>> Unit test Failed"
+		exit 1
+	fi
 	mvn clean package -P$profile -Dmaven.test.skip=true > build.log
 	if [ $? -eq 0 ]; then
 		echo " >>> Package $projectDirName/build/$warFileName.war Successfully" 
