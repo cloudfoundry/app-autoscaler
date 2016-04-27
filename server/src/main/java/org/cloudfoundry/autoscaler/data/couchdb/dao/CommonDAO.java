@@ -3,6 +3,8 @@ package org.cloudfoundry.autoscaler.data.couchdb.dao;
 public interface CommonDAO {
 
 	public <T> Object get(String id);
+	
+	public <T> Object tryGet(String id);
 
 	public <T> void add(T entity);
 

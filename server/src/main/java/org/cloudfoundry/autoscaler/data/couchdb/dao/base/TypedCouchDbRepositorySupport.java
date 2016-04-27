@@ -134,6 +134,24 @@ public class TypedCouchDbRepositorySupport<T> extends CouchDbRepositorySupport<T
     	return returnvalue;
     }
     
+    public T tryGet (String id) {
+		String[] input = beforeConnection("GET",  new String[]{id});
+		T returnvalue = null;
+		try{
+    	 returnvalue = super.get(id);
+		} catch (Exception e){
+			String msg = e.getMessage();
+			if(msg.indexOf("nothing found on db path") >= 0){
+			}
+			else{
+				logger.error(e.getMessage());
+			}
+			
+		}
+
+		afterConnection(input);
+    	return returnvalue;
+    }
     
     @Override
     public void add (T entity) {
