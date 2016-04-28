@@ -14,8 +14,6 @@ public interface ApplicationDAO extends CommonDAO {
 
 	public List<Application> findByPolicyId(String policyId);
 
-	public List<Application> findByServiceIdState(String serviceId);
-
 	public List<Application> findByServiceId(String serviceId);
 
 	public List<Application> findByServiceIdAndState(String serviceId);

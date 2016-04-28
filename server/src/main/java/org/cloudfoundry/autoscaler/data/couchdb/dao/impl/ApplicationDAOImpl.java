@@ -161,12 +161,6 @@ public class ApplicationDAOImpl extends CommonDAOImpl implements ApplicationDAO 
 	}
 
 	@Override
-	public List<Application> findByServiceIdState(String serviceId) {
-		// TODO Auto-generated method stub
-		return this.appRepoByServiceIdState.findByServiceIdAndState(serviceId);
-	}
-
-	@Override
 	public List<Application> findByServiceId(String serviceId) {
 		// TODO Auto-generated method stub
 		return this.appRepoByServiceId.findByServiceId(serviceId);
