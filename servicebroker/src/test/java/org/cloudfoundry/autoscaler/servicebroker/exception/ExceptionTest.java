@@ -2,7 +2,6 @@ package org.cloudfoundry.autoscaler.servicebroker.exception;
 
 import static org.junit.Assert.assertEquals;
 
-import org.cloudfoundry.autoscaler.servicebroker.Constants.MESSAGE_KEY;
 import org.junit.Test;
 
 

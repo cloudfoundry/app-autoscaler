@@ -1,13 +1,31 @@
 package org.cloudfoundry.autoscaler.servicebroker.rest.mock.couchdb;
 
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.APPAUTOSCALESTATEDOCTESTID;
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.APPINSTANCEMETRICSDOCTESTID;
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.APPLICATIONDOCTESTID;
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.APPLICATIONINSTANCEDOCTESTID;
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.AUTOSCALERPOLICYDOCTESTID;
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.BOUNDAPPDOCTESTID;
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.BOUNDSTATE;
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.METRICDBSEGMENTDOCTESTID;
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.SCALINGHISTORYDOCTESTID;
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.SERVERNAME;
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.SERVICECONFIGDOCTESTID;
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.SERVICEINSTANCEDOCTESTID;
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.TESTAPPID;
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.TESTBINDINGID;
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.TESTORGID;
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.TESTPOLICYID;
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.TESTSERVERURL;
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.TESTSERVICEID;
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.TESTSPACEID;
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.TRIGGERRECORDDOCTESTID;
+
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
-
-import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.*;
 
 public class CouchDBDocumentManager {
 	private static CouchDBDocumentManager manager;

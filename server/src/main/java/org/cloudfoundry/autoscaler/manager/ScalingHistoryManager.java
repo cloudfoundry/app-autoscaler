@@ -4,12 +4,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.TimeZone;
 
+import org.cloudfoundry.autoscaler.common.util.TimeZoneUtil;
 import org.cloudfoundry.autoscaler.data.AutoScalingDataStore;
 import org.cloudfoundry.autoscaler.data.couchdb.AutoScalingDataStoreFactory;
 import org.cloudfoundry.autoscaler.data.couchdb.document.AppAutoScaleState;
 import org.cloudfoundry.autoscaler.data.couchdb.document.ScalingHistory;
 import org.cloudfoundry.autoscaler.exceptions.DataStoreException;
-import org.cloudfoundry.autoscaler.util.TimeZoneUtil;
 
 /**
  * This class is used to persist and retrieve scaling history

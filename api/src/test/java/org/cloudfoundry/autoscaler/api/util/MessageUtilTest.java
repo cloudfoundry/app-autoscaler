@@ -2,9 +2,10 @@ package org.cloudfoundry.autoscaler.api.util;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.Locale;
+
 import org.cloudfoundry.autoscaler.api.util.MessageUtil;
 import org.junit.Test;
-import java.util.Locale;
 
 
 /**

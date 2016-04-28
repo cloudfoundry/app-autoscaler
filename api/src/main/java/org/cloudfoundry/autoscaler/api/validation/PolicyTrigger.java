@@ -4,7 +4,7 @@ package org.cloudfoundry.autoscaler.api.validation;
 import javax.validation.constraints.AssertTrue;
 import javax.validation.constraints.NotNull;
 
-import org.cloudfoundry.autoscaler.api.Constants;
+import org.cloudfoundry.autoscaler.common.Constants;
 
 public class PolicyTrigger {
 

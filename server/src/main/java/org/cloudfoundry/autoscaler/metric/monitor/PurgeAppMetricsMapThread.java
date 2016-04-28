@@ -6,10 +6,10 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.bean.InstanceMetrics;
+import org.cloudfoundry.autoscaler.common.util.CloudFoundryManager;
+import org.cloudfoundry.autoscaler.common.util.ConfigManager;
 import org.cloudfoundry.autoscaler.constant.Constants;
 import org.cloudfoundry.autoscaler.metric.bean.ApplicationMetrics;
-import org.cloudfoundry.autoscaler.util.CloudFoundryManager;
-import org.cloudfoundry.autoscaler.util.ConfigManager;
 
 public class PurgeAppMetricsMapThread implements Runnable {
     private static final Logger logger = Logger.getLogger(PurgeAppMetricsMapThread.class);

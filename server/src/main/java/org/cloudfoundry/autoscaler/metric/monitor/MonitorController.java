@@ -23,6 +23,8 @@ import org.cloudfoundry.autoscaler.bean.InstanceMetrics;
 import org.cloudfoundry.autoscaler.bean.Metric;
 import org.cloudfoundry.autoscaler.bean.MonitorTriggerEvent;
 import org.cloudfoundry.autoscaler.bean.Trigger;
+import org.cloudfoundry.autoscaler.common.util.CloudFoundryManager;
+import org.cloudfoundry.autoscaler.common.util.ConfigManager;
 import org.cloudfoundry.autoscaler.constant.Constants;
 import org.cloudfoundry.autoscaler.data.AutoScalingDataStore;
 import org.cloudfoundry.autoscaler.data.couchdb.AutoScalingDataStoreFactory;
@@ -32,8 +34,6 @@ import org.cloudfoundry.autoscaler.exceptions.TriggerNotFoundException;
 import org.cloudfoundry.autoscaler.manager.ScalingEventManager;
 import org.cloudfoundry.autoscaler.metric.bean.ApplicationMetrics;
 import org.cloudfoundry.autoscaler.metric.poller.CFPollerManager;
-import org.cloudfoundry.autoscaler.util.CloudFoundryManager;
-import org.cloudfoundry.autoscaler.util.ConfigManager;
 import org.cloudfoundry.autoscaler.util.MetricConfigManager;
 
 /**
@@ -532,7 +532,7 @@ public class MonitorController implements Runnable {
 		}
 		return appType;
 	}
-
+	
 	public void addOrUpdateBoundApp(String serviceId, String appId, String appType, String appName) {
 		Map<String, BoundApp> serviceApps = serviceBoundAppsMap.get(serviceId);
 		if (serviceApps == null) {

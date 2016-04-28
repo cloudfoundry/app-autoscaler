@@ -2,12 +2,12 @@ package org.cloudfoundry.autoscaler.manager;
 
 import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.bean.MonitorTriggerEvent;
+import org.cloudfoundry.autoscaler.common.util.ConfigManager;
 import org.cloudfoundry.autoscaler.data.couchdb.AutoScalingDataStoreFactory;
 import org.cloudfoundry.autoscaler.exceptions.AppNotFoundException;
 import org.cloudfoundry.autoscaler.exceptions.CloudException;
 import org.cloudfoundry.autoscaler.exceptions.DataStoreException;
 import org.cloudfoundry.autoscaler.exceptions.PolicyNotFoundException;
-import org.cloudfoundry.autoscaler.util.ConfigManager;
 
 /**
  * Handles trigger events

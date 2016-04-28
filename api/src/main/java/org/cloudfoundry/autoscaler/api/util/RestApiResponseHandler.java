@@ -4,23 +4,24 @@ package org.cloudfoundry.autoscaler.api.util;
 import java.util.Locale;
 
 import org.apache.log4j.Logger;
+import org.cloudfoundry.autoscaler.api.util.MessageUtil;
+import org.cloudfoundry.autoscaler.common.AppInfoNotFoundException;
+import org.cloudfoundry.autoscaler.common.AppNotFoundException;
+import org.cloudfoundry.autoscaler.common.CloudException;
+import org.cloudfoundry.autoscaler.common.InputJSONFormatErrorException;
+import org.cloudfoundry.autoscaler.common.InputJSONParseErrorException;
+import org.cloudfoundry.autoscaler.common.InternalAuthenticationException;
+import org.cloudfoundry.autoscaler.common.InternalServerErrorException;
+import org.cloudfoundry.autoscaler.common.OutputJSONFormatErrorException;
+import org.cloudfoundry.autoscaler.common.OutputJSONParseErrorException;
+import org.cloudfoundry.autoscaler.common.PolicyNotFoundException;
+import org.cloudfoundry.autoscaler.common.ServiceNotFoundException;
 
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.json.JSONObject;
-import org.cloudfoundry.autoscaler.api.exceptions.AppInfoNotFoundException;
-import org.cloudfoundry.autoscaler.api.exceptions.AppNotFoundException;
-import org.cloudfoundry.autoscaler.api.exceptions.PolicyNotFoundException;
-import org.cloudfoundry.autoscaler.api.exceptions.CloudException;
-import org.cloudfoundry.autoscaler.api.exceptions.ServiceNotFoundException;
-import org.cloudfoundry.autoscaler.api.exceptions.InternalServerErrorException;
-import org.cloudfoundry.autoscaler.api.exceptions.InputJSONParseErrorException;
-import org.cloudfoundry.autoscaler.api.exceptions.InputJSONFormatErrorException;
-import org.cloudfoundry.autoscaler.api.exceptions.OutputJSONParseErrorException;
-import org.cloudfoundry.autoscaler.api.exceptions.OutputJSONFormatErrorException;
-import org.cloudfoundry.autoscaler.api.exceptions.InternalAuthenticationException;
 
 public class RestApiResponseHandler {
 	public static final String CLASS_NAME = RestApiResponseHandler.class.getName();

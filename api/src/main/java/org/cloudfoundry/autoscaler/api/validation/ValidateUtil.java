@@ -13,11 +13,11 @@ import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import org.cloudfoundry.autoscaler.api.exceptions.InputJSONParseErrorException;
-import org.cloudfoundry.autoscaler.api.exceptions.InputJSONFormatErrorException;
-import org.cloudfoundry.autoscaler.api.exceptions.OutputJSONFormatErrorException;
-import org.cloudfoundry.autoscaler.api.exceptions.OutputJSONParseErrorException;
 import org.cloudfoundry.autoscaler.api.util.MessageUtil;
+import org.cloudfoundry.autoscaler.common.InputJSONFormatErrorException;
+import org.cloudfoundry.autoscaler.common.InputJSONParseErrorException;
+import org.cloudfoundry.autoscaler.common.OutputJSONFormatErrorException;
+import org.cloudfoundry.autoscaler.common.OutputJSONParseErrorException;
 
 public class ValidateUtil {
 	private static final String CLASS_NAME = ValidateUtil.class.getName();

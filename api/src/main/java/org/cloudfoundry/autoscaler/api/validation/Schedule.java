@@ -9,7 +9,7 @@ import javax.validation.Valid;
 import javax.validation.constraints.AssertTrue;
 import javax.validation.constraints.NotNull;
 
-import org.cloudfoundry.autoscaler.api.Constants;
+import org.cloudfoundry.autoscaler.common.Constants;
 
 public class Schedule {
 		@NotNull(message="{Policy.timezone.NotNull}") //debug

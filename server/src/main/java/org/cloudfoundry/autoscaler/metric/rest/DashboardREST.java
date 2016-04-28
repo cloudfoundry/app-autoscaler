@@ -19,6 +19,7 @@ import javax.ws.rs.core.Response.Status;
 import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.bean.InstanceMetrics;
 import org.cloudfoundry.autoscaler.bean.Metric;
+import org.cloudfoundry.autoscaler.common.util.RestApiResponseHandler;
 import org.cloudfoundry.autoscaler.constant.Constants;
 import org.cloudfoundry.autoscaler.data.couchdb.AutoScalingDataStoreFactory;
 import org.cloudfoundry.autoscaler.data.couchdb.document.AppInstanceMetrics;
@@ -26,7 +27,6 @@ import org.cloudfoundry.autoscaler.data.couchdb.document.BoundApp;
 import org.cloudfoundry.autoscaler.metric.bean.ApplicationMetrics;
 import org.cloudfoundry.autoscaler.metric.monitor.MonitorController;
 import org.cloudfoundry.autoscaler.util.MetricConfigManager;
-import org.cloudfoundry.autoscaler.util.RestApiResponseHandler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 

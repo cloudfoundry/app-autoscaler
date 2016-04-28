@@ -16,47 +16,47 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
 import org.apache.log4j.Logger;
+import org.cloudfoundry.autoscaler.common.util.RestApiResponseHandler;
 import org.cloudfoundry.autoscaler.metric.monitor.MonitorController;
-import org.cloudfoundry.autoscaler.util.RestApiResponseHandler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Path("/stats")
 public class ServerStatsRestApi {
-    private static final Logger logger = Logger.getLogger(ServerStatsRestApi.class);
+	private static final Logger logger = Logger.getLogger(ServerStatsRestApi.class);
 
-    private final MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
-    private final MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-    
-    private final ObjectMapper mapper = new ObjectMapper();
+	private final MemoryMXBean memoryMXBean = ManagementFactory.getMemoryMXBean();
+	private final MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
 
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response getServerStats() {
-        try {
-            Map<String, Object> stats = new HashMap<String, Object>();
+	private final ObjectMapper mapper = new ObjectMapper();
 
-            MemoryUsage heap = memoryMXBean.getHeapMemoryUsage();
-            MemoryUsage nonHeap = memoryMXBean.getNonHeapMemoryUsage();
-            stats.put("heap", heap);
-            stats.put("nonHeap", nonHeap);
-            double processCpuLoad = 0;
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getServerStats() {
+		try {
+			Map<String, Object> stats = new HashMap<String, Object>();
 
-            processCpuLoad = (Double) mbs.getAttribute(new ObjectName("java.lang:type=OperatingSystem"),
-                    "ProcessCpuLoad");
-            stats.put("processCpuLoad", processCpuLoad);
-            
-            Map<String, Integer> appstatsMap = MonitorController.getInstance().getBoundAppStats();
-            stats.put("appCount", appstatsMap.get("appCount"));
-            stats.put("instanceCount", appstatsMap.get("instanceCount"));
-            
-            return RestApiResponseHandler.getResponseOk(mapper.writeValueAsString(stats));
+			MemoryUsage heap = memoryMXBean.getHeapMemoryUsage();
+			MemoryUsage nonHeap = memoryMXBean.getNonHeapMemoryUsage();
+			stats.put("heap", heap);
+			stats.put("nonHeap", nonHeap);
+			double processCpuLoad = 0;
 
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-            return RestApiResponseHandler.getResponse(Status.INTERNAL_SERVER_ERROR);
-        }
+			processCpuLoad = (Double) mbs.getAttribute(new ObjectName("java.lang:type=OperatingSystem"),
+					"ProcessCpuLoad");
+			stats.put("processCpuLoad", processCpuLoad);
 
-    }
+			Map<String, Integer> appstatsMap = MonitorController.getInstance().getBoundAppStats();
+			stats.put("appCount", appstatsMap.get("appCount"));
+			stats.put("instanceCount", appstatsMap.get("instanceCount"));
+
+			return RestApiResponseHandler.getResponseOk(mapper.writeValueAsString(stats));
+
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
+			return RestApiResponseHandler.getResponse(Status.INTERNAL_SERVER_ERROR);
+		}
+
+	}
 
 }

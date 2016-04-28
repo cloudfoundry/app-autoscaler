@@ -1,8 +1,8 @@
 package org.cloudfoundry.autoscaler.api.rest.mock.serverapi;
 
-import static org.cloudfoundry.autoscaler.api.test.constant.Constants.TESTAPPID;
-import static org.cloudfoundry.autoscaler.api.test.constant.Constants.TESTAPPNAME;
-import static org.cloudfoundry.autoscaler.api.test.constant.Constants.TESTSERVICEID;
+import static org.cloudfoundry.autoscaler.api.Constants.TESTAPPID;
+import static org.cloudfoundry.autoscaler.api.Constants.TESTAPPNAME;
+import static org.cloudfoundry.autoscaler.api.Constants.TESTSERVICEID;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;

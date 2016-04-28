@@ -2,6 +2,7 @@ package org.cloudfoundry.autoscaler.servicebroker.test.logging;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.PatternLayout;
 import org.apache.log4j.spi.LoggingEvent;

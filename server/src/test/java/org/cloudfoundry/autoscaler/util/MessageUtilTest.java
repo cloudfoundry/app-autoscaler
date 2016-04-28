@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Locale;
 
+import org.cloudfoundry.autoscaler.util.MessageUtil;
 import org.junit.Test;
 
 public class MessageUtilTest {

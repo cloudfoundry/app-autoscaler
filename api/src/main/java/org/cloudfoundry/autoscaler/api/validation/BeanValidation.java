@@ -25,10 +25,10 @@ import javax.validation.Validator;
 import javax.validation.ValidatorFactory;
 
 import org.apache.log4j.Logger;
-import  org.cloudfoundry.autoscaler.api.Constants;
-import org.cloudfoundry.autoscaler.api.util.ConfigManager;
-import org.cloudfoundry.autoscaler.api.util.LocaleSpecificMessageInterpolator;
-import org.cloudfoundry.autoscaler.api.util.LocaleUtil;
+import org.cloudfoundry.autoscaler.common.Constants;
+import org.cloudfoundry.autoscaler.common.util.ConfigManager;
+import org.cloudfoundry.autoscaler.common.util.LocaleSpecificMessageInterpolator;
+import org.cloudfoundry.autoscaler.common.util.LocaleUtil;
 import org.hibernate.validator.HibernateValidator;
 import org.hibernate.validator.HibernateValidatorConfiguration;
 

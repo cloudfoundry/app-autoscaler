@@ -13,6 +13,7 @@ import java.util.Set;
 
 import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.bean.Trigger;
+import org.cloudfoundry.autoscaler.common.util.ConfigManager;
 import org.cloudfoundry.autoscaler.data.AutoScalingDataStore;
 import org.cloudfoundry.autoscaler.data.couchdb.connection.manager.ServerDAOManager;
 import org.cloudfoundry.autoscaler.data.couchdb.connection.manager.ServerMetricDAOManager;
@@ -38,7 +39,6 @@ import org.cloudfoundry.autoscaler.exceptions.DataStoreException;
 import org.cloudfoundry.autoscaler.exceptions.PolicyNotFoundException;
 import org.cloudfoundry.autoscaler.manager.ScalingHistoryFilter;
 import org.cloudfoundry.autoscaler.util.AutoScalerEnvUtil;
-import org.cloudfoundry.autoscaler.util.ConfigManager;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 

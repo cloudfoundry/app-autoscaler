@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
+import org.cloudfoundry.autoscaler.common.util.CloudFoundryManager;
 import org.cloudfoundry.autoscaler.constant.Constants;
 import org.cloudfoundry.autoscaler.data.AutoScalingDataStore;
 import org.cloudfoundry.autoscaler.data.couchdb.AutoScalingDataStoreFactory;
@@ -20,7 +21,6 @@ import org.cloudfoundry.autoscaler.exceptions.MonitorServiceException;
 import org.cloudfoundry.autoscaler.exceptions.NoAttachedPolicyException;
 import org.cloudfoundry.autoscaler.exceptions.PolicyNotFoundException;
 import org.cloudfoundry.autoscaler.exceptions.TriggerNotSubscribedException;
-import org.cloudfoundry.autoscaler.util.CloudFoundryManager;
 /**
  * Implements the interface ApplicationManager
  * 
@@ -114,7 +114,7 @@ public class ApplicationManagerImpl implements ApplicationManager {
 			} catch (TriggerNotSubscribedException e) {
 				logger.warn("Trigger not found on monitor service.");
 			} 
-			app.setState(Constants.APPLICATION_STATE_UNBOND);
+			app.setState(Constants.APPLICATION_STATE_UNBOUND);
 			dataStore.saveApplication(app);
 			applicationCache.put(app.getAppId(), app);
 			

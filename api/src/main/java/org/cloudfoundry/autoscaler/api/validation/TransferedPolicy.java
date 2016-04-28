@@ -19,9 +19,9 @@ import javax.validation.constraints.AssertTrue;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
-import org.cloudfoundry.autoscaler.api.Constants;
 import org.cloudfoundry.autoscaler.api.validation.BeanValidation.CommonComparator;
 import org.cloudfoundry.autoscaler.api.validation.BeanValidation.DateTimeComparator;
+import org.cloudfoundry.autoscaler.common.Constants;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;

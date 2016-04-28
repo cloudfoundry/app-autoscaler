@@ -3,18 +3,18 @@ source ${basedir}/script/utils.sh
 
 function loadRuntimeConfig(){
 if [ -z $onCloud ]; then
-	cfUrl=`getDefaultConfig cfUrl ${AutoScalingServerProfileDIR}/$profile.properties`
+	cfUrl=`getDefaultConfig cfUrl ${AutoScalingProfileDIR}/$profile.properties`
 	cfDomain=${cfUrl##"api."}
-	brokerUsername=`getDefaultConfig brokerUsername ${AutoScalingBrokerProfileDIR}/$profile.properties`
-	brokerPassword=`getDefaultConfig brokerPassword ${AutoScalingBrokerProfileDIR}/$profile.properties`
+	brokerUsername=`getDefaultConfig brokerUsername ${AutoScalingProfileDIR}/$profile.properties`
+	brokerPassword=`getDefaultConfig brokerPassword ${AutoScalingProfileDIR}/$profile.properties`
 
-	serverURIList=`getDefaultConfig serverURIList ${AutoScalingBrokerProfileDIR}/$profile.properties`
-	apiServerURI=`getDefaultConfig apiServerURI ${AutoScalingBrokerProfileDIR}/$profile.properties`
+	serverURIList=`getDefaultConfig serverURIList ${AutoScalingProfileDIR}/$profile.properties`
+	apiServerURI=`getDefaultConfig apiServerURI ${AutoScalingProfileDIR}/$profile.properties`
 
 	if [[ $apiServerURI == ${AutoScalingAPIName}.* ]]; then
 		onCloud="y";
-		hostingCustomDomain=${apiServerURI##"`eval echo $AutoScalingAPIName`."};
-		hostingCFDomain=`readConfigValue hostingCFDomain "CF domain to host $componentName applications" $hostingCustomDomain`;
+		hostingCustomDomain=${apiServerURI##$AutoScalingAPIName}
+		hostingCustomDomain=${hostingCustomDomain:1}
 	else
 		onCloud="n";
 	fi
@@ -30,23 +30,22 @@ if [ $onCloud == "n" ]; then
 	echo " serverURIList : $serverURIList"
 	echo " apiServerURI : $apiServerURI"
     read -p "Press Any key to continue when runtime environment is launched ... " input
-
 else
-	echo " >>> Now, the script will push $componentName to $hostingCFDomain"
-	echo " >>> Please input the access info for api.$hostingCFDomain "
+	echo " >>> Pushing $componentName to $cfUrl"
 	cfUsername=`readConfigValue cfUsername "CF Username"`
 	cfPassword=`readConfigValue cfPassword "CF Password"`
-	org=`readConfigValue Org "CF Org to host $componentName"`
-	space=`readConfigValue Space "CF Space to host $componentName"`
+	org=`readConfigValue Org "Organization for $componentName"`
+	space=`readConfigValue Space "Space for $componentName"`
 
-	cf login -a https://api.$hostingCFDomain -u $cfUsername -p $cfPassword -o $org -s $space  --skip-ssl-validation
+	cf login -a https://$cfUrl -u $cfUsername -p $cfPassword -o $org -s $space  --skip-ssl-validation
+	if [[ $? != 0 ]]; then
+		exit $?
+	fi
 
 	pushMavenPackageToCF ${AutoScalingServerName} ${AutoScalingServerProjectDirName}
 	pushMavenPackageToCF ${AutoScalingAPIName} ${AutoScalingAPIProjectDirName}
 	pushMavenPackageToCF ${AutoScalingBrokerName} ${AutoScalingBrokerProjectDirName}
-
 fi
-
 }
 
 function registerService(){
@@ -54,19 +53,19 @@ function registerService(){
 if [ $onCloud == "n" ]; then
 	read -p "Please input URL of service broker " brokerURI
 else
-	brokerURI="http://"${AutoScalingBrokerName}.$hostingCustomDomain
+	brokerURI="https://"${AutoScalingBrokerName}.$hostingCustomDomain
 fi
 
-
-if [ "$cfDomain" != "$hostingCFDomain" ] || [ -z "$cfUsername" ] ; then
-	echo " >>> Please input the access info of api.$cfDomain"
+hostingCFDomain
+if [ "$cfDomain" != "$hostingCustomDomain" ] || [ -z "$cfUsername" ] ; then
+	echo " >>> Please input the access info of $cfUrl"
 	cfUsername=`readConfigValue cfUsername "CF Username"`
 	cfPassword=`readConfigValue cfPassword "CF Password"`
-	org=`readConfigValue Org "CF Org which is accessible for $cfUsername"`
-	space=`readConfigValue Space "CF Space which is accessible for $cfUsername"`
+	org=`readConfigValue Org "Organization for $componentName"`
+	space=`readConfigValue Space "Space for $componentName"`
 fi
 
-cf login -a https://api.$cfDomain -u $cfUsername -p $cfPassword -o $org -s $space --skip-ssl-validation
+cf login -a https://$cfUrl -u $cfUsername -p $cfPassword -o $org -s $space  --skip-ssl-validation
 
 cf marketplace -s $serviceName
 
@@ -85,5 +84,4 @@ function setupRuntimeEnv(){
 	loadRuntimeConfig
 	launchRuntime
 	registerService
-
 }

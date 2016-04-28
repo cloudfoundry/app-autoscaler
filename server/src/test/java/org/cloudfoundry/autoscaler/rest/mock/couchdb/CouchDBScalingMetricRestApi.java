@@ -14,8 +14,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import org.cloudfoundry.autoscaler.util.RestApiResponseHandler;
-import org.json.JSONObject;
+import org.cloudfoundry.autoscaler.common.util.RestApiResponseHandler;
 
 @Path("/couchdb-scalingmetric-continuously")
 public class CouchDBScalingMetricRestApi {

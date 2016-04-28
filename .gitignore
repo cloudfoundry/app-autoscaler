@@ -4,3 +4,5 @@
 /pkg/
 /bin/ginkgo
 /.recommenders
+/.project
+/.settings/

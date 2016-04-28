@@ -8,8 +8,8 @@ import java.util.List;
 
 import javax.validation.Valid;
 
-import org.cloudfoundry.autoscaler.api.util.ConfigManager;
 import org.cloudfoundry.autoscaler.api.validation.BeanValidation.JsonObjectComparator;
+import org.cloudfoundry.autoscaler.common.util.ConfigManager;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;

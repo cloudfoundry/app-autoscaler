@@ -1,5 +1,11 @@
 package org.cloudfoundry.autoscaler.servicebroker.data.storeservice.couchdb;
 
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.TESTAPPID;
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.TESTBINDINGID;
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.TESTORGID;
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.TESTSERVERURL;
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.TESTSERVICEID;
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.TESTSPACEID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -13,12 +19,6 @@ import org.cloudfoundry.autoscaler.servicebroker.data.entity.ApplicationInstance
 import org.cloudfoundry.autoscaler.servicebroker.data.entity.ServiceInstance;
 import org.cloudfoundry.autoscaler.servicebroker.data.storeservice.IDataStoreService;
 import org.cloudfoundry.autoscaler.servicebroker.rest.mock.couchdb.CouchDBDocumentManager;
-
-import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.*;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.sun.jersey.test.framework.JerseyTest;

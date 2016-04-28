@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.TimeZone;
 
 import org.apache.log4j.Logger;
+import org.cloudfoundry.autoscaler.common.util.TimeZoneUtil;
 import org.cloudfoundry.autoscaler.data.couchdb.document.Application;
 import org.cloudfoundry.autoscaler.data.couchdb.document.AutoScalerPolicy;
 import org.cloudfoundry.autoscaler.data.couchdb.document.ScheduledPolicy;
@@ -19,7 +20,6 @@ import org.cloudfoundry.autoscaler.manager.ApplicationManager;
 import org.cloudfoundry.autoscaler.manager.ApplicationManagerImpl;
 import org.cloudfoundry.autoscaler.manager.PolicyManager;
 import org.cloudfoundry.autoscaler.manager.PolicyManagerImpl;
-import org.cloudfoundry.autoscaler.util.TimeZoneUtil;
 
 public class ScheduledServiceUtil {
 	private static final String CLASS_NAME = ScheduledServiceUtil.class.getName();

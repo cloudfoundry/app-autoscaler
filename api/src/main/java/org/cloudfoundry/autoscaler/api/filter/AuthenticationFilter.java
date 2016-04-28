@@ -16,15 +16,15 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
-import org.cloudfoundry.autoscaler.api.exceptions.AppInfoNotFoundException;
-import org.cloudfoundry.autoscaler.api.exceptions.AppNotFoundException;
-import org.cloudfoundry.autoscaler.api.exceptions.ClientIDLoginFailedException;
-import org.cloudfoundry.autoscaler.api.util.AuthenticationTool;
-import org.cloudfoundry.autoscaler.api.util.AuthenticationTool.SecurityCheckStatus;
-import org.cloudfoundry.autoscaler.api.util.CloudFoundryManager;
-import org.cloudfoundry.autoscaler.api.util.LocaleUtil;
 import org.cloudfoundry.autoscaler.api.util.MessageUtil;
 import org.cloudfoundry.autoscaler.api.util.RestApiResponseHandler;
+import org.cloudfoundry.autoscaler.common.AppInfoNotFoundException;
+import org.cloudfoundry.autoscaler.common.AppNotFoundException;
+import org.cloudfoundry.autoscaler.common.ClientIDLoginFailedException;
+import org.cloudfoundry.autoscaler.common.util.AuthenticationTool;
+import org.cloudfoundry.autoscaler.common.util.CloudFoundryManager;
+import org.cloudfoundry.autoscaler.common.util.LocaleUtil;
+import org.cloudfoundry.autoscaler.common.util.AuthenticationTool.SecurityCheckStatus;
 /**
  * Servlet Filter implementation class SSOFilter
  */

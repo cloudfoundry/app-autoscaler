@@ -1,5 +1,11 @@
 package org.cloudfoundry.autoscaler.servicebroker.rest;
-import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.*;
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.STATUS200;
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.STATUS201;
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.TESTAPPID;
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.TESTBINDINGID;
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.TESTORGID;
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.TESTSERVICEID;
+import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.TESTSPACEID;
 import static org.junit.Assert.assertEquals;
 
 import javax.ws.rs.core.MediaType;
@@ -8,6 +14,7 @@ import org.json.JSONObject;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
+
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.test.framework.JerseyTest;

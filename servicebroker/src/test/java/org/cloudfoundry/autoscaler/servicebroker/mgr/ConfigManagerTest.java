@@ -2,8 +2,6 @@ package org.cloudfoundry.autoscaler.servicebroker.mgr;
 
 import static org.junit.Assert.assertEquals;
 
-import org.cloudfoundry.autoscaler.servicebroker.Constants.MESSAGE_KEY;
-import org.junit.Assert;
 import org.junit.Test;
 
 

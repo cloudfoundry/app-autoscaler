@@ -1,7 +1,7 @@
 package org.cloudfoundry.autoscaler.api.rest.mock.serverapi;
 
-import static org.cloudfoundry.autoscaler.api.test.constant.Constants.TESTAPPID;
-import static org.cloudfoundry.autoscaler.api.test.constant.Constants.TESTPOLICYID;
+import static org.cloudfoundry.autoscaler.api.Constants.TESTAPPID;
+import static org.cloudfoundry.autoscaler.api.Constants.TESTPOLICYID;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
@@ -17,9 +17,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-
 import org.cloudfoundry.autoscaler.api.util.RestApiResponseHandler;
-
 import org.json.JSONObject;
 
 @Path("/resources")

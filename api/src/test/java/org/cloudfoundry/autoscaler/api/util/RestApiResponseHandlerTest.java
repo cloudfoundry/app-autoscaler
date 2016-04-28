@@ -8,7 +8,9 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.CacheControl;
 import javax.ws.rs.core.Response;
 
-import org.cloudfoundry.autoscaler.api.exceptions.InputJSONFormatErrorException;
+import org.cloudfoundry.autoscaler.api.util.MessageUtil;
+import org.cloudfoundry.autoscaler.api.util.RestApiResponseHandler;
+import org.cloudfoundry.autoscaler.common.InputJSONFormatErrorException;
 import org.json.JSONObject;
 import org.junit.Test;
 

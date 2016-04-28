@@ -10,7 +10,7 @@ import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 
-import org.cloudfoundry.autoscaler.api.Constants;
+import org.cloudfoundry.autoscaler.common.Constants;
 
 public class HistoryData {
 	@NotNull(message="{HistoryData.appId.NotNull}")

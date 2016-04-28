@@ -2,7 +2,7 @@ package org.cloudfoundry.autoscaler.manager;
 
 import java.util.Map;
 
-import org.cloudfoundry.autoscaler.util.CloudFoundryManager;
+import org.cloudfoundry.autoscaler.common.util.CloudFoundryManager;
 
 public class CloudApplicationManager {
 	public final static CloudApplicationManager cloudApplicationManager = new CloudApplicationManager();

@@ -40,7 +40,7 @@ The AutoScaler has three components, all of them them are Java Web Applications.
 
 
 
-`CF-AutoScaler` invokes Cloud controller API to trigger scaling on target application. To achieve this, a UAA client id with  authorities `cloud_controller.read,cloud_controller.admin` is needed for the Cloud Foundry environment `CF-AutoScaler` is registered with. You can create it using UAA command line client, make sure the client ID and secret are the ones you configured in the maven profile when you package the .war files
+`CF-AutoScaler` invokes Cloud controller API to trigger scaling on target application. To achieve this, a UAA client id with  authorities `cloud_controller.read,cloud_controller.admin` is needed for the Cloud Foundry environment `CF-AutoScaler` is registered with. You can create it using UAA command line client, make sure the client ID and secret are the ones you configured when you package the .war files
 
 ```shell
 uaac target http://uaa.<cf-domain>
@@ -54,22 +54,23 @@ uaac client add cf-autoscaler-client \
 
 The following sections describe how to test, deploy and run `CF-AutoScaler` service manually. You can also use script `./bin/getStart.sh` to complete all these steps.
 
-
 ### Run Unit Tests
 
-For all these three `CF-AutoScaler` components, a unit test profile `unittest.properties` under 'profiles' directory has been created to define the settings for unit test.
+For all these three `CF-AutoScaler` components, a unit test `unittest.properties` under 'profiles' directory has been created to define the settings for unit test.
 
-To run unit test,  go to the project directory for each component, and launch mvn test. For example, to run unit test for service broker component:
-
+To run all the unit tests, launch mvn test.
 ```shell
-cd servicebroker
-mvn test -Punittest
+mvn test -Denv=unittest
+```
+
+To run a specific project's unittest, launch mvn test for the project and its dependencies. For example, to run unit test for service broker component:
+```shell
+mvn test -Denv=unittest -pl common,servicebroker
 ```
 
 ### Configure and Package
 
-
-All the `CF-AutoScaler` components are configured through Maven profiles. You need to create your own profile according to the settings of the runtime environment that these components will be deployed to.
+All the `CF-AutoScaler` components are configured through a single properties file. You need to create your own properties according to the settings of your runtime environment.
 
 Cloud Foundry settings
 
@@ -120,14 +121,12 @@ metrics settings
 reportInterval=120
 ```
 
+Assume you want to name your environment, "myenv". Create a properties file in `app-autoscaler/profiles/sample.properties` with all the properties defined above.
 
-Assuming you are using "sample" profile, add the profile to `~/.m2/settings.xml`, or `pom.xml` of each component project if it does not exist,  and then edit the properties in `{project}/profiles/sample.properties` for `api` , `servicebroker`, and `server`.
-
-
-After the profiles are properly configured,  you can package the projects to .war files for deployment, using mvn as below. The *.war file can be found in folder `{project}/target`
+To build all the .war files for deployment mvn as below. The *.war file can be found in each folder `{project}/target`
 
 ```shell
-mvn clean package -Psample -DskipTests
+mvn clean package -Denv=sample -DskipTests
 ```
 
 ### Deploy `CF-AutoScaler` service
