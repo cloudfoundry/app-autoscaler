@@ -5,34 +5,33 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.data.couchdb.CouchdbStorageService;
-import org.cloudfoundry.autoscaler.data.couchdb.dao.impl.AppAutoScaleStateDAOImpl;
 import org.cloudfoundry.autoscaler.data.couchdb.dao.impl.BoundAppDAOImpl;
-import org.cloudfoundry.autoscaler.data.couchdb.document.AppAutoScaleState;
 import org.cloudfoundry.autoscaler.data.couchdb.document.BoundApp;
-import org.cloudfoundry.autoscaler.rest.mock.couchdb.CouchDBDocumentManager;
+import org.cloudfoundry.autoscaler.test.testcase.base.JerseyTestBase;
 
 import static org.cloudfoundry.autoscaler.test.constant.Constants.*;
 import static org.junit.Assert.*;
 
 import org.junit.Test;
 
-import com.sun.jersey.test.framework.JerseyTest;
 
-public class BoundAppDAOTest extends JerseyTest{
+public class BoundAppDAOTest extends JerseyTestBase{
 	
 	private static final Logger logger = Logger.getLogger(BoundAppDAOTest.class);
 	private static BoundAppDAO dao = null;
 	public BoundAppDAOTest()throws Exception{
-		super("org.cloudfoundry.autoscaler.rest");
+		super();
 		initConnection();
-	}
-	@Override
-	public void tearDown() throws Exception{
-		super.tearDown();
-		CouchDBDocumentManager.getInstance().initDocuments();
 	}
 	@Test
 	public void BoundAppDAOTestTest() throws Exception{
+		dao.get(BOUNDAPPDOCTESTID);
+		assertTrue(!logContains(DOCUMENTNOTFOUNDERRORMSG));
+		dao.tryGet(BOUNDAPPDOCTESTID + "TMP");
+		assertTrue(!logContains(DOCUMENTNOTFOUNDERRORMSG));
+		dao.get(BOUNDAPPDOCTESTID + "TMP");
+		assertTrue(logContains(DOCUMENTNOTFOUNDERRORMSG));
+		
 		List<BoundApp> list = dao.findAll();
 		assertTrue(list.size() > 0);
 	    list = dao.findByServerName(SERVERNAME);

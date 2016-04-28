@@ -11,6 +11,7 @@ import org.cloudfoundry.autoscaler.data.couchdb.document.BoundApp;
 import org.cloudfoundry.autoscaler.data.couchdb.document.TriggerRecord;
 import org.ektorp.ComplexKey;
 import org.ektorp.CouchDbConnector;
+import org.ektorp.DocumentNotFoundException;
 import org.ektorp.ViewQuery;
 import org.ektorp.support.CouchDbDocument;
 import org.ektorp.support.CouchDbRepositorySupport;
@@ -134,6 +135,22 @@ public class TypedCouchDbRepositorySupport<T> extends CouchDbRepositorySupport<T
     	return returnvalue;
     }
     
+    public T tryGet (String id) {
+		String[] input = beforeConnection("GET",  new String[]{id});
+		T returnvalue = null;
+		try{
+    	 returnvalue = super.get(id);
+		}catch(DocumentNotFoundException e){
+			logger.info(String.format("The document with id %s does not exist in couchdb.", id));
+		}
+		catch (Exception e1){
+			logger.error(e1.getMessage());
+			
+		}
+
+		afterConnection(input);
+    	return returnvalue;
+    }
     
     @Override
     public void add (T entity) {

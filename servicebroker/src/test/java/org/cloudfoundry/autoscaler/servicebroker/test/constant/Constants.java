@@ -27,6 +27,7 @@ public class Constants {
 	public static final String APPLICATIONINSTANCEDOCTESTID = "123456" + String.valueOf(Math.abs("APPLICATIONINSTANCEDOCTESTID".hashCode()));
 	public static final String SERVICEINSTANCEDOCTESTID = "123456" + String.valueOf(Math.abs("SERVICEINSTANCEDOCTESTID".hashCode()));
 	public static final String TESTSERVERURL = "http://localhost:9998";
+	public static final String DOCUMENTNOTFOUNDERRORMSG = "nothing found on db path";
 	
 
 }

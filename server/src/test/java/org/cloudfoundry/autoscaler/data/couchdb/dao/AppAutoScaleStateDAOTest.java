@@ -7,30 +7,31 @@ import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.data.couchdb.CouchdbStorageService;
 import org.cloudfoundry.autoscaler.data.couchdb.dao.impl.AppAutoScaleStateDAOImpl;
 import org.cloudfoundry.autoscaler.data.couchdb.document.AppAutoScaleState;
-import org.cloudfoundry.autoscaler.rest.mock.couchdb.CouchDBDocumentManager;
+import org.cloudfoundry.autoscaler.test.testcase.base.JerseyTestBase;
 
 import static org.cloudfoundry.autoscaler.test.constant.Constants.*;
 import static org.junit.Assert.*;
 
 import org.junit.Test;
 
-import com.sun.jersey.test.framework.JerseyTest;
 
-public class AppAutoScaleStateDAOTest extends JerseyTest{
+public class AppAutoScaleStateDAOTest extends JerseyTestBase{
 	
 	private static final Logger logger = Logger.getLogger(AppAutoScaleStateDAOTest.class);
 	private static AppAutoScaleStateDAO dao = null;
 	public AppAutoScaleStateDAOTest()throws Exception{
-		super("org.cloudfoundry.autoscaler.rest");
+		super();
 		initConnection();
-	}
-	@Override
-	public void tearDown() throws Exception{
-		super.tearDown();
-		CouchDBDocumentManager.getInstance().initDocuments();
 	}
 	@Test
 	public void appAutoScaleStateDAOTest(){
+		dao.get(APPAUTOSCALESTATEDOCTESTID);
+		assertTrue(!logContains(DOCUMENTNOTFOUNDERRORMSG));
+		dao.tryGet(APPAUTOSCALESTATEDOCTESTID + "TMP");
+		assertTrue(!logContains(DOCUMENTNOTFOUNDERRORMSG));
+		dao.get(APPAUTOSCALESTATEDOCTESTID + "TMP");
+		assertTrue(logContains(DOCUMENTNOTFOUNDERRORMSG));
+		
 		AppAutoScaleState state = dao.findByAppId(TESTAPPID);
 		assertNotNull(state);
 		state.setLastActionEndTime(System.currentTimeMillis());

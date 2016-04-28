@@ -1,5 +1,7 @@
 package org.cloudfoundry.autoscaler.data.couchdb.dao;
 
+import static org.cloudfoundry.autoscaler.test.constant.Constants.APPLICATIONDOCTESTID;
+import static org.cloudfoundry.autoscaler.test.constant.Constants.DOCUMENTNOTFOUNDERRORMSG;
 import static org.cloudfoundry.autoscaler.test.constant.Constants.TESTAPPID;
 import static org.cloudfoundry.autoscaler.test.constant.Constants.TESTBINDINGID;
 import static org.cloudfoundry.autoscaler.test.constant.Constants.TESTPOLICYID;
@@ -14,30 +16,28 @@ import java.util.List;
 import org.cloudfoundry.autoscaler.data.couchdb.CouchdbStorageService;
 import org.cloudfoundry.autoscaler.data.couchdb.dao.impl.ApplicationDAOImpl;
 import org.cloudfoundry.autoscaler.data.couchdb.document.Application;
-import org.cloudfoundry.autoscaler.rest.mock.couchdb.CouchDBDocumentManager;
+import org.cloudfoundry.autoscaler.test.testcase.base.JerseyTestBase;
 import org.junit.Test;
 
-import com.sun.jersey.test.framework.JerseyTest;
+public class ApplicationDAOTest extends JerseyTestBase {
 
-public class ApplicationDAOTest extends JerseyTest {
 	private static ApplicationDAO dao = null;
 
 	public ApplicationDAOTest() throws Exception {
-		super("org.cloudfoundry.autoscaler.rest");
+		super();
 		initConnection();
-	}
-
-	@Override
-	public void tearDown() throws Exception {
-		super.tearDown();
-		CouchDBDocumentManager.getInstance().initDocuments();
 	}
 
 	@Test
 	public void applicationDAOTest() {
+		dao.get(APPLICATIONDOCTESTID);
+		assertTrue(!logContains(DOCUMENTNOTFOUNDERRORMSG));
+		dao.tryGet(APPLICATIONDOCTESTID + "TMP");
+		assertTrue(!logContains(DOCUMENTNOTFOUNDERRORMSG));
+		dao.get(APPLICATIONDOCTESTID + "TMP");
+		assertTrue(logContains(DOCUMENTNOTFOUNDERRORMSG));
 		List<Application> list = dao.findAll();
 		assertTrue(list.size() > 0);
-
 		Application application = dao.findByBindId(TESTBINDINGID);
 		assertNotNull(application);
 		list = dao.findByPolicyId(TESTPOLICYID);
@@ -66,5 +66,4 @@ public class ApplicationDAOTest extends JerseyTest {
 		dao = (ApplicationDAOImpl) field.get(service);
 		assertNotNull(dao);
 	}
-
 }

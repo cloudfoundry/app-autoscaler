@@ -222,7 +222,7 @@ public class CouchdbStorageService implements AutoScalingDataStore {
 	public void addTrigger(Trigger t) throws Exception {
 		TriggerRecord triggerRecord = new TriggerRecord(t.getAppName(), t);
 		TriggerRecord existingRecord = null;
-		existingRecord = (TriggerRecord) triggerRecordDao.get(triggerRecord.getId());
+		existingRecord = (TriggerRecord) triggerRecordDao.tryGet(triggerRecord.getId());
 		if (existingRecord != null && existingRecord.getAppId() != null) {
 			triggerRecordDao.remove(existingRecord);
 		}
@@ -495,7 +495,7 @@ public class CouchdbStorageService implements AutoScalingDataStore {
 		}
 		ScalingHistory history = null;
 		try {
-			history = (ScalingHistory) scalingHistoryDao.get(id);
+			history = (ScalingHistory) scalingHistoryDao.tryGet(id);
 		} catch (org.ektorp.DocumentNotFoundException ex) {
 		}
 		return history;

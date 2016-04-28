@@ -5,34 +5,34 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.data.couchdb.CouchdbStorageService;
-import org.cloudfoundry.autoscaler.data.couchdb.dao.impl.AppAutoScaleStateDAOImpl;
 import org.cloudfoundry.autoscaler.data.couchdb.dao.impl.ScalingHistoryDAOImpl;
-import org.cloudfoundry.autoscaler.data.couchdb.document.AppAutoScaleState;
 import org.cloudfoundry.autoscaler.data.couchdb.document.ScalingHistory;
-import org.cloudfoundry.autoscaler.rest.mock.couchdb.CouchDBDocumentManager;
+import org.cloudfoundry.autoscaler.test.testcase.base.JerseyTestBase;
 
 import static org.cloudfoundry.autoscaler.test.constant.Constants.*;
 import static org.junit.Assert.*;
 
 import org.junit.Test;
 
-import com.sun.jersey.test.framework.JerseyTest;
-
-public class ScalingHistoryDAOTest extends JerseyTest{
+public class ScalingHistoryDAOTest extends JerseyTestBase{
 	
 	private static final Logger logger = Logger.getLogger(ScalingHistoryDAOTest.class);
 	private static ScalingHistoryDAO dao = null;
 	public ScalingHistoryDAOTest()throws Exception{
-		super("org.cloudfoundry.autoscaler.rest");
+		super();
 		initConnection();
 	}
-	@Override
-	public void tearDown() throws Exception{
-		super.tearDown();
-		CouchDBDocumentManager.getInstance().initDocuments();
-	}
+	
 	@Test
 	public void appAutoScaleStateDAOTest(){
+		
+		dao.get(SCALINGHISTORYDOCTESTID);
+		assertTrue(!logContains(DOCUMENTNOTFOUNDERRORMSG));
+		dao.tryGet(SCALINGHISTORYDOCTESTID + "TMP");
+		assertTrue(!logContains(DOCUMENTNOTFOUNDERRORMSG));
+		dao.get(SCALINGHISTORYDOCTESTID + "TMP");
+		assertTrue(logContains(DOCUMENTNOTFOUNDERRORMSG));
+		
 		List<ScalingHistory> list = dao.findAll();
 		assertTrue(list.size() > 0);
 		list = dao.findByScalingTime(TESTAPPID, 0, System.currentTimeMillis());
@@ -44,7 +44,7 @@ public class ScalingHistoryDAOTest extends JerseyTest{
 		assertTrue(history.getRevision().startsWith("2-"));
 		dao.remove(history);
 		history = (ScalingHistory)dao.get(history.getId());
-		assertNull(history.getId());
+		assertNull(history);
 		
 	}
 	private static void initConnection() throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException{

@@ -11,6 +11,7 @@ import javax.ws.rs.core.MultivaluedMap;
 
 import org.cloudfoundry.autoscaler.bean.Metric;
 import org.cloudfoundry.autoscaler.rest.mock.couchdb.CouchDBDocumentManager;
+import org.cloudfoundry.autoscaler.test.testcase.base.JerseyTestBase;
 import org.junit.Test;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -20,15 +21,10 @@ import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.core.util.MultivaluedMapImpl;
 import com.sun.jersey.test.framework.JerseyTest;
 
-public class DashboardRESTTest extends JerseyTest{
+public class DashboardRESTTest extends JerseyTestBase{
 	
-	public DashboardRESTTest(){
+	public DashboardRESTTest() throws Exception{
 		super("org.cloudfoundry.autoscaler.metric.rest","org.cloudfoundry.autoscaler.rest.mock");
-	}
-	@Override
-	public void tearDown() throws Exception{
-		super.tearDown();
-		CouchDBDocumentManager.getInstance().initDocuments();
 	}
 	@Test
 	public void testGetAppMetricsLastestData(){

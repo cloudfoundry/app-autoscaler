@@ -15,6 +15,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.cloudfoundry.autoscaler.util.RestApiResponseHandler;
+import org.ektorp.http.HttpStatus;
 
 
 @Path("/couchdb-scaling")
@@ -47,7 +48,13 @@ public class CouchDBScalingRestApi {
 	public Response Document(@Context final HttpServletRequest httpServletRequest,
 			@PathParam("docId") final String docId, @QueryParam("include_docs") final String include_docs) {
 		String result = this.getResponse(docId,"","");
-		return RestApiResponseHandler.getResponseOk(result);
+		if(result.indexOf("not_found") >= 0){
+			return RestApiResponseHandler.getResponse(HttpStatus.NOT_FOUND, result);
+		}
+		else{
+			return RestApiResponseHandler.getResponseOk(result);
+		}
+		
 
 	}
 	@GET
