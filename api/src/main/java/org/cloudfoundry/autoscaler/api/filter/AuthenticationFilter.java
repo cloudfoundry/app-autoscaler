@@ -31,6 +31,7 @@ import org.cloudfoundry.autoscaler.api.util.RestApiResponseHandler;
 
 public class AuthenticationFilter implements Filter {
     private static final Logger logger = Logger.getLogger(AuthenticationFilter.class.getName());
+    private static final Pattern pattern = Pattern.compile("/apps/[^/]+/");
     private final ArrayList<String> excludePatterns = new ArrayList<String>();
 
  
@@ -47,83 +48,108 @@ public class AuthenticationFilter implements Filter {
 
         String uri = httpReq.getRequestURI().toString();
         if (excludePatterns.contains(uri)) {
-            // just pass down the filter chain.
             filter.doFilter(httpReq, httpResp);
 
         } else {
-            String orgGuid=null;
-            String spaceGuid=null;
-         
+        	
+            String authorization = httpReq.getHeader("Authorization");
+            if ( authorization == null){
+            	logger.info("No Authorization header found.");
+                httpResp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+                return;            	
+            }
+            
+        	if (authorization.startsWith("Bearer "))
+        		authorization = authorization.replaceFirst("Bearer ", "");
+        	else if (authorization.startsWith("bearer "))
+        		authorization = authorization.replaceFirst("bearer ", "");
+        	
+        	String userID = null ;
+        	
+        	try {
+        		userID  = AuthenticationTool.getInstance().getUserIDFromToken(authorization);
+        		if ( userID == null ){
+        			httpResp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+        			return ;
+        		}
+        	}
+        	catch(ServletException e){
+    			logger.error("Get exception: " + e.getClass().getName() + " with message " + e.getMessage());
+				httpResp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+				return ;
+        	}
+        	catch(Exception e){
+        		logger.error("Get exception: " + e.getClass().getName() + " with message " + e.getMessage());
+                httpResp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                return;   		
+        	}
+
+        	
             String appGuid = null;
-            String regex = "/apps/[^/]+/";    		
-    		Pattern p = Pattern.compile(regex);
-    		Matcher matcher = p.matcher(uri);
-    		if (matcher.find()){
-    			appGuid = matcher.group(0).replace("/apps/", "").replace("/", "");
-    			try {
-           	        Map <String, String> orgSpace = CloudFoundryManager.getInstance().getOrgSpaceByAppId(appGuid);
-        	        orgGuid = orgSpace.get("ORG_GUID");
-        	        spaceGuid = orgSpace.get("SPACE_GUID");
-        		}
-    			catch (AppNotFoundException e){
-    				HttpServletRequest httpServletRequest = (HttpServletRequest)request;
-    				HttpServletResponse resp = (HttpServletResponse)response;
-    				resp.sendError(HttpServletResponse.SC_NOT_FOUND, RestApiResponseHandler.getErrorMessage(e, LocaleUtil.getLocale(httpServletRequest)));
-    				return;
+        	String orgGuid=null;
+            String spaceGuid=null;
+            
+    		Matcher matcher = pattern.matcher(uri);
+    		if (!matcher.find()){
+				httpResp.sendError(HttpServletResponse.SC_BAD_REQUEST);
+				return;    			
+    		}	
+    		
+    		appGuid = matcher.group(0).replace("/apps/", "").replace("/", "");
+    		try {
+    			Map <String, String> orgSpace = CloudFoundryManager.getInstance().getOrgSpaceByAppId(appGuid);
+        	    orgGuid = orgSpace.get("ORG_GUID");
+        	    spaceGuid = orgSpace.get("SPACE_GUID");
+    		}
+    		catch (AppNotFoundException e){
+    			httpResp.sendError(HttpServletResponse.SC_NOT_FOUND, RestApiResponseHandler.getErrorMessage(e, LocaleUtil.getLocale(httpReq)));
+    			return;
+    		}
+    		catch (AppInfoNotFoundException e){
+    			httpResp.sendError(HttpServletResponse.SC_BAD_REQUEST, RestApiResponseHandler.getErrorMessage(new AppNotFoundException(e.getAppId()), LocaleUtil.getLocale(httpReq)));
+    			return;
+    		}
+    		catch ( ClientIDLoginFailedException e){
+    			logger.error("login UAA with client ID " + e.getClientID() + " failed");
+    			httpResp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, MessageUtil.getMessageString(MessageUtil.RestResponseErrorMsg_internal_server_error, LocaleUtil.getLocale(httpReq)));
+    			return;    				   				
+    		}
+    		catch (Exception e){
+        		logger.error("Get exception: " + e.getClass().getName() + " with message " + e.getMessage());
+    			httpResp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                return;
+        	}
+
+    		logger.debug("Authentication check for appGuid " + appGuid + " with access token: " + authorization);
+    		
+    		try {
+                
+    			SecurityCheckStatus securityCheckStatus =  AuthenticationTool.getInstance().doValidateToken(userID, authorization, orgGuid, spaceGuid);
+               	
+    			logger.debug("Authentication status result: " + securityCheckStatus.toString());
+                
+    			if (securityCheckStatus == SecurityCheckStatus.SECURITY_CHECK_COMPLETE) {
+    				logger.debug("SecurityCheck succeeded.");
+    				filter.doFilter(request, response);
     			}
-    			catch (AppInfoNotFoundException e){
-    				HttpServletRequest httpServletRequest = (HttpServletRequest)request;
-    				HttpServletResponse resp = (HttpServletResponse)response;
-    				resp.sendError(HttpServletResponse.SC_BAD_REQUEST, RestApiResponseHandler.getErrorMessage(new AppNotFoundException(e.getAppId()), LocaleUtil.getLocale(httpServletRequest)));
-    				return;
+    			else{
+    				logger.debug("SecurityCheck failed.");
+        			httpResp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+    	            return;    				
     			}
-    			catch ( ClientIDLoginFailedException e){
-    				logger.error("login UAA with client ID " + e.getClientID() + " failed");
-    				HttpServletRequest httpServletRequest = (HttpServletRequest)request;
-    				HttpServletResponse resp = (HttpServletResponse)response;
-    				resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, MessageUtil.getMessageString(MessageUtil.RestResponseErrorMsg_internal_server_error, LocaleUtil.getLocale(httpServletRequest)));
-    				return;    				   				
-    			}
-    			catch (Exception e){
-        			logger.error("Get exception: " + e.getClass().getName() + " with message " + e.getMessage());
-        			HttpServletResponse resp = (HttpServletResponse)response;
-                    resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-                    return;
-        		}
+    		}catch (ServletException e) { 
+    			logger.error(e.getMessage(), e);
+    			httpResp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+	            return;
+    		}
+    		catch (IOException e) { 
+    			logger.error(e.getMessage(), e);
+	            httpResp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+	            return;
     		}
     		
+        }	
     		
-            String authorization = httpReq.getHeader("Authorization");
-            try {
-            	logger.debug("Authentication check with access token: " + authorization);
-            	logger.debug("Authentication check with appGuid: " + appGuid );
-                
-
-                SecurityCheckStatus securityCheckStatus =  null;
-                if (authorization != null ) {
-                	if (authorization.startsWith("Bearer "))
-                		authorization = authorization.replaceFirst("Bearer ", "");
-                	else if (authorization.startsWith("bearer "))
-                		authorization = authorization.replaceFirst("bearer ", "");
-                    securityCheckStatus = AuthenticationTool.getInstance().doValidateToken(httpReq, httpResp, authorization, orgGuid, spaceGuid);
-                }
-                else{
-                	//securityCheckStatus = SecurityCheckStatus.SECURITY_CHECK_ERROR;
-                	throw new ServletException("Current user has no permission in current space.");
-                }
-               	
-                logger.debug("Authentication status result: " + securityCheckStatus.toString());
-                if (securityCheckStatus == SecurityCheckStatus.SECURITY_CHECK_COMPLETE) {
-                    logger.debug("SSO doSecurityCheck succeeded.");
-                    filter.doFilter(request, response);
-                }
-            } catch (ServletException e) {
-                logger.error(e.getMessage(), e);
-                HttpServletResponse resp = (HttpServletResponse)response;
-                resp.sendError(HttpServletResponse.SC_UNAUTHORIZED);
-                return;
-            }
-        }
 	}
 
 	@Override

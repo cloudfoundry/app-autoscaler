@@ -51,14 +51,7 @@ public class CloudControllerRestApi {
 
 	}
 
-	/**
-	 * Creates a new policy
-	 * 
-	 * @param orgId
-	 * @param spaceId
-	 * @param jsonString
-	 * @return
-	 */
+	
 	@POST
 	@Path("/oauth/token")
 	@Consumes(MediaType.APPLICATION_FORM_URLENCODED)
