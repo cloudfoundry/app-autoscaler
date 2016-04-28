@@ -9,6 +9,7 @@ import javax.ws.rs.core.MultivaluedMap;
 import org.cloudfoundry.autoscaler.bean.AutoScalerPolicyTrigger;
 import org.cloudfoundry.autoscaler.bean.Trigger;
 import org.cloudfoundry.autoscaler.rest.mock.couchdb.CouchDBDocumentManager;
+import org.cloudfoundry.autoscaler.test.testcase.base.JerseyTestBase;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
@@ -22,15 +23,10 @@ import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.core.util.MultivaluedMapImpl;
 import com.sun.jersey.test.framework.JerseyTest;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class SubscriberRESTTest extends JerseyTest{
+public class SubscriberRESTTest extends JerseyTestBase{
 	private static final ObjectMapper mapper = new ObjectMapper();
-	public SubscriberRESTTest(){
+	public SubscriberRESTTest() throws Exception{
 		super("org.cloudfoundry.autoscaler.metric.rest","org.cloudfoundry.autoscaler.rest.mock");
-	}
-	@Override
-	public void tearDown() throws Exception{
-		super.tearDown();
-		CouchDBDocumentManager.getInstance().initDocuments();
 	}
 	@Test
 	public void test001AddTrigger() throws UniformInterfaceException, ClientHandlerException, JsonProcessingException{

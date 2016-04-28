@@ -6,6 +6,7 @@ import static org.junit.Assert.*;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.cloudfoundry.autoscaler.rest.mock.couchdb.CouchDBDocumentManager;
+import org.cloudfoundry.autoscaler.test.testcase.base.JerseyTestBase;
 import org.junit.Test;
 
 import com.sun.jersey.api.client.ClientResponse;
@@ -13,15 +14,10 @@ import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.core.util.MultivaluedMapImpl;
 import com.sun.jersey.test.framework.JerseyTest;
 
-public class OperationRESTTest extends JerseyTest{
+public class OperationRESTTest extends JerseyTestBase{
 	
-	public OperationRESTTest(){
+	public OperationRESTTest() throws Exception{
 		super("org.cloudfoundry.autoscaler.metric.rest");
-	}
-	@Override
-	public void tearDown() throws Exception{
-		super.tearDown();
-		CouchDBDocumentManager.getInstance().initDocuments();
 	}
 	@Test
 	public void testSetLogLevel(){

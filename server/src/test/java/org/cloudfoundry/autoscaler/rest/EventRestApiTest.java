@@ -11,6 +11,7 @@ import org.cloudfoundry.autoscaler.bean.MonitorTriggerEvent;
 import org.cloudfoundry.autoscaler.bean.Trigger;
 import org.cloudfoundry.autoscaler.data.couchdb.document.AutoScalerPolicy;
 import org.cloudfoundry.autoscaler.rest.mock.couchdb.CouchDBDocumentManager;
+import org.cloudfoundry.autoscaler.test.testcase.base.JerseyTestBase;
 import org.json.JSONObject;
 import org.junit.Test;
 
@@ -20,16 +21,11 @@ import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.test.framework.JerseyTest;
 
-public class EventRestApiTest extends JerseyTest{
+public class EventRestApiTest extends JerseyTestBase{
 	private static final ObjectMapper mapper = new ObjectMapper();
 	private static String policyId = null;
 	public EventRestApiTest() throws Exception{
 		super("org.cloudfoundry.autoscaler.rest","org.cloudfoundry.autoscaler.rest.mock");
-	}
-	@Override
-	public void tearDown() throws Exception{
-		super.tearDown();
-		CouchDBDocumentManager.getInstance().initDocuments();
 	}
 	@Test
 	public void testReceiveEvents() throws JsonProcessingException{

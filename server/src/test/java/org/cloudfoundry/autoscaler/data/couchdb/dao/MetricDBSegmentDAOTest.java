@@ -5,36 +5,34 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.data.couchdb.CouchdbStorageService;
-import org.cloudfoundry.autoscaler.data.couchdb.dao.impl.AppAutoScaleStateDAOImpl;
 import org.cloudfoundry.autoscaler.data.couchdb.dao.impl.MetricDBSegmentDAOImpl;
-import org.cloudfoundry.autoscaler.data.couchdb.dao.impl.ServiceConfigDAOImpl;
-import org.cloudfoundry.autoscaler.data.couchdb.document.AppAutoScaleState;
 import org.cloudfoundry.autoscaler.data.couchdb.document.MetricDBSegment;
-import org.cloudfoundry.autoscaler.data.couchdb.document.ServiceConfig;
-import org.cloudfoundry.autoscaler.rest.mock.couchdb.CouchDBDocumentManager;
+import org.cloudfoundry.autoscaler.test.testcase.base.JerseyTestBase;
 
 import static org.cloudfoundry.autoscaler.test.constant.Constants.*;
 import static org.junit.Assert.*;
 
 import org.junit.Test;
 
-import com.sun.jersey.test.framework.JerseyTest;
 
-public class MetricDBSegmentDAOTest extends JerseyTest{
+public class MetricDBSegmentDAOTest extends JerseyTestBase{
 	
 	private static final Logger logger = Logger.getLogger(MetricDBSegmentDAOTest.class);
 	private static MetricDBSegmentDAO dao = null;
 	public MetricDBSegmentDAOTest()throws Exception{
-		super("org.cloudfoundry.autoscaler.rest");
+		super();
 		initConnection();
-	}
-	@Override
-	public void tearDown() throws Exception{
-		super.tearDown();
-		CouchDBDocumentManager.getInstance().initDocuments();
 	}
 	@Test
 	public void appAutoScaleStateDAOTest(){
+		
+		dao.get(METRICDBSEGMENTDOCTESTID);
+		assertTrue(!logContains(DOCUMENTNOTFOUNDERRORMSG));
+		dao.tryGet(METRICDBSEGMENTDOCTESTID + "TMP");
+		assertTrue(!logContains(DOCUMENTNOTFOUNDERRORMSG));
+		dao.get(METRICDBSEGMENTDOCTESTID + "TMP");
+		assertTrue(logContains(DOCUMENTNOTFOUNDERRORMSG));
+		
 		List<MetricDBSegment> list = dao.findAll();
 		assertTrue(list.size() > 0);
 		MetricDBSegment segment = dao.findByMetricDBPostfix("continuously");

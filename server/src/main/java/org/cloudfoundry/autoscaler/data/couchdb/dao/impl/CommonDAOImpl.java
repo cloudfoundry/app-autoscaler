@@ -43,6 +43,14 @@ public abstract class CommonDAOImpl implements CommonDAO {
 		}
 
 	}
+	public <T> Object tryGet(String id) {
+		try {
+			return this.getDefaultRepo().tryGet(id);
+		} catch (org.ektorp.DocumentNotFoundException e) {
+			return null;
+		}
+
+	}
 
 	@Override
 	public <T> void add(T entity) {

@@ -10,6 +10,7 @@ import org.cloudfoundry.autoscaler.servicebroker.data.entity.ApplicationInstance
 import org.cloudfoundry.autoscaler.servicebroker.data.entity.ServiceInstance;
 import org.cloudfoundry.autoscaler.servicebroker.data.storeservice.couchdb.CouchdbStoreService;
 import org.cloudfoundry.autoscaler.servicebroker.rest.mock.couchdb.CouchDBDocumentManager;
+import org.cloudfoundry.autoscaler.servicebroker.test.testcase.base.JerseyTestBase;
 
 import static org.cloudfoundry.autoscaler.servicebroker.test.constant.Constants.*;
 import org.junit.After;
@@ -23,31 +24,21 @@ import com.sun.jersey.test.framework.JerseyTest;
 /**
  *
  */
-public class couchdbDAOTest extends JerseyTest{
+public class couchdbDAOTest extends JerseyTestBase{
 
     private static final Logger logger = Logger.getLogger(couchdbDAOTest.class);
 
     private static ApplicationInstanceDAOImpl applicationStore;
     private static ServiceInstanceDAOImpl serviceStore;
     public  couchdbDAOTest() throws Exception{
-		super("org.cloudfoundry.autoscaler.servicebroker.rest.mock.couchdb");
+		super();
 		 initConnection();
-	}
-//    @BeforeClass
-//    public static void setUpBeforeClass() throws Exception {
-//        initConnection();
-//    }
-
-    @Override
-	public void tearDown() throws Exception{
-		super.tearDown();
-		CouchDBDocumentManager.getInstance().initDocuments();
 	}
     @Test
     public void applicationInstanceTest() throws InterruptedException {
         final String m = "applicationInstanceTest";
         logger.info(m + " started");
-
+		
         ApplicationInstance application = new ApplicationInstance();
         application.setAppId(TESTAPPID);
         application.setBindingId(TESTBINDINGID);
@@ -109,6 +100,7 @@ public class couchdbDAOTest extends JerseyTest{
         final String m = "serviceInstanceTest";
         logger.info(m + " started");
 
+		
         ServiceInstance service = new ServiceInstance();
         service.setServiceId(TESTSERVICEID);
         service.setOrgId(TESTORGID);

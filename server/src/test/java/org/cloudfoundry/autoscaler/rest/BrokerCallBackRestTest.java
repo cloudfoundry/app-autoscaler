@@ -7,6 +7,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.MultivaluedMap;
 
 import org.cloudfoundry.autoscaler.rest.mock.couchdb.CouchDBDocumentManager;
+import org.cloudfoundry.autoscaler.test.testcase.base.JerseyTestBase;
 import org.json.JSONObject;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -17,15 +18,10 @@ import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.core.util.MultivaluedMapImpl;
 import com.sun.jersey.test.framework.JerseyTest;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class BrokerCallBackRestTest extends JerseyTest{
+public class BrokerCallBackRestTest extends JerseyTestBase{
 	
 	public BrokerCallBackRestTest() throws Exception{
 		super("org.cloudfoundry.autoscaler.rest");
-	}
-	@Override
-	public void tearDown() throws Exception{
-		super.tearDown();
-		CouchDBDocumentManager.getInstance().initDocuments();
 	}
 	@Test
 	public void test001RegisterApplication(){

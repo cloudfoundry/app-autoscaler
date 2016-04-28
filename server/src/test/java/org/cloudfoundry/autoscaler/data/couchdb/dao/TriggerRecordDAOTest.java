@@ -6,34 +6,33 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.data.couchdb.CouchdbStorageService;
-import org.cloudfoundry.autoscaler.data.couchdb.dao.impl.AppAutoScaleStateDAOImpl;
 import org.cloudfoundry.autoscaler.data.couchdb.dao.impl.TriggerRecordDAOImpl;
-import org.cloudfoundry.autoscaler.data.couchdb.document.AppAutoScaleState;
 import org.cloudfoundry.autoscaler.data.couchdb.document.TriggerRecord;
-import org.cloudfoundry.autoscaler.rest.mock.couchdb.CouchDBDocumentManager;
+import org.cloudfoundry.autoscaler.test.testcase.base.JerseyTestBase;
 
 import static org.cloudfoundry.autoscaler.test.constant.Constants.*;
 import static org.junit.Assert.*;
 
 import org.junit.Test;
 
-import com.sun.jersey.test.framework.JerseyTest;
-
-public class TriggerRecordDAOTest extends JerseyTest{
+public class TriggerRecordDAOTest extends JerseyTestBase{
 	
 	private static final Logger logger = Logger.getLogger(TriggerRecordDAOTest.class);
 	private static TriggerRecordDAO dao = null;
 	public TriggerRecordDAOTest()throws Exception{
-		super("org.cloudfoundry.autoscaler.rest");
+		super();
 		initConnection();
-	}
-	@Override
-	public void tearDown() throws Exception{
-		super.tearDown();
-		CouchDBDocumentManager.getInstance().initDocuments();
 	}
 	@Test
 	public void triggerRecordDAOTest() throws Exception{
+		
+		dao.get(TRIGGERRECORDDOCTESTID);
+		assertTrue(!logContains(DOCUMENTNOTFOUNDERRORMSG));
+		dao.tryGet(TRIGGERRECORDDOCTESTID + "TMP");
+		assertTrue(!logContains(DOCUMENTNOTFOUNDERRORMSG));
+		dao.get(TRIGGERRECORDDOCTESTID + "TMP");
+		assertTrue(logContains(DOCUMENTNOTFOUNDERRORMSG));
+		
 		List<TriggerRecord> list = dao.findAll();
 		assertTrue(list.size() > 0);
 		list = dao.findByAppId(TESTAPPID);
