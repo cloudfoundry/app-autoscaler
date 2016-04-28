@@ -121,7 +121,7 @@ public class CloudFoundryManager {
 	        return ;
             }
         else {
-        	throw new ClientIDLoginFailedException(cfClientId, cr.getClientResponseStatus().toString());
+        	throw new ClientIDLoginFailedException(cfClientId, cr.getStatusInfo().getReasonPhrase());
         }
   
     }

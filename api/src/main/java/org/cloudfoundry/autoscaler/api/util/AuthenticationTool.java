@@ -5,8 +5,6 @@ import java.io.IOException;
 import java.util.Iterator;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
@@ -21,7 +19,7 @@ public class AuthenticationTool {
 	private static final Logger logger = Logger.getLogger(AuthenticationTool.class);
     private Client restClient;
 
-    private String uaaEndpoint;
+    private String authEndpoint;
     private String cloudControllerEndpoint;
     private boolean isSslSupported = true;
     private static AuthenticationTool instance;
@@ -54,17 +52,27 @@ public class AuthenticationTool {
         this.isSslSupported = isSslSupported;
     }
    
-    public String getUaaEndpoint(HttpServletRequest request) throws IOException, ServletException{
-        if(uaaEndpoint != null) {
-            return uaaEndpoint;
+    public String getAuthEndpoint() throws IOException, ServletException{
+        if(authEndpoint == null){
+	        JSONObject cloudInfo = getCloudInfo(getCloudControllerEndpoint());
+	        authEndpoint = cloudInfo.get("authorization_endpoint").toString();
         }
-        JSONObject cloudInfo = getCloudInfo(getCloudControllerEndpoint(request));
-        return cloudInfo.get("authorization_endpoint").toString();        
+
+        logger.debug("Get UAA Endpoint: "  + authEndpoint);
+        return authEndpoint;
     }
 
-    public void setUaaEndpoint(String uaaEndpoint) {
-        this.uaaEndpoint = uaaEndpoint;
+    public void setAuthEndpoint(String authEndpoint) {
+        this.authEndpoint = authEndpoint;
     }
+    
+    public String getUserIDFromToken(String token) throws ServletException, IOException{
+	        String userInfoEndpoint = getAuthEndpoint() + "/userinfo";
+	        JSONObject userInfo = getCurrentUserInfo(token, userInfoEndpoint);
+	        logger.debug("Get user info: "  +  userInfo.toString());
+	        return userInfo.get("user_id").toString() ;     
+    }
+    
 
     private JSONObject getCurrentUserInfo(String token, String userInfoEndpoint) throws ServletException {
         String authorization = "bearer " + token;  
@@ -118,8 +126,8 @@ public class AuthenticationTool {
     }
     
     
-    private boolean isSpaceUser(String ccEndpoint, String token, String userId, String spaceId) throws ServletException {
-        String userUrl = "/v2/users/" + userId;
+    private boolean isSpaceUser(String ccEndpoint, String token, String userID, String spaceId) throws ServletException {
+        String userUrl = "/v2/users/" + userID;
         
         String spacesUrl =  userUrl + "/spaces";
         String managedSpacesUrl = userUrl + "/managed_spaces";
@@ -137,23 +145,16 @@ public class AuthenticationTool {
     }
 
  
-    public SecurityCheckStatus doValidateToken(HttpServletRequest request, HttpServletResponse response, String token, String org_id, String space_id)throws ServletException, IOException{
+    public SecurityCheckStatus doValidateToken(String userID, String token, String org_id, String space_id)throws ServletException, IOException{
 
-    	String ccEndpoint = getCloudControllerEndpoint(request);        
-        String uaaEndpoint = getUaaEndpoint(request);
-        
-        logger.debug("ccEndpoint: "  + ccEndpoint);
-        logger.debug("uaaEndpoint: " +uaaEndpoint);
-         
-
-        String userInfoEndpoint = uaaEndpoint + "/userinfo";
-
-        JSONObject userInfo = getCurrentUserInfo(token, userInfoEndpoint);
-        String userId = userInfo.get("user_id").toString();
-        if (isSpaceUser(ccEndpoint, token, userId, space_id)) {
+    	String ccEndpoint = getCloudControllerEndpoint();        
+                 
+        if (isSpaceUser(ccEndpoint, token, userID, space_id)) {
         	return SecurityCheckStatus.SECURITY_CHECK_COMPLETE;
-        } else
+        } 
+        else{
             throw new ServletException("Current user has no permission in current space.");
+        }    
 
     	
     }
@@ -164,19 +165,16 @@ public class AuthenticationTool {
         this.cloudControllerEndpoint = cloudControllerEndpoint;
     }
     
-    private String getCloudControllerEndpoint(HttpServletRequest request) {
-        
-        
-        if(cloudControllerEndpoint != null) {
-            return cloudControllerEndpoint;
+    private String getCloudControllerEndpoint() {              
+        if(cloudControllerEndpoint == null) {
+	        String cfUrl = ConfigManager.get("cfUrl").toLowerCase();
+	        if (cfUrl.startsWith("http://") || cfUrl.startsWith("https://"))
+		        cloudControllerEndpoint = cfUrl;
+	        else    
+	        	cloudControllerEndpoint = "https://" + cfUrl ;
         }
-        StringBuilder buffer = new StringBuilder();
-        buffer.append(request.getScheme());
-        buffer.append("://");
-        buffer.append(ConfigManager.get("cfUrl"));
-
-        return buffer.toString();
-        
+        logger.debug("Get Cloud Controller Endpoint: "  + cloudControllerEndpoint);
+        return cloudControllerEndpoint;
     }
 
     private JSONObject getCloudInfo(String ccEndpoint) throws ServletException, IOException{
