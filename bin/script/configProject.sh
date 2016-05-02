@@ -9,7 +9,7 @@ if [ -z "$profile" ]; then
 fi
 
 profileExist=true;
-AutoScalingProfileDIR="${basedir}/../profiles/"
+AutoScalingProfileDIR="${basedir}/../profiles"
 if [ ! -f ${AutoScalingProfileDIR}/$profile.properties ]; then
 	cp ${AutoScalingProfileDIR}/${SampleProfile}.properties ${AutoScalingProfileDIR}/$profile.properties
 	profileExist=false;
@@ -56,7 +56,7 @@ done
 }
 
 function setConfiguration() {
-echo > ${AutoScalingProfileDIR}/profiles/$profile.properties << EOF
+cat > ${AutoScalingProfileDIR}/$profile.properties <<EOF
 #Cloud Foundry settings
 cfUrl=${cfUrl}
 cfClientId=${cfClientID}
@@ -67,7 +67,7 @@ internalAuthUsername=${internalAuthUsername}
 internalAuthPassword=${internalAuthPassword}
 
 #service.name
-service.name=cf-autoscaler
+service.name=${serviceName}
 
 #broker credentials
 brokerUsername=${brokerUsername}

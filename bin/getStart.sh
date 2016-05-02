@@ -1,4 +1,5 @@
  #!/bin/bash
+
 basedir=$(cd "$(dirname "$0")"; pwd)
 source ${basedir}/script/utils.sh
 source ${basedir}/default.properties
