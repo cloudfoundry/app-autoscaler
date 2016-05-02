@@ -76,6 +76,7 @@ brokerPassword=${brokerPassword}
 # URLs
 serverURIList=${serverURIList}
 apiServerURI=${apiServerURI}
+httpProtocol=https
 
 #metrics settings
 reportInterval=120
