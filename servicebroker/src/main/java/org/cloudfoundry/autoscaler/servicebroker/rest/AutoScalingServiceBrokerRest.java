@@ -23,7 +23,7 @@ import org.cloudfoundry.autoscaler.servicebroker.exception.AlreadyBoundAnotherSe
 import org.cloudfoundry.autoscaler.servicebroker.exception.ScalingServerFailureException;
 import org.cloudfoundry.autoscaler.servicebroker.exception.ServerUrlMappingNotFoundException;
 import org.cloudfoundry.autoscaler.servicebroker.exception.ServiceBindingNotFoundException;
-import org.cloudfoundry.autoscaler.servicebroker.mgr.ConfigManager;
+import org.cloudfoundry.autoscaler.servicebroker.mgr.Catalog;
 import org.cloudfoundry.autoscaler.servicebroker.mgr.ScalingServiceMgr;
 import org.cloudfoundry.autoscaler.servicebroker.util.MessageUtil;
 import org.json.JSONException;
@@ -40,7 +40,7 @@ public class AutoScalingServiceBrokerRest {
 	public Response catalog(@Context final HttpServletRequest httpServletRequest) {
 
 		logger.info(Constants.MSG_ENTRY + " catalog");
-		JSONObject catalog = ConfigManager.getCatalogJSON();
+		JSONObject catalog = Catalog.getCatalogJSON();
 		return RestApiResponseHandler.getResponse(Response.Status.OK, catalog.toString());
 	}
 

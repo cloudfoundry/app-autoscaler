@@ -1,9 +1,9 @@
 package org.cloudfoundry.autoscaler.servicebroker.util;
 
+import org.cloudfoundry.autoscaler.common.util.ConfigManager;
 import org.cloudfoundry.autoscaler.servicebroker.Constants;
 import org.cloudfoundry.autoscaler.servicebroker.data.storeservice.IDataStoreService;
 import org.cloudfoundry.autoscaler.servicebroker.data.storeservice.couchdb.CouchdbStoreService;
-import org.cloudfoundry.autoscaler.servicebroker.mgr.ConfigManager;
 
 
 

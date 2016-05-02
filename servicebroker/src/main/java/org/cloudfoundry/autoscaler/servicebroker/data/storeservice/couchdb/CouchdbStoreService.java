@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.apache.log4j.Logger;
+import org.cloudfoundry.autoscaler.common.util.ConfigManager;
 import org.cloudfoundry.autoscaler.servicebroker.data.entity.ApplicationInstance;
 import org.cloudfoundry.autoscaler.servicebroker.data.entity.ServiceInstance;
 import org.cloudfoundry.autoscaler.servicebroker.data.entity.dao.ApplicationInstanceDAO;
@@ -14,7 +15,6 @@ import org.cloudfoundry.autoscaler.servicebroker.data.entity.dao.couchdb.Applica
 import org.cloudfoundry.autoscaler.servicebroker.data.entity.dao.couchdb.ServiceInstanceDAOImpl;
 import org.cloudfoundry.autoscaler.servicebroker.data.storeservice.IDataStoreService;
 import org.cloudfoundry.autoscaler.servicebroker.exception.ProxyInitilizedFailedException;
-import org.cloudfoundry.autoscaler.servicebroker.mgr.ConfigManager;
 import org.ektorp.CouchDbConnector;
 import org.ektorp.CouchDbInstance;
 import org.ektorp.http.StdHttpClient;
@@ -192,7 +192,7 @@ public class CouchdbStoreService implements IDataStoreService {
     	int port = ConfigManager.getInt("couchdbPort");
     	int timeout = ConfigManager.getInt("couchdbTimeout");
     	boolean enableSSL =  ConfigManager.getBoolean("couchdbEnableSSL", false);
-    	String dbName = ConfigManager.get("couchdbDBName");
+		String dbName = ConfigManager.get("couchdbDBName");
     
 		Builder builder = new StdHttpClient.Builder();
 		builder = builder
