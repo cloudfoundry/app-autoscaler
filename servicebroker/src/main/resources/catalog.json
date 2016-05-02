@@ -1,12 +1,12 @@
 {
 	"services": [{
-		"name": "${service.name}",
-		"id": "${service.name}-id",
+		"name": "${serviceName}",
+		"id": "${serviceName}-id",
 		"version": "1.0",
 		"bindable": true,
 		"description": "Automatically increase or decrease the number of application instances based on a policy you define.",
 		"plans": [{
-			"id": "${service.name}-free-plan",
+			"id": "${serviceName}-free-plan",
 			"name": "free",
 			"description": "This is the free service plan for the Auto-Scaling service."
 		}]

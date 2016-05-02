@@ -63,82 +63,64 @@ To run all the unit tests, launch mvn test.
 mvn test -Denv=unittest
 ```
 
-To run a specific project's unittest, launch mvn test for the project and its dependencies. For example, to run unit test for service broker component:
+To run a specific project's unittest, launch mvn test for the project and its dependencies. For example, to run unit test for the service broker component:
 ```shell
 mvn test -Denv=unittest -pl common,servicebroker
 ```
 
 ### Configure and Package
 
-All the `CF-AutoScaler` components are configured through a single properties file. You need to create your own properties according to the settings of your runtime environment.
-
-Cloud Foundry settings
+All the `CF-AutoScaler` components are configured through a single properties file. To create your own settings, copy the following properties and change the appropriate values for your environment.
 
 ```
-cfUrl=api.bosh-lite.com
+# CloudFoundry settings
+cfUrl=api.my.domain
 cfClientId=cf-autoscaler-client
 cfClientSecret=cf-autoscaler-client-secret
-```
 
-Service broker settings
-
-```
-service.name=CF-AutoScaler
+# Service broker settings
+serviceName=CF-AutoScaler
 brokerUsername=admin
 brokerPassword=admin
-```
 
-Scaling Server URL and protocol settings
-
-```
-serverURIList=autoscaling.bosh-lite.com
-apiServerURI=autoscalingapi.bosh-lite.com
-httpProtocol=https
-```
-
-HTTP basic settings for authentication between CF-Autoscaler components
-
-```
+# http basic authentication settings between the CF-Autoscaler components
 internalAuthUsername=admin
 internalAuthPassword=admin
-```
 
-couchdb settings
+# URLs and protocol settings
+serverURIList=https://autoscaling.my.app.domain
+apiServerURI=https://autoscalingapi.my.app.domain
 
-```
-couchdbUsername=
-couchdbPassword=
+# couchdb settings
+couchdbUsername=autoscaler
+couchdbPassword=openopen
 couchdbHost=xxx.xxx.xxx.xxx
 couchdbPort=5984
-couchdbBrokerDBName=couchdb-scalingbroker
 couchdbServerDBName=couchdb-scaling
 couchdbMetricDBPrefix=couchdb-scalingmetric
-```
+couchdbBrokerDBName=couchdb-scalingbroker
 
-metrics settings
-
-```
+# metrics settings
 reportInterval=120
 ```
 
-Assume you want to name your environment, "myenv". Create a properties file in `app-autoscaler/profiles/sample.properties` with all the properties defined above.
+Assume you want to name your environment, "myenv". Create a properties file in `app-autoscaler/profiles/myenv.properties` with all the properties defined above.
 
-To build all the .war files for deployment mvn as below. The *.war file can be found in each folder `{project}/target`
+To package all the .war files for deployment, use mvn package. The *.war file can be found in each folder `{project}/target` directory.
 
 ```shell
-mvn clean package -Denv=sample -DskipTests
+mvn clean package -Denv=myenv -DskipTests
 ```
 
 ### Deploy `CF-AutoScaler` service
 
-You can push the .war package of each `CF-AutoScaler` component to Cloud Foundry to get `CF-AutoScaler` service deployed. Please note you need to use the URLs you configured in `servicebroker/profiles/{profile}.properties` as the routes of CF-AutoScaler server and API server.
+You can push the .war package of each `CF-AutoScaler` component to Cloud Foundry to get `CF-AutoScaler` service deployed. Please note you need to use the URLs you configured in `app-autoscaler/profiles/{env}.properties` as the routes of CF-AutoScaler server and API server.
+
+The deployment assumes that there is a couchdb instance available with the configured host, port, username and password, and the couchdb can be accessed from an application running within Cloud Foundry.
 
 ```shell
-serverURIList=autoscaling.bosh-lite.com
-apiServerURI=autoscalingapi.bosh-lite.com
+bin/deploy.sh myenv
 ```
-
-The deployment assumes that there is a couchdb available with the same host, port, username and password settings specified in the maven profile when packaging, and the couchdb can be accessed from the `CF-AutoScaler` running environment.
 
 ### Register `CF-AutoScaler` service broker
 
