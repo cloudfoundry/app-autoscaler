@@ -22,9 +22,9 @@ import org.cloudfoundry.autoscaler.common.AppInfoNotFoundException;
 import org.cloudfoundry.autoscaler.common.AppNotFoundException;
 import org.cloudfoundry.autoscaler.common.ClientIDLoginFailedException;
 import org.cloudfoundry.autoscaler.common.util.AuthenticationTool;
+import org.cloudfoundry.autoscaler.common.util.AuthenticationTool.SecurityCheckStatus;
 import org.cloudfoundry.autoscaler.common.util.CloudFoundryManager;
 import org.cloudfoundry.autoscaler.common.util.LocaleUtil;
-import org.cloudfoundry.autoscaler.common.util.AuthenticationTool.SecurityCheckStatus;
 /**
  * Servlet Filter implementation class SSOFilter
  */
