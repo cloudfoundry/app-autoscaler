@@ -52,7 +52,7 @@ uaac client add cf-autoscaler-client \
     --secret cf-autoscaler-client-secret
 ```
 
-The following sections describe how to test, deploy and run `CF-AutoScaler` service manually. You can also use script `./bin/getStart.sh` to complete all these steps.
+The following sections describe how to test, deploy and run `CF-AutoScaler` service manually.
 
 ### Run Unit Tests
 
@@ -114,7 +114,7 @@ mvn clean package -Denv=myenv -DskipTests
 
 ### Deploy `CF-AutoScaler` service
 
-You can push the .war package of each `CF-AutoScaler` component to Cloud Foundry to get `CF-AutoScaler` service deployed. Please note you need to use the URLs you configured in `app-autoscaler/profiles/{env}.properties` as the routes of CF-AutoScaler server and API server.
+Push the .war package of each `CF-AutoScaler` components to Cloud Foundry to deploy `CF-AutoScaler` service.
 
 The deployment assumes that there is a couchdb instance available with the configured host, port, username and password, and the couchdb can be accessed from an application running within Cloud Foundry.
 
@@ -124,11 +124,10 @@ bin/deploy.sh myenv
 
 ### Register `CF-AutoScaler` service broker
 
-You can register `CF-AutoScaler` with `cf` command line. Again make sure the service broker name, username and password are the ones you configured in the maven profile.
+Register `CF-AutoScaler` with Cloud Foundry.
 
 ```shell
-cf create-service-broker CF-AutoScaler brokerUserName brokerPassword brokerURI
-cf enable-service-access CF-AutoScaler
+bin/register.sh myenv
 ```
 
 ## Test your 'CF-AutoScaler' deployment
