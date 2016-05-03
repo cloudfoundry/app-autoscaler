@@ -40,7 +40,7 @@ public class DataStoreServiceTest extends JerseyTest{
 		CouchDBDocumentManager.getInstance().initDocuments();
 	}
      @Test
-    public void clouandDataStoreServiceTest() throws InterruptedException {
+    public void clouandDataStoreServiceTest() throws InterruptedException, Exception {
         final String m = "clouandDataStoreServiceTest";
         logger.info(m + " started");
 

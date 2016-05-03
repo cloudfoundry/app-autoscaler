@@ -5,7 +5,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 
-import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.common.util.ConfigManager;
 import org.cloudfoundry.autoscaler.servicebroker.data.entity.ApplicationInstance;
 import org.cloudfoundry.autoscaler.servicebroker.data.entity.ServiceInstance;
@@ -23,27 +22,23 @@ import org.ektorp.impl.StdCouchDbInstance;
 
 
 
-public class CouchdbStoreService implements IDataStoreService {
+public class CouchdbStoreService implements IDataStoreService  {
 
-	private static final Logger logger = Logger.getLogger(CouchdbStoreService.class);
-	private static final CouchdbStoreService instance = new CouchdbStoreService();
+	private static CouchdbStoreService instance = null ;
     
     private ApplicationInstanceDAO applicationStore;
     private ServiceInstanceDAO serviceStore;
     
-    public static CouchdbStoreService getInstance() {
+    public static CouchdbStoreService getInstance() throws Exception {
+    	if ( instance == null )
+    		instance = new CouchdbStoreService();
         return instance;
     }
     
-	private CouchdbStoreService() {
-		try {
+	private CouchdbStoreService() throws Exception{
 			CouchDbConnector couchDBObj = initConnection();
 			applicationStore = new ApplicationInstanceDAOImpl (couchDBObj);
 			serviceStore = new ServiceInstanceDAOImpl (couchDBObj);
-			
-		} catch (Exception e) {
-			logger.error(e.getMessage(), e);
-		}
 	}
 
 	
