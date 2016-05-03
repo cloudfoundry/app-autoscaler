@@ -148,7 +148,7 @@ public class couchdbDAOTest extends JerseyTestBase{
         logger.info(m + " completed");
     }
 
-    private static void initConnection() throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
+    private static void initConnection() throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException, Exception {
 
         Field field = null;
         CouchdbStoreService cloudantStorage = CouchdbStoreService.getInstance();

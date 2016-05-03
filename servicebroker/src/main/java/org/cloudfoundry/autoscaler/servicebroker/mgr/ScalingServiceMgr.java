@@ -30,19 +30,24 @@ import com.sun.jersey.api.client.ClientResponse;
 public class ScalingServiceMgr {
 
 	private static final Logger logger = Logger.getLogger(ScalingServiceMgr.class);
-	private static final ScalingServiceMgr instance = new ScalingServiceMgr();
+	private static ScalingServiceMgr instance = null;
 
-	private IDataStoreService dataService = DataSourceUtil.getStoreProvider();
+	private IDataStoreService dataService = null;
 	private IRestClient restClient = RestClientJersey.getInstance();
 
 	private List<String> serverUrlList = new ArrayList<String>();
 	private String apiServerUrl = "";
 
-	public static ScalingServiceMgr getInstance() {
+	public static ScalingServiceMgr getInstance() throws Exception{
+		if ( instance == null ){
+			instance = new ScalingServiceMgr();
+		}
+		
 		return instance;
 	}
 
-	private ScalingServiceMgr() {
+	private ScalingServiceMgr() throws Exception{
+		dataService = DataSourceUtil.getStoreProvider();
 		initServerUrlList();
 	}
 
