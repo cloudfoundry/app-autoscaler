@@ -22,17 +22,16 @@ public class LifecycleListener implements ServletContextListener {
     }
 
     /**
-     * Load registered triggers from mongodb store
      * 
      * @see ServletContextListener#contextInitialized(ServletContextEvent)
      */
-    public void contextInitialized(ServletContextEvent event) {
-        try {
-        	DataSourceUtil.setStoreProvider(Constants.CONFIG_ENTRY_DATASTORE_PROVIDER_COUCHDB);
-        	ScalingServiceMgr.getInstance();
-        } catch (Exception e) {
-            logger.error(e.getMessage(), e);
-        }
+    public void contextInitialized(ServletContextEvent event)  {
+        	try {
+				DataSourceUtil.setStoreProvider(Constants.CONFIG_ENTRY_DATASTORE_PROVIDER_COUCHDB);
+	        	ScalingServiceMgr.getInstance();
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
     }
 
     /**

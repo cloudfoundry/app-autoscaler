@@ -15,13 +15,13 @@ public class DataSourceUtil {
     }
 
     
-    public static IDataStoreService getStoreProvider() {
+    public static IDataStoreService getStoreProvider() throws Exception{
 		if ( storeProvider == null)
 			setStoreProvider(ConfigManager.get(Constants.CONFIG_ENTRY_DATASTORE_PROVIDER, Constants.CONFIG_ENTRY_DATASTORE_PROVIDER_COUCHDB));
     	return storeProvider;
 	}
 
-	public static void setStoreProvider(String provider){
+	public static void setStoreProvider(String provider) throws Exception{
 		IDataStoreService storage = null;
 		if (provider.equalsIgnoreCase(Constants.CONFIG_ENTRY_DATASTORE_PROVIDER_COUCHDB)) {
 			storage = CouchdbStoreService.getInstance();
