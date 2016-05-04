@@ -21,9 +21,11 @@ import org.json.JSONObject;
 
 @Path("/")
 public class CloudControllerRestApi {
-	public static final String TESTAPPID = "f7e60374-4a81-4fe4-8805-bfc687eeea36";
-	public static final String TESTAPPNAME = "test";
-	public static final String TESTSERVICEID = "TESTSERVICEID";
+	public static final String TEST_APP_ID = "f7e60374-4a81-4fe4-8805-bfc687eeea36";
+	public static final String TEST_APP_NAME = "test";
+	public static final String TEST_SERVICE_ID = "TEST_SERVICE_ID";
+	public static final String TEST_SEVICE_NAME = "CF-AutoScaler";
+	public static final String TEST_ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiJ9";
 
 	@GET
 	@Path("/info")
@@ -68,15 +70,6 @@ public class CloudControllerRestApi {
 	public Response getToken(@Context final HttpServletRequest httpServletRequest,
 			@FormParam("grant_type") final String grantType, @FormParam("client_id") final String clientId,
 			@FormParam("client_secret") final String clientSecret) {
-		// {
-		// "access_token":
-		// "eyJhbGciOiJIUzI1NiJ9.eyJqdGkiOiIwY2JlNjKSJjsmJSFAjfsnkJWOAlsgaNSmMS1kZDExLTRlZDMtOGI0Zi1iN2U4MDRiOTc3MGIiLCJzdWIiOiJvZXJ1bnRpbWVfYWRtaW4iLCJhdXRob3JpdGllcyI6WyJjbG91ZF9jb250cm9sbGVyLnJlYWQiLCJjbG91ZF9jb250cm9sbGVyLndyaXRlIiwidWFhLnJlc291cmNlIiwib3BlbmlkIiwiZG9wcGxlci5maXJlaG9zZSIsInNjaW0ucmVhZCIsImNsb3VkX2NvbnRyb2xsZXIuYWRtaW4iXSwic2NvcGUiOlsiY2xvdWRfY29udHJvbGxlci5yZWFkIiwiY2xvdWRfY29udHJvbGxlci53cml0ZSIsInVhYS5yZXNvdXJjZSIsIm9wZW5pZCIsImRvcHBsZXIuZmlyZWhvc2UiLCJzY2ltLnJlYWQiLCJjbG91ZF9jb250cm9sbGVyLmFkbWluIl0sImNsaWVudF9pZCI6Im9lcnVudGltZV9hZG1pbiIsImNpZCI6Im9lcnVudGltZV9hZG1pbiIsImF6cCI6Im9lcnVudGltZV9hZG1pbiIsImdyYW50X3R5cGUiOiJjbGllbnRfY3JlZGVudGlhbHMiLCJyZXZfc2lnIjoiNDkyYjgwOGMiLCJpYXQiOjE0NTkyNDQwNjksImV4cCI6MTQ1OTI4NzI2OSwiaXNzIjoiaHR0cHM6Ly91YWEuc3RhZ2UxLm5nLmJsdWVtaXgubmV0L29hdXRoL3Rva2VuIiwiemlkIjoidWFhIiwiYXVkIjpbIm9lcnVudGltZV9hZG1pbiIsImNsb3VkX2NvbnRyb2xsZXIiLCJ1YWEiLCJvcGVuaWQiLCJkb3BwbGVyIiwic2NpbSJdfQ.cA1kWFYkVu1Ll8I_khJADUONgXh6_ip45yF8PSrxIxc",
-		// "token_type": "bearer",
-		// "expires_in": 43199,
-		// "scope": "cloud_controller.read cloud_controller.write uaa.resource
-		// openid doppler.firehose scim.read cloud_controller.admin",
-		// "jti": "0cbe67f1-dd11-4ed3-8b4f-b7e804b9770b"
-		// } httpServletRequest.getP
 
 		if ((grantType == null) || (clientId == null) || (clientSecret == null)
 				|| !grantType.equals("client_credentials") || !clientId.equals(ConfigManager.get(Constants.CLIENT_ID))
@@ -86,7 +79,7 @@ public class CloudControllerRestApi {
 		}
 
 		JSONObject jo = new JSONObject();
-		jo.put("access_token", "eyJhbGciOiJIUzI1NiJ9");
+		jo.put("access_token", TEST_ACCESS_TOKEN);
 		jo.put("token_type", "bearer");
 		jo.put("expires_in", 43199);
 		jo.put("scope",
@@ -131,12 +124,12 @@ public class CloudControllerRestApi {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getApplicationById(@Context final HttpServletRequest httpServletRequest,
 			@PathParam("appId") final String appId) {
-		String jsonStr = "{\"metadata\":{\"guid\":\"" + TESTAPPID + "\",\"url\":\"/v2/apps/" + TESTAPPID
+		String jsonStr = "{\"metadata\":{\"guid\":\"" + TEST_APP_ID + "\",\"url\":\"/v2/apps/" + TEST_APP_ID
 				+ "\",\"created_at\":\"2016-03-21T08:39:36Z\",\"updated_at\":\"2016-03-31T02:21:28Z\"},\"entity\":{\"name\":\""
-				+ TESTAPPNAME
+				+ TEST_APP_NAME
 				+ "\",\"production\":false,\"space_guid\":\"1563f76e-8544-4c6b-bf26-a4770b4d6579\",\"stack_guid\":\"088e0657-127d-4ab9-b8c4-1401d3aa8c10\",\"buildpack\":null,\"detected_buildpack\":\"SDKforNode.js(TM)(ibm-node.js-4.3.2,buildpack-v3.2-20160315-1257)\",\"environment_json\":{},\"memory\":1024,\"instances\":1,\"disk_quota\":1024,\"state\":\"STARTED\",\"version\":\"9245bcf6-5b90-4426-a24e-05be5fa4fb75\",\"command\":null,\"console\":false,\"debug\":null,\"staging_task_id\":\"ba176b4af3584ed9890ec819cd020a17\",\"package_state\":\"STAGED\",\"health_check_type\":\"port\",\"health_check_timeout\":null,\"staging_failed_reason\":null,\"staging_failed_description\":null,\"diego\":false,\"docker_image\":null,\"package_updated_at\":\"2016-03-21T08:39:50Z\",\"detected_start_command\":\"./vendor/initial_startup.rb\",\"enable_ssh\":true,\"docker_credentials_json\":{\"redacted_message\":\"[PRIVATEDATAHIDDEN]\"},\"ports\":null,\"space_url\":\"/v2/spaces/1563f76e-8544-4c6b-bf26-a4770b4d6579\",\"stack_url\":\"/v2/stacks/088e0657-127d-4ab9-b8c4-1401d3aa8c10\",\"events_url\":\"/v2/apps/"
-				+ TESTAPPID + "/events\",\"service_bindings_url\":\"/v2/apps/" + TESTAPPID
-				+ "/service_bindings\",\"routes_url\":\"/v2/apps/" + TESTAPPID + "/routes\"}}";
+				+ TEST_APP_ID + "/events\",\"service_bindings_url\":\"/v2/apps/" + TEST_APP_ID
+				+ "/service_bindings\",\"routes_url\":\"/v2/apps/" + TEST_APP_ID + "/routes\"}}";
 		return RestApiResponseHandler.getResponseOk(jsonStr);
 
 	}
@@ -146,10 +139,23 @@ public class CloudControllerRestApi {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getApplicationEnvById(@Context final HttpServletRequest httpServletRequest,
 			@PathParam("appId") final String appId) {
+		
+		String token = httpServletRequest.getHeader("Authorization");
+		if ( (token == null) || !token.equals("Bearer " + TEST_ACCESS_TOKEN)){
+			String jsonStr = "{\"code\": 10002, \"description\": \"Authentication error\", \"error_code\": \"CF-NotAuthenticated\"}";
+			return RestApiResponseHandler.getResponseUnauthorized(jsonStr);
+		}
+		
+		if ( !appId.equals(TEST_APP_ID) ){
+			String jsonStr = "{\"code\": 100004, \"description\": \"The app could not be found:" + appId + "\", \"error_code\": \"CF-AppNotFound\"}" ;
+			return RestApiResponseHandler.getResponse(404, jsonStr);
+		}
+		
+				
 		String jsonStr = "{\"staging_env_json\":{\"CF_REGION\":\"open:test:test\"},\"running_env_json\":{\"CF_REGION\":\"open:test:test\"},\"environment_json\":{},\"system_env_json\":{\"VCAP_SERVICES\":{\"CF-AutoScaler\":[{\"name\":\"ttt1\",\"label\":\"CF-AutoScaler\",\"tags\":[\"cf_extensions\",\"cf_created\",\"dev_ops\"],\"plan\":\"free\",\"credentials\":{\"agentUsername\":\"agent\",\"api_url\":\"http://localhost:9998\",\"service_id\":\""
-				+ TESTSERVICEID + "\",\"app_id\":\"" + TESTAPPID
+				+ TEST_SERVICE_ID + "\",\"app_id\":\"" + TEST_APP_ID
 				+ "\",\"url\":\"http://localhost:9998\",\"agentPassword\":\"858c1958-29cc-4ae5-bb17-c5308b6d0232\"}}]}},\"application_env_json\":{\"VCAP_APPLICATION\":{\"limits\":{\"mem\":1024,\"disk\":1024,\"fds\":16384},\"application_id\":\""
-				+ TESTAPPID
+				+ TEST_APP_ID
 				+ "\",\"application_version\":\"9245bcf6-5b90-4426-a24e-05be5fa4fb75\",\"application_name\":\"test\",\"application_uris\":[\"test.boshlite.com\"],\"version\":\"9245bcf6-5b90-4426-a24e-05be5fa4fb75\",\"name\":\"test\",\"space_name\":\"dev\",\"space_id\":\"1563f76e-8544-4c6b-bf26-a4770b4d6579\",\"uris\":[\"test.boshlite.com\"],\"users\":null}}}";
 		return RestApiResponseHandler.getResponseOk(jsonStr);
 
@@ -160,14 +166,14 @@ public class CloudControllerRestApi {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getApplicationSummaryById(@Context final HttpServletRequest httpServletRequest,
 			@PathParam("appId") final String appId) {
-		String jsonStr = "{\"guid\":\"" + TESTAPPID + "\",\"name\":\"" + TESTAPPNAME
-				+ "\",\"routes\":[{\"guid\":\"81730881-bcbc-446d-a23d-e2e87b475115\",\"host\":\"" + TESTAPPNAME
+		String jsonStr = "{\"guid\":\"" + TEST_APP_ID + "\",\"name\":\"" + TEST_APP_NAME
+				+ "\",\"routes\":[{\"guid\":\"81730881-bcbc-446d-a23d-e2e87b475115\",\"host\":\"" + TEST_APP_NAME
 				+ "\",\"domain\":{\"guid\":\"80f7b34d-0c35-47d5-b14a-c0974a9d9b8b\",\"name\":\"stage1.mybluemix.net\"}}],\"running_instances\":1,\"services\":[{\"guid\":\""
-				+ TESTSERVICEID
+				+ TEST_SERVICE_ID
 				+ "\",\"name\":\"ttt1\",\"bound_app_count\":1,\"last_operation\":{\"type\":\"create\",\"state\":\"succeeded\",\"description\":\"\",\"updated_at\":null,\"created_at\":\"2016-03-21T08:41:09Z\"},\"dashboard_url\":\"https://Scaling4.stage1.ng.bluemix.net/autoScaling.jsp?org_id=7f064d05-965c-40d4-b411-d54817c37a6a&space_id=1563f76e-8544-4c6b-bf26-a4770b4d6579&service_id="
-				+ TESTSERVICEID
+				+ TEST_SERVICE_ID
 				+ "\",\"service_plan\":{\"guid\":\"8a5481ca-d1ce-479e-9098-5881a8fb974b\",\"name\":\"free\",\"service\":{\"guid\":\"ea3d5633-89ac-4a92-9c21-c93952021d4b\",\"label\":\"Auto-Scaling\",\"provider\":null,\"version\":null}}}],\"available_domains\":[{\"guid\":\"80f7b34d-0c35-47d5-b14a-c0974a9d9b8b\",\"name\":\"stage1.mybluemix.net\",\"router_group_guid\":null}],\"name\":\""
-				+ TESTAPPNAME
+				+ TEST_APP_NAME
 				+ "\",\"production\":false,\"space_guid\":\"1563f76e-8544-4c6b-bf26-a4770b4d6579\",\"stack_guid\":\"088e0657-127d-4ab9-b8c4-1401d3aa8c10\",\"buildpack\":null,\"detected_buildpack\":\"SDK for Node.js(TM) (ibm-node.js-4.3.2, buildpack-v3.2-20160315-1257)\",\"environment_json\":{},\"memory\":1024,\"instances\":1,\"disk_quota\":1024,\"state\":\"STARTED\",\"version\":\"9245bcf6-5b90-4426-a24e-05be5fa4fb75\",\"command\":null,\"console\":false,\"debug\":null,\"staging_task_id\":\"ba176b4af3584ed9890ec819cd020a17\",\"package_state\":\"STAGED\",\"health_check_type\":\"port\",\"health_check_timeout\":null,\"staging_failed_reason\":null,\"staging_failed_description\":null,\"diego\":false,\"docker_image\":null,\"package_updated_at\":\"2016-03-21T08:39:50Z\",\"detected_start_command\":\"./vendor/initial_startup.rb\",\"enable_ssh\":true,\"docker_credentials_json\":{\"redacted_message\":\"[PRIVATE DATA HIDDEN]\"},\"ports\":null}";
 		return RestApiResponseHandler.getResponseOk(jsonStr);
 
@@ -189,12 +195,12 @@ public class CloudControllerRestApi {
 	public Response getSpacesApplications(@Context final HttpServletRequest httpServletRequest,
 			@PathParam("spaceId") final String spaceId) {
 		String jsonStr = "{\"total_results\":5,\"total_pages\":1,\"prev_url\":null,\"next_url\":null,\"resources\":[{\"metadata\":{\"guid\":\""
-				+ TESTAPPID + "\",\"url\":\"/v2/apps/" + TESTAPPID
+				+ TEST_APP_ID + "\",\"url\":\"/v2/apps/" + TEST_APP_ID
 				+ "\",\"created_at\":\"2016-03-21T08:39:36Z\",\"updated_at\":\"2016-03-31T02:21:28Z\"},\"entity\":{\"name\":\""
-				+ TESTAPPNAME
+				+ TEST_APP_NAME
 				+ "\",\"production\":false,\"space_guid\":\"1563f76e-8544-4c6b-bf26-a4770b4d6579\",\"stack_guid\":\"088e0657-127d-4ab9-b8c4-1401d3aa8c10\",\"buildpack\":null,\"detected_buildpack\":\"SDKforNode.js(TM)(ibm-node.js-4.3.2,buildpack-v3.2-20160315-1257)\",\"environment_json\":{},\"memory\":1024,\"instances\":1,\"disk_quota\":1024,\"state\":\"STARTED\",\"version\":\"9245bcf6-5b90-4426-a24e-05be5fa4fb75\",\"command\":null,\"console\":false,\"debug\":null,\"staging_task_id\":\"ba176b4af3584ed9890ec819cd020a17\",\"package_state\":\"STAGED\",\"health_check_type\":\"port\",\"health_check_timeout\":null,\"staging_failed_reason\":null,\"staging_failed_description\":null,\"diego\":false,\"docker_image\":null,\"package_updated_at\":\"2016-03-21T08:39:50Z\",\"detected_start_command\":\"./vendor/initial_startup.rb\",\"enable_ssh\":true,\"docker_credentials_json\":{\"redacted_message\":\"[PRIVATEDATAHIDDEN]\"},\"ports\":null,\"space_url\":\"/v2/spaces/1563f76e-8544-4c6b-bf26-a4770b4d6579\",\"stack_url\":\"/v2/stacks/088e0657-127d-4ab9-b8c4-1401d3aa8c10\",\"events_url\":\"/v2/apps/"
-				+ TESTAPPID + "/events\",\"service_bindings_url\":\"/v2/apps/" + TESTAPPID
-				+ "/service_bindings\",\"routes_url\":\"/v2/apps/" + TESTAPPID + "/routes\"}}]}";
+				+ TEST_APP_ID + "/events\",\"service_bindings_url\":\"/v2/apps/" + TEST_APP_ID
+				+ "/service_bindings\",\"routes_url\":\"/v2/apps/" + TEST_APP_ID + "/routes\"}}]}";
 		return RestApiResponseHandler.getResponseOk(jsonStr);
 
 	}
@@ -205,12 +211,12 @@ public class CloudControllerRestApi {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response updateApplicationInstances(@Context final HttpServletRequest httpServletRequest,
 			@PathParam("appId") String appId, @QueryParam("instances") String instances, String jsonString) {
-		String jsonStr = "{\"metadata\":{\"guid\":\"" + TESTAPPID + "\",\"url\":\"/v2/apps/" + TESTAPPID
+		String jsonStr = "{\"metadata\":{\"guid\":\"" + TEST_APP_ID + "\",\"url\":\"/v2/apps/" + TEST_APP_ID
 				+ "\",\"created_at\":\"2016-03-21T08:39:36Z\",\"updated_at\":\"2016-03-31T07:24:33Z\"},\"entity\":{\"name\":\""
-				+ TESTAPPNAME
+				+ TEST_APP_NAME
 				+ "\",\"production\":false,\"space_guid\":\"1563f76e-8544-4c6b-bf26-a4770b4d6579\",\"stack_guid\":\"088e0657-127d-4ab9-b8c4-1401d3aa8c10\",\"buildpack\":null,\"detected_buildpack\":\"SDKforNode.js(TM)(ibm-node.js-4.3.2,buildpack-v3.2-20160315-1257)\",\"environment_json\":{},\"memory\":1024,\"instances\":1,\"disk_quota\":1024,\"state\":\"STARTED\",\"version\":\"9245bcf6-5b90-4426-a24e-05be5fa4fb75\",\"command\":null,\"console\":false,\"debug\":null,\"staging_task_id\":\"ba176b4af3584ed9890ec819cd020a17\",\"package_state\":\"STAGED\",\"health_check_type\":\"port\",\"health_check_timeout\":null,\"staging_failed_reason\":null,\"staging_failed_description\":null,\"diego\":false,\"docker_image\":null,\"package_updated_at\":\"2016-03-21T08:39:50Z\",\"detected_start_command\":\"./vendor/initial_startup.rb\",\"enable_ssh\":true,\"docker_credentials_json\":{\"redacted_message\":\"[PRIVATEDATAHIDDEN]\"},\"ports\":null,\"space_url\":\"/v2/spaces/1563f76e-8544-4c6b-bf26-a4770b4d6579\",\"stack_url\":\"/v2/stacks/088e0657-127d-4ab9-b8c4-1401d3aa8c10\",\"events_url\":\"/v2/apps/"
-				+ TESTAPPID + "/events\",\"service_bindings_url\":\"/v2/apps/" + TESTAPPID
-				+ "/service_bindings\",\"routes_url\":\"/v2/apps/" + TESTAPPID + "/routes\"}}";
+				+ TEST_APP_ID + "/events\",\"service_bindings_url\":\"/v2/apps/" + TEST_APP_ID
+				+ "/service_bindings\",\"routes_url\":\"/v2/apps/" + TEST_APP_ID + "/routes\"}}";
 		return RestApiResponseHandler.getResponseOk(jsonStr);
 
 	}

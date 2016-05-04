@@ -151,7 +151,7 @@ public class CloudFoundryManager {
 		} catch (NullPointerException e) {
 			throw new ServiceNotFoundException(serviceName, appId, e);
 		} catch (Exception e) {
-			throw new Exception("error: failed to get service information from VCAP_SERVICE for appId " + appId, e);
+			throw new ServiceNotFoundException(serviceName, appId, e);
 		}
 	}
 
@@ -311,21 +311,28 @@ public class CloudFoundryManager {
 	}
 
 	private JsonNode getApplicationEnvByAppId(String appId) throws Exception {
-		try {
 			String url = this.target + "/v2/apps/" + appId + "/env";
 			logger.debug("url:" + url);
 			WebResource webResource = restClient.resource(url);
 
 			ClientResponse cr = webResource.accept(MediaType.APPLICATION_JSON).type(MediaType.APPLICATION_JSON)
 					.header("Authorization", "Bearer " + this.accessToken).get(ClientResponse.class);
-			if (cr.getStatus() == 404) {
+			int status = cr.getStatus();
+			String content = cr.getEntity(String.class);
+						
+			if ( (status >= 200) && (status < 300)){
+				return new ObjectMapper().readTree(content);
+			}
+			
+			if (status == 404) {
 				throw new AppNotFoundException(appId);
 			}
-			String response = cr.getEntity(String.class);
-			return new ObjectMapper().readTree(response);
-		} catch (IOException e) {
-			throw new CloudException(e);
-		}
+			
+			JSONObject json = new JSONObject(content);
+			String errorCode = (String) json.get("error_code");
+			String description = (String) json.get("description");
+			logger.error("Get Error response from Cloud Foundry " + errorCode + " : " + description);
+			throw new CloudException(errorCode, description);
 	}
 
 	private static String getCFAPIUrl() {
