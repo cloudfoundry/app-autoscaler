@@ -138,13 +138,36 @@ See [src/acceptance/README.md](src/acceptance/README.md)
 Now, you can play with `CF-AutoScaler`.
 Firstly create a `CF-AutoScaler` service, and bind to you application
 
-``` shell
+```shell
 cf create-service CF-AutoScaler free <service_instance>
 cf bind-service <app> <service_instance>
 ```
 
 Then refer to [API_usage.rst][a] to manage the scaling policy of your application, retrieve metrics and scaling histories.
 
+## Tips for development
+1. Run `cf logs` against the 3 servers when running tests if you need to see
+   the actual errors reported. It is sometimes useful to `cf restart` the
+   applications to see any errors that may have occurred during start.
+1. Depending on where you deploy CouchDB, the AutoScaler service container's
+   may not have network connectivity to it. To allow access, create and bind
+   a security group.
+
+```shell
+cat > my-security-group.json <<EOF
+[
+  {
+    "protocol": "tcp",
+    "destination": "0.0.0.0/0",
+    "ports": "5984"
+  }
+]
+EOF
+
+cf create-security-group couchdb my-security-group.json
+cf bind-running-security-group couchdb
+```
+Restart the applications if needed
 
 ## License
 
