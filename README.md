@@ -127,7 +127,7 @@ bin/deploy.sh myenv
 Register `CF-AutoScaler` with Cloud Foundry.
 
 ```shell
-bin/register.sh myenv
+bin/registerService.sh myenv
 ```
 
 ## Test your 'CF-AutoScaler' deployment
