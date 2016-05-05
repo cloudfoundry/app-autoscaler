@@ -67,20 +67,19 @@ public class ApplicationScaleManagerImpl implements ApplicationScaleManager {
 
 			if (!validateCooldownSetting(appId, policyTrigger, triggerId)) {
 				logger.debug("Abort trigger " + triggerEvent.toString() + " for event " + triggerEvent.getMetricType()
-						+ "/" + triggerId + " as a scaling action is ongoing or cooldown time " + appId);
+						+ "/" + triggerId + "_than_" + triggerEvent.getTrigger().getMetricThreshold() + "_" + triggerEvent.getTrigger().getUnit() + " as a scaling action is ongoing or cooldown time " + appId);
 				return;
 			}
 
 			int newCount = 0;
 			if (validateInstanceCounts(appId, policy, triggerId, currentInstanceCount)) {
 				newCount = calculateNewCount(policy, policyTrigger, triggerId, currentInstanceCount);
-				logger.info("Handle monitor trigger" + this.toString() + " : appId = " + appId + ", triggerId = "
-						+ triggerId + ", metricValue = " + triggerEvent.getMetricValue());
+				logger.info("Handle monitor trigger" + this.toString() + " : trigger info : " + triggerEvent.getTrigger().toString());
 				logger.info("Scale: Target instance count for app " + appId + " is " + newCount);
 				this.scale(appId, currentInstanceCount, newCount, null, policy.getTimezone(), null, null);
 			} else {
 				logger.debug("Abort trigger " + triggerEvent.toString() + " for event " + triggerEvent.getMetricType()
-						+ "/" + triggerId + " as it reachs the max/min instance count. " + appId);
+						+ "/" + triggerId + "_than_" + triggerEvent.getTrigger().getMetricThreshold() + "_" + triggerEvent.getTrigger().getUnit() + " as it reachs the max/min instance count. " + appId);
 				return;
 			}
 
