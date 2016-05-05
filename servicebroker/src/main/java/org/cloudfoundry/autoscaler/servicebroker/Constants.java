@@ -27,7 +27,7 @@ public final class Constants {
 	public static final String COUCHDOCUMENT_TYPE_APPLICATIONINSTANCE = "ApplicationInstance_inBroker";
 	public static final String COUCHDOCUMENT_TYPE_SERVICEINSTANCE = "ServiceInstance_inBroker";
 
-	public static final String DEFAULT_SERVER_HTTP_PROTOCOL = "http";
+	public static final String DEFAULT_SERVER_HTTP_PROTOCOL = "https";
 	
 	public static final String PROXY_USERNAME = "userName";
 	public static final String PROXY_PASSWORD = "password";
