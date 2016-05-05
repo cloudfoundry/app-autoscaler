@@ -15,7 +15,6 @@ import (
 
 var (
 	cfg         config.Config
-	defaultCfg  cfhelpers.Config
 	context     cfhelpers.SuiteContext
 	environment *cfhelpers.Environment
 )
@@ -23,18 +22,18 @@ var (
 func TestAcceptance(t *testing.T) {
 	RegisterFailHandler(Fail)
 
-	cfg, defaultCfg = config.LoadConfig(t)
+	cfg = config.LoadConfig(t)
 
-	context = cfhelpers.NewContext(defaultCfg)
+	context = cfhelpers.NewContext(cfg.Config)
 	environment = cfhelpers.NewEnvironment(context)
 
 	componentName := "Application Suite"
 
 	rs := []Reporter{}
 
-	if defaultCfg.ArtifactsDirectory != "" {
-		cfhelpers.EnableCFTrace(defaultCfg, componentName)
-		rs = append(rs, cfhelpers.NewJUnitReporter(defaultCfg, componentName))
+	if cfg.ArtifactsDirectory != "" {
+		cfhelpers.EnableCFTrace(cfg.Config, componentName)
+		rs = append(rs, cfhelpers.NewJUnitReporter(cfg.Config, componentName))
 	}
 
 	RunSpecsWithDefaultAndCustomReporters(t, componentName, rs)

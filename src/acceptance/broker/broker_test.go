@@ -16,7 +16,7 @@ var _ = Describe("AutoScaler Service Broker", func() {
 
 	BeforeEach(func() {
 		appName = generator.PrefixedRandomName("autoscaler-APP")
-		createApp := cf.Cf("push", appName, "--no-start", "-b", defaultCfg.JavaBuildpackName, "-m", config.DEFAULT_MEMORY_LIMIT, "-p", config.JAVA_APP, "-d", cfg.AppsDomain).Wait(config.DEFAULT_TIMEOUT)
+		createApp := cf.Cf("push", appName, "--no-start", "-b", cfg.JavaBuildpackName, "-m", config.DEFAULT_MEMORY_LIMIT, "-p", config.JAVA_APP, "-d", cfg.AppsDomain).Wait(config.DEFAULT_TIMEOUT)
 		Expect(createApp).To(Exit(0), "failed creating app")
 	})
 

@@ -26,7 +26,6 @@ var _ = Describe("AutoScaler Application", func() {
 	var appBits string
 	var memory string
 	var instanceCount int
-
 	var appName string
 	var appGUID string
 	var instanceName string
@@ -64,7 +63,7 @@ var _ = Describe("AutoScaler Application", func() {
 
 	Context("with a recurring schedule", func() {
 		BeforeEach(func() {
-			buildpack = defaultCfg.JavaBuildpackName
+			buildpack = cfg.JavaBuildpackName
 			appBits = config.JAVA_APP
 			memory = config.DEFAULT_MEMORY_LIMIT
 			instanceCount = 1
@@ -110,7 +109,7 @@ var _ = Describe("AutoScaler Application", func() {
 
 	Context("with scale by metrics", func() {
 		BeforeEach(func() {
-			buildpack = defaultCfg.NodejsBuildpackName
+			buildpack = cfg.NodejsBuildpackName
 			appBits = config.NODE_APP
 			memory = "128M"
 			instanceCount = 1
