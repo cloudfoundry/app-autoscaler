@@ -112,11 +112,10 @@ public class ScalingServiceMgr {
 
 	private void initServerUrlList() {
 		serverUrlList.clear();
-		String defaultHttpProtocol = ConfigManager.get(Constants.CONFIG_ENTRY_HTTP_PROTOCOL, "http");
-		String[] serverList = ConfigManager.get(Constants.CONFIG_ENTRY_SERVER_URI_LIST).split(",");
+		String[] serverList = ConfigManager.get(Constants.CONFIG_ENTRY_SCALING_SERVER_URI_LIST).split(",");
 		for (String server : serverList) {
 			if (!(server.startsWith("https://") || server.startsWith("http://"))) {
-				serverUrlList.add(defaultHttpProtocol + "://" + server.trim());
+				serverUrlList.add(Constants.DEFAULT_SERVER_HTTP_PROTOCOL + "://" + server.trim());
 			} else {
 				serverUrlList.add(server.trim());
 			}
@@ -125,7 +124,7 @@ public class ScalingServiceMgr {
 		String[] apiList = ConfigManager.get(Constants.CONFIG_ENTRY_API_SERVER_URI).split(",");
 		apiServerUrl = apiList[0].trim();
 		if (!(apiServerUrl.startsWith("https://") || apiServerUrl.startsWith("http://")))
-			apiServerUrl = defaultHttpProtocol + "://" + apiServerUrl;
+			apiServerUrl = Constants.DEFAULT_SERVER_HTTP_PROTOCOL + "://" + apiServerUrl;
 
 	}
 

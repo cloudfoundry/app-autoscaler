@@ -87,8 +87,8 @@ brokerPassword=admin
 internalAuthUsername=admin
 internalAuthPassword=admin
 
-# URLs and protocol settings
-serverURIList=https://autoscaling.my.app.domain
+# scaling and api server URI settings
+scalingServerURIList=https://autoscaling.my.app.domain
 apiServerURI=https://autoscalingapi.my.app.domain
 
 # couchdb settings
