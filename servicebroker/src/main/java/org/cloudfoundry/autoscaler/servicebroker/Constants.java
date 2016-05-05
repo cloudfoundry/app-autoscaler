@@ -19,15 +19,16 @@ public final class Constants {
 
 	public static final String DASHBOARD_URL = "";
 
-	public static final String CONFIG_ENTRY_SERVER_URI_LIST = "serverURIList";
-	public static final String CONFIG_ENTRY_API_SERVER_URI = "apiServerURI";
-	public static final String CONFIG_ENTRY_HTTP_PROTOCOL = "httpProtocol";
+	public static final String CONFIG_ENTRY_SCALING_SERVER_URI_LIST = "scalingServerURIList";
+	public static final String CONFIG_ENTRY_API_SERVER_URI = "apiServerURI";	
 	public static final String CONFIG_ENTRY_DATASTORE_PROVIDER = "storeProvider";
 	public static final String CONFIG_ENTRY_DATASTORE_PROVIDER_COUCHDB = "couchdb";
 
 	public static final String COUCHDOCUMENT_TYPE_APPLICATIONINSTANCE = "ApplicationInstance_inBroker";
 	public static final String COUCHDOCUMENT_TYPE_SERVICEINSTANCE = "ServiceInstance_inBroker";
 
+	public static final String DEFAULT_SERVER_HTTP_PROTOCOL = "http";
+	
 	public static final String PROXY_USERNAME = "userName";
 	public static final String PROXY_PASSWORD = "password";
 	public static final String PROXY_HOST = "host";
