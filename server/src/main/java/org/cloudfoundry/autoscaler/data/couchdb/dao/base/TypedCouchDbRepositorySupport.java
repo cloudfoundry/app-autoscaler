@@ -140,8 +140,8 @@ public class TypedCouchDbRepositorySupport<T> extends CouchDbRepositorySupport<T
 		T returnvalue = null;
 		try{
     	 returnvalue = super.get(id);
-		}catch(DocumentNotFoundException e){
-			logger.info(String.format("The document with id %s does not exist in couchdb.", id));
+		} catch (DocumentNotFoundException e) {
+			logger.debug(String.format("The document with id %s does not exist in couchdb.", id));
 		}
 		catch (Exception e1){
 			logger.error(e1.getMessage());
