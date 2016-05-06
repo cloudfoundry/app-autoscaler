@@ -74,26 +74,30 @@ public class CouchdbStorageService implements AutoScalingDataStore {
 
 	private static volatile CouchdbStorageService instance;
 
-	private CouchdbStorageService() {
-		initCouchdb();
+	public static void Initialize() throws Exception {
+		instance = new CouchdbStorageService();
 	}
 
 	public static CouchdbStorageService getInstance() {
 		if (instance == null) {
 			synchronized (CouchdbStorageService.class) {
 				if (instance == null)
-					instance = new CouchdbStorageService();
+					try {
+						Initialize();
+					} catch (Exception e) {
+						logger.error("Error: " + e.getMessage(), e);
+					}
 			}
 		}
 		return instance;
 	}
 
-	private void initCouchdb() {
+	public CouchdbStorageService() throws Exception {
 
 		ServerDAOManager ScalingRepoManager = null;
 
-		ScalingRepoManager = new ServerDAOManager(DB_NAME, username, password, host, port,
-				enableSSL, timeout, initDesignDocument);
+		ScalingRepoManager = new ServerDAOManager(DB_NAME, username, password, host, port, enableSSL, timeout,
+				initDesignDocument);
 		triggerRecordDao = ScalingRepoManager.getTriggerRecordDao();
 		boundAppDao = ScalingRepoManager.getBoundAppDao();
 		serviceConfigDao = ScalingRepoManager.getServiceConfigDao();
@@ -127,8 +131,8 @@ public class CouchdbStorageService implements AutoScalingDataStore {
 						&& seg.getEndTimestamp() + metricDBStaleTime < curSegment.getStartTimestamp()) {
 					String staledMetricDBName = metricDBPrefix + seg.getMetricDBPostfix();
 					logger.info("Remove staled metricDB : " + metricDBPrefix + seg.toString());
-					new ServerMetricDAOManager(staledMetricDBName, username, password, host, port, enableSSL,
-							timeout).deleteMetricDB(staledMetricDBName);
+					new ServerMetricDAOManager(staledMetricDBName, username, password, host, port, enableSSL, timeout)
+							.deleteMetricDB(staledMetricDBName);
 					metricDBSegmentDao.remove(seg);
 					iter.remove();
 				}
@@ -166,8 +170,8 @@ public class CouchdbStorageService implements AutoScalingDataStore {
 			String metricDBName = metricDBPrefix + seg.getMetricDBPostfix();
 			ServerMetricDAOManager manager = null;
 
-			manager = new ServerMetricDAOManager(metricDBName, username, password, host, port, enableSSL,
-					timeout, true);
+			manager = new ServerMetricDAOManager(metricDBName, username, password, host, port, enableSSL, timeout,
+					true);
 
 			AppInstanceMetricsDAO appInstanceMetricsDao = (manager).getAppInstanceMetricDao();
 			appInstanceMetricsDAOList.add(appInstanceMetricsDao);
@@ -200,8 +204,8 @@ public class CouchdbStorageService implements AutoScalingDataStore {
 		String newMetricDBName = metricDBPrefix + newSegment.getMetricDBPostfix();
 		AppInstanceMetricsDAO newAppInstanceMetricsDao = null;
 		try {
-			newAppInstanceMetricsDao = (new ServerMetricDAOManager(newMetricDBName, username, password, host,
-					port, enableSSL, timeout, true)).getAppInstanceMetricDao();
+			newAppInstanceMetricsDao = (new ServerMetricDAOManager(newMetricDBName, username, password, host, port,
+					enableSSL, timeout, true)).getAppInstanceMetricDao();
 
 		} catch (Exception e) {
 			logger.error("Fail to add new metric DB " + newMetricDBName + " with Error: " + e.getMessage(), e);

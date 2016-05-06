@@ -29,6 +29,7 @@ public class LifecycleListener implements ServletContextListener {
 			DataSourceUtil.setStoreProvider(Constants.CONFIG_ENTRY_DATASTORE_PROVIDER_COUCHDB);
 			ScalingServiceMgr.getInstance();
 		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
 			throw new RuntimeException(e);
 		}
 	}

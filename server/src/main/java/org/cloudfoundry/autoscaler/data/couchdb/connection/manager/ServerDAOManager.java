@@ -1,6 +1,5 @@
 package org.cloudfoundry.autoscaler.data.couchdb.connection.manager;
 
-import org.apache.log4j.Logger;
 import org.cloudfoundry.autoscaler.data.couchdb.dao.AppAutoScaleStateDAO;
 import org.cloudfoundry.autoscaler.data.couchdb.dao.ApplicationDAO;
 import org.cloudfoundry.autoscaler.data.couchdb.dao.AutoScalerPolicyDAO;
@@ -21,7 +20,6 @@ import org.ektorp.CouchDbConnector;
 
 public class ServerDAOManager extends TypedRepoConnectionManager {
 
-	private static final Logger logger = Logger.getLogger(ServerDAOManager.class);
 	private TriggerRecordDAO triggerRecordDao = null;
 	private BoundAppDAO boundAppDao = null;
 	private ServiceConfigDAO serviceConfigDao = null;
@@ -32,21 +30,17 @@ public class ServerDAOManager extends TypedRepoConnectionManager {
 	private ScalingHistoryDAO scalingHistoryDao = null;
 	private AppAutoScaleStateDAO appAutoScalerStateDao = null;
 
-	public ServerDAOManager(String dbName, String userName, String password, String host,
-			int port, boolean enableSSL, int timeout) {
+	public ServerDAOManager(String dbName, String userName, String password, String host, int port, boolean enableSSL,
+			int timeout) throws Exception {
 		this(dbName, userName, password, host, port, enableSSL, timeout, false);
 	}
 
-	public ServerDAOManager(String dbName, String userName, String password, String host,
-			int port, boolean enableSSL, int timeout, boolean initDesignDocument) {
-		try {
-			CouchDbConnector couchdb = new CouchDbConnectionManager(dbName, userName, password, host, port, enableSSL,
-					timeout).getDb();
-			initRepo(couchdb, initDesignDocument);
+	public ServerDAOManager(String dbName, String userName, String password, String host, int port, boolean enableSSL,
+			int timeout, boolean initDesignDocument) throws Exception {
+		CouchDbConnector couchdb = new CouchDbConnectionManager(dbName, userName, password, host, port, enableSSL,
+				timeout).getDb();
+		initRepo(couchdb, initDesignDocument);
 
-		} catch (Exception e) {
-			logger.error(e.getMessage(), e);
-		}
 	}
 
 	protected void initRepo(CouchDbConnector db, boolean createIfNotExist) {
