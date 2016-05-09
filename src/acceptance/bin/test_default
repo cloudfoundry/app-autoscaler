@@ -2,5 +2,6 @@
 
 $(dirname $0)/test \
   -slowSpecThreshold=120 \
+  -randomizeAllSpecs \
   $@ \
   . api broker app
