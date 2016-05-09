@@ -4,10 +4,10 @@
     "policyTriggers": [
         {
             "metricType": "Memory",
-            "statWindow": 120,
-            "breachDuration": 120,
+            "statWindow": 20,
+            "breachDuration": 20,
             "lowerThreshold": 30,
-            "upperThreshold": 80,
+            "upperThreshold": 50,
             "instanceStepCountDown": 1,
             "instanceStepCountUp": 1,
             "stepDownCoolDownSecs": 120,

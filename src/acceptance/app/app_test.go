@@ -126,7 +126,7 @@ var _ = Describe("AutoScaler Application", func() {
 		})
 
 		It("scales out", func() {
-			totalTime := 6 * time.Minute
+			totalTime := 3  * time.Minute
 			addURL := fmt.Sprintf("https://%s.%s?cmd=add&mode=normal&num=50000", appName, cfg.AppsDomain)
 			finishTime := time.Now().Add(totalTime)
 
@@ -172,7 +172,7 @@ var _ = Describe("AutoScaler Application", func() {
 			})
 
 			It("scales in", func() {
-				totalTime := 4 * time.Minute
+				totalTime := 3 * time.Minute
 				finishTime := time.Now().Add(totalTime)
 
 				// make sure our threshold is < 30%

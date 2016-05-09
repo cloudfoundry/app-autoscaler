@@ -17,7 +17,7 @@ type Config struct {
 }
 
 var (
-	DEFAULT_TIMEOUT      = 30 * time.Second
+	DEFAULT_TIMEOUT      = 60 * time.Second
 	CF_PUSH_TIMEOUT      = 2 * time.Minute
 	LONG_CURL_TIMEOUT    = 2 * time.Minute
 	CF_JAVA_TIMEOUT      = 10 * time.Minute
