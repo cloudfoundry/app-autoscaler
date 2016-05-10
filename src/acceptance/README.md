@@ -39,7 +39,8 @@ cat > integration_config.json <<EOF
   "use_http": false,
 
   "service_name": "CF-AutoScaler",
-  "api_url": "https://autoscalingapi.bosh-lite.com"
+  "api_url": "https://autoscalingapi.bosh-lite.com",
+  "report_interval": 120
 }
 EOF
 export CONFIG=$PWD/integration_config.json
@@ -49,6 +50,7 @@ The full set of config parameters is explained below:
 
 * `service_name` (required): The name of the registered auto-scaler service, use `cf marketplace` to determine the name.
 * `api_url` (required): The url of the API service of the auto-scaler
+* `report_interval` (required): How frequently metrics are collected. This value must match the value configured in your deployment.
 
 * `api` (required): Cloud Controller API endpoint.
 * `admin_user` (required): Name of a user in your CF instance with admin credentials.  This admin user must have the `doppler.firehose` scope if running the `logging` firehose tests.

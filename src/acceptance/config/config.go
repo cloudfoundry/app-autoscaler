@@ -12,8 +12,9 @@ const NODE_APP = "../assets/app/nodeApp"
 
 type Config struct {
 	cfhelpers.Config
-	ServiceName string `json:"service_name"`
-	APIUrl      string `json:"api_url"`
+	ServiceName    string `json:"service_name"`
+	APIUrl         string `json:"api_url"`
+	ReportInterval int    `json:"report_interval"`
 }
 
 var (
@@ -31,6 +32,8 @@ func LoadConfig(t *testing.T) Config {
 		t.Fatalf("Failed to load config, %s", err.Error())
 	}
 
+	validate(t, &config)
+
 	if config.DefaultTimeout > 0 {
 		DEFAULT_TIMEOUT = config.DefaultTimeout * time.Second
 	}
@@ -44,4 +47,16 @@ func LoadConfig(t *testing.T) Config {
 	}
 
 	return config
+}
+
+func validate(t *testing.T, c *Config) {
+	if c.ServiceName == "" {
+		t.Fatal("missing configuration 'service_name'")
+	}
+	if c.APIUrl == "" {
+		t.Fatal("missing configuration 'api_url'")
+	}
+	if c.ReportInterval == 0 {
+		t.Fatal("missing configuration 'report_interval'")
+	}
 }

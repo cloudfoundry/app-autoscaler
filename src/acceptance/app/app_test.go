@@ -120,13 +120,19 @@ var _ = Describe("AutoScaler Application", func() {
 			Expect(cf.Cf("start", appName).Wait(config.CF_PUSH_TIMEOUT)).To(Exit(0))
 			waitForNInstancesRunning(appGUID, instanceCount, config.DEFAULT_TIMEOUT)
 
-			statusCode, err := policy.Update("../assets/file/policy/dynamic.json")
+			schedule, err := ioutil.ReadFile("../assets/file/policy/dynamic.json.template")
+			Expect(err).ToNot(HaveOccurred())
+
+			schedule = bytes.Replace(schedule, []byte("{maxCount}"), []byte{'5'}, 1)
+			schedule = bytes.Replace(schedule, []byte("{reportInterval}"), []byte(strconv.Itoa(cfg.ReportInterval)), -1)
+
+			statusCode, err := policy.UpdateWithText(string(schedule))
 			Expect(err).ToNot(HaveOccurred())
 			Expect(statusCode).To(Equal(http.StatusCreated))
 		})
 
 		It("scales out", func() {
-			totalTime := 3  * time.Minute
+			totalTime := time.Duration(cfg.ReportInterval*2)*time.Second + time.Minute
 			addURL := fmt.Sprintf("https://%s.%s?cmd=add&mode=normal&num=50000", appName, cfg.AppsDomain)
 			finishTime := time.Now().Add(totalTime)
 
@@ -172,7 +178,7 @@ var _ = Describe("AutoScaler Application", func() {
 			})
 
 			It("scales in", func() {
-				totalTime := 3 * time.Minute
+				totalTime := time.Duration(cfg.ReportInterval*2)*time.Second + time.Minute
 				finishTime := time.Now().Add(totalTime)
 
 				// make sure our threshold is < 30%

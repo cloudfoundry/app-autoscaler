@@ -146,6 +146,7 @@ cf bind-service <app> <service_instance>
 Then refer to [API_usage.rst][a] to manage the scaling policy of your application, retrieve metrics and scaling histories.
 
 ## Tips for development
+1. To run acceptance tests faster, reduce the `reportInterval` in your config. You will also need to adjust the same value in your integration config.
 1. Logs are available locally with each application instance. For example, to retreive the logs for the API server, run `cf files AutoScalingAPI app/autoscaling_api.log`. They will roll so there may be additional files to examine.
 1. Depending on where you deploy CouchDB, the AutoScaler service container's
    may not have network connectivity to it. To allow access, create and bind

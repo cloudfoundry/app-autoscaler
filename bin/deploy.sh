@@ -17,6 +17,6 @@ source $envProperties
 
 appDomain=${apiServerURI#*://*.}
 
-cf push AutoScaling -p $appAutoScaler/server/target/server-*.war -d $appDomain
+cf push AutoScaling -p $appAutoScaler/server/target/server-*.war -m 512M -d $appDomain
 cf push AutoScalingAPI -p $appAutoScaler/api/target/api-*.war -d $appDomain
 cf push AutoScalingServiceBroker -p $appAutoScaler/servicebroker/target/servicebroker-*.war -d $appDomain
