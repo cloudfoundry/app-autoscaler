@@ -857,14 +857,14 @@ public class PublicRestApi {
 			ClientResponse cr = webResource.header("Authorization", "Basic " + authorization)
 					.accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);
 			int status_code = cr.getStatus();
-			logger.info(">>>>>> Got status_code: " + status_code + " from Server in getserverinfo ");
+			logger.debug(">>>>>> Got status_code: " + status_code + " from Server in getserverinfo ");
 			if (status_code != HttpServletResponse.SC_OK)
 				if (status_code == HttpServletResponse.SC_UNAUTHORIZED)
 					throw new InternalAuthenticationException("get Application information");
 				else
 					throw new CloudException();
 			String response = cr.getEntity(String.class);
-			logger.info(">>>" + response);
+			logger.debug(">>>" + response);
 			JsonNode jobj = objectMapper.readTree(response);
 			serviceInfo.put("service_id", credentials.get("service_id").asText());
 			serviceInfo.put("server_url", credentials.get("url").asText());

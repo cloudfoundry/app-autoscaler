@@ -430,6 +430,7 @@ public class CloudFoundryManager {
 		return getAppInfoByAppId(appId)[3];
 	}
 
+	@SuppressWarnings("rawtypes")
 	public String[] getAppInfoByAppId(String appId) throws Exception {
 		Map appJsonMap = this.getApplicationByAppId(appId);
 		Map entity = (Map) appJsonMap.get("entity");
@@ -446,6 +447,7 @@ public class CloudFoundryManager {
 
 	}
 
+	@SuppressWarnings("rawtypes")
 	private Map getApplicationByAppId(String appId) throws Exception {
 		String url = this.target + "/v2/apps/" + appId;
 		logger.debug("url:" + url);
@@ -475,11 +477,13 @@ public class CloudFoundryManager {
 		return Integer.parseInt(getAppInfoByAppId(appId)[4]);
 	}
 
+	@SuppressWarnings("rawtypes")
 	public int getRunningInstances(String appId) throws Exception {
 		Map appJsonMap = this.getApplicationSummaryByAppId(appId);
 		return Integer.parseInt(appJsonMap.get("running_instances").toString());
 	}
 
+	@SuppressWarnings("rawtypes")
 	private Map getApplicationSummaryByAppId(String appId) throws Exception {
 		String url = this.target + "/v2/apps/" + appId + "/summary";
 		logger.debug("url:" + url);

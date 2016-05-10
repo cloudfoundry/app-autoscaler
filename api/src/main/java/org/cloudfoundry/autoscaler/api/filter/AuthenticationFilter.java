@@ -2,7 +2,6 @@ package org.cloudfoundry.autoscaler.api.filter;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -16,12 +15,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
-import org.cloudfoundry.autoscaler.common.AppInfoNotFoundException;
-import org.cloudfoundry.autoscaler.common.AppNotFoundException;
-import org.cloudfoundry.autoscaler.common.ClientIDLoginFailedException;
 import org.cloudfoundry.autoscaler.common.util.AuthenticationTool;
-import org.cloudfoundry.autoscaler.common.util.AuthenticationTool.SecurityCheckStatus;
-import org.cloudfoundry.autoscaler.common.util.CloudFoundryManager;
 
 /**
  * Servlet Filter implementation class AuthenticationFilter
@@ -62,18 +56,14 @@ public class AuthenticationFilter implements Filter {
 			else if (authorization.startsWith("bearer "))
 				authorization = authorization.replaceFirst("bearer ", "");
 
-			String userID = null;
+			String userId = null;
 
 			try {
-				userID = AuthenticationTool.getInstance().getUserIDFromToken(authorization);
-				if (userID == null) {
+				userId = AuthenticationTool.getInstance().getuserIdFromToken(authorization);
+				if (userId == null) {
 					httpResp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 					return;
 				}
-			} catch (ServletException e) {
-				logger.error("Get exception: " + e.getClass().getName() + " with message " + e.getMessage());
-				httpResp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-				return;
 			} catch (Exception e) {
 				logger.error("Get exception: " + e.getClass().getName() + " with message " + e.getMessage());
 				httpResp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
@@ -81,8 +71,6 @@ public class AuthenticationFilter implements Filter {
 			}
 
 			String appGuid = null;
-			String orgGuid = null;
-			String spaceGuid = null;
 
 			Matcher matcher = pattern.matcher(uri);
 			if (!matcher.find()) {
@@ -91,36 +79,11 @@ public class AuthenticationFilter implements Filter {
 			}
 
 			appGuid = matcher.group(0).replace("/apps/", "").replace("/", "");
-			try {
-				Map<String, String> orgSpace = CloudFoundryManager.getInstance().getOrgSpaceByAppId(appGuid);
-				orgGuid = orgSpace.get("ORG_GUID");
-				spaceGuid = orgSpace.get("SPACE_GUID");
-			} catch (AppNotFoundException e) {
-				httpResp.setStatus(HttpServletResponse.SC_NOT_FOUND);
-				return;
-			} catch (AppInfoNotFoundException e) {
-				httpResp.setStatus(HttpServletResponse.SC_BAD_REQUEST);
-				return;
-			} catch (ClientIDLoginFailedException e) {
-				logger.error("login UAA with client ID " + e.getClientID() + " failed");
-				httpResp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				return;
-			} catch (Exception e) {
-				logger.error("Get exception: " + e.getClass().getName() + " with message " + e.getMessage());
-				httpResp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				return;
-			}
-
+			
 			logger.debug("Authentication check for appGuid " + appGuid + " with access token: " + authorization);
-
 			try {
-
-				SecurityCheckStatus securityCheckStatus = AuthenticationTool.getInstance().doValidateToken(userID,
-						authorization, orgGuid, spaceGuid);
-
-				logger.debug("Authentication status result: " + securityCheckStatus.toString());
-
-				if (securityCheckStatus == SecurityCheckStatus.SECURITY_CHECK_COMPLETE) {
+				boolean isDeveloper =  AuthenticationTool.getInstance().isUserDeveloperOfAppSpace(userId, authorization, appGuid);		
+				if (isDeveloper) {
 					logger.debug("SecurityCheck succeeded.");
 					filter.doFilter(request, response);
 				} else {
@@ -128,12 +91,8 @@ public class AuthenticationFilter implements Filter {
 					httpResp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 					return;
 				}
-			} catch (ServletException e) {
-				logger.error(e.getMessage(), e);
-				httpResp.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-				return;
-			} catch (IOException e) {
-				logger.error(e.getMessage(), e);
+			} catch (Exception e) {
+				logger.error("Get exception: " + e.getClass().getName() + " with message " + e.getMessage());
 				httpResp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				return;
 			}
