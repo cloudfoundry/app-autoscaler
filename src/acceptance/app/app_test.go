@@ -132,7 +132,7 @@ var _ = Describe("AutoScaler Application", func() {
 		})
 
 		It("scales out", func() {
-			totalTime := time.Duration(cfg.ReportInterval*2)*time.Second + time.Minute
+			totalTime := time.Duration(cfg.ReportInterval*2)*time.Second + 2*time.Minute
 			addURL := fmt.Sprintf("https://%s.%s?cmd=add&mode=normal&num=50000", appName, cfg.AppsDomain)
 			finishTime := time.Now().Add(totalTime)
 
