@@ -173,7 +173,7 @@ Restart the applications if needed
 This project is released under version 2.0 of the [Apache License][l].
 
 
-[a]: https://github.com/cfibmers/open-Autoscaler/blob/master/docs/API_usage.rst
+[a]: docs/API_usage.rst
 [b]: https://maven.apache.org/
 [c]: http://couchdb.apache.org/
 [d]: http://www.eclipse.org/m2e/
