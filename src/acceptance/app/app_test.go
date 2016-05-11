@@ -63,9 +63,9 @@ var _ = Describe("AutoScaler Application", func() {
 
 	Context("with a recurring schedule", func() {
 		BeforeEach(func() {
-			buildpack = cfg.JavaBuildpackName
-			appBits = config.JAVA_APP
-			memory = config.DEFAULT_MEMORY_LIMIT
+			buildpack = cfg.NodejsBuildpackName
+			appBits = config.NODE_APP
+			memory = "128M"
 			instanceCount = 1
 		})
 
@@ -137,22 +137,26 @@ var _ = Describe("AutoScaler Application", func() {
 			finishTime := time.Now().Add(totalTime)
 
 			var previousMemory, newMemory, quota uint64
+			added := false
 			Eventually(func() int {
 				// add memory if we are < 50% used
-				if previousMemory > 0 && quota/previousMemory > 1 {
+				if previousMemory == 0 || quota/previousMemory > 1 {
 					status, _, err := helpers.Curl("-k", "-s", addURL)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(status).To(Equal(http.StatusOK))
+					added = true
 				}
 
 				remaining := finishTime.Sub(time.Now())
 
-				// wait until memory bumps
-				Eventually(func() uint64 {
-					newMemory, quota = memoryUsed(appGUID, 0, remaining)
-					return newMemory
-				}, remaining, 15*time.Second).Should(BeNumerically(">", previousMemory))
-				previousMemory = newMemory
+				if added {
+					// wait until memory bumps
+					Eventually(func() uint64 {
+						newMemory, quota = memoryUsed(appGUID, 0, remaining)
+						return newMemory
+					}, remaining, 15*time.Second).Should(BeNumerically(">", previousMemory))
+					previousMemory = newMemory
+				}
 
 				remaining = finishTime.Sub(time.Now())
 				return runningInstances(appGUID, remaining)
