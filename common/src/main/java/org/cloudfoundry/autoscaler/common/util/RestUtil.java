@@ -93,7 +93,8 @@ public class RestUtil {
 
 						@Override
 						public boolean verify(String arg0, SSLSession arg1) {
-							return false;
+							// Returning true to create all-trusting host name verifier
+							return true;
 						}
 
 					}, context));
