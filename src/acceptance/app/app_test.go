@@ -4,10 +4,9 @@ import (
 	"acceptance/api"
 	"acceptance/config"
 	"acceptance/helpers"
-	"bytes"
+	"acceptance/template"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"math"
 	"net/http"
 	"strconv"
@@ -70,16 +69,16 @@ var _ = Describe("AutoScaler Application", func() {
 		})
 
 		JustBeforeEach(func() {
-			schedule, err := ioutil.ReadFile("../assets/file/policy/recurringSchedule.json.template")
-			Expect(err).ToNot(HaveOccurred())
-
 			t := time.Now().UTC()
 			start := t.Format("15:04") // Hour:Minute
 			t = t.Add(5 * time.Minute)
 			end := t.Format("15:04") // Hour:Minute
 
-			schedule = bytes.Replace(schedule, []byte("{startTimeValue}"), []byte(start), 1)
-			schedule = bytes.Replace(schedule, []byte("{endTimeValue}"), []byte(end), 1)
+			var values = template.SetStringValue(template.StartTimeValue, start, nil)
+			values = template.SetStringValue(template.EndTimeValue, end, values)
+
+			schedule, err := template.GeneratePolicy("../assets/file/policy/recurringSchedule.json.template", values)
+			Expect(err).ToNot(HaveOccurred())
 
 			policy = api.NewPolicy(cfg.APIUrl, appGUID)
 			Expect(cf.Cf("start", appName).Wait(config.CF_PUSH_TIMEOUT)).To(Exit(0))
@@ -120,11 +119,11 @@ var _ = Describe("AutoScaler Application", func() {
 			Expect(cf.Cf("start", appName).Wait(config.CF_PUSH_TIMEOUT)).To(Exit(0))
 			waitForNInstancesRunning(appGUID, instanceCount, config.DEFAULT_TIMEOUT)
 
-			schedule, err := ioutil.ReadFile("../assets/file/policy/dynamic.json.template")
-			Expect(err).ToNot(HaveOccurred())
+			var values = template.SetIntValue(template.MaxCount, 5, nil)
+			values = template.SetIntValue(template.ReportInterval, cfg.ReportInterval, values)
 
-			schedule = bytes.Replace(schedule, []byte("{maxCount}"), []byte{'5'}, 1)
-			schedule = bytes.Replace(schedule, []byte("{reportInterval}"), []byte(strconv.Itoa(cfg.ReportInterval)), -1)
+			schedule, err := template.GeneratePolicy("../assets/file/policy/dynamic.json.template", values)
+			Expect(err).ToNot(HaveOccurred())
 
 			statusCode, err := policy.UpdateWithText(string(schedule))
 			Expect(err).ToNot(HaveOccurred())

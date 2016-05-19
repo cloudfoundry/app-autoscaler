@@ -2,6 +2,7 @@ package api
 
 import (
 	"acceptance/config"
+	"acceptance/template"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -60,14 +61,18 @@ var _ = Describe("AutoScaler API", func() {
 		})
 
 		Context("with a valid policy", func() {
-			updatePolicy := func(policyFile string, expectedCode int) {
-				statusCode, err := policy.Update(policyFile)
+			updatePolicy := func(policyTemplateFile string, expectedCode int) {
+
+				policy_text, err := template.GeneratePolicy(policyTemplateFile, nil)
+				Expect(err).ToNot(HaveOccurred())
+
+				statusCode, err := policy.UpdateWithText(string(policy_text))
 				Expect(err).ToNot(HaveOccurred())
 				Expect(statusCode).To(Equal(expectedCode))
 			}
 
 			BeforeEach(func() {
-				updatePolicy("../assets/file/policy/all.json", http.StatusCreated)
+				updatePolicy("../assets/file/policy/all.json.template", http.StatusCreated)
 			})
 
 			AfterEach(func() {
@@ -84,13 +89,13 @@ var _ = Describe("AutoScaler API", func() {
 
 			It("updates the policy", func() {
 				By("dynamic")
-				updatePolicy("../assets/file/policy/dynamic.json", http.StatusOK)
+				updatePolicy("../assets/file/policy/dynamic.json.template", http.StatusOK)
 
 				By("recurring")
-				updatePolicy("../assets/file/policy/recurringSchedule.json", http.StatusOK)
+				updatePolicy("../assets/file/policy/recurringSchedule.json.template", http.StatusOK)
 
 				By("specific date")
-				updatePolicy("../assets/file/policy/specificDate.json", http.StatusOK)
+				updatePolicy("../assets/file/policy/specificDate.json.template", http.StatusOK)
 			})
 		})
 
