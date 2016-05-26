@@ -338,7 +338,11 @@ public class CloudFoundryManager {
 	private static String getCFAPIUrl() {
 
 		String key = Constants.CFURL;
-		String cfUrl = System.getenv(key);
+		String cfUrl = ConfigManager.get(key);
+
+		if ((cfUrl == null) || cfUrl.isEmpty()) {
+			cfUrl = System.getenv(key);
+		}
 
 		if ((cfUrl == null) || cfUrl.isEmpty()) {
 			try {
@@ -354,10 +358,6 @@ public class CloudFoundryManager {
 			} catch (JSONException e) {
 				logger.error(e.getMessage(), e);
 			}
-		}
-
-		if ((cfUrl == null) || cfUrl.isEmpty()) {
-			cfUrl = ConfigManager.get(key);
 		}
 
 		return cfUrl;
