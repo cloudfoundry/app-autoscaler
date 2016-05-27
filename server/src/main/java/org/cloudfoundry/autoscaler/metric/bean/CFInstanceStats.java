@@ -87,7 +87,7 @@ public class CFInstanceStats {
 
     private static Date parseDate(String date) {
         try {
-            return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss ZZZZZ").parse(date);
+            return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date);
         } catch (ParseException e) {
         }
         return null;
@@ -148,7 +148,10 @@ public class CFInstanceStats {
         private Date time;
 
         public Usage(Map<String, Object> attributes) {
-            this.time = CFInstanceStats.parseDate((String) parse(String.class, attributes.get("time")));
+            String rawTime = (String) parse(String.class, attributes.get("time"));
+            int endPoint = rawTime.indexOf(".") + 4;
+            String adjustedTime = endPoint > 3 ? rawTime.substring(0, endPoint) : rawTime;
+            this.time = CFInstanceStats.parseDate(adjustedTime);
             this.cpu = ((Double) parse(Double.class, attributes.get("cpu"))).doubleValue();
             this.disk = ((Integer) parse(Integer.class, attributes.get("disk"))).intValue();
             this.mem = ((Double) parse(Double.class, attributes.get("mem"))).doubleValue();
