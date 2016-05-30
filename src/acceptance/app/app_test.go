@@ -74,8 +74,9 @@ var _ = Describe("AutoScaler Application", func() {
 			t = t.Add(5 * time.Minute)
 			end := t.Format("15:04") // Hour:Minute
 
-			var values = template.SetStringValue(template.StartTimeValue, start, nil)
-			values = template.SetStringValue(template.EndTimeValue, end, values)
+			values := template.TemplateValues{}
+			values.SetString(template.StartTimeValue, start)
+			values.SetString(template.EndTimeValue, end)
 
 			schedule, err := template.GeneratePolicy("../assets/file/policy/recurringSchedule.json.template", values)
 			Expect(err).ToNot(HaveOccurred())
@@ -119,8 +120,9 @@ var _ = Describe("AutoScaler Application", func() {
 			Expect(cf.Cf("start", appName).Wait(config.CF_PUSH_TIMEOUT)).To(Exit(0))
 			waitForNInstancesRunning(appGUID, instanceCount, config.DEFAULT_TIMEOUT)
 
-			var values = template.SetIntValue(template.MaxCount, 5, nil)
-			values = template.SetIntValue(template.ReportInterval, cfg.ReportInterval, values)
+			values := template.TemplateValues{}
+			values.SetInt(template.MaxCount, 5)
+			values.SetInt(template.ReportInterval, cfg.ReportInterval)
 
 			schedule, err := template.GeneratePolicy("../assets/file/policy/dynamic.json.template", values)
 			Expect(err).ToNot(HaveOccurred())

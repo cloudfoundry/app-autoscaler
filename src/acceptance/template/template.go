@@ -6,8 +6,10 @@ import (
 	"strconv"
 )
 
+type TemplateValues map[string]string
+
 // Parameter names to replace them to a value.
-var (
+const (
 	EndTimeValue   = "{endTimeValue}"
 	MaxCount       = "{maxCount}"
 	StartDateValue = "{startDateValue}"
@@ -15,7 +17,7 @@ var (
 	ReportInterval = "{reportInterval}"
 )
 
-var defaultValuesForPolicy = map[string]string{
+var defaultValuesForPolicy = TemplateValues{
 	MaxCount:       "5",
 	ReportInterval: "120",
 	StartTimeValue: "00:00",
@@ -23,7 +25,7 @@ var defaultValuesForPolicy = map[string]string{
 	EndTimeValue:   "08:00",
 }
 
-func GeneratePolicy(template_file string, values map[string]string) ([]byte, error) {
+func GeneratePolicy(template_file string, values TemplateValues) ([]byte, error) {
 	template, err := ioutil.ReadFile(template_file)
 	if err != nil {
 		return nil, err
@@ -38,8 +40,8 @@ func GeneratePolicy(template_file string, values map[string]string) ([]byte, err
 	return template, nil
 }
 
-func mergeValuesAndDefaultValues(values map[string]string) map[string]string {
-	var merge_values = map[string]string{}
+func mergeValuesAndDefaultValues(values TemplateValues) TemplateValues {
+	var merge_values = TemplateValues{}
 	if values == nil {
 		return defaultValuesForPolicy
 	}
@@ -56,19 +58,10 @@ func mergeValuesAndDefaultValues(values map[string]string) map[string]string {
 	return merge_values
 }
 
-func setValue(key string, value string, values map[string]string) map[string]string {
-	if values == nil {
-		values = map[string]string{}
-	}
-	values[key] = value
-	return values
-}
-func SetStringValue(key string, value string, values map[string]string) map[string]string {
-	new_values := setValue(key, value, values)
-	return new_values
+func (values *TemplateValues) SetString(key string, value string) {
+	(*values)[key] = value
 }
 
-func SetIntValue(key string, value int, values map[string]string) map[string]string {
-	new_values := setValue(key, strconv.Itoa(value), values)
-	return new_values
+func (values *TemplateValues) SetInt(key string, value int) {
+	(*values)[key] = strconv.Itoa(value)
 }
