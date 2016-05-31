@@ -58,10 +58,10 @@ func mergeValuesAndDefaultValues(values TemplateValues) TemplateValues {
 	return merge_values
 }
 
-func (values *TemplateValues) SetString(key string, value string) {
-	(*values)[key] = value
+func (values TemplateValues) SetString(key string, value string) {
+	values[key] = value
 }
 
-func (values *TemplateValues) SetInt(key string, value int) {
-	(*values)[key] = strconv.Itoa(value)
+func (values TemplateValues) SetInt(key string, value int) {
+	values[key] = strconv.Itoa(value)
 }
