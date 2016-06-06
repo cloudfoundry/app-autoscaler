@@ -19,8 +19,8 @@
         {
             "startDate": "{startDateValue}",
             "startTime": "{startTimeValue}",
-            "endDate": "startDateValue",
-            "endTime": "endTimeValue",
+            "endDate": "{startDateValue}",
+            "endTime": "{endTimeValue}",
             "minInstCount": "2"
         },
         {
