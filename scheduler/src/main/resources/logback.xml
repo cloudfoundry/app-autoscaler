@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE xml>
+<configuration>
+
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+			<pattern>%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} -
+				%msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<!-- -==========Spring========== -->
+	<logger name="org.springframework">
+		<level value="error" />
+	</logger>
+
+	<!-- -==========Quartz========== -->
+	<logger name="org.quartz">
+		<level value="error" />
+	</logger>
+
+	<!-- ===========Hibernate========== -->
+	<!-- Log SQL DML statements as they are executed -->
+	<logger name="org.hibernate.SQL">
+		<level value="debug" />
+	</logger>
+	<!-- Log everything (a lot of information, but very useful for troubleshooting) -->
+	<logger name="org.hibernate">
+		<level value="error" />
+	</logger>
+
+	<root level="info">
+		<appender-ref ref="STDOUT" />
+	</root>
+
+</configuration>
