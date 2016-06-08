@@ -1,0 +1,18 @@
+--- 
+databaseChangeLog:
+   - changeSet:
+      id: 1
+      author: SAP
+      changes:
+        - createTable:
+            tableName: policy_json
+            columns:
+              - column:
+                  name: app_id
+                  type: varchar(50)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: policy_json
+                  type: json
