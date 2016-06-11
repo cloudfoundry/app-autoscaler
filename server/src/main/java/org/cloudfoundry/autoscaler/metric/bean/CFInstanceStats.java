@@ -7,7 +7,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 @SuppressWarnings({ "rawtypes", "unchecked" })
@@ -85,9 +86,9 @@ public class CFInstanceStats {
         return (T) defaultValue;
     }
 
-    private static Date parseDate(String date) {
+    private static Date parseDate(String dateFormat, String date) {
         try {
-            return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(date);
+            return new SimpleDateFormat(dateFormat).parse(date);
         } catch (ParseException e) {
         }
         return null;
@@ -148,10 +149,7 @@ public class CFInstanceStats {
         private Date time;
 
         public Usage(Map<String, Object> attributes) {
-            String rawTime = (String) parse(String.class, attributes.get("time"));
-            int endPoint = rawTime.indexOf(".") + 4;
-            String adjustedTime = endPoint > 3 ? rawTime.substring(0, endPoint) : rawTime;
-            this.time = CFInstanceStats.parseDate(adjustedTime);
+            this.time = parseDateBasedOnTimeStamp((String) parse(String.class, attributes.get("time")));
             this.cpu = ((Double) parse(Double.class, attributes.get("cpu"))).doubleValue();
             this.disk = ((Integer) parse(Integer.class, attributes.get("disk"))).intValue();
             this.mem = ((Double) parse(Double.class, attributes.get("mem"))).doubleValue();
@@ -171,6 +169,53 @@ public class CFInstanceStats {
 
         public Date getTime() {
             return (Date)this.time.clone();
+        }
+
+        private Date parseDateBasedOnTimeStamp(String rawDate) {
+            // The regex in something closer to English:
+            // D4-D2-D2[T ]D2:D2:D2{.D9}?TZ...
+            Pattern p = Pattern.compile("\\A(\\d{4}-\\d{2}-\\d{2})([ T])(\\d{2}:\\d{2}:\\d{2})(?:(\\.\\d{9})?)(.*)\\z");
+            Matcher m = p.matcher(rawDate);
+            if (!m.find()) {
+                return null;
+            }
+            String actualDate = m.group(1) + m.group(2) + m.group(3);
+            String dateFormat = "yyyy-MM-dd";
+            // T or space?
+            if (m.group(2).equals("T")) {
+                dateFormat += "'T'";
+            } else {
+                dateFormat += m.group(2);
+            }
+            dateFormat += "HH:mm:ss";
+            // milliseconds?
+            if (m.group(4) != null) {
+                actualDate += m.group(4).substring(0, 4);
+                dateFormat += ".SSS";
+            }
+            // Do a separate part on the timezone part
+            String timezonePart = m.group(5);
+            // Handle either "Z" or "\s\d{4}
+            if (timezonePart.length() > 0) {
+                if (timezonePart.equalsIgnoreCase("Z")) {
+                    dateFormat += "'" + timezonePart + "'";
+                    actualDate += timezonePart;
+                } else {
+                    Pattern pz = Pattern.compile("\\A( )?([-+]\\d{4})?\\z");
+                    Matcher mz = pz.matcher(timezonePart);
+                    if (mz.find()) {
+                        if (mz.group(1) != null) {
+                            dateFormat += mz.group(1);
+                            actualDate += mz.group(1);
+                        }
+                        if (mz.group(2) != null) {
+                            dateFormat += "Z";
+                            actualDate += mz.group(2);
+                        }
+                    }
+                }
+            }
+            return CFInstanceStats.parseDate(dateFormat, actualDate);
         }
     }
 }
