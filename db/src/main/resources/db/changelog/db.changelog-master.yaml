@@ -1,8 +1,16 @@
 --- 
 databaseChangeLog:
+   - property:
+      name: policy_json.type
+      value: json
+      dbms: postgresql
+   - property:
+      name: policy_json.type
+      value: text
+      dbms: h2
    - changeSet:
       id: 1
-      author: SAP
+      author: pradyutsarma
       changes:
         - createTable:
             tableName: policy_json
@@ -15,4 +23,4 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: policy_json
-                  type: json
+                  type: ${policy_json.type}
