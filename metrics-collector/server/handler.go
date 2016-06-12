@@ -13,6 +13,7 @@ import (
 
 const PATH_MEMORY_METRIC = "/v1/apps/{appid}/metrics/memory"
 const ROUTE_NAME_MEMORY_METRIC = "memory-metric"
+const TOKEN_TYPE_BEARER = "bearer"
 
 type Handler struct {
 	noaa     *consumer.Consumer
@@ -52,7 +53,7 @@ func (h *Handler) GetMemoryMetric(w http.ResponseWriter, r *http.Request) {
 	Logger.Debug("request-to-get-memory-metric", map[string]interface{}{"Request": DumpRequest(r)})
 
 	appId := mux.Vars(r)["appid"]
-	containerMetrics, err := h.noaa.ContainerMetrics(appId, "bearer "+h.cfClient.GetTokens().AccessToken)
+	containerMetrics, err := h.noaa.ContainerMetrics(appId, TOKEN_TYPE_BEARER+" "+h.cfClient.GetTokens().AccessToken)
 
 	if err == nil {
 		Logger.Debug("get-container-metrics-from-doppler", map[string]interface{}{"container-metrics": containerMetrics})

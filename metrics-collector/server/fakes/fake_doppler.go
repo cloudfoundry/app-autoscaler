@@ -1,6 +1,7 @@
 package fakes
 
 import (
+	. "github.com/cloudfoundry-incubator/app-autoscaler/metrics-collector/server"
 	"github.com/cloudfoundry/sonde-go/events"
 	"github.com/gogo/protobuf/proto"
 	"github.com/gorilla/mux"
@@ -10,7 +11,6 @@ import (
 )
 
 const PATH_DOPPLER_CONTAINER_METRICS = "/apps/{appid}/containermetrics"
-
 const FAKE_DOPPLER_ACCESS_TOKEN = "fake-access-token"
 const FAKE_DOPPLER_URL = "wss://www.fake.com:4443"
 const FAKE_APP_ID = "06ed2d79-e637-600d-8c6f-4b23b230c1d9"
@@ -25,7 +25,7 @@ func handleContainerMetrics(w http.ResponseWriter, r *http.Request) {
 
 	token := r.Header.Get("Authorization")
 
-	if token != "bearer "+FAKE_DOPPLER_ACCESS_TOKEN {
+	if token != TOKEN_TYPE_BEARER+" "+FAKE_DOPPLER_ACCESS_TOKEN {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}

@@ -13,8 +13,10 @@ import (
 )
 
 const (
-	PATH_CF_INFO = "/v2/info"
-	PATH_CF_AUTH = "/oauth/token"
+	PATH_CF_INFO                  = "/v2/info"
+	PATH_CF_AUTH                  = "/oauth/token"
+	GRANT_TYPE_PASSWORD           = "password"
+	GRANT_TYPE_CLIENT_CREDENTIALS = "client_credentials"
 )
 
 type Tokens struct {
@@ -85,15 +87,15 @@ func (c *cfClient) Login() error {
 	grantType := strings.ToLower(c.config.GrantType)
 
 	var form url.Values
-	if grantType == "password" {
+	if grantType == GRANT_TYPE_PASSWORD {
 		form = url.Values{
-			"grant_type": {"password"},
+			"grant_type": {GRANT_TYPE_PASSWORD},
 			"username":   {c.config.User},
 			"password":   {c.config.Pass},
 		}
-	} else if grantType == "client_credentials" {
+	} else if grantType == GRANT_TYPE_CLIENT_CREDENTIALS {
 		form = url.Values{
-			"grant_type":    {"client_credentials"},
+			"grant_type":    {GRANT_TYPE_CLIENT_CREDENTIALS},
 			"client_id":     {c.config.ClientId},
 			"client_secret": {c.config.Secret},
 		}
@@ -106,7 +108,7 @@ func (c *cfClient) Login() error {
 	headers["charset"] = "utf-8"
 
 	var token string
-	if grantType == "password" {
+	if grantType == GRANT_TYPE_PASSWORD {
 		token = "Basic Y2Y6"
 	} else {
 		token = c.config.ClientId + ":" + c.config.Secret

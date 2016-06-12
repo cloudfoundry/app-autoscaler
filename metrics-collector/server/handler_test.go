@@ -52,7 +52,7 @@ var _ = Describe("Handler", func() {
 				cfc.Login()
 			})
 
-			It("should return have token and endpoint populated", func() {
+			It("should have token and endpoint populated", func() {
 				Expect(handler.GetDopplerAddr()).To(Equal(fakes.FAKE_DOPPLER_URL))
 				Expect(handler.GetAccessToken()).To(Equal(fakes.FAKE_DOPPLER_ACCESS_TOKEN))
 			})

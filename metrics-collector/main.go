@@ -28,8 +28,6 @@ func main() {
 		}
 	}
 
-	fmt.Println(conf.ToString())
-
 	err = InitailizeLogger(&conf.Logging)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to intialize logger: %s\n", err.Error())

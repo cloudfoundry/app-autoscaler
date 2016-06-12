@@ -26,7 +26,7 @@ var _ = Describe("CfClient", func() {
 			BeforeEach(func() {
 				conf = fakes.FakeCfConfig
 				conf.Api = testApiUrl
-				conf.GrantType = "password"
+				conf.GrantType = GRANT_TYPE_PASSWORD
 			})
 
 			It("should not error, and get correct tokens and endpoints", func() {
@@ -43,7 +43,7 @@ var _ = Describe("CfClient", func() {
 			BeforeEach(func() {
 				conf = fakes.FakeCfConfig
 				conf.Api = testApiUrl
-				conf.GrantType = "client_credentials"
+				conf.GrantType = GRANT_TYPE_CLIENT_CREDENTIALS
 			})
 
 			It("should not error, and get correct endpoints and tokens", func() {
@@ -90,7 +90,7 @@ var _ = Describe("CfClient", func() {
 			BeforeEach(func() {
 				conf = fakes.FakeCfConfig
 				conf.Api = testApiUrl
-				conf.GrantType = "password"
+				conf.GrantType = GRANT_TYPE_PASSWORD
 				conf.Pass = "not-exist-password"
 			})
 
@@ -105,7 +105,7 @@ var _ = Describe("CfClient", func() {
 			BeforeEach(func() {
 				conf = fakes.FakeCfConfig
 				conf.Api = testApiUrl
-				conf.GrantType = "password"
+				conf.GrantType = GRANT_TYPE_PASSWORD
 				conf.User = "not-exist-user"
 			})
 
@@ -120,7 +120,7 @@ var _ = Describe("CfClient", func() {
 			BeforeEach(func() {
 				conf = fakes.FakeCfConfig
 				conf.Api = testApiUrl
-				conf.GrantType = "client_credentials"
+				conf.GrantType = GRANT_TYPE_CLIENT_CREDENTIALS
 				conf.ClientId = "not-exist-client-id"
 			})
 
@@ -135,7 +135,7 @@ var _ = Describe("CfClient", func() {
 			BeforeEach(func() {
 				conf = fakes.FakeCfConfig
 				conf.Api = testApiUrl
-				conf.GrantType = "client_credentials"
+				conf.GrantType = GRANT_TYPE_CLIENT_CREDENTIALS
 				conf.ClientId = "not-exist-client-secret"
 			})
 

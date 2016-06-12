@@ -1,6 +1,6 @@
 cf:
   api: "https://api.bosh-lite.com"
-  grant_type: "password"
+  grant_type: "client_credentials"
   user: "admin"
   pass: "admin"
   client_id: "admin"
@@ -8,6 +8,6 @@ cf:
 server:
   port: 8080
 logging:
-  level: "DEBUG"
+  level: "debug"
   file: "logs/mc.log"
   log_to_stdout: true
