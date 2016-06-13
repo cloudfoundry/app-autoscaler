@@ -1,9 +1,0 @@
-src/**/.DS_Store
-
-/.classpath
-/.project
-/.settings
-/*.log
-/build
-/target
-/WebContent
