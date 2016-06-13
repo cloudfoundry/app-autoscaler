@@ -12,10 +12,7 @@
 	</properties>
 
 	<modules>
-		<module>common</module>
-		<module>api</module>
-		<module>server</module>
-		<module>servicebroker</module>
+		<module>db</module>
 	</modules>
 
 	<build>
