@@ -1,0 +1,14 @@
+env:
+  DB_URI : postgres://postgres:postgres@10.0.2.2:5432/autoscale
+applications:
+- name: autoscaler-db
+  memory: 1G
+  instances: 1
+  host: autoscaler-db
+  path: db/target/db-1.0-SNAPSHOT.war
+  buildpack: https://github.com/cloudfoundry/java-buildpack.git#v3.7
+- name: autoscaler-api
+  memory: 1G
+  instances: 1
+  host: autoscaler-api
+  path: api/
