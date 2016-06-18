@@ -19,17 +19,17 @@ func NewContainerMetric(appId string, index int32, cpu float64, memory uint64, d
 }
 
 var _ = Describe("Metrics", func() {
-	Describe("get memory metric from container metrics", func() {
+	Describe("GetMemoryMetricFromContainerMetrics", func() {
 		var (
 			containerMetrics []*events.ContainerMetric
-			metric           Metric
+			metric           *Metric
 		)
 
 		JustBeforeEach(func() {
 			metric = GetMemoryMetricFromContainerMetrics("app-id", containerMetrics)
 		})
 
-		Context("when no metrics included", func() {
+		Context("when metrics is empty", func() {
 
 			BeforeEach(func() {
 				containerMetrics = []*events.ContainerMetric{}
@@ -43,7 +43,7 @@ var _ = Describe("Metrics", func() {
 			})
 		})
 
-		Context("when metrics are not from the given app", func() {
+		Context("when no metric is from the given app", func() {
 			BeforeEach(func() {
 				containerMetrics = []*events.ContainerMetric{
 					NewContainerMetric("different-app-id", 0, 12.11, 622222, 233300000),
@@ -60,24 +60,7 @@ var _ = Describe("Metrics", func() {
 			})
 		})
 
-		Context("when all metrics from the given app", func() {
-			BeforeEach(func() {
-				containerMetrics = []*events.ContainerMetric{
-					NewContainerMetric("app-id", 0, 12.11, 622222, 233300000),
-					NewContainerMetric("app-id", 1, 31.21, 23662, 3424553333),
-					NewContainerMetric("app-id", 2, 0.211, 88623692, 9876384949),
-				}
-			})
-
-			It("should return all the memory metrics", func() {
-				Expect(metric).NotTo(BeNil())
-				Expect(metric.AppId).To(Equal("app-id"))
-				Expect(metric.Name).To(Equal(MEMORY_METRIC_NAME))
-				Expect(len(metric.Instances)).To(Equal(3))
-			})
-		})
-
-		Context("when metrics from both  given app and other apps", func() {
+		Context("when metrics from both given app and other apps", func() {
 			BeforeEach(func() {
 				containerMetrics = []*events.ContainerMetric{
 					NewContainerMetric("app-id", 0, 12.11, 622222, 233300000),
@@ -90,6 +73,7 @@ var _ = Describe("Metrics", func() {
 				Expect(metric).NotTo(BeNil())
 				Expect(metric.AppId).To(Equal("app-id"))
 				Expect(metric.Name).To(Equal(MEMORY_METRIC_NAME))
+				Expect(len(metric.Instances)).To(Equal(2))
 				Expect(metric.Instances).To(ConsistOf(InstanceMetric{Index: 0, Value: "622222"}, InstanceMetric{Index: 1, Value: "23662"}))
 			})
 		})

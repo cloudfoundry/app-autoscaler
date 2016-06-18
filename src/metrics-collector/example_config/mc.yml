@@ -1,13 +1,9 @@
 cf:
   api: "https://api.bosh-lite.com"
-  grant_type: "client_credentials"
+  grant_type: "password"
   user: "admin"
   pass: "admin"
-  client_id: "admin"
-  secret: "admin-secret"
 server:
   port: 8080
 logging:
   level: "debug"
-  file: "logs/mc.log"
-  log_to_stdout: true

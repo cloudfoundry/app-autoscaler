@@ -3,19 +3,28 @@ package server_test
 import (
 	"metrics-collector/cf"
 	"metrics-collector/metrics"
+	"metrics-collector/mhttp"
 	. "metrics-collector/server"
 	"metrics-collector/server/fakes"
-	"metrics-collector/util"
 
+	"github.com/cloudfoundry/sonde-go/events"
+	"github.com/gogo/protobuf/proto"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/ghttp"
+	"github.com/pivotal-golang/lager"
+
+	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"math/rand"
+	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"strings"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 )
+
+const TEST_PATH_MEMORY_METRICS = "/v1/apps/test-app-id/metrics/memory"
+const TEST_PATH_CONTAINER_METRICS = "/apps/test-app-id/containermetrics"
 
 var _ = Describe("Handler", func() {
 
@@ -23,53 +32,46 @@ var _ = Describe("Handler", func() {
 		cfc         cf.CfClient
 		handler     *Handler
 		testServer  *httptest.Server
+		fakeDoppler *ghttp.Server
 		method      string
 		url         string
-		accessToken string
-		dopplerUrl  string
-		appId       string
 		resp        *http.Response
 		err         error
 	)
 
+	BeforeEach(func() {
+		fakeDoppler = ghttp.NewServer()
+		cfc = fakes.NewFakeCfClient("test-access-token", strings.Replace(fakeDoppler.URL(), "http", "ws", 1))
+		cfc.Login()
+
+		logger := lager.NewLogger("handler-test")
+		//logger.RegisterSink(lager.NewWriterSink(os.Stdout, lager.DEBUG))
+
+		handler = NewHandler(cfc, logger)
+		testServer = httptest.NewServer(handler)
+
+	})
+
+	AfterEach(func() {
+		if fakeDoppler != nil {
+			fakeDoppler.Close()
+		}
+
+		testServer.Close()
+	})
+
 	Describe("NewHandler", func() {
-		JustBeforeEach(func() {
-			handler = NewHandler(cfc)
+		It("creates a http handler", func() {
+			Expect(handler.ServeHTTP).To(BeAssignableToTypeOf(http.NotFoundHandler()))
 		})
 	})
 
 	Describe("ServeHttp", func() {
-		BeforeEach(func() {
-			cfc = fakes.NewCfClient(fakes.FAKE_DOPPLER_ACCESS_TOKEN, fakes.FAKE_DOPPLER_URL)
-			cfc.Login()
-
-			handler = NewHandler(cfc)
-			testServer = httptest.NewServer(handler)
-
-		})
-
-		AfterEach(func() {
-			testServer.Close()
-		})
-
 		JustBeforeEach(func() {
-			resp, err = util.DoRequest(method, url, "", map[string]string{}, nil)
+			resp, err = mhttp.DoRequest(method, url, "", map[string]string{}, nil)
 		})
 
-		Context("when request the wrong server", func() {
-
-			BeforeEach(func() {
-				url = "http://www.not-exist.com" + strings.Replace(PATH_MEMORY_METRIC, "{appid}", fakes.FAKE_APP_ID, -1)
-				method = "GET"
-			})
-
-			It("should err", func() {
-				Expect(err).NotTo(BeNil())
-			})
-		})
-
-		Context("when request the wrong path", func() {
-
+		Context("when requesting the wrong path", func() {
 			BeforeEach(func() {
 				url = "http://" + testServer.Listener.Addr().String() + "/not-exist-path"
 				method = "GET"
@@ -81,10 +83,9 @@ var _ = Describe("Handler", func() {
 			})
 		})
 
-		Context("when request the wrong method", func() {
-
+		Context("when requesting the wrong method", func() {
 			BeforeEach(func() {
-				url = "http://" + testServer.Listener.Addr().String() + strings.Replace(PATH_MEMORY_METRIC, "{appid}", fakes.FAKE_APP_ID, -1)
+				url = "http://" + testServer.Listener.Addr().String() + TEST_PATH_MEMORY_METRICS
 				method = "PUT"
 			})
 
@@ -93,87 +94,176 @@ var _ = Describe("Handler", func() {
 				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
 			})
 		})
+
 	})
 
 	Describe("GetMemoryMetric", func() {
-
 		JustBeforeEach(func() {
-			cfc = fakes.NewCfClient(accessToken, dopplerUrl)
-			cfc.Login()
-
-			handler = NewHandler(cfc)
-			testServer = httptest.NewServer(handler)
-
-			url = "http://" + testServer.Listener.Addr().String() + strings.Replace(PATH_MEMORY_METRIC, "{appid}", appId, -1)
-			resp, err = util.DoRequest("GET", url, "", map[string]string{}, nil)
+			url = "http://" + testServer.Listener.Addr().String() + TEST_PATH_MEMORY_METRICS
+			resp, err = mhttp.DoRequest("GET", url, "", map[string]string{}, nil)
 		})
 
-		AfterEach(func() {
-			testServer.Close()
-		})
-
-		Context("when doppler address is not valid", func() {
+		Context("when doppler server fails", func() {
 			BeforeEach(func() {
-				accessToken = fakes.FAKE_DOPPLER_ACCESS_TOKEN
-				dopplerUrl = "ws://www.not-exist.com"
-				appId = fakes.FAKE_APP_ID
+				fakeDoppler.Close()
+				fakeDoppler = nil
 			})
 
-			It("should not error and return 500", func() {
+			It("should return 500 error response", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.StatusCode).To(Equal(http.StatusInternalServerError))
+
+				By("checking the json error response body")
+
+				errJson := &mhttp.ErrorResponse{}
+				d := json.NewDecoder(resp.Body)
+				err = d.Decode(errJson)
+
+				Expect(err).To(BeNil())
+				Expect(errJson.Code).To(Equal("Interal-Server-Error"))
+				Expect(errJson.Message).To(Equal("Error getting memory metrics from doppler"))
 			})
 		})
 
-		Context("when  token to access doppler is not valid", func() {
+		Context("when doppler return 500 error response", func() {
 			BeforeEach(func() {
-				accessToken = "invalid-token"
-				dopplerUrl = testDopplerUrl
-				appId = fakes.FAKE_APP_ID
+				fakeDoppler.AppendHandlers(
+					ghttp.RespondWith(500, ""),
+				)
 			})
 
-			It("should not error and return 500", func() {
+			It("should return 500 error response", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.StatusCode).To(Equal(http.StatusInternalServerError))
+
+				By("checking the json error response body")
+
+				errJson := &mhttp.ErrorResponse{}
+				d := json.NewDecoder(resp.Body)
+				err = d.Decode(errJson)
+
+				Expect(err).To(BeNil())
+				Expect(errJson.Code).To(Equal("Interal-Server-Error"))
+				Expect(errJson.Message).To(Equal("Error getting memory metrics from doppler"))
+
 			})
 		})
 
-		Context("when  appid is not valid", func() {
+		Context("when doppler return 401 error response", func() {
 			BeforeEach(func() {
-				accessToken = fakes.FAKE_DOPPLER_ACCESS_TOKEN
-				dopplerUrl = testDopplerUrl
-				appId = "not-exist-appid"
+				fakeDoppler.AppendHandlers(
+					ghttp.RespondWith(401, ""),
+				)
 			})
 
-			It("should not error and return 500", func() {
+			It("should return 500 error response", func() {
 				Expect(err).To(BeNil())
 				Expect(resp.StatusCode).To(Equal(http.StatusInternalServerError))
+
+				By("checking the json error response body")
+
+				errJson := &mhttp.ErrorResponse{}
+				d := json.NewDecoder(resp.Body)
+				err = d.Decode(errJson)
+
+				Expect(err).To(BeNil())
+				Expect(errJson.Code).To(Equal("Interal-Server-Error"))
+				Expect(errJson.Message).To(Equal("Error getting memory metrics from doppler"))
+
 			})
 		})
 
-		Context("when request with right appid ", func() {
-			BeforeEach(func() {
-				accessToken = fakes.FAKE_DOPPLER_ACCESS_TOKEN
-				dopplerUrl = testDopplerUrl
-				appId = fakes.FAKE_APP_ID
+		Context("when doppler return 200 response", func() {
+
+			Context("container metrics is empty", func() {
+				BeforeEach(func() {
+					appendDopplerHandler200OK(0, fakeDoppler)
+				})
+
+				It("should return 200 response with empty metrics", func() {
+					Expect(err).To(BeNil())
+					Expect(resp.StatusCode).To(Equal(http.StatusOK))
+
+					By("checking the memroy metrics in response body")
+
+					metric := &metrics.Metric{}
+					d := json.NewDecoder(resp.Body)
+					err = d.Decode(metric)
+
+					Expect(err).To(BeNil())
+					Expect(metric.AppId).To(Equal("test-app-id"))
+					Expect(metric.Name).To(Equal(metrics.MEMORY_METRIC_NAME))
+					Expect(metric.Unit).To(Equal(metrics.UNIT_BYTES))
+					Expect(metric.Instances).To(BeEmpty())
+				})
 			})
 
-			It("should not error and return correct result", func() {
-				Expect(err).To(BeNil())
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+			Context("container metrics is not empty", func() {
+				BeforeEach(func() {
+					appendDopplerHandler200OK(2, fakeDoppler)
+				})
 
-				By("checking the memroy metrics in response body")
-				b, _ := ioutil.ReadAll(resp.Body)
+				It("should return 200 response with empty metrics", func() {
+					Expect(err).To(BeNil())
+					Expect(resp.StatusCode).To(Equal(http.StatusOK))
 
-				metric := &metrics.Metric{}
-				e := json.Unmarshal(b, metric)
-				Expect(e).To(BeNil())
-				Expect(metric.AppId).To(Equal(appId))
-				Expect(metric.Name).To(Equal(metrics.MEMORY_METRIC_NAME))
-				Expect(metric.Unit).To(Equal(metrics.UNIT_BYTES))
+					By("checking the memroy metrics in response body")
+
+					metric := &metrics.Metric{}
+					d := json.NewDecoder(resp.Body)
+					err = d.Decode(metric)
+
+					Expect(err).To(BeNil())
+					Expect(metric.AppId).To(Equal("test-app-id"))
+					Expect(metric.Name).To(Equal(metrics.MEMORY_METRIC_NAME))
+					Expect(metric.Unit).To(Equal(metrics.UNIT_BYTES))
+					Expect(len(metric.Instances)).To(Equal(2))
+				})
 			})
+
 		})
 
 	})
-
 })
+
+func appendDopplerHandler200OK(num int, doppler *ghttp.Server) {
+	buffer := bytes.NewBuffer([]byte{})
+	mp := multipart.NewWriter(buffer)
+
+	header := http.Header{}
+	header.Add("Content-Type", `multipart/x-protobuf; boundary=`+mp.Boundary())
+
+	origin := "fake-doppler"
+	appId := "test-app-id"
+	for i := 0; i < num; i++ {
+		index := int32(i)
+		cpu := rand.Float64()
+		memory := uint64(rand.Int63())
+		disk := uint64(rand.Int63())
+		cm := &events.ContainerMetric{
+			ApplicationId: &appId,
+			InstanceIndex: &index,
+			CpuPercentage: &cpu,
+			MemoryBytes:   &memory,
+			DiskBytes:     &disk,
+		}
+		envelope := &events.Envelope{
+			Origin:          &origin,
+			EventType:       events.Envelope_ContainerMetric.Enum(),
+			ContainerMetric: cm,
+		}
+
+		ebytes, _ := proto.Marshal(envelope)
+		partWriter, _ := mp.CreatePart(nil)
+		partWriter.Write(ebytes)
+	}
+	mp.Close()
+
+	doppler.AppendHandlers(
+		ghttp.CombineHandlers(
+			ghttp.VerifyRequest("GET", TEST_PATH_CONTAINER_METRICS),
+			ghttp.VerifyHeaderKV("Authorization", TOKEN_TYPE_BEARER+" test-access-token"),
+			ghttp.RespondWith(200, buffer.Bytes(), header),
+		),
+	)
+}

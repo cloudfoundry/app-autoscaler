@@ -1,21 +1,56 @@
 package config_test
 
 import (
-	. "metrics-collector/config"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	. "metrics-collector/config"
 
+	"github.com/cloudfoundry-incubator/candiedyaml"
 	"os"
 )
 
 var _ = Describe("Config", func() {
 
-	Describe("load config from yaml", func() {
-		Context("when it gives an invalid yaml", func() {
-			b := []byte(`
+	var (
+		conf  *Config
+		err   error
+		bytes []byte
+		path  string
+	)
+
+	Describe("LoadConfigFromYaml", func() {
+
+		JustBeforeEach(func() {
+			conf, err = LoadConfigFromYaml(bytes)
+		})
+
+		Context("when it gives an invalid yml", func() {
+			BeforeEach(func() {
+				bytes = []byte(`
+ cf:
+  api: "https://api.exmaple.com"
+  grant-type: "password"
+  user: "admin"
+server:
+  port: 8989
+  user: "user"
+  pass: "password"
+
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(BeAssignableToTypeOf(&candiedyaml.ParserError{}))
+			})
+
+		})
+
+		Context("when it gives a non integer port", func() {
+			BeforeEach(func() {
+				bytes = []byte(`
 cf:
-  api: "https://api.bosh-lite.com"
+  api: "https://api.exmaple.com"
   grant-type: "password"
   user: "admin"
 server:
@@ -23,133 +58,126 @@ server:
   user: "user"
   pass: "password"
 logging:
-  level: 0
-  file: "logs/mc.log"
-  log_to_stdout: "false"
+  level: "info"
 `)
+			})
 
 			It("should error", func() {
-				_, err := LoadConfigFromYaml(b)
 				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(MatchRegexp("Invalid integer:.*")))
 			})
 
 		})
 
 		Context("when it gives a valid yaml with all fields", func() {
-			var b = []byte(`
+			BeforeEach(func() {
+				bytes = []byte(`
 cf:
-  api: "https://api.bosh-lite.com"
-  grant_type: "password"
+  api: "https://api.example.com"
+  grant_type: "PassWord"
   user: "admin"
   pass: "admin"
   client_id: "client-id"
   secret: "client-secret"
 server:
-  port: 8080
+  port: 8989
   user: "user"
   pass: "password"
 logging:
-  level: "DEBUG"
-  file: "logs/mc.log"
-  log_to_stdout: false
+  level: "debug"
 `)
+			})
 
 			It("should not error and populate right config", func() {
-				conf, err := LoadConfigFromYaml(b)
-
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(conf.Cf.Api).To(Equal("https://api.bosh-lite.com"))
+				Expect(conf.Cf.Api).To(Equal("https://api.example.com"))
 				Expect(conf.Cf.GrantType).To(Equal("password"))
 				Expect(conf.Cf.User).To(Equal("admin"))
 				Expect(conf.Cf.Pass).To(Equal("admin"))
 				Expect(conf.Cf.ClientId).To(Equal("client-id"))
 				Expect(conf.Cf.Secret).To(Equal("client-secret"))
 
-				Expect(conf.Server.Port).To(Equal(8080))
+				Expect(conf.Server.Port).To(Equal(8989))
 				Expect(conf.Server.User).To(Equal("user"))
 				Expect(conf.Server.Pass).To(Equal("password"))
 
-				Expect(conf.Logging.Level).To(Equal("DEBUG"))
-				Expect(conf.Logging.File).To(Equal("logs/mc.log"))
-				Expect(conf.Logging.LogToStdout).To(Equal(false))
+				Expect(conf.Logging.Level).To(Equal("debug"))
 			})
 		})
 
 		Context("when it gives a valid yaml with part of the fields", func() {
-			var b = []byte(`
+			BeforeEach(func() {
+				bytes = []byte(`
 cf:
-  api: "https://api.bosh-lite.com"
-  grant_type: "password"
+  api: "https://api.example.com"
   user: "admin"
   pass: "admin"
 server:
   user: "user"
   pass: "password"
-logging:
-  file: "logs/mc.log"
 `)
+			})
 
 			It("should not error and  populate the right config", func() {
-				defaultConfig := DefaultConfig()
-				conf, err := LoadConfigFromYaml(b)
-
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(conf.Cf.Api).To(Equal("https://api.bosh-lite.com"))
-				Expect(conf.Cf.GrantType).To(Equal("password"))
+				Expect(conf.Cf.Api).To(Equal("https://api.example.com"))
+				Expect(conf.Cf.GrantType).To(Equal(DefaultCfConfig.GrantType))
 				Expect(conf.Cf.User).To(Equal("admin"))
 				Expect(conf.Cf.Pass).To(Equal("admin"))
-				Expect(conf.Cf.ClientId).To(Equal(defaultConfig.Cf.ClientId))
-				Expect(conf.Cf.Secret).To(Equal(defaultConfig.Cf.Secret))
+				Expect(conf.Cf.ClientId).To(Equal(DefaultCfConfig.ClientId))
+				Expect(conf.Cf.Secret).To(Equal(DefaultCfConfig.Secret))
 
-				Expect(conf.Server.Port).To(Equal(defaultConfig.Server.Port))
+				Expect(conf.Server.Port).To(Equal(DefaultServerConfig.Port))
 				Expect(conf.Server.User).To(Equal("user"))
 				Expect(conf.Server.Pass).To(Equal("password"))
 
-				Expect(conf.Logging.Level).To(Equal(defaultConfig.Logging.Level))
-				Expect(conf.Logging.File).To(Equal("logs/mc.log"))
-				Expect(conf.Logging.LogToStdout).To(Equal(defaultConfig.Logging.LogToStdout))
+				Expect(conf.Logging.Level).To(Equal(DefaultLoggingConfig.Level))
 			})
 		})
 
 	})
 
-	Describe("load config from file", func() {
+	Describe("LoadConfigFromFile", func() {
+
+		JustBeforeEach(func() {
+			conf, err = LoadConfigFromFile(path)
+		})
 
 		Context("when configuration file does not exist", func() {
-			var path = "not_exist.yml"
+			BeforeEach(func() {
+				path = "not_exist.yml"
+			})
 
 			It("should error and return nil config", func() {
-				conf, err := LoadConfigFromFile(path)
+
 				Expect(err).To(HaveOccurred())
+				Expect(err).To(BeAssignableToTypeOf(&os.PathError{}))
 				Expect(conf).To(BeNil())
 			})
 		})
 
 		Context("when configuration file exists and is valid", func() {
-			var path = "exist_conf.yml"
-
 			BeforeEach(func() {
+				path = "does_exist.yml"
 				file, _ := os.Create(path)
-				var b = []byte(`
+				bytes = []byte(`
 cf:
-  api: "https://api.bosh-lite.com"
-  grant_type: "password"
+  api: "https://api.example.com"
+  grant_type: "PassWord"
   user: "admin"
   pass: "admin"
   client_id: "client-id"
   secret: "client-secret"
 server:
-  port: 8080
+  port: 8989
   user: "user"
   pass: "password"
 logging:
-  level: "DEBUG"
-  file: "logs/mc.log"
-  log_to_stdout: false
+  level: "info"
 `)
-				file.Write(b)
+				file.Write(bytes)
 				file.Close()
 			})
 
@@ -164,4 +192,97 @@ logging:
 			})
 		})
 	})
+
+	Describe("Verify", func() {
+		JustBeforeEach(func() {
+			err = conf.Verify()
+		})
+
+		Context("when grant type is not supprted", func() {
+			BeforeEach(func() {
+				conf = &Config{
+					Cf:      DefaultCfConfig,
+					Logging: DefaultLoggingConfig,
+					Server:  DefaultServerConfig,
+				}
+
+				conf.Cf.GrantType = "not-supported-grant-type"
+			})
+
+			It("should error", func() {
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(MatchRegexp("Error in configuration file: unsupported grant type*")))
+			})
+		})
+
+		Context("when grant type password but user name is empty", func() {
+			BeforeEach(func() {
+				conf = &Config{
+					Cf:      DefaultCfConfig,
+					Logging: DefaultLoggingConfig,
+					Server:  DefaultServerConfig,
+				}
+				conf.Cf.GrantType = GRANT_TYPE_PASSWORD
+				conf.Cf.User = ""
+			})
+
+			It("should error", func() {
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(MatchRegexp("Error in configuration file: user name is empty")))
+			})
+		})
+
+		Context("when grant type client_credential but client id is empty", func() {
+			BeforeEach(func() {
+				conf = &Config{
+					Cf:      DefaultCfConfig,
+					Logging: DefaultLoggingConfig,
+					Server:  DefaultServerConfig,
+				}
+				conf.Cf.GrantType = GRANT_TYPE_CLIENT_CREDENTIALS
+				conf.Cf.ClientId = ""
+			})
+
+			It("should error", func() {
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(MatchError(MatchRegexp("Error in configuration file: client id is empty")))
+			})
+		})
+
+		Context("when config is valid with password grant", func() {
+			BeforeEach(func() {
+				conf = &Config{
+					Cf:      DefaultCfConfig,
+					Logging: DefaultLoggingConfig,
+					Server:  DefaultServerConfig,
+				}
+				conf.Cf.GrantType = GRANT_TYPE_PASSWORD
+				conf.Cf.User = "admin"
+				conf.Logging.Level = "debug"
+			})
+
+			It("should not error", func() {
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when config is valid with client_credential grant ", func() {
+			BeforeEach(func() {
+				conf = &Config{
+					Cf:      DefaultCfConfig,
+					Logging: DefaultLoggingConfig,
+					Server:  DefaultServerConfig,
+				}
+				conf.Cf.GrantType = GRANT_TYPE_CLIENT_CREDENTIALS
+				conf.Cf.ClientId = "admin"
+				conf.Logging.Level = "error"
+			})
+
+			It("should not error", func() {
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+	})
+
 })

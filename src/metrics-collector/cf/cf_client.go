@@ -4,17 +4,17 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/pivotal-golang/lager"
 	"metrics-collector/config"
+	"metrics-collector/mhttp"
 	"net/http"
 	"net/url"
 	"strings"
 )
 
 const (
-	PATH_CF_INFO                  = "/v2/info"
-	PATH_CF_AUTH                  = "/oauth/token"
-	GRANT_TYPE_PASSWORD           = "password"
-	GRANT_TYPE_CLIENT_CREDENTIALS = "client_credentials"
+	PATH_CF_INFO = "/v2/info"
+	PATH_CF_AUTH = "/oauth/token"
 )
 
 type Tokens struct {
@@ -36,36 +36,64 @@ type CfClient interface {
 }
 
 type cfClient struct {
-	tokens    Tokens
-	endpoints Endpoints
-	config    *config.CfConfig
+	logger      lager.Logger
+	tokens      Tokens
+	endpoints   Endpoints
+	infoUrl     string
+	formEncoded string
+	token       string
+	headers     map[string]string
 }
 
-func NewCfClient(conf *config.CfConfig) CfClient {
-	return &cfClient{
-		config: conf,
+func NewCfClient(conf *config.CfConfig, logger lager.Logger) CfClient {
+	c := &cfClient{}
+	c.logger = logger
+	c.infoUrl = conf.Api + PATH_CF_INFO
+
+	if conf.GrantType == config.GRANT_TYPE_PASSWORD {
+		c.formEncoded = url.Values{
+			"grant_type": {config.GRANT_TYPE_PASSWORD},
+			"username":   {conf.User},
+			"password":   {conf.Pass},
+		}.Encode()
+		c.token = "Basic Y2Y6"
+	} else {
+		c.formEncoded = url.Values{
+			"grant_type":    {config.GRANT_TYPE_CLIENT_CREDENTIALS},
+			"client_id":     {conf.ClientId},
+			"client_secret": {conf.Secret},
+		}.Encode()
+		c.token = "Basic " + base64.StdEncoding.EncodeToString([]byte(conf.ClientId+":"+conf.Secret))
 	}
+	c.headers = map[string]string{}
+	c.headers["Content-Type"] = "application/x-www-form-urlencoded"
+	c.headers["charset"] = "utf-8"
+	return c
 }
 
 func (c *cfClient) retrieveEndpoints() error {
-	url := c.config.Api + PATH_CF_INFO
-	resp, err := DoRequest("GET", url, "", nil, nil)
+	c.logger.Info("retrieve-endpoints", lager.Data{"infoUrl": c.infoUrl, "formEncoded": c.formEncoded})
+
+	resp, err := mhttp.DoRequest("GET", c.infoUrl, "", nil, nil)
 	if err != nil {
+		c.logger.Error("request-endpoints", err)
 		return err
 	}
 
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Error retrieving cf endpoints: %s [%d] %s", url, resp.StatusCode, resp.Status)
+		err = fmt.Errorf("Error requesting endpoints: %s [%d] %s", c.infoUrl, resp.StatusCode, resp.Status)
+		c.logger.Error("request-endpoints", err)
+		return err
 	}
 
 	d := json.NewDecoder(resp.Body)
-	return d.Decode(&c.endpoints)
+	err = d.Decode(&c.endpoints)
+	if err != nil {
+		c.logger.Error("decode-json-endpoints", err)
+	}
+	return err
 }
-
-//
-// Get Access/Refresh Tokens from login server
-//
 
 func (c *cfClient) Login() error {
 	err := c.retrieveEndpoints()
@@ -74,50 +102,29 @@ func (c *cfClient) Login() error {
 	}
 
 	authURL := c.endpoints.AuthEndpoint + PATH_CF_AUTH
-	grantType := strings.ToLower(c.config.GrantType)
-
-	var form url.Values
-	if grantType == GRANT_TYPE_PASSWORD {
-		form = url.Values{
-			"grant_type": {GRANT_TYPE_PASSWORD},
-			"username":   {c.config.User},
-			"password":   {c.config.Pass},
-		}
-	} else if grantType == GRANT_TYPE_CLIENT_CREDENTIALS {
-		form = url.Values{
-			"grant_type":    {GRANT_TYPE_CLIENT_CREDENTIALS},
-			"client_id":     {c.config.ClientId},
-			"client_secret": {c.config.Secret},
-		}
-	} else {
-		return fmt.Errorf("Not supported grant type: %s", grantType)
-	}
-
-	headers := map[string]string{}
-	headers["Content-Type"] = "application/x-www-form-urlencoded"
-	headers["charset"] = "utf-8"
-
-	var token string
-	if grantType == GRANT_TYPE_PASSWORD {
-		token = "Basic Y2Y6"
-	} else {
-		token = c.config.ClientId + ":" + c.config.Secret
-		token = "Basic " + base64.StdEncoding.EncodeToString([]byte(token))
-	}
+	c.logger.Info("login", lager.Data{"authURL": authURL})
 
 	var resp *http.Response
-	resp, err = DoRequest("POST", authURL, token, headers, strings.NewReader(form.Encode()))
+	resp, err = mhttp.DoRequest("POST", authURL, c.token, c.headers, strings.NewReader(c.formEncoded))
 	if err != nil {
+		c.logger.Error("request-login", err)
 		return err
 	}
 
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("Login failed: %s [%d] %s", authURL, resp.StatusCode, resp.Status)
+		err = fmt.Errorf("Login failed: %s [%d] %s", authURL, resp.StatusCode, resp.Status)
+		c.logger.Error("request-login", err)
+		return err
 	}
 
 	d := json.NewDecoder(resp.Body)
-	return d.Decode(&c.endpoints)
+	err = d.Decode(&c.tokens)
+	if err != nil {
+		c.logger.Error("decode-json-tokens", err)
+	}
+	return err
+
 }
 
 func (c *cfClient) GetTokens() Tokens {

@@ -11,7 +11,7 @@ type FakeCfClient struct {
 	endpoints       cf.Endpoints
 }
 
-func NewCfClient(token string, doppler string) cf.CfClient {
+func NewFakeCfClient(token string, doppler string) cf.CfClient {
 	return &FakeCfClient{
 		accessToken:     token,
 		dopplerEndpiont: doppler,

@@ -2,39 +2,41 @@ package server
 
 import (
 	"fmt"
+	"github.com/pivotal-golang/lager"
 	"metrics-collector/cf"
 	"metrics-collector/config"
-	. "metrics-collector/util"
 	"net"
 	"net/http"
 	"os"
 )
 
 type Server struct {
-	conf     config.ServerConfig
-	listener net.Listener
+	config   config.ServerConfig
 	cfClient cf.CfClient
+	logger   lager.Logger
+	listener net.Listener
 }
 
-func NewServer(c config.ServerConfig, cfc cf.CfClient) *Server {
+func NewServer(conf config.ServerConfig, cfc cf.CfClient, logger lager.Logger) *Server {
 	return &Server{
-		conf:     c,
+		config:   conf,
 		cfClient: cfc,
+		logger:   logger,
 	}
 }
 
 func (s *Server) Start() {
-	addr := fmt.Sprintf("0.0.0.0:%d", s.conf.Port)
-	Logger.Info("Starting server at " + addr)
+	addr := fmt.Sprintf("0.0.0.0:%d", s.config.Port)
+	s.logger.Info("start-server", lager.Data{"addr": addr})
 
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
-		Logger.Error("Failed-to-start-listener", err)
+		s.logger.Error("start-listener", err)
 		os.Exit(1)
 	}
 	s.listener = listener
 
-	handler := NewHandler(s.cfClient)
+	handler := NewHandler(s.cfClient, s.logger)
 	http.Handle("/", handler)
 	http.Serve(listener, nil)
 }

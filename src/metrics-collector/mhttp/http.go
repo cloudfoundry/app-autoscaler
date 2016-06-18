@@ -1,4 +1,4 @@
-package cf
+package mhttp
 
 import (
 	"crypto/tls"
@@ -7,13 +7,13 @@ import (
 	"net/http"
 )
 
-type errorReponse struct {
+type ErrorResponse struct {
 	Code    string `json:"code"`
 	Message string `json:"message"`
 }
 
 func CreateJsonErrorResponse(code string, msg string) []byte {
-	body := &errorReponse{
+	body := &ErrorResponse{
 		Code:    code,
 		Message: msg,
 	}

@@ -4,7 +4,12 @@ import (
 	"fmt"
 	"github.com/cloudfoundry-incubator/candiedyaml"
 	"io/ioutil"
+	"strings"
 )
+
+const GRANT_TYPE_PASSWORD = "password"
+const GRANT_TYPE_CLIENT_CREDENTIALS = "client_credentials"
+const DEFAULT_LOGGING_LEVEL = "info"
 
 type CfConfig struct {
 	Api       string `yaml:"api"`
@@ -15,13 +20,8 @@ type CfConfig struct {
 	Secret    string `yaml:"secret"`
 }
 
-var defaultCfConfig = CfConfig{
-	Api:       "https://api.bosh-lite.com",
-	GrantType: "password",
-	User:      "admin",
-	Pass:      "admin",
-	ClientId:  "admin",
-	Secret:    "admin-secret",
+var DefaultCfConfig = CfConfig{
+	GrantType: GRANT_TYPE_PASSWORD,
 }
 
 type ServerConfig struct {
@@ -30,22 +30,16 @@ type ServerConfig struct {
 	Pass string `yaml:"pass"`
 }
 
-var defaultServerConfig = ServerConfig{
+var DefaultServerConfig = ServerConfig{
 	Port: 8080,
-	User: "",
-	Pass: "",
 }
 
 type LoggingConfig struct {
-	Level       string `yaml:"level"`
-	File        string `yaml:"file"`
-	LogToStdout bool   `yaml:"log_to_stdout"`
+	Level string `yaml:"level"`
 }
 
-var defaultLoggingConfig = LoggingConfig{
-	Level:       "info",
-	File:        "",
-	LogToStdout: true,
+var DefaultLoggingConfig = LoggingConfig{
+	Level: DEFAULT_LOGGING_LEVEL,
 }
 
 type Config struct {
@@ -54,34 +48,57 @@ type Config struct {
 	Server  ServerConfig  `yaml:"server"`
 }
 
-func DefaultConfig() *Config {
-	var c = Config{
-		Cf:      defaultCfConfig,
-		Logging: defaultLoggingConfig,
-		Server:  defaultServerConfig,
+func LoadConfigFromFile(path string) (*Config, error) {
+	bytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
 	}
-
-	return &c
+	return LoadConfigFromYaml(bytes)
 }
 
-func LoadConfigFromFile(path string) (c *Config, e error) {
-	b, e := ioutil.ReadFile(path)
-	if e == nil {
-		return LoadConfigFromYaml(b)
+func LoadConfigFromYaml(bytes []byte) (*Config, error) {
+	conf := &Config{
+		Cf:      DefaultCfConfig,
+		Logging: DefaultLoggingConfig,
+		Server:  DefaultServerConfig,
 	}
-	return nil, e
+
+	err := candiedyaml.Unmarshal(bytes, conf)
+	if err != nil {
+		return nil, err
+	}
+
+	conf.Cf.GrantType = strings.ToLower(conf.Cf.GrantType)
+	conf.Logging.Level = strings.ToLower(conf.Logging.Level)
+
+	return conf, nil
 }
 
-func LoadConfigFromYaml(b []byte) (c *Config, e error) {
-	c = DefaultConfig()
-	e = candiedyaml.Unmarshal(b, c)
-	return
+func (c *Config) Verify() error {
+	if c.Cf.GrantType != GRANT_TYPE_PASSWORD && c.Cf.GrantType != GRANT_TYPE_CLIENT_CREDENTIALS {
+		return fmt.Errorf("Error in configuration file: unsupported grant type [%s]", c.Cf.GrantType)
+	}
+
+	if c.Cf.GrantType == GRANT_TYPE_PASSWORD {
+		if c.Cf.User == "" {
+			return fmt.Errorf("Error in configuration file: user name is empty")
+		}
+	}
+
+	if c.Cf.GrantType == GRANT_TYPE_CLIENT_CREDENTIALS {
+		if c.Cf.ClientId == "" {
+			return fmt.Errorf("Error in configuration file: client id is empty")
+		}
+	}
+	return nil
+
 }
 
-func (c *Config) ToString() (s string, e error) {
-	b, e := candiedyaml.Marshal(c)
-	if e == nil {
-		s = fmt.Sprintf("%s", b)
+func (c *Config) ToString() (string, error) {
+	bytes, err := candiedyaml.Marshal(c)
+
+	if err != nil {
+		return "", err
 	}
-	return
+	return fmt.Sprintf("%s", bytes), nil
 }
