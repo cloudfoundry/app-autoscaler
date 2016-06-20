@@ -17,9 +17,12 @@ Metrics-Collector is one of the components of CF `app-autoscaler`. It is used to
 1. add `app-autoscaler` directory to your $GOPATH
 2. change directory to `src/metrics-collector`
 1. build the project: `go build -o out/mc`
-1. test the project: 
+1. test the project:
 	1. install ginko: `go install github.com/onsi/ginkgo/ginkgo`
 	1. run tests: `ginkgo -r`
+1. regenerate fakes:
+  1. install counterfeiter: go install github.com/maxbrunsfeld/counterfeiter
+	1. go generate ./...
 
 ### Run the metrics-collector
 

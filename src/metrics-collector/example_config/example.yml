@@ -1,15 +1,9 @@
 cf:
   api: "https://api.example.com"
   grant_type: "client_credentials"
-  user: 
-  pass: 
   client_id: "cf_id"
   secret: "cf_secret"
 server:
   port: 8080
-  user: "server_user_name"
-  pass: "server_password"
 logging:
   level: "debug"
-  file: "logs/mc.log"
-  log_to_stdout: false

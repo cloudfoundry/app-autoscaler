@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"metrics-collector/cf"
@@ -8,6 +9,7 @@ import (
 	"metrics-collector/server"
 	"os"
 
+	"github.com/cloudfoundry/noaa/consumer"
 	"github.com/pivotal-golang/lager"
 )
 
@@ -41,6 +43,12 @@ func main() {
 		fmt.Fprintf(os.Stderr, "failed to login cloud foundry '%s'\n", conf.Cf.Api)
 		os.Exit(1)
 	}
+
+	dopplerUrl := cfc.GetEndpoints().DopplerEndpoint
+
+	logger.Info("create-noaa-client", map[string]interface{}{"dopplerUrl": dopplerUrl})
+	handler.noaa = consumer.New(dopplerUrl, &tls.Config{InsecureSkipVerify: true}, nil)
+
 	s := server.NewServer(conf.Server, cfClient, logger.Session("server"))
 	s.Start()
 }

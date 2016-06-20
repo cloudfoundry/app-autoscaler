@@ -1,8 +1,8 @@
 cf:
   api: "https://api.bosh-lite.com"
   grant_type: "password"
-  user: "admin"
-  pass: "admin"
+  username: "admin"
+  password: "admin"
 server:
   port: 8080
 logging:

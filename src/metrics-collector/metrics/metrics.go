@@ -8,14 +8,14 @@ import (
 )
 
 const (
-	UNIT_PERCENTAGE  = "percentage"
-	UNIT_BYTES       = "bytes"
-	UNIT_NUM         = "num"
-	UNIT_MILISECONDS = "milliseconds"
-	UNIT_RPS         = "rps"
+	UnitPercentage   = "percentage"
+	UnitBytes        = "bytes"
+	UnitNum          = "num"
+	UnitMilliseconds = "milliseconds"
+	UnitRPS          = "rps"
 )
 
-const MEMORY_METRIC_NAME = "memorybytes"
+const MemoryMetricName = "memorybytes"
 
 type Metric struct {
 	Name      string `json:"name"`
@@ -42,8 +42,8 @@ func GetMemoryMetricFromContainerMetrics(appId string, containerMetrics []*event
 	}
 
 	return &Metric{
-		Name:      MEMORY_METRIC_NAME,
-		Unit:      UNIT_BYTES,
+		Name:      MemoryMetricName,
+		Unit:      UnitBytes,
 		AppId:     appId,
 		TimeStamp: time.Now().UnixNano(),
 		Instances: insts,

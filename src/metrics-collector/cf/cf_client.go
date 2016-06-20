@@ -4,12 +4,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/pivotal-golang/lager"
 	"metrics-collector/config"
 	"metrics-collector/mhttp"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/pivotal-golang/lager"
 )
 
 const (
@@ -50,16 +51,16 @@ func NewCfClient(conf *config.CfConfig, logger lager.Logger) CfClient {
 	c.logger = logger
 	c.infoUrl = conf.Api + PATH_CF_INFO
 
-	if conf.GrantType == config.GRANT_TYPE_PASSWORD {
+	if conf.GrantType == config.GrantTypePassword {
 		c.formEncoded = url.Values{
-			"grant_type": {config.GRANT_TYPE_PASSWORD},
-			"username":   {conf.User},
-			"password":   {conf.Pass},
+			"grant_type": {config.GrantTypePassword},
+			"username":   {conf.Username},
+			"password":   {conf.Password},
 		}.Encode()
 		c.token = "Basic Y2Y6"
 	} else {
 		c.formEncoded = url.Values{
-			"grant_type":    {config.GRANT_TYPE_CLIENT_CREDENTIALS},
+			"grant_type":    {config.GrantTypeClientCredentials},
 			"client_id":     {conf.ClientId},
 			"client_secret": {conf.Secret},
 		}.Encode()

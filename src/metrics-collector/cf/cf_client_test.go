@@ -59,11 +59,7 @@ var _ = Describe("CfClient", func() {
 		BeforeEach(func() {
 			fakeCC = ghttp.NewServer()
 			fakeLoginServer = ghttp.NewServer()
-			conf = &config.Config{
-				Cf:      config.DefaultCfConfig,
-				Logging: config.DefaultLoggingConfig,
-				Server:  config.DefaultServerConfig,
-			}
+			conf = &config.Config{}
 
 			conf.Cf.Api = fakeCC.URL()
 			err = nil
@@ -81,11 +77,27 @@ var _ = Describe("CfClient", func() {
 			if fakeLoginServer != nil {
 				fakeLoginServer.Close()
 			}
+		})
 
+		Context("when retrieving endpoints succeeds", func() {
+			BeforeEach(func() {
+				fakeCC.AppendHandlers(
+					ghttp.CombineHandlers(
+						ghttp.VerifyRequest("GET", PATH_CF_INFO),
+						ghttp.RespondWith(200, infoBody),
+					),
+				)
+			})
+
+			It("has endpoints", func() {
+				Expect(cfc.GetEndpoints().AuthEndpoint).To(Equal("test-oauth-endpoint"))
+				Expect(cfc.GetEndpoints().TokenEndpoint).To(Equal("test-token-endpoint"))
+				Expect(cfc.GetEndpoints().DopplerEndpoint).To(Equal("test-doppler-endpoint"))
+			})
 		})
 
 		Context("when retrieving endpoints fails", func() {
-			Context("when the request fails", func() {
+			Context("when the Cloud Controller is not running", func() {
 				BeforeEach(func() {
 					fakeCC.Close()
 					fakeCC = nil
@@ -112,143 +124,107 @@ var _ = Describe("CfClient", func() {
 					Expect(err).To(MatchError(MatchRegexp("Error requesting endpoints: .*")))
 				})
 			})
-
 		})
 
-		Context("when retrieving endpoints succeeds", func() {
-			Context("when the auth url is not valid", func() {
+		Context("when the auth url is valid", func() {
+			BeforeEach(func() {
+				fakeCC.AppendHandlers(
+					ghttp.CombineHandlers(
+						ghttp.VerifyRequest("GET", PATH_CF_INFO),
+						ghttp.RespondWith(200, bytes.Replace(infoBody, []byte("test-oauth-endpoint"), []byte(fakeLoginServer.URL()), -1)),
+					),
+				)
+			})
+
+			Context("when login server is not running", func() {
 				BeforeEach(func() {
-					fakeCC.AppendHandlers(
-						ghttp.CombineHandlers(
-							ghttp.VerifyRequest("GET", PATH_CF_INFO),
-							ghttp.RespondWith(200, bytes.Replace(infoBody, []byte("test-oauth-endpoint"), []byte("http://www.not-exist.com"), -1)),
-						),
-					)
+					fakeLoginServer.Close()
+					fakeLoginServer = nil
 				})
 
-				It("should have the endpoints populated and return error", func() {
-					Expect(cfc.GetEndpoints().AuthEndpoint).To(Equal("http://www.not-exist.com"))
-					Expect(cfc.GetEndpoints().TokenEndpoint).To(Equal("test-token-endpoint"))
-					Expect(cfc.GetEndpoints().DopplerEndpoint).To(Equal("test-doppler-endpoint"))
-
+				It("should error", func() {
 					Expect(err).To(BeAssignableToTypeOf(&url.Error{}))
 					urlErr := err.(*url.Error)
 					Expect(urlErr.Err).To(BeAssignableToTypeOf(&net.OpError{}))
-
 				})
-
 			})
 
-			Context("when the auth url is valid", func() {
+			Context("when loginserver returns a non-200 status code", func() {
 				BeforeEach(func() {
-					fakeCC.AppendHandlers(
+					fakeLoginServer.AppendHandlers(
 						ghttp.CombineHandlers(
-							ghttp.VerifyRequest("GET", PATH_CF_INFO),
-							ghttp.RespondWith(200, bytes.Replace(infoBody, []byte("test-oauth-endpoint"), []byte(fakeLoginServer.URL()), -1)),
+							ghttp.VerifyRequest("POST", PATH_CF_AUTH),
+							ghttp.RespondWith(401, ""),
 						),
 					)
 				})
 
-				Context("when login server fails", func() {
-					BeforeEach(func() {
-						fakeLoginServer.Close()
-						fakeLoginServer = nil
-					})
-
-					It("should error", func() {
-						Expect(err).To(BeAssignableToTypeOf(&url.Error{}))
-						urlErr := err.(*url.Error)
-						Expect(urlErr.Err).To(BeAssignableToTypeOf(&net.OpError{}))
-					})
-
+				It("should error", func() {
+					Expect(err).To(MatchError(MatchRegexp("Login failed: .*")))
 				})
+			})
 
-				Context("when login in server returns non-200 status code", func() {
+			Context("when login server returns 200 status code", func() {
+				Context("when using password grant", func() {
 					BeforeEach(func() {
+						conf.Cf.GrantType = config.GrantTypePassword
+						conf.Cf.Username = "test-user"
+						conf.Cf.Password = "test-pass"
+
+						values := url.Values{
+							"grant_type": {conf.Cf.GrantType},
+							"username":   {conf.Cf.Username},
+							"password":   {conf.Cf.Password},
+						}
+
 						fakeLoginServer.AppendHandlers(
 							ghttp.CombineHandlers(
 								ghttp.VerifyRequest("POST", PATH_CF_AUTH),
-								ghttp.RespondWith(401, ""),
+								ghttp.VerifyBasicAuth("cf", ""),
+								ghttp.VerifyForm(values),
+								ghttp.RespondWith(200, authBody),
 							),
 						)
 					})
 
-					It("should error", func() {
-						Expect(err).To(MatchError(MatchRegexp("Login failed: .*")))
+					It("returns the correct tokens", func() {
+						Expect(err).ToNot(HaveOccurred())
+						Expect(cfc.GetTokens().AccessToken).To(Equal("test-access-token"))
+						Expect(cfc.GetTokens().RefreshToken).To(Equal("test-refresh-token"))
+						Expect(cfc.GetTokens().ExpiresIn).To(Equal(int64(12000)))
 					})
-
 				})
 
-				Context("when login in server returns 200 status code", func() {
-					Context("when using password grant", func() {
+				Context("when using client_credentials grant", func() {
+					BeforeEach(func() {
+						conf.Cf.GrantType = config.GrantTypeClientCredentials
+						conf.Cf.ClientId = "test-client-id"
+						conf.Cf.Secret = "test-client-secret"
 
-						BeforeEach(func() {
-							conf.Cf.GrantType = config.GRANT_TYPE_PASSWORD
-							conf.Cf.User = "test-user"
-							conf.Cf.Pass = "test-pass"
+						values := url.Values{
+							"grant_type":    {conf.Cf.GrantType},
+							"client_id":     {conf.Cf.ClientId},
+							"client_secret": {conf.Cf.Secret},
+						}
 
-							values := url.Values{
-								"grant_type": {config.GRANT_TYPE_PASSWORD},
-								"username":   {conf.Cf.User},
-								"password":   {conf.Cf.Pass},
-							}
-
-							fakeLoginServer.AppendHandlers(
-								ghttp.CombineHandlers(
-									ghttp.VerifyRequest("POST", PATH_CF_AUTH),
-									ghttp.VerifyBasicAuth("cf", ""),
-									ghttp.VerifyForm(values),
-									ghttp.RespondWith(200, authBody),
-								),
-							)
-						})
-
-						It("should not error and return the correct tokens", func() {
-							Expect(err).To(BeNil())
-							Expect(cfc.GetTokens().AccessToken).To(Equal("test-access-token"))
-							Expect(cfc.GetTokens().RefreshToken).To(Equal("test-refresh-token"))
-							Expect(cfc.GetTokens().ExpiresIn).To(Equal(int64(12000)))
-
-						})
-
+						fakeLoginServer.AppendHandlers(
+							ghttp.CombineHandlers(
+								ghttp.VerifyRequest("POST", PATH_CF_AUTH),
+								ghttp.VerifyBasicAuth(conf.Cf.ClientId, conf.Cf.Secret),
+								ghttp.VerifyForm(values),
+								ghttp.RespondWith(200, authBody),
+							),
+						)
 					})
 
-					Context("when using client_credentials grant", func() {
-						BeforeEach(func() {
-							conf.Cf.GrantType = config.GRANT_TYPE_CLIENT_CREDENTIALS
-							conf.Cf.ClientId = "test-client-id"
-							conf.Cf.Secret = "test-client-secret"
-
-							values := url.Values{
-								"grant_type":    {config.GRANT_TYPE_CLIENT_CREDENTIALS},
-								"client_id":     {conf.Cf.ClientId},
-								"client_secret": {conf.Cf.Secret},
-							}
-							fakeLoginServer.AppendHandlers(
-								ghttp.CombineHandlers(
-									ghttp.VerifyRequest("POST", PATH_CF_AUTH),
-									ghttp.VerifyBasicAuth(conf.Cf.ClientId, conf.Cf.Secret),
-									ghttp.VerifyForm(values),
-									ghttp.RespondWith(200, authBody),
-								),
-							)
-						})
-
-						It("should not error and return the correct tokens", func() {
-							Expect(err).To(BeNil())
-							Expect(cfc.GetTokens().AccessToken).To(Equal("test-access-token"))
-							Expect(cfc.GetTokens().RefreshToken).To(Equal("test-refresh-token"))
-							Expect(cfc.GetTokens().ExpiresIn).To(Equal(int64(12000)))
-
-						})
-
+					It("returns the correct tokens", func() {
+						Expect(err).ToNot(HaveOccurred())
+						Expect(cfc.GetTokens().AccessToken).To(Equal("test-access-token"))
+						Expect(cfc.GetTokens().RefreshToken).To(Equal("test-refresh-token"))
+						Expect(cfc.GetTokens().ExpiresIn).To(Equal(int64(12000)))
 					})
-
 				})
-
 			})
-
 		})
-
 	})
 })
