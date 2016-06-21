@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "scripts": {
   "start":"node app.js",
-  "unit-test": "cross-env DB_URI=sqlite://db.test.sqlite istanbul cover node_modules/mocha/bin/_mocha  -- test/unit -R spec",
+  "unit-test": "cross-env DB_URI=sqlite://db.test.sqlite istanbul cover node_modules/mocha/bin/_mocha  -- test/unit/models test/unit/routes -R spec",
   "lint":"eslint lib"
   },
   "dependencies": {
@@ -11,13 +11,15 @@
     "express": "4.13.4",
     "sequelize": "3.23.3",
     "sqlite3" :"3.1.4",
-    "pg":"5.1.0"
+    "pg":"5.1.0",
+    "http-status-codes":"1.0.6"
   },
   "devDependencies": {
     "mocha": "2.5.3",
     "istanbul":"0.4.3",
     "eslint":"2.12.0",
     "chai":"3.5.0",
-    "cross-env":"1.0.8"
+    "cross-env":"1.0.8",
+    "supertest":"1.2.0"
    }
 }

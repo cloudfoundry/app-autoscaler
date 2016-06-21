@@ -1,0 +1,6 @@
+npm-debug.log
+*.sqlite
+node_modules/*
+coverage/*
+.project
+.settings/*

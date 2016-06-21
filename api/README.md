@@ -1,5 +1,6 @@
 ## Run Unit Tests and Linter 
 ```sh
+npm install
 npm run unit-test
 npm run lint
 ```
