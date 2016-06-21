@@ -16,7 +16,7 @@ Metrics-Collector is one of the components of CF `app-autoscaler`. It is used to
 1. pull the submodules : `git submodule update --init --recursive`
 1. add `app-autoscaler` directory to your $GOPATH
 2. change directory to `src/metrics-collector`
-1. build the project: `go build -o out/mc`
+1. build the project: `go install ./...
 1. test the project:
 	1. install ginko: `go install github.com/onsi/ginkgo/ginkgo`
 	1. run tests: `ginkgo -r`
@@ -32,8 +32,8 @@ Firstly a configuration file needs to be created. Examples can be found under `e
 cf:
   api: "https://api.bosh-lite.com"
   grant_type: "password"
-  user: "admin"
-  pass: "admin"
+  username: "admin"
+  password: "admin"
 server:
   port: 8080
 logging:
@@ -46,8 +46,8 @@ The config parameters are explained as below
 * cf : cloudfoundry config
  * `api`: API endpoint of cloudfoundry
  * `grant_type`: the grant type when you login into coud foundry, can be "password" or "client_credentials"
- * `user`: the user name when using password grant to login cloudfoundry
- * `pass`: the password when using password grant to login cloudfoundry
+ * `username`: the user name when using password grant to login cloudfoundry
+ * `password`: the password when using password grant to login cloudfoundry
  * `client_id`: the client id when using client_credentials grant to login cloudfoundry
  * `secret`: the client secret when using client_credentials grant to login cloudfoundry
 * server: API sever config
@@ -55,7 +55,7 @@ The config parameters are explained as below
 * logging: config for logging
  * `level`: the level of logging, can be 'debug', 'info', 'error' or 'fatal'
 
-To run the metrics-collector, use `./out/mc -c config_file_name'
+To run the metrics-collector, use `../../bin/memorycollector -c config_file_name'
 
 ## API
 
