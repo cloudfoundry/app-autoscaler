@@ -28,9 +28,8 @@ describe("RESTful API test suite", function() {
       .get("/v2/catalog")
       .set("Authorization", "Basic " + auth)
       .expect("Content-type", /json/)
-      .expect(200) // THis is HTTP response
+      .expect(200)
       .end(function(err, res) {
-        // HTTP status should be 200
         res.status.should.equal(200);
         JSON.stringify(res.body).should.equal(JSON.stringify(catalog));
         done();
@@ -54,25 +53,19 @@ describe("RESTful API test suite", function() {
       .expect(401, done);
   });
 
-  it("should return 401 when incorrect auth format provided", function(done) {
-    supertest(server)
-      .get("/v2/catalog")
-      .set("Authorization", "invalidauth"  )
-      .expect(401, done);
-  });
-
-  it("should return 401 when auth info is not encoded with base64", function(done) {
-    supertest(server)
-      .get("/v2/catalog")
-      .set("Authorization", "Basic " + settings.user + ":" + settings.password )
-      .expect(401, done);
-  });
-
   it("should return 401 when incorrect user/password provided", function(done) {
     supertest(server)
       .get("/v2/catalog")
       .set("Authorization", "Basic " + new Buffer("incorrectuser:incorrectpassword").toString('base64') )
       .expect(401, done);
+  });
+
+  it("should return 401 when incorrect user provided", function(done) {
+    supertest(server)
+      .get("/v2/catalog")
+      .set("Authorization", "Basic " + new Buffer("incorrectuser" + ":" + settings.password).toString('base64') )
+      .expect(401, done);
+
   });
 
   it("should return 401 when incorrect password provided", function(done) {
@@ -81,13 +74,6 @@ describe("RESTful API test suite", function() {
       .set("Authorization", "Basic " + new Buffer(settings.user+ ":" + "incorrectpassword").toString('base64') )
       .expect(401, done);
 
-  });
-
-  it("should return 401 when incorrect basic auth format provided", function(done) {
-    supertest(server)
-      .get("/v2/catalog")
-      .set("Authorization", "Basic " + new Buffer(settings.user + settings.password).toString('base64') )
-      .expect(401, done);
   });
 
 

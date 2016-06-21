@@ -16,9 +16,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 
 var auth = function (req, res, next) {
-  
   function unauthorized(res) {
-    res.set('WWW-Authenticate', 'Basic realm=Authorization Required');
+    res.set('WWW-Authenticate', 'Basic realm="serviceBrokerAuth"');
     return res.sendStatus(401);
   };
 
