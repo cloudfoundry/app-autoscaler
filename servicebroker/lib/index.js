@@ -44,5 +44,8 @@ router.get('/catalog', function(req, res) {
 });
 
 app.use('/v2', router);
-var server = app.listen(port);
+var server = app.listen(port, function () {
+    var port = server.address().port;
+    console.log('Service broker app is running and listening at port %s', port);
+});
 module.exports = server;

@@ -12,14 +12,7 @@ describe('Unit Test for API', function() {
 
   it('getCatalog() should return catalog info with JSON format', function() {
     var data = api.getCatalog();
-    data.should.have.property('services');
-    JSON.stringify(data).length.should.equal(JSON.stringify(catalog).length);
-    data.services[0].id.should.equal(catalog.services[0].id);
-    data.services[0].name.should.equal(catalog.services[0].name);
-    data.services[0].description.should.equal(catalog.services[0].description);
-    data.services[0].plans[0].id.should.equal(catalog.services[0].plans[0].id);
-    data.services[0].plans[0].name.should.equal(catalog.services[0].plans[0].name);
-    data.services[0].plans[0].description.should.equal(catalog.services[0].plans[0].description);
+    JSON.stringify(data).should.equal(JSON.stringify(catalog));
   });
 
 });

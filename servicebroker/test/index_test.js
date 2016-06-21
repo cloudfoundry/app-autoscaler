@@ -32,13 +32,7 @@ describe("RESTful API test suite", function() {
       .end(function(err, res) {
         // HTTP status should be 200
         res.status.should.equal(200);
-        JSON.stringify(res.body).length.should.equal(JSON.stringify(catalog).length);
-        res.body.services[0].id.should.equal(catalog.services[0].id);
-        res.body.services[0].name.should.equal(catalog.services[0].name);
-        res.body.services[0].description.should.equal(catalog.services[0].description);
-        res.body.services[0].plans[0].id.should.equal(catalog.services[0].plans[0].id);
-        res.body.services[0].plans[0].name.should.equal(catalog.services[0].plans[0].name);
-        res.body.services[0].plans[0].description.should.equal(catalog.services[0].plans[0].description);
+        JSON.stringify(res.body).should.equal(JSON.stringify(catalog));
         done();
       });
   });
