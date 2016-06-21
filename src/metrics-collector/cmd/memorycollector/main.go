@@ -11,6 +11,9 @@ import (
 
 	"github.com/cloudfoundry/noaa/consumer"
 	"github.com/pivotal-golang/lager"
+	"github.com/tedsuo/ifrit"
+	"github.com/tedsuo/ifrit/grouper"
+	"github.com/tedsuo/ifrit/sigmon"
 )
 
 func main() {
@@ -23,15 +26,23 @@ func main() {
 	}
 
 	var conf *config.Config
-	var err error
-	conf, err = config.LoadConfigFromFile(path)
+
+	configFile, err := os.Open(path)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to read config from file '%s' : %s\n", path, err.Error())
+		fmt.Fprintf(os.Stdout, "failed to open config file '%s' : %s\n", path, err.Error())
 		os.Exit(1)
 	}
-	err = conf.Verify()
+
+	conf, err = config.LoadConfig(configFile)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to verify config : %s\n", err.Error())
+		fmt.Fprintf(os.Stdout, "failed to read config file '%s' : %s\n", path, err.Error())
+		os.Exit(1)
+	}
+	configFile.Close()
+
+	err = conf.Validate()
+	if err != nil {
+		fmt.Fprintf(os.Stdout, "failed to validate configuration : %s\n", err.Error())
 		os.Exit(1)
 	}
 
@@ -40,17 +51,32 @@ func main() {
 	cfClient := cf.NewCfClient(&conf.Cf, logger.Session("cf"))
 	err = cfClient.Login()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to login cloud foundry '%s'\n", conf.Cf.Api)
+		logger.Error("failed to login cloud foundry", err, lager.Data{"Api": conf.Cf.Api})
 		os.Exit(1)
 	}
 
-	dopplerUrl := cfc.GetEndpoints().DopplerEndpoint
+	dopplerUrl := cfClient.GetEndpoints().DopplerEndpoint
 
 	logger.Info("create-noaa-client", map[string]interface{}{"dopplerUrl": dopplerUrl})
-	handler.noaa = consumer.New(dopplerUrl, &tls.Config{InsecureSkipVerify: true}, nil)
+	tlsConfig := &tls.Config{InsecureSkipVerify: true}
+	noaa := consumer.New(dopplerUrl, tlsConfig, nil)
 
-	s := server.NewServer(conf.Server, cfClient, logger.Session("server"))
-	s.Start()
+	httpServer := server.NewServer(logger, conf.Server, cfClient, noaa)
+	members := grouper.Members{
+		{"http_server", httpServer},
+	}
+
+	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
+
+	logger.Info("started")
+
+	err = <-monitor.Wait()
+	if err != nil {
+		logger.Error("exited-with-failure", err)
+		os.Exit(1)
+	}
+
+	logger.Info("exited")
 }
 
 func initLoggerFromConfig(conf *config.LoggingConfig) lager.Logger {
@@ -59,11 +85,10 @@ func initLoggerFromConfig(conf *config.LoggingConfig) lager.Logger {
 		fmt.Fprintf(os.Stderr, "failed to initialize logger: %s\n", err.Error())
 		os.Exit(1)
 	}
-	logger := lager.NewLogger("as-metrics-collector")
+	logger := lager.NewLogger("metrics-collector")
 	logger.RegisterSink(lager.NewWriterSink(os.Stdout, logLevel))
 
 	return logger
-
 }
 
 func getLogLevel(level string) (lager.LogLevel, error) {
