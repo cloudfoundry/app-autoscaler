@@ -9,9 +9,10 @@ AutoScaler service broker is built by nodejs/expressjs
 npm bootstrap
 ```
 **Service broker configuration**
+
 Change configuration for service broker in file `config/settings.json`, including the following items:
-1. `port`, the port number in which the service broker app is launched and listening to.  The default value is 8080. 
-2. `user` and `password` : HTTP basic authorization is enabled according to the [CF service broker API # authorization](http://docs.cloudfoundry.org/services/api.html#authentication).  Please specific the user/password in setting.json, and use the same user/password when issue command "cf create-service-broker"
+* `port`, the port number in which the service broker app is launched and listening to.  The default value is 8080. 
+* `user` and `password` : HTTP basic authorization is enabled according to the [CF service broker API # authorization](http://docs.cloudfoundry.org/services/api.html#authentication).  Please specific the user/password in setting.json, and use the same user/password when issue command "cf create-service-broker"
 
 
 **Run eslint**
