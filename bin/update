@@ -14,10 +14,10 @@ function has_upstream() {
 
 set -x -e
 
-scripts_dir="$(cd $(dirname $0) && pwd)"
-if [ -d "$(dirname "$scripts_dir")/.git" ] ; then
-  "$scripts_dir"/install-git-hooks
-fi
+# scripts_dir="$(cd $(dirname $0) && pwd)"
+# if [ -d "$(dirname "$scripts_dir")/.git" ] ; then
+#   "$scripts_dir"/install-git-hooks
+# fi
 
 has_upstream && git pull
 
@@ -26,4 +26,3 @@ if [[ "$(git --version | grep 'version 1.7')x" != "x" ]]; then
 else
   git submodule sync --recursive && git submodule foreach --recursive git submodule sync  && git submodule update --init --recursive
 fi
-
