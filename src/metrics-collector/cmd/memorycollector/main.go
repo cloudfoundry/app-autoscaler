@@ -8,7 +8,9 @@ import (
 	"metrics-collector/config"
 	"metrics-collector/server"
 	"os"
+	"time"
 
+	"github.com/cloudfoundry-incubator/cf_http"
 	"github.com/cloudfoundry/noaa/consumer"
 	"github.com/pivotal-golang/lager"
 	"github.com/tedsuo/ifrit"
@@ -48,6 +50,7 @@ func main() {
 
 	logger := initLoggerFromConfig(&conf.Logging)
 
+	cf_http.Initialize(5 * time.Second)
 	cfClient := cf.NewCfClient(&conf.Cf, logger.Session("cf"))
 	err = cfClient.Login()
 	if err != nil {
