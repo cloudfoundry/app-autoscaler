@@ -4,11 +4,10 @@ import (
 	"encoding/json"
 	"metrics-collector/cf"
 	"metrics-collector/metrics"
-	"metrics-collector/mhttp"
 	"net/http"
 
+	"github.com/cloudfoundry-incubator/cf_http/handlers"
 	"github.com/cloudfoundry/sonde-go/events"
-	"github.com/gorilla/mux"
 	"github.com/pivotal-golang/lager"
 )
 
@@ -18,7 +17,11 @@ type MemoryMetricHandler struct {
 	cfClient cf.CfClient
 	logger   lager.Logger
 	noaa     NoaaConsumer
-	router   *mux.Router
+}
+
+type ErrorResponse struct {
+	Code    string `json:"code"`
+	Message string `json:"message"`
 }
 
 type NoaaConsumer interface {
@@ -42,8 +45,9 @@ func (h *MemoryMetricHandler) GetMemoryMetric(w http.ResponseWriter, r *http.Req
 	if err != nil {
 		h.logger.Error("noaa-get-container-metrics", err)
 
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(mhttp.CreateJsonErrorResponse("Interal-Server-Error", "Error getting memory metrics from doppler"))
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Error getting memory metrics from doppler"})
 		return
 	}
 
@@ -54,8 +58,9 @@ func (h *MemoryMetricHandler) GetMemoryMetric(w http.ResponseWriter, r *http.Req
 	if err != nil {
 		h.logger.Error("marshal-memory-metrics", err, lager.Data{"metric": metric})
 
-		w.WriteHeader(http.StatusInternalServerError)
-		w.Write(mhttp.CreateJsonErrorResponse("Interal-Server-Error", "Error getting memory metrics from doppler"))
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Error getting memory metrics from doppler"})
 		return
 	}
 
