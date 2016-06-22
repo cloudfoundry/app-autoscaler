@@ -16,14 +16,14 @@ System requirements:
 
 * Java 8 or above
 * [Apache Maven][b] 3
-* [Apache couchdb][c]
+* Node 6.2 or above
+* NPM 3.9.5 or above
 * [Cloud Foundry cf command line] [f]
 * [Cloud Foundry UAA command line client][u]
 
 Database requirement:
 
-The `CF-AutoScaler` uses Apache couchdb as the backend data store. You can have your own database installation from [Apache couchdb web site][c] or use an exisiting couchdb service, for example [Cloudant][e]
-
+The `CF-AutoScaler` uses Postgres as the backend data store.
 
 To get started, clone this project:
 
@@ -32,11 +32,11 @@ $ git clone https://github.com/cloudfoundry-incubator/app-autoscaler.git
 $ cd app-autoscaler
 ```
 
-The AutoScaler has three components, all of them them are Java Web Applications.
+The AutoScaler has multiple components.
 
-* `api` : provides public APIs to manage scaling policy, retrive application metrics, and scaling history. See details in [API_usage.rst][a]
+* `api` : provides public APIs to manage scaling policy
 * `servicebroker`: implements the [Cloud Foundry service broker API][k]
-* `server`: the backend engine of `CF-AutoScaler`
+* `metrics-collector`: collect container's memory usage
 
 
 
@@ -58,14 +58,22 @@ The following sections describe how to test, deploy and run `CF-AutoScaler` serv
 
 For all these three `CF-AutoScaler` components, a unit test `unittest.properties` under 'profiles' directory has been created to define the settings for unit test.
 
-To run all the unit tests, launch mvn test.
+## Unit tests
 ```shell
-mvn test -Denv=unittest
-```
+pushd api
+npm install
+npm test
+popd
 
-To run a specific project's unittest, launch mvn test for the project and its dependencies. For example, to run unit test for the service broker component:
-```shell
-mvn test -Denv=unittest -pl common,servicebroker
+pushd servicebroker
+npm run bootstrap
+npm test
+popd
+
+go install github.com/onsi/ginkgo/ginkgo
+pushd src/metrics-collector
+ginkgo -r -race
+popd
 ```
 
 ### Configure and Package

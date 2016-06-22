@@ -19,7 +19,7 @@ Metrics-Collector is one of the components of CF `app-autoscaler`. It is used to
 1. build the project: `go install ./...
 1. test the project:
 	1. install ginko: `go install github.com/onsi/ginkgo/ginkgo`
-	1. run tests: `ginkgo -r`
+	1. run tests: `ginkgo -r -race`
 1. regenerate fakes:
   1. install counterfeiter: go install github.com/maxbrunsfeld/counterfeiter
 	1. go generate ./...

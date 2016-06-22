@@ -29,7 +29,7 @@
     "bootstrap": "npm install bin/cfpack && npm install eslint mocha -g && npm install",
     "lint": "eslint lib",
     "start": "node lib/index.js",
-    "test": "mocha test --recursive",
+    "test": "mocha --recursive test",
     "watch-test": "mocha test --recursive --watch",
     "package": "./bin/cfpack/cfpack"
   }

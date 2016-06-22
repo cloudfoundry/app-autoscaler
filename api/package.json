@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "scripts": {
   "start":"node app.js",
-  "unit-test": "cross-env DB_URI=sqlite://db.test.sqlite istanbul cover node_modules/mocha/bin/_mocha  -- test/unit/models test/unit/routes -R spec",
+  "test": "cross-env DB_URI=sqlite://db.test.sqlite node_modules/.bin/_mocha --recursive test",
+  "cover": "cross-env DB_URI=sqlite://db.test.sqlite istanbul cover node_modules/mocha/bin/_mocha -- --recursive test",
   "lint":"eslint lib"
   },
   "dependencies": {
