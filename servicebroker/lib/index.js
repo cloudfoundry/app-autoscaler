@@ -5,7 +5,9 @@ var basicAuth = require('basic-auth');
 var fs = require('fs');
 var path = require('path');
 var bodyParser = require('body-parser');
-var api = require(path.join(__dirname, './api/api.js'));
+var async = require('asyncawait/async');
+var await = require('asyncawait/await');
+var API = require(path.join(__dirname, './api/api.js'));
 
 var settings = JSON.parse(
   fs.readFileSync(path.join(__dirname, '../config/settings.json'), 'utf8'));
@@ -32,10 +34,25 @@ var auth = function (req, res, next) {
 };
 
 var router = express.Router();
-var serviceBrokerApi = new api();
+var serviceBrokerApi = new API();
+
 router.get('/catalog', function(req, res) {
   res.json(serviceBrokerApi.getCatalog());
 });
+
+router.put('/service_instances/:serviceId', async(function(req, res) {
+  var serviceId = req.params.serviceId;
+  var orgId = req.body.organization_guid;
+  var spaceId = req.body.space_guid
+  var result = await (serviceBrokerApi.provisionService(serviceId, orgId, spaceId));
+  var code = result.code;
+  if (code === 200 || code === 201) {
+    res.status(code).send({ "dashboard_url": result.dashboard_url });
+    res.end();
+  } else {
+    res.sendStatus(code);
+  }
+}));
 
 
 //define the sequence of middleware

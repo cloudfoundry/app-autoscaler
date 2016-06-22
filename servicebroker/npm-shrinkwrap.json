@@ -32,6 +32,11 @@
       "from": "ansi-styles@>=2.2.1 <3.0.0",
       "resolved": "http://r.cnpmjs.org/ansi-styles/download/ansi-styles-2.2.1.tgz"
     },
+    "ap": {
+      "version": "0.2.0",
+      "from": "ap@>=0.2.0 <0.3.0",
+      "resolved": "http://r.cnpmjs.org/ap/download/ap-0.2.0.tgz"
+    },
     "argparse": {
       "version": "1.0.7",
       "from": "argparse@>=1.0.7 <2.0.0",
@@ -67,6 +72,18 @@
       "from": "async@>=1.4.0 <2.0.0",
       "resolved": "http://r.cnpmjs.org/async/download/async-1.5.2.tgz"
     },
+    "asyncawait": {
+      "version": "1.0.3",
+      "from": "asyncawait@>=1.0.3 <2.0.0",
+      "resolved": "http://r.cnpmjs.org/asyncawait/download/asyncawait-1.0.3.tgz",
+      "dependencies": {
+        "lodash": {
+          "version": "3.10.1",
+          "from": "lodash@3.10.1",
+          "resolved": "http://r.cnpmjs.org/lodash/download/lodash-3.10.1.tgz"
+        }
+      }
+    },
     "balanced-match": {
       "version": "0.4.1",
       "from": "balanced-match@>=0.4.1 <0.5.0",
@@ -91,6 +108,11 @@
       "version": "1.1.5",
       "from": "brace-expansion@>=1.0.0 <2.0.0",
       "resolved": "http://r.cnpmjs.org/brace-expansion/download/brace-expansion-1.1.5.tgz"
+    },
+    "buffer-writer": {
+      "version": "1.0.1",
+      "from": "buffer-writer@1.0.1",
+      "resolved": "http://r.cnpmjs.org/buffer-writer/download/buffer-writer-1.0.1.tgz"
     },
     "bytes": {
       "version": "2.4.0",
@@ -246,6 +268,11 @@
         }
       }
     },
+    "dottie": {
+      "version": "1.1.1",
+      "from": "dottie@>=1.0.0 <2.0.0",
+      "resolved": "http://r.cnpmjs.org/dottie/download/dottie-1.1.1.tgz"
+    },
     "ee-first": {
       "version": "1.1.1",
       "from": "ee-first@1.1.1",
@@ -375,6 +402,11 @@
       "from": "fast-levenshtein@>=1.1.0 <2.0.0",
       "resolved": "http://r.cnpmjs.org/fast-levenshtein/download/fast-levenshtein-1.1.3.tgz"
     },
+    "fibers": {
+      "version": "1.0.13",
+      "from": "fibers@>=1.0.8 <2.0.0",
+      "resolved": "http://r.cnpmjs.org/fibers/download/fibers-1.0.13.tgz"
+    },
     "figures": {
       "version": "1.7.0",
       "from": "figures@>=1.3.5 <2.0.0",
@@ -430,6 +462,11 @@
       "from": "generate-object-property@>=1.1.0 <2.0.0",
       "resolved": "http://r.cnpmjs.org/generate-object-property/download/generate-object-property-1.2.0.tgz"
     },
+    "generic-pool": {
+      "version": "2.4.2",
+      "from": "generic-pool@2.4.2",
+      "resolved": "http://r.cnpmjs.org/generic-pool/download/generic-pool-2.4.2.tgz"
+    },
     "glob": {
       "version": "7.0.5",
       "from": "glob@>=7.0.3 <8.0.0",
@@ -479,6 +516,11 @@
       "version": "0.1.4",
       "from": "imurmurhash@>=0.1.4 <0.2.0",
       "resolved": "http://r.cnpmjs.org/imurmurhash/download/imurmurhash-0.1.4.tgz"
+    },
+    "inflection": {
+      "version": "1.10.0",
+      "from": "inflection@>=1.6.0 <2.0.0",
+      "resolved": "http://r.cnpmjs.org/inflection/download/inflection-1.10.0.tgz"
     },
     "inflight": {
       "version": "1.0.5",
@@ -637,6 +679,16 @@
       "from": "mkdirp@>=0.5.0 <0.6.0",
       "resolved": "http://r.cnpmjs.org/mkdirp/download/mkdirp-0.5.1.tgz"
     },
+    "moment": {
+      "version": "2.13.0",
+      "from": "moment@>=2.13.0 <3.0.0",
+      "resolved": "http://r.cnpmjs.org/moment/download/moment-2.13.0.tgz"
+    },
+    "moment-timezone": {
+      "version": "0.5.4",
+      "from": "moment-timezone@>=0.5.4 <0.6.0",
+      "resolved": "http://r.cnpmjs.org/moment-timezone/download/moment-timezone-0.5.4.tgz"
+    },
     "ms": {
       "version": "0.7.1",
       "from": "ms@0.7.1",
@@ -651,6 +703,11 @@
       "version": "0.6.1",
       "from": "negotiator@0.6.1",
       "resolved": "http://r.cnpmjs.org/negotiator/download/negotiator-0.6.1.tgz"
+    },
+    "node-uuid": {
+      "version": "1.4.7",
+      "from": "node-uuid@>=1.4.4 <1.5.0",
+      "resolved": "http://r.cnpmjs.org/node-uuid/download/node-uuid-1.4.7.tgz"
     },
     "number-is-nan": {
       "version": "1.0.0",
@@ -687,6 +744,11 @@
       "from": "os-homedir@>=1.0.0 <2.0.0",
       "resolved": "http://r.cnpmjs.org/os-homedir/download/os-homedir-1.0.1.tgz"
     },
+    "packet-reader": {
+      "version": "0.2.0",
+      "from": "packet-reader@0.2.0",
+      "resolved": "http://r.cnpmjs.org/packet-reader/download/packet-reader-0.2.0.tgz"
+    },
     "parseurl": {
       "version": "1.3.1",
       "from": "parseurl@>=1.3.1 <1.4.0",
@@ -707,6 +769,31 @@
       "from": "path-to-regexp@0.1.7",
       "resolved": "http://r.cnpmjs.org/path-to-regexp/download/path-to-regexp-0.1.7.tgz"
     },
+    "pg": {
+      "version": "6.0.0",
+      "from": "pg@>=6.0.0 <7.0.0",
+      "resolved": "http://r.cnpmjs.org/pg/download/pg-6.0.0.tgz"
+    },
+    "pg-connection-string": {
+      "version": "0.1.3",
+      "from": "pg-connection-string@0.1.3",
+      "resolved": "http://r.cnpmjs.org/pg-connection-string/download/pg-connection-string-0.1.3.tgz"
+    },
+    "pg-pool": {
+      "version": "1.0.2",
+      "from": "pg-pool@>=1.0.0 <2.0.0",
+      "resolved": "http://r.cnpmjs.org/pg-pool/download/pg-pool-1.0.2.tgz"
+    },
+    "pg-types": {
+      "version": "1.11.0",
+      "from": "pg-types@>=1.0.0 <2.0.0",
+      "resolved": "http://r.cnpmjs.org/pg-types/download/pg-types-1.11.0.tgz"
+    },
+    "pgpass": {
+      "version": "0.0.6",
+      "from": "pgpass@0.0.6",
+      "resolved": "http://r.cnpmjs.org/pgpass/download/pgpass-0.0.6.tgz"
+    },
     "pify": {
       "version": "2.3.0",
       "from": "pify@>=2.0.0 <3.0.0",
@@ -726,6 +813,26 @@
       "version": "1.2.1",
       "from": "pluralize@>=1.2.1 <2.0.0",
       "resolved": "http://r.cnpmjs.org/pluralize/download/pluralize-1.2.1.tgz"
+    },
+    "postgres-array": {
+      "version": "1.0.0",
+      "from": "postgres-array@>=1.0.0 <1.1.0",
+      "resolved": "http://r.cnpmjs.org/postgres-array/download/postgres-array-1.0.0.tgz"
+    },
+    "postgres-bytea": {
+      "version": "1.0.0",
+      "from": "postgres-bytea@>=1.0.0 <1.1.0",
+      "resolved": "http://r.cnpmjs.org/postgres-bytea/download/postgres-bytea-1.0.0.tgz"
+    },
+    "postgres-date": {
+      "version": "1.0.2",
+      "from": "postgres-date@>=1.0.0 <1.1.0",
+      "resolved": "http://r.cnpmjs.org/postgres-date/download/postgres-date-1.0.2.tgz"
+    },
+    "postgres-interval": {
+      "version": "1.0.2",
+      "from": "postgres-interval@>=1.0.0 <1.1.0",
+      "resolved": "http://r.cnpmjs.org/postgres-interval/download/postgres-interval-1.0.2.tgz"
     },
     "prelude-ls": {
       "version": "1.1.2",
@@ -797,6 +904,11 @@
       "from": "restore-cursor@>=1.0.1 <2.0.0",
       "resolved": "http://r.cnpmjs.org/restore-cursor/download/restore-cursor-1.0.1.tgz"
     },
+    "retry-as-promised": {
+      "version": "2.0.1",
+      "from": "retry-as-promised@>=2.0.0 <3.0.0",
+      "resolved": "http://r.cnpmjs.org/retry-as-promised/download/retry-as-promised-2.0.1.tgz"
+    },
     "rimraf": {
       "version": "2.5.2",
       "from": "rimraf@>=2.2.8 <3.0.0",
@@ -812,10 +924,32 @@
       "from": "rx-lite@>=3.1.2 <4.0.0",
       "resolved": "http://r.cnpmjs.org/rx-lite/download/rx-lite-3.1.2.tgz"
     },
+    "semver": {
+      "version": "4.3.2",
+      "from": "semver@4.3.2",
+      "resolved": "http://r.cnpmjs.org/semver/download/semver-4.3.2.tgz"
+    },
     "send": {
       "version": "0.14.1",
       "from": "send@0.14.1",
       "resolved": "http://r.cnpmjs.org/send/download/send-0.14.1.tgz"
+    },
+    "sequelize": {
+      "version": "3.23.3",
+      "from": "sequelize@>=3.23.3 <4.0.0",
+      "resolved": "http://r.cnpmjs.org/sequelize/download/sequelize-3.23.3.tgz",
+      "dependencies": {
+        "lodash": {
+          "version": "4.12.0",
+          "from": "lodash@4.12.0",
+          "resolved": "http://r.cnpmjs.org/lodash/download/lodash-4.12.0.tgz"
+        },
+        "semver": {
+          "version": "5.1.0",
+          "from": "semver@>=5.0.1 <6.0.0",
+          "resolved": "http://r.cnpmjs.org/semver/download/semver-5.1.0.tgz"
+        }
+      }
     },
     "serve-static": {
       "version": "1.11.1",
@@ -831,6 +965,11 @@
       "version": "0.6.0",
       "from": "shelljs@>=0.6.0 <0.7.0",
       "resolved": "http://r.cnpmjs.org/shelljs/download/shelljs-0.6.0.tgz"
+    },
+    "shimmer": {
+      "version": "1.1.0",
+      "from": "shimmer@1.1.0",
+      "resolved": "http://r.cnpmjs.org/shimmer/download/shimmer-1.1.0.tgz"
     },
     "should-equal": {
       "version": "1.0.0",
@@ -856,6 +995,11 @@
       "version": "0.0.4",
       "from": "slice-ansi@0.0.4",
       "resolved": "http://r.cnpmjs.org/slice-ansi/download/slice-ansi-0.0.4.tgz"
+    },
+    "split": {
+      "version": "1.0.0",
+      "from": "split@>=1.0.0 <2.0.0",
+      "resolved": "http://r.cnpmjs.org/split/download/split-1.0.0.tgz"
     },
     "sprintf-js": {
       "version": "1.0.3",
@@ -919,6 +1063,16 @@
       "from": "table@>=3.7.8 <4.0.0",
       "resolved": "http://r.cnpmjs.org/table/download/table-3.7.8.tgz"
     },
+    "terraformer": {
+      "version": "1.0.5",
+      "from": "terraformer@>=1.0.5 <1.1.0",
+      "resolved": "http://r.cnpmjs.org/terraformer/download/terraformer-1.0.5.tgz"
+    },
+    "terraformer-wkt-parser": {
+      "version": "1.1.0",
+      "from": "terraformer-wkt-parser@>=1.1.0 <2.0.0",
+      "resolved": "http://r.cnpmjs.org/terraformer-wkt-parser/download/terraformer-wkt-parser-1.1.0.tgz"
+    },
     "text-table": {
       "version": "0.2.0",
       "from": "text-table@>=0.2.0 <0.3.0",
@@ -933,6 +1087,11 @@
       "version": "0.0.2",
       "from": "to-iso-string@0.0.2",
       "resolved": "http://r.cnpmjs.org/to-iso-string/download/to-iso-string-0.0.2.tgz"
+    },
+    "toposort-class": {
+      "version": "1.0.1",
+      "from": "toposort-class@>=1.0.1 <2.0.0",
+      "resolved": "http://r.cnpmjs.org/toposort-class/download/toposort-class-1.0.1.tgz"
     },
     "tryit": {
       "version": "1.0.2",
@@ -984,10 +1143,25 @@
       "from": "utils-merge@1.0.0",
       "resolved": "http://r.cnpmjs.org/utils-merge/download/utils-merge-1.0.0.tgz"
     },
+    "uuid": {
+      "version": "2.0.2",
+      "from": "uuid@>=2.0.2 <3.0.0",
+      "resolved": "http://r.cnpmjs.org/uuid/download/uuid-2.0.2.tgz"
+    },
+    "validator": {
+      "version": "5.4.0",
+      "from": "validator@>=5.2.0 <6.0.0",
+      "resolved": "http://r.cnpmjs.org/validator/download/validator-5.4.0.tgz"
+    },
     "vary": {
       "version": "1.1.0",
       "from": "vary@>=1.1.0 <1.2.0",
       "resolved": "http://r.cnpmjs.org/vary/download/vary-1.1.0.tgz"
+    },
+    "wkx": {
+      "version": "0.2.0",
+      "from": "wkx@0.2.0",
+      "resolved": "http://r.cnpmjs.org/wkx/download/wkx-0.2.0.tgz"
     },
     "wordwrap": {
       "version": "1.0.0",
