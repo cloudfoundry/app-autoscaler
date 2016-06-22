@@ -6,8 +6,8 @@ Metrics-Collector is one of the components of CF `app-autoscaler`. It is used to
 
 ### System requirements:
 
-* Go 1.5 or above
-* Cloud Foundry relese 235 or later
+* Go 1.6 or above
+* Cloud Foundry release 235 or later
 
 ### Build and test
 
@@ -55,7 +55,7 @@ The config parameters are explained as below
 * logging: config for logging
  * `level`: the level of logging, can be 'debug', 'info', 'error' or 'fatal'
 
-To run the metrics-collector, use `../../bin/memorycollector -c config_file_name'
+To run the metrics-collector, use `../../bin/metrics-collector -c config_file_name'
 
 ## API
 

@@ -13,11 +13,11 @@ import (
 	. "github.com/onsi/gomega/gexec"
 )
 
-var _ = Describe("Memorycollector", func() {
-	var runner *MemoryCollectorRunner
+var _ = Describe("MetricsCollector", func() {
+	var runner *MetricsCollectorRunner
 
 	BeforeEach(func() {
-		runner = NewMemoryCollectorRunner()
+		runner = NewMetricsCollectorRunner()
 	})
 
 	JustBeforeEach(func() {

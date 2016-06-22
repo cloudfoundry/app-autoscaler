@@ -32,13 +32,13 @@ var (
 	ccNOAAUAA  *ghttp.Server
 )
 
-func TestMemorycollector(t *testing.T) {
+func TestMetricsCollector(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Memorycollector Suite")
+	RunSpecs(t, "MetricsCollector Suite")
 }
 
 var _ = SynchronizedBeforeSuite(func() []byte {
-	mc, err := gexec.Build("metrics-collector/cmd/memorycollector", "-race")
+	mc, err := gexec.Build("metrics-collector/cmd/metrics-collector", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
 	return []byte(mc)
@@ -110,20 +110,20 @@ func writeConfig(c *config.Config) *os.File {
 	return cfg
 }
 
-type MemoryCollectorRunner struct {
+type MetricsCollectorRunner struct {
 	configPath string
 	startCheck string
 	Session    *gexec.Session
 }
 
-func NewMemoryCollectorRunner() *MemoryCollectorRunner {
-	return &MemoryCollectorRunner{
+func NewMetricsCollectorRunner() *MetricsCollectorRunner {
+	return &MetricsCollectorRunner{
 		configPath: configFile.Name(),
 		startCheck: "metrics-collector.started",
 	}
 }
 
-func (mc *MemoryCollectorRunner) Start() {
+func (mc *MetricsCollectorRunner) Start() {
 	mcSession, err := gexec.Start(exec.Command(
 		mcPath,
 		"-c",
@@ -141,13 +141,13 @@ func (mc *MemoryCollectorRunner) Start() {
 	mc.Session = mcSession
 }
 
-func (mc *MemoryCollectorRunner) Interrupt() {
+func (mc *MetricsCollectorRunner) Interrupt() {
 	if mc.Session != nil {
 		mc.Session.Interrupt().Wait(5 * time.Second)
 	}
 }
 
-func (mc *MemoryCollectorRunner) KillWithFire() {
+func (mc *MetricsCollectorRunner) KillWithFire() {
 	if mc.Session != nil {
 		mc.Session.Kill().Wait(5 * time.Second)
 	}

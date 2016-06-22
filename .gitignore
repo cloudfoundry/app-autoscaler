@@ -6,4 +6,4 @@
 /.recommenders
 /.project
 /.settings/
-/bin/memorycollector
+/bin/metrics-collector
