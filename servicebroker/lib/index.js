@@ -12,9 +12,6 @@ var settings = JSON.parse(
 var port = process.env.PORT || settings.port;
 
 var app = express();
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());
-
 var auth = function (req, res, next) {
   function unauthorized(res) {
     res.set('WWW-Authenticate', 'Basic realm="serviceBrokerAuth"');
@@ -34,15 +31,19 @@ var auth = function (req, res, next) {
   next();
 };
 
-app.use(auth);
-
 var router = express.Router();
 var serviceBrokerApi = new api();
 router.get('/catalog', function(req, res) {
   res.json(serviceBrokerApi.getCatalog());
 });
 
+
+//define the sequence of middleware
+app.use(auth);
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());
 app.use('/v2', router);
+
 var server = app.listen(port, function () {
     var port = server.address().port;
     console.log('Service broker app is running and listening at port %s', port);
