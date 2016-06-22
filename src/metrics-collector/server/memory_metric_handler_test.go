@@ -3,7 +3,6 @@ package server_test
 import (
 	"errors"
 	"metrics-collector/metrics"
-	"metrics-collector/mhttp"
 	. "metrics-collector/server"
 	"metrics-collector/server/fakes"
 
@@ -48,7 +47,7 @@ var _ = Describe("MemoryMetricHandler", func() {
 
 			It("returns a 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-				errJson := &mhttp.ErrorResponse{}
+				errJson := &ErrorResponse{}
 				d := json.NewDecoder(resp.Body)
 				err := d.Decode(errJson)
 

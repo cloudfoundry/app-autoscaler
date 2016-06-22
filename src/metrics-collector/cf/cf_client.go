@@ -1,15 +1,16 @@
 package cf
 
 import (
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"metrics-collector/config"
-	"metrics-collector/mhttp"
 	"net/http"
 	"net/url"
 	"strings"
 
+	"github.com/cloudfoundry-incubator/cf_http"
 	"github.com/pivotal-golang/lager"
 )
 
@@ -37,45 +38,52 @@ type CfClient interface {
 }
 
 type cfClient struct {
-	logger      lager.Logger
-	tokens      Tokens
-	endpoints   Endpoints
-	infoUrl     string
-	formEncoded string
-	token       string
-	headers     map[string]string
+	logger     lager.Logger
+	tokens     Tokens
+	endpoints  Endpoints
+	infoUrl    string
+	form       url.Values
+	token      string
+	headers    map[string]string
+	httpClient *http.Client
 }
 
 func NewCfClient(conf *config.CfConfig, logger lager.Logger) CfClient {
 	c := &cfClient{}
+
 	c.logger = logger
 	c.infoUrl = conf.Api + PATH_CF_INFO
 
 	if conf.GrantType == config.GrantTypePassword {
-		c.formEncoded = url.Values{
+		c.form = url.Values{
 			"grant_type": {config.GrantTypePassword},
 			"username":   {conf.Username},
 			"password":   {conf.Password},
-		}.Encode()
+		}
 		c.token = "Basic Y2Y6"
 	} else {
-		c.formEncoded = url.Values{
+		c.form = url.Values{
 			"grant_type":    {config.GrantTypeClientCredentials},
 			"client_id":     {conf.ClientId},
 			"client_secret": {conf.Secret},
-		}.Encode()
+		}
 		c.token = "Basic " + base64.StdEncoding.EncodeToString([]byte(conf.ClientId+":"+conf.Secret))
 	}
+
 	c.headers = map[string]string{}
 	c.headers["Content-Type"] = "application/x-www-form-urlencoded"
 	c.headers["charset"] = "utf-8"
+
+	c.httpClient = cf_http.NewClient()
+	c.httpClient.Transport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+
 	return c
 }
 
 func (c *cfClient) retrieveEndpoints() error {
-	c.logger.Info("retrieve-endpoints", lager.Data{"infoUrl": c.infoUrl, "formEncoded": c.formEncoded})
+	c.logger.Info("retrieve-endpoints", lager.Data{"infoUrl": c.infoUrl})
 
-	resp, err := mhttp.DoRequest("GET", c.infoUrl, "", nil, nil)
+	resp, err := c.httpClient.Get(c.infoUrl)
 	if err != nil {
 		c.logger.Error("request-endpoints", err)
 		return err
@@ -103,10 +111,21 @@ func (c *cfClient) Login() error {
 	}
 
 	authURL := c.endpoints.AuthEndpoint + PATH_CF_AUTH
-	c.logger.Info("login", lager.Data{"authURL": authURL})
+	c.logger.Info("login", lager.Data{"authURL": authURL, "form": c.form})
+
+	var req *http.Request
+	req, err = http.NewRequest("POST", authURL, strings.NewReader(c.form.Encode()))
+	if err != nil {
+		c.logger.Error("requst-login", err)
+		return err
+	}
+	req.Header.Set("Authorization", c.token)
+	for k, v := range c.headers {
+		req.Header.Set(k, v)
+	}
 
 	var resp *http.Response
-	resp, err = mhttp.DoRequest("POST", authURL, c.token, c.headers, strings.NewReader(c.formEncoded))
+	resp, err = c.httpClient.Do(req)
 	if err != nil {
 		c.logger.Error("request-login", err)
 		return err
