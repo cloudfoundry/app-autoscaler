@@ -1,5 +1,6 @@
 {
   "port": 8080,
-  "user": "user",
-  "password": "password"
+  "username": "username",
+  "password": "password",
+  "dbUri": "postgres://postgres@127.0.0.1:5432/servicebroker_db"
 }

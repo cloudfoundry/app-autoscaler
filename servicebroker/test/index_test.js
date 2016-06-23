@@ -4,12 +4,13 @@ var supertest = require("supertest");
 var should = require("should");
 var fs = require('fs');
 var path = require('path');
+var uuid = require('uuid');
 
 // This agent refers to PORT where program is runninng.
 var catalog = JSON.parse(fs.readFileSync(path.join(__dirname, '../config/catalog.json'), 'utf8'));
 var settings = JSON.parse(
   fs.readFileSync(path.join(__dirname, '../config/settings.json'), 'utf8'));
-var auth = new Buffer(settings.user + ":" + settings.password).toString('base64')
+var auth = new Buffer(settings.username + ":" + settings.password).toString('base64')
 
 // UNIT test begin
 describe("RESTful API test suite", function() {
@@ -27,8 +28,8 @@ describe("RESTful API test suite", function() {
     supertest(server)
       .get("/v2/catalog")
       .set("Authorization", "Basic " + auth)
-      .expect("Content-type", /json/)
       .expect(200)
+      .expect("Content-type", /json/)
       .end(function(err, res) {
         res.status.should.equal(200);
         JSON.stringify(res.body).should.equal(JSON.stringify(catalog));
@@ -36,9 +37,25 @@ describe("RESTful API test suite", function() {
       });
   });
 
+  it("should return 201 when add a new service instance", function(done) {
+    var serviceId = uuid.v4();
+    var orgId = uuid.v4();
+    var spaceId = uuid.v4();
+    supertest(server)
+      .put("/v2/service_instances/" + serviceId)
+      .set("Authorization", "Basic " + auth)
+      .send({ "organization_guid": orgId, "space_guid": spaceId })
+      .expect(201)
+      .expect('Content-Type', /json/)
+      .expect({
+        dashboard_url: ''
+      }, done);
+  }); 
+
+
   it("should resturn 404 when path is invalid", function(done) {
     supertest(server)
-      .get("/v2/catalogs")
+      .get("/v2/invalidpath")
       .set("Authorization", "Basic " + auth)
       .expect(404)
       .end(function(err, res) {
@@ -71,10 +88,11 @@ describe("RESTful API test suite", function() {
   it("should return 401 when incorrect password provided", function(done) {
     supertest(server)
       .get("/v2/catalog")
-      .set("Authorization", "Basic " + new Buffer(settings.user+ ":" + "incorrectpassword").toString('base64') )
+      .set("Authorization", "Basic " + new Buffer(settings.username + ":" + "incorrectpassword").toString('base64'))
       .expect(401, done);
 
   });
+
 
 
 });

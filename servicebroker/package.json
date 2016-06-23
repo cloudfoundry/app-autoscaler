@@ -11,10 +11,14 @@
     "_mocha": "./bin/_mocha"
   },
   "dependencies": {
-    "eslint": "^2.11.1",
+    "asyncawait": "^1.0.3",
     "basic-auth": "^1.0.4",
     "body-parser": "^1.15.1",
-    "express": "^4.13.4"
+    "eslint": "^2.11.1",
+    "express": "^4.13.4",
+    "pg": "^6.0.0",
+    "sequelize": "^3.23.3",
+    "uuid": "^2.0.2"
   },
   "devDependencies": {
     "chai": "^3.5.0",
@@ -23,11 +27,11 @@
     "supertest": "^1.2.0"
   },
   "scripts": {
-    "bootstrap": "npm install eslint mocha -g && npm install && npm install bin/cfpack",
     "lint": "eslint lib",
     "start": "node lib/index.js",
     "test": "mocha --recursive test",
     "watch-test": "mocha test --recursive --watch",
-    "package": "./bin/cfpack/cfpack"
+    "postgres-init": "node bin/postgresDbInit/src/index.js",
+    "package": "npm install bin/cfpack && ./bin/cfpack/cfpack"
   }
 }
