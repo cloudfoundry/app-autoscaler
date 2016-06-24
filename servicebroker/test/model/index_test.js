@@ -9,14 +9,14 @@ describe('Database Initialization Test Suite', function () {
   });
 
   it('Should be OK to return service_instance model', function () {
-    var model = require('../../lib/model')();
-    expect(model.service_instance).to.be.ok;
+    var models = require('../../lib/models')();
+    expect(models.service_instance).to.be.ok;
   });
 
   it('Should fail for with invalid DB_URI', function () {
     var correctDBUri = dbConnectionInfo.dbUri;
     dbConnectionInfo.dbUri= 'postgres://postgres@127.0.0.1:5432/invalidDB';
-    var model = require('../../lib/model')(function (error) {
+    var models = require('../../lib/models')(function (error) {
       expect(error).to.not.be.null;
     });
      dbConnectionInfo.dbUri = correctDBUri;

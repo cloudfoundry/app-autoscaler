@@ -5,7 +5,7 @@ var fake_serviceinstance = { 'serviceId':'test_service', 'orgId':'test_org', 'sp
 
 describe('Service_instance Model Definition Test Suite', function() {
   before(function() {
-    this.serviceInstance = require('../../lib/model')().service_instance;
+    this.serviceInstance = require('../../lib/models')().service_instance;
     this.serviceInstance.sequelize.sync();
   });
   

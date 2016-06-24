@@ -5,7 +5,7 @@ module.exports = function(callback) {
   var Sequelize = require('sequelize');
   var dbConnectionInfo = require(path.join(__dirname, '../../lib/util/dbConnectionInfo.js'));
   var sequelize =  new Sequelize(dbConnectionInfo.dbUri, { logging: false });
- 
+  
   sequelize.authenticate()
     .then(function() {
     if (callback) {
@@ -28,7 +28,7 @@ module.exports = function(callback) {
     .forEach(function(file) {
       var model = sequelize.import(path.join(__dirname, file));
       db[model.name] = model;
-    });
+  });
 
   db.sequelize = sequelize;
   return db;
