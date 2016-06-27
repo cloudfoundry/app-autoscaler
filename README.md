@@ -54,6 +54,16 @@ uaac client add cf-autoscaler-client \
 
 The following sections describe how to test, deploy and run `CF-AutoScaler` service manually.
 
+### Initialize the Database
+```shell
+createuser postgres -s
+psql postgres://postgres@127.0.0.1:5432/servicebroker_db -c 'DROP DATABASE IF EXISTS autoscaler'
+psql postgres://postgres@127.0.0.1:5432/servicebroker_db -c 'CREATE DATABASE autoscaler'
+
+mvn package
+java -cp 'db/target/lib/*'  liquibase.integration.commandline.Main --changeLogFile=api/db/changelog/db.changelog-master.yaml --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver update
+```
+
 ### Run Unit Tests
 
 For all these three `CF-AutoScaler` components, a unit test `unittest.properties` under 'profiles' directory has been created to define the settings for unit test.
