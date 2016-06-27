@@ -1,5 +1,6 @@
 'use strict';
 var expect = require('chai').expect;
+var models = require('../../lib/models')();
 var serviceInstance = require('../../lib/models')().service_instance;
 
 var fake_serviceId = "test_service";
@@ -20,7 +21,6 @@ var fake_condition2 = {
   where: { 'serviceId': fake_serviceId, 'orgId': fake_orgId2, 'spaceId': fake_spaceId2 }
 };
 
-
 describe('Service_instance Model Definition Test Suite', function() {
 
   before(function() {
@@ -38,7 +38,11 @@ describe('Service_instance Model Definition Test Suite', function() {
         expect(result[0].serviceId).to.equal(fake_condition.serviceId);
         expect(result[1]).to.equal(true);
         done();
-      });
+      }) 
+      .catch (function(error) {
+          console.log ("error in findOrCreate: " + error.message);
+          done();
+     });
   });
 
 
