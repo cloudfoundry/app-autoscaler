@@ -1,7 +1,7 @@
 'use strict';
 var ServiceInstance = function(sequelize, DataTypes) {
-   return sequelize.define('service_instance', {
-   serviceId: {
+  return sequelize.define('service_instance', {
+    serviceId: {
       type: DataTypes.STRING,
       primaryKey: true,
       field: 'service_id',

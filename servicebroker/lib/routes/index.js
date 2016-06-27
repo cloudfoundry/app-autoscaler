@@ -1,8 +1,8 @@
 var fs = require('fs');
 var path = require('path');
 
-module.exports = function(app){
- 	fs
+module.exports = function(app) {
+  fs
     .readdirSync(__dirname)
     .filter(function(file) {
       return file.indexOf('.') !== 0 && file !== 'index.js';
@@ -12,6 +12,3 @@ module.exports = function(app){
       require(path.join(__dirname, file))(app);
     });
 }
-
-
-

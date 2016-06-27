@@ -17,7 +17,12 @@ Change configuration for service broker in file `config/settings.json`, includin
 ```sh
 createuser postgres -s
 ```
+* Start postgres server
 
+**Initialize**
+```js
+npm run bootstrap
+```
 **Run eslint**
 ```js
 npm run lint

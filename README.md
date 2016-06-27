@@ -66,7 +66,7 @@ npm test
 popd
 
 pushd servicebroker
-npm install
+npm bootstrap
 npm test
 popd
 
