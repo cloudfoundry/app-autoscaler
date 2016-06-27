@@ -7,7 +7,7 @@ var dbConnectionInfo = require(path.join(__dirname, '../../../lib/util/dbConnect
 
 var initDB = function initDB() {
   var dbName = dbConnectionInfo.dbName;
-  var psqlConnectionStr = 'psql '+ dbConnectionInfo.dbServer;
+  var psqlConnectionStr = 'psql ' + dbConnectionInfo.dbServer;
 
   var dropDBCmd = psqlConnectionStr + ' -c "DROP DATABASE IF EXISTS ' + dbName + ';"';
   var createDBCmd = psqlConnectionStr + ' -c "CREATE DATABASE ' + dbName + ';"';
@@ -31,7 +31,7 @@ var initDB = function initDB() {
             if (error !== null) {
               console.log('exec error: ' + error);
             } else {
-              console.log('init database ' + dbName  + ' successfully!');
+              console.log('init database ' + dbName + ' successfully!');
             }
           });
         }
