@@ -31,7 +31,7 @@ describe('Service_instance Model Definition Test Suite', function() {
   });
 
 
-  context(' findOrCreate ', function() {
+  context('findOrCreate', function() {
     context('when there is no record ', function() {
       it('should create a new service instance successfully with the 1st findOrCreate', function() {
         return serviceInstance.findOrCreate(fake_condition)
@@ -69,7 +69,7 @@ describe('Service_instance Model Definition Test Suite', function() {
   });
 
 
-  context(' findById ', function() {
+  context('findById', function() {
     context('when there is no record ', function() {
       it('should find NULL with nonexist service instance', function() {
         return serviceInstance.findById(fake_serviceInstanceId)
@@ -94,7 +94,7 @@ describe('Service_instance Model Definition Test Suite', function() {
     });
   });
 
-  context(' destory ', function() {
+  context('destroy', function() {
     context('when there is no record ', function() {
       it('should return 0 with nonexist service instance', function() {
         return serviceInstance.destroy({
@@ -128,7 +128,4 @@ describe('Service_instance Model Definition Test Suite', function() {
 
     });
   });
-
-
-
 });

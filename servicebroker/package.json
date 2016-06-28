@@ -11,23 +11,21 @@
     "_mocha": "./bin/_mocha"
   },
   "dependencies": {
-    "asyncawait": "^1.0.3",
     "basic-auth": "^1.0.4",
     "body-parser": "^1.15.1",
-    "eslint": "^2.11.1",
     "express": "^4.13.4",
-    "pg": "^6.0.0",
-    "sequelize": "^3.23.3",
-    "uuid": "^2.0.2"
+    "pg": "^6.0.1",
+    "sequelize": "^3.23.4"
   },
   "devDependencies": {
+    "uuid": "^2.0.2",
+    "eslint": "^2.11.1",
     "chai": "^3.5.0",
     "mocha": "^2.5.3",
     "should": "^9.0.0",
     "supertest": "^1.2.0"
   },
   "scripts": {
-    "bootstrap": "npm install && node bin/postgresDbInit/src/index.js",
     "lint": "eslint lib",
     "start": "node lib/index.js",
     "test": "mocha --recursive test",

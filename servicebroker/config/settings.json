@@ -2,5 +2,5 @@
   "port": 8080,
   "username": "username",
   "password": "password",
-  "dbUri": "postgres://postgres@127.0.0.1:5432/servicebroker_db"
+  "dbUri": "postgres://postgres@127.0.0.1:5432/autoscaler"
 }

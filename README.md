@@ -57,11 +57,12 @@ The following sections describe how to test, deploy and run `CF-AutoScaler` serv
 ### Initialize the Database
 ```shell
 createuser postgres -s
-psql postgres://postgres@127.0.0.1:5432/servicebroker_db -c 'DROP DATABASE IF EXISTS autoscaler'
-psql postgres://postgres@127.0.0.1:5432/servicebroker_db -c 'CREATE DATABASE autoscaler'
+psql postgres://postgres@127.0.0.1:5432 -c 'DROP DATABASE IF EXISTS autoscaler'
+psql postgres://postgres@127.0.0.1:5432 -c 'CREATE DATABASE autoscaler'
 
 mvn package
-java -cp 'db/target/lib/*'  liquibase.integration.commandline.Main --changeLogFile=api/db/changelog/db.changelog-master.yaml --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver update
+java -cp 'db/target/lib/*'  liquibase.integration.commandline.Main --changeLogFile=api/db/api.db.changelog.yml --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver update
+java -cp 'db/target/lib/*'  liquibase.integration.commandline.Main --changeLogFile=servicebroker/db/servicebroker.db.changelog.yml --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver update
 ```
 
 ### Run Unit Tests
@@ -76,7 +77,7 @@ npm test
 popd
 
 pushd servicebroker
-npm bootstrap
+npm install
 npm test
 popd
 

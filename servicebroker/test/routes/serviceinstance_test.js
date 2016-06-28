@@ -34,7 +34,7 @@ describe('service instance RESTful API', function() {
     serviceInstance.truncate({ cascade: true });
   });
 
-  context('Provision service ', function() {
+  context('Provision service', function() {
     context('when there is no record', function() {
       it("creates a new instance with 201", function(done) {
         supertest(server)
@@ -92,43 +92,38 @@ describe('service instance RESTful API', function() {
 
 
   context('Deprovision service ', function() {
-
-  context('when there is no record', function() {
-    it("delete an nonexist instance with 410", function(done) {
-      supertest(server)
-        .delete("/v2/service_instances/" + "nonexistid")
-        .set("Authorization", "Basic " + auth)
-        .expect(410)
-        .expect('Content-Type', /json/)
-        .expect({}, done);
-    });
-  });
-
-  context('when an instance already exists', function() {
-
-     beforeEach(function(done) {
+    context('when there is no record', function() {
+      it("delete an nonexist instance with 410", function(done) {
         supertest(server)
-          .put("/v2/service_instances/" + serviceInstanceId)
+          .delete("/v2/service_instances/" + "nonexistid")
           .set("Authorization", "Basic " + auth)
-          .send({ "organization_guid": orgId, "space_guid": spaceId })
-          .expect(201)
+          .expect(410)
           .expect('Content-Type', /json/)
-          .expect({
-            dashboard_url: ''
-          }, done);
+          .expect({}, done);
       });
+    });
 
-    it("delete an instance with 200", function(done) {
-      supertest(server)
-        .delete("/v2/service_instances/" + serviceInstanceId)
-        .set("Authorization", "Basic " + auth)
-        .expect(200)
-        .expect('Content-Type', /json/)
-        .expect({}, done);
+    context('when an instance already exists', function() {
+      beforeEach(function(done) {
+          supertest(server)
+            .put("/v2/service_instances/" + serviceInstanceId)
+            .set("Authorization", "Basic " + auth)
+            .send({ "organization_guid": orgId, "space_guid": spaceId })
+            .expect(201)
+            .expect('Content-Type', /json/)
+            .expect({
+              dashboard_url: ''
+            }, done);
+        });
+
+      it("delete an instance with 200", function(done) {
+        supertest(server)
+          .delete("/v2/service_instances/" + serviceInstanceId)
+          .set("Authorization", "Basic " + auth)
+          .expect(200)
+          .expect('Content-Type', /json/)
+          .expect({}, done);
+      });
     });
   });
-
-
-  });
-
 });

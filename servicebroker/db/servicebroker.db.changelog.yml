@@ -1,0 +1,33 @@
+databaseChangeLog:
+- changeSet:
+    id: 1
+    author: ying
+    changes:
+    - createTable:
+        tableName: service_instance
+        columns:
+        - column:
+            name: service_id
+            type: varchar(40)
+            constraints:
+              primaryKey: true
+              nullable: false
+        - column:
+            name: org_id
+            type: varchar(40)
+            constraints:
+              nullable: false
+        - column:
+            name: space_id
+            type: varchar(40)
+            constraints:
+              nullable: false
+- changeSet:
+    id: 2
+    author: ying
+    changes:
+    - renameColumn:
+        tableName: service_instance
+        columnDataType: varchar(40),
+        newColumnName: service_instance_id
+        oldColumnName: service_id
