@@ -1,7 +1,6 @@
 'use strict';
 
 var supertest = require("supertest");
-var should = require("should");
 var fs = require('fs');
 var path = require('path');
 var uuid = require('uuid');
@@ -13,12 +12,12 @@ var auth = new Buffer(settings.username + ":" + settings.password).toString('bas
 
 describe("Invalid path for RESTful API", function() {
   var server;
-  beforeEach(function() {
+  before(function() {
     delete require.cache[require.resolve('../lib/index.js')];
     server = require(path.join(__dirname, '../lib/index.js'));
   });
 
-  afterEach(function(done) {
+  after(function(done) {
     server.close(done);
   });
 
@@ -27,23 +26,19 @@ describe("Invalid path for RESTful API", function() {
     supertest(server)
       .get("/v2/invalidpath")
       .set("Authorization", "Basic " + auth)
-      .expect(404)
-      .end(function(err, res) {
-        if (err) return done(err);
-        done();
-      });
+      .expect(404, done);
   });
 
 });
 
 describe("Auth for RESTful API", function() {
   var server;
-  beforeEach(function() {
+  before(function() {
     delete require.cache[require.resolve('../lib/index.js')];
     server = require(path.join(__dirname, '../lib/index.js'));
   });
 
-  afterEach(function(done) {
+  after(function(done) {
     server.close(done);
   });
 
@@ -56,14 +51,14 @@ describe("Auth for RESTful API", function() {
   it("should return 401 when incorrect user/password provided", function(done) {
     supertest(server)
       .get("/v2/catalog")
-      .set("Authorization", "Basic " + new Buffer("incorrectuser:incorrectpassword").toString('base64') )
+      .set("Authorization", "Basic " + new Buffer("incorrectuser:incorrectpassword").toString('base64'))
       .expect(401, done);
   });
 
   it("should return 401 when incorrect user provided", function(done) {
     supertest(server)
       .get("/v2/catalog")
-      .set("Authorization", "Basic " + new Buffer("incorrectuser" + ":" + settings.password).toString('base64') )
+      .set("Authorization", "Basic " + new Buffer("incorrectuser" + ":" + settings.password).toString('base64'))
       .expect(401, done);
 
   });

@@ -27,11 +27,11 @@
     "supertest": "^1.2.0"
   },
   "scripts": {
+    "bootstrap": "npm install && node bin/postgresDbInit/src/index.js",
     "lint": "eslint lib",
     "start": "node lib/index.js",
     "test": "mocha --recursive test",
     "watch-test": "mocha test --recursive --watch",
-    "postgres-init": "node bin/postgresDbInit/src/index.js",
     "package": "npm install bin/cfpack && ./bin/cfpack/cfpack"
   }
 }

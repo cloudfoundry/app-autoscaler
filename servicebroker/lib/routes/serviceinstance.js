@@ -1,39 +1,67 @@
 'use strict';
 
-module.exports = function(app){
+
+module.exports = function(app) {
   var path = require('path');
+  var logger = require(path.join(__dirname, '../logger/logger.js'));
   var models = require(path.join(__dirname, '../models'))();
- 
-  app.put('/v2/service_instances/:serviceId', function(req, res) {
-    var serviceId = req.params.serviceId;
+
+  app.put('/v2/service_instances/:instanceId', function(req, res) {
+    var serviceInstanceId = req.params.instanceId;
     var orgId = req.body.organization_guid;
     var spaceId = req.body.space_guid
- 
+
     models.service_instance.findOrCreate({
-      serviceId: serviceId,
+      serviceInstanceId: serviceInstanceId,
       orgId: orgId,
       spaceId: spaceId,
       where: {
-        serviceId: serviceId,
+        serviceInstanceId: serviceInstanceId,
         orgId: orgId,
         spaceId: spaceId
       }
-    })
-    .then(function(result){
+    }).then(function(result) {
       var isNew = result[1];
       if (isNew === true) {
-         res.status(201).send({ "dashboard_url": "" }).end();
+        res.status(201);
       } else {
-         res.status(200).send({ "dashboard_url": "" }).end();
+        res.status(200);
       }
-    }).catch(function(err){
-      if (err.name.indexOf('SequelizeUniqueConstraintError') >= 0) {
-        res.status(409).end();
+      res.json({ "dashboard_url": "" });
+    }).catch(function(err) {
+      if (err instanceof models.sequelize.UniqueConstraintError) {
+        res.status(409);
       } else {
-        res.status(500).end();
-      } 
+        logger.error("Fail to handle request: " + JSON.stringify(req) + " with ERROR: " + JSON.stringify(err));
+        res.status(500);
+      }
+      res.end();
     });
 
   });
-}
 
+  app.delete('/v2/service_instances/:instanceId', function(req, res) {
+    var serviceInstanceId = req.params.instanceId;
+
+    models.service_instance.findById(serviceInstanceId)
+      .then(function(instance) {
+        if (instance != null) {
+          models.service_instance.destroy({
+            where: {
+              serviceInstanceId: serviceInstanceId
+            }
+          }).then(function(count) {
+            res.status(200);
+          })
+        } else {
+          res.status(410);
+        }
+        res.json({});
+      }).catch(function(err) {
+        logger.error("Fail to handle request: " + JSON.stringify(req) + " with ERROR: " + JSON.stringify(err));
+        res.status(500).end();
+      });
+
+  });
+
+}
