@@ -1,6 +1,5 @@
 'use strict';
 var expect = require('chai').expect;
-var models = require('../../lib/models')();
 var serviceInstance = require('../../lib/models')().service_instance;
 
 var fake_serviceId = "test_service";
@@ -25,49 +24,43 @@ describe('Service_instance Model Definition Test Suite', function() {
 
   before(function() {
     serviceInstance.sequelize.sync();
-    serviceInstance.truncate({ cascade: true });
   });
 
   beforeEach(function() {
     serviceInstance.truncate({ cascade: true });
   });
 
-  it('Should create a new service instance successfully with the 1st findOrCreate', function(done) {
-    serviceInstance.findOrCreate(fake_condition)
+  it('Should create a new service instance successfully with the 1st findOrCreate', function() {
+    return serviceInstance.findOrCreate(fake_condition)
       .then(function(result) {
         expect(result[0].serviceId).to.equal(fake_condition.serviceId);
         expect(result[1]).to.equal(true);
-        done();
-      }) 
-      .catch (function(error) {
-          console.log ("error in findOrCreate: " + error.message);
-          done();
-     });
+      })
   });
 
 
-  it('Should find the existing service instance successfully with the 2nd findOrCreate', function(done) {
-    serviceInstance.findOrCreate(fake_condition)
+  it('Should find the existing service instance successfully with the 2nd findOrCreate', function() {
+    return serviceInstance.findOrCreate(fake_condition)
       .then(function(result) {
-        serviceInstance.findOrCreate(fake_condition)
+        return serviceInstance.findOrCreate(fake_condition)
           .then(function(result) {
             expect(result[0].serviceId).to.equal(fake_condition.serviceId);
             expect(result[1]).to.equal(false);
-            done();
           });
       });
+
   });
 
-  it('Should throw UniqueConstraintError with conflict record', function(done) {
-    serviceInstance.findOrCreate(fake_condition)
+  it('Should throw UniqueConstraintError with conflict record', function() {
+    return serviceInstance.findOrCreate(fake_condition)
       .then(function(result) {
-        serviceInstance.findOrCreate(fake_condition2)
-          .then(function(result) {})
-          .catch(function(error) {
+        return serviceInstance.findOrCreate(fake_condition2)
+          .then(function(result) {
+            expect(result).to.not.exist;
+          }).catch(function(error) {
             expect(error).to.not.be.null;
             expect(error instanceof serviceInstance.sequelize.UniqueConstraintError);
-            done();
-          });
+          })
       });
   });
 

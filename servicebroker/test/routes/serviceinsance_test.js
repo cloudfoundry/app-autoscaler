@@ -3,7 +3,6 @@
 var fs = require('fs');
 var path = require('path');
 var supertest = require("supertest");
-var should = require('should');
 var uuid = require('uuid');
 var serviceInstance = require('../../lib/models')().service_instance;
 
