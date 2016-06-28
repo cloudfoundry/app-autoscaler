@@ -2,7 +2,7 @@
 databaseChangeLog:
    - changeSet:
       id: 1
-      author: pradyutsarma
+      author: ying
       changes:
         - createTable:
             tableName: service_instance

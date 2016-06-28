@@ -1,7 +1,6 @@
 'use strict';
 
 var supertest = require("supertest");
-var should = require("should");
 var fs = require('fs');
 var path = require('path');
 var uuid = require('uuid');
@@ -27,11 +26,7 @@ describe("Invalid path for RESTful API", function() {
     supertest(server)
       .get("/v2/invalidpath")
       .set("Authorization", "Basic " + auth)
-      .expect(404)
-      .end(function(err, res) {
-        if (err) return done(err);
-        done();
-      });
+      .expect(404, done);
   });
 
 });

@@ -3,7 +3,7 @@
 var fs = require('fs');
 var path = require('path');
 var supertest = require("supertest");
-var should = require('should');
+var expect = require('chai').expect;
 
 var settings = JSON.parse(
   fs.readFileSync(path.join(__dirname, '../../config/settings.json'), 'utf8'));
@@ -30,8 +30,7 @@ describe('getCatalog RESTful API', function() {
       .expect(200)
       .expect("Content-type", /json/)
       .end(function(err, res) {
-        res.status.should.equal(200);
-        JSON.stringify(res.body).should.equal(JSON.stringify(catalog));
+        expect(JSON.stringify(res.body)).to.be.equal(JSON.stringify(catalog));
         done();
       });
   });
