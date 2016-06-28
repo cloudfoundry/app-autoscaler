@@ -3,6 +3,7 @@ module.exports = function(callback) {
   var fs = require('fs');
   var path = require('path');
   var Sequelize = require('sequelize');
+  var logger = require(path.join(__dirname, '../logger/logger.js'));
   var settings = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/settings.json'), 'utf8'));
   var dbConnectionInfo = require(path.join(__dirname, '../../lib/util/dbConnectionInfo.js'))(settings.dbUri);
   var sequelize = new Sequelize(dbConnectionInfo.dbUri, { logging: false });
@@ -14,7 +15,7 @@ module.exports = function(callback) {
       }
     })
     .catch(function(error) {
-      console.log('DB Connection failed ', error);
+      logger.error('DB Connection failed ', error);
       if (callback) {
         callback(error);
       }
