@@ -12,7 +12,7 @@ import (
 	"github.com/cloudfoundry/sonde-go/events"
 )
 
-const TOKEN_TYPE_BEARER = "bearer"
+const TokenTypeBearer = "bearer"
 
 type MemoryMetricHandler struct {
 	cfClient cf.CfClient
@@ -42,7 +42,7 @@ func (h *MemoryMetricHandler) GetMemoryMetric(w http.ResponseWriter, r *http.Req
 
 	w.Header().Set("Content-Type", "application/json")
 
-	containerMetrics, err := h.noaa.ContainerMetrics(appId, TOKEN_TYPE_BEARER+" "+h.cfClient.GetTokens().AccessToken)
+	containerMetrics, err := h.noaa.ContainerMetrics(appId, TokenTypeBearer+" "+h.cfClient.GetTokens().AccessToken)
 	if err != nil {
 		h.logger.Error("noaa-get-container-metrics", err)
 

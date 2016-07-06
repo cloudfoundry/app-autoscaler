@@ -17,7 +17,7 @@ import (
 	"net/url"
 )
 
-const TEST_PATH_MEMORY_METRICS = "/v1/apps/an-app-id/metrics/memory"
+const TestPathMemoryMetrics = "/v1/apps/an-app-id/metrics/memory"
 
 var _ = Describe("Server", func() {
 	var (
@@ -33,7 +33,7 @@ var _ = Describe("Server", func() {
 		consumer := &fakes.FakeNoaaConsumer{}
 		conf := config.ServerConfig{Port: port}
 		httpServer := NewServer(lager.NewLogger("test"), conf, cfc, consumer)
-		serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(port) + TEST_PATH_MEMORY_METRICS)
+		serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(port) + TestPathMemoryMetrics)
 		Expect(err).ToNot(HaveOccurred())
 
 		server = ginkgomon.Invoke(httpServer)

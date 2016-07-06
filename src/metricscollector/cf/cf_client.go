@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	PATH_CF_INFO = "/v2/info"
-	PATH_CF_AUTH = "/oauth/token"
+	PathCfInfo = "/v2/info"
+	PathCfAuth = "/oauth/token"
 )
 
 type Tokens struct {
@@ -52,7 +52,7 @@ func NewCfClient(conf *config.CfConfig, logger lager.Logger) CfClient {
 	c := &cfClient{}
 
 	c.logger = logger
-	c.infoUrl = conf.Api + PATH_CF_INFO
+	c.infoUrl = conf.Api + PathCfInfo
 
 	if conf.GrantType == config.GrantTypePassword {
 		c.form = url.Values{
@@ -110,7 +110,7 @@ func (c *cfClient) Login() error {
 		return err
 	}
 
-	authURL := c.endpoints.AuthEndpoint + PATH_CF_AUTH
+	authURL := c.endpoints.AuthEndpoint + PathCfAuth
 	c.logger.Info("login", lager.Data{"authURL": authURL, "form": c.form})
 
 	var req *http.Request

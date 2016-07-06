@@ -89,6 +89,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.Server.Port = mcPort
 	cfg.Logging.Level = "debug"
 
+	cfg.Db.MetricsDbUrl = os.Getenv("DBURL")
+	cfg.Db.PolicyDbUrl = os.Getenv("DBURL")
+
 	configFile = writeConfig(&cfg)
 })
 

@@ -37,7 +37,7 @@ var _ = Describe("Metrics", func() {
 			It("should return memory metric with empty instance metrics", func() {
 				Expect(metric).NotTo(BeNil())
 				Expect(metric.AppId).To(Equal("app-id"))
-				Expect(metric.Name).To(Equal(MemoryMetricName))
+				Expect(metric.Name).To(Equal(MetricNameMemory))
 				Expect(len(metric.Instances)).To(Equal(0))
 			})
 		})
@@ -54,7 +54,7 @@ var _ = Describe("Metrics", func() {
 			It("should return memory metric with empty instance metrics", func() {
 				Expect(metric).NotTo(BeNil())
 				Expect(metric.AppId).To(Equal("app-id"))
-				Expect(metric.Name).To(Equal(MemoryMetricName))
+				Expect(metric.Name).To(Equal(MetricNameMemory))
 				Expect(len(metric.Instances)).To(Equal(0))
 			})
 		})
@@ -71,7 +71,7 @@ var _ = Describe("Metrics", func() {
 			It("should return memory metrics from given app only", func() {
 				Expect(metric).NotTo(BeNil())
 				Expect(metric.AppId).To(Equal("app-id"))
-				Expect(metric.Name).To(Equal(MemoryMetricName))
+				Expect(metric.Name).To(Equal(MetricNameMemory))
 				Expect(len(metric.Instances)).To(Equal(2))
 				Expect(metric.Instances).To(ConsistOf(InstanceMetric{Index: 0, Value: "622222"}, InstanceMetric{Index: 1, Value: "23662"}))
 			})

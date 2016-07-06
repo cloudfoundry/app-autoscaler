@@ -54,6 +54,9 @@ server:
   pass: "password"
 logging:
   level: "info"
+db:
+  policy_db_url: "postgres://pqgotest:password@localhost/pqgotest" 
+  metrics_db_url: "postgres://pqgotest:password@localhost/pqgotest" 
 `)
 			})
 
@@ -76,6 +79,9 @@ server:
   port: 8989
 logging:
   level: "debug"
+db:
+  policy_db_url: "postgres://pqgotest:password@localhost/pqgotest" 
+  metrics_db_url: "postgres://pqgotest:password@localhost/pqgotest" 
 `)
 			})
 
@@ -100,6 +106,9 @@ logging:
 				configBytes = []byte(`
 cf:
   api: "https://api.example.com"
+db:
+  policy_db_url: "postgres://pqgotest:password@localhost/pqgotest" 
+  metrics_db_url: "postgres://pqgotest:password@localhost/pqgotest" 
 `)
 			})
 
@@ -116,16 +125,30 @@ cf:
 
 	Describe("Validate", func() {
 		BeforeEach(func() {
-			conf = &Config{
-				Cf: CfConfig{},
-			}
+			conf = &Config{}
+			conf.Cf.Api = "http://api.example.com"
+			conf.Cf.GrantType = GrantTypePassword
+			conf.Cf.Username = "admin"
+			conf.Cf.ClientId = "admin"
+			conf.Db.MetricsDbUrl = "postgres://pqgotest:password@exampl.com/pqgotest"
+			conf.Db.PolicyDbUrl = "postgres://pqgotest:password@exampl.com/pqgotest"
 		})
 
 		JustBeforeEach(func() {
 			err = conf.Validate()
 		})
 
-		Context("when grant type is not supprted", func() {
+		Context("when api is not set", func() {
+			BeforeEach(func() {
+				conf.Cf.Api = ""
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: cf api is empty")))
+			})
+		})
+
+		Context("when grant type is not supported", func() {
 			BeforeEach(func() {
 				conf.Cf.GrantType = "not-supported"
 			})
@@ -138,11 +161,16 @@ cf:
 		Context("when grant type password", func() {
 			BeforeEach(func() {
 				conf.Cf.GrantType = GrantTypePassword
-				conf.Cf.Username = "admin"
 			})
 
-			It("is valid", func() {
-				Expect(err).NotTo(HaveOccurred())
+			Context("when user name is set", func() {
+				BeforeEach(func() {
+					conf.Cf.ClientId = ""
+					conf.Cf.Username = "admin"
+				})
+				It("is valid", func() {
+					Expect(err).NotTo(HaveOccurred())
+				})
 			})
 
 			Context("when the user name is empty", func() {
@@ -162,8 +190,14 @@ cf:
 				conf.Cf.ClientId = "admin"
 			})
 
-			It("is valid", func() {
-				Expect(err).NotTo(HaveOccurred())
+			Context("when client id is set", func() {
+				BeforeEach(func() {
+					conf.Cf.ClientId = "admin"
+					conf.Cf.Username = ""
+				})
+				It("is valid", func() {
+					Expect(err).NotTo(HaveOccurred())
+				})
 			})
 
 			Context("the client id is empty", func() {
@@ -176,5 +210,28 @@ cf:
 				})
 			})
 		})
+
+		Context("when policy db url is not set", func() {
+
+			BeforeEach(func() {
+				conf.Db.PolicyDbUrl = ""
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: Policy DB url is empty")))
+			})
+		})
+
+		Context("when metrics db url is not set", func() {
+
+			BeforeEach(func() {
+				conf.Db.MetricsDbUrl = ""
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: Metrics DB url is empty")))
+			})
+		})
+
 	})
 })
