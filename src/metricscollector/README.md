@@ -13,16 +13,19 @@ Metrics Collector is one of the components of CF `app-autoscaler`. It is used to
 
 1. clone `app-autoscaler` project: `git clone https://github.com/cloudfoundry-incubator/app-autoscaler.git`
 1. change directory to `app-autoscaler`
+1. run `source .envrc`
 1. pull the submodules : `git submodule update --init --recursive`
-1. add `app-autoscaler` directory to your $GOPATH
-2. change directory to `src/metricscollector`
+1. change directory to `src/metricscollector`
 1. build the project: `go install ./...
-1. test the project:
-	1. install ginko: `go install github.com/onsi/ginkgo/ginkgo`
-	1. run tests: `ginkgo -r -race`
+1. run unit test:
+  1. download and install [postgreSQL][a]
+  1. initialize the database, see [README][b] of the project
+  1. install ginko: `go install github.com/onsi/ginkgo/ginkgo`
+  1. set environment variable `$DBURL`, e.g. `export DBURL=postgres://postgres:postgres@localhost/autoscaler?sslmode=disable`
+  1. run tests: `ginkgo -r -race`
 1. regenerate fakes:
   1. install counterfeiter: go install github.com/maxbrunsfeld/counterfeiter
-	1. go generate ./...
+  1. go generate ./...
 
 ### Run the metricscollector
 
@@ -38,6 +41,9 @@ server:
   port: 8080
 logging:
   level: "info"
+db:
+  policy_db_url: "postgres://postgres@localhost/autoscaler" 
+  metrics_db_url: "postgres://postgres@localhost/autoscaler"
 ```
 
 
@@ -54,6 +60,9 @@ The config parameters are explained as below
  * `port`: the port API sever will listen to
 * logging: config for logging
  * `level`: the level of logging, can be 'debug', 'info', 'error' or 'fatal'
+* db : config for database
+ * `policy_db_url` : the database url of policy db
+ * `metrics_db_url`: the database url of mettics db
 
 To run the metricscollector, use `../../bin/metricscollector -c config_file_name'
 
@@ -64,3 +73,6 @@ Metrics Collector exposes the following APIs for other CF App-Autoscaler compone
 | PATH                      | METHOD  | Description                              |
 |---------------------------|---------|------------------------------------------|
 | /v1/apps/{appid}/metrics/memory | GET | Get the latest memroy metric of an application |
+
+[a]: https://www.postgresql.org/download/
+[b]: ../../README.md

@@ -15,19 +15,20 @@ const (
 	UnitRPS          = "rps"
 )
 
-const MemoryMetricName = "memorybytes"
+const MetricNameMemory = "memorybytes"
 
 type Metric struct {
 	Name      string `json:"name"`
 	Unit      string `json:"unit"`
 	AppId     string `json:"app_id"`
-	TimeStamp int64  `json:"time_stamp"`
+	TimeStamp int64  `json:"timestamp"`
 	Instances []InstanceMetric
 }
 
 type InstanceMetric struct {
-	Index int32  `json:"index"`
-	Value string `json:"value"`
+	Timestamp int64  `json:"timestamp"`
+	Index     uint32 `json:"index"`
+	Value     string `json:"value"`
 }
 
 func GetMemoryMetricFromContainerMetrics(appId string, containerMetrics []*events.ContainerMetric) *Metric {
@@ -35,14 +36,14 @@ func GetMemoryMetricFromContainerMetrics(appId string, containerMetrics []*event
 	for _, cm := range containerMetrics {
 		if *cm.ApplicationId == appId {
 			insts = append(insts, InstanceMetric{
-				Index: cm.GetInstanceIndex(),
+				Index: uint32(cm.GetInstanceIndex()),
 				Value: fmt.Sprintf("%d", cm.GetMemoryBytes()),
 			})
 		}
 	}
 
 	return &Metric{
-		Name:      MemoryMetricName,
+		Name:      MetricNameMemory,
 		Unit:      UnitBytes,
 		AppId:     appId,
 		TimeStamp: time.Now().UnixNano(),

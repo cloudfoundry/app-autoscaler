@@ -7,3 +7,6 @@ server:
   port: 8080
 logging:
   level: "debug"
+db:
+  policy_db_url: "postgres://pqgotest:postgres@localhost/autoscaler" 
+  metrics_db_url: "postgres://pqgotest:postgres@localhost/autoscaler"

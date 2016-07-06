@@ -41,10 +41,16 @@ var defaultLoggingConfig = LoggingConfig{
 	Level: DefaultLoggingLevel,
 }
 
+type DbConfig struct {
+	PolicyDbUrl  string `yaml:"policy_db_url"`
+	MetricsDbUrl string `yaml:"metrics_db_url"`
+}
+
 type Config struct {
 	Cf      CfConfig      `yaml:"cf"`
 	Logging LoggingConfig `yaml:"logging"`
 	Server  ServerConfig  `yaml:"server"`
+	Db      DbConfig      `yaml:"db"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
@@ -67,6 +73,10 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 }
 
 func (c *Config) Validate() error {
+	if c.Cf.Api == "" {
+		return fmt.Errorf("Configuration error: cf api is empty")
+	}
+
 	if c.Cf.GrantType != GrantTypePassword && c.Cf.GrantType != GrantTypeClientCredentials {
 		return fmt.Errorf("Configuration error: unsupported grant type [%s]", c.Cf.GrantType)
 	}
@@ -82,6 +92,15 @@ func (c *Config) Validate() error {
 			return fmt.Errorf("Configuration error: client id is empty")
 		}
 	}
+
+	if c.Db.PolicyDbUrl == "" {
+		return fmt.Errorf("Configuration error: Policy DB url is empty")
+	}
+
+	if c.Db.MetricsDbUrl == "" {
+		return fmt.Errorf("Configuration error: Metrics DB url is empty")
+	}
+
 	return nil
 
 }

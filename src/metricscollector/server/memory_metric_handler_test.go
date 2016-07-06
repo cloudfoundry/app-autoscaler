@@ -73,7 +73,7 @@ var _ = Describe("MemoryMetricHandler", func() {
 
 					Expect(err).ToNot(HaveOccurred())
 					Expect(metric.AppId).To(Equal("an-app-id"))
-					Expect(metric.Name).To(Equal(metrics.MemoryMetricName))
+					Expect(metric.Name).To(Equal(metrics.MetricNameMemory))
 					Expect(metric.Unit).To(Equal(metrics.UnitBytes))
 					Expect(metric.Instances).To(BeEmpty())
 				})
@@ -99,7 +99,7 @@ var _ = Describe("MemoryMetricHandler", func() {
 
 					Expect(err).ToNot(HaveOccurred())
 					Expect(metric.AppId).To(Equal("an-app-id"))
-					Expect(metric.Name).To(Equal(metrics.MemoryMetricName))
+					Expect(metric.Name).To(Equal(metrics.MetricNameMemory))
 					Expect(metric.Unit).To(Equal(metrics.UnitBytes))
 					Expect(metric.Instances).To(ConsistOf(metrics.InstanceMetric{Index: 1, Value: "1234"}))
 				})

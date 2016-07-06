@@ -84,7 +84,7 @@ var _ = Describe("CfClient", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", PATH_CF_INFO),
+						ghttp.VerifyRequest("GET", PathCfInfo),
 						ghttp.RespondWith(200, infoBody),
 					),
 				)
@@ -115,7 +115,7 @@ var _ = Describe("CfClient", func() {
 				BeforeEach(func() {
 					fakeCC.AppendHandlers(
 						ghttp.CombineHandlers(
-							ghttp.VerifyRequest("GET", PATH_CF_INFO),
+							ghttp.VerifyRequest("GET", PathCfInfo),
 							ghttp.RespondWith(500, ""),
 						),
 					)
@@ -131,7 +131,7 @@ var _ = Describe("CfClient", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", PATH_CF_INFO),
+						ghttp.VerifyRequest("GET", PathCfInfo),
 						ghttp.RespondWith(200, bytes.Replace(infoBody, []byte("test-oauth-endpoint"), []byte(fakeLoginServer.URL()), -1)),
 					),
 				)
@@ -154,7 +154,7 @@ var _ = Describe("CfClient", func() {
 				BeforeEach(func() {
 					fakeLoginServer.AppendHandlers(
 						ghttp.CombineHandlers(
-							ghttp.VerifyRequest("POST", PATH_CF_AUTH),
+							ghttp.VerifyRequest("POST", PathCfAuth),
 							ghttp.RespondWith(401, ""),
 						),
 					)
@@ -180,7 +180,7 @@ var _ = Describe("CfClient", func() {
 
 						fakeLoginServer.AppendHandlers(
 							ghttp.CombineHandlers(
-								ghttp.VerifyRequest("POST", PATH_CF_AUTH),
+								ghttp.VerifyRequest("POST", PathCfAuth),
 								ghttp.VerifyBasicAuth("cf", ""),
 								ghttp.VerifyForm(values),
 								ghttp.RespondWith(200, authBody),
@@ -210,7 +210,7 @@ var _ = Describe("CfClient", func() {
 
 						fakeLoginServer.AppendHandlers(
 							ghttp.CombineHandlers(
-								ghttp.VerifyRequest("POST", PATH_CF_AUTH),
+								ghttp.VerifyRequest("POST", PathCfAuth),
 								ghttp.VerifyBasicAuth(conf.Cf.ClientId, conf.Cf.Secret),
 								ghttp.VerifyForm(values),
 								ghttp.RespondWith(200, authBody),

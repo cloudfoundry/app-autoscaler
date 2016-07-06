@@ -13,8 +13,8 @@ import (
 	"github.com/tedsuo/ifrit/http_server"
 )
 
-const PATH_MEMORY_METRIC = "/v1/apps/{appid}/metrics/memory"
-const ROUTE_NAME_MEMORY_METRIC = "memory-metric"
+const PathMemoryMetric = "/v1/apps/{appid}/metrics/memory"
+const RouteNameMemoryMetric = "memory-metric"
 
 type VarsFunc func(w http.ResponseWriter, r *http.Request, vars map[string]string)
 
@@ -27,7 +27,7 @@ func NewServer(logger lager.Logger, conf config.ServerConfig, cfc cf.CfClient, c
 	mmh := NewMemoryMetricHandler(logger, cfc, consumer)
 
 	r := mux.NewRouter()
-	r.Methods("GET").Path(PATH_MEMORY_METRIC).Handler(VarsFunc(mmh.GetMemoryMetric)).Name(ROUTE_NAME_MEMORY_METRIC)
+	r.Methods("GET").Path(PathMemoryMetric).Handler(VarsFunc(mmh.GetMemoryMetric)).Name(RouteNameMemoryMetric)
 
 	addr := fmt.Sprintf("0.0.0.0:%d", conf.Port)
 	return http_server.New(addr, r)

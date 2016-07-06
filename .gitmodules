@@ -46,3 +46,6 @@
 [submodule "src/code.cloudfoundry.org/cfhttp"]
 	path = src/code.cloudfoundry.org/cfhttp
 	url = https://github.com/cloudfoundry/cfhttp.git
+[submodule "src/github.com/lib/pq"]
+	path = src/github.com/lib/pq
+	url = https://github.com/lib/pq
