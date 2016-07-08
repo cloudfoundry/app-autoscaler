@@ -23,7 +23,11 @@ describe('service instance RESTful API', function() {
   before(function() {
     delete require.cache[require.resolve('../../lib/index.js')];
     server = require(path.join(__dirname, '../../lib/index.js'));
-    serviceInstance.sequelize.sync();
+    before(function(done) {
+      serviceInstance.sequelize.sync().then(function(result) { done(); }).catch(function(error) {
+        console.log("Failed to sync model serviceInstance, error: " + error);
+      });
+    });
   });
 
   after(function(done) {
@@ -68,6 +72,7 @@ describe('service instance RESTful API', function() {
           supertest(server)
             .put("/v2/service_instances/" + serviceInstanceId)
             .set("Authorization", "Basic " + auth)
+            .set('Accept', 'application/json')
             .send({ "organization_guid": orgId, "space_guid": spaceId })
             .expect(200)
             .expect('Content-Type', /json/)
@@ -105,7 +110,7 @@ describe('service instance RESTful API', function() {
 
     context('when an instance already exists', function() {
       beforeEach(function(done) {
-          supertest(server)
+        supertest(server)
             .put("/v2/service_instances/" + serviceInstanceId)
             .set("Authorization", "Basic " + auth)
             .send({ "organization_guid": orgId, "space_guid": spaceId })
@@ -114,7 +119,7 @@ describe('service instance RESTful API', function() {
             .expect({
               dashboard_url: ''
             }, done);
-        });
+      });
 
       it("delete an instance with 200", function(done) {
         supertest(server)
@@ -125,5 +130,9 @@ describe('service instance RESTful API', function() {
           .expect({}, done);
       });
     });
+
+
   });
+
 });
+

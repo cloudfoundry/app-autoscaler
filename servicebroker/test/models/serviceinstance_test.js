@@ -22,8 +22,10 @@ var fake_condition2 = {
 
 describe('Service_instance Model Definition Test Suite', function() {
 
-  before(function() {
-    serviceInstance.sequelize.sync();
+  before(function(done) {
+    serviceInstance.sequelize.sync().then(function(result){done();}).catch(function(error){
+      console.log("Failed to sync model serviceInstance, error: " + error);
+    });
   });
 
   beforeEach(function() {

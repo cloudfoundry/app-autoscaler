@@ -9,8 +9,8 @@ module.exports = function(app) {
   app.put('/v2/service_instances/:instanceId', function(req, res) {
     var serviceInstanceId = req.params.instanceId;
     var orgId = req.body.organization_guid;
-    var spaceId = req.body.space_guid
-
+    var spaceId = req.body.space_guid;
+    
     models.service_instance.findOrCreate({
       serviceInstanceId: serviceInstanceId,
       orgId: orgId,
@@ -52,7 +52,7 @@ module.exports = function(app) {
             }
           }).then(function(count) {
             res.status(200);
-          })
+          });
         } else {
           res.status(410);
         }
