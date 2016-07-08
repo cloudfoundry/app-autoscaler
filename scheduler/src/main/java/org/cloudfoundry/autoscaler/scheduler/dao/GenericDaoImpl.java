@@ -3,8 +3,10 @@ package org.cloudfoundry.autoscaler.scheduler.dao;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 
+import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationException;
+
 /**
- * @author Fujitsu
+ * 
  *
  * @param <T>
  */
@@ -25,8 +27,12 @@ public class GenericDaoImpl<T> implements GenericDao<T> {
 
 	@Override
 	public T create(T entity) {
-		entityManager.persist(entity);
-		entityManager.flush();
+		try{
+			entityManager.persist(entity);
+			entityManager.flush();
+		} catch(Exception exception){
+			throw new DatabaseValidationException("Create Failed", exception);
+		}
 		return entity;
 	}
 
@@ -34,24 +40,32 @@ public class GenericDaoImpl<T> implements GenericDao<T> {
 	public T update(T entity) {
 		try {
 			return entityManager.merge(entity);
-		} catch (Exception ex) {
-			return null;
+		} catch(Exception exception){
+			throw new DatabaseValidationException("Update Failed", exception);
 		}
 	}
 
 	@Override
 	public Boolean delete(T entity) {
+		boolean deleted = false;
 		try {
 			entityManager.remove(entity);
-		} catch (Exception ex) {
-			return false;
+			deleted = true;
+		} catch(Exception exception){
+			throw new DatabaseValidationException("Delete failed", exception);
 		}
-		return true;
+		return deleted;
 	}
 
 	@Override
 	public T find(Long id) {
-		return (T) entityManager.find(entityClass, id);
+		T entity;
+		try {
+			entity = (T) entityManager.find(entityClass, id);
+		} catch(Exception exception){
+			throw new DatabaseValidationException("Find failed", exception);
+		}
+		return entity;
 	}
 
 }

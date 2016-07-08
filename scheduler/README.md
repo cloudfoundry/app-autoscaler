@@ -1,5 +1,19 @@
 # Autoscaler - Scheduler
 
+## Database
+
+### Create tables
+
+#### Create Scheduler tables
+```sh
+java -cp 'db/target/lib/*'  liquibase.integration.commandline.Main --changeLogFile=scheduler/db/scheduler.changelog-master.yaml --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver update
+```
+
+#### Create Quartz Scheduler tables
+```sh
+java -cp 'db/target/lib/*'  liquibase.integration.commandline.Main --changeLogFile=scheduler/db/quartz.changelog-master.yaml --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver update
+```
+
 ## Package 
 
 ### Skip Unit Test
@@ -16,7 +30,6 @@ mvn clean package
 
 ## Run Unit Tests 
 
-Note: The unit test are using in memory database.
 
 ### All
 
@@ -24,19 +37,9 @@ Note: The unit test are using in memory database.
 mvn test
 ```
 
-### Dao
+### To run specific class tests specify the test class name
 
-```sh
-mvn -Dtest=ScheduleDaoImplTest test
-```
-
-### Service
-
+#### For example to run to run ScheduleManagerTest
 ```sh
 mvn -Dtest=ScheduleManagerTest test
-mvn -Dtest=ScalingJobManagerTest test
 ```
-### Rest
-mvn -Dtest=ScheduleRestApiTest test
-
-

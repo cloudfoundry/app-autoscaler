@@ -1,56 +1,139 @@
 package org.cloudfoundry.autoscaler.scheduler.service;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import java.util.List;
+
+import javax.transaction.Transactional;
+
+import org.cloudfoundry.autoscaler.scheduler.dao.ScheduleDao;
+import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationScalingSchedules;
-import org.cloudfoundry.autoscaler.scheduler.util.DataSetupHelper;
+import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
+import org.cloudfoundry.autoscaler.scheduler.util.error.ValidationErrorResult;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
-import org.quartz.impl.StdSchedulerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.ContextConfiguration;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 
 /**
- * @author Fujitsu
- *
+ * 
  */
 @RunWith(SpringRunner.class)
-@ContextConfiguration(locations = { "classpath:applicationContext-test.xml" })
+@SpringBootTest
+@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 public class ScheduleManagerTest {
 
 	@Autowired
-	private ScalingScheduleManager scalingScheduleManager;
-	private Log logger = LogFactory.getLog(this.getClass());
+	private ScheduleManager scalingScheduleManager;
+
+	@Autowired
+	private ScheduleDao scheduleDao;
+
+	@Autowired
+	private Scheduler scheduler;
+
+	@Autowired
+	private ValidationErrorResult validationErrorResult;
+
+	private String appId = TestDataSetupHelper.getAppId_1();
 
 	@Before
+	@Transactional
 	public void init() throws SchedulerException {
 		// Clear previous schedules.
-		Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
 		scheduler.clear();
+		validationErrorResult.initEmpty();
+	}
+
+	@After
+	@Transactional
+	public void afterTest() {
+		for (ScheduleEntity entity : scheduleDao.findAllSchedulesByAppId(appId)) {
+			scheduleDao.delete(entity);
+		}
+
+	}
+	
+	@Test
+	@Transactional
+	public void testGetSchedule_01() {
+		// Expected no schedule
+
+		List<ScheduleEntity> allSpecificDateSchedules = scalingScheduleManager.getAllSchedules(appId)
+				.getSpecific_date();
+
+		assertEquals(0, allSpecificDateSchedules.size());
+
 	}
 
 	@Test
-	public void testCreateSchedules_01() throws Exception {
-		logger.info("Executing Test Create Schedule to create one schedule...");
+	@Transactional
+	public void testGetSchedule_02() {
+		// Expected one schedule
+	
+		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSpecificDateSchedules(appId, 1);
 
-		int noOfSchedules = 1;
-		ApplicationScalingSchedules schedules = DataSetupHelper.generateSchedules(noOfSchedules);
-		String appId = scalingScheduleManager.createSchedules(schedules);
+		scalingScheduleManager.createSchedules(schedules);
 
-		logger.info("======= Check the application id is not null =======");
-		assertNotNull(appId);
+		List<ScheduleEntity> allSpecificDateSchedules = scalingScheduleManager.getAllSchedules(appId).getSpecific_date();
 
-		logger.info(
-				"======= Check the supplied application id is same as application id of the persisted schedule  =======");
-		assertEquals(schedules.getApp_id(), appId);
+		assertEquals(1, allSpecificDateSchedules.size());
 
-		logger.info("======= Test Completed =======");
 	}
+	
+	@Test
+	@Transactional
+	public void testGetSchedule_03() {
+		// Expected multiple schedules
+		
+		int noOfSpecificDateSchedules = 4;
+		
+		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSpecificDateSchedules(appId,
+				noOfSpecificDateSchedules);
+
+		scalingScheduleManager.createSchedules(schedules);
+
+		List<ScheduleEntity> allSpecificDateSchedules = scalingScheduleManager.getAllSchedules(appId).getSpecific_date();
+
+		assertEquals(noOfSpecificDateSchedules, allSpecificDateSchedules.size());
+
+	}
+
+	@Test
+	@Transactional
+	public void testCreateSchedules_04() throws Exception {
+		// Create one schedule
+		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSpecificDateSchedules(appId, 1);
+
+		scalingScheduleManager.createSchedules(schedules);
+
+		List<ScheduleEntity> allSpecificDateSchedules = scalingScheduleManager.getAllSchedules(appId).getSpecific_date();
+
+		assertEquals(1, allSpecificDateSchedules.size());
+	}
+
+	@Test
+	@Transactional
+	public void testCreateSchedules_05() throws Exception {
+		// Create multiple schedules
+		
+		int noOfSpecificDateSchedules = 4;
+
+		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSpecificDateSchedules(appId,
+				noOfSpecificDateSchedules);
+
+		scalingScheduleManager.createSchedules(schedules);
+
+		List<ScheduleEntity> allSpecificDateSchedules = scalingScheduleManager.getAllSchedules(appId).getSpecific_date();
+
+		assertEquals(noOfSpecificDateSchedules, allSpecificDateSchedules.size());
+	}
+
 }

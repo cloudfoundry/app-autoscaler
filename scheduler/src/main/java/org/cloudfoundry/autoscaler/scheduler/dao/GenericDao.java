@@ -1,7 +1,7 @@
 package org.cloudfoundry.autoscaler.scheduler.dao;
 
 /**
- * @author Fujitsu
+ * 
  *
  * @param <T>
  */

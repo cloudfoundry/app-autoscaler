@@ -1,7 +1,7 @@
 package org.cloudfoundry.autoscaler.scheduler.quartz;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -11,18 +11,17 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
 /**
- * @author Fujitsu
+ * 
  *
  */
 @Component
 public class AppScalingScheduleJob extends QuartzJobBean {
-	private Log logger = LogFactory.getLog(this.getClass());
+	private Logger logger = LogManager.getLogger(this.getClass());
 
 	@Override
 	protected void executeInternal(JobExecutionContext context) throws JobExecutionException {
 
 		SpringBeanAutowiringSupport.processInjectionBasedOnCurrentContext(this);
-		logger.info("==========================================");
 		logger.info("Scheduling job is executing for app scaling action");
 
 		JobDataMap dataMap = context.getJobDetail().getJobDataMap();
@@ -31,10 +30,7 @@ public class AppScalingScheduleJob extends QuartzJobBean {
 		Long scheduleId = dataMap.getLong("scheduleId");
 		Object schedule = dataMap.get("schedule");
 
-		logger.info("Job Key is " + jobKey);
-		logger.info("Application Id: " + appId + " Schedule Id: " + scheduleId);
-		logger.info("Schedule: " + schedule);
-		logger.info("==========================================");
-
+		logger.info(String.format("Job Key: %s, Application Id: %s, Schedule Id: %s, Schedule: %s", jobKey, appId,
+				scheduleId, schedule));
 	}
 }

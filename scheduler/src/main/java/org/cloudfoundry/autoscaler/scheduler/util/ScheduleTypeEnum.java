@@ -1,16 +1,16 @@
 package org.cloudfoundry.autoscaler.scheduler.util;
 
 /**
- * @author Fujitsu
+ * 
  *
  */
-public enum JobScheduleTypeEnum {
-	CRON("C", "schedule_type_cron"), SIMPLE("S", "schedule_type_simple");
+public enum ScheduleTypeEnum {
+	SPECIFIC_DATE("S", "Specific Date Schedule"), RECURRING("R", "Recurring Schedule");
 
 	private String dbValue;
 	private String description;
 
-	private JobScheduleTypeEnum(String dbValue, String description) {
+	private ScheduleTypeEnum(String dbValue, String description) {
 		this.dbValue = dbValue;
 		this.description = description;
 	}
@@ -31,8 +31,8 @@ public enum JobScheduleTypeEnum {
 		this.description = description;
 	}
 
-	public static JobScheduleTypeEnum getEnum(String str) {
-		for (JobScheduleTypeEnum value : values()) {
+	public static ScheduleTypeEnum getEnum(String str) {
+		for (ScheduleTypeEnum value : values()) {
 			if (value.getDbValue().equals(str)) {
 				return value;
 			}

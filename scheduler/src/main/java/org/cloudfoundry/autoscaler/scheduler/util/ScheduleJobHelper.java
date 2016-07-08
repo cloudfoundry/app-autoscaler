@@ -12,13 +12,17 @@ import org.quartz.TriggerBuilder;
 import org.quartz.TriggerKey;
 
 /**
- * @author Fujitsu
+ * 
  *
  */
 public class ScheduleJobHelper {
 
 	private static JobKey buildJobKey(String jobId) {
 		return new JobKey(jobId);
+	}
+	
+	public static String generateJobKey(Long jobId, JobActionEnum jobActionEnum) {
+		return jobId + jobActionEnum.getJobIdSuffix();
 	}
 
 	public static JobDetail buildJob(String id, Class<? extends Job> classType) {

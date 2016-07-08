@@ -11,7 +11,7 @@ import org.springframework.scheduling.quartz.SpringBeanJobFactory;
  * This JobFactory autowires automatically the created quartz bean with
  * spring @Autowired dependencies.
  * 
- * @author Fujitsu
+ * 
  * 
  */
 public class QuartzJobFactory extends SpringBeanJobFactory implements ApplicationContextAware {

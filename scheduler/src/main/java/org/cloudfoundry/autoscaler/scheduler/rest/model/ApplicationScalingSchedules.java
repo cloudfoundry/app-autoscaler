@@ -2,37 +2,65 @@ package org.cloudfoundry.autoscaler.scheduler.rest.model;
 
 import java.util.List;
 
+import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
+
 /**
- * @author Fujitsu
+ * 
  *
  */
 public class ApplicationScalingSchedules {
-	private String app_id;
-	private String timezone;
-	private List<SpecificDateSchedule> specific_date;
+	String timeZone;
+	Integer instance_min_count;
+	Integer instance_max_count;
+	private List<ScheduleEntity> specific_date;
+	private List<ScheduleEntity> recurring_schedule;
 
-	public String getApp_id() {
-		return app_id;
+	public boolean hasSchedules() {
+		if ((specific_date == null || specific_date.isEmpty())
+				&& (recurring_schedule == null || recurring_schedule.isEmpty())) {
+			return false;
+		}
+		return true;
 	}
 
-	public void setApp_id(String app_id) {
-		this.app_id = app_id;
+	public String getTimeZone() {
+		return timeZone;
 	}
 
-	public String getTimezone() {
-		return timezone;
+	public void setTimeZone(String timeZone) {
+		this.timeZone = timeZone;
 	}
 
-	public void setTimezone(String timezone) {
-		this.timezone = timezone;
+	public Integer getInstance_min_count() {
+		return instance_min_count;
 	}
 
-	public List<SpecificDateSchedule> getSpecific_date() {
+	public void setInstance_min_count(Integer instance_min_count) {
+		this.instance_min_count = instance_min_count;
+	}
+
+	public Integer getInstance_max_count() {
+		return instance_max_count;
+	}
+
+	public void setInstance_max_count(Integer instance_max_count) {
+		this.instance_max_count = instance_max_count;
+	}
+
+	public List<ScheduleEntity> getSpecific_date() {
 		return specific_date;
 	}
 
-	public void setSpecific_date(List<SpecificDateSchedule> specific_date) {
+	public void setSpecific_date(List<ScheduleEntity> specific_date) {
 		this.specific_date = specific_date;
+	}
+
+	public List<ScheduleEntity> getRecurring_schedule() {
+		return recurring_schedule;
+	}
+
+	public void setRecurring_schedule(List<ScheduleEntity> recurring_schedule) {
+		this.recurring_schedule = recurring_schedule;
 	}
 
 }

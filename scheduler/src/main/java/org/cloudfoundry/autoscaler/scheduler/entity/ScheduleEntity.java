@@ -11,13 +11,14 @@ import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
 
 /**
- * @author Fujitsu
+ * 
  *
  */
 @Entity
-@Table(name = "SCHEDULE")
+@Table(name = "app_scaling_schedule")
 @NamedQueries({
 		@NamedQuery(name = ScheduleEntity.query_schedulesByAppId, query = ScheduleEntity.jpql_schedulesByAppId) })
 public class ScheduleEntity {
@@ -25,41 +26,57 @@ public class ScheduleEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "schedule_id")
-	private Long scheduleId;
+	private Long id;
 
-	@Column(name = "app_id", nullable = false)
+	@Column(name = "app_id")
+	@NotNull
 	private String appId;
 
 	@Column(name = "timezone")
-	private String timezone;
+	@NotNull
+	private String timeZone;
+	
+	@Column(name = "default_instance_min_count")
+	@NotNull
+	private Integer defaultInstanceMinCount;
+	
+	@Column(name = "default_instance_max_count")
+	@NotNull
+	private Integer defaultInstanceMaxCount;
 
 	@Column(name = "start_date")
+	@NotNull
 	private Date startDate;
 
 	@Column(name = "end_date")
+	@NotNull
 	private Date endDate;
 
 	@Column(name = "start_time")
 	private Time startTime;
 
 	@Column(name = "end_time")
+	@NotNull
 	private Time endTime;
 
 	@Column(name = "instance_min_count")
-	private int instanceMinCount;
+	@NotNull
+	private Integer instanceMinCount;
 
 	@Column(name = "instance_max_count")
-	private int instanceMaxCount;
+	@NotNull
+	private Integer instanceMaxCount;
 
-	@Column(name = "job_schedule_type")
-	private String jobScheduleType;
+	@Column(name = "schedule_type")
+	@NotNull
+	private String scheduleType;
 
-	public Long getScheduleId() {
-		return scheduleId;
+	public Long getId() {
+		return id;
 	}
 
-	public void setScheduleId(Long scheduleId) {
-		this.scheduleId = scheduleId;
+	public void setId(Long id) {
+		this.id = id;
 	}
 
 	public String getAppId() {
@@ -70,12 +87,29 @@ public class ScheduleEntity {
 		this.appId = appId;
 	}
 
-	public String getTimezone() {
-		return timezone;
+	public String getTimeZone() {
+		return timeZone;
 	}
 
-	public void setTimezone(String timezone) {
-		this.timezone = timezone;
+	
+	public Integer getDefaultInstanceMinCount() {
+		return defaultInstanceMinCount;
+	}
+
+	public void setDefaultInstanceMinCount(Integer defaultInstanceMinCount) {
+		this.defaultInstanceMinCount = defaultInstanceMinCount;
+	}
+
+	public Integer getDefaultInstanceMaxCount() {
+		return defaultInstanceMaxCount;
+	}
+
+	public void setDefaultInstanceMaxCount(Integer defaultInstanceMaxCount) {
+		this.defaultInstanceMaxCount = defaultInstanceMaxCount;
+	}
+
+	public void setTimeZone(String timezone) {
+		this.timeZone = timezone;
 	}
 
 	public Date getStartDate() {
@@ -110,39 +144,42 @@ public class ScheduleEntity {
 		this.endTime = endTime;
 	}
 
-	public int getInstanceMinCount() {
+	public Integer getInstanceMinCount() {
 		return instanceMinCount;
 	}
 
-	public void setInstanceMinCount(int instanceMinCount) {
+	public void setInstanceMinCount(Integer instanceMinCount) {
 		this.instanceMinCount = instanceMinCount;
 	}
 
-	public int getInstanceMaxCount() {
+	public Integer getInstanceMaxCount() {
 		return instanceMaxCount;
 	}
 
-	public void setInstanceMaxCount(int instanceMaxCount) {
+	public void setInstanceMaxCount(Integer instanceMaxCount) {
 		this.instanceMaxCount = instanceMaxCount;
 	}
 
-	public String getJobScheduleType() {
-		return jobScheduleType;
+	public String getScheduleType() {
+		return scheduleType;
 	}
 
-	public void setJobScheduleType(String jobScheduleType) {
-		this.jobScheduleType = jobScheduleType;
+	public void setScheduleType(String scheduleType) {
+		this.scheduleType = scheduleType;
 	}
+
+
 
 	public static final String query_schedulesByAppId = "ScheduleEntity.schedulesByAppId";
 	protected static final String jpql_schedulesByAppId = " FROM ScheduleEntity" + " WHERE appId = :appId";
 
 	@Override
 	public String toString() {
-		return "ScheduleEntity [scheduleId=" + scheduleId + ", appId=" + appId + ", timezone=" + timezone
-				+ ", startDate=" + startDate + ", endDate=" + endDate + ", startTime=" + startTime + ", endTime="
-				+ endTime + ", instanceMinCount=" + instanceMinCount + ", instanceMaxCount=" + instanceMaxCount
-				+ ", jobScheduleType=" + jobScheduleType + "]";
+		return "ScheduleEntity [id=" + id + ", appId=" + appId + ", timeZone=" + timeZone + ", defaultInstanceMinCount="
+				+ defaultInstanceMinCount + ", defaultInstanceMaxCount=" + defaultInstanceMaxCount + ", startDate="
+				+ startDate + ", endDate=" + endDate + ", startTime=" + startTime + ", endTime=" + endTime
+				+ ", instanceMinCount=" + instanceMinCount + ", instanceMaxCount=" + instanceMaxCount
+				+ ", scheduleType=" + scheduleType + "]";
 	}
 
 }

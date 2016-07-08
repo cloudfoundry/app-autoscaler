@@ -32,49 +32,25 @@
 		<property name="jpaProperties">
 			<props>
 				<prop key="hibernate.archive.autodetection">class,hbm</prop>
-				<prop key="hibernate.hbm2ddl.auto">create-drop</prop>
+				<prop key="hibernate.hbm2ddl.auto">none</prop>
 				<prop key="hibernate.show_sql">true</prop>
-				<prop key="hibernate.dialect">org.hibernate.dialect.HSQLDialect</prop>
+				<prop key="hibernate.dialect">org.hibernate.dialect.PostgreSQLDialect</prop>
 			</props>
 		</property>
 	</bean>
 
 	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"
 		destroy-method="close">
-		<property name="driverClassName" value="${datasource.driverClassName}" />
-		<property name="url" value="${datasource.url}" />
-		<property name="username" value="${datasource.username}" />
-		<property name="password" value="${datasource.password}" />
+		<property name="driverClassName" value="${spring.datasource.driverClassName}" />
+		<property name="url" value="${spring.datasource.url}" />
+		<property name="username" value="${spring.datasource.username}" />
+		<property name="password" value="${spring.datasource.password}" />
 	</bean>
 
 	<bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
 		<property name="entityManagerFactory" ref="entityManager" />
 	</bean>
 	<tx:annotation-driven />
-
-	<bean id="persistenceExceptionTranslationPostProcessor"
-		class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor" />
-
-	<bean id="quartzDbInitializer"
-		class="org.springframework.jdbc.datasource.init.DataSourceInitializer">
-		<property name="dataSource" ref="dataSource" />
-		<property name="enabled" value="true" />
-		<property name="databasePopulator">
-			<bean
-				class="org.springframework.jdbc.datasource.init.ResourceDatabasePopulator">
-				<property name="continueOnError" value="true" />
-				<property name="ignoreFailedDrops" value="true" />
-				<property name="sqlScriptEncoding" value="UTF-8" />
-				<property name="scripts">
-					<array>
-						<value type="org.springframework.core.io.Resource">
-							classpath:/${quartz.tables}
-						</value>
-					</array>
-				</property>
-			</bean>
-		</property>
-	</bean>
 
 	<bean id="quartzScheduler"
 		class="org.springframework.scheduling.quartz.SchedulerFactoryBean"
@@ -97,7 +73,7 @@
 				<!-- The the number of milliseconds the scheduler will ‘tolerate’ a trigger to pass its next-fire-time by, 
 				before being considered “misfired”. The default value (if not specified in  configuration) is 60000 (60 seconds). -->
 				<prop key="org.quartz.jobStore.misfireThreshold">120000</prop>
-				<prop key="org.quartz.jobStore.driverDelegateClass">org.quartz.impl.jdbcjobstore.StdJDBCDelegate</prop>
+				<prop key="org.quartz.jobStore.driverDelegateClass">org.quartz.impl.jdbcjobstore.PostgreSQLDelegate</prop>
 			</props>
 		</property>
 	</bean>
