@@ -1,15 +1,16 @@
 'use strict';
+var supertest = require("supertest");
+var uuid = require('uuid');
 
 var fs = require('fs');
 var path = require('path');
-var supertest = require("supertest");
-var uuid = require('uuid');
-var serviceInstance = require('../../lib/models')().service_instance;
+var settings = require(path.join(__dirname, '../../lib/config/setting.js'))((JSON.parse(
+  fs.readFileSync(path.join(__dirname, '../../config/settings.json'), 'utf8')))).getSetting();
 
-var settings = JSON.parse(
-  fs.readFileSync(path.join(__dirname, '../../config/settings.json'), 'utf8'));
+var models = require('../../lib/models')(settings.db.uri);
+var serviceInstance = models.service_instance;
+
 var auth = new Buffer(settings.username + ":" + settings.password).toString('base64');
-
 
 describe('service instance RESTful API', function() {
   var server, serviceInstanceId, orgId, spaceId, orgIdAgain, spaceIdAgain;
@@ -23,7 +24,6 @@ describe('service instance RESTful API', function() {
   before(function() {
     delete require.cache[require.resolve('../../lib/index.js')];
     server = require(path.join(__dirname, '../../lib/index.js'));
-    serviceInstance.sequelize.sync();
   });
 
   after(function(done) {
@@ -68,6 +68,7 @@ describe('service instance RESTful API', function() {
           supertest(server)
             .put("/v2/service_instances/" + serviceInstanceId)
             .set("Authorization", "Basic " + auth)
+            .set('Accept', 'application/json')
             .send({ "organization_guid": orgId, "space_guid": spaceId })
             .expect(200)
             .expect('Content-Type', /json/)
@@ -105,7 +106,7 @@ describe('service instance RESTful API', function() {
 
     context('when an instance already exists', function() {
       beforeEach(function(done) {
-          supertest(server)
+        supertest(server)
             .put("/v2/service_instances/" + serviceInstanceId)
             .set("Authorization", "Basic " + auth)
             .send({ "organization_guid": orgId, "space_guid": spaceId })
@@ -114,7 +115,7 @@ describe('service instance RESTful API', function() {
             .expect({
               dashboard_url: ''
             }, done);
-        });
+      });
 
       it("delete an instance with 200", function(done) {
         supertest(server)
@@ -125,5 +126,9 @@ describe('service instance RESTful API', function() {
           .expect({}, done);
       });
     });
+
+
   });
+
 });
+

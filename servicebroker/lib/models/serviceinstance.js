@@ -1,6 +1,6 @@
 'use strict';
-var ServiceInstance = function(sequelize, DataTypes) {
-  return sequelize.define('service_instance', {
+module.exports = function(sequelize, DataTypes) {
+  var service_instance = sequelize.define('service_instance', {
     serviceInstanceId: {
       type: DataTypes.STRING,
       primaryKey: true,
@@ -18,10 +18,13 @@ var ServiceInstance = function(sequelize, DataTypes) {
       allowNull: false
     },
   }, {
+    classMethods: {
+      associate: function(models) {
+        service_instance.hasMany(models.binding, { foreignKey: 'service_instance_id' });
+      }
+    },
     timestamps: false,
     freezeTableName: true
   });
-
+  return service_instance;
 };
-
-module.exports = ServiceInstance;

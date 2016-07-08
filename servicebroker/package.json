@@ -15,14 +15,17 @@
     "body-parser": "^1.15.1",
     "express": "^4.13.4",
     "pg": "^6.0.1",
-    "sequelize": "^3.23.4"
+    "request": "^2.72.0",
+    "sequelize": "^3.23.4",
+    "uuid": "^2.0.2"
   },
   "devDependencies": {
     "uuid": "^2.0.2",
     "eslint": "^2.11.1",
     "chai": "^3.5.0",
     "mocha": "^2.5.3",
-    "should": "^9.0.0",
+    "nock": "^8.0.0",
+    "sinon": "^1.17.4",
     "supertest": "^1.2.0"
   },
   "scripts": {
