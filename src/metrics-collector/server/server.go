@@ -6,8 +6,9 @@ import (
 	"metrics-collector/config"
 	"net/http"
 
+	"code.cloudfoundry.org/lager"
+
 	"github.com/gorilla/mux"
-	"github.com/pivotal-golang/lager"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/http_server"
 )

@@ -6,9 +6,10 @@ import (
 	"metrics-collector/server/fakes"
 	"strconv"
 
+	"code.cloudfoundry.org/lager"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-golang/lager"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/ginkgomon"
 

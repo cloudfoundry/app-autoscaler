@@ -6,9 +6,10 @@ import (
 	"metrics-collector/metrics"
 	"net/http"
 
-	"github.com/cloudfoundry-incubator/cf_http/handlers"
+	"code.cloudfoundry.org/cfhttp/handlers"
+	"code.cloudfoundry.org/lager"
+
 	"github.com/cloudfoundry/sonde-go/events"
-	"github.com/pivotal-golang/lager"
 )
 
 const TOKEN_TYPE_BEARER = "bearer"

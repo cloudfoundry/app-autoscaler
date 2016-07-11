@@ -10,8 +10,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/cloudfoundry-incubator/cf_http"
-	"github.com/pivotal-golang/lager"
+	"code.cloudfoundry.org/cfhttp"
+	"code.cloudfoundry.org/lager"
 )
 
 const (
@@ -74,7 +74,7 @@ func NewCfClient(conf *config.CfConfig, logger lager.Logger) CfClient {
 	c.headers["Content-Type"] = "application/x-www-form-urlencoded"
 	c.headers["charset"] = "utf-8"
 
-	c.httpClient = cf_http.NewClient()
+	c.httpClient = cfhttp.NewClient()
 	c.httpClient.Transport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 
 	return c

@@ -7,10 +7,11 @@ import (
 	"net"
 	"net/url"
 
+	"code.cloudfoundry.org/lager"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
-	"github.com/pivotal-golang/lager"
 )
 
 var infoBody = []byte(`

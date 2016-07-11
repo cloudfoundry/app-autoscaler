@@ -6,11 +6,12 @@ import (
 	. "metrics-collector/server"
 	"metrics-collector/server/fakes"
 
+	"code.cloudfoundry.org/lager"
+
 	"github.com/cloudfoundry/sonde-go/events"
 	"github.com/gogo/protobuf/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/pivotal-golang/lager"
 
 	"encoding/json"
 	"net/http"

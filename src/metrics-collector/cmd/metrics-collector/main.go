@@ -10,9 +10,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/cloudfoundry-incubator/cf_http"
+	"code.cloudfoundry.org/cfhttp"
+	"code.cloudfoundry.org/lager"
+
 	"github.com/cloudfoundry/noaa/consumer"
-	"github.com/pivotal-golang/lager"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
@@ -50,7 +51,7 @@ func main() {
 
 	logger := initLoggerFromConfig(&conf.Logging)
 
-	cf_http.Initialize(5 * time.Second)
+	cfhttp.Initialize(5 * time.Second)
 	cfClient := cf.NewCfClient(&conf.Cf, logger.Session("cf"))
 	err = cfClient.Login()
 	if err != nil {
