@@ -16,11 +16,6 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.STRING,
       field: 'service_instance_id',
       allowNull: false
-    },
-    timestamp: {
-      type: DataTypes.BIGINT,
-      field: 'timestamp',
-      allowNull: false
     }
   }, {
     classMethods: {
@@ -29,7 +24,9 @@ module.exports = function(sequelize, DataTypes) {
       },
 
     },
-    timestamps: false,
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: false,
     freezeTableName: true
   });
   return binding;

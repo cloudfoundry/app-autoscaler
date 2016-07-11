@@ -82,8 +82,8 @@
             }
           }, {
             "column": {
-              "name": "timestamp",
-              "type": "bigint",
+              "name": "created_at",
+              "type": "timestamp",
               "constraints": {
                 "nullable": false
               }

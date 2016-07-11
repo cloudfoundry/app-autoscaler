@@ -23,11 +23,6 @@ describe('service instance RESTful API', function() {
   before(function() {
     delete require.cache[require.resolve('../../lib/index.js')];
     server = require(path.join(__dirname, '../../lib/index.js'));
-    before(function(done) {
-      serviceInstance.sequelize.sync().then(function(result) { done(); }).catch(function(error) {
-        console.log("Failed to sync model serviceInstance, error: " + error);
-      });
-    });
   });
 
   after(function(done) {

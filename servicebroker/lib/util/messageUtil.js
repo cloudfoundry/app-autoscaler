@@ -6,9 +6,9 @@ var catalog = JSON.parse(
 module.exports = function(){
   var messageUtil = {};
   var message = {
-    POLICY_REQUIRED: "Policy is required as a parameter for binding request.",
-    INVALID_POLICY_FORMAT: "Invalid policy format.",
-    DUPLICATED_BIND: "Another " + catalog.services[0].name + " service instance already bound to current application ${applicationId}. The multiple binding is not supported.",
+    SERVICEINSTANCE_NOT_EXIST: "Target service instance ${serviceInstanceId} does not exist",
+    POLICY_REQUIRED: "Policy is required as a parameter.",
+    DUPLICATE_BIND: "A" + catalog.services[0].name + " service instance is already bound to application ${applicationId}. Multiple bindings are not supported.",
   };
   messageUtil.getMessage = function(key, params){
   	var msg = message[key];
