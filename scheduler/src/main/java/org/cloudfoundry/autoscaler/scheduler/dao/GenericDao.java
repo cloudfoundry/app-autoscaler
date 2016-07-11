@@ -11,7 +11,7 @@ public interface GenericDao<T> {
 
 	public T update(T entity);
 
-	public Boolean delete(T entity);
+	public void delete(T entity);
 
 	public T find(Long id);
 

@@ -30,10 +30,10 @@ public class GenericDaoImpl<T> implements GenericDao<T> {
 		try{
 			entityManager.persist(entity);
 			entityManager.flush();
+			return entity;
 		} catch(Exception exception){
 			throw new DatabaseValidationException("Create Failed", exception);
 		}
-		return entity;
 	}
 
 	@Override
@@ -46,26 +46,22 @@ public class GenericDaoImpl<T> implements GenericDao<T> {
 	}
 
 	@Override
-	public Boolean delete(T entity) {
-		boolean deleted = false;
+	public void delete(T entity) {
 		try {
 			entityManager.remove(entity);
-			deleted = true;
+
 		} catch(Exception exception){
 			throw new DatabaseValidationException("Delete failed", exception);
 		}
-		return deleted;
 	}
 
 	@Override
 	public T find(Long id) {
-		T entity;
 		try {
-			entity = (T) entityManager.find(entityClass, id);
+			return entityManager.find(entityClass, id);
 		} catch(Exception exception){
 			throw new DatabaseValidationException("Find failed", exception);
 		}
-		return entity;
 	}
 
 }

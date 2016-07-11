@@ -31,7 +31,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 public class ScheduleManagerTest {
 
 	@Autowired
-	private ScheduleManager scalingScheduleManager;
+	private ScheduleManager scheduleManager;
 
 	@Autowired
 	private ScheduleDao scheduleDao;
@@ -66,7 +66,7 @@ public class ScheduleManagerTest {
 	public void testGetSchedule_01() {
 		// Expected no schedule
 
-		List<ScheduleEntity> allSpecificDateSchedules = scalingScheduleManager.getAllSchedules(appId)
+		List<ScheduleEntity> allSpecificDateSchedules = scheduleManager.getAllSchedules(appId)
 				.getSpecific_date();
 
 		assertEquals(0, allSpecificDateSchedules.size());
@@ -80,9 +80,9 @@ public class ScheduleManagerTest {
 	
 		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSpecificDateSchedules(appId, 1);
 
-		scalingScheduleManager.createSchedules(schedules);
+		scheduleManager.createSchedules(schedules);
 
-		List<ScheduleEntity> allSpecificDateSchedules = scalingScheduleManager.getAllSchedules(appId).getSpecific_date();
+		List<ScheduleEntity> allSpecificDateSchedules = scheduleManager.getAllSchedules(appId).getSpecific_date();
 
 		assertEquals(1, allSpecificDateSchedules.size());
 
@@ -98,9 +98,9 @@ public class ScheduleManagerTest {
 		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSpecificDateSchedules(appId,
 				noOfSpecificDateSchedules);
 
-		scalingScheduleManager.createSchedules(schedules);
+		scheduleManager.createSchedules(schedules);
 
-		List<ScheduleEntity> allSpecificDateSchedules = scalingScheduleManager.getAllSchedules(appId).getSpecific_date();
+		List<ScheduleEntity> allSpecificDateSchedules = scheduleManager.getAllSchedules(appId).getSpecific_date();
 
 		assertEquals(noOfSpecificDateSchedules, allSpecificDateSchedules.size());
 
@@ -112,9 +112,9 @@ public class ScheduleManagerTest {
 		// Create one schedule
 		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSpecificDateSchedules(appId, 1);
 
-		scalingScheduleManager.createSchedules(schedules);
+		scheduleManager.createSchedules(schedules);
 
-		List<ScheduleEntity> allSpecificDateSchedules = scalingScheduleManager.getAllSchedules(appId).getSpecific_date();
+		List<ScheduleEntity> allSpecificDateSchedules = scheduleManager.getAllSchedules(appId).getSpecific_date();
 
 		assertEquals(1, allSpecificDateSchedules.size());
 	}
@@ -129,9 +129,9 @@ public class ScheduleManagerTest {
 		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSpecificDateSchedules(appId,
 				noOfSpecificDateSchedules);
 
-		scalingScheduleManager.createSchedules(schedules);
+		scheduleManager.createSchedules(schedules);
 
-		List<ScheduleEntity> allSpecificDateSchedules = scalingScheduleManager.getAllSchedules(appId).getSpecific_date();
+		List<ScheduleEntity> allSpecificDateSchedules = scheduleManager.getAllSchedules(appId).getSpecific_date();
 
 		assertEquals(noOfSpecificDateSchedules, allSpecificDateSchedules.size());
 	}

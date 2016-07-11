@@ -29,13 +29,13 @@ public class ScheduleRestController {
 	@Autowired
 	private ValidationErrorResult validationErrorResult;
 	@Autowired
-	ScheduleManager scalingScheduleManager;
+	ScheduleManager scheduleManager;
 	private Logger logger = LogManager.getLogger(this.getClass());
 
 	@RequestMapping(method = RequestMethod.GET)
 	public ResponseEntity<ApplicationScalingSchedules> getAllSchedules(@PathVariable String app_id) {
 		logger.info("Get All schedules for application: " + app_id);
-		ApplicationScalingSchedules savedApplicationSchedules = scalingScheduleManager.getAllSchedules(app_id);
+		ApplicationScalingSchedules savedApplicationSchedules = scheduleManager.getAllSchedules(app_id);
 
 		return new ResponseEntity<>(savedApplicationSchedules, null, HttpStatus.OK);
 	}
@@ -45,17 +45,17 @@ public class ScheduleRestController {
 			@RequestBody ApplicationScalingSchedules rawApplicationSchedules) {
 
 		validationErrorResult.initEmpty();
-		scalingScheduleManager.setUpSchedules(app_id, rawApplicationSchedules);
+		scheduleManager.setUpSchedules(app_id, rawApplicationSchedules);
 
 		logger.info("Validate schedules for application: " + app_id);
-		scalingScheduleManager.validateSchedules(app_id, rawApplicationSchedules);
+		scheduleManager.validateSchedules(app_id, rawApplicationSchedules);
 
 		// If there are no validation errors then proceed with persisting the
 		// schedules
 		if (!validationErrorResult.hasErrors()) {
 
 			logger.info("Create schedules for application: " + app_id);
-			scalingScheduleManager.createSchedules(rawApplicationSchedules);
+			scheduleManager.createSchedules(rawApplicationSchedules);
 		}
 
 		List<String> messages = new ArrayList<String>();
