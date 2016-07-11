@@ -2,7 +2,7 @@
 package fakes
 
 import (
-	"metrics-collector/cf"
+	"metricscollector/cf"
 	"sync"
 )
 

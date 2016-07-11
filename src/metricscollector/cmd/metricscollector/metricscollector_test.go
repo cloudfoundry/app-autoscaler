@@ -3,7 +3,7 @@ package main_test
 import (
 	"fmt"
 	"io/ioutil"
-	"metrics-collector/config"
+	"metricscollector/config"
 	"net/http"
 	"os"
 

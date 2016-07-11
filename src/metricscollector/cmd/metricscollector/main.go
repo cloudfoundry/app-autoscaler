@@ -4,9 +4,9 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
-	"metrics-collector/cf"
-	"metrics-collector/config"
-	"metrics-collector/server"
+	"metricscollector/cf"
+	"metricscollector/config"
+	"metricscollector/server"
 	"os"
 	"time"
 
@@ -89,7 +89,7 @@ func initLoggerFromConfig(conf *config.LoggingConfig) lager.Logger {
 		fmt.Fprintf(os.Stderr, "failed to initialize logger: %s\n", err.Error())
 		os.Exit(1)
 	}
-	logger := lager.NewLogger("metrics-collector")
+	logger := lager.NewLogger("metricscollector")
 	logger.RegisterSink(lager.NewWriterSink(os.Stdout, logLevel))
 
 	return logger

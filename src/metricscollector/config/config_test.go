@@ -2,7 +2,7 @@ package config_test
 
 import (
 	"bytes"
-	. "metrics-collector/config"
+	. "metricscollector/config"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

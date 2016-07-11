@@ -1,7 +1,7 @@
 package metrics_test
 
 import (
-	. "metrics-collector/metrics"
+	. "metricscollector/metrics"
 
 	"github.com/cloudfoundry/sonde-go/events"
 	. "github.com/onsi/ginkgo"

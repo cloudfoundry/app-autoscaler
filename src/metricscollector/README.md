@@ -1,6 +1,6 @@
-#Metrics-Collector
+#Metrics Collector
 
-Metrics-Collector is one of the components of CF `app-autoscaler`. It is used to collect application metrics from CF loggretator. The current version only supports memory metrics, it will be extended to include other metrics like throughput and response time at a later time.
+Metrics Collector is one of the components of CF `app-autoscaler`. It is used to collect application metrics from CF loggretator. The current version only supports memory metrics, it will be extended to include other metrics like throughput and response time at a later time.
 
 ## Getting started
 
@@ -15,7 +15,7 @@ Metrics-Collector is one of the components of CF `app-autoscaler`. It is used to
 1. change directory to `app-autoscaler`
 1. pull the submodules : `git submodule update --init --recursive`
 1. add `app-autoscaler` directory to your $GOPATH
-2. change directory to `src/metrics-collector`
+2. change directory to `src/metricscollector`
 1. build the project: `go install ./...
 1. test the project:
 	1. install ginko: `go install github.com/onsi/ginkgo/ginkgo`
@@ -24,7 +24,7 @@ Metrics-Collector is one of the components of CF `app-autoscaler`. It is used to
   1. install counterfeiter: go install github.com/maxbrunsfeld/counterfeiter
 	1. go generate ./...
 
-### Run the metrics-collector
+### Run the metricscollector
 
 Firstly a configuration file needs to be created. Examples can be found under `example-config` directory. Here is an example:
 
@@ -55,7 +55,7 @@ The config parameters are explained as below
 * logging: config for logging
  * `level`: the level of logging, can be 'debug', 'info', 'error' or 'fatal'
 
-To run the metrics-collector, use `../../bin/metrics-collector -c config_file_name'
+To run the metricscollector, use `../../bin/metricscollector -c config_file_name'
 
 ## API
 

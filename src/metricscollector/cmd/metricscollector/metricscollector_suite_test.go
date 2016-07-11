@@ -3,8 +3,8 @@ package main_test
 import (
 	"io/ioutil"
 	"log"
-	"metrics-collector/cf"
-	"metrics-collector/config"
+	"metricscollector/cf"
+	"metricscollector/config"
 	"mime/multipart"
 	"net/http"
 	"os"
@@ -38,7 +38,7 @@ func TestMetricsCollector(t *testing.T) {
 }
 
 var _ = SynchronizedBeforeSuite(func() []byte {
-	mc, err := gexec.Build("metrics-collector/cmd/metrics-collector", "-race")
+	mc, err := gexec.Build("metricscollector/cmd/metricscollector", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
 	return []byte(mc)
@@ -119,7 +119,7 @@ type MetricsCollectorRunner struct {
 func NewMetricsCollectorRunner() *MetricsCollectorRunner {
 	return &MetricsCollectorRunner{
 		configPath: configFile.Name(),
-		startCheck: "metrics-collector.started",
+		startCheck: "metricscollector.started",
 	}
 }
 

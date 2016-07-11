@@ -36,7 +36,7 @@ The AutoScaler has multiple components.
 
 * `api` : provides public APIs to manage scaling policy
 * `servicebroker`: implements the [Cloud Foundry service broker API][k]
-* `metrics-collector`: collect container's memory usage
+* `metricscollector`: collect container's memory usage
 
 
 
@@ -82,7 +82,7 @@ npm test
 popd
 
 go install github.com/onsi/ginkgo/ginkgo
-pushd src/metrics-collector
+pushd src/metricscollector
 ginkgo -r -race
 popd
 ```

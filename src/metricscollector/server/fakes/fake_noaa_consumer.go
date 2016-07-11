@@ -2,7 +2,7 @@
 package fakes
 
 import (
-	"metrics-collector/server"
+	"metricscollector/server"
 	"sync"
 
 	"github.com/cloudfoundry/sonde-go/events"

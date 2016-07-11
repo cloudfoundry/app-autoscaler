@@ -2,8 +2,8 @@ package cf_test
 
 import (
 	"bytes"
-	. "metrics-collector/cf"
-	"metrics-collector/config"
+	. "metricscollector/cf"
+	"metricscollector/config"
 	"net"
 	"net/url"
 

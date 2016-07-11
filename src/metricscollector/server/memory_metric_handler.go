@@ -2,8 +2,8 @@ package server
 
 import (
 	"encoding/json"
-	"metrics-collector/cf"
-	"metrics-collector/metrics"
+	"metricscollector/cf"
+	"metricscollector/metrics"
 	"net/http"
 
 	"code.cloudfoundry.org/cfhttp/handlers"

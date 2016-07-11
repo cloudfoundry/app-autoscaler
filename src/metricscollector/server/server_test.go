@@ -1,9 +1,9 @@
 package server_test
 
 import (
-	"metrics-collector/config"
-	. "metrics-collector/server"
-	"metrics-collector/server/fakes"
+	"metricscollector/config"
+	. "metricscollector/server"
+	"metricscollector/server/fakes"
 	"strconv"
 
 	"code.cloudfoundry.org/lager"

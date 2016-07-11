@@ -2,8 +2,8 @@ package server
 
 import (
 	"fmt"
-	"metrics-collector/cf"
-	"metrics-collector/config"
+	"metricscollector/cf"
+	"metricscollector/config"
 	"net/http"
 
 	"code.cloudfoundry.org/lager"

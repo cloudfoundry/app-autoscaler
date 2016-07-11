@@ -5,7 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"metrics-collector/config"
+	"metricscollector/config"
 	"net/http"
 	"net/url"
 	"strings"
