@@ -1,14 +1,11 @@
 package org.cloudfoundry.autoscaler.scheduler.service;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotNull;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.util.JobActionEnum;
@@ -18,6 +15,7 @@ import org.cloudfoundry.autoscaler.scheduler.util.error.ValidationErrorResult;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
@@ -63,41 +61,51 @@ public class ScheduleJobManagerTest {
 		assertCreateAndFindSimpleJobs(4);
 	}
 
-	private void assertCreateAndFindSimpleJobs(int expectedJobsTobeFound) throws SchedulerException, InterruptedException {
+	private void assertCreateAndFindSimpleJobs(int expectedJobsTobeFound)
+			throws SchedulerException, InterruptedException {
 		// reset all records for this test.
 		initializer();
 
-		int alreadyFiredJobsNum = scheduler.getMetaData().getNumberOfJobsExecuted();
-
-		List<Long> scheduleIdList = createSimpleJob(expectedJobsTobeFound);
-		assertCreateJobs(scheduleIdList);
-
-		Thread.sleep(TimeUnit.SECONDS.toMillis(10));
-		assertEquals("Expected number of jobs not started", expectedJobsTobeFound * 2,
-				scheduler.getMetaData().getNumberOfJobsExecuted() - alreadyFiredJobsNum);
+		List<ScheduleEntity> scheduleEntities = createSimpleJob(expectedJobsTobeFound);
+		assertCreatedJobs(scheduleEntities);
 	}
 
-	private void assertCreateJobs(List<Long> scheduleIdList) throws SchedulerException {
+	private void assertCreatedJobs(List<ScheduleEntity> scheduleEntities) throws SchedulerException {
 		Map<String, JobDetail> scheduleIdJobDetailMap = getSchedulerJobs();
-		Set<String> jobKeys = scheduleIdJobDetailMap.keySet();
-		for (Long scheduleId : scheduleIdList) {
-			assertTrue(jobKeys.contains(ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.START)));
-			assertTrue(jobKeys.contains(ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.END)));
+
+		for (ScheduleEntity entity : scheduleEntities) {
+			JobDetail jobDetail = scheduleIdJobDetailMap
+					.get(ScheduleJobHelper.generateJobKey(entity.getId(), JobActionEnum.START));
+			assertJobDetails(entity, entity.getInstanceMinCount(), entity.getInstanceMaxCount(), JobActionEnum.START,
+					jobDetail);
+
+			jobDetail = scheduleIdJobDetailMap.get(ScheduleJobHelper.generateJobKey(entity.getId(), JobActionEnum.END));
+			assertJobDetails(entity, entity.getDefaultInstanceMinCount(), entity.getDefaultInstanceMaxCount(),
+					JobActionEnum.END, jobDetail);
 		}
 	}
 
-	private List<Long> createSimpleJob(int expectedJobsTobeFound) {
+	private void assertJobDetails(ScheduleEntity expectedEntity, int expectedInstanceMinCount,
+			int expectedInstanceMaxCount, JobActionEnum expectedJobAction, JobDetail jobDetail) {
+		assertNotNull("Expected existing jobDetail", jobDetail);
+		JobDataMap map = jobDetail.getJobDataMap();
+		assertEquals(expectedEntity.getAppId(), map.get("appId"));
+		assertEquals(expectedEntity.getId(), map.get("scheduleId"));
+		assertEquals(expectedJobAction, map.get("scalingAction"));
+		assertEquals(expectedInstanceMinCount, map.get("instanceMinCount"));
+		assertEquals(expectedInstanceMaxCount, map.get("instanceMaxCount"));
+	}
+
+	private List<ScheduleEntity> createSimpleJob(int expectedJobsTobeFound) {
 		List<ScheduleEntity> specificDateScheduleEntities = TestDataSetupHelper
 				.generateSpecificDateScheduleEntitiesWithCurrentStartEndTime(appId, expectedJobsTobeFound);
 		Long index = 0L;
-		List<Long> scheduleIdList = new ArrayList<Long>();
 		for (ScheduleEntity scheduleEntity : specificDateScheduleEntities) {
 			Long scheduleId = ++index;
 			scheduleEntity.setId(scheduleId);
 			scalingJobManager.createSimpleJob(scheduleEntity);
-			scheduleIdList.add(scheduleId);
 		}
-		return scheduleIdList;
+		return specificDateScheduleEntities;
 	}
 
 	private Map<String, JobDetail> getSchedulerJobs() throws SchedulerException {
