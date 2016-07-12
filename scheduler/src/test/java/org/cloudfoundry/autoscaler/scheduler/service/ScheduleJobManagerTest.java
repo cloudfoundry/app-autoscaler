@@ -57,36 +57,38 @@ public class ScheduleJobManagerTest {
 	}
 
 	@Test
-	public void testCreateSimpleJob_01() throws Exception {
-		// Create jobs for one schedule
-		List<ScheduleEntity> specificDateScheduleEntities = TestDataSetupHelper
-				.generateSpecificDateScheduleEntitiesWithCurrentStartEndTime(appId, 1);
-
-		assertEquals(1, specificDateScheduleEntities.size());
-
-		ScheduleEntity scheduleEntity = specificDateScheduleEntities.get(0);
-		scheduleEntity.setId(1L);
-		scalingJobManager.createSimpleJob(scheduleEntity);
-		Long scheduleId = scheduleEntity.getId();
-
-		Map<String, JobDetail> scheduleIdJobDetailMap = getSchedulerJobs();
-		Set<String> jobKeys = scheduleIdJobDetailMap.keySet();
-
-		assertTrue(jobKeys.contains(ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.START)));
-		assertTrue(jobKeys.contains(ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.END)));
-
-		Thread.sleep(TimeUnit.SECONDS.toMillis(10));
-		assertEquals("Expected number of jobs not started", scheduleId * 2,
-				scheduler.getMetaData().getNumberOfJobsExecuted());
-
+	public void testCreateSimpleJob_02() throws Exception {
+		// Pass the expected schedules
+		assertSimpleJobFoundEquals(1);
+		assertSimpleJobFoundEquals(4);
 	}
 
-	@Test
-	public void testCreateSimpleJob_02() throws Exception {
-		// Create jobs for two schedules
-		int noOfSpecificDateSchedulesToSetUp = 2;
+	private void assertSimpleJobFoundEquals(int expectedJobsTobeFound) throws SchedulerException, InterruptedException {
+		// reset all records for this test.
+		init();
+
+		int alreadyFiredJobsNum = scheduler.getMetaData().getNumberOfJobsExecuted();
+
+		List<Long> scheduleIdList = createSimpleJob(expectedJobsTobeFound);
+		assertCreateJobs(scheduleIdList);
+
+		Thread.sleep(TimeUnit.SECONDS.toMillis(10));
+		assertEquals("Expected number of jobs not started", expectedJobsTobeFound * 2,
+				scheduler.getMetaData().getNumberOfJobsExecuted() - alreadyFiredJobsNum);
+	}
+
+	private void assertCreateJobs(List<Long> scheduleIdList) throws SchedulerException {
+		Map<String, JobDetail> scheduleIdJobDetailMap = getSchedulerJobs();
+		Set<String> jobKeys = scheduleIdJobDetailMap.keySet();
+		for (Long scheduleId : scheduleIdList) {
+			assertTrue(jobKeys.contains(ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.START)));
+			assertTrue(jobKeys.contains(ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.END)));
+		}
+	}
+
+	private List<Long> createSimpleJob(int expectedJobsTobeFound) {
 		List<ScheduleEntity> specificDateScheduleEntities = TestDataSetupHelper
-				.generateSpecificDateScheduleEntitiesWithCurrentStartEndTime(appId, noOfSpecificDateSchedulesToSetUp);
+				.generateSpecificDateScheduleEntitiesWithCurrentStartEndTime(appId, expectedJobsTobeFound);
 		Long index = 0L;
 		List<Long> scheduleIdList = new ArrayList<Long>();
 		for (ScheduleEntity scheduleEntity : specificDateScheduleEntities) {
@@ -95,18 +97,7 @@ public class ScheduleJobManagerTest {
 			scalingJobManager.createSimpleJob(scheduleEntity);
 			scheduleIdList.add(scheduleId);
 		}
-
-		Map<String, JobDetail> scheduleIdJobDetailMap = getSchedulerJobs();
-		Set<String> jobKeys = scheduleIdJobDetailMap.keySet();
-		for (Long scheduleId : scheduleIdList) {
-			assertTrue(jobKeys.contains(ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.START)));
-			assertTrue(jobKeys.contains(ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.END)));
-		}
-
-		Thread.sleep(TimeUnit.SECONDS.toMillis(10));
-		assertEquals("Expected number of jobs not started", noOfSpecificDateSchedulesToSetUp * 2,
-				scheduler.getMetaData().getNumberOfJobsExecuted());
-
+		return scheduleIdList;
 	}
 
 	private Map<String, JobDetail> getSchedulerJobs() throws SchedulerException {

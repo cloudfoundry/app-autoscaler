@@ -80,74 +80,21 @@ public class ScheduleRestController_SpecificSchedule_Test {
 			scheduleDao.delete(entity);
 		}
 	}
-	
+
 	@Test
 	@Transactional
 	public void testGetSchedule_01() throws Exception {
-		// Expected no schedule
-		
-		ResultActions resultActions = getResultActionWithGetSchedule();
-
-		ObjectMapper mapper = new ObjectMapper();
-		resultActions.andExpect(status().isOk());
-		ApplicationScalingSchedules resultSchedules = mapper.readValue(
-				resultActions.andReturn().getResponse().getContentAsString(), ApplicationScalingSchedules.class);
-		assertEquals(0, resultSchedules.getSpecific_date().size());
+		// Expected number of schedules is 0
+		ResultActions resultActions = callGetAllSchedulesByAppId();
+		assertSpecificSchedulesFoundEquals(0, resultActions);
 	}
-	
-	@Test
-	@Transactional
-	public void testGetSchedule_02() throws Exception {
-		// Expected one schedule
-		ResultActions resultActions = getResultActionWithCreateSchedule(1, 0);
 
-		resultActions.andExpect(status().isCreated());
-
-		resultActions = getResultActionWithGetSchedule();
-
-		ObjectMapper mapper = new ObjectMapper();
-		resultActions.andExpect(status().isOk());
-		ApplicationScalingSchedules resultSchedules = mapper.readValue(
-				resultActions.andReturn().getResponse().getContentAsString(), ApplicationScalingSchedules.class);
-		assertEquals(1, resultSchedules.getSpecific_date().size());
-	}
-	
 	@Test
 	@Transactional
 	public void testGetSchedule_03() throws Exception {
-		// Expected multiple schedules	
-		int noOfSpecificDateSchedulesToSetUp = 4;
-		ResultActions resultActions = getResultActionWithCreateSchedule(noOfSpecificDateSchedulesToSetUp, 0);
-
-		resultActions.andExpect(status().isCreated());
-
-		resultActions = getResultActionWithGetSchedule();
-
-		ObjectMapper mapper = new ObjectMapper();
-		resultActions.andExpect(status().isOk());
-		ApplicationScalingSchedules resultSchedules = mapper.readValue(
-				resultActions.andReturn().getResponse().getContentAsString(), ApplicationScalingSchedules.class);
-		assertEquals(noOfSpecificDateSchedulesToSetUp, resultSchedules.getSpecific_date().size());
-	}
-
-	@Test
-	@Transactional
-	public void testCreateSchedule_04() throws Exception {
-		// Create one schedule
-		ResultActions resultActions = getResultActionWithCreateSchedule(1, 0);
-
-		resultActions.andExpect(status().isCreated());
-	}
-
-	@Test
-	@Transactional
-	public void testCreateSchedule_05() throws Exception {
-		// Create multiple schedules
-		
-		int noOfSpecificDateSchedulesToSetUp = 4;
-		ResultActions resultActions = getResultActionWithCreateSchedule(noOfSpecificDateSchedulesToSetUp, 0);
-
-		resultActions.andExpect(status().isCreated());
+		// Pass the expected Schedules
+		assertCreateAndGetSchedules(1);
+		assertCreateAndGetSchedules(5);
 	}
 
 	@Test
@@ -405,8 +352,12 @@ public class ScheduleRestController_SpecificSchedule_Test {
 		assertUserError(resultActions, status().isBadRequest(), errorMessage);
 	}
 
-	private ResultActions getResultActionWithCreateSchedule(int noOfSpecificDateSchedulesToSetUp,
-			int noOfRecurringSchedulesToSetUp) throws Exception {
+	private String getCreateSchedulePath() {
+		return String.format("/v2/schedules/%s", appId);
+	}
+
+	private ResultActions callCreateSchedules(int noOfSpecificDateSchedulesToSetUp, int noOfRecurringSchedulesToSetUp)
+			throws Exception {
 		String content = TestDataSetupHelper.generateJsonSchedule(noOfSpecificDateSchedulesToSetUp,
 				noOfRecurringSchedulesToSetUp);
 
@@ -414,14 +365,37 @@ public class ScheduleRestController_SpecificSchedule_Test {
 
 	}
 
-	private ResultActions getResultActionWithGetSchedule() throws Exception {
+	private ResultActions callGetAllSchedulesByAppId() throws Exception {
 
 		return mockMvc.perform(get(getCreateSchedulePath()).accept(MediaType.APPLICATION_JSON));
 
 	}
 
-	private String getCreateSchedulePath() {
-		return String.format("/v2/schedules/%s", appId);
+	private void assertCreateAndGetSchedules(int expectedSchedulesTobeFound) throws Exception {
+
+		ResultActions resultActions = callCreateSchedules(expectedSchedulesTobeFound, 0);
+		assertCreateScheduleAPI(resultActions);
+
+		resultActions = callGetAllSchedulesByAppId();
+		assertSpecificSchedulesFoundEquals(expectedSchedulesTobeFound, resultActions);
+
+		// reset all records for next test.
+		afterTest();
+	}
+
+	private void assertCreateScheduleAPI(ResultActions resultActions) throws Exception {
+		resultActions.andExpect(status().isCreated());
+	}
+
+	private void assertSpecificSchedulesFoundEquals(int expectedSchedulesTobeFound, ResultActions resultActions)
+			throws Exception {
+
+		ObjectMapper mapper = new ObjectMapper();
+		ApplicationScalingSchedules resultSchedules = mapper.readValue(
+				resultActions.andReturn().getResponse().getContentAsString(), ApplicationScalingSchedules.class);
+
+		resultActions.andExpect(status().isOk());
+		assertEquals(expectedSchedulesTobeFound, resultSchedules.getSpecific_date().size());
 	}
 
 	private void assertUserError(ResultActions resultActions, ResultMatcher statusCode, String message)

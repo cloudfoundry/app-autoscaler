@@ -60,80 +60,43 @@ public class ScheduleManagerTest {
 		}
 
 	}
-	
+
 	@Test
 	@Transactional
 	public void testGetSchedule_01() {
 		// Expected no schedule
 
-		List<ScheduleEntity> allSpecificDateSchedules = scheduleManager.getAllSchedules(appId)
-				.getSpecific_date();
-
+		List<ScheduleEntity> allSpecificDateSchedules = scheduleManager.getAllSchedules(appId).getSpecific_date();
 		assertEquals(0, allSpecificDateSchedules.size());
 
 	}
 
 	@Test
 	@Transactional
-	public void testGetSchedule_02() {
-		// Expected one schedule
-	
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSpecificDateSchedules(appId, 1);
-
-		scheduleManager.createSchedules(schedules);
-
-		List<ScheduleEntity> allSpecificDateSchedules = scheduleManager.getAllSchedules(appId).getSpecific_date();
-
-		assertEquals(1, allSpecificDateSchedules.size());
-
-	}
-	
-	@Test
-	@Transactional
 	public void testGetSchedule_03() {
 		// Expected multiple schedules
-		
-		int noOfSpecificDateSchedules = 4;
-		
+		assertCreateAndFindAllSchedules(1);
+		assertCreateAndFindAllSchedules(4);
+
+	}
+
+	private void assertCreateAndFindAllSchedules(int noOfSpecificDateSchedules) {
+		createScheduleNotThrowAnyException(noOfSpecificDateSchedules);
+
+		List<ScheduleEntity> foundSpecificSchedules = scheduleManager.getAllSchedules(appId).getSpecific_date();
+		assertSpecificSchedulesFoundEquals(noOfSpecificDateSchedules, foundSpecificSchedules);
+
+		// reset all records for next test.
+		afterTest();
+	}
+
+	private void assertSpecificSchedulesFoundEquals(int expectedScheduleTobeFound, List<ScheduleEntity> foundSchedules) {
+		assertEquals(expectedScheduleTobeFound, foundSchedules.size());
+	}
+
+	private void createScheduleNotThrowAnyException(int noOfSpecificDateSchedules) {
 		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSpecificDateSchedules(appId,
 				noOfSpecificDateSchedules);
-
 		scheduleManager.createSchedules(schedules);
-
-		List<ScheduleEntity> allSpecificDateSchedules = scheduleManager.getAllSchedules(appId).getSpecific_date();
-
-		assertEquals(noOfSpecificDateSchedules, allSpecificDateSchedules.size());
-
 	}
-
-	@Test
-	@Transactional
-	public void testCreateSchedules_04() throws Exception {
-		// Create one schedule
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSpecificDateSchedules(appId, 1);
-
-		scheduleManager.createSchedules(schedules);
-
-		List<ScheduleEntity> allSpecificDateSchedules = scheduleManager.getAllSchedules(appId).getSpecific_date();
-
-		assertEquals(1, allSpecificDateSchedules.size());
-	}
-
-	@Test
-	@Transactional
-	public void testCreateSchedules_05() throws Exception {
-		// Create multiple schedules
-		
-		int noOfSpecificDateSchedules = 4;
-
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSpecificDateSchedules(appId,
-				noOfSpecificDateSchedules);
-
-		scheduleManager.createSchedules(schedules);
-
-		List<ScheduleEntity> allSpecificDateSchedules = scheduleManager.getAllSchedules(appId).getSpecific_date();
-
-		assertEquals(noOfSpecificDateSchedules, allSpecificDateSchedules.size());
-	}
-
 }
