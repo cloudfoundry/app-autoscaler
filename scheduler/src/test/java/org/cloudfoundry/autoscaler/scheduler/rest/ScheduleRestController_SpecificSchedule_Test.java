@@ -83,23 +83,21 @@ public class ScheduleRestController_SpecificSchedule_Test {
 
 	@Test
 	@Transactional
-	public void testGetSchedule_01() throws Exception {
-		// Expected number of schedules is 0
+	public void testGetAllSchedule_with_no_schedules() throws Exception {
 		ResultActions resultActions = callGetAllSchedulesByAppId();
 		assertSpecificSchedulesFoundEquals(0, resultActions);
 	}
 
 	@Test
 	@Transactional
-	public void testGetSchedule_03() throws Exception {
-		// Pass the expected Schedules
+	public void testCreateAndGetSchedules() throws Exception {
 		assertCreateAndGetSchedules(1);
 		assertCreateAndGetSchedules(5);
 	}
 
 	@Test
 	@Transactional
-	public void testCreateScheduleWithoutStartDate_Failure_06() throws Exception {
+	public void testCreateSchedule_withoutStartDate_Failure() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
@@ -121,7 +119,7 @@ public class ScheduleRestController_SpecificSchedule_Test {
 
 	@Test
 	@Transactional
-	public void testCreateScheduleWithoutEndDate_Failure_07() throws Exception {
+	public void testCreateSchedule_withoutEndDate_Failure() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
@@ -143,7 +141,7 @@ public class ScheduleRestController_SpecificSchedule_Test {
 
 	@Test
 	@Transactional
-	public void testCreateScheduleWithoutStartTimeInSpecificDateSchedules_Failure_08() throws Exception {
+	public void testCreateSchedule_withoutStartTimeInSpecificDateSchedules_Failure() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
@@ -165,7 +163,7 @@ public class ScheduleRestController_SpecificSchedule_Test {
 
 	@Test
 	@Transactional
-	public void testCreateScheduleWithoutEndTimeInSpecificDateSchedules_Failure_09() throws Exception {
+	public void testCreateSchedule_withoutEndTimeInSpecificDateSchedules_Failure() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
@@ -190,7 +188,7 @@ public class ScheduleRestController_SpecificSchedule_Test {
 
 	@Test
 	@Transactional
-	public void testCreateScheduleWithNullValueInstanceMaxCount_Failure_10() throws Exception {
+	public void testCreateSchedule_withNullValueInstanceMaxCount_Failure() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
@@ -212,7 +210,7 @@ public class ScheduleRestController_SpecificSchedule_Test {
 
 	@Test
 	@Transactional
-	public void testCreateScheduleWithNullValueInstanceMinCount_Failure_11() throws Exception {
+	public void testCreateSchedule_withNullValueInstanceMinCount_Failure() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
@@ -234,7 +232,7 @@ public class ScheduleRestController_SpecificSchedule_Test {
 
 	@Test
 	@Transactional
-	public void testCreateScheduleWithNegativeInstanceMinCount_Failure_12() throws Exception {
+	public void testCreateSchedule_withNegativeInstanceMinCount_Failure() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
@@ -256,7 +254,7 @@ public class ScheduleRestController_SpecificSchedule_Test {
 
 	@Test
 	@Transactional
-	public void testCreateScheduleWithNegativeInstanceMaxCount_Failure_13() throws Exception {
+	public void testCreateSchedule_withNegativeInstanceMaxCount_Failure() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
@@ -278,7 +276,7 @@ public class ScheduleRestController_SpecificSchedule_Test {
 
 	@Test
 	@Transactional
-	public void testCreateScheduleWithInstanceMinCountGreaterThanInstanceMaxCount_Failure_14() throws Exception {
+	public void testCreateSchedule_withInstanceMinCountGreaterThanInstanceMaxCount_Failure() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
@@ -303,7 +301,7 @@ public class ScheduleRestController_SpecificSchedule_Test {
 
 	@Test
 	@Transactional
-	public void testCreateScheduleWithEndDateTimeBeforeStartDateTime_Failure_15() throws Exception {
+	public void testCreateSchedule_withEndDateTimeBeforeStartDateTime_Failure() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
@@ -329,7 +327,7 @@ public class ScheduleRestController_SpecificSchedule_Test {
 
 	@Test
 	@Transactional
-	public void testCreateScheduleWithOverlappingSpecificDateSchedule_Failure_16() throws Exception {
+	public void testCreateSchedule_withOverlappingSpecificDateSchedule_Failure() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 2;

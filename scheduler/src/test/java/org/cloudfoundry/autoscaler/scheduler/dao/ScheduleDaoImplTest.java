@@ -32,7 +32,7 @@ public class ScheduleDaoImplTest {
 
 	@After
 	@Transactional
-	public void afterTest() {
+	public void removeAllRecordsFromDatabase() {
 		for (ScheduleEntity entity : scheduleDao.findAllSchedulesByAppId(appId)) {
 			scheduleDao.delete(entity);
 		}
@@ -40,14 +40,14 @@ public class ScheduleDaoImplTest {
 
 	@Test
 	@Transactional
-	public void testFindAllSchedulesByAppId_01() {
+	public void testFindAllSchedules_with_no_schedules() {
 		List<ScheduleEntity> schedulesFound = findAllSchedules();
 		assertSchedulesFoundEquals(0, schedulesFound);
 	}
 
 	@Test
 	@Transactional
-	public void testFindAllSchedulesByAppId_03() {
+	public void testCreateAndFindSchedules() {
 		// Pass the expected schedules.
 		assertCreateAndFindSchedules(1);
 
@@ -79,7 +79,7 @@ public class ScheduleDaoImplTest {
 		assertSchedulesFoundEquals(expectedSchedulesTobeFound, schedulesFound);
 
 		// reset all records for next test.
-		afterTest();
+		removeAllRecordsFromDatabase();
 	}
 
 	private void assertSchedulesFoundEquals(int expectedSchedulesTobeFound, List<ScheduleEntity> schedulesFound) {

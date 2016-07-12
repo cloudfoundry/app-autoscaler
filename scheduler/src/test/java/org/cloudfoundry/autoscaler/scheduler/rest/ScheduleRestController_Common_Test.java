@@ -80,7 +80,7 @@ public class ScheduleRestController_Common_Test {
 
 	@Test
 	@Transactional
-	public void testCreateScheduleWithNoSchedules_Failure_01() throws Exception {
+	public void testCreateSchedule_withNullSchedules_Failure() throws Exception {
 		// No schedules - null case
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
@@ -101,7 +101,7 @@ public class ScheduleRestController_Common_Test {
 
 	@Test
 	@Transactional
-	public void testCreateScheduleWithNoSchedules_Failure_02() throws Exception {
+	public void testCreateSchedule_withEmptySchedules_Failure() throws Exception {
 		// No schedules - Empty case
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
@@ -122,7 +122,7 @@ public class ScheduleRestController_Common_Test {
 
 	@Test
 	@Transactional
-	public void testCreateScheduleWithoutAppId_Failure_03() throws Exception {
+	public void testCreateSchedule_withoutAppId_Failure() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
@@ -139,7 +139,7 @@ public class ScheduleRestController_Common_Test {
 
 	@Test
 	@Transactional
-	public void testCreateScheduleWithoutTimeZone_Failure_04() throws Exception {
+	public void testCreateSchedule_withoutTimeZone_Failure() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
@@ -157,7 +157,7 @@ public class ScheduleRestController_Common_Test {
 
 	@Test
 	@Transactional
-	public void testCreateScheduleWithInvalidTimeZone_Failure_05() throws Exception {
+	public void testCreateSchedule_withInvalidTimeZone_Failure() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
@@ -175,7 +175,7 @@ public class ScheduleRestController_Common_Test {
 
 	@Test
 	@Transactional
-	public void testCreateScheduleWithNullDefaultInstanceMinCount_Failure_06() throws Exception {
+	public void testCreateSchedule_withNullDefaultInstanceMinCount_Failure() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
@@ -196,7 +196,7 @@ public class ScheduleRestController_Common_Test {
 
 	@Test
 	@Transactional
-	public void testCreateScheduleWithNullDefaultInstanceMaxCountInSpecificDateSchedules_Failure_05() throws Exception {
+	public void testCreateSchedule_withNullDefaultInstanceMaxCountInSpecificDateSchedules_Failure() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
@@ -217,7 +217,7 @@ public class ScheduleRestController_Common_Test {
 
 	@Test
 	@Transactional
-	public void testCreateScheduleWithNegativeDefaultInstanceMinCount_Failure_07() throws Exception {
+	public void testCreateSchedule_withNegativeDefaultInstanceMinCount_Failure() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
@@ -238,7 +238,7 @@ public class ScheduleRestController_Common_Test {
 
 	@Test
 	@Transactional
-	public void testCreateScheduleWithNegativeDefaultInstanceMaxCount_Failure_08() throws Exception {
+	public void testCreateSchedule_withNegativeDefaultInstanceMaxCount_Failure() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
@@ -259,7 +259,7 @@ public class ScheduleRestController_Common_Test {
 
 	@Test
 	@Transactional
-	public void testCreateScheduleWithDefaultInstanceMinCountGreaterThanDefaultInstanceMaxCount_Failure_09()
+	public void testCreateSchedule_withDefaultInstanceMinCountGreaterThanDefaultInstanceMaxCount_Failure()
 			throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();

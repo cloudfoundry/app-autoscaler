@@ -50,22 +50,22 @@ public class ScheduleJobManagerTest {
 	private String appId = TestDataSetupHelper.getAppId_1();
 
 	@Before
-	public void init() throws SchedulerException {
+	public void initializer() throws SchedulerException {
 		// Clear previous schedules.
 		validationErrorResult.initEmpty();
 		scheduler.clear();
 	}
 
 	@Test
-	public void testCreateSimpleJob_02() throws Exception {
+	public void testCreateAndFindSimpleJobs() throws Exception {
 		// Pass the expected schedules
-		assertSimpleJobFoundEquals(1);
-		assertSimpleJobFoundEquals(4);
+		assertCreateAndFindSimpleJobs(1);
+		assertCreateAndFindSimpleJobs(4);
 	}
 
-	private void assertSimpleJobFoundEquals(int expectedJobsTobeFound) throws SchedulerException, InterruptedException {
+	private void assertCreateAndFindSimpleJobs(int expectedJobsTobeFound) throws SchedulerException, InterruptedException {
 		// reset all records for this test.
-		init();
+		initializer();
 
 		int alreadyFiredJobsNum = scheduler.getMetaData().getNumberOfJobsExecuted();
 

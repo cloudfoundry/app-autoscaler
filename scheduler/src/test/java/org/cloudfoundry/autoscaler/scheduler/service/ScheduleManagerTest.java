@@ -63,9 +63,7 @@ public class ScheduleManagerTest {
 
 	@Test
 	@Transactional
-	public void testGetSchedule_01() {
-		// Expected no schedule
-
+	public void testGetAllSchedules_with_no_schedules() {
 		List<ScheduleEntity> allSpecificDateSchedules = scheduleManager.getAllSchedules(appId).getSpecific_date();
 		assertEquals(0, allSpecificDateSchedules.size());
 
@@ -73,8 +71,7 @@ public class ScheduleManagerTest {
 
 	@Test
 	@Transactional
-	public void testGetSchedule_03() {
-		// Expected multiple schedules
+	public void testCreateAndGetAllSchedule() {
 		assertCreateAndFindAllSchedules(1);
 		assertCreateAndFindAllSchedules(4);
 
@@ -90,7 +87,8 @@ public class ScheduleManagerTest {
 		afterTest();
 	}
 
-	private void assertSpecificSchedulesFoundEquals(int expectedScheduleTobeFound, List<ScheduleEntity> foundSchedules) {
+	private void assertSpecificSchedulesFoundEquals(int expectedScheduleTobeFound,
+			List<ScheduleEntity> foundSchedules) {
 		assertEquals(expectedScheduleTobeFound, foundSchedules.size());
 	}
 

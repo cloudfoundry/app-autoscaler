@@ -49,7 +49,7 @@ public class ScheduleJobManagerFailureTest {
 	}
 
 	@Test
-	public void testCreateSimpleJob_Failure_01() throws SchedulerException {
+	public void testCreateSimpleJob_Failure_with_throw_SchedulerException_at_Quartz() throws SchedulerException {
 		
 		// Set mock object for Quartz.
 		Mockito.when(scheduler.scheduleJob(Mockito.anyObject(), Mockito.anyObject()))
