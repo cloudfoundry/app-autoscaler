@@ -1,7 +1,13 @@
 'use strict';
 var expect = require('chai').expect;
-var serviceInstance = require('../../lib/models')().service_instance;
-var binding = require('../../lib/models')().binding;
+
+var fs = require('fs');
+var path = require('path');
+var settings = require(path.join(__dirname, '../../lib/config/setting.js'))((JSON.parse(
+  fs.readFileSync(path.join(__dirname, '../../config/settings.json'), 'utf8'))));
+var models = require('../../lib/models')(settings);
+var serviceInstance = models.service_instance;
+var binding = models.binding;
 
 var serviceInstanceId = "test_serviceinstance";
 var orgId = "test_org";

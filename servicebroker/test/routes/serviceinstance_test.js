@@ -1,15 +1,16 @@
 'use strict';
+var supertest = require("supertest");
+var uuid = require('uuid');
 
 var fs = require('fs');
 var path = require('path');
-var supertest = require("supertest");
-var uuid = require('uuid');
-var serviceInstance = require('../../lib/models')().service_instance;
+var settings = require(path.join(__dirname, '../../lib/config/setting.js'))((JSON.parse(
+  fs.readFileSync(path.join(__dirname, '../../config/settings.json'), 'utf8'))));
 
-var settings = JSON.parse(
-  fs.readFileSync(path.join(__dirname, '../../config/settings.json'), 'utf8'));
+var models = require('../../lib/models')(settings);
+var serviceInstance = models.service_instance;
+
 var auth = new Buffer(settings.username + ":" + settings.password).toString('base64');
-
 
 describe('service instance RESTful API', function() {
   var server, serviceInstanceId, orgId, spaceId, orgIdAgain, spaceIdAgain;

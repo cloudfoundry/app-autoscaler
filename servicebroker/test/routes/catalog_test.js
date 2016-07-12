@@ -1,14 +1,12 @@
 'use strict';
-
-var fs = require('fs');
-var path = require('path');
 var supertest = require("supertest");
 var expect = require('chai').expect;
 
-var settings = JSON.parse(
-  fs.readFileSync(path.join(__dirname, '../../config/settings.json'), 'utf8'));
+var fs = require('fs');
+var path = require('path');
+var settings = require(path.join(__dirname, '../../lib/config/setting.js'))((JSON.parse(
+  fs.readFileSync(path.join(__dirname, '../../config/settings.json'), 'utf8'))));
 var auth = new Buffer(settings.username + ":" + settings.password).toString('base64');
-
 
 describe('getCatalog RESTful API', function() {
   var server;

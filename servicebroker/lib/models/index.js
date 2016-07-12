@@ -1,12 +1,11 @@
-module.exports = function(callback) {
+module.exports = function(settings, callback) {
 
   var fs = require('fs');
   var path = require('path');
   var Sequelize = require('sequelize');
   var logger = require(path.join(__dirname, '../logger/logger.js'));
-  var settings = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/settings.json'), 'utf8'));
-  var dbConnectionInfo = require(path.join(__dirname, '../../lib/util/dbConnectionInfo.js'))(settings.dbUri);
-  var sequelize = new Sequelize(dbConnectionInfo.dbUri, { logging: false });
+  console.log ("index.js : " + settings.db.uri);
+  var sequelize = new Sequelize(settings.db.uri, { logging: false });
 
   sequelize.authenticate()
     .then(function() {

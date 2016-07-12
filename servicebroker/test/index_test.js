@@ -1,13 +1,12 @@
 'use strict';
 
 var supertest = require("supertest");
-var fs = require('fs');
-var path = require('path');
 var uuid = require('uuid');
 
-// This agent refers to PORT where program is runninng.
-var settings = JSON.parse(
-  fs.readFileSync(path.join(__dirname, '../config/settings.json'), 'utf8'));
+var fs = require('fs');
+var path = require('path');
+var settings = require(path.join(__dirname, '../lib/config/setting.js'))((JSON.parse(
+  fs.readFileSync(path.join(__dirname, '../config/settings.json'), 'utf8'))));
 var auth = new Buffer(settings.username + ":" + settings.password).toString('base64')
 
 describe("Invalid path for RESTful API", function() {

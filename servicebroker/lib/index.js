@@ -7,8 +7,9 @@ var bodyParser = require('body-parser');
 var fs = require('fs');
 var path = require('path');
 var logger = require(path.join(__dirname, './logger/logger.js'));
-var settings = JSON.parse(
-  fs.readFileSync(path.join(__dirname, '../config/settings.json'), 'utf8'));
+var settings = require(path.join(__dirname, './config/setting.js'))((JSON.parse(
+  fs.readFileSync(path.join(__dirname, '../config/settings.json'), 'utf8'))));
+
 var port = process.env.PORT || settings.port;
 
 var app = express();
@@ -35,7 +36,7 @@ var auth = function (req, res, next) {
 app.use(auth);
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-require('./routes')(app);
+require('./routes')(app, settings);
 
 
 var server = app.listen(port, function () {
