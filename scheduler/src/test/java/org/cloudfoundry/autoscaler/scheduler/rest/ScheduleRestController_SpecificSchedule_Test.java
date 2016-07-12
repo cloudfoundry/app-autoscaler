@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -356,6 +357,8 @@ public class ScheduleRestController_SpecificSchedule_Test {
 
 	private void assertCreateScheduleAPI(ResultActions resultActions) throws Exception {
 		resultActions.andExpect(status().isCreated());
+		resultActions.andExpect(header().doesNotExist("Content-type"));
+		resultActions.andExpect(content().string(Matchers.isEmptyString()));
 	}
 
 	private void assertSpecificSchedulesFoundEquals(int expectedSchedulesTobeFound, ResultActions resultActions)
@@ -366,6 +369,7 @@ public class ScheduleRestController_SpecificSchedule_Test {
 				resultActions.andReturn().getResponse().getContentAsString(), ApplicationScalingSchedules.class);
 
 		resultActions.andExpect(status().isOk());
+		resultActions.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
 		assertEquals(expectedSchedulesTobeFound, resultSchedules.getSpecific_date().size());
 	}
 
