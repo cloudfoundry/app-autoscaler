@@ -3,8 +3,9 @@ var express = require('express');
 var router = express.Router();
 var logger = require('../log/logger');
 var HttpStatus = require('http-status-codes');
+var validationMiddleWare = require('../validation/validationMiddleware');
 
-router.put('/:app_id/policy',function(req, res) {
+router.put('/:app_id/policy',validationMiddleWare,function(req, res) {
   logger.info('Policy creation request received for app id : ' + req.params.app_id);
   models.policy_json.create({
     policy_json: req.body,
@@ -15,7 +16,7 @@ router.put('/:app_id/policy',function(req, res) {
       'error': null,
       'result': result
     };
-    res.status(HttpStatus.OK).send(result);
+    res.status(HttpStatus.CREATED).send(result);
   }).catch(function(error) {
     logger.error ('Policy creation failed for app id : ' + req.params.app_id, error);
     var error = {

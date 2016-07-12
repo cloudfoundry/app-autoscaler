@@ -1,0 +1,183 @@
+'use-strict'
+var moment = require('moment-timezone');
+var JSONValidator = require('jsonschema').Validator;
+var validator = new JSONValidator();
+var logger = require('../log/logger');
+var _ = require('underscore');
+
+JSONValidator.prototype.customFormats.dateTimeFormat = function(inputDate) {
+  return moment(inputDate, ['YYYY-MM-DDTHH:mm'], true).isValid();
+};
+
+JSONValidator.prototype.customFormats.timeFormat = function(inputTime) {
+  return moment(inputTime, 'HH:mm',true).isValid();
+};
+
+//  Getting the list of the Valid Time zone Using moment from latest IANA  data 
+
+var getTimeZones = function() {
+  var timezoneList = moment.tz.names();
+  return timezoneList;
+}
+
+JSONValidator.prototype.customFormats.timeZoneFormat = function(inputTimeZone) {
+  var result = false;
+  var trimmedTimeZone = inputTimeZone.replace(/\s+/g, '');
+  var timeZoneList = getTimeZones();
+  if(_.contains(timeZoneList,trimmedTimeZone)) {
+    result = true;
+  }
+  return result;
+};
+
+
+
+var getValidOperators = function() {
+  var validOperators = ['<','>','<=','>='];
+  return validOperators;
+};
+
+var getAdjustmentPattern = function() {
+  var adjustmentPattern = '^[-|+][1-9]+[0-9]*$';
+  return adjustmentPattern;
+};
+
+var getDaysInWeeksInISOFormat = function() {
+  var weekEnum = [1,2,3,4,5,6,7];
+  return weekEnum;
+};
+
+var getDaysInMonthInISOFormat = function() {
+  var monthEnum = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,
+                 18,19,20,21,22,23,24,25,26,27,28,29,30,31];
+  return monthEnum;
+};
+
+var getMetricTypes = function() {
+  var metricTypeEnum = ['MemoryUsage'];
+  return metricTypeEnum;
+};
+
+
+var getPolicySchema = function() {
+  var schema = {
+    'type': 'object',
+    'id':'/policySchema',
+    'properties' :{
+      'instance_min_count': { 'type':'number','minimum':1 },
+      'instance_max_count': { 'type':'number','minimum':1 },
+      'scaling_rules': {
+        'type':'array',
+        'items': { '$ref': '/scaling_rules' }
+      },
+      'schedules': { '$ref':'/schedules' }
+    },
+    'required' : ['instance_min_count','instance_max_count'],
+    'anyOf':[ { 'required' : ['scaling_rules'] },{ 'required' : ['schedules'] } ]
+  };
+  return schema;
+};
+
+
+var getScalingRuleSchema = function() {
+  var validOperators = getValidOperators();
+  var adjustmentPattern = getAdjustmentPattern();
+  var metricTypeEnum = getMetricTypes();
+  var schema = {
+    'type': 'object',
+    'id':'/scaling_rules',
+    'properties' : {
+      'metric_type':{ 'type':'string' ,'enum':metricTypeEnum },
+      'stat_window_secs':{ 'type':'number','minimum': 60,'maximum': 3600 },
+      'breach_duration_secs':{ 'type':'number','minimum': 60,'maximum': 3600 },
+      'threshold':{ 'type':'number','minimum': 1,'maximum': 100 },
+      'operator':{ 'type':'string','enum': validOperators },
+      'cool_down_secs':{ 'type':'number','minimum': 60,'maximum': 3600 },
+      'adjustment':{ 'type':'string','pattern': adjustmentPattern }
+    },
+    'required' : ['metric_type','threshold','operator','adjustment']
+  };  
+  return schema;
+};
+
+
+var getScheduleSchema = function() {
+  var schema = {
+    'type': 'object',
+    'id':'/schedules',
+    'properties' : {
+      'timezone':{ 'type':'string','format': 'timeZoneFormat' },
+      'recurring_schedule': {
+        'type':'array',
+        'items': { '$ref': '/recurring_schedule' },
+        'minItems': 1
+      },
+      'specific_date': {
+        'type':'array', 
+        'items': { '$ref':'/specific_date' },
+        'minItems': 1
+      }
+    },
+    'required' : ['timezone'],
+    'anyOf' : [ { 'required' : ['recurring_schedule'] }, { 'required' : ['specific_date'] }]
+  };  
+  return schema;
+};
+
+var getRecurringSchema = function() {
+  var weekEnum = getDaysInWeeksInISOFormat();
+  var monthEnum = getDaysInMonthInISOFormat();
+  var schema = {
+    'type': 'object',
+    'id':'/recurring_schedule',
+    'properties' : {
+      'start_time':{ 'type':'string','format':'timeFormat' },
+      'end_time':{ 'type':'string','format':'timeFormat' },
+      'instance_min_count':{ 'type':'number','minimum':1 },
+      'instance_max_count':{ 'type':'number','minimum':1 },
+      'days_of_week':{ 'type':'array','uniqueItems': true,
+        'items':{ 'type':'number','enum':weekEnum } },
+      'days_of_month':{ 'type':'array','uniqueItems': true,
+        'items':{ 'type':'number','enum':monthEnum } }
+    },
+    'required' : ['start_time','end_time','instance_min_count','instance_max_count'],
+    'oneOf' : [ { 'required' : ['days_of_week'] }, { 'required' : ['days_of_month'] }]
+  };
+  return schema;
+};
+
+var getSpecificDateSchema = function() {
+  var schema = {
+    'type': 'object',
+    'id':'/specific_date',
+    'properties' : {
+      'start_date_time':{ 'type':'string','format':'dateTimeFormat' },
+      'end_date_time':{ 'type':'string','format':'dateTimeFormat' },
+      'instance_min_count':{ 'type':'number','minimum':1 },
+      'instance_max_count':{ 'type':'number' ,'minimum':1 }  
+    },
+    'required' : ['start_date_time','end_date_time','instance_min_count','instance_max_count']
+  };
+  return schema;
+}
+
+
+exports.validatePolicy = function validatePolicy(inputJson,callback) {
+  if(callback) {
+    var specificDateSchema = getSpecificDateSchema();
+    var recurringScheduleSchema = getRecurringSchema();
+    var scheduleSchema = getScheduleSchema();
+    var scalingRuleSchema = getScalingRuleSchema();
+    var policySchema = getPolicySchema();
+    validator.addSchema(specificDateSchema, '/specific_date');
+    validator.addSchema(recurringScheduleSchema,'/recurring_schedule');
+    validator.addSchema(scheduleSchema,'/schedules');
+    validator.addSchema(scalingRuleSchema,'/scaling_rules');
+    var errors = validator.validate(inputJson, policySchema).errors;
+    callback(errors);
+  }
+  else{
+    logger.error('No callback function specified!');
+    return;
+  }
+}
