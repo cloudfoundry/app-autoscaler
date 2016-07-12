@@ -90,13 +90,10 @@ public class ScheduleRestController_Common_Test {
 
 		String content = mapper.writeValueAsString(schedules);
 
-		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath()).contentType(MediaType.APPLICATION_JSON).content(content));
-
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.invalid.noSchedules",
 				"app_id=" + appId);
 
-		assertUserError(resultActions, status().isBadRequest(), errorMessage);
+		assertCreateSchedules(content, errorMessage);
 	}
 
 	@Test
@@ -111,13 +108,10 @@ public class ScheduleRestController_Common_Test {
 
 		String content = mapper.writeValueAsString(schedules);
 
-		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath()).contentType(MediaType.APPLICATION_JSON).content(content));
-
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.invalid.noSchedules",
 				"app_id=" + appId);
 
-		assertUserError(resultActions, status().isBadRequest(), errorMessage);
+		assertCreateSchedules(content, errorMessage);
 	}
 
 	@Test
@@ -185,13 +179,10 @@ public class ScheduleRestController_Common_Test {
 
 		String content = mapper.writeValueAsString(schedules);
 
-		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath()).contentType(MediaType.APPLICATION_JSON).content(content));
-
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.default.value.invalid", "",
 				"instance_min_count");
 
-		assertUserError(resultActions, status().isBadRequest(), errorMessage);
+		assertCreateSchedules(content, errorMessage);
 	}
 
 	@Test
@@ -206,13 +197,10 @@ public class ScheduleRestController_Common_Test {
 
 		String content = mapper.writeValueAsString(schedules);
 
-		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath()).contentType(MediaType.APPLICATION_JSON).content(content));
-
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.default.value.invalid", "",
 				"instance_max_count");
 
-		assertUserError(resultActions, status().isBadRequest(), errorMessage);
+		assertCreateSchedules(content, errorMessage);
 	}
 
 	@Test
@@ -227,13 +215,10 @@ public class ScheduleRestController_Common_Test {
 
 		String content = mapper.writeValueAsString(schedules);
 
-		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath()).contentType(MediaType.APPLICATION_JSON).content(content));
-
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.default.value.invalid", "",
 				"instance_min_count");
 
-		assertUserError(resultActions, status().isBadRequest(), errorMessage);
+		assertCreateSchedules(content, errorMessage);
 	}
 
 	@Test
@@ -248,13 +233,10 @@ public class ScheduleRestController_Common_Test {
 
 		String content = mapper.writeValueAsString(schedules);
 
-		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath()).contentType(MediaType.APPLICATION_JSON).content(content));
-
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.default.value.invalid", "",
 				"instance_max_count");
 
-		assertUserError(resultActions, status().isBadRequest(), errorMessage);
+		assertCreateSchedules(content, errorMessage);
 	}
 
 	@Test
@@ -272,13 +254,17 @@ public class ScheduleRestController_Common_Test {
 
 		String content = mapper.writeValueAsString(schedules);
 
-		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath()).contentType(MediaType.APPLICATION_JSON).content(content));
-
 		String errorMessage = messageBundleResourceHelper.lookupMessage(
 				"schedule.default.instanceCount.invalid.min.greater", "", "instance_max_count", "instance_min_count");
 
-		assertUserError(resultActions, status().isBadRequest(), errorMessage);
+		assertCreateSchedules(content, errorMessage);
+	}
+
+	private void assertCreateSchedules(String inputContent, String expectedErrorMessage) throws Exception {
+		ResultActions resultActions = mockMvc
+				.perform(put(getCreateSchedulePath()).contentType(MediaType.APPLICATION_JSON).content(inputContent));
+
+		assertUserError(resultActions, status().isBadRequest(), expectedErrorMessage);
 	}
 
 	private String getCreateSchedulePath() {

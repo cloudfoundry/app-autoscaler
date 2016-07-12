@@ -108,13 +108,10 @@ public class ScheduleRestController_SpecificSchedule_Test {
 
 		String content = mapper.writeValueAsString(schedules);
 
-		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath()).contentType(MediaType.APPLICATION_JSON).content(content));
-
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.null",
 				scheduleBeingProcessed + " 1", "start_date");
 
-		assertUserError(resultActions, status().isBadRequest(), errorMessage);
+		assertErrorMessage(content, errorMessage);
 	}
 
 	@Test
@@ -130,13 +127,10 @@ public class ScheduleRestController_SpecificSchedule_Test {
 
 		String content = mapper.writeValueAsString(schedules);
 
-		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath()).contentType(MediaType.APPLICATION_JSON).content(content));
-
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.null",
 				scheduleBeingProcessed + " 1", "end_date");
 
-		assertUserError(resultActions, status().isBadRequest(), errorMessage);
+		assertErrorMessage(content, errorMessage);
 	}
 
 	@Test
@@ -152,13 +146,10 @@ public class ScheduleRestController_SpecificSchedule_Test {
 
 		String content = mapper.writeValueAsString(schedules);
 
-		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath()).contentType(MediaType.APPLICATION_JSON).content(content));
-
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.null",
 				scheduleBeingProcessed + " 1", "start_time");
 
-		assertUserError(resultActions, status().isBadRequest(), errorMessage);
+		assertErrorMessage(content, errorMessage);
 	}
 
 	@Test
@@ -174,16 +165,11 @@ public class ScheduleRestController_SpecificSchedule_Test {
 
 		String content = mapper.writeValueAsString(schedules);
 
-		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath()).contentType(MediaType.APPLICATION_JSON).content(content));
-
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.null",
 				scheduleBeingProcessed + " 1", "end_time");
 
-		assertUserError(resultActions, status().isBadRequest(), errorMessage);
+		assertErrorMessage(content, errorMessage);
 
-		errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.null",
-				scheduleBeingProcessed + " 1", "end_time");
 	}
 
 	@Test
@@ -199,13 +185,10 @@ public class ScheduleRestController_SpecificSchedule_Test {
 
 		String content = mapper.writeValueAsString(schedules);
 
-		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath()).contentType(MediaType.APPLICATION_JSON).content(content));
-
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.invalid",
 				scheduleBeingProcessed + " 1", "instance_max_count");
 
-		assertUserError(resultActions, status().isBadRequest(), errorMessage);
+		assertErrorMessage(content, errorMessage);
 	}
 
 	@Test
@@ -221,13 +204,10 @@ public class ScheduleRestController_SpecificSchedule_Test {
 
 		String content = mapper.writeValueAsString(schedules);
 
-		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath()).contentType(MediaType.APPLICATION_JSON).content(content));
-
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.invalid",
 				scheduleBeingProcessed + " 1", "instance_min_count");
 
-		assertUserError(resultActions, status().isBadRequest(), errorMessage);
+		assertErrorMessage(content, errorMessage);
 	}
 
 	@Test
@@ -243,13 +223,10 @@ public class ScheduleRestController_SpecificSchedule_Test {
 
 		String content = mapper.writeValueAsString(schedules);
 
-		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath()).contentType(MediaType.APPLICATION_JSON).content(content));
-
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.invalid",
 				scheduleBeingProcessed + " 1", "instance_min_count");
 
-		assertUserError(resultActions, status().isBadRequest(), errorMessage);
+		assertErrorMessage(content, errorMessage);
 	}
 
 	@Test
@@ -265,13 +242,10 @@ public class ScheduleRestController_SpecificSchedule_Test {
 
 		String content = mapper.writeValueAsString(schedules);
 
-		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath()).contentType(MediaType.APPLICATION_JSON).content(content));
-
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.invalid",
 				scheduleBeingProcessed + " 1", "instance_max_count");
 
-		assertUserError(resultActions, status().isBadRequest(), errorMessage);
+		assertErrorMessage(content, errorMessage);
 	}
 
 	@Test
@@ -290,13 +264,10 @@ public class ScheduleRestController_SpecificSchedule_Test {
 
 		String content = mapper.writeValueAsString(schedules);
 
-		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath()).contentType(MediaType.APPLICATION_JSON).content(content));
-
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.instanceCount.invalid.min.greater",
 				scheduleBeingProcessed + " 1", "instance_max_count", "instance_min_count");
 
-		assertUserError(resultActions, status().isBadRequest(), errorMessage);
+		assertErrorMessage(content, errorMessage);
 	}
 
 	@Test
@@ -316,13 +287,10 @@ public class ScheduleRestController_SpecificSchedule_Test {
 
 		String content = mapper.writeValueAsString(schedules);
 
-		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath()).contentType(MediaType.APPLICATION_JSON).content(content));
-
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.invalid.start.after.end",
 				scheduleBeingProcessed + " 1", "end_date + end_time", "start_date + start_time");
 
-		assertUserError(resultActions, status().isBadRequest(), errorMessage);
+		assertErrorMessage(content, errorMessage);
 	}
 
 	@Test
@@ -342,12 +310,17 @@ public class ScheduleRestController_SpecificSchedule_Test {
 
 		String content = mapper.writeValueAsString(schedules);
 
-		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath()).contentType(MediaType.APPLICATION_JSON).content(content));
-
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.overlap", scheduleBeingProcessed,
 				"1", "2");
-		assertUserError(resultActions, status().isBadRequest(), errorMessage);
+
+		assertErrorMessage(content, errorMessage);
+	}
+
+	private void assertErrorMessage(String inputContent, String expectedErrorMessage) throws Exception {
+		ResultActions resultActions = mockMvc
+				.perform(put(getCreateSchedulePath()).contentType(MediaType.APPLICATION_JSON).content(inputContent));
+
+		assertUserError(resultActions, status().isBadRequest(), expectedErrorMessage);
 	}
 
 	private String getCreateSchedulePath() {
