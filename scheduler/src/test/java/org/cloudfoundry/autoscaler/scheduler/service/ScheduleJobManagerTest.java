@@ -15,6 +15,7 @@ import org.cloudfoundry.autoscaler.scheduler.util.error.ValidationErrorResult;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mockito;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobKey;
@@ -25,12 +26,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.DirtiesContext.ClassMode;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
 /**
  * 
  *
  */
+@ActiveProfiles("SchedulerMock")
 @RunWith(SpringRunner.class)
 @SpringBootTest
 @DirtiesContext(classMode = ClassMode.BEFORE_EACH_TEST_METHOD)
@@ -52,6 +55,7 @@ public class ScheduleJobManagerTest {
 		// Clear previous schedules.
 		validationErrorResult.initEmpty();
 		scheduler.clear();
+		Mockito.reset(scheduler);
 	}
 
 	@Test
@@ -67,7 +71,13 @@ public class ScheduleJobManagerTest {
 		initializer();
 
 		List<ScheduleEntity> scheduleEntities = createSimpleJob(expectedJobsTobeFound);
+		assertScheduleJobMethodCallNum(expectedJobsTobeFound);
 		assertCreatedJobs(scheduleEntities);
+	}
+
+	private void assertScheduleJobMethodCallNum(int expectedJobsTobeFound) throws SchedulerException {
+		Mockito.verify(scheduler, Mockito.times(expectedJobsTobeFound * 2)).scheduleJob(Mockito.anyObject(),
+				Mockito.anyObject());
 	}
 
 	private void assertCreatedJobs(List<ScheduleEntity> scheduleEntities) throws SchedulerException {

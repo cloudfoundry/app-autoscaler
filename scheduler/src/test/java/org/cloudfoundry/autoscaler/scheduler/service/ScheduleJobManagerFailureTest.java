@@ -50,15 +50,15 @@ public class ScheduleJobManagerFailureTest {
 
 	@Test
 	public void testCreateSimpleJob_Failure_with_throw_SchedulerException_at_Quartz() throws SchedulerException {
-		
+
 		// Set mock object for Quartz.
-		Mockito.when(scheduler.scheduleJob(Mockito.anyObject(), Mockito.anyObject()))
-				.thenThrow(new SchedulerException());
+		Mockito.doThrow(SchedulerException.class).when(scheduler).scheduleJob(Mockito.anyObject(), Mockito.anyObject());
 		int noOfSpecificDateSchedulesToSetUp = 1;
-		
-		List<ScheduleEntity> specificDateScheduleEntities = TestDataSetupHelper.generateSpecificDateScheduleEntities(appId, noOfSpecificDateSchedulesToSetUp);
+
+		List<ScheduleEntity> specificDateScheduleEntities = TestDataSetupHelper
+				.generateSpecificDateScheduleEntities(appId, noOfSpecificDateSchedulesToSetUp);
 		Long index = 0L;
-		for (ScheduleEntity scheduleEntity: specificDateScheduleEntities) {
+		for (ScheduleEntity scheduleEntity : specificDateScheduleEntities) {
 			scheduleEntity.setId(++index);
 			scalingJobManager.createSimpleJob(scheduleEntity);
 		}
