@@ -5,13 +5,12 @@ import org.apache.logging.log4j.Logger;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
-import org.quartz.JobKey;
 import org.springframework.scheduling.quartz.QuartzJobBean;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
 /**
- * 
+ * QuartzJobBean class that executes the job
  *
  */
 @Component
@@ -22,15 +21,15 @@ public class AppScalingScheduleJob extends QuartzJobBean {
 	protected void executeInternal(JobExecutionContext context) throws JobExecutionException {
 
 		SpringBeanAutowiringSupport.processInjectionBasedOnCurrentContext(this);
-		logger.info("Scheduling job is executing for app scaling action");
-
+		
 		JobDataMap dataMap = context.getJobDetail().getJobDataMap();
-		JobKey jobKey = context.getJobDetail().getKey();
-		String appId = dataMap.getString("appId");
-		Long scheduleId = dataMap.getLong("scheduleId");
-		Object schedule = dataMap.get("schedule");
 
-		logger.info(String.format("Job Key: %s, Application Id: %s, Schedule Id: %s, Schedule: %s", jobKey, appId,
-				scheduleId, schedule));
+		logger.info("Scheduling job is executing for app scaling action, Job Key: " + context.getJobDetail().getKey() 
+				+ ", Application Id: " + dataMap.get("appId") 
+				+ ", Schedule Id: " + dataMap.get("scheduleId") 
+				+ ", Scaling Action: " + dataMap.get("scalingAction")
+				+ ", Instance Min Count: " + dataMap.get("instanceMinCount")
+				+ ", Instance Max Count: " + dataMap.get("instanceMaxCount"));
+
 	}
 }
