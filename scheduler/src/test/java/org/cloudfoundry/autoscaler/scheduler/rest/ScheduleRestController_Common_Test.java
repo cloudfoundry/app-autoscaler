@@ -1,6 +1,5 @@
 package org.cloudfoundry.autoscaler.scheduler.rest;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -125,7 +124,6 @@ public class ScheduleRestController_Common_Test {
 
 		ResultActions resultActions = mockMvc
 				.perform(put("/v2/schedules").contentType(MediaType.APPLICATION_JSON).content(content));
-		resultActions = mockMvc.perform(get("/v2/schedules").contentType(MediaType.APPLICATION_JSON).content(content));
 
 		resultActions.andExpect(status().isNotFound());
 
