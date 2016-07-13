@@ -17,8 +17,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  *
  */
 public class TestDataSetupHelper {
-	private static String appId_1 = "1";
-	private static String appId_2 = "2";
+	private static String[] appIds = { "89d155a3-1879-4ba3-843e-ddad7b5c92c8", "1e05ff52-9acf-4a9f-96e4-99fe8805d494",
+			"2332bd64-ab18-47f5-9813-16eb0fda5930", "cc1c9a0a-50a0-4912-92df-bea753fd93ba" };
+	private static String appId_1 = appIds[0];
+	private static String appId_2 = appIds[1];
 	private static String timeZone = "(GMT +01:00) Europe/London";
 	private static String invalidTimezone = "Invalid TimeZone";
 	private static String startDate[] = { "2100-07-20", "2100-07-22", "2100-07-25", "2100-01-01", "2100-8-10" };
@@ -64,8 +66,8 @@ public class TestDataSetupHelper {
 
 	}
 
-	public static String generateJsonSchedule(int noOfSpecificDateSchedulesToSetUp, int noOfRecurringSchedulesToSetUp)
-			throws JsonProcessingException {
+	public static String generateJsonSchedule(String appId, int noOfSpecificDateSchedulesToSetUp,
+			int noOfRecurringSchedulesToSetUp) throws JsonProcessingException {
 		ObjectMapper mapper = new ObjectMapper();
 
 		ApplicationScalingSchedules schedules = new ApplicationScalingSchedules();
@@ -158,6 +160,10 @@ public class TestDataSetupHelper {
 
 	public static String getTimeZone() {
 		return timeZone;
+	}
+
+	public static String[] getAppIds() {
+		return appIds;
 	}
 
 	public static String[] getStartDate() {

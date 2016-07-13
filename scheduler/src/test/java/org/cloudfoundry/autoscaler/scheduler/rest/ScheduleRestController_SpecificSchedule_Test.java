@@ -62,7 +62,10 @@ public class ScheduleRestController_SpecificSchedule_Test {
 	private WebApplicationContext wac;
 	private MockMvc mockMvc;
 
+	private String[] multiAppIds = TestDataSetupHelper.getAppIds();
+	private String[] singleAppId = { TestDataSetupHelper.getAppId_1() };
 	private String appId = TestDataSetupHelper.getAppId_1();
+
 	private String scheduleBeingProcessed = ScheduleTypeEnum.SPECIFIC_DATE.getDescription();
 
 	@Before
@@ -77,23 +80,28 @@ public class ScheduleRestController_SpecificSchedule_Test {
 	@After
 	@Transactional
 	public void afterTest() {
-		for (ScheduleEntity entity : scheduleDao.findAllSchedulesByAppId(appId)) {
-			scheduleDao.delete(entity);
+		for (String appId : multiAppIds) {
+			for (ScheduleEntity entity : scheduleDao.findAllSchedulesByAppId(appId)) {
+				scheduleDao.delete(entity);
+			}
 		}
 	}
 
 	@Test
 	@Transactional
 	public void testGetAllSchedule_with_no_schedules() throws Exception {
-		ResultActions resultActions = callGetAllSchedulesByAppId();
+		ResultActions resultActions = callGetAllSchedulesByAppId(appId);
 		assertSpecificSchedulesFoundEquals(0, resultActions);
 	}
 
 	@Test
 	@Transactional
 	public void testCreateAndGetSchedules() throws Exception {
-		assertCreateAndGetSchedules(1);
-		assertCreateAndGetSchedules(5);
+		assertCreateAndGetSchedules(singleAppId, 1);
+		assertCreateAndGetSchedules(singleAppId, 5);
+
+		assertCreateAndGetSchedules(multiAppIds, 1);
+		assertCreateAndGetSchedules(multiAppIds, 5);
 	}
 
 	@Test
@@ -318,39 +326,46 @@ public class ScheduleRestController_SpecificSchedule_Test {
 	}
 
 	private void assertErrorMessage(String inputContent, String expectedErrorMessage) throws Exception {
-		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath()).contentType(MediaType.APPLICATION_JSON).content(inputContent));
+		ResultActions resultActions = mockMvc.perform(
+				put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(inputContent));
+
+		resultActions = mockMvc.perform(
+				put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(inputContent));
 
 		assertUserError(resultActions, status().isBadRequest(), expectedErrorMessage);
 	}
 
-	private String getCreateSchedulePath() {
+	private String getCreateSchedulePath(String appId) {
 		return String.format("/v2/schedules/%s", appId);
 	}
 
-	private ResultActions callCreateSchedules(int noOfSpecificDateSchedulesToSetUp, int noOfRecurringSchedulesToSetUp)
-			throws Exception {
-		String content = TestDataSetupHelper.generateJsonSchedule(noOfSpecificDateSchedulesToSetUp,
+	private ResultActions callCreateSchedules(String appId, int noOfSpecificDateSchedulesToSetUp,
+			int noOfRecurringSchedulesToSetUp) throws Exception {
+		String content = TestDataSetupHelper.generateJsonSchedule(appId, noOfSpecificDateSchedulesToSetUp,
 				noOfRecurringSchedulesToSetUp);
 
-		return mockMvc.perform(put(getCreateSchedulePath()).contentType(MediaType.APPLICATION_JSON).content(content));
+		return mockMvc
+				.perform(put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 	}
 
-	private ResultActions callGetAllSchedulesByAppId() throws Exception {
+	private ResultActions callGetAllSchedulesByAppId(String appId) throws Exception {
 
-		return mockMvc.perform(get(getCreateSchedulePath()).accept(MediaType.APPLICATION_JSON));
+		return mockMvc.perform(get(getCreateSchedulePath(appId)).accept(MediaType.APPLICATION_JSON));
 
 	}
 
-	private void assertCreateAndGetSchedules(int expectedSchedulesTobeFound) throws Exception {
+	private void assertCreateAndGetSchedules(String[] appIds, int expectedSchedulesTobeFound) throws Exception {
 
-		ResultActions resultActions = callCreateSchedules(expectedSchedulesTobeFound, 0);
-		assertCreateScheduleAPI(resultActions);
+		for (String appId : appIds) {
+			ResultActions resultActions = callCreateSchedules(appId, expectedSchedulesTobeFound, 0);
+			assertCreateScheduleAPI(resultActions);
+		}
 
-		resultActions = callGetAllSchedulesByAppId();
-		assertSpecificSchedulesFoundEquals(expectedSchedulesTobeFound, resultActions);
-
+		for (String appId : appIds) {
+			ResultActions resultActions = callGetAllSchedulesByAppId(appId);
+			assertSpecificSchedulesFoundEquals(expectedSchedulesTobeFound, appId, resultActions);
+		}
 		// reset all records for next test.
 		afterTest();
 	}
@@ -361,8 +376,8 @@ public class ScheduleRestController_SpecificSchedule_Test {
 		resultActions.andExpect(content().string(Matchers.isEmptyString()));
 	}
 
-	private void assertSpecificSchedulesFoundEquals(int expectedSchedulesTobeFound, ResultActions resultActions)
-			throws Exception {
+	private void assertSpecificSchedulesFoundEquals(int expectedSchedulesTobeFound, String appId,
+			ResultActions resultActions) throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules resultSchedules = mapper.readValue(
@@ -371,6 +386,9 @@ public class ScheduleRestController_SpecificSchedule_Test {
 		resultActions.andExpect(status().isOk());
 		resultActions.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
 		assertEquals(expectedSchedulesTobeFound, resultSchedules.getSpecific_date().size());
+		for (ScheduleEntity entity : resultSchedules.getSpecific_date()) {
+			assertEquals(appId, entity.getAppId());
+		}
 	}
 
 	private void assertUserError(ResultActions resultActions, ResultMatcher statusCode, String message)

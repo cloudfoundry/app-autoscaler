@@ -28,20 +28,24 @@ public class ScheduleDaoImplTest {
 	@Autowired
 	private ScheduleDao scheduleDao;
 
+	private String[] multipleAppIds = TestDataSetupHelper.getAppIds();
+	private String[] singleAppId = new String[] { TestDataSetupHelper.getAppId_1() };
 	private String appId = TestDataSetupHelper.getAppId_1();
 
 	@After
 	@Transactional
 	public void removeAllRecordsFromDatabase() {
-		for (ScheduleEntity entity : scheduleDao.findAllSchedulesByAppId(appId)) {
-			scheduleDao.delete(entity);
+		for (String appId : multipleAppIds) {
+			for (ScheduleEntity entity : scheduleDao.findAllSchedulesByAppId(appId)) {
+				scheduleDao.delete(entity);
+			}
 		}
 	}
 
 	@Test
 	@Transactional
 	public void testFindAllSchedules_with_no_schedules() {
-		List<ScheduleEntity> schedulesFound = findAllSchedules();
+		List<ScheduleEntity> schedulesFound = findAllSchedules(appId);
 		assertSchedulesFoundEquals(0, schedulesFound);
 	}
 
@@ -49,12 +53,14 @@ public class ScheduleDaoImplTest {
 	@Transactional
 	public void testCreateAndFindSchedules() {
 		// Pass the expected schedules.
-		assertCreateAndFindSchedules(1);
+		assertCreateAndFindSchedules(singleAppId, 1);
+		assertCreateAndFindSchedules(singleAppId, 5);
 
-		assertCreateAndFindSchedules(5);
+		assertCreateAndFindSchedules(multipleAppIds, 1);
+		assertCreateAndFindSchedules(multipleAppIds, 5);
 	}
 
-	private List<ScheduleEntity> createSchedules(int noOfSpecificDateSchedulesToSetUp) {
+	private List<ScheduleEntity> createSchedules(String appId, int noOfSpecificDateSchedulesToSetUp) {
 		List<ScheduleEntity> specificDateScheduleEntities = TestDataSetupHelper
 				.generateSpecificDateScheduleEntities(appId, noOfSpecificDateSchedulesToSetUp);
 		List<ScheduleEntity> returnValues = new ArrayList<ScheduleEntity>();
@@ -66,18 +72,21 @@ public class ScheduleDaoImplTest {
 		return returnValues;
 	}
 
-	private List<ScheduleEntity> findAllSchedules() {
+	private List<ScheduleEntity> findAllSchedules(String appId) {
 		return scheduleDao.findAllSchedulesByAppId(appId);
 	}
 
-	private void assertCreateAndFindSchedules(int expectedSchedulesTobeFound) {
+	private void assertCreateAndFindSchedules(String[] appIds, int expectedSchedulesTobeFound) {
 
-		List<ScheduleEntity> savedSchedules = createSchedules(expectedSchedulesTobeFound);
-		assertCreatedScheduleIdNotNull(savedSchedules);
+		for (String appId : appIds) {
+			List<ScheduleEntity> savedSchedules = createSchedules(appId, expectedSchedulesTobeFound);
+			assertCreatedScheduleIdNotNull(savedSchedules);
+		}
 
-		List<ScheduleEntity> schedulesFound = findAllSchedules();
-		assertSchedulesFoundEquals(expectedSchedulesTobeFound, schedulesFound);
-
+		for (String appId : appIds) {
+			List<ScheduleEntity> schedulesFound = findAllSchedules(appId);
+			assertSchedulesFoundEquals(expectedSchedulesTobeFound, schedulesFound);
+		}
 		// reset all records for next test.
 		removeAllRecordsFromDatabase();
 	}
