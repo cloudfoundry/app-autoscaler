@@ -62,7 +62,7 @@ public class ScheduleRestController_SpecificSchedule_Test {
 	private WebApplicationContext wac;
 	private MockMvc mockMvc;
 
-	private String[] multiAppIds = TestDataSetupHelper.getAppIds();
+	private String[] multipleAppIds = TestDataSetupHelper.getAppIds();
 	private String[] singleAppId = { TestDataSetupHelper.getAppId_1() };
 	private String appId = TestDataSetupHelper.getAppId_1();
 
@@ -80,7 +80,7 @@ public class ScheduleRestController_SpecificSchedule_Test {
 	@After
 	@Transactional
 	public void afterTest() {
-		for (String appId : multiAppIds) {
+		for (String appId : multipleAppIds) {
 			for (ScheduleEntity entity : scheduleDao.findAllSchedulesByAppId(appId)) {
 				scheduleDao.delete(entity);
 			}
@@ -91,7 +91,10 @@ public class ScheduleRestController_SpecificSchedule_Test {
 	@Transactional
 	public void testGetAllSchedule_with_no_schedules() throws Exception {
 		ResultActions resultActions = callGetAllSchedulesByAppId(appId);
-		assertSpecificSchedulesFoundEquals(0, resultActions);
+
+		resultActions.andExpect(status().isNotFound());
+		resultActions.andExpect(header().doesNotExist("Content-type"));
+		resultActions.andExpect(content().string(Matchers.isEmptyString()));
 	}
 
 	@Test
@@ -100,8 +103,8 @@ public class ScheduleRestController_SpecificSchedule_Test {
 		assertCreateAndGetSchedules(singleAppId, 1);
 		assertCreateAndGetSchedules(singleAppId, 5);
 
-		assertCreateAndGetSchedules(multiAppIds, 1);
-		assertCreateAndGetSchedules(multiAppIds, 5);
+		assertCreateAndGetSchedules(multipleAppIds, 1);
+		assertCreateAndGetSchedules(multipleAppIds, 5);
 	}
 
 	@Test

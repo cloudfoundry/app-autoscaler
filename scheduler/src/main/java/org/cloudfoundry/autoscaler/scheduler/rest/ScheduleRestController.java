@@ -1,6 +1,5 @@
 package org.cloudfoundry.autoscaler.scheduler.rest;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
@@ -37,7 +36,13 @@ public class ScheduleRestController {
 		logger.info("Get All schedules for application: " + app_id);
 		ApplicationScalingSchedules savedApplicationSchedules = scheduleManager.getAllSchedules(app_id);
 
-		return new ResponseEntity<>(savedApplicationSchedules, null, HttpStatus.OK);
+		// No schedules found for the specified application return status code NOT_FOUND
+		if (savedApplicationSchedules == null) {
+			return new ResponseEntity<>(null, null, HttpStatus.NOT_FOUND);
+		} else {
+			return new ResponseEntity<>(savedApplicationSchedules, null, HttpStatus.OK);
+		}
+
 	}
 
 	@RequestMapping(method = RequestMethod.PUT)
@@ -58,15 +63,11 @@ public class ScheduleRestController {
 			scheduleManager.createSchedules(rawApplicationSchedules);
 		}
 
-		List<String> messages = new ArrayList<String>();
 		if (validationErrorResult.hasErrors()) {
-			// messages = validationErrorResult.getAllErrorMessages();
 			throw new InvalidDataException();
-		} else {
-			messages.add("Schedules successfully created for app_id " + app_id);
 		}
 
-		return new ResponseEntity<>(messages, null, HttpStatus.CREATED);
+		return new ResponseEntity<>(null, null, HttpStatus.CREATED);
 	}
 
 }
