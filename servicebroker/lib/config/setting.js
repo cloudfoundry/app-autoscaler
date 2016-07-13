@@ -17,22 +17,12 @@ module.exports = function(settings) {
   var apiServer = function(apiServerUri) {
     return apiServerUri.replace(/\/$/g, "").toLowerCase();
   };
-  var parse = function() {
-    var valid = validateUtil.validate(settings, ['port', 'username', 'password', 'dbUri', 'apiServerUri']).valid;
-    if (valid === true) {
-      return {
-        port: settings.port,
-        username: settings.username,
-        password: settings.password,
-        db: db(settings.dbUri),
-        apiServerUri: apiServer(settings.apiServerUri)
-      };
-    } else {
-      return null;
-    }
-
-  }
-
-  return parse();
+  return {
+    port: settings.port,
+    username: settings.username,
+    password: settings.password,
+    db: db(settings.dbUri),
+    apiServerUri: apiServer(settings.apiServerUri)
+  };
 
 };
