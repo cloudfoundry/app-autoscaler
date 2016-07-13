@@ -1,11 +1,10 @@
-module.exports = function(settings, callback) {
+module.exports = function(dbUri, callback) {
 
   var fs = require('fs');
   var path = require('path');
   var Sequelize = require('sequelize');
   var logger = require(path.join(__dirname, '../logger/logger.js'));
-  console.log ("index.js : " + settings.db.uri);
-  var sequelize = new Sequelize(settings.db.uri, { logging: false });
+  var sequelize = new Sequelize(dbUri, { logging: false });
 
   sequelize.authenticate()
     .then(function() {
