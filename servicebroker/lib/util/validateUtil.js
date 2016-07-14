@@ -5,17 +5,17 @@ module.exports = {
       if (keys != null) {
         if (keys instanceof Array) {
           for (var key in keys) {
-            if (typeof (object[keys[key]]) === "undefined" || object[keys[key]] === null) {
-              return false;
+            if (object[keys[key]] == null) {
+              return { valid: false, message: "The value of " + keys[key] + " should not be undefined or null" };
             }
           }
         } else {
-          return false;
+          return { valid: false, message: "The keys should be an array" };
         }
       }
     } else {
-      return false;
+      return { valid: false, message: "The object should not be undefined or null" };
     }
-    return true;
+    return { valid: true };
   }
 };

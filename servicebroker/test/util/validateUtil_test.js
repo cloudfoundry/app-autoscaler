@@ -9,12 +9,12 @@ describe('validateUtil Test Suite', function() {
   context('validate(testObject, keys)', function() {
     context('when testObject is null', function() {
       it('should retrun false', function() {
-        expect(validateUtil.validate(null)).to.equal(false);
+        expect(validateUtil.validate(null).valid).to.equal(false);
       });
     });
     context('when testObject is not defined', function() {
       it('should retrun false', function() {
-        expect(validateUtil.validate(testObject)).to.equal(false);;
+        expect(validateUtil.validate(testObject).valid).to.equal(false);;
       });
     });
     context('when keys is not a array', function() {
@@ -24,7 +24,7 @@ describe('validateUtil Test Suite', function() {
 
       });
       it('should retrun false', function() {
-        expect(validateUtil.validate(testObject, keys)).to.equal(false);;
+        expect(validateUtil.validate(testObject, keys).valid).to.equal(false);;
       });
     });
 
@@ -35,7 +35,7 @@ describe('validateUtil Test Suite', function() {
 
       });
       it('should retrun false', function() {
-        expect(validateUtil.validate(testObject, keys)).to.equal(false);;
+        expect(validateUtil.validate(testObject, keys).valid).to.equal(false);;
       });
     });
     context('when testObject[key] is not defined', function() {
@@ -45,7 +45,7 @@ describe('validateUtil Test Suite', function() {
 
       });
       it('should retrun false', function() {
-        expect(validateUtil.validate(testObject, keys)).to.equal(false);;
+        expect(validateUtil.validate(testObject, keys).valid).to.equal(false);;
       });
     });
     context('when testObject and  keys are both valid', function() {
@@ -55,7 +55,7 @@ describe('validateUtil Test Suite', function() {
 
       });
       it('should retrun true', function() {
-        expect(validateUtil.validate(testObject, keys)).to.equal(true);
+        expect(validateUtil.validate(testObject, keys).valid).to.equal(true);
       });
     });
 
