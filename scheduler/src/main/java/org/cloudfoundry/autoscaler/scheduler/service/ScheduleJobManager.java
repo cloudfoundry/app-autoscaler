@@ -3,8 +3,6 @@ package org.cloudfoundry.autoscaler.scheduler.service;
 import java.util.Date;
 import java.util.TimeZone;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.quartz.AppScalingScheduleJob;
 import org.cloudfoundry.autoscaler.scheduler.util.DateHelper;
@@ -32,7 +30,6 @@ public class ScheduleJobManager {
 	Scheduler scheduler;
 	@Autowired
 	ValidationErrorResult validationErrorResult;
-	private Logger logger = LogManager.getLogger(this.getClass());
 	
 	/**
 	 * Creates simple job for the application scaling using helper methods. Here
@@ -45,7 +42,6 @@ public class ScheduleJobManager {
 	 * @throws Exception
 	 */
 	public void createSimpleJob(ScheduleEntity scheduleEntity) {
-		logger.info("Create jobs for the scaling schedule");
 
 		Long scheduleId = scheduleEntity.getId();
 		String jobStartId = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.START);
@@ -103,7 +99,7 @@ public class ScheduleJobManager {
 			jobDataMap.put("instanceMinCount", scheduleEntity.getInstanceMinCount());
 			jobDataMap.put("instanceMaxCount", scheduleEntity.getInstanceMaxCount());
 		} else {
-			jobDataMap.put("instanceMinCount", scheduleEntity.getDefaultInstanceMaxCount());
+			jobDataMap.put("instanceMinCount", scheduleEntity.getDefaultInstanceMinCount());
 			jobDataMap.put("instanceMaxCount", scheduleEntity.getDefaultInstanceMaxCount());
 		}
 	}
