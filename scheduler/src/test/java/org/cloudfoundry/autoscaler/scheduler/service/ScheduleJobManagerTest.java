@@ -2,6 +2,7 @@ package org.cloudfoundry.autoscaler.scheduler.service;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import java.util.HashMap;
 import java.util.List;
@@ -11,6 +12,7 @@ import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.util.JobActionEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
+import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.ValidationErrorResult;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,12 +50,14 @@ public class ScheduleJobManagerTest {
 	@Autowired
 	private ValidationErrorResult validationErrorResult;
 
-	private String appId = TestDataSetupHelper.getAppId_1();
+	@Autowired
+	MessageBundleResourceHelper messageBundleResourceHelper;
+
+	//	private String appId = TestDataSetupHelper.getAppId_1();
 
 	@Before
 	public void initializer() throws SchedulerException {
 		// Clear previous schedules.
-		validationErrorResult.initEmpty();
 		scheduler.clear();
 		Mockito.reset(scheduler);
 	}
@@ -63,6 +67,31 @@ public class ScheduleJobManagerTest {
 		// Pass the expected schedules
 		assertCreateAndFindSimpleJobs(1);
 		assertCreateAndFindSimpleJobs(4);
+	}
+
+	@Test
+	public void testCreateSimpleJob_with_throw_SchedulerException_at_Quartz() throws SchedulerException {
+
+		// Set mock object for Quartz.
+		Mockito.doThrow(SchedulerException.class).when(scheduler).scheduleJob(Mockito.anyObject(), Mockito.anyObject());
+		int noOfSpecificDateSchedulesToSetUp = 1;
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		List<ScheduleEntity> specificDateScheduleEntities = TestDataSetupHelper
+				.generateSpecificDateScheduleEntities(appId, noOfSpecificDateSchedulesToSetUp);
+		Long index = 0L;
+		for (ScheduleEntity scheduleEntity : specificDateScheduleEntities) {
+			scheduleEntity.setId(++index);
+			scalingJobManager.createSimpleJob(scheduleEntity);
+		}
+
+		assertTrue("This test should have an Error.", validationErrorResult.hasErrors());
+		List<String> errors = validationErrorResult.getAllErrorMessages();
+		assertEquals(1, errors.size());
+
+		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.scheduler.error.create.failed",
+				"app_id=" + appId);
+
+		assertEquals(errorMessage, errors.get(0));
 	}
 
 	private void assertCreateAndFindSimpleJobs(int expectedJobsTobeFound)
@@ -107,6 +136,7 @@ public class ScheduleJobManagerTest {
 	}
 
 	private List<ScheduleEntity> createSimpleJob(int expectedJobsTobeFound) {
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		List<ScheduleEntity> specificDateScheduleEntities = TestDataSetupHelper
 				.generateSpecificDateScheduleEntitiesWithCurrentStartEndTime(appId, expectedJobsTobeFound);
 		Long index = 0L;

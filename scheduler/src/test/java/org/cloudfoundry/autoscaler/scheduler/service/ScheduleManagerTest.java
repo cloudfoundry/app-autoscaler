@@ -10,7 +10,6 @@ import org.cloudfoundry.autoscaler.scheduler.dao.ScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationScalingSchedules;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
-import org.cloudfoundry.autoscaler.scheduler.util.error.ValidationErrorResult;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,17 +38,13 @@ public class ScheduleManagerTest {
 	@Autowired
 	private Scheduler scheduler;
 
-	@Autowired
-	private ValidationErrorResult validationErrorResult;
-
-	private String appId = TestDataSetupHelper.getAppId_1();
+	private String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
 	@Before
 	@Transactional
 	public void init() throws SchedulerException {
 		// Clear previous schedules.
 		scheduler.clear();
-		validationErrorResult.initEmpty();
 	}
 
 	@After

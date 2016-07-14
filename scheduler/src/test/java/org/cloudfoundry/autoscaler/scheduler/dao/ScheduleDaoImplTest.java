@@ -28,14 +28,11 @@ public class ScheduleDaoImplTest {
 	@Autowired
 	private ScheduleDao scheduleDao;
 
-	private String[] multipleAppIds = TestDataSetupHelper.getAppIds();
-	private String[] singleAppId = new String[] { TestDataSetupHelper.getAppId_1() };
-	private String appId = TestDataSetupHelper.getAppId_1();
-
 	@After
 	@Transactional
 	public void removeAllRecordsFromDatabase() {
-		for (String appId : multipleAppIds) {
+		String[] allAppIds = TestDataSetupHelper.getAllAppIds();
+		for (String appId : allAppIds) {
 			for (ScheduleEntity entity : scheduleDao.findAllSchedulesByAppId(appId)) {
 				scheduleDao.delete(entity);
 			}
@@ -44,7 +41,8 @@ public class ScheduleDaoImplTest {
 
 	@Test
 	@Transactional
-	public void testFindAllSchedules_with_no_schedules() {
+	public void testFindAllSchedules_withNoSchedules() {
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		List<ScheduleEntity> schedulesFound = findAllSchedules(appId);
 		assertSchedulesFoundEquals(0, schedulesFound);
 	}
@@ -52,12 +50,19 @@ public class ScheduleDaoImplTest {
 	@Test
 	@Transactional
 	public void testCreateAndFindSchedules() {
-		// Pass the expected schedules.
-		assertCreateAndFindSchedules(singleAppId, 1);
-		assertCreateAndFindSchedules(singleAppId, 5);
 
-		assertCreateAndFindSchedules(multipleAppIds, 1);
-		assertCreateAndFindSchedules(multipleAppIds, 5);
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+
+		// One specific schedule for the specified app Id
+		assertCreateAndFindSchedules(1, appId);
+		// Five specific schedule for the specified app Id
+		assertCreateAndFindSchedules(5, appId);
+
+		String[] allAppIds = TestDataSetupHelper.getAllAppIds();
+		// One specific schedule for each app Id passed in the array
+		assertCreateAndFindSchedules(1, allAppIds);
+		// Five specific schedule for each app Id passed in the array
+		assertCreateAndFindSchedules(5, allAppIds);
 	}
 
 	private List<ScheduleEntity> createSchedules(String appId, int noOfSpecificDateSchedulesToSetUp) {
@@ -76,7 +81,7 @@ public class ScheduleDaoImplTest {
 		return scheduleDao.findAllSchedulesByAppId(appId);
 	}
 
-	private void assertCreateAndFindSchedules(String[] appIds, int expectedSchedulesTobeFound) {
+	private void assertCreateAndFindSchedules(int expectedSchedulesTobeFound, String... appIds) {
 
 		for (String appId : appIds) {
 			List<ScheduleEntity> savedSchedules = createSchedules(appId, expectedSchedulesTobeFound);

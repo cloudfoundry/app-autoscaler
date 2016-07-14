@@ -1,11 +1,12 @@
 package org.cloudfoundry.autoscaler.scheduler.rest;
 
+import static org.junit.Assert.assertEquals;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import java.util.Collections;
 
 import javax.transaction.Transactional;
 
@@ -43,7 +44,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @DirtiesContext(classMode = ClassMode.BEFORE_EACH_TEST_METHOD)
-public class ScheduleRestController_Common_Test {
+public class ScheduleRestControllerTest {
 
 	@Autowired
 	private Scheduler scheduler;
@@ -58,7 +59,7 @@ public class ScheduleRestController_Common_Test {
 	private WebApplicationContext wac;
 	private MockMvc mockMvc;
 
-	private String appId = TestDataSetupHelper.getAppId_1();
+	String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
 	@Before
 	public void beforeTest() throws SchedulerException {
@@ -72,50 +73,45 @@ public class ScheduleRestController_Common_Test {
 	@After
 	@Transactional
 	public void afterTest() {
-		for (ScheduleEntity entity : scheduleDao.findAllSchedulesByAppId(appId)) {
-			scheduleDao.delete(entity);
+		String[] allAppIds = TestDataSetupHelper.getAllAppIds();
+		for (String appId : allAppIds) {
+			for (ScheduleEntity entity : scheduleDao.findAllSchedulesByAppId(appId)) {
+				scheduleDao.delete(entity);
+			}
 		}
 	}
 
 	@Test
 	@Transactional
-	public void testCreateSchedule_withNullSchedules_Failure() throws Exception {
-		// No schedules - null case
-		ObjectMapper mapper = new ObjectMapper();
-		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSpecificDateSchedulesForScheduleController(appId, 1);
+	public void testGetAllSchedule_with_no_schedules() throws Exception {
+		ResultActions resultActions = callGetAllSchedulesByAppId(appId);
 
-		schedules.setSpecific_date(null);
-
-		String content = mapper.writeValueAsString(schedules);
-
-		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.invalid.noSchedules",
-				"app_id=" + appId);
-
-		assertCreateSchedules(content, errorMessage);
+		resultActions.andExpect(status().isNotFound());
+		resultActions.andExpect(header().doesNotExist("Content-type"));
+		resultActions.andExpect(content().string(Matchers.isEmptyString()));
 	}
 
 	@Test
 	@Transactional
-	public void testCreateSchedule_withEmptySchedules_Failure() throws Exception {
-		// No schedules - Empty case
-		ObjectMapper mapper = new ObjectMapper();
-		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSpecificDateSchedulesForScheduleController(appId, 1);
+	public void testCreateAndGetSchedules() throws Exception {
 
-		schedules.setSpecific_date(Collections.<ScheduleEntity> emptyList());
+		String[] singleAppId = TestDataSetupHelper.generateAppIds(1);
+		assertCreateAndGetSchedules(singleAppId, 1);
+		assertCreateAndGetSchedules(singleAppId, 5);
 
-		String content = mapper.writeValueAsString(schedules);
+		String[] multipleAppIds = TestDataSetupHelper.getAllAppIds();
+		assertCreateAndGetSchedules(multipleAppIds, 1);
+		assertCreateAndGetSchedules(multipleAppIds, 5);
 
-		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.invalid.noSchedules",
-				"app_id=" + appId);
+	}
 
-		assertCreateSchedules(content, errorMessage);
+	private String getCreateSchedulePath(String appId) {
+		return String.format("/v2/schedules/%s", appId);
 	}
 
 	@Test
 	@Transactional
-	public void testCreateSchedule_withoutAppId_Failure() throws Exception {
+	public void testCreateSchedule_without_appId() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
@@ -131,7 +127,7 @@ public class ScheduleRestController_Common_Test {
 
 	@Test
 	@Transactional
-	public void testCreateSchedule_withoutTimeZone_Failure() throws Exception {
+	public void testCreateSchedule_without_timeZone() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
@@ -142,14 +138,14 @@ public class ScheduleRestController_Common_Test {
 		String content = mapper.writeValueAsString(schedules);
 
 		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath()).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		resultActions.andExpect(status().isBadRequest());
 	}
 
 	@Test
 	@Transactional
-	public void testCreateSchedule_withInvalidTimeZone_Failure() throws Exception {
+	public void testCreateSchedule_invalid_timeZone() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
@@ -160,14 +156,14 @@ public class ScheduleRestController_Common_Test {
 		String content = mapper.writeValueAsString(schedules);
 
 		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath()).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		resultActions.andExpect(status().isBadRequest());
 	}
 
 	@Test
 	@Transactional
-	public void testCreateSchedule_withNullDefaultInstanceMinCount_Failure() throws Exception {
+	public void testCreateSchedule_without_defaultInstanceMinCount() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
@@ -177,15 +173,15 @@ public class ScheduleRestController_Common_Test {
 
 		String content = mapper.writeValueAsString(schedules);
 
-		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.default.value.invalid", "",
+		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.default.value.not.specified", "",
 				"instance_min_count");
 
-		assertCreateSchedules(content, errorMessage);
+		assertCreateSchedules(appId, content, errorMessage);
 	}
 
 	@Test
 	@Transactional
-	public void testCreateSchedule_withNullDefaultInstanceMaxCountInSpecificDateSchedules_Failure() throws Exception {
+	public void testCreateSchedule_without_defaultInstanceMaxCount() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
@@ -195,78 +191,128 @@ public class ScheduleRestController_Common_Test {
 
 		String content = mapper.writeValueAsString(schedules);
 
-		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.default.value.invalid", "",
+		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.default.value.not.specified", "",
 				"instance_max_count");
 
-		assertCreateSchedules(content, errorMessage);
+		assertCreateSchedules(appId, content, errorMessage);
 	}
 
 	@Test
 	@Transactional
-	public void testCreateSchedule_withNegativeDefaultInstanceMinCount_Failure() throws Exception {
+	public void testCreateSchedule_negative_defaultInstanceMinCount() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
 				.generateSpecificDateSchedulesForScheduleController(appId, 1);
-
-		schedules.setInstance_min_count(-1);
+		int instanceMinCount = -1;
+		schedules.setInstance_min_count(instanceMinCount);
 
 		String content = mapper.writeValueAsString(schedules);
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.default.value.invalid", "",
-				"instance_min_count");
+				"instance_min_count", instanceMinCount);
 
-		assertCreateSchedules(content, errorMessage);
+		assertCreateSchedules(appId, content, errorMessage);
 	}
 
 	@Test
 	@Transactional
-	public void testCreateSchedule_withNegativeDefaultInstanceMaxCount_Failure() throws Exception {
+	public void testCreateSchedule_negative_defaultInstanceMaxCount() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
 				.generateSpecificDateSchedulesForScheduleController(appId, 1);
-
-		schedules.setInstance_max_count(-1);
+		int instanceMaxCount = -1;
+		schedules.setInstance_max_count(instanceMaxCount);
 
 		String content = mapper.writeValueAsString(schedules);
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.default.value.invalid", "",
-				"instance_max_count");
+				"instance_max_count", instanceMaxCount);
 
-		assertCreateSchedules(content, errorMessage);
+		assertCreateSchedules(appId, content, errorMessage);
 	}
 
 	@Test
 	@Transactional
-	public void testCreateSchedule_withDefaultInstanceMinCountGreaterThanDefaultInstanceMaxCount_Failure()
-			throws Exception {
+	public void testCreateSchedule_defaultInstanceMinCount_greater_than_defaultInstanceMaxCount() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
 				.generateSpecificDateSchedulesForScheduleController(appId, 1);
 
-		Integer tmpInt = schedules.getInstance_max_count();
-		schedules.setInstance_max_count(schedules.getInstance_min_count());
-		schedules.setInstance_min_count(tmpInt);
+		Integer instanceMinCount = 5;
+		Integer instanceMaxCount = 1;
+		schedules.setInstance_max_count(instanceMaxCount);
+		schedules.setInstance_min_count(instanceMinCount);
 
 		String content = mapper.writeValueAsString(schedules);
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage(
-				"schedule.default.instanceCount.invalid.min.greater", "", "instance_max_count", "instance_min_count");
+				"schedule.default.instanceCount.invalid.min.greater", "", "instance_max_count", instanceMaxCount,
+				"instance_min_count", instanceMinCount);
 
-		assertCreateSchedules(content, errorMessage);
+		assertCreateSchedules(appId, content, errorMessage);
 	}
 
-	private void assertCreateSchedules(String inputContent, String expectedErrorMessage) throws Exception {
-		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath()).contentType(MediaType.APPLICATION_JSON).content(inputContent));
+	private ResultActions callCreateSchedules(String appId, int noOfSpecificDateSchedulesToSetUp,
+			int noOfRecurringSchedulesToSetUp) throws Exception {
+		String content = TestDataSetupHelper.generateJsonSchedule(appId, noOfSpecificDateSchedulesToSetUp,
+				noOfRecurringSchedulesToSetUp);
+
+		return mockMvc
+				.perform(put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
+
+	}
+
+	private ResultActions callGetAllSchedulesByAppId(String appId) throws Exception {
+
+		return mockMvc.perform(get(getCreateSchedulePath(appId)).accept(MediaType.APPLICATION_JSON));
+
+	}
+
+	private void assertCreateAndGetSchedules(String[] appIds, int expectedSchedulesTobeFound) throws Exception {
+
+		for (String appId : appIds) {
+			ResultActions resultActions = callCreateSchedules(appId, expectedSchedulesTobeFound, 0);
+			assertCreateScheduleAPI(resultActions);
+		}
+
+		for (String appId : appIds) {
+			ResultActions resultActions = callGetAllSchedulesByAppId(appId);
+			assertSpecificSchedulesFoundEquals(expectedSchedulesTobeFound, appId, resultActions);
+		}
+		// reset all records for next test.
+		afterTest();
+	}
+
+	private void assertCreateScheduleAPI(ResultActions resultActions) throws Exception {
+		resultActions.andExpect(status().isCreated());
+		resultActions.andExpect(header().doesNotExist("Content-type"));
+		resultActions.andExpect(content().string(Matchers.isEmptyString()));
+	}
+
+	private void assertSpecificSchedulesFoundEquals(int expectedSchedulesTobeFound, String appId,
+			ResultActions resultActions) throws Exception {
+
+		ObjectMapper mapper = new ObjectMapper();
+		ApplicationScalingSchedules resultSchedules = mapper.readValue(
+				resultActions.andReturn().getResponse().getContentAsString(), ApplicationScalingSchedules.class);
+
+		resultActions.andExpect(status().isOk());
+		resultActions.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
+		assertEquals(expectedSchedulesTobeFound, resultSchedules.getSpecific_date().size());
+		for (ScheduleEntity entity : resultSchedules.getSpecific_date()) {
+			assertEquals(appId, entity.getAppId());
+		}
+	}
+
+	private void assertCreateSchedules(String appId, String inputContent, String expectedErrorMessage)
+			throws Exception {
+		ResultActions resultActions = mockMvc.perform(
+				put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(inputContent));
 
 		assertUserError(resultActions, status().isBadRequest(), expectedErrorMessage);
-	}
-
-	private String getCreateSchedulePath() {
-		return String.format("/v2/schedules/%s", appId);
 	}
 
 	private void assertUserError(ResultActions resultActions, ResultMatcher statusCode, String message)
