@@ -12,8 +12,8 @@ import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationScalingSchedules;
 import org.cloudfoundry.autoscaler.scheduler.util.DataValidationHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.DateHelper;
-import org.cloudfoundry.autoscaler.scheduler.util.SpecificDateScheduleDateTime;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleTypeEnum;
+import org.cloudfoundry.autoscaler.scheduler.util.SpecificDateScheduleDateTime;
 import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationException;
 import org.cloudfoundry.autoscaler.scheduler.util.error.SchedulerInternalException;
 import org.cloudfoundry.autoscaler.scheduler.util.error.ValidationErrorResult;
@@ -51,11 +51,13 @@ public class ScheduleManager {
 	 */
 	public ApplicationScalingSchedules getAllSchedules(String appId) {
 		logger.info("Get All schedules for application: " + appId);
-		
+
 		List<ScheduleEntity> allScheduleEntitiesForApp = null;
 		ApplicationScalingSchedules applicationScalingSchedules = null;
 		try {
+
 			allScheduleEntitiesForApp = scheduleDao.findAllSchedulesByAppId(appId);
+			applicationScalingSchedules = populateScheduleModel(allScheduleEntitiesForApp);
 		} catch (DatabaseValidationException dve) {
 
 			validationErrorResult.addErrorForDatabaseValidationException(dve, "schedule.database.error.get.failed",
@@ -63,9 +65,6 @@ public class ScheduleManager {
 			throw new SchedulerInternalException("Database error", dve);
 		}
 
-		if (allScheduleEntitiesForApp != null) {
-			applicationScalingSchedules = populateScheduleModel(allScheduleEntitiesForApp);
-		}
 		return applicationScalingSchedules;
 	}
 
@@ -78,21 +77,19 @@ public class ScheduleManager {
 	 * @return
 	 */
 	private ApplicationScalingSchedules populateScheduleModel(List<ScheduleEntity> allScheduleEntitiesForApp) {
-
 		ApplicationScalingSchedules applicationScalingSchedules = new ApplicationScalingSchedules();
-		List<ScheduleEntity> specificDateSchedules = new ArrayList<ScheduleEntity>();
-		applicationScalingSchedules.setSpecific_date(specificDateSchedules);
+		// If there are schedules
+		if (allScheduleEntitiesForApp != null) {
+			applicationScalingSchedules = new ApplicationScalingSchedules();
+			List<ScheduleEntity> specificDateSchedules = new ArrayList<ScheduleEntity>();
+			applicationScalingSchedules.setSpecific_date(specificDateSchedules);
 
-		for (ScheduleEntity scheduleEntity : allScheduleEntitiesForApp) {
-			switch (ScheduleTypeEnum.getEnum(scheduleEntity.getScheduleType())) {
-			case SPECIFIC_DATE:
-				specificDateSchedules.add(scheduleEntity);
-				break;
-			default:
-				break;
+			for (ScheduleEntity scheduleEntity : allScheduleEntitiesForApp) {
+				if (scheduleEntity.getScheduleType().equals(ScheduleTypeEnum.SPECIFIC_DATE.getDbValue())) {
+					specificDateSchedules.add(scheduleEntity);
+				}
 			}
 		}
-
 		return applicationScalingSchedules;
 
 	}
@@ -102,20 +99,22 @@ public class ScheduleManager {
 	 * @param applicationScalingSchedules
 	 */
 	public void setUpSchedules(String appId, ApplicationScalingSchedules applicationScalingSchedules) {
-		
-		// If there are schedules then only set up the missing data in the schedule entities
+
+		// If there are schedules then only set the meta data in the schedule entities
 		if (applicationScalingSchedules.hasSchedules()) {
-			
-			// Set up the missing data in specific date schedules list
+
+			// Sets the meta data in specific date schedules list
 			setUpSchedules(appId, applicationScalingSchedules.getTimeZone(),
 					applicationScalingSchedules.getInstance_min_count(),
 					applicationScalingSchedules.getInstance_min_count(), applicationScalingSchedules.getSpecific_date(),
 					ScheduleTypeEnum.SPECIFIC_DATE);
+
+			// Call the setUpSchedules to set the meta data in recurring schedules list
 		}
 	}
 
 	/**
-	 * Sets the meta data in the entity like the appId, timeZone etc.
+	 * Sets the meta data(like the appId, timeZone etc) in each entity in the specified list.
 	 * 
 	 * @param appId
 	 * @param timeZone
@@ -124,7 +123,7 @@ public class ScheduleManager {
 	 */
 	private void setUpSchedules(String appId, String timeZone, Integer defaultInstanceMinCount,
 			Integer defaultInstanceMaxCount, List<ScheduleEntity> schedules, ScheduleTypeEnum scheduleType) {
-		if ( schedules != null && !schedules.isEmpty()) {
+		if (schedules != null && !schedules.isEmpty()) {
 			for (ScheduleEntity scheduleEntity : schedules) {
 				scheduleEntity.setAppId(appId);
 				scheduleEntity.setTimeZone(timeZone);
@@ -145,7 +144,7 @@ public class ScheduleManager {
 	 */
 	public void validateSchedules(String appId, ApplicationScalingSchedules applicationScalingSchedules) {
 		logger.info("Validate schedules for application: " + appId);
-		
+
 		boolean isValid = true;
 		boolean isValidTimeZone = true; // Flag added since date time checks
 										// depend on the time zone
@@ -194,11 +193,11 @@ public class ScheduleManager {
 
 			// Validate the dates and times only if the time zone is valid
 			if (isValidTimeZone) {
-				// Call helper method to validate the start date time and
-				// end date time.
-				SpecificDateScheduleDateTime validScheduleDateTime = validateStartEndDateTime(specificDateScheduleEntity);
+				// Call helper method to validate the start date time and end date time.
+				SpecificDateScheduleDateTime validScheduleDateTime = validateStartEndDateTime(
+						specificDateScheduleEntity);
 
-				if (validScheduleDateTime.hasValidDate()) {
+				if (validScheduleDateTime != null) {
 					validScheduleDateTime.setScheduleIdentifier(String.valueOf(scheduleIdentifier));
 					scheduleStartEndTimeList.add(validScheduleDateTime);
 
@@ -216,7 +215,8 @@ public class ScheduleManager {
 
 		// Validate the dates for overlap
 		if (scheduleStartEndTimeList != null && !scheduleStartEndTimeList.isEmpty()) {
-			List<String[]> overlapDateTimeValidationErrorMsgList = DataValidationHelper.isNotOverlapForSpecificDate(scheduleStartEndTimeList);
+			List<String[]> overlapDateTimeValidationErrorMsgList = DataValidationHelper
+					.isNotOverlapForSpecificDate(scheduleStartEndTimeList);
 			for (String[] arguments : overlapDateTimeValidationErrorMsgList) {
 				validationErrorResult.addFieldError(specificDateSchedules, "schedule.date.overlap",
 						(Object[]) arguments);
@@ -276,7 +276,7 @@ public class ScheduleManager {
 		boolean isValid = true;
 		boolean isValidStartDtTm = true;
 		boolean isValidEndDtTm = true;
-		SpecificDateScheduleDateTime validScheduleDateTime = new SpecificDateScheduleDateTime();
+		SpecificDateScheduleDateTime validScheduleDateTime = null;
 
 		Date startDate = specificDateSchedule.getStartDate();
 		Date endDate = specificDateSchedule.getEndDate();
@@ -345,8 +345,7 @@ public class ScheduleManager {
 				validationErrorResult.addFieldError(specificDateSchedule, "schedule.date.invalid.start.after.end",
 						scheduleBeingProcessed, "end_date + end_time", "start_date + start_time");
 			} else {
-				validScheduleDateTime.setEndDateTime(endTimeInMillis);
-				validScheduleDateTime.setStartDateTime(startTimeInMillis);
+				validScheduleDateTime = new SpecificDateScheduleDateTime(startTimeInMillis, endTimeInMillis);
 			}
 		}
 
@@ -363,8 +362,7 @@ public class ScheduleManager {
 	 */
 	@Transactional
 	public void createSchedules(ApplicationScalingSchedules applicationScalingSchedules) {
-		logger.info("Create schedules for application");
-		
+
 		List<ScheduleEntity> specificDateSchedules = applicationScalingSchedules.getSpecific_date();
 		for (ScheduleEntity specificDateScheduleEntity : specificDateSchedules) {
 			// Persist the schedule in database
@@ -378,7 +376,7 @@ public class ScheduleManager {
 	}
 
 	/**
-	 * Persist the application scaling schedule entity.
+	 * Persist the schedule entity holding the application's scheduling information.
 	 * 
 	 * @param scheduleEntity
 	 * @return
