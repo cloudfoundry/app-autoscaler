@@ -1,12 +1,10 @@
-module.exports = function(callback) {
+module.exports = function(dbUri, callback) {
 
   var fs = require('fs');
   var path = require('path');
   var Sequelize = require('sequelize');
   var logger = require(path.join(__dirname, '../logger/logger.js'));
-  var settings = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/settings.json'), 'utf8'));
-  var dbConnectionInfo = require(path.join(__dirname, '../../lib/util/dbConnectionInfo.js'))(settings.dbUri);
-  var sequelize = new Sequelize(dbConnectionInfo.dbUri, { logging: false });
+  var sequelize = new Sequelize(dbUri, { logging: false });
 
   sequelize.authenticate()
     .then(function() {
@@ -31,7 +29,11 @@ module.exports = function(callback) {
       var model = sequelize.import(path.join(__dirname, file));
       db[model.name] = model;
     });
-
+  Object.keys(db).forEach(function(modelName) {
+    if ("associate" in db[modelName]) {
+      db[modelName].associate(db);
+    }
+  });
   db.sequelize = sequelize;
   return db;
 

@@ -1,0 +1,115 @@
+{
+  "databaseChangeLog": [{
+    "changeSet": {
+      "id": 1,
+      "author": "ying",
+      "changes": [{
+        "createTable": {
+          "tableName": "service_instance",
+          "columns": [{
+            "column": {
+              "name": "service_id",
+              "type": "varchar(40)",
+              "constraints": {
+                "primaryKey": true,
+                "nullable": false
+              }
+            }
+          }, {
+            "column": {
+              "name": "org_id",
+              "type": "varchar(40)",
+              "constraints": {
+                "nullable": false
+              }
+            }
+          }, {
+            "column": {
+              "name": "space_id",
+              "type": "varchar(40)",
+              "constraints": {
+                "nullable": false
+              }
+            }
+          }]
+        }
+      }]
+    }
+  }, {
+    "changeSet": {
+      "id": 2,
+      "author": "ying",
+      "changes": [{
+        "renameColumn": {
+          "tableName": "service_instance",
+          "columnDataType": "varchar(40)",
+          "newColumnName": "service_instance_id",
+          "oldColumnName": "service_id"
+        }
+      }]
+    }
+  }, {
+    "changeSet": {
+      "id": 3,
+      "author": "qy",
+      "changes": [{
+        "createTable": {
+          "tableName": "binding",
+          "columns": [{
+            "column": {
+              "name": "binding_id",
+              "type": "varchar(40)",
+              "constraints": {
+                "primaryKey": true,
+                "nullable": false
+              }
+            }
+          }, {
+            "column": {
+              "name": "service_instance_id",
+              "type": "varchar(40)",
+              "constraints": {
+                "nullable": false
+              }
+            }
+          }, {
+            "column": {
+              "name": "app_id",
+              "type": "varchar(40)",
+              "constraints": {
+                "nullable": false
+              }
+            }
+          }, {
+            "column": {
+              "name": "created_at",
+              "type": "timestamp",
+              "constraints": {
+                "nullable": false
+              }
+            }
+          }]
+        }
+      }]
+    }
+  }, {
+    "changeSet": {
+      "id": 4,
+      "author": "qy",
+      "changes": [{
+        "addForeignKeyConstraint": {
+          "baseColumnNames": "service_instance_id",
+          "baseTableName": "binding",
+          "constraintName": "fk_binding_service_instance_id",
+          "deferrable": false,
+          "initiallyDeferred": false,
+          "onDelete": "RESTRICT",
+          "onUpdate": "RESTRICT",
+          "referencedColumnNames": "service_instance_id",
+          "referencedTableName": "service_instance"
+        }
+      }]
+
+    }
+  }]
+}
