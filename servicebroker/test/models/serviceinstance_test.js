@@ -4,7 +4,7 @@ var expect = require('chai').expect;
 var fs = require('fs');
 var path = require('path');
 var settings = require(path.join(__dirname, '../../lib/config/setting.js'))((JSON.parse(
-  fs.readFileSync(path.join(__dirname, '../../config/settings.json'), 'utf8'))));
+  fs.readFileSync(path.join(__dirname, '../../config/settings.json'), 'utf8')))).getSetting();
 var models = require('../../lib/models')(settings.db.uri);
 var serviceInstance = models.service_instance;
 
