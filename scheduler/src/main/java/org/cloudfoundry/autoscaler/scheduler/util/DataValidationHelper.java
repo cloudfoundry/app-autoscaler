@@ -84,11 +84,10 @@ public class DataValidationHelper {
 	}
 
 	/**
-	 * This method is given a collection of SpecificDateScheduleDateTime (
-	 * holding the schedule identifier and its start date time and end date
-	 * time). It traverses through the collection to check if the the date time
-	 * between different schedules overlap. If there is an overlap then a error
-	 * message is added to a collection and collection of messages is returned.
+	 * This method is given a collection of SpecificDateScheduleDateTime (holding the schedule 
+	 * identifier and its start date time and end date time). It traverses through the collection 
+	 * to check if the the date time between different schedules overlap. If there is an overlap 
+	 * then an error message is added to a collection and collection of messages is returned.
 	 * 
 	 * @param scheduleStartEndTimeList
 	 * @return - List of date time overlap validation messages
@@ -98,32 +97,25 @@ public class DataValidationHelper {
 		List<String[]> overlapDateTimeValidationErrorMsgList = new ArrayList<>();
 		if (scheduleStartEndTimeList != null && !scheduleStartEndTimeList.isEmpty()) {
 
-			Collections.sort(scheduleStartEndTimeList, new DateTimeComparator());
+			Collections.sort(scheduleStartEndTimeList);
 
 			for (int index = 0; index < scheduleStartEndTimeList.size() - 1; index++) {
-				SpecificDateScheduleDateTime now = scheduleStartEndTimeList.get(index);
+				SpecificDateScheduleDateTime current = scheduleStartEndTimeList.get(index);
 				SpecificDateScheduleDateTime next = scheduleStartEndTimeList.get(index + 1);
 
-				// Check for date time overlaps and create a validation error
-				// message string array
-				if (now.getStartDateTime() == next.getStartDateTime()) {
+				// Check for date time overlaps and create a validation error message string array
+				if (Long.compare(current.getStartDateTime(), next.getStartDateTime()) == 0) {
 
-					// startDateTime are equal, so and overlap. Set up a message
-					// for validation error
+					// startDateTime values are equal, so an overlap. Set up a message for validation error
 					String[] overlapDateTimeValidationErrorMsg = { ScheduleTypeEnum.SPECIFIC_DATE.getDescription(),
-							now.getScheduleIdentifier(), next.getScheduleIdentifier() };
+							current.getScheduleIdentifier(), next.getScheduleIdentifier() };
 					overlapDateTimeValidationErrorMsgList.add(overlapDateTimeValidationErrorMsg);
-				} else {
+				} else if (Long.compare(current.getEndDateTime(), next.getStartDateTime()) >= 0) {// current startDateTime was earlier than next startDateTime
 
-					// startDateTime is earlier than next startDateTime, check
-					// time range overlap,
-					// i.e, if endDateTime of now is later than or equal to
-					// startDateTime of next
-					if (now.getEndDateTime() >= next.getStartDateTime()) {
-						String[] overlapDateTimeValidationErrorMsg = { ScheduleTypeEnum.SPECIFIC_DATE.getDescription(),
-								now.getScheduleIdentifier(), next.getScheduleIdentifier() };
-						overlapDateTimeValidationErrorMsgList.add(overlapDateTimeValidationErrorMsg);
-					}
+					// endDateTime of current is later than or equal to startDateTime of next. Set up a message for validation error
+					String[] overlapDateTimeValidationErrorMsg = { ScheduleTypeEnum.SPECIFIC_DATE.getDescription(),
+							current.getScheduleIdentifier(), next.getScheduleIdentifier() };
+					overlapDateTimeValidationErrorMsgList.add(overlapDateTimeValidationErrorMsg);
 				}
 			}
 		}
