@@ -62,7 +62,7 @@ psql postgres://postgres@127.0.0.1:5432 -c 'CREATE DATABASE autoscaler'
 
 mvn package
 java -cp 'db/target/lib/*'  liquibase.integration.commandline.Main --changeLogFile=api/db/api.db.changelog.yml --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver update
-java -cp 'db/target/lib/*'  liquibase.integration.commandline.Main --changeLogFile=servicebroker/db/servicebroker.db.changelog.yml --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver update
+java -cp 'db/target/lib/*'  liquibase.integration.commandline.Main --changeLogFile=servicebroker/db/servicebroker.db.changelog.json --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver update
 ```
 
 ### Run Unit Tests

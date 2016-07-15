@@ -8,7 +8,7 @@ var uuid = require('uuid');
 var fs = require('fs');
 var path = require('path');
 var settings = require(path.join(__dirname, '../../lib/config/setting.js'))((JSON.parse(
-  fs.readFileSync(path.join(__dirname, '../../config/settings.json'), 'utf8')))).getSetting();
+  fs.readFileSync(path.join(__dirname, '../../config/settings.json'), 'utf8'))));
 
 var models = require('../../lib/models')(settings.db.uri);
 var serviceInstance = models.service_instance;

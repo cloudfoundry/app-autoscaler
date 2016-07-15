@@ -4,7 +4,7 @@ var expect = require("chai").expect;
 var fs = require('fs');
 var path = require('path');
 var settings = require(path.join(__dirname, '../../lib/config/setting.js'))((JSON.parse(
-  fs.readFileSync(path.join(__dirname, '../../config/settings.json'), 'utf8')))).getSetting();
+  fs.readFileSync(path.join(__dirname, '../../config/settings.json'), 'utf8'))));
 
 describe('Database Initialization Test Suite', function() {
   afterEach(function() {
