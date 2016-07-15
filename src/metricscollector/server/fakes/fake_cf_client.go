@@ -13,6 +13,13 @@ type FakeCfClient struct {
 	loginReturns     struct {
 		result1 error
 	}
+	RefreshAuthTokenStub        func() (string, error)
+	refreshAuthTokenMutex       sync.RWMutex
+	refreshAuthTokenArgsForCall []struct{}
+	refreshAuthTokenReturns     struct {
+		result1 string
+		result2 error
+	}
 	GetTokensStub        func() cf.Tokens
 	getTokensMutex       sync.RWMutex
 	getTokensArgsForCall []struct{}
@@ -52,6 +59,32 @@ func (fake *FakeCfClient) LoginReturns(result1 error) {
 	fake.loginReturns = struct {
 		result1 error
 	}{result1}
+}
+
+func (fake *FakeCfClient) RefreshAuthToken() (string, error) {
+	fake.refreshAuthTokenMutex.Lock()
+	fake.refreshAuthTokenArgsForCall = append(fake.refreshAuthTokenArgsForCall, struct{}{})
+	fake.recordInvocation("RefreshAuthToken", []interface{}{})
+	fake.refreshAuthTokenMutex.Unlock()
+	if fake.RefreshAuthTokenStub != nil {
+		return fake.RefreshAuthTokenStub()
+	} else {
+		return fake.refreshAuthTokenReturns.result1, fake.refreshAuthTokenReturns.result2
+	}
+}
+
+func (fake *FakeCfClient) RefreshAuthTokenCallCount() int {
+	fake.refreshAuthTokenMutex.RLock()
+	defer fake.refreshAuthTokenMutex.RUnlock()
+	return len(fake.refreshAuthTokenArgsForCall)
+}
+
+func (fake *FakeCfClient) RefreshAuthTokenReturns(result1 string, result2 error) {
+	fake.RefreshAuthTokenStub = nil
+	fake.refreshAuthTokenReturns = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeCfClient) GetTokens() cf.Tokens {
@@ -109,6 +142,8 @@ func (fake *FakeCfClient) Invocations() map[string][][]interface{} {
 	defer fake.invocationsMutex.RUnlock()
 	fake.loginMutex.RLock()
 	defer fake.loginMutex.RUnlock()
+	fake.refreshAuthTokenMutex.RLock()
+	defer fake.refreshAuthTokenMutex.RUnlock()
 	fake.getTokensMutex.RLock()
 	defer fake.getTokensMutex.RUnlock()
 	fake.getEndpointsMutex.RLock()
