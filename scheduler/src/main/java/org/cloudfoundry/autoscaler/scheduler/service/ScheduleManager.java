@@ -77,9 +77,9 @@ public class ScheduleManager {
 	 * @return
 	 */
 	private ApplicationScalingSchedules populateScheduleModel(List<ScheduleEntity> allScheduleEntitiesForApp) {
-		ApplicationScalingSchedules applicationScalingSchedules = new ApplicationScalingSchedules();
+		ApplicationScalingSchedules applicationScalingSchedules = null;
 		// If there are schedules
-		if (allScheduleEntitiesForApp != null) {
+		if (allScheduleEntitiesForApp != null && !allScheduleEntitiesForApp.isEmpty()) {
 			applicationScalingSchedules = new ApplicationScalingSchedules();
 			List<ScheduleEntity> specificDateSchedules = new ArrayList<ScheduleEntity>();
 			applicationScalingSchedules.setSpecific_date(specificDateSchedules);
