@@ -1,6 +1,7 @@
 package org.cloudfoundry.autoscaler.scheduler.service;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import java.util.List;
 
@@ -59,8 +60,8 @@ public class ScheduleManagerTest {
 	@Test
 	@Transactional
 	public void testGetAllSchedules_with_no_schedules() {
-		List<ScheduleEntity> allSpecificDateSchedules = scheduleManager.getAllSchedules(appId).getSpecific_date();
-		assertEquals(0, allSpecificDateSchedules.size());
+		ApplicationScalingSchedules scalingSchedules = scheduleManager.getAllSchedules(appId);
+		assertNull(scalingSchedules);
 
 	}
 
