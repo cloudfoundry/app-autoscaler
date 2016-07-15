@@ -3,6 +3,9 @@ cf:
   grant_type: "password"
   username: "admin"
   password: "admin"
+  # grant_type: "client_credentials"
+  # client_id: "admin"
+  # secret: "admin-secret"
 server:
   port: 8080
 logging:

@@ -8,9 +8,12 @@ import (
 	"github.com/cloudfoundry-incubator/candiedyaml"
 )
 
-const GrantTypePassword = "password"
-const GrantTypeClientCredentials = "client_credentials"
-const DefaultLoggingLevel = "info"
+const (
+	GrantTypePassword          = "password"
+	GrantTypeClientCredentials = "client_credentials"
+	GrantTypeRefreshToken      = "refresh_token"
+	DefaultLoggingLevel        = "info"
+)
 
 type CfConfig struct {
 	Api       string `yaml:"api"`

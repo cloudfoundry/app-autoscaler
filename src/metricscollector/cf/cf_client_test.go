@@ -47,37 +47,50 @@ var authBody = []byte(`
 }
 `)
 
+var refreshBody = []byte(`
+{
+	"access_token":"test-access-token-refreshed",
+	"token_type":"bearer",
+	"refresh_token":"test-refresh-token-refreshed",
+	"expires_in":24000,
+	"scope":"openid cloud_controller.read password.write cloud_controller.write",
+	"jti":"a735f90f-0b49-447d-8f9d-ae2fbc1491dd"
+}
+`)
+
 var _ = Describe("CfClient", func() {
+	var (
+		fakeCC          *ghttp.Server
+		fakeLoginServer *ghttp.Server
+		cfc             CfClient
+		conf            *config.Config
+		authToken       string
+		err             error
+	)
+
+	BeforeEach(func() {
+		fakeCC = ghttp.NewServer()
+		fakeLoginServer = ghttp.NewServer()
+		conf = &config.Config{}
+
+		conf.Cf.Api = fakeCC.URL()
+		err = nil
+	})
+
+	AfterEach(func() {
+		if fakeCC != nil {
+			fakeCC.Close()
+		}
+		if fakeLoginServer != nil {
+			fakeLoginServer.Close()
+		}
+	})
+
 	Describe("Login", func() {
-		var (
-			fakeCC          *ghttp.Server
-			fakeLoginServer *ghttp.Server
-			cfc             CfClient
-			conf            *config.Config
-			err             error
-		)
-
-		BeforeEach(func() {
-			fakeCC = ghttp.NewServer()
-			fakeLoginServer = ghttp.NewServer()
-			conf = &config.Config{}
-
-			conf.Cf.Api = fakeCC.URL()
-			err = nil
-		})
 
 		JustBeforeEach(func() {
 			cfc = NewCfClient(&conf.Cf, lager.NewLogger("cf"))
 			err = cfc.Login()
-		})
-
-		AfterEach(func() {
-			if fakeCC != nil {
-				fakeCC.Close()
-			}
-			if fakeLoginServer != nil {
-				fakeLoginServer.Close()
-			}
 		})
 
 		Context("when retrieving endpoints succeeds", func() {
@@ -161,7 +174,7 @@ var _ = Describe("CfClient", func() {
 				})
 
 				It("should error", func() {
-					Expect(err).To(MatchError(MatchRegexp("Login failed: .*")))
+					Expect(err).To(MatchError(MatchRegexp("request token grant failed: .*")))
 				})
 			})
 
@@ -226,6 +239,165 @@ var _ = Describe("CfClient", func() {
 					})
 				})
 			})
+		})
+	})
+
+	Describe("RefreshAuthToken", func() {
+		BeforeEach(func() {
+			cfc = NewCfClient(&conf.Cf, lager.NewLogger("cf"))
+		})
+
+		JustBeforeEach(func() {
+			authToken, err = cfc.RefreshAuthToken()
+		})
+
+		Context("when not logged in", func() {
+			BeforeEach(func() {
+				fakeCC.AppendHandlers(
+					ghttp.CombineHandlers(
+						ghttp.VerifyRequest("GET", PathCfInfo),
+						ghttp.RespondWith(200, bytes.Replace(infoBody, []byte("test-oauth-endpoint"), []byte(fakeLoginServer.URL()), -1)),
+					),
+				)
+			})
+
+			Context("when login server returns a non-200 status code for login", func() {
+				BeforeEach(func() {
+					fakeLoginServer.AppendHandlers(
+						ghttp.CombineHandlers(
+							ghttp.VerifyRequest("POST", PathCfAuth),
+							ghttp.RespondWith(401, ""),
+						),
+					)
+				})
+
+				It("should error", func() {
+					Expect(err).To(MatchError(MatchRegexp("request token grant failed: .*")))
+				})
+
+			})
+
+			Context("when login server returns a 200 status code for login", func() {
+				BeforeEach(func() {
+					fakeLoginServer.AppendHandlers(
+						ghttp.CombineHandlers(
+							ghttp.VerifyRequest("POST", PathCfAuth),
+							ghttp.RespondWith(200, authBody),
+						),
+					)
+				})
+
+				It("logs in and returns valid token", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(authToken).To(Equal("test-access-token"))
+					Expect(cfc.GetTokens().AccessToken).To(Equal("test-access-token"))
+					Expect(cfc.GetTokens().RefreshToken).To(Equal("test-refresh-token"))
+					Expect(cfc.GetTokens().ExpiresIn).To(Equal(int64(12000)))
+				})
+
+			})
+
+		})
+
+		Context("when already logged in", func() {
+			BeforeEach(func() {
+				fakeCC.AppendHandlers(
+					ghttp.CombineHandlers(
+						ghttp.VerifyRequest("GET", PathCfInfo),
+						ghttp.RespondWith(200, bytes.Replace(infoBody, []byte("test-oauth-endpoint"), []byte(fakeLoginServer.URL()), -1)),
+					),
+				)
+				fakeLoginServer.AppendHandlers(
+					ghttp.CombineHandlers(
+						ghttp.VerifyRequest("POST", PathCfAuth),
+						ghttp.RespondWith(200, authBody),
+					),
+				)
+				cfc.Login()
+			})
+
+			Context("when refresh fails", func() {
+				BeforeEach(func() {
+					fakeCC.AppendHandlers(
+						ghttp.CombineHandlers(
+							ghttp.VerifyRequest("GET", PathCfInfo),
+							ghttp.RespondWith(200, bytes.Replace(infoBody, []byte("test-oauth-endpoint"), []byte(fakeLoginServer.URL()), -1)),
+						),
+					)
+
+					fakeLoginServer.AppendHandlers(
+						ghttp.CombineHandlers(
+							ghttp.VerifyRequest("POST", PathCfAuth),
+							ghttp.VerifyForm(url.Values{
+								"grant_type":    {config.GrantTypeRefreshToken},
+								"refresh_token": {"test-refresh-token"},
+							}),
+							ghttp.RespondWith(401, ""),
+						),
+					)
+				})
+
+				Context("when login again fails", func() {
+					BeforeEach(func() {
+						fakeLoginServer.AppendHandlers(
+							ghttp.CombineHandlers(
+								ghttp.VerifyRequest("POST", PathCfAuth),
+								ghttp.RespondWith(401, ""),
+							),
+						)
+
+					})
+					It("should error", func() {
+						Expect(err).To(MatchError(MatchRegexp("request token grant failed: .*")))
+					})
+
+				})
+
+				Context("when login again succeeds", func() {
+					BeforeEach(func() {
+						fakeLoginServer.AppendHandlers(
+							ghttp.CombineHandlers(
+								ghttp.VerifyRequest("POST", PathCfAuth),
+								ghttp.RespondWith(200, authBody),
+							),
+						)
+
+					})
+					It("returns valid tokens", func() {
+						Expect(err).NotTo(HaveOccurred())
+						Expect(authToken).To(Equal("test-access-token"))
+						Expect(cfc.GetTokens().AccessToken).To(Equal("test-access-token"))
+						Expect(cfc.GetTokens().RefreshToken).To(Equal("test-refresh-token"))
+						Expect(cfc.GetTokens().ExpiresIn).To(Equal(int64(12000)))
+					})
+
+				})
+
+			})
+
+			Context("when refresh succeeds", func() {
+				BeforeEach(func() {
+					fakeLoginServer.AppendHandlers(
+						ghttp.CombineHandlers(
+							ghttp.VerifyRequest("POST", PathCfAuth),
+							ghttp.VerifyForm(url.Values{
+								"grant_type":    {config.GrantTypeRefreshToken},
+								"refresh_token": {"test-refresh-token"},
+							}),
+							ghttp.RespondWith(200, refreshBody),
+						),
+					)
+				})
+
+				It("returns refreshed token", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(authToken).To(Equal("test-access-token-refreshed"))
+					Expect(cfc.GetTokens().AccessToken).To(Equal("test-access-token-refreshed"))
+					Expect(cfc.GetTokens().RefreshToken).To(Equal("test-refresh-token-refreshed"))
+					Expect(cfc.GetTokens().ExpiresIn).To(Equal(int64(24000)))
+				})
+			})
+
 		})
 	})
 })

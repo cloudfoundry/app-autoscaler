@@ -25,11 +25,12 @@ import (
 )
 
 var (
-	mcPath     string
-	cfg        config.Config
-	mcPort     int
-	configFile *os.File
-	ccNOAAUAA  *ghttp.Server
+	mcPath         string
+	cfg            config.Config
+	mcPort         int
+	configFile     *os.File
+	ccNOAAUAA      *ghttp.Server
+	isTokenExpired bool
 )
 
 func TestMetricsCollector(t *testing.T) {
@@ -64,6 +65,12 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	ccNOAAUAA.RouteToHandler("GET", "/apps/an-app-id/containermetrics",
 		func(rw http.ResponseWriter, r *http.Request) {
+			if isTokenExpired {
+				isTokenExpired = false
+				rw.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+
 			mp := multipart.NewWriter(rw)
 			defer mp.Close()
 

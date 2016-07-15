@@ -64,6 +64,7 @@ func main() {
 	logger.Info("create-noaa-client", map[string]interface{}{"dopplerUrl": dopplerUrl})
 	tlsConfig := &tls.Config{InsecureSkipVerify: true}
 	noaa := consumer.New(dopplerUrl, tlsConfig, nil)
+	noaa.RefreshTokenFrom(cfClient)
 
 	httpServer := server.NewServer(logger, conf.Server, cfClient, noaa)
 	members := grouper.Members{

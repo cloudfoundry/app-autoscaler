@@ -95,10 +95,28 @@ var _ = Describe("MetricsCollector", func() {
 	})
 
 	Describe("when a request for memory metrics comes", func() {
-		It("returns with a 200", func() {
-			rsp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/v1/apps/an-app-id/metrics/memory", mcPort))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+		Context("when token is not expried", func() {
+			BeforeEach(func() {
+				isTokenExpired = false
+			})
+
+			It("returns with a 200", func() {
+				rsp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/v1/apps/an-app-id/metrics/memory", mcPort))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+			})
 		})
+
+		Context("when token is expried", func() {
+			BeforeEach(func() {
+				isTokenExpired = true
+			})
+			It("refreshes the token and returns with a 200", func() {
+				rsp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/v1/apps/an-app-id/metrics/memory", mcPort))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+			})
+		})
+
 	})
 })
