@@ -6,23 +6,33 @@ import java.util.Collections;
 import java.util.List;
 import java.util.TimeZone;
 
-import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
-import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationScalingSchedules;
-
 /**
- * 
- *
+ * Helper class for validating the data
  */
 public class DataValidationHelper {
 
 	/**
+	 * Checks if the specified object is null.
+	 * 
 	 * @param object
-	 * @return
+	 * @return true if not null otherwise false
 	 */
 	public static boolean isNotNull(Object object) {
-		if (object == null || (object instanceof String && ((String) object).trim().length() == 0))
+		if (object == null)
 			return false;
 		return true;
+	}
+
+	/**
+	 * Checks if specified string is not empty (not null and not blank)
+	 * 
+	 * @param string
+	 * @return true or false
+	 */
+	public static boolean isNotEmpty(String string) {
+		if (isNotNull(string) && !string.isEmpty())
+			return true;
+		return false;
 	}
 
 	/**
@@ -45,31 +55,20 @@ public class DataValidationHelper {
 		}
 	}
 
-	public static boolean hasSchedules(ApplicationScalingSchedules applicationScalingSchedules) {
-		List<ScheduleEntity> specificDate = applicationScalingSchedules.getSpecific_date();
-		List<ScheduleEntity> recurringSchedule = applicationScalingSchedules.getRecurring_schedule();
-		if ((specificDate == null || specificDate.isEmpty())
-				&& (recurringSchedule == null || recurringSchedule.isEmpty())) {
-			return false;
-		}
-
-		return true;
-	}
-
 	/**
-	 * Checks if the specified time in milli seconds is after current time.
+	 * Checks if the specified time in milli seconds is after now (current time).
 	 * 
 	 * @param timeInMillis
 	 * @param timeZone
 	 * 
 	 * @return
 	 */
-	public static boolean isNotCurrent(Long timeInMillis, TimeZone timeZone) {
+	public static boolean isLaterThanNow(Long timeInMillis, TimeZone timeZone) {
 		if (timeInMillis != null && timeZone != null) {
 			Calendar calendar = Calendar.getInstance(timeZone);
-			Long currentTimeInMillis = calendar.getTimeInMillis();
+			Long nowInMillis = calendar.getTimeInMillis();
 
-			return timeInMillis > currentTimeInMillis;
+			return timeInMillis > nowInMillis;
 		}
 		return false;
 	}
@@ -108,13 +107,15 @@ public class DataValidationHelper {
 
 					// startDateTime values are equal, so an overlap. Set up a message for validation error
 					String[] overlapDateTimeValidationErrorMsg = { ScheduleTypeEnum.SPECIFIC_DATE.getDescription(),
-							current.getScheduleIdentifier(), next.getScheduleIdentifier() };
+							current.getScheduleIdentifier(), "start_date start_time", next.getScheduleIdentifier(),
+							"start_date start_time" };
 					overlapDateTimeValidationErrorMsgList.add(overlapDateTimeValidationErrorMsg);
 				} else if (Long.compare(current.getEndDateTime(), next.getStartDateTime()) >= 0) {// current startDateTime was earlier than next startDateTime
 
 					// endDateTime of current is later than or equal to startDateTime of next. Set up a message for validation error
 					String[] overlapDateTimeValidationErrorMsg = { ScheduleTypeEnum.SPECIFIC_DATE.getDescription(),
-							current.getScheduleIdentifier(), next.getScheduleIdentifier() };
+							current.getScheduleIdentifier(), "end_date end_time", next.getScheduleIdentifier(),
+							"start_date start_time" };
 					overlapDateTimeValidationErrorMsgList.add(overlapDateTimeValidationErrorMsg);
 				}
 			}

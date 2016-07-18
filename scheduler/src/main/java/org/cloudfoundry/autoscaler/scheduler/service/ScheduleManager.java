@@ -39,7 +39,6 @@ public class ScheduleManager {
 	@Autowired
 	private ValidationErrorResult validationErrorResult;
 
-	private String scheduleBeingProcessed; // Specific date/Recurring
 	private Logger logger = LogManager.getLogger(this.getClass());
 
 	/**
@@ -95,6 +94,7 @@ public class ScheduleManager {
 	}
 
 	/**
+	 * This method calls the helper method to sets up the basic common information in the schedule entities. 
 	 * @param appId
 	 * @param applicationScalingSchedules
 	 */
@@ -145,33 +145,38 @@ public class ScheduleManager {
 	public void validateSchedules(String appId, ApplicationScalingSchedules applicationScalingSchedules) {
 		logger.info("Validate schedules for application: " + appId);
 
-		boolean isValid = true;
-		boolean isValidTimeZone = true; // Flag added since date time checks
-										// depend on the time zone
-
 		// Validate the application id
-		isValid = DataValidationHelper.isNotNull(appId);
-		if (!isValid) {
-			validationErrorResult.addFieldError(applicationScalingSchedules, "schedule.data.value.null", "app_id");
+		if (!DataValidationHelper.isNotEmpty(appId)) {
+			validationErrorResult.addFieldError(applicationScalingSchedules, "schedule.data.value.not.specified",
+					"app_id");
 		}
 
 		// Validate the time zone
 		String timeZoneId = applicationScalingSchedules.getTimeZone();
-		isValidTimeZone = DataValidationHelper.isValidTimeZone(timeZoneId);
+
+		// Boolean flag added since date time validations depend on the time zone
+		boolean isValidTimeZone = DataValidationHelper.isNotEmpty(timeZoneId);
+
 		if (!isValidTimeZone) {
-			validationErrorResult.addFieldError(applicationScalingSchedules, "schedule.data.invalid.timezone",
+			validationErrorResult.addFieldError(applicationScalingSchedules, "schedule.data.value.not.specified",
 					"timeZone");
 		}
 
+		if (isValidTimeZone && !DataValidationHelper.isValidTimeZone(timeZoneId)) {
+			validationErrorResult.addFieldError(applicationScalingSchedules, "schedule.data.invalid.timezone",
+					"timeZone", timeZoneId);
+		}
+
 		// Validate the default minimum and maximum instance count
-		validateInstanceMinMaxCount(applicationScalingSchedules.getInstance_min_count(),
+		validateInstanceMinMaxCount("", applicationScalingSchedules.getInstance_min_count(),
 				applicationScalingSchedules.getInstance_max_count(), true);
 
 		// Validate Specific schedules.
-		if (DataValidationHelper.hasSchedules(applicationScalingSchedules)) {
+		if (applicationScalingSchedules.hasSchedules()) {
 
 			validateSpecificDateSchedules(applicationScalingSchedules.getSpecific_date(), isValidTimeZone);
 		} else {// No schedules found
+
 			validationErrorResult.addFieldError(applicationScalingSchedules, "schedule.data.invalid.noSchedules",
 					"app_id=" + appId);
 
@@ -180,21 +185,26 @@ public class ScheduleManager {
 	}
 
 	/**
+	 * This method traverses through the list and calls helper methods to perform validations on
+	 * the specific date schedule entity.
+	 *  
 	 * @param specificDateSchedules
 	 * @param isValidTimeZone
 	 */
 	private void validateSpecificDateSchedules(List<ScheduleEntity> specificDateSchedules, boolean isValidTimeZone) {
 		List<SpecificDateScheduleDateTime> scheduleStartEndTimeList = new ArrayList<>();
+
+		// Identifier to tell which schedule is being validated, will be used in the validation messages 
+		// convenience to identify the schedule that has an issue. First schedule identified as 0
 		int scheduleIdentifier = 0;
 		for (ScheduleEntity specificDateScheduleEntity : specificDateSchedules) {
 
-			++scheduleIdentifier;
-			scheduleBeingProcessed = ScheduleTypeEnum.SPECIFIC_DATE.getDescription() + " " + scheduleIdentifier;
+			String scheduleBeingProcessed = ScheduleTypeEnum.SPECIFIC_DATE.getDescription() + " " + scheduleIdentifier; // Specific date/Recurring
 
 			// Validate the dates and times only if the time zone is valid
 			if (isValidTimeZone) {
 				// Call helper method to validate the start date time and end date time.
-				SpecificDateScheduleDateTime validScheduleDateTime = validateStartEndDateTime(
+				SpecificDateScheduleDateTime validScheduleDateTime = validateStartEndDateTime(scheduleBeingProcessed,
 						specificDateScheduleEntity);
 
 				if (validScheduleDateTime != null) {
@@ -209,8 +219,9 @@ public class ScheduleManager {
 			}
 
 			// Validate instance minimum count and maximum count.
-			validateInstanceMinMaxCount(specificDateScheduleEntity.getInstanceMinCount(),
+			validateInstanceMinMaxCount(scheduleBeingProcessed, specificDateScheduleEntity.getInstanceMinCount(),
 					specificDateScheduleEntity.getInstanceMaxCount(), false);
+			++scheduleIdentifier;
 		}
 
 		// Validate the dates for overlap
@@ -222,6 +233,7 @@ public class ScheduleManager {
 						(Object[]) arguments);
 			}
 		}
+
 	}
 
 	/**
@@ -231,38 +243,57 @@ public class ScheduleManager {
 	 * @param instanceMaxCount
 	 * @param isValidatingDefaultCount
 	 */
-	private void validateInstanceMinMaxCount(Integer instanceMinCount, Integer instanceMaxCount,
-			boolean isValidatingDefaultCount) {
+	private void validateInstanceMinMaxCount(String scheduleBeingProcessed, Integer instanceMinCount,
+			Integer instanceMaxCount, boolean isValidatingDefaultCount) {
 
 		boolean isValid = true;
 
-		isValid = DataValidationHelper.isNotNull(instanceMinCount) && instanceMinCount > 0;
-
+		boolean isValidInstanceCount = DataValidationHelper.isNotNull(instanceMinCount);
 		// The minimum instance count cannot be null.
-		if (!isValid) {
+		if (!isValidInstanceCount) {
 			validationErrorResult.addFieldError(null,
-					isValidatingDefaultCount ? "schedule.data.default.value.invalid" : "schedule.data.value.invalid",
-					isValidatingDefaultCount ? "" : scheduleBeingProcessed, "instance_min_count");
+					isValidatingDefaultCount ? "schedule.data.default.value.not.specified"
+							: "schedule.data.value.not.specified",
+					scheduleBeingProcessed, "instance_min_count", instanceMinCount);
+			isValid = false;
 		}
 
+		// The minimum instance count cannot be negative.
+		if (isValidInstanceCount && instanceMinCount < 0) {
+			validationErrorResult.addFieldError(null,
+					isValidatingDefaultCount ? "schedule.data.default.value.invalid" : "schedule.data.value.invalid",
+					scheduleBeingProcessed, "instance_min_count", instanceMinCount);
+			isValid = false;
+		}
+
+		isValidInstanceCount = DataValidationHelper.isNotNull(instanceMaxCount);
 		// The maximum instance count cannot be null.
-		if (DataValidationHelper.isNotNull(instanceMaxCount) && instanceMaxCount > 0) {
-			// To compare min and max count the min count should be valid so
-			// checking isValid
-			isValid = (isValid && instanceMaxCount > instanceMinCount);
-			if (!isValid) {
+		if (!isValidInstanceCount) {
+			validationErrorResult.addFieldError(null,
+					isValidatingDefaultCount ? "schedule.data.default.value.not.specified"
+							: "schedule.data.value.not.specified",
+					scheduleBeingProcessed, "instance_max_count", instanceMaxCount);
+			isValid = false;
+		}
+
+		// The maximum instance count cannot be zero or negative.
+		if (isValidInstanceCount && instanceMaxCount <= 0) {
+			validationErrorResult.addFieldError(null,
+					isValidatingDefaultCount ? "schedule.data.default.value.invalid" : "schedule.data.value.invalid",
+					scheduleBeingProcessed, "instance_max_count", instanceMaxCount);
+			isValid = false;
+		}
+
+		if (isValid) {
+			// Check the maximum instance count is greater than minimum instance count
+			if (instanceMaxCount <= instanceMinCount) {
 				validationErrorResult.addFieldError(null,
 						isValidatingDefaultCount ? "schedule.default.instanceCount.invalid.min.greater"
 								: "schedule.instanceCount.invalid.min.greater",
-						isValidatingDefaultCount ? "" : scheduleBeingProcessed, "instance_max_count",
-						"instance_min_count");
+						scheduleBeingProcessed, "instance_max_count", instanceMaxCount, "instance_min_count",
+						instanceMinCount);
 			}
-		} else {
-			validationErrorResult.addFieldError(null,
-					isValidatingDefaultCount ? "schedule.data.default.value.invalid" : "schedule.data.value.invalid",
-					isValidatingDefaultCount ? "" : scheduleBeingProcessed, "instance_max_count");
 		}
-
 	}
 
 	/**
@@ -272,10 +303,9 @@ public class ScheduleManager {
 	 * @param specificDateSchedule
 	 * @return
 	 */
-	private SpecificDateScheduleDateTime validateStartEndDateTime(ScheduleEntity specificDateSchedule) {
+	private SpecificDateScheduleDateTime validateStartEndDateTime(String scheduleBeingProcessed,
+			ScheduleEntity specificDateSchedule) {
 		boolean isValid = true;
-		boolean isValidStartDtTm = true;
-		boolean isValidEndDtTm = true;
 		SpecificDateScheduleDateTime validScheduleDateTime = null;
 
 		Date startDate = specificDateSchedule.getStartDate();
@@ -287,63 +317,67 @@ public class ScheduleManager {
 		Long startTimeInMillis = null;
 		Long endTimeInMillis = null;
 
-		boolean isValidDt = DataValidationHelper.isNotNull(specificDateSchedule.getStartDate());
+		boolean isValidDt = DataValidationHelper.isNotNull(startDate);
 		if (!isValidDt) {
 			isValid = false;
-			validationErrorResult.addFieldError(specificDateSchedule, "schedule.data.value.null",
+			validationErrorResult.addFieldError(specificDateSchedule, "schedule.data.value.not.specified",
 					scheduleBeingProcessed, "start_date");
 		}
-		boolean isValidTm = DataValidationHelper.isNotNull(specificDateSchedule.getStartTime());
+		boolean isValidTm = DataValidationHelper.isNotNull(startTime);
 		if (!isValidTm) {
 			isValid = false;
-			validationErrorResult.addFieldError(specificDateSchedule, "schedule.data.value.null",
+			validationErrorResult.addFieldError(specificDateSchedule, "schedule.data.value.not.specified",
 					scheduleBeingProcessed, "start_time");
 		}
-		if (isValid) {
+
+		if (isValidDt && isValidTm) {
 			startTimeInMillis = DateHelper.getTimeInMillis(startDate, startTime, timeZone);
 
-		}
-		// Check the start date time is after current date time
-		isValidStartDtTm = DataValidationHelper.isNotCurrent(startTimeInMillis, timeZone);
-		if (!isValidStartDtTm) {
-			isValid = false;
-			validationErrorResult.addFieldError(specificDateSchedule, "specificDateSchedule.date.invalid.current.after",
-					scheduleBeingProcessed, "start_date + start_time");
+			// Check the start date time is after current date time
+
+			if (!DataValidationHelper.isLaterThanNow(startTimeInMillis, timeZone)) {
+				isValid = false;
+				validationErrorResult.addFieldError(specificDateSchedule,
+						"specificDateSchedule.date.invalid.current.after", scheduleBeingProcessed,
+						"start_date start_time", startDate, startTime);
+			}
+
 		}
 
-		isValidDt = DataValidationHelper.isNotNull(specificDateSchedule.getEndDate());
+		isValidDt = DataValidationHelper.isNotNull(endDate);
 		if (!isValidDt) {
 			isValid = false;
-			validationErrorResult.addFieldError(specificDateSchedule, "schedule.data.value.null",
+			validationErrorResult.addFieldError(specificDateSchedule, "schedule.data.value.not.specified",
 					scheduleBeingProcessed, "end_date");
 		}
 
-		isValidTm = DataValidationHelper.isNotNull(specificDateSchedule.getEndTime());
+		isValidTm = DataValidationHelper.isNotNull(endTime);
 		if (!isValidTm) {
 			isValid = false;
-			validationErrorResult.addFieldError(specificDateSchedule, "schedule.data.value.null",
+			validationErrorResult.addFieldError(specificDateSchedule, "schedule.data.value.not.specified",
 					scheduleBeingProcessed, "end_time");
 		}
 
-		if (isValid) {
+		if (isValidDt && isValidTm) {
 			endTimeInMillis = DateHelper.getTimeInMillis(endDate, endTime, timeZone);
 
+			// Check the end date time is after current date time
+			if (!DataValidationHelper.isLaterThanNow(endTimeInMillis, timeZone)) {
+				isValid = false;
+				validationErrorResult.addFieldError(specificDateSchedule, "schedule.date.invalid.current.after",
+						scheduleBeingProcessed, "end_date end_time", endDate, endTime);
+			}
+
 		}
-		// Check the end date time is after current date time
-		isValidEndDtTm = DataValidationHelper.isNotCurrent(endTimeInMillis, timeZone);
-		if (!isValidEndDtTm) {
-			isValid = false;
-			validationErrorResult.addFieldError(specificDateSchedule, "schedule.date.invalid.current.after",
-					scheduleBeingProcessed, "end_date + end_time");
-		}
+
 		// Check the end date is after the start date
 		if (isValid) {
 
 			// If end date time is not after start date time, then dates invalid
 			if (!DataValidationHelper.isAfter(endTimeInMillis, startTimeInMillis)) {
-				isValid = false;
 				validationErrorResult.addFieldError(specificDateSchedule, "schedule.date.invalid.start.after.end",
-						scheduleBeingProcessed, "end_date + end_time", "start_date + start_time");
+						scheduleBeingProcessed, "end_date end_time", endDate + " " + endTime, "start_date start_time",
+						startDate + " " + startTime);
 			} else {
 				validScheduleDateTime = new SpecificDateScheduleDateTime(startTimeInMillis, endTimeInMillis);
 			}
