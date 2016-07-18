@@ -49,14 +49,12 @@ public class ScheduleRestController {
 	public ResponseEntity<List<String>> createSchedule(@PathVariable String app_id,
 			@RequestBody ApplicationScalingSchedules rawApplicationSchedules) {
 
-		validationErrorResult.initEmpty();
 		scheduleManager.setUpSchedules(app_id, rawApplicationSchedules);
 
 		logger.info("Validate schedules for application: " + app_id);
 		scheduleManager.validateSchedules(app_id, rawApplicationSchedules);
 
-		// If there are no validation errors then proceed with persisting the
-		// schedules
+		// If there are no validation errors then proceed with persisting the schedules
 		if (!validationErrorResult.hasErrors()) {
 
 			logger.info("Create schedules for application: " + app_id);

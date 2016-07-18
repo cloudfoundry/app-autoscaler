@@ -13,11 +13,11 @@ public class ValidationError {
 	private Object[] errorMessageArguments;
 
 	public ValidationError(Object object, Object[] errorMessageArguments, String errorMessageCode) {
-		this.object = object;;
+		this.object = object;
 		this.errorMessageCode = errorMessageCode;
 		this.errorMessageArguments = errorMessageArguments;
 	}
- 
+
 	public Object getObject() {
 		return object;
 	}
@@ -44,9 +44,8 @@ public class ValidationError {
 
 	@Override
 	public String toString() {
-		return "ValidationError [object=" + object + ", errorMessageCode="
-				+ errorMessageCode + ", errorMessageArguments=" + Arrays.toString(errorMessageArguments) + "]";
+		return "ValidationError [object=" + object + ", errorMessageCode=" + errorMessageCode
+				+ ", errorMessageArguments=" + Arrays.toString(errorMessageArguments) + "]";
 	}
 
-	
 }

@@ -21,25 +21,9 @@ public class ValidationErrorResult {
 
 	@Autowired
 	MessageBundleResourceHelper messageBundleResourceHelper;
-	boolean initialised;
 	private List<ValidationError> errorList; // NOTE:Leave error list null until, have actual errors
 
 	public ValidationErrorResult() {
-	}
-
-	/**
-	 * Initialise an instance with an empty errors list and no association with a specific object type
-	 * @param objectName
-	 */
-	public void initEmpty() {
-		errorList = null;
-		initialised = true;
-	}
-
-	private void checkInitialised() {
-		if (!initialised) {
-			throw new InternalCodingError("ValidationResult not initialised - call  initEmpty");
-		}
 	}
 
 	public void addFieldError(Object object, String messageCode, Object... arguments) {
@@ -59,7 +43,6 @@ public class ValidationErrorResult {
 	}
 
 	private void internalAddError(ValidationError error) {
-		checkInitialised();
 		if (errorList == null) {
 			errorList = new ArrayList<ValidationError>();
 		}
@@ -96,7 +79,6 @@ public class ValidationErrorResult {
 	 * @return - true if this instance contains any errors
 	 */
 	public boolean hasErrors() {
-		checkInitialised();
 		return errorList != null && errorList.size() > 0;
 	}
 
