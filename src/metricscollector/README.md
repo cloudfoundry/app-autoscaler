@@ -42,8 +42,8 @@ server:
 logging:
   level: "info"
 db:
-  policy_db_url: "postgres://pqgotest:postgres@localhost/pqgotest" 
-  metrics_db_url: "postgres://pqgotest:postgres@localhost/pqgotest"
+  policy_db_url: "postgres://postgres@localhost/autoscaler" 
+  metrics_db_url: "postgres://postgres@localhost/autoscaler"
 ```
 
 

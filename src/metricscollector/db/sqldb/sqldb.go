@@ -1,9 +1,9 @@
 package sqldb
 
 import (
-	"bytes"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"time"
 
 	"code.cloudfoundry.org/lager"
@@ -59,21 +59,25 @@ func NewSQLDB(conf *config.DbConfig, logger lager.Logger) (*SQLDB, error) {
 }
 
 func (db *SQLDB) Close() error {
-	var err error
+	var hasError bool
 	if db.metricsDb != nil {
-		err = db.metricsDb.Close()
+		err := db.metricsDb.Close()
 		if err != nil {
 			db.logger.Error("Close-metrics-db", err)
-			return err
+			hasError = true
 		}
 	}
 
 	if db.policyDb != nil {
-		err = db.policyDb.Close()
+		err := db.policyDb.Close()
 		if err != nil {
 			db.logger.Error("Close-policy-db", err)
-			return err
+			hasError = true
 		}
+	}
+
+	if hasError {
+		return errors.New("Error closing metrics or policy db")
 	}
 
 	return nil
@@ -127,8 +131,7 @@ func (db *SQLDB) RetrieveMetrics(appid string, name string, start int64, end int
 		}
 
 		inst := []metrics.InstanceMetric{}
-		decoder := json.NewDecoder(bytes.NewReader(value))
-		err = decoder.Decode(&inst)
+		err := json.Unmarshal(value, &inst)
 		if err != nil {
 			db.logger.Error("unmarshal-instance-metrics", err, lager.Data{"value": value})
 			return mtrcs, err
@@ -163,7 +166,7 @@ func (db *SQLDB) GetAppIds() ([]string, error) {
 	rows, err := db.policyDb.Query(query)
 	if err != nil {
 		db.logger.Error("retrive-appids-from-policy-table", err, lager.Data{"query": query})
-		return appIds, err
+		return nil, err
 	}
 
 	defer rows.Close()
@@ -172,7 +175,7 @@ func (db *SQLDB) GetAppIds() ([]string, error) {
 	for rows.Next() {
 		if err = rows.Scan(&id); err != nil {
 			db.logger.Error("scan-appid-from-search-result", err)
-			return appIds, err
+			return nil, err
 		}
 		appIds = append(appIds, id)
 	}

@@ -82,10 +82,10 @@ var _ = Describe("Sqldb", func() {
 		BeforeEach(func() {
 			db, err = NewSQLDB(conf, logger)
 			Expect(err).NotTo(HaveOccurred())
+			cleanMetricsTable()
 		})
 
 		AfterEach(func() {
-			cleanMetricsTable()
 			err = db.Close()
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -145,6 +145,7 @@ var _ = Describe("Sqldb", func() {
 		BeforeEach(func() {
 			db, err = NewSQLDB(conf, logger)
 			Expect(err).NotTo(HaveOccurred())
+			cleanMetricsTable()
 
 			start = 0
 			end = -1
@@ -153,7 +154,6 @@ var _ = Describe("Sqldb", func() {
 		})
 
 		AfterEach(func() {
-			cleanMetricsTable()
 			err = db.Close()
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -206,7 +206,7 @@ var _ = Describe("Sqldb", func() {
 			})
 		})
 
-		Context("when end time is specified (end = -1)", func() {
+		Context("when end time is now (end = -1)", func() {
 			BeforeEach(func() {
 				start = 333333
 				end = -1
@@ -310,6 +310,8 @@ var _ = Describe("Sqldb", func() {
 			db, err = NewSQLDB(conf, logger)
 			Expect(err).NotTo(HaveOccurred())
 
+			cleanMetricsTable()
+
 			instances := []metrics.InstanceMetric{{123456, 0, "3333"}, {123476, 1, "6666"}}
 			metric := &metrics.Metric{
 				AppId:     appId,
@@ -331,7 +333,6 @@ var _ = Describe("Sqldb", func() {
 		})
 
 		AfterEach(func() {
-			cleanMetricsTable()
 			err = db.Close()
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -380,10 +381,11 @@ var _ = Describe("Sqldb", func() {
 		BeforeEach(func() {
 			db, err = NewSQLDB(conf, logger)
 			Expect(err).NotTo(HaveOccurred())
+
+			cleanPolicyTable()
 		})
 
 		AfterEach(func() {
-			cleanPolicyTable()
 			err = db.Close()
 			Expect(err).NotTo(HaveOccurred())
 		})

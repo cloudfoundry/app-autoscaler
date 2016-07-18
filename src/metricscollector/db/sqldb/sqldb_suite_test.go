@@ -31,8 +31,6 @@ var _ = BeforeSuite(func() {
 	if e != nil {
 		Fail("can not connect database: " + e.Error())
 	}
-	cleanMetricsTable()
-	cleanPolicyTable()
 })
 
 var _ = AfterSuite(func() {
