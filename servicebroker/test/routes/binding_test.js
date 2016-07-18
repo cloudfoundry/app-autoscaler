@@ -28,6 +28,15 @@ function initNockBind(statusCode) {
     });
 }
 
+function initNockUnBind(statusCode) {
+  scope = nock(settings.apiServerUri)
+    .delete(/\/v1\/apps\/.*\/policy/)
+    .reply(statusCode, {
+      'success': true,
+      'error': null,
+      'result': "deleted"
+    });
+}
 describe('binding RESTful API', function() {
   var server, serviceInstanceId, serviceInstanceId2, orgId, spaceId, appId, appId2, bindingId;
   serviceInstanceId = uuid.v4();
@@ -125,18 +134,18 @@ describe('binding RESTful API', function() {
             .expect({}, done);
         });
         context('when the api server returns other error than 400, 500', function() {
-        it('returns a 500', function(done) {
-          initNockBind(300);
-          supertest(server)
-            .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
-            .set("Authorization", "Basic " + auth)
-            .set('Accept', 'application/json')
-            .send({ "app_guid": appId, "parameters": policy })
-            .expect(500)
-            .expect('Content-Type', /json/)
-            .expect({}, done);
+          it('returns a 500', function(done) {
+            initNockBind(300);
+            supertest(server)
+              .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
+              .set("Authorization", "Basic " + auth)
+              .set('Accept', 'application/json')
+              .send({ "app_guid": appId, "parameters": policy })
+              .expect(500)
+              .expect('Content-Type', /json/)
+              .expect({}, done);
+          });
         });
-      });
       });
     });
 
@@ -199,6 +208,87 @@ describe('binding RESTful API', function() {
         });
       });
     });
+  });
+  context('Unbind service', function() {
 
+    context('when the binding does not exist for the app', function() {
+      it('return 410', function(done) {
+        supertest(server)
+          .delete("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
+          .set("Authorization", "Basic " + auth)
+          .send({ "app_guid": appId })
+          .expect(410)
+          .expect('Content-Type', /json/)
+          .expect({}, done);
+      });
+    });
+
+    context('when a binding exists for the app', function() {
+      beforeEach(function(done) {
+        initNockBind(201);
+        supertest(server)
+          .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
+          .set("Authorization", "Basic " + auth)
+          .send({ "app_guid": appId, "parameters": policy })
+          .expect(201)
+          .expect('Content-Type', /json/)
+          .expect({}, done);
+      });
+      it("unbinding with 200", function(done) {
+        initNockUnBind(200);
+        supertest(server)
+          .delete("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
+          .set("Authorization", "Basic " + auth)
+          .send({ "app_guid": appId })
+          .expect(200)
+          .expect('Content-Type', /json/)
+          .expect({}, done);
+      });
+      context("when the api server returns error", function() {
+        it("return a 400", function(done) {
+          initNockUnBind(400);
+          supertest(server)
+            .delete("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
+            .set("Authorization", "Basic " + auth)
+            .send({ "app_guid": appId })
+            .expect(400)
+            .expect('Content-Type', /json/)
+            .expect({}, done);
+        });
+        it("return a 404", function(done) {
+          initNockUnBind(404);
+          supertest(server)
+            .delete("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
+            .set("Authorization", "Basic " + auth)
+            .send({ "app_guid": appId })
+            .expect(404)
+            .expect('Content-Type', /json/)
+            .expect({}, done);
+        });
+        it("return a 500", function(done) {
+          initNockUnBind(500);
+          supertest(server)
+            .delete("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
+            .set("Authorization", "Basic " + auth)
+            .send({ "app_guid": appId })
+            .expect(500)
+            .expect('Content-Type', /json/)
+            .expect({}, done);
+        });
+        context('when the api server returns other error than 400, 500', function() {
+          it('returns a 500', function(done) {
+            initNockUnBind(300);
+            supertest(server)
+              .delete("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
+              .set("Authorization", "Basic " + auth)
+              .set('Accept', 'application/json')
+              .send({ "app_guid": appId })
+              .expect(500)
+              .expect('Content-Type', /json/)
+              .expect({}, done);
+          });
+        });
+      });
+    });
   });
 });

@@ -81,7 +81,45 @@ module.exports = function(app, settings) {
     }
 
   });
+  app.delete('/v2/service_instances/:instance_id/service_bindings/:binding_id', function(req, res) {
+    var serviceInstanceId = req.params.instance_id;
+    var bindingId = req.params.binding_id;
+    var appId = req.body.app_guid;
+    models.sequelize.transaction().then(function(t) {
+      models.binding.destroy({ where: { bindingId: bindingId }, transaction: t }).then(function(count) {
+        if (count > 0) {
+          apiServerUtil.detachPolicy(appId, function(error, response) {
+            var statusCode = response.statusCode;
+            logger.info("Api server response, status code=>" + statusCode + ", response=>" + JSON.stringify(response.body));
+            if (!error && (statusCode === 200)) {
+              t.commit();
+              res.status(statusCode).json({});
 
+            } else {
+              logger.error("Fail to unbind service when call api server, error=>" + error);
+              t.rollback();
+              if (statusCode === 400 || statusCode === 404 || statusCode === 500) {
+                res.status(statusCode).json({});
+              } else {
+                res.status(500).json({});
+              }
+
+            }
+          });
+        } else {
+          t.commit();
+          res.status(410).json({});
+        }
+      }).catch(function(error) {
+        t.rollback();
+        res.status(500).json({});
+      });
+    }).catch(function(error1) {
+      logger.error("Fail to unbind service when handle transaction, error=>" + error1);
+      t.rollback();
+      res.status(500).json({});
+    });
+  });
 
 
 
