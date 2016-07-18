@@ -8,6 +8,12 @@ module.exports = function(apiServerUri) {
       callback(error, response);
     });
 
+  },
+  apiUtil.detachPolicy = function(appId, callback) {
+    request.delete({ uri: apiServerUri + '/v1/apps/' + appId + '/policy'}, function(error, response, body) {
+      callback(error, response);
+    });
+
   }
   return apiUtil;
 }
