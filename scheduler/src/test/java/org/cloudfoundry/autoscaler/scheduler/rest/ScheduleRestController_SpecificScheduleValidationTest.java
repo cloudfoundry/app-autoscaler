@@ -7,7 +7,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.lang.reflect.Method;
+import java.sql.Date;
 import java.sql.Time;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -42,7 +44,6 @@ import org.springframework.test.annotation.DirtiesContext.ClassMode;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
-import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
@@ -78,7 +79,6 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 	public void beforeTest() throws SchedulerException {
 		// Clear previous schedules.
 		scheduler.clear();
-
 		mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
 
 	}
@@ -309,7 +309,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 
 	@Test
 	@Transactional
-	public void testCreateSchedule_endDateTime_before_startDateTime() throws Exception {
+	public void testCreateSchedule_startDateTime_after_endDateTime_() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
@@ -328,6 +328,50 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.invalid.start.after.end",
 				scheduleBeingProcessed + " 0", "end_date end_time", entity.getEndDate() + " " + endTime,
 				"start_date start_time", entity.getStartDate() + " " + startTime);
+
+		assertErrorMessage(appId, content, errorMessage);
+	}
+
+	@Test
+	@Transactional
+	public void testCreateSchedule_currentDateTime_after_startDateTime() throws Exception {
+
+		ObjectMapper mapper = new ObjectMapper();
+		int noOfSpecificDateSchedulesToSetUp = 1;
+		ApplicationScalingSchedules schedules = TestDataSetupHelper
+				.generateSpecificDateSchedulesForScheduleController(appId, noOfSpecificDateSchedulesToSetUp);
+
+		// Swap startTime for endTime.
+		ScheduleEntity entity = schedules.getSpecific_date().get(0);
+		Date oldDate = new Date(0);
+		entity.setStartDate(oldDate);
+
+		String content = mapper.writeValueAsString(schedules);
+
+		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.invalid.current.after",
+				scheduleBeingProcessed + " 0", "start_date start_time", entity.getStartDate(), entity.getStartTime());
+
+		assertErrorMessage(appId, content, errorMessage);
+	}
+
+	@Test
+	@Transactional
+	public void testCreateSchedule_currentDateTime_after_endDate() throws Exception {
+
+		ObjectMapper mapper = new ObjectMapper();
+		int noOfSpecificDateSchedulesToSetUp = 1;
+		ApplicationScalingSchedules schedules = TestDataSetupHelper
+				.generateSpecificDateSchedulesForScheduleController(appId, noOfSpecificDateSchedulesToSetUp);
+
+		// Swap startTime for endTime.
+		ScheduleEntity entity = schedules.getSpecific_date().get(0);
+		Date oldDate = new Date(0);
+		entity.setEndDate(oldDate);
+
+		String content = mapper.writeValueAsString(schedules);
+
+		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.invalid.current.after",
+				scheduleBeingProcessed + " 0", "end_date end_time", entity.getEndDate(), entity.getEndTime());
 
 		assertErrorMessage(appId, content, errorMessage);
 	}
@@ -357,6 +401,39 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 
 	@Test
 	@Transactional
+	public void testCreateSchedule_overlapping_multipleSchedules() throws Exception {
+
+		ObjectMapper mapper = new ObjectMapper();
+		int noOfSpecificDateSchedulesToSetUp = 4;
+		ApplicationScalingSchedules schedules = TestDataSetupHelper
+				.generateSpecificDateSchedulesForScheduleController(appId, noOfSpecificDateSchedulesToSetUp);
+
+		// Overlap specificDate schedules.
+		// Schedule 1 end date, end time and Schedule 2 start date, start time are overlapping.
+		// Schedules 3 and 4 is overlap with start date and start time.
+		ScheduleEntity firstEntity = schedules.getSpecific_date().get(0);
+		ScheduleEntity secondEntity = schedules.getSpecific_date().get(1);
+		secondEntity.setStartDate(firstEntity.getEndDate());
+		secondEntity.setStartTime(firstEntity.getEndTime());
+
+		ScheduleEntity thirdEntity = schedules.getSpecific_date().get(2);
+		ScheduleEntity forthEntity = schedules.getSpecific_date().get(3);
+		forthEntity.setStartDate(thirdEntity.getStartDate());
+		forthEntity.setStartTime(thirdEntity.getStartTime());
+
+		String content = mapper.writeValueAsString(schedules);
+
+		List<String> messages = new ArrayList<>();
+		messages.add(messageBundleResourceHelper.lookupMessage("schedule.date.overlap", scheduleBeingProcessed, "0",
+				"end_date end_time", "1", "start_date start_time"));
+		messages.add(messageBundleResourceHelper.lookupMessage("schedule.date.overlap", scheduleBeingProcessed, "2",
+				"start_date start_time", "3", "start_date start_time"));
+
+		assertErrorMessage(appId, content, messages.toArray(new String[0]));
+	}
+
+	@Test
+	@Transactional
 	public void testCreateSchedule_without_specificDateSchedules() throws Exception {
 		// No schedules - null case
 		ObjectMapper mapper = new ObjectMapper();
@@ -367,10 +444,10 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 
 		String content = mapper.writeValueAsString(schedules);
 
-		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.invalid.noSchedules",
+		String errorMessage = messageBundleResourceHelper.lookupMessage("data.invalid.noSchedules",
 				"app_id=" + appId);
 
-		assertCreateSchedules(appId, content, errorMessage);
+		assertErrorMessage(appId, content, errorMessage);
 	}
 
 	@Test
@@ -385,10 +462,46 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 
 		String content = mapper.writeValueAsString(schedules);
 
-		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.invalid.noSchedules",
+		String errorMessage = messageBundleResourceHelper.lookupMessage("data.invalid.noSchedules",
 				"app_id=" + appId);
 
-		assertCreateSchedules(appId, content, errorMessage);
+		assertErrorMessage(appId, content, errorMessage);
+	}
+
+	@Test
+	@Transactional
+	public void testCreateSchedule_without_startEndDateTime_instanceMaxMinCount() throws Exception {
+		// schedules - no parameters.
+		ObjectMapper mapper = new ObjectMapper();
+		ApplicationScalingSchedules schedules = TestDataSetupHelper
+				.generateSpecificDateSchedulesForScheduleController(appId, 1);
+
+		ScheduleEntity entity = schedules.getSpecific_date().get(0);
+		entity.setInstanceMinCount(null);
+		entity.setInstanceMaxCount(null);
+		entity.setStartDate(null);
+		entity.setStartTime(null);
+		entity.setEndDate(null);
+		entity.setEndTime(null);
+
+		String content = mapper.writeValueAsString(schedules);
+
+		List<String> messages = new ArrayList<>();
+
+		messages.add(messageBundleResourceHelper.lookupMessage("schedule.data.value.not.specified",
+				scheduleBeingProcessed + " 0", "start_date"));
+		messages.add(messageBundleResourceHelper.lookupMessage("schedule.data.value.not.specified",
+				scheduleBeingProcessed + " 0", "end_date"));
+		messages.add(messageBundleResourceHelper.lookupMessage("schedule.data.value.not.specified",
+				scheduleBeingProcessed + " 0", "start_time"));
+		messages.add(messageBundleResourceHelper.lookupMessage("schedule.data.value.not.specified",
+				scheduleBeingProcessed + " 0", "end_time"));
+		messages.add(messageBundleResourceHelper.lookupMessage("schedule.data.value.not.specified",
+				scheduleBeingProcessed + " 0", "instance_max_count"));
+		messages.add(messageBundleResourceHelper.lookupMessage("schedule.data.value.not.specified",
+				scheduleBeingProcessed + " 0", "instance_min_count"));
+
+		assertErrorMessage(appId, content, messages.toArray(new String[0]));
 	}
 
 	private Throwable getRootException(Throwable throwable) {
@@ -398,33 +511,19 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		return getRootException(throwable.getCause());
 	}
 
-	private void assertErrorMessage(String appId, String inputContent, String expectedErrorMessage) throws Exception {
-		ResultActions resultActions = mockMvc.perform(
-				put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(inputContent));
-
-		resultActions = mockMvc.perform(
-				put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(inputContent));
-
-		assertUserError(resultActions, status().isBadRequest(), expectedErrorMessage);
-	}
-
-	private void assertCreateSchedules(String appId, String inputContent, String expectedErrorMessage)
+	private void assertErrorMessage(String appId, String inputContent, String... expectedErrorMessages)
 			throws Exception {
 		ResultActions resultActions = mockMvc.perform(
 				put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(inputContent));
 
-		assertUserError(resultActions, status().isBadRequest(), expectedErrorMessage);
+		resultActions.andExpect(status().isBadRequest());
+		resultActions.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
+		resultActions.andExpect(jsonPath("$").isArray());
+		resultActions.andExpect(jsonPath("$").value(Matchers.containsInAnyOrder(expectedErrorMessages)));
 	}
 
 	private String getCreateSchedulePath(String appId) {
 		return String.format("/v2/schedules/%s", appId);
 	}
 
-	private void assertUserError(ResultActions resultActions, ResultMatcher statusCode, String message)
-			throws Exception {
-		resultActions.andExpect(statusCode);
-		resultActions.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
-		resultActions.andExpect(jsonPath("$").isArray());
-		resultActions.andExpect(jsonPath("$[0]").value(Matchers.containsString(message)));
-	}
 }

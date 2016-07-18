@@ -88,7 +88,7 @@ public class ScheduleJobManagerTest {
 		List<String> errors = validationErrorResult.getAllErrorMessages();
 		assertEquals(1, errors.size());
 
-		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.scheduler.error.create.failed",
+		String errorMessage = messageBundleResourceHelper.lookupMessage("scheduler.error.create.failed",
 				"app_id=" + appId);
 
 		assertEquals(errorMessage, errors.get(0));

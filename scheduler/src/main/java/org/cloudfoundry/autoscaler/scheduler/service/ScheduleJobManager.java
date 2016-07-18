@@ -30,7 +30,7 @@ public class ScheduleJobManager {
 	Scheduler scheduler;
 	@Autowired
 	ValidationErrorResult validationErrorResult;
-	
+
 	/**
 	 * Creates simple job for the application scaling using helper methods. Here
 	 * in two jobs are required, First job to tell the scaling decision maker
@@ -66,17 +66,18 @@ public class ScheduleJobManager {
 
 		Trigger jobStartTrigger = ScheduleJobHelper.buildTrigger(jobStartId, jobStartDetail.getKey(), triggerStartDate);
 		Trigger jobEndTrigger = ScheduleJobHelper.buildTrigger(jobEndId, jobEndDetail.getKey(), triggerEndDate);
-		
+
 		// Schedule the job
 		try {
 			scheduler.scheduleJob(jobStartDetail, jobStartTrigger);
 			scheduler.scheduleJob(jobEndDetail, jobEndTrigger);
-			
+
 		} catch (SchedulerException se) {
-			
-			validationErrorResult.addErrorForQuartzSchedulerException(se, "schedule.scheduler.error.create.failed", "app_id="+ scheduleEntity.getAppId());
+
+			validationErrorResult.addErrorForQuartzSchedulerException(se, "scheduler.error.create.failed",
+					"app_id=" + scheduleEntity.getAppId());
 		}
-		
+
 	}
 
 	/**
@@ -86,7 +87,8 @@ public class ScheduleJobManager {
 	 * @param scheduleEntity
 	 * @param jobAction 
 	 */
-	private void setupScalingScheduleJobData(JobDetail jobDetail, ScheduleEntity scheduleEntity, JobActionEnum jobAction) {
+	private void setupScalingScheduleJobData(JobDetail jobDetail, ScheduleEntity scheduleEntity,
+			JobActionEnum jobAction) {
 
 		JobDataMap jobDataMap = jobDetail.getJobDataMap();
 		jobDataMap.put("appId", scheduleEntity.getAppId());
