@@ -59,7 +59,7 @@ public class ScheduleManager {
 			applicationScalingSchedules = populateScheduleModel(allScheduleEntitiesForApp);
 		} catch (DatabaseValidationException dve) {
 
-			validationErrorResult.addErrorForDatabaseValidationException(dve, "schedule.database.error.get.failed",
+			validationErrorResult.addErrorForDatabaseValidationException(dve, "database.error.get.failed",
 					"app_id=" + appId);
 			throw new SchedulerInternalException("Database error", dve);
 		}
@@ -147,8 +147,7 @@ public class ScheduleManager {
 
 		// Validate the application id
 		if (!DataValidationHelper.isNotEmpty(appId)) {
-			validationErrorResult.addFieldError(applicationScalingSchedules, "schedule.data.value.not.specified",
-					"app_id");
+			validationErrorResult.addFieldError(applicationScalingSchedules, "data.value.not.specified", "app_id");
 		}
 
 		// Validate the time zone
@@ -158,18 +157,18 @@ public class ScheduleManager {
 		boolean isValidTimeZone = DataValidationHelper.isNotEmpty(timeZoneId);
 
 		if (!isValidTimeZone) {
-			validationErrorResult.addFieldError(applicationScalingSchedules, "schedule.data.value.not.specified",
+			validationErrorResult.addFieldError(applicationScalingSchedules, "data.value.not.specified.timezone",
 					"timeZone");
 		}
 
 		if (isValidTimeZone && !DataValidationHelper.isValidTimeZone(timeZoneId)) {
-			validationErrorResult.addFieldError(applicationScalingSchedules, "schedule.data.invalid.timezone",
-					"timeZone", timeZoneId);
+			validationErrorResult.addFieldError(applicationScalingSchedules, "data.invalid.timezone", "timeZone",
+					timeZoneId);
 		}
 
 		// Validate the default minimum and maximum instance count
-		validateInstanceMinMaxCount("", applicationScalingSchedules.getInstance_min_count(),
-				applicationScalingSchedules.getInstance_max_count(), true);
+		validateDefaultInstanceMinMaxCount(applicationScalingSchedules.getInstance_min_count(),
+				applicationScalingSchedules.getInstance_max_count());
 
 		// Validate Specific schedules.
 		if (applicationScalingSchedules.hasSchedules()) {
@@ -177,7 +176,7 @@ public class ScheduleManager {
 			validateSpecificDateSchedules(applicationScalingSchedules.getSpecific_date(), isValidTimeZone);
 		} else {// No schedules found
 
-			validationErrorResult.addFieldError(applicationScalingSchedules, "schedule.data.invalid.noSchedules",
+			validationErrorResult.addFieldError(applicationScalingSchedules, "data.invalid.noSchedules",
 					"app_id=" + appId);
 
 		}
@@ -212,15 +211,10 @@ public class ScheduleManager {
 					scheduleStartEndTimeList.add(validScheduleDateTime);
 
 				}
-			} else {
-				validationErrorResult.addFieldError(specificDateScheduleEntity,
-						"schedule.date.notValidated.invalid.timezone", scheduleBeingProcessed, "start_date",
-						"start_time", "end_date", "end_time");
 			}
-
 			// Validate instance minimum count and maximum count.
 			validateInstanceMinMaxCount(scheduleBeingProcessed, specificDateScheduleEntity.getInstanceMinCount(),
-					specificDateScheduleEntity.getInstanceMaxCount(), false);
+					specificDateScheduleEntity.getInstanceMaxCount());
 			++scheduleIdentifier;
 		}
 
@@ -237,31 +231,78 @@ public class ScheduleManager {
 	}
 
 	/**
+	 * This method validates the default instance minimum and maximum count.
+	 * 
+	 * @param defaultInstanceMinCount
+	 * @param defaultInstanceMaxCount
+	 */
+	private void validateDefaultInstanceMinMaxCount(Integer defaultInstanceMinCount,
+			Integer defaultInstanceMaxCount) {
+
+		boolean isValid = true;
+
+		boolean isValidInstanceCount = DataValidationHelper.isNotNull(defaultInstanceMinCount);
+		// The minimum instance count cannot be null.
+		if (!isValidInstanceCount) {
+			validationErrorResult.addFieldError(null, "data.default.value.not.specified", "instance_min_count");
+			isValid = false;
+		}
+
+		// The minimum instance count cannot be negative.
+		if (isValidInstanceCount && defaultInstanceMinCount < 0) {
+			validationErrorResult.addFieldError(null, "data.default.value.invalid", "instance_min_count",
+					defaultInstanceMinCount);
+			isValid = false;
+		}
+
+		isValidInstanceCount = DataValidationHelper.isNotNull(defaultInstanceMaxCount);
+		// The maximum instance count cannot be null.
+		if (!isValidInstanceCount) {
+			validationErrorResult.addFieldError(null, "data.default.value.not.specified", "instance_max_count");
+			isValid = false;
+		}
+
+		// The maximum instance count cannot be zero or negative.
+		if (isValidInstanceCount && defaultInstanceMaxCount <= 0) {
+			validationErrorResult.addFieldError(null, "data.default.value.invalid", "instance_max_count",
+					defaultInstanceMaxCount);
+			isValid = false;
+		}
+
+		if (isValid) {
+			// Check the maximum instance count is greater than minimum instance count
+			if (defaultInstanceMaxCount <= defaultInstanceMinCount) {
+				validationErrorResult.addFieldError(null,
+						"data.default.instanceCount.invalid.min.greater", "instance_max_count", defaultInstanceMaxCount,
+						"instance_min_count",
+						defaultInstanceMinCount);
+			}
+		}
+	}
+
+	/**
 	 * This method validates the instance minimum and maximum count.
 	 * 
+	 * @param scheduleBeingProcessed
 	 * @param instanceMinCount
 	 * @param instanceMaxCount
-	 * @param isValidatingDefaultCount
 	 */
 	private void validateInstanceMinMaxCount(String scheduleBeingProcessed, Integer instanceMinCount,
-			Integer instanceMaxCount, boolean isValidatingDefaultCount) {
+			Integer instanceMaxCount) {
 
 		boolean isValid = true;
 
 		boolean isValidInstanceCount = DataValidationHelper.isNotNull(instanceMinCount);
 		// The minimum instance count cannot be null.
 		if (!isValidInstanceCount) {
-			validationErrorResult.addFieldError(null,
-					isValidatingDefaultCount ? "schedule.data.default.value.not.specified"
-							: "schedule.data.value.not.specified",
-					scheduleBeingProcessed, "instance_min_count", instanceMinCount);
+			validationErrorResult.addFieldError(null, "schedule.data.value.not.specified",
+					scheduleBeingProcessed, "instance_min_count");
 			isValid = false;
 		}
 
 		// The minimum instance count cannot be negative.
 		if (isValidInstanceCount && instanceMinCount < 0) {
-			validationErrorResult.addFieldError(null,
-					isValidatingDefaultCount ? "schedule.data.default.value.invalid" : "schedule.data.value.invalid",
+			validationErrorResult.addFieldError(null,"schedule.data.value.invalid",
 					scheduleBeingProcessed, "instance_min_count", instanceMinCount);
 			isValid = false;
 		}
@@ -270,16 +311,15 @@ public class ScheduleManager {
 		// The maximum instance count cannot be null.
 		if (!isValidInstanceCount) {
 			validationErrorResult.addFieldError(null,
-					isValidatingDefaultCount ? "schedule.data.default.value.not.specified"
-							: "schedule.data.value.not.specified",
-					scheduleBeingProcessed, "instance_max_count", instanceMaxCount);
+					  "schedule.data.value.not.specified",
+					scheduleBeingProcessed, "instance_max_count");
 			isValid = false;
 		}
 
 		// The maximum instance count cannot be zero or negative.
 		if (isValidInstanceCount && instanceMaxCount <= 0) {
 			validationErrorResult.addFieldError(null,
-					isValidatingDefaultCount ? "schedule.data.default.value.invalid" : "schedule.data.value.invalid",
+					 "schedule.data.value.invalid",
 					scheduleBeingProcessed, "instance_max_count", instanceMaxCount);
 			isValid = false;
 		}
@@ -287,9 +327,8 @@ public class ScheduleManager {
 		if (isValid) {
 			// Check the maximum instance count is greater than minimum instance count
 			if (instanceMaxCount <= instanceMinCount) {
-				validationErrorResult.addFieldError(null,
-						isValidatingDefaultCount ? "schedule.default.instanceCount.invalid.min.greater"
-								: "schedule.instanceCount.invalid.min.greater",
+				validationErrorResult.addFieldError(null, 
+						"schedule.instanceCount.invalid.min.greater",
 						scheduleBeingProcessed, "instance_max_count", instanceMaxCount, "instance_min_count",
 						instanceMinCount);
 			}
@@ -337,9 +376,8 @@ public class ScheduleManager {
 
 			if (!DataValidationHelper.isLaterThanNow(startTimeInMillis, timeZone)) {
 				isValid = false;
-				validationErrorResult.addFieldError(specificDateSchedule,
-						"specificDateSchedule.date.invalid.current.after", scheduleBeingProcessed,
-						"start_date start_time", startDate, startTime);
+				validationErrorResult.addFieldError(specificDateSchedule, "schedule.date.invalid.current.after",
+						scheduleBeingProcessed, "start_date start_time", startDate, startTime);
 			}
 
 		}
@@ -422,7 +460,7 @@ public class ScheduleManager {
 
 		} catch (DatabaseValidationException dve) {
 
-			validationErrorResult.addErrorForDatabaseValidationException(dve, "schedule.database.error.create.failed",
+			validationErrorResult.addErrorForDatabaseValidationException(dve, "database.error.create.failed",
 					"app_id=" + scheduleEntity.getAppId());
 			throw new SchedulerInternalException("Database error", dve);
 		}
