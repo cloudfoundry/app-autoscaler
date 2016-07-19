@@ -1,6 +1,7 @@
 package org.cloudfoundry.autoscaler.scheduler.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
@@ -43,11 +44,9 @@ public class DataValidationHelper {
 	 */
 	public static boolean isValidTimeZone(String timeZoneId) {
 		if (isNotNull(timeZoneId)) {
-			String[] validIDs = DateHelper.supportedTimezones;
-			for (String str : validIDs) {
-				if (str.equals(timeZoneId)) {
-					return true;
-				}
+			List<String> supportedTimeZones = Arrays.asList(DateHelper.supportedTimezones);
+			if (supportedTimeZones.contains(timeZoneId)) {
+				return true;
 			}
 			return false;
 		} else {
