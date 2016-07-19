@@ -29,7 +29,6 @@ import org.cloudfoundry.autoscaler.scheduler.util.ScheduleTypeEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
 import org.hamcrest.Matchers;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -80,12 +79,11 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		// Clear previous schedules.
 		scheduler.clear();
 		mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
-
+		removeAllRecordsFromDatabase();
 	}
 
-	@After
 	@Transactional
-	public void afterTest() {
+	public void removeAllRecordsFromDatabase() {
 		String[] allAppIds = TestDataSetupHelper.getAllAppIds();
 		for (String appId : allAppIds) {
 			for (ScheduleEntity entity : scheduleDao.findAllSchedulesByAppId(appId)) {

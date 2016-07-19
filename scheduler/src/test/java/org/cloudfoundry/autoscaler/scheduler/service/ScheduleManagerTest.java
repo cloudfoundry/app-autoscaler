@@ -16,7 +16,6 @@ import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationExcept
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.SchedulerInternalException;
 import org.cloudfoundry.autoscaler.scheduler.util.error.ValidationErrorResult;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -63,13 +62,12 @@ public class ScheduleManagerTest {
 	public void init() throws SchedulerException {
 		// Clear previous schedules.
 		scheduler.clear();
-
+		Mockito.reset(scheduleDao);
+		removeAllRecoredsFromDatabase();
 	}
 
-	@After
 	@Transactional
-	public void afterTest() {
-		Mockito.reset(scheduleDao);
+	public void removeAllRecoredsFromDatabase() {
 		for (ScheduleEntity entity : scheduleDao.findAllSchedulesByAppId(appId)) {
 			scheduleDao.delete(entity);
 		}
@@ -138,7 +136,7 @@ public class ScheduleManagerTest {
 		assertSpecificSchedulesFoundEquals(noOfSpecificDateSchedules, foundSpecificSchedules);
 
 		// reset all records for next test.
-		afterTest();
+		removeAllRecoredsFromDatabase();
 	}
 
 	private void assertSpecificSchedulesFoundEquals(int expectedScheduleTobeFound,

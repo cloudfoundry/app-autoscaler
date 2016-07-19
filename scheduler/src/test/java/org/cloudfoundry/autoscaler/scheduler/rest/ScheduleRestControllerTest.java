@@ -19,7 +19,6 @@ import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationScalingSchedu
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
 import org.hamcrest.Matchers;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -69,12 +68,11 @@ public class ScheduleRestControllerTest {
 		scheduler.clear();
 
 		mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
-
+		removeAllRecoredsFromDatabase();
 	}
 
-	@After
 	@Transactional
-	public void afterTest() {
+	public void removeAllRecoredsFromDatabase() {
 		String[] allAppIds = TestDataSetupHelper.getAllAppIds();
 		for (String appId : allAppIds) {
 			for (ScheduleEntity entity : scheduleDao.findAllSchedulesByAppId(appId)) {
@@ -341,7 +339,7 @@ public class ScheduleRestControllerTest {
 			assertSpecificSchedulesFoundEquals(expectedSchedulesTobeFound, appId, resultActions);
 		}
 		// reset all records for next test.
-		afterTest();
+		removeAllRecoredsFromDatabase();
 	}
 
 	private void assertCreateScheduleAPI(ResultActions resultActions) throws Exception {

@@ -10,7 +10,7 @@ import javax.transaction.Transactional;
 
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
-import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,7 +28,7 @@ public class ScheduleDaoImplTest {
 	@Autowired
 	private ScheduleDao scheduleDao;
 
-	@After
+	@Before
 	@Transactional
 	public void removeAllRecordsFromDatabase() {
 		String[] allAppIds = TestDataSetupHelper.getAllAppIds();
