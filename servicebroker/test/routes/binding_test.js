@@ -76,18 +76,79 @@ describe('binding RESTful API', function() {
 
 
   context('Bind service ', function() {
-
-    context('when there is no policy in request', function() {
-      it("return a 400", function(done) {
-        supertest(server)
-          .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
-          .set("Authorization", "Basic " + auth)
-          .send({ "app_guid": appId })
-          .expect(400)
-          .expect('Content-Type', /json/)
-          .expect({ "description": messageUtil.getMessage("POLICY_REQUIRED") }, done);
+    context('when request params are invalid', function() {
+      context('when serviceInstanceId is invalid', function() {
+        context('when serviceInstanceId is undefined', function() {
+          it("return a 404", function(done) {
+            supertest(server)
+              .put("/v2/service_instances//service_bindings/" + bindingId)
+              .set("Authorization", "Basic " + auth)
+              .send({ "app_guid": appId })
+              .expect(404,done);              
+          });
+        });
+        context('when serviceInstanceId is blank space', function() {
+          it("return a 400", function(done) {
+            supertest(server)
+              .put("/v2/service_instances/   /service_bindings/" + bindingId)
+              .set("Authorization", "Basic " + auth)
+              .send({ "app_guid": appId })
+              .expect(400,done);
+          });
+        });
+      });
+      context('when bindingId is invalid', function() {
+        context('when bindingId is undefined', function() {
+          it("return a 404", function(done) {
+            supertest(server)
+              .put("/v2/service_instances/" + serviceInstanceId+ "/service_bindings/")
+              .set("Authorization", "Basic " + auth)
+              .send({ "app_guid": appId })
+              .expect(404,done);              
+          });
+        });
+        context('when bindingId is blank space', function() {
+          it("return a 404", function(done) {
+            supertest(server)
+              .put("/v2/service_instances/" + serviceInstanceId+ "/service_bindings/" + "   ")
+              .set("Authorization", "Basic " + auth)
+              .send({ "app_guid": appId })
+              .expect(404,done);
+          });
+        });
+      });
+      context('when appId is invalid', function() {
+        context('when appId is undefined', function() {
+          it("return a 400", function(done) {
+            supertest(server)
+              .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
+              .set("Authorization", "Basic " + auth)
+              .expect(400,done);              
+          });
+        });
+        context('when appId is blank space', function() {
+          it("return a 404", function(done) {
+            supertest(server)
+              .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
+              .set("Authorization", "Basic " + auth)
+              .send({ "app_guid": "  " })
+              .expect(400,done);
+          });
+        });
+      });
+      context('when there is no policy in request', function() {
+        it("return a 400", function(done) {
+          supertest(server)
+            .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
+            .set("Authorization", "Basic " + auth)
+            .send({ "app_guid": appId })
+            .expect(400)
+            .expect('Content-Type', /json/)
+            .expect({ "description": messageUtil.getMessage("POLICY_REQUIRED") }, done);
+        });
       });
     });
+
     context('when the service instance does not exist', function() {
       it("return a 404", function(done) {
         supertest(server)
@@ -210,7 +271,67 @@ describe('binding RESTful API', function() {
     });
   });
   context('Unbind service', function() {
-
+    context('when request params are invalid', function() {
+      context('when serviceInstanceId is invalid', function() {
+        context('when serviceInstanceId is undefined', function() {
+          it("return a 404", function(done) {
+            supertest(server)
+              .put("/v2/service_instances//service_bindings/" + bindingId)
+              .set("Authorization", "Basic " + auth)
+              .send({ "app_guid": appId })
+              .expect(404,done);              
+          });
+        });
+        context('when serviceInstanceId is blank space', function() {
+          it("return a 400", function(done) {
+            supertest(server)
+              .put("/v2/service_instances/   /service_bindings/" + bindingId)
+              .set("Authorization", "Basic " + auth)
+              .send({ "app_guid": appId })
+              .expect(400,done);
+          });
+        });
+      });
+      context('when bindingId is invalid', function() {
+        context('when bindingId is undefined', function() {
+          it("return a 404", function(done) {
+            supertest(server)
+              .put("/v2/service_instances/" + serviceInstanceId+ "/service_bindings/")
+              .set("Authorization", "Basic " + auth)
+              .send({ "app_guid": appId })
+              .expect(404,done);              
+          });
+        });
+        context('when bindingId is blank space', function() {
+          it("return a 404", function(done) {
+            supertest(server)
+              .put("/v2/service_instances/" + serviceInstanceId+ "/service_bindings/" + "   ")
+              .set("Authorization", "Basic " + auth)
+              .send({ "app_guid": appId })
+              .expect(404,done);
+          });
+        });
+      });
+      context('when appId is invalid', function() {
+        context('when appId is undefined', function() {
+          it("return a 400", function(done) {
+            supertest(server)
+              .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
+              .set("Authorization", "Basic " + auth)
+              .expect(400,done);              
+          });
+        });
+        context('when appId is blank space', function() {
+          it("return a 404", function(done) {
+            supertest(server)
+              .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
+              .set("Authorization", "Basic " + auth)
+              .send({ "app_guid": "  " })
+              .expect(400,done);
+          });
+        });
+      });
+    });
     context('when the binding does not exist for the app', function() {
       it('return 410', function(done) {
         supertest(server)
@@ -234,7 +355,7 @@ describe('binding RESTful API', function() {
           .expect('Content-Type', /json/)
           .expect({}, done);
       });
-      it("unbinding with 200", function(done) {
+      it("it deletes the binding", function(done) {
         initNockUnBind(200);
         supertest(server)
           .delete("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
@@ -245,36 +366,45 @@ describe('binding RESTful API', function() {
           .expect({}, done);
       });
       context("when the api server returns error", function() {
-        it("return a 400", function(done) {
-          initNockUnBind(400);
-          supertest(server)
-            .delete("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
-            .set("Authorization", "Basic " + auth)
-            .send({ "app_guid": appId })
-            .expect(400)
-            .expect('Content-Type', /json/)
-            .expect({}, done);
+        context("when the api server returns a 400", function() {
+          it("return a 400", function(done) {
+            initNockUnBind(400);
+            supertest(server)
+              .delete("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
+              .set("Authorization", "Basic " + auth)
+              .send({ "app_guid": appId })
+              .expect(500)
+              .expect('Content-Type', /json/)
+              .expect({}, done);
+          });
         });
-        it("return a 404", function(done) {
-          initNockUnBind(404);
-          supertest(server)
-            .delete("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
-            .set("Authorization", "Basic " + auth)
-            .send({ "app_guid": appId })
-            .expect(404)
-            .expect('Content-Type', /json/)
-            .expect({}, done);
+
+        context("when the api server returns a 404", function() {
+          it("return a 404", function(done) {
+            initNockUnBind(404);
+            supertest(server)
+              .delete("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
+              .set("Authorization", "Basic " + auth)
+              .send({ "app_guid": appId })
+              .expect(200)
+              .expect('Content-Type', /json/)
+              .expect({}, done);
+          });
         });
-        it("return a 500", function(done) {
-          initNockUnBind(500);
-          supertest(server)
-            .delete("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
-            .set("Authorization", "Basic " + auth)
-            .send({ "app_guid": appId })
-            .expect(500)
-            .expect('Content-Type', /json/)
-            .expect({}, done);
+
+        context("when the api server returns a 500", function() {
+          it("return a 500", function(done) {
+            initNockUnBind(500);
+            supertest(server)
+              .delete("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
+              .set("Authorization", "Basic " + auth)
+              .send({ "app_guid": appId })
+              .expect(500)
+              .expect('Content-Type', /json/)
+              .expect({}, done);
+          });
         });
+
         context('when the api server returns other error than 400, 500', function() {
           it('returns a 500', function(done) {
             initNockUnBind(300);
