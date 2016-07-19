@@ -83,7 +83,7 @@ module.exports = function(app, settings) {
             });
           } else if (length > 1) { // an app has been bound to more than one service instance, this error should not exist
             logger.error("Fail to bind service because of duplicate bind for app:" + appId);
-            res.status(499).json({ "description": messageUtil.getMessage("DUPLICATE_BIND", { "applicationId": appId }) });
+            res.status(409).json({ "description": messageUtil.getMessage("DUPLICATE_BIND", { "applicationId": appId }) });
           } else if (length == 1) { // an app has been bound to a service instance
             var bindingRecord = result[0];
             if (bindingRecord.serviceInstanceId === serviceInstanceId) {
@@ -91,7 +91,7 @@ module.exports = function(app, settings) {
               res.status(409).json({});
             } else {
               logger.error("Fail to bind service because of duplicate bind for app:" + appId);
-              res.status(499).json({ "description": messageUtil.getMessage("DUPLICATE_BIND", { "applicationId": appId }) });
+              res.status(409).json({ "description": messageUtil.getMessage("DUPLICATE_BIND", { "applicationId": appId }) });
             }
           }
         });
