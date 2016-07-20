@@ -1,24 +1,15 @@
 package org.cloudfoundry.autoscaler.scheduler.rest;
 
-import static org.junit.Assert.fail;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.lang.reflect.Method;
 import java.sql.Date;
 import java.sql.Time;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import javax.transaction.Transactional;
 
@@ -92,41 +83,6 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		}
 	}
 
-	@Test
-	@Transactional
-	public void testCreateSchedulesMultipleConcurrent() throws Exception {
-		ExecutorService service = Executors.newFixedThreadPool(20);
-		Collection<Callable<Void>> processes = new LinkedList<>();
-
-		Method[] ms = this.getClass().getDeclaredMethods();
-		for (final Method m : ms) {
-			// call all failure test cases.
-			if (!m.getName().startsWith("testCreateSchedule_"))
-				continue;
-
-			final Object obj = this;
-			processes.add(new Callable<Void>() {
-				@Override
-				public Void call() throws Exception {
-					m.invoke(obj);
-					return null;
-				}
-			});
-		}
-
-		List<Future<Void>> results = service.invokeAll(processes, 1, TimeUnit.MINUTES);
-		service.shutdown();
-
-		// Check if any exception is thrown.
-		try {
-			for (Future<Void> result : results) {
-				result.get();
-			}
-		} catch (Exception e) {
-			Throwable throwable = getRootException(e);
-			fail(throwable.getMessage());
-		}
-	}
 
 	@Test
 	@Transactional
