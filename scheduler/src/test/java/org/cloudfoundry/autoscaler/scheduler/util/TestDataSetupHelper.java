@@ -18,9 +18,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  *
  */
 public class TestDataSetupHelper {
-	private static String[] appIds = { "89d155a3-1879-4ba3-843e-ddad7b5c92c8", "1e05ff52-9acf-4a9f-96e4-99fe8805d494",
-			"2332bd64-ab18-47f5-9813-16eb0fda5930", "cc1c9a0a-50a0-4912-92df-bea753fd93ba",
-			"fa1c9a0a-50a0-4912-9211-bea753fd944a", "bc1c9a0a-50a0-4912-92df-baa753fd93ba" };
 	private static List<String> genAppIds = new ArrayList<>();
 	private static String timeZone = DateHelper.supportedTimezones[0];
 	private static String invalidTimezone = "Invalid TimeZone";

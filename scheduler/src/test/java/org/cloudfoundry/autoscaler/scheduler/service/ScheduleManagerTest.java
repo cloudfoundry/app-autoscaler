@@ -42,7 +42,6 @@ public class ScheduleManagerTest {
 	@Autowired
 	private ScheduleManager scheduleManager;
 
-	//	@Spy
 	@Autowired
 	private ScheduleDao scheduleDao;
 
@@ -87,9 +86,6 @@ public class ScheduleManagerTest {
 	@Transactional
 	public void testCreateAndGetAllSchedule() {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
-		assertCreateAndFindAllSchedules(appId, 1);
-
-		appId = TestDataSetupHelper.generateAppIds(1)[0];
 		assertCreateAndFindAllSchedules(appId, 4);
 
 	}

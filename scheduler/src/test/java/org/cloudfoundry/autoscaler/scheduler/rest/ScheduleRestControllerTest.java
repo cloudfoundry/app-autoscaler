@@ -95,12 +95,6 @@ public class ScheduleRestControllerTest {
 	@Transactional
 	public void testCreateAndGetSchedules() throws Exception {
 
-		String[] singleAppId = TestDataSetupHelper.generateAppIds(1);
-		assertCreateAndGetSchedules(singleAppId, 1);
-
-		singleAppId = TestDataSetupHelper.generateAppIds(1);
-		assertCreateAndGetSchedules(singleAppId, 5);
-
 		String[] multipleAppIds = TestDataSetupHelper.generateAppIds(5);
 		assertCreateAndGetSchedules(multipleAppIds, 1);
 

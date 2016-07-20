@@ -50,14 +50,6 @@ public class ScheduleDaoImplTest {
 	@Test
 	@Transactional
 	public void testCreateAndFindSchedules() {
-
-		String appId = TestDataSetupHelper.generateAppIds(1)[0];
-		// One specific schedule for the specified app Id
-		assertCreateAndFindSchedules(1, appId);
-		appId = TestDataSetupHelper.generateAppIds(1)[0];
-		// Five specific schedule for the specified app Id
-		assertCreateAndFindSchedules(5, appId);
-
 		String[] allAppIds = TestDataSetupHelper.generateAppIds(5);
 		// One specific schedule for each app Id passed in the array
 		assertCreateAndFindSchedules(1, allAppIds);
