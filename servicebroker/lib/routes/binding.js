@@ -26,7 +26,7 @@ module.exports = function(app, settings) {
       return;
     }
     if (appId == null || appId.trim() === "") {
-      logger.error("appId is required");
+      logger.error("app_guid is required");
       res.status(400).json({});
       return;
     }
@@ -47,11 +47,10 @@ module.exports = function(app, settings) {
               apiServerUtil.attachPolicy(appId, policyJSON, function(error, response) {
                 if (error == null) {
                   var statusCode = response.statusCode;
-                  logger.info("Api server response, status code=>" + statusCode + ", response=>" + JSON.stringify(response.body));
+                  logger.info("Api Server response", {status_code: statusCode, response: JSON.stringify(response.body)});
                   if (statusCode === 200 || statusCode === 201) {
                     t.commit();
                     res.status(statusCode).json({});
-
                   } else {
                     t.rollback();
                     if (statusCode === 400 || statusCode === 500) {
@@ -61,48 +60,45 @@ module.exports = function(app, settings) {
                     }
                   }
                 } else {
-                  logger.error("Fail to bind service when call api server, error=>" , error);
+                  logger.error("Bind failed: attach policy error", {error: error});
                   res.status(500).json({});
                   t.rollback();
                 }
-
               });
-
             }).catch(function(error1) { //catch findorcreate
-              logger.error("Fail to bind service when add data to database, error=>" , error1);
+              logger.error("Bind failed: create error", {error: error1});
               t.rollback();
               if (error1 instanceof models.sequelize.UniqueConstraintError) {
                 res.status(409).json({});
               } else if (error1 instanceof models.sequelize.ForeignKeyConstraintError) {
                 res.status(404).json({ "description": messageUtil.getMessage("SERVICEINSTANCE_NOT_EXIST", { "serviceInstanceId": serviceInstanceId }) });
               } else {
-                logger.error("Fail to handle request: " + JSON.stringify(req) + " with ERROR: " , error1);
                 res.status(500).json({});
               }
-
             });
           } else if (length > 1) { // an app has been bound to more than one service instance, this error should not exist
-            logger.error("Fail to bind service because of duplicate bind for app:" + appId);
+            logger.error("Bind failed: duplicate bind",{app_guid: appId});
             res.status(409).json({ "description": messageUtil.getMessage("DUPLICATE_BIND", { "applicationId": appId }) });
           } else if (length == 1) { // an app has been bound to a service instance
             var bindingRecord = result[0];
             if (bindingRecord.serviceInstanceId === serviceInstanceId) {
-              logger.error("Fail to bind service because app:" + appId + " has already bound to service instance:" + serviceInstanceId);
+              logger.error("Bind failed: app already bound", {app_guid: appId, serviceInstanceId: serviceInstanceId});
               res.status(409).json({});
             } else {
-              logger.error("Fail to bind service because of duplicate bind for app:" + appId);
+              logger.error("Bind failed: duplicate bind",{app_guid: appId});
               res.status(409).json({ "description": messageUtil.getMessage("DUPLICATE_BIND", { "applicationId": appId }) });
             }
           }
         });
       }).catch(function(error2) { //catch transaction
-        logger.error("Fail to bind service when handle transaction, error=>" , error2);
+        logger.error("Bind failed: transaction error", {error: error2});
         t.rollback();
         res.status(500).json({});
       });
     }
 
   });
+
   app.delete('/v2/service_instances/:instance_id/service_bindings/:binding_id', function(req, res) {
     var serviceInstanceId = req.params.instance_id;
     var bindingId = req.params.binding_id;
@@ -118,7 +114,7 @@ module.exports = function(app, settings) {
       return;
     }
     if (appId == null || appId.trim() === "") {
-      logger.error("appId is required");
+      logger.error("app_guid is required");
       res.status(400).json({});
       return;
     }
@@ -128,22 +124,21 @@ module.exports = function(app, settings) {
           apiServerUtil.detachPolicy(appId, function(error, response) {
             if (error == null) {
               var statusCode = response.statusCode;
-              logger.info("Api server response, status code=>" + statusCode + ", response=>" + JSON.stringify(response.body));
+              logger.info("Api Server response", {status_code: statusCode, response: JSON.stringify(response.body)});
               if (statusCode === 200) {
                 t.commit();
                 res.status(statusCode).json({});
-
               } else if (statusCode === 404) {
                 t.commit();
                 res.status(200).json({});
               } else { //for 400,500 and other status, return 500
-                logger.error("Fail to unbind service when call api server, error status=>" + statusCode);
+                logger.error("Unbind failed: detach policy failed", {status_code: statusCode});
                 t.rollback();
                 res.status(500).json({});
               }
             } else {
               t.rollback();
-              logger.error("Fail to unbind service when call api server, error=>" , error);
+              logger.error("Bind failed: detach policy error", {error: error});
               res.status(500).json({});
             }
 
@@ -153,17 +148,14 @@ module.exports = function(app, settings) {
           res.status(410).json({});
         }
       }).catch(function(error1) {
-        logger.error("Fail to unbind service when try to delete the binding, error=>" , error1);
+        logger.error("Unbind failed: destroy error", {error: error1});
         t.rollback();
         res.status(500).json({});
       });
     }).catch(function(error2) {
-      logger.error("Fail to unbind service when handle transaction, error=>" , error2);
+      logger.error("Unbind failed: transaction error", {error: error2});
       t.rollback();
       res.status(500).json({});
     });
   });
-
-
-
 }

@@ -8,7 +8,7 @@ module.exports = function(){
   var message = {
     SERVICEINSTANCE_NOT_EXIST: "Target service instance ${serviceInstanceId} does not exist",
     POLICY_REQUIRED: "Policy is required as a parameter.",
-    DUPLICATE_BIND: "A" + catalog.services[0].name + " service instance is already bound to application ${applicationId}. Multiple bindings are not supported.",
+    DUPLICATE_BIND: "A " + catalog.services[0].name + " service instance is already bound to application ${applicationId}. Multiple bindings are not supported.",
   };
   messageUtil.getMessage = function(key, params){
   	var msg = message[key];
