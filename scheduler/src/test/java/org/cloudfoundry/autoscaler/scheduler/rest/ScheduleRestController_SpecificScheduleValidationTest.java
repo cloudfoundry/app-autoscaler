@@ -84,7 +84,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 
 	@Transactional
 	public void removeAllRecordsFromDatabase() {
-		String[] allAppIds = TestDataSetupHelper.getAllAppIds();
+		List<String> allAppIds = TestDataSetupHelper.getAllGeneratedAppIds();
 		for (String appId : allAppIds) {
 			for (ScheduleEntity entity : scheduleDao.findAllSchedulesByAppId(appId)) {
 				scheduleDao.delete(entity);

@@ -73,7 +73,7 @@ public class ScheduleRestControllerTest {
 
 	@Transactional
 	public void removeAllRecoredsFromDatabase() {
-		String[] allAppIds = TestDataSetupHelper.getAllAppIds();
+		List<String> allAppIds = TestDataSetupHelper.getAllGeneratedAppIds();
 		for (String appId : allAppIds) {
 			for (ScheduleEntity entity : scheduleDao.findAllSchedulesByAppId(appId)) {
 				scheduleDao.delete(entity);
@@ -97,10 +97,14 @@ public class ScheduleRestControllerTest {
 
 		String[] singleAppId = TestDataSetupHelper.generateAppIds(1);
 		assertCreateAndGetSchedules(singleAppId, 1);
+
+		singleAppId = TestDataSetupHelper.generateAppIds(1);
 		assertCreateAndGetSchedules(singleAppId, 5);
 
-		String[] multipleAppIds = TestDataSetupHelper.getAllAppIds();
+		String[] multipleAppIds = TestDataSetupHelper.generateAppIds(5);
 		assertCreateAndGetSchedules(multipleAppIds, 1);
+
+		multipleAppIds = TestDataSetupHelper.generateAppIds(5);
 		assertCreateAndGetSchedules(multipleAppIds, 5);
 
 	}
@@ -338,8 +342,6 @@ public class ScheduleRestControllerTest {
 			ResultActions resultActions = callGetAllSchedulesByAppId(appId);
 			assertSpecificSchedulesFoundEquals(expectedSchedulesTobeFound, appId, resultActions);
 		}
-		// reset all records for next test.
-		removeAllRecoredsFromDatabase();
 	}
 
 	private void assertCreateScheduleAPI(ResultActions resultActions) throws Exception {

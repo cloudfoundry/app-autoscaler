@@ -55,8 +55,6 @@ public class ScheduleManagerTest {
 	@Autowired
 	private ValidationErrorResult validationErrorResult;
 
-	private String appId = TestDataSetupHelper.generateAppIds(1)[0];
-
 	@Before
 	@Transactional
 	public void init() throws SchedulerException {
@@ -68,14 +66,18 @@ public class ScheduleManagerTest {
 
 	@Transactional
 	public void removeAllRecoredsFromDatabase() {
-		for (ScheduleEntity entity : scheduleDao.findAllSchedulesByAppId(appId)) {
-			scheduleDao.delete(entity);
+		List<String> appIds = TestDataSetupHelper.getAllGeneratedAppIds();
+		for (String appId : appIds) {
+			for (ScheduleEntity entity : scheduleDao.findAllSchedulesByAppId(appId)) {
+				scheduleDao.delete(entity);
+			}
 		}
 	}
 
 	@Test
 	@Transactional
 	public void testGetAllSchedules_with_no_schedules() {
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		ApplicationScalingSchedules scalingSchedules = scheduleManager.getAllSchedules(appId);
 		assertNull(scalingSchedules);
 
@@ -84,14 +86,18 @@ public class ScheduleManagerTest {
 	@Test
 	@Transactional
 	public void testCreateAndGetAllSchedule() {
-		assertCreateAndFindAllSchedules(1);
-		assertCreateAndFindAllSchedules(4);
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		assertCreateAndFindAllSchedules(appId, 1);
+
+		appId = TestDataSetupHelper.generateAppIds(1)[0];
+		assertCreateAndFindAllSchedules(appId, 4);
 
 	}
 
 	@Test
 	@Rollback
 	public void testCreateSchedule_throw_DatabaseValidationException() {
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSpecificDateSchedules(appId, 1);
 
 		ScheduleEntity entity = schedules.getSpecific_date().get(0);
@@ -113,6 +119,7 @@ public class ScheduleManagerTest {
 	@Test
 	@Rollback
 	public void testFindAllSchedule_throw_DatabaseValidationException() {
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		Mockito.when(scheduleDao.findAllSchedulesByAppId(Mockito.anyString()))
 				.thenThrow(new DatabaseValidationException());
 
@@ -129,14 +136,12 @@ public class ScheduleManagerTest {
 		}
 	}
 
-	private void assertCreateAndFindAllSchedules(int noOfSpecificDateSchedules) {
-		createScheduleNotThrowAnyException(noOfSpecificDateSchedules);
+	private void assertCreateAndFindAllSchedules(String appId, int noOfSpecificDateSchedules) {
+		createScheduleNotThrowAnyException(appId, noOfSpecificDateSchedules);
 
 		List<ScheduleEntity> foundSpecificSchedules = scheduleManager.getAllSchedules(appId).getSpecific_date();
 		assertSpecificSchedulesFoundEquals(noOfSpecificDateSchedules, foundSpecificSchedules);
 
-		// reset all records for next test.
-		removeAllRecoredsFromDatabase();
 	}
 
 	private void assertSpecificSchedulesFoundEquals(int expectedScheduleTobeFound,
@@ -144,7 +149,7 @@ public class ScheduleManagerTest {
 		assertEquals(expectedScheduleTobeFound, foundSchedules.size());
 	}
 
-	private void createScheduleNotThrowAnyException(int noOfSpecificDateSchedules) {
+	private void createScheduleNotThrowAnyException(String appId, int noOfSpecificDateSchedules) {
 		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSpecificDateSchedules(appId,
 				noOfSpecificDateSchedules);
 		scheduleManager.createSchedules(schedules);

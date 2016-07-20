@@ -31,7 +31,7 @@ public class ScheduleDaoImplTest {
 	@Before
 	@Transactional
 	public void removeAllRecordsFromDatabase() {
-		String[] allAppIds = TestDataSetupHelper.getAllAppIds();
+		List<String> allAppIds = TestDataSetupHelper.getAllGeneratedAppIds();
 		for (String appId : allAppIds) {
 			for (ScheduleEntity entity : scheduleDao.findAllSchedulesByAppId(appId)) {
 				scheduleDao.delete(entity);
@@ -52,15 +52,17 @@ public class ScheduleDaoImplTest {
 	public void testCreateAndFindSchedules() {
 
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
-
 		// One specific schedule for the specified app Id
 		assertCreateAndFindSchedules(1, appId);
+		appId = TestDataSetupHelper.generateAppIds(1)[0];
 		// Five specific schedule for the specified app Id
 		assertCreateAndFindSchedules(5, appId);
 
-		String[] allAppIds = TestDataSetupHelper.getAllAppIds();
+		String[] allAppIds = TestDataSetupHelper.generateAppIds(5);
 		// One specific schedule for each app Id passed in the array
 		assertCreateAndFindSchedules(1, allAppIds);
+
+		allAppIds = TestDataSetupHelper.generateAppIds(5);
 		// Five specific schedule for each app Id passed in the array
 		assertCreateAndFindSchedules(5, allAppIds);
 	}
@@ -92,8 +94,6 @@ public class ScheduleDaoImplTest {
 			List<ScheduleEntity> schedulesFound = findAllSchedules(appId);
 			assertSchedulesFoundEquals(expectedSchedulesTobeFound, schedulesFound);
 		}
-		// reset all records for next test.
-		removeAllRecordsFromDatabase();
 	}
 
 	private void assertSchedulesFoundEquals(int expectedSchedulesTobeFound, List<ScheduleEntity> schedulesFound) {

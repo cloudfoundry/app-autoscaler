@@ -2,9 +2,9 @@ package org.cloudfoundry.autoscaler.scheduler.util;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
@@ -19,7 +19,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 public class TestDataSetupHelper {
 	private static String[] appIds = { "89d155a3-1879-4ba3-843e-ddad7b5c92c8", "1e05ff52-9acf-4a9f-96e4-99fe8805d494",
-			"2332bd64-ab18-47f5-9813-16eb0fda5930", "cc1c9a0a-50a0-4912-92df-bea753fd93ba" };
+			"2332bd64-ab18-47f5-9813-16eb0fda5930", "cc1c9a0a-50a0-4912-92df-bea753fd93ba",
+			"fa1c9a0a-50a0-4912-9211-bea753fd944a", "bc1c9a0a-50a0-4912-92df-baa753fd93ba" };
+	private static List<String> genAppIds = new ArrayList<>();
 	private static String timeZone = DateHelper.supportedTimezones[0];
 	private static String invalidTimezone = "Invalid TimeZone";
 	private static String startDate[] = { "2100-07-20", "2100-07-22", "2100-07-25", "2100-07-28", "2100-8-10" };
@@ -154,11 +156,17 @@ public class TestDataSetupHelper {
 	}
 
 	public static String[] generateAppIds(int noOfAppIdsToGenerate) {
-		return Arrays.copyOfRange(appIds, 0, noOfAppIdsToGenerate);
+		List<String> appIds = new ArrayList<>();
+		for (int i = 0; i < noOfAppIdsToGenerate; i++) {
+			UUID uuid = UUID.randomUUID();
+			genAppIds.add(uuid.toString());
+			appIds.add(uuid.toString());
+		}
+		return appIds.toArray(new String[0]);
 	}
 
-	public static String[] getAllAppIds() {
-		return appIds;
+	public static List<String> getAllGeneratedAppIds() {
+		return genAppIds;
 	}
 
 	public static String[] getStartDate() {

@@ -65,7 +65,6 @@ public class ScheduleJobManagerTest {
 	@Test
 	public void testCreateAndFindSimpleJobs() throws Exception {
 		// Pass the expected schedules
-		assertCreateAndFindSimpleJobs(1);
 		assertCreateAndFindSimpleJobs(4);
 	}
 
@@ -96,12 +95,13 @@ public class ScheduleJobManagerTest {
 
 	private void assertCreateAndFindSimpleJobs(int expectedJobsTobeFound)
 			throws SchedulerException, InterruptedException {
-		// reset all records for this test.
-		initializer();
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		List<ScheduleEntity> specificDateScheduleEntities = TestDataSetupHelper
+				.generateSpecificDateScheduleEntitiesWithCurrentStartEndTime(appId, expectedJobsTobeFound);
 
-		List<ScheduleEntity> scheduleEntities = createSimpleJob(expectedJobsTobeFound);
+		createSimpleJob(specificDateScheduleEntities);
 		assertScheduleJobMethodCallNum(expectedJobsTobeFound);
-		assertCreatedJobs(scheduleEntities);
+		assertCreatedJobs(specificDateScheduleEntities);
 	}
 
 	private void assertScheduleJobMethodCallNum(int expectedJobsTobeFound) throws SchedulerException {
@@ -135,17 +135,13 @@ public class ScheduleJobManagerTest {
 		assertEquals(expectedInstanceMaxCount, map.get("instanceMaxCount"));
 	}
 
-	private List<ScheduleEntity> createSimpleJob(int expectedJobsTobeFound) {
-		String appId = TestDataSetupHelper.generateAppIds(1)[0];
-		List<ScheduleEntity> specificDateScheduleEntities = TestDataSetupHelper
-				.generateSpecificDateScheduleEntitiesWithCurrentStartEndTime(appId, expectedJobsTobeFound);
+	private void createSimpleJob(List<ScheduleEntity> specificDateScheduleEntities) {
 		Long index = 0L;
 		for (ScheduleEntity scheduleEntity : specificDateScheduleEntities) {
 			Long scheduleId = ++index;
 			scheduleEntity.setId(scheduleId);
 			scalingJobManager.createSimpleJob(scheduleEntity);
 		}
-		return specificDateScheduleEntities;
 	}
 
 	private Map<String, JobDetail> getSchedulerJobs() throws SchedulerException {
