@@ -1,6 +1,6 @@
 'use strict';
 
-var request = require('supertest');  
+var request = require('supertest');
 var expect = require('chai').expect;
 var fs = require('fs');
 var app = require('../../../app.js');
@@ -9,15 +9,15 @@ var logger = require('../../../lib/log/logger');
 
 describe('Routing Policy Creation', function() {
   var fakePolicy;
-  before(function(done) {
-    policy.sequelize.sync({force:true}).then(function(success) {
-        fakePolicy = JSON.parse(fs.readFileSync(__dirname+'/../fakePolicy.json', 'utf8'));
-        done();
-    }, function(error) {
-      logger.error('Failed to setup database for test',error);
-      done(error);
-    });
+
+  before(function() {
+    fakePolicy = JSON.parse(fs.readFileSync(__dirname+'/../fakePolicy.json', 'utf8'));
+  })
+
+  beforeEach(function() {
+    policy.truncate();
   });
+
   it('should create a policy for app id 12345', function(done) {
     request(app)
     .put('/v1/apps/12345/policy')
@@ -33,28 +33,25 @@ describe('Routing Policy Creation', function() {
     });
   });
 
-  it('should fail to create another policy for app id 12345', function(done) {
-    request(app)
-    .put('/v1/apps/12345/policy')
-    .send(fakePolicy)
-    .end(function(error,result) {
-      expect(result.statusCode).to.equal(400);
-      expect(result.body.success).to.equal(false);
-      expect(result.body.result).to.be.null;
-      expect(result.body.error).to.have.deep.property('name').equal('SequelizeUniqueConstraintError');
-      expect(result.body.error).to.have.deep.property('message').equal('Validation error');
-      done();
-    });
-  });
-  
-  after(function(done){
-    policy.drop().then(function(result) {
+  context('when a policy already exists' ,function() {
+    beforeEach(function(done) {
+      request(app)
+      .put('/v1/apps/12345/policy')
+      .send(fakePolicy).end(done)
+    })
+
+    it('should fail to create another policy for app id 12345', function(done) {
+      request(app)
+      .put('/v1/apps/12345/policy')
+      .send(fakePolicy)
+      .end(function(error,result) {
+        expect(result.statusCode).to.equal(400);
+        expect(result.body.success).to.equal(false);
+        expect(result.body.result).to.be.null;
+        expect(result.body.error).to.have.deep.property('name').equal('SequelizeUniqueConstraintError');
+        expect(result.body.error).to.have.deep.property('message').equal('Validation error');
         done();
-      },function(error){
-      logger.error('Failed to clean up database after test',error);
-      done(error);
+      });
     });
-  });
+  })
 });
-
-

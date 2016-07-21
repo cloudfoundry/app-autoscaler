@@ -6,17 +6,18 @@ var _ = require('underscore');
 
 describe('Model Initialization', function () {
   var models;
-  before(function(done){
+
+  before(function(){
     models = require('../../../lib/models')();
-    logger.log('Policy model loaded successfully');
-    done();
   })
+
   it('returns the Policy model', function () {
     expect(models.policy_json).to.be.ok;
     expect(_.has(models, 'policy_json')).to.be.equal(true);
     expect(_.has(models, 'sequelize')).to.be.equal(true);
     expect(_.keys(models).length).to.be.equal(2);
   });
+
   it('returns the sequelize instance with default connection pool', function () {
     expect(models.policy_json.sequelize).to.be.ok;
     expect(_.keys(models.policy_json.sequelize.options.pool).length).to.be.equal(3);

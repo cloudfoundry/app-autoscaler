@@ -11,15 +11,14 @@ describe('Test Model Load Failures', function () {
 	  process.env.DB_URI = 'postgres://postgres:postgres@127.1.1.1:5432/autoscaler';
   });
 
+  after(function() {
+	  process.env.DB_URI = correctDBUri;
+  });
+
   it('Should fail for a invalid DB_URI', function () {
     var models = require('../../../lib/models')(function (error) {
     	logger.error ('Error while establishing connection', error);
     	expect(error).to.not.be.null;
     });
   });
-
-  after(function() {
-	  process.env.DB_URI = correctDBUri;
-  });
-
 });

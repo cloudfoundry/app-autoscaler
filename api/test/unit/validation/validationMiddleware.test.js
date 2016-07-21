@@ -1,6 +1,6 @@
 'use strict';
 
-var request = require('supertest');  
+var request = require('supertest');
 var expect = require('chai').expect;
 var fs = require('fs');
 var app = require('../../../app.js');
@@ -9,20 +9,18 @@ var policy = require('../../../lib/models')().policy_json;
 var validationMiddleware = require('../../../lib/validation/validationMiddleware');
 
 describe('Validate Policy JSON Schema structure', function() {
+  var policyContent;
   var fakePolicy;
-  before(function(done) {
-    policy.sequelize.sync({force:true}).then(function() {
-      done();
-    }, function(error) {
-      logger.error('Failed to setup database for test',error);
-      done(error);
-    });
+
+  before(function() {
+    policyContent = fs.readFileSync(__dirname+'/../fakePolicy.json', 'utf8');
   });
-  
-  beforeEach(function(){
-    fakePolicy = JSON.parse(fs.readFileSync(__dirname+'/../fakePolicy.json', 'utf8'));
+
+  beforeEach(function() {
+    fakePolicy = JSON.parse(policyContent);
+    policy.truncate();
   });
-  
+
   it('should validate policy schema successfully', function(done) {
     request(app)
     .put('/v1/apps/12341/policy',validationMiddleware)
@@ -367,14 +365,4 @@ describe('Validate Policy JSON Schema structure', function() {
       done();
     });
   });
-  
-  after(function(done){
-    policy.drop().then(function(result) {
-        done();
-      },function(error){
-      logger.error('Failed to clean up database after test',error);
-      done(error);
-    });
-  });
 });
-

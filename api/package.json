@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "scripts": {
   "start":"node app.js",
-  "test": "cross-env DB_URI=postgres://postgres:postgres@localhost:5432/autoscaler_test  node_modules/.bin/_mocha --recursive test",
-  "cover": "cross-env DB_URI=postgres://postgres:postgres@localhost:5432/autoscaler_test  istanbul cover node_modules/mocha/bin/_mocha -- --recursive test",
+  "test": "cross-env DB_URI=postgres://postgres:postgres@127.0.0.1:5432/autoscaler node_modules/.bin/_mocha --recursive test",
+  "cover": "cross-env DB_URI=postgres://postgres:postgres@127.0.0.1:5432/autoscaler istanbul cover node_modules/mocha/bin/_mocha -- --recursive test",
   "lint":"eslint lib"
   },
   "dependencies": {
