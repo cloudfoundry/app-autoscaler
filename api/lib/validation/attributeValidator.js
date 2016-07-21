@@ -27,61 +27,47 @@ var compareDateTimes = function(startDateTime,endDateTime) {
   }
   return result;
 }
-
-var validateDaysOfWeekErrors = function(inputRecurringSchedules) {
-  var daysOfWeekErrors = [];
+var validateOverlappingDaysInRecurringSchedules = function(inputRecurringSchedules,property) {
+  var errors = [];
   var errorCount = 0;
-  for(let j = 0; j < inputRecurringSchedules.length; j++) {
+  for(let j = 0; j < inputRecurringSchedules.length - 1; j++) {
     for(let i = j + 1; i < inputRecurringSchedules.length; i++) {
-      if(inputRecurringSchedules[i].hasOwnProperty('days_of_week') && 
-        inputRecurringSchedules[j].hasOwnProperty('days_of_week')) {
-        if(intersect(inputRecurringSchedules[i].days_of_week,
-         inputRecurringSchedules[j].days_of_week).length > 0) {
+      if(inputRecurringSchedules[i].hasOwnProperty(property) && 
+          inputRecurringSchedules[j].hasOwnProperty(property)) {
+        if(intersect(inputRecurringSchedules[i][property],
+            inputRecurringSchedules[j][property]).length > 0) {
           if(inputRecurringSchedules[i].start_time <=
-          inputRecurringSchedules[j].end_time && 
-          inputRecurringSchedules[i].end_time >=
-          inputRecurringSchedules[j].start_time) {
+            inputRecurringSchedules[j].end_time && 
+            inputRecurringSchedules[i].end_time >=
+              inputRecurringSchedules[j].start_time) {
             let error = createErrorResponse('recurring_schedule.start_time',
-            'recurring_schedule.start_time and recurring_schedule.end_time ' + 
-            'ranges are overlapping',inputRecurringSchedules[j],
-            'Days_of_week based time range of recurring_schedule[' + j + ']' + 
-            ' is overlapped with time range of recurring_schedule[' + i + ']');
-            daysOfWeekErrors[errorCount++] = error;
+                'recurring_schedule.start_time and recurring_schedule.end_time ' + 
+                'ranges are overlapping',inputRecurringSchedules[j],
+                property + ' based time range of recurring_schedule[' + j + ']' + 
+                ' is overlapped with time range of recurring_schedule[' + i + ']');
+            errors[errorCount++] = error;
           }
         }
       }
     }
   }
+  return errors;
+}
+
+var validateDaysOfWeekErrors = function(inputRecurringSchedules) {
+  var daysOfWeekErrors = validateOverlappingDaysInRecurringSchedules(inputRecurringSchedules,
+                         'days_of_week');
   return daysOfWeekErrors;
 }
 
 
 var validateDaysOfMonthErrors = function(inputRecurringSchedules) {
-  var daysOfMonthErrors = [];
-  var errorCount = 0;
-  for(let j = 0; j < inputRecurringSchedules.length; j++) {
-    for(let i = j + 1;i < inputRecurringSchedules.length; i++) {
-      if(inputRecurringSchedules[i].hasOwnProperty('days_of_month') && 
-            inputRecurringSchedules[j].hasOwnProperty('days_of_month')) {
-        if(intersect(inputRecurringSchedules[i].days_of_month,
-          inputRecurringSchedules[j].days_of_month).length > 0) {
-          if(inputRecurringSchedules[i].start_time <= 
-          inputRecurringSchedules[j].end_time && 
-          inputRecurringSchedules[i].end_time >= 
-          inputRecurringSchedules[j].start_time) {
-            let error = createErrorResponse('recurring_schedule.start_time',
-            'recurring_schedule.start_time and recurring_schedule.end_time ranges ' + 
-            'are overlapping',inputRecurringSchedules[j],'Days_of_month based time range ' + 
-            'of recurring_schedule[' + j + '] is overlapped with time range ' + 
-            'of recurring_schedule[' + i + ']');
-            daysOfMonthErrors[errorCount++] = error;
-          }
-        }
-      }
-    }
-  }
+  var daysOfMonthErrors = validateOverlappingDaysInRecurringSchedules(inputRecurringSchedules,
+                          'days_of_month')
   return daysOfMonthErrors;
 }
+
+
 
 var validateRecurringScheduleAttributeValue = function(inputRecurringSchedules) {
   var attributeValueErrors = [];
@@ -219,11 +205,11 @@ var validatePolicyJSONValues = function(policyJson) {
 
 exports.validatePolicy = function(inputPolicy,callback) {
   if(callback) {
-    var result = validatePolicyJSONValues(inputPolicy); 
-    callback(result);
+    var errors = validatePolicyJSONValues(inputPolicy); 
+    callback(errors);
   }
   else{
-    logger.error('No callback function specified!');
+    logger.error('No callback function specified!', {});
     return;
   }
 }
