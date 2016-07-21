@@ -177,7 +177,7 @@ exports.validatePolicy = function validatePolicy(inputJson,callback) {
     callback(errors);
   }
   else{
-    logger.error('No callback function specified!');
+    logger.error('No callback function specified!', {});
     return;
   }
 }

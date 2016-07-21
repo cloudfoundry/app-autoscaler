@@ -19,12 +19,13 @@ describe('Validating Policy JSON properties',function(){
         expect(result).to.be.empty;
       });
     });
-    it('Should fail to validate the policy due to wrong Instance count',function(){
+    it('Should fail to validate the policy as instance_min_count is greater than instance_max_count',function(){
       fakePolicy.instance_min_count = 10;
       fakePolicy.instance_max_count = 5;
       attributeValidator.validatePolicy(fakePolicy,function(result){
-        expect(result).to.not.be.empty;
-        expect(result[0].stack).to.equal('instance_min_count 10 is higher or equal to instance_max_count 5 in policy_json');
+        expect(result[0]).to.have.property('stack').and.equal('instance_min_count 10 is higher or equal to instance_max_count 5 in policy_json');
+        expect(result[0]).to.have.property('message').and.equal('instance_min_count and instance_max_count values are not compatible');
+        expect(result[0]).to.have.property('property').and.equal('instance_min_count');
       });
     });
     it('Should fail to validate the policy as end_date is before start_date',function(){
@@ -59,7 +60,7 @@ describe('Validating Policy JSON properties',function(){
       attributeValidator.validatePolicy(fakePolicy,function(result){
         expect(result[0].property).to.equal('recurring_schedule.start_time');
         expect(result[0].message).to.equal('recurring_schedule.start_time and recurring_schedule.end_time ranges are overlapping');
-        expect(result[0].stack).to.equal('Days_of_week based time range of recurring_schedule[0] is overlapped with time range of recurring_schedule[2]');
+        expect(result[0].stack).to.equal('days_of_week based time range of recurring_schedule[0] is overlapped with time range of recurring_schedule[2]');
       });
     });
     it('should fail to validate policy with overlapping time range in days of month in recurring schedule',function(){
@@ -67,7 +68,7 @@ describe('Validating Policy JSON properties',function(){
       attributeValidator.validatePolicy(fakePolicy,function(result){
         expect(result[0].property).to.equal('recurring_schedule.start_time');
         expect(result[0].message).to.equal('recurring_schedule.start_time and recurring_schedule.end_time ranges are overlapping');
-        expect(result[0].stack).to.equal('Days_of_month based time range of recurring_schedule[1] is overlapped with time range of recurring_schedule[3]');
+        expect(result[0].stack).to.equal('days_of_month based time range of recurring_schedule[1] is overlapped with time range of recurring_schedule[3]');
       });
     });
     it('should validate the policy successfully if days of month in recurring schedule is overlapping but start_time and end_time in overlapped date are non-overlapping',function(){
@@ -82,7 +83,6 @@ describe('Validating Policy JSON properties',function(){
       fakePolicy.schedules.recurring_schedule[1].start_time = '23:00'
       fakePolicy.schedules.recurring_schedule[1].end_time = '13:15';
       attributeValidator.validatePolicy(fakePolicy,function(result){
-        expect(result).to.not.be.null;
         expect(result[0].property).to.equal('recurring_schedule.start_time');
         expect(result[0].message).to.equal('recurring_schedule.start_time and recurring_schedule.end_time values are not compatible');
         expect(result[0].stack).to.equal('start_time 23:00 is after end_time 13:15 in recurring_schedule :[1]');

@@ -5,19 +5,16 @@ var expect = require('chai').expect;
 var fs = require('fs');
 var app = require('../../../app.js');
 var logger = require('../../../lib/log/logger');
+var policy = require('../../../lib/models')().policy_json;
 var validationMiddleware = require('../../../lib/validation/validationMiddleware');
 
 describe('Validate Policy JSON Schema structure', function() {
   var fakePolicy;
   before(function(done) {
-    this.policy = require('../../../lib/models')().policy_json;
-    var _this = this;
-    this.policy.sequelize.sync().then(function(success) {
-      _this.policy.truncate().then(function(result) {
-        done();
-      });  
+    policy.sequelize.sync({force:true}).then(function() {
+      done();
     }, function(error) {
-      logger.error('Failed to setup database for test');
+      logger.error('Failed to setup database for test',error);
       done(error);
     });
   });
@@ -368,6 +365,15 @@ describe('Validate Policy JSON Schema structure', function() {
       expect(result.body.error[0].property).to.equal('instance.schedules.recurring_schedule[0]');
       expect(result.body.error[0].stack).to.equal('instance.schedules.recurring_schedule[0] is not exactly one from [subschema 0],[subschema 1]');
       done();
+    });
+  });
+  
+  after(function(done){
+    policy.drop().then(function(result) {
+        done();
+      },function(error){
+      logger.error('Failed to clean up database after test',error);
+      done(error);
     });
   });
 });

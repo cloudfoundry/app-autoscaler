@@ -7,7 +7,8 @@ var correctDBUri;
 describe('Test Model Load Failures', function () {
   before(function() {
 	  correctDBUri = process.env.DB_URI;
-	  process.env.DB_URI = 'sqlite://test:test/db.test.sqlite';
+	  // Provide a wrong db uri
+	  process.env.DB_URI = 'postgres://postgres:postgres@local_host:5432/autoscaler_test';
   });
 	
   it('Should fail for a invalid DB_URI', function () {
