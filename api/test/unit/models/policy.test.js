@@ -1,84 +1,40 @@
 'use strict';
 var expect = require('chai').expect;
+var fs = require('fs');
 var logger = require('../../../lib/log/logger');
+var policy = require('../../../lib/models')().policy_json;
 
-var fakePolicy = {
-	"instance_min_count" : 1,
-	"instance_max_count" : 5,
-	"scaling_rules" : [ {
-		"metric_type" : "MemoryUsage",
-		"stat_window_secs" : 300,
-		"breach_duration_secs" : 600,
-		"threshold" : 30,
-		"operator" : "<",
-		"cool_down_secs" : 300,
-		"adjustment" : "-1%"
-	}, {
-		"metric_type" : "MemoryUsage",
-		"stat_window_secs" : 300,
-		"breach_duration_secs" : 600,
-		"threshold" : 90,
-		"operator" : ">=",
-		"cool_down_secs" : 300,
-		"adjustment" : "+1"
-	} ],
-	"schedules" : {
-		"timezone" : "(GMT+08: 00)Asia/Shanghai",
-		"recurring_schedule" : [ {
-			"start_time" : "00: 00",
-			"end_time" : "08: 00",
-			"days_of_week" : [ 1, 2, 3 ],
-			"days_of_month" : [ 1, 28 ],
-			"instance_min_count" : 2,
-			"instance_max_count" : 10
-		} ],
-		"specific_date" : [ {
-			"start_date" : "2015-06-19",
-			"start_time" : "00: 00",
-			"end_date" : "2015-06-19",
-			"end_time" : "23: 59",
-			"instance_min_count" : 15,
-			"instance_max_count" : 40
-		} ]
-	}
-};
-
-describe('Cleaning up test database', function() {
-  before(function() {
-    this.Policy = require('../../../lib/models')().policy_json;
-    this.Policy.sequelize.sync().then(function() {
-      logger.info('creating the table structure');
+describe('Create a Policy', function() {
+  var fakePolicy;
+  before(function(done) {
+    policy.sequelize.sync({force:true}).then(function(success) {
+        fakePolicy = JSON.parse(fs.readFileSync(__dirname+'/../fakePolicy.json', 'utf8'));
+        done();
+    }, function(error) {
+      logger.error('Failed to setup database for test',error);
+      done(error);
     });
   });
-  
-  beforeEach(function() {
-    this.Policy.truncate().then(function(result) {
-      logger.warn('Truncating the test db before test run !!!');
-    });  
-  });
-
-  describe('Create a Policy', function() {
-    it('Should create a policy for app id 12349 successfully', function() {
-      return this.Policy.create({ 'policy_json':fakePolicy, 'app_id': '12349' })
-        .then(function(policy) {
-          logger.info('Policy created for app_id 12349');
-          expect(policy.policy_json).to.equal(fakePolicy);
-        });
+  it('Should create a policy for app id 99999 successfully', function() {
+    return policy.create({ 'policy_json':fakePolicy, 'app_id': '99999' })
+    .then(function(policy) {
+      expect(policy.policy_json).to.deep.equal(fakePolicy);
     });
-    it('Should fail to create a duplicate policy for app id 12349', function() {
-      this.Policy.create({ 'policy_json':fakePolicy, 'app_id': '12349' }).then(function(policy) {
-        logger.info('Policy created for app_id 12349');
-        expect(policy.policy_json).to.equal(fakePolicy);
-          
-      });
-      return this.Policy.create({ 'policy_json':fakePolicy, 'app_id': '12349' })
-      .then(function(policy) {
-      }).catch(function(error) {
-        logger.error('Failed to create policy ',error);
-        expect(error).to.not.be.null;
-        expect(error).to.have.deep.property('name').equal('SequelizeUniqueConstraintError');
-        expect(error).to.have.deep.property('message').equal('Validation error');
-      });
+  });
+  it('Should fail to create a policy with duplicate app_id 99999', function() {
+    return policy.create({ 'policy_json':fakePolicy, 'app_id': '99999' })
+    .catch(function(error) {
+      expect(error).to.not.be.null;
+      expect(error).to.have.deep.property('name').equal('SequelizeUniqueConstraintError');
+      expect(error).to.have.deep.property('message').equal('Validation error');
+    });
+  });
+  after(function(done){
+    policy.drop().then(function(result) {
+        done();
+      },function(error){
+      logger.error('Failed to clean up database after test',error);
+      done(error);
     });
   });
 });
