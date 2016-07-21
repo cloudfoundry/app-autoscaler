@@ -4,7 +4,19 @@ module.exports = function(dbUri, callback) {
   var path = require('path');
   var Sequelize = require('sequelize');
   var logger = require(path.join(__dirname, '../logger/logger.js'));
-  var sequelize = new Sequelize(dbUri, { logging: false });
+
+  const DEFAULT_DB_MAX_CONNECTIONS = 10;
+  const DEFAULT_DB_MIN_CONNECTIONS = 0;
+  const DEFAULT_DB_MAX_IDLETIME = 1000;
+
+  var sequelize = new Sequelize(dbUri, {
+    logging: false,
+    pool: {
+      max: process.env.DB_MAX_CONNECTIONS || DEFAULT_DB_MAX_CONNECTIONS,
+      min: process.env.DB_MIN_CONNECTIONS || DEFAULT_DB_MIN_CONNECTIONS,
+      idle: process.env.DB_MAX_IDLETIME || DEFAULT_DB_MAX_IDLETIME
+    }
+  });
 
   sequelize.authenticate()
     .then(function() {
