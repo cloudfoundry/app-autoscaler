@@ -87,7 +87,7 @@ popd
 go install github.com/onsi/ginkgo/ginkgo
 export DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
 pushd src/metricscollector
-ginkgo -r -race
+ginkgo -r -race -randomizeAllSpecs
 popd
 
 pushd scheduler
