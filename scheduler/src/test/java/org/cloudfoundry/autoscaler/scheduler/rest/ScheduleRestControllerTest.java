@@ -367,7 +367,6 @@ public class ScheduleRestControllerTest {
 		resultActions.andExpect(status().isBadRequest());
 		resultActions.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
 		resultActions.andExpect(jsonPath("$").isArray());
-		System.out.println(resultActions.andReturn().getResponse().getContentAsString());
 		resultActions.andExpect(jsonPath("$").value(Matchers.containsInAnyOrder(expectedErrorMessages)));
 	}
 }

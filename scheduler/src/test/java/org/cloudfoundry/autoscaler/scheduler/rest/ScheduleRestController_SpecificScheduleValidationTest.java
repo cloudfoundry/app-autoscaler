@@ -5,10 +5,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.sql.Date;
 import java.sql.Time;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 
 import javax.transaction.Transactional;
@@ -263,7 +263,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 
 	@Test
 	@Transactional
-	public void testCreateSchedule_startDateTime_after_endDateTime_() throws Exception {
+	public void testCreateSchedule_startDateTime_after_endDateTime() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
@@ -456,13 +456,6 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 				scheduleBeingProcessed + " 0", "instance_min_count"));
 
 		assertErrorMessage(appId, content, messages.toArray(new String[0]));
-	}
-
-	private Throwable getRootException(Throwable throwable) {
-		if (throwable.getCause() == null)
-			return throwable;
-
-		return getRootException(throwable.getCause());
 	}
 
 	private void assertErrorMessage(String appId, String inputContent, String... expectedErrorMessages)

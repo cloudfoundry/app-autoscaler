@@ -1,5 +1,6 @@
 package org.cloudfoundry.autoscaler.scheduler.util;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -25,6 +26,7 @@ public class TestDataSetupHelper {
 	private static String endDate[] = { "2100-07-20", "2100-07-23", "2100-07-27", "2100-08-07", "2100-8-10" };
 	private static String startTime[] = { "08:00:00", "13:00:00", "09:00:00" };
 	private static String endTime[] = { "10:00:00", "09:00:00", "09:00:00" };
+
 
 	public static List<ScheduleEntity> generateSpecificDateScheduleEntities(String appId,
 			int noOfSpecificDateSchedulesToSetUp) {
@@ -87,21 +89,26 @@ public class TestDataSetupHelper {
 		List<ScheduleEntity> specificDateSchedules = new ArrayList<>();
 
 		int pos = 0;
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 		for (int i = 0; i < noOfSpecificDateSchedulesToSetUp; i++) {
 			ScheduleEntity specificDateScheduleEntity = new ScheduleEntity();
 			specificDateScheduleEntity.setAppId(appId);
 			specificDateScheduleEntity.setTimeZone(timeZone);
 
-			if (setCurrentDateTime) {
-				specificDateScheduleEntity.setStartDate(java.sql.Date.valueOf(getCurrentDate(0)));
-				specificDateScheduleEntity.setEndDate(java.sql.Date.valueOf(getCurrentDate(0)));
-				specificDateScheduleEntity.setStartTime(java.sql.Time.valueOf(getCurrentTime(0)));
-				specificDateScheduleEntity.setEndTime(java.sql.Time.valueOf(getCurrentTime(0)));
-			} else {
-				specificDateScheduleEntity.setStartDate(java.sql.Date.valueOf(getDate(startDate, pos, 0)));
-				specificDateScheduleEntity.setEndDate(java.sql.Date.valueOf(getDate(endDate, pos, 5)));
-				specificDateScheduleEntity.setStartTime(java.sql.Time.valueOf(getTime(startTime, pos, 0)));
-				specificDateScheduleEntity.setEndTime(java.sql.Time.valueOf(getTime(endTime, pos, 5)));
+			try {
+				if (setCurrentDateTime) {
+					specificDateScheduleEntity.setStartDate(sdf.parse(getCurrentDate(0)));
+					specificDateScheduleEntity.setEndDate(sdf.parse(getCurrentDate(0)));
+					specificDateScheduleEntity.setStartTime(java.sql.Time.valueOf(getCurrentTime(0)));
+					specificDateScheduleEntity.setEndTime(java.sql.Time.valueOf(getCurrentTime(0)));
+				} else {
+					specificDateScheduleEntity.setStartDate(sdf.parse(getDate(startDate, pos, 0)));
+					specificDateScheduleEntity.setEndDate(sdf.parse(getDate(endDate, pos, 5)));
+					specificDateScheduleEntity.setStartTime(java.sql.Time.valueOf(getTime(startTime, pos, 0)));
+					specificDateScheduleEntity.setEndTime(java.sql.Time.valueOf(getTime(endTime, pos, 5)));
+				}
+			} catch (ParseException e) {
+				throw new RuntimeException(e.getMessage());
 			}
 
 			specificDateScheduleEntity.setInstanceMinCount(i + 5);

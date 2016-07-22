@@ -1,7 +1,7 @@
 package org.cloudfoundry.autoscaler.scheduler.entity;
 
-import java.sql.Date;
 import java.sql.Time;
+import java.util.Date;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
