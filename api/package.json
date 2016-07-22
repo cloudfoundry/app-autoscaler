@@ -2,33 +2,35 @@
   "name": "autoscaler-api",
   "version": "1.0.0",
   "scripts": {
-  "start":"node app.js",
-  "test": "cross-env DB_URI=postgres://postgres:postgres@127.0.0.1:5432/autoscaler node_modules/.bin/_mocha --recursive test",
-  "cover": "cross-env DB_URI=postgres://postgres:postgres@127.0.0.1:5432/autoscaler istanbul cover node_modules/mocha/bin/_mocha -- --recursive test",
-  "lint":"eslint lib"
+    "start": "node app.js",
+    "test": "cross-env DB_URI=postgres://postgres:postgres@127.0.0.1:5432/autoscaler node_modules/.bin/_mocha --recursive test",
+    "cover": "cross-env DB_URI=postgres://postgres:postgres@127.0.0.1:5432/autoscaler istanbul cover node_modules/mocha/bin/_mocha -- --recursive test",
+    "lint": "eslint lib"
   },
   "dependencies": {
     "body-parser": "^1.15.2",
+    "eslint": "^3.1.1",
     "express": "^4.14.0",
-    "sequelize": "^3.23.4",
-    "pg":"^6.0.1",
-    "http-status-codes":"1.0.6",
-    "jsonschema":"1.1.0",
-    "moment":"2.13.0",
-    "moment-range":"2.2.0",
-    "intersect":"1.0.1",
-    "moment-timezone":"0.5.4",
-    "underscore":"1.8.3"
+    "http-status-codes": "^1.0.6",
+    "intersect": "^1.0.1",
+    "jsonschema": "^1.1.0",
+    "moment": "^2.13.0",
+    "moment-range": "^2.2.0",
+    "moment-timezone": "^0.5.4",
+    "pg": "^6.0.3",
+    "sequelize": "^3.23.6",
+    "underscore": "1.8.3"
   },
   "devDependencies": {
-    "sqlite3": "3.1.4",
-    "mocha": "2.5.3",
-    "istanbul":"^0.4.4",
-    "eslint":"^2.13.1",
-    "chai":"3.5.0",
-    "cross-env":"1.0.8",
-    "supertest":"1.2.0",
-    "rewire":"2.5.2",
-    "underscore":"1.8.3"
-   }
+    "chai": "^3.5.0",
+    "cross-env": "^2.0.0",
+    "eslint": "^3.1.1",
+    "istanbul": "^0.4.4",
+    "mocha": "^2.5.3",
+    "moment": "^2.14.1",
+    "rewire": "^2.5.2",
+    "sqlite3": "^3.1.4",
+    "supertest": "^1.2.0",
+    "underscore": "^1.8.3"
+  }
 }
