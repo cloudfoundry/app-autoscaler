@@ -14,6 +14,7 @@ import java.util.List;
 import javax.transaction.Transactional;
 
 import org.cloudfoundry.autoscaler.scheduler.dao.SpecificDateScheduleDao;
+import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationScalingSchedules;
@@ -69,11 +70,11 @@ public class ScheduleRestControllerTest {
 		scheduler.clear();
 
 		mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
-		removeAllRecoredsFromDatabase();
+		removeAllRecordsFromDatabase();
 	}
 
 	@Transactional
-	public void removeAllRecoredsFromDatabase() {
+	public void removeAllRecordsFromDatabase() {
 		List<String> allAppIds = TestDataSetupHelper.getAllGeneratedAppIds();
 		for (String appId : allAppIds) {
 			for (SpecificDateScheduleEntity entity : specificDateScheduleDao
@@ -96,13 +97,37 @@ public class ScheduleRestControllerTest {
 	@Test
 	@Transactional
 	public void testCreateAndGetSchedules() throws Exception {
-
+		// Test multiple applications each having single specific date schedule, no recurring schedule
 		String[] multipleAppIds = TestDataSetupHelper.generateAppIds(5);
-		assertCreateAndGetSchedules(multipleAppIds, 1);
+		assertCreateAndGetSchedules(multipleAppIds, 1, 0);
 
+		// Test multiple applications each having multiple specific date schedules, no recurring schedule
 		multipleAppIds = TestDataSetupHelper.generateAppIds(5);
-		assertCreateAndGetSchedules(multipleAppIds, 5);
+		assertCreateAndGetSchedules(multipleAppIds, 5, 0);
 
+		// Test multiple applications each having single recurring schedule, no specific date schedules
+		multipleAppIds = TestDataSetupHelper.generateAppIds(5);
+		assertCreateAndGetSchedules(multipleAppIds, 0, 1);
+
+		// Test multiple applications each having multiple recurring schedule, no specific date schedules
+		multipleAppIds = TestDataSetupHelper.generateAppIds(5);
+		assertCreateAndGetSchedules(multipleAppIds, 0, 5);
+
+		// Test multiple applications each having multiple specific date and multiple recurring schedule 
+		multipleAppIds = TestDataSetupHelper.generateAppIds(5);
+		assertCreateAndGetSchedules(multipleAppIds, 5, 5);
+	}
+
+	@Test
+	@Transactional
+	public void testCreateSchedule_already_existing_schedule_for_appId() throws Exception {
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		// Create one specific date schedule and two recurring schedules for the application.
+		callCreateSchedules(appId, 1, 2);
+
+		// Create two specific date schedules and one recurring schedules for the same application.
+		ResultActions resultActions = callCreateSchedules(appId, 2, 1);
+		resultActions.andExpect(status().isConflict());
 	}
 
 	@Test
@@ -111,7 +136,7 @@ public class ScheduleRestControllerTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSpecificDateSchedulesForScheduleController(appId, 1);
+				.generateSchedulesForRestApi(1, 0);
 		String content = mapper.writeValueAsString(schedules);
 
 		ResultActions resultActions = mockMvc
@@ -127,7 +152,7 @@ public class ScheduleRestControllerTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSpecificDateSchedulesForScheduleController(appId, 1);
+				.generateSchedulesForRestApi(1, 0);
 
 		schedules.setTimeZone(null);
 
@@ -145,7 +170,7 @@ public class ScheduleRestControllerTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSpecificDateSchedulesForScheduleController(appId, 1);
+				.generateSchedulesForRestApi(1, 0);
 
 		schedules.setTimeZone("");
 
@@ -163,7 +188,7 @@ public class ScheduleRestControllerTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSpecificDateSchedulesForScheduleController(appId, 1);
+				.generateSchedulesForRestApi(1, 0);
 
 		schedules.setTimeZone(TestDataSetupHelper.getInvalidTimezone());
 
@@ -180,7 +205,7 @@ public class ScheduleRestControllerTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSpecificDateSchedulesForScheduleController(appId, 1);
+				.generateSchedulesForRestApi(1, 0);
 
 		schedules.setInstance_min_count(null);
 
@@ -198,7 +223,7 @@ public class ScheduleRestControllerTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSpecificDateSchedulesForScheduleController(appId, 1);
+				.generateSchedulesForRestApi(1, 0);
 
 		schedules.setInstance_max_count(null);
 
@@ -216,7 +241,7 @@ public class ScheduleRestControllerTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSpecificDateSchedulesForScheduleController(appId, 1);
+				.generateSchedulesForRestApi(1, 0);
 		int instanceMinCount = -1;
 		schedules.setInstance_min_count(instanceMinCount);
 
@@ -234,7 +259,7 @@ public class ScheduleRestControllerTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSpecificDateSchedulesForScheduleController(appId, 1);
+				.generateSchedulesForRestApi(1, 0);
 		int instanceMaxCount = -1;
 		schedules.setInstance_max_count(instanceMaxCount);
 
@@ -252,7 +277,7 @@ public class ScheduleRestControllerTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSpecificDateSchedulesForScheduleController(appId, 1);
+				.generateSchedulesForRestApi(1, 0);
 
 		Integer instanceMinCount = 5;
 		Integer instanceMaxCount = 1;
@@ -274,7 +299,7 @@ public class ScheduleRestControllerTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSpecificDateSchedulesForScheduleController(appId, 1);
+				.generateSchedulesForRestApi(1, 0);
 
 		schedules.setInstance_max_count(null);
 		schedules.setInstance_min_count(null);
@@ -283,11 +308,10 @@ public class ScheduleRestControllerTest {
 		String content = mapper.writeValueAsString(schedules);
 
 		List<String> messages = new ArrayList<>();
-		messages.add(messageBundleResourceHelper.lookupMessage("data.default.value.not.specified",
-				"instance_min_count"));
 		messages.add(
-				messageBundleResourceHelper.lookupMessage("data.default.value.not.specified",
-				"instance_max_count"));
+				messageBundleResourceHelper.lookupMessage("data.default.value.not.specified", "instance_min_count"));
+		messages.add(
+				messageBundleResourceHelper.lookupMessage("data.default.value.not.specified", "instance_max_count"));
 		messages.add(messageBundleResourceHelper.lookupMessage("data.value.not.specified.timezone", "timeZone"));
 
 		assertErrorMessages(appId, content, messages.toArray(new String[0]));
@@ -327,16 +351,19 @@ public class ScheduleRestControllerTest {
 
 	}
 
-	private void assertCreateAndGetSchedules(String[] appIds, int expectedSchedulesTobeFound) throws Exception {
+	private void assertCreateAndGetSchedules(String[] appIds, int expectedSpecificDateSchedulesTobeFound,
+			int expectedRecurringScheduleTobeFound) throws Exception {
 
 		for (String appId : appIds) {
-			ResultActions resultActions = callCreateSchedules(appId, expectedSchedulesTobeFound, 0);
+			ResultActions resultActions = callCreateSchedules(appId, expectedSpecificDateSchedulesTobeFound,
+					expectedRecurringScheduleTobeFound);
 			assertCreateScheduleAPI(resultActions);
 		}
 
 		for (String appId : appIds) {
 			ResultActions resultActions = callGetAllSchedulesByAppId(appId);
-			assertSpecificSchedulesFoundEquals(expectedSchedulesTobeFound, appId, resultActions);
+			assertSchedulesFoundEquals(expectedSpecificDateSchedulesTobeFound, expectedRecurringScheduleTobeFound, appId,
+					resultActions);
 		}
 	}
 
@@ -346,8 +373,8 @@ public class ScheduleRestControllerTest {
 		resultActions.andExpect(content().string(Matchers.isEmptyString()));
 	}
 
-	private void assertSpecificSchedulesFoundEquals(int expectedSchedulesTobeFound, String appId,
-			ResultActions resultActions) throws Exception {
+	private void assertSchedulesFoundEquals(int expectedSpecificDateSchedulesTobeFound, int expectedRecurringSchedulesTobeFound,
+			String appId, ResultActions resultActions) throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules resultSchedules = mapper.readValue(
@@ -355,10 +382,35 @@ public class ScheduleRestControllerTest {
 
 		resultActions.andExpect(status().isOk());
 		resultActions.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
-		assertEquals(expectedSchedulesTobeFound, resultSchedules.getSpecific_date().size());
-		for (ScheduleEntity entity : resultSchedules.getSpecific_date()) {
-			assertEquals(appId, entity.getAppId());
+
+		assertSpecificDateScheduleFoundEquals(expectedSpecificDateSchedulesTobeFound, appId, resultSchedules.getSpecific_date());
+		assertRecurringDateScheduleFoundEquals(expectedRecurringSchedulesTobeFound, appId,
+				resultSchedules.getRecurring_schedule());
+	}
+
+	private void assertSpecificDateScheduleFoundEquals(int expectedSchedulesTobeFound, String expectedAppId,
+			List<SpecificDateScheduleEntity> specificDateScheduls) {
+		if (specificDateScheduls == null) {
+			assertEquals(expectedSchedulesTobeFound, 0);
+		} else {
+			assertEquals(expectedSchedulesTobeFound, specificDateScheduls.size());
+			for (ScheduleEntity entity : specificDateScheduls) {
+				assertEquals(expectedAppId, entity.getAppId());
+			}
 		}
+	}
+
+	private void assertRecurringDateScheduleFoundEquals(int expectedRecurringSchedulesTobeFound, String expectedAppId,
+			List<RecurringScheduleEntity> recurring_schedule) {
+		if (recurring_schedule == null) {
+			assertEquals(expectedRecurringSchedulesTobeFound, 0);
+		} else {
+			assertEquals(expectedRecurringSchedulesTobeFound, recurring_schedule.size());
+			for (ScheduleEntity entity : recurring_schedule) {
+				assertEquals(expectedAppId, entity.getAppId());
+			}
+		}
+	
 	}
 
 	private void assertErrorMessages(String appId, String inputContent, String... expectedErrorMessages)

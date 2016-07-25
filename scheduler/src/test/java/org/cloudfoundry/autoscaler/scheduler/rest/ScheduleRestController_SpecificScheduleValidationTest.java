@@ -93,7 +93,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSpecificDateSchedulesForScheduleController(appId, noOfSpecificDateSchedulesToSetUp);
+				.generateSchedulesForRestApi(noOfSpecificDateSchedulesToSetUp, 0);
 
 		schedules.getSpecific_date().get(0).setStartDate(null);
 
@@ -112,7 +112,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSpecificDateSchedulesForScheduleController(appId, noOfSpecificDateSchedulesToSetUp);
+				.generateSchedulesForRestApi(noOfSpecificDateSchedulesToSetUp, 0);
 
 		schedules.getSpecific_date().get(0).setEndDate(null);
 
@@ -131,7 +131,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSpecificDateSchedulesForScheduleController(appId, noOfSpecificDateSchedulesToSetUp);
+				.generateSchedulesForRestApi(noOfSpecificDateSchedulesToSetUp, 0);
 
 		schedules.getSpecific_date().get(0).setStartTime(null);
 
@@ -150,7 +150,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSpecificDateSchedulesForScheduleController(appId, noOfSpecificDateSchedulesToSetUp);
+				.generateSchedulesForRestApi(noOfSpecificDateSchedulesToSetUp, 0);
 
 		schedules.getSpecific_date().get(0).setEndTime(null);
 
@@ -170,7 +170,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSpecificDateSchedulesForScheduleController(appId, noOfSpecificDateSchedulesToSetUp);
+				.generateSchedulesForRestApi(noOfSpecificDateSchedulesToSetUp, 0);
 
 		schedules.getSpecific_date().get(0).setInstanceMaxCount(null);
 
@@ -189,7 +189,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSpecificDateSchedulesForScheduleController(appId, noOfSpecificDateSchedulesToSetUp);
+				.generateSchedulesForRestApi(noOfSpecificDateSchedulesToSetUp, 0);
 
 		schedules.getSpecific_date().get(0).setInstanceMinCount(null);
 
@@ -208,7 +208,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSpecificDateSchedulesForScheduleController(appId, noOfSpecificDateSchedulesToSetUp);
+				.generateSchedulesForRestApi(noOfSpecificDateSchedulesToSetUp, 0);
 		Integer instanceMinCount = -1;
 		schedules.getSpecific_date().get(0).setInstanceMinCount(instanceMinCount);
 
@@ -227,7 +227,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSpecificDateSchedulesForScheduleController(appId, noOfSpecificDateSchedulesToSetUp);
+				.generateSchedulesForRestApi(noOfSpecificDateSchedulesToSetUp, 0);
 		Integer instanceMaxCount = -1;
 		schedules.getSpecific_date().get(0).setInstanceMaxCount(instanceMaxCount);
 
@@ -246,7 +246,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSpecificDateSchedulesForScheduleController(appId, noOfSpecificDateSchedulesToSetUp);
+				.generateSchedulesForRestApi(noOfSpecificDateSchedulesToSetUp, 0);
 
 		ScheduleEntity entity = schedules.getSpecific_date().get(0);
 		Integer instanceMinCount = 5;
@@ -270,7 +270,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSpecificDateSchedulesForScheduleController(appId, noOfSpecificDateSchedulesToSetUp);
+				.generateSchedulesForRestApi(noOfSpecificDateSchedulesToSetUp, 0);
 
 		// Swap startTime for endTime.
 		SpecificDateScheduleEntity entity = schedules.getSpecific_date().get(0);
@@ -295,7 +295,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSpecificDateSchedulesForScheduleController(appId, noOfSpecificDateSchedulesToSetUp);
+				.generateSchedulesForRestApi(noOfSpecificDateSchedulesToSetUp, 0);
 
 		// Swap startTime for endTime.
 		SpecificDateScheduleEntity entity = schedules.getSpecific_date().get(0);
@@ -317,7 +317,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSpecificDateSchedulesForScheduleController(appId, noOfSpecificDateSchedulesToSetUp);
+				.generateSchedulesForRestApi(noOfSpecificDateSchedulesToSetUp, 0);
 
 		// Swap startTime for endTime.
 		SpecificDateScheduleEntity entity = schedules.getSpecific_date().get(0);
@@ -339,7 +339,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 2;
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSpecificDateSchedulesForScheduleController(appId, noOfSpecificDateSchedulesToSetUp);
+				.generateSchedulesForRestApi(noOfSpecificDateSchedulesToSetUp, 0);
 
 		// Overlap specificDate schedules.
 		SpecificDateScheduleEntity firstEntity = schedules.getSpecific_date().get(0);
@@ -362,7 +362,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 4;
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSpecificDateSchedulesForScheduleController(appId, noOfSpecificDateSchedulesToSetUp);
+				.generateSchedulesForRestApi(noOfSpecificDateSchedulesToSetUp, 0);
 
 		// Overlap specificDate schedules.
 		// Schedule 1 end date, end time and Schedule 2 start date, start time are overlapping.
@@ -394,7 +394,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		// No schedules - null case
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSpecificDateSchedulesForScheduleController(appId, 1);
+				.generateSchedulesForRestApi(1, 0);
 
 		schedules.setSpecific_date(null);
 
@@ -412,7 +412,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		// No schedules - Empty case
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSpecificDateSchedulesForScheduleController(appId, 1);
+				.generateSchedulesForRestApi(1, 0);
 
 		schedules.setSpecific_date(Collections.<SpecificDateScheduleEntity> emptyList());
 
@@ -430,7 +430,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		// schedules - no parameters.
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSpecificDateSchedulesForScheduleController(appId, 1);
+				.generateSchedulesForRestApi(1, 0);
 
 		SpecificDateScheduleEntity entity = schedules.getSpecific_date().get(0);
 		entity.setInstanceMinCount(null);

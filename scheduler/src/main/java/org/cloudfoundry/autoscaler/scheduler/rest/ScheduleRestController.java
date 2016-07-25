@@ -49,6 +49,11 @@ public class ScheduleRestController {
 	public ResponseEntity<List<String>> createSchedule(@PathVariable String app_id,
 			@RequestBody ApplicationScalingSchedules rawApplicationSchedules) {
 
+		ApplicationScalingSchedules existingSchedules = scheduleManager.getAllSchedules(app_id);
+		if (existingSchedules.hasSchedules()) {
+			return new ResponseEntity<>(null, null, HttpStatus.CONFLICT);
+		}
+
 		scheduleManager.setUpSchedules(app_id, rawApplicationSchedules);
 
 		logger.info("Validate schedules for application: " + app_id);

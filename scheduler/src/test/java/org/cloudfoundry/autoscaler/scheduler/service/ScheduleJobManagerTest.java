@@ -77,7 +77,7 @@ public class ScheduleJobManagerTest {
 		int noOfSpecificDateSchedulesToSetUp = 1;
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		List<SpecificDateScheduleEntity> specificDateScheduleEntities = TestDataSetupHelper
-				.generateSpecificDateScheduleEntities(appId, noOfSpecificDateSchedulesToSetUp);
+				.generateSpecificDateSchedules(appId, noOfSpecificDateSchedulesToSetUp, false);
 		Long index = 0L;
 		for (SpecificDateScheduleEntity scheduleEntity : specificDateScheduleEntities) {
 			scheduleEntity.setId(++index);
@@ -98,7 +98,7 @@ public class ScheduleJobManagerTest {
 			throws SchedulerException, InterruptedException {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		List<SpecificDateScheduleEntity> specificDateScheduleEntities = TestDataSetupHelper
-				.generateSpecificDateScheduleEntitiesWithCurrentStartEndTime(appId, expectedJobsTobeFound);
+				.generateSpecificDateSchedules(appId, expectedJobsTobeFound, true);
 
 		createSimpleJob(specificDateScheduleEntities);
 		assertScheduleJobMethodCallNum(expectedJobsTobeFound);
