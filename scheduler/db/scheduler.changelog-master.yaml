@@ -5,7 +5,7 @@ databaseChangeLog:
       author: Fujitsu
       changes:
         - createTable:
-            tableName: app_scaling_schedule
+            tableName: app_scaling_specific_date_schedule
             columns:
               - column:
                   name: schedule_id
@@ -21,11 +21,6 @@ databaseChangeLog:
               - column:
                   name: timezone
                   type: varchar(50)
-                  constraints:
-                    nullable: false
-              - column:
-                  name: schedule_type
-                  type: varchar(10)
                   constraints:
                     nullable: false
               - column:
@@ -75,4 +70,4 @@ databaseChangeLog:
                  name: app_id
                  type: varchar(50)
              indexName: idx_app_id
-             tableName: app_scaling_schedule
+             tableName: app_scaling_specific_date_schedule             

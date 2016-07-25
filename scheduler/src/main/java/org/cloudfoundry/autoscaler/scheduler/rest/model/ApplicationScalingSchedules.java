@@ -3,6 +3,7 @@ package org.cloudfoundry.autoscaler.scheduler.rest.model;
 import java.util.List;
 
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
+import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 
 /**
  * 
@@ -12,7 +13,7 @@ public class ApplicationScalingSchedules {
 	String timeZone;
 	Integer instance_min_count;
 	Integer instance_max_count;
-	private List<ScheduleEntity> specific_date;
+	private List<SpecificDateScheduleEntity> specific_date;
 	private List<ScheduleEntity> recurring_schedule;
 
 	public boolean hasSchedules() {
@@ -47,11 +48,11 @@ public class ApplicationScalingSchedules {
 		this.instance_max_count = instance_max_count;
 	}
 
-	public List<ScheduleEntity> getSpecific_date() {
+	public List<SpecificDateScheduleEntity> getSpecific_date() {
 		return specific_date;
 	}
 
-	public void setSpecific_date(List<ScheduleEntity> specific_date) {
+	public void setSpecific_date(List<SpecificDateScheduleEntity> specific_date) {
 		this.specific_date = specific_date;
 	}
 

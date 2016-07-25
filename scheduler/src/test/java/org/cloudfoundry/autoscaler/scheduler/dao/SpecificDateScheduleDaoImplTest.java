@@ -8,7 +8,7 @@ import java.util.List;
 
 import javax.transaction.Transactional;
 
-import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
+import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,18 +23,19 @@ import org.springframework.test.context.junit4.SpringRunner;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class ScheduleDaoImplTest {
+public class SpecificDateScheduleDaoImplTest {
 
 	@Autowired
-	private ScheduleDao scheduleDao;
+	private SpecificDateScheduleDao specificDateScheduleDao;
 
 	@Before
 	@Transactional
 	public void removeAllRecordsFromDatabase() {
 		List<String> allAppIds = TestDataSetupHelper.getAllGeneratedAppIds();
 		for (String appId : allAppIds) {
-			for (ScheduleEntity entity : scheduleDao.findAllSchedulesByAppId(appId)) {
-				scheduleDao.delete(entity);
+			for (SpecificDateScheduleEntity entity : specificDateScheduleDao
+					.findAllSpecificDateSchedulesByAppId(appId)) {
+				specificDateScheduleDao.delete(entity);
 			}
 		}
 	}
@@ -43,7 +44,7 @@ public class ScheduleDaoImplTest {
 	@Transactional
 	public void testFindAllSchedules_withNoSchedules() {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
-		List<ScheduleEntity> schedulesFound = findAllSchedules(appId);
+		List<SpecificDateScheduleEntity> schedulesFound = findAllSchedules(appId);
 		assertSchedulesFoundEquals(0, schedulesFound);
 	}
 
@@ -59,41 +60,42 @@ public class ScheduleDaoImplTest {
 		assertCreateAndFindSchedules(5, allAppIds);
 	}
 
-	private List<ScheduleEntity> createSchedules(String appId, int noOfSpecificDateSchedulesToSetUp) {
-		List<ScheduleEntity> specificDateScheduleEntities = TestDataSetupHelper
+	private List<SpecificDateScheduleEntity> createSchedules(String appId, int noOfSpecificDateSchedulesToSetUp) {
+		List<SpecificDateScheduleEntity> specificDateScheduleEntities = TestDataSetupHelper
 				.generateSpecificDateScheduleEntities(appId, noOfSpecificDateSchedulesToSetUp);
-		List<ScheduleEntity> returnValues = new ArrayList<ScheduleEntity>();
-		for (ScheduleEntity scheduleEntity : specificDateScheduleEntities) {
-			ScheduleEntity entity = scheduleDao.create(scheduleEntity);
+		List<SpecificDateScheduleEntity> returnValues = new ArrayList<SpecificDateScheduleEntity>();
+		for (SpecificDateScheduleEntity scheduleEntity : specificDateScheduleEntities) {
+			SpecificDateScheduleEntity entity = specificDateScheduleDao.create(scheduleEntity);
 			returnValues.add(entity);
 		}
 
 		return returnValues;
 	}
 
-	private List<ScheduleEntity> findAllSchedules(String appId) {
-		return scheduleDao.findAllSchedulesByAppId(appId);
+	private List<SpecificDateScheduleEntity> findAllSchedules(String appId) {
+		return specificDateScheduleDao.findAllSpecificDateSchedulesByAppId(appId);
 	}
 
 	private void assertCreateAndFindSchedules(int expectedSchedulesTobeFound, String... appIds) {
 
 		for (String appId : appIds) {
-			List<ScheduleEntity> savedSchedules = createSchedules(appId, expectedSchedulesTobeFound);
+			List<SpecificDateScheduleEntity> savedSchedules = createSchedules(appId, expectedSchedulesTobeFound);
 			assertCreatedScheduleIdNotNull(savedSchedules);
 		}
 
 		for (String appId : appIds) {
-			List<ScheduleEntity> schedulesFound = findAllSchedules(appId);
+			List<SpecificDateScheduleEntity> schedulesFound = findAllSchedules(appId);
 			assertSchedulesFoundEquals(expectedSchedulesTobeFound, schedulesFound);
 		}
 	}
 
-	private void assertSchedulesFoundEquals(int expectedSchedulesTobeFound, List<ScheduleEntity> schedulesFound) {
+	private void assertSchedulesFoundEquals(int expectedSchedulesTobeFound,
+			List<SpecificDateScheduleEntity> schedulesFound) {
 		assertEquals(expectedSchedulesTobeFound, schedulesFound.size());
 	}
 
-	private void assertCreatedScheduleIdNotNull(List<ScheduleEntity> specificDateScheduleEntities) {
-		for (ScheduleEntity scheduleEntity : specificDateScheduleEntities) {
+	private void assertCreatedScheduleIdNotNull(List<SpecificDateScheduleEntity> specificDateScheduleEntities) {
+		for (SpecificDateScheduleEntity scheduleEntity : specificDateScheduleEntities) {
 			assertNotNull(scheduleEntity.getId());
 		}
 	}

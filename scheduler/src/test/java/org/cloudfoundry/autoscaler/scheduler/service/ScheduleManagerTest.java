@@ -1,15 +1,15 @@
 package org.cloudfoundry.autoscaler.scheduler.service;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
 
 import java.util.List;
 
 import javax.transaction.Transactional;
 
-import org.cloudfoundry.autoscaler.scheduler.dao.ScheduleDao;
-import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
+import org.cloudfoundry.autoscaler.scheduler.dao.SpecificDateScheduleDao;
+import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationScalingSchedules;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationException;
@@ -43,7 +43,7 @@ public class ScheduleManagerTest {
 	private ScheduleManager scheduleManager;
 
 	@Autowired
-	private ScheduleDao scheduleDao;
+	private SpecificDateScheduleDao specificDateScheduleDao;
 
 	@Autowired
 	private Scheduler scheduler;
@@ -59,7 +59,7 @@ public class ScheduleManagerTest {
 	public void init() throws SchedulerException {
 		// Clear previous schedules.
 		scheduler.clear();
-		Mockito.reset(scheduleDao);
+		Mockito.reset(specificDateScheduleDao);
 		removeAllRecoredsFromDatabase();
 	}
 
@@ -67,8 +67,9 @@ public class ScheduleManagerTest {
 	public void removeAllRecoredsFromDatabase() {
 		List<String> appIds = TestDataSetupHelper.getAllGeneratedAppIds();
 		for (String appId : appIds) {
-			for (ScheduleEntity entity : scheduleDao.findAllSchedulesByAppId(appId)) {
-				scheduleDao.delete(entity);
+			for (SpecificDateScheduleEntity entity : specificDateScheduleDao
+					.findAllSpecificDateSchedulesByAppId(appId)) {
+				specificDateScheduleDao.delete(entity);
 			}
 		}
 	}
@@ -78,7 +79,7 @@ public class ScheduleManagerTest {
 	public void testGetAllSchedules_with_no_schedules() {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		ApplicationScalingSchedules scalingSchedules = scheduleManager.getAllSchedules(appId);
-		assertNull(scalingSchedules);
+		assertFalse(scalingSchedules.hasSchedules());
 
 	}
 
@@ -96,7 +97,7 @@ public class ScheduleManagerTest {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSpecificDateSchedules(appId, 1);
 
-		ScheduleEntity entity = schedules.getSpecific_date().get(0);
+		SpecificDateScheduleEntity entity = schedules.getSpecific_date().get(0);
 		entity.setEndDate(null);
 
 		try {
@@ -116,7 +117,7 @@ public class ScheduleManagerTest {
 	@Rollback
 	public void testFindAllSchedule_throw_DatabaseValidationException() {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
-		Mockito.when(scheduleDao.findAllSchedulesByAppId(Mockito.anyString()))
+		Mockito.when(specificDateScheduleDao.findAllSpecificDateSchedulesByAppId(Mockito.anyString()))
 				.thenThrow(new DatabaseValidationException());
 
 		try {
@@ -135,13 +136,14 @@ public class ScheduleManagerTest {
 	private void assertCreateAndFindAllSchedules(String appId, int noOfSpecificDateSchedules) {
 		createScheduleNotThrowAnyException(appId, noOfSpecificDateSchedules);
 
-		List<ScheduleEntity> foundSpecificSchedules = scheduleManager.getAllSchedules(appId).getSpecific_date();
+		List<SpecificDateScheduleEntity> foundSpecificSchedules = scheduleManager.getAllSchedules(appId)
+				.getSpecific_date();
 		assertSpecificSchedulesFoundEquals(noOfSpecificDateSchedules, foundSpecificSchedules);
 
 	}
 
 	private void assertSpecificSchedulesFoundEquals(int expectedScheduleTobeFound,
-			List<ScheduleEntity> foundSchedules) {
+			List<SpecificDateScheduleEntity> foundSchedules) {
 		assertEquals(expectedScheduleTobeFound, foundSchedules.size());
 	}
 

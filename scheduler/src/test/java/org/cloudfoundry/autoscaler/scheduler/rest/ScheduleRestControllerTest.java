@@ -13,8 +13,9 @@ import java.util.List;
 
 import javax.transaction.Transactional;
 
-import org.cloudfoundry.autoscaler.scheduler.dao.ScheduleDao;
+import org.cloudfoundry.autoscaler.scheduler.dao.SpecificDateScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
+import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationScalingSchedules;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
@@ -51,7 +52,7 @@ public class ScheduleRestControllerTest {
 	private Scheduler scheduler;
 
 	@Autowired
-	private ScheduleDao scheduleDao;
+	private SpecificDateScheduleDao specificDateScheduleDao;
 
 	@Autowired
 	MessageBundleResourceHelper messageBundleResourceHelper;
@@ -75,8 +76,9 @@ public class ScheduleRestControllerTest {
 	public void removeAllRecoredsFromDatabase() {
 		List<String> allAppIds = TestDataSetupHelper.getAllGeneratedAppIds();
 		for (String appId : allAppIds) {
-			for (ScheduleEntity entity : scheduleDao.findAllSchedulesByAppId(appId)) {
-				scheduleDao.delete(entity);
+			for (SpecificDateScheduleEntity entity : specificDateScheduleDao
+					.findAllSpecificDateSchedulesByAppId(appId)) {
+				specificDateScheduleDao.delete(entity);
 			}
 		}
 	}

@@ -13,8 +13,9 @@ import java.util.List;
 
 import javax.transaction.Transactional;
 
-import org.cloudfoundry.autoscaler.scheduler.dao.ScheduleDao;
+import org.cloudfoundry.autoscaler.scheduler.dao.SpecificDateScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
+import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationScalingSchedules;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleTypeEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
@@ -52,7 +53,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 	private Scheduler scheduler;
 
 	@Autowired
-	private ScheduleDao scheduleDao;
+	private SpecificDateScheduleDao specificDateScheduleDao;
 
 	@Autowired
 	MessageBundleResourceHelper messageBundleResourceHelper;
@@ -77,8 +78,9 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 	public void removeAllRecordsFromDatabase() {
 		List<String> allAppIds = TestDataSetupHelper.getAllGeneratedAppIds();
 		for (String appId : allAppIds) {
-			for (ScheduleEntity entity : scheduleDao.findAllSchedulesByAppId(appId)) {
-				scheduleDao.delete(entity);
+			for (SpecificDateScheduleEntity entity : specificDateScheduleDao
+					.findAllSpecificDateSchedulesByAppId(appId)) {
+				specificDateScheduleDao.delete(entity);
 			}
 		}
 	}
@@ -271,7 +273,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 				.generateSpecificDateSchedulesForScheduleController(appId, noOfSpecificDateSchedulesToSetUp);
 
 		// Swap startTime for endTime.
-		ScheduleEntity entity = schedules.getSpecific_date().get(0);
+		SpecificDateScheduleEntity entity = schedules.getSpecific_date().get(0);
 		Time endTime = entity.getStartTime();
 		Time startTime = entity.getEndTime();
 		entity.setStartTime(startTime);
@@ -296,7 +298,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 				.generateSpecificDateSchedulesForScheduleController(appId, noOfSpecificDateSchedulesToSetUp);
 
 		// Swap startTime for endTime.
-		ScheduleEntity entity = schedules.getSpecific_date().get(0);
+		SpecificDateScheduleEntity entity = schedules.getSpecific_date().get(0);
 		Date oldDate = new Date(0);
 		entity.setStartDate(oldDate);
 
@@ -318,7 +320,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 				.generateSpecificDateSchedulesForScheduleController(appId, noOfSpecificDateSchedulesToSetUp);
 
 		// Swap startTime for endTime.
-		ScheduleEntity entity = schedules.getSpecific_date().get(0);
+		SpecificDateScheduleEntity entity = schedules.getSpecific_date().get(0);
 		Date oldDate = new Date(0);
 		entity.setEndDate(oldDate);
 
@@ -340,8 +342,8 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 				.generateSpecificDateSchedulesForScheduleController(appId, noOfSpecificDateSchedulesToSetUp);
 
 		// Overlap specificDate schedules.
-		ScheduleEntity firstEntity = schedules.getSpecific_date().get(0);
-		ScheduleEntity secondEntity = schedules.getSpecific_date().get(1);
+		SpecificDateScheduleEntity firstEntity = schedules.getSpecific_date().get(0);
+		SpecificDateScheduleEntity secondEntity = schedules.getSpecific_date().get(1);
 		secondEntity.setStartDate(firstEntity.getEndDate());
 		secondEntity.setStartTime(firstEntity.getEndTime());
 
@@ -365,13 +367,13 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		// Overlap specificDate schedules.
 		// Schedule 1 end date, end time and Schedule 2 start date, start time are overlapping.
 		// Schedules 3 and 4 is overlap with start date and start time.
-		ScheduleEntity firstEntity = schedules.getSpecific_date().get(0);
-		ScheduleEntity secondEntity = schedules.getSpecific_date().get(1);
+		SpecificDateScheduleEntity firstEntity = schedules.getSpecific_date().get(0);
+		SpecificDateScheduleEntity secondEntity = schedules.getSpecific_date().get(1);
 		secondEntity.setStartDate(firstEntity.getEndDate());
 		secondEntity.setStartTime(firstEntity.getEndTime());
 
-		ScheduleEntity thirdEntity = schedules.getSpecific_date().get(2);
-		ScheduleEntity forthEntity = schedules.getSpecific_date().get(3);
+		SpecificDateScheduleEntity thirdEntity = schedules.getSpecific_date().get(2);
+		SpecificDateScheduleEntity forthEntity = schedules.getSpecific_date().get(3);
 		forthEntity.setStartDate(thirdEntity.getStartDate());
 		forthEntity.setStartTime(thirdEntity.getStartTime());
 
@@ -412,7 +414,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
 				.generateSpecificDateSchedulesForScheduleController(appId, 1);
 
-		schedules.setSpecific_date(Collections.<ScheduleEntity> emptyList());
+		schedules.setSpecific_date(Collections.<SpecificDateScheduleEntity> emptyList());
 
 		String content = mapper.writeValueAsString(schedules);
 
@@ -430,7 +432,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
 				.generateSpecificDateSchedulesForScheduleController(appId, 1);
 
-		ScheduleEntity entity = schedules.getSpecific_date().get(0);
+		SpecificDateScheduleEntity entity = schedules.getSpecific_date().get(0);
 		entity.setInstanceMinCount(null);
 		entity.setInstanceMaxCount(null);
 		entity.setStartDate(null);

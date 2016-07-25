@@ -7,8 +7,9 @@ import java.util.TimeZone;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cloudfoundry.autoscaler.scheduler.dao.ScheduleDao;
+import org.cloudfoundry.autoscaler.scheduler.dao.SpecificDateScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
+import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationScalingSchedules;
 import org.cloudfoundry.autoscaler.scheduler.util.DataValidationHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.DateHelper;
@@ -33,7 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ScheduleManager {
 
 	@Autowired
-	private ScheduleDao scheduleDao;
+	private SpecificDateScheduleDao specificDateScheduleDao;
 	@Autowired
 	private ScheduleJobManager scalingJobManager;
 	@Autowired
@@ -51,12 +52,15 @@ public class ScheduleManager {
 	public ApplicationScalingSchedules getAllSchedules(String appId) {
 		logger.info("Get All schedules for application: " + appId);
 
-		List<ScheduleEntity> allScheduleEntitiesForApp = null;
-		ApplicationScalingSchedules applicationScalingSchedules = null;
-		try {
+		ApplicationScalingSchedules applicationScalingSchedules = new ApplicationScalingSchedules();
+		List<SpecificDateScheduleEntity> allSpecificDateScheduleEntitiesForApp = null;
 
-			allScheduleEntitiesForApp = scheduleDao.findAllSchedulesByAppId(appId);
-			applicationScalingSchedules = populateScheduleModel(allScheduleEntitiesForApp);
+		try {
+			allSpecificDateScheduleEntitiesForApp = specificDateScheduleDao.findAllSpecificDateSchedulesByAppId(appId);
+			if (allSpecificDateScheduleEntitiesForApp != null && !allSpecificDateScheduleEntitiesForApp.isEmpty()) {
+				applicationScalingSchedules.setSpecific_date(allSpecificDateScheduleEntitiesForApp);
+			}
+
 		} catch (DatabaseValidationException dve) {
 
 			validationErrorResult.addErrorForDatabaseValidationException(dve, "database.error.get.failed",
@@ -68,32 +72,6 @@ public class ScheduleManager {
 	}
 
 	/**
-	 * Helper method to extract the data from the schedule entity collection,
-	 * and populate schedule model with specific schedules and recurring
-	 * schedules.
-	 * 
-	 * @param allScheduleEntitiesForApp - List of all schedules
-	 * @return
-	 */
-	private ApplicationScalingSchedules populateScheduleModel(List<ScheduleEntity> allScheduleEntitiesForApp) {
-		ApplicationScalingSchedules applicationScalingSchedules = null;
-		// If there are schedules
-		if (allScheduleEntitiesForApp != null && !allScheduleEntitiesForApp.isEmpty()) {
-			applicationScalingSchedules = new ApplicationScalingSchedules();
-			List<ScheduleEntity> specificDateSchedules = new ArrayList<ScheduleEntity>();
-			applicationScalingSchedules.setSpecific_date(specificDateSchedules);
-
-			for (ScheduleEntity scheduleEntity : allScheduleEntitiesForApp) {
-				if (scheduleEntity.getScheduleType().equals(ScheduleTypeEnum.SPECIFIC_DATE.getDbValue())) {
-					specificDateSchedules.add(scheduleEntity);
-				}
-			}
-		}
-		return applicationScalingSchedules;
-
-	}
-
-	/**
 	 * This method calls the helper method to sets up the basic common information in the schedule entities. 
 	 * @param appId
 	 * @param applicationScalingSchedules
@@ -102,36 +80,29 @@ public class ScheduleManager {
 
 		// If there are schedules then only set the meta data in the schedule entities
 		if (applicationScalingSchedules.hasSchedules()) {
-
-			// Sets the meta data in specific date schedules list
-			setUpSchedules(appId, applicationScalingSchedules.getTimeZone(),
-					applicationScalingSchedules.getInstance_min_count(),
-					applicationScalingSchedules.getInstance_min_count(), applicationScalingSchedules.getSpecific_date(),
-					ScheduleTypeEnum.SPECIFIC_DATE);
+			List<SpecificDateScheduleEntity> specificDateSchedules = applicationScalingSchedules.getSpecific_date();
+			for (SpecificDateScheduleEntity specificDateScheduleEntity : specificDateSchedules) {
+				// Sets the meta data in specific date schedules list
+				setUpSchedules(appId, applicationScalingSchedules, specificDateScheduleEntity);
+			}
 
 			// Call the setUpSchedules to set the meta data in recurring schedules list
 		}
 	}
 
 	/**
-	 * Sets the meta data(like the appId, timeZone etc) in each entity in the specified list.
-	 * 
+	 * Sets the meta data(like the appId, timeZone etc) in the specified entity.
 	 * @param appId
-	 * @param timeZone
-	 * @param schedules
-	 * @param scheduleType
+	 * @param applicationScalingSchedules
+	 * @param scheduleEntity
 	 */
-	private void setUpSchedules(String appId, String timeZone, Integer defaultInstanceMinCount,
-			Integer defaultInstanceMaxCount, List<ScheduleEntity> schedules, ScheduleTypeEnum scheduleType) {
-		if (schedules != null && !schedules.isEmpty()) {
-			for (ScheduleEntity scheduleEntity : schedules) {
-				scheduleEntity.setAppId(appId);
-				scheduleEntity.setTimeZone(timeZone);
-				scheduleEntity.setDefaultInstanceMinCount(defaultInstanceMinCount);
-				scheduleEntity.setDefaultInstanceMaxCount(defaultInstanceMaxCount);
-				scheduleEntity.setScheduleType(scheduleType.getDbValue());
-			}
-		}
+	private void setUpSchedules(String appId, ApplicationScalingSchedules applicationScalingSchedules,
+			ScheduleEntity scheduleEntity) {
+		scheduleEntity.setAppId(appId);
+		scheduleEntity.setTimeZone(applicationScalingSchedules.getTimeZone());
+		scheduleEntity.setDefaultInstanceMinCount(applicationScalingSchedules.getInstance_min_count());
+		scheduleEntity.setDefaultInstanceMaxCount(applicationScalingSchedules.getInstance_max_count());
+
 	}
 
 	/**
@@ -190,13 +161,14 @@ public class ScheduleManager {
 	 * @param specificDateSchedules
 	 * @param isValidTimeZone
 	 */
-	private void validateSpecificDateSchedules(List<ScheduleEntity> specificDateSchedules, boolean isValidTimeZone) {
+	private void validateSpecificDateSchedules(List<SpecificDateScheduleEntity> specificDateSchedules,
+			boolean isValidTimeZone) {
 		List<SpecificDateScheduleDateTime> scheduleStartEndTimeList = new ArrayList<>();
 
 		// Identifier to tell which schedule is being validated, will be used in the validation messages 
 		// convenience to identify the schedule that has an issue. First schedule identified as 0
 		int scheduleIdentifier = 0;
-		for (ScheduleEntity specificDateScheduleEntity : specificDateSchedules) {
+		for (SpecificDateScheduleEntity specificDateScheduleEntity : specificDateSchedules) {
 
 			String scheduleBeingProcessed = ScheduleTypeEnum.SPECIFIC_DATE.getDescription() + " " + scheduleIdentifier; // Specific date/Recurring
 
@@ -343,7 +315,7 @@ public class ScheduleManager {
 	 * @return
 	 */
 	private SpecificDateScheduleDateTime validateStartEndDateTime(String scheduleBeingProcessed,
-			ScheduleEntity specificDateSchedule) {
+			SpecificDateScheduleEntity specificDateSchedule) {
 		boolean isValid = true;
 		SpecificDateScheduleDateTime validScheduleDateTime = null;
 
@@ -435,10 +407,10 @@ public class ScheduleManager {
 	@Transactional
 	public void createSchedules(ApplicationScalingSchedules applicationScalingSchedules) {
 
-		List<ScheduleEntity> specificDateSchedules = applicationScalingSchedules.getSpecific_date();
-		for (ScheduleEntity specificDateScheduleEntity : specificDateSchedules) {
+		List<SpecificDateScheduleEntity> specificDateSchedules = applicationScalingSchedules.getSpecific_date();
+		for (SpecificDateScheduleEntity specificDateScheduleEntity : specificDateSchedules) {
 			// Persist the schedule in database
-			ScheduleEntity savedScheduleEntity = saveNewSpecificDateSchedule(specificDateScheduleEntity);
+			SpecificDateScheduleEntity savedScheduleEntity = saveNewSpecificDateSchedule(specificDateScheduleEntity);
 
 			// Ask ScalingJobManager to create scaling job
 			if (savedScheduleEntity != null) {
@@ -448,20 +420,21 @@ public class ScheduleManager {
 	}
 
 	/**
-	 * Persist the schedule entity holding the application's scheduling information.
+	 * Persist the schedule entity holding the application's specific date scheduling information.
 	 * 
-	 * @param scheduleEntity
+	 * @param specificDateScheduleEntity
 	 * @return
 	 */
-	private ScheduleEntity saveNewSpecificDateSchedule(ScheduleEntity scheduleEntity) {
-		ScheduleEntity savedScheduleEntity = null;
+	private SpecificDateScheduleEntity saveNewSpecificDateSchedule(
+			SpecificDateScheduleEntity specificDateScheduleEntity) {
+		SpecificDateScheduleEntity savedScheduleEntity = null;
 		try {
-			savedScheduleEntity = scheduleDao.create(scheduleEntity);
+			savedScheduleEntity = specificDateScheduleDao.create(specificDateScheduleEntity);
 
 		} catch (DatabaseValidationException dve) {
 
 			validationErrorResult.addErrorForDatabaseValidationException(dve, "database.error.create.failed",
-					"app_id=" + scheduleEntity.getAppId());
+					"app_id=" + specificDateScheduleEntity.getAppId());
 			throw new SchedulerInternalException("Database error", dve);
 		}
 		return savedScheduleEntity;

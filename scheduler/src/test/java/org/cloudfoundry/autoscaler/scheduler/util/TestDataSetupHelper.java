@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
-import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
+import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationScalingSchedules;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -28,17 +28,18 @@ public class TestDataSetupHelper {
 	private static String endTime[] = { "10:00:00", "09:00:00", "09:00:00" };
 
 
-	public static List<ScheduleEntity> generateSpecificDateScheduleEntities(String appId,
+	public static List<SpecificDateScheduleEntity> generateSpecificDateScheduleEntities(String appId,
 			int noOfSpecificDateSchedulesToSetUp) {
-		List<ScheduleEntity> specificDateSchedules = generateSpecificDateScheduleEntities(appId, timeZone,
+		List<SpecificDateScheduleEntity> specificDateSchedules = generateSpecificDateScheduleEntities(appId, timeZone,
 				noOfSpecificDateSchedulesToSetUp, false, 1, 5);
 
 		return specificDateSchedules;
 	}
 
-	public static List<ScheduleEntity> generateSpecificDateScheduleEntitiesWithCurrentStartEndTime(String appId,
+	public static List<SpecificDateScheduleEntity> generateSpecificDateScheduleEntitiesWithCurrentStartEndTime(
+			String appId,
 			int noOfSpecificDateSchedulesToSetUp) {
-		List<ScheduleEntity> specificDateSchedules = generateSpecificDateScheduleEntities(appId, timeZone,
+		List<SpecificDateScheduleEntity> specificDateSchedules = generateSpecificDateScheduleEntities(appId, timeZone,
 				noOfSpecificDateSchedulesToSetUp, true, 1, 5);
 
 		return specificDateSchedules;
@@ -46,7 +47,7 @@ public class TestDataSetupHelper {
 
 	public static ApplicationScalingSchedules generateSpecificDateSchedules(String appId, int noOfSchedules) {
 		ApplicationScalingSchedules schedules = new ApplicationScalingSchedules();
-		List<ScheduleEntity> specificDateSchedules = generateSpecificDateScheduleEntities(appId, timeZone,
+		List<SpecificDateScheduleEntity> specificDateSchedules = generateSpecificDateScheduleEntities(appId, timeZone,
 				noOfSchedules, false, 1, 5);
 		schedules.setSpecific_date(specificDateSchedules);
 		return schedules;
@@ -59,7 +60,7 @@ public class TestDataSetupHelper {
 		schedules.setTimeZone(timeZone);
 		schedules.setInstance_min_count(1);
 		schedules.setInstance_max_count(5);
-		List<ScheduleEntity> specificDateSchedules = generateSpecificDateScheduleEntities(appId, null,
+		List<SpecificDateScheduleEntity> specificDateSchedules = generateSpecificDateScheduleEntities(appId, null,
 				noOfSpecificDateSchedules, false, null, null);
 		schedules.setSpecific_date(specificDateSchedules);
 		return schedules;
@@ -80,18 +81,18 @@ public class TestDataSetupHelper {
 		return mapper.writeValueAsString(schedules);
 	}
 
-	private static List<ScheduleEntity> generateSpecificDateScheduleEntities(String appId, String timeZone,
+	private static List<SpecificDateScheduleEntity> generateSpecificDateScheduleEntities(String appId, String timeZone,
 			int noOfSpecificDateSchedulesToSetUp, boolean setCurrentDateTime, Integer defaultInstanceMinCount,
 			Integer defaultInstanceMaxCount) {
 		if (noOfSpecificDateSchedulesToSetUp <= 0) {
 			return null;
 		}
-		List<ScheduleEntity> specificDateSchedules = new ArrayList<>();
+		List<SpecificDateScheduleEntity> specificDateSchedules = new ArrayList<>();
 
 		int pos = 0;
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 		for (int i = 0; i < noOfSpecificDateSchedulesToSetUp; i++) {
-			ScheduleEntity specificDateScheduleEntity = new ScheduleEntity();
+			SpecificDateScheduleEntity specificDateScheduleEntity = new SpecificDateScheduleEntity();
 			specificDateScheduleEntity.setAppId(appId);
 			specificDateScheduleEntity.setTimeZone(timeZone);
 
@@ -115,7 +116,6 @@ public class TestDataSetupHelper {
 			specificDateScheduleEntity.setInstanceMaxCount(i + 6);
 			specificDateScheduleEntity.setDefaultInstanceMinCount(defaultInstanceMinCount);
 			specificDateScheduleEntity.setDefaultInstanceMaxCount(defaultInstanceMaxCount);
-			specificDateScheduleEntity.setScheduleType(ScheduleTypeEnum.SPECIFIC_DATE.getDbValue());
 			specificDateSchedules.add(specificDateScheduleEntity);
 			pos++;
 		}

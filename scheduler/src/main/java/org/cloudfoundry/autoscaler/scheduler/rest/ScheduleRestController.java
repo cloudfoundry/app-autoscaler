@@ -37,7 +37,7 @@ public class ScheduleRestController {
 		ApplicationScalingSchedules savedApplicationSchedules = scheduleManager.getAllSchedules(app_id);
 
 		// No schedules found for the specified application return status code NOT_FOUND
-		if (savedApplicationSchedules == null) {
+		if (!savedApplicationSchedules.hasSchedules()) {
 			return new ResponseEntity<>(null, null, HttpStatus.NOT_FOUND);
 		} else {
 			return new ResponseEntity<>(savedApplicationSchedules, null, HttpStatus.OK);

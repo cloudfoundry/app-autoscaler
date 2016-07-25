@@ -1,7 +1,7 @@
 package org.cloudfoundry.autoscaler.scheduler.service;
 
-import org.cloudfoundry.autoscaler.scheduler.dao.ScheduleDao;
-import org.cloudfoundry.autoscaler.scheduler.dao.ScheduleDaoImpl;
+import org.cloudfoundry.autoscaler.scheduler.dao.SpecificDateScheduleDao;
+import org.cloudfoundry.autoscaler.scheduler.dao.SpecificDateScheduleDaoImpl;
 import org.mockito.Mockito;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,12 +11,12 @@ import org.springframework.context.annotation.Profile;
 @Profile("ScheduleDaoMock")
 @Configuration
 public class ScheduleDaoMock {
-	ScheduleDao scheduleDao = new ScheduleDaoImpl();
+	SpecificDateScheduleDao specificDateScheduleDao = new SpecificDateScheduleDaoImpl();
 
 	@Bean
 	@Primary
-	public ScheduleDao scheduleDao() {
+	public SpecificDateScheduleDao specificDateScheduleDao() {
 
-		return Mockito.spy(scheduleDao);
+		return Mockito.spy(specificDateScheduleDao);
 	}
 }

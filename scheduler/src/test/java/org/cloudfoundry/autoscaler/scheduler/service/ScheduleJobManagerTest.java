@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
+import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.util.JobActionEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
@@ -75,10 +76,10 @@ public class ScheduleJobManagerTest {
 		Mockito.doThrow(SchedulerException.class).when(scheduler).scheduleJob(Mockito.anyObject(), Mockito.anyObject());
 		int noOfSpecificDateSchedulesToSetUp = 1;
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
-		List<ScheduleEntity> specificDateScheduleEntities = TestDataSetupHelper
+		List<SpecificDateScheduleEntity> specificDateScheduleEntities = TestDataSetupHelper
 				.generateSpecificDateScheduleEntities(appId, noOfSpecificDateSchedulesToSetUp);
 		Long index = 0L;
-		for (ScheduleEntity scheduleEntity : specificDateScheduleEntities) {
+		for (SpecificDateScheduleEntity scheduleEntity : specificDateScheduleEntities) {
 			scheduleEntity.setId(++index);
 			scalingJobManager.createSimpleJob(scheduleEntity);
 		}
@@ -96,12 +97,12 @@ public class ScheduleJobManagerTest {
 	private void assertCreateAndFindSimpleJobs(int expectedJobsTobeFound)
 			throws SchedulerException, InterruptedException {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
-		List<ScheduleEntity> specificDateScheduleEntities = TestDataSetupHelper
+		List<SpecificDateScheduleEntity> specificDateScheduleEntities = TestDataSetupHelper
 				.generateSpecificDateScheduleEntitiesWithCurrentStartEndTime(appId, expectedJobsTobeFound);
 
 		createSimpleJob(specificDateScheduleEntities);
 		assertScheduleJobMethodCallNum(expectedJobsTobeFound);
-		assertCreatedJobs(specificDateScheduleEntities);
+		assertCreatedSimpleJobs(specificDateScheduleEntities);
 	}
 
 	private void assertScheduleJobMethodCallNum(int expectedJobsTobeFound) throws SchedulerException {
@@ -109,7 +110,7 @@ public class ScheduleJobManagerTest {
 				Mockito.anyObject());
 	}
 
-	private void assertCreatedJobs(List<ScheduleEntity> scheduleEntities) throws SchedulerException {
+	private void assertCreatedSimpleJobs(List<SpecificDateScheduleEntity> scheduleEntities) throws SchedulerException {
 		Map<String, JobDetail> scheduleIdJobDetailMap = getSchedulerJobs();
 
 		for (ScheduleEntity entity : scheduleEntities) {
@@ -135,9 +136,9 @@ public class ScheduleJobManagerTest {
 		assertEquals(expectedInstanceMaxCount, map.get("instanceMaxCount"));
 	}
 
-	private void createSimpleJob(List<ScheduleEntity> specificDateScheduleEntities) {
+	private void createSimpleJob(List<SpecificDateScheduleEntity> specificDateScheduleEntities) {
 		Long index = 0L;
-		for (ScheduleEntity scheduleEntity : specificDateScheduleEntities) {
+		for (SpecificDateScheduleEntity scheduleEntity : specificDateScheduleEntities) {
 			Long scheduleId = ++index;
 			scheduleEntity.setId(scheduleId);
 			scalingJobManager.createSimpleJob(scheduleEntity);
