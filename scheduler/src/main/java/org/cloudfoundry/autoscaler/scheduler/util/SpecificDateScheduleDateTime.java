@@ -11,7 +11,7 @@ public class SpecificDateScheduleDateTime implements Comparable<SpecificDateSche
 	private String scheduleIdentifier;
 	private Long startDateTime; // In milliseconds
 	private Long endDateTime; // In milliseconds
-	
+
 	public SpecificDateScheduleDateTime(Long startDateTime, Long endDateTime) {
 		this.startDateTime = startDateTime;
 		this.endDateTime = endDateTime;
@@ -43,8 +43,8 @@ public class SpecificDateScheduleDateTime implements Comparable<SpecificDateSche
 
 		if (thisDateTime == null || compareToDateTime == null)
 			throw new NullPointerException("One of the date time value is null");
-		
+
 		return Long.compare(thisDateTime, compareToDateTime);
 	}
-	
+
 }

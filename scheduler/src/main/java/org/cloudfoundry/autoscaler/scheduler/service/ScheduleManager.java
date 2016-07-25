@@ -7,7 +7,9 @@ import java.util.TimeZone;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cloudfoundry.autoscaler.scheduler.dao.RecurringScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.dao.SpecificDateScheduleDao;
+import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationScalingSchedules;
@@ -36,6 +38,8 @@ public class ScheduleManager {
 	@Autowired
 	private SpecificDateScheduleDao specificDateScheduleDao;
 	@Autowired
+	private RecurringScheduleDao recurringScheduleDao;
+	@Autowired
 	private ScheduleJobManager scalingJobManager;
 	@Autowired
 	private ValidationErrorResult validationErrorResult;
@@ -54,11 +58,17 @@ public class ScheduleManager {
 
 		ApplicationScalingSchedules applicationScalingSchedules = new ApplicationScalingSchedules();
 		List<SpecificDateScheduleEntity> allSpecificDateScheduleEntitiesForApp = null;
+		List<RecurringScheduleEntity> allRecurringScheduleEntitiesForApp = null;
 
 		try {
 			allSpecificDateScheduleEntitiesForApp = specificDateScheduleDao.findAllSpecificDateSchedulesByAppId(appId);
 			if (!allSpecificDateScheduleEntitiesForApp.isEmpty()) {
 				applicationScalingSchedules.setSpecific_date(allSpecificDateScheduleEntitiesForApp);
+			}
+
+			allRecurringScheduleEntitiesForApp = recurringScheduleDao.findAllRecurringSchedulesByAppId(appId);
+			if (!allRecurringScheduleEntitiesForApp.isEmpty()) {
+				applicationScalingSchedules.setRecurring_schedule(allRecurringScheduleEntitiesForApp);
 			}
 
 		} catch (DatabaseValidationException dve) {
@@ -81,12 +91,20 @@ public class ScheduleManager {
 		// If there are schedules then only set the meta data in the schedule entities
 		if (applicationScalingSchedules.hasSchedules()) {
 			List<SpecificDateScheduleEntity> specificDateSchedules = applicationScalingSchedules.getSpecific_date();
-			for (SpecificDateScheduleEntity specificDateScheduleEntity : specificDateSchedules) {
-				// Sets the meta data in specific date schedules list
-				setUpSchedules(appId, applicationScalingSchedules, specificDateScheduleEntity);
+			if (specificDateSchedules != null) {
+				for (SpecificDateScheduleEntity specificDateScheduleEntity : specificDateSchedules) {
+					// Sets the meta data in specific date schedules list
+					setUpSchedules(appId, applicationScalingSchedules, specificDateScheduleEntity);
+				}
 			}
 
 			// Call the setUpSchedules to set the meta data in recurring schedules list
+			List<RecurringScheduleEntity> recurringSchedules = applicationScalingSchedules.getRecurring_schedule();
+			if (recurringSchedules != null) {
+				for (RecurringScheduleEntity recurringScheduleEntity : recurringSchedules) {
+					setUpSchedules(appId, applicationScalingSchedules, recurringScheduleEntity);
+				}
+			}
 		}
 	}
 
@@ -141,10 +159,19 @@ public class ScheduleManager {
 		validateDefaultInstanceMinMaxCount(applicationScalingSchedules.getInstance_min_count(),
 				applicationScalingSchedules.getInstance_max_count());
 
-		// Validate Specific schedules.
+		// Validate schedules.
 		if (applicationScalingSchedules.hasSchedules()) {
+			List<SpecificDateScheduleEntity> specificDateSchedules = applicationScalingSchedules.getSpecific_date();
+			// Validate specific date schedules.
+			if (specificDateSchedules != null) {
+				validateSpecificDateSchedules(specificDateSchedules, isValidTimeZone);
+			}
 
-			validateSpecificDateSchedules(applicationScalingSchedules.getSpecific_date(), isValidTimeZone);
+			List<RecurringScheduleEntity> recurringSchedules = applicationScalingSchedules.getRecurring_schedule();
+			// Validate recurring schedules.
+			if (recurringSchedules != null) {
+				//TODO validate recurring schedule.
+			}
 		} else {// No schedules found
 
 			validationErrorResult.addFieldError(applicationScalingSchedules, "data.invalid.noSchedules",
@@ -208,8 +235,7 @@ public class ScheduleManager {
 	 * @param defaultInstanceMinCount
 	 * @param defaultInstanceMaxCount
 	 */
-	private void validateDefaultInstanceMinMaxCount(Integer defaultInstanceMinCount,
-			Integer defaultInstanceMaxCount) {
+	private void validateDefaultInstanceMinMaxCount(Integer defaultInstanceMinCount, Integer defaultInstanceMaxCount) {
 
 		boolean isValid = true;
 
@@ -244,10 +270,8 @@ public class ScheduleManager {
 		if (isValid) {
 			// Check the maximum instance count is greater than minimum instance count
 			if (defaultInstanceMaxCount <= defaultInstanceMinCount) {
-				validationErrorResult.addFieldError(null,
-						"data.default.instanceCount.invalid.min.greater", "instance_max_count", defaultInstanceMaxCount,
-						"instance_min_count",
-						defaultInstanceMinCount);
+				validationErrorResult.addFieldError(null, "data.default.instanceCount.invalid.min.greater",
+						"instance_max_count", defaultInstanceMaxCount, "instance_min_count", defaultInstanceMinCount);
 			}
 		}
 	}
@@ -267,40 +291,37 @@ public class ScheduleManager {
 		boolean isValidInstanceCount = DataValidationHelper.isNotNull(instanceMinCount);
 		// The minimum instance count cannot be null.
 		if (!isValidInstanceCount) {
-			validationErrorResult.addFieldError(null, "schedule.data.value.not.specified",
-					scheduleBeingProcessed, "instance_min_count");
+			validationErrorResult.addFieldError(null, "schedule.data.value.not.specified", scheduleBeingProcessed,
+					"instance_min_count");
 			isValid = false;
 		}
 
 		// The minimum instance count cannot be negative.
 		if (isValidInstanceCount && instanceMinCount < 0) {
-			validationErrorResult.addFieldError(null,"schedule.data.value.invalid",
-					scheduleBeingProcessed, "instance_min_count", instanceMinCount);
+			validationErrorResult.addFieldError(null, "schedule.data.value.invalid", scheduleBeingProcessed,
+					"instance_min_count", instanceMinCount);
 			isValid = false;
 		}
 
 		isValidInstanceCount = DataValidationHelper.isNotNull(instanceMaxCount);
 		// The maximum instance count cannot be null.
 		if (!isValidInstanceCount) {
-			validationErrorResult.addFieldError(null,
-					  "schedule.data.value.not.specified",
-					scheduleBeingProcessed, "instance_max_count");
+			validationErrorResult.addFieldError(null, "schedule.data.value.not.specified", scheduleBeingProcessed,
+					"instance_max_count");
 			isValid = false;
 		}
 
 		// The maximum instance count cannot be zero or negative.
 		if (isValidInstanceCount && instanceMaxCount <= 0) {
-			validationErrorResult.addFieldError(null,
-					 "schedule.data.value.invalid",
-					scheduleBeingProcessed, "instance_max_count", instanceMaxCount);
+			validationErrorResult.addFieldError(null, "schedule.data.value.invalid", scheduleBeingProcessed,
+					"instance_max_count", instanceMaxCount);
 			isValid = false;
 		}
 
 		if (isValid) {
 			// Check the maximum instance count is greater than minimum instance count
 			if (instanceMaxCount <= instanceMinCount) {
-				validationErrorResult.addFieldError(null,
-						"schedule.instanceCount.invalid.min.greater",
+				validationErrorResult.addFieldError(null, "schedule.instanceCount.invalid.min.greater",
 						scheduleBeingProcessed, "instance_max_count", instanceMaxCount, "instance_min_count",
 						instanceMinCount);
 			}
@@ -408,13 +429,28 @@ public class ScheduleManager {
 	public void createSchedules(ApplicationScalingSchedules applicationScalingSchedules) {
 
 		List<SpecificDateScheduleEntity> specificDateSchedules = applicationScalingSchedules.getSpecific_date();
-		for (SpecificDateScheduleEntity specificDateScheduleEntity : specificDateSchedules) {
-			// Persist the schedule in database
-			SpecificDateScheduleEntity savedScheduleEntity = saveNewSpecificDateSchedule(specificDateScheduleEntity);
+		if (specificDateSchedules != null) {
+			for (SpecificDateScheduleEntity specificDateScheduleEntity : specificDateSchedules) {
+				// Persist the schedule in database
+				SpecificDateScheduleEntity savedScheduleEntity = saveNewSpecificDateSchedule(
+						specificDateScheduleEntity);
 
-			// Ask ScalingJobManager to create scaling job
-			if (savedScheduleEntity != null) {
-				scalingJobManager.createSimpleJob(savedScheduleEntity);
+				// Ask ScalingJobManager to create scaling job
+				if (savedScheduleEntity != null) {
+					scalingJobManager.createSimpleJob(savedScheduleEntity);
+				}
+			}
+		}
+
+		List<RecurringScheduleEntity> recurringScheduls = applicationScalingSchedules.getRecurring_schedule();
+		if (recurringScheduls != null) {
+			for (RecurringScheduleEntity recurringScheduleEntity : recurringScheduls) {
+				// Persist the schedule in database
+				RecurringScheduleEntity savedScheduleEntity = saveNewRecurringSchedule(recurringScheduleEntity);
+
+				// Ask ScalingJobManager to create scaling job
+				if (savedScheduleEntity != null) {
+				}
 			}
 		}
 	}
@@ -435,6 +471,18 @@ public class ScheduleManager {
 
 			validationErrorResult.addErrorForDatabaseValidationException(dve, "database.error.create.failed",
 					"app_id=" + specificDateScheduleEntity.getAppId());
+			throw new SchedulerInternalException("Database error", dve);
+		}
+		return savedScheduleEntity;
+	}
+
+	private RecurringScheduleEntity saveNewRecurringSchedule(RecurringScheduleEntity recurringScheduleEntity) {
+		RecurringScheduleEntity savedScheduleEntity = null;
+		try {
+			savedScheduleEntity = recurringScheduleDao.create(recurringScheduleEntity);
+		} catch (DatabaseValidationException dve) {
+			validationErrorResult.addErrorForDatabaseValidationException(dve, "database.error.create.failed",
+					"app_id=" + recurringScheduleEntity.getAppId());
 			throw new SchedulerInternalException("Database error", dve);
 		}
 		return savedScheduleEntity;

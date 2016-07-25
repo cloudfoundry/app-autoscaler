@@ -2,7 +2,7 @@ package org.cloudfoundry.autoscaler.scheduler.rest.model;
 
 import java.util.List;
 
-import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
+import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 
 /**
@@ -14,7 +14,7 @@ public class ApplicationScalingSchedules {
 	Integer instance_min_count;
 	Integer instance_max_count;
 	private List<SpecificDateScheduleEntity> specific_date;
-	private List<ScheduleEntity> recurring_schedule;
+	private List<RecurringScheduleEntity> recurring_schedule;
 
 	public boolean hasSchedules() {
 		if ((specific_date == null || specific_date.isEmpty())
@@ -56,11 +56,11 @@ public class ApplicationScalingSchedules {
 		this.specific_date = specific_date;
 	}
 
-	public List<ScheduleEntity> getRecurring_schedule() {
+	public List<RecurringScheduleEntity> getRecurring_schedule() {
 		return recurring_schedule;
 	}
 
-	public void setRecurring_schedule(List<ScheduleEntity> recurring_schedule) {
+	public void setRecurring_schedule(List<RecurringScheduleEntity> recurring_schedule) {
 		this.recurring_schedule = recurring_schedule;
 	}
 
