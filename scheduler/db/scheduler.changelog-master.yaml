@@ -1,4 +1,4 @@
---- 
+---
 databaseChangeLog:
    - changeSet:
       id: 1
@@ -34,7 +34,7 @@ databaseChangeLog:
                   constraints:
                     nullable: false
               - column:
-                  name: start_time 
+                  name: start_time
                   type: time
                   constraints:
                     nullable: false
@@ -70,4 +70,4 @@ databaseChangeLog:
                  name: app_id
                  type: varchar(50)
              indexName: idx_app_id
-             tableName: app_scaling_specific_date_schedule             
+             tableName: app_scaling_specific_date_schedule

@@ -26,8 +26,8 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Service class to persist the schedule entity in the database and create
  * scheduled job.
- * 
- * 
+ *
+ *
  *
  */
 @Service
@@ -44,7 +44,7 @@ public class ScheduleManager {
 
 	/**
 	 * Calls dao and fetch all the schedules for the specified application id.
-	 * 
+	 *
 	 * @param appId
 	 * @return
 	 * @throws Exception
@@ -57,7 +57,7 @@ public class ScheduleManager {
 
 		try {
 			allSpecificDateScheduleEntitiesForApp = specificDateScheduleDao.findAllSpecificDateSchedulesByAppId(appId);
-			if (allSpecificDateScheduleEntitiesForApp != null && !allSpecificDateScheduleEntitiesForApp.isEmpty()) {
+			if (!allSpecificDateScheduleEntitiesForApp.isEmpty()) {
 				applicationScalingSchedules.setSpecific_date(allSpecificDateScheduleEntitiesForApp);
 			}
 
@@ -72,7 +72,7 @@ public class ScheduleManager {
 	}
 
 	/**
-	 * This method calls the helper method to sets up the basic common information in the schedule entities. 
+	 * This method calls the helper method to sets up the basic common information in the schedule entities.
 	 * @param appId
 	 * @param applicationScalingSchedules
 	 */
@@ -108,7 +108,7 @@ public class ScheduleManager {
 	/**
 	 * This method does the basic data validation and calls the helper method to
 	 * do further validation.
-	 * 
+	 *
 	 * @param appId
 	 * @param timeZone
 	 * @param applicationScalingSchedules
@@ -157,7 +157,7 @@ public class ScheduleManager {
 	/**
 	 * This method traverses through the list and calls helper methods to perform validations on
 	 * the specific date schedule entity.
-	 *  
+	 *
 	 * @param specificDateSchedules
 	 * @param isValidTimeZone
 	 */
@@ -165,7 +165,7 @@ public class ScheduleManager {
 			boolean isValidTimeZone) {
 		List<SpecificDateScheduleDateTime> scheduleStartEndTimeList = new ArrayList<>();
 
-		// Identifier to tell which schedule is being validated, will be used in the validation messages 
+		// Identifier to tell which schedule is being validated, will be used in the validation messages
 		// convenience to identify the schedule that has an issue. First schedule identified as 0
 		int scheduleIdentifier = 0;
 		for (SpecificDateScheduleEntity specificDateScheduleEntity : specificDateSchedules) {
@@ -204,7 +204,7 @@ public class ScheduleManager {
 
 	/**
 	 * This method validates the default instance minimum and maximum count.
-	 * 
+	 *
 	 * @param defaultInstanceMinCount
 	 * @param defaultInstanceMaxCount
 	 */
@@ -254,7 +254,7 @@ public class ScheduleManager {
 
 	/**
 	 * This method validates the instance minimum and maximum count.
-	 * 
+	 *
 	 * @param scheduleBeingProcessed
 	 * @param instanceMinCount
 	 * @param instanceMaxCount
@@ -299,7 +299,7 @@ public class ScheduleManager {
 		if (isValid) {
 			// Check the maximum instance count is greater than minimum instance count
 			if (instanceMaxCount <= instanceMinCount) {
-				validationErrorResult.addFieldError(null, 
+				validationErrorResult.addFieldError(null,
 						"schedule.instanceCount.invalid.min.greater",
 						scheduleBeingProcessed, "instance_max_count", instanceMaxCount, "instance_min_count",
 						instanceMinCount);
@@ -310,7 +310,7 @@ public class ScheduleManager {
 	/**
 	 * This method validates the start date time and end date time of the
 	 * specified specific schedule.
-	 * 
+	 *
 	 * @param specificDateSchedule
 	 * @return
 	 */
@@ -399,7 +399,7 @@ public class ScheduleManager {
 	/**
 	 * Calls private helper methods to persist the schedules in the database and
 	 * calls ScalingJobManager to create scaling action jobs.
-	 * 
+	 *
 	 * @param applicationScalingSchedules
 	 * @throws SchedulerException
 	 * @throws Exception
@@ -421,7 +421,7 @@ public class ScheduleManager {
 
 	/**
 	 * Persist the schedule entity holding the application's specific date scheduling information.
-	 * 
+	 *
 	 * @param specificDateScheduleEntity
 	 * @return
 	 */
