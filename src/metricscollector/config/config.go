@@ -13,6 +13,8 @@ const (
 	GrantTypeClientCredentials = "client_credentials"
 	GrantTypeRefreshToken      = "refresh_token"
 	DefaultLoggingLevel        = "info"
+	DefaultRefreshInterval     = 60
+	DefaultPollInterval        = 30
 )
 
 type CfConfig struct {
@@ -49,18 +51,30 @@ type DbConfig struct {
 	MetricsDbUrl string `yaml:"metrics_db_url"`
 }
 
+type CollectorConfig struct {
+	RefreshInterval int `yaml:"refresh_interval"`
+	PollInterval    int `yaml:"poll_interval"`
+}
+
+var defaultCollectorConfig = CollectorConfig{
+	RefreshInterval: DefaultRefreshInterval,
+	PollInterval:    DefaultPollInterval,
+}
+
 type Config struct {
-	Cf      CfConfig      `yaml:"cf"`
-	Logging LoggingConfig `yaml:"logging"`
-	Server  ServerConfig  `yaml:"server"`
-	Db      DbConfig      `yaml:"db"`
+	Cf        CfConfig        `yaml:"cf"`
+	Logging   LoggingConfig   `yaml:"logging"`
+	Server    ServerConfig    `yaml:"server"`
+	Db        DbConfig        `yaml:"db"`
+	Collector CollectorConfig `yaml:"collector"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
 	conf := &Config{
-		Cf:      defaultCfConfig,
-		Logging: defaultLoggingConfig,
-		Server:  defaultServerConfig,
+		Cf:        defaultCfConfig,
+		Logging:   defaultLoggingConfig,
+		Server:    defaultServerConfig,
+		Collector: defaultCollectorConfig,
 	}
 
 	decoder := candiedyaml.NewDecoder(reader)

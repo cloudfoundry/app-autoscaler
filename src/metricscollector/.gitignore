@@ -1,4 +1,4 @@
 /out
 /logs
 /bin
-test*.go
+test.go
