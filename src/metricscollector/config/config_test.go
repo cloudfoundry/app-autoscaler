@@ -82,6 +82,9 @@ logging:
 db:
   policy_db_url: "postgres://pqgotest:password@localhost/pqgotest" 
   metrics_db_url: "postgres://pqgotest:password@localhost/pqgotest" 
+collector:
+  refresh_interval: 30
+  poll_interval: 10
 `)
 			})
 

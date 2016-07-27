@@ -8,5 +8,9 @@ server:
 logging:
   level: "debug"
 db:
-  policy_db_url: "postgres://pqgotest:postgres@localhost/autoscaler" 
-  metrics_db_url: "postgres://pqgotest:postgres@localhost/autoscaler"
+  policy_db_url: "postgres://postgres:postgres@localhost/autoscaler" 
+  metrics_db_url: "postgres://postgres:postgres@localhost/autoscaler"
+collector:
+  refresh_interval: 60
+  poll_interval: 10
+  

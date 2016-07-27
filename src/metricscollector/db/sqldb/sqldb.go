@@ -159,8 +159,8 @@ func (db *SQLDB) PruneMetrics(before int64) error {
 	return err
 }
 
-func (db *SQLDB) GetAppIds() ([]string, error) {
-	appIds := []string{}
+func (db *SQLDB) GetAppIds() (map[string]bool, error) {
+	appIds := make(map[string]bool)
 	query := "SELECT app_id FROM policy_json"
 
 	rows, err := db.policyDb.Query(query)
@@ -177,7 +177,7 @@ func (db *SQLDB) GetAppIds() ([]string, error) {
 			db.logger.Error("scan-appid-from-search-result", err)
 			return nil, err
 		}
-		appIds = append(appIds, id)
+		appIds[id] = true
 	}
 	return appIds, nil
 }

@@ -4,15 +4,18 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/cloudfoundry-incubator/candiedyaml"
 )
 
 const (
-	GrantTypePassword          = "password"
-	GrantTypeClientCredentials = "client_credentials"
-	GrantTypeRefreshToken      = "refresh_token"
-	DefaultLoggingLevel        = "info"
+	GrantTypePassword                        = "password"
+	GrantTypeClientCredentials               = "client_credentials"
+	GrantTypeRefreshToken                    = "refresh_token"
+	DefaultLoggingLevel                      = "info"
+	DefaultRefreshInterval     time.Duration = 60 * time.Second
+	DefaultPollInterval        time.Duration = 30 * time.Second
 )
 
 type CfConfig struct {
@@ -49,18 +52,30 @@ type DbConfig struct {
 	MetricsDbUrl string `yaml:"metrics_db_url"`
 }
 
+type CollectorConfig struct {
+	RefreshInterval time.Duration `yaml:"refresh_interval"`
+	PollInterval    time.Duration `yaml:"poll_interval"`
+}
+
+var defaultCollectorConfig = CollectorConfig{
+	RefreshInterval: DefaultRefreshInterval,
+	PollInterval:    DefaultPollInterval,
+}
+
 type Config struct {
-	Cf      CfConfig      `yaml:"cf"`
-	Logging LoggingConfig `yaml:"logging"`
-	Server  ServerConfig  `yaml:"server"`
-	Db      DbConfig      `yaml:"db"`
+	Cf        CfConfig        `yaml:"cf"`
+	Logging   LoggingConfig   `yaml:"logging"`
+	Server    ServerConfig    `yaml:"server"`
+	Db        DbConfig        `yaml:"db"`
+	Collector CollectorConfig `yaml:"collector"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
 	conf := &Config{
-		Cf:      defaultCfConfig,
-		Logging: defaultLoggingConfig,
-		Server:  defaultServerConfig,
+		Cf:        defaultCfConfig,
+		Logging:   defaultLoggingConfig,
+		Server:    defaultServerConfig,
+		Collector: defaultCollectorConfig,
 	}
 
 	decoder := candiedyaml.NewDecoder(reader)

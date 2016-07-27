@@ -27,7 +27,7 @@ var _ = Describe("Sqldb", func() {
 		before     int64
 		appId      string
 		metricName string
-		appIds     []string
+		appIds     map[string]bool
 	)
 
 	BeforeEach(func() {
@@ -411,7 +411,9 @@ var _ = Describe("Sqldb", func() {
 
 			It("returns all app ids", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(appIds).To(ConsistOf("first-app-id", "second-app-id", "third-app-id"))
+				Expect(appIds).To(HaveKey("first-app-id"))
+				Expect(appIds).To(HaveKey("second-app-id"))
+				Expect(appIds).To(HaveKey("third-app-id"))
 			})
 
 		})
