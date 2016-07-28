@@ -5,8 +5,5 @@ module.exports = {
   },
   error: function(message, error) {
     console.error(message, error);
-  },
-  log: function(message) {
-    console.log(message);
   }
 };

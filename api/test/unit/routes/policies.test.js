@@ -38,20 +38,61 @@ describe('Routing Policy Creation', function() {
       request(app)
       .put('/v1/apps/12345/policy')
       .send(fakePolicy).end(done)
-    })
-
-    it('should fail to create another policy for app id 12345', function(done) {
+    });
+    it('should update the existing policy for app id 12345', function(done) {
       request(app)
       .put('/v1/apps/12345/policy')
       .send(fakePolicy)
       .end(function(error,result) {
-        expect(result.statusCode).to.equal(400);
-        expect(result.body.success).to.equal(false);
-        expect(result.body.result).to.be.null;
-        expect(result.body.error).to.have.deep.property('name').equal('SequelizeUniqueConstraintError');
-        expect(result.body.error).to.have.deep.property('message').equal('Validation error');
+        expect(result.statusCode).to.equal(200);
+        expect(result.body.success).to.equal(true);
+        expect(result.body.result[0].policy_json).eql(fakePolicy);
+        expect(result.body.error).to.be.null;
         done();
       });
     });
-  })
+
+    it('should successfully get the details of the policy with app id 12345',function(done){
+      request(app)
+      .get('/v1/apps/12345/policy')
+      .end(function(error,result) {
+        expect(result.statusCode).to.equal(200);
+        expect(result.body).to.deep.equal(fakePolicy);
+        done();
+      });    
+    });
+    it('should successfully delete the policy with app id 12345',function(done){
+      request(app)
+      .delete('/v1/apps/12345/policy')
+      .end(function(error,result) {
+        expect(result.statusCode).to.equal(200);
+        expect(result.body).eql({});
+        done();
+      });
+    });
+
+  });
+
+  context('when policy does not exists' ,function() {
+    it('should fail to delete a non existing policy with app id 12345',function(done){
+      request(app)
+      .delete('/v1/apps/6876923/policy')
+      .end(function(error,result) {
+        expect(result.statusCode).to.equal(404);
+        expect(result.body).eql({});
+        done();
+      });    
+    });
+
+    it('should fail to get the details of a non existing policy with app id 12345',function(done){
+      request(app)
+      .get('/v1/apps/12345/policy')
+      .end(function(error,result) {
+        expect(result.statusCode).to.equal(404);
+        expect(result.body).eql({});
+        done();
+      });    
+    });
+
+  });
 });

@@ -11,7 +11,7 @@ module.exports = function(req, res, next) {
       next (schemaValidationResult);
     }
     else{
-      logger.log('Input policy JSON schema structure is valid for application id : ' + 
+      logger.info('Input policy JSON schema structure is valid for application id : ' + 
         req.params.app_id);
       attributeValidator.validatePolicy(req.body, function(valueValidationResult) {
         if(!_.isEmpty(valueValidationResult)) {
@@ -20,7 +20,7 @@ module.exports = function(req, res, next) {
           next (valueValidationResult);
         }
         else{
-          logger.log('Input policy JSON validated successfully.' +
+          logger.info('Input policy JSON validated successfully.' +
            ' Creating policy for application id : ' + req.params.app_id);
           next();
         }
