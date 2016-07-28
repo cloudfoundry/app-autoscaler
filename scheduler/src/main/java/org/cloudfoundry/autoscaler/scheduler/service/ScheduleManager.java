@@ -446,11 +446,8 @@ public class ScheduleManager {
 		if (recurringScheduls != null) {
 			for (RecurringScheduleEntity recurringScheduleEntity : recurringScheduls) {
 				// Persist the schedule in database
-				RecurringScheduleEntity savedScheduleEntity = saveNewRecurringSchedule(recurringScheduleEntity);
+				saveNewRecurringSchedule(recurringScheduleEntity);
 
-				// Ask ScalingJobManager to create scaling job
-				if (savedScheduleEntity != null) {
-				}
 			}
 		}
 	}
