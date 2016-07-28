@@ -18,7 +18,7 @@ app.use(function(err, req, res, next) {
       'result': null
     };
   }
-  //TODO: Relook at the response code while implementing GET and UPDATE
+
   res.status(HttpStatus.BAD_REQUEST).json(errorResponse);
 });
 
