@@ -8,6 +8,7 @@ import (
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry/sonde-go/events"
 
+	"sync"
 	"time"
 )
 
@@ -24,6 +25,7 @@ type Collector struct {
 	tick     *time.Ticker
 	doneChan chan bool
 	pollers  map[string]*AppPoller
+	lock     *sync.Mutex
 }
 
 func NewCollector(logger lager.Logger, conf *config.CollectorConfig, cfc cf.CfClient, noaa NoaaConsumer, database db.DB) *Collector {
@@ -35,6 +37,7 @@ func NewCollector(logger lager.Logger, conf *config.CollectorConfig, cfc cf.CfCl
 		database: database,
 		doneChan: make(chan bool),
 		pollers:  make(map[string]*AppPoller),
+		lock:     &sync.Mutex{},
 	}
 }
 
@@ -66,6 +69,7 @@ func (c *Collector) refreshApps() {
 	}
 	c.logger.Debug("refresh-apps", lager.Data{"appIds": appIds})
 
+	c.lock.Lock()
 	for id, poller := range c.pollers {
 		_, exist := appIds[id]
 		if !exist {
@@ -84,15 +88,19 @@ func (c *Collector) refreshApps() {
 			ap.Start()
 		}
 	}
+	c.lock.Unlock()
 }
 
 func (c *Collector) Stop() {
 	if c.tick != nil {
 		c.tick.Stop()
 		c.doneChan <- true
+
+		c.lock.Lock()
 		for _, ap := range c.pollers {
 			ap.Stop()
 		}
+		c.lock.Unlock()
 	}
 	c.logger.Info("collector-stopped")
 }
