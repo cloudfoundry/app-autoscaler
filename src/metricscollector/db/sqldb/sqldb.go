@@ -105,7 +105,7 @@ func (db *SQLDB) RetrieveMetrics(appid string, name string, start int64, end int
 		" appid = $1 " +
 		" AND name = $2 " +
 		" AND timestamp >= $3" +
-		" AND timestamp <= $4"
+		" AND timestamp <= $4 ORDER BY timestamp"
 
 	if end < 0 {
 		end = time.Now().UnixNano()

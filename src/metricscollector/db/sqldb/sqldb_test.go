@@ -165,6 +165,11 @@ var _ = Describe("Sqldb", func() {
 				Unit:  metrics.UnitBytes,
 			}
 
+			metric.TimeStamp = 666666
+			metric.Instances = []metrics.InstanceMetric{{654321, 0, "6666"}, {764321, 1, "8888"}}
+			err = db.SaveMetric(metric)
+			Expect(err).NotTo(HaveOccurred())
+
 			metric.TimeStamp = 222222
 			metric.Instances = []metrics.InstanceMetric{}
 			err = db.SaveMetric(metric)
@@ -172,11 +177,6 @@ var _ = Describe("Sqldb", func() {
 
 			metric.TimeStamp = 333333
 			metric.Instances = []metrics.InstanceMetric{{123456, 0, "3333"}}
-			err = db.SaveMetric(metric)
-			Expect(err).NotTo(HaveOccurred())
-
-			metric.TimeStamp = 666666
-			metric.Instances = []metrics.InstanceMetric{{654321, 0, "6666"}, {764321, 1, "8888"}}
 			err = db.SaveMetric(metric)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -257,32 +257,34 @@ var _ = Describe("Sqldb", func() {
 			})
 		})
 
-		Context("when retriving all the metrics( start = 0, end = -1)", func() {
-			It("returns all the metrics of the app", func() {
+		Context("when retriving all the metrics( start = 0, end = -1) ", func() {
+			It("returns all the metrics of the app ordered by timestamp", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(mtrcs).To(ConsistOf(
-					&metrics.Metric{
+				Expect(mtrcs).To(HaveLen(3))
+				Expect(*mtrcs[0]).To(Equal(
+					metrics.Metric{
 						AppId:     "test-app-id",
 						Name:      metrics.MetricNameMemory,
 						Unit:      metrics.UnitBytes,
 						TimeStamp: 222222,
 						Instances: []metrics.InstanceMetric{},
-					},
-					&metrics.Metric{
+					}))
+				Expect(*mtrcs[1]).To(Equal(
+					metrics.Metric{
 						AppId:     "test-app-id",
 						Name:      metrics.MetricNameMemory,
 						Unit:      metrics.UnitBytes,
 						TimeStamp: 333333,
 						Instances: []metrics.InstanceMetric{{123456, 0, "3333"}},
-					},
-					&metrics.Metric{
+					}))
+				Expect(*mtrcs[2]).To(Equal(
+					metrics.Metric{
 						AppId:     "test-app-id",
 						Name:      metrics.MetricNameMemory,
 						Unit:      metrics.UnitBytes,
 						TimeStamp: 666666,
 						Instances: []metrics.InstanceMetric{{654321, 0, "6666"}, {764321, 1, "8888"}},
-					},
-				))
+					}))
 			})
 		})
 
@@ -319,6 +321,11 @@ var _ = Describe("Sqldb", func() {
 				Unit:      metrics.UnitBytes,
 				Instances: instances,
 			}
+
+			metric.TimeStamp = 666666
+			err = db.SaveMetric(metric)
+			Expect(err).NotTo(HaveOccurred())
+
 			metric.TimeStamp = 222222
 			err = db.SaveMetric(metric)
 			Expect(err).NotTo(HaveOccurred())
@@ -327,9 +334,6 @@ var _ = Describe("Sqldb", func() {
 			err = db.SaveMetric(metric)
 			Expect(err).NotTo(HaveOccurred())
 
-			metric.TimeStamp = 666666
-			err = db.SaveMetric(metric)
-			Expect(err).NotTo(HaveOccurred())
 		})
 
 		AfterEach(func() {

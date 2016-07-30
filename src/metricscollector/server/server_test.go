@@ -18,6 +18,7 @@ import (
 )
 
 const TestPathMemoryMetrics = "/v1/apps/an-app-id/metrics/memory"
+const TestPathMemoryMetricsHistory = "/v1/apps/an-app-id/metrics_history/memory"
 
 var _ = Describe("Server", func() {
 	var (
@@ -32,8 +33,9 @@ var _ = Describe("Server", func() {
 		cfc := &fakes.FakeCfClient{}
 		consumer := &fakes.FakeNoaaConsumer{}
 		conf := config.ServerConfig{Port: port}
-		httpServer := NewServer(lager.NewLogger("test"), conf, cfc, consumer)
-		serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(port) + TestPathMemoryMetrics)
+		database := &fakes.FakeDB{}
+		httpServer := NewServer(lager.NewLogger("test"), conf, cfc, consumer, database)
+		serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(port))
 		Expect(err).ToNot(HaveOccurred())
 
 		server = ginkgomon.Invoke(httpServer)
@@ -47,9 +49,26 @@ var _ = Describe("Server", func() {
 		rsp, err = http.Get(serverUrl.String())
 	})
 
-	It("retrieves metrics", func() {
-		Expect(err).ToNot(HaveOccurred())
-		Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+	Context("when retrieving metrics", func() {
+		BeforeEach(func() {
+			serverUrl.Path = TestPathMemoryMetrics
+		})
+
+		It("should return 200", func() {
+			Expect(err).ToNot(HaveOccurred())
+			Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+		})
+	})
+
+	Context("when retrieving metrics history", func() {
+		BeforeEach(func() {
+			serverUrl.Path = TestPathMemoryMetricsHistory
+		})
+
+		It("should return 200", func() {
+			Expect(err).ToNot(HaveOccurred())
+			Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+		})
 	})
 
 	Context("when requesting the wrong path", func() {

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"metricscollector/cf"
 	"metricscollector/config"
+	"metricscollector/db"
+	"metricscollector/db/sqldb"
 	"metricscollector/server"
 	"os"
 	"time"
@@ -60,13 +62,18 @@ func main() {
 	}
 
 	dopplerUrl := cfClient.GetEndpoints().DopplerEndpoint
-
 	logger.Info("create-noaa-client", map[string]interface{}{"dopplerUrl": dopplerUrl})
 	tlsConfig := &tls.Config{InsecureSkipVerify: true}
 	noaa := consumer.New(dopplerUrl, tlsConfig, nil)
 	noaa.RefreshTokenFrom(cfClient)
 
-	httpServer := server.NewServer(logger, conf.Server, cfClient, noaa)
+	var database db.DB
+	database, err = sqldb.NewSQLDB(&conf.Db, logger.Session("db"))
+	if err != nil {
+		logger.Error("failed to connect database", err, lager.Data{"conf": conf.Db})
+	}
+
+	httpServer := server.NewServer(logger, conf.Server, cfClient, noaa, database)
 	members := grouper.Members{
 		{"http_server", httpServer},
 	}
