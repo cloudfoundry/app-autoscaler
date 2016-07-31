@@ -29,7 +29,6 @@
     "mocha": "^2.5.3",
     "moment": "^2.14.1",
     "rewire": "^2.5.2",
-    "sqlite3": "^3.1.4",
     "supertest": "^1.2.0",
     "underscore": "^1.8.3"
   }
