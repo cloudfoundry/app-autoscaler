@@ -47,7 +47,7 @@ module.exports = function(app, settings) {
               apiServerUtil.attachPolicy(appId, policyJSON, function(error, response) {
                 if (error == null) {
                   var statusCode = response.statusCode;
-                  logger.info("Api Server response", {status_code: statusCode, response: JSON.stringify(response.body)});
+                  logger.info("Api Server response", { status_code: statusCode, response: JSON.stringify(response.body) });
                   if (statusCode === 200 || statusCode === 201) {
                     t.commit();
                     res.status(statusCode).json({});
@@ -60,13 +60,13 @@ module.exports = function(app, settings) {
                     }
                   }
                 } else {
-                  logger.error("Bind failed: attach policy error", {error: error});
+                  logger.error("Bind failed: attach policy error", { error: error });
                   res.status(500).json({});
                   t.rollback();
                 }
               });
             }).catch(function(error1) { //catch findorcreate
-              logger.error("Bind failed: create error", {error: error1});
+              logger.error("Bind failed: create error", { error: error1 });
               t.rollback();
               if (error1 instanceof models.sequelize.UniqueConstraintError) {
                 res.status(409).json({});
@@ -77,21 +77,21 @@ module.exports = function(app, settings) {
               }
             });
           } else if (length > 1) { // an app has been bound to more than one service instance, this error should not exist
-            logger.error("Bind failed: duplicate bind",{app_guid: appId});
+            logger.error("Bind failed: duplicate bind", { app_guid: appId });
             res.status(409).json({ "description": messageUtil.getMessage("DUPLICATE_BIND", { "applicationId": appId }) });
           } else if (length == 1) { // an app has been bound to a service instance
             var bindingRecord = result[0];
             if (bindingRecord.serviceInstanceId === serviceInstanceId) {
-              logger.error("Bind failed: app already bound", {app_guid: appId, serviceInstanceId: serviceInstanceId});
+              logger.error("Bind failed: app already bound", { app_guid: appId, serviceInstanceId: serviceInstanceId });
               res.status(409).json({});
             } else {
-              logger.error("Bind failed: duplicate bind",{app_guid: appId});
+              logger.error("Bind failed: duplicate bind", { app_guid: appId });
               res.status(409).json({ "description": messageUtil.getMessage("DUPLICATE_BIND", { "applicationId": appId }) });
             }
           }
         });
       }).catch(function(error2) { //catch transaction
-        logger.error("Bind failed: transaction error", {error: error2});
+        logger.error("Bind failed: transaction error", { error: error2 });
         t.rollback();
         res.status(500).json({});
       });
@@ -113,47 +113,54 @@ module.exports = function(app, settings) {
       res.status(400).json({});
       return;
     }
-    if (appId == null || appId.trim() === "") {
-      logger.error("app_guid is required");
-      res.status(400).json({});
-      return;
-    }
     models.sequelize.transaction().then(function(t) {
-      models.binding.destroy({ where: { bindingId: bindingId }, transaction: t }).then(function(count) {
-        if (count > 0) {
-          apiServerUtil.detachPolicy(appId, function(error, response) {
-            if (error == null) {
-              var statusCode = response.statusCode;
-              logger.info("Api Server response", {status_code: statusCode, response: JSON.stringify(response.body)});
-              if (statusCode === 200) {
-                t.commit();
-                res.status(statusCode).json({});
-              } else if (statusCode === 404) {
-                t.commit();
-                res.status(200).json({});
-              } else { //for 400,500 and other status, return 500
-                logger.error("Unbind failed: detach policy failed", {status_code: statusCode});
-                t.rollback();
-                res.status(500).json({});
-              }
-            } else {
-              t.rollback();
-              logger.error("Bind failed: detach policy error", {error: error});
-              res.status(500).json({});
-            }
+      models.binding.findById(bindingId).then(function(result) {
+        if (result != null) {
+          var appId = result.appId;
+          models.binding.destroy({ where: { bindingId: bindingId }, transaction: t }).then(function(count) {
+            if (count > 0) {
+              apiServerUtil.detachPolicy(appId, function(error, response) {
+                if (error == null) {
+                  var statusCode = response.statusCode;
+                  logger.info("Api Server response", { status_code: statusCode, response: JSON.stringify(response.body) });
+                  if (statusCode === 200) {
+                    t.commit();
+                    res.status(statusCode).json({});
+                  } else if (statusCode === 404) {
+                    t.commit();
+                    res.status(200).json({});
+                  } else { //for 400,500 and other status, return 500
+                    logger.error("Unbind failed: detach policy failed", { status_code: statusCode });
+                    t.rollback();
+                    res.status(500).json({});
+                  }
+                } else {
+                  t.rollback();
+                  logger.error("Bind failed: detach policy error", { error: error });
+                  res.status(500).json({});
+                }
 
+              });
+            } else {
+              t.commit();
+              res.status(410).json({});
+            }
+          }).catch(function(error1) {
+            logger.error("Unbind failed: destroy error", { error: error1 });
+            t.rollback();
+            res.status(500).json({});
           });
         } else {
           t.commit();
           res.status(410).json({});
         }
-      }).catch(function(error1) {
-        logger.error("Unbind failed: destroy error", {error: error1});
+      }).catch(function(error3) {
+        logger.error("Unbind failed: find binding failed", { error: error3 });
         t.rollback();
         res.status(500).json({});
       });
     }).catch(function(error2) {
-      logger.error("Unbind failed: transaction error", {error: error2});
+      logger.error("Unbind failed: transaction error", { error: error2 });
       t.rollback();
       res.status(500).json({});
     });
