@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
@@ -55,31 +56,36 @@ public class DataValidationHelper {
 	}
 
 	/**
-	 * Checks if the specified time in milli seconds is after now (current time).
-	 * 
-	 * @param timeInMillis
+	 * Checks if the specified date time is after now (current time).
+	 * @param dateTime
 	 * @param timeZone
-	 * 
 	 * @return
 	 */
-	public static boolean isLaterThanNow(Long timeInMillis, TimeZone timeZone) {
-		if (timeInMillis != null && timeZone != null) {
-			Calendar calendar = Calendar.getInstance(timeZone);
-			Long nowInMillis = calendar.getTimeInMillis();
-
-			return timeInMillis > nowInMillis;
+	public static boolean isLaterThanNow(Date dateTime, TimeZone timeZone) {
+		Calendar calToCompare = DateHelper.getCalendarDate(dateTime, timeZone);
+		Calendar calNow = Calendar.getInstance(timeZone);
+		if (calToCompare.after(calNow)) {
+			return true;
 		}
 		return false;
 	}
 
-	public static boolean isAfter(Long endTimeInMillis, Long startTimeInMillis) {
-		if (isNotNull(startTimeInMillis) && isNotNull(endTimeInMillis)) {
-			return endTimeInMillis > startTimeInMillis;
-		} else {
-			return false;
+	/**
+	 * Checks id the end date time is after start date time
+	 * @param endDateTime
+	 * @param startDateTime
+	 * @return
+	 */
+	public static boolean isAfter(Date endDateTime, Date startDateTime) {
+		if (isNotNull(endDateTime) && isNotNull(startDateTime)) {
+			if (endDateTime.after(startDateTime)) {
+				return true;
+			}
 		}
+		return false;
 
 	}
+
 
 	/**
 	 * This method is given a collection of SpecificDateScheduleDateTime (holding the schedule 
@@ -102,19 +108,19 @@ public class DataValidationHelper {
 				SpecificDateScheduleDateTime next = scheduleStartEndTimeList.get(index + 1);
 
 				// Check for date time overlaps and create a validation error message string array
-				if (Long.compare(current.getStartDateTime(), next.getStartDateTime()) == 0) {
+				if (current.getStartDateTime().compareTo(next.getStartDateTime()) == 0) {
 
 					// startDateTime values are equal, so an overlap. Set up a message for validation error
-					String[] overlapDateTimeValidationErrorMsg = { ScheduleTypeEnum.SPECIFIC_DATE.getDescription(),
-							current.getScheduleIdentifier(), "start_date start_time", next.getScheduleIdentifier(),
-							"start_date start_time" };
+					String[] overlapDateTimeValidationErrorMsg = {
+							current.getScheduleIdentifier(), "start_date_time", next.getScheduleIdentifier(),
+							"start_date_time" };
 					overlapDateTimeValidationErrorMsgList.add(overlapDateTimeValidationErrorMsg);
-				} else if (Long.compare(current.getEndDateTime(), next.getStartDateTime()) >= 0) {// current startDateTime was earlier than next startDateTime
-
+				}
+				// current startDateTime was earlier than next startDateTime, so following check
+				else if (current.getEndDateTime().compareTo(next.getStartDateTime()) >=0 ) {
 					// endDateTime of current is later than or equal to startDateTime of next. Set up a message for validation error
-					String[] overlapDateTimeValidationErrorMsg = { ScheduleTypeEnum.SPECIFIC_DATE.getDescription(),
-							current.getScheduleIdentifier(), "end_date end_time", next.getScheduleIdentifier(),
-							"start_date start_time" };
+					String[] overlapDateTimeValidationErrorMsg = { current.getScheduleIdentifier(), "end_date_time",
+							next.getScheduleIdentifier(), "start_date_time" };
 					overlapDateTimeValidationErrorMsgList.add(overlapDateTimeValidationErrorMsg);
 				}
 			}

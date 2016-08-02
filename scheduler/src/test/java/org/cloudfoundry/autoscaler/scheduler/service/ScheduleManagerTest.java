@@ -111,7 +111,7 @@ public class ScheduleManagerTest {
 		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(appId, 1, 0);
 
 		SpecificDateScheduleEntity entity = schedules.getSpecific_date().get(0);
-		entity.setEndDate(null);
+		entity.setEndDateTime(null);
 
 		try {
 			scheduleManager.createSchedules(schedules);

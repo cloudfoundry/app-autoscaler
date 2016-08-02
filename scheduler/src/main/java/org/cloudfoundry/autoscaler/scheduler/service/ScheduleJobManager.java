@@ -57,17 +57,16 @@ public class ScheduleJobManager {
 		setupScalingScheduleJobData(jobEndDetail, specificDateScheduleEntity, JobActionEnum.END);
 
 		// Build the trigger
-		long triggerStartDateTime = specificDateScheduleEntity.getStartDate().getTime()
-				+ specificDateScheduleEntity.getStartTime().getTime();
-		long triggerEndDateTime = specificDateScheduleEntity.getEndDate().getTime()
-				+ specificDateScheduleEntity.getEndTime().getTime();
 		TimeZone policyTimeZone = TimeZone.getTimeZone(specificDateScheduleEntity.getTimeZone());
 
-		Date triggerStartDate = DateHelper.getDateWithZoneOffset(triggerStartDateTime, policyTimeZone);
-		Date triggerEndDate = DateHelper.getDateWithZoneOffset(triggerEndDateTime, policyTimeZone);
+		Date triggerStartDateTime = DateHelper.getDateWithZoneOffset(specificDateScheduleEntity.getStartDateTime(),
+				policyTimeZone);
+		Date triggerEndDateTime = DateHelper.getDateWithZoneOffset(specificDateScheduleEntity.getEndDateTime(),
+				policyTimeZone);
 
-		Trigger jobStartTrigger = ScheduleJobHelper.buildTrigger(jobStartId, jobStartDetail.getKey(), triggerStartDate);
-		Trigger jobEndTrigger = ScheduleJobHelper.buildTrigger(jobEndId, jobEndDetail.getKey(), triggerEndDate);
+		Trigger jobStartTrigger = ScheduleJobHelper.buildTrigger(jobStartId, jobStartDetail.getKey(),
+				triggerStartDateTime);
+		Trigger jobEndTrigger = ScheduleJobHelper.buildTrigger(jobEndId, jobEndDetail.getKey(), triggerEndDateTime);
 
 		// Schedule the job
 		try {
