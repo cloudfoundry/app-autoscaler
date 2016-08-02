@@ -19,10 +19,6 @@ createuser postgres -s
 ```
 * Start postgres server
 
-**Initialize**
-```js
-npm run bootstrap
-```
 **Run eslint**
 ```js
 npm run lint

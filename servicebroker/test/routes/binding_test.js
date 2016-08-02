@@ -285,7 +285,6 @@ describe('binding RESTful API', function() {
         supertest(server)
           .delete("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
           .set("Authorization", "Basic " + auth)
-          .send({ "app_guid": appId })
           .expect(200)
           .expect('Content-Type', /json/)
           .expect({}, done);
@@ -297,7 +296,6 @@ describe('binding RESTful API', function() {
             supertest(server)
               .delete("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
               .set("Authorization", "Basic " + auth)
-              .send({ "app_guid": appId })
               .expect(500)
               .expect('Content-Type', /json/)
               .expect({}, done);
@@ -310,7 +308,6 @@ describe('binding RESTful API', function() {
             supertest(server)
               .delete("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
               .set("Authorization", "Basic " + auth)
-              .send({ "app_guid": appId })
               .expect(200)
               .expect('Content-Type', /json/)
               .expect({}, done);
@@ -323,7 +320,6 @@ describe('binding RESTful API', function() {
             supertest(server)
               .delete("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
               .set("Authorization", "Basic " + auth)
-              .send({ "app_guid": appId })
               .expect(500)
               .expect('Content-Type', /json/)
               .expect({}, done);
@@ -337,7 +333,6 @@ describe('binding RESTful API', function() {
               .delete("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
               .set("Authorization", "Basic " + auth)
               .set('Accept', 'application/json')
-              .send({ "app_guid": appId })
               .expect(500)
               .expect('Content-Type', /json/)
               .expect({}, done);
@@ -350,7 +345,6 @@ describe('binding RESTful API', function() {
         supertest(server)
           .put("/v2/service_instances//service_bindings/" + bindingId)
           .set("Authorization", "Basic " + auth)
-          .send({ "app_guid": appId })
           .expect(404, done);
       });
     });
@@ -359,7 +353,6 @@ describe('binding RESTful API', function() {
         supertest(server)
           .put("/v2/service_instances/   /service_bindings/" + bindingId)
           .set("Authorization", "Basic " + auth)
-          .send({ "app_guid": appId })
           .expect(400, done);
       });
     });
@@ -369,7 +362,6 @@ describe('binding RESTful API', function() {
         supertest(server)
           .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/")
           .set("Authorization", "Basic " + auth)
-          .send({ "app_guid": appId })
           .expect(404, done);
       });
     });
@@ -378,35 +370,14 @@ describe('binding RESTful API', function() {
         supertest(server)
           .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + "   ")
           .set("Authorization", "Basic " + auth)
-          .send({ "app_guid": appId })
           .expect(404, done);
       });
     });
-
-    context('when appId is undefined', function() {
-      it("return a 400", function(done) {
-        supertest(server)
-          .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
-          .set("Authorization", "Basic " + auth)
-          .expect(400, done);
-      });
-    });
-    context('when appId is blank space', function() {
-      it("return a 404", function(done) {
-        supertest(server)
-          .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
-          .set("Authorization", "Basic " + auth)
-          .send({ "app_guid": "  " })
-          .expect(400, done);
-      });
-    });
-
     context('when the binding does not exist for the app', function() {
       it('return 410', function(done) {
         supertest(server)
           .delete("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
           .set("Authorization", "Basic " + auth)
-          .send({ "app_guid": appId })
           .expect(410)
           .expect('Content-Type', /json/)
           .expect({}, done);
