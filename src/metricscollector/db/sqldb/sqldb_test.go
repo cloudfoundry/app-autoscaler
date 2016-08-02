@@ -314,8 +314,8 @@ var _ = Describe("Sqldb", func() {
 
 			instances := []metrics.InstanceMetric{{123456, 0, "3333"}, {123476, 1, "6666"}}
 			metric := &metrics.Metric{
-				AppId:     appId,
-				Name:      metricName,
+				AppId:     "test-app-id",
+				Name:      metrics.MetricNameMemory,
 				Unit:      metrics.UnitBytes,
 				Instances: instances,
 			}
@@ -371,7 +371,7 @@ var _ = Describe("Sqldb", func() {
 			It("removes metrics before the time specified", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(getNumberOfMetrics()).To(Equal(1))
-				Expect(hasMetric(appId, metrics.MetricNameMemory, 666666)).To(BeTrue())
+				Expect(hasMetric("test-app-id", metrics.MetricNameMemory, 666666)).To(BeTrue())
 			})
 		})
 
