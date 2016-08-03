@@ -5,56 +5,59 @@ import (
 	"metricscollector/db"
 	"metricscollector/metrics"
 
+	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
+
 	"time"
 )
 
 type AppPoller struct {
-	logger   lager.Logger
-	appId    string
-	interval time.Duration
-	cfc      cf.CfClient
-	noaa     NoaaConsumer
-	database db.DB
-	ticker   *time.Ticker
-	doneChan chan bool
+	appId        string
+	pollInterval int
+	logger       lager.Logger
+	cfc          cf.CfClient
+	noaa         NoaaConsumer
+	database     db.DB
+	pclock       clock.Clock
+	ticker       clock.Ticker
+	doneChan     chan bool
 }
 
-func NewAppPoller(logger lager.Logger, appId string, interval time.Duration, cfc cf.CfClient, noaa NoaaConsumer, database db.DB) *AppPoller {
+func NewAppPoller(appId string, pollInterval int, logger lager.Logger, cfc cf.CfClient, noaa NoaaConsumer, database db.DB, pclcok clock.Clock) *AppPoller {
 	return &AppPoller{
-		logger:   logger,
-		appId:    appId,
-		interval: interval,
-		cfc:      cfc,
-		noaa:     noaa,
-		database: database,
-		doneChan: make(chan bool),
+		appId:        appId,
+		pollInterval: pollInterval,
+		logger:       logger,
+		cfc:          cfc,
+		noaa:         noaa,
+		database:     database,
+		pclock:       pclcok,
+		doneChan:     make(chan bool),
 	}
 
 }
 
 func (ap *AppPoller) Start() {
-	ap.ticker = time.NewTicker(ap.interval)
+	ap.ticker = ap.pclock.NewTicker(time.Duration(ap.pollInterval) * time.Second)
 	go ap.startPollMetrics()
 
-	ap.logger.Info("app-poller-started", lager.Data{"appid": ap.appId})
+	ap.logger.Info("app-poller-started", lager.Data{"appid": ap.appId, "poll-interval": ap.pollInterval})
 }
 
 func (ap *AppPoller) Stop() {
 	if ap.ticker != nil {
 		ap.ticker.Stop()
-		ap.doneChan <- true
+		close(ap.doneChan)
 	}
 	ap.logger.Info("app-poller-stopped", lager.Data{"appid": ap.appId})
 }
 
 func (ap *AppPoller) startPollMetrics() {
-	ap.pollMetric()
 	for {
 		select {
 		case <-ap.doneChan:
 			return
-		case <-ap.ticker.C:
+		case <-ap.ticker.C():
 			ap.pollMetric()
 		}
 	}

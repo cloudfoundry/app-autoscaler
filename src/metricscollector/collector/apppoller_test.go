@@ -6,12 +6,13 @@ import (
 	"metricscollector/collector/fakes"
 	"metricscollector/metrics"
 
+	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry/sonde-go/events"
 	"github.com/gogo/protobuf/proto"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
 
 	"errors"
 	"time"
@@ -24,22 +25,30 @@ var _ = Describe("Apppoller", func() {
 		noaa     *fakes.FakeNoaaConsumer
 		database *fakes.FakeDB
 		poller   *AppPoller
+		fclock   *fakeclock.FakeClock
+		buffer   *gbytes.Buffer
 	)
 
 	BeforeEach(func() {
 		cfc = &fakes.FakeCfClient{}
 		noaa = &fakes.FakeNoaaConsumer{}
 		database = &fakes.FakeDB{}
-		logger := lager.NewLogger("apppoller-test")
 
-		poller = NewAppPoller(logger, "test-app-id", TestPollInterval*time.Second, cfc, noaa, database)
+		logger := lager.NewLogger("apppoller-test")
+		buffer = gbytes.NewBuffer()
+		logger.RegisterSink(lager.NewWriterSink(buffer, lager.ERROR))
+
+		fclock = fakeclock.NewFakeClock(time.Now())
+		poller = NewAppPoller("test-app-id", TestPollInterval, logger, cfc, noaa, database, fclock)
 	})
 
 	Describe("Start", func() {
 
 		JustBeforeEach(func() {
 			poller.Start()
-			time.Sleep(2500 * time.Millisecond)
+		})
+
+		AfterEach(func() {
 			poller.Stop()
 		})
 
@@ -76,7 +85,14 @@ var _ = Describe("Apppoller", func() {
 				})
 
 				It("saves all the metrics to database", func() {
-					Expect(database.SaveMetricCallCount()).To(Equal(3))
+					fclock.Increment(TestPollInterval * time.Second)
+					Eventually(database.SaveMetricCallCount).Should(Equal(1))
+
+					fclock.Increment(TestPollInterval * time.Second)
+					Eventually(database.SaveMetricCallCount).Should(Equal(2))
+
+					fclock.Increment(TestPollInterval * time.Second)
+					Eventually(database.SaveMetricCallCount).Should(Equal(3))
 				})
 			})
 
@@ -90,8 +106,15 @@ var _ = Describe("Apppoller", func() {
 					}
 				})
 
-				It("saves nothings to database", func() {
-					Expect(database.SaveMetricCallCount()).To(BeZero())
+				It("saves nothing to database", func() {
+					fclock.Increment(TestPollInterval * time.Second)
+					Consistently(database.SaveMetricCallCount).Should(BeZero())
+
+					fclock.Increment(TestPollInterval * time.Second)
+					Consistently(database.SaveMetricCallCount).Should(BeZero())
+
+					fclock.Increment(TestPollInterval * time.Second)
+					Consistently(database.SaveMetricCallCount).Should(BeZero())
 				})
 
 			})
@@ -118,7 +141,14 @@ var _ = Describe("Apppoller", func() {
 				})
 
 				It("saves non-empty metrics to database", func() {
-					Expect(database.SaveMetricCallCount()).To(Equal(2))
+					fclock.Increment(TestPollInterval * time.Second)
+					Eventually(database.SaveMetricCallCount).Should(Equal(1))
+
+					fclock.Increment(TestPollInterval * time.Second)
+					Consistently(database.SaveMetricCallCount).Should(Equal(1))
+
+					fclock.Increment(TestPollInterval * time.Second)
+					Eventually(database.SaveMetricCallCount).Should(Equal(2))
 				})
 			})
 		})
@@ -126,11 +156,18 @@ var _ = Describe("Apppoller", func() {
 		Context("when retrieving container metrics all fails", func() {
 
 			BeforeEach(func() {
-				noaa.ContainerMetricsReturns(nil, errors.New("an error"))
+				noaa.ContainerMetricsReturns(nil, errors.New("test apppoller error"))
 			})
 
-			It("saves nothing to database", func() {
-				Expect(database.SaveMetricCallCount()).To(Equal(0))
+			It("saves nothing to database and logs the errors", func() {
+				fclock.Increment(TestPollInterval * time.Second)
+				Consistently(database.SaveMetricCallCount).Should(BeZero())
+				Eventually(buffer).Should(gbytes.Say("test apppoller error"))
+
+				fclock.Increment(TestPollInterval * time.Second)
+				Consistently(database.SaveMetricCallCount).Should(BeZero())
+				Eventually(buffer).Should(gbytes.Say("test apppoller error"))
+
 			})
 		})
 
@@ -141,7 +178,7 @@ var _ = Describe("Apppoller", func() {
 					Expect(token).To(Equal("bearer test-access-token"))
 
 					if noaa.ContainerMetricsCallCount()%2 == 0 {
-						return nil, errors.New("an error")
+						return nil, errors.New("apppoller test error")
 					} else {
 						return []*events.ContainerMetric{
 							&events.ContainerMetric{
@@ -154,8 +191,17 @@ var _ = Describe("Apppoller", func() {
 				}
 			})
 
-			It("saves successful results to database", func() {
-				Expect(database.SaveMetricCallCount()).To(Equal(2))
+			It("saves successful results to database and logs the errors", func() {
+				fclock.Increment(TestPollInterval * time.Second)
+				Eventually(database.SaveMetricCallCount).Should(Equal(1))
+
+				fclock.Increment(TestPollInterval * time.Second)
+				Consistently(database.SaveMetricCallCount).Should(Equal(1))
+				Eventually(buffer).Should(gbytes.Say("apppoller test error"))
+
+				fclock.Increment(TestPollInterval * time.Second)
+				Eventually(database.SaveMetricCallCount).Should(Equal(2))
+
 			})
 
 		})
@@ -163,29 +209,21 @@ var _ = Describe("Apppoller", func() {
 	})
 
 	Describe("Stop", func() {
-		JustBeforeEach(func() {
+		BeforeEach(func() {
+			poller.Start()
+		})
+
+		It("stops the polling", func() {
+			fclock.Increment(TestPollInterval * time.Second)
+			Eventually(noaa.ContainerMetricsCallCount).Should(Equal(1))
+
+			fclock.Increment(TestPollInterval * time.Second)
+			Eventually(noaa.ContainerMetricsCallCount).Should(Equal(2))
+
 			poller.Stop()
+			fclock.Increment(TestPollInterval * time.Second)
+			Consistently(noaa.ContainerMetricsCallCount).Should(Equal(2))
 		})
-
-		Context("when apppoller is started", func() {
-			BeforeEach(func() {
-				poller.Start()
-				time.Sleep(2500 * time.Millisecond)
-			})
-
-			It("stops the polling", func() {
-				num := noaa.ContainerMetricsCallCount()
-				time.Sleep(1500 * time.Millisecond)
-				Expect(noaa.ContainerMetricsCallCount()).To(Equal(num))
-			})
-		})
-
-		Context("when apppoller is not started", func() {
-			It("does nothing", func() {
-				Expect(noaa.ContainerMetricsCallCount()).To(BeZero())
-			})
-		})
-
 	})
 
 })

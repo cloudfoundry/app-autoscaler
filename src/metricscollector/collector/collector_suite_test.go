@@ -11,9 +11,10 @@ import (
 //go:generate counterfeiter -o ./fakes/fake_noaa_consumer.go . NoaaConsumer
 //go:generate counterfeiter -o ./fakes/fake_DB.go ../db DB
 
+// make sure TestPollInterval is less than TestRefreshInterval
 const (
-	TestRefreshInterval = 2
 	TestPollInterval    = 1
+	TestRefreshInterval = 3
 )
 
 func TestCollector(t *testing.T) {
