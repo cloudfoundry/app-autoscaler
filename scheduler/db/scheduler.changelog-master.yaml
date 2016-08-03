@@ -24,23 +24,13 @@ databaseChangeLog:
                   constraints:
                     nullable: false
               - column:
-                  name: start_date
+                  name: start_date_time
                   type: date
                   constraints:
                     nullable: false
               - column:
-                  name: end_date
+                  name: end_date_time
                   type: date
-                  constraints:
-                    nullable: false
-              - column:
-                  name: start_time
-                  type: time
-                  constraints:
-                    nullable: false
-              - column:
-                  name: end_time
-                  type: time
                   constraints:
                     nullable: false
               - column:

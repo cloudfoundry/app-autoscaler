@@ -11,6 +11,8 @@ import java.util.TimeZone;
  */
 public class DateHelper {
 	
+	public static final String DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm";
+
 	public static final String[] supportedTimezones = new String[] {
 	           "(GMT -12:00) Etc/GMT+12",
 	           "(GMT -11:00) Etc/GMT+11",
@@ -596,11 +598,12 @@ public class DateHelper {
 	           "(GMT +14:00) Pacific/Kiritimati"};
 
 
-	public static Date getDateWithZoneOffset(long dateTime, TimeZone policyTimeZone) {
+	public static Date getDateWithZoneOffset(Date policyDateTime, TimeZone policyTimeZone) {
+		long policyDateTimeInMillis = getTimeInMillis(policyDateTime, policyTimeZone);
 
 		TimeZone currentTimeZone = TimeZone.getDefault();
 
-		Date date = new Date(dateTime - policyTimeZone.getRawOffset() + currentTimeZone.getRawOffset());
+		Date date = new Date(policyDateTimeInMillis - policyTimeZone.getRawOffset() + currentTimeZone.getRawOffset());
 
 		return date;
 	}
@@ -616,11 +619,23 @@ public class DateHelper {
 
 		return sdf.format(date);
 	}
+
+	public static String convertDateTimeToString(Date date) {
+		SimpleDateFormat sdf = new SimpleDateFormat(DATE_TIME_FORMAT);
+		return sdf.format(date);
+	}
+
 	
-	public static Long getTimeInMillis(Date date, Date time, TimeZone timeZone){
+	public static Long getTimeInMillis(Date dateTime, TimeZone timeZone) {
 		Calendar targetTime = Calendar.getInstance(timeZone);
-		targetTime.setTimeInMillis(date.getTime() + time.getTime());
+		targetTime.setTimeInMillis(dateTime.getTime());
 		return targetTime.getTimeInMillis();
+	}
+
+	public static Calendar getCalendarDate(Date dateTime, TimeZone timeZone) {
+		Calendar calendar = Calendar.getInstance(timeZone);
+		calendar.setTime(dateTime);
+		return calendar;
 	}
 
 }

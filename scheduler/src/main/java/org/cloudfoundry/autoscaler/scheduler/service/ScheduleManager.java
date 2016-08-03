@@ -28,9 +28,6 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Service class to persist the schedule entity in the database and create
  * scheduled job.
- *
- *
- *
  */
 @Service
 public class ScheduleManager {
@@ -197,7 +194,7 @@ public class ScheduleManager {
 		int scheduleIdentifier = 0;
 		for (SpecificDateScheduleEntity specificDateScheduleEntity : specificDateSchedules) {
 
-			String scheduleBeingProcessed = ScheduleTypeEnum.SPECIFIC_DATE.getDescription() + " " + scheduleIdentifier; // Specific date/Recurring
+			String scheduleBeingProcessed = ScheduleTypeEnum.SPECIFIC_DATE.getDescription() + " " + scheduleIdentifier; // Specific date/Recurring and the index of schedule being processed
 
 			// Validate the dates and times only if the time zone is valid
 			if (isValidTimeZone) {
@@ -206,7 +203,6 @@ public class ScheduleManager {
 						specificDateScheduleEntity);
 
 				if (validScheduleDateTime != null) {
-					validScheduleDateTime.setScheduleIdentifier(String.valueOf(scheduleIdentifier));
 					scheduleStartEndTimeList.add(validScheduleDateTime);
 
 				}
@@ -340,63 +336,40 @@ public class ScheduleManager {
 		boolean isValid = true;
 		SpecificDateScheduleDateTime validScheduleDateTime = null;
 
-		Date startDate = specificDateSchedule.getStartDate();
-		Date endDate = specificDateSchedule.getEndDate();
-		Date startTime = specificDateSchedule.getStartTime();
-		Date endTime = specificDateSchedule.getEndTime();
+		Date startDateTime = specificDateSchedule.getStartDateTime();
+		Date endDateTime = specificDateSchedule.getEndDateTime();
+
 		TimeZone timeZone = TimeZone.getTimeZone(specificDateSchedule.getTimeZone());
 
-		Long startTimeInMillis = null;
-		Long endTimeInMillis = null;
-
-		boolean isValidDt = DataValidationHelper.isNotNull(startDate);
-		if (!isValidDt) {
+		boolean isValidDtTm = DataValidationHelper.isNotNull(startDateTime);
+		if (!isValidDtTm) {
 			isValid = false;
 			validationErrorResult.addFieldError(specificDateSchedule, "schedule.data.value.not.specified",
-					scheduleBeingProcessed, "start_date");
-		}
-		boolean isValidTm = DataValidationHelper.isNotNull(startTime);
-		if (!isValidTm) {
-			isValid = false;
-			validationErrorResult.addFieldError(specificDateSchedule, "schedule.data.value.not.specified",
-					scheduleBeingProcessed, "start_time");
+					scheduleBeingProcessed, "start_date_time");
 		}
 
-		if (isValidDt && isValidTm) {
-			startTimeInMillis = DateHelper.getTimeInMillis(startDate, startTime, timeZone);
-
+		if (isValidDtTm) {
 			// Check the start date time is after current date time
-
-			if (!DataValidationHelper.isLaterThanNow(startTimeInMillis, timeZone)) {
+			if (!DataValidationHelper.isLaterThanNow(startDateTime, timeZone)) {
 				isValid = false;
 				validationErrorResult.addFieldError(specificDateSchedule, "schedule.date.invalid.current.after",
-						scheduleBeingProcessed, "start_date start_time", startDate, startTime);
+						scheduleBeingProcessed, "start_date_time", DateHelper.convertDateTimeToString(startDateTime));
 			}
-
 		}
 
-		isValidDt = DataValidationHelper.isNotNull(endDate);
-		if (!isValidDt) {
+		isValidDtTm = DataValidationHelper.isNotNull(endDateTime);
+		if (!isValidDtTm) {
 			isValid = false;
 			validationErrorResult.addFieldError(specificDateSchedule, "schedule.data.value.not.specified",
-					scheduleBeingProcessed, "end_date");
+					scheduleBeingProcessed, "end_date_time");
 		}
 
-		isValidTm = DataValidationHelper.isNotNull(endTime);
-		if (!isValidTm) {
-			isValid = false;
-			validationErrorResult.addFieldError(specificDateSchedule, "schedule.data.value.not.specified",
-					scheduleBeingProcessed, "end_time");
-		}
-
-		if (isValidDt && isValidTm) {
-			endTimeInMillis = DateHelper.getTimeInMillis(endDate, endTime, timeZone);
-
+		if (isValidDtTm) {
 			// Check the end date time is after current date time
-			if (!DataValidationHelper.isLaterThanNow(endTimeInMillis, timeZone)) {
+			if (!DataValidationHelper.isLaterThanNow(endDateTime, timeZone)) {
 				isValid = false;
 				validationErrorResult.addFieldError(specificDateSchedule, "schedule.date.invalid.current.after",
-						scheduleBeingProcessed, "end_date end_time", endDate, endTime);
+						scheduleBeingProcessed, "end_date_time", DateHelper.convertDateTimeToString(endDateTime));
 			}
 
 		}
@@ -405,12 +378,12 @@ public class ScheduleManager {
 		if (isValid) {
 
 			// If end date time is not after start date time, then dates invalid
-			if (!DataValidationHelper.isAfter(endTimeInMillis, startTimeInMillis)) {
+			if (!DataValidationHelper.isAfter(endDateTime, startDateTime)) {
 				validationErrorResult.addFieldError(specificDateSchedule, "schedule.date.invalid.start.after.end",
-						scheduleBeingProcessed, "end_date end_time", endDate + " " + endTime, "start_date start_time",
-						startDate + " " + startTime);
+						scheduleBeingProcessed, "end_date_time", DateHelper.convertDateTimeToString(endDateTime), "start_date_time", DateHelper.convertDateTimeToString(startDateTime));
 			} else {
-				validScheduleDateTime = new SpecificDateScheduleDateTime(startTimeInMillis, endTimeInMillis);
+				validScheduleDateTime = new SpecificDateScheduleDateTime(scheduleBeingProcessed,
+						startDateTime, endDateTime);
 			}
 		}
 
