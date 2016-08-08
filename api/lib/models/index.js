@@ -24,12 +24,12 @@ module.exports = function(callback) {
         callback();
       }
     })
-  .catch(function(error) {
-    logger.error('DB Connection failed ',error);
-    if (callback) {
-      callback(error);
-    }
-  });
+    .catch(function(error) {
+      logger.error('DB Connection failed ',error);
+      if (callback) {
+        callback(error);
+      }
+    });
   var db = {};
 
   fs

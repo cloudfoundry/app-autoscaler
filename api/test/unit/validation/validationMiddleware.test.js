@@ -365,4 +365,209 @@ describe('Validate Policy JSON Schema structure', function() {
       done();
     });
   });
+  it('should successfully validate policy schema without start_date and end_date in recurring_schedule', function(done) {
+    request(app)
+    .put('/v1/apps/12359/policy',validationMiddleware)
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(201);
+      expect(result.body.success).to.equal(true);
+      expect(result.body.error).to.be.null;
+      done();
+    });
+  });
+  it('should successfully validate policy schema with start_date but without end_date in recurring_schedule', function(done) {
+    delete  fakePolicy.schedules.recurring_schedule[0].end_date;
+    request(app)
+    .put('/v1/apps/12359/policy',validationMiddleware)
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(201);
+      expect(result.body.success).to.equal(true);
+      expect(result.body.error).to.be.null;
+      done();
+    });
+  });
+  it('should successfully validate policy schema with end_date but without start_date in recurring_schedule', function(done) {
+    delete  fakePolicy.schedules.recurring_schedule[0].start_date;
+    request(app)
+    .put('/v1/apps/12359/policy',validationMiddleware)
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(201);
+      expect(result.body.success).to.equal(true);
+      expect(result.body.error).to.be.null;
+      done();
+    });
+  });
+  it('should fail to validate policy schema with wrong start_date format in recurring_schedule', function(done) {
+    fakePolicy.schedules.recurring_schedule[0].start_date = '2016-76-900';
+    request(app)
+    .put('/v1/apps/12359/policy',validationMiddleware)
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(400);
+      expect(result.body.success).to.equal(false);
+      expect(result.body.error).to.not.be.null;
+      expect(result.body.error[0].message).to.equal('is not any of [subschema 0],[subschema 1]');
+      expect(result.body.error[0].property).to.equal('instance.schedules.recurring_schedule[0].start_date');
+      expect(result.body.error[0].stack).to.equal('instance.schedules.recurring_schedule[0].start_date is not any of [subschema 0],[subschema 1]');
+      done();
+    });
+  });
+  it('should fail to validate policy schema with wrong end_date format in recurring_schedule', function(done) {
+    fakePolicy.schedules.recurring_schedule[0].end_date = '23-07-2016';
+    request(app)
+    .put('/v1/apps/12359/policy',validationMiddleware)
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(400);
+      expect(result.body.success).to.equal(false);
+      expect(result.body.error).to.not.be.null;
+      expect(result.body.error[0].message).to.equal('is not any of [subschema 0],[subschema 1]');
+      expect(result.body.error[0].property).to.equal('instance.schedules.recurring_schedule[0].end_date');
+      expect(result.body.error[0].stack).to.equal('instance.schedules.recurring_schedule[0].end_date is not any of [subschema 0],[subschema 1]');
+      done();
+    });
+  });
+  it('should fail to validate policy schema if start_date is after end_date in recurring_schedule', function(done) {
+    fakePolicy.schedules.recurring_schedule[0].start_date = '2016-07-23';
+    fakePolicy.schedules.recurring_schedule[0].end_date = '2016-05-12';
+    request(app)
+    .put('/v1/apps/12359/policy',validationMiddleware)
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(400);
+      expect(result.body.success).to.equal(false);
+      expect(result.body.error).to.not.be.null;
+      expect(result.body.error[0].message).to.equal('recurring_schedule.start_date and recurring_schedule.end_date values are not compatible');
+      expect(result.body.error[0].property).to.equal('recurring_schedule.start_date');
+      expect(result.body.error[0].stack).to.equal('start_date 2016-07-23 is after end_date 2016-05-12 in recurring_schedule :[0]');
+      done();
+    });
+  });
+  
+  it('should validate policy schema without initial_min_instance_count in recurring_schedule', function(done) {
+    delete  fakePolicy.schedules.recurring_schedule[0].initial_min_instance_count;
+    delete  fakePolicy.schedules.recurring_schedule[1].initial_min_instance_count;
+    request(app)
+    .put('/v1/apps/12359/policy',validationMiddleware)
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(201);
+      expect(result.body.success).to.equal(true);
+      expect(result.body.error).to.be.null;
+      done();
+    });
+  });
+  
+  it('should validate policy schema without initial_min_instance_count in specific_date schedule', function(done) {
+    delete  fakePolicy.schedules.specific_date[0].initial_min_instance_count;
+    delete  fakePolicy.schedules.specific_date[1].initial_min_instance_count;
+    request(app)
+    .put('/v1/apps/12359/policy',validationMiddleware)
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(201);
+      expect(result.body.success).to.equal(true);
+      expect(result.body.error).to.be.null;
+      done();
+    });
+  });
+  
+  it('should fail to validate policy schema if initial_min_instance_count is greater than instance_max_count in recurring_schedule', function(done) {
+    fakePolicy.schedules.recurring_schedule[0].initial_min_instance_count = 11;
+    request(app)
+    .put('/v1/apps/12359/policy',validationMiddleware)
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(400);
+      expect(result.body.success).to.equal(false);
+      expect(result.body.error).to.not.be.null;
+      expect(result.body.error[0].message).to.equal('recurring_schedule.initial_min_instance_count and recurring_schedule.instance_max_count values are not compatible');
+      expect(result.body.error[0].property).to.equal('recurring_schedule.initial_min_instance_count');
+      expect(result.body.error[0].stack).to.equal('initial_min_instance_count 11 is higher than instance_max_count 10 in recurring_schedule :[0]');
+      done();
+    });
+  });
+  
+  it('should fail to validate policy schema if initial_min_instance_count is less than instance_min_count in recurring_schedule', function(done) {
+    fakePolicy.schedules.recurring_schedule[1].initial_min_instance_count = 1;
+    request(app)
+    .put('/v1/apps/12359/policy',validationMiddleware)
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(400);
+      expect(result.body.success).to.equal(false);
+      expect(result.body.error).to.not.be.null;
+      expect(result.body.error[0].message).to.equal('recurring_schedule.initial_min_instance_count and recurring_schedule.instance_min_count values are not compatible');
+      expect(result.body.error[0].property).to.equal('recurring_schedule.initial_min_instance_count');
+      expect(result.body.error[0].stack).to.equal('initial_min_instance_count 1 is lower than instance_min_count 3 in recurring_schedule :[1]');
+      done();
+    });
+  });
+  it('should fail to validate policy schema if initial_min_instance_count is greater than instance_max_count in specific_date schedule', function(done) {
+    fakePolicy.schedules.specific_date[0].initial_min_instance_count = 5;
+    request(app)
+    .put('/v1/apps/12359/policy',validationMiddleware)
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(400);
+      expect(result.body.success).to.equal(false);
+      expect(result.body.error).to.not.be.null;
+      expect(result.body.error[0].message).to.equal('specific_date.initial_min_instance_count and specific_date.instance_max_count values are not compatible');
+      expect(result.body.error[0].property).to.equal('specific_date.initial_min_instance_count');
+      expect(result.body.error[0].stack).to.equal('initial_min_instance_count 5 is higher than instance_max_count 4 in specific_date :[0]');
+      done();
+    });
+  });
+  
+  it('should fail to validate policy schema if initial_min_instance_count is less than instance_min_count in recurring_schedule', function(done) {
+    fakePolicy.schedules.specific_date[1].initial_min_instance_count = 1;
+    request(app)
+    .put('/v1/apps/12359/policy',validationMiddleware)
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(400);
+      expect(result.body.success).to.equal(false);
+      expect(result.body.error).to.not.be.null;
+      expect(result.body.error[0].message).to.equal('specific_date.initial_min_instance_count and specific_date.instance_min_count values are not compatible');
+      expect(result.body.error[0].property).to.equal('specific_date.initial_min_instance_count');
+      expect(result.body.error[0].stack).to.equal('initial_min_instance_count 1 is lower than instance_min_count 2 in specific_date :[1]');
+      done();
+    });
+  });
+  
+  it('Should fail to validate the policy for non integer initial_min_instance_count in recurring_schedule',function(){
+      fakePolicy.schedules.recurring_schedule[0].initial_min_instance_count = 1.3;
+      request(app)
+      .put('/v1/apps/12359/policy',validationMiddleware)
+      .send(fakePolicy)
+      .end(function(error,result) {
+        expect(result.statusCode).to.equal(400);
+        expect(result.body.success).to.equal(false);
+        expect(result.body.error).to.not.be.null;
+        expect(result.body.error[0].message).to.equal('is not of a type(s) integer');
+        expect(result.body.error[0].property).to.equal('instance.schedules.recurring_schedule[0].initial_min_instance_count');
+        expect(result.body.error[0].stack).to.equal('instance.schedules.recurring_schedule[0].initial_min_instance_count is not of a type(s) integer');
+        done();
+      });
+  });
+  
+  it('Should fail to validate the policy for non integer initial_min_instance_count in specific_date',function(){
+      fakePolicy.schedules.specific_date[1].initial_min_instance_count = 1.3;
+      request(app)
+      .put('/v1/apps/12359/policy',validationMiddleware)
+      .send(fakePolicy)
+      .end(function(error,result) {
+        expect(result.statusCode).to.equal(400);
+        expect(result.body.success).to.equal(false);
+        expect(result.body.error).to.not.be.null;
+        expect(result.body.error[0].message).to.equal('is not of a type(s) integer');
+        expect(result.body.error[0].property).to.equal('instance.schedules.specific_date[0].initial_min_instance_count');
+        expect(result.body.error[0].stack).to.equal('instance.schedules.specific_date[0].initial_min_instance_count is not of a type(s) integer');
+        done();
+      });
+  });
+  
 });

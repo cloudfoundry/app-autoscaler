@@ -13,8 +13,9 @@ describe('Validating Policy JSON schema construction',function(){
     expect(schema.id).to.equal('/specific_date');
     expect(schema.properties.start_date_time).to.deep.equal({'type':'string','format':'dateTimeFormat'});
     expect(schema.properties.end_date_time).to.deep.equal({ 'type':'string','format':'dateTimeFormat' });
-    expect(schema.properties.instance_min_count).to.deep.equal({ 'type':'number','minimum':1 });
-    expect(schema.properties.instance_max_count).to.deep.equal({ 'type':'number' ,'minimum':1});
+    expect(schema.properties.instance_min_count).to.deep.equal({ 'type':'integer','minimum':1 });
+    expect(schema.properties.instance_max_count).to.deep.equal({ 'type':'integer' ,'minimum':1});
+    expect(schema.properties.initial_min_instance_count).to.deep.equal({ 'type':'integer','minimum':1 });
     expect(schema.required).to.deep.equal( ['start_date_time','end_date_time','instance_min_count','instance_max_count']);
     
   });
@@ -26,12 +27,15 @@ describe('Validating Policy JSON schema construction',function(){
     expect(schema.id).to.equal('/recurring_schedule');
     expect(schema.properties.start_time).to.deep.equal({ 'type':'string','format':'timeFormat' });
     expect(schema.properties.end_time).to.deep.equal({ 'type':'string','format':'timeFormat' });
-    expect(schema.properties.instance_min_count).to.deep.equal({ 'type':'number','minimum':1});
-    expect(schema.properties.instance_max_count).to.deep.equal({ 'type':'number','minimum':1});
+    expect(schema.properties.instance_min_count).to.deep.equal({ 'type':'integer','minimum':1});
+    expect(schema.properties.instance_max_count).to.deep.equal({ 'type':'integer','minimum':1});
+    expect(schema.properties.initial_min_instance_count).to.deep.equal({ 'type':'integer','minimum':1 });
     expect(schema.properties.days_of_week).to.deep.equal({ 'type':'array','uniqueItems': true,
           'items':{ 'type':'number','enum':weekEnum } });
     expect(schema.properties.days_of_month).to.deep.equal({ 'type':'array','uniqueItems': true,
           'items':{ 'type':'number','enum':monthEnum } });
+    expect(schema.properties.start_date).to.deep.equal({'anyOf': [{ 'type':'string', 'format':'dateFormat' },{ 'type':'string', 'enum':[''] } ]});
+    expect(schema.properties.end_date).to.deep.equal({'anyOf': [ { 'type':'string', 'format':'dateFormat' },{ 'type':'string', 'enum':[''] }]});
     expect(schema.required).to.deep.equal(['start_time','end_time','instance_min_count','instance_max_count']);
     expect(schema.oneOf).to.deep.equal([ {'required':['days_of_week']}, {'required':['days_of_month']} ]);;
   });
@@ -70,8 +74,8 @@ describe('Validating Policy JSON schema construction',function(){
   it('should validate the getPolicySchema successfully',function(){
     var schema = schemaValidatorPrivate.__get__('getPolicySchema')(); 
     expect(schema.id).to.equal('/policySchema');
-    expect(schema.properties.instance_min_count).to.deep.equal( { 'type':'number','minimum':1});
-    expect(schema.properties.instance_min_count).to.deep.equal( { 'type':'number','minimum':1 });
+    expect(schema.properties.instance_min_count).to.deep.equal( { 'type':'integer','minimum':1});
+    expect(schema.properties.instance_min_count).to.deep.equal( { 'type':'integer','minimum':1 });
     expect(schema.properties.scaling_rules.type).to.equal('array');
     expect(schema.properties.scaling_rules.items).to.deep.equal({ '$ref': '/scaling_rules' });
     expect(schema.properties.schedules).to.deep.equal({ '$ref':'/schedules' });
