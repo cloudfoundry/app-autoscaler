@@ -46,6 +46,24 @@ describe('Validating Policy JSON properties',function(){
         expect(result[0].stack).to.equal('instance_min_count 10 is higher or equal to instance_max_count 2 in specific_date :[0]');  
       });
     });
+    it('Should fail to validate the policy as initial_min_instance_count is greater than instance_max_count in specific_date',function(){
+        fakePolicy.schedules.specific_date[0].initial_min_instance_count = 5;
+        fakePolicy.schedules.specific_date[0].instance_max_count = 4;
+        attributeValidator.validatePolicy(fakePolicy,function(result){
+          expect(result[0].property).to.equal('specific_date.initial_min_instance_count');
+          expect(result[0].message).to.equal('specific_date.initial_min_instance_count and specific_date.instance_max_count values are not compatible');
+          expect(result[0].stack).to.equal('initial_min_instance_count 5 is higher than instance_max_count 4 in specific_date :[0]');  
+        });
+    });
+    it('Should fail to validate the policy as initial_min_instance_count is less than instance_min_count in specific_date',function(){
+        fakePolicy.schedules.specific_date[0].initial_min_instance_count = 1;
+        fakePolicy.schedules.specific_date[0].instance_min_count = 2;
+        attributeValidator.validatePolicy(fakePolicy,function(result){
+          expect(result[0].property).to.equal('specific_date.initial_min_instance_count');
+          expect(result[0].message).to.equal('specific_date.initial_min_instance_count and specific_date.instance_min_count values are not compatible');
+          expect(result[0].stack).to.equal('initial_min_instance_count 1 is lower than instance_min_count 2 in specific_date :[0]');  
+        });
+    });
     it('Should fail to validate the Policy with overlapping time range in specific date',function(){
       fakePolicy.schedules.specific_date[1].start_date_time = '2015-06-04T10:53';
       fakePolicy.schedules.specific_date[1].end_date_time = '2015-06-21T23:45';
@@ -88,6 +106,15 @@ describe('Validating Policy JSON properties',function(){
         expect(result[0].stack).to.equal('start_time 23:00 is after end_time 13:15 in recurring_schedule :[1]');
       });
     });
+    it('should fail to validate the policy if start_date is after end_date in recurring schedule',function(){
+        fakePolicy.schedules.recurring_schedule[1].start_date = '2016-06-12'
+        fakePolicy.schedules.recurring_schedule[1].end_date = '2016-06-02';
+        attributeValidator.validatePolicy(fakePolicy,function(result){
+          expect(result[0].property).to.equal('recurring_schedule.start_date');
+          expect(result[0].message).to.equal('recurring_schedule.start_date and recurring_schedule.end_date values are not compatible');
+          expect(result[0].stack).to.equal('start_date 2016-06-12 is after end_date 2016-06-02 in recurring_schedule :[1]');
+        });
+    });
     it('Should fail to validate the policy as instance_min_count is greater than instance_max_count in recurring_schedule',function(){
       fakePolicy.schedules.recurring_schedule[0].instance_min_count = 10;
       fakePolicy.schedules.recurring_schedule[0].instance_max_count = 2;
@@ -97,5 +124,25 @@ describe('Validating Policy JSON properties',function(){
         expect(result[0].stack).to.equal('instance_min_count 10 is higher or equal to instance_max_count 2 in recurring_schedule :[0]');
       });
     });
+    it('Should fail to validate the policy as initial_min_instance_count is greater than instance_max_count in recurring_schedule',function(){
+        fakePolicy.schedules.recurring_schedule[0].initial_min_instance_count = 5;
+        fakePolicy.schedules.recurring_schedule[0].instance_max_count = 4;
+        attributeValidator.validatePolicy(fakePolicy,function(result){
+          expect(result[0].property).to.equal('recurring_schedule.initial_min_instance_count');
+          expect(result[0].message).to.equal('recurring_schedule.initial_min_instance_count and recurring_schedule.instance_max_count values are not compatible');
+          expect(result[0].stack).to.equal('initial_min_instance_count 5 is higher than instance_max_count 4 in recurring_schedule :[0]');  
+        });
+    });
+    it('Should fail to validate the policy as initial_min_instance_count is less than instance_min_count in recurring_schedule',function(){
+        fakePolicy.schedules.recurring_schedule[0].initial_min_instance_count = 1;
+        fakePolicy.schedules.recurring_schedule[0].instance_min_count = 2;
+        attributeValidator.validatePolicy(fakePolicy,function(result){
+          expect(result[0].property).to.equal('recurring_schedule.initial_min_instance_count');
+          expect(result[0].message).to.equal('recurring_schedule.initial_min_instance_count and recurring_schedule.instance_min_count values are not compatible');
+          expect(result[0].stack).to.equal('initial_min_instance_count 1 is lower than instance_min_count 2 in recurring_schedule :[0]');  
+        });
+    });
+    
+   
   });
   

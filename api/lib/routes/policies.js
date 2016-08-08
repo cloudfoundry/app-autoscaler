@@ -9,7 +9,7 @@ router.put('/:app_id/policy',validationMiddleWare,function(req, res) {
   logger.info('Policy creation request received for application with app id : ' + 
       req.params.app_id);
   models.policy_json
-  .findOrCreate({ where:{ app_id: req.params.app_id },defaults: { app_id: req.params.app_id,
+    .findOrCreate({ where:{ app_id: req.params.app_id },defaults: { app_id: req.params.app_id,
     policy_json: req.body } })
     .spread(function(result, created) {
       if(created) {

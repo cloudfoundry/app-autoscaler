@@ -9,6 +9,9 @@ JSONValidator.prototype.customFormats.dateTimeFormat = function(inputDate) {
   return moment(inputDate, ['YYYY-MM-DDTHH:mm'], true).isValid();
 };
 
+JSONValidator.prototype.customFormats.dateFormat = function(inputDate) {
+  return moment(inputDate, ['YYYY-MM-DD'], true).isValid();
+};
 JSONValidator.prototype.customFormats.timeFormat = function(inputTime) {
   return moment(inputTime, 'HH:mm',true).isValid();
 };
@@ -64,8 +67,8 @@ var getPolicySchema = function() {
     'type': 'object',
     'id':'/policySchema',
     'properties' :{
-      'instance_min_count': { 'type':'number','minimum':1 },
-      'instance_max_count': { 'type':'number','minimum':1 },
+      'instance_min_count': { 'type':'integer','minimum':1 },
+      'instance_max_count': { 'type':'integer','minimum':1 },
       'scaling_rules': {
         'type':'array',
         'items': { '$ref': '/scaling_rules' }
@@ -131,10 +134,17 @@ var getRecurringSchema = function() {
     'type': 'object',
     'id':'/recurring_schedule',
     'properties' : {
+      'start_date': {
+        'anyOf': [{ 'type':'string', 'format':'dateFormat' },{ 'type':'string', 'enum':[''] } ]
+      },
       'start_time':{ 'type':'string','format':'timeFormat' },
+      'end_date': {
+        'anyOf': [ { 'type':'string', 'format':'dateFormat' },{ 'type':'string', 'enum':[''] }]
+      },
       'end_time':{ 'type':'string','format':'timeFormat' },
-      'instance_min_count':{ 'type':'number','minimum':1 },
-      'instance_max_count':{ 'type':'number','minimum':1 },
+      'instance_min_count':{ 'type':'integer','minimum':1 },
+      'instance_max_count':{ 'type':'integer','minimum':1 },
+      'initial_min_instance_count':{ 'type':'integer','minimum':1 },
       'days_of_week':{ 'type':'array','uniqueItems': true,
         'items':{ 'type':'number','enum':weekEnum } },
       'days_of_month':{ 'type':'array','uniqueItems': true,
@@ -153,8 +163,9 @@ var getSpecificDateSchema = function() {
     'properties' : {
       'start_date_time':{ 'type':'string','format':'dateTimeFormat' },
       'end_date_time':{ 'type':'string','format':'dateTimeFormat' },
-      'instance_min_count':{ 'type':'number','minimum':1 },
-      'instance_max_count':{ 'type':'number' ,'minimum':1 }  
+      'instance_min_count':{ 'type':'integer','minimum':1 },
+      'instance_max_count':{ 'type':'integer' ,'minimum':1 },
+      'initial_min_instance_count':{ 'type':'integer','minimum':1 }
     },
     'required' : ['start_date_time','end_date_time','instance_min_count','instance_max_count']
   };
