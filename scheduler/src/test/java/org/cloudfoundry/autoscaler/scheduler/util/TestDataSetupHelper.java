@@ -3,11 +3,16 @@ package org.cloudfoundry.autoscaler.scheduler.util;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationScalingSchedules;
@@ -20,6 +25,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  *
  */
 public class TestDataSetupHelper {
+	static Class<?> clazz = TestDataSetupHelper.class;
+	private static Logger logger = LogManager.getLogger(clazz);
+
 	private static List<String> genAppIds = new ArrayList<>();
 	private static String timeZone = DateHelper.supportedTimezones[0];
 	private static String invalidTimezone = "Invalid TimeZone";
@@ -29,12 +37,8 @@ public class TestDataSetupHelper {
 	private static String endDateTime[] = { "2100-07-20T10:00", "2100-07-23T09:00", "2100-07-27T09:00",
 			"2100-08-07T00:00", "2100-8-11T00:00" };
 
-	private static int dayOfWeek[] = { 1, 2, 3, 4, 5, 6, 7 };
-	private static int dayOfMonth[] = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 20, 30, 31 };
-	private static String startDate[] = { "2100-07-20", "2100-07-22", "2100-07-25", "2100-07-28", "2100-8-10" };
-	private static String endDate[] = { "2100-07-20", "2100-07-23", "2100-07-27", "2100-08-07", "2100-8-10" };
-	private static String startTime[] = { "08:00:00", "13:00:00", "09:00:00" };
-	private static String endTime[] = { "10:00:00", "09:00:00", "09:00:00" };
+	private static String startTime[] = { "00:00:00", "2:00:00", "10:00:00", "11:00:12", "23:00:00" };
+	private static String endTime[] = { "1:00:00", "8:00:00", "10:01:00", "12:00:00", "23:59:00" };
 
 	public static ApplicationScalingSchedules generateSchedules(String appId, int noOfSpecificSchedules,
 			int noOfRecurringScheduls) {
@@ -109,31 +113,22 @@ public class TestDataSetupHelper {
 		List<RecurringScheduleEntity> recurringSchedules = new ArrayList<>();
 
 		int pos = 0;
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
 		for (int i = 0; i < noOfRecurringSchedulesToSetUp; i++) {
 			RecurringScheduleEntity recurringScheduleEntity = new RecurringScheduleEntity();
 			recurringScheduleEntity.setAppId(appId);
 			recurringScheduleEntity.setTimeZone(timeZone);
-			try {
-				if (isStartEndDateTimeCurrentDateTime) {
-					recurringScheduleEntity.setStartDate(sdf.parse(getCurrentDate(0)));
-					recurringScheduleEntity.setEndDate(sdf.parse(getCurrentDate(0)));
-					recurringScheduleEntity.setStartTime(java.sql.Time.valueOf(getCurrentTime(0)));
-					recurringScheduleEntity.setEndTime(java.sql.Time.valueOf(getCurrentTime(0)));
-				} else {
-					recurringScheduleEntity.setStartDate(sdf.parse(getDate(startDate, pos, 0)));
-					recurringScheduleEntity.setEndDate(sdf.parse(getDate(endDate, pos, 5)));
-					recurringScheduleEntity.setStartTime(java.sql.Time.valueOf(getTime(startTime, pos, 0)));
-					recurringScheduleEntity.setEndTime(java.sql.Time.valueOf(getTime(endTime, pos, 5)));
-				}
-			} catch (ParseException e) {
-				throw new RuntimeException(e.getMessage());
+			if (isStartEndDateTimeCurrentDateTime) {
+				recurringScheduleEntity.setStartTime(java.sql.Time.valueOf(getCurrentTime(0)));
+				recurringScheduleEntity.setEndTime(java.sql.Time.valueOf(getCurrentTime(0)));
+			} else {
+				recurringScheduleEntity.setStartTime(java.sql.Time.valueOf(getTime(startTime, pos, 0)));
+				recurringScheduleEntity.setEndTime(java.sql.Time.valueOf(getTime(endTime, pos, 5)));
 			}
 
 			if (isDayOfWeek) {
-				recurringScheduleEntity.setDayOfWeek((dayOfWeek));
+				recurringScheduleEntity.setDayOfWeek(generateDayOfWeek());
 			} else {
-				recurringScheduleEntity.setDayOfMonth((dayOfMonth));
+				recurringScheduleEntity.setDayOfMonth(generateDayOfMonth());
 			}
 			recurringScheduleEntity.setInstanceMinCount(i + 5);
 			recurringScheduleEntity.setInstanceMaxCount(i + 6);
@@ -154,8 +149,15 @@ public class TestDataSetupHelper {
 		schedules.setInstance_max_count(5);
 		List<SpecificDateScheduleEntity> specificDateSchedules = generateSpecificDateScheduleEntities(null, null,
 				noOfSpecificDateSchedules, false, null, null);
-		schedules.setRecurring_schedule(
-				generateRecurringScheduleEntities(null, null, noOfRecurringSchedulesToSetUp, false, null, null, true));
+
+		int noOfDayOfWeek = noOfRecurringSchedulesToSetUp % 2;
+		int noOfDayOfMonth = noOfRecurringSchedulesToSetUp - noOfDayOfWeek;
+		List<RecurringScheduleEntity> recurringScheduleEntities = generateRecurringScheduleEntities(null, null,
+				noOfDayOfWeek, false, null, null, true);
+		recurringScheduleEntities
+				.addAll(generateRecurringScheduleEntities(null, null, noOfDayOfMonth, false, null, null, false));
+
+		schedules.setRecurring_schedule(recurringScheduleEntities);
 		schedules.setSpecific_date(specificDateSchedules);
 		return schedules;
 
@@ -196,18 +198,18 @@ public class TestDataSetupHelper {
 	}
 
 	private static String getCurrentTime(int offsetMin) {
-		SimpleDateFormat sdfDate = new SimpleDateFormat("HH:mm:ss");
-		Date now = new Date();
-		now.setTime(now.getTime() + TimeUnit.MINUTES.toMillis(offsetMin));
-		String strDate = sdfDate.format(now);
+		SimpleDateFormat sdfDate = new SimpleDateFormat(DateHelper.TIME_FORMAT);
+		Calendar calNow = Calendar.getInstance();
+		calNow.add(Calendar.MINUTE, offsetMin);
+		String strDate = sdfDate.format(calNow.getTime());
 		return strDate;
 	}
 
-	private static String getCurrentDate(int offsetMin) {
-		SimpleDateFormat sdfDate = new SimpleDateFormat("yyyy-MM-dd");
-		Date now = new Date();
-		now.setTime(now.getTime() + TimeUnit.MINUTES.toMillis(offsetMin));
-		String strDate = sdfDate.format(now);
+	public static String getCurrentDate(int offsetMin) {
+		SimpleDateFormat sdfDate = new SimpleDateFormat(DateHelper.DATE_FORMAT);
+		Calendar calNow = Calendar.getInstance();
+		calNow.add(Calendar.MINUTE, offsetMin);
+		String strDate = sdfDate.format(calNow.getTime());
 		return strDate;
 	}
 
@@ -225,6 +227,38 @@ public class TestDataSetupHelper {
 		return appIds.toArray(new String[0]);
 	}
 
+	public static int[] generateDayOfWeek() {
+		int arraySize = (int) new Date().getTime() % 7 + 1;
+		int[] array = makeRandomArray(new Random(Calendar.getInstance().getTimeInMillis()), arraySize,
+				DateHelper.DAY_OF_WEEK_MINIMUM, DateHelper.DAY_OF_WEEK_MAXMUM);
+		logger.debug("Generate day of week array:" + Arrays.toString(array));
+		return array;
+	}
+
+	public static int[] generateDayOfMonth() {
+		int arraySize = (int) new Date().getTime() % 31 + 1;
+		int[] array = makeRandomArray(new Random(Calendar.getInstance().getTimeInMillis()), arraySize,
+				DateHelper.DAY_OF_MONTH_MINIMUM, DateHelper.DAY_OF_MONTH_MAXMUM);
+		logger.debug("Generate day of month array:" + Arrays.toString(array));
+		return array;
+	}
+
+	public static int[] makeRandomArray(Random rand, int size, int randMin, int randMax) {
+		int[] array = rand.ints(randMin, randMax + 1).distinct().limit(size).toArray();
+		Arrays.sort(array);
+		return array;
+	}
+
+	public static Date addDaysToNow(int afterDays) throws ParseException {
+		Calendar calNow = Calendar.getInstance();
+		calNow.add(Calendar.DAY_OF_MONTH, afterDays);
+		calNow.set(Calendar.HOUR_OF_DAY, 0);
+		calNow.set(Calendar.MINUTE, 0);
+		calNow.set(Calendar.SECOND, 0);
+		calNow.set(Calendar.MILLISECOND, 0);
+		return calNow.getTime();
+	}
+
 	public static List<String> getAllGeneratedAppIds() {
 		return genAppIds;
 	}
@@ -235,22 +269,6 @@ public class TestDataSetupHelper {
 
 	public static String[] getEndDateTime() {
 		return endDateTime;
-	}
-	
-	public static String[] getStartDate() {
-		return startDate;
-	}
-
-	public static String[] getEndDate() {
-		return endDate;
-	}
-
-	public static String[] getStartTime() {
-		return startTime;
-	}
-
-	public static String[] getEndTime() {
-		return endTime;
 	}
 
 	public static String getInvalidTimezone() {

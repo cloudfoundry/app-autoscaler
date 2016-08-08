@@ -12,6 +12,13 @@ import java.util.TimeZone;
 public class DateHelper {
 	
 	public static final String DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm";
+	public static final String DATE_FORMAT = "yyyy-MM-dd";
+	public static final String TIME_FORMAT = "HH:mm";
+
+	public static final int DAY_OF_WEEK_MINIMUM = 1;
+	public static final int DAY_OF_WEEK_MAXMUM = 7;
+	public static final int DAY_OF_MONTH_MINIMUM = 1;
+	public static final int DAY_OF_MONTH_MAXMUM = 31;
 
 	public static final String[] supportedTimezones = new String[] {
 	           "(GMT -12:00) Etc/GMT+12",
@@ -609,13 +616,13 @@ public class DateHelper {
 	}
 
 	public static String convertDateToString(Date date) {
-		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+		SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT);
 
 		return sdf.format(date);
 	}
 
 	public static String convertTimeToString(Date date) {
-		SimpleDateFormat sdf = new SimpleDateFormat("HH:mm:ss");
+		SimpleDateFormat sdf = new SimpleDateFormat(TIME_FORMAT);
 
 		return sdf.format(date);
 	}

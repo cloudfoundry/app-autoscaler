@@ -15,6 +15,7 @@ import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationScalingSchedules;
 import org.cloudfoundry.autoscaler.scheduler.util.DataValidationHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.DateHelper;
+import org.cloudfoundry.autoscaler.scheduler.util.RecurringScheduleTime;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleTypeEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.SpecificDateScheduleDateTime;
 import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationException;
@@ -167,7 +168,7 @@ public class ScheduleManager {
 			List<RecurringScheduleEntity> recurringSchedules = applicationScalingSchedules.getRecurring_schedule();
 			// Validate recurring schedules.
 			if (recurringSchedules != null) {
-				//TODO validate recurring schedule.
+				validateRecurringSchedules(recurringSchedules, isValidTimeZone);
 			}
 		} else {// No schedules found
 
@@ -223,6 +224,186 @@ public class ScheduleManager {
 			}
 		}
 
+	}
+
+	/**
+	 * This method traverses through the list and calls helper methods to perform validations on
+	 * the recurring schedule entity.
+	 * 
+	 * @param recurringSchedules
+	 * @param isValidTimeZone
+	 */
+	private void validateRecurringSchedules(List<RecurringScheduleEntity> recurringSchedules, boolean isValidTimeZone) {
+		int scheduleIdentifier = 0;
+
+		List<RecurringScheduleTime> recurringScheduleTimes = new ArrayList<>();
+
+		for (RecurringScheduleEntity recurringScheduleEntity : recurringSchedules) {
+			String scheduleBeingProcessed = ScheduleTypeEnum.RECURRING.getDescription() + " " + scheduleIdentifier; // Recurring
+
+			if (isValidTimeZone) {
+				RecurringScheduleTime scheduleTime = validateRecurringScheduleTime(scheduleBeingProcessed,
+						recurringScheduleEntity);
+				if (scheduleTime != null) {
+					recurringScheduleTimes.add(scheduleTime);
+				}
+			}
+			// Validate instance minimum count and maximum count.
+			validateInstanceMinMaxCount(scheduleBeingProcessed, recurringScheduleEntity.getInstanceMinCount(),
+					recurringScheduleEntity.getInstanceMaxCount());
+			++scheduleIdentifier;
+		}
+		if (isValidTimeZone) {
+			// Call helper method to validate the start date time and end date time.
+			List<String[]> messages = DataValidationHelper.isNotOverlapRecurringSchedules(recurringScheduleTimes);
+			for (String[] arguments : messages) {
+				validationErrorResult.addFieldError(recurringScheduleTimes, "schedule.date.overlap",
+						(Object[]) arguments);
+			}
+		}
+	}
+
+	private RecurringScheduleTime validateRecurringScheduleTime(String scheduleBeingProcessed,
+			RecurringScheduleEntity recurringSchedule) {
+		boolean isValid = true;
+
+		if (!validateDayOfWeekOrMonth(scheduleBeingProcessed, recurringSchedule)) {
+			isValid = false;
+		}
+
+		if (!validateStartEndDate(scheduleBeingProcessed, recurringSchedule)) {
+			isValid = false;
+		}
+
+		if (!validateStartEndTime(scheduleBeingProcessed, recurringSchedule)) {
+			isValid = false;
+		}
+
+		RecurringScheduleTime time = null;
+		if (isValid) {
+			time = new RecurringScheduleTime(scheduleBeingProcessed, recurringSchedule);
+		}
+
+		return time;
+	}
+
+	private boolean validateStartEndTime(String scheduleBeingProcessed, RecurringScheduleEntity recurringSchedule) {
+		boolean isValid = true;
+		Date startTime = recurringSchedule.getStartTime();
+		Date endTime = recurringSchedule.getEndTime();
+
+		if (!DataValidationHelper.isNotNull(startTime)) {
+			isValid = false;
+			validationErrorResult.addFieldError(recurringSchedule, "schedule.data.value.not.specified",
+					scheduleBeingProcessed, "start_time");
+		}
+
+		if (!DataValidationHelper.isNotNull(endTime)) {
+			isValid = false;
+			validationErrorResult.addFieldError(recurringSchedule, "schedule.data.value.not.specified",
+					scheduleBeingProcessed, "end_time");
+		}
+
+		if (isValid) {
+			// If end date time is not after start date time, then dates invalid
+			if (!DataValidationHelper.isAfter(endTime, startTime)) {
+				isValid = false;
+				validationErrorResult.addFieldError(recurringSchedule, "schedule.date.invalid.start.after.end",
+						scheduleBeingProcessed, "end_time", DateHelper.convertTimeToString(endTime), "start_time",
+						DateHelper.convertTimeToString(startTime));
+			}
+		}
+		return isValid;
+	}
+
+	private boolean validateStartEndDate(String scheduleBeingProcessed, RecurringScheduleEntity recurringSchedule) {
+		// Note: For recurring schedule, start and end date are optional so not checking for null
+		boolean isValid = true;
+		Date startDate = recurringSchedule.getStartDate();
+		Date endDate = recurringSchedule.getEndDate();
+		TimeZone timeZone = TimeZone.getTimeZone(recurringSchedule.getTimeZone());
+
+		if (startDate != null) {
+			// it should be after current date.
+			if (!DataValidationHelper.isDateAfterOrEqualsNow(startDate, timeZone)) {
+				isValid = false;
+				validationErrorResult.addFieldError(recurringSchedule, "schedule.date.invalid.before.current",
+						scheduleBeingProcessed, "start_date", DateHelper.convertDateToString(startDate));
+			}
+		}
+
+		if (endDate != null) {
+			// it should be after current date.
+			if (!DataValidationHelper.isDateAfterOrEqualsNow(endDate, timeZone)) {
+				isValid = false;
+				validationErrorResult.addFieldError(recurringSchedule, "schedule.date.invalid.before.current",
+						scheduleBeingProcessed, "end_date", DateHelper.convertDateToString(endDate));
+			}
+		}
+
+		if (startDate != null && endDate != null && isValid) {
+			// Is it ok to have startDate= endDate? Does not make sense in case of recurring schedules
+
+			// startDate should be before or equal to endDate
+			if (startDate.compareTo(endDate) > 0) {
+				isValid = false;
+				validationErrorResult.addFieldError(recurringSchedule, "schedule.date.invalid.end.before.start",
+						scheduleBeingProcessed, "end_date", DateHelper.convertDateToString(endDate), "start_date",
+						DateHelper.convertDateToString(startDate));
+			}
+		}
+		return isValid;
+	}
+
+	private boolean validateDayOfWeekOrMonth(String scheduleBeingProcessed, RecurringScheduleEntity recurringSchedule) {
+		boolean isValid = true;
+		int[] dayOfMonth = recurringSchedule.getDayOfMonth();
+		int[] dayOfWeek = recurringSchedule.getDayOfWeek();
+
+		if (!DataValidationHelper.isNotEmpty(dayOfMonth) && !DataValidationHelper.isNotEmpty(dayOfWeek)) {
+			isValid = false;
+			validationErrorResult.addFieldError(recurringSchedule, "schedule.data.both.values.not.specified",
+					scheduleBeingProcessed, "day_of_week", "day_of_month");
+		}
+
+		if (DataValidationHelper.isNotEmpty(dayOfMonth) && DataValidationHelper.isNotEmpty(dayOfWeek)) {
+			isValid = false;
+			validationErrorResult.addFieldError(recurringSchedule, "schedule.data.both.values.specified",
+					scheduleBeingProcessed, "day_of_week", "day_of_month");
+		}
+
+		if (DataValidationHelper.isNotEmpty(dayOfWeek)) {
+			if (!DataValidationHelper.isBetweenMinAndMaxValues(dayOfWeek, DateHelper.DAY_OF_WEEK_MINIMUM,
+					DateHelper.DAY_OF_WEEK_MAXMUM)) {
+				isValid = false;
+				validationErrorResult.addFieldError(recurringSchedule, "schedule.data.invalid.day",
+						scheduleBeingProcessed, "day_of_week", DateHelper.DAY_OF_WEEK_MINIMUM,
+						DateHelper.DAY_OF_WEEK_MAXMUM);
+			}
+
+			if (!DataValidationHelper.isElementUnique(dayOfWeek)) {
+				isValid = false;
+				validationErrorResult.addFieldError(recurringSchedule, "schedule.data.not.unique",
+						scheduleBeingProcessed, "day_of_week");
+			}
+		}
+
+		if (DataValidationHelper.isNotEmpty(dayOfMonth)) {
+			if (!DataValidationHelper.isBetweenMinAndMaxValues(dayOfMonth, DateHelper.DAY_OF_MONTH_MINIMUM,
+					DateHelper.DAY_OF_MONTH_MAXMUM)) {
+				isValid = false;
+				validationErrorResult.addFieldError(recurringSchedule, "schedule.data.invalid.day",
+						scheduleBeingProcessed, "day_of_month", DateHelper.DAY_OF_MONTH_MINIMUM,
+						DateHelper.DAY_OF_MONTH_MAXMUM);
+			}
+
+			if (!DataValidationHelper.isElementUnique(dayOfMonth)) {
+				isValid = false;
+				validationErrorResult.addFieldError(recurringSchedule, "schedule.data.not.unique",
+						scheduleBeingProcessed, "day_of_month");
+			}
+		}
+		return isValid;
 	}
 
 	/**
@@ -380,10 +561,11 @@ public class ScheduleManager {
 			// If end date time is not after start date time, then dates invalid
 			if (!DataValidationHelper.isAfter(endDateTime, startDateTime)) {
 				validationErrorResult.addFieldError(specificDateSchedule, "schedule.date.invalid.start.after.end",
-						scheduleBeingProcessed, "end_date_time", DateHelper.convertDateTimeToString(endDateTime), "start_date_time", DateHelper.convertDateTimeToString(startDateTime));
+						scheduleBeingProcessed, "end_date_time", DateHelper.convertDateTimeToString(endDateTime),
+						"start_date_time", DateHelper.convertDateTimeToString(startDateTime));
 			} else {
-				validScheduleDateTime = new SpecificDateScheduleDateTime(scheduleBeingProcessed,
-						startDateTime, endDateTime);
+				validScheduleDateTime = new SpecificDateScheduleDateTime(scheduleBeingProcessed, startDateTime,
+						endDateTime);
 			}
 		}
 
