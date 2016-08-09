@@ -1,13 +1,16 @@
 package collector_test
 
 import (
+	"metricscollector/cf"
 	. "metricscollector/collector"
 	"metricscollector/collector/fakes"
 	"metricscollector/config"
+	"metricscollector/db"
 
+	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/lager"
-	"github.com/cloudfoundry/sonde-go/events"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
@@ -24,11 +27,11 @@ var _ = Describe("Collector", func() {
 		database *fakes.FakeDB
 		coll     *Collector
 		fclock   *fakeclock.FakeClock
+		poller   *fakes.FakeAppPoller
 		buffer   *gbytes.Buffer
 	)
 
 	BeforeEach(func() {
-
 		cfc = &fakes.FakeCfClient{}
 		noaa = &fakes.FakeNoaaConsumer{}
 		database = &fakes.FakeDB{}
@@ -43,7 +46,11 @@ var _ = Describe("Collector", func() {
 		logger.RegisterSink(lager.NewWriterSink(buffer, lager.ERROR))
 
 		fclock = fakeclock.NewFakeClock(time.Now())
-		coll = NewCollector(conf, logger, cfc, noaa, database, fclock)
+		poller = &fakes.FakeAppPoller{}
+		createPoller := func(appId string, pollInterval time.Duration, logger lager.Logger, cfc cf.CfClient, noaa NoaaConsumer, database db.DB, pclcok clock.Clock) AppPoller {
+			return poller
+		}
+		coll = NewCollector(conf, logger, cfc, noaa, database, fclock, createPoller)
 	})
 
 	Describe("Start", func() {
@@ -55,39 +62,29 @@ var _ = Describe("Collector", func() {
 			coll.Stop()
 		})
 
+		It("refreshes the apps with given interval", func() {
+			Eventually(database.GetAppIdsCallCount).Should(Equal(1))
+
+			fclock.Increment(TestRefreshInterval)
+			Eventually(database.GetAppIdsCallCount).Should(Equal(2))
+
+			fclock.Increment(TestRefreshInterval)
+			Eventually(database.GetAppIdsCallCount).Should(Equal(3))
+
+		})
+
 		Context("when getting apps from policy database succeeds", func() {
-			BeforeEach(func() {
-				noaa.ContainerMetricsStub = func(appId string, token string) ([]*events.ContainerMetric, error) {
-					switch appId {
-					case "app-id-1":
-						pollings[0] = true
-					case "app-id-2":
-						pollings[1] = true
-					case "app-id-3":
-						pollings[2] = true
-					}
-					return []*events.ContainerMetric{}, nil
-				}
-			})
 
 			Context("when no apps in policy database", func() {
 				BeforeEach(func() {
 					database.GetAppIdsReturns(make(map[string]bool), nil)
 				})
 
-				It("does not poll anything", func() {
-					fclock.Increment(TestRefreshInterval * time.Second)
-					Eventually(database.GetAppIdsCallCount).Should(Equal(1))
+				It("does nothing", func() {
+					Consistently(coll.GetPollerAppIds).Should(BeEmpty())
 
-					fclock.Increment(TestPollInterval * time.Second)
-					Consistently(noaa.ContainerMetricsCallCount).Should(BeZero())
-
-					fclock.Increment((TestRefreshInterval - TestPollInterval) * time.Second)
-					Eventually(database.GetAppIdsCallCount).Should(Equal(2))
-
-					fclock.Increment(TestPollInterval * time.Second)
-					Consistently(noaa.ContainerMetricsCallCount).Should(BeZero())
-
+					fclock.Increment(TestRefreshInterval)
+					Consistently(coll.GetPollerAppIds).Should(BeEmpty())
 				})
 			})
 
@@ -97,21 +94,12 @@ var _ = Describe("Collector", func() {
 				})
 
 				It("should always poll the same set of apps", func() {
-					fclock.Increment(TestRefreshInterval * time.Second)
-					Eventually(database.GetAppIdsCallCount).Should(Equal(1))
+					Eventually(poller.StartCallCount).Should(Equal(3))
 					Eventually(coll.GetPollerAppIds).Should(ConsistOf("app-id-1", "app-id-2", "app-id-3"))
 
-					resetPollings()
-					fclock.Increment(TestPollInterval * time.Second)
-					Eventually(pollings).Should(Equal([]bool{true, true, true}))
-
-					fclock.Increment((TestRefreshInterval - TestPollInterval) * time.Second)
-					Eventually(database.GetAppIdsCallCount).Should(Equal(2))
+					fclock.Increment(TestRefreshInterval)
+					Consistently(poller.StartCallCount).Should(Equal(3))
 					Consistently(coll.GetPollerAppIds).Should(ConsistOf("app-id-1", "app-id-2", "app-id-3"))
-
-					resetPollings()
-					fclock.Increment(TestPollInterval * time.Second)
-					Eventually(pollings).Should(Equal([]bool{true, true, true}))
 				})
 			})
 
@@ -129,30 +117,18 @@ var _ = Describe("Collector", func() {
 					}
 				})
 
-				It("polls newly added ones too", func() {
-					fclock.Increment(TestRefreshInterval * time.Second)
-					Eventually(database.GetAppIdsCallCount).Should(Equal(1))
+				It("polls newly added ones", func() {
+					Eventually(poller.StartCallCount).Should(Equal(1))
 					Eventually(coll.GetPollerAppIds).Should(ConsistOf("app-id-1"))
 
-					resetPollings()
-					fclock.Increment(TestPollInterval * time.Second)
-					Eventually(pollings).Should(Equal([]bool{true, false, false}))
-
-					fclock.Increment((TestRefreshInterval - TestPollInterval) * time.Second)
-					Eventually(database.GetAppIdsCallCount).Should(Equal(2))
+					fclock.Increment(TestRefreshInterval)
+					Eventually(poller.StartCallCount).Should(Equal(2))
 					Eventually(coll.GetPollerAppIds).Should(ConsistOf("app-id-1", "app-id-2"))
 
-					resetPollings()
-					fclock.Increment(TestPollInterval * time.Second)
-					Eventually(pollings).Should(Equal([]bool{true, true, false}))
-
-					fclock.Increment((TestRefreshInterval - TestPollInterval) * time.Second)
-					Eventually(database.GetAppIdsCallCount).Should(Equal(3))
+					fclock.Increment(TestRefreshInterval)
+					Eventually(poller.StartCallCount).Should(Equal(3))
 					Eventually(coll.GetPollerAppIds).Should(ConsistOf("app-id-1", "app-id-2", "app-id-3"))
 
-					resetPollings()
-					fclock.Increment(TestPollInterval * time.Second)
-					Eventually(pollings).Should(Equal([]bool{true, true, true}))
 				})
 
 			})
@@ -172,32 +148,18 @@ var _ = Describe("Collector", func() {
 				})
 
 				It("stops polling removed apps", func() {
-					fclock.Increment(TestRefreshInterval * time.Second)
-					Eventually(database.GetAppIdsCallCount).Should(Equal(1))
+					Eventually(poller.StartCallCount).Should(Equal(3))
 					Eventually(coll.GetPollerAppIds).Should(ConsistOf("app-id-1", "app-id-2", "app-id-3"))
 
-					resetPollings()
-					fclock.Increment(TestPollInterval * time.Second)
-					Eventually(pollings).Should(Equal([]bool{true, true, true}))
-
-					fclock.Increment((TestRefreshInterval - TestPollInterval) * time.Second)
-					Eventually(database.GetAppIdsCallCount).Should(Equal(2))
+					fclock.Increment(TestRefreshInterval)
+					Consistently(poller.StartCallCount).Should(Equal(3))
+					Eventually(poller.StopCallCount).Should(Equal(1))
 					Eventually(coll.GetPollerAppIds).Should(ConsistOf("app-id-2", "app-id-3"))
 
-					resetPollings()
-					fclock.Increment(TestPollInterval * time.Second)
-					Eventually(pollings).Should(Equal([]bool{false, true, true}))
-					Consistently(pollings).Should(Equal([]bool{false, true, true}))
-
-					fclock.Increment((TestRefreshInterval - TestPollInterval) * time.Second)
-					Eventually(database.GetAppIdsCallCount).Should(Equal(3))
+					fclock.Increment(TestRefreshInterval)
+					Consistently(poller.StartCallCount).Should(Equal(3))
+					Eventually(poller.StopCallCount).Should(Equal(2))
 					Eventually(coll.GetPollerAppIds).Should(ConsistOf("app-id-3"))
-
-					resetPollings()
-					fclock.Increment(TestPollInterval * time.Second)
-					Eventually(pollings).Should(Equal([]bool{false, false, true}))
-					Consistently(pollings).Should(Equal([]bool{false, false, true}))
-
 				})
 			})
 
@@ -216,32 +178,18 @@ var _ = Describe("Collector", func() {
 				})
 
 				It("pools the new apps and stops polling removed apps", func() {
-					fclock.Increment(TestRefreshInterval * time.Second)
-					Eventually(database.GetAppIdsCallCount).Should(Equal(1))
+					Eventually(poller.StartCallCount).Should(Equal(2))
 					Eventually(coll.GetPollerAppIds).Should(ConsistOf("app-id-1", "app-id-3"))
 
-					resetPollings()
-					fclock.Increment(TestPollInterval * time.Second)
-					Eventually(pollings).Should(Equal([]bool{true, false, true}))
-
-					fclock.Increment((TestRefreshInterval - TestPollInterval) * time.Second)
-					Eventually(database.GetAppIdsCallCount).Should(Equal(2))
+					fclock.Increment(TestRefreshInterval)
+					Eventually(poller.StartCallCount).Should(Equal(3))
+					Eventually(poller.StopCallCount).Should(Equal(1))
 					Eventually(coll.GetPollerAppIds).Should(ConsistOf("app-id-2", "app-id-3"))
 
-					resetPollings()
-					fclock.Increment(TestPollInterval * time.Second)
-					Eventually(pollings).Should(Equal([]bool{false, true, true}))
-					Consistently(pollings).Should(Equal([]bool{false, true, true}))
-
-					fclock.Increment((TestRefreshInterval - TestPollInterval) * time.Second)
-					Eventually(database.GetAppIdsCallCount).Should(Equal(3))
+					fclock.Increment(TestRefreshInterval)
+					Eventually(poller.StartCallCount).Should(Equal(4))
+					Eventually(poller.StopCallCount).Should(Equal(2))
 					Eventually(coll.GetPollerAppIds).Should(ConsistOf("app-id-1", "app-id-2"))
-
-					resetPollings()
-					fclock.Increment(TestPollInterval * time.Second)
-					Eventually(pollings).Should(Equal([]bool{true, true, false}))
-					Consistently(pollings).Should(Equal([]bool{true, true, false}))
-
 				})
 
 			})
@@ -252,21 +200,16 @@ var _ = Describe("Collector", func() {
 				database.GetAppIdsReturns(nil, errors.New("test collector error"))
 			})
 
-			It("does not poll anything and logs the error", func() {
-				fclock.Increment(TestRefreshInterval * time.Second)
-				Eventually(database.GetAppIdsCallCount).Should(Equal(1))
+			It("does not poll and logs the error", func() {
 				Eventually(buffer).Should(gbytes.Say("test collector error"))
+				Consistently(coll.GetPollerAppIds).Should(BeEmpty())
 
-				fclock.Increment(TestPollInterval * time.Second)
-				Consistently(noaa.ContainerMetricsCallCount).Should(BeZero())
-
-				fclock.Increment((TestRefreshInterval - TestPollInterval) * time.Second)
+				fclock.Increment(TestRefreshInterval)
 				Eventually(database.GetAppIdsCallCount).Should(Equal(2))
 				Eventually(buffer).Should(gbytes.Say("test collector error"))
-
-				fclock.Increment(TestPollInterval * time.Second)
-				Consistently(noaa.ContainerMetricsCallCount).Should(BeZero())
+				Consistently(coll.GetPollerAppIds).Should(BeEmpty())
 			})
+
 		})
 
 	})
@@ -279,27 +222,15 @@ var _ = Describe("Collector", func() {
 
 		It("stops the collecting", func() {
 
-			fclock.Increment(TestRefreshInterval * time.Second)
-			Eventually(database.GetAppIdsCallCount).Should(Equal(1))
-			Eventually(coll.GetPollerAppIds).Should(ConsistOf("app-id-1", "app-id-2", "app-id-3"))
-
-			fclock.Increment(TestPollInterval * time.Second)
-			Eventually(noaa.ContainerMetricsCallCount).Should(Equal(3))
+			fclock.Increment(TestRefreshInterval)
+			Eventually(database.GetAppIdsCallCount).Should(Equal(2))
 
 			coll.Stop()
+			Eventually(poller.StopCallCount).Should(Equal(3))
 
-			fclock.Increment((TestRefreshInterval - TestPollInterval) * time.Second)
-			Consistently(database.GetAppIdsCallCount).Should(Equal(1))
-			Consistently(noaa.ContainerMetricsCallCount).Should(Equal(3))
-
+			fclock.Increment(TestRefreshInterval)
+			Consistently(database.GetAppIdsCallCount).Should(Equal(2))
 		})
 	})
 
 })
-
-var pollings []bool
-
-func resetPollings() {
-	pollings = []bool{false, false, false}
-
-}

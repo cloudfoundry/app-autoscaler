@@ -8,7 +8,6 @@ import (
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry/sonde-go/events"
-
 	"sync"
 	"time"
 )
@@ -18,45 +17,52 @@ type NoaaConsumer interface {
 }
 
 type Collector struct {
-	conf     *config.CollectorConfig
-	logger   lager.Logger
-	cfc      cf.CfClient
-	noaa     NoaaConsumer
-	database db.DB
-	cclock   clock.Clock
-	doneChan chan bool
-	pollers  map[string]*AppPoller
-	ticker   clock.Ticker
-	lock     *sync.Mutex
+	conf         *config.CollectorConfig
+	logger       lager.Logger
+	cfc          cf.CfClient
+	noaa         NoaaConsumer
+	database     db.DB
+	cclock       clock.Clock
+	createPoller func(string, time.Duration, lager.Logger, cf.CfClient, NoaaConsumer, db.DB, clock.Clock) AppPoller
+	doneChan     chan bool
+	pollers      map[string]AppPoller
+	ticker       clock.Ticker
+	lock         *sync.Mutex
 }
 
-func NewCollector(conf *config.CollectorConfig, logger lager.Logger, cfc cf.CfClient, noaa NoaaConsumer, database db.DB, cclock clock.Clock) *Collector {
+var createAppPollerFunc = func(appId string, pollInterval time.Duration, logger lager.Logger, cfc cf.CfClient, noaa NoaaConsumer, database db.DB, pclcok clock.Clock) AppPoller {
+	return NewAppPoller(appId, pollInterval, logger, cfc, noaa, database, pclcok)
+}
+
+func NewCollector(conf *config.CollectorConfig, logger lager.Logger, cfc cf.CfClient, noaa NoaaConsumer, database db.DB, cclock clock.Clock,
+	createPoller func(string, time.Duration, lager.Logger, cf.CfClient, NoaaConsumer, db.DB, clock.Clock) AppPoller) *Collector {
 	return &Collector{
-		conf:     conf,
-		logger:   logger,
-		cfc:      cfc,
-		noaa:     noaa,
-		database: database,
-		cclock:   cclock,
-		doneChan: make(chan bool),
-		pollers:  make(map[string]*AppPoller),
-		lock:     &sync.Mutex{},
+		conf:         conf,
+		logger:       logger,
+		cfc:          cfc,
+		noaa:         noaa,
+		database:     database,
+		cclock:       cclock,
+		createPoller: createPoller,
+		doneChan:     make(chan bool),
+		pollers:      make(map[string]AppPoller),
+		lock:         &sync.Mutex{},
 	}
 }
 
 func (c *Collector) Start() {
-	c.ticker = c.cclock.NewTicker(time.Duration(c.conf.RefreshInterval) * time.Second)
+	c.ticker = c.cclock.NewTicker(c.conf.RefreshInterval)
 	go c.startAppRefresh()
 	c.logger.Info("collector-started")
 }
 
 func (c *Collector) startAppRefresh() {
 	for {
+		c.refreshApps()
 		select {
 		case <-c.doneChan:
 			return
 		case <-c.ticker.C():
-			c.refreshApps()
 		}
 	}
 }
@@ -64,7 +70,7 @@ func (c *Collector) startAppRefresh() {
 func (c *Collector) refreshApps() {
 	appIds, err := c.database.GetAppIds()
 	if err != nil {
-		c.logger.Error("refresh-app", err)
+		c.logger.Error("refresh-apps", err)
 		return
 	}
 
@@ -84,7 +90,7 @@ func (c *Collector) refreshApps() {
 		_, exist := c.pollers[id]
 		if !exist {
 			c.logger.Debug("refresh-apps-add", lager.Data{"appId": id})
-			ap := NewAppPoller(id, c.conf.PollInterval, c.logger, c.cfc, c.noaa, c.database, c.cclock)
+			ap := c.createPoller(id, c.conf.PollInterval, c.logger, c.cfc, c.noaa, c.database, c.cclock)
 			ap.Start()
 			c.pollers[id] = ap
 		}

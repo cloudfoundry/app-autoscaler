@@ -11,9 +11,14 @@ import (
 	"time"
 )
 
-type AppPoller struct {
+type AppPoller interface {
+	Start()
+	Stop()
+}
+
+type appPoller struct {
 	appId        string
-	pollInterval int
+	pollInterval time.Duration
 	logger       lager.Logger
 	cfc          cf.CfClient
 	noaa         NoaaConsumer
@@ -23,8 +28,8 @@ type AppPoller struct {
 	doneChan     chan bool
 }
 
-func NewAppPoller(appId string, pollInterval int, logger lager.Logger, cfc cf.CfClient, noaa NoaaConsumer, database db.DB, pclcok clock.Clock) *AppPoller {
-	return &AppPoller{
+func NewAppPoller(appId string, pollInterval time.Duration, logger lager.Logger, cfc cf.CfClient, noaa NoaaConsumer, database db.DB, pclcok clock.Clock) AppPoller {
+	return &appPoller{
 		appId:        appId,
 		pollInterval: pollInterval,
 		logger:       logger,
@@ -37,14 +42,14 @@ func NewAppPoller(appId string, pollInterval int, logger lager.Logger, cfc cf.Cf
 
 }
 
-func (ap *AppPoller) Start() {
-	ap.ticker = ap.pclock.NewTicker(time.Duration(ap.pollInterval) * time.Second)
+func (ap *appPoller) Start() {
+	ap.ticker = ap.pclock.NewTicker(ap.pollInterval)
 	go ap.startPollMetrics()
 
 	ap.logger.Info("app-poller-started", lager.Data{"appid": ap.appId, "poll-interval": ap.pollInterval})
 }
 
-func (ap *AppPoller) Stop() {
+func (ap *appPoller) Stop() {
 	if ap.ticker != nil {
 		ap.ticker.Stop()
 		close(ap.doneChan)
@@ -52,18 +57,18 @@ func (ap *AppPoller) Stop() {
 	ap.logger.Info("app-poller-stopped", lager.Data{"appid": ap.appId})
 }
 
-func (ap *AppPoller) startPollMetrics() {
+func (ap *appPoller) startPollMetrics() {
 	for {
+		ap.pollMetric()
 		select {
 		case <-ap.doneChan:
 			return
 		case <-ap.ticker.C():
-			ap.pollMetric()
 		}
 	}
 }
 
-func (ap *AppPoller) pollMetric() {
+func (ap *appPoller) pollMetric() {
 	ap.logger.Debug("poll-metric", lager.Data{"appid": ap.appId})
 
 	containerMetrics, err := ap.noaa.ContainerMetrics(ap.appId, "bearer"+" "+ap.cfc.GetTokens().AccessToken)
