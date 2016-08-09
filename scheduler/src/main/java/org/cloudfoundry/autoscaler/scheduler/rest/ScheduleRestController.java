@@ -73,4 +73,18 @@ public class ScheduleRestController {
 		return new ResponseEntity<>(null, null, HttpStatus.CREATED);
 	}
 
+	@RequestMapping(method = RequestMethod.DELETE)
+	public ResponseEntity<List<String>> deleteSchedule(@PathVariable String app_id) {
+
+		ApplicationScalingSchedules existingSchedules = scheduleManager.getAllSchedules(app_id);
+		if (!existingSchedules.hasSchedules()) {
+			return new ResponseEntity<>(null, null, HttpStatus.NOT_FOUND);
+		}
+
+		logger.info("Delete schedules for application: " + app_id);
+		scheduleManager.deleteSchedules(app_id);
+
+		return new ResponseEntity<>(null, null, HttpStatus.NO_CONTENT);
+	}
+
 }

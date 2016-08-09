@@ -3,17 +3,21 @@ package org.cloudfoundry.autoscaler.scheduler.service;
 import java.util.Date;
 import java.util.TimeZone;
 
+import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.quartz.AppScalingScheduleJob;
 import org.cloudfoundry.autoscaler.scheduler.util.DateHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.JobActionEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper;
+import org.cloudfoundry.autoscaler.scheduler.util.ScheduleTypeEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.error.ValidationErrorResult;
 import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
+import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.Trigger;
+import org.quartz.TriggerKey;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -44,17 +48,20 @@ public class ScheduleJobManager {
 	public void createSimpleJob(SpecificDateScheduleEntity specificDateScheduleEntity) {
 
 		Long scheduleId = specificDateScheduleEntity.getId();
-		String jobStartId = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.START);
-		String jobEndId = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.END);
 
 		// Build the job
-		JobDetail jobStartDetail = ScheduleJobHelper.buildJob(jobStartId, AppScalingScheduleJob.class);
-		JobDetail jobEndDetail = ScheduleJobHelper.buildJob(jobEndId, AppScalingScheduleJob.class);
+		JobKey startJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.START,
+				ScheduleTypeEnum.SPECIFIC_DATE);
+		JobKey endJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.END,
+				ScheduleTypeEnum.SPECIFIC_DATE);
+
+		JobDetail startJobDetail = ScheduleJobHelper.buildJob(startJobKey, AppScalingScheduleJob.class);
+		JobDetail endJobDetail = ScheduleJobHelper.buildJob(endJobKey, AppScalingScheduleJob.class);
 
 		// Set the data in JobDetail for informing the scaling decision maker that scaling job needs to be started
-		setupScalingScheduleJobData(jobStartDetail, specificDateScheduleEntity, JobActionEnum.START);
+		setupScalingScheduleJobData(startJobDetail, specificDateScheduleEntity, JobActionEnum.START);
 		// Set the data in JobDetail for informing the scaling decision maker that scaling job needs to be ended.
-		setupScalingScheduleJobData(jobEndDetail, specificDateScheduleEntity, JobActionEnum.END);
+		setupScalingScheduleJobData(endJobDetail, specificDateScheduleEntity, JobActionEnum.END);
 
 		// Build the trigger
 		TimeZone policyTimeZone = TimeZone.getTimeZone(specificDateScheduleEntity.getTimeZone());
@@ -64,14 +71,17 @@ public class ScheduleJobManager {
 		Date triggerEndDateTime = DateHelper.getDateWithZoneOffset(specificDateScheduleEntity.getEndDateTime(),
 				policyTimeZone);
 
-		Trigger jobStartTrigger = ScheduleJobHelper.buildTrigger(jobStartId, jobStartDetail.getKey(),
-				triggerStartDateTime);
-		Trigger jobEndTrigger = ScheduleJobHelper.buildTrigger(jobEndId, jobEndDetail.getKey(), triggerEndDateTime);
+		TriggerKey startTriggerKey = ScheduleJobHelper.generateTriggerKey(scheduleId, JobActionEnum.START,
+				ScheduleTypeEnum.SPECIFIC_DATE);
+		TriggerKey endTriggerKey = ScheduleJobHelper.generateTriggerKey(scheduleId, JobActionEnum.END,
+				ScheduleTypeEnum.SPECIFIC_DATE);
+		Trigger jobStartTrigger = ScheduleJobHelper.buildTrigger(startTriggerKey, startJobKey, triggerStartDateTime);
+		Trigger jobEndTrigger = ScheduleJobHelper.buildTrigger(endTriggerKey, endJobKey, triggerEndDateTime);
 
 		// Schedule the job
 		try {
-			scheduler.scheduleJob(jobStartDetail, jobStartTrigger);
-			scheduler.scheduleJob(jobEndDetail, jobEndTrigger);
+			scheduler.scheduleJob(startJobDetail, jobStartTrigger);
+			scheduler.scheduleJob(endJobDetail, jobEndTrigger);
 
 		} catch (SchedulerException se) {
 
@@ -88,7 +98,7 @@ public class ScheduleJobManager {
 	 * @param scheduleEntity
 	 * @param jobAction 
 	 */
-	private void setupScalingScheduleJobData(JobDetail jobDetail, SpecificDateScheduleEntity scheduleEntity,
+	private void setupScalingScheduleJobData(JobDetail jobDetail, ScheduleEntity scheduleEntity,
 			JobActionEnum jobAction) {
 
 		JobDataMap jobDataMap = jobDetail.getJobDataMap();
@@ -104,6 +114,24 @@ public class ScheduleJobManager {
 		} else {
 			jobDataMap.put("instanceMinCount", scheduleEntity.getDefaultInstanceMinCount());
 			jobDataMap.put("instanceMaxCount", scheduleEntity.getDefaultInstanceMaxCount());
+		}
+	}
+
+	public void deleteSimpleJob(SpecificDateScheduleEntity specificDateScheduleEntity) {
+		Long scheduleId = specificDateScheduleEntity.getId();
+
+		JobKey startJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.START,
+				ScheduleTypeEnum.SPECIFIC_DATE);
+		JobKey endJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.END,
+				ScheduleTypeEnum.SPECIFIC_DATE);
+
+		try {
+			scheduler.deleteJob(startJobKey);
+			scheduler.deleteJob(endJobKey);
+		} catch (SchedulerException se) {
+
+			validationErrorResult.addErrorForQuartzSchedulerException(se, "scheduler.error.delete.failed",
+					"app_id=" + specificDateScheduleEntity.getAppId());
 		}
 	}
 }
