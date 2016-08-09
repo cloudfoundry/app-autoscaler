@@ -21,7 +21,6 @@ import org.cloudfoundry.autoscaler.scheduler.util.SpecificDateScheduleDateTime;
 import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationException;
 import org.cloudfoundry.autoscaler.scheduler.util.error.SchedulerInternalException;
 import org.cloudfoundry.autoscaler.scheduler.util.error.ValidationErrorResult;
-import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,7 +37,7 @@ public class ScheduleManager {
 	@Autowired
 	private RecurringScheduleDao recurringScheduleDao;
 	@Autowired
-	private ScheduleJobManager scalingJobManager;
+	private ScheduleJobManager scheduleJobManager;
 	@Autowired
 	private ValidationErrorResult validationErrorResult;
 
@@ -577,8 +576,6 @@ public class ScheduleManager {
 	 * calls ScalingJobManager to create scaling action jobs.
 	 *
 	 * @param applicationScalingSchedules
-	 * @throws SchedulerException
-	 * @throws Exception
 	 */
 	@Transactional
 	public void createSchedules(ApplicationScalingSchedules applicationScalingSchedules) {
@@ -592,14 +589,14 @@ public class ScheduleManager {
 
 				// Ask ScalingJobManager to create scaling job
 				if (savedScheduleEntity != null) {
-					scalingJobManager.createSimpleJob(savedScheduleEntity);
+					scheduleJobManager.createSimpleJob(savedScheduleEntity);
 				}
 			}
 		}
 
-		List<RecurringScheduleEntity> recurringScheduls = applicationScalingSchedules.getRecurring_schedule();
-		if (recurringScheduls != null) {
-			for (RecurringScheduleEntity recurringScheduleEntity : recurringScheduls) {
+		List<RecurringScheduleEntity> recurringSchedules = applicationScalingSchedules.getRecurring_schedule();
+		if (recurringSchedules != null) {
+			for (RecurringScheduleEntity recurringScheduleEntity : recurringSchedules) {
 				// Persist the schedule in database
 				saveNewRecurringSchedule(recurringScheduleEntity);
 
@@ -639,4 +636,50 @@ public class ScheduleManager {
 		}
 		return savedScheduleEntity;
 	}
+
+	/**
+	 * Calls private helper methods to delete the schedules from the database and
+	 * calls ScalingJobManager to delete scaling action jobs.
+	 *
+	 * @param appId
+	 */
+	@Transactional
+	public void deleteSchedules(String appId) {
+	
+		// Get all the specific date schedules for the specifies application id and delete them.
+		List<SpecificDateScheduleEntity> specificDateSchedules = specificDateScheduleDao
+				.findAllSpecificDateSchedulesByAppId(appId);
+		for (SpecificDateScheduleEntity specificDateScheduleEntity : specificDateSchedules) {
+			// Delete the specific date schedule from database
+			deleteSpecificDateSchedule(specificDateScheduleEntity);
+
+			// Ask ScalingJobManager to delete scaling job 
+			scheduleJobManager.deleteSimpleJob(specificDateScheduleEntity);
+			
+		}
+
+		// Get all the recurring schedules for the specifies application id and delete them.
+		List<RecurringScheduleEntity> recurringSchedules = recurringScheduleDao.findAllRecurringSchedulesByAppId(appId);
+		for (RecurringScheduleEntity recurringScheduleEntity : recurringSchedules) {
+			// Delete the specific date schedule from database
+			deleteRecurringSchedule(recurringScheduleEntity);
+			// Ask ScalingJobManager to delete scaling job
+		}
+	}
+
+	private void deleteSpecificDateSchedule(SpecificDateScheduleEntity specificDateScheduleEntity) {
+		try {
+
+			specificDateScheduleDao.delete(specificDateScheduleEntity);
+		} catch (DatabaseValidationException dve) {
+			validationErrorResult.addErrorForDatabaseValidationException(dve, "database.error.delete.failed",
+					"app_id=" + specificDateScheduleEntity.getAppId());
+			throw new SchedulerInternalException("Database error", dve);
+		}
+	}
+
+	private void deleteRecurringSchedule(RecurringScheduleEntity recurringScheduleEntity) {
+
+	}
+
 }

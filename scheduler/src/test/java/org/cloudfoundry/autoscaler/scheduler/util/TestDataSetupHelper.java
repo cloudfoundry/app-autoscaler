@@ -29,7 +29,7 @@ public class TestDataSetupHelper {
 	private static Logger logger = LogManager.getLogger(clazz);
 
 	private static List<String> genAppIds = new ArrayList<>();
-	private static String timeZone = DateHelper.supportedTimezones[0];
+	private static String timeZone = DateHelper.supportedTimezones[81];
 	private static String invalidTimezone = "Invalid TimeZone";
 
 	private static String startDateTime[] = { "2100-07-20T08:00", "2100-07-22T13:00", "2100-07-25T09:00",

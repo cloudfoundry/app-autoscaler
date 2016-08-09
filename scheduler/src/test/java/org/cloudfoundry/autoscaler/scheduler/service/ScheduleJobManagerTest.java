@@ -12,6 +12,7 @@ import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.util.JobActionEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper;
+import org.cloudfoundry.autoscaler.scheduler.util.ScheduleTypeEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.ValidationErrorResult;
@@ -65,8 +66,23 @@ public class ScheduleJobManagerTest {
 
 	@Test
 	public void testCreateAndFindSimpleJobs() throws Exception {
-		// Pass the expected schedules
-		assertCreateAndFindSimpleJobs(4);
+		int schedulesToSetup = 4;
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		List<SpecificDateScheduleEntity> specificDateScheduleEntities = TestDataSetupHelper
+				.generateSpecificDateSchedules(appId, schedulesToSetup, true);
+
+		createSimpleJob(specificDateScheduleEntities);
+
+		// The expected number of jobs would be twice the number of schedules( One job for start and one for end)
+		int expectedJobsToBeCreated = 2 * schedulesToSetup;
+
+		Map<JobKey, JobDetail> scheduleJobKeyDetailMap = getSchedulerJobs();
+		// Check expected jobs created
+		assertEquals(expectedJobsToBeCreated, scheduleJobKeyDetailMap.size());
+
+		for (ScheduleEntity scheduleEntity : specificDateScheduleEntities) {
+			assertCreatedJobs(scheduleJobKeyDetailMap, scheduleEntity, ScheduleTypeEnum.SPECIFIC_DATE);
+		}
 	}
 
 	@Test
@@ -78,13 +94,10 @@ public class ScheduleJobManagerTest {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		List<SpecificDateScheduleEntity> specificDateScheduleEntities = TestDataSetupHelper
 				.generateSpecificDateSchedules(appId, noOfSpecificDateSchedulesToSetUp, false);
-		Long index = 0L;
-		for (SpecificDateScheduleEntity scheduleEntity : specificDateScheduleEntities) {
-			scheduleEntity.setId(++index);
-			scalingJobManager.createSimpleJob(scheduleEntity);
-		}
+		createSimpleJob(specificDateScheduleEntities);
 
 		assertTrue("This test should have an Error.", validationErrorResult.hasErrors());
+
 		List<String> errors = validationErrorResult.getAllErrorMessages();
 		assertEquals(1, errors.size());
 
@@ -94,46 +107,29 @@ public class ScheduleJobManagerTest {
 		assertEquals(errorMessage, errors.get(0));
 	}
 
-	private void assertCreateAndFindSimpleJobs(int expectedJobsTobeFound)
-			throws SchedulerException, InterruptedException {
+	@Test
+	public void testDeleteSimpleJobs() throws Exception {
+		int schedulesToCreate = 2;
+		int expectedJobsToBeCreated = 4; // 2 jobs per schedule, one for start and one for end
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		List<SpecificDateScheduleEntity> specificDateScheduleEntities = TestDataSetupHelper
-				.generateSpecificDateSchedules(appId, expectedJobsTobeFound, true);
+				.generateSpecificDateSchedules(appId, schedulesToCreate, true);
 
 		createSimpleJob(specificDateScheduleEntities);
-		assertScheduleJobMethodCallNum(expectedJobsTobeFound);
-		assertCreatedSimpleJobs(specificDateScheduleEntities);
-	}
+		Map<JobKey, JobDetail> scheduleJobKeyDetailMap = getSchedulerJobs();
 
-	private void assertScheduleJobMethodCallNum(int expectedJobsTobeFound) throws SchedulerException {
-		Mockito.verify(scheduler, Mockito.times(expectedJobsTobeFound * 2)).scheduleJob(Mockito.anyObject(),
-				Mockito.anyObject());
-	}
+		// Check expected jobs created
+		assertEquals(expectedJobsToBeCreated, scheduleJobKeyDetailMap.size());
 
-	private void assertCreatedSimpleJobs(List<SpecificDateScheduleEntity> scheduleEntities) throws SchedulerException {
-		Map<String, JobDetail> scheduleIdJobDetailMap = getSchedulerJobs();
-
-		for (ScheduleEntity entity : scheduleEntities) {
-			JobDetail jobDetail = scheduleIdJobDetailMap
-					.get(ScheduleJobHelper.generateJobKey(entity.getId(), JobActionEnum.START));
-			assertJobDetails(entity, entity.getInstanceMinCount(), entity.getInstanceMaxCount(), JobActionEnum.START,
-					jobDetail);
-
-			jobDetail = scheduleIdJobDetailMap.get(ScheduleJobHelper.generateJobKey(entity.getId(), JobActionEnum.END));
-			assertJobDetails(entity, entity.getDefaultInstanceMinCount(), entity.getDefaultInstanceMaxCount(),
-					JobActionEnum.END, jobDetail);
+		// Delete the simple jobs
+		for (SpecificDateScheduleEntity scheduleEntity : specificDateScheduleEntities) {
+			scalingJobManager.deleteSimpleJob(scheduleEntity);
 		}
-	}
 
-	private void assertJobDetails(ScheduleEntity expectedEntity, int expectedInstanceMinCount,
-			int expectedInstanceMaxCount, JobActionEnum expectedJobAction, JobDetail jobDetail) {
-		assertNotNull("Expected existing jobDetail", jobDetail);
-		JobDataMap map = jobDetail.getJobDataMap();
-		assertEquals(expectedEntity.getAppId(), map.get("appId"));
-		assertEquals(expectedEntity.getId(), map.get("scheduleId"));
-		assertEquals(expectedJobAction, map.get("scalingAction"));
-		assertEquals(expectedInstanceMinCount, map.get("instanceMinCount"));
-		assertEquals(expectedInstanceMaxCount, map.get("instanceMaxCount"));
+		scheduleJobKeyDetailMap = getSchedulerJobs();
+		// Check the jobs, the expected job count is 0.
+		assertEquals(0, scheduleJobKeyDetailMap.size());
+
 	}
 
 	private void createSimpleJob(List<SpecificDateScheduleEntity> specificDateScheduleEntities) {
@@ -145,18 +141,52 @@ public class ScheduleJobManagerTest {
 		}
 	}
 
-	private Map<String, JobDetail> getSchedulerJobs() throws SchedulerException {
-		Map<String, JobDetail> scheduleIdJobDetailMap = new HashMap<>();
+	private void assertCreatedJobs(Map<JobKey, JobDetail> scheduleIdJobDetailMap, ScheduleEntity scheduleEntity,
+			ScheduleTypeEnum scheduleType)
+			throws SchedulerException {
+		String appId = scheduleEntity.getAppId();
+		Long scheduleId = scheduleEntity.getId();
+
+		JobKey startJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.START,
+				ScheduleTypeEnum.SPECIFIC_DATE);
+		JobKey endJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.END,
+				ScheduleTypeEnum.SPECIFIC_DATE);
+
+		int instMinCount = scheduleEntity.getInstanceMinCount();
+		int instMaxCount = scheduleEntity.getInstanceMaxCount();
+
+		JobDetail jobDetail = scheduleIdJobDetailMap.get(startJobKey);
+		assertJobDetails(appId, scheduleId, instMinCount, instMaxCount, JobActionEnum.START, jobDetail);
+
+		instMinCount = scheduleEntity.getDefaultInstanceMinCount();
+		instMaxCount = scheduleEntity.getDefaultInstanceMaxCount();
+		jobDetail = scheduleIdJobDetailMap.get(endJobKey);
+		assertJobDetails(appId, scheduleId, instMinCount, instMaxCount, JobActionEnum.END, jobDetail);
+	}
+
+	private void assertJobDetails(String expectedAppId, Long expectedScheduleId, int expectedInstanceMinCount,
+			int expectedInstanceMaxCount, JobActionEnum expectedJobAction, JobDetail expectedJobDetail) {
+		assertNotNull("Expected existing jobDetail", expectedJobDetail);
+		JobDataMap map = expectedJobDetail.getJobDataMap();
+		assertEquals(expectedAppId, map.get("appId"));
+		assertEquals(expectedScheduleId, map.get("scheduleId"));
+		assertEquals(expectedJobAction, map.get("scalingAction"));
+		assertEquals(expectedInstanceMinCount, map.get("instanceMinCount"));
+		assertEquals(expectedInstanceMaxCount, map.get("instanceMaxCount"));
+	}
+
+	private Map<JobKey, JobDetail> getSchedulerJobs() throws SchedulerException {
+		Map<JobKey, JobDetail> scheduleJobKeyDetailMap = new HashMap<>();
 
 		for (String groupName : scheduler.getJobGroupNames()) {
 
 			for (JobKey jobKey : scheduler.getJobKeys(GroupMatcher.jobGroupEquals(groupName))) {
-				scheduleIdJobDetailMap.put(jobKey.getName(), scheduler.getJobDetail(jobKey));
+				scheduleJobKeyDetailMap.put(jobKey, scheduler.getJobDetail(jobKey));
 
 			}
-
 		}
 
-		return scheduleIdJobDetailMap;
+		return scheduleJobKeyDetailMap;
 	}
+	
 }

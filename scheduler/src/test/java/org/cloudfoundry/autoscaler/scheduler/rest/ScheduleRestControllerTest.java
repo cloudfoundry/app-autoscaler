@@ -1,6 +1,7 @@
 package org.cloudfoundry.autoscaler.scheduler.rest;
 
 import static org.junit.Assert.assertEquals;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -89,9 +90,7 @@ public class ScheduleRestControllerTest {
 	public void testGetAllSchedule_with_no_schedules() throws Exception {
 		ResultActions resultActions = callGetAllSchedulesByAppId(appId);
 
-		resultActions.andExpect(status().isNotFound());
-		resultActions.andExpect(header().doesNotExist("Content-type"));
-		resultActions.andExpect(content().string(Matchers.isEmptyString()));
+		assertNoSchedulesFound(resultActions);
 	}
 
 	@Test
@@ -331,6 +330,41 @@ public class ScheduleRestControllerTest {
 		testCreateSchedule_defaultInstanceMinCount_greater_than_defaultInstanceMaxCount();
 	}
 
+	@Test
+	@Transactional
+	public void testDeleteSchedules() throws Exception {
+
+		// Test multiple applications each having multiple specific date schedules, no recurring schedule
+		String[] multipleAppIds = TestDataSetupHelper.generateAppIds(5);
+		assertDeleteSchedules(multipleAppIds, 5, 0);
+
+		// Note: Once recurring schedule delete in place following can be used 
+		// Test multiple applications each having multiple recurring schedule, no specific date schedules
+		//		assertDeleteSchedules(multipleAppIds, 0, 5);
+
+		// Test multiple applications each having multiple specific date and multiple recurring schedule 
+		//		assertDeleteSchedules(multipleAppIds, 5, 5);
+
+	}
+
+	@Test
+	@Transactional
+	public void testDeleteSchedules_appId_without_schedules() throws Exception {
+		String[] multipleAppIds = TestDataSetupHelper.generateAppIds(2);
+
+		//  Get schedules and assert to check no schedules exist
+		for (String appId : multipleAppIds) {
+			ResultActions resultActions = callGetAllSchedulesByAppId(appId);
+			assertNoSchedulesFound(resultActions);
+		}
+
+		for (String appId : multipleAppIds) {
+			ResultActions resultActions = callDeleteSchedules(appId);
+			assertNoSchedulesFound(resultActions);
+		}
+
+	}
+
 	private String getCreateSchedulePath(String appId) {
 		return String.format("/v2/schedules/%s", appId);
 	}
@@ -341,7 +375,8 @@ public class ScheduleRestControllerTest {
 				noOfRecurringSchedulesToSetUp);
 
 		return mockMvc
-				.perform(put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON)
+						.accept(MediaType.APPLICATION_JSON).content(content));
 
 	}
 
@@ -349,6 +384,18 @@ public class ScheduleRestControllerTest {
 
 		return mockMvc.perform(get(getCreateSchedulePath(appId)).accept(MediaType.APPLICATION_JSON));
 
+	}
+
+	private ResultActions callDeleteSchedules(String appId) throws Exception {
+
+		return mockMvc.perform(delete(getCreateSchedulePath(appId)).accept(MediaType.APPLICATION_JSON));
+
+	}
+
+	private void assertNoSchedulesFound(ResultActions resultActions) throws Exception {
+		resultActions.andExpect(status().isNotFound());
+		resultActions.andExpect(header().doesNotExist("Content-type"));
+		resultActions.andExpect(content().string(Matchers.isEmptyString()));
 	}
 
 	private void assertCreateAndGetSchedules(String[] appIds, int expectedSpecificDateSchedulesTobeFound,
@@ -422,5 +469,35 @@ public class ScheduleRestControllerTest {
 		resultActions.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
 		resultActions.andExpect(jsonPath("$").isArray());
 		resultActions.andExpect(jsonPath("$").value(Matchers.containsInAnyOrder(expectedErrorMessages)));
+	}
+	
+	private void assertDeleteSchedules(String[] multipleAppIds, int specificDateSchedules, int recurringSchedules)
+			throws Exception {
+		for (String appId : multipleAppIds) {
+			callCreateSchedules(appId, specificDateSchedules, recurringSchedules);
+		}
+
+		// Get schedules and assert to check schedules got created
+		for (String appId : multipleAppIds) {
+			ResultActions resultActions = callGetAllSchedulesByAppId(appId);
+			assertSchedulesFoundEquals(specificDateSchedules, recurringSchedules, appId, resultActions);
+		}
+
+		for (String appId : multipleAppIds) {
+			ResultActions resultActions = callDeleteSchedules(appId);
+			assertSchedulesAreDeleted(resultActions);
+		}
+
+		//  Get schedules and assert to check no schedules exist
+		for (String appId : multipleAppIds) {
+			ResultActions resultActions = callGetAllSchedulesByAppId(appId);
+			assertNoSchedulesFound(resultActions);
+		}
+	}
+
+	private void assertSchedulesAreDeleted(ResultActions resultActions) throws Exception {
+		resultActions.andExpect(status().isNoContent());
+		resultActions.andExpect(header().doesNotExist("Content-type"));
+		resultActions.andExpect(content().string(Matchers.isEmptyString()));
 	}
 }

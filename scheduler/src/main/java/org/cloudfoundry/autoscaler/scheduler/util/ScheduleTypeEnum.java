@@ -5,13 +5,15 @@ package org.cloudfoundry.autoscaler.scheduler.util;
  *
  */
 public enum ScheduleTypeEnum {
-	SPECIFIC_DATE("S", "Specific Date Schedule"), RECURRING("R", "Recurring Schedule");
+	SPECIFIC_DATE("S", "Specific_Date", "Specific Date Schedule"), RECURRING("R", "Recurring", "Recurring Schedule");
 
 	private String dbValue;
+	String scheduleIdentifier;
 	private String description;
 
-	private ScheduleTypeEnum(String dbValue, String description) {
+	private ScheduleTypeEnum(String dbValue, String scheduleIdentifier, String description) {
 		this.dbValue = dbValue;
+		this.scheduleIdentifier = scheduleIdentifier;
 		this.description = description;
 	}
 
@@ -21,6 +23,14 @@ public enum ScheduleTypeEnum {
 
 	public void setDbValue(String dbValue) {
 		this.dbValue = dbValue;
+	}
+
+	public String getScheduleIdentifier() {
+		return scheduleIdentifier;
+	}
+
+	public void setScheduleIdentifier(String scheduleIdentifier) {
+		this.scheduleIdentifier = scheduleIdentifier;
 	}
 
 	public String getDescription() {
