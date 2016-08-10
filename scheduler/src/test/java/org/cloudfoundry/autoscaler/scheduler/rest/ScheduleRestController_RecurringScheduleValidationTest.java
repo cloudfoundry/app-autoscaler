@@ -40,11 +40,10 @@ import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * 
+ *
  *
  */
 @RunWith(SpringRunner.class)
@@ -59,13 +58,11 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	private RecurringScheduleDao recurringScheduleDao;
 
 	@Autowired
-	MessageBundleResourceHelper messageBundleResourceHelper;
+	private MessageBundleResourceHelper messageBundleResourceHelper;
 
 	@Autowired
 	private WebApplicationContext wac;
 	private MockMvc mockMvc;
-
-	String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
 	private String scheduleBeingProcessed = ScheduleTypeEnum.RECURRING.getDescription();
 
@@ -499,7 +496,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedulesForRestApi(0,
 				noOfRecurringSchedulesToSetUp);
 
-		schedules.setRecurring_schedule(Collections.<RecurringScheduleEntity> emptyList());
+		schedules.setRecurring_schedule(Collections.emptyList());
 
 		String content = mapper.writeValueAsString(schedules);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
@@ -507,6 +504,42 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 		String errorMessage = messageBundleResourceHelper.lookupMessage("data.invalid.noSchedules", "app_id=" + appId);
 
 		assertErrorMessage(appId, content, errorMessage);
+	}
+
+	@Test
+	@Transactional
+	public void testCreateSchedule_overlapping_startEndTime_with_startEndDate() throws Exception {
+
+		// Overlapping test cases
+		assertOverlapStartEndDate(null, null, null, null);
+		assertOverlapStartEndDate("9999-01-01", null, null, null);
+		assertOverlapStartEndDate(null, "9999-01-01", null, null);
+		assertOverlapStartEndDate(null, null, "9999-01-01", null);
+		assertOverlapStartEndDate(null, null, null, "9999-01-01");
+		assertOverlapStartEndDate("9999-01-01", "9999-01-01", null, null);
+		assertOverlapStartEndDate("9999-01-01", null, "9999-01-01", null);
+		assertOverlapStartEndDate("9999-01-01", null, null, "9999-01-01");
+		assertOverlapStartEndDate(null, "9999-01-01", "9999-01-01", null);
+		assertOverlapStartEndDate(null, "9999-01-01", null, "9999-01-01");
+		assertOverlapStartEndDate(null, null, "9999-01-01", "9999-01-01");
+		assertOverlapStartEndDate("9999-01-01", "9999-01-01", "9999-01-01", null);
+		assertOverlapStartEndDate("9999-01-01", "9999-01-01", null, "9999-01-01");
+		assertOverlapStartEndDate("9999-01-01", null, "9999-01-01", "9999-01-01");
+		assertOverlapStartEndDate(null, "9999-01-01", "9999-01-01", "9999-01-01");
+		assertOverlapStartEndDate("9999-01-01", "9999-12-01", "9999-01-05", "9999-12-05");
+		assertOverlapStartEndDate("9999-01-01", "9999-12-01", "9999-01-01", "9999-12-01");
+		assertOverlapStartEndDate("9999-01-01", "9999-12-01", "9999-01-01", "9999-12-01");
+		assertOverlapStartEndDate("9999-01-01", "9999-12-01", "9998-12-01", "9999-10-01");
+
+		// Not overlapping test cases
+		assertNotOverlapStartEndDate("9999-01-05", null, null, "9999-01-04");
+		assertNotOverlapStartEndDate(null, "9999-01-04", "9999-01-05", null);
+		assertNotOverlapStartEndDate("9999-01-01", "9999-12-01", "9999-12-05", null);
+		assertNotOverlapStartEndDate("9999-01-05", "9999-12-01", null, "9999-01-01");
+		assertNotOverlapStartEndDate("9999-01-01", null, "9998-01-05", "9998-12-31");
+		assertNotOverlapStartEndDate(null, "9999-01-05", "9999-01-06", "9999-12-05");
+		assertNotOverlapStartEndDate("9998-01-01", "9998-12-31", "9999-01-01", "9999-12-31");
+		assertNotOverlapStartEndDate("9999-01-01", "9999-12-01", "9998-01-01", "9998-12-31");
 	}
 
 	@Test
@@ -591,12 +624,6 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 
 		String content = mapper.writeValueAsString(schedules);
 
-		List<String> messages = new ArrayList<>();
-		messages.add(messageBundleResourceHelper.lookupMessage("schedule.date.overlap", scheduleBeingProcessed + " 0",
-				"end_time", scheduleBeingProcessed + " 1", "start_time"));
-		messages.add(messageBundleResourceHelper.lookupMessage("schedule.date.overlap", scheduleBeingProcessed + " 2",
-				"start_time", scheduleBeingProcessed + " 3", "start_time"));
-
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		assertResponseStatusEquals(appId, content, status().isCreated());
 	}
@@ -678,7 +705,28 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 		assertErrorMessage(appId, content, messages.toArray(new String[0]));
 	}
 
-	private void assertInvalidDayOfWeek(int[] dayOfWeek) throws JsonProcessingException, Exception {
+	private void assertOverlapStartEndDate(String firstStartDateStr, String firstEndDateStr, String secondStartDateStr,
+			String secondEndDateStr) throws Exception {
+		String content = TestDataSetupHelper.generateJsonScheduleWithStartEndDate(firstStartDateStr, firstEndDateStr, secondStartDateStr,
+				secondEndDateStr);
+
+		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.overlap",
+				scheduleBeingProcessed + " 0", "end_time", scheduleBeingProcessed + " 1", "start_time");
+
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		assertErrorMessage(appId, content, errorMessage);
+	}
+
+	private void assertNotOverlapStartEndDate(String firstStartDateStr, String firstEndDateStr,
+			String secondStartDateStr, String secondEndDateStr) throws Exception {
+		String content = TestDataSetupHelper.generateJsonScheduleWithStartEndDate(firstStartDateStr, firstEndDateStr, secondStartDateStr,
+				secondEndDateStr);
+
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		assertResponseStatusEquals(appId, content, status().isCreated());
+	}
+
+	private void assertInvalidDayOfWeek(int[] dayOfWeek) throws Exception {
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.invalid.day",
 				scheduleBeingProcessed + " 0", "day_of_week", DateHelper.DAY_OF_WEEK_MINIMUM,
@@ -687,7 +735,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 		assertInvalidDayOfMonthAndWeek(dayOfWeek, null, errorMessage);
 	}
 
-	private void assertInvalidDayOfMonth(int[] array) throws JsonProcessingException, Exception {
+	private void assertInvalidDayOfMonth(int[] array) throws Exception {
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.invalid.day",
 				scheduleBeingProcessed + " 0", "day_of_month", DateHelper.DAY_OF_MONTH_MINIMUM,
 				DateHelper.DAY_OF_MONTH_MAXMUM);
@@ -696,7 +744,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	}
 
 	private void assertInvalidDayOfMonthAndWeek(int[] dayOfWeek, int[] dayOfMonth, String errorMessage)
-			throws JsonProcessingException, Exception {
+			throws Exception {
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 1;
 		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedulesForRestApi(0,

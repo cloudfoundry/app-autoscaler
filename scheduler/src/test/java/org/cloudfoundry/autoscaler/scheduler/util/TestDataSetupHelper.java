@@ -25,7 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  *
  */
 public class TestDataSetupHelper {
-	static Class<?> clazz = TestDataSetupHelper.class;
+	private static Class<?> clazz = TestDataSetupHelper.class;
 	private static Logger logger = LogManager.getLogger(clazz);
 
 	private static List<String> genAppIds = new ArrayList<>();
@@ -55,10 +55,8 @@ public class TestDataSetupHelper {
 
 	public static List<SpecificDateScheduleEntity> generateSpecificDateSchedules(String appId,
 			int noOfSpecificDateSchedulesToSetUp, boolean isStartEndDateTimeCurrentDateTime) {
-		List<SpecificDateScheduleEntity> specificDateSchedules = generateSpecificDateScheduleEntities(appId, timeZone,
-				noOfSpecificDateSchedulesToSetUp, isStartEndDateTimeCurrentDateTime, 1, 5);
-
-		return specificDateSchedules;
+		return generateSpecificDateScheduleEntities(appId, timeZone, noOfSpecificDateSchedulesToSetUp,
+				isStartEndDateTimeCurrentDateTime, 1, 5);
 	}
 
 	private static List<SpecificDateScheduleEntity> generateSpecificDateScheduleEntities(String appId, String timeZone,
@@ -81,8 +79,8 @@ public class TestDataSetupHelper {
 					specificDateScheduleEntity.setStartDateTime(sdf.parse(getCurrentDateTime(0)));
 					specificDateScheduleEntity.setEndDateTime(sdf.parse(getCurrentDateTime(0)));
 				} else {
-					specificDateScheduleEntity.setStartDateTime(sdf.parse(getDate(startDateTime, pos, 0)));
-					specificDateScheduleEntity.setEndDateTime(sdf.parse(getDate(endDateTime, pos, 5)));
+					specificDateScheduleEntity.setStartDateTime(sdf.parse(getDateString(startDateTime, pos, 0)));
+					specificDateScheduleEntity.setEndDateTime(sdf.parse(getDateString(endDateTime, pos, 5)));
 				}
 			} catch (ParseException e) {
 				throw new RuntimeException(e.getMessage());
@@ -101,10 +99,8 @@ public class TestDataSetupHelper {
 
 	public static List<RecurringScheduleEntity> generateRecurringSchedules(String appId,
 			int noOfRecurringSchedulesToSetUp, boolean isDayOfWeek) {
-		List<RecurringScheduleEntity> recurringScheduleEntities = generateRecurringScheduleEntities(appId, timeZone,
-				noOfRecurringSchedulesToSetUp, false, 1, 5, false);
-
-		return recurringScheduleEntities;
+		return generateRecurringScheduleEntities(appId, timeZone, noOfRecurringSchedulesToSetUp, false, 1, 5,
+				isDayOfWeek);
 	}
 
 	private static List<RecurringScheduleEntity> generateRecurringScheduleEntities(String appId, String timeZone,
@@ -121,8 +117,8 @@ public class TestDataSetupHelper {
 				recurringScheduleEntity.setStartTime(java.sql.Time.valueOf(getCurrentTime(0)));
 				recurringScheduleEntity.setEndTime(java.sql.Time.valueOf(getCurrentTime(0)));
 			} else {
-				recurringScheduleEntity.setStartTime(java.sql.Time.valueOf(getTime(startTime, pos, 0)));
-				recurringScheduleEntity.setEndTime(java.sql.Time.valueOf(getTime(endTime, pos, 5)));
+				recurringScheduleEntity.setStartTime(java.sql.Time.valueOf(getTimeString(startTime, pos, 0)));
+				recurringScheduleEntity.setEndTime(java.sql.Time.valueOf(getTimeString(endTime, pos, 5)));
 			}
 
 			if (isDayOfWeek) {
@@ -173,7 +169,43 @@ public class TestDataSetupHelper {
 		return mapper.writeValueAsString(schedules);
 	}
 
-	private static String getDate(String[] date, int pos, int offsetMin) {
+	public static String generateJsonScheduleWithStartEndDate(String firstStartDateStr, String firstEndDateStr,
+			String secondStartDateStr, String secondEndDateStr) throws Exception {
+		ObjectMapper mapper = new ObjectMapper();
+		int noOfRecurringSchedulesToSetUp = 2;
+		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedulesForRestApi(0,
+				noOfRecurringSchedulesToSetUp);
+
+		// Overlap recurring schedules.
+		RecurringScheduleEntity firstEntity = schedules.getRecurring_schedule().get(0);
+		RecurringScheduleEntity secondEntity = schedules.getRecurring_schedule().get(1);
+		secondEntity.setStartTime(firstEntity.getEndTime());
+
+		firstEntity.setDayOfWeek(new int[] { 1, 2, 3, 4, 5, 6, 7 });
+		firstEntity.setDayOfMonth(null);
+
+		secondEntity.setDayOfWeek(firstEntity.getDayOfWeek());
+		secondEntity.setDayOfMonth(null);
+
+		firstEntity.setStartDate(getDate(firstStartDateStr));
+		firstEntity.setEndDate(getDate(firstEndDateStr));
+
+		secondEntity.setStartDate(getDate(secondStartDateStr));
+		secondEntity.setEndDate(getDate(secondEndDateStr));
+
+		return mapper.writeValueAsString(schedules);
+	}
+
+	private static Date getDate(String dateStr) throws Exception {
+		SimpleDateFormat sdf = new SimpleDateFormat(DateHelper.DATE_FORMAT);
+		Date date = null;
+		if (dateStr != null) {
+			date = sdf.parse(dateStr);
+		}
+		return date;
+	}
+
+	private static String getDateString(String[] date, int pos, int offsetMin) {
 		if (date != null && date.length > pos) {
 			return date[pos];
 		} else {
@@ -181,7 +213,7 @@ public class TestDataSetupHelper {
 		}
 	}
 
-	private static String getTime(String[] time, int pos, int offsetMin) {
+	private static String getTimeString(String[] time, int pos, int offsetMin) {
 		if (time != null && time.length > pos) {
 			return time[pos];
 		} else {
@@ -193,24 +225,21 @@ public class TestDataSetupHelper {
 		SimpleDateFormat sdfDate = new SimpleDateFormat(DateHelper.DATE_TIME_FORMAT);
 		Date now = new Date();
 		now.setTime(now.getTime() + TimeUnit.MINUTES.toMillis(offsetMin));
-		String strDate = sdfDate.format(now);
-		return strDate;
+		return sdfDate.format(now);
 	}
 
 	private static String getCurrentTime(int offsetMin) {
 		SimpleDateFormat sdfDate = new SimpleDateFormat(DateHelper.TIME_FORMAT);
 		Calendar calNow = Calendar.getInstance();
 		calNow.add(Calendar.MINUTE, offsetMin);
-		String strDate = sdfDate.format(calNow.getTime());
-		return strDate;
+		return sdfDate.format(calNow.getTime());
 	}
 
-	public static String getCurrentDate(int offsetMin) {
+	private static String getCurrentDate(int offsetMin) {
 		SimpleDateFormat sdfDate = new SimpleDateFormat(DateHelper.DATE_FORMAT);
 		Calendar calNow = Calendar.getInstance();
 		calNow.add(Calendar.MINUTE, offsetMin);
-		String strDate = sdfDate.format(calNow.getTime());
-		return strDate;
+		return sdfDate.format(calNow.getTime());
 	}
 
 	public static String getTimeZone() {
@@ -243,13 +272,13 @@ public class TestDataSetupHelper {
 		return array;
 	}
 
-	public static int[] makeRandomArray(Random rand, int size, int randMin, int randMax) {
+	private static int[] makeRandomArray(Random rand, int size, int randMin, int randMax) {
 		int[] array = rand.ints(randMin, randMax + 1).distinct().limit(size).toArray();
 		Arrays.sort(array);
 		return array;
 	}
 
-	public static Date addDaysToNow(int afterDays) throws ParseException {
+	public static Date addDaysToNow(int afterDays) {
 		Calendar calNow = Calendar.getInstance();
 		calNow.add(Calendar.DAY_OF_MONTH, afterDays);
 		calNow.set(Calendar.HOUR_OF_DAY, 0);
