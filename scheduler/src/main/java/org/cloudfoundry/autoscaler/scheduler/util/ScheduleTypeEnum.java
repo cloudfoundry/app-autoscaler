@@ -11,7 +11,7 @@ public enum ScheduleTypeEnum {
 	String scheduleIdentifier;
 	private String description;
 
-	private ScheduleTypeEnum(String dbValue, String scheduleIdentifier, String description) {
+	ScheduleTypeEnum(String dbValue, String scheduleIdentifier, String description) {
 		this.dbValue = dbValue;
 		this.scheduleIdentifier = scheduleIdentifier;
 		this.description = description;
@@ -21,24 +21,12 @@ public enum ScheduleTypeEnum {
 		return dbValue;
 	}
 
-	public void setDbValue(String dbValue) {
-		this.dbValue = dbValue;
-	}
-
 	public String getScheduleIdentifier() {
 		return scheduleIdentifier;
 	}
 
-	public void setScheduleIdentifier(String scheduleIdentifier) {
-		this.scheduleIdentifier = scheduleIdentifier;
-	}
-
 	public String getDescription() {
 		return description;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
 	}
 
 	public static ScheduleTypeEnum getEnum(String str) {

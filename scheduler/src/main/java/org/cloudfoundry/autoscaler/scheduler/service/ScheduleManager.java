@@ -48,14 +48,13 @@ public class ScheduleManager {
 	 *
 	 * @param appId
 	 * @return
-	 * @throws Exception
 	 */
 	public ApplicationScalingSchedules getAllSchedules(String appId) {
 		logger.info("Get All schedules for application: " + appId);
 
 		ApplicationScalingSchedules applicationScalingSchedules = new ApplicationScalingSchedules();
-		List<SpecificDateScheduleEntity> allSpecificDateScheduleEntitiesForApp = null;
-		List<RecurringScheduleEntity> allRecurringScheduleEntitiesForApp = null;
+		List<SpecificDateScheduleEntity> allSpecificDateScheduleEntitiesForApp;
+		List<RecurringScheduleEntity> allRecurringScheduleEntitiesForApp;
 
 		try {
 			allSpecificDateScheduleEntitiesForApp = specificDateScheduleDao.findAllSpecificDateSchedulesByAppId(appId);
@@ -125,7 +124,6 @@ public class ScheduleManager {
 	 * do further validation.
 	 *
 	 * @param appId
-	 * @param timeZone
 	 * @param applicationScalingSchedules
 	 */
 	public void validateSchedules(String appId, ApplicationScalingSchedules applicationScalingSchedules) {
@@ -214,7 +212,7 @@ public class ScheduleManager {
 		}
 
 		// Validate the dates for overlap
-		if (scheduleStartEndTimeList != null && !scheduleStartEndTimeList.isEmpty()) {
+		if (!scheduleStartEndTimeList.isEmpty()) {
 			List<String[]> overlapDateTimeValidationErrorMsgList = DataValidationHelper
 					.isNotOverlapForSpecificDate(scheduleStartEndTimeList);
 			for (String[] arguments : overlapDateTimeValidationErrorMsgList) {
@@ -341,8 +339,6 @@ public class ScheduleManager {
 		}
 
 		if (startDate != null && endDate != null && isValid) {
-			// Is it ok to have startDate= endDate? Does not make sense in case of recurring schedules
-
 			// startDate should be before or equal to endDate
 			if (startDate.compareTo(endDate) > 0) {
 				isValid = false;
@@ -530,7 +526,7 @@ public class ScheduleManager {
 
 		if (isValidDtTm) {
 			// Check the start date time is after current date time
-			if (!DataValidationHelper.isLaterThanNow(startDateTime, timeZone)) {
+			if (!DataValidationHelper.isDateTimeAfterNow(startDateTime, timeZone)) {
 				isValid = false;
 				validationErrorResult.addFieldError(specificDateSchedule, "schedule.date.invalid.current.after",
 						scheduleBeingProcessed, "start_date_time", DateHelper.convertDateTimeToString(startDateTime));
@@ -546,7 +542,7 @@ public class ScheduleManager {
 
 		if (isValidDtTm) {
 			// Check the end date time is after current date time
-			if (!DataValidationHelper.isLaterThanNow(endDateTime, timeZone)) {
+			if (!DataValidationHelper.isDateTimeAfterNow(endDateTime, timeZone)) {
 				isValid = false;
 				validationErrorResult.addFieldError(specificDateSchedule, "schedule.date.invalid.current.after",
 						scheduleBeingProcessed, "end_date_time", DateHelper.convertDateTimeToString(endDateTime));
@@ -612,7 +608,7 @@ public class ScheduleManager {
 	 */
 	private SpecificDateScheduleEntity saveNewSpecificDateSchedule(
 			SpecificDateScheduleEntity specificDateScheduleEntity) {
-		SpecificDateScheduleEntity savedScheduleEntity = null;
+		SpecificDateScheduleEntity savedScheduleEntity;
 		try {
 			savedScheduleEntity = specificDateScheduleDao.create(specificDateScheduleEntity);
 
@@ -626,7 +622,7 @@ public class ScheduleManager {
 	}
 
 	private RecurringScheduleEntity saveNewRecurringSchedule(RecurringScheduleEntity recurringScheduleEntity) {
-		RecurringScheduleEntity savedScheduleEntity = null;
+		RecurringScheduleEntity savedScheduleEntity;
 		try {
 			savedScheduleEntity = recurringScheduleDao.create(recurringScheduleEntity);
 		} catch (DatabaseValidationException dve) {

@@ -17,71 +17,59 @@ public class DataValidationHelper {
 
 	/**
 	 * Checks if the specified object is null.
-	 * 
+	 *
 	 * @param object
 	 * @return true if not null otherwise false
 	 */
 	public static boolean isNotNull(Object object) {
-		if (object == null)
-			return false;
-		return true;
+		return object != null;
 	}
 
 	/**
 	 * Checks if specified string is not empty (not null and not blank)
-	 * 
+	 *
 	 * @param string
 	 * @return true or false
 	 */
 	public static boolean isNotEmpty(String string) {
-		if (isNotNull(string) && !string.isEmpty())
-			return true;
-		return false;
+		return (isNotNull(string) && !string.isEmpty());
 	}
 
 	/**
 	 * Checks if specified array is not empty (not null and not empty)
-	 * 
+	 *
 	 * @param array
 	 * @return
 	 */
 	public static boolean isNotEmpty(int[] array) {
-		if (isNotNull(array) && array.length > 0)
-			return true;
-		return false;
+		return (isNotNull(array) && array.length > 0);
 	}
 
 	/**
 	 * Checks if the timezone is valid
-	 * 
+	 *
 	 * @param timeZoneId
 	 * @return
 	 */
 	public static boolean isValidTimeZone(String timeZoneId) {
 		if (isNotNull(timeZoneId)) {
 			List<String> supportedTimeZones = Arrays.asList(DateHelper.supportedTimezones);
-			if (supportedTimeZones.contains(timeZoneId)) {
-				return true;
-			}
-			return false;
-		} else {
-			return false;
+			return (supportedTimeZones.contains(timeZoneId));
 		}
+		return false;
 	}
 
 	/**
 	 * Checks if the specified date time is after now (current time).
+	 *
 	 * @param dateTime
 	 * @param timeZone
 	 * @return
 	 */
-	public static boolean isLaterThanNow(Date dateTime, TimeZone timeZone) {
+	public static boolean isDateTimeAfterNow(Date dateTime, TimeZone timeZone) {
 		Calendar calToCompare = DateHelper.getCalendarDate(dateTime, timeZone);
 		Calendar calNow = Calendar.getInstance(timeZone);
-		if (calToCompare.after(calNow)) {
-			return true;
-		}
-		return false;
+		return calToCompare.after(calNow);
 	}
 
 	public static boolean isDateAfterOrEqualsNow(Date date, TimeZone policyTimeZone) {
@@ -99,15 +87,14 @@ public class DataValidationHelper {
 
 	/**
 	 * Checks id the end date time is after start date time
+	 *
 	 * @param endDateTime
 	 * @param startDateTime
 	 * @return
 	 */
 	public static boolean isAfter(Date endDateTime, Date startDateTime) {
 		if (isNotNull(endDateTime) && isNotNull(startDateTime)) {
-			if (endDateTime.after(startDateTime)) {
-				return true;
-			}
+			return  endDateTime.after(startDateTime);
 		}
 		return false;
 
@@ -123,9 +110,9 @@ public class DataValidationHelper {
 
 	public static boolean isElementUnique(int[] array) {
 		boolean isValid = true;
-		Set<Integer> set = new HashSet<Integer>();
-		for (int i = 0; i < array.length; i++) {
-			if (!set.add(array[i])) { // Duplicate value found.
+		Set<Integer> set = new HashSet<>();
+		for (int element : array) {
+			if (!set.add(element)) { // Duplicate value found.
 				isValid = false;
 			}
 		}
@@ -144,28 +131,76 @@ public class DataValidationHelper {
 					RecurringScheduleTime current = scheduleTimes.get(firstIndex);
 					RecurringScheduleTime next = scheduleTimes.get(secondIndex);
 
-					//both are dayOfWeek
-					if (current.hasDayOfWeek() && next.hasDayOfWeek()) {
-						// check overlap
-						String[] overlapDateTimeValidationErrorMsg = validateTimeOverlapping(current, next,
-								current.getDayOfWeek(), next.getDayOfWeek());
-						if (overlapDateTimeValidationErrorMsg != null) {
-							overlapDateTimeValidationErrorMsgList.add(overlapDateTimeValidationErrorMsg);
+					if (isStartEndDateOverlapping(current, next)) {
+						//both are dayOfWeek
+						if (current.hasDayOfWeek() && next.hasDayOfWeek()) {
+							// check overlap
+							String[] overlapDateTimeValidationErrorMsg = validateTimeOverlapping(current, next,
+									current.getDayOfWeek(), next.getDayOfWeek());
+							if (overlapDateTimeValidationErrorMsg != null) {
+								overlapDateTimeValidationErrorMsgList.add(overlapDateTimeValidationErrorMsg);
+							}
 						}
-					}
 
-					if (current.hasDayOfMonth() && next.hasDayOfMonth()) {
-						// check overlap
-						String[] overlapDateTimeValidationErrorMsg = validateTimeOverlapping(current, next,
-								current.getDayOfMonth(), next.getDayOfMonth());
-						if (overlapDateTimeValidationErrorMsg != null) {
-							overlapDateTimeValidationErrorMsgList.add(overlapDateTimeValidationErrorMsg);
+						if (current.hasDayOfMonth() && next.hasDayOfMonth()) {
+							// check overlap
+							String[] overlapDateTimeValidationErrorMsg = validateTimeOverlapping(current, next,
+									current.getDayOfMonth(), next.getDayOfMonth());
+							if (overlapDateTimeValidationErrorMsg != null) {
+								overlapDateTimeValidationErrorMsgList.add(overlapDateTimeValidationErrorMsg);
+							}
 						}
 					}
 				}
 			}
 		}
 		return overlapDateTimeValidationErrorMsgList;
+	}
+
+	private static boolean isStartEndDateOverlapping(RecurringScheduleTime current, RecurringScheduleTime next) {
+		boolean isOverlapping;
+
+		// NOTE: The Start and End Dates in the schedules are not sorted, so we need to compare dates
+		// by  swapping the dates hence calling isSomething twice, once with current and next then with
+		// next and current
+		isOverlapping = isOverlapping(current.getStartDate(), current.getEndDate(), next.getStartDate(),
+				next.getEndDate());
+		if (!isOverlapping)
+			isOverlapping = isOverlapping(next.getStartDate(), next.getEndDate(), current.getStartDate(),
+					current.getEndDate());
+
+		return isOverlapping;
+	}
+
+	private static boolean isOverlapping(Date firstStartDate, Date firstEndDate, Date secondStartDate,
+			Date secondEndDate) {
+		boolean isOverlapping = false;
+
+		if ((firstStartDate == null && firstEndDate == null) || (secondStartDate == null && secondEndDate == null)
+				|| (firstStartDate == null && secondStartDate == null)
+				|| (firstEndDate == null && secondEndDate == null)) {
+			isOverlapping = true;
+		}
+
+		if (firstStartDate != null && secondStartDate == null && secondEndDate != null) {
+			if (firstStartDate.compareTo(secondEndDate) <= 0) {
+				isOverlapping = true;
+			}
+		}
+
+		if (firstEndDate != null && secondStartDate != null && secondEndDate == null) {
+			if (firstEndDate.compareTo(secondStartDate) >= 0) {
+				isOverlapping = true;
+			}
+		}
+
+		if (firstStartDate != null && firstEndDate != null && secondStartDate != null && secondEndDate != null) {
+			if (firstStartDate.compareTo(secondStartDate) <= 0 && firstEndDate.compareTo(secondStartDate) >= 0) {
+				isOverlapping = true;
+			}
+		}
+
+		return isOverlapping;
 	}
 
 	private static String[] validateTimeOverlapping(RecurringScheduleTime current, RecurringScheduleTime next,
@@ -198,11 +233,11 @@ public class DataValidationHelper {
 	}
 
 	/**
-	 * This method is given a collection of SpecificDateScheduleDateTime (holding the schedule 
-	 * identifier and its start date time and end date time). It traverses through the collection 
-	 * to check if the the date time between different schedules overlap. If there is an overlap 
+	 * This method is given a collection of SpecificDateScheduleDateTime (holding the schedule
+	 * identifier and its start date time and end date time). It traverses through the collection
+	 * to check if the the date time between different schedules overlap. If there is an overlap
 	 * then an error message is added to a collection and collection of messages is returned.
-	 * 
+	 *
 	 * @param scheduleStartEndTimeList
 	 * @return - List of date time overlap validation messages
 	 */
