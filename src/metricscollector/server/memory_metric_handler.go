@@ -1,15 +1,16 @@
 package server
 
 import (
-	"encoding/json"
 	"metricscollector/cf"
 	"metricscollector/metrics"
+	"metricscollector/noaa"
 	"net/http"
 
 	"code.cloudfoundry.org/cfhttp/handlers"
 	"code.cloudfoundry.org/lager"
-
 	"github.com/cloudfoundry/sonde-go/events"
+
+	"encoding/json"
 )
 
 const TokenTypeBearer = "bearer"
@@ -29,7 +30,7 @@ type NoaaConsumer interface {
 	ContainerMetrics(appGuid string, authToken string) ([]*events.ContainerMetric, error)
 }
 
-func NewMemoryMetricHandler(logger lager.Logger, cfc cf.CfClient, consumer NoaaConsumer) *MemoryMetricHandler {
+func NewMemoryMetricHandler(logger lager.Logger, cfc cf.CfClient, consumer noaa.NoaaConsumer) *MemoryMetricHandler {
 	return &MemoryMetricHandler{
 		cfClient: cfc,
 		noaa:     consumer,

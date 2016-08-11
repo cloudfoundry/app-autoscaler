@@ -2,9 +2,9 @@ package server_test
 
 import (
 	"errors"
+	"metricscollector/fakes"
 	"metricscollector/metrics"
 	. "metricscollector/server"
-	"metricscollector/server/fakes"
 
 	"code.cloudfoundry.org/lager"
 

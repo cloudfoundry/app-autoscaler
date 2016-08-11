@@ -3,7 +3,7 @@ package collector_test
 import (
 	"metricscollector/cf"
 	. "metricscollector/collector"
-	"metricscollector/collector/fakes"
+	"metricscollector/fakes"
 	"metricscollector/metrics"
 
 	"code.cloudfoundry.org/clock/fakeclock"
@@ -66,15 +66,6 @@ var _ = Describe("Apppoller", func() {
 
 			BeforeEach(func() {
 				cfc.GetTokensReturns(cf.Tokens{AccessToken: "test-access-token"})
-
-				database.SaveMetricStub = func(metric *metrics.Metric) error {
-					Expect(metric.AppId).To(Equal("test-app-id"))
-					Expect(metric.Name).To(Equal(metrics.MetricNameMemory))
-					Expect(metric.Unit).To(Equal(metrics.UnitBytes))
-					Expect(metric.Instances).To(ConsistOf(metrics.InstanceMetric{Index: 0, Value: "1234"}))
-					return nil
-				}
-
 			})
 
 			Context("when all container metrics are not empty", func() {
@@ -92,6 +83,15 @@ var _ = Describe("Apppoller", func() {
 							},
 						}, nil
 					}
+
+					database.SaveMetricStub = func(metric *metrics.Metric) error {
+						Expect(metric.AppId).To(Equal("test-app-id"))
+						Expect(metric.Name).To(Equal(metrics.MetricNameMemory))
+						Expect(metric.Unit).To(Equal(metrics.UnitBytes))
+						Expect(metric.Instances).To(ConsistOf(metrics.InstanceMetric{Index: 0, Value: "1234"}))
+						return nil
+					}
+
 				})
 
 				It("saves all the metrics to database", func() {
@@ -146,6 +146,15 @@ var _ = Describe("Apppoller", func() {
 						}
 
 					}
+
+					database.SaveMetricStub = func(metric *metrics.Metric) error {
+						Expect(metric.AppId).To(Equal("test-app-id"))
+						Expect(metric.Name).To(Equal(metrics.MetricNameMemory))
+						Expect(metric.Unit).To(Equal(metrics.UnitBytes))
+						Expect(metric.Instances).To(ConsistOf(metrics.InstanceMetric{Index: 0, Value: "1234"}))
+						return nil
+					}
+
 				})
 
 				It("saves non-empty metrics to database", func() {

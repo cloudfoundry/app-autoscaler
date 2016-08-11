@@ -1,13 +1,9 @@
 package collector_test
 
 import (
-	"metricscollector/cf"
 	. "metricscollector/collector"
-	"metricscollector/collector/fakes"
-	"metricscollector/config"
-	"metricscollector/db"
+	"metricscollector/fakes"
 
-	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/lager"
 
@@ -22,8 +18,6 @@ import (
 var _ = Describe("Collector", func() {
 
 	var (
-		cfc      *fakes.FakeCfClient
-		noaa     *fakes.FakeNoaaConsumer
 		database *fakes.FakeDB
 		coll     *Collector
 		fclock   *fakeclock.FakeClock
@@ -32,14 +26,7 @@ var _ = Describe("Collector", func() {
 	)
 
 	BeforeEach(func() {
-		cfc = &fakes.FakeCfClient{}
-		noaa = &fakes.FakeNoaaConsumer{}
 		database = &fakes.FakeDB{}
-
-		conf := &config.CollectorConfig{
-			PollInterval:    TestPollInterval,
-			RefreshInterval: TestRefreshInterval,
-		}
 
 		logger := lager.NewLogger("collector-test")
 		buffer = gbytes.NewBuffer()
@@ -47,10 +34,10 @@ var _ = Describe("Collector", func() {
 
 		fclock = fakeclock.NewFakeClock(time.Now())
 		poller = &fakes.FakeAppPoller{}
-		createPoller := func(appId string, pollInterval time.Duration, logger lager.Logger, cfc cf.CfClient, noaa NoaaConsumer, database db.DB, pclcok clock.Clock) AppPoller {
+		createPoller := func(appId string) AppPoller {
 			return poller
 		}
-		coll = NewCollector(conf, logger, cfc, noaa, database, fclock, createPoller)
+		coll = NewCollector(TestRefreshInterval, logger, database, fclock, createPoller)
 	})
 
 	Describe("Start", func() {

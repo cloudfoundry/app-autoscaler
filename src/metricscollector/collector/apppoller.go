@@ -4,6 +4,7 @@ import (
 	"metricscollector/cf"
 	"metricscollector/db"
 	"metricscollector/metrics"
+	"metricscollector/noaa"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
@@ -21,20 +22,20 @@ type appPoller struct {
 	pollInterval time.Duration
 	logger       lager.Logger
 	cfc          cf.CfClient
-	noaa         NoaaConsumer
+	noaaConsumer noaa.NoaaConsumer
 	database     db.DB
 	pclock       clock.Clock
 	ticker       clock.Ticker
 	doneChan     chan bool
 }
 
-func NewAppPoller(appId string, pollInterval time.Duration, logger lager.Logger, cfc cf.CfClient, noaa NoaaConsumer, database db.DB, pclcok clock.Clock) AppPoller {
+func NewAppPoller(appId string, pollInterval time.Duration, logger lager.Logger, cfc cf.CfClient, noaaConsumer noaa.NoaaConsumer, database db.DB, pclcok clock.Clock) AppPoller {
 	return &appPoller{
 		appId:        appId,
 		pollInterval: pollInterval,
 		logger:       logger,
 		cfc:          cfc,
-		noaa:         noaa,
+		noaaConsumer: noaaConsumer,
 		database:     database,
 		pclock:       pclcok,
 		doneChan:     make(chan bool),
@@ -71,7 +72,7 @@ func (ap *appPoller) startPollMetrics() {
 func (ap *appPoller) pollMetric() {
 	ap.logger.Debug("poll-metric", lager.Data{"appid": ap.appId})
 
-	containerMetrics, err := ap.noaa.ContainerMetrics(ap.appId, "bearer"+" "+ap.cfc.GetTokens().AccessToken)
+	containerMetrics, err := ap.noaaConsumer.ContainerMetrics(ap.appId, "bearer"+" "+ap.cfc.GetTokens().AccessToken)
 	if err != nil {
 		ap.logger.Error("poll-metric-from-noaa", err)
 		return
