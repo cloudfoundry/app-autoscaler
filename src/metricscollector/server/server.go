@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"metricscollector/cf"
 	"metricscollector/config"
+	"metricscollector/noaa"
 	"net/http"
 
 	"code.cloudfoundry.org/lager"
@@ -23,7 +24,7 @@ func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vh(w, r, vars)
 }
 
-func NewServer(logger lager.Logger, conf config.ServerConfig, cfc cf.CfClient, consumer NoaaConsumer) ifrit.Runner {
+func NewServer(logger lager.Logger, conf config.ServerConfig, cfc cf.CfClient, consumer noaa.NoaaConsumer) ifrit.Runner {
 	mmh := NewMemoryMetricHandler(logger, cfc, consumer)
 
 	r := mux.NewRouter()

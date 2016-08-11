@@ -2,7 +2,7 @@
 package fakes
 
 import (
-	"metricscollector/server"
+	"metricscollector/noaa"
 	"sync"
 
 	"github.com/cloudfoundry/sonde-go/events"
@@ -78,4 +78,4 @@ func (fake *FakeNoaaConsumer) recordInvocation(key string, args []interface{}) {
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
 
-var _ server.NoaaConsumer = new(FakeNoaaConsumer)
+var _ noaa.NoaaConsumer = new(FakeNoaaConsumer)
