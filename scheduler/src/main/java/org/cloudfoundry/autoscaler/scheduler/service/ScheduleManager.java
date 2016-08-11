@@ -650,15 +650,16 @@ public class ScheduleManager {
 			deleteSpecificDateSchedule(specificDateScheduleEntity);
 
 			// Ask ScalingJobManager to delete scaling job 
-			scheduleJobManager.deleteSimpleJob(specificDateScheduleEntity);
+			scheduleJobManager.deleteJob(appId, specificDateScheduleEntity.getId(), ScheduleTypeEnum.SPECIFIC_DATE);
 			
 		}
 
 		// Get all the recurring schedules for the specifies application id and delete them.
 		List<RecurringScheduleEntity> recurringSchedules = recurringScheduleDao.findAllRecurringSchedulesByAppId(appId);
 		for (RecurringScheduleEntity recurringScheduleEntity : recurringSchedules) {
-			// Delete the specific date schedule from database
+			// Delete the recurring date schedule from database
 			deleteRecurringSchedule(recurringScheduleEntity);
+
 			// Ask ScalingJobManager to delete scaling job
 		}
 	}
@@ -675,7 +676,7 @@ public class ScheduleManager {
 	}
 
 	private void deleteRecurringSchedule(RecurringScheduleEntity recurringScheduleEntity) {
-
+		throw new UnsupportedOperationException(" Method not implemented yet");
 	}
 
 }

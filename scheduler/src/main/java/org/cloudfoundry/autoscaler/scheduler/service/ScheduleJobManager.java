@@ -117,13 +117,10 @@ public class ScheduleJobManager {
 		}
 	}
 
-	public void deleteSimpleJob(SpecificDateScheduleEntity specificDateScheduleEntity) {
-		Long scheduleId = specificDateScheduleEntity.getId();
+	public void deleteJob(String appId, Long scheduleId, ScheduleTypeEnum scheduleTypeEnum) {
 
-		JobKey startJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.START,
-				ScheduleTypeEnum.SPECIFIC_DATE);
-		JobKey endJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.END,
-				ScheduleTypeEnum.SPECIFIC_DATE);
+		JobKey startJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.START, scheduleTypeEnum);
+		JobKey endJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.END, scheduleTypeEnum);
 
 		try {
 			scheduler.deleteJob(startJobKey);
@@ -131,7 +128,7 @@ public class ScheduleJobManager {
 		} catch (SchedulerException se) {
 
 			validationErrorResult.addErrorForQuartzSchedulerException(se, "scheduler.error.delete.failed",
-					"app_id=" + specificDateScheduleEntity.getAppId());
+					"app_id=" + appId);
 		}
 	}
 }
