@@ -6,7 +6,6 @@ import (
 	. "metricscollector/server"
 
 	"code.cloudfoundry.org/lager"
-
 	"github.com/cloudfoundry/sonde-go/events"
 	"github.com/gogo/protobuf/proto"
 	. "github.com/onsi/ginkgo"
@@ -39,9 +38,7 @@ var _ = Describe("MemoryMetricHandler", func() {
 		consumer = &fakes.FakeNoaaConsumer{}
 		logger := lager.NewLogger("handler-test")
 		database = &fakes.FakeDB{}
-
 		resp = httptest.NewRecorder()
-
 		handler = NewMemoryMetricHandler(logger, cfc, consumer, database)
 	})
 
@@ -57,37 +54,19 @@ var _ = Describe("MemoryMetricHandler", func() {
 
 			It("returns a 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
+
 				errJson := &ErrorResponse{}
-				d := json.NewDecoder(resp.Body)
-				err = d.Decode(errJson)
+				err = json.Unmarshal(resp.Body.Bytes(), errJson)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(errJson.Code).To(Equal("Interal-Server-Error"))
-				Expect(errJson.Message).To(Equal("Error getting memory metrics from doppler"))
+				Expect(errJson).To(Equal(&ErrorResponse{
+					Code:    "Interal-Server-Error",
+					Message: "Error getting memory metrics from doppler",
+				}))
 			})
 		})
 
-		Context("when retrieving container metrics succeed", func() {
-			Context("container metrics is empty", func() {
-				BeforeEach(func() {
-					consumer.ContainerMetricsReturns([]*events.ContainerMetric{}, nil)
-				})
-
-				It("returns a 200 with empty metrics", func() {
-					Expect(resp.Code).To(Equal(http.StatusOK))
-
-					metric := &metrics.Metric{}
-					d := json.NewDecoder(resp.Body)
-					err = d.Decode(metric)
-
-					Expect(err).ToNot(HaveOccurred())
-					Expect(metric.AppId).To(Equal("an-app-id"))
-					Expect(metric.Name).To(Equal(metrics.MetricNameMemory))
-					Expect(metric.Unit).To(Equal(metrics.UnitBytes))
-					Expect(metric.Instances).To(BeEmpty())
-				})
-			})
-
+		Context("when retrieving container metrics succeeds", func() {
 			Context("container metrics is not empty", func() {
 				BeforeEach(func() {
 					consumer.ContainerMetricsReturns([]*events.ContainerMetric{
@@ -103,8 +82,7 @@ var _ = Describe("MemoryMetricHandler", func() {
 					Expect(resp.Code).To(Equal(http.StatusOK))
 
 					metric := &metrics.Metric{}
-					d := json.NewDecoder(resp.Body)
-					err = d.Decode(metric)
+					err = json.Unmarshal(resp.Body.Bytes(), metric)
 
 					Expect(err).ToNot(HaveOccurred())
 					Expect(metric.AppId).To(Equal("an-app-id"))
@@ -113,6 +91,23 @@ var _ = Describe("MemoryMetricHandler", func() {
 					Expect(metric.Instances).To(ConsistOf(metrics.InstanceMetric{Index: 1, Value: "1234"}))
 				})
 			})
+
+			Context("container metrics is empty", func() {
+				BeforeEach(func() {
+					consumer.ContainerMetricsReturns([]*events.ContainerMetric{}, nil)
+				})
+
+				It("returns a 200 with empty metrics", func() {
+					Expect(resp.Code).To(Equal(http.StatusOK))
+
+					metric := &metrics.Metric{}
+					err = json.Unmarshal(resp.Body.Bytes(), metric)
+
+					Expect(err).ToNot(HaveOccurred())
+					Expect(metric.Instances).To(BeEmpty())
+				})
+			})
+
 		})
 	})
 
@@ -133,11 +128,13 @@ var _ = Describe("MemoryMetricHandler", func() {
 					Expect(resp.Code).To(Equal(http.StatusBadRequest))
 
 					errJson := &ErrorResponse{}
-					d := json.NewDecoder(resp.Body)
-					err = d.Decode(errJson)
+					err = json.Unmarshal(resp.Body.Bytes(), errJson)
+
 					Expect(err).ToNot(HaveOccurred())
-					Expect(errJson.Code).To(Equal("Bad-Request"))
-					Expect(errJson.Message).To(Equal("Incorrect start parameter in query string"))
+					Expect(errJson).To(Equal(&ErrorResponse{
+						Code:    "Bad-Request",
+						Message: "Incorrect start parameter in query string",
+					}))
 				})
 			})
 
@@ -152,11 +149,13 @@ var _ = Describe("MemoryMetricHandler", func() {
 					Expect(resp.Code).To(Equal(http.StatusBadRequest))
 
 					errJson := &ErrorResponse{}
-					d := json.NewDecoder(resp.Body)
-					err = d.Decode(errJson)
+					err = json.Unmarshal(resp.Body.Bytes(), errJson)
+
 					Expect(err).ToNot(HaveOccurred())
-					Expect(errJson.Code).To(Equal("Bad-Request"))
-					Expect(errJson.Message).To(Equal("Error parsing start time"))
+					Expect(errJson).To(Equal(&ErrorResponse{
+						Code:    "Bad-Request",
+						Message: "Error parsing start time",
+					}))
 				})
 			})
 
@@ -171,11 +170,13 @@ var _ = Describe("MemoryMetricHandler", func() {
 					Expect(resp.Code).To(Equal(http.StatusBadRequest))
 
 					errJson := &ErrorResponse{}
-					d := json.NewDecoder(resp.Body)
-					err = d.Decode(errJson)
+					err = json.Unmarshal(resp.Body.Bytes(), errJson)
+
 					Expect(err).ToNot(HaveOccurred())
-					Expect(errJson.Code).To(Equal("Bad-Request"))
-					Expect(errJson.Message).To(Equal("Incorrect end parameter in query string"))
+					Expect(errJson).To(Equal(&ErrorResponse{
+						Code:    "Bad-Request",
+						Message: "Incorrect end parameter in query string",
+					}))
 				})
 			})
 
@@ -190,49 +191,19 @@ var _ = Describe("MemoryMetricHandler", func() {
 					Expect(resp.Code).To(Equal(http.StatusBadRequest))
 
 					errJson := &ErrorResponse{}
-					d := json.NewDecoder(resp.Body)
-					err = d.Decode(errJson)
+					err = json.Unmarshal(resp.Body.Bytes(), errJson)
+
 					Expect(err).ToNot(HaveOccurred())
-					Expect(errJson.Code).To(Equal("Bad-Request"))
-					Expect(errJson.Message).To(Equal("Error parsing end time"))
+					Expect(errJson).To(Equal(&ErrorResponse{
+						Code:    "Bad-Request",
+						Message: "Error parsing end time",
+					}))
 				})
 			})
 
 		})
 
 		Context("when request query string is valid", func() {
-			Context("when there is no start time in query string", func() {
-				BeforeEach(func() {
-					req, err = http.NewRequest(http.MethodGet, "http://localhost/v1/apps/an-app-id/metrics_history/memory?end=123", nil)
-					Expect(err).ToNot(HaveOccurred())
-				})
-
-				It("queries metrics from database with start time  0", func() {
-					appid, name, start, end := database.RetrieveMetricsArgsForCall(0)
-					Expect(appid).To(Equal("an-app-id"))
-					Expect(name).To(Equal(metrics.MetricNameMemory))
-					Expect(start).To(Equal(int64(0)))
-					Expect(end).To(Equal(int64(123)))
-				})
-
-			})
-
-			Context("when there is no end time in query string", func() {
-				BeforeEach(func() {
-					req, err = http.NewRequest(http.MethodGet, "http://localhost/v1/apps/an-app-id/metrics_history/memory?start=123", nil)
-					Expect(err).ToNot(HaveOccurred())
-				})
-
-				It("queries metrics from database with end time -1 ", func() {
-					appid, name, start, end := database.RetrieveMetricsArgsForCall(0)
-					Expect(appid).To(Equal("an-app-id"))
-					Expect(name).To(Equal(metrics.MetricNameMemory))
-					Expect(start).To(Equal(int64(123)))
-					Expect(end).To(Equal(int64(-1)))
-				})
-
-			})
-
 			Context("when there are both start and end time in query string", func() {
 				BeforeEach(func() {
 					req, err = http.NewRequest(http.MethodGet, "http://localhost/v1/apps/an-app-id/metrics_history/memory?start=123&end=567", nil)
@@ -245,6 +216,32 @@ var _ = Describe("MemoryMetricHandler", func() {
 					Expect(name).To(Equal(metrics.MetricNameMemory))
 					Expect(start).To(Equal(int64(123)))
 					Expect(end).To(Equal(int64(567)))
+				})
+
+			})
+
+			Context("when there is no start time in query string", func() {
+				BeforeEach(func() {
+					req, err = http.NewRequest(http.MethodGet, "http://localhost/v1/apps/an-app-id/metrics_history/memory?end=123", nil)
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				It("queries metrics from database with start time  0", func() {
+					_, _, start, _ := database.RetrieveMetricsArgsForCall(0)
+					Expect(start).To(Equal(int64(0)))
+				})
+
+			})
+
+			Context("when there is no end time in query string", func() {
+				BeforeEach(func() {
+					req, err = http.NewRequest(http.MethodGet, "http://localhost/v1/apps/an-app-id/metrics_history/memory?start=123", nil)
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				It("queries metrics from database with end time -1 ", func() {
+					_, _, _, end := database.RetrieveMetricsArgsForCall(0)
+					Expect(end).To(Equal(int64(-1)))
 				})
 
 			})
@@ -276,8 +273,8 @@ var _ = Describe("MemoryMetricHandler", func() {
 					Expect(resp.Code).To(Equal(http.StatusOK))
 
 					mtrcs := &[]metrics.Metric{}
-					d := json.NewDecoder(resp.Body)
-					err = d.Decode(mtrcs)
+					err = json.Unmarshal(resp.Body.Bytes(), mtrcs)
+
 					Expect(err).ToNot(HaveOccurred())
 					Expect(*mtrcs).To(Equal([]metrics.Metric{metric1, metric2}))
 				})
@@ -295,11 +292,13 @@ var _ = Describe("MemoryMetricHandler", func() {
 					Expect(resp.Code).To(Equal(http.StatusInternalServerError))
 
 					errJson := &ErrorResponse{}
-					d := json.NewDecoder(resp.Body)
-					err = d.Decode(errJson)
+					err = json.Unmarshal(resp.Body.Bytes(), errJson)
+
 					Expect(err).ToNot(HaveOccurred())
-					Expect(errJson.Code).To(Equal("Interal-Server-Error"))
-					Expect(errJson.Message).To(Equal("Error getting memory metrics history from database"))
+					Expect(errJson).To(Equal(&ErrorResponse{
+						Code:    "Interal-Server-Error",
+						Message: "Error getting memory metrics history from database",
+					}))
 				})
 			})
 

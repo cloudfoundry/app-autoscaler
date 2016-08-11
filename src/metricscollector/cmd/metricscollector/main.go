@@ -71,7 +71,9 @@ func main() {
 	database, err = sqldb.NewSQLDB(&conf.Db, logger.Session("db"))
 	if err != nil {
 		logger.Error("failed to connect database", err, lager.Data{"conf": conf.Db})
+		os.Exit(1)
 	}
+	defer database.Close()
 
 	httpServer := server.NewServer(logger, conf.Server, cfClient, noaa, database)
 	members := grouper.Members{

@@ -3,12 +3,11 @@ package server
 import (
 	"fmt"
 	"net/http"
-	"net/http"
 
 	"metricscollector/cf"
 	"metricscollector/config"
-	"metricscollector/noaa"
 	"metricscollector/db"
+	"metricscollector/noaa"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/mux"
@@ -30,13 +29,8 @@ func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vh(w, r, vars)
 }
 
-<<<<<<< 451090d87fa6411953b90920492d03076b5abc53
-func NewServer(logger lager.Logger, conf config.ServerConfig, cfc cf.CfClient, consumer noaa.NoaaConsumer) ifrit.Runner {
-	mmh := NewMemoryMetricHandler(logger, cfc, consumer)
-=======
-func NewServer(logger lager.Logger, conf config.ServerConfig, cfc cf.CfClient, consumer NoaaConsumer, database db.DB) ifrit.Runner {
+func NewServer(logger lager.Logger, conf config.ServerConfig, cfc cf.CfClient, consumer noaa.NoaaConsumer, database db.DB) ifrit.Runner {
 	mmh := NewMemoryMetricHandler(logger, cfc, consumer, database)
->>>>>>> retrive metrics for an app over an interval
 
 	r := mux.NewRouter()
 	r.Methods("GET").Path(PathMemoryMetric).Handler(VarsFunc(mmh.GetMemoryMetric)).Name(RouteNameMemoryMetric)
