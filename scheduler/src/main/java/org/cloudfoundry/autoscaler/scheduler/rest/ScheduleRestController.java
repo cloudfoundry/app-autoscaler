@@ -36,11 +36,6 @@ public class ScheduleRestController {
 		logger.info("Get All schedules for application: " + app_id);
 		ApplicationScalingSchedules savedApplicationSchedules = scheduleManager.getAllSchedules(app_id);
 		
-		// Any exception in getting the schedules
-		if (validationErrorResult.hasErrors()) {
-			throw new InvalidDataException();
-		}
-		
 		// No schedules found for the specified application return status code NOT_FOUND
 		if (!savedApplicationSchedules.hasSchedules()) {
 			return new ResponseEntity<>(null, null, HttpStatus.NOT_FOUND);
@@ -51,7 +46,7 @@ public class ScheduleRestController {
 	}
 
 	@RequestMapping(method = RequestMethod.PUT)
-	public ResponseEntity<List<String>> createSchedule(@PathVariable String app_id,
+	public ResponseEntity<List<String>> createSchedules(@PathVariable String app_id,
 			@RequestBody ApplicationScalingSchedules rawApplicationSchedules) {
 		// Note: Request could be to update existing schedules or create new schedules.
 
@@ -63,8 +58,11 @@ public class ScheduleRestController {
 		logger.info("Validate schedules for application: " + app_id);
 		scheduleManager.validateSchedules(app_id, rawApplicationSchedules);
 
-		// If there are no validation errors then proceed with persisting the schedules
-		if (!validationErrorResult.hasErrors()) {
+		if (validationErrorResult.hasErrors()) {
+			throw new InvalidDataException();
+
+		} else { // If there are no validation errors then proceed with persisting the schedules
+
 			ApplicationScalingSchedules existingSchedules = scheduleManager.getAllSchedules(app_id);
 			
 			if (existingSchedules.hasSchedules()) {// Request to update the schedules
@@ -72,27 +70,17 @@ public class ScheduleRestController {
 
 				logger.info("Delete schedules for application: " + app_id);
 				scheduleManager.deleteSchedules(app_id);
-				
-				// Any exception in delete
-				if (validationErrorResult.hasErrors()) {
-					throw new InvalidDataException();
-				}
 			}
 
 			logger.info("Create schedules for application: " + app_id);
 			scheduleManager.createSchedules(rawApplicationSchedules);
 		}
 
-		// Any exception in create
-		if (validationErrorResult.hasErrors()) {
-			throw new InvalidDataException();
-		}
-
 		return new ResponseEntity<>(null, null, HttpStatus.CREATED);
 	}
 
 	@RequestMapping(method = RequestMethod.DELETE)
-	public ResponseEntity<List<String>> deleteSchedule(@PathVariable String app_id) {
+	public ResponseEntity<List<String>> deleteSchedules(@PathVariable String app_id) {
 
 		ApplicationScalingSchedules existingSchedules = scheduleManager.getAllSchedules(app_id);
 		if (!existingSchedules.hasSchedules()) {
@@ -101,11 +89,6 @@ public class ScheduleRestController {
 
 		logger.info("Delete schedules for application: " + app_id);
 		scheduleManager.deleteSchedules(app_id);
-		
-		// Any exception in delete
-		if (validationErrorResult.hasErrors()) {
-			throw new InvalidDataException();
-		}
 		
 		return new ResponseEntity<>(null, null, HttpStatus.NO_CONTENT);
 	}

@@ -257,7 +257,7 @@ public class TestDataSetupHelper {
 	}
 
 	public static int[] generateDayOfWeek() {
-		int arraySize = (int) new Date().getTime() % 7 + 1;
+		int arraySize = (int) (new Date().getTime() % 7) + 1;
 		int[] array = makeRandomArray(new Random(Calendar.getInstance().getTimeInMillis()), arraySize,
 				DateHelper.DAY_OF_WEEK_MINIMUM, DateHelper.DAY_OF_WEEK_MAXMUM);
 		logger.debug("Generate day of week array:" + Arrays.toString(array));
@@ -265,7 +265,7 @@ public class TestDataSetupHelper {
 	}
 
 	public static int[] generateDayOfMonth() {
-		int arraySize = (int) new Date().getTime() % 31 + 1;
+		int arraySize = (int) (new Date().getTime() % 31) + 1;
 		int[] array = makeRandomArray(new Random(Calendar.getInstance().getTimeInMillis()), arraySize,
 				DateHelper.DAY_OF_MONTH_MINIMUM, DateHelper.DAY_OF_MONTH_MAXMUM);
 		logger.debug("Generate day of month array:" + Arrays.toString(array));
