@@ -60,21 +60,19 @@ public class ScheduleRestController {
 
 		if (validationErrorResult.hasErrors()) {
 			throw new InvalidDataException();
-
-		} else { // If there are no validation errors then proceed with persisting the schedules
-
-			ApplicationScalingSchedules existingSchedules = scheduleManager.getAllSchedules(app_id);
-			
-			if (existingSchedules.hasSchedules()) {// Request to update the schedules
-				logger.info("Update schedules for application: " + app_id);
-
-				logger.info("Delete schedules for application: " + app_id);
-				scheduleManager.deleteSchedules(app_id);
-			}
-
-			logger.info("Create schedules for application: " + app_id);
-			scheduleManager.createSchedules(rawApplicationSchedules);
 		}
+
+    ApplicationScalingSchedules existingSchedules = scheduleManager.getAllSchedules(app_id);
+
+    if (existingSchedules.hasSchedules()) {// Request to update the schedules
+      logger.info("Update schedules for application: " + app_id);
+
+      logger.info("Delete schedules for application: " + app_id);
+      scheduleManager.deleteSchedules(app_id);
+    }
+
+    logger.info("Create schedules for application: " + app_id);
+    scheduleManager.createSchedules(rawApplicationSchedules);
 
 		return new ResponseEntity<>(null, null, HttpStatus.CREATED);
 	}
