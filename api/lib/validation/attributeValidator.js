@@ -10,29 +10,15 @@ var createErrorResponse = function(property,message,instance,stack) {
   message: message,instance:instance,stack:stack }; 
   return errorObject;
 }
-
 var compareTimes = function(startTime,endTime) {
-  var result = true;
-  if(moment(startTime,'HH:mm').isAfter(moment(endTime,'HH:mm'))) {
-    result = false;
-  }
-  return result;
+  return moment(startTime,'HH:mm').isSameOrAfter(moment(endTime,'HH:mm'));
 }
 var compareDates = function(startDate,endDate) {
-  var result = true;
-  if(moment(startDate,'YYYY-MM-DD').isAfter(moment(endDate,'YYYY-MM-DD'))) {
-    result = false;
-  }
-  return result;
+  return moment(startDate,'YYYY-MM-DD').isAfter(moment(endDate,'YYYY-MM-DD'));
 }
-
 var compareDateTimes = function(startDateTime,endDateTime) {
-  var result = true;
-  if(moment(startDateTime,'YYYY-MM-DDTHH:mm')
-    .isAfter(moment(endDateTime,'YYYY-MM-DDTHH:mm'))) {
-    result = false;
-  }
-  return result;
+  return moment(startDateTime,'YYYY-MM-DDTHH:mm')
+    .isSameOrAfter(moment(endDateTime,'YYYY-MM-DDTHH:mm'));
 }
 var validateOverlappingDaysInRecurringSchedules = function(inputRecurringSchedules,property) {
   var errors = [];
@@ -90,17 +76,17 @@ var validateRecurringScheduleAttributeValue = function(inputRecurringSchedules) 
           ' in recurring_schedule :[' + i + ']');
       attributeValueErrors[errorCount++] = error;
     }
-    if(!compareTimes(inputRecurringSchedules[i].start_time,
+    if(compareTimes(inputRecurringSchedules[i].start_time,
         inputRecurringSchedules[i].end_time)) {
       let error = createErrorResponse('recurring_schedule.start_time',
           'recurring_schedule.start_time and recurring_schedule.end_time values are ' + 
           'not compatible',inputRecurringSchedules[i],'start_time ' + 
-          inputRecurringSchedules[i].start_time + ' is after end_time ' + 
+          inputRecurringSchedules[i].start_time + ' is same or after end_time ' + 
           inputRecurringSchedules[i].end_time + ' in recurring_schedule :[' + i + ']');
       attributeValueErrors[errorCount++] = error;
     }
     if(inputRecurringSchedules[i].start_date && inputRecurringSchedules[i].end_date) {
-      if(!compareDates(inputRecurringSchedules[i].start_date,
+      if(compareDates(inputRecurringSchedules[i].start_date,
           inputRecurringSchedules[i].end_date)) {
         let error = createErrorResponse('recurring_schedule.start_date',
             'recurring_schedule.start_date and recurring_schedule.end_date values are ' + 
@@ -203,12 +189,12 @@ var validateSpecificDateAttributeValue = function(inputSpecificDates) {
           ' in specific_date :[' + i + ']');
       attributeValueErrors[errorCount++] = error;
     }
-    if(!compareDateTimes(inputSpecificDates[i].start_date_time,
+    if(compareDateTimes(inputSpecificDates[i].start_date_time,
         inputSpecificDates[i].end_date_time)) {
       let error = createErrorResponse('specific_date.start_date_time',
           'specific_date.start_date_time and specific_date.end_date_time ' +
           'values are not compatible',inputSpecificDates[i],'start_date_time ' + 
-          inputSpecificDates[i].start_date_time + ' is after end_date_time ' + 
+          inputSpecificDates[i].start_date_time + ' is same or after end_date_time ' + 
           inputSpecificDates[i].end_date_time + ' in specific_date :[' + i + ']');
       attributeValueErrors[errorCount++] = error;
     }
