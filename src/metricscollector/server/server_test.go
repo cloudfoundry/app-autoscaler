@@ -33,7 +33,7 @@ var _ = Describe("Server", func() {
 		cfc := &fakes.FakeCfClient{}
 		consumer := &fakes.FakeNoaaConsumer{}
 		conf := config.ServerConfig{Port: port}
-		database := &fakes.FakeDB{}
+		database := &fakes.FakeMetricsDB{}
 		httpServer := NewServer(lager.NewLogger("test"), conf, cfc, consumer, database)
 		serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(port))
 		Expect(err).ToNot(HaveOccurred())

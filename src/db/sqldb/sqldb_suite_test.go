@@ -9,7 +9,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	. "metricscollector/db/sqldb"
+	. "db/sqldb"
 )
 
 var dbHelper *sql.DB

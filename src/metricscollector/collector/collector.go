@@ -1,7 +1,7 @@
 package collector
 
 import (
-	"metricscollector/db"
+	"db"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
@@ -12,7 +12,7 @@ import (
 type Collector struct {
 	refreshInterval time.Duration
 	logger          lager.Logger
-	database        db.DB
+	database        db.PolicyDB
 	cclock          clock.Clock
 	createPoller    func(string) AppPoller
 	doneChan        chan bool
@@ -21,7 +21,7 @@ type Collector struct {
 	lock            *sync.Mutex
 }
 
-func NewCollector(refreshInterval time.Duration, logger lager.Logger, database db.DB, cclock clock.Clock, createPoller func(string) AppPoller) *Collector {
+func NewCollector(refreshInterval time.Duration, logger lager.Logger, database db.PolicyDB, cclock clock.Clock, createPoller func(string) AppPoller) *Collector {
 	return &Collector{
 		refreshInterval: refreshInterval,
 		logger:          logger,

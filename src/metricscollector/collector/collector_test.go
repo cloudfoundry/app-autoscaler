@@ -18,7 +18,7 @@ import (
 var _ = Describe("Collector", func() {
 
 	var (
-		database *fakes.FakeDB
+		database *fakes.FakePolicyDB
 		coll     *Collector
 		fclock   *fakeclock.FakeClock
 		poller   *fakes.FakeAppPoller
@@ -26,7 +26,7 @@ var _ = Describe("Collector", func() {
 	)
 
 	BeforeEach(func() {
-		database = &fakes.FakeDB{}
+		database = &fakes.FakePolicyDB{}
 
 		logger := lager.NewLogger("collector-test")
 		buffer = gbytes.NewBuffer()

@@ -2,7 +2,7 @@ package collector
 
 import (
 	"cf"
-	"metricscollector/db"
+	"db"
 	"metricscollector/metrics"
 	"metricscollector/noaa"
 
@@ -23,13 +23,13 @@ type appPoller struct {
 	logger       lager.Logger
 	cfc          cf.CfClient
 	noaaConsumer noaa.NoaaConsumer
-	database     db.DB
+	database     db.MetricsDB
 	pclock       clock.Clock
 	ticker       clock.Ticker
 	doneChan     chan bool
 }
 
-func NewAppPoller(appId string, pollInterval time.Duration, logger lager.Logger, cfc cf.CfClient, noaaConsumer noaa.NoaaConsumer, database db.DB, pclcok clock.Clock) AppPoller {
+func NewAppPoller(appId string, pollInterval time.Duration, logger lager.Logger, cfc cf.CfClient, noaaConsumer noaa.NoaaConsumer, database db.MetricsDB, pclcok clock.Clock) AppPoller {
 	return &appPoller{
 		appId:        appId,
 		pollInterval: pollInterval,

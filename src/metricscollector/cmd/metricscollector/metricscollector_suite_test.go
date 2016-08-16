@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"database/sql"
 	"io/ioutil"
 	"log"
 	"mime/multipart"
@@ -21,6 +22,7 @@ import (
 	"github.com/onsi/gomega/ghttp"
 
 	"cf"
+	"db"
 	"metricscollector/config"
 )
 
@@ -99,7 +101,34 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.Db.MetricsDbUrl = os.Getenv("DBURL")
 	cfg.Db.PolicyDbUrl = os.Getenv("DBURL")
 
+	cfg.Collector.PollInterval = 10 * time.Second
+	cfg.Collector.RefreshInterval = 30 * time.Second
+
 	configFile = writeConfig(&cfg)
+
+	//clean the database
+	mcDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = mcDB.Exec("DELETE FROM applicationmetrics")
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = mcDB.Exec("DELETE from policy_json")
+	Expect(err).NotTo(HaveOccurred())
+
+	// insert a policy record so that metrics is polled
+	policy := `
+		{
+ 			"instance_min_count": 1,
+  			"instance_max_count": 5
+		}`
+	query := "INSERT INTO policy_json(app_id, policy_json) values($1, $2)"
+	_, err = mcDB.Exec(query, "an-app-id", policy)
+	Expect(err).NotTo(HaveOccurred())
+
+	err = mcDB.Close()
+	Expect(err).NotTo(HaveOccurred())
+
 })
 
 var _ = SynchronizedAfterSuite(func() {

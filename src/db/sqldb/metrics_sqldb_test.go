@@ -1,8 +1,7 @@
 package sqldb_test
 
 import (
-	"metricscollector/config"
-	. "metricscollector/db/sqldb"
+	. "db/sqldb"
 	"metricscollector/metrics"
 
 	"code.cloudfoundry.org/lager"
@@ -14,10 +13,10 @@ import (
 	"time"
 )
 
-var _ = Describe("Sqldb", func() {
+var _ = Describe("MetricsSQLDB", func() {
 	var (
-		conf       *config.DbConfig
-		db         *SQLDB
+		url        string
+		mdb        *MetricsSQLDB
 		logger     lager.Logger
 		err        error
 		metric     *metrics.Metric
@@ -27,66 +26,52 @@ var _ = Describe("Sqldb", func() {
 		before     int64
 		appId      string
 		metricName string
-		appIds     map[string]bool
 	)
 
 	BeforeEach(func() {
-		logger = lager.NewLogger("sqldb-test")
-		dbUrl := os.Getenv("DBURL")
-		conf = &config.DbConfig{MetricsDbUrl: dbUrl, PolicyDbUrl: dbUrl}
+		logger = lager.NewLogger("metrics-sqldb-test")
+		url = os.Getenv("DBURL")
 	})
 
 	Describe("NewSQLDB", func() {
 		JustBeforeEach(func() {
-			db, err = NewSQLDB(conf, logger)
+			mdb, err = NewMetricsSQLDB(url, logger)
 		})
 
 		AfterEach(func() {
-			if db != nil {
-				err = db.Close()
+			if mdb != nil {
+				err = mdb.Close()
 				Expect(err).NotTo(HaveOccurred())
 			}
 		})
 
-		Context("when db config is not correct", func() {
-			Context("when metrics db url is not correct", func() {
-				BeforeEach(func() {
-					conf.MetricsDbUrl = "postgres://non-exist-user:non-exist-password@localhost/autoscaler?sslmode=disable"
-				})
-				It("should error", func() {
-					Expect(err).To(BeAssignableToTypeOf(&pq.Error{}))
-				})
-
+		Context("when db url is not correct", func() {
+			BeforeEach(func() {
+				url = "postgres://non-exist-user:non-exist-password@localhost/autoscaler?sslmode=disable"
 			})
-
-			Context("when policy db url is not correct", func() {
-				BeforeEach(func() {
-					conf.PolicyDbUrl = "postgres://non-exist-user:non-exist-password@localhost/autoscaler?sslmode=disable"
-				})
-				It("should error", func() {
-					Expect(err).To(BeAssignableToTypeOf(&pq.Error{}))
-				})
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&pq.Error{}))
 			})
 
 		})
 
-		Context("when db config is correct", func() {
+		Context("when url is correct", func() {
 			It("should not error", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(db).NotTo(BeNil())
+				Expect(mdb).NotTo(BeNil())
 			})
 		})
 	})
 
 	Describe("SaveMetric", func() {
 		BeforeEach(func() {
-			db, err = NewSQLDB(conf, logger)
+			mdb, err = NewMetricsSQLDB(url, logger)
 			Expect(err).NotTo(HaveOccurred())
 			cleanMetricsTable()
 		})
 
 		AfterEach(func() {
-			err = db.Close()
+			err = mdb.Close()
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -99,7 +84,7 @@ var _ = Describe("Sqldb", func() {
 					TimeStamp: 11111111,
 					Instances: []metrics.InstanceMetric{{23456312, 0, "3333"}, {23556312, 1, "6666"}},
 				}
-				err = db.SaveMetric(metric)
+				err = mdb.SaveMetric(metric)
 			})
 
 			It("has the metric in database", func() {
@@ -120,17 +105,17 @@ var _ = Describe("Sqldb", func() {
 			It("has all the metrics in database", func() {
 				metric.TimeStamp = 111111
 				metric.Instances = []metrics.InstanceMetric{}
-				err = db.SaveMetric(metric)
+				err = mdb.SaveMetric(metric)
 				Expect(err).NotTo(HaveOccurred())
 
 				metric.TimeStamp = 222222
 				metric.Instances = []metrics.InstanceMetric{{23456312, 0, "3333"}}
-				db.SaveMetric(metric)
+				mdb.SaveMetric(metric)
 				Expect(err).NotTo(HaveOccurred())
 
 				metric.TimeStamp = 333333
 				metric.Instances = []metrics.InstanceMetric{{23456312, 0, "3333"}, {23556312, 1, "6666"}}
-				db.SaveMetric(metric)
+				mdb.SaveMetric(metric)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(hasMetric("test-app-id", metrics.MetricNameMemory, 111111)).To(BeTrue())
@@ -143,7 +128,7 @@ var _ = Describe("Sqldb", func() {
 
 	Describe("RetrieveMetrics", func() {
 		BeforeEach(func() {
-			db, err = NewSQLDB(conf, logger)
+			mdb, err = NewMetricsSQLDB(url, logger)
 			Expect(err).NotTo(HaveOccurred())
 			cleanMetricsTable()
 
@@ -154,7 +139,7 @@ var _ = Describe("Sqldb", func() {
 		})
 
 		AfterEach(func() {
-			err = db.Close()
+			err = mdb.Close()
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -167,20 +152,20 @@ var _ = Describe("Sqldb", func() {
 
 			metric.TimeStamp = 666666
 			metric.Instances = []metrics.InstanceMetric{{654321, 0, "6666"}, {764321, 1, "8888"}}
-			err = db.SaveMetric(metric)
+			err = mdb.SaveMetric(metric)
 			Expect(err).NotTo(HaveOccurred())
 
 			metric.TimeStamp = 222222
 			metric.Instances = []metrics.InstanceMetric{}
-			err = db.SaveMetric(metric)
+			err = mdb.SaveMetric(metric)
 			Expect(err).NotTo(HaveOccurred())
 
 			metric.TimeStamp = 333333
 			metric.Instances = []metrics.InstanceMetric{{123456, 0, "3333"}}
-			err = db.SaveMetric(metric)
+			err = mdb.SaveMetric(metric)
 			Expect(err).NotTo(HaveOccurred())
 
-			mtrcs, err = db.RetrieveMetrics("test-app-id", metrics.MetricNameMemory, start, end)
+			mtrcs, err = mdb.RetrieveMetrics("test-app-id", metrics.MetricNameMemory, start, end)
 		})
 
 		Context("The app has no metrics", func() {
@@ -309,7 +294,7 @@ var _ = Describe("Sqldb", func() {
 
 	Describe("PruneMetrics", func() {
 		BeforeEach(func() {
-			db, err = NewSQLDB(conf, logger)
+			mdb, err = NewMetricsSQLDB(url, logger)
 			Expect(err).NotTo(HaveOccurred())
 
 			cleanMetricsTable()
@@ -323,26 +308,26 @@ var _ = Describe("Sqldb", func() {
 			}
 
 			metric.TimeStamp = 666666
-			err = db.SaveMetric(metric)
+			err = mdb.SaveMetric(metric)
 			Expect(err).NotTo(HaveOccurred())
 
 			metric.TimeStamp = 222222
-			err = db.SaveMetric(metric)
+			err = mdb.SaveMetric(metric)
 			Expect(err).NotTo(HaveOccurred())
 
 			metric.TimeStamp = 333333
-			err = db.SaveMetric(metric)
+			err = mdb.SaveMetric(metric)
 			Expect(err).NotTo(HaveOccurred())
 
 		})
 
 		AfterEach(func() {
-			err = db.Close()
+			err = mdb.Close()
 			Expect(err).NotTo(HaveOccurred())
 		})
 
 		JustBeforeEach(func() {
-			err = db.PruneMetrics(before)
+			err = mdb.PruneMetrics(before)
 		})
 
 		Context("when pruning metrics before all the timestamps of metrics", func() {
@@ -377,49 +362,6 @@ var _ = Describe("Sqldb", func() {
 				Expect(getNumberOfMetrics()).To(Equal(1))
 				Expect(hasMetric("test-app-id", metrics.MetricNameMemory, 666666)).To(BeTrue())
 			})
-		})
-
-	})
-
-	Describe("GetAppIds", func() {
-		BeforeEach(func() {
-			db, err = NewSQLDB(conf, logger)
-			Expect(err).NotTo(HaveOccurred())
-
-			cleanPolicyTable()
-		})
-
-		AfterEach(func() {
-			err = db.Close()
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		JustBeforeEach(func() {
-			appIds, err = db.GetAppIds()
-		})
-
-		Context("when policy table is empty", func() {
-			It("returns no app ids", func() {
-				Expect(err).NotTo(HaveOccurred())
-				Expect(appIds).To(BeEmpty())
-			})
-
-		})
-
-		Context("when policy table is not empty", func() {
-			BeforeEach(func() {
-				insertPolicy("first-app-id")
-				insertPolicy("second-app-id")
-				insertPolicy("third-app-id")
-			})
-
-			It("returns all app ids", func() {
-				Expect(err).NotTo(HaveOccurred())
-				Expect(appIds).To(HaveKey("first-app-id"))
-				Expect(appIds).To(HaveKey("second-app-id"))
-				Expect(appIds).To(HaveKey("third-app-id"))
-			})
-
 		})
 
 	})

@@ -23,7 +23,7 @@ var _ = Describe("Apppoller", func() {
 	var (
 		cfc      *fakes.FakeCfClient
 		noaa     *fakes.FakeNoaaConsumer
-		database *fakes.FakeDB
+		database *fakes.FakeMetricsDB
 		poller   AppPoller
 		fclock   *fakeclock.FakeClock
 		buffer   *gbytes.Buffer
@@ -32,7 +32,7 @@ var _ = Describe("Apppoller", func() {
 	BeforeEach(func() {
 		cfc = &fakes.FakeCfClient{}
 		noaa = &fakes.FakeNoaaConsumer{}
-		database = &fakes.FakeDB{}
+		database = &fakes.FakeMetricsDB{}
 
 		logger := lager.NewLogger("apppoller-test")
 		buffer = gbytes.NewBuffer()

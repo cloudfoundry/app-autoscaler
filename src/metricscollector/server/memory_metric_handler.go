@@ -2,7 +2,7 @@ package server
 
 import (
 	"cf"
-	"metricscollector/db"
+	"db"
 	"metricscollector/metrics"
 	"metricscollector/noaa"
 
@@ -20,7 +20,7 @@ type MemoryMetricHandler struct {
 	cfClient     cf.CfClient
 	logger       lager.Logger
 	noaaConsumer noaa.NoaaConsumer
-	database     db.DB
+	database     db.MetricsDB
 }
 
 type ErrorResponse struct {
@@ -28,7 +28,7 @@ type ErrorResponse struct {
 	Message string `json:"message"`
 }
 
-func NewMemoryMetricHandler(logger lager.Logger, cfc cf.CfClient, consumer noaa.NoaaConsumer, database db.DB) *MemoryMetricHandler {
+func NewMemoryMetricHandler(logger lager.Logger, cfc cf.CfClient, consumer noaa.NoaaConsumer, database db.MetricsDB) *MemoryMetricHandler {
 	return &MemoryMetricHandler{
 		cfClient:     cfc,
 		noaaConsumer: consumer,

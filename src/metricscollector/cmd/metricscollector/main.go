@@ -7,7 +7,15 @@ import (
 	"os"
 	"time"
 
+	"cf"
+	"db"
+	"db/sqldb"
+	"metricscollector/collector"
+	"metricscollector/config"
+	"metricscollector/server"
+
 	"code.cloudfoundry.org/cfhttp"
+	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry/noaa/consumer"
 	"github.com/tedsuo/ifrit"
@@ -67,15 +75,33 @@ func main() {
 	noaa := consumer.New(dopplerUrl, tlsConfig, nil)
 	noaa.RefreshTokenFrom(cfClient)
 
-	var database db.DB
-	database, err = sqldb.NewSQLDB(&conf.Db, logger.Session("db"))
+	var metricsDB db.MetricsDB
+	metricsDB, err = sqldb.NewMetricsSQLDB(conf.Db.MetricsDbUrl, logger.Session("metrics-db"))
 	if err != nil {
-		logger.Error("failed to connect database", err, lager.Data{"conf": conf.Db})
+		logger.Error("failed to connect metrics database", err, lager.Data{"url": conf.Db.MetricsDbUrl})
 		os.Exit(1)
 	}
-	defer database.Close()
+	defer metricsDB.Close()
 
-	httpServer := server.NewServer(logger, conf.Server, cfClient, noaa, database)
+	var policyDB db.PolicyDB
+	policyDB, err = sqldb.NewPolicySQLDB(conf.Db.PolicyDbUrl, logger.Session("policy-db"))
+	if err != nil {
+		logger.Error("failed to connect policy database", err, lager.Data{"url": conf.Db.PolicyDbUrl})
+		os.Exit(1)
+	}
+	defer policyDB.Close()
+
+	mcClock := clock.NewClock()
+	createPoller := func(appId string) collector.AppPoller {
+		return collector.NewAppPoller(appId, conf.Collector.PollInterval, logger.Session("app-poller"), cfClient, noaa, metricsDB, mcClock)
+	}
+
+	collectServer := collector.NewCollector(conf.Collector.RefreshInterval, logger.Session("collector"), policyDB, mcClock, createPoller)
+	collectServer.Start()
+	defer collectServer.Stop()
+
+	httpServer := server.NewServer(logger, conf.Server, cfClient, noaa, metricsDB)
+
 	members := grouper.Members{
 		{"http_server", httpServer},
 	}

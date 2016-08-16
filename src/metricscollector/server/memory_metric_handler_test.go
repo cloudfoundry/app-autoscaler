@@ -23,7 +23,7 @@ var _ = Describe("MemoryMetricHandler", func() {
 		cfc      *fakes.FakeCfClient
 		consumer *fakes.FakeNoaaConsumer
 		handler  *MemoryMetricHandler
-		database *fakes.FakeDB
+		database *fakes.FakeMetricsDB
 
 		resp *httptest.ResponseRecorder
 		req  *http.Request
@@ -37,7 +37,7 @@ var _ = Describe("MemoryMetricHandler", func() {
 		cfc = &fakes.FakeCfClient{}
 		consumer = &fakes.FakeNoaaConsumer{}
 		logger := lager.NewLogger("handler-test")
-		database = &fakes.FakeDB{}
+		database = &fakes.FakeMetricsDB{}
 		resp = httptest.NewRecorder()
 		handler = NewMemoryMetricHandler(logger, cfc, consumer, database)
 	})
