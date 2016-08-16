@@ -76,7 +76,8 @@ public class ScheduleJobManagerTest {
 		// The expected number of jobs would be twice the number of schedules( One job for start and one for end)
 		int expectedJobsToBeCreated = 2 * schedulesToSetup;
 
-		Map<JobKey, JobDetail> scheduleJobKeyDetailMap = getSchedulerJobs();
+		Map<JobKey, JobDetail> scheduleJobKeyDetailMap = getSchedulerJobs(
+				ScheduleTypeEnum.SPECIFIC_DATE.getScheduleIdentifier());
 		// Check expected jobs created
 		assertEquals(expectedJobsToBeCreated, scheduleJobKeyDetailMap.size());
 
@@ -116,17 +117,19 @@ public class ScheduleJobManagerTest {
 				.generateSpecificDateSchedules(appId, schedulesToCreate, true);
 
 		createSimpleJob(specificDateScheduleEntities);
-		Map<JobKey, JobDetail> scheduleJobKeyDetailMap = getSchedulerJobs();
+		Map<JobKey, JobDetail> scheduleJobKeyDetailMap = getSchedulerJobs(
+				ScheduleTypeEnum.SPECIFIC_DATE.getScheduleIdentifier());
 
 		// Check expected jobs created
 		assertEquals(expectedJobsToBeCreated, scheduleJobKeyDetailMap.size());
 
 		// Delete the simple jobs
-		for (SpecificDateScheduleEntity scheduleEntity : specificDateScheduleEntities) {
-			scalingJobManager.deleteSimpleJob(scheduleEntity);
+		for (ScheduleEntity scheduleEntity : specificDateScheduleEntities) {
+			scalingJobManager.deleteJob(scheduleEntity.getAppId(), scheduleEntity.getId(),
+					ScheduleTypeEnum.SPECIFIC_DATE);
 		}
 
-		scheduleJobKeyDetailMap = getSchedulerJobs();
+		scheduleJobKeyDetailMap = getSchedulerJobs(ScheduleTypeEnum.SPECIFIC_DATE.getScheduleIdentifier());
 		// Check the jobs, the expected job count is 0.
 		assertEquals(0, scheduleJobKeyDetailMap.size());
 
@@ -175,15 +178,12 @@ public class ScheduleJobManagerTest {
 		assertEquals(expectedInstanceMaxCount, map.get("instanceMaxCount"));
 	}
 
-	private Map<JobKey, JobDetail> getSchedulerJobs() throws SchedulerException {
+	private Map<JobKey, JobDetail> getSchedulerJobs(String groupName) throws SchedulerException {
 		Map<JobKey, JobDetail> scheduleJobKeyDetailMap = new HashMap<>();
 
-		for (String groupName : scheduler.getJobGroupNames()) {
+		for (JobKey jobKey : scheduler.getJobKeys(GroupMatcher.jobGroupEquals(groupName))) {
+			scheduleJobKeyDetailMap.put(jobKey, scheduler.getJobDetail(jobKey));
 
-			for (JobKey jobKey : scheduler.getJobKeys(GroupMatcher.jobGroupEquals(groupName))) {
-				scheduleJobKeyDetailMap.put(jobKey, scheduler.getJobDetail(jobKey));
-
-			}
 		}
 
 		return scheduleJobKeyDetailMap;

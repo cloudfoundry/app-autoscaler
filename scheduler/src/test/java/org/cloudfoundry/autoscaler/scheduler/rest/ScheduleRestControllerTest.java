@@ -121,12 +121,16 @@ public class ScheduleRestControllerTest {
 	@Transactional
 	public void testCreateSchedule_already_existing_schedule_for_appId() throws Exception {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
-		// Create one specific date schedule and two recurring schedules for the application.
-		callCreateSchedules(appId, 1, 2);
+		// Create one specific date schedule for the application.
+		callCreateSchedules(appId, 1, 0);
+		
+		// Create two specific date schedule for the same application.
+		ResultActions resultActions = callCreateSchedules(appId, 2, 0);
+		assertCreateScheduleAPI(resultActions);
+		
+		resultActions = callGetAllSchedulesByAppId(appId);
+		assertSchedulesFoundEquals(2, 0, appId, resultActions);
 
-		// Create two specific date schedules and one recurring schedules for the same application.
-		ResultActions resultActions = callCreateSchedules(appId, 2, 1);
-		resultActions.andExpect(status().isConflict());
 	}
 
 	@Test
