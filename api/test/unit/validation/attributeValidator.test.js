@@ -34,7 +34,7 @@ describe('Validating Policy JSON properties',function(){
       attributeValidator.validatePolicy(fakePolicy,function(result){
         expect(result[0].property).to.equal('specific_date.start_date_time');
         expect(result[0].message).to.equal('specific_date.start_date_time and specific_date.end_date_time values are not compatible');
-        expect(result[0].stack).to.equal('start_date_time 2016-06-19T10:30 is after end_date_time 2014-06-19T13:30 in specific_date :[0]');  
+        expect(result[0].stack).to.equal('start_date_time 2016-06-19T10:30 is same or after end_date_time 2014-06-19T13:30 in specific_date :[0]');  
       });
     });
     it('Should fail to validate the policy as instance_min_count is greater than instance_max_count in specific_date',function(){
@@ -103,7 +103,7 @@ describe('Validating Policy JSON properties',function(){
       attributeValidator.validatePolicy(fakePolicy,function(result){
         expect(result[0].property).to.equal('recurring_schedule.start_time');
         expect(result[0].message).to.equal('recurring_schedule.start_time and recurring_schedule.end_time values are not compatible');
-        expect(result[0].stack).to.equal('start_time 23:00 is after end_time 13:15 in recurring_schedule :[1]');
+        expect(result[0].stack).to.equal('start_time 23:00 is same or after end_time 13:15 in recurring_schedule :[1]');
       });
     });
     it('should fail to validate the policy if start_date is after end_date in recurring schedule',function(){
