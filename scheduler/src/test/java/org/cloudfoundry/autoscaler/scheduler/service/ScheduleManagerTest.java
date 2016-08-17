@@ -107,10 +107,23 @@ public class ScheduleManagerTest {
 	}
 
 	@Test
+	@Transactional
+	public void testCreateAndGetSchedues_Timezone() {
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		int noOfSpecificDateSchedules = 1;
+		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId,
+				noOfSpecificDateSchedules, 0, 0);
+		scheduleManager.createSchedules(schedules);
+		// Create 1 specific date schedule.
+		createScheduleNotThrowAnyException(appId, 4, 0);
+
+	}
+
+	@Test
 	@Rollback
 	public void testCreateSpecificDateSchedule_throw_DatabaseValidationException() {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(appId, 1, 0);
+		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, 1, 0, 0);
 
 		SpecificDateScheduleEntity entity = schedules.getSpecific_date().get(0);
 		entity.setEndDateTime(null);
@@ -122,7 +135,8 @@ public class ScheduleManagerTest {
 	@Rollback
 	public void testCreateRecurringSchedule_throw_DatabaseValidationException() {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(appId, 0, 1);
+
+		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, 0, 1, 0);
 
 		RecurringScheduleEntity entity = schedules.getRecurring_schedule().get(0);
 		entity.setStartTime(null);
@@ -177,8 +191,11 @@ public class ScheduleManagerTest {
 
 	private void createScheduleNotThrowAnyException(String appId, int noOfSpecificDateSchedules,
 			int noOfRecurringSchedules) {
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(appId, noOfSpecificDateSchedules,
-				noOfRecurringSchedules);
+
+		int noOfDOMRecurringSchedules = noOfRecurringSchedules / 2;
+		int noOfDOWRecurringSchedules = noOfRecurringSchedules - noOfDOMRecurringSchedules;
+		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, noOfSpecificDateSchedules,
+				noOfDOMRecurringSchedules, noOfDOWRecurringSchedules);
 		scheduleManager.createSchedules(schedules);
 	}
 

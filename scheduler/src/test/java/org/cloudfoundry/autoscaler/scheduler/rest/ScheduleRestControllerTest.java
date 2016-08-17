@@ -139,7 +139,7 @@ public class ScheduleRestControllerTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSchedulesForRestApi(1, 0);
+				.generateSchedules(1, 0);
 		String content = mapper.writeValueAsString(schedules);
 
 		ResultActions resultActions = mockMvc
@@ -155,7 +155,7 @@ public class ScheduleRestControllerTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSchedulesForRestApi(1, 0);
+				.generateSchedules(1, 0);
 
 		schedules.setTimeZone(null);
 
@@ -173,7 +173,7 @@ public class ScheduleRestControllerTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSchedulesForRestApi(1, 0);
+				.generateSchedules(1, 0);
 
 		schedules.setTimeZone("");
 
@@ -191,7 +191,7 @@ public class ScheduleRestControllerTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSchedulesForRestApi(1, 0);
+				.generateSchedules(1, 0);
 
 		schedules.setTimeZone(TestDataSetupHelper.getInvalidTimezone());
 
@@ -208,7 +208,7 @@ public class ScheduleRestControllerTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSchedulesForRestApi(1, 0);
+				.generateSchedules(1, 0);
 
 		schedules.setInstance_min_count(null);
 
@@ -226,7 +226,7 @@ public class ScheduleRestControllerTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSchedulesForRestApi(1, 0);
+				.generateSchedules(1, 0);
 
 		schedules.setInstance_max_count(null);
 
@@ -244,7 +244,7 @@ public class ScheduleRestControllerTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSchedulesForRestApi(1, 0);
+				.generateSchedules(1, 0);
 		int instanceMinCount = -1;
 		schedules.setInstance_min_count(instanceMinCount);
 
@@ -262,7 +262,7 @@ public class ScheduleRestControllerTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSchedulesForRestApi(1, 0);
+				.generateSchedules(1, 0);
 		int instanceMaxCount = -1;
 		schedules.setInstance_max_count(instanceMaxCount);
 
@@ -280,7 +280,7 @@ public class ScheduleRestControllerTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSchedulesForRestApi(1, 0);
+				.generateSchedules(1, 0);
 
 		Integer instanceMinCount = 5;
 		Integer instanceMaxCount = 1;
@@ -302,7 +302,7 @@ public class ScheduleRestControllerTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSchedulesForRestApi(1, 0);
+				.generateSchedules(1, 0);
 
 		schedules.setInstance_max_count(null);
 		schedules.setInstance_min_count(null);
