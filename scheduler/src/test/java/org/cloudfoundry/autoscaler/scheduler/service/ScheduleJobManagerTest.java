@@ -69,7 +69,7 @@ public class ScheduleJobManagerTest {
 		int schedulesToSetup = 4;
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		List<SpecificDateScheduleEntity> specificDateScheduleEntities = TestDataSetupHelper
-				.generateSpecificDateSchedules(appId, schedulesToSetup, true);
+				.generateSpecificDateScheduleEntities(appId, schedulesToSetup);
 
 		createSimpleJob(specificDateScheduleEntities);
 
@@ -94,7 +94,7 @@ public class ScheduleJobManagerTest {
 		int noOfSpecificDateSchedulesToSetUp = 1;
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		List<SpecificDateScheduleEntity> specificDateScheduleEntities = TestDataSetupHelper
-				.generateSpecificDateSchedules(appId, noOfSpecificDateSchedulesToSetUp, false);
+				.generateSpecificDateScheduleEntities(appId, noOfSpecificDateSchedulesToSetUp);
 		createSimpleJob(specificDateScheduleEntities);
 
 		assertTrue("This test should have an Error.", validationErrorResult.hasErrors());
@@ -110,11 +110,11 @@ public class ScheduleJobManagerTest {
 
 	@Test
 	public void testDeleteSimpleJobs() throws Exception {
-		int schedulesToCreate = 2;
+		int noOfSpecificDateSchedulesToSetUp = 2;
 		int expectedJobsToBeCreated = 4; // 2 jobs per schedule, one for start and one for end
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		List<SpecificDateScheduleEntity> specificDateScheduleEntities = TestDataSetupHelper
-				.generateSpecificDateSchedules(appId, schedulesToCreate, true);
+				.generateSpecificDateScheduleEntities(appId, noOfSpecificDateSchedulesToSetUp);
 
 		createSimpleJob(specificDateScheduleEntities);
 		Map<JobKey, JobDetail> scheduleJobKeyDetailMap = getSchedulerJobs(

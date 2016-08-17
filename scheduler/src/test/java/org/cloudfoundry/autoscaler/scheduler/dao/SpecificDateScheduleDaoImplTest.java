@@ -62,7 +62,7 @@ public class SpecificDateScheduleDaoImplTest {
 
 	private List<SpecificDateScheduleEntity> createSchedules(String appId, int noOfSpecificDateSchedulesToSetUp) {
 		List<SpecificDateScheduleEntity> specificDateScheduleEntities = TestDataSetupHelper
-				.generateSpecificDateSchedules(appId, noOfSpecificDateSchedulesToSetUp, false);
+				.generateSpecificDateScheduleEntities(appId, noOfSpecificDateSchedulesToSetUp);
 		List<SpecificDateScheduleEntity> returnValues = new ArrayList<SpecificDateScheduleEntity>();
 		for (SpecificDateScheduleEntity scheduleEntity : specificDateScheduleEntities) {
 			SpecificDateScheduleEntity entity = specificDateScheduleDao.create(scheduleEntity);

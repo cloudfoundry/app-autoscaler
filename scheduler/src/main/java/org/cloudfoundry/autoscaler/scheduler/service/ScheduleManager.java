@@ -369,11 +369,11 @@ public class ScheduleManager {
 
 		if (DataValidationHelper.isNotEmpty(dayOfWeek)) {
 			if (!DataValidationHelper.isBetweenMinAndMaxValues(dayOfWeek, DateHelper.DAY_OF_WEEK_MINIMUM,
-					DateHelper.DAY_OF_WEEK_MAXMUM)) {
+					DateHelper.DAY_OF_WEEK_MAXIMUM)) {
 				isValid = false;
 				validationErrorResult.addFieldError(recurringSchedule, "schedule.data.invalid.day",
 						scheduleBeingProcessed, "day_of_week", DateHelper.DAY_OF_WEEK_MINIMUM,
-						DateHelper.DAY_OF_WEEK_MAXMUM);
+						DateHelper.DAY_OF_WEEK_MAXIMUM);
 			}
 
 			if (!DataValidationHelper.isElementUnique(dayOfWeek)) {
@@ -385,11 +385,11 @@ public class ScheduleManager {
 
 		if (DataValidationHelper.isNotEmpty(dayOfMonth)) {
 			if (!DataValidationHelper.isBetweenMinAndMaxValues(dayOfMonth, DateHelper.DAY_OF_MONTH_MINIMUM,
-					DateHelper.DAY_OF_MONTH_MAXMUM)) {
+					DateHelper.DAY_OF_MONTH_MAXIMUM)) {
 				isValid = false;
 				validationErrorResult.addFieldError(recurringSchedule, "schedule.data.invalid.day",
 						scheduleBeingProcessed, "day_of_month", DateHelper.DAY_OF_MONTH_MINIMUM,
-						DateHelper.DAY_OF_MONTH_MAXMUM);
+						DateHelper.DAY_OF_MONTH_MAXIMUM);
 			}
 
 			if (!DataValidationHelper.isElementUnique(dayOfMonth)) {

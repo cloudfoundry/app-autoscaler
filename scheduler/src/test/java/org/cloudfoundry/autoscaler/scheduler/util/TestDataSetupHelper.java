@@ -1,5 +1,6 @@
 package org.cloudfoundry.autoscaler.scheduler.util;
 
+import java.sql.Time;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -9,7 +10,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,210 +40,120 @@ public class TestDataSetupHelper {
 	private static String startTime[] = { "00:00:00", "2:00:00", "10:00:00", "11:00:12", "23:00:00" };
 	private static String endTime[] = { "1:00:00", "8:00:00", "10:01:00", "12:00:00", "23:59:00" };
 
-	public static ApplicationScalingSchedules generateSchedules(String appId, int noOfSpecificSchedules,
-			int noOfRecurringScheduls) {
-		ApplicationScalingSchedules schedules = new ApplicationScalingSchedules();
-		List<SpecificDateScheduleEntity> specificDateSchedules = generateSpecificDateScheduleEntities(appId, timeZone,
-				noOfSpecificSchedules, false, 1, 5);
-		List<RecurringScheduleEntity> recurringSchedules = generateRecurringScheduleEntities(appId, timeZone,
-				noOfRecurringScheduls, false, 1, 5, false);
-		schedules.setSpecific_date(specificDateSchedules);
-		schedules.setRecurring_schedule(recurringSchedules);
+	public static ApplicationScalingSchedules generateSchedules(int noOfSpecificDateSchedules,
+			int noOfRecurringSchedules) {
+
+		int noOfDOMRecurringSchedules = noOfRecurringSchedules / 2;
+		int noOfDOWRecurringSchedules = noOfRecurringSchedules - noOfDOMRecurringSchedules;
+
+		return new ScheduleBuilder(5, 1, timeZone, noOfSpecificDateSchedules, noOfDOMRecurringSchedules,
+				noOfDOWRecurringSchedules).build();
+
+	}
+
+	public static ApplicationScalingSchedules generateSchedulesWithEntitiesOnly(String appId, int noOfSpecificSchedules,
+			int noOfDOMRecurringSchedules, int noOfDOWRecurringSchedules) {
+
+		List<SpecificDateScheduleEntity> specificDateSchedules = generateSpecificDateScheduleEntities(appId,
+				noOfSpecificSchedules);
+
+		List<RecurringScheduleEntity> recurringSchedules = generateRecurringScheduleEntities(appId,
+				noOfDOMRecurringSchedules, noOfDOWRecurringSchedules);
+
+		ApplicationScalingSchedules schedules = new ScheduleBuilder()
+				.setSpecificDateSchedules(specificDateSchedules)
+				.setRecurringSchedules(recurringSchedules).build();
+
 		return schedules;
 
 	}
 
-	public static List<SpecificDateScheduleEntity> generateSpecificDateSchedules(String appId,
-			int noOfSpecificDateSchedulesToSetUp, boolean isStartEndDateTimeCurrentDateTime) {
-		return generateSpecificDateScheduleEntities(appId, timeZone, noOfSpecificDateSchedulesToSetUp,
-				isStartEndDateTimeCurrentDateTime, 1, 5);
+	public static List<SpecificDateScheduleEntity> generateSpecificDateScheduleEntities(String appId,
+			int noOfSpecificDateSchedulesToSetUp) {
+		return new SpecificDateScheduleEntitiesBuilder(noOfSpecificDateSchedulesToSetUp).setAppid(appId)
+				.setTimeZone(timeZone).setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).build();
 	}
 
-	private static List<SpecificDateScheduleEntity> generateSpecificDateScheduleEntities(String appId, String timeZone,
-			int noOfSpecificDateSchedulesToSetUp, boolean isStartEndDateTimeCurrentDateTime,
-			Integer defaultInstanceMinCount, Integer defaultInstanceMaxCount) {
-		if (noOfSpecificDateSchedulesToSetUp <= 0) {
-			return null;
-		}
-		List<SpecificDateScheduleEntity> specificDateSchedules = new ArrayList<>();
+	public static List<RecurringScheduleEntity> generateRecurringScheduleEntities(String appId,
+			int noOfDOMRecurringSchedules, int noOfDOWRecurringSchedules) {
 
-		int pos = 0;
-		SimpleDateFormat sdf = new SimpleDateFormat(DateHelper.DATE_TIME_FORMAT);
-		for (int i = 0; i < noOfSpecificDateSchedulesToSetUp; i++) {
-			SpecificDateScheduleEntity specificDateScheduleEntity = new SpecificDateScheduleEntity();
-			specificDateScheduleEntity.setAppId(appId);
-			specificDateScheduleEntity.setTimeZone(timeZone);
-
-			try {
-				if (isStartEndDateTimeCurrentDateTime) {
-					specificDateScheduleEntity.setStartDateTime(sdf.parse(getCurrentDateTime(0)));
-					specificDateScheduleEntity.setEndDateTime(sdf.parse(getCurrentDateTime(0)));
-				} else {
-					specificDateScheduleEntity.setStartDateTime(sdf.parse(getDateString(startDateTime, pos, 0)));
-					specificDateScheduleEntity.setEndDateTime(sdf.parse(getDateString(endDateTime, pos, 5)));
-				}
-			} catch (ParseException e) {
-				throw new RuntimeException(e.getMessage());
-			}
-
-			specificDateScheduleEntity.setInstanceMinCount(i + 5);
-			specificDateScheduleEntity.setInstanceMaxCount(i + 6);
-			specificDateScheduleEntity.setDefaultInstanceMinCount(defaultInstanceMinCount);
-			specificDateScheduleEntity.setDefaultInstanceMaxCount(defaultInstanceMaxCount);
-			specificDateSchedules.add(specificDateScheduleEntity);
-			pos++;
-		}
-
-		return specificDateSchedules;
-	}
-
-	public static List<RecurringScheduleEntity> generateRecurringSchedules(String appId,
-			int noOfRecurringSchedulesToSetUp, boolean isDayOfWeek) {
-		return generateRecurringScheduleEntities(appId, timeZone, noOfRecurringSchedulesToSetUp, false, 1, 5,
-				isDayOfWeek);
-	}
-
-	private static List<RecurringScheduleEntity> generateRecurringScheduleEntities(String appId, String timeZone,
-			int noOfRecurringSchedulesToSetUp, boolean isStartEndDateTimeCurrentDateTime,
-			Integer defaultInstanceMinCount, Integer defaultInstanceMaxCount, boolean isDayOfWeek) {
-		List<RecurringScheduleEntity> recurringSchedules = new ArrayList<>();
-
-		int pos = 0;
-		for (int i = 0; i < noOfRecurringSchedulesToSetUp; i++) {
-			RecurringScheduleEntity recurringScheduleEntity = new RecurringScheduleEntity();
-			recurringScheduleEntity.setAppId(appId);
-			recurringScheduleEntity.setTimeZone(timeZone);
-			if (isStartEndDateTimeCurrentDateTime) {
-				recurringScheduleEntity.setStartTime(java.sql.Time.valueOf(getCurrentTime(0)));
-				recurringScheduleEntity.setEndTime(java.sql.Time.valueOf(getCurrentTime(0)));
-			} else {
-				recurringScheduleEntity.setStartTime(java.sql.Time.valueOf(getTimeString(startTime, pos, 0)));
-				recurringScheduleEntity.setEndTime(java.sql.Time.valueOf(getTimeString(endTime, pos, 5)));
-			}
-
-			if (isDayOfWeek) {
-				recurringScheduleEntity.setDayOfWeek(generateDayOfWeek());
-			} else {
-				recurringScheduleEntity.setDayOfMonth(generateDayOfMonth());
-			}
-			recurringScheduleEntity.setInstanceMinCount(i + 5);
-			recurringScheduleEntity.setInstanceMaxCount(i + 6);
-			recurringScheduleEntity.setDefaultInstanceMinCount(defaultInstanceMinCount);
-			recurringScheduleEntity.setDefaultInstanceMaxCount(defaultInstanceMaxCount);
-			recurringSchedules.add(recurringScheduleEntity);
-			pos++;
-		}
-
-		return recurringSchedules;
-	}
-
-	public static ApplicationScalingSchedules generateSchedulesForRestApi(int noOfSpecificDateSchedules,
-			int noOfRecurringSchedulesToSetUp) {
-		ApplicationScalingSchedules schedules = new ApplicationScalingSchedules();
-		schedules.setTimeZone(timeZone);
-		schedules.setInstance_min_count(1);
-		schedules.setInstance_max_count(5);
-		List<SpecificDateScheduleEntity> specificDateSchedules = generateSpecificDateScheduleEntities(null, null,
-				noOfSpecificDateSchedules, false, null, null);
-
-		int noOfDayOfWeek = noOfRecurringSchedulesToSetUp % 2;
-		int noOfDayOfMonth = noOfRecurringSchedulesToSetUp - noOfDayOfWeek;
-		List<RecurringScheduleEntity> recurringScheduleEntities = generateRecurringScheduleEntities(null, null,
-				noOfDayOfWeek, false, null, null, true);
-		recurringScheduleEntities
-				.addAll(generateRecurringScheduleEntities(null, null, noOfDayOfMonth, false, null, null, false));
-
-		schedules.setRecurring_schedule(recurringScheduleEntities);
-		schedules.setSpecific_date(specificDateSchedules);
-		return schedules;
-
+		return new RecurringScheduleEntitiesBuilder(noOfDOMRecurringSchedules, noOfDOWRecurringSchedules)
+				.setAppId(appId).setTimeZone(timeZone)
+				.setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).build();
 	}
 
 	public static String generateJsonSchedule(String appId, int noOfSpecificDateSchedulesToSetUp,
 			int noOfRecurringSchedulesToSetUp) throws JsonProcessingException {
 		ObjectMapper mapper = new ObjectMapper();
 
-		ApplicationScalingSchedules schedules = generateSchedulesForRestApi(noOfSpecificDateSchedulesToSetUp,
+		ApplicationScalingSchedules schedules = generateSchedules(noOfSpecificDateSchedulesToSetUp,
 				noOfRecurringSchedulesToSetUp);
 
 		return mapper.writeValueAsString(schedules);
 	}
 
-	public static String generateJsonScheduleWithStartEndDate(String firstStartDateStr, String firstEndDateStr,
+	public static String generateJsonForOverlappingRecurringScheduleWithStartEndDate(String firstStartDateStr, String firstEndDateStr,
 			String secondStartDateStr, String secondEndDateStr) throws Exception {
 		ObjectMapper mapper = new ObjectMapper();
-		int noOfRecurringSchedulesToSetUp = 2;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedulesForRestApi(0,
-				noOfRecurringSchedulesToSetUp);
 
-		// Overlap recurring schedules.
-		RecurringScheduleEntity firstEntity = schedules.getRecurring_schedule().get(0);
-		RecurringScheduleEntity secondEntity = schedules.getRecurring_schedule().get(1);
-		secondEntity.setStartTime(firstEntity.getEndTime());
+		int[] dayOfWeek = { 1, 2, 3, 4, 5, 6, 7 };
+		Time firstStartTime = new Time(0);
+		Time firstEndTime = new Time(3600000 * 10);
+		Time secondStartTime = firstEndTime;
+		Time secondEndTime = new Time(3600000 * 11);
 
-		firstEntity.setDayOfWeek(new int[] { 1, 2, 3, 4, 5, 6, 7 });
-		firstEntity.setDayOfMonth(null);
+		List<RecurringScheduleEntity> entities = new RecurringScheduleEntitiesBuilder(0, 2)
+				// Set data in first entity
+				.setDayOfWeek(0, dayOfWeek)
+				.setDayOfMonth(0, null)
+				.setStartDate(0, getDate(firstStartDateStr))
+				.setEndDate(0, getDate(firstEndDateStr))
+				.setStartTime(0, firstStartTime)
+				.setEndTime(0, firstEndTime)
+				// Set data in second entity
+				.setDayOfWeek(1, dayOfWeek)
+				.setDayOfMonth(1, null)
+				.setStartDate(1, getDate(secondStartDateStr))
+				.setEndDate(1, getDate(secondEndDateStr))
+				.setStartTime(1, secondStartTime)
+				.setEndTime(1, secondEndTime).build();
 
-		secondEntity.setDayOfWeek(firstEntity.getDayOfWeek());
-		secondEntity.setDayOfMonth(null);
-
-		firstEntity.setStartDate(getDate(firstStartDateStr));
-		firstEntity.setEndDate(getDate(firstEndDateStr));
-
-		secondEntity.setStartDate(getDate(secondStartDateStr));
-		secondEntity.setEndDate(getDate(secondEndDateStr));
+		ApplicationScalingSchedules schedules = new ScheduleBuilder(5, 1, timeZone, 0, 0, 0)
+				.setRecurringSchedules(entities).build();
 
 		return mapper.writeValueAsString(schedules);
 	}
 
-	private static Date getDate(String dateStr) throws Exception {
+	public static Date getDate(String dateStr) throws ParseException {
 		SimpleDateFormat sdf = new SimpleDateFormat(DateHelper.DATE_FORMAT);
-		Date date = null;
+
 		if (dateStr != null) {
-			date = sdf.parse(dateStr);
+			return sdf.parse(dateStr);
 		}
-		return date;
+		return null;
 	}
 
-	private static String getDateString(String[] date, int pos, int offsetMin) {
+	static String getDateString(String[] date, int pos, int offsetMin) {
 		if (date != null && date.length > pos) {
 			return date[pos];
 		} else {
-			return getCurrentDate(offsetMin);
+			return getCurrentDateOrTime(offsetMin, DateHelper.DATE_FORMAT);
 		}
 	}
 
-	private static String getTimeString(String[] time, int pos, int offsetMin) {
+	static String getTimeString(String[] time, int pos, int offsetMin) {
 		if (time != null && time.length > pos) {
 			return time[pos];
 		} else {
-			return getCurrentTime(offsetMin);
+			return getCurrentDateOrTime(offsetMin, DateHelper.TIME_FORMAT);
 		}
 	}
 
-	private static String getCurrentDateTime(int offsetMin) {
-		SimpleDateFormat sdfDate = new SimpleDateFormat(DateHelper.DATE_TIME_FORMAT);
-		Date now = new Date();
-		now.setTime(now.getTime() + TimeUnit.MINUTES.toMillis(offsetMin));
-		return sdfDate.format(now);
-	}
-
-	private static String getCurrentTime(int offsetMin) {
-		SimpleDateFormat sdfDate = new SimpleDateFormat(DateHelper.TIME_FORMAT);
+	private static String getCurrentDateOrTime(int offsetMin, String format) {
+		SimpleDateFormat sdfDate = new SimpleDateFormat(format);
 		Calendar calNow = Calendar.getInstance();
 		calNow.add(Calendar.MINUTE, offsetMin);
 		return sdfDate.format(calNow.getTime());
-	}
-
-	private static String getCurrentDate(int offsetMin) {
-		SimpleDateFormat sdfDate = new SimpleDateFormat(DateHelper.DATE_FORMAT);
-		Calendar calNow = Calendar.getInstance();
-		calNow.add(Calendar.MINUTE, offsetMin);
-		return sdfDate.format(calNow.getTime());
-	}
-
-	public static String getTimeZone() {
-		return timeZone;
 	}
 
 	public static String[] generateAppIds(int noOfAppIdsToGenerate) {
@@ -259,7 +169,7 @@ public class TestDataSetupHelper {
 	public static int[] generateDayOfWeek() {
 		int arraySize = (int) (new Date().getTime() % 7) + 1;
 		int[] array = makeRandomArray(new Random(Calendar.getInstance().getTimeInMillis()), arraySize,
-				DateHelper.DAY_OF_WEEK_MINIMUM, DateHelper.DAY_OF_WEEK_MAXMUM);
+				DateHelper.DAY_OF_WEEK_MINIMUM, DateHelper.DAY_OF_WEEK_MAXIMUM);
 		logger.debug("Generate day of week array:" + Arrays.toString(array));
 		return array;
 	}
@@ -267,7 +177,7 @@ public class TestDataSetupHelper {
 	public static int[] generateDayOfMonth() {
 		int arraySize = (int) (new Date().getTime() % 31) + 1;
 		int[] array = makeRandomArray(new Random(Calendar.getInstance().getTimeInMillis()), arraySize,
-				DateHelper.DAY_OF_MONTH_MINIMUM, DateHelper.DAY_OF_MONTH_MAXMUM);
+				DateHelper.DAY_OF_MONTH_MINIMUM, DateHelper.DAY_OF_MONTH_MAXIMUM);
 		logger.debug("Generate day of month array:" + Arrays.toString(array));
 		return array;
 	}
@@ -288,8 +198,16 @@ public class TestDataSetupHelper {
 		return calNow.getTime();
 	}
 
+	public static int convertIntToCalendarDayOfWeek(int dayOfWeek) {
+		return dayOfWeek == Calendar.SUNDAY ? 7 : dayOfWeek - 1;
+	}
+
 	public static List<String> getAllGeneratedAppIds() {
 		return genAppIds;
+	}
+
+	public static String getTimeZone() {
+		return timeZone;
 	}
 
 	public static String[] getStartDateTime() {
@@ -304,4 +222,11 @@ public class TestDataSetupHelper {
 		return invalidTimezone;
 	}
 
+	public static String[] getStarTime() {
+		return startTime;
+	}
+
+	public static String[] getEndTime() {
+		return endTime;
+	}
 }

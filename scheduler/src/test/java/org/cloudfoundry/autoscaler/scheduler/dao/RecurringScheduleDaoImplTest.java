@@ -72,20 +72,19 @@ public class RecurringScheduleDaoImplTest {
 	}
 
 	private void assertCreateAndFindSchedules(String[] appIds, int expectedSchedulesTobeFound) {
-		int dowSchedules = expectedSchedulesTobeFound / 2;
-		int domSchedules = expectedSchedulesTobeFound - dowSchedules;
+		int noOfDOMRecurringSchedules = expectedSchedulesTobeFound / 2;
+		int noOfDOWRecurringSchedules = expectedSchedulesTobeFound - noOfDOMRecurringSchedules;
 		for (String appId : appIds) {
 			List<RecurringScheduleEntity> recurringScheduleEntities = TestDataSetupHelper
-					.generateRecurringSchedules(appId, dowSchedules, false);
-			recurringScheduleEntities.addAll(
-					TestDataSetupHelper.generateRecurringSchedules(appId, domSchedules, true));
-			List<RecurringScheduleEntity> savedSchedules = createSchedules(recurringScheduleEntities);
-			assertCreatedScheduleIdNotNull(savedSchedules);
+					.generateRecurringScheduleEntities(appId, noOfDOMRecurringSchedules, noOfDOWRecurringSchedules);
 
-			List<RecurringScheduleEntity> schedulesFound = findAllSchedules(appId);
-			assertSchedulesFoundCountEquals(expectedSchedulesTobeFound, schedulesFound);
+			List<RecurringScheduleEntity> savedRecurringScheduleEntities = createSchedules(recurringScheduleEntities);
+			assertCreatedScheduleIdNotNull(savedRecurringScheduleEntities);
 
-			assertSavedAndFoundEntitiesEquals(savedSchedules, schedulesFound);
+			List<RecurringScheduleEntity> foundRecurringScheduleEntities = findAllSchedules(appId);
+			assertSchedulesFoundCountEquals(expectedSchedulesTobeFound, foundRecurringScheduleEntities);
+
+			assertSavedAndFoundEntitiesEquals(savedRecurringScheduleEntities, foundRecurringScheduleEntities);
 		}
 	}
 
