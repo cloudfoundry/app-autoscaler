@@ -3,7 +3,6 @@ package main_test
 import (
 	"fmt"
 	"io/ioutil"
-	"metricscollector/config"
 	"net/http"
 	"os"
 
@@ -11,6 +10,8 @@ import (
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gbytes"
 	. "github.com/onsi/gomega/gexec"
+
+	"cf"
 )
 
 var _ = Describe("MetricsCollector", func() {
@@ -66,7 +67,7 @@ var _ = Describe("MetricsCollector", func() {
 	Context("with missing configuration", func() {
 		BeforeEach(func() {
 			runner.startCheck = ""
-			cfg.Cf = config.CfConfig{
+			cfg.Cf = cf.CfConfig{
 				Api: ccNOAAUAA.URL(),
 			}
 

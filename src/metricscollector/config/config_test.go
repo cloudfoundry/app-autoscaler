@@ -2,12 +2,13 @@ package config_test
 
 import (
 	"bytes"
-	. "metricscollector/config"
 
+	"github.com/cloudfoundry-incubator/candiedyaml"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/cloudfoundry-incubator/candiedyaml"
+	"cf"
+	. "metricscollector/config"
 )
 
 var _ = Describe("Config", func() {
@@ -118,7 +119,7 @@ db:
 			It("returns default values", func() {
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(conf.Cf.GrantType).To(Equal(GrantTypePassword))
+				Expect(conf.Cf.GrantType).To(Equal(cf.GrantTypePassword))
 				Expect(conf.Server.Port).To(Equal(8080))
 				Expect(conf.Logging.Level).To(Equal(DefaultLoggingLevel))
 			})
@@ -130,9 +131,8 @@ db:
 		BeforeEach(func() {
 			conf = &Config{}
 			conf.Cf.Api = "http://api.example.com"
-			conf.Cf.GrantType = GrantTypePassword
+			conf.Cf.GrantType = cf.GrantTypePassword
 			conf.Cf.Username = "admin"
-			conf.Cf.ClientId = "admin"
 			conf.Db.MetricsDbUrl = "postgres://pqgotest:password@exampl.com/pqgotest"
 			conf.Db.PolicyDbUrl = "postgres://pqgotest:password@exampl.com/pqgotest"
 		})
@@ -141,76 +141,19 @@ db:
 			err = conf.Validate()
 		})
 
-		Context("when api is not set", func() {
+		Context("when all the configs are valid", func() {
+			It("should not error", func() {
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when cf config is not valid", func() {
 			BeforeEach(func() {
 				conf.Cf.Api = ""
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: cf api is empty")))
-			})
-		})
-
-		Context("when grant type is not supported", func() {
-			BeforeEach(func() {
-				conf.Cf.GrantType = "not-supported"
-			})
-
-			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: unsupported grant type*")))
-			})
-		})
-
-		Context("when grant type password", func() {
-			BeforeEach(func() {
-				conf.Cf.GrantType = GrantTypePassword
-			})
-
-			Context("when user name is set", func() {
-				BeforeEach(func() {
-					conf.Cf.ClientId = ""
-					conf.Cf.Username = "admin"
-				})
-				It("is valid", func() {
-					Expect(err).NotTo(HaveOccurred())
-				})
-			})
-
-			Context("when the user name is empty", func() {
-				BeforeEach(func() {
-					conf.Cf.Username = ""
-				})
-
-				It("should error", func() {
-					Expect(err).To(MatchError(MatchRegexp("Configuration error: user name is empty")))
-				})
-			})
-		})
-
-		Context("when grant type client_credential", func() {
-			BeforeEach(func() {
-				conf.Cf.GrantType = GrantTypeClientCredentials
-				conf.Cf.ClientId = "admin"
-			})
-
-			Context("when client id is set", func() {
-				BeforeEach(func() {
-					conf.Cf.ClientId = "admin"
-					conf.Cf.Username = ""
-				})
-				It("is valid", func() {
-					Expect(err).NotTo(HaveOccurred())
-				})
-			})
-
-			Context("the client id is empty", func() {
-				BeforeEach(func() {
-					conf.Cf.ClientId = ""
-				})
-
-				It("returns error", func() {
-					Expect(err).To(MatchError(MatchRegexp("Configuration error: client id is empty")))
-				})
+				Expect(err).To(HaveOccurred())
 			})
 		})
 

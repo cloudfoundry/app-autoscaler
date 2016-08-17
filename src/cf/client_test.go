@@ -2,16 +2,15 @@ package cf_test
 
 import (
 	"bytes"
-	. "metricscollector/cf"
-	"metricscollector/config"
 	"net"
 	"net/url"
 
 	"code.cloudfoundry.org/lager"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
+
+	. "cf"
 )
 
 var infoBody = []byte(`
@@ -58,12 +57,12 @@ var refreshBody = []byte(`
 }
 `)
 
-var _ = Describe("CfClient", func() {
+var _ = Describe("Client", func() {
 	var (
 		fakeCC          *ghttp.Server
 		fakeLoginServer *ghttp.Server
 		cfc             CfClient
-		conf            *config.Config
+		conf            *CfConfig
 		authToken       string
 		err             error
 	)
@@ -71,9 +70,8 @@ var _ = Describe("CfClient", func() {
 	BeforeEach(func() {
 		fakeCC = ghttp.NewServer()
 		fakeLoginServer = ghttp.NewServer()
-		conf = &config.Config{}
-
-		conf.Cf.Api = fakeCC.URL()
+		conf = &CfConfig{}
+		conf.Api = fakeCC.URL()
 		err = nil
 	})
 
@@ -89,7 +87,7 @@ var _ = Describe("CfClient", func() {
 	Describe("Login", func() {
 
 		JustBeforeEach(func() {
-			cfc = NewCfClient(&conf.Cf, lager.NewLogger("cf"))
+			cfc = NewCfClient(conf, lager.NewLogger("cf"))
 			err = cfc.Login()
 		})
 
@@ -153,14 +151,14 @@ var _ = Describe("CfClient", func() {
 			Context("when login server returns 200 status code", func() {
 				Context("when using password grant", func() {
 					BeforeEach(func() {
-						conf.Cf.GrantType = config.GrantTypePassword
-						conf.Cf.Username = "test-user"
-						conf.Cf.Password = "test-pass"
+						conf.GrantType = GrantTypePassword
+						conf.Username = "test-user"
+						conf.Password = "test-pass"
 
 						values := url.Values{
-							"grant_type": {conf.Cf.GrantType},
-							"username":   {conf.Cf.Username},
-							"password":   {conf.Cf.Password},
+							"grant_type": {conf.GrantType},
+							"username":   {conf.Username},
+							"password":   {conf.Password},
 						}
 
 						fakeLoginServer.AppendHandlers(
@@ -183,20 +181,20 @@ var _ = Describe("CfClient", func() {
 
 				Context("when using client_credentials grant", func() {
 					BeforeEach(func() {
-						conf.Cf.GrantType = config.GrantTypeClientCredentials
-						conf.Cf.ClientId = "test-client-id"
-						conf.Cf.Secret = "test-client-secret"
+						conf.GrantType = GrantTypeClientCredentials
+						conf.ClientId = "test-client-id"
+						conf.Secret = "test-client-secret"
 
 						values := url.Values{
-							"grant_type":    {conf.Cf.GrantType},
-							"client_id":     {conf.Cf.ClientId},
-							"client_secret": {conf.Cf.Secret},
+							"grant_type":    {conf.GrantType},
+							"client_id":     {conf.ClientId},
+							"client_secret": {conf.Secret},
 						}
 
 						fakeLoginServer.AppendHandlers(
 							ghttp.CombineHandlers(
 								ghttp.VerifyRequest("POST", PathCfAuth),
-								ghttp.VerifyBasicAuth(conf.Cf.ClientId, conf.Cf.Secret),
+								ghttp.VerifyBasicAuth(conf.ClientId, conf.Secret),
 								ghttp.VerifyForm(values),
 								ghttp.RespondWith(200, authBody),
 							),
@@ -245,7 +243,7 @@ var _ = Describe("CfClient", func() {
 
 	Describe("RefreshAuthToken", func() {
 		BeforeEach(func() {
-			cfc = NewCfClient(&conf.Cf, lager.NewLogger("cf"))
+			cfc = NewCfClient(conf, lager.NewLogger("cf"))
 		})
 
 		JustBeforeEach(func() {
@@ -322,7 +320,7 @@ var _ = Describe("CfClient", func() {
 						ghttp.CombineHandlers(
 							ghttp.VerifyRequest("POST", PathCfAuth),
 							ghttp.VerifyForm(url.Values{
-								"grant_type":    {config.GrantTypeRefreshToken},
+								"grant_type":    {GrantTypeRefreshToken},
 								"refresh_token": {"test-refresh-token"},
 							}),
 							ghttp.RespondWith(200, refreshBody),
@@ -352,7 +350,7 @@ var _ = Describe("CfClient", func() {
 						ghttp.CombineHandlers(
 							ghttp.VerifyRequest("POST", PathCfAuth),
 							ghttp.VerifyForm(url.Values{
-								"grant_type":    {config.GrantTypeRefreshToken},
+								"grant_type":    {GrantTypeRefreshToken},
 								"refresh_token": {"test-refresh-token"},
 							}),
 							ghttp.RespondWith(401, ""),
