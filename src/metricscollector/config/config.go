@@ -7,28 +7,18 @@ import (
 	"time"
 
 	"github.com/cloudfoundry-incubator/candiedyaml"
+
+	"cf"
 )
 
 const (
-	GrantTypePassword                        = "password"
-	GrantTypeClientCredentials               = "client_credentials"
-	GrantTypeRefreshToken                    = "refresh_token"
-	DefaultLoggingLevel                      = "info"
-	DefaultRefreshInterval     time.Duration = 60 * time.Second
-	DefaultPollInterval        time.Duration = 30 * time.Second
+	DefaultLoggingLevel                  = "info"
+	DefaultRefreshInterval time.Duration = 60 * time.Second
+	DefaultPollInterval    time.Duration = 30 * time.Second
 )
 
-type CfConfig struct {
-	Api       string `yaml:"api"`
-	GrantType string `yaml:"grant_type"`
-	Username  string `yaml:"username"`
-	Password  string `yaml:"password"`
-	ClientId  string `yaml:"client_id"`
-	Secret    string `yaml:"secret"`
-}
-
-var defaultCfConfig = CfConfig{
-	GrantType: GrantTypePassword,
+var defaultCfConfig = cf.CfConfig{
+	GrantType: cf.GrantTypePassword,
 }
 
 type ServerConfig struct {
@@ -63,7 +53,7 @@ var defaultCollectorConfig = CollectorConfig{
 }
 
 type Config struct {
-	Cf        CfConfig        `yaml:"cf"`
+	Cf        cf.CfConfig     `yaml:"cf"`
 	Logging   LoggingConfig   `yaml:"logging"`
 	Server    ServerConfig    `yaml:"server"`
 	Db        DbConfig        `yaml:"db"`
@@ -91,24 +81,9 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 }
 
 func (c *Config) Validate() error {
-	if c.Cf.Api == "" {
-		return fmt.Errorf("Configuration error: cf api is empty")
-	}
-
-	if c.Cf.GrantType != GrantTypePassword && c.Cf.GrantType != GrantTypeClientCredentials {
-		return fmt.Errorf("Configuration error: unsupported grant type [%s]", c.Cf.GrantType)
-	}
-
-	if c.Cf.GrantType == GrantTypePassword {
-		if c.Cf.Username == "" {
-			return fmt.Errorf("Configuration error: user name is empty")
-		}
-	}
-
-	if c.Cf.GrantType == GrantTypeClientCredentials {
-		if c.Cf.ClientId == "" {
-			return fmt.Errorf("Configuration error: client id is empty")
-		}
+	err := c.Cf.Validate()
+	if err != nil {
+		return err
 	}
 
 	if c.Db.PolicyDbUrl == "" {

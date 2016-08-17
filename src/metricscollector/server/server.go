@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"metricscollector/cf"
+	"cf"
 	"metricscollector/config"
 	"metricscollector/db"
 	"metricscollector/noaa"

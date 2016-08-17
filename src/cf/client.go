@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"metricscollector/config"
 	"net/http"
 	"net/url"
 	"strings"
@@ -15,8 +14,11 @@ import (
 )
 
 const (
-	PathCfInfo = "/v2/info"
-	PathCfAuth = "/oauth/token"
+	PathCfInfo                 = "/v2/info"
+	PathCfAuth                 = "/oauth/token"
+	GrantTypePassword          = "password"
+	GrantTypeClientCredentials = "client_credentials"
+	GrantTypeRefreshToken      = "refresh_token"
 )
 
 type Tokens struct {
@@ -49,22 +51,22 @@ type cfClient struct {
 	httpClient *http.Client
 }
 
-func NewCfClient(conf *config.CfConfig, logger lager.Logger) CfClient {
+func NewCfClient(conf *CfConfig, logger lager.Logger) CfClient {
 	c := &cfClient{}
 
 	c.logger = logger
 	c.infoUrl = conf.Api + PathCfInfo
 
-	if conf.GrantType == config.GrantTypePassword {
+	if conf.GrantType == GrantTypePassword {
 		c.loginForm = url.Values{
-			"grant_type": {config.GrantTypePassword},
+			"grant_type": {GrantTypePassword},
 			"username":   {conf.Username},
 			"password":   {conf.Password},
 		}
 		c.token = "Basic Y2Y6"
 	} else {
 		c.loginForm = url.Values{
-			"grant_type":    {config.GrantTypeClientCredentials},
+			"grant_type":    {GrantTypeClientCredentials},
 			"client_id":     {conf.ClientId},
 			"client_secret": {conf.Secret},
 		}
@@ -159,7 +161,7 @@ func (c *cfClient) refresh() error {
 	}
 
 	refreshForm := url.Values{
-		"grant_type":    {config.GrantTypeRefreshToken},
+		"grant_type":    {GrantTypeRefreshToken},
 		"refresh_token": {c.tokens.RefreshToken},
 		"scope":         {""},
 	}

@@ -4,21 +4,21 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
-	"metricscollector/cf"
-	"metricscollector/config"
-	"metricscollector/db"
-	"metricscollector/db/sqldb"
-	"metricscollector/server"
 	"os"
 	"time"
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/lager"
-
 	"github.com/cloudfoundry/noaa/consumer"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
+
+	"cf"
+	"metricscollector/config"
+	"metricscollector/db"
+	"metricscollector/db/sqldb"
+	"metricscollector/server"
 )
 
 func main() {

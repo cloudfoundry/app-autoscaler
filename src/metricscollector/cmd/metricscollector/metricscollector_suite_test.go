@@ -3,13 +3,12 @@ package main_test
 import (
 	"io/ioutil"
 	"log"
-	"metricscollector/cf"
-	"metricscollector/config"
 	"mime/multipart"
 	"net/http"
 	"os"
 	"os/exec"
 	"strings"
+	"testing"
 	"time"
 
 	"github.com/cloudfoundry-incubator/candiedyaml"
@@ -21,7 +20,8 @@ import (
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
 
-	"testing"
+	"cf"
+	"metricscollector/config"
 )
 
 var (
@@ -85,9 +85,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		},
 	)
 
-	cfg.Cf = config.CfConfig{
+	cfg.Cf = cf.CfConfig{
 		Api:       ccNOAAUAA.URL(),
-		GrantType: config.GrantTypePassword,
+		GrantType: cf.GrantTypePassword,
 		Username:  "admin",
 		Password:  "admin",
 	}

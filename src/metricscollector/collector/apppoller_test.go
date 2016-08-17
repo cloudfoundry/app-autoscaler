@@ -1,7 +1,7 @@
 package collector_test
 
 import (
-	"metricscollector/cf"
+	"cf"
 	. "metricscollector/collector"
 	"metricscollector/fakes"
 	"metricscollector/metrics"

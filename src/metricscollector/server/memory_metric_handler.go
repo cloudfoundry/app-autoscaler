@@ -1,7 +1,7 @@
 package server
 
 import (
-	"metricscollector/cf"
+	"cf"
 	"metricscollector/db"
 	"metricscollector/metrics"
 	"metricscollector/noaa"
