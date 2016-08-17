@@ -89,6 +89,9 @@ export DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
 pushd src/metricscollector
 ginkgo -r -race -randomizeAllSpecs
 popd
+pushd src/cf
+ginkgo -r -race -randomizeAllSpecs
+popd
 
 pushd scheduler
 mvn test
