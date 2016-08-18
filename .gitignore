@@ -6,4 +6,5 @@
 /.recommenders
 /.project
 /.settings/
-/bin/metrics-collector
+/bin/metricscollector
+/bin/dataaggregator
