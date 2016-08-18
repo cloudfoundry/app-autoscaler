@@ -3,8 +3,8 @@ package org.cloudfoundry.autoscaler.scheduler.util;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 
 public class RecurringScheduleTime implements Comparable<RecurringScheduleTime> {
@@ -14,8 +14,8 @@ public class RecurringScheduleTime implements Comparable<RecurringScheduleTime> 
 	private Date startTime;
 	private Date endTime;
 
-	private Integer[] dayOfWeek;
-	private Integer[] dayOfMonth;
+	private List<Integer> dayOfWeek = null;
+	private List<Integer> dayOfMonth = null;
 
 	public RecurringScheduleTime(String scheduleIdentifier, RecurringScheduleEntity recurringScheduleEntity) {
 		this.scheduleIdentifier = scheduleIdentifier;
@@ -23,59 +23,55 @@ public class RecurringScheduleTime implements Comparable<RecurringScheduleTime> 
 		this.endDate = recurringScheduleEntity.getEndDate();
 		this.startTime = recurringScheduleEntity.getStartTime();
 		this.endTime = recurringScheduleEntity.getEndTime();
-		this.dayOfWeek = ArrayUtils.toObject(recurringScheduleEntity.getDayOfWeek());
-		this.dayOfMonth = ArrayUtils.toObject(recurringScheduleEntity.getDayOfMonth());
+
+		if (recurringScheduleEntity.getDayOfWeek() != null) {
+			this.dayOfWeek = Arrays.stream(recurringScheduleEntity.getDayOfWeek()).boxed().collect(Collectors.toList());
+		}
+
+		if (recurringScheduleEntity.getDayOfMonth() != null) {
+			this.dayOfMonth = Arrays.stream(recurringScheduleEntity.getDayOfMonth()).boxed()
+					.collect(Collectors.toList());
+		}
 	}
 
-	public String getScheduleIdentifier() {
+	String getScheduleIdentifier() {
 		return scheduleIdentifier;
 	}
 
-	public Date getStartTime() {
+	Date getStartTime() {
 		return startTime;
 	}
 
-	public Date getEndTime() {
+	Date getEndTime() {
 		return endTime;
 	}
 
-	public List<Integer> getDayOfWeek() {
-		if (this.dayOfWeek != null) {
-			return Arrays.asList(this.dayOfWeek);
-		} else {
-			return null;
-		}
+	List<Integer> getDayOfWeek() {
+		return this.dayOfWeek;
 	}
 
-	public List<Integer> getDayOfMonth() {
-		if (this.dayOfMonth != null) {
-			return Arrays.asList(this.dayOfMonth);
-		} else {
-			return null;
-		}
+	List<Integer> getDayOfMonth() {
+		return this.dayOfMonth;
 	}
 
-	public Date getStartDate() {
+	Date getStartDate() {
 		return startDate;
 	}
 
-	public Date getEndDate() {
+	Date getEndDate() {
 		return endDate;
 	}
 
-	public boolean hasDayOfWeek() {
+	boolean hasDayOfWeek() {
 		return getDayOfWeek() != null;
 	}
 
-	public boolean hasDayOfMonth() {
+	boolean hasDayOfMonth() {
 		return getDayOfMonth() != null;
 	}
 
 	@Override
 	public int compareTo(RecurringScheduleTime scheduleTime) {
-		if (scheduleTime == null)
-			throw new NullPointerException("The RecurringScheduleTime object to be compared is null");
-
 		Date thisDateTime = this.getStartTime();
 		Date compareToDateTime = scheduleTime.getStartTime();
 
