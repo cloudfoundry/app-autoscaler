@@ -1,5 +1,6 @@
 package org.cloudfoundry.autoscaler.scheduler.rest;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -11,8 +12,6 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-
-import javax.transaction.Transactional;
 
 import org.cloudfoundry.autoscaler.scheduler.dao.RecurringScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
@@ -29,7 +28,6 @@ import org.junit.Test;
 import org.junit.rules.TestRule;
 import org.junit.runner.RunWith;
 import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
@@ -73,25 +71,23 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	private String scheduleBeingProcessed = ScheduleTypeEnum.RECURRING.getDescription();
 
 	@Before
-	public void beforeTest() throws SchedulerException {
+	public void beforeTest() throws Exception {
 		// Clear previous schedules.
 		scheduler.clear();
 		mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
-		removeAllRecordsFromDatabase();
+		removeData();
 	}
 
-	@Transactional
-	public void removeAllRecordsFromDatabase() {
+	public void removeData() throws Exception {
 		List<String> allAppIds = TestDataSetupHelper.getAllGeneratedAppIds();
 		for (String appId : allAppIds) {
 			for (RecurringScheduleEntity entity : recurringScheduleDao.findAllRecurringSchedulesByAppId(appId)) {
-				recurringScheduleDao.delete(entity);
+				callDeleteSchedules(entity.getAppId());
 			}
 		}
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_with_startDate() throws Exception {
 		
 		ObjectMapper mapper = new ObjectMapper();
@@ -108,7 +104,6 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_currentDate_after_startDate() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
@@ -129,7 +124,6 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_with_endDate() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
@@ -146,7 +140,6 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_currentDateTime_after_endDate() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
@@ -167,7 +160,6 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_startDate_after_endDate() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
@@ -198,7 +190,6 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_without_startTime() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
@@ -218,7 +209,6 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_without_endTime() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
@@ -239,7 +229,6 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_startTime_after_endTime() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
@@ -266,7 +255,6 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_without_instanceMaxCount() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
@@ -286,7 +274,6 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_without_instanceMinCount() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
@@ -306,7 +293,6 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_negative_instanceMinCount() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
@@ -327,7 +313,6 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_negative_instanceMaxCount() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
@@ -348,7 +333,6 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_instanceMinCount_greater_than_instanceMaxCount() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
@@ -373,7 +357,6 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_without_dayOfWeek_and_dayOfMonth() throws Exception {
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 1;
@@ -395,7 +378,6 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_empty_dayOfWeek_and_dayOfMonth() throws Exception {
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 1;
@@ -417,7 +399,6 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_with_dayOfWeek_and_dayOfMonth() throws Exception {
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 1;
@@ -439,14 +420,12 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_invalid_value_dayOfMonth() throws Exception {
 		assertInvalidDayOfMonth(new int[] { 0 });
 		assertInvalidDayOfMonth(new int[] { 32 });
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_duplicate_dayOfMonth() throws Exception {
 		int[] dayOfMonth = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 4, 10, 11, 12, 13, 13 };
 
@@ -456,14 +435,12 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_invalid_dayOfWeek() throws Exception {
 		assertInvalidDayOfWeek(new int[] { 0 });
 		assertInvalidDayOfWeek(new int[] { 8 });
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_duplicate_dayOfWeek() throws Exception {
 		int[] dayOfWeek = { 2, 3, 4, 5, 6, 5, 7, 7 };
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.not.unique",
@@ -475,7 +452,6 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_without_recurringSchedules() throws Exception {
 		// No schedules - null case
 		ObjectMapper mapper = new ObjectMapper();
@@ -494,7 +470,6 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_empty_recurringSchedules() throws Exception {
 		// No schedules - Empty case
 		ObjectMapper mapper = new ObjectMapper();
@@ -513,7 +488,6 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_overlapping_startEndTime_with_startEndDate() throws Exception {
 		
 		// Overlapping test cases
@@ -549,7 +523,6 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_overlapping_startEndTime_and_overlapping_dayOfWeek() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
@@ -578,7 +551,6 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_overlapping_startEndTime_and_overlapping_dayOfMonth() throws Exception {
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 2;
@@ -606,7 +578,6 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_overlapping_dayOfMonth_and_dayOfWeek() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
@@ -635,7 +606,6 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_overlapping_multipleSchedules() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
@@ -680,7 +650,6 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_without_startEndTime_instanceMaxMinCount() throws Exception {
 		// schedules - no parameters.
 		ObjectMapper mapper = new ObjectMapper();
@@ -788,6 +757,12 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 
 	private String getCreateSchedulePath(String appId) {
 		return String.format("/v2/schedules/%s", appId);
+	}
+
+	private ResultActions callDeleteSchedules(String appId) throws Exception {
+
+		return mockMvc.perform(delete(getCreateSchedulePath(appId)).accept(MediaType.APPLICATION_JSON));
+
 	}
 
 }

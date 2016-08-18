@@ -665,6 +665,7 @@ public class ScheduleManager {
 			deleteRecurringSchedule(recurringScheduleEntity);
 
 			// Ask ScalingJobManager to delete scaling job
+			scheduleJobManager.deleteJob(appId, recurringScheduleEntity.getId(), ScheduleTypeEnum.RECURRING);
 		}
 	}
 
@@ -680,7 +681,13 @@ public class ScheduleManager {
 	}
 
 	private void deleteRecurringSchedule(RecurringScheduleEntity recurringScheduleEntity) {
-		throw new UnsupportedOperationException(" Method not implemented yet");
+		try {
+			recurringScheduleDao.delete(recurringScheduleEntity);
+		} catch (DatabaseValidationException dve) {
+			validationErrorResult.addErrorForDatabaseValidationException(dve, "database.error.delete.failed",
+					"app_id=" + recurringScheduleEntity.getAppId());
+			throw new SchedulerInternalException("Database error", dve);
+		}
 	}
 
 }

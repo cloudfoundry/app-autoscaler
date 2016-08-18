@@ -26,7 +26,7 @@ public class RecurringScheduleDaoImplTest {
 
 	@Before
 	@Transactional
-	public void removeAllRecordsFromDatabase() {
+	public void removeData() {
 		List<String> allAppIds = TestDataSetupHelper.getAllGeneratedAppIds();
 		for (String appId : allAppIds) {
 			for (RecurringScheduleEntity entity : recurringScheduleDao.findAllRecurringSchedulesByAppId(appId)) {

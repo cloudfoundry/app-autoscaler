@@ -79,7 +79,8 @@ public class ScheduleJobManagerTest {
 
 		createSimpleJob(specificDateScheduleEntities);
 
-		// The expected number of jobs would be twice the number of schedules( One job for start and one for end)
+		// The expected number of jobs would be twice the number of schedules(
+		// One job for start and one for end)
 		int expectedJobsToBeCreated = 2 * schedulesToSetup;
 
 		Map<JobKey, JobDetail> scheduleJobKeyDetailMap = getSchedulerJobs(
@@ -180,7 +181,8 @@ public class ScheduleJobManagerTest {
 	@Test
 	public void testDeleteSimpleJobs() throws Exception {
 		int noOfSpecificDateSchedulesToSetUp = 2;
-		int expectedJobsToBeCreated = 4; // 2 jobs per schedule, one for start and one for end
+		int expectedJobsToBeCreated = 4; // 2 jobs per schedule, one for start
+											// and one for end
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		List<SpecificDateScheduleEntity> specificDateScheduleEntities = TestDataSetupHelper
 				.generateSpecificDateScheduleEntities(appId, noOfSpecificDateSchedulesToSetUp);
@@ -204,6 +206,118 @@ public class ScheduleJobManagerTest {
 
 	}
 
+	@Test
+	public void testDeleteCronJobs() throws Exception {
+		int noOfDOMSchedules = 1;
+		int noOfDOWSchedules = 1;
+		int expectedJobsToBeCreated = 4; // 2 jobs per schedule, one for start
+											// and one for end
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		List<RecurringScheduleEntity> recurringScheduleEntities = TestDataSetupHelper
+				.generateRecurringScheduleEntities(appId, noOfDOMSchedules, noOfDOWSchedules);
+
+		createCronJob(recurringScheduleEntities);
+		Map<JobKey, JobDetail> scheduleJobKeyDetailMap = getSchedulerJobs(
+				ScheduleTypeEnum.RECURRING.getScheduleIdentifier());
+
+		// Check expected jobs created
+		assertEquals(expectedJobsToBeCreated, scheduleJobKeyDetailMap.size());
+
+		// Delete the cron jobs
+		for (ScheduleEntity scheduleEntity : recurringScheduleEntities) {
+			scalingJobManager.deleteJob(scheduleEntity.getAppId(), scheduleEntity.getId(), ScheduleTypeEnum.RECURRING);
+		}
+
+		scheduleJobKeyDetailMap = getSchedulerJobs(ScheduleTypeEnum.RECURRING.getScheduleIdentifier());
+		// Check the jobs, the expected job count is 0.
+		assertEquals(0, scheduleJobKeyDetailMap.size());
+
+	}
+
+	@Test
+	public void testDeleteSimpleJob_with_throw_SchedulerException_at_Quartz() throws SchedulerException {
+
+		// Set mock object for Quartz.
+		Mockito.doThrow(SchedulerException.class).when(scheduler).deleteJob(Mockito.anyObject());
+		int noOfSpecificDateSchedulesToSetUp = 1;
+		int expectedJobsToBeCreated = 2; // 2 jobs per schedule, one for start
+											// and one for end
+
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		List<SpecificDateScheduleEntity> specificDateScheduleEntities = TestDataSetupHelper
+				.generateSpecificDateScheduleEntities(appId, noOfSpecificDateSchedulesToSetUp);
+		createSimpleJob(specificDateScheduleEntities);
+
+		Map<JobKey, JobDetail> scheduleJobKeyDetailMap = getSchedulerJobs(
+				ScheduleTypeEnum.SPECIFIC_DATE.getScheduleIdentifier());
+
+		// Check expected jobs created
+		assertEquals(expectedJobsToBeCreated, scheduleJobKeyDetailMap.size());
+
+		// Delete the simple jobs
+		for (ScheduleEntity scheduleEntity : specificDateScheduleEntities) {
+			scalingJobManager.deleteJob(scheduleEntity.getAppId(), scheduleEntity.getId(),
+					ScheduleTypeEnum.SPECIFIC_DATE);
+		}
+
+		assertTrue("This test should have an Error.", validationErrorResult.hasErrors());
+
+		List<String> errors = validationErrorResult.getAllErrorMessages();
+		assertEquals(1, errors.size());
+
+		String errorMessage = messageBundleResourceHelper.lookupMessage("scheduler.error.delete.failed",
+				"app_id=" + appId, null);
+
+		assertEquals(errorMessage, errors.get(0));
+
+		scheduleJobKeyDetailMap = getSchedulerJobs(ScheduleTypeEnum.SPECIFIC_DATE.getScheduleIdentifier());
+
+		// Check jobs still exist
+		assertEquals(expectedJobsToBeCreated, scheduleJobKeyDetailMap.size());
+
+	}
+
+	@Test
+	public void testDeleteCronJob_with_throw_SchedulerException_at_Quartz() throws SchedulerException {
+
+		// Set mock object for Quartz.
+		Mockito.doThrow(SchedulerException.class).when(scheduler).deleteJob(Mockito.anyObject());
+		int noOfDOMRecurringSchedules = 1;
+		int expectedJobsToBeCreated = 2; // 2 jobs per schedule, one for start
+											// and one for end
+
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		List<RecurringScheduleEntity> recurringScheduleEntities = TestDataSetupHelper
+				.generateRecurringScheduleEntities(appId, noOfDOMRecurringSchedules, 0);
+
+		createCronJob(recurringScheduleEntities);
+		Map<JobKey, JobDetail> scheduleJobKeyDetailMap = getSchedulerJobs(
+				ScheduleTypeEnum.RECURRING.getScheduleIdentifier());
+
+		// Check expected jobs created
+		assertEquals(expectedJobsToBeCreated, scheduleJobKeyDetailMap.size());
+
+		// Delete the cron jobs
+		for (ScheduleEntity scheduleEntity : recurringScheduleEntities) {
+			scalingJobManager.deleteJob(scheduleEntity.getAppId(), scheduleEntity.getId(), ScheduleTypeEnum.RECURRING);
+		}
+
+		assertTrue("This test should have an Error.", validationErrorResult.hasErrors());
+		List<String> errors = validationErrorResult.getAllErrorMessages();
+		assertEquals(1, errors.size());
+
+		String errorMessage = messageBundleResourceHelper.lookupMessage("scheduler.error.delete.failed",
+				"app_id=" + appId, null);
+
+		assertEquals(errorMessage, errors.get(0));
+
+		scheduleJobKeyDetailMap = getSchedulerJobs(ScheduleTypeEnum.RECURRING.getScheduleIdentifier());
+
+		// Check jobs
+		assertEquals(expectedJobsToBeCreated, scheduleJobKeyDetailMap.size());
+
+	}
+
 	private void createSimpleJob(List<SpecificDateScheduleEntity> specificDateScheduleEntities) {
 		for (SpecificDateScheduleEntity scheduleEntity : specificDateScheduleEntities) {
 			Long scheduleId = ++scheduleIdx;
@@ -218,6 +332,31 @@ public class ScheduleJobManagerTest {
 			scheduleEntity.setId(scheduleId);
 			scalingJobManager.createCronJob(scheduleEntity);
 		}
+	}
+
+	private Map<JobKey, JobDetail> getSchedulerJobs(String groupName) throws SchedulerException {
+		Map<JobKey, JobDetail> scheduleJobKeyDetailMap = new HashMap<>();
+
+		for (JobKey jobKey : scheduler.getJobKeys(GroupMatcher.jobGroupEquals(groupName))) {
+			scheduleJobKeyDetailMap.put(jobKey, scheduler.getJobDetail(jobKey));
+
+		}
+
+		return scheduleJobKeyDetailMap;
+	}
+
+	private Trigger getSchedulerTrigger(Long scheduleIdx, JobActionEnum jobActionEnum, String groupName)
+			throws SchedulerException {
+		String name = scheduleIdx + jobActionEnum.getJobIdSuffix();
+		Trigger trigger = null;
+
+		for (TriggerKey triggerKey : scheduler.getTriggerKeys(GroupMatcher.triggerGroupEquals(groupName))) {
+			if (triggerKey.getName().startsWith(name)) {
+				trigger = scheduler.getTrigger(triggerKey);
+			}
+		}
+
+		return trigger;
 	}
 
 	private void assertCreatedJobs(Map<JobKey, JobDetail> scheduleIdJobDetailMap, ScheduleEntity scheduleEntity,
@@ -260,7 +399,6 @@ public class ScheduleJobManagerTest {
 
 		RecurringScheduleEntity entity = recurringScheduleEntities.get(0);
 		entity.setTimeZone(timeZone.getID());
-		entity.setDayOfMonth(null);
 		entity.setDayOfWeek(dayOfWeek);
 
 		createCronJob(recurringScheduleEntities);
@@ -299,7 +437,6 @@ public class ScheduleJobManagerTest {
 		RecurringScheduleEntity entity = recurringScheduleEntities.get(0);
 		entity.setTimeZone(timeZone.getID());
 		entity.setDayOfMonth(dayOfMonth);
-		entity.setDayOfWeek(null);
 		entity.setStartDate(TestDataSetupHelper.getDate(startDate));
 
 		createCronJob(recurringScheduleEntities);
@@ -340,30 +477,5 @@ public class ScheduleJobManagerTest {
 		assertEquals(expectedDay, actualCal.get(Calendar.DAY_OF_MONTH));
 		assertEquals(expectedTime.get(Calendar.HOUR_OF_DAY), actualCal.get(Calendar.HOUR_OF_DAY));
 		assertEquals(expectedTime.get(Calendar.MINUTE), actualCal.get(Calendar.MINUTE));
-	}
-
-	private Map<JobKey, JobDetail> getSchedulerJobs(String groupName) throws SchedulerException {
-		Map<JobKey, JobDetail> scheduleJobKeyDetailMap = new HashMap<>();
-
-		for (JobKey jobKey : scheduler.getJobKeys(GroupMatcher.jobGroupEquals(groupName))) {
-			scheduleJobKeyDetailMap.put(jobKey, scheduler.getJobDetail(jobKey));
-
-		}
-
-		return scheduleJobKeyDetailMap;
-	}
-
-	private Trigger getSchedulerTrigger(Long scheduleIdx, JobActionEnum jobActionEnum, String groupName)
-			throws SchedulerException {
-		String name = scheduleIdx + jobActionEnum.getJobIdSuffix();
-		Trigger trigger = null;
-
-		for (TriggerKey triggerKey : scheduler.getTriggerKeys(GroupMatcher.triggerGroupEquals(groupName))) {
-			if (triggerKey.getName().startsWith(name)) {
-				trigger = scheduler.getTrigger(triggerKey);
-			}
-		}
-
-		return trigger;
 	}
 }
