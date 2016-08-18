@@ -22,7 +22,7 @@ java -cp 'db/target/lib/*'  liquibase.integration.commandline.Main --changeLogFi
 mvn clean package -Dmaven.test.skip=true
 ```
 
-### Package and run Unit Test)
+### Package and run Unit Test
 
 ```sh
 mvn clean package
@@ -39,7 +39,7 @@ mvn test
 
 ### To run specific class tests specify the test class name
 
-#### For example to run to run ScheduleManagerTest
+#### For example to run ScheduleManagerTest
 ```sh
 mvn -Dtest=ScheduleManagerTest test
 ```

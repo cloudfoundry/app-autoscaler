@@ -97,10 +97,10 @@ public class TestDataSetupHelper {
 		ObjectMapper mapper = new ObjectMapper();
 
 		int[] dayOfWeek = { 1, 2, 3, 4, 5, 6, 7 };
-		Time firstStartTime = new Time(0);
-		Time firstEndTime = new Time(3600000 * 10);
+		Time firstStartTime = Time.valueOf("00:00:00");
+		Time firstEndTime = Time.valueOf("22:00:00");
 		Time secondStartTime = firstEndTime;
-		Time secondEndTime = new Time(3600000 * 11);
+		Time secondEndTime = Time.valueOf("23:59:00");
 
 		List<RecurringScheduleEntity> entities = new RecurringScheduleEntitiesBuilder(0, 2)
 				// Set data in first entity

@@ -20,10 +20,13 @@ import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationScalingSchedu
 import org.cloudfoundry.autoscaler.scheduler.util.DateHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleTypeEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
+import org.cloudfoundry.autoscaler.scheduler.util.TimeZoneTestRule;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
 import org.hamcrest.Matchers;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.junit.runner.RunWith;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
@@ -50,6 +53,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @DirtiesContext(classMode = ClassMode.BEFORE_EACH_TEST_METHOD)
 public class ScheduleRestController_RecurringScheduleValidationTest {
+
+	@Rule
+	public TestRule timeZoneRule = new TimeZoneTestRule(new String[] { "America/Los_Angeles", "Australia/Sydney" });
 
 	@Autowired
 	private Scheduler scheduler;
@@ -87,7 +93,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	@Test
 	@Transactional
 	public void testCreateSchedule_with_startDate() throws Exception {
-
+		
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 5;
 		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(0,
@@ -509,7 +515,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	@Test
 	@Transactional
 	public void testCreateSchedule_overlapping_startEndTime_with_startEndDate() throws Exception {
-
+		
 		// Overlapping test cases
 		assertOverlapStartEndDate(null, null, null, null);
 		assertOverlapStartEndDate("9999-01-01", null, null, null);
