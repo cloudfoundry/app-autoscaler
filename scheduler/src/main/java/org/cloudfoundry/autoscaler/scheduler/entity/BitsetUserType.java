@@ -1,52 +1,59 @@
 package org.cloudfoundry.autoscaler.scheduler.entity;
 
 import java.io.Serializable;
-import java.sql.Array;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.apache.commons.lang3.ArrayUtils;
 import org.hibernate.HibernateException;
 import org.hibernate.engine.spi.SessionImplementor;
 import org.hibernate.usertype.UserType;
-
 
 /**
  * This is a user defined Type class. This class is created to handle the integer arrays, so as to 
  * be able to map them to PostgreSQL integer[].
  *
  */
-public class IntArrayUserType implements UserType {
-	protected static final int SQLTYPE = java.sql.Types.ARRAY;
+public class BitsetUserType implements UserType {
+	protected static final int SQLTYPE = java.sql.Types.INTEGER;
 
 	@Override
 	public Object nullSafeGet(final ResultSet rs, final String[] names, final SessionImplementor sessionImplementor,
 			final Object owner) throws HibernateException, SQLException {
 		String columnName = names[0];
-		Array array = rs.getArray(columnName);
-		if (array == null) {
+		int value = rs.getInt(columnName);
+
+		List<Integer> javaArray = new ArrayList<>();
+		if (value == 0) {
 			return null;
 		} else {
-			Integer[] javaArray = (Integer[]) array.getArray();
-			return ArrayUtils.toPrimitive(javaArray);
+			for (int i = 0; (1L << i) < value; i++) {
+				if ((value & (1L << i)) != 0) {
+					javaArray.add(i + 1);
+				}
+			}
 		}
+
+		return javaArray.stream().mapToInt(i -> i).toArray();
 	}
 
 	@Override
 	public void nullSafeSet(final PreparedStatement statement, final Object value, final int index,
 			final SessionImplementor sessionImplementor) throws HibernateException, SQLException {
-		Connection connection = statement.getConnection();
-
 		if (value == null) {
 			statement.setNull(index, SQLTYPE);
 		} else {
 			int[] castObject = (int[]) value;
-			Integer[] integers = ArrayUtils.toObject(castObject);
-			Array array = connection.createArrayOf("integer", integers);
 
-			statement.setArray(index, array);
+			int bitset = 0;
+
+			for (int i = 0; i < castObject.length; i++) {
+				bitset |= 1 << (castObject[i] - 1);
+			}
+
+			statement.setInt(index, bitset);
 		}
 	}
 
@@ -86,8 +93,8 @@ public class IntArrayUserType implements UserType {
 	}
 
 	@Override
-	public Class<int[]> returnedClass() {
-		return int[].class;
+	public Class<Integer> returnedClass() {
+		return int.class;
 	}
 
 	@Override

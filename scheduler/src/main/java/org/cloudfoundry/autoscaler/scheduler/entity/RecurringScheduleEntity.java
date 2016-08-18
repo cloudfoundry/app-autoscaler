@@ -34,11 +34,11 @@ public class RecurringScheduleEntity extends ScheduleEntity {
 	private Date endDate;
 
 	@Column(name = "day_of_week")
-	@Type(type = "org.cloudfoundry.autoscaler.scheduler.entity.IntArrayUserType")
+	@Type(type = "org.cloudfoundry.autoscaler.scheduler.entity.BitsetUserType")
 	private int[] dayOfWeek;
 
 	@Column(name = "day_of_month")
-	@Type(type = "org.cloudfoundry.autoscaler.scheduler.entity.IntArrayUserType")
+	@Type(type = "org.cloudfoundry.autoscaler.scheduler.entity.BitsetUserType")
 	private int[] dayOfMonth;
 
 	public int[] getDayOfWeek() {
@@ -73,7 +73,6 @@ public class RecurringScheduleEntity extends ScheduleEntity {
 		this.endTime = endTime;
 	}
 
-
 	public Date getStartDate() {
 		return startDate;
 	}
@@ -91,7 +90,8 @@ public class RecurringScheduleEntity extends ScheduleEntity {
 	}
 
 	public static final String query_recurringSchedulesByAppId = "RecurringScheduleEntity.schedulesByAppId";
-	protected static final String jpql_recurringSchedulesByAppId = " FROM RecurringScheduleEntity" + " WHERE appId = :appId";
+	protected static final String jpql_recurringSchedulesByAppId = " FROM RecurringScheduleEntity"
+			+ " WHERE appId = :appId";
 
 	@Override
 	public String toString() {

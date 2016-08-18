@@ -58,7 +58,7 @@ public class RecurringScheduleDaoImplTest {
 
 	private List<RecurringScheduleEntity> createSchedules(List<RecurringScheduleEntity> recurringScheduleEntities) {
 
-		List<RecurringScheduleEntity> returnValues = new ArrayList<RecurringScheduleEntity>();
+		List<RecurringScheduleEntity> returnValues = new ArrayList<>();
 		for (RecurringScheduleEntity scheduleEntity : recurringScheduleEntities) {
 			RecurringScheduleEntity entity = recurringScheduleDao.create(scheduleEntity);
 			returnValues.add(entity);
