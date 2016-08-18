@@ -65,7 +65,7 @@ public class ScheduleManagerTest {
 	private Scheduler scheduler;
 
 	@Autowired
-	MessageBundleResourceHelper messageBundleResourceHelper;
+	private MessageBundleResourceHelper messageBundleResourceHelper;
 
 	@Autowired
 	private ValidationErrorResult validationErrorResult;
@@ -173,19 +173,20 @@ public class ScheduleManagerTest {
 	public void testDeleteSchedules() {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
-		// Create 4 specific date schedules and 0 recurring schedules then get them.
-		createScheduleNotThrowAnyException(appId, 4, 0);
+		// Create 4 specific date schedules and 4 recurring schedules then get them.
+		createScheduleNotThrowAnyException(appId, 4, 4);
 
 		// Get schedules and assert to check schedules are created
 		ApplicationScalingSchedules schedules = scheduleManager.getAllSchedules(appId);
 		assertSpecificDateSchedulesFoundEquals(4, schedules.getSpecific_date());
+		assertRecurringSchedulesFoundEquals(4, schedules.getRecurring_schedule());
 
 		scheduleManager.deleteSchedules(appId);
 
 		// Get schedules and assert to check there are no schedules
 		schedules = scheduleManager.getAllSchedules(appId);
 		assertSpecificDateSchedulesFoundEquals(0, schedules.getSpecific_date());
-
+		assertRecurringSchedulesFoundEquals(0, schedules.getRecurring_schedule());
 	}
 
 	@Test
@@ -197,6 +198,17 @@ public class ScheduleManagerTest {
 		createScheduleNotThrowAnyException(appId, 4, 0);
 
 		assertDatabaseExceptionOnDelete(appId, ScheduleTypeEnum.SPECIFIC_DATE);
+	}
+
+	@Test
+	@Rollback
+	public void testDeleteRecurringSchedules_throw_DatabaseValidationException() {
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+
+		// Create 4 recurring schedules.
+		createScheduleNotThrowAnyException(appId, 0, 4);
+
+		assertDatabaseExceptionOnDelete(appId, ScheduleTypeEnum.RECURRING);
 	}
 
 	private void createScheduleNotThrowAnyException(String appId, int noOfSpecificDateSchedules,

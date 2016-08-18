@@ -204,6 +204,34 @@ public class ScheduleJobManagerTest {
 
 	}
 
+	@Test
+	public void testDeleteCronJobs() throws Exception {
+		int noOfDOMSchedules = 1;
+		int noOfDOWSchedules = 1;
+		int expectedJobsToBeCreated = 4; // 2 jobs per schedule, one for start and one for end
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		List<RecurringScheduleEntity> recurringScheduleEntities = TestDataSetupHelper
+				.generateRecurringScheduleEntities(appId, noOfDOMSchedules, noOfDOWSchedules);
+
+		createCronJob(recurringScheduleEntities);
+		Map<JobKey, JobDetail> scheduleJobKeyDetailMap = getSchedulerJobs(
+				ScheduleTypeEnum.RECURRING.getScheduleIdentifier());
+
+		// Check expected jobs created
+		assertEquals(expectedJobsToBeCreated, scheduleJobKeyDetailMap.size());
+
+		// Delete the cron jobs
+		for (ScheduleEntity scheduleEntity : recurringScheduleEntities) {
+			scalingJobManager.deleteJob(scheduleEntity.getAppId(), scheduleEntity.getId(),
+					ScheduleTypeEnum.RECURRING);
+		}
+
+		scheduleJobKeyDetailMap = getSchedulerJobs(ScheduleTypeEnum.RECURRING.getScheduleIdentifier());
+		// Check the jobs, the expected job count is 0.
+		assertEquals(0, scheduleJobKeyDetailMap.size());
+
+	}
+
 	private void createSimpleJob(List<SpecificDateScheduleEntity> specificDateScheduleEntities) {
 		for (SpecificDateScheduleEntity scheduleEntity : specificDateScheduleEntities) {
 			Long scheduleId = ++scheduleIdx;
