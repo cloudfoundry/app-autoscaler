@@ -1,0 +1,3 @@
+log_level: "debug"
+policy_db_url: "postgres://postgres:123@localhost/autoscaler?sslmode=disable"
+poll_interval: 30
