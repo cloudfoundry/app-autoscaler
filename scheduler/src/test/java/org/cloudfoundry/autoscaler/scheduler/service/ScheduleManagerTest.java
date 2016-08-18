@@ -2,17 +2,23 @@ package org.cloudfoundry.autoscaler.scheduler.service;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.transaction.Transactional;
 
 import org.cloudfoundry.autoscaler.scheduler.dao.RecurringScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.dao.SpecificDateScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
+import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationScalingSchedules;
+import org.cloudfoundry.autoscaler.scheduler.util.JobActionEnum;
+import org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleTypeEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationException;
@@ -23,8 +29,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.quartz.JobDataMap;
+import org.quartz.JobDetail;
+import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
+import org.quartz.impl.matchers.GroupMatcher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
@@ -92,7 +102,7 @@ public class ScheduleManagerTest {
 
 	@Test
 	@Transactional
-	public void testCreateAndGetAllSchedules() {
+	public void testCreateAndGetAllSchedules() throws Exception {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		// Create 4 specific date schedules and no recurring schedules then get them.
 		assertCreateAndFindAllSchedules(appId, 4, 0);
@@ -200,7 +210,7 @@ public class ScheduleManagerTest {
 	}
 
 	private void assertCreateAndFindAllSchedules(String appId, int noOfSpecificDateSchedules,
-			int noOfRecurringSchedules) {
+			int noOfRecurringSchedules) throws Exception {
 		createScheduleNotThrowAnyException(appId, noOfSpecificDateSchedules, noOfRecurringSchedules);
 
 		ApplicationScalingSchedules schedules = scheduleManager.getAllSchedules(appId);
@@ -208,6 +218,31 @@ public class ScheduleManagerTest {
 		assertSpecificDateSchedulesFoundEquals(noOfSpecificDateSchedules, schedules.getSpecific_date());
 		assertRecurringSchedulesFoundEquals(noOfRecurringSchedules, schedules.getRecurring_schedule());
 
+		if (schedules.getSpecific_date() != null) {
+			int expectedSpecificDateJobsToBeCreated = noOfSpecificDateSchedules * 2;
+			Map<JobKey, JobDetail> scheduleJobKeyDetailMap = getSchedulerJobs(appId,
+					ScheduleTypeEnum.SPECIFIC_DATE.getScheduleIdentifier());
+
+			// Check expected jobs created
+			assertEquals(expectedSpecificDateJobsToBeCreated, scheduleJobKeyDetailMap.size());
+
+			for (ScheduleEntity scheduleEntity : schedules.getSpecific_date()) {
+				assertCreatedJobs(scheduleJobKeyDetailMap, scheduleEntity, ScheduleTypeEnum.SPECIFIC_DATE);
+			}
+		}
+
+		if (schedules.getRecurring_schedule() != null) {
+			// Check expected jobs created
+			Map<JobKey, JobDetail> recurringScheduleJobKeyDetailMap = getSchedulerJobs(appId,
+					ScheduleTypeEnum.RECURRING.getScheduleIdentifier());
+
+			int expectedRecurringJobsToBeCreated = noOfRecurringSchedules * 2;
+			assertEquals(expectedRecurringJobsToBeCreated, recurringScheduleJobKeyDetailMap.size());
+
+			for (ScheduleEntity scheduleEntity : schedules.getRecurring_schedule()) {
+				assertCreatedJobs(recurringScheduleJobKeyDetailMap, scheduleEntity, ScheduleTypeEnum.RECURRING);
+			}
+		}
 	}
 
 	private void assertRecurringSchedulesFoundEquals(int noOfRecurringSchedules,
@@ -237,13 +272,13 @@ public class ScheduleManagerTest {
 			Mockito.when(recurringScheduleDao.findAllRecurringSchedulesByAppId(Mockito.anyString()))
 					.thenThrow(new DatabaseValidationException());
 		}
-	
+
 		try {
 			scheduleManager.getAllSchedules(appId);
 			fail("Expected failure case.");
 		} catch (SchedulerInternalException e) {
 			String message = messageBundleResourceHelper.lookupMessage("database.error.get.failed", "app_id=" + appId);
-	
+
 			for (String errorMessage : validationErrorResult.getAllErrorMessages()) {
 				assertEquals(message, errorMessage);
 			}
@@ -257,7 +292,7 @@ public class ScheduleManagerTest {
 		} catch (SchedulerInternalException e) {
 			String message = messageBundleResourceHelper.lookupMessage("database.error.create.failed",
 					"app_id=" + appId);
-	
+
 			for (String errorMessage : validationErrorResult.getAllErrorMessages()) {
 				assertEquals(message, errorMessage);
 			}
@@ -271,17 +306,62 @@ public class ScheduleManagerTest {
 		} else {
 			Mockito.doThrow(DatabaseValidationException.class).when(recurringScheduleDao).delete(Mockito.anyObject());
 		}
-	
+
 		try {
 			scheduleManager.deleteSchedules(appId);
 			fail("Expected failure case.");
 		} catch (SchedulerInternalException e) {
 			String message = messageBundleResourceHelper.lookupMessage("database.error.delete.failed",
 					"app_id=" + appId);
-	
+
 			for (String errorMessage : validationErrorResult.getAllErrorMessages()) {
 				assertEquals(message, errorMessage);
 			}
 		}
 	}
+
+	private Map<JobKey, JobDetail> getSchedulerJobs(String appId, String groupName) throws SchedulerException {
+		Map<JobKey, JobDetail> scheduleJobKeyDetailMap = new HashMap<>();
+
+		for (JobKey jobKey : scheduler.getJobKeys(GroupMatcher.jobGroupEquals(groupName))) {
+			JobDetail detail = scheduler.getJobDetail(jobKey);
+			if (detail.getJobDataMap().get("appId").equals(appId)) {
+				scheduleJobKeyDetailMap.put(jobKey, detail);
+			}
+		}
+
+		return scheduleJobKeyDetailMap;
+	}
+
+	private void assertCreatedJobs(Map<JobKey, JobDetail> scheduleIdJobDetailMap, ScheduleEntity scheduleEntity,
+			ScheduleTypeEnum scheduleType) throws SchedulerException {
+		String appId = scheduleEntity.getAppId();
+		Long scheduleId = scheduleEntity.getId();
+
+		JobKey startJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.START, scheduleType);
+		JobKey endJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.END, scheduleType);
+
+		int instMinCount = scheduleEntity.getInstanceMinCount();
+		int instMaxCount = scheduleEntity.getInstanceMaxCount();
+
+		JobDetail jobDetail = scheduleIdJobDetailMap.get(startJobKey);
+		assertJobDetails(appId, scheduleId, instMinCount, instMaxCount, JobActionEnum.START, jobDetail);
+
+		instMinCount = scheduleEntity.getDefaultInstanceMinCount();
+		instMaxCount = scheduleEntity.getDefaultInstanceMaxCount();
+		jobDetail = scheduleIdJobDetailMap.get(endJobKey);
+		assertJobDetails(appId, scheduleId, instMinCount, instMaxCount, JobActionEnum.END, jobDetail);
+	}
+
+	private void assertJobDetails(String expectedAppId, Long expectedScheduleId, int expectedInstanceMinCount,
+			int expectedInstanceMaxCount, JobActionEnum expectedJobAction, JobDetail expectedJobDetail) {
+		assertNotNull("Expected existing jobDetail", expectedJobDetail);
+		JobDataMap map = expectedJobDetail.getJobDataMap();
+		assertEquals(expectedAppId, map.get("appId"));
+		assertEquals(expectedScheduleId, map.get("scheduleId"));
+		assertEquals(expectedJobAction, map.get("scalingAction"));
+		assertEquals(expectedInstanceMinCount, map.get("instanceMinCount"));
+		assertEquals(expectedInstanceMaxCount, map.get("instanceMaxCount"));
+	}
+
 }
