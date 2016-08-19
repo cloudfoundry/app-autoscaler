@@ -30,7 +30,7 @@ public class SpecificDateScheduleDaoImplTest {
 
 	@Before
 	@Transactional
-	public void removeAllRecordsFromDatabase() {
+	public void removeData() {
 		List<String> allAppIds = TestDataSetupHelper.getAllGeneratedAppIds();
 		for (String appId : allAppIds) {
 			for (SpecificDateScheduleEntity entity : specificDateScheduleDao
@@ -63,7 +63,7 @@ public class SpecificDateScheduleDaoImplTest {
 	private List<SpecificDateScheduleEntity> createSchedules(String appId, int noOfSpecificDateSchedulesToSetUp) {
 		List<SpecificDateScheduleEntity> specificDateScheduleEntities = TestDataSetupHelper
 				.generateSpecificDateScheduleEntities(appId, noOfSpecificDateSchedulesToSetUp);
-		List<SpecificDateScheduleEntity> returnValues = new ArrayList<SpecificDateScheduleEntity>();
+		List<SpecificDateScheduleEntity> returnValues = new ArrayList<>();
 		for (SpecificDateScheduleEntity scheduleEntity : specificDateScheduleEntities) {
 			SpecificDateScheduleEntity entity = specificDateScheduleDao.create(scheduleEntity);
 			returnValues.add(entity);

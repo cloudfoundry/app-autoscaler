@@ -1,5 +1,6 @@
 package org.cloudfoundry.autoscaler.scheduler.rest;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -9,8 +10,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-
-import javax.transaction.Transactional;
 
 import org.cloudfoundry.autoscaler.scheduler.dao.SpecificDateScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
@@ -25,7 +24,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
@@ -56,38 +54,36 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 	private SpecificDateScheduleDao specificDateScheduleDao;
 
 	@Autowired
-	MessageBundleResourceHelper messageBundleResourceHelper;
+	private MessageBundleResourceHelper messageBundleResourceHelper;
 
 	@Autowired
 	private WebApplicationContext wac;
 	private MockMvc mockMvc;
 
-	String appId = TestDataSetupHelper.generateAppIds(1)[0];
+	private String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
 	private String scheduleBeingProcessed = ScheduleTypeEnum.SPECIFIC_DATE.getDescription();
 
 	@Before
-	public void beforeTest() throws SchedulerException {
+	public void beforeTest() throws Exception {
 		// Clear previous schedules.
 		scheduler.clear();
 		mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
-		removeAllRecordsFromDatabase();
+		removeData();
 	}
 
-	@Transactional
-	public void removeAllRecordsFromDatabase() {
+	public void removeData() throws Exception {
 		List<String> allAppIds = TestDataSetupHelper.getAllGeneratedAppIds();
 		for (String appId : allAppIds) {
 			for (SpecificDateScheduleEntity entity : specificDateScheduleDao
 					.findAllSpecificDateSchedulesByAppId(appId)) {
-				specificDateScheduleDao.delete(entity);
+				callDeleteSchedules(entity.getAppId());
 			}
 		}
 	}
 
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_without_startDateTime() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
@@ -106,7 +102,6 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_without_endDateTime() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
@@ -125,7 +120,6 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_without_instanceMaxCount() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
@@ -144,7 +138,6 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_without_instanceMinCount() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
@@ -163,7 +156,6 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_negative_instanceMinCount() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
@@ -182,7 +174,6 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_negative_instanceMaxCount() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
@@ -201,7 +192,6 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_instanceMinCount_greater_than_instanceMaxCount() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
@@ -225,7 +215,6 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_startDateTime_after_endDateTime() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
@@ -251,7 +240,6 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_currentDateTime_after_startDateTime() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
@@ -274,7 +262,6 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_currentDateTime_after_endDate() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
@@ -297,7 +284,6 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_overlapping_date_time() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
@@ -319,7 +305,6 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_overlapping_multipleSchedules() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
@@ -350,7 +335,6 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_without_specificDateSchedules() throws Exception {
 		// No schedules - null case
 		ObjectMapper mapper = new ObjectMapper();
@@ -368,14 +352,13 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_empty_specificDateSchedules() throws Exception {
 		// No schedules - Empty case
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationScalingSchedules schedules = TestDataSetupHelper
 				.generateSchedules(1, 0);
 
-		schedules.setSpecific_date(Collections.<SpecificDateScheduleEntity> emptyList());
+		schedules.setSpecific_date(Collections.emptyList());
 
 		String content = mapper.writeValueAsString(schedules);
 
@@ -386,7 +369,6 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateSchedule_without_startEndDateTime_instanceMaxMinCount() throws Exception {
 		// schedules - no parameters.
 		ObjectMapper mapper = new ObjectMapper();
@@ -428,6 +410,12 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 
 	private String getCreateSchedulePath(String appId) {
 		return String.format("/v2/schedules/%s", appId);
+	}
+
+	private ResultActions callDeleteSchedules(String appId) throws Exception {
+
+		return mockMvc.perform(delete(getCreateSchedulePath(appId)).accept(MediaType.APPLICATION_JSON));
+
 	}
 
 }

@@ -77,11 +77,11 @@ public class ScheduleManagerTest {
 		scheduler.clear();
 		Mockito.reset(specificDateScheduleDao);
 		Mockito.reset(recurringScheduleDao);
-		removeAllRecordsFromDatabase();
+		removeData();
 	}
 
 	@Transactional
-	public void removeAllRecordsFromDatabase() {
+	public void removeData() {
 		List<String> appIds = TestDataSetupHelper.getAllGeneratedAppIds();
 		for (String appId : appIds) {
 			for (SpecificDateScheduleEntity entity : specificDateScheduleDao
