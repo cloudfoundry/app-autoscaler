@@ -3,6 +3,7 @@ package org.cloudfoundry.autoscaler.scheduler.service;
 import java.util.Date;
 import java.util.TimeZone;
 
+import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.quartz.AppScalingScheduleJob;
@@ -29,23 +30,19 @@ import org.springframework.stereotype.Service;
  *
  */
 @Service
-public class ScheduleJobManager {
+class ScheduleJobManager {
 	@Autowired
-	Scheduler scheduler;
+	private Scheduler scheduler;
 	@Autowired
-	ValidationErrorResult validationErrorResult;
+	private ValidationErrorResult validationErrorResult;
 
 	/**
 	 * Creates simple job for specific date schedule for the application scaling using helper 
 	 * methods. Here in two jobs are required, First job to tell the scaling decision maker
 	 * scaling action needs to initiated Second job to tell the scaling decision maker scaling
 	 * action needs to be ended.
-	 * 
-	 * @param specificDateScheduleEntity
-	 * @throws SchedulerException 
-	 * @throws Exception
 	 */
-	public void createSimpleJob(SpecificDateScheduleEntity specificDateScheduleEntity) {
+	void createSimpleJob(SpecificDateScheduleEntity specificDateScheduleEntity) {
 
 		Long scheduleId = specificDateScheduleEntity.getId();
 
@@ -86,7 +83,50 @@ public class ScheduleJobManager {
 		} catch (SchedulerException se) {
 
 			validationErrorResult.addErrorForQuartzSchedulerException(se, "scheduler.error.create.failed",
-					"app_id=" + specificDateScheduleEntity.getAppId());
+					"app_id=" + specificDateScheduleEntity.getAppId(), se.getMessage());
+		}
+
+	}
+
+	void createCronJob(RecurringScheduleEntity recurringScheduleEntity) {
+		Long scheduleId = recurringScheduleEntity.getId();
+
+		JobKey startJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.START,
+				ScheduleTypeEnum.RECURRING);
+		JobKey endJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.END, ScheduleTypeEnum.RECURRING);
+
+		// Build the job
+		JobDetail jobStartDetail = ScheduleJobHelper.buildJob(startJobKey, AppScalingScheduleJob.class);
+		JobDetail jobEndDetail = ScheduleJobHelper.buildJob(endJobKey, AppScalingScheduleJob.class);
+
+		// Set the data in JobDetail for informing the scaling decision maker that scaling job needs to be started
+		setupScalingScheduleJobData(jobStartDetail, recurringScheduleEntity, JobActionEnum.START);
+		// Set the data in JobDetail for informing the scaling decision maker that scaling job needs to be ended.
+		setupScalingScheduleJobData(jobEndDetail, recurringScheduleEntity, JobActionEnum.END);
+
+		// Build the trigger
+		Date triggerStartTime = recurringScheduleEntity.getStartTime();
+		Date triggerEndTime = recurringScheduleEntity.getEndTime();
+
+		TriggerKey startTriggerKey = ScheduleJobHelper.generateTriggerKey(scheduleId, JobActionEnum.START,
+				ScheduleTypeEnum.RECURRING);
+		TriggerKey endTriggerKey = ScheduleJobHelper.generateTriggerKey(scheduleId, JobActionEnum.END,
+				ScheduleTypeEnum.RECURRING);
+
+		Trigger jobStartTrigger = ScheduleJobHelper.buildCronTrigger(startTriggerKey, jobStartDetail.getKey(),
+				recurringScheduleEntity, triggerStartTime);
+		Trigger jobEndTrigger = ScheduleJobHelper.buildCronTrigger(endTriggerKey, jobEndDetail.getKey(),
+				recurringScheduleEntity, triggerEndTime);
+
+		// Schedule the job
+		try {
+			scheduler.scheduleJob(jobStartDetail, jobStartTrigger);
+			scheduler.scheduleJob(jobEndDetail, jobEndTrigger);
+
+		} catch (SchedulerException se) {
+
+			validationErrorResult.addErrorForQuartzSchedulerException(se, "scheduler.error.create.failed",
+					"app_id=" + recurringScheduleEntity.getAppId(), se.getMessage());
 		}
 
 	}
@@ -117,7 +157,7 @@ public class ScheduleJobManager {
 		}
 	}
 
-	public void deleteJob(String appId, Long scheduleId, ScheduleTypeEnum scheduleTypeEnum) {
+	void deleteJob(String appId, Long scheduleId, ScheduleTypeEnum scheduleTypeEnum) {
 
 		JobKey startJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.START, scheduleTypeEnum);
 		JobKey endJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.END, scheduleTypeEnum);
@@ -128,7 +168,7 @@ public class ScheduleJobManager {
 		} catch (SchedulerException se) {
 
 			validationErrorResult.addErrorForQuartzSchedulerException(se, "scheduler.error.delete.failed",
-					"app_id=" + appId);
+					"app_id=" + appId, se.getMessage());
 		}
 	}
 }

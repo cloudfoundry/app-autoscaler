@@ -4,10 +4,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
+import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.util.JobActionEnum;
@@ -25,6 +29,8 @@ import org.quartz.JobDetail;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
+import org.quartz.Trigger;
+import org.quartz.TriggerKey;
 import org.quartz.impl.matchers.GroupMatcher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -53,9 +59,9 @@ public class ScheduleJobManagerTest {
 	private ValidationErrorResult validationErrorResult;
 
 	@Autowired
-	MessageBundleResourceHelper messageBundleResourceHelper;
+	private MessageBundleResourceHelper messageBundleResourceHelper;
 
-	//	private String appId = TestDataSetupHelper.getAppId_1();
+	private Long scheduleIdx = 0L;
 
 	@Before
 	public void initializer() throws SchedulerException {
@@ -87,6 +93,44 @@ public class ScheduleJobManagerTest {
 	}
 
 	@Test
+	public void testCreateAndFindCronJobs() throws Exception {
+		int noOfDOMRecurringSchedules = 2;
+		int noOfDOWRecurringSchedules = 2;
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		List<RecurringScheduleEntity> recurringScheduleEntities = TestDataSetupHelper
+				.generateRecurringScheduleEntities(appId, noOfDOMRecurringSchedules, noOfDOWRecurringSchedules);
+
+		createCronJob(recurringScheduleEntities);
+
+		// The expected number of jobs would be twice the number of schedules
+		int expectedJobsToBeCreated = 2 * (noOfDOMRecurringSchedules + noOfDOMRecurringSchedules);
+		ScheduleTypeEnum scheduleTypeEnum = ScheduleTypeEnum.RECURRING;
+		Map<JobKey, JobDetail> scheduleJobKeyDetailMap = getSchedulerJobs(
+				ScheduleTypeEnum.RECURRING.getScheduleIdentifier());
+
+		// Check expected jobs fire day
+		assertEquals(expectedJobsToBeCreated, scheduleJobKeyDetailMap.size());
+
+		for (ScheduleEntity scheduleEntity : recurringScheduleEntities) {
+			assertCreatedJobs(scheduleJobKeyDetailMap, scheduleEntity, scheduleTypeEnum);
+		}
+	}
+
+	@Test
+	public void testCreateCronJob_with_dayOfWeek() throws Exception {
+		checkNextFireJobTheDayOfWeek(Calendar.MONDAY, TimeZone.getTimeZone("America/Phoenix"));
+		checkNextFireJobTheDayOfWeek(Calendar.FRIDAY, TimeZone.getTimeZone("GMT"));
+		checkNextFireJobTheDayOfWeek(Calendar.SUNDAY, TimeZone.getTimeZone("Pacific/Kiritimati"));
+	}
+
+	@Test
+	public void testCreateCronJob_with_dayOfMonth() throws Exception {
+		checkNextFireJobTheDayOfMonth(9, TimeZone.getTimeZone("Chile/Continental"), "2100-10-10");
+		checkNextFireJobTheDayOfMonth(27, TimeZone.getTimeZone("GMT"), null);
+		checkNextFireJobTheDayOfMonth(14, TimeZone.getTimeZone("Europe/Amsterdam"), null);
+	}
+
+	@Test
 	public void testCreateSimpleJob_with_throw_SchedulerException_at_Quartz() throws SchedulerException {
 
 		// Set mock object for Quartz.
@@ -103,7 +147,32 @@ public class ScheduleJobManagerTest {
 		assertEquals(1, errors.size());
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("scheduler.error.create.failed",
-				"app_id=" + appId);
+				"app_id=" + appId, null);
+
+		assertEquals(errorMessage, errors.get(0));
+	}
+
+	@Test
+	public void testCreateCronJob_with_throw_SchedulerException_at_Quartz() throws SchedulerException {
+
+		// Set mock object for Quartz.
+		Mockito.doThrow(SchedulerException.class).when(scheduler).scheduleJob(Mockito.anyObject(), Mockito.anyObject());
+		int noOfDOMRecurringSchedules = 1;
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		List<RecurringScheduleEntity> recurringScheduleEntities = TestDataSetupHelper
+				.generateRecurringScheduleEntities(appId, noOfDOMRecurringSchedules, 0);
+		Long index = 0L;
+		for (RecurringScheduleEntity scheduleEntity : recurringScheduleEntities) {
+			scheduleEntity.setId(++index);
+			scalingJobManager.createCronJob(scheduleEntity);
+		}
+
+		assertTrue("This test should have an Error.", validationErrorResult.hasErrors());
+		List<String> errors = validationErrorResult.getAllErrorMessages();
+		assertEquals(1, errors.size());
+
+		String errorMessage = messageBundleResourceHelper.lookupMessage("scheduler.error.create.failed",
+				"app_id=" + appId, null);
 
 		assertEquals(errorMessage, errors.get(0));
 	}
@@ -136,24 +205,28 @@ public class ScheduleJobManagerTest {
 	}
 
 	private void createSimpleJob(List<SpecificDateScheduleEntity> specificDateScheduleEntities) {
-		Long index = 0L;
 		for (SpecificDateScheduleEntity scheduleEntity : specificDateScheduleEntities) {
-			Long scheduleId = ++index;
+			Long scheduleId = ++scheduleIdx;
 			scheduleEntity.setId(scheduleId);
 			scalingJobManager.createSimpleJob(scheduleEntity);
 		}
 	}
 
+	private void createCronJob(List<RecurringScheduleEntity> recurringScheduleEntities) {
+		for (RecurringScheduleEntity scheduleEntity : recurringScheduleEntities) {
+			Long scheduleId = ++scheduleIdx;
+			scheduleEntity.setId(scheduleId);
+			scalingJobManager.createCronJob(scheduleEntity);
+		}
+	}
+
 	private void assertCreatedJobs(Map<JobKey, JobDetail> scheduleIdJobDetailMap, ScheduleEntity scheduleEntity,
-			ScheduleTypeEnum scheduleType)
-			throws SchedulerException {
+			ScheduleTypeEnum scheduleType) throws SchedulerException {
 		String appId = scheduleEntity.getAppId();
 		Long scheduleId = scheduleEntity.getId();
 
-		JobKey startJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.START,
-				ScheduleTypeEnum.SPECIFIC_DATE);
-		JobKey endJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.END,
-				ScheduleTypeEnum.SPECIFIC_DATE);
+		JobKey startJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.START, scheduleType);
+		JobKey endJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.END, scheduleType);
 
 		int instMinCount = scheduleEntity.getInstanceMinCount();
 		int instMaxCount = scheduleEntity.getInstanceMaxCount();
@@ -178,6 +251,97 @@ public class ScheduleJobManagerTest {
 		assertEquals(expectedInstanceMaxCount, map.get("instanceMaxCount"));
 	}
 
+	private void checkNextFireJobTheDayOfWeek(int day, TimeZone timeZone) throws SchedulerException {
+		int[] dayOfWeek = { TestDataSetupHelper.convertIntToCalendarDayOfWeek(day) };
+
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		List<RecurringScheduleEntity> recurringScheduleEntities = TestDataSetupHelper
+				.generateRecurringScheduleEntities(appId, 0, 1);
+
+		RecurringScheduleEntity entity = recurringScheduleEntities.get(0);
+		entity.setTimeZone(timeZone.getID());
+		entity.setDayOfMonth(null);
+		entity.setDayOfWeek(dayOfWeek);
+
+		createCronJob(recurringScheduleEntities);
+
+		// Check expected jobs fire day
+		Trigger startTrigger = getSchedulerTrigger(this.scheduleIdx, JobActionEnum.START,
+				ScheduleTypeEnum.RECURRING.getScheduleIdentifier());
+		Trigger endTrigger = getSchedulerTrigger(this.scheduleIdx, JobActionEnum.END,
+				ScheduleTypeEnum.RECURRING.getScheduleIdentifier());
+
+		assertNextFireJobDayOfWeek(day, entity.getStartTime(), timeZone, startTrigger);
+		assertNextFireJobDayOfWeek(day, entity.getEndTime(), timeZone, endTrigger);
+	}
+
+	private void assertNextFireJobDayOfWeek(int expectedDay, Date scheduleTime, TimeZone timeZone,
+			Trigger actualTrigger) {
+		Calendar expectedTime = Calendar.getInstance();
+		expectedTime.setTime(scheduleTime);
+
+		Calendar actualCal = Calendar.getInstance();
+		actualCal.setTime(actualTrigger.getNextFireTime());
+		actualCal.setTimeZone(timeZone);
+
+		assertEquals(expectedDay, actualCal.get(Calendar.DAY_OF_WEEK));
+		assertEquals(expectedTime.get(Calendar.HOUR_OF_DAY), actualCal.get(Calendar.HOUR_OF_DAY));
+		assertEquals(expectedTime.get(Calendar.MINUTE), actualCal.get(Calendar.MINUTE));
+	}
+
+	private void checkNextFireJobTheDayOfMonth(int day, TimeZone timeZone, String startDate) throws Exception {
+		int[] dayOfMonth = { day };
+
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		List<RecurringScheduleEntity> recurringScheduleEntities = TestDataSetupHelper
+				.generateRecurringScheduleEntities(appId, 1, 0);
+
+		RecurringScheduleEntity entity = recurringScheduleEntities.get(0);
+		entity.setTimeZone(timeZone.getID());
+		entity.setDayOfMonth(dayOfMonth);
+		entity.setDayOfWeek(null);
+		entity.setStartDate(TestDataSetupHelper.getDate(startDate));
+
+		createCronJob(recurringScheduleEntities);
+
+		// Check expected jobs fire day
+		Calendar now = Calendar.getInstance();
+		now.setTimeZone(timeZone);
+		Calendar calStartDate = Calendar.getInstance();
+		if (entity.getStartDate() != null) {
+			calStartDate.setTime(entity.getStartDate());
+		}
+
+		if (calStartDate.get(Calendar.DAY_OF_MONTH) > day) {
+			calStartDate.add(Calendar.MONTH, 1);
+		}
+
+		Trigger startTrigger = getSchedulerTrigger(this.scheduleIdx, JobActionEnum.START,
+				ScheduleTypeEnum.RECURRING.getScheduleIdentifier());
+		Trigger endTrigger = getSchedulerTrigger(this.scheduleIdx, JobActionEnum.END,
+				ScheduleTypeEnum.RECURRING.getScheduleIdentifier());
+
+		assertNextFireDateTime(day, timeZone, entity.getStartTime(), calStartDate, startTrigger);
+		assertNextFireDateTime(day, timeZone, entity.getEndTime(), calStartDate, endTrigger);
+
+	}
+
+	private void assertNextFireDateTime(int expectedDay, TimeZone timeZone, Date scheduleTime,
+			Calendar expectedStartDate, Trigger trigger) {
+		Calendar expectedTime = Calendar.getInstance();
+		expectedTime.setTime(scheduleTime);
+
+		Calendar actualCal = Calendar.getInstance();
+		actualCal.setTime(trigger.getNextFireTime());
+		actualCal.setTimeZone(timeZone);
+
+		assertEquals(expectedStartDate.get(Calendar.YEAR), actualCal.get(Calendar.YEAR));
+		assertEquals(expectedStartDate.get(Calendar.MONTH), actualCal.get(Calendar.MONTH));
+		assertEquals(expectedDay, actualCal.get(Calendar.DAY_OF_MONTH));
+		assertEquals(expectedTime.get(Calendar.HOUR_OF_DAY), actualCal.get(Calendar.HOUR_OF_DAY));
+		assertEquals(expectedTime.get(Calendar.MINUTE), actualCal.get(Calendar.MINUTE));
+	}
+
 	private Map<JobKey, JobDetail> getSchedulerJobs(String groupName) throws SchedulerException {
 		Map<JobKey, JobDetail> scheduleJobKeyDetailMap = new HashMap<>();
 
@@ -188,5 +352,18 @@ public class ScheduleJobManagerTest {
 
 		return scheduleJobKeyDetailMap;
 	}
-	
+
+	private Trigger getSchedulerTrigger(Long scheduleIdx, JobActionEnum jobActionEnum, String groupName)
+			throws SchedulerException {
+		String name = scheduleIdx + jobActionEnum.getJobIdSuffix();
+		Trigger trigger = null;
+
+		for (TriggerKey triggerKey : scheduler.getTriggerKeys(GroupMatcher.triggerGroupEquals(groupName))) {
+			if (triggerKey.getName().startsWith(name)) {
+				trigger = scheduler.getTrigger(triggerKey);
+			}
+		}
+
+		return trigger;
+	}
 }

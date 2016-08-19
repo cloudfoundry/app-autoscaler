@@ -226,7 +226,7 @@ public class ScheduleManager {
 	/**
 	 * This method traverses through the list and calls helper methods to perform validations on
 	 * the recurring schedule entity.
-	 * 
+	 *
 	 * @param recurringSchedules
 	 * @param isValidTimeZone
 	 */
@@ -594,8 +594,12 @@ public class ScheduleManager {
 		if (recurringSchedules != null) {
 			for (RecurringScheduleEntity recurringScheduleEntity : recurringSchedules) {
 				// Persist the schedule in database
-				saveNewRecurringSchedule(recurringScheduleEntity);
+				RecurringScheduleEntity savedScheduleEntity = saveNewRecurringSchedule(recurringScheduleEntity);
 
+				// Ask ScalingJobManager to create scaling job
+				if (savedScheduleEntity != null) {
+					scheduleJobManager.createCronJob(recurringScheduleEntity);
+				}
 			}
 		}
 	}
@@ -641,7 +645,7 @@ public class ScheduleManager {
 	 */
 	@Transactional
 	public void deleteSchedules(String appId) {
-	
+
 		// Get all the specific date schedules for the specifies application id and delete them.
 		List<SpecificDateScheduleEntity> specificDateSchedules = specificDateScheduleDao
 				.findAllSpecificDateSchedulesByAppId(appId);
@@ -649,9 +653,9 @@ public class ScheduleManager {
 			// Delete the specific date schedule from database
 			deleteSpecificDateSchedule(specificDateScheduleEntity);
 
-			// Ask ScalingJobManager to delete scaling job 
+			// Ask ScalingJobManager to delete scaling job
 			scheduleJobManager.deleteJob(appId, specificDateScheduleEntity.getId(), ScheduleTypeEnum.SPECIFIC_DATE);
-			
+
 		}
 
 		// Get all the recurring schedules for the specifies application id and delete them.

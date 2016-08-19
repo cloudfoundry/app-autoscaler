@@ -87,10 +87,10 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: day_of_week
-                  type: Integer[]
+                  type: Integer
               - column:
                   name: day_of_month
-                  type: Integer[]
+                  type: Integer
               - column:
                   name: start_date
                   type: date

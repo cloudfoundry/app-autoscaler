@@ -6,14 +6,14 @@ import java.util.Date;
 import java.util.TimeZone;
 
 /**
- * 
+ *
  *
  */
 public class DateHelper {
-	
-	public static final String DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm";
-	public static final String DATE_FORMAT = "yyyy-MM-dd";
-	public static final String TIME_FORMAT = "HH:mm";
+
+	static final String DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm";
+	static final String DATE_FORMAT = "yyyy-MM-dd";
+	static final String TIME_FORMAT = "HH:mm";
 
 	public static final int DAY_OF_WEEK_MINIMUM = 1;
 	public static final int DAY_OF_WEEK_MAXIMUM = 7;
@@ -604,7 +604,6 @@ public class DateHelper {
 	           "Etc/GMT-14",
 	           "Pacific/Kiritimati"};
 
-
 	public static Date getDateWithZoneOffset(Date policyDateTime, TimeZone policyTimeZone) {
 		long policyDateTimeInMillis = getTimeInMillis(policyDateTime, policyTimeZone);
 
@@ -632,7 +631,6 @@ public class DateHelper {
 		return sdf.format(date);
 	}
 
-	
 	public static Long getTimeInMillis(Date dateTime, TimeZone timeZone) {
 		Calendar targetTime = Calendar.getInstance(timeZone);
 		targetTime.setTimeInMillis(dateTime.getTime());
@@ -643,6 +641,27 @@ public class DateHelper {
 		Calendar calendar = Calendar.getInstance(timeZone);
 		calendar.setTime(dateTime);
 		return calendar;
+	}
+
+	public static String convertIntToDayOfWeek(int day) {
+		switch (day) {
+		case 1:
+			return "MON";
+		case 2:
+			return "TUE";
+		case 3:
+			return "WED";
+		case 4:
+			return "THU";
+		case 5:
+			return "FRI";
+		case 6:
+			return "SAT";
+		case 7:
+			return "SUN";
+		default:
+			return null;
+		}
 	}
 
 }
