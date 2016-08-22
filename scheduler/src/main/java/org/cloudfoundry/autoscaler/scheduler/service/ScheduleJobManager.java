@@ -145,6 +145,7 @@ class ScheduleJobManager {
 		jobDataMap.put("appId", scheduleEntity.getAppId());
 		jobDataMap.put("scheduleId", scheduleEntity.getId());
 		jobDataMap.put("scalingAction", jobAction);
+		jobDataMap.put("instanceMinCount", scheduleEntity.getInitialMinInstanceCount());
 
 		// The minimum and maximum instance count need to be set when the
 		// scaling action has to be started.

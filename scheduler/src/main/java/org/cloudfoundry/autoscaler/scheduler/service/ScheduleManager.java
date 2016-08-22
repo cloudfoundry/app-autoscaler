@@ -205,6 +205,14 @@ public class ScheduleManager {
 
 				}
 			}
+
+			Integer initialMinInstanceCount = specificDateScheduleEntity.getInitialMinInstanceCount();
+			// The initial minimum instance count cannot be negative.
+			if (DataValidationHelper.isNotNull(initialMinInstanceCount) && initialMinInstanceCount < 0) {
+				validationErrorResult.addFieldError(null, "schedule.data.value.invalid", scheduleBeingProcessed,
+						"initial_min_instance_count", initialMinInstanceCount);
+			}
+
 			// Validate instance minimum count and maximum count.
 			validateInstanceMinMaxCount(scheduleBeingProcessed, specificDateScheduleEntity.getInstanceMinCount(),
 					specificDateScheduleEntity.getInstanceMaxCount());
@@ -245,6 +253,14 @@ public class ScheduleManager {
 					recurringScheduleTimes.add(scheduleTime);
 				}
 			}
+
+			Integer initialMinInstanceCount = recurringScheduleEntity.getInitialMinInstanceCount();
+			// The initial minimum instance count cannot be negative.
+			if (DataValidationHelper.isNotNull(initialMinInstanceCount) && initialMinInstanceCount < 0) {
+				validationErrorResult.addFieldError(null, "schedule.data.value.invalid", scheduleBeingProcessed,
+						"initial_min_instance_count", initialMinInstanceCount);
+			}
+
 			// Validate instance minimum count and maximum count.
 			validateInstanceMinMaxCount(scheduleBeingProcessed, recurringScheduleEntity.getInstanceMinCount(),
 					recurringScheduleEntity.getInstanceMaxCount());
