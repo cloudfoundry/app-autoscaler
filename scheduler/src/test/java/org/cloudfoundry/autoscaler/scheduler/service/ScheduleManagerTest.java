@@ -9,8 +9,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.transaction.Transactional;
-
 import org.cloudfoundry.autoscaler.scheduler.dao.RecurringScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.dao.SpecificDateScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
@@ -39,7 +37,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.DirtiesContext.ClassMode;
-import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -71,7 +68,6 @@ public class ScheduleManagerTest {
 	private ValidationErrorResult validationErrorResult;
 
 	@Before
-	@Transactional
 	public void init() throws SchedulerException {
 		// Clear previous schedules.
 		scheduler.clear();
@@ -80,19 +76,14 @@ public class ScheduleManagerTest {
 		removeData();
 	}
 
-	@Transactional
 	public void removeData() {
 		List<String> appIds = TestDataSetupHelper.getAllGeneratedAppIds();
 		for (String appId : appIds) {
-			for (SpecificDateScheduleEntity entity : specificDateScheduleDao
-					.findAllSpecificDateSchedulesByAppId(appId)) {
-				specificDateScheduleDao.delete(entity);
-			}
+			scheduleManager.deleteSchedules(appId);
 		}
 	}
 
 	@Test
-	@Transactional
 	public void testGetAllSchedules_with_no_schedules() {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		ApplicationScalingSchedules scalingSchedules = scheduleManager.getAllSchedules(appId);
@@ -101,23 +92,24 @@ public class ScheduleManagerTest {
 	}
 
 	@Test
-	@Transactional
 	public void testCreateAndGetAllSchedules() throws Exception {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
-		// Create 4 specific date schedules and no recurring schedules then get them.
+		// Create 4 specific date schedules and no recurring schedules then get
+		// them.
 		assertCreateAndFindAllSchedules(appId, 4, 0);
 
 		appId = TestDataSetupHelper.generateAppIds(1)[0];
-		// Create no specific date schedules and 4 recurring schedules then get them.
+		// Create no specific date schedules and 4 recurring schedules then get
+		// them.
 		assertCreateAndFindAllSchedules(appId, 0, 4);
 
 		appId = TestDataSetupHelper.generateAppIds(1)[0];
-		// Create 4 specific date schedules and 4 recurring schedules then get them.
+		// Create 4 specific date schedules and 4 recurring schedules then get
+		// them.
 		assertCreateAndFindAllSchedules(appId, 4, 4);
 	}
 
 	@Test
-	@Transactional
 	public void testCreateAndGetSchedues_Timezone() {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		int noOfSpecificDateSchedules = 1;
@@ -130,7 +122,6 @@ public class ScheduleManagerTest {
 	}
 
 	@Test
-	@Rollback
 	public void testCreateSpecificDateSchedule_throw_DatabaseValidationException() {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, 1, 0, 0);
@@ -142,7 +133,6 @@ public class ScheduleManagerTest {
 	}
 
 	@Test
-	@Rollback
 	public void testCreateRecurringSchedule_throw_DatabaseValidationException() {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
@@ -155,25 +145,23 @@ public class ScheduleManagerTest {
 	}
 
 	@Test
-	@Transactional
 	public void testFindAllSpecificDateSchedule_throw_DatabaseValidationException() {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		assertDatabaseExceptionOnFind(appId, ScheduleTypeEnum.SPECIFIC_DATE);
 	}
 
 	@Test
-	@Transactional
 	public void testFindAllRecurringSchedule_throw_DatabaseValidationException() {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		assertDatabaseExceptionOnFind(appId, ScheduleTypeEnum.RECURRING);
 	}
 
 	@Test
-	@Transactional
 	public void testDeleteSchedules() {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
-		// Create 4 specific date schedules and 4 recurring schedules then get them.
+		// Create 4 specific date schedules and 4 recurring schedules then get
+		// them.
 		createScheduleNotThrowAnyException(appId, 4, 4);
 
 		// Get schedules and assert to check schedules are created
@@ -183,32 +171,48 @@ public class ScheduleManagerTest {
 
 		scheduleManager.deleteSchedules(appId);
 
-		// Get schedules and assert to check there are no schedules
-		schedules = scheduleManager.getAllSchedules(appId);
-		assertSpecificDateSchedulesFoundEquals(0, schedules.getSpecific_date());
-		assertRecurringSchedulesFoundEquals(0, schedules.getRecurring_schedule());
+		assertSchedulesFoundEquals(appId, 0, 0);
 	}
 
 	@Test
-	@Rollback
 	public void testDeleteSpecificDateSchedules_throw_DatabaseValidationException() {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		int specificDateSchedulesCount = 4;
+		int recurringSchedulesCount = 2;
 
-		// Create 4 specific date schedules.
-		createScheduleNotThrowAnyException(appId, 4, 0);
+		// Create 4 specific date schedules and 2 recurring schedules.
+		createScheduleNotThrowAnyException(appId, specificDateSchedulesCount, recurringSchedulesCount);
 
+		assertSchedulesFoundEquals(appId, specificDateSchedulesCount, recurringSchedulesCount);
 		assertDatabaseExceptionOnDelete(appId, ScheduleTypeEnum.SPECIFIC_DATE);
+		assertSchedulesFoundEquals(appId, specificDateSchedulesCount, recurringSchedulesCount);
 	}
 
 	@Test
-	@Rollback
 	public void testDeleteRecurringSchedules_throw_DatabaseValidationException() {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		int specificDateSchedulesCount = 2;
+		int recurringSchedulesCount = 4;
 
-		// Create 4 recurring schedules.
-		createScheduleNotThrowAnyException(appId, 0, 4);
+		// Create 4 recurring schedules and 2 specific date schedules.
+		createScheduleNotThrowAnyException(appId, specificDateSchedulesCount, recurringSchedulesCount);
 
+		assertSchedulesFoundEquals(appId, specificDateSchedulesCount, recurringSchedulesCount);
 		assertDatabaseExceptionOnDelete(appId, ScheduleTypeEnum.RECURRING);
+		assertSchedulesFoundEquals(appId, specificDateSchedulesCount, recurringSchedulesCount);
+	}
+
+	private Map<JobKey, JobDetail> getSchedulerJobs(String appId, String groupName) throws SchedulerException {
+		Map<JobKey, JobDetail> scheduleJobKeyDetailMap = new HashMap<>();
+
+		for (JobKey jobKey : scheduler.getJobKeys(GroupMatcher.jobGroupEquals(groupName))) {
+			JobDetail detail = scheduler.getJobDetail(jobKey);
+			if (detail.getJobDataMap().get("appId").equals(appId)) {
+				scheduleJobKeyDetailMap.put(jobKey, detail);
+			}
+		}
+
+		return scheduleJobKeyDetailMap;
 	}
 
 	private void createScheduleNotThrowAnyException(String appId, int noOfSpecificDateSchedules,
@@ -216,8 +220,8 @@ public class ScheduleManagerTest {
 
 		int noOfDOMRecurringSchedules = noOfRecurringSchedules / 2;
 		int noOfDOWRecurringSchedules = noOfRecurringSchedules - noOfDOMRecurringSchedules;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, noOfSpecificDateSchedules,
-				noOfDOMRecurringSchedules, noOfDOWRecurringSchedules);
+		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId,
+				noOfSpecificDateSchedules, noOfDOMRecurringSchedules, noOfDOWRecurringSchedules);
 		scheduleManager.createSchedules(schedules);
 	}
 
@@ -257,14 +261,12 @@ public class ScheduleManagerTest {
 		}
 	}
 
-	private void assertRecurringSchedulesFoundEquals(int noOfRecurringSchedules,
-			List<RecurringScheduleEntity> recurringSchedules) {
-		if (recurringSchedules != null) {
-			assertEquals(noOfRecurringSchedules, recurringSchedules.size());
-		} else {
-			assertEquals(noOfRecurringSchedules, 0);
-		}
-
+	private void assertSchedulesFoundEquals(String appId, int expectedSpecificDateSchedulesCount,
+			int expectedRecurringSchedulesCount) {
+		// Get schedules and assert to check there are no schedules
+		ApplicationScalingSchedules schedules = scheduleManager.getAllSchedules(appId);
+		assertSpecificDateSchedulesFoundEquals(expectedSpecificDateSchedulesCount, schedules.getSpecific_date());
+		assertRecurringSchedulesFoundEquals(expectedRecurringSchedulesCount, schedules.getRecurring_schedule());
 	}
 
 	private void assertSpecificDateSchedulesFoundEquals(int expectedScheduleTobeFound,
@@ -274,6 +276,16 @@ public class ScheduleManagerTest {
 		} else {
 			assertEquals(expectedScheduleTobeFound, 0);
 		}
+	}
+
+	private void assertRecurringSchedulesFoundEquals(int noOfRecurringSchedules,
+			List<RecurringScheduleEntity> recurringSchedules) {
+		if (recurringSchedules != null) {
+			assertEquals(noOfRecurringSchedules, recurringSchedules.size());
+		} else {
+			assertEquals(noOfRecurringSchedules, 0);
+		}
+
 	}
 
 	private void assertDatabaseExceptionOnFind(String appId, ScheduleTypeEnum scheduleTypeEnum) {
@@ -330,19 +342,6 @@ public class ScheduleManagerTest {
 				assertEquals(message, errorMessage);
 			}
 		}
-	}
-
-	private Map<JobKey, JobDetail> getSchedulerJobs(String appId, String groupName) throws SchedulerException {
-		Map<JobKey, JobDetail> scheduleJobKeyDetailMap = new HashMap<>();
-
-		for (JobKey jobKey : scheduler.getJobKeys(GroupMatcher.jobGroupEquals(groupName))) {
-			JobDetail detail = scheduler.getJobDetail(jobKey);
-			if (detail.getJobDataMap().get("appId").equals(appId)) {
-				scheduleJobKeyDetailMap.put(jobKey, detail);
-			}
-		}
-
-		return scheduleJobKeyDetailMap;
 	}
 
 	private void assertCreatedJobs(Map<JobKey, JobDetail> scheduleIdJobDetailMap, ScheduleEntity scheduleEntity,
