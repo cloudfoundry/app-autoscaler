@@ -21,12 +21,6 @@ import (
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
-
-	"cf"
-	"metricscollector/config"
-	"metricscollector/db"
-	"metricscollector/db/sqldb"
-	"metricscollector/server"
 )
 
 func main() {

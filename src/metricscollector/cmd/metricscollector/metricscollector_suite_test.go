@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
@@ -33,6 +34,7 @@ var (
 	configFile     *os.File
 	ccNOAAUAA      *ghttp.Server
 	isTokenExpired bool
+	eLock          *sync.Mutex
 )
 
 func TestMetricsCollector(t *testing.T) {
@@ -65,8 +67,11 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	messages := map[string][][]byte{}
 	messages["an-app-id"] = [][]byte{message1, message2, message3}
 
+	eLock = &sync.Mutex{}
 	ccNOAAUAA.RouteToHandler("GET", "/apps/an-app-id/containermetrics",
 		func(rw http.ResponseWriter, r *http.Request) {
+			eLock.Lock()
+			defer eLock.Unlock()
 			if isTokenExpired {
 				isTokenExpired = false
 				rw.WriteHeader(http.StatusUnauthorized)

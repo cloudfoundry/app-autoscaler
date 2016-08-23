@@ -96,9 +96,11 @@ var _ = Describe("MetricsCollector", func() {
 	})
 
 	Describe("when a request for memory metrics comes", func() {
-		Context("when token is not expried", func() {
+		Context("when token is not expired", func() {
 			BeforeEach(func() {
+				eLock.Lock()
 				isTokenExpired = false
+				eLock.Unlock()
 			})
 
 			It("returns with a 200", func() {
@@ -108,9 +110,11 @@ var _ = Describe("MetricsCollector", func() {
 			})
 		})
 
-		Context("when token is expried", func() {
+		Context("when token is expired", func() {
 			BeforeEach(func() {
+				eLock.Lock()
 				isTokenExpired = true
+				eLock.Unlock()
 			})
 			It("refreshes the token and returns with a 200", func() {
 				rsp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/v1/apps/an-app-id/metrics/memory", mcPort))
