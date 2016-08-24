@@ -53,10 +53,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger := initLoggerFromConfig(&conf.Logging)
-
 	cfhttp.Initialize(5 * time.Second)
-	cfClient := cf.NewCfClient(&conf.Cf, logger.Session("cf"))
+
+	logger := initLoggerFromConfig(&conf.Logging)
+	mcClock := clock.NewClock()
+
+	cfClient := cf.NewCfClient(&conf.Cf, logger.Session("cf"), mcClock)
 	err = cfClient.Login()
 	if err != nil {
 		logger.Error("failed to login cloud foundry", err, lager.Data{"Api": conf.Cf.Api})
@@ -85,7 +87,6 @@ func main() {
 	}
 	defer policyDB.Close()
 
-	mcClock := clock.NewClock()
 	createPoller := func(appId string) collector.AppPoller {
 		return collector.NewAppPoller(appId, conf.Collector.PollInterval, logger.Session("app-poller"), cfClient, noaa, metricsDB, mcClock)
 	}

@@ -3,12 +3,12 @@ package fakes
 
 import (
 	"db"
-	"metricscollector/metrics"
+	"models"
 	"sync"
 )
 
 type FakeMetricsDB struct {
-	RetrieveMetricsStub        func(appid string, name string, start int64, end int64) ([]*metrics.Metric, error)
+	RetrieveMetricsStub        func(appid string, name string, start int64, end int64) ([]*models.Metric, error)
 	retrieveMetricsMutex       sync.RWMutex
 	retrieveMetricsArgsForCall []struct {
 		appid string
@@ -17,13 +17,13 @@ type FakeMetricsDB struct {
 		end   int64
 	}
 	retrieveMetricsReturns struct {
-		result1 []*metrics.Metric
+		result1 []*models.Metric
 		result2 error
 	}
-	SaveMetricStub        func(metric *metrics.Metric) error
+	SaveMetricStub        func(metric *models.Metric) error
 	saveMetricMutex       sync.RWMutex
 	saveMetricArgsForCall []struct {
-		metric *metrics.Metric
+		metric *models.Metric
 	}
 	saveMetricReturns struct {
 		result1 error
@@ -46,7 +46,7 @@ type FakeMetricsDB struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeMetricsDB) RetrieveMetrics(appid string, name string, start int64, end int64) ([]*metrics.Metric, error) {
+func (fake *FakeMetricsDB) RetrieveMetrics(appid string, name string, start int64, end int64) ([]*models.Metric, error) {
 	fake.retrieveMetricsMutex.Lock()
 	fake.retrieveMetricsArgsForCall = append(fake.retrieveMetricsArgsForCall, struct {
 		appid string
@@ -75,18 +75,18 @@ func (fake *FakeMetricsDB) RetrieveMetricsArgsForCall(i int) (string, string, in
 	return fake.retrieveMetricsArgsForCall[i].appid, fake.retrieveMetricsArgsForCall[i].name, fake.retrieveMetricsArgsForCall[i].start, fake.retrieveMetricsArgsForCall[i].end
 }
 
-func (fake *FakeMetricsDB) RetrieveMetricsReturns(result1 []*metrics.Metric, result2 error) {
+func (fake *FakeMetricsDB) RetrieveMetricsReturns(result1 []*models.Metric, result2 error) {
 	fake.RetrieveMetricsStub = nil
 	fake.retrieveMetricsReturns = struct {
-		result1 []*metrics.Metric
+		result1 []*models.Metric
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeMetricsDB) SaveMetric(metric *metrics.Metric) error {
+func (fake *FakeMetricsDB) SaveMetric(metric *models.Metric) error {
 	fake.saveMetricMutex.Lock()
 	fake.saveMetricArgsForCall = append(fake.saveMetricArgsForCall, struct {
-		metric *metrics.Metric
+		metric *models.Metric
 	}{metric})
 	fake.recordInvocation("SaveMetric", []interface{}{metric})
 	fake.saveMetricMutex.Unlock()
@@ -103,7 +103,7 @@ func (fake *FakeMetricsDB) SaveMetricCallCount() int {
 	return len(fake.saveMetricArgsForCall)
 }
 
-func (fake *FakeMetricsDB) SaveMetricArgsForCall(i int) *metrics.Metric {
+func (fake *FakeMetricsDB) SaveMetricArgsForCall(i int) *models.Metric {
 	fake.saveMetricMutex.RLock()
 	defer fake.saveMetricMutex.RUnlock()
 	return fake.saveMetricArgsForCall[i].metric

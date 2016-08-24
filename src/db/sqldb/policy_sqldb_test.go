@@ -1,24 +1,30 @@
 package sqldb_test
 
 import (
-	"code.cloudfoundry.org/lager"
 	. "db/sqldb"
 	"eventgenerator/policy"
+	"models"
+
+	"code.cloudfoundry.org/lager"
 	"github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"encoding/json"
 	"os"
 )
 
 var _ = Describe("PolicySQLDB", func() {
 	var (
-		pdb      *PolicySQLDB
-		url      string
-		logger   lager.Logger
-		err      error
-		appIds   map[string]bool
-		policies []*policy.PolicyJson
+		policies      []*policy.PolicyJson
+		pdb           *PolicySQLDB
+		url           string
+		logger        lager.Logger
+		err           error
+		appIds        map[string]bool
+		scalingPolicy *models.ScalingPolicy
+		policyJson    []byte
+		appId         string
 	)
 
 	BeforeEach(func() {
@@ -82,9 +88,10 @@ var _ = Describe("PolicySQLDB", func() {
 
 		Context("when policy table is not empty", func() {
 			BeforeEach(func() {
-				insertPolicy("first-app-id")
-				insertPolicy("second-app-id")
-				insertPolicy("third-app-id")
+				scalingPolicy = &models.ScalingPolicy{InstanceMax: 1, InstanceMin: 6}
+				insertPolicy("first-app-id", scalingPolicy)
+				insertPolicy("second-app-id", scalingPolicy)
+				insertPolicy("third-app-id", scalingPolicy)
 			})
 
 			It("returns all app ids", func() {
@@ -95,6 +102,77 @@ var _ = Describe("PolicySQLDB", func() {
 			})
 		})
 	})
+
+	Describe("GetAppPolicy", func() {
+		BeforeEach(func() {
+			pdb, err = NewPolicySQLDB(url, logger)
+			Expect(err).NotTo(HaveOccurred())
+
+			cleanPolicyTable()
+
+			insertPolicy("an-app-id", &models.ScalingPolicy{
+				InstanceMin: 1,
+				InstanceMax: 6,
+				Rules: []models.ScalingRule{models.ScalingRule{
+					MetricType:            models.MetricNameMemory,
+					BreachDurationSeconds: 180,
+					Threshold:             1048576000,
+					Operator:              ">",
+					CoolDownSeconds:       300,
+					Adjustment:            "+10%"}}})
+			insertPolicy("another-app-id", &models.ScalingPolicy{
+				InstanceMin: 2,
+				InstanceMax: 8,
+				Rules: []models.ScalingRule{models.ScalingRule{
+					MetricType:            models.MetricNameMemory,
+					BreachDurationSeconds: 300,
+					Threshold:             104857600,
+					Operator:              "<",
+					CoolDownSeconds:       120,
+					Adjustment:            "-2"}}})
+		})
+
+		AfterEach(func() {
+			err = pdb.Close()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		JustBeforeEach(func() {
+			scalingPolicy, err = pdb.GetAppPolicy(appId)
+		})
+
+		Context("when policy table has the app", func() {
+			BeforeEach(func() {
+				appId = "an-app-id"
+			})
+
+			It("returns the policy", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(*scalingPolicy).To(Equal(models.ScalingPolicy{
+					InstanceMin: 1,
+					InstanceMax: 6,
+					Rules: []models.ScalingRule{models.ScalingRule{
+						MetricType:            models.MetricNameMemory,
+						BreachDurationSeconds: 180,
+						Threshold:             1048576000,
+						Operator:              ">",
+						CoolDownSeconds:       300,
+						Adjustment:            "+10%"}}}))
+			})
+
+		})
+
+		Context("when policy table does not have the app", func() {
+			BeforeEach(func() {
+				appId = "non-existent-app"
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("sql: no rows in result set")))
+			})
+		})
+	})
+
 	Describe("RetrievePolicies", func() {
 		BeforeEach(func() {
 			pdb, err = NewPolicySQLDB(url, logger)
@@ -109,39 +187,32 @@ var _ = Describe("PolicySQLDB", func() {
 		})
 
 		JustBeforeEach(func() {
-			insertPolicy("first-app-id")
-			insertPolicy("second-app-id")
-			insertPolicy("third-app-id")
+			scalingPolicy = &models.ScalingPolicy{}
+			insertPolicy("first-app-id", scalingPolicy)
+			insertPolicy("second-app-id", scalingPolicy)
+			insertPolicy("third-app-id", scalingPolicy)
 			policies, err = pdb.RetrievePolicies()
 		})
 
 		Context("when retriving all the policies)", func() {
 			It("returns all the policies", func() {
 				Expect(err).NotTo(HaveOccurred())
+
+				policyJson, err = json.Marshal(models.ScalingPolicy{})
+				Expect(err).NotTo(HaveOccurred())
+
 				Expect(policies).To(ConsistOf(
 					&policy.PolicyJson{
-						AppId: "first-app-id",
-						PolicyStr: `
-		{
- 			"instance_min_count": 1,
-  			"instance_max_count": 5
-		}`,
+						AppId:     "first-app-id",
+						PolicyStr: string(policyJson),
 					},
 					&policy.PolicyJson{
-						AppId: "second-app-id",
-						PolicyStr: `
-		{
- 			"instance_min_count": 1,
-  			"instance_max_count": 5
-		}`,
+						AppId:     "second-app-id",
+						PolicyStr: string(policyJson),
 					},
 					&policy.PolicyJson{
-						AppId: "third-app-id",
-						PolicyStr: `
-		{
- 			"instance_min_count": 1,
-  			"instance_max_count": 5
-		}`,
+						AppId:     "third-app-id",
+						PolicyStr: string(policyJson),
 					},
 				))
 			})

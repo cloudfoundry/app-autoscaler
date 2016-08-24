@@ -1,10 +1,12 @@
 package cf_test
 
 import (
-	"bytes"
 	"net"
+	"net/http"
 	"net/url"
+	"time"
 
+	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/lager"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -13,50 +15,6 @@ import (
 	. "cf"
 )
 
-var infoBody = []byte(`
-{
-   "name": "",
-   "build": "",
-   "support": "http://support.cloudfoundry.com",
-   "version": 0,
-   "description": "",
-   "authorization_endpoint": "test-oauth-endpoint",
-   "token_endpoint": "test-token-endpoint",
-   "min_cli_version": null,
-   "min_recommended_cli_version": null,
-   "api_version": "2.48.0",
-   "app_ssh_endpoint": "ssh.bosh-lite.com:2222",
-   "app_ssh_host_key_fingerprint": "a6:d1:08:0b:b0:cb:9b:5f:c4:ba:44:2a:97:26:19:8a",
-   "app_ssh_oauth_client": "ssh-proxy",
-   "routing_endpoint": "https://api.bosh-lite.com/routing",
-   "logging_endpoint": "wss://loggregator.bosh-lite.com:443",
-   "doppler_logging_endpoint": "test-doppler-endpoint",
-   "user": "38b2f682-04bf-48af-9e08-0325aa5c4ea9"
-}
-`)
-
-var authBody = []byte(`
-{
-	"access_token":"test-access-token",
-	"token_type":"bearer",
-	"refresh_token":"test-refresh-token",
-	"expires_in":12000,
-	"scope":"openid cloud_controller.read password.write cloud_controller.write",
-	"jti":"a735f90f-0b49-447d-8f9d-ae2fbc1491dd"
-}
-`)
-
-var refreshBody = []byte(`
-{
-	"access_token":"test-access-token-refreshed",
-	"token_type":"bearer",
-	"refresh_token":"test-refresh-token-refreshed",
-	"expires_in":24000,
-	"scope":"openid cloud_controller.read password.write cloud_controller.write",
-	"jti":"a735f90f-0b49-447d-8f9d-ae2fbc1491dd"
-}
-`)
-
 var _ = Describe("Client", func() {
 	var (
 		fakeCC          *ghttp.Server
@@ -64,6 +22,8 @@ var _ = Describe("Client", func() {
 		cfc             CfClient
 		conf            *CfConfig
 		authToken       string
+		tokens          Tokens
+		fclock          *fakeclock.FakeClock
 		err             error
 	)
 
@@ -72,6 +32,7 @@ var _ = Describe("Client", func() {
 		fakeLoginServer = ghttp.NewServer()
 		conf = &CfConfig{}
 		conf.Api = fakeCC.URL()
+		fclock = fakeclock.NewFakeClock(time.Now())
 		err = nil
 	})
 
@@ -87,7 +48,7 @@ var _ = Describe("Client", func() {
 	Describe("Login", func() {
 
 		JustBeforeEach(func() {
-			cfc = NewCfClient(conf, lager.NewLogger("cf"))
+			cfc = NewCfClient(conf, lager.NewLogger("cf"), fclock)
 			err = cfc.Login()
 		})
 
@@ -96,7 +57,11 @@ var _ = Describe("Client", func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
 						ghttp.VerifyRequest("GET", PathCfInfo),
-						ghttp.RespondWith(200, infoBody),
+						ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
+							AuthEndpoint:    "test-oauth-endpoint",
+							TokenEndpoint:   "test-token-endpoint",
+							DopplerEndpoint: "test-doppler-endpoint",
+						}),
 					),
 				)
 			})
@@ -143,7 +108,11 @@ var _ = Describe("Client", func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
 						ghttp.VerifyRequest("GET", PathCfInfo),
-						ghttp.RespondWith(200, bytes.Replace(infoBody, []byte("test-oauth-endpoint"), []byte(fakeLoginServer.URL()), -1)),
+						ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
+							AuthEndpoint:    fakeLoginServer.URL(),
+							TokenEndpoint:   "test-token-endpoint",
+							DopplerEndpoint: "test-doppler-endpoint",
+						}),
 					),
 				)
 			})
@@ -166,7 +135,11 @@ var _ = Describe("Client", func() {
 								ghttp.VerifyRequest("POST", PathCfAuth),
 								ghttp.VerifyBasicAuth("cf", ""),
 								ghttp.VerifyForm(values),
-								ghttp.RespondWith(200, authBody),
+								ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
+									AccessToken:  "test-access-token",
+									RefreshToken: "test-refresh-token",
+									ExpiresIn:    12000,
+								}),
 							),
 						)
 					})
@@ -196,7 +169,11 @@ var _ = Describe("Client", func() {
 								ghttp.VerifyRequest("POST", PathCfAuth),
 								ghttp.VerifyBasicAuth(conf.ClientId, conf.Secret),
 								ghttp.VerifyForm(values),
-								ghttp.RespondWith(200, authBody),
+								ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
+									AccessToken:  "test-access-token",
+									RefreshToken: "test-refresh-token",
+									ExpiresIn:    12000,
+								}),
 							),
 						)
 					})
@@ -243,7 +220,7 @@ var _ = Describe("Client", func() {
 
 	Describe("RefreshAuthToken", func() {
 		BeforeEach(func() {
-			cfc = NewCfClient(conf, lager.NewLogger("cf"))
+			cfc = NewCfClient(conf, lager.NewLogger("cf"), fclock)
 		})
 
 		JustBeforeEach(func() {
@@ -255,7 +232,11 @@ var _ = Describe("Client", func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
 						ghttp.VerifyRequest("GET", PathCfInfo),
-						ghttp.RespondWith(200, bytes.Replace(infoBody, []byte("test-oauth-endpoint"), []byte(fakeLoginServer.URL()), -1)),
+						ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
+							AuthEndpoint:    fakeLoginServer.URL(),
+							TokenEndpoint:   "test-token-endpoint",
+							DopplerEndpoint: "test-doppler-endpoint",
+						}),
 					),
 				)
 			})
@@ -265,7 +246,11 @@ var _ = Describe("Client", func() {
 					fakeLoginServer.AppendHandlers(
 						ghttp.CombineHandlers(
 							ghttp.VerifyRequest("POST", PathCfAuth),
-							ghttp.RespondWith(200, authBody),
+							ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
+								AccessToken:  "test-access-token",
+								RefreshToken: "test-refresh-token",
+								ExpiresIn:    12000,
+							}),
 						),
 					)
 				})
@@ -302,13 +287,21 @@ var _ = Describe("Client", func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
 						ghttp.VerifyRequest("GET", PathCfInfo),
-						ghttp.RespondWith(200, bytes.Replace(infoBody, []byte("test-oauth-endpoint"), []byte(fakeLoginServer.URL()), -1)),
+						ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
+							AuthEndpoint:    fakeLoginServer.URL(),
+							TokenEndpoint:   "test-token-endpoint",
+							DopplerEndpoint: "test-doppler-endpoint",
+						}),
 					),
 				)
 				fakeLoginServer.AppendHandlers(
 					ghttp.CombineHandlers(
 						ghttp.VerifyRequest("POST", PathCfAuth),
-						ghttp.RespondWith(200, authBody),
+						ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
+							AccessToken:  "test-access-token",
+							RefreshToken: "test-refresh-token",
+							ExpiresIn:    12000,
+						}),
 					),
 				)
 				cfc.Login()
@@ -323,7 +316,11 @@ var _ = Describe("Client", func() {
 								"grant_type":    {GrantTypeRefreshToken},
 								"refresh_token": {"test-refresh-token"},
 							}),
-							ghttp.RespondWith(200, refreshBody),
+							ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
+								AccessToken:  "test-access-token-refreshed",
+								RefreshToken: "test-refresh-token-refreshed",
+								ExpiresIn:    24000,
+							}),
 						),
 					)
 				})
@@ -342,7 +339,11 @@ var _ = Describe("Client", func() {
 					fakeCC.AppendHandlers(
 						ghttp.CombineHandlers(
 							ghttp.VerifyRequest("GET", PathCfInfo),
-							ghttp.RespondWith(200, bytes.Replace(infoBody, []byte("test-oauth-endpoint"), []byte(fakeLoginServer.URL()), -1)),
+							ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
+								AuthEndpoint:    fakeLoginServer.URL(),
+								TokenEndpoint:   "test-token-endpoint",
+								DopplerEndpoint: "test-doppler-endpoint",
+							}),
 						),
 					)
 
@@ -363,7 +364,11 @@ var _ = Describe("Client", func() {
 						fakeLoginServer.AppendHandlers(
 							ghttp.CombineHandlers(
 								ghttp.VerifyRequest("POST", PathCfAuth),
-								ghttp.RespondWith(200, authBody),
+								ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
+									AccessToken:  "test-access-token",
+									RefreshToken: "test-refresh-token",
+									ExpiresIn:    12000,
+								}),
 							),
 						)
 
@@ -397,5 +402,94 @@ var _ = Describe("Client", func() {
 			})
 
 		})
+	})
+
+	Describe("GetTokensWithRefresh", func() {
+		JustBeforeEach(func() {
+			tokens = cfc.GetTokensWithRefresh()
+		})
+
+		BeforeEach(func() {
+			cfc = NewCfClient(conf, lager.NewLogger("cf"), fclock)
+			fakeCC.AppendHandlers(
+				ghttp.CombineHandlers(
+					ghttp.VerifyRequest("GET", PathCfInfo),
+					ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
+						AuthEndpoint:    fakeLoginServer.URL(),
+						TokenEndpoint:   "test-token-endpoint",
+						DopplerEndpoint: "test-doppler-endpoint",
+					}),
+				),
+			)
+			fakeLoginServer.AppendHandlers(
+				ghttp.CombineHandlers(
+					ghttp.VerifyRequest("POST", PathCfAuth),
+					ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
+						AccessToken:  "test-access-token",
+						RefreshToken: "test-refresh-token",
+						ExpiresIn:    12000,
+					}),
+				),
+			)
+			cfc.Login()
+		})
+
+		Context("when the token is not going to be expired", func() {
+			BeforeEach(func() {
+				fclock.Increment(12000*time.Second - TimeToRefreshBeforeTokenExpire)
+			})
+			It("does not refresh tokens", func() {
+				Expect(tokens.AccessToken).To(Equal("test-access-token"))
+				Expect(tokens.RefreshToken).To(Equal("test-refresh-token"))
+				Expect(tokens.ExpiresIn).To(Equal(int64(12000)))
+			})
+
+		})
+
+		Context("when the token is going to be expired", func() {
+			Context("when refresh succeeds", func() {
+				BeforeEach(func() {
+					fakeLoginServer.AppendHandlers(
+						ghttp.CombineHandlers(
+							ghttp.VerifyRequest("POST", PathCfAuth),
+							ghttp.VerifyForm(url.Values{
+								"grant_type":    {GrantTypeRefreshToken},
+								"refresh_token": {"test-refresh-token"},
+							}),
+							ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
+								AccessToken:  "test-access-token-refreshed",
+								RefreshToken: "test-refresh-token-refreshed",
+								ExpiresIn:    24000,
+							}),
+						),
+					)
+					fclock.Increment(12001*time.Second - TimeToRefreshBeforeTokenExpire)
+				})
+
+				It("refreshes tokens", func() {
+					Expect(tokens.AccessToken).To(Equal("test-access-token-refreshed"))
+					Expect(tokens.RefreshToken).To(Equal("test-refresh-token-refreshed"))
+					Expect(tokens.ExpiresIn).To(Equal(int64(24000)))
+				})
+
+			})
+
+			Context("when refresh fails", func() {
+				BeforeEach(func() {
+					fakeCC.RouteToHandler("GET", "/v2/info", ghttp.RespondWith(200, ""))
+					fakeLoginServer.RouteToHandler("POST", "/oauth/token", ghttp.RespondWith(401, ""))
+					fclock.Increment(12001*time.Second - TimeToRefreshBeforeTokenExpire)
+				})
+
+				It("returns existing tokens", func() {
+					Expect(tokens.AccessToken).To(Equal("test-access-token"))
+					Expect(tokens.RefreshToken).To(Equal("test-refresh-token"))
+					Expect(tokens.ExpiresIn).To(Equal(int64(12000)))
+				})
+
+			})
+
+		})
+
 	})
 })

@@ -9,7 +9,7 @@ import (
 	_ "github.com/lib/pq"
 
 	"db"
-	"metricscollector/metrics"
+	"models"
 )
 
 type MetricsSQLDB struct {
@@ -50,7 +50,7 @@ func (mdb *MetricsSQLDB) Close() error {
 	return nil
 }
 
-func (mdb *MetricsSQLDB) SaveMetric(metric *metrics.Metric) error {
+func (mdb *MetricsSQLDB) SaveMetric(metric *models.Metric) error {
 	value, err := json.Marshal(metric.Instances)
 	if err != nil {
 		mdb.logger.Error("marshal-instance-metrics", err, lager.Data{"metric": metric})
@@ -67,7 +67,7 @@ func (mdb *MetricsSQLDB) SaveMetric(metric *metrics.Metric) error {
 	return err
 }
 
-func (mdb *MetricsSQLDB) RetrieveMetrics(appid string, name string, start int64, end int64) ([]*metrics.Metric, error) {
+func (mdb *MetricsSQLDB) RetrieveMetrics(appid string, name string, start int64, end int64) ([]*models.Metric, error) {
 	query := "SELECT unit, timestamp, value FROM applicationmetrics WHERE " +
 		" appid = $1 " +
 		" AND name = $2 " +
@@ -78,7 +78,7 @@ func (mdb *MetricsSQLDB) RetrieveMetrics(appid string, name string, start int64,
 		end = time.Now().UnixNano()
 	}
 
-	mtrcs := []*metrics.Metric{}
+	mtrcs := []*models.Metric{}
 	rows, err := mdb.sqldb.Query(query, appid, name, start, end)
 	if err != nil {
 		mdb.logger.Error("retrive-metrics-from-applicationmetrics-table", err,
@@ -97,14 +97,14 @@ func (mdb *MetricsSQLDB) RetrieveMetrics(appid string, name string, start int64,
 			mdb.logger.Error("scan-metric-from-search-result", err)
 		}
 
-		inst := []metrics.InstanceMetric{}
+		inst := []models.InstanceMetric{}
 		err := json.Unmarshal(value, &inst)
 		if err != nil {
 			mdb.logger.Error("unmarshal-instance-metrics", err, lager.Data{"value": value})
 			return nil, err
 		}
 
-		metric := metrics.Metric{
+		metric := models.Metric{
 			AppId:     appid,
 			Name:      name,
 			Unit:      unit,

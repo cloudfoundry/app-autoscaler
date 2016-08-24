@@ -2,7 +2,7 @@ package sqldb_test
 
 import (
 	. "db/sqldb"
-	"metricscollector/metrics"
+	"models"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/lib/pq"
@@ -19,8 +19,8 @@ var _ = Describe("MetricsSQLDB", func() {
 		mdb        *MetricsSQLDB
 		logger     lager.Logger
 		err        error
-		metric     *metrics.Metric
-		mtrcs      []*metrics.Metric
+		metric     *models.Metric
+		mtrcs      []*models.Metric
 		start      int64
 		end        int64
 		before     int64
@@ -77,50 +77,50 @@ var _ = Describe("MetricsSQLDB", func() {
 
 		Context("When inserting a metric of an app", func() {
 			BeforeEach(func() {
-				metric = &metrics.Metric{
+				metric = &models.Metric{
 					AppId:     "test-app-id",
-					Name:      metrics.MetricNameMemory,
-					Unit:      metrics.UnitBytes,
+					Name:      models.MetricNameMemory,
+					Unit:      models.UnitBytes,
 					TimeStamp: 11111111,
-					Instances: []metrics.InstanceMetric{{23456312, 0, "3333"}, {23556312, 1, "6666"}},
+					Instances: []models.InstanceMetric{{23456312, 0, "3333"}, {23556312, 1, "6666"}},
 				}
 				err = mdb.SaveMetric(metric)
 			})
 
 			It("has the metric in database", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(hasMetric("test-app-id", metrics.MetricNameMemory, 11111111)).To(BeTrue())
+				Expect(hasMetric("test-app-id", models.MetricNameMemory, 11111111)).To(BeTrue())
 			})
 		})
 
 		Context("When inserting multiple metrics of an app", func() {
 			BeforeEach(func() {
-				metric = &metrics.Metric{
+				metric = &models.Metric{
 					AppId: "test-app-id",
-					Name:  metrics.MetricNameMemory,
-					Unit:  metrics.UnitBytes,
+					Name:  models.MetricNameMemory,
+					Unit:  models.UnitBytes,
 				}
 			})
 
 			It("has all the metrics in database", func() {
 				metric.TimeStamp = 111111
-				metric.Instances = []metrics.InstanceMetric{}
+				metric.Instances = []models.InstanceMetric{}
 				err = mdb.SaveMetric(metric)
 				Expect(err).NotTo(HaveOccurred())
 
 				metric.TimeStamp = 222222
-				metric.Instances = []metrics.InstanceMetric{{23456312, 0, "3333"}}
+				metric.Instances = []models.InstanceMetric{{23456312, 0, "3333"}}
 				mdb.SaveMetric(metric)
 				Expect(err).NotTo(HaveOccurred())
 
 				metric.TimeStamp = 333333
-				metric.Instances = []metrics.InstanceMetric{{23456312, 0, "3333"}, {23556312, 1, "6666"}}
+				metric.Instances = []models.InstanceMetric{{23456312, 0, "3333"}, {23556312, 1, "6666"}}
 				mdb.SaveMetric(metric)
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(hasMetric("test-app-id", metrics.MetricNameMemory, 111111)).To(BeTrue())
-				Expect(hasMetric("test-app-id", metrics.MetricNameMemory, 222222)).To(BeTrue())
-				Expect(hasMetric("test-app-id", metrics.MetricNameMemory, 333333)).To(BeTrue())
+				Expect(hasMetric("test-app-id", models.MetricNameMemory, 111111)).To(BeTrue())
+				Expect(hasMetric("test-app-id", models.MetricNameMemory, 222222)).To(BeTrue())
+				Expect(hasMetric("test-app-id", models.MetricNameMemory, 333333)).To(BeTrue())
 			})
 		})
 
@@ -135,7 +135,7 @@ var _ = Describe("MetricsSQLDB", func() {
 			start = 0
 			end = -1
 			appId = "test-app-id"
-			metricName = metrics.MetricNameMemory
+			metricName = models.MetricNameMemory
 		})
 
 		AfterEach(func() {
@@ -144,28 +144,28 @@ var _ = Describe("MetricsSQLDB", func() {
 		})
 
 		JustBeforeEach(func() {
-			metric = &metrics.Metric{
+			metric = &models.Metric{
 				AppId: appId,
 				Name:  metricName,
-				Unit:  metrics.UnitBytes,
+				Unit:  models.UnitBytes,
 			}
 
 			metric.TimeStamp = 666666
-			metric.Instances = []metrics.InstanceMetric{{654321, 0, "6666"}, {764321, 1, "8888"}}
+			metric.Instances = []models.InstanceMetric{{654321, 0, "6666"}, {764321, 1, "8888"}}
 			err = mdb.SaveMetric(metric)
 			Expect(err).NotTo(HaveOccurred())
 
 			metric.TimeStamp = 222222
-			metric.Instances = []metrics.InstanceMetric{}
+			metric.Instances = []models.InstanceMetric{}
 			err = mdb.SaveMetric(metric)
 			Expect(err).NotTo(HaveOccurred())
 
 			metric.TimeStamp = 333333
-			metric.Instances = []metrics.InstanceMetric{{123456, 0, "3333"}}
+			metric.Instances = []models.InstanceMetric{{123456, 0, "3333"}}
 			err = mdb.SaveMetric(metric)
 			Expect(err).NotTo(HaveOccurred())
 
-			mtrcs, err = mdb.RetrieveMetrics("test-app-id", metrics.MetricNameMemory, start, end)
+			mtrcs, err = mdb.RetrieveMetrics("test-app-id", models.MetricNameMemory, start, end)
 		})
 
 		Context("The app has no metrics", func() {
@@ -247,28 +247,28 @@ var _ = Describe("MetricsSQLDB", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(mtrcs).To(HaveLen(3))
 				Expect(*mtrcs[0]).To(Equal(
-					metrics.Metric{
+					models.Metric{
 						AppId:     "test-app-id",
-						Name:      metrics.MetricNameMemory,
-						Unit:      metrics.UnitBytes,
+						Name:      models.MetricNameMemory,
+						Unit:      models.UnitBytes,
 						TimeStamp: 222222,
-						Instances: []metrics.InstanceMetric{},
+						Instances: []models.InstanceMetric{},
 					}))
 				Expect(*mtrcs[1]).To(Equal(
-					metrics.Metric{
+					models.Metric{
 						AppId:     "test-app-id",
-						Name:      metrics.MetricNameMemory,
-						Unit:      metrics.UnitBytes,
+						Name:      models.MetricNameMemory,
+						Unit:      models.UnitBytes,
 						TimeStamp: 333333,
-						Instances: []metrics.InstanceMetric{{123456, 0, "3333"}},
+						Instances: []models.InstanceMetric{{123456, 0, "3333"}},
 					}))
 				Expect(*mtrcs[2]).To(Equal(
-					metrics.Metric{
+					models.Metric{
 						AppId:     "test-app-id",
-						Name:      metrics.MetricNameMemory,
-						Unit:      metrics.UnitBytes,
+						Name:      models.MetricNameMemory,
+						Unit:      models.UnitBytes,
 						TimeStamp: 666666,
-						Instances: []metrics.InstanceMetric{{654321, 0, "6666"}, {764321, 1, "8888"}},
+						Instances: []models.InstanceMetric{{654321, 0, "6666"}, {764321, 1, "8888"}},
 					}))
 			})
 		})
@@ -281,12 +281,12 @@ var _ = Describe("MetricsSQLDB", func() {
 
 			It("returns correct metrics", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(mtrcs).To(ConsistOf(&metrics.Metric{
+				Expect(mtrcs).To(ConsistOf(&models.Metric{
 					AppId:     "test-app-id",
-					Name:      metrics.MetricNameMemory,
-					Unit:      metrics.UnitBytes,
+					Name:      models.MetricNameMemory,
+					Unit:      models.UnitBytes,
 					TimeStamp: 333333,
-					Instances: []metrics.InstanceMetric{{123456, 0, "3333"}},
+					Instances: []models.InstanceMetric{{123456, 0, "3333"}},
 				}))
 			})
 		})
@@ -299,11 +299,11 @@ var _ = Describe("MetricsSQLDB", func() {
 
 			cleanMetricsTable()
 
-			instances := []metrics.InstanceMetric{{123456, 0, "3333"}, {123476, 1, "6666"}}
-			metric := &metrics.Metric{
+			instances := []models.InstanceMetric{{123456, 0, "3333"}, {123476, 1, "6666"}}
+			metric := &models.Metric{
 				AppId:     "test-app-id",
-				Name:      metrics.MetricNameMemory,
-				Unit:      metrics.UnitBytes,
+				Name:      models.MetricNameMemory,
+				Unit:      models.UnitBytes,
 				Instances: instances,
 			}
 
@@ -360,7 +360,7 @@ var _ = Describe("MetricsSQLDB", func() {
 			It("removes metrics before the time specified", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(getNumberOfMetrics()).To(Equal(1))
-				Expect(hasMetric("test-app-id", metrics.MetricNameMemory, 666666)).To(BeTrue())
+				Expect(hasMetric("test-app-id", models.MetricNameMemory, 666666)).To(BeTrue())
 			})
 		})
 

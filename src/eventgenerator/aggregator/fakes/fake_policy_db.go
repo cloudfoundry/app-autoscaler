@@ -4,6 +4,7 @@ package fakes
 import (
 	"db"
 	"eventgenerator/policy"
+	"models"
 	"sync"
 )
 
@@ -20,6 +21,15 @@ type FakePolicyDB struct {
 	retrievePoliciesArgsForCall []struct{}
 	retrievePoliciesReturns     struct {
 		result1 []*policy.PolicyJson
+		result2 error
+	}
+	GetAppPolicyStub        func(appId string) (*models.ScalingPolicy, error)
+	getAppPolicyMutex       sync.RWMutex
+	getAppPolicyArgsForCall []struct {
+		appId string
+	}
+	getAppPolicyReturns struct {
+		result1 *models.ScalingPolicy
 		result2 error
 	}
 	CloseStub        func() error
@@ -84,6 +94,40 @@ func (fake *FakePolicyDB) RetrievePoliciesReturns(result1 []*policy.PolicyJson, 
 	}{result1, result2}
 }
 
+func (fake *FakePolicyDB) GetAppPolicy(appId string) (*models.ScalingPolicy, error) {
+	fake.getAppPolicyMutex.Lock()
+	fake.getAppPolicyArgsForCall = append(fake.getAppPolicyArgsForCall, struct {
+		appId string
+	}{appId})
+	fake.recordInvocation("GetAppPolicy", []interface{}{appId})
+	fake.getAppPolicyMutex.Unlock()
+	if fake.GetAppPolicyStub != nil {
+		return fake.GetAppPolicyStub(appId)
+	} else {
+		return fake.getAppPolicyReturns.result1, fake.getAppPolicyReturns.result2
+	}
+}
+
+func (fake *FakePolicyDB) GetAppPolicyCallCount() int {
+	fake.getAppPolicyMutex.RLock()
+	defer fake.getAppPolicyMutex.RUnlock()
+	return len(fake.getAppPolicyArgsForCall)
+}
+
+func (fake *FakePolicyDB) GetAppPolicyArgsForCall(i int) string {
+	fake.getAppPolicyMutex.RLock()
+	defer fake.getAppPolicyMutex.RUnlock()
+	return fake.getAppPolicyArgsForCall[i].appId
+}
+
+func (fake *FakePolicyDB) GetAppPolicyReturns(result1 *models.ScalingPolicy, result2 error) {
+	fake.GetAppPolicyStub = nil
+	fake.getAppPolicyReturns = struct {
+		result1 *models.ScalingPolicy
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakePolicyDB) Close() error {
 	fake.closeMutex.Lock()
 	fake.closeArgsForCall = append(fake.closeArgsForCall, struct{}{})
@@ -116,6 +160,8 @@ func (fake *FakePolicyDB) Invocations() map[string][][]interface{} {
 	defer fake.getAppIdsMutex.RUnlock()
 	fake.retrievePoliciesMutex.RLock()
 	defer fake.retrievePoliciesMutex.RUnlock()
+	fake.getAppPolicyMutex.RLock()
+	defer fake.getAppPolicyMutex.RUnlock()
 	fake.closeMutex.RLock()
 	defer fake.closeMutex.RUnlock()
 	return fake.invocations

@@ -3,8 +3,8 @@ package collector
 import (
 	"cf"
 	"db"
-	"metricscollector/metrics"
 	"metricscollector/noaa"
+	"models"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
@@ -78,7 +78,7 @@ func (ap *appPoller) pollMetric() {
 		return
 	}
 
-	metric := metrics.GetMemoryMetricFromContainerMetrics(ap.appId, containerMetrics)
+	metric := models.GetMemoryMetricFromContainerMetrics(ap.appId, containerMetrics)
 	ap.logger.Debug("poll-metric-get-memory-metric", lager.Data{"metric": *metric})
 
 	if len(metric.Instances) == 0 {
