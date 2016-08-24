@@ -2,6 +2,7 @@ package sqldb_test
 
 import (
 	"database/sql"
+	"encoding/json"
 	"os"
 	"testing"
 
@@ -10,6 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	. "db/sqldb"
+	"models"
 )
 
 var dbHelper *sql.DB
@@ -73,19 +75,18 @@ func cleanPolicyTable() {
 	}
 }
 
-func insertPolicy(appId string) {
-	policy := `
-		{
- 			"instance_min_count": 1,
-  			"instance_max_count": 5
-		}`
+func insertPolicy(appId string, scalingPolicy *models.ScalingPolicy) {
+	policyJson, e := json.Marshal(scalingPolicy)
+	if e != nil {
+		Fail("failed to marshall scaling policy" + e.Error())
+	}
+
 	query := "INSERT INTO policy_json(app_id, policy_json) values($1, $2)"
-	_, e := dbHelper.Exec(query, appId, policy)
+	_, e = dbHelper.Exec(query, appId, string(policyJson))
 
 	if e != nil {
 		Fail("can not insert data to policy table: " + e.Error())
 	}
-
 }
 
 func cleanAppMetricTable() {

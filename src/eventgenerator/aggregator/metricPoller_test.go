@@ -3,8 +3,8 @@ package aggregator_test
 import (
 	. "eventgenerator/aggregator"
 	. "eventgenerator/appmetric"
-	. "metricscollector/metrics"
-	. "metricscollector/server"
+	// . "metricscollector/server"
+	. "models"
 	"net/http"
 	"time"
 

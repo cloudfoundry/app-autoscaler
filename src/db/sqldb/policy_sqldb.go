@@ -3,10 +3,12 @@ package sqldb
 import (
 	"code.cloudfoundry.org/lager"
 	"database/sql"
+	"encoding/json"
 	"eventgenerator/policy"
 	_ "github.com/lib/pq"
 
 	"db"
+	"models"
 )
 
 const PostgresDriverName = "postgres"
@@ -56,7 +58,7 @@ func (pdb *PolicySQLDB) GetAppIds() (map[string]bool, error) {
 
 	rows, err := pdb.sqldb.Query(query)
 	if err != nil {
-		pdb.logger.Error("retrive-appids-from-policy-table", err, lager.Data{"query": query})
+		pdb.logger.Error("get-appids-from-policy-table", err, lager.Data{"query": query})
 		return nil, err
 	}
 	defer rows.Close()
@@ -64,7 +66,7 @@ func (pdb *PolicySQLDB) GetAppIds() (map[string]bool, error) {
 	var id string
 	for rows.Next() {
 		if err = rows.Scan(&id); err != nil {
-			pdb.logger.Error("scan-appid-from-search-result", err)
+			pdb.logger.Error("get-appids-scan", err)
 			return nil, err
 		}
 		appIds[id] = true
@@ -98,4 +100,22 @@ func (pdb *PolicySQLDB) RetrievePolicies() ([]*policy.PolicyJson, error) {
 		policyList = append(policyList, &policy)
 	}
 	return policyList, nil
+}
+
+func (pdb *PolicySQLDB) GetAppPolicy(appId string) (*models.ScalingPolicy, error) {
+	var policyJson []byte
+	query := "SELECT policy_json FROM policy_json WHERE app_id = $1"
+	err := pdb.sqldb.QueryRow(query, appId).Scan(&policyJson)
+	if err != nil {
+		pdb.logger.Error("get-app-policy-from-policy-table", err, lager.Data{"query": query, "appid": appId})
+		return nil, err
+	}
+
+	scalingPolicy := &models.ScalingPolicy{}
+	err = json.Unmarshal(policyJson, scalingPolicy)
+	if err != nil {
+		pdb.logger.Error("get-app-policy-unmarshal", err, lager.Data{"policyJson": string(policyJson)})
+		return nil, err
+	}
+	return scalingPolicy, nil
 }

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"time"
 
 	"github.com/cloudfoundry-incubator/candiedyaml"
 
@@ -12,9 +11,9 @@ import (
 )
 
 const (
-	DefaultLoggingLevel                  = "info"
-	DefaultRefreshInterval time.Duration = 60 * time.Second
-	DefaultPollInterval    time.Duration = 30 * time.Second
+	DefaultLoggingLevel    = "info"
+	DefaultRefreshInterval = 60
+	DefaultPollInterval    = 30
 )
 
 var defaultCfConfig = cf.CfConfig{
@@ -43,8 +42,8 @@ type DbConfig struct {
 }
 
 type CollectorConfig struct {
-	RefreshInterval time.Duration `yaml:"refresh_interval"`
-	PollInterval    time.Duration `yaml:"poll_interval"`
+	RefreshInterval int `yaml:"refresh_interval"`
+	PollInterval    int `yaml:"poll_interval"`
 }
 
 var defaultCollectorConfig = CollectorConfig{

@@ -3,14 +3,14 @@ package db
 import (
 	"eventgenerator/appmetric"
 	"eventgenerator/policy"
-	"metricscollector/metrics"
+	"models"
 )
 
 const PostgresDriverName = "postgres"
 
 type MetricsDB interface {
-	RetrieveMetrics(appid string, name string, start int64, end int64) ([]*metrics.Metric, error)
-	SaveMetric(metric *metrics.Metric) error
+	RetrieveMetrics(appid string, name string, start int64, end int64) ([]*models.Metric, error)
+	SaveMetric(metric *models.Metric) error
 	PruneMetrics(before int64) error
 	Close() error
 }
@@ -18,6 +18,7 @@ type MetricsDB interface {
 type PolicyDB interface {
 	GetAppIds() (map[string]bool, error)
 	RetrievePolicies() ([]*policy.PolicyJson, error)
+	GetAppPolicy(appId string) (*models.ScalingPolicy, error)
 	Close() error
 }
 

@@ -6,7 +6,7 @@ import (
 	"eventgenerator/appmetric"
 	"fmt"
 	"io/ioutil"
-	"metricscollector/metrics"
+	"models"
 	"net/http"
 	"strconv"
 	"time"
@@ -68,7 +68,7 @@ func (m *MetricPoller) retrieveMetric(app *appmetric.AppMonitor) {
 		return
 	}
 	defer resp.Body.Close()
-	var metrics []*metrics.Metric
+	var metrics []*models.Metric
 	if resp.StatusCode == http.StatusOK {
 		data, readError := ioutil.ReadAll(resp.Body)
 		if readError != nil {
@@ -85,7 +85,7 @@ func (m *MetricPoller) retrieveMetric(app *appmetric.AppMonitor) {
 	}
 
 }
-func (m *MetricPoller) doAggregate(appId string, metricType string, metrics []*metrics.Metric) *appmetric.AppMetric {
+func (m *MetricPoller) doAggregate(appId string, metricType string, metrics []*models.Metric) *appmetric.AppMetric {
 	var count int64 = 0
 	var sum int64 = 0
 	var unit string

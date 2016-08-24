@@ -4,7 +4,7 @@ import (
 	"cf"
 	. "metricscollector/collector"
 	"metricscollector/fakes"
-	"metricscollector/metrics"
+	"models"
 
 	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/lager"
@@ -84,11 +84,11 @@ var _ = Describe("Apppoller", func() {
 						}, nil
 					}
 
-					database.SaveMetricStub = func(metric *metrics.Metric) error {
+					database.SaveMetricStub = func(metric *models.Metric) error {
 						Expect(metric.AppId).To(Equal("test-app-id"))
-						Expect(metric.Name).To(Equal(metrics.MetricNameMemory))
-						Expect(metric.Unit).To(Equal(metrics.UnitBytes))
-						Expect(metric.Instances).To(ConsistOf(metrics.InstanceMetric{Index: 0, Value: "1234"}))
+						Expect(metric.Name).To(Equal(models.MetricNameMemory))
+						Expect(metric.Unit).To(Equal(models.UnitBytes))
+						Expect(metric.Instances).To(ConsistOf(models.InstanceMetric{Index: 0, Value: "1234"}))
 						return nil
 					}
 
@@ -147,11 +147,11 @@ var _ = Describe("Apppoller", func() {
 
 					}
 
-					database.SaveMetricStub = func(metric *metrics.Metric) error {
+					database.SaveMetricStub = func(metric *models.Metric) error {
 						Expect(metric.AppId).To(Equal("test-app-id"))
-						Expect(metric.Name).To(Equal(metrics.MetricNameMemory))
-						Expect(metric.Unit).To(Equal(metrics.UnitBytes))
-						Expect(metric.Instances).To(ConsistOf(metrics.InstanceMetric{Index: 0, Value: "1234"}))
+						Expect(metric.Name).To(Equal(models.MetricNameMemory))
+						Expect(metric.Unit).To(Equal(models.UnitBytes))
+						Expect(metric.Instances).To(ConsistOf(models.InstanceMetric{Index: 0, Value: "1234"}))
 						return nil
 					}
 
@@ -208,11 +208,11 @@ var _ = Describe("Apppoller", func() {
 					}
 				}
 
-				database.SaveMetricStub = func(metric *metrics.Metric) error {
+				database.SaveMetricStub = func(metric *models.Metric) error {
 					Expect(metric.AppId).To(Equal("test-app-id"))
-					Expect(metric.Name).To(Equal(metrics.MetricNameMemory))
-					Expect(metric.Unit).To(Equal(metrics.UnitBytes))
-					Expect(metric.Instances).To(ConsistOf(metrics.InstanceMetric{Index: 0, Value: "1234"}))
+					Expect(metric.Name).To(Equal(models.MetricNameMemory))
+					Expect(metric.Unit).To(Equal(models.UnitBytes))
+					Expect(metric.Instances).To(ConsistOf(models.InstanceMetric{Index: 0, Value: "1234"}))
 					return nil
 				}
 

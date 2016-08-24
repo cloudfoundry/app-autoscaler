@@ -51,8 +51,6 @@ cf:
   user: "admin"
 server:
   port: "port"
-  user: "user"
-  pass: "password"
 logging:
   level: "info"
 db:
@@ -84,7 +82,7 @@ db:
   policy_db_url: "postgres://pqgotest:password@localhost/pqgotest" 
   metrics_db_url: "postgres://pqgotest:password@localhost/pqgotest" 
 collector:
-  refresh_interval: 30
+  refresh_interval: 20
   poll_interval: 10
 `)
 			})
@@ -102,6 +100,9 @@ collector:
 				Expect(conf.Server.Port).To(Equal(8989))
 
 				Expect(conf.Logging.Level).To(Equal("debug"))
+
+				Expect(conf.Collector.RefreshInterval).To(Equal(20))
+				Expect(conf.Collector.PollInterval).To(Equal(10))
 			})
 		})
 
@@ -122,6 +123,8 @@ db:
 				Expect(conf.Cf.GrantType).To(Equal(cf.GrantTypePassword))
 				Expect(conf.Server.Port).To(Equal(8080))
 				Expect(conf.Logging.Level).To(Equal(DefaultLoggingLevel))
+				Expect(conf.Collector.RefreshInterval).To(Equal(DefaultRefreshInterval))
+				Expect(conf.Collector.PollInterval).To(Equal(DefaultPollInterval))
 			})
 		})
 

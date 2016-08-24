@@ -5,7 +5,7 @@ import (
 	"eventgenerator/aggregator/fakes"
 	. "eventgenerator/appmetric"
 	. "eventgenerator/policy"
-	. "metricscollector/metrics"
+	"models"
 	"net/http"
 	"regexp"
 	"time"
@@ -49,32 +49,32 @@ var _ = Describe("Aggregator", func() {
 		      }
 		   ]
 		}`
-		metrics []*Metric = []*Metric{
-			&Metric{
+		metrics []*models.Metric = []*models.Metric{
+			&models.Metric{
 				Name:      metricType,
 				Unit:      unit,
 				AppId:     testAppId,
 				TimeStamp: timestamp,
-				Instances: []InstanceMetric{InstanceMetric{
+				Instances: []models.InstanceMetric{models.InstanceMetric{
 					Timestamp: timestamp,
 					Index:     0,
 					Value:     "100",
-				}, InstanceMetric{
+				}, models.InstanceMetric{
 					Timestamp: timestamp,
 					Index:     1,
 					Value:     "200",
 				}},
 			},
-			&Metric{
+			&models.Metric{
 				Name:      metricType,
 				Unit:      unit,
 				AppId:     testAppId,
 				TimeStamp: timestamp,
-				Instances: []InstanceMetric{InstanceMetric{
+				Instances: []models.InstanceMetric{models.InstanceMetric{
 					Timestamp: timestamp,
 					Index:     0,
 					Value:     "300",
-				}, InstanceMetric{
+				}, models.InstanceMetric{
 					Timestamp: timestamp,
 					Index:     1,
 					Value:     "400",
