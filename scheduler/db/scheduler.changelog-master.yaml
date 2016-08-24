@@ -53,6 +53,11 @@ databaseChangeLog:
                   type: integer
                   constraints:
                     nullable: false
+              - column:
+                  name: initial_min_instance_count
+                  type: integer
+                  constraints:
+                    nullable: true
 
         - createIndex:
              columns:
@@ -127,6 +132,11 @@ databaseChangeLog:
                   type: integer
                   constraints:
                     nullable: false
+              - column:
+                  name: initial_min_instance_count
+                  type: integer
+                  constraints:
+                    nullable: true
 
         - createIndex:
              columns:

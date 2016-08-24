@@ -33,6 +33,7 @@ import org.springframework.test.annotation.DirtiesContext.ClassMode;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
@@ -210,6 +211,39 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.instanceCount.invalid.min.greater",
 				scheduleBeingProcessed + " 0", "instance_max_count", instanceMaxCount, "instance_min_count",
 				instanceMinCount);
+
+		assertErrorMessage(appId, content, errorMessage);
+	}
+
+	@Test
+	public void testCreateSchedule_with_initialMinInstanceCount() throws Exception {
+
+		ObjectMapper mapper = new ObjectMapper();
+		int noOfSpecificDateSchedulesToSetUp = 1;
+		ApplicationScalingSchedules schedules = TestDataSetupHelper
+				.generateSchedules(noOfSpecificDateSchedulesToSetUp, 0);
+
+		schedules.getSpecific_date().get(0).setInitialMinInstanceCount(5);
+
+		String content = mapper.writeValueAsString(schedules);
+
+		assertResponseStatusEquals(appId, content, status().isCreated());
+	}
+
+	@Test
+	public void testCreateSchedule_negative_initialMinInstanceCount() throws Exception {
+
+		ObjectMapper mapper = new ObjectMapper();
+		int noOfSpecificDateSchedulesToSetUp = 1;
+		ApplicationScalingSchedules schedules = TestDataSetupHelper
+				.generateSchedules(noOfSpecificDateSchedulesToSetUp, 0);
+		Integer initialMinInstanceCount = -1;
+		schedules.getSpecific_date().get(0).setInitialMinInstanceCount(initialMinInstanceCount);
+
+		String content = mapper.writeValueAsString(schedules);
+
+		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.invalid",
+				scheduleBeingProcessed + " 0", "initial_min_instance_count", initialMinInstanceCount);
 
 		assertErrorMessage(appId, content, errorMessage);
 	}
@@ -415,6 +449,14 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 	private ResultActions callDeleteSchedules(String appId) throws Exception {
 
 		return mockMvc.perform(delete(getCreateSchedulePath(appId)).accept(MediaType.APPLICATION_JSON));
+
+	}
+	
+	private void assertResponseStatusEquals(String appId, String inputContent, ResultMatcher status) throws Exception {
+		ResultActions resultActions = mockMvc.perform(
+				put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(inputContent));
+
+		resultActions.andExpect(status);
 
 	}
 

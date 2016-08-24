@@ -44,6 +44,9 @@ public class ScheduleEntity {
 	@NotNull
 	private Integer instanceMaxCount;
 
+	@Column(name = "initial_min_instance_count")
+	private Integer initialMinInstanceCount;
+
 	public Long getId() {
 		return id;
 	}
@@ -100,11 +103,20 @@ public class ScheduleEntity {
 		this.instanceMaxCount = instanceMaxCount;
 	}
 
+	public Integer getInitialMinInstanceCount() {
+		return initialMinInstanceCount;
+	}
+
+	public void setInitialMinInstanceCount(Integer initialMinInstanceCount) {
+		this.initialMinInstanceCount = initialMinInstanceCount;
+	}
+
 	@Override
 	public String toString() {
 		return "ScheduleEntity [id=" + id + ", appId=" + appId + ", timeZone=" + timeZone + ", defaultInstanceMinCount="
 				+ defaultInstanceMinCount + ", defaultInstanceMaxCount=" + defaultInstanceMaxCount
-				+ ", instanceMinCount=" + instanceMinCount + ", instanceMaxCount=" + instanceMaxCount + "]";
+				+ ", instanceMinCount=" + instanceMinCount + ", instanceMaxCount=" + instanceMaxCount
+				+ ", initialMinInstanceCount=" + initialMinInstanceCount + "]";
 	}
 
 }

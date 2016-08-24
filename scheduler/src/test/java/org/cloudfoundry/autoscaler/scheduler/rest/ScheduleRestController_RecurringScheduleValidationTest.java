@@ -357,6 +357,41 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	}
 
 	@Test
+	public void testCreateSchedule_with_initialMinInstanceCount() throws Exception {
+
+		ObjectMapper mapper = new ObjectMapper();
+		int noOfRecurringSchedulesToSetUp = 1;
+		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(0,
+				noOfRecurringSchedulesToSetUp);
+
+		schedules.getRecurring_schedule().get(0).setInitialMinInstanceCount(5);
+
+		String content = mapper.writeValueAsString(schedules);
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+
+		assertResponseStatusEquals(appId, content, status().isCreated());
+	}
+
+	@Test
+	public void testCreateSchedule_negative_initialMinInstanceCount() throws Exception {
+
+		ObjectMapper mapper = new ObjectMapper();
+		int noOfRecurringSchedulesToSetUp = 1;
+		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(0,
+				noOfRecurringSchedulesToSetUp);
+		Integer initialMinInstanceCount = -1;
+		schedules.getRecurring_schedule().get(0).setInitialMinInstanceCount(initialMinInstanceCount);
+
+		String content = mapper.writeValueAsString(schedules);
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+
+		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.invalid",
+				scheduleBeingProcessed + " 0", "initial_min_instance_count", initialMinInstanceCount);
+
+		assertErrorMessage(appId, content, errorMessage);
+	}
+
+	@Test
 	public void testCreateSchedule_without_dayOfWeek_and_dayOfMonth() throws Exception {
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 1;
