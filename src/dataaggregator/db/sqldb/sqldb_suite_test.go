@@ -46,6 +46,12 @@ func cleanPolicyTable() {
 		Fail("can not clean policy table: " + e.Error())
 	}
 }
+func cleanAppMetricTable() {
+	_, e := dbHelper.Exec("DELETE from app_metric")
+	if e != nil {
+		Fail("can not clean app_metric table: " + e.Error())
+	}
+}
 
 func insertPolicy(appId string) {
 	policy := `{"instance_min_count": 1,"instance_max_count": 5}`
@@ -56,4 +62,13 @@ func insertPolicy(appId string) {
 		Fail("can not insert data to policy table: " + e.Error())
 	}
 
+}
+func hasAppMetric(appId, metricType string, timestamp int64) bool {
+	query := "SELECT * FROM app_metric WHERE app_id = $1 AND metric_type = $2 AND timestamp = $3"
+	rows, e := dbHelper.Query(query, appId, metricType, timestamp)
+	if e != nil {
+		Fail("can not query table app_metric: " + e.Error())
+	}
+	defer rows.Close()
+	return rows.Next()
 }

@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
+	"dataaggregator/appmetric"
 	"dataaggregator/policy"
 	"os"
 )
@@ -25,7 +26,7 @@ var _ = Describe("Sqldb", func() {
 	BeforeEach(func() {
 		logger = lager.NewLogger("sqldb-test")
 		dbUrl := os.Getenv("DBURL")
-		conf = &config.Config{PolicyDbUrl: dbUrl}
+		conf = &config.Config{PolicyDbUrl: dbUrl, AppMetricDbUrl: dbUrl}
 	})
 
 	Describe("NewSQLDB", func() {
@@ -44,6 +45,14 @@ var _ = Describe("Sqldb", func() {
 			Context("when policy db url is not correct", func() {
 				BeforeEach(func() {
 					conf.PolicyDbUrl = "postgres://non-exist-user:non-exist-password@localhost/autoscaler?sslmode=disable"
+				})
+				It("should error", func() {
+					Expect(err).To(BeAssignableToTypeOf(&pq.Error{}))
+				})
+			})
+			Context("when appmetric db url is not correct", func() {
+				BeforeEach(func() {
+					conf.AppMetricDbUrl = "postgres://non-exist-user:non-exist-password@localhost/autoscaler?sslmode=disable"
 				})
 				It("should error", func() {
 					Expect(err).To(BeAssignableToTypeOf(&pq.Error{}))
@@ -98,5 +107,36 @@ var _ = Describe("Sqldb", func() {
 				))
 			})
 		})
+	})
+	Describe("SaveAppMetric", func() {
+		BeforeEach(func() {
+			db, err = NewSQLDB(conf, logger)
+			Expect(err).NotTo(HaveOccurred())
+			cleanAppMetricTable()
+		})
+
+		AfterEach(func() {
+			err = db.Close()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		Context("When inserting a metric of an app", func() {
+			BeforeEach(func() {
+				appMetric := &appmetric.AppMetric{
+					AppId:      "test-app-id",
+					MetricType: "MemoryUsage",
+					Unit:       "bytes",
+					Timestamp:  11111111,
+					Value:      30000,
+				}
+				err = db.SaveAppMetric(appMetric)
+			})
+
+			It("has the appMetric in database", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(hasAppMetric("test-app-id", "MemoryUsage", 11111111)).To(BeTrue())
+			})
+		})
+
 	})
 })

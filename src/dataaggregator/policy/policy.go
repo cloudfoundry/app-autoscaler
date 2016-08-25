@@ -33,16 +33,16 @@ func (p *PolicyJson) GetTrigger() *Trigger {
 }
 
 type TriggerRecord struct {
-	InstanceMaxCount int            `json:"instance_max_count"`
-	InstanceMinCount int            `json:"instance_min_count"`
+	InstanceMaxCount int64          `json:"instance_max_count"`
+	InstanceMinCount int64          `json:"instance_min_count"`
 	ScalingRules     []*ScalingRule `json:"scaling_rules"`
 }
 type ScalingRule struct {
 	MetricType         string `json:"metric_type"`
-	StatWindowSecs     int    `json:"stat_window_secs"`
-	BreachDurationSecs int    `json:"breach_duration_secs"`
-	CoolDownSecs       int    `json:"cool_down_secs"`
-	Threshold          int    `json:"threshold"`
+	StatWindowSecs     int64  `json:"stat_window_secs"`
+	BreachDurationSecs int64  `json:"breach_duration_secs"`
+	CoolDownSecs       int64  `json:"cool_down_secs"`
+	Threshold          int64  `json:"threshold"`
 	Operator           string `json:"operator"`
 	Adjustment         string `json:"adjustment"`
 }
