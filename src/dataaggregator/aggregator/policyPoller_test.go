@@ -5,6 +5,7 @@ import (
 	"code.cloudfoundry.org/lager"
 	. "dataaggregator/aggregator"
 	"dataaggregator/aggregator/fakes"
+	. "dataaggregator/appmetric"
 	. "dataaggregator/policy"
 	"errors"
 	. "github.com/onsi/ginkgo"
@@ -20,6 +21,7 @@ var _ = Describe("PolicyPoller", func() {
 		triggerMap map[string]*Trigger
 		logger     lager.Logger
 		consumer   Consumer
+		appChan    chan *AppMonitor
 		testAppId1 = "testAppId"
 		policyStr1 = `
 		{
@@ -28,11 +30,11 @@ var _ = Describe("PolicyPoller", func() {
 		   "scaling_rules":[
 		      {
 		         "metric_type":"MemoryUsage",
-		         "stat_window_secs":300,
-		         "breach_duration_secs":300,
+		         "stat_window":300,
+		         "breach_duration":300,
 		         "threshold":30,
 		         "operator":"<",
-		         "cool_down_secs":300,
+		         "cool_down_duration":300,
 		         "adjustment":"-1"
 		      }
 		   ]
@@ -44,12 +46,13 @@ var _ = Describe("PolicyPoller", func() {
 		database = &fakes.FakeDB{}
 		clock = fakeclock.NewFakeClock(time.Now())
 		logger = lager.NewLogger("PolicyPoller-test")
-		consumer = func(policies []*PolicyJson, triggers map[string]*Trigger) {}
+		consumer = func(triggers map[string]*Trigger, appChan chan *AppMonitor) {}
+		appChan = make(chan *AppMonitor, 1)
 
 	})
 	Context("Start", func() {
 		JustBeforeEach(func() {
-			poller = NewPolicyPoller(logger, clock, TestPolicyPollerInterval, database, consumer)
+			poller = NewPolicyPoller(logger, clock, TestPolicyPollerInterval, database, consumer, appChan)
 			poller.Start()
 
 		})
@@ -75,7 +78,7 @@ var _ = Describe("PolicyPoller", func() {
 						return []*PolicyJson{&PolicyJson{AppId: testAppId1, PolicyStr: policyStr1}}, nil
 					}
 					consumed = make(chan map[string]*Trigger, 1)
-					consumer = func(policies []*PolicyJson, triggers map[string]*Trigger) {
+					consumer = func(triggers map[string]*Trigger, appChan chan *AppMonitor) {
 						consumed <- triggers
 					}
 				})
@@ -89,13 +92,13 @@ var _ = Describe("PolicyPoller", func() {
 							InstanceMaxCount: 5,
 							InstanceMinCount: 1,
 							ScalingRules: []*ScalingRule{&ScalingRule{
-								MetricType:         "MemoryUsage",
-								StatWindowSecs:     300,
-								BreachDurationSecs: 300,
-								CoolDownSecs:       300,
-								Threshold:          30,
-								Operator:           "<",
-								Adjustment:         "-1",
+								MetricType:       "MemoryUsage",
+								StatWindow:       300,
+								BreachDuration:   300,
+								CoolDownDuration: 300,
+								Threshold:        30,
+								Operator:         "<",
+								Adjustment:       "-1",
 							}}},
 					}))
 				})
@@ -107,7 +110,7 @@ var _ = Describe("PolicyPoller", func() {
 						return nil, errors.New("error when retrieve policies from database")
 					}
 					consumed = make(chan bool, 1)
-					consumer = func(policies []*PolicyJson, triggers map[string]*Trigger) {
+					consumer = func(triggers map[string]*Trigger, appChan chan *AppMonitor) {
 						consumed <- true
 					}
 				})
@@ -120,7 +123,7 @@ var _ = Describe("PolicyPoller", func() {
 	})
 	Context("Stop", func() {
 		BeforeEach(func() {
-			poller = NewPolicyPoller(logger, clock, TestPolicyPollerInterval, database, consumer)
+			poller = NewPolicyPoller(logger, clock, TestPolicyPollerInterval, database, consumer, appChan)
 			poller.Start()
 			poller.Stop()
 		})

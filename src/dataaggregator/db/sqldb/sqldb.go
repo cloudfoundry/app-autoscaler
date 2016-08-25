@@ -5,24 +5,27 @@ import (
 	"errors"
 
 	"code.cloudfoundry.org/lager"
-	_ "github.com/lib/pq"
-
+	"dataaggregator/appmetric"
 	"dataaggregator/config"
 	"dataaggregator/policy"
 	"fmt"
+	_ "github.com/lib/pq"
 )
 
 const PostgresDriverName = "postgres"
 
 type SQLDB struct {
-	policyDb    *sql.DB
-	logger      lager.Logger
-	policyDbUrl string
+	policyDb       *sql.DB
+	appMetricDb    *sql.DB
+	logger         lager.Logger
+	policyDbUrl    string
+	appMetricDbUrl string
 }
 
 func NewSQLDB(conf *config.Config, logger lager.Logger) (*SQLDB, error) {
 	sqldb := &SQLDB{}
 	sqldb.policyDbUrl = conf.PolicyDbUrl
+	sqldb.appMetricDbUrl = conf.AppMetricDbUrl
 	sqldb.logger = logger
 
 	var err error
@@ -41,6 +44,20 @@ func NewSQLDB(conf *config.Config, logger lager.Logger) (*SQLDB, error) {
 		return nil, err
 	}
 
+	sqldb.appMetricDb, err = sql.Open(PostgresDriverName, conf.AppMetricDbUrl)
+	if err != nil {
+		logger.Error("open-appmetric-db", err)
+		sqldb.Close()
+		return nil, err
+	}
+
+	err = sqldb.appMetricDb.Ping()
+	if err != nil {
+		sqldb.appMetricDb = nil
+		sqldb.Close()
+		return nil, err
+	}
+
 	return sqldb, nil
 }
 
@@ -54,9 +71,16 @@ func (db *SQLDB) Close() error {
 			hasError = true
 		}
 	}
+	if db.appMetricDb != nil {
+		err := db.appMetricDb.Close()
+		if err != nil {
+			db.logger.Error("Close-appmetric-db", err)
+			hasError = true
+		}
+	}
 
 	if hasError {
-		return errors.New("Error closing policy db")
+		return errors.New("Error closing policy db or appmetric db")
 	}
 
 	return nil
@@ -88,4 +112,14 @@ func (db *SQLDB) RetrievePolicies() ([]*policy.PolicyJson, error) {
 		policyList = append(policyList, &policy)
 	}
 	return policyList, nil
+}
+func (db *SQLDB) SaveAppMetric(appMetric *appmetric.AppMetric) error {
+	query := "INSERT INTO app_metric(app_id, metric_type, unit, timestamp, value) values($1, $2, $3, $4, $5)"
+	_, err := db.appMetricDb.Exec(query, appMetric.AppId, appMetric.MetricType, appMetric.Unit, appMetric.Timestamp, appMetric.Value)
+
+	if err != nil {
+		db.logger.Error("insert-metric-into-app-metric-table", err, lager.Data{"query": query, "appMetric": appMetric})
+	}
+
+	return err
 }

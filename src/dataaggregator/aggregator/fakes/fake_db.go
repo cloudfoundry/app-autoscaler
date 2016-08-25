@@ -2,6 +2,7 @@
 package fakes
 
 import (
+	"dataaggregator/appmetric"
 	"dataaggregator/db"
 	"dataaggregator/policy"
 	"sync"
@@ -14,6 +15,14 @@ type FakeDB struct {
 	retrievePoliciesReturns     struct {
 		result1 []*policy.PolicyJson
 		result2 error
+	}
+	SaveAppMetricStub        func(appMetric *appmetric.AppMetric) error
+	saveAppMetricMutex       sync.RWMutex
+	saveAppMetricArgsForCall []struct {
+		appMetric *appmetric.AppMetric
+	}
+	saveAppMetricReturns struct {
+		result1 error
 	}
 	CloseStub        func() error
 	closeMutex       sync.RWMutex
@@ -51,6 +60,39 @@ func (fake *FakeDB) RetrievePoliciesReturns(result1 []*policy.PolicyJson, result
 	}{result1, result2}
 }
 
+func (fake *FakeDB) SaveAppMetric(appMetric *appmetric.AppMetric) error {
+	fake.saveAppMetricMutex.Lock()
+	fake.saveAppMetricArgsForCall = append(fake.saveAppMetricArgsForCall, struct {
+		appMetric *appmetric.AppMetric
+	}{appMetric})
+	fake.recordInvocation("SaveAppMetric", []interface{}{appMetric})
+	fake.saveAppMetricMutex.Unlock()
+	if fake.SaveAppMetricStub != nil {
+		return fake.SaveAppMetricStub(appMetric)
+	} else {
+		return fake.saveAppMetricReturns.result1
+	}
+}
+
+func (fake *FakeDB) SaveAppMetricCallCount() int {
+	fake.saveAppMetricMutex.RLock()
+	defer fake.saveAppMetricMutex.RUnlock()
+	return len(fake.saveAppMetricArgsForCall)
+}
+
+func (fake *FakeDB) SaveAppMetricArgsForCall(i int) *appmetric.AppMetric {
+	fake.saveAppMetricMutex.RLock()
+	defer fake.saveAppMetricMutex.RUnlock()
+	return fake.saveAppMetricArgsForCall[i].appMetric
+}
+
+func (fake *FakeDB) SaveAppMetricReturns(result1 error) {
+	fake.SaveAppMetricStub = nil
+	fake.saveAppMetricReturns = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakeDB) Close() error {
 	fake.closeMutex.Lock()
 	fake.closeArgsForCall = append(fake.closeArgsForCall, struct{}{})
@@ -81,6 +123,8 @@ func (fake *FakeDB) Invocations() map[string][][]interface{} {
 	defer fake.invocationsMutex.RUnlock()
 	fake.retrievePoliciesMutex.RLock()
 	defer fake.retrievePoliciesMutex.RUnlock()
+	fake.saveAppMetricMutex.RLock()
+	defer fake.saveAppMetricMutex.RUnlock()
 	fake.closeMutex.RLock()
 	defer fake.closeMutex.RUnlock()
 	return fake.invocations
