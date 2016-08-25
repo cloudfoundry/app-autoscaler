@@ -90,13 +90,21 @@ func main() {
 		return collector.NewAppPoller(appId, conf.Collector.PollInterval, logger.Session("app-poller"), cfClient, noaa, metricsDB, mcClock)
 	}
 
-	collectServer := collector.NewCollector(conf.Collector.RefreshInterval, logger.Session("collector"), policyDB, mcClock, createPoller)
-	collectServer.Start()
-	defer collectServer.Stop()
+	collectServer := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
+		mc := collector.NewCollector(conf.Collector.RefreshInterval, logger.Session("collector"), policyDB, mcClock, createPoller)
+		mc.Start()
 
+		close(ready)
+
+		<-signals
+		mc.Stop()
+
+		return nil
+	})
 	httpServer := server.NewServer(logger, conf.Server, cfClient, noaa, metricsDB)
 
 	members := grouper.Members{
+		{"collector", collectServer},
 		{"http_server", httpServer},
 	}
 

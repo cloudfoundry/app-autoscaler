@@ -34,7 +34,6 @@ func NewMetricsSQLDB(url string, logger lager.Logger) (*MetricsSQLDB, error) {
 	err = metricsDB.sqldb.Ping()
 	if err != nil {
 		metricsDB.sqldb.Close()
-		metricsDB.sqldb = nil
 		logger.Error("ping-metrics-db", err, lager.Data{"url": url})
 		return nil, err
 	}
@@ -43,12 +42,10 @@ func NewMetricsSQLDB(url string, logger lager.Logger) (*MetricsSQLDB, error) {
 }
 
 func (mdb *MetricsSQLDB) Close() error {
-	if mdb.sqldb != nil {
-		err := mdb.sqldb.Close()
-		if err != nil {
-			mdb.logger.Error("close-metrics-db", err, lager.Data{"url": mdb.url})
-			return err
-		}
+	err := mdb.sqldb.Close()
+	if err != nil {
+		mdb.logger.Error("close-metrics-db", err, lager.Data{"url": mdb.url})
+		return err
 	}
 	return nil
 }
@@ -86,7 +83,7 @@ func (mdb *MetricsSQLDB) RetrieveMetrics(appid string, name string, start int64,
 	if err != nil {
 		mdb.logger.Error("retrive-metrics-from-applicationmetrics-table", err,
 			lager.Data{"query": query, "appid": appid, "metricName": name, "start": start, "end": end})
-		return mtrcs, err
+		return nil, err
 	}
 
 	defer rows.Close()

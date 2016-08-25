@@ -34,7 +34,6 @@ func NewPolicySQLDB(url string, logger lager.Logger) (*PolicySQLDB, error) {
 	err = policyDB.sqldb.Ping()
 	if err != nil {
 		policyDB.sqldb.Close()
-		policyDB.sqldb = nil
 		logger.Error("ping-policy-db", err, lager.Data{"url": url})
 		return nil, err
 	}
@@ -43,12 +42,10 @@ func NewPolicySQLDB(url string, logger lager.Logger) (*PolicySQLDB, error) {
 }
 
 func (pdb *PolicySQLDB) Close() error {
-	if pdb.sqldb != nil {
-		err := pdb.sqldb.Close()
-		if err != nil {
-			pdb.logger.Error("Close-policy-db", err, lager.Data{"url": pdb.url})
-			return err
-		}
+	err := pdb.sqldb.Close()
+	if err != nil {
+		pdb.logger.Error("Close-policy-db", err, lager.Data{"url": pdb.url})
+		return err
 	}
 	return nil
 }
