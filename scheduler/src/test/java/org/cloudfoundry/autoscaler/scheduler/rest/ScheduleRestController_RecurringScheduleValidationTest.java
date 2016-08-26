@@ -15,7 +15,7 @@ import java.util.List;
 
 import org.cloudfoundry.autoscaler.scheduler.dao.RecurringScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
-import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationScalingSchedules;
+import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationSchedules;
 import org.cloudfoundry.autoscaler.scheduler.util.DateHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleTypeEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
@@ -72,7 +72,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 
 	@Before
 	public void beforeTest() throws Exception {
-		// Clear previous schedules.
+		// Clear previous applicationPolicy.getSchedules().
 		scheduler.clear();
 		mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
 		removeData();
@@ -89,15 +89,16 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 
 	@Test
 	public void testCreateSchedule_with_startDate() throws Exception {
-		
+
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 5;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(0,
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
 				noOfRecurringSchedulesToSetUp);
 
-		schedules.getRecurring_schedule().get(0).setStartDate(TestDataSetupHelper.addDaysToNow(0));
+		applicationPolicy.getSchedules().getRecurringSchedule().get(0)
+				.setStartDate(TestDataSetupHelper.addDaysToNow(0));
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
 		assertResponseStatusEquals(appId, content, status().isCreated());
@@ -108,13 +109,13 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(0,
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
 				noOfRecurringSchedulesToSetUp);
 
 		Date startDate = new Date(0);
-		schedules.getRecurring_schedule().get(0).setStartDate(startDate);
+		applicationPolicy.getSchedules().getRecurringSchedule().get(0).setStartDate(startDate);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.invalid.before.current",
@@ -128,12 +129,13 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 5;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(
-				0, noOfRecurringSchedulesToSetUp);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
+				noOfRecurringSchedulesToSetUp);
 
-		schedules.getRecurring_schedule().get(0).setEndDate(TestDataSetupHelper.addDaysToNow(7));
+		applicationPolicy.getSchedules().getRecurringSchedule().get(0)
+				.setEndDate(TestDataSetupHelper.addDaysToNow(7));
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
 		assertResponseStatusEquals(appId, content, status().isCreated());
@@ -144,13 +146,13 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(
-				0, noOfRecurringSchedulesToSetUp);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
+				noOfRecurringSchedulesToSetUp);
 
 		Date endDate = new Date(0);
-		schedules.getRecurring_schedule().get(0).setEndDate(endDate);
+		applicationPolicy.getSchedules().getRecurringSchedule().get(0).setEndDate(endDate);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.invalid.before.current",
@@ -164,10 +166,10 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(
-				0, noOfRecurringSchedulesToSetUp);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
+				noOfRecurringSchedulesToSetUp);
 
-		RecurringScheduleEntity entity = schedules.getRecurring_schedule().get(0);
+		RecurringScheduleEntity entity = applicationPolicy.getSchedules().getRecurringSchedule().get(0);
 
 		// Swap startDate for endDate.
 		Calendar currentTime = Calendar.getInstance();
@@ -179,7 +181,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 		entity.setStartDate(startDate);
 		entity.setEndDate(endDate);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.invalid.end.before.start",
@@ -194,12 +196,12 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(
-				0, noOfRecurringSchedulesToSetUp);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
+				noOfRecurringSchedulesToSetUp);
 
-		schedules.getRecurring_schedule().get(0).setStartTime(null);
+		applicationPolicy.getSchedules().getRecurringSchedule().get(0).setStartTime(null);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.not.specified",
@@ -213,12 +215,12 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(
-				0, noOfRecurringSchedulesToSetUp);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
+				noOfRecurringSchedulesToSetUp);
 
-		schedules.getRecurring_schedule().get(0).setEndTime(null);
+		applicationPolicy.getSchedules().getRecurringSchedule().get(0).setEndTime(null);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.not.specified",
@@ -233,10 +235,10 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(
-				0, noOfRecurringSchedulesToSetUp);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
+				noOfRecurringSchedulesToSetUp);
 
-		RecurringScheduleEntity entity = schedules.getRecurring_schedule().get(0);
+		RecurringScheduleEntity entity = applicationPolicy.getSchedules().getRecurringSchedule().get(0);
 
 		// Swap startTime for endTime.
 		Time endTime = entity.getStartTime();
@@ -244,7 +246,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 		entity.setStartTime(startTime);
 		entity.setEndTime(endTime);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.invalid.start.after.end",
@@ -259,12 +261,12 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(
-				0, noOfRecurringSchedulesToSetUp);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
+				noOfRecurringSchedulesToSetUp);
 
-		schedules.getRecurring_schedule().get(0).setInstanceMaxCount(null);
+		applicationPolicy.getSchedules().getRecurringSchedule().get(0).setInstanceMaxCount(null);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.not.specified",
@@ -278,12 +280,12 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(
-				0, noOfRecurringSchedulesToSetUp);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
+				noOfRecurringSchedulesToSetUp);
 
-		schedules.getRecurring_schedule().get(0).setInstanceMinCount(null);
+		applicationPolicy.getSchedules().getRecurringSchedule().get(0).setInstanceMinCount(null);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.not.specified",
@@ -297,13 +299,13 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(
-				0, noOfRecurringSchedulesToSetUp);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
+				noOfRecurringSchedulesToSetUp);
 
 		int instanceMinCount = -1;
-		schedules.getRecurring_schedule().get(0).setInstanceMinCount(instanceMinCount);
+		applicationPolicy.getSchedules().getRecurringSchedule().get(0).setInstanceMinCount(instanceMinCount);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.invalid",
@@ -317,13 +319,13 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(
-				0, noOfRecurringSchedulesToSetUp);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
+				noOfRecurringSchedulesToSetUp);
 
 		int instanceMaxCount = -1;
-		schedules.getRecurring_schedule().get(0).setInstanceMaxCount(instanceMaxCount);
+		applicationPolicy.getSchedules().getRecurringSchedule().get(0).setInstanceMaxCount(instanceMaxCount);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.invalid",
@@ -337,16 +339,16 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(
-				0, noOfRecurringSchedulesToSetUp);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
+				noOfRecurringSchedulesToSetUp);
 
-		RecurringScheduleEntity entity = schedules.getRecurring_schedule().get(0);
+		RecurringScheduleEntity entity = applicationPolicy.getSchedules().getRecurringSchedule().get(0);
 		Integer instanceMinCount = 5;
 		Integer instanceMaxCount = 4;
 		entity.setInstanceMaxCount(instanceMaxCount);
 		entity.setInstanceMinCount(instanceMinCount);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.instanceCount.invalid.min.greater",
@@ -361,12 +363,12 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(0,
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
 				noOfRecurringSchedulesToSetUp);
 
-		schedules.getRecurring_schedule().get(0).setInitialMinInstanceCount(5);
+		applicationPolicy.getSchedules().getRecurringSchedule().get(0).setInitialMinInstanceCount(5);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
 		assertResponseStatusEquals(appId, content, status().isCreated());
@@ -377,12 +379,12 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(0,
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
 				noOfRecurringSchedulesToSetUp);
 		Integer initialMinInstanceCount = -1;
-		schedules.getRecurring_schedule().get(0).setInitialMinInstanceCount(initialMinInstanceCount);
+		applicationPolicy.getSchedules().getRecurringSchedule().get(0).setInitialMinInstanceCount(initialMinInstanceCount);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.invalid",
@@ -395,15 +397,15 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	public void testCreateSchedule_without_dayOfWeek_and_dayOfMonth() throws Exception {
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(
-				0, noOfRecurringSchedulesToSetUp);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
+				noOfRecurringSchedulesToSetUp);
 
-		RecurringScheduleEntity entity = schedules.getRecurring_schedule().get(0);
+		RecurringScheduleEntity entity = applicationPolicy.getSchedules().getRecurringSchedule().get(0);
 
 		entity.setDayOfMonth(null);
-		entity.setDayOfWeek(null);
+		entity.setDaysOfWeek(null);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.both.values.not.specified",
@@ -416,15 +418,15 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	public void testCreateSchedule_empty_dayOfWeek_and_dayOfMonth() throws Exception {
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(
-				0, noOfRecurringSchedulesToSetUp);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
+				noOfRecurringSchedulesToSetUp);
 
-		RecurringScheduleEntity entity = schedules.getRecurring_schedule().get(0);
+		RecurringScheduleEntity entity = applicationPolicy.getSchedules().getRecurringSchedule().get(0);
 
 		entity.setDayOfMonth(new int[] {});
-		entity.setDayOfWeek(new int[] {});
+		entity.setDaysOfWeek(new int[] {});
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.both.values.not.specified",
@@ -437,15 +439,15 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	public void testCreateSchedule_with_dayOfWeek_and_dayOfMonth() throws Exception {
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(
-				0, noOfRecurringSchedulesToSetUp);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
+				noOfRecurringSchedulesToSetUp);
 
-		RecurringScheduleEntity entity = schedules.getRecurring_schedule().get(0);
+		RecurringScheduleEntity entity = applicationPolicy.getSchedules().getRecurringSchedule().get(0);
 
 		entity.setDayOfMonth(TestDataSetupHelper.generateDayOfMonth());
-		entity.setDayOfWeek(TestDataSetupHelper.generateDayOfWeek());
+		entity.setDaysOfWeek(TestDataSetupHelper.generateDayOfWeek());
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.both.values.specified",
@@ -491,12 +493,12 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 		// No schedules - null case
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(
-				0, noOfRecurringSchedulesToSetUp);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
+				noOfRecurringSchedulesToSetUp);
 
-		schedules.setRecurring_schedule(null);
+		applicationPolicy.getSchedules().setRecurringSchedule(null);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("data.invalid.noSchedules", "app_id=" + appId);
@@ -509,12 +511,12 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 		// No schedules - Empty case
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(
-				0, noOfRecurringSchedulesToSetUp);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
+				noOfRecurringSchedulesToSetUp);
 
-		schedules.setRecurring_schedule(Collections.emptyList());
+		applicationPolicy.getSchedules().setRecurringSchedule(Collections.emptyList());
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("data.invalid.noSchedules", "app_id=" + appId);
@@ -524,7 +526,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 
 	@Test
 	public void testCreateSchedule_overlapping_startEndTime_with_startEndDate() throws Exception {
-		
+
 		// Overlapping test cases
 		assertOverlapStartEndDate(null, null, null, null);
 		assertOverlapStartEndDate("9999-01-01", null, null, null);
@@ -562,21 +564,21 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 2;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(
-				0, noOfRecurringSchedulesToSetUp);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
+				noOfRecurringSchedulesToSetUp);
 
-		// Overlap recurring schedules.
-		RecurringScheduleEntity firstEntity = schedules.getRecurring_schedule().get(0);
-		RecurringScheduleEntity secondEntity = schedules.getRecurring_schedule().get(1);
+		// Overlap recurring applicationPolicy.getSchedules().
+		RecurringScheduleEntity firstEntity = applicationPolicy.getSchedules().getRecurringSchedule().get(0);
+		RecurringScheduleEntity secondEntity = applicationPolicy.getSchedules().getRecurringSchedule().get(1);
 		secondEntity.setStartTime(firstEntity.getEndTime());
 
-		firstEntity.setDayOfWeek(TestDataSetupHelper.generateDayOfWeek());
+		firstEntity.setDaysOfWeek(TestDataSetupHelper.generateDayOfWeek());
 		firstEntity.setDayOfMonth(null);
 
-		secondEntity.setDayOfWeek(firstEntity.getDayOfWeek());
+		secondEntity.setDaysOfWeek(firstEntity.getDaysOfWeek());
 		secondEntity.setDayOfMonth(null);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.overlap",
@@ -589,21 +591,21 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	public void testCreateSchedule_overlapping_startEndTime_and_overlapping_dayOfMonth() throws Exception {
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 2;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(
-				0, noOfRecurringSchedulesToSetUp);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
+				noOfRecurringSchedulesToSetUp);
 
-		// Overlap recurring schedules.
-		RecurringScheduleEntity firstEntity = schedules.getRecurring_schedule().get(0);
-		RecurringScheduleEntity secondEntity = schedules.getRecurring_schedule().get(1);
+		// Overlap recurring applicationPolicy.getSchedules().
+		RecurringScheduleEntity firstEntity = applicationPolicy.getSchedules().getRecurringSchedule().get(0);
+		RecurringScheduleEntity secondEntity = applicationPolicy.getSchedules().getRecurringSchedule().get(1);
 		secondEntity.setStartTime(firstEntity.getEndTime());
 
-		firstEntity.setDayOfWeek(null);
+		firstEntity.setDaysOfWeek(null);
 		firstEntity.setDayOfMonth(TestDataSetupHelper.generateDayOfMonth());
 
-		secondEntity.setDayOfWeek(null);
-		secondEntity.setDayOfMonth(firstEntity.getDayOfMonth());
+		secondEntity.setDaysOfWeek(null);
+		secondEntity.setDayOfMonth(firstEntity.getDaysOfMonth());
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.overlap",
@@ -617,24 +619,25 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 4;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(
-				0, noOfRecurringSchedulesToSetUp);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
+				noOfRecurringSchedulesToSetUp);
 
-		// Overlap recurring schedules.
-		// Schedule 1 end date, end time and Schedule 2 start date, start time are overlapping.
+		// Overlap recurring applicationPolicy.getSchedules().
+		// Schedule 1 end date, end time and Schedule 2 start date, start time
+		// are overlapping.
 		// Schedules 3 and 4 is overlap with start date and start time.
-		RecurringScheduleEntity firstEntity = schedules.getRecurring_schedule().get(0);
-		RecurringScheduleEntity secondEntity = schedules.getRecurring_schedule().get(1);
+		RecurringScheduleEntity firstEntity = applicationPolicy.getSchedules().getRecurringSchedule().get(0);
+		RecurringScheduleEntity secondEntity = applicationPolicy.getSchedules().getRecurringSchedule().get(1);
 		secondEntity.setStartDate(firstEntity.getEndDate());
 		secondEntity.setStartTime(firstEntity.getEndTime());
 
-		firstEntity.setDayOfWeek(null);
-		firstEntity.setDayOfMonth(new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21,
-				22, 23, 24, 25, 26, 27, 28, 29, 30, 31 });
-		secondEntity.setDayOfWeek(new int[] { 1, 2, 3, 4, 5, 6, 7 });
+		firstEntity.setDaysOfWeek(null);
+		firstEntity.setDayOfMonth(new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+				21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31 });
+		secondEntity.setDaysOfWeek(new int[] { 1, 2, 3, 4, 5, 6, 7 });
 		secondEntity.setDayOfMonth(null);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		assertResponseStatusEquals(appId, content, status().isCreated());
@@ -645,34 +648,35 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 4;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(
-				0, noOfRecurringSchedulesToSetUp);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
+				noOfRecurringSchedulesToSetUp);
 
-		// Overlap recurring schedules.
-		// Schedule 1 end date, end time and Schedule 2 start date, start time are overlapping.
+		// Overlap recurring applicationPolicy.getSchedules().
+		// Schedule 1 end date, end time and Schedule 2 start date, start time
+		// are overlapping.
 		// Schedules 3 and 4 is overlap with start date and start time.
-		RecurringScheduleEntity firstEntity = schedules.getRecurring_schedule().get(0);
-		RecurringScheduleEntity secondEntity = schedules.getRecurring_schedule().get(1);
+		RecurringScheduleEntity firstEntity = applicationPolicy.getSchedules().getRecurringSchedule().get(0);
+		RecurringScheduleEntity secondEntity = applicationPolicy.getSchedules().getRecurringSchedule().get(1);
 		secondEntity.setStartDate(firstEntity.getEndDate());
 		secondEntity.setStartTime(firstEntity.getEndTime());
 
-		firstEntity.setDayOfWeek(null);
+		firstEntity.setDaysOfWeek(null);
 		firstEntity.setDayOfMonth(TestDataSetupHelper.generateDayOfMonth());
-		secondEntity.setDayOfWeek(null);
-		secondEntity.setDayOfMonth(firstEntity.getDayOfMonth());
+		secondEntity.setDaysOfWeek(null);
+		secondEntity.setDayOfMonth(firstEntity.getDaysOfMonth());
 
-		RecurringScheduleEntity thirdEntity = schedules.getRecurring_schedule().get(2);
-		RecurringScheduleEntity forthEntity = schedules.getRecurring_schedule().get(3);
+		RecurringScheduleEntity thirdEntity = applicationPolicy.getSchedules().getRecurringSchedule().get(2);
+		RecurringScheduleEntity forthEntity = applicationPolicy.getSchedules().getRecurringSchedule().get(3);
 		forthEntity.setStartDate(thirdEntity.getStartDate());
 		forthEntity.setStartTime(thirdEntity.getStartTime());
 
-		thirdEntity.setDayOfWeek(TestDataSetupHelper.generateDayOfWeek());
+		thirdEntity.setDaysOfWeek(TestDataSetupHelper.generateDayOfWeek());
 		thirdEntity.setDayOfMonth(null);
 
-		forthEntity.setDayOfWeek(thirdEntity.getDayOfWeek());
+		forthEntity.setDaysOfWeek(thirdEntity.getDaysOfWeek());
 		forthEntity.setDayOfMonth(null);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
 		List<String> messages = new ArrayList<>();
@@ -689,16 +693,16 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 		// schedules - no parameters.
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(
-				0, noOfRecurringSchedulesToSetUp);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
+				noOfRecurringSchedulesToSetUp);
 
-		RecurringScheduleEntity entity = schedules.getRecurring_schedule().get(0);
+		RecurringScheduleEntity entity = applicationPolicy.getSchedules().getRecurringSchedule().get(0);
 		entity.setInstanceMinCount(null);
 		entity.setInstanceMaxCount(null);
 		entity.setStartTime(null);
 		entity.setEndTime(null);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
 		List<String> messages = new ArrayList<>();
@@ -717,8 +721,8 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 
 	private void assertOverlapStartEndDate(String firstStartDateStr, String firstEndDateStr, String secondStartDateStr,
 			String secondEndDateStr) throws Exception {
-		String content = TestDataSetupHelper.generateJsonForOverlappingRecurringScheduleWithStartEndDate(firstStartDateStr, firstEndDateStr, secondStartDateStr,
-				secondEndDateStr);
+		String content = TestDataSetupHelper.generateJsonForOverlappingRecurringScheduleWithStartEndDate(
+				firstStartDateStr, firstEndDateStr, secondStartDateStr, secondEndDateStr);
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.overlap",
 				scheduleBeingProcessed + " 0", "end_time", scheduleBeingProcessed + " 1", "start_time");
@@ -729,8 +733,8 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 
 	private void assertNotOverlapStartEndDate(String firstStartDateStr, String firstEndDateStr,
 			String secondStartDateStr, String secondEndDateStr) throws Exception {
-		String content = TestDataSetupHelper.generateJsonForOverlappingRecurringScheduleWithStartEndDate(firstStartDateStr, firstEndDateStr, secondStartDateStr,
-				secondEndDateStr);
+		String content = TestDataSetupHelper.generateJsonForOverlappingRecurringScheduleWithStartEndDate(
+				firstStartDateStr, firstEndDateStr, secondStartDateStr, secondEndDateStr);
 
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		assertResponseStatusEquals(appId, content, status().isCreated());
@@ -757,15 +761,15 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 			throws Exception {
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfRecurringSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(
-				0, noOfRecurringSchedulesToSetUp);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
+				noOfRecurringSchedulesToSetUp);
 
-		RecurringScheduleEntity entity = schedules.getRecurring_schedule().get(0);
+		RecurringScheduleEntity entity = applicationPolicy.getSchedules().getRecurringSchedule().get(0);
 
 		entity.setDayOfMonth(dayOfMonth);
-		entity.setDayOfWeek(dayOfWeek);
+		entity.setDaysOfWeek(dayOfWeek);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
 		assertErrorMessage(appId, content, errorMessage);
@@ -774,7 +778,6 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	private void assertResponseStatusEquals(String appId, String inputContent, ResultMatcher status) throws Exception {
 		ResultActions resultActions = mockMvc.perform(
 				put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(inputContent));
-
 		resultActions.andExpect(status);
 
 	}

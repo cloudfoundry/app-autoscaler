@@ -73,7 +73,7 @@ public class RecurringScheduleEntitiesBuilder {
 	}
 
 	public RecurringScheduleEntitiesBuilder setDayOfWeek(int pos, int[] dayOfWeek) {
-		recurringScheduleEntities.get(pos).setDayOfWeek(dayOfWeek);
+		recurringScheduleEntities.get(pos).setDaysOfWeek(dayOfWeek);
 		return this;
 	}
 
@@ -111,15 +111,13 @@ public class RecurringScheduleEntitiesBuilder {
 		List<RecurringScheduleEntity> recurringScheduleEntities = new ArrayList<>();
 		for (int i = 0; i < noOfSchedules; i++) {
 			RecurringScheduleEntity recurringScheduleEntity = new RecurringScheduleEntity();
-			recurringScheduleEntity.setStartTime(java.sql.Time
-					.valueOf(TestDataSetupHelper.getTimeString(TestDataSetupHelper.getStarTime(), scheduleIndex, 0)));
-			recurringScheduleEntity.setEndTime(java.sql.Time
-					.valueOf(TestDataSetupHelper.getTimeString(TestDataSetupHelper.getEndTime(), scheduleIndex, 5)));
+			recurringScheduleEntity.setStartTime(TestDataSetupHelper.getTime(TestDataSetupHelper.getStarTime(), scheduleIndex, 0));
+			recurringScheduleEntity.setEndTime(TestDataSetupHelper.getTime(TestDataSetupHelper.getEndTime(), scheduleIndex, 5));
 
 			recurringScheduleEntity.setInstanceMinCount(i + 5);
 			recurringScheduleEntity.setInstanceMaxCount(i + 6);
 			if (isDow)
-				recurringScheduleEntity.setDayOfWeek(TestDataSetupHelper.generateDayOfWeek());
+				recurringScheduleEntity.setDaysOfWeek(TestDataSetupHelper.generateDayOfWeek());
 			else
 				recurringScheduleEntity.setDayOfMonth(TestDataSetupHelper.generateDayOfMonth());
 			recurringScheduleEntities.add(recurringScheduleEntity);

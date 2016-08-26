@@ -9,6 +9,15 @@ import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
+import org.cloudfoundry.autoscaler.scheduler.util.DateHelper;
+import org.cloudfoundry.autoscaler.scheduler.util.DateTimeDeserializer;
+import org.cloudfoundry.autoscaler.scheduler.util.DateTimeSerializer;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
 /**
  * 
  *
@@ -18,15 +27,23 @@ import javax.validation.constraints.NotNull;
 @NamedQueries({
 		@NamedQuery(name = SpecificDateScheduleEntity.query_specificDateSchedulesByAppId, query = SpecificDateScheduleEntity.jpql_specificDateSchedulesByAppId) })
 public class SpecificDateScheduleEntity extends ScheduleEntity {
-
-	@Column(name = "start_date_time")
-	@NotNull
-	private Date startDateTime;
-
-	@Column(name = "end_date_time")
-	@NotNull
-	private Date endDateTime;
 	
+	@JsonFormat(pattern = DateHelper.DATE_TIME_FORMAT)
+	@JsonDeserialize(using = DateTimeDeserializer.class)
+	@JsonSerialize(using = DateTimeSerializer.class)
+	@NotNull
+	@Column(name = "start_date_time")
+	@JsonProperty("start_date_time")
+	private Date startDateTime;
+	
+	@JsonFormat(pattern = DateHelper.DATE_TIME_FORMAT)
+	@JsonDeserialize(using = DateTimeDeserializer.class)
+	@JsonSerialize(using = DateTimeSerializer.class)
+	@NotNull
+	@Column(name = "end_date_time")
+	@JsonProperty("end_date_time")
+	private Date endDateTime;
+
 	public Date getStartDateTime() {
 		return startDateTime;
 	}
@@ -44,11 +61,13 @@ public class SpecificDateScheduleEntity extends ScheduleEntity {
 	}
 
 	public static final String query_specificDateSchedulesByAppId = "SpecificDateScheduleEntity.schedulesByAppId";
-	protected static final String jpql_specificDateSchedulesByAppId = " FROM SpecificDateScheduleEntity" + " WHERE appId = :appId";
+	protected static final String jpql_specificDateSchedulesByAppId = " FROM SpecificDateScheduleEntity"
+			+ " WHERE app_id = :appId";
 
 	@Override
 	public String toString() {
-		return "SpecificDateScheduleEntity [startDateTime=" + startDateTime + ", endDateTime=" + endDateTime + "]";
+		return "SpecificDateScheduleEntity [startDateTime=" + startDateTime + ", endDateTime=" + endDateTime
+				+ "]";
 	}
 
 }

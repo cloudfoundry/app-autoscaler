@@ -25,12 +25,12 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: start_date_time
-                  type: date
+                  type: datetime
                   constraints:
                     nullable: false
               - column:
                   name: end_date_time
-                  type: date
+                  type: datetime
                   constraints:
                     nullable: false
               - column:
@@ -91,10 +91,10 @@ databaseChangeLog:
                   constraints:
                     nullable: false
               - column:
-                  name: day_of_week
+                  name: days_of_week
                   type: Integer
               - column:
-                  name: day_of_month
+                  name: days_of_month
                   type: Integer
               - column:
                   name: start_date

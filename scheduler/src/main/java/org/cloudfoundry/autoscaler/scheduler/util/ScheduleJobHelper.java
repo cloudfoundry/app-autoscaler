@@ -86,8 +86,8 @@ public class ScheduleJobHelper {
 		int min = calendar.get(Calendar.MINUTE);
 		int hour = calendar.get(Calendar.HOUR_OF_DAY);
 
-		String dayOfWeek = convertArrayToDayOfWeekString(recurringScheduleEntity.getDayOfWeek());
-		String dayOfMonth = convertArrayToDayOfMonthString(recurringScheduleEntity.getDayOfMonth());
+		String dayOfWeek = convertArrayToDayOfWeekString(recurringScheduleEntity.getDaysOfWeek());
+		String dayOfMonth = convertArrayToDayOfMonthString(recurringScheduleEntity.getDaysOfMonth());
 
 		return String.format("00 %02d %02d %s * %s *", min, hour, dayOfMonth, dayOfWeek);
 	}

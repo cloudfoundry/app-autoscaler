@@ -11,9 +11,9 @@ import java.util.TimeZone;
  */
 public class DateHelper {
 
-	static final String DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm";
-	static final String DATE_FORMAT = "yyyy-MM-dd";
-	static final String TIME_FORMAT = "HH:mm";
+	public static final String DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm";
+	public static final String DATE_FORMAT = "yyyy-MM-dd";
+	public static final String TIME_FORMAT = "HH:mm";
 
 	public static final int DAY_OF_WEEK_MINIMUM = 1;
 	public static final int DAY_OF_WEEK_MAXIMUM = 7;

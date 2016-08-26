@@ -24,12 +24,12 @@ public class RecurringScheduleTime implements Comparable<RecurringScheduleTime> 
 		this.startTime = recurringScheduleEntity.getStartTime();
 		this.endTime = recurringScheduleEntity.getEndTime();
 
-		if (recurringScheduleEntity.getDayOfWeek() != null) {
-			this.dayOfWeek = Arrays.stream(recurringScheduleEntity.getDayOfWeek()).boxed().collect(Collectors.toList());
+		if (recurringScheduleEntity.getDaysOfWeek() != null) {
+			this.dayOfWeek = Arrays.stream(recurringScheduleEntity.getDaysOfWeek()).boxed().collect(Collectors.toList());
 		}
 
-		if (recurringScheduleEntity.getDayOfMonth() != null) {
-			this.dayOfMonth = Arrays.stream(recurringScheduleEntity.getDayOfMonth()).boxed()
+		if (recurringScheduleEntity.getDaysOfMonth() != null) {
+			this.dayOfMonth = Arrays.stream(recurringScheduleEntity.getDaysOfMonth()).boxed()
 					.collect(Collectors.toList());
 		}
 	}

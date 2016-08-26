@@ -4,7 +4,8 @@ import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationScalingSchedules;
+import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationSchedules;
+import org.cloudfoundry.autoscaler.scheduler.rest.model.Schedules;
 import org.cloudfoundry.autoscaler.scheduler.service.ScheduleManager;
 import org.cloudfoundry.autoscaler.scheduler.util.error.InvalidDataException;
 import org.cloudfoundry.autoscaler.scheduler.util.error.ValidationErrorResult;
@@ -18,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 
+ * Controller class for handling the REST api calls.
  *
  */
 @RestController
@@ -32,12 +33,13 @@ public class ScheduleRestController {
 	private Logger logger = LogManager.getLogger(this.getClass());
 
 	@RequestMapping(method = RequestMethod.GET)
-	public ResponseEntity<ApplicationScalingSchedules> getAllSchedules(@PathVariable String app_id) {
+	public ResponseEntity<ApplicationSchedules> getAllSchedules(@PathVariable String app_id) {
 		logger.info("Get All schedules for application: " + app_id);
-		ApplicationScalingSchedules savedApplicationSchedules = scheduleManager.getAllSchedules(app_id);
+		
+		ApplicationSchedules savedApplicationSchedules = scheduleManager.getAllSchedules(app_id);
 		
 		// No schedules found for the specified application return status code NOT_FOUND
-		if (!savedApplicationSchedules.hasSchedules()) {
+		if (!savedApplicationSchedules.getSchedules().hasSchedules()) {
 			return new ResponseEntity<>(null, null, HttpStatus.NOT_FOUND);
 		} else {
 			return new ResponseEntity<>(savedApplicationSchedules, null, HttpStatus.OK);
@@ -47,32 +49,33 @@ public class ScheduleRestController {
 
 	@RequestMapping(method = RequestMethod.PUT)
 	public ResponseEntity<List<String>> createSchedules(@PathVariable String app_id,
-			@RequestBody ApplicationScalingSchedules rawApplicationSchedules) {
+			@RequestBody ApplicationSchedules rawApplicationPolicy) {
 		// Note: Request could be to update existing schedules or create new schedules.
 
 		// For update also the data validation is required since an update would require a delete 
 		// and then creation of new schedule. If the data is invalid, the update request will fail.
 
-		scheduleManager.setUpSchedules(app_id, rawApplicationSchedules);
+		scheduleManager.setUpSchedules(app_id, rawApplicationPolicy);
 
 		logger.info("Validate schedules for application: " + app_id);
-		scheduleManager.validateSchedules(app_id, rawApplicationSchedules);
+		scheduleManager.validateSchedules(app_id, rawApplicationPolicy);
 
 		if (validationErrorResult.hasErrors()) {
 			throw new InvalidDataException();
 		}
 
-    ApplicationScalingSchedules existingSchedules = scheduleManager.getAllSchedules(app_id);
+		Schedules existingSchedules = scheduleManager.getAllSchedules(app_id).getSchedules();
 
-    if (existingSchedules.hasSchedules()) {// Request to update the schedules
-      logger.info("Update schedules for application: " + app_id);
+		if (existingSchedules.hasSchedules()) {// Request to update the
+												// schedules
+			logger.info("Update schedules for application: " + app_id);
 
-      logger.info("Delete schedules for application: " + app_id);
-      scheduleManager.deleteSchedules(app_id);
-    }
+			logger.info("Delete schedules for application: " + app_id);
+			scheduleManager.deleteSchedules(app_id);
+		}
 
-    logger.info("Create schedules for application: " + app_id);
-    scheduleManager.createSchedules(rawApplicationSchedules);
+		logger.info("Create schedules for application: " + app_id);
+		scheduleManager.createSchedules(rawApplicationPolicy.getSchedules());
 
 		return new ResponseEntity<>(null, null, HttpStatus.CREATED);
 	}
@@ -80,7 +83,7 @@ public class ScheduleRestController {
 	@RequestMapping(method = RequestMethod.DELETE)
 	public ResponseEntity<List<String>> deleteSchedules(@PathVariable String app_id) {
 
-		ApplicationScalingSchedules existingSchedules = scheduleManager.getAllSchedules(app_id);
+		Schedules existingSchedules = scheduleManager.getAllSchedules(app_id).getSchedules();
 		if (!existingSchedules.hasSchedules()) {
 			return new ResponseEntity<>(null, null, HttpStatus.NOT_FOUND);
 		}

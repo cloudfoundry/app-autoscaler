@@ -399,7 +399,7 @@ public class ScheduleJobManagerTest {
 
 		RecurringScheduleEntity entity = recurringScheduleEntities.get(0);
 		entity.setTimeZone(timeZone.getID());
-		entity.setDayOfWeek(dayOfWeek);
+		entity.setDaysOfWeek(dayOfWeek);
 
 		createCronJob(recurringScheduleEntities);
 

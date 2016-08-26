@@ -9,6 +9,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,7 +20,7 @@ import org.cloudfoundry.autoscaler.scheduler.dao.SpecificDateScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
-import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationScalingSchedules;
+import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationSchedules;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
 import org.hamcrest.Matchers;
@@ -87,6 +91,18 @@ public class ScheduleRestControllerTest {
 
 		assertNoSchedulesFound(resultActions);
 	}
+	
+	@Test
+	public void testCreateAndGetSchedules_from_jsonFile() throws Exception{
+		String policyJsonStr = getPolicyJsonContent();
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		ResultActions resultActions = mockMvc.perform(put(getCreateSchedulePath(appId))
+				.contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).content(policyJsonStr));
+		assertCreateScheduleAPI(resultActions);
+
+		resultActions = callGetAllSchedulesByAppId(appId);
+		assertSchedulesFoundEquals(2, 4, appId, resultActions);
+	}
 
 	@Test
 	public void testCreateAndGetSchedules() throws Exception {
@@ -130,8 +146,8 @@ public class ScheduleRestControllerTest {
 	public void testCreateSchedule_without_appId() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(1, 0);
-		String content = mapper.writeValueAsString(schedules);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(1, 0);
+		String content = mapper.writeValueAsString(applicationPolicy);
 
 		ResultActions resultActions = mockMvc
 				.perform(put("/v2/schedules").contentType(MediaType.APPLICATION_JSON).content(content));
@@ -144,11 +160,11 @@ public class ScheduleRestControllerTest {
 	public void testCreateSchedule_without_timeZone() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(1, 0);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(1, 0);
 
-		schedules.setTimeZone(null);
+		applicationPolicy.getSchedules().setTimeZone(null);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("data.value.not.specified.timezone",
 				"timeZone");
@@ -160,11 +176,11 @@ public class ScheduleRestControllerTest {
 	public void testCreateSchedule_empty_timeZone() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(1, 0);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(1, 0);
 
-		schedules.setTimeZone("");
+		applicationPolicy.getSchedules().setTimeZone("");
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("data.value.not.specified.timezone",
 				"timeZone");
@@ -176,11 +192,11 @@ public class ScheduleRestControllerTest {
 	public void testCreateSchedule_invalid_timeZone() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(1, 0);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(1, 0);
 
-		schedules.setTimeZone(TestDataSetupHelper.getInvalidTimezone());
+		applicationPolicy.getSchedules().setTimeZone(TestDataSetupHelper.getInvalidTimezone());
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("data.invalid.timezone", "timeZone");
 
@@ -191,11 +207,11 @@ public class ScheduleRestControllerTest {
 	public void testCreateSchedule_without_defaultInstanceMinCount() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(1, 0);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(1, 0);
 
-		schedules.setInstance_min_count(null);
+		applicationPolicy.setInstanceMinCount(null);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("data.default.value.not.specified",
 				"instance_min_count");
@@ -207,11 +223,11 @@ public class ScheduleRestControllerTest {
 	public void testCreateSchedule_without_defaultInstanceMaxCount() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(1, 0);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(1, 0);
 
-		schedules.setInstance_max_count(null);
+		applicationPolicy.setInstanceMaxCount(null);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("data.default.value.not.specified",
 				"instance_max_count");
@@ -223,11 +239,11 @@ public class ScheduleRestControllerTest {
 	public void testCreateSchedule_negative_defaultInstanceMinCount() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(1, 0);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(1, 0);
 		int instanceMinCount = -1;
-		schedules.setInstance_min_count(instanceMinCount);
+		applicationPolicy.setInstanceMinCount(instanceMinCount);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("data.default.value.invalid",
 				"instance_min_count", instanceMinCount);
@@ -239,11 +255,11 @@ public class ScheduleRestControllerTest {
 	public void testCreateSchedule_negative_defaultInstanceMaxCount() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(1, 0);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(1, 0);
 		int instanceMaxCount = -1;
-		schedules.setInstance_max_count(instanceMaxCount);
+		applicationPolicy.setInstanceMaxCount(instanceMaxCount);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("data.default.value.invalid",
 				"instance_max_count", instanceMaxCount);
@@ -255,14 +271,14 @@ public class ScheduleRestControllerTest {
 	public void testCreateSchedule_defaultInstanceMinCount_greater_than_defaultInstanceMaxCount() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(1, 0);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(1, 0);
 
 		Integer instanceMinCount = 5;
 		Integer instanceMaxCount = 1;
-		schedules.setInstance_max_count(instanceMaxCount);
-		schedules.setInstance_min_count(instanceMinCount);
+		applicationPolicy.setInstanceMaxCount(instanceMaxCount);
+		applicationPolicy.setInstanceMinCount(instanceMinCount);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage(
 				"data.default.instanceCount.invalid.min.greater", "instance_max_count", instanceMaxCount,
@@ -275,13 +291,13 @@ public class ScheduleRestControllerTest {
 	public void testCreateSchedule_without_instanceMaxAndMinCount_timeZone() throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
-		ApplicationScalingSchedules schedules = TestDataSetupHelper.generateSchedules(1, 0);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(1, 0);
 
-		schedules.setInstance_max_count(null);
-		schedules.setInstance_min_count(null);
-		schedules.setTimeZone(null);
+		applicationPolicy.setInstanceMaxCount(null);
+		applicationPolicy.setInstanceMinCount(null);
+		applicationPolicy.getSchedules().setTimeZone(null);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 
 		List<String> messages = new ArrayList<>();
 		messages.add(
@@ -396,16 +412,17 @@ public class ScheduleRestControllerTest {
 			int expectedRecurringSchedulesTobeFound, String appId, ResultActions resultActions) throws Exception {
 
 		ObjectMapper mapper = new ObjectMapper();
-		ApplicationScalingSchedules resultSchedules = mapper.readValue(
-				resultActions.andReturn().getResponse().getContentAsString(), ApplicationScalingSchedules.class);
+		mapper.setDateFormat(DateFormat.getDateInstance(DateFormat.LONG));
+		ApplicationSchedules applicationPolicy = mapper.readValue(
+				resultActions.andReturn().getResponse().getContentAsString(), ApplicationSchedules.class);
 
 		resultActions.andExpect(status().isOk());
 		resultActions.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
 
 		assertSpecificDateScheduleFoundEquals(expectedSpecificDateSchedulesTobeFound, appId,
-				resultSchedules.getSpecific_date());
+				applicationPolicy.getSchedules().getSpecificDate());
 		assertRecurringDateScheduleFoundEquals(expectedRecurringSchedulesTobeFound, appId,
-				resultSchedules.getRecurring_schedule());
+				applicationPolicy.getSchedules().getRecurringSchedule());
 	}
 
 	private void assertSpecificDateScheduleFoundEquals(int expectedSchedulesTobeFound, String expectedAppId,
@@ -473,4 +490,19 @@ public class ScheduleRestControllerTest {
 		resultActions.andExpect(header().doesNotExist("Content-type"));
 		resultActions.andExpect(content().string(Matchers.isEmptyString()));
 	}
+	
+	public static String getPolicyJsonContent(){
+        BufferedReader br = new BufferedReader(new InputStreamReader(ApplicationSchedules.class.getResourceAsStream("/fakePolicy.json")));
+        String tmp = "";
+        String jsonPolicyStr = "";
+        try {
+            while((tmp = br.readLine()) != null){
+                jsonPolicyStr += tmp;
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        jsonPolicyStr = jsonPolicyStr.replaceAll("\\s+", " ");
+        return jsonPolicyStr;
+    }
 }

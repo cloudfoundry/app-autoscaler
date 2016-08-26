@@ -11,7 +11,15 @@ import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
+import org.cloudfoundry.autoscaler.scheduler.util.DateDeserializer;
+import org.cloudfoundry.autoscaler.scheduler.util.DateSerializer;
+import org.cloudfoundry.autoscaler.scheduler.util.SqlTimeDeserializer;
+import org.cloudfoundry.autoscaler.scheduler.util.SqlTimeSerializer;
 import org.hibernate.annotations.Type;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 @Entity
 @Table(name = "app_scaling_recurring_schedule")
@@ -19,48 +27,64 @@ import org.hibernate.annotations.Type;
 		@NamedQuery(name = RecurringScheduleEntity.query_recurringSchedulesByAppId, query = RecurringScheduleEntity.jpql_recurringSchedulesByAppId) })
 public class RecurringScheduleEntity extends ScheduleEntity {
 
-	@Column(name = "start_time")
+	@JsonDeserialize(using = SqlTimeDeserializer.class)
+	@JsonSerialize(using = SqlTimeSerializer.class)
 	@NotNull
+	@Column(name = "start_time")
+	@JsonProperty(value = "start_time")
 	private Time startTime;
 
-	@Column(name = "end_time")
+	@JsonDeserialize(using = SqlTimeDeserializer.class)
+	@JsonSerialize(using = SqlTimeSerializer.class)
 	@NotNull
+	@Column(name = "end_time")
+	@JsonProperty(value = "end_time")
 	private Time endTime;
 
+	@JsonDeserialize(using = DateDeserializer.class)
+	@JsonSerialize(using = DateSerializer.class)
 	@Column(name = "start_date")
+	@JsonProperty(value = "start_date")
 	private Date startDate;
 
+	@JsonDeserialize(using = DateDeserializer.class)
+	@JsonSerialize(using = DateSerializer.class)
 	@Column(name = "end_date")
+	@JsonProperty(value = "end_date")
 	private Date endDate;
 
-	@Column(name = "day_of_week")
 	@Type(type = "org.cloudfoundry.autoscaler.scheduler.entity.BitsetUserType")
-	private int[] dayOfWeek;
+	@Column(name = "days_of_week")
+	@JsonProperty(value = "days_of_week")
+	private int[] daysOfWeek;
 
-	@Column(name = "day_of_month")
 	@Type(type = "org.cloudfoundry.autoscaler.scheduler.entity.BitsetUserType")
-	private int[] dayOfMonth;
+	@Column(name = "days_of_month")
+	@JsonProperty(value = "days_of_month")
+	private int[] daysOfMonth;
 
-	public int[] getDayOfWeek() {
-		return dayOfWeek;
+	public int[] getDaysOfWeek() {
+		return daysOfWeek;
 	}
 
-	public void setDayOfWeek(int[] dayOfWeek) {
-		this.dayOfWeek = dayOfWeek;
+	public void setDaysOfWeek(int[] daysOfWeek) {
+		this.daysOfWeek = daysOfWeek;
 	}
 
-	public int[] getDayOfMonth() {
-		return dayOfMonth;
+	public int[] getDaysOfMonth() {
+		return daysOfMonth;
 	}
 
-	public void setDayOfMonth(int[] dayOfMonth) {
-		this.dayOfMonth = dayOfMonth;
+	public void setDayOfMonth(int[] daysOfMonth) {
+		this.daysOfMonth = daysOfMonth;
 	}
 
+	@JsonProperty("start_time")
 	public Time getStartTime() {
 		return startTime;
 	}
 
+	@JsonProperty("start_time")
 	public void setStartTime(Time startTime) {
 		this.startTime = startTime;
 	}
@@ -91,13 +115,13 @@ public class RecurringScheduleEntity extends ScheduleEntity {
 
 	public static final String query_recurringSchedulesByAppId = "RecurringScheduleEntity.schedulesByAppId";
 	protected static final String jpql_recurringSchedulesByAppId = " FROM RecurringScheduleEntity"
-			+ " WHERE appId = :appId";
+			+ " WHERE app_id = :appId";
 
 	@Override
 	public String toString() {
 		return "RecurringScheduleEntity [startTime=" + startTime + ", endTime=" + endTime + ", startDate=" + startDate
-				+ ", endDate=" + endDate + ", dayOfWeek=" + Arrays.toString(dayOfWeek) + ", dayOfMonth="
-				+ Arrays.toString(dayOfMonth) + "]";
+				+ ", endDate=" + endDate + ", dayOfWeek=" + Arrays.toString(daysOfWeek) + ", dayOfMonth="
+				+ Arrays.toString(daysOfMonth) + "]";
 	}
 
 }

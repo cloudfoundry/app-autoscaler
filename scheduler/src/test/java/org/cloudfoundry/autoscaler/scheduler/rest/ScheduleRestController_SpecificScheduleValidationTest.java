@@ -14,7 +14,7 @@ import java.util.List;
 import org.cloudfoundry.autoscaler.scheduler.dao.SpecificDateScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
-import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationScalingSchedules;
+import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationSchedules;
 import org.cloudfoundry.autoscaler.scheduler.util.DateHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleTypeEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
@@ -89,12 +89,12 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSchedules(noOfSpecificDateSchedulesToSetUp, 0);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper
+				.generateApplicationPolicy(noOfSpecificDateSchedulesToSetUp, 0);
 
-		schedules.getSpecific_date().get(0).setStartDateTime(null);
+		applicationPolicy.getSchedules().getSpecificDate().get(0).setStartDateTime(null);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.not.specified",
 				scheduleBeingProcessed + " 0", "start_date_time");
@@ -107,12 +107,12 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSchedules(noOfSpecificDateSchedulesToSetUp, 0);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper
+				.generateApplicationPolicy(noOfSpecificDateSchedulesToSetUp, 0);
 
-		schedules.getSpecific_date().get(0).setEndDateTime(null);
+		applicationPolicy.getSchedules().getSpecificDate().get(0).setEndDateTime(null);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.not.specified",
 				scheduleBeingProcessed + " 0", "end_date_time");
@@ -125,12 +125,12 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSchedules(noOfSpecificDateSchedulesToSetUp, 0);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper
+				.generateApplicationPolicy(noOfSpecificDateSchedulesToSetUp, 0);
 
-		schedules.getSpecific_date().get(0).setInstanceMaxCount(null);
+		applicationPolicy.getSchedules().getSpecificDate().get(0).setInstanceMaxCount(null);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.not.specified",
 				scheduleBeingProcessed + " 0", "instance_max_count");
@@ -143,12 +143,12 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSchedules(noOfSpecificDateSchedulesToSetUp, 0);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper
+				.generateApplicationPolicy(noOfSpecificDateSchedulesToSetUp, 0);
 
-		schedules.getSpecific_date().get(0).setInstanceMinCount(null);
+		applicationPolicy.getSchedules().getSpecificDate().get(0).setInstanceMinCount(null);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.not.specified",
 				scheduleBeingProcessed + " 0", "instance_min_count");
@@ -161,12 +161,12 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSchedules(noOfSpecificDateSchedulesToSetUp, 0);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper
+				.generateApplicationPolicy(noOfSpecificDateSchedulesToSetUp, 0);
 		Integer instanceMinCount = -1;
-		schedules.getSpecific_date().get(0).setInstanceMinCount(instanceMinCount);
+		applicationPolicy.getSchedules().getSpecificDate().get(0).setInstanceMinCount(instanceMinCount);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.invalid",
 				scheduleBeingProcessed + " 0", "instance_min_count", instanceMinCount);
@@ -179,12 +179,12 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSchedules(noOfSpecificDateSchedulesToSetUp, 0);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper
+				.generateApplicationPolicy(noOfSpecificDateSchedulesToSetUp, 0);
 		Integer instanceMaxCount = -1;
-		schedules.getSpecific_date().get(0).setInstanceMaxCount(instanceMaxCount);
+		applicationPolicy.getSchedules().getSpecificDate().get(0).setInstanceMaxCount(instanceMaxCount);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.invalid",
 				scheduleBeingProcessed + " 0", "instance_max_count", instanceMaxCount);
@@ -197,16 +197,16 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSchedules(noOfSpecificDateSchedulesToSetUp, 0);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper
+				.generateApplicationPolicy(noOfSpecificDateSchedulesToSetUp, 0);
 
-		ScheduleEntity entity = schedules.getSpecific_date().get(0);
+		ScheduleEntity entity = applicationPolicy.getSchedules().getSpecificDate().get(0);
 		Integer instanceMinCount = 5;
 		Integer instanceMaxCount = 4;
 		entity.setInstanceMaxCount(instanceMaxCount);
 		entity.setInstanceMinCount(instanceMinCount);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.instanceCount.invalid.min.greater",
 				scheduleBeingProcessed + " 0", "instance_max_count", instanceMaxCount, "instance_min_count",
@@ -220,12 +220,12 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSchedules(noOfSpecificDateSchedulesToSetUp, 0);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper
+				.generateApplicationPolicy(noOfSpecificDateSchedulesToSetUp, 0);
 
-		schedules.getSpecific_date().get(0).setInitialMinInstanceCount(5);
+		applicationPolicy.getSchedules().getSpecificDate().get(0).setInitialMinInstanceCount(5);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 
 		assertResponseStatusEquals(appId, content, status().isCreated());
 	}
@@ -235,12 +235,12 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSchedules(noOfSpecificDateSchedulesToSetUp, 0);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper
+				.generateApplicationPolicy(noOfSpecificDateSchedulesToSetUp, 0);
 		Integer initialMinInstanceCount = -1;
-		schedules.getSpecific_date().get(0).setInitialMinInstanceCount(initialMinInstanceCount);
+		applicationPolicy.getSchedules().getSpecificDate().get(0).setInitialMinInstanceCount(initialMinInstanceCount);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.invalid",
 				scheduleBeingProcessed + " 0", "initial_min_instance_count", initialMinInstanceCount);
@@ -253,17 +253,17 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSchedules(noOfSpecificDateSchedulesToSetUp, 0);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper
+				.generateApplicationPolicy(noOfSpecificDateSchedulesToSetUp, 0);
 
 		// Swap startDateTime and endDateTime.
-		SpecificDateScheduleEntity entity = schedules.getSpecific_date().get(0);
+		SpecificDateScheduleEntity entity = applicationPolicy.getSchedules().getSpecificDate().get(0);
 		Date endDateTime = entity.getStartDateTime();
 		Date startDateTime = entity.getEndDateTime();
 		entity.setStartDateTime(startDateTime);
 		entity.setEndDateTime(endDateTime);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.invalid.start.after.end",
 				scheduleBeingProcessed + " 0", "end_date_time",
@@ -278,15 +278,15 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSchedules(noOfSpecificDateSchedulesToSetUp, 0);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper
+				.generateApplicationPolicy(noOfSpecificDateSchedulesToSetUp, 0);
 
 		// Swap startTime for endTime.
-		SpecificDateScheduleEntity entity = schedules.getSpecific_date().get(0);
+		SpecificDateScheduleEntity entity = applicationPolicy.getSchedules().getSpecificDate().get(0);
 		Date oldDate = new Date(0);
 		entity.setStartDateTime(oldDate);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.invalid.current.after",
 				scheduleBeingProcessed + " 0", "start_date_time",
@@ -300,15 +300,15 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 1;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSchedules(noOfSpecificDateSchedulesToSetUp, 0);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper
+				.generateApplicationPolicy(noOfSpecificDateSchedulesToSetUp, 0);
 
 		// Swap startTime for endTime.
-		SpecificDateScheduleEntity entity = schedules.getSpecific_date().get(0);
+		SpecificDateScheduleEntity entity = applicationPolicy.getSchedules().getSpecificDate().get(0);
 		Date oldDate = new Date(0);
 		entity.setEndDateTime(oldDate);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.invalid.current.after",
 				scheduleBeingProcessed + " 0", "end_date_time",
@@ -322,15 +322,15 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 2;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSchedules(noOfSpecificDateSchedulesToSetUp, 0);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper
+				.generateApplicationPolicy(noOfSpecificDateSchedulesToSetUp, 0);
 
 		// Overlap specificDate schedules.
-		SpecificDateScheduleEntity firstEntity = schedules.getSpecific_date().get(0);
-		SpecificDateScheduleEntity secondEntity = schedules.getSpecific_date().get(1);
+		SpecificDateScheduleEntity firstEntity = applicationPolicy.getSchedules().getSpecificDate().get(0);
+		SpecificDateScheduleEntity secondEntity = applicationPolicy.getSchedules().getSpecificDate().get(1);
 		secondEntity.setStartDateTime(firstEntity.getEndDateTime());
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.overlap",
 				scheduleBeingProcessed + " 0", "end_date_time", scheduleBeingProcessed + " 1", "start_date_time");
@@ -343,21 +343,21 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		int noOfSpecificDateSchedulesToSetUp = 4;
-		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSchedules(noOfSpecificDateSchedulesToSetUp, 0);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper
+				.generateApplicationPolicy(noOfSpecificDateSchedulesToSetUp, 0);
 
 		// Overlap specificDate schedules.
 		// Schedule 1 end date time and Schedule 2 start date time are overlapping.
 		// Schedules 3 and 4 overlap with start date time.
-		SpecificDateScheduleEntity firstEntity = schedules.getSpecific_date().get(0);
-		SpecificDateScheduleEntity secondEntity = schedules.getSpecific_date().get(1);
+		SpecificDateScheduleEntity firstEntity = applicationPolicy.getSchedules().getSpecificDate().get(0);
+		SpecificDateScheduleEntity secondEntity = applicationPolicy.getSchedules().getSpecificDate().get(1);
 		secondEntity.setStartDateTime(firstEntity.getEndDateTime());
 
-		SpecificDateScheduleEntity thirdEntity = schedules.getSpecific_date().get(2);
-		SpecificDateScheduleEntity forthEntity = schedules.getSpecific_date().get(3);
+		SpecificDateScheduleEntity thirdEntity = applicationPolicy.getSchedules().getSpecificDate().get(2);
+		SpecificDateScheduleEntity forthEntity = applicationPolicy.getSchedules().getSpecificDate().get(3);
 		forthEntity.setStartDateTime(thirdEntity.getStartDateTime());
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 
 		List<String> messages = new ArrayList<>();
 		messages.add(messageBundleResourceHelper.lookupMessage("schedule.date.overlap", scheduleBeingProcessed + " 0",
@@ -372,12 +372,12 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 	public void testCreateSchedule_without_specificDateSchedules() throws Exception {
 		// No schedules - null case
 		ObjectMapper mapper = new ObjectMapper();
-		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSchedules(1, 0);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper
+				.generateApplicationPolicy(1, 0);
 
-		schedules.setSpecific_date(null);
+		applicationPolicy.getSchedules().setSpecificDate(null);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("data.invalid.noSchedules",
 				"app_id=" + appId);
@@ -389,12 +389,12 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 	public void testCreateSchedule_empty_specificDateSchedules() throws Exception {
 		// No schedules - Empty case
 		ObjectMapper mapper = new ObjectMapper();
-		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSchedules(1, 0);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper
+				.generateApplicationPolicy(1, 0);
 
-		schedules.setSpecific_date(Collections.emptyList());
+		applicationPolicy.getSchedules().setSpecificDate(Collections.emptyList());
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("data.invalid.noSchedules",
 				"app_id=" + appId);
@@ -406,16 +406,16 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 	public void testCreateSchedule_without_startEndDateTime_instanceMaxMinCount() throws Exception {
 		// schedules - no parameters.
 		ObjectMapper mapper = new ObjectMapper();
-		ApplicationScalingSchedules schedules = TestDataSetupHelper
-				.generateSchedules(1, 0);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper
+				.generateApplicationPolicy(1, 0);
 
-		SpecificDateScheduleEntity entity = schedules.getSpecific_date().get(0);
+		SpecificDateScheduleEntity entity = applicationPolicy.getSchedules().getSpecificDate().get(0);
 		entity.setInstanceMinCount(null);
 		entity.setInstanceMaxCount(null);
 		entity.setStartDateTime(null);
 		entity.setEndDateTime(null);
 
-		String content = mapper.writeValueAsString(schedules);
+		String content = mapper.writeValueAsString(applicationPolicy);
 
 		List<String> messages = new ArrayList<>();
 

@@ -7,6 +7,8 @@ import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 import javax.validation.constraints.NotNull;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * 
  *
@@ -20,31 +22,38 @@ public class ScheduleEntity {
 	@Column(name = "schedule_id")
 	private Long id;
 
-	@Column(name = "app_id")
 	@NotNull
+	@JsonProperty(value = "app_id")
+	@Column(name = "app_id")
 	private String appId;
 
+	@NotNull
+	@JsonProperty(value = "timezone")
 	@Column(name = "timezone")
-	@NotNull
 	private String timeZone;
-	
+
+	@NotNull
 	@Column(name = "default_instance_min_count")
-	@NotNull
+	@JsonProperty(value = "default_instance_min_count")
 	private Integer defaultInstanceMinCount;
-	
-	@Column(name = "default_instance_max_count")
+
 	@NotNull
+	@Column(name = "default_instance_max_count")
+	@JsonProperty(value = "default_instance_max_count")
 	private Integer defaultInstanceMaxCount;
 
-	@Column(name = "instance_min_count")
 	@NotNull
+	@Column(name = "instance_min_count")
+	@JsonProperty(value = "instance_min_count")
 	private Integer instanceMinCount;
 
-	@Column(name = "instance_max_count")
 	@NotNull
+	@Column(name = "instance_max_count")
+	@JsonProperty(value = "instance_max_count")
 	private Integer instanceMaxCount;
 
 	@Column(name = "initial_min_instance_count")
+	@JsonProperty(value = "initial_min_instance_count")
 	private Integer initialMinInstanceCount;
 
 	public Long getId() {
