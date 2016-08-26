@@ -20,32 +20,25 @@ public class ScheduleEntity {
 	@Column(name = "schedule_id")
 	private Long id;
 
-	@Column(name = "app_id")
 	@NotNull
-	private String appId;
+	private String app_id;
 
-	@Column(name = "timezone")
 	@NotNull
-	private String timeZone;
-	
-	@Column(name = "default_instance_min_count")
-	@NotNull
-	private Integer defaultInstanceMinCount;
-	
-	@Column(name = "default_instance_max_count")
-	@NotNull
-	private Integer defaultInstanceMaxCount;
+	private String timezone;
 
-	@Column(name = "instance_min_count")
 	@NotNull
-	private Integer instanceMinCount;
+	private Integer default_instance_min_count;
 
-	@Column(name = "instance_max_count")
 	@NotNull
-	private Integer instanceMaxCount;
+	private Integer default_instance_max_count;
 
-	@Column(name = "initial_min_instance_count")
-	private Integer initialMinInstanceCount;
+	@NotNull
+	private Integer instance_min_count;
+
+	@NotNull
+	private Integer instance_max_count;
+
+	private Integer initial_min_instance_count;
 
 	public Long getId() {
 		return id;
@@ -55,68 +48,68 @@ public class ScheduleEntity {
 		this.id = id;
 	}
 
-	public String getAppId() {
-		return appId;
+	public String getApp_id() {
+		return app_id;
 	}
 
-	public void setAppId(String appId) {
-		this.appId = appId;
+	public void setApp_id(String app_id) {
+		this.app_id = app_id;
 	}
 
-	public String getTimeZone() {
-		return timeZone;
+	public String getTimezone() {
+		return timezone;
 	}
 
-	public void setTimeZone(String timeZone) {
-		this.timeZone = timeZone;
+	public void setTimezone(String timezone) {
+		this.timezone = timezone;
 	}
 
-	public Integer getDefaultInstanceMinCount() {
-		return defaultInstanceMinCount;
+	public Integer getDefault_instance_min_count() {
+		return default_instance_min_count;
 	}
 
-	public void setDefaultInstanceMinCount(Integer defaultInstanceMinCount) {
-		this.defaultInstanceMinCount = defaultInstanceMinCount;
+	public void setDefault_instance_min_count(Integer default_instance_min_count) {
+		this.default_instance_min_count = default_instance_min_count;
 	}
 
-	public Integer getDefaultInstanceMaxCount() {
-		return defaultInstanceMaxCount;
+	public Integer getDefault_instance_max_count() {
+		return default_instance_max_count;
 	}
 
-	public void setDefaultInstanceMaxCount(Integer defaultInstanceMaxCount) {
-		this.defaultInstanceMaxCount = defaultInstanceMaxCount;
+	public void setDefault_instance_max_count(Integer default_instance_max_count) {
+		this.default_instance_max_count = default_instance_max_count;
 	}
 
-	public Integer getInstanceMinCount() {
-		return instanceMinCount;
+	public Integer getInstance_min_count() {
+		return instance_min_count;
 	}
 
-	public void setInstanceMinCount(Integer instanceMinCount) {
-		this.instanceMinCount = instanceMinCount;
+	public void setInstance_min_count(Integer instance_min_count) {
+		this.instance_min_count = instance_min_count;
 	}
 
-	public Integer getInstanceMaxCount() {
-		return instanceMaxCount;
+	public Integer getInstance_max_count() {
+		return instance_max_count;
 	}
 
-	public void setInstanceMaxCount(Integer instanceMaxCount) {
-		this.instanceMaxCount = instanceMaxCount;
+	public void setInstance_max_count(Integer instance_max_count) {
+		this.instance_max_count = instance_max_count;
 	}
 
-	public Integer getInitialMinInstanceCount() {
-		return initialMinInstanceCount;
+	public Integer getInitial_min_instance_count() {
+		return initial_min_instance_count;
 	}
 
-	public void setInitialMinInstanceCount(Integer initialMinInstanceCount) {
-		this.initialMinInstanceCount = initialMinInstanceCount;
+	public void setInitial_min_instance_count(Integer initial_min_instance_count) {
+		this.initial_min_instance_count = initial_min_instance_count;
 	}
 
 	@Override
 	public String toString() {
-		return "ScheduleEntity [id=" + id + ", appId=" + appId + ", timeZone=" + timeZone + ", defaultInstanceMinCount="
-				+ defaultInstanceMinCount + ", defaultInstanceMaxCount=" + defaultInstanceMaxCount
-				+ ", instanceMinCount=" + instanceMinCount + ", instanceMaxCount=" + instanceMaxCount
-				+ ", initialMinInstanceCount=" + initialMinInstanceCount + "]";
+		return "ScheduleEntity [id=" + id + ", app_id=" + app_id + ", timezone=" + timezone
+				+ ", default_instance_min_count=" + default_instance_min_count + ", default_instance_max_count="
+				+ default_instance_max_count + ", instance_min_count=" + instance_min_count + ", instance_max_count="
+				+ instance_max_count + ", initial_min_instance_count=" + initial_min_instance_count + "]";
 	}
 
 }

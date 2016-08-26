@@ -57,18 +57,18 @@ public class ScheduleJobHelper {
 	public static Trigger buildCronTrigger(TriggerKey triggerKey, JobKey jobKey, RecurringScheduleEntity scheduleEntity,
 			Date scheduleTime) {
 		TriggerBuilder<Trigger> trigger = TriggerBuilder.newTrigger().withIdentity(triggerKey);
-		TimeZone timeZone = TimeZone.getTimeZone(scheduleEntity.getTimeZone());
+		TimeZone timeZone = TimeZone.getTimeZone(scheduleEntity.getTimezone());
 
 		trigger.withSchedule(
 				CronScheduleBuilder.cronSchedule(convertRecurringScheduleToCronExpression(scheduleTime, scheduleEntity))
 						.inTimeZone(timeZone));
 
-		if (scheduleEntity.getStartDate() != null) {
-			trigger.startAt(scheduleEntity.getStartDate());
+		if (scheduleEntity.getStart_date() != null) {
+			trigger.startAt(scheduleEntity.getStart_date());
 		}
 
-		if (scheduleEntity.getEndDate() != null) {
-			trigger.endAt(scheduleEntity.getEndDate());
+		if (scheduleEntity.getEnd_date() != null) {
+			trigger.endAt(scheduleEntity.getEnd_date());
 		}
 
 		if (jobKey != null) {
@@ -86,8 +86,8 @@ public class ScheduleJobHelper {
 		int min = calendar.get(Calendar.MINUTE);
 		int hour = calendar.get(Calendar.HOUR_OF_DAY);
 
-		String dayOfWeek = convertArrayToDayOfWeekString(recurringScheduleEntity.getDayOfWeek());
-		String dayOfMonth = convertArrayToDayOfMonthString(recurringScheduleEntity.getDayOfMonth());
+		String dayOfWeek = convertArrayToDayOfWeekString(recurringScheduleEntity.getDays_of_week());
+		String dayOfMonth = convertArrayToDayOfMonthString(recurringScheduleEntity.getDays_of_month());
 
 		return String.format("00 %02d %02d %s * %s *", min, hour, dayOfMonth, dayOfWeek);
 	}

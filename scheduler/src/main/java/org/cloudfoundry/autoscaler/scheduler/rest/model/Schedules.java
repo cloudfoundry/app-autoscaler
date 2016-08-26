@@ -9,10 +9,9 @@ import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
  * 
  *
  */
-public class ApplicationScalingSchedules {
-	String timeZone;
-	Integer instance_min_count;
-	Integer instance_max_count;
+public class Schedules {
+	String timezone;
+
 	private List<SpecificDateScheduleEntity> specific_date;
 	private List<RecurringScheduleEntity> recurring_schedule;
 
@@ -24,28 +23,12 @@ public class ApplicationScalingSchedules {
 		return true;
 	}
 
-	public String getTimeZone() {
-		return timeZone;
+	public String getTimezone() {
+		return timezone;
 	}
 
-	public void setTimeZone(String timeZone) {
-		this.timeZone = timeZone;
-	}
-
-	public Integer getInstance_min_count() {
-		return instance_min_count;
-	}
-
-	public void setInstance_min_count(Integer instance_min_count) {
-		this.instance_min_count = instance_min_count;
-	}
-
-	public Integer getInstance_max_count() {
-		return instance_max_count;
-	}
-
-	public void setInstance_max_count(Integer instance_max_count) {
-		this.instance_max_count = instance_max_count;
+	public void setTimezone(String timezone) {
+		this.timezone = timezone;
 	}
 
 	public List<SpecificDateScheduleEntity> getSpecific_date() {

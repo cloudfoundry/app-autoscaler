@@ -19,17 +19,17 @@ public class RecurringScheduleTime implements Comparable<RecurringScheduleTime> 
 
 	public RecurringScheduleTime(String scheduleIdentifier, RecurringScheduleEntity recurringScheduleEntity) {
 		this.scheduleIdentifier = scheduleIdentifier;
-		this.startDate = recurringScheduleEntity.getStartDate();
-		this.endDate = recurringScheduleEntity.getEndDate();
-		this.startTime = recurringScheduleEntity.getStartTime();
-		this.endTime = recurringScheduleEntity.getEndTime();
+		this.startDate = recurringScheduleEntity.getStart_date();
+		this.endDate = recurringScheduleEntity.getEnd_date();
+		this.startTime = recurringScheduleEntity.getStart_time();
+		this.endTime = recurringScheduleEntity.getEnd_time();
 
-		if (recurringScheduleEntity.getDayOfWeek() != null) {
-			this.dayOfWeek = Arrays.stream(recurringScheduleEntity.getDayOfWeek()).boxed().collect(Collectors.toList());
+		if (recurringScheduleEntity.getDays_of_week() != null) {
+			this.dayOfWeek = Arrays.stream(recurringScheduleEntity.getDays_of_week()).boxed().collect(Collectors.toList());
 		}
 
-		if (recurringScheduleEntity.getDayOfMonth() != null) {
-			this.dayOfMonth = Arrays.stream(recurringScheduleEntity.getDayOfMonth()).boxed()
+		if (recurringScheduleEntity.getDays_of_month() != null) {
+			this.dayOfMonth = Arrays.stream(recurringScheduleEntity.getDays_of_month()).boxed()
 					.collect(Collectors.toList());
 		}
 	}

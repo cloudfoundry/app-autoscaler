@@ -18,7 +18,7 @@ public class SpecificDateScheduleEntitiesBuilder {
 	public SpecificDateScheduleEntitiesBuilder setTimeZone(String timeZone) {
 		if (specificDateScheduleEntities != null) {
 			for (SpecificDateScheduleEntity specificDateScheduleEntity : specificDateScheduleEntities) {
-				specificDateScheduleEntity.setTimeZone(timeZone);
+				specificDateScheduleEntity.setTimezone(timeZone);
 			}
 		}
 		return this;
@@ -27,7 +27,7 @@ public class SpecificDateScheduleEntitiesBuilder {
 	public SpecificDateScheduleEntitiesBuilder setAppid(String appId) {
 		if (specificDateScheduleEntities != null) {
 			for (SpecificDateScheduleEntity specificDateScheduleEntity : specificDateScheduleEntities) {
-				specificDateScheduleEntity.setAppId(appId);
+				specificDateScheduleEntity.setApp_id(appId);
 			}
 		}
 		return this;
@@ -36,7 +36,7 @@ public class SpecificDateScheduleEntitiesBuilder {
 	public SpecificDateScheduleEntitiesBuilder setDefaultInstanceMaxCount(int max) {
 		if (specificDateScheduleEntities != null) {
 			for (SpecificDateScheduleEntity specificDateScheduleEntity : specificDateScheduleEntities) {
-				specificDateScheduleEntity.setDefaultInstanceMaxCount(max);
+				specificDateScheduleEntity.setDefault_instance_max_count(max);
 			}
 		}
 		return this;
@@ -46,29 +46,29 @@ public class SpecificDateScheduleEntitiesBuilder {
 	public SpecificDateScheduleEntitiesBuilder setDefaultInstanceMinCount(int min) {
 		if (specificDateScheduleEntities != null) {
 			for (SpecificDateScheduleEntity specificDateScheduleEntity : specificDateScheduleEntities) {
-				specificDateScheduleEntity.setDefaultInstanceMinCount(min);
+				specificDateScheduleEntity.setDefault_instance_min_count(min);
 			}
 		}
 		return this;
 	}
 
 	public SpecificDateScheduleEntitiesBuilder setInstanceMaxCount(int pos, int max) {
-		specificDateScheduleEntities.get(pos).setInstanceMaxCount(max);
+		specificDateScheduleEntities.get(pos).setInstance_max_count(max);
 		return this;
 	}
 
 	public SpecificDateScheduleEntitiesBuilder setInstanceMinCount(int pos, int min) {
-		specificDateScheduleEntities.get(pos).setInstanceMinCount(min);
+		specificDateScheduleEntities.get(pos).setInstance_min_count(min);
 		return this;
 	}
 
 	public SpecificDateScheduleEntitiesBuilder setStartDateTime(int pos, Date date) {
-		specificDateScheduleEntities.get(pos).setStartDateTime(date);
+		specificDateScheduleEntities.get(pos).setStart_date_time(date);
 		return this;
 	}
 
 	public SpecificDateScheduleEntitiesBuilder setEndDateTime(int pos, Date date) {
-		specificDateScheduleEntities.get(pos).setEndDateTime(date);
+		specificDateScheduleEntities.get(pos).setEnd_date_time(date);
 		return this;
 	}
 
@@ -88,16 +88,16 @@ public class SpecificDateScheduleEntitiesBuilder {
 			SpecificDateScheduleEntity specificDateScheduleEntity = new SpecificDateScheduleEntity();
 
 			try {
-				specificDateScheduleEntity.setStartDateTime(
+				specificDateScheduleEntity.setStart_date_time(
 						sdf.parse(TestDataSetupHelper.getDateString(TestDataSetupHelper.getStartDateTime(), pos, 0)));
-				specificDateScheduleEntity.setEndDateTime(
+				specificDateScheduleEntity.setEnd_date_time(
 						sdf.parse(TestDataSetupHelper.getDateString(TestDataSetupHelper.getEndDateTime(), pos, 5)));
 			} catch (ParseException e) {
 				throw new RuntimeException(e.getMessage());
 			}
 
-			specificDateScheduleEntity.setInstanceMinCount(i + 5);
-			specificDateScheduleEntity.setInstanceMaxCount(i + 6);
+			specificDateScheduleEntity.setInstance_min_count(i + 5);
+			specificDateScheduleEntity.setInstance_max_count(i + 6);
 			specificDateScheduleEntities.add(specificDateScheduleEntity);
 			pos++;
 		}

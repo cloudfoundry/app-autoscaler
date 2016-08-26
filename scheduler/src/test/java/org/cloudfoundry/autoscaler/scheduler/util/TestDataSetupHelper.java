@@ -15,7 +15,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
-import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationScalingSchedules;
+import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationSchedules;
+import org.cloudfoundry.autoscaler.scheduler.rest.model.Schedules;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -37,21 +38,21 @@ public class TestDataSetupHelper {
 	private static String endDateTime[] = { "2100-07-20T10:00", "2100-07-23T09:00", "2100-07-27T09:00",
 			"2100-08-07T00:00", "2100-8-11T00:00" };
 
-	private static String startTime[] = { "00:00:00", "2:00:00", "10:00:00", "11:00:12", "23:00:00" };
-	private static String endTime[] = { "1:00:00", "8:00:00", "10:01:00", "12:00:00", "23:59:00" };
+	private static String startTime[] = { "00:00", "2:00", "10:00", "11:00", "23:00" };
+	private static String endTime[] = { "1:00", "8:00", "10:01", "12:00", "23:59" };
 
-	public static ApplicationScalingSchedules generateSchedules(int noOfSpecificDateSchedules,
+	public static ApplicationSchedules generateApplicationPolicy(int noOfSpecificDateSchedules,
 			int noOfRecurringSchedules) {
 
 		int noOfDOMRecurringSchedules = noOfRecurringSchedules / 2;
 		int noOfDOWRecurringSchedules = noOfRecurringSchedules - noOfDOMRecurringSchedules;
 
-		return new ScheduleBuilder(5, 1, timeZone, noOfSpecificDateSchedules, noOfDOMRecurringSchedules,
+		return new ApplicationPolicyBuilder(1, 5, timeZone, noOfSpecificDateSchedules, noOfDOMRecurringSchedules,
 				noOfDOWRecurringSchedules).build();
 
 	}
 
-	public static ApplicationScalingSchedules generateSchedulesWithEntitiesOnly(String appId, int noOfSpecificSchedules,
+	public static Schedules generateSchedulesWithEntitiesOnly(String appId, int noOfSpecificSchedules,
 			int noOfDOMRecurringSchedules, int noOfDOWRecurringSchedules) {
 
 		List<SpecificDateScheduleEntity> specificDateSchedules = generateSpecificDateScheduleEntities(appId,
@@ -60,9 +61,8 @@ public class TestDataSetupHelper {
 		List<RecurringScheduleEntity> recurringSchedules = generateRecurringScheduleEntities(appId,
 				noOfDOMRecurringSchedules, noOfDOWRecurringSchedules);
 
-		ApplicationScalingSchedules schedules = new ScheduleBuilder()
-				.setSpecificDateSchedules(specificDateSchedules)
-				.setRecurringSchedules(recurringSchedules).build();
+		Schedules schedules = new ScheduleBuilder().setSpecific_date(specificDateSchedules)
+				.setRecurring_schedule(recurringSchedules).build();
 
 		return schedules;
 
@@ -78,22 +78,22 @@ public class TestDataSetupHelper {
 			int noOfDOMRecurringSchedules, int noOfDOWRecurringSchedules) {
 
 		return new RecurringScheduleEntitiesBuilder(noOfDOMRecurringSchedules, noOfDOWRecurringSchedules)
-				.setAppId(appId).setTimeZone(timeZone)
-				.setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).build();
+				.setAppId(appId).setTimeZone(timeZone).setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5)
+				.build();
 	}
 
 	public static String generateJsonSchedule(String appId, int noOfSpecificDateSchedulesToSetUp,
 			int noOfRecurringSchedulesToSetUp) throws JsonProcessingException {
 		ObjectMapper mapper = new ObjectMapper();
 
-		ApplicationScalingSchedules schedules = generateSchedules(noOfSpecificDateSchedulesToSetUp,
+		ApplicationSchedules applicationPolicy = generateApplicationPolicy(noOfSpecificDateSchedulesToSetUp,
 				noOfRecurringSchedulesToSetUp);
 
-		return mapper.writeValueAsString(schedules);
+		return mapper.writeValueAsString(applicationPolicy);
 	}
 
-	public static String generateJsonForOverlappingRecurringScheduleWithStartEndDate(String firstStartDateStr, String firstEndDateStr,
-			String secondStartDateStr, String secondEndDateStr) throws Exception {
+	public static String generateJsonForOverlappingRecurringScheduleWithStartEndDate(String firstStartDateStr,
+			String firstEndDateStr, String secondStartDateStr, String secondEndDateStr) throws Exception {
 		ObjectMapper mapper = new ObjectMapper();
 
 		int[] dayOfWeek = { 1, 2, 3, 4, 5, 6, 7 };
@@ -104,24 +104,18 @@ public class TestDataSetupHelper {
 
 		List<RecurringScheduleEntity> entities = new RecurringScheduleEntitiesBuilder(0, 2)
 				// Set data in first entity
-				.setDayOfWeek(0, dayOfWeek)
-				.setDayOfMonth(0, null)
-				.setStartDate(0, getDate(firstStartDateStr))
-				.setEndDate(0, getDate(firstEndDateStr))
-				.setStartTime(0, firstStartTime)
-				.setEndTime(0, firstEndTime)
+				.setDayOfWeek(0, dayOfWeek).setDayOfMonth(0, null).setStartDate(0, getDate(firstStartDateStr))
+				.setEndDate(0, getDate(firstEndDateStr)).setStartTime(0, firstStartTime).setEndTime(0, firstEndTime)
 				// Set data in second entity
-				.setDayOfWeek(1, dayOfWeek)
-				.setDayOfMonth(1, null)
-				.setStartDate(1, getDate(secondStartDateStr))
-				.setEndDate(1, getDate(secondEndDateStr))
-				.setStartTime(1, secondStartTime)
-				.setEndTime(1, secondEndTime).build();
+				.setDayOfWeek(1, dayOfWeek).setDayOfMonth(1, null).setStartDate(1, getDate(secondStartDateStr))
+				.setEndDate(1, getDate(secondEndDateStr)).setStartTime(1, secondStartTime).setEndTime(1, secondEndTime)
+				.build();
 
-		ApplicationScalingSchedules schedules = new ScheduleBuilder(5, 1, timeZone, 0, 0, 0)
-				.setRecurringSchedules(entities).build();
+		Schedules schedules = new ScheduleBuilder(timeZone, 0, 0, 0).setRecurring_schedule(entities).build();
+		ApplicationSchedules applicationPolicy = generateApplicationPolicy(0, 1);
+		applicationPolicy.setSchedules(schedules);
 
-		return mapper.writeValueAsString(schedules);
+		return mapper.writeValueAsString(applicationPolicy);
 	}
 
 	public static Date getDate(String dateStr) throws ParseException {
@@ -141,12 +135,14 @@ public class TestDataSetupHelper {
 		}
 	}
 
-	static String getTimeString(String[] time, int pos, int offsetMin) {
-		if (time != null && time.length > pos) {
-			return time[pos];
+	static Time getTime(String[] timeArr, int pos, int offsetMin) {
+		String timeStr;
+		if (timeArr != null && timeArr.length > pos) {
+			timeStr = timeArr[pos];
 		} else {
-			return getCurrentDateOrTime(offsetMin, DateHelper.TIME_FORMAT);
+			timeStr = getCurrentDateOrTime(offsetMin, DateHelper.TIME_FORMAT);
 		}
+		return Time.valueOf(timeStr + ":00");
 	}
 
 	private static String getCurrentDateOrTime(int offsetMin, String format) {

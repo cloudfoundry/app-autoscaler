@@ -12,7 +12,8 @@ import org.cloudfoundry.autoscaler.scheduler.dao.SpecificDateScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
-import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationScalingSchedules;
+import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationSchedules;
+import org.cloudfoundry.autoscaler.scheduler.rest.model.Schedules;
 import org.cloudfoundry.autoscaler.scheduler.util.DataValidationHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.DateHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.RecurringScheduleTime;
@@ -49,22 +50,24 @@ public class ScheduleManager {
 	 * @param appId
 	 * @return
 	 */
-	public ApplicationScalingSchedules getAllSchedules(String appId) {
+	public ApplicationSchedules getAllSchedules(String appId) {
 		logger.info("Get All schedules for application: " + appId);
 
-		ApplicationScalingSchedules applicationScalingSchedules = new ApplicationScalingSchedules();
+		ApplicationSchedules applicationSchedules = new ApplicationSchedules();
+		Schedules schedules = new Schedules();
+		applicationSchedules.setSchedules(schedules);
 		List<SpecificDateScheduleEntity> allSpecificDateScheduleEntitiesForApp;
 		List<RecurringScheduleEntity> allRecurringScheduleEntitiesForApp;
 
 		try {
 			allSpecificDateScheduleEntitiesForApp = specificDateScheduleDao.findAllSpecificDateSchedulesByAppId(appId);
 			if (!allSpecificDateScheduleEntitiesForApp.isEmpty()) {
-				applicationScalingSchedules.setSpecific_date(allSpecificDateScheduleEntitiesForApp);
+				schedules.setSpecific_date(allSpecificDateScheduleEntitiesForApp);
 			}
 
 			allRecurringScheduleEntitiesForApp = recurringScheduleDao.findAllRecurringSchedulesByAppId(appId);
 			if (!allRecurringScheduleEntitiesForApp.isEmpty()) {
-				applicationScalingSchedules.setRecurring_schedule(allRecurringScheduleEntitiesForApp);
+				schedules.setRecurring_schedule(allRecurringScheduleEntitiesForApp);
 			}
 
 		} catch (DatabaseValidationException dve) {
@@ -74,31 +77,31 @@ public class ScheduleManager {
 			throw new SchedulerInternalException("Database error", dve);
 		}
 
-		return applicationScalingSchedules;
+		return applicationSchedules;
 	}
 
 	/**
 	 * This method calls the helper method to sets up the basic common information in the schedule entities.
 	 * @param appId
-	 * @param applicationScalingSchedules
+	 * @param applicationPolicy
 	 */
-	public void setUpSchedules(String appId, ApplicationScalingSchedules applicationScalingSchedules) {
+	public void setUpSchedules(String appId, ApplicationSchedules applicationPolicy) {
 
 		// If there are schedules then only set the meta data in the schedule entities
-		if (applicationScalingSchedules.hasSchedules()) {
-			List<SpecificDateScheduleEntity> specificDateSchedules = applicationScalingSchedules.getSpecific_date();
+		if (applicationPolicy.getSchedules() != null && applicationPolicy.getSchedules().hasSchedules()) {
+			List<SpecificDateScheduleEntity> specificDateSchedules = applicationPolicy.getSchedules().getSpecific_date();
 			if (specificDateSchedules != null) {
 				for (SpecificDateScheduleEntity specificDateScheduleEntity : specificDateSchedules) {
 					// Sets the meta data in specific date schedules list
-					setUpSchedules(appId, applicationScalingSchedules, specificDateScheduleEntity);
+					setUpSchedules(appId, applicationPolicy, specificDateScheduleEntity);
 				}
 			}
 
 			// Call the setUpSchedules to set the meta data in recurring schedules list
-			List<RecurringScheduleEntity> recurringSchedules = applicationScalingSchedules.getRecurring_schedule();
+			List<RecurringScheduleEntity> recurringSchedules = applicationPolicy.getSchedules().getRecurring_schedule();
 			if (recurringSchedules != null) {
 				for (RecurringScheduleEntity recurringScheduleEntity : recurringSchedules) {
-					setUpSchedules(appId, applicationScalingSchedules, recurringScheduleEntity);
+					setUpSchedules(appId, applicationPolicy, recurringScheduleEntity);
 				}
 			}
 		}
@@ -107,15 +110,15 @@ public class ScheduleManager {
 	/**
 	 * Sets the meta data(like the appId, timeZone etc) in the specified entity.
 	 * @param appId
-	 * @param applicationScalingSchedules
+	 * @param applicationPolicy
 	 * @param scheduleEntity
 	 */
-	private void setUpSchedules(String appId, ApplicationScalingSchedules applicationScalingSchedules,
+	private void setUpSchedules(String appId, ApplicationSchedules applicationPolicy,
 			ScheduleEntity scheduleEntity) {
-		scheduleEntity.setAppId(appId);
-		scheduleEntity.setTimeZone(applicationScalingSchedules.getTimeZone());
-		scheduleEntity.setDefaultInstanceMinCount(applicationScalingSchedules.getInstance_min_count());
-		scheduleEntity.setDefaultInstanceMaxCount(applicationScalingSchedules.getInstance_max_count());
+		scheduleEntity.setApp_id(appId);
+		scheduleEntity.setTimezone(applicationPolicy.getSchedules().getTimezone());
+		scheduleEntity.setDefault_instance_min_count(applicationPolicy.getInstance_min_count());
+		scheduleEntity.setDefault_instance_max_count(applicationPolicy.getInstance_max_count());
 
 	}
 
@@ -124,52 +127,53 @@ public class ScheduleManager {
 	 * do further validation.
 	 *
 	 * @param appId
-	 * @param applicationScalingSchedules
+	 * @param applicationPolicy
 	 */
-	public void validateSchedules(String appId, ApplicationScalingSchedules applicationScalingSchedules) {
+	public void validateSchedules(String appId, ApplicationSchedules applicationPolicy) {
 		logger.info("Validate schedules for application: " + appId);
 
 		// Validate the application id
 		if (!DataValidationHelper.isNotEmpty(appId)) {
-			validationErrorResult.addFieldError(applicationScalingSchedules, "data.value.not.specified", "app_id");
+			validationErrorResult.addFieldError(applicationPolicy, "data.value.not.specified", "app_id");
 		}
 
 		// Validate the time zone
-		String timeZoneId = applicationScalingSchedules.getTimeZone();
+		String timeZoneId = applicationPolicy.getSchedules().getTimezone();
+		
 
 		// Boolean flag added since date time validations depend on the time zone
 		boolean isValidTimeZone = DataValidationHelper.isNotEmpty(timeZoneId);
 
 		if (!isValidTimeZone) {
-			validationErrorResult.addFieldError(applicationScalingSchedules, "data.value.not.specified.timezone",
+			validationErrorResult.addFieldError(applicationPolicy, "data.value.not.specified.timezone",
 					"timeZone");
 		}
 
 		if (isValidTimeZone && !DataValidationHelper.isValidTimeZone(timeZoneId)) {
-			validationErrorResult.addFieldError(applicationScalingSchedules, "data.invalid.timezone", "timeZone",
+			validationErrorResult.addFieldError(applicationPolicy, "data.invalid.timezone", "timeZone",
 					timeZoneId);
 		}
 
 		// Validate the default minimum and maximum instance count
-		validateDefaultInstanceMinMaxCount(applicationScalingSchedules.getInstance_min_count(),
-				applicationScalingSchedules.getInstance_max_count());
+		validateDefaultInstanceMinMaxCount(applicationPolicy.getInstance_min_count(),
+				applicationPolicy.getInstance_max_count());
 
 		// Validate schedules.
-		if (applicationScalingSchedules.hasSchedules()) {
-			List<SpecificDateScheduleEntity> specificDateSchedules = applicationScalingSchedules.getSpecific_date();
+		if (applicationPolicy.getSchedules().hasSchedules()) {
+			List<SpecificDateScheduleEntity> specificDateSchedules = applicationPolicy.getSchedules().getSpecific_date();
 			// Validate specific date schedules.
 			if (specificDateSchedules != null) {
 				validateSpecificDateSchedules(specificDateSchedules, isValidTimeZone);
 			}
 
-			List<RecurringScheduleEntity> recurringSchedules = applicationScalingSchedules.getRecurring_schedule();
+			List<RecurringScheduleEntity> recurringSchedules = applicationPolicy.getSchedules().getRecurring_schedule();
 			// Validate recurring schedules.
 			if (recurringSchedules != null) {
 				validateRecurringSchedules(recurringSchedules, isValidTimeZone);
 			}
 		} else {// No schedules found
 
-			validationErrorResult.addFieldError(applicationScalingSchedules, "data.invalid.noSchedules",
+			validationErrorResult.addFieldError(applicationPolicy, "data.invalid.noSchedules",
 					"app_id=" + appId);
 
 		}
@@ -206,7 +210,7 @@ public class ScheduleManager {
 				}
 			}
 
-			Integer initialMinInstanceCount = specificDateScheduleEntity.getInitialMinInstanceCount();
+			Integer initialMinInstanceCount = specificDateScheduleEntity.getInitial_min_instance_count();
 			// The initial minimum instance count cannot be negative.
 			if (DataValidationHelper.isNotNull(initialMinInstanceCount) && initialMinInstanceCount < 0) {
 				validationErrorResult.addFieldError(null, "schedule.data.value.invalid", scheduleBeingProcessed,
@@ -214,8 +218,8 @@ public class ScheduleManager {
 			}
 
 			// Validate instance minimum count and maximum count.
-			validateInstanceMinMaxCount(scheduleBeingProcessed, specificDateScheduleEntity.getInstanceMinCount(),
-					specificDateScheduleEntity.getInstanceMaxCount());
+			validateInstanceMinMaxCount(scheduleBeingProcessed, specificDateScheduleEntity.getInstance_min_count(),
+					specificDateScheduleEntity.getInstance_max_count());
 			++scheduleIdentifier;
 		}
 
@@ -254,7 +258,7 @@ public class ScheduleManager {
 				}
 			}
 
-			Integer initialMinInstanceCount = recurringScheduleEntity.getInitialMinInstanceCount();
+			Integer initialMinInstanceCount = recurringScheduleEntity.getInitial_min_instance_count();
 			// The initial minimum instance count cannot be negative.
 			if (DataValidationHelper.isNotNull(initialMinInstanceCount) && initialMinInstanceCount < 0) {
 				validationErrorResult.addFieldError(null, "schedule.data.value.invalid", scheduleBeingProcessed,
@@ -262,8 +266,8 @@ public class ScheduleManager {
 			}
 
 			// Validate instance minimum count and maximum count.
-			validateInstanceMinMaxCount(scheduleBeingProcessed, recurringScheduleEntity.getInstanceMinCount(),
-					recurringScheduleEntity.getInstanceMaxCount());
+			validateInstanceMinMaxCount(scheduleBeingProcessed, recurringScheduleEntity.getInstance_min_count(),
+					recurringScheduleEntity.getInstance_max_count());
 			++scheduleIdentifier;
 		}
 		if (isValidTimeZone) {
@@ -302,8 +306,8 @@ public class ScheduleManager {
 
 	private boolean validateStartEndTime(String scheduleBeingProcessed, RecurringScheduleEntity recurringSchedule) {
 		boolean isValid = true;
-		Date startTime = recurringSchedule.getStartTime();
-		Date endTime = recurringSchedule.getEndTime();
+		Date startTime = recurringSchedule.getStart_time();
+		Date endTime = recurringSchedule.getEnd_time();
 
 		if (!DataValidationHelper.isNotNull(startTime)) {
 			isValid = false;
@@ -332,9 +336,9 @@ public class ScheduleManager {
 	private boolean validateStartEndDate(String scheduleBeingProcessed, RecurringScheduleEntity recurringSchedule) {
 		// Note: For recurring schedule, start and end date are optional so not checking for null
 		boolean isValid = true;
-		Date startDate = recurringSchedule.getStartDate();
-		Date endDate = recurringSchedule.getEndDate();
-		TimeZone timeZone = TimeZone.getTimeZone(recurringSchedule.getTimeZone());
+		Date startDate = recurringSchedule.getStart_date();
+		Date endDate = recurringSchedule.getEnd_date();
+		TimeZone timeZone = TimeZone.getTimeZone(recurringSchedule.getTimezone());
 
 		if (startDate != null) {
 			// it should be after current date.
@@ -368,8 +372,8 @@ public class ScheduleManager {
 
 	private boolean validateDayOfWeekOrMonth(String scheduleBeingProcessed, RecurringScheduleEntity recurringSchedule) {
 		boolean isValid = true;
-		int[] dayOfMonth = recurringSchedule.getDayOfMonth();
-		int[] dayOfWeek = recurringSchedule.getDayOfWeek();
+		int[] dayOfMonth = recurringSchedule.getDays_of_month();
+		int[] dayOfWeek = recurringSchedule.getDays_of_week();
 
 		if (!DataValidationHelper.isNotEmpty(dayOfMonth) && !DataValidationHelper.isNotEmpty(dayOfWeek)) {
 			isValid = false;
@@ -528,10 +532,10 @@ public class ScheduleManager {
 		boolean isValid = true;
 		SpecificDateScheduleDateTime validScheduleDateTime = null;
 
-		Date startDateTime = specificDateSchedule.getStartDateTime();
-		Date endDateTime = specificDateSchedule.getEndDateTime();
+		Date startDateTime = specificDateSchedule.getStart_date_time();
+		Date endDateTime = specificDateSchedule.getEnd_date_time();
 
-		TimeZone timeZone = TimeZone.getTimeZone(specificDateSchedule.getTimeZone());
+		TimeZone timeZone = TimeZone.getTimeZone(specificDateSchedule.getTimezone());
 
 		boolean isValidDtTm = DataValidationHelper.isNotNull(startDateTime);
 		if (!isValidDtTm) {
@@ -587,12 +591,12 @@ public class ScheduleManager {
 	 * Calls private helper methods to persist the schedules in the database and
 	 * calls ScalingJobManager to create scaling action jobs.
 	 *
-	 * @param applicationScalingSchedules
+	 * @param schedules
 	 */
 	@Transactional
-	public void createSchedules(ApplicationScalingSchedules applicationScalingSchedules) {
+	public void createSchedules(Schedules schedules) {
 
-		List<SpecificDateScheduleEntity> specificDateSchedules = applicationScalingSchedules.getSpecific_date();
+		List<SpecificDateScheduleEntity> specificDateSchedules = schedules.getSpecific_date();
 		if (specificDateSchedules != null) {
 			for (SpecificDateScheduleEntity specificDateScheduleEntity : specificDateSchedules) {
 				// Persist the schedule in database
@@ -606,7 +610,7 @@ public class ScheduleManager {
 			}
 		}
 
-		List<RecurringScheduleEntity> recurringSchedules = applicationScalingSchedules.getRecurring_schedule();
+		List<RecurringScheduleEntity> recurringSchedules = schedules.getRecurring_schedule();
 		if (recurringSchedules != null) {
 			for (RecurringScheduleEntity recurringScheduleEntity : recurringSchedules) {
 				// Persist the schedule in database
@@ -635,7 +639,7 @@ public class ScheduleManager {
 		} catch (DatabaseValidationException dve) {
 
 			validationErrorResult.addErrorForDatabaseValidationException(dve, "database.error.create.failed",
-					"app_id=" + specificDateScheduleEntity.getAppId());
+					"app_id=" + specificDateScheduleEntity.getApp_id());
 			throw new SchedulerInternalException("Database error", dve);
 		}
 		return savedScheduleEntity;
@@ -647,7 +651,7 @@ public class ScheduleManager {
 			savedScheduleEntity = recurringScheduleDao.create(recurringScheduleEntity);
 		} catch (DatabaseValidationException dve) {
 			validationErrorResult.addErrorForDatabaseValidationException(dve, "database.error.create.failed",
-					"app_id=" + recurringScheduleEntity.getAppId());
+					"app_id=" + recurringScheduleEntity.getApp_id());
 			throw new SchedulerInternalException("Database error", dve);
 		}
 		return savedScheduleEntity;
@@ -691,7 +695,7 @@ public class ScheduleManager {
 			specificDateScheduleDao.delete(specificDateScheduleEntity);
 		} catch (DatabaseValidationException dve) {
 			validationErrorResult.addErrorForDatabaseValidationException(dve, "database.error.delete.failed",
-					"app_id=" + specificDateScheduleEntity.getAppId());
+					"app_id=" + specificDateScheduleEntity.getApp_id());
 			throw new SchedulerInternalException("Database error", dve);
 		}
 	}
@@ -701,7 +705,7 @@ public class ScheduleManager {
 			recurringScheduleDao.delete(recurringScheduleEntity);
 		} catch (DatabaseValidationException dve) {
 			validationErrorResult.addErrorForDatabaseValidationException(dve, "database.error.delete.failed",
-					"app_id=" + recurringScheduleEntity.getAppId());
+					"app_id=" + recurringScheduleEntity.getApp_id());
 			throw new SchedulerInternalException("Database error", dve);
 		}
 	}
