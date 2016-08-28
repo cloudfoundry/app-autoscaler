@@ -76,6 +76,7 @@ var _ = Describe("MetricPoller", func() {
 		})
 		AfterEach(func() {
 			metricPoller.Stop()
+			metricServer.Close()
 		})
 		Context("when the poller is started", func() {
 			var consumed chan *AppMetric
@@ -132,6 +133,20 @@ var _ = Describe("MetricPoller", func() {
 					Consistently(consumed).ShouldNot(Receive())
 				})
 			})
+			Context("when metric-collector is not running", func() {
+				JustBeforeEach(func() {
+					metricServer.Close()
+				})
+				BeforeEach(func() {
+					metricServer = ghttp.NewServer()
+					metricServer.RouteToHandler("GET", "/v1/apps/"+testAppId+"/metrics_history/memory", ghttp.RespondWithJSONEncoded(http.StatusOK,
+						&metrics))
+
+				})
+				It("should not do aggregation as there is no metric", func() {
+					Consistently(consumed).ShouldNot(Receive())
+				})
+			})
 
 		})
 	})
@@ -156,7 +171,7 @@ var _ = Describe("MetricPoller", func() {
 
 		})
 		It("stops the aggregating", func() {
-			Eventually(consumed).ShouldNot(Receive())
+			Consistently(consumed).ShouldNot(Receive())
 		})
 	})
 })

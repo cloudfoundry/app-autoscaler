@@ -3,7 +3,7 @@ package appmetric
 type AppMonitor struct {
 	AppId          string
 	MetricType     string
-	StatWindowSecs int64
+	StatWindowSecs int
 }
 type AppMetric struct {
 	AppId      string

@@ -93,6 +93,55 @@ var _ = Describe("Aggregator", func() {
 		metricServer.RouteToHandler("GET", "/v1/apps/"+testAppId+"/metrics_history/memory", ghttp.RespondWithJSONEncoded(http.StatusOK,
 			&metrics))
 	})
+	Context("ConsumeTrigger", func() {
+		var triggerMap map[string]*Trigger
+		var appChan chan *AppMonitor
+		var appMonitor *AppMonitor
+		JustBeforeEach(func() {
+			appChan = make(chan *AppMonitor, 1)
+			aggregator = NewAggregator(logger, clock, TestPolicyPollerInterval, database, metricServer.URL(), TestMetricPollerCount)
+			triggerMap = map[string]*Trigger{testAppId: &Trigger{
+				AppId: testAppId,
+				TriggerRecord: &TriggerRecord{
+					InstanceMaxCount: 5,
+					InstanceMinCount: 1,
+					ScalingRules: []*ScalingRule{&ScalingRule{
+						MetricType:         "MemoryUsage",
+						StatWindowSecs:     300,
+						BreachDurationSecs: 300,
+						CoolDownSecs:       300,
+						Threshold:          30,
+						Operator:           "<",
+						Adjustment:         "-1",
+					}}},
+			}}
+		})
+		It("should parse the triggers to appmonitor and put them in appChan", func() {
+			aggregator.ConsumeTrigger(triggerMap, appChan)
+			Eventually(appChan).Should(Receive(&appMonitor))
+			Expect(appMonitor).To(Equal(&AppMonitor{
+				AppId:          testAppId,
+				MetricType:     "MemoryUsage",
+				StatWindowSecs: 300,
+			}))
+		})
+	})
+	Context("ConsumeAppMetric", func() {
+		var appmetric *AppMetric
+		JustBeforeEach(func() {
+			aggregator = NewAggregator(logger, clock, TestPolicyPollerInterval, database, metricServer.URL(), TestMetricPollerCount)
+			appmetric = &AppMetric{
+				AppId:      testAppId,
+				MetricType: metricType,
+				Value:      250,
+				Unit:       "bytes",
+				Timestamp:  timestamp}
+		})
+		It("should save the appmetric to database", func() {
+			aggregator.ConsumeAppMetric(appmetric)
+			Eventually(database.SaveAppMetricCallCount).Should(BeNumerically("==", 1))
+		})
+	})
 	Context("Start", func() {
 		JustBeforeEach(func() {
 			aggregator = NewAggregator(logger, clock, TestPolicyPollerInterval, database, metricServer.URL(), TestMetricPollerCount)

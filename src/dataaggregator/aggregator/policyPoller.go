@@ -3,37 +3,40 @@ package aggregator
 import (
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
+	"dataaggregator/appmetric"
 	"dataaggregator/db"
 	"dataaggregator/policy"
 	"time"
 )
 
-type Consumer func([]*policy.PolicyJson, map[string]*policy.Trigger)
+type Consumer func(map[string]*policy.Trigger, chan *appmetric.AppMonitor)
 
 type PolicyPoller struct {
 	logger   lager.Logger
 	interval time.Duration
 	database db.DB
+	appChan  chan *appmetric.AppMonitor
 	clock    clock.Clock
 	tick     clock.Ticker
 	doneChan chan bool
 	consumer Consumer
 }
 
-func NewPolicyPoller(logger lager.Logger, clock clock.Clock, interval time.Duration, database db.DB, consumer Consumer) *PolicyPoller {
+func NewPolicyPoller(logger lager.Logger, clock clock.Clock, interval time.Duration, database db.DB, consumer Consumer, appChan chan *appmetric.AppMonitor) *PolicyPoller {
 	return &PolicyPoller{
-		logger:   logger.Session("policy-poller"),
+		logger:   logger,
 		clock:    clock,
 		interval: interval,
 		database: database,
 		doneChan: make(chan bool),
 		consumer: consumer,
+		appChan:  appChan,
 	}
 }
 func (p *PolicyPoller) Start() {
 	p.tick = p.clock.NewTicker(p.interval)
 	go p.startPolicyRetrieve()
-	p.logger.Info("policy-poller-started", lager.Data{"interval": p.interval})
+	p.logger.Info("started", lager.Data{"interval": p.interval})
 }
 
 func (p *PolicyPoller) Stop() {
@@ -41,7 +44,7 @@ func (p *PolicyPoller) Stop() {
 		p.tick.Stop()
 		close(p.doneChan)
 	}
-	p.logger.Info("policy-poller-stopped")
+	p.logger.Info("stopped")
 }
 func (p *PolicyPoller) startPolicyRetrieve() {
 	for {
@@ -50,7 +53,7 @@ func (p *PolicyPoller) startPolicyRetrieve() {
 			continue
 		}
 		triggers := p.computeTriggers(policies)
-		p.consumer(policies, triggers)
+		p.consumer(triggers, p.appChan)
 		select {
 		case <-p.doneChan:
 			return

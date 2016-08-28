@@ -5,6 +5,7 @@ import (
 	"dataaggregator/appmetric"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"metricscollector/metrics"
 	"metricscollector/server"
@@ -26,7 +27,7 @@ type MetricPoller struct {
 func NewMetricPoller(metricCollectorUrl string, logger lager.Logger, appChan chan *appmetric.AppMonitor, metricConsumer MetricConsumer, httpClient *http.Client) *MetricPoller {
 	return &MetricPoller{
 		metricCollectorUrl: metricCollectorUrl,
-		logger:             logger.Session("metric-poller"),
+		logger:             logger,
 		appChan:            appChan,
 		doneChan:           make(chan bool),
 		metricConsumer:     metricConsumer,
@@ -35,12 +36,12 @@ func NewMetricPoller(metricCollectorUrl string, logger lager.Logger, appChan cha
 }
 func (m *MetricPoller) Start() {
 	go m.startMetricRetrieve()
-	m.logger.Info("metric-poller-started")
+	m.logger.Info("started")
 }
 
 func (m *MetricPoller) Stop() {
 	m.doneChan <- true
-	m.logger.Info("metric-poller-stopped")
+	m.logger.Info("stopped")
 }
 func (m *MetricPoller) startMetricRetrieve() {
 	for {
@@ -56,7 +57,7 @@ func (m *MetricPoller) retrieveMetric(app *appmetric.AppMonitor) {
 	appId := app.AppId
 	metricType := app.MetricType
 	endTime := time.Now().UnixNano()
-	startTime := endTime - app.StatWindowSecs*1000*1000
+	startTime := endTime - int64(app.StatWindowSecs)*1000*1000
 	var url string
 	switch metricType {
 	case "MemoryUsage":
@@ -64,14 +65,19 @@ func (m *MetricPoller) retrieveMetric(app *appmetric.AppMonitor) {
 	default:
 		url = m.metricCollectorUrl + "/v1/apps/" + app.AppId + "/metrics_history/memory?start=" + strconv.FormatInt(startTime, 10) + "&end=" + strconv.FormatInt(endTime, 10)
 	}
-	resp, err := m.httpClient.Get(url)
-	if err != nil {
-		m.logger.Error("Retrieve metric failed", err, lager.Data{"appId": appId, "metricType": metricType, "err": err})
-	} else {
+	if metricType == "MemoryUsage" {
+		resp, err := m.httpClient.Get(url)
+		if err != nil {
+			m.logger.Error("Retrieve metric failed", err, lager.Data{"appId": appId, "metricType": metricType, "err": err})
+			return
+		}
 		defer resp.Body.Close()
 		var metrics []*metrics.Metric
 		if resp.StatusCode == http.StatusOK {
-			data, _ := ioutil.ReadAll(resp.Body)
+			data, readError := ioutil.ReadAll(resp.Body)
+			if readError != nil {
+				m.logger.Error("Can not read data from response", readError)
+			}
 			json.Unmarshal(data, &metrics)
 			avgMetric := m.doAggregate(appId, metricType, metrics)
 			if avgMetric != nil {
@@ -84,6 +90,8 @@ func (m *MetricPoller) retrieveMetric(app *appmetric.AppMonitor) {
 			m.logger.Error("Retrieve metric failed", errors.New(errorResponse.Message), lager.Data{"appId": appId, "metricType": metricType})
 		}
 
+	} else {
+		m.logger.Error("Unsupported metric type", fmt.Errorf("%s is not supported", metricType))
 	}
 
 }
@@ -101,9 +109,9 @@ func (m *MetricPoller) doAggregate(appId string, metricType string, metrics []*m
 			sum += intValue
 		}
 	}
-
+	var avgAppMetric *appmetric.AppMetric
 	if count == 0 {
-		return &appmetric.AppMetric{
+		avgAppMetric = &appmetric.AppMetric{
 			AppId:      appId,
 			MetricType: metricType,
 			Value:      0,
@@ -111,7 +119,7 @@ func (m *MetricPoller) doAggregate(appId string, metricType string, metrics []*m
 			Timestamp:  0,
 		}
 	} else {
-		return &appmetric.AppMetric{
+		avgAppMetric = &appmetric.AppMetric{
 			AppId:      appId,
 			MetricType: metricType,
 			Value:      sum / count,
@@ -119,4 +127,5 @@ func (m *MetricPoller) doAggregate(appId string, metricType string, metrics []*m
 			Timestamp:  timestamp,
 		}
 	}
+	return avgAppMetric
 }
