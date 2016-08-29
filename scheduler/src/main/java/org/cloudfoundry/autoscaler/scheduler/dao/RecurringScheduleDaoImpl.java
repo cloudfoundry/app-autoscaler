@@ -14,7 +14,7 @@ public class RecurringScheduleDaoImpl extends GenericDaoImpl<RecurringScheduleEn
 		try {
 			return entityManager
 					.createNamedQuery(RecurringScheduleEntity.query_recurringSchedulesByAppId, RecurringScheduleEntity.class)
-					.setParameter("app_id", appId).getResultList();
+					.setParameter("appId", appId).getResultList();
 
 		} catch (Exception exception) {
 

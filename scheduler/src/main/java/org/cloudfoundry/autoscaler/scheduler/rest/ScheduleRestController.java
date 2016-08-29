@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 
+ * Controller class for handling the REST api calls.
  *
  */
 @RestController
@@ -66,15 +66,16 @@ public class ScheduleRestController {
 
 		Schedules existingSchedules = scheduleManager.getAllSchedules(app_id).getSchedules();
 
-    if (existingSchedules.hasSchedules()) {// Request to update the schedules
-      logger.info("Update schedules for application: " + app_id);
+		if (existingSchedules.hasSchedules()) {// Request to update the
+												// schedules
+			logger.info("Update schedules for application: " + app_id);
 
-      logger.info("Delete schedules for application: " + app_id);
-      scheduleManager.deleteSchedules(app_id);
-    }
+			logger.info("Delete schedules for application: " + app_id);
+			scheduleManager.deleteSchedules(app_id);
+		}
 
-    logger.info("Create schedules for application: " + app_id);
-    scheduleManager.createSchedules(rawApplicationPolicy.getSchedules());
+		logger.info("Create schedules for application: " + app_id);
+		scheduleManager.createSchedules(rawApplicationPolicy.getSchedules());
 
 		return new ResponseEntity<>(null, null, HttpStatus.CREATED);
 	}

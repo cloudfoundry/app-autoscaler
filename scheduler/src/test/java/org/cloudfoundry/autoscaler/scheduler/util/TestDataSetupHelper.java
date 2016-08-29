@@ -61,8 +61,8 @@ public class TestDataSetupHelper {
 		List<RecurringScheduleEntity> recurringSchedules = generateRecurringScheduleEntities(appId,
 				noOfDOMRecurringSchedules, noOfDOWRecurringSchedules);
 
-		Schedules schedules = new ScheduleBuilder().setSpecific_date(specificDateSchedules)
-				.setRecurring_schedule(recurringSchedules).build();
+		Schedules schedules = new ScheduleBuilder().setSpecificDate(specificDateSchedules)
+				.setRecurringSchedule(recurringSchedules).build();
 
 		return schedules;
 
@@ -111,7 +111,7 @@ public class TestDataSetupHelper {
 				.setEndDate(1, getDate(secondEndDateStr)).setStartTime(1, secondStartTime).setEndTime(1, secondEndTime)
 				.build();
 
-		Schedules schedules = new ScheduleBuilder(timeZone, 0, 0, 0).setRecurring_schedule(entities).build();
+		Schedules schedules = new ScheduleBuilder(timeZone, 0, 0, 0).setRecurringSchedule(entities).build();
 		ApplicationSchedules applicationPolicy = generateApplicationPolicy(0, 1);
 		applicationPolicy.setSchedules(schedules);
 

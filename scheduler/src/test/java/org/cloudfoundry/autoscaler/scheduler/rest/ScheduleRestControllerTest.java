@@ -80,7 +80,7 @@ public class ScheduleRestControllerTest {
 		for (String appId : allAppIds) {
 			for (SpecificDateScheduleEntity entity : specificDateScheduleDao
 					.findAllSpecificDateSchedulesByAppId(appId)) {
-				callDeleteSchedules(entity.getApp_id());
+				callDeleteSchedules(entity.getAppId());
 			}
 		}
 	}
@@ -98,7 +98,6 @@ public class ScheduleRestControllerTest {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		ResultActions resultActions = mockMvc.perform(put(getCreateSchedulePath(appId))
 				.contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).content(policyJsonStr));
-
 		assertCreateScheduleAPI(resultActions);
 
 		resultActions = callGetAllSchedulesByAppId(appId);
@@ -163,7 +162,7 @@ public class ScheduleRestControllerTest {
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(1, 0);
 
-		applicationPolicy.getSchedules().setTimezone(null);
+		applicationPolicy.getSchedules().setTimeZone(null);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 
@@ -179,7 +178,7 @@ public class ScheduleRestControllerTest {
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(1, 0);
 
-		applicationPolicy.getSchedules().setTimezone("");
+		applicationPolicy.getSchedules().setTimeZone("");
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 
@@ -195,7 +194,7 @@ public class ScheduleRestControllerTest {
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(1, 0);
 
-		applicationPolicy.getSchedules().setTimezone(TestDataSetupHelper.getInvalidTimezone());
+		applicationPolicy.getSchedules().setTimeZone(TestDataSetupHelper.getInvalidTimezone());
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 
@@ -210,7 +209,7 @@ public class ScheduleRestControllerTest {
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(1, 0);
 
-		applicationPolicy.setInstance_min_count(null);
+		applicationPolicy.setInstanceMinCount(null);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 
@@ -226,7 +225,7 @@ public class ScheduleRestControllerTest {
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(1, 0);
 
-		applicationPolicy.setInstance_max_count(null);
+		applicationPolicy.setInstanceMaxCount(null);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 
@@ -242,7 +241,7 @@ public class ScheduleRestControllerTest {
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(1, 0);
 		int instanceMinCount = -1;
-		applicationPolicy.setInstance_min_count(instanceMinCount);
+		applicationPolicy.setInstanceMinCount(instanceMinCount);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 
@@ -258,7 +257,7 @@ public class ScheduleRestControllerTest {
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(1, 0);
 		int instanceMaxCount = -1;
-		applicationPolicy.setInstance_max_count(instanceMaxCount);
+		applicationPolicy.setInstanceMaxCount(instanceMaxCount);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 
@@ -276,8 +275,8 @@ public class ScheduleRestControllerTest {
 
 		Integer instanceMinCount = 5;
 		Integer instanceMaxCount = 1;
-		applicationPolicy.setInstance_max_count(instanceMaxCount);
-		applicationPolicy.setInstance_min_count(instanceMinCount);
+		applicationPolicy.setInstanceMaxCount(instanceMaxCount);
+		applicationPolicy.setInstanceMinCount(instanceMinCount);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 
@@ -294,9 +293,9 @@ public class ScheduleRestControllerTest {
 		ObjectMapper mapper = new ObjectMapper();
 		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(1, 0);
 
-		applicationPolicy.setInstance_max_count(null);
-		applicationPolicy.setInstance_min_count(null);
-		applicationPolicy.getSchedules().setTimezone(null);
+		applicationPolicy.setInstanceMaxCount(null);
+		applicationPolicy.setInstanceMinCount(null);
+		applicationPolicy.getSchedules().setTimeZone(null);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 
@@ -421,9 +420,9 @@ public class ScheduleRestControllerTest {
 		resultActions.andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON));
 
 		assertSpecificDateScheduleFoundEquals(expectedSpecificDateSchedulesTobeFound, appId,
-				applicationPolicy.getSchedules().getSpecific_date());
+				applicationPolicy.getSchedules().getSpecificDate());
 		assertRecurringDateScheduleFoundEquals(expectedRecurringSchedulesTobeFound, appId,
-				applicationPolicy.getSchedules().getRecurring_schedule());
+				applicationPolicy.getSchedules().getRecurringSchedule());
 	}
 
 	private void assertSpecificDateScheduleFoundEquals(int expectedSchedulesTobeFound, String expectedAppId,
@@ -433,7 +432,7 @@ public class ScheduleRestControllerTest {
 		} else {
 			assertEquals(expectedSchedulesTobeFound, specificDateScheduls.size());
 			for (ScheduleEntity entity : specificDateScheduls) {
-				assertEquals(expectedAppId, entity.getApp_id());
+				assertEquals(expectedAppId, entity.getAppId());
 			}
 		}
 	}
@@ -445,7 +444,7 @@ public class ScheduleRestControllerTest {
 		} else {
 			assertEquals(expectedRecurringSchedulesTobeFound, recurring_schedule.size());
 			for (ScheduleEntity entity : recurring_schedule) {
-				assertEquals(expectedAppId, entity.getApp_id());
+				assertEquals(expectedAppId, entity.getAppId());
 			}
 		}
 

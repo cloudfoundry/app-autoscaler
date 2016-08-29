@@ -18,7 +18,7 @@ public class RecurringScheduleEntitiesBuilder {
 	public RecurringScheduleEntitiesBuilder setTimeZone(String timeZone) {
 		if (recurringScheduleEntities != null) {
 			for (RecurringScheduleEntity recurringScheduleEntity : recurringScheduleEntities) {
-				recurringScheduleEntity.setTimezone(timeZone);
+				recurringScheduleEntity.setTimeZone(timeZone);
 			}
 		}
 		return this;
@@ -27,7 +27,7 @@ public class RecurringScheduleEntitiesBuilder {
 	public RecurringScheduleEntitiesBuilder setDefaultInstanceMaxCount(int max) {
 		if (recurringScheduleEntities != null) {
 			for (RecurringScheduleEntity recurringScheduleEntity : recurringScheduleEntities) {
-				recurringScheduleEntity.setDefault_instance_max_count(max);
+				recurringScheduleEntity.setDefaultInstanceMaxCount(max);
 			}
 		}
 		return this;
@@ -36,56 +36,56 @@ public class RecurringScheduleEntitiesBuilder {
 	public RecurringScheduleEntitiesBuilder setDefaultInstanceMinCount(int min) {
 		if (recurringScheduleEntities != null) {
 			for (RecurringScheduleEntity recurringScheduleEntity : recurringScheduleEntities) {
-				recurringScheduleEntity.setDefault_instance_min_count(min);
+				recurringScheduleEntity.setDefaultInstanceMinCount(min);
 			}
 		}
 		return this;
 	}
 
 	public RecurringScheduleEntitiesBuilder setInstanceMaxCount(int pos, int max) {
-		recurringScheduleEntities.get(pos).setInstance_max_count(max);
+		recurringScheduleEntities.get(pos).setInstanceMaxCount(max);
 		return this;
 	}
 
 	public RecurringScheduleEntitiesBuilder setInstanceMinCount(int pos, int min) {
-		recurringScheduleEntities.get(pos).setInstance_min_count(min);
+		recurringScheduleEntities.get(pos).setInstanceMinCount(min);
 		return this;
 	}
 
 	public RecurringScheduleEntitiesBuilder setStartTime(int pos, Time time) {
-		recurringScheduleEntities.get(pos).setStart_time(time);
+		recurringScheduleEntities.get(pos).setStartTime(time);
 		return this;
 	}
 
 	public RecurringScheduleEntitiesBuilder setEndTime(int pos, Time time) {
-		recurringScheduleEntities.get(pos).setEnd_time(time);
+		recurringScheduleEntities.get(pos).setEndTime(time);
 		return this;
 	}
 
 	public RecurringScheduleEntitiesBuilder setStartDate(int pos, Date date) {
-		recurringScheduleEntities.get(pos).setStart_date(date);
+		recurringScheduleEntities.get(pos).setStartDate(date);
 		return this;
 	}
 
 	public RecurringScheduleEntitiesBuilder setEndDate(int pos, Date date) {
-		recurringScheduleEntities.get(pos).setEnd_date(date);
+		recurringScheduleEntities.get(pos).setEndDate(date);
 		return this;
 	}
 
 	public RecurringScheduleEntitiesBuilder setDayOfWeek(int pos, int[] dayOfWeek) {
-		recurringScheduleEntities.get(pos).setDays_of_week(dayOfWeek);
+		recurringScheduleEntities.get(pos).setDaysOfWeek(dayOfWeek);
 		return this;
 	}
 
 	public RecurringScheduleEntitiesBuilder setDayOfMonth(int pos, int[] dayOfMonth) {
-		recurringScheduleEntities.get(pos).setDay_of_month(dayOfMonth);
+		recurringScheduleEntities.get(pos).setDayOfMonth(dayOfMonth);
 		return this;
 	}
 
 	public RecurringScheduleEntitiesBuilder setAppId(String appId) {
 		if (recurringScheduleEntities != null) {
 			for (RecurringScheduleEntity recurringScheduleEntity : recurringScheduleEntities) {
-				recurringScheduleEntity.setApp_id(appId);
+				recurringScheduleEntity.setAppId(appId);
 			}
 		}
 		return this;
@@ -111,15 +111,15 @@ public class RecurringScheduleEntitiesBuilder {
 		List<RecurringScheduleEntity> recurringScheduleEntities = new ArrayList<>();
 		for (int i = 0; i < noOfSchedules; i++) {
 			RecurringScheduleEntity recurringScheduleEntity = new RecurringScheduleEntity();
-			recurringScheduleEntity.setStart_time(TestDataSetupHelper.getTime(TestDataSetupHelper.getStarTime(), scheduleIndex, 0));
-			recurringScheduleEntity.setEnd_time(TestDataSetupHelper.getTime(TestDataSetupHelper.getEndTime(), scheduleIndex, 5));
+			recurringScheduleEntity.setStartTime(TestDataSetupHelper.getTime(TestDataSetupHelper.getStarTime(), scheduleIndex, 0));
+			recurringScheduleEntity.setEndTime(TestDataSetupHelper.getTime(TestDataSetupHelper.getEndTime(), scheduleIndex, 5));
 
-			recurringScheduleEntity.setInstance_min_count(i + 5);
-			recurringScheduleEntity.setInstance_max_count(i + 6);
+			recurringScheduleEntity.setInstanceMinCount(i + 5);
+			recurringScheduleEntity.setInstanceMaxCount(i + 6);
 			if (isDow)
-				recurringScheduleEntity.setDays_of_week(TestDataSetupHelper.generateDayOfWeek());
+				recurringScheduleEntity.setDaysOfWeek(TestDataSetupHelper.generateDayOfWeek());
 			else
-				recurringScheduleEntity.setDay_of_month(TestDataSetupHelper.generateDayOfMonth());
+				recurringScheduleEntity.setDayOfMonth(TestDataSetupHelper.generateDayOfMonth());
 			recurringScheduleEntities.add(recurringScheduleEntity);
 
 			scheduleIndex++;

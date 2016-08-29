@@ -5,46 +5,57 @@ import java.util.List;
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * 
  *
  */
 public class Schedules {
-	String timezone;
+	@JsonProperty(value = "timezone")
+	String timeZone;
 
-	private List<SpecificDateScheduleEntity> specific_date;
-	private List<RecurringScheduleEntity> recurring_schedule;
+	@JsonProperty(value = "specific_date")
+	private List<SpecificDateScheduleEntity> specificDate;
+	@JsonProperty(value = "recurring_schedule")
+	private List<RecurringScheduleEntity> recurringSchedule;
 
 	public boolean hasSchedules() {
-		if ((specific_date == null || specific_date.isEmpty())
-				&& (recurring_schedule == null || recurring_schedule.isEmpty())) {
+		if ((specificDate == null || specificDate.isEmpty())
+				&& (recurringSchedule == null || recurringSchedule.isEmpty())) {
 			return false;
 		}
 		return true;
 	}
 
-	public String getTimezone() {
-		return timezone;
+	public String getTimeZone() {
+		return timeZone;
 	}
 
-	public void setTimezone(String timezone) {
-		this.timezone = timezone;
+	public void setTimeZone(String timeZone) {
+		this.timeZone = timeZone;
 	}
 
-	public List<SpecificDateScheduleEntity> getSpecific_date() {
-		return specific_date;
+	public List<SpecificDateScheduleEntity> getSpecificDate() {
+		return specificDate;
 	}
 
-	public void setSpecific_date(List<SpecificDateScheduleEntity> specific_date) {
-		this.specific_date = specific_date;
+	public void setSpecificDate(List<SpecificDateScheduleEntity> specificDate) {
+		this.specificDate = specificDate;
 	}
 
-	public List<RecurringScheduleEntity> getRecurring_schedule() {
-		return recurring_schedule;
+	public List<RecurringScheduleEntity> getRecurringSchedule() {
+		return recurringSchedule;
 	}
 
-	public void setRecurring_schedule(List<RecurringScheduleEntity> recurring_schedule) {
-		this.recurring_schedule = recurring_schedule;
+	public void setRecurringSchedule(List<RecurringScheduleEntity> recurringSchedule) {
+		this.recurringSchedule = recurringSchedule;
+	}
+
+	@Override
+	public String toString() {
+		return "Schedules [timeZone=" + timeZone + ", specificDate=" + specificDate + ", recurringSchedule="
+				+ recurringSchedule + "]";
 	}
 
 }

@@ -61,11 +61,11 @@ class ScheduleJobManager {
 		setupScalingScheduleJobData(endJobDetail, specificDateScheduleEntity, JobActionEnum.END);
 
 		// Build the trigger
-		TimeZone policyTimeZone = TimeZone.getTimeZone(specificDateScheduleEntity.getTimezone());
+		TimeZone policyTimeZone = TimeZone.getTimeZone(specificDateScheduleEntity.getTimeZone());
 
-		Date triggerStartDateTime = DateHelper.getDateWithZoneOffset(specificDateScheduleEntity.getStart_date_time(),
+		Date triggerStartDateTime = DateHelper.getDateWithZoneOffset(specificDateScheduleEntity.getStartDateTime(),
 				policyTimeZone);
-		Date triggerEndDateTime = DateHelper.getDateWithZoneOffset(specificDateScheduleEntity.getEnd_date_time(),
+		Date triggerEndDateTime = DateHelper.getDateWithZoneOffset(specificDateScheduleEntity.getEndDateTime(),
 				policyTimeZone);
 
 		TriggerKey startTriggerKey = ScheduleJobHelper.generateTriggerKey(scheduleId, JobActionEnum.START,
@@ -83,7 +83,7 @@ class ScheduleJobManager {
 		} catch (SchedulerException se) {
 
 			validationErrorResult.addErrorForQuartzSchedulerException(se, "scheduler.error.create.failed",
-					"app_id=" + specificDateScheduleEntity.getApp_id(), se.getMessage());
+					"app_id=" + specificDateScheduleEntity.getAppId(), se.getMessage());
 		}
 
 	}
@@ -105,8 +105,8 @@ class ScheduleJobManager {
 		setupScalingScheduleJobData(jobEndDetail, recurringScheduleEntity, JobActionEnum.END);
 
 		// Build the trigger
-		Date triggerStartTime = recurringScheduleEntity.getStart_time();
-		Date triggerEndTime = recurringScheduleEntity.getEnd_time();
+		Date triggerStartTime = recurringScheduleEntity.getStartTime();
+		Date triggerEndTime = recurringScheduleEntity.getEndTime();
 
 		TriggerKey startTriggerKey = ScheduleJobHelper.generateTriggerKey(scheduleId, JobActionEnum.START,
 				ScheduleTypeEnum.RECURRING);
@@ -126,7 +126,7 @@ class ScheduleJobManager {
 		} catch (SchedulerException se) {
 
 			validationErrorResult.addErrorForQuartzSchedulerException(se, "scheduler.error.create.failed",
-					"app_id=" + recurringScheduleEntity.getApp_id(), se.getMessage());
+					"app_id=" + recurringScheduleEntity.getAppId(), se.getMessage());
 		}
 
 	}
@@ -142,19 +142,19 @@ class ScheduleJobManager {
 			JobActionEnum jobAction) {
 
 		JobDataMap jobDataMap = jobDetail.getJobDataMap();
-		jobDataMap.put("appId", scheduleEntity.getApp_id());
+		jobDataMap.put("appId", scheduleEntity.getAppId());
 		jobDataMap.put("scheduleId", scheduleEntity.getId());
 		jobDataMap.put("scalingAction", jobAction);
-		jobDataMap.put("instanceMinCount", scheduleEntity.getInitial_min_instance_count());
+		jobDataMap.put("instanceMinCount", scheduleEntity.getInitialMinInstanceCount());
 
 		// The minimum and maximum instance count need to be set when the
 		// scaling action has to be started.
 		if (jobAction == JobActionEnum.START) {
-			jobDataMap.put("instanceMinCount", scheduleEntity.getInstance_min_count());
-			jobDataMap.put("instanceMaxCount", scheduleEntity.getInstance_max_count());
+			jobDataMap.put("instanceMinCount", scheduleEntity.getInstanceMinCount());
+			jobDataMap.put("instanceMaxCount", scheduleEntity.getInstanceMaxCount());
 		} else {
-			jobDataMap.put("instanceMinCount", scheduleEntity.getDefault_instance_min_count());
-			jobDataMap.put("instanceMaxCount", scheduleEntity.getDefault_instance_max_count());
+			jobDataMap.put("instanceMinCount", scheduleEntity.getDefaultInstanceMinCount());
+			jobDataMap.put("instanceMaxCount", scheduleEntity.getDefaultInstanceMaxCount());
 		}
 	}
 

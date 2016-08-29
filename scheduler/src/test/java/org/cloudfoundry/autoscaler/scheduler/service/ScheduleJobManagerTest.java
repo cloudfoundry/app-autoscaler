@@ -196,7 +196,7 @@ public class ScheduleJobManagerTest {
 
 		// Delete the simple jobs
 		for (ScheduleEntity scheduleEntity : specificDateScheduleEntities) {
-			scalingJobManager.deleteJob(scheduleEntity.getApp_id(), scheduleEntity.getId(),
+			scalingJobManager.deleteJob(scheduleEntity.getAppId(), scheduleEntity.getId(),
 					ScheduleTypeEnum.SPECIFIC_DATE);
 		}
 
@@ -225,7 +225,7 @@ public class ScheduleJobManagerTest {
 
 		// Delete the cron jobs
 		for (ScheduleEntity scheduleEntity : recurringScheduleEntities) {
-			scalingJobManager.deleteJob(scheduleEntity.getApp_id(), scheduleEntity.getId(), ScheduleTypeEnum.RECURRING);
+			scalingJobManager.deleteJob(scheduleEntity.getAppId(), scheduleEntity.getId(), ScheduleTypeEnum.RECURRING);
 		}
 
 		scheduleJobKeyDetailMap = getSchedulerJobs(ScheduleTypeEnum.RECURRING.getScheduleIdentifier());
@@ -256,7 +256,7 @@ public class ScheduleJobManagerTest {
 
 		// Delete the simple jobs
 		for (ScheduleEntity scheduleEntity : specificDateScheduleEntities) {
-			scalingJobManager.deleteJob(scheduleEntity.getApp_id(), scheduleEntity.getId(),
+			scalingJobManager.deleteJob(scheduleEntity.getAppId(), scheduleEntity.getId(),
 					ScheduleTypeEnum.SPECIFIC_DATE);
 		}
 
@@ -299,7 +299,7 @@ public class ScheduleJobManagerTest {
 
 		// Delete the cron jobs
 		for (ScheduleEntity scheduleEntity : recurringScheduleEntities) {
-			scalingJobManager.deleteJob(scheduleEntity.getApp_id(), scheduleEntity.getId(), ScheduleTypeEnum.RECURRING);
+			scalingJobManager.deleteJob(scheduleEntity.getAppId(), scheduleEntity.getId(), ScheduleTypeEnum.RECURRING);
 		}
 
 		assertTrue("This test should have an Error.", validationErrorResult.hasErrors());
@@ -361,20 +361,20 @@ public class ScheduleJobManagerTest {
 
 	private void assertCreatedJobs(Map<JobKey, JobDetail> scheduleIdJobDetailMap, ScheduleEntity scheduleEntity,
 			ScheduleTypeEnum scheduleType) throws SchedulerException {
-		String appId = scheduleEntity.getApp_id();
+		String appId = scheduleEntity.getAppId();
 		Long scheduleId = scheduleEntity.getId();
 
 		JobKey startJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.START, scheduleType);
 		JobKey endJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.END, scheduleType);
 
-		int instMinCount = scheduleEntity.getInstance_min_count();
-		int instMaxCount = scheduleEntity.getInstance_max_count();
+		int instMinCount = scheduleEntity.getInstanceMinCount();
+		int instMaxCount = scheduleEntity.getInstanceMaxCount();
 
 		JobDetail jobDetail = scheduleIdJobDetailMap.get(startJobKey);
 		assertJobDetails(appId, scheduleId, instMinCount, instMaxCount, JobActionEnum.START, jobDetail);
 
-		instMinCount = scheduleEntity.getDefault_instance_min_count();
-		instMaxCount = scheduleEntity.getDefault_instance_max_count();
+		instMinCount = scheduleEntity.getDefaultInstanceMinCount();
+		instMaxCount = scheduleEntity.getDefaultInstanceMaxCount();
 		jobDetail = scheduleIdJobDetailMap.get(endJobKey);
 		assertJobDetails(appId, scheduleId, instMinCount, instMaxCount, JobActionEnum.END, jobDetail);
 	}
@@ -398,8 +398,8 @@ public class ScheduleJobManagerTest {
 				.generateRecurringScheduleEntities(appId, 0, 1);
 
 		RecurringScheduleEntity entity = recurringScheduleEntities.get(0);
-		entity.setTimezone(timeZone.getID());
-		entity.setDays_of_week(dayOfWeek);
+		entity.setTimeZone(timeZone.getID());
+		entity.setDaysOfWeek(dayOfWeek);
 
 		createCronJob(recurringScheduleEntities);
 
@@ -409,8 +409,8 @@ public class ScheduleJobManagerTest {
 		Trigger endTrigger = getSchedulerTrigger(this.scheduleIdx, JobActionEnum.END,
 				ScheduleTypeEnum.RECURRING.getScheduleIdentifier());
 
-		assertNextFireJobDayOfWeek(day, entity.getStart_time(), timeZone, startTrigger);
-		assertNextFireJobDayOfWeek(day, entity.getEnd_time(), timeZone, endTrigger);
+		assertNextFireJobDayOfWeek(day, entity.getStartTime(), timeZone, startTrigger);
+		assertNextFireJobDayOfWeek(day, entity.getEndTime(), timeZone, endTrigger);
 	}
 
 	private void assertNextFireJobDayOfWeek(int expectedDay, Date scheduleTime, TimeZone timeZone,
@@ -435,9 +435,9 @@ public class ScheduleJobManagerTest {
 				.generateRecurringScheduleEntities(appId, 1, 0);
 
 		RecurringScheduleEntity entity = recurringScheduleEntities.get(0);
-		entity.setTimezone(timeZone.getID());
-		entity.setDay_of_month(dayOfMonth);
-		entity.setStart_date(TestDataSetupHelper.getDate(startDate));
+		entity.setTimeZone(timeZone.getID());
+		entity.setDayOfMonth(dayOfMonth);
+		entity.setStartDate(TestDataSetupHelper.getDate(startDate));
 
 		createCronJob(recurringScheduleEntities);
 
@@ -445,8 +445,8 @@ public class ScheduleJobManagerTest {
 		Calendar now = Calendar.getInstance();
 		now.setTimeZone(timeZone);
 		Calendar calStartDate = Calendar.getInstance();
-		if (entity.getStart_date() != null) {
-			calStartDate.setTime(entity.getStart_date());
+		if (entity.getStartDate() != null) {
+			calStartDate.setTime(entity.getStartDate());
 		}
 
 		if (calStartDate.get(Calendar.DAY_OF_MONTH) > day) {
@@ -458,8 +458,8 @@ public class ScheduleJobManagerTest {
 		Trigger endTrigger = getSchedulerTrigger(this.scheduleIdx, JobActionEnum.END,
 				ScheduleTypeEnum.RECURRING.getScheduleIdentifier());
 
-		assertNextFireDateTime(day, timeZone, entity.getStart_time(), calStartDate, startTrigger);
-		assertNextFireDateTime(day, timeZone, entity.getEnd_time(), calStartDate, endTrigger);
+		assertNextFireDateTime(day, timeZone, entity.getStartTime(), calStartDate, startTrigger);
+		assertNextFireDateTime(day, timeZone, entity.getEndTime(), calStartDate, endTrigger);
 
 	}
 

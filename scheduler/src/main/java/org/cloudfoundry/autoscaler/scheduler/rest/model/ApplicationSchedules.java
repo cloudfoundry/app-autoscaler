@@ -1,28 +1,33 @@
 package org.cloudfoundry.autoscaler.scheduler.rest.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * 
  *
  */
 public class ApplicationSchedules {
-	Integer instance_min_count;
-	Integer instance_max_count;
+	@JsonProperty(value = "instance_min_count")
+	Integer instanceMinCount;
+
+	@JsonProperty(value = "instance_max_count")
+	Integer instanceMaxCount;
 	Schedules schedules;
 
-	public Integer getInstance_min_count() {
-		return instance_min_count;
+	public Integer getInstanceMinCount() {
+		return instanceMinCount;
 	}
 
-	public void setInstance_min_count(Integer instance_min_count) {
-		this.instance_min_count = instance_min_count;
+	public void setInstanceMinCount(Integer instanceMinCount) {
+		this.instanceMinCount = instanceMinCount;
 	}
 
-	public Integer getInstance_max_count() {
-		return instance_max_count;
+	public Integer getInstanceMaxCount() {
+		return instanceMaxCount;
 	}
 
-	public void setInstance_max_count(Integer instance_max_count) {
-		this.instance_max_count = instance_max_count;
+	public void setInstanceMaxCount(Integer instanceMaxCount) {
+		this.instanceMaxCount = instanceMaxCount;
 	}
 
 	public Schedules getSchedules() {
@@ -35,8 +40,8 @@ public class ApplicationSchedules {
 
 	@Override
 	public String toString() {
-		return "ApplicationPolicy [instance_min_count=" + instance_min_count + ", instance_max_count="
-				+ instance_max_count + ", schedules=" + schedules + "]";
+		return "ApplicationPolicy [instanceMinCount=" + instanceMinCount + ", instanceMaxCount=" + instanceMaxCount
+				+ ", schedules=" + schedules + "]";
 	}
 
 }

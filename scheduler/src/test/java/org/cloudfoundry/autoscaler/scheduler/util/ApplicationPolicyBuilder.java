@@ -7,11 +7,11 @@ public class ApplicationPolicyBuilder {
 	
 	private ApplicationSchedules applicationPolicy;
 	
-	public ApplicationPolicyBuilder(int instance_min_count, int instance_max_count, String timezone,
+	public ApplicationPolicyBuilder(int instanceMinCount, int instanceMaxCount, String timezone,
 			int noOfSpecificDateSchedules, int noOfDOMRecurringSchedules, int noOfDOWRecurringSchedules) {
 		applicationPolicy = new ApplicationSchedules();
-		applicationPolicy.setInstance_min_count(instance_min_count);
-		applicationPolicy.setInstance_max_count(instance_max_count);
+		applicationPolicy.setInstanceMinCount(instanceMinCount);
+		applicationPolicy.setInstanceMaxCount(instanceMaxCount);
 		applicationPolicy.setSchedules(new ScheduleBuilder(timezone, noOfSpecificDateSchedules, noOfDOMRecurringSchedules, noOfDOWRecurringSchedules).build());
 
 	}

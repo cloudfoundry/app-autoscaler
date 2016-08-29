@@ -2,6 +2,7 @@ package org.cloudfoundry.autoscaler.scheduler.entity;
 
 import java.util.Date;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
@@ -9,10 +10,11 @@ import javax.persistence.Table;
 import javax.validation.constraints.NotNull;
 
 import org.cloudfoundry.autoscaler.scheduler.util.DateHelper;
-import org.cloudfoundry.autoscaler.scheduler.util.DateTimeSerializer;
 import org.cloudfoundry.autoscaler.scheduler.util.DateTimeDeserializer;
+import org.cloudfoundry.autoscaler.scheduler.util.DateTimeSerializer;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
@@ -30,37 +32,41 @@ public class SpecificDateScheduleEntity extends ScheduleEntity {
 	@JsonDeserialize(using = DateTimeDeserializer.class)
 	@JsonSerialize(using = DateTimeSerializer.class)
 	@NotNull
-	private Date start_date_time;
+	@Column(name = "start_date_time")
+	@JsonProperty("start_date_time")
+	private Date startDateTime;
 	
 	@JsonFormat(pattern = DateHelper.DATE_TIME_FORMAT)
 	@JsonDeserialize(using = DateTimeDeserializer.class)
 	@JsonSerialize(using = DateTimeSerializer.class)
 	@NotNull
-	private Date end_date_time;
+	@Column(name = "end_date_time")
+	@JsonProperty("end_date_time")
+	private Date endDateTime;
 
-	public Date getStart_date_time() {
-		return start_date_time;
+	public Date getStartDateTime() {
+		return startDateTime;
 	}
 
-	public void setStart_date_time(Date start_date_time) {
-		this.start_date_time = start_date_time;
+	public void setStartDateTime(Date startDateTime) {
+		this.startDateTime = startDateTime;
 	}
 
-	public Date getEnd_date_time() {
-		return end_date_time;
+	public Date getEndDateTime() {
+		return endDateTime;
 	}
 
-	public void setEnd_date_time(Date end_date_time) {
-		this.end_date_time = end_date_time;
+	public void setEndDateTime(Date endDateTime) {
+		this.endDateTime = endDateTime;
 	}
 
 	public static final String query_specificDateSchedulesByAppId = "SpecificDateScheduleEntity.schedulesByAppId";
 	protected static final String jpql_specificDateSchedulesByAppId = " FROM SpecificDateScheduleEntity"
-			+ " WHERE app_id = :app_id";
+			+ " WHERE app_id = :appId";
 
 	@Override
 	public String toString() {
-		return "SpecificDateScheduleEntity [start_date_time=" + start_date_time + ", end_date_time=" + end_date_time
+		return "SpecificDateScheduleEntity [startDateTime=" + startDateTime + ", endDateTime=" + endDateTime
 				+ "]";
 	}
 

@@ -7,6 +7,8 @@ import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 import javax.validation.constraints.NotNull;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * 
  *
@@ -21,24 +23,38 @@ public class ScheduleEntity {
 	private Long id;
 
 	@NotNull
-	private String app_id;
+	@JsonProperty(value = "app_id")
+	@Column(name = "app_id")
+	private String appId;
 
 	@NotNull
-	private String timezone;
+	@JsonProperty(value = "timezone")
+	@Column(name = "timezone")
+	private String timeZone;
 
 	@NotNull
-	private Integer default_instance_min_count;
+	@Column(name = "default_instance_min_count")
+	@JsonProperty(value = "default_instance_min_count")
+	private Integer defaultInstanceMinCount;
 
 	@NotNull
-	private Integer default_instance_max_count;
+	@Column(name = "default_instance_max_count")
+	@JsonProperty(value = "default_instance_max_count")
+	private Integer defaultInstanceMaxCount;
 
 	@NotNull
-	private Integer instance_min_count;
+	@Column(name = "instance_min_count")
+	@JsonProperty(value = "instance_min_count")
+	private Integer instanceMinCount;
 
 	@NotNull
-	private Integer instance_max_count;
+	@Column(name = "instance_max_count")
+	@JsonProperty(value = "instance_max_count")
+	private Integer instanceMaxCount;
 
-	private Integer initial_min_instance_count;
+	@Column(name = "initial_min_instance_count")
+	@JsonProperty(value = "initial_min_instance_count")
+	private Integer initialMinInstanceCount;
 
 	public Long getId() {
 		return id;
@@ -48,68 +64,68 @@ public class ScheduleEntity {
 		this.id = id;
 	}
 
-	public String getApp_id() {
-		return app_id;
+	public String getAppId() {
+		return appId;
 	}
 
-	public void setApp_id(String app_id) {
-		this.app_id = app_id;
+	public void setAppId(String appId) {
+		this.appId = appId;
 	}
 
-	public String getTimezone() {
-		return timezone;
+	public String getTimeZone() {
+		return timeZone;
 	}
 
-	public void setTimezone(String timezone) {
-		this.timezone = timezone;
+	public void setTimeZone(String timeZone) {
+		this.timeZone = timeZone;
 	}
 
-	public Integer getDefault_instance_min_count() {
-		return default_instance_min_count;
+	public Integer getDefaultInstanceMinCount() {
+		return defaultInstanceMinCount;
 	}
 
-	public void setDefault_instance_min_count(Integer default_instance_min_count) {
-		this.default_instance_min_count = default_instance_min_count;
+	public void setDefaultInstanceMinCount(Integer defaultInstanceMinCount) {
+		this.defaultInstanceMinCount = defaultInstanceMinCount;
 	}
 
-	public Integer getDefault_instance_max_count() {
-		return default_instance_max_count;
+	public Integer getDefaultInstanceMaxCount() {
+		return defaultInstanceMaxCount;
 	}
 
-	public void setDefault_instance_max_count(Integer default_instance_max_count) {
-		this.default_instance_max_count = default_instance_max_count;
+	public void setDefaultInstanceMaxCount(Integer defaultInstanceMaxCount) {
+		this.defaultInstanceMaxCount = defaultInstanceMaxCount;
 	}
 
-	public Integer getInstance_min_count() {
-		return instance_min_count;
+	public Integer getInstanceMinCount() {
+		return instanceMinCount;
 	}
 
-	public void setInstance_min_count(Integer instance_min_count) {
-		this.instance_min_count = instance_min_count;
+	public void setInstanceMinCount(Integer instanceMinCount) {
+		this.instanceMinCount = instanceMinCount;
 	}
 
-	public Integer getInstance_max_count() {
-		return instance_max_count;
+	public Integer getInstanceMaxCount() {
+		return instanceMaxCount;
 	}
 
-	public void setInstance_max_count(Integer instance_max_count) {
-		this.instance_max_count = instance_max_count;
+	public void setInstanceMaxCount(Integer instanceMaxCount) {
+		this.instanceMaxCount = instanceMaxCount;
 	}
 
-	public Integer getInitial_min_instance_count() {
-		return initial_min_instance_count;
+	public Integer getInitialMinInstanceCount() {
+		return initialMinInstanceCount;
 	}
 
-	public void setInitial_min_instance_count(Integer initial_min_instance_count) {
-		this.initial_min_instance_count = initial_min_instance_count;
+	public void setInitialMinInstanceCount(Integer initialMinInstanceCount) {
+		this.initialMinInstanceCount = initialMinInstanceCount;
 	}
 
 	@Override
 	public String toString() {
-		return "ScheduleEntity [id=" + id + ", app_id=" + app_id + ", timezone=" + timezone
-				+ ", default_instance_min_count=" + default_instance_min_count + ", default_instance_max_count="
-				+ default_instance_max_count + ", instance_min_count=" + instance_min_count + ", instance_max_count="
-				+ instance_max_count + ", initial_min_instance_count=" + initial_min_instance_count + "]";
+		return "ScheduleEntity [id=" + id + ", appId=" + appId + ", timeZone=" + timeZone + ", defaultInstanceMinCount="
+				+ defaultInstanceMinCount + ", defaultInstanceMaxCount=" + defaultInstanceMaxCount
+				+ ", instanceMinCount=" + instanceMinCount + ", instanceMaxCount=" + instanceMaxCount
+				+ ", initialMinInstanceCount=" + initialMinInstanceCount + "]";
 	}
 
 }

@@ -13,28 +13,28 @@ public class ScheduleBuilder {
 		this.schedules = new Schedules();
 	}
 
-	ScheduleBuilder(String timezone, int noOfSpecificDateSchedules, int noOfDOMRecurringSchedules, int noOfDOWRecurringSchedules) {
+	ScheduleBuilder(String timeZone, int noOfSpecificDateSchedules, int noOfDOMRecurringSchedules, int noOfDOWRecurringSchedules) {
 		this();
 
-		schedules.setTimezone(timezone);
-		schedules.setSpecific_date(new SpecificDateScheduleEntitiesBuilder(noOfSpecificDateSchedules).build());
-		schedules.setRecurring_schedule(
+		schedules.setTimeZone(timeZone);
+		schedules.setSpecificDate(new SpecificDateScheduleEntitiesBuilder(noOfSpecificDateSchedules).build());
+		schedules.setRecurringSchedule(
 				new RecurringScheduleEntitiesBuilder(noOfDOMRecurringSchedules, noOfDOWRecurringSchedules).build());
 
 	}
 
-	public ScheduleBuilder setTimezone(String timezone) {
-		schedules.setTimezone(timezone);
+	public ScheduleBuilder setTimeZone(String timeZone) {
+		schedules.setTimeZone(timeZone);
 		return this;
 	}
 
-	public ScheduleBuilder setSpecific_date(List<SpecificDateScheduleEntity> entities) {
-		schedules.setSpecific_date(entities);
+	public ScheduleBuilder setSpecificDate(List<SpecificDateScheduleEntity> entities) {
+		schedules.setSpecificDate(entities);
 		return this;
 	}
 
-	public ScheduleBuilder setRecurring_schedule(List<RecurringScheduleEntity> entities) {
-		schedules.setRecurring_schedule(entities);
+	public ScheduleBuilder setRecurringSchedule(List<RecurringScheduleEntity> entities) {
+		schedules.setRecurringSchedule(entities);
 		return this;
 	}
 

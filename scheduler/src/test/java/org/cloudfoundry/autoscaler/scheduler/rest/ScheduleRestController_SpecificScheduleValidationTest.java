@@ -78,7 +78,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		for (String appId : allAppIds) {
 			for (SpecificDateScheduleEntity entity : specificDateScheduleDao
 					.findAllSpecificDateSchedulesByAppId(appId)) {
-				callDeleteSchedules(entity.getApp_id());
+				callDeleteSchedules(entity.getAppId());
 			}
 		}
 	}
@@ -92,7 +92,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		ApplicationSchedules applicationPolicy = TestDataSetupHelper
 				.generateApplicationPolicy(noOfSpecificDateSchedulesToSetUp, 0);
 
-		applicationPolicy.getSchedules().getSpecific_date().get(0).setStart_date_time(null);
+		applicationPolicy.getSchedules().getSpecificDate().get(0).setStartDateTime(null);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 
@@ -110,7 +110,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		ApplicationSchedules applicationPolicy = TestDataSetupHelper
 				.generateApplicationPolicy(noOfSpecificDateSchedulesToSetUp, 0);
 
-		applicationPolicy.getSchedules().getSpecific_date().get(0).setEnd_date_time(null);
+		applicationPolicy.getSchedules().getSpecificDate().get(0).setEndDateTime(null);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 
@@ -128,7 +128,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		ApplicationSchedules applicationPolicy = TestDataSetupHelper
 				.generateApplicationPolicy(noOfSpecificDateSchedulesToSetUp, 0);
 
-		applicationPolicy.getSchedules().getSpecific_date().get(0).setInstance_max_count(null);
+		applicationPolicy.getSchedules().getSpecificDate().get(0).setInstanceMaxCount(null);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 
@@ -146,7 +146,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		ApplicationSchedules applicationPolicy = TestDataSetupHelper
 				.generateApplicationPolicy(noOfSpecificDateSchedulesToSetUp, 0);
 
-		applicationPolicy.getSchedules().getSpecific_date().get(0).setInstance_min_count(null);
+		applicationPolicy.getSchedules().getSpecificDate().get(0).setInstanceMinCount(null);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 
@@ -164,7 +164,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		ApplicationSchedules applicationPolicy = TestDataSetupHelper
 				.generateApplicationPolicy(noOfSpecificDateSchedulesToSetUp, 0);
 		Integer instanceMinCount = -1;
-		applicationPolicy.getSchedules().getSpecific_date().get(0).setInstance_min_count(instanceMinCount);
+		applicationPolicy.getSchedules().getSpecificDate().get(0).setInstanceMinCount(instanceMinCount);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 
@@ -182,7 +182,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		ApplicationSchedules applicationPolicy = TestDataSetupHelper
 				.generateApplicationPolicy(noOfSpecificDateSchedulesToSetUp, 0);
 		Integer instanceMaxCount = -1;
-		applicationPolicy.getSchedules().getSpecific_date().get(0).setInstance_max_count(instanceMaxCount);
+		applicationPolicy.getSchedules().getSpecificDate().get(0).setInstanceMaxCount(instanceMaxCount);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 
@@ -200,11 +200,11 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		ApplicationSchedules applicationPolicy = TestDataSetupHelper
 				.generateApplicationPolicy(noOfSpecificDateSchedulesToSetUp, 0);
 
-		ScheduleEntity entity = applicationPolicy.getSchedules().getSpecific_date().get(0);
+		ScheduleEntity entity = applicationPolicy.getSchedules().getSpecificDate().get(0);
 		Integer instanceMinCount = 5;
 		Integer instanceMaxCount = 4;
-		entity.setInstance_max_count(instanceMaxCount);
-		entity.setInstance_min_count(instanceMinCount);
+		entity.setInstanceMaxCount(instanceMaxCount);
+		entity.setInstanceMinCount(instanceMinCount);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 
@@ -223,7 +223,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		ApplicationSchedules applicationPolicy = TestDataSetupHelper
 				.generateApplicationPolicy(noOfSpecificDateSchedulesToSetUp, 0);
 
-		applicationPolicy.getSchedules().getSpecific_date().get(0).setInitial_min_instance_count(5);
+		applicationPolicy.getSchedules().getSpecificDate().get(0).setInitialMinInstanceCount(5);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 
@@ -238,7 +238,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		ApplicationSchedules applicationPolicy = TestDataSetupHelper
 				.generateApplicationPolicy(noOfSpecificDateSchedulesToSetUp, 0);
 		Integer initialMinInstanceCount = -1;
-		applicationPolicy.getSchedules().getSpecific_date().get(0).setInitial_min_instance_count(initialMinInstanceCount);
+		applicationPolicy.getSchedules().getSpecificDate().get(0).setInitialMinInstanceCount(initialMinInstanceCount);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 
@@ -257,18 +257,18 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 				.generateApplicationPolicy(noOfSpecificDateSchedulesToSetUp, 0);
 
 		// Swap startDateTime and endDateTime.
-		SpecificDateScheduleEntity entity = applicationPolicy.getSchedules().getSpecific_date().get(0);
-		Date endDateTime = entity.getStart_date_time();
-		Date startDateTime = entity.getEnd_date_time();
-		entity.setStart_date_time(startDateTime);
-		entity.setEnd_date_time(endDateTime);
+		SpecificDateScheduleEntity entity = applicationPolicy.getSchedules().getSpecificDate().get(0);
+		Date endDateTime = entity.getStartDateTime();
+		Date startDateTime = entity.getEndDateTime();
+		entity.setStartDateTime(startDateTime);
+		entity.setEndDateTime(endDateTime);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.invalid.start.after.end",
 				scheduleBeingProcessed + " 0", "end_date_time",
-				DateHelper.convertDateTimeToString(entity.getEnd_date_time()), "start_date_time",
-				DateHelper.convertDateTimeToString(entity.getStart_date_time()));
+				DateHelper.convertDateTimeToString(entity.getEndDateTime()), "start_date_time",
+				DateHelper.convertDateTimeToString(entity.getStartDateTime()));
 
 		assertErrorMessage(appId, content, errorMessage);
 	}
@@ -282,15 +282,15 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 				.generateApplicationPolicy(noOfSpecificDateSchedulesToSetUp, 0);
 
 		// Swap startTime for endTime.
-		SpecificDateScheduleEntity entity = applicationPolicy.getSchedules().getSpecific_date().get(0);
+		SpecificDateScheduleEntity entity = applicationPolicy.getSchedules().getSpecificDate().get(0);
 		Date oldDate = new Date(0);
-		entity.setStart_date_time(oldDate);
+		entity.setStartDateTime(oldDate);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.invalid.current.after",
 				scheduleBeingProcessed + " 0", "start_date_time",
-				DateHelper.convertDateTimeToString(entity.getStart_date_time()));
+				DateHelper.convertDateTimeToString(entity.getStartDateTime()));
 
 		assertErrorMessage(appId, content, errorMessage);
 	}
@@ -304,15 +304,15 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 				.generateApplicationPolicy(noOfSpecificDateSchedulesToSetUp, 0);
 
 		// Swap startTime for endTime.
-		SpecificDateScheduleEntity entity = applicationPolicy.getSchedules().getSpecific_date().get(0);
+		SpecificDateScheduleEntity entity = applicationPolicy.getSchedules().getSpecificDate().get(0);
 		Date oldDate = new Date(0);
-		entity.setEnd_date_time(oldDate);
+		entity.setEndDateTime(oldDate);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.invalid.current.after",
 				scheduleBeingProcessed + " 0", "end_date_time",
-				DateHelper.convertDateTimeToString(entity.getEnd_date_time()));
+				DateHelper.convertDateTimeToString(entity.getEndDateTime()));
 
 		assertErrorMessage(appId, content, errorMessage);
 	}
@@ -326,9 +326,9 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 				.generateApplicationPolicy(noOfSpecificDateSchedulesToSetUp, 0);
 
 		// Overlap specificDate schedules.
-		SpecificDateScheduleEntity firstEntity = applicationPolicy.getSchedules().getSpecific_date().get(0);
-		SpecificDateScheduleEntity secondEntity = applicationPolicy.getSchedules().getSpecific_date().get(1);
-		secondEntity.setStart_date_time(firstEntity.getEnd_date_time());
+		SpecificDateScheduleEntity firstEntity = applicationPolicy.getSchedules().getSpecificDate().get(0);
+		SpecificDateScheduleEntity secondEntity = applicationPolicy.getSchedules().getSpecificDate().get(1);
+		secondEntity.setStartDateTime(firstEntity.getEndDateTime());
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 
@@ -349,13 +349,13 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		// Overlap specificDate schedules.
 		// Schedule 1 end date time and Schedule 2 start date time are overlapping.
 		// Schedules 3 and 4 overlap with start date time.
-		SpecificDateScheduleEntity firstEntity = applicationPolicy.getSchedules().getSpecific_date().get(0);
-		SpecificDateScheduleEntity secondEntity = applicationPolicy.getSchedules().getSpecific_date().get(1);
-		secondEntity.setStart_date_time(firstEntity.getEnd_date_time());
+		SpecificDateScheduleEntity firstEntity = applicationPolicy.getSchedules().getSpecificDate().get(0);
+		SpecificDateScheduleEntity secondEntity = applicationPolicy.getSchedules().getSpecificDate().get(1);
+		secondEntity.setStartDateTime(firstEntity.getEndDateTime());
 
-		SpecificDateScheduleEntity thirdEntity = applicationPolicy.getSchedules().getSpecific_date().get(2);
-		SpecificDateScheduleEntity forthEntity = applicationPolicy.getSchedules().getSpecific_date().get(3);
-		forthEntity.setStart_date_time(thirdEntity.getStart_date_time());
+		SpecificDateScheduleEntity thirdEntity = applicationPolicy.getSchedules().getSpecificDate().get(2);
+		SpecificDateScheduleEntity forthEntity = applicationPolicy.getSchedules().getSpecificDate().get(3);
+		forthEntity.setStartDateTime(thirdEntity.getStartDateTime());
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 
@@ -375,7 +375,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		ApplicationSchedules applicationPolicy = TestDataSetupHelper
 				.generateApplicationPolicy(1, 0);
 
-		applicationPolicy.getSchedules().setSpecific_date(null);
+		applicationPolicy.getSchedules().setSpecificDate(null);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 
@@ -392,7 +392,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		ApplicationSchedules applicationPolicy = TestDataSetupHelper
 				.generateApplicationPolicy(1, 0);
 
-		applicationPolicy.getSchedules().setSpecific_date(Collections.emptyList());
+		applicationPolicy.getSchedules().setSpecificDate(Collections.emptyList());
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 
@@ -409,11 +409,11 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		ApplicationSchedules applicationPolicy = TestDataSetupHelper
 				.generateApplicationPolicy(1, 0);
 
-		SpecificDateScheduleEntity entity = applicationPolicy.getSchedules().getSpecific_date().get(0);
-		entity.setInstance_min_count(null);
-		entity.setInstance_max_count(null);
-		entity.setStart_date_time(null);
-		entity.setEnd_date_time(null);
+		SpecificDateScheduleEntity entity = applicationPolicy.getSchedules().getSpecificDate().get(0);
+		entity.setInstanceMinCount(null);
+		entity.setInstanceMaxCount(null);
+		entity.setStartDateTime(null);
+		entity.setEndDateTime(null);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 

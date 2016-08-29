@@ -30,7 +30,7 @@ public class SpecificDateScheduleDaoImpl extends GenericDaoImpl<SpecificDateSche
 			return entityManager
 					.createNamedQuery(SpecificDateScheduleEntity.query_specificDateSchedulesByAppId,
 							SpecificDateScheduleEntity.class)
-					.setParameter("app_id", appId).getResultList();
+					.setParameter("appId", appId).getResultList();
 			
 		} catch(Exception exception){
 			
