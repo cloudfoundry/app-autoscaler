@@ -1,4 +1,6 @@
 <link href="https://raw.github.com/clownfart/Markdown-CSS/master/markdown.css" rel="stylesheet"></link>
+[![Build Status](https://runtime-og.ci.cf-app.com/api/v1/pipelines/autoscaler/jobs/unit-tests/badge)](https://runtime-og.ci.cf-app.com/pipelines/autoscaler)
+
 # CF-AutoScaler
 
 This is an incubation project for Cloud Foundry. You can follow the development progress on [Pivotal Tracker][t].
