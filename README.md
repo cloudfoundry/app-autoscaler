@@ -92,6 +92,9 @@ popd
 pushd src/cf
 ginkgo -r -race -randomizeAllSpecs
 popd
+pushd src/db
+ginkgo -r -race -randomizeAllSpecs
+popd
 pushd src/dataaggregator
 ginkgo -r -race -randomizeAllSpecs
 popd
