@@ -25,10 +25,10 @@ app.use(function(err, req, res, next) {
 require('./lib/models')(function (error) {
   if (!error) {
     var server = app.listen(process.env.PORT || 3002, function() {
-	  logger.info('Autoscaler API server listening on port ' + server.address().port);
+    logger.info('Autoscaler API server started',{'port':server.address().port} ); 
     });  
   } else {
-    logger.error ('Autoscaler API server failed to start with error', error);
+  logger.error ('Autoscaler API server failed to start ',{'error': error} );
   }
 });
 

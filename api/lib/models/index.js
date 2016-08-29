@@ -25,7 +25,7 @@ module.exports = function(callback) {
       }
     })
     .catch(function(error) {
-      logger.error('DB Connection failed ',error);
+      logger.error('DB Connection failed ',{ 'error':error });
       if (callback) {
         callback(error);
       }
