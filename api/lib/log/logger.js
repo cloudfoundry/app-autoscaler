@@ -1,8 +1,10 @@
 // TODO: To decide and adopt to some logging utility like winston
+var util = require('util');
+
 module.exports = {
   info: function(message,context) {
     if(context) {
-      console.log(message,JSON.stringify(context, null, 2));
+      console.log(message, util.format('%j', context));
     }
     else {
       console.log(message);
@@ -10,6 +12,6 @@ module.exports = {
     
   },
   error: function(message, error) {
-    console.error(message, JSON.stringify(error, null, 2));
+    console.error(message, util.format('%j', error));
   }
 };
