@@ -27,7 +27,7 @@ type MetricPoller struct {
 func NewMetricPoller(metricCollectorUrl string, logger lager.Logger, appChan chan *appmetric.AppMonitor, metricConsumer MetricConsumer, httpClient *http.Client) *MetricPoller {
 	return &MetricPoller{
 		metricCollectorUrl: metricCollectorUrl,
-		logger:             logger,
+		logger:             logger.Session("MetricPoller"),
 		appChan:            appChan,
 		doneChan:           make(chan bool),
 		metricConsumer:     metricConsumer,
@@ -57,41 +57,36 @@ func (m *MetricPoller) retrieveMetric(app *appmetric.AppMonitor) {
 	appId := app.AppId
 	metricType := app.MetricType
 	endTime := time.Now().UnixNano()
-	startTime := endTime - int64(app.StatWindowSecs)*1000*1000
-	var url string
-	switch metricType {
-	case "MemoryUsage":
-		url = m.metricCollectorUrl + "/v1/apps/" + app.AppId + "/metrics_history/memory?start=" + strconv.FormatInt(startTime, 10) + "&end=" + strconv.FormatInt(endTime, 10)
-	default:
-		url = m.metricCollectorUrl + "/v1/apps/" + app.AppId + "/metrics_history/memory?start=" + strconv.FormatInt(startTime, 10) + "&end=" + strconv.FormatInt(endTime, 10)
+	startTime := endTime - int64(app.StatWindow)
+	if metricType != "MemoryUsage" {
+		m.logger.Error("Unsupported metric type", fmt.Errorf("%s is not supported", metricType))
+		return
 	}
-	if metricType == "MemoryUsage" {
-		resp, err := m.httpClient.Get(url)
-		if err != nil {
-			m.logger.Error("Retrieve metric failed", err, lager.Data{"appId": appId, "metricType": metricType, "err": err})
+	var url string
+	url = m.metricCollectorUrl + "/v1/apps/" + app.AppId + "/metrics_history/memory?start=" + strconv.FormatInt(startTime, 10) + "&end=" + strconv.FormatInt(endTime, 10)
+	resp, err := m.httpClient.Get(url)
+	if err != nil {
+		m.logger.Error("Retrieve metric failed", err, lager.Data{"appId": appId, "metricType": metricType, "err": err})
+		return
+	}
+	defer resp.Body.Close()
+	var metrics []*metrics.Metric
+	if resp.StatusCode == http.StatusOK {
+		data, readError := ioutil.ReadAll(resp.Body)
+		if readError != nil {
+			m.logger.Error("Can not read data from response", readError)
 			return
 		}
-		defer resp.Body.Close()
-		var metrics []*metrics.Metric
-		if resp.StatusCode == http.StatusOK {
-			data, readError := ioutil.ReadAll(resp.Body)
-			if readError != nil {
-				m.logger.Error("Can not read data from response", readError)
-			}
-			json.Unmarshal(data, &metrics)
-			avgMetric := m.doAggregate(appId, metricType, metrics)
-			if avgMetric != nil {
-				m.metricConsumer(avgMetric)
-			}
-		} else {
-			var errorResponse server.ErrorResponse
-			errBody, _ := ioutil.ReadAll(resp.Body)
-			json.Unmarshal(errBody, &errorResponse)
-			m.logger.Error("Retrieve metric failed", errors.New(errorResponse.Message), lager.Data{"appId": appId, "metricType": metricType})
+		json.Unmarshal(data, &metrics)
+		avgMetric := m.doAggregate(appId, metricType, metrics)
+		if avgMetric != nil {
+			m.metricConsumer(avgMetric)
 		}
-
 	} else {
-		m.logger.Error("Unsupported metric type", fmt.Errorf("%s is not supported", metricType))
+		var errorResponse server.ErrorResponse
+		errBody, _ := ioutil.ReadAll(resp.Body)
+		json.Unmarshal(errBody, &errorResponse)
+		m.logger.Error("Retrieve metric failed", errors.New(errorResponse.Message), lager.Data{"appId": appId, "metricType": metricType})
 	}
 
 }

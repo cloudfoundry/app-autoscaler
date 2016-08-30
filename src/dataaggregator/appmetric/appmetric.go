@@ -1,9 +1,13 @@
 package appmetric
 
+import (
+	"time"
+)
+
 type AppMonitor struct {
-	AppId          string
-	MetricType     string
-	StatWindowSecs int
+	AppId      string
+	MetricType string
+	StatWindow time.Duration
 }
 type AppMetric struct {
 	AppId      string

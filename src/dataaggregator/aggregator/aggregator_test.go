@@ -33,11 +33,11 @@ var _ = Describe("Aggregator", func() {
 		   "scaling_rules":[
 		      {
 		         "metric_type":"MemoryUsage",
-		         "stat_window_secs":300,
-		         "breach_duration_secs":300,
+		         "stat_window":300,
+		         "breach_duration":300,
 		         "threshold":30,
 		         "operator":"<",
-		         "cool_down_secs":300,
+		         "cool_down_duration":300,
 		         "adjustment":"-1"
 		      }
 		   ]
@@ -97,55 +97,95 @@ var _ = Describe("Aggregator", func() {
 		var triggerMap map[string]*Trigger
 		var appChan chan *AppMonitor
 		var appMonitor *AppMonitor
-		JustBeforeEach(func() {
+		BeforeEach(func() {
 			appChan = make(chan *AppMonitor, 1)
 			aggregator = NewAggregator(logger, clock, TestPolicyPollerInterval, database, metricServer.URL(), TestMetricPollerCount)
-			triggerMap = map[string]*Trigger{testAppId: &Trigger{
-				AppId: testAppId,
-				TriggerRecord: &TriggerRecord{
-					InstanceMaxCount: 5,
-					InstanceMinCount: 1,
-					ScalingRules: []*ScalingRule{&ScalingRule{
-						MetricType:         "MemoryUsage",
-						StatWindowSecs:     300,
-						BreachDurationSecs: 300,
-						CoolDownSecs:       300,
-						Threshold:          30,
-						Operator:           "<",
-						Adjustment:         "-1",
-					}}},
-			}}
+
 		})
-		It("should parse the triggers to appmonitor and put them in appChan", func() {
-			aggregator.ConsumeTrigger(triggerMap, appChan)
-			Eventually(appChan).Should(Receive(&appMonitor))
-			Expect(appMonitor).To(Equal(&AppMonitor{
-				AppId:          testAppId,
-				MetricType:     "MemoryUsage",
-				StatWindowSecs: 300,
-			}))
+		Context("when there are data in triggerMap", func() {
+			JustBeforeEach(func() {
+				triggerMap = map[string]*Trigger{testAppId: &Trigger{
+					AppId: testAppId,
+					TriggerRecord: &TriggerRecord{
+						InstanceMaxCount: 5,
+						InstanceMinCount: 1,
+						ScalingRules: []*ScalingRule{&ScalingRule{
+							MetricType:       "MemoryUsage",
+							StatWindow:       300,
+							BreachDuration:   300,
+							CoolDownDuration: 300,
+							Threshold:        30,
+							Operator:         "<",
+							Adjustment:       "-1",
+						}}},
+				}}
+			})
+			It("should parse the triggers to appmonitor and put them in appChan", func() {
+				aggregator.ConsumeTrigger(triggerMap, appChan)
+				Eventually(appChan).Should(Receive(&appMonitor))
+				Expect(appMonitor).To(Equal(&AppMonitor{
+					AppId:      testAppId,
+					MetricType: "MemoryUsage",
+					StatWindow: 300,
+				}))
+			})
 		})
+		Context("when there is not data in triggerMap", func() {
+			JustBeforeEach(func() {
+				triggerMap = map[string]*Trigger{}
+			})
+			It("should not receive any data from the appChan", func() {
+				aggregator.ConsumeTrigger(triggerMap, appChan)
+				Consistently(appChan).ShouldNot(Receive())
+			})
+		})
+		Context("when the triggerMap is nil", func() {
+			JustBeforeEach(func() {
+				triggerMap = nil
+			})
+			It("should not receive any data from the appChan", func() {
+				aggregator.ConsumeTrigger(triggerMap, appChan)
+				Consistently(appChan).ShouldNot(Receive())
+			})
+		})
+
 	})
 	Context("ConsumeAppMetric", func() {
 		var appmetric *AppMetric
 		JustBeforeEach(func() {
 			aggregator = NewAggregator(logger, clock, TestPolicyPollerInterval, database, metricServer.URL(), TestMetricPollerCount)
-			appmetric = &AppMetric{
-				AppId:      testAppId,
-				MetricType: metricType,
-				Value:      250,
-				Unit:       "bytes",
-				Timestamp:  timestamp}
+
 		})
-		It("should save the appmetric to database", func() {
-			aggregator.ConsumeAppMetric(appmetric)
-			Eventually(database.SaveAppMetricCallCount).Should(BeNumerically("==", 1))
+		Context("when there is data in appmetric", func() {
+			JustBeforeEach(func() {
+				appmetric = &AppMetric{
+					AppId:      testAppId,
+					MetricType: metricType,
+					Value:      250,
+					Unit:       "bytes",
+					Timestamp:  timestamp}
+			})
+			It("should call database.SaveAppmetric to save the appmetric to database", func() {
+				aggregator.ConsumeAppMetric(appmetric)
+				Eventually(database.SaveAppMetricCallCount).Should(BeNumerically("==", 1))
+			})
 		})
+		Context("when the appmetric is nil", func() {
+			JustBeforeEach(func() {
+				appmetric = nil
+			})
+			It("should call database.SaveAppmetric to save the appmetric to database", func() {
+				aggregator.ConsumeAppMetric(appmetric)
+				Consistently(database.SaveAppMetricCallCount).Should(BeNumerically("==", 0))
+			})
+		})
+
 	})
 	Context("Start", func() {
 		JustBeforeEach(func() {
 			aggregator = NewAggregator(logger, clock, TestPolicyPollerInterval, database, metricServer.URL(), TestMetricPollerCount)
 			aggregator.Start()
+			Eventually(len(aggregator.MetricPollerArray)).Should(BeNumerically("==", TestMetricPollerCount))
 		})
 		AfterEach(func() {
 			aggregator.Stop()

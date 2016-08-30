@@ -2,6 +2,7 @@ package policy
 
 import (
 	"encoding/json"
+	"time"
 )
 
 type Policy interface {
@@ -38,13 +39,13 @@ type TriggerRecord struct {
 	ScalingRules     []*ScalingRule `json:"scaling_rules"`
 }
 type ScalingRule struct {
-	MetricType         string `json:"metric_type"`
-	StatWindowSecs     int    `json:"stat_window_secs"`
-	BreachDurationSecs int    `json:"breach_duration_secs"`
-	CoolDownSecs       int    `json:"cool_down_secs"`
-	Threshold          int    `json:"threshold"`
-	Operator           string `json:"operator"`
-	Adjustment         string `json:"adjustment"`
+	MetricType       string        `json:"metric_type"`
+	StatWindow       time.Duration `json:"stat_window"`
+	BreachDuration   time.Duration `json:"breach_duration"`
+	CoolDownDuration time.Duration `json:"cool_down_duration"`
+	Threshold        int           `json:"threshold"`
+	Operator         string        `json:"operator"`
+	Adjustment       string        `json:"adjustment"`
 }
 type Trigger struct {
 	AppId         string         `json:"appId"`

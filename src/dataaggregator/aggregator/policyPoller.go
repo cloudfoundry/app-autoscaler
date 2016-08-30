@@ -24,7 +24,7 @@ type PolicyPoller struct {
 
 func NewPolicyPoller(logger lager.Logger, clock clock.Clock, interval time.Duration, database db.DB, consumer Consumer, appChan chan *appmetric.AppMonitor) *PolicyPoller {
 	return &PolicyPoller{
-		logger:   logger,
+		logger:   logger.Session("PolicyPoller"),
 		clock:    clock,
 		interval: interval,
 		database: database,

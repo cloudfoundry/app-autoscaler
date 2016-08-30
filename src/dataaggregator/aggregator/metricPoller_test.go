@@ -68,9 +68,9 @@ var _ = Describe("MetricPoller", func() {
 			metricPoller = NewMetricPoller(metricServer.URL(), logger, appChan, metricConsumer, httpClient)
 			metricPoller.Start()
 			appChan <- &AppMonitor{
-				AppId:          testAppId,
-				MetricType:     metricType,
-				StatWindowSecs: 10,
+				AppId:      testAppId,
+				MetricType: metricType,
+				StatWindow: 10,
 			}
 
 		})
@@ -164,9 +164,9 @@ var _ = Describe("MetricPoller", func() {
 			metricPoller.Start()
 			metricPoller.Stop()
 			appChan <- &AppMonitor{
-				AppId:          testAppId,
-				MetricType:     metricType,
-				StatWindowSecs: 10,
+				AppId:      testAppId,
+				MetricType: metricType,
+				StatWindow: 10,
 			}
 
 		})

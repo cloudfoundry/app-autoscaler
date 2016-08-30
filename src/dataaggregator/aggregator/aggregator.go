@@ -7,8 +7,8 @@ import (
 	"dataaggregator/appmetric"
 	"dataaggregator/db"
 	"dataaggregator/policy"
+	"errors"
 	"net/http"
-	"strconv"
 	"time"
 )
 
@@ -19,45 +19,51 @@ type Aggregator struct {
 	appChan            chan *appmetric.AppMonitor
 	policyPoller       *PolicyPoller
 	metricPollerCount  int64
-	metricPollerArray  []*MetricPoller
+	MetricPollerArray  []*MetricPoller
 	database           db.DB
 }
 
 func NewAggregator(logger lager.Logger, clock clock.Clock, policyPollerInterval time.Duration, database db.DB, metricCollectorUrl string, metricPollerCount int64) *Aggregator {
 	aggregator := &Aggregator{
-		logger:             logger,
+		logger:             logger.Session("Aggregator"),
 		metricCollectorUrl: metricCollectorUrl,
 		doneChan:           make(chan bool),
 		appChan:            make(chan *appmetric.AppMonitor, 10),
 		metricPollerCount:  metricPollerCount,
-		metricPollerArray:  []*MetricPoller{},
+		MetricPollerArray:  []*MetricPoller{},
 		database:           database,
 	}
-	aggregator.policyPoller = NewPolicyPoller(lager.NewLogger("policy-poller"), clock, policyPollerInterval, database, aggregator.ConsumeTrigger, aggregator.appChan)
+	aggregator.policyPoller = NewPolicyPoller(logger, clock, policyPollerInterval, database, aggregator.ConsumeTrigger, aggregator.appChan)
 
 	client := cfhttp.NewClient()
 	client.Transport.(*http.Transport).MaxIdleConnsPerHost = (int)(metricPollerCount)
 
 	var i int64
 	for i = 0; i < metricPollerCount; i++ {
-		pollerLogger := lager.NewLogger("metric-poller-" + strconv.FormatInt(i, 10))
-		poller := NewMetricPoller(metricCollectorUrl, pollerLogger, aggregator.appChan, aggregator.ConsumeAppMetric, client)
-		aggregator.metricPollerArray = append(aggregator.metricPollerArray, poller)
+		poller := NewMetricPoller(metricCollectorUrl, logger, aggregator.appChan, aggregator.ConsumeAppMetric, client)
+		aggregator.MetricPollerArray = append(aggregator.MetricPollerArray, poller)
 	}
 	return aggregator
 }
 func (a *Aggregator) ConsumeTrigger(triggerMap map[string]*policy.Trigger, appChan chan *appmetric.AppMonitor) {
+	if triggerMap == nil {
+		return
+	}
 	for appId, trigger := range triggerMap {
 		for _, rule := range trigger.TriggerRecord.ScalingRules {
 			appChan <- &appmetric.AppMonitor{
-				AppId:          appId,
-				MetricType:     rule.MetricType,
-				StatWindowSecs: rule.StatWindowSecs,
+				AppId:      appId,
+				MetricType: rule.MetricType,
+				StatWindow: rule.StatWindow,
 			}
 		}
 	}
 }
 func (a *Aggregator) ConsumeAppMetric(appMetric *appmetric.AppMetric) {
+	if appMetric == nil {
+		a.logger.Error("appmetric is nil", errors.New("Should not save a nil appmetric to database"))
+		return
+	}
 	err := a.database.SaveAppMetric(appMetric)
 	if err != nil {
 		a.logger.Error("save appmetric to database failed", err, lager.Data{"appmetric": appMetric})
@@ -65,17 +71,15 @@ func (a *Aggregator) ConsumeAppMetric(appMetric *appmetric.AppMetric) {
 }
 func (a *Aggregator) Start() {
 	a.policyPoller.Start()
-	for _, metricPoller := range a.metricPollerArray {
+	for _, metricPoller := range a.MetricPollerArray {
 		metricPoller.Start()
 	}
-	a.logger.Info("aggregator-started")
+	a.logger.Info("started")
 }
 func (a *Aggregator) Stop() {
 	a.policyPoller.Stop()
-	for _, metricPoller := range a.metricPollerArray {
+	for _, metricPoller := range a.MetricPollerArray {
 		metricPoller.Stop()
 	}
-	// close(a.appChan)
-	// close(a.metricChan)
-	a.logger.Info("aggregator-stopped")
+	a.logger.Info("stopped")
 }
