@@ -4,11 +4,9 @@ import (
 	"code.cloudfoundry.org/lager"
 	"dataaggregator/appmetric"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"metricscollector/metrics"
-	"metricscollector/server"
 	"net/http"
 	"strconv"
 	"time"
@@ -56,17 +54,17 @@ func (m *MetricPoller) startMetricRetrieve() {
 func (m *MetricPoller) retrieveMetric(app *appmetric.AppMonitor) {
 	appId := app.AppId
 	metricType := app.MetricType
-	endTime := time.Now().UnixNano()
-	startTime := endTime - int64(app.StatWindow)
+	endTime := time.Now()
+	startTime := endTime.Add(0 - app.StatWindow)
 	if metricType != "MemoryUsage" {
 		m.logger.Error("Unsupported metric type", fmt.Errorf("%s is not supported", metricType))
 		return
 	}
 	var url string
-	url = m.metricCollectorUrl + "/v1/apps/" + app.AppId + "/metrics_history/memory?start=" + strconv.FormatInt(startTime, 10) + "&end=" + strconv.FormatInt(endTime, 10)
+	url = m.metricCollectorUrl + "/v1/apps/" + app.AppId + "/metrics_history/memory?start=" + strconv.FormatInt(startTime.UnixNano(), 10) + "&end=" + strconv.FormatInt(endTime.UnixNano(), 10)
 	resp, err := m.httpClient.Get(url)
 	if err != nil {
-		m.logger.Error("Retrieve metric failed", err, lager.Data{"appId": appId, "metricType": metricType, "err": err})
+		m.logger.Error("Failed to retrieve metric from memory-collector. Request failed", err, lager.Data{"appId": appId, "metricType": metricType, "err": err})
 		return
 	}
 	defer resp.Body.Close()
@@ -74,7 +72,7 @@ func (m *MetricPoller) retrieveMetric(app *appmetric.AppMonitor) {
 	if resp.StatusCode == http.StatusOK {
 		data, readError := ioutil.ReadAll(resp.Body)
 		if readError != nil {
-			m.logger.Error("Can not read data from response", readError)
+			m.logger.Error("Failed to read data from response", readError, lager.Data{"appId": appId, "metricType": metricType})
 			return
 		}
 		json.Unmarshal(data, &metrics)
@@ -83,10 +81,7 @@ func (m *MetricPoller) retrieveMetric(app *appmetric.AppMonitor) {
 			m.metricConsumer(avgMetric)
 		}
 	} else {
-		var errorResponse server.ErrorResponse
-		errBody, _ := ioutil.ReadAll(resp.Body)
-		json.Unmarshal(errBody, &errorResponse)
-		m.logger.Error("Retrieve metric failed", errors.New(errorResponse.Message), lager.Data{"appId": appId, "metricType": metricType})
+		m.logger.Error("Failed to retrieve metric from memory-collector", fmt.Errorf("response status code:%d", resp.StatusCode), lager.Data{"appId": appId, "metricType": metricType})
 	}
 
 }

@@ -12,21 +12,26 @@ import (
 	"github.com/onsi/gomega/ghttp"
 	. "metricscollector/metrics"
 	"net/http"
+	"regexp"
 	"time"
 )
 
 var _ = Describe("Aggregator", func() {
 	var (
-		aggregator   *Aggregator
-		database     *fakes.FakeDB
-		clock        *fakeclock.FakeClock
-		logger       lager.Logger
-		metricServer *ghttp.Server
-		testAppId    string = "testAppId"
-		timestamp    int64  = time.Now().UnixNano()
-		metricType   string = "MemoryUsage"
-		unit         string = "bytes"
-		policyStr           = `
+		aggregator            *Aggregator
+		database              *fakes.FakeDB
+		clock                 *fakeclock.FakeClock
+		logger                lager.Logger
+		metricServer          *ghttp.Server
+		TestMetricPollerCount int    = 3
+		testAppId             string = "testAppId"
+		testAppId2            string = "testAppId2"
+		testAppId3            string = "testAppId3"
+		testAppId4            string = "testAppId4"
+		timestamp             int64  = time.Now().UnixNano()
+		metricType            string = "MemoryUsage"
+		unit                  string = "bytes"
+		policyStr                    = `
 		{
 		   "instance_min_count":1,
 		   "instance_max_count":5,
@@ -84,13 +89,14 @@ var _ = Describe("Aggregator", func() {
 			Expect(appMetric.AppId).To(Equal("testAppId"))
 			Expect(appMetric.MetricType).To(Equal(metricType))
 			Expect(appMetric.Unit).To(Equal(unit))
-			Expect(appMetric.Value).To(BeNumerically("==", 250))
+			Expect(appMetric.Value).To(Equal(int64(250)))
 			return nil
 		}
 		clock = fakeclock.NewFakeClock(time.Now())
 		logger = lager.NewLogger("Aggregator-test")
 		metricServer = ghttp.NewServer()
-		metricServer.RouteToHandler("GET", "/v1/apps/"+testAppId+"/metrics_history/memory", ghttp.RespondWithJSONEncoded(http.StatusOK,
+		regPath := regexp.MustCompile(`^/v1/apps/.*/metrics_history/memory$`)
+		metricServer.RouteToHandler("GET", regPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
 			&metrics))
 	})
 	Context("ConsumeTrigger", func() {
@@ -100,28 +106,27 @@ var _ = Describe("Aggregator", func() {
 		BeforeEach(func() {
 			appChan = make(chan *AppMonitor, 1)
 			aggregator = NewAggregator(logger, clock, TestPolicyPollerInterval, database, metricServer.URL(), TestMetricPollerCount)
-
+			triggerMap = map[string]*Trigger{testAppId: &Trigger{
+				AppId: testAppId,
+				TriggerRecord: &TriggerRecord{
+					InstanceMaxCount: 5,
+					InstanceMinCount: 1,
+					ScalingRules: []*ScalingRule{&ScalingRule{
+						MetricType:       "MemoryUsage",
+						StatWindow:       300,
+						BreachDuration:   300,
+						CoolDownDuration: 300,
+						Threshold:        30,
+						Operator:         "<",
+						Adjustment:       "-1",
+					}}},
+			}}
 		})
 		Context("when there are data in triggerMap", func() {
 			JustBeforeEach(func() {
-				triggerMap = map[string]*Trigger{testAppId: &Trigger{
-					AppId: testAppId,
-					TriggerRecord: &TriggerRecord{
-						InstanceMaxCount: 5,
-						InstanceMinCount: 1,
-						ScalingRules: []*ScalingRule{&ScalingRule{
-							MetricType:       "MemoryUsage",
-							StatWindow:       300,
-							BreachDuration:   300,
-							CoolDownDuration: 300,
-							Threshold:        30,
-							Operator:         "<",
-							Adjustment:       "-1",
-						}}},
-				}}
+				aggregator.ConsumeTrigger(triggerMap, appChan)
 			})
 			It("should parse the triggers to appmonitor and put them in appChan", func() {
-				aggregator.ConsumeTrigger(triggerMap, appChan)
 				Eventually(appChan).Should(Receive(&appMonitor))
 				Expect(appMonitor).To(Equal(&AppMonitor{
 					AppId:      testAppId,
@@ -131,20 +136,24 @@ var _ = Describe("Aggregator", func() {
 			})
 		})
 		Context("when there is not data in triggerMap", func() {
-			JustBeforeEach(func() {
+			BeforeEach(func() {
 				triggerMap = map[string]*Trigger{}
 			})
-			It("should not receive any data from the appChan", func() {
+			JustBeforeEach(func() {
 				aggregator.ConsumeTrigger(triggerMap, appChan)
+			})
+			It("should not receive any data from the appChan", func() {
 				Consistently(appChan).ShouldNot(Receive())
 			})
 		})
 		Context("when the triggerMap is nil", func() {
-			JustBeforeEach(func() {
+			BeforeEach(func() {
 				triggerMap = nil
 			})
-			It("should not receive any data from the appChan", func() {
+			JustBeforeEach(func() {
 				aggregator.ConsumeTrigger(triggerMap, appChan)
+			})
+			It("should not receive any data from the appChan", func() {
 				Consistently(appChan).ShouldNot(Receive())
 			})
 		})
@@ -152,31 +161,32 @@ var _ = Describe("Aggregator", func() {
 	})
 	Context("ConsumeAppMetric", func() {
 		var appmetric *AppMetric
-		JustBeforeEach(func() {
+		BeforeEach(func() {
 			aggregator = NewAggregator(logger, clock, TestPolicyPollerInterval, database, metricServer.URL(), TestMetricPollerCount)
-
+			appmetric = &AppMetric{
+				AppId:      testAppId,
+				MetricType: metricType,
+				Value:      250,
+				Unit:       "bytes",
+				Timestamp:  timestamp}
 		})
 		Context("when there is data in appmetric", func() {
 			JustBeforeEach(func() {
-				appmetric = &AppMetric{
-					AppId:      testAppId,
-					MetricType: metricType,
-					Value:      250,
-					Unit:       "bytes",
-					Timestamp:  timestamp}
+				aggregator.ConsumeAppMetric(appmetric)
 			})
 			It("should call database.SaveAppmetric to save the appmetric to database", func() {
-				aggregator.ConsumeAppMetric(appmetric)
-				Eventually(database.SaveAppMetricCallCount).Should(BeNumerically("==", 1))
+				Eventually(database.SaveAppMetricCallCount).Should(Equal(1))
 			})
 		})
 		Context("when the appmetric is nil", func() {
-			JustBeforeEach(func() {
+			BeforeEach(func() {
 				appmetric = nil
 			})
-			It("should call database.SaveAppmetric to save the appmetric to database", func() {
+			JustBeforeEach(func() {
 				aggregator.ConsumeAppMetric(appmetric)
-				Consistently(database.SaveAppMetricCallCount).Should(BeNumerically("==", 0))
+			})
+			It("should call database.SaveAppmetric to save the appmetric to database", func() {
+				Consistently(database.SaveAppMetricCallCount).Should(Equal(0))
 			})
 		})
 
@@ -185,7 +195,6 @@ var _ = Describe("Aggregator", func() {
 		JustBeforeEach(func() {
 			aggregator = NewAggregator(logger, clock, TestPolicyPollerInterval, database, metricServer.URL(), TestMetricPollerCount)
 			aggregator.Start()
-			Eventually(len(aggregator.MetricPollerArray)).Should(BeNumerically("==", TestMetricPollerCount))
 		})
 		AfterEach(func() {
 			aggregator.Stop()
@@ -195,6 +204,35 @@ var _ = Describe("Aggregator", func() {
 			Eventually(database.RetrievePoliciesCallCount).Should(BeNumerically(">=", 2))
 			Eventually(database.SaveAppMetricCallCount).Should(BeNumerically(">=", 2))
 
+		})
+		Context("MetricPoller", func() {
+			var unBlockChan chan bool
+			var calledChan chan string
+			BeforeEach(func() {
+				TestMetricPollerCount = 3
+				unBlockChan = make(chan bool)
+				calledChan = make(chan string)
+				database.RetrievePoliciesStub = func() ([]*PolicyJson, error) {
+					return []*PolicyJson{&PolicyJson{AppId: testAppId, PolicyStr: policyStr}, &PolicyJson{AppId: testAppId2, PolicyStr: policyStr}, &PolicyJson{AppId: testAppId3, PolicyStr: policyStr}, &PolicyJson{AppId: testAppId4, PolicyStr: policyStr}}, nil
+				}
+				database.SaveAppMetricStub = func(appMetric *AppMetric) error {
+					calledChan <- appMetric.AppId
+					<-unBlockChan
+					return nil
+				}
+			})
+			It("should create MetricPollerCount metric-pollers", func() {
+				for i := 0; i < TestMetricPollerCount; i++ {
+					Eventually(calledChan).Should(Receive())
+				}
+				Consistently(calledChan).ShouldNot(Receive())
+				Eventually(database.SaveAppMetricCallCount).Should(Equal(int(TestMetricPollerCount)))
+				for i := 0; i < TestMetricPollerCount; i++ {
+					unBlockChan <- true
+				}
+				<-calledChan
+				unBlockChan <- true
+			})
 		})
 	})
 	Context("Stop", func() {
@@ -209,8 +247,8 @@ var _ = Describe("Aggregator", func() {
 		})
 		It("should return 1", func() {
 			clock.Increment(10 * TestPolicyPollerInterval * time.Second)
-			Eventually(database.RetrievePoliciesCallCount).Should(BeNumerically("==", retrievePoliciesCallCount))
-			Eventually(database.SaveAppMetricCallCount).Should(BeNumerically("==", saveAppMetricCallCount))
+			Eventually(database.RetrievePoliciesCallCount).Should(Equal(retrievePoliciesCallCount))
+			Eventually(database.SaveAppMetricCallCount).Should(Equal(saveAppMetricCallCount))
 
 		})
 	})

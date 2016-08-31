@@ -9,7 +9,6 @@ import (
 
 const (
 	TestPolicyPollerInterval = 1
-	TestMetricPollerCount    = 10
 )
 
 func TestPolicyPoller(t *testing.T) {

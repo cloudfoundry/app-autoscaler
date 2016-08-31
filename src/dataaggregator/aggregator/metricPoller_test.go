@@ -103,6 +103,25 @@ var _ = Describe("MetricPoller", func() {
 						Timestamp:  timestamp}))
 				})
 			})
+			//the too long response will cause ioutil.ReadAll() to panic
+			//slow test, will take a lot of seconds
+			Context("when the response body from metric-collector is too long", func() {
+				BeforeEach(func() {
+					var tooLargeMetrics, template []*Metric
+					for i := 0; i < 9999; i++ {
+						template = append(template, metrics...)
+					}
+					for i := 0; i < 999; i++ {
+						tooLargeMetrics = append(tooLargeMetrics, template...)
+					}
+					metricServer = ghttp.NewServer()
+					metricServer.RouteToHandler("GET", "/v1/apps/"+testAppId+"/metrics_history/memory", ghttp.RespondWithJSONEncoded(http.StatusOK,
+						&tooLargeMetrics))
+				})
+				It("should cause io read error and should not do aggregation", func() {
+					Consistently(consumed).ShouldNot(Receive())
+				})
+			})
 			Context("when metric-collector returns an empty result", func() {
 				BeforeEach(func() {
 					metricServer = ghttp.NewServer()
@@ -139,8 +158,6 @@ var _ = Describe("MetricPoller", func() {
 				})
 				BeforeEach(func() {
 					metricServer = ghttp.NewServer()
-					metricServer.RouteToHandler("GET", "/v1/apps/"+testAppId+"/metrics_history/memory", ghttp.RespondWithJSONEncoded(http.StatusOK,
-						&metrics))
 
 				})
 				It("should not do aggregation as there is no metric", func() {

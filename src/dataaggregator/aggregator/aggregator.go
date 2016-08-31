@@ -7,7 +7,6 @@ import (
 	"dataaggregator/appmetric"
 	"dataaggregator/db"
 	"dataaggregator/policy"
-	"errors"
 	"net/http"
 	"time"
 )
@@ -18,30 +17,30 @@ type Aggregator struct {
 	doneChan           chan bool
 	appChan            chan *appmetric.AppMonitor
 	policyPoller       *PolicyPoller
-	metricPollerCount  int64
-	MetricPollerArray  []*MetricPoller
+	metricPollerCount  int
+	metricPollerArray  []*MetricPoller
 	database           db.DB
 }
 
-func NewAggregator(logger lager.Logger, clock clock.Clock, policyPollerInterval time.Duration, database db.DB, metricCollectorUrl string, metricPollerCount int64) *Aggregator {
+func NewAggregator(logger lager.Logger, clock clock.Clock, policyPollerInterval time.Duration, database db.DB, metricCollectorUrl string, metricPollerCount int) *Aggregator {
 	aggregator := &Aggregator{
 		logger:             logger.Session("Aggregator"),
 		metricCollectorUrl: metricCollectorUrl,
 		doneChan:           make(chan bool),
 		appChan:            make(chan *appmetric.AppMonitor, 10),
 		metricPollerCount:  metricPollerCount,
-		MetricPollerArray:  []*MetricPoller{},
+		metricPollerArray:  []*MetricPoller{},
 		database:           database,
 	}
 	aggregator.policyPoller = NewPolicyPoller(logger, clock, policyPollerInterval, database, aggregator.ConsumeTrigger, aggregator.appChan)
 
 	client := cfhttp.NewClient()
-	client.Transport.(*http.Transport).MaxIdleConnsPerHost = (int)(metricPollerCount)
+	client.Transport.(*http.Transport).MaxIdleConnsPerHost = metricPollerCount
 
-	var i int64
+	var i int
 	for i = 0; i < metricPollerCount; i++ {
 		poller := NewMetricPoller(metricCollectorUrl, logger, aggregator.appChan, aggregator.ConsumeAppMetric, client)
-		aggregator.MetricPollerArray = append(aggregator.MetricPollerArray, poller)
+		aggregator.metricPollerArray = append(aggregator.metricPollerArray, poller)
 	}
 	return aggregator
 }
@@ -61,7 +60,6 @@ func (a *Aggregator) ConsumeTrigger(triggerMap map[string]*policy.Trigger, appCh
 }
 func (a *Aggregator) ConsumeAppMetric(appMetric *appmetric.AppMetric) {
 	if appMetric == nil {
-		a.logger.Error("appmetric is nil", errors.New("Should not save a nil appmetric to database"))
 		return
 	}
 	err := a.database.SaveAppMetric(appMetric)
@@ -71,14 +69,14 @@ func (a *Aggregator) ConsumeAppMetric(appMetric *appmetric.AppMetric) {
 }
 func (a *Aggregator) Start() {
 	a.policyPoller.Start()
-	for _, metricPoller := range a.MetricPollerArray {
+	for _, metricPoller := range a.metricPollerArray {
 		metricPoller.Start()
 	}
 	a.logger.Info("started")
 }
 func (a *Aggregator) Stop() {
 	a.policyPoller.Stop()
-	for _, metricPoller := range a.MetricPollerArray {
+	for _, metricPoller := range a.metricPollerArray {
 		metricPoller.Stop()
 	}
 	a.logger.Info("stopped")
