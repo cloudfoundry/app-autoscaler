@@ -1,6 +1,8 @@
 package aggregator_test
 
 import (
+	"time"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -8,7 +10,7 @@ import (
 )
 
 const (
-	TestPolicyPollerInterval = 1
+	testPolicyPollerInterval = 10 * time.Millisecond
 )
 
 func TestPolicyPoller(t *testing.T) {

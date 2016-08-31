@@ -1,37 +1,38 @@
 package aggregator_test
 
 import (
-	"code.cloudfoundry.org/clock/fakeclock"
-	"code.cloudfoundry.org/lager"
 	. "dataaggregator/aggregator"
 	"dataaggregator/aggregator/fakes"
 	. "dataaggregator/appmetric"
 	. "dataaggregator/policy"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/ghttp"
 	. "metricscollector/metrics"
 	"net/http"
 	"regexp"
 	"time"
+
+	"code.cloudfoundry.org/clock/fakeclock"
+	"code.cloudfoundry.org/lager"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/ghttp"
 )
 
 var _ = Describe("Aggregator", func() {
 	var (
-		aggregator            *Aggregator
-		database              *fakes.FakeDB
-		clock                 *fakeclock.FakeClock
-		logger                lager.Logger
-		metricServer          *ghttp.Server
-		TestMetricPollerCount int    = 3
-		testAppId             string = "testAppId"
-		testAppId2            string = "testAppId2"
-		testAppId3            string = "testAppId3"
-		testAppId4            string = "testAppId4"
-		timestamp             int64  = time.Now().UnixNano()
-		metricType            string = "MemoryUsage"
-		unit                  string = "bytes"
-		policyStr                    = `
+		aggregator        *Aggregator
+		database          *fakes.FakeDB
+		clock             *fakeclock.FakeClock
+		logger            lager.Logger
+		metricServer      *ghttp.Server
+		metricPollerCount int    = 3
+		testAppId         string = "testAppId"
+		testAppId2        string = "testAppId2"
+		testAppId3        string = "testAppId3"
+		testAppId4        string = "testAppId4"
+		timestamp         int64  = time.Now().UnixNano()
+		metricType        string = "MemoryUsage"
+		unit              string = "bytes"
+		policyStr                = `
 		{
 		   "instance_min_count":1,
 		   "instance_max_count":5,
@@ -105,7 +106,7 @@ var _ = Describe("Aggregator", func() {
 		var appMonitor *AppMonitor
 		BeforeEach(func() {
 			appChan = make(chan *AppMonitor, 1)
-			aggregator = NewAggregator(logger, clock, TestPolicyPollerInterval, database, metricServer.URL(), TestMetricPollerCount)
+			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, database, metricServer.URL(), metricPollerCount)
 			triggerMap = map[string]*Trigger{testAppId: &Trigger{
 				AppId: testAppId,
 				TriggerRecord: &TriggerRecord{
@@ -162,7 +163,7 @@ var _ = Describe("Aggregator", func() {
 	Context("ConsumeAppMetric", func() {
 		var appmetric *AppMetric
 		BeforeEach(func() {
-			aggregator = NewAggregator(logger, clock, TestPolicyPollerInterval, database, metricServer.URL(), TestMetricPollerCount)
+			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, database, metricServer.URL(), metricPollerCount)
 			appmetric = &AppMetric{
 				AppId:      testAppId,
 				MetricType: metricType,
@@ -193,63 +194,61 @@ var _ = Describe("Aggregator", func() {
 	})
 	Context("Start", func() {
 		JustBeforeEach(func() {
-			aggregator = NewAggregator(logger, clock, TestPolicyPollerInterval, database, metricServer.URL(), TestMetricPollerCount)
+			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, database, metricServer.URL(), metricPollerCount)
 			aggregator.Start()
 		})
 		AfterEach(func() {
 			aggregator.Stop()
 		})
 		It("should save the appmetric to database", func() {
-			clock.Increment(2 * TestPolicyPollerInterval * time.Second)
+			clock.Increment(2 * testPolicyPollerInterval)
 			Eventually(database.RetrievePoliciesCallCount).Should(BeNumerically(">=", 2))
 			Eventually(database.SaveAppMetricCallCount).Should(BeNumerically(">=", 2))
-
 		})
+
 		Context("MetricPoller", func() {
 			var unBlockChan chan bool
 			var calledChan chan string
 			BeforeEach(func() {
-				TestMetricPollerCount = 3
+				metricPollerCount = 4
 				unBlockChan = make(chan bool)
 				calledChan = make(chan string)
 				database.RetrievePoliciesStub = func() ([]*PolicyJson, error) {
 					return []*PolicyJson{&PolicyJson{AppId: testAppId, PolicyStr: policyStr}, &PolicyJson{AppId: testAppId2, PolicyStr: policyStr}, &PolicyJson{AppId: testAppId3, PolicyStr: policyStr}, &PolicyJson{AppId: testAppId4, PolicyStr: policyStr}}, nil
 				}
 				database.SaveAppMetricStub = func(appMetric *AppMetric) error {
+					defer GinkgoRecover()
 					calledChan <- appMetric.AppId
 					<-unBlockChan
 					return nil
 				}
 			})
 			It("should create MetricPollerCount metric-pollers", func() {
-				for i := 0; i < TestMetricPollerCount; i++ {
+				for i := 0; i < metricPollerCount; i++ {
 					Eventually(calledChan).Should(Receive())
 				}
 				Consistently(calledChan).ShouldNot(Receive())
-				Eventually(database.SaveAppMetricCallCount).Should(Equal(int(TestMetricPollerCount)))
-				for i := 0; i < TestMetricPollerCount; i++ {
-					unBlockChan <- true
-				}
-				<-calledChan
-				unBlockChan <- true
+
+				Eventually(database.SaveAppMetricCallCount).Should(Equal(int(metricPollerCount)))
+
+				close(unBlockChan)
 			})
 		})
 	})
 	Context("Stop", func() {
 		var retrievePoliciesCallCount, saveAppMetricCallCount int
 		JustBeforeEach(func() {
-			aggregator = NewAggregator(logger, clock, TestPolicyPollerInterval, database, metricServer.URL(), TestMetricPollerCount)
+			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, database, metricServer.URL(), metricPollerCount)
 			aggregator.Start()
 			aggregator.Stop()
 			retrievePoliciesCallCount = database.RetrievePoliciesCallCount()
 			saveAppMetricCallCount = database.SaveAppMetricCallCount()
 
 		})
-		It("should return 1", func() {
-			clock.Increment(10 * TestPolicyPollerInterval * time.Second)
+		It("should not retrieve or save", func() {
+			clock.Increment(10 * testPolicyPollerInterval)
 			Eventually(database.RetrievePoliciesCallCount).Should(Equal(retrievePoliciesCallCount))
 			Eventually(database.SaveAppMetricCallCount).Should(Equal(saveAppMetricCallCount))
-
 		})
 	})
 })

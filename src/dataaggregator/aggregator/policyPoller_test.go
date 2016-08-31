@@ -1,16 +1,17 @@
 package aggregator_test
 
 import (
-	"code.cloudfoundry.org/clock/fakeclock"
-	"code.cloudfoundry.org/lager"
 	. "dataaggregator/aggregator"
 	"dataaggregator/aggregator/fakes"
 	. "dataaggregator/appmetric"
 	. "dataaggregator/policy"
 	"errors"
+	"time"
+
+	"code.cloudfoundry.org/clock/fakeclock"
+	"code.cloudfoundry.org/lager"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"time"
 )
 
 var _ = Describe("PolicyPoller", func() {
@@ -52,7 +53,7 @@ var _ = Describe("PolicyPoller", func() {
 	})
 	Context("Start", func() {
 		JustBeforeEach(func() {
-			poller = NewPolicyPoller(logger, clock, TestPolicyPollerInterval, database, consumer, appChan)
+			poller = NewPolicyPoller(logger, clock, testPolicyPollerInterval, database, consumer, appChan)
 			poller.Start()
 
 		})
@@ -67,7 +68,7 @@ var _ = Describe("PolicyPoller", func() {
 
 			})
 			It("should retrieve policies for every interval", func() {
-				clock.Increment(2 * TestPolicyPollerInterval * time.Second)
+				clock.Increment(2 * testPolicyPollerInterval * time.Second)
 				Eventually(database.RetrievePoliciesCallCount).Should(BeNumerically(">=", 2))
 			})
 
@@ -83,7 +84,7 @@ var _ = Describe("PolicyPoller", func() {
 					}
 				})
 				It("should call the consumer with the new triggers for every interval", func() {
-					clock.Increment(2 * TestPolicyPollerInterval * time.Second)
+					clock.Increment(2 * testPolicyPollerInterval)
 					var triggerMap map[string]*Trigger
 					Eventually(consumed).Should(Receive(&triggerMap))
 					Expect(triggerMap[testAppId1]).To(Equal(&Trigger{
@@ -115,7 +116,7 @@ var _ = Describe("PolicyPoller", func() {
 					}
 				})
 				It("should not call the consumer as there is no trigger", func() {
-					clock.Increment(2 * TestPolicyPollerInterval * time.Second)
+					clock.Increment(2 * testPolicyPollerInterval * time.Second)
 					Consistently(consumed).ShouldNot(Receive())
 				})
 			})
@@ -123,13 +124,13 @@ var _ = Describe("PolicyPoller", func() {
 	})
 	Context("Stop", func() {
 		BeforeEach(func() {
-			poller = NewPolicyPoller(logger, clock, TestPolicyPollerInterval, database, consumer, appChan)
+			poller = NewPolicyPoller(logger, clock, testPolicyPollerInterval, database, consumer, appChan)
 			poller.Start()
 			poller.Stop()
 		})
 
 		It("stops the polling", func() {
-			clock.Increment(5 * TestPolicyPollerInterval * time.Second)
+			clock.Increment(5 * testPolicyPollerInterval)
 			Eventually(database.RetrievePoliciesCallCount).Should(Equal(1))
 			Consistently(database.RetrievePoliciesCallCount).Should(Equal(1))
 		})

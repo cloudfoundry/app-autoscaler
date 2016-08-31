@@ -1,17 +1,18 @@
 package aggregator_test
 
 import (
-	"code.cloudfoundry.org/cfhttp"
-	"code.cloudfoundry.org/lager"
 	. "dataaggregator/aggregator"
 	. "dataaggregator/appmetric"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/ghttp"
 	. "metricscollector/metrics"
 	. "metricscollector/server"
 	"net/http"
 	"time"
+
+	"code.cloudfoundry.org/cfhttp"
+	"code.cloudfoundry.org/lager"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/ghttp"
 )
 
 var _ = Describe("MetricPoller", func() {
@@ -62,6 +63,7 @@ var _ = Describe("MetricPoller", func() {
 		httpClient = cfhttp.NewClient()
 		appChan = make(chan *AppMonitor, 1)
 		metricConsumer = func(appMetric *AppMetric) {}
+		metricServer = nil
 	})
 	Context("Start", func() {
 		JustBeforeEach(func() {
@@ -105,7 +107,7 @@ var _ = Describe("MetricPoller", func() {
 			})
 			//the too long response will cause ioutil.ReadAll() to panic
 			//slow test, will take a lot of seconds
-			Context("when the response body from metric-collector is too long", func() {
+			PContext("when the response body from metric-collector is too long", func() {
 				BeforeEach(func() {
 					var tooLargeMetrics, template []*Metric
 					for i := 0; i < 9999; i++ {
