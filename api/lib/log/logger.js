@@ -1,9 +1,25 @@
 // TODO: To decide and adopt to some logging utility like winston
+var util = require('util');
+
 module.exports = {
-  info: function(message) {
-    console.log(message);
+  info: function(message,context) {	
+    var logItem = {
+      timestamp: new Date(),
+      source: 'autoscaler:apiserver',
+      text: message,
+      log_level: 'info',
+      data: context === null ? {} : context
+    };
+    console.log (util.format('%j', logItem)); 
   },
   error: function(message, error) {
-    console.error(message, error);
+    var logItem = {
+      timestamp: new Date(),
+      source: 'autoscaler:apiserver',
+      text: message,
+      log_level: 'error',
+      data: error
+    };
+    console.error (util.format('%j', logItem));
   }
 };
