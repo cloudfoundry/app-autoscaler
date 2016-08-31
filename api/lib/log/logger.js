@@ -2,16 +2,24 @@
 var util = require('util');
 
 module.exports = {
-  info: function(message,context) {
-    if(context) {
-      console.log(message, util.format('%j', context));
-    }
-    else {
-      console.log(message);
-    }
-    
+  info: function(message,context) {	
+    var logItem = {
+      timestamp: new Date(),
+      source: 'autoscaler:apiserver',
+      text: message,
+      log_level: 'info',
+      data: context === null ? {} : context
+    };
+    console.log (util.format('%j', logItem)); 
   },
   error: function(message, error) {
-    console.error(message, util.format('%j', error));
+    var logItem = {
+      timestamp: new Date(),
+      source: 'autoscaler:apiserver',
+      text: message,
+      log_level: 'error',
+      data: error
+    };
+    console.error (util.format('%j', logItem));
   }
 };
