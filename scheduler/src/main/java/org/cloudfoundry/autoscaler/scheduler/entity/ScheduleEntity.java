@@ -9,49 +9,56 @@ import javax.validation.constraints.NotNull;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-/**
- * 
- *
- */
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
 
+@ApiModel
 @MappedSuperclass
 public class ScheduleEntity {
 
+	@ApiModelProperty(hidden = true)
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "schedule_id")
 	private Long id;
 
+	@ApiModelProperty(hidden = true)
 	@NotNull
 	@JsonProperty(value = "app_id")
 	@Column(name = "app_id")
 	private String appId;
 
+	@ApiModelProperty(hidden = true)
 	@NotNull
 	@JsonProperty(value = "timezone")
 	@Column(name = "timezone")
 	private String timeZone;
 
+	@ApiModelProperty(hidden = true)
 	@NotNull
 	@Column(name = "default_instance_min_count")
 	@JsonProperty(value = "default_instance_min_count")
 	private Integer defaultInstanceMinCount;
 
+	@ApiModelProperty(hidden = true)
 	@NotNull
 	@Column(name = "default_instance_max_count")
 	@JsonProperty(value = "default_instance_max_count")
 	private Integer defaultInstanceMaxCount;
 
+	@ApiModelProperty(required = true, position = 10)
 	@NotNull
 	@Column(name = "instance_min_count")
 	@JsonProperty(value = "instance_min_count")
 	private Integer instanceMinCount;
 
+	@ApiModelProperty(required = true, position = 11)
 	@NotNull
 	@Column(name = "instance_max_count")
 	@JsonProperty(value = "instance_max_count")
 	private Integer instanceMaxCount;
 
+	@ApiModelProperty(required = true, position = 12)
 	@Column(name = "initial_min_instance_count")
 	@JsonProperty(value = "initial_min_instance_count")
 	private Integer initialMinInstanceCount;

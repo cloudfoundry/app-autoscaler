@@ -16,7 +16,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiParam;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 
 /**
  * Controller class for handling the REST api calls.
@@ -33,10 +39,15 @@ public class ScheduleRestController {
 	private Logger logger = LogManager.getLogger(this.getClass());
 
 	@RequestMapping(method = RequestMethod.GET)
-	public ResponseEntity<ApplicationSchedules> getAllSchedules(@PathVariable String app_id) {
-		logger.info("Get All schedules for application: " + app_id);
+	@ApiOperation(value = "Get all schedules (specific dates and recurring) for the specified application id.", produces = "application/json")
+	@ApiResponses(value = {
+			@ApiResponse(code = 200, message = "Schedules found for the specified application id.", response = ApplicationSchedules.class),
+			@ApiResponse(code = 404, message = "No schedules found for the specified application id.") })
+	public ResponseEntity<ApplicationSchedules> getAllSchedules(
+			@ApiParam(name = "app_id", value = "The application id", required = true) @PathVariable("app_id") String appId) {
+		logger.info("Get All schedules for application: " + appId);
 		
-		ApplicationSchedules savedApplicationSchedules = scheduleManager.getAllSchedules(app_id);
+		ApplicationSchedules savedApplicationSchedules = scheduleManager.getAllSchedules(appId);
 		
 		// No schedules found for the specified application return status code NOT_FOUND
 		if (!savedApplicationSchedules.getSchedules().hasSchedules()) {
@@ -48,48 +59,65 @@ public class ScheduleRestController {
 	}
 
 	@RequestMapping(method = RequestMethod.PUT)
-	public ResponseEntity<List<String>> createSchedules(@PathVariable String app_id,
+	@ResponseStatus(HttpStatus.OK) 
+	@ApiOperation(value = "Create/Modify schedules for the specified application id.", consumes = "application/json")
+	@ApiResponses(value = {
+			@ApiResponse(code = 200, message = "Schedules created for the specified application id."),
+			@ApiResponse(code = 204, message = "Schedules modified for the specified application id."),
+			@ApiResponse(code = 400, message = "Validation error encountered.") })
+	public ResponseEntity<List<String>> createSchedules(
+			@ApiParam(name = "app_id", value = "The application id", required = true) @PathVariable("app_id") String appId,
 			@RequestBody ApplicationSchedules rawApplicationPolicy) {
 		// Note: Request could be to update existing schedules or create new schedules.
 
 		// For update also the data validation is required since an update would require a delete 
 		// and then creation of new schedule. If the data is invalid, the update request will fail.
 
-		scheduleManager.setUpSchedules(app_id, rawApplicationPolicy);
+		scheduleManager.setUpSchedules(appId, rawApplicationPolicy);
 
-		logger.info("Validate schedules for application: " + app_id);
-		scheduleManager.validateSchedules(app_id, rawApplicationPolicy);
+		logger.info("Validate schedules for application: " + appId);
+		scheduleManager.validateSchedules(appId, rawApplicationPolicy);
 
 		if (validationErrorResult.hasErrors()) {
 			throw new InvalidDataException();
 		}
 
-		Schedules existingSchedules = scheduleManager.getAllSchedules(app_id).getSchedules();
+		Schedules existingSchedules = scheduleManager.getAllSchedules(appId).getSchedules();
+		boolean isUpdateScheduleRequest = existingSchedules.hasSchedules();
 
-		if (existingSchedules.hasSchedules()) {// Request to update the
-												// schedules
-			logger.info("Update schedules for application: " + app_id);
+		if (isUpdateScheduleRequest) {// Request to update the schedules
+			logger.info("Update schedules for application: " + appId);
 
-			logger.info("Delete schedules for application: " + app_id);
-			scheduleManager.deleteSchedules(app_id);
+			logger.info("Delete schedules for application: " + appId);
+			scheduleManager.deleteSchedules(appId);
 		}
 
-		logger.info("Create schedules for application: " + app_id);
+		logger.info("Create schedules for application: " + appId);
 		scheduleManager.createSchedules(rawApplicationPolicy.getSchedules());
 
-		return new ResponseEntity<>(null, null, HttpStatus.CREATED);
+		if (isUpdateScheduleRequest) {
+			return new ResponseEntity<>(null, null, HttpStatus.NO_CONTENT);
+		}
+
+		return new ResponseEntity<>(null, null, HttpStatus.OK);
 	}
 
 	@RequestMapping(method = RequestMethod.DELETE)
-	public ResponseEntity<List<String>> deleteSchedules(@PathVariable String app_id) {
+	@ResponseStatus(HttpStatus.NO_CONTENT)
+	@ApiOperation(value = "Delete all schedules (specific dates and recurring) for the specified application id.")
+	@ApiResponses(value = {
+			@ApiResponse(code = 204, message = "All schedules deleted for the specified application id."),
+			@ApiResponse(code = 404, message = "No schedules found for deletion for the specified application id.") })
+	public ResponseEntity<List<String>> deleteSchedules(
+			@ApiParam(name = "app_id", value = "The application id", required = true) @PathVariable("app_id") String appId) {
 
-		Schedules existingSchedules = scheduleManager.getAllSchedules(app_id).getSchedules();
+		Schedules existingSchedules = scheduleManager.getAllSchedules(appId).getSchedules();
 		if (!existingSchedules.hasSchedules()) {
 			return new ResponseEntity<>(null, null, HttpStatus.NOT_FOUND);
 		}
 
-		logger.info("Delete schedules for application: " + app_id);
-		scheduleManager.deleteSchedules(app_id);
+		logger.info("Delete schedules for application: " + appId);
+		scheduleManager.deleteSchedules(appId);
 		
 		return new ResponseEntity<>(null, null, HttpStatus.NO_CONTENT);
 	}

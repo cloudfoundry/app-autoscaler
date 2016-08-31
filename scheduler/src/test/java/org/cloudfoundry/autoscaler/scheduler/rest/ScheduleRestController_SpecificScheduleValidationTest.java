@@ -227,7 +227,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 
-		assertResponseStatusEquals(appId, content, status().isCreated());
+		assertResponseStatusEquals(appId, content, status().isOk());
 	}
 
 	@Test

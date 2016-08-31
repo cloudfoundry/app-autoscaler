@@ -43,3 +43,19 @@ mvn test
 ```sh
 mvn -Dtest=ScheduleManagerTest test
 ```
+
+## API documentation
+
+### Start scheduler module
+
+```sh
+mvn spring-boot:run
+```
+
+### Access API documentation using following url on the browser
+
+```
+http://localhost:8080/swagger-ui.html
+```
+
+
