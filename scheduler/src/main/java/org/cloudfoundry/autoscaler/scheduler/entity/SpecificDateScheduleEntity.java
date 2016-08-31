@@ -18,16 +18,17 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
-/**
- * 
- *
- */
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
+@ApiModel
 @Entity
 @Table(name = "app_scaling_specific_date_schedule")
 @NamedQueries({
 		@NamedQuery(name = SpecificDateScheduleEntity.query_specificDateSchedulesByAppId, query = SpecificDateScheduleEntity.jpql_specificDateSchedulesByAppId) })
 public class SpecificDateScheduleEntity extends ScheduleEntity {
 	
+	@ApiModelProperty(example = DateHelper.DATE_TIME_FORMAT, required = true, position = 1)
 	@JsonFormat(pattern = DateHelper.DATE_TIME_FORMAT)
 	@JsonDeserialize(using = DateTimeDeserializer.class)
 	@JsonSerialize(using = DateTimeSerializer.class)
@@ -36,6 +37,7 @@ public class SpecificDateScheduleEntity extends ScheduleEntity {
 	@JsonProperty("start_date_time")
 	private Date startDateTime;
 	
+	@ApiModelProperty(example = DateHelper.DATE_TIME_FORMAT, required = true, position = 2)
 	@JsonFormat(pattern = DateHelper.DATE_TIME_FORMAT)
 	@JsonDeserialize(using = DateTimeDeserializer.class)
 	@JsonSerialize(using = DateTimeSerializer.class)

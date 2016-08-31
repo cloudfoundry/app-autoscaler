@@ -436,7 +436,7 @@ public class ScheduleJobManagerTest {
 
 		RecurringScheduleEntity entity = recurringScheduleEntities.get(0);
 		entity.setTimeZone(timeZone.getID());
-		entity.setDayOfMonth(dayOfMonth);
+		entity.setDaysOfMonth(dayOfMonth);
 		entity.setStartDate(TestDataSetupHelper.getDate(startDate));
 
 		createCronJob(recurringScheduleEntities);

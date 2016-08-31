@@ -37,6 +37,7 @@ import org.springframework.test.annotation.DirtiesContext.ClassMode;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.ResultMatcher;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
@@ -98,7 +99,7 @@ public class ScheduleRestControllerTest {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		ResultActions resultActions = mockMvc.perform(put(getCreateSchedulePath(appId))
 				.contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).content(policyJsonStr));
-		assertCreateScheduleAPI(resultActions);
+		assertCreateScheduleAPI(resultActions, status().isOk());
 
 		resultActions = callGetAllSchedulesByAppId(appId);
 		assertSchedulesFoundEquals(2, 4, appId, resultActions);
@@ -135,7 +136,7 @@ public class ScheduleRestControllerTest {
 
 		// Create two specific date schedules and one recurring schedule for the same application.
 		ResultActions resultActions = callCreateSchedules(appId, 2, 1);
-		assertCreateScheduleAPI(resultActions);
+		assertCreateScheduleAPI(resultActions, status().isNoContent());
 
 		resultActions = callGetAllSchedulesByAppId(appId);
 		assertSchedulesFoundEquals(2, 1, appId, resultActions);
@@ -392,7 +393,7 @@ public class ScheduleRestControllerTest {
 		for (String appId : appIds) {
 			ResultActions resultActions = callCreateSchedules(appId, expectedSpecificDateSchedulesTobeFound,
 					expectedRecurringScheduleTobeFound);
-			assertCreateScheduleAPI(resultActions);
+			assertCreateScheduleAPI(resultActions, status().isOk());
 		}
 
 		for (String appId : appIds) {
@@ -402,8 +403,8 @@ public class ScheduleRestControllerTest {
 		}
 	}
 
-	private void assertCreateScheduleAPI(ResultActions resultActions) throws Exception {
-		resultActions.andExpect(status().isCreated());
+	private void assertCreateScheduleAPI(ResultActions resultActions, ResultMatcher status) throws Exception {
+		resultActions.andExpect(status);
 		resultActions.andExpect(header().doesNotExist("Content-type"));
 		resultActions.andExpect(content().string(Matchers.isEmptyString()));
 	}

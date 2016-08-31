@@ -101,7 +101,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
-		assertResponseStatusEquals(appId, content, status().isCreated());
+		assertResponseStatusEquals(appId, content, status().isOk());
 	}
 
 	@Test
@@ -132,13 +132,12 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
 				noOfRecurringSchedulesToSetUp);
 
-		applicationPolicy.getSchedules().getRecurringSchedule().get(0)
-				.setEndDate(TestDataSetupHelper.addDaysToNow(7));
+		applicationPolicy.getSchedules().getRecurringSchedule().get(0).setEndDate(TestDataSetupHelper.addDaysToNow(7));
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
-		assertResponseStatusEquals(appId, content, status().isCreated());
+		assertResponseStatusEquals(appId, content, status().isOk());
 	}
 
 	@Test
@@ -371,7 +370,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
-		assertResponseStatusEquals(appId, content, status().isCreated());
+		assertResponseStatusEquals(appId, content, status().isOk());
 	}
 
 	@Test
@@ -382,7 +381,8 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
 				noOfRecurringSchedulesToSetUp);
 		Integer initialMinInstanceCount = -1;
-		applicationPolicy.getSchedules().getRecurringSchedule().get(0).setInitialMinInstanceCount(initialMinInstanceCount);
+		applicationPolicy.getSchedules().getRecurringSchedule().get(0)
+				.setInitialMinInstanceCount(initialMinInstanceCount);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
@@ -402,7 +402,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 
 		RecurringScheduleEntity entity = applicationPolicy.getSchedules().getRecurringSchedule().get(0);
 
-		entity.setDayOfMonth(null);
+		entity.setDaysOfMonth(null);
 		entity.setDaysOfWeek(null);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
@@ -423,7 +423,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 
 		RecurringScheduleEntity entity = applicationPolicy.getSchedules().getRecurringSchedule().get(0);
 
-		entity.setDayOfMonth(new int[] {});
+		entity.setDaysOfMonth(new int[] {});
 		entity.setDaysOfWeek(new int[] {});
 
 		String content = mapper.writeValueAsString(applicationPolicy);
@@ -444,7 +444,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 
 		RecurringScheduleEntity entity = applicationPolicy.getSchedules().getRecurringSchedule().get(0);
 
-		entity.setDayOfMonth(TestDataSetupHelper.generateDayOfMonth());
+		entity.setDaysOfMonth(TestDataSetupHelper.generateDayOfMonth());
 		entity.setDaysOfWeek(TestDataSetupHelper.generateDayOfWeek());
 
 		String content = mapper.writeValueAsString(applicationPolicy);
@@ -573,10 +573,10 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 		secondEntity.setStartTime(firstEntity.getEndTime());
 
 		firstEntity.setDaysOfWeek(TestDataSetupHelper.generateDayOfWeek());
-		firstEntity.setDayOfMonth(null);
+		firstEntity.setDaysOfMonth(null);
 
 		secondEntity.setDaysOfWeek(firstEntity.getDaysOfWeek());
-		secondEntity.setDayOfMonth(null);
+		secondEntity.setDaysOfMonth(null);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
@@ -600,10 +600,10 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 		secondEntity.setStartTime(firstEntity.getEndTime());
 
 		firstEntity.setDaysOfWeek(null);
-		firstEntity.setDayOfMonth(TestDataSetupHelper.generateDayOfMonth());
+		firstEntity.setDaysOfMonth(TestDataSetupHelper.generateDayOfMonth());
 
 		secondEntity.setDaysOfWeek(null);
-		secondEntity.setDayOfMonth(firstEntity.getDaysOfMonth());
+		secondEntity.setDaysOfMonth(firstEntity.getDaysOfMonth());
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
@@ -632,15 +632,15 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 		secondEntity.setStartTime(firstEntity.getEndTime());
 
 		firstEntity.setDaysOfWeek(null);
-		firstEntity.setDayOfMonth(new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+		firstEntity.setDaysOfMonth(new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
 				21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31 });
 		secondEntity.setDaysOfWeek(new int[] { 1, 2, 3, 4, 5, 6, 7 });
-		secondEntity.setDayOfMonth(null);
+		secondEntity.setDaysOfMonth(null);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
-		assertResponseStatusEquals(appId, content, status().isCreated());
+		assertResponseStatusEquals(appId, content, status().isOk());
 	}
 
 	@Test
@@ -661,9 +661,9 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 		secondEntity.setStartTime(firstEntity.getEndTime());
 
 		firstEntity.setDaysOfWeek(null);
-		firstEntity.setDayOfMonth(TestDataSetupHelper.generateDayOfMonth());
+		firstEntity.setDaysOfMonth(TestDataSetupHelper.generateDayOfMonth());
 		secondEntity.setDaysOfWeek(null);
-		secondEntity.setDayOfMonth(firstEntity.getDaysOfMonth());
+		secondEntity.setDaysOfMonth(firstEntity.getDaysOfMonth());
 
 		RecurringScheduleEntity thirdEntity = applicationPolicy.getSchedules().getRecurringSchedule().get(2);
 		RecurringScheduleEntity forthEntity = applicationPolicy.getSchedules().getRecurringSchedule().get(3);
@@ -671,10 +671,10 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 		forthEntity.setStartTime(thirdEntity.getStartTime());
 
 		thirdEntity.setDaysOfWeek(TestDataSetupHelper.generateDayOfWeek());
-		thirdEntity.setDayOfMonth(null);
+		thirdEntity.setDaysOfMonth(null);
 
 		forthEntity.setDaysOfWeek(thirdEntity.getDaysOfWeek());
-		forthEntity.setDayOfMonth(null);
+		forthEntity.setDaysOfMonth(null);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
@@ -737,7 +737,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 				firstStartDateStr, firstEndDateStr, secondStartDateStr, secondEndDateStr);
 
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
-		assertResponseStatusEquals(appId, content, status().isCreated());
+		assertResponseStatusEquals(appId, content, status().isOk());
 	}
 
 	private void assertInvalidDayOfWeek(int[] dayOfWeek) throws Exception {
@@ -766,7 +766,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 
 		RecurringScheduleEntity entity = applicationPolicy.getSchedules().getRecurringSchedule().get(0);
 
-		entity.setDayOfMonth(dayOfMonth);
+		entity.setDaysOfMonth(dayOfMonth);
 		entity.setDaysOfWeek(dayOfWeek);
 
 		String content = mapper.writeValueAsString(applicationPolicy);

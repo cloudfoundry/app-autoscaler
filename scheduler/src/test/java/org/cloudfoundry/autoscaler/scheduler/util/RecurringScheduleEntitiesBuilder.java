@@ -78,7 +78,7 @@ public class RecurringScheduleEntitiesBuilder {
 	}
 
 	public RecurringScheduleEntitiesBuilder setDayOfMonth(int pos, int[] dayOfMonth) {
-		recurringScheduleEntities.get(pos).setDayOfMonth(dayOfMonth);
+		recurringScheduleEntities.get(pos).setDaysOfMonth(dayOfMonth);
 		return this;
 	}
 
@@ -119,7 +119,7 @@ public class RecurringScheduleEntitiesBuilder {
 			if (isDow)
 				recurringScheduleEntity.setDaysOfWeek(TestDataSetupHelper.generateDayOfWeek());
 			else
-				recurringScheduleEntity.setDayOfMonth(TestDataSetupHelper.generateDayOfMonth());
+				recurringScheduleEntity.setDaysOfMonth(TestDataSetupHelper.generateDayOfMonth());
 			recurringScheduleEntities.add(recurringScheduleEntity);
 
 			scheduleIndex++;

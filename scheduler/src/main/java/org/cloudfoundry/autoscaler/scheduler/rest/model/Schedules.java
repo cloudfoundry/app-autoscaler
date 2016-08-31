@@ -7,16 +7,20 @@ import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-/**
- * 
- *
- */
+import io.swagger.annotations.ApiModel;
+import io.swagger.annotations.ApiModelProperty;
+
+@ApiModel
 public class Schedules {
+	@ApiModelProperty(required = true, position = 1)
 	@JsonProperty(value = "timezone")
 	String timeZone;
 
+	@ApiModelProperty(position = 3)
 	@JsonProperty(value = "specific_date")
 	private List<SpecificDateScheduleEntity> specificDate;
+
+	@ApiModelProperty(position = 2)
 	@JsonProperty(value = "recurring_schedule")
 	private List<RecurringScheduleEntity> recurringSchedule;
 
