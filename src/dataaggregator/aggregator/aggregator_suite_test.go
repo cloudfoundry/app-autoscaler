@@ -11,7 +11,7 @@ const (
 	TestPolicyPollerInterval = 1
 )
 
-func TestAggregator(t *testing.T) {
+func TestPolicyPoller(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "PolicyPoller Suite")
+	RunSpecs(t, "Aggregator Suite")
 }

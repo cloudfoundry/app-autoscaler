@@ -27,13 +27,14 @@ var _ = Describe("Config", func() {
 				configBytes = []byte(`
 log_level: "debug"
 policy_db_url: "postgres://postgres:password@localhost/autoscaler"
+appmetric_db_url: "postgres://postgres:password@localhost/autoscaler"
 poll_interval: 30
 `)
 			})
 
 			It("returns the config", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(conf).To(Equal(&Config{LogLevel: "debug", PollInterval: 30, PolicyDbUrl: "postgres://postgres:password@localhost/autoscaler"}))
+				Expect(conf).To(Equal(&Config{LogLevel: "debug", PollInterval: 30, PolicyDbUrl: "postgres://postgres:password@localhost/autoscaler", AppMetricDbUrl: "postgres://postgres:password@localhost/autoscaler"}))
 			})
 		})
 		Context("with invalid yaml", func() {
@@ -41,6 +42,7 @@ poll_interval: 30
 				configBytes = []byte(`
   log_level: "debug"
  policy_db_url: "postgres://postgres:password@localhost/autoscaler"
+ appmetric_db_url: "postgres://postgres:password@localhost/autoscaler"
  poll_interval: 30
 		`)
 			})
@@ -55,6 +57,7 @@ poll_interval: 30
 				configBytes = []byte(`
 log_level: "debug"
 policy_db_url: "postgres://postgres:password@localhost/autoscaler"
+appmetric_db_url: "postgres://postgres:password@localhost/autoscaler"
 poll_interval: "NotIntegerValue"
 `)
 			})
@@ -84,6 +87,7 @@ policy_db_url: "postgres://postgres:password@localhost/autoscaler"
 		BeforeEach(func() {
 			conf = &Config{}
 			conf.PolicyDbUrl = "postgres://postgres:password@localhost/autoscaler"
+			conf.AppMetricDbUrl = "postgres://postgres:password@localhost/autoscaler"
 		})
 
 		JustBeforeEach(func() {
@@ -98,6 +102,16 @@ policy_db_url: "postgres://postgres:password@localhost/autoscaler"
 
 			It("should error", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: Policy DB url is empty")))
+			})
+		})
+		Context("when appmetric db url is not set", func() {
+
+			BeforeEach(func() {
+				conf.AppMetricDbUrl = ""
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: AppMetric DB url is empty")))
 			})
 		})
 		Context("when poll interval is le than 0", func() {
