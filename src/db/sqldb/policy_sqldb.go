@@ -1,9 +1,9 @@
 package sqldb
 
 import (
-	"database/sql"
-
 	"code.cloudfoundry.org/lager"
+	"dataaggregator/policy"
+	"database/sql"
 	_ "github.com/lib/pq"
 
 	"db"
@@ -70,4 +70,32 @@ func (pdb *PolicySQLDB) GetAppIds() (map[string]bool, error) {
 		appIds[id] = true
 	}
 	return appIds, nil
+}
+
+func (pdb *PolicySQLDB) RetrievePolicies() ([]*policy.PolicyJson, error) {
+	query := "SELECT app_id,policy_json FROM policy_json WHERE 1=1 "
+	policyList := []*policy.PolicyJson{}
+	rows, err := pdb.sqldb.Query(query)
+	if err != nil {
+		pdb.logger.Error("retrive-policy-list-from-policy_json-table", err,
+			lager.Data{"query": query})
+		return policyList, err
+	}
+
+	defer rows.Close()
+
+	var appId string
+	var policyStr string
+
+	for rows.Next() {
+		if err = rows.Scan(&appId, &policyStr); err != nil {
+			pdb.logger.Error("scan-policy-from-search-result", err)
+		}
+		policy := policy.PolicyJson{
+			AppId:     appId,
+			PolicyStr: policyStr,
+		}
+		policyList = append(policyList, &policy)
+	}
+	return policyList, nil
 }

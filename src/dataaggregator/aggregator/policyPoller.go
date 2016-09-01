@@ -4,8 +4,8 @@ import (
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
 	"dataaggregator/appmetric"
-	"dataaggregator/db"
 	"dataaggregator/policy"
+	"db"
 	"time"
 )
 
@@ -14,7 +14,7 @@ type Consumer func(map[string]*policy.Trigger, chan *appmetric.AppMonitor)
 type PolicyPoller struct {
 	logger   lager.Logger
 	interval time.Duration
-	database db.DB
+	database db.PolicyDB
 	appChan  chan *appmetric.AppMonitor
 	clock    clock.Clock
 	tick     clock.Ticker
@@ -22,7 +22,7 @@ type PolicyPoller struct {
 	consumer Consumer
 }
 
-func NewPolicyPoller(logger lager.Logger, clock clock.Clock, interval time.Duration, database db.DB, consumer Consumer, appChan chan *appmetric.AppMonitor) *PolicyPoller {
+func NewPolicyPoller(logger lager.Logger, clock clock.Clock, interval time.Duration, database db.PolicyDB, consumer Consumer, appChan chan *appmetric.AppMonitor) *PolicyPoller {
 	return &PolicyPoller{
 		logger:   logger.Session("PolicyPoller"),
 		clock:    clock,

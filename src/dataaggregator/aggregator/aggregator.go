@@ -5,8 +5,8 @@ import (
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
 	"dataaggregator/appmetric"
-	"dataaggregator/db"
 	"dataaggregator/policy"
+	"db"
 	"net/http"
 	"time"
 )
@@ -19,10 +19,11 @@ type Aggregator struct {
 	policyPoller       *PolicyPoller
 	metricPollerCount  int
 	metricPollerArray  []*MetricPoller
-	database           db.DB
+	policyDatabase     db.PolicyDB
+	appMetricDatabase  db.AppMetricDB
 }
 
-func NewAggregator(logger lager.Logger, clock clock.Clock, policyPollerInterval time.Duration, database db.DB, metricCollectorUrl string, metricPollerCount int) *Aggregator {
+func NewAggregator(logger lager.Logger, clock clock.Clock, policyPollerInterval time.Duration, policyDatabase db.PolicyDB, appMetricDatabase db.AppMetricDB, metricCollectorUrl string, metricPollerCount int) *Aggregator {
 	aggregator := &Aggregator{
 		logger:             logger.Session("Aggregator"),
 		metricCollectorUrl: metricCollectorUrl,
@@ -30,9 +31,10 @@ func NewAggregator(logger lager.Logger, clock clock.Clock, policyPollerInterval 
 		appChan:            make(chan *appmetric.AppMonitor, 10),
 		metricPollerCount:  metricPollerCount,
 		metricPollerArray:  []*MetricPoller{},
-		database:           database,
+		policyDatabase:     policyDatabase,
+		appMetricDatabase:  appMetricDatabase,
 	}
-	aggregator.policyPoller = NewPolicyPoller(logger, clock, policyPollerInterval, database, aggregator.ConsumeTrigger, aggregator.appChan)
+	aggregator.policyPoller = NewPolicyPoller(logger, clock, policyPollerInterval, policyDatabase, aggregator.ConsumeTrigger, aggregator.appChan)
 
 	client := cfhttp.NewClient()
 	client.Transport.(*http.Transport).MaxIdleConnsPerHost = metricPollerCount
@@ -62,7 +64,7 @@ func (a *Aggregator) ConsumeAppMetric(appMetric *appmetric.AppMetric) {
 	if appMetric == nil {
 		return
 	}
-	err := a.database.SaveAppMetric(appMetric)
+	err := a.appMetricDatabase.SaveAppMetric(appMetric)
 	if err != nil {
 		a.logger.Error("save appmetric to database failed", err, lager.Data{"appmetric": appMetric})
 	}

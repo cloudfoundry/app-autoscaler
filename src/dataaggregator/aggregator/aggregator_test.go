@@ -20,7 +20,8 @@ import (
 var _ = Describe("Aggregator", func() {
 	var (
 		aggregator        *Aggregator
-		database          *fakes.FakeDB
+		appMetricDatabase *fakes.FakeAppMetricDB
+		policyDatabase    *fakes.FakePolicyDB
 		clock             *fakeclock.FakeClock
 		logger            lager.Logger
 		metricServer      *ghttp.Server
@@ -82,11 +83,12 @@ var _ = Describe("Aggregator", func() {
 		}
 	)
 	BeforeEach(func() {
-		database = &fakes.FakeDB{}
-		database.RetrievePoliciesStub = func() ([]*PolicyJson, error) {
+		appMetricDatabase = &fakes.FakeAppMetricDB{}
+		policyDatabase = &fakes.FakePolicyDB{}
+		policyDatabase.RetrievePoliciesStub = func() ([]*PolicyJson, error) {
 			return []*PolicyJson{&PolicyJson{AppId: testAppId, PolicyStr: policyStr}}, nil
 		}
-		database.SaveAppMetricStub = func(appMetric *AppMetric) error {
+		appMetricDatabase.SaveAppMetricStub = func(appMetric *AppMetric) error {
 			Expect(appMetric.AppId).To(Equal("testAppId"))
 			Expect(appMetric.MetricType).To(Equal(metricType))
 			Expect(appMetric.Unit).To(Equal(unit))
@@ -106,7 +108,7 @@ var _ = Describe("Aggregator", func() {
 		var appMonitor *AppMonitor
 		BeforeEach(func() {
 			appChan = make(chan *AppMonitor, 1)
-			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, database, metricServer.URL(), metricPollerCount)
+			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount)
 			triggerMap = map[string]*Trigger{testAppId: &Trigger{
 				AppId: testAppId,
 				TriggerRecord: &TriggerRecord{
@@ -163,7 +165,7 @@ var _ = Describe("Aggregator", func() {
 	Context("ConsumeAppMetric", func() {
 		var appmetric *AppMetric
 		BeforeEach(func() {
-			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, database, metricServer.URL(), metricPollerCount)
+			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount)
 			appmetric = &AppMetric{
 				AppId:      testAppId,
 				MetricType: metricType,
@@ -176,7 +178,7 @@ var _ = Describe("Aggregator", func() {
 				aggregator.ConsumeAppMetric(appmetric)
 			})
 			It("should call database.SaveAppmetric to save the appmetric to database", func() {
-				Eventually(database.SaveAppMetricCallCount).Should(Equal(1))
+				Eventually(appMetricDatabase.SaveAppMetricCallCount).Should(Equal(1))
 			})
 		})
 		Context("when the appmetric is nil", func() {
@@ -187,14 +189,14 @@ var _ = Describe("Aggregator", func() {
 				aggregator.ConsumeAppMetric(appmetric)
 			})
 			It("should call database.SaveAppmetric to save the appmetric to database", func() {
-				Consistently(database.SaveAppMetricCallCount).Should(Equal(0))
+				Consistently(appMetricDatabase.SaveAppMetricCallCount).Should(Equal(0))
 			})
 		})
 
 	})
 	Context("Start", func() {
 		JustBeforeEach(func() {
-			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, database, metricServer.URL(), metricPollerCount)
+			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount)
 			aggregator.Start()
 		})
 		AfterEach(func() {
@@ -202,8 +204,8 @@ var _ = Describe("Aggregator", func() {
 		})
 		It("should save the appmetric to database", func() {
 			clock.Increment(2 * testPolicyPollerInterval)
-			Eventually(database.RetrievePoliciesCallCount).Should(BeNumerically(">=", 2))
-			Eventually(database.SaveAppMetricCallCount).Should(BeNumerically(">=", 2))
+			Eventually(policyDatabase.RetrievePoliciesCallCount).Should(BeNumerically(">=", 2))
+			Eventually(appMetricDatabase.SaveAppMetricCallCount).Should(BeNumerically(">=", 2))
 		})
 
 		Context("MetricPoller", func() {
@@ -213,10 +215,10 @@ var _ = Describe("Aggregator", func() {
 				metricPollerCount = 4
 				unBlockChan = make(chan bool)
 				calledChan = make(chan string)
-				database.RetrievePoliciesStub = func() ([]*PolicyJson, error) {
+				policyDatabase.RetrievePoliciesStub = func() ([]*PolicyJson, error) {
 					return []*PolicyJson{&PolicyJson{AppId: testAppId, PolicyStr: policyStr}, &PolicyJson{AppId: testAppId2, PolicyStr: policyStr}, &PolicyJson{AppId: testAppId3, PolicyStr: policyStr}, &PolicyJson{AppId: testAppId4, PolicyStr: policyStr}}, nil
 				}
-				database.SaveAppMetricStub = func(appMetric *AppMetric) error {
+				appMetricDatabase.SaveAppMetricStub = func(appMetric *AppMetric) error {
 					defer GinkgoRecover()
 					calledChan <- appMetric.AppId
 					<-unBlockChan
@@ -229,7 +231,7 @@ var _ = Describe("Aggregator", func() {
 				}
 				Consistently(calledChan).ShouldNot(Receive())
 
-				Eventually(database.SaveAppMetricCallCount).Should(Equal(int(metricPollerCount)))
+				Eventually(appMetricDatabase.SaveAppMetricCallCount).Should(Equal(int(metricPollerCount)))
 
 				close(unBlockChan)
 			})
@@ -238,17 +240,17 @@ var _ = Describe("Aggregator", func() {
 	Context("Stop", func() {
 		var retrievePoliciesCallCount, saveAppMetricCallCount int
 		JustBeforeEach(func() {
-			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, database, metricServer.URL(), metricPollerCount)
+			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount)
 			aggregator.Start()
 			aggregator.Stop()
-			retrievePoliciesCallCount = database.RetrievePoliciesCallCount()
-			saveAppMetricCallCount = database.SaveAppMetricCallCount()
+			retrievePoliciesCallCount = policyDatabase.RetrievePoliciesCallCount()
+			saveAppMetricCallCount = appMetricDatabase.SaveAppMetricCallCount()
 
 		})
 		It("should not retrieve or save", func() {
 			clock.Increment(10 * testPolicyPollerInterval)
-			Eventually(database.RetrievePoliciesCallCount).Should(Equal(retrievePoliciesCallCount))
-			Eventually(database.SaveAppMetricCallCount).Should(Equal(saveAppMetricCallCount))
+			Eventually(policyDatabase.RetrievePoliciesCallCount).Should(Equal(retrievePoliciesCallCount))
+			Eventually(appMetricDatabase.SaveAppMetricCallCount).Should(Equal(saveAppMetricCallCount))
 		})
 	})
 })

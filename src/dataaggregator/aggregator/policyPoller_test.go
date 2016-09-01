@@ -16,7 +16,7 @@ import (
 
 var _ = Describe("PolicyPoller", func() {
 	var (
-		database   *fakes.FakeDB
+		database   *fakes.FakePolicyDB
 		clock      *fakeclock.FakeClock
 		poller     *PolicyPoller
 		triggerMap map[string]*Trigger
@@ -44,7 +44,7 @@ var _ = Describe("PolicyPoller", func() {
 
 	BeforeEach(func() {
 		triggerMap = make(map[string]*Trigger)
-		database = &fakes.FakeDB{}
+		database = &fakes.FakePolicyDB{}
 		clock = fakeclock.NewFakeClock(time.Now())
 		logger = lager.NewLogger("PolicyPoller-test")
 		consumer = func(triggers map[string]*Trigger, appChan chan *AppMonitor) {}
