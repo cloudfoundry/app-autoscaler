@@ -1,9 +1,9 @@
 package sqldb_test
 
 import (
-	. "db/sqldb"
-
 	"code.cloudfoundry.org/lager"
+	"dataaggregator/policy"
+	. "db/sqldb"
 	"github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -13,11 +13,12 @@ import (
 
 var _ = Describe("PolicySQLDB", func() {
 	var (
-		pdb    *PolicySQLDB
-		url    string
-		logger lager.Logger
-		err    error
-		appIds map[string]bool
+		pdb      *PolicySQLDB
+		url      string
+		logger   lager.Logger
+		err      error
+		appIds   map[string]bool
+		policies []*policy.PolicyJson
 	)
 
 	BeforeEach(func() {
@@ -91,6 +92,58 @@ var _ = Describe("PolicySQLDB", func() {
 				Expect(appIds).To(HaveKey("first-app-id"))
 				Expect(appIds).To(HaveKey("second-app-id"))
 				Expect(appIds).To(HaveKey("third-app-id"))
+			})
+		})
+	})
+	Describe("RetrievePolicies", func() {
+		BeforeEach(func() {
+			pdb, err = NewPolicySQLDB(url, logger)
+			Expect(err).NotTo(HaveOccurred())
+
+			cleanPolicyTable()
+		})
+
+		AfterEach(func() {
+			err = pdb.Close()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		JustBeforeEach(func() {
+			insertPolicy("first-app-id")
+			insertPolicy("second-app-id")
+			insertPolicy("third-app-id")
+			policies, err = pdb.RetrievePolicies()
+		})
+
+		Context("when retriving all the policies)", func() {
+			It("returns all the policies", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(policies).To(ConsistOf(
+					&policy.PolicyJson{
+						AppId: "first-app-id",
+						PolicyStr: `
+		{
+ 			"instance_min_count": 1,
+  			"instance_max_count": 5
+		}`,
+					},
+					&policy.PolicyJson{
+						AppId: "second-app-id",
+						PolicyStr: `
+		{
+ 			"instance_min_count": 1,
+  			"instance_max_count": 5
+		}`,
+					},
+					&policy.PolicyJson{
+						AppId: "third-app-id",
+						PolicyStr: `
+		{
+ 			"instance_min_count": 1,
+  			"instance_max_count": 5
+		}`,
+					},
+				))
 			})
 		})
 	})

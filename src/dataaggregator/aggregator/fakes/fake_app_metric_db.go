@@ -3,19 +3,11 @@ package fakes
 
 import (
 	"dataaggregator/appmetric"
-	"dataaggregator/db"
-	"dataaggregator/policy"
+	"db"
 	"sync"
 )
 
-type FakeDB struct {
-	RetrievePoliciesStub        func() ([]*policy.PolicyJson, error)
-	retrievePoliciesMutex       sync.RWMutex
-	retrievePoliciesArgsForCall []struct{}
-	retrievePoliciesReturns     struct {
-		result1 []*policy.PolicyJson
-		result2 error
-	}
+type FakeAppMetricDB struct {
 	SaveAppMetricStub        func(appMetric *appmetric.AppMetric) error
 	saveAppMetricMutex       sync.RWMutex
 	saveAppMetricArgsForCall []struct {
@@ -34,33 +26,7 @@ type FakeDB struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeDB) RetrievePolicies() ([]*policy.PolicyJson, error) {
-	fake.retrievePoliciesMutex.Lock()
-	fake.retrievePoliciesArgsForCall = append(fake.retrievePoliciesArgsForCall, struct{}{})
-	fake.recordInvocation("RetrievePolicies", []interface{}{})
-	fake.retrievePoliciesMutex.Unlock()
-	if fake.RetrievePoliciesStub != nil {
-		return fake.RetrievePoliciesStub()
-	} else {
-		return fake.retrievePoliciesReturns.result1, fake.retrievePoliciesReturns.result2
-	}
-}
-
-func (fake *FakeDB) RetrievePoliciesCallCount() int {
-	fake.retrievePoliciesMutex.RLock()
-	defer fake.retrievePoliciesMutex.RUnlock()
-	return len(fake.retrievePoliciesArgsForCall)
-}
-
-func (fake *FakeDB) RetrievePoliciesReturns(result1 []*policy.PolicyJson, result2 error) {
-	fake.RetrievePoliciesStub = nil
-	fake.retrievePoliciesReturns = struct {
-		result1 []*policy.PolicyJson
-		result2 error
-	}{result1, result2}
-}
-
-func (fake *FakeDB) SaveAppMetric(appMetric *appmetric.AppMetric) error {
+func (fake *FakeAppMetricDB) SaveAppMetric(appMetric *appmetric.AppMetric) error {
 	fake.saveAppMetricMutex.Lock()
 	fake.saveAppMetricArgsForCall = append(fake.saveAppMetricArgsForCall, struct {
 		appMetric *appmetric.AppMetric
@@ -74,26 +40,26 @@ func (fake *FakeDB) SaveAppMetric(appMetric *appmetric.AppMetric) error {
 	}
 }
 
-func (fake *FakeDB) SaveAppMetricCallCount() int {
+func (fake *FakeAppMetricDB) SaveAppMetricCallCount() int {
 	fake.saveAppMetricMutex.RLock()
 	defer fake.saveAppMetricMutex.RUnlock()
 	return len(fake.saveAppMetricArgsForCall)
 }
 
-func (fake *FakeDB) SaveAppMetricArgsForCall(i int) *appmetric.AppMetric {
+func (fake *FakeAppMetricDB) SaveAppMetricArgsForCall(i int) *appmetric.AppMetric {
 	fake.saveAppMetricMutex.RLock()
 	defer fake.saveAppMetricMutex.RUnlock()
 	return fake.saveAppMetricArgsForCall[i].appMetric
 }
 
-func (fake *FakeDB) SaveAppMetricReturns(result1 error) {
+func (fake *FakeAppMetricDB) SaveAppMetricReturns(result1 error) {
 	fake.SaveAppMetricStub = nil
 	fake.saveAppMetricReturns = struct {
 		result1 error
 	}{result1}
 }
 
-func (fake *FakeDB) Close() error {
+func (fake *FakeAppMetricDB) Close() error {
 	fake.closeMutex.Lock()
 	fake.closeArgsForCall = append(fake.closeArgsForCall, struct{}{})
 	fake.recordInvocation("Close", []interface{}{})
@@ -105,24 +71,22 @@ func (fake *FakeDB) Close() error {
 	}
 }
 
-func (fake *FakeDB) CloseCallCount() int {
+func (fake *FakeAppMetricDB) CloseCallCount() int {
 	fake.closeMutex.RLock()
 	defer fake.closeMutex.RUnlock()
 	return len(fake.closeArgsForCall)
 }
 
-func (fake *FakeDB) CloseReturns(result1 error) {
+func (fake *FakeAppMetricDB) CloseReturns(result1 error) {
 	fake.CloseStub = nil
 	fake.closeReturns = struct {
 		result1 error
 	}{result1}
 }
 
-func (fake *FakeDB) Invocations() map[string][][]interface{} {
+func (fake *FakeAppMetricDB) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.retrievePoliciesMutex.RLock()
-	defer fake.retrievePoliciesMutex.RUnlock()
 	fake.saveAppMetricMutex.RLock()
 	defer fake.saveAppMetricMutex.RUnlock()
 	fake.closeMutex.RLock()
@@ -130,7 +94,7 @@ func (fake *FakeDB) Invocations() map[string][][]interface{} {
 	return fake.invocations
 }
 
-func (fake *FakeDB) recordInvocation(key string, args []interface{}) {
+func (fake *FakeAppMetricDB) recordInvocation(key string, args []interface{}) {
 	fake.invocationsMutex.Lock()
 	defer fake.invocationsMutex.Unlock()
 	if fake.invocations == nil {
@@ -142,4 +106,4 @@ func (fake *FakeDB) recordInvocation(key string, args []interface{}) {
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
 
-var _ db.DB = new(FakeDB)
+var _ db.AppMetricDB = new(FakeAppMetricDB)

@@ -1,6 +1,8 @@
 package db
 
 import (
+	"dataaggregator/appmetric"
+	"dataaggregator/policy"
 	"metricscollector/metrics"
 )
 
@@ -15,5 +17,11 @@ type MetricsDB interface {
 
 type PolicyDB interface {
 	GetAppIds() (map[string]bool, error)
+	RetrievePolicies() ([]*policy.PolicyJson, error)
+	Close() error
+}
+
+type AppMetricDB interface {
+	SaveAppMetric(appMetric *appmetric.AppMetric) error
 	Close() error
 }
