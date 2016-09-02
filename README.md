@@ -98,7 +98,7 @@ popd
 pushd src/db
 ginkgo -r -race -randomizeAllSpecs
 popd
-pushd src/dataaggregator
+pushd src/eventgenerator
 ginkgo -r -race -randomizeAllSpecs
 popd
 
