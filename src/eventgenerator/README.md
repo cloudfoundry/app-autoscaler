@@ -14,7 +14,7 @@ Data Aggregator is one of the components of CF `app-autoscaler`.
 1. change directory to `app-autoscaler`
 1. run `source .envrc`
 1. pull the submodules : `git submodule update --init --recursive`
-1. change directory to `src/dataaggregator`
+1. change directory to `src/eventgenerator`
 1. build the project: `go install ./...
 1. run unit test:
   1. download and install [postgreSQL][a]

@@ -2,8 +2,8 @@ package sqldb_test
 
 import (
 	"code.cloudfoundry.org/lager"
-	"dataaggregator/appmetric"
 	. "db/sqldb"
+	"eventgenerator/appmetric"
 	"github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

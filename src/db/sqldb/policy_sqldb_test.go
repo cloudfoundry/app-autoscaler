@@ -2,8 +2,8 @@ package sqldb_test
 
 import (
 	"code.cloudfoundry.org/lager"
-	"dataaggregator/policy"
 	. "db/sqldb"
+	"eventgenerator/policy"
 	"github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

@@ -1,11 +1,11 @@
 package aggregator_test
 
 import (
-	. "dataaggregator/aggregator"
-	"dataaggregator/aggregator/fakes"
-	. "dataaggregator/appmetric"
-	. "dataaggregator/policy"
 	"errors"
+	. "eventgenerator/aggregator"
+	"eventgenerator/aggregator/fakes"
+	. "eventgenerator/appmetric"
+	. "eventgenerator/policy"
 	"time"
 
 	"code.cloudfoundry.org/clock/fakeclock"

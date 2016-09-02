@@ -1,8 +1,8 @@
 package aggregator_test
 
 import (
-	. "dataaggregator/aggregator"
-	. "dataaggregator/appmetric"
+	. "eventgenerator/aggregator"
+	. "eventgenerator/appmetric"
 	. "metricscollector/metrics"
 	. "metricscollector/server"
 	"net/http"

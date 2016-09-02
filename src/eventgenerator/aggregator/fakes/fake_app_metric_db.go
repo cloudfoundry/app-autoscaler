@@ -2,8 +2,8 @@
 package fakes
 
 import (
-	"dataaggregator/appmetric"
 	"db"
+	"eventgenerator/appmetric"
 	"sync"
 )
 

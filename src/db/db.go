@@ -1,8 +1,8 @@
 package db
 
 import (
-	"dataaggregator/appmetric"
-	"dataaggregator/policy"
+	"eventgenerator/appmetric"
+	"eventgenerator/policy"
 	"metricscollector/metrics"
 )
 

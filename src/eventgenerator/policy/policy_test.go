@@ -1,7 +1,7 @@
 package policy_test
 
 import (
-	. "dataaggregator/policy"
+	. "eventgenerator/policy"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

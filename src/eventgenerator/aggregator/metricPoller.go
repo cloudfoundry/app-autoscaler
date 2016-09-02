@@ -2,8 +2,8 @@ package aggregator
 
 import (
 	"code.cloudfoundry.org/lager"
-	"dataaggregator/appmetric"
 	"encoding/json"
+	"eventgenerator/appmetric"
 	"fmt"
 	"io/ioutil"
 	"metricscollector/metrics"

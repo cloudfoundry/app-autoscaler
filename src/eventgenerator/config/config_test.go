@@ -1,7 +1,7 @@
 package config_test
 
 import (
-	. "dataaggregator/config"
+	. "eventgenerator/config"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"

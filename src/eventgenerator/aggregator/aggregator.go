@@ -4,9 +4,9 @@ import (
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
-	"dataaggregator/appmetric"
-	"dataaggregator/policy"
 	"db"
+	"eventgenerator/appmetric"
+	"eventgenerator/policy"
 	"net/http"
 	"time"
 )

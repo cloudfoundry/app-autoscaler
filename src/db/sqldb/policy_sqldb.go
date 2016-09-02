@@ -2,8 +2,8 @@ package sqldb
 
 import (
 	"code.cloudfoundry.org/lager"
-	"dataaggregator/policy"
 	"database/sql"
+	"eventgenerator/policy"
 	_ "github.com/lib/pq"
 
 	"db"

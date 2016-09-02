@@ -2,8 +2,8 @@ package sqldb
 
 import (
 	"code.cloudfoundry.org/lager"
-	"dataaggregator/appmetric"
 	"database/sql"
+	"eventgenerator/appmetric"
 	_ "github.com/lib/pq"
 
 	"db"
