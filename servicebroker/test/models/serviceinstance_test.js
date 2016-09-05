@@ -28,8 +28,9 @@ var condition2 = {
 
 describe('Service_instance Model Definition Test Suite', function() {
 
-  beforeEach(function() {
+  beforeEach(function(done) {
     serviceInstance.truncate({ cascade: true });
+    done();
   });
 
 

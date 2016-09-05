@@ -30,8 +30,9 @@ describe('service instance RESTful API', function() {
     server.close(done);
   });
 
-  beforeEach(function() {
+  beforeEach(function(done) {
     serviceInstance.truncate({ cascade: true });
+    done();
   });
 
   context('Provision service', function() {

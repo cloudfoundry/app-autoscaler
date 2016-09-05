@@ -16,11 +16,12 @@ describe('Database Initialization Test Suite', function() {
     expect(models.service_instance).to.be.ok;
   });
 
-  it('Should fail for with invalid DB_URI', function() {
+  it('Should fail for with invalid DB_URI', function(done) {
     var correctDBUri = settings.db.uri;
     settings.db.uri = 'postgres://postgres@127.0.0.1:5432/invalidDB';
     var models = require('../../lib/models')(settings.db.uri, function(error) {
       expect(error).to.not.be.null;
+      done();
     });
     settings.db.uri = correctDBUri;
   });
