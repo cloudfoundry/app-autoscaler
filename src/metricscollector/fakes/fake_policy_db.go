@@ -2,8 +2,8 @@
 package fakes
 
 import (
-	"dataaggregator/policy"
 	"db"
+	"eventgenerator/policy"
 	"sync"
 )
 
