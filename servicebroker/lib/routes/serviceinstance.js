@@ -32,7 +32,7 @@ module.exports = function(app, settings) {
       if (err instanceof models.sequelize.UniqueConstraintError) {
         res.status(409);
       } else {
-        logger.error("Fail to handle request: " + JSON.stringify(req) + " with ERROR: " + JSON.stringify(err));
+        logger.error("Fail to handle request: ", {req: req, err: err} );
         res.status(500);
       }
       res.end();
@@ -58,7 +58,7 @@ module.exports = function(app, settings) {
         }
         res.json({});
       }).catch(function(err) {
-        logger.error("Fail to handle request: " + JSON.stringify(req) + " with ERROR: " + JSON.stringify(err));
+        logger.error("Fail to handle request: ", {req: req, err: err});
         res.status(500).end();
       });
 

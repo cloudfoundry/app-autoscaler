@@ -47,7 +47,7 @@ module.exports = function(app, settings) {
               apiServerUtil.attachPolicy(appId, policyJSON, function(error, response) {
                 if (error == null) {
                   var statusCode = response.statusCode;
-                  logger.info("Api Server response", { status_code: statusCode, response: JSON.stringify(response.body) });
+                  logger.info("Api Server response", { status_code: statusCode, response: response.body});
                   if (statusCode === 200 || statusCode === 201) {
                     t.commit();
                     res.status(statusCode).json({});
@@ -122,7 +122,7 @@ module.exports = function(app, settings) {
               apiServerUtil.detachPolicy(appId, function(error, response) {
                 if (error == null) {
                   var statusCode = response.statusCode;
-                  logger.info("Api Server response", { status_code: statusCode, response: JSON.stringify(response.body) });
+                  logger.info("Api Server response", { status_code: statusCode, response: response.body });
                   if (statusCode === 200) {
                     t.commit();
                     res.status(statusCode).json({});

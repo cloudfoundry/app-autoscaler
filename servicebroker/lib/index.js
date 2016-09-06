@@ -45,6 +45,6 @@ require('./routes')(app, settings);
 
 var server = app.listen(port, function() {
   var port = server.address().port;
-  logger.info('Service broker app is running and listening at port ' + port);
+  logger.info('Service broker app is running', {port: port});
 });
 module.exports = server;
