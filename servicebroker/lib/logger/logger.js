@@ -1,15 +1,25 @@
 // placeholder for future logging enhancement
+var util = require('util');
+
 module.exports = {
-  info: function(message) {
-    console.log(message);
-  },
-  warn: function(message) {
-    console.log(message);
+  info: function(message,context) {	
+	var logItem = {
+	  timestamp: new Date(),
+	  source: 'autoscaler:servicebroker',
+	  text: message,
+	  log_level: 'info',
+	  data: context === null ? {} : context
+	};
+	console.log (util.format('%j', logItem)); 
   },
   error: function(message, error) {
-    console.error(message, error);
-  },
-  log: function(message) {
-    console.log(message);
+    var logItem = {
+      timestamp: new Date(),
+      source: 'autoscaler:servicebroker',
+      text: message,
+      log_level: 'error',
+      data: error
+    };
+    console.error (util.format('%j', logItem));
   }
 };
