@@ -4,7 +4,7 @@ import (
 	"code.cloudfoundry.org/lager"
 	"database/sql"
 	"encoding/json"
-	"eventgenerator/policy"
+	"eventgenerator/model"
 	_ "github.com/lib/pq"
 
 	"db"
@@ -74,9 +74,9 @@ func (pdb *PolicySQLDB) GetAppIds() (map[string]bool, error) {
 	return appIds, nil
 }
 
-func (pdb *PolicySQLDB) RetrievePolicies() ([]*policy.PolicyJson, error) {
+func (pdb *PolicySQLDB) RetrievePolicies() ([]*model.PolicyJson, error) {
 	query := "SELECT app_id,policy_json FROM policy_json WHERE 1=1 "
-	policyList := []*policy.PolicyJson{}
+	policyList := []*model.PolicyJson{}
 	rows, err := pdb.sqldb.Query(query)
 	if err != nil {
 		pdb.logger.Error("retrive-policy-list-from-policy_json-table", err,
@@ -93,11 +93,11 @@ func (pdb *PolicySQLDB) RetrievePolicies() ([]*policy.PolicyJson, error) {
 		if err = rows.Scan(&appId, &policyStr); err != nil {
 			pdb.logger.Error("scan-policy-from-search-result", err)
 		}
-		policy := policy.PolicyJson{
+		policyJson := model.PolicyJson{
 			AppId:     appId,
 			PolicyStr: policyStr,
 		}
-		policyList = append(policyList, &policy)
+		policyList = append(policyList, &policyJson)
 	}
 	return policyList, nil
 }

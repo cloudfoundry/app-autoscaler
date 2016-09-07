@@ -1,14 +1,10 @@
-package policy
+package model
 
 import (
 	"encoding/json"
 	"time"
 )
 
-type Policy interface {
-	Equals(p *PolicyJson) bool
-	GetTrigger(p *PolicyJson) *Trigger
-}
 type PolicyJson struct {
 	AppId     string `json:"appId"`
 	PolicyStr string `json:"PolicyStr"`
@@ -27,10 +23,10 @@ func (p1 *PolicyJson) Equals(p2 *PolicyJson) bool {
 		return false
 	}
 }
-func (p *PolicyJson) GetTrigger() *Trigger {
+func (p *PolicyJson) GetPolicy() *Policy {
 	var triggerRecord TriggerRecord
 	json.Unmarshal([]byte(p.PolicyStr), &triggerRecord)
-	return &Trigger{AppId: p.AppId, TriggerRecord: &triggerRecord}
+	return &Policy{AppId: p.AppId, TriggerRecord: &triggerRecord}
 }
 
 type TriggerRecord struct {
@@ -47,7 +43,7 @@ type ScalingRule struct {
 	Operator         string        `json:"operator"`
 	Adjustment       string        `json:"adjustment"`
 }
-type Trigger struct {
+type Policy struct {
 	AppId         string         `json:"appId"`
 	TriggerRecord *TriggerRecord `json:"triggerRecord"`
 }

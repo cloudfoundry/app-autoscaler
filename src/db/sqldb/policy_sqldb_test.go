@@ -1,14 +1,13 @@
 package sqldb_test
 
 import (
-	. "db/sqldb"
-	"eventgenerator/policy"
-	"models"
-
 	"code.cloudfoundry.org/lager"
+	. "db/sqldb"
+	"eventgenerator/model"
 	"github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"models"
 
 	"encoding/json"
 	"os"
@@ -16,7 +15,6 @@ import (
 
 var _ = Describe("PolicySQLDB", func() {
 	var (
-		policies      []*policy.PolicyJson
 		pdb           *PolicySQLDB
 		url           string
 		logger        lager.Logger
@@ -25,6 +23,7 @@ var _ = Describe("PolicySQLDB", func() {
 		scalingPolicy *models.ScalingPolicy
 		policyJson    []byte
 		appId         string
+		policies      []*model.PolicyJson
 	)
 
 	BeforeEach(func() {

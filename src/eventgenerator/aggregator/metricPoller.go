@@ -3,7 +3,7 @@ package aggregator
 import (
 	"code.cloudfoundry.org/lager"
 	"encoding/json"
-	"eventgenerator/appmetric"
+	"eventgenerator/model"
 	"fmt"
 	"io/ioutil"
 	"models"
@@ -12,17 +12,17 @@ import (
 	"time"
 )
 
-type MetricConsumer func(appMetric *appmetric.AppMetric)
+type MetricConsumer func(appMetric *model.AppMetric)
 type MetricPoller struct {
 	metricCollectorUrl string
 	logger             lager.Logger
 	doneChan           chan bool
-	appChan            chan *appmetric.AppMonitor
+	appChan            chan *model.AppMonitor
 	metricConsumer     MetricConsumer
 	httpClient         *http.Client
 }
 
-func NewMetricPoller(metricCollectorUrl string, logger lager.Logger, appChan chan *appmetric.AppMonitor, metricConsumer MetricConsumer, httpClient *http.Client) *MetricPoller {
+func NewMetricPoller(metricCollectorUrl string, logger lager.Logger, appChan chan *model.AppMonitor, metricConsumer MetricConsumer, httpClient *http.Client) *MetricPoller {
 	return &MetricPoller{
 		metricCollectorUrl: metricCollectorUrl,
 		logger:             logger.Session("MetricPoller"),
@@ -51,7 +51,7 @@ func (m *MetricPoller) startMetricRetrieve() {
 		}
 	}
 }
-func (m *MetricPoller) retrieveMetric(app *appmetric.AppMonitor) {
+func (m *MetricPoller) retrieveMetric(app *model.AppMonitor) {
 	appId := app.AppId
 	metricType := app.MetricType
 	endTime := time.Now()
@@ -85,7 +85,7 @@ func (m *MetricPoller) retrieveMetric(app *appmetric.AppMonitor) {
 	}
 
 }
-func (m *MetricPoller) doAggregate(appId string, metricType string, metrics []*models.Metric) *appmetric.AppMetric {
+func (m *MetricPoller) doAggregate(appId string, metricType string, metrics []*metrics.Metric) *model.AppMetric {
 	var count int64 = 0
 	var sum int64 = 0
 	var unit string
@@ -99,9 +99,9 @@ func (m *MetricPoller) doAggregate(appId string, metricType string, metrics []*m
 			sum += intValue
 		}
 	}
-	var avgAppMetric *appmetric.AppMetric
+	var avgAppMetric *model.AppMetric
 	if count == 0 {
-		avgAppMetric = &appmetric.AppMetric{
+		avgAppMetric = &model.AppMetric{
 			AppId:      appId,
 			MetricType: metricType,
 			Value:      0,
@@ -109,7 +109,7 @@ func (m *MetricPoller) doAggregate(appId string, metricType string, metrics []*m
 			Timestamp:  0,
 		}
 	} else {
-		avgAppMetric = &appmetric.AppMetric{
+		avgAppMetric = &model.AppMetric{
 			AppId:      appId,
 			MetricType: metricType,
 			Value:      sum / count,

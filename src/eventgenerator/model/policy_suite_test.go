@@ -1,4 +1,4 @@
-package policy_test
+package model_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -9,5 +9,5 @@ import (
 
 func TestModel(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Policy Suite")
+	RunSpecs(t, "Model Suite")
 }
