@@ -5,7 +5,7 @@ var logger = require('../log/logger');
 var HttpStatus = require('http-status-codes');
 var validationMiddleWare = require('../validation/validationMiddleware');
 
-router.put('/:app_id/policy',validationMiddleWare,function(req, res) {
+router.put('/:app_id',validationMiddleWare,function(req, res) {
   logger.info('Policy creation request received',{ 'app id': req.params.app_id });
   models.policy_json
     .findOrCreate({ where:{ app_id: req.params.app_id },defaults: { app_id: req.params.app_id,
@@ -18,7 +18,7 @@ router.put('/:app_id/policy',validationMiddleWare,function(req, res) {
           'error': null,
           'result': result
         };
-        res.set('Location', '/v1/apps/' + req.params.app_id + '/policy');
+        res.set('Location', '/v1/policies/' + req.params.app_id);
         res.status(HttpStatus.CREATED).json(successResponse);
       }
       else{
@@ -55,7 +55,7 @@ router.put('/:app_id/policy',validationMiddleWare,function(req, res) {
     });
 });
 
-router.delete('/:app_id/policy',function(req,res) {
+router.delete('/:app_id',function(req,res) {
   logger.info('Policy deletion request received', { 'app id': req.params.app_id });
   models.policy_json.destroy({ where: { app_id: req.params.app_id } }).then(function(result) {
     if(result > 0) {
@@ -73,7 +73,7 @@ router.delete('/:app_id/policy',function(req,res) {
   });
 });
 
-router.get('/:app_id/policy',function(req,res) {
+router.get('/:app_id',function(req,res) {
   logger.info('Request for policy details received',{ 'app id': req.params.app_id });
   models.policy_json.findById(req.params.app_id).then (function(policyExists) {
     if(policyExists) {

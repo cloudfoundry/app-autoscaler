@@ -7,7 +7,7 @@ var app = express();
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use('/v1/apps',policies);
+app.use('/v1/policies',policies);
 
 app.use(function(err, req, res, next) {
   var errorResponse = {};

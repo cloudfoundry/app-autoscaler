@@ -20,7 +20,7 @@ var scope;
 
 function initNockBind(statusCode) {
   scope = nock(settings.apiServerUri)
-    .put(/\/v1\/apps\/.*\/policy/)
+    .put(/\/v1\/policies\/.*/)
     .reply(statusCode, {
       'success': true,
       'error': null,
@@ -30,7 +30,7 @@ function initNockBind(statusCode) {
 
 function initNockUnBind(statusCode) {
   scope = nock(settings.apiServerUri)
-    .delete(/\/v1\/apps\/.*\/policy/)
+    .delete(/\/v1\/policies\/.*/)
     .reply(statusCode, {
       'success': true,
       'error': null,
