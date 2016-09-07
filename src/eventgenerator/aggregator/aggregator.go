@@ -5,8 +5,7 @@ import (
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
 	"db"
-	"eventgenerator/appmetric"
-	"eventgenerator/policy"
+	"eventgenerator/model"
 	"net/http"
 	"time"
 )
@@ -15,7 +14,7 @@ type Aggregator struct {
 	logger             lager.Logger
 	metricCollectorUrl string
 	doneChan           chan bool
-	appChan            chan *appmetric.AppMonitor
+	appChan            chan *model.AppMonitor
 	policyPoller       *PolicyPoller
 	metricPollerCount  int
 	metricPollerArray  []*MetricPoller
@@ -28,14 +27,13 @@ func NewAggregator(logger lager.Logger, clock clock.Clock, policyPollerInterval 
 		logger:             logger.Session("Aggregator"),
 		metricCollectorUrl: metricCollectorUrl,
 		doneChan:           make(chan bool),
-		appChan:            make(chan *appmetric.AppMonitor, 10),
+		appChan:            make(chan *model.AppMonitor, 10),
 		metricPollerCount:  metricPollerCount,
 		metricPollerArray:  []*MetricPoller{},
 		policyDatabase:     policyDatabase,
 		appMetricDatabase:  appMetricDatabase,
 	}
-	aggregator.policyPoller = NewPolicyPoller(logger, clock, policyPollerInterval, policyDatabase, aggregator.ConsumeTrigger, aggregator.appChan)
-
+	aggregator.policyPoller = NewPolicyPoller(logger, clock, policyPollerInterval, policyDatabase, aggregator.ConsumePolicy, aggregator.appChan)
 	client := cfhttp.NewClient()
 	client.Transport.(*http.Transport).MaxIdleConnsPerHost = metricPollerCount
 
@@ -46,13 +44,13 @@ func NewAggregator(logger lager.Logger, clock clock.Clock, policyPollerInterval 
 	}
 	return aggregator
 }
-func (a *Aggregator) ConsumeTrigger(triggerMap map[string]*policy.Trigger, appChan chan *appmetric.AppMonitor) {
-	if triggerMap == nil {
+func (a *Aggregator) ConsumePolicy(policyMap map[string]*model.Policy, appChan chan *model.AppMonitor) {
+	if policyMap == nil {
 		return
 	}
-	for appId, trigger := range triggerMap {
-		for _, rule := range trigger.TriggerRecord.ScalingRules {
-			appChan <- &appmetric.AppMonitor{
+	for appId, policy := range policyMap {
+		for _, rule := range policy.TriggerRecord.ScalingRules {
+			appChan <- &model.AppMonitor{
 				AppId:      appId,
 				MetricType: rule.MetricType,
 				StatWindow: rule.StatWindow,
@@ -60,7 +58,7 @@ func (a *Aggregator) ConsumeTrigger(triggerMap map[string]*policy.Trigger, appCh
 		}
 	}
 }
-func (a *Aggregator) ConsumeAppMetric(appMetric *appmetric.AppMetric) {
+func (a *Aggregator) ConsumeAppMetric(appMetric *model.AppMetric) {
 	if appMetric == nil {
 		return
 	}

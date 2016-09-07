@@ -4,25 +4,24 @@ import (
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
 	"db"
-	"eventgenerator/appmetric"
-	"eventgenerator/policy"
+	"eventgenerator/model"
 	"time"
 )
 
-type Consumer func(map[string]*policy.Trigger, chan *appmetric.AppMonitor)
+type Consumer func(map[string]*model.Policy, chan *model.AppMonitor)
 
 type PolicyPoller struct {
 	logger   lager.Logger
 	interval time.Duration
 	database db.PolicyDB
-	appChan  chan *appmetric.AppMonitor
+	appChan  chan *model.AppMonitor
 	clock    clock.Clock
 	tick     clock.Ticker
 	doneChan chan bool
 	consumer Consumer
 }
 
-func NewPolicyPoller(logger lager.Logger, clock clock.Clock, interval time.Duration, database db.PolicyDB, consumer Consumer, appChan chan *appmetric.AppMonitor) *PolicyPoller {
+func NewPolicyPoller(logger lager.Logger, clock clock.Clock, interval time.Duration, database db.PolicyDB, consumer Consumer, appChan chan *model.AppMonitor) *PolicyPoller {
 	return &PolicyPoller{
 		logger:   logger.Session("PolicyPoller"),
 		clock:    clock,
@@ -52,7 +51,7 @@ func (p *PolicyPoller) startPolicyRetrieve() {
 		if err != nil {
 			continue
 		}
-		triggers := p.computeTriggers(policies)
+		triggers := p.computePolicys(policies)
 		p.consumer(triggers, p.appChan)
 		select {
 		case <-p.doneChan:
@@ -62,7 +61,7 @@ func (p *PolicyPoller) startPolicyRetrieve() {
 	}
 }
 
-func (p *PolicyPoller) retrievePolicies() ([]*policy.PolicyJson, error) {
+func (p *PolicyPoller) retrievePolicies() ([]*model.PolicyJson, error) {
 	policies, err := p.database.RetrievePolicies()
 	if err != nil {
 		p.logger.Error("retrieve policies", err)
@@ -71,12 +70,12 @@ func (p *PolicyPoller) retrievePolicies() ([]*policy.PolicyJson, error) {
 	p.logger.Info("policy count", lager.Data{"count": len(policies)})
 	return policies, nil
 }
-func (p *PolicyPoller) computeTriggers(policies []*policy.PolicyJson) map[string]*policy.Trigger {
-	triggerMap := make(map[string]*policy.Trigger)
+func (p *PolicyPoller) computePolicys(policies []*model.PolicyJson) map[string]*model.Policy {
+	policyMap := make(map[string]*model.Policy)
 	for _, policyRow := range policies {
-		tmpTrigger := policyRow.GetTrigger()
-		triggerMap[policyRow.AppId] = tmpTrigger
+		tmpPolicy := policyRow.GetPolicy()
+		policyMap[policyRow.AppId] = tmpPolicy
 	}
-	p.logger.Info("trigger count", lager.Data{"count": len(triggerMap)})
-	return triggerMap
+	p.logger.Info("policy count", lager.Data{"count": len(policyMap)})
+	return policyMap
 }

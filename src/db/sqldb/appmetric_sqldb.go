@@ -3,7 +3,7 @@ package sqldb
 import (
 	"code.cloudfoundry.org/lager"
 	"database/sql"
-	"eventgenerator/appmetric"
+	"eventgenerator/model"
 	_ "github.com/lib/pq"
 
 	"db"
@@ -47,7 +47,7 @@ func (adb *AppMetricSQLDB) Close() error {
 	}
 	return nil
 }
-func (adb *AppMetricSQLDB) SaveAppMetric(appMetric *appmetric.AppMetric) error {
+func (adb *AppMetricSQLDB) SaveAppMetric(appMetric *model.AppMetric) error {
 	query := "INSERT INTO app_metric(app_id, metric_type, unit, timestamp, value) values($1, $2, $3, $4, $5)"
 	_, err := adb.sqldb.Exec(query, appMetric.AppId, appMetric.MetricType, appMetric.Unit, appMetric.Timestamp, appMetric.Value)
 

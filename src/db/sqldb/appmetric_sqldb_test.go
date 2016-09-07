@@ -3,7 +3,7 @@ package sqldb_test
 import (
 	"code.cloudfoundry.org/lager"
 	. "db/sqldb"
-	"eventgenerator/appmetric"
+	"eventgenerator/model"
 	"github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -68,7 +68,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 
 		Context("When inserting a metric of an app", func() {
 			BeforeEach(func() {
-				appMetric := &appmetric.AppMetric{
+				appMetric := &model.AppMetric{
 					AppId:      "test-app-id",
 					MetricType: "MemoryUsage",
 					Unit:       "bytes",

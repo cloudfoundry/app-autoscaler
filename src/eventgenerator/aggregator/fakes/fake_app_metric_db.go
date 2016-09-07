@@ -3,15 +3,15 @@ package fakes
 
 import (
 	"db"
-	"eventgenerator/appmetric"
+	"eventgenerator/model"
 	"sync"
 )
 
 type FakeAppMetricDB struct {
-	SaveAppMetricStub        func(appMetric *appmetric.AppMetric) error
+	SaveAppMetricStub        func(appMetric *model.AppMetric) error
 	saveAppMetricMutex       sync.RWMutex
 	saveAppMetricArgsForCall []struct {
-		appMetric *appmetric.AppMetric
+		appMetric *model.AppMetric
 	}
 	saveAppMetricReturns struct {
 		result1 error
@@ -26,10 +26,10 @@ type FakeAppMetricDB struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeAppMetricDB) SaveAppMetric(appMetric *appmetric.AppMetric) error {
+func (fake *FakeAppMetricDB) SaveAppMetric(appMetric *model.AppMetric) error {
 	fake.saveAppMetricMutex.Lock()
 	fake.saveAppMetricArgsForCall = append(fake.saveAppMetricArgsForCall, struct {
-		appMetric *appmetric.AppMetric
+		appMetric *model.AppMetric
 	}{appMetric})
 	fake.recordInvocation("SaveAppMetric", []interface{}{appMetric})
 	fake.saveAppMetricMutex.Unlock()
@@ -46,7 +46,7 @@ func (fake *FakeAppMetricDB) SaveAppMetricCallCount() int {
 	return len(fake.saveAppMetricArgsForCall)
 }
 
-func (fake *FakeAppMetricDB) SaveAppMetricArgsForCall(i int) *appmetric.AppMetric {
+func (fake *FakeAppMetricDB) SaveAppMetricArgsForCall(i int) *model.AppMetric {
 	fake.saveAppMetricMutex.RLock()
 	defer fake.saveAppMetricMutex.RUnlock()
 	return fake.saveAppMetricArgsForCall[i].appMetric
