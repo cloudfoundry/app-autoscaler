@@ -7,7 +7,7 @@ import (
 	"models"
 
 	"code.cloudfoundry.org/clock/fakeclock"
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/lagertest"
 	"github.com/cloudfoundry/sonde-go/events"
 	"github.com/gogo/protobuf/proto"
 	. "github.com/onsi/ginkgo"
@@ -34,9 +34,8 @@ var _ = Describe("Apppoller", func() {
 		noaa = &fakes.FakeNoaaConsumer{}
 		database = &fakes.FakeMetricsDB{}
 
-		logger := lager.NewLogger("apppoller-test")
-		buffer = gbytes.NewBuffer()
-		logger.RegisterSink(lager.NewWriterSink(buffer, lager.ERROR))
+		logger := lagertest.NewTestLogger("apppoller-test")
+		buffer = logger.Buffer()
 
 		fclock = fakeclock.NewFakeClock(time.Now())
 		poller = NewAppPoller("test-app-id", TestPollInterval, logger, cfc, noaa, database, fclock)

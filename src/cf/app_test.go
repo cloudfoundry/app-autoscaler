@@ -64,9 +64,9 @@ var _ = Describe("App", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", strings.Replace(PathAppSummary, "{appid}", "test-app-id", 1)),
-						ghttp.RespondWithJSONEncoded(http.StatusOK, models.AppProperties{
-							Instances: 6,
+						ghttp.VerifyRequest("GET", strings.Replace(PathApp, "{appid}", "test-app-id", 1)),
+						ghttp.RespondWithJSONEncoded(http.StatusOK, models.AppInfo{
+							models.AppEntity{Instances: 6},
 						}),
 					),
 				)
@@ -113,7 +113,7 @@ var _ = Describe("App", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.RespondWithJSONEncoded(http.StatusOK, `{instances:"abc"}`),
+						ghttp.RespondWithJSONEncoded(http.StatusOK, `{"entity":{"instances:"abc"}}`),
 					),
 				)
 			})
@@ -134,8 +134,8 @@ var _ = Describe("App", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("PUT", strings.Replace(PathAppUpdate, "{appid}", "test-app-id", 1)),
-						ghttp.VerifyJSONRepresenting(models.AppProperties{Instances: 6}),
+						ghttp.VerifyRequest("PUT", strings.Replace(PathApp, "{appid}", "test-app-id", 1)),
+						ghttp.VerifyJSONRepresenting(models.AppEntity{Instances: 6}),
 						ghttp.RespondWith(http.StatusCreated, ""),
 					),
 				)

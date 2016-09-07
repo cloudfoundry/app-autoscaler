@@ -22,11 +22,18 @@ func (conf *CfConfig) Validate() error {
 
 	apiUrl, err := url.Parse(conf.Api)
 	if err != nil {
-		return fmt.Errorf("Configuration error: cf api is invalid")
+		return fmt.Errorf("Configuration error: cf api is not a valid url")
 	}
+
 	if apiUrl.Scheme == "" {
-		apiUrl.Scheme = "https"
+		return fmt.Errorf("Configuration error: cf api scheme is empty")
 	}
+
+	scheme := strings.ToLower(apiUrl.Scheme)
+	if (scheme != "http") && (scheme != "https") {
+		return fmt.Errorf("Configuration error: cf api scheme is invalid")
+	}
+
 	if strings.HasSuffix(apiUrl.Path, "/") {
 		apiUrl.Path = strings.TrimSuffix(apiUrl.Path, "/")
 	}

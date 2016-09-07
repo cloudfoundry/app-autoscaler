@@ -15,6 +15,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 var _ = Describe("Server", func() {
@@ -49,13 +50,13 @@ var _ = Describe("Server", func() {
 
 	Context("when trigger scaling action", func() {
 		BeforeEach(func() {
-			serverUrl.Path = PathScalingActions
+			serverUrl.Path = strings.Replace(PathScale, "{appid}", "test-app-id", 1)
 			database.GetAppPolicyReturns(&models.ScalingPolicy{}, nil)
 		})
 
-		It("should return 201", func() {
+		It("should return 200", func() {
 			Expect(err).ToNot(HaveOccurred())
-			Expect(rsp.StatusCode).To(Equal(http.StatusCreated))
+			Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 		})
 	})
 

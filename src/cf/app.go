@@ -14,12 +14,11 @@ import (
 
 const (
 	TokenTypeBearer = "bearer"
-	PathAppSummary  = "/v2/apps/{appid}/summary"
-	PathAppUpdate   = "/v2/apps/{appid}"
+	PathApp         = "/v2/apps/{appid}"
 )
 
 func (c *cfClient) GetAppInstances(appId string) (int, error) {
-	url := c.conf.Api + strings.Replace(PathAppSummary, "{appid}", appId, 1)
+	url := c.conf.Api + strings.Replace(PathApp, "{appid}", appId, 1)
 	c.logger.Debug("get-app-instances", lager.Data{"url": url})
 
 	req, err := http.NewRequest("GET", url, nil)
@@ -44,25 +43,25 @@ func (c *cfClient) GetAppInstances(appId string) (int, error) {
 		return -1, err
 	}
 
-	props := &models.AppProperties{}
-	err = json.NewDecoder(resp.Body).Decode(props)
+	appInfo := &models.AppInfo{}
+	err = json.NewDecoder(resp.Body).Decode(appInfo)
 	if err != nil {
 		c.logger.Error("get-app-instances-decode", err)
 		return -1, err
 	}
-	return props.Instances, nil
+	return appInfo.Entity.Instances, nil
 }
 
 func (c *cfClient) SetAppInstances(appId string, num int) error {
-	url := c.conf.Api + strings.Replace(PathAppUpdate, "{appid}", appId, 1)
+	url := c.conf.Api + strings.Replace(PathApp, "{appid}", appId, 1)
 	c.logger.Debug("set-app-instances", lager.Data{"url": url})
 
-	props := models.AppProperties{
+	entity := models.AppEntity{
 		Instances: num,
 	}
-	body, err := json.Marshal(props)
+	body, err := json.Marshal(entity)
 	if err != nil {
-		c.logger.Error("set-app-instances-marshal", err, lager.Data{"appid": appId, "props": props})
+		c.logger.Error("set-app-instances-marshal", err, lager.Data{"appid": appId, "entity": entity})
 		return err
 	}
 

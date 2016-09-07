@@ -30,7 +30,8 @@ func NewScalingHandler(logger lager.Logger, cfc cf.CfClient, database db.PolicyD
 	}
 }
 
-func (h *ScalingHandler) HandleScale(w http.ResponseWriter, r *http.Request) {
+func (h *ScalingHandler) HandleScale(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+	appId := vars["appid"]
 	trigger := &models.Trigger{}
 	err := json.NewDecoder(r.Body).Decode(trigger)
 	if err != nil {
@@ -41,31 +42,31 @@ func (h *ScalingHandler) HandleScale(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.logger.Debug("handle-scale", lager.Data{"trigger": trigger})
+	h.logger.Debug("handle-scale", lager.Data{"appid": appId, "trigger": trigger})
 
 	var newInstances int
-	newInstances, err = h.Scale(trigger)
+	newInstances, err = h.Scale(appId, trigger)
 	if err != nil {
-		h.logger.Error("handle-scale-perform-scaling-action", err, lager.Data{"trigger": trigger})
+		h.logger.Error("handle-scale-perform-scaling-action", err, lager.Data{"appid": appId, "trigger": trigger})
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 			Code:    "Internal-server-error",
 			Message: "Error taking scaling action"})
 		return
 	}
-	handlers.WriteJSONResponse(w, http.StatusCreated, models.AppProperties{Instances: newInstances})
+	handlers.WriteJSONResponse(w, http.StatusOK, models.AppEntity{Instances: newInstances})
 
 }
 
-func (h *ScalingHandler) Scale(trigger *models.Trigger) (int, error) {
-	policy, err := h.database.GetAppPolicy(trigger.AppId)
+func (h *ScalingHandler) Scale(appId string, trigger *models.Trigger) (int, error) {
+	policy, err := h.database.GetAppPolicy(appId)
 	if err != nil {
-		h.logger.Error("scale-get-app-policy", err, lager.Data{"appId": trigger.AppId})
+		h.logger.Error("scale-get-app-policy", err, lager.Data{"appId": appId})
 		return -1, err
 	}
 
-	instances, err := h.cfClient.GetAppInstances(trigger.AppId)
+	instances, err := h.cfClient.GetAppInstances(appId)
 	if err != nil {
-		h.logger.Error("scale-get-app-instances", err, lager.Data{"appId": trigger.AppId})
+		h.logger.Error("scale-get-app-instances", err, lager.Data{"appId": appId})
 		return -1, err
 	}
 
@@ -76,14 +77,14 @@ func (h *ScalingHandler) Scale(trigger *models.Trigger) (int, error) {
 		return -1, err
 	}
 
-	h.logger.Info("Scale", lager.Data{"trigger": trigger, "instanceMin": policy.InstanceMin, "InstanceMax": policy.InstanceMax, "currentInstances": instances, "newInstances": newInstances})
+	h.logger.Info("Scale", lager.Data{"appid": appId, "trigger": trigger, "instanceMin": policy.InstanceMin, "InstanceMax": policy.InstanceMax, "currentInstances": instances, "newInstances": newInstances})
 	if newInstances == instances {
 		return newInstances, nil
 	}
 
-	err = h.cfClient.SetAppInstances(trigger.AppId, newInstances)
+	err = h.cfClient.SetAppInstances(appId, newInstances)
 	if err != nil {
-		h.logger.Error("scale-set-app-instances", err, lager.Data{"appid": trigger.AppId, "newInstances": newInstances})
+		h.logger.Error("scale-set-app-instances", err, lager.Data{"appid": appId, "newInstances": newInstances})
 		return -1, err
 	}
 	return newInstances, nil

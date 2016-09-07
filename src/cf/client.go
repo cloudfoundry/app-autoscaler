@@ -200,13 +200,11 @@ func (c *cfClient) GetTokens() Tokens {
 }
 
 func (c *cfClient) GetTokensWithRefresh() Tokens {
+	c.lock.Lock()
 	if c.isTokenToBeExpired() {
-		c.lock.Lock()
-		if c.isTokenToBeExpired() {
-			c.RefreshAuthToken()
-		}
-		c.lock.Unlock()
+		c.RefreshAuthToken()
 	}
+	c.lock.Unlock()
 	return c.tokens
 }
 

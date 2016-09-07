@@ -5,7 +5,7 @@ import (
 	. "engine/server"
 	"models"
 
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
@@ -39,10 +39,8 @@ var _ = Describe("ScalingHandler", func() {
 	BeforeEach(func() {
 		cfc = &fakes.FakeCfClient{}
 
-		logger := lager.NewLogger("scaling-handler-test")
-		buffer = gbytes.NewBuffer()
-		logger.RegisterSink(lager.NewWriterSink(buffer, lager.ERROR))
-
+		logger := lagertest.NewTestLogger("scaling-handler-test")
+		buffer = logger.Buffer()
 		database = &fakes.FakePolicyDB{}
 		resp = httptest.NewRecorder()
 		handler = NewScalingHandler(logger, cfc, database)
@@ -130,13 +128,12 @@ var _ = Describe("ScalingHandler", func() {
 	Describe("Scale", func() {
 		BeforeEach(func() {
 			trigger = &models.Trigger{
-				AppId:      "an-app-id",
 				MetricType: models.MetricNameMemory,
 				Adjustment: "+1",
 			}
 		})
 		JustBeforeEach(func() {
-			newInstances, err = handler.Scale(trigger)
+			newInstances, err = handler.Scale("an-app-id", trigger)
 		})
 
 		Context("when scaling succeeds", func() {
@@ -221,7 +218,7 @@ var _ = Describe("ScalingHandler", func() {
 
 	Describe("HandleScale", func() {
 		JustBeforeEach(func() {
-			handler.HandleScale(resp, req)
+			handler.HandleScale(resp, req, map[string]string{"appid": "an-app-id"})
 		})
 
 		Context("when scaling app succeeds", func() {
@@ -230,7 +227,6 @@ var _ = Describe("ScalingHandler", func() {
 				cfc.GetAppInstancesReturns(2, nil)
 
 				trigger = &models.Trigger{
-					AppId:      "an-app-id",
 					MetricType: models.MetricNameMemory,
 					Adjustment: "+1",
 				}
@@ -241,10 +237,10 @@ var _ = Describe("ScalingHandler", func() {
 				Expect(err).NotTo(HaveOccurred())
 			})
 
-			It("returns 201 with new instances number", func() {
-				Expect(resp.Code).To(Equal(http.StatusCreated))
+			It("returns 200 with new instances number", func() {
+				Expect(resp.Code).To(Equal(http.StatusOK))
 
-				props := &models.AppProperties{}
+				props := &models.AppEntity{}
 				err = json.Unmarshal(resp.Body.Bytes(), props)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(props.Instances).To(Equal(3))
@@ -274,7 +270,6 @@ var _ = Describe("ScalingHandler", func() {
 				database.GetAppPolicyReturns(nil, errors.New("an error"))
 
 				trigger = &models.Trigger{
-					AppId:      "an-app-id",
 					MetricType: models.MetricNameMemory,
 					Adjustment: "+1",
 				}
