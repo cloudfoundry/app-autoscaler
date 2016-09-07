@@ -1,10 +1,9 @@
 package server_test
 
 import (
-	"metricscollector/config"
-	"metricscollector/fakes"
-	. "metricscollector/server"
-	"strconv"
+	"engine/fakes"
+	. "engine/server"
+	"models"
 
 	"code.cloudfoundry.org/lager"
 	. "github.com/onsi/ginkgo"
@@ -12,32 +11,33 @@ import (
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/ginkgomon"
 
+	"bytes"
+	"encoding/json"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
-const TestPathMemoryMetrics = "/v1/apps/an-app-id/metrics/memory"
-const TestPathMemoryMetricsHistory = "/v1/apps/an-app-id/metrics_history/memory"
-
 var _ = Describe("Server", func() {
+
 	var (
 		server    ifrit.Process
 		serverUrl *url.URL
 		rsp       *http.Response
+		cfc       *fakes.FakeCfClient
+		database  *fakes.FakePolicyDB
+		body      []byte
 		err       error
 	)
 
 	BeforeEach(func() {
-		port := 1111
-		cfc := &fakes.FakeCfClient{}
-		consumer := &fakes.FakeNoaaConsumer{}
-		conf := config.ServerConfig{Port: port}
-		database := &fakes.FakeMetricsDB{}
-		httpServer := NewServer(lager.NewLogger("test"), conf, cfc, consumer, database)
-		serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(port))
-		Expect(err).ToNot(HaveOccurred())
-
+		cfc = &fakes.FakeCfClient{}
+		database = &fakes.FakePolicyDB{}
+		httpServer := NewServer(lager.NewLogger("test"), cfc, database)
+		serverUrl, _ = url.Parse("http://127.0.0.1:8080")
 		server = ginkgomon.Invoke(httpServer)
+		body, err = json.Marshal(models.Trigger{Adjustment: "+1"})
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	AfterEach(func() {
@@ -45,23 +45,13 @@ var _ = Describe("Server", func() {
 	})
 
 	JustBeforeEach(func() {
-		rsp, err = http.Get(serverUrl.String())
+		rsp, err = http.Post(serverUrl.String(), "application/json", bytes.NewReader(body))
 	})
 
-	Context("when retrieving metrics", func() {
+	Context("when trigger scaling action", func() {
 		BeforeEach(func() {
-			serverUrl.Path = TestPathMemoryMetrics
-		})
-
-		It("should return 200", func() {
-			Expect(err).ToNot(HaveOccurred())
-			Expect(rsp.StatusCode).To(Equal(http.StatusOK))
-		})
-	})
-
-	Context("when retrieving metrics history", func() {
-		BeforeEach(func() {
-			serverUrl.Path = TestPathMemoryMetricsHistory
+			serverUrl.Path = strings.Replace(PathScale, "{appid}", "test-app-id", 1)
+			database.GetAppPolicyReturns(&models.ScalingPolicy{}, nil)
 		})
 
 		It("should return 200", func() {
@@ -83,7 +73,7 @@ var _ = Describe("Server", func() {
 
 	Context("when requesting the wrong method", func() {
 		JustBeforeEach(func() {
-			rsp, err = http.Post(serverUrl.String(), "garbage", nil)
+			rsp, err = http.Post(serverUrl.String(), "unknown", nil)
 		})
 
 		It("should return 404", func() {
@@ -91,4 +81,5 @@ var _ = Describe("Server", func() {
 			Expect(rsp.StatusCode).To(Equal(http.StatusNotFound))
 		})
 	})
+
 })

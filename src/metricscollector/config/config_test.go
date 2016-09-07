@@ -2,6 +2,7 @@ package config_test
 
 import (
 	"bytes"
+	"time"
 
 	"github.com/cloudfoundry-incubator/candiedyaml"
 	. "github.com/onsi/ginkgo"
@@ -51,8 +52,6 @@ cf:
   user: "admin"
 server:
   port: "port"
-  user: "user"
-  pass: "password"
 logging:
   level: "info"
 db:
@@ -84,8 +83,8 @@ db:
   policy_db_url: "postgres://pqgotest:password@localhost/pqgotest" 
   metrics_db_url: "postgres://pqgotest:password@localhost/pqgotest" 
 collector:
-  refresh_interval: 30
-  poll_interval: 10
+  refresh_interval_in_seconds: 20
+  poll_interval_in_seconds: 10
 `)
 			})
 
@@ -102,6 +101,9 @@ collector:
 				Expect(conf.Server.Port).To(Equal(8989))
 
 				Expect(conf.Logging.Level).To(Equal("debug"))
+
+				Expect(conf.Collector.RefreshInterval).To(Equal(20 * time.Second))
+				Expect(conf.Collector.PollInterval).To(Equal(10 * time.Second))
 			})
 		})
 
@@ -122,6 +124,8 @@ db:
 				Expect(conf.Cf.GrantType).To(Equal(cf.GrantTypePassword))
 				Expect(conf.Server.Port).To(Equal(8080))
 				Expect(conf.Logging.Level).To(Equal(DefaultLoggingLevel))
+				Expect(conf.Collector.RefreshInterval).To(Equal(DefaultRefreshInterval))
+				Expect(conf.Collector.PollInterval).To(Equal(DefaultPollInterval))
 			})
 		})
 

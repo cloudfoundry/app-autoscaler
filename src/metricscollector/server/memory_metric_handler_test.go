@@ -2,8 +2,8 @@ package server_test
 
 import (
 	"metricscollector/fakes"
-	"metricscollector/metrics"
 	. "metricscollector/server"
+	"models"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry/sonde-go/events"
@@ -29,8 +29,8 @@ var _ = Describe("MemoryMetricHandler", func() {
 		req  *http.Request
 		err  error
 
-		metric1 metrics.Metric
-		metric2 metrics.Metric
+		metric1 models.Metric
+		metric2 models.Metric
 	)
 
 	BeforeEach(func() {
@@ -55,11 +55,11 @@ var _ = Describe("MemoryMetricHandler", func() {
 			It("returns a 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
 
-				errJson := &ErrorResponse{}
+				errJson := &models.ErrorResponse{}
 				err = json.Unmarshal(resp.Body.Bytes(), errJson)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(errJson).To(Equal(&ErrorResponse{
+				Expect(errJson).To(Equal(&models.ErrorResponse{
 					Code:    "Interal-Server-Error",
 					Message: "Error getting memory metrics from doppler",
 				}))
@@ -81,14 +81,14 @@ var _ = Describe("MemoryMetricHandler", func() {
 				It("returns a 200 response with metrics", func() {
 					Expect(resp.Code).To(Equal(http.StatusOK))
 
-					metric := &metrics.Metric{}
+					metric := &models.Metric{}
 					err = json.Unmarshal(resp.Body.Bytes(), metric)
 
 					Expect(err).ToNot(HaveOccurred())
 					Expect(metric.AppId).To(Equal("an-app-id"))
-					Expect(metric.Name).To(Equal(metrics.MetricNameMemory))
-					Expect(metric.Unit).To(Equal(metrics.UnitBytes))
-					Expect(metric.Instances).To(ConsistOf(metrics.InstanceMetric{Index: 1, Value: "1234"}))
+					Expect(metric.Name).To(Equal(models.MetricNameMemory))
+					Expect(metric.Unit).To(Equal(models.UnitBytes))
+					Expect(metric.Instances).To(ConsistOf(models.InstanceMetric{Index: 1, Value: "1234"}))
 				})
 			})
 
@@ -100,7 +100,7 @@ var _ = Describe("MemoryMetricHandler", func() {
 				It("returns a 200 with empty metrics", func() {
 					Expect(resp.Code).To(Equal(http.StatusOK))
 
-					metric := &metrics.Metric{}
+					metric := &models.Metric{}
 					err = json.Unmarshal(resp.Body.Bytes(), metric)
 
 					Expect(err).ToNot(HaveOccurred())
@@ -127,11 +127,11 @@ var _ = Describe("MemoryMetricHandler", func() {
 				It("returns 400", func() {
 					Expect(resp.Code).To(Equal(http.StatusBadRequest))
 
-					errJson := &ErrorResponse{}
+					errJson := &models.ErrorResponse{}
 					err = json.Unmarshal(resp.Body.Bytes(), errJson)
 
 					Expect(err).ToNot(HaveOccurred())
-					Expect(errJson).To(Equal(&ErrorResponse{
+					Expect(errJson).To(Equal(&models.ErrorResponse{
 						Code:    "Bad-Request",
 						Message: "Incorrect start parameter in query string",
 					}))
@@ -148,11 +148,11 @@ var _ = Describe("MemoryMetricHandler", func() {
 				It("returns 400", func() {
 					Expect(resp.Code).To(Equal(http.StatusBadRequest))
 
-					errJson := &ErrorResponse{}
+					errJson := &models.ErrorResponse{}
 					err = json.Unmarshal(resp.Body.Bytes(), errJson)
 
 					Expect(err).ToNot(HaveOccurred())
-					Expect(errJson).To(Equal(&ErrorResponse{
+					Expect(errJson).To(Equal(&models.ErrorResponse{
 						Code:    "Bad-Request",
 						Message: "Error parsing start time",
 					}))
@@ -169,11 +169,11 @@ var _ = Describe("MemoryMetricHandler", func() {
 				It("returns 400", func() {
 					Expect(resp.Code).To(Equal(http.StatusBadRequest))
 
-					errJson := &ErrorResponse{}
+					errJson := &models.ErrorResponse{}
 					err = json.Unmarshal(resp.Body.Bytes(), errJson)
 
 					Expect(err).ToNot(HaveOccurred())
-					Expect(errJson).To(Equal(&ErrorResponse{
+					Expect(errJson).To(Equal(&models.ErrorResponse{
 						Code:    "Bad-Request",
 						Message: "Incorrect end parameter in query string",
 					}))
@@ -190,11 +190,11 @@ var _ = Describe("MemoryMetricHandler", func() {
 				It("returns 400", func() {
 					Expect(resp.Code).To(Equal(http.StatusBadRequest))
 
-					errJson := &ErrorResponse{}
+					errJson := &models.ErrorResponse{}
 					err = json.Unmarshal(resp.Body.Bytes(), errJson)
 
 					Expect(err).ToNot(HaveOccurred())
-					Expect(errJson).To(Equal(&ErrorResponse{
+					Expect(errJson).To(Equal(&models.ErrorResponse{
 						Code:    "Bad-Request",
 						Message: "Error parsing end time",
 					}))
@@ -213,7 +213,7 @@ var _ = Describe("MemoryMetricHandler", func() {
 				It("queries metrics from database with the given start and end time ", func() {
 					appid, name, start, end := database.RetrieveMetricsArgsForCall(0)
 					Expect(appid).To(Equal("an-app-id"))
-					Expect(name).To(Equal(metrics.MetricNameMemory))
+					Expect(name).To(Equal(models.MetricNameMemory))
 					Expect(start).To(Equal(int64(123)))
 					Expect(end).To(Equal(int64(567)))
 				})
@@ -251,32 +251,32 @@ var _ = Describe("MemoryMetricHandler", func() {
 					req, err = http.NewRequest(http.MethodGet, "http://localhost/v1/apps/an-app-id/metrics_history/memory?start=123&end=567", nil)
 					Expect(err).ToNot(HaveOccurred())
 
-					metric1 = metrics.Metric{
-						Name:      metrics.MetricNameMemory,
-						Unit:      metrics.UnitBytes,
+					metric1 = models.Metric{
+						Name:      models.MetricNameMemory,
+						Unit:      models.UnitBytes,
 						AppId:     "an-app-id",
 						TimeStamp: 333,
-						Instances: []metrics.InstanceMetric{{333, 0, "6666"}, {333, 1, "7777"}},
+						Instances: []models.InstanceMetric{{333, 0, "6666"}, {333, 1, "7777"}},
 					}
 
-					metric2 = metrics.Metric{
-						Name:      metrics.MetricNameMemory,
-						Unit:      metrics.UnitBytes,
+					metric2 = models.Metric{
+						Name:      models.MetricNameMemory,
+						Unit:      models.UnitBytes,
 						AppId:     "an-app-id",
 						TimeStamp: 555,
-						Instances: []metrics.InstanceMetric{{555, 0, "7777"}, {555, 1, "8888"}},
+						Instances: []models.InstanceMetric{{555, 0, "7777"}, {555, 1, "8888"}},
 					}
-					database.RetrieveMetricsReturns([]*metrics.Metric{&metric1, &metric2}, nil)
+					database.RetrieveMetricsReturns([]*models.Metric{&metric1, &metric2}, nil)
 				})
 
 				It("returns 200 with metrics in message body", func() {
 					Expect(resp.Code).To(Equal(http.StatusOK))
 
-					mtrcs := &[]metrics.Metric{}
+					mtrcs := &[]models.Metric{}
 					err = json.Unmarshal(resp.Body.Bytes(), mtrcs)
 
 					Expect(err).ToNot(HaveOccurred())
-					Expect(*mtrcs).To(Equal([]metrics.Metric{metric1, metric2}))
+					Expect(*mtrcs).To(Equal([]models.Metric{metric1, metric2}))
 				})
 			})
 
@@ -291,11 +291,11 @@ var _ = Describe("MemoryMetricHandler", func() {
 				It("returns 500", func() {
 					Expect(resp.Code).To(Equal(http.StatusInternalServerError))
 
-					errJson := &ErrorResponse{}
+					errJson := &models.ErrorResponse{}
 					err = json.Unmarshal(resp.Body.Bytes(), errJson)
 
 					Expect(err).ToNot(HaveOccurred())
-					Expect(errJson).To(Equal(&ErrorResponse{
+					Expect(errJson).To(Equal(&models.ErrorResponse{
 						Code:    "Interal-Server-Error",
 						Message: "Error getting memory metrics history from database",
 					}))

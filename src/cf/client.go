@@ -8,17 +8,21 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 
 	"code.cloudfoundry.org/cfhttp"
+	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
+	"time"
 )
 
 const (
-	PathCfInfo                 = "/v2/info"
-	PathCfAuth                 = "/oauth/token"
-	GrantTypePassword          = "password"
-	GrantTypeClientCredentials = "client_credentials"
-	GrantTypeRefreshToken      = "refresh_token"
+	PathCfInfo                                   = "/v2/info"
+	PathCfAuth                                   = "/oauth/token"
+	GrantTypePassword                            = "password"
+	GrantTypeClientCredentials                   = "client_credentials"
+	GrantTypeRefreshToken                        = "refresh_token"
+	TimeToRefreshBeforeTokenExpire time.Duration = 10 * time.Minute
 )
 
 type Tokens struct {
@@ -37,24 +41,32 @@ type CfClient interface {
 	Login() error
 	RefreshAuthToken() (string, error)
 	GetTokens() Tokens
+	GetTokensWithRefresh() Tokens
 	GetEndpoints() Endpoints
+	GetAppInstances(string) (int, error)
+	SetAppInstances(string, int) error
 }
 
 type cfClient struct {
 	logger     lager.Logger
+	conf       *CfConfig
+	clk        clock.Clock
 	tokens     Tokens
 	endpoints  Endpoints
 	infoUrl    string
 	authUrl    string
 	loginForm  url.Values
-	token      string
+	authHeader string
 	httpClient *http.Client
+	lock       *sync.Mutex
+	grantTime  time.Time
 }
 
-func NewCfClient(conf *CfConfig, logger lager.Logger) CfClient {
+func NewCfClient(conf *CfConfig, logger lager.Logger, clk clock.Clock) CfClient {
 	c := &cfClient{}
-
 	c.logger = logger
+	c.conf = conf
+	c.clk = clk
 	c.infoUrl = conf.Api + PathCfInfo
 
 	if conf.GrantType == GrantTypePassword {
@@ -63,18 +75,20 @@ func NewCfClient(conf *CfConfig, logger lager.Logger) CfClient {
 			"username":   {conf.Username},
 			"password":   {conf.Password},
 		}
-		c.token = "Basic Y2Y6"
+		c.authHeader = "Basic Y2Y6"
 	} else {
 		c.loginForm = url.Values{
 			"grant_type":    {GrantTypeClientCredentials},
 			"client_id":     {conf.ClientId},
 			"client_secret": {conf.Secret},
 		}
-		c.token = "Basic " + base64.StdEncoding.EncodeToString([]byte(conf.ClientId+":"+conf.Secret))
+		c.authHeader = "Basic " + base64.StdEncoding.EncodeToString([]byte(conf.ClientId+":"+conf.Secret))
 	}
 
 	c.httpClient = cfhttp.NewClient()
 	c.httpClient.Transport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+
+	c.lock = &sync.Mutex{}
 
 	return c
 }
@@ -95,8 +109,7 @@ func (c *cfClient) retrieveEndpoints() error {
 		return err
 	}
 
-	d := json.NewDecoder(resp.Body)
-	err = d.Decode(&c.endpoints)
+	err = json.NewDecoder(resp.Body).Decode(&c.endpoints)
 	if err != nil {
 		c.logger.Error("retrieve-endpoints-decode", err)
 		return err
@@ -114,9 +127,8 @@ func (c *cfClient) requestTokenGrant(formData *url.Values) error {
 		c.logger.Error("request-token-grant-new-request", err)
 		return err
 	}
-	req.Header.Set("Authorization", c.token)
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("charset", "utf-8")
+	req.Header.Set("Authorization", c.authHeader)
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded;charset=utf-8")
 
 	var resp *http.Response
 	resp, err = c.httpClient.Do(req)
@@ -132,12 +144,13 @@ func (c *cfClient) requestTokenGrant(formData *url.Values) error {
 		return err
 	}
 
-	d := json.NewDecoder(resp.Body)
-	err = d.Decode(&c.tokens)
+	err = json.NewDecoder(resp.Body).Decode(&c.tokens)
 	if err != nil {
 		c.logger.Error("request-token-grant-decode", err)
+		return err
 	}
-	return err
+	c.grantTime = time.Now()
+	return nil
 }
 
 func (c *cfClient) Login() error {
@@ -184,6 +197,19 @@ func (c *cfClient) RefreshAuthToken() (string, error) {
 
 func (c *cfClient) GetTokens() Tokens {
 	return c.tokens
+}
+
+func (c *cfClient) GetTokensWithRefresh() Tokens {
+	c.lock.Lock()
+	if c.isTokenToBeExpired() {
+		c.RefreshAuthToken()
+	}
+	c.lock.Unlock()
+	return c.tokens
+}
+
+func (c *cfClient) isTokenToBeExpired() bool {
+	return c.clk.Now().Sub(c.grantTime) > (time.Duration(c.tokens.ExpiresIn)*time.Second - TimeToRefreshBeforeTokenExpire)
 }
 
 func (c *cfClient) GetEndpoints() Endpoints {

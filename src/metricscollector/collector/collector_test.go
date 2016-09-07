@@ -5,7 +5,7 @@ import (
 	"metricscollector/fakes"
 
 	"code.cloudfoundry.org/clock/fakeclock"
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/lagertest"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -28,9 +28,8 @@ var _ = Describe("Collector", func() {
 	BeforeEach(func() {
 		database = &fakes.FakePolicyDB{}
 
-		logger := lager.NewLogger("collector-test")
-		buffer = gbytes.NewBuffer()
-		logger.RegisterSink(lager.NewWriterSink(buffer, lager.ERROR))
+		logger := lagertest.NewTestLogger("collector-test")
+		buffer = logger.Buffer()
 
 		fclock = fakeclock.NewFakeClock(time.Now())
 		poller = &fakes.FakeAppPoller{}

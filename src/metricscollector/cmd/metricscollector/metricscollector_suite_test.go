@@ -106,12 +106,11 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.Db.MetricsDbUrl = os.Getenv("DBURL")
 	cfg.Db.PolicyDbUrl = os.Getenv("DBURL")
 
-	cfg.Collector.PollInterval = 10 * time.Second
-	cfg.Collector.RefreshInterval = 30 * time.Second
+	cfg.Collector.PollInterval = 10
+	cfg.Collector.RefreshInterval = 30
 
 	configFile = writeConfig(&cfg)
 
-	//clean the database
 	mcDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
 	Expect(err).NotTo(HaveOccurred())
 
@@ -121,7 +120,6 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	_, err = mcDB.Exec("DELETE from policy_json")
 	Expect(err).NotTo(HaveOccurred())
 
-	// insert a policy record so that metrics is polled
 	policy := `
 		{
  			"instance_min_count": 1,
