@@ -2,7 +2,6 @@ package db
 
 import (
 	"eventgenerator/model"
-	"metricscollector/metrics"
 	"models"
 )
 
@@ -24,5 +23,6 @@ type PolicyDB interface {
 
 type AppMetricDB interface {
 	SaveAppMetric(appMetric *model.AppMetric) error
+	RetrieveAppMetrics(appId string, metricType string, start int64, end int64) ([]*model.AppMetric, error)
 	Close() error
 }

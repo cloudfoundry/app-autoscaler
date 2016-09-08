@@ -85,7 +85,7 @@ func (m *MetricPoller) retrieveMetric(app *model.AppMonitor) {
 	}
 
 }
-func (m *MetricPoller) doAggregate(appId string, metricType string, metrics []*metrics.Metric) *model.AppMetric {
+func (m *MetricPoller) doAggregate(appId string, metricType string, metrics []*models.Metric) *model.AppMetric {
 	var count int64 = 0
 	var sum int64 = 0
 	var unit string

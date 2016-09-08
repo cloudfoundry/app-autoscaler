@@ -7,16 +7,17 @@ import (
 	"github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
 	"os"
+	"time"
 )
 
 var _ = Describe("AppMetricSQLDB", func() {
 	var (
-		adb    *AppMetricSQLDB
-		url    string
-		logger lager.Logger
-		err    error
+		adb        *AppMetricSQLDB
+		url        string
+		logger     lager.Logger
+		err        error
+		appMetrics []*model.AppMetric
 	)
 
 	BeforeEach(func() {
@@ -84,6 +85,55 @@ var _ = Describe("AppMetricSQLDB", func() {
 			})
 		})
 
+	})
+	Describe("RetrieveAppMetrics", func() {
+		BeforeEach(func() {
+			adb, err = NewAppMetricSQLDB(url, logger)
+			Expect(err).NotTo(HaveOccurred())
+
+			cleanAppMetricTable()
+		})
+
+		AfterEach(func() {
+			err = adb.Close()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		JustBeforeEach(func() {
+			insertAppMetric("first-app-id")
+			insertAppMetric("first-app-id")
+			insertAppMetric("first-app-id")
+			appMetrics, err = adb.RetrieveAppMetrics("first-app-id", testMetricType, 0, time.Now().UnixNano())
+		})
+
+		Context("when retriving all the appMetrics)", func() {
+			It("returns all the appMetrics", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(appMetrics).To(ConsistOf(
+					&model.AppMetric{
+						AppId:      "first-app-id",
+						MetricType: testMetricType,
+						Unit:       testUnit,
+						Value:      testValue,
+						Timestamp:  testTimestamp,
+					},
+					&model.AppMetric{
+						AppId:      "first-app-id",
+						MetricType: testMetricType,
+						Unit:       testUnit,
+						Value:      testValue,
+						Timestamp:  testTimestamp,
+					},
+					&model.AppMetric{
+						AppId:      "first-app-id",
+						MetricType: testMetricType,
+						Unit:       testUnit,
+						Value:      testValue,
+						Timestamp:  testTimestamp,
+					},
+				))
+			})
+		})
 	})
 
 })
