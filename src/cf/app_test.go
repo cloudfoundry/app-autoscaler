@@ -14,7 +14,6 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"strings"
 )
 
 var _ = Describe("App", func() {
@@ -64,7 +63,7 @@ var _ = Describe("App", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", strings.Replace(PathApp, "{appid}", "test-app-id", 1)),
+						ghttp.VerifyRequest("GET", PathApp+"/test-app-id"),
 						ghttp.RespondWithJSONEncoded(http.StatusOK, models.AppInfo{
 							models.AppEntity{Instances: 6},
 						}),
@@ -134,7 +133,7 @@ var _ = Describe("App", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("PUT", strings.Replace(PathApp, "{appid}", "test-app-id", 1)),
+						ghttp.VerifyRequest("PUT", PathApp+"/test-app-id"),
 						ghttp.VerifyJSONRepresenting(models.AppEntity{Instances: 6}),
 						ghttp.RespondWith(http.StatusCreated, ""),
 					),

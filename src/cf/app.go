@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
+	"path"
 
 	"code.cloudfoundry.org/lager"
 
@@ -14,11 +14,11 @@ import (
 
 const (
 	TokenTypeBearer = "bearer"
-	PathApp         = "/v2/apps/{appid}"
+	PathApp         = "/v2/apps"
 )
 
 func (c *cfClient) GetAppInstances(appId string) (int, error) {
-	url := c.conf.Api + strings.Replace(PathApp, "{appid}", appId, 1)
+	url := c.conf.Api + path.Join(PathApp, appId)
 	c.logger.Debug("get-app-instances", lager.Data{"url": url})
 
 	req, err := http.NewRequest("GET", url, nil)
@@ -53,7 +53,7 @@ func (c *cfClient) GetAppInstances(appId string) (int, error) {
 }
 
 func (c *cfClient) SetAppInstances(appId string, num int) error {
-	url := c.conf.Api + strings.Replace(PathApp, "{appid}", appId, 1)
+	url := c.conf.Api + path.Join(PathApp, appId)
 	c.logger.Debug("set-app-instances", lager.Data{"url": url})
 
 	entity := models.AppEntity{

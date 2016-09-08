@@ -58,33 +58,35 @@ func (h *ScalingHandler) HandleScale(w http.ResponseWriter, r *http.Request, var
 }
 
 func (h *ScalingHandler) Scale(appId string, trigger *models.Trigger) (int, error) {
+	logger := h.logger.WithData(lager.Data{"appId": appId})
+
 	policy, err := h.database.GetAppPolicy(appId)
 	if err != nil {
-		h.logger.Error("scale-get-app-policy", err, lager.Data{"appId": appId})
+		logger.Error("scale-get-app-policy", err)
 		return -1, err
 	}
 
 	instances, err := h.cfClient.GetAppInstances(appId)
 	if err != nil {
-		h.logger.Error("scale-get-app-instances", err, lager.Data{"appId": appId})
+		logger.Error("scale-get-app-instances", err)
 		return -1, err
 	}
 
 	var newInstances int
 	newInstances, err = h.ComputeNewInstances(instances, trigger.Adjustment, policy.InstanceMin, policy.InstanceMax)
 	if err != nil {
-		h.logger.Error("scale-compute-new-instance", err, lager.Data{"instances": instances, "adjustment": trigger.Adjustment, "instanceMin": policy.InstanceMin, "InstanceMax": policy.InstanceMax})
+		logger.Error("scale-compute-new-instance", err, lager.Data{"instances": instances, "adjustment": trigger.Adjustment, "instanceMin": policy.InstanceMin, "InstanceMax": policy.InstanceMax})
 		return -1, err
 	}
 
-	h.logger.Info("Scale", lager.Data{"appid": appId, "trigger": trigger, "instanceMin": policy.InstanceMin, "InstanceMax": policy.InstanceMax, "currentInstances": instances, "newInstances": newInstances})
+	logger.Info("Scale", lager.Data{"trigger": trigger, "instanceMin": policy.InstanceMin, "InstanceMax": policy.InstanceMax, "currentInstances": instances, "newInstances": newInstances})
 	if newInstances == instances {
 		return newInstances, nil
 	}
 
 	err = h.cfClient.SetAppInstances(appId, newInstances)
 	if err != nil {
-		h.logger.Error("scale-set-app-instances", err, lager.Data{"appid": appId, "newInstances": newInstances})
+		logger.Error("scale-set-app-instances", err, lager.Data{"newInstances": newInstances})
 		return -1, err
 	}
 	return newInstances, nil

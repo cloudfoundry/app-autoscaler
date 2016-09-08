@@ -6,6 +6,7 @@ import (
 	"models"
 
 	"code.cloudfoundry.org/lager"
+	"github.com/gorilla/mux"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tedsuo/ifrit"
@@ -14,44 +15,47 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
-	"net/url"
-	"strings"
 )
 
-var _ = Describe("Server", func() {
+const serverURL = "http://127.0.0.1:8080"
 
+var server ifrit.Process
+
+var _ = BeforeSuite(func() {
+	cfc := &fakes.FakeCfClient{}
+	database := &fakes.FakePolicyDB{}
+	database.GetAppPolicyReturns(&models.ScalingPolicy{}, nil)
+	httpServer := NewServer(lager.NewLogger("test"), cfc, database)
+	server = ginkgomon.Invoke(httpServer)
+})
+
+var _ = AfterSuite(func() {
+	ginkgomon.Interrupt(server)
+})
+
+var _ = Describe("Server", func() {
 	var (
-		server    ifrit.Process
-		serverUrl *url.URL
-		rsp       *http.Response
-		cfc       *fakes.FakeCfClient
-		database  *fakes.FakePolicyDB
-		body      []byte
-		err       error
+		urlPath string
+		rsp     *http.Response
+		body    []byte
+		err     error
 	)
 
 	BeforeEach(func() {
-		cfc = &fakes.FakeCfClient{}
-		database = &fakes.FakePolicyDB{}
-		httpServer := NewServer(lager.NewLogger("test"), cfc, database)
-		serverUrl, _ = url.Parse("http://127.0.0.1:8080")
-		server = ginkgomon.Invoke(httpServer)
 		body, err = json.Marshal(models.Trigger{Adjustment: "+1"})
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	AfterEach(func() {
-		ginkgomon.Interrupt(server)
-	})
-
 	JustBeforeEach(func() {
-		rsp, err = http.Post(serverUrl.String(), "application/json", bytes.NewReader(body))
+		rsp, err = http.Post(serverURL+urlPath, "application/json", bytes.NewReader(body))
 	})
 
 	Context("when trigger scaling action", func() {
 		BeforeEach(func() {
-			serverUrl.Path = strings.Replace(PathScale, "{appid}", "test-app-id", 1)
-			database.GetAppPolicyReturns(&models.ScalingPolicy{}, nil)
+			route := mux.Route{}
+			uPath, err := route.Path(PathScale).URLPath("appid", "test-app-id")
+			Expect(err).NotTo(HaveOccurred())
+			urlPath = uPath.Path
 		})
 
 		It("should return 200", func() {
@@ -62,7 +66,7 @@ var _ = Describe("Server", func() {
 
 	Context("when requesting the wrong path", func() {
 		BeforeEach(func() {
-			serverUrl.Path = "/not-exist-path"
+			urlPath = "/not-exist-path"
 		})
 
 		It("should return 404", func() {
@@ -71,9 +75,9 @@ var _ = Describe("Server", func() {
 		})
 	})
 
-	Context("when requesting the wrong method", func() {
+	Context("when requesting the wrong path", func() {
 		JustBeforeEach(func() {
-			rsp, err = http.Post(serverUrl.String(), "unknown", nil)
+			rsp, err = http.Post(serverURL, "unknown", nil)
 		})
 
 		It("should return 404", func() {
