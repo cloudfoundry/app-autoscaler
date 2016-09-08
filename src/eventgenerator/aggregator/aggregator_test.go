@@ -4,7 +4,7 @@ import (
 	. "eventgenerator/aggregator"
 	"eventgenerator/aggregator/fakes"
 	. "eventgenerator/model"
-	. "models"
+	"models"
 	"net/http"
 	"regexp"
 	"time"

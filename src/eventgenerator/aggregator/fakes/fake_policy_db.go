@@ -4,7 +4,7 @@ package fakes
 import (
 	"db"
 	"eventgenerator/model"
-	. "models"
+	"models"
 	"sync"
 )
 

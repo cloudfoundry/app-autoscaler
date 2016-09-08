@@ -2,7 +2,6 @@ package db
 
 import (
 	"eventgenerator/model"
-	"metricscollector/metrics"
 	"models"
 )
 
