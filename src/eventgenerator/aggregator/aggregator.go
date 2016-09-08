@@ -27,7 +27,7 @@ func NewAggregator(logger lager.Logger, clock clock.Clock, policyPollerInterval 
 		logger:             logger.Session("Aggregator"),
 		metricCollectorUrl: metricCollectorUrl,
 		doneChan:           make(chan bool),
-		appChan:            make(chan *model.AppMonitor, 10),
+		appChan:            make(chan *model.AppMonitor, 1024),
 		metricPollerCount:  metricPollerCount,
 		metricPollerArray:  []*MetricPoller{},
 		policyDatabase:     policyDatabase,

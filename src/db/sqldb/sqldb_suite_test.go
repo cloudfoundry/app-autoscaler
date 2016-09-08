@@ -6,15 +6,18 @@ import (
 	"os"
 	"testing"
 
+	. "db/sqldb"
 	_ "github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	. "db/sqldb"
 	"models"
 )
 
 var dbHelper *sql.DB
+var testMetricType string = "MemoryUsage"
+var testUnit string = "mb"
+var testValue int64 = 200
+var testTimestamp int64 = 1000000000000
 
 func TestSqldb(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -33,6 +36,7 @@ var _ = BeforeSuite(func() {
 	if e != nil {
 		Fail("can not connect database: " + e.Error())
 	}
+
 })
 
 var _ = AfterSuite(func() {
@@ -104,4 +108,13 @@ func hasAppMetric(appId, metricType string, timestamp int64) bool {
 	}
 	defer rows.Close()
 	return rows.Next()
+}
+func insertAppMetric(appId string) {
+	query := "INSERT INTO app_metric(app_id, metric_type,unit,value,timestamp) values($1, $2, $3, $4, $5)"
+	_, e := dbHelper.Exec(query, appId, testMetricType, testUnit, testValue, testTimestamp)
+
+	if e != nil {
+		Fail("can not insert data to policy table: " + e.Error())
+	}
+
 }

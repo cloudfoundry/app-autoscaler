@@ -16,12 +16,12 @@ type AppMetric struct {
 	Unit       string
 	Timestamp  int64
 }
-type AppEvaluationEntity struct {
+type Trigger struct {
 	AppId            string        `json:"appId"`
 	MetricType       string        `json:"metricType"`
 	BreachDuration   time.Duration `json:"breachDuration"`
 	CoolDownDuration time.Duration `json:"coolDownDuration"`
-	Threshold        int           `json:"threshold"`
+	Threshold        int64         `json:"threshold"`
 	Operator         string        `json:"operator"`
 	Adjustment       string        `json:"adjustment"`
 }
