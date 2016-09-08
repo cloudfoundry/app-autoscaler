@@ -24,3 +24,29 @@ databaseChangeLog:
               - column:
                   name: policy_json
                   type: ${policy_json.type}
+   - changeSet:
+      id: 2
+      author: pradyutsarma
+      changes:
+        - addColumn:
+            columns:
+              - column:
+                  name: updated_at
+                  type: timestamp
+            tableName: policy_json
+        - createProcedure:
+            procedureBody:
+              CREATE OR REPLACE FUNCTION get_last_updated() RETURNS trigger
+                LANGUAGE plpgsql
+                AS $$
+                BEGIN
+                NEW.updated_at := CURRENT_TIMESTAMP;
+                RETURN NEW;
+                END;
+              $$;
+        - sql:
+            DROP TRIGGER IF EXISTS update_last_updated_at_policy_db ON policy_json;
+            CREATE TRIGGER update_last_updated_at_policy_db BEFORE INSERT OR UPDATE ON policy_json FOR EACH ROW EXECUTE PROCEDURE get_last_updated();
+        - rollback:
+            DROP FUNCTION get_last_updated()
+            DROP TRIGGER update_last_updated_at_policy_db ON policy_json;
