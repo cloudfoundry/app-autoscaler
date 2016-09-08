@@ -1,5 +1,5 @@
 <link href="https://raw.github.com/clownfart/Markdown-CSS/master/markdown.css" rel="stylesheet"></link>
-[![Build Status](https://runtime-og.ci.cf-app.com/api/v1/pipelines/autoscaler/jobs/unit-tests/badge)](https://runtime-og.ci.cf-app.com/pipelines/autoscaler)
+[![Build Status](https://runtime-og.ci.cf-app.com/api/v1/pipelines/autoscaler/jobs/unit-tests/badge?ts=1)](https://runtime-og.ci.cf-app.com/pipelines/autoscaler)
 
 # CF-AutoScaler
 
