@@ -14,7 +14,7 @@ describe('Create a Policy', function() {
 
   context ('Test create policies', function () {
 	  beforeEach(function() {
-		policy.truncate();
+		  return policy.truncate();
 	  });
 
 	  it('Should create a policy for app id 99999 successfully', function() {
@@ -41,7 +41,7 @@ describe('Create a Policy', function() {
   
   context ('Test create and update policies with updated_at checks', function () {
 	  beforeEach(function() {
-		policy.truncate();
+		  return policy.truncate();
 	  });
 
 	  it('Create a policy with app_id 99999 and then updates the policy for the same', function(done) {
