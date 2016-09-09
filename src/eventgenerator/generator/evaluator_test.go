@@ -73,9 +73,9 @@ var _ = Describe("Evaluator", func() {
 	BeforeEach(func() {
 		logger = lagertest.NewTestLogger("Evaluator-test")
 		httpClient = cfhttp.NewClient()
-		triggerChan = make(chan []*Trigger, 1)
+		triggerChan = make(chan []*Trigger, 2)
 		database = &fakes.FakeAppMetricDB{}
-		scalingEngine = nil
+		scalingEngine = ghttp.NewServer()
 
 	})
 	Context("Start", func() {
@@ -92,8 +92,7 @@ var _ = Describe("Evaluator", func() {
 		Context("when evaluator is started", func() {
 
 			BeforeEach(func() {
-				scalingEngine = ghttp.NewServer()
-				triggerChan <- triggerArray
+				Expect(triggerChan).To(BeSent(triggerArray))
 			})
 			Context("retrieve appMatrics", func() {
 				BeforeEach(func() {
@@ -106,86 +105,83 @@ var _ = Describe("Evaluator", func() {
 					Eventually(database.RetrieveAppMetricsCallCount).Should(Equal(1))
 				})
 			})
-			Context("when retrieve appMetrics from database successfully", func() {
-				Context("when there are data in appMetrics", func() {
-					Context("when the appMetrics breach the trigger", func() {
+
+			Context("when the appMetrics breach the trigger", func() {
+				BeforeEach(func() {
+					database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*AppMetric, error) {
+						return appMetricUpper, nil
+					}
+				})
+				Context("should send trigger alarm to scaling engine", func() {
+					Context("when send trigger alarm successfully", func() {
 						BeforeEach(func() {
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*AppMetric, error) {
-								return appMetricUpper, nil
-							}
+							scalingEngine.RouteToHandler("POST", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
 						})
-						Context("should send trigger alarm to scaling engine", func() {
-							Context("when send trigger alarm successfully", func() {
-								BeforeEach(func() {
-									scalingEngine.RouteToHandler("POST", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
-								})
-								It("when send trigger successfully", func() {
-									Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
-									Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("send trigger alarm to scaling engine")))
-								})
-							})
-							Context("when the send request encounters error", func() {
-								JustBeforeEach(func() {
-									scalingEngine.Close()
-								})
-								It("should log the error", func() {
-									Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("http reqeust error,failed to send trigger alarm")))
-								})
-							})
-							Context("when the scaling engine returns error", func() {
-								BeforeEach(func() {
-									scalingEngine.RouteToHandler("POST", regPath, ghttp.RespondWithJSONEncoded(http.StatusBadRequest, "error"))
-								})
-								It("should log the error", func() {
-									Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
-									Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("scaling engine error,failed to send trigger alarm")))
-								})
-							})
-							PContext("when the scaling engine's response is too long", func() {
-								BeforeEach(func() {
-									tmp := ""
-									errorStr := ""
-									for i := 0; i < 9999; i++ {
-										tmp = tmp + "error-error-error-error-error-error-error-error-error-error-error-error-error-error-error-error-error-error-error-error"
-									}
-									for i := 0; i < 999; i++ {
-										errorStr = errorStr + tmp
-									}
-									scalingEngine.RouteToHandler("POST", regPath, ghttp.RespondWithJSONEncoded(http.StatusBadRequest, errorStr))
-								})
-								It("should log the error", func() {
-									Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
-									Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("failed to read body from scaling engine's response")))
-								})
-							})
-
-						})
-
-					})
-
-					Context("when the appMetrics do not breach the trigger", func() {
-						BeforeEach(func() {
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*AppMetric, error) {
-								return appMetricLower, nil
-							}
-						})
-
-						It("should not send trigger alarm", func() {
-							Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
+						It("when send trigger successfully", func() {
+							Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
+							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("send trigger alarm to scaling engine")))
 						})
 					})
+					Context("when the send request encounters error", func() {
+						JustBeforeEach(func() {
+							scalingEngine.Close()
+						})
+						It("should log the error", func() {
+							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("http reqeust error,failed to send trigger alarm")))
+						})
+					})
+					Context("when the scaling engine returns error", func() {
+						BeforeEach(func() {
+							scalingEngine.RouteToHandler("POST", regPath, ghttp.RespondWithJSONEncoded(http.StatusBadRequest, "error"))
+						})
+						It("should log the error", func() {
+							Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
+							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("scaling engine error,failed to send trigger alarm")))
+						})
+					})
+					PContext("when the scaling engine's response is too long", func() {
+						BeforeEach(func() {
+							tmp := ""
+							errorStr := ""
+							for i := 0; i < 9999; i++ {
+								tmp = tmp + "error-error-error-error-error-error-error-error-error-error-error-error-error-error-error-error-error-error-error-error"
+							}
+							for i := 0; i < 999; i++ {
+								errorStr = errorStr + tmp
+							}
+							scalingEngine.RouteToHandler("POST", regPath, ghttp.RespondWithJSONEncoded(http.StatusBadRequest, errorStr))
+						})
+						It("should log the error", func() {
+							Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
+							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("failed to read body from scaling engine's response")))
+						})
+					})
+
 				})
 
-				Context("when appMetrics is empty", func() {
-					BeforeEach(func() {
-						database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*AppMetric, error) {
-							return []*AppMetric{}, nil
-						}
-					})
+			})
 
-					It("should not send trigger alarm", func() {
-						Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
-					})
+			Context("when the appMetrics do not breach the trigger", func() {
+				BeforeEach(func() {
+					database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*AppMetric, error) {
+						return appMetricLower, nil
+					}
+				})
+
+				It("should not send trigger alarm", func() {
+					Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
+				})
+			})
+
+			Context("when appMetrics is empty", func() {
+				BeforeEach(func() {
+					database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*AppMetric, error) {
+						return []*AppMetric{}, nil
+					}
+				})
+
+				It("should not send trigger alarm", func() {
+					Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
 				})
 			})
 
@@ -198,6 +194,24 @@ var _ = Describe("Evaluator", func() {
 
 				It("should not send trigger alarm", func() {
 					Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
+				})
+			})
+			Context("when there are invalid operators in trigger", func() {
+				BeforeEach(func() {
+					invalidTriggerArray := []*Trigger{&Trigger{
+						AppId:            testAppId,
+						MetricType:       testMetricType,
+						BreachDuration:   300,
+						CoolDownDuration: 300,
+						Threshold:        500,
+						Operator:         "invalid_operator",
+						Adjustment:       "1",
+					}}
+
+					Expect(triggerChan).To(BeSent(invalidTriggerArray))
+				})
+				It("should log the error", func() {
+					Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("operator is invalid")))
 				})
 			})
 
@@ -213,6 +227,7 @@ var _ = Describe("Evaluator", func() {
 			}
 			evaluator.Start()
 			evaluator.Stop()
+			time.Sleep(1 * time.Second)
 		})
 
 		AfterEach(func() {
@@ -220,8 +235,8 @@ var _ = Describe("Evaluator", func() {
 		})
 
 		It("should stop to send trigger alarm", func() {
-			triggerChan <- triggerArray
-			Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(0))
+			Expect(triggerChan).To(BeSent(triggerArray))
+			Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
 		})
 	})
 })

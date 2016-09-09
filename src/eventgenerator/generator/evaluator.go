@@ -8,12 +8,7 @@ import (
 	"eventgenerator/model"
 	"io/ioutil"
 	"net/http"
-	"strings"
 	"time"
-)
-
-const (
-	PathScale = "/v1/apps/{appid}/scale"
 )
 
 type Evaluator struct {
@@ -54,7 +49,16 @@ func (e *Evaluator) Stop() {
 	e.logger.Info("stopped")
 }
 func (e *Evaluator) doEvaluate(triggerArray []*model.Trigger) {
+
 	for _, trigger := range triggerArray {
+		threshold := trigger.Threshold
+		operator := trigger.Operator
+
+		if !e.isValidOperator(operator) {
+			e.logger.Error("operator is invalid", nil, lager.Data{"trigger": trigger})
+			continue
+		}
+
 		appMetricList, err := e.retrieveAppMetrics(trigger)
 		if err != nil {
 			return
@@ -63,26 +67,33 @@ func (e *Evaluator) doEvaluate(triggerArray []*model.Trigger) {
 			e.logger.Debug("no available appmetric", lager.Data{"trigger": trigger})
 			return
 		}
-		threshold := trigger.Threshold
-		operator := trigger.Operator
-		var shouldAlarm bool = true
 		for _, appMetric := range appMetricList {
 			if operator == ">" {
 				if appMetric.Value <= threshold {
 					e.logger.Debug("should not send trigger alarm to scaling engine", lager.Data{"trigger": trigger, "appMetric": appMetric})
 					return
 				}
-			} else {
+			} else if operator == ">=" {
+				if appMetric.Value < threshold {
+					e.logger.Debug("should not send trigger alarm to scaling engine", lager.Data{"trigger": trigger, "appMetric": appMetric})
+					return
+				}
+			} else if operator == "<" {
 				if appMetric.Value >= threshold {
+					e.logger.Debug("should not send trigger alarm to scaling engine", lager.Data{"trigger": trigger, "appMetric": appMetric})
+					return
+				}
+			} else if operator == "<=" {
+				if appMetric.Value > threshold {
 					e.logger.Debug("should not send trigger alarm to scaling engine", lager.Data{"trigger": trigger, "appMetric": appMetric})
 					return
 				}
 			}
 		}
-		if shouldAlarm {
-			e.logger.Info("send trigger alarm to scaling engine", lager.Data{"trigger": trigger})
-			e.sendTriggerAlarm(trigger)
-		}
+
+		e.logger.Info("send trigger alarm to scaling engine", lager.Data{"trigger": trigger})
+		e.sendTriggerAlarm(trigger)
+
 	}
 
 }
@@ -102,10 +113,9 @@ func (e *Evaluator) retrieveAppMetrics(trigger *model.Trigger) ([]*model.AppMetr
 }
 func (e *Evaluator) sendTriggerAlarm(trigger *model.Trigger) {
 	url := e.scalingEngineUrl
-	b := new(bytes.Buffer)
-	json.NewEncoder(b).Encode(trigger)
-	path := strings.Replace(PathScale, "{appid}", trigger.AppId, 1)
-	resp, respErr := e.httpClient.Post(url+path, "", b)
+	jsonBytes, _ := json.Marshal(trigger)
+	path := "/v1/apps/" + trigger.AppId + "/scale"
+	resp, respErr := e.httpClient.Post(url+path, "", bytes.NewReader(jsonBytes))
 	if respErr != nil {
 		e.logger.Error("http reqeust error,failed to send trigger alarm", respErr, lager.Data{"trigger": trigger})
 		return
@@ -120,4 +130,13 @@ func (e *Evaluator) sendTriggerAlarm(trigger *model.Trigger) {
 		}
 		e.logger.Error("scaling engine error,failed to send trigger alarm", nil, lager.Data{"responseCode": resp.StatusCode, "responseBody": respBody})
 	}
+}
+func (e *Evaluator) isValidOperator(operator string) bool {
+	validOperators := []string{">", ">=", "<", "<="}
+	for _, o := range validOperators {
+		if o == operator {
+			return true
+		}
+	}
+	return false
 }

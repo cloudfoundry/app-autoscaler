@@ -1,7 +1,6 @@
 package generator_test
 
 import (
-	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/lager"
 	"code.cloudfoundry.org/lager/lagertest"
@@ -20,7 +19,6 @@ var _ = Describe("AppEvaluationManager", func() {
 
 	var (
 		logger               lager.Logger
-		rclock               clock.Clock
 		fclock               *fakeclock.FakeClock
 		manager              *AppEvaluationManager
 		testEvaluateInterval time.Duration
@@ -74,7 +72,6 @@ var _ = Describe("AppEvaluationManager", func() {
 	)
 	BeforeEach(func() {
 		fclock = fakeclock.NewFakeClock(time.Now())
-		rclock = clock.NewClock()
 		testEvaluateInterval = 1 * time.Second
 		logger = lagertest.NewTestLogger("ApplicationManager-test")
 		triggerArrayChan = make(chan []*Trigger, 10)
