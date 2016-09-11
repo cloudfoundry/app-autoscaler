@@ -17,7 +17,7 @@ import (
 )
 
 const TestPathMemoryMetrics = "/v1/apps/an-app-id/metrics/memory"
-const TestPathMemoryMetricsHistory = "/v1/apps/an-app-id/metrics_history/memory"
+const TestPathMemoryMetricHistories = "/v1/apps/an-app-id/metric_histories/memory"
 
 var _ = Describe("Server", func() {
 	var (
@@ -44,13 +44,13 @@ var _ = Describe("Server", func() {
 		ginkgomon.Interrupt(server)
 	})
 
-	JustBeforeEach(func() {
-		rsp, err = http.Get(serverUrl.String())
-	})
-
 	Context("when retrieving metrics", func() {
 		BeforeEach(func() {
 			serverUrl.Path = TestPathMemoryMetrics
+		})
+
+		JustBeforeEach(func() {
+			rsp, err = http.Get(serverUrl.String())
 		})
 
 		It("should return 200", func() {
@@ -61,7 +61,11 @@ var _ = Describe("Server", func() {
 
 	Context("when retrieving metrics history", func() {
 		BeforeEach(func() {
-			serverUrl.Path = TestPathMemoryMetricsHistory
+			serverUrl.Path = TestPathMemoryMetricHistories
+		})
+
+		JustBeforeEach(func() {
+			rsp, err = http.Get(serverUrl.String())
 		})
 
 		It("should return 200", func() {
@@ -75,13 +79,21 @@ var _ = Describe("Server", func() {
 			serverUrl.Path = "/not-exist-path"
 		})
 
+		JustBeforeEach(func() {
+			rsp, err = http.Get(serverUrl.String())
+		})
+
 		It("should return 404", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(rsp.StatusCode).To(Equal(http.StatusNotFound))
 		})
 	})
 
-	Context("when requesting the wrong method", func() {
+	Context("when using wrong method to retrieve memory metrics", func() {
+		BeforeEach(func() {
+			serverUrl.Path = TestPathMemoryMetrics
+		})
+
 		JustBeforeEach(func() {
 			rsp, err = http.Post(serverUrl.String(), "garbage", nil)
 		})
@@ -91,4 +103,20 @@ var _ = Describe("Server", func() {
 			Expect(rsp.StatusCode).To(Equal(http.StatusNotFound))
 		})
 	})
+
+	Context("when using wrong method to retrieve memory metric histories", func() {
+		BeforeEach(func() {
+			serverUrl.Path = TestPathMemoryMetricHistories
+		})
+
+		JustBeforeEach(func() {
+			rsp, err = http.Post(serverUrl.String(), "garbage", nil)
+		})
+
+		It("should return 404", func() {
+			Expect(err).ToNot(HaveOccurred())
+			Expect(rsp.StatusCode).To(Equal(http.StatusNotFound))
+		})
+	})
+
 })

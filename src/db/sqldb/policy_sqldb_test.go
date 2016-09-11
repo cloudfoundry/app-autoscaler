@@ -46,7 +46,7 @@ var _ = Describe("PolicySQLDB", func() {
 
 		Context("when db url is not correct", func() {
 			BeforeEach(func() {
-				url = "postgres://non-exist-user:non-exist-password@localhost/autoscaler?sslmode=disable"
+				url = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&pq.Error{}))

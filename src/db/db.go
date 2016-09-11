@@ -26,3 +26,9 @@ type AppMetricDB interface {
 	RetrieveAppMetrics(appId string, metricType string, start int64, end int64) ([]*model.AppMetric, error)
 	Close() error
 }
+
+type HistoryDB interface {
+	SaveScalingHistory(history *models.AppScalingHistory) error
+	RetrieveScalingHistories(appId string, start int64, end int64) ([]*models.AppScalingHistory, error)
+	Close() error
+}

@@ -127,7 +127,7 @@ var _ = Describe("MetricsCollector", func() {
 
 	Describe("when a request for memory metrics history comes", func() {
 		It("returns with a 200", func() {
-			rsp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/v1/apps/an-app-id/metrics_history/memory", mcPort))
+			rsp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/v1/apps/an-app-id/metric_histories/memory", mcPort))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 		})

@@ -67,6 +67,7 @@ java -cp 'db/target/lib/*'  liquibase.integration.commandline.Main --changeLogFi
 java -cp 'db/target/lib/*'  liquibase.integration.commandline.Main --changeLogFile=servicebroker/db/servicebroker.db.changelog.json --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver update
 java -cp 'db/target/lib/*'  liquibase.integration.commandline.Main --changeLogFile=src/metricscollector/db/metricscollector.db.changelog.yml --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver update
 java -cp 'db/target/lib/*'  liquibase.integration.commandline.Main --changeLogFile=src/eventgenerator/db/dataaggregator.db.changelog.yml --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver update
+java -cp 'db/target/lib/*'  liquibase.integration.commandline.Main --changeLogFile=src/engine/db/engine.db.changelog.yml --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver update
 java -cp 'db/target/lib/*'  liquibase.integration.commandline.Main --changeLogFile=scheduler/db/scheduler.changelog-master.yaml --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver update
 java -cp 'db/target/lib/*'  liquibase.integration.commandline.Main --changeLogFile=scheduler/db/quartz.changelog-master.yaml --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver update
 ```

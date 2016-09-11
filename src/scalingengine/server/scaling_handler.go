@@ -6,9 +6,11 @@ import (
 	"models"
 
 	"code.cloudfoundry.org/cfhttp/handlers"
+	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
 
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -17,16 +19,20 @@ import (
 const TokenTypeBearer = "bearer"
 
 type ScalingHandler struct {
-	cfClient cf.CfClient
-	logger   lager.Logger
-	database db.PolicyDB
+	cfClient  cf.CfClient
+	logger    lager.Logger
+	policyDB  db.PolicyDB
+	historyDB db.HistoryDB
+	hClock    clock.Clock
 }
 
-func NewScalingHandler(logger lager.Logger, cfc cf.CfClient, database db.PolicyDB) *ScalingHandler {
+func NewScalingHandler(logger lager.Logger, cfc cf.CfClient, policyDB db.PolicyDB, historyDB db.HistoryDB, hClock clock.Clock) *ScalingHandler {
 	return &ScalingHandler{
-		cfClient: cfc,
-		logger:   logger,
-		database: database,
+		cfClient:  cfc,
+		logger:    logger,
+		policyDB:  policyDB,
+		historyDB: historyDB,
+		hClock:    hClock,
 	}
 }
 
@@ -60,39 +66,74 @@ func (h *ScalingHandler) HandleScale(w http.ResponseWriter, r *http.Request, var
 func (h *ScalingHandler) Scale(appId string, trigger *models.Trigger) (int, error) {
 	logger := h.logger.WithData(lager.Data{"appId": appId})
 
-	policy, err := h.database.GetAppPolicy(appId)
+	history := &models.AppScalingHistory{
+		AppId:        appId,
+		Timestamp:    h.hClock.Now().UnixNano(),
+		ScalingType:  models.ScalingTypeDynamic,
+		OldInstances: -1,
+		NewInstances: -1,
+		Reason:       getScalingReason(trigger),
+	}
+
+	policy, err := h.policyDB.GetAppPolicy(appId)
 	if err != nil {
 		logger.Error("scale-get-app-policy", err)
+		history.Status = models.ScalingStatusFailed
+		history.Error = "failed to get scaling policy"
+		h.historyDB.SaveScalingHistory(history)
 		return -1, err
 	}
 
 	instances, err := h.cfClient.GetAppInstances(appId)
 	if err != nil {
 		logger.Error("scale-get-app-instances", err)
+		history.Status = models.ScalingStatusFailed
+		history.Error = "failed to get app instances"
+		h.historyDB.SaveScalingHistory(history)
 		return -1, err
 	}
+	history.OldInstances = instances
 
 	var newInstances int
-	newInstances, err = h.ComputeNewInstances(instances, trigger.Adjustment, policy.InstanceMin, policy.InstanceMax)
+	newInstances, err = h.ComputeNewInstances(instances, trigger.Adjustment)
 	if err != nil {
-		logger.Error("scale-compute-new-instance", err, lager.Data{"instances": instances, "adjustment": trigger.Adjustment, "instanceMin": policy.InstanceMin, "InstanceMax": policy.InstanceMax})
+		logger.Error("scale-compute-new-instance", err, lager.Data{"instances": instances, "adjustment": trigger.Adjustment})
+		history.Status = models.ScalingStatusFailed
+		history.Error = "failed to compute new app instances"
+		h.historyDB.SaveScalingHistory(history)
 		return -1, err
 	}
 
-	logger.Info("Scale", lager.Data{"trigger": trigger, "instanceMin": policy.InstanceMin, "InstanceMax": policy.InstanceMax, "currentInstances": instances, "newInstances": newInstances})
+	if newInstances > policy.InstanceMax {
+		newInstances = policy.InstanceMax
+		history.Message = fmt.Sprintf("limit to max instances %d", policy.InstanceMax)
+	} else if newInstances < policy.InstanceMin {
+		newInstances = policy.InstanceMin
+		history.Message = fmt.Sprintf("limit to min instances %d", policy.InstanceMin)
+	}
+	history.NewInstances = newInstances
+
 	if newInstances == instances {
+		history.Status = models.ScalingStatusIgnored
+		h.historyDB.SaveScalingHistory(history)
 		return newInstances, nil
 	}
 
 	err = h.cfClient.SetAppInstances(appId, newInstances)
 	if err != nil {
 		logger.Error("scale-set-app-instances", err, lager.Data{"newInstances": newInstances})
+		history.Status = models.ScalingStatusFailed
+		history.Error = "failed to set app instances"
+		h.historyDB.SaveScalingHistory(history)
 		return -1, err
 	}
+
+	history.Status = models.ScalingStatusSucceeded
+	h.historyDB.SaveScalingHistory(history)
 	return newInstances, nil
 }
 
-func (h *ScalingHandler) ComputeNewInstances(currentInstances int, adjustment string, instanceMin int, instanceMax int) (int, error) {
+func (h *ScalingHandler) ComputeNewInstances(currentInstances int, adjustment string) (int, error) {
 	var newInstances int
 	if strings.HasSuffix(adjustment, "%") {
 		percentage, err := strconv.ParseFloat(strings.TrimSuffix(adjustment, "%"), 32)
@@ -110,11 +151,82 @@ func (h *ScalingHandler) ComputeNewInstances(currentInstances int, adjustment st
 		newInstances = int(step) + currentInstances
 	}
 
-	if newInstances < instanceMin {
-		newInstances = instanceMin
-	} else if newInstances > instanceMax {
-		newInstances = instanceMax
+	return newInstances, nil
+}
+
+func (h *ScalingHandler) GetScalingHistories(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+	appId := vars["appid"]
+	startParam := r.URL.Query()["start"]
+	endParam := r.URL.Query()["end"]
+	h.logger.Debug("get-scaling-histories", lager.Data{"appId": appId, "start": startParam, "end": endParam})
+
+	var err error
+	start := int64(0)
+	end := int64(-1)
+
+	if len(startParam) == 1 {
+		start, err = strconv.ParseInt(startParam[0], 10, 64)
+		if err != nil {
+			h.logger.Error("get-scaling-histories-parse-start-time", err, lager.Data{"start": startParam})
+			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
+				Code:    "Bad-Request",
+				Message: "Error parsing start time"})
+			return
+		}
+	} else if len(startParam) > 1 {
+		h.logger.Error("get-scaling-histories-get-start-time", err, lager.Data{"start": startParam})
+		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
+			Code:    "Bad-Request",
+			Message: "Incorrect start parameter in query string"})
+		return
 	}
 
-	return newInstances, nil
+	if len(endParam) == 1 {
+		end, err = strconv.ParseInt(endParam[0], 10, 64)
+		if err != nil {
+			h.logger.Error("get-scaling-histories-parse-end-time", err, lager.Data{"end": endParam})
+			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
+				Code:    "Bad-Request",
+				Message: "Error parsing end time"})
+			return
+		}
+	} else if len(endParam) > 1 {
+		h.logger.Error("get-scaling-histories-get-end-time", err, lager.Data{"end": endParam})
+		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
+			Code:    "Bad-Request",
+			Message: "Incorrect end parameter in query string"})
+		return
+	}
+
+	var histories []*models.AppScalingHistory
+
+	histories, err = h.historyDB.RetrieveScalingHistories(appId, start, end)
+	if err != nil {
+		h.logger.Error("get-scaling-history-retrieve-histories", err, lager.Data{"appId": appId, "start": start, "end": end})
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Error getting scaling histories from database"})
+		return
+	}
+
+	var body []byte
+	body, err = json.Marshal(histories)
+	if err != nil {
+		h.logger.Error("get-scaling-history-marshal", err, lager.Data{"appId": appId, "histories": histories})
+
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Error getting scaling histories from database"})
+		return
+	}
+	w.Write(body)
+}
+
+func getScalingReason(trigger *models.Trigger) string {
+	return fmt.Sprintf("%s instance(s) because %s %s %d for %d seconds",
+		trigger.Adjustment,
+		trigger.MetricType,
+		trigger.Operator,
+		trigger.Threshold,
+		trigger.BreachDurationSeconds)
 }

@@ -1,12 +1,15 @@
 package sqldb_test
 
 import (
-	"code.cloudfoundry.org/lager"
 	. "db/sqldb"
 	"eventgenerator/model"
+	"models"
+
+	"code.cloudfoundry.org/lager"
 	"github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
 	"os"
 	"time"
 )
@@ -39,7 +42,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 
 		Context("when db url is not correct", func() {
 			BeforeEach(func() {
-				url = "postgres://non-exist-user:non-exist-password@localhost/autoscaler?sslmode=disable"
+				url = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&pq.Error{}))
@@ -71,8 +74,8 @@ var _ = Describe("AppMetricSQLDB", func() {
 			BeforeEach(func() {
 				appMetric := &model.AppMetric{
 					AppId:      "test-app-id",
-					MetricType: "MemoryUsage",
-					Unit:       "bytes",
+					MetricType: models.MetricNameMemory,
+					Unit:       models.UnitBytes,
 					Timestamp:  11111111,
 					Value:      30000,
 				}
@@ -81,7 +84,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 
 			It("has the appMetric in database", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(hasAppMetric("test-app-id", "MemoryUsage", 11111111)).To(BeTrue())
+				Expect(hasAppMetric("test-app-id", models.MetricNameMemory, 11111111)).To(BeTrue())
 			})
 		})
 

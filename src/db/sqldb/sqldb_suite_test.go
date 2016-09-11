@@ -116,5 +116,21 @@ func insertAppMetric(appId string) {
 	if e != nil {
 		Fail("can not insert data to policy table: " + e.Error())
 	}
+}
 
+func cleanScalingHistoryTable() {
+	_, e := dbHelper.Exec("DELETE from scalinghistory")
+	if e != nil {
+		Fail("can not clean scaling history table: " + e.Error())
+	}
+}
+
+func hasScalingHistory(appId string, timestamp int64) bool {
+	query := "SELECT * FROM scalinghistory WHERE appid = $1 AND timestamp = $2"
+	rows, e := dbHelper.Query(query, appId, timestamp)
+	if e != nil {
+		Fail("can not query table scalinghistory: " + e.Error())
+	}
+	defer rows.Close()
+	return rows.Next()
 }
