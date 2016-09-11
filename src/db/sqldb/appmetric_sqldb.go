@@ -3,10 +3,9 @@ package sqldb
 import (
 	"code.cloudfoundry.org/lager"
 	"database/sql"
-	"eventgenerator/appmetric"
-	_ "github.com/lib/pq"
-
 	"db"
+	"eventgenerator/model"
+	_ "github.com/lib/pq"
 )
 
 type AppMetricSQLDB struct {
@@ -47,7 +46,7 @@ func (adb *AppMetricSQLDB) Close() error {
 	}
 	return nil
 }
-func (adb *AppMetricSQLDB) SaveAppMetric(appMetric *appmetric.AppMetric) error {
+func (adb *AppMetricSQLDB) SaveAppMetric(appMetric *model.AppMetric) error {
 	query := "INSERT INTO app_metric(app_id, metric_type, unit, timestamp, value) values($1, $2, $3, $4, $5)"
 	_, err := adb.sqldb.Exec(query, appMetric.AppId, appMetric.MetricType, appMetric.Unit, appMetric.Timestamp, appMetric.Value)
 
@@ -56,4 +55,34 @@ func (adb *AppMetricSQLDB) SaveAppMetric(appMetric *appmetric.AppMetric) error {
 	}
 
 	return err
+}
+func (adb *AppMetricSQLDB) RetrieveAppMetrics(appIdP string, metricTypeP string, startP int64, endP int64) ([]*model.AppMetric, error) {
+	query := "SELECT app_id,metric_type,value,unit,timestamp FROM app_metric WHERE app_id=$1 AND metric_type=$2 AND timestamp>=$3 AND timestamp<=$4 ORDER BY timestamp ASC"
+	appMetricList := []*model.AppMetric{}
+	rows, err := adb.sqldb.Query(query, appIdP, metricTypeP, startP, endP)
+	if err != nil {
+		adb.logger.Error("retrieve-app-metric-list-from-app_metric-table", err, lager.Data{"query": query})
+		return appMetricList, err
+	}
+	defer rows.Close()
+	var appId string
+	var metricType string
+	var value int64
+	var unit string
+	var timestamp int64
+	for rows.Next() {
+		if err = rows.Scan(&appId, &metricType, &value, &unit, &timestamp); err != nil {
+			adb.logger.Error("scan-appmetric-from-search-result", err)
+		}
+
+		appMetric := &model.AppMetric{
+			AppId:      appId,
+			MetricType: metricType,
+			Value:      value,
+			Unit:       unit,
+			Timestamp:  timestamp,
+		}
+		appMetricList = append(appMetricList, appMetric)
+	}
+	return appMetricList, nil
 }

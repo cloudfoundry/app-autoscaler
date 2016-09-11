@@ -1,4 +1,4 @@
-package policy_test
+package generator_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestModel(t *testing.T) {
+func TestGenerator(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Policy Suite")
+	RunSpecs(t, "Generator Suite")
 }

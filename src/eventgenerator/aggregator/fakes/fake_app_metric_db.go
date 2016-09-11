@@ -3,18 +3,30 @@ package fakes
 
 import (
 	"db"
-	"eventgenerator/appmetric"
+	"eventgenerator/model"
 	"sync"
 )
 
 type FakeAppMetricDB struct {
-	SaveAppMetricStub        func(appMetric *appmetric.AppMetric) error
+	SaveAppMetricStub        func(appMetric *model.AppMetric) error
 	saveAppMetricMutex       sync.RWMutex
 	saveAppMetricArgsForCall []struct {
-		appMetric *appmetric.AppMetric
+		appMetric *model.AppMetric
 	}
 	saveAppMetricReturns struct {
 		result1 error
+	}
+	RetrieveAppMetricsStub        func(appId string, metricType string, start int64, end int64) ([]*model.AppMetric, error)
+	retrieveAppMetricsMutex       sync.RWMutex
+	retrieveAppMetricsArgsForCall []struct {
+		appId      string
+		metricType string
+		start      int64
+		end        int64
+	}
+	retrieveAppMetricsReturns struct {
+		result1 []*model.AppMetric
+		result2 error
 	}
 	CloseStub        func() error
 	closeMutex       sync.RWMutex
@@ -26,10 +38,10 @@ type FakeAppMetricDB struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeAppMetricDB) SaveAppMetric(appMetric *appmetric.AppMetric) error {
+func (fake *FakeAppMetricDB) SaveAppMetric(appMetric *model.AppMetric) error {
 	fake.saveAppMetricMutex.Lock()
 	fake.saveAppMetricArgsForCall = append(fake.saveAppMetricArgsForCall, struct {
-		appMetric *appmetric.AppMetric
+		appMetric *model.AppMetric
 	}{appMetric})
 	fake.recordInvocation("SaveAppMetric", []interface{}{appMetric})
 	fake.saveAppMetricMutex.Unlock()
@@ -46,7 +58,7 @@ func (fake *FakeAppMetricDB) SaveAppMetricCallCount() int {
 	return len(fake.saveAppMetricArgsForCall)
 }
 
-func (fake *FakeAppMetricDB) SaveAppMetricArgsForCall(i int) *appmetric.AppMetric {
+func (fake *FakeAppMetricDB) SaveAppMetricArgsForCall(i int) *model.AppMetric {
 	fake.saveAppMetricMutex.RLock()
 	defer fake.saveAppMetricMutex.RUnlock()
 	return fake.saveAppMetricArgsForCall[i].appMetric
@@ -57,6 +69,43 @@ func (fake *FakeAppMetricDB) SaveAppMetricReturns(result1 error) {
 	fake.saveAppMetricReturns = struct {
 		result1 error
 	}{result1}
+}
+
+func (fake *FakeAppMetricDB) RetrieveAppMetrics(appId string, metricType string, start int64, end int64) ([]*model.AppMetric, error) {
+	fake.retrieveAppMetricsMutex.Lock()
+	fake.retrieveAppMetricsArgsForCall = append(fake.retrieveAppMetricsArgsForCall, struct {
+		appId      string
+		metricType string
+		start      int64
+		end        int64
+	}{appId, metricType, start, end})
+	fake.recordInvocation("RetrieveAppMetrics", []interface{}{appId, metricType, start, end})
+	fake.retrieveAppMetricsMutex.Unlock()
+	if fake.RetrieveAppMetricsStub != nil {
+		return fake.RetrieveAppMetricsStub(appId, metricType, start, end)
+	} else {
+		return fake.retrieveAppMetricsReturns.result1, fake.retrieveAppMetricsReturns.result2
+	}
+}
+
+func (fake *FakeAppMetricDB) RetrieveAppMetricsCallCount() int {
+	fake.retrieveAppMetricsMutex.RLock()
+	defer fake.retrieveAppMetricsMutex.RUnlock()
+	return len(fake.retrieveAppMetricsArgsForCall)
+}
+
+func (fake *FakeAppMetricDB) RetrieveAppMetricsArgsForCall(i int) (string, string, int64, int64) {
+	fake.retrieveAppMetricsMutex.RLock()
+	defer fake.retrieveAppMetricsMutex.RUnlock()
+	return fake.retrieveAppMetricsArgsForCall[i].appId, fake.retrieveAppMetricsArgsForCall[i].metricType, fake.retrieveAppMetricsArgsForCall[i].start, fake.retrieveAppMetricsArgsForCall[i].end
+}
+
+func (fake *FakeAppMetricDB) RetrieveAppMetricsReturns(result1 []*model.AppMetric, result2 error) {
+	fake.RetrieveAppMetricsStub = nil
+	fake.retrieveAppMetricsReturns = struct {
+		result1 []*model.AppMetric
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeAppMetricDB) Close() error {
@@ -89,6 +138,8 @@ func (fake *FakeAppMetricDB) Invocations() map[string][][]interface{} {
 	defer fake.invocationsMutex.RUnlock()
 	fake.saveAppMetricMutex.RLock()
 	defer fake.saveAppMetricMutex.RUnlock()
+	fake.retrieveAppMetricsMutex.RLock()
+	defer fake.retrieveAppMetricsMutex.RUnlock()
 	fake.closeMutex.RLock()
 	defer fake.closeMutex.RUnlock()
 	return fake.invocations

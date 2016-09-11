@@ -3,8 +3,7 @@ package aggregator_test
 import (
 	. "eventgenerator/aggregator"
 	"eventgenerator/aggregator/fakes"
-	. "eventgenerator/appmetric"
-	. "eventgenerator/policy"
+	. "eventgenerator/model"
 	"models"
 	"net/http"
 	"regexp"
@@ -102,14 +101,15 @@ var _ = Describe("Aggregator", func() {
 		metricServer.RouteToHandler("GET", regPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
 			&metrics))
 	})
-	Context("ConsumeTrigger", func() {
-		var triggerMap map[string]*Trigger
+	Context("ConsumePolicy", func() {
+		var policyMap map[string]*Policy
 		var appChan chan *AppMonitor
 		var appMonitor *AppMonitor
 		BeforeEach(func() {
 			appChan = make(chan *AppMonitor, 1)
+
 			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount)
-			triggerMap = map[string]*Trigger{testAppId: &Trigger{
+			policyMap = map[string]*Policy{testAppId: &Policy{
 				AppId: testAppId,
 				TriggerRecord: &TriggerRecord{
 					InstanceMaxCount: 5,
@@ -127,7 +127,7 @@ var _ = Describe("Aggregator", func() {
 		})
 		Context("when there are data in triggerMap", func() {
 			JustBeforeEach(func() {
-				aggregator.ConsumeTrigger(triggerMap, appChan)
+				aggregator.ConsumePolicy(policyMap, appChan)
 			})
 			It("should parse the triggers to appmonitor and put them in appChan", func() {
 				Eventually(appChan).Should(Receive(&appMonitor))
@@ -138,23 +138,23 @@ var _ = Describe("Aggregator", func() {
 				}))
 			})
 		})
-		Context("when there is not data in triggerMap", func() {
+		Context("when there is no data in policyMap", func() {
 			BeforeEach(func() {
-				triggerMap = map[string]*Trigger{}
+				policyMap = map[string]*Policy{}
 			})
 			JustBeforeEach(func() {
-				aggregator.ConsumeTrigger(triggerMap, appChan)
+				aggregator.ConsumePolicy(policyMap, appChan)
 			})
 			It("should not receive any data from the appChan", func() {
 				Consistently(appChan).ShouldNot(Receive())
 			})
 		})
-		Context("when the triggerMap is nil", func() {
+		Context("when the policyMap is nil", func() {
 			BeforeEach(func() {
-				triggerMap = nil
+				policyMap = nil
 			})
 			JustBeforeEach(func() {
-				aggregator.ConsumeTrigger(triggerMap, appChan)
+				aggregator.ConsumePolicy(policyMap, appChan)
 			})
 			It("should not receive any data from the appChan", func() {
 				Consistently(appChan).ShouldNot(Receive())

@@ -4,8 +4,7 @@ import (
 	"errors"
 	. "eventgenerator/aggregator"
 	"eventgenerator/aggregator/fakes"
-	. "eventgenerator/appmetric"
-	. "eventgenerator/policy"
+	. "eventgenerator/model"
 	"time"
 
 	"code.cloudfoundry.org/clock/fakeclock"
@@ -19,7 +18,7 @@ var _ = Describe("PolicyPoller", func() {
 		database   *fakes.FakePolicyDB
 		clock      *fakeclock.FakeClock
 		poller     *PolicyPoller
-		triggerMap map[string]*Trigger
+		policyMap  map[string]*Policy
 		logger     lager.Logger
 		consumer   Consumer
 		appChan    chan *AppMonitor
@@ -43,11 +42,12 @@ var _ = Describe("PolicyPoller", func() {
 	)
 
 	BeforeEach(func() {
-		triggerMap = make(map[string]*Trigger)
+		policyMap = make(map[string]*Policy)
 		database = &fakes.FakePolicyDB{}
 		clock = fakeclock.NewFakeClock(time.Now())
 		logger = lager.NewLogger("PolicyPoller-test")
-		consumer = func(triggers map[string]*Trigger, appChan chan *AppMonitor) {}
+		consumer = func(policies map[string]*Policy, appChan chan *AppMonitor) {
+		}
 		appChan = make(chan *AppMonitor, 1)
 
 	})
@@ -73,21 +73,21 @@ var _ = Describe("PolicyPoller", func() {
 			})
 
 			Context("when retrieve policies and compute triggers successfully", func() {
-				var consumed chan map[string]*Trigger
+				var consumed chan map[string]*Policy
 				BeforeEach(func() {
 					database.RetrievePoliciesStub = func() ([]*PolicyJson, error) {
 						return []*PolicyJson{&PolicyJson{AppId: testAppId1, PolicyStr: policyStr1}}, nil
 					}
-					consumed = make(chan map[string]*Trigger, 1)
-					consumer = func(triggers map[string]*Trigger, appChan chan *AppMonitor) {
-						consumed <- triggers
+					consumed = make(chan map[string]*Policy, 1)
+					consumer = func(policies map[string]*Policy, appChan chan *AppMonitor) {
+						consumed <- policies
 					}
 				})
 				It("should call the consumer with the new triggers for every interval", func() {
 					clock.Increment(2 * testPolicyPollerInterval)
-					var triggerMap map[string]*Trigger
-					Eventually(consumed).Should(Receive(&triggerMap))
-					Expect(triggerMap[testAppId1]).To(Equal(&Trigger{
+					var policyMap map[string]*Policy
+					Eventually(consumed).Should(Receive(&policyMap))
+					Expect(policyMap[testAppId1]).To(Equal(&Policy{
 						AppId: testAppId1,
 						TriggerRecord: &TriggerRecord{
 							InstanceMaxCount: 5,
@@ -111,7 +111,7 @@ var _ = Describe("PolicyPoller", func() {
 						return nil, errors.New("error when retrieve policies from database")
 					}
 					consumed = make(chan bool, 1)
-					consumer = func(triggers map[string]*Trigger, appChan chan *AppMonitor) {
+					consumer = func(policies map[string]*Policy, appChan chan *AppMonitor) {
 						consumed <- true
 					}
 				})

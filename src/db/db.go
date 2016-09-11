@@ -1,8 +1,7 @@
 package db
 
 import (
-	"eventgenerator/appmetric"
-	"eventgenerator/policy"
+	"eventgenerator/model"
 	"models"
 )
 
@@ -17,12 +16,13 @@ type MetricsDB interface {
 
 type PolicyDB interface {
 	GetAppIds() (map[string]bool, error)
-	RetrievePolicies() ([]*policy.PolicyJson, error)
 	GetAppPolicy(appId string) (*models.ScalingPolicy, error)
+	RetrievePolicies() ([]*model.PolicyJson, error)
 	Close() error
 }
 
 type AppMetricDB interface {
-	SaveAppMetric(appMetric *appmetric.AppMetric) error
+	SaveAppMetric(appMetric *model.AppMetric) error
+	RetrieveAppMetrics(appId string, metricType string, start int64, end int64) ([]*model.AppMetric, error)
 	Close() error
 }

@@ -2,9 +2,8 @@ package aggregator_test
 
 import (
 	. "eventgenerator/aggregator"
-	. "eventgenerator/appmetric"
-	// . "metricscollector/server"
-	. "models"
+	. "eventgenerator/model"
+	"models"
 	"net/http"
 	"time"
 
@@ -25,32 +24,32 @@ var _ = Describe("MetricPoller", func() {
 	var httpClient *http.Client
 	var metricConsumer MetricConsumer
 	var metricServer *ghttp.Server
-	var metrics []*Metric = []*Metric{
-		&Metric{
+	var metrics []*models.Metric = []*models.Metric{
+		&models.Metric{
 			Name:      metricType,
 			Unit:      "bytes",
 			AppId:     testAppId,
 			TimeStamp: timestamp,
-			Instances: []InstanceMetric{InstanceMetric{
+			Instances: []models.InstanceMetric{models.InstanceMetric{
 				Timestamp: timestamp,
 				Index:     0,
 				Value:     "100",
-			}, InstanceMetric{
+			}, models.InstanceMetric{
 				Timestamp: timestamp,
 				Index:     1,
 				Value:     "200",
 			}},
 		},
-		&Metric{
+		&models.Metric{
 			Name:      metricType,
 			Unit:      "bytes",
 			AppId:     testAppId,
 			TimeStamp: timestamp,
-			Instances: []InstanceMetric{InstanceMetric{
+			Instances: []models.InstanceMetric{models.InstanceMetric{
 				Timestamp: timestamp,
 				Index:     0,
 				Value:     "300",
-			}, InstanceMetric{
+			}, models.InstanceMetric{
 				Timestamp: timestamp,
 				Index:     1,
 				Value:     "400",
@@ -109,7 +108,7 @@ var _ = Describe("MetricPoller", func() {
 			//slow test, will take a lot of seconds
 			PContext("when the response body from metric-collector is too long", func() {
 				BeforeEach(func() {
-					var tooLargeMetrics, template []*Metric
+					var tooLargeMetrics, template []*models.Metric
 					for i := 0; i < 9999; i++ {
 						template = append(template, metrics...)
 					}
@@ -128,7 +127,7 @@ var _ = Describe("MetricPoller", func() {
 				BeforeEach(func() {
 					metricServer = ghttp.NewServer()
 					metricServer.RouteToHandler("GET", "/v1/apps/"+testAppId+"/metrics_history/memory", ghttp.RespondWithJSONEncoded(http.StatusOK,
-						&[]*Metric{}))
+						&[]*models.Metric{}))
 				})
 				It("should not do aggregation as there is no metric", func() {
 					var appMetric *AppMetric
@@ -146,7 +145,7 @@ var _ = Describe("MetricPoller", func() {
 				BeforeEach(func() {
 					metricServer = ghttp.NewServer()
 					metricServer.RouteToHandler("GET", "/v1/apps/"+testAppId+"/metrics_history/memory", ghttp.RespondWithJSONEncoded(http.StatusBadRequest,
-						ErrorResponse{
+						models.ErrorResponse{
 							Code:    "Interal-Server-Error",
 							Message: "Error"}))
 				})
