@@ -11,6 +11,8 @@ import (
 	"time"
 )
 
+var validOperators []string = []string{">", ">=", "<", "<="}
+
 type Evaluator struct {
 	logger           lager.Logger
 	httpClient       *http.Client
@@ -113,7 +115,10 @@ func (e *Evaluator) retrieveAppMetrics(trigger *model.Trigger) ([]*model.AppMetr
 }
 func (e *Evaluator) sendTriggerAlarm(trigger *model.Trigger) {
 	url := e.scalingEngineUrl
-	jsonBytes, _ := json.Marshal(trigger)
+	jsonBytes, jsonEncodeError := json.Marshal(trigger)
+	if jsonEncodeError != nil {
+		e.logger.Error("failed to json.Marshal trigger", jsonEncodeError)
+	}
 	path := "/v1/apps/" + trigger.AppId + "/scale"
 	resp, respErr := e.httpClient.Post(url+path, "", bytes.NewReader(jsonBytes))
 	if respErr != nil {
@@ -132,7 +137,6 @@ func (e *Evaluator) sendTriggerAlarm(trigger *model.Trigger) {
 	}
 }
 func (e *Evaluator) isValidOperator(operator string) bool {
-	validOperators := []string{">", ">=", "<", "<="}
 	for _, o := range validOperators {
 		if o == operator {
 			return true
