@@ -63,11 +63,11 @@ func (h *MemoryMetricHandler) GetMemoryMetric(w http.ResponseWriter, r *http.Req
 	w.Write(body)
 }
 
-func (h *MemoryMetricHandler) GetMemoryMetricHistory(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+func (h *MemoryMetricHandler) GetMemoryMetricHistories(w http.ResponseWriter, r *http.Request, vars map[string]string) {
 	appId := vars["appid"]
 	startParam := r.URL.Query()["start"]
 	endParam := r.URL.Query()["end"]
-	h.logger.Debug("get-memeory-metric-history", lager.Data{"appId": appId, "start": startParam, "end": endParam})
+	h.logger.Debug("get-memeory-metric-histories", lager.Data{"appId": appId, "start": startParam, "end": endParam})
 
 	var err error
 	start := int64(0)
@@ -76,14 +76,14 @@ func (h *MemoryMetricHandler) GetMemoryMetricHistory(w http.ResponseWriter, r *h
 	if len(startParam) == 1 {
 		start, err = strconv.ParseInt(startParam[0], 10, 64)
 		if err != nil {
-			h.logger.Error("get-memory-metric-history-parse-start-time", err, lager.Data{"start": startParam})
+			h.logger.Error("get-memory-metric-histories-parse-start-time", err, lager.Data{"start": startParam})
 			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 				Code:    "Bad-Request",
 				Message: "Error parsing start time"})
 			return
 		}
 	} else if len(startParam) > 1 {
-		h.logger.Error("get-memory-metric-history-get-start-time", err, lager.Data{"start": startParam})
+		h.logger.Error("get-memory-metric-histories-get-start-time", err, lager.Data{"start": startParam})
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 			Code:    "Bad-Request",
 			Message: "Incorrect start parameter in query string"})
@@ -93,14 +93,14 @@ func (h *MemoryMetricHandler) GetMemoryMetricHistory(w http.ResponseWriter, r *h
 	if len(endParam) == 1 {
 		end, err = strconv.ParseInt(endParam[0], 10, 64)
 		if err != nil {
-			h.logger.Error("get-memory-metric-history-parse-end-time", err, lager.Data{"end": endParam})
+			h.logger.Error("get-memory-metric-histories-parse-end-time", err, lager.Data{"end": endParam})
 			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 				Code:    "Bad-Request",
 				Message: "Error parsing end time"})
 			return
 		}
 	} else if len(endParam) > 1 {
-		h.logger.Error("get-memory-metric-history-get-end-time", err, lager.Data{"end": endParam})
+		h.logger.Error("get-memory-metric-histories-get-end-time", err, lager.Data{"end": endParam})
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 			Code:    "Bad-Request",
 			Message: "Incorrect end parameter in query string"})
@@ -111,21 +111,21 @@ func (h *MemoryMetricHandler) GetMemoryMetricHistory(w http.ResponseWriter, r *h
 
 	mtrcs, err = h.database.RetrieveMetrics(appId, models.MetricNameMemory, start, end)
 	if err != nil {
-		h.logger.Error("get-memmory-history-retrieve-metrics", err, lager.Data{"appId": appId, "start": start, "end": end})
+		h.logger.Error("get-memmory-histories-retrieve-metrics", err, lager.Data{"appId": appId, "start": start, "end": end})
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 			Code:    "Interal-Server-Error",
-			Message: "Error getting memory metrics history from database"})
+			Message: "Error getting memory metric histories from database"})
 		return
 	}
 
 	var body []byte
 	body, err = json.Marshal(mtrcs)
 	if err != nil {
-		h.logger.Error("get-memory-metric-history-marshal", err, lager.Data{"appId": appId, "metrics": mtrcs})
+		h.logger.Error("get-memory-metric-histories-marshal", err, lager.Data{"appId": appId, "metrics": mtrcs})
 
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 			Code:    "Interal-Server-Error",
-			Message: "Error getting memory metrics history from database"})
+			Message: "Error getting memory metric histories from database"})
 		return
 	}
 	w.Write(body)

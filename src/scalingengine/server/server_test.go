@@ -23,9 +23,10 @@ var server ifrit.Process
 
 var _ = BeforeSuite(func() {
 	cfc := &fakes.FakeCfClient{}
-	database := &fakes.FakePolicyDB{}
-	database.GetAppPolicyReturns(&models.ScalingPolicy{}, nil)
-	httpServer := NewServer(lager.NewLogger("test"), cfc, database)
+	policyDB := &fakes.FakePolicyDB{}
+	policyDB.GetAppPolicyReturns(&models.ScalingPolicy{}, nil)
+	historyDB := &fakes.FakeHistoryDB{}
+	httpServer := NewServer(lager.NewLogger("test"), cfc, policyDB, historyDB)
 	server = ginkgomon.Invoke(httpServer)
 })
 
@@ -46,11 +47,11 @@ var _ = Describe("Server", func() {
 		Expect(err).NotTo(HaveOccurred())
 	})
 
-	JustBeforeEach(func() {
-		rsp, err = http.Post(serverURL+urlPath, "application/json", bytes.NewReader(body))
-	})
+	Context("when triggering scaling action", func() {
+		JustBeforeEach(func() {
+			rsp, err = http.Post(serverURL+urlPath, "application/json", bytes.NewReader(body))
+		})
 
-	Context("when trigger scaling action", func() {
 		BeforeEach(func() {
 			route := mux.Route{}
 			uPath, err := route.Path(PathScale).URLPath("appid", "test-app-id")
@@ -62,28 +63,70 @@ var _ = Describe("Server", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 		})
-	})
 
-	Context("when requesting the wrong path", func() {
-		BeforeEach(func() {
-			urlPath = "/not-exist-path"
+		Context("when requesting the wrong path", func() {
+			BeforeEach(func() {
+				urlPath = "/not-exist-path"
+			})
+
+			It("should return 404", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(rsp.StatusCode).To(Equal(http.StatusNotFound))
+			})
 		})
 
-		It("should return 404", func() {
-			Expect(err).ToNot(HaveOccurred())
-			Expect(rsp.StatusCode).To(Equal(http.StatusNotFound))
+		Context("when using the wrong method", func() {
+			JustBeforeEach(func() {
+				rsp, err = http.Get(serverURL + urlPath)
+			})
+
+			It("should return 404", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(rsp.StatusCode).To(Equal(http.StatusNotFound))
+			})
 		})
+
 	})
 
-	Context("when requesting the wrong path", func() {
+	Context("when getting scaling histories", func() {
 		JustBeforeEach(func() {
-			rsp, err = http.Post(serverURL, "unknown", nil)
+			rsp, err = http.Get(serverURL + urlPath)
 		})
 
-		It("should return 404", func() {
-			Expect(err).ToNot(HaveOccurred())
-			Expect(rsp.StatusCode).To(Equal(http.StatusNotFound))
+		BeforeEach(func() {
+			route := mux.Route{}
+			uPath, err := route.Path(PathScalingHistories).URLPath("appid", "test-app-id")
+			Expect(err).NotTo(HaveOccurred())
+			urlPath = uPath.Path
 		})
+
+		It("should return 200", func() {
+			Expect(err).ToNot(HaveOccurred())
+			Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+		})
+
+		Context("when requesting the wrong path", func() {
+			BeforeEach(func() {
+				urlPath = "/not-exist-path"
+			})
+
+			It("should return 404", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(rsp.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
+
+		Context("when using the wrong method", func() {
+			JustBeforeEach(func() {
+				rsp, err = http.Post(serverURL+urlPath, "gabage", nil)
+			})
+
+			It("should return 404", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(rsp.StatusCode).To(Equal(http.StatusNotFound))
+			})
+		})
+
 	})
 
 })

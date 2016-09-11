@@ -62,7 +62,7 @@ func (adb *AppMetricSQLDB) RetrieveAppMetrics(appIdP string, metricTypeP string,
 	rows, err := adb.sqldb.Query(query, appIdP, metricTypeP, startP, endP)
 	if err != nil {
 		adb.logger.Error("retrieve-app-metric-list-from-app_metric-table", err, lager.Data{"query": query})
-		return appMetricList, err
+		return nil, err
 	}
 	defer rows.Close()
 	var appId string
@@ -73,6 +73,7 @@ func (adb *AppMetricSQLDB) RetrieveAppMetrics(appIdP string, metricTypeP string,
 	for rows.Next() {
 		if err = rows.Scan(&appId, &metricType, &value, &unit, &timestamp); err != nil {
 			adb.logger.Error("scan-appmetric-from-search-result", err)
+			return nil, err
 		}
 
 		appMetric := &model.AppMetric{

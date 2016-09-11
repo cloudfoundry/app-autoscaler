@@ -33,7 +33,7 @@ var _ = Describe("MetricsSQLDB", func() {
 		url = os.Getenv("DBURL")
 	})
 
-	Describe("NewSQLDB", func() {
+	Describe("NewMetricsSQLDB", func() {
 		JustBeforeEach(func() {
 			mdb, err = NewMetricsSQLDB(url, logger)
 		})
@@ -47,7 +47,7 @@ var _ = Describe("MetricsSQLDB", func() {
 
 		Context("when db url is not correct", func() {
 			BeforeEach(func() {
-				url = "postgres://non-exist-user:non-exist-password@localhost/autoscaler?sslmode=disable"
+				url = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&pq.Error{}))
@@ -132,21 +132,9 @@ var _ = Describe("MetricsSQLDB", func() {
 			Expect(err).NotTo(HaveOccurred())
 			cleanMetricsTable()
 
-			start = 0
-			end = -1
-			appId = "test-app-id"
-			metricName = models.MetricNameMemory
-		})
-
-		AfterEach(func() {
-			err = mdb.Close()
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		JustBeforeEach(func() {
 			metric = &models.Metric{
-				AppId: appId,
-				Name:  metricName,
+				AppId: "test-app-id",
+				Name:  models.MetricNameMemory,
 				Unit:  models.UnitBytes,
 			}
 
@@ -165,12 +153,24 @@ var _ = Describe("MetricsSQLDB", func() {
 			err = mdb.SaveMetric(metric)
 			Expect(err).NotTo(HaveOccurred())
 
-			mtrcs, err = mdb.RetrieveMetrics("test-app-id", models.MetricNameMemory, start, end)
+			start = 0
+			end = -1
+			appId = "test-app-id"
+			metricName = models.MetricNameMemory
+		})
+
+		AfterEach(func() {
+			err = mdb.Close()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		JustBeforeEach(func() {
+			mtrcs, err = mdb.RetrieveMetrics(appId, metricName, start, end)
 		})
 
 		Context("The app has no metrics", func() {
 			BeforeEach(func() {
-				appId = "other-app-id"
+				appId = "app-id-no-metric"
 			})
 
 			It("returns empty metrics", func() {
@@ -180,9 +180,9 @@ var _ = Describe("MetricsSQLDB", func() {
 
 		})
 
-		Context("when the app has no memory metrics", func() {
+		Context("when the app has no metrics with the given metric name", func() {
 			BeforeEach(func() {
-				metricName = "other-metric"
+				metricName = "metric-name-no-metrics"
 			})
 
 			It("returns empty metrics", func() {
@@ -245,31 +245,28 @@ var _ = Describe("MetricsSQLDB", func() {
 		Context("when retriving all the metrics( start = 0, end = -1) ", func() {
 			It("returns all the metrics of the app ordered by timestamp", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(mtrcs).To(HaveLen(3))
-				Expect(*mtrcs[0]).To(Equal(
-					models.Metric{
+				Expect(mtrcs).To(Equal([]*models.Metric{
+					&models.Metric{
 						AppId:     "test-app-id",
 						Name:      models.MetricNameMemory,
 						Unit:      models.UnitBytes,
 						TimeStamp: 222222,
 						Instances: []models.InstanceMetric{},
-					}))
-				Expect(*mtrcs[1]).To(Equal(
-					models.Metric{
+					},
+					&models.Metric{
 						AppId:     "test-app-id",
 						Name:      models.MetricNameMemory,
 						Unit:      models.UnitBytes,
 						TimeStamp: 333333,
 						Instances: []models.InstanceMetric{{123456, 0, "3333"}},
-					}))
-				Expect(*mtrcs[2]).To(Equal(
-					models.Metric{
+					},
+					&models.Metric{
 						AppId:     "test-app-id",
 						Name:      models.MetricNameMemory,
 						Unit:      models.UnitBytes,
 						TimeStamp: 666666,
 						Instances: []models.InstanceMetric{{654321, 0, "6666"}, {764321, 1, "8888"}},
-					}))
+					}}))
 			})
 		})
 
@@ -281,13 +278,14 @@ var _ = Describe("MetricsSQLDB", func() {
 
 			It("returns correct metrics", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(mtrcs).To(ConsistOf(&models.Metric{
-					AppId:     "test-app-id",
-					Name:      models.MetricNameMemory,
-					Unit:      models.UnitBytes,
-					TimeStamp: 333333,
-					Instances: []models.InstanceMetric{{123456, 0, "3333"}},
-				}))
+				Expect(mtrcs).To(Equal([]*models.Metric{
+					&models.Metric{
+						AppId:     "test-app-id",
+						Name:      models.MetricNameMemory,
+						Unit:      models.UnitBytes,
+						TimeStamp: 333333,
+						Instances: []models.InstanceMetric{{123456, 0, "3333"}},
+					}}))
 			})
 		})
 	})

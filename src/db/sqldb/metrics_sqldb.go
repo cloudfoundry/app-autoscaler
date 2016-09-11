@@ -95,6 +95,7 @@ func (mdb *MetricsSQLDB) RetrieveMetrics(appid string, name string, start int64,
 	for rows.Next() {
 		if err = rows.Scan(&unit, &timestamp, &value); err != nil {
 			mdb.logger.Error("scan-metric-from-search-result", err)
+			return nil, err
 		}
 
 		inst := []models.InstanceMetric{}

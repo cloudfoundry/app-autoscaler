@@ -17,6 +17,8 @@ import (
 	"net/http/httptest"
 )
 
+var testUrlMemoryMetricHistories = "http://localhost/v1/apps/an-app-id/metric_histories/memory"
+
 var _ = Describe("MemoryMetricHandler", func() {
 
 	var (
@@ -113,13 +115,13 @@ var _ = Describe("MemoryMetricHandler", func() {
 
 	Describe("GetMemoryMetricHistory", func() {
 		JustBeforeEach(func() {
-			handler.GetMemoryMetricHistory(resp, req, map[string]string{"appid": "an-app-id"})
+			handler.GetMemoryMetricHistories(resp, req, map[string]string{"appid": "an-app-id"})
 		})
 
 		Context("when request query string is invalid", func() {
 			Context("when there are multiple start pararmeters in query string", func() {
 				BeforeEach(func() {
-					req, err = http.NewRequest(http.MethodGet, "http://localhost/v1/apps/an-app-id/metrics_history/memory?start=123&start=231", nil)
+					req, err = http.NewRequest(http.MethodGet, testUrlMemoryMetricHistories+"?start=123&start=231", nil)
 					Expect(err).ToNot(HaveOccurred())
 
 				})
@@ -140,7 +142,7 @@ var _ = Describe("MemoryMetricHandler", func() {
 
 			Context("when start time is not a number", func() {
 				BeforeEach(func() {
-					req, err = http.NewRequest(http.MethodGet, "http://localhost/v1/apps/an-app-id/metrics_history/memory?start=abc", nil)
+					req, err = http.NewRequest(http.MethodGet, testUrlMemoryMetricHistories+"?start=abc", nil)
 					Expect(err).ToNot(HaveOccurred())
 
 				})
@@ -161,7 +163,7 @@ var _ = Describe("MemoryMetricHandler", func() {
 
 			Context("when there are multiple end parameters in query string", func() {
 				BeforeEach(func() {
-					req, err = http.NewRequest(http.MethodGet, "http://localhost/v1/apps/an-app-id/metrics_history/memory?end=123&end=231", nil)
+					req, err = http.NewRequest(http.MethodGet, testUrlMemoryMetricHistories+"?end=123&end=231", nil)
 					Expect(err).ToNot(HaveOccurred())
 
 				})
@@ -182,7 +184,7 @@ var _ = Describe("MemoryMetricHandler", func() {
 
 			Context("when end time is not a number", func() {
 				BeforeEach(func() {
-					req, err = http.NewRequest(http.MethodGet, "http://localhost/v1/apps/an-app-id/metrics_history/memory?end=abc", nil)
+					req, err = http.NewRequest(http.MethodGet, testUrlMemoryMetricHistories+"?end=abc", nil)
 					Expect(err).ToNot(HaveOccurred())
 
 				})
@@ -206,7 +208,7 @@ var _ = Describe("MemoryMetricHandler", func() {
 		Context("when request query string is valid", func() {
 			Context("when there are both start and end time in query string", func() {
 				BeforeEach(func() {
-					req, err = http.NewRequest(http.MethodGet, "http://localhost/v1/apps/an-app-id/metrics_history/memory?start=123&end=567", nil)
+					req, err = http.NewRequest(http.MethodGet, testUrlMemoryMetricHistories+"?start=123&end=567", nil)
 					Expect(err).ToNot(HaveOccurred())
 				})
 
@@ -222,7 +224,7 @@ var _ = Describe("MemoryMetricHandler", func() {
 
 			Context("when there is no start time in query string", func() {
 				BeforeEach(func() {
-					req, err = http.NewRequest(http.MethodGet, "http://localhost/v1/apps/an-app-id/metrics_history/memory?end=123", nil)
+					req, err = http.NewRequest(http.MethodGet, testUrlMemoryMetricHistories+"?end=123", nil)
 					Expect(err).ToNot(HaveOccurred())
 				})
 
@@ -235,7 +237,7 @@ var _ = Describe("MemoryMetricHandler", func() {
 
 			Context("when there is no end time in query string", func() {
 				BeforeEach(func() {
-					req, err = http.NewRequest(http.MethodGet, "http://localhost/v1/apps/an-app-id/metrics_history/memory?start=123", nil)
+					req, err = http.NewRequest(http.MethodGet, testUrlMemoryMetricHistories+"?start=123", nil)
 					Expect(err).ToNot(HaveOccurred())
 				})
 
@@ -248,7 +250,7 @@ var _ = Describe("MemoryMetricHandler", func() {
 
 			Context("when query database succeeds", func() {
 				BeforeEach(func() {
-					req, err = http.NewRequest(http.MethodGet, "http://localhost/v1/apps/an-app-id/metrics_history/memory?start=123&end=567", nil)
+					req, err = http.NewRequest(http.MethodGet, testUrlMemoryMetricHistories+"?start=123&end=567", nil)
 					Expect(err).ToNot(HaveOccurred())
 
 					metric1 = models.Metric{
@@ -282,7 +284,7 @@ var _ = Describe("MemoryMetricHandler", func() {
 
 			Context("when query database fails", func() {
 				BeforeEach(func() {
-					req, err = http.NewRequest(http.MethodGet, "http://localhost/v1/apps/an-app-id/metrics_history/memory?start=123&end=567", nil)
+					req, err = http.NewRequest(http.MethodGet, testUrlMemoryMetricHistories+"?start=123&end=567", nil)
 					Expect(err).ToNot(HaveOccurred())
 
 					database.RetrieveMetricsReturns(nil, errors.New("database error"))
@@ -297,7 +299,7 @@ var _ = Describe("MemoryMetricHandler", func() {
 					Expect(err).ToNot(HaveOccurred())
 					Expect(errJson).To(Equal(&models.ErrorResponse{
 						Code:    "Interal-Server-Error",
-						Message: "Error getting memory metrics history from database",
+						Message: "Error getting memory metric histories from database",
 					}))
 				})
 			})
