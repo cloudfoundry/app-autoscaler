@@ -18,13 +18,16 @@ import (
 
 var _ = Describe("Aggregator", func() {
 	var (
+		evaluationManager *AppEvaluationManager
 		aggregator        *Aggregator
 		appMetricDatabase *fakes.FakeAppMetricDB
 		policyDatabase    *fakes.FakePolicyDB
 		clock             *fakeclock.FakeClock
 		logger            lager.Logger
 		metricServer      *ghttp.Server
-		metricPollerCount int    = 3
+		metricPollerCount int = 3
+		evaluatorCount    int = 0
+		triggerChan       chan []*Trigger
 		testAppId         string = "testAppId"
 		testAppId2        string = "testAppId2"
 		testAppId3        string = "testAppId3"
@@ -94,21 +97,27 @@ var _ = Describe("Aggregator", func() {
 			Expect(appMetric.Value).To(Equal(int64(250)))
 			return nil
 		}
+		appMetricDatabase.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*AppMetric, error) {
+			return []*AppMetric{}, nil
+		}
 		clock = fakeclock.NewFakeClock(time.Now())
 		logger = lager.NewLogger("Aggregator-test")
 		metricServer = ghttp.NewServer()
 		regPath := regexp.MustCompile(`^/v1/apps/.*/metrics_history/memory$`)
 		metricServer.RouteToHandler("GET", regPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
 			&metrics))
+		triggerChan = make(chan []*Trigger, 10)
+		evaluationManager = NewAppEvaluationManager(testEvaluateInteval, logger, clock, triggerChan, evaluatorCount, appMetricDatabase, "")
 	})
 	Context("ConsumePolicy", func() {
 		var policyMap map[string]*Policy
 		var appChan chan *AppMonitor
 		var appMonitor *AppMonitor
+		var triggerArray []*Trigger
 		BeforeEach(func() {
 			appChan = make(chan *AppMonitor, 1)
 
-			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount)
+			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount, evaluationManager)
 			policyMap = map[string]*Policy{testAppId: &Policy{
 				AppId: testAppId,
 				TriggerRecord: &TriggerRecord{
@@ -128,14 +137,30 @@ var _ = Describe("Aggregator", func() {
 		Context("when there are data in triggerMap", func() {
 			JustBeforeEach(func() {
 				aggregator.ConsumePolicy(policyMap, appChan)
+				evaluationManager.Start()
+				Eventually(clock.WatcherCount).Should(Equal(1))
+				clock.Increment(1 * testEvaluateInteval)
+
 			})
 			It("should parse the triggers to appmonitor and put them in appChan", func() {
+
 				Eventually(appChan).Should(Receive(&appMonitor))
 				Expect(appMonitor).To(Equal(&AppMonitor{
 					AppId:      testAppId,
 					MetricType: "MemoryUsage",
 					StatWindow: 300,
 				}))
+
+				Eventually(triggerChan).Should(Receive(&triggerArray))
+				Expect(triggerArray).To(Equal([]*Trigger{&Trigger{
+					AppId:            testAppId,
+					MetricType:       "MemoryUsage",
+					BreachDuration:   300,
+					CoolDownDuration: 300,
+					Threshold:        30,
+					Operator:         "<",
+					Adjustment:       "-1",
+				}}))
 			})
 		})
 		Context("when there is no data in policyMap", func() {
@@ -144,9 +169,13 @@ var _ = Describe("Aggregator", func() {
 			})
 			JustBeforeEach(func() {
 				aggregator.ConsumePolicy(policyMap, appChan)
+				evaluationManager.Start()
+				Eventually(clock.WatcherCount).Should(Equal(1))
+				clock.Increment(1 * testEvaluateInteval)
 			})
 			It("should not receive any data from the appChan", func() {
 				Consistently(appChan).ShouldNot(Receive())
+				Consistently(triggerChan).ShouldNot(Receive())
 			})
 		})
 		Context("when the policyMap is nil", func() {
@@ -155,9 +184,13 @@ var _ = Describe("Aggregator", func() {
 			})
 			JustBeforeEach(func() {
 				aggregator.ConsumePolicy(policyMap, appChan)
+				evaluationManager.Start()
+				Eventually(clock.WatcherCount).Should(Equal(1))
+				clock.Increment(1 * testEvaluateInteval)
 			})
 			It("should not receive any data from the appChan", func() {
 				Consistently(appChan).ShouldNot(Receive())
+				Consistently(triggerChan).ShouldNot(Receive())
 			})
 		})
 
@@ -165,7 +198,7 @@ var _ = Describe("Aggregator", func() {
 	Context("ConsumeAppMetric", func() {
 		var appmetric *AppMetric
 		BeforeEach(func() {
-			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount)
+			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount, evaluationManager)
 			appmetric = &AppMetric{
 				AppId:      testAppId,
 				MetricType: metricType,
@@ -196,7 +229,7 @@ var _ = Describe("Aggregator", func() {
 	})
 	Context("Start", func() {
 		JustBeforeEach(func() {
-			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount)
+			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount, evaluationManager)
 			aggregator.Start()
 		})
 		AfterEach(func() {
@@ -240,7 +273,7 @@ var _ = Describe("Aggregator", func() {
 	Context("Stop", func() {
 		var retrievePoliciesCallCount, saveAppMetricCallCount int
 		JustBeforeEach(func() {
-			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount)
+			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount, evaluationManager)
 			aggregator.Start()
 			aggregator.Stop()
 			retrievePoliciesCallCount = policyDatabase.RetrievePoliciesCallCount()

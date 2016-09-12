@@ -39,7 +39,7 @@ type ScalingRule struct {
 	StatWindow       time.Duration `json:"stat_window"`
 	BreachDuration   time.Duration `json:"breach_duration"`
 	CoolDownDuration time.Duration `json:"cool_down_duration"`
-	Threshold        int           `json:"threshold"`
+	Threshold        int64         `json:"threshold"`
 	Operator         string        `json:"operator"`
 	Adjustment       string        `json:"adjustment"`
 }

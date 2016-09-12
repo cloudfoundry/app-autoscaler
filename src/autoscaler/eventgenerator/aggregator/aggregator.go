@@ -20,9 +20,10 @@ type Aggregator struct {
 	metricPollerArray  []*MetricPoller
 	policyDatabase     db.PolicyDB
 	appMetricDatabase  db.AppMetricDB
+	evaluationManager  *AppEvaluationManager
 }
 
-func NewAggregator(logger lager.Logger, clock clock.Clock, policyPollerInterval time.Duration, policyDatabase db.PolicyDB, appMetricDatabase db.AppMetricDB, metricCollectorUrl string, metricPollerCount int) *Aggregator {
+func NewAggregator(logger lager.Logger, clock clock.Clock, policyPollerInterval time.Duration, policyDatabase db.PolicyDB, appMetricDatabase db.AppMetricDB, metricCollectorUrl string, metricPollerCount int, evaluationManager *AppEvaluationManager) *Aggregator {
 	aggregator := &Aggregator{
 		logger:             logger.Session("Aggregator"),
 		metricCollectorUrl: metricCollectorUrl,
@@ -32,6 +33,7 @@ func NewAggregator(logger lager.Logger, clock clock.Clock, policyPollerInterval 
 		metricPollerArray:  []*MetricPoller{},
 		policyDatabase:     policyDatabase,
 		appMetricDatabase:  appMetricDatabase,
+		evaluationManager:  evaluationManager,
 	}
 	aggregator.policyPoller = NewPolicyPoller(logger, clock, policyPollerInterval, policyDatabase, aggregator.ConsumePolicy, aggregator.appChan)
 	client := cfhttp.NewClient()
@@ -48,6 +50,7 @@ func (a *Aggregator) ConsumePolicy(policyMap map[string]*model.Policy, appChan c
 	if policyMap == nil {
 		return
 	}
+	var triggerArrayMap map[string][]*model.Trigger = make(map[string][]*model.Trigger)
 	for appId, policy := range policyMap {
 		for _, rule := range policy.TriggerRecord.ScalingRules {
 			appChan <- &model.AppMonitor{
@@ -55,8 +58,23 @@ func (a *Aggregator) ConsumePolicy(policyMap map[string]*model.Policy, appChan c
 				MetricType: rule.MetricType,
 				StatWindow: rule.StatWindow,
 			}
+			_, exist := triggerArrayMap[appId+"#"+rule.MetricType]
+			if !exist {
+				triggerArrayMap[appId+"#"+rule.MetricType] = []*model.Trigger{}
+			}
+			triggerArrayMap[appId+"#"+rule.MetricType] = append(triggerArrayMap[appId+"#"+rule.MetricType], &model.Trigger{
+				AppId:            appId,
+				MetricType:       rule.MetricType,
+				BreachDuration:   rule.BreachDuration,
+				CoolDownDuration: rule.CoolDownDuration,
+				Threshold:        rule.Threshold,
+				Operator:         rule.Operator,
+				Adjustment:       rule.Adjustment,
+			})
+
 		}
 	}
+	a.evaluationManager.SetTriggers(triggerArrayMap)
 }
 func (a *Aggregator) ConsumeAppMetric(appMetric *model.AppMetric) {
 	if appMetric == nil {
