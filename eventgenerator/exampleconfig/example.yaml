@@ -1,3 +1,21 @@
-log_level: "debug"
-policy_db_url: "postgres://postgres:123@localhost/autoscaler?sslmode=disable"
-poll_interval: 30
+server:
+  port: 8080
+logging:
+  level: "debug"
+db:
+  policy_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
+  app_metrics_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
+aggregator: 
+  aggregator_execute_interval: 30s
+  policy_poller_interval: 30s
+  metric_poller_count: 10
+  app_monitor_channel_size: 100
+evaluator:
+  evaluation_manager_execute_interval: 30s
+  evaluator_count: 10
+  trigger_array_channel_size: 100
+scalingEngine:
+  scaling_engine_url: "http://localhost:8082"
+metricCollector:
+  metric_collector_url: "http://localhost:8083"
+

@@ -47,12 +47,12 @@ func (p *PolicyPoller) Stop() {
 }
 func (p *PolicyPoller) startPolicyRetrieve() {
 	for {
-		policies, err := p.retrievePolicies()
+		policyJsons, err := p.retrievePolicies()
 		if err != nil {
 			continue
 		}
-		triggers := p.computePolicys(policies)
-		p.consumer(triggers, p.appChan)
+		policies := p.computePolicys(policyJsons)
+		p.consumer(policies, p.appChan)
 		select {
 		case <-p.doneChan:
 			return
@@ -62,17 +62,17 @@ func (p *PolicyPoller) startPolicyRetrieve() {
 }
 
 func (p *PolicyPoller) retrievePolicies() ([]*model.PolicyJson, error) {
-	policies, err := p.database.RetrievePolicies()
+	policyJsons, err := p.database.RetrievePolicies()
 	if err != nil {
-		p.logger.Error("retrieve policies", err)
+		p.logger.Error("retrieve policyJsons", err)
 		return nil, err
 	}
-	p.logger.Info("policy count", lager.Data{"count": len(policies)})
-	return policies, nil
+	p.logger.Info("policy count", lager.Data{"count": len(policyJsons)})
+	return policyJsons, nil
 }
-func (p *PolicyPoller) computePolicys(policies []*model.PolicyJson) map[string]*model.Policy {
+func (p *PolicyPoller) computePolicys(policyJsons []*model.PolicyJson) map[string]*model.Policy {
 	policyMap := make(map[string]*model.Policy)
-	for _, policyRow := range policies {
+	for _, policyRow := range policyJsons {
 		tmpPolicy := policyRow.GetPolicy()
 		policyMap[policyRow.AppId] = tmpPolicy
 	}
