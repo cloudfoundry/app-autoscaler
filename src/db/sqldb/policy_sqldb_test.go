@@ -1,13 +1,14 @@
 package sqldb_test
 
 import (
-	"code.cloudfoundry.org/lager"
 	. "db/sqldb"
 	"eventgenerator/model"
+	"models"
+
+	"code.cloudfoundry.org/lager"
 	"github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"models"
 
 	"encoding/json"
 	"os"
@@ -201,15 +202,15 @@ var _ = Describe("PolicySQLDB", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(policies).To(ConsistOf(
-					&policy.PolicyJson{
+					&model.PolicyJson{
 						AppId:     "first-app-id",
 						PolicyStr: string(policyJson),
 					},
-					&policy.PolicyJson{
+					&model.PolicyJson{
 						AppId:     "second-app-id",
 						PolicyStr: string(policyJson),
 					},
-					&policy.PolicyJson{
+					&model.PolicyJson{
 						AppId:     "third-app-id",
 						PolicyStr: string(policyJson),
 					},

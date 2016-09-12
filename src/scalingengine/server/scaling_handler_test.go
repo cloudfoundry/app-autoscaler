@@ -1,9 +1,9 @@
 package server_test
 
 import (
-	"engine/fakes"
-	. "engine/server"
 	"models"
+	"scalingengine/fakes"
+	. "scalingengine/server"
 
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"

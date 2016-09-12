@@ -89,18 +89,12 @@ popd
 
 go install github.com/onsi/ginkgo/ginkgo
 export DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
-pushd src/metricscollector
-ginkgo -r -race -randomizeAllSpecs
-popd
-pushd src/cf
-ginkgo -r -race -randomizeAllSpecs
-popd
-pushd src/db
-ginkgo -r -race -randomizeAllSpecs
-popd
-pushd src/eventgenerator
-ginkgo -r -race -randomizeAllSpecs
-popd
+for f in cf db models metricscollector eventgenerator scalingengine
+do
+  pushd src/$f
+  ginkgo -r -race -randomizeAllSpecs
+  popd
+done
 
 pushd scheduler
 mvn test
