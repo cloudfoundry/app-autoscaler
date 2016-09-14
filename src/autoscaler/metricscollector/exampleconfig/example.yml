@@ -1,8 +1,11 @@
 cf:
-  api: "https://api.example.com"
-  grant_type: "client_credentials"
-  client_id: "cf_id"
-  secret: "cf_secret"
+  api: "https://api.bosh-lite.com"
+  grant_type: "password"
+  username: "admin"
+  password: "admin"
+  # grant_type: "client_credentials"
+  # client_id: "admin"
+  # secret: "admin-secret"
 server:
   port: 8080
 logging:
@@ -13,4 +16,3 @@ db:
 collector:
   refresh_interval_in_seconds: 60
   poll_interval_in_seconds: 10
-  
