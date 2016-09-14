@@ -23,12 +23,12 @@ type Aggregator struct {
 	evaluationManager  *AppEvaluationManager
 }
 
-func NewAggregator(logger lager.Logger, clock clock.Clock, policyPollerInterval time.Duration, policyDatabase db.PolicyDB, appMetricDatabase db.AppMetricDB, metricCollectorUrl string, metricPollerCount int, evaluationManager *AppEvaluationManager) *Aggregator {
+func NewAggregator(logger lager.Logger, clock clock.Clock, policyPollerInterval time.Duration, policyDatabase db.PolicyDB, appMetricDatabase db.AppMetricDB, metricCollectorUrl string, metricPollerCount int, evaluationManager *AppEvaluationManager, appMonitorChan chan *model.AppMonitor) *Aggregator {
 	aggregator := &Aggregator{
 		logger:             logger.Session("Aggregator"),
 		metricCollectorUrl: metricCollectorUrl,
 		doneChan:           make(chan bool),
-		appChan:            make(chan *model.AppMonitor, 1024),
+		appChan:            appMonitorChan,
 		metricPollerCount:  metricPollerCount,
 		metricPollerArray:  []*MetricPoller{},
 		policyDatabase:     policyDatabase,

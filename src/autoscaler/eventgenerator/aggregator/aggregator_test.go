@@ -28,6 +28,7 @@ var _ = Describe("Aggregator", func() {
 		metricPollerCount int = 3
 		evaluatorCount    int = 0
 		triggerChan       chan []*Trigger
+		appMonitorChan    chan *AppMonitor
 		testAppId         string = "testAppId"
 		testAppId2        string = "testAppId2"
 		testAppId3        string = "testAppId3"
@@ -107,6 +108,7 @@ var _ = Describe("Aggregator", func() {
 		metricServer.RouteToHandler("GET", regPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
 			&metrics))
 		triggerChan = make(chan []*Trigger, 10)
+		appMonitorChan = make(chan *AppMonitor, 10)
 		evaluationManager = NewAppEvaluationManager(testEvaluateInteval, logger, clock, triggerChan, evaluatorCount, appMetricDatabase, "")
 	})
 	Context("ConsumePolicy", func() {
@@ -117,7 +119,7 @@ var _ = Describe("Aggregator", func() {
 		BeforeEach(func() {
 			appChan = make(chan *AppMonitor, 1)
 
-			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount, evaluationManager)
+			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount, evaluationManager, appMonitorChan)
 			policyMap = map[string]*Policy{testAppId: &Policy{
 				AppId: testAppId,
 				TriggerRecord: &TriggerRecord{
@@ -198,7 +200,7 @@ var _ = Describe("Aggregator", func() {
 	Context("ConsumeAppMetric", func() {
 		var appmetric *AppMetric
 		BeforeEach(func() {
-			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount, evaluationManager)
+			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount, evaluationManager, appMonitorChan)
 			appmetric = &AppMetric{
 				AppId:      testAppId,
 				MetricType: metricType,
@@ -229,7 +231,7 @@ var _ = Describe("Aggregator", func() {
 	})
 	Context("Start", func() {
 		JustBeforeEach(func() {
-			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount, evaluationManager)
+			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount, evaluationManager, appMonitorChan)
 			aggregator.Start()
 		})
 		AfterEach(func() {
@@ -273,7 +275,7 @@ var _ = Describe("Aggregator", func() {
 	Context("Stop", func() {
 		var retrievePoliciesCallCount, saveAppMetricCallCount int
 		JustBeforeEach(func() {
-			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount, evaluationManager)
+			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount, evaluationManager, appMonitorChan)
 			aggregator.Start()
 			aggregator.Stop()
 			retrievePoliciesCallCount = policyDatabase.RetrievePoliciesCallCount()
