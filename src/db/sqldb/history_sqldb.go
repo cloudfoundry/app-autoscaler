@@ -87,13 +87,14 @@ func (hdb *HistorySQLDB) RetrieveScalingHistories(appId string, start int64, end
 	for rows.Next() {
 		if err = rows.Scan(&timestamp, &scalingType, &status, &oldInstances, &newInstances, &reason, &message, &errorMsg); err != nil {
 			hdb.logger.Error("retrieve-scaling-history-scan", err)
+			return nil, err
 		}
 
 		history := models.AppScalingHistory{
 			AppId:        appId,
 			Timestamp:    timestamp,
-			ScalingType:  scalingType,
-			Status:       status,
+			ScalingType:  models.ScalingType(scalingType),
+			Status:       models.ScalingStatus(status),
 			OldInstances: oldInstances,
 			NewInstances: newInstances,
 			Reason:       reason,

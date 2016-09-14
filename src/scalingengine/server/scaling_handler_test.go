@@ -22,7 +22,7 @@ import (
 	"time"
 )
 
-var testUrlScalingHistories = "http://localhost/v1/apps/an-app-id/scaling_histories"
+const testUrlScalingHistories = "http://localhost/v1/apps/an-app-id/scaling_histories"
 
 var _ = Describe("ScalingHandler", func() {
 	var (
@@ -195,7 +195,7 @@ var _ = Describe("ScalingHandler", func() {
 					OldInstances: 5,
 					NewInstances: 6,
 					Reason:       "+2 instance(s) because memorybytes > 222222 for 100 seconds",
-					Message:      "limit to max instances 6",
+					Message:      "limited by max instances 6",
 				}))
 
 			})
@@ -224,7 +224,7 @@ var _ = Describe("ScalingHandler", func() {
 					OldInstances: 3,
 					NewInstances: 2,
 					Reason:       "-60% instance(s) because memorybytes > 222222 for 100 seconds",
-					Message:      "limit to min instances 2",
+					Message:      "limited by min instances 2",
 				}))
 
 			})

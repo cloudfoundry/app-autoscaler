@@ -38,22 +38,24 @@ func NewScalingHandler(logger lager.Logger, cfc cf.CfClient, policyDB db.PolicyD
 
 func (h *ScalingHandler) HandleScale(w http.ResponseWriter, r *http.Request, vars map[string]string) {
 	appId := vars["appid"]
+	logger := h.logger.WithData(lager.Data{"appId": appId})
+
 	trigger := &models.Trigger{}
 	err := json.NewDecoder(r.Body).Decode(trigger)
 	if err != nil {
-		h.logger.Error("handle-scale-unmarshal-trigger", err)
+		logger.Error("handle-scale-unmarshal-trigger", err)
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 			Code:    "Bad-Request",
 			Message: "Incorrect trigger in request body"})
 		return
 	}
 
-	h.logger.Debug("handle-scale", lager.Data{"appid": appId, "trigger": trigger})
+	logger.Debug("handle-scale", lager.Data{"trigger": trigger})
 
 	var newInstances int
 	newInstances, err = h.Scale(appId, trigger)
 	if err != nil {
-		h.logger.Error("handle-scale-perform-scaling-action", err, lager.Data{"appid": appId, "trigger": trigger})
+		logger.Error("handle-scale-perform-scaling-action", err, lager.Data{"trigger": trigger})
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 			Code:    "Internal-server-error",
 			Message: "Error taking scaling action"})
@@ -75,12 +77,13 @@ func (h *ScalingHandler) Scale(appId string, trigger *models.Trigger) (int, erro
 		Reason:       getScalingReason(trigger),
 	}
 
+	defer h.historyDB.SaveScalingHistory(history)
+
 	policy, err := h.policyDB.GetAppPolicy(appId)
 	if err != nil {
 		logger.Error("scale-get-app-policy", err)
 		history.Status = models.ScalingStatusFailed
 		history.Error = "failed to get scaling policy"
-		h.historyDB.SaveScalingHistory(history)
 		return -1, err
 	}
 
@@ -89,7 +92,6 @@ func (h *ScalingHandler) Scale(appId string, trigger *models.Trigger) (int, erro
 		logger.Error("scale-get-app-instances", err)
 		history.Status = models.ScalingStatusFailed
 		history.Error = "failed to get app instances"
-		h.historyDB.SaveScalingHistory(history)
 		return -1, err
 	}
 	history.OldInstances = instances
@@ -100,22 +102,20 @@ func (h *ScalingHandler) Scale(appId string, trigger *models.Trigger) (int, erro
 		logger.Error("scale-compute-new-instance", err, lager.Data{"instances": instances, "adjustment": trigger.Adjustment})
 		history.Status = models.ScalingStatusFailed
 		history.Error = "failed to compute new app instances"
-		h.historyDB.SaveScalingHistory(history)
 		return -1, err
 	}
 
-	if newInstances > policy.InstanceMax {
-		newInstances = policy.InstanceMax
-		history.Message = fmt.Sprintf("limit to max instances %d", policy.InstanceMax)
-	} else if newInstances < policy.InstanceMin {
+	if newInstances < policy.InstanceMin {
 		newInstances = policy.InstanceMin
-		history.Message = fmt.Sprintf("limit to min instances %d", policy.InstanceMin)
+		history.Message = fmt.Sprintf("limited by min instances %d", policy.InstanceMin)
+	} else if newInstances > policy.InstanceMax {
+		newInstances = policy.InstanceMax
+		history.Message = fmt.Sprintf("limited by max instances %d", policy.InstanceMax)
 	}
 	history.NewInstances = newInstances
 
 	if newInstances == instances {
 		history.Status = models.ScalingStatusIgnored
-		h.historyDB.SaveScalingHistory(history)
 		return newInstances, nil
 	}
 
@@ -124,12 +124,10 @@ func (h *ScalingHandler) Scale(appId string, trigger *models.Trigger) (int, erro
 		logger.Error("scale-set-app-instances", err, lager.Data{"newInstances": newInstances})
 		history.Status = models.ScalingStatusFailed
 		history.Error = "failed to set app instances"
-		h.historyDB.SaveScalingHistory(history)
 		return -1, err
 	}
 
 	history.Status = models.ScalingStatusSucceeded
-	h.historyDB.SaveScalingHistory(history)
 	return newInstances, nil
 }
 
@@ -156,9 +154,11 @@ func (h *ScalingHandler) ComputeNewInstances(currentInstances int, adjustment st
 
 func (h *ScalingHandler) GetScalingHistories(w http.ResponseWriter, r *http.Request, vars map[string]string) {
 	appId := vars["appid"]
+	logger := h.logger.WithData(lager.Data{"appId": appId})
+
 	startParam := r.URL.Query()["start"]
 	endParam := r.URL.Query()["end"]
-	h.logger.Debug("get-scaling-histories", lager.Data{"appId": appId, "start": startParam, "end": endParam})
+	logger.Debug("get-scaling-histories", lager.Data{"start": startParam, "end": endParam})
 
 	var err error
 	start := int64(0)
@@ -167,14 +167,14 @@ func (h *ScalingHandler) GetScalingHistories(w http.ResponseWriter, r *http.Requ
 	if len(startParam) == 1 {
 		start, err = strconv.ParseInt(startParam[0], 10, 64)
 		if err != nil {
-			h.logger.Error("get-scaling-histories-parse-start-time", err, lager.Data{"start": startParam})
+			logger.Error("get-scaling-histories-parse-start-time", err, lager.Data{"start": startParam})
 			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 				Code:    "Bad-Request",
 				Message: "Error parsing start time"})
 			return
 		}
 	} else if len(startParam) > 1 {
-		h.logger.Error("get-scaling-histories-get-start-time", err, lager.Data{"start": startParam})
+		logger.Error("get-scaling-histories-get-start-time", err, lager.Data{"start": startParam})
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 			Code:    "Bad-Request",
 			Message: "Incorrect start parameter in query string"})
@@ -184,14 +184,14 @@ func (h *ScalingHandler) GetScalingHistories(w http.ResponseWriter, r *http.Requ
 	if len(endParam) == 1 {
 		end, err = strconv.ParseInt(endParam[0], 10, 64)
 		if err != nil {
-			h.logger.Error("get-scaling-histories-parse-end-time", err, lager.Data{"end": endParam})
+			logger.Error("get-scaling-histories-parse-end-time", err, lager.Data{"end": endParam})
 			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 				Code:    "Bad-Request",
 				Message: "Error parsing end time"})
 			return
 		}
 	} else if len(endParam) > 1 {
-		h.logger.Error("get-scaling-histories-get-end-time", err, lager.Data{"end": endParam})
+		logger.Error("get-scaling-histories-get-end-time", err, lager.Data{"end": endParam})
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 			Code:    "Bad-Request",
 			Message: "Incorrect end parameter in query string"})
@@ -202,7 +202,7 @@ func (h *ScalingHandler) GetScalingHistories(w http.ResponseWriter, r *http.Requ
 
 	histories, err = h.historyDB.RetrieveScalingHistories(appId, start, end)
 	if err != nil {
-		h.logger.Error("get-scaling-history-retrieve-histories", err, lager.Data{"appId": appId, "start": start, "end": end})
+		logger.Error("get-scaling-history-retrieve-histories", err, lager.Data{"start": start, "end": end})
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 			Code:    "Interal-Server-Error",
 			Message: "Error getting scaling histories from database"})
@@ -212,7 +212,7 @@ func (h *ScalingHandler) GetScalingHistories(w http.ResponseWriter, r *http.Requ
 	var body []byte
 	body, err = json.Marshal(histories)
 	if err != nil {
-		h.logger.Error("get-scaling-history-marshal", err, lager.Data{"appId": appId, "histories": histories})
+		logger.Error("get-scaling-history-marshal", err, lager.Data{"histories": histories})
 
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 			Code:    "Interal-Server-Error",

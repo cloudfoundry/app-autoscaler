@@ -8,19 +8,25 @@ type AppEntity struct {
 	Instances int `json:"instances"`
 }
 
+type ScalingType int
+type ScalingStatus int
+
 const (
-	ScalingTypeDynamic     = 0
-	ScalingTypeSchedule    = 1
-	ScalingStatusSucceeded = 0
-	ScalingStatusFailed    = 1
-	ScalingStatusIgnored   = 2
+	ScalingTypeDynamic ScalingType = iota
+	ScalingTypeSchedule
+)
+
+const (
+	ScalingStatusSucceeded ScalingStatus = iota
+	ScalingStatusFailed
+	ScalingStatusIgnored
 )
 
 type AppScalingHistory struct {
 	AppId        string
 	Timestamp    int64
-	ScalingType  int
-	Status       int
+	ScalingType  ScalingType
+	Status       ScalingStatus
 	OldInstances int
 	NewInstances int
 	Reason       string

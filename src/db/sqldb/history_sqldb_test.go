@@ -152,7 +152,7 @@ var _ = Describe("HistorySqldb", func() {
 
 		JustBeforeEach(func() {
 			history = &models.AppScalingHistory{
-				AppId:        appId,
+				AppId:        "an-app-id",
 				OldInstances: 2,
 				NewInstances: 4,
 				Reason:       "a reason",
@@ -187,12 +187,12 @@ var _ = Describe("HistorySqldb", func() {
 			err = hdb.SaveScalingHistory(history)
 			Expect(err).NotTo(HaveOccurred())
 
-			histories, err = hdb.RetrieveScalingHistories("an-app-id", start, end)
+			histories, err = hdb.RetrieveScalingHistories(appId, start, end)
 		})
 
 		Context("When the app has no hisotry", func() {
 			BeforeEach(func() {
-				appId = "other-app-id"
+				appId = "app-id-no-history"
 			})
 
 			It("returns empty metrics", func() {
@@ -256,53 +256,49 @@ var _ = Describe("HistorySqldb", func() {
 		Context("when retrieving all the histories( start = 0, end = -1) ", func() {
 			It("returns all the histories of the app ordered by timestamp", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(histories).To(HaveLen(4))
-				Expect(*histories[0]).To(Equal(models.AppScalingHistory{
-					AppId:        "an-app-id",
-					Timestamp:    222222,
-					ScalingType:  models.ScalingTypeDynamic,
-					Status:       models.ScalingStatusFailed,
-					OldInstances: 2,
-					NewInstances: 4,
-					Reason:       "a reason",
-					Message:      "a message",
-					Error:        "an error",
-				}))
-
-				Expect(*histories[1]).To(Equal(models.AppScalingHistory{
-					AppId:        "an-app-id",
-					Timestamp:    333333,
-					ScalingType:  models.ScalingTypeSchedule,
-					Status:       models.ScalingStatusIgnored,
-					OldInstances: 2,
-					NewInstances: 4,
-					Reason:       "a reason",
-					Message:      "a message",
-				}))
-
-				Expect(*histories[2]).To(Equal(models.AppScalingHistory{
-					AppId:        "an-app-id",
-					Timestamp:    555555,
-					ScalingType:  models.ScalingTypeSchedule,
-					Status:       models.ScalingStatusFailed,
-					OldInstances: 2,
-					NewInstances: 4,
-					Reason:       "a reason",
-					Message:      "a message",
-					Error:        "an error",
-				}))
-
-				Expect(*histories[3]).To(Equal(models.AppScalingHistory{
-					AppId:        "an-app-id",
-					Timestamp:    666666,
-					ScalingType:  models.ScalingTypeDynamic,
-					Status:       models.ScalingStatusSucceeded,
-					OldInstances: 2,
-					NewInstances: 4,
-					Reason:       "a reason",
-					Message:      "a message",
-				}))
-
+				Expect(histories).To(Equal([]*models.AppScalingHistory{
+					&models.AppScalingHistory{
+						AppId:        "an-app-id",
+						Timestamp:    222222,
+						ScalingType:  models.ScalingTypeDynamic,
+						Status:       models.ScalingStatusFailed,
+						OldInstances: 2,
+						NewInstances: 4,
+						Reason:       "a reason",
+						Message:      "a message",
+						Error:        "an error",
+					},
+					&models.AppScalingHistory{
+						AppId:        "an-app-id",
+						Timestamp:    333333,
+						ScalingType:  models.ScalingTypeSchedule,
+						Status:       models.ScalingStatusIgnored,
+						OldInstances: 2,
+						NewInstances: 4,
+						Reason:       "a reason",
+						Message:      "a message",
+					},
+					&models.AppScalingHistory{
+						AppId:        "an-app-id",
+						Timestamp:    555555,
+						ScalingType:  models.ScalingTypeSchedule,
+						Status:       models.ScalingStatusFailed,
+						OldInstances: 2,
+						NewInstances: 4,
+						Reason:       "a reason",
+						Message:      "a message",
+						Error:        "an error",
+					},
+					&models.AppScalingHistory{
+						AppId:        "an-app-id",
+						Timestamp:    666666,
+						ScalingType:  models.ScalingTypeDynamic,
+						Status:       models.ScalingStatusSucceeded,
+						OldInstances: 2,
+						NewInstances: 4,
+						Reason:       "a reason",
+						Message:      "a message",
+					}}))
 			})
 		})
 
@@ -314,30 +310,28 @@ var _ = Describe("HistorySqldb", func() {
 
 			It("return correct histories", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(histories).To(HaveLen(2))
-
-				Expect(*histories[0]).To(Equal(models.AppScalingHistory{
-					AppId:        "an-app-id",
-					Timestamp:    333333,
-					ScalingType:  models.ScalingTypeSchedule,
-					Status:       models.ScalingStatusIgnored,
-					OldInstances: 2,
-					NewInstances: 4,
-					Reason:       "a reason",
-					Message:      "a message",
-				}))
-
-				Expect(*histories[1]).To(Equal(models.AppScalingHistory{
-					AppId:        "an-app-id",
-					Timestamp:    555555,
-					ScalingType:  models.ScalingTypeSchedule,
-					Status:       models.ScalingStatusFailed,
-					OldInstances: 2,
-					NewInstances: 4,
-					Reason:       "a reason",
-					Message:      "a message",
-					Error:        "an error",
-				}))
+				Expect(histories).To(Equal([]*models.AppScalingHistory{
+					&models.AppScalingHistory{
+						AppId:        "an-app-id",
+						Timestamp:    333333,
+						ScalingType:  models.ScalingTypeSchedule,
+						Status:       models.ScalingStatusIgnored,
+						OldInstances: 2,
+						NewInstances: 4,
+						Reason:       "a reason",
+						Message:      "a message",
+					},
+					&models.AppScalingHistory{
+						AppId:        "an-app-id",
+						Timestamp:    555555,
+						ScalingType:  models.ScalingTypeSchedule,
+						Status:       models.ScalingStatusFailed,
+						OldInstances: 2,
+						NewInstances: 4,
+						Reason:       "a reason",
+						Message:      "a message",
+						Error:        "an error",
+					}}))
 
 			})
 
