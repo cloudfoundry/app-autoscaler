@@ -1,0 +1,7 @@
+logging:
+  level: "debug"
+db:
+  metrics_db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+pruner:
+  interval_in_hours: 12
+  cutoff_days: 30
