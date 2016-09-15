@@ -162,8 +162,18 @@ var _ = Describe("App", func() {
 
 		Context("when cloud controller is not reachable", func() {
 			BeforeEach(func() {
+				ccURL := fakeCC.URL()
 				fakeCC.Close()
 				fakeCC = nil
+
+				Eventually(func() error {
+					resp, err := http.Get(ccURL)
+					if err != nil {
+						return err
+					}
+					resp.Body.Close()
+					return nil
+				}).Should(HaveOccurred())
 			})
 
 			It("should error", func() {
