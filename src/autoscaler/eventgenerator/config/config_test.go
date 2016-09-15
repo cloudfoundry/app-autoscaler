@@ -163,7 +163,7 @@ metricCollector:
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
 			})
 		})
 
@@ -194,7 +194,7 @@ metricCollector:
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
 			})
 		})
 
@@ -287,7 +287,7 @@ metricCollector:
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
 			})
 		})
 

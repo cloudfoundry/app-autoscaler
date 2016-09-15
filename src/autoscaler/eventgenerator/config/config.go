@@ -23,16 +23,8 @@ type ServerConfig struct {
 	Port int `yaml:"port"`
 }
 
-var defaultServerConfig = ServerConfig{
-	Port: DefaultServerPort,
-}
-
 type LoggingConfig struct {
 	Level string `yaml:"level"`
-}
-
-var defaultLoggingConfig = LoggingConfig{
-	Level: DefaultLoggingLevel,
 }
 
 type DBConfig struct {
@@ -41,32 +33,19 @@ type DBConfig struct {
 }
 
 type AggregatorConfig struct {
-	AggregatorExecuateIntervalInSeconds int `yaml:"aggregator_execute_interval_in_seconds"`
-	PolicyPollerIntervalInSeconds       int `yaml:"policy_poller_interval_in_seconds"`
-	MetricPollerCount                   int `yaml:"metric_poller_count"`
-	AppMonitorChannelSize               int `yaml:"app_monitor_channel_size"`
+	AggregatorExecuateIntervalInSeconds time.Duration `yaml:"aggregator_execute_interval_in_seconds"`
+	PolicyPollerIntervalInSeconds       time.Duration `yaml:"policy_poller_interval_in_seconds"`
+	MetricPollerCount                   int           `yaml:"metric_poller_count"`
+	AppMonitorChannelSize               int           `yaml:"app_monitor_channel_size"`
 	AggregatorExecuateInterval          time.Duration
 	PolicyPollerInterval                time.Duration
 }
 
-var defaultAggregatorConfig = AggregatorConfig{
-	AggregatorExecuateInterval: DefaultAggregatorExecuteInterval,
-	PolicyPollerInterval:       DefaultPolicyPollerInterval,
-	MetricPollerCount:          DefaultMetricPollerCount,
-	AppMonitorChannelSize:      DefaultAppMonitorChannelSize,
-}
-
 type EvaluatorConfig struct {
-	EvaluationManagerIntervalInSeconds int `yaml:"evaluation_manager_execute_interval_in_seconds"`
-	EvaluatorCount                     int `yaml:"evaluator_count"`
-	TriggerArrayChannelSize            int `yaml:"trigger_array_channel_size"`
+	EvaluationManagerIntervalInSeconds time.Duration `yaml:"evaluation_manager_execute_interval_in_seconds"`
+	EvaluatorCount                     int           `yaml:"evaluator_count"`
+	TriggerArrayChannelSize            int           `yaml:"trigger_array_channel_size"`
 	EvaluationManagerInterval          time.Duration
-}
-
-var defaultEvaluatorConfig = EvaluatorConfig{
-	EvaluationManagerInterval: DefaultEvaluationExecuteInterval,
-	EvaluatorCount:            DefaultEvaluatorCount,
-	TriggerArrayChannelSize:   DefaultTriggerArrayChannelSize,
 }
 
 type ScalingEngineConfig struct {
@@ -88,10 +67,23 @@ type Config struct {
 
 func LoadConfig(bytes []byte) (*Config, error) {
 	conf := &Config{
-		Server:     defaultServerConfig,
-		Logging:    defaultLoggingConfig,
-		Aggregator: defaultAggregatorConfig,
-		Evaluator:  defaultEvaluatorConfig,
+		Server: ServerConfig{
+			Port: DefaultServerPort,
+		},
+		Logging: LoggingConfig{
+			Level: DefaultLoggingLevel,
+		},
+		Aggregator: AggregatorConfig{
+			AggregatorExecuateInterval: DefaultAggregatorExecuteInterval,
+			PolicyPollerInterval:       DefaultPolicyPollerInterval,
+			MetricPollerCount:          DefaultMetricPollerCount,
+			AppMonitorChannelSize:      DefaultAppMonitorChannelSize,
+		},
+		Evaluator: EvaluatorConfig{
+			EvaluationManagerInterval: DefaultEvaluationExecuteInterval,
+			EvaluatorCount:            DefaultEvaluatorCount,
+			TriggerArrayChannelSize:   DefaultTriggerArrayChannelSize,
+		},
 	}
 	err := yaml.Unmarshal(bytes, &conf)
 	if err != nil {

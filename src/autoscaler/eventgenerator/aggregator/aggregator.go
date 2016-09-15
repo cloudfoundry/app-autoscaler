@@ -2,6 +2,7 @@ package aggregator
 
 import (
 	"autoscaler/db"
+	"autoscaler/eventgenerator/generator"
 	"autoscaler/eventgenerator/model"
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/clock"
@@ -20,10 +21,10 @@ type Aggregator struct {
 	metricPollerArray  []*MetricPoller
 	policyDatabase     db.PolicyDB
 	appMetricDatabase  db.AppMetricDB
-	evaluationManager  *AppEvaluationManager
+	evaluationManager  *generator.AppEvaluationManager
 }
 
-func NewAggregator(logger lager.Logger, clock clock.Clock, policyPollerInterval time.Duration, policyDatabase db.PolicyDB, appMetricDatabase db.AppMetricDB, metricCollectorUrl string, metricPollerCount int, evaluationManager *AppEvaluationManager, appMonitorChan chan *model.AppMonitor) *Aggregator {
+func NewAggregator(logger lager.Logger, clock clock.Clock, policyPollerInterval time.Duration, policyDatabase db.PolicyDB, appMetricDatabase db.AppMetricDB, metricCollectorUrl string, metricPollerCount int, evaluationManager *generator.AppEvaluationManager, appMonitorChan chan *model.AppMonitor) *Aggregator {
 	aggregator := &Aggregator{
 		logger:             logger.Session("Aggregator"),
 		metricCollectorUrl: metricCollectorUrl,
@@ -58,11 +59,12 @@ func (a *Aggregator) ConsumePolicy(policyMap map[string]*model.Policy, appChan c
 				MetricType: rule.MetricType,
 				StatWindow: rule.StatWindow,
 			}
-			_, exist := triggerArrayMap[appId+"#"+rule.MetricType]
+			triggerKey := appId + "#" + rule.MetricType
+			triggerArray, exist := triggerArrayMap[triggerKey]
 			if !exist {
-				triggerArrayMap[appId+"#"+rule.MetricType] = []*model.Trigger{}
+				triggerArray = []*model.Trigger{}
 			}
-			triggerArrayMap[appId+"#"+rule.MetricType] = append(triggerArrayMap[appId+"#"+rule.MetricType], &model.Trigger{
+			triggerArray = append(triggerArray, &model.Trigger{
 				AppId:            appId,
 				MetricType:       rule.MetricType,
 				BreachDuration:   rule.BreachDuration,
@@ -71,7 +73,7 @@ func (a *Aggregator) ConsumePolicy(policyMap map[string]*model.Policy, appChan c
 				Operator:         rule.Operator,
 				Adjustment:       rule.Adjustment,
 			})
-
+			triggerArrayMap[triggerKey] = triggerArray
 		}
 	}
 	a.evaluationManager.SetTriggers(triggerArrayMap)
