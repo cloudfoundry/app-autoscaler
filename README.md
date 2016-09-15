@@ -63,13 +63,13 @@ psql postgres://postgres@127.0.0.1:5432 -c 'DROP DATABASE IF EXISTS autoscaler'
 psql postgres://postgres@127.0.0.1:5432 -c 'CREATE DATABASE autoscaler'
 
 mvn package
-java -cp 'db/target/lib/*'  liquibase.integration.commandline.Main --changeLogFile=api/db/api.db.changelog.yml --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver update
-java -cp 'db/target/lib/*'  liquibase.integration.commandline.Main --changeLogFile=servicebroker/db/servicebroker.db.changelog.json --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver update
-java -cp 'db/target/lib/*'  liquibase.integration.commandline.Main --changeLogFile=src/metricscollector/db/metricscollector.db.changelog.yml --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver update
-java -cp 'db/target/lib/*'  liquibase.integration.commandline.Main --changeLogFile=src/eventgenerator/db/dataaggregator.db.changelog.yml --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver update
-java -cp 'db/target/lib/*'  liquibase.integration.commandline.Main --changeLogFile=src/scalingengine/db/scalingengine.db.changelog.yml --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver update
-java -cp 'db/target/lib/*'  liquibase.integration.commandline.Main --changeLogFile=scheduler/db/scheduler.changelog-master.yaml --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver update
-java -cp 'db/target/lib/*'  liquibase.integration.commandline.Main --changeLogFile=scheduler/db/quartz.changelog-master.yaml --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver update
+java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=api/db/api.db.changelog.yml update
+java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=servicebroker/db/servicebroker.db.changelog.json update
+java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/metricscollector/db/metricscollector.db.changelog.yml update
+java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/eventgenerator/db/dataaggregator.db.changelog.yml update
+java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/scalingengine/db/scalingengine.db.changelog.yml update
+java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=scheduler/db/scheduler.changelog-master.yaml update
+java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=scheduler/db/quartz.changelog-master.yaml update
 ```
 
 ### Run Unit Tests
