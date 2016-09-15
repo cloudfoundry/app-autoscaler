@@ -34,12 +34,12 @@ db:
   policy_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
   app_metrics_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
 aggregator: 
-  aggregator_execute_interval_in_seconds: 30
-  policy_poller_interval_in_seconds: 30
+  aggregator_execute_interval: 30s
+  policy_poller_interval: 30s
   metric_poller_count: 10
   app_monitor_channel_size: 100
 evaluator:
-  evaluation_manager_execute_interval_in_seconds: 30
+  evaluation_manager_execute_interval: 30s
   evaluator_count: 10
   trigger_array_channel_size: 100
 scalingEngine:
@@ -56,17 +56,14 @@ metricCollector:
 					Logging: LoggingConfig{Level: "info"},
 					DB:      DBConfig{PolicyDBUrl: "postgres://postgres:password@localhost/autoscaler?sslmode=disable", AppMetricDBUrl: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"},
 					Aggregator: AggregatorConfig{
-						AggregatorExecuateIntervalInSeconds: 30,
-						PolicyPollerIntervalInSeconds:       30,
-						AggregatorExecuateInterval:          30 * time.Second,
-						PolicyPollerInterval:                30 * time.Second,
-						MetricPollerCount:                   10,
-						AppMonitorChannelSize:               100},
+						AggregatorExecuteInterval: 30 * time.Second,
+						PolicyPollerInterval:      30 * time.Second,
+						MetricPollerCount:         10,
+						AppMonitorChannelSize:     100},
 					Evaluator: EvaluatorConfig{
-						EvaluationManagerIntervalInSeconds: 30,
-						EvaluationManagerInterval:          30 * time.Second,
-						EvaluatorCount:                     10,
-						TriggerArrayChannelSize:            100},
+						EvaluationManagerInterval: 30 * time.Second,
+						EvaluatorCount:            10,
+						TriggerArrayChannelSize:   100},
 					ScalingEngine: ScalingEngineConfig{
 						ScalingEngineUrl: "http://localhost:8082"},
 					MetricCollector: MetricCollectorConfig{
@@ -85,12 +82,12 @@ db:
   policy_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
   app_metrics_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
 aggregator: 
-  aggregator_execute_interval_in_seconds: 30
-  policy_poller_interval_in_seconds: 30
+  aggregator_execute_interval: 30s
+  policy_poller_interval: 30s
   metric_poller_count: 10
   app_monitor_channel_size: 100
 evaluator:
-  evaluation_manager_execute_interval_in_seconds: 30
+  evaluation_manager_execute_interval: 30s
   evaluator_count: 10
   trigger_array_channel_size: 100
 scalingEngine:
@@ -116,12 +113,12 @@ db:
   policy_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
   app_metrics_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
 aggregator: 
-  aggregator_execute_interval_in_seconds: 30
-  policy_poller_interval_in_seconds: 30
+  aggregator_execute_interval: 30s
+  policy_poller_interval: 30s
   metric_poller_count: 10
   app_monitor_channel_size: 100
 evaluator:
-  evaluation_manager_execute_interval_in_seconds: 30
+  evaluation_manager_execute_interval: 30s
   evaluator_count: 10
   trigger_array_channel_size: 100
 scalingEngine:
@@ -136,7 +133,7 @@ metricCollector:
 			})
 		})
 
-		Context("when it gives a non integer aggregator_execute_interval_in_seconds", func() {
+		Context("when it gives a non integer aggregator_execute_interval", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
 server:
@@ -147,12 +144,12 @@ db:
   policy_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
   app_metrics_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
 aggregator: 
-  aggregator_execute_interval_in_seconds: "NOT-INTEGER-VALUE"
-  policy_poller_interval_in_seconds: 30
+  aggregator_execute_interval: "NOT-INTEGER-VALUE"
+  policy_poller_interval: 30s
   metric_poller_count: 10
   app_monitor_channel_size: 100
 evaluator:
-  evaluation_manager_execute_interval_in_seconds: 30
+  evaluation_manager_execute_interval: 30s
   evaluator_count: 10
   trigger_array_channel_size: 100
 scalingEngine:
@@ -167,7 +164,7 @@ metricCollector:
 			})
 		})
 
-		Context("when it gives a non integer policy_poller_interval_in_seconds", func() {
+		Context("when it gives a non integer policy_poller_interval", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
 server:
@@ -178,12 +175,12 @@ db:
   policy_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
   app_metrics_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
 aggregator: 
-  aggregator_execute_interval_in_seconds: 30
-  policy_poller_interval_in_seconds: "NOT-INTEGER-VALUE"
+  aggregator_execute_interval: 30s
+  policy_poller_interval: "NOT-INTEGER-VALUE"
   metric_poller_count: 10
   app_monitor_channel_size: 100
 evaluator:
-  evaluation_manager_execute_interval_in_seconds: 30
+  evaluation_manager_execute_interval: 30s
   evaluator_count: 10
   trigger_array_channel_size: 100
 scalingEngine:
@@ -209,12 +206,12 @@ db:
   policy_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
   app_metrics_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
 aggregator: 
-  aggregator_execute_interval_in_seconds: 30
-  policy_poller_interval_in_seconds: 30
+  aggregator_execute_interval: 30s
+  policy_poller_interval: 30s
   metric_poller_count: "NOT-INTEGER-VALUE"
   app_monitor_channel_size: 100
 evaluator:
-  evaluation_manager_execute_interval_in_seconds: 30
+  evaluation_manager_execute_interval: 30s
   evaluator_count: 10
   trigger_array_channel_size: 100
 scalingEngine:
@@ -240,12 +237,12 @@ db:
   policy_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
   app_metrics_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
 aggregator: 
-  aggregator_execute_interval_in_seconds: 30
-  policy_poller_interval_in_seconds: 30
+  aggregator_execute_interval: 30s
+  policy_poller_interval: 30s
   metric_poller_count: 10
   app_monitor_channel_size: "NOT-INTEGER-VALUE"
 evaluator:
-  evaluation_manager_execute_interval_in_seconds: 30
+  evaluation_manager_execute_interval: 30s
   evaluator_count: 10
   trigger_array_channel_size: 100
 scalingEngine:
@@ -260,7 +257,7 @@ metricCollector:
 			})
 		})
 
-		Context("when it gives a non integer evaluation_manager_execute_interval_in_seconds", func() {
+		Context("when it gives a non integer evaluation_manager_execute_interval", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
 server:
@@ -271,12 +268,12 @@ db:
   policy_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
   app_metrics_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
 aggregator: 
-  aggregator_execute_interval_in_seconds: 30
-  policy_poller_interval_in_seconds: 30
+  aggregator_execute_interval: 30s
+  policy_poller_interval: 30s
   metric_poller_count: 10
   app_monitor_channel_size: 100
 evaluator:
-  evaluation_manager_execute_interval_in_seconds: "NOT-INTEGER-VALUE"
+  evaluation_manager_execute_interval: "NOT-INTEGER-VALUE"
   evaluator_count: 10
   trigger_array_channel_size: 100
 scalingEngine:
@@ -302,12 +299,12 @@ db:
   policy_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
   app_metrics_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
 aggregator: 
-  aggregator_execute_interval_in_seconds: 30
-  policy_poller_interval_in_seconds: 30
+  aggregator_execute_interval: 30s
+  policy_poller_interval: 30s
   metric_poller_count: 10
   app_monitor_channel_size: 100
 evaluator:
-  evaluation_manager_execute_interval_in_seconds: 30
+  evaluation_manager_execute_interval: 30s
   evaluator_count: "NOT-INTEGER-VALUE"
   trigger_array_channel_size: 100
 scalingEngine:
@@ -332,12 +329,12 @@ db:
   policy_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
   app_metrics_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
 aggregator: 
-  aggregator_execute_interval_in_seconds: 30
-  policy_poller_interval_in_seconds: 30
+  aggregator_execute_interval: 30s
+  policy_poller_interval: 30s
   metric_poller_count: 10
   app_monitor_channel_size: 100
 evaluator:
-  evaluation_manager_execute_interval_in_seconds: 30
+  evaluation_manager_execute_interval: 30s
   evaluator_count: 10
   trigger_array_channel_size: "NOT-INTEGER-VALUE"
 scalingEngine:
@@ -374,7 +371,7 @@ metricCollector:
 				Expect(conf).To(Equal(&Config{Server: ServerConfig{Port: 8080},
 					Logging: LoggingConfig{Level: "info"},
 					DB:      DBConfig{PolicyDBUrl: "postgres://postgres:password@localhost/autoscaler?sslmode=disable", AppMetricDBUrl: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"},
-					Aggregator: AggregatorConfig{AggregatorExecuateInterval: DefaultAggregatorExecuteInterval,
+					Aggregator: AggregatorConfig{AggregatorExecuteInterval: DefaultAggregatorExecuteInterval,
 						PolicyPollerInterval:  DefaultPolicyPollerInterval,
 						MetricPollerCount:     DefaultMetricPollerCount,
 						AppMonitorChannelSize: DefaultAppMonitorChannelSize},
@@ -396,17 +393,14 @@ metricCollector:
 				Logging: LoggingConfig{Level: "info"},
 				DB:      DBConfig{PolicyDBUrl: "postgres://postgres:password@localhost/autoscaler?sslmode=disable", AppMetricDBUrl: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"},
 				Aggregator: AggregatorConfig{
-					AggregatorExecuateIntervalInSeconds: 30,
-					PolicyPollerIntervalInSeconds:       30,
-					AggregatorExecuateInterval:          30 * time.Second,
-					PolicyPollerInterval:                30 * time.Second,
-					MetricPollerCount:                   10,
-					AppMonitorChannelSize:               100},
+					AggregatorExecuteInterval: 30 * time.Second,
+					PolicyPollerInterval:      30 * time.Second,
+					MetricPollerCount:         10,
+					AppMonitorChannelSize:     100},
 				Evaluator: EvaluatorConfig{
-					EvaluationManagerIntervalInSeconds: 30,
-					EvaluationManagerInterval:          30 * time.Second,
-					EvaluatorCount:                     10,
-					TriggerArrayChannelSize:            100},
+					EvaluationManagerInterval: 30 * time.Second,
+					EvaluatorCount:            10,
+					TriggerArrayChannelSize:   100},
 				ScalingEngine: ScalingEngineConfig{
 					ScalingEngineUrl: "http://localhost:8082"},
 				MetricCollector: MetricCollectorConfig{
@@ -479,7 +473,7 @@ metricCollector:
 
 		Context("when AggregatorExecuateInterval <= 0", func() {
 			BeforeEach(func() {
-				conf.Aggregator.AggregatorExecuateInterval = 0
+				conf.Aggregator.AggregatorExecuteInterval = 0
 			})
 			It("should error", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: aggregator execute interval is less-equal than 0")))

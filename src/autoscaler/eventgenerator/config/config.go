@@ -33,19 +33,16 @@ type DBConfig struct {
 }
 
 type AggregatorConfig struct {
-	AggregatorExecuateIntervalInSeconds time.Duration `yaml:"aggregator_execute_interval_in_seconds"`
-	PolicyPollerIntervalInSeconds       time.Duration `yaml:"policy_poller_interval_in_seconds"`
-	MetricPollerCount                   int           `yaml:"metric_poller_count"`
-	AppMonitorChannelSize               int           `yaml:"app_monitor_channel_size"`
-	AggregatorExecuateInterval          time.Duration
-	PolicyPollerInterval                time.Duration
+	MetricPollerCount         int           `yaml:"metric_poller_count"`
+	AppMonitorChannelSize     int           `yaml:"app_monitor_channel_size"`
+	AggregatorExecuteInterval time.Duration `yaml:"aggregator_execute_interval"`
+	PolicyPollerInterval      time.Duration `yaml:"policy_poller_interval"`
 }
 
 type EvaluatorConfig struct {
-	EvaluationManagerIntervalInSeconds time.Duration `yaml:"evaluation_manager_execute_interval_in_seconds"`
-	EvaluatorCount                     int           `yaml:"evaluator_count"`
-	TriggerArrayChannelSize            int           `yaml:"trigger_array_channel_size"`
-	EvaluationManagerInterval          time.Duration
+	EvaluatorCount            int           `yaml:"evaluator_count"`
+	TriggerArrayChannelSize   int           `yaml:"trigger_array_channel_size"`
+	EvaluationManagerInterval time.Duration `yaml:"evaluation_manager_execute_interval"`
 }
 
 type ScalingEngineConfig struct {
@@ -74,10 +71,10 @@ func LoadConfig(bytes []byte) (*Config, error) {
 			Level: DefaultLoggingLevel,
 		},
 		Aggregator: AggregatorConfig{
-			AggregatorExecuateInterval: DefaultAggregatorExecuteInterval,
-			PolicyPollerInterval:       DefaultPolicyPollerInterval,
-			MetricPollerCount:          DefaultMetricPollerCount,
-			AppMonitorChannelSize:      DefaultAppMonitorChannelSize,
+			AggregatorExecuteInterval: DefaultAggregatorExecuteInterval,
+			PolicyPollerInterval:      DefaultPolicyPollerInterval,
+			MetricPollerCount:         DefaultMetricPollerCount,
+			AppMonitorChannelSize:     DefaultAppMonitorChannelSize,
 		},
 		Evaluator: EvaluatorConfig{
 			EvaluationManagerInterval: DefaultEvaluationExecuteInterval,
@@ -90,15 +87,6 @@ func LoadConfig(bytes []byte) (*Config, error) {
 		return nil, err
 	}
 	conf.Logging.Level = strings.ToLower(conf.Logging.Level)
-	if conf.Aggregator.AggregatorExecuateIntervalInSeconds != 0 {
-		conf.Aggregator.AggregatorExecuateInterval = time.Duration(conf.Aggregator.AggregatorExecuateIntervalInSeconds) * time.Second
-	}
-	if conf.Aggregator.PolicyPollerIntervalInSeconds != 0 {
-		conf.Aggregator.PolicyPollerInterval = time.Duration(conf.Aggregator.PolicyPollerIntervalInSeconds) * time.Second
-	}
-	if conf.Evaluator.EvaluationManagerIntervalInSeconds != 0 {
-		conf.Evaluator.EvaluationManagerInterval = time.Duration(conf.Evaluator.EvaluationManagerIntervalInSeconds) * time.Second
-	}
 	return conf, nil
 }
 
@@ -118,7 +106,7 @@ func (c *Config) Validate() error {
 	if c.MetricCollector.MetricCollectorUrl == "" {
 		return fmt.Errorf("Configuration error: Metric collector url is empty")
 	}
-	if c.Aggregator.AggregatorExecuateInterval <= time.Duration(0) {
+	if c.Aggregator.AggregatorExecuteInterval <= time.Duration(0) {
 		return fmt.Errorf("Configuration error: aggregator execute interval is less-equal than 0")
 	}
 	if c.Aggregator.PolicyPollerInterval <= time.Duration(0) {
