@@ -3,6 +3,7 @@ package aggregator_test
 import (
 	. "autoscaler/eventgenerator/aggregator"
 	"autoscaler/eventgenerator/aggregator/fakes"
+	. "autoscaler/eventgenerator/generator"
 	. "autoscaler/eventgenerator/model"
 	"autoscaler/models"
 	"net/http"
