@@ -1,4 +1,4 @@
-package prune_test
+package config_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -9,5 +9,5 @@ import (
 
 func TestConfig(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "App Metric Prune Suite")
+	RunSpecs(t, "Pruner Config Suite")
 }
