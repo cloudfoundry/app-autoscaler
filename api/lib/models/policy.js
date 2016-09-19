@@ -9,7 +9,8 @@ module.exports = function(sequelize, DataTypes) {
     },
     policy_json: {
       type: DataTypes.JSON,
-      field: 'policy_json'
+      field: 'policy_json',
+      allowNull: false
     },
     updated_at: {
       type: DataTypes.DATE,
