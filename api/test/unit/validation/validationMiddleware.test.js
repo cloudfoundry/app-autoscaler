@@ -7,6 +7,8 @@ var app = require('../../../app.js');
 var logger = require('../../../lib/log/logger');
 var policy = require('../../../lib/models')().policy_json;
 var validationMiddleware = require('../../../lib/validation/validationMiddleware');
+var nock = require('nock');
+var schedulerURI = process.env.SCHEDULER_URI ;
 
 describe('Validate Policy JSON Schema structure', function() {
   var policyContent;
@@ -18,10 +20,13 @@ describe('Validate Policy JSON Schema structure', function() {
 
   beforeEach(function() {
     fakePolicy = JSON.parse(policyContent);
-    policy.truncate();
+    return policy.truncate();
   });
 
   it('should validate policy schema successfully', function(done) {
+    nock(schedulerURI)
+    .put('/v2/schedules/12341')
+    .reply(200);
     request(app)
     .put('/v1/policies/12341',validationMiddleware)
     .send(fakePolicy)
@@ -78,6 +83,9 @@ describe('Validate Policy JSON Schema structure', function() {
 
   });
   it('should validate policy schema in the absesnce of scaling_rules ', function(done) {
+    nock(schedulerURI)
+    .put('/v2/schedules/12345')
+    .reply(200);
     delete fakePolicy.scaling_rules;
     request(app)
     .put('/v1/policies/12345',validationMiddleware)
@@ -107,6 +115,9 @@ describe('Validate Policy JSON Schema structure', function() {
 
   });
   it('should validate policy schema without stat_window_secs in scaling_rules',function(done) {
+    nock(schedulerURI)
+    .put('/v2/schedules/12347')
+    .reply(200);
     delete fakePolicy.scaling_rules[0].stat_window_secs;
     request(app)
     .put('/v1/policies/12347',validationMiddleware)
@@ -182,6 +193,9 @@ describe('Validate Policy JSON Schema structure', function() {
 
   });
   it('should successfully validate policy schema irespective of spaces in timezone', function(done) {
+    nock(schedulerURI)
+    .put('/v2/schedules/12351')
+    .reply(200);
     fakePolicy.schedules.timezone = '   Asia   /  Shanghai ';
     request(app)
     .put('/v1/policies/12351',validationMiddleware)
@@ -195,6 +209,9 @@ describe('Validate Policy JSON Schema structure', function() {
 
   });
   it('should validate policy schema with only recurring_schedule without specific_date', function(done) {
+    nock(schedulerURI)
+    .put('/v2/schedules/12352')
+    .reply(200);
     delete fakePolicy.schedules.specific_date;
     request(app)
     .put('/v1/policies/12352',validationMiddleware)
@@ -209,6 +226,9 @@ describe('Validate Policy JSON Schema structure', function() {
   });
 
   it('should validate policy schema with only specific_date without recurring_schedule', function(done) {
+    nock(schedulerURI)
+    .put('/v2/schedules/12353')
+    .reply(200);
     delete fakePolicy.schedules.recurring_schedule;
     request(app)
     .put('/v1/policies/12353',validationMiddleware)
@@ -381,7 +401,10 @@ describe('Validate Policy JSON Schema structure', function() {
     });
   });
   it('should successfully validate policy schema without start_date and end_date in recurring_schedule', function(done) {
-    request(app)
+    nock(schedulerURI)
+    .put('/v2/schedules/12359')
+    .reply(200);
+     request(app)
     .put('/v1/policies/12359',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
@@ -392,6 +415,9 @@ describe('Validate Policy JSON Schema structure', function() {
     });
   });
   it('should successfully validate policy schema with start_date but without end_date in recurring_schedule', function(done) {
+    nock(schedulerURI)
+    .put('/v2/schedules/12359')
+    .reply(200);
     delete  fakePolicy.schedules.recurring_schedule[0].end_date;
     request(app)
     .put('/v1/policies/12359',validationMiddleware)
@@ -404,6 +430,9 @@ describe('Validate Policy JSON Schema structure', function() {
     });
   });
   it('should successfully validate policy schema with end_date but without start_date in recurring_schedule', function(done) {
+    nock(schedulerURI)
+    .put('/v2/schedules/12359')
+    .reply(200);
     delete  fakePolicy.schedules.recurring_schedule[0].start_date;
     request(app)
     .put('/v1/policies/12359',validationMiddleware)
@@ -463,6 +492,9 @@ describe('Validate Policy JSON Schema structure', function() {
   });
   
   it('should validate policy schema without initial_min_instance_count in recurring_schedule', function(done) {
+    nock(schedulerURI)
+    .put('/v2/schedules/12359')
+    .reply(200);
     delete  fakePolicy.schedules.recurring_schedule[0].initial_min_instance_count;
     delete  fakePolicy.schedules.recurring_schedule[1].initial_min_instance_count;
     request(app)
@@ -477,6 +509,9 @@ describe('Validate Policy JSON Schema structure', function() {
   });
   
   it('should validate policy schema without initial_min_instance_count in specific_date schedule', function(done) {
+    nock(schedulerURI)
+    .put('/v2/schedules/12359')
+    .reply(200);
     delete  fakePolicy.schedules.specific_date[0].initial_min_instance_count;
     delete  fakePolicy.schedules.specific_date[1].initial_min_instance_count;
     request(app)
@@ -620,6 +655,9 @@ describe('Validate Policy JSON Schema structure', function() {
     });
   });
   it('should validate policy where start_date and end_date are same but start_time is before end_time in recurring_schedule', function(done) {
+    nock(schedulerURI)
+    .put('/v2/schedules/12359')
+    .reply(200);
     fakePolicy.schedules.recurring_schedule[0].start_date = '2016-07-23';
     fakePolicy.schedules.recurring_schedule[0].end_date = '2016-07-23';
     fakePolicy.schedules.recurring_schedule[0].start_time = '10:00';

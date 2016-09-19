@@ -6,6 +6,8 @@ var fs = require('fs');
 var app = require('../../../app.js');
 var policy = require('../../../lib/models')().policy_json;
 var logger = require('../../../lib/log/logger');
+var nock = require('nock');
+var schedulerURI = process.env.SCHEDULER_URI ;
 
 describe('Routing Policy Creation', function() {
   var fakePolicy;
@@ -15,10 +17,13 @@ describe('Routing Policy Creation', function() {
   })
 
   beforeEach(function() {
-    policy.truncate();
+    return policy.truncate();
   });
 
   it('should create a policy for app id 12345', function(done) {
+    nock(schedulerURI)
+    .put('/v2/schedules/12345')
+    .reply(200);
     request(app)
     .put('/v1/policies/12345')
     .send(fakePolicy)
@@ -35,11 +40,17 @@ describe('Routing Policy Creation', function() {
 
   context('when a policy already exists' ,function() {
     beforeEach(function(done) {
+      nock(schedulerURI)
+      .put('/v2/schedules/12345')
+      .reply(200);
       request(app)
       .put('/v1/policies/12345')
       .send(fakePolicy).end(done)
     });
     it('should update the existing policy for app id 12345', function(done) {
+      nock(schedulerURI)
+      .put('/v2/schedules/12345')
+      .reply(204);
       request(app)
       .put('/v1/policies/12345')
       .send(fakePolicy)
