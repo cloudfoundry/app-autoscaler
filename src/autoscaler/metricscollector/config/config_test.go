@@ -30,9 +30,9 @@ var _ = Describe("Config", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
  cf:
-  api: "https://api.exmaple.com"
-  grant-type: "password"
-  user: "admin"
+  api: https://api.exmaple.com
+  grant-type: password
+  user: admin
 server:
   port: 8989
 `)
@@ -47,16 +47,16 @@ server:
 			BeforeEach(func() {
 				configBytes = []byte(`
 cf:
-  api: "https://api.exmaple.com"
-  grant-type: "password"
-  user: "admin"
+  api: https://api.exmaple.com
+  grant-type: password
+  user: admin
 server:
-  port: "port"
+  port: port
 logging:
-  level: "info"
+  level: info
 db:
-  policy_db_url: "postgres://pqgotest:password@localhost/pqgotest" 
-  metrics_db_url: "postgres://pqgotest:password@localhost/pqgotest" 
+  policy_db_url: postgres://pqgotest:password@localhost/pqgotest
+  metrics_db_url: postgres://pqgotest:password@localhost/pqgotest
 `)
 			})
 
@@ -69,19 +69,19 @@ db:
 			BeforeEach(func() {
 				configBytes = []byte(`
 cf:
-  api: "https://api.example.com"
-  grant_type: "PassWord"
-  username: "admin"
-  password: "admin"
-  client_id: "client-id"
-  secret: "client-secret"
+  api: https://api.example.com
+  grant_type: PassWord
+  username: admin
+  password: admin
+  client_id: client-id
+  secret: client-secret
 server:
   port: 8989
 logging:
-  level: "debug"
+  level: DebuG
 db:
-  policy_db_url: "postgres://pqgotest:password@localhost/pqgotest" 
-  metrics_db_url: "postgres://pqgotest:password@localhost/pqgotest" 
+  policy_db_url: postgres://pqgotest:password@localhost/pqgotest
+  metrics_db_url: postgres://pqgotest:password@localhost/pqgotest
 collector:
   refresh_interval_in_seconds: 20
   poll_interval_in_seconds: 10
@@ -111,10 +111,10 @@ collector:
 			BeforeEach(func() {
 				configBytes = []byte(`
 cf:
-  api: "https://api.example.com"
+  api: https://api.example.com
 db:
-  policy_db_url: "postgres://pqgotest:password@localhost/pqgotest" 
-  metrics_db_url: "postgres://pqgotest:password@localhost/pqgotest" 
+  policy_db_url: postgres://pqgotest:password@localhost/pqgotest
+  metrics_db_url: postgres://pqgotest:password@localhost/pqgotest
 `)
 			})
 

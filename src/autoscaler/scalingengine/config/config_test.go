@@ -29,9 +29,9 @@ var _ = Describe("Config", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
  cf:
-  api: "https://api.exmaple.com"
-  grant-type: "password"
-  user: "admin"
+  api: https://api.exmaple.com
+  grant-type: password
+  user: admin
 server:
   port: 8989
 `)
@@ -46,16 +46,16 @@ server:
 			BeforeEach(func() {
 				configBytes = []byte(`
 cf:
-  api: "https://api.exmaple.com"
-  grant-type: "password"
-  user: "admin"
+  api: https://api.exmaple.com
+  grant-type: password
+  user: admin
 server:
-  port: "port"
+  port: port
 logging:
-  level: "info"
+  level: info
 db:
-  policy_db_url: "test-policy-db-url" 
-  history_db_url: "test-history-db-url" 
+  policy_db_url: test-policy-db-url
+  history_db_url: test-history-db-url
 `)
 			})
 
@@ -68,19 +68,19 @@ db:
 			BeforeEach(func() {
 				configBytes = []byte(`
 cf:
-  api: "https://api.example.com"
-  grant_type: "PassWord"
-  username: "admin"
-  password: "admin"
-  client_id: "client-id"
-  secret: "client-secret"
+  api: https://api.example.com
+  grant_type: PassWord
+  username: admin
+  password: admin
+  client_id: client-id
+  secret: client-secret
 server:
   port: 8989
 logging:
-  level: "debug"
+  level: DeBug
 db:
-  policy_db_url: "test-policy-db-url"
-  history_db_url: "test-history-db-url" 
+  policy_db_url: test-policy-db-url
+  history_db_url: test-history-db-url
 `)
 			})
 
@@ -108,10 +108,10 @@ db:
 			BeforeEach(func() {
 				configBytes = []byte(`
 cf:
-  api: "https://api.example.com"
+  api: https://api.example.com
 db:
-  policy_db_url: "test-policy-db-url"
-  history_db_url: "test-history-db-url" 
+  policy_db_url: test-policy-db-url
+  history_db_url: test-history-db-url
 `)
 			})
 
