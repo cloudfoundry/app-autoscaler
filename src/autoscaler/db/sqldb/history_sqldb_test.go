@@ -10,6 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 
 	"os"
+	"time"
 )
 
 var _ = Describe("HistorySqldb", func() {
@@ -24,6 +25,7 @@ var _ = Describe("HistorySqldb", func() {
 		end       int64
 		appId     string
 		histories []*models.AppScalingHistory
+		canScale  bool
 	)
 
 	BeforeEach(func() {
@@ -335,6 +337,89 @@ var _ = Describe("HistorySqldb", func() {
 
 			})
 
+		})
+	})
+
+	Describe("UpdateScalingCooldownExpireTime", func() {
+		BeforeEach(func() {
+			hdb, err = NewHistorySQLDB(url, logger)
+			Expect(err).NotTo(HaveOccurred())
+			cleanScalingCooldownTable()
+		})
+
+		AfterEach(func() {
+			err = hdb.Close()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		JustBeforeEach(func() {
+			err = hdb.UpdateScalingCooldownExpireTime("an-app-id", 222222)
+		})
+
+		Context("when there is no previous app cooldown record", func() {
+			It("creates the record", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(hasScalingCooldownRecord("an-app-id", 222222)).To(BeTrue())
+			})
+		})
+
+		Context("when there is previous app cooldown record", func() {
+			BeforeEach(func() {
+				err = hdb.UpdateScalingCooldownExpireTime("an-app-id", 111111)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("removes the previous record and inserts a new record", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(hasScalingCooldownRecord("an-app-id", 111111)).To(BeFalse())
+				Expect(hasScalingCooldownRecord("an-app-id", 222222)).To(BeTrue())
+			})
+		})
+	})
+
+	Describe("CanScaleApp", func() {
+		BeforeEach(func() {
+			hdb, err = NewHistorySQLDB(url, logger)
+			Expect(err).NotTo(HaveOccurred())
+			cleanScalingCooldownTable()
+		})
+
+		AfterEach(func() {
+			err = hdb.Close()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		JustBeforeEach(func() {
+			canScale, err = hdb.CanScaleApp("an-app-id")
+		})
+
+		Context("when there is no cooldown record before", func() {
+			It("returns true", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(canScale).To(BeTrue())
+			})
+		})
+
+		Context("when the app is still in cooldown period", func() {
+			BeforeEach(func() {
+				err = hdb.UpdateScalingCooldownExpireTime("an-app-id", time.Now().Add(10*time.Second).UnixNano())
+				Expect(err).NotTo(HaveOccurred())
+			})
+			It("returns false", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(canScale).To(BeFalse())
+			})
+		})
+
+		Context("when the app passes cooldown period", func() {
+			BeforeEach(func() {
+				err = hdb.UpdateScalingCooldownExpireTime("an-app-id", time.Now().Add(-10*time.Second).UnixNano())
+				Expect(err).NotTo(HaveOccurred())
+			})
+			It("returns false", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(canScale).To(BeTrue())
+			})
 		})
 	})
 
