@@ -7,15 +7,16 @@ import (
 	"autoscaler/eventgenerator/config"
 	"autoscaler/eventgenerator/generator"
 	"autoscaler/eventgenerator/model"
-	"code.cloudfoundry.org/clock"
-	"code.cloudfoundry.org/lager"
 	"flag"
 	"fmt"
+	"io/ioutil"
+	"os"
+
+	"code.cloudfoundry.org/clock"
+	"code.cloudfoundry.org/lager"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
-	"io/ioutil"
-	"os"
 )
 
 func main() {
@@ -23,7 +24,7 @@ func main() {
 	flag.StringVar(&path, "c", "", "config file")
 	flag.Parse()
 	if path == "" {
-		fmt.Fprintln(os.Stderr, "missing config file\nUsage:use '-c' option to specify the config file path")
+		fmt.Fprintln(os.Stdout, "missing config file\nUsage:use '-c' option to specify the config file path")
 		os.Exit(1)
 	}
 
@@ -106,7 +107,7 @@ func main() {
 func initLoggerFromConfig(conf *config.LoggingConfig) lager.Logger {
 	logLevel, err := getLogLevel(conf.Level)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to initialize logger: %s\n", err.Error())
+		fmt.Fprintf(os.Stdout, "failed to initialize logger: %s\n", err.Error())
 		os.Exit(1)
 	}
 	logger := lager.NewLogger("eventgenerator")
