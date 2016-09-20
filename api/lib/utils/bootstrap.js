@@ -5,14 +5,16 @@ exports.boot = function boot(cb) {
     function(callback) {
       if (!process.env.DB_URI) {
         callback({ 'message':'DB_URI not found' });		
-      } else {
-	    callback(null);
-	  }
+      } 
+      else {
+        callback(null);
+      }
     },
     function(callback) {
-	  if (!process.env.SCHEDULER_URI) {
+      if (!process.env.SCHEDULER_URI) {
         callback({ 'message':'SCHEDULER_URI not found' });		
-      } else {
+      } 
+      else {
         callback (null);
       }
     },
@@ -20,11 +22,12 @@ exports.boot = function boot(cb) {
       require('../../lib/models')(function(error) {
         if (error) {
           callback(error)
-        } else{
+        } 
+        else {
           callback(null);
         }
       });
-    },
+    }
   ],
   function(err, results) {
     cb (err);
