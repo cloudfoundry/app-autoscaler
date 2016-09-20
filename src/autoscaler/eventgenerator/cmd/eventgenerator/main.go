@@ -23,7 +23,7 @@ func main() {
 	flag.StringVar(&path, "c", "", "config file")
 	flag.Parse()
 	if path == "" {
-		fmt.Fprintln(os.Stderr, "missing config file")
+		fmt.Fprintln(os.Stderr, "missing config file\nUsage:use '-c' option to specify the config file path")
 		os.Exit(1)
 	}
 
@@ -35,6 +35,7 @@ func main() {
 		os.Exit(1)
 	}
 	configFileBytes, readError := ioutil.ReadAll(configFile)
+	configFile.Close()
 	if readError != nil {
 		fmt.Fprintf(os.Stdout, "failed to read data from config file:%s", readError.Error())
 		os.Exit(1)
@@ -44,7 +45,7 @@ func main() {
 		fmt.Fprintf(os.Stdout, "failed to read config file '%s' : %s\n", path, err.Error())
 		os.Exit(1)
 	}
-	configFile.Close()
+
 	err = conf.Validate()
 	if err != nil {
 		fmt.Fprintf(os.Stdout, "failed to validate configuration : %s\n", err.Error())

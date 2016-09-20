@@ -76,11 +76,19 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	return []byte(eg)
 }, func(pathByte []byte) {
 	egPath = string(pathByte)
-	metricCollector = ghttp.NewServer()
-	scalingEngine = ghttp.NewServer()
-	metricCollector.RouteToHandler("GET", "/v1/apps/"+testAppId+"/metrics_history/memory", ghttp.RespondWithJSONEncoded(http.StatusOK,
-		&metrics))
-	scalingEngine.RouteToHandler("POST", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
+	initDB()
+	initHttpEndPoints()
+	initConfig()
+
+})
+
+var _ = SynchronizedAfterSuite(func() {
+	os.Remove(configFile.Name())
+}, func() {
+	gexec.CleanupBuildArtifacts()
+})
+
+func initDB() {
 	egDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
 	Expect(err).NotTo(HaveOccurred())
 
@@ -112,6 +120,17 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	err = egDB.Close()
 	Expect(err).NotTo(HaveOccurred())
+}
+
+func initHttpEndPoints() {
+	metricCollector = ghttp.NewServer()
+	scalingEngine = ghttp.NewServer()
+	metricCollector.RouteToHandler("GET", "/v1/apps/"+testAppId+"/metrics_history/memory", ghttp.RespondWithJSONEncoded(http.StatusOK,
+		&metrics))
+	scalingEngine.RouteToHandler("POST", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
+}
+
+func initConfig() {
 	conf := &config.Config{
 		Server: config.ServerConfig{
 			Port: config.DefaultServerPort + 1,
@@ -142,13 +161,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		},
 	}
 	configFile = writeConfig(conf)
-})
-
-var _ = SynchronizedAfterSuite(func() {
-	os.Remove(configFile.Name())
-}, func() {
-	gexec.CleanupBuildArtifacts()
-})
+}
 
 func writeConfig(c *config.Config) *os.File {
 	cfg, err := ioutil.TempFile("", "eg")
