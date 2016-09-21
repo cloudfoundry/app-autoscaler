@@ -1,15 +1,14 @@
 package config_test
 
 import (
-	"bytes"
-	"time"
+	"autoscaler/cf"
+	. "autoscaler/scalingengine/config"
 
 	"github.com/cloudfoundry-incubator/candiedyaml"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"autoscaler/cf"
-	. "autoscaler/metricscollector/config"
+	"bytes"
 )
 
 var _ = Describe("Config", func() {
@@ -55,8 +54,8 @@ server:
 logging:
   level: info
 db:
-  policy_db_url: postgres://pqgotest:password@localhost/pqgotest
-  metrics_db_url: postgres://pqgotest:password@localhost/pqgotest
+  policy_db_url: test-policy-db-url
+  history_db_url: test-history-db-url
 `)
 			})
 
@@ -78,13 +77,10 @@ cf:
 server:
   port: 8989
 logging:
-  level: DebuG
+  level: DeBug
 db:
-  policy_db_url: postgres://pqgotest:password@localhost/pqgotest
-  metrics_db_url: postgres://pqgotest:password@localhost/pqgotest
-collector:
-  refresh_interval_in_seconds: 20
-  poll_interval_in_seconds: 10
+  policy_db_url: test-policy-db-url
+  history_db_url: test-history-db-url
 `)
 			})
 
@@ -102,8 +98,9 @@ collector:
 
 				Expect(conf.Logging.Level).To(Equal("debug"))
 
-				Expect(conf.Collector.RefreshInterval).To(Equal(20 * time.Second))
-				Expect(conf.Collector.PollInterval).To(Equal(10 * time.Second))
+				Expect(conf.Db.PolicyDbUrl).To(Equal("test-policy-db-url"))
+				Expect(conf.Db.HistoryDbUrl).To(Equal("test-history-db-url"))
+
 			})
 		})
 
@@ -113,8 +110,8 @@ collector:
 cf:
   api: https://api.example.com
 db:
-  policy_db_url: postgres://pqgotest:password@localhost/pqgotest
-  metrics_db_url: postgres://pqgotest:password@localhost/pqgotest
+  policy_db_url: test-policy-db-url
+  history_db_url: test-history-db-url
 `)
 			})
 
@@ -123,9 +120,7 @@ db:
 
 				Expect(conf.Cf.GrantType).To(Equal(cf.GrantTypePassword))
 				Expect(conf.Server.Port).To(Equal(8080))
-				Expect(conf.Logging.Level).To(Equal(DefaultLoggingLevel))
-				Expect(conf.Collector.RefreshInterval).To(Equal(DefaultRefreshInterval))
-				Expect(conf.Collector.PollInterval).To(Equal(DefaultPollInterval))
+				Expect(conf.Logging.Level).To(Equal("info"))
 			})
 		})
 
@@ -137,8 +132,8 @@ db:
 			conf.Cf.Api = "http://api.example.com"
 			conf.Cf.GrantType = cf.GrantTypePassword
 			conf.Cf.Username = "admin"
-			conf.Db.MetricsDbUrl = "postgres://pqgotest:password@exampl.com/pqgotest"
-			conf.Db.PolicyDbUrl = "postgres://pqgotest:password@exampl.com/pqgotest"
+			conf.Db.PolicyDbUrl = "test-policy-db-url"
+			conf.Db.HistoryDbUrl = "test-history-db-url"
 		})
 
 		JustBeforeEach(func() {
@@ -172,16 +167,17 @@ db:
 			})
 		})
 
-		Context("when metrics db url is not set", func() {
+		Context("when history db url is not set", func() {
 
 			BeforeEach(func() {
-				conf.Db.MetricsDbUrl = ""
+				conf.Db.HistoryDbUrl = ""
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: Metrics DB url is empty")))
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: History DB url is empty")))
 			})
 		})
 
 	})
+
 })

@@ -2,6 +2,7 @@ package server_test
 
 import (
 	"autoscaler/models"
+	"autoscaler/scalingengine/config"
 	"autoscaler/scalingengine/fakes"
 	. "autoscaler/scalingengine/server"
 
@@ -14,20 +15,22 @@ import (
 
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
-const serverURL = "http://127.0.0.1:8080"
-
 var server ifrit.Process
+var serverUrl string
 
 var _ = BeforeSuite(func() {
+	conf := config.ServerConfig{Port: 8080}
 	cfc := &fakes.FakeCfClient{}
 	policyDB := &fakes.FakePolicyDB{}
 	policyDB.GetAppPolicyReturns(&models.ScalingPolicy{}, nil)
 	historyDB := &fakes.FakeHistoryDB{}
-	httpServer := NewServer(lager.NewLogger("test"), cfc, policyDB, historyDB)
+	httpServer := NewServer(lager.NewLogger("test"), conf, cfc, policyDB, historyDB)
 	server = ginkgomon.Invoke(httpServer)
+	serverUrl = fmt.Sprintf("http://127.0.0.1:%d", conf.Port)
 })
 
 var _ = AfterSuite(func() {
@@ -49,7 +52,7 @@ var _ = Describe("Server", func() {
 
 	Context("when triggering scaling action", func() {
 		JustBeforeEach(func() {
-			rsp, err = http.Post(serverURL+urlPath, "application/json", bytes.NewReader(body))
+			rsp, err = http.Post(serverUrl+urlPath, "application/json", bytes.NewReader(body))
 		})
 
 		BeforeEach(func() {
@@ -77,7 +80,7 @@ var _ = Describe("Server", func() {
 
 		Context("when using the wrong method", func() {
 			JustBeforeEach(func() {
-				rsp, err = http.Get(serverURL + urlPath)
+				rsp, err = http.Get(serverUrl + urlPath)
 			})
 
 			It("should return 404", func() {
@@ -90,7 +93,7 @@ var _ = Describe("Server", func() {
 
 	Context("when getting scaling histories", func() {
 		JustBeforeEach(func() {
-			rsp, err = http.Get(serverURL + urlPath)
+			rsp, err = http.Get(serverUrl + urlPath)
 		})
 
 		BeforeEach(func() {
@@ -118,7 +121,7 @@ var _ = Describe("Server", func() {
 
 		Context("when using the wrong method", func() {
 			JustBeforeEach(func() {
-				rsp, err = http.Post(serverURL+urlPath, "gabage", nil)
+				rsp, err = http.Post(serverUrl+urlPath, "gabage", nil)
 			})
 
 			It("should return 404", func() {

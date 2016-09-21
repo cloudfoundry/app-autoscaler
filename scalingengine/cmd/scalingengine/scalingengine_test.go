@@ -1,24 +1,28 @@
 package main_test
 
 import (
-	"fmt"
-	"io/ioutil"
-	"net/http"
-	"os"
+	"autoscaler/cf"
+	"autoscaler/models"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gbytes"
 	. "github.com/onsi/gomega/gexec"
 
-	"autoscaler/cf"
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"net/http"
+	"os"
 )
 
-var _ = Describe("MetricsCollector", func() {
-	var runner *MetricsCollectorRunner
+var _ = Describe("Main", func() {
+
+	var runner *ScalingEngineRunner
 
 	BeforeEach(func() {
-		runner = NewMetricsCollectorRunner()
+		runner = NewScalingEngineRunner()
 	})
 
 	JustBeforeEach(func() {
@@ -48,7 +52,7 @@ var _ = Describe("MetricsCollector", func() {
 	Context("with an invalid config file", func() {
 		BeforeEach(func() {
 			runner.startCheck = ""
-			badfile, err := ioutil.TempFile("", "bad-mc-config")
+			badfile, err := ioutil.TempFile("", "bad-engine-config")
 			Expect(err).NotTo(HaveOccurred())
 			runner.configPath = badfile.Name()
 			ioutil.WriteFile(runner.configPath, []byte("bogus"), os.ModePerm)
@@ -67,14 +71,14 @@ var _ = Describe("MetricsCollector", func() {
 	Context("with missing configuration", func() {
 		BeforeEach(func() {
 			runner.startCheck = ""
-			cfg.Cf = cf.CfConfig{
-				Api: ccNOAAUAA.URL(),
+			conf.Cf = cf.CfConfig{
+				Api: ccUAA.URL(),
 			}
 
-			cfg.Server.Port = 7000 + GinkgoParallelNode()
-			cfg.Logging.Level = "debug"
+			conf.Server.Port = 7000 + GinkgoParallelNode()
+			conf.Logging.Level = "debug"
 
-			cfg := writeConfig(&cfg)
+			cfg := writeConfig(&conf)
 			runner.configPath = cfg.Name()
 		})
 
@@ -95,46 +99,26 @@ var _ = Describe("MetricsCollector", func() {
 		})
 	})
 
-	Describe("when a request for memory metrics comes", func() {
-		Context("when token is not expired", func() {
-			BeforeEach(func() {
-				eLock.Lock()
-				isTokenExpired = false
-				eLock.Unlock()
-			})
-
-			It("returns with a 200", func() {
-				rsp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/v1/apps/an-app-id/metrics/memory", mcPort))
-				defer rsp.Body.Close()
-
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
-			})
-		})
-
-		Context("when token is expired", func() {
-			BeforeEach(func() {
-				eLock.Lock()
-				isTokenExpired = true
-				eLock.Unlock()
-			})
-			It("refreshes the token and returns with a 200", func() {
-				rsp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/v1/apps/an-app-id/metrics/memory", mcPort))
-				defer rsp.Body.Close()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
-			})
-		})
-
-	})
-
-	Describe("when a request for memory metrics history comes", func() {
+	Describe("when a request to trigger scaling comes", func() {
 		It("returns with a 200", func() {
-			rsp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/v1/apps/an-app-id/metric_histories/memory", mcPort))
-			defer rsp.Body.Close()
+			body, err := json.Marshal(models.Trigger{Adjustment: "+1"})
+			Expect(err).NotTo(HaveOccurred())
 
+			rsp, err := http.Post(fmt.Sprintf("http://127.0.0.1:%d/v1/apps/%s/scale", port, appId),
+				"application/json", bytes.NewReader(body))
+			defer rsp.Body.Close()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 		})
 	})
+
+	Describe("when a request to retrieve scaling history comes", func() {
+		It("returns with a 200", func() {
+			rsp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/v1/apps/%s/scaling_histories", port, appId))
+			defer rsp.Body.Close()
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+		})
+	})
+
 })
