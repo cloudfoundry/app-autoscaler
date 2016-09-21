@@ -1,7 +1,6 @@
 package main
 
 import (
-	"crypto/tls"
 	"flag"
 	"fmt"
 	"os"
@@ -10,14 +9,12 @@ import (
 	"autoscaler/cf"
 	"autoscaler/db"
 	"autoscaler/db/sqldb"
-	"autoscaler/metricscollector/collector"
-	"autoscaler/metricscollector/config"
-	"autoscaler/metricscollector/server"
+	"autoscaler/scalingengine/config"
+	"autoscaler/scalingengine/server"
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
-	"github.com/cloudfoundry/noaa/consumer"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
@@ -55,28 +52,14 @@ func main() {
 	cfhttp.Initialize(5 * time.Second)
 
 	logger := initLoggerFromConfig(&conf.Logging)
-	mcClock := clock.NewClock()
+	eClock := clock.NewClock()
 
-	cfClient := cf.NewCfClient(&conf.Cf, logger.Session("cf"), mcClock)
+	cfClient := cf.NewCfClient(&conf.Cf, logger.Session("cf"), eClock)
 	err = cfClient.Login()
 	if err != nil {
 		logger.Error("failed to login cloud foundry", err, lager.Data{"Api": conf.Cf.Api})
 		os.Exit(1)
 	}
-
-	dopplerUrl := cfClient.GetEndpoints().DopplerEndpoint
-	logger.Info("create-noaa-client", map[string]interface{}{"dopplerUrl": dopplerUrl})
-	tlsConfig := &tls.Config{InsecureSkipVerify: true}
-	noaa := consumer.New(dopplerUrl, tlsConfig, nil)
-	noaa.RefreshTokenFrom(cfClient)
-
-	var metricsDB db.MetricsDB
-	metricsDB, err = sqldb.NewMetricsSQLDB(conf.Db.MetricsDbUrl, logger.Session("metrics-db"))
-	if err != nil {
-		logger.Error("failed to connect metrics database", err, lager.Data{"url": conf.Db.MetricsDbUrl})
-		os.Exit(1)
-	}
-	defer metricsDB.Close()
 
 	var policyDB db.PolicyDB
 	policyDB, err = sqldb.NewPolicySQLDB(conf.Db.PolicyDbUrl, logger.Session("policy-db"))
@@ -86,25 +69,16 @@ func main() {
 	}
 	defer policyDB.Close()
 
-	createPoller := func(appId string) collector.AppPoller {
-		return collector.NewAppPoller(appId, conf.Collector.PollInterval, logger.Session("app-poller"), cfClient, noaa, metricsDB, mcClock)
+	var historyDB db.HistoryDB
+	historyDB, err = sqldb.NewHistorySQLDB(conf.Db.HistoryDbUrl, logger.Session("history-db"))
+	if err != nil {
+		logger.Error("failed to connect history database", err, lager.Data{"url": conf.Db.HistoryDbUrl})
+		os.Exit(1)
 	}
+	defer historyDB.Close()
 
-	collectServer := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
-		mc := collector.NewCollector(conf.Collector.RefreshInterval, logger.Session("collector"), policyDB, mcClock, createPoller)
-		mc.Start()
-
-		close(ready)
-
-		<-signals
-		mc.Stop()
-
-		return nil
-	})
-	httpServer := server.NewServer(logger, conf.Server, cfClient, noaa, metricsDB)
-
+	httpServer := server.NewServer(logger, conf.Server, cfClient, policyDB, historyDB)
 	members := grouper.Members{
-		{"collector", collectServer},
 		{"http_server", httpServer},
 	}
 
@@ -127,7 +101,7 @@ func initLoggerFromConfig(conf *config.LoggingConfig) lager.Logger {
 		fmt.Fprintf(os.Stderr, "failed to initialize logger: %s\n", err.Error())
 		os.Exit(1)
 	}
-	logger := lager.NewLogger("metricscollector")
+	logger := lager.NewLogger("scalingengine")
 	logger.RegisterSink(lager.NewWriterSink(os.Stdout, logLevel))
 
 	return logger

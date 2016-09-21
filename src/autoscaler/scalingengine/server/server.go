@@ -3,6 +3,7 @@ package server
 import (
 	"autoscaler/cf"
 	"autoscaler/db"
+	"autoscaler/scalingengine/config"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
@@ -10,6 +11,7 @@ import (
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/http_server"
 
+	"fmt"
 	"net/http"
 )
 
@@ -27,13 +29,13 @@ func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vh(w, r, vars)
 }
 
-func NewServer(logger lager.Logger, cfc cf.CfClient, policyDB db.PolicyDB, historyDB db.HistoryDB) ifrit.Runner {
+func NewServer(logger lager.Logger, conf config.ServerConfig, cfc cf.CfClient, policyDB db.PolicyDB, historyDB db.HistoryDB) ifrit.Runner {
 	handler := NewScalingHandler(logger, cfc, policyDB, historyDB, clock.NewClock())
 
 	r := mux.NewRouter()
 	r.Methods("POST").Path(PathScale).Handler(VarsFunc(handler.HandleScale)).Name(RouteNameScale)
 	r.Methods("GET").Path(PathScalingHistories).Handler(VarsFunc(handler.GetScalingHistories)).Name(RouteNameHistoreis)
 
-	// todo: make port configurable
-	return http_server.New("0.0.0.0:8080", r)
+	addr := fmt.Sprintf("0.0.0.0:%d", conf.Port)
+	return http_server.New(addr, r)
 }
