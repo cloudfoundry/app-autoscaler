@@ -107,6 +107,15 @@ func hasAppMetric(appId, metricType string, timestamp int64) bool {
 	return rows.Next()
 }
 
+func getNumberOfAppMetrics() int {
+	var num int
+	e := dbHelper.QueryRow("SELECT COUNT(*) FROM app_metric").Scan(&num)
+	if e != nil {
+		Fail("can not count the number of records in table app_metric: " + e.Error())
+	}
+	return num
+}
+
 func cleanScalingHistoryTable() {
 	_, e := dbHelper.Exec("DELETE from scalinghistory")
 	if e != nil {

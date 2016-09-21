@@ -9,7 +9,6 @@ import (
 	"testing"
 )
 
-// make sure TestRefreshInterval is equal TestIntervalInHours
 const (
 	TestRefreshInterval time.Duration = 12 * time.Hour
 )

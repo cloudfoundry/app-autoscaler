@@ -50,17 +50,27 @@ func main() {
 	logger := initLoggerFromConfig(&conf.Logging)
 	prClock := clock.NewClock()
 
-	metricsDB, err := sqldb.NewMetricsSQLDB(conf.Db.MetricsDbUrl, logger.Session("metrics-db"))
+	metricsDb, err := sqldb.NewMetricsSQLDB(conf.Db.MetricsDbUrl, logger.Session("metrics-db"))
 	if err != nil {
 		logger.Error("failed to connect metrics db", err, lager.Data{"url": conf.Db.MetricsDbUrl})
 		os.Exit(1)
 	}
-	defer metricsDB.Close()
+	defer metricsDb.Close()
 
-	metricsDBPruner := createMetricsDBPrunerRunner(conf, metricsDB, prClock, logger)
+	metricsDbPruner := createMetricsDbPrunerRunner(conf, metricsDb, prClock, logger)
+
+	appMetricsDb, err := sqldb.NewAppMetricSQLDB(conf.Db.AppMetricsDbUrl, logger.Session("appmetrics-db"))
+	if err != nil {
+		logger.Error("failed to connect app metrics db", err, lager.Data{"url": conf.Db.AppMetricsDbUrl})
+		os.Exit(1)
+	}
+	defer appMetricsDb.Close()
+
+	appMetricsDbPruner := createAppMetricsDbPrunerRunner(conf, appMetricsDb, prClock, logger)
 
 	members := grouper.Members{
-		{"metricsdb_pruner", metricsDBPruner},
+		{"metricsdb_pruner", metricsDbPruner},
+		{"appmetricsdb_pruner", appMetricsDbPruner},
 	}
 
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
@@ -76,11 +86,11 @@ func main() {
 	logger.Info("exited")
 }
 
-func createMetricsDBPrunerRunner(conf *config.Config, metricsDB db.MetricsDB, prClock clock.Clock, logger lager.Logger) ifrit.Runner {
-	interval := time.Duration(conf.Pruner.IntervalInHours) * time.Hour
+func createMetricsDbPrunerRunner(conf *config.Config, metricsDb db.MetricsDB, prClock clock.Clock, logger lager.Logger) ifrit.Runner {
+	interval := time.Duration(conf.Pruner.MetricsDbPruner.RefreshIntervalInHours) * time.Hour
 
-	metricsDBPruner := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
-		mdp := NewMetricsDBPruner(logger, metricsDB, interval, conf.Pruner.CutoffDays, prClock)
+	metricsDbPruner := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
+		mdp := NewMetricsDbPruner(logger, metricsDb, interval, conf.Pruner.MetricsDbPruner.CutoffDays, prClock)
 		mdp.Start()
 
 		close(ready)
@@ -91,7 +101,25 @@ func createMetricsDBPrunerRunner(conf *config.Config, metricsDB db.MetricsDB, pr
 		return nil
 	})
 
-	return metricsDBPruner
+	return metricsDbPruner
+}
+
+func createAppMetricsDbPrunerRunner(conf *config.Config, appMetricsDb db.AppMetricDB, prClock clock.Clock, logger lager.Logger) ifrit.Runner {
+	interval := time.Duration(conf.Pruner.AppMetricsDbPruner.RefreshIntervalInHours) * time.Hour
+
+	appMetricsDbPruner := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
+		amdp := NewAppMetricsDbPruner(logger, appMetricsDb, interval, conf.Pruner.AppMetricsDbPruner.CutoffDays, prClock)
+		amdp.Start()
+
+		close(ready)
+
+		<-signals
+		amdp.Stop()
+
+		return nil
+	})
+
+	return appMetricsDbPruner
 }
 
 func initLoggerFromConfig(conf *config.LoggingConfig) lager.Logger {

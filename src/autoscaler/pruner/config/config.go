@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	DefaultLoggingLevel        = "info"
-	DefaultIntervalInHours int = 24
-	DefaultCutoffDays      int = 30
+	DefaultLoggingLevel               = "info"
+	DefaultRefreshIntervalInHours int = 24
+	DefaultCutoffDays             int = 30
 )
 
 type LoggingConfig struct {
@@ -24,17 +24,34 @@ var defaultLoggingConfig = LoggingConfig{
 }
 
 type DbConfig struct {
-	MetricsDbUrl string `yaml:"metrics_db_url"`
+	MetricsDbUrl    string `yaml:"metrics_db_url"`
+	AppMetricsDbUrl string `yaml:"app_metrics_db_url"`
 }
 
 type PrunerConfig struct {
-	IntervalInHours int `yaml:"interval_in_hours"`
-	CutoffDays      int `yaml:"cutoff_days"`
+	MetricsDbPruner    MetricsDbPrunerConfig    `yaml:"metrics_db"`
+	AppMetricsDbPruner AppMetricsDbPrunerConfig `yaml:"app_metrics_db"`
+}
+
+type MetricsDbPrunerConfig struct {
+	RefreshIntervalInHours int `yaml:"refresh_interval_in_hours"`
+	CutoffDays             int `yaml:"cutoff_days"`
+}
+
+type AppMetricsDbPrunerConfig struct {
+	RefreshIntervalInHours int `yaml:"refresh_interval_in_hours"`
+	CutoffDays             int `yaml:"cutoff_days"`
 }
 
 var defaultPrunerConfig = PrunerConfig{
-	IntervalInHours: DefaultIntervalInHours,
-	CutoffDays:      DefaultCutoffDays,
+	MetricsDbPruner: MetricsDbPrunerConfig{
+		RefreshIntervalInHours: DefaultRefreshIntervalInHours,
+		CutoffDays:             DefaultCutoffDays,
+	},
+	AppMetricsDbPruner: AppMetricsDbPrunerConfig{
+		RefreshIntervalInHours: DefaultRefreshIntervalInHours,
+		CutoffDays:             DefaultCutoffDays,
+	},
 }
 
 type Config struct {
@@ -70,12 +87,24 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("Configuration error: Metrics DB url is empty")
 	}
 
-	if c.Pruner.IntervalInHours < 0 {
-		return fmt.Errorf("Configuration error: Interval in hours is negative")
+	if c.Db.AppMetricsDbUrl == "" {
+		return fmt.Errorf("Configuration error: App Metrics DB url is empty")
 	}
 
-	if c.Pruner.CutoffDays < 0 {
-		return fmt.Errorf("Configuration error: Cutoff days is negative")
+	if c.Pruner.MetricsDbPruner.RefreshIntervalInHours < 0 {
+		return fmt.Errorf("Configuration error: Metrics DB refresh interval in hours is negative")
+	}
+
+	if c.Pruner.MetricsDbPruner.CutoffDays < 0 {
+		return fmt.Errorf("Configuration error: Metrics DB cutoff days is negative")
+	}
+
+	if c.Pruner.AppMetricsDbPruner.RefreshIntervalInHours < 0 {
+		return fmt.Errorf("Configuration error: App Metrics DB refresh interval in hours is negative")
+	}
+
+	if c.Pruner.AppMetricsDbPruner.CutoffDays < 0 {
+		return fmt.Errorf("Configuration error: App Metrics DB cutoff days is negative")
 	}
 
 	return nil

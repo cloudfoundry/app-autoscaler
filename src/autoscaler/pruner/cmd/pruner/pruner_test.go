@@ -26,8 +26,11 @@ var _ = Describe("Pruner", func() {
 	})
 
 	It("should start", func() {
-		// Metric Pruner
+		// Metrics DB Pruner
 		Consistently(runner.Session).ShouldNot(Say("metrics-db-pruner-stopped"))
+
+		// App Metrics DB Pruner
+		Consistently(runner.Session).ShouldNot(Say("app-metrics-db-pruner-stopped"))
 
 		// Pruner
 		Consistently(runner.Session).ShouldNot(Exit())
@@ -68,7 +71,7 @@ var _ = Describe("Pruner", func() {
 		BeforeEach(func() {
 			runner.startCheck = ""
 
-			cfg.Pruner.CutoffDays = -1
+			cfg.Pruner.MetricsDbPruner.CutoffDays = -1
 
 			cfg := writeConfig(&cfg)
 			runner.configPath = cfg.Name()
@@ -104,6 +107,30 @@ var _ = Describe("Pruner", func() {
 		It("should error", func() {
 			Eventually(runner.Session).Should(Exit(1))
 			Expect(runner.Session.Buffer()).To(Say("failed to connect metrics db"))
+		})
+
+	})
+
+	Context("when connection to app metrics db fails", func() {
+		BeforeEach(func() {
+
+			runner.startCheck = ""
+
+			//invalid url
+			cfg.Db.AppMetricsDbUrl = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
+
+			cfg := writeConfig(&cfg)
+			runner.configPath = cfg.Name()
+
+		})
+
+		AfterEach(func() {
+			os.Remove(runner.configPath)
+		})
+
+		It("should error", func() {
+			Eventually(runner.Session).Should(Exit(1))
+			Expect(runner.Session.Buffer()).To(Say("failed to connect app metrics db"))
 		})
 
 	})

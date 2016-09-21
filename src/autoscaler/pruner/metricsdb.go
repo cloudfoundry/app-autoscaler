@@ -9,19 +9,19 @@ import (
 	"code.cloudfoundry.org/lager"
 )
 
-type MetricsDBPruner struct {
+type MetricsDbPruner struct {
 	logger     lager.Logger
-	metricsDB  db.MetricsDB
+	metricsDb  db.MetricsDB
 	interval   time.Duration
 	cutoffDays int
 	clock      clock.Clock
 	doneChan   chan bool
 }
 
-func NewMetricsDBPruner(logger lager.Logger, metricsDB db.MetricsDB, interval time.Duration, cutoffDays int, clock clock.Clock) *MetricsDBPruner {
-	return &MetricsDBPruner{
+func NewMetricsDbPruner(logger lager.Logger, metricsDb db.MetricsDB, interval time.Duration, cutoffDays int, clock clock.Clock) *MetricsDbPruner {
+	return &MetricsDbPruner{
 		logger:     logger,
-		metricsDB:  metricsDB,
+		metricsDb:  metricsDb,
 		interval:   interval,
 		cutoffDays: cutoffDays,
 		clock:      clock,
@@ -29,18 +29,18 @@ func NewMetricsDBPruner(logger lager.Logger, metricsDB db.MetricsDB, interval ti
 	}
 }
 
-func (mdp *MetricsDBPruner) Start() {
+func (mdp *MetricsDbPruner) Start() {
 	go mdp.startMetricPrune()
 
-	mdp.logger.Info("metrics-db-pruner-started", lager.Data{"interval_in_hours": mdp.interval})
+	mdp.logger.Info("metrics-db-pruner-started", lager.Data{"refresh_interval_in_hours": mdp.interval})
 }
 
-func (mdp *MetricsDBPruner) Stop() {
+func (mdp *MetricsDbPruner) Stop() {
 	close(mdp.doneChan)
 	mdp.logger.Info("metrics-db-pruner-stopped")
 }
 
-func (mdp *MetricsDBPruner) startMetricPrune() {
+func (mdp *MetricsDbPruner) startMetricPrune() {
 	ticker := mdp.clock.NewTicker(mdp.interval)
 
 	for {
@@ -54,12 +54,12 @@ func (mdp *MetricsDBPruner) startMetricPrune() {
 	}
 }
 
-func (mdp *MetricsDBPruner) PruneOldMetrics() {
+func (mdp *MetricsDbPruner) PruneOldMetrics() {
 	mdp.logger.Debug("Prune metrics db data older than", lager.Data{"cutoff_days": mdp.cutoffDays})
 
 	timestamp := mdp.clock.Now().AddDate(0, 0, -mdp.cutoffDays).UnixNano()
 
-	err := mdp.metricsDB.PruneMetrics(timestamp)
+	err := mdp.metricsDb.PruneMetrics(timestamp)
 	if err != nil {
 		mdp.logger.Error("prune-metricsdb", err)
 		return

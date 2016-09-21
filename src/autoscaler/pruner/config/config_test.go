@@ -31,8 +31,14 @@ var _ = Describe("Config", func() {
   level: "debug"
 db:
   metrics_db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  app_metrics_db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
 pruner:
-  cutoff_days: 30
+  metrics_db:
+    refresh_interval_in_hours: 12
+    cutoff_days: 30
+  app_metrics_db:
+    refresh_interval_in_hours: 12
+    cutoff_days: 30
 `)
 			})
 
@@ -48,8 +54,14 @@ logging:
   level: "debug"
 db:
   metrics_db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  app_metrics_db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
 pruner:
-  cutoff_days: "cutoff_days"
+  metrics_db:
+    refresh_interval_in_hours: 12
+    cutoff_days: "cutoff_days"
+  app_metrics_db:
+    refresh_interval_in_hours: 12
+    cutoff_days: 30
 `)
 			})
 
@@ -65,9 +77,14 @@ logging:
   level: "debug"
 db:
   metrics_db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  app_metrics_db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
 pruner:
-  interval_in_hours: 12
-  cutoff_days: 20
+  metrics_db:
+    refresh_interval_in_hours: 12
+    cutoff_days: 20
+  app_metrics_db:
+    refresh_interval_in_hours: 10
+    cutoff_days: 15
 `)
 			})
 
@@ -77,9 +94,13 @@ pruner:
 				Expect(conf.Logging.Level).To(Equal("debug"))
 
 				Expect(conf.Db.MetricsDbUrl).To(Equal("postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"))
+				Expect(conf.Db.AppMetricsDbUrl).To(Equal("postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"))
 
-				Expect(conf.Pruner.IntervalInHours).To(Equal(12))
-				Expect(conf.Pruner.CutoffDays).To(Equal(20))
+				Expect(conf.Pruner.MetricsDbPruner.RefreshIntervalInHours).To(Equal(12))
+				Expect(conf.Pruner.MetricsDbPruner.CutoffDays).To(Equal(20))
+
+				Expect(conf.Pruner.AppMetricsDbPruner.RefreshIntervalInHours).To(Equal(10))
+				Expect(conf.Pruner.AppMetricsDbPruner.CutoffDays).To(Equal(15))
 			})
 		})
 
@@ -87,7 +108,8 @@ pruner:
 			BeforeEach(func() {
 				configBytes = []byte(`
 db:
-  metrics_db_url: "postgres://pqgotest:password@localhost/pqgotest" 
+  metrics_db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable" 
+  app_metrics_db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
 `)
 			})
 
@@ -96,8 +118,11 @@ db:
 
 				Expect(conf.Logging.Level).To(Equal(DefaultLoggingLevel))
 
-				Expect(conf.Pruner.IntervalInHours).To(Equal(DefaultIntervalInHours))
-				Expect(conf.Pruner.CutoffDays).To(Equal(DefaultCutoffDays))
+				Expect(conf.Pruner.MetricsDbPruner.RefreshIntervalInHours).To(Equal(DefaultRefreshIntervalInHours))
+				Expect(conf.Pruner.MetricsDbPruner.CutoffDays).To(Equal(DefaultCutoffDays))
+
+				Expect(conf.Pruner.AppMetricsDbPruner.RefreshIntervalInHours).To(Equal(DefaultRefreshIntervalInHours))
+				Expect(conf.Pruner.AppMetricsDbPruner.CutoffDays).To(Equal(DefaultCutoffDays))
 			})
 		})
 
@@ -107,8 +132,11 @@ db:
 		BeforeEach(func() {
 			conf = &Config{}
 			conf.Db.MetricsDbUrl = "postgres://pqgotest:password@exampl.com/pqgotest"
-			conf.Pruner.IntervalInHours = 12
-			conf.Pruner.CutoffDays = 30
+			conf.Db.AppMetricsDbUrl = "postgres://pqgotest:password@exampl.com/pqgotest"
+			conf.Pruner.MetricsDbPruner.RefreshIntervalInHours = 12
+			conf.Pruner.MetricsDbPruner.CutoffDays = 30
+			conf.Pruner.AppMetricsDbPruner.RefreshIntervalInHours = 10
+			conf.Pruner.AppMetricsDbPruner.CutoffDays = 15
 		})
 
 		JustBeforeEach(func() {
@@ -132,25 +160,58 @@ db:
 			})
 		})
 
-		Context("when interval in hours is set negative value", func() {
+		Context("when app metrics db url is not set", func() {
 
 			BeforeEach(func() {
-				conf.Pruner.IntervalInHours = -1
+				conf.Db.AppMetricsDbUrl = ""
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: Interval in hours is negative")))
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: App Metrics DB url is empty")))
 			})
 		})
 
-		Context("when cutoff days is set negative value", func() {
+		Context("when metrics db refresh interval in hours is set negative value", func() {
 
 			BeforeEach(func() {
-				conf.Pruner.CutoffDays = -1
+				conf.Pruner.MetricsDbPruner.RefreshIntervalInHours = -1
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: Cutoff days is negative")))
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: Metrics DB refresh interval in hours is negative")))
+			})
+		})
+
+		Context("when app metrics db refresh interval in hours is set negative value", func() {
+
+			BeforeEach(func() {
+				conf.Pruner.AppMetricsDbPruner.RefreshIntervalInHours = -1
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: App Metrics DB refresh interval in hours is negative")))
+			})
+		})
+
+		Context("when metrics db cutoff days is set negative value", func() {
+
+			BeforeEach(func() {
+				conf.Pruner.MetricsDbPruner.CutoffDays = -1
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: Metrics DB cutoff days is negative")))
+			})
+		})
+
+		Context("when app metrics db cutoff days is set negative value", func() {
+
+			BeforeEach(func() {
+				conf.Pruner.AppMetricsDbPruner.CutoffDays = -1
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: App Metrics DB cutoff days is negative")))
 			})
 		})
 	})

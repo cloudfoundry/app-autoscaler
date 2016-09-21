@@ -56,9 +56,13 @@ func initConfig() {
 	cfg.Logging.Level = "debug"
 
 	cfg.Db.MetricsDbUrl = os.Getenv("DBURL")
+	cfg.Db.AppMetricsDbUrl = os.Getenv("DBURL")
 
-	cfg.Pruner.IntervalInHours = 12
-	cfg.Pruner.CutoffDays = 20
+	cfg.Pruner.MetricsDbPruner.RefreshIntervalInHours = 12
+	cfg.Pruner.MetricsDbPruner.CutoffDays = 20
+
+	cfg.Pruner.AppMetricsDbPruner.RefreshIntervalInHours = 12
+	cfg.Pruner.AppMetricsDbPruner.CutoffDays = 20
 
 }
 
@@ -105,6 +109,9 @@ func (pr *PrunerRunner) Start() {
 
 		//Metric Pruner
 		Eventually(prSession.Buffer()).Should(gbytes.Say("metrics-db-pruner-started"))
+
+		//App Metric Pruner
+		Eventually(prSession.Buffer()).Should(gbytes.Say("app-metrics-db-pruner-started"))
 
 		//All pruners started
 		Eventually(prSession.Buffer(), 2).Should(gbytes.Say(pr.startCheck))

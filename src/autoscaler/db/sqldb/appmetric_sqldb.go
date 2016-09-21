@@ -87,3 +87,13 @@ func (adb *AppMetricSQLDB) RetrieveAppMetrics(appIdP string, metricTypeP string,
 	}
 	return appMetricList, nil
 }
+
+func (adb *AppMetricSQLDB) PruneAppMetrics(before int64) error {
+	query := "DELETE FROM app_metric WHERE timestamp <= $1"
+	_, err := adb.sqldb.Exec(query, before)
+	if err != nil {
+		adb.logger.Error("prune-metrics-from-app_metric-table", err, lager.Data{"query": query, "before": before})
+	}
+
+	return err
+}

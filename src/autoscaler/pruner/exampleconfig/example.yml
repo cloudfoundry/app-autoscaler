@@ -3,5 +3,10 @@ logging:
 db:
   metrics_db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
 pruner:
-  interval_in_hours: 12
-  cutoff_days: 30
+  metrics_db:
+    refresh_interval_in_hours: 12
+    cutoff_days: 30
+  app_metrics_db:
+    refresh_interval_in_hours: 12
+    cutoff_days: 30
+ 

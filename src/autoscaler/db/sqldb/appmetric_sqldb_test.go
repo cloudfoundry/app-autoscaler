@@ -22,6 +22,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 		err               error
 		appMetrics        []*model.AppMetric
 		start, end        int64
+		before            int64
 		appId, metricName string
 	)
 
@@ -247,4 +248,78 @@ var _ = Describe("AppMetricSQLDB", func() {
 
 	})
 
+	Describe("PruneAppMetrics", func() {
+		BeforeEach(func() {
+			adb, err = NewAppMetricSQLDB(url, logger)
+			Expect(err).NotTo(HaveOccurred())
+
+			cleanAppMetricTable()
+
+			appMetric := &model.AppMetric{
+				AppId:      "test-app-id",
+				MetricType: models.MetricNameMemory,
+				Unit:       models.UnitBytes,
+				Timestamp:  11111111,
+				Value:      10000,
+			}
+
+			err = adb.SaveAppMetric(appMetric)
+			Expect(err).NotTo(HaveOccurred())
+
+			appMetric.Timestamp = 55555555
+			appMetric.Value = 50000
+			err = adb.SaveAppMetric(appMetric)
+			Expect(err).NotTo(HaveOccurred())
+
+			appMetric.Timestamp = 33333333
+			appMetric.Value = 30000
+			err = adb.SaveAppMetric(appMetric)
+			Expect(err).NotTo(HaveOccurred())
+
+		})
+
+		AfterEach(func() {
+			err = adb.Close()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		JustBeforeEach(func() {
+			err = adb.PruneAppMetrics(before)
+		})
+
+		Context("when pruning app metrics before all the timestamps of metrics", func() {
+			BeforeEach(func() {
+				before = 0
+			})
+
+			It("does not remove any metrics", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(getNumberOfAppMetrics()).To(Equal(3))
+			})
+		})
+
+		Context("when pruning all the metrics", func() {
+			BeforeEach(func() {
+				before = time.Now().UnixNano()
+			})
+
+			It("empties the app metrics table", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(getNumberOfAppMetrics()).To(Equal(0))
+			})
+		})
+
+		Context("when pruning part of the metrics", func() {
+			BeforeEach(func() {
+				before = 33333333
+			})
+
+			It("removes metrics before the time specified", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(getNumberOfAppMetrics()).To(Equal(1))
+				Expect(hasAppMetric("test-app-id", models.MetricNameMemory, 55555555)).To(BeTrue())
+			})
+		})
+
+	})
 })
