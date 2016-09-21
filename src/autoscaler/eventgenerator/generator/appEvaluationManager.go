@@ -17,7 +17,6 @@ type AppEvaluationManager struct {
 	logger           lager.Logger
 	cclock           clock.Clock
 	lock             sync.Mutex
-	stopping         bool
 	doneChan         chan bool
 	triggerChan      chan []*model.Trigger
 	triggers         map[string][]*model.Trigger
@@ -32,7 +31,6 @@ func NewAppEvaluationManager(evaluateInterval time.Duration, logger lager.Logger
 		evaluateInterval: evaluateInterval,
 		logger:           logger.Session("AppEvaluationManager"),
 		cclock:           cclock,
-		stopping:         false,
 		doneChan:         make(chan bool),
 		triggerChan:      triggerChan,
 		triggers:         map[string][]*model.Trigger{},

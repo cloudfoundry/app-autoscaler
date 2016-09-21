@@ -120,7 +120,7 @@ var _ = Describe("Aggregator", func() {
 		BeforeEach(func() {
 			appChan = make(chan *AppMonitor, 1)
 
-			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount, evaluationManager, appMonitorChan)
+			aggregator = NewAggregator(logger, clock, testAggregatorExecuteInterval, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), 0, evaluationManager, appMonitorChan)
 			policyMap = map[string]*Policy{testAppId: &Policy{
 				AppId: testAppId,
 				TriggerRecord: &TriggerRecord{
@@ -139,15 +139,17 @@ var _ = Describe("Aggregator", func() {
 		})
 		Context("when there are data in triggerMap", func() {
 			JustBeforeEach(func() {
-				aggregator.ConsumePolicy(policyMap, appChan)
+				aggregator.ConsumePolicy(policyMap, appMonitorChan)
+				aggregator.Start()
 				evaluationManager.Start()
-				Eventually(clock.WatcherCount).Should(Equal(1))
+				Eventually(clock.WatcherCount).Should(Equal(3)) //policyPoller:1,aggregator:1,evaluationManager:1
 				clock.Increment(1 * testEvaluateInteval)
+				clock.Increment(1 * testAggregatorExecuteInterval)
 
 			})
 			It("should parse the triggers to appmonitor and put them in appChan", func() {
 
-				Eventually(appChan).Should(Receive(&appMonitor))
+				Eventually(appMonitorChan).Should(Receive(&appMonitor))
 				Expect(appMonitor).To(Equal(&AppMonitor{
 					AppId:      testAppId,
 					MetricType: "MemoryUsage",
@@ -201,7 +203,7 @@ var _ = Describe("Aggregator", func() {
 	Context("ConsumeAppMetric", func() {
 		var appmetric *AppMetric
 		BeforeEach(func() {
-			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount, evaluationManager, appMonitorChan)
+			aggregator = NewAggregator(logger, clock, testAggregatorExecuteInterval, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount, evaluationManager, appMonitorChan)
 			appmetric = &AppMetric{
 				AppId:      testAppId,
 				MetricType: metricType,
@@ -232,16 +234,17 @@ var _ = Describe("Aggregator", func() {
 	})
 	Context("Start", func() {
 		JustBeforeEach(func() {
-			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount, evaluationManager, appMonitorChan)
+			aggregator = NewAggregator(logger, clock, testAggregatorExecuteInterval, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount, evaluationManager, appMonitorChan)
 			aggregator.Start()
+			Eventually(clock.WatcherCount).Should(Equal(2)) //policyPoller:1,aggregator:1
 		})
 		AfterEach(func() {
 			aggregator.Stop()
 		})
 		It("should save the appmetric to database", func() {
-			clock.Increment(2 * testPolicyPollerInterval)
-			Eventually(policyDatabase.RetrievePoliciesCallCount).Should(BeNumerically(">=", 2))
-			Eventually(appMetricDatabase.SaveAppMetricCallCount).Should(BeNumerically(">=", 2))
+			clock.Increment(1 * testPolicyPollerInterval)
+			Eventually(policyDatabase.RetrievePoliciesCallCount).Should(BeNumerically(">=", 1))
+			Eventually(appMetricDatabase.SaveAppMetricCallCount).Should(BeNumerically(">=", 1))
 		})
 
 		Context("MetricPoller", func() {
@@ -262,6 +265,7 @@ var _ = Describe("Aggregator", func() {
 				}
 			})
 			It("should create MetricPollerCount metric-pollers", func() {
+				clock.Increment(1 * testPolicyPollerInterval)
 				for i := 0; i < metricPollerCount; i++ {
 					Eventually(calledChan).Should(Receive())
 				}
@@ -276,8 +280,9 @@ var _ = Describe("Aggregator", func() {
 	Context("Stop", func() {
 		var retrievePoliciesCallCount, saveAppMetricCallCount int
 		JustBeforeEach(func() {
-			aggregator = NewAggregator(logger, clock, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount, evaluationManager, appMonitorChan)
+			aggregator = NewAggregator(logger, clock, testAggregatorExecuteInterval, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount, evaluationManager, appMonitorChan)
 			aggregator.Start()
+			Eventually(clock.WatcherCount).Should(Equal(2)) //policyPoller:1,aggregator:1
 			aggregator.Stop()
 			retrievePoliciesCallCount = policyDatabase.RetrievePoliciesCallCount()
 			saveAppMetricCallCount = appMetricDatabase.SaveAppMetricCallCount()

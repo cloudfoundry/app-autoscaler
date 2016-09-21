@@ -8,23 +8,28 @@ import (
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
 	"net/http"
+	"sync"
 	"time"
 )
 
 type Aggregator struct {
-	logger             lager.Logger
-	metricCollectorUrl string
-	doneChan           chan bool
-	appChan            chan *model.AppMonitor
-	policyPoller       *PolicyPoller
-	metricPollerCount  int
-	metricPollerArray  []*MetricPoller
-	policyDatabase     db.PolicyDB
-	appMetricDatabase  db.AppMetricDB
-	evaluationManager  *generator.AppEvaluationManager
+	logger                    lager.Logger
+	metricCollectorUrl        string
+	doneChan                  chan bool
+	appChan                   chan *model.AppMonitor
+	policyPoller              *PolicyPoller
+	metricPollerCount         int
+	metricPollerArray         []*MetricPoller
+	policyDatabase            db.PolicyDB
+	appMetricDatabase         db.AppMetricDB
+	evaluationManager         *generator.AppEvaluationManager
+	cclock                    clock.Clock
+	aggregatorExecuteInterval time.Duration
+	appMonitorArray           []*model.AppMonitor
+	lock                      sync.Mutex
 }
 
-func NewAggregator(logger lager.Logger, clock clock.Clock, policyPollerInterval time.Duration, policyDatabase db.PolicyDB, appMetricDatabase db.AppMetricDB, metricCollectorUrl string, metricPollerCount int, evaluationManager *generator.AppEvaluationManager, appMonitorChan chan *model.AppMonitor) *Aggregator {
+func NewAggregator(logger lager.Logger, clock clock.Clock, aggregatorExecuteInterval time.Duration, policyPollerInterval time.Duration, policyDatabase db.PolicyDB, appMetricDatabase db.AppMetricDB, metricCollectorUrl string, metricPollerCount int, evaluationManager *generator.AppEvaluationManager, appMonitorChan chan *model.AppMonitor) *Aggregator {
 	aggregator := &Aggregator{
 		logger:             logger.Session("Aggregator"),
 		metricCollectorUrl: metricCollectorUrl,
@@ -35,6 +40,9 @@ func NewAggregator(logger lager.Logger, clock clock.Clock, policyPollerInterval 
 		policyDatabase:     policyDatabase,
 		appMetricDatabase:  appMetricDatabase,
 		evaluationManager:  evaluationManager,
+		cclock:             clock,
+		aggregatorExecuteInterval: aggregatorExecuteInterval,
+		appMonitorArray:           []*model.AppMonitor{},
 	}
 	aggregator.policyPoller = NewPolicyPoller(logger, clock, policyPollerInterval, policyDatabase, aggregator.ConsumePolicy, aggregator.appChan)
 	client := cfhttp.NewClient()
@@ -52,13 +60,17 @@ func (a *Aggregator) ConsumePolicy(policyMap map[string]*model.Policy, appChan c
 		return
 	}
 	var triggerArrayMap map[string][]*model.Trigger = make(map[string][]*model.Trigger)
+	var appMonitorArrayTmp = []*model.AppMonitor{}
+
 	for appId, policy := range policyMap {
 		for _, rule := range policy.TriggerRecord.ScalingRules {
-			appChan <- &model.AppMonitor{
+
+			appMonitorArrayTmp = append(appMonitorArrayTmp, &model.AppMonitor{
 				AppId:      appId,
 				MetricType: rule.MetricType,
 				StatWindow: rule.StatWindow,
-			}
+			})
+
 			triggerKey := appId + "#" + rule.MetricType
 			triggerArray, exist := triggerArrayMap[triggerKey]
 			if !exist {
@@ -76,6 +88,7 @@ func (a *Aggregator) ConsumePolicy(policyMap map[string]*model.Policy, appChan c
 			triggerArrayMap[triggerKey] = triggerArray
 		}
 	}
+	a.setAppMonitors(appMonitorArrayTmp)
 	a.evaluationManager.SetTriggers(triggerArrayMap)
 }
 func (a *Aggregator) ConsumeAppMetric(appMetric *model.AppMetric) {
@@ -92,12 +105,40 @@ func (a *Aggregator) Start() {
 	for _, metricPoller := range a.metricPollerArray {
 		metricPoller.Start()
 	}
-	a.logger.Info("started")
+	go a.startWork()
+
 }
 func (a *Aggregator) Stop() {
 	a.policyPoller.Stop()
 	for _, metricPoller := range a.metricPollerArray {
 		metricPoller.Stop()
 	}
+	close(a.doneChan)
 	a.logger.Info("stopped")
+}
+func (a *Aggregator) setAppMonitors(appMonitors []*model.AppMonitor) {
+	a.lock.Lock()
+	a.appMonitorArray = appMonitors
+	a.lock.Unlock()
+}
+func (a *Aggregator) startWork() {
+	ticker := a.cclock.NewTicker(a.aggregatorExecuteInterval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-a.doneChan:
+			return
+		case <-ticker.C():
+			a.addToAggregateChannel()
+		}
+	}
+	a.logger.Info("started")
+}
+func (a *Aggregator) addToAggregateChannel() {
+	a.lock.Lock()
+	appMonitors := a.appMonitorArray
+	a.lock.Unlock()
+	for _, appMonitorTmp := range appMonitors {
+		a.appChan <- appMonitorTmp
+	}
 }
