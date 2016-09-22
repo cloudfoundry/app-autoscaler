@@ -15,15 +15,14 @@ type MetricsDBPruner struct {
 	interval   time.Duration
 	cutoffDays int
 	clock      clock.Clock
-	ticker     clock.Ticker
 	doneChan   chan bool
 }
 
-func NewMetricsDBPruner(logger lager.Logger, metricsDB db.MetricsDB, interval int, cutoffDays int, clock clock.Clock) *MetricsDBPruner {
+func NewMetricsDBPruner(logger lager.Logger, metricsDB db.MetricsDB, interval time.Duration, cutoffDays int, clock clock.Clock) *MetricsDBPruner {
 	return &MetricsDBPruner{
 		logger:     logger,
 		metricsDB:  metricsDB,
-		interval:   time.Duration(interval) * time.Hour,
+		interval:   interval,
 		cutoffDays: cutoffDays,
 		clock:      clock,
 		doneChan:   make(chan bool),
@@ -31,27 +30,26 @@ func NewMetricsDBPruner(logger lager.Logger, metricsDB db.MetricsDB, interval in
 }
 
 func (mdp *MetricsDBPruner) Start() {
-	mdp.ticker = mdp.clock.NewTicker(mdp.interval)
 	go mdp.startMetricPrune()
 
 	mdp.logger.Info("metrics-db-pruner-started", lager.Data{"interval_in_hours": mdp.interval})
 }
 
 func (mdp *MetricsDBPruner) Stop() {
-	if mdp.ticker != nil {
-		mdp.ticker.Stop()
-		close(mdp.doneChan)
-	}
+	close(mdp.doneChan)
 	mdp.logger.Info("metrics-db-pruner-stopped")
 }
 
 func (mdp *MetricsDBPruner) startMetricPrune() {
+	ticker := mdp.clock.NewTicker(mdp.interval)
+
 	for {
 		mdp.PruneOldMetrics()
 		select {
 		case <-mdp.doneChan:
+			ticker.Stop()
 			return
-		case <-mdp.ticker.C():
+		case <-ticker.C():
 		}
 	}
 }

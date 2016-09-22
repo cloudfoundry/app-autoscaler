@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"time"
 
 	"autoscaler/db"
 	"autoscaler/db/sqldb"
@@ -76,8 +77,10 @@ func main() {
 }
 
 func createMetricsDBPrunerRunner(conf *config.Config, metricsDB db.MetricsDB, prClock clock.Clock, logger lager.Logger) ifrit.Runner {
+	interval := time.Duration(conf.Pruner.IntervalInHours) * time.Hour
+
 	metricsDBPruner := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
-		mdp := NewMetricsDBPruner(logger, metricsDB, conf.Pruner.IntervalInHours, conf.Pruner.CutoffDays, prClock)
+		mdp := NewMetricsDBPruner(logger, metricsDB, interval, conf.Pruner.CutoffDays, prClock)
 		mdp.Start()
 
 		close(ready)

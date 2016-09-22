@@ -33,7 +33,7 @@ var _ = Describe("MetricdsDB Prune", func() {
 		metricsDB = &fakes.FakeMetricsDB{}
 		fclock = fakeclock.NewFakeClock(time.Now())
 
-		pruner = NewMetricsDBPruner(logger, metricsDB, TestIntervalInHours, cutoffDays, fclock)
+		pruner = NewMetricsDBPruner(logger, metricsDB, TestRefreshInterval, cutoffDays, fclock)
 	})
 
 	Describe("Start", func() {
