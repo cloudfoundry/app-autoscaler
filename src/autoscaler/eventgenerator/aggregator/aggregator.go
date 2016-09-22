@@ -18,7 +18,6 @@ type Aggregator struct {
 	doneChan                  chan bool
 	appChan                   chan *model.AppMonitor
 	policyPoller              *PolicyPoller
-	metricPollerCount         int
 	metricPollerArray         []*MetricPoller
 	policyDatabase            db.PolicyDB
 	appMetricDatabase         db.AppMetricDB
@@ -35,7 +34,6 @@ func NewAggregator(logger lager.Logger, clock clock.Clock, aggregatorExecuteInte
 		metricCollectorUrl: metricCollectorUrl,
 		doneChan:           make(chan bool),
 		appChan:            appMonitorChan,
-		metricPollerCount:  metricPollerCount,
 		metricPollerArray:  []*MetricPoller{},
 		policyDatabase:     policyDatabase,
 		appMetricDatabase:  appMetricDatabase,

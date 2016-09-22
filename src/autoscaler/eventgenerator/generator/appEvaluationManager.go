@@ -21,7 +21,6 @@ type AppEvaluationManager struct {
 	triggerChan      chan []*model.Trigger
 	triggers         map[string][]*model.Trigger
 	evaluatorArray   []*Evaluator
-	evaluatorCount   int
 	database         db.AppMetricDB
 	scalingEngineUrl string
 }
@@ -35,7 +34,6 @@ func NewAppEvaluationManager(evaluateInterval time.Duration, logger lager.Logger
 		triggerChan:      triggerChan,
 		triggers:         map[string][]*model.Trigger{},
 		evaluatorArray:   []*Evaluator{},
-		evaluatorCount:   evaluatorCount,
 		database:         database,
 		scalingEngineUrl: scalingEngineUrl,
 	}
