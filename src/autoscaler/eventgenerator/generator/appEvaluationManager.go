@@ -21,8 +21,6 @@ type AppEvaluationManager struct {
 	triggerChan      chan []*model.Trigger
 	triggers         map[string][]*model.Trigger
 	evaluatorArray   []*Evaluator
-	database         db.AppMetricDB
-	scalingEngineUrl string
 }
 
 func NewAppEvaluationManager(evaluateInterval time.Duration, logger lager.Logger, cclock clock.Clock, triggerChan chan []*model.Trigger, evaluatorCount int, database db.AppMetricDB, scalingEngineUrl string) *AppEvaluationManager {
@@ -34,8 +32,6 @@ func NewAppEvaluationManager(evaluateInterval time.Duration, logger lager.Logger
 		triggerChan:      triggerChan,
 		triggers:         map[string][]*model.Trigger{},
 		evaluatorArray:   []*Evaluator{},
-		database:         database,
-		scalingEngineUrl: scalingEngineUrl,
 	}
 	client := cfhttp.NewClient()
 	client.Transport.(*http.Transport).MaxIdleConnsPerHost = evaluatorCount

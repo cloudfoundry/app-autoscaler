@@ -14,12 +14,10 @@ import (
 
 type Aggregator struct {
 	logger                    lager.Logger
-	metricCollectorUrl        string
 	doneChan                  chan bool
 	appChan                   chan *model.AppMonitor
 	policyPoller              *PolicyPoller
 	metricPollerArray         []*MetricPoller
-	policyDatabase            db.PolicyDB
 	appMetricDatabase         db.AppMetricDB
 	evaluationManager         *generator.AppEvaluationManager
 	cclock                    clock.Clock
@@ -30,15 +28,13 @@ type Aggregator struct {
 
 func NewAggregator(logger lager.Logger, clock clock.Clock, aggregatorExecuteInterval time.Duration, policyPollerInterval time.Duration, policyDatabase db.PolicyDB, appMetricDatabase db.AppMetricDB, metricCollectorUrl string, metricPollerCount int, evaluationManager *generator.AppEvaluationManager, appMonitorChan chan *model.AppMonitor) *Aggregator {
 	aggregator := &Aggregator{
-		logger:             logger.Session("Aggregator"),
-		metricCollectorUrl: metricCollectorUrl,
-		doneChan:           make(chan bool),
-		appChan:            appMonitorChan,
-		metricPollerArray:  []*MetricPoller{},
-		policyDatabase:     policyDatabase,
-		appMetricDatabase:  appMetricDatabase,
-		evaluationManager:  evaluationManager,
-		cclock:             clock,
+		logger:            logger.Session("Aggregator"),
+		doneChan:          make(chan bool),
+		appChan:           appMonitorChan,
+		metricPollerArray: []*MetricPoller{},
+		appMetricDatabase: appMetricDatabase,
+		evaluationManager: evaluationManager,
+		cclock:            clock,
 		aggregatorExecuteInterval: aggregatorExecuteInterval,
 		appMonitorArray:           []*model.AppMonitor{},
 	}
