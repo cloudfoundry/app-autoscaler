@@ -98,6 +98,11 @@ func (pr *PrunerRunner) Start() {
 	Expect(err).NotTo(HaveOccurred())
 
 	if pr.startCheck != "" {
+
+		//Metric Pruner
+		Eventually(prSession.Buffer()).Should(gbytes.Say("metrics-db-pruner-started"))
+
+		//All pruners started
 		Eventually(prSession.Buffer(), 2).Should(gbytes.Say(pr.startCheck))
 	}
 

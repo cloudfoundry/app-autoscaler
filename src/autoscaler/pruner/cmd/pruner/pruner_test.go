@@ -26,6 +26,10 @@ var _ = Describe("Pruner", func() {
 	})
 
 	It("should start", func() {
+		// Metric Pruner
+		Consistently(runner.Session).ShouldNot(Say("metrics-db-pruner-stopped"))
+
+		// Pruner
 		Consistently(runner.Session).ShouldNot(Exit())
 	})
 

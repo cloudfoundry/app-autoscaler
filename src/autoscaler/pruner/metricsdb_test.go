@@ -15,7 +15,7 @@ import (
 	"github.com/onsi/gomega/gbytes"
 )
 
-var _ = Describe("Prune", func() {
+var _ = Describe("MetricdsDB Prune", func() {
 	var (
 		metricsDB  *fakes.FakeMetricsDB
 		pruner     *MetricsDBPruner
@@ -89,7 +89,7 @@ var _ = Describe("Prune", func() {
 			Eventually(buffer).Should(gbytes.Say("metrics-db-pruner-stopped"))
 
 			fclock.Increment(TestRefreshInterval)
-			Eventually(metricsDB.PruneMetricsCallCount).Should(Equal(2))
+			Consistently(metricsDB.PruneMetricsCallCount).Should(Equal(2))
 		})
 	})
 })
