@@ -47,27 +47,16 @@ func main() {
 	}
 
 	logger := initLoggerFromConfig(&conf.Logging)
+	prClock := clock.NewClock()
 
-	var metricsDB db.MetricsDB
-	metricsDB, err = sqldb.NewMetricsSQLDB(conf.Db.MetricsDbUrl, logger.Session("metrics-db"))
+	metricsDB, err := sqldb.NewMetricsSQLDB(conf.Db.MetricsDbUrl, logger.Session("metrics-db"))
 	if err != nil {
 		logger.Error("failed to connect metrics db", err, lager.Data{"url": conf.Db.MetricsDbUrl})
 		os.Exit(1)
 	}
 	defer metricsDB.Close()
 
-	prClock := clock.NewClock()
-	metricsDBPruner := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
-		mdp := NewMetricsDBPruner(logger, metricsDB, conf.Pruner.IntervalInHours, conf.Pruner.CutoffDays, prClock)
-		mdp.Start()
-
-		close(ready)
-
-		<-signals
-		mdp.Stop()
-
-		return nil
-	})
+	metricsDBPruner := createMetricsDBPrunerRunner(conf, metricsDB, prClock, logger)
 
 	members := grouper.Members{
 		{"metricsdb_pruner", metricsDBPruner},
@@ -84,6 +73,22 @@ func main() {
 	}
 
 	logger.Info("exited")
+}
+
+func createMetricsDBPrunerRunner(conf *config.Config, metricsDB db.MetricsDB, prClock clock.Clock, logger lager.Logger) ifrit.Runner {
+	metricsDBPruner := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
+		mdp := NewMetricsDBPruner(logger, metricsDB, conf.Pruner.IntervalInHours, conf.Pruner.CutoffDays, prClock)
+		mdp.Start()
+
+		close(ready)
+
+		<-signals
+		mdp.Stop()
+
+		return nil
+	})
+
+	return metricsDBPruner
 }
 
 func initLoggerFromConfig(conf *config.LoggingConfig) lager.Logger {
