@@ -4,9 +4,9 @@ import (
 	"autoscaler/cf"
 	. "autoscaler/scalingengine/config"
 
-	"github.com/cloudfoundry-incubator/candiedyaml"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"gopkg.in/yaml.v2"
 
 	"bytes"
 )
@@ -38,29 +38,20 @@ server:
 			})
 
 			It("returns an error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&candiedyaml.ParserError{}))
+				Expect(err).To(MatchError(MatchRegexp("yaml:*")))
 			})
 		})
 
 		Context("when it gives a non integer port", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
-cf:
-  api: https://api.exmaple.com
-  grant-type: password
-  user: admin
 server:
   port: port
-logging:
-  level: info
-db:
-  policy_db_url: test-policy-db-url
-  history_db_url: test-history-db-url
 `)
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Invalid integer:.*")))
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
 			})
 		})
 

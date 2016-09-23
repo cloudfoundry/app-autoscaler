@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"time"
 
-	"github.com/cloudfoundry-incubator/candiedyaml"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"gopkg.in/yaml.v2"
 
 	"autoscaler/cf"
 	. "autoscaler/metricscollector/config"
@@ -39,29 +39,34 @@ server:
 			})
 
 			It("returns an error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&candiedyaml.ParserError{}))
+				Expect(err).To(MatchError(MatchRegexp("yaml:*")))
 			})
 		})
 
 		Context("when it gives a non integer port", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
-cf:
-  api: https://api.exmaple.com
-  grant-type: password
-  user: admin
 server:
   port: port
-logging:
-  level: info
-db:
-  policy_db_url: postgres://pqgotest:password@localhost/pqgotest
-  metrics_db_url: postgres://pqgotest:password@localhost/pqgotest
 `)
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Invalid integer:.*")))
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+			})
+		})
+
+		Context("when it gives an invalid time duration", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+collector:
+  refresh_interval: 20a
+  poll_interval: 10s  
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
 			})
 		})
 
@@ -83,8 +88,8 @@ db:
   policy_db_url: postgres://pqgotest:password@localhost/pqgotest
   metrics_db_url: postgres://pqgotest:password@localhost/pqgotest
 collector:
-  refresh_interval_in_seconds: 20
-  poll_interval_in_seconds: 10
+  refresh_interval: 20s
+  poll_interval: 10s
 `)
 			})
 

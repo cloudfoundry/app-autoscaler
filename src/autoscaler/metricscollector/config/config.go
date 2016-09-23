@@ -3,10 +3,11 @@ package config
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"strings"
 	"time"
 
-	"github.com/cloudfoundry-incubator/candiedyaml"
+	"gopkg.in/yaml.v2"
 
 	"autoscaler/cf"
 )
@@ -43,10 +44,8 @@ type DbConfig struct {
 }
 
 type CollectorConfig struct {
-	RefreshIntervalInSeconds int `yaml:"refresh_interval_in_seconds"`
-	PollIntervalInSeconds    int `yaml:"poll_interval_in_seconds"`
-	RefreshInterval          time.Duration
-	PollInterval             time.Duration
+	RefreshInterval time.Duration `yaml:"refresh_interval"`
+	PollInterval    time.Duration `yaml:"poll_interval"`
 }
 
 var defaultCollectorConfig = CollectorConfig{
@@ -70,22 +69,18 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		Collector: defaultCollectorConfig,
 	}
 
-	decoder := candiedyaml.NewDecoder(reader)
-	err := decoder.Decode(conf)
+	bytes, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+
+	err = yaml.Unmarshal(bytes, conf)
 	if err != nil {
 		return nil, err
 	}
 
 	conf.Cf.GrantType = strings.ToLower(conf.Cf.GrantType)
 	conf.Logging.Level = strings.ToLower(conf.Logging.Level)
-
-	if conf.Collector.PollIntervalInSeconds != 0 {
-		conf.Collector.PollInterval = time.Duration(conf.Collector.PollIntervalInSeconds) * time.Second
-	}
-
-	if conf.Collector.RefreshIntervalInSeconds != 0 {
-		conf.Collector.RefreshInterval = time.Duration(conf.Collector.RefreshIntervalInSeconds) * time.Second
-	}
 
 	return conf, nil
 }

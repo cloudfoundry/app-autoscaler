@@ -51,10 +51,6 @@ var _ = Describe("Server", func() {
 	})
 
 	Context("when triggering scaling action", func() {
-		JustBeforeEach(func() {
-			rsp, err = http.Post(serverUrl+urlPath, "application/json", bytes.NewReader(body))
-		})
-
 		BeforeEach(func() {
 			route := mux.Route{}
 			uPath, err := route.Path(PathScale).URLPath("appid", "test-app-id")
@@ -62,19 +58,28 @@ var _ = Describe("Server", func() {
 			urlPath = uPath.Path
 		})
 
-		It("should return 200", func() {
-			Expect(err).ToNot(HaveOccurred())
-			Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+		Context("when requesting correctly", func() {
+			JustBeforeEach(func() {
+				rsp, err = http.Post(serverUrl+urlPath, "application/json", bytes.NewReader(body))
+			})
+
+			It("should return 200", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+				rsp.Body.Close()
+			})
+
 		})
 
 		Context("when requesting the wrong path", func() {
-			BeforeEach(func() {
-				urlPath = "/not-exist-path"
+			JustBeforeEach(func() {
+				rsp, err = http.Post(serverUrl+"/not-exist-path", "application/json", bytes.NewReader(body))
 			})
 
 			It("should return 404", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(rsp.StatusCode).To(Equal(http.StatusNotFound))
+				rsp.Body.Close()
 			})
 		})
 
@@ -86,16 +91,13 @@ var _ = Describe("Server", func() {
 			It("should return 404", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(rsp.StatusCode).To(Equal(http.StatusNotFound))
+				rsp.Body.Close()
 			})
 		})
 
 	})
 
 	Context("when getting scaling histories", func() {
-		JustBeforeEach(func() {
-			rsp, err = http.Get(serverUrl + urlPath)
-		})
-
 		BeforeEach(func() {
 			route := mux.Route{}
 			uPath, err := route.Path(PathScalingHistories).URLPath("appid", "test-app-id")
@@ -103,19 +105,28 @@ var _ = Describe("Server", func() {
 			urlPath = uPath.Path
 		})
 
-		It("should return 200", func() {
-			Expect(err).ToNot(HaveOccurred())
-			Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+		Context("when requesting correctly", func() {
+			JustBeforeEach(func() {
+				rsp, err = http.Get(serverUrl + urlPath)
+			})
+
+			It("should return 200", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+				rsp.Body.Close()
+			})
+
 		})
 
 		Context("when requesting the wrong path", func() {
-			BeforeEach(func() {
-				urlPath = "/not-exist-path"
+			JustBeforeEach(func() {
+				rsp, err = http.Get(serverUrl + "/not-exist-path")
 			})
 
 			It("should return 404", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(rsp.StatusCode).To(Equal(http.StatusNotFound))
+				rsp.Body.Close()
 			})
 		})
 
@@ -127,6 +138,7 @@ var _ = Describe("Server", func() {
 			It("should return 404", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(rsp.StatusCode).To(Equal(http.StatusNotFound))
+				rsp.Body.Close()
 			})
 		})
 
