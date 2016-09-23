@@ -17,14 +17,10 @@ type AppEvaluationManager struct {
 	logger           lager.Logger
 	cclock           clock.Clock
 	lock             sync.Mutex
-	stopping         bool
 	doneChan         chan bool
 	triggerChan      chan []*model.Trigger
 	triggers         map[string][]*model.Trigger
 	evaluatorArray   []*Evaluator
-	evaluatorCount   int
-	database         db.AppMetricDB
-	scalingEngineUrl string
 }
 
 func NewAppEvaluationManager(evaluateInterval time.Duration, logger lager.Logger, cclock clock.Clock, triggerChan chan []*model.Trigger, evaluatorCount int, database db.AppMetricDB, scalingEngineUrl string) *AppEvaluationManager {
@@ -32,14 +28,10 @@ func NewAppEvaluationManager(evaluateInterval time.Duration, logger lager.Logger
 		evaluateInterval: evaluateInterval,
 		logger:           logger.Session("AppEvaluationManager"),
 		cclock:           cclock,
-		stopping:         false,
 		doneChan:         make(chan bool),
 		triggerChan:      triggerChan,
 		triggers:         map[string][]*model.Trigger{},
 		evaluatorArray:   []*Evaluator{},
-		evaluatorCount:   evaluatorCount,
-		database:         database,
-		scalingEngineUrl: scalingEngineUrl,
 	}
 	client := cfhttp.NewClient()
 	client.Transport.(*http.Transport).MaxIdleConnsPerHost = evaluatorCount
