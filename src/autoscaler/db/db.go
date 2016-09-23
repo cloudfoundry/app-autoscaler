@@ -30,5 +30,7 @@ type AppMetricDB interface {
 type HistoryDB interface {
 	SaveScalingHistory(history *models.AppScalingHistory) error
 	RetrieveScalingHistories(appId string, start int64, end int64) ([]*models.AppScalingHistory, error)
+	UpdateScalingCooldownExpireTime(appId string, expireAt int64) error
+	CanScaleApp(appId string) (bool, error)
 	Close() error
 }

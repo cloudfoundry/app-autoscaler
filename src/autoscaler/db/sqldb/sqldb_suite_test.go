@@ -72,7 +72,7 @@ func getNumberOfMetrics() int {
 func cleanPolicyTable() {
 	_, e := dbHelper.Exec("DELETE from policy_json")
 	if e != nil {
-		Fail("can not clean policy table: " + e.Error())
+		Fail("can not clean table policy_json: " + e.Error())
 	}
 }
 
@@ -86,14 +86,14 @@ func insertPolicy(appId string, scalingPolicy *models.ScalingPolicy) {
 	_, e = dbHelper.Exec(query, appId, string(policyJson))
 
 	if e != nil {
-		Fail("can not insert data to policy table: " + e.Error())
+		Fail("can not insert data to table policy_json: " + e.Error())
 	}
 }
 
 func cleanAppMetricTable() {
 	_, e := dbHelper.Exec("DELETE from app_metric")
 	if e != nil {
-		Fail("can not clean app_metric table: " + e.Error())
+		Fail("can not clean table app_metric : " + e.Error())
 	}
 }
 
@@ -110,7 +110,7 @@ func hasAppMetric(appId, metricType string, timestamp int64) bool {
 func cleanScalingHistoryTable() {
 	_, e := dbHelper.Exec("DELETE from scalinghistory")
 	if e != nil {
-		Fail("can not clean scaling history table: " + e.Error())
+		Fail("can not clean table scalinghistory: " + e.Error())
 	}
 }
 
@@ -119,6 +119,23 @@ func hasScalingHistory(appId string, timestamp int64) bool {
 	rows, e := dbHelper.Query(query, appId, timestamp)
 	if e != nil {
 		Fail("can not query table scalinghistory: " + e.Error())
+	}
+	defer rows.Close()
+	return rows.Next()
+}
+
+func cleanScalingCooldownTable() {
+	_, e := dbHelper.Exec("DELETE from scalingcooldown")
+	if e != nil {
+		Fail("can not clean table scalingcooldown: " + e.Error())
+	}
+}
+
+func hasScalingCooldownRecord(appId string, expireAt int64) bool {
+	query := "SELECT * FROM scalingcooldown WHERE appid = $1 AND expireat = $2"
+	rows, e := dbHelper.Query(query, appId, expireAt)
+	if e != nil {
+		Fail("can not query table scalingcooldown: " + e.Error())
 	}
 	defer rows.Close()
 	return rows.Next()

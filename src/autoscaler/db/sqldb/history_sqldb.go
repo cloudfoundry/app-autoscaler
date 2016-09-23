@@ -105,3 +105,43 @@ func (hdb *HistorySQLDB) RetrieveScalingHistories(appId string, start int64, end
 	}
 	return histories, nil
 }
+
+func (hdb *HistorySQLDB) CanScaleApp(appId string) (bool, error) {
+	query := "SELECT expireat FROM scalingcooldown where appid = $1"
+	rows, err := hdb.sqldb.Query(query, appId)
+	if err != nil {
+		hdb.logger.Error("can-scale-app-query-record", err, lager.Data{"query": query, "appid": appId})
+		return false, err
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		var expireAt int64
+		if err = rows.Scan(&expireAt); err != nil {
+			hdb.logger.Error("can-scale-app-scan", err, lager.Data{"query": query, "appid": appId})
+			return false, err
+		}
+		if expireAt < time.Now().UnixNano() {
+			return true, nil
+		} else {
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
+func (hdb *HistorySQLDB) UpdateScalingCooldownExpireTime(appId string, expireAt int64) error {
+	_, err := hdb.sqldb.Exec("DELETE FROM scalingcooldown where appid = $1", appId)
+	if err != nil {
+		hdb.logger.Error("update-scaling-cooldown-time-delete", err, lager.Data{"appid": appId})
+		return err
+	}
+
+	_, err = hdb.sqldb.Exec("INSERT INTO scalingcooldown(appid, expireat) values($1, $2)", appId, expireAt)
+	if err != nil {
+		hdb.logger.Error("update-scaling-cooldown-time-insert", err, lager.Data{"appid": appId, "expireAt": expireAt})
+		return err
+	}
+	return nil
+}

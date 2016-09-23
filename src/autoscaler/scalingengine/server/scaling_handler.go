@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const TokenTypeBearer = "bearer"
@@ -24,6 +25,7 @@ type ScalingHandler struct {
 	policyDB  db.PolicyDB
 	historyDB db.HistoryDB
 	hClock    clock.Clock
+	appLock   *AppLock
 }
 
 func NewScalingHandler(logger lager.Logger, cfc cf.CfClient, policyDB db.PolicyDB, historyDB db.HistoryDB, hClock clock.Clock) *ScalingHandler {
@@ -33,6 +35,7 @@ func NewScalingHandler(logger lager.Logger, cfc cf.CfClient, policyDB db.PolicyD
 		policyDB:  policyDB,
 		historyDB: historyDB,
 		hClock:    hClock,
+		appLock:   NewAppLock(),
 	}
 }
 
@@ -53,7 +56,11 @@ func (h *ScalingHandler) HandleScale(w http.ResponseWriter, r *http.Request, var
 	logger.Debug("handle-scale", lager.Data{"trigger": trigger})
 
 	var newInstances int
+
+	h.appLock.Lock(appId)
 	newInstances, err = h.Scale(appId, trigger)
+	h.appLock.UnLock(appId)
+
 	if err != nil {
 		logger.Error("handle-scale-perform-scaling-action", err, lager.Data{"trigger": trigger})
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
@@ -79,14 +86,6 @@ func (h *ScalingHandler) Scale(appId string, trigger *models.Trigger) (int, erro
 
 	defer h.historyDB.SaveScalingHistory(history)
 
-	policy, err := h.policyDB.GetAppPolicy(appId)
-	if err != nil {
-		logger.Error("scale-get-app-policy", err)
-		history.Status = models.ScalingStatusFailed
-		history.Error = "failed to get scaling policy"
-		return -1, err
-	}
-
 	instances, err := h.cfClient.GetAppInstances(appId)
 	if err != nil {
 		logger.Error("scale-get-app-instances", err)
@@ -96,12 +95,35 @@ func (h *ScalingHandler) Scale(appId string, trigger *models.Trigger) (int, erro
 	}
 	history.OldInstances = instances
 
+	var ok bool
+	ok, err = h.historyDB.CanScaleApp(appId)
+	if err != nil {
+		logger.Error("scale-check-cooldown", err)
+		history.Status = models.ScalingStatusFailed
+		history.Error = "failed to check app cooldown setting"
+		return -1, err
+	}
+	if !ok {
+		history.Status = models.ScalingStatusIgnored
+		history.NewInstances = instances
+		history.Message = "app in cooldown period"
+		return instances, nil
+	}
+
 	var newInstances int
 	newInstances, err = h.ComputeNewInstances(instances, trigger.Adjustment)
 	if err != nil {
 		logger.Error("scale-compute-new-instance", err, lager.Data{"instances": instances, "adjustment": trigger.Adjustment})
 		history.Status = models.ScalingStatusFailed
 		history.Error = "failed to compute new app instances"
+		return -1, err
+	}
+
+	policy, err := h.policyDB.GetAppPolicy(appId)
+	if err != nil {
+		logger.Error("scale-get-app-policy", err)
+		history.Status = models.ScalingStatusFailed
+		history.Error = "failed to get scaling policy"
 		return -1, err
 	}
 
@@ -128,6 +150,9 @@ func (h *ScalingHandler) Scale(appId string, trigger *models.Trigger) (int, erro
 	}
 
 	history.Status = models.ScalingStatusSucceeded
+
+	h.historyDB.UpdateScalingCooldownExpireTime(appId, h.hClock.Now().Add(time.Duration(trigger.CoolDownSeconds)*time.Second).UnixNano())
+
 	return newInstances, nil
 }
 
