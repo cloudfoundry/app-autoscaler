@@ -5,8 +5,6 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	"time"
 )
 
 var (
@@ -100,7 +98,7 @@ func hasAcquiredLock() bool {
 	select {
 	case <-ch:
 		return true
-	case <-time.After(5 * time.Millisecond):
+	default:
 		return false
 	}
 }
