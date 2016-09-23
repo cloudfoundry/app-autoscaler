@@ -51,3 +51,16 @@ databaseChangeLog:
                   type: varchar
                   constraints:
                     nullable: true
+        - createTable:
+            tableName: scalingcooldown
+            columns:
+              - column:
+                  name: appid
+                  type: varchar
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expireat
+                  type: bigint
+                  constraints:
+                    nullable: false

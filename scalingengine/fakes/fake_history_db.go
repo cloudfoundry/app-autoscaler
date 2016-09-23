@@ -27,6 +27,24 @@ type FakeHistoryDB struct {
 		result1 []*models.AppScalingHistory
 		result2 error
 	}
+	UpdateScalingCooldownExpireTimeStub        func(appId string, expireAt int64) error
+	updateScalingCooldownExpireTimeMutex       sync.RWMutex
+	updateScalingCooldownExpireTimeArgsForCall []struct {
+		appId    string
+		expireAt int64
+	}
+	updateScalingCooldownExpireTimeReturns struct {
+		result1 error
+	}
+	CanScaleAppStub        func(appId string) (bool, error)
+	canScaleAppMutex       sync.RWMutex
+	canScaleAppArgsForCall []struct {
+		appId string
+	}
+	canScaleAppReturns struct {
+		result1 bool
+		result2 error
+	}
 	CloseStub        func() error
 	closeMutex       sync.RWMutex
 	closeArgsForCall []struct{}
@@ -106,6 +124,74 @@ func (fake *FakeHistoryDB) RetrieveScalingHistoriesReturns(result1 []*models.App
 	}{result1, result2}
 }
 
+func (fake *FakeHistoryDB) UpdateScalingCooldownExpireTime(appId string, expireAt int64) error {
+	fake.updateScalingCooldownExpireTimeMutex.Lock()
+	fake.updateScalingCooldownExpireTimeArgsForCall = append(fake.updateScalingCooldownExpireTimeArgsForCall, struct {
+		appId    string
+		expireAt int64
+	}{appId, expireAt})
+	fake.recordInvocation("UpdateScalingCooldownExpireTime", []interface{}{appId, expireAt})
+	fake.updateScalingCooldownExpireTimeMutex.Unlock()
+	if fake.UpdateScalingCooldownExpireTimeStub != nil {
+		return fake.UpdateScalingCooldownExpireTimeStub(appId, expireAt)
+	} else {
+		return fake.updateScalingCooldownExpireTimeReturns.result1
+	}
+}
+
+func (fake *FakeHistoryDB) UpdateScalingCooldownExpireTimeCallCount() int {
+	fake.updateScalingCooldownExpireTimeMutex.RLock()
+	defer fake.updateScalingCooldownExpireTimeMutex.RUnlock()
+	return len(fake.updateScalingCooldownExpireTimeArgsForCall)
+}
+
+func (fake *FakeHistoryDB) UpdateScalingCooldownExpireTimeArgsForCall(i int) (string, int64) {
+	fake.updateScalingCooldownExpireTimeMutex.RLock()
+	defer fake.updateScalingCooldownExpireTimeMutex.RUnlock()
+	return fake.updateScalingCooldownExpireTimeArgsForCall[i].appId, fake.updateScalingCooldownExpireTimeArgsForCall[i].expireAt
+}
+
+func (fake *FakeHistoryDB) UpdateScalingCooldownExpireTimeReturns(result1 error) {
+	fake.UpdateScalingCooldownExpireTimeStub = nil
+	fake.updateScalingCooldownExpireTimeReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeHistoryDB) CanScaleApp(appId string) (bool, error) {
+	fake.canScaleAppMutex.Lock()
+	fake.canScaleAppArgsForCall = append(fake.canScaleAppArgsForCall, struct {
+		appId string
+	}{appId})
+	fake.recordInvocation("CanScaleApp", []interface{}{appId})
+	fake.canScaleAppMutex.Unlock()
+	if fake.CanScaleAppStub != nil {
+		return fake.CanScaleAppStub(appId)
+	} else {
+		return fake.canScaleAppReturns.result1, fake.canScaleAppReturns.result2
+	}
+}
+
+func (fake *FakeHistoryDB) CanScaleAppCallCount() int {
+	fake.canScaleAppMutex.RLock()
+	defer fake.canScaleAppMutex.RUnlock()
+	return len(fake.canScaleAppArgsForCall)
+}
+
+func (fake *FakeHistoryDB) CanScaleAppArgsForCall(i int) string {
+	fake.canScaleAppMutex.RLock()
+	defer fake.canScaleAppMutex.RUnlock()
+	return fake.canScaleAppArgsForCall[i].appId
+}
+
+func (fake *FakeHistoryDB) CanScaleAppReturns(result1 bool, result2 error) {
+	fake.CanScaleAppStub = nil
+	fake.canScaleAppReturns = struct {
+		result1 bool
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeHistoryDB) Close() error {
 	fake.closeMutex.Lock()
 	fake.closeArgsForCall = append(fake.closeArgsForCall, struct{}{})
@@ -138,6 +224,10 @@ func (fake *FakeHistoryDB) Invocations() map[string][][]interface{} {
 	defer fake.saveScalingHistoryMutex.RUnlock()
 	fake.retrieveScalingHistoriesMutex.RLock()
 	defer fake.retrieveScalingHistoriesMutex.RUnlock()
+	fake.updateScalingCooldownExpireTimeMutex.RLock()
+	defer fake.updateScalingCooldownExpireTimeMutex.RUnlock()
+	fake.canScaleAppMutex.RLock()
+	defer fake.canScaleAppMutex.RUnlock()
 	fake.closeMutex.RLock()
 	defer fake.closeMutex.RUnlock()
 	return fake.invocations

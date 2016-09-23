@@ -112,6 +112,7 @@ var _ = Describe("ScalingHandler", func() {
 			trigger = &models.Trigger{
 				MetricType:            models.MetricNameMemory,
 				BreachDurationSeconds: 100,
+				CoolDownSeconds:       30,
 				Threshold:             222222,
 				Operator:              ">",
 				Adjustment:            "+1",
@@ -123,8 +124,10 @@ var _ = Describe("ScalingHandler", func() {
 
 		Context("when scaling succeeds", func() {
 			BeforeEach(func() {
-				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 1, InstanceMax: 6}, nil)
 				cfc.GetAppInstancesReturns(2, nil)
+				historyDB.CanScaleAppReturns(true, nil)
+				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 1, InstanceMax: 6}, nil)
+
 			})
 
 			It("sets the new app instance number and stores the succeeded scaling history", func() {
@@ -133,6 +136,10 @@ var _ = Describe("ScalingHandler", func() {
 				Expect(id).To(Equal("an-app-id"))
 				Expect(num).To(Equal(3))
 				Expect(newInstances).To(Equal(3))
+
+				id, expiredAt := historyDB.UpdateScalingCooldownExpireTimeArgsForCall(0)
+				Expect(id).To(Equal("an-app-id"))
+				Expect(expiredAt).To(Equal(hClock.Now().Add(30 * time.Second).UnixNano()))
 
 				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 					AppId:        "an-app-id",
@@ -147,11 +154,37 @@ var _ = Describe("ScalingHandler", func() {
 			})
 		})
 
+		Context("when app is in cooldown period", func() {
+			BeforeEach(func() {
+				cfc.GetAppInstancesReturns(2, nil)
+				historyDB.CanScaleAppReturns(false, nil)
+			})
+
+			It("ignores the scaling", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cfc.SetAppInstancesCallCount()).To(BeZero())
+
+				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+					AppId:        "an-app-id",
+					Timestamp:    hClock.Now().UnixNano(),
+					ScalingType:  models.ScalingTypeDynamic,
+					Status:       models.ScalingStatusIgnored,
+					OldInstances: 2,
+					NewInstances: 2,
+					Reason:       "+1 instance(s) because memorybytes > 222222 for 100 seconds",
+					Message:      "app in cooldown period",
+				}))
+
+			})
+		})
+
 		Context("when app instances not changed", func() {
 			BeforeEach(func() {
 				trigger.Adjustment = "+20%"
-				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 1, InstanceMax: 6}, nil)
 				cfc.GetAppInstancesReturns(2, nil)
+				historyDB.CanScaleAppReturns(true, nil)
+				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 1, InstanceMax: 6}, nil)
+
 			})
 
 			It("does not update the app and stores the ignored scaling history", func() {
@@ -175,8 +208,10 @@ var _ = Describe("ScalingHandler", func() {
 		Context("when it exceeds max instances limit", func() {
 			BeforeEach(func() {
 				trigger.Adjustment = "+2"
-				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 1, InstanceMax: 6}, nil)
 				cfc.GetAppInstancesReturns(5, nil)
+				historyDB.CanScaleAppReturns(true, nil)
+				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 1, InstanceMax: 6}, nil)
+
 			})
 
 			It("does upate the app instance with max instances and stores the succeeded scaling history", func() {
@@ -204,8 +239,10 @@ var _ = Describe("ScalingHandler", func() {
 		Context("when it exceeds min instances limit", func() {
 			BeforeEach(func() {
 				trigger.Adjustment = "-60%"
-				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 2, InstanceMax: 6}, nil)
 				cfc.GetAppInstancesReturns(3, nil)
+				historyDB.CanScaleAppReturns(true, nil)
+				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 2, InstanceMax: 6}, nil)
+
 			})
 
 			It("does upate the app instance with max instances and stores the succeeded scaling history", func() {
@@ -225,30 +262,6 @@ var _ = Describe("ScalingHandler", func() {
 					NewInstances: 2,
 					Reason:       "-60% instance(s) because memorybytes > 222222 for 100 seconds",
 					Message:      "limited by min instances 2",
-				}))
-
-			})
-		})
-
-		Context("when getting policy fails", func() {
-			BeforeEach(func() {
-				policyDB.GetAppPolicyReturns(nil, errors.New("test error"))
-			})
-
-			It("should error and store the failed scaling history", func() {
-				Expect(err).To(HaveOccurred())
-				Eventually(buffer).Should(gbytes.Say("scale-get-app-policy"))
-				Eventually(buffer).Should(gbytes.Say("test error"))
-
-				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
-					AppId:        "an-app-id",
-					Timestamp:    hClock.Now().UnixNano(),
-					ScalingType:  models.ScalingTypeDynamic,
-					Status:       models.ScalingStatusFailed,
-					OldInstances: -1,
-					NewInstances: -1,
-					Reason:       "+1 instance(s) because memorybytes > 222222 for 100 seconds",
-					Error:        "failed to get scaling policy",
 				}))
 
 			})
@@ -278,11 +291,35 @@ var _ = Describe("ScalingHandler", func() {
 			})
 		})
 
+		Context("When checking cooldown fails", func() {
+			BeforeEach(func() {
+				cfc.GetAppInstancesReturns(2, nil)
+				historyDB.CanScaleAppReturns(false, errors.New("test error"))
+			})
+			It("should error and store the failed scaling history", func() {
+				Expect(err).To(HaveOccurred())
+				Eventually(buffer).Should(gbytes.Say("scale-check-cooldown"))
+				Eventually(buffer).Should(gbytes.Say("test error"))
+
+				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+					AppId:        "an-app-id",
+					Timestamp:    hClock.Now().UnixNano(),
+					ScalingType:  models.ScalingTypeDynamic,
+					Status:       models.ScalingStatusFailed,
+					OldInstances: 2,
+					NewInstances: -1,
+					Reason:       "+1 instance(s) because memorybytes > 222222 for 100 seconds",
+					Error:        "failed to check app cooldown setting",
+				}))
+
+			})
+		})
+
 		Context("when computing new app instances fails", func() {
 			BeforeEach(func() {
 				trigger.Adjustment = "+a"
-				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{}, nil)
 				cfc.GetAppInstancesReturns(2, nil)
+				historyDB.CanScaleAppReturns(true, nil)
 			})
 
 			It("should error and store failed scaling history", func() {
@@ -302,10 +339,37 @@ var _ = Describe("ScalingHandler", func() {
 			})
 		})
 
+		Context("when getting policy fails", func() {
+			BeforeEach(func() {
+				cfc.GetAppInstancesReturns(2, nil)
+				historyDB.CanScaleAppReturns(true, nil)
+				policyDB.GetAppPolicyReturns(nil, errors.New("test error"))
+			})
+
+			It("should error and store the failed scaling history", func() {
+				Expect(err).To(HaveOccurred())
+				Eventually(buffer).Should(gbytes.Say("scale-get-app-policy"))
+				Eventually(buffer).Should(gbytes.Say("test error"))
+
+				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+					AppId:        "an-app-id",
+					Timestamp:    hClock.Now().UnixNano(),
+					ScalingType:  models.ScalingTypeDynamic,
+					Status:       models.ScalingStatusFailed,
+					OldInstances: 2,
+					NewInstances: -1,
+					Reason:       "+1 instance(s) because memorybytes > 222222 for 100 seconds",
+					Error:        "failed to get scaling policy",
+				}))
+
+			})
+		})
+
 		Context("when set new instances fails", func() {
 			BeforeEach(func() {
-				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 1, InstanceMax: 6}, nil)
 				cfc.GetAppInstancesReturns(2, nil)
+				historyDB.CanScaleAppReturns(true, nil)
+				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 1, InstanceMax: 6}, nil)
 				cfc.SetAppInstancesReturns(errors.New("test error"))
 			})
 
@@ -337,8 +401,9 @@ var _ = Describe("ScalingHandler", func() {
 
 		Context("when scaling app succeeds", func() {
 			BeforeEach(func() {
-				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 1, InstanceMax: 6}, nil)
 				cfc.GetAppInstancesReturns(2, nil)
+				historyDB.CanScaleAppReturns(true, nil)
+				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 1, InstanceMax: 6}, nil)
 
 				trigger = &models.Trigger{
 					MetricType: models.MetricNameMemory,
@@ -381,7 +446,7 @@ var _ = Describe("ScalingHandler", func() {
 
 		Context("when scaling app fails", func() {
 			BeforeEach(func() {
-				policyDB.GetAppPolicyReturns(nil, errors.New("an error"))
+				cfc.GetAppInstancesReturns(-1, errors.New("an error"))
 
 				trigger = &models.Trigger{
 					MetricType: models.MetricNameMemory,
