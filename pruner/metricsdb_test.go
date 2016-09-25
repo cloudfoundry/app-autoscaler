@@ -79,6 +79,7 @@ var _ = Describe("MetricdsDB Prune", func() {
 	Describe("Stop", func() {
 		JustBeforeEach(func() {
 			pruner.Start()
+			Eventually(fclock.WatcherCount).Should(Equal(1))
 		})
 
 		It("Stop the pruner", func() {
