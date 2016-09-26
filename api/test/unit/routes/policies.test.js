@@ -38,6 +38,39 @@ describe('Routing Policy Creation', function() {
     });
   });
 
+  it('should fail to create a policy for validation error in scheduler for app id 12346', function(done) {
+    nock(schedulerURI)
+    .put('/v2/schedules/12346')
+    .reply(400);
+    request(app)
+    .put('/v1/policies/12346')
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(400);
+      expect(result.body.error.message).eql('Failed to create schedules due to validation error in scheduler');
+      expect(result.body.success).eql(false);
+      done();
+    });
+  });
+
+  it('should fail to create a policy for internal error in scheduler for app id 12347', function(done) {
+  var mockError = { 'message':'Failed to create schedules due to an internal' + 
+        ' error in scheduler','details':'fake body' };
+    nock(schedulerURI)
+    .put('/v2/schedules/12347')
+    .replyWithError(mockError);
+    request(app)
+    .put('/v1/policies/12347')
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(500);
+      expect(result.body.error.message).eql('Failed to create schedules due to an internal error in scheduler');
+      expect(result.body.error.details).eql('fake body');
+      expect(result.body.success).eql(false);
+      done();
+    });
+  });
+  
   context('when a policy already exists' ,function() {
     beforeEach(function(done) {
       nock(schedulerURI)

@@ -70,7 +70,30 @@ describe('Scheduler Utility functions', function() {
       expect(result.statusCode).to.equal(400);
       expect(error).to.not.be.null;
       expect(error.details).to.equal('fake body');
+      expect(error.message).to.equal('Failed to create schedules due to validation error in scheduler');
+      done();
+    });
+  });
+  
+  it('should fail to create a schedule due to un-accepted response code (other than 400 ) in scheduler module for app id 12348',function(done){
+    nock(schedulerURI)
+    .put('/v2/schedules/12348')
+    .reply(function(uri, requestBody) {
+      return [
+              405,
+              'fake body',
+              ];
+    });
+    var mockRequest = {
+        body : fakePolicy,
+        params : { 'app_id' : '12348' }
+    };
+    schedulerUtils.createOrUpdateSchedule(mockRequest,function(error,result){
+      expect(result.statusCode).to.equal(500);
+      expect(error).to.not.be.null;
+      expect(error.details).to.equal('fake body');
       expect(error.message).to.equal('Failed to create schedules due to an internal error in scheduler');
+      console.log(error);
       done();
     });
   });
