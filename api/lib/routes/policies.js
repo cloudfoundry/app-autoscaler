@@ -4,54 +4,34 @@ var router = express.Router();
 var logger = require('../log/logger');
 var HttpStatus = require('http-status-codes');
 var validationMiddleWare = require('../validation/validationMiddleware');
+var routeHelper = require('./routeHelper');
+var schedulerUtil = require('../utils/schedulerUtils');
+var async = require('async');
 
 router.put('/:app_id',validationMiddleWare,function(req, res) {
   logger.info('Policy creation request received',{ 'app id': req.params.app_id });
-  models.policy_json
-    .findOrCreate({ where:{ app_id: req.params.app_id },defaults: { app_id: req.params.app_id,
-    policy_json: req.body } })
-    .spread(function(result, created) {
-      if(created) {
-        logger.info('No policy exists, creating policy..',{ 'app id': req.params.app_id });  
-        var successResponse = {
+  async.waterfall([async.apply(schedulerUtil.createOrUpdateSchedule, req),
+    async.apply(routeHelper.createOrUpdatePolicy, req)],
+    function(error, result) {
+      var responseDecorator = { };
+      if(error) {
+        responseDecorator = {
+          'success': false,
+          'error': error,
+          'result': null
+        };
+      }
+      else {
+        if(result.statusCode === HttpStatus.CREATED) {
+          res.set('Location', '/v1/policies/' + req.params.app_id);
+        }
+        responseDecorator = {
           'success': true,
           'error': null,
-          'result': result
-        };
-        res.set('Location', '/v1/policies/' + req.params.app_id);
-        res.status(HttpStatus.CREATED).json(successResponse);
+          'result': result.response    
+        }
       }
-      else{
-        logger.info('Updating the existing policy',{ 'app id': req.params.app_id });
-        models.policy_json.update({
-          app_id: req.params.app_id,
-          policy_json: req.body
-        },{ where: { app_id: req.params.app_id } ,returning:true }).then(function(result) {
-          var successResponse = {
-            'success': true,
-            'error': null,
-            'result': result[1]
-          };
-          res.status(HttpStatus.OK).json(successResponse);
-        }).catch(function(error) {
-          logger.error ('Failed to update policy',{ 'app id': req.params.app_id,'error':error });
-          var errorResponse = {
-            'success': false,
-            'error': error,
-            'result': null
-          };
-          res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(errorResponse);
-        });
-      }
-
-    }).catch(function(error) {
-      logger.error ('Failed to create policy', { 'app id': req.params.app_id,'error':error });
-      var errorResponse = {
-        'success': false,
-        'error': error,
-        'result': null
-      };
-      res.status(HttpStatus.INTERNAL_SERVER_ERROR).send(errorResponse);
+      res.status(result.statusCode).json(responseDecorator);
     });
 });
 
@@ -86,7 +66,7 @@ router.get('/:app_id',function(req,res) {
     }
   }).catch(function(error) {
     logger.error ('Failed to retrieve policy details',
-    { 'app id': req.params.app_id,'error':error });
+        { 'app id': req.params.app_id,'error':error });
     res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(error);
   });
 });

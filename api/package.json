@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "scripts": {
     "start": "node app.js",
-    "test": "cross-env DB_URI=postgres://postgres:postgres@127.0.0.1:5432/autoscaler node_modules/.bin/_mocha --recursive test",
-    "cover": "cross-env DB_URI=postgres://postgres:postgres@127.0.0.1:5432/autoscaler istanbul cover node_modules/mocha/bin/_mocha -- --recursive test",
+    "test": "cross-env DB_URI=postgres://postgres:postgres@127.0.0.1:5432/autoscaler cross-env SCHEDULER_URI=http://127.0.0.1:8080 node_modules/.bin/_mocha --recursive test",
+    "cover": "cross-env DB_URI=postgres://postgres:postgres@127.0.0.1:5432/autoscaler cross-env SCHEDULER_URI=http://127.0.0.1:8080 istanbul cover node_modules/mocha/bin/_mocha -- --recursive test",
     "lint": "eslint lib"
   },
   "dependencies": {
@@ -19,7 +19,9 @@
     "moment-timezone": "^0.5.4",
     "pg": "^6.0.3",
     "sequelize": "^3.23.6",
-    "underscore": "1.8.3"
+    "underscore": "^1.8.3",
+    "request":"^2.74.0",
+    "async":"^2.0.1"
   },
   "devDependencies": {
     "chai": "^3.5.0",
@@ -30,6 +32,7 @@
     "moment": "^2.14.1",
     "rewire": "^2.5.2",
     "supertest": "^1.2.0",
-    "underscore": "^1.8.3"
+    "underscore": "^1.8.3",
+    "nock":"^8.0.0"
   }
 }
