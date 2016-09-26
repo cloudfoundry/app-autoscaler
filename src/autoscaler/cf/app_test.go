@@ -3,6 +3,7 @@ package cf_test
 import (
 	. "autoscaler/cf"
 	"autoscaler/models"
+	"io"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
@@ -179,7 +180,7 @@ var _ = Describe("App", func() {
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&url.Error{}))
 				urlErr := err.(*url.Error)
-				Expect(urlErr.Err).To(BeAssignableToTypeOf(&net.OpError{}))
+				Expect(urlErr.Err).To(Or(Equal(io.EOF), BeAssignableToTypeOf(&net.OpError{})))
 			})
 
 		})
