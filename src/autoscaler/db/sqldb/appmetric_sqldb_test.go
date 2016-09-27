@@ -321,5 +321,17 @@ var _ = Describe("AppMetricSQLDB", func() {
 			})
 		})
 
+		Context("When not connected to the database", func() {
+			BeforeEach(func() {
+				before = 0
+				err = adb.Close()
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("sql: database is closed")))
+			})
+		})
+
 	})
 })

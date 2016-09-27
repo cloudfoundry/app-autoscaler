@@ -17,11 +17,11 @@ import (
 
 var _ = Describe("MetricdsDB Prune", func() {
 	var (
-		metricsDb  *fakes.FakeMetricsDB
-		pruner     *MetricsDbPruner
-		fclock     *fakeclock.FakeClock
-		cutoffDays int
-		buffer     *gbytes.Buffer
+		metricsDb    *fakes.FakeMetricsDB
+		prunerRunner *DbPrunerRunner
+		fclock       *fakeclock.FakeClock
+		cutoffDays   int
+		buffer       *gbytes.Buffer
 	)
 
 	BeforeEach(func() {
@@ -33,16 +33,18 @@ var _ = Describe("MetricdsDB Prune", func() {
 		metricsDb = &fakes.FakeMetricsDB{}
 		fclock = fakeclock.NewFakeClock(time.Now())
 
-		pruner = NewMetricsDbPruner(logger, metricsDb, TestRefreshInterval, cutoffDays, fclock)
+		metricsDbPruner := NewMetricsDbPruner(metricsDb, cutoffDays, fclock, logger)
+		prunerRunner = NewDbPrunerRunner(metricsDbPruner, "metrics-db", TestRefreshInterval, fclock, logger)
+
 	})
 
 	Describe("Start", func() {
 		JustBeforeEach(func() {
-			pruner.Start()
+			prunerRunner.Start()
 		})
 
 		AfterEach(func() {
-			pruner.Stop()
+			prunerRunner.Stop()
 		})
 
 		Context("when pruning metrics records from metrics db", func() {
@@ -78,7 +80,7 @@ var _ = Describe("MetricdsDB Prune", func() {
 
 	Describe("Stop", func() {
 		JustBeforeEach(func() {
-			pruner.Start()
+			prunerRunner.Start()
 			Eventually(fclock.WatcherCount).Should(Equal(1))
 		})
 
@@ -86,7 +88,7 @@ var _ = Describe("MetricdsDB Prune", func() {
 			fclock.Increment(TestRefreshInterval)
 			Eventually(metricsDb.PruneMetricsCallCount).Should(Equal(2))
 
-			pruner.Stop()
+			prunerRunner.Stop()
 			Eventually(buffer).Should(gbytes.Say("metrics-db-pruner-stopped"))
 
 			fclock.Increment(TestRefreshInterval)

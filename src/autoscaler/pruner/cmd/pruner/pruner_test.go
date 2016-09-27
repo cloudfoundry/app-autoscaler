@@ -30,7 +30,7 @@ var _ = Describe("Pruner", func() {
 		Consistently(runner.Session).ShouldNot(Say("metrics-db-pruner-stopped"))
 
 		// App Metrics DB Pruner
-		Consistently(runner.Session).ShouldNot(Say("app-metrics-db-pruner-stopped"))
+		Consistently(runner.Session).ShouldNot(Say("appmetrics-db-pruner-stopped"))
 
 		// Pruner
 		Consistently(runner.Session).ShouldNot(Exit())
@@ -71,7 +71,7 @@ var _ = Describe("Pruner", func() {
 		BeforeEach(func() {
 			runner.startCheck = ""
 
-			cfg.Pruner.MetricsDbPruner.CutoffDays = -1
+			cfg.MetricsDb.CutoffDays = -1
 
 			cfg := writeConfig(&cfg)
 			runner.configPath = cfg.Name()
@@ -93,7 +93,7 @@ var _ = Describe("Pruner", func() {
 			runner.startCheck = ""
 
 			//invalid url
-			cfg.Db.MetricsDbUrl = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
+			cfg.MetricsDb.DbUrl = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 
 			cfg := writeConfig(&cfg)
 			runner.configPath = cfg.Name()
@@ -117,7 +117,7 @@ var _ = Describe("Pruner", func() {
 			runner.startCheck = ""
 
 			//invalid url
-			cfg.Db.AppMetricsDbUrl = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
+			cfg.AppMetricsDb.DbUrl = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 
 			cfg := writeConfig(&cfg)
 			runner.configPath = cfg.Name()

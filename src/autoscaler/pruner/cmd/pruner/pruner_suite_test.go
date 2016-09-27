@@ -55,14 +55,14 @@ var _ = SynchronizedAfterSuite(func() {
 func initConfig() {
 	cfg.Logging.Level = "debug"
 
-	cfg.Db.MetricsDbUrl = os.Getenv("DBURL")
-	cfg.Db.AppMetricsDbUrl = os.Getenv("DBURL")
+	cfg.MetricsDb.DbUrl = os.Getenv("DBURL")
+	cfg.AppMetricsDb.DbUrl = os.Getenv("DBURL")
 
-	cfg.Pruner.MetricsDbPruner.RefreshIntervalInHours = 12
-	cfg.Pruner.MetricsDbPruner.CutoffDays = 20
+	cfg.MetricsDb.RefreshIntervalInHours = 12
+	cfg.MetricsDb.CutoffDays = 20
 
-	cfg.Pruner.AppMetricsDbPruner.RefreshIntervalInHours = 12
-	cfg.Pruner.AppMetricsDbPruner.CutoffDays = 20
+	cfg.AppMetricsDb.RefreshIntervalInHours = 12
+	cfg.AppMetricsDb.CutoffDays = 20
 
 }
 
@@ -111,7 +111,7 @@ func (pr *PrunerRunner) Start() {
 		Eventually(prSession.Buffer()).Should(gbytes.Say("metrics-db-pruner-started"))
 
 		//App Metric Pruner
-		Eventually(prSession.Buffer()).Should(gbytes.Say("app-metrics-db-pruner-started"))
+		Eventually(prSession.Buffer()).Should(gbytes.Say("appmetrics-db-pruner-started"))
 
 		//All pruners started
 		Eventually(prSession.Buffer(), 2).Should(gbytes.Say(pr.startCheck))

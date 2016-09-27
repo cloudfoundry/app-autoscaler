@@ -1,8 +1,6 @@
 package pruner
 
 import (
-	"time"
-
 	"autoscaler/db"
 
 	"code.cloudfoundry.org/clock"
@@ -10,51 +8,22 @@ import (
 )
 
 type MetricsDbPruner struct {
-	logger     lager.Logger
 	metricsDb  db.MetricsDB
-	interval   time.Duration
 	cutoffDays int
 	clock      clock.Clock
-	doneChan   chan bool
+	logger     lager.Logger
 }
 
-func NewMetricsDbPruner(logger lager.Logger, metricsDb db.MetricsDB, interval time.Duration, cutoffDays int, clock clock.Clock) *MetricsDbPruner {
+func NewMetricsDbPruner(metricsDb db.MetricsDB, cutoffDays int, clock clock.Clock, logger lager.Logger) *MetricsDbPruner {
 	return &MetricsDbPruner{
-		logger:     logger,
 		metricsDb:  metricsDb,
-		interval:   interval,
 		cutoffDays: cutoffDays,
 		clock:      clock,
-		doneChan:   make(chan bool),
+		logger:     logger,
 	}
 }
 
-func (mdp *MetricsDbPruner) Start() {
-	go mdp.startMetricPrune()
-
-	mdp.logger.Info("metrics-db-pruner-started", lager.Data{"refresh_interval_in_hours": mdp.interval})
-}
-
-func (mdp *MetricsDbPruner) Stop() {
-	close(mdp.doneChan)
-	mdp.logger.Info("metrics-db-pruner-stopped")
-}
-
-func (mdp *MetricsDbPruner) startMetricPrune() {
-	ticker := mdp.clock.NewTicker(mdp.interval)
-
-	for {
-		mdp.PruneOldMetrics()
-		select {
-		case <-mdp.doneChan:
-			ticker.Stop()
-			return
-		case <-ticker.C():
-		}
-	}
-}
-
-func (mdp *MetricsDbPruner) PruneOldMetrics() {
+func (mdp MetricsDbPruner) PruneOldData() {
 	mdp.logger.Debug("Prune metrics db data older than", lager.Data{"cutoff_days": mdp.cutoffDays})
 
 	timestamp := mdp.clock.Now().AddDate(0, 0, -mdp.cutoffDays).UnixNano()
