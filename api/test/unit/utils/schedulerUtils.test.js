@@ -93,7 +93,6 @@ describe('Scheduler Utility functions', function() {
       expect(error).to.not.be.null;
       expect(error.details).to.equal('fake body');
       expect(error.message).to.equal('Failed to create schedules due to an internal error in scheduler');
-      console.log(error);
       done();
     });
   });
