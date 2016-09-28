@@ -79,7 +79,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 					MetricType: models.MetricNameMemory,
 					Unit:       models.UnitBytes,
 					Timestamp:  11111111,
-					Value:      30000,
+					Value:      GetInt64Pointer(30000),
 				}
 				err = adb.SaveAppMetric(appMetric)
 			})
@@ -92,6 +92,9 @@ var _ = Describe("AppMetricSQLDB", func() {
 
 	})
 	Describe("RetrieveAppMetrics", func() {
+		value1 := GetInt64Pointer(10000)
+		value2 := GetInt64Pointer(50000)
+		value3 := GetInt64Pointer(30000)
 		BeforeEach(func() {
 			adb, err = NewAppMetricSQLDB(url, logger)
 			Expect(err).NotTo(HaveOccurred())
@@ -102,18 +105,18 @@ var _ = Describe("AppMetricSQLDB", func() {
 				MetricType: models.MetricNameMemory,
 				Unit:       models.UnitBytes,
 				Timestamp:  11111111,
-				Value:      10000,
+				Value:      value1,
 			}
 			err = adb.SaveAppMetric(appMetric)
 			Expect(err).NotTo(HaveOccurred())
 
-			appMetric.Timestamp = 55555555
-			appMetric.Value = 50000
+			appMetric.Timestamp = 33333333
+			appMetric.Value = value2
 			err = adb.SaveAppMetric(appMetric)
 			Expect(err).NotTo(HaveOccurred())
 
-			appMetric.Timestamp = 33333333
-			appMetric.Value = 30000
+			appMetric.Timestamp = 55555555
+			appMetric.Value = value3
 			err = adb.SaveAppMetric(appMetric)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -201,21 +204,21 @@ var _ = Describe("AppMetricSQLDB", func() {
 						MetricType: models.MetricNameMemory,
 						Unit:       models.UnitBytes,
 						Timestamp:  11111111,
-						Value:      10000,
+						Value:      value1,
 					},
 					&model.AppMetric{
 						AppId:      "test-app-id",
 						MetricType: models.MetricNameMemory,
 						Unit:       models.UnitBytes,
 						Timestamp:  33333333,
-						Value:      30000,
+						Value:      value2,
 					},
 					&model.AppMetric{
 						AppId:      "test-app-id",
 						MetricType: models.MetricNameMemory,
 						Unit:       models.UnitBytes,
 						Timestamp:  55555555,
-						Value:      50000,
+						Value:      value3,
 					}}))
 			})
 		})
@@ -233,14 +236,14 @@ var _ = Describe("AppMetricSQLDB", func() {
 						MetricType: models.MetricNameMemory,
 						Unit:       models.UnitBytes,
 						Timestamp:  33333333,
-						Value:      30000,
+						Value:      value2,
 					},
 					&model.AppMetric{
 						AppId:      "test-app-id",
 						MetricType: models.MetricNameMemory,
 						Unit:       models.UnitBytes,
 						Timestamp:  55555555,
-						Value:      50000,
+						Value:      value3,
 					}}))
 			})
 		})

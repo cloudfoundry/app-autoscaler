@@ -95,12 +95,13 @@ var _ = Describe("MetricPoller", func() {
 				})
 				It("should get the app's average metric", func() {
 					var appMetric *AppMetric
+					var value int64 = 250
 					Eventually(consumed).Should(Receive(&appMetric))
 					appMetric.Timestamp = timestamp
 					Expect(appMetric).To(Equal(&AppMetric{
 						AppId:      testAppId,
 						MetricType: metricType,
-						Value:      250,
+						Value:      &value,
 						Unit:       "bytes",
 						Timestamp:  timestamp}))
 				})
@@ -137,7 +138,7 @@ var _ = Describe("MetricPoller", func() {
 					Expect(appMetric).To(Equal(&AppMetric{
 						AppId:      testAppId,
 						MetricType: metricType,
-						Value:      -1,
+						Value:      nil,
 						Unit:       "",
 						Timestamp:  timestamp,
 					}))

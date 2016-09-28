@@ -90,6 +90,7 @@ func (m *MetricPoller) doAggregate(appId string, metricType string, metrics []*m
 	var count int64 = 0
 	var sum int64 = 0
 	var unit string
+	var timestamp int64 = time.Now().UnixNano()
 	for _, metric := range metrics {
 		unit = metric.Unit
 		for _, instanceMetric := range metric.Instances {
@@ -103,17 +104,18 @@ func (m *MetricPoller) doAggregate(appId string, metricType string, metrics []*m
 		avgAppMetric = &model.AppMetric{
 			AppId:      appId,
 			MetricType: metricType,
-			Value:      -1,
+			Value:      nil,
 			Unit:       "",
-			Timestamp:  time.Now().UnixNano(),
+			Timestamp:  timestamp,
 		}
 	} else {
+		avgValue := sum / count
 		avgAppMetric = &model.AppMetric{
 			AppId:      appId,
 			MetricType: metricType,
-			Value:      sum / count,
+			Value:      &avgValue,
 			Unit:       unit,
-			Timestamp:  time.Now().UnixNano(),
+			Timestamp:  timestamp,
 		}
 	}
 	return avgAppMetric

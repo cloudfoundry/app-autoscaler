@@ -70,27 +70,27 @@ func (e *Evaluator) doEvaluate(triggerArray []*model.Trigger) {
 			return
 		}
 		for _, appMetric := range appMetricList {
-			if appMetric.Value < 0 {
+			if appMetric.Value == nil {
 				e.logger.Info("should not send trigger alarm to scaling engine because there is nil-value metric", lager.Data{"trigger": trigger, "appMetric": appMetric})
 				return
 			}
 			if operator == ">" {
-				if appMetric.Value <= threshold {
+				if *appMetric.Value <= threshold {
 					e.logger.Debug("should not send trigger alarm to scaling engine", lager.Data{"trigger": trigger, "appMetric": appMetric})
 					return
 				}
 			} else if operator == ">=" {
-				if appMetric.Value < threshold {
+				if *appMetric.Value < threshold {
 					e.logger.Debug("should not send trigger alarm to scaling engine", lager.Data{"trigger": trigger, "appMetric": appMetric})
 					return
 				}
 			} else if operator == "<" {
-				if appMetric.Value >= threshold {
+				if *appMetric.Value >= threshold {
 					e.logger.Debug("should not send trigger alarm to scaling engine", lager.Data{"trigger": trigger, "appMetric": appMetric})
 					return
 				}
 			} else if operator == "<=" {
-				if appMetric.Value > threshold {
+				if *appMetric.Value > threshold {
 					e.logger.Debug("should not send trigger alarm to scaling engine", lager.Data{"trigger": trigger, "appMetric": appMetric})
 					return
 				}

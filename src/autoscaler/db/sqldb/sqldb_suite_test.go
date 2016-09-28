@@ -140,3 +140,7 @@ func hasScalingCooldownRecord(appId string, expireAt int64) bool {
 	defer rows.Close()
 	return rows.Next()
 }
+func GetInt64Pointer(value int64) *int64 {
+	tmp := value
+	return &tmp
+}
