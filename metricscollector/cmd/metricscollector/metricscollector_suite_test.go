@@ -13,7 +13,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/cloudfoundry-incubator/candiedyaml"
 	"github.com/cloudfoundry/sonde-go/events"
 	"github.com/gogo/protobuf/proto"
 	. "github.com/onsi/ginkgo"
@@ -21,6 +20,7 @@ import (
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
+	"gopkg.in/yaml.v2"
 
 	"autoscaler/cf"
 	"autoscaler/db"
@@ -145,8 +145,11 @@ func writeConfig(c *config.Config) *os.File {
 	cfg, err := ioutil.TempFile("", "mc")
 	Expect(err).NotTo(HaveOccurred())
 	defer cfg.Close()
-	e := candiedyaml.NewEncoder(cfg)
-	err = e.Encode(c)
+
+	bytes, err := yaml.Marshal(c)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = cfg.Write(bytes)
 	Expect(err).NotTo(HaveOccurred())
 
 	return cfg

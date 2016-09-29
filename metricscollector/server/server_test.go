@@ -56,6 +56,7 @@ var _ = Describe("Server", func() {
 		It("should return 200", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+			rsp.Body.Close()
 		})
 	})
 
@@ -71,6 +72,7 @@ var _ = Describe("Server", func() {
 		It("should return 200", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+			rsp.Body.Close()
 		})
 	})
 
@@ -86,6 +88,7 @@ var _ = Describe("Server", func() {
 		It("should return 404", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(rsp.StatusCode).To(Equal(http.StatusNotFound))
+			rsp.Body.Close()
 		})
 	})
 
@@ -101,6 +104,7 @@ var _ = Describe("Server", func() {
 		It("should return 404", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(rsp.StatusCode).To(Equal(http.StatusNotFound))
+			rsp.Body.Close()
 		})
 	})
 
@@ -116,6 +120,7 @@ var _ = Describe("Server", func() {
 		It("should return 404", func() {
 			Expect(err).ToNot(HaveOccurred())
 			Expect(rsp.StatusCode).To(Equal(http.StatusNotFound))
+			rsp.Body.Close()
 		})
 	})
 
