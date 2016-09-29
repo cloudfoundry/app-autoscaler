@@ -106,18 +106,18 @@ var _ = Describe("Main", func() {
 
 			rsp, err := http.Post(fmt.Sprintf("http://127.0.0.1:%d/v1/apps/%s/scale", port, appId),
 				"application/json", bytes.NewReader(body))
-			defer rsp.Body.Close()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+			rsp.Body.Close()
 		})
 	})
 
 	Describe("when a request to retrieve scaling history comes", func() {
 		It("returns with a 200", func() {
 			rsp, err := http.Get(fmt.Sprintf("http://127.0.0.1:%d/v1/apps/%s/scaling_histories", port, appId))
-			defer rsp.Body.Close()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+			rsp.Body.Close()
 		})
 	})
 

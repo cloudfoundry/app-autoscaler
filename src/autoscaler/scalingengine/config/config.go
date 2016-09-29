@@ -3,9 +3,10 @@ package config
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"strings"
 
-	"github.com/cloudfoundry-incubator/candiedyaml"
+	"gopkg.in/yaml.v2"
 
 	"autoscaler/cf"
 )
@@ -49,8 +50,12 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		Server:  defaultServerConfig,
 	}
 
-	decoder := candiedyaml.NewDecoder(reader)
-	err := decoder.Decode(conf)
+	bytes, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+
+	err = yaml.Unmarshal(bytes, conf)
 	if err != nil {
 		return nil, err
 	}

@@ -6,12 +6,12 @@ import (
 	"autoscaler/models"
 	"autoscaler/scalingengine/config"
 
-	"github.com/cloudfoundry-incubator/candiedyaml"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
+	"gopkg.in/yaml.v2"
 
 	"database/sql"
 	"fmt"
@@ -115,7 +115,10 @@ func writeConfig(c *config.Config) *os.File {
 
 	defer cfg.Close()
 
-	err = candiedyaml.NewEncoder(cfg).Encode(c)
+	bytes, err := yaml.Marshal(c)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = cfg.Write(bytes)
 	Expect(err).NotTo(HaveOccurred())
 
 	return cfg

@@ -2,8 +2,8 @@ package config_test
 
 import (
 	"bytes"
+	"gopkg.in/yaml.v2"
 
-	"github.com/cloudfoundry-incubator/candiedyaml"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -37,7 +37,7 @@ pruner:
 			})
 
 			It("returns an error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&candiedyaml.ParserError{}))
+				Expect(err).To(MatchError(MatchRegexp("yaml: .*")))
 			})
 		})
 
@@ -54,7 +54,7 @@ pruner:
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Invalid integer:.*")))
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
 			})
 		})
 
