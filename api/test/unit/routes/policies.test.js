@@ -79,6 +79,7 @@ describe('Routing Policy Creation', function() {
       request(app)
       .put('/v1/policies/12345')
       .send(fakePolicy).end(done)
+
     });
     it('should update the existing policy for app id 12345', function(done) {
       nock(schedulerURI)
@@ -106,28 +107,47 @@ describe('Routing Policy Creation', function() {
       });    
     });
     it('should successfully delete the policy with app id 12345',function(done){
+      nock(schedulerURI)
+      .delete('/v2/schedules/12345')
+      .reply(200);
+      
       request(app)
       .delete('/v1/policies/12345')
       .end(function(error,result) {
         expect(result.statusCode).to.equal(200);
-        expect(result.body).eql({});
         done();
       });
     });
+
+    it('should fail to delete the policy with app id 12345 due to internal server error',function(done){
+        nock(schedulerURI)
+        .delete('/v2/schedules/12345')
+        .reply(500);
+        
+        request(app)
+        .delete('/v1/policies/12345')
+        .end(function(error,result) {
+          expect(result.statusCode).to.equal(500);
+          done();
+        });
+      });
 
   });
 
   context('when policy does not exists' ,function() {
     it('should fail to delete a non existing policy with app id 12345',function(done){
+      nock(schedulerURI)
+      .delete('/v2/schedules/12345')
+      .reply(404);
+    
       request(app)
-      .delete('/v1/policies/6876923')
+      .delete('/v1/policies/12345')
       .end(function(error,result) {
         expect(result.statusCode).to.equal(404);
-        expect(result.body).eql({});
         done();
       });    
     });
-
+    
     it('should fail to get the details of a non existing policy with app id 12345',function(done){
       request(app)
       .get('/v1/policies/12345')

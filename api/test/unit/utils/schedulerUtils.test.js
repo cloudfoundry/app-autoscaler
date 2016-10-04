@@ -96,6 +96,66 @@ describe('Scheduler Utility functions', function() {
       done();
     });
   });
+  
+  it('should fail to delete a schedule for app id 12345',function(done){
+    	nock(schedulerURI)
+        .delete('/v2/schedules/12345')
+        .reply(404);
+        var mockRequest = {
+                body : fakePolicy,
+                params : { 'app_id' : '12345' }
+        };
+        schedulerUtils.deleteSchedules(mockRequest ,function(error,result){
+          expect(result.statusCode).to.equal(404);
+          expect(error).to.be.null;
+          done();
+        });
+   });
+
+  it('should fail to delete a schedule for app id 12345 due to an internal server error 500 response code from scheduler',function(done){
+  	nock(schedulerURI)
+      .delete('/v2/schedules/12345')
+      .reply(500);
+      var mockRequest = {
+              body : fakePolicy,
+              params : { 'app_id' : '12345' }
+      };
+      schedulerUtils.deleteSchedules(mockRequest ,function(error,result){
+        expect(result.statusCode).to.equal(500);
+        expect(error).to.not.be.null;
+        done();
+      });
+ });
+
+  it('should fail to delete a schedule for app id 12345 due to an internal error with the request',function(done){
+	  	nock(schedulerURI)
+	      .delete('/v2/schedules/')
+	      .reply(503);
+	      var mockRequest = {
+	              body : fakePolicy,
+	              params : { 'app_id' : '12345' }
+	      };
+	      schedulerUtils.deleteSchedules(mockRequest ,function(error,result){
+	        expect(result.statusCode).to.equal(500);
+	        expect(error).to.not.be.null;
+	        done();
+	      });
+  });
+  
+  it('should successfully delete schedules for app id 12345',function(done){
+	  	nock(schedulerURI)
+	      .delete('/v2/schedules/12345')
+	      .reply(200);
+	      var mockRequest = {
+	              body : fakePolicy,
+	              params : { 'app_id' : '12345' }
+	      };
+	      schedulerUtils.deleteSchedules(mockRequest ,function(error,result){
+	        expect(result.statusCode).to.equal(200);
+	        expect(error).to.be.null;
+	        done();
+	      });
+	 });
 
   context('when a schedules already exists' ,function() {
     beforeEach(function(done) {

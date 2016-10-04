@@ -31,3 +31,20 @@ get any error during the schedule creation/update. */
       callback(error,{ 'statusCode':HttpStatus.INTERNAL_SERVER_ERROR });
     });
 }
+
+exports.deletePolicy = function(req, schedulerResponse, callback) {
+  var appId = req.params.app_id;
+  models.policy_json.destroy({ where: { app_id: appId } }).then(function(result) {
+    if(result > 0) {
+      logger.info('Successfully deleted the policy for application',{ 'app id': appId });
+      callback(null,{ 'statusCode':HttpStatus.OK });
+    }
+    else {
+      logger.info('No policy bound with application',{ 'app id': appId });
+      callback(null,{ 'statusCode':HttpStatus.NOT_FOUND });
+    }
+  }).catch(function(error) {
+    logger.error ('Internal Error while deleting policy', { 'app id': appId,'error':error });
+    callback(error,{ 'statusCode':HttpStatus.INTERNAL_SERVER_ERROR });
+  });
+};
