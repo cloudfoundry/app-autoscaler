@@ -4,6 +4,7 @@ import (
 	"autoscaler/cf"
 	"autoscaler/db"
 	"autoscaler/models"
+	"autoscaler/scalingengine/schedule"
 
 	"code.cloudfoundry.org/cfhttp/handlers"
 	"code.cloudfoundry.org/clock"
@@ -20,22 +21,24 @@ import (
 const TokenTypeBearer = "bearer"
 
 type ScalingHandler struct {
-	cfClient  cf.CfClient
-	logger    lager.Logger
-	policyDB  db.PolicyDB
-	historyDB db.HistoryDB
-	hClock    clock.Clock
-	appLock   *AppLock
+	cfClient     cf.CfClient
+	logger       lager.Logger
+	policyDB     db.PolicyDB
+	historyDB    db.HistoryDB
+	hClock       clock.Clock
+	appLock      *AppLock
+	appSchedules *schedule.AppSchedules
 }
 
 func NewScalingHandler(logger lager.Logger, cfc cf.CfClient, policyDB db.PolicyDB, historyDB db.HistoryDB, hClock clock.Clock) *ScalingHandler {
 	return &ScalingHandler{
-		cfClient:  cfc,
-		logger:    logger,
-		policyDB:  policyDB,
-		historyDB: historyDB,
-		hClock:    hClock,
-		appLock:   NewAppLock(),
+		cfClient:     cfc,
+		logger:       logger,
+		policyDB:     policyDB,
+		historyDB:    historyDB,
+		hClock:       hClock,
+		appLock:      NewAppLock(),
+		appSchedules: schedule.NewAppSchedules(logger.Session("schedules"), cfc, policyDB),
 	}
 }
 
@@ -254,4 +257,38 @@ func getScalingReason(trigger *models.Trigger) string {
 		trigger.Operator,
 		trigger.Threshold,
 		trigger.BreachDurationSeconds)
+}
+
+func (h *ScalingHandler) SetActiveSchedule(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+	appId := vars["appid"]
+	scheduleId := vars["scheduleid"]
+
+	activeSchedule := schedule.ActiveSchedule{}
+	err := json.NewDecoder(r.Body).Decode(&activeSchedule)
+	if err != nil {
+		h.logger.Error("failed-set-active-schedule-unmarshal", err, lager.Data{"appid": appId, "scheduleid": scheduleId})
+		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
+			Code:    "Bad-Request",
+			Message: "Incorrect active schedule in request body",
+		})
+		return
+	}
+
+	activeSchedule.ScheduleId = scheduleId
+	h.logger.Debug("set-active-schedule", lager.Data{"appid": appId, "activeSchedule": activeSchedule})
+
+	h.appLock.Lock(appId)
+	h.appSchedules.SetActiveSchedule(appId, activeSchedule)
+	h.appLock.UnLock(appId)
+}
+
+func (h *ScalingHandler) RemoveActiveSchedule(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+	appId := vars["appid"]
+	scheduleId := vars["scheduleid"]
+
+	h.appLock.Lock(appId)
+	h.appSchedules.RemoveActiveSchedule(appId, scheduleId)
+	h.appLock.UnLock(appId)
+
+	w.WriteHeader(http.StatusNoContent)
 }
