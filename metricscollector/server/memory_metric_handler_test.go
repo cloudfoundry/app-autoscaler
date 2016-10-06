@@ -51,7 +51,7 @@ var _ = Describe("MemoryMetricHandler", func() {
 
 		Context("when retrieving container metrics fail", func() {
 			BeforeEach(func() {
-				consumer.ContainerMetricsReturns(nil, errors.New("an error"))
+				consumer.ContainerEnvelopesReturns(nil, errors.New("an error"))
 			})
 
 			It("returns a 500", func() {
@@ -71,11 +71,13 @@ var _ = Describe("MemoryMetricHandler", func() {
 		Context("when retrieving container metrics succeeds", func() {
 			Context("container metrics is not empty", func() {
 				BeforeEach(func() {
-					consumer.ContainerMetricsReturns([]*events.ContainerMetric{
-						&events.ContainerMetric{
-							ApplicationId: proto.String("an-app-id"),
-							InstanceIndex: proto.Int32(1),
-							MemoryBytes:   proto.Uint64(1234),
+					consumer.ContainerEnvelopesReturns([]*events.Envelope{
+						&events.Envelope{
+							ContainerMetric: &events.ContainerMetric{
+								ApplicationId: proto.String("an-app-id"),
+								InstanceIndex: proto.Int32(1),
+								MemoryBytes:   proto.Uint64(1234),
+							},
 						},
 					}, nil)
 				})
@@ -96,7 +98,7 @@ var _ = Describe("MemoryMetricHandler", func() {
 
 			Context("container metrics is empty", func() {
 				BeforeEach(func() {
-					consumer.ContainerMetricsReturns([]*events.ContainerMetric{}, nil)
+					consumer.ContainerEnvelopesReturns([]*events.Envelope{}, nil)
 				})
 
 				It("returns a 200 with empty metrics", func() {
@@ -257,7 +259,7 @@ var _ = Describe("MemoryMetricHandler", func() {
 						Name:      models.MetricNameMemory,
 						Unit:      models.UnitBytes,
 						AppId:     "an-app-id",
-						TimeStamp: 333,
+						Timestamp: 333,
 						Instances: []models.InstanceMetric{{333, 0, "6666"}, {333, 1, "7777"}},
 					}
 
@@ -265,7 +267,7 @@ var _ = Describe("MemoryMetricHandler", func() {
 						Name:      models.MetricNameMemory,
 						Unit:      models.UnitBytes,
 						AppId:     "an-app-id",
-						TimeStamp: 555,
+						Timestamp: 555,
 						Instances: []models.InstanceMetric{{555, 0, "7777"}, {555, 1, "8888"}},
 					}
 					database.RetrieveMetricsReturns([]*models.Metric{&metric1, &metric2}, nil)

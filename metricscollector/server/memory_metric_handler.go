@@ -37,7 +37,7 @@ func (h *MemoryMetricHandler) GetMemoryMetric(w http.ResponseWriter, r *http.Req
 
 	w.Header().Set("Content-Type", "application/json")
 
-	containerMetrics, err := h.noaaConsumer.ContainerMetrics(appId, TokenTypeBearer+" "+h.cfClient.GetTokens().AccessToken)
+	containerMetrics, err := h.noaaConsumer.ContainerEnvelopes(appId, TokenTypeBearer+" "+h.cfClient.GetTokens().AccessToken)
 	if err != nil {
 		h.logger.Error("Get-memory-metric-from-noaa", err, lager.Data{"appId": appId})
 

@@ -58,7 +58,7 @@ func (mdb *MetricsSQLDB) SaveMetric(metric *models.Metric) error {
 	}
 
 	query := "INSERT INTO applicationmetrics(appid, name, unit, timestamp, value) values($1, $2, $3, $4, $5)"
-	_, err = mdb.sqldb.Exec(query, metric.AppId, metric.Name, metric.Unit, metric.TimeStamp, string(value))
+	_, err = mdb.sqldb.Exec(query, metric.AppId, metric.Name, metric.Unit, metric.Timestamp, string(value))
 
 	if err != nil {
 		mdb.logger.Error("insert-metric-into-applicationmetrics-table", err, lager.Data{"query": query, "metric": metric})
@@ -109,7 +109,7 @@ func (mdb *MetricsSQLDB) RetrieveMetrics(appid string, name string, start int64,
 			AppId:     appid,
 			Name:      name,
 			Unit:      unit,
-			TimeStamp: timestamp,
+			Timestamp: timestamp,
 			Instances: inst,
 		}
 		mtrcs = append(mtrcs, &metric)

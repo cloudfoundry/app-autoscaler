@@ -59,7 +59,7 @@ var _ = Describe("Aggregator", func() {
 				Name:      metricType,
 				Unit:      unit,
 				AppId:     testAppId,
-				TimeStamp: timestamp,
+				Timestamp: timestamp,
 				Instances: []models.InstanceMetric{models.InstanceMetric{
 					Timestamp: timestamp,
 					Index:     0,
@@ -74,7 +74,7 @@ var _ = Describe("Aggregator", func() {
 				Name:      metricType,
 				Unit:      unit,
 				AppId:     testAppId,
-				TimeStamp: timestamp,
+				Timestamp: timestamp,
 				Instances: []models.InstanceMetric{models.InstanceMetric{
 					Timestamp: timestamp,
 					Index:     0,

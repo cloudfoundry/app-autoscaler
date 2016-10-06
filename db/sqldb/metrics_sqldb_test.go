@@ -81,7 +81,7 @@ var _ = Describe("MetricsSQLDB", func() {
 					AppId:     "test-app-id",
 					Name:      models.MetricNameMemory,
 					Unit:      models.UnitBytes,
-					TimeStamp: 11111111,
+					Timestamp: 11111111,
 					Instances: []models.InstanceMetric{{23456312, 0, "3333"}, {23556312, 1, "6666"}},
 				}
 				err = mdb.SaveMetric(metric)
@@ -103,17 +103,17 @@ var _ = Describe("MetricsSQLDB", func() {
 			})
 
 			It("has all the metrics in database", func() {
-				metric.TimeStamp = 111111
+				metric.Timestamp = 111111
 				metric.Instances = []models.InstanceMetric{}
 				err = mdb.SaveMetric(metric)
 				Expect(err).NotTo(HaveOccurred())
 
-				metric.TimeStamp = 222222
+				metric.Timestamp = 222222
 				metric.Instances = []models.InstanceMetric{{23456312, 0, "3333"}}
 				mdb.SaveMetric(metric)
 				Expect(err).NotTo(HaveOccurred())
 
-				metric.TimeStamp = 333333
+				metric.Timestamp = 333333
 				metric.Instances = []models.InstanceMetric{{23456312, 0, "3333"}, {23556312, 1, "6666"}}
 				mdb.SaveMetric(metric)
 				Expect(err).NotTo(HaveOccurred())
@@ -138,17 +138,17 @@ var _ = Describe("MetricsSQLDB", func() {
 				Unit:  models.UnitBytes,
 			}
 
-			metric.TimeStamp = 666666
+			metric.Timestamp = 666666
 			metric.Instances = []models.InstanceMetric{{654321, 0, "6666"}, {764321, 1, "8888"}}
 			err = mdb.SaveMetric(metric)
 			Expect(err).NotTo(HaveOccurred())
 
-			metric.TimeStamp = 222222
+			metric.Timestamp = 222222
 			metric.Instances = []models.InstanceMetric{}
 			err = mdb.SaveMetric(metric)
 			Expect(err).NotTo(HaveOccurred())
 
-			metric.TimeStamp = 333333
+			metric.Timestamp = 333333
 			metric.Instances = []models.InstanceMetric{{123456, 0, "3333"}}
 			err = mdb.SaveMetric(metric)
 			Expect(err).NotTo(HaveOccurred())
@@ -250,21 +250,21 @@ var _ = Describe("MetricsSQLDB", func() {
 						AppId:     "test-app-id",
 						Name:      models.MetricNameMemory,
 						Unit:      models.UnitBytes,
-						TimeStamp: 222222,
+						Timestamp: 222222,
 						Instances: []models.InstanceMetric{},
 					},
 					&models.Metric{
 						AppId:     "test-app-id",
 						Name:      models.MetricNameMemory,
 						Unit:      models.UnitBytes,
-						TimeStamp: 333333,
+						Timestamp: 333333,
 						Instances: []models.InstanceMetric{{123456, 0, "3333"}},
 					},
 					&models.Metric{
 						AppId:     "test-app-id",
 						Name:      models.MetricNameMemory,
 						Unit:      models.UnitBytes,
-						TimeStamp: 666666,
+						Timestamp: 666666,
 						Instances: []models.InstanceMetric{{654321, 0, "6666"}, {764321, 1, "8888"}},
 					}}))
 			})
@@ -283,7 +283,7 @@ var _ = Describe("MetricsSQLDB", func() {
 						AppId:     "test-app-id",
 						Name:      models.MetricNameMemory,
 						Unit:      models.UnitBytes,
-						TimeStamp: 333333,
+						Timestamp: 333333,
 						Instances: []models.InstanceMetric{{123456, 0, "3333"}},
 					}}))
 			})
@@ -305,15 +305,15 @@ var _ = Describe("MetricsSQLDB", func() {
 				Instances: instances,
 			}
 
-			metric.TimeStamp = 666666
+			metric.Timestamp = 666666
 			err = mdb.SaveMetric(metric)
 			Expect(err).NotTo(HaveOccurred())
 
-			metric.TimeStamp = 222222
+			metric.Timestamp = 222222
 			err = mdb.SaveMetric(metric)
 			Expect(err).NotTo(HaveOccurred())
 
-			metric.TimeStamp = 333333
+			metric.Timestamp = 333333
 			err = mdb.SaveMetric(metric)
 			Expect(err).NotTo(HaveOccurred())
 

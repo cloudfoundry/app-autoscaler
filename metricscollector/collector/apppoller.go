@@ -29,7 +29,7 @@ type appPoller struct {
 	doneChan     chan bool
 }
 
-func NewAppPoller(appId string, pollInterval time.Duration, logger lager.Logger, cfc cf.CfClient, noaaConsumer noaa.NoaaConsumer, database db.MetricsDB, pclcok clock.Clock) AppPoller {
+func NewAppPoller(logger lager.Logger, appId string, pollInterval time.Duration, cfc cf.CfClient, noaaConsumer noaa.NoaaConsumer, database db.MetricsDB, pclcok clock.Clock) AppPoller {
 	return &appPoller{
 		appId:        appId,
 		pollInterval: pollInterval,
@@ -72,7 +72,7 @@ func (ap *appPoller) startPollMetrics() {
 func (ap *appPoller) pollMetric() {
 	ap.logger.Debug("poll-metric", lager.Data{"appid": ap.appId})
 
-	containerMetrics, err := ap.noaaConsumer.ContainerMetrics(ap.appId, "bearer"+" "+ap.cfc.GetTokens().AccessToken)
+	containerMetrics, err := ap.noaaConsumer.ContainerEnvelopes(ap.appId, "bearer"+" "+ap.cfc.GetTokens().AccessToken)
 	if err != nil {
 		ap.logger.Error("poll-metric-from-noaa", err)
 		return

@@ -8,10 +8,6 @@ import (
 	"autoscaler/eventgenerator/config"
 	"autoscaler/models"
 	"database/sql"
-	"github.com/onsi/gomega/gbytes"
-	"github.com/onsi/gomega/gexec"
-	"github.com/onsi/gomega/ghttp"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -19,6 +15,11 @@ import (
 	"regexp"
 	"testing"
 	"time"
+
+	"github.com/onsi/gomega/gbytes"
+	"github.com/onsi/gomega/gexec"
+	"github.com/onsi/gomega/ghttp"
+	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -36,7 +37,7 @@ var (
 			Name:      metricType,
 			Unit:      "bytes",
 			AppId:     testAppId,
-			TimeStamp: timestamp,
+			Timestamp: timestamp,
 			Instances: []models.InstanceMetric{models.InstanceMetric{
 				Timestamp: timestamp,
 				Index:     0,
@@ -51,7 +52,7 @@ var (
 			Name:      metricType,
 			Unit:      "bytes",
 			AppId:     testAppId,
-			TimeStamp: timestamp,
+			Timestamp: timestamp,
 			Instances: []models.InstanceMetric{models.InstanceMetric{
 				Timestamp: timestamp,
 				Index:     0,

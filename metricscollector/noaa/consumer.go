@@ -5,5 +5,5 @@ import (
 )
 
 type NoaaConsumer interface {
-	ContainerMetrics(appGuid string, authToken string) ([]*events.ContainerMetric, error)
+	ContainerEnvelopes(appGuid string, authToken string) ([]*events.Envelope, error)
 }
