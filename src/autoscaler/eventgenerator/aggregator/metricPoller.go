@@ -3,13 +3,14 @@ package aggregator
 import (
 	"autoscaler/eventgenerator/model"
 	"autoscaler/models"
-	"code.cloudfoundry.org/lager"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
+
+	"code.cloudfoundry.org/lager"
 )
 
 type MetricConsumer func(appMetric *model.AppMetric)
@@ -92,7 +93,7 @@ func (m *MetricPoller) doAggregate(appId string, metricType string, metrics []*m
 	var timestamp int64
 	for _, metric := range metrics {
 		unit = metric.Unit
-		timestamp = metric.TimeStamp
+		timestamp = metric.Timestamp
 		for _, instanceMetric := range metric.Instances {
 			count++
 			intValue, _ := strconv.ParseInt(instanceMetric.Value, 10, 64)

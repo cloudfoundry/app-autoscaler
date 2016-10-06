@@ -29,7 +29,7 @@ var _ = Describe("MetricPoller", func() {
 			Name:      metricType,
 			Unit:      "bytes",
 			AppId:     testAppId,
-			TimeStamp: timestamp,
+			Timestamp: timestamp,
 			Instances: []models.InstanceMetric{models.InstanceMetric{
 				Timestamp: timestamp,
 				Index:     0,
@@ -44,7 +44,7 @@ var _ = Describe("MetricPoller", func() {
 			Name:      metricType,
 			Unit:      "bytes",
 			AppId:     testAppId,
-			TimeStamp: timestamp,
+			Timestamp: timestamp,
 			Instances: []models.InstanceMetric{models.InstanceMetric{
 				Timestamp: timestamp,
 				Index:     0,

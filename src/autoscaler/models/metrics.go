@@ -21,7 +21,7 @@ type Metric struct {
 	Name      string `json:"name"`
 	Unit      string `json:"unit"`
 	AppId     string `json:"app_id"`
-	TimeStamp int64  `json:"timestamp"`
+	Timestamp int64  `json:"timestamp"`
 	Instances []InstanceMetric
 }
 
@@ -31,13 +31,15 @@ type InstanceMetric struct {
 	Value     string `json:"value"`
 }
 
-func GetMemoryMetricFromContainerMetrics(appId string, containerMetrics []*events.ContainerMetric) *Metric {
+func GetMemoryMetricFromContainerMetrics(appId string, containerMetrics []*events.Envelope) *Metric {
 	insts := []InstanceMetric{}
-	for _, cm := range containerMetrics {
+	for _, e := range containerMetrics {
+		cm := e.ContainerMetric
 		if *cm.ApplicationId == appId {
 			insts = append(insts, InstanceMetric{
-				Index: uint32(cm.GetInstanceIndex()),
-				Value: fmt.Sprintf("%d", cm.GetMemoryBytes()),
+				Timestamp: e.GetTimestamp(),
+				Index:     uint32(cm.GetInstanceIndex()),
+				Value:     fmt.Sprintf("%d", cm.GetMemoryBytes()),
 			})
 		}
 	}
@@ -46,7 +48,7 @@ func GetMemoryMetricFromContainerMetrics(appId string, containerMetrics []*event
 		Name:      MetricNameMemory,
 		Unit:      UnitBytes,
 		AppId:     appId,
-		TimeStamp: time.Now().UnixNano(),
+		Timestamp: time.Now().UnixNano(),
 		Instances: insts,
 	}
 }

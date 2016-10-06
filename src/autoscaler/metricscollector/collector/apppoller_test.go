@@ -38,7 +38,7 @@ var _ = Describe("Apppoller", func() {
 		buffer = logger.Buffer()
 
 		fclock = fakeclock.NewFakeClock(time.Now())
-		poller = NewAppPoller("test-app-id", TestPollInterval, logger, cfc, noaa, database, fclock)
+		poller = NewAppPoller(logger, "test-app-id", TestPollInterval, cfc, noaa, database, fclock)
 	})
 
 	Describe("Start", func() {
@@ -52,13 +52,13 @@ var _ = Describe("Apppoller", func() {
 		})
 
 		It("polls metrics with the given interval", func() {
-			Eventually(noaa.ContainerMetricsCallCount).Should(Equal(1))
+			Eventually(noaa.ContainerEnvelopesCallCount).Should(Equal(1))
 
 			fclock.Increment(TestPollInterval)
-			Eventually(noaa.ContainerMetricsCallCount).Should(Equal(2))
+			Eventually(noaa.ContainerEnvelopesCallCount).Should(Equal(2))
 
 			fclock.Increment(TestPollInterval)
-			Eventually(noaa.ContainerMetricsCallCount).Should(Equal(3))
+			Eventually(noaa.ContainerEnvelopesCallCount).Should(Equal(3))
 		})
 
 		Context("when retrieving container metrics all succeeds", func() {
@@ -70,15 +70,17 @@ var _ = Describe("Apppoller", func() {
 			Context("when all container metrics are not empty", func() {
 
 				BeforeEach(func() {
-					noaa.ContainerMetricsStub = func(appid string, token string) ([]*events.ContainerMetric, error) {
+					noaa.ContainerEnvelopesStub = func(appid string, token string) ([]*events.Envelope, error) {
 						Expect(appid).To(Equal("test-app-id"))
 						Expect(token).To(Equal("bearer test-access-token"))
 
-						return []*events.ContainerMetric{
-							&events.ContainerMetric{
-								ApplicationId: proto.String("test-app-id"),
-								InstanceIndex: proto.Int32(0),
-								MemoryBytes:   proto.Uint64(1234),
+						return []*events.Envelope{
+							&events.Envelope{
+								ContainerMetric: &events.ContainerMetric{
+									ApplicationId: proto.String("test-app-id"),
+									InstanceIndex: proto.Int32(0),
+									MemoryBytes:   proto.Uint64(1234),
+								},
 							},
 						}, nil
 					}
@@ -106,11 +108,11 @@ var _ = Describe("Apppoller", func() {
 
 			Context("when all container metrics are empty", func() {
 				BeforeEach(func() {
-					noaa.ContainerMetricsStub = func(appid string, token string) ([]*events.ContainerMetric, error) {
+					noaa.ContainerEnvelopesStub = func(appid string, token string) ([]*events.Envelope, error) {
 						Expect(appid).To(Equal("test-app-id"))
 						Expect(token).To(Equal("bearer test-access-token"))
 
-						return []*events.ContainerMetric{}, nil
+						return []*events.Envelope{}, nil
 					}
 				})
 
@@ -128,22 +130,23 @@ var _ = Describe("Apppoller", func() {
 
 			Context("when container metrics are partially empty", func() {
 				BeforeEach(func() {
-					noaa.ContainerMetricsStub = func(appid string, token string) ([]*events.ContainerMetric, error) {
+					noaa.ContainerEnvelopesStub = func(appid string, token string) ([]*events.Envelope, error) {
 						Expect(appid).To(Equal("test-app-id"))
 						Expect(token).To(Equal("bearer test-access-token"))
 
-						if noaa.ContainerMetricsCallCount()%2 == 0 {
-							return []*events.ContainerMetric{}, nil
+						if noaa.ContainerEnvelopesCallCount()%2 == 0 {
+							return []*events.Envelope{}, nil
 						} else {
-							return []*events.ContainerMetric{
-								&events.ContainerMetric{
-									ApplicationId: proto.String("test-app-id"),
-									InstanceIndex: proto.Int32(0),
-									MemoryBytes:   proto.Uint64(1234),
+							return []*events.Envelope{
+								&events.Envelope{
+									ContainerMetric: &events.ContainerMetric{
+										ApplicationId: proto.String("test-app-id"),
+										InstanceIndex: proto.Int32(0),
+										MemoryBytes:   proto.Uint64(1234),
+									},
 								},
 							}, nil
 						}
-
 					}
 
 					database.SaveMetricStub = func(metric *models.Metric) error {
@@ -171,7 +174,7 @@ var _ = Describe("Apppoller", func() {
 		Context("when retrieving container metrics all fails", func() {
 
 			BeforeEach(func() {
-				noaa.ContainerMetricsReturns(nil, errors.New("test apppoller error"))
+				noaa.ContainerEnvelopesReturns(nil, errors.New("test apppoller error"))
 			})
 
 			It("saves nothing to database and logs the errors", func() {
@@ -190,18 +193,20 @@ var _ = Describe("Apppoller", func() {
 			BeforeEach(func() {
 				cfc.GetTokensReturns(cf.Tokens{AccessToken: "test-access-token"})
 
-				noaa.ContainerMetricsStub = func(appid string, token string) ([]*events.ContainerMetric, error) {
+				noaa.ContainerEnvelopesStub = func(appid string, token string) ([]*events.Envelope, error) {
 					Expect(appid).To(Equal("test-app-id"))
 					Expect(token).To(Equal("bearer test-access-token"))
 
-					if noaa.ContainerMetricsCallCount()%2 == 0 {
+					if noaa.ContainerEnvelopesCallCount()%2 == 0 {
 						return nil, errors.New("apppoller test error")
 					} else {
-						return []*events.ContainerMetric{
-							&events.ContainerMetric{
-								ApplicationId: proto.String("test-app-id"),
-								InstanceIndex: proto.Int32(0),
-								MemoryBytes:   proto.Uint64(1234),
+						return []*events.Envelope{
+							&events.Envelope{
+								ContainerMetric: &events.ContainerMetric{
+									ApplicationId: proto.String("test-app-id"),
+									InstanceIndex: proto.Int32(0),
+									MemoryBytes:   proto.Uint64(1234),
+								},
 							},
 						}, nil
 					}
@@ -229,7 +234,6 @@ var _ = Describe("Apppoller", func() {
 				Eventually(database.SaveMetricCallCount).Should(Equal(2))
 
 			})
-
 		})
 
 	})
@@ -240,14 +244,14 @@ var _ = Describe("Apppoller", func() {
 		})
 
 		It("stops the polling", func() {
-			Eventually(noaa.ContainerMetricsCallCount).Should(Equal(1))
+			Eventually(noaa.ContainerEnvelopesCallCount).Should(Equal(1))
 
 			fclock.Increment(TestPollInterval)
-			Eventually(noaa.ContainerMetricsCallCount).Should(Equal(2))
+			Eventually(noaa.ContainerEnvelopesCallCount).Should(Equal(2))
 
 			poller.Stop()
 			fclock.Increment(TestPollInterval)
-			Consistently(noaa.ContainerMetricsCallCount).Should(Equal(2))
+			Consistently(noaa.ContainerEnvelopesCallCount).Should(Equal(2))
 		})
 	})
 

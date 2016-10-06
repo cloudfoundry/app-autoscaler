@@ -21,7 +21,7 @@ func newContainerMetric(appId string, index int32, cpu float64, memory uint64, d
 var _ = Describe("Metrics", func() {
 	Describe("GetMemoryMetricFromContainerMetrics", func() {
 		var (
-			containerMetrics []*events.ContainerMetric
+			containerMetrics []*events.Envelope
 			metric           *Metric
 		)
 
@@ -31,7 +31,7 @@ var _ = Describe("Metrics", func() {
 
 		Context("when metrics are empty", func() {
 			BeforeEach(func() {
-				containerMetrics = []*events.ContainerMetric{}
+				containerMetrics = []*events.Envelope{}
 			})
 
 			It("should return memory metric with empty instance metrics", func() {
@@ -44,10 +44,10 @@ var _ = Describe("Metrics", func() {
 
 		Context("when no metric is available for the given app", func() {
 			BeforeEach(func() {
-				containerMetrics = []*events.ContainerMetric{
-					newContainerMetric("different-app-id", 0, 12.11, 622222, 233300000),
-					newContainerMetric("different-app-id", 1, 31.21, 23662, 3424553333),
-					newContainerMetric("another-different-app-id", 0, 0.211, 88623692, 9876384949),
+				containerMetrics = []*events.Envelope{
+					&events.Envelope{ContainerMetric: newContainerMetric("different-app-id", 0, 12.11, 622222, 233300000)},
+					&events.Envelope{ContainerMetric: newContainerMetric("different-app-id", 1, 31.21, 23662, 3424553333)},
+					&events.Envelope{ContainerMetric: newContainerMetric("another-different-app-id", 0, 0.211, 88623692, 9876384949)},
 				}
 			})
 
@@ -61,10 +61,10 @@ var _ = Describe("Metrics", func() {
 
 		Context("when metrics from both given app and other apps", func() {
 			BeforeEach(func() {
-				containerMetrics = []*events.ContainerMetric{
-					newContainerMetric("app-id", 0, 12.11, 622222, 233300000),
-					newContainerMetric("app-id", 1, 31.21, 23662, 3424553333),
-					newContainerMetric("different-app-id", 2, 0.211, 88623692, 9876384949),
+				containerMetrics = []*events.Envelope{
+					&events.Envelope{ContainerMetric: newContainerMetric("app-id", 0, 12.11, 622222, 233300000)},
+					&events.Envelope{ContainerMetric: newContainerMetric("app-id", 1, 31.21, 23662, 3424553333)},
+					&events.Envelope{ContainerMetric: newContainerMetric("different-app-id", 2, 0.211, 88623692, 9876384949)},
 				}
 			})
 

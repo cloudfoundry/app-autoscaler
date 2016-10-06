@@ -9,51 +9,51 @@ import (
 )
 
 type FakeNoaaConsumer struct {
-	ContainerMetricsStub        func(appGuid string, authToken string) ([]*events.ContainerMetric, error)
-	containerMetricsMutex       sync.RWMutex
-	containerMetricsArgsForCall []struct {
+	ContainerEnvelopesStub        func(appGuid string, authToken string) ([]*events.Envelope, error)
+	containerEnvelopesMutex       sync.RWMutex
+	containerEnvelopesArgsForCall []struct {
 		appGuid   string
 		authToken string
 	}
-	containerMetricsReturns struct {
-		result1 []*events.ContainerMetric
+	containerEnvelopesReturns struct {
+		result1 []*events.Envelope
 		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeNoaaConsumer) ContainerMetrics(appGuid string, authToken string) ([]*events.ContainerMetric, error) {
-	fake.containerMetricsMutex.Lock()
-	fake.containerMetricsArgsForCall = append(fake.containerMetricsArgsForCall, struct {
+func (fake *FakeNoaaConsumer) ContainerEnvelopes(appGuid string, authToken string) ([]*events.Envelope, error) {
+	fake.containerEnvelopesMutex.Lock()
+	fake.containerEnvelopesArgsForCall = append(fake.containerEnvelopesArgsForCall, struct {
 		appGuid   string
 		authToken string
 	}{appGuid, authToken})
-	fake.recordInvocation("ContainerMetrics", []interface{}{appGuid, authToken})
-	fake.containerMetricsMutex.Unlock()
-	if fake.ContainerMetricsStub != nil {
-		return fake.ContainerMetricsStub(appGuid, authToken)
+	fake.recordInvocation("ContainerEnvelopes", []interface{}{appGuid, authToken})
+	fake.containerEnvelopesMutex.Unlock()
+	if fake.ContainerEnvelopesStub != nil {
+		return fake.ContainerEnvelopesStub(appGuid, authToken)
 	} else {
-		return fake.containerMetricsReturns.result1, fake.containerMetricsReturns.result2
+		return fake.containerEnvelopesReturns.result1, fake.containerEnvelopesReturns.result2
 	}
 }
 
-func (fake *FakeNoaaConsumer) ContainerMetricsCallCount() int {
-	fake.containerMetricsMutex.RLock()
-	defer fake.containerMetricsMutex.RUnlock()
-	return len(fake.containerMetricsArgsForCall)
+func (fake *FakeNoaaConsumer) ContainerEnvelopesCallCount() int {
+	fake.containerEnvelopesMutex.RLock()
+	defer fake.containerEnvelopesMutex.RUnlock()
+	return len(fake.containerEnvelopesArgsForCall)
 }
 
-func (fake *FakeNoaaConsumer) ContainerMetricsArgsForCall(i int) (string, string) {
-	fake.containerMetricsMutex.RLock()
-	defer fake.containerMetricsMutex.RUnlock()
-	return fake.containerMetricsArgsForCall[i].appGuid, fake.containerMetricsArgsForCall[i].authToken
+func (fake *FakeNoaaConsumer) ContainerEnvelopesArgsForCall(i int) (string, string) {
+	fake.containerEnvelopesMutex.RLock()
+	defer fake.containerEnvelopesMutex.RUnlock()
+	return fake.containerEnvelopesArgsForCall[i].appGuid, fake.containerEnvelopesArgsForCall[i].authToken
 }
 
-func (fake *FakeNoaaConsumer) ContainerMetricsReturns(result1 []*events.ContainerMetric, result2 error) {
-	fake.ContainerMetricsStub = nil
-	fake.containerMetricsReturns = struct {
-		result1 []*events.ContainerMetric
+func (fake *FakeNoaaConsumer) ContainerEnvelopesReturns(result1 []*events.Envelope, result2 error) {
+	fake.ContainerEnvelopesStub = nil
+	fake.containerEnvelopesReturns = struct {
+		result1 []*events.Envelope
 		result2 error
 	}{result1, result2}
 }
@@ -61,8 +61,8 @@ func (fake *FakeNoaaConsumer) ContainerMetricsReturns(result1 []*events.Containe
 func (fake *FakeNoaaConsumer) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
-	fake.containerMetricsMutex.RLock()
-	defer fake.containerMetricsMutex.RUnlock()
+	fake.containerEnvelopesMutex.RLock()
+	defer fake.containerEnvelopesMutex.RUnlock()
 	return fake.invocations
 }
 
