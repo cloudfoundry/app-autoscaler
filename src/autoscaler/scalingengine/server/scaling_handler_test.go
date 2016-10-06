@@ -23,6 +23,7 @@ import (
 )
 
 const testUrlScalingHistories = "http://localhost/v1/apps/an-app-id/scaling_histories"
+const testUrlActiveSchedules = "http://localhost/v1/apps/an-app-id/active_schedules/a-schedule-id"
 
 var _ = Describe("ScalingHandler", func() {
 	var (
@@ -674,4 +675,60 @@ var _ = Describe("ScalingHandler", func() {
 		})
 
 	})
+
+	Describe("SetActiveSchedule", func() {
+		JustBeforeEach(func() {
+			handler.SetActiveSchedule(resp, req, map[string]string{"appid": "an-app-id", "schduleid": "a-schdule-id"})
+		})
+
+		Context("when active schedule is valid", func() {
+			BeforeEach(func() {
+				body = []byte(`{"instance_min_count":1, "instance_max_count":5, "initial_min_instance_count":3}`)
+				req, err = http.NewRequest(http.MethodPut, testUrlActiveSchedules, bytes.NewReader(body))
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("returns 200", func() {
+				Expect(resp.Code).To(Equal(http.StatusOK))
+			})
+		})
+
+		Context("when active schedule is invalid", func() {
+			BeforeEach(func() {
+				body = []byte(`{"instance_min_count":"a"}`)
+				req, err = http.NewRequest(http.MethodPut, testUrlActiveSchedules, bytes.NewReader(body))
+				Expect(err).ToNot(HaveOccurred())
+			})
+
+			It("returns 400", func() {
+				Expect(resp.Code).To(Equal(http.StatusBadRequest))
+
+				errJson := &models.ErrorResponse{}
+				err = json.Unmarshal(resp.Body.Bytes(), errJson)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(errJson).To(Equal(&models.ErrorResponse{
+					Code:    "Bad-Request",
+					Message: "Incorrect active schedule in request body",
+				}))
+			})
+		})
+	})
+
+	Describe("RemoveActiveSchedule", func() {
+		JustBeforeEach(func() {
+			handler.RemoveActiveSchedule(resp, req, map[string]string{"appid": "an-app-id", "schduleid": "a-schdule-id"})
+		})
+
+		BeforeEach(func() {
+			req, err = http.NewRequest(http.MethodDelete, testUrlActiveSchedules, nil)
+			Expect(err).ToNot(HaveOccurred())
+			policyDB.GetAppPolicyReturns(&models.ScalingPolicy{}, nil)
+		})
+
+		It("returns 204", func() {
+			Expect(resp.Code).To(Equal(http.StatusNoContent))
+		})
+
+	})
+
 })
