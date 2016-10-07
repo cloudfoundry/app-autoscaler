@@ -25,20 +25,31 @@ var _ = Describe("Pruner", func() {
 		runner.KillWithFire()
 	})
 
-	It("should start", func() {
-		// Metrics DB Pruner
-		Consistently(runner.Session).ShouldNot(Say("metrics-db-pruner-stopped"))
+	Context("when pruner started", func() {
+		It("should start metricsdbpruner", func() {
 
-		// App Metrics DB Pruner
-		Consistently(runner.Session).ShouldNot(Say("appmetrics-db-pruner-stopped"))
+			//Metric Pruner
+			Eventually(runner.Session).Should(Say("metricsdbpruner-started"))
 
-		// Pruner
-		Consistently(runner.Session).ShouldNot(Exit())
+			// Pruner
+			Consistently(runner.Session).ShouldNot(Exit())
+
+		})
+
+		It("should start appmetricsdbpruner", func() {
+
+			//App Metric Pruner
+			Eventually(runner.Session).Should(Say("appmetricsdbpruner-started"))
+
+			// Pruner
+			Consistently(runner.Session).ShouldNot(Exit())
+
+		})
+
 	})
 
 	Context("with a missing config file", func() {
 		BeforeEach(func() {
-			runner.startCheck = ""
 			runner.configPath = "bogus"
 		})
 
@@ -50,7 +61,6 @@ var _ = Describe("Pruner", func() {
 
 	Context("with an invalid config file", func() {
 		BeforeEach(func() {
-			runner.startCheck = ""
 			badfile, err := ioutil.TempFile("", "bad-pr-config")
 			Expect(err).NotTo(HaveOccurred())
 			runner.configPath = badfile.Name()
@@ -69,7 +79,6 @@ var _ = Describe("Pruner", func() {
 
 	Context("with missing/invalid configuration", func() {
 		BeforeEach(func() {
-			runner.startCheck = ""
 
 			cfg.MetricsDb.CutoffDays = -1
 
@@ -89,8 +98,6 @@ var _ = Describe("Pruner", func() {
 
 	Context("when connection to metrics db fails", func() {
 		BeforeEach(func() {
-
-			runner.startCheck = ""
 
 			//invalid url
 			cfg.MetricsDb.DbUrl = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
@@ -114,8 +121,6 @@ var _ = Describe("Pruner", func() {
 	Context("when connection to app metrics db fails", func() {
 		BeforeEach(func() {
 
-			runner.startCheck = ""
-
 			//invalid url
 			cfg.AppMetricsDb.DbUrl = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 
@@ -137,8 +142,8 @@ var _ = Describe("Pruner", func() {
 
 	Context("when an interrupt is sent", func() {
 		It("should stop", func() {
-			runner.Session.Interrupt()
-			Eventually(runner.Session, 5).Should(Exit(0))
+			runner.Interrupt()
+			Eventually(runner.Session, 5).Should(Exit(130))
 		})
 	})
 })

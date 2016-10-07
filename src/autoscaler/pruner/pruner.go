@@ -1,56 +1,48 @@
 package pruner
 
 import (
+	"os"
 	"time"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
 )
 
-type Pruner interface {
-	PruneOldData()
+type DbPruner interface {
+	Prune()
 }
 
 type DbPrunerRunner struct {
-	pruner   Pruner
+	dbPruner DbPruner
 	name     string
 	interval time.Duration
 	clock    clock.Clock
-	doneChan chan bool
 	logger   lager.Logger
 }
 
-func NewDbPrunerRunner(pruner Pruner, name string, interval time.Duration, clock clock.Clock, logger lager.Logger) *DbPrunerRunner {
+func NewDbPrunerRunner(dbPruner DbPruner, name string, interval time.Duration, clock clock.Clock, logger lager.Logger) *DbPrunerRunner {
 	return &DbPrunerRunner{
-		pruner:   pruner,
+		dbPruner: dbPruner,
 		name:     name,
 		interval: interval,
 		clock:    clock,
 		logger:   logger,
-		doneChan: make(chan bool),
 	}
 }
 
-func (dpr *DbPrunerRunner) Start() {
-	go dpr.startPrune()
-
-	dpr.logger.Info(dpr.name+"-pruner-started", lager.Data{"refresh_interval_in_hours": dpr.interval})
-}
-
-func (dpr *DbPrunerRunner) Stop() {
-	close(dpr.doneChan)
-	dpr.logger.Info(dpr.name + "-pruner-stopped")
-}
-
-func (dpr *DbPrunerRunner) startPrune() {
+func (dpr *DbPrunerRunner) Run(signals <-chan os.Signal, ready chan<- struct{}) error {
+	close(ready)
 	ticker := dpr.clock.NewTicker(dpr.interval)
 
+	dpr.logger.Info(dpr.name+"-started", lager.Data{"refresh_interval": dpr.interval})
+
 	for {
-		dpr.pruner.PruneOldData()
+		go dpr.dbPruner.Prune()
 		select {
-		case <-dpr.doneChan:
+		case <-signals:
 			ticker.Stop()
-			return
+			dpr.logger.Info(dpr.name + "-stopped")
+			return nil
 		case <-ticker.C():
 		}
 	}

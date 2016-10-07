@@ -16,22 +16,21 @@ type AppMetricsDbPruner struct {
 
 func NewAppMetricsDbPruner(appMetricsDb db.AppMetricDB, cutoffDays int, clock clock.Clock, logger lager.Logger) *AppMetricsDbPruner {
 	return &AppMetricsDbPruner{
-
 		appMetricsDb: appMetricsDb,
 		cutoffDays:   cutoffDays,
 		clock:        clock,
-		logger:       logger,
+		logger:       logger.Session("appmetricsdbpruner"),
 	}
 }
 
-func (amdp AppMetricsDbPruner) PruneOldData() {
-	amdp.logger.Debug("Prune app metric db data older than", lager.Data{"cutoff_days": amdp.cutoffDays})
+func (amdp AppMetricsDbPruner) Prune() {
+	amdp.logger.Debug("Pruning app metrics")
 
 	timestamp := amdp.clock.Now().AddDate(0, 0, -amdp.cutoffDays).UnixNano()
 
 	err := amdp.appMetricsDb.PruneAppMetrics(timestamp)
 	if err != nil {
-		amdp.logger.Error("prune-appmetricsdb", err)
+		amdp.logger.Error("failed-prune-appmetrics", err)
 		return
 	}
 

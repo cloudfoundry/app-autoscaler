@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"autoscaler/metricscollector/fakes"
-	. "autoscaler/pruner"
+	"autoscaler/pruner"
 
 	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/lager/lagertest"
@@ -13,12 +13,15 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
+	"github.com/tedsuo/ifrit"
+	"github.com/tedsuo/ifrit/ginkgomon"
 )
 
 var _ = Describe("MetricdsDB Prune", func() {
 	var (
 		metricsDb    *fakes.FakeMetricsDB
-		prunerRunner *DbPrunerRunner
+		prunerRunner *pruner.DbPrunerRunner
+		proc         ifrit.Process
 		fclock       *fakeclock.FakeClock
 		cutoffDays   int
 		buffer       *gbytes.Buffer
@@ -33,18 +36,20 @@ var _ = Describe("MetricdsDB Prune", func() {
 		metricsDb = &fakes.FakeMetricsDB{}
 		fclock = fakeclock.NewFakeClock(time.Now())
 
-		metricsDbPruner := NewMetricsDbPruner(metricsDb, cutoffDays, fclock, logger)
-		prunerRunner = NewDbPrunerRunner(metricsDbPruner, "metrics-db", TestRefreshInterval, fclock, logger)
+		metricsDbPruner := pruner.NewMetricsDbPruner(metricsDb, cutoffDays, fclock, logger)
+		prunerRunner = pruner.NewDbPrunerRunner(metricsDbPruner, "metricsdbpruner", TestRefreshInterval, fclock, logger)
 
 	})
 
 	Describe("Start", func() {
 		JustBeforeEach(func() {
-			prunerRunner.Start()
+			proc = ifrit.Invoke(prunerRunner)
 		})
 
 		AfterEach(func() {
-			prunerRunner.Stop()
+			ginkgomon.Kill(proc)
+			Eventually(proc.Wait()).Should(Receive(BeNil()))
+
 		})
 
 		Context("when pruning metrics records from metrics db", func() {
@@ -80,7 +85,7 @@ var _ = Describe("MetricdsDB Prune", func() {
 
 	Describe("Stop", func() {
 		JustBeforeEach(func() {
-			prunerRunner.Start()
+			proc = ifrit.Invoke(prunerRunner)
 			Eventually(fclock.WatcherCount).Should(Equal(1))
 		})
 
@@ -88,8 +93,10 @@ var _ = Describe("MetricdsDB Prune", func() {
 			fclock.Increment(TestRefreshInterval)
 			Eventually(metricsDb.PruneMetricsCallCount).Should(Equal(2))
 
-			prunerRunner.Stop()
-			Eventually(buffer).Should(gbytes.Say("metrics-db-pruner-stopped"))
+			ginkgomon.Kill(proc)
+			Eventually(proc.Wait()).Should(Receive(BeNil()))
+
+			Eventually(buffer).Should(gbytes.Say("metricsdbpruner-stopped"))
 
 			fclock.Increment(TestRefreshInterval)
 			Consistently(metricsDb.PruneMetricsCallCount).Should(Equal(2))

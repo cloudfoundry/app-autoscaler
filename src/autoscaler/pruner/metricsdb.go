@@ -19,18 +19,18 @@ func NewMetricsDbPruner(metricsDb db.MetricsDB, cutoffDays int, clock clock.Cloc
 		metricsDb:  metricsDb,
 		cutoffDays: cutoffDays,
 		clock:      clock,
-		logger:     logger,
+		logger:     logger.Session("metricsdbpruner"),
 	}
 }
 
-func (mdp MetricsDbPruner) PruneOldData() {
-	mdp.logger.Debug("Prune metrics db data older than", lager.Data{"cutoff_days": mdp.cutoffDays})
+func (mdp MetricsDbPruner) Prune() {
+	mdp.logger.Debug("Pruning metrics", lager.Data{"cutoff_days": mdp.cutoffDays})
 
 	timestamp := mdp.clock.Now().AddDate(0, 0, -mdp.cutoffDays).UnixNano()
 
 	err := mdp.metricsDb.PruneMetrics(timestamp)
 	if err != nil {
-		mdp.logger.Error("prune-metricsdb", err)
+		mdp.logger.Error("failed-prune-metrics", err)
 		return
 	}
 }

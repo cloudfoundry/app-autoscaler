@@ -2,9 +2,9 @@ logging:
   level: "debug"
 metrics_db:
   db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-  refresh_interval_in_hours: 12
+  refresh_interval: 12h
   cutoff_days: 30
 app_metrics_db:
   db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-  refresh_interval_in_hours: 12
+  refresh_interval: 12h
   cutoff_days: 30

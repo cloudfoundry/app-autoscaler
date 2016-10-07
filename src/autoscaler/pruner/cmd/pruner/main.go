@@ -4,10 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"time"
 
 	"autoscaler/db/sqldb"
-	. "autoscaler/pruner"
+	"autoscaler/pruner"
 	"autoscaler/pruner/config"
 
 	"code.cloudfoundry.org/clock"
@@ -63,15 +62,15 @@ func main() {
 	}
 	defer appMetricsDb.Close()
 
-	metricDbPruner := NewMetricsDbPruner(metricsDb, conf.MetricsDb.CutoffDays, prClock, logger)
-	metricsDbPrunerRunner := createDbPrunerRunner(metricDbPruner, "metrics-db", conf.MetricsDb.RefreshIntervalInHours, prClock, logger)
+	metricDbPruner := pruner.NewMetricsDbPruner(metricsDb, conf.MetricsDb.CutoffDays, prClock, logger)
+	metricsDbPrunerRunner := pruner.NewDbPrunerRunner(metricDbPruner, "metricsdbpruner", conf.MetricsDb.RefreshInterval, prClock, logger)
 
-	appMetricsDbPruner := NewAppMetricsDbPruner(appMetricsDb, conf.AppMetricsDb.CutoffDays, prClock, logger)
-	appMetricsDbPrunerRunner := createDbPrunerRunner(appMetricsDbPruner, "appmetrics-db", conf.AppMetricsDb.RefreshIntervalInHours, prClock, logger)
+	appMetricsDbPruner := pruner.NewAppMetricsDbPruner(appMetricsDb, conf.AppMetricsDb.CutoffDays, prClock, logger)
+	appMetricsDbPrunerRunner := pruner.NewDbPrunerRunner(appMetricsDbPruner, "appmetricsdbpruner", conf.AppMetricsDb.RefreshInterval, prClock, logger)
 
 	members := grouper.Members{
-		{"metricsdb_pruner", metricsDbPrunerRunner},
-		{"appmetricsdb_pruner", appMetricsDbPrunerRunner},
+		{"metricsdbpruner", metricsDbPrunerRunner},
+		{"appmetricsdbpruner", appMetricsDbPrunerRunner},
 	}
 
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
@@ -86,24 +85,6 @@ func main() {
 
 	logger.Info("exited")
 
-}
-
-func createDbPrunerRunner(pruner Pruner, name string, refreshInterval int, prClock clock.Clock, logger lager.Logger) ifrit.Runner {
-	interval := time.Duration(refreshInterval) * time.Hour
-
-	runner := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
-		dpr := NewDbPrunerRunner(pruner, name, interval, prClock, logger)
-		dpr.Start()
-
-		close(ready)
-
-		<-signals
-		dpr.Stop()
-
-		return nil
-	})
-
-	return runner
 }
 
 func initLoggerFromConfig(conf *config.LoggingConfig) lager.Logger {
