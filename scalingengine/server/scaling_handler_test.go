@@ -23,6 +23,7 @@ import (
 )
 
 const testUrlScalingHistories = "http://localhost/v1/apps/an-app-id/scaling_histories"
+const testUrlActiveSchedules = "http://localhost/v1/apps/an-app-id/active_schedules/a-schedule-id"
 
 var _ = Describe("ScalingHandler", func() {
 	var (
@@ -674,4 +675,100 @@ var _ = Describe("ScalingHandler", func() {
 		})
 
 	})
+
+	Describe("HandleActiveScheduleStart", func() {
+		JustBeforeEach(func() {
+			req, err = http.NewRequest(http.MethodPut, testUrlActiveSchedules, bytes.NewReader(body))
+			Expect(err).ToNot(HaveOccurred())
+
+			handler.HandleActiveScheduleStart(resp, req, map[string]string{"appid": "an-app-id", "schduleid": "a-schdule-id"})
+		})
+
+		Context("when active schedule is valid", func() {
+			BeforeEach(func() {
+				body = []byte(`{"instance_min_count":1, "instance_max_count":5, "initial_min_instance_count":3}`)
+			})
+
+			It("returns 200", func() {
+				Expect(resp.Code).To(Equal(http.StatusOK))
+			})
+		})
+
+		Context("when active schedule is invalid", func() {
+			BeforeEach(func() {
+				body = []byte(`{"instance_min_count":"a"}`)
+			})
+
+			It("returns 400", func() {
+				Expect(resp.Code).To(Equal(http.StatusBadRequest))
+
+				errJson := &models.ErrorResponse{}
+				err = json.Unmarshal(resp.Body.Bytes(), errJson)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(errJson).To(Equal(&models.ErrorResponse{
+					Code:    "Bad-Request",
+					Message: "Incorrect active schedule in request body",
+				}))
+			})
+		})
+
+		Context("when setting active schedule fails", func() {
+			BeforeEach(func() {
+				body = []byte(`{"instance_min_count":1, "instance_max_count":5, "initial_min_instance_count":3}`)
+				cfc.GetAppInstancesReturns(0, errors.New("an error"))
+			})
+
+			It("returns 500", func() {
+				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
+
+				errJson := &models.ErrorResponse{}
+				err = json.Unmarshal(resp.Body.Bytes(), errJson)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(errJson).To(Equal(&models.ErrorResponse{
+					Code:    "Interal-Server-Error",
+					Message: "Error setting active schedule",
+				}))
+			})
+		})
+
+	})
+
+	Describe("HandleActiveScheduleEnd", func() {
+		JustBeforeEach(func() {
+			req, err = http.NewRequest(http.MethodDelete, testUrlActiveSchedules, nil)
+			Expect(err).ToNot(HaveOccurred())
+
+			handler.HandleActiveScheduleEnd(resp, req, map[string]string{"appid": "an-app-id", "schduleid": "a-schdule-id"})
+		})
+
+		Context("when removing active schedule succeeds", func() {
+			BeforeEach(func() {
+				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{}, nil)
+			})
+
+			It("returns 204", func() {
+				Expect(resp.Code).To(Equal(http.StatusNoContent))
+			})
+		})
+
+		Context("when removing active schedule fails", func() {
+			BeforeEach(func() {
+				policyDB.GetAppPolicyReturns(nil, errors.New("an error"))
+			})
+
+			It("returns 500", func() {
+				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
+
+				errJson := &models.ErrorResponse{}
+				err = json.Unmarshal(resp.Body.Bytes(), errJson)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(errJson).To(Equal(&models.ErrorResponse{
+					Code:    "Interal-Server-Error",
+					Message: "Error removing active schedule",
+				}))
+			})
+		})
+
+	})
+
 })

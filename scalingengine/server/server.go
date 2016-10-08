@@ -16,10 +16,12 @@ import (
 )
 
 const (
-	PathScale            = "/v1/apps/{appid}/scale"
-	PathScalingHistories = "/v1/apps/{appid}/scaling_histories"
-	RouteNameScale       = "scale"
-	RouteNameHistoreis   = "histories"
+	PathScale                = "/v1/apps/{appid}/scale"
+	PathScalingHistories     = "/v1/apps/{appid}/scaling_histories"
+	PathActiveSchedule       = "/v1/apps/{appid}/active_schedules/{scheduleid}"
+	RouteNameScale           = "scale"
+	RouteNameHistoreis       = "histories"
+	RouteNameActiveSchedules = "activeSchedules"
 )
 
 type VarsFunc func(w http.ResponseWriter, r *http.Request, vars map[string]string)
@@ -35,6 +37,8 @@ func NewServer(logger lager.Logger, conf config.ServerConfig, cfc cf.CfClient, p
 	r := mux.NewRouter()
 	r.Methods("POST").Path(PathScale).Handler(VarsFunc(handler.HandleScale)).Name(RouteNameScale)
 	r.Methods("GET").Path(PathScalingHistories).Handler(VarsFunc(handler.GetScalingHistories)).Name(RouteNameHistoreis)
+	r.Methods("PUT").Path(PathActiveSchedule).Handler(VarsFunc(handler.HandleActiveScheduleStart)).Name(RouteNameActiveSchedules)
+	r.Methods("DELETE").Path(PathActiveSchedule).Handler(VarsFunc(handler.HandleActiveScheduleEnd)).Name(RouteNameActiveSchedules)
 
 	addr := fmt.Sprintf("0.0.0.0:%d", conf.Port)
 	return http_server.New(addr, r)
