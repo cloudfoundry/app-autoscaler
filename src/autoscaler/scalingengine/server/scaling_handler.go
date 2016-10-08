@@ -4,6 +4,7 @@ import (
 	"autoscaler/cf"
 	"autoscaler/db"
 	"autoscaler/models"
+	"autoscaler/scalingengine/schedule"
 
 	"code.cloudfoundry.org/cfhttp/handlers"
 	"code.cloudfoundry.org/clock"
@@ -20,22 +21,24 @@ import (
 const TokenTypeBearer = "bearer"
 
 type ScalingHandler struct {
-	cfClient  cf.CfClient
-	logger    lager.Logger
-	policyDB  db.PolicyDB
-	historyDB db.HistoryDB
-	hClock    clock.Clock
-	appLock   *AppLock
+	cfClient     cf.CfClient
+	logger       lager.Logger
+	policyDB     db.PolicyDB
+	historyDB    db.HistoryDB
+	hClock       clock.Clock
+	appLock      *AppLock
+	appSchedules *schedule.AppSchedules
 }
 
 func NewScalingHandler(logger lager.Logger, cfc cf.CfClient, policyDB db.PolicyDB, historyDB db.HistoryDB, hClock clock.Clock) *ScalingHandler {
 	return &ScalingHandler{
-		cfClient:  cfc,
-		logger:    logger,
-		policyDB:  policyDB,
-		historyDB: historyDB,
-		hClock:    hClock,
-		appLock:   NewAppLock(),
+		cfClient:     cfc,
+		logger:       logger,
+		policyDB:     policyDB,
+		historyDB:    historyDB,
+		hClock:       hClock,
+		appLock:      NewAppLock(),
+		appSchedules: schedule.NewAppSchedules(logger.Session("schedules"), cfc, policyDB),
 	}
 }
 
@@ -254,4 +257,60 @@ func getScalingReason(trigger *models.Trigger) string {
 		trigger.Operator,
 		trigger.Threshold,
 		trigger.BreachDurationSeconds)
+}
+
+func (h *ScalingHandler) HandleActiveScheduleStart(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+	appId := vars["appid"]
+	scheduleId := vars["scheduleid"]
+
+	logger := h.logger.WithData(lager.Data{"appid": appId, "scheduleid": scheduleId})
+
+	activeSchedule := &schedule.ActiveSchedule{}
+	err := json.NewDecoder(r.Body).Decode(activeSchedule)
+	if err != nil {
+		logger.Error("failed-handle-active-schedule-start-unmarshal", err)
+		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
+			Code:    "Bad-Request",
+			Message: "Incorrect active schedule in request body",
+		})
+		return
+	}
+
+	activeSchedule.ScheduleId = scheduleId
+	logger.Info("handle-active-schedule-start", lager.Data{"activeSchedule": activeSchedule})
+
+	h.appLock.Lock(appId)
+	err = h.appSchedules.SetActiveSchedule(appId, activeSchedule)
+	h.appLock.UnLock(appId)
+
+	if err != nil {
+		h.logger.Error("failed-handle-active-schedule-start-set-active-schedule", err, lager.Data{"activeSchedule": activeSchedule})
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Error setting active schedule",
+		})
+	}
+}
+
+func (h *ScalingHandler) HandleActiveScheduleEnd(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+	appId := vars["appid"]
+	scheduleId := vars["scheduleid"]
+
+	logger := h.logger.WithData(lager.Data{"appid": appId, "scheduleid": scheduleId})
+	logger.Info("handle-active-schedule-end")
+
+	h.appLock.Lock(appId)
+	err := h.appSchedules.RemoveActiveSchedule(appId, scheduleId)
+	h.appLock.UnLock(appId)
+
+	if err != nil {
+		logger.Error("failed-handle-active-schedule-end-remove-active-schedule", err)
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Error removing active schedule",
+		})
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
