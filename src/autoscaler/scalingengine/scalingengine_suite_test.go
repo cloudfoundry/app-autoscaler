@@ -1,4 +1,4 @@
-package schedule_test
+package scalingengine_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -9,5 +9,5 @@ import (
 
 func TestSchedule(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Schedule Suite")
+	RunSpecs(t, "Scaling Engine Suite")
 }
