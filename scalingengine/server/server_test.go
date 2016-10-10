@@ -23,19 +23,21 @@ import (
 var server ifrit.Process
 var serverUrl string
 
-var _ = BeforeSuite(func() {
-	conf := config.ServerConfig{Port: 8080}
-	cfc := &fakes.FakeCfClient{}
-	policyDB := &fakes.FakePolicyDB{}
-	policyDB.GetAppPolicyReturns(&models.ScalingPolicy{}, nil)
+var _ = SynchronizedBeforeSuite(func() []byte {
+	return nil
+}, func(_ []byte) {
+	port := 2222 + GinkgoParallelNode()
+	conf := config.ServerConfig{Port: port}
 	historyDB := &fakes.FakeHistoryDB{}
-	httpServer := NewServer(lager.NewLogger("test"), conf, cfc, policyDB, historyDB)
+	scalingEngine := &fakes.FakeScalingEngine{}
+	httpServer := NewServer(lager.NewLogger("test"), conf, historyDB, scalingEngine)
 	server = ginkgomon.Invoke(httpServer)
 	serverUrl = fmt.Sprintf("http://127.0.0.1:%d", conf.Port)
 })
 
-var _ = AfterSuite(func() {
+var _ = SynchronizedAfterSuite(func() {
 	ginkgomon.Interrupt(server)
+}, func() {
 })
 
 var _ = Describe("Server", func() {
@@ -70,7 +72,6 @@ var _ = Describe("Server", func() {
 				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 				rsp.Body.Close()
 			})
-
 		})
 
 		Context("when requesting the wrong path", func() {
@@ -96,7 +97,6 @@ var _ = Describe("Server", func() {
 				rsp.Body.Close()
 			})
 		})
-
 	})
 
 	Context("when getting scaling histories", func() {
@@ -117,7 +117,6 @@ var _ = Describe("Server", func() {
 				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 				rsp.Body.Close()
 			})
-
 		})
 
 		Context("when requesting the wrong path", func() {
@@ -143,7 +142,6 @@ var _ = Describe("Server", func() {
 				rsp.Body.Close()
 			})
 		})
-
 	})
 
 	Context("when requesting active shedule", func() {
@@ -192,7 +190,7 @@ var _ = Describe("Server", func() {
 			Context("when requesting the wrong path", func() {
 				BeforeEach(func() {
 					method = http.MethodPut
-					urlPath = "not-exist"
+					urlPath = "/not-exist"
 				})
 
 				It("should return 404", func() {
@@ -218,7 +216,7 @@ var _ = Describe("Server", func() {
 
 			Context("when requesting the wrong path", func() {
 				BeforeEach(func() {
-					urlPath = "not-exist"
+					urlPath = "/not-exist"
 				})
 
 				It("should return 404", func() {
@@ -228,7 +226,5 @@ var _ = Describe("Server", func() {
 				})
 			})
 		})
-
 	})
-
 })

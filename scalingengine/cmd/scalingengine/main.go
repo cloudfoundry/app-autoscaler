@@ -9,6 +9,7 @@ import (
 	"autoscaler/cf"
 	"autoscaler/db"
 	"autoscaler/db/sqldb"
+	"autoscaler/scalingengine"
 	"autoscaler/scalingengine/config"
 	"autoscaler/scalingengine/server"
 
@@ -77,7 +78,8 @@ func main() {
 	}
 	defer historyDB.Close()
 
-	httpServer := server.NewServer(logger, conf.Server, cfClient, policyDB, historyDB)
+	scalingEngine := scalingengine.NewScalingEngine(logger, cfClient, policyDB, historyDB, eClock)
+	httpServer := server.NewServer(logger, conf.Server, historyDB, scalingEngine)
 	members := grouper.Members{
 		{"http_server", httpServer},
 	}

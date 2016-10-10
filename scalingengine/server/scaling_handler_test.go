@@ -5,9 +5,6 @@ import (
 	"autoscaler/scalingengine/fakes"
 	. "autoscaler/scalingengine/server"
 
-	"code.cloudfoundry.org/clock"
-	"code.cloudfoundry.org/clock/fakeclock"
-
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -18,8 +15,6 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
-	"time"
 )
 
 const testUrlScalingHistories = "http://localhost/v1/apps/an-app-id/scaling_histories"
@@ -27,384 +22,35 @@ const testUrlActiveSchedules = "http://localhost/v1/apps/an-app-id/active_schedu
 
 var _ = Describe("ScalingHandler", func() {
 	var (
-		cfc                *fakes.FakeCfClient
-		policyDB           *fakes.FakePolicyDB
 		historyDB          *fakes.FakeHistoryDB
-		hClock             clock.Clock
+		scalingEngine      *fakes.FakeScalingEngine
 		handler            *ScalingHandler
 		resp               *httptest.ResponseRecorder
 		req                *http.Request
 		body               []byte
 		err                error
-		instances          int
-		newInstances       int
-		adjustment         string
 		trigger            *models.Trigger
 		buffer             *gbytes.Buffer
 		history1, history2 *models.AppScalingHistory
 	)
 
 	BeforeEach(func() {
-		cfc = &fakes.FakeCfClient{}
 		logger := lagertest.NewTestLogger("scaling-handler-test")
 		buffer = logger.Buffer()
-		policyDB = &fakes.FakePolicyDB{}
 		historyDB = &fakes.FakeHistoryDB{}
-		hClock = fakeclock.NewFakeClock(time.Now())
-		handler = NewScalingHandler(logger, cfc, policyDB, historyDB, hClock)
+		scalingEngine = &fakes.FakeScalingEngine{}
+		handler = NewScalingHandler(logger, historyDB, scalingEngine)
 		resp = httptest.NewRecorder()
 	})
 
-	Describe("ComputeNewInstances", func() {
-		BeforeEach(func() {
-			instances = 3
-		})
-
-		JustBeforeEach(func() {
-			newInstances, err = handler.ComputeNewInstances(instances, adjustment)
-		})
-
-		Context("when adjustment is not valid", func() {
-			Context("when adjustment is not a valid percentage", func() {
-				BeforeEach(func() {
-					adjustment = "10.5a%"
-				})
-
-				It("should error", func() {
-					Expect(err).To(BeAssignableToTypeOf(&strconv.NumError{}))
-				})
-			})
-			Context("when adjustment is not a valid step", func() {
-				BeforeEach(func() {
-					adjustment = "#1"
-				})
-
-				It("should error", func() {
-					Expect(err).To(BeAssignableToTypeOf(&strconv.NumError{}))
-				})
-			})
-		})
-
-		Context("when adjustment is valid", func() {
-			Context("when adjustment is by percentage", func() {
-				BeforeEach(func() {
-					adjustment = "50%"
-				})
-				It("returns correct new instance number", func() {
-					Expect(err).NotTo(HaveOccurred())
-					Expect(newInstances).To(Equal(5))
-				})
-			})
-
-			Context("when adjustment is by step", func() {
-				BeforeEach(func() {
-					adjustment = "-2"
-				})
-				It("returns correct new instance number", func() {
-					Expect(err).NotTo(HaveOccurred())
-					Expect(newInstances).To(Equal(1))
-				})
-			})
-		})
-	})
-
 	Describe("Scale", func() {
-		BeforeEach(func() {
-			trigger = &models.Trigger{
-				MetricType:            models.MetricNameMemory,
-				BreachDurationSeconds: 100,
-				CoolDownSeconds:       30,
-				Threshold:             222222,
-				Operator:              ">",
-				Adjustment:            "+1",
-			}
-		})
 		JustBeforeEach(func() {
-			newInstances, err = handler.Scale("an-app-id", trigger)
-		})
-
-		Context("when scaling succeeds", func() {
-			BeforeEach(func() {
-				cfc.GetAppInstancesReturns(2, nil)
-				historyDB.CanScaleAppReturns(true, nil)
-				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 1, InstanceMax: 6}, nil)
-
-			})
-
-			It("sets the new app instance number and stores the succeeded scaling history", func() {
-				Expect(err).NotTo(HaveOccurred())
-				id, num := cfc.SetAppInstancesArgsForCall(0)
-				Expect(id).To(Equal("an-app-id"))
-				Expect(num).To(Equal(3))
-				Expect(newInstances).To(Equal(3))
-
-				id, expiredAt := historyDB.UpdateScalingCooldownExpireTimeArgsForCall(0)
-				Expect(id).To(Equal("an-app-id"))
-				Expect(expiredAt).To(Equal(hClock.Now().Add(30 * time.Second).UnixNano()))
-
-				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
-					AppId:        "an-app-id",
-					Timestamp:    hClock.Now().UnixNano(),
-					ScalingType:  models.ScalingTypeDynamic,
-					Status:       models.ScalingStatusSucceeded,
-					OldInstances: 2,
-					NewInstances: 3,
-					Reason:       "+1 instance(s) because memorybytes > 222222 for 100 seconds",
-				}))
-
-			})
-		})
-
-		Context("when app is in cooldown period", func() {
-			BeforeEach(func() {
-				cfc.GetAppInstancesReturns(2, nil)
-				historyDB.CanScaleAppReturns(false, nil)
-			})
-
-			It("ignores the scaling", func() {
-				Expect(err).NotTo(HaveOccurred())
-				Expect(cfc.SetAppInstancesCallCount()).To(BeZero())
-
-				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
-					AppId:        "an-app-id",
-					Timestamp:    hClock.Now().UnixNano(),
-					ScalingType:  models.ScalingTypeDynamic,
-					Status:       models.ScalingStatusIgnored,
-					OldInstances: 2,
-					NewInstances: 2,
-					Reason:       "+1 instance(s) because memorybytes > 222222 for 100 seconds",
-					Message:      "app in cooldown period",
-				}))
-
-			})
-		})
-
-		Context("when app instances not changed", func() {
-			BeforeEach(func() {
-				trigger.Adjustment = "+20%"
-				cfc.GetAppInstancesReturns(2, nil)
-				historyDB.CanScaleAppReturns(true, nil)
-				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 1, InstanceMax: 6}, nil)
-
-			})
-
-			It("does not update the app and stores the ignored scaling history", func() {
-				Expect(err).NotTo(HaveOccurred())
-				Expect(cfc.SetAppInstancesCallCount()).To(BeZero())
-				Expect(newInstances).To(Equal(2))
-
-				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
-					AppId:        "an-app-id",
-					Timestamp:    hClock.Now().UnixNano(),
-					ScalingType:  models.ScalingTypeDynamic,
-					Status:       models.ScalingStatusIgnored,
-					OldInstances: 2,
-					NewInstances: 2,
-					Reason:       "+20% instance(s) because memorybytes > 222222 for 100 seconds",
-				}))
-
-			})
-		})
-
-		Context("when it exceeds max instances limit", func() {
-			BeforeEach(func() {
-				trigger.Adjustment = "+2"
-				cfc.GetAppInstancesReturns(5, nil)
-				historyDB.CanScaleAppReturns(true, nil)
-				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 1, InstanceMax: 6}, nil)
-
-			})
-
-			It("does upate the app instance with max instances and stores the succeeded scaling history", func() {
-				Expect(err).NotTo(HaveOccurred())
-
-				id, num := cfc.SetAppInstancesArgsForCall(0)
-				Expect(id).To(Equal("an-app-id"))
-				Expect(num).To(Equal(6))
-				Expect(newInstances).To(Equal(6))
-
-				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
-					AppId:        "an-app-id",
-					Timestamp:    hClock.Now().UnixNano(),
-					ScalingType:  models.ScalingTypeDynamic,
-					Status:       models.ScalingStatusSucceeded,
-					OldInstances: 5,
-					NewInstances: 6,
-					Reason:       "+2 instance(s) because memorybytes > 222222 for 100 seconds",
-					Message:      "limited by max instances 6",
-				}))
-
-			})
-		})
-
-		Context("when it exceeds min instances limit", func() {
-			BeforeEach(func() {
-				trigger.Adjustment = "-60%"
-				cfc.GetAppInstancesReturns(3, nil)
-				historyDB.CanScaleAppReturns(true, nil)
-				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 2, InstanceMax: 6}, nil)
-
-			})
-
-			It("does upate the app instance with max instances and stores the succeeded scaling history", func() {
-				Expect(err).NotTo(HaveOccurred())
-
-				id, num := cfc.SetAppInstancesArgsForCall(0)
-				Expect(id).To(Equal("an-app-id"))
-				Expect(num).To(Equal(2))
-				Expect(newInstances).To(Equal(2))
-
-				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
-					AppId:        "an-app-id",
-					Timestamp:    hClock.Now().UnixNano(),
-					ScalingType:  models.ScalingTypeDynamic,
-					Status:       models.ScalingStatusSucceeded,
-					OldInstances: 3,
-					NewInstances: 2,
-					Reason:       "-60% instance(s) because memorybytes > 222222 for 100 seconds",
-					Message:      "limited by min instances 2",
-				}))
-
-			})
-		})
-
-		Context("when getting app instances from cloud controller fails", func() {
-			BeforeEach(func() {
-				cfc.GetAppInstancesReturns(-1, errors.New("test error"))
-			})
-
-			It("should error and store the failed scaling history", func() {
-				Expect(err).To(HaveOccurred())
-				Eventually(buffer).Should(gbytes.Say("scale-get-app-instances"))
-				Eventually(buffer).Should(gbytes.Say("test error"))
-
-				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
-					AppId:        "an-app-id",
-					Timestamp:    hClock.Now().UnixNano(),
-					ScalingType:  models.ScalingTypeDynamic,
-					Status:       models.ScalingStatusFailed,
-					OldInstances: -1,
-					NewInstances: -1,
-					Reason:       "+1 instance(s) because memorybytes > 222222 for 100 seconds",
-					Error:        "failed to get app instances",
-				}))
-
-			})
-		})
-
-		Context("When checking cooldown fails", func() {
-			BeforeEach(func() {
-				cfc.GetAppInstancesReturns(2, nil)
-				historyDB.CanScaleAppReturns(false, errors.New("test error"))
-			})
-			It("should error and store the failed scaling history", func() {
-				Expect(err).To(HaveOccurred())
-				Eventually(buffer).Should(gbytes.Say("scale-check-cooldown"))
-				Eventually(buffer).Should(gbytes.Say("test error"))
-
-				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
-					AppId:        "an-app-id",
-					Timestamp:    hClock.Now().UnixNano(),
-					ScalingType:  models.ScalingTypeDynamic,
-					Status:       models.ScalingStatusFailed,
-					OldInstances: 2,
-					NewInstances: -1,
-					Reason:       "+1 instance(s) because memorybytes > 222222 for 100 seconds",
-					Error:        "failed to check app cooldown setting",
-				}))
-
-			})
-		})
-
-		Context("when computing new app instances fails", func() {
-			BeforeEach(func() {
-				trigger.Adjustment = "+a"
-				cfc.GetAppInstancesReturns(2, nil)
-				historyDB.CanScaleAppReturns(true, nil)
-			})
-
-			It("should error and store failed scaling history", func() {
-				Expect(err).To(HaveOccurred())
-				Eventually(buffer).Should(gbytes.Say("scale-compute-new-instance"))
-
-				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
-					AppId:        "an-app-id",
-					Timestamp:    hClock.Now().UnixNano(),
-					ScalingType:  models.ScalingTypeDynamic,
-					Status:       models.ScalingStatusFailed,
-					OldInstances: 2,
-					NewInstances: -1,
-					Reason:       "+a instance(s) because memorybytes > 222222 for 100 seconds",
-					Error:        "failed to compute new app instances",
-				}))
-			})
-		})
-
-		Context("when getting policy fails", func() {
-			BeforeEach(func() {
-				cfc.GetAppInstancesReturns(2, nil)
-				historyDB.CanScaleAppReturns(true, nil)
-				policyDB.GetAppPolicyReturns(nil, errors.New("test error"))
-			})
-
-			It("should error and store the failed scaling history", func() {
-				Expect(err).To(HaveOccurred())
-				Eventually(buffer).Should(gbytes.Say("scale-get-app-policy"))
-				Eventually(buffer).Should(gbytes.Say("test error"))
-
-				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
-					AppId:        "an-app-id",
-					Timestamp:    hClock.Now().UnixNano(),
-					ScalingType:  models.ScalingTypeDynamic,
-					Status:       models.ScalingStatusFailed,
-					OldInstances: 2,
-					NewInstances: -1,
-					Reason:       "+1 instance(s) because memorybytes > 222222 for 100 seconds",
-					Error:        "failed to get scaling policy",
-				}))
-
-			})
-		})
-
-		Context("when set new instances fails", func() {
-			BeforeEach(func() {
-				cfc.GetAppInstancesReturns(2, nil)
-				historyDB.CanScaleAppReturns(true, nil)
-				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 1, InstanceMax: 6}, nil)
-				cfc.SetAppInstancesReturns(errors.New("test error"))
-			})
-
-			It("should error and store failed scaling history", func() {
-				Expect(err).To(HaveOccurred())
-				Eventually(buffer).Should(gbytes.Say("scale-set-app-instances"))
-				Eventually(buffer).Should(gbytes.Say("test error"))
-
-				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
-					AppId:        "an-app-id",
-					Timestamp:    hClock.Now().UnixNano(),
-					ScalingType:  models.ScalingTypeDynamic,
-					Status:       models.ScalingStatusFailed,
-					OldInstances: 2,
-					NewInstances: 3,
-					Reason:       "+1 instance(s) because memorybytes > 222222 for 100 seconds",
-					Error:        "failed to set app instances",
-				}))
-
-			})
-		})
-
-	})
-
-	Describe("HandleScale", func() {
-		JustBeforeEach(func() {
-			handler.HandleScale(resp, req, map[string]string{"appid": "an-app-id"})
+			handler.Scale(resp, req, map[string]string{"appid": "an-app-id"})
 		})
 
 		Context("when scaling app succeeds", func() {
 			BeforeEach(func() {
-				cfc.GetAppInstancesReturns(2, nil)
-				historyDB.CanScaleAppReturns(true, nil)
-				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 1, InstanceMax: 6}, nil)
+				scalingEngine.ScaleReturns(3, nil)
 
 				trigger = &models.Trigger{
 					MetricType: models.MetricNameMemory,
@@ -420,6 +66,11 @@ var _ = Describe("ScalingHandler", func() {
 			It("returns 200 with new instances number", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
 
+				Expect(scalingEngine.ScaleCallCount()).To(Equal(1))
+				appId, scaleTrigger := scalingEngine.ScaleArgsForCall(0)
+				Expect(appId).To(Equal("an-app-id"))
+				Expect(scaleTrigger).To(Equal(trigger))
+
 				props := &models.AppEntity{}
 				err = json.Unmarshal(resp.Body.Bytes(), props)
 				Expect(err).NotTo(HaveOccurred())
@@ -432,6 +83,7 @@ var _ = Describe("ScalingHandler", func() {
 				req, err = http.NewRequest("POST", "", bytes.NewReader([]byte(`bad body`)))
 				Expect(err).NotTo(HaveOccurred())
 			})
+
 			It("returns 400", func() {
 				Expect(resp.Code).To(Equal(http.StatusBadRequest))
 
@@ -447,7 +99,7 @@ var _ = Describe("ScalingHandler", func() {
 
 		Context("when scaling app fails", func() {
 			BeforeEach(func() {
-				cfc.GetAppInstancesReturns(-1, errors.New("an error"))
+				scalingEngine.ScaleReturns(0, errors.New("an error"))
 
 				trigger = &models.Trigger{
 					MetricType: models.MetricNameMemory,
@@ -458,7 +110,6 @@ var _ = Describe("ScalingHandler", func() {
 
 				req, err = http.NewRequest("POST", "", bytes.NewReader(body))
 				Expect(err).NotTo(HaveOccurred())
-
 			})
 
 			It("returns 500", func() {
@@ -473,7 +124,6 @@ var _ = Describe("ScalingHandler", func() {
 				}))
 			})
 		})
-
 	})
 
 	Describe("GetScalingHistories", func() {
@@ -565,7 +215,6 @@ var _ = Describe("ScalingHandler", func() {
 					}))
 				})
 			})
-
 		})
 
 		Context("when request query string is valid", func() {
@@ -581,7 +230,6 @@ var _ = Describe("ScalingHandler", func() {
 					Expect(start).To(Equal(int64(123)))
 					Expect(end).To(Equal(int64(567)))
 				})
-
 			})
 
 			Context("when there is no start time in query string", func() {
@@ -594,7 +242,6 @@ var _ = Describe("ScalingHandler", func() {
 					_, start, _ := historyDB.RetrieveScalingHistoriesArgsForCall(0)
 					Expect(start).To(Equal(int64(0)))
 				})
-
 			})
 
 			Context("when there is no end time in query string", func() {
@@ -607,7 +254,6 @@ var _ = Describe("ScalingHandler", func() {
 					_, _, end := historyDB.RetrieveScalingHistoriesArgsForCall(0)
 					Expect(end).To(Equal(int64(-1)))
 				})
-
 			})
 
 			Context("when query database succeeds", func() {
@@ -671,17 +317,15 @@ var _ = Describe("ScalingHandler", func() {
 					}))
 				})
 			})
-
 		})
-
 	})
 
-	Describe("HandleActiveScheduleStart", func() {
+	Describe("StartActiveSchedule", func() {
 		JustBeforeEach(func() {
 			req, err = http.NewRequest(http.MethodPut, testUrlActiveSchedules, bytes.NewReader(body))
 			Expect(err).ToNot(HaveOccurred())
 
-			handler.HandleActiveScheduleStart(resp, req, map[string]string{"appid": "an-app-id", "schduleid": "a-schdule-id"})
+			handler.StartActiveSchedule(resp, req, map[string]string{"appid": "an-app-id", "schduleid": "a-schdule-id"})
 		})
 
 		Context("when active schedule is valid", func() {
@@ -715,7 +359,7 @@ var _ = Describe("ScalingHandler", func() {
 		Context("when setting active schedule fails", func() {
 			BeforeEach(func() {
 				body = []byte(`{"instance_min_count":1, "instance_max_count":5, "initial_min_instance_count":3}`)
-				cfc.GetAppInstancesReturns(0, errors.New("an error"))
+				scalingEngine.SetActiveScheduleReturns(errors.New("an error"))
 			})
 
 			It("returns 500", func() {
@@ -730,22 +374,17 @@ var _ = Describe("ScalingHandler", func() {
 				}))
 			})
 		})
-
 	})
 
-	Describe("HandleActiveScheduleEnd", func() {
+	Describe("RemoveActiveSchedule", func() {
 		JustBeforeEach(func() {
 			req, err = http.NewRequest(http.MethodDelete, testUrlActiveSchedules, nil)
 			Expect(err).ToNot(HaveOccurred())
 
-			handler.HandleActiveScheduleEnd(resp, req, map[string]string{"appid": "an-app-id", "schduleid": "a-schdule-id"})
+			handler.RemoveActiveSchedule(resp, req, map[string]string{"appid": "an-app-id", "schduleid": "a-schdule-id"})
 		})
 
 		Context("when removing active schedule succeeds", func() {
-			BeforeEach(func() {
-				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{}, nil)
-			})
-
 			It("returns 204", func() {
 				Expect(resp.Code).To(Equal(http.StatusNoContent))
 			})
@@ -753,7 +392,7 @@ var _ = Describe("ScalingHandler", func() {
 
 		Context("when removing active schedule fails", func() {
 			BeforeEach(func() {
-				policyDB.GetAppPolicyReturns(nil, errors.New("an error"))
+				scalingEngine.RemoveActiveScheduleReturns(errors.New("an error"))
 			})
 
 			It("returns 500", func() {
@@ -768,7 +407,5 @@ var _ = Describe("ScalingHandler", func() {
 				}))
 			})
 		})
-
 	})
-
 })

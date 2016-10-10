@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 type ScalingPolicy struct {
 	InstanceMin int           `json:"instance_min_count"`
 	InstanceMax int           `json:"instance_max_count"`
@@ -23,4 +25,8 @@ type Trigger struct {
 	CoolDownSeconds       int    `json:"cool_down_secs"`
 	Adjustment            string `json:"adjustment"`
 	TimeStamp             int64  `json:timestamp"`
+}
+
+func (t Trigger) CoolDown() time.Duration {
+	return time.Duration(t.CoolDownSeconds) * time.Second
 }
