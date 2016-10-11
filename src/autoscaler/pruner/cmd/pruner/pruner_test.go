@@ -29,7 +29,7 @@ var _ = Describe("Pruner", func() {
 		It("should start metricsdbpruner", func() {
 
 			//Metric Pruner
-			Eventually(runner.Session).Should(Say("metricsdbpruner-started"))
+			Eventually(runner.Session).Should(Say("metricsdbpruner.started"))
 
 			// Pruner
 			Consistently(runner.Session).ShouldNot(Exit())
@@ -39,7 +39,7 @@ var _ = Describe("Pruner", func() {
 		It("should start appmetricsdbpruner", func() {
 
 			//App Metric Pruner
-			Eventually(runner.Session).Should(Say("appmetricsdbpruner-started"))
+			Eventually(runner.Session).Should(Say("appmetricsdbpruner.started"))
 
 			// Pruner
 			Consistently(runner.Session).ShouldNot(Exit())

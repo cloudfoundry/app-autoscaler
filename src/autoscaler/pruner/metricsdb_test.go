@@ -13,18 +13,15 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
-	"github.com/tedsuo/ifrit"
-	"github.com/tedsuo/ifrit/ginkgomon"
 )
 
 var _ = Describe("MetricdsDB Prune", func() {
 	var (
-		metricsDb    *fakes.FakeMetricsDB
-		prunerRunner *pruner.DbPrunerRunner
-		proc         ifrit.Process
-		fclock       *fakeclock.FakeClock
-		cutoffDays   int
-		buffer       *gbytes.Buffer
+		metricsDb       *fakes.FakeMetricsDB
+		fclock          *fakeclock.FakeClock
+		cutoffDays      int
+		buffer          *gbytes.Buffer
+		metricsDbPruner *pruner.MetricsDbPruner
 	)
 
 	BeforeEach(func() {
@@ -36,34 +33,19 @@ var _ = Describe("MetricdsDB Prune", func() {
 		metricsDb = &fakes.FakeMetricsDB{}
 		fclock = fakeclock.NewFakeClock(time.Now())
 
-		metricsDbPruner := pruner.NewMetricsDbPruner(metricsDb, cutoffDays, fclock, logger)
-		prunerRunner = pruner.NewDbPrunerRunner(metricsDbPruner, "metricsdbpruner", TestRefreshInterval, fclock, logger)
+		metricsDbPruner = pruner.NewMetricsDbPruner(metricsDb, cutoffDays, fclock, logger)
 
 	})
 
-	Describe("Start", func() {
+	Describe("Prune", func() {
 		JustBeforeEach(func() {
-			proc = ifrit.Invoke(prunerRunner)
-		})
-
-		AfterEach(func() {
-			ginkgomon.Kill(proc)
-			Eventually(proc.Wait()).Should(Receive(BeNil()))
-
+			metricsDbPruner.Prune()
 		})
 
 		Context("when pruning metrics records from metrics db", func() {
-			It("prunes at given interval and cutoff days", func() {
+			It("prunes as per given cutoff days", func() {
 				Eventually(metricsDb.PruneMetricsCallCount).Should(Equal(1))
 				Expect(metricsDb.PruneMetricsArgsForCall(0)).To(BeNumerically("==", fclock.Now().AddDate(0, 0, -cutoffDays).UnixNano()))
-
-				fclock.Increment(TestRefreshInterval)
-				Eventually(metricsDb.PruneMetricsCallCount).Should(Equal(2))
-				Expect(metricsDb.PruneMetricsArgsForCall(1)).To(BeNumerically("==", fclock.Now().AddDate(0, 0, -cutoffDays).UnixNano()))
-
-				fclock.Increment(TestRefreshInterval)
-				Eventually(metricsDb.PruneMetricsCallCount).Should(Equal(3))
-				Expect(metricsDb.PruneMetricsArgsForCall(2)).To(BeNumerically("==", fclock.Now().AddDate(0, 0, -cutoffDays).UnixNano()))
 			})
 		})
 
@@ -75,31 +57,7 @@ var _ = Describe("MetricdsDB Prune", func() {
 			It("should error", func() {
 				Eventually(metricsDb.PruneMetricsCallCount).Should(Equal(1))
 				Eventually(buffer).Should(gbytes.Say("test pruner error"))
-
-				fclock.Increment(TestRefreshInterval)
-				Eventually(metricsDb.PruneMetricsCallCount).Should(Equal(2))
-				Eventually(buffer).Should(gbytes.Say("test pruner error"))
 			})
-		})
-	})
-
-	Describe("Stop", func() {
-		JustBeforeEach(func() {
-			proc = ifrit.Invoke(prunerRunner)
-			Eventually(fclock.WatcherCount).Should(Equal(1))
-		})
-
-		It("Stops the pruner", func() {
-			fclock.Increment(TestRefreshInterval)
-			Eventually(metricsDb.PruneMetricsCallCount).Should(Equal(2))
-
-			ginkgomon.Kill(proc)
-			Eventually(proc.Wait()).Should(Receive(BeNil()))
-
-			Eventually(buffer).Should(gbytes.Say("metricsdbpruner-stopped"))
-
-			fclock.Increment(TestRefreshInterval)
-			Consistently(metricsDb.PruneMetricsCallCount).Should(Equal(2))
 		})
 	})
 })

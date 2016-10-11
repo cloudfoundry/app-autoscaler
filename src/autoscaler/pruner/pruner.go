@@ -14,16 +14,14 @@ type DbPruner interface {
 
 type DbPrunerRunner struct {
 	dbPruner DbPruner
-	name     string
 	interval time.Duration
 	clock    clock.Clock
 	logger   lager.Logger
 }
 
-func NewDbPrunerRunner(dbPruner DbPruner, name string, interval time.Duration, clock clock.Clock, logger lager.Logger) *DbPrunerRunner {
+func NewDbPrunerRunner(dbPruner DbPruner, interval time.Duration, clock clock.Clock, logger lager.Logger) *DbPrunerRunner {
 	return &DbPrunerRunner{
 		dbPruner: dbPruner,
-		name:     name,
 		interval: interval,
 		clock:    clock,
 		logger:   logger,
@@ -34,14 +32,14 @@ func (dpr *DbPrunerRunner) Run(signals <-chan os.Signal, ready chan<- struct{}) 
 	close(ready)
 	ticker := dpr.clock.NewTicker(dpr.interval)
 
-	dpr.logger.Info(dpr.name+"-started", lager.Data{"refresh_interval": dpr.interval})
+	dpr.logger.Info("started", lager.Data{"refresh_interval": dpr.interval})
 
 	for {
 		go dpr.dbPruner.Prune()
 		select {
 		case <-signals:
 			ticker.Stop()
-			dpr.logger.Info(dpr.name + "-stopped")
+			dpr.logger.Info("stopped")
 			return nil
 		case <-ticker.C():
 		}

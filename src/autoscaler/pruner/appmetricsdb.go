@@ -19,7 +19,7 @@ func NewAppMetricsDbPruner(appMetricsDb db.AppMetricDB, cutoffDays int, clock cl
 		appMetricsDb: appMetricsDb,
 		cutoffDays:   cutoffDays,
 		clock:        clock,
-		logger:       logger.Session("appmetricsdbpruner"),
+		logger:       logger,
 	}
 }
 

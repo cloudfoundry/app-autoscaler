@@ -62,11 +62,13 @@ func main() {
 	}
 	defer appMetricsDb.Close()
 
-	metricDbPruner := pruner.NewMetricsDbPruner(metricsDb, conf.MetricsDb.CutoffDays, prClock, logger)
-	metricsDbPrunerRunner := pruner.NewDbPrunerRunner(metricDbPruner, "metricsdbpruner", conf.MetricsDb.RefreshInterval, prClock, logger)
+	prunerLoggerSessionName := "metricsdbpruner"
+	metricDbPruner := pruner.NewMetricsDbPruner(metricsDb, conf.MetricsDb.CutoffDays, prClock, logger.Session(prunerLoggerSessionName))
+	metricsDbPrunerRunner := pruner.NewDbPrunerRunner(metricDbPruner, conf.MetricsDb.RefreshInterval, prClock, logger.Session(prunerLoggerSessionName))
 
-	appMetricsDbPruner := pruner.NewAppMetricsDbPruner(appMetricsDb, conf.AppMetricsDb.CutoffDays, prClock, logger)
-	appMetricsDbPrunerRunner := pruner.NewDbPrunerRunner(appMetricsDbPruner, "appmetricsdbpruner", conf.AppMetricsDb.RefreshInterval, prClock, logger)
+	prunerLoggerSessionName = "appmetricsdbpruner"
+	appMetricsDbPruner := pruner.NewAppMetricsDbPruner(appMetricsDb, conf.AppMetricsDb.CutoffDays, prClock, logger.Session(prunerLoggerSessionName))
+	appMetricsDbPrunerRunner := pruner.NewDbPrunerRunner(appMetricsDbPruner, conf.AppMetricsDb.RefreshInterval, prClock, logger.Session(prunerLoggerSessionName))
 
 	members := grouper.Members{
 		{"metricsdbpruner", metricsDbPrunerRunner},
