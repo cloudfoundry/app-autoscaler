@@ -296,7 +296,7 @@ var _ = Describe("Evaluator", func() {
 						})
 						It("should send trigger alarm to scaling engine", func() {
 							Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
-							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("should not send trigger alarm to scaling engine because there is nil-value metric( When aggrgator gets an empty metric array from metric-collector in a statWindow,it creates an AppMetric instance with nil Value)")))
+							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("should not send trigger alarm to scaling engine because there is nil-value metric")))
 						})
 					})
 				})
@@ -350,7 +350,7 @@ var _ = Describe("Evaluator", func() {
 						})
 						It("should send trigger alarm to scaling engine", func() {
 							Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
-							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("should not send trigger alarm to scaling engine because there is nil-value metric( When aggrgator gets an empty metric array from metric-collector in a statWindow,it creates an AppMetric instance with nil Value)")))
+							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("should not send trigger alarm to scaling engine because there is nil-value metric")))
 						})
 					})
 				})
@@ -404,7 +404,7 @@ var _ = Describe("Evaluator", func() {
 						})
 						It("should send trigger alarm to scaling engine", func() {
 							Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
-							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("should not send trigger alarm to scaling engine because there is nil-value metric( When aggrgator gets an empty metric array from metric-collector in a statWindow,it creates an AppMetric instance with nil Value)")))
+							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("should not send trigger alarm to scaling engine because there is nil-value metric")))
 						})
 					})
 				})
@@ -458,7 +458,7 @@ var _ = Describe("Evaluator", func() {
 						})
 						It("should send trigger alarm to scaling engine", func() {
 							Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
-							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("should not send trigger alarm to scaling engine because there is nil-value metric( When aggrgator gets an empty metric array from metric-collector in a statWindow,it creates an AppMetric instance with nil Value)")))
+							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("should not send trigger alarm to scaling engine because there is nil-value metric")))
 						})
 					})
 				})

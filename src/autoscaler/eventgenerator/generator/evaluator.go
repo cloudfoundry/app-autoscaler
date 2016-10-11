@@ -71,7 +71,7 @@ func (e *Evaluator) doEvaluate(triggerArray []*model.Trigger) {
 		}
 		for _, appMetric := range appMetricList {
 			if appMetric.Value == nil {
-				e.logger.Info("should not send trigger alarm to scaling engine because there is nil-value metric( When aggrgator gets an empty metric array from metric-collector in a statWindow,it creates an AppMetric instance with nil Value)", lager.Data{"trigger": trigger, "appMetric": appMetric})
+				e.logger.Debug("should not send trigger alarm to scaling engine because there is nil-value metric", lager.Data{"trigger": trigger, "appMetric": appMetric})
 				return
 			}
 			if operator == ">" {
