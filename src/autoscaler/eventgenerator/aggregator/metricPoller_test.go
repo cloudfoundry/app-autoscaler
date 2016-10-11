@@ -95,11 +95,13 @@ var _ = Describe("MetricPoller", func() {
 				})
 				It("should get the app's average metric", func() {
 					var appMetric *AppMetric
+					var value int64 = 250
 					Eventually(consumed).Should(Receive(&appMetric))
+					appMetric.Timestamp = timestamp
 					Expect(appMetric).To(Equal(&AppMetric{
 						AppId:      testAppId,
 						MetricType: metricType,
-						Value:      250,
+						Value:      &value,
 						Unit:       "bytes",
 						Timestamp:  timestamp}))
 				})
@@ -132,12 +134,13 @@ var _ = Describe("MetricPoller", func() {
 				It("should not do aggregation as there is no metric", func() {
 					var appMetric *AppMetric
 					Eventually(consumed).Should(Receive(&appMetric))
+					appMetric.Timestamp = timestamp
 					Expect(appMetric).To(Equal(&AppMetric{
 						AppId:      testAppId,
 						MetricType: metricType,
-						Value:      0,
+						Value:      nil,
 						Unit:       "",
-						Timestamp:  0,
+						Timestamp:  timestamp,
 					}))
 				})
 			})

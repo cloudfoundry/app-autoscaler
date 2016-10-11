@@ -97,7 +97,7 @@ var _ = Describe("Aggregator", func() {
 			Expect(appMetric.AppId).To(Equal("testAppId"))
 			Expect(appMetric.MetricType).To(Equal(metricType))
 			Expect(appMetric.Unit).To(Equal(unit))
-			Expect(appMetric.Value).To(Equal(int64(250)))
+			Expect(*appMetric.Value).To(Equal(int64(250)))
 			return nil
 		}
 		appMetricDatabase.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*AppMetric, error) {
@@ -207,12 +207,13 @@ var _ = Describe("Aggregator", func() {
 	})
 	Context("ConsumeAppMetric", func() {
 		var appmetric *AppMetric
+		var value int64 = 250
 		BeforeEach(func() {
 			aggregator = NewAggregator(logger, clock, testAggregatorExecuteInterval, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount, evaluationManager, appMonitorChan)
 			appmetric = &AppMetric{
 				AppId:      testAppId,
 				MetricType: metricType,
-				Value:      250,
+				Value:      &value,
 				Unit:       "bytes",
 				Timestamp:  timestamp}
 		})

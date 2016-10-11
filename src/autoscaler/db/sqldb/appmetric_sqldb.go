@@ -67,19 +67,18 @@ func (adb *AppMetricSQLDB) RetrieveAppMetrics(appIdP string, metricTypeP string,
 	defer rows.Close()
 	var appId string
 	var metricType string
-	var value int64
 	var unit string
 	var timestamp int64
 	for rows.Next() {
+		var value int64
 		if err = rows.Scan(&appId, &metricType, &value, &unit, &timestamp); err != nil {
 			adb.logger.Error("scan-appmetric-from-search-result", err)
 			return nil, err
 		}
-
 		appMetric := &model.AppMetric{
 			AppId:      appId,
 			MetricType: metricType,
-			Value:      value,
+			Value:      &value,
 			Unit:       unit,
 			Timestamp:  timestamp,
 		}
