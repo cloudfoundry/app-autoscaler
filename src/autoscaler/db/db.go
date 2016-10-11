@@ -35,3 +35,8 @@ type HistoryDB interface {
 	CanScaleApp(appId string) (bool, error)
 	Close() error
 }
+
+type ScheduleDB interface {
+	GetActiveSchedule(appId string) (*models.ActiveSchedule, error)
+	Close() error
+}

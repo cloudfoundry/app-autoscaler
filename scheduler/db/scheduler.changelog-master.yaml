@@ -145,3 +145,51 @@ databaseChangeLog:
                  type: varchar(50)
              indexName: idx_recurring_app_id
              tableName: app_scaling_recurring_schedule
+
+   - changeSet:
+      id: 3
+      author: Fujitsu
+      changes:
+        - createTable:
+            tableName: app_scaling_active_schedule
+            columns:
+              - column:
+                  name: active_schedule_id
+                  type: bigint
+                  autoIncrement: true
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: app_id
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: instance_min_count
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: instance_max_count
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: initial_min_instance_count
+                  type: integer
+                  constraints:
+                    nullable: true
+              - column:
+                  name: status
+                  type: integer
+                  constraints:
+                    nullable: false
+      
+        - createIndex:
+             columns:
+             - column:
+                 name: app_id
+                 type: varchar(50)
+             indexName: idx_active_schedule_app_id
+             tableName: app_scaling_active_schedule
+

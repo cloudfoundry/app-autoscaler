@@ -82,7 +82,7 @@ func insertPolicy(appId string, scalingPolicy *models.ScalingPolicy) {
 		Fail("failed to marshall scaling policy" + e.Error())
 	}
 
-	query := "INSERT INTO policy_json(app_id, policy_json) values($1, $2)"
+	query := "INSERT INTO policy_json(app_id, policy_json) VALUES($1, $2)"
 	_, e = dbHelper.Exec(query, appId, string(policyJson))
 
 	if e != nil {
@@ -152,4 +152,24 @@ func hasScalingCooldownRecord(appId string, expireAt int64) bool {
 func GetInt64Pointer(value int64) *int64 {
 	tmp := value
 	return &tmp
+}
+
+func cleanActiveScheduleTable() error {
+	_, e := dbHelper.Exec("DELETE from app_scaling_active_schedule")
+	return e
+}
+
+func insertActiveSchedule(sheduleId int64, appId string, instanceMin, instanceMax, instanceMinInitial, status int) error {
+	var e error
+	var query string
+	if instanceMinInitial <= 0 {
+		query = "INSERT INTO app_scaling_active_schedule(active_schedule_id, app_id, instance_min_count, instance_max_count, status) " +
+			" VALUES ($1, $2, $3, $4, $5)"
+		_, e = dbHelper.Exec(query, sheduleId, appId, instanceMin, instanceMax, status)
+	} else {
+		query = "INSERT INTO app_scaling_active_schedule(active_schedule_id, app_id, instance_min_count, instance_max_count, initial_min_instance_count, status) " +
+			" VALUES ($1, $2, $3, $4, $5, $6)"
+		_, e = dbHelper.Exec(query, sheduleId, appId, instanceMin, instanceMax, instanceMinInitial, status)
+	}
+	return e
 }

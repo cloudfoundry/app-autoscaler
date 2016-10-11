@@ -30,3 +30,10 @@ type Trigger struct {
 func (t Trigger) CoolDown() time.Duration {
 	return time.Duration(t.CoolDownSeconds) * time.Second
 }
+
+type ActiveSchedule struct {
+	ScheduleId         string
+	InstanceMin        int `json:"instance_min_count"`
+	InstanceMax        int `json:"instance_max_count"`
+	InstanceMinInitial int `json:"initial_min_instance_count"`
+}
