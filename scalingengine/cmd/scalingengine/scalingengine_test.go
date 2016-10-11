@@ -121,4 +121,32 @@ var _ = Describe("Main", func() {
 		})
 	})
 
+	Describe("when a request of active schedule start comes", func() {
+		It("returns with a 200", func() {
+			url := fmt.Sprintf("http://127.0.0.1:%d/v1/apps/%s/active_schedules/111111", port, appId)
+			bodyReader := bytes.NewReader([]byte(`{"instance_min_count":1, "instance_max_count":5, "initial_min_instance_count":3}`))
+
+			req, err := http.NewRequest(http.MethodPut, url, bodyReader)
+			Expect(err).NotTo(HaveOccurred())
+
+			rsp, err := http.DefaultClient.Do(req)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+			rsp.Body.Close()
+		})
+	})
+
+	Describe("when a request of active schedule end comes", func() {
+		It("returns with a 204", func() {
+			url := fmt.Sprintf("http://127.0.0.1:%d/v1/apps/%s/active_schedules/111111", port, appId)
+			req, err := http.NewRequest(http.MethodDelete, url, nil)
+			Expect(err).NotTo(HaveOccurred())
+
+			rsp, err := http.DefaultClient.Do(req)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.StatusCode).To(Equal(http.StatusNoContent))
+			rsp.Body.Close()
+		})
+	})
+
 })

@@ -28,11 +28,11 @@ type FakeScalingEngine struct {
 		result1 int
 		result2 error
 	}
-	SetActiveScheduleStub        func(appId string, schedule *scalingengine.ActiveSchedule) error
+	SetActiveScheduleStub        func(appId string, schedule *models.ActiveSchedule) error
 	setActiveScheduleMutex       sync.RWMutex
 	setActiveScheduleArgsForCall []struct {
 		appId    string
-		schedule *scalingengine.ActiveSchedule
+		schedule *models.ActiveSchedule
 	}
 	setActiveScheduleReturns struct {
 		result1 error
@@ -120,11 +120,11 @@ func (fake *FakeScalingEngine) ComputeNewInstancesReturns(result1 int, result2 e
 	}{result1, result2}
 }
 
-func (fake *FakeScalingEngine) SetActiveSchedule(appId string, schedule *scalingengine.ActiveSchedule) error {
+func (fake *FakeScalingEngine) SetActiveSchedule(appId string, schedule *models.ActiveSchedule) error {
 	fake.setActiveScheduleMutex.Lock()
 	fake.setActiveScheduleArgsForCall = append(fake.setActiveScheduleArgsForCall, struct {
 		appId    string
-		schedule *scalingengine.ActiveSchedule
+		schedule *models.ActiveSchedule
 	}{appId, schedule})
 	fake.recordInvocation("SetActiveSchedule", []interface{}{appId, schedule})
 	fake.setActiveScheduleMutex.Unlock()
@@ -141,7 +141,7 @@ func (fake *FakeScalingEngine) SetActiveScheduleCallCount() int {
 	return len(fake.setActiveScheduleArgsForCall)
 }
 
-func (fake *FakeScalingEngine) SetActiveScheduleArgsForCall(i int) (string, *scalingengine.ActiveSchedule) {
+func (fake *FakeScalingEngine) SetActiveScheduleArgsForCall(i int) (string, *models.ActiveSchedule) {
 	fake.setActiveScheduleMutex.RLock()
 	defer fake.setActiveScheduleMutex.RUnlock()
 	return fake.setActiveScheduleArgsForCall[i].appId, fake.setActiveScheduleArgsForCall[i].schedule

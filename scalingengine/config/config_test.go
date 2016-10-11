@@ -72,6 +72,7 @@ logging:
 db:
   policy_db_url: test-policy-db-url
   history_db_url: test-history-db-url
+  schedule_db_url: test-schedule-db-url
 `)
 			})
 
@@ -91,6 +92,7 @@ db:
 
 				Expect(conf.Db.PolicyDbUrl).To(Equal("test-policy-db-url"))
 				Expect(conf.Db.HistoryDbUrl).To(Equal("test-history-db-url"))
+				Expect(conf.Db.ScheduleDbUrl).To(Equal("test-schedule-db-url"))
 
 			})
 		})
@@ -103,6 +105,7 @@ cf:
 db:
   policy_db_url: test-policy-db-url
   history_db_url: test-history-db-url
+  schedule_db_url: test-schedule-db-url
 `)
 			})
 
@@ -125,6 +128,7 @@ db:
 			conf.Cf.Username = "admin"
 			conf.Db.PolicyDbUrl = "test-policy-db-url"
 			conf.Db.HistoryDbUrl = "test-history-db-url"
+			conf.Db.ScheduleDbUrl = "test-schedule-db-url"
 		})
 
 		JustBeforeEach(func() {
@@ -148,7 +152,6 @@ db:
 		})
 
 		Context("when policy db url is not set", func() {
-
 			BeforeEach(func() {
 				conf.Db.PolicyDbUrl = ""
 			})
@@ -159,13 +162,22 @@ db:
 		})
 
 		Context("when history db url is not set", func() {
-
 			BeforeEach(func() {
 				conf.Db.HistoryDbUrl = ""
 			})
 
 			It("should error", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: History DB url is empty")))
+			})
+		})
+
+		Context("when schedule db url is not set", func() {
+			BeforeEach(func() {
+				conf.Db.ScheduleDbUrl = ""
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: Schedule DB url is empty")))
 			})
 		})
 

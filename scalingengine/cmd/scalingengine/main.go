@@ -78,7 +78,15 @@ func main() {
 	}
 	defer historyDB.Close()
 
-	scalingEngine := scalingengine.NewScalingEngine(logger, cfClient, policyDB, historyDB, eClock)
+	var scheduleDB db.ScheduleDB
+	scheduleDB, err = sqldb.NewScheduleSQLDB(conf.Db.ScheduleDbUrl, logger.Session("schedule-db"))
+	if err != nil {
+		logger.Error("failed to connect schedule database", err, lager.Data{"url": conf.Db.ScheduleDbUrl})
+		os.Exit(1)
+	}
+	defer scheduleDB.Close()
+
+	scalingEngine := scalingengine.NewScalingEngine(logger, cfClient, policyDB, historyDB, scheduleDB, eClock)
 	httpServer := server.NewServer(logger, conf.Server, historyDB, scalingEngine)
 	members := grouper.Members{
 		{"http_server", httpServer},

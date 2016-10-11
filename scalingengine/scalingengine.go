@@ -4,6 +4,7 @@ import (
 	"autoscaler/cf"
 	"autoscaler/db"
 	"autoscaler/models"
+
 	"fmt"
 	"strconv"
 	"strings"
@@ -12,35 +13,30 @@ import (
 	"code.cloudfoundry.org/lager"
 )
 
-type ActiveSchedule struct {
-	ScheduleId         string
-	InstanceMin        int `json:"instance_min_count"`
-	InstanceMax        int `json:"instance_max_count"`
-	InstanceMinInitial int `json:"initial_min_instance_count"`
-}
-
 type ScalingEngine interface {
 	Scale(appId string, trigger *models.Trigger) (int, error)
 	ComputeNewInstances(currentInstances int, adjustment string) (int, error)
-	SetActiveSchedule(appId string, schedule *ActiveSchedule) error
+	SetActiveSchedule(appId string, schedule *models.ActiveSchedule) error
 	RemoveActiveSchedule(appId string, scheduleId string) error
 }
 
 type scalingEngine struct {
-	logger    lager.Logger
-	cfClient  cf.CfClient
-	policyDB  db.PolicyDB
-	historyDB db.HistoryDB
-	clock     clock.Clock
+	logger     lager.Logger
+	cfClient   cf.CfClient
+	policyDB   db.PolicyDB
+	historyDB  db.HistoryDB
+	scheduleDB db.ScheduleDB
+	clock      clock.Clock
 }
 
-func NewScalingEngine(logger lager.Logger, cfClient cf.CfClient, policyDB db.PolicyDB, historyDB db.HistoryDB, clock clock.Clock) ScalingEngine {
+func NewScalingEngine(logger lager.Logger, cfClient cf.CfClient, policyDB db.PolicyDB, historyDB db.HistoryDB, scheduleDB db.ScheduleDB, clock clock.Clock) ScalingEngine {
 	return &scalingEngine{
-		logger:    logger.Session("scale"),
-		cfClient:  cfClient,
-		policyDB:  policyDB,
-		historyDB: historyDB,
-		clock:     clock,
+		logger:     logger.Session("scale"),
+		cfClient:   cfClient,
+		policyDB:   policyDB,
+		historyDB:  historyDB,
+		scheduleDB: scheduleDB,
+		clock:      clock,
 	}
 }
 
@@ -68,8 +64,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (int, error
 	}
 	history.OldInstances = instances
 
-	var ok bool
-	ok, err = s.historyDB.CanScaleApp(appId)
+	ok, err := s.historyDB.CanScaleApp(appId)
 	if err != nil {
 		logger.Error("failed-check-cooldown", err)
 		history.Status = models.ScalingStatusFailed
@@ -83,8 +78,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (int, error
 		return instances, nil
 	}
 
-	var newInstances int
-	newInstances, err = s.ComputeNewInstances(instances, trigger.Adjustment)
+	newInstances, err := s.ComputeNewInstances(instances, trigger.Adjustment)
 	if err != nil {
 		logger.Error("failed-compute-new-instance", err, lager.Data{"instances": instances, "adjustment": trigger.Adjustment})
 		history.Status = models.ScalingStatusFailed
@@ -92,20 +86,39 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (int, error
 		return -1, err
 	}
 
-	policy, err := s.policyDB.GetAppPolicy(appId)
+	schedule, err := s.scheduleDB.GetActiveSchedule(appId)
 	if err != nil {
-		logger.Error("failed-to-get-app-policy", err)
+		logger.Error("failed-get-active-schedule", err)
 		history.Status = models.ScalingStatusFailed
-		history.Error = "failed to get scaling policy"
+		history.Error = "failed to get active schedule"
 		return -1, err
 	}
 
-	if newInstances < policy.InstanceMin {
-		newInstances = policy.InstanceMin
-		history.Message = fmt.Sprintf("limited by min instances %d", policy.InstanceMin)
-	} else if newInstances > policy.InstanceMax {
-		newInstances = policy.InstanceMax
-		history.Message = fmt.Sprintf("limited by max instances %d", policy.InstanceMax)
+	var instanceMin, instanceMax int
+
+	if schedule != nil {
+		instanceMin = schedule.InstanceMin
+		instanceMax = schedule.InstanceMax
+	} else {
+		var policy *models.ScalingPolicy
+		policy, err = s.policyDB.GetAppPolicy(appId)
+		if err != nil {
+			logger.Error("failed-get-app-policy", err)
+			history.Status = models.ScalingStatusFailed
+			history.Error = "failed to get scaling policy"
+			return -1, err
+		} else {
+			instanceMin = policy.InstanceMin
+			instanceMax = policy.InstanceMax
+		}
+	}
+
+	if newInstances < instanceMin {
+		newInstances = instanceMin
+		history.Message = fmt.Sprintf("limited by min instances %d", instanceMin)
+	} else if newInstances > instanceMax {
+		newInstances = instanceMax
+		history.Message = fmt.Sprintf("limited by max instances %d", instanceMax)
 	}
 	history.NewInstances = newInstances
 

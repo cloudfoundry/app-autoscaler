@@ -75,6 +75,7 @@ var _ = SynchronizedBeforeSuite(
 
 		conf.Db.PolicyDbUrl = os.Getenv("DBURL")
 		conf.Db.HistoryDbUrl = os.Getenv("DBURL")
+		conf.Db.ScheduleDbUrl = os.Getenv("DBURL")
 
 		configFile = writeConfig(&conf)
 
@@ -85,6 +86,9 @@ var _ = SynchronizedBeforeSuite(
 		Expect(err).NotTo(HaveOccurred())
 
 		_, err = engineDB.Exec("DELETE from policy_json WHERE app_id = $1", appId)
+		Expect(err).NotTo(HaveOccurred())
+
+		_, err = engineDB.Exec("DELETE from app_scaling_active_schedule WHERE app_id = $1", appId)
 		Expect(err).NotTo(HaveOccurred())
 
 		policy := `

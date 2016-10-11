@@ -141,7 +141,7 @@ func (h *ScalingHandler) StartActiveSchedule(w http.ResponseWriter, r *http.Requ
 
 	logger := h.logger.Session("start-active-schedule", lager.Data{"appid": appId, "scheduleid": scheduleId})
 
-	activeSchedule := &scalingengine.ActiveSchedule{}
+	activeSchedule := &models.ActiveSchedule{}
 	err := json.NewDecoder(r.Body).Decode(activeSchedule)
 	if err != nil {
 		logger.Error("failed-to-decode", err)
