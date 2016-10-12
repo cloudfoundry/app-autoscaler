@@ -18,7 +18,7 @@ const TokenTypeBearer = "bearer"
 type ScalingHandler struct {
 	logger        lager.Logger
 	historyDB     db.HistoryDB
-	appLock       *AppLock
+	appLock       *StripedLock
 	scalingEngine scalingengine.ScalingEngine
 }
 
@@ -26,7 +26,7 @@ func NewScalingHandler(logger lager.Logger, historyDB db.HistoryDB, scalingEngin
 	return &ScalingHandler{
 		logger:        logger.Session("scaling-handler"),
 		historyDB:     historyDB,
-		appLock:       NewAppLock(),
+		appLock:       NewStripedLock(32),
 		scalingEngine: scalingEngine,
 	}
 }
@@ -49,9 +49,9 @@ func (h *ScalingHandler) Scale(w http.ResponseWriter, r *http.Request, vars map[
 
 	var newInstances int
 
-	h.appLock.Lock(appId)
+	h.appLock.GetLock(appId).Lock()
 	newInstances, err = h.scalingEngine.Scale(appId, trigger)
-	h.appLock.UnLock(appId)
+	h.appLock.GetLock(appId).Unlock()
 
 	if err != nil {
 		logger.Error("failed-to-scale", err, lager.Data{"trigger": trigger})
@@ -155,9 +155,9 @@ func (h *ScalingHandler) StartActiveSchedule(w http.ResponseWriter, r *http.Requ
 	activeSchedule.ScheduleId = scheduleId
 	logger.Info("handling", lager.Data{"activeSchedule": activeSchedule})
 
-	h.appLock.Lock(appId)
+	h.appLock.GetLock(appId).Lock()
 	err = h.scalingEngine.SetActiveSchedule(appId, activeSchedule)
-	h.appLock.UnLock(appId)
+	h.appLock.GetLock(appId).Unlock()
 
 	if err != nil {
 		h.logger.Error("failed-to-set-active-schedule", err, lager.Data{"activeSchedule": activeSchedule})
@@ -175,9 +175,9 @@ func (h *ScalingHandler) RemoveActiveSchedule(w http.ResponseWriter, r *http.Req
 	logger := h.logger.Session("remove-active-schedule", lager.Data{"appid": appId, "scheduleid": scheduleId})
 	logger.Info("handle-active-schedule-end")
 
-	h.appLock.Lock(appId)
+	h.appLock.GetLock(appId).Lock()
 	err := h.scalingEngine.RemoveActiveSchedule(appId, scheduleId)
-	h.appLock.UnLock(appId)
+	h.appLock.GetLock(appId).Unlock()
 
 	if err != nil {
 		logger.Error("failed-to-remove-active-schedule", err)
