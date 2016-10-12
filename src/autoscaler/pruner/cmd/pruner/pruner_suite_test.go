@@ -4,28 +4,21 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"sync"
 	"testing"
 	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
-	"github.com/onsi/gomega/ghttp"
 	"gopkg.in/yaml.v2"
 
 	"autoscaler/pruner/config"
 )
 
 var (
-	prPath         string
-	cfg            config.Config
-	prPort         int
-	configFile     *os.File
-	ccNOAAUAA      *ghttp.Server
-	isTokenExpired bool
-	eLock          *sync.Mutex
+	prPath     string
+	cfg        config.Config
+	configFile *os.File
 )
 
 func TestPruner(t *testing.T) {
@@ -55,10 +48,14 @@ var _ = SynchronizedAfterSuite(func() {
 func initConfig() {
 	cfg.Logging.Level = "debug"
 
-	cfg.Db.MetricsDbUrl = os.Getenv("DBURL")
+	cfg.MetricsDb.DbUrl = os.Getenv("DBURL")
+	cfg.AppMetricsDb.DbUrl = os.Getenv("DBURL")
 
-	cfg.Pruner.IntervalInHours = 12
-	cfg.Pruner.CutoffDays = 20
+	cfg.MetricsDb.RefreshInterval = 12 * time.Hour
+	cfg.MetricsDb.CutoffDays = 20
+
+	cfg.AppMetricsDb.RefreshInterval = 12 * time.Hour
+	cfg.AppMetricsDb.CutoffDays = 20
 
 }
 
@@ -79,14 +76,12 @@ func writeConfig(c *config.Config) *os.File {
 
 type PrunerRunner struct {
 	configPath string
-	startCheck string
 	Session    *gexec.Session
 }
 
 func NewPrunerRunner() *PrunerRunner {
 	return &PrunerRunner{
 		configPath: configFile.Name(),
-		startCheck: "pruner.started",
 	}
 }
 
@@ -100,15 +95,6 @@ func (pr *PrunerRunner) Start() {
 		gexec.NewPrefixedWriter("\x1b[91m[e]\x1b[32m[pr]\x1b[0m ", GinkgoWriter),
 	)
 	Expect(err).NotTo(HaveOccurred())
-
-	if pr.startCheck != "" {
-
-		//Metric Pruner
-		Eventually(prSession.Buffer()).Should(gbytes.Say("metrics-db-pruner-started"))
-
-		//All pruners started
-		Eventually(prSession.Buffer(), 2).Should(gbytes.Say(pr.startCheck))
-	}
 
 	pr.Session = prSession
 }

@@ -28,6 +28,14 @@ type FakeAppMetricDB struct {
 		result1 []*model.AppMetric
 		result2 error
 	}
+	PruneAppMetricsStub        func(before int64) error
+	pruneAppMetricsMutex       sync.RWMutex
+	pruneAppMetricsArgsForCall []struct {
+		before int64
+	}
+	pruneAppMetricsReturns struct {
+		result1 error
+	}
 	CloseStub        func() error
 	closeMutex       sync.RWMutex
 	closeArgsForCall []struct{}
@@ -106,6 +114,39 @@ func (fake *FakeAppMetricDB) RetrieveAppMetricsReturns(result1 []*model.AppMetri
 		result1 []*model.AppMetric
 		result2 error
 	}{result1, result2}
+}
+
+func (fake *FakeAppMetricDB) PruneAppMetrics(before int64) error {
+	fake.pruneAppMetricsMutex.Lock()
+	fake.pruneAppMetricsArgsForCall = append(fake.pruneAppMetricsArgsForCall, struct {
+		before int64
+	}{before})
+	fake.recordInvocation("PruneAppMetrics", []interface{}{before})
+	fake.pruneAppMetricsMutex.Unlock()
+	if fake.PruneAppMetricsStub != nil {
+		return fake.PruneAppMetricsStub(before)
+	} else {
+		return fake.pruneAppMetricsReturns.result1
+	}
+}
+
+func (fake *FakeAppMetricDB) PruneAppMetricsCallCount() int {
+	fake.pruneAppMetricsMutex.RLock()
+	defer fake.pruneAppMetricsMutex.RUnlock()
+	return len(fake.pruneAppMetricsArgsForCall)
+}
+
+func (fake *FakeAppMetricDB) PruneAppMetricsArgsForCall(i int) int64 {
+	fake.pruneAppMetricsMutex.RLock()
+	defer fake.pruneAppMetricsMutex.RUnlock()
+	return fake.pruneAppMetricsArgsForCall[i].before
+}
+
+func (fake *FakeAppMetricDB) PruneAppMetricsReturns(result1 error) {
+	fake.PruneAppMetricsStub = nil
+	fake.pruneAppMetricsReturns = struct {
+		result1 error
+	}{result1}
 }
 
 func (fake *FakeAppMetricDB) Close() error {
