@@ -62,23 +62,25 @@ exports.deleteSchedules = function deleteSchedules(req, callback) {
   request(options, function(error, response, body) {
     if(error) {
       logger.error('Error occurred during schedule deletion ', { 'app id': appId,'error':error });
-      callback(error,{ 'statusCode':HttpStatus.INTERNAL_SERVER_ERROR });
+      error.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+      callback(error);
     }
     else if (response.statusCode === HttpStatus.NO_CONTENT || 
         response.statusCode === HttpStatus.OK) {
       logger.info('Schedules deleted successfully ',{ 'app id': appId });
-      callback(null,{ 'statusCode':HttpStatus.OK });
+      callback(null);
     }
     else if (response.statusCode === HttpStatus.NOT_FOUND) {
       logger.info('No schedules found for application',{ 'app id': appId });
-      callback(null,{ 'statusCode':HttpStatus.NOT_FOUND });
-    }    
+      callback(null);
+    }
     else {
       var internalError = { 'message':'Failed to delete schedules due to an internal' + 
             ' error in scheduler','details':response.body };
       logger.error('Error occurred in scheduler module during deletion ',
             { 'app id': appId,'error':internalError });
-      callback(internalError, { 'statusCode':HttpStatus.INTERNAL_SERVER_ERROR });
+      internalError.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+      callback(internalError);
     }
   });
 

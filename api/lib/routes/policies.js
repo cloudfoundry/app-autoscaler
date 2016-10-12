@@ -37,18 +37,23 @@ router.put('/:app_id',validationMiddleWare,function(req, res) {
 
 router.delete('/:app_id',function(req,res) {
   logger.info('Policy deletion request received for application', { 'app id': req.params.app_id });
-  async.waterfall([async.apply(schedulerUtil.deleteSchedules, req),
-  async.apply(routeHelper.deletePolicy, req)],
+  async.waterfall([async.apply(routeHelper.deletePolicy, req),
+                   async.apply(schedulerUtil.deleteSchedules, req)],
   function(error, result) {
     var responseDecorator = { };
+    var status = HttpStatus.OK;
     if(error) {
+      status = error.statusCode;
       responseDecorator = {
         'success': false,
         'error': error,
         'result': null
       };
+    } 
+    else {
+      status = HttpStatus.OK;
     }
-    res.status(result.statusCode).json(responseDecorator);
+    res.status(status).json(responseDecorator);
   });
 });
 

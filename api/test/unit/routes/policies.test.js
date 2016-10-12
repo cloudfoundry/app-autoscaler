@@ -113,8 +113,9 @@ describe('Routing Policy Creation', function() {
       
       request(app)
       .delete('/v1/policies/12345')
-      .end(function(error,result) {
-        expect(result.statusCode).to.equal(200);
+      .expect(200)
+      .end(function(error) {
+        expect(error).to.be.null;
         done();
       });
     });
@@ -134,11 +135,8 @@ describe('Routing Policy Creation', function() {
 
   });
 
-  context('when policy does not exists' ,function() {
-    it('should fail to delete a non existing policy with app id 12345',function(done){
-      nock(schedulerURI)
-      .delete('/v2/schedules/12345')
-      .reply(404);
+  context('when policy does not exist' ,function() {
+    it('should return 404 while deleting policy with app id 12345',function(done){
     
       request(app)
       .delete('/v1/policies/12345')

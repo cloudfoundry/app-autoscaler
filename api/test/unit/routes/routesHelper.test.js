@@ -36,16 +36,15 @@ describe('Policy Route helper ', function() {
 		});
 	});
 	
-	it('should fail to delete a policy with schedule for app id 12345',function(done){
+	it('should return a 404 in trying to delete a policy for app id 12345 which does not exist',function(done){
 		var mockRequest = {
 				body : fakePolicy,
 				params : { 'app_id' : '12345' }
 		};
 		var app_id = '12345';
-		var mockSchedulerResponse = {'statusCode':404 };
-		routeHelper.deletePolicy(mockRequest, mockSchedulerResponse,function(error,result){
-			expect(result.statusCode).to.equal(404);
-			expect(error).to.be.null;
+		routeHelper.deletePolicy(mockRequest, function(error){
+			expect(error).to.not.be.null;
+			expect(error.statusCode).to.equal(404);
 			done();
 		});
 	});	
@@ -92,11 +91,14 @@ describe('Policy Route helper ', function() {
 			var mockRequest = {
 					params : { 'app_id' : '12348' }
 			};
-			var mockSchedulerResponse = {'statusCode':HttpStatus.OK };
-			routeHelper.deletePolicy(mockRequest,mockSchedulerResponse,function(error,result){
+			routeHelper.deletePolicy(mockRequest, function(error){
 				expect(error).to.be.null;
-				expect(result.statusCode).to.equal(200);
-				done();
+				request(app)
+				  .get('/v1/policies/12348')
+				  .end(function(error,result) {
+				      expect(result.statusCode).to.equal(404);
+				      done();
+				});    
 			});
 		});
 
@@ -104,11 +106,17 @@ describe('Policy Route helper ', function() {
 			var mockRequest = {
 					params : {} // Not passing the app_id will throw an internal server error
 			};
-			var mockSchedulerResponse = {'statusCode':HttpStatus.NOT_FOUND };
-			routeHelper.deletePolicy(mockRequest,mockSchedulerResponse,function(error,result){
+
+			routeHelper.deletePolicy(mockRequest, function(error){
 				expect(error).to.not.be.null;
-				expect(result.statusCode).to.equal(500);
-				done();
+				expect(error.statusCode).to.equal(500);
+				request(app)
+				  .get('/v1/policies/12348')
+				  .end(function(error,result) {
+				      expect(result.statusCode).to.equal(200);
+				      expect(result.body).to.deep.equal(fakePolicy);
+				      done();
+				});    
 			});
 		});
 		

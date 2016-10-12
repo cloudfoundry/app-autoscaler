@@ -97,67 +97,70 @@ describe('Scheduler Utility functions', function() {
     });
   });
   
-  it('should fail to delete a schedule for app id 12345',function(done){
-    	nock(schedulerURI)
-        .delete('/v2/schedules/12345')
-        .reply(404);
-        var mockRequest = {
-                body : fakePolicy,
-                params : { 'app_id' : '12345' }
-        };
-        schedulerUtils.deleteSchedules(mockRequest ,function(error,result){
-          expect(result.statusCode).to.equal(404);
-          expect(error).to.be.null;
-          done();
-        });
-   });
+  context ("Deleting schedules during policy deletion", function() {
+	  
+	  it('should pass (No error) if the scheduler returns 404 (No schedules) for app',function(done){
+	    	nock(schedulerURI)
+	        .delete('/v2/schedules/12345_NoSchedules')
+	        .reply(404);
+	        var mockRequest = {
+	                body : fakePolicy,
+	                params : { 'app_id' : '12345_NoSchedules' }
+	        };
+	        schedulerUtils.deleteSchedules(mockRequest ,function(error){
+	          expect(error).to.be.null;
+	          done();
+	        });
+	   });
 
-  it('should fail to delete a schedule for app id 12345 due to an internal server error 500 response code from scheduler',function(done){
-  	nock(schedulerURI)
-      .delete('/v2/schedules/12345')
-      .reply(500);
-      var mockRequest = {
-              body : fakePolicy,
-              params : { 'app_id' : '12345' }
-      };
-      schedulerUtils.deleteSchedules(mockRequest ,function(error,result){
-        expect(result.statusCode).to.equal(500);
-        expect(error).to.not.be.null;
-        done();
-      });
- });
+	  it('should fail due to an internal server error 500 response code from scheduler',function(done){
+	  	  nock(schedulerURI)
+	      .delete('/v2/schedules/12345_ErrorFromScheduler')
+	      .reply(500);
 
-  it('should fail to delete a schedule for app id 12345 due to an internal error with the request',function(done){
-	  	nock(schedulerURI)
-	      .delete('/v2/schedules/')
-	      .reply(503);
-	      var mockRequest = {
+	  	  var mockRequest = {
 	              body : fakePolicy,
-	              params : { 'app_id' : '12345' }
+	              params : { 'app_id' : '12345_ErrorFromScheduler' }
 	      };
-	      schedulerUtils.deleteSchedules(mockRequest ,function(error,result){
-	        expect(result.statusCode).to.equal(500);
+	      schedulerUtils.deleteSchedules(mockRequest, function(error){
 	        expect(error).to.not.be.null;
-	        done();
-	      });
-  });
-  
-  it('should successfully delete schedules for app id 12345',function(done){
-	  	nock(schedulerURI)
-	      .delete('/v2/schedules/12345')
-	      .reply(200);
-	      var mockRequest = {
-	              body : fakePolicy,
-	              params : { 'app_id' : '12345' }
-	      };
-	      schedulerUtils.deleteSchedules(mockRequest ,function(error,result){
-	        expect(result.statusCode).to.equal(200);
-	        expect(error).to.be.null;
+	        expect(error.statusCode).to.equal(500);
 	        done();
 	      });
 	 });
 
-  context('when a schedules already exists' ,function() {
+	  it('should fail due to an internal error with the request',function(done){
+		  	nock(schedulerURI)
+		      .delete('/v2/schedules/')
+		      .reply(503);
+		      var mockRequest = {
+		              body : fakePolicy,
+		              params : { 'app_id' : '123456' }
+		      };
+		      schedulerUtils.deleteSchedules(mockRequest, function(error){
+			    expect(error).to.not.be.null;
+		        expect(error.statusCode).to.equal(500);
+		        done();
+		      });
+	  });
+	  
+	  it('should successfully delete schedules for app id 12345',function(done){
+		  	nock(schedulerURI)
+		      .delete('/v2/schedules/12345')
+		      .reply(200);
+		      var mockRequest = {
+		              body : fakePolicy,
+		              params : { 'app_id' : '12345' }
+		      };
+		      schedulerUtils.deleteSchedules(mockRequest, function(error){
+		        expect(error).to.be.null;
+		        done();
+		      });
+		 });
+	  
+  });
+
+  context('when schedules already exists' ,function() {
     beforeEach(function(done) {
       nock(schedulerURI)
       .put('/v2/schedules/12345')
