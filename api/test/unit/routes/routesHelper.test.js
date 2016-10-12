@@ -36,6 +36,19 @@ describe('Policy Route helper ', function() {
 		});
 	});
 	
+	it('should return a 404 in trying to delete a policy for app id 12345 which does not exist',function(done){
+		var mockRequest = {
+				body : fakePolicy,
+				params : { 'app_id' : '12345' }
+		};
+		var app_id = '12345';
+		routeHelper.deletePolicy(mockRequest, function(error){
+			expect(error).to.not.be.null;
+			expect(error.statusCode).to.equal(404);
+			done();
+		});
+	});	
+	
 	context('when policy already exists',function(){
 		beforeEach(function(done){
 			var mockRequest = {
@@ -61,7 +74,54 @@ describe('Policy Route helper ', function() {
 			});
 		});
 	});
-	
+
+	context('Create a policy and delete',function(){
+		beforeEach(function(done){
+			var mockRequest = {
+					body : fakePolicy,
+					params : { 'app_id' : '12348' }
+			};
+			var mockSchedulerResponse = {'statusCode':HttpStatus.OK };
+			routeHelper.createOrUpdatePolicy(mockRequest,mockSchedulerResponse,function(error,result){
+				done();
+			});
+		});
+		
+		it('should delete the policy with app_id 12348',function(done){
+			var mockRequest = {
+					params : { 'app_id' : '12348' }
+			};
+			routeHelper.deletePolicy(mockRequest, function(error){
+				expect(error).to.be.null;
+				request(app)
+				  .get('/v1/policies/12348')
+				  .end(function(error,result) {
+				      expect(result.statusCode).to.equal(404);
+				      done();
+				});    
+			});
+		});
+
+		it('should fail to delete the policy due to an internal server error',function(done){
+			var mockRequest = {
+					params : {} // Not passing the app_id will throw an internal server error
+			};
+
+			routeHelper.deletePolicy(mockRequest, function(error){
+				expect(error).to.not.be.null;
+				expect(error.statusCode).to.equal(500);
+				request(app)
+				  .get('/v1/policies/12348')
+				  .end(function(error,result) {
+				      expect(result.statusCode).to.equal(200);
+				      expect(result.body).to.deep.equal(fakePolicy);
+				      done();
+				});    
+			});
+		});
+		
+	});
+
 	it('should fail to create a policy due to internal error',function(done){
 		//Mocking a request without any app_id in the request param
 		var mockRequest = {

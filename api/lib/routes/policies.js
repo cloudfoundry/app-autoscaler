@@ -36,20 +36,24 @@ router.put('/:app_id',validationMiddleWare,function(req, res) {
 });
 
 router.delete('/:app_id',function(req,res) {
-  logger.info('Policy deletion request received', { 'app id': req.params.app_id });
-  models.policy_json.destroy({ where: { app_id: req.params.app_id } }).then(function(result) {
-    if(result > 0) {
-      logger.info('Successfully deleted the policy',{ 'app id': req.params.app_id });
-      res.status(HttpStatus.OK).json({});
+  logger.info('Policy deletion request received for application', { 'app id': req.params.app_id });
+  async.waterfall([async.apply(routeHelper.deletePolicy, req),
+                   async.apply(schedulerUtil.deleteSchedules, req)],
+  function(error, result) {
+    var responseDecorator = { };
+    var status = HttpStatus.OK;
+    if(error) {
+      status = error.statusCode;
+      responseDecorator = {
+        'success': false,
+        'error': error,
+        'result': null
+      };
+    } 
+    else {
+      status = HttpStatus.OK;
     }
-    else{
-      logger.info('No policy found to delete',{ 'app id': req.params.app_id });
-      res.status(HttpStatus.NOT_FOUND).json({});
-    }
-
-  }).catch(function(error) {
-    logger.error ('Failed to delete policy', { 'app id': req.params.app_id,'error':error });
-    res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(error);
+    res.status(status).json(responseDecorator);
   });
 });
 

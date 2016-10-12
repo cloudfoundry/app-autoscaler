@@ -50,4 +50,38 @@ exports.createOrUpdateSchedule = function createOrUpdateSchedule(req,callback) {
 
 };
 
+exports.deleteSchedules = function deleteSchedules(req, callback) {
+  logger.info('Deleting schedules for application',{ 'app id': req.params.app_id });
+  var appId = req.params.app_id;
+  var schedulerURI = process.env.SCHEDULER_URI;
+  var options = { 
+    url: schedulerURI + '/v2/schedules/' + appId,
+    method: 'DELETE'
+  };
+  
+  request(options, function(error, response, body) {
+    if(error) {
+      logger.error('Error occurred during schedule deletion ', { 'app id': appId,'error':error });
+      error.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+      callback(error);
+    }
+    else if (response.statusCode === HttpStatus.NO_CONTENT || 
+        response.statusCode === HttpStatus.OK) {
+      logger.info('Schedules deleted successfully ',{ 'app id': appId });
+      callback(null);
+    }
+    else if (response.statusCode === HttpStatus.NOT_FOUND) {
+      logger.info('No schedules found for application',{ 'app id': appId });
+      callback(null);
+    }
+    else {
+      var internalError = { 'message':'Failed to delete schedules due to an internal' + 
+            ' error in scheduler','details':response.body };
+      logger.error('Error occurred in scheduler module during deletion ',
+            { 'app id': appId,'error':internalError });
+      internalError.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+      callback(internalError);
+    }
+  });
 
+};
