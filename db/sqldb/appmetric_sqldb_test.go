@@ -258,24 +258,25 @@ var _ = Describe("AppMetricSQLDB", func() {
 
 			cleanAppMetricTable()
 
+			value := int64(10000)
 			appMetric := &model.AppMetric{
 				AppId:      "test-app-id",
 				MetricType: models.MetricNameMemory,
 				Unit:       models.UnitBytes,
 				Timestamp:  11111111,
-				Value:      10000,
+				Value:      &value,
 			}
 
 			err = adb.SaveAppMetric(appMetric)
 			Expect(err).NotTo(HaveOccurred())
 
 			appMetric.Timestamp = 55555555
-			appMetric.Value = 50000
+			*appMetric.Value = 50000
 			err = adb.SaveAppMetric(appMetric)
 			Expect(err).NotTo(HaveOccurred())
 
 			appMetric.Timestamp = 33333333
-			appMetric.Value = 30000
+			*appMetric.Value = 30000
 			err = adb.SaveAppMetric(appMetric)
 			Expect(err).NotTo(HaveOccurred())
 
