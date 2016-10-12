@@ -2,18 +2,19 @@ package config_test
 
 import (
 	"bytes"
-	"gopkg.in/yaml.v2"
+	"time"
+
+	"autoscaler/pruner/config"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	. "autoscaler/pruner/config"
+	"gopkg.in/yaml.v2"
 )
 
 var _ = Describe("Config", func() {
 
 	var (
-		conf        *Config
+		conf        *config.Config
 		err         error
 		configBytes []byte
 	)
@@ -21,7 +22,7 @@ var _ = Describe("Config", func() {
 	Describe("LoadConfig", func() {
 
 		JustBeforeEach(func() {
-			conf, err = LoadConfig(bytes.NewReader(configBytes))
+			conf, err = config.LoadConfig(bytes.NewReader(configBytes))
 		})
 
 		Context("with invalid yaml", func() {
@@ -29,9 +30,13 @@ var _ = Describe("Config", func() {
 				configBytes = []byte(`
  logging:
   level: "debug"
-db:
-  metrics_db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-pruner:
+metrics_db:
+  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  refresh_interval: 12h
+  cutoff_days: 30
+app_metrics_db:
+  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  refresh_interval: 12h
   cutoff_days: 30
 `)
 			})
@@ -46,10 +51,14 @@ pruner:
 				configBytes = []byte(`
 logging:
   level: "debug"
-db:
-  metrics_db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-pruner:
+metrics_db:
+  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  refresh_interval: 12h
   cutoff_days: "cutoff_days"
+app_metrics_db:
+  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  refresh_interval: 12h
+  cutoff_days: 30
 `)
 			})
 
@@ -63,11 +72,14 @@ pruner:
 				configBytes = []byte(`
 logging:
   level: "debug"
-db:
-  metrics_db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-pruner:
-  interval_in_hours: 12
+metrics_db:
+  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  refresh_interval: 12h
   cutoff_days: 20
+app_metrics_db:
+  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  refresh_interval: 10h
+  cutoff_days: 15
 `)
 			})
 
@@ -76,28 +88,37 @@ pruner:
 
 				Expect(conf.Logging.Level).To(Equal("debug"))
 
-				Expect(conf.Db.MetricsDbUrl).To(Equal("postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"))
+				Expect(conf.MetricsDb.DbUrl).To(Equal("postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"))
+				Expect(conf.AppMetricsDb.DbUrl).To(Equal("postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"))
 
-				Expect(conf.Pruner.IntervalInHours).To(Equal(12))
-				Expect(conf.Pruner.CutoffDays).To(Equal(20))
+				Expect(conf.MetricsDb.RefreshInterval).To(Equal(12 * time.Hour))
+				Expect(conf.MetricsDb.CutoffDays).To(Equal(20))
+
+				Expect(conf.AppMetricsDb.RefreshInterval).To(Equal(10 * time.Hour))
+				Expect(conf.AppMetricsDb.CutoffDays).To(Equal(15))
 			})
 		})
 
 		Context("with partial config", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
-db:
-  metrics_db_url: "postgres://pqgotest:password@localhost/pqgotest" 
+metrics_db:
+  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+app_metrics_db:
+  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
 `)
 			})
 
 			It("returns default values", func() {
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(conf.Logging.Level).To(Equal(DefaultLoggingLevel))
+				Expect(conf.Logging.Level).To(Equal(config.DefaultLoggingLevel))
 
-				Expect(conf.Pruner.IntervalInHours).To(Equal(DefaultIntervalInHours))
-				Expect(conf.Pruner.CutoffDays).To(Equal(DefaultCutoffDays))
+				Expect(conf.MetricsDb.RefreshInterval).To(Equal(config.DefaultRefreshInterval))
+				Expect(conf.MetricsDb.CutoffDays).To(Equal(config.DefaultCutoffDays))
+
+				Expect(conf.AppMetricsDb.RefreshInterval).To(Equal(config.DefaultRefreshInterval))
+				Expect(conf.AppMetricsDb.CutoffDays).To(Equal(config.DefaultCutoffDays))
 			})
 		})
 
@@ -105,10 +126,13 @@ db:
 
 	Describe("Validate", func() {
 		BeforeEach(func() {
-			conf = &Config{}
-			conf.Db.MetricsDbUrl = "postgres://pqgotest:password@exampl.com/pqgotest"
-			conf.Pruner.IntervalInHours = 12
-			conf.Pruner.CutoffDays = 30
+			conf = &config.Config{}
+			conf.MetricsDb.DbUrl = "postgres://pqgotest:password@exampl.com/pqgotest"
+			conf.AppMetricsDb.DbUrl = "postgres://pqgotest:password@exampl.com/pqgotest"
+			conf.MetricsDb.RefreshInterval = 12 * time.Hour
+			conf.MetricsDb.CutoffDays = 30
+			conf.AppMetricsDb.RefreshInterval = 10 * time.Hour
+			conf.AppMetricsDb.CutoffDays = 15
 		})
 
 		JustBeforeEach(func() {
@@ -124,7 +148,7 @@ db:
 		Context("when metrics db url is not set", func() {
 
 			BeforeEach(func() {
-				conf.Db.MetricsDbUrl = ""
+				conf.MetricsDb.DbUrl = ""
 			})
 
 			It("should error", func() {
@@ -132,25 +156,58 @@ db:
 			})
 		})
 
-		Context("when interval in hours is set negative value", func() {
+		Context("when app metrics db url is not set", func() {
 
 			BeforeEach(func() {
-				conf.Pruner.IntervalInHours = -1
+				conf.AppMetricsDb.DbUrl = ""
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: Interval in hours is negative")))
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: App Metrics DB url is empty")))
 			})
 		})
 
-		Context("when cutoff days is set negative value", func() {
+		Context("when metrics db refresh interval in hours is set to a negative value", func() {
 
 			BeforeEach(func() {
-				conf.Pruner.CutoffDays = -1
+				conf.MetricsDb.RefreshInterval = -1
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: Cutoff days is negative")))
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: Metrics DB refresh interval is negative")))
+			})
+		})
+
+		Context("when app metrics db refresh interval in hours is set to a negative value", func() {
+
+			BeforeEach(func() {
+				conf.AppMetricsDb.RefreshInterval = -1
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: App Metrics DB refresh interval is negative")))
+			})
+		})
+
+		Context("when metrics db cutoff days is set to a negative value", func() {
+
+			BeforeEach(func() {
+				conf.MetricsDb.CutoffDays = -1
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: Metrics DB cutoff days is negative")))
+			})
+		})
+
+		Context("when app metrics db cutoff days is set to a negative value", func() {
+
+			BeforeEach(func() {
+				conf.AppMetricsDb.CutoffDays = -1
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: App Metrics DB cutoff days is negative")))
 			})
 		})
 	})

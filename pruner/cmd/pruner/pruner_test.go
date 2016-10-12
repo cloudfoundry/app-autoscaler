@@ -25,17 +25,31 @@ var _ = Describe("Pruner", func() {
 		runner.KillWithFire()
 	})
 
-	It("should start", func() {
-		// Metric Pruner
-		Consistently(runner.Session).ShouldNot(Say("metrics-db-pruner-stopped"))
+	Context("when pruner started", func() {
+		It("should start metricsdbpruner", func() {
 
-		// Pruner
-		Consistently(runner.Session).ShouldNot(Exit())
+			//Metric Pruner
+			Eventually(runner.Session).Should(Say("metricsdbpruner.started"))
+
+			// Pruner
+			Consistently(runner.Session).ShouldNot(Exit())
+
+		})
+
+		It("should start appmetricsdbpruner", func() {
+
+			//App Metric Pruner
+			Eventually(runner.Session).Should(Say("appmetricsdbpruner.started"))
+
+			// Pruner
+			Consistently(runner.Session).ShouldNot(Exit())
+
+		})
+
 	})
 
 	Context("with a missing config file", func() {
 		BeforeEach(func() {
-			runner.startCheck = ""
 			runner.configPath = "bogus"
 		})
 
@@ -47,7 +61,6 @@ var _ = Describe("Pruner", func() {
 
 	Context("with an invalid config file", func() {
 		BeforeEach(func() {
-			runner.startCheck = ""
 			badfile, err := ioutil.TempFile("", "bad-pr-config")
 			Expect(err).NotTo(HaveOccurred())
 			runner.configPath = badfile.Name()
@@ -66,9 +79,8 @@ var _ = Describe("Pruner", func() {
 
 	Context("with missing/invalid configuration", func() {
 		BeforeEach(func() {
-			runner.startCheck = ""
 
-			cfg.Pruner.CutoffDays = -1
+			cfg.MetricsDb.CutoffDays = -1
 
 			cfg := writeConfig(&cfg)
 			runner.configPath = cfg.Name()
@@ -87,10 +99,8 @@ var _ = Describe("Pruner", func() {
 	Context("when connection to metrics db fails", func() {
 		BeforeEach(func() {
 
-			runner.startCheck = ""
-
 			//invalid url
-			cfg.Db.MetricsDbUrl = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
+			cfg.MetricsDb.DbUrl = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 
 			cfg := writeConfig(&cfg)
 			runner.configPath = cfg.Name()
@@ -108,10 +118,32 @@ var _ = Describe("Pruner", func() {
 
 	})
 
+	Context("when connection to app metrics db fails", func() {
+		BeforeEach(func() {
+
+			//invalid url
+			cfg.AppMetricsDb.DbUrl = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
+
+			cfg := writeConfig(&cfg)
+			runner.configPath = cfg.Name()
+
+		})
+
+		AfterEach(func() {
+			os.Remove(runner.configPath)
+		})
+
+		It("should error", func() {
+			Eventually(runner.Session).Should(Exit(1))
+			Expect(runner.Session.Buffer()).To(Say("failed to connect app metrics db"))
+		})
+
+	})
+
 	Context("when an interrupt is sent", func() {
 		It("should stop", func() {
-			runner.Session.Interrupt()
-			Eventually(runner.Session, 5).Should(Exit(0))
+			runner.Interrupt()
+			Eventually(runner.Session, 5).Should(Exit(130))
 		})
 	})
 })
