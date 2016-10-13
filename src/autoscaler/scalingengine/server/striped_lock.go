@@ -1,33 +1,34 @@
 package server
 
 import (
-	"hash/crc32"
+	"hash/fnv"
 	"sync"
 )
 
 type StripedLock struct {
-	capacity int
-	sLock    *sync.Mutex
-	locks    []*sync.Mutex
+	locks []*sync.Mutex
 }
 
 func NewStripedLock(capacity int) *StripedLock {
 	if capacity <= 0 {
 		panic("invalid striped lock capacity")
 	}
+
+	locks := make([]*sync.Mutex, capacity)
+	for i := 0; i < capacity; i++ {
+		locks[i] = &sync.Mutex{}
+	}
+
 	return &StripedLock{
-		capacity: capacity,
-		sLock:    &sync.Mutex{},
-		locks:    make([]*sync.Mutex, capacity),
+		locks: locks,
 	}
 }
 
 func (sl *StripedLock) GetLock(key string) *sync.Mutex {
-	idx := crc32.ChecksumIEEE([]byte(key)) % uint32(sl.capacity)
-	sl.sLock.Lock()
-	if sl.locks[idx] == nil {
-		sl.locks[idx] = &sync.Mutex{}
+	h := fnv.New32a()
+	_, err := h.Write([]byte(key))
+	if err != nil {
+		return nil
 	}
-	sl.sLock.Unlock()
-	return sl.locks[idx]
+	return sl.locks[h.Sum32()%uint32(len(sl.locks))]
 }
