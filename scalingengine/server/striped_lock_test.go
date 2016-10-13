@@ -43,20 +43,19 @@ var _ = Describe("StripedLock", func() {
 
 	Describe("GetLock", func() {
 		BeforeEach(func() {
-			stripedLock = NewStripedLock(32)
-		})
-
-		Context("when getting lock the first time", func() {
-			It("creates the lock and returns", func() {
-				Expect(stripedLock.GetLock("some key")).NotTo(BeNil())
-			})
+			stripedLock = NewStripedLock(4)
 		})
 
 		Context("when getting lock with the same key", func() {
 			It("returns the same lock", func() {
-				Expect(stripedLock.GetLock("some-key")).Should(BeIdenticalTo(stripedLock.GetLock("some-key")))
+				Expect(stripedLock.GetLock("some-key")).To(BeIdenticalTo(stripedLock.GetLock("some-key")))
 			})
 		})
 
+		Context("when getting lock with different keys", func() {
+			It("returns a different lock", func() {
+				Expect(stripedLock.GetLock("some-key")).NotTo(BeIdenticalTo(stripedLock.GetLock("another-key")))
+			})
+		})
 	})
 })
