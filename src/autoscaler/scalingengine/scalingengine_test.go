@@ -407,6 +407,17 @@ var _ = Describe("ScalingEngine", func() {
 				appid, instances := cfc.SetAppInstancesArgsForCall(0)
 				Expect(appid).To(Equal("an-app-id"))
 				Expect(instances).To(Equal(10))
+				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+					AppId:        "an-app-id",
+					Timestamp:    clock.Now().UnixNano(),
+					ScalingType:  models.ScalingTypeSchedule,
+					Status:       models.ScalingStatusSucceeded,
+					OldInstances: 12,
+					NewInstances: 10,
+					Reason:       "scheudle starts with instance min 2, instance max 10 and instance min initial 5",
+					Message:      "limited by max instances 5",
+				}))
+
 			})
 		})
 
@@ -426,6 +437,18 @@ var _ = Describe("ScalingEngine", func() {
 					appid, instances := cfc.SetAppInstancesArgsForCall(0)
 					Expect(appid).To(Equal("an-app-id"))
 					Expect(instances).To(Equal(2))
+
+					Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+						AppId:        "an-app-id",
+						Timestamp:    clock.Now().UnixNano(),
+						ScalingType:  models.ScalingTypeSchedule,
+						Status:       models.ScalingStatusSucceeded,
+						OldInstances: 1,
+						NewInstances: 2,
+						Reason:       "scheudle starts with instance min 2, instance max 10 and instance min initial 0",
+						Message:      "limited by min instances 2",
+					}))
+
 				})
 			})
 
@@ -436,6 +459,16 @@ var _ = Describe("ScalingEngine", func() {
 				It("does not change the instance number", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(cfc.SetAppInstancesCallCount()).To(BeZero())
+
+					Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+						AppId:        "an-app-id",
+						Timestamp:    clock.Now().UnixNano(),
+						ScalingType:  models.ScalingTypeSchedule,
+						Status:       models.ScalingStatusIgnored,
+						OldInstances: 3,
+						NewInstances: 3,
+						Reason:       "scheudle starts with instance min 2, instance max 10 and instance min initial 0",
+					}))
 				})
 			})
 		})
@@ -452,6 +485,18 @@ var _ = Describe("ScalingEngine", func() {
 					appid, instances := cfc.SetAppInstancesArgsForCall(0)
 					Expect(appid).To(Equal("an-app-id"))
 					Expect(instances).To(Equal(5))
+
+					Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+						AppId:        "an-app-id",
+						Timestamp:    clock.Now().UnixNano(),
+						ScalingType:  models.ScalingTypeSchedule,
+						Status:       models.ScalingStatusSucceeded,
+						OldInstances: 3,
+						NewInstances: 5,
+						Reason:       "scheudle starts with instance min 2, instance max 10 and instance min initial 5",
+						Message:      "limited by min instances 5",
+					}))
+
 				})
 			})
 
@@ -462,6 +507,17 @@ var _ = Describe("ScalingEngine", func() {
 				It("does not change the instance number", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(cfc.SetAppInstancesCallCount()).To(BeZero())
+
+					Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+						AppId:        "an-app-id",
+						Timestamp:    clock.Now().UnixNano(),
+						ScalingType:  models.ScalingTypeSchedule,
+						Status:       models.ScalingStatusIgnored,
+						OldInstances: 6,
+						NewInstances: 6,
+						Reason:       "scheudle starts with instance min 2, instance max 10 and instance min initial 5",
+					}))
+
 				})
 			})
 		})
@@ -475,6 +531,18 @@ var _ = Describe("ScalingEngine", func() {
 				Expect(err).To(HaveOccurred())
 				Eventually(buffer).Should(gbytes.Say("failed-to-get-app-instances"))
 				Eventually(buffer).Should(gbytes.Say("an error"))
+
+				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+					AppId:        "an-app-id",
+					Timestamp:    clock.Now().UnixNano(),
+					ScalingType:  models.ScalingTypeSchedule,
+					Status:       models.ScalingStatusFailed,
+					OldInstances: -1,
+					NewInstances: -1,
+					Reason:       "scheudle starts with instance min 2, instance max 10 and instance min initial 5",
+					Error:        "failed to get app instances",
+				}))
+
 			})
 		})
 
@@ -487,6 +555,19 @@ var _ = Describe("ScalingEngine", func() {
 				Expect(err).To(HaveOccurred())
 				Eventually(buffer).Should(gbytes.Say("failed-to-set-app-instances"))
 				Eventually(buffer).Should(gbytes.Say("an error"))
+
+				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+					AppId:        "an-app-id",
+					Timestamp:    clock.Now().UnixNano(),
+					ScalingType:  models.ScalingTypeSchedule,
+					Status:       models.ScalingStatusFailed,
+					OldInstances: 0,
+					NewInstances: 5,
+					Reason:       "scheudle starts with instance min 2, instance max 10 and instance min initial 5",
+					Message:      "limited by min instances 5",
+					Error:        "failed to set app instances",
+				}))
+
 			})
 		})
 
@@ -508,6 +589,15 @@ var _ = Describe("ScalingEngine", func() {
 
 			It("does not change the instance number", func() {
 				Expect(cfc.SetAppInstancesCallCount()).To(Equal(0))
+				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+					AppId:        "an-app-id",
+					Timestamp:    clock.Now().UnixNano(),
+					ScalingType:  models.ScalingTypeSchedule,
+					Status:       models.ScalingStatusIgnored,
+					OldInstances: 5,
+					NewInstances: 5,
+					Reason:       "schedule ends",
+				}))
 			})
 		})
 
@@ -520,6 +610,17 @@ var _ = Describe("ScalingEngine", func() {
 				appId, instances := cfc.SetAppInstancesArgsForCall(0)
 				Expect(appId).To(Equal("an-app-id"))
 				Expect(instances).To(Equal(3))
+				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+					AppId:        "an-app-id",
+					Timestamp:    clock.Now().UnixNano(),
+					ScalingType:  models.ScalingTypeSchedule,
+					Status:       models.ScalingStatusSucceeded,
+					OldInstances: 1,
+					NewInstances: 3,
+					Reason:       "schedule ends",
+					Message:      "limited by min instances 3",
+				}))
+
 			})
 		})
 
@@ -532,6 +633,18 @@ var _ = Describe("ScalingEngine", func() {
 				appId, instances := cfc.SetAppInstancesArgsForCall(0)
 				Expect(appId).To(Equal("an-app-id"))
 				Expect(instances).To(Equal(6))
+
+				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+					AppId:        "an-app-id",
+					Timestamp:    clock.Now().UnixNano(),
+					ScalingType:  models.ScalingTypeSchedule,
+					Status:       models.ScalingStatusSucceeded,
+					OldInstances: 8,
+					NewInstances: 6,
+					Reason:       "schedule ends",
+					Message:      "limited by max instances 6",
+				}))
+
 			})
 		})
 
@@ -544,6 +657,18 @@ var _ = Describe("ScalingEngine", func() {
 				Expect(err).To(HaveOccurred())
 				Eventually(buffer).Should(gbytes.Say("failed-to-get-app-instances"))
 				Eventually(buffer).Should(gbytes.Say("an error"))
+
+				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+					AppId:        "an-app-id",
+					Timestamp:    clock.Now().UnixNano(),
+					ScalingType:  models.ScalingTypeSchedule,
+					Status:       models.ScalingStatusFailed,
+					OldInstances: -1,
+					NewInstances: -1,
+					Reason:       "schedule ends",
+					Error:        "failed to get app instances",
+				}))
+
 			})
 		})
 
@@ -557,6 +682,17 @@ var _ = Describe("ScalingEngine", func() {
 				Eventually(buffer).Should(gbytes.Say("failed-to-get-app-policy"))
 				Eventually(buffer).Should(gbytes.Say("an error"))
 
+				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+					AppId:        "an-app-id",
+					Timestamp:    clock.Now().UnixNano(),
+					ScalingType:  models.ScalingTypeSchedule,
+					Status:       models.ScalingStatusFailed,
+					OldInstances: 0,
+					NewInstances: -1,
+					Reason:       "schedule ends",
+					Error:        "failed to get app policy",
+				}))
+
 			})
 		})
 
@@ -569,6 +705,19 @@ var _ = Describe("ScalingEngine", func() {
 				Expect(err).To(HaveOccurred())
 				Eventually(buffer).Should(gbytes.Say("failed-to-set-app-instances"))
 				Eventually(buffer).Should(gbytes.Say("an error"))
+
+				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+					AppId:        "an-app-id",
+					Timestamp:    clock.Now().UnixNano(),
+					ScalingType:  models.ScalingTypeSchedule,
+					Status:       models.ScalingStatusFailed,
+					OldInstances: 0,
+					NewInstances: 3,
+					Reason:       "schedule ends",
+					Error:        "failed to set app instances",
+					Message:      "limited by min instances 3",
+				}))
+
 			})
 		})
 
