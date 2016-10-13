@@ -264,7 +264,11 @@ Request         ``PUT /v1/apps/:app_id/policy/status/``
 Authorization   Authorization: Bearer Token of ``AccessToken``
 Headers         ``Accept: application/json``
 Parameters      app_id: the GUID of the application
-Request Body    None
+Request Body    *example* ::
+
+                    {
+                        "enable":true,
+                    }
 Response Codes   *Codes* ::
 
                     200 - Success
