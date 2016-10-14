@@ -276,6 +276,6 @@ func getDynamicScalingReason(trigger *models.Trigger) string {
 }
 
 func getScheduledScalingReason(schedule *ActiveSchedule) string {
-	return fmt.Sprintf("scheudle starts with instance min %d, instance max %d and instance min initial %d",
+	return fmt.Sprintf("schedule starts with instance min %d, instance max %d and instance min initial %d",
 		schedule.InstanceMin, schedule.InstanceMax, schedule.InstanceMinInitial)
 }
