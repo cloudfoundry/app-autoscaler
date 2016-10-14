@@ -54,7 +54,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (int, error
 		ScalingType:  models.ScalingTypeDynamic,
 		OldInstances: -1,
 		NewInstances: -1,
-		Reason:       getScalingReason(trigger),
+		Reason:       getDynamicScalingReason(trigger),
 	}
 
 	defer s.historyDB.SaveScalingHistory(history)
@@ -153,14 +153,28 @@ func (s *scalingEngine) ComputeNewInstances(currentInstances int, adjustment str
 	return newInstances, nil
 }
 
-func (se *scalingEngine) SetActiveSchedule(appId string, schedule *ActiveSchedule) error {
-	logger := se.logger.WithData(lager.Data{"appId": appId, "schedule": schedule})
+func (s *scalingEngine) SetActiveSchedule(appId string, schedule *ActiveSchedule) error {
+	logger := s.logger.WithData(lager.Data{"appId": appId, "schedule": schedule})
 
-	instances, err := se.cfClient.GetAppInstances(appId)
+	now := s.clock.Now()
+	history := &models.AppScalingHistory{
+		AppId:        appId,
+		Timestamp:    now.UnixNano(),
+		ScalingType:  models.ScalingTypeSchedule,
+		OldInstances: -1,
+		NewInstances: -1,
+		Reason:       getScheduledScalingReason(schedule),
+	}
+	defer s.historyDB.SaveScalingHistory(history)
+
+	instances, err := s.cfClient.GetAppInstances(appId)
 	if err != nil {
 		logger.Error("failed-to-get-app-instances", err)
+		history.Status = models.ScalingStatusFailed
+		history.Error = "failed to get app instances"
 		return err
 	}
+	history.OldInstances = instances
 
 	instanceMin := schedule.InstanceMinInitial
 	if schedule.InstanceMin > instanceMin {
@@ -170,57 +184,98 @@ func (se *scalingEngine) SetActiveSchedule(appId string, schedule *ActiveSchedul
 	newInstances := instances
 	if newInstances < instanceMin {
 		newInstances = instanceMin
+		history.Message = fmt.Sprintf("limited by min instances %d", instanceMin)
 	} else if newInstances > schedule.InstanceMax {
 		newInstances = schedule.InstanceMax
+		history.Message = fmt.Sprintf("limited by max instances %d", instanceMin)
 	}
 
-	if newInstances != instances {
-		err = se.cfClient.SetAppInstances(appId, newInstances)
-		if err != nil {
-			logger.Error("failed-to-set-app-instances", err)
-			return err
-		}
+	history.NewInstances = newInstances
+
+	if newInstances == instances {
+		history.Status = models.ScalingStatusIgnored
+		return nil
 	}
+
+	err = s.cfClient.SetAppInstances(appId, newInstances)
+	if err != nil {
+		logger.Error("failed-to-set-app-instances", err)
+		history.Status = models.ScalingStatusFailed
+		history.Error = "failed to set app instances"
+		return err
+	}
+	history.Status = models.ScalingStatusSucceeded
 	return nil
 }
 
-func (se *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) error {
-	logger := se.logger.WithData(lager.Data{"appId": appId, "scheduleId": scheduleId})
+func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) error {
+	logger := s.logger.WithData(lager.Data{"appId": appId, "scheduleId": scheduleId})
 
-	instances, err := se.cfClient.GetAppInstances(appId)
+	now := s.clock.Now()
+	history := &models.AppScalingHistory{
+		AppId:        appId,
+		Timestamp:    now.UnixNano(),
+		ScalingType:  models.ScalingTypeSchedule,
+		OldInstances: -1,
+		NewInstances: -1,
+		Reason:       "schedule ends",
+	}
+	defer s.historyDB.SaveScalingHistory(history)
+
+	instances, err := s.cfClient.GetAppInstances(appId)
 	if err != nil {
 		logger.Error("failed-to-get-app-instances", err)
+		history.Status = models.ScalingStatusFailed
+		history.Error = "failed to get app instances"
 		return err
 	}
+	history.OldInstances = instances
 
-	policy, err := se.policyDB.GetAppPolicy(appId)
+	policy, err := s.policyDB.GetAppPolicy(appId)
 	if err != nil {
 		logger.Error("failed-to-get-app-policy", err)
+		history.Status = models.ScalingStatusFailed
+		history.Error = "failed to get app policy"
 		return err
 	}
 
 	newInstances := instances
 	if newInstances < policy.InstanceMin {
 		newInstances = policy.InstanceMin
+		history.Message = fmt.Sprintf("limited by min instances %d", policy.InstanceMin)
 	} else if newInstances > policy.InstanceMax {
 		newInstances = policy.InstanceMax
+		history.Message = fmt.Sprintf("limited by max instances %d", policy.InstanceMax)
 	}
 
-	if newInstances != instances {
-		err = se.cfClient.SetAppInstances(appId, newInstances)
-		if err != nil {
-			logger.Error("failed-to-set-app-instances", err)
-			return err
-		}
+	history.NewInstances = newInstances
+
+	if newInstances == instances {
+		history.Status = models.ScalingStatusIgnored
+		return nil
 	}
+
+	err = s.cfClient.SetAppInstances(appId, newInstances)
+	if err != nil {
+		logger.Error("failed-to-set-app-instances", err)
+		history.Status = models.ScalingStatusFailed
+		history.Error = "failed to set app instances"
+		return err
+	}
+	history.Status = models.ScalingStatusSucceeded
 	return nil
 }
 
-func getScalingReason(trigger *models.Trigger) string {
+func getDynamicScalingReason(trigger *models.Trigger) string {
 	return fmt.Sprintf("%s instance(s) because %s %s %d for %d seconds",
 		trigger.Adjustment,
 		trigger.MetricType,
 		trigger.Operator,
 		trigger.Threshold,
 		trigger.BreachDurationSeconds)
+}
+
+func getScheduledScalingReason(schedule *ActiveSchedule) string {
+	return fmt.Sprintf("scheudle starts with instance min %d, instance max %d and instance min initial %d",
+		schedule.InstanceMin, schedule.InstanceMax, schedule.InstanceMinInitial)
 }
