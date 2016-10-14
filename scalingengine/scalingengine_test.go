@@ -414,7 +414,7 @@ var _ = Describe("ScalingEngine", func() {
 					Status:       models.ScalingStatusSucceeded,
 					OldInstances: 12,
 					NewInstances: 10,
-					Reason:       "scheudle starts with instance min 2, instance max 10 and instance min initial 5",
+					Reason:       "schedule starts with instance min 2, instance max 10 and instance min initial 5",
 					Message:      "limited by max instances 5",
 				}))
 
@@ -445,7 +445,7 @@ var _ = Describe("ScalingEngine", func() {
 						Status:       models.ScalingStatusSucceeded,
 						OldInstances: 1,
 						NewInstances: 2,
-						Reason:       "scheudle starts with instance min 2, instance max 10 and instance min initial 0",
+						Reason:       "schedule starts with instance min 2, instance max 10 and instance min initial 0",
 						Message:      "limited by min instances 2",
 					}))
 
@@ -467,7 +467,7 @@ var _ = Describe("ScalingEngine", func() {
 						Status:       models.ScalingStatusIgnored,
 						OldInstances: 3,
 						NewInstances: 3,
-						Reason:       "scheudle starts with instance min 2, instance max 10 and instance min initial 0",
+						Reason:       "schedule starts with instance min 2, instance max 10 and instance min initial 0",
 					}))
 				})
 			})
@@ -493,7 +493,7 @@ var _ = Describe("ScalingEngine", func() {
 						Status:       models.ScalingStatusSucceeded,
 						OldInstances: 3,
 						NewInstances: 5,
-						Reason:       "scheudle starts with instance min 2, instance max 10 and instance min initial 5",
+						Reason:       "schedule starts with instance min 2, instance max 10 and instance min initial 5",
 						Message:      "limited by min instances 5",
 					}))
 
@@ -515,7 +515,7 @@ var _ = Describe("ScalingEngine", func() {
 						Status:       models.ScalingStatusIgnored,
 						OldInstances: 6,
 						NewInstances: 6,
-						Reason:       "scheudle starts with instance min 2, instance max 10 and instance min initial 5",
+						Reason:       "schedule starts with instance min 2, instance max 10 and instance min initial 5",
 					}))
 
 				})
@@ -539,7 +539,7 @@ var _ = Describe("ScalingEngine", func() {
 					Status:       models.ScalingStatusFailed,
 					OldInstances: -1,
 					NewInstances: -1,
-					Reason:       "scheudle starts with instance min 2, instance max 10 and instance min initial 5",
+					Reason:       "schedule starts with instance min 2, instance max 10 and instance min initial 5",
 					Error:        "failed to get app instances",
 				}))
 
@@ -563,7 +563,7 @@ var _ = Describe("ScalingEngine", func() {
 					Status:       models.ScalingStatusFailed,
 					OldInstances: 0,
 					NewInstances: 5,
-					Reason:       "scheudle starts with instance min 2, instance max 10 and instance min initial 5",
+					Reason:       "schedule starts with instance min 2, instance max 10 and instance min initial 5",
 					Message:      "limited by min instances 5",
 					Error:        "failed to set app instances",
 				}))
