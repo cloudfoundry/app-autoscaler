@@ -14,7 +14,9 @@ router.put('/:app_id',validationMiddleWare,function(req, res) {
     async.apply(routeHelper.createOrUpdatePolicy, req)],
     function(error, result) {
       var responseDecorator = { };
+      var statusCode = HttpStatus.OK;
       if(error) {
+        statusCode = error.statusCode;
         responseDecorator = {
           'success': false,
           'error': error,
@@ -22,6 +24,7 @@ router.put('/:app_id',validationMiddleWare,function(req, res) {
         };
       }
       else {
+        statusCode = result.statusCode;
         if(result.statusCode === HttpStatus.CREATED) {
           res.set('Location', '/v1/policies/' + req.params.app_id);
         }
@@ -31,7 +34,7 @@ router.put('/:app_id',validationMiddleWare,function(req, res) {
           'result': result.response    
         }
       }
-      res.status(result.statusCode).json(responseDecorator);
+      res.status(statusCode).json(responseDecorator);
     });
 });
 
