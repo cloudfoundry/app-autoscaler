@@ -2,7 +2,7 @@ var logger = require('../log/logger');
 var models = require('../models')();
 var HttpStatus = require('http-status-codes');
 
-exports.createOrUpdatePolicy = function(req,schedulerResponse,callback) {
+exports.createOrUpdatePolicy = function(req, callback) {
 /*  Create policy will only be called in the async waterfall when we do not 
 get any error during the schedule creation/update. */
   models.policy_json.findOrCreate({ where:{ app_id: req.params.app_id },
@@ -23,12 +23,14 @@ get any error during the schedule creation/update. */
         }).catch(function(error) {
           logger.error ('Failed to update policy',
              { 'app id': req.params.app_id,'error':error });
-          callback(error,{ 'statusCode':HttpStatus.INTERNAL_SERVER_ERROR });
+          error.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+          callback(error);
         });
       }
     }).catch(function(error) {
       logger.error ('Failed to create policy', { 'app id': req.params.app_id,'error':error });
-      callback(error,{ 'statusCode':HttpStatus.INTERNAL_SERVER_ERROR });
+      error.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+      callback(error);
     });
 }
 

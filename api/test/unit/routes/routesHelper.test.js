@@ -23,31 +23,65 @@ describe('Policy Route helper ', function() {
 		return policy.truncate();
 	});
 
-	it('should create a policy with schedule for app id 12345',function(done){
-		var mockRequest = {
-				body : fakePolicy,
-				params : { 'app_id' : '12345' }
-		};
-		var mockSchedulerResponse = {'statusCode':HttpStatus.OK };
-		routeHelper.createOrUpdatePolicy(mockRequest,mockSchedulerResponse,function(error,result){
-			expect(result.statusCode).to.equal(HttpStatus.CREATED);
-			expect(error).to.be.null;
-			done();
-		});
-	});
+    context ('Create a policy', function () {
+    	it('should create with schedules for app id 12345',function(done){
+    		var mockRequest = {
+    				body : fakePolicy,
+    				params : { 'app_id' : '12345' }
+    		};
+
+    		routeHelper.createOrUpdatePolicy(mockRequest, function(error,result){
+    			expect(result.statusCode).to.equal(HttpStatus.CREATED);
+    			expect(error).to.be.null;
+    			done();
+    		});
+    	});
+
+    	it('should fail due to an internal error',function(done){
+    		//Mocking a request without any app_id in the request param
+    		var mockRequest = {
+    				body : fakePolicy,
+    				params : { 'key' : 'value' }
+    		};
+    		routeHelper.createOrUpdatePolicy(mockRequest, function(error,result){
+    			expect(error).not.to.be.null;
+    			expect(error.name).eql('SequelizeDatabaseError');
+    			expect(error.message).eql('null value in column "app_id" violates not-null constraint');
+    			done();
+    		});
+    	});
+    	
+    	it('should create without any schedules info for app id 12346',function(done){
+    		delete fakePolicy.schedules;
+    		var mockRequest = {
+    				body : fakePolicy,
+    				params : { 'app_id' : '12346' }
+    		};
+
+    		routeHelper.createOrUpdatePolicy(mockRequest, function(error,result){
+    			expect(result.statusCode).to.equal(HttpStatus.CREATED);
+    			expect(error).to.be.null;
+    			done();
+    		});
+    	});
+    	
+    });
 	
-	it('should return a 404 in trying to delete a policy for app id 12345 which does not exist',function(done){
-		var mockRequest = {
-				body : fakePolicy,
-				params : { 'app_id' : '12345' }
-		};
-		var app_id = '12345';
-		routeHelper.deletePolicy(mockRequest, function(error){
-			expect(error).to.not.be.null;
-			expect(error.statusCode).to.equal(404);
-			done();
-		});
-	});	
+    context ('Delete a policy', function () {
+    	it('should return a 404 for app id 12345 which does not exist',function(done){
+    		var mockRequest = {
+    				body : fakePolicy,
+    				params : { 'app_id' : '12345' }
+    		};
+    		var app_id = '12345';
+    		routeHelper.deletePolicy(mockRequest, function(error){
+    			expect(error).to.not.be.null;
+    			expect(error.statusCode).to.equal(404);
+    			done();
+    		});
+    	});	
+    	
+    });
 	
 	context('when policy already exists',function(){
 		beforeEach(function(done){
@@ -55,18 +89,31 @@ describe('Policy Route helper ', function() {
 					body : fakePolicy,
 					params : { 'app_id' : '12348' }
 			};
-			var mockSchedulerResponse = {'statusCode':HttpStatus.OK };
-			routeHelper.createOrUpdatePolicy(mockRequest,mockSchedulerResponse,function(error,result){
+			routeHelper.createOrUpdatePolicy(mockRequest, function(error,result){
 				done();
 			});
 		});
-		it('should fail to update a policy with schedule due to internal error',function(done){
+
+		it('should update with schedules',function(done){
+			var mockRequest = {
+					params : { 'app_id' : '12348' },
+					body: fakePolicy
+			};
+			
+			routeHelper.createOrUpdatePolicy(mockRequest, function(error,result){
+				expect(error).to.be.null;
+				expect(result.statusCode).to.equal(HttpStatus.OK);
+				done();
+			});
+		});
+		
+		it('should fail to update with schedules due to an internal error',function(done){
 			//Mocking a request without any policy_json in the request body
 			var mockRequest = {
 					params : { 'app_id' : '12348' }
 			};
-			var mockSchedulerResponse = {'statusCode':HttpStatus.INTERNAL_SERVER_ERROR };
-			routeHelper.createOrUpdatePolicy(mockRequest,mockSchedulerResponse,function(error,result){
+			
+			routeHelper.createOrUpdatePolicy(mockRequest, function(error,result){
 				expect(error).not.to.be.null;
 				expect(error.name).eql('SequelizeValidationError');
 				expect(error.message).eql('notNull Violation: policy_json cannot be null');
@@ -81,8 +128,8 @@ describe('Policy Route helper ', function() {
 					body : fakePolicy,
 					params : { 'app_id' : '12348' }
 			};
-			var mockSchedulerResponse = {'statusCode':HttpStatus.OK };
-			routeHelper.createOrUpdatePolicy(mockRequest,mockSchedulerResponse,function(error,result){
+
+			routeHelper.createOrUpdatePolicy(mockRequest, function(error,result){
 				done();
 			});
 		});
@@ -120,35 +167,6 @@ describe('Policy Route helper ', function() {
 			});
 		});
 		
-	});
-
-	it('should fail to create a policy due to internal error',function(done){
-		//Mocking a request without any app_id in the request param
-		var mockRequest = {
-				body : fakePolicy,
-				params : { 'key' : 'value' }
-		};
-		var mockSchedulerResponse = {'statusCode':HttpStatus.INTERNAL_SERVER_ERROR };
-		routeHelper.createOrUpdatePolicy(mockRequest,mockSchedulerResponse,function(error,result){
-			expect(error).not.to.be.null;
-			expect(error.name).eql('SequelizeDatabaseError');
-			expect(error.message).eql('null value in column "app_id" violates not-null constraint');
-			done();
-		});
-	});
-	
-	it('should create a policy without any schedule info for app id 12346',function(done){
-		delete fakePolicy.schedules;
-		var mockRequest = {
-				body : fakePolicy,
-				params : { 'app_id' : '12346' }
-		};
-		var mockSchedulerResponse = {'statusCode':HttpStatus.OK };
-		routeHelper.createOrUpdatePolicy(mockRequest,mockSchedulerResponse,function(error,result){
-			expect(result.statusCode).to.equal(HttpStatus.CREATED);
-			expect(error).to.be.null;
-			done();
-		});
 	});
 	
 });

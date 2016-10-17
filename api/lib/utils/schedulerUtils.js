@@ -6,7 +6,7 @@ exports.createOrUpdateSchedule = function createOrUpdateSchedule(req,callback) {
   var schedulerURI = process.env.SCHEDULER_URI;
   if(!req.body.schedules) {
     logger.info('Policy does not have schedule info ',{ 'app id':req.params.app_id });
-    callback(null,{ 'statusCode':HttpStatus.OK });
+    callback(null);
   }
   else{
     logger.info('Policy has schedules, creating/updating schedules ..',
@@ -21,21 +21,23 @@ exports.createOrUpdateSchedule = function createOrUpdateSchedule(req,callback) {
       if(error) {
         logger.error('Error occurred during schedule creation/update ',
               { 'app id': req.params.app_id,'error':error });
-        callback(error,{ 'statusCode':HttpStatus.INTERNAL_SERVER_ERROR }); 
+        error.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+        callback(error); 
       }
       else if(response.statusCode === HttpStatus.NO_CONTENT 
           || response.statusCode === HttpStatus.OK) { 
         logger.info('Schedules created/updated successfully',{ 'app id': req.params.app_id });
-        callback(null,{ 'statusCode':HttpStatus.OK });
+        callback(null);
       }
-      else if(response.statusCode === HttpStatus.BAD_REQUEST) { 
+      else if(response.statusCode === HttpStatus.BAD_REQUEST) {
         /* Creating the error object for Validation Error in scheduler with status code 400 
         to call the main callback in the waterfall immediately after getting this error. */
-        var ValidationError = { 'message':'Failed to create schedules due to validation' + 
+        var validationError = { 'message':'Failed to create schedules due to validation' + 
             ' error in scheduler','details':response.body };
         logger.error('Error occurred during creation/update of schedules ',
-        { 'app id': req.params.app_id,'error':ValidationError });
-        callback(ValidationError,{ 'statusCode':HttpStatus.BAD_REQUEST });
+            { 'app id': req.params.app_id,'error':validationError });
+        validationError.statusCode = HttpStatus.BAD_REQUEST;
+        callback(validationError);
       }
       // For any other error response received from Scheduler
       else {
@@ -43,7 +45,8 @@ exports.createOrUpdateSchedule = function createOrUpdateSchedule(req,callback) {
                 ' error in scheduler','details':response.body };
         logger.error('Error occurred in scheduler module during creation/update ',
             { 'app id': req.params.app_id,'error':internalError });
-        callback(internalError,{ 'statusCode':HttpStatus.INTERNAL_SERVER_ERROR });
+        internalError.statusCode = HttpStatus.INTERNAL_SERVER_ERROR
+        callback(internalError);
       }
     });
   }
