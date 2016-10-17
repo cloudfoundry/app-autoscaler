@@ -166,7 +166,7 @@ func (s *scalingEngine) ComputeNewInstances(currentInstances int, adjustment str
 	return newInstances, nil
 }
 
-func (s *scalingEngine) SetActiveSchedule(appId string, schedule *ActiveSchedule) error {
+func (s *scalingEngine) SetActiveSchedule(appId string, schedule *models.ActiveSchedule) error {
 	logger := s.logger.WithData(lager.Data{"appId": appId, "schedule": schedule})
 
 	now := s.clock.Now()
@@ -288,7 +288,7 @@ func getDynamicScalingReason(trigger *models.Trigger) string {
 		trigger.BreachDurationSeconds)
 }
 
-func getScheduledScalingReason(schedule *ActiveSchedule) string {
+func getScheduledScalingReason(schedule *models.ActiveSchedule) string {
 	return fmt.Sprintf("schedule starts with instance min %d, instance max %d and instance min initial %d",
 		schedule.InstanceMin, schedule.InstanceMax, schedule.InstanceMinInitial)
 }
