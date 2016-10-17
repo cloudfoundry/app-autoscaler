@@ -49,7 +49,7 @@ func (sdb *ScheduleSQLDB) Close() error {
 
 func (sdb *ScheduleSQLDB) GetActiveSchedule(appId string) (*models.ActiveSchedule, error) {
 	query := "SELECT active_schedule_id, instance_min_count, instance_max_count, initial_min_instance_count" +
-		" FROM app_scaling_active_schedule WHERE app_id = $1 ORDER BY active_schedule_id DESC"
+		" FROM app_scaling_active_schedule WHERE app_id = $1 ORDER BY created_at DESC"
 	logger := sdb.logger.WithData(lager.Data{"query": query, "appid": appId})
 
 	rows, err := sdb.sqldb.Query(query, appId)

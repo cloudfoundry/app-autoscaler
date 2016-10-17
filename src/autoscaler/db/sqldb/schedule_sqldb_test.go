@@ -80,54 +80,44 @@ var _ = Describe("ScheduleSqldb", func() {
 			})
 		})
 
-		Context("when there is active schedule with not null InstanceMinInitial for the given app", func() {
+		Context("when there is active schedule with an InstanceMinInitial", func() {
 			BeforeEach(func() {
-				err = insertActiveSchedule(111111, "an-app-id", 2, 10, 5, 0)
+				err = insertActiveSchedule("an-app-id", 2, 10, 5, "starting")
 				Expect(err).NotTo(HaveOccurred())
 			})
 			It("return the active schedule", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(activeSchedule).To(Equal(&models.ActiveSchedule{
-					ScheduleId:         "111111",
-					InstanceMin:        2,
-					InstanceMax:        10,
-					InstanceMinInitial: 5,
-				}))
+				Expect(activeSchedule.InstanceMin).To(Equal(2))
+				Expect(activeSchedule.InstanceMax).To(Equal(10))
+				Expect(activeSchedule.InstanceMinInitial).To(Equal(5))
 			})
 		})
 
-		Context("when there is active schedule with null InstanceMinInitial for the given app", func() {
+		Context("when there is active schedule with no InstanceMinInitial", func() {
 			BeforeEach(func() {
-				err = insertActiveSchedule(111111, "an-app-id", 2, 10, -1, 0)
+				err = insertActiveSchedule("an-app-id", 2, 10, -1, "starting")
 				Expect(err).NotTo(HaveOccurred())
 			})
 			It("return the active schedule with InstanceMinInitial set to be zero ", func() {
-				Expect(err).NotTo(HaveOccurred())
-				Expect(activeSchedule).To(Equal(&models.ActiveSchedule{
-					ScheduleId:         "111111",
-					InstanceMin:        2,
-					InstanceMax:        10,
-					InstanceMinInitial: 0,
-				}))
+				Expect(activeSchedule.InstanceMin).To(Equal(2))
+				Expect(activeSchedule.InstanceMax).To(Equal(10))
+				Expect(activeSchedule.InstanceMinInitial).To(Equal(0))
 			})
 		})
 
 		Context("when there is multiple active schedules for the given app", func() {
 			BeforeEach(func() {
-				err = insertActiveSchedule(111111, "an-app-id", 2, 10, -1, 0)
+				err = insertActiveSchedule("an-app-id", 2, 10, -1, "starting")
 				Expect(err).NotTo(HaveOccurred())
-				err = insertActiveSchedule(222222, "an-app-id", 3, 9, 5, 0)
+				err = insertActiveSchedule("an-app-id", 3, 9, 5, "starting")
 				Expect(err).NotTo(HaveOccurred())
 
 			})
 			It("return the latest active schedule", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(activeSchedule).To(Equal(&models.ActiveSchedule{
-					ScheduleId:         "222222",
-					InstanceMin:        3,
-					InstanceMax:        9,
-					InstanceMinInitial: 5,
-				}))
+				Expect(activeSchedule.InstanceMin).To(Equal(3))
+				Expect(activeSchedule.InstanceMax).To(Equal(9))
+				Expect(activeSchedule.InstanceMinInitial).To(Equal(5))
 			})
 		})
 

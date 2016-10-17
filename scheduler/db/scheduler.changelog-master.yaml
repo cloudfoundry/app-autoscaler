@@ -160,6 +160,11 @@ databaseChangeLog:
                   constraints:
                     primaryKey: true
               - column:
+                  name: created_at
+                  type: timestamp
+                  constraints:
+                    nullable: false                    
+              - column:
                   name: app_id
                   type: varchar(50)
                   constraints:
@@ -181,10 +186,9 @@ databaseChangeLog:
                     nullable: true
               - column:
                   name: status
-                  type: integer
+                  type: varchar(20)
                   constraints:
                     nullable: false
-      
         - createIndex:
              columns:
              - column:
@@ -192,4 +196,18 @@ databaseChangeLog:
                  type: varchar(50)
              indexName: idx_active_schedule_app_id
              tableName: app_scaling_active_schedule
+        - createProcedure:
+            procedureBody:
+              CREATE OR REPLACE FUNCTION add_created_at() RETURNS trigger
+                AS $body$
+                BEGIN
+                NEW.created_at := CURRENT_TIMESTAMP;
+                RETURN NEW;
+                END;
+              $body$
+              LANGUAGE plpgsql;                             
+        - sql:
+            DROP TRIGGER IF EXISTS add_created_at_app_scaling_active_schedule ON app_scaling_active_schedule;
+            CREATE TRIGGER add_created_at_app_scaling_active_schedule BEFORE INSERT ON app_scaling_active_schedule FOR EACH ROW EXECUTE PROCEDURE add_created_at();
+
 
