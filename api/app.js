@@ -6,6 +6,7 @@ var bootstrap = require('./lib/utils/bootstrap');
 var app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use('/health', require('express-healthcheck')());
 
 bootstrap.boot(function(error){
   if (!error) {

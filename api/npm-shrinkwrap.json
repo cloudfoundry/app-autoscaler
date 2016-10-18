@@ -531,6 +531,11 @@
       "from": "express@>=4.14.0 <5.0.0",
       "resolved": "https://registry.npmjs.org/express/-/express-4.14.0.tgz"
     },
+    "express-healthcheck": {
+      "version": "0.1.0",
+      "from": "express-healthcheck@0.1.0",
+      "resolved": "https://registry.npmjs.org/express-healthcheck/-/express-healthcheck-0.1.0.tgz"
+    },
     "extend": {
       "version": "3.0.0",
       "from": "extend@>=3.0.0 <3.1.0",
