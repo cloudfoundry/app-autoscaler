@@ -24,12 +24,6 @@ databaseChangeLog:
               - column:
                   name: policy_json
                   type: ${policy_json.type}
-   - changeSet:
-      id: 2
-      author: pradyutsarma
-      changes:
-        - addColumn:
-            columns:
               - column:
                   name: updated_at
                   type: timestamp
