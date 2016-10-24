@@ -16,7 +16,7 @@ $ cd app-autoscaler
 
 ```sh
 pushd  scheduler
-mvn package
+mvn package -DskipTests
 popd
 
 pushd api
