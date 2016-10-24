@@ -97,6 +97,19 @@ mvn test
 popd
 ```
 
+## Integration tests
+pushd api
+npm install
+popd
+
+pushd scheduler
+mvn package -DskipTests
+popd
+
+pushd test/integration/api
+npm install
+npm run integration
+popd
 ### Configure and Package
 
 All the `CF-AutoScaler` components are configured through a single properties file. To create your own settings, copy the following properties and change the appropriate values for your environment.
