@@ -71,8 +71,8 @@ describe('API Server-Scheduler Integration tests', function(){
                               // Not passing the error to the callback but in the results 
                               // to ensure that the next function in the series to stop the apiserver is called
                               callback(null, e);
-						  }
-						  console.log ('Scheduler stopped successfully')
+                          }
+                          console.log ('Scheduler stopped successfully')
                           callback();
                       },
                       function(callback) {
