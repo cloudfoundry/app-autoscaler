@@ -62,18 +62,41 @@ describe('API Server-Scheduler Integration tests', function(){
 	});
 	
     after(function(done) {
-    	try {
-        	scheduler.kill();
-        	apiServer.kill();
-        	done();
-		} catch (e) {
-	        done(e);
-		}
+        async.series([
+                      function(callback) {
+                          try {
+                              scheduler.kill();
+                          } catch (e) {
+                              console.error ('Error while trying to stop the Scheduler. Attempting to stop the API server', e);
+                              // Not passing the error to the callback but in the results 
+                              // to ensure that the next function in the series to stop the apiserver is called
+                              callback(null, e);
+						  }
+						  console.log ('Scheduler stopped successfully')
+                          callback();
+                      },
+                      function(callback) {
+                          try {
+                              apiServer.kill();
+                          } catch (e) {
+                              console.error ('Error while trying to stop the API Server.', e);
+                              callback(null, e);
+                          }
+                          console.log ('API Server stopped successfully')
+                          callback();
+                      }
+                  ],
+                  function(err, results) {
+                      if (results[0] || results[1])
+                          console.error ('Some error may have occurred while trying to stop the API Server or the Scheduler');
+                      done ();
+                  }
+        );
     });
     
 	context('Create Policy with schedules ',function(){
 		// Cleanup the DB before running every context
-		before(function(done){
+		beforeEach(function(done){
 			var deletePolicyOptions={
 					url:apiServerURI+'/v1/policies/dummy',
 					method:'DELETE',
@@ -81,8 +104,8 @@ describe('API Server-Scheduler Integration tests', function(){
 			};
 			request(deletePolicyOptions,function(error,response,body){
 				done();
-			});		
-		});	
+			});
+		});
 
 		it('Should create a policy and associated schedules',function(done){
 			async.series([	
@@ -125,8 +148,6 @@ describe('API Server-Scheduler Integration tests', function(){
 				request(getSchedulesOptions,function(error,response,body){
 					expect(error).to.be.null;
 					expect(response.statusCode).to.equal(200);
-					expect(response.body.schedules.specific_date).to.not.be.empty;
-					expect(response.body.schedules.recurring_schedule).to.not.be.empty;
 					expect(response.body.schedules.recurring_schedule).to.have.lengthOf(4);
 					expect(response.body.schedules.specific_date).to.have.lengthOf(2);
 					callback(error,response);
@@ -135,6 +156,49 @@ describe('API Server-Scheduler Integration tests', function(){
 			],done);
 		});
 		
+		it('Should fail to create policy and associated schedules due to some validation error with the policy',function(done){
+			var newFakePolicy=JSON.parse(JSON.stringify(fakePolicy));
+			newFakePolicy.instance_min_count=5;
+			async.series([
+			function createDummyPolicy(callback){
+				var createOptions={
+						url:apiServerURI+'/v1/policies/dummy',
+						method:'PUT',
+						body:newFakePolicy,
+						json:true
+				};
+				request(createOptions,function(error,response,body){
+					expect(error).to.be.null;
+					expect(response.statusCode).to.equal(400);
+					callback(error,response);
+				});
+			},
+			function getDummyPolicy(callback){
+				var policyOptions={
+						url:apiServerURI+'/v1/policies/dummy',
+						method:'GET',
+						json:true
+				};
+				request(policyOptions,function(error,response,body){
+					expect(error).to.be.null;
+					expect(response.statusCode).to.equal(404);
+					callback(error,response);
+				});
+			},
+			function getDummySchedule(callback){
+				var getSchedulesOptions={
+						url:schedulerURI+'/v2/schedules/dummy',
+						method:'GET',
+						json:true
+				};
+				request(getSchedulesOptions,function(error,response,body){
+					expect(error).to.be.null;
+					expect(response.statusCode).to.equal(404);
+					callback(error,response);
+				});
+			}
+			],done);
+		});
 	});
 	
 	context(' Create policy without schedules ',function(){
@@ -151,14 +215,14 @@ describe('API Server-Scheduler Integration tests', function(){
 		});	
 
 		it('should create the policy only',function(done){
-			var newFakePolicy=JSON.parse(JSON.stringify(fakePolicy));
-			delete newFakePolicy.schedules;
+			var policyWithoutSchedules=JSON.parse(JSON.stringify(fakePolicy));
+			delete policyWithoutSchedules.schedules;
 			async.series([	
 			function createDummyPolicy(callback){
 				var createOptions={
 						url:apiServerURI+'/v1/policies/dummy',
 						method:'PUT',
-						body:newFakePolicy,
+						body:policyWithoutSchedules,
 						json:true
 				};
 				request(createOptions,function(error,response,body){
@@ -226,9 +290,10 @@ describe('API Server-Scheduler Integration tests', function(){
 			});		
 		});
 
-		it('Should update a policy and associated schedules',function(done){
+		it('Should update the policy and associated schedules',function(done){
 			var newFakePolicy=JSON.parse(JSON.stringify(fakePolicy));
 			newFakePolicy.schedules.recurring_schedule[0].instance_max_count=8;
+			newFakePolicy.instance_min_count=2;
 			async.series([	
 			function updateDummyPolicy(callback){
 				var updateOptions={
@@ -260,7 +325,7 @@ describe('API Server-Scheduler Integration tests', function(){
 					callback(error,response);
 				});	
 			},
-			function getDummySchedule(callback){
+			function getDummySchedules(callback){
 				var getSchedulesOptions={
 						url:schedulerURI+'/v2/schedules/dummy',
 						method:'GET',
@@ -269,8 +334,6 @@ describe('API Server-Scheduler Integration tests', function(){
 				request(getSchedulesOptions,function(error,response,body){
 					expect(error).to.be.null;
 					expect(response.statusCode).to.equal(200);
-					expect(response.body.schedules.specific_date).to.not.be.empty;
-					expect(response.body.schedules.recurring_schedule).to.not.be.empty;
 					expect(response.body.schedules.recurring_schedule).to.have.lengthOf(4);
 					expect(response.body.schedules.specific_date).to.have.lengthOf(2);
 					callback(error,response);
@@ -280,187 +343,128 @@ describe('API Server-Scheduler Integration tests', function(){
 		});
 
 	});
-	
-	context('Failure scenarios',function(){
-		// Cleanup the DB before running every context
-		before(function(done){
-			var deletePolicyOptions={
-					url:apiServerURI+'/v1/policies/dummy',
-					method:'DELETE',
-					json:true
-			};
-			request(deletePolicyOptions,function(error,response,body){
-				done();
-			});		
-		});	
-
-		it('Should fail to create policy and associated schedules due to some validation error with the policy',function(done){
-			var newFakePolicy=JSON.parse(JSON.stringify(fakePolicy));
-			newFakePolicy.instance_min_count=5;
-			async.series([	
-			function createDummyPolicy(callback){
-				var createOptions={
-						url:apiServerURI+'/v1/policies/dummy',
-						method:'PUT',
-						body:newFakePolicy,
-						json:true
-				};
-				request(createOptions,function(error,response,body){
-					expect(error).to.be.null;
-					expect(response.statusCode).to.equal(400);
-					callback(error,response);
-				});
-			},
-			function getDummyPolicy(callback){
-				var policyOptions={
-						url:apiServerURI+'/v1/policies/dummy',
-						method:'GET',
-						json:true
-				};
-				request(policyOptions,function(error,response,body){
-					expect(error).to.be.null;
-					expect(response.statusCode).to.equal(404);
-					callback(error,response);
-				});	
-			},
-			function getDummySchedule(callback){
-				var getSchedulesOptions={
-						url:schedulerURI+'/v2/schedules/dummy',
-						method:'GET',
-						json:true
-				};
-				request(getSchedulesOptions,function(error,response,body){
-					expect(error).to.be.null;
-					expect(response.statusCode).to.equal(404);
-					callback(error,response);
-				});
-			}
-			],done);
-		});	
 		
-		it('Should return a 404 status code while deleting a non-existing policy and associated schedules',function(done){
-				var deletePolicyOptions={
-						url:apiServerURI+'/v1/policies/dummy',
-						method:'DELETE',
-						json:true
-				};
-				request(deletePolicyOptions,function(error,response,body){
-					expect(response.statusCode).to.equal(404);
-					expect(response.body.success).to.equal(false);
-					expect(response.body.error.statusCode).to.equal(404);
-					done();
-				});
-		});	
-		
-		it('Should return a 404 status code while retrieving a non-existing policy',function(done){
-				var policyOptions={
-						url:apiServerURI+'/v1/policies/dummy',
-						method:'GET',
-						json:true
-				};
-				request(policyOptions,function(error,response,body){
-					expect(response.statusCode).to.equal(404);
-					expect(response.body).to.deep.equal({});
-					done();
-				});	
-		});
-	});
-	
 	context('Delete Policy with schedules ',function(){
-		before(function(done){
-			var deletePolicyOptions={
-					url:apiServerURI+'/v1/policies/dummy',
-					method:'DELETE',
-					json:true
-			};
-			request(deletePolicyOptions,function(error,response,body){
-				
-				var createOptions={
-						url:apiServerURI+'/v1/policies/dummy',
-						method:'PUT',
-						body:fakePolicy,
-						json:true
-				};
-				request(createOptions,function(error,response,body){
-					expect(error).to.be.null;
-					expect(response.statusCode).to.equal(201);
-					expect(response.body.success).to.equal(true);
-					expect(response.body.error).to.be.null;
-					expect(response.body.result.policy_json).eql(fakePolicy);
-					expect(response.body.result.app_id).to.equal('dummy');
-					done();
-				});
-			});		
-		});
-
-		it('Should delete an existing policy and associated schedules',function(done){
-			async.series([	
-			function getDummyPolicy(callback){
-				var policyOptions={
-						url:apiServerURI+'/v1/policies/dummy',
-						method:'GET',
-						json:true
-				};
-				request(policyOptions,function(error,response,body){
-					expect(error).to.be.null;
-					expect(response.statusCode).to.equal(200);
-					expect(response.body).to.deep.equal(fakePolicy);
-					callback(error,response);
-				});	
-			},
-			function getDummySchedule(callback){
-				var getSchedulesOptions={
-						url:schedulerURI+'/v2/schedules/dummy',
-						method:'GET',
-						json:true
-				};
-				request(getSchedulesOptions,function(error,response,body){
-					expect(error).to.be.null;
-					expect(response.statusCode).to.equal(200);
-					expect(response.body.schedules.specific_date).to.not.be.empty;
-					expect(response.body.schedules.recurring_schedule).to.not.be.empty;
-					expect(response.body.schedules.recurring_schedule).to.have.lengthOf(4);
-					expect(response.body.schedules.specific_date).to.have.lengthOf(2);
-					callback(error,response);
-				});
-			},
-			function deletePolicy(callback){
+		context('for a non-existing app', function () {
+			before(function(done){
 				var deletePolicyOptions={
 						url:apiServerURI+'/v1/policies/dummy',
 						method:'DELETE',
 						json:true
 				};
 				request(deletePolicyOptions,function(error,response,body){
-					expect(error).to.be.null;
-					expect(response.statusCode).to.equal(200);
-					callback(error,response);
+					done();
 				});
-			},
-			function getDummyPolicy(callback){
-				var policyOptions={
+			});	
+
+			it('Should return a 404 status code',function(done){
+					var deletePolicyOptions={
+							url:apiServerURI+'/v1/policies/dummy',
+							method:'DELETE',
+							json:true
+					};
+					request(deletePolicyOptions,function(error,response,body){
+						expect(response.statusCode).to.equal(404);
+						expect(response.body.success).to.equal(false);
+						expect(response.body.error.statusCode).to.equal(404);
+						done();
+					});
+			});
+		});
+
+		context('for an existing app', function() {
+			before(function(done){
+				var deletePolicyOptions={
 						url:apiServerURI+'/v1/policies/dummy',
-						method:'GET',
+						method:'DELETE',
 						json:true
 				};
-				request(policyOptions,function(error,response,body){
-					expect(error).to.be.null;
-					expect(response.statusCode).to.equal(404);
-					callback(error,response);
-				});	
-			},
-			function getDummySchedule(callback){
-				var getSchedulesOptions={
-						url:schedulerURI+'/v2/schedules/dummy',
-						method:'GET',
-						json:true
-				};
-				request(getSchedulesOptions,function(error,response,body){
-					expect(error).to.be.null;
-					expect(response.statusCode).to.equal(404);
-					callback(error,response);
+				request(deletePolicyOptions,function(error,response,body){
+					var createOptions={
+							url:apiServerURI+'/v1/policies/dummy',
+							method:'PUT',
+							body:fakePolicy,
+							json:true
+					};
+					request(createOptions,function(error,response,body){
+						expect(error).to.be.null;
+						expect(response.statusCode).to.equal(201);
+						expect(response.body.success).to.equal(true);
+						expect(response.body.error).to.be.null;
+						expect(response.body.result.policy_json).eql(fakePolicy);
+						expect(response.body.result.app_id).to.equal('dummy');
+						done();
+					});
 				});
-			},
-			],done);
+			});
+
+			it('Should delete the existing policy and associated schedules',function(done){
+				async.series([
+				function getDummyPolicy(callback){
+					var policyOptions={
+							url:apiServerURI+'/v1/policies/dummy',
+							method:'GET',
+							json:true
+					};
+					request(policyOptions,function(error,response,body){
+						expect(error).to.be.null;
+						expect(response.statusCode).to.equal(200);
+						expect(response.body).to.deep.equal(fakePolicy);
+						callback(error,response);
+					});	
+				},
+				function getDummySchedule(callback){
+					var getSchedulesOptions={
+							url:schedulerURI+'/v2/schedules/dummy',
+							method:'GET',
+							json:true
+					};
+					request(getSchedulesOptions,function(error,response,body){
+						expect(error).to.be.null;
+						expect(response.statusCode).to.equal(200);
+						expect(response.body.schedules.recurring_schedule).to.have.lengthOf(4);
+						expect(response.body.schedules.specific_date).to.have.lengthOf(2);
+						callback(error,response);
+					});
+				},
+				function deletePolicy(callback){
+					var deletePolicyOptions={
+							url:apiServerURI+'/v1/policies/dummy',
+							method:'DELETE',
+							json:true
+					};
+					request(deletePolicyOptions,function(error,response,body){
+						expect(error).to.be.null;
+						expect(response.statusCode).to.equal(200);
+						callback(error,response);
+					});
+				},
+				function getDummyPolicy(callback){
+					var policyOptions={
+							url:apiServerURI+'/v1/policies/dummy',
+							method:'GET',
+							json:true
+					};
+					request(policyOptions,function(error,response,body){
+						expect(error).to.be.null;
+						expect(response.statusCode).to.equal(404);
+						callback(error,response);
+					});
+				},
+				function getDummySchedule(callback){
+					var getSchedulesOptions={
+							url:schedulerURI+'/v2/schedules/dummy',
+							method:'GET',
+							json:true
+					};
+					request(getSchedulesOptions,function(error,response,body){
+						expect(error).to.be.null;
+						expect(response.statusCode).to.equal(404);
+						callback(error,response);
+					});
+				},
+				],done);
+			});
 		});
 		
 	});
