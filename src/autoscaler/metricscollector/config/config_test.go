@@ -71,7 +71,7 @@ collector:
 			})
 		})
 
-		Context("when it gives an invalid retry times", func() {
+		Context("when provided with an invalid retry_times value", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
 collector:
