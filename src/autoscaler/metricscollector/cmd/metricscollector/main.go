@@ -87,7 +87,7 @@ func main() {
 	defer policyDB.Close()
 
 	createPoller := func(appId string) collector.AppPoller {
-		return collector.NewAppPoller(logger.Session("app-poller"), appId, conf.Collector.PollInterval, cfClient, noaa, metricsDB, mcClock)
+		return collector.NewAppPoller(logger.Session("app-poller"), appId, conf.Collector.PollInterval, conf.Collector.RetryTimes, cfClient, noaa, metricsDB, mcClock)
 	}
 
 	collectServer := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {

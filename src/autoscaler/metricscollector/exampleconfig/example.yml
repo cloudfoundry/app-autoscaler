@@ -13,3 +13,4 @@ db:
 collector:
   refresh_interval: 60s
   poll_interval: 10s
+  retry_times: 3

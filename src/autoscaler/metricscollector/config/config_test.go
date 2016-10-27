@@ -61,7 +61,23 @@ server:
 				configBytes = []byte(`
 collector:
   refresh_interval: 20a
-  poll_interval: 10s  
+  poll_interval: 10s
+  retry_times: 3  
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+			})
+		})
+
+		Context("when it gives an invalid retry times", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+collector:
+  refresh_interval: 20s
+  poll_interval: 10s
+  retry_times: -3  
 `)
 			})
 
@@ -90,6 +106,7 @@ db:
 collector:
   refresh_interval: 20s
   poll_interval: 10s
+  retry_times: 3
 `)
 			})
 
@@ -109,6 +126,7 @@ collector:
 
 				Expect(conf.Collector.RefreshInterval).To(Equal(20 * time.Second))
 				Expect(conf.Collector.PollInterval).To(Equal(10 * time.Second))
+				Expect(conf.Collector.RetryTimes).To(Equal(uint(3)))
 			})
 		})
 
@@ -131,6 +149,7 @@ db:
 				Expect(conf.Logging.Level).To(Equal(DefaultLoggingLevel))
 				Expect(conf.Collector.RefreshInterval).To(Equal(DefaultRefreshInterval))
 				Expect(conf.Collector.PollInterval).To(Equal(DefaultPollInterval))
+				Expect(conf.Collector.RetryTimes).To(Equal(DefaultRetryTimes))
 			})
 		})
 
