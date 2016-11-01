@@ -2,17 +2,13 @@ package org.cloudfoundry.autoscaler.scheduler.util.error;
 
 import java.util.Arrays;
 
-/**
- * 
- *
- */
-public class ValidationError {
+class ValidationError {
 
 	private Object object;
 	private String errorMessageCode;
 	private Object[] errorMessageArguments;
 
-	public ValidationError(Object object, Object[] errorMessageArguments, String errorMessageCode) {
+	ValidationError(Object object, Object[] errorMessageArguments, String errorMessageCode) {
 		this.object = object;
 		this.errorMessageCode = errorMessageCode;
 		this.errorMessageArguments = errorMessageArguments;
@@ -26,20 +22,12 @@ public class ValidationError {
 		this.object = object;
 	}
 
-	public String getErrorMessageCode() {
+	String getErrorMessageCode() {
 		return errorMessageCode;
 	}
 
-	public void setErrorMessageCode(String errorMessageCode) {
-		this.errorMessageCode = errorMessageCode;
-	}
-
-	public Object[] getErrorMessageArguments() {
+	Object[] getErrorMessageArguments() {
 		return errorMessageArguments;
-	}
-
-	public void setErrorMessageArguments(Object[] errorMessageArguments) {
-		this.errorMessageArguments = errorMessageArguments;
 	}
 
 	@Override

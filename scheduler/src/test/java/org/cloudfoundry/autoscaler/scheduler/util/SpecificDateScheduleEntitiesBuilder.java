@@ -8,14 +8,14 @@ import java.util.List;
 
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 
-public class SpecificDateScheduleEntitiesBuilder {
+class SpecificDateScheduleEntitiesBuilder {
 	private List<SpecificDateScheduleEntity> specificDateScheduleEntities;
 
-	public SpecificDateScheduleEntitiesBuilder(int noOfSchedules) {
+	SpecificDateScheduleEntitiesBuilder(int noOfSchedules) {
 		specificDateScheduleEntities = generateEntities(noOfSchedules);
 	}
 
-	public SpecificDateScheduleEntitiesBuilder setTimeZone(String timeZone) {
+	SpecificDateScheduleEntitiesBuilder setTimeZone(String timeZone) {
 		if (specificDateScheduleEntities != null) {
 			for (SpecificDateScheduleEntity specificDateScheduleEntity : specificDateScheduleEntities) {
 				specificDateScheduleEntity.setTimeZone(timeZone);
@@ -33,7 +33,7 @@ public class SpecificDateScheduleEntitiesBuilder {
 		return this;
 	}
 
-	public SpecificDateScheduleEntitiesBuilder setDefaultInstanceMaxCount(int max) {
+	SpecificDateScheduleEntitiesBuilder setDefaultInstanceMaxCount(int max) {
 		if (specificDateScheduleEntities != null) {
 			for (SpecificDateScheduleEntity specificDateScheduleEntity : specificDateScheduleEntities) {
 				specificDateScheduleEntity.setDefaultInstanceMaxCount(max);
@@ -43,7 +43,7 @@ public class SpecificDateScheduleEntitiesBuilder {
 
 	}
 
-	public SpecificDateScheduleEntitiesBuilder setDefaultInstanceMinCount(int min) {
+	SpecificDateScheduleEntitiesBuilder setDefaultInstanceMinCount(int min) {
 		if (specificDateScheduleEntities != null) {
 			for (SpecificDateScheduleEntity specificDateScheduleEntity : specificDateScheduleEntities) {
 				specificDateScheduleEntity.setDefaultInstanceMinCount(min);
@@ -69,6 +69,15 @@ public class SpecificDateScheduleEntitiesBuilder {
 
 	public SpecificDateScheduleEntitiesBuilder setEndDateTime(int pos, Date date) {
 		specificDateScheduleEntities.get(pos).setEndDateTime(date);
+		return this;
+	}
+
+	public SpecificDateScheduleEntitiesBuilder setScheduleId() {
+		long index = 1;
+		for (SpecificDateScheduleEntity specificDateScheduleEntity : specificDateScheduleEntities) {
+			specificDateScheduleEntity.setId(index++);
+		}
+
 		return this;
 	}
 

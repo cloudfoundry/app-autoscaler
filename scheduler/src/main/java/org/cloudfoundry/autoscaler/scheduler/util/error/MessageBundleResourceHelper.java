@@ -15,10 +15,11 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class MessageBundleResourceHelper {
-	
-	@Autowired @Qualifier("messageSource")
+
+	@Autowired
+	@Qualifier("messageSource")
 	private MessageSource messageSource;
-	
+
 	/**
 	 * Lookup a message resource for the specified key
 	 * 
@@ -28,19 +29,18 @@ public class MessageBundleResourceHelper {
 	 * 
 	 * @return - the located message or defaultMessage if none is found
 	 */
-	public String lookupMessageWithDefault(String key, String defaultMessage, Object... arguments) {
-		
+	private String lookupMessageWithDefault(String key, String defaultMessage, Object... arguments) {
+
 		Locale locale = LocaleContextHolder.getLocale();
-		
+
 		return messageSource.getMessage(key, arguments, defaultMessage, locale);
 	}
-	
+
 	/**
 	 * Lookup a message resource for the specified key, using <code>"["+key+"]"</code> as default message.
 	 */
 	public String lookupMessage(String key, Object... arguments) {
 		return lookupMessageWithDefault(key, "[" + key + "]", arguments);
 	}
-	
-	
+
 }

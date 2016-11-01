@@ -5,20 +5,20 @@ package org.cloudfoundry.autoscaler.scheduler.util;
  *
  */
 public enum JobActionEnum {
-	START("Start", "Start Scaling Job", "_start"), END("End", "End Scaling Job", "_end");
+	START("Starting", "Start Scaling Job", "_start"), END("Ending", "End Scaling Job", "_end");
 
-	private String action;
+	private String status;
 	private String description;
 	private String jobIdSuffix;
 
-	JobActionEnum(String action, String description, String jobIdSuffix) {
-		this.action = action;
+	JobActionEnum(String status, String description, String jobIdSuffix) {
+		this.status = status;
 		this.description = description;
 		this.jobIdSuffix = jobIdSuffix;
 	}
 
-	public String getAction() {
-		return action;
+	public String getStatus() {
+		return status;
 	}
 
 	public String getDescription() {

@@ -17,6 +17,8 @@ import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.util.JobActionEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleTypeEnum;
+import org.cloudfoundry.autoscaler.scheduler.util.TestConfiguration;
+import org.cloudfoundry.autoscaler.scheduler.util.TestDataCleanupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.ValidationErrorResult;
@@ -34,26 +36,19 @@ import org.quartz.TriggerKey;
 import org.quartz.impl.matchers.GroupMatcher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.annotation.DirtiesContext.ClassMode;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
-/**
- * 
- *
- */
 @ActiveProfiles("SchedulerMock")
 @RunWith(SpringRunner.class)
 @SpringBootTest
-@DirtiesContext(classMode = ClassMode.BEFORE_EACH_TEST_METHOD)
-public class ScheduleJobManagerTest {
+public class ScheduleJobManagerTest extends TestConfiguration {
 
 	@Autowired
 	private Scheduler scheduler;
 
 	@Autowired
-	private ScheduleJobManager scalingJobManager;
+	private ScheduleJobManager scheduleJobManager;
 
 	@Autowired
 	private ValidationErrorResult validationErrorResult;
@@ -61,12 +56,15 @@ public class ScheduleJobManagerTest {
 	@Autowired
 	private MessageBundleResourceHelper messageBundleResourceHelper;
 
+	@Autowired
+	private TestDataCleanupHelper testDataCleanupHelper;
+
 	private Long scheduleIdx = 0L;
 
 	@Before
 	public void initializer() throws SchedulerException {
-		// Clear previous schedules.
-		scheduler.clear();
+		testDataCleanupHelper.cleanupData(scheduler);
+
 		Mockito.reset(scheduler);
 	}
 
@@ -165,7 +163,7 @@ public class ScheduleJobManagerTest {
 		Long index = 0L;
 		for (RecurringScheduleEntity scheduleEntity : recurringScheduleEntities) {
 			scheduleEntity.setId(++index);
-			scalingJobManager.createCronJob(scheduleEntity);
+			scheduleJobManager.createCronJob(scheduleEntity);
 		}
 
 		assertTrue("This test should have an Error.", validationErrorResult.hasErrors());
@@ -196,7 +194,7 @@ public class ScheduleJobManagerTest {
 
 		// Delete the simple jobs
 		for (ScheduleEntity scheduleEntity : specificDateScheduleEntities) {
-			scalingJobManager.deleteJob(scheduleEntity.getAppId(), scheduleEntity.getId(),
+			scheduleJobManager.deleteJob(scheduleEntity.getAppId(), scheduleEntity.getId(),
 					ScheduleTypeEnum.SPECIFIC_DATE);
 		}
 
@@ -225,7 +223,7 @@ public class ScheduleJobManagerTest {
 
 		// Delete the cron jobs
 		for (ScheduleEntity scheduleEntity : recurringScheduleEntities) {
-			scalingJobManager.deleteJob(scheduleEntity.getAppId(), scheduleEntity.getId(), ScheduleTypeEnum.RECURRING);
+			scheduleJobManager.deleteJob(scheduleEntity.getAppId(), scheduleEntity.getId(), ScheduleTypeEnum.RECURRING);
 		}
 
 		scheduleJobKeyDetailMap = getSchedulerJobs(ScheduleTypeEnum.RECURRING.getScheduleIdentifier());
@@ -256,7 +254,7 @@ public class ScheduleJobManagerTest {
 
 		// Delete the simple jobs
 		for (ScheduleEntity scheduleEntity : specificDateScheduleEntities) {
-			scalingJobManager.deleteJob(scheduleEntity.getAppId(), scheduleEntity.getId(),
+			scheduleJobManager.deleteJob(scheduleEntity.getAppId(), scheduleEntity.getId(),
 					ScheduleTypeEnum.SPECIFIC_DATE);
 		}
 
@@ -299,7 +297,7 @@ public class ScheduleJobManagerTest {
 
 		// Delete the cron jobs
 		for (ScheduleEntity scheduleEntity : recurringScheduleEntities) {
-			scalingJobManager.deleteJob(scheduleEntity.getAppId(), scheduleEntity.getId(), ScheduleTypeEnum.RECURRING);
+			scheduleJobManager.deleteJob(scheduleEntity.getAppId(), scheduleEntity.getId(), ScheduleTypeEnum.RECURRING);
 		}
 
 		assertTrue("This test should have an Error.", validationErrorResult.hasErrors());
@@ -322,7 +320,7 @@ public class ScheduleJobManagerTest {
 		for (SpecificDateScheduleEntity scheduleEntity : specificDateScheduleEntities) {
 			Long scheduleId = ++scheduleIdx;
 			scheduleEntity.setId(scheduleId);
-			scalingJobManager.createSimpleJob(scheduleEntity);
+			scheduleJobManager.createSimpleJob(scheduleEntity);
 		}
 	}
 
@@ -330,7 +328,7 @@ public class ScheduleJobManagerTest {
 		for (RecurringScheduleEntity scheduleEntity : recurringScheduleEntities) {
 			Long scheduleId = ++scheduleIdx;
 			scheduleEntity.setId(scheduleId);
-			scalingJobManager.createCronJob(scheduleEntity);
+			scheduleJobManager.createCronJob(scheduleEntity);
 		}
 	}
 
@@ -382,12 +380,12 @@ public class ScheduleJobManagerTest {
 	private void assertJobDetails(String expectedAppId, Long expectedScheduleId, int expectedInstanceMinCount,
 			int expectedInstanceMaxCount, JobActionEnum expectedJobAction, JobDetail expectedJobDetail) {
 		assertNotNull("Expected existing jobDetail", expectedJobDetail);
-		JobDataMap map = expectedJobDetail.getJobDataMap();
-		assertEquals(expectedAppId, map.get("appId"));
-		assertEquals(expectedScheduleId, map.get("scheduleId"));
-		assertEquals(expectedJobAction, map.get("scalingAction"));
-		assertEquals(expectedInstanceMinCount, map.get("instanceMinCount"));
-		assertEquals(expectedInstanceMaxCount, map.get("instanceMaxCount"));
+		JobDataMap jobDataMap = expectedJobDetail.getJobDataMap();
+		assertEquals(expectedAppId, jobDataMap.get(ScheduleJobHelper.APP_ID));
+		assertEquals(expectedScheduleId, jobDataMap.get(ScheduleJobHelper.SCHEDULE_ID));
+		assertEquals(expectedJobAction.getStatus(), jobDataMap.get(ScheduleJobHelper.SCALING_ACTION));
+		assertEquals(expectedInstanceMinCount, jobDataMap.get(ScheduleJobHelper.INSTANCE_MIN_COUNT));
+		assertEquals(expectedInstanceMaxCount, jobDataMap.get(ScheduleJobHelper.INSTANCE_MAX_COUNT));
 	}
 
 	private void checkNextFireJobTheDayOfWeek(int day, TimeZone timeZone) throws SchedulerException {

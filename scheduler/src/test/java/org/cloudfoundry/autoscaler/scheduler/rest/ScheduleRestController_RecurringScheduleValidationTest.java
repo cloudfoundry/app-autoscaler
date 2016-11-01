@@ -18,6 +18,8 @@ import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationSchedules;
 import org.cloudfoundry.autoscaler.scheduler.util.DateHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleTypeEnum;
+import org.cloudfoundry.autoscaler.scheduler.util.TestConfiguration;
+import org.cloudfoundry.autoscaler.scheduler.util.TestDataCleanupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.TimeZoneTestRule;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
@@ -43,14 +45,10 @@ import org.springframework.web.context.WebApplicationContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-/**
- *
- *
- */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
-@DirtiesContext(classMode = ClassMode.BEFORE_EACH_TEST_METHOD)
-public class ScheduleRestController_RecurringScheduleValidationTest {
+@DirtiesContext(classMode = ClassMode.BEFORE_CLASS)
+public class ScheduleRestController_RecurringScheduleValidationTest extends TestConfiguration {
 
 	@Rule
 	public TestRule timeZoneRule = new TimeZoneTestRule(new String[] { "America/Los_Angeles", "Australia/Sydney" });
@@ -65,6 +63,9 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 	private MessageBundleResourceHelper messageBundleResourceHelper;
 
 	@Autowired
+	private TestDataCleanupHelper testDataCleanupHelper;
+
+	@Autowired
 	private WebApplicationContext wac;
 	private MockMvc mockMvc;
 
@@ -72,19 +73,8 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 
 	@Before
 	public void beforeTest() throws Exception {
-		// Clear previous applicationPolicy.getSchedules().
-		scheduler.clear();
+		testDataCleanupHelper.cleanupData(scheduler);
 		mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
-		removeData();
-	}
-
-	public void removeData() throws Exception {
-		List<String> allAppIds = TestDataSetupHelper.getAllGeneratedAppIds();
-		for (String appId : allAppIds) {
-			for (RecurringScheduleEntity entity : recurringScheduleDao.findAllRecurringSchedulesByAppId(appId)) {
-				callDeleteSchedules(entity.getAppId());
-			}
-		}
 	}
 
 	@Test

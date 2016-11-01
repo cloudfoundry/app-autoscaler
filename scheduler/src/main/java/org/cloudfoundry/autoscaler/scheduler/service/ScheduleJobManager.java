@@ -6,7 +6,8 @@ import java.util.TimeZone;
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
-import org.cloudfoundry.autoscaler.scheduler.quartz.AppScalingScheduleJob;
+import org.cloudfoundry.autoscaler.scheduler.quartz.AppScalingScheduleEndJob;
+import org.cloudfoundry.autoscaler.scheduler.quartz.AppScalingScheduleStartJob;
 import org.cloudfoundry.autoscaler.scheduler.util.DateHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.JobActionEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper;
@@ -52,8 +53,8 @@ class ScheduleJobManager {
 		JobKey endJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.END,
 				ScheduleTypeEnum.SPECIFIC_DATE);
 
-		JobDetail startJobDetail = ScheduleJobHelper.buildJob(startJobKey, AppScalingScheduleJob.class);
-		JobDetail endJobDetail = ScheduleJobHelper.buildJob(endJobKey, AppScalingScheduleJob.class);
+		JobDetail startJobDetail = ScheduleJobHelper.buildJob(startJobKey, AppScalingScheduleStartJob.class);
+		JobDetail endJobDetail = ScheduleJobHelper.buildJob(endJobKey, AppScalingScheduleEndJob.class);
 
 		// Set the data in JobDetail for informing the scaling decision maker that scaling job needs to be started
 		setupScalingScheduleJobData(startJobDetail, specificDateScheduleEntity, JobActionEnum.START);
@@ -96,8 +97,8 @@ class ScheduleJobManager {
 		JobKey endJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.END, ScheduleTypeEnum.RECURRING);
 
 		// Build the job
-		JobDetail jobStartDetail = ScheduleJobHelper.buildJob(startJobKey, AppScalingScheduleJob.class);
-		JobDetail jobEndDetail = ScheduleJobHelper.buildJob(endJobKey, AppScalingScheduleJob.class);
+		JobDetail jobStartDetail = ScheduleJobHelper.buildJob(startJobKey, AppScalingScheduleStartJob.class);
+		JobDetail jobEndDetail = ScheduleJobHelper.buildJob(endJobKey, AppScalingScheduleEndJob.class);
 
 		// Set the data in JobDetail for informing the scaling decision maker that scaling job needs to be started
 		setupScalingScheduleJobData(jobStartDetail, recurringScheduleEntity, JobActionEnum.START);
@@ -142,19 +143,22 @@ class ScheduleJobManager {
 			JobActionEnum jobAction) {
 
 		JobDataMap jobDataMap = jobDetail.getJobDataMap();
-		jobDataMap.put("appId", scheduleEntity.getAppId());
-		jobDataMap.put("scheduleId", scheduleEntity.getId());
-		jobDataMap.put("scalingAction", jobAction);
-		jobDataMap.put("instanceMinCount", scheduleEntity.getInitialMinInstanceCount());
+		jobDataMap.put(ScheduleJobHelper.APP_ID, scheduleEntity.getAppId());
+		jobDataMap.put(ScheduleJobHelper.SCHEDULE_ID, scheduleEntity.getId());
+		jobDataMap.put(ScheduleJobHelper.SCALING_ACTION, jobAction.getStatus());
+		jobDataMap.put(ScheduleJobHelper.RescheduleCount.ACTIVE_SCHEDULE.name(), 1);
+		jobDataMap.put(ScheduleJobHelper.RescheduleCount.SCALING_ENGINE_NOTIFICATION.name(),1);
+		jobDataMap.put(ScheduleJobHelper.ACTIVE_SCHEDULE_TABLE_TASK_DONE, false);
 
 		// The minimum and maximum instance count need to be set when the
 		// scaling action has to be started.
 		if (jobAction == JobActionEnum.START) {
-			jobDataMap.put("instanceMinCount", scheduleEntity.getInstanceMinCount());
-			jobDataMap.put("instanceMaxCount", scheduleEntity.getInstanceMaxCount());
+			jobDataMap.put(ScheduleJobHelper.INSTANCE_MIN_COUNT, scheduleEntity.getInstanceMinCount());
+			jobDataMap.put(ScheduleJobHelper.INSTANCE_MAX_COUNT, scheduleEntity.getInstanceMaxCount());
+			jobDataMap.put(ScheduleJobHelper.INITIAL_MIN_INSTANCE_COUNT, scheduleEntity.getInitialMinInstanceCount());
 		} else {
-			jobDataMap.put("instanceMinCount", scheduleEntity.getDefaultInstanceMinCount());
-			jobDataMap.put("instanceMaxCount", scheduleEntity.getDefaultInstanceMaxCount());
+			jobDataMap.put(ScheduleJobHelper.INSTANCE_MIN_COUNT, scheduleEntity.getDefaultInstanceMinCount());
+			jobDataMap.put(ScheduleJobHelper.INSTANCE_MAX_COUNT, scheduleEntity.getDefaultInstanceMaxCount());
 		}
 	}
 

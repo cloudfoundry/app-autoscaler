@@ -9,6 +9,7 @@ import java.util.List;
 import javax.transaction.Transactional;
 
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
+import org.cloudfoundry.autoscaler.scheduler.util.TestConfiguration;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,7 +24,7 @@ import org.springframework.test.context.junit4.SpringRunner;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class SpecificDateScheduleDaoImplTest {
+public class SpecificDateScheduleDaoImplTest extends TestConfiguration {
 
 	@Autowired
 	private SpecificDateScheduleDao specificDateScheduleDao;

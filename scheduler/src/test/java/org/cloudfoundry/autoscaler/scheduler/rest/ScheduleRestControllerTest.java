@@ -21,6 +21,7 @@ import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationSchedules;
+import org.cloudfoundry.autoscaler.scheduler.util.TestConfiguration;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
 import org.hamcrest.Matchers;
@@ -49,8 +50,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
-@DirtiesContext(classMode = ClassMode.BEFORE_EACH_TEST_METHOD)
-public class ScheduleRestControllerTest {
+@DirtiesContext(classMode = ClassMode.BEFORE_CLASS)
+public class ScheduleRestControllerTest extends TestConfiguration {
 
 	@Autowired
 	private Scheduler scheduler;

@@ -10,7 +10,6 @@ databaseChangeLog:
               - column:
                   name: schedule_id
                   type: bigint
-                  autoIncrement: true
                   constraints:
                     primaryKey: true
               - column:
@@ -76,7 +75,6 @@ databaseChangeLog:
               - column:
                   name: schedule_id
                   type: bigint
-                  autoIncrement: true
                   constraints:
                     primaryKey: true
               - column:
@@ -147,13 +145,19 @@ databaseChangeLog:
       id: 3
       author: Fujitsu
       changes:
+      - createSequence:
+          cycle: true
+          sequenceName: schedule_id_sequence
+   - changeSet:
+      id: 4
+      author: Fujitsu
+      changes:
         - createTable:
             tableName: app_scaling_active_schedule
             columns:
               - column:
-                  name: active_schedule_id
+                  name: id
                   type: bigint
-                  autoIncrement: true
                   constraints:
                     primaryKey: true
               - column:
@@ -194,4 +198,3 @@ databaseChangeLog:
                  type: varchar(50)
              indexName: idx_active_schedule_app_id
              tableName: app_scaling_active_schedule
-

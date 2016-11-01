@@ -10,29 +10,29 @@ import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationExcept
  *
  * @param <T>
  */
-public class GenericDaoImpl<T> implements GenericDao<T> {
+class GenericDaoImpl<T> implements GenericDao<T> {
 
 	@PersistenceContext
 	EntityManager entityManager;
 	private Class<T> entityClass;
 
-	public GenericDaoImpl() {
+	GenericDaoImpl() {
 
 	}
 
-	public GenericDaoImpl(Class<T> entityClass) {
+	GenericDaoImpl(Class<T> entityClass) {
 
 		this.entityClass = entityClass;
 	}
 
 	@Override
 	public T create(T entity) {
-		try{
+		try {
 			entityManager.persist(entity);
 			entityManager.flush();
 			return entity;
-		} catch(Exception exception){
-			throw new DatabaseValidationException("Create Failed", exception);
+		} catch (Exception exception) {
+			throw new DatabaseValidationException("Create failed", exception);
 		}
 	}
 
@@ -40,8 +40,8 @@ public class GenericDaoImpl<T> implements GenericDao<T> {
 	public T update(T entity) {
 		try {
 			return entityManager.merge(entity);
-		} catch(Exception exception){
-			throw new DatabaseValidationException("Update Failed", exception);
+		} catch (Exception exception) {
+			throw new DatabaseValidationException("Update failed", exception);
 		}
 	}
 
@@ -50,7 +50,7 @@ public class GenericDaoImpl<T> implements GenericDao<T> {
 		try {
 			entityManager.remove(entity);
 
-		} catch(Exception exception){
+		} catch (Exception exception) {
 			throw new DatabaseValidationException("Delete failed", exception);
 		}
 	}
@@ -59,7 +59,8 @@ public class GenericDaoImpl<T> implements GenericDao<T> {
 	public T find(Long id) {
 		try {
 			return entityManager.find(entityClass, id);
-		} catch(Exception exception){
+
+		} catch (Exception exception) {
 			throw new DatabaseValidationException("Find failed", exception);
 		}
 	}
