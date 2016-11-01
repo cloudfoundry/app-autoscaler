@@ -13,13 +13,12 @@ import org.springframework.context.annotation.Profile;
 @Profile("ScheduleDaoMock")
 @Configuration
 public class ScheduleDaoMock {
-	SpecificDateScheduleDao specificDateScheduleDao = new SpecificDateScheduleDaoImpl();
-	RecurringScheduleDao recurringScheduleDao = new RecurringScheduleDaoImpl();
+	private SpecificDateScheduleDao specificDateScheduleDao = new SpecificDateScheduleDaoImpl();
+	private RecurringScheduleDao recurringScheduleDao = new RecurringScheduleDaoImpl();
 
 	@Bean
 	@Primary
 	public SpecificDateScheduleDao specificDateScheduleDao() {
-
 		return Mockito.spy(specificDateScheduleDao);
 	}
 

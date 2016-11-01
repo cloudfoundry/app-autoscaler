@@ -7,10 +7,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
+import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.Job;
 import org.quartz.JobBuilder;
+import org.quartz.JobDataMap;
 import org.quartz.JobDetail;
 import org.quartz.JobKey;
 import org.quartz.SimpleScheduleBuilder;
@@ -23,6 +25,12 @@ import org.quartz.TriggerKey;
  *
  */
 public class ScheduleJobHelper {
+	public static final String APP_ID = "appId";
+	public static final String SCHEDULE_ID = "scheduleId";
+	public static final String SCALING_ACTION = "scalingAction";
+	public static final String INITIAL_MIN_INSTANCE_COUNT = "initialMinInstanceCount";
+	public static final String INSTANCE_MIN_COUNT = "instanceMinCount";
+	public static final String INSTANCE_MAX_COUNT = "instanceMaxCount";
 
 	public static JobKey generateJobKey(Long id, JobActionEnum jobActionEnum, ScheduleTypeEnum scheduleTypeEnum) {
 		String name = id + jobActionEnum.getJobIdSuffix();
@@ -116,6 +124,22 @@ public class ScheduleJobHelper {
 			cronExpression = Arrays.toString(dayOfMonth).replaceAll("[\\[\\]\\s]", "");
 		}
 		return cronExpression;
+	}
+
+	public static ActiveScheduleEntity setupActiveSchedule(JobDataMap jobDataMap) {
+
+		ActiveScheduleEntity activeScheduleEntity = new ActiveScheduleEntity();
+
+		activeScheduleEntity.setAppId(jobDataMap.getString(APP_ID));
+		activeScheduleEntity.setId(jobDataMap.getLongValue(SCHEDULE_ID));
+		activeScheduleEntity.setInstanceMinCount(jobDataMap.getIntValue(INSTANCE_MIN_COUNT));
+		activeScheduleEntity.setInstanceMaxCount(jobDataMap.getIntValue(INSTANCE_MAX_COUNT));
+		activeScheduleEntity.setStatus(jobDataMap.getString(SCALING_ACTION));
+
+		// Initial min instance count can be null
+		activeScheduleEntity.setInitialMinInstanceCount((Integer) jobDataMap.get(INITIAL_MIN_INSTANCE_COUNT));
+
+		return activeScheduleEntity;
 	}
 
 }

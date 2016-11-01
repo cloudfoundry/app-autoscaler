@@ -13,6 +13,7 @@ import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationSchedules;
@@ -61,10 +62,8 @@ public class TestDataSetupHelper {
 		List<RecurringScheduleEntity> recurringSchedules = generateRecurringScheduleEntities(appId,
 				noOfDOMRecurringSchedules, noOfDOWRecurringSchedules);
 
-		Schedules schedules = new ScheduleBuilder().setSpecificDate(specificDateSchedules)
-				.setRecurringSchedule(recurringSchedules).build();
-
-		return schedules;
+		return new ScheduleBuilder().setSpecificDate(specificDateSchedules).setRecurringSchedule(recurringSchedules)
+				.build();
 
 	}
 
@@ -116,6 +115,20 @@ public class TestDataSetupHelper {
 		applicationPolicy.setSchedules(schedules);
 
 		return mapper.writeValueAsString(applicationPolicy);
+	}
+
+	public static ActiveScheduleEntity generateActiveScheduleEntity(String appId, Long scheduleId,
+			JobActionEnum jobAction) {
+
+		ActiveScheduleEntity activeScheduleEntity = new ActiveScheduleEntity();
+
+		activeScheduleEntity.setAppId(appId);
+		activeScheduleEntity.setId(scheduleId);
+		activeScheduleEntity.setInstanceMinCount(2);
+		activeScheduleEntity.setInstanceMaxCount(4);
+		activeScheduleEntity.setStatus(jobAction.getStatus());
+		activeScheduleEntity.setInitialMinInstanceCount(null);
+		return activeScheduleEntity;
 	}
 
 	public static Date getDate(String dateStr) throws ParseException {

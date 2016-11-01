@@ -17,6 +17,7 @@ import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationSchedules;
 import org.cloudfoundry.autoscaler.scheduler.util.DateHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleTypeEnum;
+import org.cloudfoundry.autoscaler.scheduler.util.TestDataCleanupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
 import org.hamcrest.Matchers;
@@ -39,13 +40,9 @@ import org.springframework.web.context.WebApplicationContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-/**
- * 
- *
- */
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
-@DirtiesContext(classMode = ClassMode.BEFORE_EACH_TEST_METHOD)
+@DirtiesContext(classMode = ClassMode.BEFORE_CLASS)
 public class ScheduleRestController_SpecificScheduleValidationTest {
 
 	@Autowired
@@ -58,6 +55,8 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 	private MessageBundleResourceHelper messageBundleResourceHelper;
 
 	@Autowired
+	private TestDataCleanupHelper testDataCleanupHelper;
+	@Autowired
 	private WebApplicationContext wac;
 	private MockMvc mockMvc;
 
@@ -67,22 +66,10 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 
 	@Before
 	public void beforeTest() throws Exception {
-		// Clear previous schedules.
-		scheduler.clear();
+		testDataCleanupHelper.cleanupData(scheduler);
+
 		mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
-		removeData();
 	}
-
-	public void removeData() throws Exception {
-		List<String> allAppIds = TestDataSetupHelper.getAllGeneratedAppIds();
-		for (String appId : allAppIds) {
-			for (SpecificDateScheduleEntity entity : specificDateScheduleDao
-					.findAllSpecificDateSchedulesByAppId(appId)) {
-				callDeleteSchedules(entity.getAppId());
-			}
-		}
-	}
-
 
 	@Test
 	public void testCreateSchedule_without_startDateTime() throws Exception {
@@ -372,15 +359,13 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 	public void testCreateSchedule_without_specificDateSchedules() throws Exception {
 		// No schedules - null case
 		ObjectMapper mapper = new ObjectMapper();
-		ApplicationSchedules applicationPolicy = TestDataSetupHelper
-				.generateApplicationPolicy(1, 0);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(1, 0);
 
 		applicationPolicy.getSchedules().setSpecificDate(null);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 
-		String errorMessage = messageBundleResourceHelper.lookupMessage("data.invalid.noSchedules",
-				"app_id=" + appId);
+		String errorMessage = messageBundleResourceHelper.lookupMessage("data.invalid.noSchedules", "app_id=" + appId);
 
 		assertErrorMessage(appId, content, errorMessage);
 	}
@@ -389,15 +374,13 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 	public void testCreateSchedule_empty_specificDateSchedules() throws Exception {
 		// No schedules - Empty case
 		ObjectMapper mapper = new ObjectMapper();
-		ApplicationSchedules applicationPolicy = TestDataSetupHelper
-				.generateApplicationPolicy(1, 0);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(1, 0);
 
 		applicationPolicy.getSchedules().setSpecificDate(Collections.emptyList());
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 
-		String errorMessage = messageBundleResourceHelper.lookupMessage("data.invalid.noSchedules",
-				"app_id=" + appId);
+		String errorMessage = messageBundleResourceHelper.lookupMessage("data.invalid.noSchedules", "app_id=" + appId);
 
 		assertErrorMessage(appId, content, errorMessage);
 	}
@@ -406,8 +389,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 	public void testCreateSchedule_without_startEndDateTime_instanceMaxMinCount() throws Exception {
 		// schedules - no parameters.
 		ObjectMapper mapper = new ObjectMapper();
-		ApplicationSchedules applicationPolicy = TestDataSetupHelper
-				.generateApplicationPolicy(1, 0);
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(1, 0);
 
 		SpecificDateScheduleEntity entity = applicationPolicy.getSchedules().getSpecificDate().get(0);
 		entity.setInstanceMinCount(null);
@@ -451,7 +433,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 		return mockMvc.perform(delete(getCreateSchedulePath(appId)).accept(MediaType.APPLICATION_JSON));
 
 	}
-	
+
 	private void assertResponseStatusEquals(String appId, String inputContent, ResultMatcher status) throws Exception {
 		ResultActions resultActions = mockMvc.perform(
 				put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(inputContent));

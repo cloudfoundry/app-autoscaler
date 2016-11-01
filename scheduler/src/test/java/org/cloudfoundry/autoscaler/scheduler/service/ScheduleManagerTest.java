@@ -18,6 +18,7 @@ import org.cloudfoundry.autoscaler.scheduler.rest.model.Schedules;
 import org.cloudfoundry.autoscaler.scheduler.util.JobActionEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleTypeEnum;
+import org.cloudfoundry.autoscaler.scheduler.util.TestDataCleanupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationException;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
@@ -35,8 +36,6 @@ import org.quartz.SchedulerException;
 import org.quartz.impl.matchers.GroupMatcher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.annotation.DirtiesContext.ClassMode;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -46,7 +45,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 @ActiveProfiles("ScheduleDaoMock")
 @RunWith(SpringRunner.class)
 @SpringBootTest
-@DirtiesContext(classMode = ClassMode.BEFORE_EACH_TEST_METHOD)
 public class ScheduleManagerTest {
 
 	@Autowired
@@ -67,20 +65,15 @@ public class ScheduleManagerTest {
 	@Autowired
 	private ValidationErrorResult validationErrorResult;
 
+	@Autowired
+	private TestDataCleanupHelper testDataCleanupHelper;
+
 	@Before
 	public void init() throws SchedulerException {
-		// Clear previous schedules.
-		scheduler.clear();
+		testDataCleanupHelper.cleanupData(scheduler);
+
 		Mockito.reset(specificDateScheduleDao);
 		Mockito.reset(recurringScheduleDao);
-		removeData();
-	}
-
-	public void removeData() {
-		List<String> appIds = TestDataSetupHelper.getAllGeneratedAppIds();
-		for (String appId : appIds) {
-			scheduleManager.deleteSchedules(appId);
-		}
 	}
 
 	@Test
@@ -113,8 +106,8 @@ public class ScheduleManagerTest {
 	public void testCreateAndGetSchedues_Timezone() {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		int noOfSpecificDateSchedules = 1;
-		Schedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId,
-				noOfSpecificDateSchedules, 0, 0);
+		Schedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, noOfSpecificDateSchedules, 0,
+				0);
 		scheduleManager.createSchedules(schedules);
 		// Create 1 specific date schedule.
 		createScheduleNotThrowAnyException(appId, 4, 0);
@@ -220,8 +213,8 @@ public class ScheduleManagerTest {
 
 		int noOfDOMRecurringSchedules = noOfRecurringSchedules / 2;
 		int noOfDOWRecurringSchedules = noOfRecurringSchedules - noOfDOMRecurringSchedules;
-		Schedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId,
-				noOfSpecificDateSchedules, noOfDOMRecurringSchedules, noOfDOWRecurringSchedules);
+		Schedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, noOfSpecificDateSchedules,
+				noOfDOMRecurringSchedules, noOfDOWRecurringSchedules);
 		scheduleManager.createSchedules(schedules);
 	}
 
@@ -370,7 +363,7 @@ public class ScheduleManagerTest {
 		JobDataMap map = expectedJobDetail.getJobDataMap();
 		assertEquals(expectedAppId, map.get("appId"));
 		assertEquals(expectedScheduleId, map.get("scheduleId"));
-		assertEquals(expectedJobAction, map.get("scalingAction"));
+		assertEquals(expectedJobAction.getStatus(), map.get("scalingAction"));
 		assertEquals(expectedInstanceMinCount, map.get("instanceMinCount"));
 		assertEquals(expectedInstanceMaxCount, map.get("instanceMaxCount"));
 	}
