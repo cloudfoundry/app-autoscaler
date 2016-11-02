@@ -7,8 +7,9 @@ var uuid = require('uuid');
 
 var fs = require('fs');
 var path = require('path');
+var configFilePath = path.join(__dirname, '../../config/settings.json');
 var settings = require(path.join(__dirname, '../../lib/config/setting.js'))((JSON.parse(
-  fs.readFileSync(path.join(__dirname, '../../config/settings.json'), 'utf8'))));
+  fs.readFileSync(configFilePath, 'utf8'))));
 
 var models = require('../../lib/models')(settings.db.uri);
 var serviceInstance = models.service_instance;
@@ -60,11 +61,14 @@ describe('binding RESTful API', function() {
   };
   var policy = { "policy": "testPolicy" };
   before(function(done) {
-    server = require(path.join(__dirname, '../../lib/index.js'));
+    server = require(path.join(__dirname, '../../lib/server.js'))(configFilePath);
     done();
   });
+  after(function(done){
+    server.close(done)
+  });
   beforeEach(function(done) {
-    delete require.cache[require.resolve('../../lib/index.js')];
+    delete require.cache[require.resolve('../../lib/server.js')];
     binding.truncate({ cascade: true }).then(function(result) {
       serviceInstance.truncate({ cascade: true }).then(function(result) {
         serviceInstance.create(service_condition).then(function(result) {

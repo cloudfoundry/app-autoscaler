@@ -30,7 +30,7 @@
   },
   "scripts": {
     "lint": "eslint lib",
-    "start": "node lib/index.js",
+    "start": "node lib/index.js -c config/settings.json",
     "test": "mocha --recursive test",
     "watch-test": "mocha test --recursive --watch",
     "package": "npm install bin/cfpack && ./bin/cfpack/cfpack"

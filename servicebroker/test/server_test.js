@@ -5,15 +5,16 @@ var uuid = require('uuid');
 
 var fs = require('fs');
 var path = require('path');
+var configFilePath = path.join(__dirname, '../config/settings.json');
 var settings = require(path.join(__dirname, '../lib/config/setting.js'))((JSON.parse(
-  fs.readFileSync(path.join(__dirname, '../config/settings.json'), 'utf8'))));
+  fs.readFileSync(configFilePath, 'utf8'))));
 var auth = new Buffer(settings.username + ":" + settings.password).toString('base64')
 
 describe("Invalid path for RESTful API", function() {
   var server;
   before(function() {
-    delete require.cache[require.resolve('../lib/index.js')];
-    server = require(path.join(__dirname, '../lib/index.js'));
+    delete require.cache[require.resolve('../lib/server.js')];
+    server = require(path.join(__dirname, '../lib/server.js'))(configFilePath);
   });
 
   after(function(done) {
@@ -33,8 +34,8 @@ describe("Invalid path for RESTful API", function() {
 describe("Auth for RESTful API", function() {
   var server;
   before(function() {
-    delete require.cache[require.resolve('../lib/index.js')];
-    server = require(path.join(__dirname, '../lib/index.js'));
+    delete require.cache[require.resolve('../lib/server.js')];
+    server = require(path.join(__dirname, '../lib/server.js'))(configFilePath);
   });
 
   after(function(done) {
