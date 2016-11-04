@@ -70,24 +70,16 @@ func main() {
 	}
 	defer policyDB.Close()
 
-	var historyDB db.HistoryDB
-	historyDB, err = sqldb.NewHistorySQLDB(conf.Db.HistoryDbUrl, logger.Session("history-db"))
+	var scalingEngineDB db.ScalingEngineDB
+	scalingEngineDB, err = sqldb.NewScalingEngineSQLDB(conf.Db.ScalingEngineDbUrl, logger.Session("scalingengine-db"))
 	if err != nil {
-		logger.Error("failed to connect history database", err, lager.Data{"url": conf.Db.HistoryDbUrl})
+		logger.Error("failed to connect scalingengine database", err, lager.Data{"url": conf.Db.ScalingEngineDbUrl})
 		os.Exit(1)
 	}
-	defer historyDB.Close()
+	defer scalingEngineDB.Close()
 
-	var scheduleDB db.ScheduleDB
-	scheduleDB, err = sqldb.NewScheduleSQLDB(conf.Db.ScheduleDbUrl, logger.Session("schedule-db"))
-	if err != nil {
-		logger.Error("failed to connect schedule database", err, lager.Data{"url": conf.Db.ScheduleDbUrl})
-		os.Exit(1)
-	}
-	defer scheduleDB.Close()
-
-	scalingEngine := scalingengine.NewScalingEngine(logger, cfClient, policyDB, historyDB, scheduleDB, eClock)
-	httpServer := server.NewServer(logger, conf.Server, historyDB, scalingEngine)
+	scalingEngine := scalingengine.NewScalingEngine(logger, cfClient, policyDB, scalingEngineDB, eClock)
+	httpServer := server.NewServer(logger, conf.Server, scalingEngineDB, scalingEngine)
 	members := grouper.Members{
 		{"http_server", httpServer},
 	}

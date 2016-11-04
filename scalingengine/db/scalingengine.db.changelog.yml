@@ -64,3 +64,42 @@ databaseChangeLog:
                   type: bigint
                   constraints:
                     nullable: false
+  - changeSet:
+      id: 3
+      author: byang
+      changes:
+        - createTable:
+            tableName: activeschedule
+            columns:
+              - column:
+                  name: scheduleid
+                  type: varchar
+                  constraints:
+                    nullable: false
+              - column:
+                  name: appid
+                  type: varchar
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: createdat
+                  type: timestamp
+                  constraints:
+                    nullable: false
+                  defaultValueComputed: now()  
+              - column:
+                  name: instancemincount
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: instancemaxcount
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: initialmininstancecount
+                  type: integer
+                  constraints:
+                    nullable: false

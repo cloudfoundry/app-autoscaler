@@ -28,9 +28,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 }, func(_ []byte) {
 	port := 2222 + GinkgoParallelNode()
 	conf := config.ServerConfig{Port: port}
-	historyDB := &fakes.FakeHistoryDB{}
+	scalingEngineDB := &fakes.FakeScalingEngineDB{}
 	scalingEngine := &fakes.FakeScalingEngine{}
-	httpServer := NewServer(lager.NewLogger("test"), conf, historyDB, scalingEngine)
+	httpServer := NewServer(lager.NewLogger("test"), conf, scalingEngineDB, scalingEngine)
 	server = ginkgomon.Invoke(httpServer)
 	serverUrl = fmt.Sprintf("http://127.0.0.1:%d", conf.Port)
 })

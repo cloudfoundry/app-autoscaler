@@ -30,8 +30,8 @@ func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vh(w, r, vars)
 }
 
-func NewServer(logger lager.Logger, conf config.ServerConfig, historyDB db.HistoryDB, scalingEngine scalingengine.ScalingEngine) ifrit.Runner {
-	handler := NewScalingHandler(logger, historyDB, scalingEngine)
+func NewServer(logger lager.Logger, conf config.ServerConfig, scalingEngineDB db.ScalingEngineDB, scalingEngine scalingengine.ScalingEngine) ifrit.Runner {
+	handler := NewScalingHandler(logger, scalingEngineDB, scalingEngine)
 
 	r := mux.NewRouter()
 	r.Methods("POST").Path(PathScale).Handler(VarsFunc(handler.Scale)).Name(RouteNameScale)

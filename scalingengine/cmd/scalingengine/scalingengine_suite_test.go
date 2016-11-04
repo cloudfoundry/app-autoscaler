@@ -74,21 +74,20 @@ var _ = SynchronizedBeforeSuite(
 		conf.Logging.Level = "debug"
 
 		conf.Db.PolicyDbUrl = os.Getenv("DBURL")
-		conf.Db.HistoryDbUrl = os.Getenv("DBURL")
-		conf.Db.ScheduleDbUrl = os.Getenv("DBURL")
+		conf.Db.ScalingEngineDbUrl = os.Getenv("DBURL")
 
 		configFile = writeConfig(&conf)
 
-		engineDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
+		testDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
 		Expect(err).NotTo(HaveOccurred())
 
-		_, err = engineDB.Exec("DELETE FROM scalinghistory WHERE appid = $1", appId)
+		_, err = testDB.Exec("DELETE FROM scalinghistory WHERE appid = $1", appId)
 		Expect(err).NotTo(HaveOccurred())
 
-		_, err = engineDB.Exec("DELETE from policy_json WHERE app_id = $1", appId)
+		_, err = testDB.Exec("DELETE from policy_json WHERE app_id = $1", appId)
 		Expect(err).NotTo(HaveOccurred())
 
-		_, err = engineDB.Exec("DELETE from app_scaling_active_schedule WHERE app_id = $1", appId)
+		_, err = testDB.Exec("DELETE from activeschedule WHERE appid = $1", appId)
 		Expect(err).NotTo(HaveOccurred())
 
 		policy := `
@@ -96,10 +95,10 @@ var _ = SynchronizedBeforeSuite(
  			"instance_min_count": 1,
   			"instance_max_count": 5
 		}`
-		_, err = engineDB.Exec("INSERT INTO policy_json(app_id, policy_json) values($1, $2)", appId, policy)
+		_, err = testDB.Exec("INSERT INTO policy_json(app_id, policy_json) values($1, $2)", appId, policy)
 		Expect(err).NotTo(HaveOccurred())
 
-		err = engineDB.Close()
+		err = testDB.Close()
 		Expect(err).NotTo(HaveOccurred())
 
 	})

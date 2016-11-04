@@ -2,6 +2,7 @@ package server_test
 
 import (
 	"autoscaler/models"
+	"autoscaler/scalingengine"
 	"autoscaler/scalingengine/fakes"
 	. "autoscaler/scalingengine/server"
 
@@ -22,7 +23,7 @@ const testUrlActiveSchedules = "http://localhost/v1/apps/an-app-id/active_schedu
 
 var _ = Describe("ScalingHandler", func() {
 	var (
-		historyDB          *fakes.FakeHistoryDB
+		scalingEngineDB    *fakes.FakeScalingEngineDB
 		scalingEngine      *fakes.FakeScalingEngine
 		handler            *ScalingHandler
 		resp               *httptest.ResponseRecorder
@@ -37,9 +38,9 @@ var _ = Describe("ScalingHandler", func() {
 	BeforeEach(func() {
 		logger := lagertest.NewTestLogger("scaling-handler-test")
 		buffer = logger.Buffer()
-		historyDB = &fakes.FakeHistoryDB{}
+		scalingEngineDB = &fakes.FakeScalingEngineDB{}
 		scalingEngine = &fakes.FakeScalingEngine{}
-		handler = NewScalingHandler(logger, historyDB, scalingEngine)
+		handler = NewScalingHandler(logger, scalingEngineDB, scalingEngine)
 		resp = httptest.NewRecorder()
 	})
 
@@ -225,7 +226,7 @@ var _ = Describe("ScalingHandler", func() {
 				})
 
 				It("retrieves scaling histories from database with the given start and end time ", func() {
-					appid, start, end := historyDB.RetrieveScalingHistoriesArgsForCall(0)
+					appid, start, end := scalingEngineDB.RetrieveScalingHistoriesArgsForCall(0)
 					Expect(appid).To(Equal("an-app-id"))
 					Expect(start).To(Equal(int64(123)))
 					Expect(end).To(Equal(int64(567)))
@@ -239,7 +240,7 @@ var _ = Describe("ScalingHandler", func() {
 				})
 
 				It("queries metrics from database with start time  0", func() {
-					_, start, _ := historyDB.RetrieveScalingHistoriesArgsForCall(0)
+					_, start, _ := scalingEngineDB.RetrieveScalingHistoriesArgsForCall(0)
 					Expect(start).To(Equal(int64(0)))
 				})
 			})
@@ -251,7 +252,7 @@ var _ = Describe("ScalingHandler", func() {
 				})
 
 				It("queries metrics from database with end time -1 ", func() {
-					_, _, end := historyDB.RetrieveScalingHistoriesArgsForCall(0)
+					_, _, end := scalingEngineDB.RetrieveScalingHistoriesArgsForCall(0)
 					Expect(end).To(Equal(int64(-1)))
 				})
 			})
@@ -283,7 +284,7 @@ var _ = Describe("ScalingHandler", func() {
 						Error:        "an error",
 					}
 
-					historyDB.RetrieveScalingHistoriesReturns([]*models.AppScalingHistory{history1, history2}, nil)
+					scalingEngineDB.RetrieveScalingHistoriesReturns([]*models.AppScalingHistory{history1, history2}, nil)
 				})
 
 				It("returns 200 with scaling histories in message body", func() {
@@ -301,7 +302,7 @@ var _ = Describe("ScalingHandler", func() {
 				BeforeEach(func() {
 					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?start=123&end=567", nil)
 					Expect(err).ToNot(HaveOccurred())
-					historyDB.RetrieveScalingHistoriesReturns(nil, errors.New("database error"))
+					scalingEngineDB.RetrieveScalingHistoriesReturns(nil, errors.New("database error"))
 				})
 
 				It("returns 500", func() {
@@ -387,6 +388,24 @@ var _ = Describe("ScalingHandler", func() {
 		Context("when removing active schedule succeeds", func() {
 			It("returns 204", func() {
 				Expect(resp.Code).To(Equal(http.StatusNoContent))
+			})
+		})
+
+		Context("when active schedule is not found", func() {
+			BeforeEach(func() {
+				scalingEngine.RemoveActiveScheduleReturns(&scalingengine.ActiveScheduleNotFoundError{})
+			})
+
+			It("returns 404", func() {
+				Expect(resp.Code).To(Equal(http.StatusNotFound))
+
+				errJson := &models.ErrorResponse{}
+				err = json.Unmarshal(resp.Body.Bytes(), errJson)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(errJson).To(Equal(&models.ErrorResponse{
+					Code:    "Not-Found",
+					Message: "Active schedule not found",
+				}))
 			})
 		})
 
