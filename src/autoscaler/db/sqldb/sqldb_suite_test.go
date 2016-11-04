@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"os"
 	"testing"
-	"time"
 
 	. "autoscaler/db/sqldb"
 	"autoscaler/models"
@@ -182,22 +181,13 @@ func GetInt64Pointer(value int64) *int64 {
 }
 
 func cleanActiveScheduleTable() error {
-	_, e := dbHelper.Exec("DELETE from app_scaling_active_schedule")
+	_, e := dbHelper.Exec("DELETE from activeschedule")
 	return e
 }
 
-func insertActiveSchedule(appId string, instanceMin, instanceMax, instanceMinInitial int, status string) error {
-	var query string
-	var err error
-	id := time.Now().UnixNano()
-	if instanceMinInitial <= 0 {
-		query = "INSERT INTO app_scaling_active_schedule(id, app_id, instance_min_count, instance_max_count, status) " +
-			"i VALUES ($1, $2, $3, $4, $5)"
-		_, err = dbHelper.Exec(query, id, appId, instanceMin, instanceMax, status)
-	} else {
-		query = "INSERT INTO app_scaling_active_schedule(id, app_id, instance_min_count, instance_max_count, initial_min_instance_count, status) " +
-			" VALUES ($1, $2, $3, $4, $5, $6)"
-		_, err = dbHelper.Exec(query, id, appId, instanceMin, instanceMax, instanceMinInitial, status)
-	}
-	return err
+func insertActiveSchedule(appId, scheduleId string, instanceMin, instanceMax, instanceMinInitial int) error {
+	query := "INSERT INTO activeschedule(appid, scheduleid, instancemincount, instancemaxcount, initialmininstancecount) " +
+		" VALUES ($1, $2, $3, $4, $5)"
+	_, e := dbHelper.Exec(query, appId, scheduleId, instanceMin, instanceMax, instanceMinInitial)
+	return e
 }

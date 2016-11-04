@@ -32,9 +32,8 @@ var defaultLoggingConfig = LoggingConfig{
 }
 
 type DbConfig struct {
-	PolicyDbUrl   string `yaml:"policy_db_url"`
-	HistoryDbUrl  string `yaml:"history_db_url"`
-	ScheduleDbUrl string `yaml:"schedule_db_url"`
+	PolicyDbUrl        string `yaml:"policy_db_url"`
+	ScalingEngineDbUrl string `yaml:"scalingengine_db_url"`
 }
 
 type Config struct {
@@ -77,12 +76,8 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("Configuration error: Policy DB url is empty")
 	}
 
-	if c.Db.HistoryDbUrl == "" {
-		return fmt.Errorf("Configuration error: History DB url is empty")
-	}
-
-	if c.Db.ScheduleDbUrl == "" {
-		return fmt.Errorf("Configuration error: Schedule DB url is empty")
+	if c.Db.ScalingEngineDbUrl == "" {
+		return fmt.Errorf("Configuration error: ScalingEngine DB url is empty")
 	}
 
 	return nil

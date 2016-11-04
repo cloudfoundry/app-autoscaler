@@ -21,22 +21,27 @@ type ScalingEngine interface {
 }
 
 type scalingEngine struct {
-	logger     lager.Logger
-	cfClient   cf.CfClient
-	policyDB   db.PolicyDB
-	historyDB  db.HistoryDB
-	scheduleDB db.ScheduleDB
-	clock      clock.Clock
+	logger          lager.Logger
+	cfClient        cf.CfClient
+	policyDB        db.PolicyDB
+	scalingEngineDB db.ScalingEngineDB
+	clock           clock.Clock
 }
 
-func NewScalingEngine(logger lager.Logger, cfClient cf.CfClient, policyDB db.PolicyDB, historyDB db.HistoryDB, scheduleDB db.ScheduleDB, clock clock.Clock) ScalingEngine {
+type ActiveScheduleNotFoundError struct {
+}
+
+func (ase *ActiveScheduleNotFoundError) Error() string {
+	return fmt.Sprintf("active schedule not found")
+}
+
+func NewScalingEngine(logger lager.Logger, cfClient cf.CfClient, policyDB db.PolicyDB, scalingEngineDB db.ScalingEngineDB, clock clock.Clock) ScalingEngine {
 	return &scalingEngine{
-		logger:     logger.Session("scale"),
-		cfClient:   cfClient,
-		policyDB:   policyDB,
-		historyDB:  historyDB,
-		scheduleDB: scheduleDB,
-		clock:      clock,
+		logger:          logger.Session("scale"),
+		cfClient:        cfClient,
+		policyDB:        policyDB,
+		scalingEngineDB: scalingEngineDB,
+		clock:           clock,
 	}
 }
 
@@ -53,7 +58,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (int, error
 		Reason:       getDynamicScalingReason(trigger),
 	}
 
-	defer s.historyDB.SaveScalingHistory(history)
+	defer s.scalingEngineDB.SaveScalingHistory(history)
 
 	instances, err := s.cfClient.GetAppInstances(appId)
 	if err != nil {
@@ -64,7 +69,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (int, error
 	}
 	history.OldInstances = instances
 
-	ok, err := s.historyDB.CanScaleApp(appId)
+	ok, err := s.scalingEngineDB.CanScaleApp(appId)
 	if err != nil {
 		logger.Error("failed-check-cooldown", err)
 		history.Status = models.ScalingStatusFailed
@@ -86,7 +91,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (int, error
 		return -1, err
 	}
 
-	schedule, err := s.scheduleDB.GetActiveSchedule(appId)
+	schedule, err := s.scalingEngineDB.GetActiveSchedule(appId)
 	if err != nil {
 		logger.Error("failed-get-active-schedule", err)
 		history.Status = models.ScalingStatusFailed
@@ -137,7 +142,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (int, error
 
 	history.Status = models.ScalingStatusSucceeded
 
-	err = s.historyDB.UpdateScalingCooldownExpireTime(appId, now.Add(trigger.CoolDown()).UnixNano())
+	err = s.scalingEngineDB.UpdateScalingCooldownExpireTime(appId, now.Add(trigger.CoolDown()).UnixNano())
 	if err != nil {
 		logger.Error("failed-to-update-scaling-cool-down-expire-time", err, lager.Data{"newInstances": newInstances})
 	}
@@ -169,6 +174,27 @@ func (s *scalingEngine) ComputeNewInstances(currentInstances int, adjustment str
 func (s *scalingEngine) SetActiveSchedule(appId string, schedule *models.ActiveSchedule) error {
 	logger := s.logger.WithData(lager.Data{"appId": appId, "schedule": schedule})
 
+	currentSchedule, err := s.scalingEngineDB.GetActiveSchedule(appId)
+	if err != nil {
+		logger.Error("failed-to-get-existing-active-schedule-from-database", err)
+		return err
+	}
+
+	if currentSchedule != nil {
+		if schedule.ScheduleId == currentSchedule.ScheduleId {
+			logger.Info("set-active-schedule", lager.Data{"message": "duplicate request to set active schedule"})
+			return nil
+		} else {
+			logger.Info("set-active-schedule", lager.Data{"message": "an active schedule exists in database", "currentSchedule": currentSchedule})
+		}
+	}
+
+	err = s.scalingEngineDB.SetActiveSchedule(appId, schedule)
+	if err != nil {
+		logger.Error("failed-to-set-active-schedule-in-database", err)
+		return err
+	}
+
 	now := s.clock.Now()
 	history := &models.AppScalingHistory{
 		AppId:        appId,
@@ -178,7 +204,7 @@ func (s *scalingEngine) SetActiveSchedule(appId string, schedule *models.ActiveS
 		NewInstances: -1,
 		Reason:       getScheduledScalingReason(schedule),
 	}
-	defer s.historyDB.SaveScalingHistory(history)
+	defer s.scalingEngineDB.SaveScalingHistory(history)
 
 	instances, err := s.cfClient.GetAppInstances(appId)
 	if err != nil {
@@ -224,6 +250,24 @@ func (s *scalingEngine) SetActiveSchedule(appId string, schedule *models.ActiveS
 func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) error {
 	logger := s.logger.WithData(lager.Data{"appId": appId, "scheduleId": scheduleId})
 
+	currentSchedule, err := s.scalingEngineDB.GetActiveSchedule(appId)
+	if err != nil {
+		logger.Error("failed-to-get-existing-active-schedule-from-database", err)
+		return err
+	}
+
+	if (currentSchedule == nil) || (currentSchedule.ScheduleId != scheduleId) {
+		err = &ActiveScheduleNotFoundError{}
+		logger.Error("failed-to-remove-active-schedule", err)
+		return err
+	}
+
+	err = s.scalingEngineDB.RemoveActiveSchedule(appId)
+	if err != nil {
+		logger.Error("failed-to-remove-active-schedule-from-database", err)
+		return err
+	}
+
 	now := s.clock.Now()
 	history := &models.AppScalingHistory{
 		AppId:        appId,
@@ -233,7 +277,7 @@ func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) er
 		NewInstances: -1,
 		Reason:       "schedule ends",
 	}
-	defer s.historyDB.SaveScalingHistory(history)
+	defer s.scalingEngineDB.SaveScalingHistory(history)
 
 	instances, err := s.cfClient.GetAppInstances(appId)
 	if err != nil {
