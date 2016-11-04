@@ -28,15 +28,13 @@ type AppMetricDB interface {
 	Close() error
 }
 
-type HistoryDB interface {
+type ScalingEngineDB interface {
 	SaveScalingHistory(history *models.AppScalingHistory) error
 	RetrieveScalingHistories(appId string, start int64, end int64) ([]*models.AppScalingHistory, error)
 	UpdateScalingCooldownExpireTime(appId string, expireAt int64) error
 	CanScaleApp(appId string) (bool, error)
-	Close() error
-}
-
-type ScheduleDB interface {
 	GetActiveSchedule(appId string) (*models.ActiveSchedule, error)
+	SetActiveSchedule(appId string, schedule *models.ActiveSchedule) error
+	RemoveActiveSchedule(appId string) error
 	Close() error
 }

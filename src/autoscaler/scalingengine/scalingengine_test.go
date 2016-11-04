@@ -20,13 +20,12 @@ import (
 
 var _ = Describe("ScalingEngine", func() {
 	var (
-		scalingEngine  ScalingEngine
-		activeSchedule *models.ActiveSchedule
-		cfc            *fakes.FakeCfClient
-		policyDB       *fakes.FakePolicyDB
-		historyDB      *fakes.FakeHistoryDB
-		scheduleDB     *fakes.FakeScheduleDB
-		clock          *fakeclock.FakeClock
+		scalingEngine   ScalingEngine
+		activeSchedule  *models.ActiveSchedule
+		cfc             *fakes.FakeCfClient
+		policyDB        *fakes.FakePolicyDB
+		scalingEngineDB *fakes.FakeScalingEngineDB
+		clock           *fakeclock.FakeClock
 
 		newInstances int
 		trigger      *models.Trigger
@@ -37,14 +36,14 @@ var _ = Describe("ScalingEngine", func() {
 	BeforeEach(func() {
 		cfc = &fakes.FakeCfClient{}
 		policyDB = &fakes.FakePolicyDB{}
-		historyDB = &fakes.FakeHistoryDB{}
-		scheduleDB = &fakes.FakeScheduleDB{}
+		scalingEngineDB = &fakes.FakeScalingEngineDB{}
 
 		logger := lagertest.NewTestLogger("schedule-test")
 		buffer = logger.Buffer()
 		clock = fakeclock.NewFakeClock(time.Now())
-		scalingEngine = NewScalingEngine(logger, cfc, policyDB, historyDB, scheduleDB, clock)
+		scalingEngine = NewScalingEngine(logger, cfc, policyDB, scalingEngineDB, clock)
 		activeSchedule = &models.ActiveSchedule{
+			ScheduleId:         "a-schedule-id",
 			InstanceMinInitial: 5,
 			InstanceMin:        2,
 			InstanceMax:        10,
@@ -70,7 +69,7 @@ var _ = Describe("ScalingEngine", func() {
 		Context("when scaling succeeds", func() {
 			BeforeEach(func() {
 				cfc.GetAppInstancesReturns(2, nil)
-				historyDB.CanScaleAppReturns(true, nil)
+				scalingEngineDB.CanScaleAppReturns(true, nil)
 				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 1, InstanceMax: 6}, nil)
 
 			})
@@ -82,11 +81,11 @@ var _ = Describe("ScalingEngine", func() {
 				Expect(num).To(Equal(3))
 				Expect(newInstances).To(Equal(3))
 
-				id, expiredAt := historyDB.UpdateScalingCooldownExpireTimeArgsForCall(0)
+				id, expiredAt := scalingEngineDB.UpdateScalingCooldownExpireTimeArgsForCall(0)
 				Expect(id).To(Equal("an-app-id"))
 				Expect(expiredAt).To(Equal(clock.Now().Add(30 * time.Second).UnixNano()))
 
-				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 					AppId:        "an-app-id",
 					Timestamp:    clock.Now().UnixNano(),
 					ScalingType:  models.ScalingTypeDynamic,
@@ -102,14 +101,14 @@ var _ = Describe("ScalingEngine", func() {
 		Context("when app is in cooldown period", func() {
 			BeforeEach(func() {
 				cfc.GetAppInstancesReturns(2, nil)
-				historyDB.CanScaleAppReturns(false, nil)
+				scalingEngineDB.CanScaleAppReturns(false, nil)
 			})
 
 			It("ignores the scaling", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(cfc.SetAppInstancesCallCount()).To(BeZero())
 
-				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 					AppId:        "an-app-id",
 					Timestamp:    clock.Now().UnixNano(),
 					ScalingType:  models.ScalingTypeDynamic,
@@ -127,7 +126,7 @@ var _ = Describe("ScalingEngine", func() {
 			BeforeEach(func() {
 				trigger.Adjustment = "+20%"
 				cfc.GetAppInstancesReturns(2, nil)
-				historyDB.CanScaleAppReturns(true, nil)
+				scalingEngineDB.CanScaleAppReturns(true, nil)
 				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 1, InstanceMax: 6}, nil)
 
 			})
@@ -137,7 +136,7 @@ var _ = Describe("ScalingEngine", func() {
 				Expect(cfc.SetAppInstancesCallCount()).To(BeZero())
 				Expect(newInstances).To(Equal(2))
 
-				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 					AppId:        "an-app-id",
 					Timestamp:    clock.Now().UnixNano(),
 					ScalingType:  models.ScalingTypeDynamic,
@@ -154,7 +153,7 @@ var _ = Describe("ScalingEngine", func() {
 			BeforeEach(func() {
 				trigger.Adjustment = "+2"
 				cfc.GetAppInstancesReturns(5, nil)
-				historyDB.CanScaleAppReturns(true, nil)
+				scalingEngineDB.CanScaleAppReturns(true, nil)
 				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 1, InstanceMax: 6}, nil)
 
 			})
@@ -167,7 +166,7 @@ var _ = Describe("ScalingEngine", func() {
 				Expect(num).To(Equal(6))
 				Expect(newInstances).To(Equal(6))
 
-				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 					AppId:        "an-app-id",
 					Timestamp:    clock.Now().UnixNano(),
 					ScalingType:  models.ScalingTypeDynamic,
@@ -185,7 +184,7 @@ var _ = Describe("ScalingEngine", func() {
 			BeforeEach(func() {
 				trigger.Adjustment = "-60%"
 				cfc.GetAppInstancesReturns(3, nil)
-				historyDB.CanScaleAppReturns(true, nil)
+				scalingEngineDB.CanScaleAppReturns(true, nil)
 				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 2, InstanceMax: 6}, nil)
 
 			})
@@ -198,7 +197,7 @@ var _ = Describe("ScalingEngine", func() {
 				Expect(num).To(Equal(2))
 				Expect(newInstances).To(Equal(2))
 
-				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 					AppId:        "an-app-id",
 					Timestamp:    clock.Now().UnixNano(),
 					ScalingType:  models.ScalingTypeDynamic,
@@ -214,7 +213,7 @@ var _ = Describe("ScalingEngine", func() {
 
 		Context("when there is active schedule", func() {
 			BeforeEach(func() {
-				scheduleDB.GetActiveScheduleReturns(&models.ActiveSchedule{
+				scalingEngineDB.GetActiveScheduleReturns(&models.ActiveSchedule{
 					ScheduleId:  "111111",
 					InstanceMin: 3,
 					InstanceMax: 7,
@@ -225,7 +224,7 @@ var _ = Describe("ScalingEngine", func() {
 				BeforeEach(func() {
 					trigger.Adjustment = "+2"
 					cfc.GetAppInstancesReturns(6, nil)
-					historyDB.CanScaleAppReturns(true, nil)
+					scalingEngineDB.CanScaleAppReturns(true, nil)
 				})
 
 				It("updates the app instance with  max instances and stores the succeeded scaling history", func() {
@@ -237,7 +236,7 @@ var _ = Describe("ScalingEngine", func() {
 					Expect(num).To(Equal(7))
 					Expect(newInstances).To(Equal(7))
 
-					Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+					Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 						AppId:        "an-app-id",
 						Timestamp:    clock.Now().UnixNano(),
 						ScalingType:  models.ScalingTypeDynamic,
@@ -255,7 +254,7 @@ var _ = Describe("ScalingEngine", func() {
 				BeforeEach(func() {
 					trigger.Adjustment = "-60%"
 					cfc.GetAppInstancesReturns(5, nil)
-					historyDB.CanScaleAppReturns(true, nil)
+					scalingEngineDB.CanScaleAppReturns(true, nil)
 				})
 
 				It("updates the app instance with min instances and stores the succeeded scaling history", func() {
@@ -267,7 +266,7 @@ var _ = Describe("ScalingEngine", func() {
 					Expect(num).To(Equal(3))
 					Expect(newInstances).To(Equal(3))
 
-					Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+					Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 						AppId:        "an-app-id",
 						Timestamp:    clock.Now().UnixNano(),
 						ScalingType:  models.ScalingTypeDynamic,
@@ -293,7 +292,7 @@ var _ = Describe("ScalingEngine", func() {
 				Eventually(buffer).Should(gbytes.Say("failed-to-get-app-instances"))
 				Eventually(buffer).Should(gbytes.Say("test error"))
 
-				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 					AppId:        "an-app-id",
 					Timestamp:    clock.Now().UnixNano(),
 					ScalingType:  models.ScalingTypeDynamic,
@@ -310,14 +309,14 @@ var _ = Describe("ScalingEngine", func() {
 		Context("When checking cooldown fails", func() {
 			BeforeEach(func() {
 				cfc.GetAppInstancesReturns(2, nil)
-				historyDB.CanScaleAppReturns(false, errors.New("test error"))
+				scalingEngineDB.CanScaleAppReturns(false, errors.New("test error"))
 			})
 			It("should error and store the failed scaling history", func() {
 				Expect(err).To(HaveOccurred())
 				Eventually(buffer).Should(gbytes.Say("failed-check-cooldown"))
 				Eventually(buffer).Should(gbytes.Say("test error"))
 
-				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 					AppId:        "an-app-id",
 					Timestamp:    clock.Now().UnixNano(),
 					ScalingType:  models.ScalingTypeDynamic,
@@ -335,14 +334,14 @@ var _ = Describe("ScalingEngine", func() {
 			BeforeEach(func() {
 				trigger.Adjustment = "+a"
 				cfc.GetAppInstancesReturns(2, nil)
-				historyDB.CanScaleAppReturns(true, nil)
+				scalingEngineDB.CanScaleAppReturns(true, nil)
 			})
 
 			It("should error and store failed scaling history", func() {
 				Expect(err).To(HaveOccurred())
 				Eventually(buffer).Should(gbytes.Say("failed-compute-new-instance"))
 
-				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 					AppId:        "an-app-id",
 					Timestamp:    clock.Now().UnixNano(),
 					ScalingType:  models.ScalingTypeDynamic,
@@ -358,8 +357,8 @@ var _ = Describe("ScalingEngine", func() {
 		Context("when getting active schedule fails", func() {
 			BeforeEach(func() {
 				cfc.GetAppInstancesReturns(2, nil)
-				historyDB.CanScaleAppReturns(true, nil)
-				scheduleDB.GetActiveScheduleReturns(nil, errors.New("test error"))
+				scalingEngineDB.CanScaleAppReturns(true, nil)
+				scalingEngineDB.GetActiveScheduleReturns(nil, errors.New("test error"))
 			})
 
 			It("should error and store the failed scaling history", func() {
@@ -367,7 +366,7 @@ var _ = Describe("ScalingEngine", func() {
 				Eventually(buffer).Should(gbytes.Say("failed-get-active-schedule"))
 				Eventually(buffer).Should(gbytes.Say("test error"))
 
-				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 					AppId:        "an-app-id",
 					Timestamp:    clock.Now().UnixNano(),
 					ScalingType:  models.ScalingTypeDynamic,
@@ -384,7 +383,7 @@ var _ = Describe("ScalingEngine", func() {
 		Context("when getting policy fails", func() {
 			BeforeEach(func() {
 				cfc.GetAppInstancesReturns(2, nil)
-				historyDB.CanScaleAppReturns(true, nil)
+				scalingEngineDB.CanScaleAppReturns(true, nil)
 				policyDB.GetAppPolicyReturns(nil, errors.New("test error"))
 			})
 
@@ -393,7 +392,7 @@ var _ = Describe("ScalingEngine", func() {
 				Eventually(buffer).Should(gbytes.Say("failed-get-app-policy"))
 				Eventually(buffer).Should(gbytes.Say("test error"))
 
-				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 					AppId:        "an-app-id",
 					Timestamp:    clock.Now().UnixNano(),
 					ScalingType:  models.ScalingTypeDynamic,
@@ -410,7 +409,7 @@ var _ = Describe("ScalingEngine", func() {
 		Context("when set new instances fails", func() {
 			BeforeEach(func() {
 				cfc.GetAppInstancesReturns(2, nil)
-				historyDB.CanScaleAppReturns(true, nil)
+				scalingEngineDB.CanScaleAppReturns(true, nil)
 				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 1, InstanceMax: 6}, nil)
 				cfc.SetAppInstancesReturns(errors.New("test error"))
 			})
@@ -420,7 +419,7 @@ var _ = Describe("ScalingEngine", func() {
 				Eventually(buffer).Should(gbytes.Say("failed-to-set-app-instances"))
 				Eventually(buffer).Should(gbytes.Say("test error"))
 
-				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 					AppId:        "an-app-id",
 					Timestamp:    clock.Now().UnixNano(),
 					ScalingType:  models.ScalingTypeDynamic,
@@ -496,6 +495,13 @@ var _ = Describe("ScalingEngine", func() {
 			err = scalingEngine.SetActiveSchedule("an-app-id", activeSchedule)
 		})
 
+		It("Saves the active schedule to database", func() {
+			Expect(err).NotTo(HaveOccurred())
+			id, schedule := scalingEngineDB.SetActiveScheduleArgsForCall(0)
+			Expect(id).To(Equal("an-app-id"))
+			Expect(schedule).To(Equal(activeSchedule))
+		})
+
 		Context("when app instance number is greater than InstanceMax in active schedule", func() {
 			BeforeEach(func() {
 				cfc.GetAppInstancesReturns(12, nil)
@@ -507,7 +513,7 @@ var _ = Describe("ScalingEngine", func() {
 				appid, instances := cfc.SetAppInstancesArgsForCall(0)
 				Expect(appid).To(Equal("an-app-id"))
 				Expect(instances).To(Equal(10))
-				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 					AppId:        "an-app-id",
 					Timestamp:    clock.Now().UnixNano(),
 					ScalingType:  models.ScalingTypeSchedule,
@@ -538,7 +544,7 @@ var _ = Describe("ScalingEngine", func() {
 					Expect(appid).To(Equal("an-app-id"))
 					Expect(instances).To(Equal(2))
 
-					Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+					Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 						AppId:        "an-app-id",
 						Timestamp:    clock.Now().UnixNano(),
 						ScalingType:  models.ScalingTypeSchedule,
@@ -560,7 +566,7 @@ var _ = Describe("ScalingEngine", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(cfc.SetAppInstancesCallCount()).To(BeZero())
 
-					Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+					Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 						AppId:        "an-app-id",
 						Timestamp:    clock.Now().UnixNano(),
 						ScalingType:  models.ScalingTypeSchedule,
@@ -586,7 +592,7 @@ var _ = Describe("ScalingEngine", func() {
 					Expect(appid).To(Equal("an-app-id"))
 					Expect(instances).To(Equal(5))
 
-					Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+					Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 						AppId:        "an-app-id",
 						Timestamp:    clock.Now().UnixNano(),
 						ScalingType:  models.ScalingTypeSchedule,
@@ -608,7 +614,7 @@ var _ = Describe("ScalingEngine", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(cfc.SetAppInstancesCallCount()).To(BeZero())
 
-					Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+					Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 						AppId:        "an-app-id",
 						Timestamp:    clock.Now().UnixNano(),
 						ScalingType:  models.ScalingTypeSchedule,
@@ -622,6 +628,59 @@ var _ = Describe("ScalingEngine", func() {
 			})
 		})
 
+		Context("when active schedule exists", func() {
+			Context("when it is the same active schedule", func() {
+				BeforeEach(func() {
+					scalingEngineDB.GetActiveScheduleReturns(&models.ActiveSchedule{ScheduleId: "a-schedule-id"}, nil)
+				})
+
+				It("igore the duplicatd request", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(scalingEngineDB.SetActiveScheduleCallCount()).To(BeZero())
+					Eventually(buffer).Should(gbytes.Say("set-active-schedule"))
+					Eventually(buffer).Should(gbytes.Say("duplicate request to set active schedule"))
+				})
+			})
+
+			Context("when it is a different active schedule", func() {
+				BeforeEach(func() {
+					scalingEngineDB.GetActiveScheduleReturns(&models.ActiveSchedule{ScheduleId: "a-different-schedule-id"}, nil)
+				})
+
+				It("rewrites the current active schedule", func() {
+					Expect(err).NotTo(HaveOccurred())
+					id, schedule := scalingEngineDB.SetActiveScheduleArgsForCall(0)
+					Expect(id).To(Equal("an-app-id"))
+					Expect(schedule).To(Equal(activeSchedule))
+					Eventually(buffer).Should(gbytes.Say("set-active-schedule"))
+					Eventually(buffer).Should(gbytes.Say("an active schedule exists in database"))
+				})
+			})
+
+		})
+
+		Context("when getting current active schedule fails", func() {
+			BeforeEach(func() {
+				scalingEngineDB.GetActiveScheduleReturns(nil, errors.New("an error"))
+			})
+			It("should error", func() {
+				Expect(err).To(HaveOccurred())
+				Eventually(buffer).Should(gbytes.Say("failed-to-get-existing-active-schedule-from-database"))
+				Eventually(buffer).Should(gbytes.Say("an error"))
+			})
+		})
+
+		Context("when setting active schedule in database fails", func() {
+			BeforeEach(func() {
+				scalingEngineDB.SetActiveScheduleReturns(errors.New("an error"))
+			})
+			It("should error", func() {
+				Expect(err).To(HaveOccurred())
+				Eventually(buffer).Should(gbytes.Say("failed-to-set-active-schedule-in-database"))
+				Eventually(buffer).Should(gbytes.Say("an error"))
+			})
+		})
+
 		Context("when getting app instances fails", func() {
 			BeforeEach(func() {
 				cfc.GetAppInstancesReturns(0, errors.New("an error"))
@@ -632,7 +691,7 @@ var _ = Describe("ScalingEngine", func() {
 				Eventually(buffer).Should(gbytes.Say("failed-to-get-app-instances"))
 				Eventually(buffer).Should(gbytes.Say("an error"))
 
-				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 					AppId:        "an-app-id",
 					Timestamp:    clock.Now().UnixNano(),
 					ScalingType:  models.ScalingTypeSchedule,
@@ -656,7 +715,7 @@ var _ = Describe("ScalingEngine", func() {
 				Eventually(buffer).Should(gbytes.Say("failed-to-set-app-instances"))
 				Eventually(buffer).Should(gbytes.Say("an error"))
 
-				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 					AppId:        "an-app-id",
 					Timestamp:    clock.Now().UnixNano(),
 					ScalingType:  models.ScalingTypeSchedule,
@@ -684,12 +743,13 @@ var _ = Describe("ScalingEngine", func() {
 
 		Context("when app instance number is in the default range [InstanceMin, InstianceMax] in the policy", func() {
 			BeforeEach(func() {
+				scalingEngineDB.GetActiveScheduleReturns(&models.ActiveSchedule{ScheduleId: "a-schedule-id"}, nil)
 				cfc.GetAppInstancesReturns(5, nil)
 			})
 
 			It("does not change the instance number", func() {
 				Expect(cfc.SetAppInstancesCallCount()).To(Equal(0))
-				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 					AppId:        "an-app-id",
 					Timestamp:    clock.Now().UnixNano(),
 					ScalingType:  models.ScalingTypeSchedule,
@@ -703,6 +763,7 @@ var _ = Describe("ScalingEngine", func() {
 
 		Context("when app instance number is below the default InstanceMin in the policy", func() {
 			BeforeEach(func() {
+				scalingEngineDB.GetActiveScheduleReturns(&models.ActiveSchedule{ScheduleId: "a-schedule-id"}, nil)
 				cfc.GetAppInstancesReturns(1, nil)
 			})
 
@@ -710,7 +771,7 @@ var _ = Describe("ScalingEngine", func() {
 				appId, instances := cfc.SetAppInstancesArgsForCall(0)
 				Expect(appId).To(Equal("an-app-id"))
 				Expect(instances).To(Equal(3))
-				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 					AppId:        "an-app-id",
 					Timestamp:    clock.Now().UnixNano(),
 					ScalingType:  models.ScalingTypeSchedule,
@@ -726,6 +787,7 @@ var _ = Describe("ScalingEngine", func() {
 
 		Context("when app instance number is greater than the default InstanaceMax in the policy", func() {
 			BeforeEach(func() {
+				scalingEngineDB.GetActiveScheduleReturns(&models.ActiveSchedule{ScheduleId: "a-schedule-id"}, nil)
 				cfc.GetAppInstancesReturns(8, nil)
 			})
 
@@ -734,7 +796,7 @@ var _ = Describe("ScalingEngine", func() {
 				Expect(appId).To(Equal("an-app-id"))
 				Expect(instances).To(Equal(6))
 
-				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 					AppId:        "an-app-id",
 					Timestamp:    clock.Now().UnixNano(),
 					ScalingType:  models.ScalingTypeSchedule,
@@ -748,8 +810,53 @@ var _ = Describe("ScalingEngine", func() {
 			})
 		})
 
+		Context("when active schedule does not exist", func() {
+			BeforeEach(func() {
+				scalingEngineDB.GetActiveScheduleReturns(nil, nil)
+			})
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&ActiveScheduleNotFoundError{}))
+				Expect(scalingEngineDB.RemoveActiveScheduleCallCount()).To(BeZero())
+			})
+		})
+
+		Context("when there is a different active schedule", func() {
+			BeforeEach(func() {
+				scalingEngineDB.GetActiveScheduleReturns(&models.ActiveSchedule{ScheduleId: "a-different-schedule-id"}, nil)
+			})
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&ActiveScheduleNotFoundError{}))
+				Expect(scalingEngineDB.RemoveActiveScheduleCallCount()).To(BeZero())
+			})
+		})
+
+		Context("when getting active schedule fails", func() {
+			BeforeEach(func() {
+				scalingEngineDB.GetActiveScheduleReturns(nil, errors.New("an error"))
+			})
+			It("should error", func() {
+				Expect(err).To(HaveOccurred())
+				Eventually(buffer).Should(gbytes.Say("failed-to-get-existing-active-schedule-from-database"))
+				Eventually(buffer).Should(gbytes.Say("an error"))
+			})
+		})
+
+		Context("when removing active schedule from database fails", func() {
+			BeforeEach(func() {
+				scalingEngineDB.GetActiveScheduleReturns(&models.ActiveSchedule{ScheduleId: "a-schedule-id"}, nil)
+				scalingEngineDB.RemoveActiveScheduleReturns(errors.New("an error"))
+			})
+			It("should error", func() {
+				Expect(err).To(HaveOccurred())
+				Eventually(buffer).Should(gbytes.Say("failed-to-remove-active-schedule-from-database"))
+				Eventually(buffer).Should(gbytes.Say("an error"))
+			})
+
+		})
+
 		Context("when getting app instances fails", func() {
 			BeforeEach(func() {
+				scalingEngineDB.GetActiveScheduleReturns(&models.ActiveSchedule{ScheduleId: "a-schedule-id"}, nil)
 				cfc.GetAppInstancesReturns(0, errors.New("an error"))
 			})
 
@@ -758,7 +865,7 @@ var _ = Describe("ScalingEngine", func() {
 				Eventually(buffer).Should(gbytes.Say("failed-to-get-app-instances"))
 				Eventually(buffer).Should(gbytes.Say("an error"))
 
-				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 					AppId:        "an-app-id",
 					Timestamp:    clock.Now().UnixNano(),
 					ScalingType:  models.ScalingTypeSchedule,
@@ -774,6 +881,7 @@ var _ = Describe("ScalingEngine", func() {
 
 		Context("when getting app policy fails", func() {
 			BeforeEach(func() {
+				scalingEngineDB.GetActiveScheduleReturns(&models.ActiveSchedule{ScheduleId: "a-schedule-id"}, nil)
 				policyDB.GetAppPolicyReturns(nil, errors.New("an error"))
 			})
 
@@ -782,7 +890,7 @@ var _ = Describe("ScalingEngine", func() {
 				Eventually(buffer).Should(gbytes.Say("failed-to-get-app-policy"))
 				Eventually(buffer).Should(gbytes.Say("an error"))
 
-				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 					AppId:        "an-app-id",
 					Timestamp:    clock.Now().UnixNano(),
 					ScalingType:  models.ScalingTypeSchedule,
@@ -798,6 +906,7 @@ var _ = Describe("ScalingEngine", func() {
 
 		Context("when setting instance number fails", func() {
 			BeforeEach(func() {
+				scalingEngineDB.GetActiveScheduleReturns(&models.ActiveSchedule{ScheduleId: "a-schedule-id"}, nil)
 				cfc.SetAppInstancesReturns(errors.New("an error"))
 			})
 
@@ -806,7 +915,7 @@ var _ = Describe("ScalingEngine", func() {
 				Eventually(buffer).Should(gbytes.Say("failed-to-set-app-instances"))
 				Eventually(buffer).Should(gbytes.Say("an error"))
 
-				Expect(historyDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 					AppId:        "an-app-id",
 					Timestamp:    clock.Now().UnixNano(),
 					ScalingType:  models.ScalingTypeSchedule,

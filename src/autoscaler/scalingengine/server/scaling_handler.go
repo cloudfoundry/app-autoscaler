@@ -16,18 +16,18 @@ import (
 const TokenTypeBearer = "bearer"
 
 type ScalingHandler struct {
-	logger        lager.Logger
-	historyDB     db.HistoryDB
-	appLock       *StripedLock
-	scalingEngine scalingengine.ScalingEngine
+	logger          lager.Logger
+	scalingEngineDB db.ScalingEngineDB
+	appLock         *StripedLock
+	scalingEngine   scalingengine.ScalingEngine
 }
 
-func NewScalingHandler(logger lager.Logger, historyDB db.HistoryDB, scalingEngine scalingengine.ScalingEngine) *ScalingHandler {
+func NewScalingHandler(logger lager.Logger, scalingEngineDB db.ScalingEngineDB, scalingEngine scalingengine.ScalingEngine) *ScalingHandler {
 	return &ScalingHandler{
-		logger:        logger.Session("scaling-handler"),
-		historyDB:     historyDB,
-		appLock:       NewStripedLock(32),
-		scalingEngine: scalingEngine,
+		logger:          logger.Session("scaling-handler"),
+		scalingEngineDB: scalingEngineDB,
+		appLock:         NewStripedLock(32),
+		scalingEngine:   scalingEngine,
 	}
 }
 
@@ -112,7 +112,7 @@ func (h *ScalingHandler) GetScalingHistories(w http.ResponseWriter, r *http.Requ
 
 	var histories []*models.AppScalingHistory
 
-	histories, err = h.historyDB.RetrieveScalingHistories(appId, start, end)
+	histories, err = h.scalingEngineDB.RetrieveScalingHistories(appId, start, end)
 	if err != nil {
 		logger.Error("failed-to-retrieve-histories", err, lager.Data{"start": start, "end": end})
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
@@ -181,10 +181,18 @@ func (h *ScalingHandler) RemoveActiveSchedule(w http.ResponseWriter, r *http.Req
 
 	if err != nil {
 		logger.Error("failed-to-remove-active-schedule", err)
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: "Error removing active schedule",
-		})
+		switch err.(type) {
+		case *scalingengine.ActiveScheduleNotFoundError:
+			handlers.WriteJSONResponse(w, http.StatusNotFound, models.ErrorResponse{
+				Code:    "Not-Found",
+				Message: "Active schedule not found",
+			})
+		default:
+			handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+				Code:    "Interal-Server-Error",
+				Message: "Error removing active schedule"})
+
+		}
 		return
 	}
 
