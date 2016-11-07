@@ -73,3 +73,16 @@ databaseChangeLog:
                   type: bigint
                   constraints:
                     nullable: false    
+        - createIndex:
+             columns:
+             - column:
+                 name: appid
+                 type: varchar(255)
+             - column:
+                 name: name
+                 type: varchar(100)
+             - column:
+                 name: timestamp
+                 type: bigint                
+             indexName: idx_instance_metrics
+             tableName: appinstancemetrics                    

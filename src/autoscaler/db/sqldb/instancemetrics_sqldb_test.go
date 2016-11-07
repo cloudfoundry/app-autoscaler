@@ -8,6 +8,7 @@ import (
 	"github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gstruct"
 
 	"os"
 	"time"
@@ -214,35 +215,35 @@ var _ = Describe("InstancemetricsSqldb", func() {
 		Context("when retriving all the metrics( start = 0, end = -1) ", func() {
 			It("removes duplicates and returns all the instance metrics of the app ordered by timestamp", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(mtrcs).To(Equal([]*models.AppInstanceMetric{
-					&models.AppInstanceMetric{
-						AppId:         "test-app-id",
-						InstanceIndex: 1,
-						CollectedAt:   111111,
-						Name:          models.MetricNameMemory,
-						Unit:          models.UnitBytes,
-						Value:         "214365",
-						Timestamp:     110000,
-					},
+				Expect(mtrcs).To(HaveLen(3))
+				Expect(*mtrcs[0]).To(gstruct.MatchAllFields(gstruct.Fields{
+					"AppId":         Equal("test-app-id"),
+					"InstanceIndex": BeEquivalentTo(1),
+					"CollectedAt":   BeEquivalentTo(111111),
+					"Name":          Equal(models.MetricNameMemory),
+					"Unit":          Equal(models.UnitBytes),
+					"Value":         Equal("214365"),
+					"Timestamp":     BeEquivalentTo(110000),
+				}))
 
-					&models.AppInstanceMetric{
-						AppId:         "test-app-id",
-						InstanceIndex: 0,
-						CollectedAt:   111111,
-						Name:          models.MetricNameMemory,
-						Unit:          models.UnitBytes,
-						Value:         "654321",
-						Timestamp:     111100,
-					},
-					&models.AppInstanceMetric{
-						AppId:         "test-app-id",
-						InstanceIndex: 1,
-						CollectedAt:   222222,
-						Name:          models.MetricNameMemory,
-						Unit:          models.UnitBytes,
-						Value:         "321765",
-						Timestamp:     222200,
-					},
+				Expect(*mtrcs[1]).To(gstruct.MatchAllFields(gstruct.Fields{
+					"AppId":         Equal("test-app-id"),
+					"InstanceIndex": BeEquivalentTo(0),
+					"CollectedAt":   BeNumerically(">=", 111111),
+					"Name":          Equal(models.MetricNameMemory),
+					"Unit":          Equal(models.UnitBytes),
+					"Value":         Equal("654321"),
+					"Timestamp":     BeEquivalentTo(111100),
+				}))
+
+				Expect(*mtrcs[2]).To(gstruct.MatchAllFields(gstruct.Fields{
+					"AppId":         Equal("test-app-id"),
+					"InstanceIndex": BeEquivalentTo(1),
+					"CollectedAt":   BeEquivalentTo(222222),
+					"Name":          Equal(models.MetricNameMemory),
+					"Unit":          Equal(models.UnitBytes),
+					"Value":         Equal("321765"),
+					"Timestamp":     BeEquivalentTo(222200),
 				}))
 			})
 		})
@@ -306,25 +307,24 @@ var _ = Describe("InstancemetricsSqldb", func() {
 
 			It("returns correct metrics", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(mtrcs).To(Equal([]*models.AppInstanceMetric{
-					&models.AppInstanceMetric{
-						AppId:         "test-app-id",
-						InstanceIndex: 0,
-						CollectedAt:   111111,
-						Name:          models.MetricNameMemory,
-						Unit:          models.UnitBytes,
-						Value:         "654321",
-						Timestamp:     111100,
-					},
-					&models.AppInstanceMetric{
-						AppId:         "test-app-id",
-						InstanceIndex: 1,
-						CollectedAt:   222222,
-						Name:          models.MetricNameMemory,
-						Unit:          models.UnitBytes,
-						Value:         "321765",
-						Timestamp:     222200,
-					},
+				Expect(mtrcs).To(HaveLen(2))
+				Expect(*mtrcs[0]).To(gstruct.MatchAllFields(gstruct.Fields{
+					"AppId":         Equal("test-app-id"),
+					"InstanceIndex": BeEquivalentTo(0),
+					"CollectedAt":   BeNumerically(">=", 111111),
+					"Name":          Equal(models.MetricNameMemory),
+					"Unit":          Equal(models.UnitBytes),
+					"Value":         Equal("654321"),
+					"Timestamp":     BeEquivalentTo(111100),
+				}))
+				Expect(*mtrcs[1]).To(gstruct.MatchAllFields(gstruct.Fields{
+					"AppId":         Equal("test-app-id"),
+					"InstanceIndex": BeEquivalentTo(1),
+					"CollectedAt":   BeEquivalentTo(222222),
+					"Name":          Equal(models.MetricNameMemory),
+					"Unit":          Equal(models.UnitBytes),
+					"Value":         Equal("321765"),
+					"Timestamp":     BeEquivalentTo(222200),
 				}))
 			})
 		})
