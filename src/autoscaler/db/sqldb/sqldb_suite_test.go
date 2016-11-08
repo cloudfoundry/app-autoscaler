@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"os"
 	"testing"
+	"time"
 
 	. "autoscaler/db/sqldb"
 	"autoscaler/models"
@@ -186,16 +187,17 @@ func cleanActiveScheduleTable() error {
 }
 
 func insertActiveSchedule(appId string, instanceMin, instanceMax, instanceMinInitial int, status string) error {
-	var e error
 	var query string
+	var err error
+	id := time.Now().UnixNano()
 	if instanceMinInitial <= 0 {
-		query = "INSERT INTO app_scaling_active_schedule(app_id, instance_min_count, instance_max_count, status) " +
-			" VALUES ($1, $2, $3, $4)"
-		_, e = dbHelper.Exec(query, appId, instanceMin, instanceMax, status)
+		query = "INSERT INTO app_scaling_active_schedule(id, app_id, instance_min_count, instance_max_count, status) " +
+			"i VALUES ($1, $2, $3, $4, $5)"
+		_, err = dbHelper.Exec(query, id, appId, instanceMin, instanceMax, status)
 	} else {
-		query = "INSERT INTO app_scaling_active_schedule(app_id, instance_min_count, instance_max_count, initial_min_instance_count, status) " +
-			" VALUES ($1, $2, $3, $4, $5)"
-		_, e = dbHelper.Exec(query, appId, instanceMin, instanceMax, instanceMinInitial, status)
+		query = "INSERT INTO app_scaling_active_schedule(id, app_id, instance_min_count, instance_max_count, initial_min_instance_count, status) " +
+			" VALUES ($1, $2, $3, $4, $5, $6)"
+		_, err = dbHelper.Exec(query, id, appId, instanceMin, instanceMax, instanceMinInitial, status)
 	}
-	return e
+	return err
 }
