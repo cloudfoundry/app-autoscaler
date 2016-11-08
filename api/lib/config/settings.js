@@ -15,23 +15,20 @@ module.exports = function(settings) {
     }
   };
 
-  var apiServer = function(apiServerUri) {
-    if (apiServerUri != null) {
-      return apiServerUri.replace(/\/$/g, "").toLowerCase();
+  var scheduler = function(schedulerUri) {
+    if (schedulerUri != null) {
+      return schedulerUri.replace(/\/$/g, "").toLowerCase();
     }
   };
 
   settings = {
     port: settings.port,
-    username: settings.username,
-    password: settings.password,
     dbMaxConnectionCount: settings.dbMaxConnectionCount,
     dbMinConnectionCount: settings.dbMinConnectionCount,
     dbMaxIdleTime: settings.dbMaxIdleTime,
     db: db(settings.dbUri),
-    apiServerUri: apiServer(settings.apiServerUri)
+    schedulerUri: scheduler(settings.schedulerUri)
   };
-
   settings.validate = function(){
     if(typeof(settings.port) != "number") {
       return {valid:false,message:"The port must be a number"};
@@ -40,12 +37,6 @@ module.exports = function(settings) {
       return {valid:false,message:"The value of port must between 0 and 65536"};
     }
 
-    if(typeof(settings.username) != "string") {
-      return {valid:false,message:"username is required"};
-    }
-    if(typeof(settings.password) != "string") {
-      return {valid:false,message:"password is required"};
-    }
     if(typeof(settings.dbMaxConnectionCount) != "number") {
       return {valid:false,message:"dbMaxConnectionCount is required"};
     }
@@ -67,8 +58,8 @@ module.exports = function(settings) {
     if(typeof(settings.db.uri) != "string") {
       return {valid:false,message:"dbUri is required"};
     }
-    if(typeof(settings.apiServerUri) != "string") {
-      return {valid:false,message:"apiServerUri is required"};
+    if(typeof(settings.schedulerUri) != "string") {
+      return {valid:false,message:"schedulerUri is required"};
     }
     return {valid:true}
   }

@@ -3,20 +3,14 @@
 var expect = require("chai").expect;
 var logger = require('../../../lib/log/logger');
 var correctDBUri;
-
+var fs = require('fs');
+var path = require('path');
+var settings = require(path.join(__dirname, '../../../lib/config/settings.js'))((JSON.parse(
+  fs.readFileSync(path.join(__dirname, '../../../config/settings.json'), 'utf8'))));
 describe('Test Model Load Failures', function () {
-  before(function() {
-	  correctDBUri = process.env.DB_URI;
-	  // Provide a wrong db uri
-	  process.env.DB_URI = 'postgres://postgres:postgres@127.1.1.1:5432/autoscaler';
-  });
-
-  after(function() {
-	  process.env.DB_URI = correctDBUri;
-  });
 
   it('Should fail for a invalid DB_URI', function () {
-    var models = require('../../../lib/models')(function (error) {
+    var models = require('../../../lib/models')(settings,function (error) {
     	logger.error ('Error while establishing connection', error);
     	expect(error).to.not.be.null;
     });

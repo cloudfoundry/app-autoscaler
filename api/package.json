@@ -2,8 +2,8 @@
   "name": "autoscaler-api",
   "version": "1.0.0",
   "scripts": {
-    "start": "node app.js",
-    "test": "cross-env DB_URI=postgres://postgres:postgres@127.0.0.1:5432/autoscaler cross-env SCHEDULER_URI=http://127.0.0.1:8080 node_modules/.bin/_mocha --recursive test",
+    "start": "node index.js -c config/settings.json",
+    "test": "mocha --recursive test",
     "cover": "cross-env DB_URI=postgres://postgres:postgres@127.0.0.1:5432/autoscaler cross-env SCHEDULER_URI=http://127.0.0.1:8080 istanbul cover node_modules/mocha/bin/_mocha -- --recursive test",
     "lint": "eslint lib"
   },

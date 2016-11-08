@@ -2,16 +2,14 @@
 
 var path = require('path');
 var expect = require('chai').expect;
-var configSetting = require(path.join(__dirname, '../../lib/config/setting.js'));
+var configSetting = require(path.join(__dirname, '../../../lib/config/settings.js'));
 var defaultConfig = {
   "port": 80,
-  "username": "username",
-  "password": "password",
+  "dbUri": "postgres://postgres@server:80/dbname",
   "dbMaxConnectionCount": 10,
   "dbMinConnectionCount": 0,
   "dbMaxIdleTime": 1000,
-  "dbUri": "postgres://postgres@server:80/dbname",
-  "apiServerUri": "http://apiserveruri"
+  "schedulerUri": "http://scheduleruri"
 }
 
 var settingTmp = {};
@@ -24,8 +22,9 @@ describe('config setting Test Suite', function() {
 
   it('Should contain the default configuration', function() {
       expect(settings.port).to.equal(defaultConfig.port);
-      expect(settings.username).to.equal(defaultConfig.username);
-      expect(settings.password).to.equal(defaultConfig.password);
+      expect(settings.dbMaxConnectionCount).to.equal(defaultConfig.dbMaxConnectionCount);
+      expect(settings.dbMinConnectionCount).to.equal(defaultConfig.dbMinConnectionCount);
+      expect(settings.dbMaxIdleTime).to.equal(defaultConfig.dbMaxIdleTime);
       expect(settings.apiServerUri).to.equal(defaultConfig.apiServerUri);
       expect(settings.db.uri).to.equal(defaultConfig.dbUri);
       expect(settings.db.server).to.equal('postgres://postgres@server:80');
@@ -66,35 +65,6 @@ describe('config setting Test Suite', function() {
       });
     });
 
-    context('Validate username', function() {
-      context('When username is null', function() {
-        it('Should return false', function() {
-          settings.username = null;
-          expect(settings.validate().valid).to.equal(false);
-        })
-      });
-      context('When username is undefined', function() {
-        it('Should return false', function() {
-          delete settings.username
-          expect(settings.validate().valid).to.equal(false);
-        })
-      });
-    });
-
-    context('Validate password', function() {
-      context('When password is null', function() {
-        it('Should return false', function() {
-          settings.password = null
-          expect(settings.validate().valid).to.equal(false);
-        })
-      });
-      context('When password is undefined', function() {
-        it('Should return false', function() {
-          delete settings.password
-          expect(settings.validate().valid).to.equal(false);
-        })
-      });
-    });
     context('Validate dbMaxConnectionCount', function() {
       context('When dbMaxConnectionCount is null', function() {
         it('Should return false', function() {
@@ -175,6 +145,8 @@ describe('config setting Test Suite', function() {
         })
       });
     });
+
+
     context('Validate dbUri', function() {
       context('When dbUri is null', function() {
         it('Should return false', function() {
@@ -190,22 +162,22 @@ describe('config setting Test Suite', function() {
       });
     });
 
-    context('Validate apiServerUri', function() {
-      context('When apiServerUri is null', function() {
+    context('Validate schedulerUri', function() {
+      context('When schedulerUri is null', function() {
         it('Should return false', function() {
-          settings.apiServerUri = null
+          settings.schedulerUri = null
           expect(settings.validate().valid).to.equal(false);
         })
       });
-      context('When apiServerUri is undefined', function() {
+      context('When schedulerUri is undefined', function() {
         it('Should return false', function() {
-          delete settings.apiServerUri
+          delete settings.schedulerUri
           expect(settings.validate().valid).to.equal(false);
         })
       });
     });
   });
-  
+
   context('dbUri', function() {
     it('Should filter the last slash', function() {
       var dbSetting = configSetting({dbUri: defaultConfig.dbUri + '/'}).db;
@@ -222,16 +194,16 @@ describe('config setting Test Suite', function() {
     });
   });
 
-  context('apiServerUri', function() {
+  context('schedulerUri', function() {
     it('Should filter the last slash', function() {
-      var apiSetting = configSetting({apiServerUri: defaultConfig.apiServerUri + '/'}).apiServerUri;
-      expect(apiSetting).to.equal(defaultConfig.apiServerUri);
+      var apiSetting = configSetting({schedulerUri: defaultConfig.schedulerUri + '/'}).schedulerUri;
+      expect(apiSetting).to.equal(defaultConfig.schedulerUri);
     });
 
-    context('When the apiServerUri is upper case', function() {
+    context('When the schedulerUri is upper case', function() {
       it('Should be lowercased', function() {
-        var apiSetting = configSetting({apiServerUri: defaultConfig.apiServerUri.toUpperCase()}).apiServerUri;
-        expect(apiSetting).to.equal(defaultConfig.apiServerUri);
+        var apiSetting = configSetting({schedulerUri: defaultConfig.schedulerUri.toUpperCase()}).schedulerUri;
+        expect(apiSetting).to.equal(defaultConfig.schedulerUri);
       });
     });
   });
