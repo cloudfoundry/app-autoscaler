@@ -14,6 +14,13 @@ type MetricsDB interface {
 	Close() error
 }
 
+type InstanceMetricsDB interface {
+	RetrieveInstanceMetrics(appid string, name string, start int64, end int64) ([]*models.AppInstanceMetric, error)
+	SaveMetric(metric *models.AppInstanceMetric) error
+	PruneMetrics(before int64) error
+	Close() error
+}
+
 type PolicyDB interface {
 	GetAppIds() (map[string]bool, error)
 	GetAppPolicy(appId string) (*models.ScalingPolicy, error)

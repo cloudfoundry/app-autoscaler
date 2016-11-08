@@ -50,6 +50,13 @@ func cleanMetricsTable() {
 	}
 }
 
+func cleanInstanceMetricsTable() {
+	_, e := dbHelper.Exec("DELETE FROM appinstancemetrics")
+	if e != nil {
+		Fail("can not clean table appinstancemetrics:" + e.Error())
+	}
+}
+
 func hasMetric(appId, name string, timestamp int64) bool {
 	query := "SELECT * FROM applicationmetrics WHERE appid = $1 AND name = $2 AND timestamp = $3"
 	rows, e := dbHelper.Query(query, appId, name, timestamp)
@@ -60,11 +67,30 @@ func hasMetric(appId, name string, timestamp int64) bool {
 	return rows.Next()
 }
 
+func hasInstanceMetric(appId string, index int, name string, timestamp int64) bool {
+	query := "SELECT * FROM appinstancemetrics WHERE appid = $1 AND instanceindex = $2 AND name = $3 AND timestamp = $4"
+	rows, e := dbHelper.Query(query, appId, index, name, timestamp)
+	if e != nil {
+		Fail("can not query table appinstancemetrics: " + e.Error())
+	}
+	defer rows.Close()
+	return rows.Next()
+}
+
 func getNumberOfMetrics() int {
 	var num int
 	e := dbHelper.QueryRow("SELECT COUNT(*) FROM applicationmetrics").Scan(&num)
 	if e != nil {
 		Fail("can not count the number of records in table applicationmetrics: " + e.Error())
+	}
+	return num
+}
+
+func getNumberOfInstanceMetrics() int {
+	var num int
+	e := dbHelper.QueryRow("SELECT COUNT(*) FROM appinstancemetrics").Scan(&num)
+	if e != nil {
+		Fail("can not count the number of records in table appinstancemetrics: " + e.Error())
 	}
 	return num
 }
