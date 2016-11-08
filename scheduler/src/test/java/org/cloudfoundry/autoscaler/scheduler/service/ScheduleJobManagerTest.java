@@ -17,6 +17,7 @@ import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.util.JobActionEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleTypeEnum;
+import org.cloudfoundry.autoscaler.scheduler.util.TestConfiguration;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataCleanupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
@@ -41,7 +42,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 @ActiveProfiles("SchedulerMock")
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class ScheduleJobManagerTest {
+public class ScheduleJobManagerTest extends TestConfiguration {
 
 	@Autowired
 	private Scheduler scheduler;

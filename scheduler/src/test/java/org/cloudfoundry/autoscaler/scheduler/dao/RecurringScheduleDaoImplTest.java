@@ -10,6 +10,7 @@ import java.util.List;
 import javax.transaction.Transactional;
 
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
+import org.cloudfoundry.autoscaler.scheduler.util.TestConfiguration;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.junit.Before;
 import org.junit.Test;
@@ -20,7 +21,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class RecurringScheduleDaoImplTest {
+public class RecurringScheduleDaoImplTest extends TestConfiguration {
 	@Autowired
 	private RecurringScheduleDao recurringScheduleDao;
 

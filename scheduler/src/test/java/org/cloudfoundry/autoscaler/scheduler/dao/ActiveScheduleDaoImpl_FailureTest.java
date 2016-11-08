@@ -14,6 +14,7 @@ import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
+import org.cloudfoundry.autoscaler.scheduler.util.TestConfiguration;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataCleanupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationException;
 import org.junit.Before;
@@ -22,20 +23,18 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
-@ActiveProfiles("DataSourceMock")
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class ActiveScheduleDaoImpl_FailureTest {
-
+public class ActiveScheduleDaoImpl_FailureTest  extends TestConfiguration {
 
 	@Autowired
 	private ActiveScheduleDao activeScheduleDao;
 
-	@Autowired
+	@SpyBean
 	private DataSource dataSource;
 
 	@Autowired

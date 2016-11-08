@@ -18,6 +18,7 @@ import org.cloudfoundry.autoscaler.scheduler.rest.model.Schedules;
 import org.cloudfoundry.autoscaler.scheduler.util.JobActionEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleTypeEnum;
+import org.cloudfoundry.autoscaler.scheduler.util.TestConfiguration;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataCleanupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationException;
@@ -45,7 +46,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 @ActiveProfiles("ScheduleDaoMock")
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class ScheduleManagerTest {
+public class ScheduleManagerTest  extends TestConfiguration {
 
 	@Autowired
 	private ScheduleManager scheduleManager;
