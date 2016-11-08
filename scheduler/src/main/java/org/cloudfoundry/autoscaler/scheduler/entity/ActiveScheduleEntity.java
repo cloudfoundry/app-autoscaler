@@ -86,7 +86,7 @@ public class ActiveScheduleEntity implements RowMapper<ActiveScheduleEntity> {
 
 	public ActiveScheduleEntity mapRow(ResultSet rs, int rowNum) throws SQLException {
 		ActiveScheduleEntity activeScheduleEntity = new ActiveScheduleEntity();
-		activeScheduleEntity.setId(rs.getLong("active_schedule_id"));
+		activeScheduleEntity.setId(rs.getLong("id"));
 		activeScheduleEntity.setAppId(rs.getString("app_id"));
 		activeScheduleEntity.setInstanceMinCount(rs.getInt("instance_min_count"));
 		activeScheduleEntity.setInstanceMaxCount(rs.getInt("instance_max_count"));

@@ -146,6 +146,9 @@ class ScheduleJobManager {
 		jobDataMap.put(ScheduleJobHelper.APP_ID, scheduleEntity.getAppId());
 		jobDataMap.put(ScheduleJobHelper.SCHEDULE_ID, scheduleEntity.getId());
 		jobDataMap.put(ScheduleJobHelper.SCALING_ACTION, jobAction.getStatus());
+		jobDataMap.put(ScheduleJobHelper.RescheduleCount.ACTIVE_SCHEDULE.name(), 1);
+		jobDataMap.put(ScheduleJobHelper.RescheduleCount.SCALING_ENGINE_NOTIFICATION.name(),1);
+		jobDataMap.put(ScheduleJobHelper.ACTIVE_SCHEDULE_TABLE_TASK_DONE, false);
 
 		// The minimum and maximum instance count need to be set when the
 		// scaling action has to be started.

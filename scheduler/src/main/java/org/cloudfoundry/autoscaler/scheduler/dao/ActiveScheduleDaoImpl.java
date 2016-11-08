@@ -1,6 +1,5 @@
 package org.cloudfoundry.autoscaler.scheduler.dao;
 
-import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 
 import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
@@ -16,19 +15,16 @@ public class ActiveScheduleDaoImpl extends JdbcDaoSupport implements ActiveSched
 
 	private static final String TABLE_NAME = "app_scaling_active_schedule";
 
-	private static final String SELECT_SQL = "SELECT * FROM " + TABLE_NAME + " WHERE active_schedule_id=?";
+	private static final String SELECT_SQL = "SELECT * FROM " + TABLE_NAME + " WHERE id=?";
 
 	private static final String INSERT_SQL = "INSERT INTO " + TABLE_NAME
-			+ "(active_schedule_id, app_id, instance_min_count, instance_max_count, initial_min_instance_count, status) "
+			+ "(id, app_id, instance_min_count, instance_max_count, initial_min_instance_count, status) "
 			+ "VALUES (?, ?, ?, ?, ?, ?)";
 
-	private static final String DELETE_SQL = "DELETE FROM " + TABLE_NAME + " WHERE active_schedule_id=?";
+	private static final String DELETE_SQL = "DELETE FROM " + TABLE_NAME + " WHERE id=?";
 
 	@Autowired
-	private DataSource dataSource;
-
-	@PostConstruct
-	private void initialize() {
+	private void setupDataSource(DataSource dataSource) {
 		setDataSource(dataSource);
 	}
 

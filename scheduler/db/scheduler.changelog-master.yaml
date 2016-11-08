@@ -156,7 +156,7 @@ databaseChangeLog:
             tableName: app_scaling_active_schedule
             columns:
               - column:
-                  name: active_schedule_id
+                  name: id
                   type: bigint
                   constraints:
                     primaryKey: true

@@ -17,45 +17,45 @@ public class AppScalingScheduleEndJob extends AppScalingScheduleJob {
 	private Logger logger = LogManager.getLogger(this.getClass());
 
 	@Override
-	public void executeInternal(JobExecutionContext context) throws JobExecutionException {
+	public void executeInternal(JobExecutionContext jobExecutionContext) throws JobExecutionException {
 		JobActionEnum jobEnd = JobActionEnum.END;
 
-		JobDataMap dataMap = context.getJobDetail().getJobDataMap();
-		ActiveScheduleEntity activeScheduleEntity = ScheduleJobHelper.setupActiveSchedule(dataMap);
+		JobDataMap jobDataMap = jobExecutionContext.getJobDetail().getJobDataMap();
+		ActiveScheduleEntity activeScheduleEntity = ScheduleJobHelper.setupActiveSchedule(jobDataMap);
 
 		String executingMessage = messageBundleResourceHelper.lookupMessage("scheduler.job.start",
-				context.getJobDetail().getKey(), activeScheduleEntity.getAppId(), activeScheduleEntity.getId(), jobEnd,
-				activeScheduleEntity.getInstanceMinCount(), activeScheduleEntity.getInstanceMaxCount(),
-				activeScheduleEntity.getInitialMinInstanceCount());
+				jobExecutionContext.getJobDetail().getKey(), activeScheduleEntity.getAppId(),
+				activeScheduleEntity.getId(), jobEnd, activeScheduleEntity.getInstanceMinCount(),
+				activeScheduleEntity.getInstanceMaxCount(), activeScheduleEntity.getInitialMinInstanceCount());
 		logger.info(executingMessage);
 
 		// Delete the active schedule
-		deleteActiveSchedule(activeScheduleEntity, context);
+		deleteActiveSchedule(activeScheduleEntity, jobExecutionContext);
 
-		notifyScalingEngine(activeScheduleEntity, jobEnd);
+		notifyScalingEngine(activeScheduleEntity, jobEnd, jobExecutionContext);
 
 	}
 
 	@Transactional
-	private void deleteActiveSchedule(ActiveScheduleEntity activeScheduleEntity, JobExecutionContext jobExecutionContext) throws JobExecutionException {
+	private void deleteActiveSchedule(ActiveScheduleEntity activeScheduleEntity,
+			JobExecutionContext jobExecutionContext) {
+		JobDataMap jobDataMap = jobExecutionContext.getJobDetail().getJobDataMap();
+		boolean activeScheduleTableTaskDone = jobDataMap.getBoolean(ScheduleJobHelper.ACTIVE_SCHEDULE_TABLE_TASK_DONE);
+		if (!activeScheduleTableTaskDone) {
+			try {
+				activeScheduleDao.delete(activeScheduleEntity.getId());
+				jobDataMap.put(ScheduleJobHelper.ACTIVE_SCHEDULE_TABLE_TASK_DONE, true);
+			} catch (DatabaseValidationException dve) {
+				String errorMessage = messageBundleResourceHelper.lookupMessage(
+						"database.error.delete.activeschedule.failed", dve.getMessage(),
+						activeScheduleEntity.getAppId(), activeScheduleEntity.getId());
+				logger.error(errorMessage, dve);
 
-		try {
-			activeScheduleDao.delete(activeScheduleEntity.getId());
-		} catch (DatabaseValidationException dve) {
-			// Refire the job immediately
-			String errorMessage = messageBundleResourceHelper
-					.lookupMessage("database.error.delete.activeschedule.failed", dve.getMessage());
-			logger.error(errorMessage, dve);
-			if(jobExecutionContext.getRefireCount() < maxJobRefireCount) {
-				try {
-					Thread.sleep(jobRefireInterval);
-				} catch (InterruptedException ie) {
-					logger.error(ie.getMessage(), ie);
-				}
-				throw new JobExecutionException(dve, true);
+				//Reschedule Job
+				handleJobRescheduling(jobExecutionContext, ScheduleJobHelper.RescheduleCount.ACTIVE_SCHEDULE,
+						maxJobRescheduleCount);
 			}
+
 		}
-
 	}
-
 }

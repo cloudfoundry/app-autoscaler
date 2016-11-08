@@ -44,7 +44,12 @@
 			<artifactId>spring-boot-starter-tomcat</artifactId>
 			<scope>provided</scope>
 		</dependency>
-		<!-- Note: Explicitly specified as the respective jar is not showing in 
+		<dependency>
+			<groupId>org.apache.tomcat.embed</groupId>
+			<artifactId>tomcat-embed-jasper</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<!-- Note: Explicitly specified as the respective jar is not showing in
 			the maven dependencies -->
 		<dependency>
 			<groupId>org.springframework</groupId>
@@ -117,6 +122,7 @@
           <configuration>
             <disableXmlReport>true</disableXmlReport>
             <redirectTestOutputToFile>true</redirectTestOutputToFile>
+		    <runOrder>random</runOrder>
           </configuration>
         </plugin>
 	  </plugins>

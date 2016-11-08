@@ -1,20 +1,29 @@
 package org.cloudfoundry.autoscaler.scheduler.quartz;
 
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.util.Date;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cloudfoundry.autoscaler.scheduler.dao.ActiveScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.util.JobActionEnum;
-import org.cloudfoundry.autoscaler.scheduler.util.ScalingEngineUtil;
+import org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
+import org.quartz.JobDataMap;
+import org.quartz.JobExecutionContext;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.Trigger;
+import org.quartz.TriggerKey;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.scheduling.quartz.QuartzJobBean;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestTemplate;
 
 /**
  * QuartzJobBean class that executes the job
@@ -26,60 +35,90 @@ abstract class AppScalingScheduleJob extends QuartzJobBean {
 	@Value("${autoscaler.scalingengine.url}")
 	private String scalingEngineUrl;
 
-	@Value("${scalingenginejob.refire.interval}")
-	long jobRefireInterval;
+	@Value("${scalingenginejob.reschedule.interval.millisecond}")
+	long jobRescheduleIntervalMilliSecond;
 
-	@Value("${scalingenginejob.refire.maxcount}")
-	int maxJobRefireCount;
+	@Value("${scalingenginejob.reschedule.maxcount}")
+	int maxJobRescheduleCount;
 
-	@Autowired
-	private ScalingEngineUtil scalingEngineUtil;
+	@Value("${scalingengine.notification.reschedule.maxcount}")
+	int maxScalingEngineNotificationRescheduleCount;
 
 	@Autowired
 	ActiveScheduleDao activeScheduleDao;
 
 	@Autowired
+	private RestTemplate restTemplate;
+
+	@Autowired
 	MessageBundleResourceHelper messageBundleResourceHelper;
 
-	void notifyScalingEngine(ActiveScheduleEntity activeScheduleEntity, JobActionEnum scalingAction) {
+	void notifyScalingEngine(ActiveScheduleEntity activeScheduleEntity, JobActionEnum scalingAction,
+			JobExecutionContext jobExecutionContext) {
 		String appId = activeScheduleEntity.getAppId();
 		Long scheduleId = activeScheduleEntity.getId();
+		HttpEntity<ActiveScheduleEntity> requestEntity = new HttpEntity<>(activeScheduleEntity);
 
 		try {
-			URL url = new URL(scalingEngineUrl + "/v1/apps/" + appId + "/active_schedule/" + scheduleId);
-
-			HttpURLConnection scalingEngineConnection = scalingEngineUtil.getConnection(url, activeScheduleEntity);
-			handleResponse(activeScheduleEntity, scalingAction, scalingEngineConnection);
-
-		} catch (IOException e) {
-			String message = messageBundleResourceHelper.lookupMessage("scalingengine.notification.error",
-					e.getMessage(), appId, scheduleId, scalingAction);
-			logger.error(message);
-		} finally {
-			scalingEngineUtil.close();
-		}
-
-	}
-
-	private void handleResponse(ActiveScheduleEntity activeScheduleEntity, JobActionEnum scalingAction,
-			HttpURLConnection scalingEngineConnection) throws IOException {
-		int responseCode = scalingEngineConnection.getResponseCode();
-		String responseMessage = scalingEngineConnection.getResponseMessage();
-		String appId = activeScheduleEntity.getAppId();
-		Long scheduleId = activeScheduleEntity.getId();
-		if (responseCode >= 400 && responseCode < 500) {
-			String message = messageBundleResourceHelper.lookupMessage("scalingengine.notification.client.error",
-					responseCode, responseMessage, appId, scheduleId, scalingAction);
-			logger.error(message);
-		} else if (responseCode >= 500) {
-			String message = messageBundleResourceHelper.lookupMessage("scalingengine.notification.failed",
-					responseCode, responseMessage, appId, scheduleId, scalingAction);
-			logger.error(message);
-		} else {
 			String message = messageBundleResourceHelper.lookupMessage("scalingengine.notification.success", appId,
 					scheduleId, scalingAction);
 			logger.info(message);
+			restTemplate.put(scalingEngineUrl + "/v1/apps/" + appId + "/active_schedule/" + scheduleId, requestEntity);
+		} catch (HttpStatusCodeException hce) {
+			handleResponse(activeScheduleEntity, scalingAction, hce);
+		} catch (ResourceAccessException rae) {
+			String message = messageBundleResourceHelper.lookupMessage("scalingengine.notification.error",
+					rae.getMessage(), appId, scheduleId, scalingAction);
+			logger.error(message, rae);
+			handleJobRescheduling(jobExecutionContext, ScheduleJobHelper.RescheduleCount.SCALING_ENGINE_NOTIFICATION,
+					maxScalingEngineNotificationRescheduleCount);
+		}
+	}
 
+	private void handleResponse(ActiveScheduleEntity activeScheduleEntity, JobActionEnum scalingAction,
+			HttpStatusCodeException hsce) {
+		String appId = activeScheduleEntity.getAppId();
+		Long scheduleId = activeScheduleEntity.getId();
+		HttpStatus errorResponseCode = hsce.getStatusCode();
+		if (errorResponseCode.is4xxClientError()) {
+			String message = messageBundleResourceHelper.lookupMessage("scalingengine.notification.client.error",
+					errorResponseCode, hsce.getResponseBodyAsString(), appId, scheduleId, scalingAction);
+			logger.error(message, hsce);
+		} else {
+			String message = messageBundleResourceHelper.lookupMessage("scalingengine.notification.failed",
+					errorResponseCode, hsce.getResponseBodyAsString(), appId, scheduleId, scalingAction);
+			logger.error(message, hsce);
+		}
+	}
+
+	void handleJobRescheduling(JobExecutionContext jobExecutionContext, ScheduleJobHelper.RescheduleCount retryCounter,
+			int maxCount) {
+		JobDataMap jobDataMap = jobExecutionContext.getJobDetail().getJobDataMap();
+		String retryCounterTask = retryCounter.name();// ACTIVE_SCHEDULE, SCALING_ENGINE_NOTIFICATION
+		int jobFireCount = jobDataMap.getInt(retryCounterTask);
+		String appId = jobDataMap.getString(ScheduleJobHelper.APP_ID);
+		Long scheduleId = jobDataMap.getLong(ScheduleJobHelper.SCHEDULE_ID);
+		TriggerKey triggerKey = jobExecutionContext.getTrigger().getKey();
+
+		if (jobFireCount < maxCount) {
+			Date newTriggerTime = new Date(System.currentTimeMillis() + jobRescheduleIntervalMilliSecond);
+			Trigger newTrigger = ScheduleJobHelper.buildTrigger(triggerKey, null, newTriggerTime);
+
+			try {
+				Scheduler scheduler = jobExecutionContext.getScheduler();
+				jobDataMap.put(retryCounterTask, ++jobFireCount);
+				scheduler.addJob(jobExecutionContext.getJobDetail(), true);
+				scheduler.rescheduleJob(triggerKey, newTrigger);
+			} catch (SchedulerException se) {
+				String errorMessage = messageBundleResourceHelper.lookupMessage("scheduler.job.reschedule.failed",
+						se.getMessage(), triggerKey, appId, scheduleId, jobFireCount - 1);
+				logger.error(errorMessage, se);
+			}
+		} else {
+			String errorMessage = messageBundleResourceHelper.lookupMessage(
+					"scheduler.job.reschedule.failed.max.reached", triggerKey, appId, scheduleId, maxCount,
+					retryCounterTask);
+			logger.error(errorMessage);
 		}
 	}
 }

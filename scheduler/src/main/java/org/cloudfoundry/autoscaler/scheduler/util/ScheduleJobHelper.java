@@ -25,12 +25,18 @@ import org.quartz.TriggerKey;
  *
  */
 public class ScheduleJobHelper {
+
+	public enum RescheduleCount {
+		ACTIVE_SCHEDULE, SCALING_ENGINE_NOTIFICATION
+	};
+
 	public static final String APP_ID = "appId";
 	public static final String SCHEDULE_ID = "scheduleId";
 	public static final String SCALING_ACTION = "scalingAction";
 	public static final String INITIAL_MIN_INSTANCE_COUNT = "initialMinInstanceCount";
 	public static final String INSTANCE_MIN_COUNT = "instanceMinCount";
 	public static final String INSTANCE_MAX_COUNT = "instanceMaxCount";
+	public static final String ACTIVE_SCHEDULE_TABLE_TASK_DONE = "activeScheduleTableTask";
 
 	public static JobKey generateJobKey(Long id, JobActionEnum jobActionEnum, ScheduleTypeEnum scheduleTypeEnum) {
 		String name = id + jobActionEnum.getJobIdSuffix();

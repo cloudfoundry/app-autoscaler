@@ -5,7 +5,6 @@ import static org.junit.Assert.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.net.HttpURLConnection;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
@@ -21,13 +20,14 @@ import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationSchedules;
 import org.cloudfoundry.autoscaler.scheduler.util.ApplicationPolicyBuilder;
+import org.cloudfoundry.autoscaler.scheduler.util.EmbeddedTomcatUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.JobActionEnum;
-import org.cloudfoundry.autoscaler.scheduler.util.ScalingEngineUtil;
+import org.cloudfoundry.autoscaler.scheduler.util.TestConfiguration;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataCleanupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
+import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -42,22 +42,21 @@ import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.Commit;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.WebApplicationContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-@ActiveProfiles("ScalingEngineUtilMock")
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 @Commit
-public class ScheduleRestController_ScalingEngine_IntegrationTest {
+public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest extends TestConfiguration {
 
 	@Mock
 	private Appender mockAppender;
@@ -76,19 +75,23 @@ public class ScheduleRestController_ScalingEngine_IntegrationTest {
 	private MockMvc mockMvc;
 
 	@Autowired
-	private ScalingEngineUtil scalingEngineUtil;
-
-	@Autowired
 	private TestDataCleanupHelper testDataCleanupHelper;
 
 	@Value("${autoscaler.scalingengine.url}")
 	private String scalingEngineUrl;
+
+	@Autowired
+	private RestTemplate restTemplate;
+
+	EmbeddedTomcatUtil embeddedTomcatUtil;
 
 	@Before
 	@Transactional
 	public void before() throws Exception {
 		// Clean up data
 		testDataCleanupHelper.cleanupData(scheduler);
+		embeddedTomcatUtil = new EmbeddedTomcatUtil();
+		embeddedTomcatUtil.start();
 
 		Mockito.reset(mockAppender);
 
@@ -101,8 +104,12 @@ public class ScheduleRestController_ScalingEngine_IntegrationTest {
 		setLogLevel(Level.INFO);
 	}
 
+	@After
+	public void after() {
+		embeddedTomcatUtil.stop();
+	}
+
 	@Test
-    @Ignore
 	public void testCreateScheduleAndNotifyScalingEngine() throws Exception {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
@@ -133,9 +140,15 @@ public class ScheduleRestController_ScalingEngine_IntegrationTest {
 		endActiveScheduleEntity.setInstanceMinCount(applicationSchedules.getInstanceMinCount());
 		endActiveScheduleEntity.setInstanceMaxCount(applicationSchedules.getInstanceMaxCount());
 
-		HttpURLConnection mockHttpURLConnection = Mockito.mock(HttpURLConnection.class);
-		Mockito.when(scalingEngineUtil.getConnection(Mockito.anyObject(), Mockito.anyObject()))
-				.thenReturn(mockHttpURLConnection);
+		embeddedTomcatUtil.setup(appId, currentSequenceSchedulerId, 200, null);
+
+		//		TestJobListener testStartJobListener = new TestJobListener(JobActionEnum.START.name(),1);
+		//		JobKey jobKey = ScheduleJobHelper.generateJobKey(currentSequenceSchedulerId, JobActionEnum.START, ScheduleTypeEnum.SPECIFIC_DATE);
+		//		scheduler.getListenerManager().addJobListener(testStartJobListener, KeyMatcher.keyEquals(jobKey));
+		//
+		//		TestJobListener testEndJobListener = new TestJobListener(JobActionEnum.END.name(),1);
+		//		jobKey = ScheduleJobHelper.generateJobKey(currentSequenceSchedulerId, JobActionEnum.END, ScheduleTypeEnum.SPECIFIC_DATE);
+		//		scheduler.getListenerManager().addJobListener(testEndJobListener, KeyMatcher.keyEquals(jobKey));
 
 		ObjectMapper mapper = new ObjectMapper();
 		String content = mapper.writeValueAsString(applicationSchedules);
@@ -146,17 +159,18 @@ public class ScheduleRestController_ScalingEngine_IntegrationTest {
 
 		// Assert START Job successful message
 		Thread.sleep(TimeUnit.MINUTES.toMillis(1));
+		//		testStartJobListener.waitForJobToFinish(TimeUnit.SECONDS.toMillis(75));
 
 		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 		String expectedMessage = messageBundleResourceHelper.lookupMessage("scalingengine.notification.success",
-				startActiveScheduleEntity.getAppId(), startActiveScheduleEntity.getId(),
-				JobActionEnum.START);
+				startActiveScheduleEntity.getAppId(), startActiveScheduleEntity.getId(), JobActionEnum.START);
 
 		assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), is(Level.INFO));
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
 
 		// Assert END Job successful message
 		Thread.sleep(TimeUnit.MINUTES.toMillis(1));
+		//		testEndJobListener.waitForJobToFinish(TimeUnit.SECONDS.toMillis(75));
 
 		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 		expectedMessage = messageBundleResourceHelper.lookupMessage("scalingengine.notification.success",
