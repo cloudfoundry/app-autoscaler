@@ -12,7 +12,7 @@ var configFilePath = path.join(__dirname, '../../config/settings.json');
 var settings = require(path.join(__dirname, '../../lib/config/setting.js'))((JSON.parse(
   fs.readFileSync(configFilePath, 'utf8'))));
 
-var models = require('../../lib/models')(settings.db.uri);
+var models = require('../../lib/models')(settings.db);
 var serviceInstance = models.service_instance;
 var binding = models.binding;
 

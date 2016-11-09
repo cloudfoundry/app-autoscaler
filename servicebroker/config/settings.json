@@ -1,7 +1,12 @@
 {
-  "port": 8080,
-  "username": "username",
-  "password": "password",
-  "dbUri": "postgres://postgres@127.0.0.1:5432/autoscaler",
-  "apiServerUri": "http://autoscaler.boshlite.com"
+    "port": 8080,
+    "username": "username",
+    "password": "password",
+    "db": {
+        "maxConnections": 10,
+        "minConnections": 0,
+        "idleTimeout": 1000,
+        "uri": "postgres://postgres@127.0.0.1:5432/autoscaler"
+    },
+    "apiServerUri": "http://autoscaler.boshlite.com"
 }

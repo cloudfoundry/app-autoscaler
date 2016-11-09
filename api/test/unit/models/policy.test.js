@@ -1,9 +1,12 @@
 'use strict';
 var expect = require('chai').expect;
 var fs = require('fs');
+var path = require('path');
 var moment = require('moment');
 var logger = require('../../../lib/log/logger');
-var policy = require('../../../lib/models')().policy_json;
+var settings = require(path.join(__dirname, '../../../lib/config/setting.js'))((JSON.parse(
+  fs.readFileSync(path.join(__dirname, '../../../config/settings.json'), 'utf8'))));
+var policy = require('../../../lib/models')(settings.db).policy_json;
 
 describe('Create a Policy', function() {
   var fakePolicy;
@@ -20,7 +23,7 @@ describe('Create a Policy', function() {
 	  it('Should create a policy for app id 99999 successfully', function() {
 	    return policy.create({ 'policy_json':fakePolicy, 'app_id': '99999' })
 	    .then(function(policy) {
-	      expect(policy.policy_json).to.deep.equal(fakePolicy);
+	      expect(JSON.parse(policy.policy_json)).to.deep.equal(fakePolicy);
 	      expect(policy).to.have.property('updated_at').to.not.be.null;
 	    });
 	  });
@@ -52,7 +55,7 @@ describe('Create a Policy', function() {
 			    	  policy.update({ 'policy_json':fakePolicy, 'app_id': '99999' },{ where: { app_id: '99999' } ,returning:true})
 			    	    .then(function(result) {
 			    	      var updatedPolicy = result[1][0];
-			    	      expect(updatedPolicy.policy_json).to.deep.equal(fakePolicy);
+			    	      expect(JSON.parse(updatedPolicy.policy_json)).to.deep.equal(fakePolicy);
 			    	      expect(updatedPolicy).to.have.property('updated_at').to.not.be.null;
 			    	      // Ensure the updated timestamp isAfter created timestamp
 			    	      expect(moment(moment(updatedPolicy.updated_at).format('YYYY-MM-DDTHH:mm:ss'))

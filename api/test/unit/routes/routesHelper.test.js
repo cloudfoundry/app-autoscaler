@@ -3,12 +3,16 @@
 var request = require('supertest');
 var expect = require('chai').expect;
 var fs = require('fs');
-var app = require('../../../app.js');
-var policy = require('../../../lib/models')().policy_json;
+var path = require('path');
+var settings = require(path.join(__dirname, '../../../lib/config/setting.js'))((JSON.parse(
+  fs.readFileSync(path.join(__dirname, '../../../config/settings.json'), 'utf8'))));
+var API = require('../../../app.js');
+var app;
+var policy = require('../../../lib/models')(settings.db).policy_json;
 var logger = require('../../../lib/log/logger');
 var nock = require('nock');
 var HttpStatus = require('http-status-codes');
-var routeHelper = require('../../../lib/routes/routeHelper');
+var routeHelper = require('../../../lib/routes/routeHelper')(settings.db);
 var schedulerURI = process.env.SCHEDULER_URI;
 
 
@@ -17,8 +21,11 @@ describe('Policy Route helper ', function() {
 
     before(function() {
 		fakePolicy = JSON.parse(fs.readFileSync(__dirname+'/../fakePolicy.json', 'utf8'));
+		app = API(path.join(__dirname, '../../../config/settings.json'));
 	})
-
+    after(function(done){
+    	app.close(done);
+  	})
 	beforeEach(function() {
 		return policy.truncate();
 	});
@@ -161,7 +168,7 @@ describe('Policy Route helper ', function() {
 				  .get('/v1/policies/12348')
 				  .end(function(error,result) {
 				      expect(result.statusCode).to.equal(200);
-				      expect(result.body).to.deep.equal(fakePolicy);
+				      expect(JSON.parse(result.body)).to.deep.equal(fakePolicy);
 				      done();
 				});    
 			});

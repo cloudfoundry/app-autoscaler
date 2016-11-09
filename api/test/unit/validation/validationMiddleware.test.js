@@ -3,12 +3,16 @@
 var request = require('supertest');
 var expect = require('chai').expect;
 var fs = require('fs');
-var app = require('../../../app.js');
+var path = require('path');
+var settings = require(path.join(__dirname, '../../../lib/config/setting.js'))((JSON.parse(
+  fs.readFileSync(path.join(__dirname, '../../../config/settings.json'), 'utf8'))));
+var API = require('../../../app.js');
+var app;
 var logger = require('../../../lib/log/logger');
-var policy = require('../../../lib/models')().policy_json;
+var policy = require('../../../lib/models')(settings.db).policy_json;
 var validationMiddleware = require('../../../lib/validation/validationMiddleware');
 var nock = require('nock');
-var schedulerURI = process.env.SCHEDULER_URI ;
+var schedulerURI = settings.schedulerUri;
 
 describe('Validate Policy JSON Schema structure', function() {
   var policyContent;
@@ -16,8 +20,11 @@ describe('Validate Policy JSON Schema structure', function() {
 
   before(function() {
     policyContent = fs.readFileSync(__dirname+'/../fakePolicy.json', 'utf8');
+    app = API(path.join(__dirname, '../../../config/settings.json'));
   });
-
+  after(function(done){
+      app.close(done);
+  })
   beforeEach(function() {
     fakePolicy = JSON.parse(policyContent);
     return policy.truncate();

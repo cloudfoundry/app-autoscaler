@@ -4,7 +4,7 @@
 module.exports = function(app, settings) {
   var path = require('path');
   var logger = require(path.join(__dirname, '../logger/logger.js'));
-  var models = require(path.join(__dirname, '../models'))(settings.db.uri);
+  var models = require(path.join(__dirname, '../models'))(settings.db);
 
   app.put('/v2/service_instances/:instanceId', function(req, res) {
     var serviceInstanceId = req.params.instanceId;
