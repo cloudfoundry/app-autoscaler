@@ -16,6 +16,7 @@ const (
 	DefaultLoggingLevel                  = "info"
 	DefaultRefreshInterval time.Duration = 60 * time.Second
 	DefaultPollInterval    time.Duration = 30 * time.Second
+	DefaultRetryTimes      uint          = 3
 )
 
 var defaultCfConfig = cf.CfConfig{
@@ -46,11 +47,13 @@ type DbConfig struct {
 type CollectorConfig struct {
 	RefreshInterval time.Duration `yaml:"refresh_interval"`
 	PollInterval    time.Duration `yaml:"poll_interval"`
+	RetryTimes      uint          `yaml:"retry_times"`
 }
 
 var defaultCollectorConfig = CollectorConfig{
 	RefreshInterval: DefaultRefreshInterval,
 	PollInterval:    DefaultPollInterval,
+	RetryTimes:      DefaultRetryTimes,
 }
 
 type Config struct {

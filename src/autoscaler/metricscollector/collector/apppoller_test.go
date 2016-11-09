@@ -38,7 +38,7 @@ var _ = Describe("Apppoller", func() {
 		buffer = logger.Buffer()
 
 		fclock = fakeclock.NewFakeClock(time.Now())
-		poller = NewAppPoller(logger, "test-app-id", TestPollInterval, cfc, noaa, database, fclock)
+		poller = NewAppPoller(logger, "test-app-id", TestPollInterval, TestRetryTimes, cfc, noaa, database, fclock)
 	})
 
 	Describe("Start", func() {
@@ -197,7 +197,7 @@ var _ = Describe("Apppoller", func() {
 					Expect(appid).To(Equal("test-app-id"))
 					Expect(token).To(Equal("bearer test-access-token"))
 
-					if noaa.ContainerEnvelopesCallCount()%2 == 0 {
+					if noaa.ContainerEnvelopesCallCount() >= 2 && noaa.ContainerEnvelopesCallCount() <= 4 {
 						return nil, errors.New("apppoller test error")
 					} else {
 						return []*events.Envelope{
@@ -232,6 +232,46 @@ var _ = Describe("Apppoller", func() {
 
 				fclock.Increment(TestPollInterval)
 				Eventually(database.SaveMetricCallCount).Should(Equal(2))
+
+			})
+		})
+
+		Context("when retrieving container metrics fails", func() {
+			BeforeEach(func() {
+				cfc.GetTokensReturns(cf.Tokens{AccessToken: "test-access-token"})
+
+				noaa.ContainerEnvelopesStub = func(appid string, token string) ([]*events.Envelope, error) {
+					Expect(appid).To(Equal("test-app-id"))
+					Expect(token).To(Equal("bearer test-access-token"))
+
+					if noaa.ContainerEnvelopesCallCount() < 3 {
+						return nil, errors.New("apppoller test error")
+					} else {
+						return []*events.Envelope{
+							&events.Envelope{
+								ContainerMetric: &events.ContainerMetric{
+									ApplicationId: proto.String("test-app-id"),
+									InstanceIndex: proto.Int32(0),
+									MemoryBytes:   proto.Uint64(1234),
+								},
+							},
+						}, nil
+					}
+				}
+
+			})
+
+			It("retries thrice", func() {
+
+				Eventually(buffer).Should(gbytes.Say("poll-metric-from-noaa-fail"))
+				Eventually(buffer).Should(gbytes.Say("apppoller test error"))
+				Eventually(buffer).Should(gbytes.Say("poll-metric-from-noaa-retry"))
+
+				Eventually(buffer).Should(gbytes.Say("poll-metric-from-noaa-fail"))
+				Eventually(buffer).Should(gbytes.Say("apppoller test error"))
+				Eventually(buffer).Should(gbytes.Say("poll-metric-from-noaa-retry"))
+
+				Eventually(buffer).Should(gbytes.Say("poll-metric-get-memory-metric"))
 
 			})
 		})

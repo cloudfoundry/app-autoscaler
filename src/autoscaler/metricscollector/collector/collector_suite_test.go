@@ -12,6 +12,7 @@ import (
 const (
 	TestPollInterval    time.Duration = 1 * time.Second
 	TestRefreshInterval time.Duration = 3 * time.Second
+	TestRetryTimes      uint          = 3
 )
 
 func TestCollector(t *testing.T) {
