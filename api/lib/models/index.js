@@ -1,4 +1,4 @@
-module.exports = function(settings, callback) {
+module.exports = function(dbSettings, callback) {
 
   var fs = require('fs');
   var path = require('path');
@@ -9,11 +9,11 @@ module.exports = function(settings, callback) {
   const DEFAULT_DB_MIN_CONNECTIONS = 0;
   const DEFAULT_DB_MAX_IDLETIME = 1000;
 
-  var sequelize = new Sequelize(settings.db.uri, {
+  var sequelize = new Sequelize(dbSettings.uri, {
     pool: {
-      max: settings.dbMaxConnectionCount || DEFAULT_DB_MAX_CONNECTIONS,
-      min: settings.dbMinConnectionCount || DEFAULT_DB_MIN_CONNECTIONS,
-      idle: settings.dbMaxIdleTime || DEFAULT_DB_MAX_IDLETIME
+      max: dbSettings.maxConnections || DEFAULT_DB_MAX_CONNECTIONS,
+      min: dbSettings.minConnections || DEFAULT_DB_MIN_CONNECTIONS,
+      idle: dbSettings.idleTimeout || DEFAULT_DB_MAX_IDLETIME
     }
   });
 

@@ -1,7 +1,7 @@
 'use strict';
-module.exports = function(settings){
+module.exports = function(dbSettings){
   var logger = require('../log/logger');
-  var models = require('../models')(settings);
+  var models = require('../models')(dbSettings);
   var HttpStatus = require('http-status-codes');
   var helper = {};
   helper.createOrUpdatePolicy = function(req, callback) {

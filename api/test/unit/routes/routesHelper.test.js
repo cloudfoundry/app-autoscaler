@@ -4,15 +4,15 @@ var request = require('supertest');
 var expect = require('chai').expect;
 var fs = require('fs');
 var path = require('path');
-var settings = require(path.join(__dirname, '../../../lib/config/settings.js'))((JSON.parse(
+var settings = require(path.join(__dirname, '../../../lib/config/setting.js'))((JSON.parse(
   fs.readFileSync(path.join(__dirname, '../../../config/settings.json'), 'utf8'))));
 var API = require('../../../app.js');
 var app;
-var policy = require('../../../lib/models')(settings).policy_json;
+var policy = require('../../../lib/models')(settings.db).policy_json;
 var logger = require('../../../lib/log/logger');
 var nock = require('nock');
 var HttpStatus = require('http-status-codes');
-var routeHelper = require('../../../lib/routes/routeHelper')(settings);
+var routeHelper = require('../../../lib/routes/routeHelper')(settings.db);
 var schedulerURI = process.env.SCHEDULER_URI;
 
 

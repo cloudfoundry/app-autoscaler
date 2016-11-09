@@ -1,12 +1,12 @@
 'use strict';
 module.exports = function(settings){
-  var models = require('../models')(settings);
+  var models = require('../models')(settings.db);
   var express = require('express');
   var router = express.Router();
   var logger = require('../log/logger');
   var HttpStatus = require('http-status-codes');
   var validationMiddleWare = require('../validation/validationMiddleware');
-  var routeHelper = require('./routeHelper')(settings);
+  var routeHelper = require('./routeHelper')(settings.db);
   var schedulerUtil = require('../utils/schedulerUtils')(settings);
   var async = require('async');
 

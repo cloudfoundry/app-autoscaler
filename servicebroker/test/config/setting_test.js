@@ -7,10 +7,12 @@ var defaultConfig = {
   "port": 80,
   "username": "username",
   "password": "password",
-  "dbMaxConnectionCount": 10,
-  "dbMinConnectionCount": 0,
-  "dbMaxIdleTime": 1000,
-  "dbUri": "postgres://postgres@server:80/dbname",
+  "db": {
+    "maxConnections": 10,
+    "minConnections": 0,
+    "idleTimeout": 1000,
+    "uri": "postgres://postgres@server:80/dbname"
+  },
   "apiServerUri": "http://apiserveruri"
 }
 
@@ -23,13 +25,16 @@ describe('config setting Test Suite', function() {
   });
 
   it('Should contain the default configuration', function() {
-      expect(settings.port).to.equal(defaultConfig.port);
-      expect(settings.username).to.equal(defaultConfig.username);
-      expect(settings.password).to.equal(defaultConfig.password);
-      expect(settings.apiServerUri).to.equal(defaultConfig.apiServerUri);
-      expect(settings.db.uri).to.equal(defaultConfig.dbUri);
-      expect(settings.db.server).to.equal('postgres://postgres@server:80');
-      expect(settings.db.name).to.equal('dbname');
+    expect(settings.port).to.equal(defaultConfig.port);
+    expect(settings.username).to.equal(defaultConfig.username);
+    expect(settings.password).to.equal(defaultConfig.password);
+    expect(settings.apiServerUri).to.equal(defaultConfig.apiServerUri);
+    expect(settings.db.uri).to.equal(defaultConfig.db.uri);
+    expect(settings.db.server).to.equal('postgres://postgres@server:80');
+    expect(settings.db.name).to.equal('dbname');
+    expect(settings.db.maxConnections).to.equal(defaultConfig.db.maxConnections);
+    expect(settings.db.minConnections).to.equal(defaultConfig.db.minConnections);
+    expect(settings.db.idleTimeout).to.equal(defaultConfig.db.idleTimeout);
   });
 
   describe('validate', function() {
@@ -95,94 +100,94 @@ describe('config setting Test Suite', function() {
         })
       });
     });
-    context('Validate dbMaxConnectionCount', function() {
-      context('When dbMaxConnectionCount is null', function() {
+    context('Validate db.maxConnections', function() {
+      context('When db.maxConnections is null', function() {
         it('Should return false', function() {
-          settings.dbMaxConnectionCount = null;
+          settings.db.maxConnections = null;
           expect(settings.validate().valid).to.equal(false);
         })
       });
-      context('When dbMaxConnectionCount is undefined', function() {
+      context('When db.maxConnections is undefined', function() {
         it('Should return false', function() {
-          delete settings.dbMaxConnectionCount
+          delete settings.db.maxConnections
           expect(settings.validate().valid).to.equal(false);
         })
       });
-      context('When dbMaxConnectionCount is not an integer', function() {
+      context('When db.maxConnections is not an integer', function() {
         it('Should return false', function() {
-          settings.dbMaxConnectionCount = "10";
+          settings.db.maxConnections = "10";
           expect(settings.validate().valid).to.equal(false);
         })
       });
-      context('When the dbMaxConnectionCount is out of range', function() {
+      context('When the db.maxConnections is out of range', function() {
         it('Should return false', function() {
-          settings.dbMaxConnectionCount = -10;
-          expect(settings.validate().valid).to.equal(false);
-        })
-      });
-    });
-
-    context('Validate dbMinConnectionCount', function() {
-      context('When dbMinConnectionCount is null', function() {
-        it('Should return false', function() {
-          settings.dbMinConnectionCount = null;
-          expect(settings.validate().valid).to.equal(false);
-        })
-      });
-      context('When dbMinConnectionCount is undefined', function() {
-        it('Should return false', function() {
-          delete settings.dbMinConnectionCount
-          expect(settings.validate().valid).to.equal(false);
-        })
-      });
-      context('When dbMinConnectionCount is not an integer', function() {
-        it('Should return false', function() {
-          settings.dbMinConnectionCount = "10";
-          expect(settings.validate().valid).to.equal(false);
-        })
-      });
-      context('When the dbMinConnectionCount is out of range', function() {
-        it('Should return false', function() {
-          settings.dbMinConnectionCount = -10;
+          settings.db.maxConnections = -10;
           expect(settings.validate().valid).to.equal(false);
         })
       });
     });
 
-    context('Validate dbMaxIdleTime', function() {
-      context('When dbMaxIdleTime is null', function() {
+    context('Validate db.minConnections', function() {
+      context('When minConnections is null', function() {
         it('Should return false', function() {
-          settings.dbMaxIdleTime = null;
+          settings.db.minConnections = null;
           expect(settings.validate().valid).to.equal(false);
         })
       });
-      context('When dbMaxIdleTime is undefined', function() {
+      context('When db.minConnections is undefined', function() {
         it('Should return false', function() {
-          delete settings.dbMaxIdleTime
+          delete settings.db.minConnections
           expect(settings.validate().valid).to.equal(false);
         })
       });
-      context('When dbMaxIdleTime is not an integer', function() {
+      context('When db.minConnections is not an integer', function() {
         it('Should return false', function() {
-          settings.dbMaxIdleTime = "1000";
+          settings.db.minConnections = "10";
           expect(settings.validate().valid).to.equal(false);
         })
       });
-      context('When the dbMaxIdleTime is out of range', function() {
+      context('When the db.minConnections is out of range', function() {
         it('Should return false', function() {
-          settings.dbMaxIdleTime = -1000;
+          settings.db.minConnections = -10;
           expect(settings.validate().valid).to.equal(false);
         })
       });
     });
-    context('Validate dbUri', function() {
-      context('When dbUri is null', function() {
+
+    context('Validate db.idleTimeout', function() {
+      context('When db.idleTimeout is null', function() {
+        it('Should return false', function() {
+          settings.db.idleTimeout = null;
+          expect(settings.validate().valid).to.equal(false);
+        })
+      });
+      context('When db.idleTimeout is undefined', function() {
+        it('Should return false', function() {
+          delete settings.db.idleTimeout
+          expect(settings.validate().valid).to.equal(false);
+        })
+      });
+      context('When db.idleTimeout is not an integer', function() {
+        it('Should return false', function() {
+          settings.db.idleTimeout = "1000";
+          expect(settings.validate().valid).to.equal(false);
+        })
+      });
+      context('When the db.idleTimeout is out of range', function() {
+        it('Should return false', function() {
+          settings.db.idleTimeout = -1000;
+          expect(settings.validate().valid).to.equal(false);
+        })
+      });
+    });
+    context('Validate db.uri', function() {
+      context('When db.uri is null', function() {
         it('Should return false', function() {
           settings.db.uri = null
           expect(settings.validate().valid).to.equal(false);
         })
       });
-      context('When dbUri is undefined', function() {
+      context('When db.uri is undefined', function() {
         it('Should return false', function() {
           delete settings.db.uri
           expect(settings.validate().valid).to.equal(false);
@@ -205,32 +210,32 @@ describe('config setting Test Suite', function() {
       });
     });
   });
-  
-  context('dbUri', function() {
+
+  context('db.uri', function() {
     it('Should filter the last slash', function() {
-      var dbSetting = configSetting({dbUri: defaultConfig.dbUri + '/'}).db;
-      expect(dbSetting.uri).to.equal(defaultConfig.dbUri);
+      var dbSetting = configSetting({ db: { uri: defaultConfig.db.uri + '/' } }).db;
+      expect(dbSetting.uri).to.equal(defaultConfig.db.uri);
       expect(dbSetting.server).to.equal("postgres://postgres@server:80");
       expect(dbSetting.name).to.equal("dbname");
     });
 
-    context('When the dbUri is mixed case', function() {
+    context('When the db.uri is mixed case', function() {
       it('Should be lowercased', function() {
-        var dbSetting = configSetting({dbUri: defaultConfig.dbUri.toUpperCase()}).db;
-        expect(dbSetting.uri).to.equal(defaultConfig.dbUri);
+        var dbSetting = configSetting({ db: { uri: defaultConfig.db.uri.toUpperCase() } }).db;
+        expect(dbSetting.uri).to.equal(defaultConfig.db.uri);
       });
     });
   });
 
   context('apiServerUri', function() {
     it('Should filter the last slash', function() {
-      var apiSetting = configSetting({apiServerUri: defaultConfig.apiServerUri + '/'}).apiServerUri;
+      var apiSetting = configSetting({ apiServerUri: defaultConfig.apiServerUri + '/' }).apiServerUri;
       expect(apiSetting).to.equal(defaultConfig.apiServerUri);
     });
 
     context('When the apiServerUri is upper case', function() {
       it('Should be lowercased', function() {
-        var apiSetting = configSetting({apiServerUri: defaultConfig.apiServerUri.toUpperCase()}).apiServerUri;
+        var apiSetting = configSetting({ apiServerUri: defaultConfig.apiServerUri.toUpperCase() }).apiServerUri;
         expect(apiSetting).to.equal(defaultConfig.apiServerUri);
       });
     });

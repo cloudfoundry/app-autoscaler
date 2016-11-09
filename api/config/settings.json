@@ -1,8 +1,10 @@
 {
   "port": 8080,
-  "dbUri": "postgres://postgres@127.0.0.1:5432/autoscaler",
-  "dbMaxConnectionCount": 10,
-  "dbMinConnectionCount": 0,
-  "dbMaxIdleTime": 1000,
+  "db": {
+    "maxConnections": 10,
+    "minConnections": 0,
+    "idleTimeout": 1000,
+    "uri": "postgres://postgres@127.0.0.1:5432/autoscaler"
+  },
   "schedulerUri": "http://autoscaler.boshlite.com"
 }

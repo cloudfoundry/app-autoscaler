@@ -4,9 +4,9 @@ var fs = require('fs');
 var path = require('path');
 var moment = require('moment');
 var logger = require('../../../lib/log/logger');
-var settings = require(path.join(__dirname, '../../../lib/config/settings.js'))((JSON.parse(
+var settings = require(path.join(__dirname, '../../../lib/config/setting.js'))((JSON.parse(
   fs.readFileSync(path.join(__dirname, '../../../config/settings.json'), 'utf8'))));
-var policy = require('../../../lib/models')(settings).policy_json;
+var policy = require('../../../lib/models')(settings.db).policy_json;
 
 describe('Create a Policy', function() {
   var fakePolicy;

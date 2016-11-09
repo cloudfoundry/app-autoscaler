@@ -11,7 +11,7 @@ module.exports = function(configFilePath) {
       logger.error("Invalid configuration file path: " + configFilePath);
       throw new Error('configuration file does not exist:' + configFilePath);
   }
-  var settings = require(path.join(__dirname, './lib/config/settings.js'))((JSON.parse(
+  var settings = require(path.join(__dirname, './lib/config/setting.js'))((JSON.parse(
         fs.readFileSync(configFilePath, 'utf8'))));
   var validateResult = settings.validate();
   if (validateResult.valid === false) {
