@@ -103,7 +103,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.Server.Port = mcPort
 	cfg.Logging.Level = "debug"
 
-	cfg.Db.MetricsDbUrl = os.Getenv("DBURL")
+	cfg.Db.InstanceMetricsDbUrl = os.Getenv("DBURL")
 	cfg.Db.PolicyDbUrl = os.Getenv("DBURL")
 
 	cfg.Collector.PollInterval = 10
@@ -114,7 +114,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	mcDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = mcDB.Exec("DELETE FROM applicationmetrics")
+	_, err = mcDB.Exec("DELETE FROM appinstancemetrics")
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = mcDB.Exec("DELETE from policy_json")

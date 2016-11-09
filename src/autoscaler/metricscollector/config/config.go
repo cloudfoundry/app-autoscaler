@@ -39,8 +39,8 @@ var defaultLoggingConfig = LoggingConfig{
 }
 
 type DbConfig struct {
-	PolicyDbUrl  string `yaml:"policy_db_url"`
-	MetricsDbUrl string `yaml:"metrics_db_url"`
+	PolicyDbUrl          string `yaml:"policy_db_url"`
+	InstanceMetricsDbUrl string `yaml:"instance_metrics_db_url"`
 }
 
 type CollectorConfig struct {
@@ -95,8 +95,8 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("Configuration error: Policy DB url is empty")
 	}
 
-	if c.Db.MetricsDbUrl == "" {
-		return fmt.Errorf("Configuration error: Metrics DB url is empty")
+	if c.Db.InstanceMetricsDbUrl == "" {
+		return fmt.Errorf("Configuration error: InstanceMetrics DB url is empty")
 	}
 
 	return nil

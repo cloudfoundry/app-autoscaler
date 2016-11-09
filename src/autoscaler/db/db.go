@@ -17,7 +17,7 @@ type MetricsDB interface {
 type InstanceMetricsDB interface {
 	RetrieveInstanceMetrics(appid string, name string, start int64, end int64) ([]*models.AppInstanceMetric, error)
 	SaveMetric(metric *models.AppInstanceMetric) error
-	PruneMetrics(before int64) error
+	PruneInstanceMetrics(before int64) error
 	Close() error
 }
 
