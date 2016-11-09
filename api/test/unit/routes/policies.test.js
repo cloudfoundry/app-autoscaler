@@ -40,7 +40,7 @@ describe('Routing Policy Creation', function() {
       expect(result.headers.location).to.be.equal('/v1/policies/12345');
       expect(result.body.success).to.equal(true);
       expect(result.body.error).to.be.null;
-      expect(JSON.parse(result.body.result.policy_json)).eql(fakePolicy);
+      expect(result.body.result.policy_json).eql(fakePolicy);
       done();
     });
   });
@@ -98,7 +98,7 @@ describe('Routing Policy Creation', function() {
       .end(function(error,result) {
         expect(result.statusCode).to.equal(200);
         expect(result.body.success).to.equal(true);
-        expect(JSON.parse(result.body.result[0].policy_json)).eql(fakePolicy);
+        expect(result.body.result[0].policy_json).eql(fakePolicy);
         expect(result.body.error).to.be.null;
         done();
       });
@@ -109,7 +109,7 @@ describe('Routing Policy Creation', function() {
       .get('/v1/policies/12345')
       .end(function(error,result) {
         expect(result.statusCode).to.equal(200);
-        expect(JSON.parse(result.body)).to.deep.equal(fakePolicy);
+        expect(result.body).to.deep.equal(fakePolicy);
         done();
       });    
     });

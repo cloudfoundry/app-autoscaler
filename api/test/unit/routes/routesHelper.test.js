@@ -168,7 +168,7 @@ describe('Policy Route helper ', function() {
 				  .get('/v1/policies/12348')
 				  .end(function(error,result) {
 				      expect(result.statusCode).to.equal(200);
-				      expect(JSON.parse(result.body)).to.deep.equal(fakePolicy);
+				      expect(result.body).to.deep.equal(fakePolicy);
 				      done();
 				});    
 			});
