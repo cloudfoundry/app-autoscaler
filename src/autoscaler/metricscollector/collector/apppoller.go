@@ -72,13 +72,13 @@ func (ap *appPoller) startPollMetrics() {
 func (ap *appPoller) pollMetric() {
 	ap.logger.Debug("poll-metric", lager.Data{"appid": ap.appId})
 
-	ContainerEnvelopes, err := ap.noaaConsumer.ContainerEnvelopes(ap.appId, "bearer"+" "+ap.cfc.GetTokens().AccessToken)
+	containerEnvelopes, err := ap.noaaConsumer.ContainerEnvelopes(ap.appId, "bearer"+" "+ap.cfc.GetTokens().AccessToken)
 	if err != nil {
 		ap.logger.Error("poll-metric-from-noaa", err)
 		return
 	}
 
-	metrics := models.GetInstanceMemoryMetricFromContainerEnvelopes(ap.pclock.Now().UnixNano(), ap.appId, ContainerEnvelopes)
+	metrics := models.GetInstanceMemoryMetricFromContainerEnvelopes(ap.pclock.Now().UnixNano(), ap.appId, containerEnvelopes)
 	ap.logger.Debug("poll-metric-get-memory-metric", lager.Data{"metrics": metrics})
 
 	for _, metric := range metrics {
