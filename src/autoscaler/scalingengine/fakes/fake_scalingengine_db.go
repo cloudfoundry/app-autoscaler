@@ -54,6 +54,13 @@ type FakeScalingEngineDB struct {
 		result1 *models.ActiveSchedule
 		result2 error
 	}
+	GetActiveSchedulesStub        func() (map[string]string, error)
+	getActiveSchedulesMutex       sync.RWMutex
+	getActiveSchedulesArgsForCall []struct{}
+	getActiveSchedulesReturns     struct {
+		result1 map[string]string
+		result2 error
+	}
 	SetActiveScheduleStub        func(appId string, schedule *models.ActiveSchedule) error
 	setActiveScheduleMutex       sync.RWMutex
 	setActiveScheduleArgsForCall []struct {
@@ -252,6 +259,32 @@ func (fake *FakeScalingEngineDB) GetActiveScheduleReturns(result1 *models.Active
 	}{result1, result2}
 }
 
+func (fake *FakeScalingEngineDB) GetActiveSchedules() (map[string]string, error) {
+	fake.getActiveSchedulesMutex.Lock()
+	fake.getActiveSchedulesArgsForCall = append(fake.getActiveSchedulesArgsForCall, struct{}{})
+	fake.recordInvocation("GetActiveSchedules", []interface{}{})
+	fake.getActiveSchedulesMutex.Unlock()
+	if fake.GetActiveSchedulesStub != nil {
+		return fake.GetActiveSchedulesStub()
+	} else {
+		return fake.getActiveSchedulesReturns.result1, fake.getActiveSchedulesReturns.result2
+	}
+}
+
+func (fake *FakeScalingEngineDB) GetActiveSchedulesCallCount() int {
+	fake.getActiveSchedulesMutex.RLock()
+	defer fake.getActiveSchedulesMutex.RUnlock()
+	return len(fake.getActiveSchedulesArgsForCall)
+}
+
+func (fake *FakeScalingEngineDB) GetActiveSchedulesReturns(result1 map[string]string, result2 error) {
+	fake.GetActiveSchedulesStub = nil
+	fake.getActiveSchedulesReturns = struct {
+		result1 map[string]string
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeScalingEngineDB) SetActiveSchedule(appId string, schedule *models.ActiveSchedule) error {
 	fake.setActiveScheduleMutex.Lock()
 	fake.setActiveScheduleArgsForCall = append(fake.setActiveScheduleArgsForCall, struct {
@@ -357,6 +390,8 @@ func (fake *FakeScalingEngineDB) Invocations() map[string][][]interface{} {
 	defer fake.canScaleAppMutex.RUnlock()
 	fake.getActiveScheduleMutex.RLock()
 	defer fake.getActiveScheduleMutex.RUnlock()
+	fake.getActiveSchedulesMutex.RLock()
+	defer fake.getActiveSchedulesMutex.RUnlock()
 	fake.setActiveScheduleMutex.RLock()
 	defer fake.setActiveScheduleMutex.RUnlock()
 	fake.removeActiveScheduleMutex.RLock()

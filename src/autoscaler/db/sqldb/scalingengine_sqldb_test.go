@@ -26,6 +26,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 		histories      []*models.AppScalingHistory
 		canScale       bool
 		activeSchedule *models.ActiveSchedule
+		schedules      map[string]string
 	)
 
 	BeforeEach(func() {
@@ -461,6 +462,58 @@ var _ = Describe("ScalingEngineSqldb", func() {
 					InstanceMinInitial: 5,
 				}))
 			})
+		})
+		Context("when there is database error", func() {
+			BeforeEach(func() {
+				sdb.Close()
+			})
+			It("should error", func() {
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("GetActiveSchedules", func() {
+		BeforeEach(func() {
+			sdb, err = NewScalingEngineSQLDB(url, logger)
+			Expect(err).NotTo(HaveOccurred())
+			err = cleanActiveScheduleTable()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			err = sdb.Close()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		JustBeforeEach(func() {
+			schedules, err = sdb.GetActiveSchedules()
+		})
+
+		Context("when the table is empty", func() {
+			It("returns an empty active schedules", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(schedules).To(BeEmpty())
+			})
+		})
+
+		Context("when the table is not empty", func() {
+			BeforeEach(func() {
+				err = insertActiveSchedule("app-id-1", "schedule-id-1", 2, 10, 5)
+				Expect(err).NotTo(HaveOccurred())
+				err = insertActiveSchedule("app-id-2", "schedule-id-2", 5, 9, -1)
+				Expect(err).NotTo(HaveOccurred())
+				err = insertActiveSchedule("app-id-3", "schedule-id-3", 3, 9, 6)
+				Expect(err).NotTo(HaveOccurred())
+			})
+			It("return all active schedules", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(schedules).To(HaveLen(3))
+				Expect(schedules).To(HaveKeyWithValue("app-id-1", "schedule-id-1"))
+				Expect(schedules).To(HaveKeyWithValue("app-id-2", "schedule-id-2"))
+				Expect(schedules).To(HaveKeyWithValue("app-id-3", "schedule-id-3"))
+			})
+
 		})
 		Context("when there is database error", func() {
 			BeforeEach(func() {

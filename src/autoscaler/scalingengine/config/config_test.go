@@ -9,6 +9,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"bytes"
+	"time"
 )
 
 var _ = Describe("Config", func() {
@@ -72,6 +73,9 @@ logging:
 db:
   policy_db_url: test-policy-db-url
   scalingengine_db_url: test-scalingengine-db-url
+  scheduler_db_url: test-scheduler-db-url
+synchronizer:
+  active_schedule_sync_interval: 300s  
 `)
 			})
 
@@ -91,6 +95,9 @@ db:
 
 				Expect(conf.Db.PolicyDbUrl).To(Equal("test-policy-db-url"))
 				Expect(conf.Db.ScalingEngineDbUrl).To(Equal("test-scalingengine-db-url"))
+				Expect(conf.Db.SchedulerDbUrl).To(Equal("test-scheduler-db-url"))
+
+				Expect(conf.Synchronizer.ActiveScheduleSyncInterval).To(Equal(5 * time.Minute))
 			})
 		})
 
@@ -102,6 +109,7 @@ cf:
 db:
   policy_db_url: test-policy-db-url
   scalingengine_db_url: test-scalingengine-db-url
+  SchedulerDbUrl: test-scheduler-db-url
 `)
 			})
 
@@ -111,6 +119,7 @@ db:
 				Expect(conf.Cf.GrantType).To(Equal(cf.GrantTypePassword))
 				Expect(conf.Server.Port).To(Equal(8080))
 				Expect(conf.Logging.Level).To(Equal("info"))
+				Expect(conf.Synchronizer.ActiveScheduleSyncInterval).To(Equal(DefaultActiveScheduleSyncInterval))
 			})
 		})
 
@@ -124,6 +133,7 @@ db:
 			conf.Cf.Username = "admin"
 			conf.Db.PolicyDbUrl = "test-policy-db-url"
 			conf.Db.ScalingEngineDbUrl = "test-scalingengine-db-url"
+			conf.Db.SchedulerDbUrl = "test-scheduler-db-url"
 		})
 
 		JustBeforeEach(func() {
@@ -163,6 +173,16 @@ db:
 
 			It("should error", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: ScalingEngine DB url is empty")))
+			})
+		})
+
+		Context("when scheduler db url is not set", func() {
+			BeforeEach(func() {
+				conf.Db.SchedulerDbUrl = ""
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: Scheduler DB url is empty")))
 			})
 		})
 

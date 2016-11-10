@@ -170,6 +170,27 @@ func (sdb *ScalingEngineSQLDB) GetActiveSchedule(appId string) (*models.ActiveSc
 	}, nil
 }
 
+func (sdb *ScalingEngineSQLDB) GetActiveSchedules() (map[string]string, error) {
+	query := "SELECT scheduleid, appid FROM activeschedule"
+	rows, err := sdb.sqldb.Query(query)
+	if err != nil {
+		sdb.logger.Error("failed-get-active-schedules", err, lager.Data{"query": query})
+		return nil, err
+	}
+	defer rows.Close()
+
+	schedules := make(map[string]string)
+	var id, appId string
+	for rows.Next() {
+		if err = rows.Scan(&id, &appId); err != nil {
+			sdb.logger.Error("failed-get-active-schedules-scan", err, lager.Data{"query": query})
+			return nil, err
+		}
+		schedules[appId] = id
+	}
+	return schedules, nil
+}
+
 func (sdb *ScalingEngineSQLDB) RemoveActiveSchedule(appId string) error {
 	query := "DELETE FROM activeschedule WHERE appid = $1"
 	_, err := sdb.sqldb.Exec(query, appId)
