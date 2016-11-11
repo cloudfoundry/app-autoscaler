@@ -5,12 +5,15 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.cloudfoundry.autoscaler.scheduler.dao.ActiveScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.dao.RecurringScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.dao.SpecificDateScheduleDao;
+import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
@@ -37,6 +40,7 @@ import org.quartz.SchedulerException;
 import org.quartz.impl.matchers.GroupMatcher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -46,7 +50,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 @ActiveProfiles("ScheduleDaoMock")
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class ScheduleManagerTest  extends TestConfiguration {
+public class ScheduleManagerTest extends TestConfiguration {
 
 	@Autowired
 	private ScheduleManager scheduleManager;
@@ -56,6 +60,9 @@ public class ScheduleManagerTest  extends TestConfiguration {
 
 	@Autowired
 	private RecurringScheduleDao recurringScheduleDao;
+
+	@SpyBean
+	private ActiveScheduleDao activeScheduleDao;
 
 	@Autowired
 	private Scheduler scheduler;
@@ -163,9 +170,20 @@ public class ScheduleManagerTest  extends TestConfiguration {
 		assertSpecificDateSchedulesFoundEquals(4, schedules.getSpecificDate());
 		assertRecurringSchedulesFoundEquals(4, schedules.getRecurringSchedule());
 
+		List<ActiveScheduleEntity> activeSchedules = new ArrayList<>();
+		for (int index = 0; index < 8; index++) {
+			ActiveScheduleEntity activeScheduleEntity = TestDataSetupHelper.generateActiveScheduleEntity(appId, 1L,
+					JobActionEnum.START);
+			activeSchedules.add(activeScheduleEntity);
+		}
+		Mockito.doReturn(activeSchedules).when(activeScheduleDao).findAllActiveSchedulesByAppId(appId);
+
 		scheduleManager.deleteSchedules(appId);
 
 		assertSchedulesFoundEquals(appId, 0, 0);
+
+		Mockito.verify(activeScheduleDao, Mockito.times(1)).findAllActiveSchedulesByAppId(appId);
+		Mockito.verify(activeScheduleDao, Mockito.times(8)).delete(1L);
 	}
 
 	@Test

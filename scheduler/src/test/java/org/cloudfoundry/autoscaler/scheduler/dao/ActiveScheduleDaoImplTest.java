@@ -4,6 +4,8 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 
+import java.util.List;
+
 import javax.persistence.EntityManager;
 import javax.sql.DataSource;
 import javax.transaction.Transactional;
@@ -101,6 +103,31 @@ public class ActiveScheduleDaoImplTest extends TestConfiguration {
 
 		assertThat("It should be 0", number, is(0));
 		assertThat("It should be 2", getActiveSchedulesCount(), is(2L));
+	}
+
+	@Test
+	public void testFindAllActiveSchedules() {
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		Long scheduleId = 3L;
+		ActiveScheduleEntity activeScheduleEntity = TestDataSetupHelper.generateActiveScheduleEntity(appId, scheduleId,
+				JobActionEnum.START);
+		activeScheduleDao.create(activeScheduleEntity);
+
+		scheduleId = 4L;
+		activeScheduleEntity = TestDataSetupHelper.generateActiveScheduleEntity(appId, scheduleId, JobActionEnum.START);
+		activeScheduleDao.create(activeScheduleEntity);
+
+		scheduleId = 5L;
+		activeScheduleEntity = TestDataSetupHelper.generateActiveScheduleEntity(appId, scheduleId, JobActionEnum.START);
+		activeScheduleDao.create(activeScheduleEntity);
+
+		List<ActiveScheduleEntity> activeSchedules = activeScheduleDao.findAllActiveSchedulesByAppId(appId);
+
+		assertThat("It should have count of 3 active schedules", activeSchedules.size(), is(3));
+
+		for (ActiveScheduleEntity activeScheduleEntityFound : activeSchedules) {
+			assertThat("It should have expected app id", activeScheduleEntityFound.getAppId(), is(appId));
+		}
 	}
 
 	private long getActiveSchedulesCount() {

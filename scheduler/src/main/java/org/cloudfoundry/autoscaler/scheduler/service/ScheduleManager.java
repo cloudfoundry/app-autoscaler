@@ -7,8 +7,10 @@ import java.util.TimeZone;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cloudfoundry.autoscaler.scheduler.dao.ActiveScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.dao.RecurringScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.dao.SpecificDateScheduleDao;
+import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
@@ -37,6 +39,8 @@ public class ScheduleManager {
 	private SpecificDateScheduleDao specificDateScheduleDao;
 	@Autowired
 	private RecurringScheduleDao recurringScheduleDao;
+    @Autowired
+    ActiveScheduleDao activeScheduleDao;
 	@Autowired
 	private ScheduleJobManager scheduleJobManager;
 	@Autowired
@@ -675,7 +679,6 @@ public class ScheduleManager {
 
 			// Ask ScalingJobManager to delete scaling job
 			scheduleJobManager.deleteJob(appId, specificDateScheduleEntity.getId(), ScheduleTypeEnum.SPECIFIC_DATE);
-
 		}
 
 		// Get all the recurring schedules for the specifies application id and delete them.
@@ -687,7 +690,10 @@ public class ScheduleManager {
 			// Ask ScalingJobManager to delete scaling job
 			scheduleJobManager.deleteJob(appId, recurringScheduleEntity.getId(), ScheduleTypeEnum.RECURRING);
 		}
-	}
+
+        // Delete all the active schedules for the application
+        deleteActiveSchedules(appId);
+    }
 
 	private void deleteSpecificDateSchedule(SpecificDateScheduleEntity specificDateScheduleEntity) {
 		try {
@@ -709,5 +715,22 @@ public class ScheduleManager {
 			throw new SchedulerInternalException("Database error", dve);
 		}
 	}
+
+    private void deleteActiveSchedules(String appId) {
+        try {
+            logger.info("Get all active schedules for application: " + appId);
+            List<ActiveScheduleEntity> activeSchedules = activeScheduleDao.findAllActiveSchedulesByAppId(appId);
+
+            logger.info("Delete all active schedules for application: " + appId);
+            for(ActiveScheduleEntity activeScheduleEntity: activeSchedules) {
+                activeScheduleDao.delete(activeScheduleEntity.getId());
+            }
+        } catch (DatabaseValidationException dve) {
+            validationErrorResult.addErrorForDatabaseValidationException(dve, "database.error.delete.activeschedules.failed",
+                    "app_id=" + appId);
+            throw new SchedulerInternalException("Database error", dve);
+
+        }
+    }
 
 }
