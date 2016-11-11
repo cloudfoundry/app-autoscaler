@@ -32,36 +32,43 @@ var (
 	conf            *config.Config
 	metricCollector *ghttp.Server
 	scalingEngine   *ghttp.Server
-	metrics         []*models.Metric = []*models.Metric{
-		&models.Metric{
-			Name:      metricType,
-			Unit:      "bytes",
-			AppId:     testAppId,
-			Timestamp: timestamp,
-			Instances: []models.InstanceMetric{models.InstanceMetric{
-				Timestamp: timestamp,
-				Index:     0,
-				Value:     "500",
-			}, models.InstanceMetric{
-				Timestamp: timestamp,
-				Index:     1,
-				Value:     "600",
-			}},
+	metrics         []*models.AppInstanceMetric = []*models.AppInstanceMetric{
+		&models.AppInstanceMetric{
+			AppId:         testAppId,
+			InstanceIndex: 0,
+			CollectedAt:   111111,
+			Name:          metricType,
+			Unit:          models.UnitBytes,
+			Value:         "500",
+			Timestamp:     111100,
 		},
-		&models.Metric{
-			Name:      metricType,
-			Unit:      "bytes",
-			AppId:     testAppId,
-			Timestamp: timestamp,
-			Instances: []models.InstanceMetric{models.InstanceMetric{
-				Timestamp: timestamp,
-				Index:     0,
-				Value:     "700",
-			}, models.InstanceMetric{
-				Timestamp: timestamp,
-				Index:     1,
-				Value:     "800",
-			}},
+		&models.AppInstanceMetric{
+			AppId:         testAppId,
+			InstanceIndex: 1,
+			CollectedAt:   111111,
+			Name:          metricType,
+			Unit:          models.UnitBytes,
+			Value:         "600",
+			Timestamp:     110000,
+		},
+
+		&models.AppInstanceMetric{
+			AppId:         testAppId,
+			InstanceIndex: 0,
+			CollectedAt:   222222,
+			Name:          metricType,
+			Unit:          models.UnitBytes,
+			Value:         "700",
+			Timestamp:     222200,
+		},
+		&models.AppInstanceMetric{
+			AppId:         testAppId,
+			InstanceIndex: 1,
+			CollectedAt:   222222,
+			Name:          metricType,
+			Unit:          models.UnitBytes,
+			Value:         "800",
+			Timestamp:     220000,
 		},
 	}
 )

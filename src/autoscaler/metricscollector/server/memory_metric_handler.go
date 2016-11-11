@@ -20,10 +20,10 @@ type MemoryMetricHandler struct {
 	cfClient     cf.CfClient
 	logger       lager.Logger
 	noaaConsumer noaa.NoaaConsumer
-	database     db.MetricsDB
+	database     db.InstanceMetricsDB
 }
 
-func NewMemoryMetricHandler(logger lager.Logger, cfc cf.CfClient, consumer noaa.NoaaConsumer, database db.MetricsDB) *MemoryMetricHandler {
+func NewMemoryMetricHandler(logger lager.Logger, cfc cf.CfClient, consumer noaa.NoaaConsumer, database db.InstanceMetricsDB) *MemoryMetricHandler {
 	return &MemoryMetricHandler{
 		cfClient:     cfc,
 		noaaConsumer: consumer,
@@ -107,9 +107,9 @@ func (h *MemoryMetricHandler) GetMemoryMetricHistories(w http.ResponseWriter, r 
 		return
 	}
 
-	var mtrcs []*models.Metric
+	var mtrcs []*models.AppInstanceMetric
 
-	mtrcs, err = h.database.RetrieveMetrics(appId, models.MetricNameMemory, start, end)
+	mtrcs, err = h.database.RetrieveInstanceMetrics(appId, models.MetricNameMemory, start, end)
 	if err != nil {
 		h.logger.Error("get-memmory-histories-retrieve-metrics", err, lager.Data{"appId": appId, "start": start, "end": end})
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{

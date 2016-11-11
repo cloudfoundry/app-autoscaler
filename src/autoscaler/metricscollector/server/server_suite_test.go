@@ -31,7 +31,7 @@ var _ = BeforeSuite(func() {
 	cfc := &fakes.FakeCfClient{}
 	consumer := &fakes.FakeNoaaConsumer{}
 	conf := config.ServerConfig{Port: port}
-	database := &fakes.FakeMetricsDB{}
+	database := &fakes.FakeInstanceMetricsDB{}
 	httpServer := server.NewServer(lager.NewLogger("test"), conf, cfc, consumer, database)
 
 	var err error

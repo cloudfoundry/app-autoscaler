@@ -86,7 +86,7 @@ logging:
   level: DebuG
 db:
   policy_db_url: postgres://pqgotest:password@localhost/pqgotest
-  metrics_db_url: postgres://pqgotest:password@localhost/pqgotest
+  instance_metrics_db_url: postgres://pqgotest:password@localhost/pqgotest
 collector:
   refresh_interval: 20s
   poll_interval: 10s
@@ -107,6 +107,9 @@ collector:
 
 				Expect(conf.Logging.Level).To(Equal("debug"))
 
+				Expect(conf.Db.PolicyDbUrl).To(Equal("postgres://pqgotest:password@localhost/pqgotest"))
+				Expect(conf.Db.InstanceMetricsDbUrl).To(Equal("postgres://pqgotest:password@localhost/pqgotest"))
+
 				Expect(conf.Collector.RefreshInterval).To(Equal(20 * time.Second))
 				Expect(conf.Collector.PollInterval).To(Equal(10 * time.Second))
 			})
@@ -119,7 +122,7 @@ cf:
   api: https://api.example.com
 db:
   policy_db_url: postgres://pqgotest:password@localhost/pqgotest
-  metrics_db_url: postgres://pqgotest:password@localhost/pqgotest
+  instance_metrics_db_url: postgres://pqgotest:password@localhost/pqgotest
 `)
 			})
 
@@ -142,8 +145,8 @@ db:
 			conf.Cf.Api = "http://api.example.com"
 			conf.Cf.GrantType = cf.GrantTypePassword
 			conf.Cf.Username = "admin"
-			conf.Db.MetricsDbUrl = "postgres://pqgotest:password@exampl.com/pqgotest"
 			conf.Db.PolicyDbUrl = "postgres://pqgotest:password@exampl.com/pqgotest"
+			conf.Db.InstanceMetricsDbUrl = "postgres://pqgotest:password@exampl.com/pqgotest"
 		})
 
 		JustBeforeEach(func() {
@@ -180,11 +183,11 @@ db:
 		Context("when metrics db url is not set", func() {
 
 			BeforeEach(func() {
-				conf.Db.MetricsDbUrl = ""
+				conf.Db.InstanceMetricsDbUrl = ""
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: Metrics DB url is empty")))
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: InstanceMetrics DB url is empty")))
 			})
 		})
 

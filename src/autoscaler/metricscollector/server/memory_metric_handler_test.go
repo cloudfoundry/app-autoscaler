@@ -25,21 +25,21 @@ var _ = Describe("MemoryMetricHandler", func() {
 		cfc      *fakes.FakeCfClient
 		consumer *fakes.FakeNoaaConsumer
 		handler  *MemoryMetricHandler
-		database *fakes.FakeMetricsDB
+		database *fakes.FakeInstanceMetricsDB
 
 		resp *httptest.ResponseRecorder
 		req  *http.Request
 		err  error
 
-		metric1 models.Metric
-		metric2 models.Metric
+		metric1 models.AppInstanceMetric
+		metric2 models.AppInstanceMetric
 	)
 
 	BeforeEach(func() {
 		cfc = &fakes.FakeCfClient{}
 		consumer = &fakes.FakeNoaaConsumer{}
 		logger := lager.NewLogger("handler-test")
-		database = &fakes.FakeMetricsDB{}
+		database = &fakes.FakeInstanceMetricsDB{}
 		resp = httptest.NewRecorder()
 		handler = NewMemoryMetricHandler(logger, cfc, consumer, database)
 	})
@@ -215,7 +215,7 @@ var _ = Describe("MemoryMetricHandler", func() {
 				})
 
 				It("queries metrics from database with the given start and end time ", func() {
-					appid, name, start, end := database.RetrieveMetricsArgsForCall(0)
+					appid, name, start, end := database.RetrieveInstanceMetricsArgsForCall(0)
 					Expect(appid).To(Equal("an-app-id"))
 					Expect(name).To(Equal(models.MetricNameMemory))
 					Expect(start).To(Equal(int64(123)))
@@ -231,7 +231,7 @@ var _ = Describe("MemoryMetricHandler", func() {
 				})
 
 				It("queries metrics from database with start time  0", func() {
-					_, _, start, _ := database.RetrieveMetricsArgsForCall(0)
+					_, _, start, _ := database.RetrieveInstanceMetricsArgsForCall(0)
 					Expect(start).To(Equal(int64(0)))
 				})
 
@@ -244,7 +244,7 @@ var _ = Describe("MemoryMetricHandler", func() {
 				})
 
 				It("queries metrics from database with end time -1 ", func() {
-					_, _, _, end := database.RetrieveMetricsArgsForCall(0)
+					_, _, _, end := database.RetrieveInstanceMetricsArgsForCall(0)
 					Expect(end).To(Equal(int64(-1)))
 				})
 
@@ -255,32 +255,36 @@ var _ = Describe("MemoryMetricHandler", func() {
 					req, err = http.NewRequest(http.MethodGet, testUrlMemoryMetricHistories+"?start=123&end=567", nil)
 					Expect(err).ToNot(HaveOccurred())
 
-					metric1 = models.Metric{
-						Name:      models.MetricNameMemory,
-						Unit:      models.UnitBytes,
-						AppId:     "an-app-id",
-						Timestamp: 333,
-						Instances: []models.InstanceMetric{{333, 0, "6666"}, {333, 1, "7777"}},
+					metric1 = models.AppInstanceMetric{
+						AppId:         "an-app-id",
+						InstanceIndex: 0,
+						CollectedAt:   111122,
+						Name:          models.MetricNameMemory,
+						Unit:          models.UnitBytes,
+						Value:         "123456",
+						Timestamp:     111100,
 					}
 
-					metric2 = models.Metric{
-						Name:      models.MetricNameMemory,
-						Unit:      models.UnitBytes,
-						AppId:     "an-app-id",
-						Timestamp: 555,
-						Instances: []models.InstanceMetric{{555, 0, "7777"}, {555, 1, "8888"}},
+					metric2 = models.AppInstanceMetric{
+						AppId:         "an-app-id",
+						InstanceIndex: 1,
+						CollectedAt:   111122,
+						Name:          models.MetricNameMemory,
+						Unit:          models.UnitBytes,
+						Value:         "345612",
+						Timestamp:     111111,
 					}
-					database.RetrieveMetricsReturns([]*models.Metric{&metric1, &metric2}, nil)
+					database.RetrieveInstanceMetricsReturns([]*models.AppInstanceMetric{&metric1, &metric2}, nil)
 				})
 
 				It("returns 200 with metrics in message body", func() {
 					Expect(resp.Code).To(Equal(http.StatusOK))
 
-					mtrcs := &[]models.Metric{}
+					mtrcs := &[]models.AppInstanceMetric{}
 					err = json.Unmarshal(resp.Body.Bytes(), mtrcs)
 
 					Expect(err).ToNot(HaveOccurred())
-					Expect(*mtrcs).To(Equal([]models.Metric{metric1, metric2}))
+					Expect(*mtrcs).To(Equal([]models.AppInstanceMetric{metric1, metric2}))
 				})
 			})
 
@@ -289,7 +293,7 @@ var _ = Describe("MemoryMetricHandler", func() {
 					req, err = http.NewRequest(http.MethodGet, testUrlMemoryMetricHistories+"?start=123&end=567", nil)
 					Expect(err).ToNot(HaveOccurred())
 
-					database.RetrieveMetricsReturns(nil, errors.New("database error"))
+					database.RetrieveInstanceMetricsReturns(nil, errors.New("database error"))
 				})
 
 				It("returns 500", func() {

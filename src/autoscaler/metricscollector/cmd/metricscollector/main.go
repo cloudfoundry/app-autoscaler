@@ -70,13 +70,13 @@ func main() {
 	noaa := consumer.New(dopplerUrl, tlsConfig, nil)
 	noaa.RefreshTokenFrom(cfClient)
 
-	var metricsDB db.MetricsDB
-	metricsDB, err = sqldb.NewMetricsSQLDB(conf.Db.MetricsDbUrl, logger.Session("metrics-db"))
+	var instanceMetricsDB db.InstanceMetricsDB
+	instanceMetricsDB, err = sqldb.NewInstanceMetricsSQLDB(conf.Db.InstanceMetricsDbUrl, logger.Session("instancemetrics-db"))
 	if err != nil {
-		logger.Error("failed to connect metrics database", err, lager.Data{"url": conf.Db.MetricsDbUrl})
+		logger.Error("failed to connect instancemetrics database", err, lager.Data{"url": conf.Db.InstanceMetricsDbUrl})
 		os.Exit(1)
 	}
-	defer metricsDB.Close()
+	defer instanceMetricsDB.Close()
 
 	var policyDB db.PolicyDB
 	policyDB, err = sqldb.NewPolicySQLDB(conf.Db.PolicyDbUrl, logger.Session("policy-db"))
@@ -87,7 +87,7 @@ func main() {
 	defer policyDB.Close()
 
 	createPoller := func(appId string) collector.AppPoller {
-		return collector.NewAppPoller(logger.Session("app-poller"), appId, conf.Collector.PollInterval, cfClient, noaa, metricsDB, mcClock)
+		return collector.NewAppPoller(logger.Session("app-poller"), appId, conf.Collector.PollInterval, cfClient, noaa, instanceMetricsDB, mcClock)
 	}
 
 	collectServer := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
@@ -101,7 +101,7 @@ func main() {
 
 		return nil
 	})
-	httpServer := server.NewServer(logger, conf.Server, cfClient, noaa, metricsDB)
+	httpServer := server.NewServer(logger, conf.Server, cfClient, noaa, instanceMetricsDB)
 
 	members := grouper.Members{
 		{"collector", collectServer},

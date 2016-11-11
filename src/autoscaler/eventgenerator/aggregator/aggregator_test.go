@@ -54,36 +54,43 @@ var _ = Describe("Aggregator", func() {
 		      }
 		   ]
 		}`
-		metrics []*models.Metric = []*models.Metric{
-			&models.Metric{
-				Name:      metricType,
-				Unit:      unit,
-				AppId:     testAppId,
-				Timestamp: timestamp,
-				Instances: []models.InstanceMetric{models.InstanceMetric{
-					Timestamp: timestamp,
-					Index:     0,
-					Value:     "100",
-				}, models.InstanceMetric{
-					Timestamp: timestamp,
-					Index:     1,
-					Value:     "200",
-				}},
+		metrics []*models.AppInstanceMetric = []*models.AppInstanceMetric{
+			&models.AppInstanceMetric{
+				AppId:         testAppId,
+				InstanceIndex: 0,
+				CollectedAt:   111111,
+				Name:          metricType,
+				Unit:          models.UnitBytes,
+				Value:         "100",
+				Timestamp:     111100,
 			},
-			&models.Metric{
-				Name:      metricType,
-				Unit:      unit,
-				AppId:     testAppId,
-				Timestamp: timestamp,
-				Instances: []models.InstanceMetric{models.InstanceMetric{
-					Timestamp: timestamp,
-					Index:     0,
-					Value:     "300",
-				}, models.InstanceMetric{
-					Timestamp: timestamp,
-					Index:     1,
-					Value:     "400",
-				}},
+			&models.AppInstanceMetric{
+				AppId:         testAppId,
+				InstanceIndex: 1,
+				CollectedAt:   111111,
+				Name:          metricType,
+				Unit:          models.UnitBytes,
+				Value:         "200",
+				Timestamp:     110000,
+			},
+
+			&models.AppInstanceMetric{
+				AppId:         testAppId,
+				InstanceIndex: 0,
+				CollectedAt:   222222,
+				Name:          metricType,
+				Unit:          models.UnitBytes,
+				Value:         "300",
+				Timestamp:     222200,
+			},
+			&models.AppInstanceMetric{
+				AppId:         testAppId,
+				InstanceIndex: 1,
+				CollectedAt:   222222,
+				Name:          metricType,
+				Unit:          models.UnitBytes,
+				Value:         "400",
+				Timestamp:     220000,
 			},
 		}
 	)
