@@ -69,7 +69,7 @@ func (m *MetricPoller) retrieveMetric(app *model.AppMonitor) {
 		return
 	}
 	defer resp.Body.Close()
-	var metrics []*models.Metric
+	var metrics []*models.AppInstanceMetric
 	if resp.StatusCode == http.StatusOK {
 		data, readError := ioutil.ReadAll(resp.Body)
 		if readError != nil {
@@ -77,7 +77,7 @@ func (m *MetricPoller) retrieveMetric(app *model.AppMonitor) {
 			return
 		}
 		json.Unmarshal(data, &metrics)
-		avgMetric := m.doAggregate(appId, metricType, metrics)
+		avgMetric := m.aggregate(appId, metricType, metrics)
 		if avgMetric != nil {
 			m.metricConsumer(avgMetric)
 		}
@@ -86,16 +86,18 @@ func (m *MetricPoller) retrieveMetric(app *model.AppMonitor) {
 	}
 
 }
-func (m *MetricPoller) doAggregate(appId string, metricType string, metrics []*models.Metric) *model.AppMetric {
+func (m *MetricPoller) aggregate(appId string, metricType string, metrics []*models.AppInstanceMetric) *model.AppMetric {
 	var count int64 = 0
 	var sum int64 = 0
 	var unit string
 	var timestamp int64 = time.Now().UnixNano()
 	for _, metric := range metrics {
 		unit = metric.Unit
-		for _, instanceMetric := range metric.Instances {
+		intValue, err := strconv.ParseInt(metric.Value, 10, 64)
+		if err != nil {
+			m.logger.Error("failed-to-aggregate", err, lager.Data{"value": metric.Value})
+		} else {
 			count++
-			intValue, _ := strconv.ParseInt(instanceMetric.Value, 10, 64)
 			sum += intValue
 		}
 	}

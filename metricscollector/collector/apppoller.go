@@ -23,13 +23,13 @@ type appPoller struct {
 	logger       lager.Logger
 	cfc          cf.CfClient
 	noaaConsumer noaa.NoaaConsumer
-	database     db.MetricsDB
+	database     db.InstanceMetricsDB
 	pclock       clock.Clock
 	ticker       clock.Ticker
 	doneChan     chan bool
 }
 
-func NewAppPoller(logger lager.Logger, appId string, pollInterval time.Duration, cfc cf.CfClient, noaaConsumer noaa.NoaaConsumer, database db.MetricsDB, pclcok clock.Clock) AppPoller {
+func NewAppPoller(logger lager.Logger, appId string, pollInterval time.Duration, cfc cf.CfClient, noaaConsumer noaa.NoaaConsumer, database db.InstanceMetricsDB, pclock clock.Clock) AppPoller {
 	return &appPoller{
 		appId:        appId,
 		pollInterval: pollInterval,
@@ -37,7 +37,7 @@ func NewAppPoller(logger lager.Logger, appId string, pollInterval time.Duration,
 		cfc:          cfc,
 		noaaConsumer: noaaConsumer,
 		database:     database,
-		pclock:       pclcok,
+		pclock:       pclock,
 		doneChan:     make(chan bool),
 	}
 
@@ -72,21 +72,19 @@ func (ap *appPoller) startPollMetrics() {
 func (ap *appPoller) pollMetric() {
 	ap.logger.Debug("poll-metric", lager.Data{"appid": ap.appId})
 
-	containerMetrics, err := ap.noaaConsumer.ContainerEnvelopes(ap.appId, "bearer"+" "+ap.cfc.GetTokens().AccessToken)
+	containerEnvelopes, err := ap.noaaConsumer.ContainerEnvelopes(ap.appId, "bearer"+" "+ap.cfc.GetTokens().AccessToken)
 	if err != nil {
 		ap.logger.Error("poll-metric-from-noaa", err)
 		return
 	}
 
-	metric := models.GetMemoryMetricFromContainerMetrics(ap.appId, containerMetrics)
-	ap.logger.Debug("poll-metric-get-memory-metric", lager.Data{"metric": *metric})
+	metrics := models.GetInstanceMemoryMetricFromContainerEnvelopes(ap.pclock.Now().UnixNano(), ap.appId, containerEnvelopes)
+	ap.logger.Debug("poll-metric-get-memory-metric", lager.Data{"metrics": metrics})
 
-	if len(metric.Instances) == 0 {
-		return
-	}
-
-	err = ap.database.SaveMetric(metric)
-	if err != nil {
-		ap.logger.Error("poll-metric-save", err)
+	for _, metric := range metrics {
+		err = ap.database.SaveMetric(metric)
+		if err != nil {
+			ap.logger.Error("poll-metric-save", err, lager.Data{"metric": metric})
+		}
 	}
 }

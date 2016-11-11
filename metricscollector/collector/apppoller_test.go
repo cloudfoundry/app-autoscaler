@@ -13,6 +13,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
+	"github.com/onsi/gomega/gstruct"
 
 	"errors"
 	"time"
@@ -21,24 +22,26 @@ import (
 var _ = Describe("Apppoller", func() {
 
 	var (
-		cfc      *fakes.FakeCfClient
-		noaa     *fakes.FakeNoaaConsumer
-		database *fakes.FakeMetricsDB
-		poller   AppPoller
-		fclock   *fakeclock.FakeClock
-		buffer   *gbytes.Buffer
+		cfc       *fakes.FakeCfClient
+		noaa      *fakes.FakeNoaaConsumer
+		database  *fakes.FakeInstanceMetricsDB
+		poller    AppPoller
+		fclock    *fakeclock.FakeClock
+		buffer    *gbytes.Buffer
+		timestamp int64
 	)
 
 	BeforeEach(func() {
 		cfc = &fakes.FakeCfClient{}
 		noaa = &fakes.FakeNoaaConsumer{}
-		database = &fakes.FakeMetricsDB{}
+		database = &fakes.FakeInstanceMetricsDB{}
 
 		logger := lagertest.NewTestLogger("apppoller-test")
 		buffer = logger.Buffer()
 
 		fclock = fakeclock.NewFakeClock(time.Now())
 		poller = NewAppPoller(logger, "test-app-id", TestPollInterval, cfc, noaa, database, fclock)
+		timestamp = 111111
 	})
 
 	Describe("Start", func() {
@@ -67,13 +70,12 @@ var _ = Describe("Apppoller", func() {
 				cfc.GetTokensReturns(cf.Tokens{AccessToken: "test-access-token"})
 			})
 
-			Context("when all container metrics are not empty", func() {
+			Context("when container envelopes are not empty", func() {
 
 				BeforeEach(func() {
 					noaa.ContainerEnvelopesStub = func(appid string, token string) ([]*events.Envelope, error) {
 						Expect(appid).To(Equal("test-app-id"))
 						Expect(token).To(Equal("bearer test-access-token"))
-
 						return []*events.Envelope{
 							&events.Envelope{
 								ContainerMetric: &events.ContainerMetric{
@@ -81,21 +83,27 @@ var _ = Describe("Apppoller", func() {
 									InstanceIndex: proto.Int32(0),
 									MemoryBytes:   proto.Uint64(1234),
 								},
+								Timestamp: &timestamp,
 							},
 						}, nil
 					}
 
-					database.SaveMetricStub = func(metric *models.Metric) error {
-						Expect(metric.AppId).To(Equal("test-app-id"))
-						Expect(metric.Name).To(Equal(models.MetricNameMemory))
-						Expect(metric.Unit).To(Equal(models.UnitBytes))
-						Expect(metric.Instances).To(ConsistOf(models.InstanceMetric{Index: 0, Value: "1234"}))
+					database.SaveMetricStub = func(metric *models.AppInstanceMetric) error {
+						Expect(*metric).To(gstruct.MatchAllFields(gstruct.Fields{
+							"AppId":         Equal("test-app-id"),
+							"InstanceIndex": BeEquivalentTo(0),
+							"CollectedAt":   Equal(fclock.Now().UnixNano()),
+							"Name":          Equal(models.MetricNameMemory),
+							"Unit":          Equal(models.UnitBytes),
+							"Value":         Equal("1234"),
+							"Timestamp":     BeEquivalentTo(111111),
+						}))
 						return nil
 					}
 
 				})
 
-				It("saves all the metrics to database", func() {
+				It("saves the metrics to database", func() {
 					Eventually(database.SaveMetricCallCount).Should(Equal(1))
 
 					fclock.Increment(TestPollInterval)
@@ -106,7 +114,7 @@ var _ = Describe("Apppoller", func() {
 				})
 			})
 
-			Context("when all container metrics are empty", func() {
+			Context("when container envelopes are empty", func() {
 				BeforeEach(func() {
 					noaa.ContainerEnvelopesStub = func(appid string, token string) ([]*events.Envelope, error) {
 						Expect(appid).To(Equal("test-app-id"))
@@ -128,7 +136,7 @@ var _ = Describe("Apppoller", func() {
 
 			})
 
-			Context("when container metrics are partially empty", func() {
+			Context("when container envelopes are partially empty", func() {
 				BeforeEach(func() {
 					noaa.ContainerEnvelopesStub = func(appid string, token string) ([]*events.Envelope, error) {
 						Expect(appid).To(Equal("test-app-id"))
@@ -144,22 +152,28 @@ var _ = Describe("Apppoller", func() {
 										InstanceIndex: proto.Int32(0),
 										MemoryBytes:   proto.Uint64(1234),
 									},
+									Timestamp: &timestamp,
 								},
 							}, nil
 						}
 					}
 
-					database.SaveMetricStub = func(metric *models.Metric) error {
-						Expect(metric.AppId).To(Equal("test-app-id"))
-						Expect(metric.Name).To(Equal(models.MetricNameMemory))
-						Expect(metric.Unit).To(Equal(models.UnitBytes))
-						Expect(metric.Instances).To(ConsistOf(models.InstanceMetric{Index: 0, Value: "1234"}))
+					database.SaveMetricStub = func(metric *models.AppInstanceMetric) error {
+						Expect(*metric).To(gstruct.MatchAllFields(gstruct.Fields{
+							"AppId":         Equal("test-app-id"),
+							"InstanceIndex": BeEquivalentTo(0),
+							"CollectedAt":   Equal(fclock.Now().UnixNano()),
+							"Name":          Equal(models.MetricNameMemory),
+							"Unit":          Equal(models.UnitBytes),
+							"Value":         Equal("1234"),
+							"Timestamp":     BeEquivalentTo(111111),
+						}))
 						return nil
 					}
 
 				})
 
-				It("saves non-empty metrics to database", func() {
+				It("saves metrics in non-empty container envelops to database", func() {
 					Eventually(database.SaveMetricCallCount).Should(Equal(1))
 
 					fclock.Increment(TestPollInterval)
@@ -171,7 +185,7 @@ var _ = Describe("Apppoller", func() {
 			})
 		})
 
-		Context("when retrieving container metrics all fails", func() {
+		Context("when retrieving container envelopes all fails", func() {
 
 			BeforeEach(func() {
 				noaa.ContainerEnvelopesReturns(nil, errors.New("test apppoller error"))
@@ -189,7 +203,7 @@ var _ = Describe("Apppoller", func() {
 			})
 		})
 
-		Context("when retrieving container metrics partially fails", func() {
+		Context("when retrieving container envelopes partially fails", func() {
 			BeforeEach(func() {
 				cfc.GetTokensReturns(cf.Tokens{AccessToken: "test-access-token"})
 
@@ -207,16 +221,22 @@ var _ = Describe("Apppoller", func() {
 									InstanceIndex: proto.Int32(0),
 									MemoryBytes:   proto.Uint64(1234),
 								},
+								Timestamp: &timestamp,
 							},
 						}, nil
 					}
 				}
 
-				database.SaveMetricStub = func(metric *models.Metric) error {
-					Expect(metric.AppId).To(Equal("test-app-id"))
-					Expect(metric.Name).To(Equal(models.MetricNameMemory))
-					Expect(metric.Unit).To(Equal(models.UnitBytes))
-					Expect(metric.Instances).To(ConsistOf(models.InstanceMetric{Index: 0, Value: "1234"}))
+				database.SaveMetricStub = func(metric *models.AppInstanceMetric) error {
+					Expect(*metric).To(gstruct.MatchAllFields(gstruct.Fields{
+						"AppId":         Equal("test-app-id"),
+						"InstanceIndex": BeEquivalentTo(0),
+						"CollectedAt":   Equal(fclock.Now().UnixNano()),
+						"Name":          Equal(models.MetricNameMemory),
+						"Unit":          Equal(models.UnitBytes),
+						"Value":         Equal("1234"),
+						"Timestamp":     BeEquivalentTo(111111),
+					}))
 					return nil
 				}
 
