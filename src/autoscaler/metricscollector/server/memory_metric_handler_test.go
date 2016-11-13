@@ -10,6 +10,7 @@ import (
 	"github.com/gogo/protobuf/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gstruct"
 
 	"encoding/json"
 	"errors"
@@ -71,13 +72,23 @@ var _ = Describe("MemoryMetricHandler", func() {
 		Context("when retrieving container metrics succeeds", func() {
 			Context("container metrics is not empty", func() {
 				BeforeEach(func() {
+					timestamp := int64(111111)
 					consumer.ContainerEnvelopesReturns([]*events.Envelope{
 						&events.Envelope{
 							ContainerMetric: &events.ContainerMetric{
 								ApplicationId: proto.String("an-app-id"),
-								InstanceIndex: proto.Int32(1),
+								InstanceIndex: proto.Int32(0),
 								MemoryBytes:   proto.Uint64(1234),
 							},
+							Timestamp: &timestamp,
+						},
+						&events.Envelope{
+							ContainerMetric: &events.ContainerMetric{
+								ApplicationId: proto.String("an-app-id"),
+								InstanceIndex: proto.Int32(1),
+								MemoryBytes:   proto.Uint64(5678),
+							},
+							Timestamp: &timestamp,
 						},
 					}, nil)
 				})
@@ -85,14 +96,30 @@ var _ = Describe("MemoryMetricHandler", func() {
 				It("returns a 200 response with metrics", func() {
 					Expect(resp.Code).To(Equal(http.StatusOK))
 
-					metric := &models.Metric{}
-					err = json.Unmarshal(resp.Body.Bytes(), metric)
+					metrics := []models.AppInstanceMetric{}
+					err = json.Unmarshal(resp.Body.Bytes(), &metrics)
 
 					Expect(err).ToNot(HaveOccurred())
-					Expect(metric.AppId).To(Equal("an-app-id"))
-					Expect(metric.Name).To(Equal(models.MetricNameMemory))
-					Expect(metric.Unit).To(Equal(models.UnitBytes))
-					Expect(metric.Instances).To(ConsistOf(models.InstanceMetric{Index: 1, Value: "1234"}))
+					Expect(metrics).To(HaveLen(2))
+
+					Expect(metrics[0]).To(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+						"AppId":         Equal("an-app-id"),
+						"InstanceIndex": BeEquivalentTo(0),
+						"Name":          Equal(models.MetricNameMemory),
+						"Unit":          Equal(models.UnitBytes),
+						"Value":         Equal("1234"),
+						"Timestamp":     BeEquivalentTo(111111),
+					}))
+
+					Expect(metrics[1]).To(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+						"AppId":         Equal("an-app-id"),
+						"InstanceIndex": BeEquivalentTo(1),
+						"Name":          Equal(models.MetricNameMemory),
+						"Unit":          Equal(models.UnitBytes),
+						"Value":         Equal("5678"),
+						"Timestamp":     BeEquivalentTo(111111),
+					}))
+
 				})
 			})
 
@@ -104,11 +131,11 @@ var _ = Describe("MemoryMetricHandler", func() {
 				It("returns a 200 with empty metrics", func() {
 					Expect(resp.Code).To(Equal(http.StatusOK))
 
-					metric := &models.Metric{}
-					err = json.Unmarshal(resp.Body.Bytes(), metric)
+					metrics := []models.AppInstanceMetric{}
+					err = json.Unmarshal(resp.Body.Bytes(), &metrics)
 
 					Expect(err).ToNot(HaveOccurred())
-					Expect(metric.Instances).To(BeEmpty())
+					Expect(metrics).To(BeEmpty())
 				})
 			})
 

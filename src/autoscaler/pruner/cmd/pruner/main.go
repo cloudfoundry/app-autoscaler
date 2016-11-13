@@ -48,12 +48,12 @@ func main() {
 	logger := initLoggerFromConfig(&conf.Logging)
 	prClock := clock.NewClock()
 
-	metricsDb, err := sqldb.NewMetricsSQLDB(conf.MetricsDb.DbUrl, logger.Session("metrics-db"))
+	instanceMetricsDb, err := sqldb.NewInstanceMetricsSQLDB(conf.InstanceMetricsDb.DbUrl, logger.Session("instancemetrics-db"))
 	if err != nil {
-		logger.Error("failed to connect metrics db", err, lager.Data{"url": conf.MetricsDb.DbUrl})
+		logger.Error("failed to connect instancemetrics db", err, lager.Data{"url": conf.InstanceMetricsDb.DbUrl})
 		os.Exit(1)
 	}
-	defer metricsDb.Close()
+	defer instanceMetricsDb.Close()
 
 	appMetricsDb, err := sqldb.NewAppMetricSQLDB(conf.AppMetricsDb.DbUrl, logger.Session("appmetrics-db"))
 	if err != nil {
@@ -62,16 +62,16 @@ func main() {
 	}
 	defer appMetricsDb.Close()
 
-	prunerLoggerSessionName := "metricsdbpruner"
-	metricDbPruner := pruner.NewMetricsDbPruner(metricsDb, conf.MetricsDb.CutoffDays, prClock, logger.Session(prunerLoggerSessionName))
-	metricsDbPrunerRunner := pruner.NewDbPrunerRunner(metricDbPruner, conf.MetricsDb.RefreshInterval, prClock, logger.Session(prunerLoggerSessionName))
+	prunerLoggerSessionName := "instancemetricsdbpruner"
+	instanceMetricDbPruner := pruner.NewInstanceMetricsDbPruner(instanceMetricsDb, conf.InstanceMetricsDb.CutoffDays, prClock, logger.Session(prunerLoggerSessionName))
+	instanceMetricsDbPrunerRunner := pruner.NewDbPrunerRunner(instanceMetricDbPruner, conf.InstanceMetricsDb.RefreshInterval, prClock, logger.Session(prunerLoggerSessionName))
 
 	prunerLoggerSessionName = "appmetricsdbpruner"
 	appMetricsDbPruner := pruner.NewAppMetricsDbPruner(appMetricsDb, conf.AppMetricsDb.CutoffDays, prClock, logger.Session(prunerLoggerSessionName))
 	appMetricsDbPrunerRunner := pruner.NewDbPrunerRunner(appMetricsDbPruner, conf.AppMetricsDb.RefreshInterval, prClock, logger.Session(prunerLoggerSessionName))
 
 	members := grouper.Members{
-		{"metricsdbpruner", metricsDbPrunerRunner},
+		{"instancemetricsdbpruner", instanceMetricsDbPrunerRunner},
 		{"appmetricsdbpruner", appMetricsDbPrunerRunner},
 	}
 
