@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 const TokenTypeBearer = "bearer"
@@ -37,7 +38,7 @@ func (h *MemoryMetricHandler) GetMemoryMetric(w http.ResponseWriter, r *http.Req
 
 	w.Header().Set("Content-Type", "application/json")
 
-	containerMetrics, err := h.noaaConsumer.ContainerEnvelopes(appId, TokenTypeBearer+" "+h.cfClient.GetTokens().AccessToken)
+	containerEnvelopes, err := h.noaaConsumer.ContainerEnvelopes(appId, TokenTypeBearer+" "+h.cfClient.GetTokens().AccessToken)
 	if err != nil {
 		h.logger.Error("Get-memory-metric-from-noaa", err, lager.Data{"appId": appId})
 
@@ -46,13 +47,13 @@ func (h *MemoryMetricHandler) GetMemoryMetric(w http.ResponseWriter, r *http.Req
 			Message: "Error getting memory metrics from doppler"})
 		return
 	}
-	h.logger.Debug("Get-memory-metric-from-noaa", lager.Data{"appId": appId, "container-metrics": containerMetrics})
+	h.logger.Debug("Get-memory-metric-from-noaa", lager.Data{"appId": appId, "containerEnvelopes": containerEnvelopes})
 
-	metric := models.GetMemoryMetricFromContainerMetrics(appId, containerMetrics)
+	metrics := models.GetInstanceMemoryMetricFromContainerEnvelopes(time.Now().UnixNano(), appId, containerEnvelopes)
 	var body []byte
-	body, err = json.Marshal(metric)
+	body, err = json.Marshal(metrics)
 	if err != nil {
-		h.logger.Error("get-memory-metrics-marshal", err, lager.Data{"appId": appId, "metric": metric})
+		h.logger.Error("get-memory-metrics-marshal", err, lager.Data{"appId": appId, "metrics": metrics})
 
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 			Code:    "Interal-Server-Error",

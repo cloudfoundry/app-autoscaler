@@ -7,13 +7,6 @@ import (
 
 const PostgresDriverName = "postgres"
 
-type MetricsDB interface {
-	RetrieveMetrics(appid string, name string, start int64, end int64) ([]*models.Metric, error)
-	SaveMetric(metric *models.Metric) error
-	PruneMetrics(before int64) error
-	Close() error
-}
-
 type InstanceMetricsDB interface {
 	RetrieveInstanceMetrics(appid string, name string, start int64, end int64) ([]*models.AppInstanceMetric, error)
 	SaveMetric(metric *models.AppInstanceMetric) error

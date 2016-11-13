@@ -43,28 +43,11 @@ var _ = AfterSuite(func() {
 
 })
 
-func cleanMetricsTable() {
-	_, e := dbHelper.Exec("DELETE FROM applicationmetrics")
-	if e != nil {
-		Fail("can not clean table applicationmetrics:" + e.Error())
-	}
-}
-
 func cleanInstanceMetricsTable() {
 	_, e := dbHelper.Exec("DELETE FROM appinstancemetrics")
 	if e != nil {
 		Fail("can not clean table appinstancemetrics:" + e.Error())
 	}
-}
-
-func hasMetric(appId, name string, timestamp int64) bool {
-	query := "SELECT * FROM applicationmetrics WHERE appid = $1 AND name = $2 AND timestamp = $3"
-	rows, e := dbHelper.Query(query, appId, name, timestamp)
-	if e != nil {
-		Fail("can not query table applicationmetrics: " + e.Error())
-	}
-	defer rows.Close()
-	return rows.Next()
 }
 
 func hasInstanceMetric(appId string, index int, name string, timestamp int64) bool {
@@ -75,15 +58,6 @@ func hasInstanceMetric(appId string, index int, name string, timestamp int64) bo
 	}
 	defer rows.Close()
 	return rows.Next()
-}
-
-func getNumberOfMetrics() int {
-	var num int
-	e := dbHelper.QueryRow("SELECT COUNT(*) FROM applicationmetrics").Scan(&num)
-	if e != nil {
-		Fail("can not count the number of records in table applicationmetrics: " + e.Error())
-	}
-	return num
 }
 
 func getNumberOfInstanceMetrics() int {

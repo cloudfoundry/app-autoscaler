@@ -48,12 +48,11 @@ var _ = SynchronizedAfterSuite(func() {
 func initConfig() {
 	cfg.Logging.Level = "debug"
 
-	cfg.MetricsDb.DbUrl = os.Getenv("DBURL")
+	cfg.InstanceMetricsDb.DbUrl = os.Getenv("DBURL")
+	cfg.InstanceMetricsDb.RefreshInterval = 12 * time.Hour
+	cfg.InstanceMetricsDb.CutoffDays = 20
+
 	cfg.AppMetricsDb.DbUrl = os.Getenv("DBURL")
-
-	cfg.MetricsDb.RefreshInterval = 12 * time.Hour
-	cfg.MetricsDb.CutoffDays = 20
-
 	cfg.AppMetricsDb.RefreshInterval = 12 * time.Hour
 	cfg.AppMetricsDb.CutoffDays = 20
 
