@@ -20,7 +20,7 @@ type LoggingConfig struct {
 	Level string `yaml:"level"`
 }
 
-type MetricsDbPrunerConfig struct {
+type InstanceMetricsDbPrunerConfig struct {
 	DbUrl           string        `yaml:"db_url"`
 	RefreshInterval time.Duration `yaml:"refresh_interval"`
 	CutoffDays      int           `yaml:"cutoff_days"`
@@ -33,14 +33,14 @@ type AppMetricsDbPrunerConfig struct {
 }
 
 type Config struct {
-	Logging      LoggingConfig            `yaml:"logging"`
-	MetricsDb    MetricsDbPrunerConfig    `yaml:"metrics_db"`
-	AppMetricsDb AppMetricsDbPrunerConfig `yaml:"app_metrics_db"`
+	Logging           LoggingConfig                 `yaml:"logging"`
+	InstanceMetricsDb InstanceMetricsDbPrunerConfig `yaml:"instance_metrics_db"`
+	AppMetricsDb      AppMetricsDbPrunerConfig      `yaml:"app_metrics_db"`
 }
 
 var defaultDbConfig = Config{
 	Logging: LoggingConfig{Level: DefaultLoggingLevel},
-	MetricsDb: MetricsDbPrunerConfig{
+	InstanceMetricsDb: InstanceMetricsDbPrunerConfig{
 		RefreshInterval: DefaultRefreshInterval,
 		CutoffDays:      DefaultCutoffDays,
 	},
@@ -70,20 +70,20 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 
 func (c *Config) Validate() error {
 
-	if c.MetricsDb.DbUrl == "" {
-		return fmt.Errorf("Configuration error: Metrics DB url is empty")
+	if c.InstanceMetricsDb.DbUrl == "" {
+		return fmt.Errorf("Configuration error: InstanceMetrics DB url is empty")
+	}
+
+	if c.InstanceMetricsDb.RefreshInterval < 0 {
+		return fmt.Errorf("Configuration error: InstanceMetrics DB refresh interval is negative")
+	}
+
+	if c.InstanceMetricsDb.CutoffDays < 0 {
+		return fmt.Errorf("Configuration error: InstanceMetrics DB cutoff days is negative")
 	}
 
 	if c.AppMetricsDb.DbUrl == "" {
 		return fmt.Errorf("Configuration error: App Metrics DB url is empty")
-	}
-
-	if c.MetricsDb.RefreshInterval < 0 {
-		return fmt.Errorf("Configuration error: Metrics DB refresh interval is negative")
-	}
-
-	if c.MetricsDb.CutoffDays < 0 {
-		return fmt.Errorf("Configuration error: Metrics DB cutoff days is negative")
 	}
 
 	if c.AppMetricsDb.RefreshInterval < 0 {
