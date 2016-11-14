@@ -12,5 +12,5 @@ public interface ActiveScheduleDao {
 
 	int delete(Long id);
 
-	List<ActiveScheduleEntity> findAllActiveSchedulesByAppId(String appId);
+	void deleteAllActiveSchedulesByAppId(String appId);
 }

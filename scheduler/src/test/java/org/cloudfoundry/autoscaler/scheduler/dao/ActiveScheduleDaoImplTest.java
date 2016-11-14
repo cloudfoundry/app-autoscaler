@@ -106,7 +106,7 @@ public class ActiveScheduleDaoImplTest extends TestConfiguration {
 	}
 
 	@Test
-	public void testFindAllActiveSchedules() {
+	public void testDeleteAllActiveSchedulesByAppId() {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		Long scheduleId = 3L;
 		ActiveScheduleEntity activeScheduleEntity = TestDataSetupHelper.generateActiveScheduleEntity(appId, scheduleId,
@@ -121,17 +121,21 @@ public class ActiveScheduleDaoImplTest extends TestConfiguration {
 		activeScheduleEntity = TestDataSetupHelper.generateActiveScheduleEntity(appId, scheduleId, JobActionEnum.START);
 		activeScheduleDao.create(activeScheduleEntity);
 
-		List<ActiveScheduleEntity> activeSchedules = activeScheduleDao.findAllActiveSchedulesByAppId(appId);
+		assertThat("It should have 3 active schedules", getActiveSchedulesCount(appId), is(3L));
 
-		assertThat("It should have count of 3 active schedules", activeSchedules.size(), is(3));
+		activeScheduleDao.deleteAllActiveSchedulesByAppId(appId);
 
-		for (ActiveScheduleEntity activeScheduleEntityFound : activeSchedules) {
-			assertThat("It should have expected app id", activeScheduleEntityFound.getAppId(), is(appId));
-		}
+		assertThat("It should have no active schedules for the appId", getActiveSchedulesCount(appId), is(0L));
+
 	}
 
 	private long getActiveSchedulesCount() {
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 		return jdbcTemplate.queryForObject("SELECT COUNT(1) FROM app_scaling_active_schedule", Long.class);
+	}
+
+	private long getActiveSchedulesCount(String appId) {
+		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+		return jdbcTemplate.queryForObject("SELECT COUNT(1) FROM app_scaling_active_schedule WHERE app_id='"+appId+"'", Long.class);
 	}
 }

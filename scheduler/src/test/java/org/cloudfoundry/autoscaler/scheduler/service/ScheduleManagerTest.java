@@ -1,8 +1,10 @@
 package org.cloudfoundry.autoscaler.scheduler.service;
 
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
@@ -41,12 +43,12 @@ import org.quartz.impl.matchers.GroupMatcher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
-/**
- * 
- */
+import javax.sql.DataSource;
+
 @ActiveProfiles("ScheduleDaoMock")
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -75,6 +77,9 @@ public class ScheduleManagerTest extends TestConfiguration {
 
 	@Autowired
 	private TestDataCleanupHelper testDataCleanupHelper;
+
+	@Autowired
+	private DataSource dataSource;
 
 	@Before
 	public void init() throws SchedulerException {
@@ -176,14 +181,13 @@ public class ScheduleManagerTest extends TestConfiguration {
 					JobActionEnum.START);
 			activeSchedules.add(activeScheduleEntity);
 		}
-		Mockito.doReturn(activeSchedules).when(activeScheduleDao).findAllActiveSchedulesByAppId(appId);
+		Mockito.doNothing().when(activeScheduleDao).deleteAllActiveSchedulesByAppId(appId);
 
 		scheduleManager.deleteSchedules(appId);
 
 		assertSchedulesFoundEquals(appId, 0, 0);
 
-		Mockito.verify(activeScheduleDao, Mockito.times(1)).findAllActiveSchedulesByAppId(appId);
-		Mockito.verify(activeScheduleDao, Mockito.times(8)).delete(1L);
+		Mockito.verify(activeScheduleDao, Mockito.times(1)).deleteAllActiveSchedulesByAppId(appId);
 	}
 
 	@Test
@@ -212,6 +216,46 @@ public class ScheduleManagerTest extends TestConfiguration {
 		assertSchedulesFoundEquals(appId, specificDateSchedulesCount, recurringSchedulesCount);
 		assertDatabaseExceptionOnDelete(appId, ScheduleTypeEnum.RECURRING);
 		assertSchedulesFoundEquals(appId, specificDateSchedulesCount, recurringSchedulesCount);
+	}
+
+	@Test
+	public void testDeleteActiveSchedules_throw_DatabaseValidationException() {
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		// Create one specific date and one recurring date schedule
+		createScheduleNotThrowAnyException(appId, 1, 1);
+
+		// Create one active schedule
+		ActiveScheduleEntity activeScheduleEntity = TestDataSetupHelper.generateActiveScheduleEntity(appId, 1L,
+				JobActionEnum.START);
+		activeScheduleDao.create(activeScheduleEntity);
+
+		// Assert the count of specific date and recurring date schedule
+		assertSchedulesFoundEquals(appId, 1, 1);
+
+		// Assert there is one active schedule
+		assertThat("It should have 1 active schedules", getActiveSchedulesCount(appId), is(1L));
+
+		// Mock the exception when deleting active schedule
+		Mockito.doThrow(DatabaseValidationException.class).when(activeScheduleDao)
+				.deleteAllActiveSchedulesByAppId(appId);
+
+		try {
+			scheduleManager.deleteSchedules(appId);
+			fail("Expected failure case.");
+		} catch (SchedulerInternalException e) {
+			String message = messageBundleResourceHelper.lookupMessage("database.error.delete.failed",
+					"app_id=" + appId);
+
+			for (String errorMessage : validationErrorResult.getAllErrorMessages()) {
+				assertEquals(message, errorMessage);
+			}
+		}
+		// Assert the count of Specific date schedule and recurring date schedules is
+		// same (no schedule should be deleted because of the exception)
+		assertSchedulesFoundEquals(appId, 1, 1);
+
+		// Assert there is one active schedule
+		assertThat("It should have 1 active schedule", getActiveSchedulesCount(appId), is(1L));
 	}
 
 	private Map<JobKey, JobDetail> getSchedulerJobs(String appId, String groupName) throws SchedulerException {
@@ -385,6 +429,11 @@ public class ScheduleManagerTest extends TestConfiguration {
 		assertEquals(expectedJobAction.getStatus(), map.get("scalingAction"));
 		assertEquals(expectedInstanceMinCount, map.get("instanceMinCount"));
 		assertEquals(expectedInstanceMaxCount, map.get("instanceMaxCount"));
+	}
+
+	private long getActiveSchedulesCount(String appId) {
+		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+		return jdbcTemplate.queryForObject("SELECT COUNT(1) FROM app_scaling_active_schedule WHERE app_id='"+appId+"'", Long.class);
 	}
 
 }

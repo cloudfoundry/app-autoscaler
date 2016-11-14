@@ -25,7 +25,7 @@ public class ActiveScheduleDaoImpl extends JdbcDaoSupport implements ActiveSched
 
 	private static final String DELETE_SQL = "DELETE FROM " + TABLE_NAME + " WHERE id=?";
 
-	private static final String SELECT_ALL_FOR_APPID_SQL = "SELECT * FROM " + TABLE_NAME + " WHERE app_id=?";
+	private static final String DELETE_ALL_FOR_APPID_SQL = "DELETE FROM " + TABLE_NAME + " WHERE app_id=?";
 
 	@Autowired
 	private void setupDataSource(DataSource dataSource) {
@@ -66,14 +66,11 @@ public class ActiveScheduleDaoImpl extends JdbcDaoSupport implements ActiveSched
 	}
 
 	@Override
-	public List<ActiveScheduleEntity> findAllActiveSchedulesByAppId(String appId) {
+	public void deleteAllActiveSchedulesByAppId(String appId) {
 		try {
-			return getJdbcTemplate().query(SELECT_ALL_FOR_APPID_SQL, new Object[] { appId },
-					new ActiveScheduleEntity());
-		} catch (EmptyResultDataAccessException ex) {
-			return null;
+			getJdbcTemplate().update(DELETE_ALL_FOR_APPID_SQL, new Object[] { appId });
 		} catch (DataAccessException e) {
-			throw new DatabaseValidationException("Find All active schedules for Application Id:" + appId + " failed",
+			throw new DatabaseValidationException("Delete All active schedules for Application Id:" + appId + " failed",
 					e);
 		}
 	}

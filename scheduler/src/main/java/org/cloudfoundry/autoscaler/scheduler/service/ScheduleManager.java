@@ -718,15 +718,10 @@ public class ScheduleManager {
 
     private void deleteActiveSchedules(String appId) {
         try {
-            logger.info("Get all active schedules for application: " + appId);
-            List<ActiveScheduleEntity> activeSchedules = activeScheduleDao.findAllActiveSchedulesByAppId(appId);
-
             logger.info("Delete all active schedules for application: " + appId);
-            for(ActiveScheduleEntity activeScheduleEntity: activeSchedules) {
-                activeScheduleDao.delete(activeScheduleEntity.getId());
-            }
+            activeScheduleDao.deleteAllActiveSchedulesByAppId(appId);
         } catch (DatabaseValidationException dve) {
-            validationErrorResult.addErrorForDatabaseValidationException(dve, "database.error.delete.activeschedules.failed",
+            validationErrorResult.addErrorForDatabaseValidationException(dve, "database.error.delete.failed",
                     "app_id=" + appId);
             throw new SchedulerInternalException("Database error", dve);
 
