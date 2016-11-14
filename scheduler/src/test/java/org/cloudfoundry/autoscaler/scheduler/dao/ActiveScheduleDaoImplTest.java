@@ -4,6 +4,8 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 
+import java.util.List;
+
 import javax.persistence.EntityManager;
 import javax.sql.DataSource;
 import javax.transaction.Transactional;
@@ -103,8 +105,37 @@ public class ActiveScheduleDaoImplTest extends TestConfiguration {
 		assertThat("It should be 2", getActiveSchedulesCount(), is(2L));
 	}
 
+	@Test
+	public void testDeleteAllActiveSchedulesByAppId() {
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		Long scheduleId = 3L;
+		ActiveScheduleEntity activeScheduleEntity = TestDataSetupHelper.generateActiveScheduleEntity(appId, scheduleId,
+				JobActionEnum.START);
+		activeScheduleDao.create(activeScheduleEntity);
+
+		scheduleId = 4L;
+		activeScheduleEntity = TestDataSetupHelper.generateActiveScheduleEntity(appId, scheduleId, JobActionEnum.START);
+		activeScheduleDao.create(activeScheduleEntity);
+
+		scheduleId = 5L;
+		activeScheduleEntity = TestDataSetupHelper.generateActiveScheduleEntity(appId, scheduleId, JobActionEnum.START);
+		activeScheduleDao.create(activeScheduleEntity);
+
+		assertThat("It should have 3 active schedules", getActiveSchedulesCount(appId), is(3L));
+
+		activeScheduleDao.deleteAllActiveSchedulesByAppId(appId);
+
+		assertThat("It should have no active schedules for the appId", getActiveSchedulesCount(appId), is(0L));
+
+	}
+
 	private long getActiveSchedulesCount() {
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 		return jdbcTemplate.queryForObject("SELECT COUNT(1) FROM app_scaling_active_schedule", Long.class);
+	}
+
+	private long getActiveSchedulesCount(String appId) {
+		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+		return jdbcTemplate.queryForObject("SELECT COUNT(1) FROM app_scaling_active_schedule WHERE app_id='"+appId+"'", Long.class);
 	}
 }

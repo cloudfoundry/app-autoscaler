@@ -1,5 +1,7 @@
 package org.cloudfoundry.autoscaler.scheduler.dao;
 
+import java.util.List;
+
 import javax.sql.DataSource;
 
 import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
@@ -22,6 +24,8 @@ public class ActiveScheduleDaoImpl extends JdbcDaoSupport implements ActiveSched
 			+ "VALUES (?, ?, ?, ?, ?, ?)";
 
 	private static final String DELETE_SQL = "DELETE FROM " + TABLE_NAME + " WHERE id=?";
+
+	private static final String DELETE_ALL_FOR_APPID_SQL = "DELETE FROM " + TABLE_NAME + " WHERE app_id=?";
 
 	@Autowired
 	private void setupDataSource(DataSource dataSource) {
@@ -58,6 +62,16 @@ public class ActiveScheduleDaoImpl extends JdbcDaoSupport implements ActiveSched
 
 		} catch (DataAccessException e) {
 			throw new DatabaseValidationException("Delete failed", e);
+		}
+	}
+
+	@Override
+	public void deleteAllActiveSchedulesByAppId(String appId) {
+		try {
+			getJdbcTemplate().update(DELETE_ALL_FOR_APPID_SQL, new Object[] { appId });
+		} catch (DataAccessException e) {
+			throw new DatabaseValidationException("Delete All active schedules for Application Id:" + appId + " failed",
+					e);
 		}
 	}
 }

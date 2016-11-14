@@ -447,7 +447,7 @@ public class ScheduleJobManagerTest extends TestConfiguration {
 			calStartDate.setTime(entity.getStartDate());
 		}
 
-		if (calStartDate.get(Calendar.DAY_OF_MONTH) > day) {
+		if (calStartDate.get(Calendar.DAY_OF_MONTH) >= day) {
 			calStartDate.add(Calendar.MONTH, 1);
 		}
 
