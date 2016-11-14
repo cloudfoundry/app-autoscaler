@@ -17,7 +17,7 @@ type Collector struct {
 	createPoller    func(string) AppPoller
 	doneChan        chan bool
 	pollers         map[string]AppPoller
-	ticker          clock.Ticker
+	timer           clock.Timer
 	lock            *sync.Mutex
 }
 
@@ -35,7 +35,7 @@ func NewCollector(refreshInterval time.Duration, logger lager.Logger, database d
 }
 
 func (c *Collector) Start() {
-	c.ticker = c.cclock.NewTicker(c.refreshInterval)
+	c.timer = c.cclock.NewTimer(c.refreshInterval)
 	go c.startAppRefresh()
 	c.logger.Info("collector-started")
 }
@@ -43,10 +43,11 @@ func (c *Collector) Start() {
 func (c *Collector) startAppRefresh() {
 	for {
 		c.refreshApps()
+		c.timer.Reset(c.refreshInterval)
 		select {
 		case <-c.doneChan:
 			return
-		case <-c.ticker.C():
+		case <-c.timer.C():
 		}
 	}
 }
@@ -83,8 +84,8 @@ func (c *Collector) refreshApps() {
 }
 
 func (c *Collector) Stop() {
-	if c.ticker != nil {
-		c.ticker.Stop()
+	if c.timer != nil {
+		c.timer.Stop()
 		close(c.doneChan)
 
 		c.lock.Lock()
