@@ -41,13 +41,12 @@ module.exports = function(app, settings) {
               bindingId: bindingId,
               appId: appId,
               serviceInstanceId: serviceInstanceId,
-              timestamp: new Date().getTime(),
-              transaction: t
-            }).then(function(result) {
+              timestamp: new Date().getTime()
+            }, { transaction: t }).then(function(result) {
               apiServerUtil.attachPolicy(appId, policyJSON, function(error, response) {
                 if (error == null) {
                   var statusCode = response.statusCode;
-                  logger.info("Api Server response", { status_code: statusCode, response: response.body});
+                  logger.info("Api Server response", { status_code: statusCode, response: response.body });
                   if (statusCode === 200 || statusCode === 201) {
                     t.commit();
                     res.status(statusCode).json({});
