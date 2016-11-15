@@ -65,7 +65,7 @@ describe('binding RESTful API', function() {
     server = BrokerServer(configFilePath);
     done();
   });
-  after(function(done){
+  after(function(done) {
     server.close(done)
   });
   beforeEach(function(done) {
@@ -90,7 +90,13 @@ describe('binding RESTful API', function() {
           .send({ "app_guid": appId, "parameters": policy })
           .expect(201)
           .expect('Content-Type', /json/)
-          .expect({}, done);
+          .expect({})
+          .end(function(err, res) {
+            binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+              expect(countRes).to.equal(1);
+              done();
+            })
+          });
       });
       context("when the api server returns error", function() {
         it("return a 400", function(done) {
@@ -101,7 +107,13 @@ describe('binding RESTful API', function() {
             .send({ "app_guid": appId, "parameters": policy })
             .expect(400)
             .expect('Content-Type', /json/)
-            .expect({}, done);
+            .expect({})
+            .end(function(err, res) {
+              binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+                expect(countRes).to.equal(0);
+                done();
+              })
+            });
         });
         it("return a 500", function(done) {
           initNockBind(500);
@@ -111,7 +123,13 @@ describe('binding RESTful API', function() {
             .send({ "app_guid": appId, "parameters": policy })
             .expect(500)
             .expect('Content-Type', /json/)
-            .expect({}, done);
+            .expect({})
+            .end(function(err, res) {
+              binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+                expect(countRes).to.equal(0);
+                done();
+              })
+            });
         });
         context('when the api server returns other error than 400, 500', function() {
           it('returns a 500', function(done) {
@@ -123,7 +141,13 @@ describe('binding RESTful API', function() {
               .send({ "app_guid": appId, "parameters": policy })
               .expect(500)
               .expect('Content-Type', /json/)
-              .expect({}, done);
+              .expect({})
+              .end(function(err, res) {
+                binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+                  expect(countRes).to.equal(0);
+                  done();
+                })
+              });
           });
         });
       });
@@ -139,7 +163,13 @@ describe('binding RESTful API', function() {
           .send({ "app_guid": appId, "parameters": policy })
           .expect(201)
           .expect('Content-Type', /json/)
-          .expect({}, done);
+          .expect({})
+          .end(function(err, res) {
+            binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+              expect(countRes).to.equal(1);
+              done();
+            })
+          });
       });
 
       context('when an app is already bound', function() {
@@ -151,7 +181,13 @@ describe('binding RESTful API', function() {
             .send({ "app_guid": appId, "parameters": policy })
             .expect(409)
             .expect('Content-Type', /json/)
-            .expect({}, done);
+            .expect({})
+            .end(function(err, res) {
+              binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+                expect(countRes).to.equal(1);
+                done();
+              })
+            });
         });
       });
       context('when the binding id already exists', function() {
@@ -168,7 +204,13 @@ describe('binding RESTful API', function() {
             .send({ "app_guid": appId2, "parameters": policy })
             .expect(409)
             .expect('Content-Type', /json/)
-            .expect({}, done);
+            .expect({})
+            .end(function(err, res) {
+              binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+                expect(countRes).to.equal(1);
+                done();
+              })
+            });
         });
       });
       context('when an service instance has already bound to an application', function() {
@@ -184,7 +226,13 @@ describe('binding RESTful API', function() {
             .set('Accept', 'application/json')
             .send({ "app_guid": appId, "parameters": policy })
             .expect(409)
-            .expect({ "description": messageUtil.getMessage("DUPLICATE_BIND", { "applicationId": appId }) }, done);
+            .expect({ "description": messageUtil.getMessage("DUPLICATE_BIND", { "applicationId": appId }) })
+            .end(function(err, res) {
+              binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+                expect(countRes).to.equal(1);
+                done();
+              })
+            });
         });
       });
     });
@@ -194,7 +242,13 @@ describe('binding RESTful API', function() {
           .put("/v2/service_instances//service_bindings/" + bindingId)
           .set("Authorization", "Basic " + auth)
           .send({ "app_guid": appId })
-          .expect(404, done);
+          .expect(404)
+          .end(function(err, res) {
+            binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+              expect(countRes).to.equal(0);
+              done();
+            })
+          });
       });
     });
     context('when serviceInstanceId is blank space', function() {
@@ -203,7 +257,13 @@ describe('binding RESTful API', function() {
           .put("/v2/service_instances/   /service_bindings/" + bindingId)
           .set("Authorization", "Basic " + auth)
           .send({ "app_guid": appId })
-          .expect(400, done);
+          .expect(400)
+          .end(function(err, res) {
+            binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+              expect(countRes).to.equal(0);
+              done();
+            })
+          });
       });
     });
     context('when bindingId is undefined', function() {
@@ -212,7 +272,13 @@ describe('binding RESTful API', function() {
           .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/")
           .set("Authorization", "Basic " + auth)
           .send({ "app_guid": appId })
-          .expect(404, done);
+          .expect(404)
+          .end(function(err, res) {
+            binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+              expect(countRes).to.equal(0);
+              done();
+            })
+          });
       });
     });
     context('when bindingId is blank space', function() {
@@ -221,7 +287,13 @@ describe('binding RESTful API', function() {
           .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + "   ")
           .set("Authorization", "Basic " + auth)
           .send({ "app_guid": appId })
-          .expect(404, done);
+          .expect(404)
+          .end(function(err, res) {
+            binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+              expect(countRes).to.equal(0);
+              done();
+            })
+          });
       });
     });
 
@@ -230,7 +302,13 @@ describe('binding RESTful API', function() {
         supertest(server)
           .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
           .set("Authorization", "Basic " + auth)
-          .expect(400, done);
+          .expect(400)
+          .end(function(err, res) {
+            binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+              expect(countRes).to.equal(0);
+              done();
+            })
+          });
       });
     });
     context('when appId is blank space', function() {
@@ -239,7 +317,13 @@ describe('binding RESTful API', function() {
           .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
           .set("Authorization", "Basic " + auth)
           .send({ "app_guid": "  " })
-          .expect(400, done);
+          .expect(400)
+          .end(function(err, res) {
+            binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+              expect(countRes).to.equal(0);
+              done();
+            })
+          });
       });
     });
 
@@ -251,7 +335,13 @@ describe('binding RESTful API', function() {
           .send({ "app_guid": appId })
           .expect(400)
           .expect('Content-Type', /json/)
-          .expect({ "description": messageUtil.getMessage("POLICY_REQUIRED") }, done);
+          .expect({ "description": messageUtil.getMessage("POLICY_REQUIRED") })
+          .end(function(err, res) {
+            binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+              expect(countRes).to.equal(0);
+              done();
+            })
+          });
       });
     });
 
@@ -264,12 +354,18 @@ describe('binding RESTful API', function() {
           .send({ "app_guid": appId, "parameters": policy })
           .expect(404)
           .expect('Content-Type', /json/)
-          .expect({ "description": messageUtil.getMessage("SERVICEINSTANCE_NOT_EXIST", { "serviceInstanceId": serviceInstanceId2 }) }, done);
+          .expect({ "description": messageUtil.getMessage("SERVICEINSTANCE_NOT_EXIST", { "serviceInstanceId": serviceInstanceId2 }) })
+          .end(function(err, res) {
+            binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+              expect(countRes).to.equal(0);
+              done();
+            })
+          });
       });
     });
   });
   context('Unbind service', function() {
-    
+
     context('when a binding exists for the app', function() {
       beforeEach(function(done) {
         initNockBind(201);
@@ -279,7 +375,13 @@ describe('binding RESTful API', function() {
           .send({ "app_guid": appId, "parameters": policy })
           .expect(201)
           .expect('Content-Type', /json/)
-          .expect({}, done);
+          .expect({})
+          .end(function(err, res) {
+            binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+              expect(countRes).to.equal(1);
+              done();
+            })
+          });
       });
       it("it deletes the binding", function(done) {
         initNockUnBind(200);
@@ -288,7 +390,13 @@ describe('binding RESTful API', function() {
           .set("Authorization", "Basic " + auth)
           .expect(200)
           .expect('Content-Type', /json/)
-          .expect({}, done);
+          .expect({})
+          .end(function(err, res) {
+            binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+              expect(countRes).to.equal(0);
+              done();
+            })
+          });
       });
       context("when the api server returns error", function() {
         context("when the api server returns a 400", function() {
@@ -299,7 +407,13 @@ describe('binding RESTful API', function() {
               .set("Authorization", "Basic " + auth)
               .expect(500)
               .expect('Content-Type', /json/)
-              .expect({}, done);
+              .expect({})
+              .end(function(err, res) {
+                binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+                  expect(countRes).to.equal(1);
+                  done();
+                })
+              });
           });
         });
 
@@ -311,7 +425,13 @@ describe('binding RESTful API', function() {
               .set("Authorization", "Basic " + auth)
               .expect(200)
               .expect('Content-Type', /json/)
-              .expect({}, done);
+              .expect({})
+              .end(function(err, res) {
+                binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+                  expect(countRes).to.equal(0);
+                  done();
+                })
+              });
           });
         });
 
@@ -323,7 +443,13 @@ describe('binding RESTful API', function() {
               .set("Authorization", "Basic " + auth)
               .expect(500)
               .expect('Content-Type', /json/)
-              .expect({}, done);
+              .expect({})
+              .end(function(err, res) {
+                binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+                  expect(countRes).to.equal(1);
+                  done();
+                })
+              });
           });
         });
 
@@ -336,7 +462,13 @@ describe('binding RESTful API', function() {
               .set('Accept', 'application/json')
               .expect(500)
               .expect('Content-Type', /json/)
-              .expect({}, done);
+              .expect({})
+              .end(function(err, res) {
+                binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+                  expect(countRes).to.equal(1);
+                  done();
+                })
+              });
           });
         });
       });
@@ -346,7 +478,13 @@ describe('binding RESTful API', function() {
         supertest(server)
           .put("/v2/service_instances//service_bindings/" + bindingId)
           .set("Authorization", "Basic " + auth)
-          .expect(404, done);
+          .expect(404)
+          .end(function(err, res) {
+            binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+              expect(countRes).to.equal(0);
+              done();
+            })
+          });
       });
     });
     context('when serviceInstanceId is blank space', function() {
@@ -354,7 +492,13 @@ describe('binding RESTful API', function() {
         supertest(server)
           .put("/v2/service_instances/   /service_bindings/" + bindingId)
           .set("Authorization", "Basic " + auth)
-          .expect(400, done);
+          .expect(400)
+          .end(function(err, res) {
+            binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+              expect(countRes).to.equal(0);
+              done();
+            })
+          });
       });
     });
 
@@ -363,7 +507,13 @@ describe('binding RESTful API', function() {
         supertest(server)
           .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/")
           .set("Authorization", "Basic " + auth)
-          .expect(404, done);
+          .expect(404)
+          .end(function(err, res) {
+            binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+              expect(countRes).to.equal(0);
+              done();
+            })
+          });
       });
     });
     context('when bindingId is blank space', function() {
@@ -371,7 +521,13 @@ describe('binding RESTful API', function() {
         supertest(server)
           .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + "   ")
           .set("Authorization", "Basic " + auth)
-          .expect(404, done);
+          .expect(404)
+          .end(function(err, res) {
+            binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+              expect(countRes).to.equal(0);
+              done();
+            })
+          });
       });
     });
     context('when the binding does not exist for the app', function() {
@@ -381,7 +537,13 @@ describe('binding RESTful API', function() {
           .set("Authorization", "Basic " + auth)
           .expect(410)
           .expect('Content-Type', /json/)
-          .expect({}, done);
+          .expect({})
+          .end(function(err, res) {
+            binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+              expect(countRes).to.equal(0);
+              done();
+            })
+          });
       });
     });
   });
