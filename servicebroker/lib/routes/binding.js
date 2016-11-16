@@ -61,45 +61,51 @@ module.exports = function(app, settings) {
               timestamp: new Date().getTime()
             }, { transaction: t }).then(function(result) {
               apiServerUtil.attachPolicy(appId, policyJSON, function(error, response) {
-                if (error == null) {
-                  var statusCode = response.statusCode;
-                  logger.info("Api Server response", { status_code: statusCode, response: response.body });
-                  if (statusCode === 200 || statusCode === 201) {
-                    commitTransaction(t, res, statusCode, {});
-                  } else {
-                    if (statusCode === 400 || statusCode === 500) {
-                      rollbackTransaction(t, res, statusCode, {});
-                    } else {
-                      rollbackTransaction(t, res, 500, {});
-                    }
-                  }
-                } else {
+                if (error != null) {
                   logger.error("Bind failed: attach policy error", { error: error });
                   rollbackTransaction(t, res, 500, {});
+                  return;
                 }
+
+                var statusCode = response.statusCode;
+                logger.info("Api Server response", { status_code: statusCode, response: response.body });
+                if (statusCode === 200 || statusCode === 201) {
+                  commitTransaction(t, res, statusCode, {});
+                  return;
+                } 
+                if (statusCode === 400 || statusCode === 500) {
+                  rollbackTransaction(t, res, statusCode, {});
+                  return;
+                }
+
+                rollbackTransaction(t, res, 500, {});
               });
             }).catch(function(error1) { //catch findorcreate
               logger.error("Bind failed: create error", { error: error1 });
               if (error1 instanceof models.sequelize.UniqueConstraintError) {
                 rollbackTransaction(t, res, 409, {});
+                return;
               } else if (error1 instanceof models.sequelize.ForeignKeyConstraintError) {
                 rollbackTransaction(t, res, 404, { "description": messageUtil.getMessage("SERVICEINSTANCE_NOT_EXIST", { "serviceInstanceId": serviceInstanceId }) });
-              } else {
-                rollbackTransaction(t, res, 500, {});
+                return;
               }
+
+              rollbackTransaction(t, res, 500, {});
             });
           } else if (length > 1) { // an app has been bound to more than one service instance, this error should not exist
             logger.error("Bind failed: duplicate bind", { app_guid: appId });
             res.status(409).json({ "description": messageUtil.getMessage("DUPLICATE_BIND", { "applicationId": appId }) });
+            return;
           } else if (length == 1) { // an app has been bound to a service instance
             var bindingRecord = result[0];
             if (bindingRecord.serviceInstanceId === serviceInstanceId) {
               logger.error("Bind failed: app already bound", { app_guid: appId, serviceInstanceId: serviceInstanceId });
               res.status(409).json({});
-            } else {
-              logger.error("Bind failed: duplicate bind", { app_guid: appId });
-              res.status(409).json({ "description": messageUtil.getMessage("DUPLICATE_BIND", { "applicationId": appId }) });
+              return;
             }
+
+            logger.error("Bind failed: duplicate bind", { app_guid: appId });
+            res.status(409).json({ "description": messageUtil.getMessage("DUPLICATE_BIND", { "applicationId": appId }) });
           }
         });
       }).catch(function(error2) { //catch transaction
@@ -136,30 +142,33 @@ module.exports = function(app, settings) {
                   logger.info("Api Server response", { status_code: statusCode, response: response.body });
                   if (statusCode === 200) {
                     commitTransaction(t, res, statusCode, {});
+                    return;
                   } else if (statusCode === 404) {
                     commitTransaction(t, res, 200, {});
-                  } else { //for 400,500 and other status, return 500
-                    logger.error("Unbind failed: detach policy failed", { status_code: statusCode });
-                    rollbackTransaction(t, res, 500, {});
+                    return;
                   }
-                } else {
-                  
-                  logger.error("Bind failed: detach policy error", { error: error });
+
+                  //for 400,500 and other status, return 500
+                  logger.error("Unbind failed: detach policy failed", { status_code: statusCode });
                   rollbackTransaction(t, res, 500, {});
+                  return;
                 }
 
+                logger.error("Bind failed: detach policy error", { error: error });
+                rollbackTransaction(t, res, 500, {});
               });
-            } else {
-              commitTransaction(t, res, 410, {});
+              return;
             }
+
+            rollbackTransaction(t, res, 410, {});
           }).catch(function(error1) {
             logger.error("Unbind failed: destroy error", { error: error1 });
             rollbackTransaction(t, res, 500, {});
-
           });
-        } else {
-          commitTransaction(t, res, 410, {});
+          return;
         }
+
+        rollbackTransaction(t, res, 410, {});
       }).catch(function(error3) {
         logger.error("Unbind failed: find binding failed", { error: error3 });
         rollbackTransaction(t, res, 500, {});
