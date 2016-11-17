@@ -33,9 +33,6 @@ public class ActiveScheduleEntity implements RowMapper<ActiveScheduleEntity> {
 	@JsonProperty(value = "initial_min_instance_count")
 	private Integer initialMinInstanceCount;
 
-	@ApiModelProperty(required = true, position = 4)
-	private String status;
-
 	public Long getId() {
 		return id;
 	}
@@ -76,14 +73,6 @@ public class ActiveScheduleEntity implements RowMapper<ActiveScheduleEntity> {
 		this.initialMinInstanceCount = initialMinInstanceCount;
 	}
 
-	public String getStatus() {
-		return status;
-	}
-
-	public void setStatus(String status) {
-		this.status = status;
-	}
-
 	public ActiveScheduleEntity mapRow(ResultSet rs, int rowNum) throws SQLException {
 		ActiveScheduleEntity activeScheduleEntity = new ActiveScheduleEntity();
 		activeScheduleEntity.setId(rs.getLong("id"));
@@ -94,32 +83,21 @@ public class ActiveScheduleEntity implements RowMapper<ActiveScheduleEntity> {
 		int initialMinInstanceCount = rs.getInt("initial_min_instance_count");
 		activeScheduleEntity.setInitialMinInstanceCount(rs.wasNull() ? null : initialMinInstanceCount);
 
-		activeScheduleEntity.setStatus(rs.getString("status"));
 		return activeScheduleEntity;
 	}
 
 	@Override
 	public boolean equals(Object o) {
-		if (this == o)
-			return true;
-		if (o == null || getClass() != o.getClass())
-			return false;
+		if (this == o) return true;
+		if (o == null || getClass() != o.getClass()) return false;
 
 		ActiveScheduleEntity that = (ActiveScheduleEntity) o;
 
-		if (!id.equals(that.id))
-			return false;
-		if (!appId.equals(that.appId))
-			return false;
-		if (!instanceMinCount.equals(that.instanceMinCount))
-			return false;
-		if (!instanceMaxCount.equals(that.instanceMaxCount))
-			return false;
-		if (initialMinInstanceCount != null ? !initialMinInstanceCount.equals(that.initialMinInstanceCount)
-				: that.initialMinInstanceCount != null)
-			return false;
-		return status.equals(that.status);
-
+		if (!id.equals(that.id)) return false;
+		if (!appId.equals(that.appId)) return false;
+		if (!instanceMinCount.equals(that.instanceMinCount)) return false;
+		if (!instanceMaxCount.equals(that.instanceMaxCount)) return false;
+		return initialMinInstanceCount != null ? initialMinInstanceCount.equals(that.initialMinInstanceCount) : that.initialMinInstanceCount == null;
 	}
 
 	@Override
@@ -129,7 +107,6 @@ public class ActiveScheduleEntity implements RowMapper<ActiveScheduleEntity> {
 		result = 31 * result + instanceMinCount.hashCode();
 		result = 31 * result + instanceMaxCount.hashCode();
 		result = 31 * result + (initialMinInstanceCount != null ? initialMinInstanceCount.hashCode() : 0);
-		result = 31 * result + status.hashCode();
 		return result;
 	}
 
@@ -137,6 +114,6 @@ public class ActiveScheduleEntity implements RowMapper<ActiveScheduleEntity> {
 	public String toString() {
 		return "ActiveScheduleEntity{" + "id=" + id + ", appId='" + appId + '\'' + ", instanceMinCount="
 				+ instanceMinCount + ", instanceMaxCount=" + instanceMaxCount + ", initialMinInstanceCount="
-				+ initialMinInstanceCount + ", status='" + status + '\'' + '}';
+				+ initialMinInstanceCount + '}';
 	}
 }

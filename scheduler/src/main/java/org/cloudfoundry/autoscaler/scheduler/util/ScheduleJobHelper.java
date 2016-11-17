@@ -32,7 +32,6 @@ public class ScheduleJobHelper {
 
 	public static final String APP_ID = "appId";
 	public static final String SCHEDULE_ID = "scheduleId";
-	public static final String SCALING_ACTION = "scalingAction";
 	public static final String INITIAL_MIN_INSTANCE_COUNT = "initialMinInstanceCount";
 	public static final String INSTANCE_MIN_COUNT = "instanceMinCount";
 	public static final String INSTANCE_MAX_COUNT = "instanceMaxCount";
@@ -140,7 +139,6 @@ public class ScheduleJobHelper {
 		activeScheduleEntity.setId(jobDataMap.getLongValue(SCHEDULE_ID));
 		activeScheduleEntity.setInstanceMinCount(jobDataMap.getIntValue(INSTANCE_MIN_COUNT));
 		activeScheduleEntity.setInstanceMaxCount(jobDataMap.getIntValue(INSTANCE_MAX_COUNT));
-		activeScheduleEntity.setStatus(jobDataMap.getString(SCALING_ACTION));
 
 		// Initial min instance count can be null
 		activeScheduleEntity.setInitialMinInstanceCount((Integer) jobDataMap.get(INITIAL_MIN_INSTANCE_COUNT));

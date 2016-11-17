@@ -139,7 +139,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		Mockito.verify(activeScheduleDao, Mockito.atLeastOnce()).create(activeScheduleEntity);
 		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 
-		String expectedMessage = messageBundleResourceHelper.lookupMessage("scalingengine.notification.success", appId,
+		String expectedMessage = messageBundleResourceHelper.lookupMessage("scalingengine.notification.activeschedule.start", appId,
 				scheduleId, JobActionEnum.START);
 		assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), is(Level.INFO));
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
@@ -156,7 +156,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		String appId = activeScheduleEntity.getAppId();
 		Long scheduleId = activeScheduleEntity.getId();
 
-		embeddedTomcatUtil.setup(appId, scheduleId, 200, null);
+		embeddedTomcatUtil.setup(appId, scheduleId, 204, null);
 
 		ArgumentCaptor<URL> urlArgumentCaptor = ArgumentCaptor.forClass(URL.class);
 		ArgumentCaptor<ActiveScheduleEntity> activeScheduleEntityArgumentCaptor = ArgumentCaptor
@@ -170,7 +170,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		Mockito.verify(activeScheduleDao, Mockito.times(1)).delete(activeScheduleEntity.getId());
 		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 
-		String expectedMessage = messageBundleResourceHelper.lookupMessage("scalingengine.notification.success", appId,
+		String expectedMessage = messageBundleResourceHelper.lookupMessage("scalingengine.notification.activeschedule.remove", appId,
 				scheduleId, JobActionEnum.END);
 		assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), is(Level.INFO));
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
@@ -203,7 +203,6 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 
 		testJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(1));
 
-		// 5 times because in case of failure quartz will refire job immediately which will call create again
 		Mockito.verify(activeScheduleDao, Mockito.times(expectedNumOfJobFired)).create(activeScheduleEntity);
 
 		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
@@ -229,7 +228,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		String appId = activeScheduleEntity.getAppId();
 		Long scheduleId = activeScheduleEntity.getId();
 
-		embeddedTomcatUtil.setup(appId, scheduleId, 200, null);
+		embeddedTomcatUtil.setup(appId, scheduleId, 204, null);
 
 		Mockito.doThrow(new DatabaseValidationException("test exception")).doReturn(1).when(activeScheduleDao)
 				.delete(scheduleId);
@@ -277,7 +276,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 
 		testJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(1));
 
-		// 5 times because in case of failure quartz will refire job immediately which will call create again
+		// 5 times because in case of failure quartz will reschedule job which will call create again
 		Mockito.verify(activeScheduleDao, Mockito.times(expectedNumOfJobFired)).create(activeScheduleEntity);
 
 		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
@@ -304,7 +303,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		String appId = activeScheduleEntity.getAppId();
 		Long scheduleId = activeScheduleEntity.getId();
 
-		embeddedTomcatUtil.setup(appId, scheduleId, 200, null);
+		embeddedTomcatUtil.setup(appId, scheduleId, 204, null);
 
 		Mockito.doThrow(new DatabaseValidationException("test exception")).when(activeScheduleDao).delete(scheduleId);
 
@@ -465,7 +464,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 
 		HttpEntity<ActiveScheduleEntity> requestEntity = new HttpEntity<>(activeScheduleEntity);
 		Mockito.doThrow(new ResourceAccessException("test exception")).when(restTemplate)
-				.put(eq(scalingEngineUrl + "/v1/apps/" + appId + "/active_schedule/" + scheduleId), eq(requestEntity));
+				.put(eq(scalingEngineUrl + "/v1/apps/" + appId + "/active_schedules/" + scheduleId), eq(requestEntity));
 
 		TestJobListener testJobListener = new TestJobListener(2);
 		scheduler.getListenerManager().addJobListener(testJobListener);
@@ -522,7 +521,6 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		JobDataMap jobDataMap = jobDetail.getJobDataMap();
 		jobDataMap.put(ScheduleJobHelper.APP_ID, appId);
 		jobDataMap.put(ScheduleJobHelper.SCHEDULE_ID, scheduleId);
-		jobDataMap.put(ScheduleJobHelper.SCALING_ACTION, jobAction.getStatus());
 		jobDataMap.put(ScheduleJobHelper.INITIAL_MIN_INSTANCE_COUNT, 1);
 		jobDataMap.put(ScheduleJobHelper.INSTANCE_MIN_COUNT, 2);
 		jobDataMap.put(ScheduleJobHelper.INSTANCE_MAX_COUNT, 4);

@@ -59,7 +59,7 @@ public class EmbeddedTomcatUtil {
 	}
 
 	public void setup(String appId, Long scheduleId, int statusCode, String message) throws ServletException {
-		String url = "/v1/apps/" + appId + "/active_schedule/" + scheduleId;
+		String url = "/v1/apps/" + appId + "/active_schedules/" + scheduleId;
 		Tomcat.addServlet(appContext, appId, new ScalingEngineMock(statusCode, message));
 		appContext.addServletMapping(url, appId);
 
@@ -84,6 +84,17 @@ public class EmbeddedTomcatUtil {
 				response.setContentType("application/json");
 			}
 		}
+
+		@Override
+		protected void doDelete(HttpServletRequest request, HttpServletResponse response) throws IOException {
+
+			response.setStatus(this.returnStatus);
+			if (returnMessage != null && !returnMessage.isEmpty()) {
+				response.getWriter().write(returnMessage);
+				response.setContentType("application/json");
+			}
+		}
+
 	}
 
 }

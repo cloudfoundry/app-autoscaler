@@ -186,11 +186,6 @@ databaseChangeLog:
                   type: integer
                   constraints:
                     nullable: true
-              - column:
-                  name: status
-                  type: varchar(20)
-                  constraints:
-                    nullable: false
         - createIndex:
              columns:
              - column:

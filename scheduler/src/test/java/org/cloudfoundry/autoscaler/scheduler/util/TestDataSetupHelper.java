@@ -126,7 +126,6 @@ public class TestDataSetupHelper {
 		activeScheduleEntity.setId(scheduleId);
 		activeScheduleEntity.setInstanceMinCount(2);
 		activeScheduleEntity.setInstanceMaxCount(4);
-		activeScheduleEntity.setStatus(jobAction.getStatus());
 		activeScheduleEntity.setInitialMinInstanceCount(null);
 		return activeScheduleEntity;
 	}
