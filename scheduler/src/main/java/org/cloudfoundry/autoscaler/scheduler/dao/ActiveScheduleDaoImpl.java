@@ -20,8 +20,8 @@ public class ActiveScheduleDaoImpl extends JdbcDaoSupport implements ActiveSched
 	private static final String SELECT_SQL = "SELECT * FROM " + TABLE_NAME + " WHERE id=?";
 
 	private static final String INSERT_SQL = "INSERT INTO " + TABLE_NAME
-			+ "(id, app_id, instance_min_count, instance_max_count, initial_min_instance_count, status) "
-			+ "VALUES (?, ?, ?, ?, ?, ?)";
+			+ "(id, app_id, instance_min_count, instance_max_count, initial_min_instance_count) "
+			+ "VALUES (?, ?, ?, ?, ?)";
 
 	private static final String DELETE_SQL = "DELETE FROM " + TABLE_NAME + " WHERE id=?";
 
@@ -47,7 +47,7 @@ public class ActiveScheduleDaoImpl extends JdbcDaoSupport implements ActiveSched
 	public void create(ActiveScheduleEntity activeScheduleEntity) {
 		Object[] objects = new Object[] { activeScheduleEntity.getId(), activeScheduleEntity.getAppId(),
 				activeScheduleEntity.getInstanceMinCount(), activeScheduleEntity.getInstanceMaxCount(),
-				activeScheduleEntity.getInitialMinInstanceCount(), activeScheduleEntity.getStatus() };
+				activeScheduleEntity.getInitialMinInstanceCount()};
 		try {
 			getJdbcTemplate().update(INSERT_SQL, objects);
 		} catch (DataAccessException e) {

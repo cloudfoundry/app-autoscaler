@@ -383,7 +383,6 @@ public class ScheduleJobManagerTest extends TestConfiguration {
 		JobDataMap jobDataMap = expectedJobDetail.getJobDataMap();
 		assertEquals(expectedAppId, jobDataMap.get(ScheduleJobHelper.APP_ID));
 		assertEquals(expectedScheduleId, jobDataMap.get(ScheduleJobHelper.SCHEDULE_ID));
-		assertEquals(expectedJobAction.getStatus(), jobDataMap.get(ScheduleJobHelper.SCALING_ACTION));
 		assertEquals(expectedInstanceMinCount, jobDataMap.get(ScheduleJobHelper.INSTANCE_MIN_COUNT));
 		assertEquals(expectedInstanceMaxCount, jobDataMap.get(ScheduleJobHelper.INSTANCE_MAX_COUNT));
 	}

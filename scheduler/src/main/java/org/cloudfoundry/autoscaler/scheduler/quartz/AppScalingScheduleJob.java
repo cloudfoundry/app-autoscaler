@@ -60,10 +60,19 @@ abstract class AppScalingScheduleJob extends QuartzJobBean {
 		HttpEntity<ActiveScheduleEntity> requestEntity = new HttpEntity<>(activeScheduleEntity);
 
 		try {
-			String message = messageBundleResourceHelper.lookupMessage("scalingengine.notification.success", appId,
-					scheduleId, scalingAction);
-			logger.info(message);
-			restTemplate.put(scalingEngineUrl + "/v1/apps/" + appId + "/active_schedule/" + scheduleId, requestEntity);
+			String scalingEnginePathActiveSchedule = scalingEngineUrl + "/v1/apps/" + appId + "/active_schedules/" + scheduleId;
+
+			if (scalingAction == JobActionEnum.START) {
+				String message = messageBundleResourceHelper.lookupMessage("scalingengine.notification.activeschedule.start", appId,
+						scheduleId, scalingAction);
+				logger.info(message);
+				restTemplate.put(scalingEnginePathActiveSchedule, requestEntity);
+			} else {
+				String message = messageBundleResourceHelper.lookupMessage("scalingengine.notification.activeschedule.remove", appId,
+						scheduleId, scalingAction);
+				logger.info(message);
+				restTemplate.delete(scalingEnginePathActiveSchedule, requestEntity);
+			}
 		} catch (HttpStatusCodeException hce) {
 			handleResponse(activeScheduleEntity, scalingAction, hce);
 		} catch (ResourceAccessException rae) {
