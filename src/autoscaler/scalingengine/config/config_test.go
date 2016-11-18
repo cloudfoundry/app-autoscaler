@@ -109,7 +109,7 @@ cf:
 db:
   policy_db_url: test-policy-db-url
   scalingengine_db_url: test-scalingengine-db-url
-  SchedulerDbUrl: test-scheduler-db-url
+  scheduler_db_url: test-scheduler-db-url
 `)
 			})
 

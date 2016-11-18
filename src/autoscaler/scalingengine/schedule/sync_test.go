@@ -119,6 +119,7 @@ var _ = Describe("Sync", func() {
 
 			It("set the active schedule", func() {
 				fclock.WaitForWatcherAndIncrement(TestSyncInterval)
+				Eventually(buffer).Should(gbytes.Say("synchronize-active-schedules-find-missing-active-schedule-start"))
 				Eventually(engine.SetActiveScheduleCallCount).Should(Equal(1))
 				appId, schedule := engine.SetActiveScheduleArgsForCall(0)
 				Expect(appId).To(Equal("app-id-2"))
@@ -148,6 +149,7 @@ var _ = Describe("Sync", func() {
 
 			It("set the new active schedule", func() {
 				fclock.WaitForWatcherAndIncrement(TestSyncInterval)
+				Eventually(buffer).Should(gbytes.Say("synchronize-active-schedules-find-missing-active-schedule-start"))
 				Eventually(engine.SetActiveScheduleCallCount).Should(Equal(1))
 				appId, schedule := engine.SetActiveScheduleArgsForCall(0)
 				Expect(appId).To(Equal("app-id-2"))
@@ -174,6 +176,7 @@ var _ = Describe("Sync", func() {
 
 			It("set the active schedule", func() {
 				fclock.WaitForWatcherAndIncrement(TestSyncInterval)
+				Eventually(buffer).Should(gbytes.Say("synchronize-active-schedules-find-missing-active-schedule-end"))
 				Eventually(engine.RemoveActiveScheduleCallCount).Should(Equal(1))
 				appId, scheduleId := engine.RemoveActiveScheduleArgsForCall(0)
 				Expect(appId).To(Equal("app-id-2"))
