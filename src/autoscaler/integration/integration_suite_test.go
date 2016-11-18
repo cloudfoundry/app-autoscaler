@@ -3,7 +3,6 @@ package integration_test
 import (
 	"autoscaler/db"
 	"autoscaler/integration"
-	"autoscaler/integration/helper"
 	"code.cloudfoundry.org/lager"
 	"database/sql"
 	"encoding/json"
@@ -17,8 +16,11 @@ import (
 	"github.com/tedsuo/ifrit/grouper"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 )
@@ -32,14 +34,13 @@ var (
 	dbHelper              *sql.DB
 	brokerUserName        string = "username"
 	brokerPassword        string = "password"
+	brokerAuth            string
 	nodeDbUri             string = "postgres://postgres:123@127.0.0.1:5432/autoscaler"
 	golangDbUri           string = "postgres://postgres:123@127.0.0.1:5432/autoscaler?sslmode=disable"
-	testAppId             string = "testAppId"
-	testServiceInstanceId string = "testServiceInstanceId"
-	testOrgId             string = "testOrgId"
-	testSpaceId           string = "testSpaceId"
-	testBindingId         string = "testBindingId"
 	scheduler             *ghttp.Server
+	httpClient            *http.Client
+	policyTemplate        string                   = `{ "app_guid": "%s", "parameters": %s }`
+	processMap            map[string]ifrit.Process = map[string]ifrit.Process{}
 )
 
 var _ = SynchronizedBeforeSuite(func() []byte {
@@ -53,9 +54,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 }, func(encodedBuiltArtifacts []byte) {
 	err := json.Unmarshal(encodedBuiltArtifacts, &components)
 	Expect(err).NotTo(HaveOccurred())
-
 	var e error
-
 	dbUrl := golangDbUri
 	if dbUrl == "" {
 		Fail("environment variable $DBURL is not set")
@@ -65,6 +64,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	if e != nil {
 		Fail("can not connect database: " + e.Error())
 	}
+	clearDatabase()
 })
 
 var _ = AfterSuite(func() {
@@ -75,19 +75,19 @@ var _ = AfterSuite(func() {
 })
 
 var _ = BeforeEach(func() {
+	httpClient = &http.Client{}
 	scheduler = ghttp.NewServer()
 	apiServerConfPath = prepareApiServerConfig(components.Ports["apiServer"], nodeDbUri, scheduler.URL())
 	serviceBrokerConfPath = prepareServiceBrokerConfig(components.Ports["serviceBroker"], brokerUserName, brokerPassword, nodeDbUri, fmt.Sprintf("http://127.0.0.1:%d", components.Ports["apiServer"]))
-	plumbing = ginkgomon.Invoke(grouper.NewParallel(os.Kill, grouper.Members{
-		{"apiServer", components.ApiServer(apiServerConfPath)},
-		{"serviceBroker", components.ServiceBroker(serviceBrokerConfPath)},
-	}))
+	startApiServer()
+	startServiceBroker()
 	logger = lager.NewLogger("test")
 	logger.RegisterSink(lager.NewWriterSink(GinkgoWriter, lager.DEBUG))
 })
 
 var _ = AfterEach(func() {
-	helper.StopProcesses(plumbing)
+	stopAll()
+	scheduler.Close()
 
 })
 
@@ -114,7 +114,27 @@ func PreparePorts() integration.Ports {
 	}
 	return ports
 }
-
+func startApiServer() {
+	processMap["apiServer"] = ginkgomon.Invoke(grouper.NewParallel(os.Kill, grouper.Members{
+		{"apiServer", components.ApiServer(apiServerConfPath)},
+	}))
+}
+func startServiceBroker() {
+	processMap["serviceBroker"] = ginkgomon.Invoke(grouper.NewParallel(os.Kill, grouper.Members{
+		{"serviceBroker", components.ServiceBroker(serviceBrokerConfPath)},
+	}))
+}
+func stopApiServer() {
+	ginkgomon.Kill(processMap["apiServer"], 5*time.Second)
+}
+func stopAll() {
+	for _, process := range processMap {
+		if process == nil {
+			continue
+		}
+		ginkgomon.Kill(process, 5*time.Second)
+	}
+}
 func prepareServiceBrokerConfig(port int, username string, password string, dbUri string, apiServerUri string) string {
 	settingStrTemplate := `
 {
@@ -171,39 +191,71 @@ func writeStringConfig(c string) *os.File {
 	return cfg
 
 }
-func addServiceInstance(serviceInstanceId string, orgId string, spaceId string) {
-	_, err := dbHelper.Exec("INSERT INTO service_instance(service_instance_id,org_id,space_id) VALUES ($1,$2,$3)", serviceInstanceId, orgId, spaceId)
-	Expect(err).NotTo(HaveOccurred())
+func getRandomId() string {
+	return strconv.FormatInt(time.Now().UnixNano(), 10)
 }
-func addBinding(bindingId string, appId string, serviceInstanceId string, createAt time.Time) {
-	_, err := dbHelper.Exec("INSERT INTO binding(binding_id,app_id,service_instance_id,created_at) VALUES ($1,$2,$3,$4)", bindingId, appId, serviceInstanceId, createAt)
+func provisionServiceInstance(serviceInstanceId string, orgId string, spaceId string) (*http.Response, error) {
+	req, err := http.NewRequest("PUT", fmt.Sprintf("http://127.0.0.1:%d/v2/service_instances/%s", components.Ports["serviceBroker"], serviceInstanceId), strings.NewReader(fmt.Sprintf(`{"organization_guid":"%s","space_guid":"%s"}`, orgId, spaceId)))
 	Expect(err).NotTo(HaveOccurred())
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Basic "+brokerAuth)
+	return httpClient.Do(req)
 }
-func addPolicy(appId string, policyJson string, updateAt time.Time) {
-	_, err := dbHelper.Exec("INSERT INTO policy_json(app_id,policy_json,updated_at) VALUES ($1,$2,$3)", appId, policyJson, updateAt)
+func deprovisionServiceInstance(serviceInstanceId string) (*http.Response, error) {
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("http://127.0.0.1:%d/v2/service_instances/%s", components.Ports["serviceBroker"], serviceInstanceId), strings.NewReader(""))
 	Expect(err).NotTo(HaveOccurred())
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Basic "+brokerAuth)
+	return httpClient.Do(req)
 }
-func cleanPolicyJsonTable() {
-	_, err := dbHelper.Exec("DELETE FROM policy_json")
+func bindService(bindingId string, appId string, serviceInstanceId string, policyStr string) (*http.Response, error) {
+	policy := fmt.Sprintf(policyTemplate, appId, policyStr)
+	req, err := http.NewRequest("PUT", fmt.Sprintf("http://127.0.0.1:%d/v2/service_instances/%s/service_bindings/%s", components.Ports["serviceBroker"], serviceInstanceId, bindingId), strings.NewReader(policy))
 	Expect(err).NotTo(HaveOccurred())
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Basic "+brokerAuth)
+	return httpClient.Do(req)
 }
-func getNumberOfPolicyJson() int {
+func unbindService(bindingId string, appId string, serviceInstanceId string) (*http.Response, error) {
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("http://127.0.0.1:%d/v2/service_instances/%s/service_bindings/%s", components.Ports["serviceBroker"], serviceInstanceId, bindingId), strings.NewReader(fmt.Sprintf(`{"app_guid":"%s"}`, appId)))
+	Expect(err).NotTo(HaveOccurred())
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Basic "+brokerAuth)
+	return httpClient.Do(req)
+}
+
+func detachPolicy(appId string) (*http.Response, error) {
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("http://127.0.0.1:%d/v1/policies/%s", components.Ports["apiServer"], appId), strings.NewReader(""))
+	Expect(err).NotTo(HaveOccurred())
+	req.Header.Set("Content-Type", "application/json")
+	return httpClient.Do(req)
+}
+
+func getNumberOfPolicyJson(appId string) int {
 	var num int
-	err := dbHelper.QueryRow("SELECT COUNT(*) FROM policy_json").Scan(&num)
+	err := dbHelper.QueryRow("SELECT COUNT(*) FROM policy_json WHERE app_id=$1", appId).Scan(&num)
 	Expect(err).NotTo(HaveOccurred())
 	return num
 }
-func getNumberOfBinding() int {
+func getNumberOfBinding(bindingId string, appId string, serviceInstanceId string) int {
 	var num int
-	err := dbHelper.QueryRow("SELECT COUNT(*) FROM binding").Scan(&num)
+	err := dbHelper.QueryRow("SELECT COUNT(*) FROM binding WHERE binding_id=$1 AND app_id=$2 AND service_instance_id=$3 ", bindingId, appId, serviceInstanceId).Scan(&num)
 	Expect(err).NotTo(HaveOccurred())
 	return num
 }
-func getNumberOfServiceInstance() int {
+func getNumberOfServiceInstance(serviceInstanceId string, orgId string, spaceId string) int {
 	var num int
-	err := dbHelper.QueryRow("SELECT COUNT(*) FROM service_instance").Scan(&num)
+	err := dbHelper.QueryRow("SELECT COUNT(*) FROM service_instance WHERE service_instance_id=$1 AND org_id=$2 AND space_id=$3", serviceInstanceId, orgId, spaceId).Scan(&num)
 	Expect(err).NotTo(HaveOccurred())
 	return num
+}
+func removeBinding(bindingId string) {
+	_, err := dbHelper.Exec("DELETE FROM binding WHERE binding_id=$1", bindingId)
+	Expect(err).NotTo(HaveOccurred())
+}
+func removePolicy(appId string) {
+	_, err := dbHelper.Exec("DELETE FROM policy_json WHERE app_id=$1", appId)
+	Expect(err).NotTo(HaveOccurred())
 }
 func clearDatabase() {
 
