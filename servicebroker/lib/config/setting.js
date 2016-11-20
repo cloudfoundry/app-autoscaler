@@ -23,7 +23,8 @@ module.exports = function(settingsObj) {
     port: settingsObj.port,
     username: settingsObj.username,
     password: settingsObj.password,
-    apiServerUri: apiServer(settingsObj.apiServerUri)
+    apiServerUri: apiServer(settingsObj.apiServerUri),
+    httpRequestTimeout: settingsObj.httpRequestTimeout
   };
   if (settingsObj.db) {
     var dbObj = db(settingsObj.db.uri);
@@ -75,6 +76,12 @@ module.exports = function(settingsObj) {
     }
     if (typeof(settings.apiServerUri) != "string") {
       return { valid: false, message: "apiServerUri is required" };
+    }
+    if (typeof(settings.httpRequestTimeout) != "number") {
+      return { valid: false, message: "The httpRequestTimeout must be a number" };
+    }
+    if (settings.httpRequestTimeout < 0) {
+      return { valid: false, message: "The value of httpRequestTimeout must be greater than 0" };
     }
     return { valid: true }
   }

@@ -129,6 +129,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 		appId = getRandomId()
 		//add a service instance
 		resp, err := provisionServiceInstance(serviceInstanceId, orgId, spaceId)
+		defer resp.Body.Close()
 		Expect(err).NotTo(HaveOccurred())
 		Expect(resp.StatusCode).To(Equal(201))
 
@@ -143,6 +144,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 	AfterEach(func() {
 		//clean the service instance added in before each
 		resp, err := deprovisionServiceInstance(serviceInstanceId)
+		defer resp.Body.Close()
 		Expect(err).NotTo(HaveOccurred())
 		Expect(resp.StatusCode).To(Equal(200))
 		Eventually(func() int {
@@ -160,6 +162,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 			AfterEach(func() {
 				//clear the binding
 				resp, err := unbindService(bindingId, appId, serviceInstanceId)
+				defer resp.Body.Close()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(200))
 				Eventually(func() int {
@@ -167,8 +170,9 @@ var _ = Describe("Integration_Broker_Api", func() {
 				}).Should(Equal(0))
 
 			})
-			It("should return 201, save scaling rules to db and call scheduler", func() {
+			It("creates a binding,, save scaling rules to db and call scheduler", func() {
 				resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson)
+				defer resp.Body.Close()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(201))
 				Eventually(func() int {
@@ -186,9 +190,10 @@ var _ = Describe("Integration_Broker_Api", func() {
 				scheduler.RouteToHandler("PUT", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
 
 			})
-			It("should return 400, save no scaling rule to db and not call scheduler", func() {
+			It("does not create a binding", func() {
 
 				resp, err := bindService(bindingId, appId, serviceInstanceId, invalidPolicyJson)
+				defer resp.Body.Close()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(400))
 				Eventually(func() int {
@@ -203,11 +208,14 @@ var _ = Describe("Integration_Broker_Api", func() {
 		Context("Api-server is down", func() {
 			BeforeEach(func() {
 				stopApiServer()
+				_, err := attachPolicy(appId, schedulePolicyJson)
+				Expect(err).To(HaveOccurred())
 				scheduler.RouteToHandler("PUT", regPath, ghttp.RespondWith(http.StatusInternalServerError, "error"))
 
 			})
 			It("should return 500, save no scaling rule to db and call scheduler", func() {
 				resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson)
+				defer resp.Body.Close()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(500))
 				Eventually(func() int {
@@ -226,6 +234,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 			})
 			It("should return 500, save no scaling rule to db and call scheduler", func() {
 				resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson)
+				defer resp.Body.Close()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(500))
 				Eventually(func() int {
@@ -245,6 +254,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 			//do a bind first
 			scheduler.RouteToHandler("PUT", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
 			resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson)
+			defer resp.Body.Close()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(resp.StatusCode).To(Equal(201))
 			Eventually(func() int {
@@ -263,6 +273,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 			})
 			It("should return 200 ,delete binding, policy_json and call scheduler", func() {
 				resp, err := unbindService(bindingId, appId, serviceInstanceId)
+				defer resp.Body.Close()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(200))
 
@@ -279,6 +290,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 				scheduler.RouteToHandler("DELETE", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
 				//detach the appId's policy first
 				resp, err := detachPolicy(appId)
+				defer resp.Body.Close()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(200))
 				Eventually(func() int {
@@ -288,6 +300,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 			})
 			It("should return 200 ,delete the binding info and not call scheduler", func() {
 				resp, err := unbindService(bindingId, appId, serviceInstanceId)
+				defer resp.Body.Close()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(200))
 
@@ -302,6 +315,8 @@ var _ = Describe("Integration_Broker_Api", func() {
 		Context("Api-server is down", func() {
 			BeforeEach(func() {
 				stopApiServer()
+				_, err := detachPolicy(appId)
+				Expect(err).To(HaveOccurred())
 				scheduler.RouteToHandler("DELETE", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
 
 			})
@@ -317,6 +332,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 			})
 			It("should return 500 and not delete the binding info", func() {
 				resp, err := unbindService(bindingId, appId, serviceInstanceId)
+				defer resp.Body.Close()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(500))
 
@@ -345,6 +361,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 			})
 			It("should return 500 and not delete the binding info", func() {
 				resp, err := unbindService(bindingId, appId, serviceInstanceId)
+				defer resp.Body.Close()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(500))
 

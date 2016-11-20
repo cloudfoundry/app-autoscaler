@@ -8,7 +8,7 @@ module.exports = function(app, settings) {
   var logger = require(path.join(__dirname, '../logger/logger.js'));
   var models = require(path.join(__dirname, '../models'))(settings.db);
 
-  var apiServerUtil = require(path.join(__dirname, '../util/apiServerUtil.js'))(settings.apiServerUri);
+  var apiServerUtil = require(path.join(__dirname, '../util/apiServerUtil.js'))(settings.apiServerUri,settings.httpRequestTimeout);
   var messageUtil = require(path.join(__dirname, '../util/messageUtil.js'))();
 
   function commitTransaction(transaction, response, statusCode, responseBody) {

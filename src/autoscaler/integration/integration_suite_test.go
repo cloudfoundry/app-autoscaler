@@ -3,6 +3,7 @@ package integration_test
 import (
 	"autoscaler/db"
 	"autoscaler/integration"
+	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/lager"
 	"database/sql"
 	"encoding/json"
@@ -40,6 +41,7 @@ var (
 	scheduler             *ghttp.Server
 	httpClient            *http.Client
 	policyTemplate        string                   = `{ "app_guid": "%s", "parameters": %s }`
+	httpRequestTimeout    time.Duration            = 1000 * time.Millisecond
 	processMap            map[string]ifrit.Process = map[string]ifrit.Process{}
 )
 
@@ -50,10 +52,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		Ports:       PreparePorts(),
 	})
 	Expect(err).NotTo(HaveOccurred())
-	return payload
-}, func(encodedBuiltArtifacts []byte) {
-	err := json.Unmarshal(encodedBuiltArtifacts, &components)
-	Expect(err).NotTo(HaveOccurred())
+
 	var e error
 	dbUrl := golangDbUri
 	if dbUrl == "" {
@@ -65,17 +64,22 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		Fail("can not connect database: " + e.Error())
 	}
 	clearDatabase()
+
+	return payload
+}, func(encodedBuiltArtifacts []byte) {
+	err := json.Unmarshal(encodedBuiltArtifacts, &components)
+	Expect(err).NotTo(HaveOccurred())
 })
 
-var _ = AfterSuite(func() {
+var _ = SynchronizedAfterSuite(func() {
+
+}, func() {
 	if dbHelper != nil {
 		dbHelper.Close()
 	}
-
 })
-
 var _ = BeforeEach(func() {
-	httpClient = &http.Client{}
+	httpClient = cfhttp.NewCustomTimeoutClient(httpRequestTimeout)
 	scheduler = ghttp.NewServer()
 	apiServerConfPath = prepareApiServerConfig(components.Ports["apiServer"], nodeDbUri, scheduler.URL())
 	serviceBrokerConfPath = prepareServiceBrokerConfig(components.Ports["serviceBroker"], brokerUserName, brokerPassword, nodeDbUri, fmt.Sprintf("http://127.0.0.1:%d", components.Ports["apiServer"]))
@@ -125,14 +129,14 @@ func startServiceBroker() {
 	}))
 }
 func stopApiServer() {
-	ginkgomon.Kill(processMap["apiServer"], 5*time.Second)
+	ginkgomon.Interrupt(processMap["apiServer"], 5*time.Second)
 }
 func stopAll() {
 	for _, process := range processMap {
 		if process == nil {
 			continue
 		}
-		ginkgomon.Kill(process, 5*time.Second)
+		ginkgomon.Interrupt(process, 5*time.Second)
 	}
 }
 func prepareServiceBrokerConfig(port int, username string, password string, dbUri string, apiServerUri string) string {
@@ -147,10 +151,11 @@ func prepareServiceBrokerConfig(port int, username string, password string, dbUr
         "idleTimeout": 1000,
         "uri": "%s"
     },
-    "apiServerUri": "%s"
+    "apiServerUri": "%s",
+    "httpRequestTimeout" : %d
 }
   `
-	settingJonsStr := fmt.Sprintf(settingStrTemplate, port, username, password, dbUri, apiServerUri)
+	settingJonsStr := fmt.Sprintf(settingStrTemplate, port, username, password, dbUri, apiServerUri, httpRequestTimeout)
 	configFile := writeStringConfig(settingJonsStr)
 	return configFile.Name()
 }
@@ -226,6 +231,12 @@ func unbindService(bindingId string, appId string, serviceInstanceId string) (*h
 
 func detachPolicy(appId string) (*http.Response, error) {
 	req, err := http.NewRequest("DELETE", fmt.Sprintf("http://127.0.0.1:%d/v1/policies/%s", components.Ports["apiServer"], appId), strings.NewReader(""))
+	Expect(err).NotTo(HaveOccurred())
+	req.Header.Set("Content-Type", "application/json")
+	return httpClient.Do(req)
+}
+func attachPolicy(appId string, policyStr string) (*http.Response, error) {
+	req, err := http.NewRequest("PUT", fmt.Sprintf("http://127.0.0.1:%d/v1/policies/%s", components.Ports["apiServer"], appId), strings.NewReader(policyStr))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
 	return httpClient.Do(req)
