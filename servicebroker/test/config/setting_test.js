@@ -13,7 +13,8 @@ var defaultConfig = {
     "idleTimeout": 1000,
     "uri": "postgres://postgres@server:80/dbname"
   },
-  "apiServerUri": "http://apiserveruri"
+  "apiServerUri": "http://apiserveruri",
+  "httpRequestTimeout": 5000
 }
 
 var settingTmp = {};
@@ -35,6 +36,7 @@ describe('config setting Test Suite', function() {
     expect(settings.db.maxConnections).to.equal(defaultConfig.db.maxConnections);
     expect(settings.db.minConnections).to.equal(defaultConfig.db.minConnections);
     expect(settings.db.idleTimeout).to.equal(defaultConfig.db.idleTimeout);
+    expect(settings.httpRequestTimeout).to.equal(defaultConfig.httpRequestTimeout);
   });
 
   describe('validate', function() {
