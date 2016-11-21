@@ -240,4 +240,31 @@ describe('config setting Test Suite', function() {
       });
     });
   });
+
+  context('Validate httpRequestTimeout', function() {
+      context('When httpRequestTimeout is null', function() {
+        it('Should return false', function() {
+          settings.httpRequestTimeout = null;
+          expect(settings.validate().valid).to.equal(false);
+        })
+      });
+      context('When httpRequestTimeout is undefined', function() {
+        it('Should return false', function() {
+          delete settings.httpRequestTimeout
+          expect(settings.validate().valid).to.equal(false);
+        })
+      });
+      context('When httpRequestTimeout is not an integer', function() {
+        it('Should return false', function() {
+          settings.httpRequestTimeout = "1000";
+          expect(settings.validate().valid).to.equal(false);
+        })
+      });
+      context('When the httpRequestTimeout is out of range', function() {
+        it('Should return false', function() {
+          settings.httpRequestTimeout = -1
+          expect(settings.validate().valid).to.equal(false);
+        })
+      });
+    });
 });
