@@ -55,7 +55,24 @@ describe('Scheduler Utility functions', function() {
 		      done();
 		    });
 		  });
-	
+
+	  it('should fail to create schedules due to request timeout',function(done){
+		    nock(schedulerURI)
+		    .put('/v2/schedules/12349_RequestTimeout')
+		    .socketDelay(20000) // Adding a timeout of 20 Seconds
+		    .reply(204);
+		    var mockRequest = {
+		        body : fakePolicy,
+		        params : { 'app_id' : '12349_RequestTimeout' }
+		    };
+		    schedulerUtils.createOrUpdateSchedule(mockRequest,function(error){
+		      expect(error).to.not.be.null;
+		      expect(error.statusCode).to.equal(500);
+		      expect(error.code).to.equal('ESOCKETTIMEDOUT');
+		      done();
+		    });
+	  });
+
 	  it('should fail to create schedules due to internal validation error in scheduler module for app id 12347',function(done){
 		    nock(schedulerURI)
 		    .put('/v2/schedules/12347')
@@ -133,6 +150,24 @@ describe('Scheduler Utility functions', function() {
 	        done();
 	      });
 	 });
+
+	  it('should fail to delete schedules due to request timeout',function(done){
+		    nock(schedulerURI)
+		     .delete('/v2/schedules/12345_RequestTimeoutError')
+		     .socketDelay(20000) // Adding a timeout of 20 Seconds
+		     .reply(500);
+		     var mockRequest = {
+		        body : fakePolicy,
+		        params : { 'app_id' : '12345_RequestTimeoutError' }
+		    };
+		    schedulerUtils.deleteSchedules(mockRequest,function(error){
+		    console.log(error);
+		      expect(error).to.not.be.null;
+		      expect(error.statusCode).to.equal(500);
+		      expect(error.code).to.equal('ESOCKETTIMEDOUT');
+		      done();
+		    });
+	  });
 
 	  it('should fail due to an internal error with the request',function(done){
 		  	nock(schedulerURI)

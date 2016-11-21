@@ -1,5 +1,5 @@
 'use strict';
-module.exports = function(settings){
+module.exports = function(settings) {
   var request = require('request') ;
   var logger = require('../log/logger');
   var HttpStatus = require('http-status-codes');
@@ -17,7 +17,8 @@ module.exports = function(settings){
         url: schedulerURI + '/v2/schedules/' + req.params.app_id,
         method: 'PUT',
         body: req.body,
-        json: true  
+        json: true,
+        timeout: 10000
       };
       request(options, function(error, response, body) {
         if(error) {
@@ -61,7 +62,8 @@ module.exports = function(settings){
     var schedulerURI = settings.schedulerUri;
     var options = { 
       url: schedulerURI + '/v2/schedules/' + appId,
-      method: 'DELETE'
+      method: 'DELETE',
+      timeout: 10000
     };
     
     request(options, function(error, response, body) {
