@@ -75,6 +75,8 @@ var _ = SynchronizedBeforeSuite(
 
 		conf.Db.PolicyDbUrl = os.Getenv("DBURL")
 		conf.Db.ScalingEngineDbUrl = os.Getenv("DBURL")
+		conf.Db.SchedulerDbUrl = os.Getenv("DBURL")
+		conf.Synchronizer.ActiveScheduleSyncInterval = 10 * time.Minute
 
 		configFile = writeConfig(&conf)
 
@@ -88,6 +90,9 @@ var _ = SynchronizedBeforeSuite(
 		Expect(err).NotTo(HaveOccurred())
 
 		_, err = testDB.Exec("DELETE from activeschedule WHERE appid = $1", appId)
+		Expect(err).NotTo(HaveOccurred())
+
+		_, err = testDB.Exec("DELETE from app_scaling_active_schedule WHERE app_id = $1", appId)
 		Expect(err).NotTo(HaveOccurred())
 
 		policy := `

@@ -34,7 +34,13 @@ type ScalingEngineDB interface {
 	UpdateScalingCooldownExpireTime(appId string, expireAt int64) error
 	CanScaleApp(appId string) (bool, error)
 	GetActiveSchedule(appId string) (*models.ActiveSchedule, error)
+	GetActiveSchedules() (map[string]string, error)
 	SetActiveSchedule(appId string, schedule *models.ActiveSchedule) error
 	RemoveActiveSchedule(appId string) error
+	Close() error
+}
+
+type SchedulerDB interface {
+	GetActiveSchedules() (map[string]*models.ActiveSchedule, error)
 	Close() error
 }
