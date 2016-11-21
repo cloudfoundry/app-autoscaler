@@ -25,6 +25,7 @@ type scalingEngine struct {
 	cfClient        cf.CfClient
 	policyDB        db.PolicyDB
 	scalingEngineDB db.ScalingEngineDB
+	appLock         *StripedLock
 	clock           clock.Clock
 }
 
@@ -41,12 +42,16 @@ func NewScalingEngine(logger lager.Logger, cfClient cf.CfClient, policyDB db.Pol
 		cfClient:        cfClient,
 		policyDB:        policyDB,
 		scalingEngineDB: scalingEngineDB,
+		appLock:         NewStripedLock(32),
 		clock:           clock,
 	}
 }
 
 func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (int, error) {
 	logger := s.logger.WithData(lager.Data{"appId": appId})
+
+	s.appLock.GetLock(appId).Lock()
+	defer s.appLock.GetLock(appId).Unlock()
 
 	now := s.clock.Now()
 	history := &models.AppScalingHistory{
@@ -174,6 +179,9 @@ func (s *scalingEngine) ComputeNewInstances(currentInstances int, adjustment str
 func (s *scalingEngine) SetActiveSchedule(appId string, schedule *models.ActiveSchedule) error {
 	logger := s.logger.WithData(lager.Data{"appId": appId, "schedule": schedule})
 
+	s.appLock.GetLock(appId).Lock()
+	defer s.appLock.GetLock(appId).Unlock()
+
 	currentSchedule, err := s.scalingEngineDB.GetActiveSchedule(appId)
 	if err != nil {
 		logger.Error("failed-to-get-existing-active-schedule-from-database", err)
@@ -249,6 +257,9 @@ func (s *scalingEngine) SetActiveSchedule(appId string, schedule *models.ActiveS
 
 func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) error {
 	logger := s.logger.WithData(lager.Data{"appId": appId, "scheduleId": scheduleId})
+
+	s.appLock.GetLock(appId).Lock()
+	defer s.appLock.GetLock(appId).Unlock()
 
 	currentSchedule, err := s.scalingEngineDB.GetActiveSchedule(appId)
 	if err != nil {

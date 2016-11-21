@@ -11,6 +11,7 @@ import (
 	"autoscaler/db/sqldb"
 	"autoscaler/scalingengine"
 	"autoscaler/scalingengine/config"
+	"autoscaler/scalingengine/schedule"
 	"autoscaler/scalingengine/server"
 
 	"code.cloudfoundry.org/cfhttp"
@@ -78,10 +79,22 @@ func main() {
 	}
 	defer scalingEngineDB.Close()
 
+	var schedulerDB db.SchedulerDB
+	schedulerDB, err = sqldb.NewSchedulerSQLDB(conf.Db.SchedulerDbUrl, logger.Session("scheduler-db"))
+	if err != nil {
+		logger.Error("failed to connect scheduler database", err, lager.Data{"url": conf.Db.SchedulerDbUrl})
+		os.Exit(1)
+	}
+	defer schedulerDB.Close()
+
 	scalingEngine := scalingengine.NewScalingEngine(logger, cfClient, policyDB, scalingEngineDB, eClock)
-	httpServer := server.NewServer(logger, conf.Server, scalingEngineDB, scalingEngine)
+	httpServer := server.NewServer(logger.Session("http-server"), conf.Server, scalingEngineDB, scalingEngine)
+
+	synchronizer := schedule.NewActiveScheduleSychronizer(logger.Session("synchronizer"), schedulerDB, scalingEngineDB, scalingEngine,
+		conf.Synchronizer.ActiveScheduleSyncInterval, eClock)
 	members := grouper.Members{
 		{"http_server", httpServer},
+		{"schedule_synchronizer", synchronizer},
 	}
 
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))

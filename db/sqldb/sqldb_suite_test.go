@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	. "autoscaler/db/sqldb"
+	"autoscaler/db"
 	"autoscaler/models"
 
 	_ "github.com/lib/pq"
@@ -29,7 +29,7 @@ var _ = BeforeSuite(func() {
 		Fail("environment variable $DBURL is not set")
 	}
 
-	dbHelper, e = sql.Open(PostgresDriverName, dbUrl)
+	dbHelper, e = sql.Open(db.PostgresDriverName, dbUrl)
 	if e != nil {
 		Fail("can not connect database: " + e.Error())
 	}
@@ -163,5 +163,25 @@ func insertActiveSchedule(appId, scheduleId string, instanceMin, instanceMax, in
 	query := "INSERT INTO activeschedule(appid, scheduleid, instancemincount, instancemaxcount, initialmininstancecount) " +
 		" VALUES ($1, $2, $3, $4, $5)"
 	_, e := dbHelper.Exec(query, appId, scheduleId, instanceMin, instanceMax, instanceMinInitial)
+	return e
+}
+
+func cleanSchedulerActiveScheduleTable() error {
+	_, e := dbHelper.Exec("DELETE from app_scaling_active_schedule")
+	return e
+}
+
+func insertSchedulerActiveSchedule(id int, appId string, instanceMin, instanceMax, instanceMinInitial int) error {
+	var e error
+	var query string
+	if instanceMinInitial <= 0 {
+		query = "INSERT INTO app_scaling_active_schedule(id, app_id, instance_min_count, instance_max_count) " +
+			" VALUES ($1, $2, $3, $4)"
+		_, e = dbHelper.Exec(query, id, appId, instanceMin, instanceMax)
+	} else {
+		query = "INSERT INTO app_scaling_active_schedule(id, app_id, instance_min_count, instance_max_count, initial_min_instance_count) " +
+			" VALUES ($1, $2, $3, $4, $5)"
+		_, e = dbHelper.Exec(query, id, appId, instanceMin, instanceMax, instanceMinInitial)
+	}
 	return e
 }

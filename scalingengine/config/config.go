@@ -5,11 +5,14 @@ import (
 	"io"
 	"io/ioutil"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v2"
 
 	"autoscaler/cf"
 )
+
+const DefaultActiveScheduleSyncInterval time.Duration = 10 * time.Minute
 
 var defaultCfConfig = cf.CfConfig{
 	GrantType: cf.GrantTypePassword,
@@ -34,20 +37,31 @@ var defaultLoggingConfig = LoggingConfig{
 type DbConfig struct {
 	PolicyDbUrl        string `yaml:"policy_db_url"`
 	ScalingEngineDbUrl string `yaml:"scalingengine_db_url"`
+	SchedulerDbUrl     string `yaml:"scheduler_db_url"`
+}
+
+type SynchronizerConfig struct {
+	ActiveScheduleSyncInterval time.Duration `yaml:"active_schedule_sync_interval"`
+}
+
+var defaultSynchronizerConfig = SynchronizerConfig{
+	ActiveScheduleSyncInterval: DefaultActiveScheduleSyncInterval,
 }
 
 type Config struct {
-	Cf      cf.CfConfig   `yaml:"cf"`
-	Logging LoggingConfig `yaml:"logging"`
-	Server  ServerConfig  `yaml:"server"`
-	Db      DbConfig      `yaml:"db"`
+	Cf           cf.CfConfig        `yaml:"cf"`
+	Logging      LoggingConfig      `yaml:"logging"`
+	Server       ServerConfig       `yaml:"server"`
+	Db           DbConfig           `yaml:"db"`
+	Synchronizer SynchronizerConfig `yaml:"synchronizer"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
 	conf := &Config{
-		Cf:      defaultCfConfig,
-		Logging: defaultLoggingConfig,
-		Server:  defaultServerConfig,
+		Cf:           defaultCfConfig,
+		Logging:      defaultLoggingConfig,
+		Server:       defaultServerConfig,
+		Synchronizer: defaultSynchronizerConfig,
 	}
 
 	bytes, err := ioutil.ReadAll(reader)
@@ -78,6 +92,10 @@ func (c *Config) Validate() error {
 
 	if c.Db.ScalingEngineDbUrl == "" {
 		return fmt.Errorf("Configuration error: ScalingEngine DB url is empty")
+	}
+
+	if c.Db.SchedulerDbUrl == "" {
+		return fmt.Errorf("Configuration error: Scheduler DB url is empty")
 	}
 
 	return nil

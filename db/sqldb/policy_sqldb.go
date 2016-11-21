@@ -11,8 +11,6 @@ import (
 	"autoscaler/models"
 )
 
-const PostgresDriverName = "postgres"
-
 type PolicySQLDB struct {
 	url    string
 	logger lager.Logger
@@ -20,27 +18,24 @@ type PolicySQLDB struct {
 }
 
 func NewPolicySQLDB(url string, logger lager.Logger) (*PolicySQLDB, error) {
-	policyDB := &PolicySQLDB{
-		url:    url,
-		logger: logger,
-	}
-
-	var err error
-
-	policyDB.sqldb, err = sql.Open(db.PostgresDriverName, url)
+	sqldb, err := sql.Open(db.PostgresDriverName, url)
 	if err != nil {
 		logger.Error("open-policy-db", err, lager.Data{"url": url})
 		return nil, err
 	}
 
-	err = policyDB.sqldb.Ping()
+	err = sqldb.Ping()
 	if err != nil {
-		policyDB.sqldb.Close()
+		sqldb.Close()
 		logger.Error("ping-policy-db", err, lager.Data{"url": url})
 		return nil, err
 	}
 
-	return policyDB, nil
+	return &PolicySQLDB{
+		url:    url,
+		logger: logger,
+		sqldb:  sqldb,
+	}, nil
 }
 
 func (pdb *PolicySQLDB) Close() error {
@@ -92,6 +87,7 @@ func (pdb *PolicySQLDB) RetrievePolicies() ([]*model.PolicyJson, error) {
 	for rows.Next() {
 		if err = rows.Scan(&appId, &policyStr); err != nil {
 			pdb.logger.Error("scan-policy-from-search-result", err)
+			return nil, err
 		}
 		policyJson := model.PolicyJson{
 			AppId:     appId,
