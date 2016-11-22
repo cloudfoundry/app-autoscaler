@@ -172,18 +172,18 @@ var getSpecificDateSchema = function() {
   return schema;
 }
 
+var initSchema = function() {
+  validator.addSchema(getSpecificDateSchema(), '/specific_date');
+  validator.addSchema(getRecurringSchema(),'/recurring_schedule');
+  validator.addSchema(getScheduleSchema(),'/schedules');
+  validator.addSchema(getScalingRuleSchema(),'/scaling_rules');
+  return getPolicySchema();
+}
+
+var policySchema = initSchema();
 
 exports.validatePolicy = function validatePolicy(inputJson,callback) {
   if(callback) {
-    var specificDateSchema = getSpecificDateSchema();
-    var recurringScheduleSchema = getRecurringSchema();
-    var scheduleSchema = getScheduleSchema();
-    var scalingRuleSchema = getScalingRuleSchema();
-    var policySchema = getPolicySchema();
-    validator.addSchema(specificDateSchema, '/specific_date');
-    validator.addSchema(recurringScheduleSchema,'/recurring_schedule');
-    validator.addSchema(scheduleSchema,'/schedules');
-    validator.addSchema(scalingRuleSchema,'/scaling_rules');
     var errors = validator.validate(inputJson, policySchema).errors;
     callback(errors);
   }
