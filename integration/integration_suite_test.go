@@ -36,8 +36,7 @@ var (
 	brokerUserName        string = "username"
 	brokerPassword        string = "password"
 	brokerAuth            string
-	nodeDbUri             string = "postgres://postgres:123@127.0.0.1:5432/autoscaler"
-	golangDbUri           string = "postgres://postgres:123@127.0.0.1:5432/autoscaler?sslmode=disable"
+	dbUrl                 string
 	scheduler             *ghttp.Server
 	httpClient            *http.Client
 	policyTemplate        string                   = `{ "app_guid": "%s", "parameters": %s }`
@@ -54,7 +53,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	Expect(err).NotTo(HaveOccurred())
 
 	var e error
-	dbUrl := golangDbUri
+	dbUrl = os.Getenv("DBURL")
 	if dbUrl == "" {
 		Fail("environment variable $DBURL is not set")
 	}
@@ -81,8 +80,8 @@ var _ = SynchronizedAfterSuite(func() {
 var _ = BeforeEach(func() {
 	httpClient = cfhttp.NewCustomTimeoutClient(httpRequestTimeout)
 	scheduler = ghttp.NewServer()
-	apiServerConfPath = prepareApiServerConfig(components.Ports["apiServer"], nodeDbUri, scheduler.URL())
-	serviceBrokerConfPath = prepareServiceBrokerConfig(components.Ports["serviceBroker"], brokerUserName, brokerPassword, nodeDbUri, fmt.Sprintf("http://127.0.0.1:%d", components.Ports["apiServer"]))
+	apiServerConfPath = prepareApiServerConfig(components.Ports["apiServer"], dbUrl, scheduler.URL())
+	serviceBrokerConfPath = prepareServiceBrokerConfig(components.Ports["serviceBroker"], brokerUserName, brokerPassword, dbUrl, fmt.Sprintf("http://127.0.0.1:%d", components.Ports["apiServer"]))
 	startApiServer()
 	startServiceBroker()
 	logger = lager.NewLogger("test")
