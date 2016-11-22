@@ -82,7 +82,6 @@ cf:
   secret: client-secret
 server:
   port: 8989
-  enable_ssl: false
 logging:
   level: DebuG
 db:
@@ -109,7 +108,6 @@ ssl:
 				Expect(conf.Cf.Secret).To(Equal("client-secret"))
 
 				Expect(conf.Server.Port).To(Equal(8989))
-				Expect(conf.Server.EnableSSL).To(BeFalse())
 
 				Expect(conf.Logging.Level).To(Equal("debug"))
 
@@ -141,7 +139,6 @@ db:
 
 				Expect(conf.Cf.GrantType).To(Equal(cf.GrantTypePassword))
 				Expect(conf.Server.Port).To(Equal(8080))
-				Expect(conf.Server.EnableSSL).To(BeTrue())
 				Expect(conf.Logging.Level).To(Equal(DefaultLoggingLevel))
 				Expect(conf.Collector.RefreshInterval).To(Equal(DefaultRefreshInterval))
 				Expect(conf.Collector.PollInterval).To(Equal(DefaultPollInterval))

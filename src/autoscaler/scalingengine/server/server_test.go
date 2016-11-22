@@ -29,8 +29,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	port := 2222 + GinkgoParallelNode()
 	conf := &config.Config{
 		Server: config.ServerConfig{
-			Port:      port,
-			EnableSSL: false,
+			Port: port,
 		},
 	}
 	scalingEngineDB := &fakes.FakeScalingEngineDB{}

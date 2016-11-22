@@ -20,13 +20,11 @@ var defaultCfConfig = cf.CfConfig{
 }
 
 type ServerConfig struct {
-	Port      int  `yaml:"port"`
-	EnableSSL bool `yaml:"enable_ssl"`
+	Port int `yaml:"port"`
 }
 
 var defaultServerConfig = ServerConfig{
-	Port:      8080,
-	EnableSSL: true,
+	Port: 8080,
 }
 
 type LoggingConfig struct {

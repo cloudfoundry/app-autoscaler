@@ -43,7 +43,7 @@ func NewServer(logger lager.Logger, conf *config.Config, scalingEngineDB db.Scal
 	addr := fmt.Sprintf("0.0.0.0:%d", conf.Server.Port)
 	logger.Info("new-http-server", lager.Data{"serverConfig": conf.Server})
 
-	if conf.Server.EnableSSL {
+	if (conf.SSL.KeyFile != "") && (conf.SSL.CertFile != "") {
 		tlsConfig, err := cfhttp.NewTLSConfig(conf.SSL.CertFile, conf.SSL.KeyFile, conf.SSL.CACertFile)
 		if err != nil {
 			logger.Error("failed-new-server-new-tls-confilg", err, lager.Data{"sslConfig": conf.SSL})

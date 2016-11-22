@@ -32,8 +32,7 @@ var _ = BeforeSuite(func() {
 	consumer := &fakes.FakeNoaaConsumer{}
 	conf := &config.Config{
 		Server: config.ServerConfig{
-			Port:      port,
-			EnableSSL: false,
+			Port: port,
 		},
 	}
 	database := &fakes.FakeInstanceMetricsDB{}
