@@ -90,6 +90,10 @@ db:
 collector:
   refresh_interval: 20s
   poll_interval: 10s
+ssl: 
+  key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
+  cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
+  ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 `)
 			})
 
@@ -112,6 +116,10 @@ collector:
 
 				Expect(conf.Collector.RefreshInterval).To(Equal(20 * time.Second))
 				Expect(conf.Collector.PollInterval).To(Equal(10 * time.Second))
+
+				Expect(conf.SSL.KeyFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/server.key"))
+				Expect(conf.SSL.CertFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/server.crt"))
+				Expect(conf.SSL.CACertFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/ca.crt"))
 			})
 		})
 
