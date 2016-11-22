@@ -101,7 +101,12 @@ func main() {
 
 		return nil
 	})
-	httpServer := server.NewServer(logger, conf.Server, cfClient, noaa, instanceMetricsDB)
+
+	httpServer, err := server.NewServer(logger, conf, cfClient, noaa, instanceMetricsDB)
+	if err != nil {
+		logger.Error("failed to create http server", err)
+		os.Exit(1)
+	}
 
 	members := grouper.Members{
 		{"collector", collectServer},

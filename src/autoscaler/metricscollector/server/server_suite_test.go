@@ -30,11 +30,17 @@ var _ = BeforeSuite(func() {
 	port := 1111
 	cfc := &fakes.FakeCfClient{}
 	consumer := &fakes.FakeNoaaConsumer{}
-	conf := config.ServerConfig{Port: port}
+	conf := &config.Config{
+		Server: config.ServerConfig{
+			Port:      port,
+			EnableSSL: false,
+		},
+	}
 	database := &fakes.FakeInstanceMetricsDB{}
-	httpServer := server.NewServer(lager.NewLogger("test"), conf, cfc, consumer, database)
 
-	var err error
+	httpServer, err := server.NewServer(lager.NewLogger("test"), conf, cfc, consumer, database)
+	Expect(err).NotTo(HaveOccurred())
+
 	serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(port))
 	Expect(err).ToNot(HaveOccurred())
 

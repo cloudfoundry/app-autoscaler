@@ -5,6 +5,7 @@ import (
 	"autoscaler/scalingengine"
 	"autoscaler/scalingengine/config"
 
+	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/mux"
 	"github.com/tedsuo/ifrit"
@@ -30,7 +31,7 @@ func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vh(w, r, vars)
 }
 
-func NewServer(logger lager.Logger, conf config.ServerConfig, scalingEngineDB db.ScalingEngineDB, scalingEngine scalingengine.ScalingEngine) ifrit.Runner {
+func NewServer(logger lager.Logger, conf *config.Config, scalingEngineDB db.ScalingEngineDB, scalingEngine scalingengine.ScalingEngine) (ifrit.Runner, error) {
 	handler := NewScalingHandler(logger, scalingEngineDB, scalingEngine)
 
 	r := mux.NewRouter()
@@ -39,6 +40,17 @@ func NewServer(logger lager.Logger, conf config.ServerConfig, scalingEngineDB db
 	r.Methods("PUT").Path(PathActiveSchedule).Handler(VarsFunc(handler.StartActiveSchedule)).Name(RouteNameActiveSchedules)
 	r.Methods("DELETE").Path(PathActiveSchedule).Handler(VarsFunc(handler.RemoveActiveSchedule)).Name(RouteNameActiveSchedules)
 
-	addr := fmt.Sprintf("0.0.0.0:%d", conf.Port)
-	return http_server.New(addr, r)
+	addr := fmt.Sprintf("0.0.0.0:%d", conf.Server.Port)
+	logger.Info("new-http-server", lager.Data{"serverConfig": conf.Server})
+
+	if conf.Server.EnableSSL {
+		tlsConfig, err := cfhttp.NewTLSConfig(conf.SSL.CertFile, conf.SSL.KeyFile, conf.SSL.CACertFile)
+		if err != nil {
+			logger.Error("failed-new-server-new-tls-confilg", err, lager.Data{"sslConfig": conf.SSL})
+			return nil, err
+		}
+		return http_server.NewTLSServer(addr, r, tlsConfig), nil
+	}
+
+	return http_server.New(addr, r), nil
 }

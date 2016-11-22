@@ -27,12 +27,18 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	return nil
 }, func(_ []byte) {
 	port := 2222 + GinkgoParallelNode()
-	conf := config.ServerConfig{Port: port}
+	conf := &config.Config{
+		Server: config.ServerConfig{
+			Port:      port,
+			EnableSSL: false,
+		},
+	}
 	scalingEngineDB := &fakes.FakeScalingEngineDB{}
 	scalingEngine := &fakes.FakeScalingEngine{}
-	httpServer := NewServer(lager.NewLogger("test"), conf, scalingEngineDB, scalingEngine)
+	httpServer, err := NewServer(lager.NewLogger("test"), conf, scalingEngineDB, scalingEngine)
+	Expect(err).NotTo(HaveOccurred())
 	server = ginkgomon.Invoke(httpServer)
-	serverUrl = fmt.Sprintf("http://127.0.0.1:%d", conf.Port)
+	serverUrl = fmt.Sprintf("http://127.0.0.1:%d", conf.Server.Port)
 })
 
 var _ = SynchronizedAfterSuite(func() {

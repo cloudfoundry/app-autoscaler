@@ -82,6 +82,7 @@ cf:
   secret: client-secret
 server:
   port: 8989
+  enable_ssl: false
 logging:
   level: DebuG
 db:
@@ -90,6 +91,10 @@ db:
 collector:
   refresh_interval: 20s
   poll_interval: 10s
+ssl: 
+  key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
+  cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
+  ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 `)
 			})
 
@@ -104,6 +109,7 @@ collector:
 				Expect(conf.Cf.Secret).To(Equal("client-secret"))
 
 				Expect(conf.Server.Port).To(Equal(8989))
+				Expect(conf.Server.EnableSSL).To(BeFalse())
 
 				Expect(conf.Logging.Level).To(Equal("debug"))
 
@@ -112,6 +118,10 @@ collector:
 
 				Expect(conf.Collector.RefreshInterval).To(Equal(20 * time.Second))
 				Expect(conf.Collector.PollInterval).To(Equal(10 * time.Second))
+
+				Expect(conf.SSL.KeyFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/server.key"))
+				Expect(conf.SSL.CertFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/server.crt"))
+				Expect(conf.SSL.CACertFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/ca.crt"))
 			})
 		})
 
@@ -131,6 +141,7 @@ db:
 
 				Expect(conf.Cf.GrantType).To(Equal(cf.GrantTypePassword))
 				Expect(conf.Server.Port).To(Equal(8080))
+				Expect(conf.Server.EnableSSL).To(BeTrue())
 				Expect(conf.Logging.Level).To(Equal(DefaultLoggingLevel))
 				Expect(conf.Collector.RefreshInterval).To(Equal(DefaultRefreshInterval))
 				Expect(conf.Collector.PollInterval).To(Equal(DefaultPollInterval))

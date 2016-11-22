@@ -10,6 +10,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"autoscaler/cf"
+	"autoscaler/models"
 )
 
 const (
@@ -23,11 +24,13 @@ var defaultCfConfig = cf.CfConfig{
 }
 
 type ServerConfig struct {
-	Port int `yaml:"port"`
+	Port      int  `yaml:"port"`
+	EnableSSL bool `yaml:"enable_ssl"`
 }
 
 var defaultServerConfig = ServerConfig{
-	Port: 8080,
+	Port:      8080,
+	EnableSSL: true,
 }
 
 type LoggingConfig struct {
@@ -59,6 +62,7 @@ type Config struct {
 	Server    ServerConfig    `yaml:"server"`
 	Db        DbConfig        `yaml:"db"`
 	Collector CollectorConfig `yaml:"collector"`
+	SSL       models.SSLCerts `yaml:"ssl"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
