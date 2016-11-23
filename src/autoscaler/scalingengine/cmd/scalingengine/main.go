@@ -88,7 +88,11 @@ func main() {
 	defer schedulerDB.Close()
 
 	scalingEngine := scalingengine.NewScalingEngine(logger, cfClient, policyDB, scalingEngineDB, eClock)
-	httpServer := server.NewServer(logger.Session("http-server"), conf.Server, scalingEngineDB, scalingEngine)
+	httpServer, err := server.NewServer(logger.Session("http-server"), conf, scalingEngineDB, scalingEngine)
+	if err != nil {
+		logger.Error("failed to create http server", err)
+		os.Exit(1)
+	}
 
 	synchronizer := schedule.NewActiveScheduleSychronizer(logger.Session("synchronizer"), schedulerDB, scalingEngineDB, scalingEngine,
 		conf.Synchronizer.ActiveScheduleSyncInterval, eClock)

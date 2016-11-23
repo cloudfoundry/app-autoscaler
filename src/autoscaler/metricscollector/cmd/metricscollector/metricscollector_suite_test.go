@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"code.cloudfoundry.org/cfhttp"
 	"github.com/cloudfoundry/sonde-go/events"
 	"github.com/gogo/protobuf/proto"
 	. "github.com/onsi/ginkgo"
@@ -35,6 +36,7 @@ var (
 	ccNOAAUAA      *ghttp.Server
 	isTokenExpired bool
 	eLock          *sync.Mutex
+	httpClient     *http.Client
 )
 
 func TestMetricsCollector(t *testing.T) {
@@ -101,13 +103,18 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	mcPort = 7000 + GinkgoParallelNode()
 	cfg.Server.Port = mcPort
+
 	cfg.Logging.Level = "debug"
 
 	cfg.Db.InstanceMetricsDbUrl = os.Getenv("DBURL")
 	cfg.Db.PolicyDbUrl = os.Getenv("DBURL")
 
-	cfg.Collector.PollInterval = 10
-	cfg.Collector.RefreshInterval = 30
+	cfg.Collector.PollInterval = 10 * time.Second
+	cfg.Collector.RefreshInterval = 30 * time.Second
+
+	cfg.SSL.KeyFile = "testfiles/testserver.key"
+	cfg.SSL.CertFile = "testfiles/testserver.crt"
+	cfg.SSL.CACertFile = "testfiles/testca.crt"
 
 	configFile = writeConfig(&cfg)
 
@@ -131,6 +138,14 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	err = mcDB.Close()
 	Expect(err).NotTo(HaveOccurred())
+
+	tlsConfig, err := cfhttp.NewTLSConfig(cfg.SSL.CertFile, cfg.SSL.KeyFile, cfg.SSL.CACertFile)
+	Expect(err).NotTo(HaveOccurred())
+	httpClient = &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: tlsConfig,
+		},
+	}
 
 })
 

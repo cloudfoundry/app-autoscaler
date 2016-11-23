@@ -6,6 +6,7 @@ import (
 	"autoscaler/models"
 	"autoscaler/scalingengine/config"
 
+	"code.cloudfoundry.org/cfhttp"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
@@ -36,6 +37,7 @@ var (
 	configFile *os.File
 	ccUAA      *ghttp.Server
 	appId      string
+	httpClient *http.Client
 )
 
 var _ = SynchronizedBeforeSuite(
@@ -78,6 +80,10 @@ var _ = SynchronizedBeforeSuite(
 		conf.Db.SchedulerDbUrl = os.Getenv("DBURL")
 		conf.Synchronizer.ActiveScheduleSyncInterval = 10 * time.Minute
 
+		conf.SSL.KeyFile = "testfiles/testserver.key"
+		conf.SSL.CertFile = "testfiles/testserver.crt"
+		conf.SSL.CACertFile = "testfiles/testca.crt"
+
 		configFile = writeConfig(&conf)
 
 		testDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
@@ -105,6 +111,14 @@ var _ = SynchronizedBeforeSuite(
 
 		err = testDB.Close()
 		Expect(err).NotTo(HaveOccurred())
+
+		tlsConfig, err := cfhttp.NewTLSConfig(conf.SSL.CertFile, conf.SSL.KeyFile, conf.SSL.CACertFile)
+		Expect(err).NotTo(HaveOccurred())
+		httpClient = &http.Client{
+			Transport: &http.Transport{
+				TLSClientConfig: tlsConfig,
+			},
+		}
 
 	})
 

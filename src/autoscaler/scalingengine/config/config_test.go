@@ -76,6 +76,10 @@ db:
   scheduler_db_url: test-scheduler-db-url
 synchronizer:
   active_schedule_sync_interval: 300s  
+ssl: 
+  key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
+  cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
+  ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt  
 `)
 			})
 
@@ -98,6 +102,11 @@ synchronizer:
 				Expect(conf.Db.SchedulerDbUrl).To(Equal("test-scheduler-db-url"))
 
 				Expect(conf.Synchronizer.ActiveScheduleSyncInterval).To(Equal(5 * time.Minute))
+
+				Expect(conf.SSL.KeyFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/server.key"))
+				Expect(conf.SSL.CertFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/server.crt"))
+				Expect(conf.SSL.CACertFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/ca.crt"))
+
 			})
 		})
 

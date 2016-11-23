@@ -10,6 +10,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"autoscaler/cf"
+	"autoscaler/models"
 )
 
 const (
@@ -59,6 +60,7 @@ type Config struct {
 	Server    ServerConfig    `yaml:"server"`
 	Db        DbConfig        `yaml:"db"`
 	Collector CollectorConfig `yaml:"collector"`
+	SSL       models.SSLCerts `yaml:"ssl"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {

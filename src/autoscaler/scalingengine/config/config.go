@@ -10,6 +10,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"autoscaler/cf"
+	"autoscaler/models"
 )
 
 const DefaultActiveScheduleSyncInterval time.Duration = 10 * time.Minute
@@ -54,6 +55,7 @@ type Config struct {
 	Server       ServerConfig       `yaml:"server"`
 	Db           DbConfig           `yaml:"db"`
 	Synchronizer SynchronizerConfig `yaml:"synchronizer"`
+	SSL          models.SSLCerts    `yaml:"ssl"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
