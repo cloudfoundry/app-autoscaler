@@ -103,6 +103,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	mcPort = 7000 + GinkgoParallelNode()
 	cfg.Server.Port = mcPort
+	cfg.Server.TLS.KeyFile = "testfiles/testserver.key"
+	cfg.Server.TLS.CertFile = "testfiles/testserver.crt"
+	cfg.Server.TLS.CACertFile = "testfiles/testca.crt"
 
 	cfg.Logging.Level = "debug"
 
@@ -111,10 +114,6 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	cfg.Collector.PollInterval = 10 * time.Second
 	cfg.Collector.RefreshInterval = 30 * time.Second
-
-	cfg.SSL.KeyFile = "testfiles/testserver.key"
-	cfg.SSL.CertFile = "testfiles/testserver.crt"
-	cfg.SSL.CACertFile = "testfiles/testca.crt"
 
 	configFile = writeConfig(&cfg)
 
@@ -139,7 +138,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	err = mcDB.Close()
 	Expect(err).NotTo(HaveOccurred())
 
-	tlsConfig, err := cfhttp.NewTLSConfig(cfg.SSL.CertFile, cfg.SSL.KeyFile, cfg.SSL.CACertFile)
+	tlsConfig, err := cfhttp.NewTLSConfig(cfg.Server.TLS.CertFile, cfg.Server.TLS.KeyFile, cfg.Server.TLS.CACertFile)
 	Expect(err).NotTo(HaveOccurred())
 	httpClient = &http.Client{
 		Transport: &http.Transport{

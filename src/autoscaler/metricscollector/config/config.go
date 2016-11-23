@@ -24,7 +24,8 @@ var defaultCfConfig = cf.CfConfig{
 }
 
 type ServerConfig struct {
-	Port int `yaml:"port"`
+	Port int             `yaml:"port"`
+	TLS  models.TLSCerts `yaml:"tls"`
 }
 
 var defaultServerConfig = ServerConfig{
@@ -60,7 +61,6 @@ type Config struct {
 	Server    ServerConfig    `yaml:"server"`
 	Db        DbConfig        `yaml:"db"`
 	Collector CollectorConfig `yaml:"collector"`
-	SSL       models.SSLCerts `yaml:"ssl"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
