@@ -40,10 +40,10 @@ func NewServer(logger lager.Logger, conf *config.Config, cfc cf.CfClient, consum
 	addr := fmt.Sprintf("0.0.0.0:%d", conf.Server.Port)
 	logger.Info("new-http-server", lager.Data{"serverConfig": conf.Server})
 
-	if (conf.SSL.KeyFile != "") && (conf.SSL.CertFile != "") {
-		tlsConfig, err := cfhttp.NewTLSConfig(conf.SSL.CertFile, conf.SSL.KeyFile, conf.SSL.CACertFile)
+	if (conf.Server.TLS.KeyFile != "") && (conf.Server.TLS.CertFile != "") {
+		tlsConfig, err := cfhttp.NewTLSConfig(conf.Server.TLS.CertFile, conf.Server.TLS.KeyFile, conf.Server.TLS.CACertFile)
 		if err != nil {
-			logger.Error("failed-new-server-new-tls-confilg", err, lager.Data{"sslConfig": conf.SSL})
+			logger.Error("failed-new-server-new-tls-config", err, lager.Data{"tls": conf.Server.TLS})
 			return nil, err
 		}
 		return http_server.NewTLSServer(addr, r, tlsConfig), nil

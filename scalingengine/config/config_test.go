@@ -68,6 +68,10 @@ cf:
   secret: client-secret
 server:
   port: 8989
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 logging:
   level: DeBug
 db:
@@ -75,11 +79,7 @@ db:
   scalingengine_db_url: test-scalingengine-db-url
   scheduler_db_url: test-scheduler-db-url
 synchronizer:
-  active_schedule_sync_interval: 300s  
-ssl: 
-  key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
-  cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
-  ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt  
+  active_schedule_sync_interval: 300s
 `)
 			})
 
@@ -94,6 +94,9 @@ ssl:
 				Expect(conf.Cf.Secret).To(Equal("client-secret"))
 
 				Expect(conf.Server.Port).To(Equal(8989))
+				Expect(conf.Server.TLS.KeyFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/server.key"))
+				Expect(conf.Server.TLS.CertFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/server.crt"))
+				Expect(conf.Server.TLS.CACertFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/ca.crt"))
 
 				Expect(conf.Logging.Level).To(Equal("debug"))
 
@@ -102,11 +105,6 @@ ssl:
 				Expect(conf.Db.SchedulerDbUrl).To(Equal("test-scheduler-db-url"))
 
 				Expect(conf.Synchronizer.ActiveScheduleSyncInterval).To(Equal(5 * time.Minute))
-
-				Expect(conf.SSL.KeyFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/server.key"))
-				Expect(conf.SSL.CertFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/server.crt"))
-				Expect(conf.SSL.CACertFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/ca.crt"))
-
 			})
 		})
 

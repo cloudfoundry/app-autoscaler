@@ -72,6 +72,9 @@ var _ = SynchronizedBeforeSuite(
 
 		port = 7000 + GinkgoParallelNode()
 		conf.Server.Port = port
+		conf.Server.TLS.KeyFile = "testfiles/testserver.key"
+		conf.Server.TLS.CertFile = "testfiles/testserver.crt"
+		conf.Server.TLS.CACertFile = "testfiles/testca.crt"
 
 		conf.Logging.Level = "debug"
 
@@ -79,10 +82,6 @@ var _ = SynchronizedBeforeSuite(
 		conf.Db.ScalingEngineDbUrl = os.Getenv("DBURL")
 		conf.Db.SchedulerDbUrl = os.Getenv("DBURL")
 		conf.Synchronizer.ActiveScheduleSyncInterval = 10 * time.Minute
-
-		conf.SSL.KeyFile = "testfiles/testserver.key"
-		conf.SSL.CertFile = "testfiles/testserver.crt"
-		conf.SSL.CACertFile = "testfiles/testca.crt"
 
 		configFile = writeConfig(&conf)
 
@@ -112,7 +111,7 @@ var _ = SynchronizedBeforeSuite(
 		err = testDB.Close()
 		Expect(err).NotTo(HaveOccurred())
 
-		tlsConfig, err := cfhttp.NewTLSConfig(conf.SSL.CertFile, conf.SSL.KeyFile, conf.SSL.CACertFile)
+		tlsConfig, err := cfhttp.NewTLSConfig(conf.Server.TLS.CertFile, conf.Server.TLS.KeyFile, conf.Server.TLS.CACertFile)
 		Expect(err).NotTo(HaveOccurred())
 		httpClient = &http.Client{
 			Transport: &http.Transport{

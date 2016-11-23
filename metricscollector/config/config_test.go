@@ -82,6 +82,10 @@ cf:
   secret: client-secret
 server:
   port: 8989
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 logging:
   level: DebuG
 db:
@@ -90,10 +94,6 @@ db:
 collector:
   refresh_interval: 20s
   poll_interval: 10s
-ssl: 
-  key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
-  cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
-  ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 `)
 			})
 
@@ -117,9 +117,9 @@ ssl:
 				Expect(conf.Collector.RefreshInterval).To(Equal(20 * time.Second))
 				Expect(conf.Collector.PollInterval).To(Equal(10 * time.Second))
 
-				Expect(conf.SSL.KeyFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/server.key"))
-				Expect(conf.SSL.CertFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/server.crt"))
-				Expect(conf.SSL.CACertFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/ca.crt"))
+				Expect(conf.Server.TLS.KeyFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/server.key"))
+				Expect(conf.Server.TLS.CertFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/server.crt"))
+				Expect(conf.Server.TLS.CACertFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/ca.crt"))
 			})
 		})
 
