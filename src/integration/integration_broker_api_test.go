@@ -2,11 +2,12 @@ package integration_test
 
 import (
 	"encoding/base64"
+	"net/http"
+	"regexp"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
-	"net/http"
-	"regexp"
 )
 
 var _ = Describe("Integration_Broker_Api", func() {
@@ -120,7 +121,6 @@ var _ = Describe("Integration_Broker_Api", func() {
 		}`
 	)
 	BeforeEach(func() {
-
 		brokerAuth = base64.StdEncoding.EncodeToString([]byte("username:password"))
 		serviceInstanceId = getRandomId()
 		orgId = getRandomId()
@@ -129,248 +129,158 @@ var _ = Describe("Integration_Broker_Api", func() {
 		appId = getRandomId()
 		//add a service instance
 		resp, err := provisionServiceInstance(serviceInstanceId, orgId, spaceId)
-		defer resp.Body.Close()
 		Expect(err).NotTo(HaveOccurred())
 		Expect(resp.StatusCode).To(Equal(201))
-
-		Eventually(func() int {
-			return getNumberOfBinding(bindingId, appId, serviceInstanceId)
-		}).Should(Equal(0))
-		Eventually(func() int {
-			return getNumberOfPolicyJson(appId)
-		}).Should(Equal(0))
-
+		resp.Body.Close()
 	})
+
 	AfterEach(func() {
 		//clean the service instance added in before each
 		resp, err := deprovisionServiceInstance(serviceInstanceId)
-		defer resp.Body.Close()
 		Expect(err).NotTo(HaveOccurred())
 		Expect(resp.StatusCode).To(Equal(200))
-		Eventually(func() int {
-			return getNumberOfServiceInstance(serviceInstanceId, orgId, spaceId)
-		}).Should(Equal(0))
-
+		resp.Body.Close()
 	})
-	Describe("Bind Service", func() {
 
+	Describe("Bind Service", func() {
 		Context("Policy with schedules", func() {
 			BeforeEach(func() {
 				scheduler.RouteToHandler("PUT", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
 				scheduler.RouteToHandler("DELETE", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
 			})
+
 			AfterEach(func() {
 				//clear the binding
 				resp, err := unbindService(bindingId, appId, serviceInstanceId)
-				defer resp.Body.Close()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(200))
-				Eventually(func() int {
-					return getNumberOfBinding(bindingId, appId, serviceInstanceId)
-				}).Should(Equal(0))
-
+				resp.Body.Close()
 			})
-			It("creates a binding,, save scaling rules to db and call scheduler", func() {
+
+			It("creates a binding, save scaling rules to db and call scheduler", func() {
 				resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson)
-				defer resp.Body.Close()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(201))
-				Eventually(func() int {
-					return getNumberOfBinding(bindingId, appId, serviceInstanceId)
-				}).Should(Equal(1))
-				Eventually(func() int {
-					return getNumberOfPolicyJson(appId)
-				}).Should(Equal(1))
+				resp.Body.Close()
 				Consistently(scheduler.ReceivedRequests).Should(HaveLen(1))
-
 			})
 		})
+
 		Context("Invalid policy", func() {
 			BeforeEach(func() {
 				scheduler.RouteToHandler("PUT", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
-
 			})
-			It("does not create a binding", func() {
 
+			It("does not create a binding", func() {
+				schedulerCount := len(scheduler.ReceivedRequests())
 				resp, err := bindService(bindingId, appId, serviceInstanceId, invalidPolicyJson)
-				defer resp.Body.Close()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(400))
-				Eventually(func() int {
-					return getNumberOfBinding(bindingId, appId, serviceInstanceId)
-				}).Should(Equal(0))
-				Eventually(func() int {
-					return getNumberOfPolicyJson(appId)
-				}).Should(Equal(0))
-				Consistently(scheduler.ReceivedRequests).Should(HaveLen(0))
+				resp.Body.Close()
+				Consistently(scheduler.ReceivedRequests).Should(HaveLen(schedulerCount))
 			})
 		})
-		Context("Api-server is down", func() {
+
+		Context("ApiServer is down", func() {
 			BeforeEach(func() {
 				stopApiServer()
 				_, err := attachPolicy(appId, schedulePolicyJson)
 				Expect(err).To(HaveOccurred())
 				scheduler.RouteToHandler("PUT", regPath, ghttp.RespondWith(http.StatusInternalServerError, "error"))
-
 			})
+
 			It("should return 500, save no scaling rule to db and call scheduler", func() {
+				schedulerCount := len(scheduler.ReceivedRequests())
 				resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson)
-				defer resp.Body.Close()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(500))
-				Eventually(func() int {
-					return getNumberOfBinding(bindingId, appId, serviceInstanceId)
-				}).Should(Equal(0))
-				Eventually(func() int {
-					return getNumberOfPolicyJson(appId)
-				}).Should(Equal(0))
-				Consistently(scheduler.ReceivedRequests).Should(HaveLen(0))
+				resp.Body.Close()
+				Consistently(scheduler.ReceivedRequests).Should(HaveLen(schedulerCount))
 			})
 		})
+
 		Context("Scheduler returns error", func() {
 			BeforeEach(func() {
 				scheduler.RouteToHandler("PUT", regPath, ghttp.RespondWith(http.StatusInternalServerError, "error"))
-
 			})
+
 			It("should return 500, save no scaling rule to db and call scheduler", func() {
+				schedulerCount := len(scheduler.ReceivedRequests())
 				resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson)
-				defer resp.Body.Close()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(500))
-				Eventually(func() int {
-					return getNumberOfBinding(bindingId, appId, serviceInstanceId)
-				}).Should(Equal(0))
-				Eventually(func() int {
-					return getNumberOfPolicyJson(appId)
-				}).Should(Equal(0))
-				Consistently(scheduler.ReceivedRequests).Should(HaveLen(1))
+				resp.Body.Close()
+				Consistently(scheduler.ReceivedRequests).Should(HaveLen(schedulerCount + 1))
 			})
 		})
 	})
 
-	Describe("UnBind Service", func() {
+	Describe("Unbind Service", func() {
 		BeforeEach(func() {
 			brokerAuth = base64.StdEncoding.EncodeToString([]byte("username:password"))
 			//do a bind first
 			scheduler.RouteToHandler("PUT", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
 			resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson)
-			defer resp.Body.Close()
 			Expect(err).NotTo(HaveOccurred())
 			Expect(resp.StatusCode).To(Equal(201))
-			Eventually(func() int {
-				return getNumberOfBinding(bindingId, appId, serviceInstanceId)
-			}).Should(Equal(1))
-			Eventually(func() int {
-				return getNumberOfPolicyJson(appId)
-			}).Should(Equal(1))
-			Consistently(scheduler.ReceivedRequests).Should(HaveLen(1))
-
+			defer resp.Body.Close()
 		})
-		Context("Unbind service", func() {
-			BeforeEach(func() {
-				scheduler.RouteToHandler("DELETE", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
 
-			})
-			It("should return 200 ,delete binding, policy_json and call scheduler", func() {
-				resp, err := unbindService(bindingId, appId, serviceInstanceId)
-				defer resp.Body.Close()
-				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(200))
-
-				Eventually(func() int {
-					return getNumberOfBinding(bindingId, appId, serviceInstanceId)
-				}).Should(Equal(0))
-				Eventually(func() int {
-					return getNumberOfPolicyJson(appId)
-				}).Should(Equal(0))
-			})
+		BeforeEach(func() {
+			scheduler.RouteToHandler("DELETE", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
 		})
+
+		It("should return 200 ,delete binding, policy_json and call scheduler", func() {
+			resp, err := unbindService(bindingId, appId, serviceInstanceId)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.StatusCode).To(Equal(200))
+			resp.Body.Close()
+		})
+
 		Context("Policy does not exist", func() {
 			BeforeEach(func() {
 				scheduler.RouteToHandler("DELETE", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
 				//detach the appId's policy first
 				resp, err := detachPolicy(appId)
-				defer resp.Body.Close()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(200))
-				Eventually(func() int {
-					return getNumberOfPolicyJson(appId)
-				}).Should(Equal(0))
-
+				resp.Body.Close()
 			})
+
 			It("should return 200 ,delete the binding info and not call scheduler", func() {
 				resp, err := unbindService(bindingId, appId, serviceInstanceId)
-				defer resp.Body.Close()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(200))
-
-				Eventually(func() int {
-					return getNumberOfBinding(bindingId, appId, serviceInstanceId)
-				}).Should(Equal(0))
-				Eventually(func() int {
-					return getNumberOfPolicyJson(appId)
-				}).Should(Equal(0))
+				resp.Body.Close()
 			})
 		})
-		Context("Api-server is down", func() {
+
+		Context("APIServer is down", func() {
 			BeforeEach(func() {
 				stopApiServer()
 				_, err := detachPolicy(appId)
 				Expect(err).To(HaveOccurred())
 				scheduler.RouteToHandler("DELETE", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
+			})
 
-			})
-			AfterEach(func() {
-				removeBinding(bindingId)
-				removePolicy(appId)
-				Eventually(func() int {
-					return getNumberOfBinding(bindingId, appId, serviceInstanceId)
-				}).Should(Equal(0))
-				Eventually(func() int {
-					return getNumberOfPolicyJson(appId)
-				}).Should(Equal(0))
-			})
 			It("should return 500 and not delete the binding info", func() {
 				resp, err := unbindService(bindingId, appId, serviceInstanceId)
-				defer resp.Body.Close()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(500))
-
-				Consistently(func() int {
-					return getNumberOfBinding(bindingId, appId, serviceInstanceId)
-				}).Should(Equal(1))
-				Consistently(func() int {
-					return getNumberOfPolicyJson(appId)
-				}).Should(Equal(1))
+				resp.Body.Close()
 			})
 		})
+
 		Context("Scheduler returns error", func() {
 			BeforeEach(func() {
 				scheduler.RouteToHandler("DELETE", regPath, ghttp.RespondWith(http.StatusInternalServerError, "error"))
+			})
 
-			})
-			AfterEach(func() {
-				removeBinding(bindingId)
-				removePolicy(appId)
-				Eventually(func() int {
-					return getNumberOfBinding(bindingId, appId, serviceInstanceId)
-				}).Should(Equal(0))
-				Eventually(func() int {
-					return getNumberOfPolicyJson(appId)
-				}).Should(Equal(0))
-			})
 			It("should return 500 and not delete the binding info", func() {
 				resp, err := unbindService(bindingId, appId, serviceInstanceId)
-				defer resp.Body.Close()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(500))
-
-				Consistently(func() int {
-					return getNumberOfBinding(bindingId, appId, serviceInstanceId)
-				}).Should(Equal(1))
-				Consistently(func() int {
-					return getNumberOfPolicyJson(appId)
-				}).Should(Equal(0))
+				resp.Body.Close()
 			})
 		})
 	})
