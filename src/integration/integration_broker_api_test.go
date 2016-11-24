@@ -2,6 +2,7 @@ package integration_test
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"net/http"
 	"regexp"
 
@@ -20,7 +21,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 		orgId              string
 		spaceId            string
 		appId              string
-		schedulePolicyJson string = `
+		schedulePolicyJson = []byte(`
 			{
 		   "instance_min_count":1,
 		   "instance_max_count":4,
@@ -113,13 +114,14 @@ var _ = Describe("Integration_Broker_Api", func() {
 		         }
 		      ]
 		   }
-		}`
-		invalidPolicyJson string = `
+		}`)
+		invalidPolicyJson = []byte(`
 			{
 		   "instance_min_count":10,
 		   "instance_max_count":4
-		}`
+		}`)
 	)
+
 	BeforeEach(func() {
 		brokerAuth = base64.StdEncoding.EncodeToString([]byte("username:password"))
 		serviceInstanceId = getRandomId()
@@ -157,12 +159,25 @@ var _ = Describe("Integration_Broker_Api", func() {
 				resp.Body.Close()
 			})
 
-			It("creates a binding, save scaling rules to db and call scheduler", func() {
+			It("creates a binding", func() {
 				resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(201))
 				resp.Body.Close()
 				Consistently(scheduler.ReceivedRequests).Should(HaveLen(1))
+
+				By("checking the API Server")
+				var expected map[string]interface{}
+				err = json.Unmarshal(schedulePolicyJson, &expected)
+				Expect(err).NotTo(HaveOccurred())
+
+				resp, err = getPolicy(appId)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				var actual map[string]interface{}
+				err = json.NewDecoder(resp.Body).Decode(&actual)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(actual).To(Equal(expected))
 			})
 		})
 
@@ -178,22 +193,27 @@ var _ = Describe("Integration_Broker_Api", func() {
 				Expect(resp.StatusCode).To(Equal(400))
 				resp.Body.Close()
 				Consistently(scheduler.ReceivedRequests).Should(HaveLen(schedulerCount))
+
+				By("checking the API Server")
+				resp, err = getPolicy(appId)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
 			})
 		})
 
 		Context("ApiServer is down", func() {
 			BeforeEach(func() {
 				stopApiServer()
-				_, err := attachPolicy(appId, schedulePolicyJson)
+				_, err := getPolicy(appId)
 				Expect(err).To(HaveOccurred())
 				scheduler.RouteToHandler("PUT", regPath, ghttp.RespondWith(http.StatusInternalServerError, "error"))
 			})
 
-			It("should return 500, save no scaling rule to db and call scheduler", func() {
+			It("should return 500", func() {
 				schedulerCount := len(scheduler.ReceivedRequests())
 				resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(500))
+				Expect(resp.StatusCode).To(Equal(http.StatusInternalServerError))
 				resp.Body.Close()
 				Consistently(scheduler.ReceivedRequests).Should(HaveLen(schedulerCount))
 			})
@@ -204,13 +224,18 @@ var _ = Describe("Integration_Broker_Api", func() {
 				scheduler.RouteToHandler("PUT", regPath, ghttp.RespondWith(http.StatusInternalServerError, "error"))
 			})
 
-			It("should return 500, save no scaling rule to db and call scheduler", func() {
+			It("should return 500", func() {
 				schedulerCount := len(scheduler.ReceivedRequests())
 				resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(500))
+				Expect(resp.StatusCode).To(Equal(http.StatusInternalServerError))
 				resp.Body.Close()
 				Consistently(scheduler.ReceivedRequests).Should(HaveLen(schedulerCount + 1))
+
+				By("checking the API Server")
+				resp, err = getPolicy(appId)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
 			})
 		})
 	})
@@ -222,19 +247,24 @@ var _ = Describe("Integration_Broker_Api", func() {
 			scheduler.RouteToHandler("PUT", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
 			resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(resp.StatusCode).To(Equal(201))
-			defer resp.Body.Close()
+			Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+			resp.Body.Close()
 		})
 
 		BeforeEach(func() {
 			scheduler.RouteToHandler("DELETE", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
 		})
 
-		It("should return 200 ,delete binding, policy_json and call scheduler", func() {
+		It("should return 200", func() {
 			resp, err := unbindService(bindingId, appId, serviceInstanceId)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(resp.StatusCode).To(Equal(200))
+			Expect(resp.StatusCode).To(Equal(http.StatusOK))
 			resp.Body.Close()
+
+			By("checking the API Server")
+			resp, err = getPolicy(appId)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
 		})
 
 		Context("Policy does not exist", func() {
@@ -243,14 +273,14 @@ var _ = Describe("Integration_Broker_Api", func() {
 				//detach the appId's policy first
 				resp, err := detachPolicy(appId)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(200))
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 				resp.Body.Close()
 			})
 
-			It("should return 200 ,delete the binding info and not call scheduler", func() {
+			It("should return 200", func() {
 				resp, err := unbindService(bindingId, appId, serviceInstanceId)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(200))
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 				resp.Body.Close()
 			})
 		})
@@ -263,10 +293,10 @@ var _ = Describe("Integration_Broker_Api", func() {
 				scheduler.RouteToHandler("DELETE", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
 			})
 
-			It("should return 500 and not delete the binding info", func() {
+			It("should return 500", func() {
 				resp, err := unbindService(bindingId, appId, serviceInstanceId)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(500))
+				Expect(resp.StatusCode).To(Equal(http.StatusInternalServerError))
 				resp.Body.Close()
 			})
 		})
@@ -279,8 +309,13 @@ var _ = Describe("Integration_Broker_Api", func() {
 			It("should return 500 and not delete the binding info", func() {
 				resp, err := unbindService(bindingId, appId, serviceInstanceId)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(500))
+				Expect(resp.StatusCode).To(Equal(http.StatusInternalServerError))
 				resp.Body.Close()
+
+				By("checking the API Server")
+				resp, err = getPolicy(appId)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
 			})
 		})
 	})

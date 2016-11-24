@@ -2,6 +2,7 @@ package integration_test
 
 import (
 	"autoscaler/db"
+	"bytes"
 	. "integration"
 
 	"database/sql"
@@ -43,7 +44,6 @@ var (
 	dbHelper           *sql.DB
 	scheduler          *ghttp.Server
 	httpClient         *http.Client
-	policyTemplate     string                   = `{ "app_guid": "%s", "parameters": %s }`
 	httpRequestTimeout time.Duration            = 1000 * time.Millisecond
 	processMap         map[string]ifrit.Process = map[string]ifrit.Process{}
 )
@@ -216,9 +216,14 @@ func deprovisionServiceInstance(serviceInstanceId string) (*http.Response, error
 	return httpClient.Do(req)
 }
 
-func bindService(bindingId string, appId string, serviceInstanceId string, policyStr string) (*http.Response, error) {
-	policy := fmt.Sprintf(policyTemplate, appId, policyStr)
-	req, err := http.NewRequest("PUT", fmt.Sprintf("http://127.0.0.1:%d/v2/service_instances/%s/service_bindings/%s", components.Ports[ServiceBroker], serviceInstanceId, bindingId), strings.NewReader(policy))
+func bindService(bindingId string, appId string, serviceInstanceId string, policy []byte) (*http.Response, error) {
+	rawParameters := json.RawMessage(policy)
+	bindBody := map[string]interface{}{
+		"app_guid":   appId,
+		"parameters": &rawParameters,
+	}
+	body, err := json.Marshal(bindBody)
+	req, err := http.NewRequest("PUT", fmt.Sprintf("http://127.0.0.1:%d/v2/service_instances/%s/service_bindings/%s", components.Ports[ServiceBroker], serviceInstanceId, bindingId), bytes.NewReader(body))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Basic "+brokerAuth)
@@ -233,6 +238,12 @@ func unbindService(bindingId string, appId string, serviceInstanceId string) (*h
 	return httpClient.Do(req)
 }
 
+func getPolicy(appId string) (*http.Response, error) {
+	req, err := http.NewRequest("GET", fmt.Sprintf("http://127.0.0.1:%d/v1/policies/%s", components.Ports[APIServer], appId), nil)
+	Expect(err).NotTo(HaveOccurred())
+	return httpClient.Do(req)
+}
+
 func detachPolicy(appId string) (*http.Response, error) {
 	req, err := http.NewRequest("DELETE", fmt.Sprintf("http://127.0.0.1:%d/v1/policies/%s", components.Ports[APIServer], appId), strings.NewReader(""))
 	Expect(err).NotTo(HaveOccurred())
@@ -240,8 +251,8 @@ func detachPolicy(appId string) (*http.Response, error) {
 	return httpClient.Do(req)
 }
 
-func attachPolicy(appId string, policyStr string) (*http.Response, error) {
-	req, err := http.NewRequest("PUT", fmt.Sprintf("http://127.0.0.1:%d/v1/policies/%s", components.Ports[APIServer], appId), strings.NewReader(policyStr))
+func attachPolicy(appId string, policy []byte) (*http.Response, error) {
+	req, err := http.NewRequest("PUT", fmt.Sprintf("http://127.0.0.1:%d/v1/policies/%s", components.Ports[APIServer], appId), bytes.NewReader(policy))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
 	return httpClient.Do(req)
