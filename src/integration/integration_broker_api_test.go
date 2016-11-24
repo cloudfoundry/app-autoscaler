@@ -198,6 +198,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 				resp, err = getPolicy(appId)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
+				resp.Body.Close()
 			})
 		})
 
@@ -236,6 +237,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 				resp, err = getPolicy(appId)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
+				resp.Body.Close()
 			})
 		})
 	})
@@ -265,6 +267,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 			resp, err = getPolicy(appId)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
+			resp.Body.Close()
 		})
 
 		Context("Policy does not exist", func() {
@@ -316,6 +319,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 				resp, err = getPolicy(appId)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
+				resp.Body.Close()
 			})
 		})
 	})
