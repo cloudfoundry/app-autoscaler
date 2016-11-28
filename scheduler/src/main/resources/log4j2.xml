@@ -2,7 +2,7 @@
 <!--<!DOCTYPE xml>-->
 <Configuration status="WARN" monitorInterval="30">
     <Properties>
-        <Property name="LOG_PATTERN">%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n</Property>
+        <Property name="LOG_PATTERN">{"timestamp":"%d{ISO8601}","source":"%c{1.}:%L","log_level":"%p","message":"%replace{%msg}{\"}{\\"}"}%n</Property>
         <!-- <Property name="LOG_PATH">"logs"</Property> -->
     </Properties>
     <Appenders>
