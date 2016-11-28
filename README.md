@@ -90,7 +90,10 @@ popd
 
 go install github.com/onsi/ginkgo/ginkgo
 export DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
-ginkgo -r -race -randomizeAllSpecs src/autoscaler
+pushd src/autoscaler
+./scripts/generate_test_certs.sh
+ginkgo -r -race -randomizeAllSpecs
+popd
 
 pushd scheduler
 mvn test
