@@ -1,15 +1,16 @@
 package integration
 
 import (
-	"os/exec"
-	"time"
-
 	"github.com/tedsuo/ifrit/ginkgomon"
+	"os/exec"
+	"strconv"
+	"time"
 )
 
 const (
 	APIServer     = "apiServer"
 	ServiceBroker = "serviceBroker"
+	Scheduler     = "scheduler"
 )
 
 type Executables map[string]string
@@ -69,6 +70,20 @@ func (components *Components) ApiServer(confPath string, argv ...string) *ginkgo
 		StartCheckTimeout: 10 * time.Second,
 		Command: exec.Command(
 			"node", append([]string{components.Executables[APIServer], "-c", confPath}, argv...)...,
+		),
+		Cleanup: func() {
+		},
+	})
+}
+func (components *Components) Scheduler(confPath string, argv ...string) *ginkgomon.Runner {
+
+	return ginkgomon.New(ginkgomon.Config{
+		Name:              Scheduler,
+		AnsiColorCode:     "34m",
+		StartCheck:        "Started SchedulerApplication in",
+		StartCheckTimeout: 60 * time.Second,
+		Command: exec.Command(
+			"java", append([]string{"-jar", "-Dspring.config.location=" + confPath, "-Dserver.port=" + strconv.FormatInt(int64(components.Ports[Scheduler]), 10), components.Executables[Scheduler]}, argv...)...,
 		),
 		Cleanup: func() {
 		},
