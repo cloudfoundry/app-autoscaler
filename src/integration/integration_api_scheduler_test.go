@@ -29,10 +29,10 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 		resp, err := detachPolicy(appId)
 		resp.Body.Close()
 		Expect(err).NotTo(HaveOccurred())
-		Expect(resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusNotFound).Should(Equal(true))
 	})
 	AfterEach(func() {
 		fakeScalingEngine.Close()
+		stopAll()
 	})
 	Describe("Create policy", func() {
 		Context("Policies with schedules", func() {
@@ -47,21 +47,10 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 				var expected map[string]interface{}
 				err = json.Unmarshal(policyStr, &expected)
 				Expect(err).NotTo(HaveOccurred())
-
-				resp, err = getPolicy(appId)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
-				var actual map[string]interface{}
-				err = json.NewDecoder(resp.Body).Decode(&actual)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(actual).To(Equal(expected))
-				resp.Body.Close()
+				checkResponseContent(getPolicy, appId, http.StatusOK, expected)
 
 				By("checking the Scheduler")
-				resp, err = getSchedules(appId)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
-				resp.Body.Close()
+				checkSchedule(getSchedules, appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})
 
 			})
 			It("fails with an invalid policy", func() {
@@ -96,14 +85,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 				err = json.Unmarshal(policyStr, &expected)
 				Expect(err).NotTo(HaveOccurred())
 
-				resp, err = getPolicy(appId)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
-				var actual map[string]interface{}
-				err = json.NewDecoder(resp.Body).Decode(&actual)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(actual).To(Equal(expected))
-				resp.Body.Close()
+				checkResponseContent(getPolicy, appId, http.StatusOK, expected)
 
 				By("checking the Scheduler")
 				resp, err = getSchedules(appId)
@@ -123,25 +105,6 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusCreated))
 				resp.Body.Close()
-				By("checking the API Server")
-				var expected map[string]interface{}
-				err = json.Unmarshal(policyStr, &expected)
-				Expect(err).NotTo(HaveOccurred())
-
-				resp, err = getPolicy(appId)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
-				var actual map[string]interface{}
-				err = json.NewDecoder(resp.Body).Decode(&actual)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(actual).To(Equal(expected))
-				resp.Body.Close()
-
-				By("checking the Scheduler")
-				resp, err = getSchedules(appId)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
-				resp.Body.Close()
 
 			})
 			It("updates the policy and schedules", func() {
@@ -155,21 +118,10 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 				var expected map[string]interface{}
 				err = json.Unmarshal(policyStr, &expected)
 				Expect(err).NotTo(HaveOccurred())
-
-				resp, err = getPolicy(appId)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
-				var actual map[string]interface{}
-				err = json.NewDecoder(resp.Body).Decode(&actual)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(actual).To(Equal(expected))
-				resp.Body.Close()
+				checkResponseContent(getPolicy, appId, http.StatusOK, expected)
 
 				By("checking the Scheduler")
-				resp, err = getSchedules(appId)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
-				resp.Body.Close()
+				checkSchedule(getSchedules, appId, http.StatusOK, map[string]int{"recurring_schedule": 3, "specific_date": 1})
 
 			})
 		})
@@ -194,25 +146,6 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 				resp, err := attachPolicy(appId, policyStr)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusCreated))
-				resp.Body.Close()
-				By("checking the API Server")
-				var expected map[string]interface{}
-				err = json.Unmarshal(policyStr, &expected)
-				Expect(err).NotTo(HaveOccurred())
-
-				resp, err = getPolicy(appId)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
-				var actual map[string]interface{}
-				err = json.NewDecoder(resp.Body).Decode(&actual)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(actual).To(Equal(expected))
-				resp.Body.Close()
-
-				By("checking the Scheduler")
-				resp, err = getSchedules(appId)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 				resp.Body.Close()
 
 			})

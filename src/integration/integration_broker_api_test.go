@@ -56,6 +56,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 		Expect(resp.StatusCode).To(Equal(http.StatusOK))
 		resp.Body.Close()
 		fakeScheduler.Close()
+		stopAll()
 	})
 
 	Describe("Bind Service", func() {
@@ -85,13 +86,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 				err = json.Unmarshal(schedulePolicyJson, &expected)
 				Expect(err).NotTo(HaveOccurred())
 
-				resp, err = getPolicy(appId)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
-				var actual map[string]interface{}
-				err = json.NewDecoder(resp.Body).Decode(&actual)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(actual).To(Equal(expected))
+				checkResponseContent(getPolicy, appId, http.StatusOK, expected)
 			})
 		})
 

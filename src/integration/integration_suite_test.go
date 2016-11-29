@@ -47,8 +47,8 @@ var (
 	fakeScheduler                  *ghttp.Server
 	fakeScalingEngine              *ghttp.Server
 	httpClient                     *http.Client
-	brokerApiHttpRequestTimeout    time.Duration            = 1000 * time.Millisecond
-	apiSchedulerHttpRequestTimeout time.Duration            = 5000 * time.Millisecond
+	brokerApiHttpRequestTimeout    time.Duration            = 1 * time.Second
+	apiSchedulerHttpRequestTimeout time.Duration            = 5 * time.Second
 	processMap                     map[string]ifrit.Process = map[string]ifrit.Process{}
 )
 
@@ -98,7 +98,7 @@ var _ = BeforeEach(func() {
 })
 
 var _ = AfterEach(func() {
-	stopAll()
+
 })
 
 func TestIntegration(t *testing.T) {
@@ -316,4 +316,32 @@ func clearDatabase() {
 
 	_, err = dbHelper.Exec("DELETE FROM app_scaling_specific_date_schedule")
 	Expect(err).NotTo(HaveOccurred())
+}
+
+type GetResponse func(id string) (*http.Response, error)
+
+func checkResponseContent(getResponse GetResponse, id string, expectHttpStatus int, expectResponseMap map[string]interface{}) {
+	resp, err := getResponse(id)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(resp.StatusCode).To(Equal(expectHttpStatus))
+	var actual map[string]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&actual)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(actual).To(Equal(expectResponseMap))
+	resp.Body.Close()
+}
+
+func checkSchedule(getResponse GetResponse, id string, expectHttpStatus int, expectResponseMap map[string]int) {
+	resp, err := getResponse(id)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(resp.StatusCode).To(Equal(expectHttpStatus))
+	var actual map[string]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&actual)
+	Expect(err).NotTo(HaveOccurred())
+	var schedules map[string]interface{} = actual["schedules"].(map[string]interface{})
+	var recurring []interface{} = schedules["recurring_schedule"].([]interface{})
+	var specificDate []interface{} = schedules["specific_date"].([]interface{})
+	Expect(len(specificDate)).To(Equal(expectResponseMap["specific_date"]))
+	Expect(len(recurring)).To(Equal(expectResponseMap["recurring_schedule"]))
+	resp.Body.Close()
 }
