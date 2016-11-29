@@ -203,59 +203,6 @@ var _ = Describe("Apppoller", func() {
 			})
 		})
 
-		Context("when retrieving container envelopes partially fails", func() {
-			BeforeEach(func() {
-				cfc.GetTokensReturns(cf.Tokens{AccessToken: "test-access-token"})
-
-				noaa.ContainerEnvelopesStub = func(appid string, token string) ([]*events.Envelope, error) {
-					Expect(appid).To(Equal("test-app-id"))
-					Expect(token).To(Equal("bearer test-access-token"))
-
-					if noaa.ContainerEnvelopesCallCount() >= 2 && noaa.ContainerEnvelopesCallCount() <= 4 {
-						return nil, errors.New("apppoller test error")
-					} else {
-						return []*events.Envelope{
-							&events.Envelope{
-								ContainerMetric: &events.ContainerMetric{
-									ApplicationId: proto.String("test-app-id"),
-									InstanceIndex: proto.Int32(0),
-									MemoryBytes:   proto.Uint64(1234),
-								},
-								Timestamp: &timestamp,
-							},
-						}, nil
-					}
-				}
-
-				database.SaveMetricStub = func(metric *models.AppInstanceMetric) error {
-					Expect(*metric).To(gstruct.MatchAllFields(gstruct.Fields{
-						"AppId":         Equal("test-app-id"),
-						"InstanceIndex": BeEquivalentTo(0),
-						"CollectedAt":   Equal(fclock.Now().UnixNano()),
-						"Name":          Equal(models.MetricNameMemory),
-						"Unit":          Equal(models.UnitBytes),
-						"Value":         Equal("1234"),
-						"Timestamp":     BeEquivalentTo(111111),
-					}))
-					return nil
-				}
-
-			})
-
-			It("saves successful results to database and logs the errors", func() {
-				Eventually(database.SaveMetricCallCount).Should(Equal(1))
-
-				fclock.Increment(TestPollInterval)
-				Eventually(buffer).Should(gbytes.Say("poll-metric-from-noaa"))
-				Eventually(buffer).Should(gbytes.Say("apppoller test error"))
-				Consistently(database.SaveMetricCallCount).Should(Equal(1))
-
-				fclock.Increment(TestPollInterval)
-				Eventually(database.SaveMetricCallCount).Should(Equal(2))
-
-			})
-		})
-
 		Context("when retrieving container envelopes fail, the metrics collector retries", func() {
 			BeforeEach(func() {
 				cfc.GetTokensReturns(cf.Tokens{AccessToken: "test-access-token"})
