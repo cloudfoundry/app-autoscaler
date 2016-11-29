@@ -282,16 +282,12 @@ var _ = Describe("Apppoller", func() {
 			})
 
 			It("polls container envelopes successfully; logs the retries and errors", func() {
-
-				Eventually(buffer).Should(gbytes.Say("poll-metric-from-noaa"))
-				Eventually(buffer).Should(gbytes.Say("apppoller test error"))
 				Eventually(buffer).Should(gbytes.Say("poll-metric-from-noaa-retry"))
 
-				Eventually(buffer).Should(gbytes.Say("poll-metric-from-noaa"))
-				Eventually(buffer).Should(gbytes.Say("apppoller test error"))
 				Eventually(buffer).Should(gbytes.Say("poll-metric-from-noaa-retry"))
 
 				Eventually(buffer).Should(gbytes.Say("poll-metric-get-memory-metric"))
+				Eventually(noaa.ContainerEnvelopesCallCount).Should(Equal(3))
 
 			})
 		})

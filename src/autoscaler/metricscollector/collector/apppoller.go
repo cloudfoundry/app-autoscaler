@@ -77,18 +77,18 @@ func (ap *appPoller) pollMetric() {
 	var containerEnvelopes []*events.Envelope
 	var err error
 
-	for attempt := 1; attempt <= 3; attempt++ {
-		if attempt != 0 {
-			ap.logger.Debug("poll-metric-from-noaa-retry", lager.Data{"attempt": attempt})
-		}
+	for attempt := 0; attempt < 3; attempt++ {
+		ap.logger.Debug("poll-metric-from-noaa-retry", lager.Data{"attempt": attempt + 1, "appid": ap.appId})
 
 		containerEnvelopes, err = ap.noaaConsumer.ContainerEnvelopes(ap.appId, "bearer"+" "+ap.cfc.GetTokens().AccessToken)
 
-		if err != nil {
-			ap.logger.Error("poll-metric-from-noaa", err)
-		} else {
+		if err == nil {
 			break
 		}
+	}
+
+	if err != nil {
+		ap.logger.Error("poll-metric-from-noaa", err, lager.Data{"appid": ap.appId})
 	}
 
 	metrics := models.GetInstanceMemoryMetricFromContainerEnvelopes(ap.pclock.Now().UnixNano(), ap.appId, containerEnvelopes)
