@@ -8,11 +8,6 @@ import java.sql.SQLException;
 
 import javax.sql.DataSource;
 
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.config.Configuration;
-import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.util.TestConfiguration;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataCleanupHelper;
@@ -24,12 +19,11 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class ActiveScheduleDaoImpl_FailureTest  extends TestConfiguration {
+public class ActiveScheduleDaoImpl_FailureTest extends TestConfiguration {
 
 	@Autowired
 	private ActiveScheduleDao activeScheduleDao;
@@ -42,8 +36,6 @@ public class ActiveScheduleDaoImpl_FailureTest  extends TestConfiguration {
 
 	@Before
 	public void before() throws SQLException, InterruptedException {
-		setLogLevel(Level.INFO);
-
 		Mockito.reset(dataSource);
 		Mockito.when(dataSource.getConnection()).thenThrow(new SQLException("test exception"));
 
@@ -82,19 +74,4 @@ public class ActiveScheduleDaoImpl_FailureTest  extends TestConfiguration {
 		}
 	}
 
-	private void setLogLevel(Level level) {
-		LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
-		Configuration config = ctx.getConfiguration();
-
-		LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
-		loggerConfig.removeAppender("MockAppender");
-
-		loggerConfig.setLevel(level);
-		ctx.updateLoggers();
-	}
-
-	private long getActiveSchedulesCount() {
-		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-		return jdbcTemplate.queryForObject("SELECT COUNT(1) FROM app_scaling_active_schedule", Long.class);
-	}
 }

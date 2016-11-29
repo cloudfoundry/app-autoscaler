@@ -22,6 +22,7 @@ import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationSchedules;
 import org.cloudfoundry.autoscaler.scheduler.util.TestConfiguration;
+import org.cloudfoundry.autoscaler.scheduler.util.TestDataCleanupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
 import org.hamcrest.Matchers;
@@ -63,28 +64,20 @@ public class ScheduleRestControllerTest extends TestConfiguration {
 	private MessageBundleResourceHelper messageBundleResourceHelper;
 
 	@Autowired
+	private TestDataCleanupHelper testDataCleanupHelper;
+
+	@Autowired
 	private WebApplicationContext wac;
 	private MockMvc mockMvc;
 
 	private String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
 	@Before
-	public void beforeTest() throws Exception {
-		// Clear previous schedules.
-		scheduler.clear();
+	public void before() throws Exception {
+		// Clean up data.
+		testDataCleanupHelper.cleanupData(scheduler);
 
 		mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
-		removeData();
-	}
-
-	public void removeData() throws Exception {
-		List<String> allAppIds = TestDataSetupHelper.getAllGeneratedAppIds();
-		for (String appId : allAppIds) {
-			for (SpecificDateScheduleEntity entity : specificDateScheduleDao
-					.findAllSpecificDateSchedulesByAppId(appId)) {
-				callDeleteSchedules(entity.getAppId());
-			}
-		}
 	}
 
 	@Test

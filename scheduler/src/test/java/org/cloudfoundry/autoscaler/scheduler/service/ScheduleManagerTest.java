@@ -3,26 +3,22 @@ package org.cloudfoundry.autoscaler.scheduler.service;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.eq;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.cloudfoundry.autoscaler.scheduler.dao.ActiveScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.dao.RecurringScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.dao.SpecificDateScheduleDao;
-import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
-import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.Schedules;
-import org.cloudfoundry.autoscaler.scheduler.util.JobActionEnum;
-import org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper;
+import org.cloudfoundry.autoscaler.scheduler.util.RecurringScheduleEntitiesBuilder;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleTypeEnum;
+import org.cloudfoundry.autoscaler.scheduler.util.SpecificDateScheduleEntitiesBuilder;
 import org.cloudfoundry.autoscaler.scheduler.util.TestConfiguration;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataCleanupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
@@ -34,22 +30,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
-import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
-import org.quartz.JobKey;
-import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
-import org.quartz.impl.matchers.GroupMatcher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.SpyBean;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import javax.sql.DataSource;
-
-@ActiveProfiles("ScheduleDaoMock")
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class ScheduleManagerTest extends TestConfiguration {
@@ -57,17 +43,17 @@ public class ScheduleManagerTest extends TestConfiguration {
 	@Autowired
 	private ScheduleManager scheduleManager;
 
-	@Autowired
+	@MockBean
 	private SpecificDateScheduleDao specificDateScheduleDao;
 
-	@Autowired
+	@MockBean
 	private RecurringScheduleDao recurringScheduleDao;
 
-	@SpyBean
+	@MockBean
 	private ActiveScheduleDao activeScheduleDao;
 
-	@Autowired
-	private Scheduler scheduler;
+	@MockBean
+	private ScheduleJobManager scheduleJobManager;
 
 	@Autowired
 	private MessageBundleResourceHelper messageBundleResourceHelper;
@@ -78,12 +64,9 @@ public class ScheduleManagerTest extends TestConfiguration {
 	@Autowired
 	private TestDataCleanupHelper testDataCleanupHelper;
 
-	@Autowired
-	private DataSource dataSource;
-
 	@Before
-	public void init() throws SchedulerException {
-		testDataCleanupHelper.cleanupData(scheduler);
+	public void before() throws SchedulerException {
+		testDataCleanupHelper.cleanupData();
 
 		Mockito.reset(specificDateScheduleDao);
 		Mockito.reset(recurringScheduleDao);
@@ -92,39 +75,116 @@ public class ScheduleManagerTest extends TestConfiguration {
 	@Test
 	public void testGetAllSchedules_with_no_schedules() {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		Mockito.when(specificDateScheduleDao.findAllSpecificDateSchedulesByAppId(eq(appId)))
+				.thenReturn(new ArrayList<>());
+		Mockito.when(recurringScheduleDao.findAllRecurringSchedulesByAppId(eq(appId))).thenReturn(new ArrayList<>());
+
 		Schedules scalingSchedules = scheduleManager.getAllSchedules(appId).getSchedules();
+
 		assertFalse(scalingSchedules.hasSchedules());
-
+		Mockito.verify(specificDateScheduleDao, Mockito.times(1)).findAllSpecificDateSchedulesByAppId(appId);
+		Mockito.verify(recurringScheduleDao, Mockito.times(1)).findAllRecurringSchedulesByAppId(appId);
 	}
 
 	@Test
-	public void testCreateAndGetAllSchedules() throws Exception {
+	public void testGetAllSchedules() {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
-		// Create 4 specific date schedules and no recurring schedules then get
-		// them.
-		assertCreateAndFindAllSchedules(appId, 4, 0);
+		List<SpecificDateScheduleEntity> specificDateScheduleEntities = new SpecificDateScheduleEntitiesBuilder(3)
+				.setAppid(appId).setScheduleId().build();
+		List<RecurringScheduleEntity> recurringScheduleEntities = new RecurringScheduleEntitiesBuilder(2, 2)
+				.setAppId(appId).setScheduleId().build();
 
-		appId = TestDataSetupHelper.generateAppIds(1)[0];
-		// Create no specific date schedules and 4 recurring schedules then get
-		// them.
-		assertCreateAndFindAllSchedules(appId, 0, 4);
+		Mockito.when(specificDateScheduleDao.findAllSpecificDateSchedulesByAppId(eq(appId)))
+				.thenReturn(specificDateScheduleEntities);
+		Mockito.when(recurringScheduleDao.findAllRecurringSchedulesByAppId(eq(appId)))
+				.thenReturn(recurringScheduleEntities);
 
-		appId = TestDataSetupHelper.generateAppIds(1)[0];
-		// Create 4 specific date schedules and 4 recurring schedules then get
-		// them.
-		assertCreateAndFindAllSchedules(appId, 4, 4);
+		Schedules scalingSchedules = scheduleManager.getAllSchedules(appId).getSchedules();
+
+		Mockito.verify(specificDateScheduleDao, Mockito.times(1)).findAllSpecificDateSchedulesByAppId(appId);
+		Mockito.verify(recurringScheduleDao, Mockito.times(1)).findAllRecurringSchedulesByAppId(appId);
+		assertThat("Both specific schedules are equal", scalingSchedules.getSpecificDate(),
+				is(specificDateScheduleEntities));
+		assertThat("Both recurring schedules are equal", scalingSchedules.getRecurringSchedule(),
+				is(recurringScheduleEntities));
 	}
 
 	@Test
-	public void testCreateAndGetSchedues_Timezone() {
+	public void testCreateSchedules_with_specificDateSchedule() {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		int noOfSpecificDateSchedules = 1;
+
 		Schedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, noOfSpecificDateSchedules, 0,
 				0);
-		scheduleManager.createSchedules(schedules);
-		// Create 1 specific date schedule.
-		createScheduleNotThrowAnyException(appId, 4, 0);
 
+		SpecificDateScheduleEntity specificDateScheduleEntity = new SpecificDateScheduleEntitiesBuilder(1)
+				.setAppid(appId).setScheduleId().build().get(0);
+		Mockito.when(specificDateScheduleDao.create(Mockito.anyObject())).thenReturn(specificDateScheduleEntity);
+
+		scheduleManager.createSchedules(schedules);
+
+		assertCreateSchedules(schedules, specificDateScheduleEntity, null, noOfSpecificDateSchedules, 0, 0);
+	}
+
+	@Test
+	public void testCreateSchedules_with_dayOfMonth_recurringSchedule() {
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		int noOfDOMRecurringSchedules = 1;
+		int noOfDOWRecurringSchedules = 0;
+
+		Schedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, 0, noOfDOMRecurringSchedules,
+				noOfDOWRecurringSchedules);
+
+		RecurringScheduleEntity recurringScheduleEntity = new RecurringScheduleEntitiesBuilder(1, 0).setAppId(appId)
+				.setScheduleId().build().get(0);
+		Mockito.when(recurringScheduleDao.create(Mockito.anyObject())).thenReturn(recurringScheduleEntity);
+
+		scheduleManager.createSchedules(schedules);
+
+		assertCreateSchedules(schedules, null, recurringScheduleEntity, 0, noOfDOMRecurringSchedules,
+				noOfDOWRecurringSchedules);
+	}
+
+	@Test
+	public void testCreateSchedules_with_dayOfWeek_recurringSchedule() {
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		int noOfDOMRecurringSchedules = 0;
+		int noOfDOWRecurringSchedules = 1;
+
+		Schedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, 0, noOfDOMRecurringSchedules,
+				noOfDOWRecurringSchedules);
+
+		RecurringScheduleEntity recurringScheduleEntity = new RecurringScheduleEntitiesBuilder(1, 0).setAppId(appId)
+				.setScheduleId().build().get(0);
+		Mockito.when(recurringScheduleDao.create(Mockito.anyObject())).thenReturn(recurringScheduleEntity);
+
+		scheduleManager.createSchedules(schedules);
+
+		assertCreateSchedules(schedules, null, recurringScheduleEntity, 0, noOfDOMRecurringSchedules,
+				noOfDOWRecurringSchedules);
+	}
+
+	@Test
+	public void testCreateSchedules() {
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		int noOfSpecificDateSchedules = 3;
+		int noOfDOMRecurringSchedules = 3;
+		int noOfDOWRecurringSchedules = 3;
+
+		Schedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, noOfSpecificDateSchedules,
+				noOfDOMRecurringSchedules, noOfDOWRecurringSchedules);
+
+		SpecificDateScheduleEntity specificDateScheduleEntity = new SpecificDateScheduleEntitiesBuilder(1)
+				.setAppid(appId).setScheduleId().build().get(0);
+		RecurringScheduleEntity recurringScheduleEntity = new RecurringScheduleEntitiesBuilder(1, 0).setAppId(appId)
+				.setScheduleId().build().get(0);
+		Mockito.when(specificDateScheduleDao.create(Mockito.anyObject())).thenReturn(specificDateScheduleEntity);
+		Mockito.when(recurringScheduleDao.create(Mockito.anyObject())).thenReturn(recurringScheduleEntity);
+
+		scheduleManager.createSchedules(schedules);
+
+		assertCreateSchedules(schedules, specificDateScheduleEntity, recurringScheduleEntity, noOfSpecificDateSchedules,
+				noOfDOMRecurringSchedules, noOfDOWRecurringSchedules);
 	}
 
 	@Test
@@ -132,243 +192,12 @@ public class ScheduleManagerTest extends TestConfiguration {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		Schedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, 1, 0, 0);
 
-		SpecificDateScheduleEntity entity = schedules.getSpecificDate().get(0);
-		entity.setEndDateTime(null);
+		Mockito.when(specificDateScheduleDao.create(Mockito.anyObject()))
+				.thenThrow(new DatabaseValidationException("test exception"));
 
-		assertDatabaseExceptionOnCreate(appId, schedules);
-	}
-
-	@Test
-	public void testCreateRecurringSchedule_throw_DatabaseValidationException() {
-		String appId = TestDataSetupHelper.generateAppIds(1)[0];
-
-		Schedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, 0, 1, 0);
-
-		RecurringScheduleEntity entity = schedules.getRecurringSchedule().get(0);
-		entity.setStartTime(null);
-
-		assertDatabaseExceptionOnCreate(appId, schedules);
-	}
-
-	@Test
-	public void testFindAllSpecificDateSchedule_throw_DatabaseValidationException() {
-		String appId = TestDataSetupHelper.generateAppIds(1)[0];
-		assertDatabaseExceptionOnFind(appId, ScheduleTypeEnum.SPECIFIC_DATE);
-	}
-
-	@Test
-	public void testFindAllRecurringSchedule_throw_DatabaseValidationException() {
-		String appId = TestDataSetupHelper.generateAppIds(1)[0];
-		assertDatabaseExceptionOnFind(appId, ScheduleTypeEnum.RECURRING);
-	}
-
-	@Test
-	public void testDeleteSchedules() {
-		String appId = TestDataSetupHelper.generateAppIds(1)[0];
-
-		// Create 4 specific date schedules and 4 recurring schedules then get
-		// them.
-		createScheduleNotThrowAnyException(appId, 4, 4);
-
-		// Get schedules and assert to check schedules are created
-		Schedules schedules = scheduleManager.getAllSchedules(appId).getSchedules();
-		assertSpecificDateSchedulesFoundEquals(4, schedules.getSpecificDate());
-		assertRecurringSchedulesFoundEquals(4, schedules.getRecurringSchedule());
-
-		List<ActiveScheduleEntity> activeSchedules = new ArrayList<>();
-		for (int index = 0; index < 8; index++) {
-			ActiveScheduleEntity activeScheduleEntity = TestDataSetupHelper.generateActiveScheduleEntity(appId, 1L,
-					JobActionEnum.START);
-			activeSchedules.add(activeScheduleEntity);
-		}
-		Mockito.doNothing().when(activeScheduleDao).deleteAllActiveSchedulesByAppId(appId);
-
-		scheduleManager.deleteSchedules(appId);
-
-		assertSchedulesFoundEquals(appId, 0, 0);
-
-		Mockito.verify(activeScheduleDao, Mockito.times(1)).deleteAllActiveSchedulesByAppId(appId);
-	}
-
-	@Test
-	public void testDeleteSpecificDateSchedules_throw_DatabaseValidationException() {
-		String appId = TestDataSetupHelper.generateAppIds(1)[0];
-		int specificDateSchedulesCount = 4;
-		int recurringSchedulesCount = 2;
-
-		// Create 4 specific date schedules and 2 recurring schedules.
-		createScheduleNotThrowAnyException(appId, specificDateSchedulesCount, recurringSchedulesCount);
-
-		assertSchedulesFoundEquals(appId, specificDateSchedulesCount, recurringSchedulesCount);
-		assertDatabaseExceptionOnDelete(appId, ScheduleTypeEnum.SPECIFIC_DATE);
-		assertSchedulesFoundEquals(appId, specificDateSchedulesCount, recurringSchedulesCount);
-	}
-
-	@Test
-	public void testDeleteRecurringSchedules_throw_DatabaseValidationException() {
-		String appId = TestDataSetupHelper.generateAppIds(1)[0];
-		int specificDateSchedulesCount = 2;
-		int recurringSchedulesCount = 4;
-
-		// Create 4 recurring schedules and 2 specific date schedules.
-		createScheduleNotThrowAnyException(appId, specificDateSchedulesCount, recurringSchedulesCount);
-
-		assertSchedulesFoundEquals(appId, specificDateSchedulesCount, recurringSchedulesCount);
-		assertDatabaseExceptionOnDelete(appId, ScheduleTypeEnum.RECURRING);
-		assertSchedulesFoundEquals(appId, specificDateSchedulesCount, recurringSchedulesCount);
-	}
-
-	@Test
-	public void testDeleteActiveSchedules_throw_DatabaseValidationException() {
-		String appId = TestDataSetupHelper.generateAppIds(1)[0];
-		// Create one specific date and one recurring date schedule
-		createScheduleNotThrowAnyException(appId, 1, 1);
-
-		// Create one active schedule
-		ActiveScheduleEntity activeScheduleEntity = TestDataSetupHelper.generateActiveScheduleEntity(appId, 1L,
-				JobActionEnum.START);
-		activeScheduleDao.create(activeScheduleEntity);
-
-		// Assert the count of specific date and recurring date schedule
-		assertSchedulesFoundEquals(appId, 1, 1);
-
-		// Assert there is one active schedule
-		assertThat("It should have 1 active schedules", getActiveSchedulesCount(appId), is(1L));
-
-		// Mock the exception when deleting active schedule
-		Mockito.doThrow(DatabaseValidationException.class).when(activeScheduleDao)
-				.deleteAllActiveSchedulesByAppId(appId);
-
-		try {
-			scheduleManager.deleteSchedules(appId);
-			fail("Expected failure case.");
-		} catch (SchedulerInternalException e) {
-			String message = messageBundleResourceHelper.lookupMessage("database.error.delete.failed",
-					"app_id=" + appId);
-
-			for (String errorMessage : validationErrorResult.getAllErrorMessages()) {
-				assertEquals(message, errorMessage);
-			}
-		}
-		// Assert the count of Specific date schedule and recurring date schedules is
-		// same (no schedule should be deleted because of the exception)
-		assertSchedulesFoundEquals(appId, 1, 1);
-
-		// Assert there is one active schedule
-		assertThat("It should have 1 active schedule", getActiveSchedulesCount(appId), is(1L));
-	}
-
-	private Map<JobKey, JobDetail> getSchedulerJobs(String appId, String groupName) throws SchedulerException {
-		Map<JobKey, JobDetail> scheduleJobKeyDetailMap = new HashMap<>();
-
-		for (JobKey jobKey : scheduler.getJobKeys(GroupMatcher.jobGroupEquals(groupName))) {
-			JobDetail detail = scheduler.getJobDetail(jobKey);
-			if (detail.getJobDataMap().get("appId").equals(appId)) {
-				scheduleJobKeyDetailMap.put(jobKey, detail);
-			}
-		}
-
-		return scheduleJobKeyDetailMap;
-	}
-
-	private void createScheduleNotThrowAnyException(String appId, int noOfSpecificDateSchedules,
-			int noOfRecurringSchedules) {
-
-		int noOfDOMRecurringSchedules = noOfRecurringSchedules / 2;
-		int noOfDOWRecurringSchedules = noOfRecurringSchedules - noOfDOMRecurringSchedules;
-		Schedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, noOfSpecificDateSchedules,
-				noOfDOMRecurringSchedules, noOfDOWRecurringSchedules);
-		scheduleManager.createSchedules(schedules);
-	}
-
-	private void assertCreateAndFindAllSchedules(String appId, int noOfSpecificDateSchedules,
-			int noOfRecurringSchedules) throws Exception {
-		createScheduleNotThrowAnyException(appId, noOfSpecificDateSchedules, noOfRecurringSchedules);
-
-		Schedules schedules = scheduleManager.getAllSchedules(appId).getSchedules();
-
-		assertSpecificDateSchedulesFoundEquals(noOfSpecificDateSchedules, schedules.getSpecificDate());
-		assertRecurringSchedulesFoundEquals(noOfRecurringSchedules, schedules.getRecurringSchedule());
-
-		if (schedules.getSpecificDate() != null) {
-			int expectedSpecificDateJobsToBeCreated = noOfSpecificDateSchedules * 2;
-			Map<JobKey, JobDetail> scheduleJobKeyDetailMap = getSchedulerJobs(appId,
-					ScheduleTypeEnum.SPECIFIC_DATE.getScheduleIdentifier());
-
-			// Check expected jobs created
-			assertEquals(expectedSpecificDateJobsToBeCreated, scheduleJobKeyDetailMap.size());
-
-			for (ScheduleEntity scheduleEntity : schedules.getSpecificDate()) {
-				assertCreatedJobs(scheduleJobKeyDetailMap, scheduleEntity, ScheduleTypeEnum.SPECIFIC_DATE);
-			}
-		}
-
-		if (schedules.getRecurringSchedule() != null) {
-			// Check expected jobs created
-			Map<JobKey, JobDetail> recurringScheduleJobKeyDetailMap = getSchedulerJobs(appId,
-					ScheduleTypeEnum.RECURRING.getScheduleIdentifier());
-
-			int expectedRecurringJobsToBeCreated = noOfRecurringSchedules * 2;
-			assertEquals(expectedRecurringJobsToBeCreated, recurringScheduleJobKeyDetailMap.size());
-
-			for (ScheduleEntity scheduleEntity : schedules.getRecurringSchedule()) {
-				assertCreatedJobs(recurringScheduleJobKeyDetailMap, scheduleEntity, ScheduleTypeEnum.RECURRING);
-			}
-		}
-	}
-
-	private void assertSchedulesFoundEquals(String appId, int expectedSpecificDateSchedulesCount,
-			int expectedRecurringSchedulesCount) {
-		// Get schedules and assert to check there are no schedules
-		Schedules schedules = scheduleManager.getAllSchedules(appId).getSchedules();
-		assertSpecificDateSchedulesFoundEquals(expectedSpecificDateSchedulesCount, schedules.getSpecificDate());
-		assertRecurringSchedulesFoundEquals(expectedRecurringSchedulesCount, schedules.getRecurringSchedule());
-	}
-
-	private void assertSpecificDateSchedulesFoundEquals(int expectedScheduleTobeFound,
-			List<SpecificDateScheduleEntity> foundSchedules) {
-		if (foundSchedules != null) {
-			assertEquals(expectedScheduleTobeFound, foundSchedules.size());
-		} else {
-			assertEquals(expectedScheduleTobeFound, 0);
-		}
-	}
-
-	private void assertRecurringSchedulesFoundEquals(int noOfRecurringSchedules,
-			List<RecurringScheduleEntity> recurringSchedules) {
-		if (recurringSchedules != null) {
-			assertEquals(noOfRecurringSchedules, recurringSchedules.size());
-		} else {
-			assertEquals(noOfRecurringSchedules, 0);
-		}
-
-	}
-
-	private void assertDatabaseExceptionOnFind(String appId, ScheduleTypeEnum scheduleTypeEnum) {
-		if (scheduleTypeEnum == ScheduleTypeEnum.SPECIFIC_DATE) {
-			Mockito.when(specificDateScheduleDao.findAllSpecificDateSchedulesByAppId(Mockito.anyString()))
-					.thenThrow(new DatabaseValidationException());
-		} else {
-			Mockito.when(recurringScheduleDao.findAllRecurringSchedulesByAppId(Mockito.anyString()))
-					.thenThrow(new DatabaseValidationException());
-		}
-
-		try {
-			scheduleManager.getAllSchedules(appId);
-			fail("Expected failure case.");
-		} catch (SchedulerInternalException e) {
-			String message = messageBundleResourceHelper.lookupMessage("database.error.get.failed", "app_id=" + appId);
-
-			for (String errorMessage : validationErrorResult.getAllErrorMessages()) {
-				assertEquals(message, errorMessage);
-			}
-		}
-	}
-
-	private void assertDatabaseExceptionOnCreate(String appId, Schedules schedules) {
 		try {
 			scheduleManager.createSchedules(schedules);
-			fail("Expected failure case.");
+			fail("Should fail");
 		} catch (SchedulerInternalException e) {
 			String message = messageBundleResourceHelper.lookupMessage("database.error.create.failed",
 					"app_id=" + appId);
@@ -377,19 +206,213 @@ public class ScheduleManagerTest extends TestConfiguration {
 				assertEquals(message, errorMessage);
 			}
 		}
+
+		Mockito.verify(scheduleJobManager, Mockito.never()).createSimpleJob(Mockito.anyObject());
 	}
 
-	private void assertDatabaseExceptionOnDelete(String appId, ScheduleTypeEnum scheduleTypeEnum) {
-		if (scheduleTypeEnum == ScheduleTypeEnum.SPECIFIC_DATE) {
-			Mockito.doThrow(DatabaseValidationException.class).when(specificDateScheduleDao)
-					.delete(Mockito.anyObject());
-		} else {
-			Mockito.doThrow(DatabaseValidationException.class).when(recurringScheduleDao).delete(Mockito.anyObject());
+	@Test
+	public void testCreateRecurringSchedule_throw_DatabaseValidationException() {
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		Schedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, 0, 1, 0);
+
+		Mockito.when(recurringScheduleDao.create(Mockito.anyObject()))
+				.thenThrow(new DatabaseValidationException("test exception"));
+
+		try {
+			scheduleManager.createSchedules(schedules);
+			fail("Should fail");
+		} catch (SchedulerInternalException e) {
+			String message = messageBundleResourceHelper.lookupMessage("database.error.create.failed",
+					"app_id=" + appId);
+
+			for (String errorMessage : validationErrorResult.getAllErrorMessages()) {
+				assertEquals(message, errorMessage);
+			}
 		}
+
+		Mockito.verify(scheduleJobManager, Mockito.never()).createCronJob(Mockito.anyObject());
+	}
+
+	@Test
+	public void testFindAllSpecificDateSchedule_throw_DatabaseValidationException() {
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		Mockito.when(specificDateScheduleDao.findAllSpecificDateSchedulesByAppId(Mockito.anyString()))
+				.thenThrow(new DatabaseValidationException("test exception"));
+
+		try {
+			scheduleManager.getAllSchedules("appId1");
+		} catch (SchedulerInternalException sie) {
+			String message = messageBundleResourceHelper.lookupMessage("database.error.get.failed", "app_id=" + appId);
+
+			for (String errorMessage : validationErrorResult.getAllErrorMessages()) {
+				assertEquals(message, errorMessage);
+			}
+		}
+	}
+
+	@Test
+	public void testFindAllRecurringSchedule_throw_DatabaseValidationException() {
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		Mockito.when(recurringScheduleDao.findAllRecurringSchedulesByAppId(Mockito.anyString()))
+				.thenThrow(new DatabaseValidationException("test exception"));
+
+		try {
+			scheduleManager.getAllSchedules("appId1");
+		} catch (SchedulerInternalException sie) {
+			String message = messageBundleResourceHelper.lookupMessage("database.error.get.failed", "app_id=" + appId);
+
+			for (String errorMessage : validationErrorResult.getAllErrorMessages()) {
+				assertEquals(message, errorMessage);
+			}
+		}
+	}
+
+	@Test
+	public void testDeleteSchedules() {
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+
+		List<SpecificDateScheduleEntity> specificDateScheduleEntities = new SpecificDateScheduleEntitiesBuilder(2)
+				.setAppid(appId).setScheduleId().build();
+		List<RecurringScheduleEntity> recurringScheduleEntities = new RecurringScheduleEntitiesBuilder(1, 1)
+				.setAppId(appId).setScheduleId().build();
+
+		Mockito.when(specificDateScheduleDao.findAllSpecificDateSchedulesByAppId(appId))
+				.thenReturn(specificDateScheduleEntities);
+		Mockito.when(recurringScheduleDao.findAllRecurringSchedulesByAppId(appId))
+				.thenReturn(recurringScheduleEntities);
+
+		scheduleManager.deleteSchedules(appId);
+
+		for (SpecificDateScheduleEntity specificDateScheduleEntity : specificDateScheduleEntities) {
+			Mockito.verify(specificDateScheduleDao, Mockito.times(1)).delete(specificDateScheduleEntity);
+			Mockito.verify(scheduleJobManager, Mockito.times(1)).deleteJob(specificDateScheduleEntity.getAppId(),
+					specificDateScheduleEntity.getId(), ScheduleTypeEnum.SPECIFIC_DATE);
+		}
+		for (RecurringScheduleEntity recurringScheduleEntity : recurringScheduleEntities) {
+			Mockito.verify(recurringScheduleDao, Mockito.times(1)).delete(recurringScheduleEntity);
+			Mockito.verify(scheduleJobManager, Mockito.times(1)).deleteJob(recurringScheduleEntity.getAppId(),
+					recurringScheduleEntity.getId(), ScheduleTypeEnum.RECURRING);
+		}
+		Mockito.verify(activeScheduleDao, Mockito.times(1)).deleteAllActiveSchedulesByAppId(appId);
+	}
+
+	@Test
+	public void testDeleteSchedules_without_any_schedules() {
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+
+		List<SpecificDateScheduleEntity> specificDateScheduleEntities = new ArrayList<>();
+
+		List<RecurringScheduleEntity> recurringScheduleEntities = new ArrayList<>();
+
+		Mockito.when(specificDateScheduleDao.findAllSpecificDateSchedulesByAppId(appId))
+				.thenReturn(specificDateScheduleEntities);
+		Mockito.when(recurringScheduleDao.findAllRecurringSchedulesByAppId(appId))
+				.thenReturn(recurringScheduleEntities);
+
+		scheduleManager.deleteSchedules(appId);
+
+		Mockito.verify(specificDateScheduleDao, Mockito.never()).delete(Mockito.anyObject());
+		Mockito.verify(scheduleJobManager, Mockito.never()).deleteJob(Mockito.anyString(), Mockito.anyLong(),
+				Mockito.anyObject());
+
+		Mockito.verify(recurringScheduleDao, Mockito.never()).delete(Mockito.anyObject());
+		Mockito.verify(scheduleJobManager, Mockito.never()).deleteJob(Mockito.anyString(), Mockito.anyLong(),
+				Mockito.anyObject());
+
+		Mockito.verify(activeScheduleDao, Mockito.times(1)).deleteAllActiveSchedulesByAppId(appId);
+	}
+
+	@Test
+	public void testDeleteSpecificDateSchedules_throw_DatabaseValidationException() {
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+
+		List<SpecificDateScheduleEntity> specificDateScheduleEntities = new SpecificDateScheduleEntitiesBuilder(2)
+				.setAppid(appId).setScheduleId().build();
+		List<RecurringScheduleEntity> recurringScheduleEntities = new RecurringScheduleEntitiesBuilder(1, 1)
+				.setAppId(appId).setScheduleId().build();
+
+		Mockito.when(specificDateScheduleDao.findAllSpecificDateSchedulesByAppId(appId))
+				.thenReturn(specificDateScheduleEntities);
+		Mockito.when(recurringScheduleDao.findAllRecurringSchedulesByAppId(appId))
+				.thenReturn(recurringScheduleEntities);
+
+		Mockito.doThrow(new DatabaseValidationException("test exception")).when(specificDateScheduleDao)
+				.delete(Mockito.anyObject());
 
 		try {
 			scheduleManager.deleteSchedules(appId);
-			fail("Expected failure case.");
+			fail("Should fail");
+		} catch (SchedulerInternalException sie) {
+			String message = messageBundleResourceHelper.lookupMessage("database.error.delete.failed",
+					"app_id=" + appId);
+
+			for (String errorMessage : validationErrorResult.getAllErrorMessages()) {
+				assertEquals(message, errorMessage);
+			}
+
+		}
+
+		Mockito.verify(scheduleJobManager, Mockito.never()).deleteJob(Mockito.anyString(), Mockito.anyLong(),
+				eq(ScheduleTypeEnum.SPECIFIC_DATE));
+		Mockito.verify(activeScheduleDao, Mockito.never()).deleteAllActiveSchedulesByAppId(Mockito.anyString());
+	}
+
+	@Test
+	public void testDeleteRecurringSchedules_throw_DatabaseValidationException() {
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+
+		List<SpecificDateScheduleEntity> specificDateScheduleEntities = new SpecificDateScheduleEntitiesBuilder(2)
+				.setAppid(appId).setScheduleId().build();
+		List<RecurringScheduleEntity> recurringScheduleEntities = new RecurringScheduleEntitiesBuilder(1, 1)
+				.setAppId(appId).setScheduleId().build();
+
+		Mockito.when(specificDateScheduleDao.findAllSpecificDateSchedulesByAppId(appId))
+				.thenReturn(specificDateScheduleEntities);
+		Mockito.when(recurringScheduleDao.findAllRecurringSchedulesByAppId(appId))
+				.thenReturn(recurringScheduleEntities);
+
+		Mockito.doThrow(new DatabaseValidationException("test exception")).when(recurringScheduleDao)
+				.delete(Mockito.anyObject());
+
+		try {
+			scheduleManager.deleteSchedules(appId);
+			fail("Should fail");
+		} catch (SchedulerInternalException sie) {
+			String message = messageBundleResourceHelper.lookupMessage("database.error.delete.failed",
+					"app_id=" + appId);
+
+			for (String errorMessage : validationErrorResult.getAllErrorMessages()) {
+				assertEquals(message, errorMessage);
+			}
+
+		}
+
+		Mockito.verify(scheduleJobManager, Mockito.never()).deleteJob(Mockito.anyString(), Mockito.anyLong(),
+				eq(ScheduleTypeEnum.RECURRING));
+		Mockito.verify(activeScheduleDao, Mockito.never()).deleteAllActiveSchedulesByAppId(Mockito.anyString());
+	}
+
+	@Test
+	public void testDeleteActiveSchedules_throw_DatabaseValidationException() {
+
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+
+		List<SpecificDateScheduleEntity> specificDateScheduleEntities = new SpecificDateScheduleEntitiesBuilder(2)
+				.setAppid(appId).setScheduleId().build();
+		List<RecurringScheduleEntity> recurringScheduleEntities = new RecurringScheduleEntitiesBuilder(1, 1)
+				.setAppId(appId).setScheduleId().build();
+
+		Mockito.when(specificDateScheduleDao.findAllSpecificDateSchedulesByAppId(appId))
+				.thenReturn(specificDateScheduleEntities);
+		Mockito.when(recurringScheduleDao.findAllRecurringSchedulesByAppId(appId))
+				.thenReturn(recurringScheduleEntities);
+		// Mock the exception when deleting active schedule
+		Mockito.doThrow(new DatabaseValidationException("test exception")).when(activeScheduleDao)
+				.deleteAllActiveSchedulesByAppId(appId);
+
+		try {
+			scheduleManager.deleteSchedules(appId);
+			fail("Should fail");
 		} catch (SchedulerInternalException e) {
 			String message = messageBundleResourceHelper.lookupMessage("database.error.delete.failed",
 					"app_id=" + appId);
@@ -400,39 +423,26 @@ public class ScheduleManagerTest extends TestConfiguration {
 		}
 	}
 
-	private void assertCreatedJobs(Map<JobKey, JobDetail> scheduleIdJobDetailMap, ScheduleEntity scheduleEntity,
-			ScheduleTypeEnum scheduleType) throws SchedulerException {
-		String appId = scheduleEntity.getAppId();
-		Long scheduleId = scheduleEntity.getId();
+	private void assertCreateSchedules(Schedules schedules, SpecificDateScheduleEntity specificDateScheduleEntity,
+			RecurringScheduleEntity recurringScheduleEntity, int noOfSpecificDateSchedules,
+			int noOfDOMRecurringSchedules, int noOfDOWRecurringSchedules) {
 
-		JobKey startJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.START, scheduleType);
-		JobKey endJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.END, scheduleType);
+		if (schedules.getSpecificDate() != null) {
+			for (SpecificDateScheduleEntity foundSpecificDateScheduleEntity : schedules.getSpecificDate()) {
+				Mockito.verify(specificDateScheduleDao, Mockito.times(1)).create(foundSpecificDateScheduleEntity);
+			}
+		}
 
-		int instMinCount = scheduleEntity.getInstanceMinCount();
-		int instMaxCount = scheduleEntity.getInstanceMaxCount();
+		if (schedules.getRecurringSchedule() != null) {
+			for (RecurringScheduleEntity foundRecurringScheduleEntity : schedules.getRecurringSchedule()) {
+				Mockito.verify(recurringScheduleDao, Mockito.times(1)).create(foundRecurringScheduleEntity);
+			}
+		}
 
-		JobDetail jobDetail = scheduleIdJobDetailMap.get(startJobKey);
-		assertJobDetails(appId, scheduleId, instMinCount, instMaxCount, JobActionEnum.START, jobDetail);
-
-		instMinCount = scheduleEntity.getDefaultInstanceMinCount();
-		instMaxCount = scheduleEntity.getDefaultInstanceMaxCount();
-		jobDetail = scheduleIdJobDetailMap.get(endJobKey);
-		assertJobDetails(appId, scheduleId, instMinCount, instMaxCount, JobActionEnum.END, jobDetail);
-	}
-
-	private void assertJobDetails(String expectedAppId, Long expectedScheduleId, int expectedInstanceMinCount,
-			int expectedInstanceMaxCount, JobActionEnum expectedJobAction, JobDetail expectedJobDetail) {
-		assertNotNull("Expected existing jobDetail", expectedJobDetail);
-		JobDataMap map = expectedJobDetail.getJobDataMap();
-		assertEquals(expectedAppId, map.get("appId"));
-		assertEquals(expectedScheduleId, map.get("scheduleId"));
-		assertEquals(expectedInstanceMinCount, map.get("instanceMinCount"));
-		assertEquals(expectedInstanceMaxCount, map.get("instanceMaxCount"));
-	}
-
-	private long getActiveSchedulesCount(String appId) {
-		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-		return jdbcTemplate.queryForObject("SELECT COUNT(1) FROM app_scaling_active_schedule WHERE app_id='"+appId+"'", Long.class);
+		Mockito.verify(scheduleJobManager, Mockito.times(noOfSpecificDateSchedules))
+				.createSimpleJob(specificDateScheduleEntity);
+		Mockito.verify(scheduleJobManager, Mockito.times(noOfDOMRecurringSchedules + noOfDOWRecurringSchedules))
+				.createCronJob(recurringScheduleEntity);
 	}
 
 }
