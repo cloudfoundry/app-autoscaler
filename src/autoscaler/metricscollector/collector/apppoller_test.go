@@ -203,7 +203,7 @@ var _ = Describe("Apppoller", func() {
 			})
 		})
 
-		Context("when retrieving container envelopes partially fails", func() {
+		Context("when retrieving container envelopes fail, the metrics collector retries", func() {
 			BeforeEach(func() {
 				cfc.GetTokensReturns(cf.Tokens{AccessToken: "test-access-token"})
 
@@ -211,7 +211,7 @@ var _ = Describe("Apppoller", func() {
 					Expect(appid).To(Equal("test-app-id"))
 					Expect(token).To(Equal("bearer test-access-token"))
 
-					if noaa.ContainerEnvelopesCallCount()%2 == 0 {
+					if noaa.ContainerEnvelopesCallCount() < 3 {
 						return nil, errors.New("apppoller test error")
 					} else {
 						return []*events.Envelope{
@@ -221,37 +221,20 @@ var _ = Describe("Apppoller", func() {
 									InstanceIndex: proto.Int32(0),
 									MemoryBytes:   proto.Uint64(1234),
 								},
-								Timestamp: &timestamp,
 							},
 						}, nil
 					}
 				}
 
-				database.SaveMetricStub = func(metric *models.AppInstanceMetric) error {
-					Expect(*metric).To(gstruct.MatchAllFields(gstruct.Fields{
-						"AppId":         Equal("test-app-id"),
-						"InstanceIndex": BeEquivalentTo(0),
-						"CollectedAt":   Equal(fclock.Now().UnixNano()),
-						"Name":          Equal(models.MetricNameMemory),
-						"Unit":          Equal(models.UnitBytes),
-						"Value":         Equal("1234"),
-						"Timestamp":     BeEquivalentTo(111111),
-					}))
-					return nil
-				}
-
 			})
 
-			It("saves successful results to database and logs the errors", func() {
-				Eventually(database.SaveMetricCallCount).Should(Equal(1))
+			It("polls container envelopes successfully; logs the retries and errors", func() {
+				Eventually(buffer).Should(gbytes.Say("poll-metric-from-noaa-retry"))
 
-				fclock.Increment(TestPollInterval)
-				Eventually(buffer).Should(gbytes.Say("poll-metric-from-noaa"))
-				Eventually(buffer).Should(gbytes.Say("apppoller test error"))
-				Consistently(database.SaveMetricCallCount).Should(Equal(1))
+				Eventually(buffer).Should(gbytes.Say("poll-metric-from-noaa-retry"))
 
-				fclock.Increment(TestPollInterval)
-				Eventually(database.SaveMetricCallCount).Should(Equal(2))
+				Eventually(buffer).Should(gbytes.Say("poll-metric-get-memory-metric"))
+				Eventually(noaa.ContainerEnvelopesCallCount).Should(Equal(3))
 
 			})
 		})

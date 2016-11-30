@@ -9,6 +9,8 @@ import (
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
 
+	"github.com/cloudfoundry/sonde-go/events"
+
 	"time"
 )
 
@@ -72,10 +74,21 @@ func (ap *appPoller) startPollMetrics() {
 func (ap *appPoller) pollMetric() {
 	ap.logger.Debug("poll-metric", lager.Data{"appid": ap.appId})
 
-	containerEnvelopes, err := ap.noaaConsumer.ContainerEnvelopes(ap.appId, "bearer"+" "+ap.cfc.GetTokens().AccessToken)
+	var containerEnvelopes []*events.Envelope
+	var err error
+
+	for attempt := 0; attempt < 3; attempt++ {
+		ap.logger.Debug("poll-metric-from-noaa-retry", lager.Data{"attempt": attempt + 1, "appid": ap.appId})
+
+		containerEnvelopes, err = ap.noaaConsumer.ContainerEnvelopes(ap.appId, "bearer"+" "+ap.cfc.GetTokens().AccessToken)
+
+		if err == nil {
+			break
+		}
+	}
+
 	if err != nil {
-		ap.logger.Error("poll-metric-from-noaa", err)
-		return
+		ap.logger.Error("poll-metric-from-noaa", err, lager.Data{"appid": ap.appId})
 	}
 
 	metrics := models.GetInstanceMemoryMetricFromContainerEnvelopes(ap.pclock.Now().UnixNano(), ap.appId, containerEnvelopes)
