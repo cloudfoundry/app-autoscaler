@@ -32,10 +32,17 @@ type AppMetricsDbPrunerConfig struct {
 	CutoffDays      int           `yaml:"cutoff_days"`
 }
 
+type ScalingEngineDbPrunerConfig struct {
+	DbUrl           string        `yaml:"db_url"`
+	RefreshInterval time.Duration `yaml:"refresh_interval"`
+	CutoffDays      int           `yaml:"cutoff_days"`
+}
+
 type Config struct {
 	Logging           LoggingConfig                 `yaml:"logging"`
 	InstanceMetricsDb InstanceMetricsDbPrunerConfig `yaml:"instance_metrics_db"`
 	AppMetricsDb      AppMetricsDbPrunerConfig      `yaml:"app_metrics_db"`
+	ScalingEngineDb   ScalingEngineDbPrunerConfig   `yaml:"scaling_engine_db"`
 }
 
 var defaultDbConfig = Config{
@@ -45,6 +52,10 @@ var defaultDbConfig = Config{
 		CutoffDays:      DefaultCutoffDays,
 	},
 	AppMetricsDb: AppMetricsDbPrunerConfig{
+		RefreshInterval: DefaultRefreshInterval,
+		CutoffDays:      DefaultCutoffDays,
+	},
+	ScalingEngineDb: ScalingEngineDbPrunerConfig{
 		RefreshInterval: DefaultRefreshInterval,
 		CutoffDays:      DefaultCutoffDays,
 	},
@@ -83,15 +94,27 @@ func (c *Config) Validate() error {
 	}
 
 	if c.AppMetricsDb.DbUrl == "" {
-		return fmt.Errorf("Configuration error: App Metrics DB url is empty")
+		return fmt.Errorf("Configuration error: AppMetrics DB url is empty")
 	}
 
 	if c.AppMetricsDb.RefreshInterval < 0 {
-		return fmt.Errorf("Configuration error: App Metrics DB refresh interval is negative")
+		return fmt.Errorf("Configuration error: AppMetrics DB refresh interval is negative")
 	}
 
 	if c.AppMetricsDb.CutoffDays < 0 {
-		return fmt.Errorf("Configuration error: App Metrics DB cutoff days is negative")
+		return fmt.Errorf("Configuration error: AppMetrics DB cutoff days is negative")
+	}
+
+	if c.ScalingEngineDb.DbUrl == "" {
+		return fmt.Errorf("Configuration error: ScalingEngine DB url is empty")
+	}
+
+	if c.ScalingEngineDb.RefreshInterval < 0 {
+		return fmt.Errorf("Configuration error: ScalingEngine DB refresh interval is negative")
+	}
+
+	if c.ScalingEngineDb.CutoffDays < 0 {
+		return fmt.Errorf("Configuration error: ScalingEngine DB cutoff days is negative")
 	}
 
 	return nil

@@ -106,6 +106,15 @@ func (sdb *ScalingEngineSQLDB) RetrieveScalingHistories(appId string, start int6
 	return histories, nil
 }
 
+func (sdb *ScalingEngineSQLDB) PruneScalingHistories(before int64) error {
+	query := "DELETE FROM scalinghistory WHERE timestamp <= $1"
+	_, err := sdb.sqldb.Exec(query, before)
+	if err != nil {
+		sdb.logger.Error("failed-prune-scaling-histories-from-scalinghistory-table", err, lager.Data{"query": query, "before": before})
+	}
+	return err
+}
+
 func (sdb *ScalingEngineSQLDB) CanScaleApp(appId string) (bool, error) {
 	query := "SELECT expireat FROM scalingcooldown where appid = $1"
 	rows, err := sdb.sqldb.Query(query, appId)

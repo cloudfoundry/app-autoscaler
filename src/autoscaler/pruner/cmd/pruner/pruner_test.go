@@ -26,26 +26,20 @@ var _ = Describe("Pruner", func() {
 	})
 
 	Context("when pruner started", func() {
-		It("should start metricsdbpruner", func() {
-
-			//Metric Pruner
-			Eventually(runner.Session).Should(Say("instancemetricsdbpruner.started"))
-
-			// Pruner
+		It("should start instancemetrics dbpruner", func() {
+			Eventually(runner.Session).Should(Say("instancemetrics-dbpruner.started"))
 			Consistently(runner.Session).ShouldNot(Exit())
-
 		})
 
-		It("should start appmetricsdbpruner", func() {
-
-			//App Metric Pruner
-			Eventually(runner.Session).Should(Say("appmetricsdbpruner.started"))
-
-			// Pruner
+		It("should start appmetrics dbpruner", func() {
+			Eventually(runner.Session).Should(Say("appmetrics-dbpruner.started"))
 			Consistently(runner.Session).ShouldNot(Exit())
-
 		})
 
+		It("should start scalingengine dbpruner", func() {
+			Eventually(runner.Session).Should(Say("scalingengine-dbpruner.started"))
+			Consistently(runner.Session).ShouldNot(Exit())
+		})
 	})
 
 	Context("with a missing config file", func() {
@@ -98,13 +92,9 @@ var _ = Describe("Pruner", func() {
 
 	Context("when connection to instancemetrics db fails", func() {
 		BeforeEach(func() {
-
-			//invalid url
 			cfg.InstanceMetricsDb.DbUrl = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
-
 			cfg := writeConfig(&cfg)
 			runner.configPath = cfg.Name()
-
 		})
 
 		AfterEach(func() {
@@ -118,15 +108,11 @@ var _ = Describe("Pruner", func() {
 
 	})
 
-	Context("when connection to app metrics db fails", func() {
+	Context("when connection to appmetrics db fails", func() {
 		BeforeEach(func() {
-
-			//invalid url
 			cfg.AppMetricsDb.DbUrl = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
-
 			cfg := writeConfig(&cfg)
 			runner.configPath = cfg.Name()
-
 		})
 
 		AfterEach(func() {
@@ -135,7 +121,25 @@ var _ = Describe("Pruner", func() {
 
 		It("should error", func() {
 			Eventually(runner.Session).Should(Exit(1))
-			Expect(runner.Session.Buffer()).To(Say("failed to connect app metrics db"))
+			Expect(runner.Session.Buffer()).To(Say("failed to connect appmetrics db"))
+		})
+
+	})
+
+	Context("when connection to scalingengine db fails", func() {
+		BeforeEach(func() {
+			cfg.ScalingEngineDb.DbUrl = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
+			cfg := writeConfig(&cfg)
+			runner.configPath = cfg.Name()
+		})
+
+		AfterEach(func() {
+			os.Remove(runner.configPath)
+		})
+
+		It("should error", func() {
+			Eventually(runner.Session).Should(Exit(1))
+			Expect(runner.Session.Buffer()).To(Say("failed to connect scalingengine db"))
 		})
 
 	})

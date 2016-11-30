@@ -27,6 +27,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 		canScale       bool
 		activeSchedule *models.ActiveSchedule
 		schedules      map[string]string
+		before         int64
 	)
 
 	BeforeEach(func() {
@@ -339,6 +340,85 @@ var _ = Describe("ScalingEngineSqldb", func() {
 			})
 
 		})
+	})
+
+	Describe("PruneScalingHistories", func() {
+		BeforeEach(func() {
+			sdb, err = NewScalingEngineSQLDB(url, logger)
+			Expect(err).NotTo(HaveOccurred())
+			cleanScalingHistoryTable()
+
+			history = &models.AppScalingHistory{}
+			history.Timestamp = 666666
+			err = sdb.SaveScalingHistory(history)
+			Expect(err).NotTo(HaveOccurred())
+
+			history.Timestamp = 222222
+			err = sdb.SaveScalingHistory(history)
+			Expect(err).NotTo(HaveOccurred())
+
+			history.Timestamp = 555555
+			err = sdb.SaveScalingHistory(history)
+			Expect(err).NotTo(HaveOccurred())
+
+			history.Timestamp = 333333
+			err = sdb.SaveScalingHistory(history)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		JustBeforeEach(func() {
+			err = sdb.PruneScalingHistories(before)
+		})
+
+		AfterEach(func() {
+			err = sdb.Close()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		Context("when pruning histories before all the timestamps", func() {
+			BeforeEach(func() {
+				before = 111111
+			})
+
+			It("does not remove any histories", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(getNumberOfScalingHistories()).To(Equal(4))
+			})
+		})
+
+		Context("when pruning all the histories", func() {
+			BeforeEach(func() {
+				before = time.Now().UnixNano()
+			})
+
+			It("empties the scalinghistory table", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(getNumberOfScalingHistories()).To(Equal(0))
+			})
+		})
+
+		Context("when pruning part of the histories", func() {
+			BeforeEach(func() {
+				before = 333333
+			})
+
+			It("removes histories before the time specified", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(getNumberOfScalingHistories()).To(Equal(2))
+			})
+		})
+
+		Context("when db fails", func() {
+			BeforeEach(func() {
+				sdb.Close()
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("sql: .*")))
+			})
+
+		})
+
 	})
 
 	Describe("UpdateScalingCooldownExpireTime", func() {

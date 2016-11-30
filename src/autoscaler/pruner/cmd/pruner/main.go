@@ -57,22 +57,34 @@ func main() {
 
 	appMetricsDb, err := sqldb.NewAppMetricSQLDB(conf.AppMetricsDb.DbUrl, logger.Session("appmetrics-db"))
 	if err != nil {
-		logger.Error("failed to connect app metrics db", err, lager.Data{"url": conf.AppMetricsDb.DbUrl})
+		logger.Error("failed to connect appmetrics db", err, lager.Data{"url": conf.AppMetricsDb.DbUrl})
 		os.Exit(1)
 	}
 	defer appMetricsDb.Close()
 
-	prunerLoggerSessionName := "instancemetricsdbpruner"
+	scalingEngineDb, err := sqldb.NewScalingEngineSQLDB(conf.ScalingEngineDb.DbUrl, logger.Session("scalingengine-db"))
+	if err != nil {
+		logger.Error("failed to connect scalingengine db", err, lager.Data{"url": conf.ScalingEngineDb.DbUrl})
+		os.Exit(1)
+	}
+	defer scalingEngineDb.Close()
+
+	prunerLoggerSessionName := "instancemetrics-dbpruner"
 	instanceMetricDbPruner := pruner.NewInstanceMetricsDbPruner(instanceMetricsDb, conf.InstanceMetricsDb.CutoffDays, prClock, logger.Session(prunerLoggerSessionName))
 	instanceMetricsDbPrunerRunner := pruner.NewDbPrunerRunner(instanceMetricDbPruner, conf.InstanceMetricsDb.RefreshInterval, prClock, logger.Session(prunerLoggerSessionName))
 
-	prunerLoggerSessionName = "appmetricsdbpruner"
+	prunerLoggerSessionName = "appmetrics-dbpruner"
 	appMetricsDbPruner := pruner.NewAppMetricsDbPruner(appMetricsDb, conf.AppMetricsDb.CutoffDays, prClock, logger.Session(prunerLoggerSessionName))
 	appMetricsDbPrunerRunner := pruner.NewDbPrunerRunner(appMetricsDbPruner, conf.AppMetricsDb.RefreshInterval, prClock, logger.Session(prunerLoggerSessionName))
 
+	prunerLoggerSessionName = "scalingengine-dbpruner"
+	scalingEngineDbPruner := pruner.NewScalingEngineDbPruner(scalingEngineDb, conf.ScalingEngineDb.CutoffDays, prClock, logger.Session(prunerLoggerSessionName))
+	scalingEngineDbPrunerRunner := pruner.NewDbPrunerRunner(scalingEngineDbPruner, conf.ScalingEngineDb.RefreshInterval, prClock, logger.Session(prunerLoggerSessionName))
+
 	members := grouper.Members{
-		{"instancemetricsdbpruner", instanceMetricsDbPrunerRunner},
-		{"appmetricsdbpruner", appMetricsDbPrunerRunner},
+		{"instancemetrics-dbpruner", instanceMetricsDbPrunerRunner},
+		{"appmetrics-dbpruner", appMetricsDbPrunerRunner},
+		{"scalingEngine-dbpruner", scalingEngineDbPrunerRunner},
 	}
 
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))

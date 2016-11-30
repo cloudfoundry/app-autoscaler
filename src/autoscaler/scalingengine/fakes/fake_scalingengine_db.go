@@ -27,6 +27,14 @@ type FakeScalingEngineDB struct {
 		result1 []*models.AppScalingHistory
 		result2 error
 	}
+	PruneScalingHistoriesStub        func(before int64) error
+	pruneScalingHistoriesMutex       sync.RWMutex
+	pruneScalingHistoriesArgsForCall []struct {
+		before int64
+	}
+	pruneScalingHistoriesReturns struct {
+		result1 error
+	}
 	UpdateScalingCooldownExpireTimeStub        func(appId string, expireAt int64) error
 	updateScalingCooldownExpireTimeMutex       sync.RWMutex
 	updateScalingCooldownExpireTimeArgsForCall []struct {
@@ -155,6 +163,39 @@ func (fake *FakeScalingEngineDB) RetrieveScalingHistoriesReturns(result1 []*mode
 		result1 []*models.AppScalingHistory
 		result2 error
 	}{result1, result2}
+}
+
+func (fake *FakeScalingEngineDB) PruneScalingHistories(before int64) error {
+	fake.pruneScalingHistoriesMutex.Lock()
+	fake.pruneScalingHistoriesArgsForCall = append(fake.pruneScalingHistoriesArgsForCall, struct {
+		before int64
+	}{before})
+	fake.recordInvocation("PruneScalingHistories", []interface{}{before})
+	fake.pruneScalingHistoriesMutex.Unlock()
+	if fake.PruneScalingHistoriesStub != nil {
+		return fake.PruneScalingHistoriesStub(before)
+	} else {
+		return fake.pruneScalingHistoriesReturns.result1
+	}
+}
+
+func (fake *FakeScalingEngineDB) PruneScalingHistoriesCallCount() int {
+	fake.pruneScalingHistoriesMutex.RLock()
+	defer fake.pruneScalingHistoriesMutex.RUnlock()
+	return len(fake.pruneScalingHistoriesArgsForCall)
+}
+
+func (fake *FakeScalingEngineDB) PruneScalingHistoriesArgsForCall(i int) int64 {
+	fake.pruneScalingHistoriesMutex.RLock()
+	defer fake.pruneScalingHistoriesMutex.RUnlock()
+	return fake.pruneScalingHistoriesArgsForCall[i].before
+}
+
+func (fake *FakeScalingEngineDB) PruneScalingHistoriesReturns(result1 error) {
+	fake.PruneScalingHistoriesStub = nil
+	fake.pruneScalingHistoriesReturns = struct {
+		result1 error
+	}{result1}
 }
 
 func (fake *FakeScalingEngineDB) UpdateScalingCooldownExpireTime(appId string, expireAt int64) error {
@@ -384,6 +425,8 @@ func (fake *FakeScalingEngineDB) Invocations() map[string][][]interface{} {
 	defer fake.saveScalingHistoryMutex.RUnlock()
 	fake.retrieveScalingHistoriesMutex.RLock()
 	defer fake.retrieveScalingHistoriesMutex.RUnlock()
+	fake.pruneScalingHistoriesMutex.RLock()
+	defer fake.pruneScalingHistoriesMutex.RUnlock()
 	fake.updateScalingCooldownExpireTimeMutex.RLock()
 	defer fake.updateScalingCooldownExpireTimeMutex.RUnlock()
 	fake.canScaleAppMutex.RLock()
