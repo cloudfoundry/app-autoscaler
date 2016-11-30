@@ -27,7 +27,7 @@ type appPoller struct {
 	noaaConsumer noaa.NoaaConsumer
 	database     db.InstanceMetricsDB
 	pclock       clock.Clock
-	ticker       clock.Ticker
+	timer        clock.Timer
 	doneChan     chan bool
 }
 
@@ -46,15 +46,15 @@ func NewAppPoller(logger lager.Logger, appId string, pollInterval time.Duration,
 }
 
 func (ap *appPoller) Start() {
-	ap.ticker = ap.pclock.NewTicker(ap.pollInterval)
+	ap.timer = ap.pclock.NewTimer(ap.pollInterval)
 	go ap.startPollMetrics()
 
 	ap.logger.Info("app-poller-started", lager.Data{"appid": ap.appId, "poll-interval": ap.pollInterval})
 }
 
 func (ap *appPoller) Stop() {
-	if ap.ticker != nil {
-		ap.ticker.Stop()
+	if ap.timer != nil {
+		ap.timer.Stop()
 		close(ap.doneChan)
 	}
 	ap.logger.Info("app-poller-stopped", lager.Data{"appid": ap.appId})
@@ -63,10 +63,11 @@ func (ap *appPoller) Stop() {
 func (ap *appPoller) startPollMetrics() {
 	for {
 		ap.pollMetric()
+		ap.timer.Reset(ap.pollInterval)
 		select {
 		case <-ap.doneChan:
 			return
-		case <-ap.ticker.C():
+		case <-ap.timer.C():
 		}
 	}
 }
