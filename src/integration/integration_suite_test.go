@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"path"
 	"strconv"
@@ -36,16 +37,19 @@ var (
 	logger                lager.Logger
 	serviceBrokerConfPath string
 	apiServerConfPath     string
+	schedulerConfPath     string
 	brokerUserName        string = "username"
 	brokerPassword        string = "password"
 	brokerAuth            string
 	dbUrl                 string
 
-	dbHelper           *sql.DB
-	scheduler          *ghttp.Server
-	httpClient         *http.Client
-	httpRequestTimeout time.Duration            = 1000 * time.Millisecond
-	processMap         map[string]ifrit.Process = map[string]ifrit.Process{}
+	dbHelper                       *sql.DB
+	fakeScheduler                  *ghttp.Server
+	fakeScalingEngine              *ghttp.Server
+	httpClient                     *http.Client
+	brokerApiHttpRequestTimeout    time.Duration            = 1 * time.Second
+	apiSchedulerHttpRequestTimeout time.Duration            = 5 * time.Second
+	processMap                     map[string]ifrit.Process = map[string]ifrit.Process{}
 )
 
 var _ = SynchronizedBeforeSuite(func() []byte {
@@ -77,14 +81,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	dbHelper, err = sql.Open(db.PostgresDriverName, dbUrl)
 	Expect(err).NotTo(HaveOccurred())
 
-	scheduler = ghttp.NewServer()
-	apiServerConfPath = prepareApiServerConfig(components.Ports[APIServer], dbUrl, scheduler.URL())
-	serviceBrokerConfPath = prepareServiceBrokerConfig(components.Ports[ServiceBroker], brokerUserName, brokerPassword, dbUrl, fmt.Sprintf("http://127.0.0.1:%d", components.Ports[APIServer]))
-
 })
 
 var _ = SynchronizedAfterSuite(func() {
-	scheduler.Close()
 
 	if len(tmpDir) > 0 {
 		os.RemoveAll(tmpDir)
@@ -93,15 +92,13 @@ var _ = SynchronizedAfterSuite(func() {
 })
 
 var _ = BeforeEach(func() {
-	httpClient = cfhttp.NewCustomTimeoutClient(httpRequestTimeout)
-	startApiServer()
-	startServiceBroker()
+	httpClient = cfhttp.NewClient()
 	logger = lager.NewLogger("test")
 	logger.RegisterSink(lager.NewWriterSink(GinkgoWriter, lager.DEBUG))
 })
 
 var _ = AfterEach(func() {
-	stopAll()
+
 })
 
 func TestIntegration(t *testing.T) {
@@ -115,6 +112,7 @@ func CompileTestedExecutables() Executables {
 
 	builtExecutables[APIServer] = path.Join(rootDir, "api/index.js")
 	builtExecutables[ServiceBroker] = path.Join(rootDir, "servicebroker/lib/index.js")
+	builtExecutables[Scheduler] = path.Join(rootDir, "scheduler/target/scheduler-1.0-SNAPSHOT.war")
 
 	return builtExecutables
 }
@@ -123,6 +121,7 @@ func PreparePorts() Ports {
 	return Ports{
 		APIServer:     10000 + GinkgoParallelNode(),
 		ServiceBroker: 11000 + GinkgoParallelNode(),
+		Scheduler:     12000 + GinkgoParallelNode(),
 	}
 }
 
@@ -137,7 +136,11 @@ func startServiceBroker() {
 		{ServiceBroker, components.ServiceBroker(serviceBrokerConfPath)},
 	}))
 }
-
+func startScheduler() {
+	processMap[Scheduler] = ginkgomon.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
+		{Scheduler, components.Scheduler(schedulerConfPath)},
+	}))
+}
 func stopApiServer() {
 	ginkgomon.Interrupt(processMap[APIServer], 5*time.Second)
 }
@@ -163,7 +166,7 @@ func prepareServiceBrokerConfig(port int, username string, password string, dbUr
 			IdleTimeout:    1000,
 		},
 		APIServerUri:       apiServerUri,
-		HttpRequestTimeout: int(httpRequestTimeout / time.Millisecond),
+		HttpRequestTimeout: int(brokerApiHttpRequestTimeout / time.Millisecond),
 	}
 
 	cfgFile, err := ioutil.TempFile(tmpDir, ServiceBroker)
@@ -195,7 +198,36 @@ func prepareApiServerConfig(port int, dbUri string, schedulerUri string) string 
 	cfgFile.Close()
 	return cfgFile.Name()
 }
+func prepareSchedulerConfig(dbUri string, scalingEngineUri string) string {
 
+	dbUrl, _ := url.Parse(dbUri)
+	scheme := dbUrl.Scheme
+	host := dbUrl.Host
+	path := dbUrl.Path
+	userInfo := dbUrl.User
+	userName := userInfo.Username()
+	password, _ := userInfo.Password()
+	jdbcDBUri := fmt.Sprintf("jdbc:%s://%s%s", scheme, host, path)
+	settingStrTemplate := `
+#datasource for application and quartz
+spring.datasource.driverClassName=org.postgresql.Driver
+spring.datasource.url=%s
+spring.datasource.username=%s
+spring.datasource.password=%s
+#quartz job
+scalingenginejob.reschedule.interval.millisecond=10000
+scalingenginejob.reschedule.maxcount=6
+scalingengine.notification.reschedule.maxcount=3
+# scaling engine url
+autoscaler.scalingengine.url=%s
+  `
+	settingJonsStr := fmt.Sprintf(settingStrTemplate, jdbcDBUri, userName, password, scalingEngineUri)
+	cfgFile, err := ioutil.TempFile(tmpDir, Scheduler)
+	Expect(err).NotTo(HaveOccurred())
+	ioutil.WriteFile(cfgFile.Name(), []byte(settingJonsStr), 0777)
+	cfgFile.Close()
+	return cfgFile.Name()
+}
 func getRandomId() string {
 	return strconv.FormatInt(time.Now().UnixNano(), 10)
 }
@@ -258,6 +290,17 @@ func attachPolicy(appId string, policy []byte) (*http.Response, error) {
 	return httpClient.Do(req)
 }
 
+func getSchedules(appId string) (*http.Response, error) {
+	req, err := http.NewRequest("GET", fmt.Sprintf("http://127.0.0.1:%d/v2/schedules/%s", components.Ports["scheduler"], appId), strings.NewReader(""))
+	Expect(err).NotTo(HaveOccurred())
+	req.Header.Set("Content-Type", "application/json")
+	return httpClient.Do(req)
+}
+func readPolicyFromFile(filename string) []byte {
+	content, err := ioutil.ReadFile(filename)
+	Expect(err).NotTo(HaveOccurred())
+	return content
+}
 func clearDatabase() {
 	_, err := dbHelper.Exec("DELETE FROM policy_json")
 	Expect(err).NotTo(HaveOccurred())
@@ -267,4 +310,38 @@ func clearDatabase() {
 
 	_, err = dbHelper.Exec("DELETE FROM service_instance")
 	Expect(err).NotTo(HaveOccurred())
+
+	_, err = dbHelper.Exec("DELETE FROM app_scaling_recurring_schedule")
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = dbHelper.Exec("DELETE FROM app_scaling_specific_date_schedule")
+	Expect(err).NotTo(HaveOccurred())
+}
+
+type GetResponse func(id string) (*http.Response, error)
+
+func checkResponseContent(getResponse GetResponse, id string, expectHttpStatus int, expectResponseMap map[string]interface{}) {
+	resp, err := getResponse(id)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(resp.StatusCode).To(Equal(expectHttpStatus))
+	var actual map[string]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&actual)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(actual).To(Equal(expectResponseMap))
+	resp.Body.Close()
+}
+
+func checkSchedule(getResponse GetResponse, id string, expectHttpStatus int, expectResponseMap map[string]int) {
+	resp, err := getResponse(id)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(resp.StatusCode).To(Equal(expectHttpStatus))
+	var actual map[string]interface{}
+	err = json.NewDecoder(resp.Body).Decode(&actual)
+	Expect(err).NotTo(HaveOccurred())
+	var schedules map[string]interface{} = actual["schedules"].(map[string]interface{})
+	var recurring []interface{} = schedules["recurring_schedule"].([]interface{})
+	var specificDate []interface{} = schedules["specific_date"].([]interface{})
+	Expect(len(specificDate)).To(Equal(expectResponseMap["specific_date"]))
+	Expect(len(recurring)).To(Equal(expectResponseMap["recurring_schedule"]))
+	resp.Body.Close()
 }
