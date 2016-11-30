@@ -27,7 +27,6 @@ type appPoller struct {
 	noaaConsumer noaa.NoaaConsumer
 	database     db.InstanceMetricsDB
 	pclock       clock.Clock
-	ticker       clock.Ticker
 	doneChan     chan bool
 }
 
@@ -46,27 +45,24 @@ func NewAppPoller(logger lager.Logger, appId string, pollInterval time.Duration,
 }
 
 func (ap *appPoller) Start() {
-	ap.ticker = ap.pclock.NewTicker(ap.pollInterval)
 	go ap.startPollMetrics()
 
 	ap.logger.Info("app-poller-started", lager.Data{"appid": ap.appId, "poll-interval": ap.pollInterval})
 }
 
 func (ap *appPoller) Stop() {
-	if ap.ticker != nil {
-		ap.ticker.Stop()
-		close(ap.doneChan)
-	}
+	ap.doneChan <- true
 	ap.logger.Info("app-poller-stopped", lager.Data{"appid": ap.appId})
 }
 
 func (ap *appPoller) startPollMetrics() {
 	for {
 		ap.pollMetric()
+		timer := ap.pclock.NewTimer(ap.pollInterval)
 		select {
 		case <-ap.doneChan:
 			return
-		case <-ap.ticker.C():
+		case <-timer.C():
 		}
 	}
 }
@@ -89,6 +85,7 @@ func (ap *appPoller) pollMetric() {
 
 	if err != nil {
 		ap.logger.Error("poll-metric-from-noaa", err, lager.Data{"appid": ap.appId})
+		return
 	}
 
 	metrics := models.GetInstanceMemoryMetricFromContainerEnvelopes(ap.pclock.Now().UnixNano(), ap.appId, containerEnvelopes)
