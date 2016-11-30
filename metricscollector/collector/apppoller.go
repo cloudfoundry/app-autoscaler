@@ -61,6 +61,7 @@ func (ap *appPoller) startPollMetrics() {
 		timer := ap.pclock.NewTimer(ap.pollInterval)
 		select {
 		case <-ap.doneChan:
+			timer.Stop()
 			return
 		case <-timer.C():
 		}
@@ -68,33 +69,33 @@ func (ap *appPoller) startPollMetrics() {
 }
 
 func (ap *appPoller) pollMetric() {
-	ap.logger.Debug("poll-metric", lager.Data{"appid": ap.appId})
+	logger := ap.logger.WithData(lager.Data{"appId": ap.appId})
+	logger.Debug("poll-metric")
 
 	var containerEnvelopes []*events.Envelope
 	var err error
 
 	for attempt := 0; attempt < 3; attempt++ {
-		ap.logger.Debug("poll-metric-from-noaa-retry", lager.Data{"attempt": attempt + 1, "appid": ap.appId})
+		logger.Debug("poll-metric-from-noaa-retry", lager.Data{"attempt": attempt + 1})
 
-		containerEnvelopes, err = ap.noaaConsumer.ContainerEnvelopes(ap.appId, "bearer"+" "+ap.cfc.GetTokens().AccessToken)
-
+		containerEnvelopes, err = ap.noaaConsumer.ContainerEnvelopes(ap.appId, "bearer "+ap.cfc.GetTokens().AccessToken)
 		if err == nil {
 			break
 		}
 	}
 
 	if err != nil {
-		ap.logger.Error("poll-metric-from-noaa", err, lager.Data{"appid": ap.appId})
+		logger.Error("poll-metric-from-noaa", err)
 		return
 	}
 
 	metrics := models.GetInstanceMemoryMetricFromContainerEnvelopes(ap.pclock.Now().UnixNano(), ap.appId, containerEnvelopes)
-	ap.logger.Debug("poll-metric-get-memory-metric", lager.Data{"metrics": metrics})
+	logger.Debug("poll-metric-get-memory-metric", lager.Data{"metrics": metrics})
 
 	for _, metric := range metrics {
 		err = ap.database.SaveMetric(metric)
 		if err != nil {
-			ap.logger.Error("poll-metric-save", err, lager.Data{"metric": metric})
+			logger.Error("poll-metric-save", err, lager.Data{"metric": metric})
 		}
 	}
 }
