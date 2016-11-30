@@ -5,7 +5,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.eq;
 
-import java.net.URL;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -84,10 +83,10 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 	@Value("${autoscaler.scalingengine.url}")
 	private String scalingEngineUrl;
 
-	static EmbeddedTomcatUtil embeddedTomcatUtil;
+	private static EmbeddedTomcatUtil embeddedTomcatUtil;
 
 	@BeforeClass
-	public static void beforClass() {
+	public static void beforeClass() {
 		embeddedTomcatUtil = new EmbeddedTomcatUtil();
 		embeddedTomcatUtil.start();
 
@@ -102,6 +101,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 	public void before() throws SchedulerException {
 		MockitoAnnotations.initMocks(this);
 		testDataCleanupHelper.cleanupData(scheduler);
+
 		Mockito.reset(mockAppender);
 
 		Mockito.when(mockAppender.getName()).thenReturn("MockAppender");
@@ -158,10 +158,6 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 
 		embeddedTomcatUtil.setup(appId, scheduleId, 204, null);
 
-		ArgumentCaptor<URL> urlArgumentCaptor = ArgumentCaptor.forClass(URL.class);
-		ArgumentCaptor<ActiveScheduleEntity> activeScheduleEntityArgumentCaptor = ArgumentCaptor
-				.forClass(ActiveScheduleEntity.class);
-
 		TestJobListener testJobListener = new TestJobListener(1);
 		scheduler.getListenerManager().addJobListener(testJobListener);
 		scheduler.scheduleJob(jobInformation.getJobDetail(), jobInformation.getTrigger());
@@ -181,7 +177,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 	public void testCreateActiveSchedules_throw_DatabaseValidationException() throws Exception {
 		setLogLevel(Level.ERROR);
 
-		int expectedNumOfJobFired = 2;
+		int expectedNumOfTimesJobRescheduled = 2;
 
 		// Build the job
 		JobInformation jobInformation = new JobInformation<>(AppScalingScheduleStartJob.class);
@@ -196,14 +192,14 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		Mockito.doThrow(new DatabaseValidationException("test exception")).doNothing().when(activeScheduleDao)
 				.create(Mockito.anyObject());
 
-		TestJobListener testJobListener = new TestJobListener(expectedNumOfJobFired);
+		TestJobListener testJobListener = new TestJobListener(expectedNumOfTimesJobRescheduled);
 		scheduler.getListenerManager().addJobListener(testJobListener);
 
 		scheduler.scheduleJob(jobInformation.getJobDetail(), jobInformation.getTrigger());
 
 		testJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(1));
 
-		Mockito.verify(activeScheduleDao, Mockito.times(expectedNumOfJobFired)).create(activeScheduleEntity);
+		Mockito.verify(activeScheduleDao, Mockito.times(expectedNumOfTimesJobRescheduled)).create(activeScheduleEntity);
 
 		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 		String expectedMessage = messageBundleResourceHelper
@@ -218,7 +214,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 	public void testRemoveActiveSchedules_throw_DatabaseValidationException() throws Exception {
 		setLogLevel(Level.ERROR);
 
-		int expectedNumOfJobFired = 2;
+		int expectedNumOfTimesJobRescheduled = 2;
 
 		// Build the job
 		JobInformation jobInformation = new JobInformation<>(AppScalingScheduleEndJob.class);
@@ -233,14 +229,14 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		Mockito.doThrow(new DatabaseValidationException("test exception")).doReturn(1).when(activeScheduleDao)
 				.delete(scheduleId);
 
-		TestJobListener testJobListener = new TestJobListener(expectedNumOfJobFired);
+		TestJobListener testJobListener = new TestJobListener(expectedNumOfTimesJobRescheduled);
 		scheduler.getListenerManager().addJobListener(testJobListener);
 
 		scheduler.scheduleJob(jobInformation.getJobDetail(), jobInformation.getTrigger());
 
 		testJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(1));
 
-		Mockito.verify(activeScheduleDao, Mockito.times(expectedNumOfJobFired)).delete(scheduleId);
+		Mockito.verify(activeScheduleDao, Mockito.times(expectedNumOfTimesJobRescheduled)).delete(scheduleId);
 		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 		String expectedMessage = messageBundleResourceHelper
 				.lookupMessage("database.error.delete.activeschedule.failed", "test exception", appId, scheduleId);
@@ -251,10 +247,10 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 
 	@Test
 	//@Ignore
-	public void testCreateActiveSchedules_when_MaxRescheduleCountReached() throws Exception {
+	public void testCreateActiveSchedules_when_JobRescheduleMaxCountReached() throws Exception {
 		setLogLevel(Level.ERROR);
 
-		int expectedNumOfJobFired = 5;
+		int expectedNumOfTimesJobRescheduled = 5;
 
 		// Build the job
 		JobInformation jobInformation = new JobInformation<>(AppScalingScheduleStartJob.class);
@@ -269,7 +265,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		Mockito.doThrow(new DatabaseValidationException("test exception")).when(activeScheduleDao)
 				.create(Mockito.anyObject());
 
-		TestJobListener testJobListener = new TestJobListener(expectedNumOfJobFired);
+		TestJobListener testJobListener = new TestJobListener(expectedNumOfTimesJobRescheduled);
 		scheduler.getListenerManager().addJobListener(testJobListener);
 
 		scheduler.scheduleJob(jobInformation.getJobDetail(), jobInformation.getTrigger());
@@ -277,12 +273,12 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		testJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(1));
 
 		// 5 times because in case of failure quartz will reschedule job which will call create again
-		Mockito.verify(activeScheduleDao, Mockito.times(expectedNumOfJobFired)).create(activeScheduleEntity);
+		Mockito.verify(activeScheduleDao, Mockito.times(expectedNumOfTimesJobRescheduled)).create(activeScheduleEntity);
 
 		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 		String expectedMessage = messageBundleResourceHelper.lookupMessage(
 				"scheduler.job.reschedule.failed.max.reached", jobInformation.getTrigger().getKey(), appId, scheduleId,
-				expectedNumOfJobFired, ScheduleJobHelper.RescheduleCount.ACTIVE_SCHEDULE.name());
+				expectedNumOfTimesJobRescheduled, ScheduleJobHelper.RescheduleCount.ACTIVE_SCHEDULE.name());
 
 		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
@@ -290,10 +286,10 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 	}
 
 	@Test
-	public void testRemoveActiveSchedules_when_MaxRescheduleCountReached() throws Exception {
+	public void testRemoveActiveSchedules_when_JobRescheduleMaxCountReached() throws Exception {
 		setLogLevel(Level.ERROR);
 
-		int expectedNumOfJobFired = 5;
+		int expectedNumOfTimesJobRescheduled = 5;
 
 		// Build the job
 		JobInformation jobInformation = new JobInformation<>(AppScalingScheduleEndJob.class);
@@ -307,18 +303,18 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 
 		Mockito.doThrow(new DatabaseValidationException("test exception")).when(activeScheduleDao).delete(scheduleId);
 
-		TestJobListener testJobListener = new TestJobListener(expectedNumOfJobFired);
+		TestJobListener testJobListener = new TestJobListener(expectedNumOfTimesJobRescheduled);
 		scheduler.getListenerManager().addJobListener(testJobListener);
 
 		scheduler.scheduleJob(jobInformation.getJobDetail(), jobInformation.getTrigger());
 
 		testJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(1));
 
-		Mockito.verify(activeScheduleDao, Mockito.times(expectedNumOfJobFired)).delete(scheduleId);
+		Mockito.verify(activeScheduleDao, Mockito.times(expectedNumOfTimesJobRescheduled)).delete(scheduleId);
 		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 		String expectedMessage = messageBundleResourceHelper.lookupMessage(
 				"scheduler.job.reschedule.failed.max.reached", jobInformation.getTrigger().getKey(), appId, scheduleId,
-				expectedNumOfJobFired, ScheduleJobHelper.RescheduleCount.ACTIVE_SCHEDULE.name());
+				expectedNumOfTimesJobRescheduled, ScheduleJobHelper.RescheduleCount.ACTIVE_SCHEDULE.name());
 
 		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));

@@ -91,6 +91,15 @@ public class RecurringScheduleEntitiesBuilder {
 		return this;
 	}
 
+	public RecurringScheduleEntitiesBuilder setScheduleId() {
+		long index = 1;
+		for (RecurringScheduleEntity recurringScheduleEntity : recurringScheduleEntities) {
+			recurringScheduleEntity.setId(index++);
+		}
+
+		return this;
+	}
+
 	public List<RecurringScheduleEntity> build() {
 		return recurringScheduleEntities;
 	}

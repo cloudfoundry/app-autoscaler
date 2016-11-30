@@ -27,7 +27,7 @@ import io.swagger.annotations.ApiModelProperty;
 @NamedQueries({
 		@NamedQuery(name = SpecificDateScheduleEntity.query_specificDateSchedulesByAppId, query = SpecificDateScheduleEntity.jpql_specificDateSchedulesByAppId) })
 public class SpecificDateScheduleEntity extends ScheduleEntity {
-	
+
 	@ApiModelProperty(example = DateHelper.DATE_TIME_FORMAT, required = true, position = 1)
 	@JsonFormat(pattern = DateHelper.DATE_TIME_FORMAT)
 	@JsonDeserialize(using = DateTimeDeserializer.class)
@@ -36,7 +36,7 @@ public class SpecificDateScheduleEntity extends ScheduleEntity {
 	@Column(name = "start_date_time")
 	@JsonProperty("start_date_time")
 	private Date startDateTime;
-	
+
 	@ApiModelProperty(example = DateHelper.DATE_TIME_FORMAT, required = true, position = 2)
 	@JsonFormat(pattern = DateHelper.DATE_TIME_FORMAT)
 	@JsonDeserialize(using = DateTimeDeserializer.class)
@@ -63,13 +63,37 @@ public class SpecificDateScheduleEntity extends ScheduleEntity {
 	}
 
 	public static final String query_specificDateSchedulesByAppId = "SpecificDateScheduleEntity.schedulesByAppId";
-	protected static final String jpql_specificDateSchedulesByAppId = " FROM SpecificDateScheduleEntity"
+	static final String jpql_specificDateSchedulesByAppId = " FROM SpecificDateScheduleEntity"
 			+ " WHERE app_id = :appId";
 
 	@Override
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
+		if (!super.equals(o))
+			return false;
+
+		SpecificDateScheduleEntity that = (SpecificDateScheduleEntity) o;
+
+		if (!startDateTime.equals(that.startDateTime))
+			return false;
+		return endDateTime.equals(that.endDateTime);
+
+	}
+
+	@Override
+	public int hashCode() {
+		int result = super.hashCode();
+		result = 31 * result + startDateTime.hashCode();
+		result = 31 * result + endDateTime.hashCode();
+		return result;
+	}
+
+	@Override
 	public String toString() {
-		return "SpecificDateScheduleEntity [startDateTime=" + startDateTime + ", endDateTime=" + endDateTime
-				+ "]";
+		return "SpecificDateScheduleEntity [startDateTime=" + startDateTime + ", endDateTime=" + endDateTime + "]";
 	}
 
 }

@@ -4,9 +4,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 
-import java.util.List;
-
-import javax.persistence.EntityManager;
 import javax.sql.DataSource;
 import javax.transaction.Transactional;
 
@@ -29,9 +26,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 public class ActiveScheduleDaoImplTest extends TestConfiguration {
 
 	@Autowired
-	private EntityManager entityManager;
-
-	@Autowired
 	private ActiveScheduleDao activeScheduleDao;
 
 	@Autowired
@@ -48,19 +42,17 @@ public class ActiveScheduleDaoImplTest extends TestConfiguration {
 		// Add fake test records.
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		Long scheduleId = 1L;
-		ActiveScheduleEntity activeScheduleEntity = TestDataSetupHelper.generateActiveScheduleEntity(appId, scheduleId,
-				JobActionEnum.START);
-		activeScheduleDao.create(activeScheduleEntity);
+		insertActiveSchedule(appId, scheduleId, 1, 5, 0);
 
 		appId = TestDataSetupHelper.generateAppIds(1)[0];
 		scheduleId = 2L;
-		activeScheduleEntity = TestDataSetupHelper.generateActiveScheduleEntity(appId, scheduleId, JobActionEnum.START);
-		activeScheduleDao.create(activeScheduleEntity);
+		insertActiveSchedule(appId, scheduleId, 2, 7, 3);
 	}
 
 	@Test
-	public void testFindActiveSchedule_with_incorrect_Id() {
-		assertThat("It should be null", activeScheduleDao.find(3L), nullValue());
+	public void testFindActiveSchedule_with_invalidId() {
+		ActiveScheduleEntity activeScheduleEntity = activeScheduleDao.find(3L);
+		assertThat("It should be null", activeScheduleEntity, nullValue());
 	}
 
 	@Test
@@ -69,26 +61,34 @@ public class ActiveScheduleDaoImplTest extends TestConfiguration {
 		Long scheduleId = 3L;
 		ActiveScheduleEntity activeScheduleEntity = TestDataSetupHelper.generateActiveScheduleEntity(appId, scheduleId,
 				JobActionEnum.START);
+
+		assertThat("It should have no active schedule", getActiveSchedulesCountByScheduleId(scheduleId), is(0L));
+
 		activeScheduleDao.create(activeScheduleEntity);
+
+		assertThat("It should have one active schedule", getActiveSchedulesCountByScheduleId(scheduleId), is(1L));
 
 		ActiveScheduleEntity foundActiveScheduleEntity = activeScheduleDao.find(activeScheduleEntity.getId());
 
-		assertThat("It should be 3", getActiveSchedulesCount(), is(3L));
 		assertThat("Both active schedules should be equal", activeScheduleEntity, is(foundActiveScheduleEntity));
 	}
 
 	@Test
 	public void testDeleteActiveSchedule() {
 		Long activeScheduleId = 2L;
+
+		assertThat("It should have one active schedule", getActiveSchedulesCountByScheduleId(activeScheduleId), is(1L));
+
 		int deletedActiveSchedules = activeScheduleDao.delete(activeScheduleId);
 
 		assertThat("It should be 1", deletedActiveSchedules, is(1));
-		assertThat("It should be 1", getActiveSchedulesCount(), is(1L));
-		assertThat("It should be null", activeScheduleDao.find(activeScheduleId), nullValue());
+		assertThat("It should have no active schedule", getActiveSchedulesCountByScheduleId(activeScheduleId), is(0L));
 	}
 
 	@Test
 	public void testDeleteActiveSchedule_with_nullValue() {
+
+		assertThat("It should be 2", getActiveSchedulesCount(), is(2L));
 
 		int number = activeScheduleDao.delete(null);
 
@@ -99,9 +99,11 @@ public class ActiveScheduleDaoImplTest extends TestConfiguration {
 	@Test
 	public void testDeleteActiveSchedule_with_invalidId() {
 
-		int number = activeScheduleDao.delete(7L);
+		assertThat("It should be 2", getActiveSchedulesCount(), is(2L));
 
-		assertThat("It should be 0", number, is(0));
+		int deletedActiveSchedules = activeScheduleDao.delete(7L);
+
+		assertThat("It should be 0", deletedActiveSchedules, is(0));
 		assertThat("It should be 2", getActiveSchedulesCount(), is(2L));
 	}
 
@@ -121,12 +123,24 @@ public class ActiveScheduleDaoImplTest extends TestConfiguration {
 		activeScheduleEntity = TestDataSetupHelper.generateActiveScheduleEntity(appId, scheduleId, JobActionEnum.START);
 		activeScheduleDao.create(activeScheduleEntity);
 
-		assertThat("It should have 3 active schedules", getActiveSchedulesCount(appId), is(3L));
+		assertThat("It should have 3 active schedules", getActiveSchedulesCountByAppId(appId), is(3L));
 
 		activeScheduleDao.deleteAllActiveSchedulesByAppId(appId);
 
-		assertThat("It should have no active schedules for the appId", getActiveSchedulesCount(appId), is(0L));
+		assertThat("It should have no active schedules", getActiveSchedulesCountByAppId(appId), is(0L));
 
+	}
+
+	private void insertActiveSchedule(String appId, Long scheduleId, int instanceMinCount, int instanceMaxCount,
+			int initialMinInstanceCount) {
+		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+
+		Object[] objects = new Object[] { scheduleId, appId, instanceMinCount, instanceMaxCount,
+				initialMinInstanceCount };
+
+		jdbcTemplate.update("INSERT INTO app_scaling_active_schedule "
+				+ "(id, app_id, instance_min_count, instance_max_count, initial_min_instance_count) "
+				+ "VALUES (?, ?, ?, ?, ?)", objects);
 	}
 
 	private long getActiveSchedulesCount() {
@@ -134,8 +148,15 @@ public class ActiveScheduleDaoImplTest extends TestConfiguration {
 		return jdbcTemplate.queryForObject("SELECT COUNT(1) FROM app_scaling_active_schedule", Long.class);
 	}
 
-	private long getActiveSchedulesCount(String appId) {
+	private long getActiveSchedulesCountByAppId(String appId) {
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
-		return jdbcTemplate.queryForObject("SELECT COUNT(1) FROM app_scaling_active_schedule WHERE app_id='"+appId+"'", Long.class);
+		return jdbcTemplate.queryForObject("SELECT COUNT(1) FROM app_scaling_active_schedule WHERE app_id=?",
+				new Object[] { appId }, Long.class);
+	}
+
+	private long getActiveSchedulesCountByScheduleId(Long scheduleId) {
+		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+		return jdbcTemplate.queryForObject("SELECT COUNT(1) FROM app_scaling_active_schedule WHERE id=?",
+				new Object[] { scheduleId }, Long.class);
 	}
 }

@@ -8,14 +8,14 @@ import java.util.List;
 
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 
-class SpecificDateScheduleEntitiesBuilder {
+public class SpecificDateScheduleEntitiesBuilder {
 	private List<SpecificDateScheduleEntity> specificDateScheduleEntities;
 
-	SpecificDateScheduleEntitiesBuilder(int noOfSchedules) {
+	public SpecificDateScheduleEntitiesBuilder(int noOfSchedules) {
 		specificDateScheduleEntities = generateEntities(noOfSchedules);
 	}
 
-	SpecificDateScheduleEntitiesBuilder setTimeZone(String timeZone) {
+	public SpecificDateScheduleEntitiesBuilder setTimeZone(String timeZone) {
 		if (specificDateScheduleEntities != null) {
 			for (SpecificDateScheduleEntity specificDateScheduleEntity : specificDateScheduleEntities) {
 				specificDateScheduleEntity.setTimeZone(timeZone);
@@ -33,7 +33,7 @@ class SpecificDateScheduleEntitiesBuilder {
 		return this;
 	}
 
-	SpecificDateScheduleEntitiesBuilder setDefaultInstanceMaxCount(int max) {
+	public SpecificDateScheduleEntitiesBuilder setDefaultInstanceMaxCount(int max) {
 		if (specificDateScheduleEntities != null) {
 			for (SpecificDateScheduleEntity specificDateScheduleEntity : specificDateScheduleEntities) {
 				specificDateScheduleEntity.setDefaultInstanceMaxCount(max);
@@ -43,7 +43,7 @@ class SpecificDateScheduleEntitiesBuilder {
 
 	}
 
-	SpecificDateScheduleEntitiesBuilder setDefaultInstanceMinCount(int min) {
+	public SpecificDateScheduleEntitiesBuilder setDefaultInstanceMinCount(int min) {
 		if (specificDateScheduleEntities != null) {
 			for (SpecificDateScheduleEntity specificDateScheduleEntity : specificDateScheduleEntities) {
 				specificDateScheduleEntity.setDefaultInstanceMinCount(min);

@@ -130,6 +130,49 @@ public class ScheduleEntity {
 	}
 
 	@Override
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (o == null || getClass() != o.getClass())
+			return false;
+
+		ScheduleEntity that = (ScheduleEntity) o;
+
+		if (id != null ? !id.equals(that.id) : that.id != null)
+			return false;
+		if (appId != null ? !appId.equals(that.appId) : that.appId != null)
+			return false;
+		if (timeZone != null ? !timeZone.equals(that.timeZone) : that.timeZone != null)
+			return false;
+		if (defaultInstanceMinCount != null ? !defaultInstanceMinCount.equals(that.defaultInstanceMinCount)
+				: that.defaultInstanceMinCount != null)
+			return false;
+		if (defaultInstanceMaxCount != null ? !defaultInstanceMaxCount.equals(that.defaultInstanceMaxCount)
+				: that.defaultInstanceMaxCount != null)
+			return false;
+		if (!instanceMinCount.equals(that.instanceMinCount))
+			return false;
+		if (!instanceMaxCount.equals(that.instanceMaxCount))
+			return false;
+		return initialMinInstanceCount != null ? initialMinInstanceCount.equals(that.initialMinInstanceCount)
+				: that.initialMinInstanceCount == null;
+
+	}
+
+	@Override
+	public int hashCode() {
+		int result = id != null ? id.hashCode() : 0;
+		result = 31 * result + (appId != null ? appId.hashCode() : 0);
+		result = 31 * result + (timeZone != null ? timeZone.hashCode() : 0);
+		result = 31 * result + (defaultInstanceMinCount != null ? defaultInstanceMinCount.hashCode() : 0);
+		result = 31 * result + (defaultInstanceMaxCount != null ? defaultInstanceMaxCount.hashCode() : 0);
+		result = 31 * result + instanceMinCount.hashCode();
+		result = 31 * result + instanceMaxCount.hashCode();
+		result = 31 * result + (initialMinInstanceCount != null ? initialMinInstanceCount.hashCode() : 0);
+		return result;
+	}
+
+	@Override
 	public String toString() {
 		return "ScheduleEntity [id=" + id + ", appId=" + appId + ", timeZone=" + timeZone + ", defaultInstanceMinCount="
 				+ defaultInstanceMinCount + ", defaultInstanceMaxCount=" + defaultInstanceMaxCount

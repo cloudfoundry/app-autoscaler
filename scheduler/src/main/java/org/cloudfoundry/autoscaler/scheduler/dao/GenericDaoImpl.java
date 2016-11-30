@@ -49,7 +49,7 @@ class GenericDaoImpl<T> implements GenericDao<T> {
 	public void delete(T entity) {
 		try {
 			entityManager.remove(entity);
-
+			entityManager.flush();
 		} catch (Exception exception) {
 			throw new DatabaseValidationException("Delete failed", exception);
 		}

@@ -10,7 +10,6 @@ import org.apache.logging.log4j.Logger;
 import org.cloudfoundry.autoscaler.scheduler.dao.ActiveScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.dao.RecurringScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.dao.SpecificDateScheduleDao;
-import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
@@ -40,7 +39,7 @@ public class ScheduleManager {
 	@Autowired
 	private RecurringScheduleDao recurringScheduleDao;
     @Autowired
-    ActiveScheduleDao activeScheduleDao;
+	private ActiveScheduleDao activeScheduleDao;
 	@Autowired
 	private ScheduleJobManager scheduleJobManager;
 	@Autowired
@@ -622,7 +621,7 @@ public class ScheduleManager {
 
 				// Ask ScalingJobManager to create scaling job
 				if (savedScheduleEntity != null) {
-					scheduleJobManager.createCronJob(recurringScheduleEntity);
+					scheduleJobManager.createCronJob(savedScheduleEntity);
 				}
 			}
 		}
