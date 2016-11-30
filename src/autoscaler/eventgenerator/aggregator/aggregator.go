@@ -4,12 +4,13 @@ import (
 	"autoscaler/db"
 	"autoscaler/eventgenerator/generator"
 	"autoscaler/eventgenerator/model"
-	"code.cloudfoundry.org/cfhttp"
-	"code.cloudfoundry.org/clock"
-	"code.cloudfoundry.org/lager"
 	"net/http"
 	"sync"
 	"time"
+
+	"code.cloudfoundry.org/cfhttp"
+	"code.cloudfoundry.org/clock"
+	"code.cloudfoundry.org/lager"
 )
 
 type Aggregator struct {
@@ -49,6 +50,7 @@ func NewAggregator(logger lager.Logger, clock clock.Clock, aggregatorExecuteInte
 	}
 	return aggregator
 }
+
 func (a *Aggregator) ConsumePolicy(policyMap map[string]*model.Policy, appChan chan *model.AppMonitor) {
 	if policyMap == nil {
 		return
@@ -82,6 +84,7 @@ func (a *Aggregator) ConsumePolicy(policyMap map[string]*model.Policy, appChan c
 			triggerArrayMap[triggerKey] = triggerArray
 		}
 	}
+
 	a.setAppMonitors(appMonitorArrayTmp)
 	a.evaluationManager.SetTriggers(triggerArrayMap)
 }
@@ -132,6 +135,7 @@ func (a *Aggregator) addToAggregateChannel() {
 	a.lock.Lock()
 	appMonitors := a.appMonitorArray
 	a.lock.Unlock()
+
 	for _, appMonitorTmp := range appMonitors {
 		a.appChan <- appMonitorTmp
 	}
