@@ -55,9 +55,11 @@ var _ = Describe("PolicyPoller", func() {
 			poller.Start()
 
 		})
+
 		AfterEach(func() {
 			poller.Stop()
 		})
+
 		Context("when the poller is started", func() {
 			BeforeEach(func() {
 				database.RetrievePoliciesStub = func() ([]*PolicyJson, error) {
@@ -66,6 +68,7 @@ var _ = Describe("PolicyPoller", func() {
 
 			})
 			It("should retrieve policies for every interval", func() {
+				Eventually(database.RetrievePoliciesCallCount).Should(Equal(1))
 				clock.Increment(2 * testPolicyPollerInterval * time.Second)
 				Eventually(database.RetrievePoliciesCallCount).Should(BeNumerically(">=", 2))
 			})
@@ -120,16 +123,18 @@ var _ = Describe("PolicyPoller", func() {
 			})
 		})
 	})
+
 	Context("Stop", func() {
 		BeforeEach(func() {
 			poller = NewPolicyPoller(logger, clock, testPolicyPollerInterval, database, consumer, appChan)
 			poller.Start()
+			Eventually(database.RetrievePoliciesCallCount).Should(Equal(1))
+
 			poller.Stop()
 		})
 
 		It("stops the polling", func() {
 			clock.Increment(5 * testPolicyPollerInterval)
-			Eventually(database.RetrievePoliciesCallCount).Should(Equal(1))
 			Consistently(database.RetrievePoliciesCallCount).Should(Equal(1))
 		})
 	})
