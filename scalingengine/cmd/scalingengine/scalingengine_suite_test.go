@@ -5,6 +5,7 @@ import (
 	"autoscaler/db"
 	"autoscaler/models"
 	"autoscaler/scalingengine/config"
+	"path/filepath"
 
 	"code.cloudfoundry.org/cfhttp"
 	. "github.com/onsi/ginkgo"
@@ -71,10 +72,11 @@ var _ = SynchronizedBeforeSuite(
 		}
 
 		port = 7000 + GinkgoParallelNode()
+		testCertDir := "../../../../../test-certs"
 		conf.Server.Port = port
-		conf.Server.TLS.KeyFile = "../../../testcerts/scalingengine.key"
-		conf.Server.TLS.CertFile = "../../../testcerts/scalingengine.crt"
-		conf.Server.TLS.CACertFile = "../../../testcerts/autoscaler-ca.crt"
+		conf.Server.TLS.KeyFile = filepath.Join(testCertDir, "scalingengine.key")
+		conf.Server.TLS.CertFile = filepath.Join(testCertDir, "scalingengine.crt")
+		conf.Server.TLS.CACertFile = filepath.Join(testCertDir, "autoscaler-ca.crt")
 
 		conf.Logging.Level = "debug"
 
@@ -112,9 +114,9 @@ var _ = SynchronizedBeforeSuite(
 		Expect(err).NotTo(HaveOccurred())
 
 		tlsConfig, err := cfhttp.NewTLSConfig(
-			"../../../testcerts/eventgenerator.crt",
-			"../../../testcerts/eventgenerator.key",
-			"../../../testcerts/autoscaler-ca.crt")
+			filepath.Join(testCertDir, "eventgenerator.crt"),
+			filepath.Join(testCertDir, "eventgenerator.key"),
+			filepath.Join(testCertDir, "autoscaler-ca.crt"))
 		Expect(err).NotTo(HaveOccurred())
 		httpClient = &http.Client{
 			Transport: &http.Transport{
