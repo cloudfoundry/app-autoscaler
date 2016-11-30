@@ -72,9 +72,9 @@ var _ = SynchronizedBeforeSuite(
 
 		port = 7000 + GinkgoParallelNode()
 		conf.Server.Port = port
-		conf.Server.TLS.KeyFile = "testfiles/testserver.key"
-		conf.Server.TLS.CertFile = "testfiles/testserver.crt"
-		conf.Server.TLS.CACertFile = "testfiles/testca.crt"
+		conf.Server.TLS.KeyFile = "../../../testcerts/scalingengine.key"
+		conf.Server.TLS.CertFile = "../../../testcerts/scalingengine.crt"
+		conf.Server.TLS.CACertFile = "../../../testcerts/autoscaler-ca.crt"
 
 		conf.Logging.Level = "debug"
 
@@ -111,7 +111,10 @@ var _ = SynchronizedBeforeSuite(
 		err = testDB.Close()
 		Expect(err).NotTo(HaveOccurred())
 
-		tlsConfig, err := cfhttp.NewTLSConfig(conf.Server.TLS.CertFile, conf.Server.TLS.KeyFile, conf.Server.TLS.CACertFile)
+		tlsConfig, err := cfhttp.NewTLSConfig(
+			"../../../testcerts/eventgenerator.crt",
+			"../../../testcerts/eventgenerator.key",
+			"../../../testcerts/autoscaler-ca.crt")
 		Expect(err).NotTo(HaveOccurred())
 		httpClient = &http.Client{
 			Transport: &http.Transport{
