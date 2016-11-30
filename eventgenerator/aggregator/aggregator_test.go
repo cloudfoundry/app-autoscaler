@@ -252,9 +252,11 @@ var _ = Describe("Aggregator", func() {
 			evaluationManager.Start()
 			Eventually(clock.WatcherCount).Should(Equal(3)) //policyPoller:1,aggregator:1,evaluationManager:1
 		})
+
 		AfterEach(func() {
 			aggregator.Stop()
 		})
+
 		It("should save the appmetric to database", func() {
 			clock.Increment(1 * fakeWaitDuration)
 			Eventually(policyDatabase.RetrievePoliciesCallCount).Should(BeNumerically(">=", 1))
@@ -268,16 +270,19 @@ var _ = Describe("Aggregator", func() {
 				metricPollerCount = 4
 				unBlockChan = make(chan bool)
 				calledChan = make(chan string)
+
 				policyDatabase.RetrievePoliciesStub = func() ([]*PolicyJson, error) {
 					return []*PolicyJson{&PolicyJson{AppId: testAppId, PolicyStr: policyStr}, &PolicyJson{AppId: testAppId2, PolicyStr: policyStr}, &PolicyJson{AppId: testAppId3, PolicyStr: policyStr}, &PolicyJson{AppId: testAppId4, PolicyStr: policyStr}}, nil
 				}
+
 				appMetricDatabase.SaveAppMetricStub = func(appMetric *AppMetric) error {
 					defer GinkgoRecover()
 					calledChan <- appMetric.AppId
-					<-unBlockChan
+					Eventually(unBlockChan).Should(BeClosed())
 					return nil
 				}
 			})
+
 			It("should create MetricPollerCount metric-pollers", func() {
 				clock.Increment(1 * fakeWaitDuration)
 				for i := 0; i < metricPollerCount; i++ {
@@ -291,6 +296,7 @@ var _ = Describe("Aggregator", func() {
 			})
 		})
 	})
+
 	Context("Stop", func() {
 		var retrievePoliciesCallCount, saveAppMetricCallCount int
 		JustBeforeEach(func() {

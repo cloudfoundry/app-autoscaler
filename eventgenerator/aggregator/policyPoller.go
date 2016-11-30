@@ -3,9 +3,10 @@ package aggregator
 import (
 	"autoscaler/db"
 	"autoscaler/eventgenerator/model"
+	"time"
+
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
-	"time"
 )
 
 type Consumer func(map[string]*model.Policy, chan *model.AppMonitor)
@@ -16,7 +17,6 @@ type PolicyPoller struct {
 	database db.PolicyDB
 	appChan  chan *model.AppMonitor
 	clock    clock.Clock
-	tick     clock.Ticker
 	doneChan chan bool
 	consumer Consumer
 }
@@ -33,30 +33,31 @@ func NewPolicyPoller(logger lager.Logger, clock clock.Clock, interval time.Durat
 	}
 }
 func (p *PolicyPoller) Start() {
-	p.tick = p.clock.NewTicker(p.interval)
 	go p.startPolicyRetrieve()
 	p.logger.Info("started", lager.Data{"interval": p.interval})
 }
 
 func (p *PolicyPoller) Stop() {
-	if p.tick != nil {
-		p.tick.Stop()
-		close(p.doneChan)
-	}
+	close(p.doneChan)
 	p.logger.Info("stopped")
 }
+
 func (p *PolicyPoller) startPolicyRetrieve() {
+	tick := p.clock.NewTicker(p.interval)
+	defer tick.Stop()
+
 	for {
 		policyJsons, err := p.retrievePolicies()
 		if err != nil {
 			continue
 		}
-		policies := p.computePolicys(policyJsons)
+		policies := p.computePolicies(policyJsons)
 		p.consumer(policies, p.appChan)
+
 		select {
 		case <-p.doneChan:
 			return
-		case <-p.tick.C():
+		case <-tick.C():
 		}
 	}
 }
@@ -70,7 +71,7 @@ func (p *PolicyPoller) retrievePolicies() ([]*model.PolicyJson, error) {
 	p.logger.Info("policy count", lager.Data{"count": len(policyJsons)})
 	return policyJsons, nil
 }
-func (p *PolicyPoller) computePolicys(policyJsons []*model.PolicyJson) map[string]*model.Policy {
+func (p *PolicyPoller) computePolicies(policyJsons []*model.PolicyJson) map[string]*model.Policy {
 	policyMap := make(map[string]*model.Policy)
 	for _, policyRow := range policyJsons {
 		tmpPolicy := policyRow.GetPolicy()
