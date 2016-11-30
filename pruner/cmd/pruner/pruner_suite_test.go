@@ -56,6 +56,9 @@ func initConfig() {
 	cfg.AppMetricsDb.RefreshInterval = 12 * time.Hour
 	cfg.AppMetricsDb.CutoffDays = 20
 
+	cfg.ScalingEngineDb.DbUrl = os.Getenv("DBURL")
+	cfg.ScalingEngineDb.RefreshInterval = 12 * time.Hour
+	cfg.ScalingEngineDb.CutoffDays = 20
 }
 
 func writeConfig(c *config.Config) *os.File {

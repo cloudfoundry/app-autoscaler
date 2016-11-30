@@ -33,10 +33,14 @@ var _ = Describe("Config", func() {
 instance_metrics_db:
   db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
   refresh_interval: 12h
-  cutoff_days: 30
+  cutoff_days: 10
 app_metrics_db:
   db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-  refresh_interval: 12h
+  refresh_interval: 24h
+  cutoff_days: 20
+scaling_engine_db:
+  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  refresh_interval: 36h
   cutoff_days: 30
 `)
 			})
@@ -54,11 +58,15 @@ logging:
 instance_metrics_db:
   db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
   refresh_interval: 12h
-  cutoff_days: "cutoff_days"
+  cutoff_days: 10
 app_metrics_db:
   db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-  refresh_interval: 12h
-  cutoff_days: 30
+  refresh_interval: 24h
+  cutoff_days: 20
+scaling_engine_db:
+  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  refresh_interval: 36h
+  cutoff_days: 30s
 `)
 			})
 
@@ -80,6 +88,10 @@ app_metrics_db:
   db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
   refresh_interval: 10h
   cutoff_days: 15
+scaling_engine_db:
+  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  refresh_interval: 36h
+  cutoff_days: 30
 `)
 			})
 
@@ -95,6 +107,11 @@ app_metrics_db:
 				Expect(conf.AppMetricsDb.DbUrl).To(Equal("postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"))
 				Expect(conf.AppMetricsDb.RefreshInterval).To(Equal(10 * time.Hour))
 				Expect(conf.AppMetricsDb.CutoffDays).To(Equal(15))
+
+				Expect(conf.ScalingEngineDb.DbUrl).To(Equal("postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"))
+				Expect(conf.ScalingEngineDb.RefreshInterval).To(Equal(36 * time.Hour))
+				Expect(conf.ScalingEngineDb.CutoffDays).To(Equal(30))
+
 			})
 		})
 
@@ -105,6 +122,8 @@ instance_metrics_db:
   db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
 app_metrics_db:
   db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+scaling_engine_db:
+  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"  
 `)
 			})
 
@@ -118,6 +137,9 @@ app_metrics_db:
 
 				Expect(conf.AppMetricsDb.RefreshInterval).To(Equal(config.DefaultRefreshInterval))
 				Expect(conf.AppMetricsDb.CutoffDays).To(Equal(config.DefaultCutoffDays))
+
+				Expect(conf.ScalingEngineDb.RefreshInterval).To(Equal(config.DefaultRefreshInterval))
+				Expect(conf.ScalingEngineDb.CutoffDays).To(Equal(config.DefaultCutoffDays))
 			})
 		})
 
@@ -134,6 +156,11 @@ app_metrics_db:
 			conf.AppMetricsDb.DbUrl = "postgres://pqgotest:password@exampl.com/pqgotest"
 			conf.AppMetricsDb.RefreshInterval = 10 * time.Hour
 			conf.AppMetricsDb.CutoffDays = 15
+
+			conf.ScalingEngineDb.DbUrl = "postgres://pqgotest:password@exampl.com/pqgotest"
+			conf.ScalingEngineDb.RefreshInterval = 36 * time.Hour
+			conf.ScalingEngineDb.CutoffDays = 20
+
 		})
 
 		JustBeforeEach(func() {
@@ -146,7 +173,7 @@ app_metrics_db:
 			})
 		})
 
-		Context("when metrics db url is not set", func() {
+		Context("when InstanceMetrics db url is not set", func() {
 
 			BeforeEach(func() {
 				conf.InstanceMetricsDb.DbUrl = ""
@@ -157,18 +184,29 @@ app_metrics_db:
 			})
 		})
 
-		Context("when app metrics db url is not set", func() {
+		Context("when AppMetrics db url is not set", func() {
 
 			BeforeEach(func() {
 				conf.AppMetricsDb.DbUrl = ""
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: App Metrics DB url is empty")))
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: AppMetrics DB url is empty")))
 			})
 		})
 
-		Context("when metrics db refresh interval in hours is set to a negative value", func() {
+		Context("when ScalingEngine db url is not set", func() {
+
+			BeforeEach(func() {
+				conf.ScalingEngineDb.DbUrl = ""
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: ScalingEngine DB url is empty")))
+			})
+		})
+
+		Context("when InstanceMetrics db refresh interval in hours is set to a negative value", func() {
 
 			BeforeEach(func() {
 				conf.InstanceMetricsDb.RefreshInterval = -1
@@ -179,18 +217,29 @@ app_metrics_db:
 			})
 		})
 
-		Context("when app metrics db refresh interval in hours is set to a negative value", func() {
+		Context("when AppMetrics db refresh interval in hours is set to a negative value", func() {
 
 			BeforeEach(func() {
 				conf.AppMetricsDb.RefreshInterval = -1
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: App Metrics DB refresh interval is negative")))
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: AppMetrics DB refresh interval is negative")))
 			})
 		})
 
-		Context("when metrics db cutoff days is set to a negative value", func() {
+		Context("when ScalingEngine db refresh interval in hours is set to a negative value", func() {
+
+			BeforeEach(func() {
+				conf.ScalingEngineDb.RefreshInterval = -1
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: ScalingEngine DB refresh interval is negative")))
+			})
+		})
+
+		Context("when InstanceMetrics db cutoff days is set to a negative value", func() {
 
 			BeforeEach(func() {
 				conf.InstanceMetricsDb.CutoffDays = -1
@@ -201,15 +250,27 @@ app_metrics_db:
 			})
 		})
 
-		Context("when app metrics db cutoff days is set to a negative value", func() {
+		Context("when AppMetrics db cutoff days is set to a negative value", func() {
 
 			BeforeEach(func() {
 				conf.AppMetricsDb.CutoffDays = -1
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: App Metrics DB cutoff days is negative")))
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: AppMetrics DB cutoff days is negative")))
 			})
 		})
+
+		Context("when ScalingEngine db cutoff days is set to a negative value", func() {
+
+			BeforeEach(func() {
+				conf.ScalingEngineDb.CutoffDays = -1
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: ScalingEngine DB cutoff days is negative")))
+			})
+		})
+
 	})
 })

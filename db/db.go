@@ -31,6 +31,7 @@ type AppMetricDB interface {
 type ScalingEngineDB interface {
 	SaveScalingHistory(history *models.AppScalingHistory) error
 	RetrieveScalingHistories(appId string, start int64, end int64) ([]*models.AppScalingHistory, error)
+	PruneScalingHistories(before int64) error
 	UpdateScalingCooldownExpireTime(appId string, expireAt int64) error
 	CanScaleApp(appId string) (bool, error)
 	GetActiveSchedule(appId string) (*models.ActiveSchedule, error)

@@ -133,6 +133,15 @@ func hasScalingHistory(appId string, timestamp int64) bool {
 	return rows.Next()
 }
 
+func getNumberOfScalingHistories() int {
+	var num int
+	e := dbHelper.QueryRow("SELECT COUNT(*) FROM scalinghistory").Scan(&num)
+	if e != nil {
+		Fail("can not count the number of records in table scalinghistory: " + e.Error())
+	}
+	return num
+}
+
 func cleanScalingCooldownTable() {
 	_, e := dbHelper.Exec("DELETE from scalingcooldown")
 	if e != nil {
