@@ -71,6 +71,10 @@ java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:pos
 java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/eventgenerator/db/dataaggregator.db.changelog.yml update
 java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/scalingengine/db/scalingengine.db.changelog.yml update
 ```
+### Generate TLS Certificates
+```shell
+./scripts/generate_test_certs.sh
+```
 
 ### Run Unit Tests
 
@@ -91,7 +95,6 @@ popd
 go install github.com/onsi/ginkgo/ginkgo
 export DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
 pushd src/autoscaler
-./scripts/generate_test_certs.sh
 ginkgo -r -race -randomizeAllSpecs
 popd
 
@@ -101,6 +104,7 @@ popd
 ```
 
 ## Integration tests
+```shell
 pushd api
 npm install
 popd
@@ -109,110 +113,10 @@ pushd scheduler
 mvn package -DskipTests
 popd
 
-pushd test/integration/api
-npm install
-npm run integration
-popd
-### Configure and Package
-
-All the `CF-AutoScaler` components are configured through a single properties file. To create your own settings, copy the following properties and change the appropriate values for your environment.
-
+go install github.com/onsi/ginkgo/ginkgo
+export DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
+ginkgo -r -race -randomizeAllSpecs src/integration
 ```
-# CloudFoundry settings
-cfUrl=api.my.domain
-cfClientId=cf-autoscaler-client
-cfClientSecret=cf-autoscaler-client-secret
-
-# Service broker settings
-serviceName=CF-AutoScaler
-brokerUsername=admin
-brokerPassword=admin
-
-# http basic authentication settings between the CF-Autoscaler components
-internalAuthUsername=admin
-internalAuthPassword=admin
-
-# scaling and api server URI settings
-scalingServerURIList=https://autoscaling.my.app.domain
-apiServerURI=https://autoscalingapi.my.app.domain
-
-# couchdb settings
-couchdbUsername=autoscaler
-couchdbPassword=openopen
-couchdbHost=xxx.xxx.xxx.xxx
-couchdbPort=5984
-couchdbServerDBName=couchdb-scaling
-couchdbMetricDBPrefix=couchdb-scalingmetric
-couchdbBrokerDBName=couchdb-scalingbroker
-
-# metrics settings
-reportInterval=120
-```
-
-Assume you want to name your environment, "myenv". Create a properties file in `app-autoscaler/profiles/myenv.properties` with all the properties defined above.
-
-To package all the .war files for deployment, use mvn package. The *.war file can be found in each folder `{project}/target` directory.
-
-```shell
-mvn clean package -Denv=myenv -DskipTests
-```
-
-### Deploy `CF-AutoScaler` service
-
-Push the .war package of each `CF-AutoScaler` components to Cloud Foundry to deploy `CF-AutoScaler` service.
-
-The deployment assumes that there is a couchdb instance available with the configured host, port, username and password, and the couchdb can be accessed from an application running within Cloud Foundry.
-
-```shell
-bin/deploy.sh myenv
-```
-
-### Register `CF-AutoScaler` service broker
-
-Register `CF-AutoScaler` with Cloud Foundry.
-
-```shell
-bin/registerService.sh myenv
-```
-
-## Test your 'CF-AutoScaler' deployment
-See [src/acceptance/README.md](src/acceptance/README.md)
-
-## Use `CF-AutoScaler`
-
-Now, you can play with `CF-AutoScaler`.
-Create a `CF-AutoScaler` service, and bind to you application
-
-```shell
-cf create-service CF-AutoScaler free <service_instance>
-cf bind-service <app> <service_instance>
-```
-
-Then refer to [API_usage.rst][a] to manage the scaling policy of your application, retrieve metrics and scaling histories.
-
-## Tips for development
-1. To run acceptance tests faster, reduce the `reportInterval` in your config. You will also need to adjust the same value in your integration config.
-1. Logs are available locally with each application instance. For example, to retreive the logs for the API server, run `cf files AutoScalingAPI app/autoscaling_api.log`. They will roll so there may be additional files to examine.
-1. Depending on where you deploy CouchDB, the AutoScaler service container's
-   may not have network connectivity to it. To allow access, create and bind
-   a security group.
-
-```shell
-cat > my-security-group.json <<EOF
-[
-  {
-    "protocol": "tcp",
-    "destination": "0.0.0.0/0",
-    "ports": "5984"
-  }
-]
-EOF
-
-cf create-security-group couchdb my-security-group.json
-cf bind-running-security-group couchdb
-```
-Restart the applications if needed
-
 ## License
 
 This project is released under version 2.0 of the [Apache License][l].

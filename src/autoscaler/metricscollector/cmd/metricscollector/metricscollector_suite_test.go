@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -101,11 +102,12 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		Password:  "admin",
 	}
 
+	testCertDir := "../../../../../test-certs"
 	mcPort = 7000 + GinkgoParallelNode()
 	cfg.Server.Port = mcPort
-	cfg.Server.TLS.KeyFile = "../../../testcerts/metricscollector.key"
-	cfg.Server.TLS.CertFile = "../../../testcerts/metricscollector.crt"
-	cfg.Server.TLS.CACertFile = "../../../testcerts/autoscaler-ca.crt"
+	cfg.Server.TLS.KeyFile = filepath.Join(testCertDir, "metricscollector.key")
+	cfg.Server.TLS.CertFile = filepath.Join(testCertDir, "metricscollector.crt")
+	cfg.Server.TLS.CACertFile = filepath.Join(testCertDir, "autoscaler-ca.crt")
 
 	cfg.Logging.Level = "debug"
 
@@ -139,9 +141,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	Expect(err).NotTo(HaveOccurred())
 
 	tlsConfig, err := cfhttp.NewTLSConfig(
-		"../../../testcerts/eventgenerator.crt",
-		"../../../testcerts/eventgenerator.key",
-		"../../../testcerts/autoscaler-ca.crt")
+		filepath.Join(testCertDir, "eventgenerator.crt"),
+		filepath.Join(testCertDir, "eventgenerator.key"),
+		filepath.Join(testCertDir, "autoscaler-ca.crt"))
 	Expect(err).NotTo(HaveOccurred())
 	httpClient = &http.Client{
 		Transport: &http.Transport{
