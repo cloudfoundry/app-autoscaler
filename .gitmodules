@@ -49,3 +49,6 @@
 [submodule "src/code.cloudfoundry.org/clock"]
 	path = src/code.cloudfoundry.org/clock
 	url = https://github.com/cloudfoundry/clock
+[submodule "src/github.com/square/certstrap"]
+	path = src/github.com/square/certstrap
+	url = https://github.com/square/certstrap
