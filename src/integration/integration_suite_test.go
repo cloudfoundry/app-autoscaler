@@ -34,7 +34,6 @@ var (
 	tmpDir     string
 
 	plumbing              ifrit.Process
-	logger                lager.Logger
 	serviceBrokerConfPath string
 	apiServerConfPath     string
 	schedulerConfPath     string
@@ -43,19 +42,30 @@ var (
 	brokerAuth            string
 	dbUrl                 string
 
-	dbHelper                       *sql.DB
-	fakeScheduler                  *ghttp.Server
-	fakeScalingEngine              *ghttp.Server
-	httpClient                     *http.Client
-	brokerApiHttpRequestTimeout    time.Duration            = 1 * time.Second
-	apiSchedulerHttpRequestTimeout time.Duration            = 5 * time.Second
-	processMap                     map[string]ifrit.Process = map[string]ifrit.Process{}
+	dbHelper          *sql.DB
+	fakeScheduler     *ghttp.Server
+	fakeScalingEngine *ghttp.Server
+	processMap        map[string]ifrit.Process = map[string]ifrit.Process{}
+	schedulerProcess  ifrit.Process
+
+	brokerApiHttpRequestTimeout    time.Duration = 1 * time.Second
+	apiSchedulerHttpRequestTimeout time.Duration = 5 * time.Second
+
+	httpClient *http.Client
+	logger     lager.Logger
 )
 
+func TestIntegration(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Integration Suite")
+}
+
 var _ = SynchronizedBeforeSuite(func() []byte {
-	payload, err := json.Marshal(Components{
+	components = Components{
+		Ports:       PreparePorts(),
 		Executables: CompileTestedExecutables(),
-	})
+	}
+	payload, err := json.Marshal(&components)
 	Expect(err).NotTo(HaveOccurred())
 
 	dbUrl = os.Getenv("DBURL")
@@ -67,6 +77,13 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	Expect(err).NotTo(HaveOccurred())
 
 	clearDatabase()
+
+	tmpDir, err = ioutil.TempDir("", "autoscaler")
+	Expect(err).NotTo(HaveOccurred())
+
+	fakeScalingEngine = ghttp.NewServer()
+	schedulerConfPath = prepareSchedulerConfig(dbUrl, fakeScalingEngine.URL())
+	schedulerProcess = startScheduler()
 
 	return payload
 }, func(encodedBuiltArtifacts []byte) {
@@ -80,15 +97,15 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	dbUrl = os.Getenv("DBURL")
 	dbHelper, err = sql.Open(db.PostgresDriverName, dbUrl)
 	Expect(err).NotTo(HaveOccurred())
-
 })
 
 var _ = SynchronizedAfterSuite(func() {
-
 	if len(tmpDir) > 0 {
 		os.RemoveAll(tmpDir)
 	}
 }, func() {
+	ginkgomon.Kill(schedulerProcess)
+	fakeScalingEngine.Close()
 })
 
 var _ = BeforeEach(func() {
@@ -96,15 +113,6 @@ var _ = BeforeEach(func() {
 	logger = lager.NewLogger("test")
 	logger.RegisterSink(lager.NewWriterSink(GinkgoWriter, lager.DEBUG))
 })
-
-var _ = AfterEach(func() {
-
-})
-
-func TestIntegration(t *testing.T) {
-	RegisterFailHandler(Fail)
-	RunSpecs(t, "Integration Suite")
-}
 
 func CompileTestedExecutables() Executables {
 	builtExecutables := Executables{}
@@ -121,7 +129,7 @@ func PreparePorts() Ports {
 	return Ports{
 		APIServer:     10000 + GinkgoParallelNode(),
 		ServiceBroker: 11000 + GinkgoParallelNode(),
-		Scheduler:     12000 + GinkgoParallelNode(),
+		Scheduler:     12000,
 	}
 }
 
@@ -136,11 +144,10 @@ func startServiceBroker() {
 		{ServiceBroker, components.ServiceBroker(serviceBrokerConfPath)},
 	}))
 }
-func startScheduler() {
-	processMap[Scheduler] = ginkgomon.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
-		{Scheduler, components.Scheduler(schedulerConfPath)},
-	}))
+func startScheduler() ifrit.Process {
+	return ginkgomon.Invoke(components.Scheduler(schedulerConfPath))
 }
+
 func stopApiServer() {
 	ginkgomon.Interrupt(processMap[APIServer], 5*time.Second)
 }
@@ -198,8 +205,8 @@ func prepareApiServerConfig(port int, dbUri string, schedulerUri string) string 
 	cfgFile.Close()
 	return cfgFile.Name()
 }
-func prepareSchedulerConfig(dbUri string, scalingEngineUri string) string {
 
+func prepareSchedulerConfig(dbUri string, scalingEngineUri string) string {
 	dbUrl, _ := url.Parse(dbUri)
 	scheme := dbUrl.Scheme
 	host := dbUrl.Host
@@ -228,6 +235,7 @@ autoscaler.scalingengine.url=%s
 	cfgFile.Close()
 	return cfgFile.Name()
 }
+
 func getRandomId() string {
 	return strconv.FormatInt(time.Now().UnixNano(), 10)
 }

@@ -4,12 +4,13 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/ghttp"
 	. "integration"
 	"net/http"
 	"regexp"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/ghttp"
 )
 
 var _ = Describe("Integration_Broker_Api", func() {
@@ -31,6 +32,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 		fakeScheduler = ghttp.NewServer()
 		apiServerConfPath = prepareApiServerConfig(components.Ports[APIServer], dbUrl, fakeScheduler.URL())
 		serviceBrokerConfPath = prepareServiceBrokerConfig(components.Ports[ServiceBroker], brokerUserName, brokerPassword, dbUrl, fmt.Sprintf("http://127.0.0.1:%d", components.Ports[APIServer]))
+
 		startApiServer()
 		startServiceBroker()
 		brokerAuth = base64.StdEncoding.EncodeToString([]byte("username:password"))
