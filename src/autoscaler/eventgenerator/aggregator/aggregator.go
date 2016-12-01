@@ -88,6 +88,7 @@ func (a *Aggregator) ConsumePolicy(policyMap map[string]*model.Policy, appChan c
 	a.setAppMonitors(appMonitorArrayTmp)
 	a.evaluationManager.SetTriggers(triggerArrayMap)
 }
+
 func (a *Aggregator) ConsumeAppMetric(appMetric *model.AppMetric) {
 	if appMetric == nil {
 		return
@@ -97,6 +98,7 @@ func (a *Aggregator) ConsumeAppMetric(appMetric *model.AppMetric) {
 		a.logger.Error("save appmetric to database failed", err, lager.Data{"appmetric": appMetric})
 	}
 }
+
 func (a *Aggregator) Start() {
 	a.policyPoller.Start()
 	for _, metricPoller := range a.metricPollerArray {
@@ -104,7 +106,9 @@ func (a *Aggregator) Start() {
 	}
 	go a.startWork()
 
+	a.logger.Info("started")
 }
+
 func (a *Aggregator) Stop() {
 	a.policyPoller.Stop()
 	for _, metricPoller := range a.metricPollerArray {
@@ -113,11 +117,13 @@ func (a *Aggregator) Stop() {
 	close(a.doneChan)
 	a.logger.Info("stopped")
 }
+
 func (a *Aggregator) setAppMonitors(appMonitors []*model.AppMonitor) {
 	a.lock.Lock()
 	a.appMonitorArray = appMonitors
 	a.lock.Unlock()
 }
+
 func (a *Aggregator) startWork() {
 	ticker := a.cclock.NewTicker(a.aggregatorExecuteInterval)
 	defer ticker.Stop()
@@ -129,8 +135,8 @@ func (a *Aggregator) startWork() {
 			a.addToAggregateChannel()
 		}
 	}
-	a.logger.Info("started")
 }
+
 func (a *Aggregator) addToAggregateChannel() {
 	a.lock.Lock()
 	appMonitors := a.appMonitorArray

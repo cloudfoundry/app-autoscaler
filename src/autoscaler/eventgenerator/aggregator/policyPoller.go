@@ -32,6 +32,7 @@ func NewPolicyPoller(logger lager.Logger, clock clock.Clock, interval time.Durat
 		appChan:  appChan,
 	}
 }
+
 func (p *PolicyPoller) Start() {
 	go p.startPolicyRetrieve()
 	p.logger.Info("started", lager.Data{"interval": p.interval})
@@ -71,6 +72,7 @@ func (p *PolicyPoller) retrievePolicies() ([]*model.PolicyJson, error) {
 	p.logger.Info("policy count", lager.Data{"count": len(policyJsons)})
 	return policyJsons, nil
 }
+
 func (p *PolicyPoller) computePolicies(policyJsons []*model.PolicyJson) map[string]*model.Policy {
 	policyMap := make(map[string]*model.Policy)
 	for _, policyRow := range policyJsons {
