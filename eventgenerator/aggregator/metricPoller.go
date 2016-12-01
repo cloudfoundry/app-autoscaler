@@ -42,6 +42,7 @@ func (m *MetricPoller) Stop() {
 	m.doneChan <- true
 	m.logger.Info("stopped")
 }
+
 func (m *MetricPoller) startMetricRetrieve() {
 	for {
 		select {
@@ -52,6 +53,7 @@ func (m *MetricPoller) startMetricRetrieve() {
 		}
 	}
 }
+
 func (m *MetricPoller) retrieveMetric(app *model.AppMonitor) {
 	appId := app.AppId
 	metricType := app.MetricType
@@ -61,6 +63,7 @@ func (m *MetricPoller) retrieveMetric(app *model.AppMonitor) {
 		m.logger.Error("Unsupported metric type", fmt.Errorf("%s is not supported", metricType))
 		return
 	}
+
 	var url string
 	url = m.metricCollectorUrl + "/v1/apps/" + app.AppId + "/metrics_history/memory?start=" + strconv.FormatInt(startTime.UnixNano(), 10) + "&end=" + strconv.FormatInt(endTime.UnixNano(), 10)
 	resp, err := m.httpClient.Get(url)
@@ -69,6 +72,7 @@ func (m *MetricPoller) retrieveMetric(app *model.AppMonitor) {
 		return
 	}
 	defer resp.Body.Close()
+
 	var metrics []*models.AppInstanceMetric
 	if resp.StatusCode == http.StatusOK {
 		data, readError := ioutil.ReadAll(resp.Body)
@@ -84,8 +88,8 @@ func (m *MetricPoller) retrieveMetric(app *model.AppMonitor) {
 	} else {
 		m.logger.Error("Failed to retrieve metric from memory-collector", fmt.Errorf("response status code:%d", resp.StatusCode), lager.Data{"appId": appId, "metricType": metricType})
 	}
-
 }
+
 func (m *MetricPoller) aggregate(appId string, metricType string, metrics []*models.AppInstanceMetric) *model.AppMetric {
 	var count int64 = 0
 	var sum int64 = 0

@@ -135,7 +135,7 @@ var _ = Describe("PolicyPoller", func() {
 
 		It("stops the polling", func() {
 			clock.Increment(5 * testPolicyPollerInterval)
-			Consistently(database.RetrievePoliciesCallCount).Should(Equal(1))
+			Consistently(database.RetrievePoliciesCallCount).Should(Or(Equal(1), Equal(2)))
 		})
 	})
 })
