@@ -12,10 +12,12 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"testing"
 	"time"
 
+	"code.cloudfoundry.org/cfhttp"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
@@ -131,14 +133,35 @@ func initDB() {
 }
 
 func initHttpEndPoints() {
-	metricCollector = ghttp.NewServer()
-	scalingEngine = ghttp.NewServer()
+	testCertDir := "../../../../../test-certs"
+
+	mcTLSConfig, err := cfhttp.NewTLSConfig(
+		filepath.Join(testCertDir, "metricscollector.crt"),
+		filepath.Join(testCertDir, "metricscollector.key"),
+		filepath.Join(testCertDir, "autoscaler-ca.crt"))
+	Expect(err).NotTo(HaveOccurred())
+
+	metricCollector = ghttp.NewUnstartedServer()
+	metricCollector.HTTPTestServer.TLS = mcTLSConfig
+	metricCollector.HTTPTestServer.StartTLS()
+
+	seTLSConfig, err := cfhttp.NewTLSConfig(
+		filepath.Join(testCertDir, "scalingengine.crt"),
+		filepath.Join(testCertDir, "scalingengine.key"),
+		filepath.Join(testCertDir, "autoscaler-ca.crt"))
+	Expect(err).NotTo(HaveOccurred())
+
+	scalingEngine = ghttp.NewUnstartedServer()
+	scalingEngine.HTTPTestServer.TLS = seTLSConfig
+	scalingEngine.HTTPTestServer.StartTLS()
+
 	metricCollector.RouteToHandler("GET", "/v1/apps/"+testAppId+"/metrics_history/memory", ghttp.RespondWithJSONEncoded(http.StatusOK,
 		&metrics))
 	scalingEngine.RouteToHandler("POST", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
 }
 
 func initConfig() {
+	testCertDir := "../../../../../test-certs"
 	conf := &config.Config{
 		Server: config.ServerConfig{
 			Port: config.DefaultServerPort + 1,
@@ -163,9 +186,19 @@ func initConfig() {
 		},
 		ScalingEngine: config.ScalingEngineConfig{
 			ScalingEngineUrl: scalingEngine.URL(),
+			TLSClientCerts: models.TLSCerts{
+				KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
+				CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
+				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			},
 		},
 		MetricCollector: config.MetricCollectorConfig{
 			MetricCollectorUrl: metricCollector.URL(),
+			TLSClientCerts: models.TLSCerts{
+				KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
+				CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
+				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			},
 		},
 	}
 	configFile = writeConfig(conf)

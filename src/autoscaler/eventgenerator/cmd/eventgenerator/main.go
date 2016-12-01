@@ -74,9 +74,27 @@ func main() {
 	triggerArrayChan := make(chan []*model.Trigger, conf.Evaluator.TriggerArrayChannelSize)
 	appMonitorChan := make(chan *model.AppMonitor, conf.Aggregator.AppMonitorChannelSize)
 
+	seTLSClientCerts := &conf.ScalingEngine.TLSClientCerts
+	if seTLSClientCerts.CertFile == "" || seTLSClientCerts.KeyFile == "" {
+		seTLSClientCerts = nil
+	}
+	evaluationManager, err := generator.NewAppEvaluationManager(conf.Evaluator.EvaluationManagerInterval, logger, egClock, triggerArrayChan, conf.Evaluator.EvaluatorCount, appMetricDB, conf.ScalingEngine.ScalingEngineUrl, seTLSClientCerts)
+	if err != nil {
+		logger.Error("failed to create Evaluation Manager", err)
+		os.Exit(1)
+	}
+
+	mcTLSClientCerts := &conf.MetricCollector.TLSClientCerts
+	if mcTLSClientCerts.CertFile == "" || mcTLSClientCerts.KeyFile == "" {
+		mcTLSClientCerts = nil
+	}
+	aggregator, err := aggregator.NewAggregator(logger, egClock, conf.Aggregator.AggregatorExecuteInterval, conf.Aggregator.PolicyPollerInterval, policyDB, appMetricDB, conf.MetricCollector.MetricCollectorUrl, conf.Aggregator.MetricPollerCount, evaluationManager, appMonitorChan, mcTLSClientCerts)
+	if err != nil {
+		logger.Error("failed to create Aggregator", err)
+		os.Exit(1)
+	}
+
 	eventGeneratorServer := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
-		evaluationManager := generator.NewAppEvaluationManager(conf.Evaluator.EvaluationManagerInterval, logger, egClock, triggerArrayChan, conf.Evaluator.EvaluatorCount, appMetricDB, conf.ScalingEngine.ScalingEngineUrl)
-		aggregator := aggregator.NewAggregator(logger, egClock, conf.Aggregator.AggregatorExecuteInterval, conf.Aggregator.PolicyPollerInterval, policyDB, appMetricDB, conf.MetricCollector.MetricCollectorUrl, conf.Aggregator.MetricPollerCount, evaluationManager, appMonitorChan)
 		evaluationManager.Start()
 		aggregator.Start()
 		close(ready)
@@ -87,6 +105,7 @@ func main() {
 
 		return nil
 	})
+
 	members := grouper.Members{
 		{"eventGeneratorServer", eventGeneratorServer},
 	}
