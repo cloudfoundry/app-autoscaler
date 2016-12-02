@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+type GetPolicies func() map[string]*Policy
 type PolicyJson struct {
 	AppId     string `json:"appId"`
 	PolicyStr string `json:"PolicyStr"`

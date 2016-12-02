@@ -4,13 +4,12 @@ import (
 	. "autoscaler/eventgenerator/aggregator"
 	"autoscaler/eventgenerator/aggregator/fakes"
 	. "autoscaler/eventgenerator/model"
-	"errors"
-	"time"
-
 	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/lager"
+	"errors"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"time"
 )
 
 var _ = Describe("PolicyPoller", func() {
@@ -19,8 +18,6 @@ var _ = Describe("PolicyPoller", func() {
 		clock      *fakeclock.FakeClock
 		poller     *PolicyPoller
 		logger     lager.Logger
-		consumer   Consumer
-		appChan    chan *AppMonitor
 		testAppId1 = "testAppId"
 		policyStr1 = `
 		{
@@ -44,14 +41,11 @@ var _ = Describe("PolicyPoller", func() {
 		database = &fakes.FakePolicyDB{}
 		clock = fakeclock.NewFakeClock(time.Now())
 		logger = lager.NewLogger("PolicyPoller-test")
-		consumer = func(policies map[string]*Policy, appChan chan *AppMonitor) {
-		}
-		appChan = make(chan *AppMonitor, 1)
 
 	})
 	Context("Start", func() {
 		JustBeforeEach(func() {
-			poller = NewPolicyPoller(logger, clock, testPolicyPollerInterval, database, consumer, appChan)
+			poller = NewPolicyPoller(logger, clock, testPolicyPollerInterval, database)
 			poller.Start()
 
 		})
@@ -74,20 +68,17 @@ var _ = Describe("PolicyPoller", func() {
 			})
 
 			Context("when retrieve policies and compute triggers successfully", func() {
-				var consumed chan map[string]*Policy
 				BeforeEach(func() {
 					database.RetrievePoliciesStub = func() ([]*PolicyJson, error) {
 						return []*PolicyJson{&PolicyJson{AppId: testAppId1, PolicyStr: policyStr1}}, nil
 					}
-					consumed = make(chan map[string]*Policy, 1)
-					consumer = func(policies map[string]*Policy, appChan chan *AppMonitor) {
-						consumed <- policies
-					}
 				})
 				It("should call the consumer with the new triggers for every interval", func() {
-					clock.Increment(2 * testPolicyPollerInterval)
-					var policyMap map[string]*Policy
-					Eventually(consumed).Should(Receive(&policyMap))
+					Eventually(clock.WatcherCount).Should(Equal(1))
+					clock.Increment(1 * testPolicyPollerInterval)
+					clock.Increment(1 * testPolicyPollerInterval)
+					Eventually(database.RetrievePoliciesCallCount).Should(BeNumerically(">=", 2))
+					var policyMap map[string]*Policy = poller.GetPolicies()
 					Expect(policyMap[testAppId1]).To(Equal(&Policy{
 						AppId: testAppId1,
 						TriggerRecord: &TriggerRecord{
@@ -106,19 +97,15 @@ var _ = Describe("PolicyPoller", func() {
 				})
 			})
 			Context("when return error when retrieve policies from database", func() {
-				var consumed chan bool
 				BeforeEach(func() {
 					database.RetrievePoliciesStub = func() ([]*PolicyJson, error) {
 						return nil, errors.New("error when retrieve policies from database")
 					}
-					consumed = make(chan bool, 1)
-					consumer = func(policies map[string]*Policy, appChan chan *AppMonitor) {
-						consumed <- true
-					}
 				})
 				It("should not call the consumer as there is no trigger", func() {
-					clock.Increment(2 * testPolicyPollerInterval * time.Second)
-					Consistently(consumed).ShouldNot(Receive())
+					clock.Increment(2 * testPolicyPollerInterval)
+					var policyMap map[string]*Policy = poller.GetPolicies()
+					Expect(len(policyMap)).To(Equal(0))
 				})
 			})
 		})
@@ -126,7 +113,7 @@ var _ = Describe("PolicyPoller", func() {
 
 	Context("Stop", func() {
 		BeforeEach(func() {
-			poller = NewPolicyPoller(logger, clock, testPolicyPollerInterval, database, consumer, appChan)
+			poller = NewPolicyPoller(logger, clock, testPolicyPollerInterval, database)
 			poller.Start()
 			Eventually(database.RetrievePoliciesCallCount).Should(Equal(1))
 
