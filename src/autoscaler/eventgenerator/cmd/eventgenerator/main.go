@@ -74,11 +74,13 @@ func main() {
 	triggerArrayChan := make(chan []*model.Trigger, conf.Evaluator.TriggerArrayChannelSize)
 	appMonitorChan := make(chan *model.AppMonitor, conf.Aggregator.AppMonitorChannelSize)
 
+	policyPoller := aggregator.NewPolicyPoller(logger, egClock, conf.Aggregator.PolicyPollerInterval, policyDB)
+
 	seTLSClientCerts := &conf.ScalingEngine.TLSClientCerts
 	if seTLSClientCerts.CertFile == "" || seTLSClientCerts.KeyFile == "" {
 		seTLSClientCerts = nil
 	}
-	evaluationManager, err := generator.NewAppEvaluationManager(conf.Evaluator.EvaluationManagerInterval, logger, egClock, triggerArrayChan, conf.Evaluator.EvaluatorCount, appMetricDB, conf.ScalingEngine.ScalingEngineUrl, seTLSClientCerts)
+	evaluationManager, err := generator.NewAppEvaluationManager(conf.Evaluator.EvaluationManagerInterval, logger, egClock, triggerArrayChan, conf.Evaluator.EvaluatorCount, appMetricDB, conf.ScalingEngine.ScalingEngineUrl, policyPoller.GetPolicies, seTLSClientCerts)
 	if err != nil {
 		logger.Error("failed to create Evaluation Manager", err)
 		os.Exit(1)
@@ -88,13 +90,14 @@ func main() {
 	if mcTLSClientCerts.CertFile == "" || mcTLSClientCerts.KeyFile == "" {
 		mcTLSClientCerts = nil
 	}
-	aggregator, err := aggregator.NewAggregator(logger, egClock, conf.Aggregator.AggregatorExecuteInterval, conf.Aggregator.PolicyPollerInterval, policyDB, appMetricDB, conf.MetricCollector.MetricCollectorUrl, conf.Aggregator.MetricPollerCount, evaluationManager, appMonitorChan, mcTLSClientCerts)
+	aggregator, err := aggregator.NewAggregator(logger, egClock, conf.Aggregator.AggregatorExecuteInterval, conf.Aggregator.PolicyPollerInterval, policyDB, appMetricDB, conf.MetricCollector.MetricCollectorUrl, conf.Aggregator.MetricPollerCount, evaluationManager, appMonitorChan, policyPoller.GetPolicies, mcTLSClientCerts)
 	if err != nil {
 		logger.Error("failed to create Aggregator", err)
 		os.Exit(1)
 	}
 
 	eventGeneratorServer := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
+		policyPoller.Start()
 		evaluationManager.Start()
 		aggregator.Start()
 		close(ready)
@@ -102,6 +105,7 @@ func main() {
 		<-signals
 		aggregator.Stop()
 		evaluationManager.Stop()
+		policyPoller.Stop()
 
 		return nil
 	})
