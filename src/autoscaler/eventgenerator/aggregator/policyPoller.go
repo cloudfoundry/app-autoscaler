@@ -3,10 +3,11 @@ package aggregator
 import (
 	"autoscaler/db"
 	"autoscaler/eventgenerator/model"
-	"code.cloudfoundry.org/clock"
-	"code.cloudfoundry.org/lager"
 	"sync"
 	"time"
+
+	"code.cloudfoundry.org/clock"
+	"code.cloudfoundry.org/lager"
 )
 
 type Consumer func(map[string]*model.Policy, chan *model.AppMonitor)
@@ -55,8 +56,9 @@ func (p *PolicyPoller) startPolicyRetrieve() {
 		if err != nil {
 			continue
 		}
+		policies := p.computePolicies(policyJsons)
 		p.lock.Lock()
-		p.policyMap = p.computePolicies(policyJsons)
+		p.policyMap = policies
 		p.lock.Unlock()
 		select {
 		case <-p.doneChan:
