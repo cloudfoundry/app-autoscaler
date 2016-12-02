@@ -3,6 +3,7 @@ package generator
 import (
 	"autoscaler/db"
 	"autoscaler/eventgenerator/model"
+	"autoscaler/models"
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
@@ -23,7 +24,9 @@ type AppEvaluationManager struct {
 	evaluatorArray   []*Evaluator
 }
 
-func NewAppEvaluationManager(evaluateInterval time.Duration, logger lager.Logger, cclock clock.Clock, triggerChan chan []*model.Trigger, evaluatorCount int, database db.AppMetricDB, scalingEngineUrl string) *AppEvaluationManager {
+func NewAppEvaluationManager(evaluateInterval time.Duration, logger lager.Logger, cclock clock.Clock,
+	triggerChan chan []*model.Trigger, evaluatorCount int, database db.AppMetricDB,
+	scalingEngineUrl string, tlsCerts *models.TLSCerts) (*AppEvaluationManager, error) {
 	manager := &AppEvaluationManager{
 		evaluateInterval: evaluateInterval,
 		logger:           logger.Session("AppEvaluationManager"),
@@ -35,11 +38,19 @@ func NewAppEvaluationManager(evaluateInterval time.Duration, logger lager.Logger
 	}
 	client := cfhttp.NewClient()
 	client.Transport.(*http.Transport).MaxIdleConnsPerHost = evaluatorCount
+	if tlsCerts != nil {
+		tlsConfig, err := cfhttp.NewTLSConfig(tlsCerts.CertFile, tlsCerts.KeyFile, tlsCerts.CACertFile)
+		if err != nil {
+			return nil, err
+		}
+		client.Transport.(*http.Transport).TLSClientConfig = tlsConfig
+	}
+
 	for i := 0; i < evaluatorCount; i++ {
 		evaluator := NewEvaluator(logger, client, scalingEngineUrl, triggerChan, database)
 		manager.evaluatorArray = append(manager.evaluatorArray, evaluator)
 	}
-	return manager
+	return manager, nil
 }
 func (a *AppEvaluationManager) Start() {
 	for _, evaluator := range a.evaluatorArray {

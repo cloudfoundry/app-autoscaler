@@ -19,6 +19,7 @@ import (
 var _ = Describe("AppEvaluationManager", func() {
 
 	var (
+		err                  error
 		logger               lager.Logger
 		fclock               *fakeclock.FakeClock
 		manager              *AppEvaluationManager
@@ -80,7 +81,8 @@ var _ = Describe("AppEvaluationManager", func() {
 		fakeScalingEngine.RouteToHandler("POST", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
 		database = &fakes.FakeAppMetricDB{}
 		testEvaluatorCount = 0
-		manager = NewAppEvaluationManager(testEvaluateInterval, logger, fclock, triggerArrayChan, testEvaluatorCount, database, fakeScalingEngine.URL())
+		manager, err = NewAppEvaluationManager(testEvaluateInterval, logger, fclock, triggerArrayChan, testEvaluatorCount, database, fakeScalingEngine.URL(), nil)
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	Describe("Start", func() {
@@ -98,7 +100,8 @@ var _ = Describe("AppEvaluationManager", func() {
 			var calledChan chan string
 			BeforeEach(func() {
 				testEvaluatorCount = 4
-				manager = NewAppEvaluationManager(testEvaluateInterval, logger, fclock, triggerArrayChan, testEvaluatorCount, database, fakeScalingEngine.URL())
+				manager, err = NewAppEvaluationManager(testEvaluateInterval, logger, fclock, triggerArrayChan, testEvaluatorCount, database, fakeScalingEngine.URL(), nil)
+				Expect(err).NotTo(HaveOccurred())
 				unBlockChan = make(chan bool)
 				calledChan = make(chan string)
 				database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*AppMetric, error) {
