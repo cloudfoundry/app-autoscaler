@@ -6,19 +6,19 @@ import (
 	. "autoscaler/eventgenerator/generator"
 	. "autoscaler/eventgenerator/model"
 	"autoscaler/models"
-	"net/http"
-	"regexp"
-	"time"
-
 	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/lager"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
+	"net/http"
+	"regexp"
+	"time"
 )
 
 var _ = Describe("Aggregator", func() {
 	var (
+		getPolicies       GetPolicies
 		evaluationManager *AppEvaluationManager
 		aggregator        *Aggregator
 		appMetricDatabase *fakes.FakeAppMetricDB
@@ -93,6 +93,100 @@ var _ = Describe("Aggregator", func() {
 				Timestamp:     220000,
 			},
 		}
+		policyMap map[string]*Policy = map[string]*Policy{
+			testAppId: &Policy{
+				AppId: testAppId,
+				TriggerRecord: &TriggerRecord{
+					InstanceMaxCount: 5,
+					InstanceMinCount: 1,
+					ScalingRules: []*ScalingRule{
+						&ScalingRule{
+							MetricType:       "MemoryUsage",
+							StatWindow:       300,
+							BreachDuration:   300,
+							CoolDownDuration: 300,
+							Threshold:        30,
+							Operator:         "<",
+							Adjustment:       "-1",
+						},
+					},
+				},
+			},
+		}
+		policyMap2 map[string]*Policy = map[string]*Policy{
+			testAppId: &Policy{
+				AppId: testAppId,
+				TriggerRecord: &TriggerRecord{
+					InstanceMaxCount: 5,
+					InstanceMinCount: 1,
+					ScalingRules: []*ScalingRule{
+						&ScalingRule{
+							MetricType:       "MemoryUsage",
+							StatWindow:       300,
+							BreachDuration:   300,
+							CoolDownDuration: 300,
+							Threshold:        30,
+							Operator:         "<",
+							Adjustment:       "-1",
+						},
+					},
+				},
+			},
+			testAppId2: &Policy{
+				AppId: testAppId2,
+				TriggerRecord: &TriggerRecord{
+					InstanceMaxCount: 5,
+					InstanceMinCount: 1,
+					ScalingRules: []*ScalingRule{
+						&ScalingRule{
+							MetricType:       "MemoryUsage",
+							StatWindow:       300,
+							BreachDuration:   300,
+							CoolDownDuration: 300,
+							Threshold:        30,
+							Operator:         "<",
+							Adjustment:       "-1",
+						},
+					},
+				},
+			},
+			testAppId3: &Policy{
+				AppId: testAppId3,
+				TriggerRecord: &TriggerRecord{
+					InstanceMaxCount: 5,
+					InstanceMinCount: 1,
+					ScalingRules: []*ScalingRule{
+						&ScalingRule{
+							MetricType:       "MemoryUsage",
+							StatWindow:       300,
+							BreachDuration:   300,
+							CoolDownDuration: 300,
+							Threshold:        30,
+							Operator:         "<",
+							Adjustment:       "-1",
+						},
+					},
+				},
+			},
+			testAppId4: &Policy{
+				AppId: testAppId4,
+				TriggerRecord: &TriggerRecord{
+					InstanceMaxCount: 5,
+					InstanceMinCount: 1,
+					ScalingRules: []*ScalingRule{
+						&ScalingRule{
+							MetricType:       "MemoryUsage",
+							StatWindow:       300,
+							BreachDuration:   300,
+							CoolDownDuration: 300,
+							Threshold:        30,
+							Operator:         "<",
+							Adjustment:       "-1",
+						},
+					},
+				},
+			},
+		}
 	)
 
 	BeforeEach(func() {
@@ -104,13 +198,15 @@ var _ = Describe("Aggregator", func() {
 		}
 
 		appMetricDatabase.SaveAppMetricStub = func(appMetric *AppMetric) error {
-			Expect(appMetric.AppId).To(Equal("testAppId"))
+			Expect(appMetric.AppId).To(Equal(testAppId))
 			Expect(appMetric.MetricType).To(Equal(metricType))
 			Expect(appMetric.Unit).To(Equal(unit))
 			Expect(*appMetric.Value).To(Equal(int64(250)))
 			return nil
 		}
-
+		getPolicies = func() map[string]*Policy {
+			return policyMap
+		}
 		appMetricDatabase.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*AppMetric, error) {
 			return []*AppMetric{}, nil
 		}
@@ -125,7 +221,8 @@ var _ = Describe("Aggregator", func() {
 
 		triggerChan = make(chan []*Trigger, 10)
 		appMonitorChan = make(chan *AppMonitor, 10)
-		evaluationManager = NewAppEvaluationManager(testEvaluateInteval, logger, clock, triggerChan, evaluatorCount, appMetricDatabase, "")
+		evaluationManager = NewAppEvaluationManager(testEvaluateInteval, logger, clock, triggerChan, evaluatorCount, appMetricDatabase, "",
+			getPolicies)
 
 		if testEvaluateInteval > testAggregatorExecuteInterval {
 			fakeWaitDuration = testEvaluateInteval
@@ -134,104 +231,12 @@ var _ = Describe("Aggregator", func() {
 		}
 	})
 
-	Describe("ConsumePolicy", func() {
-		var policyMap map[string]*Policy
-		var appChan chan *AppMonitor
-		var appMonitor *AppMonitor
-		var triggerArray []*Trigger
-		BeforeEach(func() {
-			appChan = make(chan *AppMonitor, 1)
-
-			aggregator = NewAggregator(logger, clock, testAggregatorExecuteInterval, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), 0, evaluationManager, appMonitorChan)
-			policyMap = map[string]*Policy{testAppId: &Policy{
-				AppId: testAppId,
-				TriggerRecord: &TriggerRecord{
-					InstanceMaxCount: 5,
-					InstanceMinCount: 1,
-					ScalingRules: []*ScalingRule{&ScalingRule{
-						MetricType:       "MemoryUsage",
-						StatWindow:       300,
-						BreachDuration:   300,
-						CoolDownDuration: 300,
-						Threshold:        30,
-						Operator:         "<",
-						Adjustment:       "-1",
-					}}},
-			}}
-		})
-
-		Context("when there are data in triggerMap", func() {
-			JustBeforeEach(func() {
-				aggregator.ConsumePolicy(policyMap, appMonitorChan)
-				aggregator.Start()
-				evaluationManager.Start()
-				Eventually(clock.WatcherCount).Should(Equal(3)) //policyPoller:1,aggregator:1,evaluationManager:1
-				clock.Increment(1 * fakeWaitDuration)
-			})
-
-			It("should parse the triggers to appmonitor and put them in appChan", func() {
-				Eventually(appMonitorChan).Should(Receive(&appMonitor))
-				Expect(appMonitor).To(Equal(&AppMonitor{
-					AppId:      testAppId,
-					MetricType: "MemoryUsage",
-					StatWindow: 300,
-				}))
-
-				Eventually(triggerChan).Should(Receive(&triggerArray))
-				Expect(triggerArray).To(Equal([]*Trigger{&Trigger{
-					AppId:            testAppId,
-					MetricType:       "MemoryUsage",
-					BreachDuration:   300,
-					CoolDownDuration: 300,
-					Threshold:        30,
-					Operator:         "<",
-					Adjustment:       "-1",
-				}}))
-			})
-		})
-
-		Context("when there is no data in policyMap", func() {
-			BeforeEach(func() {
-				policyMap = map[string]*Policy{}
-			})
-
-			JustBeforeEach(func() {
-				aggregator.ConsumePolicy(policyMap, appChan)
-				evaluationManager.Start()
-				Eventually(clock.WatcherCount).Should(Equal(1))
-				clock.Increment(1 * fakeWaitDuration)
-			})
-
-			It("should not receive any data from the appChan", func() {
-				Consistently(appChan).ShouldNot(Receive())
-				Consistently(triggerChan).ShouldNot(Receive())
-			})
-		})
-
-		Context("when the policyMap is nil", func() {
-			BeforeEach(func() {
-				policyMap = nil
-			})
-
-			JustBeforeEach(func() {
-				aggregator.ConsumePolicy(policyMap, appChan)
-				evaluationManager.Start()
-				Eventually(clock.WatcherCount).Should(Equal(1))
-				clock.Increment(1 * fakeWaitDuration)
-			})
-
-			It("should not receive any data from the appChan", func() {
-				Consistently(appChan).ShouldNot(Receive())
-				Consistently(triggerChan).ShouldNot(Receive())
-			})
-		})
-	})
-
 	Describe("ConsumeAppMetric", func() {
 		var appmetric *AppMetric
 		var value int64 = 250
 		BeforeEach(func() {
-			aggregator = NewAggregator(logger, clock, testAggregatorExecuteInterval, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount, evaluationManager, appMonitorChan)
+			aggregator = NewAggregator(logger, clock, testAggregatorExecuteInterval, testPolicyPollerInterval, policyDatabase, appMetricDatabase,
+				metricServer.URL(), metricPollerCount, evaluationManager, appMonitorChan, getPolicies)
 			appmetric = &AppMetric{
 				AppId:      testAppId,
 				MetricType: metricType,
@@ -267,10 +272,11 @@ var _ = Describe("Aggregator", func() {
 
 	Describe("Start", func() {
 		JustBeforeEach(func() {
-			aggregator = NewAggregator(logger, clock, testAggregatorExecuteInterval, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount, evaluationManager, appMonitorChan)
+			aggregator = NewAggregator(logger, clock, testAggregatorExecuteInterval, testPolicyPollerInterval, policyDatabase, appMetricDatabase,
+				metricServer.URL(), metricPollerCount, evaluationManager, appMonitorChan, getPolicies)
 			aggregator.Start()
 			evaluationManager.Start()
-			Eventually(clock.WatcherCount).Should(Equal(3)) //policyPoller:1,aggregator:1,evaluationManager:1
+			Eventually(clock.WatcherCount).Should(Equal(2)) //aggregator:1,evaluationManager:1
 		})
 
 		AfterEach(func() {
@@ -279,7 +285,6 @@ var _ = Describe("Aggregator", func() {
 
 		It("should save the appmetric to database", func() {
 			clock.Increment(1 * fakeWaitDuration)
-			Eventually(policyDatabase.RetrievePoliciesCallCount).Should(BeNumerically(">=", 1))
 			Eventually(appMetricDatabase.SaveAppMetricCallCount).Should(BeNumerically(">=", 1))
 		})
 
@@ -291,11 +296,9 @@ var _ = Describe("Aggregator", func() {
 				metricPollerCount = 4
 				unBlockChan = make(chan bool)
 				calledChan = make(chan string)
-
-				policyDatabase.RetrievePoliciesStub = func() ([]*PolicyJson, error) {
-					return []*PolicyJson{&PolicyJson{AppId: testAppId, PolicyStr: policyStr}, &PolicyJson{AppId: testAppId2, PolicyStr: policyStr}, &PolicyJson{AppId: testAppId3, PolicyStr: policyStr}, &PolicyJson{AppId: testAppId4, PolicyStr: policyStr}}, nil
+				getPolicies = func() map[string]*Policy {
+					return policyMap2
 				}
-
 				appMetricDatabase.SaveAppMetricStub = func(appMetric *AppMetric) error {
 					defer GinkgoRecover()
 					calledChan <- appMetric.AppId
@@ -323,9 +326,10 @@ var _ = Describe("Aggregator", func() {
 		var saveAppMetricCallCount int
 
 		JustBeforeEach(func() {
-			aggregator = NewAggregator(logger, clock, testAggregatorExecuteInterval, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount, evaluationManager, appMonitorChan)
+			aggregator = NewAggregator(logger, clock, testAggregatorExecuteInterval, testPolicyPollerInterval, policyDatabase, appMetricDatabase,
+				metricServer.URL(), metricPollerCount, evaluationManager, appMonitorChan, getPolicies)
 			aggregator.Start()
-			Eventually(clock.WatcherCount).Should(Equal(2)) //policyPoller:1,aggregator:1
+			Eventually(clock.WatcherCount).Should(Equal(1)) //aggregator:1
 			aggregator.Stop()
 
 			retrievePoliciesCallCount = policyDatabase.RetrievePoliciesCallCount()
@@ -334,7 +338,6 @@ var _ = Describe("Aggregator", func() {
 
 		It("should not retrieve or save", func() {
 			clock.Increment(1 * fakeWaitDuration)
-			Eventually(policyDatabase.RetrievePoliciesCallCount).Should(Equal(retrievePoliciesCallCount))
 			Eventually(appMetricDatabase.SaveAppMetricCallCount).Should(Equal(saveAppMetricCallCount))
 		})
 	})

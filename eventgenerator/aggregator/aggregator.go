@@ -17,7 +17,6 @@ type Aggregator struct {
 	logger                    lager.Logger
 	doneChan                  chan bool
 	appChan                   chan *model.AppMonitor
-	policyPoller              *PolicyPoller
 	metricPollerArray         []*MetricPoller
 	appMetricDatabase         db.AppMetricDB
 	evaluationManager         *generator.AppEvaluationManager
@@ -25,9 +24,12 @@ type Aggregator struct {
 	aggregatorExecuteInterval time.Duration
 	appMonitorArray           []*model.AppMonitor
 	lock                      sync.Mutex
+	getPolicies               model.GetPolicies
 }
 
-func NewAggregator(logger lager.Logger, clock clock.Clock, aggregatorExecuteInterval time.Duration, policyPollerInterval time.Duration, policyDatabase db.PolicyDB, appMetricDatabase db.AppMetricDB, metricCollectorUrl string, metricPollerCount int, evaluationManager *generator.AppEvaluationManager, appMonitorChan chan *model.AppMonitor) *Aggregator {
+func NewAggregator(logger lager.Logger, clock clock.Clock, aggregatorExecuteInterval time.Duration, policyPollerInterval time.Duration,
+	policyDatabase db.PolicyDB, appMetricDatabase db.AppMetricDB, metricCollectorUrl string, metricPollerCount int,
+	evaluationManager *generator.AppEvaluationManager, appMonitorChan chan *model.AppMonitor, getPolicies model.GetPolicies) *Aggregator {
 	aggregator := &Aggregator{
 		logger:            logger.Session("Aggregator"),
 		doneChan:          make(chan bool),
@@ -38,8 +40,8 @@ func NewAggregator(logger lager.Logger, clock clock.Clock, aggregatorExecuteInte
 		cclock:            clock,
 		aggregatorExecuteInterval: aggregatorExecuteInterval,
 		appMonitorArray:           []*model.AppMonitor{},
+		getPolicies:               getPolicies,
 	}
-	aggregator.policyPoller = NewPolicyPoller(logger, clock, policyPollerInterval, policyDatabase, aggregator.ConsumePolicy, aggregator.appChan)
 	client := cfhttp.NewClient()
 	client.Transport.(*http.Transport).MaxIdleConnsPerHost = metricPollerCount
 
@@ -51,13 +53,11 @@ func NewAggregator(logger lager.Logger, clock clock.Clock, aggregatorExecuteInte
 	return aggregator
 }
 
-func (a *Aggregator) ConsumePolicy(policyMap map[string]*model.Policy, appChan chan *model.AppMonitor) {
+func (a *Aggregator) getAppMonitors(policyMap map[string]*model.Policy) []*model.AppMonitor {
 	if policyMap == nil {
-		return
+		return nil
 	}
-	var triggerArrayMap map[string][]*model.Trigger = make(map[string][]*model.Trigger)
 	var appMonitorArrayTmp = []*model.AppMonitor{}
-
 	for appId, policy := range policyMap {
 		for _, rule := range policy.TriggerRecord.ScalingRules {
 
@@ -66,27 +66,9 @@ func (a *Aggregator) ConsumePolicy(policyMap map[string]*model.Policy, appChan c
 				MetricType: rule.MetricType,
 				StatWindow: rule.StatWindow,
 			})
-
-			triggerKey := appId + "#" + rule.MetricType
-			triggerArray, exist := triggerArrayMap[triggerKey]
-			if !exist {
-				triggerArray = []*model.Trigger{}
-			}
-			triggerArray = append(triggerArray, &model.Trigger{
-				AppId:            appId,
-				MetricType:       rule.MetricType,
-				BreachDuration:   rule.BreachDuration,
-				CoolDownDuration: rule.CoolDownDuration,
-				Threshold:        rule.Threshold,
-				Operator:         rule.Operator,
-				Adjustment:       rule.Adjustment,
-			})
-			triggerArrayMap[triggerKey] = triggerArray
 		}
 	}
-
-	a.setAppMonitors(appMonitorArrayTmp)
-	a.evaluationManager.SetTriggers(triggerArrayMap)
+	return appMonitorArrayTmp
 }
 
 func (a *Aggregator) ConsumeAppMetric(appMetric *model.AppMetric) {
@@ -100,7 +82,6 @@ func (a *Aggregator) ConsumeAppMetric(appMetric *model.AppMetric) {
 }
 
 func (a *Aggregator) Start() {
-	a.policyPoller.Start()
 	for _, metricPoller := range a.metricPollerArray {
 		metricPoller.Start()
 	}
@@ -110,18 +91,11 @@ func (a *Aggregator) Start() {
 }
 
 func (a *Aggregator) Stop() {
-	a.policyPoller.Stop()
 	for _, metricPoller := range a.metricPollerArray {
 		metricPoller.Stop()
 	}
 	close(a.doneChan)
 	a.logger.Info("stopped")
-}
-
-func (a *Aggregator) setAppMonitors(appMonitors []*model.AppMonitor) {
-	a.lock.Lock()
-	a.appMonitorArray = appMonitors
-	a.lock.Unlock()
 }
 
 func (a *Aggregator) startWork() {
@@ -132,17 +106,12 @@ func (a *Aggregator) startWork() {
 		case <-a.doneChan:
 			return
 		case <-ticker.C():
-			a.addToAggregateChannel()
+			a.lock.Lock()
+			a.appMonitorArray = a.getAppMonitors(a.getPolicies())
+			a.lock.Unlock()
+			for _, appMonitorTmp := range a.appMonitorArray {
+				a.appChan <- appMonitorTmp
+			}
 		}
-	}
-}
-
-func (a *Aggregator) addToAggregateChannel() {
-	a.lock.Lock()
-	appMonitors := a.appMonitorArray
-	a.lock.Unlock()
-
-	for _, appMonitorTmp := range appMonitors {
-		a.appChan <- appMonitorTmp
 	}
 }
