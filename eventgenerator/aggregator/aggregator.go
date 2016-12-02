@@ -6,7 +6,6 @@ import (
 	"autoscaler/eventgenerator/model"
 	"autoscaler/models"
 	"net/http"
-	"sync"
 	"time"
 
 	"code.cloudfoundry.org/cfhttp"
@@ -23,8 +22,6 @@ type Aggregator struct {
 	evaluationManager         *generator.AppEvaluationManager
 	cclock                    clock.Clock
 	aggregatorExecuteInterval time.Duration
-	appMonitorArray           []*model.AppMonitor
-	lock                      sync.Mutex
 	getPolicies               model.GetPolicies
 }
 
@@ -41,7 +38,6 @@ func NewAggregator(logger lager.Logger, clock clock.Clock, aggregatorExecuteInte
 		evaluationManager: evaluationManager,
 		cclock:            clock,
 		aggregatorExecuteInterval: aggregatorExecuteInterval,
-		appMonitorArray:           []*model.AppMonitor{},
 		getPolicies:               getPolicies,
 	}
 	client := cfhttp.NewClient()
@@ -66,18 +62,19 @@ func (a *Aggregator) getAppMonitors(policyMap map[string]*model.Policy) []*model
 	if policyMap == nil {
 		return nil
 	}
-	var appMonitorArrayTmp = []*model.AppMonitor{}
+	appMonitors := make([]*model.AppMonitor, 0, len(policyMap))
 	for appId, policy := range policyMap {
 		for _, rule := range policy.TriggerRecord.ScalingRules {
 
-			appMonitorArrayTmp = append(appMonitorArrayTmp, &model.AppMonitor{
+			appMonitors = append(appMonitors, &model.AppMonitor{
 				AppId:      appId,
 				MetricType: rule.MetricType,
 				StatWindow: rule.StatWindow,
 			})
 		}
 	}
-	return appMonitorArrayTmp
+
+	return appMonitors
 }
 
 func (a *Aggregator) ConsumeAppMetric(appMetric *model.AppMetric) {
@@ -115,10 +112,8 @@ func (a *Aggregator) startWork() {
 		case <-a.doneChan:
 			return
 		case <-ticker.C():
-			a.lock.Lock()
-			a.appMonitorArray = a.getAppMonitors(a.getPolicies())
-			a.lock.Unlock()
-			for _, appMonitorTmp := range a.appMonitorArray {
+			appMonitors := a.getAppMonitors(a.getPolicies())
+			for _, appMonitorTmp := range appMonitors {
 				a.appChan <- appMonitorTmp
 			}
 		}

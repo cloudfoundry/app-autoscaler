@@ -5,7 +5,6 @@ import (
 	"autoscaler/eventgenerator/model"
 	"autoscaler/models"
 	"net/http"
-	"sync"
 	"time"
 
 	"code.cloudfoundry.org/cfhttp"
@@ -18,10 +17,8 @@ type AppEvaluationManager struct {
 	evaluateInterval time.Duration
 	logger           lager.Logger
 	cclock           clock.Clock
-	lock             sync.Mutex
 	doneChan         chan bool
 	triggerChan      chan []*model.Trigger
-	triggers         map[string][]*model.Trigger
 	evaluatorArray   []*Evaluator
 	getPolicies      model.GetPolicies
 }
@@ -35,10 +32,10 @@ func NewAppEvaluationManager(evaluateInterval time.Duration, logger lager.Logger
 		cclock:           cclock,
 		doneChan:         make(chan bool),
 		triggerChan:      triggerChan,
-		triggers:         map[string][]*model.Trigger{},
 		evaluatorArray:   []*Evaluator{},
 		getPolicies:      getPolicies,
 	}
+
 	client := cfhttp.NewClient()
 	client.Transport.(*http.Transport).MaxIdleConnsPerHost = evaluatorCount
 	if tlsCerts != nil {
@@ -55,19 +52,21 @@ func NewAppEvaluationManager(evaluateInterval time.Duration, logger lager.Logger
 	}
 	return manager, nil
 }
+
 func (a *AppEvaluationManager) getTriggers(policyMap map[string]*model.Policy) map[string][]*model.Trigger {
 	if policyMap == nil {
 		return nil
 	}
-	var triggerArrayMap map[string][]*model.Trigger = make(map[string][]*model.Trigger)
+
+	triggersByType := make(map[string][]*model.Trigger)
 	for appId, policy := range policyMap {
 		for _, rule := range policy.TriggerRecord.ScalingRules {
 			triggerKey := appId + "#" + rule.MetricType
-			triggerArray, exist := triggerArrayMap[triggerKey]
+			triggers, exist := triggersByType[triggerKey]
 			if !exist {
-				triggerArray = []*model.Trigger{}
+				triggers = []*model.Trigger{}
 			}
-			triggerArray = append(triggerArray, &model.Trigger{
+			triggers = append(triggers, &model.Trigger{
 				AppId:            appId,
 				MetricType:       rule.MetricType,
 				BreachDuration:   rule.BreachDuration,
@@ -76,11 +75,12 @@ func (a *AppEvaluationManager) getTriggers(policyMap map[string]*model.Policy) m
 				Operator:         rule.Operator,
 				Adjustment:       rule.Adjustment,
 			})
-			triggerArrayMap[triggerKey] = triggerArray
+			triggersByType[triggerKey] = triggers
 		}
 	}
-	return triggerArrayMap
+	return triggersByType
 }
+
 func (a *AppEvaluationManager) Start() {
 	for _, evaluator := range a.evaluatorArray {
 		evaluator.Start()
@@ -102,10 +102,8 @@ func (a *AppEvaluationManager) doEvaluate() {
 		case <-a.doneChan:
 			return
 		case <-ticker.C():
-			a.lock.Lock()
-			a.triggers = a.getTriggers(a.getPolicies())
-			a.lock.Unlock()
-			for _, triggerArray := range a.triggers {
+			triggers := a.getTriggers(a.getPolicies())
+			for _, triggerArray := range triggers {
 				a.triggerChan <- triggerArray
 			}
 		}
