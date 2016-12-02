@@ -19,6 +19,7 @@ import (
 
 var _ = Describe("Aggregator", func() {
 	var (
+		err               error
 		evaluationManager *AppEvaluationManager
 		aggregator        *Aggregator
 		appMetricDatabase *fakes.FakeAppMetricDB
@@ -125,8 +126,8 @@ var _ = Describe("Aggregator", func() {
 
 		triggerChan = make(chan []*Trigger, 10)
 		appMonitorChan = make(chan *AppMonitor, 10)
-		evaluationManager = NewAppEvaluationManager(testEvaluateInteval, logger, clock, triggerChan, evaluatorCount, appMetricDatabase, "")
-
+		evaluationManager, err = NewAppEvaluationManager(testEvaluateInteval, logger, clock, triggerChan, evaluatorCount, appMetricDatabase, "", nil)
+		Expect(err).NotTo(HaveOccurred())
 		if testEvaluateInteval > testAggregatorExecuteInterval {
 			fakeWaitDuration = testEvaluateInteval
 		} else {
@@ -142,7 +143,8 @@ var _ = Describe("Aggregator", func() {
 		BeforeEach(func() {
 			appChan = make(chan *AppMonitor, 1)
 
-			aggregator = NewAggregator(logger, clock, testAggregatorExecuteInterval, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), 0, evaluationManager, appMonitorChan)
+			aggregator, err = NewAggregator(logger, clock, testAggregatorExecuteInterval, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), 0, evaluationManager, appMonitorChan, nil)
+			Expect(err).NotTo(HaveOccurred())
 			policyMap = map[string]*Policy{testAppId: &Policy{
 				AppId: testAppId,
 				TriggerRecord: &TriggerRecord{
@@ -231,7 +233,8 @@ var _ = Describe("Aggregator", func() {
 		var appmetric *AppMetric
 		var value int64 = 250
 		BeforeEach(func() {
-			aggregator = NewAggregator(logger, clock, testAggregatorExecuteInterval, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount, evaluationManager, appMonitorChan)
+			aggregator, err = NewAggregator(logger, clock, testAggregatorExecuteInterval, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount, evaluationManager, appMonitorChan, nil)
+			Expect(err).NotTo(HaveOccurred())
 			appmetric = &AppMetric{
 				AppId:      testAppId,
 				MetricType: metricType,
@@ -267,7 +270,8 @@ var _ = Describe("Aggregator", func() {
 
 	Describe("Start", func() {
 		JustBeforeEach(func() {
-			aggregator = NewAggregator(logger, clock, testAggregatorExecuteInterval, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount, evaluationManager, appMonitorChan)
+			aggregator, err = NewAggregator(logger, clock, testAggregatorExecuteInterval, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount, evaluationManager, appMonitorChan, nil)
+			Expect(err).NotTo(HaveOccurred())
 			aggregator.Start()
 			evaluationManager.Start()
 			Eventually(clock.WatcherCount).Should(Equal(3)) //policyPoller:1,aggregator:1,evaluationManager:1
@@ -323,7 +327,8 @@ var _ = Describe("Aggregator", func() {
 		var saveAppMetricCallCount int
 
 		JustBeforeEach(func() {
-			aggregator = NewAggregator(logger, clock, testAggregatorExecuteInterval, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount, evaluationManager, appMonitorChan)
+			aggregator, err = NewAggregator(logger, clock, testAggregatorExecuteInterval, testPolicyPollerInterval, policyDatabase, appMetricDatabase, metricServer.URL(), metricPollerCount, evaluationManager, appMonitorChan, nil)
+			Expect(err).NotTo(HaveOccurred())
 			aggregator.Start()
 			Eventually(clock.WatcherCount).Should(Equal(2)) //policyPoller:1,aggregator:1
 			aggregator.Stop()

@@ -2,6 +2,7 @@ package config_test
 
 import (
 	. "autoscaler/eventgenerator/config"
+	"autoscaler/models"
 
 	"time"
 
@@ -29,10 +30,10 @@ var _ = Describe("Config", func() {
 server:
   port: 8081
 logging:
-  level: "info"
+  level: info
 db:
-  policy_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
-  app_metrics_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
+  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
 aggregator: 
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
@@ -43,10 +44,17 @@ evaluator:
   evaluator_count: 10
   trigger_array_channel_size: 100
 scalingEngine:
-  scaling_engine_url: "http://localhost:8082"
+  scaling_engine_url: http://localhost:8082
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 metricCollector:
-  metric_collector_url: "http://localhost:8083"
-
+  metric_collector_url: http://localhost:8083
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/mc.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/mc.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 `)
 			})
 
@@ -65,9 +73,21 @@ metricCollector:
 						EvaluatorCount:            10,
 						TriggerArrayChannelSize:   100},
 					ScalingEngine: ScalingEngineConfig{
-						ScalingEngineUrl: "http://localhost:8082"},
+						ScalingEngineUrl: "http://localhost:8082",
+						TLSClientCerts: models.TLSCerts{
+							KeyFile:    "/var/vcap/jobs/autoscaler/config/certs/se.key",
+							CertFile:   "/var/vcap/jobs/autoscaler/config/certs/se.crt",
+							CACertFile: "/var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt",
+						},
+					},
 					MetricCollector: MetricCollectorConfig{
-						MetricCollectorUrl: "http://localhost:8083"},
+						MetricCollectorUrl: "http://localhost:8083",
+						TLSClientCerts: models.TLSCerts{
+							KeyFile:    "/var/vcap/jobs/autoscaler/config/certs/mc.key",
+							CertFile:   "/var/vcap/jobs/autoscaler/config/certs/mc.crt",
+							CACertFile: "/var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt",
+						},
+					},
 				}))
 			})
 		})
@@ -77,10 +97,10 @@ metricCollector:
   server:
   port: 8081
 logging:
-  level: "info"
+  level: info
 db:
-  policy_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
-  app_metrics_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
+  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
 aggregator: 
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
@@ -91,10 +111,10 @@ evaluator:
   evaluator_count: 10
   trigger_array_channel_size: 100
 scalingEngine:
-  scaling_engine_url: "http://localhost:8082"
+  scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: "http://localhost:8083"
-		`)
+  metric_collector_url: http://localhost:8083
+`)
 			})
 
 			It("returns an error", func() {
@@ -106,12 +126,12 @@ metricCollector:
 			BeforeEach(func() {
 				configBytes = []byte(`
 server:
-  port: "NOT-INTEGER-VALUE"
+  port: NOT-INTEGER-VALUE
 logging:
-  level: "info"
+  level: info
 db:
-  policy_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
-  app_metrics_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
+  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
 aggregator: 
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
@@ -122,9 +142,9 @@ evaluator:
   evaluator_count: 10
   trigger_array_channel_size: 100
 scalingEngine:
-  scaling_engine_url: "http://localhost:8082"
+  scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: "http://localhost:8083"
+  metric_collector_url: http://localhost:8083
 `)
 			})
 
@@ -139,12 +159,12 @@ metricCollector:
 server:
   port: 8081
 logging:
-  level: "info"
+  level: info
 db:
-  policy_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
-  app_metrics_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
+  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
 aggregator: 
-  aggregator_execute_interval: "NOT-INTEGER-VALUE"
+  aggregator_execute_interval: NOT-INTEGER-VALUE
   policy_poller_interval: 30s
   metric_poller_count: 10
   app_monitor_channel_size: 100
@@ -153,9 +173,9 @@ evaluator:
   evaluator_count: 10
   trigger_array_channel_size: 100
 scalingEngine:
-  scaling_engine_url: "http://localhost:8082"
+  scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: "http://localhost:8083"
+  metric_collector_url: http://localhost:8083
 `)
 			})
 
@@ -170,13 +190,13 @@ metricCollector:
 server:
   port: 8081
 logging:
-  level: "info"
+  level: info
 db:
-  policy_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
-  app_metrics_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
+  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
 aggregator: 
   aggregator_execute_interval: 30s
-  policy_poller_interval: "NOT-INTEGER-VALUE"
+  policy_poller_interval: NOT-INTEGER-VALUE
   metric_poller_count: 10
   app_monitor_channel_size: 100
 evaluator:
@@ -184,9 +204,9 @@ evaluator:
   evaluator_count: 10
   trigger_array_channel_size: 100
 scalingEngine:
-  scaling_engine_url: "http://localhost:8082"
+  scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: "http://localhost:8083"
+  metric_collector_url: http://localhost:8083
 `)
 			})
 
@@ -201,23 +221,23 @@ metricCollector:
 server:
   port: 8081
 logging:
-  level: "info"
+  level: info
 db:
-  policy_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
-  app_metrics_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
+  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
 aggregator: 
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
-  metric_poller_count: "NOT-INTEGER-VALUE"
+  metric_poller_count: NOT-INTEGER-VALUE
   app_monitor_channel_size: 100
 evaluator:
   evaluation_manager_execute_interval: 30s
   evaluator_count: 10
   trigger_array_channel_size: 100
 scalingEngine:
-  scaling_engine_url: "http://localhost:8082"
+  scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: "http://localhost:8083"
+  metric_collector_url: http://localhost:8083
 `)
 			})
 
@@ -232,23 +252,23 @@ metricCollector:
 server:
   port: 8081
 logging:
-  level: "info"
+  level: info
 db:
-  policy_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
-  app_metrics_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
+  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
 aggregator: 
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
   metric_poller_count: 10
-  app_monitor_channel_size: "NOT-INTEGER-VALUE"
+  app_monitor_channel_size: NOT-INTEGER-VALUE
 evaluator:
   evaluation_manager_execute_interval: 30s
   evaluator_count: 10
   trigger_array_channel_size: 100
 scalingEngine:
-  scaling_engine_url: "http://localhost:8082"
+  scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: "http://localhost:8083"
+  metric_collector_url: http://localhost:8083
 `)
 			})
 
@@ -263,23 +283,23 @@ metricCollector:
 server:
   port: 8081
 logging:
-  level: "info"
+  level: info
 db:
-  policy_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
-  app_metrics_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
+  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
 aggregator: 
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
   metric_poller_count: 10
   app_monitor_channel_size: 100
 evaluator:
-  evaluation_manager_execute_interval: "NOT-INTEGER-VALUE"
+  evaluation_manager_execute_interval: NOT-INTEGER-VALUE
   evaluator_count: 10
   trigger_array_channel_size: 100
 scalingEngine:
-  scaling_engine_url: "http://localhost:8082"
+  scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: "http://localhost:8083"
+  metric_collector_url: http://localhost:8083
 `)
 			})
 
@@ -294,10 +314,10 @@ metricCollector:
 server:
   port: 8081
 logging:
-  level: "info"
+  level: info
 db:
-  policy_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
-  app_metrics_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
+  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
 aggregator: 
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
@@ -308,9 +328,9 @@ evaluator:
   evaluator_count: "NOT-INTEGER-VALUE"
   trigger_array_channel_size: 100
 scalingEngine:
-  scaling_engine_url: "http://localhost:8082"
+  scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: "http://localhost:8083"
+  metric_collector_url: http://localhost:8083
 `)
 			})
 
@@ -324,10 +344,10 @@ metricCollector:
 server:
   port: 8081
 logging:
-  level: "info"
+  level: info
 db:
-  policy_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
-  app_metrics_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
+  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
 aggregator: 
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
@@ -336,11 +356,11 @@ aggregator:
 evaluator:
   evaluation_manager_execute_interval: 30s
   evaluator_count: 10
-  trigger_array_channel_size: "NOT-INTEGER-VALUE"
+  trigger_array_channel_size: NOT-INTEGER-VALUE
 scalingEngine:
-  scaling_engine_url: "http://localhost:8082"
+  scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: "http://localhost:8083"
+  metric_collector_url: http://localhost:8083
 `)
 			})
 
@@ -354,12 +374,12 @@ metricCollector:
 				configBytes = []byte(`
 
 db:
-  policy_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
-  app_metrics_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
+  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
 scalingEngine:
-  scaling_engine_url: "http://localhost:8082"
+  scaling_engine_url: http://localhost:8082
 metricCollector:
-  metric_collector_url: "http://localhost:8083"
+  metric_collector_url: http://localhost:8083
 `)
 			})
 

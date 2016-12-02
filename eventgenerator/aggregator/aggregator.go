@@ -4,6 +4,7 @@ import (
 	"autoscaler/db"
 	"autoscaler/eventgenerator/generator"
 	"autoscaler/eventgenerator/model"
+	"autoscaler/models"
 	"net/http"
 	"sync"
 	"time"
@@ -27,7 +28,11 @@ type Aggregator struct {
 	lock                      sync.Mutex
 }
 
-func NewAggregator(logger lager.Logger, clock clock.Clock, aggregatorExecuteInterval time.Duration, policyPollerInterval time.Duration, policyDatabase db.PolicyDB, appMetricDatabase db.AppMetricDB, metricCollectorUrl string, metricPollerCount int, evaluationManager *generator.AppEvaluationManager, appMonitorChan chan *model.AppMonitor) *Aggregator {
+func NewAggregator(logger lager.Logger, clock clock.Clock, aggregatorExecuteInterval time.Duration,
+	policyPollerInterval time.Duration, policyDatabase db.PolicyDB, appMetricDatabase db.AppMetricDB,
+	metricCollectorUrl string, metricPollerCount int, evaluationManager *generator.AppEvaluationManager,
+	appMonitorChan chan *model.AppMonitor, tlsCerts *models.TLSCerts) (*Aggregator, error) {
+
 	aggregator := &Aggregator{
 		logger:            logger.Session("Aggregator"),
 		doneChan:          make(chan bool),
@@ -42,13 +47,20 @@ func NewAggregator(logger lager.Logger, clock clock.Clock, aggregatorExecuteInte
 	aggregator.policyPoller = NewPolicyPoller(logger, clock, policyPollerInterval, policyDatabase, aggregator.ConsumePolicy, aggregator.appChan)
 	client := cfhttp.NewClient()
 	client.Transport.(*http.Transport).MaxIdleConnsPerHost = metricPollerCount
+	if tlsCerts != nil {
+		tlsConfig, err := cfhttp.NewTLSConfig(tlsCerts.CertFile, tlsCerts.KeyFile, tlsCerts.CACertFile)
+		if err != nil {
+			return nil, err
+		}
+		client.Transport.(*http.Transport).TLSClientConfig = tlsConfig
+	}
 
 	var i int
 	for i = 0; i < metricPollerCount; i++ {
 		poller := NewMetricPoller(metricCollectorUrl, logger, aggregator.appChan, aggregator.ConsumeAppMetric, client)
 		aggregator.metricPollerArray = append(aggregator.metricPollerArray, poller)
 	}
-	return aggregator
+	return aggregator, nil
 }
 
 func (a *Aggregator) ConsumePolicy(policyMap map[string]*model.Policy, appChan chan *model.AppMonitor) {

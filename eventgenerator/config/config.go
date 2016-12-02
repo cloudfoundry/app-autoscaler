@@ -5,6 +5,8 @@ import (
 	"gopkg.in/yaml.v2"
 	"strings"
 	"time"
+
+	"autoscaler/models"
 )
 
 const (
@@ -46,10 +48,13 @@ type EvaluatorConfig struct {
 }
 
 type ScalingEngineConfig struct {
-	ScalingEngineUrl string `yaml:"scaling_engine_url"`
+	ScalingEngineUrl string          `yaml:"scaling_engine_url"`
+	TLSClientCerts   models.TLSCerts `yaml:"tls"`
 }
+
 type MetricCollectorConfig struct {
-	MetricCollectorUrl string `yaml:"metric_collector_url"`
+	MetricCollectorUrl string          `yaml:"metric_collector_url"`
+	TLSClientCerts     models.TLSCerts `yaml:"tls"`
 }
 
 type Config struct {
