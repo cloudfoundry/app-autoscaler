@@ -26,6 +26,8 @@ type Aggregator struct {
 	aggregatorExecuteInterval time.Duration
 	appMonitorArray           []*model.AppMonitor
 	lock                      sync.Mutex
+	firstTimeChannel          chan bool
+	isTheFirstTime            bool
 }
 
 func NewAggregator(logger lager.Logger, clock clock.Clock, aggregatorExecuteInterval time.Duration,
@@ -43,6 +45,8 @@ func NewAggregator(logger lager.Logger, clock clock.Clock, aggregatorExecuteInte
 		cclock:            clock,
 		aggregatorExecuteInterval: aggregatorExecuteInterval,
 		appMonitorArray:           []*model.AppMonitor{},
+		firstTimeChannel:          make(chan bool, 1),
+		isTheFirstTime:            false,
 	}
 	aggregator.policyPoller = NewPolicyPoller(logger, clock, policyPollerInterval, policyDatabase, aggregator.ConsumePolicy, aggregator.appChan)
 	client := cfhttp.NewClient()
@@ -133,7 +137,11 @@ func (a *Aggregator) Stop() {
 func (a *Aggregator) setAppMonitors(appMonitors []*model.AppMonitor) {
 	a.lock.Lock()
 	a.appMonitorArray = appMonitors
+	if !a.isTheFirstTime {
+		a.firstTimeChannel <- true
+	}
 	a.lock.Unlock()
+
 }
 
 func (a *Aggregator) startWork() {
@@ -150,7 +158,12 @@ func (a *Aggregator) startWork() {
 }
 
 func (a *Aggregator) addToAggregateChannel() {
+
+	if !a.isTheFirstTime {
+		<-a.firstTimeChannel
+	}
 	a.lock.Lock()
+	a.isTheFirstTime = true
 	appMonitors := a.appMonitorArray
 	a.lock.Unlock()
 
