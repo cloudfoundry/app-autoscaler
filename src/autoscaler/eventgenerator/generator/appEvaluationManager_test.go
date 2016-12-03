@@ -29,8 +29,6 @@ var _ = Describe("AppEvaluationManager", func() {
 		triggerArrayChan     chan []*Trigger
 		testAppId            string = "testAppId"
 		testAppId2           string = "testAppId2"
-		testAppId3           string = "testAppId3"
-		testAppId4           string = "testAppId4"
 		testMetricType       string = "MemoryUsage"
 		fakeScalingEngine    *ghttp.Server
 		regPath                                 = regexp.MustCompile(`^/v1/apps/.*/scale$`)
@@ -71,84 +69,9 @@ var _ = Describe("AppEvaluationManager", func() {
 					},
 				},
 			},
-			testAppId3: &Policy{
-				AppId: testAppId3,
-				TriggerRecord: &TriggerRecord{
-					InstanceMaxCount: 5,
-					InstanceMinCount: 1,
-					ScalingRules: []*ScalingRule{
-						&ScalingRule{
-							MetricType:       "MemoryUsage",
-							StatWindow:       300,
-							BreachDuration:   300,
-							CoolDownDuration: 300,
-							Threshold:        30,
-							Operator:         "<",
-							Adjustment:       "-1",
-						},
-					},
-				},
-			},
-			testAppId4: &Policy{
-				AppId: testAppId4,
-				TriggerRecord: &TriggerRecord{
-					InstanceMaxCount: 5,
-					InstanceMinCount: 1,
-					ScalingRules: []*ScalingRule{
-						&ScalingRule{
-							MetricType:       "MemoryUsage",
-							StatWindow:       300,
-							BreachDuration:   300,
-							CoolDownDuration: 300,
-							Threshold:        30,
-							Operator:         "<",
-							Adjustment:       "-1",
-						},
-					},
-				},
-			},
-		}
-		policyMap2 map[string]*Policy = map[string]*Policy{
-			testAppId: &Policy{
-				AppId: testAppId,
-				TriggerRecord: &TriggerRecord{
-					InstanceMaxCount: 5,
-					InstanceMinCount: 1,
-					ScalingRules: []*ScalingRule{
-						&ScalingRule{
-							MetricType:       "MemoryUsage",
-							StatWindow:       300,
-							BreachDuration:   300,
-							CoolDownDuration: 300,
-							Threshold:        30,
-							Operator:         "<",
-							Adjustment:       "-1",
-						},
-					},
-				},
-			},
-		}
-		policyMap3 map[string]*Policy = map[string]*Policy{
-			testAppId2: &Policy{
-				AppId: testAppId2,
-				TriggerRecord: &TriggerRecord{
-					InstanceMaxCount: 5,
-					InstanceMinCount: 1,
-					ScalingRules: []*ScalingRule{
-						&ScalingRule{
-							MetricType:       "MemoryUsage",
-							StatWindow:       300,
-							BreachDuration:   300,
-							CoolDownDuration: 300,
-							Threshold:        30,
-							Operator:         "<",
-							Adjustment:       "-1",
-						},
-					},
-				},
-			},
 		}
 	)
+
 	BeforeEach(func() {
 		fclock = fakeclock.NewFakeClock(time.Now())
 		testEvaluateInterval = 1 * time.Second
@@ -163,8 +86,7 @@ var _ = Describe("AppEvaluationManager", func() {
 	Describe("Start", func() {
 		JustBeforeEach(func() {
 			var err error
-			manager, err = NewAppEvaluationManager(testEvaluateInterval, logger, fclock, triggerArrayChan,
-				testEvaluatorCount, database, fakeScalingEngine.URL(), getPolicies, nil)
+			manager, err = NewAppEvaluationManager(logger, testEvaluateInterval, fclock, triggerArrayChan, getPolicies)
 			Expect(err).NotTo(HaveOccurred())
 			manager.Start()
 			Eventually(fclock.WatcherCount).Should(Equal(1))
@@ -174,52 +96,30 @@ var _ = Describe("AppEvaluationManager", func() {
 			manager.Stop()
 		})
 
-		Context("EvaluatorArray", func() {
-			var unBlockChan chan bool
-			var calledChan chan string
+		Context("when there are triggers for evaluation", func() {
 			BeforeEach(func() {
 				getPolicies = func() map[string]*Policy {
 					return policyMap
 				}
-				testEvaluatorCount = 4
-				unBlockChan = make(chan bool)
-				calledChan = make(chan string)
-				database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*AppMetric, error) {
-					defer GinkgoRecover()
-					calledChan <- appId
-					<-unBlockChan
-					return nil, nil
-				}
 			})
-			It("should create evaluatorCount evaluators", func() {
 
-				fclock.Increment(1 * testEvaluateInterval)
-				for i := 0; i < testEvaluatorCount; i++ {
-					Eventually(calledChan).Should(Receive())
-
-				}
-				Consistently(calledChan).ShouldNot(Receive())
-				fclock.Increment(1 * testEvaluateInterval)
-				Eventually(fclock.WatcherCount).Should(Equal(1))
-				Eventually(database.RetrieveAppMetricsCallCount).Should(Equal(int(testEvaluatorCount)))
-
-				close(unBlockChan)
-			})
-		})
-
-		Context("when there are triggers for evaluation", func() {
-			BeforeEach(func() {
-				getPolicies = func() map[string]*Policy {
-					return policyMap2
-				}
-			})
 			It("should add triggers to evaluate", func() {
-
 				fclock.Increment(10 * testEvaluateInterval)
 				var arr []*Trigger
 				Eventually(triggerArrayChan).Should(Receive(&arr))
 				Expect(arr).To(Equal([]*Trigger{&Trigger{
 					AppId:            testAppId,
+					MetricType:       testMetricType,
+					BreachDuration:   300,
+					CoolDownDuration: 300,
+					Threshold:        30,
+					Operator:         "<",
+					Adjustment:       "-1",
+				}}))
+
+				Eventually(triggerArrayChan).Should(Receive(&arr))
+				Expect(arr).To(Equal([]*Trigger{&Trigger{
+					AppId:            testAppId2,
 					MetricType:       testMetricType,
 					BreachDuration:   300,
 					CoolDownDuration: 300,
@@ -242,45 +142,6 @@ var _ = Describe("AppEvaluationManager", func() {
 				Consistently(triggerArrayChan).ShouldNot(Receive())
 			})
 		})
-		Context("when triggers are changed", func() {
-			var resultPolicyMap map[string]*Policy
-			BeforeEach(func() {
-				getPolicies = func() map[string]*Policy {
-					return resultPolicyMap
-				}
-			})
-			It("should add new triggers to evaluate", func() {
-
-				resultPolicyMap = policyMap2
-				fclock.Increment(1 * testEvaluateInterval)
-				var arr []*Trigger
-				Eventually(triggerArrayChan).Should(Receive(&arr))
-
-				Expect(arr).To(Equal([]*Trigger{&Trigger{
-					AppId:            testAppId,
-					MetricType:       testMetricType,
-					BreachDuration:   300,
-					CoolDownDuration: 300,
-					Threshold:        30,
-					Operator:         "<",
-					Adjustment:       "-1",
-				}}))
-				resultPolicyMap = policyMap3
-				fclock.Increment(1 * testEvaluateInterval)
-				Eventually(triggerArrayChan).Should(Receive(&arr))
-
-				Expect(arr).To(Equal([]*Trigger{&Trigger{
-					AppId:            testAppId2,
-					MetricType:       testMetricType,
-					BreachDuration:   300,
-					CoolDownDuration: 300,
-					Threshold:        30,
-					Operator:         "<",
-					Adjustment:       "-1",
-				}}))
-			})
-		})
-
 	})
 
 	Describe("Stop", func() {
@@ -288,9 +149,9 @@ var _ = Describe("AppEvaluationManager", func() {
 			getPolicies = func() map[string]*Policy {
 				return policyMap
 			}
+
 			var err error
-			manager, err = NewAppEvaluationManager(testEvaluateInterval, logger, fclock, triggerArrayChan,
-				testEvaluatorCount, database, fakeScalingEngine.URL(), getPolicies, nil)
+			manager, err = NewAppEvaluationManager(logger, testEvaluateInterval, fclock, triggerArrayChan, getPolicies)
 			Expect(err).NotTo(HaveOccurred())
 			manager.Start()
 			Eventually(fclock.WatcherCount).Should(Equal(1))

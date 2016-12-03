@@ -1,11 +1,11 @@
 package aggregator
 
 import (
+	"autoscaler/db"
 	"autoscaler/eventgenerator/model"
 	"autoscaler/models"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
@@ -13,33 +13,33 @@ import (
 	"code.cloudfoundry.org/lager"
 )
 
-type MetricConsumer func(appMetric *model.AppMetric)
 type MetricPoller struct {
-	metricCollectorUrl string
 	logger             lager.Logger
+	metricCollectorUrl string
 	doneChan           chan bool
 	appChan            chan *model.AppMonitor
-	metricConsumer     MetricConsumer
 	httpClient         *http.Client
+	appMetricDB        db.AppMetricDB
 }
 
-func NewMetricPoller(metricCollectorUrl string, logger lager.Logger, appChan chan *model.AppMonitor, metricConsumer MetricConsumer, httpClient *http.Client) *MetricPoller {
+func NewMetricPoller(logger lager.Logger, metricCollectorUrl string, appChan chan *model.AppMonitor, httpClient *http.Client, appMetricDB db.AppMetricDB) *MetricPoller {
 	return &MetricPoller{
 		metricCollectorUrl: metricCollectorUrl,
 		logger:             logger.Session("MetricPoller"),
 		appChan:            appChan,
 		doneChan:           make(chan bool),
-		metricConsumer:     metricConsumer,
 		httpClient:         httpClient,
+		appMetricDB:        appMetricDB,
 	}
 }
+
 func (m *MetricPoller) Start() {
 	go m.startMetricRetrieve()
 	m.logger.Info("started")
 }
 
 func (m *MetricPoller) Stop() {
-	m.doneChan <- true
+	close(m.doneChan)
 	m.logger.Info("stopped")
 }
 
@@ -73,20 +73,27 @@ func (m *MetricPoller) retrieveMetric(app *model.AppMonitor) {
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		m.logger.Error("Failed to retrieve metric from memory-collector", nil,
+			lager.Data{"appId": appId, "metricType": metricType, "statusCode": resp.StatusCode})
+		return
+	}
+
 	var metrics []*models.AppInstanceMetric
-	if resp.StatusCode == http.StatusOK {
-		data, readError := ioutil.ReadAll(resp.Body)
-		if readError != nil {
-			m.logger.Error("Failed to read data from response", readError, lager.Data{"appId": appId, "metricType": metricType})
-			return
-		}
-		json.Unmarshal(data, &metrics)
-		avgMetric := m.aggregate(appId, metricType, metrics)
-		if avgMetric != nil {
-			m.metricConsumer(avgMetric)
-		}
-	} else {
-		m.logger.Error("Failed to retrieve metric from memory-collector", fmt.Errorf("response status code:%d", resp.StatusCode), lager.Data{"appId": appId, "metricType": metricType})
+	err = json.NewDecoder(resp.Body).Decode(&metrics)
+	if err != nil {
+		m.logger.Error("Failed to parse response", err, lager.Data{"appId": appId, "metricType": metricType})
+		return
+	}
+
+	avgMetric := m.aggregate(appId, metricType, metrics)
+	if avgMetric == nil {
+		return
+	}
+
+	err = m.appMetricDB.SaveAppMetric(avgMetric)
+	if err != nil {
+		m.logger.Error("Failed to save appmetric", err, lager.Data{"appmetric": avgMetric})
 	}
 }
 
@@ -105,24 +112,23 @@ func (m *MetricPoller) aggregate(appId string, metricType string, metrics []*mod
 			sum += intValue
 		}
 	}
-	var avgAppMetric *model.AppMetric
+
 	if count == 0 {
-		avgAppMetric = &model.AppMetric{
+		return &model.AppMetric{
 			AppId:      appId,
 			MetricType: metricType,
 			Value:      nil,
 			Unit:       "",
 			Timestamp:  timestamp,
 		}
-	} else {
-		avgValue := sum / count
-		avgAppMetric = &model.AppMetric{
-			AppId:      appId,
-			MetricType: metricType,
-			Value:      &avgValue,
-			Unit:       unit,
-			Timestamp:  timestamp,
-		}
 	}
-	return avgAppMetric
+
+	avgValue := sum / count
+	return &model.AppMetric{
+		AppId:      appId,
+		MetricType: metricType,
+		Value:      &avgValue,
+		Unit:       unit,
+		Timestamp:  timestamp,
+	}
 }
