@@ -10,8 +10,10 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 
+	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
 	"github.com/tedsuo/ifrit"
@@ -28,36 +30,16 @@ func main() {
 		os.Exit(1)
 	}
 
-	var conf *config.Config
-
-	configFile, err := os.Open(path)
+	conf, err := loadConfig(path)
 	if err != nil {
-		fmt.Fprintf(os.Stdout, "failed to open config file '%s' : %s\n", path, err.Error())
-		os.Exit(1)
-	}
-	configFileBytes, readError := ioutil.ReadAll(configFile)
-	configFile.Close()
-	if readError != nil {
-		fmt.Fprintf(os.Stdout, "failed to read data from config file:%s", readError.Error())
-		os.Exit(1)
-	}
-	conf, err = config.LoadConfig(configFileBytes)
-	if err != nil {
-		fmt.Fprintf(os.Stdout, "failed to read config file '%s' : %s\n", path, err.Error())
-		os.Exit(1)
-	}
-
-	err = conf.Validate()
-	if err != nil {
-		fmt.Fprintf(os.Stdout, "failed to validate configuration : %s\n", err.Error())
+		fmt.Fprintf(os.Stdout, "%s\n", err.Error())
 		os.Exit(1)
 	}
 
 	logger := initLoggerFromConfig(&conf.Logging)
 	egClock := clock.NewClock()
 
-	var appMetricDB db.AppMetricDB
-	appMetricDB, err = sqldb.NewAppMetricSQLDB(conf.DB.AppMetricDBUrl, logger.Session("appMetric-db"))
+	appMetricDB, err := sqldb.NewAppMetricSQLDB(conf.DB.AppMetricDBUrl, logger.Session("appMetric-db"))
 	if err != nil {
 		logger.Error("failed to connect app-metric database", err, lager.Data{"url": conf.DB.AppMetricDBUrl})
 		os.Exit(1)
@@ -71,26 +53,27 @@ func main() {
 		os.Exit(1)
 	}
 	defer policyDB.Close()
-	triggerArrayChan := make(chan []*model.Trigger, conf.Evaluator.TriggerArrayChannelSize)
-	appMonitorChan := make(chan *model.AppMonitor, conf.Aggregator.AppMonitorChannelSize)
 
 	policyPoller := aggregator.NewPolicyPoller(logger, egClock, conf.Aggregator.PolicyPollerInterval, policyDB)
 
-	seTLSClientCerts := &conf.ScalingEngine.TLSClientCerts
-	if seTLSClientCerts.CertFile == "" || seTLSClientCerts.KeyFile == "" {
-		seTLSClientCerts = nil
+	triggersChan := make(chan []*model.Trigger, conf.Evaluator.TriggerArrayChannelSize)
+	evaluators, err := createEvaluators(logger, conf, triggersChan, appMetricDB)
+	if err != nil {
+		logger.Error("failed to create Evaluators", err)
+		os.Exit(1)
 	}
-	evaluationManager, err := generator.NewAppEvaluationManager(conf.Evaluator.EvaluationManagerInterval, logger, egClock, triggerArrayChan, conf.Evaluator.EvaluatorCount, appMetricDB, conf.ScalingEngine.ScalingEngineUrl, policyPoller.GetPolicies, seTLSClientCerts)
+
+	evaluationManager, err := generator.NewAppEvaluationManager(logger, conf.Evaluator.EvaluationManagerInterval, egClock,
+		triggersChan, policyPoller.GetPolicies)
 	if err != nil {
 		logger.Error("failed to create Evaluation Manager", err)
 		os.Exit(1)
 	}
 
-	mcTLSClientCerts := &conf.MetricCollector.TLSClientCerts
-	if mcTLSClientCerts.CertFile == "" || mcTLSClientCerts.KeyFile == "" {
-		mcTLSClientCerts = nil
-	}
-	aggregator, err := aggregator.NewAggregator(logger, egClock, conf.Aggregator.AggregatorExecuteInterval, conf.Aggregator.PolicyPollerInterval, policyDB, appMetricDB, conf.MetricCollector.MetricCollectorUrl, conf.Aggregator.MetricPollerCount, evaluationManager, appMonitorChan, policyPoller.GetPolicies, mcTLSClientCerts)
+	appMonitorsChan := make(chan *model.AppMonitor, conf.Aggregator.AppMonitorChannelSize)
+	metricPollers, err := createMetricPollers(logger, conf, appMonitorsChan, appMetricDB)
+	aggregator, err := aggregator.NewAggregator(logger, egClock, conf.Aggregator.AggregatorExecuteInterval,
+		appMonitorsChan, policyPoller.GetPolicies)
 	if err != nil {
 		logger.Error("failed to create Aggregator", err)
 		os.Exit(1)
@@ -98,8 +81,17 @@ func main() {
 
 	eventGeneratorServer := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
 		policyPoller.Start()
+
+		for _, evaluator := range evaluators {
+			evaluator.Start()
+		}
 		evaluationManager.Start()
+
+		for _, metricPoller := range metricPollers {
+			metricPoller.Start()
+		}
 		aggregator.Start()
+
 		close(ready)
 
 		<-signals
@@ -152,4 +144,81 @@ func getLogLevel(level string) (lager.LogLevel, error) {
 	default:
 		return -1, fmt.Errorf("Error: unsupported log level:%s", level)
 	}
+}
+
+func loadConfig(path string) (*config.Config, error) {
+	configFile, err := os.Open(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open config file %q: %s", path, err.Error())
+	}
+
+	configFileBytes, err := ioutil.ReadAll(configFile)
+	configFile.Close()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read data from config file %q: %s", path, err.Error())
+	}
+
+	conf, err := config.LoadConfig(configFileBytes)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse config file %q: %s", path, err.Error())
+	}
+
+	err = conf.Validate()
+	if err != nil {
+		return nil, fmt.Errorf("failed to validate configuration: %s", err.Error())
+	}
+
+	return conf, nil
+}
+
+func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan chan []*model.Trigger, database db.AppMetricDB) ([]*generator.Evaluator, error) {
+	count := conf.Evaluator.EvaluatorCount
+	scalingEngineUrl := conf.ScalingEngine.ScalingEngineUrl
+
+	tlsCerts := &conf.ScalingEngine.TLSClientCerts
+	if tlsCerts.CertFile == "" || tlsCerts.KeyFile == "" {
+		tlsCerts = nil
+	}
+
+	client := cfhttp.NewClient()
+	client.Transport.(*http.Transport).MaxIdleConnsPerHost = count
+	if tlsCerts != nil {
+		tlsConfig, err := cfhttp.NewTLSConfig(tlsCerts.CertFile, tlsCerts.KeyFile, tlsCerts.CACertFile)
+		if err != nil {
+			return nil, err
+		}
+		client.Transport.(*http.Transport).TLSClientConfig = tlsConfig
+	}
+
+	evaluators := make([]*generator.Evaluator, count)
+	for i := 0; i < count; i++ {
+		evaluators[i] = generator.NewEvaluator(logger, client, scalingEngineUrl, triggersChan, database)
+	}
+
+	return evaluators, nil
+}
+
+func createMetricPollers(logger lager.Logger, conf *config.Config, appChan chan *model.AppMonitor, database db.AppMetricDB) ([]*aggregator.MetricPoller, error) {
+	tlsCerts := &conf.MetricCollector.TLSClientCerts
+	if tlsCerts.CertFile == "" || tlsCerts.KeyFile == "" {
+		tlsCerts = nil
+	}
+
+	count := conf.Aggregator.MetricPollerCount
+	client := cfhttp.NewClient()
+	client.Transport.(*http.Transport).MaxIdleConnsPerHost = count
+	if tlsCerts != nil {
+		tlsConfig, err := cfhttp.NewTLSConfig(tlsCerts.CertFile, tlsCerts.KeyFile, tlsCerts.CACertFile)
+		if err != nil {
+			return nil, err
+		}
+		client.Transport.(*http.Transport).TLSClientConfig = tlsConfig
+	}
+
+	pollers := make([]*aggregator.MetricPoller, count)
+	for i := 0; i < count; i++ {
+		pollers[i] = aggregator.NewMetricPoller(logger, conf.MetricCollector.MetricCollectorUrl, appChan, client, database)
+	}
+
+	return pollers, nil
 }

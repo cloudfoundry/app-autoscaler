@@ -2,15 +2,18 @@ package aggregator_test
 
 import (
 	. "autoscaler/eventgenerator/aggregator"
+	"autoscaler/eventgenerator/aggregator/fakes"
 	. "autoscaler/eventgenerator/model"
 	"autoscaler/models"
+	"errors"
 	"net/http"
 	"time"
 
 	"code.cloudfoundry.org/cfhttp"
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/ghttp"
 )
 
@@ -18,11 +21,11 @@ var _ = Describe("MetricPoller", func() {
 	var testAppId string = "testAppId"
 	var timestamp int64 = time.Now().UnixNano()
 	var metricType string = "MemoryUsage"
-	var logger lager.Logger
-	var appChan chan *AppMonitor
+	var logger *lagertest.TestLogger
+	var appMonitorsChan chan *AppMonitor
+	var appMetricDatabase *fakes.FakeAppMetricDB
 	var metricPoller *MetricPoller
 	var httpClient *http.Client
-	var metricConsumer MetricConsumer
 	var metricServer *ghttp.Server
 	var metrics []*models.AppInstanceMetric = []*models.AppInstanceMetric{
 		&models.AppInstanceMetric{
@@ -65,141 +68,154 @@ var _ = Describe("MetricPoller", func() {
 	}
 
 	BeforeEach(func() {
-		logger = lager.NewLogger("MetricPoller-test")
+		logger = lagertest.NewTestLogger("MetricPoller-test")
 		httpClient = cfhttp.NewClient()
-		appChan = make(chan *AppMonitor, 1)
-		metricConsumer = func(appMetric *AppMetric) {}
+		appMonitorsChan = make(chan *AppMonitor, 1)
+		appMetricDatabase = &fakes.FakeAppMetricDB{}
 		metricServer = nil
 	})
+
 	Context("Start", func() {
-		JustBeforeEach(func() {
-			metricPoller = NewMetricPoller(metricServer.URL(), logger, appChan, metricConsumer, httpClient)
-			metricPoller.Start()
-			appChan <- &AppMonitor{
+		var appMonitor *AppMonitor
+
+		BeforeEach(func() {
+			appMonitor = &AppMonitor{
 				AppId:      testAppId,
 				MetricType: metricType,
 				StatWindow: 10,
 			}
 
+			metricServer = ghttp.NewServer()
+			metricServer.RouteToHandler("GET", "/v1/apps/"+testAppId+"/metrics_history/memory", ghttp.RespondWithJSONEncoded(http.StatusOK,
+				&metrics))
 		})
+
+		JustBeforeEach(func() {
+			metricPoller = NewMetricPoller(logger, metricServer.URL(), appMonitorsChan, httpClient, appMetricDatabase)
+			metricPoller.Start()
+
+			appMonitorsChan <- appMonitor
+		})
+
 		AfterEach(func() {
 			metricPoller.Stop()
 			metricServer.Close()
 		})
-		Context("when the poller is started", func() {
-			var consumed chan *AppMetric
+
+		Context("with a non-MemoryUsage type", func() {
 			BeforeEach(func() {
-				consumed = make(chan *AppMetric, 1)
-				metricConsumer = func(appMetric *AppMetric) {
-					consumed <- appMetric
-				}
-			})
-			Context("when retrieve metrics from metric-collector successfully", func() {
-				BeforeEach(func() {
-					metricServer = ghttp.NewServer()
-					metricServer.RouteToHandler("GET", "/v1/apps/"+testAppId+"/metrics_history/memory", ghttp.RespondWithJSONEncoded(http.StatusOK,
-						&metrics))
-				})
-				It("should get the app's average metric", func() {
-					var appMetric *AppMetric
-					var value int64 = 250
-					Eventually(consumed).Should(Receive(&appMetric))
-					appMetric.Timestamp = timestamp
-					Expect(appMetric).To(Equal(&AppMetric{
-						AppId:      testAppId,
-						MetricType: metricType,
-						Value:      &value,
-						Unit:       "bytes",
-						Timestamp:  timestamp}))
-				})
-			})
-			//the too long response will cause ioutil.ReadAll() to panic
-			//slow test, will take a lot of seconds
-			PContext("when the response body from metric-collector is too long", func() {
-				BeforeEach(func() {
-					var tooLargeMetrics, template []*models.AppInstanceMetric
-					for i := 0; i < 9999; i++ {
-						template = append(template, metrics...)
-					}
-					for i := 0; i < 999; i++ {
-						tooLargeMetrics = append(tooLargeMetrics, template...)
-					}
-					metricServer = ghttp.NewServer()
-					metricServer.RouteToHandler("GET", "/v1/apps/"+testAppId+"/metrics_history/memory", ghttp.RespondWithJSONEncoded(http.StatusOK,
-						&tooLargeMetrics))
-				})
-				It("should cause io read error and should not do aggregation", func() {
-					Consistently(consumed).ShouldNot(Receive())
-				})
-			})
-			Context("when metric-collector returns an empty result", func() {
-				BeforeEach(func() {
-					metricServer = ghttp.NewServer()
-					metricServer.RouteToHandler("GET", "/v1/apps/"+testAppId+"/metrics_history/memory", ghttp.RespondWithJSONEncoded(http.StatusOK,
-						&[]*models.AppInstanceMetric{}))
-				})
-				It("should not do aggregation as there is no metric", func() {
-					var appMetric *AppMetric
-					Eventually(consumed).Should(Receive(&appMetric))
-					appMetric.Timestamp = timestamp
-					Expect(appMetric).To(Equal(&AppMetric{
-						AppId:      testAppId,
-						MetricType: metricType,
-						Value:      nil,
-						Unit:       "",
-						Timestamp:  timestamp,
-					}))
-				})
-			})
-			Context("when metric-collector returns error", func() {
-				BeforeEach(func() {
-					metricServer = ghttp.NewServer()
-					metricServer.RouteToHandler("GET", "/v1/apps/"+testAppId+"/metrics_history/memory", ghttp.RespondWithJSONEncoded(http.StatusBadRequest,
-						models.ErrorResponse{
-							Code:    "Interal-Server-Error",
-							Message: "Error"}))
-				})
-				It("should not do aggregation as there is no metric", func() {
-					Consistently(consumed).ShouldNot(Receive())
-				})
-			})
-			Context("when metric-collector is not running", func() {
-				JustBeforeEach(func() {
-					metricServer.Close()
-				})
-				BeforeEach(func() {
-					metricServer = ghttp.NewServer()
-
-				})
-				It("should not do aggregation as there is no metric", func() {
-					Consistently(consumed).ShouldNot(Receive())
-				})
+				appMonitor.MetricType = "garbage"
 			})
 
+			It("logs an error", func() {
+				Eventually(logger.Buffer).Should(Say("Unsupported metric type"))
+			})
+
+			It("does not save any metrics", func() {
+				Consistently(appMetricDatabase.SaveAppMetricCallCount).Should(BeZero())
+			})
+		})
+
+		Context("when metrics are successfully retrieved", func() {
+			It("saves the average metrics", func() {
+				Eventually(appMetricDatabase.SaveAppMetricCallCount).Should(Equal(1))
+				actualAppMetric := appMetricDatabase.SaveAppMetricArgsForCall(0)
+				actualAppMetric.Timestamp = timestamp
+
+				var value int64 = 250
+				Expect(actualAppMetric).To(Equal(&AppMetric{
+					AppId:      testAppId,
+					MetricType: metricType,
+					Value:      &value,
+					Unit:       "bytes",
+					Timestamp:  timestamp}))
+			})
+		})
+
+		Context("when the metrics are not valid JSON", func() {
+			BeforeEach(func() {
+				metricServer.RouteToHandler("GET", "/v1/apps/"+testAppId+"/metrics_history/memory", ghttp.RespondWith(http.StatusOK,
+					"{[}"))
+			})
+
+			It("logs an error", func() {
+				Eventually(logger.Buffer).Should(Say("Failed to parse response"))
+			})
+
+			It("does not save any metrics", func() {
+				Consistently(appMetricDatabase.SaveAppMetricCallCount).Should(BeZero())
+			})
+		})
+
+		Context("when empty metrics are retrieved", func() {
+			BeforeEach(func() {
+				metricServer.RouteToHandler("GET", "/v1/apps/"+testAppId+"/metrics_history/memory", ghttp.RespondWithJSONEncoded(http.StatusOK,
+					&[]*models.AppInstanceMetric{}))
+			})
+
+			It("saves the average metrics with no value", func() {
+				Eventually(appMetricDatabase.SaveAppMetricCallCount).Should(Equal(1))
+				Expect(appMetricDatabase.SaveAppMetricArgsForCall(0).Value).To(BeNil())
+			})
+		})
+
+		Context("when an error ocurrs retrieving metrics", func() {
+			BeforeEach(func() {
+				metricServer.RouteToHandler("GET", "/v1/apps/"+testAppId+"/metrics_history/memory", ghttp.RespondWithJSONEncoded(http.StatusBadRequest,
+					models.ErrorResponse{
+						Code:    "Interal-Server-Error",
+						Message: "Error"}))
+			})
+
+			It("does not save any metrics", func() {
+				Consistently(appMetricDatabase.SaveAppMetricCallCount).Should(Equal(0))
+			})
+		})
+
+		Context("when metric-collector is not running", func() {
+			JustBeforeEach(func() {
+				metricServer.Close()
+			})
+
+			It("logs an error", func() {
+				Eventually(logger.Buffer).Should(Say("Failed to retrieve metric"))
+			})
+
+			It("does not save any metrics", func() {
+				Consistently(appMetricDatabase.SaveAppMetricCallCount).Should(BeZero())
+			})
+		})
+
+		Context("when the save fails", func() {
+			BeforeEach(func() {
+				appMetricDatabase.SaveAppMetricReturns(errors.New("db error"))
+			})
+
+			It("logs an error", func() {
+				Eventually(logger.Buffer).Should(Say("Failed to save"))
+			})
 		})
 	})
+
 	Context("Stop", func() {
-		var consumed chan *AppMetric
 		BeforeEach(func() {
-			consumed = make(chan *AppMetric, 1)
-			metricConsumer = func(appMetric *AppMetric) {
-				consumed <- appMetric
-			}
 			metricServer = ghttp.NewServer()
 			metricServer.RouteToHandler("GET", "/v1/apps/"+testAppId+"/metrics_history/memory", ghttp.RespondWithJSONEncoded(http.StatusOK,
 				&metrics))
-			metricPoller = NewMetricPoller(metricServer.URL(), logger, appChan, metricConsumer, httpClient)
+
+			metricPoller = NewMetricPoller(logger, metricServer.URL(), appMonitorsChan, httpClient, appMetricDatabase)
 			metricPoller.Start()
 			metricPoller.Stop()
-			appChan <- &AppMonitor{
+
+			appMonitorsChan <- &AppMonitor{
 				AppId:      testAppId,
 				MetricType: metricType,
 				StatWindow: 10,
 			}
-
 		})
+
 		It("stops the aggregating", func() {
-			Consistently(consumed).ShouldNot(Receive())
+			Consistently(appMetricDatabase.SaveAppMetricCallCount).Should(Or(Equal(0), Equal(1)))
 		})
 	})
 })

@@ -1,13 +1,9 @@
 package generator
 
 import (
-	"autoscaler/db"
 	"autoscaler/eventgenerator/model"
-	"autoscaler/models"
-	"net/http"
 	"time"
 
-	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
 )
@@ -19,38 +15,19 @@ type AppEvaluationManager struct {
 	cclock           clock.Clock
 	doneChan         chan bool
 	triggerChan      chan []*model.Trigger
-	evaluatorArray   []*Evaluator
 	getPolicies      model.GetPolicies
 }
 
-func NewAppEvaluationManager(evaluateInterval time.Duration, logger lager.Logger, cclock clock.Clock,
-	triggerChan chan []*model.Trigger, evaluatorCount int, database db.AppMetricDB,
-	scalingEngineUrl string, getPolicies model.GetPolicies, tlsCerts *models.TLSCerts) (*AppEvaluationManager, error) {
-	manager := &AppEvaluationManager{
+func NewAppEvaluationManager(logger lager.Logger, evaluateInterval time.Duration, cclock clock.Clock,
+	triggerChan chan []*model.Trigger, getPolicies model.GetPolicies) (*AppEvaluationManager, error) {
+	return &AppEvaluationManager{
 		evaluateInterval: evaluateInterval,
 		logger:           logger.Session("AppEvaluationManager"),
 		cclock:           cclock,
 		doneChan:         make(chan bool),
 		triggerChan:      triggerChan,
-		evaluatorArray:   []*Evaluator{},
 		getPolicies:      getPolicies,
-	}
-
-	client := cfhttp.NewClient()
-	client.Transport.(*http.Transport).MaxIdleConnsPerHost = evaluatorCount
-	if tlsCerts != nil {
-		tlsConfig, err := cfhttp.NewTLSConfig(tlsCerts.CertFile, tlsCerts.KeyFile, tlsCerts.CACertFile)
-		if err != nil {
-			return nil, err
-		}
-		client.Transport.(*http.Transport).TLSClientConfig = tlsConfig
-	}
-
-	for i := 0; i < evaluatorCount; i++ {
-		evaluator := NewEvaluator(logger, client, scalingEngineUrl, triggerChan, database)
-		manager.evaluatorArray = append(manager.evaluatorArray, evaluator)
-	}
-	return manager, nil
+	}, nil
 }
 
 func (a *AppEvaluationManager) getTriggers(policyMap map[string]*model.Policy) map[string][]*model.Trigger {
@@ -82,11 +59,7 @@ func (a *AppEvaluationManager) getTriggers(policyMap map[string]*model.Policy) m
 }
 
 func (a *AppEvaluationManager) Start() {
-	for _, evaluator := range a.evaluatorArray {
-		evaluator.Start()
-	}
 	go a.doEvaluate()
-
 }
 
 func (a *AppEvaluationManager) Stop() {

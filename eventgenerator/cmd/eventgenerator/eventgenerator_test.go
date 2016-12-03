@@ -2,13 +2,14 @@ package main_test
 
 import (
 	"autoscaler/eventgenerator/config"
+	"io/ioutil"
+	"os"
+	"time"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gbytes"
 	. "github.com/onsi/gomega/gexec"
-	"io/ioutil"
-	"os"
-	"time"
 )
 
 var _ = Describe("Eventgenerator", func() {
@@ -59,7 +60,7 @@ var _ = Describe("Eventgenerator", func() {
 
 		It("fails with an error", func() {
 			Eventually(runner.Session).Should(Exit(1))
-			Expect(runner.Session.Buffer()).To(Say("failed to read config file"))
+			Expect(runner.Session.Buffer()).To(Say("failed to parse config file"))
 		})
 	})
 
