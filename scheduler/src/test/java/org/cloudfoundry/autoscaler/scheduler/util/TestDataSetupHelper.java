@@ -24,7 +24,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Class to set up the test data for the test classes
- *
  */
 public class TestDataSetupHelper {
 	private static Class<?> clazz = TestDataSetupHelper.class;
@@ -130,7 +129,7 @@ public class TestDataSetupHelper {
 		return activeScheduleEntity;
 	}
 
-	public static Date getDate(String dateStr) throws ParseException {
+	private static Date getDate(String dateStr) throws ParseException {
 		SimpleDateFormat sdf = new SimpleDateFormat(DateHelper.DATE_FORMAT);
 
 		if (dateStr != null) {
@@ -218,11 +217,11 @@ public class TestDataSetupHelper {
 		return timeZone;
 	}
 
-	public static String[] getStartDateTime() {
+	static String[] getStartDateTime() {
 		return startDateTime;
 	}
 
-	public static String[] getEndDateTime() {
+	static String[] getEndDateTime() {
 		return endDateTime;
 	}
 
@@ -230,11 +229,11 @@ public class TestDataSetupHelper {
 		return invalidTimezone;
 	}
 
-	public static String[] getStarTime() {
+	static String[] getStarTime() {
 		return startTime;
 	}
 
-	public static String[] getEndTime() {
+	static String[] getEndTime() {
 		return endTime;
 	}
 }

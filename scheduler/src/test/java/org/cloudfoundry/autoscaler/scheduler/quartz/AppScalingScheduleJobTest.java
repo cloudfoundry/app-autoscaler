@@ -46,10 +46,13 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.Trigger;
 import org.quartz.TriggerKey;
+import org.quartz.impl.StdSchedulerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.client.ResourceAccessException;
@@ -68,7 +71,9 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 	@Autowired
 	private MessageBundleResourceHelper messageBundleResourceHelper;
 
-	@Autowired
+	private Scheduler memScheduler;
+
+	@MockBean
 	private Scheduler scheduler;
 
 	@SpyBean
@@ -79,6 +84,9 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 
 	@Autowired
 	private TestDataCleanupHelper testDataCleanupHelper;
+
+	@Autowired
+	private ApplicationContext applicationContext;
 
 	@Value("${autoscaler.scalingengine.url}")
 	private String scalingEngineUrl;
@@ -100,15 +108,29 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 	@Before
 	public void before() throws SchedulerException {
 		MockitoAnnotations.initMocks(this);
-		testDataCleanupHelper.cleanupData(scheduler);
+		memScheduler = createMemScheduler();
+		testDataCleanupHelper.cleanupData(memScheduler);
 
 		Mockito.reset(mockAppender);
+		Mockito.reset(activeScheduleDao);
+		Mockito.reset(restTemplate);
 
 		Mockito.when(mockAppender.getName()).thenReturn("MockAppender");
 		Mockito.when(mockAppender.isStarted()).thenReturn(true);
 		Mockito.when(mockAppender.isStopped()).thenReturn(false);
 
 		setLogLevel(Level.INFO);
+	}
+
+	private Scheduler createMemScheduler() throws SchedulerException {
+		Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
+
+		QuartzJobFactory jobFactory = new QuartzJobFactory();
+		jobFactory.setApplicationContext(applicationContext);
+		scheduler.setJobFactory(jobFactory);
+
+		scheduler.start();
+		return scheduler;
 	}
 
 	@Test
@@ -127,9 +149,9 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 				.forClass(ActiveScheduleEntity.class);
 
 		TestJobListener testJobListener = new TestJobListener(1);
-		scheduler.getListenerManager().addJobListener(testJobListener);
+		memScheduler.getListenerManager().addJobListener(testJobListener);
 
-		scheduler.scheduleJob(jobInformation.getJobDetail(), jobInformation.getTrigger());
+		memScheduler.scheduleJob(jobInformation.getJobDetail(), jobInformation.getTrigger());
 
 		testJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(1));
 
@@ -139,8 +161,8 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		Mockito.verify(activeScheduleDao, Mockito.atLeastOnce()).create(activeScheduleEntity);
 		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 
-		String expectedMessage = messageBundleResourceHelper.lookupMessage("scalingengine.notification.activeschedule.start", appId,
-				scheduleId, JobActionEnum.START);
+		String expectedMessage = messageBundleResourceHelper.lookupMessage(
+				"scalingengine.notification.activeschedule.start", appId, scheduleId, JobActionEnum.START);
 		assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), is(Level.INFO));
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
 
@@ -159,15 +181,15 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		embeddedTomcatUtil.setup(appId, scheduleId, 204, null);
 
 		TestJobListener testJobListener = new TestJobListener(1);
-		scheduler.getListenerManager().addJobListener(testJobListener);
-		scheduler.scheduleJob(jobInformation.getJobDetail(), jobInformation.getTrigger());
+		memScheduler.getListenerManager().addJobListener(testJobListener);
+		memScheduler.scheduleJob(jobInformation.getJobDetail(), jobInformation.getTrigger());
 		testJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(1));
 
 		Mockito.verify(activeScheduleDao, Mockito.times(1)).delete(activeScheduleEntity.getId());
 		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 
-		String expectedMessage = messageBundleResourceHelper.lookupMessage("scalingengine.notification.activeschedule.remove", appId,
-				scheduleId, JobActionEnum.END);
+		String expectedMessage = messageBundleResourceHelper.lookupMessage(
+				"scalingengine.notification.activeschedule.remove", appId, scheduleId, JobActionEnum.END);
 		assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), is(Level.INFO));
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
 
@@ -193,9 +215,9 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 				.create(Mockito.anyObject());
 
 		TestJobListener testJobListener = new TestJobListener(expectedNumOfTimesJobRescheduled);
-		scheduler.getListenerManager().addJobListener(testJobListener);
+		memScheduler.getListenerManager().addJobListener(testJobListener);
 
-		scheduler.scheduleJob(jobInformation.getJobDetail(), jobInformation.getTrigger());
+		memScheduler.scheduleJob(jobInformation.getJobDetail(), jobInformation.getTrigger());
 
 		testJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(1));
 
@@ -230,9 +252,9 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 				.delete(scheduleId);
 
 		TestJobListener testJobListener = new TestJobListener(expectedNumOfTimesJobRescheduled);
-		scheduler.getListenerManager().addJobListener(testJobListener);
+		memScheduler.getListenerManager().addJobListener(testJobListener);
 
-		scheduler.scheduleJob(jobInformation.getJobDetail(), jobInformation.getTrigger());
+		memScheduler.scheduleJob(jobInformation.getJobDetail(), jobInformation.getTrigger());
 
 		testJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(1));
 
@@ -266,9 +288,9 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 				.create(Mockito.anyObject());
 
 		TestJobListener testJobListener = new TestJobListener(expectedNumOfTimesJobRescheduled);
-		scheduler.getListenerManager().addJobListener(testJobListener);
+		memScheduler.getListenerManager().addJobListener(testJobListener);
 
-		scheduler.scheduleJob(jobInformation.getJobDetail(), jobInformation.getTrigger());
+		memScheduler.scheduleJob(jobInformation.getJobDetail(), jobInformation.getTrigger());
 
 		testJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(1));
 
@@ -304,9 +326,9 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		Mockito.doThrow(new DatabaseValidationException("test exception")).when(activeScheduleDao).delete(scheduleId);
 
 		TestJobListener testJobListener = new TestJobListener(expectedNumOfTimesJobRescheduled);
-		scheduler.getListenerManager().addJobListener(testJobListener);
+		memScheduler.getListenerManager().addJobListener(testJobListener);
 
-		scheduler.scheduleJob(jobInformation.getJobDetail(), jobInformation.getTrigger());
+		memScheduler.scheduleJob(jobInformation.getJobDetail(), jobInformation.getTrigger());
 
 		testJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(1));
 
@@ -337,9 +359,9 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		embeddedTomcatUtil.setup(appId, scheduleId, 400, "test error message");
 
 		TestJobListener testJobListener = new TestJobListener(1);
-		scheduler.getListenerManager().addJobListener(testJobListener);
+		memScheduler.getListenerManager().addJobListener(testJobListener);
 
-		scheduler.scheduleJob(jobInformation.getJobDetail(), jobInformation.getTrigger());
+		memScheduler.scheduleJob(jobInformation.getJobDetail(), jobInformation.getTrigger());
 
 		testJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(1));
 
@@ -370,9 +392,9 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		embeddedTomcatUtil.setup(appId, scheduleId, 400, "test error message");
 
 		TestJobListener testJobListener = new TestJobListener(1);
-		scheduler.getListenerManager().addJobListener(testJobListener);
+		memScheduler.getListenerManager().addJobListener(testJobListener);
 
-		scheduler.scheduleJob(jobInformation.getJobDetail(), jobInformation.getTrigger());
+		memScheduler.scheduleJob(jobInformation.getJobDetail(), jobInformation.getTrigger());
 
 		testJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(1));
 
@@ -400,9 +422,9 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		embeddedTomcatUtil.setup(appId, scheduleId, 500, "test error message");
 
 		TestJobListener testJobListener = new TestJobListener(1);
-		scheduler.getListenerManager().addJobListener(testJobListener);
+		memScheduler.getListenerManager().addJobListener(testJobListener);
 
-		scheduler.scheduleJob(jobInformation.getJobDetail(), jobInformation.getTrigger());
+		memScheduler.scheduleJob(jobInformation.getJobDetail(), jobInformation.getTrigger());
 
 		testJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(1));
 
@@ -430,9 +452,9 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		embeddedTomcatUtil.setup(appId, scheduleId, 500, "test error message");
 
 		TestJobListener testJobListener = new TestJobListener(1);
-		scheduler.getListenerManager().addJobListener(testJobListener);
+		memScheduler.getListenerManager().addJobListener(testJobListener);
 
-		scheduler.scheduleJob(jobInformation.getJobDetail(), jobInformation.getTrigger());
+		memScheduler.scheduleJob(jobInformation.getJobDetail(), jobInformation.getTrigger());
 
 		testJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(1));
 
@@ -463,9 +485,9 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 				.put(eq(scalingEngineUrl + "/v1/apps/" + appId + "/active_schedules/" + scheduleId), eq(requestEntity));
 
 		TestJobListener testJobListener = new TestJobListener(2);
-		scheduler.getListenerManager().addJobListener(testJobListener);
+		memScheduler.getListenerManager().addJobListener(testJobListener);
 
-		scheduler.scheduleJob(jobInformation.getJobDetail(), jobInformation.getTrigger());
+		memScheduler.scheduleJob(jobInformation.getJobDetail(), jobInformation.getTrigger());
 
 		testJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(1));
 
