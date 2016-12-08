@@ -8,9 +8,12 @@ import (
 )
 
 const (
-	APIServer     = "apiServer"
-	ServiceBroker = "serviceBroker"
-	Scheduler     = "scheduler"
+	APIServer        = "apiServer"
+	ServiceBroker    = "serviceBroker"
+	Scheduler        = "scheduler"
+	MetricsCollector = "metricsCollector"
+	EventGenerator   = "eventGenerator"
+	ScalingEngine    = "scalingEngine"
 )
 
 type Executables map[string]string
@@ -87,5 +90,51 @@ func (components *Components) Scheduler(confPath string, argv ...string) *ginkgo
 		),
 		Cleanup: func() {
 		},
+	})
+}
+func (components *Components) MetricsCollector(confPath string, argv ...string) *ginkgomon.Runner {
+
+	return ginkgomon.New(ginkgomon.Config{
+		Name:              MetricsCollector,
+		AnsiColorCode:     "35m",
+		StartCheck:        `"metricscollector.started"`,
+		StartCheckTimeout: 10 * time.Second,
+		Command: exec.Command(
+			components.Executables[MetricsCollector],
+			append([]string{
+				"-c", confPath,
+			}, argv...)...,
+		),
+	})
+}
+
+func (components *Components) EventGenerator(confPath string, argv ...string) *ginkgomon.Runner {
+
+	return ginkgomon.New(ginkgomon.Config{
+		Name:              EventGenerator,
+		AnsiColorCode:     "36m",
+		StartCheck:        `"eventgenerator.started"`,
+		StartCheckTimeout: 10 * time.Second,
+		Command: exec.Command(
+			components.Executables[EventGenerator],
+			append([]string{
+				"-c", confPath,
+			}, argv...)...,
+		),
+	})
+}
+func (components *Components) ScalingEngine(confPath string, argv ...string) *ginkgomon.Runner {
+
+	return ginkgomon.New(ginkgomon.Config{
+		Name:              ScalingEngine,
+		AnsiColorCode:     "37m",
+		StartCheck:        `"scalingengine.started"`,
+		StartCheckTimeout: 10 * time.Second,
+		Command: exec.Command(
+			components.Executables[ScalingEngine],
+			append([]string{
+				"-c", confPath,
+			}, argv...)...,
+		),
 	})
 }
