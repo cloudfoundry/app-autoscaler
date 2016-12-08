@@ -29,20 +29,20 @@ import org.springframework.web.client.RestTemplate;
  * QuartzJobBean class that executes the job
  */
 @Component
-abstract class AppScalingScheduleJob extends QuartzJobBean {
+public abstract class AppScalingScheduleJob extends QuartzJobBean {
 	private Logger logger = LogManager.getLogger(this.getClass());
 
 	@Value("${autoscaler.scalingengine.url}")
 	private String scalingEngineUrl;
 
 	@Value("${scalingenginejob.reschedule.interval.millisecond}")
-	long jobRescheduleIntervalMilliSecond;
+	private long jobRescheduleIntervalMilliSecond;
 
 	@Value("${scalingenginejob.reschedule.maxcount}")
 	int maxJobRescheduleCount;
 
 	@Value("${scalingengine.notification.reschedule.maxcount}")
-	int maxScalingEngineNotificationRescheduleCount;
+	private int maxScalingEngineNotificationRescheduleCount;
 
 	@Autowired
 	ActiveScheduleDao activeScheduleDao;
@@ -60,16 +60,17 @@ abstract class AppScalingScheduleJob extends QuartzJobBean {
 		HttpEntity<ActiveScheduleEntity> requestEntity = new HttpEntity<>(activeScheduleEntity);
 
 		try {
-			String scalingEnginePathActiveSchedule = scalingEngineUrl + "/v1/apps/" + appId + "/active_schedules/" + scheduleId;
+			String scalingEnginePathActiveSchedule = scalingEngineUrl + "/v1/apps/" + appId + "/active_schedules/"
+					+ scheduleId;
 
 			if (scalingAction == JobActionEnum.START) {
-				String message = messageBundleResourceHelper.lookupMessage("scalingengine.notification.activeschedule.start", appId,
-						scheduleId, scalingAction);
+				String message = messageBundleResourceHelper.lookupMessage(
+						"scalingengine.notification.activeschedule.start", appId, scheduleId, scalingAction);
 				logger.info(message);
 				restTemplate.put(scalingEnginePathActiveSchedule, requestEntity);
 			} else {
-				String message = messageBundleResourceHelper.lookupMessage("scalingengine.notification.activeschedule.remove", appId,
-						scheduleId, scalingAction);
+				String message = messageBundleResourceHelper.lookupMessage(
+						"scalingengine.notification.activeschedule.remove", appId, scheduleId, scalingAction);
 				logger.info(message);
 				restTemplate.delete(scalingEnginePathActiveSchedule, requestEntity);
 			}
@@ -108,6 +109,9 @@ abstract class AppScalingScheduleJob extends QuartzJobBean {
 		String appId = jobDataMap.getString(ScheduleJobHelper.APP_ID);
 		Long scheduleId = jobDataMap.getLong(ScheduleJobHelper.SCHEDULE_ID);
 		TriggerKey triggerKey = jobExecutionContext.getTrigger().getKey();
+
+		logger.info("Rescheduling job for Trigger Key: " + triggerKey + ", Application Id: " + appId + ", Schedule Id: "
+				+ scheduleId);
 
 		if (jobFireCount < maxCount) {
 			Date newTriggerTime = new Date(System.currentTimeMillis() + jobRescheduleIntervalMilliSecond);

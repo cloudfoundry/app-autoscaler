@@ -166,6 +166,11 @@ databaseChangeLog:
                   constraints:
                     nullable: false
               - column:
+                  name: start_job_identifier
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
                   name: created_at
                   type: timestamp
                   constraints:

@@ -1,27 +1,35 @@
 package org.cloudfoundry.autoscaler.scheduler.service;
 
+import static org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper.APP_ID;
+import static org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper.DEFAULT_INSTANCE_MAX_COUNT;
+import static org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper.DEFAULT_INSTANCE_MIN_COUNT;
+import static org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper.END_JOB_CRON_EXPRESSION;
+import static org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper.END_JOB_START_TIME;
+import static org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper.INSTANCE_MAX_COUNT;
+import static org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper.INSTANCE_MIN_COUNT;
+import static org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper.SCHEDULE_ID;
+import static org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper.TIMEZONE;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.mockito.Matchers.eq;
 
 import java.sql.Time;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
+import org.cloudfoundry.autoscaler.scheduler.quartz.AppScalingRecurringScheduleStartJob;
+import org.cloudfoundry.autoscaler.scheduler.quartz.AppScalingSpecificDateScheduleStartJob;
+import org.cloudfoundry.autoscaler.scheduler.util.DateHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.JobActionEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.RecurringScheduleEntitiesBuilder;
-import org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleTypeEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.SpecificDateScheduleEntitiesBuilder;
 import org.cloudfoundry.autoscaler.scheduler.util.TestConfiguration;
@@ -29,6 +37,7 @@ import org.cloudfoundry.autoscaler.scheduler.util.TestDataCleanupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.ValidationErrorResult;
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -40,6 +49,7 @@ import org.quartz.JobDetail;
 import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
+import org.quartz.SimpleTrigger;
 import org.quartz.Trigger;
 import org.quartz.TriggerKey;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -76,46 +86,38 @@ public class ScheduleJobManagerTest extends TestConfiguration {
 	@Test
 	public void testCreateSimpleJobs_with_GMT_timeZone() throws Exception {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
-		String timeZone = TimeZone.getTimeZone("GMT").getID();
-		Date startDateTime = new Date();
-		Date endDateTime = new Date();
+		TimeZone timeZone = TimeZone.getTimeZone("GMT");
+
+		Long now = System.currentTimeMillis();
+
+		Date startDateTime = new Date(now);
+		Date endDateTime = new Date(now + TimeUnit.SECONDS.toMillis(10));
 
 		SpecificDateScheduleEntity specificDateScheduleEntity = new SpecificDateScheduleEntitiesBuilder(1)
-				.setAppid(appId).setTimeZone(timeZone).setScheduleId().setStartDateTime(0, startDateTime)
+				.setAppid(appId).setTimeZone(timeZone.getID()).setScheduleId().setStartDateTime(0, startDateTime)
 				.setEndDateTime(0, endDateTime).setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).build()
 				.get(0);
 
 		scheduleJobManager.createSimpleJob(specificDateScheduleEntity);
 
-		// Start assertion
-		Long id = specificDateScheduleEntity.getId();
-		ScheduleTypeEnum scheduleTypeEnum = ScheduleTypeEnum.SPECIFIC_DATE;
-		JobKey startJobKey = ScheduleJobHelper.generateJobKey(id, JobActionEnum.START, scheduleTypeEnum);
-		JobKey endJobKey = ScheduleJobHelper.generateJobKey(id, JobActionEnum.END, scheduleTypeEnum);
-
-		TriggerKey startTriggerKey = ScheduleJobHelper.generateTriggerKey(id, JobActionEnum.START, scheduleTypeEnum);
-		TriggerKey endTriggerKey = ScheduleJobHelper.generateTriggerKey(id, JobActionEnum.END, scheduleTypeEnum);
-		Date expectedStartDateTime = new Date(startDateTime.getTime() + TimeZone.getDefault().getRawOffset()
-				- TimeZone.getTimeZone(timeZone).getRawOffset());
-		Date expectedEndDateTime = new Date(endDateTime.getTime() + TimeZone.getDefault().getRawOffset()
-				- TimeZone.getTimeZone(timeZone).getRawOffset());
-
-		assertThat("Never call it", validationErrorResult.hasErrors(), is(false));
+		Long scheduleId = specificDateScheduleEntity.getId();
+		ScheduleTypeEnum scheduleType = ScheduleTypeEnum.SPECIFIC_DATE;
+		String keyName = scheduleId + JobActionEnum.START.getJobIdSuffix();
+		JobKey startJobKey = new JobKey(keyName, scheduleType.getScheduleIdentifier());
+		TriggerKey startTriggerKey = new TriggerKey(keyName, scheduleType.getScheduleIdentifier());
+		Date expectedStartDateTime = DateHelper.getDateWithZoneOffset(startDateTime, timeZone);
 
 		ArgumentCaptor<JobDetail> jobDetailArgumentCaptor = ArgumentCaptor.forClass(JobDetail.class);
 		ArgumentCaptor<Trigger> triggerArgumentCaptor = ArgumentCaptor.forClass(Trigger.class);
 
-		Mockito.verify(scheduler, Mockito.times(2)).scheduleJob(jobDetailArgumentCaptor.capture(),
+		assertThat("No validation error", validationErrorResult.hasErrors(), is(false));
+
+		Mockito.verify(scheduler, Mockito.times(1)).scheduleJob(jobDetailArgumentCaptor.capture(),
 				triggerArgumentCaptor.capture());
 
-		Map<JobKey, JobDetail> scheduleJobKeyDetailMap = new HashMap<>();
-		for (JobDetail jobDetail : jobDetailArgumentCaptor.getAllValues()) {
-			scheduleJobKeyDetailMap.put(jobDetail.getKey(), jobDetail);
-		}
-		assertJobDetails(scheduleJobKeyDetailMap, specificDateScheduleEntity, scheduleTypeEnum);
+		assertSimpleJobDetail(jobDetailArgumentCaptor.getValue(), specificDateScheduleEntity);
 
-		assertSimpleTrigger(startJobKey, endJobKey, startTriggerKey, endTriggerKey, expectedStartDateTime,
-				expectedEndDateTime, triggerArgumentCaptor);
+		assertSimpleTrigger(triggerArgumentCaptor.getValue(), expectedStartDateTime, startJobKey, startTriggerKey);
 	}
 
 	@Test
@@ -131,31 +133,26 @@ public class ScheduleJobManagerTest extends TestConfiguration {
 
 		scheduleJobManager.createCronJob(recurringScheduleEntity);
 
-		// Start assertion
-		Long id = recurringScheduleEntity.getId();
+		Long scheduleId = recurringScheduleEntity.getId();
 		ScheduleTypeEnum scheduleType = ScheduleTypeEnum.RECURRING;
-		JobKey startJobKey = ScheduleJobHelper.generateJobKey(id, JobActionEnum.START, scheduleType);
-		JobKey endJobKey = ScheduleJobHelper.generateJobKey(id, JobActionEnum.END, scheduleType);
-		TriggerKey startTriggerKey = ScheduleJobHelper.generateTriggerKey(id, JobActionEnum.START, scheduleType);
-		TriggerKey endTriggerKey = ScheduleJobHelper.generateTriggerKey(id, JobActionEnum.END, scheduleType);
+		String keyName = scheduleId + JobActionEnum.START.getJobIdSuffix();
+		JobKey startJobKey = new JobKey(keyName, scheduleType.getScheduleIdentifier());
+		TriggerKey startTriggerKey = new TriggerKey(keyName, scheduleType.getScheduleIdentifier());
 		String expectedCronExpressionForStartJob = "00 10 22 ? * TUE,THU,SAT *";
 		String expectedCronExpressionForEndJob = "00 20 23 ? * TUE,THU,SAT *";
 
 		ArgumentCaptor<JobDetail> jobDetailArgumentCaptor = ArgumentCaptor.forClass(JobDetail.class);
 		ArgumentCaptor<Trigger> triggerArgumentCaptor = ArgumentCaptor.forClass(Trigger.class);
-		Mockito.verify(scheduler, Mockito.times(2)).scheduleJob(jobDetailArgumentCaptor.capture(),
+		Mockito.verify(scheduler, Mockito.times(1)).scheduleJob(jobDetailArgumentCaptor.capture(),
 				triggerArgumentCaptor.capture());
 
-		assertThat("Never call it", validationErrorResult.hasErrors(), is(false));
+		assertThat("No validation error", validationErrorResult.hasErrors(), is(false));
 
-		Map<JobKey, JobDetail> scheduleJobKeyDetailMap = new HashMap<>();
-		for (JobDetail jobDetail : jobDetailArgumentCaptor.getAllValues()) {
-			scheduleJobKeyDetailMap.put(jobDetail.getKey(), jobDetail);
-		}
-		assertJobDetails(scheduleJobKeyDetailMap, recurringScheduleEntity, ScheduleTypeEnum.RECURRING);
+		assertCronJobDetail(jobDetailArgumentCaptor.getValue(), recurringScheduleEntity,
+				expectedCronExpressionForEndJob);
 
-		assertCronTrigger(expectedCronExpressionForStartJob, expectedCronExpressionForEndJob, recurringScheduleEntity,
-				startJobKey, endJobKey, startTriggerKey, endTriggerKey, triggerArgumentCaptor);
+		assertCronTrigger(triggerArgumentCaptor.getValue(), expectedCronExpressionForStartJob, recurringScheduleEntity,
+				startJobKey, startTriggerKey);
 	}
 
 	@Test
@@ -171,31 +168,26 @@ public class ScheduleJobManagerTest extends TestConfiguration {
 
 		scheduleJobManager.createCronJob(recurringScheduleEntity);
 
-		// Start assertion
-		Long id = recurringScheduleEntity.getId();
+		Long scheduleId = recurringScheduleEntity.getId();
 		ScheduleTypeEnum scheduleType = ScheduleTypeEnum.RECURRING;
-		JobKey startJobKey = ScheduleJobHelper.generateJobKey(id, JobActionEnum.START, scheduleType);
-		JobKey endJobKey = ScheduleJobHelper.generateJobKey(id, JobActionEnum.END, scheduleType);
-		TriggerKey startTriggerKey = ScheduleJobHelper.generateTriggerKey(id, JobActionEnum.START, scheduleType);
-		TriggerKey endTriggerKey = ScheduleJobHelper.generateTriggerKey(id, JobActionEnum.END, scheduleType);
+		String keyName = scheduleId + JobActionEnum.START.getJobIdSuffix();
+		JobKey startJobKey = new JobKey(keyName, scheduleType.getScheduleIdentifier());
+		TriggerKey startTriggerKey = new TriggerKey(keyName, scheduleType.getScheduleIdentifier());
 		String expectedCronExpressionForStartJob = "00 10 22 ? * MON,TUE,WED,THU,FRI,SAT,SUN *";
 		String expectedCronExpressionForEndJob = "00 20 23 ? * MON,TUE,WED,THU,FRI,SAT,SUN *";
 
 		ArgumentCaptor<JobDetail> jobDetailArgumentCaptor = ArgumentCaptor.forClass(JobDetail.class);
 		ArgumentCaptor<Trigger> triggerArgumentCaptor = ArgumentCaptor.forClass(Trigger.class);
-		Mockito.verify(scheduler, Mockito.times(2)).scheduleJob(jobDetailArgumentCaptor.capture(),
+		Mockito.verify(scheduler, Mockito.times(1)).scheduleJob(jobDetailArgumentCaptor.capture(),
 				triggerArgumentCaptor.capture());
 
-		assertThat("Never call it", validationErrorResult.hasErrors(), is(false));
+		assertThat("No validation error", validationErrorResult.hasErrors(), is(false));
 
-		Map<JobKey, JobDetail> scheduleJobKeyDetailMap = new HashMap<>();
-		for (JobDetail jobDetail : jobDetailArgumentCaptor.getAllValues()) {
-			scheduleJobKeyDetailMap.put(jobDetail.getKey(), jobDetail);
-		}
-		assertJobDetails(scheduleJobKeyDetailMap, recurringScheduleEntity, ScheduleTypeEnum.RECURRING);
+		assertCronJobDetail(jobDetailArgumentCaptor.getValue(), recurringScheduleEntity,
+				expectedCronExpressionForEndJob);
 
-		assertCronTrigger(expectedCronExpressionForStartJob, expectedCronExpressionForEndJob, recurringScheduleEntity,
-				startJobKey, endJobKey, startTriggerKey, endTriggerKey, triggerArgumentCaptor);
+		assertCronTrigger(triggerArgumentCaptor.getValue(), expectedCronExpressionForStartJob, recurringScheduleEntity,
+				startJobKey, startTriggerKey);
 	}
 
 	@Test
@@ -211,31 +203,26 @@ public class ScheduleJobManagerTest extends TestConfiguration {
 
 		scheduleJobManager.createCronJob(recurringScheduleEntity);
 
-		// Start assertion
-		Long id = recurringScheduleEntity.getId();
+		Long scheduleId = recurringScheduleEntity.getId();
 		ScheduleTypeEnum scheduleType = ScheduleTypeEnum.RECURRING;
-		JobKey startJobKey = ScheduleJobHelper.generateJobKey(id, JobActionEnum.START, scheduleType);
-		JobKey endJobKey = ScheduleJobHelper.generateJobKey(id, JobActionEnum.END, scheduleType);
-		TriggerKey startTriggerKey = ScheduleJobHelper.generateTriggerKey(id, JobActionEnum.START, scheduleType);
-		TriggerKey endTriggerKey = ScheduleJobHelper.generateTriggerKey(id, JobActionEnum.END, scheduleType);
+		String keyName = scheduleId + JobActionEnum.START.getJobIdSuffix();
+		JobKey startJobKey = new JobKey(keyName, scheduleType.getScheduleIdentifier());
+		TriggerKey startTriggerKey = new TriggerKey(keyName, scheduleType.getScheduleIdentifier());
 		String expectedCronExpressionForStartJob = "00 01 00 1,5,10,20,31 * ? *";
 		String expectedCronExpressionForEndJob = "00 59 23 1,5,10,20,31 * ? *";
 
 		ArgumentCaptor<JobDetail> jobDetailArgumentCaptor = ArgumentCaptor.forClass(JobDetail.class);
 		ArgumentCaptor<Trigger> triggerArgumentCaptor = ArgumentCaptor.forClass(Trigger.class);
-		Mockito.verify(scheduler, Mockito.times(2)).scheduleJob(jobDetailArgumentCaptor.capture(),
+		Mockito.verify(scheduler, Mockito.times(1)).scheduleJob(jobDetailArgumentCaptor.capture(),
 				triggerArgumentCaptor.capture());
 
-		assertThat("Never call it", validationErrorResult.hasErrors(), is(false));
+		assertThat("No validation error", validationErrorResult.hasErrors(), is(false));
 
-		Map<JobKey, JobDetail> scheduleJobKeyDetailMap = new HashMap<>();
-		for (JobDetail jobDetail : jobDetailArgumentCaptor.getAllValues()) {
-			scheduleJobKeyDetailMap.put(jobDetail.getKey(), jobDetail);
-		}
-		assertJobDetails(scheduleJobKeyDetailMap, recurringScheduleEntity, ScheduleTypeEnum.RECURRING);
+		assertCronJobDetail(jobDetailArgumentCaptor.getValue(), recurringScheduleEntity,
+				expectedCronExpressionForEndJob);
 
-		assertCronTrigger(expectedCronExpressionForStartJob, expectedCronExpressionForEndJob, recurringScheduleEntity,
-				startJobKey, endJobKey, startTriggerKey, endTriggerKey, triggerArgumentCaptor);
+		assertCronTrigger(triggerArgumentCaptor.getValue(), expectedCronExpressionForStartJob, recurringScheduleEntity,
+				startJobKey, startTriggerKey);
 	}
 
 	@Test
@@ -252,31 +239,26 @@ public class ScheduleJobManagerTest extends TestConfiguration {
 
 		scheduleJobManager.createCronJob(recurringScheduleEntity);
 
-		// Start assertion
-		Long id = recurringScheduleEntity.getId();
+		Long scheduleId = recurringScheduleEntity.getId();
 		ScheduleTypeEnum scheduleType = ScheduleTypeEnum.RECURRING;
-		JobKey startJobKey = ScheduleJobHelper.generateJobKey(id, JobActionEnum.START, scheduleType);
-		JobKey endJobKey = ScheduleJobHelper.generateJobKey(id, JobActionEnum.END, scheduleType);
-		TriggerKey startTriggerKey = ScheduleJobHelper.generateTriggerKey(id, JobActionEnum.START, scheduleType);
-		TriggerKey endTriggerKey = ScheduleJobHelper.generateTriggerKey(id, JobActionEnum.END, scheduleType);
+		String keyName = scheduleId + JobActionEnum.START.getJobIdSuffix();
+		JobKey startJobKey = new JobKey(keyName, scheduleType.getScheduleIdentifier());
+		TriggerKey startTriggerKey = new TriggerKey(keyName, scheduleType.getScheduleIdentifier());
 		String expectedCronExpressionForStartJob = "00 10 22 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31 * ? *";
 		String expectedCronExpressionForEndJob = "00 20 23 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31 * ? *";
 
 		ArgumentCaptor<JobDetail> jobDetailArgumentCaptor = ArgumentCaptor.forClass(JobDetail.class);
 		ArgumentCaptor<Trigger> triggerArgumentCaptor = ArgumentCaptor.forClass(Trigger.class);
-		Mockito.verify(scheduler, Mockito.times(2)).scheduleJob(jobDetailArgumentCaptor.capture(),
+		Mockito.verify(scheduler, Mockito.times(1)).scheduleJob(jobDetailArgumentCaptor.capture(),
 				triggerArgumentCaptor.capture());
 
-		assertThat("Never call it", validationErrorResult.hasErrors(), is(false));
+		assertThat("No validation error", validationErrorResult.hasErrors(), is(false));
 
-		Map<JobKey, JobDetail> scheduleJobKeyDetailMap = new HashMap<>();
-		for (JobDetail jobDetail : jobDetailArgumentCaptor.getAllValues()) {
-			scheduleJobKeyDetailMap.put(jobDetail.getKey(), jobDetail);
-		}
-		assertJobDetails(scheduleJobKeyDetailMap, recurringScheduleEntity, ScheduleTypeEnum.RECURRING);
+		assertCronJobDetail(jobDetailArgumentCaptor.getValue(), recurringScheduleEntity,
+				expectedCronExpressionForEndJob);
 
-		assertCronTrigger(expectedCronExpressionForStartJob, expectedCronExpressionForEndJob, recurringScheduleEntity,
-				startJobKey, endJobKey, startTriggerKey, endTriggerKey, triggerArgumentCaptor);
+		assertCronTrigger(triggerArgumentCaptor.getValue(), expectedCronExpressionForStartJob, recurringScheduleEntity,
+				startJobKey, startTriggerKey);
 	}
 
 	@Test
@@ -287,12 +269,13 @@ public class ScheduleJobManagerTest extends TestConfiguration {
 
 		scheduleJobManager.deleteJob(appId, scheduleId, scheduleType);
 
-		// Start assertion
-		JobKey startJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.START, scheduleType);
-		JobKey endJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.END, scheduleType);
+		JobKey startJobKey = new JobKey(scheduleId + JobActionEnum.START.getJobIdSuffix(),
+				scheduleType.getScheduleIdentifier());
+		JobKey endJobKey = new JobKey(scheduleId + JobActionEnum.END.getJobIdSuffix(),
+				scheduleType.getScheduleIdentifier());
 
-		Mockito.verify(scheduler).deleteJob(eq(startJobKey));
-		Mockito.verify(scheduler).deleteJob(eq(endJobKey));
+		Mockito.verify(scheduler, Mockito.times(1)).deleteJob(eq(startJobKey));
+		Mockito.verify(scheduler, Mockito.times(1)).deleteJob(eq(endJobKey));
 	}
 
 	@Test
@@ -303,12 +286,13 @@ public class ScheduleJobManagerTest extends TestConfiguration {
 
 		scheduleJobManager.deleteJob(appId, scheduleId, scheduleType);
 
-		// Start assertion
-		JobKey startJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.START, scheduleType);
-		JobKey endJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.END, scheduleType);
+		JobKey startJobKey = new JobKey(scheduleId + JobActionEnum.START.getJobIdSuffix(),
+				scheduleType.getScheduleIdentifier());
+		JobKey endJobKey = new JobKey(scheduleId + JobActionEnum.END.getJobIdSuffix(),
+				scheduleType.getScheduleIdentifier());
 
-		Mockito.verify(scheduler).deleteJob(eq(startJobKey));
-		Mockito.verify(scheduler).deleteJob(eq(endJobKey));
+		Mockito.verify(scheduler, Mockito.times(1)).deleteJob(eq(startJobKey));
+		Mockito.verify(scheduler, Mockito.times(1)).deleteJob(eq(endJobKey));
 	}
 
 	@Test
@@ -326,7 +310,6 @@ public class ScheduleJobManagerTest extends TestConfiguration {
 
 		scheduleJobManager.createSimpleJob(specificDateScheduleEntity);
 
-		// Start assertion
 		assertTrue("This test should have an Error.", validationErrorResult.hasErrors());
 
 		List<String> errors = validationErrorResult.getAllErrorMessages();
@@ -352,7 +335,6 @@ public class ScheduleJobManagerTest extends TestConfiguration {
 
 		scheduleJobManager.createCronJob(recurringScheduleEntity);
 
-		// Start assertion
 		assertTrue("This test should have an Error.", validationErrorResult.hasErrors());
 		List<String> errors = validationErrorResult.getAllErrorMessages();
 		assertEquals(1, errors.size());
@@ -372,7 +354,6 @@ public class ScheduleJobManagerTest extends TestConfiguration {
 
 		scheduleJobManager.deleteJob(appId, scheduleId, type);
 
-		// Start assertion
 		assertTrue("This test should have an Error.", validationErrorResult.hasErrors());
 
 		List<String> errors = validationErrorResult.getAllErrorMessages();
@@ -393,7 +374,6 @@ public class ScheduleJobManagerTest extends TestConfiguration {
 
 		scheduleJobManager.deleteJob(appId, scheduleId, type);
 
-		// Start assertion
 		assertTrue("This test should have an Error.", validationErrorResult.hasErrors());
 		List<String> errors = validationErrorResult.getAllErrorMessages();
 		assertEquals(1, errors.size());
@@ -436,73 +416,58 @@ public class ScheduleJobManagerTest extends TestConfiguration {
 				.setDayOfWeek(0, dayOfWeek).build().get(0);
 	}
 
-	private void assertSimpleTrigger(JobKey startJobKey, JobKey endJobKey, TriggerKey startTriggerKey,
-			TriggerKey endTriggerKey, Date expectedStartDateTime, Date expectedEndDateTime,
-			ArgumentCaptor<Trigger> triggerArgumentCaptor) {
-		for (Trigger trigger : triggerArgumentCaptor.getAllValues()) {
-			if (trigger.getKey().equals(startTriggerKey)) {
-				assertThat(trigger.getJobKey(), is(startJobKey));
-				assertThat(trigger.getStartTime(), is(expectedStartDateTime));
-			} else if (trigger.getKey().equals(endTriggerKey)) {
-				assertThat(trigger.getJobKey(), is(endJobKey));
-				assertThat(trigger.getStartTime(), is(expectedEndDateTime));
-			} else {
-				fail("Invalid trigger key :" + trigger.getKey());
-			}
+	private void assertSimpleTrigger(Trigger trigger, Date expectedStartDateTime, JobKey expectedStartJobKey,
+			TriggerKey expectedStartTriggerKey) {
+
+		assertThat(trigger.getJobKey(), is(expectedStartJobKey));
+		assertThat(trigger.getKey(), is(expectedStartTriggerKey));
+		assertThat(trigger.getStartTime(), is(expectedStartDateTime));
+		assertThat(trigger.getMisfireInstruction(), is(SimpleTrigger.MISFIRE_INSTRUCTION_FIRE_NOW));
+	}
+
+	private void assertCronTrigger(Trigger trigger, String expectedCronExpressionForStartJob,
+			RecurringScheduleEntity recurringScheduleEntity, JobKey startJobKey, TriggerKey startTriggerKey) {
+
+		CronTrigger cronTrigger = (CronTrigger) trigger;
+		assertThat(cronTrigger.getJobKey(), is(startJobKey));
+		assertThat(cronTrigger.getKey(), is(startTriggerKey));
+		assertThat(cronTrigger.getCronExpression(), is(expectedCronExpressionForStartJob));
+		assertThat(cronTrigger.getTimeZone(), is(TimeZone.getTimeZone(recurringScheduleEntity.getTimeZone())));
+		assertThat(cronTrigger.getMisfireInstruction(), is(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW));
+
+		if (recurringScheduleEntity.getStartDate() != null) {
+			assertThat(cronTrigger.getStartTime(), is(recurringScheduleEntity.getStartDate()));
 		}
+		assertThat(cronTrigger.getEndTime(), is(recurringScheduleEntity.getEndDate()));
 	}
 
-	private void assertCronTrigger(String expectedCronExpressionForStartJob, String expectedCronExpressionForEndJob,
-			RecurringScheduleEntity recurringScheduleEntity, JobKey startJobKey, JobKey endJobKey,
-			TriggerKey startTriggerKey, TriggerKey endTriggerKey, ArgumentCaptor<Trigger> triggerArgumentCaptor) {
-		for (Trigger trigger : triggerArgumentCaptor.getAllValues()) {
-			CronTrigger cronTrigger = (CronTrigger) trigger;
-			if (trigger.getKey().equals(startTriggerKey)) {
-				assertThat(trigger.getJobKey(), is(startJobKey));
-				assertThat(cronTrigger.getCronExpression(), is(expectedCronExpressionForStartJob));
-			} else if (trigger.getKey().equals(endTriggerKey)) {
-				assertThat(trigger.getJobKey(), is(endJobKey));
-				assertThat(cronTrigger.getCronExpression(), is(expectedCronExpressionForEndJob));
-			} else {
-				fail("Invalid trigger key :" + trigger.getKey());
-			}
-
-			assertThat(cronTrigger.getTimeZone(), is(TimeZone.getTimeZone(recurringScheduleEntity.getTimeZone())));
-			if (recurringScheduleEntity.getStartDate() != null) {
-				assertThat(cronTrigger.getStartTime(), is(recurringScheduleEntity.getStartDate()));
-			}
-			assertThat(cronTrigger.getEndTime(), is(recurringScheduleEntity.getEndDate()));
-		}
+	private void assertCommonJobDataMap(JobDataMap jobDataMap, ScheduleEntity scheduleEntity) {
+		assertThat(jobDataMap.getString(APP_ID), is(scheduleEntity.getAppId()));
+		assertThat(jobDataMap.getLong(SCHEDULE_ID), is(scheduleEntity.getId()));
+		assertThat(jobDataMap.getString(TIMEZONE), is(scheduleEntity.getTimeZone()));
+		assertThat(jobDataMap.getInt(INSTANCE_MIN_COUNT), is(scheduleEntity.getInstanceMinCount()));
+		assertThat(jobDataMap.getInt(INSTANCE_MAX_COUNT), is(scheduleEntity.getInstanceMaxCount()));
+		assertThat(jobDataMap.getInt(DEFAULT_INSTANCE_MIN_COUNT), is(scheduleEntity.getDefaultInstanceMinCount()));
+		assertThat(jobDataMap.getInt(DEFAULT_INSTANCE_MAX_COUNT), is(scheduleEntity.getDefaultInstanceMaxCount()));
 	}
 
-	private void assertJobDetails(Map<JobKey, JobDetail> scheduleIdJobDetailMap, ScheduleEntity scheduleEntity,
-			ScheduleTypeEnum scheduleType) throws SchedulerException {
-		String appId = scheduleEntity.getAppId();
-		Long scheduleId = scheduleEntity.getId();
+	private void assertSimpleJobDetail(JobDetail jobDetail, SpecificDateScheduleEntity scheduleEntity)
+			throws SchedulerException {
+		assertThat("Expected existing jobDetail", jobDetail, Matchers.notNullValue());
+		assertEquals(AppScalingSpecificDateScheduleStartJob.class, jobDetail.getJobClass());
 
-		JobKey startJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.START, scheduleType);
-		JobKey endJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.END, scheduleType);
-
-		int instMinCount = scheduleEntity.getInstanceMinCount();
-		int instMaxCount = scheduleEntity.getInstanceMaxCount();
-
-		JobDetail jobDetail = scheduleIdJobDetailMap.get(startJobKey);
-		assertJobDetail(appId, scheduleId, instMinCount, instMaxCount, JobActionEnum.START, jobDetail);
-
-		instMinCount = scheduleEntity.getDefaultInstanceMinCount();
-		instMaxCount = scheduleEntity.getDefaultInstanceMaxCount();
-		jobDetail = scheduleIdJobDetailMap.get(endJobKey);
-		assertJobDetail(appId, scheduleId, instMinCount, instMaxCount, JobActionEnum.END, jobDetail);
+		JobDataMap jobDataMap = jobDetail.getJobDataMap();
+		assertCommonJobDataMap(jobDataMap, scheduleEntity);
+		assertThat(jobDataMap.getLong(END_JOB_START_TIME), is(scheduleEntity.getEndDateTime().getTime()));
 	}
 
-	private void assertJobDetail(String expectedAppId, Long expectedScheduleId, int expectedInstanceMinCount,
-			int expectedInstanceMaxCount, JobActionEnum expectedJobAction, JobDetail expectedJobDetail) {
-		assertNotNull("Expected existing jobDetail", expectedJobDetail);
-		JobDataMap jobDataMap = expectedJobDetail.getJobDataMap();
-		assertEquals(expectedAppId, jobDataMap.get(ScheduleJobHelper.APP_ID));
-		assertEquals(expectedScheduleId, jobDataMap.get(ScheduleJobHelper.SCHEDULE_ID));
-		assertEquals(expectedInstanceMinCount, jobDataMap.get(ScheduleJobHelper.INSTANCE_MIN_COUNT));
-		assertEquals(expectedInstanceMaxCount, jobDataMap.get(ScheduleJobHelper.INSTANCE_MAX_COUNT));
-	}
+	private void assertCronJobDetail(JobDetail jobDetail, ScheduleEntity scheduleEntity, String cronExpression)
+			throws SchedulerException {
+		assertThat("Expected existing jobDetail", jobDetail, Matchers.notNullValue());
+		assertEquals(AppScalingRecurringScheduleStartJob.class, jobDetail.getJobClass());
 
+		JobDataMap jobDataMap = jobDetail.getJobDataMap();
+		assertCommonJobDataMap(jobDataMap, scheduleEntity);
+		assertThat(jobDataMap.getString(END_JOB_CRON_EXPRESSION), is(cronExpression));
+	}
 }

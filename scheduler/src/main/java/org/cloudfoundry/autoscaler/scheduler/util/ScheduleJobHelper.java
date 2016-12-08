@@ -28,19 +28,21 @@ public class ScheduleJobHelper {
 
 	public enum RescheduleCount {
 		ACTIVE_SCHEDULE, SCALING_ENGINE_NOTIFICATION
-	};
+	}
 
 	public static final String APP_ID = "appId";
 	public static final String SCHEDULE_ID = "scheduleId";
+	public static final String TIMEZONE = "timeZone";
 	public static final String INITIAL_MIN_INSTANCE_COUNT = "initialMinInstanceCount";
 	public static final String INSTANCE_MIN_COUNT = "instanceMinCount";
 	public static final String INSTANCE_MAX_COUNT = "instanceMaxCount";
+	public static final String DEFAULT_INSTANCE_MIN_COUNT = "defaultInstanceMinCount";
+	public static final String DEFAULT_INSTANCE_MAX_COUNT = "defaultInstanceMaxCount";
+	public static final String START_JOB_IDENTIFIER = "startJobIdentifier";
+	public static final String END_JOB_START_TIME = "endJobStartTime";
+	public static final String END_JOB_CRON_EXPRESSION = "endJobCronExpression";
 	public static final String ACTIVE_SCHEDULE_TABLE_TASK_DONE = "activeScheduleTableTask";
-
-	public static JobKey generateJobKey(Long id, JobActionEnum jobActionEnum, ScheduleTypeEnum scheduleTypeEnum) {
-		String name = id + jobActionEnum.getJobIdSuffix();
-		return new JobKey(name, scheduleTypeEnum.getScheduleIdentifier());
-	}
+	public static final String CREATE_END_JOB_TASK_DONE = "endJobScheduleTask";
 
 	public static JobDetail buildJob(JobKey jobKey, Class<? extends Job> classType) {
 
@@ -48,17 +50,12 @@ public class ScheduleJobHelper {
 		return jobBuilder.build();
 	}
 
-	public static TriggerKey generateTriggerKey(Long id, JobActionEnum jobActionEnum,
-			ScheduleTypeEnum scheduleTypeEnum) {
-		String name = id + jobActionEnum.getJobIdSuffix();
-		return new TriggerKey(name, scheduleTypeEnum.getScheduleIdentifier());
-	}
-
 	public static Trigger buildTrigger(TriggerKey triggerKey, JobKey jobKey, Date triggerDate) {
 
 		TriggerBuilder<Trigger> trigger = TriggerBuilder.newTrigger().withIdentity(triggerKey);
 
-		trigger.withSchedule(SimpleScheduleBuilder.simpleSchedule()).startAt(triggerDate);
+		trigger.withSchedule(SimpleScheduleBuilder.simpleSchedule().withMisfireHandlingInstructionFireNow())
+				.startAt(triggerDate);
 
 		if (jobKey != null) {
 			trigger.forJob(jobKey);
@@ -74,7 +71,7 @@ public class ScheduleJobHelper {
 
 		trigger.withSchedule(
 				CronScheduleBuilder.cronSchedule(convertRecurringScheduleToCronExpression(scheduleTime, scheduleEntity))
-						.inTimeZone(timeZone));
+						.inTimeZone(timeZone).withMisfireHandlingInstructionFireAndProceed());
 
 		if (scheduleEntity.getStartDate() != null) {
 			trigger.startAt(scheduleEntity.getStartDate());
@@ -91,7 +88,7 @@ public class ScheduleJobHelper {
 		return trigger.build();
 	}
 
-	private static String convertRecurringScheduleToCronExpression(Date scheduleTime,
+	public static String convertRecurringScheduleToCronExpression(Date scheduleTime,
 			RecurringScheduleEntity recurringScheduleEntity) {
 		Calendar calendar = Calendar.getInstance();
 		calendar.setTime(scheduleTime);

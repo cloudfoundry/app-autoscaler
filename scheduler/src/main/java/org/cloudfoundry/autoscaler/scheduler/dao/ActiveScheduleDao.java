@@ -1,7 +1,5 @@
 package org.cloudfoundry.autoscaler.scheduler.dao;
 
-import java.util.List;
-
 import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
 
 public interface ActiveScheduleDao {
@@ -10,7 +8,7 @@ public interface ActiveScheduleDao {
 
 	void create(ActiveScheduleEntity activeScheduleEntity);
 
-	int delete(Long id);
+	int delete(Long id, Long startJobIdentifier);
 
-	void deleteAllActiveSchedulesByAppId(String appId);
+	int deleteActiveSchedulesByAppId(String appId);
 }

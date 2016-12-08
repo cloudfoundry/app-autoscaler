@@ -6,8 +6,8 @@ import java.util.TimeZone;
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
-import org.cloudfoundry.autoscaler.scheduler.quartz.AppScalingScheduleEndJob;
-import org.cloudfoundry.autoscaler.scheduler.quartz.AppScalingScheduleStartJob;
+import org.cloudfoundry.autoscaler.scheduler.quartz.AppScalingRecurringScheduleStartJob;
+import org.cloudfoundry.autoscaler.scheduler.quartz.AppScalingSpecificDateScheduleStartJob;
 import org.cloudfoundry.autoscaler.scheduler.util.DateHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.JobActionEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper;
@@ -26,8 +26,6 @@ import org.springframework.stereotype.Service;
 /**
  * Service class to persist the schedule entity in the database and create
  * scheduled job.
- * 
- * 
  *
  */
 @Service
@@ -46,40 +44,30 @@ class ScheduleJobManager {
 	void createSimpleJob(SpecificDateScheduleEntity specificDateScheduleEntity) {
 
 		Long scheduleId = specificDateScheduleEntity.getId();
+		String keyName = scheduleId + JobActionEnum.START.getJobIdSuffix();
 
 		// Build the job
-		JobKey startJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.START,
-				ScheduleTypeEnum.SPECIFIC_DATE);
-		JobKey endJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.END,
-				ScheduleTypeEnum.SPECIFIC_DATE);
+		JobKey startJobKey = new JobKey(keyName, ScheduleTypeEnum.SPECIFIC_DATE.getScheduleIdentifier());
 
-		JobDetail startJobDetail = ScheduleJobHelper.buildJob(startJobKey, AppScalingScheduleStartJob.class);
-		JobDetail endJobDetail = ScheduleJobHelper.buildJob(endJobKey, AppScalingScheduleEndJob.class);
+		JobDetail startJobDetail = ScheduleJobHelper.buildJob(startJobKey,
+				AppScalingSpecificDateScheduleStartJob.class);
 
-		// Set the data in JobDetail for informing the scaling decision maker that scaling job needs to be started
-		setupScalingScheduleJobData(startJobDetail, specificDateScheduleEntity, JobActionEnum.START);
-		// Set the data in JobDetail for informing the scaling decision maker that scaling job needs to be ended.
-		setupScalingScheduleJobData(endJobDetail, specificDateScheduleEntity, JobActionEnum.END);
+		// Set the data in JobDetail for informing the scaling engine that scaling job needs to be started
+		setupCommonScalingData(startJobDetail, specificDateScheduleEntity);
+		setupSpecificDateScheduleScalingData(startJobDetail, specificDateScheduleEntity.getEndDateTime());
 
 		// Build the trigger
 		TimeZone policyTimeZone = TimeZone.getTimeZone(specificDateScheduleEntity.getTimeZone());
 
 		Date triggerStartDateTime = DateHelper.getDateWithZoneOffset(specificDateScheduleEntity.getStartDateTime(),
 				policyTimeZone);
-		Date triggerEndDateTime = DateHelper.getDateWithZoneOffset(specificDateScheduleEntity.getEndDateTime(),
-				policyTimeZone);
 
-		TriggerKey startTriggerKey = ScheduleJobHelper.generateTriggerKey(scheduleId, JobActionEnum.START,
-				ScheduleTypeEnum.SPECIFIC_DATE);
-		TriggerKey endTriggerKey = ScheduleJobHelper.generateTriggerKey(scheduleId, JobActionEnum.END,
-				ScheduleTypeEnum.SPECIFIC_DATE);
+		TriggerKey startTriggerKey = new TriggerKey(keyName, ScheduleTypeEnum.SPECIFIC_DATE.getScheduleIdentifier());
 		Trigger jobStartTrigger = ScheduleJobHelper.buildTrigger(startTriggerKey, startJobKey, triggerStartDateTime);
-		Trigger jobEndTrigger = ScheduleJobHelper.buildTrigger(endTriggerKey, endJobKey, triggerEndDateTime);
 
 		// Schedule the job
 		try {
 			scheduler.scheduleJob(startJobDetail, jobStartTrigger);
-			scheduler.scheduleJob(endJobDetail, jobEndTrigger);
 
 		} catch (SchedulerException se) {
 
@@ -91,39 +79,29 @@ class ScheduleJobManager {
 
 	void createCronJob(RecurringScheduleEntity recurringScheduleEntity) {
 		Long scheduleId = recurringScheduleEntity.getId();
+		String keyName = scheduleId + JobActionEnum.START.getJobIdSuffix();
 
-		JobKey startJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.START,
-				ScheduleTypeEnum.RECURRING);
-		JobKey endJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.END, ScheduleTypeEnum.RECURRING);
+		JobKey startJobKey = new JobKey(keyName, ScheduleTypeEnum.RECURRING.getScheduleIdentifier());
 
 		// Build the job
-		JobDetail jobStartDetail = ScheduleJobHelper.buildJob(startJobKey, AppScalingScheduleStartJob.class);
-		JobDetail jobEndDetail = ScheduleJobHelper.buildJob(endJobKey, AppScalingScheduleEndJob.class);
-
-		// Set the data in JobDetail for informing the scaling decision maker that scaling job needs to be started
-		setupScalingScheduleJobData(jobStartDetail, recurringScheduleEntity, JobActionEnum.START);
-		// Set the data in JobDetail for informing the scaling decision maker that scaling job needs to be ended.
-		setupScalingScheduleJobData(jobEndDetail, recurringScheduleEntity, JobActionEnum.END);
+		JobDetail jobStartDetail = ScheduleJobHelper.buildJob(startJobKey, AppScalingRecurringScheduleStartJob.class);
 
 		// Build the trigger
 		Date triggerStartTime = recurringScheduleEntity.getStartTime();
-		Date triggerEndTime = recurringScheduleEntity.getEndTime();
 
-		TriggerKey startTriggerKey = ScheduleJobHelper.generateTriggerKey(scheduleId, JobActionEnum.START,
-				ScheduleTypeEnum.RECURRING);
-		TriggerKey endTriggerKey = ScheduleJobHelper.generateTriggerKey(scheduleId, JobActionEnum.END,
-				ScheduleTypeEnum.RECURRING);
+		// Set the data in JobDetail for informing the scaling engine that scaling job needs to be started
+		String cronExpression = ScheduleJobHelper.convertRecurringScheduleToCronExpression(
+				recurringScheduleEntity.getEndTime(), recurringScheduleEntity);
+		setupCommonScalingData(jobStartDetail, recurringScheduleEntity);
+		setupRecurringScheduleScalingData(jobStartDetail, cronExpression);
+
+		TriggerKey startTriggerKey = new TriggerKey(keyName, ScheduleTypeEnum.RECURRING.getScheduleIdentifier());
 
 		Trigger jobStartTrigger = ScheduleJobHelper.buildCronTrigger(startTriggerKey, jobStartDetail.getKey(),
 				recurringScheduleEntity, triggerStartTime);
-		Trigger jobEndTrigger = ScheduleJobHelper.buildCronTrigger(endTriggerKey, jobEndDetail.getKey(),
-				recurringScheduleEntity, triggerEndTime);
-
 		// Schedule the job
 		try {
 			scheduler.scheduleJob(jobStartDetail, jobStartTrigger);
-			scheduler.scheduleJob(jobEndDetail, jobEndTrigger);
-
 		} catch (SchedulerException se) {
 
 			validationErrorResult.addErrorForQuartzSchedulerException(se, "scheduler.error.create.failed",
@@ -134,37 +112,41 @@ class ScheduleJobManager {
 
 	/**
 	 * Sets the data in the JobDetail object
-	 * 
 	 * @param jobDetail
 	 * @param scheduleEntity
-	 * @param jobAction 
 	 */
-	private void setupScalingScheduleJobData(JobDetail jobDetail, ScheduleEntity scheduleEntity,
-			JobActionEnum jobAction) {
-
+	private void setupCommonScalingData(JobDetail jobDetail, ScheduleEntity scheduleEntity) {
 		JobDataMap jobDataMap = jobDetail.getJobDataMap();
 		jobDataMap.put(ScheduleJobHelper.APP_ID, scheduleEntity.getAppId());
 		jobDataMap.put(ScheduleJobHelper.SCHEDULE_ID, scheduleEntity.getId());
-		jobDataMap.put(ScheduleJobHelper.RescheduleCount.ACTIVE_SCHEDULE.name(), 1);
-		jobDataMap.put(ScheduleJobHelper.RescheduleCount.SCALING_ENGINE_NOTIFICATION.name(),1);
-		jobDataMap.put(ScheduleJobHelper.ACTIVE_SCHEDULE_TABLE_TASK_DONE, false);
+		jobDataMap.put(ScheduleJobHelper.TIMEZONE, scheduleEntity.getTimeZone());
+		jobDataMap.put(ScheduleJobHelper.INSTANCE_MIN_COUNT, scheduleEntity.getInstanceMinCount());
+		jobDataMap.put(ScheduleJobHelper.INSTANCE_MAX_COUNT, scheduleEntity.getInstanceMaxCount());
+		jobDataMap.put(ScheduleJobHelper.INITIAL_MIN_INSTANCE_COUNT, scheduleEntity.getInitialMinInstanceCount());
+		jobDataMap.put(ScheduleJobHelper.DEFAULT_INSTANCE_MIN_COUNT, scheduleEntity.getDefaultInstanceMinCount());
+		jobDataMap.put(ScheduleJobHelper.DEFAULT_INSTANCE_MAX_COUNT, scheduleEntity.getDefaultInstanceMaxCount());
 
-		// The minimum and maximum instance count need to be set when the
-		// scaling action has to be started.
-		if (jobAction == JobActionEnum.START) {
-			jobDataMap.put(ScheduleJobHelper.INSTANCE_MIN_COUNT, scheduleEntity.getInstanceMinCount());
-			jobDataMap.put(ScheduleJobHelper.INSTANCE_MAX_COUNT, scheduleEntity.getInstanceMaxCount());
-			jobDataMap.put(ScheduleJobHelper.INITIAL_MIN_INSTANCE_COUNT, scheduleEntity.getInitialMinInstanceCount());
-		} else {
-			jobDataMap.put(ScheduleJobHelper.INSTANCE_MIN_COUNT, scheduleEntity.getDefaultInstanceMinCount());
-			jobDataMap.put(ScheduleJobHelper.INSTANCE_MAX_COUNT, scheduleEntity.getDefaultInstanceMaxCount());
-		}
+		jobDataMap.put(ScheduleJobHelper.RescheduleCount.ACTIVE_SCHEDULE.name(), 1);
+		jobDataMap.put(ScheduleJobHelper.RescheduleCount.SCALING_ENGINE_NOTIFICATION.name(), 1);
+		jobDataMap.put(ScheduleJobHelper.ACTIVE_SCHEDULE_TABLE_TASK_DONE, false);
+		jobDataMap.put(ScheduleJobHelper.CREATE_END_JOB_TASK_DONE, false);
+	}
+
+	private void setupSpecificDateScheduleScalingData(JobDetail jobDetail, Date endJobStartTime) {
+		JobDataMap jobDataMap = jobDetail.getJobDataMap();
+		jobDataMap.put(ScheduleJobHelper.END_JOB_START_TIME, endJobStartTime.getTime());
+	}
+
+	private void setupRecurringScheduleScalingData(JobDetail jobDetail, String cronExpression) {
+		JobDataMap jobDataMap = jobDetail.getJobDataMap();
+		jobDataMap.put(ScheduleJobHelper.END_JOB_CRON_EXPRESSION, cronExpression);
 	}
 
 	void deleteJob(String appId, Long scheduleId, ScheduleTypeEnum scheduleTypeEnum) {
-
-		JobKey startJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.START, scheduleTypeEnum);
-		JobKey endJobKey = ScheduleJobHelper.generateJobKey(scheduleId, JobActionEnum.END, scheduleTypeEnum);
+		JobKey startJobKey = new JobKey(scheduleId + JobActionEnum.START.getJobIdSuffix(),
+				scheduleTypeEnum.getScheduleIdentifier());
+		JobKey endJobKey = new JobKey(scheduleId + JobActionEnum.END.getJobIdSuffix(),
+				scheduleTypeEnum.getScheduleIdentifier());
 
 		try {
 			scheduler.deleteJob(startJobKey);

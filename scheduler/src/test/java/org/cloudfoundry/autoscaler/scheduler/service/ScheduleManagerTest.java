@@ -293,7 +293,7 @@ public class ScheduleManagerTest extends TestConfiguration {
 			Mockito.verify(scheduleJobManager, Mockito.times(1)).deleteJob(recurringScheduleEntity.getAppId(),
 					recurringScheduleEntity.getId(), ScheduleTypeEnum.RECURRING);
 		}
-		Mockito.verify(activeScheduleDao, Mockito.times(1)).deleteAllActiveSchedulesByAppId(appId);
+		Mockito.verify(activeScheduleDao, Mockito.times(1)).deleteActiveSchedulesByAppId(appId);
 	}
 
 	@Test
@@ -319,7 +319,7 @@ public class ScheduleManagerTest extends TestConfiguration {
 		Mockito.verify(scheduleJobManager, Mockito.never()).deleteJob(Mockito.anyString(), Mockito.anyLong(),
 				Mockito.anyObject());
 
-		Mockito.verify(activeScheduleDao, Mockito.times(1)).deleteAllActiveSchedulesByAppId(appId);
+		Mockito.verify(activeScheduleDao, Mockito.times(1)).deleteActiveSchedulesByAppId(appId);
 	}
 
 	@Test
@@ -354,7 +354,7 @@ public class ScheduleManagerTest extends TestConfiguration {
 
 		Mockito.verify(scheduleJobManager, Mockito.never()).deleteJob(Mockito.anyString(), Mockito.anyLong(),
 				eq(ScheduleTypeEnum.SPECIFIC_DATE));
-		Mockito.verify(activeScheduleDao, Mockito.never()).deleteAllActiveSchedulesByAppId(Mockito.anyString());
+		Mockito.verify(activeScheduleDao, Mockito.never()).deleteActiveSchedulesByAppId(Mockito.anyString());
 	}
 
 	@Test
@@ -389,7 +389,7 @@ public class ScheduleManagerTest extends TestConfiguration {
 
 		Mockito.verify(scheduleJobManager, Mockito.never()).deleteJob(Mockito.anyString(), Mockito.anyLong(),
 				eq(ScheduleTypeEnum.RECURRING));
-		Mockito.verify(activeScheduleDao, Mockito.never()).deleteAllActiveSchedulesByAppId(Mockito.anyString());
+		Mockito.verify(activeScheduleDao, Mockito.never()).deleteActiveSchedulesByAppId(Mockito.anyString());
 	}
 
 	@Test
@@ -408,7 +408,7 @@ public class ScheduleManagerTest extends TestConfiguration {
 				.thenReturn(recurringScheduleEntities);
 		// Mock the exception when deleting active schedule
 		Mockito.doThrow(new DatabaseValidationException("test exception")).when(activeScheduleDao)
-				.deleteAllActiveSchedulesByAppId(appId);
+				.deleteActiveSchedulesByAppId(appId);
 
 		try {
 			scheduleManager.deleteSchedules(appId);
