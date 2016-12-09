@@ -42,11 +42,13 @@ public class ActiveScheduleDaoImplTest extends TestConfiguration {
 		// Add fake test records.
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		Long scheduleId = 1L;
-		insertActiveSchedule(appId, scheduleId, 1, 5, 0);
+		Long startJobIdentifier = 1L;
+		insertActiveSchedule(appId, scheduleId, 1, 5, 0, startJobIdentifier);
 
 		appId = TestDataSetupHelper.generateAppIds(1)[0];
 		scheduleId = 2L;
-		insertActiveSchedule(appId, scheduleId, 2, 7, 3);
+		startJobIdentifier = 2L;
+		insertActiveSchedule(appId, scheduleId, 2, 7, 3, startJobIdentifier);
 	}
 
 	@Test
@@ -76,10 +78,11 @@ public class ActiveScheduleDaoImplTest extends TestConfiguration {
 	@Test
 	public void testDeleteActiveSchedule() {
 		Long activeScheduleId = 2L;
+		Long startJobIdentifier = 2L;
 
 		assertThat("It should have one active schedule", getActiveSchedulesCountByScheduleId(activeScheduleId), is(1L));
 
-		int deletedActiveSchedules = activeScheduleDao.delete(activeScheduleId);
+		int deletedActiveSchedules = activeScheduleDao.delete(activeScheduleId, startJobIdentifier);
 
 		assertThat("It should be 1", deletedActiveSchedules, is(1));
 		assertThat("It should have no active schedule", getActiveSchedulesCountByScheduleId(activeScheduleId), is(0L));
@@ -90,7 +93,7 @@ public class ActiveScheduleDaoImplTest extends TestConfiguration {
 
 		assertThat("It should be 2", getActiveSchedulesCount(), is(2L));
 
-		int number = activeScheduleDao.delete(null);
+		int number = activeScheduleDao.delete(null, null);
 
 		assertThat("It should be 0", number, is(0));
 		assertThat("It should be 2", getActiveSchedulesCount(), is(2L));
@@ -101,7 +104,7 @@ public class ActiveScheduleDaoImplTest extends TestConfiguration {
 
 		assertThat("It should be 2", getActiveSchedulesCount(), is(2L));
 
-		int deletedActiveSchedules = activeScheduleDao.delete(7L);
+		int deletedActiveSchedules = activeScheduleDao.delete(7L, 3L);
 
 		assertThat("It should be 0", deletedActiveSchedules, is(0));
 		assertThat("It should be 2", getActiveSchedulesCount(), is(2L));
@@ -125,22 +128,22 @@ public class ActiveScheduleDaoImplTest extends TestConfiguration {
 
 		assertThat("It should have 3 active schedules", getActiveSchedulesCountByAppId(appId), is(3L));
 
-		activeScheduleDao.deleteAllActiveSchedulesByAppId(appId);
+		activeScheduleDao.deleteActiveSchedulesByAppId(appId);
 
 		assertThat("It should have no active schedules", getActiveSchedulesCountByAppId(appId), is(0L));
 
 	}
 
 	private void insertActiveSchedule(String appId, Long scheduleId, int instanceMinCount, int instanceMaxCount,
-			int initialMinInstanceCount) {
+			int initialMinInstanceCount, Long startJobIdentifier) {
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 
-		Object[] objects = new Object[] { scheduleId, appId, instanceMinCount, instanceMaxCount,
+		Object[] objects = new Object[] { scheduleId, appId, startJobIdentifier, instanceMinCount, instanceMaxCount,
 				initialMinInstanceCount };
 
 		jdbcTemplate.update("INSERT INTO app_scaling_active_schedule "
-				+ "(id, app_id, instance_min_count, instance_max_count, initial_min_instance_count) "
-				+ "VALUES (?, ?, ?, ?, ?)", objects);
+				+ "(id, app_id, start_job_identifier, instance_min_count, instance_max_count, initial_min_instance_count) "
+				+ "VALUES (?, ?, ?, ?, ?, ?)", objects);
 	}
 
 	private long getActiveSchedulesCount() {

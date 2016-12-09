@@ -66,7 +66,7 @@ public class ActiveScheduleDaoImpl_FailureTest extends TestConfiguration {
 	public void testDeleteActiveSchedule_throw_DatabaseValidationException() throws SQLException, InterruptedException {
 
 		try {
-			activeScheduleDao.delete(null);
+			activeScheduleDao.delete(null, null);
 
 			fail("Should fail");
 		} catch (DatabaseValidationException dve) {

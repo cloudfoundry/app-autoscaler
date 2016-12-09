@@ -9,6 +9,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Random;
+import java.util.TimeZone;
 import java.util.UUID;
 
 import org.apache.logging.log4j.LogManager;
@@ -16,15 +17,21 @@ import org.apache.logging.log4j.Logger;
 import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
+import org.cloudfoundry.autoscaler.scheduler.quartz.AppScalingScheduleJob;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationSchedules;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.Schedules;
+import org.quartz.JobBuilder;
+import org.quartz.JobDataMap;
+import org.quartz.JobDetail;
+import org.quartz.JobKey;
+import org.quartz.Trigger;
+import org.quartz.TriggerKey;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Class to set up the test data for the test classes
- *
  */
 public class TestDataSetupHelper {
 	private static Class<?> clazz = TestDataSetupHelper.class;
@@ -127,10 +134,11 @@ public class TestDataSetupHelper {
 		activeScheduleEntity.setInstanceMinCount(2);
 		activeScheduleEntity.setInstanceMaxCount(4);
 		activeScheduleEntity.setInitialMinInstanceCount(null);
+		activeScheduleEntity.setStartJobIdentifier(new Date().getTime());
 		return activeScheduleEntity;
 	}
 
-	public static Date getDate(String dateStr) throws ParseException {
+	private static Date getDate(String dateStr) throws ParseException {
 		SimpleDateFormat sdf = new SimpleDateFormat(DateHelper.DATE_FORMAT);
 
 		if (dateStr != null) {
@@ -210,6 +218,28 @@ public class TestDataSetupHelper {
 		return dayOfWeek == Calendar.SUNDAY ? 7 : dayOfWeek - 1;
 	}
 
+	public static JobDataMap setupJobDataMap(JobDetail jobDetail) {
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		Long scheduleId = 1L;
+
+		JobDataMap jobDataMap = jobDetail.getJobDataMap();
+		jobDataMap.put(ScheduleJobHelper.APP_ID, appId);
+		jobDataMap.put(ScheduleJobHelper.SCHEDULE_ID, scheduleId);
+		jobDataMap.put(ScheduleJobHelper.TIMEZONE, TimeZone.getDefault().getID());
+		jobDataMap.put(ScheduleJobHelper.INITIAL_MIN_INSTANCE_COUNT, 1);
+		jobDataMap.put(ScheduleJobHelper.INSTANCE_MIN_COUNT, 2);
+		jobDataMap.put(ScheduleJobHelper.INSTANCE_MAX_COUNT, 4);
+		jobDataMap.put(ScheduleJobHelper.DEFAULT_INSTANCE_MIN_COUNT, 1);
+		jobDataMap.put(ScheduleJobHelper.DEFAULT_INSTANCE_MAX_COUNT, 5);
+
+		jobDataMap.put(ScheduleJobHelper.RescheduleCount.ACTIVE_SCHEDULE.name(), 1);
+		jobDataMap.put(ScheduleJobHelper.RescheduleCount.SCALING_ENGINE_NOTIFICATION.name(), 1);
+		jobDataMap.put(ScheduleJobHelper.ACTIVE_SCHEDULE_TABLE_TASK_DONE, false);
+		jobDataMap.put(ScheduleJobHelper.CREATE_END_JOB_TASK_DONE, false);
+
+		return jobDataMap;
+	}
+
 	public static List<String> getAllGeneratedAppIds() {
 		return genAppIds;
 	}
@@ -218,11 +248,11 @@ public class TestDataSetupHelper {
 		return timeZone;
 	}
 
-	public static String[] getStartDateTime() {
+	static String[] getStartDateTime() {
 		return startDateTime;
 	}
 
-	public static String[] getEndDateTime() {
+	static String[] getEndDateTime() {
 		return endDateTime;
 	}
 
@@ -230,11 +260,35 @@ public class TestDataSetupHelper {
 		return invalidTimezone;
 	}
 
-	public static String[] getStarTime() {
+	static String[] getStarTime() {
 		return startTime;
 	}
 
-	public static String[] getEndTime() {
+	static String[] getEndTime() {
 		return endTime;
 	}
+
+	public static class JobInformation<T extends AppScalingScheduleJob> {
+		private JobDetail jobDetail;
+		private Trigger trigger;
+
+		public JobInformation(Class<T> appScalingScheduleJobClass) {
+			JobKey jobKey = new JobKey("TestJobKey", ScheduleTypeEnum.SPECIFIC_DATE.getScheduleIdentifier());
+			this.jobDetail = JobBuilder.newJob(appScalingScheduleJobClass).withIdentity(jobKey).storeDurably().build();
+
+			TriggerKey triggerKey = new TriggerKey("TestTriggerKey",
+					ScheduleTypeEnum.SPECIFIC_DATE.getScheduleIdentifier());
+
+			this.trigger = ScheduleJobHelper.buildTrigger(triggerKey, jobKey, new Date());
+		}
+
+		public JobDetail getJobDetail() {
+			return jobDetail;
+		}
+
+		public Trigger getTrigger() {
+			return trigger;
+		}
+	}
+
 }

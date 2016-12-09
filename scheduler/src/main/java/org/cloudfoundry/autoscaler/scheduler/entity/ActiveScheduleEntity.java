@@ -21,6 +21,9 @@ public class ActiveScheduleEntity implements RowMapper<ActiveScheduleEntity> {
 	@JsonProperty(value = "app_id")
 	private String appId;
 
+	@JsonIgnore
+	private Long startJobIdentifier;
+
 	@ApiModelProperty(required = true, position = 1)
 	@JsonProperty(value = "instance_min_count")
 	private Integer instanceMinCount;
@@ -47,6 +50,14 @@ public class ActiveScheduleEntity implements RowMapper<ActiveScheduleEntity> {
 
 	public void setAppId(String appId) {
 		this.appId = appId;
+	}
+
+	public Long getStartJobIdentifier() {
+		return startJobIdentifier;
+	}
+
+	public void setStartJobIdentifier(Long startJobIdentifier) {
+		this.startJobIdentifier = startJobIdentifier;
 	}
 
 	public Integer getInstanceMinCount() {
@@ -79,6 +90,7 @@ public class ActiveScheduleEntity implements RowMapper<ActiveScheduleEntity> {
 		activeScheduleEntity.setAppId(rs.getString("app_id"));
 		activeScheduleEntity.setInstanceMinCount(rs.getInt("instance_min_count"));
 		activeScheduleEntity.setInstanceMaxCount(rs.getInt("instance_max_count"));
+		activeScheduleEntity.setStartJobIdentifier(rs.getLong("start_job_identifier"));
 
 		int initialMinInstanceCount = rs.getInt("initial_min_instance_count");
 		activeScheduleEntity.setInitialMinInstanceCount(rs.wasNull() ? null : initialMinInstanceCount);
@@ -95,6 +107,9 @@ public class ActiveScheduleEntity implements RowMapper<ActiveScheduleEntity> {
 
 		if (!id.equals(that.id)) return false;
 		if (!appId.equals(that.appId)) return false;
+		if (startJobIdentifier != null ? !startJobIdentifier.equals(that.startJobIdentifier)
+				: that.startJobIdentifier != null)
+			return false;
 		if (!instanceMinCount.equals(that.instanceMinCount)) return false;
 		if (!instanceMaxCount.equals(that.instanceMaxCount)) return false;
 		return initialMinInstanceCount != null ? initialMinInstanceCount.equals(that.initialMinInstanceCount) : that.initialMinInstanceCount == null;
@@ -104,6 +119,7 @@ public class ActiveScheduleEntity implements RowMapper<ActiveScheduleEntity> {
 	public int hashCode() {
 		int result = id.hashCode();
 		result = 31 * result + appId.hashCode();
+		result = 31 * result + (startJobIdentifier != null ? startJobIdentifier.hashCode() : 0);
 		result = 31 * result + instanceMinCount.hashCode();
 		result = 31 * result + instanceMaxCount.hashCode();
 		result = 31 * result + (initialMinInstanceCount != null ? initialMinInstanceCount.hashCode() : 0);
@@ -112,8 +128,8 @@ public class ActiveScheduleEntity implements RowMapper<ActiveScheduleEntity> {
 
 	@Override
 	public String toString() {
-		return "ActiveScheduleEntity{" + "id=" + id + ", appId='" + appId + '\'' + ", instanceMinCount="
-				+ instanceMinCount + ", instanceMaxCount=" + instanceMaxCount + ", initialMinInstanceCount="
-				+ initialMinInstanceCount + '}';
+		return "ActiveScheduleEntity{" + "id=" + id + ", appId='" + appId + '\'' + ", startJobIdentifier="
+				+ startJobIdentifier + ", instanceMinCount=" + instanceMinCount + ", instanceMaxCount="
+				+ instanceMaxCount + ", initialMinInstanceCount=" + initialMinInstanceCount + '}';
 	}
 }

@@ -717,8 +717,8 @@ public class ScheduleManager {
 
     private void deleteActiveSchedules(String appId) {
         try {
-            logger.info("Delete all active schedules for application: " + appId);
-            activeScheduleDao.deleteAllActiveSchedulesByAppId(appId);
+			logger.info("Delete active schedules for application: " + appId);
+			activeScheduleDao.deleteActiveSchedulesByAppId(appId);
         } catch (DatabaseValidationException dve) {
             validationErrorResult.addErrorForDatabaseValidationException(dve, "database.error.delete.failed",
                     "app_id=" + appId);
