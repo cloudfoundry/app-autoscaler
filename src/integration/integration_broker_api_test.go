@@ -30,8 +30,8 @@ var _ = Describe("Integration_Broker_Api", func() {
 	BeforeEach(func() {
 		httpClient.Timeout = brokerApiHttpRequestTimeout
 		fakeScheduler = ghttp.NewServer()
-		apiServerConfPath = prepareApiServerConfig(components.Ports[APIServer], dbUrl, fakeScheduler.URL())
-		serviceBrokerConfPath = prepareServiceBrokerConfig(components.Ports[ServiceBroker], brokerUserName, brokerPassword, dbUrl, fmt.Sprintf("http://127.0.0.1:%d", components.Ports[APIServer]))
+		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], dbUrl, fakeScheduler.URL(), tmpDir)
+		serviceBrokerConfPath = components.PrepareServiceBrokerConfig(components.Ports[ServiceBroker], brokerUserName, brokerPassword, dbUrl, fmt.Sprintf("http://127.0.0.1:%d", components.Ports[APIServer]), brokerApiHttpRequestTimeout, tmpDir)
 
 		startApiServer()
 		startServiceBroker()

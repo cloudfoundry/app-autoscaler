@@ -13,9 +13,9 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 
 	BeforeEach(func() {
 		startFakeCCNOAAUAA()
-		metricsCollectorConfPath = prepareMetricsCollectorConfig(dbUrl, components.Ports[MetricsCollector], fakeCCNOAAUAA.URL(), cf.GrantTypePassword)
-		eventGeneratorConfPath = prepareEventGeneratorConfig(dbUrl, components.Ports[EventGenerator], fmt.Sprintf("http://127.0.0.1:%d", components.Ports[MetricsCollector]), fmt.Sprintf("http://127.0.0.1:%d", components.Ports[ScalingEngine]))
-		scalingEngineConfPath = prepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), cf.GrantTypePassword)
+		metricsCollectorConfPath = components.PrepareMetricsCollectorConfig(dbUrl, components.Ports[MetricsCollector], fakeCCNOAAUAA.URL(), cf.GrantTypePassword, tmpDir)
+		eventGeneratorConfPath = components.PrepareEventGeneratorConfig(dbUrl, components.Ports[EventGenerator], fmt.Sprintf("http://127.0.0.1:%d", components.Ports[MetricsCollector]), fmt.Sprintf("http://127.0.0.1:%d", components.Ports[ScalingEngine]), tmpDir)
+		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), cf.GrantTypePassword, tmpDir)
 		startMetricsCollector()
 		startEventGenerator()
 		startScalingEngine()

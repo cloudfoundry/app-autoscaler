@@ -3,13 +3,9 @@ package integration_test
 import (
 	"autoscaler/cf"
 	"autoscaler/db"
-	"autoscaler/models"
 	"bytes"
 	. "integration"
 
-	egConfig "autoscaler/eventgenerator/config"
-	mcConfig "autoscaler/metricscollector/config"
-	seConfig "autoscaler/scalingengine/config"
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/lager"
 	"database/sql"
@@ -25,15 +21,12 @@ import (
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/ginkgomon"
 	"github.com/tedsuo/ifrit/grouper"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
 	"mime/multipart"
 	"net/http"
-	"net/url"
 	"os"
 	"path"
-	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -58,8 +51,7 @@ var (
 	brokerPassword           string = "password"
 	brokerAuth               string
 	dbUrl                    string
-	testCertDir              string = "../../test-certs"
-	ccNOAAUAARegPath                = regexp.MustCompile(`^/apps/.*/containermetrics$`)
+	ccNOAAUAARegPath         = regexp.MustCompile(`^/apps/.*/containermetrics$`)
 	dbHelper                 *sql.DB
 	fakeScheduler            *ghttp.Server
 	fakeScalingEngine        *ghttp.Server
@@ -68,7 +60,7 @@ var (
 	schedulerProcess         ifrit.Process
 
 	brokerApiHttpRequestTimeout    time.Duration = 1 * time.Second
-	apiSchedulerHttpRequestTimeout time.Duration = 5 * time.Second
+	apiSchedulerHttpRequestTimeout time.Duration = 5000 * time.Millisecond
 
 	httpClient *http.Client
 	logger     lager.Logger
@@ -101,7 +93,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	Expect(err).NotTo(HaveOccurred())
 
 	fakeScalingEngine = ghttp.NewServer()
-	schedulerConfPath = prepareSchedulerConfig(dbUrl, fakeScalingEngine.URL())
+	schedulerConfPath = components.PrepareSchedulerConfig(dbUrl, fakeScalingEngine.URL(), tmpDir)
 	schedulerProcess = startScheduler()
 	return payload
 }, func(encodedBuiltArtifacts []byte) {
@@ -204,198 +196,6 @@ func stopAll() {
 		}
 		ginkgomon.Interrupt(process, 5*time.Second)
 	}
-}
-
-func prepareServiceBrokerConfig(port int, username string, password string, dbUri string, apiServerUri string) string {
-	brokerConfig := ServiceBrokerConfig{
-		Port:     port,
-		Username: username,
-		Password: password,
-		DB: DBConfig{
-			URI:            dbUri,
-			MinConnections: 1,
-			MaxConnections: 10,
-			IdleTimeout:    1000,
-		},
-		APIServerUri:       apiServerUri,
-		HttpRequestTimeout: int(brokerApiHttpRequestTimeout / time.Millisecond),
-	}
-
-	cfgFile, err := ioutil.TempFile(tmpDir, ServiceBroker)
-	w := json.NewEncoder(cfgFile)
-	err = w.Encode(brokerConfig)
-	Expect(err).NotTo(HaveOccurred())
-	cfgFile.Close()
-	return cfgFile.Name()
-}
-
-func prepareApiServerConfig(port int, dbUri string, schedulerUri string) string {
-	apiConfig := APIServerConfig{
-		Port: port,
-
-		DB: DBConfig{
-			URI:            dbUri,
-			MinConnections: 1,
-			MaxConnections: 10,
-			IdleTimeout:    1000,
-		},
-
-		SchedulerUri: schedulerUri,
-	}
-
-	cfgFile, err := ioutil.TempFile(tmpDir, APIServer)
-	w := json.NewEncoder(cfgFile)
-	err = w.Encode(apiConfig)
-	Expect(err).NotTo(HaveOccurred())
-	cfgFile.Close()
-	return cfgFile.Name()
-}
-
-func prepareSchedulerConfig(dbUri string, scalingEngineUri string) string {
-	dbUrl, _ := url.Parse(dbUri)
-	scheme := dbUrl.Scheme
-	host := dbUrl.Host
-	path := dbUrl.Path
-	userInfo := dbUrl.User
-	userName := userInfo.Username()
-	password, _ := userInfo.Password()
-	jdbcDBUri := fmt.Sprintf("jdbc:%s://%s%s", scheme, host, path)
-	settingStrTemplate := `
-#datasource for application and quartz
-spring.datasource.driverClassName=org.postgresql.Driver
-spring.datasource.url=%s
-spring.datasource.username=%s
-spring.datasource.password=%s
-#quartz job
-scalingenginejob.reschedule.interval.millisecond=10000
-scalingenginejob.reschedule.maxcount=6
-scalingengine.notification.reschedule.maxcount=3
-# scaling engine url
-autoscaler.scalingengine.url=%s
-  `
-	settingJonsStr := fmt.Sprintf(settingStrTemplate, jdbcDBUri, userName, password, scalingEngineUri)
-	cfgFile, err := ioutil.TempFile(tmpDir, Scheduler)
-	Expect(err).NotTo(HaveOccurred())
-	ioutil.WriteFile(cfgFile.Name(), []byte(settingJonsStr), 0777)
-	cfgFile.Close()
-	return cfgFile.Name()
-}
-
-func prepareMetricsCollectorConfig(dbUri string, port int, ccNOAAUAAUrl string, cfGrantTypePassword string) string {
-	cfg := mcConfig.Config{
-		Cf: cf.CfConfig{
-			Api:       ccNOAAUAAUrl,
-			GrantType: cfGrantTypePassword,
-			Username:  "admin",
-			Password:  "admin",
-		},
-		Server: mcConfig.ServerConfig{
-			Port: port,
-			TLS: models.TLSCerts{
-				KeyFile:    filepath.Join(testCertDir, "metricscollector.key"),
-				CertFile:   filepath.Join(testCertDir, "metricscollector.crt"),
-				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-			},
-		},
-		Logging: mcConfig.LoggingConfig{
-			Level: "debug",
-		},
-		Db: mcConfig.DbConfig{
-			InstanceMetricsDbUrl: dbUri,
-			PolicyDbUrl:          dbUri,
-		},
-		Collector: mcConfig.CollectorConfig{
-			PollInterval:    10,
-			RefreshInterval: 30,
-		},
-	}
-
-	return writeYmlConfig(tmpDir, MetricsCollector, &cfg)
-}
-
-func prepareEventGeneratorConfig(dbUri string, port int, metricsCollectorUrl string, scalingEngineUrl string) string {
-	conf := &egConfig.Config{
-		Server: egConfig.ServerConfig{
-			Port: port,
-		},
-		Logging: egConfig.LoggingConfig{
-			Level: "debug",
-		},
-		Aggregator: egConfig.AggregatorConfig{
-			AggregatorExecuteInterval: 1 * time.Second,
-			PolicyPollerInterval:      1 * time.Second,
-			MetricPollerCount:         1,
-			AppMonitorChannelSize:     1,
-		},
-		Evaluator: egConfig.EvaluatorConfig{
-			EvaluationManagerInterval: 1 * time.Second,
-			EvaluatorCount:            1,
-			TriggerArrayChannelSize:   1,
-		},
-		DB: egConfig.DBConfig{
-			PolicyDBUrl:    dbUri,
-			AppMetricDBUrl: dbUri,
-		},
-		ScalingEngine: egConfig.ScalingEngineConfig{
-			ScalingEngineUrl: scalingEngineUrl,
-			TLSClientCerts: models.TLSCerts{
-				KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
-				CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
-				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-			},
-		},
-		MetricCollector: egConfig.MetricCollectorConfig{
-			MetricCollectorUrl: metricsCollectorUrl,
-			TLSClientCerts: models.TLSCerts{
-				KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
-				CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
-				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-			},
-		},
-	}
-	return writeYmlConfig(tmpDir, EventGenerator, &conf)
-}
-
-func prepareScalingEngineConfig(dbUri string, port int, ccUAAUrl string, cfGrantTypePassword string) string {
-	conf := seConfig.Config{
-		Cf: cf.CfConfig{
-			Api:       ccUAAUrl,
-			GrantType: cfGrantTypePassword,
-			Username:  "admin",
-			Password:  "admin",
-		},
-		Server: seConfig.ServerConfig{
-			Port: port,
-			TLS: models.TLSCerts{
-				KeyFile:    filepath.Join(testCertDir, "scalingengine.key"),
-				CertFile:   filepath.Join(testCertDir, "scalingengine.crt"),
-				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-			},
-		},
-		Logging: seConfig.LoggingConfig{
-			Level: "debug",
-		},
-		Db: seConfig.DbConfig{
-			PolicyDbUrl:        dbUri,
-			ScalingEngineDbUrl: dbUri,
-			SchedulerDbUrl:     dbUri,
-		},
-		Synchronizer: seConfig.SynchronizerConfig{
-			ActiveScheduleSyncInterval: 10 * time.Minute,
-		},
-	}
-
-	return writeYmlConfig(tmpDir, ScalingEngine, &conf)
-}
-
-func writeYmlConfig(dir string, componentName string, c interface{}) string {
-	cfgFile, err := ioutil.TempFile(dir, componentName)
-	Expect(err).NotTo(HaveOccurred())
-	defer cfgFile.Close()
-	configBytes, err := yaml.Marshal(c)
-	ioutil.WriteFile(cfgFile.Name(), configBytes, 0777)
-	return cfgFile.Name()
-
 }
 
 func getRandomId() string {
