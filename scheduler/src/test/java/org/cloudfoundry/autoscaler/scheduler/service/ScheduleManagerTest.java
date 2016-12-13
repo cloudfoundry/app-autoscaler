@@ -32,7 +32,7 @@ import org.cloudfoundry.autoscaler.scheduler.util.RecurringScheduleEntitiesBuild
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleTypeEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.SpecificDateScheduleEntitiesBuilder;
 import org.cloudfoundry.autoscaler.scheduler.util.TestConfiguration;
-import org.cloudfoundry.autoscaler.scheduler.util.TestDataCleanupHelper;
+import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationException;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
@@ -84,7 +84,7 @@ public class ScheduleManagerTest extends TestConfiguration {
 	private ValidationErrorResult validationErrorResult;
 
 	@Autowired
-	private TestDataCleanupHelper testDataCleanupHelper;
+	private TestDataDbUtil testDataDbUtil;
 
 	@Autowired
 	private RestTemplate restTemplate;
@@ -102,7 +102,7 @@ public class ScheduleManagerTest extends TestConfiguration {
 
 	@Before
 	public void before() throws SchedulerException {
-		testDataCleanupHelper.cleanupData();
+		testDataDbUtil.cleanupData();
 
 		Mockito.reset(specificDateScheduleDao);
 		Mockito.reset(recurringScheduleDao);

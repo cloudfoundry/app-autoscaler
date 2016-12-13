@@ -20,7 +20,7 @@ public class DateHelper {
 	public static final int DAY_OF_MONTH_MINIMUM = 1;
 	public static final int DAY_OF_MONTH_MAXIMUM = 31;
 
-	public static final String[] supportedTimezones = new String[] {
+	static final String[] supportedTimezones = new String[] {
 	           "Etc/GMT+12",
 	           "Etc/GMT+11",
 	           "Pacific/Midway",
@@ -643,7 +643,7 @@ public class DateHelper {
 		return calendar;
 	}
 
-	public static String convertIntToDayOfWeek(int day) {
+	static String convertIntToDayOfWeek(int day) {
 		switch (day) {
 		case 1:
 			return "MON";

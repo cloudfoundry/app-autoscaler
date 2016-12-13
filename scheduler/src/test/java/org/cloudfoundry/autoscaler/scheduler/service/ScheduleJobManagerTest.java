@@ -33,7 +33,7 @@ import org.cloudfoundry.autoscaler.scheduler.util.RecurringScheduleEntitiesBuild
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleTypeEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.SpecificDateScheduleEntitiesBuilder;
 import org.cloudfoundry.autoscaler.scheduler.util.TestConfiguration;
-import org.cloudfoundry.autoscaler.scheduler.util.TestDataCleanupHelper;
+import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.ValidationErrorResult;
@@ -74,11 +74,11 @@ public class ScheduleJobManagerTest extends TestConfiguration {
 	private MessageBundleResourceHelper messageBundleResourceHelper;
 
 	@Autowired
-	private TestDataCleanupHelper testDataCleanupHelper;
+	private TestDataDbUtil testDataDbUtil;
 
 	@Before
 	public void before() throws SchedulerException {
-		testDataCleanupHelper.cleanupData();
+		testDataDbUtil.cleanupData();
 
 		Mockito.reset(scheduler);
 	}
@@ -335,13 +335,13 @@ public class ScheduleJobManagerTest extends TestConfiguration {
 
 		scheduleJobManager.createCronJob(recurringScheduleEntity);
 
-		assertTrue("This test should have an Error.", validationErrorResult.hasErrors());
 		List<String> errors = validationErrorResult.getAllErrorMessages();
-		assertEquals(1, errors.size());
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("scheduler.error.create.failed",
 				"app_id=" + appId, "test exception");
 		assertEquals(errorMessage, errors.get(0));
+		assertEquals(1, errors.size());
+		assertTrue("This test should have an Error.", validationErrorResult.hasErrors());
 	}
 
 	@Test
@@ -354,14 +354,13 @@ public class ScheduleJobManagerTest extends TestConfiguration {
 
 		scheduleJobManager.deleteJob(appId, scheduleId, type);
 
-		assertTrue("This test should have an Error.", validationErrorResult.hasErrors());
-
 		List<String> errors = validationErrorResult.getAllErrorMessages();
-		assertEquals(1, errors.size());
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("scheduler.error.delete.failed",
 				"app_id=" + appId, "test exception");
 		assertEquals(errorMessage, errors.get(0));
+		assertEquals(1, errors.size());
+		assertTrue("This test should have an Error.", validationErrorResult.hasErrors());
 	}
 
 	@Test
@@ -374,13 +373,13 @@ public class ScheduleJobManagerTest extends TestConfiguration {
 
 		scheduleJobManager.deleteJob(appId, scheduleId, type);
 
-		assertTrue("This test should have an Error.", validationErrorResult.hasErrors());
 		List<String> errors = validationErrorResult.getAllErrorMessages();
-		assertEquals(1, errors.size());
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("scheduler.error.delete.failed",
 				"app_id=" + appId, "test exception");
 		assertEquals(errorMessage, errors.get(0));
+		assertEquals(1, errors.size());
+		assertTrue("This test should have an Error.", validationErrorResult.hasErrors());
 	}
 
 	private RecurringScheduleEntity createRecurringScheduleWithDaysOfMonth(String timeZone, String startTime,

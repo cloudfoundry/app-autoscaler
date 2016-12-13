@@ -22,7 +22,7 @@ import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationSchedules;
 import org.cloudfoundry.autoscaler.scheduler.util.ApplicationPolicyBuilder;
 import org.cloudfoundry.autoscaler.scheduler.util.EmbeddedTomcatUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestConfiguration;
-import org.cloudfoundry.autoscaler.scheduler.util.TestDataCleanupHelper;
+import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
 import org.junit.After;
@@ -74,7 +74,7 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 	private MockMvc mockMvc;
 
 	@Autowired
-	private TestDataCleanupHelper testDataCleanupHelper;
+	private TestDataDbUtil testDataDbUtil;
 
 	@Value("${autoscaler.scalingengine.url}")
 	private String scalingEngineUrl;
@@ -88,7 +88,7 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 	@Transactional
 	public void before() throws Exception {
 		// Clean up data
-		testDataCleanupHelper.cleanupData(scheduler);
+		testDataDbUtil.cleanupData(scheduler);
 		embeddedTomcatUtil = new EmbeddedTomcatUtil();
 		embeddedTomcatUtil.start();
 
@@ -122,7 +122,7 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 		specificDateScheduleEntity.setStartDateTime(startTime);
 		specificDateScheduleEntity.setEndDateTime(endTime);
 
-		Long currentSequenceSchedulerId = testDataCleanupHelper.getCurrentSequenceSchedulerId() + 1;
+		Long currentSequenceSchedulerId = testDataDbUtil.getCurrentSequenceSchedulerId() + 1;
 
 		ActiveScheduleEntity startActiveScheduleEntity = new ActiveScheduleEntity();
 		startActiveScheduleEntity.setAppId(appId);

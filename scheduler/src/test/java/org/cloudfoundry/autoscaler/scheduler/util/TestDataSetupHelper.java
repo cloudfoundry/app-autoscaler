@@ -39,7 +39,6 @@ public class TestDataSetupHelper {
 
 	private static List<String> genAppIds = new ArrayList<>();
 	private static String timeZone = DateHelper.supportedTimezones[81];
-	private static String invalidTimezone = "Invalid TimeZone";
 
 	private static String startDateTime[] = { "2100-07-20T08:00", "2100-07-22T13:00", "2100-07-25T09:00",
 			"2100-07-28T00:00", "2100-8-10T00:00" };
@@ -88,8 +87,8 @@ public class TestDataSetupHelper {
 				.build();
 	}
 
-	public static String generateJsonSchedule(String appId, int noOfSpecificDateSchedulesToSetUp,
-			int noOfRecurringSchedulesToSetUp) throws JsonProcessingException {
+	public static String generateJsonSchedule(int noOfSpecificDateSchedulesToSetUp, int noOfRecurringSchedulesToSetUp)
+			throws JsonProcessingException {
 		ObjectMapper mapper = new ObjectMapper();
 
 		ApplicationSchedules applicationPolicy = generateApplicationPolicy(noOfSpecificDateSchedulesToSetUp,
@@ -124,8 +123,7 @@ public class TestDataSetupHelper {
 		return mapper.writeValueAsString(applicationPolicy);
 	}
 
-	public static ActiveScheduleEntity generateActiveScheduleEntity(String appId, Long scheduleId,
-			JobActionEnum jobAction) {
+	public static ActiveScheduleEntity generateActiveScheduleEntity(String appId, Long scheduleId) {
 
 		ActiveScheduleEntity activeScheduleEntity = new ActiveScheduleEntity();
 
@@ -254,10 +252,6 @@ public class TestDataSetupHelper {
 
 	static String[] getEndDateTime() {
 		return endDateTime;
-	}
-
-	public static String getInvalidTimezone() {
-		return invalidTimezone;
 	}
 
 	static String[] getStarTime() {
