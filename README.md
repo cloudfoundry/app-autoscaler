@@ -96,7 +96,7 @@ couchdbUsername=autoscaler
 couchdbPassword=openopen
 couchdbHost=xxx.xxx.xxx.xxx
 couchdbPort=5984
-couchdbServerDBName=couchdb-scaling
+couchdbDBName=couchdb-scaling
 couchdbMetricDBPrefix=couchdb-scalingmetric
 couchdbBrokerDBName=couchdb-scalingbroker
 
