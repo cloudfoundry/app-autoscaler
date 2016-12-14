@@ -4,9 +4,9 @@ import (
 	"autoscaler/eventgenerator/aggregator/fakes"
 	. "autoscaler/eventgenerator/generator"
 	"autoscaler/models"
+	"autoscaler/routes"
 	"errors"
 	"net/http"
-	"regexp"
 	"time"
 
 	"code.cloudfoundry.org/cfhttp"
@@ -24,9 +24,9 @@ var _ = Describe("Evaluator", func() {
 		database       *fakes.FakeAppMetricDB
 		scalingEngine  *ghttp.Server
 		evaluator      *Evaluator
-		testAppId      string            = "testAppId"
-		testMetricType string            = "MemoryUsage"
-		regPath                          = regexp.MustCompile(`^/v1/apps/.*/scale$`)
+		testAppId      string = "testAppId"
+		testMetricType string = "MemoryUsage"
+		urlPath        string
 		triggerArrayGT []*models.Trigger = []*models.Trigger{&models.Trigger{
 			AppId:                 testAppId,
 			MetricType:            testMetricType,
@@ -214,6 +214,10 @@ var _ = Describe("Evaluator", func() {
 		database = &fakes.FakeAppMetricDB{}
 		scalingEngine = ghttp.NewServer()
 
+		path, err := routes.ScalingEngineRoutes().Get(routes.ScaleRoute).URLPath("appid", testAppId)
+		Expect(err).NotTo(HaveOccurred())
+		urlPath = path.Path
+
 	})
 
 	Context("Start", func() {
@@ -231,7 +235,7 @@ var _ = Describe("Evaluator", func() {
 
 			Context("retrieve appMatrics", func() {
 				BeforeEach(func() {
-					scalingEngine.RouteToHandler("POST", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
+					scalingEngine.RouteToHandler("POST", urlPath, ghttp.RespondWith(http.StatusOK, "successful"))
 					database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
 						return appMetricGTUpper, nil
 					}
@@ -244,7 +248,7 @@ var _ = Describe("Evaluator", func() {
 			})
 			Context("operators", func() {
 				BeforeEach(func() {
-					scalingEngine.RouteToHandler("POST", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
+					scalingEngine.RouteToHandler("POST", urlPath, ghttp.RespondWith(http.StatusOK, "successful"))
 				})
 				Context(">", func() {
 					BeforeEach(func() {
@@ -482,7 +486,7 @@ var _ = Describe("Evaluator", func() {
 
 				Context("when the scaling engine returns error", func() {
 					BeforeEach(func() {
-						scalingEngine.RouteToHandler("POST", regPath, ghttp.RespondWithJSONEncoded(http.StatusBadRequest, "error"))
+						scalingEngine.RouteToHandler("POST", urlPath, ghttp.RespondWithJSONEncoded(http.StatusBadRequest, "error"))
 					})
 
 					It("should log the error", func() {
@@ -501,7 +505,7 @@ var _ = Describe("Evaluator", func() {
 						for i := 0; i < 999; i++ {
 							errorStr = errorStr + tmp
 						}
-						scalingEngine.RouteToHandler("POST", regPath, ghttp.RespondWithJSONEncoded(http.StatusBadRequest, errorStr))
+						scalingEngine.RouteToHandler("POST", urlPath, ghttp.RespondWithJSONEncoded(http.StatusBadRequest, errorStr))
 					})
 
 					It("should log the error", func() {
