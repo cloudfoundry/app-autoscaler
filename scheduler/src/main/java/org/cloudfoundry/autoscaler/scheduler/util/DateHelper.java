@@ -1,14 +1,12 @@
 package org.cloudfoundry.autoscaler.scheduler.util;
 
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
-/**
- *
- *
- */
+import org.cloudfoundry.autoscaler.scheduler.util.error.SchedulerInternalException;
+
 public class DateHelper {
 
 	public static final String DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm";
@@ -604,14 +602,18 @@ public class DateHelper {
 	           "Etc/GMT-14",
 	           "Pacific/Kiritimati"};
 
-	public static Date getDateWithZoneOffset(Date policyDateTime, TimeZone policyTimeZone) {
-		long policyDateTimeInMillis = getTimeInMillis(policyDateTime, policyTimeZone);
+	public static Date getDateWithZoneOffset(Date dateTime, TimeZone timeZone) {
+		SimpleDateFormat localSdf = new SimpleDateFormat(DATE_TIME_FORMAT);
 
-		TimeZone currentTimeZone = TimeZone.getDefault();
+		SimpleDateFormat sdf = new SimpleDateFormat(DATE_TIME_FORMAT);
+		sdf.setTimeZone(timeZone);
 
-		Date date = new Date(policyDateTimeInMillis - policyTimeZone.getRawOffset() + currentTimeZone.getRawOffset());
+		try {
+			return sdf.parse(localSdf.format(dateTime));
+		} catch (ParseException e) {
+			throw new SchedulerInternalException("Invalid date specified. date=" + dateTime, e);
+		}
 
-		return date;
 	}
 
 	public static String convertDateToString(Date date) {
@@ -629,18 +631,6 @@ public class DateHelper {
 	public static String convertDateTimeToString(Date date) {
 		SimpleDateFormat sdf = new SimpleDateFormat(DATE_TIME_FORMAT);
 		return sdf.format(date);
-	}
-
-	public static Long getTimeInMillis(Date dateTime, TimeZone timeZone) {
-		Calendar targetTime = Calendar.getInstance(timeZone);
-		targetTime.setTimeInMillis(dateTime.getTime());
-		return targetTime.getTimeInMillis();
-	}
-
-	public static Calendar getCalendarDate(Date dateTime, TimeZone timeZone) {
-		Calendar calendar = Calendar.getInstance(timeZone);
-		calendar.setTime(dateTime);
-		return calendar;
 	}
 
 	static String convertIntToDayOfWeek(int day) {

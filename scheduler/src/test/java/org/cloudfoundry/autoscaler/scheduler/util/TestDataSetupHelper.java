@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -40,9 +41,12 @@ public class TestDataSetupHelper {
 	private static List<String> genAppIds = new ArrayList<>();
 	private static String timeZone = DateHelper.supportedTimezones[81];
 
-	private static String startDateTime[] = { "2100-07-20T08:00", "2100-07-22T13:00", "2100-07-25T09:00",
+	private static String currentStartDateTime = getCurrentDateOrTime(5, DateHelper.DATE_TIME_FORMAT, getTimeZone());
+	private static String currentEndDateTime = getCurrentDateOrTime(6, DateHelper.DATE_TIME_FORMAT, getTimeZone());
+
+	private static String startDateTime[] = { currentStartDateTime, "2100-07-22T13:00", "2100-07-25T09:00",
 			"2100-07-28T00:00", "2100-8-10T00:00" };
-	private static String endDateTime[] = { "2100-07-20T10:00", "2100-07-23T09:00", "2100-07-27T09:00",
+	private static String endDateTime[] = { currentEndDateTime, "2100-07-23T09:00", "2100-07-27T09:00",
 			"2100-08-07T00:00", "2100-8-11T00:00" };
 
 	private static String startTime[] = { "00:00", "2:00", "10:00", "11:00", "23:00" };
@@ -149,7 +153,7 @@ public class TestDataSetupHelper {
 		if (date != null && date.length > pos) {
 			return date[pos];
 		} else {
-			return getCurrentDateOrTime(offsetMin, DateHelper.DATE_FORMAT);
+			return getCurrentDateOrTime(offsetMin, DateHelper.DATE_FORMAT, getTimeZone());
 		}
 	}
 
@@ -158,16 +162,23 @@ public class TestDataSetupHelper {
 		if (timeArr != null && timeArr.length > pos) {
 			timeStr = timeArr[pos];
 		} else {
-			timeStr = getCurrentDateOrTime(offsetMin, DateHelper.TIME_FORMAT);
+			timeStr = getCurrentDateOrTime(offsetMin, DateHelper.TIME_FORMAT, getTimeZone());
 		}
 		return Time.valueOf(timeStr + ":00");
 	}
 
-	private static String getCurrentDateOrTime(int offsetMin, String format) {
+	private static String getCurrentDateOrTime(int offsetMin, String format, String timeZone) {
 		SimpleDateFormat sdfDate = new SimpleDateFormat(format);
 		Calendar calNow = Calendar.getInstance();
 		calNow.add(Calendar.MINUTE, offsetMin);
+
+		sdfDate.setTimeZone(TimeZone.getTimeZone(timeZone));
 		return sdfDate.format(calNow.getTime());
+	}
+
+	public static Date getCurrentDateTime(int offsetMin, TimeZone timeZone) {
+		return DateHelper.getDateWithZoneOffset(
+				new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(offsetMin)), timeZone);
 	}
 
 	public static String[] generateAppIds(int noOfAppIdsToGenerate) {

@@ -67,9 +67,9 @@ public class DataValidationHelper {
 	 * @return
 	 */
 	public static boolean isDateTimeAfterNow(Date dateTime, TimeZone timeZone) {
-		Calendar calToCompare = DateHelper.getCalendarDate(dateTime, timeZone);
-		Calendar calNow = Calendar.getInstance(timeZone);
-		return calToCompare.after(calNow);
+		Date convertedToLocalTime = DateHelper.getDateWithZoneOffset(dateTime, timeZone);
+		Date now = new Date();
+		return convertedToLocalTime.after(now);
 	}
 
 	public static boolean isDateAfterOrEqualsNow(Date date, TimeZone policyTimeZone) {

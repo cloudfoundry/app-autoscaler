@@ -153,19 +153,7 @@ public class ScheduleManager {
 			validationErrorResult.addFieldError(applicationPolicy, "data.value.not.specified", "app_id");
 		}
 
-		// Validate the time zone
-		String timeZoneId = applicationPolicy.getSchedules().getTimeZone();
-
-		// Boolean flag added since date time validations depend on the time zone
-		boolean isValidTimeZone = DataValidationHelper.isNotEmpty(timeZoneId);
-
-		if (!isValidTimeZone) {
-			validationErrorResult.addFieldError(applicationPolicy, "data.value.not.specified.timezone", "timeZone");
-		}
-
-		if (isValidTimeZone && !DataValidationHelper.isValidTimeZone(timeZoneId)) {
-			validationErrorResult.addFieldError(applicationPolicy, "data.invalid.timezone", "timeZone", timeZoneId);
-		}
+		boolean isValidTimeZone = validateTimeZone(applicationPolicy);
 
 		// Validate the default minimum and maximum instance count
 		validateDefaultInstanceMinMaxCount(applicationPolicy.getInstanceMinCount(),
@@ -190,6 +178,22 @@ public class ScheduleManager {
 
 		}
 
+	}
+
+	private boolean validateTimeZone(ApplicationSchedules applicationPolicy) {
+		String timeZoneId = applicationPolicy.getSchedules().getTimeZone();
+
+		boolean isValidTimeZone = true;
+		if (!DataValidationHelper.isNotEmpty(timeZoneId)) {
+			validationErrorResult.addFieldError(applicationPolicy, "data.value.not.specified.timezone", "timeZone");
+			isValidTimeZone = false;
+		}
+
+		if (isValidTimeZone && !DataValidationHelper.isValidTimeZone(timeZoneId)) {
+			validationErrorResult.addFieldError(applicationPolicy, "data.invalid.timezone", "timeZone", timeZoneId);
+			isValidTimeZone = false;
+		}
+		return isValidTimeZone;
 	}
 
 	/**

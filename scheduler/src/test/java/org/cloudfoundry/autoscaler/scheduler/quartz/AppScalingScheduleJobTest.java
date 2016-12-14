@@ -9,6 +9,7 @@ import static org.mockito.Matchers.notNull;
 
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.Level;
@@ -141,7 +142,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 	public void testNotifyStartOfActiveScheduleToScalingEngine_with_SpecificDateSchedule() throws Exception {
 		// Build the job and trigger
 		JobInformation jobInformation = new JobInformation<>(AppScalingSpecificDateScheduleStartJob.class);
-		Date endJobStartTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
+		Date endJobStartTime = TestDataSetupHelper.getCurrentDateTime(1, TimeZone.getDefault());
 		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime);
 
 		ActiveScheduleEntity activeScheduleEntity = ScheduleJobHelper.setupActiveSchedule(jobDataMap);
@@ -187,7 +188,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 			throws Exception {
 		// Build the job and trigger
 		JobInformation jobInformation = new JobInformation<>(AppScalingSpecificDateScheduleStartJob.class);
-		Date endJobStartTime = new Date(System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(1));
+		Date endJobStartTime = TestDataSetupHelper.getCurrentDateTime(-1, TimeZone.getDefault());
 		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime);
 
 		ActiveScheduleEntity activeScheduleEntity = ScheduleJobHelper.setupActiveSchedule(jobDataMap);
@@ -312,7 +313,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 	public void testNotifyStartOfActiveScheduleToScalingEngine_with_existing_ActiveSchedule() throws Exception {
 		// Build the job and trigger
 		JobInformation jobInformation = new JobInformation<>(AppScalingSpecificDateScheduleStartJob.class);
-		Date endJobStartTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
+		Date endJobStartTime = TestDataSetupHelper.getCurrentDateTime(1, TimeZone.getDefault());
 		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime);
 		ActiveScheduleEntity activeScheduleEntity = ScheduleJobHelper.setupActiveSchedule(jobDataMap);
 		String appId = activeScheduleEntity.getAppId();
@@ -364,7 +365,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 
 		// Build the job and trigger
 		JobInformation jobInformation = new JobInformation<>(AppScalingSpecificDateScheduleStartJob.class);
-		Date endJobStartTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
+		Date endJobStartTime = TestDataSetupHelper.getCurrentDateTime(1, TimeZone.getDefault());
 
 		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime);
 
@@ -403,7 +404,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 	public void testNotifyEndOfActiveScheduleToScalingEngine() throws Exception {
 		// Build the job
 		JobInformation jobInformation = new JobInformation<>(AppScalingScheduleEndJob.class);
-		Date endJobStartTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
+		Date endJobStartTime = TestDataSetupHelper.getCurrentDateTime(1, TimeZone.getDefault());
 
 		long startJobIdentifier = 10L;
 		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime);
@@ -442,7 +443,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 
 		// Build the job
 		JobInformation jobInformation = new JobInformation<>(AppScalingSpecificDateScheduleStartJob.class);
-		Date endJobStartTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
+		Date endJobStartTime = TestDataSetupHelper.getCurrentDateTime(1, TimeZone.getDefault());
 		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime);
 
 		ActiveScheduleEntity activeScheduleEntity = ScheduleJobHelper.setupActiveSchedule(jobDataMap);
@@ -495,7 +496,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 
 		// Build the job
 		JobInformation jobInformation = new JobInformation<>(AppScalingScheduleEndJob.class);
-		Date endJobStartTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
+		Date endJobStartTime = TestDataSetupHelper.getCurrentDateTime(1, TimeZone.getDefault());
 
 		long startJobIdentifier = 10L;
 		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime);
@@ -538,7 +539,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 
 		// Build the job
 		JobInformation jobInformation = new JobInformation<>(AppScalingSpecificDateScheduleStartJob.class);
-		Date endJobStartTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
+		Date endJobStartTime = TestDataSetupHelper.getCurrentDateTime(1, TimeZone.getDefault());
 		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime);
 
 		ActiveScheduleEntity activeScheduleEntity = ScheduleJobHelper.setupActiveSchedule(jobDataMap);
@@ -585,7 +586,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 
 		// Build the job
 		JobInformation jobInformation = new JobInformation<>(AppScalingScheduleEndJob.class);
-		Date endJobStartTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
+		Date endJobStartTime = TestDataSetupHelper.getCurrentDateTime(1, TimeZone.getDefault());
 
 		long startJobIdentifier = 10L;
 		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime);
@@ -626,7 +627,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		setLogLevel(Level.ERROR);
 		// Build the job and trigger
 		JobInformation jobInformation = new JobInformation<>(AppScalingSpecificDateScheduleStartJob.class);
-		Date endJobStartTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
+		Date endJobStartTime = TestDataSetupHelper.getCurrentDateTime(1, TimeZone.getDefault());
 		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime);
 		// Min_Count > Max_Count (Invalid data)
 		jobDataMap.put(ScheduleJobHelper.INSTANCE_MIN_COUNT, 5);
@@ -677,7 +678,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 
 		// Build the job and trigger
 		JobInformation jobInformation = new JobInformation<>(AppScalingScheduleEndJob.class);
-		Date endJobStartTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
+		Date endJobStartTime = TestDataSetupHelper.getCurrentDateTime(1, TimeZone.getDefault());
 
 		long startJobIdentifier = 10L;
 		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime);
@@ -717,7 +718,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		setLogLevel(Level.ERROR);
 		// Build the job and trigger
 		JobInformation jobInformation = new JobInformation<>(AppScalingSpecificDateScheduleStartJob.class);
-		Date endJobStartTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
+		Date endJobStartTime = TestDataSetupHelper.getCurrentDateTime(1, TimeZone.getDefault());
 		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime);
 
 		ActiveScheduleEntity activeScheduleEntity = ScheduleJobHelper.setupActiveSchedule(jobDataMap);
@@ -764,7 +765,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 
 		// Build the job and trigger
 		JobInformation jobInformation = new JobInformation<>(AppScalingScheduleEndJob.class);
-		Date endJobStartTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
+		Date endJobStartTime = TestDataSetupHelper.getCurrentDateTime(1, TimeZone.getDefault());
 
 		long startJobIdentifier = 10L;
 		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime);
@@ -801,7 +802,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 
 		// Build the job and trigger
 		JobInformation jobInformation = new JobInformation<>(AppScalingSpecificDateScheduleStartJob.class);
-		Date endJobStartTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
+		Date endJobStartTime = TestDataSetupHelper.getCurrentDateTime(1, TimeZone.getDefault());
 		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime);
 
 		ActiveScheduleEntity activeScheduleEntity = ScheduleJobHelper.setupActiveSchedule(jobDataMap);
@@ -854,7 +855,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		setLogLevel(Level.ERROR);
 		// Build the job
 		JobInformation jobInformation = new JobInformation<>(AppScalingSpecificDateScheduleStartJob.class);
-		Date endJobStartTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
+		Date endJobStartTime = TestDataSetupHelper.getCurrentDateTime(1, TimeZone.getDefault());
 		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime);
 
 		ActiveScheduleEntity activeScheduleEntity = ScheduleJobHelper.setupActiveSchedule(jobDataMap);
