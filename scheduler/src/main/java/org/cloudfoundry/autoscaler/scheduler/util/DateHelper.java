@@ -1,11 +1,10 @@
 package org.cloudfoundry.autoscaler.scheduler.util;
 
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.TimeZone;
-
-import org.cloudfoundry.autoscaler.scheduler.util.error.SchedulerInternalException;
 
 public class DateHelper {
 
@@ -603,17 +602,9 @@ public class DateHelper {
 	           "Pacific/Kiritimati"};
 
 	public static Date getDateWithZoneOffset(Date dateTime, TimeZone timeZone) {
-		SimpleDateFormat localSdf = new SimpleDateFormat(DATE_TIME_FORMAT);
+		LocalDateTime local = LocalDateTime.ofInstant(dateTime.toInstant(), ZoneId.systemDefault());
 
-		SimpleDateFormat sdf = new SimpleDateFormat(DATE_TIME_FORMAT);
-		sdf.setTimeZone(timeZone);
-
-		try {
-			return sdf.parse(localSdf.format(dateTime));
-		} catch (ParseException e) {
-			throw new SchedulerInternalException("Invalid date specified. date=" + dateTime, e);
-		}
-
+		return Date.from(local.atZone(timeZone.toZoneId()).toInstant());
 	}
 
 	public static String convertDateToString(Date date) {
