@@ -180,17 +180,17 @@ func cleanSchedulerActiveScheduleTable() error {
 	return e
 }
 
-func insertSchedulerActiveSchedule(id int, appId string, instanceMin, instanceMax, instanceMinInitial int) error {
+func insertSchedulerActiveSchedule(id int, appId string, startJobIdentifier int, instanceMin, instanceMax, instanceMinInitial int) error {
 	var e error
 	var query string
 	if instanceMinInitial <= 0 {
-		query = "INSERT INTO app_scaling_active_schedule(id, app_id, instance_min_count, instance_max_count) " +
-			" VALUES ($1, $2, $3, $4)"
-		_, e = dbHelper.Exec(query, id, appId, instanceMin, instanceMax)
-	} else {
-		query = "INSERT INTO app_scaling_active_schedule(id, app_id, instance_min_count, instance_max_count, initial_min_instance_count) " +
+		query = "INSERT INTO app_scaling_active_schedule(id, app_id, start_job_identifier, instance_min_count, instance_max_count) " +
 			" VALUES ($1, $2, $3, $4, $5)"
-		_, e = dbHelper.Exec(query, id, appId, instanceMin, instanceMax, instanceMinInitial)
+		_, e = dbHelper.Exec(query, id, appId, startJobIdentifier, instanceMin, instanceMax)
+	} else {
+		query = "INSERT INTO app_scaling_active_schedule(id, app_id, start_job_identifier, instance_min_count, instance_max_count, initial_min_instance_count) " +
+			" VALUES ($1, $2, $3, $4, $5, $6)"
+		_, e = dbHelper.Exec(query, id, appId, startJobIdentifier, instanceMin, instanceMax, instanceMinInitial)
 	}
 	return e
 }
