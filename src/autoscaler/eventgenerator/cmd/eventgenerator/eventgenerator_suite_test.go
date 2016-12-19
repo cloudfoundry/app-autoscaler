@@ -115,11 +115,11 @@ func initDB() {
 		   "scaling_rules":[
 		      {
 		         "metric_type":"MemoryUsage",
-		         "stat_window":300000000000,
-		         "breach_duration":300000000000,
+		         "stat_window_secs":300,
+		         "breach_duration_secs":300,
 		         "threshold":300,
 		         "operator":">",
-		         "cool_down_duration":300000000000,
+		         "cool_down_secs":300,
 		         "adjustment":"+1"
 		      }
 		   ]

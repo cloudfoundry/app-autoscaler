@@ -19,11 +19,11 @@ var _ = Describe("Policy", func() {
    "scaling_rules":[
       {
          "metric_type":"MemoryUsage",
-         "stat_window":300,
-         "breach_duration":300,
+         "stat_window_secs":300,
+         "breach_duration_secs":300,
          "threshold":30,
          "operator":"<",
-         "cool_down_duration":300,
+         "cool_down_secs":300,
          "adjustment":"-1"
       }
    ]
@@ -35,11 +35,11 @@ var _ = Describe("Policy", func() {
    "scaling_rules":[
       {
          "metric_type":"MemoryUsage",
-         "stat_window":300,
-         "breach_duration":600,
+         "stat_window_secs":300,
+         "breach_duration_secs":600,
          "threshold":30,
          "operator":"<",
-         "cool_down_duration":300,
+         "cool_down_secs":300,
          "adjustment":"-1"
       }
    ]
@@ -101,7 +101,7 @@ var _ = Describe("Policy", func() {
 			policy = policyJson.GetPolicy()
 		})
 		It("should return a policy", func() {
-			Expect(policy).To(Equal(&Policy{AppId: testAppId, TriggerRecord: &TriggerRecord{InstanceMaxCount: 5, InstanceMinCount: 1, ScalingRules: []*ScalingRule{&ScalingRule{MetricType: "MemoryUsage", StatWindow: 300, BreachDuration: 300, CoolDownDuration: 300, Threshold: 30, Operator: "<", Adjustment: "-1"}}}}))
+			Expect(policy).To(Equal(&Policy{AppId: testAppId, TriggerRecord: &TriggerRecord{InstanceMaxCount: 5, InstanceMinCount: 1, ScalingRules: []*ScalingRule{&ScalingRule{MetricType: "MemoryUsage", StatWindowSeconds: 300, BreachDurationSeconds: 300, CoolDownSeconds: 300, Threshold: 30, Operator: "<", Adjustment: "-1"}}}}))
 		})
 
 	})

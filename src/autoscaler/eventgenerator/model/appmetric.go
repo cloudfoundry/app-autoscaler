@@ -17,11 +17,19 @@ type AppMetric struct {
 	Timestamp  int64
 }
 type Trigger struct {
-	AppId            string        `json:"appId"`
-	MetricType       string        `json:"metricType"`
-	BreachDuration   time.Duration `json:"breachDuration"`
-	CoolDownDuration time.Duration `json:"coolDownDuration"`
-	Threshold        int64         `json:"threshold"`
-	Operator         string        `json:"operator"`
-	Adjustment       string        `json:"adjustment"`
+	AppId                 string `json:"appId"`
+	MetricType            string `json:"metric_type"`
+	BreachDurationSeconds int    `json:"breach_duration_secs"`
+	CoolDownSeconds       int    `json:"cool_down_secs"`
+	Threshold             int64  `json:"threshold"`
+	Operator              string `json:"operator"`
+	Adjustment            string `json:"adjustment"`
+}
+
+func (t Trigger) BreachDuration() time.Duration {
+	return time.Duration(t.BreachDurationSeconds) * time.Second
+}
+
+func (t Trigger) CoolDown() time.Duration {
+	return time.Duration(t.CoolDownSeconds) * time.Second
 }

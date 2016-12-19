@@ -28,40 +28,40 @@ var _ = Describe("Evaluator", func() {
 		testMetricType string     = "MemoryUsage"
 		regPath                   = regexp.MustCompile(`^/v1/apps/.*/scale$`)
 		triggerArrayGT []*Trigger = []*Trigger{&Trigger{
-			AppId:            testAppId,
-			MetricType:       testMetricType,
-			BreachDuration:   300,
-			CoolDownDuration: 300,
-			Threshold:        500,
-			Operator:         ">",
-			Adjustment:       "1",
+			AppId:                 testAppId,
+			MetricType:            testMetricType,
+			BreachDurationSeconds: 300,
+			CoolDownSeconds:       300,
+			Threshold:             500,
+			Operator:              ">",
+			Adjustment:            "1",
 		}}
 		triggerArrayGE []*Trigger = []*Trigger{&Trigger{
-			AppId:            testAppId,
-			MetricType:       testMetricType,
-			BreachDuration:   300,
-			CoolDownDuration: 300,
-			Threshold:        500,
-			Operator:         ">=",
-			Adjustment:       "1",
+			AppId:                 testAppId,
+			MetricType:            testMetricType,
+			BreachDurationSeconds: 300,
+			CoolDownSeconds:       300,
+			Threshold:             500,
+			Operator:              ">=",
+			Adjustment:            "1",
 		}}
 		triggerArrayLT []*Trigger = []*Trigger{&Trigger{
-			AppId:            testAppId,
-			MetricType:       testMetricType,
-			BreachDuration:   300,
-			CoolDownDuration: 300,
-			Threshold:        500,
-			Operator:         "<",
-			Adjustment:       "1",
+			AppId:                 testAppId,
+			MetricType:            testMetricType,
+			BreachDurationSeconds: 300,
+			CoolDownSeconds:       300,
+			Threshold:             500,
+			Operator:              "<",
+			Adjustment:            "1",
 		}}
 		triggerArrayLE []*Trigger = []*Trigger{&Trigger{
-			AppId:            testAppId,
-			MetricType:       testMetricType,
-			BreachDuration:   300,
-			CoolDownDuration: 300,
-			Threshold:        500,
-			Operator:         "<=",
-			Adjustment:       "1",
+			AppId:                 testAppId,
+			MetricType:            testMetricType,
+			BreachDurationSeconds: 300,
+			CoolDownSeconds:       300,
+			Threshold:             500,
+			Operator:              "<=",
+			Adjustment:            "1",
 		}}
 		//test appmetric for >
 		appMetricGTUpper []*AppMetric = []*AppMetric{
@@ -526,13 +526,13 @@ var _ = Describe("Evaluator", func() {
 			Context("when there are invalid operators in trigger", func() {
 				BeforeEach(func() {
 					invalidTriggerArray := []*Trigger{&Trigger{
-						AppId:            testAppId,
-						MetricType:       testMetricType,
-						BreachDuration:   300,
-						CoolDownDuration: 300,
-						Threshold:        500,
-						Operator:         "invalid_operator",
-						Adjustment:       "1",
+						AppId:                 testAppId,
+						MetricType:            testMetricType,
+						BreachDurationSeconds: 300,
+						CoolDownSeconds:       300,
+						Threshold:             500,
+						Operator:              "invalid_operator",
+						Adjustment:            "1",
 					}}
 					triggerChan = make(chan []*Trigger, 1)
 					Eventually(triggerChan).Should(BeSent(invalidTriggerArray))

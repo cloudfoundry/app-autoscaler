@@ -32,10 +32,12 @@ func NewEvaluator(logger lager.Logger, httpClient *http.Client, scalingEngineUrl
 		database:         database,
 	}
 }
+
 func (e *Evaluator) Start() {
 	go e.start()
 	e.logger.Info("started")
 }
+
 func (e *Evaluator) start() {
 	for {
 		select {
@@ -46,10 +48,12 @@ func (e *Evaluator) start() {
 		}
 	}
 }
+
 func (e *Evaluator) Stop() {
 	close(e.doneChan)
 	e.logger.Info("stopped")
 }
+
 func (e *Evaluator) doEvaluate(triggerArray []*model.Trigger) {
 
 	for _, trigger := range triggerArray {
@@ -103,13 +107,11 @@ func (e *Evaluator) doEvaluate(triggerArray []*model.Trigger) {
 	}
 
 }
+
 func (e *Evaluator) retrieveAppMetrics(trigger *model.Trigger) ([]*model.AppMetric, error) {
-	appId := trigger.AppId
-	metricType := trigger.MetricType
-	breachDuration := trigger.BreachDuration
 	endTime := time.Now()
-	startTime := endTime.Add(0 - breachDuration)
-	appMetrics, err := e.database.RetrieveAppMetrics(appId, metricType, startTime.UnixNano(), endTime.UnixNano())
+	startTime := endTime.Add(0 - trigger.BreachDuration())
+	appMetrics, err := e.database.RetrieveAppMetrics(trigger.AppId, trigger.MetricType, startTime.UnixNano(), endTime.UnixNano())
 	if err != nil {
 		e.logger.Error("retrieve appMetrics", err, lager.Data{"trigger": trigger})
 		return nil, err
@@ -117,14 +119,14 @@ func (e *Evaluator) retrieveAppMetrics(trigger *model.Trigger) ([]*model.AppMetr
 	e.logger.Debug("appMetrics", lager.Data{"appMetrics": appMetrics})
 	return appMetrics, nil
 }
+
 func (e *Evaluator) sendTriggerAlarm(trigger *model.Trigger) {
-	url := e.scalingEngineUrl
 	jsonBytes, jsonEncodeError := json.Marshal(trigger)
 	if jsonEncodeError != nil {
 		e.logger.Error("failed to json.Marshal trigger", jsonEncodeError)
 	}
 	path := "/v1/apps/" + trigger.AppId + "/scale"
-	resp, respErr := e.httpClient.Post(url+path, "", bytes.NewReader(jsonBytes))
+	resp, respErr := e.httpClient.Post(e.scalingEngineUrl+path, "", bytes.NewReader(jsonBytes))
 	if respErr != nil {
 		e.logger.Error("http reqeust error,failed to send trigger alarm", respErr, lager.Data{"trigger": trigger})
 		return
