@@ -82,11 +82,11 @@ var _ = Describe("SchedulerSqldb", func() {
 
 		Context("when the table is not empty", func() {
 			BeforeEach(func() {
-				err = insertSchedulerActiveSchedule(111111, "app-id-1", 2, 10, 5)
+				err = insertSchedulerActiveSchedule(111111, "app-id-1", 1, 2, 10, 5)
 				Expect(err).NotTo(HaveOccurred())
-				err = insertSchedulerActiveSchedule(222222, "app-id-2", 3, 7, 5)
+				err = insertSchedulerActiveSchedule(222222, "app-id-2", 2, 3, 7, 5)
 				Expect(err).NotTo(HaveOccurred())
-				err = insertSchedulerActiveSchedule(333333, "app-id-3", 5, 12, -1)
+				err = insertSchedulerActiveSchedule(333333, "app-id-3", 3, 5, 12, -1)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
