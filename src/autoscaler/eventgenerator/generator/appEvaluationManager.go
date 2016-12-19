@@ -44,13 +44,13 @@ func (a *AppEvaluationManager) getTriggers(policyMap map[string]*model.Policy) m
 				triggers = []*model.Trigger{}
 			}
 			triggers = append(triggers, &model.Trigger{
-				AppId:            appId,
-				MetricType:       rule.MetricType,
-				BreachDuration:   rule.BreachDuration,
-				CoolDownDuration: rule.CoolDownDuration,
-				Threshold:        rule.Threshold,
-				Operator:         rule.Operator,
-				Adjustment:       rule.Adjustment,
+				AppId:                 appId,
+				MetricType:            rule.MetricType,
+				BreachDurationSeconds: rule.BreachDurationSeconds,
+				CoolDownSeconds:       rule.CoolDownSeconds,
+				Threshold:             rule.Threshold,
+				Operator:              rule.Operator,
+				Adjustment:            rule.Adjustment,
 			})
 			triggersByType[triggerKey] = triggers
 		}

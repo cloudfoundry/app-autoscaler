@@ -40,13 +40,13 @@ var _ = Describe("AppEvaluationManager", func() {
 					InstanceMinCount: 1,
 					ScalingRules: []*ScalingRule{
 						&ScalingRule{
-							MetricType:       "MemoryUsage",
-							StatWindow:       300,
-							BreachDuration:   300,
-							CoolDownDuration: 300,
-							Threshold:        30,
-							Operator:         "<",
-							Adjustment:       "-1",
+							MetricType:            "MemoryUsage",
+							StatWindowSeconds:     200,
+							BreachDurationSeconds: 200,
+							CoolDownSeconds:       200,
+							Threshold:             80,
+							Operator:              ">=",
+							Adjustment:            "1",
 						},
 					},
 				},
@@ -58,13 +58,13 @@ var _ = Describe("AppEvaluationManager", func() {
 					InstanceMinCount: 1,
 					ScalingRules: []*ScalingRule{
 						&ScalingRule{
-							MetricType:       "MemoryUsage",
-							StatWindow:       300,
-							BreachDuration:   300,
-							CoolDownDuration: 300,
-							Threshold:        30,
-							Operator:         "<",
-							Adjustment:       "-1",
+							MetricType:            "MemoryUsage",
+							StatWindowSeconds:     300,
+							BreachDurationSeconds: 300,
+							CoolDownSeconds:       300,
+							Threshold:             20,
+							Operator:              "<=",
+							Adjustment:            "-1",
 						},
 					},
 				},
@@ -108,24 +108,24 @@ var _ = Describe("AppEvaluationManager", func() {
 				var arr []*Trigger
 				Eventually(triggerArrayChan).Should(Receive(&arr))
 				Expect(arr).To(Equal([]*Trigger{&Trigger{
-					AppId:            testAppId,
-					MetricType:       testMetricType,
-					BreachDuration:   300,
-					CoolDownDuration: 300,
-					Threshold:        30,
-					Operator:         "<",
-					Adjustment:       "-1",
+					AppId:                 testAppId,
+					MetricType:            testMetricType,
+					BreachDurationSeconds: 200,
+					CoolDownSeconds:       200,
+					Threshold:             80,
+					Operator:              ">=",
+					Adjustment:            "1",
 				}}))
 
 				Eventually(triggerArrayChan).Should(Receive(&arr))
 				Expect(arr).To(Equal([]*Trigger{&Trigger{
-					AppId:            testAppId2,
-					MetricType:       testMetricType,
-					BreachDuration:   300,
-					CoolDownDuration: 300,
-					Threshold:        30,
-					Operator:         "<",
-					Adjustment:       "-1",
+					AppId:                 testAppId2,
+					MetricType:            testMetricType,
+					BreachDurationSeconds: 300,
+					CoolDownSeconds:       300,
+					Threshold:             20,
+					Operator:              "<=",
+					Adjustment:            "-1",
 				}}))
 			})
 		})

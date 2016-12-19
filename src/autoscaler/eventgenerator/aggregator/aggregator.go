@@ -42,7 +42,7 @@ func (a *Aggregator) getAppMonitors(policyMap map[string]*model.Policy) []*model
 			appMonitors = append(appMonitors, &model.AppMonitor{
 				AppId:      appId,
 				MetricType: rule.MetricType,
-				StatWindow: rule.StatWindow,
+				StatWindow: rule.StatWindow(),
 			})
 		}
 	}
