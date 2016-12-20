@@ -3,7 +3,6 @@ package fakes
 
 import (
 	"autoscaler/db"
-	"autoscaler/eventgenerator/model"
 	"autoscaler/models"
 	"sync"
 )
@@ -25,11 +24,11 @@ type FakePolicyDB struct {
 		result1 *models.ScalingPolicy
 		result2 error
 	}
-	RetrievePoliciesStub        func() ([]*model.PolicyJson, error)
+	RetrievePoliciesStub        func() ([]*models.PolicyJson, error)
 	retrievePoliciesMutex       sync.RWMutex
 	retrievePoliciesArgsForCall []struct{}
 	retrievePoliciesReturns     struct {
-		result1 []*model.PolicyJson
+		result1 []*models.PolicyJson
 		result2 error
 	}
 	CloseStub        func() error
@@ -102,7 +101,7 @@ func (fake *FakePolicyDB) GetAppPolicyReturns(result1 *models.ScalingPolicy, res
 	}{result1, result2}
 }
 
-func (fake *FakePolicyDB) RetrievePolicies() ([]*model.PolicyJson, error) {
+func (fake *FakePolicyDB) RetrievePolicies() ([]*models.PolicyJson, error) {
 	fake.retrievePoliciesMutex.Lock()
 	fake.retrievePoliciesArgsForCall = append(fake.retrievePoliciesArgsForCall, struct{}{})
 	fake.recordInvocation("RetrievePolicies", []interface{}{})
@@ -120,10 +119,10 @@ func (fake *FakePolicyDB) RetrievePoliciesCallCount() int {
 	return len(fake.retrievePoliciesArgsForCall)
 }
 
-func (fake *FakePolicyDB) RetrievePoliciesReturns(result1 []*model.PolicyJson, result2 error) {
+func (fake *FakePolicyDB) RetrievePoliciesReturns(result1 []*models.PolicyJson, result2 error) {
 	fake.RetrievePoliciesStub = nil
 	fake.retrievePoliciesReturns = struct {
-		result1 []*model.PolicyJson
+		result1 []*models.PolicyJson
 		result2 error
 	}{result1, result2}
 }

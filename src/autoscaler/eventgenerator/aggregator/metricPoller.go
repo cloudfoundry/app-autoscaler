@@ -2,7 +2,6 @@ package aggregator
 
 import (
 	"autoscaler/db"
-	"autoscaler/eventgenerator/model"
 	"autoscaler/models"
 	"encoding/json"
 	"fmt"
@@ -17,12 +16,12 @@ type MetricPoller struct {
 	logger             lager.Logger
 	metricCollectorUrl string
 	doneChan           chan bool
-	appChan            chan *model.AppMonitor
+	appChan            chan *models.AppMonitor
 	httpClient         *http.Client
 	appMetricDB        db.AppMetricDB
 }
 
-func NewMetricPoller(logger lager.Logger, metricCollectorUrl string, appChan chan *model.AppMonitor, httpClient *http.Client, appMetricDB db.AppMetricDB) *MetricPoller {
+func NewMetricPoller(logger lager.Logger, metricCollectorUrl string, appChan chan *models.AppMonitor, httpClient *http.Client, appMetricDB db.AppMetricDB) *MetricPoller {
 	return &MetricPoller{
 		metricCollectorUrl: metricCollectorUrl,
 		logger:             logger.Session("MetricPoller"),
@@ -54,7 +53,7 @@ func (m *MetricPoller) startMetricRetrieve() {
 	}
 }
 
-func (m *MetricPoller) retrieveMetric(app *model.AppMonitor) {
+func (m *MetricPoller) retrieveMetric(app *models.AppMonitor) {
 	appId := app.AppId
 	metricType := app.MetricType
 	endTime := time.Now()
@@ -97,7 +96,7 @@ func (m *MetricPoller) retrieveMetric(app *model.AppMonitor) {
 	}
 }
 
-func (m *MetricPoller) aggregate(appId string, metricType string, metrics []*models.AppInstanceMetric) *model.AppMetric {
+func (m *MetricPoller) aggregate(appId string, metricType string, metrics []*models.AppInstanceMetric) *models.AppMetric {
 	var count int64 = 0
 	var sum int64 = 0
 	var unit string
@@ -114,7 +113,7 @@ func (m *MetricPoller) aggregate(appId string, metricType string, metrics []*mod
 	}
 
 	if count == 0 {
-		return &model.AppMetric{
+		return &models.AppMetric{
 			AppId:      appId,
 			MetricType: metricType,
 			Value:      nil,
@@ -124,7 +123,7 @@ func (m *MetricPoller) aggregate(appId string, metricType string, metrics []*mod
 	}
 
 	avgValue := sum / count
-	return &model.AppMetric{
+	return &models.AppMetric{
 		AppId:      appId,
 		MetricType: metricType,
 		Value:      &avgValue,

@@ -3,7 +3,7 @@ package generator_test
 import (
 	"autoscaler/eventgenerator/aggregator/fakes"
 	. "autoscaler/eventgenerator/generator"
-	. "autoscaler/eventgenerator/model"
+	"autoscaler/models"
 	"net/http"
 	"regexp"
 	"time"
@@ -19,27 +19,27 @@ import (
 var _ = Describe("AppEvaluationManager", func() {
 
 	var (
-		getPolicies          GetPolicies
+		getPolicies          models.GetPolicies
 		logger               lager.Logger
 		fclock               *fakeclock.FakeClock
 		manager              *AppEvaluationManager
 		testEvaluateInterval time.Duration
 		testEvaluatorCount   int
 		database             *fakes.FakeAppMetricDB
-		triggerArrayChan     chan []*Trigger
+		triggerArrayChan     chan []*models.Trigger
 		testAppId            string = "testAppId"
 		testAppId2           string = "testAppId2"
 		testMetricType       string = "MemoryUsage"
 		fakeScalingEngine    *ghttp.Server
-		regPath                                 = regexp.MustCompile(`^/v1/apps/.*/scale$`)
-		policyMap            map[string]*Policy = map[string]*Policy{
-			testAppId: &Policy{
+		regPath              *regexp.Regexp               = regexp.MustCompile(`^/v1/apps/.*/scale$`)
+		policyMap            map[string]*models.AppPolicy = map[string]*models.AppPolicy{
+			testAppId: &models.AppPolicy{
 				AppId: testAppId,
-				TriggerRecord: &TriggerRecord{
-					InstanceMaxCount: 5,
-					InstanceMinCount: 1,
-					ScalingRules: []*ScalingRule{
-						&ScalingRule{
+				ScalingPolicy: &models.ScalingPolicy{
+					InstanceMax: 5,
+					InstanceMin: 1,
+					ScalingRules: []*models.ScalingRule{
+						&models.ScalingRule{
 							MetricType:            "MemoryUsage",
 							StatWindowSeconds:     200,
 							BreachDurationSeconds: 200,
@@ -51,13 +51,13 @@ var _ = Describe("AppEvaluationManager", func() {
 					},
 				},
 			},
-			testAppId2: &Policy{
+			testAppId2: &models.AppPolicy{
 				AppId: testAppId2,
-				TriggerRecord: &TriggerRecord{
-					InstanceMaxCount: 5,
-					InstanceMinCount: 1,
-					ScalingRules: []*ScalingRule{
-						&ScalingRule{
+				ScalingPolicy: &models.ScalingPolicy{
+					InstanceMax: 5,
+					InstanceMin: 1,
+					ScalingRules: []*models.ScalingRule{
+						&models.ScalingRule{
 							MetricType:            "MemoryUsage",
 							StatWindowSeconds:     300,
 							BreachDurationSeconds: 300,
@@ -76,7 +76,7 @@ var _ = Describe("AppEvaluationManager", func() {
 		fclock = fakeclock.NewFakeClock(time.Now())
 		testEvaluateInterval = 1 * time.Second
 		logger = lagertest.NewTestLogger("ApplicationManager-test")
-		triggerArrayChan = make(chan []*Trigger, 10)
+		triggerArrayChan = make(chan []*models.Trigger, 10)
 		fakeScalingEngine = ghttp.NewServer()
 		fakeScalingEngine.RouteToHandler("POST", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
 		database = &fakes.FakeAppMetricDB{}
@@ -98,16 +98,16 @@ var _ = Describe("AppEvaluationManager", func() {
 
 		Context("when there are triggers for evaluation", func() {
 			BeforeEach(func() {
-				getPolicies = func() map[string]*Policy {
+				getPolicies = func() map[string]*models.AppPolicy {
 					return policyMap
 				}
 			})
 
 			It("should add triggers to evaluate", func() {
 				fclock.Increment(10 * testEvaluateInterval)
-				var arr []*Trigger
+				var arr []*models.Trigger
 				Eventually(triggerArrayChan).Should(Receive(&arr))
-				Expect(arr).To(Equal([]*Trigger{&Trigger{
+				Expect(arr).To(Equal([]*models.Trigger{&models.Trigger{
 					AppId:                 testAppId,
 					MetricType:            testMetricType,
 					BreachDurationSeconds: 200,
@@ -118,7 +118,7 @@ var _ = Describe("AppEvaluationManager", func() {
 				}}))
 
 				Eventually(triggerArrayChan).Should(Receive(&arr))
-				Expect(arr).To(Equal([]*Trigger{&Trigger{
+				Expect(arr).To(Equal([]*models.Trigger{&models.Trigger{
 					AppId:                 testAppId2,
 					MetricType:            testMetricType,
 					BreachDurationSeconds: 300,
@@ -132,7 +132,7 @@ var _ = Describe("AppEvaluationManager", func() {
 
 		Context("when there is no trigger", func() {
 			BeforeEach(func() {
-				getPolicies = func() map[string]*Policy {
+				getPolicies = func() map[string]*models.AppPolicy {
 					return nil
 				}
 			})
@@ -146,7 +146,7 @@ var _ = Describe("AppEvaluationManager", func() {
 
 	Describe("Stop", func() {
 		BeforeEach(func() {
-			getPolicies = func() map[string]*Policy {
+			getPolicies = func() map[string]*models.AppPolicy {
 				return policyMap
 			}
 

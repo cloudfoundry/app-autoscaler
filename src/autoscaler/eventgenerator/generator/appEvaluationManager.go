@@ -1,25 +1,25 @@
 package generator
 
 import (
-	"autoscaler/eventgenerator/model"
+	"autoscaler/models"
 	"time"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
 )
 
-type ConsumeAppMonitorMap func(map[string][]*model.Trigger, chan []*model.Trigger)
+type ConsumeAppMonitorMap func(map[string][]*models.Trigger, chan []*models.Trigger)
 type AppEvaluationManager struct {
 	evaluateInterval time.Duration
 	logger           lager.Logger
 	cclock           clock.Clock
 	doneChan         chan bool
-	triggerChan      chan []*model.Trigger
-	getPolicies      model.GetPolicies
+	triggerChan      chan []*models.Trigger
+	getPolicies      models.GetPolicies
 }
 
 func NewAppEvaluationManager(logger lager.Logger, evaluateInterval time.Duration, cclock clock.Clock,
-	triggerChan chan []*model.Trigger, getPolicies model.GetPolicies) (*AppEvaluationManager, error) {
+	triggerChan chan []*models.Trigger, getPolicies models.GetPolicies) (*AppEvaluationManager, error) {
 	return &AppEvaluationManager{
 		evaluateInterval: evaluateInterval,
 		logger:           logger.Session("AppEvaluationManager"),
@@ -30,20 +30,20 @@ func NewAppEvaluationManager(logger lager.Logger, evaluateInterval time.Duration
 	}, nil
 }
 
-func (a *AppEvaluationManager) getTriggers(policyMap map[string]*model.Policy) map[string][]*model.Trigger {
+func (a *AppEvaluationManager) getTriggers(policyMap map[string]*models.AppPolicy) map[string][]*models.Trigger {
 	if policyMap == nil {
 		return nil
 	}
 
-	triggersByType := make(map[string][]*model.Trigger)
+	triggersByType := make(map[string][]*models.Trigger)
 	for appId, policy := range policyMap {
-		for _, rule := range policy.TriggerRecord.ScalingRules {
+		for _, rule := range policy.ScalingPolicy.ScalingRules {
 			triggerKey := appId + "#" + rule.MetricType
 			triggers, exist := triggersByType[triggerKey]
 			if !exist {
-				triggers = []*model.Trigger{}
+				triggers = []*models.Trigger{}
 			}
-			triggers = append(triggers, &model.Trigger{
+			triggers = append(triggers, &models.Trigger{
 				AppId:                 appId,
 				MetricType:            rule.MetricType,
 				BreachDurationSeconds: rule.BreachDurationSeconds,

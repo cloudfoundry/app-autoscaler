@@ -2,7 +2,6 @@ package sqldb_test
 
 import (
 	. "autoscaler/db/sqldb"
-	"autoscaler/eventgenerator/model"
 	"autoscaler/models"
 
 	"code.cloudfoundry.org/lager"
@@ -24,7 +23,7 @@ var _ = Describe("PolicySQLDB", func() {
 		scalingPolicy *models.ScalingPolicy
 		policyJson    []byte
 		appId         string
-		policies      []*model.PolicyJson
+		policies      []*models.PolicyJson
 	)
 
 	BeforeEach(func() {
@@ -113,8 +112,9 @@ var _ = Describe("PolicySQLDB", func() {
 			insertPolicy("an-app-id", &models.ScalingPolicy{
 				InstanceMin: 1,
 				InstanceMax: 6,
-				Rules: []models.ScalingRule{models.ScalingRule{
+				ScalingRules: []*models.ScalingRule{&models.ScalingRule{
 					MetricType:            models.MetricNameMemory,
+					StatWindowSeconds:     120,
 					BreachDurationSeconds: 180,
 					Threshold:             1048576000,
 					Operator:              ">",
@@ -123,8 +123,9 @@ var _ = Describe("PolicySQLDB", func() {
 			insertPolicy("another-app-id", &models.ScalingPolicy{
 				InstanceMin: 2,
 				InstanceMax: 8,
-				Rules: []models.ScalingRule{models.ScalingRule{
+				ScalingRules: []*models.ScalingRule{&models.ScalingRule{
 					MetricType:            models.MetricNameMemory,
+					StatWindowSeconds:     120,
 					BreachDurationSeconds: 300,
 					Threshold:             104857600,
 					Operator:              "<",
@@ -151,8 +152,9 @@ var _ = Describe("PolicySQLDB", func() {
 				Expect(*scalingPolicy).To(Equal(models.ScalingPolicy{
 					InstanceMin: 1,
 					InstanceMax: 6,
-					Rules: []models.ScalingRule{models.ScalingRule{
+					ScalingRules: []*models.ScalingRule{&models.ScalingRule{
 						MetricType:            models.MetricNameMemory,
+						StatWindowSeconds:     120,
 						BreachDurationSeconds: 180,
 						Threshold:             1048576000,
 						Operator:              ">",
@@ -202,15 +204,15 @@ var _ = Describe("PolicySQLDB", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(policies).To(ConsistOf(
-					&model.PolicyJson{
+					&models.PolicyJson{
 						AppId:     "first-app-id",
 						PolicyStr: string(policyJson),
 					},
-					&model.PolicyJson{
+					&models.PolicyJson{
 						AppId:     "second-app-id",
 						PolicyStr: string(policyJson),
 					},
-					&model.PolicyJson{
+					&models.PolicyJson{
 						AppId:     "third-app-id",
 						PolicyStr: string(policyJson),
 					},

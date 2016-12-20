@@ -1,7 +1,7 @@
-package model_test
+package models_test
 
 import (
-	. "autoscaler/eventgenerator/model"
+	. "autoscaler/models"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -11,7 +11,7 @@ var _ = Describe("Policy", func() {
 
 	var testAppId = "testAppId"
 	var testAppIdAnother = "testAppIdAnother"
-	var policy *Policy
+	var policy *AppPolicy
 	var policyStr = `
    {
    "instance_min_count":1,
@@ -94,14 +94,28 @@ var _ = Describe("Policy", func() {
 		})
 
 	})
-	Context("GetPolicyFromPolicyJSON", func() {
+	Context("GetAppPolicy", func() {
 
 		BeforeEach(func() {
 			policyJson = &PolicyJson{AppId: testAppId, PolicyStr: policyStr}
-			policy = policyJson.GetPolicy()
+			policy = policyJson.GetAppPolicy()
 		})
 		It("should return a policy", func() {
-			Expect(policy).To(Equal(&Policy{AppId: testAppId, TriggerRecord: &TriggerRecord{InstanceMaxCount: 5, InstanceMinCount: 1, ScalingRules: []*ScalingRule{&ScalingRule{MetricType: "MemoryUsage", StatWindowSeconds: 300, BreachDurationSeconds: 300, CoolDownSeconds: 300, Threshold: 30, Operator: "<", Adjustment: "-1"}}}}))
+			Expect(policy).To(Equal(&AppPolicy{
+				AppId: testAppId,
+				ScalingPolicy: &ScalingPolicy{
+					InstanceMax: 5,
+					InstanceMin: 1,
+					ScalingRules: []*ScalingRule{
+						&ScalingRule{
+							MetricType:            "MemoryUsage",
+							StatWindowSeconds:     300,
+							BreachDurationSeconds: 300,
+							CoolDownSeconds:       300,
+							Threshold:             30,
+							Operator:              "<",
+							Adjustment:            "-1",
+						}}}}))
 		})
 
 	})

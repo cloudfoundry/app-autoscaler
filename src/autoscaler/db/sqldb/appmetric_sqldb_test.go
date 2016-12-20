@@ -2,7 +2,6 @@ package sqldb_test
 
 import (
 	. "autoscaler/db/sqldb"
-	"autoscaler/eventgenerator/model"
 	"autoscaler/models"
 
 	"code.cloudfoundry.org/lager"
@@ -20,7 +19,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 		url               string
 		logger            lager.Logger
 		err               error
-		appMetrics        []*model.AppMetric
+		appMetrics        []*models.AppMetric
 		start, end        int64
 		before            int64
 		appId, metricName string
@@ -75,7 +74,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 
 		Context("When inserting a metric of an app", func() {
 			BeforeEach(func() {
-				appMetric := &model.AppMetric{
+				appMetric := &models.AppMetric{
 					AppId:      "test-app-id",
 					MetricType: models.MetricNameMemory,
 					Unit:       models.UnitBytes,
@@ -101,7 +100,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 			Expect(err).NotTo(HaveOccurred())
 			cleanAppMetricTable()
 
-			appMetric := &model.AppMetric{
+			appMetric := &models.AppMetric{
 				AppId:      "test-app-id",
 				MetricType: models.MetricNameMemory,
 				Unit:       models.UnitBytes,
@@ -199,22 +198,22 @@ var _ = Describe("AppMetricSQLDB", func() {
 		Context("when retriving all the appMetrics)", func() {
 			It("returns all the appMetrics ordered by timestamp", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(appMetrics).To(Equal([]*model.AppMetric{
-					&model.AppMetric{
+				Expect(appMetrics).To(Equal([]*models.AppMetric{
+					&models.AppMetric{
 						AppId:      "test-app-id",
 						MetricType: models.MetricNameMemory,
 						Unit:       models.UnitBytes,
 						Timestamp:  11111111,
 						Value:      value1,
 					},
-					&model.AppMetric{
+					&models.AppMetric{
 						AppId:      "test-app-id",
 						MetricType: models.MetricNameMemory,
 						Unit:       models.UnitBytes,
 						Timestamp:  33333333,
 						Value:      value2,
 					},
-					&model.AppMetric{
+					&models.AppMetric{
 						AppId:      "test-app-id",
 						MetricType: models.MetricNameMemory,
 						Unit:       models.UnitBytes,
@@ -231,15 +230,15 @@ var _ = Describe("AppMetricSQLDB", func() {
 			})
 			It("returns correct appMetrics ordered by timestamp", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(appMetrics).To(Equal([]*model.AppMetric{
-					&model.AppMetric{
+				Expect(appMetrics).To(Equal([]*models.AppMetric{
+					&models.AppMetric{
 						AppId:      "test-app-id",
 						MetricType: models.MetricNameMemory,
 						Unit:       models.UnitBytes,
 						Timestamp:  33333333,
 						Value:      value2,
 					},
-					&model.AppMetric{
+					&models.AppMetric{
 						AppId:      "test-app-id",
 						MetricType: models.MetricNameMemory,
 						Unit:       models.UnitBytes,
@@ -259,7 +258,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 			cleanAppMetricTable()
 
 			value := int64(10000)
-			appMetric := &model.AppMetric{
+			appMetric := &models.AppMetric{
 				AppId:      "test-app-id",
 				MetricType: models.MetricNameMemory,
 				Unit:       models.UnitBytes,

@@ -2,7 +2,7 @@ package aggregator_test
 
 import (
 	. "autoscaler/eventgenerator/aggregator"
-	. "autoscaler/eventgenerator/model"
+	"autoscaler/models"
 	"time"
 
 	"code.cloudfoundry.org/clock/fakeclock"
@@ -13,21 +13,21 @@ import (
 
 var _ = Describe("Aggregator", func() {
 	var (
-		getPolicies      GetPolicies
+		getPolicies      models.GetPolicies
 		aggregator       *Aggregator
 		clock            *fakeclock.FakeClock
 		logger           lager.Logger
-		appMonitorsChan  chan *AppMonitor
+		appMonitorsChan  chan *models.AppMonitor
 		testAppId        string = "testAppId"
 		fakeWaitDuration time.Duration
-		policyMap        = map[string]*Policy{
-			testAppId: &Policy{
+		policyMap        = map[string]*models.AppPolicy{
+			testAppId: &models.AppPolicy{
 				AppId: testAppId,
-				TriggerRecord: &TriggerRecord{
-					InstanceMaxCount: 5,
-					InstanceMinCount: 1,
-					ScalingRules: []*ScalingRule{
-						&ScalingRule{
+				ScalingPolicy: &models.ScalingPolicy{
+					InstanceMax: 5,
+					InstanceMin: 1,
+					ScalingRules: []*models.ScalingRule{
+						&models.ScalingRule{
 							MetricType:            "MemoryUsage",
 							StatWindowSeconds:     300,
 							BreachDurationSeconds: 300,
@@ -43,14 +43,14 @@ var _ = Describe("Aggregator", func() {
 	)
 
 	BeforeEach(func() {
-		getPolicies = func() map[string]*Policy {
+		getPolicies = func() map[string]*models.AppPolicy {
 			return policyMap
 		}
 
 		clock = fakeclock.NewFakeClock(time.Now())
 		logger = lager.NewLogger("Aggregator-test")
 
-		appMonitorsChan = make(chan *AppMonitor, 10)
+		appMonitorsChan = make(chan *models.AppMonitor, 10)
 		if testEvaluateInteval > testAggregatorExecuteInterval {
 			fakeWaitDuration = testEvaluateInteval
 		} else {

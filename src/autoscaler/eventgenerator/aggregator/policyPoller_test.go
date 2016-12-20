@@ -3,7 +3,7 @@ package aggregator_test
 import (
 	. "autoscaler/eventgenerator/aggregator"
 	"autoscaler/eventgenerator/aggregator/fakes"
-	. "autoscaler/eventgenerator/model"
+	"autoscaler/models"
 	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/lager"
 	"errors"
@@ -56,8 +56,8 @@ var _ = Describe("PolicyPoller", func() {
 
 		Context("when the poller is started", func() {
 			BeforeEach(func() {
-				database.RetrievePoliciesStub = func() ([]*PolicyJson, error) {
-					return []*PolicyJson{&PolicyJson{AppId: testAppId1, PolicyStr: policyStr1}}, nil
+				database.RetrievePoliciesStub = func() ([]*models.PolicyJson, error) {
+					return []*models.PolicyJson{&models.PolicyJson{AppId: testAppId1, PolicyStr: policyStr1}}, nil
 				}
 
 			})
@@ -69,8 +69,8 @@ var _ = Describe("PolicyPoller", func() {
 
 			Context("when retrieve policies and compute triggers successfully", func() {
 				BeforeEach(func() {
-					database.RetrievePoliciesStub = func() ([]*PolicyJson, error) {
-						return []*PolicyJson{&PolicyJson{AppId: testAppId1, PolicyStr: policyStr1}}, nil
+					database.RetrievePoliciesStub = func() ([]*models.PolicyJson, error) {
+						return []*models.PolicyJson{&models.PolicyJson{AppId: testAppId1, PolicyStr: policyStr1}}, nil
 					}
 				})
 				It("should call the consumer with the new triggers for every interval", func() {
@@ -78,13 +78,13 @@ var _ = Describe("PolicyPoller", func() {
 					clock.Increment(1 * testPolicyPollerInterval)
 					clock.Increment(1 * testPolicyPollerInterval)
 					Eventually(database.RetrievePoliciesCallCount).Should(BeNumerically(">=", 2))
-					var policyMap map[string]*Policy = poller.GetPolicies()
-					Expect(policyMap[testAppId1]).To(Equal(&Policy{
+					policyMap := poller.GetPolicies()
+					Expect(policyMap[testAppId1]).To(Equal(&models.AppPolicy{
 						AppId: testAppId1,
-						TriggerRecord: &TriggerRecord{
-							InstanceMaxCount: 5,
-							InstanceMinCount: 1,
-							ScalingRules: []*ScalingRule{&ScalingRule{
+						ScalingPolicy: &models.ScalingPolicy{
+							InstanceMax: 5,
+							InstanceMin: 1,
+							ScalingRules: []*models.ScalingRule{&models.ScalingRule{
 								MetricType:            "MemoryUsage",
 								StatWindowSeconds:     300,
 								BreachDurationSeconds: 300,
@@ -98,13 +98,13 @@ var _ = Describe("PolicyPoller", func() {
 			})
 			Context("when return error when retrieve policies from database", func() {
 				BeforeEach(func() {
-					database.RetrievePoliciesStub = func() ([]*PolicyJson, error) {
+					database.RetrievePoliciesStub = func() ([]*models.PolicyJson, error) {
 						return nil, errors.New("error when retrieve policies from database")
 					}
 				})
 				It("should not call the consumer as there is no trigger", func() {
 					clock.Increment(2 * testPolicyPollerInterval)
-					var policyMap map[string]*Policy = poller.GetPolicies()
+					policyMap := poller.GetPolicies()
 					Expect(len(policyMap)).To(Equal(0))
 				})
 			})
