@@ -6,7 +6,7 @@ import (
 	"autoscaler/eventgenerator/aggregator"
 	"autoscaler/eventgenerator/config"
 	"autoscaler/eventgenerator/generator"
-	"autoscaler/eventgenerator/model"
+	"autoscaler/models"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -56,7 +56,7 @@ func main() {
 
 	policyPoller := aggregator.NewPolicyPoller(logger, egClock, conf.Aggregator.PolicyPollerInterval, policyDB)
 
-	triggersChan := make(chan []*model.Trigger, conf.Evaluator.TriggerArrayChannelSize)
+	triggersChan := make(chan []*models.Trigger, conf.Evaluator.TriggerArrayChannelSize)
 	evaluators, err := createEvaluators(logger, conf, triggersChan, appMetricDB)
 	if err != nil {
 		logger.Error("failed to create Evaluators", err)
@@ -70,7 +70,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	appMonitorsChan := make(chan *model.AppMonitor, conf.Aggregator.AppMonitorChannelSize)
+	appMonitorsChan := make(chan *models.AppMonitor, conf.Aggregator.AppMonitorChannelSize)
 	metricPollers, err := createMetricPollers(logger, conf, appMonitorsChan, appMetricDB)
 	aggregator, err := aggregator.NewAggregator(logger, egClock, conf.Aggregator.AggregatorExecuteInterval,
 		appMonitorsChan, policyPoller.GetPolicies)
@@ -171,7 +171,7 @@ func loadConfig(path string) (*config.Config, error) {
 	return conf, nil
 }
 
-func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan chan []*model.Trigger, database db.AppMetricDB) ([]*generator.Evaluator, error) {
+func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan chan []*models.Trigger, database db.AppMetricDB) ([]*generator.Evaluator, error) {
 	count := conf.Evaluator.EvaluatorCount
 	scalingEngineUrl := conf.ScalingEngine.ScalingEngineUrl
 
@@ -198,7 +198,7 @@ func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan cha
 	return evaluators, nil
 }
 
-func createMetricPollers(logger lager.Logger, conf *config.Config, appChan chan *model.AppMonitor, database db.AppMetricDB) ([]*aggregator.MetricPoller, error) {
+func createMetricPollers(logger lager.Logger, conf *config.Config, appChan chan *models.AppMonitor, database db.AppMetricDB) ([]*aggregator.MetricPoller, error) {
 	tlsCerts := &conf.MetricCollector.TLSClientCerts
 	if tlsCerts.CertFile == "" || tlsCerts.KeyFile == "" {
 		tlsCerts = nil

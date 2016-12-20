@@ -1,7 +1,7 @@
 package aggregator
 
 import (
-	"autoscaler/eventgenerator/model"
+	"autoscaler/models"
 	"time"
 
 	"code.cloudfoundry.org/clock"
@@ -11,15 +11,15 @@ import (
 type Aggregator struct {
 	logger                    lager.Logger
 	doneChan                  chan bool
-	appChan                   chan *model.AppMonitor
+	appChan                   chan *models.AppMonitor
 	metricPollerArray         []*MetricPoller
 	cclock                    clock.Clock
 	aggregatorExecuteInterval time.Duration
-	getPolicies               model.GetPolicies
+	getPolicies               models.GetPolicies
 }
 
 func NewAggregator(logger lager.Logger, clock clock.Clock, aggregatorExecuteInterval time.Duration,
-	appMonitorChan chan *model.AppMonitor, getPolicies model.GetPolicies) (*Aggregator, error) {
+	appMonitorChan chan *models.AppMonitor, getPolicies models.GetPolicies) (*Aggregator, error) {
 	aggregator := &Aggregator{
 		logger:   logger.Session("Aggregator"),
 		doneChan: make(chan bool),
@@ -31,15 +31,14 @@ func NewAggregator(logger lager.Logger, clock clock.Clock, aggregatorExecuteInte
 	return aggregator, nil
 }
 
-func (a *Aggregator) getAppMonitors(policyMap map[string]*model.Policy) []*model.AppMonitor {
+func (a *Aggregator) getAppMonitors(policyMap map[string]*models.AppPolicy) []*models.AppMonitor {
 	if policyMap == nil {
 		return nil
 	}
-	appMonitors := make([]*model.AppMonitor, 0, len(policyMap))
-	for appId, policy := range policyMap {
-		for _, rule := range policy.TriggerRecord.ScalingRules {
-
-			appMonitors = append(appMonitors, &model.AppMonitor{
+	appMonitors := make([]*models.AppMonitor, 0, len(policyMap))
+	for appId, appPolicy := range policyMap {
+		for _, rule := range appPolicy.ScalingPolicy.ScalingRules {
+			appMonitors = append(appMonitors, &models.AppMonitor{
 				AppId:      appId,
 				MetricType: rule.MetricType,
 				StatWindow: rule.StatWindow(),

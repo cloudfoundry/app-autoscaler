@@ -3,7 +3,6 @@ package fakes
 
 import (
 	"autoscaler/db"
-	"autoscaler/eventgenerator/model"
 	"autoscaler/models"
 	"sync"
 )
@@ -16,13 +15,6 @@ type FakePolicyDB struct {
 		result1 map[string]bool
 		result2 error
 	}
-	RetrievePoliciesStub        func() ([]*model.PolicyJson, error)
-	retrievePoliciesMutex       sync.RWMutex
-	retrievePoliciesArgsForCall []struct{}
-	retrievePoliciesReturns     struct {
-		result1 []*model.PolicyJson
-		result2 error
-	}
 	GetAppPolicyStub        func(appId string) (*models.ScalingPolicy, error)
 	getAppPolicyMutex       sync.RWMutex
 	getAppPolicyArgsForCall []struct {
@@ -30,6 +22,13 @@ type FakePolicyDB struct {
 	}
 	getAppPolicyReturns struct {
 		result1 *models.ScalingPolicy
+		result2 error
+	}
+	RetrievePoliciesStub        func() ([]*models.PolicyJson, error)
+	retrievePoliciesMutex       sync.RWMutex
+	retrievePoliciesArgsForCall []struct{}
+	retrievePoliciesReturns     struct {
+		result1 []*models.PolicyJson
 		result2 error
 	}
 	CloseStub        func() error
@@ -68,32 +67,6 @@ func (fake *FakePolicyDB) GetAppIdsReturns(result1 map[string]bool, result2 erro
 	}{result1, result2}
 }
 
-func (fake *FakePolicyDB) RetrievePolicies() ([]*model.PolicyJson, error) {
-	fake.retrievePoliciesMutex.Lock()
-	fake.retrievePoliciesArgsForCall = append(fake.retrievePoliciesArgsForCall, struct{}{})
-	fake.recordInvocation("RetrievePolicies", []interface{}{})
-	fake.retrievePoliciesMutex.Unlock()
-	if fake.RetrievePoliciesStub != nil {
-		return fake.RetrievePoliciesStub()
-	} else {
-		return fake.retrievePoliciesReturns.result1, fake.retrievePoliciesReturns.result2
-	}
-}
-
-func (fake *FakePolicyDB) RetrievePoliciesCallCount() int {
-	fake.retrievePoliciesMutex.RLock()
-	defer fake.retrievePoliciesMutex.RUnlock()
-	return len(fake.retrievePoliciesArgsForCall)
-}
-
-func (fake *FakePolicyDB) RetrievePoliciesReturns(result1 []*model.PolicyJson, result2 error) {
-	fake.RetrievePoliciesStub = nil
-	fake.retrievePoliciesReturns = struct {
-		result1 []*model.PolicyJson
-		result2 error
-	}{result1, result2}
-}
-
 func (fake *FakePolicyDB) GetAppPolicy(appId string) (*models.ScalingPolicy, error) {
 	fake.getAppPolicyMutex.Lock()
 	fake.getAppPolicyArgsForCall = append(fake.getAppPolicyArgsForCall, struct {
@@ -128,6 +101,32 @@ func (fake *FakePolicyDB) GetAppPolicyReturns(result1 *models.ScalingPolicy, res
 	}{result1, result2}
 }
 
+func (fake *FakePolicyDB) RetrievePolicies() ([]*models.PolicyJson, error) {
+	fake.retrievePoliciesMutex.Lock()
+	fake.retrievePoliciesArgsForCall = append(fake.retrievePoliciesArgsForCall, struct{}{})
+	fake.recordInvocation("RetrievePolicies", []interface{}{})
+	fake.retrievePoliciesMutex.Unlock()
+	if fake.RetrievePoliciesStub != nil {
+		return fake.RetrievePoliciesStub()
+	} else {
+		return fake.retrievePoliciesReturns.result1, fake.retrievePoliciesReturns.result2
+	}
+}
+
+func (fake *FakePolicyDB) RetrievePoliciesCallCount() int {
+	fake.retrievePoliciesMutex.RLock()
+	defer fake.retrievePoliciesMutex.RUnlock()
+	return len(fake.retrievePoliciesArgsForCall)
+}
+
+func (fake *FakePolicyDB) RetrievePoliciesReturns(result1 []*models.PolicyJson, result2 error) {
+	fake.RetrievePoliciesStub = nil
+	fake.retrievePoliciesReturns = struct {
+		result1 []*models.PolicyJson
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakePolicyDB) Close() error {
 	fake.closeMutex.Lock()
 	fake.closeArgsForCall = append(fake.closeArgsForCall, struct{}{})
@@ -158,10 +157,10 @@ func (fake *FakePolicyDB) Invocations() map[string][][]interface{} {
 	defer fake.invocationsMutex.RUnlock()
 	fake.getAppIdsMutex.RLock()
 	defer fake.getAppIdsMutex.RUnlock()
-	fake.retrievePoliciesMutex.RLock()
-	defer fake.retrievePoliciesMutex.RUnlock()
 	fake.getAppPolicyMutex.RLock()
 	defer fake.getAppPolicyMutex.RUnlock()
+	fake.retrievePoliciesMutex.RLock()
+	defer fake.retrievePoliciesMutex.RUnlock()
 	fake.closeMutex.RLock()
 	defer fake.closeMutex.RUnlock()
 	return fake.invocations

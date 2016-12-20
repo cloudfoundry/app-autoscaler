@@ -2,7 +2,7 @@ package sqldb
 
 import (
 	"autoscaler/db"
-	"autoscaler/eventgenerator/model"
+	"autoscaler/models"
 	"code.cloudfoundry.org/lager"
 	"database/sql"
 	_ "github.com/lib/pq"
@@ -46,7 +46,7 @@ func (adb *AppMetricSQLDB) Close() error {
 	}
 	return nil
 }
-func (adb *AppMetricSQLDB) SaveAppMetric(appMetric *model.AppMetric) error {
+func (adb *AppMetricSQLDB) SaveAppMetric(appMetric *models.AppMetric) error {
 	query := "INSERT INTO app_metric(app_id, metric_type, unit, timestamp, value) values($1, $2, $3, $4, $5)"
 	_, err := adb.sqldb.Exec(query, appMetric.AppId, appMetric.MetricType, appMetric.Unit, appMetric.Timestamp, appMetric.Value)
 
@@ -56,9 +56,9 @@ func (adb *AppMetricSQLDB) SaveAppMetric(appMetric *model.AppMetric) error {
 
 	return err
 }
-func (adb *AppMetricSQLDB) RetrieveAppMetrics(appIdP string, metricTypeP string, startP int64, endP int64) ([]*model.AppMetric, error) {
+func (adb *AppMetricSQLDB) RetrieveAppMetrics(appIdP string, metricTypeP string, startP int64, endP int64) ([]*models.AppMetric, error) {
 	query := "SELECT app_id,metric_type,value,unit,timestamp FROM app_metric WHERE app_id=$1 AND metric_type=$2 AND timestamp>=$3 AND timestamp<=$4 ORDER BY timestamp ASC"
-	appMetricList := []*model.AppMetric{}
+	appMetricList := []*models.AppMetric{}
 	rows, err := adb.sqldb.Query(query, appIdP, metricTypeP, startP, endP)
 	if err != nil {
 		adb.logger.Error("retrieve-app-metric-list-from-app_metric-table", err, lager.Data{"query": query})
@@ -75,7 +75,7 @@ func (adb *AppMetricSQLDB) RetrieveAppMetrics(appIdP string, metricTypeP string,
 			adb.logger.Error("scan-appmetric-from-search-result", err)
 			return nil, err
 		}
-		appMetric := &model.AppMetric{
+		appMetric := &models.AppMetric{
 			AppId:      appId,
 			MetricType: metricType,
 			Value:      &value,

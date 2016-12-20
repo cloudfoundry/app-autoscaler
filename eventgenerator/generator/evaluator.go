@@ -2,7 +2,7 @@ package generator
 
 import (
 	"autoscaler/db"
-	"autoscaler/eventgenerator/model"
+	"autoscaler/models"
 	"bytes"
 	"code.cloudfoundry.org/lager"
 	"encoding/json"
@@ -17,12 +17,12 @@ type Evaluator struct {
 	logger           lager.Logger
 	httpClient       *http.Client
 	scalingEngineUrl string
-	triggerChan      chan []*model.Trigger
+	triggerChan      chan []*models.Trigger
 	doneChan         chan bool
 	database         db.AppMetricDB
 }
 
-func NewEvaluator(logger lager.Logger, httpClient *http.Client, scalingEngineUrl string, triggerChan chan []*model.Trigger, database db.AppMetricDB) *Evaluator {
+func NewEvaluator(logger lager.Logger, httpClient *http.Client, scalingEngineUrl string, triggerChan chan []*models.Trigger, database db.AppMetricDB) *Evaluator {
 	return &Evaluator{
 		logger:           logger.Session("Evaluator"),
 		httpClient:       httpClient,
@@ -54,7 +54,7 @@ func (e *Evaluator) Stop() {
 	e.logger.Info("stopped")
 }
 
-func (e *Evaluator) doEvaluate(triggerArray []*model.Trigger) {
+func (e *Evaluator) doEvaluate(triggerArray []*models.Trigger) {
 
 	for _, trigger := range triggerArray {
 		threshold := trigger.Threshold
@@ -108,7 +108,7 @@ func (e *Evaluator) doEvaluate(triggerArray []*model.Trigger) {
 
 }
 
-func (e *Evaluator) retrieveAppMetrics(trigger *model.Trigger) ([]*model.AppMetric, error) {
+func (e *Evaluator) retrieveAppMetrics(trigger *models.Trigger) ([]*models.AppMetric, error) {
 	endTime := time.Now()
 	startTime := endTime.Add(0 - trigger.BreachDuration())
 	appMetrics, err := e.database.RetrieveAppMetrics(trigger.AppId, trigger.MetricType, startTime.UnixNano(), endTime.UnixNano())
@@ -120,7 +120,7 @@ func (e *Evaluator) retrieveAppMetrics(trigger *model.Trigger) ([]*model.AppMetr
 	return appMetrics, nil
 }
 
-func (e *Evaluator) sendTriggerAlarm(trigger *model.Trigger) {
+func (e *Evaluator) sendTriggerAlarm(trigger *models.Trigger) {
 	jsonBytes, jsonEncodeError := json.Marshal(trigger)
 	if jsonEncodeError != nil {
 		e.logger.Error("failed to json.Marshal trigger", jsonEncodeError)

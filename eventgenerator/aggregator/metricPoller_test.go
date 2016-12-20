@@ -3,7 +3,6 @@ package aggregator_test
 import (
 	. "autoscaler/eventgenerator/aggregator"
 	"autoscaler/eventgenerator/aggregator/fakes"
-	. "autoscaler/eventgenerator/model"
 	"autoscaler/models"
 	"errors"
 	"net/http"
@@ -22,7 +21,7 @@ var _ = Describe("MetricPoller", func() {
 	var timestamp int64 = time.Now().UnixNano()
 	var metricType string = "MemoryUsage"
 	var logger *lagertest.TestLogger
-	var appMonitorsChan chan *AppMonitor
+	var appMonitorsChan chan *models.AppMonitor
 	var appMetricDatabase *fakes.FakeAppMetricDB
 	var metricPoller *MetricPoller
 	var httpClient *http.Client
@@ -70,16 +69,16 @@ var _ = Describe("MetricPoller", func() {
 	BeforeEach(func() {
 		logger = lagertest.NewTestLogger("MetricPoller-test")
 		httpClient = cfhttp.NewClient()
-		appMonitorsChan = make(chan *AppMonitor, 1)
+		appMonitorsChan = make(chan *models.AppMonitor, 1)
 		appMetricDatabase = &fakes.FakeAppMetricDB{}
 		metricServer = nil
 	})
 
 	Context("Start", func() {
-		var appMonitor *AppMonitor
+		var appMonitor *models.AppMonitor
 
 		BeforeEach(func() {
-			appMonitor = &AppMonitor{
+			appMonitor = &models.AppMonitor{
 				AppId:      testAppId,
 				MetricType: metricType,
 				StatWindow: 10,
@@ -123,7 +122,7 @@ var _ = Describe("MetricPoller", func() {
 				actualAppMetric.Timestamp = timestamp
 
 				var value int64 = 250
-				Expect(actualAppMetric).To(Equal(&AppMetric{
+				Expect(actualAppMetric).To(Equal(&models.AppMetric{
 					AppId:      testAppId,
 					MetricType: metricType,
 					Value:      &value,
@@ -207,7 +206,7 @@ var _ = Describe("MetricPoller", func() {
 			metricPoller.Start()
 			metricPoller.Stop()
 
-			appMonitorsChan <- &AppMonitor{
+			appMonitorsChan <- &models.AppMonitor{
 				AppId:      testAppId,
 				MetricType: metricType,
 				StatWindow: 10,
