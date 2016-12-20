@@ -1,7 +1,6 @@
 package db
 
 import (
-	"autoscaler/eventgenerator/model"
 	"autoscaler/models"
 )
 
@@ -17,13 +16,13 @@ type InstanceMetricsDB interface {
 type PolicyDB interface {
 	GetAppIds() (map[string]bool, error)
 	GetAppPolicy(appId string) (*models.ScalingPolicy, error)
-	RetrievePolicies() ([]*model.PolicyJson, error)
+	RetrievePolicies() ([]*models.PolicyJson, error)
 	Close() error
 }
 
 type AppMetricDB interface {
-	SaveAppMetric(appMetric *model.AppMetric) error
-	RetrieveAppMetrics(appId string, metricType string, start int64, end int64) ([]*model.AppMetric, error)
+	SaveAppMetric(appMetric *models.AppMetric) error
+	RetrieveAppMetrics(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error)
 	PruneAppMetrics(before int64) error
 	Close() error
 }

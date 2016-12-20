@@ -1,7 +1,6 @@
 package sqldb
 
 import (
-	"autoscaler/eventgenerator/model"
 	"code.cloudfoundry.org/lager"
 	"database/sql"
 	"encoding/json"
@@ -69,9 +68,9 @@ func (pdb *PolicySQLDB) GetAppIds() (map[string]bool, error) {
 	return appIds, nil
 }
 
-func (pdb *PolicySQLDB) RetrievePolicies() ([]*model.PolicyJson, error) {
+func (pdb *PolicySQLDB) RetrievePolicies() ([]*models.PolicyJson, error) {
 	query := "SELECT app_id,policy_json FROM policy_json WHERE 1=1 "
-	policyList := []*model.PolicyJson{}
+	policyList := []*models.PolicyJson{}
 	rows, err := pdb.sqldb.Query(query)
 	if err != nil {
 		pdb.logger.Error("retrive-policy-list-from-policy_json-table", err,
@@ -89,7 +88,7 @@ func (pdb *PolicySQLDB) RetrievePolicies() ([]*model.PolicyJson, error) {
 			pdb.logger.Error("scan-policy-from-search-result", err)
 			return nil, err
 		}
-		policyJson := model.PolicyJson{
+		policyJson := models.PolicyJson{
 			AppId:     appId,
 			PolicyStr: policyStr,
 		}

@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 type AppInfo struct {
 	Entity AppEntity `json:"entity"`
 }
@@ -32,4 +34,18 @@ type AppScalingHistory struct {
 	Reason       string
 	Message      string
 	Error        string
+}
+
+type AppMonitor struct {
+	AppId      string
+	MetricType string
+	StatWindow time.Duration
+}
+
+type AppMetric struct {
+	AppId      string
+	MetricType string
+	Value      *int64
+	Unit       string
+	Timestamp  int64
 }

@@ -2,7 +2,7 @@ package aggregator
 
 import (
 	"autoscaler/db"
-	"autoscaler/eventgenerator/model"
+	"autoscaler/models"
 	"sync"
 	"time"
 
@@ -10,7 +10,7 @@ import (
 	"code.cloudfoundry.org/lager"
 )
 
-type Consumer func(map[string]*model.Policy, chan *model.AppMonitor)
+type Consumer func(map[string]*models.AppPolicy, chan *models.AppMonitor)
 
 type PolicyPoller struct {
 	logger    lager.Logger
@@ -18,7 +18,7 @@ type PolicyPoller struct {
 	database  db.PolicyDB
 	clock     clock.Clock
 	doneChan  chan bool
-	policyMap map[string]*model.Policy
+	policyMap map[string]*models.AppPolicy
 	lock      sync.Mutex
 }
 
@@ -29,10 +29,10 @@ func NewPolicyPoller(logger lager.Logger, clock clock.Clock, interval time.Durat
 		interval:  interval,
 		database:  database,
 		doneChan:  make(chan bool),
-		policyMap: make(map[string]*model.Policy),
+		policyMap: make(map[string]*models.AppPolicy),
 	}
 }
-func (p *PolicyPoller) GetPolicies() map[string]*model.Policy {
+func (p *PolicyPoller) GetPolicies() map[string]*models.AppPolicy {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 	return p.policyMap
@@ -69,7 +69,7 @@ func (p *PolicyPoller) startPolicyRetrieve() {
 	}
 }
 
-func (p *PolicyPoller) retrievePolicies() ([]*model.PolicyJson, error) {
+func (p *PolicyPoller) retrievePolicies() ([]*models.PolicyJson, error) {
 	policyJsons, err := p.database.RetrievePolicies()
 	if err != nil {
 		p.logger.Error("retrieve policyJsons", err)
@@ -79,10 +79,10 @@ func (p *PolicyPoller) retrievePolicies() ([]*model.PolicyJson, error) {
 	return policyJsons, nil
 }
 
-func (p *PolicyPoller) computePolicies(policyJsons []*model.PolicyJson) map[string]*model.Policy {
-	policyMap := make(map[string]*model.Policy)
+func (p *PolicyPoller) computePolicies(policyJsons []*models.PolicyJson) map[string]*models.AppPolicy {
+	policyMap := make(map[string]*models.AppPolicy)
 	for _, policyRow := range policyJsons {
-		tmpPolicy := policyRow.GetPolicy()
+		tmpPolicy := policyRow.GetAppPolicy()
 		policyMap[policyRow.AppId] = tmpPolicy
 	}
 	p.logger.Info("policy count", lager.Data{"count": len(policyMap)})
