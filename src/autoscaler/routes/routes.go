@@ -2,7 +2,6 @@ package routes
 
 import (
 	"github.com/gorilla/mux"
-	"sync"
 )
 
 const (
@@ -27,8 +26,7 @@ type AutoScalerRoute struct {
 	scalingEngineRoutes    *mux.Router
 }
 
-var autoScalerRouteInstance *AutoScalerRoute
-var once sync.Once
+var autoScalerRouteInstance *AutoScalerRoute = newRouters()
 
 func newRouters() *AutoScalerRoute {
 	instance := &AutoScalerRoute{
@@ -47,16 +45,9 @@ func newRouters() *AutoScalerRoute {
 	return instance
 
 }
-
-func getInstance() *AutoScalerRoute {
-	once.Do(func() {
-		autoScalerRouteInstance = newRouters()
-	})
-	return autoScalerRouteInstance
-}
 func MetricsCollectorRoutes() *mux.Router {
-	return getInstance().metricsCollectorRoutes
+	return autoScalerRouteInstance.metricsCollectorRoutes
 }
 func ScalingEngineRoutes() *mux.Router {
-	return getInstance().scalingEngineRoutes
+	return autoScalerRouteInstance.scalingEngineRoutes
 }

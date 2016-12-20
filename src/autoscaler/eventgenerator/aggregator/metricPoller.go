@@ -66,7 +66,10 @@ func (m *MetricPoller) retrieveMetric(app *models.AppMonitor) {
 
 	var url string
 	path, _ := routes.MetricsCollectorRoutes().Get(routes.MemoryMetricHistoryRoute).URLPath("appid", app.AppId)
-	url = m.metricCollectorUrl + path.Path + "?start=" + strconv.FormatInt(startTime.UnixNano(), 10) + "&end=" + strconv.FormatInt(endTime.UnixNano(), 10)
+	parameters := path.Query()
+	parameters.Add("start", strconv.FormatInt(startTime.UnixNano(), 10))
+	parameters.Add("end", strconv.FormatInt(endTime.UnixNano(), 10))
+	url = m.metricCollectorUrl + path.RequestURI() + "?" + parameters.Encode()
 	resp, err := m.httpClient.Get(url)
 	if err != nil {
 		m.logger.Error("Failed to retrieve metric from memory-collector. Request failed", err, lager.Data{"appId": appId, "metricType": metricType, "err": err})
