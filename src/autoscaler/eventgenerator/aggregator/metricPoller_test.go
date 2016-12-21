@@ -4,16 +4,16 @@ import (
 	. "autoscaler/eventgenerator/aggregator"
 	"autoscaler/eventgenerator/aggregator/fakes"
 	"autoscaler/models"
-	"errors"
-	"net/http"
-	"time"
-
+	"autoscaler/routes"
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/lager/lagertest"
+	"errors"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/ghttp"
+	"net/http"
+	"time"
 )
 
 var _ = Describe("MetricPoller", func() {
@@ -65,13 +65,17 @@ var _ = Describe("MetricPoller", func() {
 			Timestamp:     220000,
 		},
 	}
-
+	var urlPath string
 	BeforeEach(func() {
 		logger = lagertest.NewTestLogger("MetricPoller-test")
 		httpClient = cfhttp.NewClient()
 		appMonitorsChan = make(chan *models.AppMonitor, 1)
 		appMetricDatabase = &fakes.FakeAppMetricDB{}
 		metricServer = nil
+
+		path, err := routes.MetricsCollectorRoutes().Get(routes.MemoryMetricHistoryRoute).URLPath("appid", testAppId)
+		Expect(err).NotTo(HaveOccurred())
+		urlPath = path.Path
 	})
 
 	Context("Start", func() {
@@ -85,7 +89,7 @@ var _ = Describe("MetricPoller", func() {
 			}
 
 			metricServer = ghttp.NewServer()
-			metricServer.RouteToHandler("GET", "/v1/apps/"+testAppId+"/metrics_history/memory", ghttp.RespondWithJSONEncoded(http.StatusOK,
+			metricServer.RouteToHandler("GET", urlPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
 				&metrics))
 		})
 
@@ -133,7 +137,7 @@ var _ = Describe("MetricPoller", func() {
 
 		Context("when the metrics are not valid JSON", func() {
 			BeforeEach(func() {
-				metricServer.RouteToHandler("GET", "/v1/apps/"+testAppId+"/metrics_history/memory", ghttp.RespondWith(http.StatusOK,
+				metricServer.RouteToHandler("GET", urlPath, ghttp.RespondWith(http.StatusOK,
 					"{[}"))
 			})
 
@@ -148,7 +152,7 @@ var _ = Describe("MetricPoller", func() {
 
 		Context("when empty metrics are retrieved", func() {
 			BeforeEach(func() {
-				metricServer.RouteToHandler("GET", "/v1/apps/"+testAppId+"/metrics_history/memory", ghttp.RespondWithJSONEncoded(http.StatusOK,
+				metricServer.RouteToHandler("GET", urlPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
 					&[]*models.AppInstanceMetric{}))
 			})
 
@@ -160,7 +164,7 @@ var _ = Describe("MetricPoller", func() {
 
 		Context("when an error ocurrs retrieving metrics", func() {
 			BeforeEach(func() {
-				metricServer.RouteToHandler("GET", "/v1/apps/"+testAppId+"/metrics_history/memory", ghttp.RespondWithJSONEncoded(http.StatusBadRequest,
+				metricServer.RouteToHandler("GET", urlPath, ghttp.RespondWithJSONEncoded(http.StatusBadRequest,
 					models.ErrorResponse{
 						Code:    "Interal-Server-Error",
 						Message: "Error"}))
@@ -199,7 +203,7 @@ var _ = Describe("MetricPoller", func() {
 	Context("Stop", func() {
 		BeforeEach(func() {
 			metricServer = ghttp.NewServer()
-			metricServer.RouteToHandler("GET", "/v1/apps/"+testAppId+"/metrics_history/memory", ghttp.RespondWithJSONEncoded(http.StatusOK,
+			metricServer.RouteToHandler("GET", urlPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
 				&metrics))
 
 			metricPoller = NewMetricPoller(logger, metricServer.URL(), appMonitorsChan, httpClient, appMetricDatabase)

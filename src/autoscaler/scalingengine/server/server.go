@@ -2,6 +2,7 @@ package server
 
 import (
 	"autoscaler/db"
+	"autoscaler/routes"
 	"autoscaler/scalingengine"
 	"autoscaler/scalingengine/config"
 
@@ -15,15 +16,6 @@ import (
 	"net/http"
 )
 
-const (
-	PathScale                = "/v1/apps/{appid}/scale"
-	PathScalingHistories     = "/v1/apps/{appid}/scaling_histories"
-	PathActiveSchedule       = "/v1/apps/{appid}/active_schedules/{scheduleid}"
-	RouteNameScale           = "scale"
-	RouteNameHistoreis       = "histories"
-	RouteNameActiveSchedules = "activeSchedules"
-)
-
 type VarsFunc func(w http.ResponseWriter, r *http.Request, vars map[string]string)
 
 func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -34,11 +26,11 @@ func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func NewServer(logger lager.Logger, conf *config.Config, scalingEngineDB db.ScalingEngineDB, scalingEngine scalingengine.ScalingEngine) (ifrit.Runner, error) {
 	handler := NewScalingHandler(logger, scalingEngineDB, scalingEngine)
 
-	r := mux.NewRouter()
-	r.Methods("POST").Path(PathScale).Handler(VarsFunc(handler.Scale)).Name(RouteNameScale)
-	r.Methods("GET").Path(PathScalingHistories).Handler(VarsFunc(handler.GetScalingHistories)).Name(RouteNameHistoreis)
-	r.Methods("PUT").Path(PathActiveSchedule).Handler(VarsFunc(handler.StartActiveSchedule)).Name(RouteNameActiveSchedules)
-	r.Methods("DELETE").Path(PathActiveSchedule).Handler(VarsFunc(handler.RemoveActiveSchedule)).Name(RouteNameActiveSchedules)
+	r := routes.ScalingEngineRoutes()
+	r.Get(routes.ScaleRoute).Methods(http.MethodPost).Handler(VarsFunc(handler.Scale))
+	r.Get(routes.HistoreisRoute).Methods(http.MethodGet).Handler(VarsFunc(handler.GetScalingHistories))
+	r.Get(routes.UpdateActiveSchedulesRoute).Methods(http.MethodPut).Handler(VarsFunc(handler.StartActiveSchedule))
+	r.Get(routes.DeleteActiveSchedulesRoute).Methods(http.MethodDelete).Handler(VarsFunc(handler.RemoveActiveSchedule))
 
 	addr := fmt.Sprintf("0.0.0.0:%d", conf.Server.Port)
 	logger.Info("new-http-server", lager.Data{"serverConfig": conf.Server})

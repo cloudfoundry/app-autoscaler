@@ -155,7 +155,7 @@ func initHttpEndPoints() {
 	scalingEngine.HTTPTestServer.TLS = seTLSConfig
 	scalingEngine.HTTPTestServer.StartTLS()
 
-	metricCollector.RouteToHandler("GET", "/v1/apps/"+testAppId+"/metrics_history/memory", ghttp.RespondWithJSONEncoded(http.StatusOK,
+	metricCollector.RouteToHandler("GET", "/v1/apps/"+testAppId+"/metric_histories/memory", ghttp.RespondWithJSONEncoded(http.StatusOK,
 		&metrics))
 	scalingEngine.RouteToHandler("POST", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
 }

@@ -2,6 +2,7 @@ package server_test
 
 import (
 	"autoscaler/models"
+	"autoscaler/routes"
 	"autoscaler/scalingengine/config"
 	"autoscaler/scalingengine/fakes"
 	. "autoscaler/scalingengine/server"
@@ -54,6 +55,7 @@ var _ = Describe("Server", func() {
 		err        error
 		method     string
 		bodyReader io.Reader
+		route      *mux.Router = routes.ScalingEngineRoutes()
 	)
 
 	Context("when triggering scaling action", func() {
@@ -61,8 +63,7 @@ var _ = Describe("Server", func() {
 			body, err = json.Marshal(models.Trigger{Adjustment: "+1"})
 			Expect(err).NotTo(HaveOccurred())
 
-			route := mux.Route{}
-			uPath, err := route.Path(PathScale).URLPath("appid", "test-app-id")
+			uPath, err := route.Get(routes.ScaleRoute).URLPath("appid", "test-app-id")
 			Expect(err).NotTo(HaveOccurred())
 			urlPath = uPath.Path
 		})
@@ -106,8 +107,7 @@ var _ = Describe("Server", func() {
 
 	Context("when getting scaling histories", func() {
 		BeforeEach(func() {
-			route := mux.Route{}
-			uPath, err := route.Path(PathScalingHistories).URLPath("appid", "test-app-id")
+			uPath, err := route.Get(routes.HistoreisRoute).URLPath("appid", "test-app-id")
 			Expect(err).NotTo(HaveOccurred())
 			urlPath = uPath.Path
 		})
@@ -150,12 +150,6 @@ var _ = Describe("Server", func() {
 	})
 
 	Context("when requesting active shedule", func() {
-		BeforeEach(func() {
-			route := mux.Route{}
-			uPath, err := route.Path(PathActiveSchedule).URLPath("appid", "test-app-id", "scheduleid", "test-schedule-id")
-			Expect(err).NotTo(HaveOccurred())
-			urlPath = uPath.Path
-		})
 
 		JustBeforeEach(func() {
 			req, err = http.NewRequest(method, serverUrl+urlPath, bodyReader)
@@ -165,6 +159,9 @@ var _ = Describe("Server", func() {
 
 		Context("when setting active schedule", func() {
 			BeforeEach(func() {
+				uPath, err := route.Get(routes.UpdateActiveSchedulesRoute).URLPath("appid", "test-app-id", "scheduleid", "test-schedule-id")
+				Expect(err).NotTo(HaveOccurred())
+				urlPath = uPath.Path
 				bodyReader = bytes.NewReader([]byte(`{"instance_min_count":1, "instance_max_count":5, "initial_min_instance_count":3}`))
 			})
 
@@ -208,6 +205,9 @@ var _ = Describe("Server", func() {
 
 		Context("when deleting active schedule", func() {
 			BeforeEach(func() {
+				uPath, err := route.Get(routes.DeleteActiveSchedulesRoute).URLPath("appid", "test-app-id", "scheduleid", "test-schedule-id")
+				Expect(err).NotTo(HaveOccurred())
+				urlPath = uPath.Path
 				bodyReader = nil
 				method = http.MethodDelete
 			})
