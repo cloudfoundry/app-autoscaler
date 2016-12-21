@@ -3,6 +3,7 @@ package aggregator
 import (
 	"autoscaler/db"
 	"autoscaler/models"
+	"autoscaler/routes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -64,7 +65,11 @@ func (m *MetricPoller) retrieveMetric(app *models.AppMonitor) {
 	}
 
 	var url string
-	url = m.metricCollectorUrl + "/v1/apps/" + app.AppId + "/metrics_history/memory?start=" + strconv.FormatInt(startTime.UnixNano(), 10) + "&end=" + strconv.FormatInt(endTime.UnixNano(), 10)
+	path, _ := routes.MetricsCollectorRoutes().Get(routes.MemoryMetricHistoryRoute).URLPath("appid", app.AppId)
+	parameters := path.Query()
+	parameters.Add("start", strconv.FormatInt(startTime.UnixNano(), 10))
+	parameters.Add("end", strconv.FormatInt(endTime.UnixNano(), 10))
+	url = m.metricCollectorUrl + path.RequestURI() + "?" + parameters.Encode()
 	resp, err := m.httpClient.Get(url)
 	if err != nil {
 		m.logger.Error("Failed to retrieve metric from memory-collector. Request failed", err, lager.Data{"appId": appId, "metricType": metricType, "err": err})

@@ -3,6 +3,7 @@ package generator
 import (
 	"autoscaler/db"
 	"autoscaler/models"
+	"autoscaler/routes"
 	"bytes"
 	"code.cloudfoundry.org/lager"
 	"encoding/json"
@@ -125,8 +126,8 @@ func (e *Evaluator) sendTriggerAlarm(trigger *models.Trigger) {
 	if jsonEncodeError != nil {
 		e.logger.Error("failed to json.Marshal trigger", jsonEncodeError)
 	}
-	path := "/v1/apps/" + trigger.AppId + "/scale"
-	resp, respErr := e.httpClient.Post(e.scalingEngineUrl+path, "", bytes.NewReader(jsonBytes))
+	path, _ := routes.ScalingEngineRoutes().Get(routes.ScaleRoute).URLPath("appid", trigger.AppId)
+	resp, respErr := e.httpClient.Post(e.scalingEngineUrl+path.Path, "", bytes.NewReader(jsonBytes))
 	if respErr != nil {
 		e.logger.Error("http reqeust error,failed to send trigger alarm", respErr, lager.Data{"trigger": trigger})
 		return
