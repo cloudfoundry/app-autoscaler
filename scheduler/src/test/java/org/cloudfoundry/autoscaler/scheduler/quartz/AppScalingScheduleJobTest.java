@@ -162,7 +162,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 
 		String expectedMessage = messageBundleResourceHelper.lookupMessage(
-				"scalingengine.notification.activeschedule.start", appId, scheduleId, JobActionEnum.START);
+				"scalingengine.notification.activeschedule.start", appId, scheduleId);
 		assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), is(Level.INFO));
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
 
@@ -246,7 +246,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 
 		String expectedMessage = messageBundleResourceHelper.lookupMessage(
-				"scalingengine.notification.activeschedule.start", appId, scheduleId, JobActionEnum.START);
+				"scalingengine.notification.activeschedule.start", appId, scheduleId);
 		assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), is(Level.INFO));
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
 
@@ -333,7 +333,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 
 		String expectedMessage = messageBundleResourceHelper.lookupMessage(
-				"scalingengine.notification.activeschedule.start", appId, scheduleId, JobActionEnum.START);
+				"scalingengine.notification.activeschedule.start", appId, scheduleId);
 		assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), is(Level.INFO));
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
 
@@ -426,7 +426,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 
 		String expectedMessage = messageBundleResourceHelper.lookupMessage(
-				"scalingengine.notification.activeschedule.remove", appId, scheduleId, JobActionEnum.END);
+				"scalingengine.notification.activeschedule.remove", appId, scheduleId);
 		assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), is(Level.INFO));
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
 

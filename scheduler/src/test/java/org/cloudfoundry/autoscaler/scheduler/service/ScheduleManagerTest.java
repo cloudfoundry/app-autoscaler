@@ -6,13 +6,25 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.eq;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
+import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withNoContent;
+import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.cloudfoundry.autoscaler.scheduler.dao.ActiveScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.dao.RecurringScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.dao.SpecificDateScheduleDao;
+import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.Schedules;
@@ -26,15 +38,25 @@ import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationExcept
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.SchedulerInternalException;
 import org.cloudfoundry.autoscaler.scheduler.util.error.ValidationErrorResult;
+import org.hamcrest.core.Is;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.quartz.SchedulerException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.client.ExpectedCount;
+import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.client.RestTemplate;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -64,12 +86,35 @@ public class ScheduleManagerTest extends TestConfiguration {
 	@Autowired
 	private TestDataCleanupHelper testDataCleanupHelper;
 
+	@Autowired
+	private RestTemplate restTemplate;
+
+	@Value("${autoscaler.scalingengine.url}")
+	private String scalingEngineUrl;
+
+	private MockRestServiceServer mockServer;
+
+	@Mock
+	private Appender mockAppender;
+
+	@Captor
+	private ArgumentCaptor<LogEvent> logCaptor;
+
 	@Before
 	public void before() throws SchedulerException {
 		testDataCleanupHelper.cleanupData();
 
 		Mockito.reset(specificDateScheduleDao);
 		Mockito.reset(recurringScheduleDao);
+		Mockito.reset(activeScheduleDao);
+		Mockito.reset(mockAppender);
+		mockServer = MockRestServiceServer.createServer(restTemplate);
+
+		Mockito.when(mockAppender.getName()).thenReturn("MockAppender");
+		Mockito.when(mockAppender.isStarted()).thenReturn(true);
+		Mockito.when(mockAppender.isStopped()).thenReturn(false);
+
+		setLogLevel(Level.INFO);
 	}
 
 	@Test
@@ -270,6 +315,13 @@ public class ScheduleManagerTest extends TestConfiguration {
 	@Test
 	public void testDeleteSchedules() {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		long scheduleId = 1L;
+
+		ActiveScheduleEntity activeScheduleEntity = new ActiveScheduleEntity();
+		activeScheduleEntity.setAppId(appId);
+		activeScheduleEntity.setId(scheduleId);
+		List<ActiveScheduleEntity> activeScheduleEntities = new ArrayList<>();
+		activeScheduleEntities.add(activeScheduleEntity);
 
 		List<SpecificDateScheduleEntity> specificDateScheduleEntities = new SpecificDateScheduleEntitiesBuilder(2)
 				.setAppid(appId).setScheduleId().build();
@@ -280,6 +332,13 @@ public class ScheduleManagerTest extends TestConfiguration {
 				.thenReturn(specificDateScheduleEntities);
 		Mockito.when(recurringScheduleDao.findAllRecurringSchedulesByAppId(appId))
 				.thenReturn(recurringScheduleEntities);
+
+		Mockito.when(activeScheduleDao.findByAppId(appId)).thenReturn(activeScheduleEntities);
+
+		String scalingEnginePathActiveSchedule = scalingEngineUrl + "/v1/apps/" + appId + "/active_schedules/"
+				+ scheduleId;
+		mockServer.expect(ExpectedCount.times(1), requestTo(scalingEnginePathActiveSchedule))
+				.andExpect(method(HttpMethod.DELETE)).andRespond(withNoContent());
 
 		scheduleManager.deleteSchedules(appId);
 
@@ -294,6 +353,62 @@ public class ScheduleManagerTest extends TestConfiguration {
 					recurringScheduleEntity.getId(), ScheduleTypeEnum.RECURRING);
 		}
 		Mockito.verify(activeScheduleDao, Mockito.times(1)).deleteActiveSchedulesByAppId(appId);
+
+		mockServer.verify();
+	}
+
+	@Test
+	public void testDeleteSchedules_when_activeSchedule_not_found_in_scalingEngine() {
+		setLogLevel(Level.ERROR);
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		long scheduleId = 1L;
+
+		ActiveScheduleEntity activeScheduleEntity = new ActiveScheduleEntity();
+		activeScheduleEntity.setAppId(appId);
+		activeScheduleEntity.setId(scheduleId);
+		List<ActiveScheduleEntity> activeScheduleEntities = new ArrayList<>();
+		activeScheduleEntities.add(activeScheduleEntity);
+
+		List<SpecificDateScheduleEntity> specificDateScheduleEntities = new SpecificDateScheduleEntitiesBuilder(2)
+				.setAppid(appId).setScheduleId().build();
+		List<RecurringScheduleEntity> recurringScheduleEntities = new RecurringScheduleEntitiesBuilder(1, 1)
+				.setAppId(appId).setScheduleId().build();
+
+		Mockito.when(specificDateScheduleDao.findAllSpecificDateSchedulesByAppId(appId))
+				.thenReturn(specificDateScheduleEntities);
+		Mockito.when(recurringScheduleDao.findAllRecurringSchedulesByAppId(appId))
+				.thenReturn(recurringScheduleEntities);
+
+		Mockito.when(activeScheduleDao.findByAppId(appId)).thenReturn(activeScheduleEntities);
+
+		String scalingEnginePathActiveSchedule = scalingEngineUrl + "/v1/apps/" + appId + "/active_schedules/"
+				+ scheduleId;
+		mockServer.expect(ExpectedCount.times(1), requestTo(scalingEnginePathActiveSchedule))
+				.andExpect(method(HttpMethod.DELETE)).andRespond(withStatus(HttpStatus.NOT_FOUND).body("test error"));
+
+		scheduleManager.deleteSchedules(appId);
+
+		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
+
+		for (SpecificDateScheduleEntity specificDateScheduleEntity : specificDateScheduleEntities) {
+			Mockito.verify(specificDateScheduleDao, Mockito.times(1)).delete(specificDateScheduleEntity);
+			Mockito.verify(scheduleJobManager, Mockito.times(1)).deleteJob(specificDateScheduleEntity.getAppId(),
+					specificDateScheduleEntity.getId(), ScheduleTypeEnum.SPECIFIC_DATE);
+		}
+		for (RecurringScheduleEntity recurringScheduleEntity : recurringScheduleEntities) {
+			Mockito.verify(recurringScheduleDao, Mockito.times(1)).delete(recurringScheduleEntity);
+			Mockito.verify(scheduleJobManager, Mockito.times(1)).deleteJob(recurringScheduleEntity.getAppId(),
+					recurringScheduleEntity.getId(), ScheduleTypeEnum.RECURRING);
+		}
+		Mockito.verify(activeScheduleDao, Mockito.times(1)).deleteActiveSchedulesByAppId(appId);
+
+		mockServer.verify();
+
+		String expectedMessage = messageBundleResourceHelper.lookupMessage(
+				"scalingengine.notification.activeschedule.delete.failed", HttpStatus.NOT_FOUND, "test error", appId,
+				scheduleId);
+		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), Is.is(expectedMessage));
+		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), Is.is(Level.ERROR));
 	}
 
 	@Test
@@ -421,6 +536,7 @@ public class ScheduleManagerTest extends TestConfiguration {
 				assertEquals(message, errorMessage);
 			}
 		}
+		mockServer.verify();
 	}
 
 	private void assertCreateSchedules(Schedules schedules, SpecificDateScheduleEntity specificDateScheduleEntity,
@@ -443,6 +559,19 @@ public class ScheduleManagerTest extends TestConfiguration {
 				.createSimpleJob(specificDateScheduleEntity);
 		Mockito.verify(scheduleJobManager, Mockito.times(noOfDOMRecurringSchedules + noOfDOWRecurringSchedules))
 				.createCronJob(recurringScheduleEntity);
+	}
+
+	private void setLogLevel(Level level) {
+		LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+		Configuration config = ctx.getConfiguration();
+
+		LoggerConfig loggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME);
+		loggerConfig.removeAppender("MockAppender");
+
+		loggerConfig.setLevel(level);
+		loggerConfig.addAppender(mockAppender, level, null);
+		ctx.updateLoggers();
+
 	}
 
 }

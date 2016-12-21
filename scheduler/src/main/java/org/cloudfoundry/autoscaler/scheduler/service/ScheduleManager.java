@@ -10,6 +10,7 @@ import org.apache.logging.log4j.Logger;
 import org.cloudfoundry.autoscaler.scheduler.dao.ActiveScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.dao.RecurringScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.dao.SpecificDateScheduleDao;
+import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
@@ -18,14 +19,20 @@ import org.cloudfoundry.autoscaler.scheduler.rest.model.Schedules;
 import org.cloudfoundry.autoscaler.scheduler.util.DataValidationHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.DateHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.RecurringScheduleTime;
+import org.cloudfoundry.autoscaler.scheduler.util.ScalingEngineUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleTypeEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.SpecificDateScheduleDateTime;
 import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationException;
+import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.SchedulerInternalException;
 import org.cloudfoundry.autoscaler.scheduler.util.error.ValidationErrorResult;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.HttpStatusCodeException;
+import org.springframework.web.client.ResourceAccessException;
+import org.springframework.web.client.RestTemplate;
 
 /**
  * Service class to persist the schedule entity in the database and create
@@ -38,12 +45,19 @@ public class ScheduleManager {
 	private SpecificDateScheduleDao specificDateScheduleDao;
 	@Autowired
 	private RecurringScheduleDao recurringScheduleDao;
-    @Autowired
+	@Autowired
 	private ActiveScheduleDao activeScheduleDao;
 	@Autowired
 	private ScheduleJobManager scheduleJobManager;
 	@Autowired
+	private RestTemplate restTemplate;
+	@Autowired
 	private ValidationErrorResult validationErrorResult;
+	@Autowired
+	private MessageBundleResourceHelper messageBundleResourceHelper;
+
+	@Value("${autoscaler.scalingengine.url}")
+	private String scalingEngineUrl;
 
 	private Logger logger = LogManager.getLogger(this.getClass());
 
@@ -116,8 +130,7 @@ public class ScheduleManager {
 	 * @param applicationPolicy
 	 * @param scheduleEntity
 	 */
-	private void setUpSchedules(String appId, ApplicationSchedules applicationPolicy,
-			ScheduleEntity scheduleEntity) {
+	private void setUpSchedules(String appId, ApplicationSchedules applicationPolicy, ScheduleEntity scheduleEntity) {
 		scheduleEntity.setAppId(appId);
 		scheduleEntity.setTimeZone(applicationPolicy.getSchedules().getTimeZone());
 		scheduleEntity.setDefaultInstanceMinCount(applicationPolicy.getInstanceMinCount());
@@ -142,19 +155,16 @@ public class ScheduleManager {
 
 		// Validate the time zone
 		String timeZoneId = applicationPolicy.getSchedules().getTimeZone();
-		
 
 		// Boolean flag added since date time validations depend on the time zone
 		boolean isValidTimeZone = DataValidationHelper.isNotEmpty(timeZoneId);
 
 		if (!isValidTimeZone) {
-			validationErrorResult.addFieldError(applicationPolicy, "data.value.not.specified.timezone",
-					"timeZone");
+			validationErrorResult.addFieldError(applicationPolicy, "data.value.not.specified.timezone", "timeZone");
 		}
 
 		if (isValidTimeZone && !DataValidationHelper.isValidTimeZone(timeZoneId)) {
-			validationErrorResult.addFieldError(applicationPolicy, "data.invalid.timezone", "timeZone",
-					timeZoneId);
+			validationErrorResult.addFieldError(applicationPolicy, "data.invalid.timezone", "timeZone", timeZoneId);
 		}
 
 		// Validate the default minimum and maximum instance count
@@ -176,8 +186,7 @@ public class ScheduleManager {
 			}
 		} else {// No schedules found
 
-			validationErrorResult.addFieldError(applicationPolicy, "data.invalid.noSchedules",
-					"app_id=" + appId);
+			validationErrorResult.addFieldError(applicationPolicy, "data.invalid.noSchedules", "app_id=" + appId);
 
 		}
 
@@ -690,9 +699,9 @@ public class ScheduleManager {
 			scheduleJobManager.deleteJob(appId, recurringScheduleEntity.getId(), ScheduleTypeEnum.RECURRING);
 		}
 
-        // Delete all the active schedules for the application
-        deleteActiveSchedules(appId);
-    }
+		// Delete all the active schedules for the application
+		deleteActiveSchedules(appId);
+	}
 
 	private void deleteSpecificDateSchedule(SpecificDateScheduleEntity specificDateScheduleEntity) {
 		try {
@@ -715,16 +724,45 @@ public class ScheduleManager {
 		}
 	}
 
-    private void deleteActiveSchedules(String appId) {
-        try {
+	private void deleteActiveSchedules(String appId) {
+		try {
+			List<ActiveScheduleEntity> activeScheduleEntities = activeScheduleDao.findByAppId(appId);
 			logger.info("Delete active schedules for application: " + appId);
 			activeScheduleDao.deleteActiveSchedulesByAppId(appId);
-        } catch (DatabaseValidationException dve) {
-            validationErrorResult.addErrorForDatabaseValidationException(dve, "database.error.delete.failed",
-                    "app_id=" + appId);
-            throw new SchedulerInternalException("Database error", dve);
+			for (ActiveScheduleEntity activeScheduleEntity : activeScheduleEntities) {
 
-        }
-    }
+				notifyScalingEngine(activeScheduleEntity);
+
+			}
+		} catch (DatabaseValidationException dve) {
+			validationErrorResult.addErrorForDatabaseValidationException(dve, "database.error.delete.failed",
+					"app_id=" + appId);
+			throw new SchedulerInternalException("Database error", dve);
+
+		}
+	}
+
+	private void notifyScalingEngine(ActiveScheduleEntity activeScheduleEntity) {
+		String appId = activeScheduleEntity.getAppId();
+		long scheduleId = activeScheduleEntity.getId();
+		String scalingEnginePathActiveSchedule = ScalingEngineUtil.getScalingEngineActiveSchedulePath(scalingEngineUrl,
+				appId, scheduleId);
+		String message = messageBundleResourceHelper.lookupMessage("scalingengine.notification.activeschedule.remove",
+				appId, scheduleId);
+		logger.info(message);
+		try {
+			restTemplate.delete(scalingEnginePathActiveSchedule, activeScheduleEntity);
+		} catch (HttpStatusCodeException hce) {
+			String errorMessage = messageBundleResourceHelper.lookupMessage(
+					"scalingengine.notification.activeschedule.delete.failed", hce.getStatusCode(),
+					hce.getResponseBodyAsString(), appId, scheduleId);
+			logger.error(errorMessage, hce);
+		} catch (ResourceAccessException rae) {
+			String errorMessage = messageBundleResourceHelper.lookupMessage("scalingengine.notification.error",
+					rae.getMessage(), appId, scheduleId, "delete");
+			logger.error(errorMessage, rae);
+
+		}
+	}
 
 }

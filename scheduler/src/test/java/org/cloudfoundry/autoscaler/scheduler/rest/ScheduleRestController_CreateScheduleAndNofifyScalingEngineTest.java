@@ -21,7 +21,6 @@ import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationSchedules;
 import org.cloudfoundry.autoscaler.scheduler.util.ApplicationPolicyBuilder;
 import org.cloudfoundry.autoscaler.scheduler.util.EmbeddedTomcatUtil;
-import org.cloudfoundry.autoscaler.scheduler.util.JobActionEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.TestConfiguration;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataCleanupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
@@ -83,7 +82,7 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 	@Autowired
 	private RestTemplate restTemplate;
 
-	EmbeddedTomcatUtil embeddedTomcatUtil;
+	private EmbeddedTomcatUtil embeddedTomcatUtil;
 
 	@Before
 	@Transactional
@@ -151,8 +150,9 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 		Thread.sleep(TimeUnit.MINUTES.toMillis(1));
 
 		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
-		String expectedMessage = messageBundleResourceHelper.lookupMessage("scalingengine.notification.activeschedule.start",
-				startActiveScheduleEntity.getAppId(), startActiveScheduleEntity.getId(), JobActionEnum.START);
+		String expectedMessage = messageBundleResourceHelper.lookupMessage(
+				"scalingengine.notification.activeschedule.start", startActiveScheduleEntity.getAppId(),
+				startActiveScheduleEntity.getId());
 
 		assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), is(Level.INFO));
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
@@ -162,7 +162,7 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 
 		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 		expectedMessage = messageBundleResourceHelper.lookupMessage("scalingengine.notification.activeschedule.remove",
-				endActiveScheduleEntity.getAppId(), endActiveScheduleEntity.getId(), JobActionEnum.END);
+				endActiveScheduleEntity.getAppId(), endActiveScheduleEntity.getId());
 
 		assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), is(Level.INFO));
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));

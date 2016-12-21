@@ -20,6 +20,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.junit4.SpringRunner;
 
+import java.util.List;
+
 @RunWith(SpringRunner.class)
 @SpringBootTest
 @Transactional
@@ -40,12 +42,12 @@ public class ActiveScheduleDaoImplTest extends TestConfiguration {
 		testDataCleanupHelper.cleanupData();
 
 		// Add fake test records.
-		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		String appId = "appId_1";
 		Long scheduleId = 1L;
 		Long startJobIdentifier = 1L;
 		insertActiveSchedule(appId, scheduleId, 1, 5, 0, startJobIdentifier);
 
-		appId = TestDataSetupHelper.generateAppIds(1)[0];
+		appId = "appId_2";
 		scheduleId = 2L;
 		startJobIdentifier = 2L;
 		insertActiveSchedule(appId, scheduleId, 2, 7, 3, startJobIdentifier);
@@ -132,6 +134,20 @@ public class ActiveScheduleDaoImplTest extends TestConfiguration {
 
 		assertThat("It should have no active schedules", getActiveSchedulesCountByAppId(appId), is(0L));
 
+	}
+
+	@Test
+	public void testFindActiveScheduleByAppId() {
+		String appId = "appId_1";
+		List<ActiveScheduleEntity> activeScheduleEntities = activeScheduleDao.findByAppId(appId);
+		assertThat("It should have one active schedule", activeScheduleEntities.size(), is(1));
+	}
+
+	@Test
+	public void testFindActiveScheduleByAppId_with_invalidAppId() {
+		String appId = "invalid_appId";
+		List<ActiveScheduleEntity> activeScheduleEntities = activeScheduleDao.findByAppId(appId);
+		assertThat("It should have no active schedule", activeScheduleEntities.size(), is(0));
 	}
 
 	private void insertActiveSchedule(String appId, Long scheduleId, int instanceMinCount, int instanceMaxCount,

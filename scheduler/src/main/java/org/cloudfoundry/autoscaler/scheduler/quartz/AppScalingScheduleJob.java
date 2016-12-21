@@ -7,6 +7,7 @@ import org.apache.logging.log4j.Logger;
 import org.cloudfoundry.autoscaler.scheduler.dao.ActiveScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.util.JobActionEnum;
+import org.cloudfoundry.autoscaler.scheduler.util.ScalingEngineUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
 import org.quartz.JobDataMap;
@@ -60,17 +61,17 @@ public abstract class AppScalingScheduleJob extends QuartzJobBean {
 		HttpEntity<ActiveScheduleEntity> requestEntity = new HttpEntity<>(activeScheduleEntity);
 
 		try {
-			String scalingEnginePathActiveSchedule = scalingEngineUrl + "/v1/apps/" + appId + "/active_schedules/"
-					+ scheduleId;
+			String scalingEnginePathActiveSchedule = ScalingEngineUtil
+					.getScalingEngineActiveSchedulePath(scalingEngineUrl, appId, scheduleId);
 
 			if (scalingAction == JobActionEnum.START) {
-				String message = messageBundleResourceHelper.lookupMessage(
-						"scalingengine.notification.activeschedule.start", appId, scheduleId, scalingAction);
+				String message = messageBundleResourceHelper
+						.lookupMessage("scalingengine.notification.activeschedule.start", appId, scheduleId);
 				logger.info(message);
 				restTemplate.put(scalingEnginePathActiveSchedule, requestEntity);
 			} else {
-				String message = messageBundleResourceHelper.lookupMessage(
-						"scalingengine.notification.activeschedule.remove", appId, scheduleId, scalingAction);
+				String message = messageBundleResourceHelper
+						.lookupMessage("scalingengine.notification.activeschedule.remove", appId, scheduleId);
 				logger.info(message);
 				restTemplate.delete(scalingEnginePathActiveSchedule, requestEntity);
 			}
