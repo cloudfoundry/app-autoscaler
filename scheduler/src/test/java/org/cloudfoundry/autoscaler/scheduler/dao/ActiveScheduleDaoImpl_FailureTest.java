@@ -74,4 +74,15 @@ public class ActiveScheduleDaoImpl_FailureTest extends TestConfiguration {
 		}
 	}
 
+	@Test
+	public void testFindActiveScheduleByAppId_throw_DatabaseValidationException() throws SQLException {
+		String appId = "appId_1";
+		try {
+			activeScheduleDao.findByAppId(appId);
+			fail("Should fail");
+		} catch (DatabaseValidationException dve) {
+			assertThat(dve.getMessage(), is("Select active schedules by Application Id:" + appId + " failed"));
+		}
+	}
+
 }
