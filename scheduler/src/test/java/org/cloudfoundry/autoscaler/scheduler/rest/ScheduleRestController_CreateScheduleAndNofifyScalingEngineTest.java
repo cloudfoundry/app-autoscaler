@@ -154,8 +154,8 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 				"scalingengine.notification.activeschedule.start", startActiveScheduleEntity.getAppId(),
 				startActiveScheduleEntity.getId());
 
-		assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), is(Level.INFO));
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
+		assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), is(Level.INFO));
 
 		// Assert END Job successful message
 		Thread.sleep(TimeUnit.MINUTES.toMillis(1));
@@ -164,8 +164,8 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 		expectedMessage = messageBundleResourceHelper.lookupMessage("scalingengine.notification.activeschedule.remove",
 				endActiveScheduleEntity.getAppId(), endActiveScheduleEntity.getId());
 
-		assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), is(Level.INFO));
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
+		assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), is(Level.INFO));
 
 	}
 

@@ -116,6 +116,7 @@
             <disableXmlReport>true</disableXmlReport>
             <redirectTestOutputToFile>true</redirectTestOutputToFile>
 		    <runOrder>random</runOrder>
+			  <reuseForks>false</reuseForks>
           </configuration>
         </plugin>
 	  </plugins>
