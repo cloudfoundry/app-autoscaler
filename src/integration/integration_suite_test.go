@@ -3,6 +3,7 @@ package integration_test
 import (
 	"autoscaler/cf"
 	"autoscaler/db"
+	"autoscaler/models"
 	"bytes"
 	. "integration"
 
@@ -52,6 +53,7 @@ var (
 	brokerAuth               string
 	dbUrl                    string
 	ccNOAAUAARegPath         = regexp.MustCompile(`^/apps/.*/containermetrics$`)
+	appInstanceRegPath       = regexp.MustCompile(`^/v2/apps/.*$`)
 	dbHelper                 *sql.DB
 	fakeScheduler            *ghttp.Server
 	fakeScalingEngine        *ghttp.Server
@@ -60,7 +62,13 @@ var (
 	schedulerProcess         ifrit.Process
 
 	brokerApiHttpRequestTimeout    time.Duration = 1 * time.Second
-	apiSchedulerHttpRequestTimeout time.Duration = 5000 * time.Millisecond
+	apiSchedulerHttpRequestTimeout time.Duration = 5 * time.Second
+
+	pollInterval              time.Duration = 1 * time.Second
+	refreshInterval           time.Duration = 1 * time.Second
+	aggregatorExecuteInterval time.Duration = 1 * time.Second
+	policyPollerInterval      time.Duration = 1 * time.Second
+	evaluationManagerInterval time.Duration = 1 * time.Second
 
 	httpClient *http.Client
 	logger     lager.Logger
@@ -131,6 +139,7 @@ func CompileTestedExecutables() Executables {
 	builtExecutables[APIServer] = path.Join(rootDir, "api/index.js")
 	builtExecutables[ServiceBroker] = path.Join(rootDir, "servicebroker/lib/index.js")
 	builtExecutables[Scheduler] = path.Join(rootDir, "scheduler/target/scheduler-1.0-SNAPSHOT.war")
+
 	builtExecutables[EventGenerator], err = gexec.BuildIn(os.Getenv("GOPATH"), "autoscaler/eventgenerator/cmd/eventgenerator", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
@@ -288,6 +297,31 @@ func clearDatabase() {
 
 	_, err = dbHelper.Exec("DELETE FROM app_scaling_specific_date_schedule")
 	Expect(err).NotTo(HaveOccurred())
+
+	_, err = dbHelper.Exec("DELETE FROM scalinghistory")
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = dbHelper.Exec("DELETE FROM app_metric")
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = dbHelper.Exec("DELETE FROM appinstancemetrics")
+	Expect(err).NotTo(HaveOccurred())
+}
+func insertPolicy(appId string, scalingPolicy models.ScalingPolicy) {
+
+	query := "INSERT INTO policy_json(app_id, policy_json) VALUES($1, $2)"
+	policyBytes, err := json.Marshal(scalingPolicy)
+	Expect(err).NotTo(HaveOccurred())
+	_, err = dbHelper.Exec(query, appId, string(policyBytes))
+	Expect(err).NotTo(HaveOccurred())
+
+}
+func getScalingHistoryCount(appId string, oldInstanceCount int, newInstanceCount int) int {
+	var count int
+	query := "SELECT COUNT(*) FROM scalinghistory WHERE appid=$1 AND oldinstances=$2 AND newinstances=$3"
+	err := dbHelper.QueryRow(query, appId, oldInstanceCount, newInstanceCount).Scan(&count)
+	Expect(err).NotTo(HaveOccurred())
+	return count
 }
 
 type GetResponse func(id string) (*http.Response, error)
@@ -318,23 +352,22 @@ func checkSchedule(getResponse GetResponse, id string, expectHttpStatus int, exp
 	resp.Body.Close()
 }
 
-func startFakeCCNOAAUAA() {
+func startFakeCCNOAAUAA(appId string, instanceCount int) {
 	fakeCCNOAAUAA = ghttp.NewServer()
 	fakeCCNOAAUAA.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
 		cf.Endpoints{
 			AuthEndpoint:    fakeCCNOAAUAA.URL(),
 			DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
 		}))
+	fakeCCNOAAUAA.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))
 
-	fakeCCNOAAUAA.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK,
-		cf.Tokens{}))
+	fakeCCNOAAUAA.RouteToHandler("GET", appInstanceRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
+		models.AppInfo{Entity: models.AppEntity{Instances: instanceCount}}))
+	fakeCCNOAAUAA.RouteToHandler("PUT", appInstanceRegPath, ghttp.RespondWith(http.StatusCreated, ""))
 
-	message1 := marshalMessage(createContainerMetric("an-app-id", 0, 3.0, 1024, 2048, 0))
-	message2 := marshalMessage(createContainerMetric("an-app-id", 1, 4.0, 1024, 2048, 0))
-	message3 := marshalMessage(createContainerMetric("an-app-id", 2, 5.0, 1024, 2048, 0))
+}
 
-	messages := map[string][][]byte{}
-	messages["an-app-id"] = [][]byte{message1, message2, message3}
+func fakeMetrics(appId string, memoryValue uint64) {
 
 	eLock = &sync.Mutex{}
 	fakeCCNOAAUAA.RouteToHandler("GET", ccNOAAUAARegPath,
@@ -350,10 +383,16 @@ func startFakeCCNOAAUAA() {
 			mp := multipart.NewWriter(rw)
 			defer mp.Close()
 
-			guid := "some-process-guid"
+			guid := appId
 
 			rw.Header().Set("Content-Type", `multipart/x-protobuf; boundary=`+mp.Boundary())
+			timestamp := time.Now().UnixNano()
+			message1 := marshalMessage(createContainerMetric(appId, 0, 3.0, memoryValue, 2048, timestamp))
+			message2 := marshalMessage(createContainerMetric(appId, 1, 4.0, memoryValue, 2048, timestamp))
+			message3 := marshalMessage(createContainerMetric(appId, 2, 5.0, memoryValue, 2048, timestamp))
 
+			messages := map[string][][]byte{}
+			messages[appId] = [][]byte{message1, message2, message3}
 			for _, msg := range messages[guid] {
 				partWriter, _ := mp.CreatePart(nil)
 				partWriter.Write(msg)
@@ -361,7 +400,6 @@ func startFakeCCNOAAUAA() {
 		},
 	)
 }
-
 func createContainerMetric(appId string, instanceIndex int32, cpuPercentage float64, memoryBytes uint64, diskByte uint64, timestamp int64) *events.Envelope {
 	if timestamp == 0 {
 		timestamp = time.Now().UnixNano()

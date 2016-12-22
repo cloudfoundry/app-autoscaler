@@ -227,7 +227,7 @@ autoscaler.scalingengine.url=%s
 	return cfgFile.Name()
 }
 
-func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port int, ccNOAAUAAUrl string, cfGrantTypePassword string, tmpDir string) string {
+func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port int, ccNOAAUAAUrl string, cfGrantTypePassword string, pollInterval time.Duration, refreshInterval time.Duration, tmpDir string) string {
 	cfg := mcConfig.Config{
 		Cf: cf.CfConfig{
 			Api:       ccNOAAUAAUrl,
@@ -251,15 +251,15 @@ func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port i
 			PolicyDbUrl:          dbUri,
 		},
 		Collector: mcConfig.CollectorConfig{
-			PollInterval:    10,
-			RefreshInterval: 30,
+			PollInterval:    pollInterval,
+			RefreshInterval: refreshInterval,
 		},
 	}
 
 	return writeYmlConfig(tmpDir, MetricsCollector, &cfg)
 }
 
-func (components *Components) PrepareEventGeneratorConfig(dbUri string, port int, metricsCollectorUrl string, scalingEngineUrl string, tmpDir string) string {
+func (components *Components) PrepareEventGeneratorConfig(dbUri string, port int, metricsCollectorUrl string, scalingEngineUrl string, aggregatorExecuteInterval time.Duration, policyPollerInterval time.Duration, evaluationManagerInterval time.Duration, tmpDir string) string {
 	conf := &egConfig.Config{
 		Server: egConfig.ServerConfig{
 			Port: port,
@@ -268,13 +268,13 @@ func (components *Components) PrepareEventGeneratorConfig(dbUri string, port int
 			Level: "debug",
 		},
 		Aggregator: egConfig.AggregatorConfig{
-			AggregatorExecuteInterval: 1 * time.Second,
-			PolicyPollerInterval:      1 * time.Second,
+			AggregatorExecuteInterval: aggregatorExecuteInterval,
+			PolicyPollerInterval:      policyPollerInterval,
 			MetricPollerCount:         1,
 			AppMonitorChannelSize:     1,
 		},
 		Evaluator: egConfig.EvaluatorConfig{
-			EvaluationManagerInterval: 1 * time.Second,
+			EvaluationManagerInterval: evaluationManagerInterval,
 			EvaluatorCount:            1,
 			TriggerArrayChannelSize:   1,
 		},
