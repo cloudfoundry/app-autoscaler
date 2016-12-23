@@ -1,8 +1,12 @@
 package org.cloudfoundry.autoscaler.scheduler.util;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
@@ -67,22 +71,32 @@ public class DataValidationHelper {
 	 * @return
 	 */
 	public static boolean isDateTimeAfterNow(Date dateTime, TimeZone timeZone) {
-		Date convertedToLocalTime = DateHelper.getDateWithZoneOffset(dateTime, timeZone);
-		Date now = new Date();
-		return convertedToLocalTime.after(now);
+		ZoneId policyZoneId = timeZone.toZoneId();
+		ZonedDateTime policyZonedDateTime = getPolicyZonedDateTime(dateTime, policyZoneId);
+
+		ZonedDateTime policyZonedDateTimeNow = ZonedDateTime.now(policyZoneId);
+
+		return policyZonedDateTime.isAfter(policyZonedDateTimeNow);
 	}
 
-	public static boolean isDateAfterOrEqualsNow(Date date, TimeZone policyTimeZone) {
-		Date compareTo = DateHelper.getDateWithZoneOffset(date, policyTimeZone);
+	public static boolean isDateAfterOrEqualsNow(Date date, TimeZone timeZone) {
+		ZoneId policyZoneId = timeZone.toZoneId();
+		LocalDate policyLocalDate = getPolicyZonedDateTime(date, policyZoneId).toLocalDate();
+		LocalDate localDateNow = LocalDate.now(policyZoneId);
 
-		Calendar calNow = Calendar.getInstance();
-		calNow.set(Calendar.HOUR_OF_DAY, 0);
-		calNow.set(Calendar.MINUTE, 0);
-		calNow.set(Calendar.SECOND, 0);
-		calNow.set(Calendar.MILLISECOND, 0);
-		Date now = DateHelper.getDateWithZoneOffset(calNow.getTime(), policyTimeZone);
+		return !policyLocalDate.isBefore(localDateNow);
 
-		return (compareTo.compareTo(now) >= 0);
+	}
+
+	private static ZonedDateTime getPolicyZonedDateTime(Date dateTime, ZoneId policyZone) {
+		ZoneOffset offsetForPolicyZone = policyZone.getRules().getOffset(Instant.now());
+		ZoneOffset offsetForSystemZone = ZoneId.systemDefault().getRules().getOffset(Instant.now());
+
+		long epochGMTSeconds = dateTime.getTime() / 1000 + offsetForSystemZone.getTotalSeconds()
+				- offsetForPolicyZone.getTotalSeconds();
+		Instant i = Instant.ofEpochSecond((epochGMTSeconds));
+
+		return ZonedDateTime.ofInstant(i, policyZone);
 	}
 
 	/**
@@ -94,7 +108,7 @@ public class DataValidationHelper {
 	 */
 	public static boolean isAfter(Date endDateTime, Date startDateTime) {
 		if (isNotNull(endDateTime) && isNotNull(startDateTime)) {
-			return  endDateTime.after(startDateTime);
+			return endDateTime.after(startDateTime);
 		}
 		return false;
 

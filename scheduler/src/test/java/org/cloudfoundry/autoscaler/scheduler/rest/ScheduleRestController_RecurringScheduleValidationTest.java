@@ -821,6 +821,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 	}
 
 	private void assertResponseStatusEquals(ResultActions resultActions, ResultMatcher status) throws Exception {
+		resultActions.andExpect(content().string(""));
 		resultActions.andExpect(status);
 	}
 

@@ -3,6 +3,8 @@ package org.cloudfoundry.autoscaler.scheduler.util;
 import java.sql.Time;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -39,7 +41,7 @@ public class TestDataSetupHelper {
 	private static Logger logger = LogManager.getLogger(clazz);
 
 	private static List<String> genAppIds = new ArrayList<>();
-	private static String timeZone = DateHelper.supportedTimezones[81];
+	private static String timeZone = "GMT";
 
 	private static String currentStartDateTime = getCurrentDateOrTime(5, DateHelper.DATE_TIME_FORMAT, getTimeZone());
 	private static String currentEndDateTime = getCurrentDateOrTime(6, DateHelper.DATE_TIME_FORMAT, getTimeZone());
@@ -214,13 +216,9 @@ public class TestDataSetupHelper {
 	}
 
 	public static Date addDaysToNow(int afterDays) {
-		Calendar calNow = Calendar.getInstance();
-		calNow.add(Calendar.DAY_OF_MONTH, afterDays);
-		calNow.set(Calendar.HOUR_OF_DAY, 0);
-		calNow.set(Calendar.MINUTE, 0);
-		calNow.set(Calendar.SECOND, 0);
-		calNow.set(Calendar.MILLISECOND, 0);
-		return calNow.getTime();
+		LocalDate localDate = LocalDate.now(TimeZone.getTimeZone(getTimeZone()).toZoneId());
+		localDate.plusDays(afterDays);
+		return Date.from(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant());
 	}
 
 	public static int convertIntToCalendarDayOfWeek(int dayOfWeek) {

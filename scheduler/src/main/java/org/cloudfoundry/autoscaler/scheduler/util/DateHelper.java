@@ -1,8 +1,10 @@
 package org.cloudfoundry.autoscaler.scheduler.util;
 
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.TimeZone;
 
@@ -602,9 +604,21 @@ public class DateHelper {
 	           "Pacific/Kiritimati"};
 
 	public static Date getDateWithZoneOffset(Date dateTime, TimeZone timeZone) {
-		LocalDateTime local = LocalDateTime.ofInstant(dateTime.toInstant(), ZoneId.systemDefault());
+		ZoneId zoneId = timeZone.toZoneId();
+		ZonedDateTime zonedDateTime = getPolicyZonedDateTime(dateTime, zoneId);
 
-		return Date.from(local.atZone(timeZone.toZoneId()).toInstant());
+		return Date.from(zonedDateTime.toInstant());
+	}
+
+	static ZonedDateTime getPolicyZonedDateTime(Date dateTime, ZoneId policyZone) {
+		ZoneOffset offsetForPolicyZone = policyZone.getRules().getOffset(dateTime.toInstant());
+		ZoneOffset offsetForSystemZone = ZoneId.systemDefault().getRules().getOffset(dateTime.toInstant());
+
+		long epochGMTSeconds = dateTime.getTime() / 1000 + offsetForSystemZone.getTotalSeconds()
+				- offsetForPolicyZone.getTotalSeconds();
+		Instant instant = Instant.ofEpochSecond((epochGMTSeconds));
+
+		return ZonedDateTime.ofInstant(instant, policyZone);
 	}
 
 	public static String convertDateToString(Date date) {
