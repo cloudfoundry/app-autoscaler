@@ -1,55 +1,74 @@
 package integration_test
 
 import (
+	"autoscaler/cf"
 	"autoscaler/db"
+	"autoscaler/models"
 	"bytes"
 	. "integration"
 
+	"code.cloudfoundry.org/cfhttp"
+	"code.cloudfoundry.org/lager"
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-	"os"
-	"path"
-	"strconv"
-	"strings"
-	"testing"
-	"time"
-
-	"code.cloudfoundry.org/cfhttp"
-	"code.cloudfoundry.org/lager"
+	"github.com/cloudfoundry/sonde-go/events"
+	"github.com/gogo/protobuf/proto"
 	_ "github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/ginkgomon"
 	"github.com/tedsuo/ifrit/grouper"
+	"io/ioutil"
+	"log"
+	"mime/multipart"
+	"net/http"
+	"os"
+	"path"
+	"regexp"
+	"strconv"
+	"strings"
+	"sync"
+	"testing"
+	"time"
 )
 
 var (
-	components Components
-	tmpDir     string
-
-	plumbing              ifrit.Process
-	serviceBrokerConfPath string
-	apiServerConfPath     string
-	schedulerConfPath     string
-	brokerUserName        string = "username"
-	brokerPassword        string = "password"
-	brokerAuth            string
-	dbUrl                 string
-
-	dbHelper          *sql.DB
-	fakeScheduler     *ghttp.Server
-	fakeScalingEngine *ghttp.Server
-	processMap        map[string]ifrit.Process = map[string]ifrit.Process{}
-	schedulerProcess  ifrit.Process
+	components               Components
+	tmpDir                   string
+	isTokenExpired           bool
+	eLock                    *sync.Mutex
+	plumbing                 ifrit.Process
+	serviceBrokerConfPath    string
+	apiServerConfPath        string
+	schedulerConfPath        string
+	metricsCollectorConfPath string
+	eventGeneratorConfPath   string
+	scalingEngineConfPath    string
+	brokerUserName           string = "username"
+	brokerPassword           string = "password"
+	brokerAuth               string
+	dbUrl                    string
+	ccNOAAUAARegPath         = regexp.MustCompile(`^/apps/.*/containermetrics$`)
+	appInstanceRegPath       = regexp.MustCompile(`^/v2/apps/.*$`)
+	dbHelper                 *sql.DB
+	fakeScheduler            *ghttp.Server
+	fakeScalingEngine        *ghttp.Server
+	fakeCCNOAAUAA            *ghttp.Server
+	processMap               map[string]ifrit.Process = map[string]ifrit.Process{}
+	schedulerProcess         ifrit.Process
 
 	brokerApiHttpRequestTimeout    time.Duration = 1 * time.Second
 	apiSchedulerHttpRequestTimeout time.Duration = 5 * time.Second
+
+	pollInterval              time.Duration = 1 * time.Second
+	refreshInterval           time.Duration = 1 * time.Second
+	aggregatorExecuteInterval time.Duration = 1 * time.Second
+	policyPollerInterval      time.Duration = 1 * time.Second
+	evaluationManagerInterval time.Duration = 1 * time.Second
 
 	httpClient *http.Client
 	logger     lager.Logger
@@ -82,9 +101,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	Expect(err).NotTo(HaveOccurred())
 
 	fakeScalingEngine = ghttp.NewServer()
-	schedulerConfPath = prepareSchedulerConfig(dbUrl, fakeScalingEngine.URL())
+	schedulerConfPath = components.PrepareSchedulerConfig(dbUrl, fakeScalingEngine.URL(), tmpDir)
 	schedulerProcess = startScheduler()
-
 	return payload
 }, func(encodedBuiltArtifacts []byte) {
 	err := json.Unmarshal(encodedBuiltArtifacts, &components)
@@ -117,19 +135,31 @@ var _ = BeforeEach(func() {
 func CompileTestedExecutables() Executables {
 	builtExecutables := Executables{}
 	rootDir := os.Getenv("GOPATH")
-
+	var err error
 	builtExecutables[APIServer] = path.Join(rootDir, "api/index.js")
 	builtExecutables[ServiceBroker] = path.Join(rootDir, "servicebroker/lib/index.js")
 	builtExecutables[Scheduler] = path.Join(rootDir, "scheduler/target/scheduler-1.0-SNAPSHOT.war")
+
+	builtExecutables[EventGenerator], err = gexec.BuildIn(os.Getenv("GOPATH"), "autoscaler/eventgenerator/cmd/eventgenerator", "-race")
+	Expect(err).NotTo(HaveOccurred())
+
+	builtExecutables[MetricsCollector], err = gexec.BuildIn(os.Getenv("GOPATH"), "autoscaler/metricscollector/cmd/metricscollector", "-race")
+	Expect(err).NotTo(HaveOccurred())
+
+	builtExecutables[ScalingEngine], err = gexec.BuildIn(os.Getenv("GOPATH"), "autoscaler/scalingengine/cmd/scalingengine", "-race")
+	Expect(err).NotTo(HaveOccurred())
 
 	return builtExecutables
 }
 
 func PreparePorts() Ports {
 	return Ports{
-		APIServer:     10000 + GinkgoParallelNode(),
-		ServiceBroker: 11000 + GinkgoParallelNode(),
-		Scheduler:     12000,
+		APIServer:        10000 + GinkgoParallelNode(),
+		ServiceBroker:    11000 + GinkgoParallelNode(),
+		Scheduler:        12000,
+		MetricsCollector: 13000 + GinkgoParallelNode(),
+		EventGenerator:   14000 + GinkgoParallelNode(),
+		ScalingEngine:    15000 + GinkgoParallelNode(),
 	}
 }
 
@@ -144,10 +174,26 @@ func startServiceBroker() {
 		{ServiceBroker, components.ServiceBroker(serviceBrokerConfPath)},
 	}))
 }
+
 func startScheduler() ifrit.Process {
 	return ginkgomon.Invoke(components.Scheduler(schedulerConfPath))
 }
 
+func startMetricsCollector() {
+	processMap[MetricsCollector] = ginkgomon.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
+		{MetricsCollector, components.MetricsCollector(metricsCollectorConfPath)},
+	}))
+}
+func startEventGenerator() {
+	processMap[EventGenerator] = ginkgomon.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
+		{EventGenerator, components.EventGenerator(eventGeneratorConfPath)},
+	}))
+}
+func startScalingEngine() {
+	processMap[ScalingEngine] = ginkgomon.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
+		{ScalingEngine, components.ScalingEngine(scalingEngineConfPath)},
+	}))
+}
 func stopApiServer() {
 	ginkgomon.Interrupt(processMap[APIServer], 5*time.Second)
 }
@@ -159,81 +205,6 @@ func stopAll() {
 		}
 		ginkgomon.Interrupt(process, 5*time.Second)
 	}
-}
-
-func prepareServiceBrokerConfig(port int, username string, password string, dbUri string, apiServerUri string) string {
-	brokerConfig := ServiceBrokerConfig{
-		Port:     port,
-		Username: username,
-		Password: password,
-		DB: DBConfig{
-			URI:            dbUri,
-			MinConnections: 1,
-			MaxConnections: 10,
-			IdleTimeout:    1000,
-		},
-		APIServerUri:       apiServerUri,
-		HttpRequestTimeout: int(brokerApiHttpRequestTimeout / time.Millisecond),
-	}
-
-	cfgFile, err := ioutil.TempFile(tmpDir, ServiceBroker)
-	w := json.NewEncoder(cfgFile)
-	err = w.Encode(brokerConfig)
-	Expect(err).NotTo(HaveOccurred())
-	cfgFile.Close()
-	return cfgFile.Name()
-}
-
-func prepareApiServerConfig(port int, dbUri string, schedulerUri string) string {
-	apiConfig := APIServerConfig{
-		Port: port,
-
-		DB: DBConfig{
-			URI:            dbUri,
-			MinConnections: 1,
-			MaxConnections: 10,
-			IdleTimeout:    1000,
-		},
-
-		SchedulerUri: schedulerUri,
-	}
-
-	cfgFile, err := ioutil.TempFile(tmpDir, APIServer)
-	w := json.NewEncoder(cfgFile)
-	err = w.Encode(apiConfig)
-	Expect(err).NotTo(HaveOccurred())
-	cfgFile.Close()
-	return cfgFile.Name()
-}
-
-func prepareSchedulerConfig(dbUri string, scalingEngineUri string) string {
-	dbUrl, _ := url.Parse(dbUri)
-	scheme := dbUrl.Scheme
-	host := dbUrl.Host
-	path := dbUrl.Path
-	userInfo := dbUrl.User
-	userName := userInfo.Username()
-	password, _ := userInfo.Password()
-	jdbcDBUri := fmt.Sprintf("jdbc:%s://%s%s", scheme, host, path)
-	settingStrTemplate := `
-#datasource for application and quartz
-spring.datasource.driverClassName=org.postgresql.Driver
-spring.datasource.url=%s
-spring.datasource.username=%s
-spring.datasource.password=%s
-#quartz job
-scalingenginejob.reschedule.interval.millisecond=10000
-scalingenginejob.reschedule.maxcount=6
-scalingengine.notification.reschedule.maxcount=3
-# scaling engine url
-autoscaler.scalingengine.url=%s
-  `
-	settingJonsStr := fmt.Sprintf(settingStrTemplate, jdbcDBUri, userName, password, scalingEngineUri)
-	cfgFile, err := ioutil.TempFile(tmpDir, Scheduler)
-	Expect(err).NotTo(HaveOccurred())
-	ioutil.WriteFile(cfgFile.Name(), []byte(settingJonsStr), 0777)
-	cfgFile.Close()
-	return cfgFile.Name()
 }
 
 func getRandomId() string {
@@ -304,11 +275,13 @@ func getSchedules(appId string) (*http.Response, error) {
 	req.Header.Set("Content-Type", "application/json")
 	return httpClient.Do(req)
 }
+
 func readPolicyFromFile(filename string) []byte {
 	content, err := ioutil.ReadFile(filename)
 	Expect(err).NotTo(HaveOccurred())
 	return content
 }
+
 func clearDatabase() {
 	_, err := dbHelper.Exec("DELETE FROM policy_json")
 	Expect(err).NotTo(HaveOccurred())
@@ -324,6 +297,31 @@ func clearDatabase() {
 
 	_, err = dbHelper.Exec("DELETE FROM app_scaling_specific_date_schedule")
 	Expect(err).NotTo(HaveOccurred())
+
+	_, err = dbHelper.Exec("DELETE FROM scalinghistory")
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = dbHelper.Exec("DELETE FROM app_metric")
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = dbHelper.Exec("DELETE FROM appinstancemetrics")
+	Expect(err).NotTo(HaveOccurred())
+}
+func insertPolicy(appId string, scalingPolicy models.ScalingPolicy) {
+
+	query := "INSERT INTO policy_json(app_id, policy_json) VALUES($1, $2)"
+	policyBytes, err := json.Marshal(scalingPolicy)
+	Expect(err).NotTo(HaveOccurred())
+	_, err = dbHelper.Exec(query, appId, string(policyBytes))
+	Expect(err).NotTo(HaveOccurred())
+
+}
+func getScalingHistoryCount(appId string, oldInstanceCount int, newInstanceCount int) int {
+	var count int
+	query := "SELECT COUNT(*) FROM scalinghistory WHERE appid=$1 AND oldinstances=$2 AND newinstances=$3"
+	err := dbHelper.QueryRow(query, appId, oldInstanceCount, newInstanceCount).Scan(&count)
+	Expect(err).NotTo(HaveOccurred())
+	return count
 }
 
 type GetResponse func(id string) (*http.Response, error)
@@ -352,4 +350,82 @@ func checkSchedule(getResponse GetResponse, id string, expectHttpStatus int, exp
 	Expect(len(specificDate)).To(Equal(expectResponseMap["specific_date"]))
 	Expect(len(recurring)).To(Equal(expectResponseMap["recurring_schedule"]))
 	resp.Body.Close()
+}
+
+func startFakeCCNOAAUAA(appId string, instanceCount int) {
+	fakeCCNOAAUAA = ghttp.NewServer()
+	fakeCCNOAAUAA.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
+		cf.Endpoints{
+			AuthEndpoint:    fakeCCNOAAUAA.URL(),
+			DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
+		}))
+	fakeCCNOAAUAA.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))
+
+	fakeCCNOAAUAA.RouteToHandler("GET", appInstanceRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
+		models.AppInfo{Entity: models.AppEntity{Instances: instanceCount}}))
+	fakeCCNOAAUAA.RouteToHandler("PUT", appInstanceRegPath, ghttp.RespondWith(http.StatusCreated, ""))
+
+}
+
+func fakeMetrics(appId string, memoryValue uint64) {
+
+	eLock = &sync.Mutex{}
+	fakeCCNOAAUAA.RouteToHandler("GET", ccNOAAUAARegPath,
+		func(rw http.ResponseWriter, r *http.Request) {
+			eLock.Lock()
+			defer eLock.Unlock()
+			if isTokenExpired {
+				isTokenExpired = false
+				rw.WriteHeader(http.StatusUnauthorized)
+				return
+			}
+
+			mp := multipart.NewWriter(rw)
+			defer mp.Close()
+
+			guid := appId
+
+			rw.Header().Set("Content-Type", `multipart/x-protobuf; boundary=`+mp.Boundary())
+			timestamp := time.Now().UnixNano()
+			message1 := marshalMessage(createContainerMetric(appId, 0, 3.0, memoryValue, 2048, timestamp))
+			message2 := marshalMessage(createContainerMetric(appId, 1, 4.0, memoryValue, 2048, timestamp))
+			message3 := marshalMessage(createContainerMetric(appId, 2, 5.0, memoryValue, 2048, timestamp))
+
+			messages := map[string][][]byte{}
+			messages[appId] = [][]byte{message1, message2, message3}
+			for _, msg := range messages[guid] {
+				partWriter, _ := mp.CreatePart(nil)
+				partWriter.Write(msg)
+			}
+		},
+	)
+}
+func createContainerMetric(appId string, instanceIndex int32, cpuPercentage float64, memoryBytes uint64, diskByte uint64, timestamp int64) *events.Envelope {
+	if timestamp == 0 {
+		timestamp = time.Now().UnixNano()
+	}
+
+	cm := &events.ContainerMetric{
+		ApplicationId: proto.String(appId),
+		InstanceIndex: proto.Int32(instanceIndex),
+		CpuPercentage: proto.Float64(cpuPercentage),
+		MemoryBytes:   proto.Uint64(memoryBytes),
+		DiskBytes:     proto.Uint64(diskByte),
+	}
+
+	return &events.Envelope{
+		ContainerMetric: cm,
+		EventType:       events.Envelope_ContainerMetric.Enum(),
+		Origin:          proto.String("fake-origin-1"),
+		Timestamp:       proto.Int64(timestamp),
+	}
+}
+
+func marshalMessage(message *events.Envelope) []byte {
+	data, err := proto.Marshal(message)
+	if err != nil {
+		log.Println(err.Error())
+	}
+
+	return data
 }

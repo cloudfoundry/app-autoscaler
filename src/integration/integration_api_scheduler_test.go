@@ -20,7 +20,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 
 	BeforeEach(func() {
 		httpClient.Timeout = apiSchedulerHttpRequestTimeout
-		apiServerConfPath = prepareApiServerConfig(components.Ports[APIServer], dbUrl, fmt.Sprintf("http://127.0.0.1:%d", components.Ports[Scheduler]))
+		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], dbUrl, fmt.Sprintf("http://127.0.0.1:%d", components.Ports[Scheduler]), tmpDir)
 		startApiServer()
 		appId = getRandomId()
 		resp, err := detachPolicy(appId)
