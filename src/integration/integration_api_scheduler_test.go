@@ -24,8 +24,8 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 		startApiServer()
 		appId = getRandomId()
 		resp, err := detachPolicy(appId)
-		resp.Body.Close()
 		Expect(err).NotTo(HaveOccurred())
+		resp.Body.Close()
 	})
 
 	AfterEach(func() {
