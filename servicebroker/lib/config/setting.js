@@ -24,18 +24,19 @@ module.exports = function(settingsObj) {
     username: settingsObj.username,
     password: settingsObj.password,
     apiServerUri: apiServer(settingsObj.apiServerUri),
-    httpRequestTimeout: settingsObj.httpRequestTimeout
+    httpRequestTimeout: settingsObj.httpRequestTimeout,
+    tls: settingsObj.tls
   };
   if (settingsObj.db) {
     var dbObj = db(settingsObj.db.uri);
     settings.db = {
-        maxConnections: settingsObj.db.maxConnections,
-        minConnections: settingsObj.db.minConnections,
-        idleTimeout: settingsObj.db.idleTimeout,
-        uri: dbObj.uri,
-        name: dbObj.name,
-        server: dbObj.server
-      }
+      maxConnections: settingsObj.db.maxConnections,
+      minConnections: settingsObj.db.minConnections,
+      idleTimeout: settingsObj.db.idleTimeout,
+      uri: dbObj.uri,
+      name: dbObj.name,
+      server: dbObj.server
+    }
 
   }
 
@@ -83,6 +84,22 @@ module.exports = function(settingsObj) {
     if (settings.httpRequestTimeout < 0) {
       return { valid: false, message: "The value of httpRequestTimeout must be greater than 0" };
     }
+    if (!settings.tls) {
+      return { valid: false, message: "tls is required" };
+    }
+    if(typeof(settings.tls) != "object"){
+      return { valid: false, message: "tls must be an object" };
+    } 
+    if (typeof(settings.tls.keyFile) != "string") {
+      return { valid: false, message: "tls.keyFile is required" };
+    }
+    if (typeof(settings.tls.certFile) != "string") {
+      return { valid: false, message: "tls.certFile is required" };
+    }
+    if (typeof(settings.tls.caCertFile) != "string") {
+      return { valid: false, message: "tls.caCertFile is required" };
+    }
+    
     return { valid: true }
   }
 
