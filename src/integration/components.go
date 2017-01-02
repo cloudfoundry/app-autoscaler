@@ -53,8 +53,9 @@ type ServiceBrokerConfig struct {
 
 	DB DBConfig `json:"db"`
 
-	APIServerUri       string `json:"apiServerUri"`
-	HttpRequestTimeout int    `json:"httpRequestTimeout"`
+	APIServerUri       string          `json:"apiServerUri"`
+	HttpRequestTimeout int             `json:"httpRequestTimeout"`
+	TLS                models.TLSCerts `json:"tls"`
 }
 
 type APIServerConfig struct {
@@ -165,6 +166,11 @@ func (components *Components) PrepareServiceBrokerConfig(port int, username stri
 		},
 		APIServerUri:       apiServerUri,
 		HttpRequestTimeout: int(brokerApiHttpRequestTimeout / time.Millisecond),
+		TLS: models.TLSCerts{
+			KeyFile:    filepath.Join(testCertDir, "servicebroker.key"),
+			CertFile:   filepath.Join(testCertDir, "servicebroker.crt"),
+			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+		},
 	}
 
 	cfgFile, err := ioutil.TempFile(tmpDir, ServiceBroker)

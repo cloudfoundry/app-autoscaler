@@ -1,16 +1,17 @@
 package integration_test
 
 import (
+	"code.cloudfoundry.org/cfhttp"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	. "integration"
-	"net/http"
-	"regexp"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
+	. "integration"
+	"net/http"
+	"path/filepath"
+	"regexp"
 )
 
 var _ = Describe("Integration_Broker_Api", func() {
@@ -28,7 +29,14 @@ var _ = Describe("Integration_Broker_Api", func() {
 	)
 
 	BeforeEach(func() {
+		brokerTLSConfig, err := cfhttp.NewTLSConfig(
+			filepath.Join(testCertDir, "servicebroker.crt"),
+			filepath.Join(testCertDir, "servicebroker.key"),
+			filepath.Join(testCertDir, "autoscaler-ca.crt"),
+		)
+		Expect(err).NotTo(HaveOccurred())
 		httpClient.Timeout = brokerApiHttpRequestTimeout
+		httpClient.Transport.(*http.Transport).TLSClientConfig = brokerTLSConfig
 		fakeScheduler = ghttp.NewServer()
 		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], dbUrl, fakeScheduler.URL(), tmpDir)
 		serviceBrokerConfPath = components.PrepareServiceBrokerConfig(components.Ports[ServiceBroker], brokerUserName, brokerPassword, dbUrl, fmt.Sprintf("http://127.0.0.1:%d", components.Ports[APIServer]), brokerApiHttpRequestTimeout, tmpDir)
