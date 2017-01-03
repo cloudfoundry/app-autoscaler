@@ -106,27 +106,31 @@ var _ = Describe("AppEvaluationManager", func() {
 			It("should add triggers to evaluate", func() {
 				fclock.Increment(10 * testEvaluateInterval)
 				var arr []*models.Trigger
+				var triggerArray [][]*models.Trigger = [][]*models.Trigger{}
 				Eventually(triggerArrayChan).Should(Receive(&arr))
-				Expect(arr).To(Equal([]*models.Trigger{&models.Trigger{
-					AppId:                 testAppId,
-					MetricType:            testMetricType,
-					BreachDurationSeconds: 200,
-					CoolDownSeconds:       200,
-					Threshold:             80,
-					Operator:              ">=",
-					Adjustment:            "1",
-				}}))
-
+				triggerArray = append(triggerArray, arr)
 				Eventually(triggerArrayChan).Should(Receive(&arr))
-				Expect(arr).To(Equal([]*models.Trigger{&models.Trigger{
-					AppId:                 testAppId2,
-					MetricType:            testMetricType,
-					BreachDurationSeconds: 300,
-					CoolDownSeconds:       300,
-					Threshold:             20,
-					Operator:              "<=",
-					Adjustment:            "-1",
-				}}))
+				triggerArray = append(triggerArray, arr)
+				Expect(triggerArray).Should(ContainElement(
+					[]*models.Trigger{&models.Trigger{
+						AppId:                 testAppId,
+						MetricType:            testMetricType,
+						BreachDurationSeconds: 200,
+						CoolDownSeconds:       200,
+						Threshold:             80,
+						Operator:              ">=",
+						Adjustment:            "1",
+					}}))
+				Expect(triggerArray).Should(ContainElement(
+					[]*models.Trigger{&models.Trigger{
+						AppId:                 testAppId2,
+						MetricType:            testMetricType,
+						BreachDurationSeconds: 300,
+						CoolDownSeconds:       300,
+						Threshold:             20,
+						Operator:              "<=",
+						Adjustment:            "-1",
+					}}))
 			})
 		})
 
