@@ -14,7 +14,12 @@ var defaultConfig = {
     "uri": "postgres://postgres@server:80/dbname"
   },
   "apiServerUri": "http://apiserveruri",
-  "httpRequestTimeout": 5000
+  "httpRequestTimeout": 5000,
+  "tls": {
+    "keyFile": "keyFilePath",
+    "certFile": "certFilePath",
+    "caCertFile": "caCertFilePath"
+  }
 }
 
 var settingTmp = {};
@@ -37,6 +42,9 @@ describe('config setting Test Suite', function() {
     expect(settings.db.minConnections).to.equal(defaultConfig.db.minConnections);
     expect(settings.db.idleTimeout).to.equal(defaultConfig.db.idleTimeout);
     expect(settings.httpRequestTimeout).to.equal(defaultConfig.httpRequestTimeout);
+    expect(settings.tls.keyFile).to.equal(defaultConfig.tls.keyFile);
+    expect(settings.tls.certFile).to.equal(defaultConfig.tls.certFile);
+    expect(settings.tls.caCertFile).to.equal(defaultConfig.tls.caCertFile);
   });
 
   describe('validate', function() {
@@ -268,5 +276,71 @@ describe('config setting Test Suite', function() {
           expect(settings.validate().valid).to.equal(false);
         })
       });
+  });
+
+  context('Validate tls', function(){
+    context('When tls is null', function(){
+      it('Should return false',function(){
+        settings.tls = null;
+        expect(settings.validate().valid).to.equal(false)
+      });
     });
+    context('When tls is undefined', function(){
+      it('Should return false',function(){
+        delete settings.tls;
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+    context('When tls is not an object', function(){
+      it('Should return false',function(){
+        settings.tls = "notobject";
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+  });
+
+  context('Validate tls.keyFile', function(){
+    context('When tls.keyFile is null', function(){
+      it('Should return false',function(){
+        settings.tls.keyFile = null;
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+    context('When tls.keyFile is undefined', function(){
+      it('Should return false',function(){
+        delete settings.tls.keyFile;
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+  });
+
+  context('Validate tls.certFile', function(){
+    context('When tls.certFile is null', function(){
+      it('Should return false',function(){
+        settings.tls.certFile = null;
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+    context('When tls.certFile is undefined', function(){
+      it('Should return false',function(){
+        delete settings.tls.certFile;
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+  });
+
+  context('Validate tls.caCertFile', function(){
+    context('When tls.caCertFile is null', function(){
+      it('Should return false',function(){
+        settings.tls.caCertFile = null;
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+    context('When tls.caCertFile is undefined', function(){
+      it('Should return false',function(){
+        delete settings.tls.caCertFile;
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+  });
 });

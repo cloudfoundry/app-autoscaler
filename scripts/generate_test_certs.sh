@@ -27,3 +27,7 @@ certstrap --depot-path ${depot_path} sign scalingengine --CA autoscaler-ca
 # eventgenerator certificate
 certstrap --depot-path ${depot_path} request-cert --passphrase '' --common-name eventgenerator --ip 127.0.0.1
 certstrap --depot-path ${depot_path} sign eventgenerator --CA autoscaler-ca
+
+# servicebroker certificate
+certstrap --depot-path ${depot_path} request-cert --passphrase '' --common-name servicebroker --ip 127.0.0.1
+certstrap --depot-path ${depot_path} sign servicebroker --CA autoscaler-ca
