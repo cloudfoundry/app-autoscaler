@@ -64,6 +64,8 @@ type APIServerConfig struct {
 	DB DBConfig `json:"db"`
 
 	SchedulerUri string `json:"schedulerUri"`
+
+	TLS models.TLSCerts `json:"tls"`
 }
 
 func (components *Components) ServiceBroker(confPath string, argv ...string) *ginkgomon.Runner {
@@ -193,6 +195,12 @@ func (components *Components) PrepareApiServerConfig(port int, dbUri string, sch
 		},
 
 		SchedulerUri: schedulerUri,
+
+		TLS: models.TLSCerts{
+			KeyFile:    filepath.Join(testCertDir, "api.key"),
+			CertFile:   filepath.Join(testCertDir, "api.crt"),
+			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+		},
 	}
 
 	cfgFile, err := ioutil.TempFile(tmpDir, APIServer)
