@@ -65,7 +65,7 @@ module.exports = function(configFilePath) {
     app.use(auth);
     app.use(bodyParser.urlencoded({ extended: true }));
     app.use(bodyParser.json());
-    require('./routes')(app, settings);
+    require('./routes')(app, settings, options);
 
 
     var server = https.createServer(options, app).listen(port, function() {
