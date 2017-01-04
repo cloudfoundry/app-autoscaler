@@ -1,5 +1,6 @@
 'use strict';
 
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 var request = require('supertest');
 var expect = require('chai').expect;
 var fs = require('fs');
