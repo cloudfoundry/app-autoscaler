@@ -1,7 +1,9 @@
 package integration_test
 
 import (
+	"code.cloudfoundry.org/cfhttp"
 	. "integration"
+	"path/filepath"
 
 	"encoding/json"
 	"fmt"
@@ -19,6 +21,13 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 	)
 
 	BeforeEach(func() {
+		apiTLSConfig, err := cfhttp.NewTLSConfig(
+			filepath.Join(testCertDir, "api.crt"),
+			filepath.Join(testCertDir, "api.key"),
+			filepath.Join(testCertDir, "autoscaler-ca.crt"),
+		)
+		Expect(err).NotTo(HaveOccurred())
+		httpClient.Transport.(*http.Transport).TLSClientConfig = apiTLSConfig
 		httpClient.Timeout = apiSchedulerHttpRequestTimeout
 		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], dbUrl, fmt.Sprintf("http://127.0.0.1:%d", components.Ports[Scheduler]), tmpDir)
 		startApiServer()
