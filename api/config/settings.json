@@ -6,5 +6,10 @@
     "idleTimeout": 1000,
     "uri": "postgres://postgres@127.0.0.1:5432/autoscaler"
   },
-  "schedulerUri": "http://autoscaler.boshlite.com"
+  "schedulerUri": "http://autoscaler.boshlite.com",
+  "tls": {
+        "keyFile":"../test-certs/api.key",
+        "certFile":"../test-certs/api.crt",
+        "caCertFile":"../test-certs/autoscaler-ca.crt"
+    }
 }

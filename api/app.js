@@ -1,5 +1,6 @@
 'use strict';
 module.exports = function(configFilePath) {
+  var https = require('https')
   var fs = require('fs');
   var path = require('path');
   var express = require('express');
@@ -19,11 +20,32 @@ module.exports = function(configFilePath) {
       throw new Error('settings.json is invalid');
   }
   var port = settings.port;
+  
+  var options = {};
+    
+  if(!fs.existsSync(settings.tls.keyFile)){
+      logger.error("Invalid TLS key path: " + settings.tls.keyFile);
+      throw new Error("Invalid TLS key path: " + settings.tls.keyFile);
+  }
+  if(!fs.existsSync(settings.tls.certFile)){
+      logger.error("Invalid TLS certificate path: " + settings.tls.certFile);
+      throw new Error("Invalid TLS certificate path: " + settings.tls.certFile);
+  }
+  if(!fs.existsSync(settings.tls.caCertFile)){
+      logger.error("Invalid TLS ca certificate path: " + settings.tls.caCertFile);
+      throw new Error("Invalid TLS ca certificate path: " + settings.tls.caCertFile);
+  }
+
+  options = {
+      key: fs.readFileSync(settings.tls.keyFile),
+      cert: fs.readFileSync(settings.tls.certFile),
+      ca: fs.readFileSync(settings.tls.caCertFile)
+  }
   var app = express();
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: false }));
   app.use('/health', require('express-healthcheck')());
-  var server = app.listen(port || 3002, function() {
+  var server = https.createServer(options, app).listen(port || 3002, function() {
       logger.info('Autoscaler API server started',{'port':server.address().port} ); 
       var policies = require('./lib/routes/policies')(settings);
       app.use('/v1/policies',policies);

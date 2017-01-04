@@ -25,7 +25,8 @@ module.exports = function(settingsObj) {
     port: settingsObj.port,
     username: settingsObj.username,
     password: settingsObj.password,
-    schedulerUri: scheduler(settingsObj.schedulerUri)
+    schedulerUri: scheduler(settingsObj.schedulerUri),
+    tls: settingsObj.tls
   };
   if (settingsObj.db) {
     var dbObj = db(settingsObj.db.uri);
@@ -70,6 +71,21 @@ module.exports = function(settingsObj) {
     }
     if(typeof(settings.schedulerUri) != "string") {
       return {valid:false,message:"schedulerUri is required"};
+    }
+    if (!settings.tls) {
+      return { valid: false, message: "tls is required" };
+    }
+    if(typeof(settings.tls) != "object"){
+      return { valid: false, message: "tls must be an object" };
+    } 
+    if (typeof(settings.tls.keyFile) != "string") {
+      return { valid: false, message: "tls.keyFile is required" };
+    }
+    if (typeof(settings.tls.certFile) != "string") {
+      return { valid: false, message: "tls.certFile is required" };
+    }
+    if (typeof(settings.tls.caCertFile) != "string") {
+      return { valid: false, message: "tls.caCertFile is required" };
     }
     return {valid:true}
   }
