@@ -9,7 +9,12 @@ var settings = require(path.join(__dirname, '../../../lib/config/setting.js'))((
 var policy = require('../../../lib/models')(settings.db).policy_json;
 var logger = require('../../../lib/log/logger');
 var nock = require('nock');
-var schedulerUtils = require('../../../lib/utils/schedulerUtils')(settings);
+var tlsOptions = {
+      key: fs.readFileSync(settings.tls.keyFile),
+      cert: fs.readFileSync(settings.tls.certFile),
+      ca: fs.readFileSync(settings.tls.caCertFile)
+}
+var schedulerUtils = require('../../../lib/utils/schedulerUtils')(settings, tlsOptions);
 var schedulerURI = settings.schedulerUri;
 
 describe('Scheduler Utility functions', function() {
