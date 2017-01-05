@@ -6,7 +6,7 @@ set -ex
 go get -v github.com/square/certstrap
 
 # Place keys and certificates here
-depot_path="testcerts"
+depot_path="../test-certs"
 rm -rf ${depot_path}
 mkdir -p ${depot_path}
 
@@ -35,3 +35,9 @@ certstrap --depot-path ${depot_path} sign servicebroker --CA autoscaler-ca
 # api certificate
 certstrap --depot-path ${depot_path} request-cert --passphrase '' --common-name api --ip 127.0.0.1
 certstrap --depot-path ${depot_path} sign api --CA autoscaler-ca
+
+# scheduler certificate
+certstrap --depot-path ${depot_path} request-cert --passphrase 123456 --common-name scheduler --ip 127.0.0.1
+certstrap --depot-path ${depot_path} sign scheduler --CA autoscaler-ca
+openssl pkcs12 -export -in ${depot_path}/scheduler.crt -inkey ${depot_path}/scheduler.key -out ${depot_path}/scheduler.p12 -name scheduler -passin pass:123456 -password pass:123456
+keytool -importkeystore -srckeystore ${depot_path}/scheduler.p12 -srcstoretype PKCS12 -destkeystore ${depot_path}/scheduler.jks -deststoretype JKS -alias scheduler -srcstorepass "123456" -storepass "123456"
