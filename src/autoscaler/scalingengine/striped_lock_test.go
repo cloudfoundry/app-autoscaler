@@ -51,11 +51,5 @@ var _ = Describe("StripedLock", func() {
 				Expect(stripedLock.GetLock("some-key")).To(BeIdenticalTo(stripedLock.GetLock("some-key")))
 			})
 		})
-
-		Context("when getting lock with different keys", func() {
-			It("returns a different lock", func() {
-				Expect(stripedLock.GetLock("some-key")).NotTo(BeIdenticalTo(stripedLock.GetLock("another-key")))
-			})
-		})
 	})
 })
