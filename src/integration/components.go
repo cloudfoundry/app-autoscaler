@@ -237,12 +237,12 @@ scalingengine.notification.reschedule.maxcount=3
 # scaling engine url
 autoscaler.scalingengine.url=%s
 #ssl
-server.ssl.key-store=%s/scheduler.jks
+server.ssl.key-store=%s/scheduler.p12
 caCert=%s/autoscaler-ca.crt
 server.ssl.key-alias=scheduler
 server.ssl.key-store-password=123456
 #server.ssl.key-password=123456
-server.ssl.key-store-type=JKS
+#server.ssl.key-store-type=P12
   `
 	settingJonsStr := fmt.Sprintf(settingStrTemplate, jdbcDBUri, userName, password, scalingEngineUri, testCertDir, testCertDir)
 	cfgFile, err := os.Create(filepath.Join(tmpDir, "integration.properties"))
