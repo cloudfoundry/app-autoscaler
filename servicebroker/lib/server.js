@@ -6,6 +6,9 @@ module.exports = function(configFilePath) {
     var bodyParser = require('body-parser');
     var fs = require('fs');
     var path = require('path');
+    var gracefulShutdown = require('http-shutdown');
+    gracefulShutdown.extend();
+
     if (!configFilePath || !fs.existsSync(configFilePath)) {
         logger.error("Invalid configuration file path: " + configFilePath);
         throw new Error('configuration file does not exist:' + configFilePath);
@@ -68,7 +71,7 @@ module.exports = function(configFilePath) {
     require('./routes')(app, settings, options);
 
 
-    var server = https.createServer(options, app).listen(port, function() {
+    var server = https.createServer(options, app).withShutdown().listen(port, function() {
         var port = server.address().port;
         logger.info('Service broker app is running', { port: port });
     });
