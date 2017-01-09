@@ -14,11 +14,6 @@ var gracefulShutdown = function(signal) {
   })
 }
 
-//listen for SIGTERM signal e.g. kill
-process.on ('SIGTERM', function(){
-  gracefulShutdown('SIGTERM')
-});
-
 //listen for SIGINT signal e.g. Ctrl-C
 process.on ('SIGINT', function(){
   gracefulShutdown('SIGINT')
