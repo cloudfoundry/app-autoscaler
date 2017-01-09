@@ -1,5 +1,5 @@
 'use strict';
-module.exports = function(settings) {
+module.exports = function(settings, tlsOptions) {
   var request = require('request') ;
   var logger = require('../log/logger');
   var HttpStatus = require('http-status-codes');
@@ -18,7 +18,10 @@ module.exports = function(settings) {
         method: 'PUT',
         body: req.body,
         json: true,
-        timeout: 10000
+        timeout: 10000,
+        cert: tlsOptions.cert,
+        key: tlsOptions.key,
+        ca: tlsOptions.ca 
       };
       request(options, function(error, response, body) {
         if(error) {
@@ -63,7 +66,10 @@ module.exports = function(settings) {
     var options = { 
       url: schedulerURI + '/v2/schedules/' + appId,
       method: 'DELETE',
-      timeout: 10000
+      timeout: 10000,
+      cert: tlsOptions.cert,
+      key: tlsOptions.key,
+      ca: tlsOptions.ca 
     };
     
     request(options, function(error, response, body) {

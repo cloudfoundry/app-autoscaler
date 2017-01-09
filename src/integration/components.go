@@ -13,6 +13,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net/url"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
@@ -219,6 +220,9 @@ func (components *Components) PrepareSchedulerConfig(dbUri string, scalingEngine
 	userInfo := dbUrl.User
 	userName := userInfo.Username()
 	password, _ := userInfo.Password()
+	if scheme == "postgres" {
+		scheme = "postgresql"
+	}
 	jdbcDBUri := fmt.Sprintf("jdbc:%s://%s%s", scheme, host, path)
 	settingStrTemplate := `
 #datasource for application and quartz
@@ -232,9 +236,16 @@ scalingenginejob.reschedule.maxcount=6
 scalingengine.notification.reschedule.maxcount=3
 # scaling engine url
 autoscaler.scalingengine.url=%s
+#ssl
+server.ssl.key-store=%s/scheduler.p12
+caCert=%s/autoscaler-ca.crt
+server.ssl.key-alias=scheduler
+server.ssl.key-store-password=123456
+#server.ssl.key-password=123456
+#server.ssl.key-store-type=P12
   `
-	settingJonsStr := fmt.Sprintf(settingStrTemplate, jdbcDBUri, userName, password, scalingEngineUri)
-	cfgFile, err := ioutil.TempFile(tmpDir, Scheduler)
+	settingJonsStr := fmt.Sprintf(settingStrTemplate, jdbcDBUri, userName, password, scalingEngineUri, testCertDir, testCertDir)
+	cfgFile, err := os.Create(filepath.Join(tmpDir, "integration.properties"))
 	Expect(err).NotTo(HaveOccurred())
 	ioutil.WriteFile(cfgFile.Name(), []byte(settingJonsStr), 0777)
 	cfgFile.Close()

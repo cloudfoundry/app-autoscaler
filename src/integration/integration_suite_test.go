@@ -272,7 +272,7 @@ func attachPolicy(appId string, policy []byte) (*http.Response, error) {
 }
 
 func getSchedules(appId string) (*http.Response, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("http://127.0.0.1:%d/v2/schedules/%s", components.Ports["scheduler"], appId), strings.NewReader(""))
+	req, err := http.NewRequest("GET", fmt.Sprintf("https://127.0.0.1:%d/v2/schedules/%s", components.Ports["scheduler"], appId), strings.NewReader(""))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
 	return httpClient.Do(req)
