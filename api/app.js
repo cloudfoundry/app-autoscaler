@@ -7,6 +7,8 @@ module.exports = function(configFilePath) {
   var bodyParser = require('body-parser');
   var logger = require('./lib/log/logger');
   var HttpStatus = require('http-status-codes');
+  var gracefulShutdown = require('http-shutdown');
+  gracefulShutdown.extend();
 
   if (!configFilePath || !fs.existsSync(configFilePath)) {
       logger.error("Invalid configuration file path: " + configFilePath);
@@ -45,7 +47,7 @@ module.exports = function(configFilePath) {
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: false }));
   app.use('/health', require('express-healthcheck')());
-  var server = https.createServer(options, app).listen(port || 3002, function() {
+  var server = https.createServer(options, app).withShutdown().listen(port || 3002, function() {
       logger.info('Autoscaler API server started',{'port':server.address().port} ); 
       var policies = require('./lib/routes/policies')(settings, options);
       app.use('/v1/policies',policies);
