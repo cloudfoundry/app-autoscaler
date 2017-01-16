@@ -1,14 +1,13 @@
 package org.cloudfoundry.autoscaler.scheduler.util;
 
-import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -70,33 +69,20 @@ public class DataValidationHelper {
 	 * @param timeZone
 	 * @return
 	 */
-	public static boolean isDateTimeAfterNow(Date dateTime, TimeZone timeZone) {
+	public static boolean isDateTimeAfterNow(LocalDateTime dateTime, TimeZone timeZone) {
 		ZoneId policyZoneId = timeZone.toZoneId();
-		ZonedDateTime policyZonedDateTime = getPolicyZonedDateTime(dateTime, policyZoneId);
 
-		ZonedDateTime policyZonedDateTimeNow = ZonedDateTime.now(policyZoneId);
+		ZonedDateTime policyDate = DateHelper.getZonedDateTime(dateTime, timeZone);
 
-		return policyZonedDateTime.isAfter(policyZonedDateTimeNow);
+		return policyDate.isAfter(ZonedDateTime.now(policyZoneId));
 	}
 
-	public static boolean isDateAfterOrEqualsNow(Date date, TimeZone timeZone) {
+	public static boolean isDateAfterOrEqualsNow(LocalDate date, TimeZone timeZone) {
 		ZoneId policyZoneId = timeZone.toZoneId();
-		LocalDate policyLocalDate = getPolicyZonedDateTime(date, policyZoneId).toLocalDate();
-		LocalDate localDateNow = LocalDate.now(policyZoneId);
 
-		return !policyLocalDate.isBefore(localDateNow);
+		ZonedDateTime policyDate = DateHelper.getZonedDateTime(date, timeZone);
 
-	}
-
-	private static ZonedDateTime getPolicyZonedDateTime(Date dateTime, ZoneId policyZone) {
-		ZoneOffset offsetForPolicyZone = policyZone.getRules().getOffset(Instant.now());
-		ZoneOffset offsetForSystemZone = ZoneId.systemDefault().getRules().getOffset(Instant.now());
-
-		long epochGMTSeconds = dateTime.getTime() / 1000 + offsetForSystemZone.getTotalSeconds()
-				- offsetForPolicyZone.getTotalSeconds();
-		Instant i = Instant.ofEpochSecond((epochGMTSeconds));
-
-		return ZonedDateTime.ofInstant(i, policyZone);
+		return !policyDate.toLocalDate().isBefore(ZonedDateTime.now(policyZoneId).toLocalDate());
 	}
 
 	/**
@@ -106,12 +92,19 @@ public class DataValidationHelper {
 	 * @param startDateTime
 	 * @return
 	 */
-	public static boolean isAfter(Date endDateTime, Date startDateTime) {
+	public static boolean isAfter(LocalDateTime endDateTime, LocalDateTime startDateTime) {
 		if (isNotNull(endDateTime) && isNotNull(startDateTime)) {
-			return endDateTime.after(startDateTime);
+			return endDateTime.isAfter(startDateTime);
 		}
 		return false;
 
+	}
+
+	public static boolean isAfter(LocalTime endTime, LocalTime startTime) {
+		if (isNotNull(endTime) && isNotNull(startTime)) {
+			return endTime.isAfter(startTime);
+		}
+		return false;
 	}
 
 	public static boolean isBetweenMinAndMaxValues(int[] array, int lowerLimit, int upperLimit) {
@@ -186,8 +179,8 @@ public class DataValidationHelper {
 		return isOverlapping;
 	}
 
-	private static boolean isOverlapping(Date firstStartDate, Date firstEndDate, Date secondStartDate,
-			Date secondEndDate) {
+	private static boolean isOverlapping(LocalDate firstStartDate, LocalDate firstEndDate, LocalDate secondStartDate,
+			LocalDate secondEndDate) {
 		boolean isOverlapping = false;
 
 		if ((firstStartDate == null && firstEndDate == null) || (secondStartDate == null && secondEndDate == null)
@@ -285,5 +278,6 @@ public class DataValidationHelper {
 		}
 		return overlapDateTimeValidationErrorMsgList;
 	}
+
 
 }

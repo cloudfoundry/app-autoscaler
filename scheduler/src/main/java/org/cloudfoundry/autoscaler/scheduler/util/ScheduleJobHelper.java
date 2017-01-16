@@ -1,8 +1,9 @@
 package org.cloudfoundry.autoscaler.scheduler.util;
 
+import java.time.LocalTime;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
@@ -50,13 +51,12 @@ public class ScheduleJobHelper {
 		return jobBuilder.build();
 	}
 
-	public static Trigger buildTrigger(TriggerKey triggerKey, JobKey jobKey, Date triggerDate) {
+	public static Trigger buildTrigger(TriggerKey triggerKey, JobKey jobKey, ZonedDateTime triggerDate) {
 
 		TriggerBuilder<Trigger> trigger = TriggerBuilder.newTrigger().withIdentity(triggerKey);
 
 		trigger.withSchedule(SimpleScheduleBuilder.simpleSchedule().withMisfireHandlingInstructionFireNow())
-				.startAt(triggerDate);
-
+				.startAt(Date.from(triggerDate.toInstant()));
 		if (jobKey != null) {
 			trigger.forJob(jobKey);
 		}
@@ -65,7 +65,7 @@ public class ScheduleJobHelper {
 	}
 
 	public static Trigger buildCronTrigger(TriggerKey triggerKey, JobKey jobKey, RecurringScheduleEntity scheduleEntity,
-			Date scheduleTime) {
+			LocalTime scheduleTime) {
 		TriggerBuilder<Trigger> trigger = TriggerBuilder.newTrigger().withIdentity(triggerKey);
 		TimeZone timeZone = TimeZone.getTimeZone(scheduleEntity.getTimeZone());
 
@@ -74,11 +74,18 @@ public class ScheduleJobHelper {
 						.inTimeZone(timeZone).withMisfireHandlingInstructionFireAndProceed());
 
 		if (scheduleEntity.getStartDate() != null) {
-			trigger.startAt(scheduleEntity.getStartDate());
+			ZonedDateTime startAt = DateHelper.getZonedDateTime(scheduleEntity.getStartDate(),
+					TimeZone.getTimeZone(scheduleEntity.getTimeZone()));
+			trigger.startAt(Date.from(startAt.toInstant()));
 		}
 
 		if (scheduleEntity.getEndDate() != null) {
-			trigger.endAt(scheduleEntity.getEndDate());
+			// Adding a day because Quartz recognizes the end time when the trigger is no longer fire so it should be the next
+			// day of policy's endDate. For example, if in policy the end date is "16/01/2016", then the trigger will no longer
+			// fire from "17/01/2016 00:00"
+			ZonedDateTime endAt = DateHelper.getZonedDateTime(scheduleEntity.getEndDate().plusDays(1),
+					TimeZone.getTimeZone(scheduleEntity.getTimeZone()));
+			trigger.endAt(Date.from(endAt.toInstant()));
 		}
 
 		if (jobKey != null) {
@@ -88,13 +95,10 @@ public class ScheduleJobHelper {
 		return trigger.build();
 	}
 
-	public static String convertRecurringScheduleToCronExpression(Date scheduleTime,
+	public static String convertRecurringScheduleToCronExpression(LocalTime scheduleTime,
 			RecurringScheduleEntity recurringScheduleEntity) {
-		Calendar calendar = Calendar.getInstance();
-		calendar.setTime(scheduleTime);
-
-		int min = calendar.get(Calendar.MINUTE);
-		int hour = calendar.get(Calendar.HOUR_OF_DAY);
+		int min = scheduleTime.getMinute();
+		int hour = scheduleTime.getHour();
 
 		String dayOfWeek = convertArrayToDayOfWeekString(recurringScheduleEntity.getDaysOfWeek());
 		String dayOfMonth = convertArrayToDayOfMonthString(recurringScheduleEntity.getDaysOfMonth());

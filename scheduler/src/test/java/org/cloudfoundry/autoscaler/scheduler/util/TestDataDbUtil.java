@@ -1,5 +1,7 @@
 package org.cloudfoundry.autoscaler.scheduler.util;
 
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -90,8 +92,8 @@ public class TestDataDbUtil {
 		for (SpecificDateScheduleEntity entity : entities) {
 			Long scheduleId = numberingScheduleId();
 			Object[] objects = new Object[] { scheduleId, entity.getAppId(), entity.getTimeZone(),
-					entity.getStartDateTime(), entity.getEndDateTime(), entity.getInstanceMinCount(),
-					entity.getInstanceMaxCount(), entity.getDefaultInstanceMinCount(),
+					Timestamp.valueOf(entity.getStartDateTime()), Timestamp.valueOf(entity.getEndDateTime()),
+					entity.getInstanceMinCount(), entity.getInstanceMaxCount(), entity.getDefaultInstanceMinCount(),
 					entity.getDefaultInstanceMaxCount(), entity.getInitialMinInstanceCount() };
 
 			jdbcTemplate.update("INSERT INTO app_scaling_specific_date_schedule "
@@ -109,8 +111,9 @@ public class TestDataDbUtil {
 			Object[] objects = new Object[] { scheduleId, entity.getAppId(), entity.getTimeZone(),
 					entity.getDefaultInstanceMinCount(), entity.getDefaultInstanceMaxCount(),
 					entity.getInstanceMinCount(), entity.getInstanceMaxCount(), entity.getInitialMinInstanceCount(),
-					entity.getStartDate(), entity.getEndDate(), entity.getStartTime(), entity.getEndTime(),
-					convertArrayToBits(entity.getDaysOfWeek()), convertArrayToBits(entity.getDaysOfMonth()) };
+					entity.getStartDate(), entity.getEndDate(), Time.valueOf(entity.getStartTime()),
+					Time.valueOf(entity.getEndTime()), convertArrayToBits(entity.getDaysOfWeek()),
+					convertArrayToBits(entity.getDaysOfMonth()) };
 
 			jdbcTemplate.update("INSERT INTO app_scaling_recurring_schedule "
 					+ "( schedule_id, app_id, timezone, default_instance_min_count, default_instance_max_count, instance_min_count, instance_max_count, initial_min_instance_count, start_date, end_date, start_time, end_time, days_of_week, days_of_month) "

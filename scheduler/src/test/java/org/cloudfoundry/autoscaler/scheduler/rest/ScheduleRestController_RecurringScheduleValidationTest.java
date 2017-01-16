@@ -5,11 +5,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.sql.Time;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 
 import org.cloudfoundry.autoscaler.scheduler.dao.RecurringScheduleDao;
@@ -91,9 +90,9 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		int noOfRecurringSchedulesToSetUp = 5;
 		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
 				noOfRecurringSchedulesToSetUp);
+		LocalDate startDate = TestDataSetupHelper.getZoneDateNow(applicationPolicy.getSchedules().getTimeZone());
 
-		applicationPolicy.getSchedules().getRecurringSchedule().get(0)
-				.setStartDate(TestDataSetupHelper.addDaysToNow(0));
+		applicationPolicy.getSchedules().getRecurringSchedule().get(0).setStartDate(startDate);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
@@ -111,7 +110,8 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
 				noOfRecurringSchedulesToSetUp);
 
-		Date startDate = new Date(0);
+		LocalDate startDate = TestDataSetupHelper.getZoneDateNow(applicationPolicy.getSchedules().getTimeZone())
+				.minusDays(1);
 		applicationPolicy.getSchedules().getRecurringSchedule().get(0).setStartDate(startDate);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
@@ -120,7 +120,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 				.perform(put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.invalid.before.current",
-				scheduleBeingProcessed + " 0", "start_date", DateHelper.convertDateToString(startDate));
+				scheduleBeingProcessed + " 0", "start_date", startDate);
 		assertErrorMessage(resultActions, errorMessage);
 	}
 
@@ -132,7 +132,9 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
 				noOfRecurringSchedulesToSetUp);
 
-		applicationPolicy.getSchedules().getRecurringSchedule().get(0).setEndDate(TestDataSetupHelper.addDaysToNow(7));
+		LocalDate endDate = TestDataSetupHelper.getZoneDateNow(applicationPolicy.getSchedules().getTimeZone())
+				.plusDays(7);
+		applicationPolicy.getSchedules().getRecurringSchedule().get(0).setEndDate(endDate);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
@@ -150,7 +152,8 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(0,
 				noOfRecurringSchedulesToSetUp);
 
-		Date endDate = new Date(0);
+		LocalDate endDate = TestDataSetupHelper.getZoneDateNow(applicationPolicy.getSchedules().getTimeZone())
+				.minusDays(1);
 		applicationPolicy.getSchedules().getRecurringSchedule().get(0).setEndDate(endDate);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
@@ -159,7 +162,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 				.perform(put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.invalid.before.current",
-				scheduleBeingProcessed + " 0", "end_date", DateHelper.convertDateToString(endDate));
+				scheduleBeingProcessed + " 0", "end_date", endDate);
 		assertErrorMessage(resultActions, errorMessage);
 	}
 
@@ -174,11 +177,10 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		RecurringScheduleEntity entity = applicationPolicy.getSchedules().getRecurringSchedule().get(0);
 
 		// Swap startDate for endDate.
-		Calendar currentTime = Calendar.getInstance();
-		currentTime.add(Calendar.YEAR, 1);
-		Date endDate = currentTime.getTime();
-		currentTime.add(Calendar.YEAR, 1);
-		Date startDate = currentTime.getTime();
+		LocalDate startDate = TestDataSetupHelper.getZoneDateNow(applicationPolicy.getSchedules().getTimeZone())
+				.plusDays(2);
+		LocalDate endDate = TestDataSetupHelper.getZoneDateNow(applicationPolicy.getSchedules().getTimeZone())
+				.plusDays(1);
 
 		entity.setStartDate(startDate);
 		entity.setEndDate(endDate);
@@ -189,8 +191,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 				.perform(put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.invalid.end.before.start",
-				scheduleBeingProcessed + " 0", "end_date", DateHelper.convertDateToString(entity.getEndDate()),
-				"start_date", DateHelper.convertDateToString(entity.getStartDate()));
+				scheduleBeingProcessed + " 0", "end_date", entity.getEndDate(), "start_date", entity.getStartDate());
 		assertErrorMessage(resultActions, errorMessage);
 	}
 
@@ -246,8 +247,8 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		RecurringScheduleEntity entity = applicationPolicy.getSchedules().getRecurringSchedule().get(0);
 
 		// Swap startTime for endTime.
-		Time endTime = entity.getStartTime();
-		Time startTime = entity.getEndTime();
+		LocalTime endTime = entity.getStartTime();
+		LocalTime startTime = entity.getEndTime();
 		entity.setStartTime(startTime);
 		entity.setEndTime(endTime);
 
@@ -257,8 +258,8 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 				.perform(put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.invalid.start.after.end",
-				scheduleBeingProcessed + " 0", "end_time", DateHelper.convertTimeToString(endTime), "start_time",
-				DateHelper.convertTimeToString(startTime));
+				scheduleBeingProcessed + " 0", "end_time", DateHelper.convertLocalTimeToString(endTime), "start_time",
+				DateHelper.convertLocalTimeToString(startTime));
 		assertErrorMessage(resultActions, errorMessage);
 	}
 

@@ -1,8 +1,8 @@
 package org.cloudfoundry.autoscaler.scheduler.util;
 
-import java.sql.Time;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
@@ -52,22 +52,22 @@ public class RecurringScheduleEntitiesBuilder {
 		return this;
 	}
 
-	public RecurringScheduleEntitiesBuilder setStartTime(int pos, Time time) {
+	public RecurringScheduleEntitiesBuilder setStartTime(int pos, LocalTime time) {
 		recurringScheduleEntities.get(pos).setStartTime(time);
 		return this;
 	}
 
-	public RecurringScheduleEntitiesBuilder setEndTime(int pos, Time time) {
+	public RecurringScheduleEntitiesBuilder setEndTime(int pos, LocalTime time) {
 		recurringScheduleEntities.get(pos).setEndTime(time);
 		return this;
 	}
 
-	public RecurringScheduleEntitiesBuilder setStartDate(int pos, Date date) {
+	public RecurringScheduleEntitiesBuilder setStartDate(int pos, LocalDate date) {
 		recurringScheduleEntities.get(pos).setStartDate(date);
 		return this;
 	}
 
-	public RecurringScheduleEntitiesBuilder setEndDate(int pos, Date date) {
+	public RecurringScheduleEntitiesBuilder setEndDate(int pos, LocalDate date) {
 		recurringScheduleEntities.get(pos).setEndDate(date);
 		return this;
 	}
@@ -120,8 +120,10 @@ public class RecurringScheduleEntitiesBuilder {
 		List<RecurringScheduleEntity> recurringScheduleEntities = new ArrayList<>();
 		for (int i = 0; i < noOfSchedules; i++) {
 			RecurringScheduleEntity recurringScheduleEntity = new RecurringScheduleEntity();
-			recurringScheduleEntity.setStartTime(TestDataSetupHelper.getTime(TestDataSetupHelper.getStarTime(), scheduleIndex, 0));
-			recurringScheduleEntity.setEndTime(TestDataSetupHelper.getTime(TestDataSetupHelper.getEndTime(), scheduleIndex, 5));
+			recurringScheduleEntity
+					.setStartTime(TestDataSetupHelper.getTime(TestDataSetupHelper.getStarTime(), scheduleIndex, 0));
+			recurringScheduleEntity
+					.setEndTime(TestDataSetupHelper.getTime(TestDataSetupHelper.getEndTime(), scheduleIndex, 5));
 
 			recurringScheduleEntity.setInstanceMinCount(i + 5);
 			recurringScheduleEntity.setInstanceMaxCount(i + 6);

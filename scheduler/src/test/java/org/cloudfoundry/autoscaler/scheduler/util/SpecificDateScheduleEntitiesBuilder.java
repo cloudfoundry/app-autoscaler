@@ -1,9 +1,7 @@
 package org.cloudfoundry.autoscaler.scheduler.util;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
@@ -62,12 +60,12 @@ public class SpecificDateScheduleEntitiesBuilder {
 		return this;
 	}
 
-	public SpecificDateScheduleEntitiesBuilder setStartDateTime(int pos, Date date) {
+	public SpecificDateScheduleEntitiesBuilder setStartDateTime(int pos, LocalDateTime date) {
 		specificDateScheduleEntities.get(pos).setStartDateTime(date);
 		return this;
 	}
 
-	public SpecificDateScheduleEntitiesBuilder setEndDateTime(int pos, Date date) {
+	public SpecificDateScheduleEntitiesBuilder setEndDateTime(int pos, LocalDateTime date) {
 		specificDateScheduleEntities.get(pos).setEndDateTime(date);
 		return this;
 	}
@@ -92,18 +90,13 @@ public class SpecificDateScheduleEntitiesBuilder {
 		List<SpecificDateScheduleEntity> specificDateScheduleEntities = new ArrayList<>();
 
 		int pos = 0;
-		SimpleDateFormat sdf = new SimpleDateFormat(DateHelper.DATE_TIME_FORMAT);
 		for (int i = 0; i < noOfEntities; i++) {
 			SpecificDateScheduleEntity specificDateScheduleEntity = new SpecificDateScheduleEntity();
 
-			try {
-				specificDateScheduleEntity.setStartDateTime(
-						sdf.parse(TestDataSetupHelper.getDateString(TestDataSetupHelper.getStartDateTime(), pos, 0)));
-				specificDateScheduleEntity.setEndDateTime(
-						sdf.parse(TestDataSetupHelper.getDateString(TestDataSetupHelper.getEndDateTime(), pos, 5)));
-			} catch (ParseException e) {
-				throw new RuntimeException(e.getMessage());
-			}
+			specificDateScheduleEntity.setStartDateTime(LocalDateTime
+					.parse(TestDataSetupHelper.getDateString(TestDataSetupHelper.getStartDateTime(), pos, 0)));
+			specificDateScheduleEntity.setEndDateTime(LocalDateTime
+					.parse(TestDataSetupHelper.getDateString(TestDataSetupHelper.getEndDateTime(), pos, 5)));
 
 			specificDateScheduleEntity.setInstanceMinCount(i + 5);
 			specificDateScheduleEntity.setInstanceMaxCount(i + 6);

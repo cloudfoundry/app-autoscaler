@@ -1,6 +1,6 @@
 package org.cloudfoundry.autoscaler.scheduler.util;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 /**
  * A convenience bean to hold the schedule identifier, the schedule start date time and end date time.
@@ -11,24 +11,25 @@ public class SpecificDateScheduleDateTime implements Comparable<SpecificDateSche
 	// An identifier for convenience (currently Schedule type(Specific date) and number, till we come up with some other mechanism to identify schedule) 
 	// to know which schedule is being processed. First schedule specific date/recurring starts with scheduleIdentifier 0
 	private String scheduleIdentifier;
-	private Date startDateTime;
-	private Date endDateTime;
+	private LocalDateTime startDateTime;
+	private LocalDateTime endDateTime;
 
-	public SpecificDateScheduleDateTime(String scheduleIdentifier, Date startDateTime, Date endDateTime) {
+	public SpecificDateScheduleDateTime(String scheduleIdentifier, LocalDateTime startDateTime,
+			LocalDateTime endDateTime) {
 		this.scheduleIdentifier = scheduleIdentifier;
 		this.startDateTime = startDateTime;
 		this.endDateTime = endDateTime;
 	}
 
-	public String getScheduleIdentifier() {
+	String getScheduleIdentifier() {
 		return scheduleIdentifier;
 	}
 
-	public Date getStartDateTime() {
+	LocalDateTime getStartDateTime() {
 		return startDateTime;
 	}
 
-	public Date getEndDateTime() {
+	public LocalDateTime getEndDateTime() {
 		return endDateTime;
 	}
 
@@ -37,8 +38,8 @@ public class SpecificDateScheduleDateTime implements Comparable<SpecificDateSche
 		if (compareSpecificDateScheduleDateTime == null)
 			throw new NullPointerException("The SpecificDateScheduleDateTime object to be compared is null");
 
-		Date thisDateTime = this.getStartDateTime();
-		Date compareToDateTime = compareSpecificDateScheduleDateTime.getStartDateTime();
+		LocalDateTime thisDateTime = this.getStartDateTime();
+		LocalDateTime compareToDateTime = compareSpecificDateScheduleDateTime.getStartDateTime();
 
 		if (thisDateTime == null || compareToDateTime == null)
 			throw new NullPointerException("One of the date time value is null");

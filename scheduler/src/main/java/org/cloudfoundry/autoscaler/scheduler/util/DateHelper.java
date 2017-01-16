@@ -1,11 +1,11 @@
 package org.cloudfoundry.autoscaler.scheduler.util;
 
-import java.text.SimpleDateFormat;
-import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.Date;
+import java.time.format.DateTimeFormatter;
 import java.util.TimeZone;
 
 public class DateHelper {
@@ -603,39 +603,24 @@ public class DateHelper {
 	           "Etc/GMT-14",
 	           "Pacific/Kiritimati"};
 
-	public static Date getDateWithZoneOffset(Date dateTime, TimeZone timeZone) {
+	public static ZonedDateTime getZonedDateTime(LocalDateTime dateTime, TimeZone timeZone) {
 		ZoneId zoneId = timeZone.toZoneId();
-		ZonedDateTime zonedDateTime = getPolicyZonedDateTime(dateTime, zoneId);
-
-		return Date.from(zonedDateTime.toInstant());
+		return dateTime.atZone(zoneId);
 	}
 
-	static ZonedDateTime getPolicyZonedDateTime(Date dateTime, ZoneId policyZone) {
-		ZoneOffset offsetForPolicyZone = policyZone.getRules().getOffset(dateTime.toInstant());
-		ZoneOffset offsetForSystemZone = ZoneId.systemDefault().getRules().getOffset(dateTime.toInstant());
-
-		long epochGMTSeconds = dateTime.getTime() / 1000 + offsetForSystemZone.getTotalSeconds()
-				- offsetForPolicyZone.getTotalSeconds();
-		Instant instant = Instant.ofEpochSecond((epochGMTSeconds));
-
-		return ZonedDateTime.ofInstant(instant, policyZone);
+	static ZonedDateTime getZonedDateTime(LocalDate date, TimeZone timeZone) {
+		ZoneId zoneId = timeZone.toZoneId();
+		return date.atStartOfDay(zoneId);
 	}
 
-	public static String convertDateToString(Date date) {
-		SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT);
-
-		return sdf.format(date);
+	public static String convertLocalTimeToString(LocalTime time) {
+		DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(TIME_FORMAT);
+		return time.format(dateTimeFormatter);
 	}
 
-	public static String convertTimeToString(Date date) {
-		SimpleDateFormat sdf = new SimpleDateFormat(TIME_FORMAT);
-
-		return sdf.format(date);
-	}
-
-	public static String convertDateTimeToString(Date date) {
-		SimpleDateFormat sdf = new SimpleDateFormat(DATE_TIME_FORMAT);
-		return sdf.format(date);
+	public static String convertLocalDateTimeToString(LocalDateTime dateTime) {
+		DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DATE_TIME_FORMAT);
+		return dateTime.format(dateTimeFormatter);
 	}
 
 	static String convertIntToDayOfWeek(int day) {

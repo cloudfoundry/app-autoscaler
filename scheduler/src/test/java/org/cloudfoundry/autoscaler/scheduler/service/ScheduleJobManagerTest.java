@@ -15,12 +15,13 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.eq;
 
-import java.sql.Time;
-import java.util.Calendar;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
-import java.util.concurrent.TimeUnit;
 
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
@@ -88,10 +89,8 @@ public class ScheduleJobManagerTest extends TestConfiguration {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		TimeZone timeZone = TimeZone.getTimeZone("GMT");
 
-		Long now = System.currentTimeMillis();
-
-		Date startDateTime = new Date(now);
-		Date endDateTime = new Date(now + TimeUnit.SECONDS.toMillis(10));
+		LocalDateTime startDateTime = LocalDateTime.now();
+		LocalDateTime endDateTime = LocalDateTime.now().plusSeconds(10);
 
 		SpecificDateScheduleEntity specificDateScheduleEntity = new SpecificDateScheduleEntitiesBuilder(1)
 				.setAppid(appId).setTimeZone(timeZone.getID()).setScheduleId().setStartDateTime(0, startDateTime)
@@ -105,7 +104,7 @@ public class ScheduleJobManagerTest extends TestConfiguration {
 		String keyName = scheduleId + JobActionEnum.START.getJobIdSuffix();
 		JobKey startJobKey = new JobKey(keyName, scheduleType.getScheduleIdentifier());
 		TriggerKey startTriggerKey = new TriggerKey(keyName, scheduleType.getScheduleIdentifier());
-		Date expectedStartDateTime = DateHelper.getDateWithZoneOffset(startDateTime, timeZone);
+		ZonedDateTime expectedStartDateTime = DateHelper.getZonedDateTime(startDateTime, timeZone);
 
 		ArgumentCaptor<JobDetail> jobDetailArgumentCaptor = ArgumentCaptor.forClass(JobDetail.class);
 		ArgumentCaptor<Trigger> triggerArgumentCaptor = ArgumentCaptor.forClass(Trigger.class);
@@ -386,8 +385,8 @@ public class ScheduleJobManagerTest extends TestConfiguration {
 			String endTime, int[] dayOfMonth) throws SchedulerException {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
-		Time startDateTime = Time.valueOf(startTime);
-		Time endDateTime = Time.valueOf(endTime);
+		LocalTime startDateTime = LocalTime.parse(startTime);
+		LocalTime endDateTime = LocalTime.parse(endTime);
 
 		return new RecurringScheduleEntitiesBuilder(1, 0).setAppId(appId).setTimeZone(timeZone).setScheduleId()
 				.setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setStartTime(0, startDateTime)
@@ -396,31 +395,27 @@ public class ScheduleJobManagerTest extends TestConfiguration {
 
 	private RecurringScheduleEntity createRecurringScheduleWithDaysOfWeek(String timeZone, String startTime,
 			String endTime, int[] dayOfWeek) throws SchedulerException {
-		Calendar starDateCal = Calendar.getInstance();
-		starDateCal.set(2080, 9, 1, 0, 0, 0);
-		starDateCal.clear(Calendar.MILLISECOND);
 
-		Calendar endDateCal = Calendar.getInstance();
-		endDateCal.set(2080, 9, 20, 0, 0, 0);
-		endDateCal.clear(Calendar.MILLISECOND);
+		LocalDate startDate = LocalDate.of(2080, 9, 1);
+		LocalDate endDate = LocalDate.of(2080, 9, 10);
 
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
-		Time startDateTime = Time.valueOf(startTime);
-		Time endDateTime = Time.valueOf(endTime);
+		LocalTime startDateTime = LocalTime.parse(startTime);
+		LocalTime endDateTime = LocalTime.parse(endTime);
 
 		return new RecurringScheduleEntitiesBuilder(0, 1).setAppId(appId).setTimeZone(timeZone).setScheduleId()
 				.setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setStartTime(0, startDateTime)
-				.setEndTime(0, endDateTime).setStartDate(0, starDateCal.getTime()).setEndDate(0, endDateCal.getTime())
+				.setEndTime(0, endDateTime).setStartDate(0, startDate).setEndDate(0, endDate)
 				.setDayOfWeek(0, dayOfWeek).build().get(0);
 	}
 
-	private void assertSimpleTrigger(Trigger trigger, Date expectedStartDateTime, JobKey expectedStartJobKey,
+	private void assertSimpleTrigger(Trigger trigger, ZonedDateTime expectedStartDateTime, JobKey expectedStartJobKey,
 			TriggerKey expectedStartTriggerKey) {
 
 		assertThat(trigger.getJobKey(), is(expectedStartJobKey));
 		assertThat(trigger.getKey(), is(expectedStartTriggerKey));
-		assertThat(trigger.getStartTime(), is(expectedStartDateTime));
+		assertThat(trigger.getStartTime(), is(Date.from(expectedStartDateTime.toInstant())));
 		assertThat(trigger.getMisfireInstruction(), is(SimpleTrigger.MISFIRE_INSTRUCTION_FIRE_NOW));
 	}
 
@@ -434,10 +429,16 @@ public class ScheduleJobManagerTest extends TestConfiguration {
 		assertThat(cronTrigger.getTimeZone(), is(TimeZone.getTimeZone(recurringScheduleEntity.getTimeZone())));
 		assertThat(cronTrigger.getMisfireInstruction(), is(CronTrigger.MISFIRE_INSTRUCTION_FIRE_ONCE_NOW));
 
+		TimeZone timeZone = TimeZone.getTimeZone(recurringScheduleEntity.getTimeZone());
+
 		if (recurringScheduleEntity.getStartDate() != null) {
-			assertThat(cronTrigger.getStartTime(), is(recurringScheduleEntity.getStartDate()));
+			assertThat(cronTrigger.getStartTime(), is(
+					Date.from(recurringScheduleEntity.getStartDate().atStartOfDay(timeZone.toZoneId()).toInstant())));
 		}
-		assertThat(cronTrigger.getEndTime(), is(recurringScheduleEntity.getEndDate()));
+		if (recurringScheduleEntity.getEndDate() != null) {
+			assertThat(cronTrigger.getEndTime(), is(Date.from(
+					recurringScheduleEntity.getEndDate().plusDays(1).atStartOfDay(timeZone.toZoneId()).toInstant())));
+		}
 	}
 
 	private void assertCommonJobDataMap(JobDataMap jobDataMap, ScheduleEntity scheduleEntity) {
@@ -457,7 +458,7 @@ public class ScheduleJobManagerTest extends TestConfiguration {
 
 		JobDataMap jobDataMap = jobDetail.getJobDataMap();
 		assertCommonJobDataMap(jobDataMap, scheduleEntity);
-		assertThat(jobDataMap.getLong(END_JOB_START_TIME), is(scheduleEntity.getEndDateTime().getTime()));
+		assertThat(jobDataMap.get(END_JOB_START_TIME), is(scheduleEntity.getEndDateTime()));
 	}
 
 	private void assertCronJobDetail(JobDetail jobDetail, ScheduleEntity scheduleEntity, String cronExpression)

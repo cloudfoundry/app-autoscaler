@@ -5,7 +5,7 @@ import static org.junit.Assert.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
@@ -112,8 +112,8 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 	public void testCreateScheduleAndNotifyScalingEngine() throws Exception {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
-		Date startTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
-		Date endTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(2));
+		LocalDateTime startTime = LocalDateTime.now().plusMinutes(1);
+		LocalDateTime endTime = LocalDateTime.now().plusMinutes(2);
 
 		ApplicationSchedules applicationSchedules = new ApplicationPolicyBuilder(1, 5, TimeZone.getDefault().getID(), 1,
 				0, 0).build();

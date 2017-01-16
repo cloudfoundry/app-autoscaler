@@ -5,9 +5,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 
 import org.cloudfoundry.autoscaler.scheduler.dao.RecurringScheduleDao;
@@ -270,8 +270,8 @@ public class ScheduleRestController_SpecificScheduleValidationTest extends TestC
 
 		// Swap startDateTime and endDateTime.
 		SpecificDateScheduleEntity entity = applicationPolicy.getSchedules().getSpecificDate().get(0);
-		Date endDateTime = entity.getStartDateTime();
-		Date startDateTime = entity.getEndDateTime();
+		LocalDateTime endDateTime = entity.getStartDateTime();
+		LocalDateTime startDateTime = entity.getEndDateTime();
 		entity.setStartDateTime(startDateTime);
 		entity.setEndDateTime(endDateTime);
 
@@ -282,8 +282,8 @@ public class ScheduleRestController_SpecificScheduleValidationTest extends TestC
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.invalid.start.after.end",
 				scheduleBeingProcessed + " 0", "end_date_time",
-				DateHelper.convertDateTimeToString(entity.getEndDateTime()), "start_date_time",
-				DateHelper.convertDateTimeToString(entity.getStartDateTime()));
+				DateHelper.convertLocalDateTimeToString(entity.getEndDateTime()), "start_date_time",
+				DateHelper.convertLocalDateTimeToString(entity.getStartDateTime()));
 		assertErrorMessage(resultActions, errorMessage);
 	}
 
@@ -297,7 +297,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest extends TestC
 
 		// Swap startTime for endTime.
 		SpecificDateScheduleEntity entity = applicationPolicy.getSchedules().getSpecificDate().get(0);
-		Date oldDate = new Date(0);
+		LocalDateTime oldDate = LocalDateTime.now().minusDays(1);
 		entity.setStartDateTime(oldDate);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
@@ -307,7 +307,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest extends TestC
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.invalid.current.after",
 				scheduleBeingProcessed + " 0", "start_date_time",
-				DateHelper.convertDateTimeToString(entity.getStartDateTime()));
+				DateHelper.convertLocalDateTimeToString(entity.getStartDateTime()));
 		assertErrorMessage(resultActions, errorMessage);
 	}
 
@@ -321,7 +321,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest extends TestC
 
 		// Swap startTime for endTime.
 		SpecificDateScheduleEntity entity = applicationPolicy.getSchedules().getSpecificDate().get(0);
-		Date oldDate = new Date(0);
+		LocalDateTime oldDate = LocalDateTime.now().minusDays(1);
 		entity.setEndDateTime(oldDate);
 
 		String content = mapper.writeValueAsString(applicationPolicy);
@@ -331,7 +331,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest extends TestC
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.invalid.current.after",
 				scheduleBeingProcessed + " 0", "end_date_time",
-				DateHelper.convertDateTimeToString(entity.getEndDateTime()));
+				DateHelper.convertLocalDateTimeToString(entity.getEndDateTime()));
 		assertErrorMessage(resultActions, errorMessage);
 	}
 
