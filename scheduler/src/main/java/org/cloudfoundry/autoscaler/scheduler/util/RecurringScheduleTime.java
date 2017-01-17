@@ -1,7 +1,8 @@
 package org.cloudfoundry.autoscaler.scheduler.util;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -9,10 +10,10 @@ import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 
 public class RecurringScheduleTime implements Comparable<RecurringScheduleTime> {
 	private String scheduleIdentifier;
-	private Date startDate;
-	private Date endDate;
-	private Date startTime;
-	private Date endTime;
+	private LocalDate startDate;
+	private LocalDate endDate;
+	private LocalTime startTime;
+	private LocalTime endTime;
 
 	private List<Integer> dayOfWeek = null;
 	private List<Integer> dayOfMonth = null;
@@ -38,11 +39,11 @@ public class RecurringScheduleTime implements Comparable<RecurringScheduleTime> 
 		return scheduleIdentifier;
 	}
 
-	Date getStartTime() {
+	LocalTime getStartTime() {
 		return startTime;
 	}
 
-	Date getEndTime() {
+	LocalTime getEndTime() {
 		return endTime;
 	}
 
@@ -54,11 +55,11 @@ public class RecurringScheduleTime implements Comparable<RecurringScheduleTime> 
 		return this.dayOfMonth;
 	}
 
-	Date getStartDate() {
+	LocalDate getStartDate() {
 		return startDate;
 	}
 
-	Date getEndDate() {
+	LocalDate getEndDate() {
 		return endDate;
 	}
 
@@ -72,8 +73,8 @@ public class RecurringScheduleTime implements Comparable<RecurringScheduleTime> 
 
 	@Override
 	public int compareTo(RecurringScheduleTime scheduleTime) {
-		Date thisDateTime = this.getStartTime();
-		Date compareToDateTime = scheduleTime.getStartTime();
+		LocalTime thisDateTime = this.getStartTime();
+		LocalTime compareToDateTime = scheduleTime.getStartTime();
 
 		if (thisDateTime == null || compareToDateTime == null)
 			throw new NullPointerException("One of the date time value is null");

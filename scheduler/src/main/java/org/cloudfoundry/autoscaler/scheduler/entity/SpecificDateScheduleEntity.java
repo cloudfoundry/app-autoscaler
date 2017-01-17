@@ -1,6 +1,6 @@
 package org.cloudfoundry.autoscaler.scheduler.entity;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -35,7 +35,7 @@ public class SpecificDateScheduleEntity extends ScheduleEntity {
 	@NotNull
 	@Column(name = "start_date_time")
 	@JsonProperty("start_date_time")
-	private Date startDateTime;
+	private LocalDateTime startDateTime;
 
 	@ApiModelProperty(example = DateHelper.DATE_TIME_FORMAT, required = true, position = 2)
 	@JsonFormat(pattern = DateHelper.DATE_TIME_FORMAT)
@@ -44,21 +44,21 @@ public class SpecificDateScheduleEntity extends ScheduleEntity {
 	@NotNull
 	@Column(name = "end_date_time")
 	@JsonProperty("end_date_time")
-	private Date endDateTime;
+	private LocalDateTime endDateTime;
 
-	public Date getStartDateTime() {
+	public LocalDateTime getStartDateTime() {
 		return startDateTime;
 	}
 
-	public void setStartDateTime(Date startDateTime) {
+	public void setStartDateTime(LocalDateTime startDateTime) {
 		this.startDateTime = startDateTime;
 	}
 
-	public Date getEndDateTime() {
+	public LocalDateTime getEndDateTime() {
 		return endDateTime;
 	}
 
-	public void setEndDateTime(Date endDateTime) {
+	public void setEndDateTime(LocalDateTime endDateTime) {
 		this.endDateTime = endDateTime;
 	}
 

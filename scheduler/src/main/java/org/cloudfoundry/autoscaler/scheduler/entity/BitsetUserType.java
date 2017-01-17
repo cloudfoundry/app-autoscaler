@@ -8,7 +8,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.hibernate.HibernateException;
-import org.hibernate.engine.spi.SessionImplementor;
+import org.hibernate.engine.spi.SharedSessionContractImplementor;
 import org.hibernate.usertype.UserType;
 
 /**
@@ -20,8 +20,9 @@ public class BitsetUserType implements UserType {
 	protected static final int SQLTYPE = java.sql.Types.INTEGER;
 
 	@Override
-	public Object nullSafeGet(final ResultSet rs, final String[] names, final SessionImplementor sessionImplementor,
-			final Object owner) throws HibernateException, SQLException {
+	public Object nullSafeGet(ResultSet rs, String[] names,
+			SharedSessionContractImplementor sharedSessionContractImplementor, Object owner)
+			throws HibernateException, SQLException {
 		String columnName = names[0];
 		int value = rs.getInt(columnName);
 
@@ -37,11 +38,12 @@ public class BitsetUserType implements UserType {
 		}
 
 		return javaArray.stream().mapToInt(i -> i).toArray();
+
 	}
 
 	@Override
-	public void nullSafeSet(final PreparedStatement statement, final Object value, final int index,
-			final SessionImplementor sessionImplementor) throws HibernateException, SQLException {
+	public void nullSafeSet(PreparedStatement statement, Object value, int index,
+			SharedSessionContractImplementor sharedSessionContractImplementor) throws HibernateException, SQLException {
 		if (value == null) {
 			statement.setNull(index, SQLTYPE);
 		} else {
@@ -49,8 +51,8 @@ public class BitsetUserType implements UserType {
 
 			int bitset = 0;
 
-			for (int i = 0; i < castObject.length; i++) {
-				bitset |= 1 << (castObject[i] - 1);
+			for (int aCastObject : castObject) {
+				bitset |= 1 << (aCastObject - 1);
 			}
 
 			statement.setInt(index, bitset);

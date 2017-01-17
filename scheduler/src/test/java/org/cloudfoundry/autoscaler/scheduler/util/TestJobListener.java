@@ -1,13 +1,14 @@
 package org.cloudfoundry.autoscaler.scheduler.util;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.listeners.JobListenerSupport;
 
 public class TestJobListener extends JobListenerSupport {
 	private int expectedNumOfJobFired;
-	private int currentNumOfFire = 0;
-
+	private volatile AtomicInteger currentNumOfFire = new AtomicInteger(0);
 
 	public TestJobListener(int expectedNumOfJobFired) {
 		this.expectedNumOfJobFired = expectedNumOfJobFired;
@@ -20,20 +21,19 @@ public class TestJobListener extends JobListenerSupport {
 
 	@Override
 	public void jobWasExecuted(JobExecutionContext context, JobExecutionException jobException) {
-		currentNumOfFire++;
-
-		if (currentNumOfFire < expectedNumOfJobFired) {
-			return;
-		}
-
 		synchronized (this) {
+
+			if (currentNumOfFire.addAndGet(1) < expectedNumOfJobFired) {
+				return;
+			}
+
 			notify();
 		}
 	}
 
 	synchronized public void waitForJobToFinish(long timeoutMillis) throws InterruptedException {
 		wait(timeoutMillis);
-		if (currentNumOfFire < expectedNumOfJobFired) {
+		if (currentNumOfFire.get() < expectedNumOfJobFired) {
 			throw new RuntimeException("Waiting for job time out. Number of times job fired: " + currentNumOfFire
 					+ " expected: " + expectedNumOfJobFired);
 		}

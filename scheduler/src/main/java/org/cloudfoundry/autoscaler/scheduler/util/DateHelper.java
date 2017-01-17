@@ -1,14 +1,13 @@
 package org.cloudfoundry.autoscaler.scheduler.util;
 
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.TimeZone;
 
-/**
- *
- *
- */
 public class DateHelper {
 
 	public static final String DATE_TIME_FORMAT = "yyyy-MM-dd'T'HH:mm";
@@ -20,7 +19,7 @@ public class DateHelper {
 	public static final int DAY_OF_MONTH_MINIMUM = 1;
 	public static final int DAY_OF_MONTH_MAXIMUM = 31;
 
-	public static final String[] supportedTimezones = new String[] {
+	static final String[] supportedTimezones = new String[] {
 	           "Etc/GMT+12",
 	           "Etc/GMT+11",
 	           "Pacific/Midway",
@@ -604,46 +603,27 @@ public class DateHelper {
 	           "Etc/GMT-14",
 	           "Pacific/Kiritimati"};
 
-	public static Date getDateWithZoneOffset(Date policyDateTime, TimeZone policyTimeZone) {
-		long policyDateTimeInMillis = getTimeInMillis(policyDateTime, policyTimeZone);
-
-		TimeZone currentTimeZone = TimeZone.getDefault();
-
-		Date date = new Date(policyDateTimeInMillis - policyTimeZone.getRawOffset() + currentTimeZone.getRawOffset());
-
-		return date;
+	public static ZonedDateTime getZonedDateTime(LocalDateTime dateTime, TimeZone timeZone) {
+		ZoneId zoneId = timeZone.toZoneId();
+		return dateTime.atZone(zoneId);
 	}
 
-	public static String convertDateToString(Date date) {
-		SimpleDateFormat sdf = new SimpleDateFormat(DATE_FORMAT);
-
-		return sdf.format(date);
+	static ZonedDateTime getZonedDateTime(LocalDate date, TimeZone timeZone) {
+		ZoneId zoneId = timeZone.toZoneId();
+		return date.atStartOfDay(zoneId);
 	}
 
-	public static String convertTimeToString(Date date) {
-		SimpleDateFormat sdf = new SimpleDateFormat(TIME_FORMAT);
-
-		return sdf.format(date);
+	public static String convertLocalTimeToString(LocalTime time) {
+		DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(TIME_FORMAT);
+		return time.format(dateTimeFormatter);
 	}
 
-	public static String convertDateTimeToString(Date date) {
-		SimpleDateFormat sdf = new SimpleDateFormat(DATE_TIME_FORMAT);
-		return sdf.format(date);
+	public static String convertLocalDateTimeToString(LocalDateTime dateTime) {
+		DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DATE_TIME_FORMAT);
+		return dateTime.format(dateTimeFormatter);
 	}
 
-	public static Long getTimeInMillis(Date dateTime, TimeZone timeZone) {
-		Calendar targetTime = Calendar.getInstance(timeZone);
-		targetTime.setTimeInMillis(dateTime.getTime());
-		return targetTime.getTimeInMillis();
-	}
-
-	public static Calendar getCalendarDate(Date dateTime, TimeZone timeZone) {
-		Calendar calendar = Calendar.getInstance(timeZone);
-		calendar.setTime(dateTime);
-		return calendar;
-	}
-
-	public static String convertIntToDayOfWeek(int day) {
+	static String convertIntToDayOfWeek(int day) {
 		switch (day) {
 		case 1:
 			return "MON";

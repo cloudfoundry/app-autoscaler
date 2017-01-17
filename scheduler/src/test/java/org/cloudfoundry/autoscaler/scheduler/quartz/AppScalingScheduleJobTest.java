@@ -7,8 +7,10 @@ import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.notNull;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.Level;
@@ -24,7 +26,7 @@ import org.cloudfoundry.autoscaler.scheduler.util.EmbeddedTomcatUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.JobActionEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.TestConfiguration;
-import org.cloudfoundry.autoscaler.scheduler.util.TestDataCleanupHelper;
+import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper.JobInformation;
 import org.cloudfoundry.autoscaler.scheduler.util.TestJobListener;
@@ -86,7 +88,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 	private RestTemplate restTemplate;
 
 	@Autowired
-	private TestDataCleanupHelper testDataCleanupHelper;
+	private TestDataDbUtil testDataDbUtil;
 
 	@Autowired
 	private ApplicationContext applicationContext;
@@ -112,7 +114,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 	public void before() throws SchedulerException {
 		MockitoAnnotations.initMocks(this);
 		memScheduler = createMemScheduler();
-		testDataCleanupHelper.cleanupData(memScheduler);
+		testDataDbUtil.cleanupData(memScheduler);
 
 		Mockito.reset(mockAppender);
 		Mockito.reset(activeScheduleDao);
@@ -141,8 +143,9 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 	public void testNotifyStartOfActiveScheduleToScalingEngine_with_SpecificDateSchedule() throws Exception {
 		// Build the job and trigger
 		JobInformation jobInformation = new JobInformation<>(AppScalingSpecificDateScheduleStartJob.class);
-		Date endJobStartTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
-		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime);
+		Date endJobStartTime = TestDataSetupHelper.getCurrentDateTime(1);
+		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime,
+				TimeZone.getDefault());
 
 		ActiveScheduleEntity activeScheduleEntity = ScheduleJobHelper.setupActiveSchedule(jobDataMap);
 		String appId = activeScheduleEntity.getAppId();
@@ -161,8 +164,8 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		Mockito.verify(activeScheduleDao, Mockito.times(1)).create(Mockito.anyObject());
 		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 
-		String expectedMessage = messageBundleResourceHelper.lookupMessage(
-				"scalingengine.notification.activeschedule.start", appId, scheduleId);
+		String expectedMessage = messageBundleResourceHelper
+				.lookupMessage("scalingengine.notification.activeschedule.start", appId, scheduleId);
 		assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), is(Level.INFO));
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
 
@@ -187,8 +190,9 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 			throws Exception {
 		// Build the job and trigger
 		JobInformation jobInformation = new JobInformation<>(AppScalingSpecificDateScheduleStartJob.class);
-		Date endJobStartTime = new Date(System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(1));
-		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime);
+		Date endJobStartTime = TestDataSetupHelper.getCurrentDateTime(-1);
+		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime,
+				TimeZone.getDefault());
 
 		ActiveScheduleEntity activeScheduleEntity = ScheduleJobHelper.setupActiveSchedule(jobDataMap);
 		String appId = activeScheduleEntity.getAppId();
@@ -208,10 +212,11 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 
 		String expectedMessage = messageBundleResourceHelper.lookupMessage(
-				"scheduler.job.start.specificdate.schedule.skipped", endJobStartTime,
+				"scheduler.job.start.specificdate.schedule.skipped",
+				TestDataSetupHelper.convertDateTimeString(endJobStartTime, TimeZone.getDefault()),
 				jobInformation.getJobDetail().getKey(), appId, scheduleId);
-		assertThat("Log level should be WARN", logCaptor.getValue().getLevel(), is(Level.WARN));
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
+		assertThat("Log level should be WARN", logCaptor.getValue().getLevel(), is(Level.WARN));
 
 		// For end job
 		Mockito.verify(scheduler, Mockito.never()).scheduleJob(Mockito.anyObject(), Mockito.anyObject());
@@ -245,10 +250,10 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		Mockito.verify(activeScheduleDao, Mockito.times(1)).create(Mockito.anyObject());
 		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 
-		String expectedMessage = messageBundleResourceHelper.lookupMessage(
-				"scalingengine.notification.activeschedule.start", appId, scheduleId);
-		assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), is(Level.INFO));
+		String expectedMessage = messageBundleResourceHelper
+				.lookupMessage("scalingengine.notification.activeschedule.start", appId, scheduleId);
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
+		assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), is(Level.INFO));
 
 		// For end job
 		ArgumentCaptor<JobDetail> jobDetailArgumentCaptor = ArgumentCaptor.forClass(JobDetail.class);
@@ -298,8 +303,8 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		String expectedMessage = messageBundleResourceHelper.lookupMessage("scheduler.job.cronexpression.parse.failed",
 				"Illegal characters for this position: 'INV'", "Invalid cron expression",
 				jobInformation.getJobDetail().getKey(), appId, scheduleId);
-		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
+		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
 
 		// For end job
 		Mockito.verify(scheduler, Mockito.never()).scheduleJob(Mockito.anyObject(), Mockito.anyObject());
@@ -312,8 +317,9 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 	public void testNotifyStartOfActiveScheduleToScalingEngine_with_existing_ActiveSchedule() throws Exception {
 		// Build the job and trigger
 		JobInformation jobInformation = new JobInformation<>(AppScalingSpecificDateScheduleStartJob.class);
-		Date endJobStartTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
-		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime);
+		Date endJobStartTime = TestDataSetupHelper.getCurrentDateTime(1);
+		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime,
+				TimeZone.getDefault());
 		ActiveScheduleEntity activeScheduleEntity = ScheduleJobHelper.setupActiveSchedule(jobDataMap);
 		String appId = activeScheduleEntity.getAppId();
 		Long scheduleId = activeScheduleEntity.getId();
@@ -332,8 +338,8 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		Mockito.verify(activeScheduleDao, Mockito.times(1)).create(Mockito.anyObject());
 		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 
-		String expectedMessage = messageBundleResourceHelper.lookupMessage(
-				"scalingengine.notification.activeschedule.start", appId, scheduleId);
+		String expectedMessage = messageBundleResourceHelper
+				.lookupMessage("scalingengine.notification.activeschedule.start", appId, scheduleId);
 		assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), is(Level.INFO));
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
 
@@ -364,9 +370,10 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 
 		// Build the job and trigger
 		JobInformation jobInformation = new JobInformation<>(AppScalingSpecificDateScheduleStartJob.class);
-		Date endJobStartTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
+		Date endJobStartTime = TestDataSetupHelper.getCurrentDateTime(1);
 
-		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime);
+		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime,
+				TimeZone.getDefault());
 
 		ActiveScheduleEntity activeScheduleEntity = ScheduleJobHelper.setupActiveSchedule(jobDataMap);
 		String appId = activeScheduleEntity.getAppId();
@@ -389,8 +396,8 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 
 		String expectedMessage = messageBundleResourceHelper
 				.lookupMessage("database.error.delete.activeschedule.failed", "test exception", appId);
-		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
+		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
 
 		// For end job
 		Mockito.verify(scheduler, Mockito.never()).scheduleJob(Mockito.anyObject(), Mockito.anyObject());
@@ -403,10 +410,11 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 	public void testNotifyEndOfActiveScheduleToScalingEngine() throws Exception {
 		// Build the job
 		JobInformation jobInformation = new JobInformation<>(AppScalingScheduleEndJob.class);
-		Date endJobStartTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
+		Date endJobStartTime = TestDataSetupHelper.getCurrentDateTime(1);
 
 		long startJobIdentifier = 10L;
-		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime);
+		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime,
+				TimeZone.getDefault());
 		jobDataMap.put(ScheduleJobHelper.START_JOB_IDENTIFIER, startJobIdentifier);
 
 		ActiveScheduleEntity activeScheduleEntity = ScheduleJobHelper.setupActiveSchedule(jobDataMap);
@@ -425,10 +433,10 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		Mockito.verify(activeScheduleDao, Mockito.times(1)).delete(activeScheduleEntity.getId(), startJobIdentifier);
 		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 
-		String expectedMessage = messageBundleResourceHelper.lookupMessage(
-				"scalingengine.notification.activeschedule.remove", appId, scheduleId);
-		assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), is(Level.INFO));
+		String expectedMessage = messageBundleResourceHelper
+				.lookupMessage("scalingengine.notification.activeschedule.remove", appId, scheduleId);
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
+		assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), is(Level.INFO));
 
 		// For notify to Scaling Engine
 		assertNotifyScalingEngineForEndJob(activeScheduleEntity);
@@ -442,8 +450,9 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 
 		// Build the job
 		JobInformation jobInformation = new JobInformation<>(AppScalingSpecificDateScheduleStartJob.class);
-		Date endJobStartTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
-		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime);
+		Date endJobStartTime = TestDataSetupHelper.getCurrentDateTime(1);
+		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime,
+				TimeZone.getDefault());
 
 		ActiveScheduleEntity activeScheduleEntity = ScheduleJobHelper.setupActiveSchedule(jobDataMap);
 		String appId = activeScheduleEntity.getAppId();
@@ -469,8 +478,8 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		String expectedMessage = messageBundleResourceHelper
 				.lookupMessage("database.error.create.activeschedule.failed", "test exception", appId, scheduleId);
 
-		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
+		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
 
 		// For end job
 		ArgumentCaptor<JobDetail> jobDetailArgumentCaptor = ArgumentCaptor.forClass(JobDetail.class);
@@ -495,10 +504,11 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 
 		// Build the job
 		JobInformation jobInformation = new JobInformation<>(AppScalingScheduleEndJob.class);
-		Date endJobStartTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
+		Date endJobStartTime = TestDataSetupHelper.getCurrentDateTime(1);
 
 		long startJobIdentifier = 10L;
-		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime);
+		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime,
+				TimeZone.getDefault());
 		jobDataMap.put(ScheduleJobHelper.START_JOB_IDENTIFIER, startJobIdentifier);
 
 		ActiveScheduleEntity activeScheduleEntity = ScheduleJobHelper.setupActiveSchedule(jobDataMap);
@@ -523,8 +533,8 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		String expectedMessage = messageBundleResourceHelper
 				.lookupMessage("database.error.delete.activeschedule.failed", "test exception", appId, scheduleId);
 
-		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
+		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
 
 		// For notify to Scaling Engine
 		assertNotifyScalingEngineForEndJob(activeScheduleEntity);
@@ -538,8 +548,9 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 
 		// Build the job
 		JobInformation jobInformation = new JobInformation<>(AppScalingSpecificDateScheduleStartJob.class);
-		Date endJobStartTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
-		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime);
+		Date endJobStartTime = TestDataSetupHelper.getCurrentDateTime(1);
+		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime,
+				TimeZone.getDefault());
 
 		ActiveScheduleEntity activeScheduleEntity = ScheduleJobHelper.setupActiveSchedule(jobDataMap);
 		String appId = activeScheduleEntity.getAppId();
@@ -567,8 +578,8 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 				"scheduler.job.reschedule.failed.max.reached", jobInformation.getTrigger().getKey(), appId, scheduleId,
 				expectedNumOfTimesJobRescheduled, ScheduleJobHelper.RescheduleCount.ACTIVE_SCHEDULE.name());
 
-		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
+		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
 
 		// For end job
 		Mockito.verify(scheduler, Mockito.never()).scheduleJob(Mockito.anyObject(), Mockito.anyObject());
@@ -585,10 +596,11 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 
 		// Build the job
 		JobInformation jobInformation = new JobInformation<>(AppScalingScheduleEndJob.class);
-		Date endJobStartTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
+		Date endJobStartTime = TestDataSetupHelper.getCurrentDateTime(1);
 
 		long startJobIdentifier = 10L;
-		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime);
+		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime,
+				TimeZone.getDefault());
 		jobDataMap.put(ScheduleJobHelper.START_JOB_IDENTIFIER, startJobIdentifier);
 
 		ActiveScheduleEntity activeScheduleEntity = ScheduleJobHelper.setupActiveSchedule(jobDataMap);
@@ -614,8 +626,8 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 				"scheduler.job.reschedule.failed.max.reached", jobInformation.getTrigger().getKey(), appId, scheduleId,
 				expectedNumOfTimesJobRescheduled, ScheduleJobHelper.RescheduleCount.ACTIVE_SCHEDULE.name());
 
-		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
+		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
 
 		// For notify to Scaling Engine
 		Mockito.verify(restTemplate, Mockito.never()).delete(Mockito.anyString(), notNull());
@@ -626,8 +638,9 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		setLogLevel(Level.ERROR);
 		// Build the job and trigger
 		JobInformation jobInformation = new JobInformation<>(AppScalingSpecificDateScheduleStartJob.class);
-		Date endJobStartTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
-		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime);
+		Date endJobStartTime = TestDataSetupHelper.getCurrentDateTime(1);
+		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime,
+				TimeZone.getDefault());
 		// Min_Count > Max_Count (Invalid data)
 		jobDataMap.put(ScheduleJobHelper.INSTANCE_MIN_COUNT, 5);
 		jobDataMap.put(ScheduleJobHelper.INSTANCE_MAX_COUNT, 4);
@@ -652,8 +665,8 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		String expectedMessage = messageBundleResourceHelper.lookupMessage("scalingengine.notification.client.error",
 				400, "test error message", appId, scheduleId, JobActionEnum.START);
 
-		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
+		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
 
 		// For end job
 		ArgumentCaptor<JobDetail> jobDetailArgumentCaptor = ArgumentCaptor.forClass(JobDetail.class);
@@ -677,10 +690,11 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 
 		// Build the job and trigger
 		JobInformation jobInformation = new JobInformation<>(AppScalingScheduleEndJob.class);
-		Date endJobStartTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
+		Date endJobStartTime = TestDataSetupHelper.getCurrentDateTime(1);
 
 		long startJobIdentifier = 10L;
-		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime);
+		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime,
+				TimeZone.getDefault());
 		jobDataMap.put(ScheduleJobHelper.START_JOB_IDENTIFIER, startJobIdentifier);
 		// Min_Count > Max_Count (Invalid data)
 		jobDataMap.put(ScheduleJobHelper.INSTANCE_MIN_COUNT, 5);
@@ -705,8 +719,8 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		String expectedMessage = messageBundleResourceHelper.lookupMessage("scalingengine.notification.client.error",
 				400, "test error message", appId, scheduleId, JobActionEnum.END);
 
-		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
+		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
 
 		// For notify to Scaling Engine
 		assertNotifyScalingEngineForEndJob(activeScheduleEntity);
@@ -717,8 +731,9 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		setLogLevel(Level.ERROR);
 		// Build the job and trigger
 		JobInformation jobInformation = new JobInformation<>(AppScalingSpecificDateScheduleStartJob.class);
-		Date endJobStartTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
-		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime);
+		Date endJobStartTime = TestDataSetupHelper.getCurrentDateTime(1);
+		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime,
+				TimeZone.getDefault());
 
 		ActiveScheduleEntity activeScheduleEntity = ScheduleJobHelper.setupActiveSchedule(jobDataMap);
 		String appId = activeScheduleEntity.getAppId();
@@ -739,8 +754,8 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		String expectedMessage = messageBundleResourceHelper.lookupMessage("scalingengine.notification.failed", 500,
 				"test error message", appId, scheduleId, JobActionEnum.START);
 
-		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
+		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
 
 		// For end job
 		ArgumentCaptor<JobDetail> jobDetailArgumentCaptor = ArgumentCaptor.forClass(JobDetail.class);
@@ -764,10 +779,11 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 
 		// Build the job and trigger
 		JobInformation jobInformation = new JobInformation<>(AppScalingScheduleEndJob.class);
-		Date endJobStartTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
+		Date endJobStartTime = TestDataSetupHelper.getCurrentDateTime(1);
 
 		long startJobIdentifier = 10L;
-		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime);
+		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime,
+				TimeZone.getDefault());
 		jobDataMap.put(ScheduleJobHelper.START_JOB_IDENTIFIER, startJobIdentifier);
 
 		ActiveScheduleEntity activeScheduleEntity = ScheduleJobHelper.setupActiveSchedule(jobDataMap);
@@ -788,8 +804,8 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		String expectedMessage = messageBundleResourceHelper.lookupMessage("scalingengine.notification.failed", 500,
 				"test error message", appId, scheduleId, JobActionEnum.END);
 
-		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
+		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
 
 		// For notify to Scaling Engine
 		assertNotifyScalingEngineForEndJob(activeScheduleEntity);
@@ -801,8 +817,9 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 
 		// Build the job and trigger
 		JobInformation jobInformation = new JobInformation<>(AppScalingSpecificDateScheduleStartJob.class);
-		Date endJobStartTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
-		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime);
+		Date endJobStartTime = TestDataSetupHelper.getCurrentDateTime(1);
+		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime,
+				TimeZone.getDefault());
 
 		ActiveScheduleEntity activeScheduleEntity = ScheduleJobHelper.setupActiveSchedule(jobDataMap);
 		String appId = activeScheduleEntity.getAppId();
@@ -830,8 +847,8 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 				jobInformation.getTrigger().getKey(), appId, scheduleId, 2,
 				ScheduleJobHelper.RescheduleCount.SCALING_ENGINE_NOTIFICATION.name());
 
-		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
+		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
 
 		// For end job
 		ArgumentCaptor<JobDetail> jobDetailArgumentCaptor = ArgumentCaptor.forClass(JobDetail.class);
@@ -854,8 +871,9 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		setLogLevel(Level.ERROR);
 		// Build the job
 		JobInformation jobInformation = new JobInformation<>(AppScalingSpecificDateScheduleStartJob.class);
-		Date endJobStartTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
-		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime);
+		Date endJobStartTime = TestDataSetupHelper.getCurrentDateTime(1);
+		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime,
+				TimeZone.getDefault());
 
 		ActiveScheduleEntity activeScheduleEntity = ScheduleJobHelper.setupActiveSchedule(jobDataMap);
 		String appId = activeScheduleEntity.getAppId();
@@ -877,8 +895,8 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 
 		String expectedMessage = messageBundleResourceHelper.lookupMessage("scheduler.job.end.schedule.failed",
 				"test exception", "\\w.*", appId, scheduleId, "\\w.*");
-		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
 		assertTrue(logCaptor.getValue().getMessage().getFormattedMessage().matches(expectedMessage));
+		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
 
 		// For end job
 		ArgumentCaptor<JobDetail> jobDetailArgumentCaptor = ArgumentCaptor.forClass(JobDetail.class);
@@ -948,10 +966,10 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 
 	}
 
-	private JobDataMap setupJobDataForSpecificDateSchedule(JobDetail jobDetail, Date endJobStartTime) {
+	private JobDataMap setupJobDataForSpecificDateSchedule(JobDetail jobDetail, Date startTime, TimeZone timeZone) {
 		JobDataMap jobDataMap = TestDataSetupHelper.setupJobDataMap(jobDetail);
-
-		jobDataMap.put(ScheduleJobHelper.END_JOB_START_TIME, endJobStartTime.getTime());
+		LocalDateTime endJobStartTime = LocalDateTime.ofInstant(startTime.toInstant(), timeZone.toZoneId());
+		jobDataMap.put(ScheduleJobHelper.END_JOB_START_TIME, endJobStartTime);
 
 		return jobDataMap;
 	}

@@ -10,7 +10,7 @@ import javax.sql.DataSource;
 
 import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.util.TestConfiguration;
-import org.cloudfoundry.autoscaler.scheduler.util.TestDataCleanupHelper;
+import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationException;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,13 +32,12 @@ public class ActiveScheduleDaoImpl_FailureTest extends TestConfiguration {
 	private DataSource dataSource;
 
 	@Autowired
-	TestDataCleanupHelper testDataCleanupHelper;
+	TestDataDbUtil testDataDbUtil;
 
 	@Before
 	public void before() throws SQLException, InterruptedException {
 		Mockito.reset(dataSource);
 		Mockito.when(dataSource.getConnection()).thenThrow(new SQLException("test exception"));
-
 	}
 
 	@Test

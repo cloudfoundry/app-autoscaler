@@ -1,6 +1,8 @@
 package org.cloudfoundry.autoscaler.scheduler.service;
 
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZonedDateTime;
 import java.util.TimeZone;
 
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
@@ -59,7 +61,7 @@ class ScheduleJobManager {
 		// Build the trigger
 		TimeZone policyTimeZone = TimeZone.getTimeZone(specificDateScheduleEntity.getTimeZone());
 
-		Date triggerStartDateTime = DateHelper.getDateWithZoneOffset(specificDateScheduleEntity.getStartDateTime(),
+		ZonedDateTime triggerStartDateTime = DateHelper.getZonedDateTime(specificDateScheduleEntity.getStartDateTime(),
 				policyTimeZone);
 
 		TriggerKey startTriggerKey = new TriggerKey(keyName, ScheduleTypeEnum.SPECIFIC_DATE.getScheduleIdentifier());
@@ -87,7 +89,7 @@ class ScheduleJobManager {
 		JobDetail jobStartDetail = ScheduleJobHelper.buildJob(startJobKey, AppScalingRecurringScheduleStartJob.class);
 
 		// Build the trigger
-		Date triggerStartTime = recurringScheduleEntity.getStartTime();
+		LocalTime triggerStartTime = recurringScheduleEntity.getStartTime();
 
 		// Set the data in JobDetail for informing the scaling engine that scaling job needs to be started
 		String cronExpression = ScheduleJobHelper.convertRecurringScheduleToCronExpression(
@@ -132,9 +134,9 @@ class ScheduleJobManager {
 		jobDataMap.put(ScheduleJobHelper.CREATE_END_JOB_TASK_DONE, false);
 	}
 
-	private void setupSpecificDateScheduleScalingData(JobDetail jobDetail, Date endJobStartTime) {
+	private void setupSpecificDateScheduleScalingData(JobDetail jobDetail, LocalDateTime endJobStartTime) {
 		JobDataMap jobDataMap = jobDetail.getJobDataMap();
-		jobDataMap.put(ScheduleJobHelper.END_JOB_START_TIME, endJobStartTime.getTime());
+		jobDataMap.put(ScheduleJobHelper.END_JOB_START_TIME, endJobStartTime);
 	}
 
 	private void setupRecurringScheduleScalingData(JobDetail jobDetail, String cronExpression) {

@@ -1,6 +1,7 @@
 package org.cloudfoundry.autoscaler.scheduler.quartz;
 
-import java.util.Date;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -29,18 +30,20 @@ abstract class AppScalingScheduleStartJob extends AppScalingScheduleJob {
 	@Autowired
 	private Scheduler scheduler;
 
-	abstract Date calculateEndJobStartTime(JobExecutionContext jobExecutionContext) throws JobExecutionException;
+	abstract ZonedDateTime calculateEndJobStartTime(JobExecutionContext jobExecutionContext)
+			throws JobExecutionException;
 
-	boolean shouldExecuteStartJob(JobExecutionContext jobExecutionContext, Date startJobStartTime,
-			Date endJobStartTime) {
+	boolean shouldExecuteStartJob(JobExecutionContext jobExecutionContext, ZonedDateTime startJobStartTime,
+			ZonedDateTime endJobStartTime) {
 		return true;
 	}
 
 	@Override
 	public void executeInternal(JobExecutionContext jobExecutionContext) throws JobExecutionException {
 		JobActionEnum jobStart = JobActionEnum.START;
-		Date startJobStartTime = jobExecutionContext.getFireTime();
-		Date endJobStartTime = calculateEndJobStartTime(jobExecutionContext);
+		ZonedDateTime startJobStartTime = ZonedDateTime.ofInstant(jobExecutionContext.getFireTime().toInstant(),
+				ZoneId.systemDefault());
+		ZonedDateTime endJobStartTime = calculateEndJobStartTime(jobExecutionContext);
 		if (shouldExecuteStartJob(jobExecutionContext, startJobStartTime, endJobStartTime)) {
 
 			JobDataMap jobDataMap = jobExecutionContext.getJobDetail().getJobDataMap();
@@ -112,7 +115,7 @@ abstract class AppScalingScheduleStartJob extends AppScalingScheduleJob {
 	}
 
 	private void scheduleEndJob(JobExecutionContext jobExecutionContext, long startJobIdentifier,
-			Date endJobStartTime) {
+			ZonedDateTime endJobStartTime) {
 		JobDataMap jobDataMap = jobExecutionContext.getJobDetail().getJobDataMap();
 		if (!jobDataMap.getBoolean(ScheduleJobHelper.CREATE_END_JOB_TASK_DONE)) {
 			jobDataMap.put(ScheduleJobHelper.START_JOB_IDENTIFIER, startJobIdentifier);

@@ -1,10 +1,13 @@
 package org.cloudfoundry.autoscaler.scheduler.util;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -66,23 +69,20 @@ public class DataValidationHelper {
 	 * @param timeZone
 	 * @return
 	 */
-	public static boolean isDateTimeAfterNow(Date dateTime, TimeZone timeZone) {
-		Calendar calToCompare = DateHelper.getCalendarDate(dateTime, timeZone);
-		Calendar calNow = Calendar.getInstance(timeZone);
-		return calToCompare.after(calNow);
+	public static boolean isDateTimeAfterNow(LocalDateTime dateTime, TimeZone timeZone) {
+		ZoneId policyZoneId = timeZone.toZoneId();
+
+		ZonedDateTime policyDate = DateHelper.getZonedDateTime(dateTime, timeZone);
+
+		return policyDate.isAfter(ZonedDateTime.now(policyZoneId));
 	}
 
-	public static boolean isDateAfterOrEqualsNow(Date date, TimeZone policyTimeZone) {
-		Date compareTo = DateHelper.getDateWithZoneOffset(date, policyTimeZone);
+	public static boolean isDateAfterOrEqualsNow(LocalDate date, TimeZone timeZone) {
+		ZoneId policyZoneId = timeZone.toZoneId();
 
-		Calendar calNow = Calendar.getInstance();
-		calNow.set(Calendar.HOUR_OF_DAY, 0);
-		calNow.set(Calendar.MINUTE, 0);
-		calNow.set(Calendar.SECOND, 0);
-		calNow.set(Calendar.MILLISECOND, 0);
-		Date now = DateHelper.getDateWithZoneOffset(calNow.getTime(), policyTimeZone);
+		ZonedDateTime policyDate = DateHelper.getZonedDateTime(date, timeZone);
 
-		return (compareTo.compareTo(now) >= 0);
+		return !policyDate.toLocalDate().isBefore(ZonedDateTime.now(policyZoneId).toLocalDate());
 	}
 
 	/**
@@ -92,12 +92,19 @@ public class DataValidationHelper {
 	 * @param startDateTime
 	 * @return
 	 */
-	public static boolean isAfter(Date endDateTime, Date startDateTime) {
+	public static boolean isAfter(LocalDateTime endDateTime, LocalDateTime startDateTime) {
 		if (isNotNull(endDateTime) && isNotNull(startDateTime)) {
-			return  endDateTime.after(startDateTime);
+			return endDateTime.isAfter(startDateTime);
 		}
 		return false;
 
+	}
+
+	public static boolean isAfter(LocalTime endTime, LocalTime startTime) {
+		if (isNotNull(endTime) && isNotNull(startTime)) {
+			return endTime.isAfter(startTime);
+		}
+		return false;
 	}
 
 	public static boolean isBetweenMinAndMaxValues(int[] array, int lowerLimit, int upperLimit) {
@@ -172,8 +179,8 @@ public class DataValidationHelper {
 		return isOverlapping;
 	}
 
-	private static boolean isOverlapping(Date firstStartDate, Date firstEndDate, Date secondStartDate,
-			Date secondEndDate) {
+	private static boolean isOverlapping(LocalDate firstStartDate, LocalDate firstEndDate, LocalDate secondStartDate,
+			LocalDate secondEndDate) {
 		boolean isOverlapping = false;
 
 		if ((firstStartDate == null && firstEndDate == null) || (secondStartDate == null && secondEndDate == null)
@@ -271,5 +278,6 @@ public class DataValidationHelper {
 		}
 		return overlapDateTimeValidationErrorMsgList;
 	}
+
 
 }

@@ -5,7 +5,7 @@ import static org.junit.Assert.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
@@ -22,7 +22,7 @@ import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationSchedules;
 import org.cloudfoundry.autoscaler.scheduler.util.ApplicationPolicyBuilder;
 import org.cloudfoundry.autoscaler.scheduler.util.EmbeddedTomcatUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestConfiguration;
-import org.cloudfoundry.autoscaler.scheduler.util.TestDataCleanupHelper;
+import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
 import org.junit.After;
@@ -74,7 +74,7 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 	private MockMvc mockMvc;
 
 	@Autowired
-	private TestDataCleanupHelper testDataCleanupHelper;
+	private TestDataDbUtil testDataDbUtil;
 
 	@Value("${autoscaler.scalingengine.url}")
 	private String scalingEngineUrl;
@@ -88,7 +88,7 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 	@Transactional
 	public void before() throws Exception {
 		// Clean up data
-		testDataCleanupHelper.cleanupData(scheduler);
+		testDataDbUtil.cleanupData(scheduler);
 		embeddedTomcatUtil = new EmbeddedTomcatUtil();
 		embeddedTomcatUtil.start();
 
@@ -112,8 +112,8 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 	public void testCreateScheduleAndNotifyScalingEngine() throws Exception {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
-		Date startTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(1));
-		Date endTime = new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(2));
+		LocalDateTime startTime = LocalDateTime.now().plusMinutes(1);
+		LocalDateTime endTime = LocalDateTime.now().plusMinutes(2);
 
 		ApplicationSchedules applicationSchedules = new ApplicationPolicyBuilder(1, 5, TimeZone.getDefault().getID(), 1,
 				0, 0).build();
@@ -122,7 +122,7 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 		specificDateScheduleEntity.setStartDateTime(startTime);
 		specificDateScheduleEntity.setEndDateTime(endTime);
 
-		Long currentSequenceSchedulerId = testDataCleanupHelper.getCurrentSequenceSchedulerId() + 1;
+		Long currentSequenceSchedulerId = testDataDbUtil.getCurrentSequenceSchedulerId() + 1;
 
 		ActiveScheduleEntity startActiveScheduleEntity = new ActiveScheduleEntity();
 		startActiveScheduleEntity.setAppId(appId);

@@ -1,6 +1,7 @@
 package org.cloudfoundry.autoscaler.scheduler.quartz;
 
-import java.util.Date;
+import java.time.ZonedDateTime;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -115,7 +116,8 @@ public abstract class AppScalingScheduleJob extends QuartzJobBean {
 				+ scheduleId);
 
 		if (jobFireCount < maxCount) {
-			Date newTriggerTime = new Date(System.currentTimeMillis() + jobRescheduleIntervalMilliSecond);
+			ZonedDateTime newTriggerTime = ZonedDateTime.now()
+					.plusNanos(TimeUnit.MILLISECONDS.toNanos(jobRescheduleIntervalMilliSecond));
 			Trigger newTrigger = ScheduleJobHelper.buildTrigger(triggerKey, null, newTriggerTime);
 
 			try {
