@@ -9,6 +9,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
 	. "integration"
+	"io/ioutil"
 	"net/http"
 	"path/filepath"
 	"regexp"
@@ -19,13 +20,14 @@ var _ = Describe("Integration_Broker_Api", func() {
 	var (
 		regPath = regexp.MustCompile(`^/v2/schedules/.*$`)
 
-		serviceInstanceId  string
-		bindingId          string
-		orgId              string
-		spaceId            string
-		appId              string
-		schedulePolicyJson []byte
-		invalidPolicyJson  []byte
+		serviceInstanceId       string
+		bindingId               string
+		orgId                   string
+		spaceId                 string
+		appId                   string
+		schedulePolicyJson      []byte
+		invalidSchemaPolicyJson []byte
+		invalidDataPolicyJson   []byte
 	)
 
 	BeforeEach(func() {
@@ -56,7 +58,8 @@ var _ = Describe("Integration_Broker_Api", func() {
 		resp.Body.Close()
 
 		schedulePolicyJson = readPolicyFromFile("fakePolicyWithSchedule.json")
-		invalidPolicyJson = readPolicyFromFile("fakeInvalidPolicy.json")
+		invalidSchemaPolicyJson = readPolicyFromFile("fakeInvalidPolicy.json")
+		invalidDataPolicyJson = readPolicyFromFile("fakeInvalidDataPolicy.json")
 	})
 
 	AfterEach(func() {
@@ -100,16 +103,41 @@ var _ = Describe("Integration_Broker_Api", func() {
 			})
 		})
 
-		Context("Invalid policy", func() {
+		Context("Invalid policy Schema", func() {
 			BeforeEach(func() {
 				fakeScheduler.RouteToHandler("PUT", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
 			})
 
 			It("does not create a binding", func() {
 				schedulerCount := len(fakeScheduler.ReceivedRequests())
-				resp, err := bindService(bindingId, appId, serviceInstanceId, invalidPolicyJson)
+				resp, err := bindService(bindingId, appId, serviceInstanceId, invalidSchemaPolicyJson)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
+				respBody, err := ioutil.ReadAll(resp.Body)
+				Expect(string(respBody)).To(Equal(`{"error":[{"property":"instance","message":"is not any of [subschema 0],[subschema 1]","schema":"/policySchema","instance":{"instance_min_count":10,"instance_max_count":4},"name":"anyOf","argument":["[subschema 0]","[subschema 1]"],"stack":"instance is not any of [subschema 0],[subschema 1]"}]}`))
+				resp.Body.Close()
+				Consistently(fakeScheduler.ReceivedRequests).Should(HaveLen(schedulerCount))
+
+				By("checking the API Server")
+				resp, err = getPolicy(appId)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
+				resp.Body.Close()
+			})
+		})
+
+		Context("Invalid policy Data", func() {
+			BeforeEach(func() {
+				fakeScheduler.RouteToHandler("PUT", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
+			})
+
+			It("does not create a binding", func() {
+				schedulerCount := len(fakeScheduler.ReceivedRequests())
+				resp, err := bindService(bindingId, appId, serviceInstanceId, invalidDataPolicyJson)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
+				respBody, err := ioutil.ReadAll(resp.Body)
+				Expect(string(respBody)).To(Equal(`{"error":[{"property":"instance.scaling_rules[0].cool_down_secs","message":"must have a minimum value of 60","schema":{"type":"number","minimum":60,"maximum":3600},"instance":-300,"name":"minimum","argument":60,"stack":"instance.scaling_rules[0].cool_down_secs must have a minimum value of 60"}]}`))
 				resp.Body.Close()
 				Consistently(fakeScheduler.ReceivedRequests).Should(HaveLen(schedulerCount))
 

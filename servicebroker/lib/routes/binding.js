@@ -69,20 +69,20 @@ module.exports = function(app, settings, tlsOptions) {
 
                 var statusCode = response.statusCode;
                 logger.info("Api Server response", { status_code: statusCode, response: response.body });
-                if (statusCode === 200 || statusCode === 201) {
-                  commitTransaction(t, res, statusCode, {});
-                  return;
-                } 
-                if (statusCode === 400) {
-                  rollbackTransaction(t, res, statusCode, {error: response.body.error});
-                  return;
-                }
-                if (statusCode === 500) {
-                  rollbackTransaction(t, res, statusCode, {});
-                  return;
+
+                switch(statusCode){
+                  case 200:
+                  case 201:
+                    commitTransaction(t, res, statusCode, {});
+                    return;
+                  case 400:
+                    rollbackTransaction(t, res, statusCode, {error: response.body.error});
+                    return;
+                  default:
+                    rollbackTransaction(t, res, 500, {});
+                    return;
                 }
 
-                rollbackTransaction(t, res, 500, {});
               });
             }).catch(function(error1) { //catch findorcreate
               logger.error("Bind failed: create error", { error: error1 });
