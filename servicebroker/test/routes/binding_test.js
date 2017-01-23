@@ -21,6 +21,8 @@ var auth = new Buffer(settings.username + ":" + settings.password).toString('bas
 var messageUtil = require(path.join(__dirname, '../../lib/util/messageUtil.js'))()
 var scope;
 
+var VALIDATION_ERROR_FROM_API_SERVER = "validation error from apiserver";
+
 function initNockBind(statusCode) {
   scope = nock(settings.apiServerUri)
     .put(/\/v1\/policies\/.*/)
@@ -40,6 +42,17 @@ function initNockUnBind(statusCode) {
       'result': "deleted"
     });
 }
+
+function initNockApiServerBindError(statusCode) {
+  scope = nock(settings.apiServerUri)
+    .put(/\/v1\/policies\/.*/)
+    .reply(statusCode, {
+      'success': false,
+      'error': VALIDATION_ERROR_FROM_API_SERVER,
+      'result': null
+    });
+}
+
 describe('binding RESTful API', function() {
   var server, serviceInstanceId, serviceInstanceId2, orgId, spaceId, appId, appId2, bindingId;
   serviceInstanceId = uuid.v4();
@@ -101,14 +114,14 @@ describe('binding RESTful API', function() {
       });
       context("when the api server returns error", function() {
         it("return a 400", function(done) {
-          initNockBind(400);
+          initNockApiServerBindError(400);
           supertest(server)
             .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
             .set("Authorization", "Basic " + auth)
             .send({ "app_guid": appId, "parameters": policy })
             .expect(400)
             .expect('Content-Type', /json/)
-            .expect({})
+            .expect({'error': VALIDATION_ERROR_FROM_API_SERVER})
             .end(function(err, res) {
               binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
                 expect(countRes).to.equal(0);

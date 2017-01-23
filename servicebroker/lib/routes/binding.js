@@ -73,7 +73,11 @@ module.exports = function(app, settings, tlsOptions) {
                   commitTransaction(t, res, statusCode, {});
                   return;
                 } 
-                if (statusCode === 400 || statusCode === 500) {
+                if (statusCode === 400) {
+                  rollbackTransaction(t, res, statusCode, {error: response.body.error});
+                  return;
+                }
+                if (statusCode === 500) {
                   rollbackTransaction(t, res, statusCode, {});
                   return;
                 }
