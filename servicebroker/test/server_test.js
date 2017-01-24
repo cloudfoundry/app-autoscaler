@@ -2,7 +2,7 @@
 
 var supertest = require("supertest");
 var uuid = require('uuid');
-
+var sinon = require('sinon');
 var fs = require('fs');
 var path = require('path');
 var BrokerServer = require(path.join(__dirname, '../lib/server.js'));
@@ -11,6 +11,14 @@ var settings = require(path.join(__dirname, '../lib/config/setting.js'))((JSON.p
   fs.readFileSync(configFilePath, 'utf8'))));
 var auth = new Buffer(settings.username + ":" + settings.password).toString('base64')
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
+var app, sandbox, shutdownStub, processExitStub, forceShutdownStub;
+
+before(function () {
+  process.removeAllListeners('SIGUSR2');
+  process.removeAllListeners('SIGINT');
+})
+
 describe("Invalid path for RESTful API", function() {
   var server;
   before(function() {
@@ -71,3 +79,71 @@ describe("Auth for RESTful API", function() {
   });
 
 });
+
+describe('Gracefully Shutting down', function () {
+  beforeEach(function () {
+    app = BrokerServer(configFilePath);
+    sandbox = sinon.sandbox.create();
+    shutdownStub = sandbox.stub(app, 'shutdown');
+    processExitStub = sandbox.stub(process, 'exit');
+  })
+
+  afterEach(function (done) {
+    sandbox.restore();
+    app.close(done);
+  })
+
+  it('receives SIGINT signal', function (done) {
+    process.once('SIGINT', function () {
+      sinon.assert.calledOnce(shutdownStub);
+      done();
+    });
+    process.kill(process.pid, 'SIGINT');
+  })
+
+  it('receives SIGUSR2 signal', function (done) {
+    process.once('SIGUSR2', function () {
+      sinon.assert.calledOnce(shutdownStub);
+      done();
+    });
+    process.kill(process.pid, 'SIGUSR2');
+  })
+})
+
+describe('Forcefully Shutting down', function () {
+  beforeEach(function () {
+    app = BrokerServer(configFilePath);
+    sandbox = sinon.sandbox.create({ useFakeTimers: true });
+    shutdownStub = sandbox.stub(app, 'shutdown', function () {
+      setTimeout(function () { }, 15 * 1000);
+    });
+    forceShutdownStub = sandbox.stub(app, 'forceShutdown');
+    processExitStub = sandbox.stub(process, 'exit');
+  })
+
+  afterEach(function (done) {
+    sandbox.restore();
+    app.close(done);
+  })
+
+  it('receives SIGINT signal', function (done) {
+    process.once('SIGINT', function () {
+      sinon.assert.notCalled(forceShutdownStub);
+      sandbox.clock.tick(11 * 1000);
+      sinon.assert.calledOnce(forceShutdownStub);
+      done();
+    });
+    process.kill(process.pid, 'SIGINT');
+  })
+
+  it('receives SIGUSR2 signal', function (done) {
+    process.once('SIGUSR2', function () {
+      sinon.assert.notCalled(forceShutdownStub);
+      sandbox.clock.tick(11 * 1000);
+      sinon.assert.calledOnce(forceShutdownStub);
+      done();
+    });
+    process.kill(process.pid, 'SIGUSR2');
+  })
+})
+
