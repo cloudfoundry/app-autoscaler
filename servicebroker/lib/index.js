@@ -11,7 +11,15 @@ var gracefulShutdown = function(signal) {
   logger.info("Received " + signal + " signal, shutting down gracefully...");
   server.shutdown(function() {
     logger.info('Everything is cleanly shutdown');
+    process.exit();
   })
+
+  setTimeout(function(){
+    server.forceShutdown(function(){
+      logger.info('Could not close connections in time, forcefully shutting down');
+      process.exit();
+    })
+  }, 4*1000);
 }
 
 //listen for SIGINT signal e.g. Ctrl-C

@@ -109,6 +109,10 @@ pushd api
 npm install
 popd
 
+pushd servicebroker
+npm install
+popd
+
 pushd scheduler
 mvn package -DskipTests
 popd
