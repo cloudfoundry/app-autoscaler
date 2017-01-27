@@ -14,11 +14,17 @@ import org.apache.catalina.startup.Tomcat;
 import org.apache.tomcat.util.http.fileupload.FileUtils;
 
 public class EmbeddedTomcatUtil {
-	File applicationDir;
-	Context appContext;
+
+	private File baseDir = null;
+
+	private File applicationDir;
+
+	private Context appContext;
+
+	private Tomcat tomcat = new Tomcat();
 
 	public EmbeddedTomcatUtil() {
-		File baseDir = new File("tomcat");
+		baseDir = new File("tomcat");
 		tomcat.setBaseDir(baseDir.getAbsolutePath());
 
 		applicationDir = new File(baseDir + "/webapps", "/ROOT");
@@ -28,17 +34,14 @@ public class EmbeddedTomcatUtil {
 		}
 		tomcat.setPort(8090);
 		tomcat.setSilent(false);
-	}
 
-	private Tomcat tomcat = new Tomcat();
+	}
 
 	public void start() {
 		try {
 			tomcat.start();
 			appContext = tomcat.addWebapp("/", applicationDir.getAbsolutePath());
-		} catch (LifecycleException e) {
-			throw new RuntimeException(e);
-		} catch (ServletException e) {
+		} catch (LifecycleException | ServletException e) {
 			throw new RuntimeException(e);
 		}
 	}
@@ -48,21 +51,16 @@ public class EmbeddedTomcatUtil {
 			tomcat.stop();
 			tomcat.destroy();
 			// Tomcat creates a work folder where the temporary files are stored
-			FileUtils.deleteDirectory(new File("work"));
-		} catch (LifecycleException e) {
-			throw new RuntimeException(e);
-		}
-
-		catch (IOException e) {
+			FileUtils.deleteDirectory(baseDir);
+		} catch (LifecycleException | IOException e) {
 			throw new RuntimeException(e);
 		}
 	}
 
 	public void setup(String appId, Long scheduleId, int statusCode, String message) throws ServletException {
 		String url = "/v1/apps/" + appId + "/active_schedules/" + scheduleId;
-		Tomcat.addServlet(appContext, appId, new ScalingEngineMock(statusCode, message));
+		tomcat.addServlet(appContext.getPath(), appId, new ScalingEngineMock(statusCode, message));
 		appContext.addServletMapping(url, appId);
-
 	}
 
 	static class ScalingEngineMock extends HttpServlet {
@@ -70,7 +68,7 @@ public class EmbeddedTomcatUtil {
 		private int returnStatus;
 		private String returnMessage;
 
-		public ScalingEngineMock(int status, String returnMessage) {
+		ScalingEngineMock(int status, String returnMessage) {
 			this.returnStatus = status;
 			this.returnMessage = returnMessage;
 		}
