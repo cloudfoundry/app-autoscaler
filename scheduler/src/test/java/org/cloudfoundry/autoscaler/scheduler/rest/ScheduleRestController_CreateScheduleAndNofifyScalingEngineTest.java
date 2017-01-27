@@ -21,9 +21,11 @@ import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationSchedules;
 import org.cloudfoundry.autoscaler.scheduler.util.ApplicationPolicyBuilder;
 import org.cloudfoundry.autoscaler.scheduler.util.EmbeddedTomcatUtil;
+import org.cloudfoundry.autoscaler.scheduler.util.JobActionEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.TestConfiguration;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
+import org.cloudfoundry.autoscaler.scheduler.util.TestJobListener;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
 import org.junit.After;
 import org.junit.Before;
@@ -33,7 +35,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.quartz.JobKey;
 import org.quartz.Scheduler;
+import org.quartz.impl.matchers.NameMatcher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -113,8 +117,8 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 	public void testCreateScheduleAndNotifyScalingEngine() throws Exception {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 
-		LocalDateTime startTime = LocalDateTime.now().plusMinutes(1);
-		LocalDateTime endTime = LocalDateTime.now().plusMinutes(2);
+		LocalDateTime startTime = LocalDateTime.now().plusSeconds(70);
+		LocalDateTime endTime = LocalDateTime.now().plusSeconds(130);
 
 		ApplicationSchedules applicationSchedules = new ApplicationPolicyBuilder(1, 5, TimeZone.getDefault().getID(), 1,
 				0, 0).build();
@@ -139,6 +143,13 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 		endActiveScheduleEntity.setInstanceMaxCount(applicationSchedules.getInstanceMaxCount());
 
 		embeddedTomcatUtil.setup(appId, currentSequenceSchedulerId, 200, null);
+		TestJobListener startJobListener = new TestJobListener(1);
+		TestJobListener endJobListener = new TestJobListener(1);
+
+		scheduler.getListenerManager().addJobListener(startJobListener,
+				NameMatcher.jobNameEndsWith(JobActionEnum.START.getJobIdSuffix()));
+		scheduler.getListenerManager().addJobListener(endJobListener,
+				NameMatcher.jobNameContains(JobActionEnum.END.getJobIdSuffix()));
 
 		ObjectMapper mapper = new ObjectMapper();
 		String content = mapper.writeValueAsString(applicationSchedules);
@@ -149,7 +160,7 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 		resultActions.andExpect(status().isOk());
 
 		// Assert START Job successful message
-		Thread.sleep(TimeUnit.MINUTES.toMillis(1));
+		startJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(2));
 
 		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 		String expectedMessage = messageBundleResourceHelper.lookupMessage(
@@ -160,7 +171,7 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 		assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), is(Level.INFO));
 
 		// Assert END Job successful message
-		Thread.sleep(TimeUnit.MINUTES.toMillis(1));
+		endJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(2));
 
 		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 		expectedMessage = messageBundleResourceHelper.lookupMessage("scalingengine.notification.activeschedule.remove",
