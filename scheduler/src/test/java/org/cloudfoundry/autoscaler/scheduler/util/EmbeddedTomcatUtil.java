@@ -63,6 +63,12 @@ public class EmbeddedTomcatUtil {
 		appContext.addServletMapping(url, appId);
 	}
 
+	public void setup(String appId, int statusCode, String message) {
+		String url = "/v1/apps/" + appId + "/active_schedules/*";
+		tomcat.addServlet(appContext.getPath(), appId, new ScalingEngineMock(statusCode, message));
+		appContext.addServletMapping(url, appId);
+	}
+
 	static class ScalingEngineMock extends HttpServlet {
 
 		private int returnStatus;
