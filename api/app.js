@@ -63,33 +63,7 @@ module.exports = function(configFilePath) {
         res.status(HttpStatus.BAD_REQUEST).json(errorResponse);
       });
         
-  });
-
-  var gracefulShutdown = function(signal) {
-    logger.info('Received ' + signal + ' signal, shutting down gracefully...');
-    server.shutdown(function() {
-      logger.info('Everything is cleanly shutdown');
-      process.exit();
-    })
-    
-    setTimeout(function(){
-      server.forceShutdown(function(){
-        logger.info('Could not close connections in time, forcefully shutting down');
-        process.exit();
-      })
-    }, 10*1000);
-  }
-
-  //listen for SIGINT signal e.g. Ctrl-C
-  process.on ('SIGINT', function(){
-    gracefulShutdown('SIGINT')
-  });
-
-  //listen for SIGUSR2 signal e.g. user-defined signal
-  process.on ('SIGUSR2', function(){
-    gracefulShutdown('SIGUSR2')
   });  
-  
   return server;
 }
  
