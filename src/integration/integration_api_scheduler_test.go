@@ -12,12 +12,14 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/tedsuo/ifrit"
 )
 
 var _ = Describe("Integration_Api_Scheduler", func() {
 	var (
-		appId     string
-		policyStr []byte
+		appId            string
+		policyStr        []byte
+		schedulerProcess ifrit.Process
 	)
 
 	BeforeEach(func() {
@@ -30,7 +32,9 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 		httpClient.Transport.(*http.Transport).TLSClientConfig = apiTLSConfig
 		httpClient.Timeout = apiSchedulerHttpRequestTimeout
 		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), tmpDir)
+		schedulerConfPath = components.PrepareSchedulerConfig(dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), tmpDir)
 		startApiServer()
+		schedulerProcess = startScheduler()
 		appId = getRandomId()
 		resp, err := detachPolicy(appId)
 		Expect(err).NotTo(HaveOccurred())
@@ -39,6 +43,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 
 	AfterEach(func() {
 		stopAll()
+		stopScheduler(schedulerProcess)
 	})
 
 	Describe("Create policy", func() {

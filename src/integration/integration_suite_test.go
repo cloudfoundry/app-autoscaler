@@ -17,6 +17,7 @@ import (
 	_ "github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
 	"github.com/tedsuo/ifrit"
@@ -56,13 +57,13 @@ var (
 	appInstanceRegPath       = regexp.MustCompile(`^/v2/apps/.*$`)
 	dbHelper                 *sql.DB
 	fakeScheduler            *ghttp.Server
-	fakeScalingEngine        *ghttp.Server
 	fakeCCNOAAUAA            *ghttp.Server
-	processMap               map[string]ifrit.Process = map[string]ifrit.Process{}
-	schedulerProcess         ifrit.Process
+	processMap               map[string]ifrit.Process         = map[string]ifrit.Process{}
+	stdOutbufferMap          map[string]func() *gbytes.Buffer = map[string]func() *gbytes.Buffer{}
 
-	brokerApiHttpRequestTimeout    time.Duration = 5 * time.Second
-	apiSchedulerHttpRequestTimeout time.Duration = 5 * time.Second
+	brokerApiHttpRequestTimeout              time.Duration = 5 * time.Second
+	apiSchedulerHttpRequestTimeout           time.Duration = 5 * time.Second
+	schedulerScalingEngineHttpRequestTimeout time.Duration = 10 * time.Second
 
 	pollInterval              time.Duration = 1 * time.Second
 	refreshInterval           time.Duration = 1 * time.Second
@@ -99,12 +100,6 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	clearDatabase()
 
-	tmpDir, err = ioutil.TempDir("", "autoscaler")
-	Expect(err).NotTo(HaveOccurred())
-
-	fakeScalingEngine = ghttp.NewServer()
-	schedulerConfPath = components.PrepareSchedulerConfig(dbUrl, fakeScalingEngine.URL(), tmpDir)
-	schedulerProcess = startScheduler()
 	return payload
 }, func(encodedBuiltArtifacts []byte) {
 	err := json.Unmarshal(encodedBuiltArtifacts, &components)
@@ -120,12 +115,10 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 })
 
 var _ = SynchronizedAfterSuite(func() {
+}, func() {
 	if len(tmpDir) > 0 {
 		os.RemoveAll(tmpDir)
 	}
-}, func() {
-	ginkgomon.Kill(schedulerProcess)
-	fakeScalingEngine.Close()
 })
 
 var _ = BeforeEach(func() {
@@ -142,13 +135,13 @@ func CompileTestedExecutables() Executables {
 	builtExecutables[ServiceBroker] = path.Join(rootDir, "servicebroker/lib/index.js")
 	builtExecutables[Scheduler] = path.Join(rootDir, "scheduler/target/scheduler-1.0-SNAPSHOT.war")
 
-	builtExecutables[EventGenerator], err = gexec.BuildIn(os.Getenv("GOPATH"), "autoscaler/eventgenerator/cmd/eventgenerator", "-race")
+	builtExecutables[EventGenerator], err = gexec.BuildIn(rootDir, "autoscaler/eventgenerator/cmd/eventgenerator", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
-	builtExecutables[MetricsCollector], err = gexec.BuildIn(os.Getenv("GOPATH"), "autoscaler/metricscollector/cmd/metricscollector", "-race")
+	builtExecutables[MetricsCollector], err = gexec.BuildIn(rootDir, "autoscaler/metricscollector/cmd/metricscollector", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
-	builtExecutables[ScalingEngine], err = gexec.BuildIn(os.Getenv("GOPATH"), "autoscaler/scalingengine/cmd/scalingengine", "-race")
+	builtExecutables[ScalingEngine], err = gexec.BuildIn(rootDir, "autoscaler/scalingengine/cmd/scalingengine", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
 	return builtExecutables
@@ -158,7 +151,7 @@ func PreparePorts() Ports {
 	return Ports{
 		APIServer:        10000 + GinkgoParallelNode(),
 		ServiceBroker:    11000 + GinkgoParallelNode(),
-		Scheduler:        12000,
+		Scheduler:        12000 + GinkgoParallelNode(),
 		MetricsCollector: 13000 + GinkgoParallelNode(),
 		EventGenerator:   14000 + GinkgoParallelNode(),
 		ScalingEngine:    15000 + GinkgoParallelNode(),
@@ -182,7 +175,9 @@ func startServiceBroker() *ginkgomon.Runner {
 }
 
 func startScheduler() ifrit.Process {
-	return ginkgomon.Invoke(components.Scheduler(schedulerConfPath))
+	schedulerRunner := components.Scheduler(schedulerConfPath)
+	stdOutbufferMap[Scheduler] = schedulerRunner.Buffer
+	return ginkgomon.Invoke(schedulerRunner)
 }
 
 func startMetricsCollector() {
@@ -190,18 +185,27 @@ func startMetricsCollector() {
 		{MetricsCollector, components.MetricsCollector(metricsCollectorConfPath)},
 	}))
 }
+
 func startEventGenerator() {
 	processMap[EventGenerator] = ginkgomon.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
 		{EventGenerator, components.EventGenerator(eventGeneratorConfPath)},
 	}))
 }
+
 func startScalingEngine() {
+	scalingEngineRunner := components.ScalingEngine(scalingEngineConfPath)
+	stdOutbufferMap[ScalingEngine] = scalingEngineRunner.Buffer
 	processMap[ScalingEngine] = ginkgomon.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
-		{ScalingEngine, components.ScalingEngine(scalingEngineConfPath)},
+		{ScalingEngine, scalingEngineRunner},
 	}))
 }
+
 func stopApiServer() {
 	ginkgomon.Interrupt(processMap[APIServer], 5*time.Second)
+}
+
+func stopScheduler(schedulerProcess ifrit.Process) {
+	ginkgomon.Kill(schedulerProcess)
 }
 
 func sendSigusr2Signal(component string) {
@@ -293,6 +297,50 @@ func getSchedules(appId string) (*http.Response, error) {
 	return httpClient.Do(req)
 }
 
+func createSchedule(appId string, schedule string) (*http.Response, error) {
+	req, err := http.NewRequest("PUT", fmt.Sprintf("https://127.0.0.1:%d/v2/schedules/%s", components.Ports[Scheduler], appId), bytes.NewReader([]byte(schedule)))
+	if err != nil {
+		panic(err)
+	}
+	Expect(err).NotTo(HaveOccurred())
+	req.Header.Set("Content-Type", "application/json")
+	return httpClient.Do(req)
+}
+
+func deleteSchedule(appId string) (*http.Response, error) {
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("https://127.0.0.1:%d/v2/schedules/%s", components.Ports[Scheduler], appId), strings.NewReader(""))
+	Expect(err).NotTo(HaveOccurred())
+	req.Header.Set("Content-Type", "application/json")
+	return httpClient.Do(req)
+}
+
+func getAppIdOfActiveSchedules() []string {
+	var appIds []string
+	var appId string
+	rows, e := dbHelper.Query("SELECT appid FROM activeschedule")
+	if e != nil {
+		Fail("can not get records in table activeschedule: " + e.Error())
+	}
+	defer rows.Close()
+	for rows.Next() {
+		err := rows.Scan(&appId)
+		if err != nil {
+			Fail("Fail")
+		}
+		appIds = append(appIds, appId)
+	}
+	return appIds
+}
+
+func getNumberOfActiveSchedules(appId string) int {
+	var num int
+	e := dbHelper.QueryRow("SELECT COUNT(*) FROM activeschedule where appid =$1", appId).Scan(&num)
+	if e != nil {
+		Fail("can not count the number of records in table activeschedule: " + e.Error())
+	}
+	return num
+}
+
 func readPolicyFromFile(filename string) []byte {
 	content, err := ioutil.ReadFile(filename)
 	Expect(err).NotTo(HaveOccurred())
@@ -315,6 +363,12 @@ func clearDatabase() {
 	_, err = dbHelper.Exec("DELETE FROM app_scaling_specific_date_schedule")
 	Expect(err).NotTo(HaveOccurred())
 
+	_, err = dbHelper.Exec("DELETE FROM app_scaling_active_schedule")
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = dbHelper.Exec("DELETE FROM activeschedule")
+	Expect(err).NotTo(HaveOccurred())
+
 	_, err = dbHelper.Exec("DELETE FROM scalinghistory")
 	Expect(err).NotTo(HaveOccurred())
 
@@ -324,6 +378,7 @@ func clearDatabase() {
 	_, err = dbHelper.Exec("DELETE FROM appinstancemetrics")
 	Expect(err).NotTo(HaveOccurred())
 }
+
 func insertPolicy(appId string, scalingPolicy models.ScalingPolicy) {
 
 	query := "INSERT INTO policy_json(app_id, policy_json) VALUES($1, $2)"
@@ -333,6 +388,7 @@ func insertPolicy(appId string, scalingPolicy models.ScalingPolicy) {
 	Expect(err).NotTo(HaveOccurred())
 
 }
+
 func getScalingHistoryCount(appId string, oldInstanceCount int, newInstanceCount int) int {
 	var count int
 	query := "SELECT COUNT(*) FROM scalinghistory WHERE appid=$1 AND oldinstances=$2 AND newinstances=$3"

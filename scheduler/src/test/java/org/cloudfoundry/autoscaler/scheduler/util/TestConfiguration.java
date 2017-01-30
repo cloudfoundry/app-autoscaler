@@ -4,6 +4,6 @@ import org.springframework.test.context.TestPropertySource;
 
 @TestPropertySource(properties = { "scalingenginejob.reschedule.interval.millisecond=100",
 		"scalingenginejob.reschedule.maxcount=5", "autoscaler.scalingengine.url=http://localhost:8090",
-		"scalingengine.notification.reschedule.maxcount=2" })
+		"scalingengine.notification.reschedule.maxcount=2", "server.ssl.enabled=false" })
 public class TestConfiguration {
 }
