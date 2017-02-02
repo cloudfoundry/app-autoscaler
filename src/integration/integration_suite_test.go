@@ -166,16 +166,20 @@ func PreparePorts() Ports {
 	}
 }
 
-func startApiServer() {
+func startApiServer() *ginkgomon.Runner {
+	runner := components.ApiServer(apiServerConfPath)
 	processMap[APIServer] = ginkgomon.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
-		{APIServer, components.ApiServer(apiServerConfPath)},
+		{APIServer, runner},
 	}))
+	return runner
 }
 
-func startServiceBroker() {
+func startServiceBroker() *ginkgomon.Runner {
+	runner := components.ServiceBroker(serviceBrokerConfPath)
 	processMap[ServiceBroker] = ginkgomon.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
-		{ServiceBroker, components.ServiceBroker(serviceBrokerConfPath)},
+		{ServiceBroker, runner},
 	}))
+	return runner
 }
 
 func startScheduler() ifrit.Process {
@@ -205,7 +209,6 @@ func sendSigusr2Signal(component string) {
 	process := processMap[component]
 	if process != nil {
 		process.Signal(syscall.SIGUSR2)
-		Eventually(process.Wait(), 5*time.Second).Should(Receive(), "sent SIGUSR2 signal to process, failed to exit in time")
 	}
 }
 
@@ -444,3 +447,5 @@ func marshalMessage(message *events.Envelope) []byte {
 
 	return data
 }
+
+

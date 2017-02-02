@@ -6,15 +6,24 @@ import (
 
 	"net"
 
+	"time"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/ghttp"
+	"github.com/tedsuo/ifrit/ginkgomon"
 )
 
 var _ = Describe("Integration_Api_Broker_Graceful_Shutdown", func() {
 
 	const (
 		MessageForServer = "message_for_server"
+	)
+
+	var (
+		runner *ginkgomon.Runner
+		buffer *gbytes.Buffer
 	)
 
 	BeforeEach(func() {
@@ -35,10 +44,11 @@ var _ = Describe("Integration_Api_Broker_Graceful_Shutdown", func() {
 		Context("ApiServer", func() {
 
 			BeforeEach(func() {
-				startApiServer()
+				runner = startApiServer()
+				buffer = runner.Buffer()
 			})
 
-			It("stops receiving new connections after being interrupted", func() {
+			It("stops receiving new connections on receiving SIGUSR2 signal", func() {
 				conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", components.Ports[APIServer]))
 				Expect(err).NotTo(HaveOccurred())
 
@@ -52,17 +62,24 @@ var _ = Describe("Integration_Api_Broker_Graceful_Shutdown", func() {
 				newConn.Close()
 
 				sendSigusr2Signal(APIServer)
+				Eventually(buffer, 5*time.Second).Should(gbytes.Say(`Received SIGUSR2 signal`))
+
+				Eventually(processMap[APIServer].Wait()).Should(Receive())
+				Expect(runner.ExitCode()).Should(Equal(0))
 
 				_, err = net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", components.Ports[APIServer]))
 				Expect(err).To(HaveOccurred())
 
 			})
 
-			It("waits for in-flight request to finish before shutting down", func() {
+			It("waits for in-flight request to finish before shutting down server on receiving SIGUSR2 signal", func() {
 				conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", components.Ports[APIServer]))
 				Expect(err).NotTo(HaveOccurred())
 
 				sendSigusr2Signal(APIServer)
+				Eventually(buffer, 5*time.Second).Should(gbytes.Say(`Received SIGUSR2 signal`))
+
+				Expect(runner.ExitCode()).Should(Equal(-1))
 
 				_, err = net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", components.Ports[APIServer]))
 				Expect(err).To(HaveOccurred())
@@ -72,6 +89,8 @@ var _ = Describe("Integration_Api_Broker_Graceful_Shutdown", func() {
 
 				conn.Close()
 
+				Eventually(processMap[APIServer].Wait()).Should(Receive())
+				Expect(runner.ExitCode()).Should(Equal(0))
 			})
 
 		})
@@ -79,10 +98,11 @@ var _ = Describe("Integration_Api_Broker_Graceful_Shutdown", func() {
 		Context("Service Broker", func() {
 
 			BeforeEach(func() {
-				startServiceBroker()
+				runner = startServiceBroker()
+				buffer = runner.Buffer()
 			})
 
-			It("stops receiving new connections after being interrupted", func() {
+			It("stops receiving new connections on receiving SIGUSR2 signal", func() {
 				conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", components.Ports[ServiceBroker]))
 				Expect(err).NotTo(HaveOccurred())
 
@@ -96,17 +116,24 @@ var _ = Describe("Integration_Api_Broker_Graceful_Shutdown", func() {
 				newConn.Close()
 
 				sendSigusr2Signal(ServiceBroker)
+				Eventually(buffer, 5*time.Second).Should(gbytes.Say(`Received SIGUSR2 signal`))
+
+				Eventually(processMap[ServiceBroker].Wait()).Should(Receive())
+				Expect(runner.ExitCode()).Should(Equal(0))
 
 				_, err = net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", components.Ports[ServiceBroker]))
 				Expect(err).To(HaveOccurred())
 
 			})
 
-			It("waits for in-flight request to finish before shutting down", func() {
+			It("waits for in-flight request to finish before shutting down server on receiving SIGUSR2 signal", func() {
 				conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", components.Ports[ServiceBroker]))
 				Expect(err).NotTo(HaveOccurred())
 
 				sendSigusr2Signal(ServiceBroker)
+				Eventually(buffer, 5*time.Second).Should(gbytes.Say(`Received SIGUSR2 signal`))
+
+				Expect(runner.ExitCode()).Should(Equal(-1))
 
 				_, err = net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", components.Ports[ServiceBroker]))
 				Expect(err).To(HaveOccurred())
@@ -116,6 +143,8 @@ var _ = Describe("Integration_Api_Broker_Graceful_Shutdown", func() {
 
 				conn.Close()
 
+				Eventually(processMap[ServiceBroker].Wait()).Should(Receive())
+				Expect(runner.ExitCode()).Should(Equal(0))
 			})
 
 		})
