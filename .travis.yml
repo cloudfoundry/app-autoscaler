@@ -47,7 +47,7 @@ script:
   - npm test
   - popd
   - pushd src/autoscaler
-  - ginkgo -r -race -randomizeAllSpecs
+  - ginkgo -r -race -randomizeAllSpecs -trace -progress
   - popd
   - pushd scheduler
   - mvn test
@@ -62,4 +62,4 @@ script:
   - pushd scheduler
   - mvn package -DskipTests
   - popd
-  - ginkgo -r -race -p -randomizeAllSpecs src/integration
+  - ginkgo -r -race -nodes=2 -randomizeAllSpecs -trace -progress src/integration

@@ -1,10 +1,12 @@
 package integration_test
 
 import (
-	"fmt"
+	"encoding/base64"
 	. "integration"
+	"net/http"
+	"path/filepath"
 
-	"net"
+	"code.cloudfoundry.org/cfhttp"
 
 	"time"
 
@@ -17,190 +19,248 @@ import (
 
 var _ = Describe("Integration_Api_Broker_Graceful_Shutdown", func() {
 
-	const (
-		MessageForServer = "message_for_server"
-	)
-
 	var (
-		runner *ginkgomon.Runner
-		buffer *gbytes.Buffer
+		runner        *ginkgomon.Runner
+		buffer        *gbytes.Buffer
+		fakeApiServer *ghttp.Server
+
+		serviceInstanceId  string
+		bindingId          string
+		orgId              string
+		spaceId            string
+		appId              string
+		schedulePolicyJson []byte
 	)
-
-	BeforeEach(func() {
-		fakeScheduler = ghttp.NewServer()
-		fakeApiServer := ghttp.NewServer()
-
-		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], dbUrl, fakeScheduler.URL(), tmpDir)
-		serviceBrokerConfPath = components.PrepareServiceBrokerConfig(components.Ports[ServiceBroker], brokerUserName, brokerPassword, dbUrl, fakeApiServer.URL(), brokerApiHttpRequestTimeout, tmpDir)
-
-	})
 
 	AfterEach(func() {
 		stopAll()
 	})
 
-	Describe("Graceful Shutdown", func() {
-
+	Describe("Shutdown", func() {
 		Context("ApiServer", func() {
-
 			BeforeEach(func() {
+				fakeScheduler = ghttp.NewServer()
+				apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], dbUrl, fakeScheduler.URL(), tmpDir)
+				apiTLSConfig, err := cfhttp.NewTLSConfig(
+					filepath.Join(testCertDir, "api.crt"),
+					filepath.Join(testCertDir, "api.key"),
+					filepath.Join(testCertDir, "autoscaler-ca.crt"),
+				)
+				Expect(err).NotTo(HaveOccurred())
+				httpClient.Transport.(*http.Transport).TLSClientConfig = apiTLSConfig
+				httpClient.Timeout = apiSchedulerHttpRequestTimeout
 				runner = startApiServer()
 				buffer = runner.Buffer()
 			})
 
-			It("stops receiving new connections on receiving SIGUSR2 signal", func() {
-				conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", components.Ports[APIServer]))
-				Expect(err).NotTo(HaveOccurred())
-
-				_, err = conn.Write([]byte(MessageForServer))
-				Expect(err).NotTo(HaveOccurred())
-
-				newConn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", components.Ports[APIServer]))
-				Expect(err).NotTo(HaveOccurred())
-
-				conn.Close()
-				newConn.Close()
-
-				sendSigusr2Signal(APIServer)
-				Eventually(buffer, 5*time.Second).Should(gbytes.Say(`Received SIGUSR2 signal`))
-
-				Eventually(processMap[APIServer].Wait()).Should(Receive())
-				Expect(runner.ExitCode()).Should(Equal(0))
-
-				_, err = net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", components.Ports[APIServer]))
-				Expect(err).To(HaveOccurred())
-
+			AfterEach(func() {
+				fakeScheduler.Close()
+				stopAll()
 			})
 
-			It("waits for in-flight request to finish before shutting down server on receiving SIGUSR2 signal", func() {
-				conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", components.Ports[APIServer]))
-				Expect(err).NotTo(HaveOccurred())
+			Context("with a SIGUSR2 signal", func() {
+				It("stops receiving new connections", func() {
+					fakeScheduler.AppendHandlers(ghttp.RespondWith(http.StatusOK, "successful"))
 
-				sendSigusr2Signal(APIServer)
-				Eventually(buffer, 5*time.Second).Should(gbytes.Say(`Received SIGUSR2 signal`))
+					policyStr := readPolicyFromFile("fakePolicyWithSchedule.json")
+					resp, err := attachPolicy(getRandomId(), policyStr)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+					resp.Body.Close()
 
-				Expect(runner.ExitCode()).Should(Equal(-1))
+					sendSigusr2Signal(APIServer)
+					Eventually(buffer, 5*time.Second).Should(gbytes.Say(`Received SIGUSR2 signal`))
 
-				_, err = net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", components.Ports[APIServer]))
-				Expect(err).To(HaveOccurred())
+					resp, err = attachPolicy(getRandomId(), policyStr)
+					Expect(err).To(HaveOccurred())
 
-				_, err = conn.Write([]byte(MessageForServer))
-				Expect(err).NotTo(HaveOccurred())
+					Eventually(processMap[APIServer].Wait()).Should(Receive())
+					Expect(runner.ExitCode()).Should(Equal(0))
+				})
 
-				conn.Close()
+				It("waits for in-flight request to finish", func() {
+					ch := make(chan struct{})
+					fakeScheduler.AppendHandlers(func(w http.ResponseWriter, r *http.Request) {
+						defer GinkgoRecover()
+						ch <- struct{}{}
 
-				Eventually(processMap[APIServer].Wait()).Should(Receive())
-				Expect(runner.ExitCode()).Should(Equal(0))
+						Eventually(ch, 5*time.Second).Should(BeClosed())
+						w.WriteHeader(http.StatusOK)
+					})
+
+					done := make(chan struct{})
+					go func() {
+						defer GinkgoRecover()
+						policyStr := readPolicyFromFile("fakePolicyWithSchedule.json")
+						resp, err := attachPolicy(getRandomId(), policyStr)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+						resp.Body.Close()
+						close(done)
+					}()
+
+					Eventually(ch, 5*time.Second).Should(Receive())
+					sendSigusr2Signal(APIServer)
+
+					Eventually(buffer, 5*time.Second).Should(gbytes.Say(`Received SIGUSR2 signal`))
+					Consistently(processMap[APIServer].Wait()).ShouldNot(Receive())
+					close(ch)
+					Eventually(done).Should(BeClosed())
+
+					Eventually(processMap[APIServer].Wait()).Should(Receive())
+					Expect(runner.ExitCode()).Should(BeZero())
+				})
+			})
+
+			Context("with a SIGKILL signal", func() {
+				It("terminates the server immediately without finishing in-flight requests", func() {
+					ch := make(chan struct{})
+					fakeScheduler.AppendHandlers(func(w http.ResponseWriter, r *http.Request) {
+						defer GinkgoRecover()
+						ch <- struct{}{}
+
+						Eventually(ch, 5*time.Second).Should(BeClosed())
+						w.WriteHeader(http.StatusOK)
+					})
+
+					done := make(chan struct{})
+					go func() {
+						defer GinkgoRecover()
+						policyStr := readPolicyFromFile("fakePolicyWithSchedule.json")
+						_, err := attachPolicy(getRandomId(), policyStr)
+						Expect(err).To(HaveOccurred())
+						close(done)
+					}()
+
+					Eventually(ch, 5*time.Second).Should(Receive())
+
+					sendKillSignal(APIServer)
+					Eventually(processMap[APIServer].Wait(), 5*time.Second).Should(Receive())
+
+					close(ch)
+					Eventually(done).Should(BeClosed())
+				})
 			})
 
 		})
 
 		Context("Service Broker", func() {
-
 			BeforeEach(func() {
+				fakeApiServer = ghttp.NewServer()
+				brokerTLSConfig, err := cfhttp.NewTLSConfig(
+					filepath.Join(testCertDir, "servicebroker.crt"),
+					filepath.Join(testCertDir, "servicebroker.key"),
+					filepath.Join(testCertDir, "autoscaler-ca.crt"),
+				)
+				Expect(err).NotTo(HaveOccurred())
+				httpClient.Timeout = brokerApiHttpRequestTimeout
+				httpClient.Transport.(*http.Transport).TLSClientConfig = brokerTLSConfig
+				serviceBrokerConfPath = components.PrepareServiceBrokerConfig(components.Ports[ServiceBroker], brokerUserName, brokerPassword, dbUrl, fakeApiServer.URL(), brokerApiHttpRequestTimeout, tmpDir)
 				runner = startServiceBroker()
 				buffer = runner.Buffer()
+
+				brokerAuth = base64.StdEncoding.EncodeToString([]byte("username:password"))
+				serviceInstanceId = getRandomId()
+				orgId = getRandomId()
+				spaceId = getRandomId()
+				bindingId = getRandomId()
+				appId = getRandomId()
+				//add a service instance
+				resp, err := provisionServiceInstance(serviceInstanceId, orgId, spaceId)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+				resp.Body.Close()
+
+				schedulePolicyJson = readPolicyFromFile("fakePolicyWithSchedule.json")
 			})
 
-			It("stops receiving new connections on receiving SIGUSR2 signal", func() {
-				conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", components.Ports[ServiceBroker]))
-				Expect(err).NotTo(HaveOccurred())
-
-				_, err = conn.Write([]byte(MessageForServer))
-				Expect(err).NotTo(HaveOccurred())
-
-				newConn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", components.Ports[ServiceBroker]))
-				Expect(err).NotTo(HaveOccurred())
-
-				conn.Close()
-				newConn.Close()
-
-				sendSigusr2Signal(ServiceBroker)
-				Eventually(buffer, 5*time.Second).Should(gbytes.Say(`Received SIGUSR2 signal`))
-
-				Eventually(processMap[ServiceBroker].Wait()).Should(Receive())
-				Expect(runner.ExitCode()).Should(Equal(0))
-
-				_, err = net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", components.Ports[ServiceBroker]))
-				Expect(err).To(HaveOccurred())
-
+			AfterEach(func() {
+				fakeApiServer.Close()
+				stopAll()
 			})
 
-			It("waits for in-flight request to finish before shutting down server on receiving SIGUSR2 signal", func() {
-				conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", components.Ports[ServiceBroker]))
-				Expect(err).NotTo(HaveOccurred())
+			Context("with a SIGUSR2 signal", func() {
+				It("stops receiving new connections", func() {
+					fakeApiServer.AppendHandlers(ghttp.RespondWith(http.StatusCreated, "created"))
 
-				sendSigusr2Signal(ServiceBroker)
-				Eventually(buffer, 5*time.Second).Should(gbytes.Say(`Received SIGUSR2 signal`))
+					resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+					resp.Body.Close()
 
-				Expect(runner.ExitCode()).Should(Equal(-1))
+					sendSigusr2Signal(ServiceBroker)
+					Eventually(buffer, 5*time.Second).Should(gbytes.Say(`Received SIGUSR2 signal`))
 
-				_, err = net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", components.Ports[ServiceBroker]))
-				Expect(err).To(HaveOccurred())
+					_, err = bindService(getRandomId(), appId, serviceInstanceId, schedulePolicyJson)
+					Expect(err).To(HaveOccurred())
 
-				_, err = conn.Write([]byte(MessageForServer))
-				Expect(err).NotTo(HaveOccurred())
+					Eventually(processMap[ServiceBroker].Wait()).Should(Receive())
+					Expect(runner.ExitCode()).Should(BeZero())
+				})
 
-				conn.Close()
+				It("waits for in-flight request to finish", func() {
+					ch := make(chan struct{})
+					fakeApiServer.AppendHandlers(func(w http.ResponseWriter, r *http.Request) {
+						defer GinkgoRecover()
+						ch <- struct{}{}
 
-				Eventually(processMap[ServiceBroker].Wait()).Should(Receive())
-				Expect(runner.ExitCode()).Should(Equal(0))
+						Eventually(ch, 5*time.Second).Should(BeClosed())
+						w.WriteHeader(http.StatusCreated)
+					})
+
+					done := make(chan struct{})
+					go func() {
+						defer GinkgoRecover()
+						resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+						resp.Body.Close()
+						close(done)
+					}()
+
+					Eventually(ch, 5*time.Second).Should(Receive())
+					sendSigusr2Signal(ServiceBroker)
+
+					Eventually(buffer, 5*time.Second).Should(gbytes.Say(`Received SIGUSR2 signal`))
+					Consistently(processMap[ServiceBroker].Wait()).ShouldNot(Receive())
+					close(ch)
+					Eventually(done).Should(BeClosed())
+
+					Eventually(processMap[ServiceBroker].Wait()).Should(Receive())
+					Expect(runner.ExitCode()).Should(BeZero())
+				})
 			})
 
+			Context("with a SIGKILL signal", func() {
+				It("terminates the server immediately without finishing in-flight requests", func() {
+					ch := make(chan struct{})
+					fakeApiServer.AppendHandlers(func(w http.ResponseWriter, r *http.Request) {
+						defer GinkgoRecover()
+						ch <- struct{}{}
+
+						Eventually(ch, 5*time.Second).Should(BeClosed())
+						w.WriteHeader(http.StatusCreated)
+					})
+
+					done := make(chan struct{})
+					go func() {
+						defer GinkgoRecover()
+						_, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson)
+						Expect(err).To(HaveOccurred())
+						close(done)
+					}()
+
+					Eventually(ch, 5*time.Second).Should(Receive())
+
+					sendKillSignal(ServiceBroker)
+					Eventually(processMap[ServiceBroker].Wait(), 5*time.Second).Should(Receive())
+
+					close(ch)
+					Eventually(done).Should(BeClosed())
+
+				})
+			})
 		})
-
-	})
-
-	Describe("Non Graceful Shutdown", func() {
-
-		Context("ApiServer", func() {
-
-			BeforeEach(func() {
-				startApiServer()
-			})
-
-			It("kills server immediately without serving the in-flight requests", func() {
-				conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", components.Ports[APIServer]))
-				Expect(err).NotTo(HaveOccurred())
-
-				_, err = conn.Write([]byte(MessageForServer))
-				Expect(err).NotTo(HaveOccurred())
-
-				sendKillSignal(APIServer)
-
-				_, err = conn.Write([]byte(MessageForServer))
-				Expect(err).To(HaveOccurred())
-
-				_, err = net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", components.Ports[APIServer]))
-				Expect(err).To(HaveOccurred())
-
-			})
-		})
-
-		Context("Service Broker", func() {
-
-			BeforeEach(func() {
-				startServiceBroker()
-			})
-
-			It("kills server immediately without serving the in-flight requests", func() {
-				conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", components.Ports[ServiceBroker]))
-				Expect(err).NotTo(HaveOccurred())
-
-				_, err = conn.Write([]byte(MessageForServer))
-				Expect(err).NotTo(HaveOccurred())
-
-				sendKillSignal(ServiceBroker)
-
-				_, err = conn.Write([]byte(MessageForServer))
-				Expect(err).To(HaveOccurred())
-
-				_, err = net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", components.Ports[ServiceBroker]))
-				Expect(err).To(HaveOccurred())
-
-			})
-		})
-
 	})
 
 })
