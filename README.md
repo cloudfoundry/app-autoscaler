@@ -1,62 +1,54 @@
 <link href="https://raw.github.com/clownfart/Markdown-CSS/master/markdown.css" rel="stylesheet"></link>
 [![Build Status](https://runtime-og.ci.cf-app.com/api/v1/pipelines/autoscaler/jobs/unit-tests/badge?ts=1)](https://runtime-og.ci.cf-app.com/pipelines/autoscaler)
 
-# CF-AutoScaler
+# App-AutoScaler
 
 This is an incubation project for Cloud Foundry. You can follow the development progress on [Pivotal Tracker][t].
 
-The `CF-AutoScaler` provides the capability to adjust the computation resources for Cloud Foundry applications through
+The `App-AutoScaler` provides the capability to adjust the computation resources for Cloud Foundry applications through
 
 * Dynamic scaling based on application performance metrics
 * Scheduled scaling based on time
 
-The `CF-AutoScaler` is provided as a Cloud Foundry service offering. Any application bound with `CF-AutoScaler` service will be able to use it.
+The `App-AutoScaler` is provided as a Cloud Foundry service offering. Any application bound with `App-AutoScaler` service will be able to use it. It has the following components:
 
-## Getting Started
+* `api` : provides public APIs to manage scaling policy
+* `servicebroker`: implements the [Cloud Foundry service broker API][k]
+* `metricscollector`: collects container's memory usage
+* `eventgenerator`: aggreates memory metrics, evaluates scaling rules and triggers events for dynamic scaling
+* `scheduler`: manages the schedules in scaling policy and trigger events for scheduled scaling
+* `scalingengine`: takes the scaling actions based on dynamic scaling rules or schedules
 
-System requirements:
+
+## Development
+
+### System requirements
 
 * Java 8 or above
 * [Apache Maven][b] 3
 * Node 6.2 or above
 * NPM 3.9.5 or above
 * [Cloud Foundry cf command line] [f]
-* [Cloud Foundry UAA command line client][u]
+* Go 1.7
 
-Database requirement:
+### Database requirement
 
-The `CF-AutoScaler` uses Postgres as the backend data store.
+The `App-AutoScaler` uses Postgres as the backend data store. To download and install, refer to [PostgreSQL][p] web site.
 
-To get started, clone this project:
+
+### Setup
+
+To set up the development, firstly clone this project
 
 ```shell
 $ git clone https://github.com/cloudfoundry-incubator/app-autoscaler.git
 $ cd app-autoscaler
+$ git submodule update --init --recursive
 ```
 
-The AutoScaler has multiple components.
 
-* `api` : provides public APIs to manage scaling policy
-* `servicebroker`: implements the [Cloud Foundry service broker API][k]
-* `metricscollector`: collect container's memory usage
+#### Initialize the Database
 
-
-
-`CF-AutoScaler` invokes Cloud controller API to trigger scaling on target application. To achieve this, a UAA client id with  authorities `cloud_controller.read,cloud_controller.admin` is needed for the Cloud Foundry environment `CF-AutoScaler` is registered with. You can create it using UAA command line client, make sure the client ID and secret are the ones you configured when you package the .war files
-
-```shell
-uaac target http://uaa.<cf-domain>
-uaac token client get admin -s <cf uaa admin secret>
-uaac client add cf-autoscaler-client \
-	--name cf-autoscaler \
-    --authorized_grant_types client_credentials \
-    --authorities cloud_controller.read,cloud_controller.admin \
-    --secret cf-autoscaler-client-secret
-```
-
-The following sections describe how to test, deploy and run `CF-AutoScaler` service manually.
-
-### Initialize the Database
 ```shell
 createuser postgres -s
 psql postgres://postgres@127.0.0.1:5432 -c 'DROP DATABASE IF EXISTS autoscaler'
@@ -71,16 +63,16 @@ java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:pos
 java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/eventgenerator/db/dataaggregator.db.changelog.yml update
 java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/scalingengine/db/scalingengine.db.changelog.yml update
 ```
-### Generate TLS Certificates
+
+#### Generate TLS Certificates
+
 ```shell
 ./scripts/generate_test_certs.sh
 ```
 
-### Run Unit Tests
 
-For all these three `CF-AutoScaler` components, a unit test `unittest.properties` under 'profiles' directory has been created to define the settings for unit test.
+### Unit tests
 
-## Unit tests
 ```shell
 pushd api
 npm install
@@ -103,7 +95,8 @@ mvn test
 popd
 ```
 
-## Integration tests
+### Integration tests
+
 ```shell
 pushd api
 npm install
@@ -117,12 +110,36 @@ go install github.com/onsi/ginkgo/ginkgo
 export DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
 ginkgo -r -race -p -randomizeAllSpecs src/integration
 ```
+
+## Deploy
+
+Go to [app-autoscaler-release][r] project to BOSH deploy `App-AutoScaler` 
+
+## Register service broker
+You can register `App-AutoScaler` with command:
+
+```shell
+cf create-service-broker App-AutoScaler <brokerUserName> <brokerPassword> <brokerURI>
+cf enable-service-access autoscaler
+```
+
+## Use `App-AutoScaler` 
+
+Now, you can play with `App-AutoScaler`.
+
+Firstly create a `App-AutoScaler` service, and bind to you application
+
+``` shell
+cf create-service autoscaler  autoscaler-free-plan  <service_instance_name>
+cf bind-service <app> <service_instance_name> -c <policy>
+```
+
+
 ## License
 
 This project is released under version 2.0 of the [Apache License][l].
 
 
-[a]: docs/API_usage.rst
 [b]: https://maven.apache.org/
 [c]: http://couchdb.apache.org/
 [d]: http://www.eclipse.org/m2e/
@@ -131,4 +148,5 @@ This project is released under version 2.0 of the [Apache License][l].
 [k]: http://docs.cloudfoundry.org/services/api.html
 [l]: LICENSE
 [t]: https://www.pivotaltracker.com/projects/1566795
-[u]: https://github.com/cloudfoundry/cf-uaac
+[p]: https://www.postgresql.org/
+[r]: https://github.com/cloudfoundry-incubator/app-autoscaler-release
