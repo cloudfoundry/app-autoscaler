@@ -34,6 +34,7 @@ import (
 	"sync"
 	"testing"
 	"time"
+	"syscall"
 )
 
 var (
@@ -61,7 +62,7 @@ var (
 	processMap               map[string]ifrit.Process = map[string]ifrit.Process{}
 	schedulerProcess         ifrit.Process
 
-	brokerApiHttpRequestTimeout    time.Duration = 1 * time.Second
+	brokerApiHttpRequestTimeout    time.Duration = 5 * time.Second
 	apiSchedulerHttpRequestTimeout time.Duration = 5 * time.Second
 
 	pollInterval              time.Duration = 1 * time.Second
@@ -165,16 +166,20 @@ func PreparePorts() Ports {
 	}
 }
 
-func startApiServer() {
+func startApiServer() *ginkgomon.Runner {
+	runner := components.ApiServer(apiServerConfPath)
 	processMap[APIServer] = ginkgomon.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
-		{APIServer, components.ApiServer(apiServerConfPath)},
+		{APIServer, runner},
 	}))
+	return runner
 }
 
-func startServiceBroker() {
+func startServiceBroker() *ginkgomon.Runner {
+	runner := components.ServiceBroker(serviceBrokerConfPath)
 	processMap[ServiceBroker] = ginkgomon.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
-		{ServiceBroker, components.ServiceBroker(serviceBrokerConfPath)},
+		{ServiceBroker, runner},
 	}))
+	return runner
 }
 
 func startScheduler() ifrit.Process {
@@ -198,6 +203,17 @@ func startScalingEngine() {
 }
 func stopApiServer() {
 	ginkgomon.Interrupt(processMap[APIServer], 5*time.Second)
+}
+
+func sendSigusr2Signal(component string) {
+	process := processMap[component]
+	if process != nil {
+		process.Signal(syscall.SIGUSR2)
+	}
+}
+
+func sendKillSignal(component string) {
+	ginkgomon.Kill(processMap[component], 5*time.Second)
 }
 
 func stopAll() {
@@ -431,3 +447,5 @@ func marshalMessage(message *events.Envelope) []byte {
 
 	return data
 }
+
+
