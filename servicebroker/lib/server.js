@@ -6,9 +6,6 @@ module.exports = function(configFilePath) {
     var bodyParser = require('body-parser');
     var fs = require('fs');
     var path = require('path');
-    var gracefulShutdown = require('http-shutdown');
-    gracefulShutdown.extend();
-
     if (!configFilePath || !fs.existsSync(configFilePath)) {
         logger.error("Invalid configuration file path: " + configFilePath);
         throw new Error('configuration file does not exist:' + configFilePath);
@@ -71,9 +68,23 @@ module.exports = function(configFilePath) {
     require('./routes')(app, settings, options);
 
 
-    var server = https.createServer(options, app).withShutdown().listen(port, function() {
+    var server = https.createServer(options, app).listen(port, function() {
         var port = server.address().port;
         logger.info('Service broker app is running', { port: port });
     });
+
+    var gracefulShutdown = function(signal) {
+        logger.info("Received " + signal + " signal, shutting down gracefully...");
+        server.close(function() {
+            logger.info('Everything is cleanly shutdown');
+            process.exit();
+        })
+    }
+
+    //listen for SIGUSR2 signal e.g. user-defined signal
+    process.on ('SIGUSR2', function(){
+        gracefulShutdown('SIGUSR2')
+    });
+
     return server;
 }
