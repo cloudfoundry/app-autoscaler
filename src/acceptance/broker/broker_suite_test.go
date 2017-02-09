@@ -7,45 +7,42 @@ import (
 	"acceptance/config"
 
 	"github.com/cloudfoundry-incubator/cf-test-helpers/cf"
-	cfhelpers "github.com/cloudfoundry-incubator/cf-test-helpers/helpers"
+	"github.com/cloudfoundry-incubator/cf-test-helpers/helpers"
+	"github.com/cloudfoundry-incubator/cf-test-helpers/workflowhelpers"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gexec"
 )
 
 var (
-	cfg         config.Config
-	context     cfhelpers.SuiteContext
-	environment *cfhelpers.Environment
+	cfg   *config.Config
+	setup *workflowhelpers.ReproducibleTestSuiteSetup
 )
 
 func TestAcceptance(t *testing.T) {
 	RegisterFailHandler(Fail)
 
 	cfg = config.LoadConfig(t)
-
-	context = cfhelpers.NewContext(cfg.Config)
-	environment = cfhelpers.NewEnvironment(context)
-
 	componentName := "Broker Suite"
-
 	rs := []Reporter{}
 
-	if cfg.ArtifactsDirectory != "" {
-		cfhelpers.EnableCFTrace(cfg.Config, componentName)
-		rs = append(rs, cfhelpers.NewJUnitReporter(cfg.Config, componentName))
+	if cfg.GetArtifactsDirectory() != "" {
+		helpers.EnableCFTrace(cfg, componentName)
+		rs = append(rs, helpers.NewJUnitReporter(cfg, componentName))
 	}
 
 	RunSpecsWithDefaultAndCustomReporters(t, componentName, rs)
 }
 
 var _ = BeforeSuite(func() {
-	environment.Setup()
 
-	serviceExists := cf.Cf("marketplace", "-s", cfg.ServiceName).Wait(config.DEFAULT_TIMEOUT)
+	setup = workflowhelpers.NewTestSuiteSetup(cfg)
+	setup.Setup()
+
+	serviceExists := cf.Cf("marketplace", "-s", cfg.ServiceName).Wait(cfg.DefaultTimeoutDuration())
 	Expect(serviceExists).To(Exit(0), fmt.Sprintf("Service offering, %s, does not exist", cfg.ServiceName))
 })
 
 var _ = AfterSuite(func() {
-	environment.Teardown()
+	setup.Teardown()
 })

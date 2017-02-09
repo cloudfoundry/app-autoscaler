@@ -36,9 +36,10 @@ cat > integration_config.json <<EOF
   "admin_password": "admin",
   "apps_domain": "bosh-lite.com",
   "skip_ssl_validation": true,
-  "use_http": false,
+  "use_http": true,
 
   "service_name": "CF-AutoScaler",
+  "service_plan": "autoscaler-free-plan",
   "api_url": "https://autoscalingapi.bosh-lite.com",
   "report_interval": 120
 }
@@ -71,11 +72,13 @@ The full set of config parameters is explained below:
 * `use_http` (optional): Set to true if you would like CF Acceptance Tests to use HTTP when making api and application requests. (default is HTTPS)
 
 * `java_buildpack_name` (optional) [See below](#buildpack-names).
+* `nodejs_buildpack_name` (optional) [See below](#buildpack-names).
 
 #### Buildpack Names
 Many tests specify a buildpack when pushing an app, so that on diego the app staging process completes in less time. The default names for the buildpacks are as follows; if you have buildpacks with different names, you can override them by setting different names:
 
 * `java_buildpack_name: java_buildpack`
+* `nodejs_buildpack_name: nodejs_buildpack`
 
 #### Capturing Test Output
 If you set a value for `artifacts_directory` in your `$CONFIG` file, then you will be able to capture `cf` trace output from failed test runs.  When a test fails, look for the node id and suite name ("*Applications*" and "*2*" in the example below) in the test output:
