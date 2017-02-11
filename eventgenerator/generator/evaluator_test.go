@@ -25,7 +25,7 @@ var _ = Describe("Evaluator", func() {
 		scalingEngine  *ghttp.Server
 		evaluator      *Evaluator
 		testAppId      string = "testAppId"
-		testMetricType string = "MemoryUsage"
+		testMetricType string = models.MetricNameMemory
 		urlPath        string
 		triggerArrayGT []*models.Trigger = []*models.Trigger{&models.Trigger{
 			AppId:                 testAppId,
@@ -34,7 +34,7 @@ var _ = Describe("Evaluator", func() {
 			CoolDownSeconds:       300,
 			Threshold:             500,
 			Operator:              ">",
-			Adjustment:            "1",
+			Adjustment:            "+1",
 		}}
 		triggerArrayGE []*models.Trigger = []*models.Trigger{&models.Trigger{
 			AppId:                 testAppId,
@@ -43,7 +43,7 @@ var _ = Describe("Evaluator", func() {
 			CoolDownSeconds:       300,
 			Threshold:             500,
 			Operator:              ">=",
-			Adjustment:            "1",
+			Adjustment:            "+1",
 		}}
 		triggerArrayLT []*models.Trigger = []*models.Trigger{&models.Trigger{
 			AppId:                 testAppId,
@@ -52,7 +52,7 @@ var _ = Describe("Evaluator", func() {
 			CoolDownSeconds:       300,
 			Threshold:             500,
 			Operator:              "<",
-			Adjustment:            "1",
+			Adjustment:            "-1",
 		}}
 		triggerArrayLE []*models.Trigger = []*models.Trigger{&models.Trigger{
 			AppId:                 testAppId,
@@ -61,7 +61,7 @@ var _ = Describe("Evaluator", func() {
 			CoolDownSeconds:       300,
 			Threshold:             500,
 			Operator:              "<=",
-			Adjustment:            "1",
+			Adjustment:            "-1",
 		}}
 
 		firstTrigger = models.Trigger{
@@ -71,7 +71,7 @@ var _ = Describe("Evaluator", func() {
 			CoolDownSeconds:       300,
 			Threshold:             500,
 			Operator:              ">=",
-			Adjustment:            "1",
+			Adjustment:            "+1",
 		}
 
 		secondTrigger = models.Trigger{
@@ -81,7 +81,7 @@ var _ = Describe("Evaluator", func() {
 			CoolDownSeconds:       300,
 			Threshold:             500,
 			Operator:              "<=",
-			Adjustment:            "1",
+			Adjustment:            "-1",
 		}
 		triggerArrayMultipleTriggers []*models.Trigger = []*models.Trigger{&firstTrigger, &secondTrigger}
 
@@ -89,35 +89,35 @@ var _ = Describe("Evaluator", func() {
 		appMetricGTBreach []*models.AppMetric = []*models.AppMetric{
 			&models.AppMetric{AppId: testAppId,
 				MetricType: testMetricType,
-				Value:      GetInt64Pointer(600),
-				Unit:       "mb",
+				Value:      "600",
+				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
 			&models.AppMetric{AppId: testAppId,
 				MetricType: testMetricType,
-				Value:      GetInt64Pointer(650),
-				Unit:       "mb",
+				Value:      "650",
+				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
 			&models.AppMetric{AppId: testAppId,
 				MetricType: testMetricType,
-				Value:      GetInt64Pointer(620),
-				Unit:       "mb",
+				Value:      "620",
+				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
 		}
 		appMetricGTNotBreach []*models.AppMetric = []*models.AppMetric{
 			&models.AppMetric{AppId: testAppId,
 				MetricType: testMetricType,
-				Value:      GetInt64Pointer(200),
-				Unit:       "mb",
+				Value:      "200",
+				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
 			&models.AppMetric{AppId: testAppId,
 				MetricType: testMetricType,
-				Value:      GetInt64Pointer(150),
-				Unit:       "mb",
+				Value:      "150",
+				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
 			&models.AppMetric{AppId: testAppId,
 				MetricType: testMetricType,
-				Value:      GetInt64Pointer(600),
-				Unit:       "mb",
+				Value:      "600",
+				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
 		}
 
@@ -125,35 +125,35 @@ var _ = Describe("Evaluator", func() {
 		appMetricGEBreach []*models.AppMetric = []*models.AppMetric{
 			&models.AppMetric{AppId: testAppId,
 				MetricType: testMetricType,
-				Value:      GetInt64Pointer(600),
-				Unit:       "mb",
+				Value:      "600",
+				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
 			&models.AppMetric{AppId: testAppId,
 				MetricType: testMetricType,
-				Value:      GetInt64Pointer(500),
-				Unit:       "mb",
+				Value:      "500",
+				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
 			&models.AppMetric{AppId: testAppId,
 				MetricType: testMetricType,
-				Value:      GetInt64Pointer(700),
-				Unit:       "mb",
+				Value:      "700",
+				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
 		}
 		appMetricGENotBreach []*models.AppMetric = []*models.AppMetric{
 			&models.AppMetric{AppId: testAppId,
 				MetricType: testMetricType,
-				Value:      GetInt64Pointer(200),
-				Unit:       "mb",
+				Value:      "200",
+				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
 			&models.AppMetric{AppId: testAppId,
 				MetricType: testMetricType,
-				Value:      GetInt64Pointer(500),
-				Unit:       "mb",
+				Value:      "500",
+				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
 			&models.AppMetric{AppId: testAppId,
 				MetricType: testMetricType,
-				Value:      GetInt64Pointer(120),
-				Unit:       "mb",
+				Value:      "120",
+				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
 		}
 
@@ -161,35 +161,35 @@ var _ = Describe("Evaluator", func() {
 		appMetricLTNotBreach []*models.AppMetric = []*models.AppMetric{
 			&models.AppMetric{AppId: testAppId,
 				MetricType: testMetricType,
-				Value:      GetInt64Pointer(600),
-				Unit:       "mb",
+				Value:      "600",
+				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
 			&models.AppMetric{AppId: testAppId,
 				MetricType: testMetricType,
-				Value:      GetInt64Pointer(300),
-				Unit:       "mb",
+				Value:      "300",
+				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
 			&models.AppMetric{AppId: testAppId,
 				MetricType: testMetricType,
-				Value:      GetInt64Pointer(700),
-				Unit:       "mb",
+				Value:      "200",
+				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
 		}
 		appMetricLTBreach []*models.AppMetric = []*models.AppMetric{
 			&models.AppMetric{AppId: testAppId,
 				MetricType: testMetricType,
-				Value:      GetInt64Pointer(200),
-				Unit:       "mb",
+				Value:      "200",
+				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
 			&models.AppMetric{AppId: testAppId,
 				MetricType: testMetricType,
-				Value:      GetInt64Pointer(150),
-				Unit:       "mb",
+				Value:      "150",
+				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
 			&models.AppMetric{AppId: testAppId,
 				MetricType: testMetricType,
-				Value:      GetInt64Pointer(320),
-				Unit:       "mb",
+				Value:      "320",
+				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
 		}
 
@@ -197,53 +197,53 @@ var _ = Describe("Evaluator", func() {
 		appMetricLENotBreach []*models.AppMetric = []*models.AppMetric{
 			&models.AppMetric{AppId: testAppId,
 				MetricType: testMetricType,
-				Value:      GetInt64Pointer(600),
-				Unit:       "mb",
+				Value:      "600",
+				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
 			&models.AppMetric{AppId: testAppId,
 				MetricType: testMetricType,
-				Value:      GetInt64Pointer(500),
-				Unit:       "mb",
+				Value:      "500",
+				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
 			&models.AppMetric{AppId: testAppId,
 				MetricType: testMetricType,
-				Value:      GetInt64Pointer(300),
-				Unit:       "mb",
+				Value:      "300",
+				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
 		}
 		appMetricLEBreach []*models.AppMetric = []*models.AppMetric{
 			&models.AppMetric{AppId: testAppId,
 				MetricType: testMetricType,
-				Value:      GetInt64Pointer(500),
-				Unit:       "mb",
+				Value:      "500",
+				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
 			&models.AppMetric{AppId: testAppId,
 				MetricType: testMetricType,
-				Value:      GetInt64Pointer(300),
-				Unit:       "mb",
+				Value:      "300",
+				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
 			&models.AppMetric{AppId: testAppId,
 				MetricType: testMetricType,
-				Value:      GetInt64Pointer(200),
-				Unit:       "mb",
+				Value:      "200",
+				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
 		}
 
 		appMetricMultipleTriggerAllBreach []*models.AppMetric = []*models.AppMetric{
 			&models.AppMetric{AppId: testAppId,
 				MetricType: testMetricType,
-				Value:      GetInt64Pointer(500),
-				Unit:       "mb",
+				Value:      "500",
+				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
 			&models.AppMetric{AppId: testAppId,
 				MetricType: testMetricType,
-				Value:      GetInt64Pointer(500),
-				Unit:       "mb",
+				Value:      "500",
+				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
 			&models.AppMetric{AppId: testAppId,
 				MetricType: testMetricType,
-				Value:      GetInt64Pointer(500),
-				Unit:       "mb",
+				Value:      "500",
+				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
 		}
 	)
@@ -328,11 +328,11 @@ var _ = Describe("Evaluator", func() {
 							Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
 						})
 					})
-					Context("when the appMetrics contain nil-value elements", func() {
+					Context("when the appMetrics contain  empty value elements", func() {
 						BeforeEach(func() {
 							appMetricNilValue := append(appMetricGTBreach, &models.AppMetric{AppId: testAppId,
 								MetricType: testMetricType,
-								Value:      nil,
+								Value:      "",
 								Unit:       "",
 								Timestamp:  time.Now().UnixNano()})
 							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
@@ -341,7 +341,7 @@ var _ = Describe("Evaluator", func() {
 						})
 						It("should send trigger alarm to scaling engine", func() {
 							Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
-							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("should not send trigger alarm to scaling engine because there is nil-value metric")))
+							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("should not send trigger alarm to scaling engine because there is empty value metric")))
 						})
 					})
 				})
@@ -382,11 +382,11 @@ var _ = Describe("Evaluator", func() {
 							Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
 						})
 					})
-					Context("when the appMetrics contain nil-value elements", func() {
+					Context("when the appMetrics contain empty value elements", func() {
 						BeforeEach(func() {
 							appMetricNilValue := append(appMetricGEBreach, &models.AppMetric{AppId: testAppId,
 								MetricType: testMetricType,
-								Value:      nil,
+								Value:      "",
 								Unit:       "",
 								Timestamp:  time.Now().UnixNano()})
 							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
@@ -395,7 +395,7 @@ var _ = Describe("Evaluator", func() {
 						})
 						It("should send trigger alarm to scaling engine", func() {
 							Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
-							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("should not send trigger alarm to scaling engine because there is nil-value metric")))
+							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("should not send trigger alarm to scaling engine because there is empty value metric")))
 						})
 					})
 				})
@@ -436,11 +436,11 @@ var _ = Describe("Evaluator", func() {
 							Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
 						})
 					})
-					Context("when the appMetrics contain nil-value elements", func() {
+					Context("when the appMetrics contain empty value elements", func() {
 						BeforeEach(func() {
 							appMetricNilValue := append(appMetricLTBreach, &models.AppMetric{AppId: testAppId,
 								MetricType: testMetricType,
-								Value:      nil,
+								Value:      "",
 								Unit:       "",
 								Timestamp:  time.Now().UnixNano()})
 							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
@@ -449,7 +449,7 @@ var _ = Describe("Evaluator", func() {
 						})
 						It("should send trigger alarm to scaling engine", func() {
 							Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
-							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("should not send trigger alarm to scaling engine because there is nil-value metric")))
+							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("should not send trigger alarm to scaling engine because there is empty value metric")))
 						})
 					})
 				})
@@ -490,11 +490,11 @@ var _ = Describe("Evaluator", func() {
 							Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
 						})
 					})
-					Context("when the appMetrics contain nil-value elements", func() {
+					Context("when the appMetrics contain empty value elements", func() {
 						BeforeEach(func() {
 							appMetricNilValue := append(appMetricLEBreach, &models.AppMetric{AppId: testAppId,
 								MetricType: testMetricType,
-								Value:      nil,
+								Value:      "",
 								Unit:       "",
 								Timestamp:  time.Now().UnixNano()})
 							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
@@ -503,7 +503,7 @@ var _ = Describe("Evaluator", func() {
 						})
 						It("should send trigger alarm to scaling engine", func() {
 							Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
-							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("should not send trigger alarm to scaling engine because there is nil-value metric")))
+							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("should not send trigger alarm to scaling engine because there is empty value metric")))
 						})
 					})
 				})

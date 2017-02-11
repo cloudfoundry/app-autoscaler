@@ -46,8 +46,8 @@ var _ = Describe("Metrics", func() {
 		Context("when no metric is available for the given app", func() {
 			BeforeEach(func() {
 				containerEnvelops = []*events.Envelope{
-					newContainerEnvelope(111111, "different-app-id", 0, 12.11, 622222, 233300000),
-					newContainerEnvelope(222222, "different-app-id", 1, 31.21, 23662, 3424553333),
+					newContainerEnvelope(111111, "different-app-id", 0, 12.11, 6222220, 233300000),
+					newContainerEnvelope(222222, "different-app-id", 1, 31.21, 2366200, 3424553333),
 					newContainerEnvelope(333333, "another-different-app-id", 0, 0.211, 88623692, 9876384949),
 				}
 			})
@@ -61,8 +61,8 @@ var _ = Describe("Metrics", func() {
 			BeforeEach(func() {
 				containerEnvelops = []*events.Envelope{
 					newContainerEnvelope(111111, "an-app-id", 0, 12.11, 622222, 233300000),
-					newContainerEnvelope(222222, "different-app-id", 2, 0.211, 88623692, 9876384949),
-					newContainerEnvelope(333333, "an-app-id", 1, 31.21, 23662, 3424553333),
+					newContainerEnvelope(222222, "different-app-id", 2, 0.211, 2366200, 9876384949),
+					newContainerEnvelope(333333, "an-app-id", 1, 31.21, 88623692, 3424553333),
 				}
 			})
 
@@ -73,8 +73,8 @@ var _ = Describe("Metrics", func() {
 						InstanceIndex: 0,
 						CollectedAt:   123456,
 						Name:          MetricNameMemory,
-						Unit:          UnitBytes,
-						Value:         "622222",
+						Unit:          UnitMegaBytes,
+						Value:         "1",
 						Timestamp:     111111,
 					},
 					&AppInstanceMetric{
@@ -82,8 +82,8 @@ var _ = Describe("Metrics", func() {
 						InstanceIndex: 1,
 						CollectedAt:   123456,
 						Name:          MetricNameMemory,
-						Unit:          UnitBytes,
-						Value:         "23662",
+						Unit:          UnitMegaBytes,
+						Value:         "85",
 						Timestamp:     333333,
 					},
 				))

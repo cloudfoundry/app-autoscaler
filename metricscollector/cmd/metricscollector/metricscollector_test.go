@@ -104,7 +104,7 @@ var _ = Describe("MetricsCollector", func() {
 			})
 
 			It("returns with a 200", func() {
-				rsp, err := httpClient.Get(fmt.Sprintf("https://127.0.0.1:%d/v1/apps/an-app-id/metrics/memory", mcPort))
+				rsp, err := httpClient.Get(fmt.Sprintf("https://127.0.0.1:%d/v1/apps/an-app-id/metrics/memoryused", mcPort))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 				rsp.Body.Close()
@@ -118,7 +118,7 @@ var _ = Describe("MetricsCollector", func() {
 				eLock.Unlock()
 			})
 			It("refreshes the token and returns with a 200", func() {
-				rsp, err := httpClient.Get(fmt.Sprintf("https://127.0.0.1:%d/v1/apps/an-app-id/metrics/memory", mcPort))
+				rsp, err := httpClient.Get(fmt.Sprintf("https://127.0.0.1:%d/v1/apps/an-app-id/metrics/memoryused", mcPort))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 				rsp.Body.Close()
@@ -129,7 +129,7 @@ var _ = Describe("MetricsCollector", func() {
 
 	Describe("when a request for memory metrics history comes", func() {
 		It("returns with a 200", func() {
-			rsp, err := httpClient.Get(fmt.Sprintf("https://127.0.0.1:%d/v1/apps/an-app-id/metric_histories/memory", mcPort))
+			rsp, err := httpClient.Get(fmt.Sprintf("https://127.0.0.1:%d/v1/apps/an-app-id/metric_histories/memoryused", mcPort))
 			Expect(err).NotTo(HaveOccurred())
 			Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 			rsp.Body.Close()

@@ -7,8 +7,8 @@ import (
 	"net/http"
 )
 
-const TestPathMemoryMetrics = "/v1/apps/an-app-id/metrics/memory"
-const TestPathMemoryMetricHistories = "/v1/apps/an-app-id/metric_histories/memory"
+const TestPathMemoryMetrics = "/v1/apps/an-app-id/metrics/memoryused"
+const TestPathMemoryMetricHistories = "/v1/apps/an-app-id/metric_histories/memoryused"
 
 var _ = Describe("Server", func() {
 	var (

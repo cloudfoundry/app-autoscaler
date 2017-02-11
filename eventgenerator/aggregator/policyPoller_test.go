@@ -25,7 +25,7 @@ var _ = Describe("PolicyPoller", func() {
 		   "instance_max_count":5,
 		   "scaling_rules":[
 		      {
-		         "metric_type":"MemoryUsage",
+		         "metric_type":"memoryused",
 		         "stat_window_secs":300,
 		         "breach_duration_secs":300,
 		         "threshold":30,
@@ -85,7 +85,7 @@ var _ = Describe("PolicyPoller", func() {
 							InstanceMax: 5,
 							InstanceMin: 1,
 							ScalingRules: []*models.ScalingRule{&models.ScalingRule{
-								MetricType:            "MemoryUsage",
+								MetricType:            models.MetricNameMemory,
 								StatWindowSeconds:     300,
 								BreachDurationSeconds: 300,
 								CoolDownSeconds:       300,
