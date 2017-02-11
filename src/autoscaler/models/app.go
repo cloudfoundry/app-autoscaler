@@ -45,7 +45,7 @@ type AppMonitor struct {
 type AppMetric struct {
 	AppId      string
 	MetricType string
-	Value      *int64
+	Value      string
 	Unit       string
 	Timestamp  int64
 }

@@ -19,7 +19,7 @@ var _ = Describe("Routes", func() {
 				It("should return the correct path", func() {
 					path, err := routes.MetricsCollectorRoutes().Get(routes.MemoryMetricRoute).URLPath("appid", testAppId)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(path.Path).To(Equal("/v1/apps/testAppId/metrics/memory"))
+					Expect(path.Path).To(Equal("/v1/apps/testAppId/metrics/memoryused"))
 				})
 			})
 
@@ -45,7 +45,7 @@ var _ = Describe("Routes", func() {
 				It("should return the correct path", func() {
 					path, err := routes.MetricsCollectorRoutes().Get(routes.MemoryMetricHistoryRoute).URLPath("appid", testAppId)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(path.Path).To(Equal("/v1/apps/testAppId/metric_histories/memory"))
+					Expect(path.Path).To(Equal("/v1/apps/testAppId/metric_histories/memoryused"))
 				})
 			})
 

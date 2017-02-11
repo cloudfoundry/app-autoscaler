@@ -5,8 +5,8 @@ import (
 )
 
 const (
-	memoryMetricPath          = "/v1/apps/{appid}/metrics/memory"
-	memoryMetricHistoriesPath = "/v1/apps/{appid}/metric_histories/memory"
+	memoryMetricPath          = "/v1/apps/{appid}/metrics/memoryused"
+	memoryMetricHistoriesPath = "/v1/apps/{appid}/metric_histories/memoryused"
 
 	MemoryMetricRoute        = "memory-metric"
 	MemoryMetricHistoryRoute = "memory-metric-histories"

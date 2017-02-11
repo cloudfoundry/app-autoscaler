@@ -21,7 +21,7 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 	BeforeEach(func() {
 		testAppId = getRandomId()
 		startFakeCCNOAAUAA(testAppId, initInstanceCount)
-		fakeMetrics(testAppId, 400)
+		fakeMetrics(testAppId, 400*1024*1024)
 		metricsCollectorConfPath = components.PrepareMetricsCollectorConfig(dbUrl, components.Ports[MetricsCollector], fakeCCNOAAUAA.URL(), cf.GrantTypePassword, pollInterval, refreshInterval, tmpDir)
 		eventGeneratorConfPath = components.PrepareEventGeneratorConfig(dbUrl, components.Ports[EventGenerator], fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), aggregatorExecuteInterval, policyPollerInterval, evaluationManagerInterval, tmpDir)
 		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), cf.GrantTypePassword, tmpDir)
@@ -41,7 +41,7 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 					InstanceMax: 5,
 					ScalingRules: []*models.ScalingRule{
 						&models.ScalingRule{
-							MetricType:            "MemoryUsage",
+							MetricType:            models.MetricNameMemory,
 							StatWindowSeconds:     30,
 							BreachDurationSeconds: 30,
 							Threshold:             90,
@@ -68,7 +68,7 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 					InstanceMax: 5,
 					ScalingRules: []*models.ScalingRule{
 						&models.ScalingRule{
-							MetricType:            "MemoryUsage",
+							MetricType:            models.MetricNameMemory,
 							StatWindowSeconds:     30,
 							BreachDurationSeconds: 30,
 							Threshold:             900,
@@ -96,7 +96,7 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 					InstanceMax: 5,
 					ScalingRules: []*models.ScalingRule{
 						&models.ScalingRule{
-							MetricType:            "MemoryUsage",
+							MetricType:            models.MetricNameMemory,
 							StatWindowSeconds:     30,
 							BreachDurationSeconds: 30,
 							Threshold:             900,
@@ -122,7 +122,7 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 					InstanceMax: 5,
 					ScalingRules: []*models.ScalingRule{
 						&models.ScalingRule{
-							MetricType:            "MemoryUsage",
+							MetricType:            models.MetricNameMemory,
 							StatWindowSeconds:     30,
 							BreachDurationSeconds: 30,
 							Threshold:             90,

@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -77,31 +78,38 @@ func (e *Evaluator) doEvaluate(triggerArray []*models.Trigger) {
 
 		isBreached := true
 		for _, appMetric := range appMetricList {
-			if appMetric.Value == nil {
-				e.logger.Debug("should not send trigger alarm to scaling engine because there is nil-value metric", lager.Data{"trigger": trigger, "appMetric": appMetric})
+			if appMetric.Value == "" {
+				e.logger.Debug("should not send trigger alarm to scaling engine because there is empty value metric", lager.Data{"trigger": trigger, "appMetric": appMetric})
 				isBreached = false
 				break
 			}
+			value, err := strconv.ParseInt(appMetric.Value, 10, 64)
+			if err != nil {
+				e.logger.Debug("should not send trigger alarm to scaling engine because parse metric value fails", lager.Data{"trigger": trigger, "appMetric": appMetric})
+				isBreached = false
+				break
+			}
+
 			if operator == ">" {
-				if *appMetric.Value <= threshold {
+				if value <= threshold {
 					e.logger.Debug("should not send trigger alarm to scaling engine", lager.Data{"trigger": trigger, "appMetric": appMetric})
 					isBreached = false
 					break
 				}
 			} else if operator == ">=" {
-				if *appMetric.Value < threshold {
+				if value < threshold {
 					e.logger.Debug("should not send trigger alarm to scaling engine", lager.Data{"trigger": trigger, "appMetric": appMetric})
 					isBreached = false
 					break
 				}
 			} else if operator == "<" {
-				if *appMetric.Value >= threshold {
+				if value >= threshold {
 					e.logger.Debug("should not send trigger alarm to scaling engine", lager.Data{"trigger": trigger, "appMetric": appMetric})
 					isBreached = false
 					break
 				}
 			} else if operator == "<=" {
-				if *appMetric.Value > threshold {
+				if value > threshold {
 					e.logger.Debug("should not send trigger alarm to scaling engine", lager.Data{"trigger": trigger, "appMetric": appMetric})
 					isBreached = false
 					break

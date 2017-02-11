@@ -29,8 +29,8 @@ var _ = Describe("Eventgenerator", func() {
 
 	It("should start", func() {
 		Consistently(runner.Session).ShouldNot(Exit())
-		Eventually(func() bool { return len(scalingEngine.ReceivedRequests()) >= 1 }, 5*time.Second).Should(BeTrue())
 		Eventually(func() bool { return len(metricCollector.ReceivedRequests()) >= 1 }, 5*time.Second).Should(BeTrue())
+		Eventually(func() bool { return len(scalingEngine.ReceivedRequests()) >= 1 }, 5*time.Second).Should(BeTrue())
 	})
 
 	Context("with a missing config file", func() {
