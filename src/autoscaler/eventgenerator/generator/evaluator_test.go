@@ -64,26 +64,26 @@ var _ = Describe("Evaluator", func() {
 			Adjustment:            "1",
 		}}
 
-		triggerArrayMultipleTriggers []*models.Trigger = []*models.Trigger{
-			&models.Trigger{
-				AppId:                 testAppId,
-				MetricType:            testMetricType,
-				BreachDurationSeconds: 300,
-				CoolDownSeconds:       300,
-				Threshold:             500,
-				Operator:              ">=",
-				Adjustment:            "1",
-			},
-			&models.Trigger{
-				AppId:                 testAppId,
-				MetricType:            testMetricType,
-				BreachDurationSeconds: 300,
-				CoolDownSeconds:       300,
-				Threshold:             500,
-				Operator:              "<=",
-				Adjustment:            "1",
-			},
+		firstTrigger = models.Trigger{
+			AppId:                 testAppId,
+			MetricType:            testMetricType,
+			BreachDurationSeconds: 300,
+			CoolDownSeconds:       300,
+			Threshold:             500,
+			Operator:              ">=",
+			Adjustment:            "1",
 		}
+
+		secondTrigger = models.Trigger{
+			AppId:                 testAppId,
+			MetricType:            testMetricType,
+			BreachDurationSeconds: 300,
+			CoolDownSeconds:       300,
+			Threshold:             500,
+			Operator:              "<=",
+			Adjustment:            "1",
+		}
+		triggerArrayMultipleTriggers []*models.Trigger = []*models.Trigger{&firstTrigger, &secondTrigger}
 
 		//test appmetric for >
 		appMetricGTBreach []*models.AppMetric = []*models.AppMetric{
@@ -229,16 +229,10 @@ var _ = Describe("Evaluator", func() {
 				Timestamp:  time.Now().UnixNano()},
 		}
 
-		//test appmetric for multiple triggers
-		appMetricMultipleTriggerAllNotBreach []*models.AppMetric = []*models.AppMetric{
+		appMetricMultipleTriggerAllBreach []*models.AppMetric = []*models.AppMetric{
 			&models.AppMetric{AppId: testAppId,
 				MetricType: testMetricType,
-				Value:      GetInt64Pointer(600),
-				Unit:       "mb",
-				Timestamp:  time.Now().UnixNano()},
-			&models.AppMetric{AppId: testAppId,
-				MetricType: testMetricType,
-				Value:      GetInt64Pointer(200),
+				Value:      GetInt64Pointer(500),
 				Unit:       "mb",
 				Timestamp:  time.Now().UnixNano()},
 			&models.AppMetric{AppId: testAppId,
@@ -246,22 +240,9 @@ var _ = Describe("Evaluator", func() {
 				Value:      GetInt64Pointer(500),
 				Unit:       "mb",
 				Timestamp:  time.Now().UnixNano()},
-		}
-
-		appMetricMultipleTriggerAllBreach []*models.AppMetric = []*models.AppMetric{
 			&models.AppMetric{AppId: testAppId,
 				MetricType: testMetricType,
-				Value:      GetInt64Pointer(50),
-				Unit:       "mb",
-				Timestamp:  time.Now().UnixNano()},
-			&models.AppMetric{AppId: testAppId,
-				MetricType: testMetricType,
-				Value:      GetInt64Pointer(50),
-				Unit:       "mb",
-				Timestamp:  time.Now().UnixNano()},
-			&models.AppMetric{AppId: testAppId,
-				MetricType: testMetricType,
-				Value:      GetInt64Pointer(50),
+				Value:      GetInt64Pointer(500),
 				Unit:       "mb",
 				Timestamp:  time.Now().UnixNano()},
 		}
@@ -530,16 +511,23 @@ var _ = Describe("Evaluator", func() {
 
 			Context("multiple triggers", func() {
 				BeforeEach(func() {
-					scalingEngine.RouteToHandler("POST", urlPath, ghttp.RespondWith(http.StatusOK, "successful"))
 					Expect(triggerChan).To(BeSent(triggerArrayMultipleTriggers))
 				})
 				Context("when only the first trigger breaches", func() {
 					BeforeEach(func() {
+						scalingEngine.AppendHandlers(
+							ghttp.CombineHandlers(
+								ghttp.VerifyRequest("POST", urlPath),
+								ghttp.VerifyJSONRepresenting(firstTrigger),
+								ghttp.RespondWith(http.StatusOK, ""),
+							),
+						)
+
 						database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
 							return appMetricGEBreach, nil
 						}
 					})
-					It("should send trigger alarm to scaling engine", func() {
+					It("should send alarm of first trigger to scaling engine", func() {
 						Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
 						Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("send trigger alarm to scaling engine")))
 					})
@@ -547,11 +535,19 @@ var _ = Describe("Evaluator", func() {
 
 				Context("when only second tigger breaches", func() {
 					BeforeEach(func() {
+						scalingEngine.AppendHandlers(
+							ghttp.CombineHandlers(
+								ghttp.VerifyRequest("POST", urlPath),
+								ghttp.VerifyJSONRepresenting(secondTrigger),
+								ghttp.RespondWith(http.StatusOK, ""),
+							),
+						)
+
 						database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
 							return appMetricLEBreach, nil
 						}
 					})
-					It("should send trigger alarm to scaling engine", func() {
+					It("should send alarm  of second trigger to scaling engine", func() {
 						Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
 						Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("send trigger alarm to scaling engine")))
 					})
@@ -559,25 +555,20 @@ var _ = Describe("Evaluator", func() {
 
 				Context("when both tiggers breach", func() {
 					BeforeEach(func() {
+						scalingEngine.AppendHandlers(
+							ghttp.CombineHandlers(
+								ghttp.VerifyRequest("POST", urlPath),
+								ghttp.VerifyJSONRepresenting(firstTrigger),
+								ghttp.RespondWith(http.StatusOK, ""),
+							),
+						)
 						database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
 							return appMetricMultipleTriggerAllBreach, nil
 						}
 					})
-					It("should send one trigger alarm to scaling engine", func() {
+					It("should send alarm of first trigger to scaling engine", func() {
 						Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
 						Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("send trigger alarm to scaling engine")))
-					})
-				})
-
-				Context("when no tigger breaches", func() {
-					BeforeEach(func() {
-						database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
-							return appMetricMultipleTriggerAllNotBreach, nil
-						}
-					})
-					It("should not send trigger alarm to scaling engine", func() {
-						Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(0))
-						Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("should not send trigger alarm to scaling engine")))
 					})
 				})
 
