@@ -11,14 +11,16 @@ const (
 	MemoryMetricRoute        = "memory-metric"
 	MemoryMetricHistoryRoute = "memory-metric-histories"
 
-	scalePath            = "/v1/apps/{appid}/scale"
-	scalingHistoriesPath = "/v1/apps/{appid}/scaling_histories"
-	activeSchedulePath   = "/v1/apps/{appid}/active_schedules/{scheduleid}"
+	scalePath             = "/v1/apps/{appid}/scale"
+	scalingHistoriesPath  = "/v1/apps/{appid}/scaling_histories"
+	activeSchedulePath    = "/v1/apps/{appid}/active_schedules/{scheduleid}"
+	appActiveSchedulePath = "/v1/apps/{appid}/active_schedules"
 
 	ScaleRoute                 = "scale"
-	HistoreisRoute             = "histories"
+	HistoriesRoute             = "histories"
 	UpdateActiveSchedulesRoute = "updateActiveSchedules"
 	DeleteActiveSchedulesRoute = "deleteActiveSchedules"
+	GetActiveScheduleRoute     = "getActiveSchedule"
 )
 
 type AutoScalerRoute struct {
@@ -38,9 +40,10 @@ func newRouters() *AutoScalerRoute {
 	instance.metricsCollectorRoutes.Path(memoryMetricHistoriesPath).Name(MemoryMetricHistoryRoute)
 
 	instance.scalingEngineRoutes.Path(scalePath).Name(ScaleRoute)
-	instance.scalingEngineRoutes.Path(scalingHistoriesPath).Name(HistoreisRoute)
+	instance.scalingEngineRoutes.Path(scalingHistoriesPath).Name(HistoriesRoute)
 	instance.scalingEngineRoutes.Path(activeSchedulePath).Name(UpdateActiveSchedulesRoute)
 	instance.scalingEngineRoutes.Path(activeSchedulePath).Name(DeleteActiveSchedulesRoute)
+	instance.scalingEngineRoutes.Path(appActiveSchedulePath).Name(GetActiveScheduleRoute)
 
 	return instance
 

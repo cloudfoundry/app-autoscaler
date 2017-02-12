@@ -20,6 +20,7 @@ import (
 
 const testUrlScalingHistories = "http://localhost/v1/apps/an-app-id/scaling_histories"
 const testUrlActiveSchedules = "http://localhost/v1/apps/an-app-id/active_schedules/a-schedule-id"
+const testUrlAppActiveSchedule = "http://localhost/v1/apps/an-app-id/active_schedules"
 
 var _ = Describe("ScalingHandler", func() {
 	var (
@@ -33,6 +34,7 @@ var _ = Describe("ScalingHandler", func() {
 		trigger            *models.Trigger
 		buffer             *gbytes.Buffer
 		history1, history2 *models.AppScalingHistory
+		activeSchedule     *models.ActiveSchedule
 	)
 
 	BeforeEach(func() {
@@ -423,6 +425,57 @@ var _ = Describe("ScalingHandler", func() {
 				Expect(errJson).To(Equal(&models.ErrorResponse{
 					Code:    "Interal-Server-Error",
 					Message: "Error removing active schedule",
+				}))
+			})
+		})
+	})
+
+	Describe("GetActiveSchedule", func() {
+		JustBeforeEach(func() {
+			handler.GetActiveSchedule(resp, req, map[string]string{"appid": "an-app-id"})
+		})
+
+		Context("when query database succeeds", func() {
+			BeforeEach(func() {
+				req, err = http.NewRequest(http.MethodGet, testUrlAppActiveSchedule, nil)
+				Expect(err).ToNot(HaveOccurred())
+
+				activeSchedule = &models.ActiveSchedule{
+					ScheduleId:         "a-schedule-id",
+					InstanceMin:        1,
+					InstanceMax:        5,
+					InstanceMinInitial: 3,
+				}
+
+				scalingEngineDB.GetActiveScheduleReturns(activeSchedule, nil)
+			})
+
+			It("returns 200 with active schedule in message body", func() {
+				Expect(resp.Code).To(Equal(http.StatusOK))
+
+				actualActiveSchedule := &models.ActiveSchedule{}
+				err = json.Unmarshal(resp.Body.Bytes(), actualActiveSchedule)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(*actualActiveSchedule).To(Equal(*activeSchedule))
+			})
+		})
+
+		Context("when query database fails", func() {
+			BeforeEach(func() {
+				scalingEngineDB.GetActiveScheduleReturns(nil, errors.New("database error"))
+			})
+
+			It("returns 500", func() {
+				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
+
+				errJson := &models.ErrorResponse{}
+				err = json.Unmarshal(resp.Body.Bytes(), errJson)
+
+				Expect(err).ToNot(HaveOccurred())
+				Expect(errJson).To(Equal(&models.ErrorResponse{
+					Code:    "Interal-Server-Error",
+					Message: "Error getting active schedule from database",
 				}))
 			})
 		})

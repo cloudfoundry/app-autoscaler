@@ -107,7 +107,7 @@ var _ = Describe("Server", func() {
 
 	Context("when getting scaling histories", func() {
 		BeforeEach(func() {
-			uPath, err := route.Get(routes.HistoreisRoute).URLPath("appid", "test-app-id")
+			uPath, err := route.Get(routes.HistoriesRoute).URLPath("appid", "test-app-id")
 			Expect(err).NotTo(HaveOccurred())
 			urlPath = uPath.Path
 		})
@@ -215,6 +215,48 @@ var _ = Describe("Server", func() {
 				It("should return 204", func() {
 					Expect(err).ToNot(HaveOccurred())
 					Expect(rsp.StatusCode).To(Equal(http.StatusNoContent))
+					rsp.Body.Close()
+				})
+			})
+
+			Context("when requesting the wrong path", func() {
+				BeforeEach(func() {
+					urlPath = "/not-exist"
+				})
+
+				It("should return 404", func() {
+					Expect(err).ToNot(HaveOccurred())
+					Expect(rsp.StatusCode).To(Equal(http.StatusNotFound))
+					rsp.Body.Close()
+				})
+			})
+		})
+
+		Context("when getting active schedule", func() {
+			BeforeEach(func() {
+				uPath, err := route.Get(routes.GetActiveScheduleRoute).URLPath("appid", "test-app-id")
+				Expect(err).NotTo(HaveOccurred())
+				urlPath = uPath.Path
+				bodyReader = nil
+				method = http.MethodGet
+			})
+
+			Context("when requesting correctly", func() {
+				It("should return 200", func() {
+					Expect(err).ToNot(HaveOccurred())
+					Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+					rsp.Body.Close()
+				})
+			})
+
+			Context("when using the wrong method", func() {
+				BeforeEach(func() {
+					method = http.MethodDelete
+				})
+
+				It("should return 404", func() {
+					Expect(err).ToNot(HaveOccurred())
+					Expect(rsp.StatusCode).To(Equal(http.StatusNotFound))
 					rsp.Body.Close()
 				})
 			})
