@@ -68,43 +68,52 @@ func (e *Evaluator) doEvaluate(triggerArray []*models.Trigger) {
 
 		appMetricList, err := e.retrieveAppMetrics(trigger)
 		if err != nil {
-			return
+			continue
 		}
 		if len(appMetricList) == 0 {
 			e.logger.Debug("no available appmetric", lager.Data{"trigger": trigger})
-			return
+			continue
 		}
+
+		isBreached := true
 		for _, appMetric := range appMetricList {
 			if appMetric.Value == nil {
 				e.logger.Debug("should not send trigger alarm to scaling engine because there is nil-value metric", lager.Data{"trigger": trigger, "appMetric": appMetric})
-				return
+				isBreached = false
+				break
 			}
 			if operator == ">" {
 				if *appMetric.Value <= threshold {
 					e.logger.Debug("should not send trigger alarm to scaling engine", lager.Data{"trigger": trigger, "appMetric": appMetric})
-					return
+					isBreached = false
+					break
 				}
 			} else if operator == ">=" {
 				if *appMetric.Value < threshold {
 					e.logger.Debug("should not send trigger alarm to scaling engine", lager.Data{"trigger": trigger, "appMetric": appMetric})
-					return
+					isBreached = false
+					break
 				}
 			} else if operator == "<" {
 				if *appMetric.Value >= threshold {
 					e.logger.Debug("should not send trigger alarm to scaling engine", lager.Data{"trigger": trigger, "appMetric": appMetric})
-					return
+					isBreached = false
+					break
 				}
 			} else if operator == "<=" {
 				if *appMetric.Value > threshold {
 					e.logger.Debug("should not send trigger alarm to scaling engine", lager.Data{"trigger": trigger, "appMetric": appMetric})
-					return
+					isBreached = false
+					break
 				}
 			}
 		}
 
-		e.logger.Info("send trigger alarm to scaling engine", lager.Data{"trigger": trigger})
-		e.sendTriggerAlarm(trigger)
-
+		if isBreached {
+			e.logger.Info("send trigger alarm to scaling engine", lager.Data{"trigger": trigger})
+			e.sendTriggerAlarm(trigger)
+			return
+		}
 	}
 
 }
@@ -127,7 +136,7 @@ func (e *Evaluator) sendTriggerAlarm(trigger *models.Trigger) {
 		e.logger.Error("failed to json.Marshal trigger", jsonEncodeError)
 	}
 	path, _ := routes.ScalingEngineRoutes().Get(routes.ScaleRoute).URLPath("appid", trigger.AppId)
-	resp, respErr := e.httpClient.Post(e.scalingEngineUrl+path.Path, "", bytes.NewReader(jsonBytes))
+	resp, respErr := e.httpClient.Post(e.scalingEngineUrl+path.Path, "application/json", bytes.NewReader(jsonBytes))
 	if respErr != nil {
 		e.logger.Error("http reqeust error,failed to send trigger alarm", respErr, lager.Data{"trigger": trigger})
 		return
