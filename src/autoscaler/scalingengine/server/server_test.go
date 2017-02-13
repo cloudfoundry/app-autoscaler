@@ -95,17 +95,6 @@ var _ = Describe("Server", func() {
 			})
 		})
 
-		Context("when using the wrong method", func() {
-			JustBeforeEach(func() {
-				rsp, err = http.Get(serverUrl + urlPath)
-			})
-
-			It("should return 404", func() {
-				Expect(err).ToNot(HaveOccurred())
-				Expect(rsp.StatusCode).To(Equal(http.StatusNotFound))
-				rsp.Body.Close()
-			})
-		})
 	})
 
 	Context("when getting scaling histories", func() {
@@ -130,18 +119,6 @@ var _ = Describe("Server", func() {
 		Context("when requesting the wrong path", func() {
 			JustBeforeEach(func() {
 				rsp, err = http.Get(serverUrl + "/not-exist-path")
-			})
-
-			It("should return 404", func() {
-				Expect(err).ToNot(HaveOccurred())
-				Expect(rsp.StatusCode).To(Equal(http.StatusNotFound))
-				rsp.Body.Close()
-			})
-		})
-
-		Context("when using the wrong method", func() {
-			JustBeforeEach(func() {
-				rsp, err = http.Post(serverUrl+urlPath, "gabage", nil)
 			})
 
 			It("should return 404", func() {
@@ -176,18 +153,6 @@ var _ = Describe("Server", func() {
 				It("should return 200", func() {
 					Expect(err).ToNot(HaveOccurred())
 					Expect(rsp.StatusCode).To(Equal(http.StatusOK))
-					rsp.Body.Close()
-				})
-			})
-
-			Context("when using the wrong method", func() {
-				BeforeEach(func() {
-					method = http.MethodPost
-				})
-
-				It("should return 404", func() {
-					Expect(err).ToNot(HaveOccurred())
-					Expect(rsp.StatusCode).To(Equal(http.StatusNotFound))
 					rsp.Body.Close()
 				})
 			})

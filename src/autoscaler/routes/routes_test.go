@@ -94,7 +94,7 @@ var _ = Describe("Routes", func() {
 			})
 		})
 
-		Context("HistoreisRoute", func() {
+		Context("HistoriesRoute", func() {
 			Context("when provide correct route variable", func() {
 				It("should return the correct path", func() {
 					path, err := routes.ScalingEngineRoutes().Get(routes.HistoriesRoute).URLPath("appid", testAppId)
