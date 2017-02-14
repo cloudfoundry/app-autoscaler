@@ -8,13 +8,13 @@ import (
 
 const (
 	UnitPercentage   = "percentage"
-	UnitBytes        = "bytes"
+	UnitMegaBytes    = "megabytes"
 	UnitNum          = "num"
 	UnitMilliseconds = "milliseconds"
 	UnitRPS          = "rps"
 )
 
-const MetricNameMemory = "memorybytes"
+const MetricNameMemory = "memoryused"
 
 type AppInstanceMetric struct {
 	AppId         string `json:"app_id"`
@@ -36,8 +36,8 @@ func GetInstanceMemoryMetricFromContainerEnvelopes(collectAt int64, appId string
 				InstanceIndex: uint32(cm.GetInstanceIndex()),
 				CollectedAt:   collectAt,
 				Name:          MetricNameMemory,
-				Unit:          UnitBytes,
-				Value:         fmt.Sprintf("%d", cm.GetMemoryBytes()),
+				Unit:          UnitMegaBytes,
+				Value:         fmt.Sprintf("%d", int(float64(cm.GetMemoryBytes())/(1024*1024)+0.5)),
 				Timestamp:     e.GetTimestamp(),
 			})
 		}

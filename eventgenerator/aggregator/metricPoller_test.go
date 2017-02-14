@@ -19,7 +19,7 @@ import (
 var _ = Describe("MetricPoller", func() {
 	var testAppId string = "testAppId"
 	var timestamp int64 = time.Now().UnixNano()
-	var metricType string = "MemoryUsage"
+	var metricType string = models.MetricNameMemory
 	var logger *lagertest.TestLogger
 	var appMonitorsChan chan *models.AppMonitor
 	var appMetricDatabase *fakes.FakeAppMetricDB
@@ -32,7 +32,7 @@ var _ = Describe("MetricPoller", func() {
 			InstanceIndex: 0,
 			CollectedAt:   111111,
 			Name:          metricType,
-			Unit:          models.UnitBytes,
+			Unit:          models.UnitMegaBytes,
 			Value:         "100",
 			Timestamp:     111100,
 		},
@@ -41,7 +41,7 @@ var _ = Describe("MetricPoller", func() {
 			InstanceIndex: 1,
 			CollectedAt:   111111,
 			Name:          metricType,
-			Unit:          models.UnitBytes,
+			Unit:          models.UnitMegaBytes,
 			Value:         "200",
 			Timestamp:     110000,
 		},
@@ -51,7 +51,7 @@ var _ = Describe("MetricPoller", func() {
 			InstanceIndex: 0,
 			CollectedAt:   222222,
 			Name:          metricType,
-			Unit:          models.UnitBytes,
+			Unit:          models.UnitMegaBytes,
 			Value:         "300",
 			Timestamp:     222200,
 		},
@@ -60,7 +60,7 @@ var _ = Describe("MetricPoller", func() {
 			InstanceIndex: 1,
 			CollectedAt:   222222,
 			Name:          metricType,
-			Unit:          models.UnitBytes,
+			Unit:          models.UnitMegaBytes,
 			Value:         "400",
 			Timestamp:     220000,
 		},
@@ -105,7 +105,7 @@ var _ = Describe("MetricPoller", func() {
 			metricServer.Close()
 		})
 
-		Context("with a non-MemoryUsage type", func() {
+		Context("with a non-memoryused type", func() {
 			BeforeEach(func() {
 				appMonitor.MetricType = "garbage"
 			})
@@ -125,12 +125,11 @@ var _ = Describe("MetricPoller", func() {
 				actualAppMetric := appMetricDatabase.SaveAppMetricArgsForCall(0)
 				actualAppMetric.Timestamp = timestamp
 
-				var value int64 = 250
 				Expect(actualAppMetric).To(Equal(&models.AppMetric{
 					AppId:      testAppId,
 					MetricType: metricType,
-					Value:      &value,
-					Unit:       "bytes",
+					Value:      "250",
+					Unit:       models.UnitMegaBytes,
 					Timestamp:  timestamp}))
 			})
 		})
@@ -158,7 +157,7 @@ var _ = Describe("MetricPoller", func() {
 
 			It("saves the average metrics with no value", func() {
 				Eventually(appMetricDatabase.SaveAppMetricCallCount).Should(Equal(1))
-				Expect(appMetricDatabase.SaveAppMetricArgsForCall(0).Value).To(BeNil())
+				Expect(appMetricDatabase.SaveAppMetricArgsForCall(0).Value).To(BeEmpty())
 			})
 		})
 

@@ -77,9 +77,9 @@ var _ = Describe("AppMetricSQLDB", func() {
 				appMetric := &models.AppMetric{
 					AppId:      "test-app-id",
 					MetricType: models.MetricNameMemory,
-					Unit:       models.UnitBytes,
+					Unit:       models.UnitMegaBytes,
 					Timestamp:  11111111,
-					Value:      GetInt64Pointer(30000),
+					Value:      "300",
 				}
 				err = adb.SaveAppMetric(appMetric)
 			})
@@ -92,9 +92,6 @@ var _ = Describe("AppMetricSQLDB", func() {
 
 	})
 	Describe("RetrieveAppMetrics", func() {
-		value1 := GetInt64Pointer(10000)
-		value2 := GetInt64Pointer(50000)
-		value3 := GetInt64Pointer(30000)
 		BeforeEach(func() {
 			adb, err = NewAppMetricSQLDB(url, logger)
 			Expect(err).NotTo(HaveOccurred())
@@ -103,20 +100,20 @@ var _ = Describe("AppMetricSQLDB", func() {
 			appMetric := &models.AppMetric{
 				AppId:      "test-app-id",
 				MetricType: models.MetricNameMemory,
-				Unit:       models.UnitBytes,
+				Unit:       models.UnitMegaBytes,
 				Timestamp:  11111111,
-				Value:      value1,
+				Value:      "100",
 			}
 			err = adb.SaveAppMetric(appMetric)
 			Expect(err).NotTo(HaveOccurred())
 
 			appMetric.Timestamp = 33333333
-			appMetric.Value = value2
+			appMetric.Value = "200"
 			err = adb.SaveAppMetric(appMetric)
 			Expect(err).NotTo(HaveOccurred())
 
 			appMetric.Timestamp = 55555555
-			appMetric.Value = value3
+			appMetric.Value = "300"
 			err = adb.SaveAppMetric(appMetric)
 			Expect(err).NotTo(HaveOccurred())
 
@@ -202,23 +199,23 @@ var _ = Describe("AppMetricSQLDB", func() {
 					&models.AppMetric{
 						AppId:      "test-app-id",
 						MetricType: models.MetricNameMemory,
-						Unit:       models.UnitBytes,
+						Unit:       models.UnitMegaBytes,
 						Timestamp:  11111111,
-						Value:      value1,
+						Value:      "100",
 					},
 					&models.AppMetric{
 						AppId:      "test-app-id",
 						MetricType: models.MetricNameMemory,
-						Unit:       models.UnitBytes,
+						Unit:       models.UnitMegaBytes,
 						Timestamp:  33333333,
-						Value:      value2,
+						Value:      "200",
 					},
 					&models.AppMetric{
 						AppId:      "test-app-id",
 						MetricType: models.MetricNameMemory,
-						Unit:       models.UnitBytes,
+						Unit:       models.UnitMegaBytes,
 						Timestamp:  55555555,
-						Value:      value3,
+						Value:      "300",
 					}}))
 			})
 		})
@@ -234,16 +231,16 @@ var _ = Describe("AppMetricSQLDB", func() {
 					&models.AppMetric{
 						AppId:      "test-app-id",
 						MetricType: models.MetricNameMemory,
-						Unit:       models.UnitBytes,
+						Unit:       models.UnitMegaBytes,
 						Timestamp:  33333333,
-						Value:      value2,
+						Value:      "200",
 					},
 					&models.AppMetric{
 						AppId:      "test-app-id",
 						MetricType: models.MetricNameMemory,
-						Unit:       models.UnitBytes,
+						Unit:       models.UnitMegaBytes,
 						Timestamp:  55555555,
-						Value:      value3,
+						Value:      "300",
 					}}))
 			})
 		})
@@ -257,25 +254,24 @@ var _ = Describe("AppMetricSQLDB", func() {
 
 			cleanAppMetricTable()
 
-			value := int64(10000)
 			appMetric := &models.AppMetric{
 				AppId:      "test-app-id",
 				MetricType: models.MetricNameMemory,
-				Unit:       models.UnitBytes,
+				Unit:       models.UnitMegaBytes,
 				Timestamp:  11111111,
-				Value:      &value,
+				Value:      "100",
 			}
 
 			err = adb.SaveAppMetric(appMetric)
 			Expect(err).NotTo(HaveOccurred())
 
 			appMetric.Timestamp = 55555555
-			*appMetric.Value = 50000
+			appMetric.Value = "200"
 			err = adb.SaveAppMetric(appMetric)
 			Expect(err).NotTo(HaveOccurred())
 
 			appMetric.Timestamp = 33333333
-			*appMetric.Value = 30000
+			appMetric.Value = "300"
 			err = adb.SaveAppMetric(appMetric)
 			Expect(err).NotTo(HaveOccurred())
 

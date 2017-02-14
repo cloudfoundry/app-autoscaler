@@ -78,7 +78,7 @@ var _ = Describe("MemoryMetricHandler", func() {
 							ContainerMetric: &events.ContainerMetric{
 								ApplicationId: proto.String("an-app-id"),
 								InstanceIndex: proto.Int32(0),
-								MemoryBytes:   proto.Uint64(1234),
+								MemoryBytes:   proto.Uint64(12345678),
 							},
 							Timestamp: &timestamp,
 						},
@@ -86,7 +86,7 @@ var _ = Describe("MemoryMetricHandler", func() {
 							ContainerMetric: &events.ContainerMetric{
 								ApplicationId: proto.String("an-app-id"),
 								InstanceIndex: proto.Int32(1),
-								MemoryBytes:   proto.Uint64(5678),
+								MemoryBytes:   proto.Uint64(87654321),
 							},
 							Timestamp: &timestamp,
 						},
@@ -106,8 +106,8 @@ var _ = Describe("MemoryMetricHandler", func() {
 						"AppId":         Equal("an-app-id"),
 						"InstanceIndex": BeEquivalentTo(0),
 						"Name":          Equal(models.MetricNameMemory),
-						"Unit":          Equal(models.UnitBytes),
-						"Value":         Equal("1234"),
+						"Unit":          Equal(models.UnitMegaBytes),
+						"Value":         Equal("12"),
 						"Timestamp":     BeEquivalentTo(111111),
 					}))
 
@@ -115,8 +115,8 @@ var _ = Describe("MemoryMetricHandler", func() {
 						"AppId":         Equal("an-app-id"),
 						"InstanceIndex": BeEquivalentTo(1),
 						"Name":          Equal(models.MetricNameMemory),
-						"Unit":          Equal(models.UnitBytes),
-						"Value":         Equal("5678"),
+						"Unit":          Equal(models.UnitMegaBytes),
+						"Value":         Equal("84"),
 						"Timestamp":     BeEquivalentTo(111111),
 					}))
 
@@ -287,8 +287,8 @@ var _ = Describe("MemoryMetricHandler", func() {
 						InstanceIndex: 0,
 						CollectedAt:   111122,
 						Name:          models.MetricNameMemory,
-						Unit:          models.UnitBytes,
-						Value:         "123456",
+						Unit:          models.UnitMegaBytes,
+						Value:         "12345678",
 						Timestamp:     111100,
 					}
 
@@ -297,8 +297,8 @@ var _ = Describe("MemoryMetricHandler", func() {
 						InstanceIndex: 1,
 						CollectedAt:   111122,
 						Name:          models.MetricNameMemory,
-						Unit:          models.UnitBytes,
-						Value:         "345612",
+						Unit:          models.UnitMegaBytes,
+						Value:         "87654321",
 						Timestamp:     111111,
 					}
 					database.RetrieveInstanceMetricsReturns([]*models.AppInstanceMetric{&metric1, &metric2}, nil)
