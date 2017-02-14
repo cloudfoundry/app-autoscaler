@@ -4,8 +4,9 @@ import (
 	"autoscaler/db"
 	"autoscaler/models"
 	"code.cloudfoundry.org/lager"
-	"database/sql"
 	_ "github.com/lib/pq"
+
+	"database/sql"
 )
 
 type AppMetricSQLDB struct {
@@ -68,9 +69,10 @@ func (adb *AppMetricSQLDB) RetrieveAppMetrics(appIdP string, metricTypeP string,
 	var appId string
 	var metricType string
 	var unit string
+	var value string
 	var timestamp int64
+
 	for rows.Next() {
-		var value int64
 		if err = rows.Scan(&appId, &metricType, &value, &unit, &timestamp); err != nil {
 			adb.logger.Error("scan-appmetric-from-search-result", err)
 			return nil, err
@@ -78,7 +80,7 @@ func (adb *AppMetricSQLDB) RetrieveAppMetrics(appIdP string, metricTypeP string,
 		appMetric := &models.AppMetric{
 			AppId:      appId,
 			MetricType: metricType,
-			Value:      &value,
+			Value:      value,
 			Unit:       unit,
 			Timestamp:  timestamp,
 		}

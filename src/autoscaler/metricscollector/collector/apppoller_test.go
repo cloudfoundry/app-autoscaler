@@ -81,7 +81,7 @@ var _ = Describe("Apppoller", func() {
 								ContainerMetric: &events.ContainerMetric{
 									ApplicationId: proto.String("test-app-id"),
 									InstanceIndex: proto.Int32(0),
-									MemoryBytes:   proto.Uint64(1234),
+									MemoryBytes:   proto.Uint64(12345678),
 								},
 								Timestamp: &timestamp,
 							},
@@ -94,8 +94,8 @@ var _ = Describe("Apppoller", func() {
 							"InstanceIndex": BeEquivalentTo(0),
 							"CollectedAt":   Equal(fclock.Now().UnixNano()),
 							"Name":          Equal(models.MetricNameMemory),
-							"Unit":          Equal(models.UnitBytes),
-							"Value":         Equal("1234"),
+							"Unit":          Equal(models.UnitMegaBytes),
+							"Value":         Equal("12"),
 							"Timestamp":     BeEquivalentTo(111111),
 						}))
 						return nil
@@ -150,7 +150,7 @@ var _ = Describe("Apppoller", func() {
 									ContainerMetric: &events.ContainerMetric{
 										ApplicationId: proto.String("test-app-id"),
 										InstanceIndex: proto.Int32(0),
-										MemoryBytes:   proto.Uint64(1234),
+										MemoryBytes:   proto.Uint64(12345678),
 									},
 									Timestamp: &timestamp,
 								},
@@ -164,8 +164,8 @@ var _ = Describe("Apppoller", func() {
 							"InstanceIndex": BeEquivalentTo(0),
 							"CollectedAt":   Equal(fclock.Now().UnixNano()),
 							"Name":          Equal(models.MetricNameMemory),
-							"Unit":          Equal(models.UnitBytes),
-							"Value":         Equal("1234"),
+							"Unit":          Equal(models.UnitMegaBytes),
+							"Value":         Equal("12"),
 							"Timestamp":     BeEquivalentTo(111111),
 						}))
 						return nil
@@ -219,7 +219,7 @@ var _ = Describe("Apppoller", func() {
 								ContainerMetric: &events.ContainerMetric{
 									ApplicationId: proto.String("test-app-id"),
 									InstanceIndex: proto.Int32(0),
-									MemoryBytes:   proto.Uint64(1234),
+									MemoryBytes:   proto.Uint64(12345678),
 								},
 							},
 						}, nil

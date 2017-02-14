@@ -59,7 +59,7 @@ func (m *MetricPoller) retrieveMetric(app *models.AppMonitor) {
 	metricType := app.MetricType
 	endTime := time.Now()
 	startTime := endTime.Add(0 - app.StatWindow)
-	if metricType != "MemoryUsage" {
+	if metricType != models.MetricNameMemory {
 		m.logger.Error("Unsupported metric type", fmt.Errorf("%s is not supported", metricType))
 		return
 	}
@@ -108,12 +108,12 @@ func (m *MetricPoller) aggregate(appId string, metricType string, metrics []*mod
 	var timestamp int64 = time.Now().UnixNano()
 	for _, metric := range metrics {
 		unit = metric.Unit
-		intValue, err := strconv.ParseInt(metric.Value, 10, 64)
+		metricValue, err := strconv.ParseInt(metric.Value, 10, 64)
 		if err != nil {
 			m.logger.Error("failed-to-aggregate", err, lager.Data{"value": metric.Value})
 		} else {
 			count++
-			sum += intValue
+			sum += metricValue
 		}
 	}
 
@@ -121,17 +121,17 @@ func (m *MetricPoller) aggregate(appId string, metricType string, metrics []*mod
 		return &models.AppMetric{
 			AppId:      appId,
 			MetricType: metricType,
-			Value:      nil,
+			Value:      "",
 			Unit:       "",
 			Timestamp:  timestamp,
 		}
 	}
 
-	avgValue := sum / count
+	avgValue := int64(float64(sum)/float64(count) + 0.5)
 	return &models.AppMetric{
 		AppId:      appId,
 		MetricType: metricType,
-		Value:      &avgValue,
+		Value:      fmt.Sprintf("%d", avgValue),
 		Unit:       unit,
 		Timestamp:  timestamp,
 	}
