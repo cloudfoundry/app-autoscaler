@@ -203,6 +203,14 @@ func (h *ScalingHandler) GetActiveSchedule(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	if activeSchedule == nil {
+		handlers.WriteJSONResponse(w, http.StatusNotFound, models.ErrorResponse{
+			Code:    "Not-Found",
+			Message: "Active schedule not found",
+		})
+		return
+	}
+
 	var body []byte
 	body, err = json.Marshal(activeSchedule)
 	if err != nil {

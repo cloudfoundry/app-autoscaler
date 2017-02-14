@@ -432,7 +432,28 @@ var _ = Describe("ScalingHandler", func() {
 
 	Describe("GetActiveSchedule", func() {
 		JustBeforeEach(func() {
-			handler.GetActiveSchedule(resp, req, map[string]string{"appid": "an-app-id"})
+			handler.GetActiveSchedule(resp, req, map[string]string{"appid": "invalid-app-id"})
+		})
+
+		Context("when app id is invalid", func() {
+			BeforeEach(func() {
+				req, err = http.NewRequest(http.MethodGet, testUrlAppActiveSchedule, nil)
+				Expect(err).ToNot(HaveOccurred())
+
+				scalingEngineDB.GetActiveScheduleReturns(nil, nil)
+			})
+
+			It("returns 404", func() {
+				Expect(resp.Code).To(Equal(http.StatusNotFound))
+
+				errJson := &models.ErrorResponse{}
+				err = json.Unmarshal(resp.Body.Bytes(), errJson)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(errJson).To(Equal(&models.ErrorResponse{
+					Code:    "Not-Found",
+					Message: "Active schedule not found",
+				}))
+			})
 		})
 
 		Context("when query database succeeds", func() {
@@ -457,7 +478,7 @@ var _ = Describe("ScalingHandler", func() {
 				err = json.Unmarshal(resp.Body.Bytes(), actualActiveSchedule)
 
 				Expect(err).ToNot(HaveOccurred())
-				Expect(*actualActiveSchedule).To(Equal(*activeSchedule))
+				Expect(actualActiveSchedule).To(Equal(activeSchedule))
 			})
 		})
 
