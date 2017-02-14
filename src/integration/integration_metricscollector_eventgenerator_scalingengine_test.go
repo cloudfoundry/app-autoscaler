@@ -20,7 +20,7 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 	)
 	BeforeEach(func() {
 		testAppId = getRandomId()
-		startFakeCCNOAAUAA(testAppId, initInstanceCount)
+		startFakeCCNOAAUAA(initInstanceCount)
 		fakeMetrics(testAppId, 400*1024*1024)
 		metricsCollectorConfPath = components.PrepareMetricsCollectorConfig(dbUrl, components.Ports[MetricsCollector], fakeCCNOAAUAA.URL(), cf.GrantTypePassword, pollInterval, refreshInterval, tmpDir)
 		eventGeneratorConfPath = components.PrepareEventGeneratorConfig(dbUrl, components.Ports[EventGenerator], fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), aggregatorExecuteInterval, policyPollerInterval, evaluationManagerInterval, tmpDir)
