@@ -32,9 +32,9 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"testing"
 	"time"
-	"syscall"
 )
 
 var (
@@ -42,7 +42,6 @@ var (
 	tmpDir                   string
 	isTokenExpired           bool
 	eLock                    *sync.Mutex
-	plumbing                 ifrit.Process
 	serviceBrokerConfPath    string
 	apiServerConfPath        string
 	schedulerConfPath        string
@@ -370,7 +369,7 @@ func checkSchedule(getResponse GetResponse, id string, expectHttpStatus int, exp
 	resp.Body.Close()
 }
 
-func startFakeCCNOAAUAA(appId string, instanceCount int) {
+func startFakeCCNOAAUAA(instanceCount int) {
 	fakeCCNOAAUAA = ghttp.NewServer()
 	fakeCCNOAAUAA.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
 		cf.Endpoints{
@@ -447,5 +446,3 @@ func marshalMessage(message *events.Envelope) []byte {
 
 	return data
 }
-
-
