@@ -13,8 +13,6 @@ import (
 	"strconv"
 )
 
-const TokenTypeBearer = "bearer"
-
 type ScalingHandler struct {
 	logger          lager.Logger
 	scalingEngineDB db.ScalingEngineDB
@@ -188,4 +186,41 @@ func (h *ScalingHandler) RemoveActiveSchedule(w http.ResponseWriter, r *http.Req
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *ScalingHandler) GetActiveSchedule(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+	appId := vars["appid"]
+
+	logger := h.logger.Session("get-active-schedule", lager.Data{"appid": appId})
+	logger.Info("handle-active-schedule-get")
+
+	activeSchedule, err := h.scalingEngineDB.GetActiveSchedule(appId)
+	if err != nil {
+		logger.Error("failed-to-get-active-schedule", err, lager.Data{"appid": appId})
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Error getting active schedule from database"})
+		return
+	}
+
+	if activeSchedule == nil {
+		handlers.WriteJSONResponse(w, http.StatusNotFound, models.ErrorResponse{
+			Code:    "Not-Found",
+			Message: "Active schedule not found",
+		})
+		return
+	}
+
+	var body []byte
+	body, err = json.Marshal(activeSchedule)
+	if err != nil {
+		logger.Error("failed-to-marshal", err, lager.Data{"activeSchedule": activeSchedule})
+
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Error getting active schedule from database"})
+		return
+	}
+
+	w.Write(body)
 }
