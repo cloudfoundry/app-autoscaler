@@ -27,15 +27,15 @@ import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.TestJobListener;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
-import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.impl.matchers.NameMatcher;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,7 +51,6 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.context.WebApplicationContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -84,19 +83,25 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 	@Value("${autoscaler.scalingengine.url}")
 	private String scalingEngineUrl;
 
-	@Autowired
-	private RestTemplate restTemplate;
+	private static EmbeddedTomcatUtil embeddedTomcatUtil;
 
-	private EmbeddedTomcatUtil embeddedTomcatUtil;
+
+	@BeforeClass
+	public static void beforeClass() {
+		embeddedTomcatUtil = new EmbeddedTomcatUtil();
+		embeddedTomcatUtil.start();
+	}
+
+	@AfterClass
+	public static void afterClass() {
+		embeddedTomcatUtil.stop();
+	}
 
 	@Before
 	@Transactional
 	public void before() throws Exception {
 		// Clean up data
 		testDataDbUtil.cleanupData(scheduler);
-		embeddedTomcatUtil = new EmbeddedTomcatUtil();
-		embeddedTomcatUtil.start();
-
 		Mockito.reset(mockAppender);
 
 		Mockito.when(mockAppender.getName()).thenReturn("MockAppender");
@@ -106,11 +111,6 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 		mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
 
 		setLogLevel(Level.INFO);
-	}
-
-	@After
-	public void after() {
-		embeddedTomcatUtil.stop();
 	}
 
 	@Test

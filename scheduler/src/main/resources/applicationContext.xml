@@ -3,16 +3,13 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:context="http://www.springframework.org/schema/context"
        xmlns:tx="http://www.springframework.org/schema/tx"
-       xmlns:util="http://www.springframework.org/schema/util"
        xsi:schemaLocation="
 	http://www.springframework.org/schema/beans 
 	http://www.springframework.org/schema/beans/spring-beans.xsd
 	http://www.springframework.org/schema/context 
     http://www.springframework.org/schema/context/spring-context.xsd
 	http://www.springframework.org/schema/tx 
-	http://www.springframework.org/schema/tx/spring-tx.xsd
-    http://www.springframework.org/schema/util
-    http://www.springframework.org/schema/util/spring-util.xsd">
+	http://www.springframework.org/schema/tx/spring-tx.xsd">
 
     <!-- This will automatically locate any and all property files you have
         within your classpath, provided they fall under the resources directory.
@@ -83,27 +80,6 @@
                 <prop key="org.quartz.jobStore.isClustered">true</prop>
                 <prop key="org.quartz.scheduler.instanceId">AUTO</prop>
             </props>
-        </property>
-    </bean>
-    <bean id="restTemplate" class="org.springframework.web.client.RestTemplate"/>
-
-    <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-        <property name="targetObject">
-            <!-- System.getProperties() -->
-            <bean class="org.springframework.beans.factory.config.MethodInvokingFactoryBean">
-                <property name="targetClass" value="java.lang.System"/>
-                <property name="targetMethod" value="getProperties"/>
-            </bean>
-        </property>
-        <property name="targetMethod" value="putAll"/>
-        <property name="arguments">
-            <!-- The new Properties -->
-            <util:properties>
-                <prop key="javax.net.ssl.trustStore">${client.ssl.trustStore}</prop>
-                <prop key="javax.net.ssl.trustStorePassword">${client.ssl.trustStorePassword}</prop>
-                <prop key="javax.net.ssl.keyStore">${client.ssl.keyStore}</prop>
-                <prop key="javax.net.ssl.keyStorePassword">${client.ssl.keyStorePassword}</prop>
-            </util:properties>
         </property>
     </bean>
 </beans>

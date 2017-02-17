@@ -106,7 +106,12 @@
             <artifactId>hibernate-entitymanager</artifactId>
             <version>5.2.6.Final</version>
         </dependency>
-	</dependencies>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.5.3</version>
+        </dependency>
+    </dependencies>
 
     <build>
 	  <plugins>

@@ -11,10 +11,6 @@ import springfox.documentation.spi.DocumentationType;
 import springfox.documentation.spring.web.plugins.Docket;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
-/**
- * 
- *
- */
 @EnableSwagger2
 @SpringBootApplication
 @ImportResource("classpath:applicationContext.xml")
@@ -24,7 +20,7 @@ public class SchedulerApplication {
 		SpringApplication.run(SchedulerApplication.class, args);
 
 	}
-	
+
 	@Bean
 	public Docket api() {
 		return new Docket(DocumentationType.SWAGGER_2).useDefaultResponseMessages(false).select()

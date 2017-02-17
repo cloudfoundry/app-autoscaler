@@ -6,8 +6,6 @@ import (
 	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gbytes"
-	"github.com/tedsuo/ifrit"
 	. "integration"
 	"io/ioutil"
 	"net/http"
@@ -20,7 +18,6 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 		testAppId         string
 		initInstanceCount int = 2
 		policyStr         string
-		schedulerProcess  ifrit.Process
 	)
 
 	BeforeEach(func() {
@@ -37,8 +34,6 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 		startFakeCCNOAAUAA(initInstanceCount)
 
 		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), cf.GrantTypePassword, tmpDir)
-		schedulerConfPath = components.PrepareSchedulerConfig(dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), tmpDir)
-		schedulerProcess = startScheduler()
 		startScalingEngine()
 
 		policyByte := readPolicyFromFile("fakePolicyWithSpecificDateSchedule.json")
@@ -47,46 +42,36 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 	})
 
 	AfterEach(func() {
-		deleteSchedules(testAppId)
-		stopAll()
-		stopScheduler(schedulerProcess)
+		deleteSchedule(testAppId)
+		stopScalingEngine()
 	})
 
 	Describe("Create Schedule", func() {
 		Context("Valid specific date schedule", func() {
 
 			It("creates active schedule in scaling engine", func() {
-				Expect(getNumberOfActiveSchedules(testAppId)).To(Equal(0))
 				resp, err := createSchedule(testAppId, policyStr)
-				Expect(err).NotTo(HaveOccurred())
-				defer resp.Body.Close()
+				checkResponse(resp, err, http.StatusOK)
 
-				body, err := ioutil.ReadAll(resp.Body)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(string(body)).To(Equal(""))
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
-				Eventually(getAppIdOfActiveSchedules, 5*time.Minute).Should(ContainElement(testAppId))
-				Expect(getNumberOfActiveSchedules(testAppId)).To(Equal(1))
+				Eventually(func() bool {
+					return activeScheduleExists(testAppId)
+				}, 2*time.Minute).Should(BeTrue())
 
 			})
 		})
 
 		Context("ScalingEngine Server is down", func() {
 			BeforeEach(func() {
-				stopAll()
+				stopScalingEngine()
 			})
 
-			It("should return 500", func() {
+			It("should not create an active schedule in scaling engine", func() {
 				resp, err := createSchedule(testAppId, policyStr)
-				Expect(err).NotTo(HaveOccurred())
-				defer resp.Body.Close()
+				checkResponse(resp, err, http.StatusOK)
 
-				body, err := ioutil.ReadAll(resp.Body)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(string(body)).To(Equal(""))
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
-				Eventually(stdOutbufferMap[Scheduler], 5*time.Minute).Should(gbytes.Say("Error connecting to scaling engine, failed with error: .* for app id: " + testAppId))
-				Expect(getNumberOfActiveSchedules(testAppId)).To(Equal(0))
+				Consistently(func() int {
+					return getNumberOfActiveSchedules(testAppId)
+				}, 2*time.Minute).Should(BeZero())
 			})
 		})
 
@@ -95,62 +80,26 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 	Describe("Delete Schedule", func() {
 		BeforeEach(func() {
 			resp, err := createSchedule(testAppId, policyStr)
-			Expect(err).NotTo(HaveOccurred())
-			defer resp.Body.Close()
+			checkResponse(resp, err, http.StatusOK)
 
-			body, err := ioutil.ReadAll(resp.Body)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(body)).To(Equal(""))
-			Expect(resp.StatusCode).To(Equal(http.StatusOK))
-			Eventually(getAppIdOfActiveSchedules, 5*time.Minute).Should(ContainElement(testAppId))
+			Eventually(func() bool {
+				return activeScheduleExists(testAppId)
+			}, 2*time.Minute).Should(BeTrue())
 		})
 
 		It("deletes active schedule in scaling engine", func() {
-			Expect(getNumberOfActiveSchedules(testAppId)).To(Equal(1))
 			resp, err := deleteSchedule(testAppId)
-			Expect(err).NotTo(HaveOccurred())
-			defer resp.Body.Close()
+			checkResponse(resp, err, http.StatusNoContent)
 
-			body, err := ioutil.ReadAll(resp.Body)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(string(body)).To(Equal(""))
-			Expect(resp.StatusCode).To(Equal(http.StatusNoContent))
-			Eventually(getAppIdOfActiveSchedules, 5*time.Minute).ShouldNot(ContainElement(testAppId))
-			Expect(getNumberOfActiveSchedules(testAppId)).To(Equal(0))
+			Eventually(func() bool {
+				return activeScheduleExists(testAppId)
+			}, 2*time.Minute).Should(BeFalse())
 		})
-
-		Context("ScalingEngine Server is down", func() {
-			BeforeEach(func() {
-				stopAll()
-			})
-
-			It("should return 500", func() {
-				Expect(getNumberOfActiveSchedules(testAppId)).To(Equal(1))
-				resp, err := deleteSchedule(testAppId)
-				Expect(err).NotTo(HaveOccurred())
-				defer resp.Body.Close()
-
-				body, err := ioutil.ReadAll(resp.Body)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(string(body)).To(Equal(""))
-				Expect(resp.StatusCode).To(Equal(http.StatusNoContent))
-				Eventually(stdOutbufferMap[Scheduler], 5*time.Minute).Should(gbytes.Say("Error connecting to scaling engine, failed with error: .* for app id: " + testAppId))
-				Expect(getNumberOfActiveSchedules(testAppId)).To(Equal(1))
-			})
-		})
-
 	})
 
 })
 
-func deleteSchedules(appId string) {
-	resp, err := deleteSchedule(appId)
-	Expect(err).NotTo(HaveOccurred())
-	defer resp.Body.Close()
-}
-
 func setPolicyDateTime(policyByte []byte) string {
-
 	timeZone := "GMT"
 	location, _ := time.LoadLocation(timeZone)
 	timeNowInTimeZone := time.Now().In(location)
@@ -158,4 +107,20 @@ func setPolicyDateTime(policyByte []byte) string {
 	startTime := timeNowInTimeZone.Add(70 * time.Second).Format(dateTimeFormat)
 
 	return fmt.Sprintf(string(policyByte), timeZone, startTime, timeNowInTimeZone.Add(2*time.Hour).Format(dateTimeFormat))
+}
+
+func checkResponse(resp *http.Response, err error, expectedStatus int) {
+	Expect(err).NotTo(HaveOccurred())
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(body).To(HaveLen(0))
+	Expect(resp.StatusCode).To(Equal(expectedStatus))
+}
+
+func activeScheduleExists(appId string) bool {
+	resp, err := getActiveSchedule(appId)
+	Expect(err).NotTo(HaveOccurred())
+
+	return resp.StatusCode == http.StatusOK
 }

@@ -17,7 +17,6 @@ import (
 	_ "github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
 	"github.com/tedsuo/ifrit"
@@ -58,8 +57,8 @@ var (
 	dbHelper                 *sql.DB
 	fakeScheduler            *ghttp.Server
 	fakeCCNOAAUAA            *ghttp.Server
-	processMap               map[string]ifrit.Process         = map[string]ifrit.Process{}
-	stdOutbufferMap          map[string]func() *gbytes.Buffer = map[string]func() *gbytes.Buffer{}
+	processMap               map[string]ifrit.Process = map[string]ifrit.Process{}
+	schedulerProcess         ifrit.Process
 
 	brokerApiHttpRequestTimeout              time.Duration = 5 * time.Second
 	apiSchedulerHttpRequestTimeout           time.Duration = 5 * time.Second
@@ -112,13 +111,18 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	dbUrl = os.Getenv("DBURL")
 	dbHelper, err = sql.Open(db.PostgresDriverName, dbUrl)
 	Expect(err).NotTo(HaveOccurred())
+
+	schedulerConfPath = components.PrepareSchedulerConfig(dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), tmpDir)
+	schedulerProcess = startScheduler()
 })
 
 var _ = SynchronizedAfterSuite(func() {
-}, func() {
+	stopScheduler(schedulerProcess)
 	if len(tmpDir) > 0 {
 		os.RemoveAll(tmpDir)
 	}
+}, func() {
+
 })
 
 var _ = BeforeEach(func() {
@@ -175,9 +179,8 @@ func startServiceBroker() *ginkgomon.Runner {
 }
 
 func startScheduler() ifrit.Process {
-	schedulerRunner := components.Scheduler(schedulerConfPath)
-	stdOutbufferMap[Scheduler] = schedulerRunner.Buffer
-	return ginkgomon.Invoke(schedulerRunner)
+	runner := components.Scheduler(schedulerConfPath)
+	return ginkgomon.Invoke(runner)
 }
 
 func startMetricsCollector() {
@@ -193,10 +196,9 @@ func startEventGenerator() {
 }
 
 func startScalingEngine() {
-	scalingEngineRunner := components.ScalingEngine(scalingEngineConfPath)
-	stdOutbufferMap[ScalingEngine] = scalingEngineRunner.Buffer
+	runner := components.ScalingEngine(scalingEngineConfPath)
 	processMap[ScalingEngine] = ginkgomon.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
-		{ScalingEngine, scalingEngineRunner},
+		{ScalingEngine, runner},
 	}))
 }
 
@@ -206,6 +208,10 @@ func stopApiServer() {
 
 func stopScheduler(schedulerProcess ifrit.Process) {
 	ginkgomon.Kill(schedulerProcess)
+}
+
+func stopScalingEngine() {
+	ginkgomon.Kill(processMap[ScalingEngine], 5*time.Second)
 }
 
 func sendSigusr2Signal(component string) {
@@ -314,22 +320,11 @@ func deleteSchedule(appId string) (*http.Response, error) {
 	return httpClient.Do(req)
 }
 
-func getAppIdOfActiveSchedules() []string {
-	var appIds []string
-	var appId string
-	rows, e := dbHelper.Query("SELECT appid FROM activeschedule")
-	if e != nil {
-		Fail("can not get records in table activeschedule: " + e.Error())
-	}
-	defer rows.Close()
-	for rows.Next() {
-		err := rows.Scan(&appId)
-		if err != nil {
-			Fail("Fail")
-		}
-		appIds = append(appIds, appId)
-	}
-	return appIds
+func getActiveSchedule(appId string) (*http.Response, error) {
+	req, err := http.NewRequest("GET", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/active_schedules", components.Ports[ScalingEngine], appId), strings.NewReader(""))
+	Expect(err).NotTo(HaveOccurred())
+	req.Header.Set("Content-Type", "application/json")
+	return httpClient.Do(req)
 }
 
 func getNumberOfActiveSchedules(appId string) int {

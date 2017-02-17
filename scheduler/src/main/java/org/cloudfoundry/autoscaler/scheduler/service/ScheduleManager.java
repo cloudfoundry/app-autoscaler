@@ -34,7 +34,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.ResourceAccessException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestOperations;
 
 /**
  * Service class to persist the schedule entity in the database and create
@@ -52,7 +52,7 @@ public class ScheduleManager {
 	@Autowired
 	private ScheduleJobManager scheduleJobManager;
 	@Autowired
-	private RestTemplate restTemplate;
+	private RestOperations restOperations;
 	@Autowired
 	private ValidationErrorResult validationErrorResult;
 	@Autowired
@@ -757,7 +757,7 @@ public class ScheduleManager {
 				appId, scheduleId);
 		logger.info(message);
 		try {
-			restTemplate.delete(scalingEnginePathActiveSchedule, activeScheduleEntity);
+			restOperations.delete(scalingEnginePathActiveSchedule, activeScheduleEntity);
 		} catch (HttpStatusCodeException hce) {
 			String errorMessage = messageBundleResourceHelper.lookupMessage(
 					"scalingengine.notification.activeschedule.delete.failed", hce.getStatusCode(),

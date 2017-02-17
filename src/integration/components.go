@@ -30,7 +30,7 @@ const (
 	ScalingEngine    = "scalingEngine"
 )
 
-var testCertDir string = os.Getenv("GOPATH") + "/test-certs"
+var testCertDir string = "../../test-certs"
 
 type Executables map[string]string
 type Ports map[string]int
@@ -248,17 +248,20 @@ autoscaler.scalingengine.url=%s
 server.ssl.key-store=%s/scheduler.p12
 server.ssl.key-alias=scheduler
 server.ssl.key-store-password=123456
-client.ssl.keyStore=%s/scheduler.p12
-client.ssl.keyStorePassword=123456
-client.ssl.trustStore=%s/scheduler.truststore
-client.ssl.trustStorePassword=123456
+server.ssl.key-store-type=PKCS12
+client.ssl.key-store=%s/scheduler.p12
+client.ssl.key-store-password=123456
+client.ssl.key-store-type=PKCS12
+client.ssl.trust-store=%s/autoscaler.truststore
+client.ssl.trust-store-password=123456
+client.ssl.protocol=TLSv1.2
 #Quartz
 org.quartz.scheduler.instanceName=app-autoscaler-%d
 `
-	settingJonsStr := fmt.Sprintf(settingStrTemplate, jdbcDBUri, userName, password, scalingEngineUri, testCertDir, testCertDir, testCertDir, components.Ports[Scheduler])
+	settingJsonStr := fmt.Sprintf(settingStrTemplate, jdbcDBUri, userName, password, scalingEngineUri, testCertDir, testCertDir, testCertDir, components.Ports[Scheduler])
 	cfgFile, err := os.Create(filepath.Join(tmpDir, "application.properties"))
 	Expect(err).NotTo(HaveOccurred())
-	ioutil.WriteFile(cfgFile.Name(), []byte(settingJonsStr), 0777)
+	ioutil.WriteFile(cfgFile.Name(), []byte(settingJsonStr), 0777)
 	cfgFile.Close()
 	return cfgFile.Name()
 }
