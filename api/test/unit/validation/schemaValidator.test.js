@@ -64,7 +64,7 @@ describe('Validating Policy JSON schema construction',function(){
     expect(schema.properties.metric_type).to.deep.equal({ 'type':'string','enum':metricTypeEnum});
     expect(schema.properties.stat_window_secs).to.deep.equal({ 'type':'number','minimum': 60,'maximum': 3600 });
     expect(schema.properties.breach_duration_secs).to.deep.equal({ 'type':'number','minimum': 60,'maximum': 3600 });
-    expect(schema.properties.threshold).to.deep.equal({ 'type':'number','minimum': 1,'maximum': 100 });
+    expect(schema.properties.threshold).to.deep.equal({ 'type':'number','minimum': 1 });
     expect(schema.properties.operator).to.deep.equal({ 'type':'string','enum':validOperator });
     expect(schema.properties.cool_down_secs).to.deep.equal({ 'type':'number','minimum': 60,'maximum': 3600 });
     expect(schema.properties.adjustment).to.deep.equal({ 'type':'string','pattern':adjustmentPattern });
