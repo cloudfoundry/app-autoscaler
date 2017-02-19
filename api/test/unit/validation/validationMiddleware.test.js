@@ -105,8 +105,8 @@ describe('Validate Policy JSON Schema structure', function() {
     });
 
   });
-  it('should fail to validate policy schema as threshold value is not in the range ', function(done) {
-    fakePolicy.scaling_rules[0].threshold = 300;
+  it('should fail to validate policy schema as threshold value is negative', function(done) {
+    fakePolicy.scaling_rules[0].threshold = -300;
     request(app)
     .put('/v1/policies/12346',validationMiddleware)
     .send(fakePolicy)
@@ -115,8 +115,8 @@ describe('Validate Policy JSON Schema structure', function() {
       expect(result.body.success).to.equal(false);
       expect(result.body.error).to.not.be.null;
       expect(result.body.error[0].property).to.equal('instance.scaling_rules[0].threshold');
-      expect(result.body.error[0].message).to.equal('must have a maximum value of 100');
-      expect(result.body.error[0].stack).to.equal('instance.scaling_rules[0].threshold must have a maximum value of 100');
+      expect(result.body.error[0].message).to.equal('must have a minimum value of 1');
+      expect(result.body.error[0].stack).to.equal('instance.scaling_rules[0].threshold must have a minimum value of 1');
       done();
     });
 

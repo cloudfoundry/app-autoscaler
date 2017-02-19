@@ -93,7 +93,7 @@ var getScalingRuleSchema = function() {
       'metric_type':{ 'type':'string' ,'enum':metricTypeEnum },
       'stat_window_secs':{ 'type':'number','minimum': 60,'maximum': 3600 },
       'breach_duration_secs':{ 'type':'number','minimum': 60,'maximum': 3600 },
-      'threshold':{ 'type':'number','minimum': 1,'maximum': 100 },
+      'threshold':{ 'type':'number','minimum': 1},
       'operator':{ 'type':'string','enum': validOperators },
       'cool_down_secs':{ 'type':'number','minimum': 60,'maximum': 3600 },
       'adjustment':{ 'type':'string','pattern': adjustmentPattern }
