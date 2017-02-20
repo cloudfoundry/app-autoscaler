@@ -81,10 +81,12 @@ public class EmbeddedTomcatUtil {
 		httpsConnector.setPort(8091);
 		httpsConnector.setSecure(true);
 		httpsConnector.setScheme("https");
+		httpsConnector.setAttribute("truststoreFile", "../src/test/resources/certs/test.truststore");
+		httpsConnector.setAttribute("truststorePass", "123456");
 		httpsConnector.setAttribute("keystoreFile", "../src/test/resources/certs/fake-scalingengine.p12");
 		httpsConnector.setAttribute("keyAlias", "fake-scalingengine");
 		httpsConnector.setAttribute("keystorePass", "123456");
-		httpsConnector.setAttribute("clientAuth", "false");
+		httpsConnector.setAttribute("clientAuth", "true");
 		httpsConnector.setAttribute("sslProtocol", "TLSv1.2");
 		httpsConnector.setAttribute("SSLEnabled", true);
 	}

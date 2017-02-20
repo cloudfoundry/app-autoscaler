@@ -51,7 +51,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 
 			It("creates active schedule in scaling engine", func() {
 				resp, err := createSchedule(testAppId, policyStr)
-				checkResponse(resp, err, http.StatusOK)
+				checkResponseIsEmpty(resp, err, http.StatusOK)
 
 				Eventually(func() bool {
 					return activeScheduleExists(testAppId)
@@ -67,7 +67,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 
 			It("should not create an active schedule in scaling engine", func() {
 				resp, err := createSchedule(testAppId, policyStr)
-				checkResponse(resp, err, http.StatusOK)
+				checkResponseIsEmpty(resp, err, http.StatusOK)
 
 				Consistently(func() int {
 					return getNumberOfActiveSchedules(testAppId)
@@ -80,7 +80,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 	Describe("Delete Schedule", func() {
 		BeforeEach(func() {
 			resp, err := createSchedule(testAppId, policyStr)
-			checkResponse(resp, err, http.StatusOK)
+			checkResponseIsEmpty(resp, err, http.StatusOK)
 
 			Eventually(func() bool {
 				return activeScheduleExists(testAppId)
@@ -89,7 +89,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 
 		It("deletes active schedule in scaling engine", func() {
 			resp, err := deleteSchedule(testAppId)
-			checkResponse(resp, err, http.StatusNoContent)
+			checkResponseIsEmpty(resp, err, http.StatusNoContent)
 
 			Eventually(func() bool {
 				return activeScheduleExists(testAppId)
@@ -109,7 +109,7 @@ func setPolicyDateTime(policyByte []byte) string {
 	return fmt.Sprintf(string(policyByte), timeZone, startTime, timeNowInTimeZone.Add(2*time.Hour).Format(dateTimeFormat))
 }
 
-func checkResponse(resp *http.Response, err error, expectedStatus int) {
+func checkResponseIsEmpty(resp *http.Response, err error, expectedStatus int) {
 	Expect(err).NotTo(HaveOccurred())
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
