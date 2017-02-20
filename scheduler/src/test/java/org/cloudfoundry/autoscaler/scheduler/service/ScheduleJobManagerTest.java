@@ -13,6 +13,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.eq;
 
 import java.time.LocalDate;
@@ -23,6 +24,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
+import org.cloudfoundry.autoscaler.scheduler.dao.ActiveScheduleDao;
+import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
@@ -65,6 +68,9 @@ public class ScheduleJobManagerTest extends TestConfiguration {
 	@MockBean
 	private Scheduler scheduler;
 
+	@MockBean
+	private ActiveScheduleDao activeScheduleDao;
+
 	@Autowired
 	private ScheduleJobManager scheduleJobManager;
 
@@ -82,6 +88,7 @@ public class ScheduleJobManagerTest extends TestConfiguration {
 		testDataDbUtil.cleanupData();
 
 		Mockito.reset(scheduler);
+		Mockito.reset(activeScheduleDao);
 	}
 
 	@Test
@@ -265,13 +272,20 @@ public class ScheduleJobManagerTest extends TestConfiguration {
 		String appId = "appId";
 		Long scheduleId = 1L;
 		ScheduleTypeEnum scheduleType = ScheduleTypeEnum.SPECIFIC_DATE;
+		Long startJobIdentifier = System.currentTimeMillis();
+
+		ActiveScheduleEntity activeScheduleEntity = new ActiveScheduleEntity();
+		activeScheduleEntity.setStartJobIdentifier(scheduleId);
+		activeScheduleEntity.setAppId(appId);
+		activeScheduleEntity.setStartJobIdentifier(startJobIdentifier);
+		Mockito.when(activeScheduleDao.find(scheduleId)).thenReturn(activeScheduleEntity);
 
 		scheduleJobManager.deleteJob(appId, scheduleId, scheduleType);
 
 		JobKey startJobKey = new JobKey(scheduleId + JobActionEnum.START.getJobIdSuffix(),
 				scheduleType.getScheduleIdentifier());
-		JobKey endJobKey = new JobKey(scheduleId + JobActionEnum.END.getJobIdSuffix(),
-				scheduleType.getScheduleIdentifier());
+		JobKey endJobKey = new JobKey(scheduleId + JobActionEnum.END.getJobIdSuffix() + "_" + startJobIdentifier,
+				"Schedule");
 
 		Mockito.verify(scheduler, Mockito.times(1)).deleteJob(eq(startJobKey));
 		Mockito.verify(scheduler, Mockito.times(1)).deleteJob(eq(endJobKey));
@@ -282,16 +296,34 @@ public class ScheduleJobManagerTest extends TestConfiguration {
 		String appId = "appId";
 		Long scheduleId = 1L;
 		ScheduleTypeEnum scheduleType = ScheduleTypeEnum.RECURRING;
+		Long startJobIdentifier = System.currentTimeMillis();
+
+		ActiveScheduleEntity activeScheduleEntity = new ActiveScheduleEntity();
+		activeScheduleEntity.setStartJobIdentifier(scheduleId);
+		activeScheduleEntity.setAppId(appId);
+		activeScheduleEntity.setStartJobIdentifier(startJobIdentifier);
+		Mockito.when(activeScheduleDao.find(scheduleId)).thenReturn(activeScheduleEntity);
 
 		scheduleJobManager.deleteJob(appId, scheduleId, scheduleType);
 
 		JobKey startJobKey = new JobKey(scheduleId + JobActionEnum.START.getJobIdSuffix(),
 				scheduleType.getScheduleIdentifier());
-		JobKey endJobKey = new JobKey(scheduleId + JobActionEnum.END.getJobIdSuffix(),
-				scheduleType.getScheduleIdentifier());
+		JobKey endJobKey = new JobKey(scheduleId + JobActionEnum.END.getJobIdSuffix() + "_" + startJobIdentifier,
+				"Schedule");
 
 		Mockito.verify(scheduler, Mockito.times(1)).deleteJob(eq(startJobKey));
 		Mockito.verify(scheduler, Mockito.times(1)).deleteJob(eq(endJobKey));
+	}
+
+	@Test
+	public void testDeleteSimpleJobs_without_activeSchedule() throws Exception {
+		String appId = "appId";
+		Long scheduleId = 1L;
+		ScheduleTypeEnum scheduleType = ScheduleTypeEnum.SPECIFIC_DATE;
+
+		scheduleJobManager.deleteJob(appId, scheduleId, scheduleType);
+
+		Mockito.verify(scheduler, Mockito.times(1)).deleteJob(anyObject());
 	}
 
 	@Test
@@ -406,8 +438,8 @@ public class ScheduleJobManagerTest extends TestConfiguration {
 
 		return new RecurringScheduleEntitiesBuilder(0, 1).setAppId(appId).setTimeZone(timeZone).setScheduleId()
 				.setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setStartTime(0, startDateTime)
-				.setEndTime(0, endDateTime).setStartDate(0, startDate).setEndDate(0, endDate)
-				.setDayOfWeek(0, dayOfWeek).build().get(0);
+				.setEndTime(0, endDateTime).setStartDate(0, startDate).setEndDate(0, endDate).setDayOfWeek(0, dayOfWeek)
+				.build().get(0);
 	}
 
 	private void assertSimpleTrigger(Trigger trigger, ZonedDateTime expectedStartDateTime, JobKey expectedStartJobKey,

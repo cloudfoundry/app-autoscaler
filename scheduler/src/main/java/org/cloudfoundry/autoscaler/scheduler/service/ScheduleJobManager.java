@@ -5,6 +5,8 @@ import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.TimeZone;
 
+import org.cloudfoundry.autoscaler.scheduler.dao.ActiveScheduleDao;
+import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
@@ -34,6 +36,10 @@ import org.springframework.stereotype.Service;
 class ScheduleJobManager {
 	@Autowired
 	private Scheduler scheduler;
+
+	@Autowired
+	private ActiveScheduleDao activeScheduleDao;
+
 	@Autowired
 	private ValidationErrorResult validationErrorResult;
 
@@ -145,18 +151,25 @@ class ScheduleJobManager {
 	}
 
 	void deleteJob(String appId, Long scheduleId, ScheduleTypeEnum scheduleTypeEnum) {
-		JobKey startJobKey = new JobKey(scheduleId + JobActionEnum.START.getJobIdSuffix(),
-				scheduleTypeEnum.getScheduleIdentifier());
-		JobKey endJobKey = new JobKey(scheduleId + JobActionEnum.END.getJobIdSuffix(),
+		deleteJobFromQuartz(appId, scheduleId + JobActionEnum.START.getJobIdSuffix(),
 				scheduleTypeEnum.getScheduleIdentifier());
 
+		ActiveScheduleEntity activeScheduleEntity = activeScheduleDao.find(scheduleId);
+		if (activeScheduleEntity != null) {
+			String jobName = scheduleId + JobActionEnum.END.getJobIdSuffix() + "_"
+					+ activeScheduleEntity.getStartJobIdentifier();
+			deleteJobFromQuartz(appId, jobName, "Schedule");
+		}
+	}
+
+	private void deleteJobFromQuartz(String appId, String jobName, String jobGroup) {
+		JobKey jobKey = new JobKey(jobName, jobGroup);
 		try {
-			scheduler.deleteJob(startJobKey);
-			scheduler.deleteJob(endJobKey);
+			scheduler.deleteJob(jobKey);
 		} catch (SchedulerException se) {
-
 			validationErrorResult.addErrorForQuartzSchedulerException(se, "scheduler.error.delete.failed",
 					"app_id=" + appId, se.getMessage());
 		}
 	}
+
 }
