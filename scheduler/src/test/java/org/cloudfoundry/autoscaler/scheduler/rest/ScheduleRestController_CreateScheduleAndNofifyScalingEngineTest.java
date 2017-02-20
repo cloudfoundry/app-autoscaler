@@ -16,7 +16,6 @@ import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
-import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationSchedules;
 import org.cloudfoundry.autoscaler.scheduler.util.ApplicationPolicyBuilder;
@@ -97,6 +96,12 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 		embeddedTomcatUtil.stop();
 	}
 
+	private String appId;
+
+	private TestJobListener startJobListener;
+
+	private TestJobListener endJobListener;
+
 	@Before
 	@Transactional
 	public void before() throws Exception {
@@ -111,12 +116,40 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 		mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
 
 		setLogLevel(Level.INFO);
+
+		appId = TestDataSetupHelper.generateAppIds(1)[0];
+		startJobListener = new TestJobListener(1);
+		endJobListener = new TestJobListener(1);
 	}
 
 	@Test
 	public void testCreateScheduleAndNotifyScalingEngine() throws Exception {
-		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		createSchedule();
 
+		// Assert START Job successful message
+		startJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(2));
+
+		Long currentSequenceSchedulerId = testDataDbUtil.getCurrentSequenceSchedulerId();
+		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
+		String expectedMessage = messageBundleResourceHelper
+				.lookupMessage("scalingengine.notification.activeschedule.start", appId, currentSequenceSchedulerId);
+
+		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
+		assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), is(Level.INFO));
+
+		// Assert END Job successful message
+		endJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(2));
+
+		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
+		expectedMessage = messageBundleResourceHelper.lookupMessage("scalingengine.notification.activeschedule.remove",
+				appId, currentSequenceSchedulerId);
+
+		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
+		assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), is(Level.INFO));
+
+	}
+
+	public void createSchedule() throws Exception {
 		LocalDateTime startTime = LocalDateTime.now().plusSeconds(70);
 		LocalDateTime endTime = LocalDateTime.now().plusSeconds(130);
 
@@ -127,20 +160,7 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 		specificDateScheduleEntity.setStartDateTime(startTime);
 		specificDateScheduleEntity.setEndDateTime(endTime);
 
-		ActiveScheduleEntity startActiveScheduleEntity = new ActiveScheduleEntity();
-		startActiveScheduleEntity.setAppId(appId);
-		startActiveScheduleEntity.setInstanceMinCount(specificDateScheduleEntity.getInstanceMinCount());
-		startActiveScheduleEntity.setInstanceMaxCount(specificDateScheduleEntity.getInstanceMaxCount());
-		startActiveScheduleEntity.setInitialMinInstanceCount(specificDateScheduleEntity.getInitialMinInstanceCount());
-
-		ActiveScheduleEntity endActiveScheduleEntity = new ActiveScheduleEntity();
-		endActiveScheduleEntity.setAppId(appId);
-		endActiveScheduleEntity.setInstanceMinCount(applicationSchedules.getInstanceMinCount());
-		endActiveScheduleEntity.setInstanceMaxCount(applicationSchedules.getInstanceMaxCount());
-
 		embeddedTomcatUtil.setup(appId, 200, null);
-		TestJobListener startJobListener = new TestJobListener(1);
-		TestJobListener endJobListener = new TestJobListener(1);
 
 		scheduler.getListenerManager().addJobListener(startJobListener,
 				NameMatcher.jobNameEndsWith(JobActionEnum.START.getJobIdSuffix()));
@@ -149,37 +169,14 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 
 		ObjectMapper mapper = new ObjectMapper();
 		String content = mapper.writeValueAsString(applicationSchedules);
-		ResultActions resultActions = mockMvc.perform(put(getCreateSchedulerPath(appId))
+		ResultActions resultActions = mockMvc.perform(put(getSchedulerPath(appId))
 				.contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).content(content));
 
 		resultActions.andExpect(MockMvcResultMatchers.content().string(""));
 		resultActions.andExpect(status().isOk());
-
-		// Assert START Job successful message
-		startJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(2));
-
-		Long currentSequenceSchedulerId = testDataDbUtil.getCurrentSequenceSchedulerId();
-		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
-		String expectedMessage = messageBundleResourceHelper.lookupMessage(
-				"scalingengine.notification.activeschedule.start", startActiveScheduleEntity.getAppId(),
-				currentSequenceSchedulerId);
-
-		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
-		assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), is(Level.INFO));
-
-		// Assert END Job successful message
-		endJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(2));
-
-		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
-		expectedMessage = messageBundleResourceHelper.lookupMessage("scalingengine.notification.activeschedule.remove",
-				endActiveScheduleEntity.getAppId(), currentSequenceSchedulerId);
-
-		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
-		assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), is(Level.INFO));
-
 	}
 
-	private String getCreateSchedulerPath(String appId) {
+	private String getSchedulerPath(String appId) {
 		return String.format("/v2/schedules/%s", appId);
 	}
 
