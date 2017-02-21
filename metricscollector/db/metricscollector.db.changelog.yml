@@ -4,38 +4,6 @@ databaseChangeLog:
       author: byang
       changes:
         - createTable:
-            tableName: applicationmetrics
-            columns:
-              - column:
-                  name: appid
-                  type: varchar(255)
-                  constraints:
-                    nullable: false
-              - column:
-                  name: name
-                  type: varchar(100)
-                  constraints:
-                    nullable: false
-              - column:
-                  name: unit
-                  type: varchar(20)
-                  constraints:
-                    nullable: false                    
-              - column:
-                  name: timestamp
-                  type: bigint
-                  constraints:
-                    nullable: false
-              - column:
-                  name: value
-                  type: varchar
-                  constraints:
-                    nullable: false
-  - changeSet:
-      id: 2
-      author: byang
-      changes:
-        - createTable:
             tableName: appinstancemetrics
             columns:
               - column:
@@ -85,4 +53,4 @@ databaseChangeLog:
                  name: timestamp
                  type: bigint                
              indexName: idx_instance_metrics
-             tableName: appinstancemetrics                    
+             tableName: appinstancemetrics
