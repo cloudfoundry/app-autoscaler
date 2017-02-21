@@ -366,7 +366,7 @@ func (components *Components) PrepareScalingEngineConfig(dbUri string, port int,
 			SchedulerDbUrl:     dbUri,
 		},
 		Synchronizer: seConfig.SynchronizerConfig{
-			ActiveScheduleSyncInterval: 10 * time.Minute,
+			ActiveScheduleSyncInterval: 10 * time.Second,
 		},
 	}
 

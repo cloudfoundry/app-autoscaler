@@ -65,13 +65,19 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 				stopScalingEngine()
 			})
 
-			It("should not create an active schedule in scaling engine", func() {
+			It("should create an active schedule in scaling engine after restart", func() {
 				resp, err := createSchedule(testAppId, policyStr)
 				checkResponseIsEmpty(resp, err, http.StatusOK)
 
-				Consistently(func() int {
-					return getNumberOfActiveSchedules(testAppId)
-				}, 2*time.Minute).Should(BeZero())
+				Consistently(func() error {
+					_, err := getActiveSchedule(testAppId)
+					return err
+				}, 2*time.Minute).Should(HaveOccurred())
+
+				startScalingEngine()
+				Eventually(func() bool {
+					return activeScheduleExists(testAppId)
+				}, 20*time.Second).Should(BeTrue())
 			})
 		})
 

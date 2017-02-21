@@ -327,15 +327,6 @@ func getActiveSchedule(appId string) (*http.Response, error) {
 	return httpClient.Do(req)
 }
 
-func getNumberOfActiveSchedules(appId string) int {
-	var num int
-	e := dbHelper.QueryRow("SELECT COUNT(*) FROM activeschedule where appid =$1", appId).Scan(&num)
-	if e != nil {
-		Fail("can not count the number of records in table activeschedule: " + e.Error())
-	}
-	return num
-}
-
 func readPolicyFromFile(filename string) []byte {
 	content, err := ioutil.ReadFile(filename)
 	Expect(err).NotTo(HaveOccurred())
