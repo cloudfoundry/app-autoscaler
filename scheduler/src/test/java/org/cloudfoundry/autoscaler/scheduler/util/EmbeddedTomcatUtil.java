@@ -10,6 +10,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.catalina.Context;
 import org.apache.catalina.LifecycleException;
+import org.apache.catalina.Service;
+import org.apache.catalina.connector.Connector;
 import org.apache.catalina.startup.Tomcat;
 import org.apache.tomcat.util.http.fileupload.FileUtils;
 
@@ -26,6 +28,12 @@ public class EmbeddedTomcatUtil {
 	public EmbeddedTomcatUtil() {
 		baseDir = new File("tomcat");
 		tomcat.setBaseDir(baseDir.getAbsolutePath());
+
+		Connector httpsConnector = new Connector();
+		setupSSLConfig(httpsConnector);
+
+		Service service = tomcat.getService();
+		service.addConnector(httpsConnector);
 
 		applicationDir = new File(baseDir + "/webapps", "/ROOT");
 
@@ -67,6 +75,20 @@ public class EmbeddedTomcatUtil {
 		String url = "/v1/apps/" + appId + "/active_schedules/*";
 		tomcat.addServlet(appContext.getPath(), appId, new ScalingEngineMock(statusCode, message));
 		appContext.addServletMapping(url, appId);
+	}
+
+	private void setupSSLConfig(Connector httpsConnector) {
+		httpsConnector.setPort(8091);
+		httpsConnector.setSecure(true);
+		httpsConnector.setScheme("https");
+		httpsConnector.setAttribute("truststoreFile", "../src/test/resources/certs/test.truststore");
+		httpsConnector.setAttribute("truststorePass", "123456");
+		httpsConnector.setAttribute("keystoreFile", "../src/test/resources/certs/fake-scalingengine.p12");
+		httpsConnector.setAttribute("keyAlias", "fake-scalingengine");
+		httpsConnector.setAttribute("keystorePass", "123456");
+		httpsConnector.setAttribute("clientAuth", "true");
+		httpsConnector.setAttribute("sslProtocol", "TLSv1.2");
+		httpsConnector.setAttribute("SSLEnabled", true);
 	}
 
 	static class ScalingEngineMock extends HttpServlet {

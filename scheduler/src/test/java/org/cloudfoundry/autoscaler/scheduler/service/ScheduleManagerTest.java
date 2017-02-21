@@ -56,6 +56,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.client.ExpectedCount;
 import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.client.RestOperations;
 import org.springframework.web.client.RestTemplate;
 
 @RunWith(SpringRunner.class)
@@ -87,7 +88,7 @@ public class ScheduleManagerTest extends TestConfiguration {
 	private TestDataDbUtil testDataDbUtil;
 
 	@Autowired
-	private RestTemplate restTemplate;
+	private RestOperations restOperations;
 
 	@Value("${autoscaler.scalingengine.url}")
 	private String scalingEngineUrl;
@@ -108,7 +109,7 @@ public class ScheduleManagerTest extends TestConfiguration {
 		Mockito.reset(recurringScheduleDao);
 		Mockito.reset(activeScheduleDao);
 		Mockito.reset(mockAppender);
-		mockServer = MockRestServiceServer.createServer(restTemplate);
+		mockServer = MockRestServiceServer.createServer((RestTemplate) restOperations);
 
 		Mockito.when(mockAppender.getName()).thenReturn("MockAppender");
 		Mockito.when(mockAppender.isStarted()).thenReturn(true);

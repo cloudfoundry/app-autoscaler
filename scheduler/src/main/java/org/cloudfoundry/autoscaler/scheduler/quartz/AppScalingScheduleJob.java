@@ -25,7 +25,7 @@ import org.springframework.scheduling.quartz.QuartzJobBean;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.ResourceAccessException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestOperations;
 
 /**
  * QuartzJobBean class that executes the job
@@ -50,7 +50,7 @@ public abstract class AppScalingScheduleJob extends QuartzJobBean {
 	ActiveScheduleDao activeScheduleDao;
 
 	@Autowired
-	private RestTemplate restTemplate;
+	private RestOperations restOperations;
 
 	@Autowired
 	MessageBundleResourceHelper messageBundleResourceHelper;
@@ -69,12 +69,12 @@ public abstract class AppScalingScheduleJob extends QuartzJobBean {
 				String message = messageBundleResourceHelper
 						.lookupMessage("scalingengine.notification.activeschedule.start", appId, scheduleId);
 				logger.info(message);
-				restTemplate.put(scalingEnginePathActiveSchedule, requestEntity);
+				restOperations.put(scalingEnginePathActiveSchedule, requestEntity);
 			} else {
 				String message = messageBundleResourceHelper
 						.lookupMessage("scalingengine.notification.activeschedule.remove", appId, scheduleId);
 				logger.info(message);
-				restTemplate.delete(scalingEnginePathActiveSchedule, requestEntity);
+				restOperations.delete(scalingEnginePathActiveSchedule, requestEntity);
 			}
 		} catch (HttpStatusCodeException hce) {
 			handleResponse(activeScheduleEntity, scalingAction, hce);

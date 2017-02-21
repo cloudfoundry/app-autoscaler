@@ -1,7 +1,10 @@
 language: java
 
+dist: trusty
+sudo: required
+
 jdk:
-  - oraclejdk8
+  - openjdk8
 
 services:
   - postgresql

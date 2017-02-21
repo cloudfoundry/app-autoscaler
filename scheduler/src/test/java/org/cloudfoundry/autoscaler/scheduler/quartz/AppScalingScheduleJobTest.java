@@ -61,7 +61,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpEntity;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.web.client.ResourceAccessException;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestOperations;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -85,7 +85,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 	private ActiveScheduleDao activeScheduleDao;
 
 	@SpyBean
-	private RestTemplate restTemplate;
+	private RestOperations restOperations;
 
 	@Autowired
 	private TestDataDbUtil testDataDbUtil;
@@ -118,7 +118,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 
 		Mockito.reset(mockAppender);
 		Mockito.reset(activeScheduleDao);
-		Mockito.reset(restTemplate);
+		Mockito.reset(restOperations);
 		Mockito.reset(scheduler);
 
 		Mockito.when(mockAppender.getName()).thenReturn("MockAppender");
@@ -222,7 +222,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		Mockito.verify(scheduler, Mockito.never()).scheduleJob(Mockito.anyObject(), Mockito.anyObject());
 
 		// For notify to Scaling Engine
-		Mockito.verify(restTemplate, Mockito.never()).put(Mockito.anyString(), notNull());
+		Mockito.verify(restOperations, Mockito.never()).put(Mockito.anyString(), notNull());
 	}
 
 	@Test
@@ -310,7 +310,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		Mockito.verify(scheduler, Mockito.never()).scheduleJob(Mockito.anyObject(), Mockito.anyObject());
 
 		// For notify to Scaling Engine
-		Mockito.verify(restTemplate, Mockito.never()).put(Mockito.anyString(), Mockito.notNull());
+		Mockito.verify(restOperations, Mockito.never()).put(Mockito.anyString(), Mockito.notNull());
 	}
 
 	@Test
@@ -403,7 +403,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		Mockito.verify(scheduler, Mockito.never()).scheduleJob(Mockito.anyObject(), Mockito.anyObject());
 
 		// For notify to Scaling Engine
-		Mockito.verify(restTemplate, Mockito.never()).put(Mockito.anyString(), notNull());
+		Mockito.verify(restOperations, Mockito.never()).put(Mockito.anyString(), notNull());
 	}
 
 	@Test
@@ -444,6 +444,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 
 	@Test
 	public void testCreateActiveSchedules_throw_DatabaseValidationException() throws Exception {
+
 		setLogLevel(Level.ERROR);
 
 		int expectedNumOfTimesJobRescheduled = 2;
@@ -585,7 +586,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		Mockito.verify(scheduler, Mockito.never()).scheduleJob(Mockito.anyObject(), Mockito.anyObject());
 
 		// For notify to Scaling Engine
-		Mockito.verify(restTemplate, Mockito.never()).put(Mockito.anyString(), notNull());
+		Mockito.verify(restOperations, Mockito.never()).put(Mockito.anyString(), notNull());
 	}
 
 	@Test
@@ -630,7 +631,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
 
 		// For notify to Scaling Engine
-		Mockito.verify(restTemplate, Mockito.never()).delete(Mockito.anyString(), notNull());
+		Mockito.verify(restOperations, Mockito.never()).delete(Mockito.anyString(), notNull());
 	}
 
 	@Test
@@ -825,7 +826,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		String appId = activeScheduleEntity.getAppId();
 		Long scheduleId = activeScheduleEntity.getId();
 
-		Mockito.doThrow(new ResourceAccessException("test exception")).when(restTemplate).put(
+		Mockito.doThrow(new ResourceAccessException("test exception")).when(restOperations).put(
 				eq(scalingEngineUrl + "/v1/apps/" + appId + "/active_schedules/" + scheduleId), Mockito.anyObject());
 
 		TestJobListener testJobListener = new TestJobListener(2);
@@ -943,14 +944,14 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		String scalingEnginePath = scalingEngineUrl + "/v1/apps/" + activeScheduleEntity.getAppId()
 				+ "/active_schedules/" + activeScheduleEntity.getId();
 		HttpEntity<ActiveScheduleEntity> requestEntity = new HttpEntity<>(activeScheduleEntity);
-		Mockito.verify(restTemplate, Mockito.times(1)).put(scalingEnginePath, requestEntity);
+		Mockito.verify(restOperations, Mockito.times(1)).put(scalingEnginePath, requestEntity);
 	}
 
 	private void assertNotifyScalingEngineForEndJob(ActiveScheduleEntity activeScheduleEntity) {
 		String scalingEnginePath = scalingEngineUrl + "/v1/apps/" + activeScheduleEntity.getAppId()
 				+ "/active_schedules/" + activeScheduleEntity.getId();
 		HttpEntity<ActiveScheduleEntity> requestEntity = new HttpEntity<>(activeScheduleEntity);
-		Mockito.verify(restTemplate, Mockito.times(1)).delete(scalingEnginePath, requestEntity);
+		Mockito.verify(restOperations, Mockito.times(1)).delete(scalingEnginePath, requestEntity);
 	}
 
 	private void setLogLevel(Level level) {

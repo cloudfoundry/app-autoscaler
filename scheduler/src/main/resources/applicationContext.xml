@@ -60,12 +60,13 @@
         <property name="applicationContextSchedulerContextKey" value="applicationContext"/>
         <property name="waitForJobsToCompleteOnShutdown" value="true"/>
         <property name="overwriteExistingJobs" value="true"/>
+        <property name="schedulerName" value="${org.quartz.scheduler.instanceName}"/>
         <property name="dataSource">
             <ref bean="dataSource"/>
         </property>
-		<property name="transactionManager">
-			<ref bean="transactionManager" />
-		</property>
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
+        </property>
         <property name="jobFactory">
             <bean class="org.cloudfoundry.autoscaler.scheduler.quartz.QuartzJobFactory"/>
         </property>
@@ -76,8 +77,9 @@
                 <prop key="org.quartz.jobStore.misfireThreshold">120000</prop>
                 <prop key="org.quartz.jobStore.driverDelegateClass">org.quartz.impl.jdbcjobstore.PostgreSQLDelegate
                 </prop>
+                <prop key="org.quartz.jobStore.isClustered">true</prop>
+                <prop key="org.quartz.scheduler.instanceId">AUTO</prop>
             </props>
         </property>
     </bean>
-    <bean id="restTemplate" class="org.springframework.web.client.RestTemplate"/>
 </beans>

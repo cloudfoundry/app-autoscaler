@@ -37,6 +37,7 @@ certstrap --depot-path ${depot_path} request-cert --passphrase '' --common-name 
 certstrap --depot-path ${depot_path} sign api --CA autoscaler-ca
 
 # scheduler certificate
-certstrap --depot-path ${depot_path} request-cert --passphrase 123456 --common-name scheduler --ip 127.0.0.1
+certstrap --depot-path ${depot_path} request-cert --passphrase '' --common-name scheduler --ip 127.0.0.1
 certstrap --depot-path ${depot_path} sign scheduler --CA autoscaler-ca
-openssl pkcs12 -export -in ${depot_path}/scheduler.crt -inkey ${depot_path}/scheduler.key -out ${depot_path}/scheduler.p12 -name scheduler -passin pass:123456 -password pass:123456
+openssl pkcs12 -export -in ${depot_path}/scheduler.crt -inkey ${depot_path}/scheduler.key -out ${depot_path}/scheduler.p12 -name scheduler -password pass:123456
+keytool -importcert -alias autoscaler -file ${depot_path}/autoscaler-ca.crt -keystore ${depot_path}/autoscaler.truststore -storeType pkcs12 -storepass 123456 -noprompt

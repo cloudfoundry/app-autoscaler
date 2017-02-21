@@ -17,6 +17,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -96,20 +97,25 @@ func (components *Components) ApiServer(confPath string, argv ...string) *ginkgo
 		},
 	})
 }
-func (components *Components) Scheduler(confPath string, argv ...string) *ginkgomon.Runner {
 
+func (components *Components) Scheduler(confPath string, argv ...string) *ginkgomon.Runner {
+	fName := filepath.Base(confPath)
+	fNameIndex := strings.Index(confPath, fName)
+
+	dirPath := confPath[0:fNameIndex]
 	return ginkgomon.New(ginkgomon.Config{
 		Name:              Scheduler,
 		AnsiColorCode:     "34m",
 		StartCheck:        "Started SchedulerApplication in",
-		StartCheckTimeout: 60 * time.Second,
+		StartCheckTimeout: 120 * time.Second,
 		Command: exec.Command(
-			"java", append([]string{"-jar", "-Dspring.config.location=" + confPath, "-Dserver.port=" + strconv.FormatInt(int64(components.Ports[Scheduler]), 10), components.Executables[Scheduler]}, argv...)...,
+			"java", append([]string{"-jar", "-Dspring.config.location=" + dirPath, "-Dserver.port=" + strconv.FormatInt(int64(components.Ports[Scheduler]), 10), components.Executables[Scheduler]}, argv...)...,
 		),
 		Cleanup: func() {
 		},
 	})
 }
+
 func (components *Components) MetricsCollector(confPath string, argv ...string) *ginkgomon.Runner {
 
 	return ginkgomon.New(ginkgomon.Config{
@@ -141,6 +147,7 @@ func (components *Components) EventGenerator(confPath string, argv ...string) *g
 		),
 	})
 }
+
 func (components *Components) ScalingEngine(confPath string, argv ...string) *ginkgomon.Runner {
 
 	return ginkgomon.New(ginkgomon.Config{
@@ -156,6 +163,7 @@ func (components *Components) ScalingEngine(confPath string, argv ...string) *gi
 		),
 	})
 }
+
 func (components *Components) PrepareServiceBrokerConfig(port int, username string, password string, dbUri string, apiServerUri string, brokerApiHttpRequestTimeout time.Duration, tmpDir string) string {
 	brokerConfig := ServiceBrokerConfig{
 		Port:     port,
@@ -232,22 +240,28 @@ spring.datasource.username=%s
 spring.datasource.password=%s
 #quartz job
 scalingenginejob.reschedule.interval.millisecond=10000
-scalingenginejob.reschedule.maxcount=6
+scalingenginejob.reschedule.maxcount=3
 scalingengine.notification.reschedule.maxcount=3
 # scaling engine url
 autoscaler.scalingengine.url=%s
 #ssl
 server.ssl.key-store=%s/scheduler.p12
-caCert=%s/autoscaler-ca.crt
 server.ssl.key-alias=scheduler
 server.ssl.key-store-password=123456
-#server.ssl.key-password=123456
-#server.ssl.key-store-type=P12
-  `
-	settingJonsStr := fmt.Sprintf(settingStrTemplate, jdbcDBUri, userName, password, scalingEngineUri, testCertDir, testCertDir)
-	cfgFile, err := os.Create(filepath.Join(tmpDir, "integration.properties"))
+server.ssl.key-store-type=PKCS12
+client.ssl.key-store=%s/scheduler.p12
+client.ssl.key-store-password=123456
+client.ssl.key-store-type=PKCS12
+client.ssl.trust-store=%s/autoscaler.truststore
+client.ssl.trust-store-password=123456
+client.ssl.protocol=TLSv1.2
+#Quartz
+org.quartz.scheduler.instanceName=app-autoscaler-%d
+`
+	settingJsonStr := fmt.Sprintf(settingStrTemplate, jdbcDBUri, userName, password, scalingEngineUri, testCertDir, testCertDir, testCertDir, components.Ports[Scheduler])
+	cfgFile, err := os.Create(filepath.Join(tmpDir, "application.properties"))
 	Expect(err).NotTo(HaveOccurred())
-	ioutil.WriteFile(cfgFile.Name(), []byte(settingJonsStr), 0777)
+	ioutil.WriteFile(cfgFile.Name(), []byte(settingJsonStr), 0777)
 	cfgFile.Close()
 	return cfgFile.Name()
 }
@@ -352,7 +366,7 @@ func (components *Components) PrepareScalingEngineConfig(dbUri string, port int,
 			SchedulerDbUrl:     dbUri,
 		},
 		Synchronizer: seConfig.SynchronizerConfig{
-			ActiveScheduleSyncInterval: 10 * time.Minute,
+			ActiveScheduleSyncInterval: 10 * time.Second,
 		},
 	}
 

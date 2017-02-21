@@ -14,6 +14,14 @@ java -cp 'db/target/lib/*'  liquibase.integration.commandline.Main --changeLogFi
 java -cp 'db/target/lib/*'  liquibase.integration.commandline.Main --changeLogFile=scheduler/db/quartz.changelog-master.yaml --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver update
 ```
 
+## Generate certificates
+
+```sh
+pushd scripts
+./generate_unit_test_certs.sh
+popd
+```
+
 ## Package 
 
 ### Skip Unit Test
