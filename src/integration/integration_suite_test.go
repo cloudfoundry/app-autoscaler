@@ -8,6 +8,7 @@ import (
 	. "integration"
 
 	"code.cloudfoundry.org/cfhttp"
+	"code.cloudfoundry.org/consuladapter/consulrunner"
 	"code.cloudfoundry.org/lager"
 	"database/sql"
 	"encoding/json"
@@ -74,6 +75,8 @@ var (
 	logger     lager.Logger
 
 	testCertDir string = "../../test-certs"
+
+	consulRunner *consulrunner.ClusterRunner
 )
 
 func TestIntegration(t *testing.T) {
@@ -114,10 +117,23 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	schedulerConfPath = components.PrepareSchedulerConfig(dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), tmpDir)
 	schedulerProcess = startScheduler()
+
+	consulRunner = consulrunner.NewClusterRunner(
+		consulrunner.ClusterRunnerConfig{
+			StartingPort: components.Ports[ConsulCluster],
+			NumNodes:     1,
+			Scheme:       "http",
+		},
+	)
+	consulRunner.Start()
+	consulRunner.WaitUntilReady()
 })
 
 var _ = SynchronizedAfterSuite(func() {
 	stopScheduler(schedulerProcess)
+	if consulRunner != nil {
+		consulRunner.Stop()
+	}
 	if len(tmpDir) > 0 {
 		os.RemoveAll(tmpDir)
 	}
@@ -126,6 +142,7 @@ var _ = SynchronizedAfterSuite(func() {
 })
 
 var _ = BeforeEach(func() {
+	consulRunner.Reset()
 	httpClient = cfhttp.NewClient()
 	logger = lager.NewLogger("test")
 	logger.RegisterSink(lager.NewWriterSink(GinkgoWriter, lager.DEBUG))
@@ -159,6 +176,7 @@ func PreparePorts() Ports {
 		MetricsCollector: 13000 + GinkgoParallelNode(),
 		EventGenerator:   14000 + GinkgoParallelNode(),
 		ScalingEngine:    15000 + GinkgoParallelNode(),
+		ConsulCluster:    16000 + GinkgoParallelNode()*consulrunner.PortOffsetLength,
 	}
 }
 
