@@ -20,6 +20,6 @@ module.exports = {
       log_level: 'error',
       data: error
     };
-    console.error (util.format('%j', logItem));
+    console.log (util.format('%j', logItem));
   }
 };
