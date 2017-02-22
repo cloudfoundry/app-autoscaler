@@ -3,6 +3,7 @@ package org.cloudfoundry.autoscaler.scheduler.rest;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -18,7 +19,9 @@ import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.cloudfoundry.autoscaler.scheduler.dao.ActiveScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.dao.SpecificDateScheduleDao;
+import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
@@ -57,6 +60,9 @@ public class ScheduleRestControllerTest extends TestConfiguration {
 	@MockBean
 	private Scheduler scheduler;
 
+	@MockBean
+	private ActiveScheduleDao activeScheduleDao;
+
 	@Autowired
 	private SpecificDateScheduleDao specificDateScheduleDao;
 
@@ -76,8 +82,13 @@ public class ScheduleRestControllerTest extends TestConfiguration {
 	@Before
 	public void before() throws Exception {
 		Mockito.reset(scheduler);
+		Mockito.reset(activeScheduleDao);
 		testDataDbUtil.cleanupData();
 		mockMvc = MockMvcBuilders.webAppContextSetup(wac).build();
+
+		ActiveScheduleEntity activeScheduleEntity = new ActiveScheduleEntity();
+		activeScheduleEntity.setStartJobIdentifier(System.currentTimeMillis());
+		Mockito.when(activeScheduleDao.find(any())).thenReturn(activeScheduleEntity);
 
 		String appId = "appId_1";
 		List<SpecificDateScheduleEntity> specificDateScheduleEntities = TestDataSetupHelper
