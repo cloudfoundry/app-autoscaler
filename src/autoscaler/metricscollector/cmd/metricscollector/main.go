@@ -10,14 +10,17 @@ import (
 	"autoscaler/cf"
 	"autoscaler/db"
 	"autoscaler/db/sqldb"
+	"autoscaler/metricscollector"
 	"autoscaler/metricscollector/collector"
 	"autoscaler/metricscollector/config"
 	"autoscaler/metricscollector/server"
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/clock"
+	"code.cloudfoundry.org/consuladapter"
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry/noaa/consumer"
+	"github.com/nu7hatch/gouuid"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
@@ -108,7 +111,22 @@ func main() {
 		os.Exit(1)
 	}
 
+	consulClient, err := consuladapter.NewClientFromUrl(conf.Lock.ConsulClusterConfig)
+	if err != nil {
+		logger.Fatal("new consul client failed", err)
+	}
+
+	serviceClient := metricscollector.NewServiceClient(consulClient, mcClock)
+
+	lockMaintainer := serviceClient.NewMetricsCollectorLockRunner(
+		logger,
+		generateGUID(logger),
+		conf.Lock.LockRetryInterval,
+		conf.Lock.LockTTL,
+	)
+
 	members := grouper.Members{
+		{"lock-maintainer", lockMaintainer},
 		{"collector", collectServer},
 		{"http_server", httpServer},
 	}
@@ -151,4 +169,12 @@ func getLogLevel(level string) (lager.LogLevel, error) {
 	default:
 		return -1, fmt.Errorf("Error: unsupported log level:%s", level)
 	}
+}
+
+func generateGUID(logger lager.Logger) string {
+	uuid, err := uuid.NewV4()
+	if err != nil {
+		logger.Fatal("Couldn't generate uuid", err)
+	}
+	return uuid.String()
 }
