@@ -70,6 +70,34 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
 				resp.Body.Close()
 			})
+
+			Context("Scheduler is down", func() {
+				BeforeEach(func() {
+					stopScheduler(schedulerProcess)
+
+					policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
+					resp, err := attachPolicy(appId, policyStr)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(resp.StatusCode).To(Equal(http.StatusInternalServerError))
+					resp.Body.Close()
+
+					schedulerProcess = startScheduler()
+				})
+
+				It("should neither create policy nor schedule", func() {
+					By("checking the API Server")
+					resp, err := getPolicy(appId)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
+					resp.Body.Close()
+
+					By("checking the Scheduler")
+					resp, err = getSchedules(appId)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
+					resp.Body.Close()
+				})
+			})
 		})
 
 		Context("Policies without schedules", func() {
@@ -93,6 +121,34 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
 				resp.Body.Close()
 
+			})
+
+			Context("Scheduler is down", func() {
+				BeforeEach(func() {
+					stopScheduler(schedulerProcess)
+
+					policyStr = readPolicyFromFile("fakePolicyWithoutSchedule.json")
+					resp, err := attachPolicy(appId, policyStr)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+					resp.Body.Close()
+
+					schedulerProcess = startScheduler()
+				})
+
+				It("should create the policy only", func() {
+					By("checking the API Server")
+					var expected map[string]interface{}
+					err := json.Unmarshal(policyStr, &expected)
+					Expect(err).NotTo(HaveOccurred())
+					checkResponseContent(getPolicy, appId, http.StatusOK, expected)
+
+					By("checking the Scheduler")
+					resp, err := getSchedules(appId)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
+					resp.Body.Close()
+				})
 			})
 		})
 	})
@@ -167,6 +223,30 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
 				resp.Body.Close()
+			})
+
+			Context("Scheduler is down", func() {
+				BeforeEach(func() {
+					stopScheduler(schedulerProcess)
+
+					resp, err := detachPolicy(appId)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(resp.StatusCode).To(Equal(http.StatusInternalServerError))
+					resp.Body.Close()
+
+					schedulerProcess = startScheduler()
+				})
+
+				It("should not delete schedule in Scheduler", func() {
+					By("checking the API Server")
+					resp, err := getPolicy(appId)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
+					resp.Body.Close()
+
+					By("checking the Scheduler")
+					checkSchedule(getSchedules, appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})
+				})
 			})
 		})
 	})
