@@ -84,7 +84,7 @@ func (sdb *SchedulerSQLDB) GetActiveSchedules() (map[string]*models.ActiveSchedu
 
 }
 
-func (sdb *SchedulerSQLDB) SynchronizeActiveSchedules(appIdMap map[string]bool) error {
+func (sdb *SchedulerSQLDB) SynchronizeActiveSchedules(appIdMap map[string]struct{}) error {
 	if len(appIdMap) == 0 {
 		sdb.logger.Debug("No application exists")
 		return nil

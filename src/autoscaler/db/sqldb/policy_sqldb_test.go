@@ -19,7 +19,7 @@ var _ = Describe("PolicySQLDB", func() {
 		url           string
 		logger        lager.Logger
 		err           error
-		appIds        map[string]bool
+		appIds        map[string]struct{}
 		scalingPolicy *models.ScalingPolicy
 		policyJson    []byte
 		appId         string

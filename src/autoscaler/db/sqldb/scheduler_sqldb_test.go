@@ -19,7 +19,7 @@ var _ = Describe("SchedulerSqldb", func() {
 		sdb       *SchedulerSQLDB
 		err       error
 		schedules map[string]*models.ActiveSchedule
-		appIdMap  map[string]bool
+		appIdMap  map[string]struct{}
 	)
 
 	BeforeEach(func() {
@@ -150,8 +150,7 @@ var _ = Describe("SchedulerSqldb", func() {
 		})
 		Context("when appIdMap is empty", func() {
 			BeforeEach(func() {
-				appIdMap = map[string]bool{}
-
+				appIdMap = map[string]struct{}{}
 			})
 			It("no active schedule is removed", func() {
 				Expect(schedules).To(HaveKeyWithValue("app-id-1", &models.ActiveSchedule{
@@ -176,8 +175,8 @@ var _ = Describe("SchedulerSqldb", func() {
 		})
 		Context("when appIdMap is not empty", func() {
 			BeforeEach(func() {
-				appIdMap = map[string]bool{
-					"app-id-2": true,
+				appIdMap = map[string]struct{}{
+					"app-id-2": struct{}{},
 				}
 			})
 			It("active schedules of app which appId is not in appIdMap are removed", func() {

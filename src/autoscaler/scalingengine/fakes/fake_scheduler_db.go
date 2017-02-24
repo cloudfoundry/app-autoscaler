@@ -15,10 +15,10 @@ type FakeSchedulerDB struct {
 		result1 map[string]*models.ActiveSchedule
 		result2 error
 	}
-	SynchronizeActiveSchedulesStub        func(map[string]bool) error
+	SynchronizeActiveSchedulesStub        func(map[string]struct{}) error
 	synchronizeActiveSchedulesMutex       sync.RWMutex
 	synchronizeActiveSchedulesArgsForCall []struct {
-		arg1 map[string]bool
+		arg1 map[string]struct{}
 	}
 	synchronizeActiveSchedulesReturns struct {
 		result1 error
@@ -58,10 +58,10 @@ func (fake *FakeSchedulerDB) GetActiveSchedulesReturns(result1 map[string]*model
 	}{result1, result2}
 }
 
-func (fake *FakeSchedulerDB) SynchronizeActiveSchedules(arg1 map[string]bool) error {
+func (fake *FakeSchedulerDB) SynchronizeActiveSchedules(arg1 map[string]struct{}) error {
 	fake.synchronizeActiveSchedulesMutex.Lock()
 	fake.synchronizeActiveSchedulesArgsForCall = append(fake.synchronizeActiveSchedulesArgsForCall, struct {
-		arg1 map[string]bool
+		arg1 map[string]struct{}
 	}{arg1})
 	fake.recordInvocation("SynchronizeActiveSchedules", []interface{}{arg1})
 	fake.synchronizeActiveSchedulesMutex.Unlock()
@@ -77,7 +77,7 @@ func (fake *FakeSchedulerDB) SynchronizeActiveSchedulesCallCount() int {
 	return len(fake.synchronizeActiveSchedulesArgsForCall)
 }
 
-func (fake *FakeSchedulerDB) SynchronizeActiveSchedulesArgsForCall(i int) map[string]bool {
+func (fake *FakeSchedulerDB) SynchronizeActiveSchedulesArgsForCall(i int) map[string]struct{} {
 	fake.synchronizeActiveSchedulesMutex.RLock()
 	defer fake.synchronizeActiveSchedulesMutex.RUnlock()
 	return fake.synchronizeActiveSchedulesArgsForCall[i].arg1

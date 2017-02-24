@@ -8,11 +8,11 @@ import (
 )
 
 type FakePolicyDB struct {
-	GetAppIdsStub        func() (map[string]bool, error)
+	GetAppIdsStub        func() (map[string]struct{}, error)
 	getAppIdsMutex       sync.RWMutex
 	getAppIdsArgsForCall []struct{}
 	getAppIdsReturns     struct {
-		result1 map[string]bool
+		result1 map[string]struct{}
 		result2 error
 	}
 	GetAppPolicyStub        func(appId string) (*models.ScalingPolicy, error)
@@ -41,7 +41,7 @@ type FakePolicyDB struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakePolicyDB) GetAppIds() (map[string]bool, error) {
+func (fake *FakePolicyDB) GetAppIds() (map[string]struct{}, error) {
 	fake.getAppIdsMutex.Lock()
 	fake.getAppIdsArgsForCall = append(fake.getAppIdsArgsForCall, struct{}{})
 	fake.recordInvocation("GetAppIds", []interface{}{})
@@ -59,10 +59,10 @@ func (fake *FakePolicyDB) GetAppIdsCallCount() int {
 	return len(fake.getAppIdsArgsForCall)
 }
 
-func (fake *FakePolicyDB) GetAppIdsReturns(result1 map[string]bool, result2 error) {
+func (fake *FakePolicyDB) GetAppIdsReturns(result1 map[string]struct{}, result2 error) {
 	fake.GetAppIdsStub = nil
 	fake.getAppIdsReturns = struct {
-		result1 map[string]bool
+		result1 map[string]struct{}
 		result2 error
 	}{result1, result2}
 }

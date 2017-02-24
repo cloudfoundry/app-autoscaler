@@ -48,7 +48,7 @@ var _ = Describe("Activescheduledb synchronize", func() {
 		})
 		Context("When there is no data in policy db", func() {
 			BeforeEach(func() {
-				policyDb.GetAppIdsReturns(map[string]bool{}, nil)
+				policyDb.GetAppIdsReturns(map[string]struct{}{}, nil)
 			})
 			It("should not do synchronization", func() {
 				Expect(policyDb.GetAppIdsCallCount()).To(Equal(1))
@@ -59,7 +59,7 @@ var _ = Describe("Activescheduledb synchronize", func() {
 		})
 		Context("When synchronization fails", func() {
 			BeforeEach(func() {
-				policyDb.GetAppIdsReturns(map[string]bool{"appId1": true, "appId2": true}, nil)
+				policyDb.GetAppIdsReturns(map[string]struct{}{"appId1": struct{}{}, "appId2": struct{}{}}, nil)
 				schedulerDb.SynchronizeActiveSchedulesReturns(errors.New("delete-active-schedule-error"))
 			})
 			It("should error", func() {
@@ -71,7 +71,7 @@ var _ = Describe("Activescheduledb synchronize", func() {
 		})
 		Context("When synchronization succeeds", func() {
 			BeforeEach(func() {
-				policyDb.GetAppIdsReturns(map[string]bool{"appId1": true, "appId2": true}, nil)
+				policyDb.GetAppIdsReturns(map[string]struct{}{"appId1": struct{}{}, "appId2": struct{}{}}, nil)
 				schedulerDb.SynchronizeActiveSchedulesReturns(nil)
 			})
 			It("should synchronize", func() {
