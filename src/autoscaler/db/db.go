@@ -42,5 +42,6 @@ type ScalingEngineDB interface {
 
 type SchedulerDB interface {
 	GetActiveSchedules() (map[string]*models.ActiveSchedule, error)
+	SynchronizeActiveSchedules(map[string]bool) error
 	Close() error
 }

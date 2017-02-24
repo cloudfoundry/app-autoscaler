@@ -9,6 +9,7 @@ import (
 
 	"database/sql"
 	"strconv"
+	"strings"
 )
 
 type SchedulerSQLDB struct {
@@ -81,4 +82,24 @@ func (sdb *SchedulerSQLDB) GetActiveSchedules() (map[string]*models.ActiveSchedu
 	}
 	return schedules, nil
 
+}
+
+func (sdb *SchedulerSQLDB) SynchronizeActiveSchedules(appIdMap map[string]bool) error {
+	if len(appIdMap) == 0 {
+		sdb.logger.Debug("No application exists")
+		return nil
+	}
+	var query string = "DELETE FROM app_scaling_active_schedule WHERE app_id NOT IN("
+	var appIdsStr string = ""
+	for appId, _ := range appIdMap {
+		appIdsStr += "'" + appId + "',"
+	}
+	appIdsStr = strings.TrimRight(appIdsStr, ",")
+	query += appIdsStr + ")"
+	_, err := sdb.sqldb.Exec(query)
+	if err != nil {
+		sdb.logger.Error("Failed to delete active schedules", err, lager.Data{"query": query})
+	}
+
+	return err
 }

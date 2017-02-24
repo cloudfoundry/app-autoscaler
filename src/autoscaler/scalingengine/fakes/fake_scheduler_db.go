@@ -15,6 +15,14 @@ type FakeSchedulerDB struct {
 		result1 map[string]*models.ActiveSchedule
 		result2 error
 	}
+	SynchronizeActiveSchedulesStub        func(map[string]bool) error
+	synchronizeActiveSchedulesMutex       sync.RWMutex
+	synchronizeActiveSchedulesArgsForCall []struct {
+		arg1 map[string]bool
+	}
+	synchronizeActiveSchedulesReturns struct {
+		result1 error
+	}
 	CloseStub        func() error
 	closeMutex       sync.RWMutex
 	closeArgsForCall []struct{}
@@ -32,9 +40,8 @@ func (fake *FakeSchedulerDB) GetActiveSchedules() (map[string]*models.ActiveSche
 	fake.getActiveSchedulesMutex.Unlock()
 	if fake.GetActiveSchedulesStub != nil {
 		return fake.GetActiveSchedulesStub()
-	} else {
-		return fake.getActiveSchedulesReturns.result1, fake.getActiveSchedulesReturns.result2
 	}
+	return fake.getActiveSchedulesReturns.result1, fake.getActiveSchedulesReturns.result2
 }
 
 func (fake *FakeSchedulerDB) GetActiveSchedulesCallCount() int {
@@ -51,6 +58,38 @@ func (fake *FakeSchedulerDB) GetActiveSchedulesReturns(result1 map[string]*model
 	}{result1, result2}
 }
 
+func (fake *FakeSchedulerDB) SynchronizeActiveSchedules(arg1 map[string]bool) error {
+	fake.synchronizeActiveSchedulesMutex.Lock()
+	fake.synchronizeActiveSchedulesArgsForCall = append(fake.synchronizeActiveSchedulesArgsForCall, struct {
+		arg1 map[string]bool
+	}{arg1})
+	fake.recordInvocation("SynchronizeActiveSchedules", []interface{}{arg1})
+	fake.synchronizeActiveSchedulesMutex.Unlock()
+	if fake.SynchronizeActiveSchedulesStub != nil {
+		return fake.SynchronizeActiveSchedulesStub(arg1)
+	}
+	return fake.synchronizeActiveSchedulesReturns.result1
+}
+
+func (fake *FakeSchedulerDB) SynchronizeActiveSchedulesCallCount() int {
+	fake.synchronizeActiveSchedulesMutex.RLock()
+	defer fake.synchronizeActiveSchedulesMutex.RUnlock()
+	return len(fake.synchronizeActiveSchedulesArgsForCall)
+}
+
+func (fake *FakeSchedulerDB) SynchronizeActiveSchedulesArgsForCall(i int) map[string]bool {
+	fake.synchronizeActiveSchedulesMutex.RLock()
+	defer fake.synchronizeActiveSchedulesMutex.RUnlock()
+	return fake.synchronizeActiveSchedulesArgsForCall[i].arg1
+}
+
+func (fake *FakeSchedulerDB) SynchronizeActiveSchedulesReturns(result1 error) {
+	fake.SynchronizeActiveSchedulesStub = nil
+	fake.synchronizeActiveSchedulesReturns = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakeSchedulerDB) Close() error {
 	fake.closeMutex.Lock()
 	fake.closeArgsForCall = append(fake.closeArgsForCall, struct{}{})
@@ -58,9 +97,8 @@ func (fake *FakeSchedulerDB) Close() error {
 	fake.closeMutex.Unlock()
 	if fake.CloseStub != nil {
 		return fake.CloseStub()
-	} else {
-		return fake.closeReturns.result1
 	}
+	return fake.closeReturns.result1
 }
 
 func (fake *FakeSchedulerDB) CloseCallCount() int {
@@ -81,6 +119,8 @@ func (fake *FakeSchedulerDB) Invocations() map[string][][]interface{} {
 	defer fake.invocationsMutex.RUnlock()
 	fake.getActiveSchedulesMutex.RLock()
 	defer fake.getActiveSchedulesMutex.RUnlock()
+	fake.synchronizeActiveSchedulesMutex.RLock()
+	defer fake.synchronizeActiveSchedulesMutex.RUnlock()
 	fake.closeMutex.RLock()
 	defer fake.closeMutex.RUnlock()
 	return fake.invocations
