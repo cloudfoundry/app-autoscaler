@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/clock"
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/lagertest"
 	"code.cloudfoundry.org/locket"
 
 	. "github.com/onsi/ginkgo"
@@ -29,6 +29,7 @@ var _ = Describe("MetricsCollector", func() {
 	var runner *MetricsCollectorRunner
 
 	BeforeEach(func() {
+		consulRunner.Reset()
 		runner = NewMetricsCollectorRunner()
 	})
 
@@ -38,57 +39,64 @@ var _ = Describe("MetricsCollector", func() {
 
 	Context("when the metricscollector acquires the lock", func() {
 		BeforeEach(func() {
-			runner.StartWithoutCheck()
+			runner.startCheck = ""
+			runner.Start()
+
 			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say(runner.acquiredLockCheck))
 		})
 
 		It("should start", func() {
-			Eventually(runner.Session.Buffer(), 2*time.Second).Should(gbytes.Say(runner.startCheck))
+			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.started"))
 			Consistently(runner.Session).ShouldNot(Exit())
 		})
 	})
 
 	Context("when the metricscollector loses the lock", func() {
 		BeforeEach(func() {
-			runner.StartWithoutCheck()
+			runner.startCheck = ""
+			runner.Start()
+
 			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say(runner.acquiredLockCheck))
-			Eventually(runner.Session.Buffer(), 2*time.Second).Should(gbytes.Say(runner.startCheck))
+			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.started"))
 
 			consulRunner.Reset()
 		})
 
 		It("exits with failure", func() {
-			Eventually(runner.Session.Buffer(), 4*time.Second).Should(gbytes.Say("exited-with-failure"))
+			Eventually(runner.Session.Buffer, 4*time.Second).Should(gbytes.Say("exited-with-failure"))
 			Eventually(runner.Session).Should(Exit(1))
 		})
 	})
 
 	Context("when the metricscollector initially does not have the lock", func() {
-		var competetingMetricsCollectorProcess ifrit.Process
+		var competingMetricsCollectorProcess ifrit.Process
 
 		BeforeEach(func() {
 			consulClient := consulRunner.NewClient()
-			logger := lager.NewLogger("metricscollector")
-			competingMetricsCollectorLock := locket.NewLock(logger, consulClient, metricscollector.MetricsCollectorLockSchemaPath(), []byte{}, clock.NewClock(), cfg.Lock.LockRetryInterval, cfg.Lock.LockTTL)
-			competetingMetricsCollectorProcess = ifrit.Invoke(competingMetricsCollectorLock)
+			logger := lagertest.NewTestLogger("competing-process")
+			buffer := logger.Buffer()
 
-			runner.StartWithoutCheck()
+			competingMetricsCollectorLock := locket.NewLock(logger, consulClient, metricscollector.MetricsCollectorLockSchemaPath(), []byte{}, clock.NewClock(), cfg.Lock.LockRetryInterval, cfg.Lock.LockTTL)
+			competingMetricsCollectorProcess = ifrit.Invoke(competingMetricsCollectorLock)
+			Eventually(buffer, 2*time.Second).Should(gbytes.Say("competing-process.lock.acquire-lock-succeeded"))
+
+			runner.startCheck = ""
+			runner.Start()
 		})
 
 		It("should not start", func() {
 			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.lock.acquiring-lock"))
-			Consistently(runner.Session.Buffer, 2*time.Second).ShouldNot(gbytes.Say(runner.startCheck))
+			Consistently(runner.Session.Buffer, 2*time.Second).ShouldNot(gbytes.Say("metricscollector.started"))
 		})
 
 		Describe("when the lock becomes available", func() {
 			BeforeEach(func() {
-				ginkgomon.Kill(competetingMetricsCollectorProcess)
-				time.Sleep(10 * time.Millisecond)
+				ginkgomon.Kill(competingMetricsCollectorProcess)
 			})
 
 			It("acquires the lock and starts", func() {
 				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say(runner.acquiredLockCheck))
-				Eventually(runner.Session.Buffer(), 2*time.Second).Should(gbytes.Say(runner.startCheck))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.started"))
 				Consistently(runner.Session).ShouldNot(Exit())
 			})
 
@@ -161,7 +169,7 @@ var _ = Describe("MetricsCollector", func() {
 
 		It("should stop", func() {
 			runner.Session.Interrupt()
-			Eventually(runner.Session, 2*time.Second).Should(Exit(0))
+			Eventually(runner.Session, 5).Should(Exit(0))
 		})
 	})
 

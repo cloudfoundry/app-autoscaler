@@ -170,10 +170,6 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	}
 })
 
-var _ = BeforeEach(func() {
-	consulRunner.Reset()
-})
-
 var _ = SynchronizedAfterSuite(func() {
 	if consulRunner != nil {
 		consulRunner.Stop()
@@ -227,20 +223,6 @@ func (mc *MetricsCollectorRunner) Start() {
 	if mc.startCheck != "" {
 		Eventually(mcSession.Buffer(), 2).Should(gbytes.Say(mc.startCheck))
 	}
-
-	mc.Session = mcSession
-}
-
-func (mc *MetricsCollectorRunner) StartWithoutCheck() {
-	mcSession, err := gexec.Start(exec.Command(
-		mcPath,
-		"-c",
-		mc.configPath,
-	),
-		gexec.NewPrefixedWriter("\x1b[32m[o]\x1b[32m[mc]\x1b[0m ", GinkgoWriter),
-		gexec.NewPrefixedWriter("\x1b[91m[e]\x1b[32m[mc]\x1b[0m ", GinkgoWriter),
-	)
-	Expect(err).NotTo(HaveOccurred())
 
 	mc.Session = mcSession
 }
