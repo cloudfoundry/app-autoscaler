@@ -8,9 +8,6 @@ import (
 	seConfig "autoscaler/scalingengine/config"
 	"encoding/json"
 	"fmt"
-	. "github.com/onsi/gomega"
-	"github.com/tedsuo/ifrit/ginkgomon"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"net/url"
 	"os"
@@ -19,6 +16,10 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	. "github.com/onsi/gomega"
+	"github.com/tedsuo/ifrit/ginkgomon"
+	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -28,6 +29,7 @@ const (
 	MetricsCollector = "metricsCollector"
 	EventGenerator   = "eventGenerator"
 	ScalingEngine    = "scalingEngine"
+	ConsulCluster    = "consulCluster"
 )
 
 var testCertDir string = "../../test-certs"
@@ -266,7 +268,8 @@ org.quartz.scheduler.instanceName=app-autoscaler-%d
 	return cfgFile.Name()
 }
 
-func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port int, ccNOAAUAAUrl string, cfGrantTypePassword string, pollInterval time.Duration, refreshInterval time.Duration, tmpDir string) string {
+func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port int, ccNOAAUAAUrl string, cfGrantTypePassword string, pollInterval time.Duration,
+	refreshInterval time.Duration, tmpDir string, lockTTL time.Duration, lockRetryInterval time.Duration, ConsulClusterConfig string) string {
 	cfg := mcConfig.Config{
 		Cf: cf.CfConfig{
 			Api:       ccNOAAUAAUrl,
@@ -292,6 +295,11 @@ func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port i
 		Collector: mcConfig.CollectorConfig{
 			PollInterval:    pollInterval,
 			RefreshInterval: refreshInterval,
+		},
+		Lock: mcConfig.LockConfig{
+			LockTTL:             lockTTL,
+			LockRetryInterval:   lockRetryInterval,
+			ConsulClusterConfig: ConsulClusterConfig,
 		},
 	}
 

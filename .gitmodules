@@ -52,3 +52,18 @@
 [submodule "src/github.com/square/certstrap"]
 	path = src/github.com/square/certstrap
 	url = https://github.com/square/certstrap
+[submodule "src/code.cloudfoundry.org/consuladapter"]
+	path = src/code.cloudfoundry.org/consuladapter
+	url = https://github.com/cloudfoundry/consuladapter.git
+[submodule "src/code.cloudfoundry.org/locket"]
+	path = src/code.cloudfoundry.org/locket
+	url = https://github.com/cloudfoundry/locket.git
+[submodule "src/code.cloudfoundry.org/runtimeschema"]
+	path = src/code.cloudfoundry.org/runtimeschema
+	url = https://github.com/cloudfoundry/runtimeschema
+[submodule "src/github.com/hashicorp/consul"]
+	path = src/github.com/hashicorp/consul
+	url = https://github.com/hashicorp/consul
+[submodule "src/github.com/cloudfoundry/dropsonde"]
+	path = src/github.com/cloudfoundry/dropsonde
+	url = https://github.com/cloudfoundry/dropsonde

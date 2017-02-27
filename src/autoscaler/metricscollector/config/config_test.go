@@ -94,6 +94,10 @@ db:
 collector:
   refresh_interval: 20s
   poll_interval: 10s
+lock:
+  lock_ttl: 15s
+  lock_retry_interval: 10s
+  consul_cluster_config: http://127.0.0.1:8500
 `)
 			})
 
@@ -120,6 +124,10 @@ collector:
 				Expect(conf.Server.TLS.KeyFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/server.key"))
 				Expect(conf.Server.TLS.CertFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/server.crt"))
 				Expect(conf.Server.TLS.CACertFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/ca.crt"))
+
+				Expect(conf.Lock.ConsulClusterConfig).To(Equal("http://127.0.0.1:8500"))
+				Expect(conf.Lock.LockRetryInterval).To(Equal(10 * time.Second))
+				Expect(conf.Lock.LockTTL).To(Equal(15 * time.Second))
 			})
 		})
 
@@ -131,6 +139,8 @@ cf:
 db:
   policy_db_url: postgres://pqgotest:password@localhost/pqgotest
   instance_metrics_db_url: postgres://pqgotest:password@localhost/pqgotest
+lock:
+  consul_cluster_config: http://127.0.0.1:8500
 `)
 			})
 
@@ -142,6 +152,9 @@ db:
 				Expect(conf.Logging.Level).To(Equal(DefaultLoggingLevel))
 				Expect(conf.Collector.RefreshInterval).To(Equal(DefaultRefreshInterval))
 				Expect(conf.Collector.PollInterval).To(Equal(DefaultPollInterval))
+
+				Expect(conf.Lock.LockRetryInterval).To(Equal(DefaultRetryInterval))
+				Expect(conf.Lock.LockTTL).To(Equal(DefaultLockTTL))
 			})
 		})
 
@@ -155,6 +168,7 @@ db:
 			conf.Cf.Username = "admin"
 			conf.Db.PolicyDbUrl = "postgres://pqgotest:password@exampl.com/pqgotest"
 			conf.Db.InstanceMetricsDbUrl = "postgres://pqgotest:password@exampl.com/pqgotest"
+			conf.Lock.ConsulClusterConfig = "http://127.0.0.1:8500"
 		})
 
 		JustBeforeEach(func() {
@@ -196,6 +210,17 @@ db:
 
 			It("should error", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: InstanceMetrics DB url is empty")))
+			})
+		})
+
+		Context("when consul_cluster_config is not set", func() {
+
+			BeforeEach(func() {
+				conf.Lock.ConsulClusterConfig = ""
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: Consul cluster config is empty")))
 			})
 		})
 

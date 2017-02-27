@@ -6,9 +6,11 @@ import (
 	"autoscaler/cf"
 	"autoscaler/models"
 	"fmt"
+	"time"
+
+	"code.cloudfoundry.org/locket"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"time"
 )
 
 var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", func() {
@@ -22,7 +24,8 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 		testAppId = getRandomId()
 		startFakeCCNOAAUAA(initInstanceCount)
 		fakeMetrics(testAppId, 400*1024*1024)
-		metricsCollectorConfPath = components.PrepareMetricsCollectorConfig(dbUrl, components.Ports[MetricsCollector], fakeCCNOAAUAA.URL(), cf.GrantTypePassword, pollInterval, refreshInterval, tmpDir)
+		metricsCollectorConfPath = components.PrepareMetricsCollectorConfig(dbUrl, components.Ports[MetricsCollector], fakeCCNOAAUAA.URL(), cf.GrantTypePassword, pollInterval,
+			refreshInterval, tmpDir, locket.DefaultSessionTTL, locket.RetryInterval, consulRunner.ConsulCluster())
 		eventGeneratorConfPath = components.PrepareEventGeneratorConfig(dbUrl, components.Ports[EventGenerator], fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), aggregatorExecuteInterval, policyPollerInterval, evaluationManagerInterval, tmpDir)
 		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), cf.GrantTypePassword, tmpDir)
 		startMetricsCollector()

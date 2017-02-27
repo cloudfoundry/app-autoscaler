@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"code.cloudfoundry.org/locket"
+
 	"gopkg.in/yaml.v2"
 
 	"autoscaler/cf"
@@ -17,6 +19,8 @@ const (
 	DefaultLoggingLevel                  = "info"
 	DefaultRefreshInterval time.Duration = 60 * time.Second
 	DefaultPollInterval    time.Duration = 30 * time.Second
+	DefaultLockTTL         time.Duration = locket.DefaultSessionTTL
+	DefaultRetryInterval   time.Duration = locket.RetryInterval
 )
 
 var defaultCfConfig = cf.CfConfig{
@@ -55,12 +59,24 @@ var defaultCollectorConfig = CollectorConfig{
 	PollInterval:    DefaultPollInterval,
 }
 
+type LockConfig struct {
+	LockTTL             time.Duration `yaml:"lock_ttl"`
+	LockRetryInterval   time.Duration `yaml:"lock_retry_interval"`
+	ConsulClusterConfig string        `yaml:"consul_cluster_config"`
+}
+
+var defaultLockConfig = LockConfig{
+	LockTTL:           DefaultLockTTL,
+	LockRetryInterval: DefaultRetryInterval,
+}
+
 type Config struct {
 	Cf        cf.CfConfig     `yaml:"cf"`
 	Logging   LoggingConfig   `yaml:"logging"`
 	Server    ServerConfig    `yaml:"server"`
 	Db        DbConfig        `yaml:"db"`
 	Collector CollectorConfig `yaml:"collector"`
+	Lock      LockConfig      `yaml:"lock"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
@@ -69,6 +85,7 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		Logging:   defaultLoggingConfig,
 		Server:    defaultServerConfig,
 		Collector: defaultCollectorConfig,
+		Lock:      defaultLockConfig,
 	}
 
 	bytes, err := ioutil.ReadAll(reader)
@@ -99,6 +116,10 @@ func (c *Config) Validate() error {
 
 	if c.Db.InstanceMetricsDbUrl == "" {
 		return fmt.Errorf("Configuration error: InstanceMetrics DB url is empty")
+	}
+
+	if c.Lock.ConsulClusterConfig == "" {
+		return fmt.Errorf("Configuration error: Consul cluster config is empty")
 	}
 
 	return nil
