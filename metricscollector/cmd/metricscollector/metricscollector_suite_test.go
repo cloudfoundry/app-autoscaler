@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/cfhttp"
+	"code.cloudfoundry.org/consuladapter/consulrunner"
 	"github.com/cloudfoundry/sonde-go/events"
 	"github.com/gogo/protobuf/proto"
 	. "github.com/onsi/ginkgo"
@@ -27,6 +28,8 @@ import (
 	"autoscaler/cf"
 	"autoscaler/db"
 	"autoscaler/metricscollector/config"
+
+	"code.cloudfoundry.org/locket"
 )
 
 var (
@@ -38,6 +41,7 @@ var (
 	isTokenExpired bool
 	eLock          *sync.Mutex
 	httpClient     *http.Client
+	consulRunner   *consulrunner.ClusterRunner
 )
 
 func TestMetricsCollector(t *testing.T) {
@@ -51,6 +55,16 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	return []byte(mc)
 }, func(pathsByte []byte) {
+
+	consulRunner = consulrunner.NewClusterRunner(
+		consulrunner.ClusterRunnerConfig{
+			StartingPort: 9001,
+			NumNodes:     1,
+			Scheme:       "http",
+		},
+	)
+	consulRunner.Start()
+	consulRunner.WaitUntilReady()
 	mcPath = string(pathsByte)
 
 	ccNOAAUAA = ghttp.NewServer()
@@ -117,6 +131,10 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.Collector.PollInterval = 10 * time.Second
 	cfg.Collector.RefreshInterval = 30 * time.Second
 
+	cfg.Lock.ConsulClusterConfig = consulRunner.ConsulCluster()
+	cfg.Lock.LockRetryInterval = locket.RetryInterval
+	cfg.Lock.LockTTL = locket.DefaultSessionTTL
+
 	configFile = writeConfig(&cfg)
 
 	mcDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
@@ -150,10 +168,12 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 			TLSClientConfig: tlsConfig,
 		},
 	}
-
 })
 
 var _ = SynchronizedAfterSuite(func() {
+	if consulRunner != nil {
+		consulRunner.Stop()
+	}
 	ccNOAAUAA.Close()
 	os.Remove(configFile.Name())
 }, func() {
@@ -175,15 +195,17 @@ func writeConfig(c *config.Config) *os.File {
 }
 
 type MetricsCollectorRunner struct {
-	configPath string
-	startCheck string
-	Session    *gexec.Session
+	configPath        string
+	startCheck        string
+	acquiredLockCheck string
+	Session           *gexec.Session
 }
 
 func NewMetricsCollectorRunner() *MetricsCollectorRunner {
 	return &MetricsCollectorRunner{
-		configPath: configFile.Name(),
-		startCheck: "metricscollector.started",
+		configPath:        configFile.Name(),
+		startCheck:        "metricscollector.started",
+		acquiredLockCheck: "metricscollector.lock.acquire-lock-succeeded",
 	}
 }
 
