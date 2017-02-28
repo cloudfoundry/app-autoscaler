@@ -29,6 +29,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -254,6 +255,17 @@ func stopAll() {
 
 func getRandomId() string {
 	return strconv.FormatInt(time.Now().UnixNano(), 10)
+}
+
+func initializeHttpClient(certFileName string, keyFileName string, caCertFileName string, httpRequestTimeout time.Duration) {
+	TLSConfig, err := cfhttp.NewTLSConfig(
+		filepath.Join(testCertDir, certFileName),
+		filepath.Join(testCertDir, keyFileName),
+		filepath.Join(testCertDir, caCertFileName),
+	)
+	Expect(err).NotTo(HaveOccurred())
+	httpClient.Transport.(*http.Transport).TLSClientConfig = TLSConfig
+	httpClient.Timeout = httpRequestTimeout
 }
 
 func provisionServiceInstance(serviceInstanceId string, orgId string, spaceId string) (*http.Response, error) {

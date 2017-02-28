@@ -1,12 +1,9 @@
 package integration_test
 
 import (
-	"code.cloudfoundry.org/cfhttp"
-	. "integration"
-	"path/filepath"
-
 	"encoding/json"
 	"fmt"
+	. "integration"
 	"io/ioutil"
 	"net/http"
 
@@ -21,14 +18,8 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 	)
 
 	BeforeEach(func() {
-		apiTLSConfig, err := cfhttp.NewTLSConfig(
-			filepath.Join(testCertDir, "api.crt"),
-			filepath.Join(testCertDir, "api.key"),
-			filepath.Join(testCertDir, "autoscaler-ca.crt"),
-		)
-		Expect(err).NotTo(HaveOccurred())
-		httpClient.Transport.(*http.Transport).TLSClientConfig = apiTLSConfig
-		httpClient.Timeout = apiSchedulerHttpRequestTimeout
+		initializeHttpClient("api.crt", "api.key", "autoscaler-ca.crt", apiSchedulerHttpRequestTimeout)
+
 		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), tmpDir)
 		startApiServer()
 		appId = getRandomId()
@@ -38,7 +29,58 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 	})
 
 	AfterEach(func() {
-		stopAll()
+		stopApiServer()
+	})
+
+	Context("Scheduler is down", func() {
+		JustBeforeEach(func() {
+			stopScheduler(schedulerProcess)
+		})
+
+		AfterEach(func() {
+			schedulerProcess = startScheduler()
+		})
+
+		Context("Create policy", func() {
+			It("should not create policy", func() {
+				policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
+				resp, err := attachPolicy(appId, policyStr)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resp.StatusCode).To(Equal(http.StatusInternalServerError))
+				resp.Body.Close()
+
+				By("checking the API Server")
+				resp, err = getPolicy(appId)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
+				resp.Body.Close()
+			})
+		})
+
+		Context("Delete policy", func() {
+			BeforeEach(func() {
+				//attach a policy first with 4 recurring and 2 specific_date schedules
+				policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
+				resp, err := attachPolicy(appId, policyStr)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+				resp.Body.Close()
+			})
+
+			It("should delete policy in API server", func() {
+				resp, err := detachPolicy(appId)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resp.StatusCode).To(Equal(http.StatusInternalServerError))
+				resp.Body.Close()
+
+				By("checking the API Server")
+				resp, err = getPolicy(appId)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
+				resp.Body.Close()
+			})
+		})
+
 	})
 
 	Describe("Create policy", func() {
@@ -79,6 +121,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
 				resp.Body.Close()
 			})
+
 		})
 
 		Context("Policies without schedules", func() {
