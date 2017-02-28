@@ -18,6 +18,8 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/cfhttp"
+	"code.cloudfoundry.org/consuladapter/consulrunner"
+	"code.cloudfoundry.org/locket"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
@@ -34,6 +36,7 @@ var (
 	conf            *config.Config
 	metricCollector *ghttp.Server
 	scalingEngine   *ghttp.Server
+	consulRunner    *consulrunner.ClusterRunner
 	metrics         []*models.AppInstanceMetric = []*models.AppInstanceMetric{
 		&models.AppInstanceMetric{
 			AppId:         testAppId,
@@ -88,15 +91,30 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	egPath = string(pathByte)
 	initDB()
 	initHttpEndPoints()
+	initConsul()
 	initConfig()
-
 })
 
 var _ = SynchronizedAfterSuite(func() {
 	os.Remove(configFile.Name())
+	if consulRunner != nil {
+		consulRunner.Stop()
+	}
 }, func() {
 	gexec.CleanupBuildArtifacts()
 })
+
+func initConsul() {
+	consulRunner = consulrunner.NewClusterRunner(
+		consulrunner.ClusterRunnerConfig{
+			StartingPort: 9001,
+			NumNodes:     1,
+			Scheme:       "http",
+		},
+	)
+	consulRunner.Start()
+	consulRunner.WaitUntilReady()
+}
 
 func initDB() {
 	egDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
@@ -162,7 +180,7 @@ func initHttpEndPoints() {
 
 func initConfig() {
 	testCertDir := "../../../../../test-certs"
-	conf := &config.Config{
+	conf = &config.Config{
 		Server: config.ServerConfig{
 			Port: config.DefaultServerPort + 1,
 		},
@@ -200,6 +218,11 @@ func initConfig() {
 				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 			},
 		},
+		Lock: config.LockConfig{
+			LockRetryInterval:   locket.RetryInterval,
+			LockTTL:             locket.DefaultSessionTTL,
+			ConsulClusterConfig: consulRunner.ConsulCluster(),
+		},
 	}
 	configFile = writeConfig(conf)
 }
@@ -216,15 +239,17 @@ func writeConfig(c *config.Config) *os.File {
 }
 
 type EventGeneratorRunner struct {
-	configPath string
-	startCheck string
-	Session    *gexec.Session
+	configPath        string
+	startCheck        string
+	acquiredLockCheck string
+	Session           *gexec.Session
 }
 
 func NewEventGeneratorRunner() *EventGeneratorRunner {
 	return &EventGeneratorRunner{
-		configPath: configFile.Name(),
-		startCheck: "eventgenerator.started",
+		configPath:        configFile.Name(),
+		startCheck:        "eventgenerator.started",
+		acquiredLockCheck: "eventgenerator.lock.acquire-lock-succeeded",
 	}
 }
 

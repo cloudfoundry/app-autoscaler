@@ -306,7 +306,8 @@ func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port i
 	return writeYmlConfig(tmpDir, MetricsCollector, &cfg)
 }
 
-func (components *Components) PrepareEventGeneratorConfig(dbUri string, port int, metricsCollectorUrl string, scalingEngineUrl string, aggregatorExecuteInterval time.Duration, policyPollerInterval time.Duration, evaluationManagerInterval time.Duration, tmpDir string) string {
+func (components *Components) PrepareEventGeneratorConfig(dbUri string, port int, metricsCollectorUrl string, scalingEngineUrl string, aggregatorExecuteInterval time.Duration, policyPollerInterval time.Duration,
+	evaluationManagerInterval time.Duration, tmpDir string, lockTTL time.Duration, lockRetryInterval time.Duration, ConsulClusterConfig string) string {
 	conf := &egConfig.Config{
 		Server: egConfig.ServerConfig{
 			Port: port,
@@ -344,6 +345,11 @@ func (components *Components) PrepareEventGeneratorConfig(dbUri string, port int
 				CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
 				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 			},
+		},
+		Lock: egConfig.LockConfig{
+			LockTTL:             lockTTL,
+			LockRetryInterval:   lockRetryInterval,
+			ConsulClusterConfig: ConsulClusterConfig,
 		},
 	}
 	return writeYmlConfig(tmpDir, EventGenerator, &conf)

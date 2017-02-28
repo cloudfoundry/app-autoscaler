@@ -3,6 +3,7 @@ package main
 import (
 	"autoscaler/db"
 	"autoscaler/db/sqldb"
+	"autoscaler/eventgenerator"
 	"autoscaler/eventgenerator/aggregator"
 	"autoscaler/eventgenerator/config"
 	"autoscaler/eventgenerator/generator"
@@ -15,7 +16,9 @@ import (
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/clock"
+	"code.cloudfoundry.org/consuladapter"
 	"code.cloudfoundry.org/lager"
+	uuid "github.com/nu7hatch/gouuid"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
@@ -102,7 +105,22 @@ func main() {
 		return nil
 	})
 
+	consulClient, err := consuladapter.NewClientFromUrl(conf.Lock.ConsulClusterConfig)
+	if err != nil {
+		logger.Fatal("new consul client failed", err)
+	}
+
+	serviceClient := eventgenerator.NewServiceClient(consulClient, egClock)
+
+	lockMaintainer := serviceClient.NewEventGeneratorLockRunner(
+		logger,
+		generateGUID(logger),
+		conf.Lock.LockRetryInterval,
+		conf.Lock.LockTTL,
+	)
+
 	members := grouper.Members{
+		{"lock-maintainer", lockMaintainer},
 		{"eventGeneratorServer", eventGeneratorServer},
 	}
 
@@ -221,4 +239,12 @@ func createMetricPollers(logger lager.Logger, conf *config.Config, appChan chan 
 	}
 
 	return pollers, nil
+}
+
+func generateGUID(logger lager.Logger) string {
+	uuid, err := uuid.NewV4()
+	if err != nil {
+		logger.Fatal("Couldn't generate uuid", err)
+	}
+	return uuid.String()
 }
