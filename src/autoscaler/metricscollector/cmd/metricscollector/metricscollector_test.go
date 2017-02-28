@@ -45,7 +45,8 @@ var _ = Describe("MetricsCollector", func() {
 			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say(runner.acquiredLockCheck))
 		})
 
-		It("should start", func() {
+		It("should register itself as the active instance and start", func() {
+			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.registration-runner.succeeded-registering-service"))
 			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.started"))
 			Consistently(runner.Session).ShouldNot(Exit())
 		})
@@ -57,6 +58,7 @@ var _ = Describe("MetricsCollector", func() {
 			runner.Start()
 
 			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say(runner.acquiredLockCheck))
+			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.registration-runner.succeeded-registering-service"))
 			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.started"))
 
 			consulRunner.Reset()
@@ -96,6 +98,7 @@ var _ = Describe("MetricsCollector", func() {
 
 			It("acquires the lock and starts", func() {
 				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say(runner.acquiredLockCheck))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.registration-runner.succeeded-registering-service"))
 				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.started"))
 				Consistently(runner.Session).ShouldNot(Exit())
 			})
