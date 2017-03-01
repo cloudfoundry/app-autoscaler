@@ -11,6 +11,7 @@ import (
 	"code.cloudfoundry.org/lager/lagertest"
 	"code.cloudfoundry.org/locket"
 
+	"github.com/hashicorp/consul/api"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -20,16 +21,21 @@ import (
 	"autoscaler/cf"
 	"autoscaler/metricscollector"
 
+	"code.cloudfoundry.org/consuladapter"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/ginkgomon"
 )
 
 var _ = Describe("MetricsCollector", func() {
-	var runner *MetricsCollectorRunner
+	var (
+		runner       *MetricsCollectorRunner
+		consulClient consuladapter.Client
+	)
 
 	BeforeEach(func() {
 		consulRunner.Reset()
+		consulClient = consulRunner.NewClient()
 		runner = NewMetricsCollectorRunner()
 	})
 
@@ -43,6 +49,37 @@ var _ = Describe("MetricsCollector", func() {
 			runner.Start()
 
 			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say(runner.acquiredLockCheck))
+		})
+
+		It("registers itself with consul", func() {
+			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.registration-runner.succeeded-registering-service"))
+
+			services, err := consulClient.Agent().Services()
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(services).To(HaveKeyWithValue("metricscollector",
+				&api.AgentService{
+					Service: "metricscollector",
+					ID:      "metricscollector",
+					Port:    cfg.Server.Port,
+				}))
+		})
+
+		It("registers a TTL healthcheck", func() {
+			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.registration-runner.succeeded-registering-service"))
+
+			checks, err := consulClient.Agent().Checks()
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(checks).To(HaveKeyWithValue("service:metricscollector",
+				&api.AgentCheck{
+					Node:        "0",
+					CheckID:     "service:metricscollector",
+					Name:        "Service 'metricscollector' check",
+					Status:      "passing",
+					ServiceID:   "metricscollector",
+					ServiceName: "metricscollector",
+				}))
 		})
 
 		It("should start", func() {
@@ -72,7 +109,6 @@ var _ = Describe("MetricsCollector", func() {
 		var competingMetricsCollectorProcess ifrit.Process
 
 		BeforeEach(func() {
-			consulClient := consulRunner.NewClient()
 			logger := lagertest.NewTestLogger("competing-process")
 			buffer := logger.Buffer()
 
