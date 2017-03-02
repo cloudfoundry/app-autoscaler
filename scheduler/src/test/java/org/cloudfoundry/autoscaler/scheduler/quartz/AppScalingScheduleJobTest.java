@@ -395,7 +395,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 
 		String expectedMessage = messageBundleResourceHelper
-				.lookupMessage("database.error.delete.activeschedule.failed", "test exception", appId);
+				.lookupMessage("database.error.delete.activeschedules.failed", "test exception", appId);
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
 		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
 

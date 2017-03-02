@@ -80,7 +80,7 @@ abstract class AppScalingScheduleStartJob extends AppScalingScheduleJob {
 						+ appId + " before creating new active schedule.");
 			} catch (DatabaseValidationException dve) {
 				String errorMessage = messageBundleResourceHelper
-						.lookupMessage("database.error.delete.activeschedule.failed", dve.getMessage(), appId);
+						.lookupMessage("database.error.delete.activeschedules.failed", dve.getMessage(), appId);
 				logger.error(errorMessage, dve);
 
 				handleJobRescheduling(jobExecutionContext, ScheduleJobHelper.RescheduleCount.ACTIVE_SCHEDULE,
