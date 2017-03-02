@@ -19,7 +19,18 @@ var defaultConfig = {
     "keyFile": "keyFilePath",
     "certFile": "certFilePath",
     "caCertFile": "caCertFilePath"
-  }
+  },
+  "services": [{
+    "id": "autoscaler-guid",
+    "name": "autoscaler",
+    "description": "Automatically increase or decrease the number of application instances based on a policy you define.",
+    "bindable": true,
+    "plans": [{
+      "id": "autoscaler-free-plan-id",
+      "name": "autoscaler-free-plan",
+      "description": "This is the free service plan for the Auto-Scaling service."
+    }]
+  }]
 }
 
 var settingTmp = {};
@@ -339,6 +350,90 @@ describe('config setting Test Suite', function() {
     context('When tls.caCertFile is undefined', function(){
       it('Should return false',function(){
         delete settings.tls.caCertFile;
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+  });
+  
+  context('Validate Catalog Service Plans', function(){
+    context('When Service Plan Id is null', function(){
+      it('Should return false',function(){
+        settings.services[0].plans[0].id = null
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+    context('When Service Plan Name is null', function(){
+      it('Should return false',function(){
+        settings.services[0].plans[0].name = null
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+    context('When Service Plan is empty', function(){
+      it('Should return false',function(){
+        settings.services[0].plans = {}
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+    context('When Service Plan is null', function(){
+      it('Should return false',function(){
+        settings.services[0].plans = null;
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+    context('When Service Plan is not an array', function(){
+      it('Should return false',function(){
+        settings.services[0].plans = "nonarray object"
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+    context('When Service Plan is not defined', function(){
+      it('Should return false',function(){
+        delete settings.services[0].plans;
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+  });
+  
+  context('Validate Catalog services', function(){
+    context('When service id is null', function(){
+      it('Should return false',function(){
+        settings.services[0].id = null
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+    context('When service name is null', function(){
+      it('Should return false',function(){
+        settings.services[0].name = null
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+    context('When bindable parameter is not Boolean type', function(){
+      it('Should return false',function(){
+        settings.services[0].bindable = "abcd"
+          expect(settings.validate().valid).to.equal(false)
+      });
+    });
+    context('When service array is empty', function(){
+      it('Should return false',function(){
+        settings.services = {}
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+    context('When service definition is null', function(){
+      it('Should return false',function(){
+        settings.services = null;
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+    context('When Service definition is not an array', function(){
+      it('Should return false',function(){
+        settings.services = "nonarray object"
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+    context('When services not defined', function(){
+      it('Should return false',function(){
+        delete settings.services;
         expect(settings.validate().valid).to.equal(false)
       });
     });

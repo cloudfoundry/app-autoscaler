@@ -49,6 +49,20 @@ type DBConfig struct {
 	IdleTimeout    int    `json:"idleTimeout"`
 }
 
+type Service struct {
+	Id          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Bindable    bool   `json:"bindable"`
+	Plans       []Plan `json:"plans"`
+}
+
+type Plan struct {
+	Id          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
 type ServiceBrokerConfig struct {
 	Port int `json:"port"`
 
@@ -60,6 +74,7 @@ type ServiceBrokerConfig struct {
 	APIServerUri       string          `json:"apiServerUri"`
 	HttpRequestTimeout int             `json:"httpRequestTimeout"`
 	TLS                models.TLSCerts `json:"tls"`
+	Services           []Service       `json:"services"`
 }
 
 type APIServerConfig struct {
@@ -183,6 +198,21 @@ func (components *Components) PrepareServiceBrokerConfig(port int, username stri
 			KeyFile:    filepath.Join(testCertDir, "servicebroker.key"),
 			CertFile:   filepath.Join(testCertDir, "servicebroker.crt"),
 			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+		},
+		Services: []Service{
+			{
+				Id:          "autoscaler-guid",
+				Name:        "autoscaler",
+				Description: "Automatically increase or decrease the number of application instances based on a policy you define",
+				Bindable:    true,
+				Plans: []Plan{
+					{
+						Id:          "autoscaler-free-plan-id",
+						Name:        "autoscaler-free-plan",
+						Description: "This is the free service plan for the Auto-Scaling service",
+					},
+				},
+			},
 		},
 	}
 
