@@ -18,6 +18,8 @@ import (
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/consuladapter"
 	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/locket"
+	"github.com/hashicorp/consul/api"
 	uuid "github.com/nu7hatch/gouuid"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
@@ -119,9 +121,12 @@ func main() {
 		conf.Lock.LockTTL,
 	)
 
+	registrationRunner := initializeRegistrationRunner(logger, consulClient, conf.Server.Port, egClock)
+
 	members := grouper.Members{
 		{"lock-maintainer", lockMaintainer},
 		{"eventGeneratorServer", eventGeneratorServer},
+		{"registration", registrationRunner},
 	}
 
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
@@ -239,6 +244,21 @@ func createMetricPollers(logger lager.Logger, conf *config.Config, appChan chan 
 	}
 
 	return pollers, nil
+}
+
+func initializeRegistrationRunner(
+	logger lager.Logger,
+	consulClient consuladapter.Client,
+	port int,
+	clock clock.Clock) ifrit.Runner {
+	registration := &api.AgentServiceRegistration{
+		Name: "eventgenerator",
+		Port: port,
+		Check: &api.AgentServiceCheck{
+			TTL: "20s",
+		},
+	}
+	return locket.NewRegistrationRunner(logger, registration, consulClient, locket.RetryInterval, clock)
 }
 
 func generateGUID(logger lager.Logger) string {
