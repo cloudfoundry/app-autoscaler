@@ -107,7 +107,7 @@ var _ = SynchronizedAfterSuite(func() {
 func initConsul() {
 	consulRunner = consulrunner.NewClusterRunner(
 		consulrunner.ClusterRunnerConfig{
-			StartingPort: 9001,
+			StartingPort: 9001 + GinkgoParallelNode()*consulrunner.PortOffsetLength,
 			NumNodes:     1,
 			Scheme:       "http",
 		},

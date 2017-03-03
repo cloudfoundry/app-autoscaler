@@ -11,6 +11,8 @@ import (
 	"code.cloudfoundry.org/lager/lagertest"
 	"code.cloudfoundry.org/locket"
 
+	"code.cloudfoundry.org/consuladapter"
+	"github.com/hashicorp/consul/api"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
@@ -21,10 +23,14 @@ import (
 )
 
 var _ = Describe("Eventgenerator", func() {
-	var runner *EventGeneratorRunner
+	var (
+		runner       *EventGeneratorRunner
+		consulClient consuladapter.Client
+	)
 
 	BeforeEach(func() {
 		consulRunner.Reset()
+		consulClient = consulRunner.NewClient()
 		runner = NewEventGeneratorRunner()
 	})
 
@@ -38,6 +44,37 @@ var _ = Describe("Eventgenerator", func() {
 			runner.Start()
 
 			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say(runner.acquiredLockCheck))
+		})
+
+		It("registers itself with consul", func() {
+			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("eventgenerator.registration-runner.succeeded-registering-service"))
+
+			services, err := consulClient.Agent().Services()
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(services).To(HaveKeyWithValue("eventgenerator",
+				&api.AgentService{
+					Service: "eventgenerator",
+					ID:      "eventgenerator",
+					Port:    conf.Server.Port,
+				}))
+		})
+
+		It("registers a TTL healthcheck", func() {
+			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("eventgenerator.registration-runner.succeeded-registering-service"))
+
+			checks, err := consulClient.Agent().Checks()
+			Expect(err).ToNot(HaveOccurred())
+
+			Expect(checks).To(HaveKeyWithValue("service:eventgenerator",
+				&api.AgentCheck{
+					Node:        "0",
+					CheckID:     "service:eventgenerator",
+					Name:        "Service 'eventgenerator' check",
+					Status:      "passing",
+					ServiceID:   "eventgenerator",
+					ServiceName: "eventgenerator",
+				}))
 		})
 
 		It("should start", func() {
@@ -60,8 +97,8 @@ var _ = Describe("Eventgenerator", func() {
 		})
 
 		It("exits with failure", func() {
-			Eventually(runner.Session.Buffer, 4*time.Second).Should(gbytes.Say("exited-with-failure"))
-			Eventually(runner.Session).Should(Exit(1))
+			Eventually(runner.Session, 4*time.Second).Should(Exit(1))
+			Expect(runner.Session.Buffer()).Should(Say("exited-with-failure"))
 		})
 	})
 
@@ -69,7 +106,6 @@ var _ = Describe("Eventgenerator", func() {
 		var competingEventGeneratorProcess ifrit.Process
 
 		BeforeEach(func() {
-			consulClient := consulRunner.NewClient()
 			logger := lagertest.NewTestLogger("competing-process")
 			buffer := logger.Buffer()
 
