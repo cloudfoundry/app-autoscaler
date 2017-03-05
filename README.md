@@ -124,28 +124,9 @@ export DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
 ginkgo -r -race -p -randomizeAllSpecs src/integration
 ```
 
-## Deploy
+## Deploy and use
 
-Go to [app-autoscaler-release][r] project to BOSH deploy `App-AutoScaler` 
-
-## Register service broker
-You can register `App-AutoScaler` with command:
-
-```shell
-cf create-service-broker App-AutoScaler <brokerUserName> <brokerPassword> <brokerURI>
-cf enable-service-access autoscaler
-```
-
-## Use `App-AutoScaler` 
-
-Now, you can play with `App-AutoScaler`.
-
-Firstly create a `App-AutoScaler` service, and bind to you application
-
-``` shell
-cf create-service autoscaler  autoscaler-free-plan  <service_instance_name>
-cf bind-service <app> <service_instance_name> -c <policy>
-```
+Go to [app-autoscaler-release][r] project for how to BOSH deploy `App-AutoScaler` and use the service
 
 
 ## License
