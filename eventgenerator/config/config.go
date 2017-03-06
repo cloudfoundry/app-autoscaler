@@ -2,16 +2,19 @@ package config
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"strings"
 	"time"
+
+	"code.cloudfoundry.org/locket"
+
+	"gopkg.in/yaml.v2"
 
 	"autoscaler/models"
 )
 
 const (
 	DefaultServerPort                int           = 8080
-	DefaultLoggingLevel                            = "info"
+	DefaultLoggingLevel              string        = "info"
 	DefaultPolicyPollerInterval      time.Duration = 40 * time.Second
 	DefaultAggregatorExecuteInterval time.Duration = 40 * time.Second
 	DefaultMetricPollerCount         int           = 20
@@ -19,6 +22,8 @@ const (
 	DefaultEvaluationExecuteInterval time.Duration = 40 * time.Second
 	DefaultEvaluatorCount            int           = 20
 	DefaultTriggerArrayChannelSize   int           = 200
+	DefaultLockTTL                   time.Duration = locket.DefaultSessionTTL
+	DefaultRetryInterval             time.Duration = locket.RetryInterval
 )
 
 type ServerConfig struct {
@@ -57,6 +62,12 @@ type MetricCollectorConfig struct {
 	TLSClientCerts     models.TLSCerts `yaml:"tls"`
 }
 
+type LockConfig struct {
+	LockTTL             time.Duration `yaml:"lock_ttl"`
+	LockRetryInterval   time.Duration `yaml:"lock_retry_interval"`
+	ConsulClusterConfig string        `yaml:"consul_cluster_config"`
+}
+
 type Config struct {
 	Server          ServerConfig          `yaml:"server"`
 	Logging         LoggingConfig         `yaml:"logging"`
@@ -65,6 +76,7 @@ type Config struct {
 	Evaluator       EvaluatorConfig       `yaml:"evaluator"`
 	ScalingEngine   ScalingEngineConfig   `yaml:"scalingEngine"`
 	MetricCollector MetricCollectorConfig `yaml:"metricCollector"`
+	Lock            LockConfig            `yaml:"lock"`
 }
 
 func LoadConfig(bytes []byte) (*Config, error) {
@@ -85,6 +97,10 @@ func LoadConfig(bytes []byte) (*Config, error) {
 			EvaluationManagerInterval: DefaultEvaluationExecuteInterval,
 			EvaluatorCount:            DefaultEvaluatorCount,
 			TriggerArrayChannelSize:   DefaultTriggerArrayChannelSize,
+		},
+		Lock: LockConfig{
+			LockRetryInterval: DefaultRetryInterval,
+			LockTTL:           DefaultLockTTL,
 		},
 	}
 	err := yaml.Unmarshal(bytes, &conf)
@@ -111,6 +127,9 @@ func (c *Config) Validate() error {
 	if c.MetricCollector.MetricCollectorUrl == "" {
 		return fmt.Errorf("Configuration error: Metric collector url is empty")
 	}
+	if c.Lock.ConsulClusterConfig == "" {
+		return fmt.Errorf("Configuration error: Consul Cluster Config is empty")
+	}
 	if c.Aggregator.AggregatorExecuteInterval <= time.Duration(0) {
 		return fmt.Errorf("Configuration error: aggregator execute interval is less-equal than 0")
 	}
@@ -131,6 +150,12 @@ func (c *Config) Validate() error {
 	}
 	if c.Evaluator.TriggerArrayChannelSize <= 0 {
 		return fmt.Errorf("Configuration error: trigger-array channel size is less-equal than 0")
+	}
+	if c.Lock.LockRetryInterval <= 0 {
+		return fmt.Errorf("Configuration error: lock retry interval is less than or equal to 0")
+	}
+	if c.Lock.LockTTL <= 0 {
+		return fmt.Errorf("Configuration error: lock ttl is less than or equal to 0")
 	}
 	return nil
 
