@@ -55,6 +55,10 @@ metricCollector:
     key_file: /var/vcap/jobs/autoscaler/config/certs/mc.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/mc.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+lock:
+  lock_ttl: 15s
+  lock_retry_interval: 10s
+  consul_cluster_config: http://127.0.0.1:8500
 `)
 			})
 
@@ -88,6 +92,11 @@ metricCollector:
 							CACertFile: "/var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt",
 						},
 					},
+					Lock: LockConfig{
+						LockTTL:             15 * time.Second,
+						LockRetryInterval:   10 * time.Second,
+						ConsulClusterConfig: "http://127.0.0.1:8500",
+					},
 				}))
 			})
 		})
@@ -114,6 +123,8 @@ scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
   metric_collector_url: http://localhost:8083
+lock:
+  consul_cluster_config: http://127.0.0.1:8500
 `)
 			})
 
@@ -145,6 +156,8 @@ scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
   metric_collector_url: http://localhost:8083
+lock:
+  consul_cluster_config: http://127.0.0.1:8500
 `)
 			})
 
@@ -176,6 +189,8 @@ scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
   metric_collector_url: http://localhost:8083
+lock:
+  consul_cluster_config: http://127.0.0.1:8500
 `)
 			})
 
@@ -207,6 +222,8 @@ scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
   metric_collector_url: http://localhost:8083
+lock:
+  consul_cluster_config: http://127.0.0.1:8500
 `)
 			})
 
@@ -238,6 +255,8 @@ scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
   metric_collector_url: http://localhost:8083
+lock:
+  consul_cluster_config: http://127.0.0.1:8500
 `)
 			})
 
@@ -269,6 +288,8 @@ scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
   metric_collector_url: http://localhost:8083
+lock:
+  consul_cluster_config: http://127.0.0.1:8500
 `)
 			})
 
@@ -300,6 +321,8 @@ scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
   metric_collector_url: http://localhost:8083
+lock:
+  consul_cluster_config: http://127.0.0.1:8500
 `)
 			})
 
@@ -331,6 +354,8 @@ scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
   metric_collector_url: http://localhost:8083
+lock:
+  consul_cluster_config: http://127.0.0.1:8500	
 `)
 			})
 
@@ -361,11 +386,83 @@ scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
   metric_collector_url: http://localhost:8083
+lock:
+  consul_cluster_config: http://127.0.0.1:8500
 `)
 			})
 
 			It("should error", func() {
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+			})
+		})
+
+		Context("when it gives a non integer lock_ttl", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+server:
+  port: 8081
+logging:
+  level: info
+db:
+  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+aggregator: 
+  aggregator_execute_interval: 30s
+  policy_poller_interval: 30s
+  metric_poller_count: 10
+  app_monitor_channel_size: 100
+evaluator:
+  evaluation_manager_execute_interval: 30s
+  evaluator_count: 10
+  trigger_array_channel_size: 100
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+metricCollector:
+  metric_collector_url: http://localhost:8083
+lock:
+  lock_ttl: NOT-INTEGER-VALUE
+  lock_retry_interval: 10s
+  consul_cluster_config: http://127.0.0.1:8500
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
+			})
+		})
+
+		Context("when it gives a non integer lock_retry_interval", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+server:
+  port: 8081
+logging:
+  level: info
+db:
+  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+aggregator: 
+  aggregator_execute_interval: 30s
+  policy_poller_interval: 30s
+  metric_poller_count: 10
+  app_monitor_channel_size: 100
+evaluator:
+  evaluation_manager_execute_interval: 30s
+  evaluator_count: 10
+  trigger_array_channel_size: 100
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+metricCollector:
+  metric_collector_url: http://localhost:8083
+lock:
+  lock_ttl: 15s
+  lock_retry_interval: NOT-INTEGER-VALUE
+  consul_cluster_config: http://127.0.0.1:8500
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
 			})
 		})
 
@@ -380,6 +477,8 @@ scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
   metric_collector_url: http://localhost:8083
+lock:
+  consul_cluster_config: http://127.0.0.1:8500
 `)
 			})
 
@@ -401,7 +500,12 @@ metricCollector:
 					ScalingEngine: ScalingEngineConfig{
 						ScalingEngineUrl: "http://localhost:8082"},
 					MetricCollector: MetricCollectorConfig{
-						MetricCollectorUrl: "http://localhost:8083"}}))
+						MetricCollectorUrl: "http://localhost:8083"},
+					Lock: LockConfig{
+						LockRetryInterval:   DefaultRetryInterval,
+						LockTTL:             DefaultLockTTL,
+						ConsulClusterConfig: "http://127.0.0.1:8500"},
+				}))
 			})
 		})
 
@@ -424,7 +528,11 @@ metricCollector:
 				ScalingEngine: ScalingEngineConfig{
 					ScalingEngineUrl: "http://localhost:8082"},
 				MetricCollector: MetricCollectorConfig{
-					MetricCollectorUrl: "http://localhost:8083"}}
+					MetricCollectorUrl: "http://localhost:8083"},
+				Lock: LockConfig{
+					LockRetryInterval:   DefaultRetryInterval,
+					LockTTL:             DefaultLockTTL,
+					ConsulClusterConfig: "http://127.0.0.1:8500"}}
 		})
 
 		JustBeforeEach(func() {
@@ -491,6 +599,17 @@ metricCollector:
 			})
 		})
 
+		Context("when consul cluster config is not set", func() {
+
+			BeforeEach(func() {
+				conf.Lock.ConsulClusterConfig = ""
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: Consul Cluster Config is empty")))
+			})
+		})
+
 		Context("when AggregatorExecuateInterval <= 0", func() {
 			BeforeEach(func() {
 				conf.Aggregator.AggregatorExecuteInterval = 0
@@ -533,6 +652,24 @@ metricCollector:
 			})
 			It("should error", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: evalution manager execeute interval is less-equal than 0")))
+			})
+		})
+
+		Context("when LockRetryInterval <= 0", func() {
+			BeforeEach(func() {
+				conf.Lock.LockRetryInterval = 0
+			})
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: lock retry interval is less than or equal to 0")))
+			})
+		})
+
+		Context("when LockTTL <= 0", func() {
+			BeforeEach(func() {
+				conf.Lock.LockTTL = 0
+			})
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: lock ttl is less than or equal to 0")))
 			})
 		})
 
