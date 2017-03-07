@@ -12,7 +12,7 @@ var app;
 var policy = require('../../../lib/models')(settings.db).policy_json;
 var logger = require('../../../lib/log/logger');
 var nock = require('nock');
-var schedulerURI = settings.schedulerUri ;
+var schedulerURI = settings.scheduler.uri ;
 
 describe('Routing Policy Creation', function() {
   var fakePolicy;

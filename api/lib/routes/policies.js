@@ -1,5 +1,5 @@
 'use strict';
-module.exports = function(settings,tlsOptions){
+module.exports = function(settings){
   var models = require('../models')(settings.db);
   var express = require('express');
   var router = express.Router();
@@ -7,7 +7,7 @@ module.exports = function(settings,tlsOptions){
   var HttpStatus = require('http-status-codes');
   var validationMiddleWare = require('../validation/validationMiddleware');
   var routeHelper = require('./routeHelper')(settings.db);
-  var schedulerUtil = require('../utils/schedulerUtils')(settings, tlsOptions);
+  var schedulerUtil = require('../utils/schedulerUtils')(settings);
   var async = require('async');
 
   router.put('/:app_id',validationMiddleWare,function(req, res) {

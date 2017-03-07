@@ -15,7 +15,7 @@ var tlsOptions = {
       ca: fs.readFileSync(settings.tls.caCertFile)
 }
 var schedulerUtils = require('../../../lib/utils/schedulerUtils')(settings, tlsOptions);
-var schedulerURI = settings.schedulerUri;
+var schedulerURI = settings.scheduler.uri;
 
 describe('Scheduler Utility functions', function() {
   var fakePolicy;

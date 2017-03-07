@@ -1,11 +1,17 @@
 'use strict';
-module.exports = function(settings, tlsOptions) {
+module.exports = function(settings) {
   var request = require('request') ;
   var logger = require('../log/logger');
   var HttpStatus = require('http-status-codes');
+  var fs = require('fs');
   var schedulerUtilObj = {};
+  var schedulerTLSOptions = {
+      key: fs.readFileSync(settings.scheduler.tls.keyFile),
+      cert: fs.readFileSync(settings.scheduler.tls.certFile),
+      ca: fs.readFileSync(settings.scheduler.tls.caCertFile)
+  };
   schedulerUtilObj.createOrUpdateSchedule = function createOrUpdateSchedule(req,callback) {
-    var schedulerURI = settings.schedulerUri;
+    var schedulerURI = settings.scheduler.uri;
     if(!req.body.schedules) {
       logger.info('Policy does not have schedule info ',{ 'app id':req.params.app_id });
       callback(null);
@@ -19,9 +25,9 @@ module.exports = function(settings, tlsOptions) {
         body: req.body,
         json: true,
         timeout: 10000,
-        cert: tlsOptions.cert,
-        key: tlsOptions.key,
-        ca: tlsOptions.ca 
+        cert: schedulerTLSOptions.cert,
+        key: schedulerTLSOptions.key,
+        ca: schedulerTLSOptions.ca 
       };
       request(options, function(error, response, body) {
         if(error) {
@@ -62,14 +68,14 @@ module.exports = function(settings, tlsOptions) {
   schedulerUtilObj.deleteSchedules = function deleteSchedules(req, callback) {
     logger.info('Deleting schedules for application',{ 'app id': req.params.app_id });
     var appId = req.params.app_id;
-    var schedulerURI = settings.schedulerUri;
+    var schedulerURI = settings.scheduler.uri;
     var options = { 
       url: schedulerURI + '/v2/schedules/' + appId,
       method: 'DELETE',
       timeout: 10000,
-      cert: tlsOptions.cert,
-      key: tlsOptions.key,
-      ca: tlsOptions.ca 
+      cert: schedulerTLSOptions.cert,
+      key: schedulerTLSOptions.key,
+      ca: schedulerTLSOptions.ca 
     };
     
     request(options, function(error, response, body) {
