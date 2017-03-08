@@ -14,7 +14,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
-	"strings"
 	"time"
 
 	. "github.com/onsi/gomega"
@@ -101,17 +100,13 @@ func (components *Components) ApiServer(confPath string, argv ...string) *ginkgo
 }
 
 func (components *Components) Scheduler(confPath string, argv ...string) *ginkgomon.Runner {
-	fName := filepath.Base(confPath)
-	fNameIndex := strings.Index(confPath, fName)
-
-	dirPath := confPath[0:fNameIndex]
 	return ginkgomon.New(ginkgomon.Config{
 		Name:              Scheduler,
 		AnsiColorCode:     "34m",
-		StartCheck:        "Started SchedulerApplication in",
+		StartCheck:        "Tomcat started on port",
 		StartCheckTimeout: 120 * time.Second,
 		Command: exec.Command(
-			"java", append([]string{"-jar", "-Dspring.config.location=" + dirPath, "-Dserver.port=" + strconv.FormatInt(int64(components.Ports[Scheduler]), 10), components.Executables[Scheduler]}, argv...)...,
+			"java", append([]string{"-jar", "-Dspring.config.location=" + confPath, "-Dserver.port=" + strconv.FormatInt(int64(components.Ports[Scheduler]), 10), components.Executables[Scheduler]}, argv...)...,
 		),
 		Cleanup: func() {
 		},
@@ -222,7 +217,7 @@ func (components *Components) PrepareApiServerConfig(port int, dbUri string, sch
 	return cfgFile.Name()
 }
 
-func (components *Components) PrepareSchedulerConfig(dbUri string, scalingEngineUri string, tmpDir string) string {
+func (components *Components) PrepareSchedulerConfig(dbUri string, scalingEngineUri string, tmpDir string, consulPort string) string {
 	dbUrl, _ := url.Parse(dbUri)
 	scheme := dbUrl.Scheme
 	host := dbUrl.Host
@@ -259,8 +254,15 @@ client.ssl.trust-store-password=123456
 client.ssl.protocol=TLSv1.2
 #Quartz
 org.quartz.scheduler.instanceName=app-autoscaler-%d
+#consul
+spring.cloud.consul.port=%s
+spring.cloud.consul.discovery.serviceName=scheduler
+spring.cloud.consul.discovery.heartbeat.enabled=true
+spring.cloud.consul.discovery.heartbeat.ttlValue=20
+
+spring.application.name=scheduler
 `
-	settingJsonStr := fmt.Sprintf(settingStrTemplate, jdbcDBUri, userName, password, scalingEngineUri, testCertDir, testCertDir, testCertDir, components.Ports[Scheduler])
+	settingJsonStr := fmt.Sprintf(settingStrTemplate, jdbcDBUri, userName, password, scalingEngineUri, testCertDir, testCertDir, testCertDir, components.Ports[Scheduler], consulPort)
 	cfgFile, err := os.Create(filepath.Join(tmpDir, "application.properties"))
 	Expect(err).NotTo(HaveOccurred())
 	ioutil.WriteFile(cfgFile.Name(), []byte(settingJsonStr), 0777)

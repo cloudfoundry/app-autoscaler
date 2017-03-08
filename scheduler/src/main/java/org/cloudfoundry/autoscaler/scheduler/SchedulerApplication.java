@@ -2,6 +2,7 @@ package org.cloudfoundry.autoscaler.scheduler;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ImportResource;
 
@@ -12,6 +13,7 @@ import springfox.documentation.spring.web.plugins.Docket;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 @EnableSwagger2
+@EnableDiscoveryClient
 @SpringBootApplication
 @ImportResource("classpath:applicationContext.xml")
 public class SchedulerApplication {

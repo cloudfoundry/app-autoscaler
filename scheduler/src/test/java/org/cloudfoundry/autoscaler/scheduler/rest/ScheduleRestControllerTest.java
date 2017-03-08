@@ -26,12 +26,15 @@ import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationSchedules;
+import org.cloudfoundry.autoscaler.scheduler.util.ConsulUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestConfiguration;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
 import org.hamcrest.Matchers;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -78,6 +81,19 @@ public class ScheduleRestControllerTest extends TestConfiguration {
 	private MockMvc mockMvc;
 
 	private String appId = TestDataSetupHelper.generateAppIds(1)[0];
+
+	private static ConsulUtil consulUtil;
+
+	@BeforeClass
+	public static void beforeClass() throws IOException {
+		consulUtil = new ConsulUtil();
+		consulUtil.start();
+	}
+
+	@AfterClass
+	public static void afterClass() throws IOException {
+		consulUtil.stop();
+	}
 
 	@Before
 	public void before() throws Exception {

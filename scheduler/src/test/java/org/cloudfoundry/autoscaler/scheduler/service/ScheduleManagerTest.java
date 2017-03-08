@@ -11,6 +11,7 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withNoContent;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withStatus;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,6 +29,7 @@ import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.Schedules;
+import org.cloudfoundry.autoscaler.scheduler.util.ConsulUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.RecurringScheduleEntitiesBuilder;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleTypeEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.SpecificDateScheduleEntitiesBuilder;
@@ -39,7 +41,9 @@ import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHel
 import org.cloudfoundry.autoscaler.scheduler.util.error.SchedulerInternalException;
 import org.cloudfoundry.autoscaler.scheduler.util.error.ValidationErrorResult;
 import org.hamcrest.core.Is;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -100,6 +104,19 @@ public class ScheduleManagerTest extends TestConfiguration {
 
 	@Captor
 	private ArgumentCaptor<LogEvent> logCaptor;
+
+	private static ConsulUtil consulUtil;
+
+	@BeforeClass
+	public static void beforeClass() throws IOException {
+		consulUtil = new ConsulUtil();
+		consulUtil.start();
+	}
+
+	@AfterClass
+	public static void afterClass() throws IOException {
+		consulUtil.stop();
+	}
 
 	@Before
 	public void before() throws SchedulerException {
