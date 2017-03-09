@@ -15,12 +15,12 @@ module.exports = function(settingsObj) {
     }
   };
 
-  var scheduler = function(schedulerUri) {
+  var cleanupSchedulerURI = function(schedulerUri) {
     if (schedulerUri != null) {
       return schedulerUri.replace(/\/$/g, "").toLowerCase();
     }
   };
-  settingsObj.scheduler.uri = scheduler(settingsObj.scheduler.uri);
+  settingsObj.scheduler.uri = cleanupSchedulerURI(settingsObj.scheduler.uri);
   var settings = {
     port: settingsObj.port,
     username: settingsObj.username,

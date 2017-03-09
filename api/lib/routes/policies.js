@@ -7,7 +7,7 @@ module.exports = function(settings){
   var HttpStatus = require('http-status-codes');
   var validationMiddleWare = require('../validation/validationMiddleware');
   var routeHelper = require('./routeHelper')(settings.db);
-  var schedulerUtil = require('../utils/schedulerUtils')(settings);
+  var schedulerUtil = require('../utils/schedulerUtils')(settings.scheduler);
   var async = require('async');
 
   router.put('/:app_id',validationMiddleWare,function(req, res) {

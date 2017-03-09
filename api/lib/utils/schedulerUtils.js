@@ -1,17 +1,17 @@
 'use strict';
-module.exports = function(settings) {
+module.exports = function(schedulerSettings) {
   var request = require('request') ;
   var logger = require('../log/logger');
   var HttpStatus = require('http-status-codes');
   var fs = require('fs');
   var schedulerUtilObj = {};
   var schedulerTLSOptions = {
-      key: fs.readFileSync(settings.scheduler.tls.keyFile),
-      cert: fs.readFileSync(settings.scheduler.tls.certFile),
-      ca: fs.readFileSync(settings.scheduler.tls.caCertFile)
+      key: fs.readFileSync(schedulerSettings.tls.keyFile),
+      cert: fs.readFileSync(schedulerSettings.tls.certFile),
+      ca: fs.readFileSync(schedulerSettings.tls.caCertFile)
   };
   schedulerUtilObj.createOrUpdateSchedule = function createOrUpdateSchedule(req,callback) {
-    var schedulerURI = settings.scheduler.uri;
+    var schedulerURI = schedulerSettings.uri;
     if(!req.body.schedules) {
       logger.info('Policy does not have schedule info ',{ 'app id':req.params.app_id });
       callback(null);
@@ -68,7 +68,7 @@ module.exports = function(settings) {
   schedulerUtilObj.deleteSchedules = function deleteSchedules(req, callback) {
     logger.info('Deleting schedules for application',{ 'app id': req.params.app_id });
     var appId = req.params.app_id;
-    var schedulerURI = settings.scheduler.uri;
+    var schedulerURI = schedulerSettings.uri;
     var options = { 
       url: schedulerURI + '/v2/schedules/' + appId,
       method: 'DELETE',
