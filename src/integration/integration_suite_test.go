@@ -116,9 +116,6 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	dbHelper, err = sql.Open(db.PostgresDriverName, dbUrl)
 	Expect(err).NotTo(HaveOccurred())
 
-	schedulerConfPath = components.PrepareSchedulerConfig(dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), tmpDir)
-	schedulerProcess = startScheduler()
-
 	consulRunner = consulrunner.NewClusterRunner(
 		consulrunner.ClusterRunnerConfig{
 			StartingPort: components.Ports[ConsulCluster],
@@ -128,6 +125,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	)
 	consulRunner.Start()
 	consulRunner.WaitUntilReady()
+
+	schedulerConfPath = components.PrepareSchedulerConfig(dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), tmpDir, strings.Split(consulRunner.Address(), ":")[1])
+	schedulerProcess = startScheduler()
 })
 
 var _ = SynchronizedAfterSuite(func() {

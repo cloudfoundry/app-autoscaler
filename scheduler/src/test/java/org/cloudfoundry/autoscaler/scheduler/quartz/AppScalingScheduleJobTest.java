@@ -7,6 +7,7 @@ import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Matchers.notNull;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
@@ -22,6 +23,7 @@ import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.cloudfoundry.autoscaler.scheduler.dao.ActiveScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
+import org.cloudfoundry.autoscaler.scheduler.util.ConsulUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.EmbeddedTomcatUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.JobActionEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper;
@@ -98,15 +100,20 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 
 	private static EmbeddedTomcatUtil embeddedTomcatUtil;
 
+	private static ConsulUtil consulUtil;
+
 	@BeforeClass
-	public static void beforeClass() {
+	public static void beforeClass() throws IOException {
 		embeddedTomcatUtil = new EmbeddedTomcatUtil();
 		embeddedTomcatUtil.start();
 
+		consulUtil = new ConsulUtil();
+		consulUtil.start();
 	}
 
 	@AfterClass
-	public static void afterClass() {
+	public static void afterClass() throws IOException {
+		consulUtil.stop();
 		embeddedTomcatUtil.stop();
 	}
 

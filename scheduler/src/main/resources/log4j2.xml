@@ -22,7 +22,7 @@
     <Loggers>
     <!-- -==========Spring==========  -->
 		<Logger name="org.springframework.web" level="info" />
-	
+
 	<!-- -==========Hibernate==========  -->
 		<!-- Log all SQL DML statements as they are executed -->
 		<Logger name="org.hibernate.SQL" level="error" />

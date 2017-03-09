@@ -7,9 +7,11 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
@@ -23,6 +25,7 @@ import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationSchedules;
 import org.cloudfoundry.autoscaler.scheduler.util.ApplicationPolicyBuilder;
+import org.cloudfoundry.autoscaler.scheduler.util.ConsulUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.EmbeddedTomcatUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.JobActionEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.TestConfiguration;
@@ -46,6 +49,7 @@ import org.quartz.impl.matchers.GroupMatcher;
 import org.quartz.impl.matchers.NameMatcher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.embedded.LocalServerPort;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.http.MediaType;
@@ -59,6 +63,10 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
+import com.ecwid.consul.v1.ConsulClient;
+import com.ecwid.consul.v1.Response;
+import com.ecwid.consul.v1.agent.model.Check;
+import com.ecwid.consul.v1.agent.model.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RunWith(SpringRunner.class)
@@ -89,17 +97,25 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 	@Value("${autoscaler.scalingengine.url}")
 	private String scalingEngineUrl;
 
+	@LocalServerPort
+	private Integer schedulerPort;
+
 	private static EmbeddedTomcatUtil embeddedTomcatUtil;
 
+	private static ConsulUtil consulUtil;
 
 	@BeforeClass
-	public static void beforeClass() {
+	public static void beforeClass() throws IOException {
 		embeddedTomcatUtil = new EmbeddedTomcatUtil();
 		embeddedTomcatUtil.start();
+
+		consulUtil = new ConsulUtil();
+		consulUtil.start();
 	}
 
 	@AfterClass
-	public static void afterClass() {
+	public static void afterClass() throws IOException {
+		consulUtil.stop();
 		embeddedTomcatUtil.stop();
 	}
 
@@ -181,6 +197,26 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 		// Assert END Job doesn't exist
 		assertThat("It should not have any job keys.", getExistingJobKeys(), empty());
 
+	}
+
+	@Test
+	public void testRegisterSchedulerToConsulAgent() {
+		ConsulClient consulClient = new ConsulClient();
+
+		Response<Map<String, Service>> services = consulClient.getAgentServices();
+		Service service = services.getValue().get("scheduler-0");
+		assertThat(service.getService(), is("scheduler"));
+		assertThat(service.getId(), is("scheduler-0"));
+		assertThat(service.getPort(), is(schedulerPort));
+
+		Response<Map<String, Check>> checks = consulClient.getAgentChecks();
+		Check check = checks.getValue().get("service:scheduler-0");
+
+		assertThat(check.getServiceName(), is("scheduler"));
+		assertThat(check.getStatus(), is(Check.CheckStatus.PASSING));
+		assertThat(check.getName(), is("Service 'scheduler' check"));
+		assertThat(check.getCheckId(), is("service:scheduler-0"));
+		assertThat(check.getServiceId(), is("scheduler-0"));
 	}
 
 	public void createSchedule() throws Exception {
