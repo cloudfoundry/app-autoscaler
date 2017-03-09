@@ -13,7 +13,14 @@ var defaultConfig = {
     "idleTimeout": 1000,
     "uri": "postgres://postgres@server:80/dbname"
   },
-  "apiServerUri": "http://apiserveruri",
+  "apiserver": {
+    "uri": "https://autoscaler.boshlite.com",
+    "tls": {
+      "keyFile":"../test-certs/api.key",
+      "certFile":"../test-certs/api.crt",
+      "caCertFile":"../test-certs/autoscaler-ca.crt"
+      }
+  },
   "httpRequestTimeout": 5000,
   "tls": {
     "keyFile": "keyFilePath",
@@ -34,7 +41,6 @@ describe('config setting Test Suite', function() {
     expect(settings.port).to.equal(defaultConfig.port);
     expect(settings.username).to.equal(defaultConfig.username);
     expect(settings.password).to.equal(defaultConfig.password);
-    expect(settings.apiServerUri).to.equal(defaultConfig.apiServerUri);
     expect(settings.db.uri).to.equal(defaultConfig.db.uri);
     expect(settings.db.server).to.equal('postgres://postgres@server:80');
     expect(settings.db.name).to.equal('dbname');
@@ -45,6 +51,10 @@ describe('config setting Test Suite', function() {
     expect(settings.tls.keyFile).to.equal(defaultConfig.tls.keyFile);
     expect(settings.tls.certFile).to.equal(defaultConfig.tls.certFile);
     expect(settings.tls.caCertFile).to.equal(defaultConfig.tls.caCertFile);
+    expect(settings.apiserver.uri).to.equal(defaultConfig.apiserver.uri);
+    expect(settings.apiserver.tls.keyFile).to.equal(defaultConfig.apiserver.tls.keyFile);
+    expect(settings.apiserver.tls.caCertFile).to.equal(defaultConfig.apiserver.tls.caCertFile);
+    expect(settings.apiserver.tls.certFile).to.equal(defaultConfig.apiserver.tls.certFile);
   });
 
   describe('validate', function() {
@@ -204,26 +214,11 @@ describe('config setting Test Suite', function() {
         })
       });
     });
-
-    context('Validate apiServerUri', function() {
-      context('When apiServerUri is null', function() {
-        it('Should return false', function() {
-          settings.apiServerUri = null
-          expect(settings.validate().valid).to.equal(false);
-        })
-      });
-      context('When apiServerUri is undefined', function() {
-        it('Should return false', function() {
-          delete settings.apiServerUri
-          expect(settings.validate().valid).to.equal(false);
-        })
-      });
-    });
   });
 
   context('db.uri', function() {
     it('Should filter the last slash', function() {
-      var dbSetting = configSetting({ db: { uri: defaultConfig.db.uri + '/' } }).db;
+      var dbSetting = configSetting({ db: { uri: defaultConfig.db.uri + '/' },apiserver: { uri: defaultConfig.apiserver.uri, tls: defaultConfig.apiserver.tls } }).db;
       expect(dbSetting.uri).to.equal(defaultConfig.db.uri);
       expect(dbSetting.server).to.equal("postgres://postgres@server:80");
       expect(dbSetting.name).to.equal("dbname");
@@ -231,25 +226,40 @@ describe('config setting Test Suite', function() {
 
     context('When the db.uri is mixed case', function() {
       it('Should be lowercased', function() {
-        var dbSetting = configSetting({ db: { uri: defaultConfig.db.uri.toUpperCase() } }).db;
+        var dbSetting = configSetting({ db: { uri: defaultConfig.db.uri.toUpperCase() },apiserver: { uri: defaultConfig.apiserver.uri, tls: defaultConfig.apiserver.tls } }).db;
         expect(dbSetting.uri).to.equal(defaultConfig.db.uri);
       });
     });
   });
 
-  context('apiServerUri', function() {
+  context('apiserver uri', function() {
     it('Should filter the last slash', function() {
-      var apiSetting = configSetting({ apiServerUri: defaultConfig.apiServerUri + '/' }).apiServerUri;
-      expect(apiSetting).to.equal(defaultConfig.apiServerUri);
+      var apiSetting = configSetting({ apiserver : { uri: defaultConfig.apiserver.uri + '/' }}).apiserver;
+      expect(apiSetting.uri).to.equal(defaultConfig.apiserver.uri);
     });
 
-    context('When the apiServerUri is upper case', function() {
+    context('When the apiserver uri is upper case', function() {
       it('Should be lowercased', function() {
-        var apiSetting = configSetting({ apiServerUri: defaultConfig.apiServerUri.toUpperCase() }).apiServerUri;
-        expect(apiSetting).to.equal(defaultConfig.apiServerUri);
+        var apiSetting = configSetting({ apiserver : { uri: defaultConfig.apiserver.uri.toUpperCase() }}).apiserver;
+        expect(apiSetting.uri).to.equal(defaultConfig.apiserver.uri);
       });
     });
   });
+
+  context('Validate apiserver uri', function() {
+      context('When apiserver uri is null', function() {
+        it('Should return false', function() {
+          settings.apiserver.uri = null
+          expect(settings.validate().valid).to.equal(false);
+        })
+      });
+      context('When apiserver uri is undefined', function() {
+        it('Should return false', function() {
+          delete settings.apiserver.uri
+          expect(settings.validate().valid).to.equal(false);
+        })
+      });
+    });
 
   context('Validate httpRequestTimeout', function() {
       context('When httpRequestTimeout is null', function() {
@@ -343,4 +353,71 @@ describe('config setting Test Suite', function() {
       });
     });
   });
+
+context('Validate apiserver client tls.keyFile', function(){
+    context('When apiserver client tls.keyFile is null', function(){
+      it('Should return false',function(){
+        settings.apiserver.tls.keyFile = null;
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+    context('When apiserver client tls.keyFile is undefined', function(){
+      it('Should return false',function(){
+        delete settings.apiserver.tls.keyFile;
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+  });
+
+  context('Validate apiserver client tls.certFile', function(){
+    context('When apiserver client tls.certFile is null', function(){
+      it('Should return false',function(){
+        settings.apiserver.tls.certFile = null;
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+    context('When apiserver client tls.certFile is undefined', function(){
+      it('Should return false',function(){
+        delete settings.apiserver.tls.certFile;
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+  });
+
+  context('Validate apiserver client tls.caCertFile', function(){
+    context('When apiserver client tls.caCertFile is null', function(){
+      it('Should return false',function(){
+        settings.apiserver.tls.caCertFile = null;
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+    context('When apiserver client tls.caCertFile is undefined', function(){
+      it('Should return false',function(){
+        delete settings.apiserver.tls.caCertFile;
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+  });
+
+  context('Validate apiserver client tls', function(){
+    context('When apiserver client tls is null', function(){
+      it('Should return false',function(){
+        settings.apiserver.tls = null;
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+    context('When apiserver client tls  is undefined', function(){
+      it('Should return false',function(){
+        delete settings.apiserver.tls;
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+    context('When apiserver client tls is not an object', function(){
+      it('Should return false',function(){
+        settings.apiserver.tls = "notobject";
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+});
+
 });

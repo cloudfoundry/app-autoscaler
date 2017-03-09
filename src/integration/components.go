@@ -47,6 +47,10 @@ type DBConfig struct {
 	MaxConnections int    `json:"maxConnections"`
 	IdleTimeout    int    `json:"idleTimeout"`
 }
+type APIServerClient struct {
+	Uri string          `json:"uri"`
+	TLS models.TLSCerts `json:"tls"`
+}
 
 type ServiceBrokerConfig struct {
 	Port int `json:"port"`
@@ -56,7 +60,7 @@ type ServiceBrokerConfig struct {
 
 	DB DBConfig `json:"db"`
 
-	APIServerUri       string          `json:"apiServerUri"`
+	APIServerClient    APIServerClient `json:"apiserver"`
 	HttpRequestTimeout int             `json:"httpRequestTimeout"`
 	TLS                models.TLSCerts `json:"tls"`
 }
@@ -175,7 +179,14 @@ func (components *Components) PrepareServiceBrokerConfig(port int, username stri
 			MaxConnections: 10,
 			IdleTimeout:    1000,
 		},
-		APIServerUri:       apiServerUri,
+		APIServerClient: APIServerClient{
+			Uri: apiServerUri,
+			TLS: models.TLSCerts{
+				KeyFile:    filepath.Join(testCertDir, "api.key"),
+				CertFile:   filepath.Join(testCertDir, "api.crt"),
+				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			},
+		},
 		HttpRequestTimeout: int(brokerApiHttpRequestTimeout / time.Millisecond),
 		TLS: models.TLSCerts{
 			KeyFile:    filepath.Join(testCertDir, "servicebroker.key"),
