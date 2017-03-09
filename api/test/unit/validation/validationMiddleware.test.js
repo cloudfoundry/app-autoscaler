@@ -12,7 +12,7 @@ var logger = require('../../../lib/log/logger');
 var policy = require('../../../lib/models')(settings.db).policy_json;
 var validationMiddleware = require('../../../lib/validation/validationMiddleware');
 var nock = require('nock');
-var schedulerURI = settings.schedulerUri;
+var schedulerURI = settings.scheduler.uri;
 
 describe('Validate Policy JSON Schema structure', function() {
   var policyContent;

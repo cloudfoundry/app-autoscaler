@@ -15,17 +15,17 @@ module.exports = function(settingsObj) {
     }
   };
 
-  var scheduler = function(schedulerUri) {
+  var cleanupSchedulerURI = function(schedulerUri) {
     if (schedulerUri != null) {
       return schedulerUri.replace(/\/$/g, "").toLowerCase();
     }
   };
-
+  settingsObj.scheduler.uri = cleanupSchedulerURI(settingsObj.scheduler.uri);
   var settings = {
     port: settingsObj.port,
     username: settingsObj.username,
     password: settingsObj.password,
-    schedulerUri: scheduler(settingsObj.schedulerUri),
+    scheduler: settingsObj.scheduler,
     tls: settingsObj.tls
   };
   if (settingsObj.db) {
@@ -69,9 +69,6 @@ module.exports = function(settingsObj) {
     if(typeof(settings.db.uri) != "string") {
       return {valid:false,message:"dbUri is required"};
     }
-    if(typeof(settings.schedulerUri) != "string") {
-      return {valid:false,message:"schedulerUri is required"};
-    }
     if (!settings.tls) {
       return { valid: false, message: "tls is required" };
     }
@@ -86,6 +83,27 @@ module.exports = function(settingsObj) {
     }
     if (typeof(settings.tls.caCertFile) != "string") {
       return { valid: false, message: "tls.caCertFile is required" };
+    }
+    if (!settings.scheduler) {
+      return { valid: false, message: "scheduler details required" };
+    }
+    if (typeof (settings.scheduler.tls) != "object") {
+      return { valid: false, message: "scheduler.tls should be an object" };
+    }
+    if (!settings.scheduler.uri) {
+      return { valid: false, message: "scheduler uri is required" };
+    }
+    if (!settings.scheduler.tls) {
+      return { valid: false, message: "scheduler tls is required" };
+    }
+    if (!settings.scheduler.tls.keyFile) {
+      return { valid: false, message: "scheduler.tls.keyFile is required" };
+    }
+    if (!settings.scheduler.tls.caCertFile) {
+      return { valid: false, message: "scheduler.tls.caCertFile is required" };
+    }
+    if (!settings.scheduler.tls.certFile) {
+      return { valid: false, message: "scheduler.tls.certFile is required" };
     }
     return {valid:true}
   }

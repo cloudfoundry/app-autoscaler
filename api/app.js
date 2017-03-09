@@ -47,7 +47,7 @@ module.exports = function(configFilePath) {
   app.use('/health', require('express-healthcheck')());
   var server = https.createServer(options, app).listen(port || 3002, function() {
       logger.info('Autoscaler API server started',{'port':server.address().port} ); 
-      var policies = require('./lib/routes/policies')(settings, options);
+      var policies = require('./lib/routes/policies')(settings);
       app.use('/v1/policies',policies);
       app.use(function(err, req, res, next) {
         var errorResponse = {};

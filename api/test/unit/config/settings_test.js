@@ -11,7 +11,14 @@ var defaultConfig = {
     "idleTimeout": 1000,
     "uri": "postgres://postgres@server:80/dbname",
   },
-  "schedulerUri": "http://scheduleruri",
+  "scheduler": {
+    "uri": "http://scheduleruri",
+    "tls": {
+      "keyFile": "keyFilePath",
+      "certFile": "certFilePath",
+      "caCertFile": "caCertFilePath"
+    }
+  },
   "tls": {
     "keyFile": "keyFilePath",
     "certFile": "certFilePath",
@@ -31,13 +38,17 @@ describe('config setting Test Suite', function() {
     expect(settings.db.maxConnections).to.equal(defaultConfig.db.maxConnections);
     expect(settings.db.minConnections).to.equal(defaultConfig.db.minConnections);
     expect(settings.db.idleTimeout).to.equal(defaultConfig.db.idleTimeout);
-    expect(settings.apiServerUri).to.equal(defaultConfig.apiServerUri);
     expect(settings.db.uri).to.equal(defaultConfig.db.uri);
     expect(settings.db.server).to.equal('postgres://postgres@server:80');
     expect(settings.db.name).to.equal('dbname');
     expect(settings.tls.keyFile).to.equal(defaultConfig.tls.keyFile);
     expect(settings.tls.certFile).to.equal(defaultConfig.tls.certFile);
     expect(settings.tls.caCertFile).to.equal(defaultConfig.tls.caCertFile);
+    expect(settings.scheduler.uri).to.equal(defaultConfig.scheduler.uri);
+    expect(settings.scheduler.tls.keyFile).to.equal(defaultConfig.scheduler.tls.keyFile);
+    expect(settings.scheduler.tls.caCertFile).to.equal(defaultConfig.scheduler.tls.caCertFile);
+    expect(settings.scheduler.tls.certFile).to.equal(defaultConfig.scheduler.tls.certFile);
+
   });
 
   describe('validate', function() {
@@ -171,25 +182,10 @@ describe('config setting Test Suite', function() {
       });
     });
 
-    context('Validate schedulerUri', function() {
-      context('When schedulerUri is null', function() {
-        it('Should return false', function() {
-          settings.schedulerUri = null
-          expect(settings.validate().valid).to.equal(false);
-        })
-      });
-      context('When schedulerUri is undefined', function() {
-        it('Should return false', function() {
-          delete settings.schedulerUri
-          expect(settings.validate().valid).to.equal(false);
-        })
-      });
-    });
-  });
-
+    
   context('dbUri', function() {
     it('Should filter the last slash', function() {
-      var dbSetting = configSetting({ db: { uri: defaultConfig.db.uri + '/' } }).db;
+      var dbSetting = configSetting({ db: { uri: defaultConfig.db.uri + '/' }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls } }).db;
       expect(dbSetting.uri).to.equal(defaultConfig.db.uri);
       expect(dbSetting.server).to.equal("postgres://postgres@server:80");
       expect(dbSetting.name).to.equal("dbname");
@@ -197,25 +193,42 @@ describe('config setting Test Suite', function() {
 
     context('When the dbUri is mixed case', function() {
       it('Should be lowercased', function() {
-        var dbSetting = configSetting({ db: { uri:defaultConfig.db.uri.toUpperCase() } }).db;
+        var dbSetting = configSetting({ db: { uri:defaultConfig.db.uri.toUpperCase() }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls } }).db;
         expect(dbSetting.uri).to.equal(defaultConfig.db.uri);
       });
     });
   });
 
-  context('schedulerUri', function() {
+  context('scheduler uri', function() {
     it('Should filter the last slash', function() {
-      var apiSetting = configSetting({ schedulerUri: defaultConfig.schedulerUri + '/' }).schedulerUri;
-      expect(apiSetting).to.equal(defaultConfig.schedulerUri);
+      var apiSetting = configSetting({ scheduler : { uri: defaultConfig.scheduler.uri + '/' }}).scheduler;
+      expect(apiSetting.uri).to.equal(defaultConfig.scheduler.uri);
     });
 
-    context('When the schedulerUri is upper case', function() {
+    context('When the scheduler uri is upper case', function() {
       it('Should be lowercased', function() {
-        var apiSetting = configSetting({ schedulerUri: defaultConfig.schedulerUri.toUpperCase() }).schedulerUri;
-        expect(apiSetting).to.equal(defaultConfig.schedulerUri);
+        var apiSetting = configSetting({ scheduler : { uri: defaultConfig.scheduler.uri.toUpperCase() }}).scheduler;
+        expect(apiSetting.uri).to.equal(defaultConfig.scheduler.uri);
       });
     });
   });
+
+ context('Validate scheduler uri', function() {
+      context('When scheduler uri is null', function() {
+        it('Should return false', function() {
+          settings.scheduler.uri = null
+          expect(settings.validate().valid).to.equal(false);
+        })
+      });
+      context('When scheduler uri is undefined', function() {
+        it('Should return false', function() {
+          delete settings.scheduler.uri
+          expect(settings.validate().valid).to.equal(false);
+        })
+      });
+    });
+  });
+
 
   context('Validate tls', function(){
     context('When tls is null', function(){
@@ -282,4 +295,71 @@ describe('config setting Test Suite', function() {
       });
     });
   });
+  
+ context('Validate scheduler client tls.keyFile', function(){
+    context('When scheduler client tls.keyFile is null', function(){
+      it('Should return false',function(){
+        settings.scheduler.tls.keyFile = null;
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+    context('When scheduler client tls.keyFile is undefined', function(){
+      it('Should return false',function(){
+        delete settings.scheduler.tls.keyFile;
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+  });
+
+  context('Validate scheduler client tls.certFile', function(){
+    context('When scheduler client tls.certFile is null', function(){
+      it('Should return false',function(){
+        settings.scheduler.tls.certFile = null;
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+    context('When scheduler client tls.certFile is undefined', function(){
+      it('Should return false',function(){
+        delete settings.scheduler.tls.certFile;
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+  });
+
+  context('Validate scheduler client tls.caCertFile', function(){
+    context('When scheduler client tls.caCertFile is null', function(){
+      it('Should return false',function(){
+        settings.scheduler.tls.caCertFile = null;
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+    context('When scheduler client tls.caCertFile is undefined', function(){
+      it('Should return false',function(){
+        delete settings.scheduler.tls.caCertFile;
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+  });
+
+  context('Validate scheduler client tls', function(){
+    context('When scheduler client tls is null', function(){
+      it('Should return false',function(){
+        settings.scheduler.tls = null;
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+    context('When scheduler client tls  is undefined', function(){
+      it('Should return false',function(){
+        delete settings.scheduler.tls;
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+    context('When scheduler client tls is not an object', function(){
+      it('Should return false',function(){
+        settings.scheduler.tls = "notobject";
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+  });
+
 });

@@ -61,13 +61,16 @@ type ServiceBrokerConfig struct {
 	HttpRequestTimeout int             `json:"httpRequestTimeout"`
 	TLS                models.TLSCerts `json:"tls"`
 }
-
+type SchedulerClient struct {
+	Uri string          `json:"uri"`
+	TLS models.TLSCerts `json:"tls"`
+}
 type APIServerConfig struct {
 	Port int `json:"port"`
 
 	DB DBConfig `json:"db"`
 
-	SchedulerUri string `json:"schedulerUri"`
+	SchedulerClient SchedulerClient `json:"scheduler"`
 
 	TLS models.TLSCerts `json:"tls"`
 }
@@ -205,7 +208,14 @@ func (components *Components) PrepareApiServerConfig(port int, dbUri string, sch
 			IdleTimeout:    1000,
 		},
 
-		SchedulerUri: schedulerUri,
+		SchedulerClient: SchedulerClient{
+			Uri: schedulerUri,
+			TLS: models.TLSCerts{
+				KeyFile:    filepath.Join(testCertDir, "scheduler.key"),
+				CertFile:   filepath.Join(testCertDir, "scheduler.crt"),
+				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			},
+		},
 
 		TLS: models.TLSCerts{
 			KeyFile:    filepath.Join(testCertDir, "api.key"),
