@@ -23,8 +23,6 @@
     <!-- -==========Spring==========  -->
 		<Logger name="org.springframework.web" level="info" />
 
-        <Logger name="org.springframework.boot.context.embedded.tomcat" level="info"/>
-	
 	<!-- -==========Hibernate==========  -->
 		<!-- Log all SQL DML statements as they are executed -->
 		<Logger name="org.hibernate.SQL" level="error" />

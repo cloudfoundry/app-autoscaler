@@ -103,7 +103,7 @@ func (components *Components) Scheduler(confPath string, argv ...string) *ginkgo
 	return ginkgomon.New(ginkgomon.Config{
 		Name:              Scheduler,
 		AnsiColorCode:     "34m",
-		StartCheck:        "Tomcat started on port",
+		StartCheck:        "Started SchedulerApplication in",
 		StartCheckTimeout: 120 * time.Second,
 		Command: exec.Command(
 			"java", append([]string{"-jar", "-Dspring.config.location=" + confPath, "-Dserver.port=" + strconv.FormatInt(int64(components.Ports[Scheduler]), 10), components.Executables[Scheduler]}, argv...)...,
