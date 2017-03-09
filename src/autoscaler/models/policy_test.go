@@ -18,7 +18,7 @@ var _ = Describe("Policy", func() {
    "instance_max_count":5,
    "scaling_rules":[
       {
-         "metric_type":"MemoryUsage",
+         "metric_type":"memoryused",
          "stat_window_secs":300,
          "breach_duration_secs":300,
          "threshold":30,
@@ -34,7 +34,7 @@ var _ = Describe("Policy", func() {
    "instance_max_count":5,
    "scaling_rules":[
       {
-         "metric_type":"MemoryUsage",
+         "metric_type":"memoryused",
          "stat_window_secs":300,
          "breach_duration_secs":600,
          "threshold":30,
@@ -108,7 +108,7 @@ var _ = Describe("Policy", func() {
 					InstanceMin: 1,
 					ScalingRules: []*ScalingRule{
 						&ScalingRule{
-							MetricType:            "MemoryUsage",
+							MetricType:            "memoryused",
 							StatWindowSeconds:     300,
 							BreachDurationSeconds: 300,
 							CoolDownSeconds:       300,
