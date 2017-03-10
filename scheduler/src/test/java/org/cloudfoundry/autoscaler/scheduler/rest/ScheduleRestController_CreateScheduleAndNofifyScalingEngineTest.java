@@ -204,19 +204,26 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 		ConsulClient consulClient = new ConsulClient();
 
 		Response<Map<String, Service>> services = consulClient.getAgentServices();
-		Service service = services.getValue().get("scheduler-0");
+		Service service = services.getValue().get("scheduler");
 		assertThat(service.getService(), is("scheduler"));
-		assertThat(service.getId(), is("scheduler-0"));
+		assertThat(service.getId(), is("scheduler"));
 		assertThat(service.getPort(), is(schedulerPort));
 
 		Response<Map<String, Check>> checks = consulClient.getAgentChecks();
-		Check check = checks.getValue().get("service:scheduler-0");
+		Check check = checks.getValue().get("service:scheduler");
 
 		assertThat(check.getServiceName(), is("scheduler"));
 		assertThat(check.getStatus(), is(Check.CheckStatus.PASSING));
 		assertThat(check.getName(), is("Service 'scheduler' check"));
-		assertThat(check.getCheckId(), is("service:scheduler-0"));
-		assertThat(check.getServiceId(), is("scheduler-0"));
+		assertThat(check.getCheckId(), is("service:scheduler"));
+		assertThat(check.getServiceId(), is("scheduler"));
+		assertThat(check.getNode(), is("0"));
+	}
+
+	@Test
+	public void testQuartzSetting() throws SchedulerException {
+		assertThat(scheduler.getSchedulerName(), is("app-autoscaler"));
+		assertThat(scheduler.getSchedulerInstanceId(), is("scheduler-12345"));
 	}
 
 	public void createSchedule() throws Exception {

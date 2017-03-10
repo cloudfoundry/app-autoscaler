@@ -256,6 +256,8 @@ server.ssl.key-store=%s/scheduler.p12
 server.ssl.key-alias=scheduler
 server.ssl.key-store-password=123456
 server.ssl.key-store-type=PKCS12
+server.ssl.trust-store=%s/autoscaler.truststore
+server.ssl.trust-store-password=123456
 client.ssl.key-store=%s/scheduler.p12
 client.ssl.key-store-password=123456
 client.ssl.key-store-type=PKCS12
@@ -264,15 +266,18 @@ client.ssl.trust-store-password=123456
 client.ssl.protocol=TLSv1.2
 #Quartz
 org.quartz.scheduler.instanceName=app-autoscaler-%d
+org.quartz.scheduler.instanceId=app-autoscaler-%d
 #consul
 spring.cloud.consul.port=%s
 spring.cloud.consul.discovery.serviceName=scheduler
+spring.cloud.consul.discovery.instanceId=scheduler
 spring.cloud.consul.discovery.heartbeat.enabled=true
 spring.cloud.consul.discovery.heartbeat.ttlValue=20
+spring.cloud.consul.discovery.hostname=
 
 spring.application.name=scheduler
 `
-	settingJsonStr := fmt.Sprintf(settingStrTemplate, jdbcDBUri, userName, password, scalingEngineUri, testCertDir, testCertDir, testCertDir, components.Ports[Scheduler], consulPort)
+	settingJsonStr := fmt.Sprintf(settingStrTemplate, jdbcDBUri, userName, password, scalingEngineUri, testCertDir, testCertDir, testCertDir, testCertDir, components.Ports[Scheduler], components.Ports[Scheduler], consulPort)
 	cfgFile, err := os.Create(filepath.Join(tmpDir, "application.properties"))
 	Expect(err).NotTo(HaveOccurred())
 	ioutil.WriteFile(cfgFile.Name(), []byte(settingJsonStr), 0777)
