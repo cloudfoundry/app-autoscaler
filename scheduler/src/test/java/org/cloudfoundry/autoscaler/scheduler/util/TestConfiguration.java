@@ -12,6 +12,7 @@ import org.springframework.test.context.TestPropertySource;
 		"server.ssl.key-alias=test-scheduler",
 		"server.ssl.key-store-password=123456",
 		"server.ssl.key-store-type=PKCS12",
+		"server.ssl.trust-store=src/test/resources/certs/test.truststore", "server.ssl.trust-store-password=123456",
 		"client.ssl.key-store=src/test/resources/certs/test-scheduler.p12",
 		"client.ssl.key-store-password=123456",
 		"client.ssl.key-store-type=PKCS12",
@@ -19,6 +20,7 @@ import org.springframework.test.context.TestPropertySource;
 		"client.ssl.trust-store-password=123456",
 		"client.ssl.protocol=TLSv1.2", "org.quartz.scheduler.instanceName=app-autoscaler",
 		"org.quartz.scheduler.instanceId=scheduler-12345", "spring.cloud.consul.discovery.serviceName=scheduler",
+		"spring.cloud.consul.discovery.instanceId=scheduler", "spring.cloud.consul.discovery.hostname=",
 		"spring.cloud.consul.discovery.heartbeat.enabled=true",
 		"spring.cloud.consul.discovery.heartbeat.ttlValue=20", "spring.application.name=scheduler" })
 public class TestConfiguration {
