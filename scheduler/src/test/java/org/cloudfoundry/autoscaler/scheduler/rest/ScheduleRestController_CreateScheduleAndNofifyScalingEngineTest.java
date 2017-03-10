@@ -219,6 +219,12 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 		assertThat(check.getServiceId(), is("scheduler-0"));
 	}
 
+	@Test
+	public void testQuartzSetting() throws SchedulerException {
+		assertThat(scheduler.getSchedulerName(), is("app-autoscaler"));
+		assertThat(scheduler.getSchedulerInstanceId(), is("scheduler-12345"));
+	}
+
 	public void createSchedule() throws Exception {
 		LocalDateTime startTime = LocalDateTime.now().plusSeconds(70);
 		LocalDateTime endTime = LocalDateTime.now().plusSeconds(130);

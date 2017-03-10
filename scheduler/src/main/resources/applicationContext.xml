@@ -78,7 +78,7 @@
                 <prop key="org.quartz.jobStore.driverDelegateClass">org.quartz.impl.jdbcjobstore.PostgreSQLDelegate
                 </prop>
                 <prop key="org.quartz.jobStore.isClustered">true</prop>
-                <prop key="org.quartz.scheduler.instanceId">AUTO</prop>
+                <prop key="org.quartz.scheduler.instanceId">${org.quartz.scheduler.instanceId}</prop>
                 <prop key="org.quartz.threadPool.threadCount">10</prop>
             </props>
         </property>

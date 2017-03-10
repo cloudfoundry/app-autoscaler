@@ -18,7 +18,8 @@ import org.springframework.test.context.TestPropertySource;
 		"client.ssl.trust-store=src/test/resources/certs/test.truststore",
 		"client.ssl.trust-store-password=123456",
 		"client.ssl.protocol=TLSv1.2", "org.quartz.scheduler.instanceName=app-autoscaler",
-		"spring.cloud.consul.discovery.serviceName=scheduler", "spring.cloud.consul.discovery.heartbeat.enabled=true",
+		"org.quartz.scheduler.instanceId=scheduler-12345", "spring.cloud.consul.discovery.serviceName=scheduler",
+		"spring.cloud.consul.discovery.heartbeat.enabled=true",
 		"spring.cloud.consul.discovery.heartbeat.ttlValue=20", "spring.application.name=scheduler" })
 public class TestConfiguration {
 }

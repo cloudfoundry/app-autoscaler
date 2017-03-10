@@ -264,6 +264,7 @@ client.ssl.trust-store-password=123456
 client.ssl.protocol=TLSv1.2
 #Quartz
 org.quartz.scheduler.instanceName=app-autoscaler-%d
+org.quartz.scheduler.instanceId=app-autoscaler-%d
 #consul
 spring.cloud.consul.port=%s
 spring.cloud.consul.discovery.serviceName=scheduler
@@ -272,7 +273,7 @@ spring.cloud.consul.discovery.heartbeat.ttlValue=20
 
 spring.application.name=scheduler
 `
-	settingJsonStr := fmt.Sprintf(settingStrTemplate, jdbcDBUri, userName, password, scalingEngineUri, testCertDir, testCertDir, testCertDir, components.Ports[Scheduler], consulPort)
+	settingJsonStr := fmt.Sprintf(settingStrTemplate, jdbcDBUri, userName, password, scalingEngineUri, testCertDir, testCertDir, testCertDir, components.Ports[Scheduler], components.Ports[Scheduler], consulPort)
 	cfgFile, err := os.Create(filepath.Join(tmpDir, "application.properties"))
 	Expect(err).NotTo(HaveOccurred())
 	ioutil.WriteFile(cfgFile.Name(), []byte(settingJsonStr), 0777)
