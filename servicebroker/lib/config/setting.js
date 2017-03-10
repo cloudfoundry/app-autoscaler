@@ -25,7 +25,8 @@ module.exports = function(settingsObj) {
     password: settingsObj.password,
     apiServerUri: apiServer(settingsObj.apiServerUri),
     httpRequestTimeout: settingsObj.httpRequestTimeout,
-    tls: settingsObj.tls
+    tls: settingsObj.tls,
+    services: settingsObj.services
   };
   if (settingsObj.db) {
     var dbObj = db(settingsObj.db.uri);
@@ -99,9 +100,46 @@ module.exports = function(settingsObj) {
     if (typeof(settings.tls.caCertFile) != "string") {
       return { valid: false, message: "tls.caCertFile is required" };
     }
-    
+    if(!settings.services){
+        return { valid: false, message: "catalog services required" };
+    }
+    if(!Array.isArray(settings.services)){
+        return { valid: false, message: "catalog services must be an array " };
+    }
+    if(settings.services.length<=0){
+        return { valid: false, message: "catalog services array should not be empty" };
+    }
+    for(var i=0;i<settings.services.length;i++){
+      if(!settings.services[i].id){
+        return {valid: false, message:"service must have an id"}
+      }
+      if(!settings.services[i].name){
+        return {valid: false, message:"service must have a name"}
+      }
+      if(settings.services[i].bindable){
+        if(typeof(settings.services[i].bindable) !== "boolean"){
+          return {valid: false, message:"bindable parameter of catalog service should be of boolean type"}
+        }
+      }
+      if(!settings.services[i].plans){
+        return {valid: false, message:"service must have plans"}
+      }
+      if(!Array.isArray(settings.services[i].plans)){
+        return {valid: false, message:"service plans must be an array"}
+      }
+      if(settings.services[i].plans.length<=0){
+        return {valid: false, message:"service plans must be a non empty array"}
+      }
+      for(var j=0;j<settings.services[i].plans.length;j++){
+        if(!settings.services[i].plans[j].name){
+          return {valid: false, message:"service plan must have a name"}
+        }
+        if(!settings.services[i].plans[j].id){
+          return {valid: false, message:"service plan must have an id"}
+        }
+      }
+    }
     return { valid: true }
   }
-
   return settings;
 };

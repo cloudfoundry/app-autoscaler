@@ -21,15 +21,13 @@ describe('getCatalog RESTful API', function() {
   });
 
   it("should return catalog json", function(done) {
-    var catalog = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/catalog.json'), 'utf8'));
-
     supertest(server)
       .get("/v2/catalog")
       .set("Authorization", "Basic " + auth)
       .expect(200)
       .expect("Content-type", /json/)
       .end(function(err, res) {
-        expect(JSON.stringify(res.body)).to.be.equal(JSON.stringify(catalog));
+        expect(JSON.stringify(res.body)).to.be.equal(JSON.stringify(settings.services));
         done();
       });
   });
