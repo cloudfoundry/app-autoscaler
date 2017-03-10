@@ -14,16 +14,17 @@ module.exports = function(settingsObj) {
     }
   };
 
-  var apiServer = function(apiServerUri) {
+  var cleanupAPIServerURI = function(apiServerUri) {
     if (apiServerUri != null) {
       return apiServerUri.replace(/\/$/g, "").toLowerCase();
     }
   };
+  settingsObj.apiserver.uri = cleanupAPIServerURI(settingsObj.apiserver.uri);
   var settings = {
     port: settingsObj.port,
     username: settingsObj.username,
     password: settingsObj.password,
-    apiServerUri: apiServer(settingsObj.apiServerUri),
+    apiserver:settingsObj.apiserver,
     httpRequestTimeout: settingsObj.httpRequestTimeout,
     tls: settingsObj.tls
   };
@@ -75,14 +76,29 @@ module.exports = function(settingsObj) {
     if (typeof(settings.db.uri) != "string") {
       return { valid: false, message: "dbUri is required" };
     }
-    if (typeof(settings.apiServerUri) != "string") {
-      return { valid: false, message: "apiServerUri is required" };
-    }
     if (typeof(settings.httpRequestTimeout) != "number") {
       return { valid: false, message: "The httpRequestTimeout must be a number" };
     }
     if (settings.httpRequestTimeout < 0) {
       return { valid: false, message: "The value of httpRequestTimeout must be greater than 0" };
+    }
+    if (!settings.apiserver.tls) {
+      return { valid: false, message: "apiserver tls is required" };
+    }
+    if(typeof(settings.apiserver.tls) != "object"){
+      return { valid: false, message: "apiserver tls must be an object" };
+    } 
+    if(!settings.apiserver.uri){
+      return { valid: false, message: "apiserver uri is required" };
+    } 
+    if (typeof(settings.apiserver.tls.keyFile) != "string") {
+      return { valid: false, message: "apiserver tls.keyFile is required" };
+    }
+    if (typeof(settings.apiserver.tls.certFile) != "string") {
+      return { valid: false, message: "apiserver tls.certFile is required" };
+    }
+    if (typeof(settings.apiserver.tls.caCertFile) != "string") {
+      return { valid: false, message: "apiserver tls.caCertFile is required" };
     }
     if (!settings.tls) {
       return { valid: false, message: "tls is required" };

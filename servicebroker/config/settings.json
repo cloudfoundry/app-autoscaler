@@ -8,7 +8,14 @@
         "idleTimeout": 1000,
         "uri": "postgres://postgres@127.0.0.1:5432/autoscaler"
     },
-    "apiServerUri": "https://autoscaler.boshlite.com",
+    "apiserver": {
+        "uri": "https://autoscaler.boshlite.com",
+        "tls": {
+            "keyFile":"../test-certs/api.key",
+            "certFile":"../test-certs/api.crt",
+            "caCertFile":"../test-certs/autoscaler-ca.crt"
+        }
+    },
     "httpRequestTimeout": 5000,
     "tls": {
         "keyFile":"../test-certs/servicebroker.key",

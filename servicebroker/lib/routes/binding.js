@@ -1,14 +1,14 @@
 'use strict';
 
 
-module.exports = function(app, settings, tlsOptions) {
+module.exports = function(app, settings) {
   var path = require('path');
   var fs = require('fs');
   var request = require('request');
   var logger = require(path.join(__dirname, '../logger/logger.js'));
   var models = require(path.join(__dirname, '../models'))(settings.db);
 
-  var apiServerUtil = require(path.join(__dirname, '../util/apiServerUtil.js'))(settings.apiServerUri,settings.httpRequestTimeout,tlsOptions);
+  var apiServerUtil = require(path.join(__dirname, '../util/apiServerUtil.js'))(settings);
   var messageUtil = require(path.join(__dirname, '../util/messageUtil.js'))();
 
   function commitTransaction(transaction, response, statusCode, responseBody) {
