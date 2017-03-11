@@ -7,17 +7,26 @@ import (
 	"strings"
 	"time"
 
+	"code.cloudfoundry.org/locket"
+
 	"gopkg.in/yaml.v2"
 )
 
 const (
-	DefaultLoggingLevel                  = "info"
+	DefaultServerPort      int           = 8080
+	DefaultLoggingLevel    string        = "info"
 	DefaultRefreshInterval time.Duration = 24 * time.Hour
 	DefaultCutoffDays      int           = 30
+	DefaultLockTTL         time.Duration = locket.DefaultSessionTTL
+	DefaultRetryInterval   time.Duration = locket.RetryInterval
 )
 
 type LoggingConfig struct {
 	Level string `yaml:"level"`
+}
+
+type ServerConfig struct {
+	Port int `yaml:"port"`
 }
 
 type InstanceMetricsDbPrunerConfig struct {
@@ -38,11 +47,19 @@ type ScalingEngineDbPrunerConfig struct {
 	CutoffDays      int           `yaml:"cutoff_days"`
 }
 
+type LockConfig struct {
+	LockTTL             time.Duration `yaml:"lock_ttl"`
+	LockRetryInterval   time.Duration `yaml:"lock_retry_interval"`
+	ConsulClusterConfig string        `yaml:"consul_cluster_config"`
+}
+
 type Config struct {
 	Logging           LoggingConfig                 `yaml:"logging"`
 	InstanceMetricsDb InstanceMetricsDbPrunerConfig `yaml:"instance_metrics_db"`
 	AppMetricsDb      AppMetricsDbPrunerConfig      `yaml:"app_metrics_db"`
 	ScalingEngineDb   ScalingEngineDbPrunerConfig   `yaml:"scaling_engine_db"`
+	Lock              LockConfig                    `yaml:"lock"`
+	Server            ServerConfig                  `yaml:"server"`
 }
 
 var defaultDbConfig = Config{
@@ -58,6 +75,13 @@ var defaultDbConfig = Config{
 	ScalingEngineDb: ScalingEngineDbPrunerConfig{
 		RefreshInterval: DefaultRefreshInterval,
 		CutoffDays:      DefaultCutoffDays,
+	},
+	Lock: LockConfig{
+		LockRetryInterval: DefaultRetryInterval,
+		LockTTL:           DefaultLockTTL,
+	},
+	Server: ServerConfig{
+		Port: DefaultServerPort,
 	},
 }
 
@@ -115,6 +139,22 @@ func (c *Config) Validate() error {
 
 	if c.ScalingEngineDb.CutoffDays < 0 {
 		return fmt.Errorf("Configuration error: ScalingEngine DB cutoff days is negative")
+	}
+
+	if c.Lock.LockRetryInterval <= 0 {
+		return fmt.Errorf("Configuration error: lock retry interval is less than or equal to 0")
+	}
+
+	if c.Lock.LockTTL <= 0 {
+		return fmt.Errorf("Configuration error: lock ttl is less than or equal to 0")
+	}
+
+	if c.Lock.ConsulClusterConfig == "" {
+		return fmt.Errorf("Configuration error: Consul Cluster Config is empty")
+	}
+
+	if c.Server.Port <= 0 || c.Server.Port > 65535 {
+		return fmt.Errorf("Configuration error: server port is less-equal than 0 or more than 65535")
 	}
 
 	return nil
