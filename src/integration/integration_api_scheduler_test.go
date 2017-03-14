@@ -9,6 +9,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"strings"
 )
 
 var _ = Describe("Integration_Api_Scheduler", func() {
@@ -20,6 +21,9 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 	BeforeEach(func() {
 		initializeHttpClient("api.crt", "api.key", "autoscaler-ca.crt", apiSchedulerHttpRequestTimeout)
 
+		schedulerConfPath = components.PrepareSchedulerConfig(dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), tmpDir, strings.Split(consulRunner.Address(), ":")[1])
+		schedulerProcess = startScheduler()
+
 		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), tmpDir)
 		startApiServer()
 		appId = getRandomId()
@@ -30,6 +34,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 
 	AfterEach(func() {
 		stopApiServer()
+		stopScheduler(schedulerProcess)
 	})
 
 	Context("Scheduler is down", func() {

@@ -8,6 +8,7 @@ import (
 	. "integration"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -28,6 +29,9 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), cf.GrantTypePassword, tmpDir)
 		startScalingEngine()
 
+		schedulerConfPath = components.PrepareSchedulerConfig(dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), tmpDir, strings.Split(consulRunner.Address(), ":")[1])
+		schedulerProcess = startScheduler()
+
 		policyByte := readPolicyFromFile("fakePolicyWithSpecificDateSchedule.json")
 		policyStr = setPolicyDateTime(policyByte)
 
@@ -35,6 +39,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 
 	AfterEach(func() {
 		deleteSchedule(testAppId)
+		stopScheduler(schedulerProcess)
 		stopScalingEngine()
 	})
 
