@@ -2,14 +2,12 @@ package integration_test
 
 import (
 	"autoscaler/cf"
-	"code.cloudfoundry.org/cfhttp"
 	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "integration"
 	"io/ioutil"
 	"net/http"
-	"path/filepath"
 	"time"
 )
 
@@ -21,14 +19,8 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 	)
 
 	BeforeEach(func() {
-		schedulerTLSConfig, err := cfhttp.NewTLSConfig(
-			filepath.Join(testCertDir, "scheduler.crt"),
-			filepath.Join(testCertDir, "scheduler.key"),
-			filepath.Join(testCertDir, "autoscaler-ca.crt"),
-		)
-		Expect(err).NotTo(HaveOccurred())
-		httpClient.Transport.(*http.Transport).TLSClientConfig = schedulerTLSConfig
-		httpClient.Timeout = schedulerScalingEngineHttpRequestTimeout
+		initializeHttpClient("scheduler.crt", "scheduler.key", "autoscaler-ca.crt", schedulerScalingEngineHttpRequestTimeout)
+
 		testAppId = getRandomId()
 
 		startFakeCCNOAAUAA(initInstanceCount)

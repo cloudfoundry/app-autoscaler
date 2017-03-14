@@ -39,16 +39,10 @@ var _ = Describe("Integration_Api_Broker_Graceful_Shutdown", func() {
 	Describe("Shutdown", func() {
 		Context("ApiServer", func() {
 			BeforeEach(func() {
+				initializeHttpClient("api.crt", "api.key", "autoscaler-ca.crt", apiSchedulerHttpRequestTimeout)
+
 				fakeScheduler = ghttp.NewServer()
 				apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], dbUrl, fakeScheduler.URL(), tmpDir)
-				apiTLSConfig, err := cfhttp.NewTLSConfig(
-					filepath.Join(testCertDir, "api.crt"),
-					filepath.Join(testCertDir, "api.key"),
-					filepath.Join(testCertDir, "autoscaler-ca.crt"),
-				)
-				Expect(err).NotTo(HaveOccurred())
-				httpClient.Transport.(*http.Transport).TLSClientConfig = apiTLSConfig
-				httpClient.Timeout = apiSchedulerHttpRequestTimeout
 				runner = startApiServer()
 				buffer = runner.Buffer()
 			})
