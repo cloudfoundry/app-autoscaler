@@ -2,14 +2,13 @@ package integration_test
 
 import (
 	"autoscaler/cf"
-	"code.cloudfoundry.org/cfhttp"
 	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "integration"
 	"io/ioutil"
 	"net/http"
-	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -21,20 +20,17 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 	)
 
 	BeforeEach(func() {
-		schedulerTLSConfig, err := cfhttp.NewTLSConfig(
-			filepath.Join(testCertDir, "scheduler.crt"),
-			filepath.Join(testCertDir, "scheduler.key"),
-			filepath.Join(testCertDir, "autoscaler-ca.crt"),
-		)
-		Expect(err).NotTo(HaveOccurred())
-		httpClient.Transport.(*http.Transport).TLSClientConfig = schedulerTLSConfig
-		httpClient.Timeout = schedulerScalingEngineHttpRequestTimeout
+		initializeHttpClient("scheduler.crt", "scheduler.key", "autoscaler-ca.crt", schedulerScalingEngineHttpRequestTimeout)
+
 		testAppId = getRandomId()
 
 		startFakeCCNOAAUAA(initInstanceCount)
 
 		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), cf.GrantTypePassword, tmpDir)
 		startScalingEngine()
+
+		schedulerConfPath = components.PrepareSchedulerConfig(dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), tmpDir, strings.Split(consulRunner.Address(), ":")[1])
+		schedulerProcess = startScheduler()
 
 		policyByte := readPolicyFromFile("fakePolicyWithSpecificDateSchedule.json")
 		policyStr = setPolicyDateTime(policyByte)
@@ -43,6 +39,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 
 	AfterEach(func() {
 		deleteSchedule(testAppId)
+		stopScheduler(schedulerProcess)
 		stopScalingEngine()
 	})
 
