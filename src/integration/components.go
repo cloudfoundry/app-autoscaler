@@ -29,6 +29,7 @@ const (
 	EventGenerator   = "eventGenerator"
 	ScalingEngine    = "scalingEngine"
 	ConsulCluster    = "consulCluster"
+	ServiceCatalog   = "serviceCatalog"
 )
 
 var testCertDir string = "../../test-certs"
@@ -64,6 +65,23 @@ type ServiceBrokerConfig struct {
 	HttpRequestTimeout int             `json:"httpRequestTimeout"`
 	TLS                models.TLSCerts `json:"tls"`
 }
+type Service struct {
+	Id          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Bindable    bool   `json:"bindable"`
+	Plans       []Plan `json:"plans"`
+}
+
+type Plan struct {
+	Id          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
+type ServiceCatalogConfig struct {
+	Services []Service `json:"services"`
+}
 type SchedulerClient struct {
 	Uri string          `json:"uri"`
 	TLS models.TLSCerts `json:"tls"`
@@ -78,14 +96,14 @@ type APIServerConfig struct {
 	TLS models.TLSCerts `json:"tls"`
 }
 
-func (components *Components) ServiceBroker(confPath string, argv ...string) *ginkgomon.Runner {
+func (components *Components) ServiceBroker(confPath string, catalogPath string, argv ...string) *ginkgomon.Runner {
 	return ginkgomon.New(ginkgomon.Config{
 		Name:              ServiceBroker,
 		AnsiColorCode:     "32m",
 		StartCheck:        "Service broker app is running",
 		StartCheckTimeout: 10 * time.Second,
 		Command: exec.Command(
-			"node", append([]string{components.Executables[ServiceBroker], "-c", confPath}, argv...)...,
+			"node", append([]string{components.Executables[ServiceBroker], "-c", confPath, "-sc", catalogPath}, argv...)...,
 		),
 		Cleanup: func() {
 		},
@@ -198,6 +216,32 @@ func (components *Components) PrepareServiceBrokerConfig(port int, username stri
 	cfgFile, err := ioutil.TempFile(tmpDir, ServiceBroker)
 	w := json.NewEncoder(cfgFile)
 	err = w.Encode(brokerConfig)
+	Expect(err).NotTo(HaveOccurred())
+	cfgFile.Close()
+	return cfgFile.Name()
+}
+
+func (components *Components) PrepareServiceCatalogConfig(servicename string, serviceid string, planname string, planid string, tmpDir string) string {
+	serviceCatalogConfig := ServiceCatalogConfig{
+		[]Service{
+			{
+				Id:          serviceid,
+				Name:        servicename,
+				Description: "Automatically increase or decrease the number of application instances based on a policy you define",
+				Bindable:    true,
+				Plans: []Plan{
+					{
+						Id:          planid,
+						Name:        planname,
+						Description: "This is the free service plan for the Auto-Scaling service",
+					},
+				},
+			},
+		},
+	}
+	cfgFile, err := ioutil.TempFile(tmpDir, ServiceCatalog)
+	w := json.NewEncoder(cfgFile)
+	err = w.Encode(serviceCatalogConfig)
 	Expect(err).NotTo(HaveOccurred())
 	cfgFile.Close()
 	return cfgFile.Name()

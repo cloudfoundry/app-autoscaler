@@ -1,5 +1,5 @@
 'use strict';
-module.exports = function(configFilePath) {
+module.exports = function(configFilePath,catalogPath) {
     var https = require('https')
     var express = require('express');
     var basicAuth = require('basic-auth');
@@ -10,7 +10,11 @@ module.exports = function(configFilePath) {
         logger.error("Invalid configuration file path: " + configFilePath);
         throw new Error('configuration file does not exist:' + configFilePath);
     }
-
+    if (!catalogPath || !fs.existsSync(catalogPath)) {
+        logger.error("Invalid service catalog file path: " + catalogPath);
+        throw new Error('service catalog file does not exist:' + catalogPath);
+    }
+    var catalog = JSON.parse(fs.readFileSync(catalogPath, 'utf8'))
     var logger = require(path.join(__dirname, './logger/logger.js'));
     var settings = require(path.join(__dirname, './config/setting.js'))((JSON.parse(
         fs.readFileSync(configFilePath, 'utf8'))));
@@ -65,7 +69,7 @@ module.exports = function(configFilePath) {
     app.use(auth);
     app.use(bodyParser.urlencoded({ extended: true }));
     app.use(bodyParser.json());
-    require('./routes')(app, settings);
+    require('./routes')(app, settings,catalog);
 
 
     var server = https.createServer(options, app).listen(port, function() {

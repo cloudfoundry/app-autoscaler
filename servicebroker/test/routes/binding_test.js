@@ -10,6 +10,8 @@ var fs = require('fs');
 var path = require('path');
 var BrokerServer = require(path.join(__dirname, '../../lib/server.js'));
 var configFilePath = path.join(__dirname, '../../config/settings.json');
+var catalogFilePath = path.join(__dirname, '../../config/catalog.json');
+var catalog = JSON.parse(fs.readFileSync(catalogFilePath), 'utf8');
 var settings = require(path.join(__dirname, '../../lib/config/setting.js'))((JSON.parse(
   fs.readFileSync(configFilePath, 'utf8'))));
 
@@ -18,7 +20,7 @@ var serviceInstance = models.service_instance;
 var binding = models.binding;
 
 var auth = new Buffer(settings.username + ":" + settings.password).toString('base64');
-var messageUtil = require(path.join(__dirname, '../../lib/util/messageUtil.js'))()
+var messageUtil = require(path.join(__dirname, '../../lib/util/messageUtil.js'))(catalog)
 var scope;
 
 var VALIDATION_ERROR_FROM_API_SERVER = "validation error from apiserver";
@@ -76,7 +78,7 @@ describe('binding RESTful API', function() {
   };
   var policy = { "policy": "testPolicy" };
   before(function(done) {
-    server = BrokerServer(configFilePath);
+    server = BrokerServer(configFilePath,catalogFilePath);
     done();
   });
   after(function(done) {

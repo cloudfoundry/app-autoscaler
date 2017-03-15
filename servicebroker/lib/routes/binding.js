@@ -1,7 +1,7 @@
 'use strict';
 
 
-module.exports = function(app, settings) {
+module.exports = function(app, settings, catalog) {
   var path = require('path');
   var fs = require('fs');
   var request = require('request');
@@ -9,7 +9,7 @@ module.exports = function(app, settings) {
   var models = require(path.join(__dirname, '../models'))(settings.db);
 
   var apiServerUtil = require(path.join(__dirname, '../util/apiServerUtil.js'))(settings);
-  var messageUtil = require(path.join(__dirname, '../util/messageUtil.js'))();
+  var messageUtil = require(path.join(__dirname, '../util/messageUtil.js'))(catalog);
 
   function commitTransaction(transaction, response, statusCode, responseBody) {
     transaction.commit().then(function(res) {

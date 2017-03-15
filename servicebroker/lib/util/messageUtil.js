@@ -1,9 +1,7 @@
 'use strict';
 var path = require('path');
 var fs = require('fs');
-var catalog = JSON.parse(
-  fs.readFileSync(path.join(__dirname, '../../config/catalog.json'), 'utf8'));
-module.exports = function(){
+module.exports = function(catalog){
   var messageUtil = {};
   var message = {
     SERVICEINSTANCE_NOT_EXIST: "Target service instance ${serviceInstanceId} does not exist",
