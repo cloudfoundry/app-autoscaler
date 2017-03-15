@@ -22,6 +22,7 @@ import org.springframework.test.context.TestPropertySource;
 		"org.quartz.scheduler.instanceId=scheduler-12345", "spring.cloud.consul.discovery.serviceName=scheduler",
 		"spring.cloud.consul.discovery.instanceId=scheduler", "spring.cloud.consul.discovery.hostname=",
 		"spring.cloud.consul.discovery.heartbeat.enabled=true",
-		"spring.cloud.consul.discovery.heartbeat.ttlValue=20", "spring.application.name=scheduler" })
+		"spring.cloud.consul.discovery.heartbeat.ttlValue=20", "spring.application.name=scheduler",
+		"spring.mvc.servlet.load-on-startup=1" })
 public class TestConfiguration {
 }
