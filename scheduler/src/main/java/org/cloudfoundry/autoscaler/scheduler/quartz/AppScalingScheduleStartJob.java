@@ -55,9 +55,6 @@ abstract class AppScalingScheduleStartJob extends AppScalingScheduleJob {
 					activeScheduleEntity.getId(), jobStart);
 			logger.info(executingMessage);
 
-			String appId = activeScheduleEntity.getAppId();
-
-			deleteExistingActiveSchedule(jobExecutionContext, appId);
 			// Save new active schedule
 			saveActiveSchedule(jobExecutionContext, activeScheduleEntity);
 
@@ -70,24 +67,22 @@ abstract class AppScalingScheduleStartJob extends AppScalingScheduleJob {
 	@Transactional
 	private void deleteExistingActiveSchedule(JobExecutionContext jobExecutionContext, String appId)
 			throws JobExecutionException {
-		JobDataMap jobDataMap = jobExecutionContext.getJobDetail().getJobDataMap();
-		boolean activeScheduleTableCreateTaskDone = jobDataMap.getBoolean(ScheduleJobHelper.ACTIVE_SCHEDULE_TABLE_CREATE_TASK_DONE);
-		if (!activeScheduleTableCreateTaskDone) {
-			// Delete existing active schedules from database
-			try {
-				int activeScheduleDeleted = activeScheduleDao.deleteActiveSchedulesByAppId(appId);
-				logger.info("Deleted " + activeScheduleDeleted + " existing active schedules for application id :"
-						+ appId + " before creating new active schedule.");
-			} catch (DatabaseValidationException dve) {
-				String errorMessage = messageBundleResourceHelper
-						.lookupMessage("database.error.delete.activeschedules.failed", dve.getMessage(), appId);
-				logger.error(errorMessage, dve);
 
-				handleJobRescheduling(jobExecutionContext, ScheduleJobHelper.RescheduleCount.ACTIVE_SCHEDULE,
-						maxJobRescheduleCount);
-				throw new JobExecutionException(errorMessage, dve);
-			}
+		// Delete existing active schedules from database
+		try {
+			int activeScheduleDeleted = activeScheduleDao.deleteActiveSchedulesByAppId(appId);
+			logger.info("Deleted " + activeScheduleDeleted + " existing active schedules for application id :"
+					+ appId + " before creating new active schedule.");
+		} catch (DatabaseValidationException dve) {
+			String errorMessage = messageBundleResourceHelper
+					.lookupMessage("database.error.delete.activeschedules.failed", dve.getMessage(), appId);
+			logger.error(errorMessage, dve);
+
+			handleJobRescheduling(jobExecutionContext, ScheduleJobHelper.RescheduleCount.ACTIVE_SCHEDULE,
+					maxJobRescheduleCount);
+			throw new JobExecutionException(errorMessage, dve);
 		}
+
 	}
 
 	@Transactional
@@ -96,7 +91,7 @@ abstract class AppScalingScheduleStartJob extends AppScalingScheduleJob {
 		JobDataMap jobDataMap = jobExecutionContext.getJobDetail().getJobDataMap();
 		boolean activeScheduleTableCreateTaskDone = jobDataMap.getBoolean(ScheduleJobHelper.ACTIVE_SCHEDULE_TABLE_CREATE_TASK_DONE);
 		if (!activeScheduleTableCreateTaskDone) {
-
+			deleteExistingActiveSchedule(jobExecutionContext, activeScheduleEntity.getAppId());
 			try {
 				activeScheduleDao.create(activeScheduleEntity);
 				jobDataMap.put(ScheduleJobHelper.ACTIVE_SCHEDULE_TABLE_CREATE_TASK_DONE, true);
