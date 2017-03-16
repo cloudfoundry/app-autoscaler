@@ -33,6 +33,7 @@ import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.TestJobListener;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
+import org.hamcrest.Matchers;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -169,6 +170,7 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
 		assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), is(Level.INFO));
+		assertThat("It should have no active schedule", testDataDbUtil.getNumberOfActiveSchedulesByAppId(appId), Matchers.is(0L));
 
 	}
 

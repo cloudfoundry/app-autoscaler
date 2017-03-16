@@ -71,8 +71,8 @@ abstract class AppScalingScheduleStartJob extends AppScalingScheduleJob {
 	private void deleteExistingActiveSchedule(JobExecutionContext jobExecutionContext, String appId)
 			throws JobExecutionException {
 		JobDataMap jobDataMap = jobExecutionContext.getJobDetail().getJobDataMap();
-		boolean activeScheduleTableTaskDone = jobDataMap.getBoolean(ScheduleJobHelper.ACTIVE_SCHEDULE_TABLE_TASK_DONE);
-		if (!activeScheduleTableTaskDone) {
+		boolean activeScheduleTableCreateTaskDone = jobDataMap.getBoolean(ScheduleJobHelper.ACTIVE_SCHEDULE_TABLE_CREATE_TASK_DONE);
+		if (!activeScheduleTableCreateTaskDone) {
 			// Delete existing active schedules from database
 			try {
 				int activeScheduleDeleted = activeScheduleDao.deleteActiveSchedulesByAppId(appId);
@@ -94,12 +94,12 @@ abstract class AppScalingScheduleStartJob extends AppScalingScheduleJob {
 	private void saveActiveSchedule(JobExecutionContext jobExecutionContext, ActiveScheduleEntity activeScheduleEntity)
 			throws JobExecutionException {
 		JobDataMap jobDataMap = jobExecutionContext.getJobDetail().getJobDataMap();
-		boolean activeScheduleTableTaskDone = jobDataMap.getBoolean(ScheduleJobHelper.ACTIVE_SCHEDULE_TABLE_TASK_DONE);
-		if (!activeScheduleTableTaskDone) {
+		boolean activeScheduleTableCreateTaskDone = jobDataMap.getBoolean(ScheduleJobHelper.ACTIVE_SCHEDULE_TABLE_CREATE_TASK_DONE);
+		if (!activeScheduleTableCreateTaskDone) {
 
 			try {
 				activeScheduleDao.create(activeScheduleEntity);
-				jobDataMap.put(ScheduleJobHelper.ACTIVE_SCHEDULE_TABLE_TASK_DONE, true);
+				jobDataMap.put(ScheduleJobHelper.ACTIVE_SCHEDULE_TABLE_CREATE_TASK_DONE, true);
 			} catch (DatabaseValidationException dve) {
 
 				String errorMessage = messageBundleResourceHelper.lookupMessage(
@@ -119,6 +119,7 @@ abstract class AppScalingScheduleStartJob extends AppScalingScheduleJob {
 		JobDataMap jobDataMap = jobExecutionContext.getJobDetail().getJobDataMap();
 		if (!jobDataMap.getBoolean(ScheduleJobHelper.CREATE_END_JOB_TASK_DONE)) {
 			jobDataMap.put(ScheduleJobHelper.START_JOB_IDENTIFIER, startJobIdentifier);
+
 			Long scheduleId = jobDataMap.getLong(ScheduleJobHelper.SCHEDULE_ID);
 			String keyName = scheduleId + JobActionEnum.END.getJobIdSuffix() + "_" + startJobIdentifier;
 

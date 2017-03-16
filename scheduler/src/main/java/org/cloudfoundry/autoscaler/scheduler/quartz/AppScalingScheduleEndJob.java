@@ -43,12 +43,12 @@ public class AppScalingScheduleEndJob extends AppScalingScheduleJob {
 		long scheduleId = jobDataMap.getLong(ScheduleJobHelper.SCHEDULE_ID);
 		long startJobIdentifier = jobDataMap.getLong(ScheduleJobHelper.START_JOB_IDENTIFIER);
 
-		boolean activeScheduleTableTaskDone = jobDataMap.getBoolean(ScheduleJobHelper.ACTIVE_SCHEDULE_TABLE_TASK_DONE);
+		boolean activeScheduleTableDeleteTaskDone = jobDataMap.getBoolean(ScheduleJobHelper.ACTIVE_SCHEDULE_TABLE_DELETE_TASK_DONE);
 
-		if (!activeScheduleTableTaskDone) {
+		if (!activeScheduleTableDeleteTaskDone) {
 			try {
 				activeScheduleDao.delete(scheduleId, startJobIdentifier);
-				jobDataMap.put(ScheduleJobHelper.ACTIVE_SCHEDULE_TABLE_TASK_DONE, true);
+				jobDataMap.put(ScheduleJobHelper.ACTIVE_SCHEDULE_TABLE_DELETE_TASK_DONE, true);
 			} catch (DatabaseValidationException dve) {
 				String errorMessage = messageBundleResourceHelper.lookupMessage(
 						"database.error.delete.activeschedule.failed", dve.getMessage(), appId, scheduleId);
