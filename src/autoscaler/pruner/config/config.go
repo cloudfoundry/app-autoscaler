@@ -25,10 +25,6 @@ type LoggingConfig struct {
 	Level string `yaml:"level"`
 }
 
-type ServerConfig struct {
-	Port int `yaml:"port"`
-}
-
 type InstanceMetricsDbPrunerConfig struct {
 	DbUrl           string        `yaml:"db_url"`
 	RefreshInterval time.Duration `yaml:"refresh_interval"`
@@ -59,7 +55,6 @@ type Config struct {
 	AppMetricsDb      AppMetricsDbPrunerConfig      `yaml:"app_metrics_db"`
 	ScalingEngineDb   ScalingEngineDbPrunerConfig   `yaml:"scaling_engine_db"`
 	Lock              LockConfig                    `yaml:"lock"`
-	Server            ServerConfig                  `yaml:"server"`
 }
 
 var defaultDbConfig = Config{
@@ -79,9 +74,6 @@ var defaultDbConfig = Config{
 	Lock: LockConfig{
 		LockRetryInterval: DefaultRetryInterval,
 		LockTTL:           DefaultLockTTL,
-	},
-	Server: ServerConfig{
-		Port: DefaultServerPort,
 	},
 }
 
@@ -151,10 +143,6 @@ func (c *Config) Validate() error {
 
 	if c.Lock.ConsulClusterConfig == "" {
 		return fmt.Errorf("Configuration error: Consul Cluster Config is empty")
-	}
-
-	if c.Server.Port <= 0 || c.Server.Port > 65535 {
-		return fmt.Errorf("Configuration error: server port is less-equal than 0 or more than 65535")
 	}
 
 	return nil

@@ -66,7 +66,6 @@ func initConsul() {
 
 func initConfig() {
 	cfg.Logging.Level = "debug"
-	cfg.Server.Port = 8081 + GinkgoParallelNode()
 
 	cfg.InstanceMetricsDb.DbUrl = os.Getenv("DBURL")
 	cfg.InstanceMetricsDb.RefreshInterval = 12 * time.Hour

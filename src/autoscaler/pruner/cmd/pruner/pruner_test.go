@@ -53,7 +53,6 @@ var _ = Describe("Pruner", func() {
 				&api.AgentService{
 					Service: "pruner",
 					ID:      "pruner",
-					Port:    cfg.Server.Port,
 				}))
 		})
 

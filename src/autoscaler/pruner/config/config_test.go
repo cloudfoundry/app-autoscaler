@@ -225,8 +225,6 @@ lock:
 		BeforeEach(func() {
 			conf = &config.Config{}
 
-			conf.Server.Port = 8181
-
 			conf.InstanceMetricsDb.DbUrl = "postgres://pqgotest:password@exampl.com/pqgotest"
 			conf.InstanceMetricsDb.RefreshInterval = 12 * time.Hour
 			conf.InstanceMetricsDb.CutoffDays = 30
@@ -384,28 +382,6 @@ lock:
 
 			It("should error", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: Consul Cluster Config is empty")))
-			})
-		})
-
-		Context("when server port <= 0", func() {
-
-			BeforeEach(func() {
-				conf.Server.Port = 0
-			})
-
-			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: server port is less-equal than 0 or more than 65535")))
-			})
-		})
-
-		Context("when server port > 65535", func() {
-
-			BeforeEach(func() {
-				conf.Server.Port = 65536
-			})
-
-			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: server port is less-equal than 0 or more than 65535")))
 			})
 		})
 

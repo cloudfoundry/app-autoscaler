@@ -99,7 +99,7 @@ func main() {
 		conf.Lock.LockTTL,
 	)
 
-	registrationRunner := initializeRegistrationRunner(logger, consulClient, conf.Server.Port, prClock)
+	registrationRunner := initializeRegistrationRunner(logger, consulClient, prClock)
 
 	members := grouper.Members{
 		{"lock-maintainer", lockMaintainer},
@@ -153,11 +153,9 @@ func getLogLevel(level string) (lager.LogLevel, error) {
 func initializeRegistrationRunner(
 	logger lager.Logger,
 	consulClient consuladapter.Client,
-	port int,
 	clock clock.Clock) ifrit.Runner {
 	registration := &api.AgentServiceRegistration{
 		Name: "pruner",
-		Port: port,
 		Check: &api.AgentServiceCheck{
 			TTL: "20s",
 		},
