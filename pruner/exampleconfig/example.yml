@@ -8,3 +8,7 @@ app_metrics_db:
   db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
   refresh_interval: 12h
   cutoff_days: 30
+lock:
+  lock_ttl: 15s
+  lock_retry_interval: 10s
+  consul_cluster_config: http://127.0.0.1:8500

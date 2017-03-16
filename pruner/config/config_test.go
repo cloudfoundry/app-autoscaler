@@ -42,6 +42,8 @@ scaling_engine_db:
   db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
   refresh_interval: 36h
   cutoff_days: 30
+lock:
+  consul_cluster_config: "http://127.0.0.1:8500"
 `)
 			})
 
@@ -67,6 +69,8 @@ scaling_engine_db:
   db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
   refresh_interval: 36h
   cutoff_days: 30s
+lock:
+  consul_cluster_config: "http://127.0.0.1:8500"
 `)
 			})
 
@@ -92,6 +96,10 @@ scaling_engine_db:
   db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
   refresh_interval: 36h
   cutoff_days: 30
+lock:
+  lock_ttl: 15s
+  lock_retry_interval: 10s
+  consul_cluster_config: "http://127.0.0.1:8500"
 `)
 			})
 
@@ -112,6 +120,10 @@ scaling_engine_db:
 				Expect(conf.ScalingEngineDb.RefreshInterval).To(Equal(36 * time.Hour))
 				Expect(conf.ScalingEngineDb.CutoffDays).To(Equal(30))
 
+				Expect(conf.Lock.LockTTL).To(Equal(15 * time.Second))
+				Expect(conf.Lock.LockRetryInterval).To(Equal(10 * time.Second))
+				Expect(conf.Lock.ConsulClusterConfig).To(Equal("http://127.0.0.1:8500"))
+
 			})
 		})
 
@@ -123,7 +135,9 @@ instance_metrics_db:
 app_metrics_db:
   db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
 scaling_engine_db:
-  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"  
+  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable" 
+lock:
+  consul_cluster_config: "http://127.0.0.1:8500" 
 `)
 			})
 
@@ -140,6 +154,68 @@ scaling_engine_db:
 
 				Expect(conf.ScalingEngineDb.RefreshInterval).To(Equal(config.DefaultRefreshInterval))
 				Expect(conf.ScalingEngineDb.CutoffDays).To(Equal(config.DefaultCutoffDays))
+
+				Expect(conf.Lock.ConsulClusterConfig).To(Equal("http://127.0.0.1:8500"))
+				Expect(conf.Lock.LockTTL).To(Equal(config.DefaultLockTTL))
+				Expect(conf.Lock.LockRetryInterval).To(Equal(config.DefaultRetryInterval))
+			})
+		})
+
+		Context("when it gives a non integer lock ttl", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: "debug"
+instance_metrics_db:
+  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  refresh_interval: 12h
+  cutoff_days: 10
+app_metrics_db:
+  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  refresh_interval: 24h
+  cutoff_days: 20
+scaling_engine_db:
+  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  refresh_interval: 36h
+  cutoff_days: 30s
+lock:
+  lock_ttl: NON-INTEGER-VALUE
+  lock_retry_interval: 10s
+  consul_cluster_config: "http://127.0.0.1:8500"
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
+			})
+		})
+
+		Context("when it gives a non integer lock retry interval", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: "debug"
+instance_metrics_db:
+  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  refresh_interval: 12h
+  cutoff_days: 10
+app_metrics_db:
+  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  refresh_interval: 24h
+  cutoff_days: 20
+scaling_engine_db:
+  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  refresh_interval: 36h
+  cutoff_days: 30s
+lock:
+  lock_ttl: 15s
+  lock_retry_interval: NON-INTEGER-VALUE
+  consul_cluster_config: "http://127.0.0.1:8500"
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
 			})
 		})
 
@@ -160,6 +236,10 @@ scaling_engine_db:
 			conf.ScalingEngineDb.DbUrl = "postgres://pqgotest:password@exampl.com/pqgotest"
 			conf.ScalingEngineDb.RefreshInterval = 36 * time.Hour
 			conf.ScalingEngineDb.CutoffDays = 20
+
+			conf.Lock.LockTTL = 15 * time.Second
+			conf.Lock.LockRetryInterval = 10 * time.Second
+			conf.Lock.ConsulClusterConfig = "http://127.0.0.1:8500"
 
 		})
 
@@ -269,6 +349,39 @@ scaling_engine_db:
 
 			It("should error", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: ScalingEngine DB cutoff days is negative")))
+			})
+		})
+
+		Context("when Lock ttl value in seconds is set to a negative value", func() {
+
+			BeforeEach(func() {
+				conf.Lock.LockTTL = -10
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: lock ttl is less than or equal to 0")))
+			})
+		})
+
+		Context("when Lock retry interval value in seconds is set to a negative value", func() {
+
+			BeforeEach(func() {
+				conf.Lock.LockRetryInterval = -15
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: lock retry interval is less than or equal to 0")))
+			})
+		})
+
+		Context("when Consul Cluster Config is not set", func() {
+
+			BeforeEach(func() {
+				conf.Lock.ConsulClusterConfig = ""
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: Consul Cluster Config is empty")))
 			})
 		})
 
