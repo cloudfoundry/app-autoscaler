@@ -7,6 +7,9 @@ import (
 	"testing"
 	"time"
 
+	"code.cloudfoundry.org/consuladapter/consulrunner"
+	"code.cloudfoundry.org/locket"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
@@ -16,9 +19,10 @@ import (
 )
 
 var (
-	prPath     string
-	cfg        config.Config
-	configFile *os.File
+	prPath       string
+	cfg          config.Config
+	configFile   *os.File
+	consulRunner *consulrunner.ClusterRunner
 )
 
 func TestPruner(t *testing.T) {
@@ -33,7 +37,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	return []byte(pr)
 }, func(pathsByte []byte) {
 	prPath = string(pathsByte)
-
+	initConsul()
 	initConfig()
 
 	configFile = writeConfig(&cfg)
@@ -41,9 +45,24 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 var _ = SynchronizedAfterSuite(func() {
 	os.Remove(configFile.Name())
+	if consulRunner != nil {
+		consulRunner.Stop()
+	}
 }, func() {
 	gexec.CleanupBuildArtifacts()
 })
+
+func initConsul() {
+	consulRunner = consulrunner.NewClusterRunner(
+		consulrunner.ClusterRunnerConfig{
+			StartingPort: 9001 + GinkgoParallelNode()*consulrunner.PortOffsetLength,
+			NumNodes:     1,
+			Scheme:       "http",
+		},
+	)
+	consulRunner.Start()
+	consulRunner.WaitUntilReady()
+}
 
 func initConfig() {
 	cfg.Logging.Level = "debug"
@@ -59,6 +78,10 @@ func initConfig() {
 	cfg.ScalingEngineDb.DbUrl = os.Getenv("DBURL")
 	cfg.ScalingEngineDb.RefreshInterval = 12 * time.Hour
 	cfg.ScalingEngineDb.CutoffDays = 20
+
+	cfg.Lock.ConsulClusterConfig = consulRunner.ConsulCluster()
+	cfg.Lock.LockRetryInterval = locket.RetryInterval
+	cfg.Lock.LockTTL = locket.DefaultSessionTTL
 }
 
 func writeConfig(c *config.Config) *os.File {
@@ -77,13 +100,17 @@ func writeConfig(c *config.Config) *os.File {
 }
 
 type PrunerRunner struct {
-	configPath string
-	Session    *gexec.Session
+	configPath        string
+	startCheck        string
+	acquiredLockCheck string
+	Session           *gexec.Session
 }
 
 func NewPrunerRunner() *PrunerRunner {
 	return &PrunerRunner{
-		configPath: configFile.Name(),
+		configPath:        configFile.Name(),
+		startCheck:        "pruner.started",
+		acquiredLockCheck: "pruner.lock.acquire-lock-succeeded",
 	}
 }
 

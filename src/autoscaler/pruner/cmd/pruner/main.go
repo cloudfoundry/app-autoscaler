@@ -10,7 +10,11 @@ import (
 	"autoscaler/pruner/config"
 
 	"code.cloudfoundry.org/clock"
+	"code.cloudfoundry.org/consuladapter"
 	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/locket"
+	"github.com/hashicorp/consul/api"
+	uuid "github.com/nu7hatch/gouuid"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
@@ -81,10 +85,28 @@ func main() {
 	scalingEngineDbPruner := pruner.NewScalingEngineDbPruner(scalingEngineDb, conf.ScalingEngineDb.CutoffDays, prClock, logger.Session(prunerLoggerSessionName))
 	scalingEngineDbPrunerRunner := pruner.NewDbPrunerRunner(scalingEngineDbPruner, conf.ScalingEngineDb.RefreshInterval, prClock, logger.Session(prunerLoggerSessionName))
 
+	consulClient, err := consuladapter.NewClientFromUrl(conf.Lock.ConsulClusterConfig)
+	if err != nil {
+		logger.Fatal("new consul client failed", err)
+	}
+
+	serviceClient := pruner.NewServiceClient(consulClient, prClock)
+
+	lockMaintainer := serviceClient.NewPrunerLockRunner(
+		logger,
+		generateGUID(logger),
+		conf.Lock.LockRetryInterval,
+		conf.Lock.LockTTL,
+	)
+
+	registrationRunner := initializeRegistrationRunner(logger, consulClient, prClock)
+
 	members := grouper.Members{
+		{"lock-maintainer", lockMaintainer},
 		{"instancemetrics-dbpruner", instanceMetricsDbPrunerRunner},
 		{"appmetrics-dbpruner", appMetricsDbPrunerRunner},
 		{"scalingEngine-dbpruner", scalingEngineDbPrunerRunner},
+		{"registration", registrationRunner},
 	}
 
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
@@ -126,4 +148,25 @@ func getLogLevel(level string) (lager.LogLevel, error) {
 	default:
 		return -1, fmt.Errorf("Error: unsupported log level:%s", level)
 	}
+}
+
+func initializeRegistrationRunner(
+	logger lager.Logger,
+	consulClient consuladapter.Client,
+	clock clock.Clock) ifrit.Runner {
+	registration := &api.AgentServiceRegistration{
+		Name: "pruner",
+		Check: &api.AgentServiceCheck{
+			TTL: "20s",
+		},
+	}
+	return locket.NewRegistrationRunner(logger, registration, consulClient, locket.RetryInterval, clock)
+}
+
+func generateGUID(logger lager.Logger) string {
+	uuid, err := uuid.NewV4()
+	if err != nil {
+		logger.Fatal("Couldn't generate uuid", err)
+	}
+	return uuid.String()
 }
