@@ -13,7 +13,6 @@ import (
 )
 
 const (
-	DefaultServerPort      int           = 8080
 	DefaultLoggingLevel    string        = "info"
 	DefaultRefreshInterval time.Duration = 24 * time.Hour
 	DefaultCutoffDays      int           = 30
