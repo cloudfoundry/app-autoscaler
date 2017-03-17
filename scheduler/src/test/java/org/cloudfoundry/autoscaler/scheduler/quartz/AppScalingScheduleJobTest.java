@@ -187,7 +187,6 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		JobDataMap actualJobDataMap = jobDetailArgumentCaptor.getValue().getJobDataMap();
 		assertTrue(actualJobDataMap.getBoolean(ScheduleJobHelper.ACTIVE_SCHEDULE_TABLE_CREATE_TASK_DONE));
 		assertTrue(actualJobDataMap.getBoolean(ScheduleJobHelper.CREATE_END_JOB_TASK_DONE));
-		assertFalse(actualJobDataMap.getBoolean(ScheduleJobHelper.ACTIVE_SCHEDULE_TABLE_DELETE_TASK_DONE));
 
 		Long startJobIdentifier = jobDetailArgumentCaptor.getValue().getJobDataMap()
 				.getLong(ScheduleJobHelper.START_JOB_IDENTIFIER);
