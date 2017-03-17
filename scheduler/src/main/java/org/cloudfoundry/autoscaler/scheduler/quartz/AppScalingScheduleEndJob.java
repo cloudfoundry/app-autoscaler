@@ -43,24 +43,18 @@ public class AppScalingScheduleEndJob extends AppScalingScheduleJob {
 		long scheduleId = jobDataMap.getLong(ScheduleJobHelper.SCHEDULE_ID);
 		long startJobIdentifier = jobDataMap.getLong(ScheduleJobHelper.START_JOB_IDENTIFIER);
 
-		boolean activeScheduleTableTaskDone = jobDataMap.getBoolean(ScheduleJobHelper.ACTIVE_SCHEDULE_TABLE_TASK_DONE);
+		try {
+			activeScheduleDao.delete(scheduleId, startJobIdentifier);
+		} catch (DatabaseValidationException dve) {
+			String errorMessage = messageBundleResourceHelper.lookupMessage(
+					"database.error.delete.activeschedule.failed", dve.getMessage(), appId, scheduleId);
+			logger.error(errorMessage, dve);
 
-		if (!activeScheduleTableTaskDone) {
-			try {
-				activeScheduleDao.delete(scheduleId, startJobIdentifier);
-				jobDataMap.put(ScheduleJobHelper.ACTIVE_SCHEDULE_TABLE_TASK_DONE, true);
-			} catch (DatabaseValidationException dve) {
-				String errorMessage = messageBundleResourceHelper.lookupMessage(
-						"database.error.delete.activeschedule.failed", dve.getMessage(), appId, scheduleId);
-				logger.error(errorMessage, dve);
+			//Reschedule Job
+			handleJobRescheduling(jobExecutionContext, ScheduleJobHelper.RescheduleCount.ACTIVE_SCHEDULE,
+					maxJobRescheduleCount);
 
-				//Reschedule Job
-				handleJobRescheduling(jobExecutionContext, ScheduleJobHelper.RescheduleCount.ACTIVE_SCHEDULE,
-						maxJobRescheduleCount);
-
-				throw new JobExecutionException(errorMessage, dve);
-			}
-
+			throw new JobExecutionException(errorMessage, dve);
 		}
 	}
 }

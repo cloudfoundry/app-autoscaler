@@ -247,7 +247,7 @@ public class TestDataSetupHelper {
 
 		jobDataMap.put(ScheduleJobHelper.RescheduleCount.ACTIVE_SCHEDULE.name(), 1);
 		jobDataMap.put(ScheduleJobHelper.RescheduleCount.SCALING_ENGINE_NOTIFICATION.name(), 1);
-		jobDataMap.put(ScheduleJobHelper.ACTIVE_SCHEDULE_TABLE_TASK_DONE, false);
+		jobDataMap.put(ScheduleJobHelper.ACTIVE_SCHEDULE_TABLE_CREATE_TASK_DONE, false);
 		jobDataMap.put(ScheduleJobHelper.CREATE_END_JOB_TASK_DONE, false);
 
 		return jobDataMap;

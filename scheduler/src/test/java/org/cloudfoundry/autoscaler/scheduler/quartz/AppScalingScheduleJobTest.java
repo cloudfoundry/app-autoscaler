@@ -1,6 +1,7 @@
 package org.cloudfoundry.autoscaler.scheduler.quartz;
 
 import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyObject;
@@ -182,6 +183,10 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 
 		Mockito.verify(scheduler, Mockito.times(1)).scheduleJob(jobDetailArgumentCaptor.capture(),
 				triggerArgumentCaptor.capture());
+
+		JobDataMap actualJobDataMap = jobDetailArgumentCaptor.getValue().getJobDataMap();
+		assertTrue(actualJobDataMap.getBoolean(ScheduleJobHelper.ACTIVE_SCHEDULE_TABLE_CREATE_TASK_DONE));
+		assertTrue(actualJobDataMap.getBoolean(ScheduleJobHelper.CREATE_END_JOB_TASK_DONE));
 
 		Long startJobIdentifier = jobDetailArgumentCaptor.getValue().getJobDataMap()
 				.getLong(ScheduleJobHelper.START_JOB_IDENTIFIER);

@@ -42,7 +42,7 @@ public class ScheduleJobHelper {
 	public static final String START_JOB_IDENTIFIER = "startJobIdentifier";
 	public static final String END_JOB_START_TIME = "endJobStartTime";
 	public static final String END_JOB_CRON_EXPRESSION = "endJobCronExpression";
-	public static final String ACTIVE_SCHEDULE_TABLE_TASK_DONE = "activeScheduleTableTask";
+	public static final String ACTIVE_SCHEDULE_TABLE_CREATE_TASK_DONE = "activeScheduleTableCreateTask";
 	public static final String CREATE_END_JOB_TASK_DONE = "endJobScheduleTask";
 
 	public static JobDetail buildJob(JobKey jobKey, Class<? extends Job> classType) {

@@ -57,12 +57,12 @@ class ScheduleJobManager {
 		// Build the job
 		JobKey startJobKey = new JobKey(keyName, ScheduleTypeEnum.SPECIFIC_DATE.getScheduleIdentifier());
 
-		JobDetail startJobDetail = ScheduleJobHelper.buildJob(startJobKey,
+		JobDetail jobDetail = ScheduleJobHelper.buildJob(startJobKey,
 				AppScalingSpecificDateScheduleStartJob.class);
 
 		// Set the data in JobDetail for informing the scaling engine that scaling job needs to be started
-		setupCommonScalingData(startJobDetail, specificDateScheduleEntity);
-		setupSpecificDateScheduleScalingData(startJobDetail, specificDateScheduleEntity.getEndDateTime());
+		setupCommonScalingData(jobDetail, specificDateScheduleEntity);
+		setupSpecificDateScheduleScalingData(jobDetail, specificDateScheduleEntity.getEndDateTime());
 
 		// Build the trigger
 		TimeZone policyTimeZone = TimeZone.getTimeZone(specificDateScheduleEntity.getTimeZone());
@@ -75,7 +75,7 @@ class ScheduleJobManager {
 
 		// Schedule the job
 		try {
-			scheduler.scheduleJob(startJobDetail, jobStartTrigger);
+			scheduler.scheduleJob(jobDetail, jobStartTrigger);
 
 		} catch (SchedulerException se) {
 
@@ -136,7 +136,7 @@ class ScheduleJobManager {
 
 		jobDataMap.put(ScheduleJobHelper.RescheduleCount.ACTIVE_SCHEDULE.name(), 1);
 		jobDataMap.put(ScheduleJobHelper.RescheduleCount.SCALING_ENGINE_NOTIFICATION.name(), 1);
-		jobDataMap.put(ScheduleJobHelper.ACTIVE_SCHEDULE_TABLE_TASK_DONE, false);
+		jobDataMap.put(ScheduleJobHelper.ACTIVE_SCHEDULE_TABLE_CREATE_TASK_DONE, false);
 		jobDataMap.put(ScheduleJobHelper.CREATE_END_JOB_TASK_DONE, false);
 	}
 
