@@ -110,7 +110,7 @@ func (components *Components) Scheduler(confPath string, argv ...string) *ginkgo
 	return ginkgomon.New(ginkgomon.Config{
 		Name:              Scheduler,
 		AnsiColorCode:     "34m",
-		StartCheck:        "Started SchedulerApplication in",
+		StartCheck:        "Scheduler is ready to start",
 		StartCheckTimeout: 120 * time.Second,
 		Command: exec.Command(
 			"java", append([]string{"-jar", "-Dspring.config.location=" + confPath, "-Dserver.port=" + strconv.FormatInt(int64(components.Ports[Scheduler]), 10), components.Executables[Scheduler]}, argv...)...,
@@ -287,6 +287,7 @@ spring.cloud.consul.discovery.heartbeat.ttlValue=20
 spring.cloud.consul.discovery.hostname=
 
 spring.application.name=scheduler
+spring.mvc.servlet.load-on-startup=1
 `
 	settingJsonStr := fmt.Sprintf(settingStrTemplate, jdbcDBUri, userName, password, scalingEngineUri, testCertDir, testCertDir, testCertDir, testCertDir, components.Ports[Scheduler], components.Ports[Scheduler], consulPort)
 	cfgFile, err := os.Create(filepath.Join(tmpDir, "application.properties"))
