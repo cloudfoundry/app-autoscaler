@@ -307,6 +307,11 @@ func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) er
 		return err
 	}
 
+	if policy == nil {
+		history.Status = models.ScalingStatusIgnored
+		return nil
+	}
+
 	newInstances := instances
 	if newInstances < policy.InstanceMin {
 		newInstances = policy.InstanceMin

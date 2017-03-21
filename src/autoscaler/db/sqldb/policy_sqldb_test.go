@@ -112,7 +112,7 @@ var _ = Describe("PolicySQLDB", func() {
 			insertPolicy("an-app-id", &models.ScalingPolicy{
 				InstanceMin: 1,
 				InstanceMax: 6,
-				ScalingRules: []*models.ScalingRule{&models.ScalingRule{
+				ScalingRules: []*models.ScalingRule{{
 					MetricType:            models.MetricNameMemory,
 					StatWindowSeconds:     120,
 					BreachDurationSeconds: 180,
@@ -123,7 +123,7 @@ var _ = Describe("PolicySQLDB", func() {
 			insertPolicy("another-app-id", &models.ScalingPolicy{
 				InstanceMin: 2,
 				InstanceMax: 8,
-				ScalingRules: []*models.ScalingRule{&models.ScalingRule{
+				ScalingRules: []*models.ScalingRule{{
 					MetricType:            models.MetricNameMemory,
 					StatWindowSeconds:     120,
 					BreachDurationSeconds: 300,
@@ -152,7 +152,7 @@ var _ = Describe("PolicySQLDB", func() {
 				Expect(*scalingPolicy).To(Equal(models.ScalingPolicy{
 					InstanceMin: 1,
 					InstanceMax: 6,
-					ScalingRules: []*models.ScalingRule{&models.ScalingRule{
+					ScalingRules: []*models.ScalingRule{{
 						MetricType:            models.MetricNameMemory,
 						StatWindowSeconds:     120,
 						BreachDurationSeconds: 180,
@@ -169,8 +169,9 @@ var _ = Describe("PolicySQLDB", func() {
 				appId = "non-existent-app"
 			})
 
-			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("sql: no rows in result set")))
+			It("should return nil", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(scalingPolicy).To(BeNil())
 			})
 		})
 	})
