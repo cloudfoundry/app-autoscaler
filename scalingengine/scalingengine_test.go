@@ -904,6 +904,19 @@ var _ = Describe("ScalingEngine", func() {
 			})
 		})
 
+		Context("when no policy for app in policy db", func() {
+			BeforeEach(func() {
+				scalingEngineDB.GetActiveScheduleReturns(&models.ActiveSchedule{ScheduleId: "a-schedule-id"}, nil)
+				policyDB.GetAppPolicyReturns(nil, nil)
+			})
+
+			It("should not have any error", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(cfc.SetAppInstancesCallCount()).To(BeZero())
+				Expect(scalingEngineDB.RemoveActiveScheduleCallCount()).To(Equal(1))
+			})
+		})
+
 		Context("when setting instance number fails", func() {
 			BeforeEach(func() {
 				scalingEngineDB.GetActiveScheduleReturns(&models.ActiveSchedule{ScheduleId: "a-schedule-id"}, nil)
