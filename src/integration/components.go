@@ -33,6 +33,8 @@ const (
 
 var testCertDir string = "../../test-certs"
 
+var serviceCatalogPath string = "../../servicebroker/config/catalog.json"
+
 type Executables map[string]string
 type Ports map[string]int
 
@@ -63,6 +65,7 @@ type ServiceBrokerConfig struct {
 	APIServerClient    APIServerClient `json:"apiserver"`
 	HttpRequestTimeout int             `json:"httpRequestTimeout"`
 	TLS                models.TLSCerts `json:"tls"`
+	ServiceCatalogPath string          `json:"serviceCatalogPath"`
 }
 type SchedulerClient struct {
 	Uri string          `json:"uri"`
@@ -193,6 +196,7 @@ func (components *Components) PrepareServiceBrokerConfig(port int, username stri
 			CertFile:   filepath.Join(testCertDir, "servicebroker.crt"),
 			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 		},
+		ServiceCatalogPath: serviceCatalogPath,
 	}
 
 	cfgFile, err := ioutil.TempFile(tmpDir, ServiceBroker)

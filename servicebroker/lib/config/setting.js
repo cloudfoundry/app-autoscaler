@@ -26,7 +26,8 @@ module.exports = function(settingsObj) {
     password: settingsObj.password,
     apiserver:settingsObj.apiserver,
     httpRequestTimeout: settingsObj.httpRequestTimeout,
-    tls: settingsObj.tls
+    tls: settingsObj.tls,
+    serviceCatalogPath:settingsObj.serviceCatalogPath
   };
   if (settingsObj.db) {
     var dbObj = db(settingsObj.db.uri);
@@ -115,7 +116,9 @@ module.exports = function(settingsObj) {
     if (typeof(settings.tls.caCertFile) != "string") {
       return { valid: false, message: "tls.caCertFile is required" };
     }
-    
+    if (!settings.serviceCatalogPath) {
+      return {valid: false, message: "serviceCatalogPath is required"}
+    }
     return { valid: true }
   }
 
