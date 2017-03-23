@@ -7,9 +7,22 @@ import (
 	"bytes"
 	. "integration"
 
+	"code.cloudfoundry.org/cfhttp"
+	"code.cloudfoundry.org/consuladapter/consulrunner"
+	"code.cloudfoundry.org/lager"
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/cloudfoundry/sonde-go/events"
+	"github.com/gogo/protobuf/proto"
+	_ "github.com/lib/pq"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
+	"github.com/onsi/gomega/ghttp"
+	"github.com/tedsuo/ifrit"
+	"github.com/tedsuo/ifrit/ginkgomon"
+	"github.com/tedsuo/ifrit/grouper"
 	"io/ioutil"
 	"log"
 	"mime/multipart"
@@ -24,20 +37,6 @@ import (
 	"syscall"
 	"testing"
 	"time"
-
-	"code.cloudfoundry.org/cfhttp"
-	"code.cloudfoundry.org/consuladapter/consulrunner"
-	"code.cloudfoundry.org/lager"
-	"github.com/cloudfoundry/sonde-go/events"
-	"github.com/gogo/protobuf/proto"
-	_ "github.com/lib/pq"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gexec"
-	"github.com/onsi/gomega/ghttp"
-	"github.com/tedsuo/ifrit"
-	"github.com/tedsuo/ifrit/ginkgomon"
-	"github.com/tedsuo/ifrit/grouper"
 )
 
 var (
@@ -46,11 +45,6 @@ var (
 	isTokenExpired           bool
 	eLock                    *sync.Mutex
 	serviceBrokerConfPath    string
-	serviceCatalogPath       string
-	serviceName              string = "autoscaler"
-	serviceId                string = "autoscaler-guid"
-	planName                 string = "autoscaler-free-plan"
-	planId                   string = "autoscaler-free-plan-id"
 	apiServerConfPath        string
 	schedulerConfPath        string
 	metricsCollectorConfPath string
@@ -192,7 +186,7 @@ func startApiServer() *ginkgomon.Runner {
 }
 
 func startServiceBroker() *ginkgomon.Runner {
-	runner := components.ServiceBroker(serviceBrokerConfPath, serviceCatalogPath)
+	runner := components.ServiceBroker(serviceBrokerConfPath)
 	processMap[ServiceBroker] = ginkgomon.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
 		{ServiceBroker, runner},
 	}))

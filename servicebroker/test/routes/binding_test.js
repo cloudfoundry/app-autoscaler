@@ -10,8 +10,7 @@ var fs = require('fs');
 var path = require('path');
 var BrokerServer = require(path.join(__dirname, '../../lib/server.js'));
 var configFilePath = path.join(__dirname, '../../config/settings.json');
-var catalogFilePath = path.join(__dirname, '../../config/catalog.json');
-var catalog = JSON.parse(fs.readFileSync(catalogFilePath), 'utf8');
+var catalog = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/catalog.json'), 'utf8'));
 var settings = require(path.join(__dirname, '../../lib/config/setting.js'))((JSON.parse(
   fs.readFileSync(configFilePath, 'utf8'))));
 
@@ -78,7 +77,7 @@ describe('binding RESTful API', function() {
   };
   var policy = { "policy": "testPolicy" };
   before(function(done) {
-    server = BrokerServer(configFilePath,catalogFilePath);
+    server = BrokerServer(configFilePath);
     done();
   });
   after(function(done) {

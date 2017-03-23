@@ -26,7 +26,8 @@ var defaultConfig = {
     "keyFile": "keyFilePath",
     "certFile": "certFilePath",
     "caCertFile": "caCertFilePath"
-  }
+  },
+  "serviceCatalogPath" : "catalogPath"
 }
 
 var settingTmp = {};
@@ -55,6 +56,7 @@ describe('config setting Test Suite', function() {
     expect(settings.apiserver.tls.keyFile).to.equal(defaultConfig.apiserver.tls.keyFile);
     expect(settings.apiserver.tls.caCertFile).to.equal(defaultConfig.apiserver.tls.caCertFile);
     expect(settings.apiserver.tls.certFile).to.equal(defaultConfig.apiserver.tls.certFile);
+    expect(settings.serviceCatalogPath).to.equal(defaultConfig.serviceCatalogPath);
   });
 
   describe('validate', function() {
@@ -419,5 +421,20 @@ context('Validate apiserver client tls.keyFile', function(){
       });
     });
 });
+
+context('Validate Service Catalog', function(){
+    context('When catalogPath is null', function(){
+      it('Should return false',function(){
+        settings.serviceCatalogPath = null;
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+    context('When catalogPath is undefined', function(){
+      it('Should return false',function(){
+        delete settings.serviceCatalogPath;
+        expect(settings.validate().valid).to.equal(false)
+      });
+    });
+  });
 
 });
