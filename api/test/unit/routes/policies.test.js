@@ -5,6 +5,7 @@ var request = require('supertest');
 var expect = require('chai').expect;
 var fs = require('fs');
 var path = require('path');
+var uuidV4 = require('uuid/v4');
 var settings = require(path.join(__dirname, '../../../lib/config/setting.js'))((JSON.parse(
   fs.readFileSync(path.join(__dirname, '../../../config/settings.json'), 'utf8'))));
 var API = require('../../../app.js');
@@ -42,6 +43,7 @@ describe('Routing Policy Creation', function() {
       expect(result.body.success).to.equal(true);
       expect(result.body.error).to.be.null;
       expect(result.body.result.policy_json).eql(fakePolicy);
+      expect(result.body.result.guid).to.not.be.null;
       done();
     });
   });
@@ -80,15 +82,20 @@ describe('Routing Policy Creation', function() {
   });
   
   context('when a policy already exists' ,function() {
+    var initialGuid;
+
     beforeEach(function(done) {
       nock(schedulerURI)
       .put('/v2/schedules/12345')
       .reply(200);
       request(app)
       .put('/v1/policies/12345')
-      .send(fakePolicy).end(done)
-
+      .send(fakePolicy).end(function(error, result) {
+        initialGuid = result.body.result.guid;
+        done();
+      })
     });
+
     it('should update the existing policy for app id 12345', function(done) {
       nock(schedulerURI)
       .put('/v2/schedules/12345')
@@ -101,6 +108,7 @@ describe('Routing Policy Creation', function() {
         expect(result.body.success).to.equal(true);
         expect(result.body.result[0].policy_json).eql(fakePolicy);
         expect(result.body.error).to.be.null;
+        expect(result.body.result[0].guid).to.not.eql(initialGuid);
         done();
       });
     });
@@ -114,6 +122,7 @@ describe('Routing Policy Creation', function() {
         done();
       });    
     });
+
     it('should successfully delete the policy with app id 12345',function(done){
       nock(schedulerURI)
       .delete('/v2/schedules/12345')
