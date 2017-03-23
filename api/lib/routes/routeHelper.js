@@ -9,7 +9,7 @@ module.exports = function(dbSettings){
   get any error during the schedule creation/update. */
     models.policy_json.findOrCreate({ where:{ app_id: req.params.app_id },
       defaults: { app_id: req.params.app_id,
-      policy_json: req.body } })
+      policy_json: req.body, guid: req.query.policy_guid } })
       .spread(function(result, created) {
         if(created) {
           logger.info('No policy exists, creating policy..',{ 'app id': req.params.app_id });  
@@ -19,7 +19,8 @@ module.exports = function(dbSettings){
           logger.info('Updating the existing policy',{ 'app id': req.params.app_id });
           models.policy_json.update({
             app_id: req.params.app_id,
-            policy_json: req.body
+            policy_json: req.body,
+            guid: req.query.policy_guid
           },{ where: { app_id: req.params.app_id } ,returning:true }).then(function(result) {
             callback(null, { 'statusCode':HttpStatus.OK,'response':result[1] });
           }).catch(function(error) {

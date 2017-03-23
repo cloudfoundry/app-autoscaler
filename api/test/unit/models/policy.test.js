@@ -3,6 +3,7 @@ var expect = require('chai').expect;
 var fs = require('fs');
 var path = require('path');
 var moment = require('moment');
+var uuidV4 = require('uuid/v4');
 var logger = require('../../../lib/log/logger');
 var settings = require(path.join(__dirname, '../../../lib/config/setting.js'))((JSON.parse(
   fs.readFileSync(path.join(__dirname, '../../../config/settings.json'), 'utf8'))));
@@ -21,17 +22,17 @@ describe('Create a Policy', function() {
     });
 
     it('Should create a policy for app id 99999 successfully', function() {
-      return policy.create({ 'policy_json':fakePolicy, 'app_id': '99999' })
+      return policy.create({ 'policy_json':fakePolicy, 'app_id': '99999', 'guid': uuidV4() })
       .then(function(policy) {
         expect(policy.policy_json).to.deep.equal(fakePolicy);
-        expect(policy).to.have.property('updated_at').to.not.be.null;
+        expect(policy).to.have.property('guid').to.not.be.null;
       });
     });
 
     it('Should fail to create a policy with duplicate app_id 99999', function(done) {
-      policy.create({ 'policy_json':fakePolicy, 'app_id': '99999' })
+      policy.create({ 'policy_json':fakePolicy, 'app_id': '99999', 'guid': uuidV4() })
         .then(function(savedPolicy) {
-        policy.create({ 'policy_json':fakePolicy, 'app_id': '99999' })
+        policy.create({ 'policy_json':fakePolicy, 'app_id': '99999', 'guid': uuidV4() })
         .catch(function(error) {
             expect(error).to.not.be.null;
             expect(error).to.have.deep.property('name').equal('SequelizeUniqueConstraintError');
@@ -48,18 +49,15 @@ describe('Create a Policy', function() {
     });
 
     it('Create a policy with app_id 99999 and then updates the policy for the same', function(done) {
-        policy.create({ 'policy_json':fakePolicy, 'app_id': '99999' })
+        policy.create({ 'policy_json':fakePolicy, 'app_id': '99999', 'guid': uuidV4() })
           .then(function(createdPolicy) {
-            expect(createdPolicy).to.have.property('updated_at').to.not.be.null;
+            expect(createdPolicy).to.have.property('guid').to.not.be.null;
             setTimeout(function(){
-              policy.update({ 'policy_json':fakePolicy, 'app_id': '99999' },{ where: { app_id: '99999' } ,returning:true})
+              policy.update({ 'policy_json':fakePolicy, 'app_id': '99999', 'guid': uuidV4() },{ where: { app_id: '99999' } ,returning:true})
                 .then(function(result) {
                   var updatedPolicy = result[1][0];
                   expect(updatedPolicy.policy_json).to.deep.equal(fakePolicy);
-                  expect(updatedPolicy).to.have.property('updated_at').to.not.be.null;
-                  // Ensure the updated timestamp isAfter created timestamp
-                  expect(moment(moment(updatedPolicy.updated_at).format('YYYY-MM-DDTHH:mm:ss'))
-                      .isAfter(moment(createdPolicy.updated_at).format('YYYY-MM-DDTHH:mm:ss'))).to.equal(true);
+                  expect(updatedPolicy).to.have.property('guid').to.not.be.null;
                   done();
               });
             }, 1000);
