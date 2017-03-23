@@ -9,9 +9,12 @@ module.exports = function(settings){
   var routeHelper = require('./routeHelper')(settings.db);
   var schedulerUtil = require('../utils/schedulerUtils')(settings.scheduler);
   var async = require('async');
+  var uuidV4 = require('uuid/v4');
 
   router.put('/:app_id',validationMiddleWare,function(req, res) {
     logger.info('Policy creation request received',{ 'app id': req.params.app_id });
+    req.query.policy_guid = uuidV4();
+    logger.info('Policy guid ' + req.query.policy_guid);
     async.waterfall([async.apply(schedulerUtil.createOrUpdateSchedule, req),
       async.apply(routeHelper.createOrUpdatePolicy, req)],
       function(error, result) {
