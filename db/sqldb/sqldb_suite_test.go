@@ -82,8 +82,8 @@ func insertPolicy(appId string, scalingPolicy *models.ScalingPolicy) {
 		Fail("failed to marshall scaling policy" + e.Error())
 	}
 
-	query := "INSERT INTO policy_json(app_id, policy_json) VALUES($1, $2)"
-	_, e = dbHelper.Exec(query, appId, string(policyJson))
+	query := "INSERT INTO policy_json(app_id, policy_json, guid) VALUES($1, $2, $3)"
+	_, e = dbHelper.Exec(query, appId, string(policyJson), "1234")
 
 	if e != nil {
 		Fail("can not insert data to table policy_json: " + e.Error())
