@@ -142,8 +142,8 @@ func initDB() {
 		      }
 		   ]
 		}`
-	query := "INSERT INTO policy_json(app_id, policy_json) values($1, $2)"
-	_, err = egDB.Exec(query, testAppId, policy)
+	query := "INSERT INTO policy_json(app_id, policy_json, guid) values($1, $2, $3)"
+	_, err = egDB.Exec(query, testAppId, policy, "1234")
 	Expect(err).NotTo(HaveOccurred())
 
 	err = egDB.Close()
