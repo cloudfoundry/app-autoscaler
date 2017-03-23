@@ -44,3 +44,25 @@ databaseChangeLog:
         - rollback:
             DROP FUNCTION get_last_updated()
             DROP TRIGGER update_last_updated_at_policy_db ON policy_json;
+   - changeSet:
+      id: 2
+      author: qibobo
+      changes:
+        - sql:
+            DROP TRIGGER update_last_updated_at_policy_db ON policy_json;
+            DROP FUNCTION get_last_updated()
+        - rollback:
+
+        - dropColumn:
+            tableName: policy_json
+            columnName: updated_at
+        - addColumn:
+            tableName: policy_json
+            columns:
+            - column:
+                name: guid
+                type: varchar(50)
+                constraints:
+                  nullable: false
+
+

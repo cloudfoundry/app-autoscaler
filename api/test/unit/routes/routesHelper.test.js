@@ -4,6 +4,7 @@ var request = require('supertest');
 var expect = require('chai').expect;
 var fs = require('fs');
 var path = require('path');
+var uuidV4 = require('uuid/v4');
 var settings = require(path.join(__dirname, '../../../lib/config/setting.js'))((JSON.parse(
   fs.readFileSync(path.join(__dirname, '../../../config/settings.json'), 'utf8'))));
 var API = require('../../../app.js');
@@ -34,7 +35,8 @@ describe('Policy Route helper ', function() {
     	it('should create with schedules for app id 12345',function(done){
     		var mockRequest = {
     				body : fakePolicy,
-    				params : { 'app_id' : '12345' }
+    				params : { 'app_id' : '12345' },
+    				query : { 'policy_guid' : uuidV4()}
     		};
 
     		routeHelper.createOrUpdatePolicy(mockRequest, function(error,result){
@@ -48,7 +50,8 @@ describe('Policy Route helper ', function() {
     		//Mocking a request without any app_id in the request param
     		var mockRequest = {
     				body : fakePolicy,
-    				params : { 'key' : 'value' }
+    				params : { 'key' : 'value' },
+    				query : { 'policy_guid' : uuidV4()}
     		};
     		routeHelper.createOrUpdatePolicy(mockRequest, function(error,result){
     			expect(error).not.to.be.null;
@@ -62,7 +65,8 @@ describe('Policy Route helper ', function() {
     		delete fakePolicy.schedules;
     		var mockRequest = {
     				body : fakePolicy,
-    				params : { 'app_id' : '12346' }
+    				params : { 'app_id' : '12346' },
+    				query : { 'policy_guid' : uuidV4()}
     		};
 
     		routeHelper.createOrUpdatePolicy(mockRequest, function(error,result){
@@ -78,7 +82,8 @@ describe('Policy Route helper ', function() {
     	it('should return a 404 for app id 12345 which does not exist',function(done){
     		var mockRequest = {
     				body : fakePolicy,
-    				params : { 'app_id' : '12345' }
+    				params : { 'app_id' : '12345' },
+    				query : { 'policy_guid' : uuidV4()}
     		};
     		var app_id = '12345';
     		routeHelper.deletePolicy(mockRequest, function(error){
@@ -94,7 +99,8 @@ describe('Policy Route helper ', function() {
 		beforeEach(function(done){
 			var mockRequest = {
 					body : fakePolicy,
-					params : { 'app_id' : '12348' }
+					params : { 'app_id' : '12348' },
+    				query : { 'policy_guid' : uuidV4()}
 			};
 			routeHelper.createOrUpdatePolicy(mockRequest, function(error,result){
 				done();
@@ -104,7 +110,8 @@ describe('Policy Route helper ', function() {
 		it('should update with schedules',function(done){
 			var mockRequest = {
 					params : { 'app_id' : '12348' },
-					body: fakePolicy
+					body: fakePolicy,
+    				query : { 'policy_guid' : uuidV4()}
 			};
 			
 			routeHelper.createOrUpdatePolicy(mockRequest, function(error,result){
@@ -117,7 +124,8 @@ describe('Policy Route helper ', function() {
 		it('should fail to update with schedules due to an internal error',function(done){
 			//Mocking a request without any policy_json in the request body
 			var mockRequest = {
-					params : { 'app_id' : '12348' }
+					params : { 'app_id' : '12348' },
+    				query : { 'policy_guid' : uuidV4()}
 			};
 			
 			routeHelper.createOrUpdatePolicy(mockRequest, function(error,result){
@@ -133,7 +141,8 @@ describe('Policy Route helper ', function() {
 		beforeEach(function(done){
 			var mockRequest = {
 					body : fakePolicy,
-					params : { 'app_id' : '12348' }
+					params : { 'app_id' : '12348' },
+    				query : { 'policy_guid' : uuidV4()}
 			};
 
 			routeHelper.createOrUpdatePolicy(mockRequest, function(error,result){

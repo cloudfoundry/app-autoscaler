@@ -12,9 +12,10 @@ module.exports = function(sequelize, DataTypes) {
       field: 'policy_json',
       allowNull: false
     },
-    updated_at: {
-      type: DataTypes.DATE,
-      field: 'updated_at'
+    guid: {
+      type: DataTypes.STRING,
+      field: 'guid',
+      allowNull: false
     }
   },{
     timestamps: false,
