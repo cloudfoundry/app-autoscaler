@@ -107,7 +107,7 @@ var _ = SynchronizedBeforeSuite(
  			"instance_min_count": 1,
   			"instance_max_count": 5
 		}`
-		_, err = testDB.Exec("INSERT INTO policy_json(app_id, policy_json) values($1, $2)", appId, policy)
+		_, err = testDB.Exec("INSERT INTO policy_json(app_id, policy_json, guid) values($1, $2, $3)", appId, policy, "1234")
 		Expect(err).NotTo(HaveOccurred())
 
 		err = testDB.Close()

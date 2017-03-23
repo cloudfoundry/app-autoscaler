@@ -151,8 +151,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
  			"instance_min_count": 1,
   			"instance_max_count": 5
 		}`
-	query := "INSERT INTO policy_json(app_id, policy_json) values($1, $2)"
-	_, err = mcDB.Exec(query, "an-app-id", policy)
+	query := "INSERT INTO policy_json(app_id, policy_json, guid) values($1, $2, $3)"
+	_, err = mcDB.Exec(query, "an-app-id", policy, "1234")
 	Expect(err).NotTo(HaveOccurred())
 
 	err = mcDB.Close()
