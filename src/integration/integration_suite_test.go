@@ -7,22 +7,9 @@ import (
 	"bytes"
 	. "integration"
 
-	"code.cloudfoundry.org/cfhttp"
-	"code.cloudfoundry.org/consuladapter/consulrunner"
-	"code.cloudfoundry.org/lager"
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/cloudfoundry/sonde-go/events"
-	"github.com/gogo/protobuf/proto"
-	_ "github.com/lib/pq"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gexec"
-	"github.com/onsi/gomega/ghttp"
-	"github.com/tedsuo/ifrit"
-	"github.com/tedsuo/ifrit/ginkgomon"
-	"github.com/tedsuo/ifrit/grouper"
 	"io/ioutil"
 	"log"
 	"mime/multipart"
@@ -37,6 +24,20 @@ import (
 	"syscall"
 	"testing"
 	"time"
+
+	"code.cloudfoundry.org/cfhttp"
+	"code.cloudfoundry.org/consuladapter/consulrunner"
+	"code.cloudfoundry.org/lager"
+	"github.com/cloudfoundry/sonde-go/events"
+	"github.com/gogo/protobuf/proto"
+	_ "github.com/lib/pq"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/gexec"
+	"github.com/onsi/gomega/ghttp"
+	"github.com/tedsuo/ifrit"
+	"github.com/tedsuo/ifrit/ginkgomon"
+	"github.com/tedsuo/ifrit/grouper"
 )
 
 var (
@@ -392,11 +393,10 @@ func clearDatabase() {
 }
 
 func insertPolicy(appId string, scalingPolicy models.ScalingPolicy) {
-
-	query := "INSERT INTO policy_json(app_id, policy_json) VALUES($1, $2)"
+	query := "INSERT INTO policy_json(app_id, policy_json, guid) VALUES($1, $2, $3)"
 	policyBytes, err := json.Marshal(scalingPolicy)
 	Expect(err).NotTo(HaveOccurred())
-	_, err = dbHelper.Exec(query, appId, string(policyBytes))
+	_, err = dbHelper.Exec(query, appId, string(policyBytes), "1234")
 	Expect(err).NotTo(HaveOccurred())
 
 }
