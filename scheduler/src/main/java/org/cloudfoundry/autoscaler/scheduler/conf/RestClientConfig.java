@@ -13,9 +13,8 @@ import org.apache.http.conn.HttpClientConnectionManager;
 import org.apache.http.conn.socket.ConnectionSocketFactory;
 import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.SSLContexts;
 import org.springframework.beans.factory.annotation.Value;
@@ -55,8 +54,7 @@ public class RestClientConfig {
 			keyStore.load(keyStoreInstream, keyStorePassword.toCharArray());
 		}
 
-		SSLContextBuilder sslCtxBuilder = SSLContexts.custom().loadTrustMaterial(trustStore,
-				null);
+		SSLContextBuilder sslCtxBuilder = SSLContexts.custom().loadTrustMaterial(trustStore, null);
 		sslCtxBuilder = sslCtxBuilder.loadKeyMaterial(keyStore, keyStorePassword.toCharArray());
 
 		SSLContext sslcontext = sslCtxBuilder.build();
@@ -68,7 +66,7 @@ public class RestClientConfig {
 		builder.setSSLSocketFactory(sslsf);
 		Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory> create()
 				.register("https", sslsf).register("http", new PlainConnectionSocketFactory()).build();
-		HttpClientConnectionManager ccm = new BasicHttpClientConnectionManager(registry);
+		HttpClientConnectionManager ccm = new PoolingHttpClientConnectionManager(registry);
 		builder.setConnectionManager(ccm);
 		return builder.build();
 	}
