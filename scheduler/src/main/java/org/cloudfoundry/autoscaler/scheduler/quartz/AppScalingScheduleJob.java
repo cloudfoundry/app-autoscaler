@@ -74,7 +74,7 @@ public abstract class AppScalingScheduleJob extends QuartzJobBean {
 				String message = messageBundleResourceHelper
 						.lookupMessage("scalingengine.notification.activeschedule.remove", appId, scheduleId);
 				logger.info(message);
-				restOperations.delete(scalingEnginePathActiveSchedule, requestEntity);
+				restOperations.delete(scalingEnginePathActiveSchedule);
 			}
 		} catch (HttpStatusCodeException hce) {
 			handleResponse(activeScheduleEntity, scalingAction, hce);

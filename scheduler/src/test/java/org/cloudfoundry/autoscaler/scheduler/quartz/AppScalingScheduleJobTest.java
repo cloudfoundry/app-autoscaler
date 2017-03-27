@@ -642,7 +642,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
 
 		// For notify to Scaling Engine
-		Mockito.verify(restOperations, Mockito.never()).delete(Mockito.anyString(), notNull());
+		Mockito.verify(restOperations, Mockito.never()).delete(Mockito.anyString());
 	}
 
 	@Test
@@ -997,10 +997,9 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 	}
 
 	private void assertNotifyScalingEngineForEndJob(ActiveScheduleEntity activeScheduleEntity) {
-		String scalingEnginePath = scalingEngineUrl + "/v1/apps/" + activeScheduleEntity.getAppId()
+		String scalingEnginePathActiveSchedule = scalingEngineUrl + "/v1/apps/" + activeScheduleEntity.getAppId()
 				+ "/active_schedules/" + activeScheduleEntity.getId();
-		HttpEntity<ActiveScheduleEntity> requestEntity = new HttpEntity<>(activeScheduleEntity);
-		Mockito.verify(restOperations, Mockito.times(1)).delete(scalingEnginePath, requestEntity);
+		Mockito.verify(restOperations, Mockito.times(1)).delete(scalingEnginePathActiveSchedule);
 	}
 
 	private void setLogLevel(Level level) {

@@ -738,7 +738,7 @@ public class ScheduleManager {
 			activeScheduleDao.deleteActiveSchedulesByAppId(appId);
 			for (ActiveScheduleEntity activeScheduleEntity : activeScheduleEntities) {
 
-				notifyScalingEngine(activeScheduleEntity);
+				notifyScalingEngineForDelete(activeScheduleEntity.getAppId(), activeScheduleEntity.getId() );
 
 			}
 		} catch (DatabaseValidationException dve) {
@@ -748,9 +748,7 @@ public class ScheduleManager {
 		}
 	}
 
-	private void notifyScalingEngine(ActiveScheduleEntity activeScheduleEntity) {
-		String appId = activeScheduleEntity.getAppId();
-		long scheduleId = activeScheduleEntity.getId();
+	private void notifyScalingEngineForDelete(String appId, long scheduleId) {
 		String scalingEnginePathActiveSchedule = ScalingEngineUtil.getScalingEngineActiveSchedulePath(scalingEngineUrl,
 				appId, scheduleId);
 		String message = messageBundleResourceHelper.lookupMessage("scalingengine.notification.activeschedule.remove",
