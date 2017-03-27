@@ -579,11 +579,12 @@ var _ = Describe("Evaluator", func() {
 					database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
 						return appMetricGTBreach, nil
 					}
-					Expect(triggerChan).To(BeSent(triggerArrayGT))
 				})
 				Context("when the send request encounters error", func() {
 					JustBeforeEach(func() {
 						scalingEngine.Close()
+						Eventually(scalingEngine.HTTPTestServer).Should(BeNil())
+						Expect(triggerChan).To(BeSent(triggerArrayGT))
 					})
 
 					It("should log the error", func() {
@@ -594,6 +595,7 @@ var _ = Describe("Evaluator", func() {
 				Context("when the scaling engine returns error", func() {
 					BeforeEach(func() {
 						scalingEngine.RouteToHandler("POST", urlPath, ghttp.RespondWithJSONEncoded(http.StatusBadRequest, "error"))
+						Expect(triggerChan).To(BeSent(triggerArrayGT))
 					})
 
 					It("should log the error", func() {
@@ -613,6 +615,7 @@ var _ = Describe("Evaluator", func() {
 							errorStr = errorStr + tmp
 						}
 						scalingEngine.RouteToHandler("POST", urlPath, ghttp.RespondWithJSONEncoded(http.StatusBadRequest, errorStr))
+						Expect(triggerChan).To(BeSent(triggerArrayGT))
 					})
 
 					It("should log the error", func() {
