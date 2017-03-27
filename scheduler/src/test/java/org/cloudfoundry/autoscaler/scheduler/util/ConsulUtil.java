@@ -23,9 +23,10 @@ public class ConsulUtil {
 		process = processBuilder.start();
 	}
 
-	public void stop() throws IOException {
+	public void stop() throws IOException, InterruptedException {
 		if (process != null) {
 			process.destroy();
+			process.waitFor();
 		}
 		if (dataDir != null) {
 			FileUtils.deleteDirectory(dataDir);

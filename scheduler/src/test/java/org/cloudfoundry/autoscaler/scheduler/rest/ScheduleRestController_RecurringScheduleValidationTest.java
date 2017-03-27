@@ -88,7 +88,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 	}
 
 	@AfterClass
-	public static void afterClass() throws IOException {
+	public static void afterClass() throws IOException, InterruptedException {
 		consulUtil.stop();
 	}
 

@@ -43,7 +43,7 @@ public class ActiveScheduleDaoImplTest extends TestConfiguration {
 	}
 
 	@AfterClass
-	public static void afterClass() throws IOException {
+	public static void afterClass() throws IOException, InterruptedException {
 		consulUtil.stop();
 	}
 

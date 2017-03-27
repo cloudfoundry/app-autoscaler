@@ -85,7 +85,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest extends TestC
 	}
 
 	@AfterClass
-	public static void afterClass() throws IOException {
+	public static void afterClass() throws IOException, InterruptedException {
 		consulUtil.stop();
 	}
 

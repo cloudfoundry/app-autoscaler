@@ -115,7 +115,7 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 	}
 
 	@AfterClass
-	public static void afterClass() throws IOException {
+	public static void afterClass() throws IOException, InterruptedException {
 		consulUtil.stop();
 		embeddedTomcatUtil.stop();
 	}

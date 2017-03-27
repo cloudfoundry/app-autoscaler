@@ -1,7 +1,6 @@
 package org.cloudfoundry.autoscaler.scheduler.quartz;
 
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyObject;
@@ -113,7 +112,7 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 	}
 
 	@AfterClass
-	public static void afterClass() throws IOException {
+	public static void afterClass() throws IOException, InterruptedException {
 		consulUtil.stop();
 		embeddedTomcatUtil.stop();
 	}

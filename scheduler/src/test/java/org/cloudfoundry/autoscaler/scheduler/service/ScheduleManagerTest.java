@@ -114,7 +114,7 @@ public class ScheduleManagerTest extends TestConfiguration {
 	}
 
 	@AfterClass
-	public static void afterClass() throws IOException {
+	public static void afterClass() throws IOException, InterruptedException {
 		consulUtil.stop();
 	}
 
