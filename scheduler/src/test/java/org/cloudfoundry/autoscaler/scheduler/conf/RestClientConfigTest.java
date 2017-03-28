@@ -69,11 +69,11 @@ public class RestClientConfigTest extends TestConfiguration {
 		concurrentRequests(10, scalingEnginePathActiveSchedule);
 	}
 
-	private void concurrentRequests(int threadCount, String scalingEngineUrl) throws Exception {
+	private void concurrentRequests(int threadCount, String scalingEnginePathActiveSchedule) throws Exception {
 
 		Callable<Throwable> task = () -> {
 			try {
-				restOperations.delete(scalingEngineUrl);
+				restOperations.delete(scalingEnginePathActiveSchedule);
 				return null;
 			} catch (Throwable th) {
 				return th;

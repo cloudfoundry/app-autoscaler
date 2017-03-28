@@ -74,7 +74,7 @@ public abstract class AppScalingScheduleJob extends QuartzJobBean {
 				String message = messageBundleResourceHelper
 						.lookupMessage("scalingengine.notification.activeschedule.remove", appId, scheduleId);
 				logger.info(message);
-				restOperations.delete(scalingEnginePathActiveSchedule, requestEntity);
+				restOperations.delete(scalingEnginePathActiveSchedule);
 			}
 		} catch (HttpStatusCodeException hce) {
 			handleResponse(activeScheduleEntity, scalingAction, hce);
@@ -92,10 +92,10 @@ public abstract class AppScalingScheduleJob extends QuartzJobBean {
 		String appId = activeScheduleEntity.getAppId();
 		Long scheduleId = activeScheduleEntity.getId();
 		HttpStatus errorResponseCode = hsce.getStatusCode();
-		if (errorResponseCode.is4xxClientError()) {
-			String message = messageBundleResourceHelper.lookupMessage("scalingengine.notification.client.error",
-					errorResponseCode, hsce.getResponseBodyAsString(), appId, scheduleId, scalingAction);
-			logger.error(message, hsce);
+		if (errorResponseCode == HttpStatus.NOT_FOUND) {
+			String message = messageBundleResourceHelper.lookupMessage("scalingengine.notification.activeschedule.notFound",
+					appId, scheduleId);
+			logger.info(message, hsce);
 		} else {
 			String message = messageBundleResourceHelper.lookupMessage("scalingengine.notification.failed",
 					errorResponseCode, hsce.getResponseBodyAsString(), appId, scheduleId, scalingAction);

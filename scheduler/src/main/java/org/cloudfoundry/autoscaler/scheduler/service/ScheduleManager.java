@@ -30,6 +30,7 @@ import org.cloudfoundry.autoscaler.scheduler.util.error.SchedulerInternalExcepti
 import org.cloudfoundry.autoscaler.scheduler.util.error.ValidationErrorResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpStatusCodeException;
@@ -737,38 +738,38 @@ public class ScheduleManager {
 			activeScheduleDao.deleteActiveSchedulesByAppId(appId);
 			for (ActiveScheduleEntity activeScheduleEntity : activeScheduleEntities) {
 
-				notifyScalingEngine(activeScheduleEntity);
+				notifyScalingEngineForDelete(activeScheduleEntity.getAppId(), activeScheduleEntity.getId() );
 
 			}
 		} catch (DatabaseValidationException dve) {
 			validationErrorResult.addErrorForDatabaseValidationException(dve, "database.error.delete.failed",
 					"app_id=" + appId);
 			throw new SchedulerInternalException("Database error", dve);
-
 		}
 	}
 
-	private void notifyScalingEngine(ActiveScheduleEntity activeScheduleEntity) {
-		String appId = activeScheduleEntity.getAppId();
-		long scheduleId = activeScheduleEntity.getId();
+	private void notifyScalingEngineForDelete(String appId, long scheduleId) {
 		String scalingEnginePathActiveSchedule = ScalingEngineUtil.getScalingEngineActiveSchedulePath(scalingEngineUrl,
 				appId, scheduleId);
 		String message = messageBundleResourceHelper.lookupMessage("scalingengine.notification.activeschedule.remove",
 				appId, scheduleId);
 		logger.info(message);
 		try {
-			restOperations.delete(scalingEnginePathActiveSchedule, activeScheduleEntity);
+			restOperations.delete(scalingEnginePathActiveSchedule);
 		} catch (HttpStatusCodeException hce) {
-			String errorMessage = messageBundleResourceHelper.lookupMessage(
-					"scalingengine.notification.activeschedule.delete.failed", hce.getStatusCode(),
-					hce.getResponseBodyAsString(), appId, scheduleId);
-			logger.error(errorMessage, hce);
+			if (hce.getStatusCode() == HttpStatus.NOT_FOUND) {
+				message = messageBundleResourceHelper
+						.lookupMessage("scalingengine.notification.activeschedule.notFound", appId, scheduleId);
+				logger.info(message, hce);
+			} else {
+				String errorMessage = messageBundleResourceHelper.lookupMessage("scalingengine.notification.error",
+						hce.getResponseBodyAsString(), appId, scheduleId, "delete");
+				throw new SchedulerInternalException(errorMessage, hce);
+			}
 		} catch (ResourceAccessException rae) {
 			String errorMessage = messageBundleResourceHelper.lookupMessage("scalingengine.notification.error",
 					rae.getMessage(), appId, scheduleId, "delete");
-			logger.error(errorMessage, rae);
-
+			throw new SchedulerInternalException(errorMessage, rae);
 		}
 	}
-
 }

@@ -642,7 +642,45 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
 
 		// For notify to Scaling Engine
-		Mockito.verify(restOperations, Mockito.never()).delete(Mockito.anyString(), notNull());
+		Mockito.verify(restOperations, Mockito.never()).delete(Mockito.anyString());
+	}
+
+	@Test
+	public void testNotifyEndOfActiveScheduleToScalingEngine_when_activeScheduleNotFoundInScalingEngine()
+			throws Exception {
+		// Build the job and trigger
+		JobInformation jobInformation = new JobInformation<>(AppScalingScheduleEndJob.class);
+		Date endJobStartTime = TestDataSetupHelper.getCurrentDateTime(1);
+
+		long startJobIdentifier = 10L;
+		JobDataMap jobDataMap = setupJobDataForSpecificDateSchedule(jobInformation.getJobDetail(), endJobStartTime,
+				TimeZone.getDefault());
+		jobDataMap.put(ScheduleJobHelper.START_JOB_IDENTIFIER, startJobIdentifier);
+
+		ActiveScheduleEntity activeScheduleEntity = ScheduleJobHelper.setupActiveSchedule(jobDataMap);
+		String appId = activeScheduleEntity.getAppId();
+		Long scheduleId = activeScheduleEntity.getId();
+
+		embeddedTomcatUtil.setup(appId, scheduleId, 404, "test not found message");
+
+		TestJobListener testJobListener = new TestJobListener(1);
+		memScheduler.getListenerManager().addJobListener(testJobListener);
+
+		memScheduler.scheduleJob(jobInformation.getJobDetail(), jobInformation.getTrigger());
+
+		testJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(1));
+
+		Mockito.verify(activeScheduleDao, Mockito.times(1)).delete(scheduleId, startJobIdentifier);
+
+		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
+		String expectedMessage = messageBundleResourceHelper
+				.lookupMessage("scalingengine.notification.activeschedule.notFound", appId, scheduleId);
+
+		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
+		assertThat("Log level should be Info", logCaptor.getValue().getLevel(), is(Level.INFO));
+
+		// For notify to Scaling Engine
+		assertNotifyScalingEngineForEndJob(activeScheduleEntity);
 	}
 
 	@Test
@@ -674,8 +712,8 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		Mockito.verify(activeScheduleDao, Mockito.times(1)).create(Mockito.anyObject());
 
 		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
-		String expectedMessage = messageBundleResourceHelper.lookupMessage("scalingengine.notification.client.error",
-				400, "test error message", appId, scheduleId, JobActionEnum.START);
+		String expectedMessage = messageBundleResourceHelper.lookupMessage("scalingengine.notification.failed", 400,
+				"test error message", appId, scheduleId, JobActionEnum.START);
 
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
 		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
@@ -728,8 +766,8 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 		Mockito.verify(activeScheduleDao, Mockito.times(1)).delete(scheduleId, startJobIdentifier);
 
 		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
-		String expectedMessage = messageBundleResourceHelper.lookupMessage("scalingengine.notification.client.error",
-				400, "test error message", appId, scheduleId, JobActionEnum.END);
+		String expectedMessage = messageBundleResourceHelper.lookupMessage("scalingengine.notification.failed", 400,
+				"test error message", appId, scheduleId, JobActionEnum.END);
 
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), is(expectedMessage));
 		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), is(Level.ERROR));
@@ -959,10 +997,9 @@ public class AppScalingScheduleJobTest extends TestConfiguration {
 	}
 
 	private void assertNotifyScalingEngineForEndJob(ActiveScheduleEntity activeScheduleEntity) {
-		String scalingEnginePath = scalingEngineUrl + "/v1/apps/" + activeScheduleEntity.getAppId()
+		String scalingEnginePathActiveSchedule = scalingEngineUrl + "/v1/apps/" + activeScheduleEntity.getAppId()
 				+ "/active_schedules/" + activeScheduleEntity.getId();
-		HttpEntity<ActiveScheduleEntity> requestEntity = new HttpEntity<>(activeScheduleEntity);
-		Mockito.verify(restOperations, Mockito.times(1)).delete(scalingEnginePath, requestEntity);
+		Mockito.verify(restOperations, Mockito.times(1)).delete(scalingEnginePathActiveSchedule);
 	}
 
 	private void setLogLevel(Level level) {

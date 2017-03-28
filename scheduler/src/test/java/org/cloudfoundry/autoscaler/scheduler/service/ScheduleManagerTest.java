@@ -1,9 +1,11 @@
 package org.cloudfoundry.autoscaler.scheduler.service;
 
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.eq;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
@@ -55,11 +57,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.client.ExpectedCount;
 import org.springframework.test.web.client.MockRestServiceServer;
+import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestOperations;
 import org.springframework.web.client.RestTemplate;
 
@@ -91,7 +95,7 @@ public class ScheduleManagerTest extends TestConfiguration {
 	@Autowired
 	private TestDataDbUtil testDataDbUtil;
 
-	@Autowired
+	@SpyBean
 	private RestOperations restOperations;
 
 	@Value("${autoscaler.scalingengine.url}")
@@ -126,6 +130,7 @@ public class ScheduleManagerTest extends TestConfiguration {
 		Mockito.reset(recurringScheduleDao);
 		Mockito.reset(activeScheduleDao);
 		Mockito.reset(mockAppender);
+		Mockito.reset(restOperations);
 		mockServer = MockRestServiceServer.createServer((RestTemplate) restOperations);
 
 		Mockito.when(mockAppender.getName()).thenReturn("MockAppender");
@@ -376,8 +381,43 @@ public class ScheduleManagerTest extends TestConfiguration {
 	}
 
 	@Test
-	public void testDeleteSchedules_when_activeSchedule_not_found_in_scalingEngine() {
+	public void testNotifyScalingEngine_when_ResourceAccessException() throws Exception {
 		setLogLevel(Level.ERROR);
+
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		long scheduleId = 1L;
+
+		ActiveScheduleEntity activeScheduleEntity = new ActiveScheduleEntity();
+		activeScheduleEntity.setAppId(appId);
+		activeScheduleEntity.setId(scheduleId);
+		List<ActiveScheduleEntity> activeScheduleEntities = new ArrayList<>();
+		activeScheduleEntities.add(activeScheduleEntity);
+
+		List<SpecificDateScheduleEntity> specificDateScheduleEntities = new SpecificDateScheduleEntitiesBuilder(2)
+				.setAppid(appId).setScheduleId().build();
+
+		Mockito.when(specificDateScheduleDao.findAllSpecificDateSchedulesByAppId(appId))
+				.thenReturn(specificDateScheduleEntities);
+		Mockito.doNothing().when(scheduleJobManager).deleteJob(Mockito.anyString(), Mockito.anyLong(),
+				Mockito.anyObject());
+
+		Mockito.when(activeScheduleDao.findByAppId(appId)).thenReturn(activeScheduleEntities);
+		Mockito.doThrow(new ResourceAccessException("test resource access exception")).when(restOperations)
+				.delete(Mockito.anyString());
+
+		try {
+			scheduleManager.deleteSchedules(appId);
+			fail("Should fail");
+		} catch (SchedulerInternalException sie) {
+			String expectedMessage = messageBundleResourceHelper.lookupMessage("scalingengine.notification.error",
+					"test resource access exception", appId, scheduleId, "delete");
+			assertThat(sie.getMessage(), is(expectedMessage));
+			assertTrue(sie.getCause().getClass().equals(ResourceAccessException.class));
+		}
+	}
+
+	@Test
+	public void testDeleteSchedules_when_activeSchedule_not_found_in_scalingEngine() {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		long scheduleId = 1L;
 
@@ -402,7 +442,7 @@ public class ScheduleManagerTest extends TestConfiguration {
 		String scalingEnginePathActiveSchedule = scalingEngineUrl + "/v1/apps/" + appId + "/active_schedules/"
 				+ scheduleId;
 		mockServer.expect(ExpectedCount.times(1), requestTo(scalingEnginePathActiveSchedule))
-				.andExpect(method(HttpMethod.DELETE)).andRespond(withStatus(HttpStatus.NOT_FOUND).body("test error"));
+				.andExpect(method(HttpMethod.DELETE)).andRespond(withStatus(HttpStatus.NOT_FOUND));
 
 		scheduleManager.deleteSchedules(appId);
 
@@ -422,11 +462,52 @@ public class ScheduleManagerTest extends TestConfiguration {
 
 		mockServer.verify();
 
-		String expectedMessage = messageBundleResourceHelper.lookupMessage(
-				"scalingengine.notification.activeschedule.delete.failed", HttpStatus.NOT_FOUND, "test error", appId,
-				scheduleId);
+		String expectedMessage = messageBundleResourceHelper
+				.lookupMessage("scalingengine.notification.activeschedule.notFound", appId, scheduleId);
 		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), Is.is(expectedMessage));
-		assertThat("Log level should be ERROR", logCaptor.getValue().getLevel(), Is.is(Level.ERROR));
+		assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), Is.is(Level.INFO));
+	}
+
+	@Test
+	public void testDeleteSchedules_when_internal_server_error_in_scalingEngine() {
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		long scheduleId = 1L;
+
+		ActiveScheduleEntity activeScheduleEntity = new ActiveScheduleEntity();
+		activeScheduleEntity.setAppId(appId);
+		activeScheduleEntity.setId(scheduleId);
+		List<ActiveScheduleEntity> activeScheduleEntities = new ArrayList<>();
+		activeScheduleEntities.add(activeScheduleEntity);
+
+		List<SpecificDateScheduleEntity> specificDateScheduleEntities = new SpecificDateScheduleEntitiesBuilder(2)
+				.setAppid(appId).setScheduleId().build();
+		List<RecurringScheduleEntity> recurringScheduleEntities = new RecurringScheduleEntitiesBuilder(1, 1)
+				.setAppId(appId).setScheduleId().build();
+
+		Mockito.when(specificDateScheduleDao.findAllSpecificDateSchedulesByAppId(appId))
+				.thenReturn(specificDateScheduleEntities);
+		Mockito.when(recurringScheduleDao.findAllRecurringSchedulesByAppId(appId))
+				.thenReturn(recurringScheduleEntities);
+
+		Mockito.when(activeScheduleDao.findByAppId(appId)).thenReturn(activeScheduleEntities);
+
+		String scalingEnginePathActiveSchedule = scalingEngineUrl + "/v1/apps/" + appId + "/active_schedules/"
+				+ scheduleId;
+		mockServer.expect(ExpectedCount.times(1), requestTo(scalingEnginePathActiveSchedule))
+				.andExpect(method(HttpMethod.DELETE))
+				.andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR).body("test internal server error"));
+
+		try {
+			scheduleManager.deleteSchedules(appId);
+			fail("Should fail");
+		} catch (SchedulerInternalException sie) {
+			String expectedMessage = messageBundleResourceHelper.lookupMessage("scalingengine.notification.error",
+					"test internal server error", appId, scheduleId, "delete");
+			assertThat(sie.getMessage(), containsString(expectedMessage));
+
+		}
+		mockServer.verify();
+
 	}
 
 	@Test
