@@ -4,10 +4,34 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.actuate.autoconfigure.AuditAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.EndpointAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.EndpointWebMvcAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.HealthIndicatorAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.InfoContributorAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.ManagementServerPropertiesAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.MetricExportAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.MetricRepositoryAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.PublicMetricsAutoConfiguration;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.aop.AopAutoConfiguration;
+import org.springframework.boot.autoconfigure.context.ConfigurationPropertiesAutoConfiguration;
+import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
+import org.springframework.boot.autoconfigure.gson.GsonAutoConfiguration;
+import org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration;
+import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration;
+import org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration;
+import org.springframework.boot.autoconfigure.transaction.jta.JtaAutoConfiguration;
+import org.springframework.boot.autoconfigure.validation.ValidationAutoConfiguration;
+import org.springframework.boot.autoconfigure.web.WebClientAutoConfiguration;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+import org.springframework.cloud.autoconfigure.ConfigurationPropertiesRebinderAutoConfiguration;
+import org.springframework.cloud.autoconfigure.LifecycleMvcEndpointAutoConfiguration;
+import org.springframework.cloud.client.CommonsClientAutoConfiguration;
+import org.springframework.cloud.client.loadbalancer.AsyncLoadBalancerAutoConfiguration;
 import org.springframework.cloud.client.serviceregistry.AutoServiceRegistrationConfiguration;
 import org.springframework.cloud.consul.serviceregistry.ConsulAutoServiceRegistration;
 import org.springframework.context.annotation.Bean;
@@ -21,8 +45,17 @@ import springfox.documentation.spring.web.plugins.Docket;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 @EnableSwagger2
-@EnableDiscoveryClient(autoRegister = false)
-@SpringBootApplication
+@SpringBootApplication(exclude = { AopAutoConfiguration.class, HealthIndicatorAutoConfiguration.class,
+		AuditAutoConfiguration.class, PropertyPlaceholderAutoConfiguration.class, PublicMetricsAutoConfiguration.class,
+		InfoContributorAutoConfiguration.class, WebClientAutoConfiguration.class, EndpointAutoConfiguration.class,
+		ConfigurationPropertiesAutoConfiguration.class, CommonsClientAutoConfiguration.class,
+		MetricRepositoryAutoConfiguration.class, ProjectInfoAutoConfiguration.class,
+		AsyncLoadBalancerAutoConfiguration.class, ConfigurationPropertiesRebinderAutoConfiguration.class,
+		LifecycleMvcEndpointAutoConfiguration.class, MetricExportAutoConfiguration.class,
+		DataSourceAutoConfiguration.class, GsonAutoConfiguration.class, ValidationAutoConfiguration.class,
+		DataSourceTransactionManagerAutoConfiguration.class, EndpointWebMvcAutoConfiguration.class,
+		JacksonAutoConfiguration.class, JdbcTemplateAutoConfiguration.class, JtaAutoConfiguration.class,
+		ManagementServerPropertiesAutoConfiguration.class })
 @ImportResource("classpath:applicationContext.xml")
 @ImportAutoConfiguration({ AutoServiceRegistrationConfiguration.class })
 public class SchedulerApplication {

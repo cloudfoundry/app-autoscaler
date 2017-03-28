@@ -23,6 +23,7 @@ import org.springframework.test.context.TestPropertySource;
 		"spring.cloud.consul.discovery.instanceId=scheduler", "spring.cloud.consul.discovery.hostname=",
 		"spring.cloud.consul.discovery.heartbeat.enabled=true",
 		"spring.cloud.consul.discovery.heartbeat.ttlValue=20", "spring.application.name=scheduler",
-		"spring.mvc.servlet.load-on-startup=1" })
+		"spring.mvc.servlet.load-on-startup=1", "spring.aop.auto=false", "endpoints.enabled=false",
+		"spring.data.jpa.repositories.enabled=false" })
 public class TestConfiguration {
 }

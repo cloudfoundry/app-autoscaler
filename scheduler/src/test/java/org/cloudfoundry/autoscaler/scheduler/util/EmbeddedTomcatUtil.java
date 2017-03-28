@@ -68,13 +68,13 @@ public class EmbeddedTomcatUtil {
 	public void setup(String appId, Long scheduleId, int statusCode, String message) throws ServletException {
 		String url = "/v1/apps/" + appId + "/active_schedules/" + scheduleId;
 		tomcat.addServlet(appContext.getPath(), appId, new ScalingEngineMock(statusCode, message));
-		appContext.addServletMapping(url, appId);
+		appContext.addServletMappingDecoded(url, appId);
 	}
 
 	public void setup(String appId, int statusCode, String message) {
 		String url = "/v1/apps/" + appId + "/active_schedules/*";
 		tomcat.addServlet(appContext.getPath(), appId, new ScalingEngineMock(statusCode, message));
-		appContext.addServletMapping(url, appId);
+		appContext.addServletMappingDecoded(url, appId);
 	}
 
 	private void setupSSLConfig(Connector httpsConnector) {
