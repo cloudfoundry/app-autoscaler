@@ -608,7 +608,7 @@ public class DateHelper {
 		return dateTime.atZone(zoneId);
 	}
 
-	static ZonedDateTime getZonedDateTime(LocalDate date, TimeZone timeZone) {
+	public static ZonedDateTime getZonedDateTime(LocalDate date, TimeZone timeZone) {
 		ZoneId zoneId = timeZone.toZoneId();
 		return date.atStartOfDay(zoneId);
 	}

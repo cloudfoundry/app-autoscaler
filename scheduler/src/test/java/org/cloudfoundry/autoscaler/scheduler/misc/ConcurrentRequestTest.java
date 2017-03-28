@@ -1,4 +1,4 @@
-package org.cloudfoundry.autoscaler.scheduler.conf;
+package org.cloudfoundry.autoscaler.scheduler.misc;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
@@ -28,7 +28,7 @@ import org.springframework.web.client.RestOperations;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class RestClientConfigTest extends TestConfiguration {
+public class ConcurrentRequestTest extends TestConfiguration {
 
 	@Value("${autoscaler.scalingengine.url}")
 	private String scalingEngineUrl;
