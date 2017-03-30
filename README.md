@@ -28,7 +28,7 @@ The `App-AutoScaler` is provided as a Cloud Foundry service offering. Any applic
 * [Apache Maven][b] 3
 * Node 6.2 or above
 * NPM 3.9.5 or above
-* [Cloud Foundry cf command line] [f]
+* [Cloud Foundry cf command line][f]
 * Go 1.7
 
 ### Database requirement
