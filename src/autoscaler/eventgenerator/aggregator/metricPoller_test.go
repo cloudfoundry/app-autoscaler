@@ -27,7 +27,7 @@ var _ = Describe("MetricPoller", func() {
 	var httpClient *http.Client
 	var metricServer *ghttp.Server
 	var metrics []*models.AppInstanceMetric = []*models.AppInstanceMetric{
-		&models.AppInstanceMetric{
+		{
 			AppId:         testAppId,
 			InstanceIndex: 0,
 			CollectedAt:   111111,
@@ -36,7 +36,7 @@ var _ = Describe("MetricPoller", func() {
 			Value:         "100",
 			Timestamp:     111100,
 		},
-		&models.AppInstanceMetric{
+		{
 			AppId:         testAppId,
 			InstanceIndex: 1,
 			CollectedAt:   111111,
@@ -46,7 +46,7 @@ var _ = Describe("MetricPoller", func() {
 			Timestamp:     110000,
 		},
 
-		&models.AppInstanceMetric{
+		{
 			AppId:         testAppId,
 			InstanceIndex: 0,
 			CollectedAt:   222222,
@@ -55,7 +55,7 @@ var _ = Describe("MetricPoller", func() {
 			Value:         "300",
 			Timestamp:     222200,
 		},
-		&models.AppInstanceMetric{
+		{
 			AppId:         testAppId,
 			InstanceIndex: 1,
 			CollectedAt:   222222,
