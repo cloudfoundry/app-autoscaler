@@ -89,8 +89,6 @@ var _ = Describe("MetricPoller", func() {
 			}
 
 			metricServer = ghttp.NewUnstartedServer()
-			metricServer.RouteToHandler("GET", urlPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
-				&metrics))
 
 			metricPoller = NewMetricPoller(logger, metricServer.URL(), appMonitorsChan, httpClient, appMetricDatabase)
 			metricPoller.Start()
