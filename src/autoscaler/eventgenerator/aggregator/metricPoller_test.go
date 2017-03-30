@@ -78,6 +78,40 @@ var _ = Describe("MetricPoller", func() {
 		urlPath = path.Path
 	})
 
+	Context("When metric-collector is not running", func() {
+		var appMonitor *models.AppMonitor
+
+		BeforeEach(func() {
+			appMonitor = &models.AppMonitor{
+				AppId:      testAppId,
+				MetricType: metricType,
+				StatWindow: 10,
+			}
+
+			metricServer = ghttp.NewUnstartedServer()
+			metricServer.RouteToHandler("GET", urlPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
+				&metrics))
+
+			metricPoller = NewMetricPoller(logger, metricServer.URL(), appMonitorsChan, httpClient, appMetricDatabase)
+			metricPoller.Start()
+
+			appMonitorsChan <- appMonitor
+		})
+
+		AfterEach(func() {
+			metricPoller.Stop()
+			metricServer.Close()
+		})
+
+		It("logs an error", func() {
+			Eventually(logger.Buffer).Should(Say("Failed to retrieve metric"))
+		})
+
+		It("does not save any metrics", func() {
+			Consistently(appMetricDatabase.SaveAppMetricCallCount).Should(BeZero())
+		})
+	})
+
 	Context("Start", func() {
 		var appMonitor *models.AppMonitor
 
@@ -171,20 +205,6 @@ var _ = Describe("MetricPoller", func() {
 
 			It("does not save any metrics", func() {
 				Consistently(appMetricDatabase.SaveAppMetricCallCount).Should(Equal(0))
-			})
-		})
-
-		Context("when metric-collector is not running", func() {
-			JustBeforeEach(func() {
-				metricServer.Close()
-			})
-
-			It("logs an error", func() {
-				Eventually(logger.Buffer).Should(Say("Failed to retrieve metric"))
-			})
-
-			It("does not save any metrics", func() {
-				Consistently(appMetricDatabase.SaveAppMetricCallCount).Should(BeZero())
 			})
 		})
 
