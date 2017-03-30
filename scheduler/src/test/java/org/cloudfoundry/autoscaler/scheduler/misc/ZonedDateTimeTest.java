@@ -1,4 +1,4 @@
-package org.cloudfoundry.autoscaler.scheduler.util;
+package org.cloudfoundry.autoscaler.scheduler.misc;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
@@ -9,6 +9,8 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.TimeZone;
 
+import org.cloudfoundry.autoscaler.scheduler.util.DateHelper;
+import org.cloudfoundry.autoscaler.scheduler.util.TimeZoneTestRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestRule;

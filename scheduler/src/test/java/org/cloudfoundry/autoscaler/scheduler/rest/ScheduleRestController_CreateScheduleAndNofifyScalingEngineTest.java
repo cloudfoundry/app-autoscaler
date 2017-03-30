@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
@@ -50,7 +49,6 @@ import org.quartz.impl.matchers.GroupMatcher;
 import org.quartz.impl.matchers.NameMatcher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.context.embedded.LocalServerPort;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.http.MediaType;
@@ -64,10 +62,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
-import com.ecwid.consul.v1.ConsulClient;
-import com.ecwid.consul.v1.Response;
-import com.ecwid.consul.v1.agent.model.Check;
-import com.ecwid.consul.v1.agent.model.Service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RunWith(SpringRunner.class)
@@ -97,9 +91,6 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 
 	@Value("${autoscaler.scalingengine.url}")
 	private String scalingEngineUrl;
-
-	@LocalServerPort
-	private Integer schedulerPort;
 
 	private static EmbeddedTomcatUtil embeddedTomcatUtil;
 
@@ -199,27 +190,6 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 		// Assert END Job doesn't exist
 		assertThat("It should not have any job keys.", getExistingJobKeys(), empty());
 
-	}
-
-	@Test
-	public void testRegisterSchedulerToConsulAgent() {
-		ConsulClient consulClient = new ConsulClient();
-
-		Response<Map<String, Service>> services = consulClient.getAgentServices();
-		Service service = services.getValue().get("scheduler");
-		assertThat(service.getService(), is("scheduler"));
-		assertThat(service.getId(), is("scheduler"));
-		assertThat(service.getPort(), is(schedulerPort));
-
-		Response<Map<String, Check>> checks = consulClient.getAgentChecks();
-		Check check = checks.getValue().get("service:scheduler");
-
-		assertThat(check.getServiceName(), is("scheduler"));
-		assertThat(check.getStatus(), is(Check.CheckStatus.PASSING));
-		assertThat(check.getName(), is("Service 'scheduler' check"));
-		assertThat(check.getCheckId(), is("service:scheduler"));
-		assertThat(check.getServiceId(), is("scheduler"));
-		assertThat(check.getNode(), is("0"));
 	}
 
 	@Test
