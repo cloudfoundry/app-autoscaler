@@ -7,13 +7,13 @@ import (
 	"strings"
 
 	"github.com/cloudfoundry-incubator/cf-test-helpers/cf"
-	"github.com/cloudfoundry-incubator/cf-test-helpers/runner"
+	"github.com/cloudfoundry-incubator/cf-test-helpers/helpers"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 )
 
-func Curl(args ...string) (int, []byte, error) {
-	curlCmd := runner.Curl(append([]string{"--output", "/dev/stderr", "--write-out", "%{http_code}"}, args...)...).Wait(config.DEFAULT_TIMEOUT)
+func Curl(cfg *config.Config, args ...string) (int, []byte, error) {
+	curlCmd := helpers.Curl(cfg, append([]string{"--output", "/dev/stderr", "--write-out", "%{http_code}"}, args...)...).Wait(cfg.DefaultTimeoutDuration())
 	if curlCmd.ExitCode() != 0 {
 		return 0, curlCmd.Err.Contents(), fmt.Errorf("curl failed: exit code %d", curlCmd.ExitCode())
 	}
@@ -24,8 +24,8 @@ func Curl(args ...string) (int, []byte, error) {
 	return statusCode, curlCmd.Err.Contents(), nil
 }
 
-func OauthToken() string {
+func OauthToken(cfg *config.Config) string {
 	cmd := cf.Cf("oauth-token")
-	Expect(cmd.Wait(config.DEFAULT_TIMEOUT)).To(gexec.Exit(0))
+	Expect(cmd.Wait(cfg.DefaultTimeoutDuration())).To(gexec.Exit(0))
 	return strings.TrimSpace(string(cmd.Out.Contents()))
 }
