@@ -176,7 +176,7 @@ func (engine *ScalingEngineRunner) Start() {
 	Expect(err).NotTo(HaveOccurred())
 
 	if engine.startCheck != "" {
-		Eventually(engineSession.Buffer(), 2).Should(gbytes.Say(engine.startCheck))
+		Eventually(engineSession.Buffer, 2).Should(gbytes.Say(engine.startCheck))
 	}
 
 	engine.Session = engineSession

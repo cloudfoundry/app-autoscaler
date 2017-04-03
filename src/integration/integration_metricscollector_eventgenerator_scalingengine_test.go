@@ -43,7 +43,7 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 					InstanceMin: 1,
 					InstanceMax: 5,
 					ScalingRules: []*models.ScalingRule{
-						&models.ScalingRule{
+						{
 							MetricType:            models.MetricNameMemory,
 							StatWindowSeconds:     30,
 							BreachDurationSeconds: 30,
@@ -60,7 +60,7 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 			It("should scale out", func() {
 				Eventually(func() int {
 					return getScalingHistoryCount(testAppId, initInstanceCount, initInstanceCount+1)
-				}, timeout, 15*time.Second).Should(BeNumerically(">=", 1))
+				}, timeout, 15*time.Second, 1*time.Second).Should(BeNumerically(">=", 1))
 			})
 
 		})
@@ -70,7 +70,7 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 					InstanceMin: 1,
 					InstanceMax: 5,
 					ScalingRules: []*models.ScalingRule{
-						&models.ScalingRule{
+						{
 							MetricType:            models.MetricNameMemory,
 							StatWindowSeconds:     30,
 							BreachDurationSeconds: 30,
@@ -86,7 +86,7 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 			It("shouldn't scale out", func() {
 				Consistently(func() int {
 					return getScalingHistoryCount(testAppId, initInstanceCount, initInstanceCount+1)
-				}, timeout, 15*time.Second).Should(Equal(0))
+				}, timeout, 15*time.Second, 1*time.Second).Should(Equal(0))
 			})
 
 		})
@@ -98,7 +98,7 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 					InstanceMin: 1,
 					InstanceMax: 5,
 					ScalingRules: []*models.ScalingRule{
-						&models.ScalingRule{
+						{
 							MetricType:            models.MetricNameMemory,
 							StatWindowSeconds:     30,
 							BreachDurationSeconds: 30,
@@ -114,7 +114,7 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 			It("should scale in", func() {
 				Eventually(func() int {
 					return getScalingHistoryCount(testAppId, initInstanceCount, initInstanceCount-1)
-				}, timeout, 15*time.Second).Should(BeNumerically(">=", 1))
+				}, timeout, 15*time.Second, 1*time.Second).Should(BeNumerically(">=", 1))
 			})
 
 		})
@@ -124,7 +124,7 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 					InstanceMin: 1,
 					InstanceMax: 5,
 					ScalingRules: []*models.ScalingRule{
-						&models.ScalingRule{
+						{
 							MetricType:            models.MetricNameMemory,
 							StatWindowSeconds:     30,
 							BreachDurationSeconds: 30,
@@ -140,7 +140,7 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 			It("shouldn't scale in", func() {
 				Consistently(func() int {
 					return getScalingHistoryCount(testAppId, initInstanceCount, initInstanceCount-1)
-				}, timeout, 15*time.Second).Should(Equal(0))
+				}, timeout, 15*time.Second, 1*time.Second).Should(Equal(0))
 			})
 
 		})
