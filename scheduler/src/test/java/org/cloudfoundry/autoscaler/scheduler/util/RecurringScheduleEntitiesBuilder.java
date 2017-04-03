@@ -99,7 +99,16 @@ public class RecurringScheduleEntitiesBuilder {
 
 		return this;
 	}
-
+	
+	public RecurringScheduleEntitiesBuilder setGuid(String guid){
+		if(recurringScheduleEntities != null){
+			for (RecurringScheduleEntity recurringScheduleEntity : recurringScheduleEntities){
+				recurringScheduleEntity.setGuid(guid);
+			}
+		}
+		return this;
+	}
+	
 	public List<RecurringScheduleEntity> build() {
 		return recurringScheduleEntities;
 	}

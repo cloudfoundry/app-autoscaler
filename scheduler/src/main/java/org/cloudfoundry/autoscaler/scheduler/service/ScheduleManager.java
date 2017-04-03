@@ -105,7 +105,7 @@ public class ScheduleManager {
 	 * @param appId
 	 * @param applicationPolicy
 	 */
-	public void setUpSchedules(String appId, ApplicationSchedules applicationPolicy) {
+	public void setUpSchedules(String appId, String guid, ApplicationSchedules applicationPolicy) {
 
 		// If there are schedules then only set the meta data in the schedule entities
 		if (applicationPolicy.getSchedules() != null && applicationPolicy.getSchedules().hasSchedules()) {
@@ -113,7 +113,7 @@ public class ScheduleManager {
 			if (specificDateSchedules != null) {
 				for (SpecificDateScheduleEntity specificDateScheduleEntity : specificDateSchedules) {
 					// Sets the meta data in specific date schedules list
-					setUpSchedules(appId, applicationPolicy, specificDateScheduleEntity);
+					setUpSchedules(appId, guid, applicationPolicy, specificDateScheduleEntity);
 				}
 			}
 
@@ -121,7 +121,7 @@ public class ScheduleManager {
 			List<RecurringScheduleEntity> recurringSchedules = applicationPolicy.getSchedules().getRecurringSchedule();
 			if (recurringSchedules != null) {
 				for (RecurringScheduleEntity recurringScheduleEntity : recurringSchedules) {
-					setUpSchedules(appId, applicationPolicy, recurringScheduleEntity);
+					setUpSchedules(appId, guid, applicationPolicy, recurringScheduleEntity);
 				}
 			}
 		}
@@ -133,11 +133,12 @@ public class ScheduleManager {
 	 * @param applicationPolicy
 	 * @param scheduleEntity
 	 */
-	private void setUpSchedules(String appId, ApplicationSchedules applicationPolicy, ScheduleEntity scheduleEntity) {
+	private void setUpSchedules(String appId, String guid, ApplicationSchedules applicationPolicy, ScheduleEntity scheduleEntity) {
 		scheduleEntity.setAppId(appId);
 		scheduleEntity.setTimeZone(applicationPolicy.getSchedules().getTimeZone());
 		scheduleEntity.setDefaultInstanceMinCount(applicationPolicy.getInstanceMinCount());
 		scheduleEntity.setDefaultInstanceMaxCount(applicationPolicy.getInstanceMaxCount());
+		scheduleEntity.setGuid(guid);
 
 	}
 

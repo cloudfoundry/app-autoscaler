@@ -73,6 +73,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest extends TestC
 	private MockMvc mockMvc;
 
 	private String appId = TestDataSetupHelper.generateAppIds(1)[0];
+	String guid = TestDataSetupHelper.generateGuid();
 
 	private String scheduleBeingProcessed = ScheduleTypeEnum.SPECIFIC_DATE.getDescription();
 
@@ -110,7 +111,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest extends TestC
 		String content = mapper.writeValueAsString(applicationPolicy);
 
 		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.not.specified",
 				scheduleBeingProcessed + " 0", "start_date_time");
@@ -130,7 +131,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest extends TestC
 		String content = mapper.writeValueAsString(applicationPolicy);
 
 		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.not.specified",
 				scheduleBeingProcessed + " 0", "end_date_time");
@@ -150,7 +151,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest extends TestC
 		String content = mapper.writeValueAsString(applicationPolicy);
 
 		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.not.specified",
 				scheduleBeingProcessed + " 0", "instance_max_count");
@@ -170,7 +171,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest extends TestC
 		String content = mapper.writeValueAsString(applicationPolicy);
 
 		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.not.specified",
 				scheduleBeingProcessed + " 0", "instance_min_count");
@@ -190,7 +191,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest extends TestC
 		String content = mapper.writeValueAsString(applicationPolicy);
 
 		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.invalid",
 				scheduleBeingProcessed + " 0", "instance_min_count", instanceMinCount);
@@ -210,7 +211,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest extends TestC
 		String content = mapper.writeValueAsString(applicationPolicy);
 
 		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.invalid",
 				scheduleBeingProcessed + " 0", "instance_max_count", instanceMaxCount);
@@ -234,7 +235,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest extends TestC
 		String content = mapper.writeValueAsString(applicationPolicy);
 
 		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.instanceCount.invalid.min.greater",
 				scheduleBeingProcessed + " 0", "instance_max_count", instanceMaxCount, "instance_min_count",
@@ -254,7 +255,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest extends TestC
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		assertResponseStatusEquals(resultActions, status().isOk());
 	}
@@ -272,7 +273,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest extends TestC
 		String content = mapper.writeValueAsString(applicationPolicy);
 
 		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.invalid",
 				scheduleBeingProcessed + " 0", "initial_min_instance_count", initialMinInstanceCount);
@@ -297,7 +298,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest extends TestC
 		String content = mapper.writeValueAsString(applicationPolicy);
 
 		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.invalid.start.after.end",
 				scheduleBeingProcessed + " 0", "end_date_time",
@@ -322,7 +323,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest extends TestC
 		String content = mapper.writeValueAsString(applicationPolicy);
 
 		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.invalid.current.after",
 				scheduleBeingProcessed + " 0", "start_date_time",
@@ -346,7 +347,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest extends TestC
 		String content = mapper.writeValueAsString(applicationPolicy);
 
 		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.invalid.current.after",
 				scheduleBeingProcessed + " 0", "end_date_time",
@@ -370,7 +371,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest extends TestC
 		String content = mapper.writeValueAsString(applicationPolicy);
 
 		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.overlap",
 				scheduleBeingProcessed + " 0", "end_date_time", scheduleBeingProcessed + " 1", "start_date_time");
@@ -399,7 +400,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest extends TestC
 		String content = mapper.writeValueAsString(applicationPolicy);
 
 		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		List<String> messages = new ArrayList<>();
 		messages.add(messageBundleResourceHelper.lookupMessage("schedule.date.overlap", scheduleBeingProcessed + " 0",
@@ -421,7 +422,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest extends TestC
 		String content = mapper.writeValueAsString(applicationPolicy);
 
 		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("data.invalid.noSchedules", "app_id=" + appId);
 		assertErrorMessage(resultActions, errorMessage);
@@ -438,7 +439,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest extends TestC
 		String content = mapper.writeValueAsString(applicationPolicy);
 
 		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("data.invalid.noSchedules", "app_id=" + appId);
 		assertErrorMessage(resultActions, errorMessage);
@@ -458,7 +459,7 @@ public class ScheduleRestController_SpecificScheduleValidationTest extends TestC
 
 		String content = mapper.writeValueAsString(applicationPolicy);
 		ResultActions resultActions = mockMvc
-				.perform(put(getCreateSchedulePath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		List<String> messages = new ArrayList<>();
 		messages.add(messageBundleResourceHelper.lookupMessage("schedule.data.value.not.specified",
@@ -483,9 +484,5 @@ public class ScheduleRestController_SpecificScheduleValidationTest extends TestC
 	private void assertResponseStatusEquals(ResultActions resultActions, ResultMatcher expectedStatus)
 			throws Exception {
 		resultActions.andExpect(expectedStatus);
-	}
-
-	private String getCreateSchedulePath(String appId) {
-		return String.format("/v2/schedules/%s", appId);
 	}
 }

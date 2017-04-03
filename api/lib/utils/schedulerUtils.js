@@ -20,7 +20,7 @@ module.exports = function(schedulerSettings) {
       logger.info('Policy has schedules, creating/updating schedules ..',
       { 'app id':req.params.app_id });
       var options = { 
-        url: schedulerURI + '/v2/schedules/' + req.params.app_id,
+        url: schedulerURI + '/v2/schedules/' + req.params.app_id + "?guid=" + req.query.policy_guid,
         method: 'PUT',
         body: req.body,
         json: true,

@@ -81,6 +81,8 @@ public class ScheduleRestControllerTest extends TestConfiguration {
 	private MockMvc mockMvc;
 
 	private String appId = TestDataSetupHelper.generateAppIds(1)[0];
+	private String guid = TestDataSetupHelper.generateGuid();
+	private String guid1, guid2, guid3;
 
 	private static ConsulUtil consulUtil;
 
@@ -107,25 +109,28 @@ public class ScheduleRestControllerTest extends TestConfiguration {
 		Mockito.when(activeScheduleDao.find(any())).thenReturn(activeScheduleEntity);
 
 		String appId = "appId_1";
+		guid1 = TestDataSetupHelper.generateGuid();
 		List<SpecificDateScheduleEntity> specificDateScheduleEntities = TestDataSetupHelper
-				.generateSpecificDateScheduleEntities(appId, 1);
+				.generateSpecificDateScheduleEntities(appId,guid1, 1);
 		testDataDbUtil.insertSpecificDateSchedule(specificDateScheduleEntities);
 
 		appId = "appId_2";
+		guid2 = TestDataSetupHelper.generateGuid();
 		List<RecurringScheduleEntity> recurringScheduleEntities = TestDataSetupHelper
-				.generateRecurringScheduleEntities(appId, 1, 0);
+				.generateRecurringScheduleEntities(appId,guid2, 1, 0);
 		testDataDbUtil.insertRecurringSchedule(recurringScheduleEntities);
 
 		appId = "appId_3";
-		specificDateScheduleEntities = TestDataSetupHelper.generateSpecificDateScheduleEntities(appId, 2);
+		guid3 = TestDataSetupHelper.generateGuid();
+		specificDateScheduleEntities = TestDataSetupHelper.generateSpecificDateScheduleEntities(appId,guid3, 2);
 		testDataDbUtil.insertSpecificDateSchedule(specificDateScheduleEntities);
-		recurringScheduleEntities = TestDataSetupHelper.generateRecurringScheduleEntities(appId, 1, 2);
+		recurringScheduleEntities = TestDataSetupHelper.generateRecurringScheduleEntities(appId,guid3, 1, 2);
 		testDataDbUtil.insertRecurringSchedule(recurringScheduleEntities);
 	}
 
 	@Test
 	public void testGetAllSchedule_with_no_schedules() throws Exception {
-		ResultActions resultActions = mockMvc.perform(get(getSchedulerPath(appId)).accept(MediaType.APPLICATION_JSON));
+		ResultActions resultActions = mockMvc.perform(get(TestDataSetupHelper.getSchedulerPath(appId, guid)).accept(MediaType.APPLICATION_JSON));
 
 		assertNoSchedulesFound(resultActions);
 	}
@@ -134,7 +139,7 @@ public class ScheduleRestControllerTest extends TestConfiguration {
 	public void testGetSchedule_with_only_specificDateSchedule() throws Exception {
 		String appId = "appId_1";
 
-		ResultActions resultActions = mockMvc.perform(get(getSchedulerPath(appId)).accept(MediaType.APPLICATION_JSON));
+		ResultActions resultActions = mockMvc.perform(get(TestDataSetupHelper.getSchedulerPath(appId, guid1)).accept(MediaType.APPLICATION_JSON));
 
 		ApplicationSchedules applicationPolicy = getApplicationSchedulesFromResultActions(resultActions);
 
@@ -149,7 +154,7 @@ public class ScheduleRestControllerTest extends TestConfiguration {
 	public void testGetSchedule_with_only_recurringSchedule() throws Exception {
 		String appId = "appId_2";
 
-		ResultActions resultActions = mockMvc.perform(get(getSchedulerPath(appId)).accept(MediaType.APPLICATION_JSON));
+		ResultActions resultActions = mockMvc.perform(get(TestDataSetupHelper.getSchedulerPath(appId,guid2)).accept(MediaType.APPLICATION_JSON));
 
 		ApplicationSchedules applicationPolicy = getApplicationSchedulesFromResultActions(resultActions);
 
@@ -164,7 +169,7 @@ public class ScheduleRestControllerTest extends TestConfiguration {
 	public void testGetSchedule_with_specificDateSchedule_and_recurringSchedule() throws Exception {
 		String appId = "appId_3";
 
-		ResultActions resultActions = mockMvc.perform(get(getSchedulerPath(appId)).accept(MediaType.APPLICATION_JSON));
+		ResultActions resultActions = mockMvc.perform(get(TestDataSetupHelper.getSchedulerPath(appId,guid3)).accept(MediaType.APPLICATION_JSON));
 
 		ApplicationSchedules applicationPolicy = getApplicationSchedulesFromResultActions(resultActions);
 
@@ -179,11 +184,12 @@ public class ScheduleRestControllerTest extends TestConfiguration {
 	public void testCreateAndGetSchedules_from_jsonFile() throws Exception {
 		String policyJsonStr = getPolicyJsonContent();
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
-		ResultActions resultActions = mockMvc.perform(put(getSchedulerPath(appId))
+		String guid = TestDataSetupHelper.generateGuid();
+		ResultActions resultActions = mockMvc.perform(put(TestDataSetupHelper.getSchedulerPath(appId,guid))
 				.contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).content(policyJsonStr));
 		assertResponseForCreateSchedules(resultActions, status().isOk());
 
-		resultActions = mockMvc.perform(get(getSchedulerPath(appId)).accept(MediaType.APPLICATION_JSON));
+		resultActions = mockMvc.perform(get(TestDataSetupHelper.getSchedulerPath(appId,guid)).accept(MediaType.APPLICATION_JSON));
 
 		ApplicationSchedules applicationSchedules = getApplicationSchedulesFromResultActions(resultActions);
 		assertSchedulesFoundEquals(applicationSchedules, appId, resultActions, 2, 4);
@@ -194,9 +200,10 @@ public class ScheduleRestControllerTest extends TestConfiguration {
 	@Test
 	public void testCreateSchedule_with_only_specificDateSchedules() throws Exception {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		String guid = TestDataSetupHelper.generateGuid();
 		String content = TestDataSetupHelper.generateJsonSchedule(2, 0);
 
-		ResultActions resultActions = mockMvc.perform(put(getSchedulerPath(appId))
+		ResultActions resultActions = mockMvc.perform(put(TestDataSetupHelper.getSchedulerPath(appId,guid))
 				.contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).content(content));
 
 		assertResponseForCreateSchedules(resultActions, status().isOk());
@@ -212,9 +219,10 @@ public class ScheduleRestControllerTest extends TestConfiguration {
 	@Test
 	public void testCreateSchedule_with_only_recurringSchedules() throws Exception {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		String guid = TestDataSetupHelper.generateGuid();
 		String content = TestDataSetupHelper.generateJsonSchedule(0, 2);
 
-		ResultActions resultActions = mockMvc.perform(put(getSchedulerPath(appId))
+		ResultActions resultActions = mockMvc.perform(put(TestDataSetupHelper.getSchedulerPath(appId,guid))
 				.contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).content(content));
 
 		assertResponseForCreateSchedules(resultActions, status().isOk());
@@ -230,9 +238,10 @@ public class ScheduleRestControllerTest extends TestConfiguration {
 	@Test
 	public void testCreateSchedule_with_specificDateSchedules_and_recurringSchedules() throws Exception {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		String guid = TestDataSetupHelper.generateGuid();
 		String content = TestDataSetupHelper.generateJsonSchedule(2, 2);
 
-		ResultActions resultActions = mockMvc.perform(put(getSchedulerPath(appId))
+		ResultActions resultActions = mockMvc.perform(put(TestDataSetupHelper.getSchedulerPath(appId,guid))
 				.contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).content(content));
 
 		assertResponseForCreateSchedules(resultActions, status().isOk());
@@ -256,7 +265,7 @@ public class ScheduleRestControllerTest extends TestConfiguration {
 
 		// Create two specific date schedules and one recurring schedule for the same application.
 		String content = TestDataSetupHelper.generateJsonSchedule(2, 1);
-		ResultActions resultActions = mockMvc.perform(put(getSchedulerPath(appId))
+		ResultActions resultActions = mockMvc.perform(put(TestDataSetupHelper.getSchedulerPath(appId,guid3))
 				.contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).content(content));
 		assertResponseForCreateSchedules(resultActions, status().isNoContent());
 
@@ -282,6 +291,21 @@ public class ScheduleRestControllerTest extends TestConfiguration {
 		resultActions.andExpect(status().isNotFound());
 
 	}
+	
+	@Test
+	public void testCreateSchedule_without_guid() throws Exception {
+
+		String appId = "appId";
+		ObjectMapper mapper = new ObjectMapper();
+		ApplicationSchedules applicationPolicy = TestDataSetupHelper.generateApplicationPolicy(1, 0);
+		String content = mapper.writeValueAsString(applicationPolicy);
+
+		ResultActions resultActions = mockMvc
+				.perform(put("/v2/schedules/" + appId).contentType(MediaType.APPLICATION_JSON).content(content));
+
+		resultActions.andExpect(status().isInternalServerError());
+
+	}
 
 	@Test
 	public void testCreateSchedule_without_timeZone() throws Exception {
@@ -294,7 +318,7 @@ public class ScheduleRestControllerTest extends TestConfiguration {
 		String content = mapper.writeValueAsString(applicationPolicy);
 
 		ResultActions resultActions = mockMvc
-				.perform(put(getSchedulerPath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("data.value.not.specified.timezone",
 				"timeZone");
@@ -312,7 +336,7 @@ public class ScheduleRestControllerTest extends TestConfiguration {
 		String content = mapper.writeValueAsString(applicationPolicy);
 
 		ResultActions resultActions = mockMvc
-				.perform(put(getSchedulerPath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("data.value.not.specified.timezone",
 				"timeZone");
@@ -330,7 +354,7 @@ public class ScheduleRestControllerTest extends TestConfiguration {
 		String content = mapper.writeValueAsString(applicationPolicy);
 
 		ResultActions resultActions = mockMvc
-				.perform(put(getSchedulerPath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("data.invalid.timezone", "timeZone");
 		assertErrorMessages(resultActions, errorMessage);
@@ -347,7 +371,7 @@ public class ScheduleRestControllerTest extends TestConfiguration {
 		String content = mapper.writeValueAsString(applicationPolicy);
 
 		ResultActions resultActions = mockMvc
-				.perform(put(getSchedulerPath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("data.default.value.not.specified",
 				"instance_min_count");
@@ -365,7 +389,7 @@ public class ScheduleRestControllerTest extends TestConfiguration {
 		String content = mapper.writeValueAsString(applicationPolicy);
 
 		ResultActions resultActions = mockMvc
-				.perform(put(getSchedulerPath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("data.default.value.not.specified",
 				"instance_max_count");
@@ -383,7 +407,7 @@ public class ScheduleRestControllerTest extends TestConfiguration {
 		String content = mapper.writeValueAsString(applicationPolicy);
 
 		ResultActions resultActions = mockMvc
-				.perform(put(getSchedulerPath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("data.default.value.invalid",
 				"instance_min_count", instanceMinCount);
@@ -401,7 +425,7 @@ public class ScheduleRestControllerTest extends TestConfiguration {
 		String content = mapper.writeValueAsString(applicationPolicy);
 
 		ResultActions resultActions = mockMvc
-				.perform(put(getSchedulerPath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("data.default.value.invalid",
 				"instance_max_count", instanceMaxCount);
@@ -422,7 +446,7 @@ public class ScheduleRestControllerTest extends TestConfiguration {
 		String content = mapper.writeValueAsString(applicationPolicy);
 
 		ResultActions resultActions = mockMvc
-				.perform(put(getSchedulerPath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage(
 				"data.default.instanceCount.invalid.min.greater", "instance_max_count", instanceMaxCount,
@@ -443,7 +467,7 @@ public class ScheduleRestControllerTest extends TestConfiguration {
 		String content = mapper.writeValueAsString(applicationPolicy);
 
 		ResultActions resultActions = mockMvc
-				.perform(put(getSchedulerPath(appId)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		List<String> messages = new ArrayList<>();
 		messages.add(
@@ -478,7 +502,7 @@ public class ScheduleRestControllerTest extends TestConfiguration {
 				is(0));
 
 		ResultActions resultActions = mockMvc
-				.perform(delete(getSchedulerPath(appId)).accept(MediaType.APPLICATION_JSON));
+				.perform(delete(TestDataSetupHelper.getSchedulerPath(appId, guid)).accept(MediaType.APPLICATION_JSON));
 		assertSchedulesAreDeleted(resultActions);
 
 		assertThat("It should have no specific date schedules.",
@@ -499,7 +523,7 @@ public class ScheduleRestControllerTest extends TestConfiguration {
 				is(1));
 
 		ResultActions resultActions = mockMvc
-				.perform(delete(getSchedulerPath(appId)).accept(MediaType.APPLICATION_JSON));
+				.perform(delete(TestDataSetupHelper.getSchedulerPath(appId, guid)).accept(MediaType.APPLICATION_JSON));
 		assertSchedulesAreDeleted(resultActions);
 
 		assertThat("It should have no specific date schedules.",
@@ -520,7 +544,7 @@ public class ScheduleRestControllerTest extends TestConfiguration {
 				is(3));
 
 		ResultActions resultActions = mockMvc
-				.perform(delete(getSchedulerPath(appId)).accept(MediaType.APPLICATION_JSON));
+				.perform(delete(TestDataSetupHelper.getSchedulerPath(appId, guid)).accept(MediaType.APPLICATION_JSON));
 		assertSchedulesAreDeleted(resultActions);
 
 		assertThat("It should have no specific date schedules.",
@@ -545,7 +569,7 @@ public class ScheduleRestControllerTest extends TestConfiguration {
 		assertThat("It should have 4 recurring schedules.", testDataDbUtil.getNumberOfRecurringSchedules(), is(4));
 
 		ResultActions resultActions = mockMvc
-				.perform(delete(getSchedulerPath(appId)).accept(MediaType.APPLICATION_JSON));
+				.perform(delete(TestDataSetupHelper.getSchedulerPath(appId, guid)).accept(MediaType.APPLICATION_JSON));
 		assertNoSchedulesFound(resultActions);
 
 		assertThat("It should have 3 specific date schedules.", testDataDbUtil.getNumberOfSpecificDateSchedules(),
@@ -617,10 +641,6 @@ public class ScheduleRestControllerTest extends TestConfiguration {
 		resultActions.andExpect(content().string(Matchers.isEmptyString()));
 		resultActions.andExpect(header().doesNotExist("Content-type"));
 		resultActions.andExpect(status().isNoContent());
-	}
-
-	private String getSchedulerPath(String appId) {
-		return String.format("/v2/schedules/%s", appId);
 	}
 
 	private ApplicationSchedules getApplicationSchedulesFromResultActions(ResultActions resultActions)

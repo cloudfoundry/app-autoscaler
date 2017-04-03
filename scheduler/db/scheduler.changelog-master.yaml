@@ -57,6 +57,11 @@ databaseChangeLog:
                   type: integer
                   constraints:
                     nullable: true
+              - column:
+                  name: guid
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
         - createIndex:
              columns:
              - column:
@@ -134,6 +139,11 @@ databaseChangeLog:
                   type: integer
                   constraints:
                     nullable: true
+              - column:
+                  name: guid
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
         - createIndex:
              columns:
              - column:

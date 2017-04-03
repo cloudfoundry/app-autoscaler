@@ -16,6 +16,7 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -180,9 +181,10 @@ public class ScheduleManagerTest extends TestConfiguration {
 	@Test
 	public void testCreateSchedules_with_specificDateSchedule() {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		String guid = TestDataSetupHelper.generateGuid();
 		int noOfSpecificDateSchedules = 1;
 
-		Schedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, noOfSpecificDateSchedules, 0,
+		Schedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, guid, noOfSpecificDateSchedules, 0,
 				0);
 
 		SpecificDateScheduleEntity specificDateScheduleEntity = new SpecificDateScheduleEntitiesBuilder(1)
@@ -197,10 +199,11 @@ public class ScheduleManagerTest extends TestConfiguration {
 	@Test
 	public void testCreateSchedules_with_dayOfMonth_recurringSchedule() {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		String guid = TestDataSetupHelper.generateGuid();
 		int noOfDOMRecurringSchedules = 1;
 		int noOfDOWRecurringSchedules = 0;
 
-		Schedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, 0, noOfDOMRecurringSchedules,
+		Schedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, guid, 0, noOfDOMRecurringSchedules,
 				noOfDOWRecurringSchedules);
 
 		RecurringScheduleEntity recurringScheduleEntity = new RecurringScheduleEntitiesBuilder(1, 0).setAppId(appId)
@@ -216,10 +219,11 @@ public class ScheduleManagerTest extends TestConfiguration {
 	@Test
 	public void testCreateSchedules_with_dayOfWeek_recurringSchedule() {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		String guid = TestDataSetupHelper.generateGuid();
 		int noOfDOMRecurringSchedules = 0;
 		int noOfDOWRecurringSchedules = 1;
 
-		Schedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, 0, noOfDOMRecurringSchedules,
+		Schedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, guid, 0, noOfDOMRecurringSchedules,
 				noOfDOWRecurringSchedules);
 
 		RecurringScheduleEntity recurringScheduleEntity = new RecurringScheduleEntitiesBuilder(1, 0).setAppId(appId)
@@ -235,11 +239,12 @@ public class ScheduleManagerTest extends TestConfiguration {
 	@Test
 	public void testCreateSchedules() {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		String guid = TestDataSetupHelper.generateGuid();
 		int noOfSpecificDateSchedules = 3;
 		int noOfDOMRecurringSchedules = 3;
 		int noOfDOWRecurringSchedules = 3;
 
-		Schedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, noOfSpecificDateSchedules,
+		Schedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, guid, noOfSpecificDateSchedules,
 				noOfDOMRecurringSchedules, noOfDOWRecurringSchedules);
 
 		SpecificDateScheduleEntity specificDateScheduleEntity = new SpecificDateScheduleEntitiesBuilder(1)
@@ -258,7 +263,8 @@ public class ScheduleManagerTest extends TestConfiguration {
 	@Test
 	public void testCreateSpecificDateSchedule_throw_DatabaseValidationException() {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
-		Schedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, 1, 0, 0);
+		String guid = TestDataSetupHelper.generateGuid();
+		Schedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId,guid, 1, 0, 0);
 
 		Mockito.when(specificDateScheduleDao.create(Mockito.anyObject()))
 				.thenThrow(new DatabaseValidationException("test exception"));
@@ -281,7 +287,8 @@ public class ScheduleManagerTest extends TestConfiguration {
 	@Test
 	public void testCreateRecurringSchedule_throw_DatabaseValidationException() {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
-		Schedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, 0, 1, 0);
+		String guid = TestDataSetupHelper.generateGuid();
+		Schedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, guid, 0, 1, 0);
 
 		Mockito.when(recurringScheduleDao.create(Mockito.anyObject()))
 				.thenThrow(new DatabaseValidationException("test exception"));

@@ -15,6 +15,7 @@ import (
 var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 	var (
 		testAppId         string
+		testGuid          string
 		initInstanceCount int = 2
 		policyStr         string
 	)
@@ -23,7 +24,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 		initializeHttpClient("scheduler.crt", "scheduler.key", "autoscaler-ca.crt", schedulerScalingEngineHttpRequestTimeout)
 
 		testAppId = getRandomId()
-
+		testGuid = getRandomId()
 		startFakeCCNOAAUAA(initInstanceCount)
 
 		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), cf.GrantTypePassword, tmpDir)
@@ -47,7 +48,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 		Context("Valid specific date schedule", func() {
 
 			It("creates active schedule in scaling engine", func() {
-				resp, err := createSchedule(testAppId, policyStr)
+				resp, err := createSchedule(testAppId, testGuid, policyStr)
 				checkResponseIsEmpty(resp, err, http.StatusOK)
 
 				Eventually(func() bool {
@@ -63,7 +64,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 			})
 
 			It("should create an active schedule in scaling engine after restart", func() {
-				resp, err := createSchedule(testAppId, policyStr)
+				resp, err := createSchedule(testAppId, testGuid, policyStr)
 				checkResponseIsEmpty(resp, err, http.StatusOK)
 
 				Consistently(func() error {
@@ -82,7 +83,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 
 	Describe("Delete Schedule", func() {
 		BeforeEach(func() {
-			resp, err := createSchedule(testAppId, policyStr)
+			resp, err := createSchedule(testAppId, testGuid, policyStr)
 			checkResponseIsEmpty(resp, err, http.StatusOK)
 
 			Eventually(func() bool {

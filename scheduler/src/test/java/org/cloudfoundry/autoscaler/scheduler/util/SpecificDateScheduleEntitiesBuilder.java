@@ -78,7 +78,16 @@ public class SpecificDateScheduleEntitiesBuilder {
 
 		return this;
 	}
-
+	
+	public SpecificDateScheduleEntitiesBuilder setGuid(String guid){
+		if(specificDateScheduleEntities != null){
+			for(SpecificDateScheduleEntity specificDateScheduleEntity : specificDateScheduleEntities){
+				specificDateScheduleEntity.setGuid(guid);
+			}
+		}
+		return this;
+	}
+	
 	public List<SpecificDateScheduleEntity> build() {
 		return specificDateScheduleEntities;
 	}

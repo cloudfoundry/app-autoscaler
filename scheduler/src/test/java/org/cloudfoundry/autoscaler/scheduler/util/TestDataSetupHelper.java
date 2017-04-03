@@ -66,13 +66,13 @@ public class TestDataSetupHelper {
 
 	}
 
-	public static Schedules generateSchedulesWithEntitiesOnly(String appId, int noOfSpecificSchedules,
+	public static Schedules generateSchedulesWithEntitiesOnly(String appId, String guid, int noOfSpecificSchedules,
 			int noOfDOMRecurringSchedules, int noOfDOWRecurringSchedules) {
 
-		List<SpecificDateScheduleEntity> specificDateSchedules = generateSpecificDateScheduleEntities(appId,
+		List<SpecificDateScheduleEntity> specificDateSchedules = generateSpecificDateScheduleEntities(appId, guid,
 				noOfSpecificSchedules);
 
-		List<RecurringScheduleEntity> recurringSchedules = generateRecurringScheduleEntities(appId,
+		List<RecurringScheduleEntity> recurringSchedules = generateRecurringScheduleEntities(appId, guid,
 				noOfDOMRecurringSchedules, noOfDOWRecurringSchedules);
 
 		return new ScheduleBuilder().setSpecificDate(specificDateSchedules).setRecurringSchedule(recurringSchedules)
@@ -80,17 +80,17 @@ public class TestDataSetupHelper {
 
 	}
 
-	public static List<SpecificDateScheduleEntity> generateSpecificDateScheduleEntities(String appId,
+	public static List<SpecificDateScheduleEntity> generateSpecificDateScheduleEntities(String appId, String guid,
 			int noOfSpecificDateSchedulesToSetUp) {
-		return new SpecificDateScheduleEntitiesBuilder(noOfSpecificDateSchedulesToSetUp).setAppid(appId)
+		return new SpecificDateScheduleEntitiesBuilder(noOfSpecificDateSchedulesToSetUp).setAppid(appId).setGuid(guid)
 				.setTimeZone(timeZone).setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).build();
 	}
 
-	public static List<RecurringScheduleEntity> generateRecurringScheduleEntities(String appId,
+	public static List<RecurringScheduleEntity> generateRecurringScheduleEntities(String appId, String guid,
 			int noOfDOMRecurringSchedules, int noOfDOWRecurringSchedules) {
 
 		return new RecurringScheduleEntitiesBuilder(noOfDOMRecurringSchedules, noOfDOWRecurringSchedules)
-				.setAppId(appId).setTimeZone(timeZone).setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5)
+				.setAppId(appId).setGuid(guid).setTimeZone(timeZone).setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5)
 				.build();
 	}
 
@@ -204,7 +204,9 @@ public class TestDataSetupHelper {
 		}
 		return appIds.toArray(new String[0]);
 	}
-
+	public static String generateGuid(){
+		return UUID.randomUUID().toString();
+	}
 	public static int[] generateDayOfWeek() {
 		int arraySize = (int) (new Date().getTime() % 7) + 1;
 		int[] array = makeRandomArray(new Random(Calendar.getInstance().getTimeInMillis()), arraySize,
@@ -256,7 +258,9 @@ public class TestDataSetupHelper {
 	public static List<String> getAllGeneratedAppIds() {
 		return genAppIds;
 	}
-
+	public static String getSchedulerPath(String appId, String guid) {
+		return String.format("/v2/schedules/%s?guid=%s", appId, guid);
+	}
 	static String getTimeZone() {
 		return timeZone;
 	}
