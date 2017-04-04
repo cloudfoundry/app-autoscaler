@@ -35,6 +35,8 @@ var _ = Describe("Config", func() {
   user: admin
 server:
   port: 8989
+consul:
+  cluster: http://127.0.0.1:8500
 `)
 			})
 
@@ -80,6 +82,8 @@ db:
   scheduler_db_url: test-scheduler-db-url
 synchronizer:
   active_schedule_sync_interval: 300s
+consul:
+  cluster: http://127.0.0.1:8500
 `)
 			})
 
@@ -105,6 +109,8 @@ synchronizer:
 				Expect(conf.Db.SchedulerDbUrl).To(Equal("test-scheduler-db-url"))
 
 				Expect(conf.Synchronizer.ActiveScheduleSyncInterval).To(Equal(5 * time.Minute))
+
+				Expect(conf.Consul.Cluster).To(Equal("http://127.0.0.1:8500"))
 			})
 		})
 
@@ -117,6 +123,8 @@ db:
   policy_db_url: test-policy-db-url
   scalingengine_db_url: test-scalingengine-db-url
   scheduler_db_url: test-scheduler-db-url
+consul:
+  cluster: http://127.0.0.1:8500
 `)
 			})
 
@@ -141,6 +149,7 @@ db:
 			conf.Db.PolicyDbUrl = "test-policy-db-url"
 			conf.Db.ScalingEngineDbUrl = "test-scalingengine-db-url"
 			conf.Db.SchedulerDbUrl = "test-scheduler-db-url"
+			conf.Consul.Cluster = "http://127.0.0.1:8500"
 		})
 
 		JustBeforeEach(func() {
@@ -193,6 +202,15 @@ db:
 			})
 		})
 
+		Context("when consul cluster is not set", func() {
+			BeforeEach(func() {
+				conf.Consul.Cluster = ""
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: Consul cluster is empty")))
+			})
+		})
 	})
 
 })

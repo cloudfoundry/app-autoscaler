@@ -13,3 +13,5 @@ db:
   scheduler_db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
 synchronizer:
   active_schedule_sync_interval: 600s
+consul:
+  cluster: "http://127.0.0.1:8500"

@@ -50,12 +50,19 @@ var defaultSynchronizerConfig = SynchronizerConfig{
 	ActiveScheduleSyncInterval: DefaultActiveScheduleSyncInterval,
 }
 
+type ConsulConfig struct {
+	Cluster string `yaml:"cluster"`
+}
+
+var defaultConsulConfig = ConsulConfig{}
+
 type Config struct {
 	Cf           cf.CfConfig        `yaml:"cf"`
 	Logging      LoggingConfig      `yaml:"logging"`
 	Server       ServerConfig       `yaml:"server"`
 	Db           DbConfig           `yaml:"db"`
 	Synchronizer SynchronizerConfig `yaml:"synchronizer"`
+	Consul       ConsulConfig       `yaml:"consul"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
@@ -64,6 +71,7 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		Logging:      defaultLoggingConfig,
 		Server:       defaultServerConfig,
 		Synchronizer: defaultSynchronizerConfig,
+		Consul:       defaultConsulConfig,
 	}
 
 	bytes, err := ioutil.ReadAll(reader)
@@ -98,6 +106,10 @@ func (c *Config) Validate() error {
 
 	if c.Db.SchedulerDbUrl == "" {
 		return fmt.Errorf("Configuration error: Scheduler DB url is empty")
+	}
+
+	if c.Consul.Cluster == "" {
+		return fmt.Errorf("Configuration error: Consul cluster is empty")
 	}
 
 	return nil
