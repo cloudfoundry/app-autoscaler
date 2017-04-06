@@ -13,7 +13,6 @@ import (
 )
 
 const (
-	DefaultServerPort                int           = 8080
 	DefaultLoggingLevel              string        = "info"
 	DefaultPolicyPollerInterval      time.Duration = 40 * time.Second
 	DefaultAggregatorExecuteInterval time.Duration = 40 * time.Second
@@ -25,10 +24,6 @@ const (
 	DefaultLockTTL                   time.Duration = locket.DefaultSessionTTL
 	DefaultRetryInterval             time.Duration = locket.RetryInterval
 )
-
-type ServerConfig struct {
-	Port int `yaml:"port"`
-}
 
 type LoggingConfig struct {
 	Level string `yaml:"level"`
@@ -69,7 +64,6 @@ type LockConfig struct {
 }
 
 type Config struct {
-	Server          ServerConfig          `yaml:"server"`
 	Logging         LoggingConfig         `yaml:"logging"`
 	DB              DBConfig              `yaml:"db"`
 	Aggregator      AggregatorConfig      `yaml:"aggregator"`
@@ -81,9 +75,6 @@ type Config struct {
 
 func LoadConfig(bytes []byte) (*Config, error) {
 	conf := &Config{
-		Server: ServerConfig{
-			Port: DefaultServerPort,
-		},
 		Logging: LoggingConfig{
 			Level: DefaultLoggingLevel,
 		},
@@ -112,9 +103,6 @@ func LoadConfig(bytes []byte) (*Config, error) {
 }
 
 func (c *Config) Validate() error {
-	if c.Server.Port <= 0 || c.Server.Port > 65535 {
-		return fmt.Errorf("Configuration error: server port is less-equal than 0 or more than 65535")
-	}
 	if c.DB.PolicyDBUrl == "" {
 		return fmt.Errorf("Configuration error: Policy DB url is empty")
 	}

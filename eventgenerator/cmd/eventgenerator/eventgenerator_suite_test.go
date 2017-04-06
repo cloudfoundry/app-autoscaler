@@ -181,9 +181,6 @@ func initHttpEndPoints() {
 func initConfig() {
 	testCertDir := "../../../../../test-certs"
 	conf = &config.Config{
-		Server: config.ServerConfig{
-			Port: config.DefaultServerPort + 1,
-		},
 		Logging: config.LoggingConfig{
 			Level: "debug",
 		},
