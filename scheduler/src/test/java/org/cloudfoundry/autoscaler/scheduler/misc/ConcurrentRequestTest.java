@@ -15,7 +15,6 @@ import java.util.concurrent.Future;
 import org.cloudfoundry.autoscaler.scheduler.util.ConsulUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.EmbeddedTomcatUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.ScalingEngineUtil;
-import org.cloudfoundry.autoscaler.scheduler.util.TestConfiguration;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -28,7 +27,7 @@ import org.springframework.web.client.RestOperations;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class ConcurrentRequestTest extends TestConfiguration {
+public class ConcurrentRequestTest {
 
 	@Value("${autoscaler.scalingengine.url}")
 	private String scalingEngineUrl;

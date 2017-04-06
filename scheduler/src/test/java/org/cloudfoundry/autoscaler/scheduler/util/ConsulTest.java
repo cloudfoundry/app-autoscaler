@@ -28,7 +28,7 @@ import com.ecwid.consul.v1.agent.model.Service;
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
-public class ConsulTest extends TestConfiguration {
+public class ConsulTest {
 
 	@LocalServerPort
 	private Integer schedulerPort;

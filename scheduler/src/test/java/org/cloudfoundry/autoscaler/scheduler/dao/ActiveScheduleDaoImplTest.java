@@ -11,7 +11,6 @@ import javax.transaction.Transactional;
 
 import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.util.ConsulUtil;
-import org.cloudfoundry.autoscaler.scheduler.util.TestConfiguration;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.junit.AfterClass;
@@ -26,7 +25,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 @RunWith(SpringRunner.class)
 @SpringBootTest
 @Transactional
-public class ActiveScheduleDaoImplTest extends TestConfiguration {
+public class ActiveScheduleDaoImplTest {
 
 	@Autowired
 	private ActiveScheduleDao activeScheduleDao;
