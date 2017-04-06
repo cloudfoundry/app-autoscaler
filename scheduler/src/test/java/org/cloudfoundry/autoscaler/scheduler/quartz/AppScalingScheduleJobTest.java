@@ -27,7 +27,6 @@ import org.cloudfoundry.autoscaler.scheduler.util.ConsulUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.EmbeddedTomcatUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.JobActionEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper;
-import org.cloudfoundry.autoscaler.scheduler.util.TestConfiguration;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper.JobInformation;
@@ -67,7 +66,7 @@ import org.springframework.web.client.RestOperations;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class AppScalingScheduleJobTest extends TestConfiguration {
+public class AppScalingScheduleJobTest {
 
 	@Mock
 	private Appender mockAppender;

@@ -12,7 +12,6 @@ import javax.transaction.Transactional;
 
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.util.ConsulUtil;
-import org.cloudfoundry.autoscaler.scheduler.util.TestConfiguration;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationException;
@@ -28,7 +27,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 @RunWith(SpringRunner.class)
 @SpringBootTest
 @Transactional
-public class RecurringScheduleDaoImplTest extends TestConfiguration {
+public class RecurringScheduleDaoImplTest {
 	@Autowired
 	private RecurringScheduleDao recurringScheduleDao;
 

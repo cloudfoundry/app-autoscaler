@@ -11,7 +11,6 @@ import javax.sql.DataSource;
 
 import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.util.ConsulUtil;
-import org.cloudfoundry.autoscaler.scheduler.util.TestConfiguration;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationException;
 import org.junit.AfterClass;
@@ -27,7 +26,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class ActiveScheduleDaoImpl_FailureTest extends TestConfiguration {
+public class ActiveScheduleDaoImpl_FailureTest {
 
 	@Autowired
 	private ActiveScheduleDao activeScheduleDao;

@@ -11,7 +11,6 @@ import javax.transaction.Transactional;
 
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.util.ConsulUtil;
-import org.cloudfoundry.autoscaler.scheduler.util.TestConfiguration;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationException;
@@ -27,7 +26,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 @RunWith(SpringRunner.class)
 @SpringBootTest
 @Transactional
-public class SpecificDateScheduleDaoImplTest extends TestConfiguration {
+public class SpecificDateScheduleDaoImplTest {
 
 	@Autowired
 	private SpecificDateScheduleDao specificDateScheduleDao;
