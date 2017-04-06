@@ -27,8 +27,6 @@ var _ = Describe("Config", func() {
 		Context("with valid yaml", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
-server:
-  port: 8081
 logging:
   level: info
 db:
@@ -64,7 +62,7 @@ lock:
 
 			It("returns the config", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(conf).To(Equal(&Config{Server: ServerConfig{Port: 8081},
+				Expect(conf).To(Equal(&Config{
 					Logging: LoggingConfig{Level: "info"},
 					DB:      DBConfig{PolicyDBUrl: "postgres://postgres:password@localhost/autoscaler?sslmode=disable", AppMetricDBUrl: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"},
 					Aggregator: AggregatorConfig{
@@ -103,9 +101,7 @@ lock:
 		Context("with invalid yaml", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
-  server:
-  port: 8081
-logging:
+  logging:
   level: info
 db:
   policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
@@ -133,44 +129,9 @@ lock:
 			})
 		})
 
-		Context("when it gives a non integer server port", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
-server:
-  port: NOT-INTEGER-VALUE
-logging:
-  level: info
-db:
-  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
-  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
-aggregator: 
-  aggregator_execute_interval: 30s
-  policy_poller_interval: 30s
-  metric_poller_count: 10
-  app_monitor_channel_size: 100
-evaluator:
-  evaluation_manager_execute_interval: 30s
-  evaluator_count: 10
-  trigger_array_channel_size: 100
-scalingEngine:
-  scaling_engine_url: http://localhost:8082
-metricCollector:
-  metric_collector_url: http://localhost:8083
-lock:
-  consul_cluster_config: http://127.0.0.1:8500
-`)
-			})
-
-			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
-			})
-		})
-
 		Context("when it gives a non integer aggregator_execute_interval", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
-server:
-  port: 8081
 logging:
   level: info
 db:
@@ -202,8 +163,6 @@ lock:
 		Context("when it gives a non integer policy_poller_interval", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
-server:
-  port: 8081
 logging:
   level: info
 db:
@@ -235,8 +194,6 @@ lock:
 		Context("when it gives a non integer metric_poller_count", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
-server:
-  port: 8081
 logging:
   level: info
 db:
@@ -268,8 +225,6 @@ lock:
 		Context("when it gives a non integer app_monitor_channel_size", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
-server:
-  port: 8081
 logging:
   level: info
 db:
@@ -301,8 +256,6 @@ lock:
 		Context("when it gives a non integer evaluation_manager_execute_interval", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
-server:
-  port: 8081
 logging:
   level: info
 db:
@@ -334,8 +287,6 @@ lock:
 		Context("when it gives a non integer evaluator_count", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
-server:
-  port: 8081
 logging:
   level: info
 db:
@@ -366,8 +317,6 @@ lock:
 		Context("when it gives a non integer trigger_array_channel_size", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
-server:
-  port: 8081
 logging:
   level: info
 db:
@@ -399,8 +348,6 @@ lock:
 		Context("when it gives a non integer lock_ttl", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
-server:
-  port: 8081
 logging:
   level: info
 db:
@@ -434,8 +381,6 @@ lock:
 		Context("when it gives a non integer lock_retry_interval", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
-server:
-  port: 8081
 logging:
   level: info
 db:
@@ -469,7 +414,6 @@ lock:
 		Context("with partial config", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
-
 db:
   policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
   app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
@@ -487,7 +431,7 @@ lock:
 				Expect(conf.Aggregator.PolicyPollerInterval).To(Equal(time.Duration(DefaultPolicyPollerInterval)))
 
 				Expect(err).NotTo(HaveOccurred())
-				Expect(conf).To(Equal(&Config{Server: ServerConfig{Port: 8080},
+				Expect(conf).To(Equal(&Config{
 					Logging: LoggingConfig{Level: "info"},
 					DB:      DBConfig{PolicyDBUrl: "postgres://postgres:password@localhost/autoscaler?sslmode=disable", AppMetricDBUrl: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"},
 					Aggregator: AggregatorConfig{AggregatorExecuteInterval: DefaultAggregatorExecuteInterval,
@@ -513,7 +457,7 @@ lock:
 
 	Describe("Validate", func() {
 		BeforeEach(func() {
-			conf = &Config{Server: ServerConfig{Port: 8081},
+			conf = &Config{
 				Logging: LoggingConfig{Level: "info"},
 				DB:      DBConfig{PolicyDBUrl: "postgres://postgres:password@localhost/autoscaler?sslmode=disable", AppMetricDBUrl: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"},
 				Aggregator: AggregatorConfig{
@@ -537,24 +481,6 @@ lock:
 
 		JustBeforeEach(func() {
 			err = conf.Validate()
-		})
-
-		Context("when server port <= 0", func() {
-			BeforeEach(func() {
-				conf.Server.Port = 0
-			})
-			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: server port is less-equal than 0 or more than 65535")))
-			})
-		})
-
-		Context("when server port > 65535", func() {
-			BeforeEach(func() {
-				conf.Server.Port = 65536
-			})
-			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: server port is less-equal than 0 or more than 65535")))
-			})
 		})
 
 		Context("when policy db url is not set", func() {
