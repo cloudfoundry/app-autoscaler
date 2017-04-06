@@ -258,8 +258,8 @@ public class TestDataSetupHelper {
 	public static List<String> getAllGeneratedAppIds() {
 		return genAppIds;
 	}
-	public static String getSchedulerPath(String appId, String guid) {
-		return String.format("/v2/schedules/%s?guid=%s", appId, guid);
+	public static String getSchedulerPath(String appId) {
+		return String.format("/v2/schedules/%s", appId);
 	}
 	static String getTimeZone() {
 		return timeZone;

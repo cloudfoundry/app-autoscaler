@@ -184,7 +184,7 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 
 		// Delete End job.
 		ResultActions resultActions = mockMvc
-				.perform(delete(TestDataSetupHelper.getSchedulerPath(appId, guid)).accept(MediaType.APPLICATION_JSON));
+				.perform(delete(TestDataSetupHelper.getSchedulerPath(appId)).accept(MediaType.APPLICATION_JSON));
 
 		resultActions.andExpect(MockMvcResultMatchers.content().string(""));
 		resultActions.andExpect(status().isNoContent());
@@ -220,7 +220,7 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest ext
 
 		ObjectMapper mapper = new ObjectMapper();
 		String content = mapper.writeValueAsString(applicationSchedules);
-		ResultActions resultActions = mockMvc.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid))
+		ResultActions resultActions = mockMvc.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid)
 				.contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).content(content));
 
 		resultActions.andExpect(MockMvcResultMatchers.content().string(""));

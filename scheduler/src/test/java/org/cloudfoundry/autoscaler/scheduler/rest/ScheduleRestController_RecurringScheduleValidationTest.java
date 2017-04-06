@@ -115,7 +115,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
 		ResultActions resultActions = mockMvc
-				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		assertResponseStatusEquals(resultActions, status().isOk());
 	}
@@ -136,7 +136,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
 		ResultActions resultActions = mockMvc
-				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.invalid.before.current",
 				scheduleBeingProcessed + " 0", "start_date", startDate);
@@ -159,7 +159,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
 		ResultActions resultActions = mockMvc
-				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		assertResponseStatusEquals(resultActions, status().isOk());
 	}
@@ -180,7 +180,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
 		ResultActions resultActions = mockMvc
-				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.invalid.before.current",
 				scheduleBeingProcessed + " 0", "end_date", endDate);
@@ -210,7 +210,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
 		ResultActions resultActions = mockMvc
-				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.invalid.end.before.start",
 				scheduleBeingProcessed + " 0", "end_date", entity.getEndDate(), "start_date", entity.getStartDate());
@@ -231,7 +231,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
 		ResultActions resultActions = mockMvc
-				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.not.specified",
 				scheduleBeingProcessed + " 0", "start_time");
@@ -252,7 +252,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
 		ResultActions resultActions = mockMvc
-				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.not.specified",
 				scheduleBeingProcessed + " 0", "end_time");
@@ -280,7 +280,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
 		ResultActions resultActions = mockMvc
-				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.date.invalid.start.after.end",
 				scheduleBeingProcessed + " 0", "end_time", DateHelper.convertLocalTimeToString(endTime), "start_time",
@@ -302,7 +302,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
 		ResultActions resultActions = mockMvc
-				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.not.specified",
 				scheduleBeingProcessed + " 0", "instance_max_count");
@@ -323,7 +323,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
 		ResultActions resultActions = mockMvc
-				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.not.specified",
 				scheduleBeingProcessed + " 0", "instance_min_count");
@@ -345,7 +345,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
 		ResultActions resultActions = mockMvc
-				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.invalid",
 				scheduleBeingProcessed + " 0", "instance_min_count", instanceMinCount);
@@ -367,7 +367,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
 		ResultActions resultActions = mockMvc
-				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.invalid",
 				scheduleBeingProcessed + " 0", "instance_max_count", instanceMaxCount);
@@ -392,7 +392,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
 		ResultActions resultActions = mockMvc
-				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.instanceCount.invalid.min.greater",
 				scheduleBeingProcessed + " 0", "instance_max_count", instanceMaxCount, "instance_min_count",
@@ -414,7 +414,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
 		ResultActions resultActions = mockMvc
-				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		assertResponseStatusEquals(resultActions, status().isOk());
 	}
@@ -434,7 +434,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
 		ResultActions resultActions = mockMvc
-				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.value.invalid",
 				scheduleBeingProcessed + " 0", "initial_min_instance_count", initialMinInstanceCount);
@@ -466,7 +466,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
 		ResultActions resultActions = mockMvc
-				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.both.values.not.specified",
 				scheduleBeingProcessed + " 0", "day_of_week", "day_of_month");
@@ -489,7 +489,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
 		ResultActions resultActions = mockMvc
-				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("schedule.data.both.values.specified",
 				scheduleBeingProcessed + " 0", "day_of_week", "day_of_month");
@@ -556,7 +556,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
 		ResultActions resultActions = mockMvc
-				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("data.invalid.noSchedules", "app_id=" + appId);
 		assertErrorMessage(resultActions, errorMessage);
@@ -576,7 +576,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
 		ResultActions resultActions = mockMvc
-				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		String errorMessage = messageBundleResourceHelper.lookupMessage("data.invalid.noSchedules", "app_id=" + appId);
 		assertErrorMessage(resultActions, errorMessage);
@@ -667,7 +667,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
 		ResultActions resultActions = mockMvc
-				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		assertOverlapDateErrorMessage(resultActions);
 	}
@@ -694,7 +694,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
 		ResultActions resultActions = mockMvc
-				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		assertOverlapDateErrorMessage(resultActions);
 	}
@@ -726,7 +726,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
 		ResultActions resultActions = mockMvc
-				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		assertResponseStatusEquals(resultActions, status().isOk());
 	}
@@ -768,7 +768,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
 		ResultActions resultActions = mockMvc
-				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		List<String> messages = new ArrayList<>();
 		messages.add(messageBundleResourceHelper.lookupMessage("schedule.date.overlap", scheduleBeingProcessed + " 0",
@@ -797,7 +797,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
 		ResultActions resultActions = mockMvc
-				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid).contentType(MediaType.APPLICATION_JSON).content(content));
 
 		List<String> messages = new ArrayList<>();
 		messages.add(messageBundleResourceHelper.lookupMessage("schedule.data.value.not.specified",
@@ -820,7 +820,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 				firstStartDateStr, firstEndDateStr, secondStartDateStr, secondEndDateStr);
 
 		return mockMvc
-				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid).contentType(MediaType.APPLICATION_JSON).content(content));
 	}
 
 	private ResultActions getResultActionsForInvalidDayOfWeek(int[] dayOfWeek) throws Exception {
@@ -838,7 +838,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
 		return mockMvc
-				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid).contentType(MediaType.APPLICATION_JSON).content(content));
 	}
 
 	private ResultActions getResultActionsForInvalidDayOfMonth(int[] dayOfMonth) throws Exception {
@@ -856,7 +856,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest extends Test
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
 		return mockMvc
-				.perform(put(TestDataSetupHelper.getSchedulerPath(appId, guid)).contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid).contentType(MediaType.APPLICATION_JSON).content(content));
 	}
 
 	private void assertOverlapDateErrorMessage(ResultActions resultActions) throws Exception {

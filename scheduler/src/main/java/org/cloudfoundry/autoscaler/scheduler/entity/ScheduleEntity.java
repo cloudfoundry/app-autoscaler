@@ -163,17 +163,14 @@ public class ScheduleEntity {
 		if (defaultInstanceMaxCount != null ? !defaultInstanceMaxCount.equals(that.defaultInstanceMaxCount)
 				: that.defaultInstanceMaxCount != null)
 			return false;
-		if (instanceMinCount != null ? !instanceMinCount.equals(that.instanceMinCount)
-				: that.instanceMinCount != null)
+		if (!instanceMinCount.equals(that.instanceMinCount))
 			return false;
-		if (instanceMaxCount != null ? !instanceMaxCount.equals(that.instanceMaxCount)
-				: that.instanceMaxCount != null)
+		if (!instanceMaxCount.equals(that.instanceMaxCount))
 			return false;
 		if (initialMinInstanceCount != null ? !initialMinInstanceCount.equals(that.initialMinInstanceCount)
 				: that.initialMinInstanceCount != null)
 			return false;
-		if (guid != null ? !guid.equals(that.guid)
-				: that.guid != null)
+		if (!guid.equals(that.guid))
 			return false;
 		return true;
 

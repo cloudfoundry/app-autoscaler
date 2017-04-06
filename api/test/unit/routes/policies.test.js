@@ -32,6 +32,7 @@ describe('Routing Policy Creation', function() {
   it('should create a policy for app id 12345', function(done) {
     nock(schedulerURI)
     .put('/v2/schedules/12345')
+    .query({'guid':/.*/})
     .reply(200);
     request(app)
     .put('/v1/policies/12345')
@@ -51,6 +52,7 @@ describe('Routing Policy Creation', function() {
   it('should fail to create a policy for validation error in scheduler for app id 12346', function(done) {
     nock(schedulerURI)
     .put('/v2/schedules/12346')
+    .query({'guid':/.*/})
     .reply(400);
     request(app)
     .put('/v1/policies/12346')
@@ -68,6 +70,7 @@ describe('Routing Policy Creation', function() {
         ' error in scheduler','details':'fake body' };
     nock(schedulerURI)
     .put('/v2/schedules/12347')
+    .query({'guid':/.*/})
     .replyWithError(mockError);
     request(app)
     .put('/v1/policies/12347')
@@ -87,6 +90,7 @@ describe('Routing Policy Creation', function() {
     beforeEach(function(done) {
       nock(schedulerURI)
       .put('/v2/schedules/12345')
+      .query({'guid':/.*/})
       .reply(200);
       request(app)
       .put('/v1/policies/12345')
@@ -99,6 +103,7 @@ describe('Routing Policy Creation', function() {
     it('should update the existing policy for app id 12345', function(done) {
       nock(schedulerURI)
       .put('/v2/schedules/12345')
+      .query({'guid':/.*/})
       .reply(204);
       request(app)
       .put('/v1/policies/12345')
