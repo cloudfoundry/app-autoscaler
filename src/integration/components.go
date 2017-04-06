@@ -342,12 +342,9 @@ func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port i
 	return writeYmlConfig(tmpDir, MetricsCollector, &cfg)
 }
 
-func (components *Components) PrepareEventGeneratorConfig(dbUri string, port int, metricsCollectorUrl string, scalingEngineUrl string, aggregatorExecuteInterval time.Duration, policyPollerInterval time.Duration,
+func (components *Components) PrepareEventGeneratorConfig(dbUri string, metricsCollectorUrl string, scalingEngineUrl string, aggregatorExecuteInterval time.Duration, policyPollerInterval time.Duration,
 	evaluationManagerInterval time.Duration, tmpDir string, lockTTL time.Duration, lockRetryInterval time.Duration, ConsulClusterConfig string) string {
 	conf := &egConfig.Config{
-		Server: egConfig.ServerConfig{
-			Port: port,
-		},
 		Logging: egConfig.LoggingConfig{
 			Level: "debug",
 		},

@@ -84,7 +84,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	eventGeneratorServer := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
+	eventGenerator := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
 		policyPoller.Start()
 
 		for _, evaluator := range evaluators {
@@ -121,11 +121,11 @@ func main() {
 		conf.Lock.LockTTL,
 	)
 
-	registrationRunner := initializeRegistrationRunner(logger, consulClient, conf.Server.Port, egClock)
+	registrationRunner := initializeRegistrationRunner(logger, consulClient, egClock)
 
 	members := grouper.Members{
 		{"lock-maintainer", lockMaintainer},
-		{"eventGeneratorServer", eventGeneratorServer},
+		{"eventGenerator", eventGenerator},
 		{"registration", registrationRunner},
 	}
 
@@ -249,11 +249,9 @@ func createMetricPollers(logger lager.Logger, conf *config.Config, appChan chan 
 func initializeRegistrationRunner(
 	logger lager.Logger,
 	consulClient consuladapter.Client,
-	port int,
 	clock clock.Clock) ifrit.Runner {
 	registration := &api.AgentServiceRegistration{
 		Name: "eventgenerator",
-		Port: port,
 		Check: &api.AgentServiceCheck{
 			TTL: "20s",
 		},

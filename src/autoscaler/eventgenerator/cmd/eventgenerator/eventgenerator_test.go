@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/clock"
+	"code.cloudfoundry.org/consuladapter"
 	"code.cloudfoundry.org/lager/lagertest"
 	"code.cloudfoundry.org/locket"
 
-	"code.cloudfoundry.org/consuladapter"
 	"github.com/hashicorp/consul/api"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -56,7 +56,6 @@ var _ = Describe("Eventgenerator", func() {
 				&api.AgentService{
 					Service: "eventgenerator",
 					ID:      "eventgenerator",
-					Port:    conf.Server.Port,
 				}))
 		})
 
@@ -175,9 +174,6 @@ var _ = Describe("Eventgenerator", func() {
 		BeforeEach(func() {
 			runner.startCheck = ""
 			conf := &config.Config{
-				Server: config.ServerConfig{
-					Port: config.DefaultServerPort + 1,
-				},
 				Logging: config.LoggingConfig{
 					Level: "debug",
 				},
