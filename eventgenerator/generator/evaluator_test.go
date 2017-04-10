@@ -252,7 +252,7 @@ var _ = Describe("Evaluator", func() {
 		httpClient = cfhttp.NewClient()
 		triggerChan = make(chan []*models.Trigger, 1)
 		database = &fakes.FakeAppMetricDB{}
-		scalingEngine = ghttp.NewServer()
+		scalingEngine = nil
 
 		path, err := routes.ScalingEngineRoutes().Get(routes.ScaleRoute).URLPath("appid", testAppId)
 		Expect(err).NotTo(HaveOccurred())
@@ -264,6 +264,10 @@ var _ = Describe("Evaluator", func() {
 		JustBeforeEach(func() {
 			evaluator = NewEvaluator(logger, httpClient, scalingEngine.URL(), triggerChan, database)
 			evaluator.Start()
+		})
+
+		BeforeEach(func() {
+			scalingEngine = ghttp.NewServer()
 		})
 
 		AfterEach(func() {
@@ -579,21 +583,11 @@ var _ = Describe("Evaluator", func() {
 					database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
 						return appMetricGTBreach, nil
 					}
-					Expect(triggerChan).To(BeSent(triggerArrayGT))
 				})
-				Context("when the send request encounters error", func() {
-					JustBeforeEach(func() {
-						scalingEngine.Close()
-					})
-
-					It("should log the error", func() {
-						Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("http reqeust error,failed to send trigger alarm")))
-					})
-				})
-
 				Context("when the scaling engine returns error", func() {
 					BeforeEach(func() {
 						scalingEngine.RouteToHandler("POST", urlPath, ghttp.RespondWithJSONEncoded(http.StatusBadRequest, "error"))
+						Expect(triggerChan).To(BeSent(triggerArrayGT))
 					})
 
 					It("should log the error", func() {
@@ -613,6 +607,7 @@ var _ = Describe("Evaluator", func() {
 							errorStr = errorStr + tmp
 						}
 						scalingEngine.RouteToHandler("POST", urlPath, ghttp.RespondWithJSONEncoded(http.StatusBadRequest, errorStr))
+						Expect(triggerChan).To(BeSent(triggerArrayGT))
 					})
 
 					It("should log the error", func() {
@@ -659,6 +654,7 @@ var _ = Describe("Evaluator", func() {
 
 	Context("Stop", func() {
 		BeforeEach(func() {
+			scalingEngine = ghttp.NewServer()
 			database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
 				return nil, errors.New("no alarm")
 			}
@@ -672,6 +668,27 @@ var _ = Describe("Evaluator", func() {
 
 		It("should stop to send trigger alarm", func() {
 			Eventually(triggerChan).ShouldNot(BeSent(triggerArrayGT))
+		})
+	})
+
+	Context("Scaling Engine is not reachable", func() {
+		BeforeEach(func() {
+			scalingEngine = ghttp.NewUnstartedServer()
+			database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+				return appMetricGTBreach, nil
+			}
+			evaluator = NewEvaluator(logger, httpClient, scalingEngine.URL(), triggerChan, database)
+			evaluator.Start()
+			Expect(triggerChan).To(BeSent(triggerArrayGT))
+		})
+
+		AfterEach(func() {
+			evaluator.Stop()
+			scalingEngine.Close()
+		})
+
+		It("should log the error", func() {
+			Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("http reqeust error,failed to send trigger alarm")))
 		})
 	})
 })
