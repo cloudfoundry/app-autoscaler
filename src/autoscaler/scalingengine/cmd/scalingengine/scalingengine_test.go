@@ -110,7 +110,7 @@ var _ = Describe("Main", func() {
 			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("scalingengine.started"))
 		})
 
-		It("should get scaling engine sservice", func() {
+		It("should get scaling engine service", func() {
 			services, err := consulClient.Agent().Services()
 			Expect(err).ToNot(HaveOccurred())
 
@@ -151,7 +151,7 @@ var _ = Describe("Main", func() {
 			runner.Interrupt()
 		})
 
-		It("should not get scaling engine sservice", func() {
+		It("should not get scaling engine service", func() {
 			Eventually(func() map[string]*api.AgentService {
 				services, err := consulClient.Agent().Services()
 				Expect(err).ToNot(HaveOccurred())
