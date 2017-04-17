@@ -221,7 +221,7 @@ func (mc *MetricsCollectorRunner) Start() {
 	Expect(err).NotTo(HaveOccurred())
 
 	if mc.startCheck != "" {
-		Eventually(mcSession.Buffer(), 2).Should(gbytes.Say(mc.startCheck))
+		Eventually(mcSession.Buffer, 2).Should(gbytes.Say(mc.startCheck))
 	}
 
 	mc.Session = mcSession
