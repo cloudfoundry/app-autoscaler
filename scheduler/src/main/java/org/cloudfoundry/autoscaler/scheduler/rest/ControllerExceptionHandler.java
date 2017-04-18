@@ -13,8 +13,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ControllerAdvice
 public class ControllerExceptionHandler {
@@ -50,4 +52,8 @@ public class ControllerExceptionHandler {
 		List<String> errors = validationErrorResult.getAllErrorMessages();
 		return new ResponseEntity<>(errors, null, HttpStatus.INTERNAL_SERVER_ERROR);
 	}
+	@ExceptionHandler(MissingServletRequestParameterException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    private void handleMissingParameter(MissingServletRequestParameterException e) {
+    }
 }
