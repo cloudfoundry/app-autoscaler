@@ -75,18 +75,20 @@ var _ = Describe("Pruner", func() {
 
 		It("should start instancemetrics dbpruner", func() {
 			Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("pruner.instancemetrics-dbpruner.started"))
-			Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("pruner.started"))
 			Consistently(runner.Session).ShouldNot(Exit())
 		})
 
 		It("should start appmetrics dbpruner", func() {
 			Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("pruner.appmetrics-dbpruner.started"))
-			Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("pruner.started"))
 			Consistently(runner.Session).ShouldNot(Exit())
 		})
 
 		It("should start scalingengine dbpruner", func() {
 			Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("pruner.scalingengine-dbpruner.started"))
+			Consistently(runner.Session).ShouldNot(Exit())
+		})
+
+		It("should have pruner started", func() {
 			Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("pruner.started"))
 			Consistently(runner.Session).ShouldNot(Exit())
 		})
@@ -137,24 +139,25 @@ var _ = Describe("Pruner", func() {
 			It("should acquire the lock and start instancemetrics dbpruner", func() {
 				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say(runner.acquiredLockCheck))
 				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("pruner.instancemetrics-dbpruner.started"))
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("pruner.started"))
 				Consistently(runner.Session).ShouldNot(Exit())
 			})
 
 			It("should acquire the lock and start appmetrics dbpruner", func() {
 				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say(runner.acquiredLockCheck))
 				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("pruner.appmetrics-dbpruner.started"))
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("pruner.started"))
 				Consistently(runner.Session).ShouldNot(Exit())
 			})
 
 			It("should acquire the lock and start scalingengine dbpruner", func() {
 				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say(runner.acquiredLockCheck))
 				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("pruner.scalingengine-dbpruner.started"))
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("pruner.started"))
 				Consistently(runner.Session).ShouldNot(Exit())
 			})
 
+			It("should have pruner started", func() {
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("pruner.started"))
+				Consistently(runner.Session).ShouldNot(Exit())
+			})
 		})
 	})
 
