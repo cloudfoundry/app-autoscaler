@@ -30,6 +30,7 @@ import (
 	"autoscaler/metricscollector/config"
 
 	"code.cloudfoundry.org/locket"
+	"encoding/json"
 )
 
 var (
@@ -42,6 +43,7 @@ var (
 	eLock          *sync.Mutex
 	httpClient     *http.Client
 	consulRunner   *consulrunner.ClusterRunner
+	setupParams    arguments
 )
 
 func TestMetricsCollector(t *testing.T) {
@@ -49,23 +51,15 @@ func TestMetricsCollector(t *testing.T) {
 	RunSpecs(t, "MetricsCollector Suite")
 }
 
+type arguments struct {
+	McBuildPath  string
+	CcNoaaUaaURL string
+	Lock         *sync.Mutex
+}
+
 var _ = SynchronizedBeforeSuite(func() []byte {
 	mc, err := gexec.Build("autoscaler/metricscollector/cmd/metricscollector", "-race")
 	Expect(err).NotTo(HaveOccurred())
-
-	return []byte(mc)
-}, func(pathsByte []byte) {
-
-	consulRunner = consulrunner.NewClusterRunner(
-		consulrunner.ClusterRunnerConfig{
-			StartingPort: 9001 + GinkgoParallelNode()*consulrunner.PortOffsetLength,
-			NumNodes:     1,
-			Scheme:       "http",
-		},
-	)
-	consulRunner.Start()
-	consulRunner.WaitUntilReady()
-	mcPath = string(pathsByte)
 
 	ccNOAAUAA = ghttp.NewServer()
 	ccNOAAUAA.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
@@ -109,8 +103,55 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		},
 	)
 
+	mcDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = mcDB.Exec("DELETE FROM appinstancemetrics")
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = mcDB.Exec("DELETE from policy_json")
+	Expect(err).NotTo(HaveOccurred())
+
+	policy := `
+		{
+ 			"instance_min_count": 1,
+  			"instance_max_count": 5
+		}`
+	query := "INSERT INTO policy_json(app_id, policy_json, guid) values($1, $2, $3)"
+	_, err = mcDB.Exec(query, "an-app-id", policy, "1234")
+	Expect(err).NotTo(HaveOccurred())
+
+	err = mcDB.Close()
+	Expect(err).NotTo(HaveOccurred())
+
+	setupParams = arguments{
+		McBuildPath:  mc,
+		CcNoaaUaaURL: ccNOAAUAA.URL(),
+		Lock:         eLock,
+	}
+
+	data, err := json.Marshal(&setupParams)
+	Expect(err).NotTo(HaveOccurred())
+
+	return data
+}, func(data []byte) {
+	err := json.Unmarshal(data, &setupParams)
+	Expect(err).NotTo(HaveOccurred())
+	mcPath = setupParams.McBuildPath
+	eLock = setupParams.Lock
+
+	consulRunner = consulrunner.NewClusterRunner(
+		consulrunner.ClusterRunnerConfig{
+			StartingPort: 9001 + GinkgoParallelNode()*consulrunner.PortOffsetLength,
+			NumNodes:     1,
+			Scheme:       "http",
+		},
+	)
+	consulRunner.Start()
+	consulRunner.WaitUntilReady()
+
 	cfg.Cf = cf.CfConfig{
-		Api:       ccNOAAUAA.URL(),
+		Api:       setupParams.CcNoaaUaaURL,
 		GrantType: cf.GrantTypePassword,
 		Username:  "admin",
 		Password:  "admin",
@@ -137,27 +178,6 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	configFile = writeConfig(&cfg)
 
-	mcDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
-	Expect(err).NotTo(HaveOccurred())
-
-	_, err = mcDB.Exec("DELETE FROM appinstancemetrics")
-	Expect(err).NotTo(HaveOccurred())
-
-	_, err = mcDB.Exec("DELETE from policy_json")
-	Expect(err).NotTo(HaveOccurred())
-
-	policy := `
-		{
- 			"instance_min_count": 1,
-  			"instance_max_count": 5
-		}`
-	query := "INSERT INTO policy_json(app_id, policy_json, guid) values($1, $2, $3)"
-	_, err = mcDB.Exec(query, "an-app-id", policy, "1234")
-	Expect(err).NotTo(HaveOccurred())
-
-	err = mcDB.Close()
-	Expect(err).NotTo(HaveOccurred())
-
 	tlsConfig, err := cfhttp.NewTLSConfig(
 		filepath.Join(testCertDir, "eventgenerator.crt"),
 		filepath.Join(testCertDir, "eventgenerator.key"),
@@ -174,9 +194,9 @@ var _ = SynchronizedAfterSuite(func() {
 	if consulRunner != nil {
 		consulRunner.Stop()
 	}
-	ccNOAAUAA.Close()
 	os.Remove(configFile.Name())
 }, func() {
+	ccNOAAUAA.Close()
 	gexec.CleanupBuildArtifacts()
 })
 
