@@ -176,7 +176,7 @@ var _ = Describe("MetricsCollector", func() {
 		BeforeEach(func() {
 			runner.startCheck = ""
 			cfg.Cf = cf.CfConfig{
-				Api: setupParams.CcNoaaUaaURL,
+				Api: ccNOAAUAA.URL(),
 			}
 
 			cfg.Server.Port = 7000 + GinkgoParallelNode()
