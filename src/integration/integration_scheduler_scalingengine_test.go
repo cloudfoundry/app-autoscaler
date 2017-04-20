@@ -52,7 +52,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 
 				Eventually(func() bool {
 					return activeScheduleExists(testAppId)
-				}, 2*time.Minute, 5*time.Second).Should(BeTrue())
+				}, 2*time.Minute, 1*time.Second).Should(BeTrue())
 
 			})
 		})
@@ -87,7 +87,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 
 			Eventually(func() bool {
 				return activeScheduleExists(testAppId)
-			}, 2*time.Minute, 5*time.Second).Should(BeTrue())
+			}, 2*time.Minute, 1*time.Second).Should(BeTrue())
 		})
 
 		It("deletes active schedule in scaling engine", func() {
@@ -96,7 +96,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 
 			Eventually(func() bool {
 				return activeScheduleExists(testAppId)
-			}, 2*time.Minute, 5*time.Second).Should(BeFalse())
+			}, 2*time.Minute, 1*time.Second).Should(BeFalse())
 		})
 	})
 
