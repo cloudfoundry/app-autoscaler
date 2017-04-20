@@ -21,13 +21,13 @@ var _ = Describe("Aggregator", func() {
 		testAppId        string = "testAppId"
 		fakeWaitDuration time.Duration
 		policyMap        = map[string]*models.AppPolicy{
-			testAppId: &models.AppPolicy{
+			testAppId: {
 				AppId: testAppId,
 				ScalingPolicy: &models.ScalingPolicy{
 					InstanceMax: 5,
 					InstanceMin: 1,
 					ScalingRules: []*models.ScalingRule{
-						&models.ScalingRule{
+						{
 							MetricType:            models.MetricNameMemory,
 							StatWindowSeconds:     300,
 							BreachDurationSeconds: 300,
