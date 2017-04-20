@@ -85,10 +85,10 @@ func TestEventgenerator(t *testing.T) {
 var _ = SynchronizedBeforeSuite(func() []byte {
 	eg, err := gexec.Build("autoscaler/eventgenerator/cmd/eventgenerator", "-race")
 	Expect(err).NotTo(HaveOccurred())
+	initDB()
 	return []byte(eg)
 }, func(pathByte []byte) {
 	egPath = string(pathByte)
-	initDB()
 	initHttpEndPoints()
 	initConsul()
 	initConfig()
