@@ -388,7 +388,7 @@ func (components *Components) PrepareEventGeneratorConfig(dbUri string, metricsC
 	return writeYmlConfig(tmpDir, EventGenerator, &conf)
 }
 
-func (components *Components) PrepareScalingEngineConfig(dbUri string, port int, ccUAAUrl string, cfGrantTypePassword string, tmpDir string) string {
+func (components *Components) PrepareScalingEngineConfig(dbUri string, port int, ccUAAUrl string, cfGrantTypePassword string, tmpDir string, consulClusterConfig string) string {
 	conf := seConfig.Config{
 		Cf: cf.CfConfig{
 			Api:       ccUAAUrl,
@@ -414,6 +414,9 @@ func (components *Components) PrepareScalingEngineConfig(dbUri string, port int,
 		},
 		Synchronizer: seConfig.SynchronizerConfig{
 			ActiveScheduleSyncInterval: 10 * time.Second,
+		},
+		Consul: seConfig.ConsulConfig{
+			Cluster: consulClusterConfig,
 		},
 	}
 

@@ -26,7 +26,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 
 		startFakeCCNOAAUAA(initInstanceCount)
 
-		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), cf.GrantTypePassword, tmpDir)
+		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), cf.GrantTypePassword, tmpDir, consulRunner.ConsulCluster())
 		startScalingEngine()
 
 		schedulerConfPath = components.PrepareSchedulerConfig(dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), tmpDir, strings.Split(consulRunner.Address(), ":")[1])
@@ -52,7 +52,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 
 				Eventually(func() bool {
 					return activeScheduleExists(testAppId)
-				}, 2*time.Minute).Should(BeTrue())
+				}, 2*time.Minute, 1*time.Second).Should(BeTrue())
 
 			})
 		})
@@ -69,12 +69,12 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 				Consistently(func() error {
 					_, err := getActiveSchedule(testAppId)
 					return err
-				}, 2*time.Minute).Should(HaveOccurred())
+				}, 2*time.Minute, 1*time.Second).Should(HaveOccurred())
 
 				startScalingEngine()
 				Eventually(func() bool {
 					return activeScheduleExists(testAppId)
-				}, 20*time.Second).Should(BeTrue())
+				}, 20*time.Second, 1*time.Second).Should(BeTrue())
 			})
 		})
 
@@ -87,7 +87,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 
 			Eventually(func() bool {
 				return activeScheduleExists(testAppId)
-			}, 2*time.Minute).Should(BeTrue())
+			}, 2*time.Minute, 1*time.Second).Should(BeTrue())
 		})
 
 		It("deletes active schedule in scaling engine", func() {
@@ -96,7 +96,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 
 			Eventually(func() bool {
 				return activeScheduleExists(testAppId)
-			}, 2*time.Minute).Should(BeFalse())
+			}, 2*time.Minute, 1*time.Second).Should(BeFalse())
 		})
 	})
 
