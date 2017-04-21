@@ -30,7 +30,6 @@ var (
 	egPath          string
 	testAppId       string = "testAppId"
 	metricType      string = models.MetricNameMemory
-	timestamp       int64  = time.Now().UnixNano()
 	regPath                = regexp.MustCompile(`^/v1/apps/.*/scale$`)
 	configFile      *os.File
 	conf            *config.Config
@@ -38,7 +37,7 @@ var (
 	scalingEngine   *ghttp.Server
 	consulRunner    *consulrunner.ClusterRunner
 	metrics         []*models.AppInstanceMetric = []*models.AppInstanceMetric{
-		&models.AppInstanceMetric{
+		{
 			AppId:         testAppId,
 			InstanceIndex: 0,
 			CollectedAt:   111111,
@@ -47,7 +46,7 @@ var (
 			Value:         "500",
 			Timestamp:     111100,
 		},
-		&models.AppInstanceMetric{
+		{
 			AppId:         testAppId,
 			InstanceIndex: 1,
 			CollectedAt:   111111,
@@ -57,7 +56,7 @@ var (
 			Timestamp:     110000,
 		},
 
-		&models.AppInstanceMetric{
+		{
 			AppId:         testAppId,
 			InstanceIndex: 0,
 			CollectedAt:   222222,
@@ -66,7 +65,7 @@ var (
 			Value:         "700",
 			Timestamp:     222200,
 		},
-		&models.AppInstanceMetric{
+		{
 			AppId:         testAppId,
 			InstanceIndex: 1,
 			CollectedAt:   222222,
@@ -262,7 +261,7 @@ func (eg *EventGeneratorRunner) Start() {
 	Expect(err).NotTo(HaveOccurred())
 
 	if eg.startCheck != "" {
-		Eventually(egSession.Buffer(), 2).Should(gbytes.Say(eg.startCheck))
+		Eventually(egSession.Buffer, 2).Should(gbytes.Say(eg.startCheck))
 	}
 
 	eg.Session = egSession

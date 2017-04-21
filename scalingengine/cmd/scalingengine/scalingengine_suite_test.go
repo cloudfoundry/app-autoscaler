@@ -15,6 +15,7 @@ import (
 	"github.com/onsi/gomega/ghttp"
 	"gopkg.in/yaml.v2"
 
+	"code.cloudfoundry.org/consuladapter/consulrunner"
 	"database/sql"
 	"fmt"
 	"io/ioutil"
@@ -32,13 +33,14 @@ func TestScalingengine(t *testing.T) {
 }
 
 var (
-	enginePath string
-	conf       config.Config
-	port       int
-	configFile *os.File
-	ccUAA      *ghttp.Server
-	appId      string
-	httpClient *http.Client
+	enginePath   string
+	conf         config.Config
+	port         int
+	configFile   *os.File
+	ccUAA        *ghttp.Server
+	appId        string
+	httpClient   *http.Client
+	consulRunner *consulrunner.ClusterRunner
 )
 
 var _ = SynchronizedBeforeSuite(
@@ -48,6 +50,16 @@ var _ = SynchronizedBeforeSuite(
 		return []byte(compiledPath)
 	},
 	func(pathBytes []byte) {
+		consulRunner = consulrunner.NewClusterRunner(
+			consulrunner.ClusterRunnerConfig{
+				StartingPort: 9001 + GinkgoParallelNode()*consulrunner.PortOffsetLength,
+				NumNodes:     1,
+				Scheme:       "http",
+			},
+		)
+		consulRunner.Start()
+		consulRunner.WaitUntilReady()
+
 		enginePath = string(pathBytes)
 
 		ccUAA = ghttp.NewServer()
@@ -84,6 +96,8 @@ var _ = SynchronizedBeforeSuite(
 		conf.Db.ScalingEngineDbUrl = os.Getenv("DBURL")
 		conf.Db.SchedulerDbUrl = os.Getenv("DBURL")
 		conf.Synchronizer.ActiveScheduleSyncInterval = 10 * time.Minute
+
+		conf.Consul.Cluster = consulRunner.ConsulCluster()
 
 		configFile = writeConfig(&conf)
 
@@ -128,6 +142,9 @@ var _ = SynchronizedBeforeSuite(
 
 var _ = SynchronizedAfterSuite(
 	func() {
+		if consulRunner != nil {
+			consulRunner.Stop()
+		}
 		ccUAA.Close()
 		os.Remove(configFile.Name())
 	},
@@ -176,7 +193,7 @@ func (engine *ScalingEngineRunner) Start() {
 	Expect(err).NotTo(HaveOccurred())
 
 	if engine.startCheck != "" {
-		Eventually(engineSession.Buffer(), 2).Should(gbytes.Say(engine.startCheck))
+		Eventually(engineSession.Buffer, 2).Should(gbytes.Say(engine.startCheck))
 	}
 
 	engine.Session = engineSession
