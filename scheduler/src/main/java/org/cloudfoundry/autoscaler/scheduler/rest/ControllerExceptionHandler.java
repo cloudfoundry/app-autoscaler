@@ -52,8 +52,9 @@ public class ControllerExceptionHandler {
 		List<String> errors = validationErrorResult.getAllErrorMessages();
 		return new ResponseEntity<>(errors, null, HttpStatus.INTERNAL_SERVER_ERROR);
 	}
+
 	@ExceptionHandler(MissingServletRequestParameterException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    private void handleMissingParameter(MissingServletRequestParameterException e) {
-    }
+	@ResponseStatus(HttpStatus.BAD_REQUEST)
+	private void handleMissingParameter(MissingServletRequestParameterException e) {
+	}
 }
