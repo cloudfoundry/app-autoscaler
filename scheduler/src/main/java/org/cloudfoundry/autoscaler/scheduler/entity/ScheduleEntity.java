@@ -1,5 +1,7 @@
 package org.cloudfoundry.autoscaler.scheduler.entity;
 
+import java.time.LocalDateTime;
+
 import javax.persistence.Column;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -8,7 +10,15 @@ import javax.persistence.MappedSuperclass;
 import javax.persistence.SequenceGenerator;
 import javax.validation.constraints.NotNull;
 
+import org.cloudfoundry.autoscaler.scheduler.util.DateHelper;
+import org.cloudfoundry.autoscaler.scheduler.util.DateTimeDeserializer;
+import org.cloudfoundry.autoscaler.scheduler.util.DateTimeSerializer;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty.Access;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -64,6 +74,14 @@ public class ScheduleEntity {
 	@Column(name = "initial_min_instance_count")
 	@JsonProperty(value = "initial_min_instance_count")
 	private Integer initialMinInstanceCount;
+	
+	@Column(name = "updated_at")
+	@JsonProperty(value = "updated_at")
+	@JsonFormat(pattern = DateHelper.DATE_TIME_FORMAT)
+	@JsonDeserialize(using = DateTimeDeserializer.class)
+	@JsonSerialize(using = DateTimeSerializer.class)
+	private LocalDateTime updatedAt;
+	
 
 	public Long getId() {
 		return id;
@@ -127,6 +145,14 @@ public class ScheduleEntity {
 
 	public void setInitialMinInstanceCount(Integer initialMinInstanceCount) {
 		this.initialMinInstanceCount = initialMinInstanceCount;
+	}
+	
+	public LocalDateTime getUpdatedAt() {
+		return updatedAt;
+	}
+
+	public void setUpdatedAt(LocalDateTime updatedAt) {
+		this.updatedAt = updatedAt;
 	}
 
 	@Override

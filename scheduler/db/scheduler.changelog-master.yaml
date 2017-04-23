@@ -198,3 +198,34 @@ databaseChangeLog:
                  type: varchar(50)
              indexName: idx_active_schedule_app_id
              tableName: app_scaling_active_schedule
+   - changeSet:
+      id: 5
+      author: qibobo
+      changes:
+        - addColumn:
+            columns:
+            - column:
+                name: updated_at
+                type: timestamp
+            tableName: app_scaling_recurring_schedule
+        - addColumn:
+            columns:
+            - column:
+                name: updated_at
+                type: timestamp
+            tableName: app_scaling_specific_date_schedule
+        - createProcedure:
+              procedureBody:
+                CREATE OR REPLACE FUNCTION get_last_updated_for_schedule() RETURNS trigger
+                  LANGUAGE plpgsql
+                  AS $$
+                  BEGIN
+                  NEW.updated_at := CURRENT_TIMESTAMP;
+                  RETURN NEW;
+                  END;
+                $$;
+        - sql:
+              DROP TRIGGER IF EXISTS update_last_updated_for_recurring_schedule ON app_scaling_recurring_schedule;
+              CREATE TRIGGER update_last_updated_for_recurring_schedule BEFORE INSERT OR UPDATE ON app_scaling_recurring_schedule FOR EACH ROW EXECUTE PROCEDURE get_last_updated_for_schedule();
+              DROP TRIGGER IF EXISTS update_last_updated_for_specific_date_schedule ON app_scaling_recurring_schedule;
+              CREATE TRIGGER update_last_updated_for_specific_date_schedule BEFORE INSERT OR UPDATE ON app_scaling_specific_date_schedule FOR EACH ROW EXECUTE PROCEDURE get_last_updated_for_schedule();
