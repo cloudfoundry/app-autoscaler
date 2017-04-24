@@ -54,11 +54,13 @@ public class RecurringScheduleDaoImplTest {
 
 		// Add fake test records.
 		String appId = "appId1";
-		List<RecurringScheduleEntity> entities = TestDataSetupHelper.generateRecurringScheduleEntities(appId, 1, 0);
+		String guid = TestDataSetupHelper.generateGuid();
+		List<RecurringScheduleEntity> entities = TestDataSetupHelper.generateRecurringScheduleEntities(appId, guid, 1, 0);
 		testDataDbUtil.insertRecurringSchedule(entities);
 
 		appId = "appId3";
-		entities = TestDataSetupHelper.generateRecurringScheduleEntities(appId, 0, 1);
+		guid = TestDataSetupHelper.generateGuid();
+		entities = TestDataSetupHelper.generateRecurringScheduleEntities(appId, guid, 0, 1);
 		testDataDbUtil.insertRecurringSchedule(entities);
 	}
 
@@ -85,9 +87,9 @@ public class RecurringScheduleDaoImplTest {
 	@Test
 	public void testCreateRecurringSchedule() {
 		String appId = "appId2";
-
+		String guid = TestDataSetupHelper.generateGuid();
 		RecurringScheduleEntity recurringScheduleEntity = TestDataSetupHelper
-				.generateRecurringScheduleEntities(appId, 1, 0).get(0);
+				.generateRecurringScheduleEntities(appId, guid, 1, 0).get(0);
 
 		assertThat("It should no recurring schedule", testDataDbUtil.getNumberOfRecurringSchedulesByAppId(appId),
 				is(0));

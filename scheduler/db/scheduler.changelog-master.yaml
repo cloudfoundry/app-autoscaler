@@ -198,3 +198,24 @@ databaseChangeLog:
                  type: varchar(50)
              indexName: idx_active_schedule_app_id
              tableName: app_scaling_active_schedule
+   - changeSet:
+      id: 5
+      author: qibobo
+      changes:
+        - addColumn:
+            tableName: app_scaling_recurring_schedule
+            columns:
+            - column:
+                name: guid
+                type: varchar(50)
+                constraints:
+                  nullable: false
+        - addColumn:
+            tableName: app_scaling_specific_date_schedule
+            columns:
+            - column:
+                name: guid
+                type: varchar(50)
+                constraints:
+                  nullable: false
+

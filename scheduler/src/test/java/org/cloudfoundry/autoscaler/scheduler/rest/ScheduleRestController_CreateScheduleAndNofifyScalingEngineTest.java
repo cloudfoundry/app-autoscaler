@@ -112,6 +112,7 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest {
 	}
 
 	private String appId;
+	private String guid;
 
 	private TestJobListener startJobListener;
 
@@ -133,6 +134,7 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest {
 		setLogLevel(Level.INFO);
 
 		appId = TestDataSetupHelper.generateAppIds(1)[0];
+		guid = TestDataSetupHelper.generateGuid();
 		startJobListener = new TestJobListener(1);
 		endJobListener = new TestJobListener(1);
 	}
@@ -182,7 +184,7 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest {
 
 		// Delete End job.
 		ResultActions resultActions = mockMvc
-				.perform(delete(getSchedulerPath(appId)).accept(MediaType.APPLICATION_JSON));
+				.perform(delete(TestDataSetupHelper.getSchedulerPath(appId)).accept(MediaType.APPLICATION_JSON));
 
 		resultActions.andExpect(MockMvcResultMatchers.content().string(""));
 		resultActions.andExpect(status().isNoContent());
@@ -218,7 +220,7 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest {
 
 		ObjectMapper mapper = new ObjectMapper();
 		String content = mapper.writeValueAsString(applicationSchedules);
-		ResultActions resultActions = mockMvc.perform(put(getSchedulerPath(appId))
+		ResultActions resultActions = mockMvc.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid)
 				.contentType(MediaType.APPLICATION_JSON).accept(MediaType.APPLICATION_JSON).content(content));
 
 		resultActions.andExpect(MockMvcResultMatchers.content().string(""));
@@ -233,10 +235,6 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest {
 		}
 
 		return jobKeys;
-	}
-
-	private String getSchedulerPath(String appId) {
-		return String.format("/v2/schedules/%s", appId);
 	}
 
 	private void setLogLevel(Level level) {

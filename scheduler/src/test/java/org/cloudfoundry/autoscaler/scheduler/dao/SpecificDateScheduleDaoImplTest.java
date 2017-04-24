@@ -54,11 +54,13 @@ public class SpecificDateScheduleDaoImplTest {
 
 		// Add fake test records.
 		String appId = "appId1";
-		List<SpecificDateScheduleEntity> entities = TestDataSetupHelper.generateSpecificDateScheduleEntities(appId, 1);
+		String guid = TestDataSetupHelper.generateGuid();
+		List<SpecificDateScheduleEntity> entities = TestDataSetupHelper.generateSpecificDateScheduleEntities(appId, guid, 1);
 		testDataDbUtil.insertSpecificDateSchedule(entities);
 
 		appId = "appId3";
-		entities = TestDataSetupHelper.generateSpecificDateScheduleEntities(appId, 1);
+		guid = TestDataSetupHelper.generateGuid();
+		entities = TestDataSetupHelper.generateSpecificDateScheduleEntities(appId, guid, 1);
 		testDataDbUtil.insertSpecificDateSchedule(entities);
 	}
 
@@ -87,8 +89,9 @@ public class SpecificDateScheduleDaoImplTest {
 	@Test
 	public void testCreateSpecificDateSchedule() {
 		String appId = "appId2";
+		String guid = TestDataSetupHelper.generateGuid();
 		SpecificDateScheduleEntity specificDateScheduleEntity = TestDataSetupHelper
-				.generateSpecificDateScheduleEntities(appId, 1).get(0);
+				.generateSpecificDateScheduleEntities(appId, guid, 1).get(0);
 
 		assertThat("It should have no specific date schedule",
 				testDataDbUtil.getNumberOfRecurringSchedulesByAppId(appId), is(0));

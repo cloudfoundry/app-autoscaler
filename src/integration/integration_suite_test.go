@@ -329,8 +329,8 @@ func getSchedules(appId string) (*http.Response, error) {
 	return httpClient.Do(req)
 }
 
-func createSchedule(appId string, schedule string) (*http.Response, error) {
-	req, err := http.NewRequest("PUT", fmt.Sprintf("https://127.0.0.1:%d/v2/schedules/%s", components.Ports[Scheduler], appId), bytes.NewReader([]byte(schedule)))
+func createSchedule(appId string, guid string, schedule string) (*http.Response, error) {
+	req, err := http.NewRequest("PUT", fmt.Sprintf("https://127.0.0.1:%d/v2/schedules/%s?guid=%s", components.Ports[Scheduler], appId, guid), bytes.NewReader([]byte(schedule)))
 	if err != nil {
 		panic(err)
 	}

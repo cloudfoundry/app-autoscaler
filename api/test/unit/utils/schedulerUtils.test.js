@@ -32,10 +32,12 @@ describe('Scheduler Utility functions', function() {
 	  it('should create new schedules for app id 12345',function(done){
 		    nock(schedulerURI)
 		    .put('/v2/schedules/12345')
+		    .query({guid: 'random-guid'})
 		    .reply(204);
 		    var mockRequest = {
 		        body : fakePolicy,
-		        params : { 'app_id' : '12345' }
+		        params : { 'app_id' : '12345' },
+		        query : {'policy_guid' : 'random-guid' }
 		    };
 		    schedulerUtils.createOrUpdateSchedule(mockRequest,function(error){
 		      expect(error).to.be.null;
@@ -48,10 +50,12 @@ describe('Scheduler Utility functions', function() {
 		        ' error in scheduler','details':'fake body' };
 		    nock(schedulerURI)
 		    .put('/v2/schedules/12346')
+		    .query({guid: 'random-guid'})
 		    .replyWithError(mockError);
 		    var mockRequest = {
 		        body : fakePolicy,
-		        params : { 'app_id' : '12346' }
+		        params : { 'app_id' : '12346' },
+		        query : {'policy_guid' : 'random-guid' }
 		    };
 		    schedulerUtils.createOrUpdateSchedule(mockRequest,function(error){
 		      expect(error).to.not.be.null;
@@ -64,11 +68,13 @@ describe('Scheduler Utility functions', function() {
 	  it('should fail to create schedules due to request timeout',function(done){
 		    nock(schedulerURI)
 		    .put('/v2/schedules/12349_RequestTimeout')
+		    .query({guid: 'random-guid'})
 		    .socketDelay(20000) // Adding a timeout of 20 Seconds
 		    .reply(204);
 		    var mockRequest = {
 		        body : fakePolicy,
-		        params : { 'app_id' : '12349_RequestTimeout' }
+		        params : { 'app_id' : '12349_RequestTimeout' },
+		        query : {'policy_guid' : 'random-guid' }
 		    };
 		    schedulerUtils.createOrUpdateSchedule(mockRequest,function(error){
 		      expect(error).to.not.be.null;
@@ -81,6 +87,7 @@ describe('Scheduler Utility functions', function() {
 	  it('should fail to create schedules due to internal validation error in scheduler module for app id 12347',function(done){
 		    nock(schedulerURI)
 		    .put('/v2/schedules/12347')
+		    .query({guid: 'random-guid'})
 		    .reply(function(uri, requestBody) {
 		      return [
 		              400,
@@ -89,7 +96,8 @@ describe('Scheduler Utility functions', function() {
 		    });
 		    var mockRequest = {
 		        body : fakePolicy,
-		        params : { 'app_id' : '12347' }
+		        params : { 'app_id' : '12347' },
+		        query : {'policy_guid' : 'random-guid' }
 		    };
 		    schedulerUtils.createOrUpdateSchedule(mockRequest,function(error){
 		      expect(error.statusCode).to.equal(400);
@@ -103,6 +111,7 @@ describe('Scheduler Utility functions', function() {
       it('should fail to create schedules due to un-accepted response code (other than 400 ) in scheduler module for app id 12348',function(done){
 		    nock(schedulerURI)
 		    .put('/v2/schedules/12348')
+		    .query({guid: 'random-guid'})
 		    .reply(function(uri, requestBody) {
 		      return [
 		              405,
@@ -111,7 +120,8 @@ describe('Scheduler Utility functions', function() {
 		    });
 		    var mockRequest = {
 		        body : fakePolicy,
-		        params : { 'app_id' : '12348' }
+		        params : { 'app_id' : '12348' },
+		        query : {'policy_guid' : 'random-guid' }
 		    };
 		    schedulerUtils.createOrUpdateSchedule(mockRequest,function(error){
 		      expect(error.statusCode).to.equal(500);
@@ -176,7 +186,7 @@ describe('Scheduler Utility functions', function() {
 
 	  it('should fail due to an internal error with the request',function(done){
 		  	nock(schedulerURI)
-		      .delete('/v2/schedules/')
+		      .delete('/v2/schedules')
 		      .reply(503);
 		      var mockRequest = {
 		              body : fakePolicy,
@@ -209,10 +219,12 @@ describe('Scheduler Utility functions', function() {
     beforeEach(function(done) {
       nock(schedulerURI)
       .put('/v2/schedules/12345')
+      .query({guid: 'random-guid'})
       .reply(204);
       var mockRequest = {
           body : fakePolicy,
-          params : { 'app_id' : '12345' }
+          params : { 'app_id' : '12345' },
+		  query : {'policy_guid' : 'random-guid' }
       };
       schedulerUtils.createOrUpdateSchedule(mockRequest,function(error,result){
         done();
@@ -221,10 +233,12 @@ describe('Scheduler Utility functions', function() {
     it('should update a schedule for app id 12345',function(done){
       nock(schedulerURI)
       .put('/v2/schedules/12345')
+      .query({guid: 'random-guid'})
       .reply(200);
       var mockRequest = {
           body : fakePolicy,
-          params : { 'app_id' : '12345' }
+          params : { 'app_id' : '12345' },
+		  query : {'policy_guid' : 'random-guid' }
       };
       schedulerUtils.createOrUpdateSchedule(mockRequest,function(error){
         expect(error).to.be.null;

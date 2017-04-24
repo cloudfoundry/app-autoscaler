@@ -65,6 +65,11 @@ public class ScheduleEntity {
 	@JsonProperty(value = "initial_min_instance_count")
 	private Integer initialMinInstanceCount;
 
+	@ApiModelProperty(required = true, position = 13)
+	@Column(name = "guid")
+	@JsonProperty(value = "guid")
+	private String guid;
+
 	public Long getId() {
 		return id;
 	}
@@ -129,6 +134,14 @@ public class ScheduleEntity {
 		this.initialMinInstanceCount = initialMinInstanceCount;
 	}
 
+	public String getGuid() {
+		return guid;
+	}
+
+	public void setGuid(String guid) {
+		this.guid = guid;
+	}
+
 	@Override
 	public boolean equals(Object o) {
 		if (this == o)
@@ -154,8 +167,12 @@ public class ScheduleEntity {
 			return false;
 		if (!instanceMaxCount.equals(that.instanceMaxCount))
 			return false;
-		return initialMinInstanceCount != null ? initialMinInstanceCount.equals(that.initialMinInstanceCount)
-				: that.initialMinInstanceCount == null;
+		if (initialMinInstanceCount != null ? !initialMinInstanceCount.equals(that.initialMinInstanceCount)
+				: that.initialMinInstanceCount != null)
+			return false;
+		if (!guid.equals(that.guid))
+			return false;
+		return true;
 
 	}
 
@@ -169,6 +186,7 @@ public class ScheduleEntity {
 		result = 31 * result + instanceMinCount.hashCode();
 		result = 31 * result + instanceMaxCount.hashCode();
 		result = 31 * result + (initialMinInstanceCount != null ? initialMinInstanceCount.hashCode() : 0);
+		result = 31 * result + (guid != null ? guid.hashCode() : 0);
 		return result;
 	}
 
@@ -177,7 +195,7 @@ public class ScheduleEntity {
 		return "ScheduleEntity [id=" + id + ", appId=" + appId + ", timeZone=" + timeZone + ", defaultInstanceMinCount="
 				+ defaultInstanceMinCount + ", defaultInstanceMaxCount=" + defaultInstanceMaxCount
 				+ ", instanceMinCount=" + instanceMinCount + ", instanceMaxCount=" + instanceMaxCount
-				+ ", initialMinInstanceCount=" + initialMinInstanceCount + "]";
+				+ ", initialMinInstanceCount=" + initialMinInstanceCount + ", guid=" + guid + "]";
 	}
 
 }

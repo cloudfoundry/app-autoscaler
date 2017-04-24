@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -67,13 +68,14 @@ public class ScheduleRestController {
 			@ApiResponse(code = 400, message = "Validation error encountered.") })
 	public ResponseEntity<List<String>> createSchedules(
 			@ApiParam(name = "app_id", value = "The application id", required = true) @PathVariable("app_id") String appId,
+			@ApiParam(name = "guid", value = "The policy guid", required = true) @RequestParam("guid") String guid,
 			@RequestBody ApplicationSchedules rawApplicationPolicy) {
 		// Note: Request could be to update existing schedules or create new schedules.
 
 		// For update also the data validation is required since an update would require a delete 
 		// and then creation of new schedule. If the data is invalid, the update request will fail.
 
-		scheduleManager.setUpSchedules(appId, rawApplicationPolicy);
+		scheduleManager.setUpSchedules(appId, guid, rawApplicationPolicy);
 
 		logger.info("Validate schedules for application: " + appId);
 		scheduleManager.validateSchedules(appId, rawApplicationPolicy);
@@ -121,5 +123,4 @@ public class ScheduleRestController {
 		
 		return new ResponseEntity<>(null, null, HttpStatus.NO_CONTENT);
 	}
-
 }

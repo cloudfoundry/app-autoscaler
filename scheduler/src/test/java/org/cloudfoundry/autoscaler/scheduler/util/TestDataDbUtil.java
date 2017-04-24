@@ -94,11 +94,11 @@ public class TestDataDbUtil {
 			Object[] objects = new Object[] { scheduleId, entity.getAppId(), entity.getTimeZone(),
 					Timestamp.valueOf(entity.getStartDateTime()), Timestamp.valueOf(entity.getEndDateTime()),
 					entity.getInstanceMinCount(), entity.getInstanceMaxCount(), entity.getDefaultInstanceMinCount(),
-					entity.getDefaultInstanceMaxCount(), entity.getInitialMinInstanceCount() };
+					entity.getDefaultInstanceMaxCount(), entity.getInitialMinInstanceCount(), entity.getGuid() };
 
 			jdbcTemplate.update("INSERT INTO app_scaling_specific_date_schedule "
-					+ "(schedule_id, app_id, timezone, start_date_time, end_date_time, instance_min_count, instance_max_count, default_instance_min_count, default_instance_max_count, initial_min_instance_count) "
-					+ "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", objects);
+					+ "(schedule_id, app_id, timezone, start_date_time, end_date_time, instance_min_count, instance_max_count, default_instance_min_count, default_instance_max_count, initial_min_instance_count, guid) "
+					+ "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", objects);
 		}
 	}
 
@@ -113,11 +113,11 @@ public class TestDataDbUtil {
 					entity.getInstanceMinCount(), entity.getInstanceMaxCount(), entity.getInitialMinInstanceCount(),
 					entity.getStartDate(), entity.getEndDate(), Time.valueOf(entity.getStartTime()),
 					Time.valueOf(entity.getEndTime()), convertArrayToBits(entity.getDaysOfWeek()),
-					convertArrayToBits(entity.getDaysOfMonth()) };
+					convertArrayToBits(entity.getDaysOfMonth()), entity.getGuid() };
 
 			jdbcTemplate.update("INSERT INTO app_scaling_recurring_schedule "
-					+ "( schedule_id, app_id, timezone, default_instance_min_count, default_instance_max_count, instance_min_count, instance_max_count, initial_min_instance_count, start_date, end_date, start_time, end_time, days_of_week, days_of_month) "
-					+ "VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", objects);
+					+ "( schedule_id, app_id, timezone, default_instance_min_count, default_instance_max_count, instance_min_count, instance_max_count, initial_min_instance_count, start_date, end_date, start_time, end_time, days_of_week, days_of_month, guid) "
+					+ "VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", objects);
 		}
 	}
 
