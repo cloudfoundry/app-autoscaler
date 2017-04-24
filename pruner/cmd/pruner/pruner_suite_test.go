@@ -66,16 +66,20 @@ func initConsul() {
 
 func initConfig() {
 	cfg.Logging.Level = "debug"
+	dbUrl := os.Getenv("DBURL")
+	if dbUrl == "" {
+		Fail("environment variable $DBURL is not set")
+	}
 
-	cfg.InstanceMetricsDb.DbUrl = os.Getenv("DBURL")
+	cfg.InstanceMetricsDb.DbUrl = dbUrl
 	cfg.InstanceMetricsDb.RefreshInterval = 12 * time.Hour
 	cfg.InstanceMetricsDb.CutoffDays = 20
 
-	cfg.AppMetricsDb.DbUrl = os.Getenv("DBURL")
+	cfg.AppMetricsDb.DbUrl = dbUrl
 	cfg.AppMetricsDb.RefreshInterval = 12 * time.Hour
 	cfg.AppMetricsDb.CutoffDays = 20
 
-	cfg.ScalingEngineDb.DbUrl = os.Getenv("DBURL")
+	cfg.ScalingEngineDb.DbUrl = dbUrl
 	cfg.ScalingEngineDb.RefreshInterval = 12 * time.Hour
 	cfg.ScalingEngineDb.CutoffDays = 20
 
