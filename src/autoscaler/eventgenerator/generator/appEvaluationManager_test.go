@@ -32,13 +32,13 @@ var _ = Describe("AppEvaluationManager", func() {
 		fakeScalingEngine    *ghttp.Server
 		regPath              *regexp.Regexp               = regexp.MustCompile(`^/v1/apps/.*/scale$`)
 		policyMap            map[string]*models.AppPolicy = map[string]*models.AppPolicy{
-			testAppId: &models.AppPolicy{
+			testAppId: {
 				AppId: testAppId,
 				ScalingPolicy: &models.ScalingPolicy{
 					InstanceMax: 5,
 					InstanceMin: 1,
 					ScalingRules: []*models.ScalingRule{
-						&models.ScalingRule{
+						{
 							MetricType:            models.MetricNameMemory,
 							StatWindowSeconds:     200,
 							BreachDurationSeconds: 200,
@@ -50,13 +50,13 @@ var _ = Describe("AppEvaluationManager", func() {
 					},
 				},
 			},
-			testAppId2: &models.AppPolicy{
+			testAppId2: {
 				AppId: testAppId2,
 				ScalingPolicy: &models.ScalingPolicy{
 					InstanceMax: 5,
 					InstanceMin: 1,
 					ScalingRules: []*models.ScalingRule{
-						&models.ScalingRule{
+						{
 							MetricType:            models.MetricNameMemory,
 							StatWindowSeconds:     300,
 							BreachDurationSeconds: 300,
@@ -111,7 +111,7 @@ var _ = Describe("AppEvaluationManager", func() {
 				Eventually(triggerArrayChan).Should(Receive(&arr))
 				triggerArray = append(triggerArray, arr)
 				Expect(triggerArray).Should(ContainElement(
-					[]*models.Trigger{&models.Trigger{
+					[]*models.Trigger{{
 						AppId:                 testAppId,
 						MetricType:            models.MetricNameMemory,
 						BreachDurationSeconds: 200,
@@ -121,7 +121,7 @@ var _ = Describe("AppEvaluationManager", func() {
 						Adjustment:            "1",
 					}}))
 				Expect(triggerArray).Should(ContainElement(
-					[]*models.Trigger{&models.Trigger{
+					[]*models.Trigger{{
 						AppId:                 testAppId2,
 						MetricType:            models.MetricNameMemory,
 						BreachDurationSeconds: 300,

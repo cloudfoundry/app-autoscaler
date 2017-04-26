@@ -11,8 +11,3 @@ func TestGenerator(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Generator Suite")
 }
-
-func GetInt64Pointer(value int64) *int64 {
-	tmp := value
-	return &tmp
-}

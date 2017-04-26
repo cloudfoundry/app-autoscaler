@@ -27,7 +27,7 @@ var _ = Describe("Evaluator", func() {
 		testAppId      string = "testAppId"
 		testMetricType string = models.MetricNameMemory
 		urlPath        string
-		triggerArrayGT []*models.Trigger = []*models.Trigger{&models.Trigger{
+		triggerArrayGT []*models.Trigger = []*models.Trigger{{
 			AppId:                 testAppId,
 			MetricType:            testMetricType,
 			BreachDurationSeconds: 300,
@@ -36,7 +36,7 @@ var _ = Describe("Evaluator", func() {
 			Operator:              ">",
 			Adjustment:            "+1",
 		}}
-		triggerArrayGE []*models.Trigger = []*models.Trigger{&models.Trigger{
+		triggerArrayGE []*models.Trigger = []*models.Trigger{{
 			AppId:                 testAppId,
 			MetricType:            testMetricType,
 			BreachDurationSeconds: 300,
@@ -45,7 +45,7 @@ var _ = Describe("Evaluator", func() {
 			Operator:              ">=",
 			Adjustment:            "+1",
 		}}
-		triggerArrayLT []*models.Trigger = []*models.Trigger{&models.Trigger{
+		triggerArrayLT []*models.Trigger = []*models.Trigger{{
 			AppId:                 testAppId,
 			MetricType:            testMetricType,
 			BreachDurationSeconds: 300,
@@ -54,7 +54,7 @@ var _ = Describe("Evaluator", func() {
 			Operator:              "<",
 			Adjustment:            "-1",
 		}}
-		triggerArrayLE []*models.Trigger = []*models.Trigger{&models.Trigger{
+		triggerArrayLE []*models.Trigger = []*models.Trigger{{
 			AppId:                 testAppId,
 			MetricType:            testMetricType,
 			BreachDurationSeconds: 300,
@@ -87,34 +87,34 @@ var _ = Describe("Evaluator", func() {
 
 		//test appmetric for >
 		appMetricGTBreach []*models.AppMetric = []*models.AppMetric{
-			&models.AppMetric{AppId: testAppId,
+			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "600",
 				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
-			&models.AppMetric{AppId: testAppId,
+			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "650",
 				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
-			&models.AppMetric{AppId: testAppId,
+			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "620",
 				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
 		}
 		appMetricGTNotBreach []*models.AppMetric = []*models.AppMetric{
-			&models.AppMetric{AppId: testAppId,
+			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "200",
 				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
-			&models.AppMetric{AppId: testAppId,
+			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "150",
 				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
-			&models.AppMetric{AppId: testAppId,
+			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "600",
 				Unit:       models.UnitMegaBytes,
@@ -123,34 +123,34 @@ var _ = Describe("Evaluator", func() {
 
 		//test appmetric for >=
 		appMetricGEBreach []*models.AppMetric = []*models.AppMetric{
-			&models.AppMetric{AppId: testAppId,
+			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "600",
 				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
-			&models.AppMetric{AppId: testAppId,
+			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "500",
 				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
-			&models.AppMetric{AppId: testAppId,
+			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "700",
 				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
 		}
 		appMetricGENotBreach []*models.AppMetric = []*models.AppMetric{
-			&models.AppMetric{AppId: testAppId,
+			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "200",
 				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
-			&models.AppMetric{AppId: testAppId,
+			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "500",
 				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
-			&models.AppMetric{AppId: testAppId,
+			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "120",
 				Unit:       models.UnitMegaBytes,
@@ -159,34 +159,34 @@ var _ = Describe("Evaluator", func() {
 
 		//test appmetric for <
 		appMetricLTNotBreach []*models.AppMetric = []*models.AppMetric{
-			&models.AppMetric{AppId: testAppId,
+			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "600",
 				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
-			&models.AppMetric{AppId: testAppId,
+			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "300",
 				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
-			&models.AppMetric{AppId: testAppId,
+			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "200",
 				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
 		}
 		appMetricLTBreach []*models.AppMetric = []*models.AppMetric{
-			&models.AppMetric{AppId: testAppId,
+			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "200",
 				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
-			&models.AppMetric{AppId: testAppId,
+			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "150",
 				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
-			&models.AppMetric{AppId: testAppId,
+			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "320",
 				Unit:       models.UnitMegaBytes,
@@ -195,34 +195,34 @@ var _ = Describe("Evaluator", func() {
 
 		//test appmetric for <=
 		appMetricLENotBreach []*models.AppMetric = []*models.AppMetric{
-			&models.AppMetric{AppId: testAppId,
+			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "600",
 				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
-			&models.AppMetric{AppId: testAppId,
+			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "500",
 				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
-			&models.AppMetric{AppId: testAppId,
+			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "300",
 				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
 		}
 		appMetricLEBreach []*models.AppMetric = []*models.AppMetric{
-			&models.AppMetric{AppId: testAppId,
+			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "500",
 				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
-			&models.AppMetric{AppId: testAppId,
+			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "300",
 				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
-			&models.AppMetric{AppId: testAppId,
+			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "200",
 				Unit:       models.UnitMegaBytes,
@@ -230,17 +230,17 @@ var _ = Describe("Evaluator", func() {
 		}
 
 		appMetricMultipleTriggerAllBreach []*models.AppMetric = []*models.AppMetric{
-			&models.AppMetric{AppId: testAppId,
+			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "500",
 				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
-			&models.AppMetric{AppId: testAppId,
+			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "500",
 				Unit:       models.UnitMegaBytes,
 				Timestamp:  time.Now().UnixNano()},
-			&models.AppMetric{AppId: testAppId,
+			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "500",
 				Unit:       models.UnitMegaBytes,
@@ -631,7 +631,7 @@ var _ = Describe("Evaluator", func() {
 
 			Context("when there are invalid operators in trigger", func() {
 				BeforeEach(func() {
-					invalidTriggerArray := []*models.Trigger{&models.Trigger{
+					invalidTriggerArray := []*models.Trigger{{
 						AppId:                 testAppId,
 						MetricType:            testMetricType,
 						BreachDurationSeconds: 300,

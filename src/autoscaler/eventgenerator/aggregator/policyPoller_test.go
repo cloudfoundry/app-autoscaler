@@ -57,7 +57,7 @@ var _ = Describe("PolicyPoller", func() {
 		Context("when the poller is started", func() {
 			BeforeEach(func() {
 				database.RetrievePoliciesStub = func() ([]*models.PolicyJson, error) {
-					return []*models.PolicyJson{&models.PolicyJson{AppId: testAppId1, PolicyStr: policyStr1}}, nil
+					return []*models.PolicyJson{{AppId: testAppId1, PolicyStr: policyStr1}}, nil
 				}
 
 			})
@@ -70,7 +70,7 @@ var _ = Describe("PolicyPoller", func() {
 			Context("when retrieve policies and compute triggers successfully", func() {
 				BeforeEach(func() {
 					database.RetrievePoliciesStub = func() ([]*models.PolicyJson, error) {
-						return []*models.PolicyJson{&models.PolicyJson{AppId: testAppId1, PolicyStr: policyStr1}}, nil
+						return []*models.PolicyJson{{AppId: testAppId1, PolicyStr: policyStr1}}, nil
 					}
 				})
 				It("should call the consumer with the new triggers for every interval", func() {
@@ -84,7 +84,7 @@ var _ = Describe("PolicyPoller", func() {
 						ScalingPolicy: &models.ScalingPolicy{
 							InstanceMax: 5,
 							InstanceMin: 1,
-							ScalingRules: []*models.ScalingRule{&models.ScalingRule{
+							ScalingRules: []*models.ScalingRule{{
 								MetricType:            models.MetricNameMemory,
 								StatWindowSeconds:     300,
 								BreachDurationSeconds: 300,
