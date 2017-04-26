@@ -53,18 +53,29 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	mc, err := gexec.Build("autoscaler/metricscollector/cmd/metricscollector", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
+	mcDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = mcDB.Exec("DELETE FROM appinstancemetrics")
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = mcDB.Exec("DELETE from policy_json")
+	Expect(err).NotTo(HaveOccurred())
+
+	policy := `
+		{
+ 			"instance_min_count": 1,
+  			"instance_max_count": 5
+		}`
+	query := "INSERT INTO policy_json(app_id, policy_json, guid) values($1, $2, $3)"
+	_, err = mcDB.Exec(query, "an-app-id", policy, "1234")
+	Expect(err).NotTo(HaveOccurred())
+
+	err = mcDB.Close()
+	Expect(err).NotTo(HaveOccurred())
+
 	return []byte(mc)
 }, func(pathsByte []byte) {
-
-	consulRunner = consulrunner.NewClusterRunner(
-		consulrunner.ClusterRunnerConfig{
-			StartingPort: 9001 + GinkgoParallelNode()*consulrunner.PortOffsetLength,
-			NumNodes:     1,
-			Scheme:       "http",
-		},
-	)
-	consulRunner.Start()
-	consulRunner.WaitUntilReady()
 	mcPath = string(pathsByte)
 
 	ccNOAAUAA = ghttp.NewServer()
@@ -109,6 +120,16 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		},
 	)
 
+	consulRunner = consulrunner.NewClusterRunner(
+		consulrunner.ClusterRunnerConfig{
+			StartingPort: 9001 + GinkgoParallelNode()*consulrunner.PortOffsetLength,
+			NumNodes:     1,
+			Scheme:       "http",
+		},
+	)
+	consulRunner.Start()
+	consulRunner.WaitUntilReady()
+
 	cfg.Cf = cf.CfConfig{
 		Api:       ccNOAAUAA.URL(),
 		GrantType: cf.GrantTypePassword,
@@ -136,27 +157,6 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.Lock.LockTTL = locket.DefaultSessionTTL
 
 	configFile = writeConfig(&cfg)
-
-	mcDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
-	Expect(err).NotTo(HaveOccurred())
-
-	_, err = mcDB.Exec("DELETE FROM appinstancemetrics")
-	Expect(err).NotTo(HaveOccurred())
-
-	_, err = mcDB.Exec("DELETE from policy_json")
-	Expect(err).NotTo(HaveOccurred())
-
-	policy := `
-		{
- 			"instance_min_count": 1,
-  			"instance_max_count": 5
-		}`
-	query := "INSERT INTO policy_json(app_id, policy_json, guid) values($1, $2, $3)"
-	_, err = mcDB.Exec(query, "an-app-id", policy, "1234")
-	Expect(err).NotTo(HaveOccurred())
-
-	err = mcDB.Close()
-	Expect(err).NotTo(HaveOccurred())
 
 	tlsConfig, err := cfhttp.NewTLSConfig(
 		filepath.Join(testCertDir, "eventgenerator.crt"),
