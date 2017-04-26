@@ -13,7 +13,6 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
-	"github.com/onsi/gomega/gstruct"
 
 	"errors"
 	"time"
@@ -89,14 +88,14 @@ var _ = Describe("Apppoller", func() {
 					}
 
 					database.SaveMetricStub = func(metric *models.AppInstanceMetric) error {
-						Expect(*metric).To(gstruct.MatchAllFields(gstruct.Fields{
-							"AppId":         Equal("test-app-id"),
-							"InstanceIndex": BeEquivalentTo(0),
-							"CollectedAt":   Equal(fclock.Now().UnixNano()),
-							"Name":          Equal(models.MetricNameMemory),
-							"Unit":          Equal(models.UnitMegaBytes),
-							"Value":         Equal("12"),
-							"Timestamp":     BeEquivalentTo(111111),
+						Expect(metric).To(Equal(&models.AppInstanceMetric{
+							AppId:         "test-app-id",
+							InstanceIndex: 0,
+							CollectedAt:   fclock.Now().UnixNano(),
+							Name:          models.MetricNameMemory,
+							Unit:          models.UnitMegaBytes,
+							Value:         "12",
+							Timestamp:     111111,
 						}))
 						return nil
 					}
@@ -159,14 +158,14 @@ var _ = Describe("Apppoller", func() {
 					}
 
 					database.SaveMetricStub = func(metric *models.AppInstanceMetric) error {
-						Expect(*metric).To(gstruct.MatchAllFields(gstruct.Fields{
-							"AppId":         Equal("test-app-id"),
-							"InstanceIndex": BeEquivalentTo(0),
-							"CollectedAt":   Equal(fclock.Now().UnixNano()),
-							"Name":          Equal(models.MetricNameMemory),
-							"Unit":          Equal(models.UnitMegaBytes),
-							"Value":         Equal("12"),
-							"Timestamp":     BeEquivalentTo(111111),
+						Expect(metric).To(Equal(&models.AppInstanceMetric{
+							AppId:         "test-app-id",
+							InstanceIndex: 0,
+							CollectedAt:   fclock.Now().UnixNano(),
+							Name:          models.MetricNameMemory,
+							Unit:          models.UnitMegaBytes,
+							Value:         "12",
+							Timestamp:     111111,
 						}))
 						return nil
 					}
