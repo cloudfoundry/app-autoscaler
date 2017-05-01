@@ -108,10 +108,6 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("Configuration error: Scheduler DB url is empty")
 	}
 
-	if c.Consul.Cluster == "" {
-		return fmt.Errorf("Configuration error: Consul cluster is empty")
-	}
-
 	return nil
 
 }

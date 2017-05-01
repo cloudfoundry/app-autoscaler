@@ -100,17 +100,19 @@ func main() {
 	synchronizer := schedule.NewActiveScheduleSychronizer(logger.Session("synchronizer"), schedulerDB, scalingEngineDB, scalingEngine,
 		conf.Synchronizer.ActiveScheduleSyncInterval, eClock)
 
-	consulClient, err := consuladapter.NewClientFromUrl(conf.Consul.Cluster)
-	if err != nil {
-		logger.Fatal("new consul client failed", err)
-	}
-
-	registrationRunner := initializeRegistrationRunner(logger, consulClient, conf.Server.Port, eClock)
-
 	members := grouper.Members{
 		{"http_server", httpServer},
 		{"schedule_synchronizer", synchronizer},
-		{"registration", registrationRunner},
+	}
+
+	if conf.Consul.Cluster != "" {
+		consulClient, err := consuladapter.NewClientFromUrl(conf.Consul.Cluster)
+		if err != nil {
+			logger.Fatal("new consul client failed", err)
+		}
+
+		registrationRunner := initializeRegistrationRunner(logger, consulClient, conf.Server.Port, eClock)
+		members = append(members, grouper.Member{"registration", registrationRunner})
 	}
 
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
