@@ -37,7 +37,7 @@ var _ = Describe("Main", func() {
 	})
 
 	AfterEach(func() {
-		runner.KillWithFire()
+		runner.Interrupt()
 	})
 
 	It("should start", func() {
@@ -78,14 +78,15 @@ var _ = Describe("Main", func() {
 	Context("with missing configuration", func() {
 		BeforeEach(func() {
 			runner.startCheck = ""
-			conf.Cf = cf.CfConfig{
+			missingParamConf := conf
+			missingParamConf.Cf = cf.CfConfig{
 				Api: ccUAA.URL(),
 			}
 
-			conf.Server.Port = 7000 + GinkgoParallelNode()
-			conf.Logging.Level = "debug"
+			missingParamConf.Server.Port = 7000 + GinkgoParallelNode()
+			missingParamConf.Logging.Level = "debug"
 
-			cfg := writeConfig(&conf)
+			cfg := writeConfig(&missingParamConf)
 			runner.configPath = cfg.Name()
 		})
 
@@ -149,6 +150,34 @@ var _ = Describe("Main", func() {
 			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("scalingengine.started"))
 
 			runner.Interrupt()
+		})
+
+		It("should not get scaling engine service", func() {
+			Eventually(func() map[string]*api.AgentService {
+				services, err := consulClient.Agent().Services()
+				Expect(err).ToNot(HaveOccurred())
+
+				return services
+			}).ShouldNot(HaveKey("scalingengine"))
+		})
+	})
+
+	Context("when no consul", func() {
+		BeforeEach(func() {
+			noConsulConf := conf
+			noConsulConf.Consul.Cluster = ""
+			cfg := writeConfig(&noConsulConf)
+			runner.configPath = cfg.Name()
+			runner.startCheck = ""
+			consulClient = consulRunner.NewClient()
+		})
+
+		JustBeforeEach(func() {
+			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("scalingengine.started"))
+		})
+
+		AfterEach(func() {
+			os.Remove(runner.configPath)
 		})
 
 		It("should not get scaling engine service", func() {
