@@ -149,7 +149,7 @@ var _ = Describe("AppStreamer", func() {
 				Eventually(buffer).Should(gbytes.Say("an error"))
 			})
 		})
-		Context("when cosing the connection succeeds", func() {
+		Context("when closing the connection succeeds", func() {
 			It("logs the message", func() {
 				Eventually(buffer).Should(gbytes.Say("noaa-connections-closed"))
 				Eventually(buffer).Should(gbytes.Say("an-app-id"))
