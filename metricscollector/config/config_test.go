@@ -61,7 +61,7 @@ server:
 				configBytes = []byte(`
 collector:
   refresh_interval: 20a
-  poll_interval: 10s  
+  collect_interval: 10s  
 `)
 			})
 
@@ -93,7 +93,7 @@ db:
   instance_metrics_db_url: postgres://pqgotest:password@localhost/pqgotest
 collector:
   refresh_interval: 20s
-  poll_interval: 10s
+  collect_interval: 10s
 lock:
   lock_ttl: 15s
   lock_retry_interval: 10s
@@ -119,7 +119,7 @@ lock:
 				Expect(conf.Db.InstanceMetricsDbUrl).To(Equal("postgres://pqgotest:password@localhost/pqgotest"))
 
 				Expect(conf.Collector.RefreshInterval).To(Equal(20 * time.Second))
-				Expect(conf.Collector.PollInterval).To(Equal(10 * time.Second))
+				Expect(conf.Collector.CollectInterval).To(Equal(10 * time.Second))
 
 				Expect(conf.Server.TLS.KeyFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/server.key"))
 				Expect(conf.Server.TLS.CertFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/server.crt"))
@@ -149,7 +149,7 @@ db:
 				Expect(conf.Server.Port).To(Equal(8080))
 				Expect(conf.Logging.Level).To(Equal(DefaultLoggingLevel))
 				Expect(conf.Collector.RefreshInterval).To(Equal(DefaultRefreshInterval))
-				Expect(conf.Collector.PollInterval).To(Equal(DefaultPollInterval))
+				Expect(conf.Collector.CollectInterval).To(Equal(DefaultCollectInterval))
 
 				Expect(conf.Lock.LockRetryInterval).To(Equal(DefaultRetryInterval))
 				Expect(conf.Lock.LockTTL).To(Equal(DefaultLockTTL))

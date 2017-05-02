@@ -39,7 +39,7 @@ var _ = Describe("Apppoller", func() {
 		buffer = logger.Buffer()
 
 		fclock = fakeclock.NewFakeClock(time.Now())
-		poller = NewAppPoller(logger, "test-app-id", TestPollInterval, cfc, noaa, database, fclock)
+		poller = NewAppPoller(logger, "test-app-id", TestCollectInterval, cfc, noaa, database, fclock)
 		timestamp = 111111
 	})
 
@@ -56,10 +56,10 @@ var _ = Describe("Apppoller", func() {
 		It("polls metrics with the given interval", func() {
 			Eventually(noaa.ContainerEnvelopesCallCount).Should(Equal(1))
 
-			fclock.WaitForWatcherAndIncrement(TestPollInterval)
+			fclock.WaitForWatcherAndIncrement(TestCollectInterval)
 			Eventually(noaa.ContainerEnvelopesCallCount).Should(Equal(2))
 
-			fclock.WaitForWatcherAndIncrement(TestPollInterval)
+			fclock.WaitForWatcherAndIncrement(TestCollectInterval)
 			Eventually(noaa.ContainerEnvelopesCallCount).Should(Equal(3))
 		})
 
@@ -105,10 +105,10 @@ var _ = Describe("Apppoller", func() {
 				It("saves the metrics to database", func() {
 					Eventually(database.SaveMetricCallCount).Should(Equal(1))
 
-					fclock.WaitForWatcherAndIncrement(TestPollInterval)
+					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
 					Eventually(database.SaveMetricCallCount).Should(Equal(2))
 
-					fclock.WaitForWatcherAndIncrement(TestPollInterval)
+					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
 					Eventually(database.SaveMetricCallCount).Should(Equal(3))
 				})
 			})
@@ -126,10 +126,10 @@ var _ = Describe("Apppoller", func() {
 				It("saves nothing to database", func() {
 					Consistently(database.SaveMetricCallCount).Should(BeZero())
 
-					fclock.WaitForWatcherAndIncrement(TestPollInterval)
+					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
 					Consistently(database.SaveMetricCallCount).Should(BeZero())
 
-					fclock.WaitForWatcherAndIncrement(TestPollInterval)
+					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
 					Consistently(database.SaveMetricCallCount).Should(BeZero())
 				})
 
@@ -175,10 +175,10 @@ var _ = Describe("Apppoller", func() {
 				It("saves metrics in non-empty container envelops to database", func() {
 					Eventually(database.SaveMetricCallCount).Should(Equal(1))
 
-					fclock.WaitForWatcherAndIncrement(TestPollInterval)
+					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
 					Consistently(database.SaveMetricCallCount).Should(Equal(1))
 
-					fclock.WaitForWatcherAndIncrement(TestPollInterval)
+					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
 					Eventually(database.SaveMetricCallCount).Should(Equal(2))
 				})
 			})
@@ -195,7 +195,7 @@ var _ = Describe("Apppoller", func() {
 				Eventually(buffer).Should(gbytes.Say("test apppoller error"))
 				Consistently(database.SaveMetricCallCount).Should(BeZero())
 
-				fclock.WaitForWatcherAndIncrement(TestPollInterval)
+				fclock.WaitForWatcherAndIncrement(TestCollectInterval)
 				Eventually(buffer).Should(gbytes.Say("poll-metric-from-noaa"))
 				Eventually(buffer).Should(gbytes.Say("test apppoller error"))
 				Consistently(database.SaveMetricCallCount).Should(BeZero())
@@ -248,11 +248,11 @@ var _ = Describe("Apppoller", func() {
 		It("stops the polling", func() {
 			Eventually(noaa.ContainerEnvelopesCallCount).Should(Equal(1))
 
-			fclock.WaitForWatcherAndIncrement(TestPollInterval)
+			fclock.WaitForWatcherAndIncrement(TestCollectInterval)
 			Eventually(noaa.ContainerEnvelopesCallCount).Should(Equal(2))
 
 			poller.Stop()
-			fclock.Increment(TestPollInterval)
+			fclock.Increment(TestCollectInterval)
 			Consistently(noaa.ContainerEnvelopesCallCount).Should(Equal(2))
 		})
 	})
