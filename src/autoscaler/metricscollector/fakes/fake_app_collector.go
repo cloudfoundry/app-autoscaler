@@ -6,7 +6,7 @@ import (
 	"sync"
 )
 
-type FakeAppPoller struct {
+type FakeAppCollector struct {
 	StartStub        func()
 	startMutex       sync.RWMutex
 	startArgsForCall []struct{}
@@ -17,7 +17,7 @@ type FakeAppPoller struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeAppPoller) Start() {
+func (fake *FakeAppCollector) Start() {
 	fake.startMutex.Lock()
 	fake.startArgsForCall = append(fake.startArgsForCall, struct{}{})
 	fake.recordInvocation("Start", []interface{}{})
@@ -27,13 +27,13 @@ func (fake *FakeAppPoller) Start() {
 	}
 }
 
-func (fake *FakeAppPoller) StartCallCount() int {
+func (fake *FakeAppCollector) StartCallCount() int {
 	fake.startMutex.RLock()
 	defer fake.startMutex.RUnlock()
 	return len(fake.startArgsForCall)
 }
 
-func (fake *FakeAppPoller) Stop() {
+func (fake *FakeAppCollector) Stop() {
 	fake.stopMutex.Lock()
 	fake.stopArgsForCall = append(fake.stopArgsForCall, struct{}{})
 	fake.recordInvocation("Stop", []interface{}{})
@@ -43,13 +43,13 @@ func (fake *FakeAppPoller) Stop() {
 	}
 }
 
-func (fake *FakeAppPoller) StopCallCount() int {
+func (fake *FakeAppCollector) StopCallCount() int {
 	fake.stopMutex.RLock()
 	defer fake.stopMutex.RUnlock()
 	return len(fake.stopArgsForCall)
 }
 
-func (fake *FakeAppPoller) Invocations() map[string][][]interface{} {
+func (fake *FakeAppCollector) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
 	fake.startMutex.RLock()
@@ -59,7 +59,7 @@ func (fake *FakeAppPoller) Invocations() map[string][][]interface{} {
 	return fake.invocations
 }
 
-func (fake *FakeAppPoller) recordInvocation(key string, args []interface{}) {
+func (fake *FakeAppCollector) recordInvocation(key string, args []interface{}) {
 	fake.invocationsMutex.Lock()
 	defer fake.invocationsMutex.Unlock()
 	if fake.invocations == nil {
@@ -71,4 +71,4 @@ func (fake *FakeAppPoller) recordInvocation(key string, args []interface{}) {
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
 
-var _ collector.AppPoller = new(FakeAppPoller)
+var _ collector.AppCollector = new(FakeAppCollector)

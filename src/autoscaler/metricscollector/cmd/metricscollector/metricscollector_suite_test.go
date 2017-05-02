@@ -149,7 +149,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.Db.InstanceMetricsDbUrl = os.Getenv("DBURL")
 	cfg.Db.PolicyDbUrl = os.Getenv("DBURL")
 
-	cfg.Collector.PollInterval = 10 * time.Second
+	cfg.Collector.CollectInterval = 10 * time.Second
 	cfg.Collector.RefreshInterval = 30 * time.Second
 
 	cfg.Lock.ConsulClusterConfig = consulRunner.ConsulCluster()

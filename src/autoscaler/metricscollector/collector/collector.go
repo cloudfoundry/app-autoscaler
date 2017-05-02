@@ -9,28 +9,33 @@ import (
 	"time"
 )
 
-type Collector struct {
-	refreshInterval time.Duration
-	logger          lager.Logger
-	database        db.PolicyDB
-	cclock          clock.Clock
-	createPoller    func(string) AppPoller
-	doneChan        chan bool
-	pollers         map[string]AppPoller
-	ticker          clock.Ticker
-	lock            *sync.Mutex
+type AppCollector interface {
+	Start()
+	Stop()
 }
 
-func NewCollector(refreshInterval time.Duration, logger lager.Logger, database db.PolicyDB, cclock clock.Clock, createPoller func(string) AppPoller) *Collector {
+type Collector struct {
+	refreshInterval    time.Duration
+	logger             lager.Logger
+	database           db.PolicyDB
+	cclock             clock.Clock
+	createAppCollector func(string) AppCollector
+	doneChan           chan bool
+	appCollectors      map[string]AppCollector
+	ticker             clock.Ticker
+	lock               *sync.Mutex
+}
+
+func NewCollector(refreshInterval time.Duration, logger lager.Logger, database db.PolicyDB, cclock clock.Clock, createAppCollector func(string) AppCollector) *Collector {
 	return &Collector{
-		refreshInterval: refreshInterval,
-		logger:          logger,
-		database:        database,
-		cclock:          cclock,
-		createPoller:    createPoller,
-		doneChan:        make(chan bool),
-		pollers:         make(map[string]AppPoller),
-		lock:            &sync.Mutex{},
+		refreshInterval:    refreshInterval,
+		logger:             logger,
+		database:           database,
+		cclock:             cclock,
+		createAppCollector: createAppCollector,
+		doneChan:           make(chan bool),
+		appCollectors:      make(map[string]AppCollector),
+		lock:               &sync.Mutex{},
 	}
 }
 
@@ -61,22 +66,22 @@ func (c *Collector) refreshApps() {
 	c.logger.Debug("refresh-apps", lager.Data{"appIds": appIds})
 
 	c.lock.Lock()
-	for id, ap := range c.pollers {
+	for id, ap := range c.appCollectors {
 		_, exist := appIds[id]
 		if !exist {
 			c.logger.Debug("refresh-apps-remove", lager.Data{"appId": id})
 			ap.Stop()
-			delete(c.pollers, id)
+			delete(c.appCollectors, id)
 		}
 	}
 
 	for id, _ := range appIds {
-		_, exist := c.pollers[id]
+		_, exist := c.appCollectors[id]
 		if !exist {
 			c.logger.Debug("refresh-apps-add", lager.Data{"appId": id})
-			ap := c.createPoller(id)
+			ap := c.createAppCollector(id)
 			ap.Start()
-			c.pollers[id] = ap
+			c.appCollectors[id] = ap
 		}
 	}
 	c.lock.Unlock()
@@ -88,7 +93,7 @@ func (c *Collector) Stop() {
 		close(c.doneChan)
 
 		c.lock.Lock()
-		for _, ap := range c.pollers {
+		for _, ap := range c.appCollectors {
 			ap.Stop()
 		}
 		c.lock.Unlock()
@@ -96,10 +101,10 @@ func (c *Collector) Stop() {
 	c.logger.Info("collector-stopped")
 }
 
-func (c *Collector) GetPollerAppIds() []string {
+func (c *Collector) GetCollectorAppIds() []string {
 	var appIds []string
 	c.lock.Lock()
-	for id, _ := range c.pollers {
+	for id, _ := range c.appCollectors {
 		appIds = append(appIds, id)
 	}
 	c.lock.Unlock()

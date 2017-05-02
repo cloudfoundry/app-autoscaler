@@ -67,7 +67,7 @@ var (
 	apiSchedulerHttpRequestTimeout           time.Duration = 5 * time.Second
 	schedulerScalingEngineHttpRequestTimeout time.Duration = 10 * time.Second
 
-	pollInterval              time.Duration = 1 * time.Second
+	collectInterval           time.Duration = 1 * time.Second
 	refreshInterval           time.Duration = 1 * time.Second
 	aggregatorExecuteInterval time.Duration = 1 * time.Second
 	policyPollerInterval      time.Duration = 1 * time.Second

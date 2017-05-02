@@ -304,7 +304,7 @@ spring.data.jpa.repositories.enabled=false
 	return cfgFile.Name()
 }
 
-func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port int, ccNOAAUAAUrl string, cfGrantTypePassword string, pollInterval time.Duration,
+func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port int, ccNOAAUAAUrl string, cfGrantTypePassword string, collectInterval time.Duration,
 	refreshInterval time.Duration, tmpDir string, lockTTL time.Duration, lockRetryInterval time.Duration, ConsulClusterConfig string) string {
 	cfg := mcConfig.Config{
 		Cf: cf.CfConfig{
@@ -329,7 +329,7 @@ func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port i
 			PolicyDbUrl:          dbUri,
 		},
 		Collector: mcConfig.CollectorConfig{
-			PollInterval:    pollInterval,
+			CollectInterval: collectInterval,
 			RefreshInterval: refreshInterval,
 		},
 		Lock: mcConfig.LockConfig{
