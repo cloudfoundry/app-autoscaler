@@ -175,16 +175,14 @@ var _ = Describe("MetricsCollector", func() {
 	Context("with missing configuration", func() {
 		BeforeEach(func() {
 			runner.startCheck = ""
-			cfg.Cf = cf.CfConfig{
+			missingConfig := cfg
+			missingConfig.Cf = cf.CfConfig{
 				Api: ccNOAAUAA.URL(),
 			}
 
-			cfg.Server.Port = 7000 + GinkgoParallelNode()
-			cfg.Logging.Level = "debug"
-
-			cfg := writeConfig(&cfg)
-			runner.configPath = cfg.Name()
-
+			missingConfig.Server.Port = 7000 + GinkgoParallelNode()
+			missingConfig.Logging.Level = "debug"
+			runner.configPath = writeConfig(&missingConfig).Name()
 			runner.Start()
 		})
 
@@ -196,6 +194,34 @@ var _ = Describe("MetricsCollector", func() {
 			Eventually(runner.Session).Should(Exit(1))
 			Expect(runner.Session.Buffer()).To(Say("failed to validate configuration"))
 		})
+	})
+
+	Context("when no consul is configured", func() {
+		BeforeEach(func() {
+			noConsulConf := cfg
+			noConsulConf.Lock.ConsulClusterConfig = ""
+			runner.configPath = writeConfig(&noConsulConf).Name()
+			runner.startCheck = ""
+			runner.Start()
+		})
+
+		AfterEach(func() {
+			os.Remove(runner.configPath)
+		})
+
+		It("should not get metricscollector service", func() {
+			Eventually(func() map[string]*api.AgentService {
+				services, err := consulClient.Agent().Services()
+				Expect(err).ToNot(HaveOccurred())
+				return services
+			}).ShouldNot(HaveKey("metricscollector"))
+		})
+
+		It("should start", func() {
+			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.started"))
+			Consistently(runner.Session).ShouldNot(Exit())
+		})
+
 	})
 
 	Context("when an interrupt is sent", func() {

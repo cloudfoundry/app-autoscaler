@@ -118,10 +118,6 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("Configuration error: InstanceMetrics DB url is empty")
 	}
 
-	if c.Lock.ConsulClusterConfig == "" {
-		return fmt.Errorf("Configuration error: Consul cluster config is empty")
-	}
-
 	return nil
 
 }

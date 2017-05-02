@@ -113,27 +113,28 @@ func main() {
 		os.Exit(1)
 	}
 
-	consulClient, err := consuladapter.NewClientFromUrl(conf.Lock.ConsulClusterConfig)
-	if err != nil {
-		logger.Fatal("new consul client failed", err)
-	}
-
-	serviceClient := metricscollector.NewServiceClient(consulClient, mcClock)
-
-	lockMaintainer := serviceClient.NewMetricsCollectorLockRunner(
-		logger,
-		generateGUID(logger),
-		conf.Lock.LockRetryInterval,
-		conf.Lock.LockTTL,
-	)
-
-	registrationRunner := initializeRegistrationRunner(logger, consulClient, conf.Server.Port, mcClock)
-
 	members := grouper.Members{
-		{"lock-maintainer", lockMaintainer},
 		{"collector", collectServer},
 		{"http_server", httpServer},
-		{"registration", registrationRunner},
+	}
+
+	if conf.Lock.ConsulClusterConfig != "" {
+		consulClient, err := consuladapter.NewClientFromUrl(conf.Lock.ConsulClusterConfig)
+		if err != nil {
+			logger.Fatal("new consul client failed", err)
+		}
+
+		serviceClient := metricscollector.NewServiceClient(consulClient, mcClock)
+		lockMaintainer := serviceClient.NewMetricsCollectorLockRunner(
+			logger,
+			generateGUID(logger),
+			conf.Lock.LockRetryInterval,
+			conf.Lock.LockTTL,
+		)
+
+		registrationRunner := initializeRegistrationRunner(logger, consulClient, conf.Server.Port, mcClock)
+		members = append(members, grouper.Member{"lock-maintainer", lockMaintainer})
+		members = append(members, grouper.Member{"registration", registrationRunner})
 	}
 
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
