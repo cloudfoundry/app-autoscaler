@@ -66,7 +66,7 @@ var _ = Describe("Server", func() {
 			body, err = json.Marshal(models.Trigger{Adjustment: "+1"})
 			Expect(err).NotTo(HaveOccurred())
 
-			uPath, err := route.Get(routes.ScaleRoute).URLPath("appid", "test-app-id")
+			uPath, err := route.Get(routes.ScaleRouteName).URLPath("appid", "test-app-id")
 			Expect(err).NotTo(HaveOccurred())
 			urlPath = uPath.Path
 		})
@@ -99,7 +99,7 @@ var _ = Describe("Server", func() {
 
 	Context("when getting scaling histories", func() {
 		BeforeEach(func() {
-			uPath, err := route.Get(routes.HistoriesRoute).URLPath("appid", "test-app-id")
+			uPath, err := route.Get(routes.GetScalingHistoriesRouteName).URLPath("appid", "test-app-id")
 			Expect(err).NotTo(HaveOccurred())
 			urlPath = uPath.Path
 		})
@@ -139,7 +139,7 @@ var _ = Describe("Server", func() {
 
 		Context("when setting active schedule", func() {
 			BeforeEach(func() {
-				uPath, err := route.Get(routes.UpdateActiveSchedulesRoute).URLPath("appid", "test-app-id", "scheduleid", "test-schedule-id")
+				uPath, err := route.Get(routes.SetActiveScheduleRouteName).URLPath("appid", "test-app-id", "scheduleid", "test-schedule-id")
 				Expect(err).NotTo(HaveOccurred())
 				urlPath = uPath.Path
 				bodyReader = bytes.NewReader([]byte(`{"instance_min_count":1, "instance_max_count":5, "initial_min_instance_count":3}`))
@@ -173,7 +173,7 @@ var _ = Describe("Server", func() {
 
 		Context("when deleting active schedule", func() {
 			BeforeEach(func() {
-				uPath, err := route.Get(routes.DeleteActiveSchedulesRoute).URLPath("appid", "test-app-id", "scheduleid", "test-schedule-id")
+				uPath, err := route.Get(routes.DeleteActiveScheduleRouteName).URLPath("appid", "test-app-id", "scheduleid", "test-schedule-id")
 				Expect(err).NotTo(HaveOccurred())
 				urlPath = uPath.Path
 				bodyReader = nil
@@ -202,7 +202,7 @@ var _ = Describe("Server", func() {
 
 		Context("when getting active schedule", func() {
 			BeforeEach(func() {
-				uPath, err := route.Get(routes.GetActiveScheduleRoute).URLPath("appid", "test-app-id")
+				uPath, err := route.Get(routes.GetActiveSchedulesRouteName).URLPath("appid", "test-app-id")
 				Expect(err).NotTo(HaveOccurred())
 				urlPath = uPath.Path
 				bodyReader = nil

@@ -12,20 +12,21 @@ var _ = Describe("Routes", func() {
 	var (
 		testAppId      string = "testAppId"
 		testScheduleId string = "testScheduleId"
+		testMetricType string = "testMetricType"
 	)
 	Describe("MetricsCollectorRoutes", func() {
-		Context("MemoryMetricRoute", func() {
+		Context("GetMemoryMetricRoute", func() {
 			Context("when provide correct route variable", func() {
 				It("should return the correct path", func() {
-					path, err := routes.MetricsCollectorRoutes().Get(routes.MemoryMetricRoute).URLPath("appid", testAppId)
+					path, err := routes.MetricsCollectorRoutes().Get(routes.GetMemoryMetricRouteName).URLPath("appid", testAppId)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(path.Path).To(Equal("/v1/apps/testAppId/metrics/memoryused"))
+					Expect(path.Path).To(Equal("/v1/apps/" + testAppId + "/metrics/memoryused"))
 				})
 			})
 
 			Context("when provide wrong route variable", func() {
 				It("should return error", func() {
-					_, err := routes.MetricsCollectorRoutes().Get(routes.MemoryMetricRoute).URLPath("wrongVariable", testAppId)
+					_, err := routes.MetricsCollectorRoutes().Get(routes.GetMemoryMetricRouteName).URLPath("wrongVariable", testAppId)
 					Expect(err).To(HaveOccurred())
 
 				})
@@ -33,25 +34,25 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide not enough route variable", func() {
 				It("should return error", func() {
-					_, err := routes.MetricsCollectorRoutes().Get(routes.MemoryMetricRoute).URLPath()
+					_, err := routes.MetricsCollectorRoutes().Get(routes.GetMemoryMetricRouteName).URLPath()
 					Expect(err).To(HaveOccurred())
 
 				})
 			})
 		})
 
-		Context("MemoryMetricHistoryRoute", func() {
+		Context("GetMemoryMetricHistoriesRoute", func() {
 			Context("when provide correct route variable", func() {
 				It("should return the correct path", func() {
-					path, err := routes.MetricsCollectorRoutes().Get(routes.MemoryMetricHistoryRoute).URLPath("appid", testAppId)
+					path, err := routes.MetricsCollectorRoutes().Get(routes.GetMemoryMetricHistoriesRouteName).URLPath("appid", testAppId)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(path.Path).To(Equal("/v1/apps/testAppId/metric_histories/memoryused"))
+					Expect(path.Path).To(Equal("/v1/apps/" + testAppId + "/metric_histories/memoryused"))
 				})
 			})
 
 			Context("when provide wrong route variable", func() {
 				It("should return error", func() {
-					_, err := routes.MetricsCollectorRoutes().Get(routes.MemoryMetricHistoryRoute).URLPath("wrongVariable", testAppId)
+					_, err := routes.MetricsCollectorRoutes().Get(routes.GetMemoryMetricHistoriesRouteName).URLPath("wrongVariable", testAppId)
 					Expect(err).To(HaveOccurred())
 
 				})
@@ -59,27 +60,54 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide not enough route variable", func() {
 				It("should return error", func() {
-					_, err := routes.MetricsCollectorRoutes().Get(routes.MemoryMetricHistoryRoute).URLPath()
+					_, err := routes.MetricsCollectorRoutes().Get(routes.GetMemoryMetricHistoriesRouteName).URLPath()
 					Expect(err).To(HaveOccurred())
 
 				})
 			})
 		})
+
+		Context("GetMetricHistoriesRoute", func() {
+			Context("when provide correct route variable", func() {
+				It("should return the correct path", func() {
+					path, err := routes.MetricsCollectorRoutes().Get(routes.GetMetricHistoriesRouteName).URLPath("appid", testAppId, "metrictype", testMetricType)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(path.Path).To(Equal("/v1/apps/" + testAppId + "/metric_histories/" + testMetricType))
+				})
+			})
+
+			Context("when provide wrong route variable", func() {
+				It("should return error", func() {
+					_, err := routes.MetricsCollectorRoutes().Get(routes.GetMetricHistoriesRouteName).URLPath("wrongVariable", testAppId)
+					Expect(err).To(HaveOccurred())
+
+				})
+			})
+
+			Context("when provide not enough route variable", func() {
+				It("should return error", func() {
+					_, err := routes.MetricsCollectorRoutes().Get(routes.GetMetricHistoriesRouteName).URLPath("appid", testAppId)
+					Expect(err).To(HaveOccurred())
+
+				})
+			})
+		})
+
 	})
 
 	Describe("ScalingEngineRoutes", func() {
 		Context("ScaleRoute", func() {
 			Context("when provide correct route variable", func() {
 				It("should return the correct path", func() {
-					path, err := routes.ScalingEngineRoutes().Get(routes.ScaleRoute).URLPath("appid", testAppId)
+					path, err := routes.ScalingEngineRoutes().Get(routes.ScaleRouteName).URLPath("appid", testAppId)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(path.Path).To(Equal("/v1/apps/testAppId/scale"))
+					Expect(path.Path).To(Equal("/v1/apps/" + testAppId + "/scale"))
 				})
 			})
 
 			Context("when provide wrong route variable", func() {
 				It("should return error", func() {
-					_, err := routes.ScalingEngineRoutes().Get(routes.ScaleRoute).URLPath("wrongVariable", testAppId)
+					_, err := routes.ScalingEngineRoutes().Get(routes.ScaleRouteName).URLPath("wrongVariable", testAppId)
 					Expect(err).To(HaveOccurred())
 
 				})
@@ -87,25 +115,25 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide not enough route variable", func() {
 				It("should return error", func() {
-					_, err := routes.ScalingEngineRoutes().Get(routes.ScaleRoute).URLPath()
+					_, err := routes.ScalingEngineRoutes().Get(routes.ScaleRouteName).URLPath()
 					Expect(err).To(HaveOccurred())
 
 				})
 			})
 		})
 
-		Context("HistoriesRoute", func() {
+		Context("GetScalingHistoriesRoute", func() {
 			Context("when provide correct route variable", func() {
 				It("should return the correct path", func() {
-					path, err := routes.ScalingEngineRoutes().Get(routes.HistoriesRoute).URLPath("appid", testAppId)
+					path, err := routes.ScalingEngineRoutes().Get(routes.GetScalingHistoriesRouteName).URLPath("appid", testAppId)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(path.Path).To(Equal("/v1/apps/testAppId/scaling_histories"))
+					Expect(path.Path).To(Equal("/v1/apps/" + testAppId + "/scaling_histories"))
 				})
 			})
 
 			Context("when provide wrong route variable", func() {
 				It("should return error", func() {
-					_, err := routes.ScalingEngineRoutes().Get(routes.HistoriesRoute).URLPath("wrongVariable", testAppId)
+					_, err := routes.ScalingEngineRoutes().Get(routes.GetScalingHistoriesRouteName).URLPath("wrongVariable", testAppId)
 					Expect(err).To(HaveOccurred())
 
 				})
@@ -113,25 +141,25 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide not enough route variable", func() {
 				It("should return error", func() {
-					_, err := routes.ScalingEngineRoutes().Get(routes.HistoriesRoute).URLPath()
+					_, err := routes.ScalingEngineRoutes().Get(routes.GetScalingHistoriesRouteName).URLPath()
 					Expect(err).To(HaveOccurred())
 
 				})
 			})
 		})
 
-		Context("UpdateActiveSchedulesRoute", func() {
+		Context("SetActiveScheduleRoute", func() {
 			Context("when provide correct route variable", func() {
 				It("should return the correct path", func() {
-					path, err := routes.ScalingEngineRoutes().Get(routes.UpdateActiveSchedulesRoute).URLPath("appid", testAppId, "scheduleid", testScheduleId)
+					path, err := routes.ScalingEngineRoutes().Get(routes.SetActiveScheduleRouteName).URLPath("appid", testAppId, "scheduleid", testScheduleId)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(path.Path).To(Equal("/v1/apps/testAppId/active_schedules/testScheduleId"))
+					Expect(path.Path).To(Equal("/v1/apps/" + testAppId + "/active_schedules/" + testScheduleId))
 				})
 			})
 
 			Context("when provide wrong route variable", func() {
 				It("should return error", func() {
-					_, err := routes.ScalingEngineRoutes().Get(routes.UpdateActiveSchedulesRoute).URLPath("wrongVariable", testAppId)
+					_, err := routes.ScalingEngineRoutes().Get(routes.SetActiveScheduleRouteName).URLPath("wrongVariable", testAppId)
 					Expect(err).To(HaveOccurred())
 
 				})
@@ -139,25 +167,25 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide not enough route variable", func() {
 				It("should return error", func() {
-					_, err := routes.ScalingEngineRoutes().Get(routes.UpdateActiveSchedulesRoute).URLPath("appid", testAppId)
+					_, err := routes.ScalingEngineRoutes().Get(routes.SetActiveScheduleRouteName).URLPath("appid", testAppId)
 					Expect(err).To(HaveOccurred())
 
 				})
 			})
 		})
 
-		Context("DeleteActiveSchedulesRoute", func() {
+		Context("DeleteActiveScheduleRoute", func() {
 			Context("when provide correct route variable", func() {
 				It("should return the correct path", func() {
-					path, err := routes.ScalingEngineRoutes().Get(routes.DeleteActiveSchedulesRoute).URLPath("appid", testAppId, "scheduleid", testScheduleId)
+					path, err := routes.ScalingEngineRoutes().Get(routes.DeleteActiveScheduleRouteName).URLPath("appid", testAppId, "scheduleid", testScheduleId)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(path.Path).To(Equal("/v1/apps/testAppId/active_schedules/testScheduleId"))
+					Expect(path.Path).To(Equal("/v1/apps/" + testAppId + "/active_schedules/" + testScheduleId))
 				})
 			})
 
 			Context("when provide wrong route variable", func() {
 				It("should return error", func() {
-					_, err := routes.ScalingEngineRoutes().Get(routes.DeleteActiveSchedulesRoute).URLPath("wrongVariable", testAppId)
+					_, err := routes.ScalingEngineRoutes().Get(routes.DeleteActiveScheduleRouteName).URLPath("wrongVariable", testAppId)
 					Expect(err).To(HaveOccurred())
 
 				})
@@ -165,25 +193,25 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide not enough route variable", func() {
 				It("should return error", func() {
-					_, err := routes.ScalingEngineRoutes().Get(routes.DeleteActiveSchedulesRoute).URLPath("appid", testAppId)
+					_, err := routes.ScalingEngineRoutes().Get(routes.DeleteActiveScheduleRouteName).URLPath("appid", testAppId)
 					Expect(err).To(HaveOccurred())
 
 				})
 			})
 		})
 
-		Context("GetActiveScheduleRoute", func() {
+		Context("GetActiveSchedulesRoute", func() {
 			Context("when provide correct route variable", func() {
 				It("should return the correct path", func() {
-					path, err := routes.ScalingEngineRoutes().Get(routes.GetActiveScheduleRoute).URLPath("appid", testAppId)
+					path, err := routes.ScalingEngineRoutes().Get(routes.GetActiveSchedulesRouteName).URLPath("appid", testAppId)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(path.Path).To(Equal("/v1/apps/testAppId/active_schedules"))
+					Expect(path.Path).To(Equal("/v1/apps/" + testAppId + "/active_schedules"))
 				})
 			})
 
 			Context("when provide wrong route variable", func() {
 				It("should return error", func() {
-					_, err := routes.ScalingEngineRoutes().Get(routes.GetActiveScheduleRoute).URLPath("wrongVariable", testAppId)
+					_, err := routes.ScalingEngineRoutes().Get(routes.GetActiveSchedulesRouteName).URLPath("wrongVariable", testAppId)
 					Expect(err).To(HaveOccurred())
 
 				})
@@ -191,7 +219,7 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide not enough route variable", func() {
 				It("should return error", func() {
-					_, err := routes.ScalingEngineRoutes().Get(routes.GetActiveScheduleRoute).URLPath()
+					_, err := routes.ScalingEngineRoutes().Get(routes.GetActiveSchedulesRouteName).URLPath()
 					Expect(err).To(HaveOccurred())
 
 				})

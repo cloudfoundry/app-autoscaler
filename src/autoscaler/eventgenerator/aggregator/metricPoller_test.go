@@ -73,7 +73,7 @@ var _ = Describe("MetricPoller", func() {
 		appMetricDatabase = &fakes.FakeAppMetricDB{}
 		metricServer = nil
 
-		path, err := routes.MetricsCollectorRoutes().Get(routes.MemoryMetricHistoryRoute).URLPath("appid", testAppId)
+		path, err := routes.MetricsCollectorRoutes().Get(routes.GetMemoryMetricHistoriesRouteName).URLPath("appid", testAppId)
 		Expect(err).NotTo(HaveOccurred())
 		urlPath = path.Path
 	})

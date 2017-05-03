@@ -254,7 +254,7 @@ var _ = Describe("Evaluator", func() {
 		database = &fakes.FakeAppMetricDB{}
 		scalingEngine = nil
 
-		path, err := routes.ScalingEngineRoutes().Get(routes.ScaleRoute).URLPath("appid", testAppId)
+		path, err := routes.ScalingEngineRoutes().Get(routes.ScaleRouteName).URLPath("appid", testAppId)
 		Expect(err).NotTo(HaveOccurred())
 		urlPath = path.Path
 

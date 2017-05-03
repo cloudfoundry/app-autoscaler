@@ -143,7 +143,7 @@ func (e *Evaluator) sendTriggerAlarm(trigger *models.Trigger) {
 	if jsonEncodeError != nil {
 		e.logger.Error("failed to json.Marshal trigger", jsonEncodeError)
 	}
-	path, _ := routes.ScalingEngineRoutes().Get(routes.ScaleRoute).URLPath("appid", trigger.AppId)
+	path, _ := routes.ScalingEngineRoutes().Get(routes.ScaleRouteName).URLPath("appid", trigger.AppId)
 	resp, respErr := e.httpClient.Post(e.scalingEngineUrl+path.Path, "application/json", bytes.NewReader(jsonBytes))
 	if respErr != nil {
 		e.logger.Error("http reqeust error,failed to send trigger alarm", respErr, lager.Data{"trigger": trigger})
