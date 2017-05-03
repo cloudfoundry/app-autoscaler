@@ -2,25 +2,32 @@ package routes
 
 import (
 	"github.com/gorilla/mux"
+
+	"net/http"
 )
 
 const (
-	memoryMetricPath          = "/v1/apps/{appid}/metrics/memoryused"
-	memoryMetricHistoriesPath = "/v1/apps/{appid}/metric_histories/memoryused"
+	MetricHistoriesPath         = "/v1/apps/{appid}/metric_histories/{metrictype}"
+	GetMetricHistoriesRouteName = "GetMetricHistories"
 
-	MemoryMetricRoute        = "memory-metric"
-	MemoryMetricHistoryRoute = "memory-metric-histories"
+	MemoryMetricPath         = "/v1/apps/{appid}/metrics/memoryused"
+	GetMemoryMetricRouteName = "GetMemoryMetric"
 
-	scalePath             = "/v1/apps/{appid}/scale"
-	scalingHistoriesPath  = "/v1/apps/{appid}/scaling_histories"
-	activeSchedulePath    = "/v1/apps/{appid}/active_schedules/{scheduleid}"
-	appActiveSchedulePath = "/v1/apps/{appid}/active_schedules"
+	MemoryMetricHistoriesPath         = "/v1/apps/{appid}/metric_histories/memoryused"
+	GetMemoryMetricHistoriesRouteName = "GetMemoryMetricHistories"
 
-	ScaleRoute                 = "scale"
-	HistoriesRoute             = "histories"
-	UpdateActiveSchedulesRoute = "updateActiveSchedules"
-	DeleteActiveSchedulesRoute = "deleteActiveSchedules"
-	GetActiveScheduleRoute     = "getActiveSchedule"
+	ScalePath      = "/v1/apps/{appid}/scale"
+	ScaleRouteName = "Scale"
+
+	ScalingHistoriesPath         = "/v1/apps/{appid}/scaling_histories"
+	GetScalingHistoriesRouteName = "GetScalingHistories"
+
+	ActiveSchedulePath            = "/v1/apps/{appid}/active_schedules/{scheduleid}"
+	SetActiveScheduleRouteName    = "SetActiveSchedule"
+	DeleteActiveScheduleRouteName = "DeleteActiveSchedule"
+
+	ActiveSchedulesPath         = "/v1/apps/{appid}/active_schedules"
+	GetActiveSchedulesRouteName = "GetActiveSchedules"
 )
 
 type AutoScalerRoute struct {
@@ -36,14 +43,15 @@ func newRouters() *AutoScalerRoute {
 		scalingEngineRoutes:    mux.NewRouter(),
 	}
 
-	instance.metricsCollectorRoutes.Path(memoryMetricPath).Name(MemoryMetricRoute)
-	instance.metricsCollectorRoutes.Path(memoryMetricHistoriesPath).Name(MemoryMetricHistoryRoute)
+	instance.metricsCollectorRoutes.Path(MemoryMetricPath).Methods(http.MethodGet).Name(GetMemoryMetricRouteName)
+	instance.metricsCollectorRoutes.Path(MemoryMetricHistoriesPath).Methods(http.MethodGet).Name(GetMemoryMetricHistoriesRouteName)
+	instance.metricsCollectorRoutes.Path(MetricHistoriesPath).Methods(http.MethodGet).Name(GetMetricHistoriesRouteName)
 
-	instance.scalingEngineRoutes.Path(scalePath).Name(ScaleRoute)
-	instance.scalingEngineRoutes.Path(scalingHistoriesPath).Name(HistoriesRoute)
-	instance.scalingEngineRoutes.Path(activeSchedulePath).Name(UpdateActiveSchedulesRoute)
-	instance.scalingEngineRoutes.Path(activeSchedulePath).Name(DeleteActiveSchedulesRoute)
-	instance.scalingEngineRoutes.Path(appActiveSchedulePath).Name(GetActiveScheduleRoute)
+	instance.scalingEngineRoutes.Path(ScalePath).Methods(http.MethodPost).Name(ScaleRouteName)
+	instance.scalingEngineRoutes.Path(ScalingHistoriesPath).Methods(http.MethodGet).Name(GetScalingHistoriesRouteName)
+	instance.scalingEngineRoutes.Path(ActiveSchedulePath).Methods(http.MethodPut).Name(SetActiveScheduleRouteName)
+	instance.scalingEngineRoutes.Path(ActiveSchedulePath).Methods(http.MethodDelete).Name(DeleteActiveScheduleRouteName)
+	instance.scalingEngineRoutes.Path(ActiveSchedulesPath).Methods(http.MethodGet).Name(GetActiveSchedulesRouteName)
 
 	return instance
 
