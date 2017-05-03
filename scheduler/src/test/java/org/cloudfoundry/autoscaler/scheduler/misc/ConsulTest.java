@@ -1,4 +1,4 @@
-package org.cloudfoundry.autoscaler.scheduler.util;
+package org.cloudfoundry.autoscaler.scheduler.misc;
 
 import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertNull;
@@ -7,9 +7,8 @@ import static org.junit.Assert.assertThat;
 import java.io.IOException;
 import java.util.Map;
 
-import org.junit.After;
+import org.cloudfoundry.autoscaler.scheduler.util.ConsulUtil;
 import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,7 +33,7 @@ public class ConsulTest {
 	private Integer schedulerPort;
 
 	@Autowired
-	EmbeddedWebApplicationContext context;
+	private EmbeddedWebApplicationContext context;
 
 	private static ConsulUtil consulUtil;
 
@@ -48,14 +47,6 @@ public class ConsulTest {
 	public static void afterClass() throws IOException, InterruptedException {
 
 		consulUtil.stop();
-	}
-
-	@Before
-	public void before() throws Exception {
-	}
-
-	@After
-	public void after() {
 	}
 
 	@Test
