@@ -65,20 +65,20 @@ func (m *MetricPoller) retrieveMetric(app *models.AppMonitor) {
 	}
 
 	var url string
-	path, _ := routes.MetricsCollectorRoutes().Get(routes.MemoryMetricHistoryRoute).URLPath("appid", app.AppId)
+	path, _ := routes.MetricsCollectorRoutes().Get(routes.GetMemoryMetricHistoriesRouteName).URLPath("appid", app.AppId)
 	parameters := path.Query()
 	parameters.Add("start", strconv.FormatInt(startTime.UnixNano(), 10))
 	parameters.Add("end", strconv.FormatInt(endTime.UnixNano(), 10))
 	url = m.metricCollectorUrl + path.RequestURI() + "?" + parameters.Encode()
 	resp, err := m.httpClient.Get(url)
 	if err != nil {
-		m.logger.Error("Failed to retrieve metric from memory-collector. Request failed", err, lager.Data{"appId": appId, "metricType": metricType, "err": err})
+		m.logger.Error("Failed to retrieve metric from metrics collector. Request failed", err, lager.Data{"appId": appId, "metricType": metricType, "err": err})
 		return
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		m.logger.Error("Failed to retrieve metric from memory-collector", nil,
+		m.logger.Error("Failed to retrieve metric from metrics collector", nil,
 			lager.Data{"appId": appId, "metricType": metricType, "statusCode": resp.StatusCode})
 		return
 	}

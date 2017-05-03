@@ -28,8 +28,8 @@ func NewServer(logger lager.Logger, conf *config.Config, cfc cf.CfClient, consum
 	mmh := NewMemoryMetricHandler(logger, cfc, consumer, database)
 
 	r := routes.MetricsCollectorRoutes()
-	r.Get(routes.MemoryMetricRoute).Methods(http.MethodGet).Handler(VarsFunc(mmh.GetMemoryMetric))
-	r.Get(routes.MemoryMetricHistoryRoute).Methods(http.MethodGet).Handler(VarsFunc(mmh.GetMemoryMetricHistories))
+	r.Get(routes.GetMemoryMetricRouteName).Handler(VarsFunc(mmh.GetMemoryMetric))
+	r.Get(routes.GetMemoryMetricHistoriesRouteName).Handler(VarsFunc(mmh.GetMemoryMetricHistories))
 
 	addr := fmt.Sprintf("0.0.0.0:%d", conf.Server.Port)
 	logger.Info("new-http-server", lager.Data{"serverConfig": conf.Server})

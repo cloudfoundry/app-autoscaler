@@ -27,11 +27,12 @@ func NewServer(logger lager.Logger, conf *config.Config, scalingEngineDB db.Scal
 	handler := NewScalingHandler(logger, scalingEngineDB, scalingEngine)
 
 	r := routes.ScalingEngineRoutes()
-	r.Get(routes.ScaleRoute).Methods(http.MethodPost).Handler(VarsFunc(handler.Scale))
-	r.Get(routes.HistoriesRoute).Methods(http.MethodGet).Handler(VarsFunc(handler.GetScalingHistories))
-	r.Get(routes.UpdateActiveSchedulesRoute).Methods(http.MethodPut).Handler(VarsFunc(handler.StartActiveSchedule))
-	r.Get(routes.DeleteActiveSchedulesRoute).Methods(http.MethodDelete).Handler(VarsFunc(handler.RemoveActiveSchedule))
-	r.Get(routes.GetActiveScheduleRoute).Methods(http.MethodGet).Handler(VarsFunc(handler.GetActiveSchedule))
+	r.Get(routes.ScaleRouteName).Handler(VarsFunc(handler.Scale))
+	r.Get(routes.GetScalingHistoriesRouteName).Handler(VarsFunc(handler.GetScalingHistories))
+
+	r.Get(routes.SetActiveScheduleRouteName).Handler(VarsFunc(handler.StartActiveSchedule))
+	r.Get(routes.DeleteActiveScheduleRouteName).Handler(VarsFunc(handler.RemoveActiveSchedule))
+	r.Get(routes.GetActiveSchedulesRouteName).Handler(VarsFunc(handler.GetActiveSchedule))
 
 	addr := fmt.Sprintf("0.0.0.0:%d", conf.Server.Port)
 	logger.Info("new-http-server", lager.Data{"serverConfig": conf.Server})
