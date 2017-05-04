@@ -96,10 +96,6 @@ scaling_engine_db:
   db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
   refresh_interval: 36h
   cutoff_days: 30
-lock:
-  lock_ttl: 15s
-  lock_retry_interval: 10s
-  consul_cluster_config: "http://127.0.0.1:8500"
 `)
 			})
 
@@ -119,10 +115,6 @@ lock:
 				Expect(conf.ScalingEngineDb.DbUrl).To(Equal("postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"))
 				Expect(conf.ScalingEngineDb.RefreshInterval).To(Equal(36 * time.Hour))
 				Expect(conf.ScalingEngineDb.CutoffDays).To(Equal(30))
-
-				Expect(conf.Lock.LockTTL).To(Equal(15 * time.Second))
-				Expect(conf.Lock.LockRetryInterval).To(Equal(10 * time.Second))
-				Expect(conf.Lock.ConsulClusterConfig).To(Equal("http://127.0.0.1:8500"))
 
 			})
 		})
@@ -380,8 +372,8 @@ lock:
 				conf.Lock.ConsulClusterConfig = ""
 			})
 
-			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: Consul Cluster Config is empty")))
+			It("should validate successfully", func() {
+				Expect(err).NotTo(HaveOccurred())
 			})
 		})
 
