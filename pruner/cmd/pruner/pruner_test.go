@@ -212,6 +212,34 @@ var _ = Describe("Pruner", func() {
 		})
 	})
 
+	Context("when no consul is configured", func() {
+		BeforeEach(func() {
+			noConsulConf := cfg
+			noConsulConf.Lock.ConsulClusterConfig = ""
+			runner.configPath = writeConfig(&noConsulConf).Name()
+			runner.startCheck = ""
+			runner.Start()
+		})
+
+		AfterEach(func() {
+			os.Remove(runner.configPath)
+		})
+
+		It("should not get pruner service", func() {
+			Eventually(func() map[string]*api.AgentService {
+				services, err := consulClient.Agent().Services()
+				Expect(err).ToNot(HaveOccurred())
+				return services
+			}).ShouldNot(HaveKey("pruner"))
+		})
+
+		It("should start pruner", func() {
+			Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("pruner.started"))
+			Consistently(runner.Session).ShouldNot(Exit())
+		})
+
+	})
+
 	Context("when connection to instancemetrics db fails", func() {
 		BeforeEach(func() {
 			cfg.InstanceMetricsDb.DbUrl = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"

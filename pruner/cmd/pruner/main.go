@@ -85,28 +85,29 @@ func main() {
 	scalingEngineDbPruner := pruner.NewScalingEngineDbPruner(scalingEngineDb, conf.ScalingEngineDb.CutoffDays, prClock, logger.Session(prunerLoggerSessionName))
 	scalingEngineDbPrunerRunner := pruner.NewDbPrunerRunner(scalingEngineDbPruner, conf.ScalingEngineDb.RefreshInterval, prClock, logger.Session(prunerLoggerSessionName))
 
-	consulClient, err := consuladapter.NewClientFromUrl(conf.Lock.ConsulClusterConfig)
-	if err != nil {
-		logger.Fatal("new consul client failed", err)
-	}
-
-	serviceClient := pruner.NewServiceClient(consulClient, prClock)
-
-	lockMaintainer := serviceClient.NewPrunerLockRunner(
-		logger,
-		generateGUID(logger),
-		conf.Lock.LockRetryInterval,
-		conf.Lock.LockTTL,
-	)
-
-	registrationRunner := initializeRegistrationRunner(logger, consulClient, prClock)
-
 	members := grouper.Members{
-		{"lock-maintainer", lockMaintainer},
 		{"instancemetrics-dbpruner", instanceMetricsDbPrunerRunner},
 		{"appmetrics-dbpruner", appMetricsDbPrunerRunner},
 		{"scalingEngine-dbpruner", scalingEngineDbPrunerRunner},
-		{"registration", registrationRunner},
+	}
+	if conf.Lock.ConsulClusterConfig != "" {
+		consulClient, err := consuladapter.NewClientFromUrl(conf.Lock.ConsulClusterConfig)
+		if err != nil {
+			logger.Fatal("new consul client failed", err)
+		}
+
+		serviceClient := pruner.NewServiceClient(consulClient, prClock)
+
+		lockMaintainer := serviceClient.NewPrunerLockRunner(
+			logger,
+			generateGUID(logger),
+			conf.Lock.LockRetryInterval,
+			conf.Lock.LockTTL,
+		)
+
+		registrationRunner := initializeRegistrationRunner(logger, consulClient, prClock)
+		members = append([]grouper.Member{grouper.Member{"lock-maintainer", lockMaintainer}}, members...)
+		members = append(members, grouper.Member{"registration", registrationRunner})
 	}
 
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
