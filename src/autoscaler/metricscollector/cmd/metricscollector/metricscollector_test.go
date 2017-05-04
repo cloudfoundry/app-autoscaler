@@ -83,6 +83,7 @@ var _ = Describe("MetricsCollector", func() {
 		})
 
 		It("should start", func() {
+			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.collector.collector-started"))
 			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.started"))
 			Consistently(runner.Session).ShouldNot(Exit())
 		})
@@ -121,6 +122,8 @@ var _ = Describe("MetricsCollector", func() {
 		})
 
 		It("should not start", func() {
+			Consistently(runner.Session.Buffer, 2*time.Second).ShouldNot(gbytes.Say("metricscollector.collector.collector-started"))
+			Consistently(runner.Session.Buffer, 2*time.Second).ShouldNot(gbytes.Say("metricscollector.registration-runner"))
 			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.lock.acquiring-lock"))
 			Consistently(runner.Session.Buffer, 2*time.Second).ShouldNot(gbytes.Say("metricscollector.started"))
 		})
