@@ -107,18 +107,20 @@ func main() {
 		return nil
 	})
 
-	httpServer, err := server.NewServer(logger, conf, cfClient, noaa, instanceMetricsDB)
+	httpServer, err := server.NewServer(logger.Session("http_sever"), conf, cfClient, noaa, instanceMetricsDB)
 	if err != nil {
 		logger.Error("failed to create http server", err)
 		os.Exit(1)
 	}
 
-	members := grouper.Members{
-		{"collector", collectServer},
-		{"http_server", httpServer},
-	}
+	var members grouper.Members
 
-	if conf.Lock.ConsulClusterConfig != "" {
+	if conf.Lock.ConsulClusterConfig == "" {
+		members = grouper.Members{
+			{"collector", collectServer},
+			{"http_server", httpServer},
+		}
+	} else {
 		consulClient, err := consuladapter.NewClientFromUrl(conf.Lock.ConsulClusterConfig)
 		if err != nil {
 			logger.Fatal("new consul client failed", err)
@@ -133,8 +135,12 @@ func main() {
 		)
 
 		registrationRunner := initializeRegistrationRunner(logger, consulClient, conf.Server.Port, mcClock)
-		members = append(members, grouper.Member{"lock-maintainer", lockMaintainer})
-		members = append(members, grouper.Member{"registration", registrationRunner})
+		members = grouper.Members{
+			{"lock-maintainer", lockMaintainer},
+			{"collector", collectServer},
+			{"http_server", httpServer},
+			{"registration", registrationRunner},
+		}
 	}
 
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
@@ -146,7 +152,6 @@ func main() {
 		logger.Error("exited-with-failure", err)
 		os.Exit(1)
 	}
-
 	logger.Info("exited")
 }
 
