@@ -96,6 +96,10 @@ scaling_engine_db:
   db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
   refresh_interval: 36h
   cutoff_days: 30
+lock:
+  lock_ttl: 15s
+  lock_retry_interval: 10s
+  consul_cluster_config: "http://127.0.0.1:8500"
 `)
 			})
 
@@ -116,6 +120,10 @@ scaling_engine_db:
 				Expect(conf.ScalingEngineDb.RefreshInterval).To(Equal(36 * time.Hour))
 				Expect(conf.ScalingEngineDb.CutoffDays).To(Equal(30))
 
+				Expect(conf.Lock.LockTTL).To(Equal(15 * time.Second))
+				Expect(conf.Lock.LockRetryInterval).To(Equal(10 * time.Second))
+				Expect(conf.Lock.ConsulClusterConfig).To(Equal("http://127.0.0.1:8500"))
+
 			})
 		})
 
@@ -128,8 +136,6 @@ app_metrics_db:
   db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
 scaling_engine_db:
   db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable" 
-lock:
-  consul_cluster_config: "http://127.0.0.1:8500" 
 `)
 			})
 
@@ -147,7 +153,6 @@ lock:
 				Expect(conf.ScalingEngineDb.RefreshInterval).To(Equal(config.DefaultRefreshInterval))
 				Expect(conf.ScalingEngineDb.CutoffDays).To(Equal(config.DefaultCutoffDays))
 
-				Expect(conf.Lock.ConsulClusterConfig).To(Equal("http://127.0.0.1:8500"))
 				Expect(conf.Lock.LockTTL).To(Equal(config.DefaultLockTTL))
 				Expect(conf.Lock.LockRetryInterval).To(Equal(config.DefaultRetryInterval))
 			})
