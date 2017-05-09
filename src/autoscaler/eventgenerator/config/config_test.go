@@ -421,8 +421,6 @@ scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
   metric_collector_url: http://localhost:8083
-lock:
-  consul_cluster_config: http://127.0.0.1:8500
 `)
 			})
 
@@ -446,9 +444,8 @@ lock:
 					MetricCollector: MetricCollectorConfig{
 						MetricCollectorUrl: "http://localhost:8083"},
 					Lock: LockConfig{
-						LockRetryInterval:   DefaultRetryInterval,
-						LockTTL:             DefaultLockTTL,
-						ConsulClusterConfig: "http://127.0.0.1:8500"},
+						LockRetryInterval: DefaultRetryInterval,
+						LockTTL:           DefaultLockTTL},
 				}))
 			})
 		})
@@ -474,9 +471,8 @@ lock:
 				MetricCollector: MetricCollectorConfig{
 					MetricCollectorUrl: "http://localhost:8083"},
 				Lock: LockConfig{
-					LockRetryInterval:   DefaultRetryInterval,
-					LockTTL:             DefaultLockTTL,
-					ConsulClusterConfig: "http://127.0.0.1:8500"}}
+					LockRetryInterval: DefaultRetryInterval,
+					LockTTL:           DefaultLockTTL}}
 		})
 
 		JustBeforeEach(func() {
@@ -522,17 +518,6 @@ lock:
 
 			It("should error", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: Metric collector url is empty")))
-			})
-		})
-
-		Context("when consul cluster config is not set", func() {
-
-			BeforeEach(func() {
-				conf.Lock.ConsulClusterConfig = ""
-			})
-
-			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: Consul Cluster Config is empty")))
 			})
 		})
 

@@ -107,26 +107,27 @@ func main() {
 		return nil
 	})
 
-	consulClient, err := consuladapter.NewClientFromUrl(conf.Lock.ConsulClusterConfig)
-	if err != nil {
-		logger.Fatal("new consul client failed", err)
+	members := grouper.Members{
+		{"eventGenerator", eventGenerator},
 	}
 
-	serviceClient := eventgenerator.NewServiceClient(consulClient, egClock)
+	if conf.Lock.ConsulClusterConfig != "" {
+		consulClient, err := consuladapter.NewClientFromUrl(conf.Lock.ConsulClusterConfig)
+		if err != nil {
+			logger.Fatal("new consul client failed", err)
+		}
 
-	lockMaintainer := serviceClient.NewEventGeneratorLockRunner(
-		logger,
-		generateGUID(logger),
-		conf.Lock.LockRetryInterval,
-		conf.Lock.LockTTL,
-	)
+		serviceClient := eventgenerator.NewServiceClient(consulClient, egClock)
 
-	registrationRunner := initializeRegistrationRunner(logger, consulClient, egClock)
-
-	members := grouper.Members{
-		{"lock-maintainer", lockMaintainer},
-		{"eventGenerator", eventGenerator},
-		{"registration", registrationRunner},
+		lockMaintainer := serviceClient.NewEventGeneratorLockRunner(
+			logger,
+			generateGUID(logger),
+			conf.Lock.LockRetryInterval,
+			conf.Lock.LockTTL,
+		)
+		registrationRunner := initializeRegistrationRunner(logger, consulClient, egClock)
+		members = append(grouper.Members{{"lock-maintainer", lockMaintainer}}, members...)
+		members = append(members, grouper.Member{"registration", registrationRunner})
 	}
 
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
