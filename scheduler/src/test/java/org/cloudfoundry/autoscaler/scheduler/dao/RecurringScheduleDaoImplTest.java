@@ -6,7 +6,9 @@ import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.transaction.Transactional;
 
@@ -36,6 +38,8 @@ public class RecurringScheduleDaoImplTest {
 
 	private static ConsulUtil consulUtil;
 
+	private RecurringScheduleEntity entity1, entity2;
+
 	@BeforeClass
 	public static void beforeClass() throws IOException {
 		consulUtil = new ConsulUtil();
@@ -55,13 +59,16 @@ public class RecurringScheduleDaoImplTest {
 		// Add fake test records.
 		String appId = "appId1";
 		String guid = TestDataSetupHelper.generateGuid();
-		List<RecurringScheduleEntity> entities = TestDataSetupHelper.generateRecurringScheduleEntities(appId, guid, 1, 0);
+		List<RecurringScheduleEntity> entities = TestDataSetupHelper.generateRecurringScheduleEntities(appId, guid,false, 1,
+				0);
 		testDataDbUtil.insertRecurringSchedule(entities);
+		entity1 = entities.get(0);
 
 		appId = "appId3";
 		guid = TestDataSetupHelper.generateGuid();
-		entities = TestDataSetupHelper.generateRecurringScheduleEntities(appId, guid, 0, 1);
+		entities = TestDataSetupHelper.generateRecurringScheduleEntities(appId, guid, false, 0, 1);
 		testDataDbUtil.insertRecurringSchedule(entities);
+		entity2 = entities.get(0);
 	}
 
 	@Test
@@ -85,11 +92,29 @@ public class RecurringScheduleDaoImplTest {
 	}
 
 	@Test
+	public void testFindAllRecurringSchedules() {
+		String appId1 = "appId1";
+		String appId3 = "appId3";
+		List<RecurringScheduleEntity> foundEntityList = recurringScheduleDao.findAllRecurringSchedules();
+
+		assertThat("It should have two record", foundEntityList.size(), is(2));
+		Set<String> appIdSet = new HashSet<String>() {
+			{
+				add(foundEntityList.get(0).getAppId());
+				add(foundEntityList.get(1).getAppId());
+			}
+		};
+		assertThat("It should contains the two inserted entities",
+				appIdSet.contains(appId1) && appIdSet.contains(appId3), is(true));
+
+	}
+
+	@Test
 	public void testCreateRecurringSchedule() {
 		String appId = "appId2";
 		String guid = TestDataSetupHelper.generateGuid();
 		RecurringScheduleEntity recurringScheduleEntity = TestDataSetupHelper
-				.generateRecurringScheduleEntities(appId, guid, 1, 0).get(0);
+				.generateRecurringScheduleEntities(appId, guid, false, 1, 0).get(0);
 
 		assertThat("It should no recurring schedule", testDataDbUtil.getNumberOfRecurringSchedulesByAppId(appId),
 				is(0));
@@ -136,7 +161,7 @@ public class RecurringScheduleDaoImplTest {
 			recurringScheduleDao.findAllRecurringSchedulesByAppId(null);
 			fail("Should fail");
 		} catch (DatabaseValidationException dve) {
-			assertThat(dve.getMessage(), is("Find All recurring schedules failed"));
+			assertThat(dve.getMessage(), is("Find All recurring schedules by app id failed"));
 		}
 	}
 

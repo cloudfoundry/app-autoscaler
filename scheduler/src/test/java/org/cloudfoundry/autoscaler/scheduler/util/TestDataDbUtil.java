@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import javax.annotation.Resource;
 import javax.sql.DataSource;
 
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
@@ -17,17 +18,22 @@ import org.quartz.impl.matchers.GroupMatcher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 public class TestDataDbUtil {
 
-	@Autowired
+	@Resource(name="dataSource")
 	private DataSource dataSource;
+	
+	@Resource(name="dataSource")
+	private DataSource policyDbDataSource;
 
 	public void cleanupData() {
 		removeAllActiveSchedules();
 		removeAllSpecificDateSchedules();
 		removeAllRecurringSchedules();
+		removeAllPolicyJson();
 	}
 
 	public void cleanupData(Scheduler scheduler) throws SchedulerException {
@@ -132,7 +138,19 @@ public class TestDataDbUtil {
 				+ "(id, app_id, start_job_identifier, instance_min_count, instance_max_count, initial_min_instance_count) "
 				+ "VALUES (?, ?, ?, ?, ?, ?)", objects);
 	}
-
+	@Transactional(value = "policyDbTransactionManager")
+	public void insertPolicyJson(String appId, String guid){
+		JdbcTemplate policyDbJdbcTemplate = new JdbcTemplate(policyDbDataSource);
+		Object[] objects = new Object[] { appId, PolicyUtil.getPolicyJsonContent(), guid };
+		policyDbJdbcTemplate.update("INSERT INTO policy_json(app_id, policy_json, guid) VALUES (?, to_json(?::json), ?)", objects);
+		
+	}
+	@Transactional(value = "policyDbTransactionManager")
+	public void removeAllPolicyJson(){
+		JdbcTemplate policyDbJdbcTemplate = new JdbcTemplate(policyDbDataSource);
+		policyDbJdbcTemplate.update("DELETE FROM policy_json");
+	}
+	
 	private void removeAllActiveSchedules() {
 		JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
 

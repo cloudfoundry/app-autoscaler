@@ -5,7 +5,9 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.transaction.Transactional;
 
@@ -55,12 +57,12 @@ public class SpecificDateScheduleDaoImplTest {
 		// Add fake test records.
 		String appId = "appId1";
 		String guid = TestDataSetupHelper.generateGuid();
-		List<SpecificDateScheduleEntity> entities = TestDataSetupHelper.generateSpecificDateScheduleEntities(appId, guid, 1);
+		List<SpecificDateScheduleEntity> entities = TestDataSetupHelper.generateSpecificDateScheduleEntities(appId, guid, false, 1);
 		testDataDbUtil.insertSpecificDateSchedule(entities);
 
 		appId = "appId3";
 		guid = TestDataSetupHelper.generateGuid();
-		entities = TestDataSetupHelper.generateSpecificDateScheduleEntities(appId, guid, 1);
+		entities = TestDataSetupHelper.generateSpecificDateScheduleEntities(appId, guid, false, 1);
 		testDataDbUtil.insertSpecificDateSchedule(entities);
 	}
 
@@ -87,11 +89,30 @@ public class SpecificDateScheduleDaoImplTest {
 	}
 
 	@Test
+	public void testFindAllSpecificDateSchedules(){
+		String appId1 = "appId1";
+		String appId3 = "appId3";
+		
+		List<SpecificDateScheduleEntity> foundEntityList = specificDateScheduleDao.findAllSpecificDateSchedules();
+		
+		assertThat("It should have two record", foundEntityList.size(), is(2));
+		
+		Set<String> appIdSet = new HashSet<String>() {
+			{
+				add(foundEntityList.get(0).getAppId());
+				add(foundEntityList.get(1).getAppId());
+			}
+		};
+		assertThat("It should contains the two inserted entities",
+				appIdSet.contains(appId1) && appIdSet.contains(appId3), is(true));
+	}
+	
+	@Test
 	public void testCreateSpecificDateSchedule() {
 		String appId = "appId2";
 		String guid = TestDataSetupHelper.generateGuid();
 		SpecificDateScheduleEntity specificDateScheduleEntity = TestDataSetupHelper
-				.generateSpecificDateScheduleEntities(appId, guid, 1).get(0);
+				.generateSpecificDateScheduleEntities(appId, guid, false, 1).get(0);
 
 		assertThat("It should have no specific date schedule",
 				testDataDbUtil.getNumberOfRecurringSchedulesByAppId(appId), is(0));
@@ -139,7 +160,7 @@ public class SpecificDateScheduleDaoImplTest {
 			specificDateScheduleDao.findAllSpecificDateSchedulesByAppId(null);
 			fail("Should fail");
 		} catch (DatabaseValidationException dve) {
-			assertThat(dve.getMessage(), is("Find All specific date schedules failed"));
+			assertThat(dve.getMessage(), is("Find All specific date schedules by app id failed"));
 		}
 	}
 

@@ -16,6 +16,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 	var (
 		testAppId         string
 		testGuid          string
+		anouterGuid       string
 		initInstanceCount int = 2
 		policyStr         string
 	)
@@ -25,6 +26,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 
 		testAppId = getRandomId()
 		testGuid = getRandomId()
+		anouterGuid = getRandomId()
 		startFakeCCNOAAUAA(initInstanceCount)
 
 		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), cf.GrantTypePassword, tmpDir, consulRunner.ConsulCluster())
@@ -40,6 +42,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 
 	AfterEach(func() {
 		deleteSchedule(testAppId)
+		deletePolicy(testAppId)
 		stopScheduler(schedulerProcess)
 		stopScalingEngine()
 	})
@@ -98,6 +101,107 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 			Eventually(func() bool {
 				return activeScheduleExists(testAppId)
 			}, 2*time.Minute, 1*time.Second).Should(BeFalse())
+		})
+	})
+
+	Describe("Synchronized Schedule", func() {
+		Context("when the app's policy has been updated", func() {
+			BeforeEach(func() {
+				policyStr = string(setPolicyDateTime(readPolicyFromFile("fakePolicyWithSpecificDateSchedule.json")))
+				resp, err := createSchedule(testAppId, testGuid, policyStr)
+				checkResponseIsEmpty(resp, err, http.StatusOK)
+
+				Eventually(func() bool {
+					return activeScheduleExists(testAppId)
+				}, 2*time.Minute, 5*time.Second).Should(BeTrue())
+
+				insertPolicyDirectly(testAppId, policyStr, anouterGuid)
+
+			})
+			It("updates the schedules", func() {
+				resp, err := synchronizeSchedule()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+
+				Eventually(func() bool {
+					return activeScheduleExists(testAppId)
+				}, 2*time.Minute, 5*time.Second).Should(BeTrue())
+
+			})
+		})
+
+		Context("when the app's policy has been deleted", func() {
+			BeforeEach(func() {
+				policyStr = string(setPolicyDateTime(readPolicyFromFile("fakePolicyWithSpecificDateSchedule.json")))
+				resp, err := createSchedule(testAppId, testGuid, policyStr)
+				checkResponseIsEmpty(resp, err, http.StatusOK)
+
+				Eventually(func() bool {
+					return activeScheduleExists(testAppId)
+				}, 2*time.Minute, 5*time.Second).Should(BeTrue())
+
+				deletePolicy(testAppId)
+
+			})
+			It("delete the schedules", func() {
+				resp, err := synchronizeSchedule()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+
+				Eventually(func() bool {
+					return activeScheduleExists(testAppId)
+				}, 2*time.Minute, 5*time.Second).Should(BeFalse())
+
+			})
+		})
+
+		Context("when the app's policy has been created", func() {
+			BeforeEach(func() {
+				policyStr = string(setPolicyDateTime(readPolicyFromFile("fakePolicyWithSpecificDateSchedule.json")))
+				insertPolicyDirectly(testAppId, policyStr, anouterGuid)
+
+				_, err := deleteSchedule(testAppId)
+				Expect(err).NotTo(HaveOccurred())
+
+				Eventually(func() bool {
+					return activeScheduleExists(testAppId)
+				}, 2*time.Minute, 1*time.Second).Should(BeFalse())
+
+			})
+			It("create the schedules", func() {
+				resp, err := synchronizeSchedule()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+
+				Eventually(func() bool {
+					return activeScheduleExists(testAppId)
+				}, 2*time.Minute, 5*time.Second).Should(BeTrue())
+
+			})
+		})
+
+		Context("when there is no policy and schedule", func() {
+			BeforeEach(func() {
+				_, err := deleteSchedule(testAppId)
+				Expect(err).NotTo(HaveOccurred())
+
+				Eventually(func() bool {
+					return activeScheduleExists(testAppId)
+				}, 2*time.Minute, 1*time.Second).Should(BeFalse())
+
+				deletePolicy(testAppId)
+
+			})
+			It("do nothing", func() {
+				resp, err := synchronizeSchedule()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+
+				Eventually(func() bool {
+					return activeScheduleExists(testAppId)
+				}, 2*time.Minute, 5*time.Second).Should(BeFalse())
+
+			})
 		})
 	})
 
