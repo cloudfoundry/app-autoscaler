@@ -8,7 +8,7 @@ import (
 )
 
 const TestPathMemoryMetrics = "/v1/apps/an-app-id/metrics/memoryused"
-const TestPathMemoryMetricHistories = "/v1/apps/an-app-id/metric_histories/memoryused"
+const TestPathMetricHistories = "/v1/apps/an-app-id/metric_histories/a-metric-type"
 
 var _ = Describe("Server", func() {
 	var (
@@ -16,7 +16,7 @@ var _ = Describe("Server", func() {
 		err error
 	)
 
-	Context("when retrieving metrics", func() {
+	Context("when retrieving memory metric", func() {
 		BeforeEach(func() {
 			serverUrl.Path = TestPathMemoryMetrics
 		})
@@ -34,7 +34,7 @@ var _ = Describe("Server", func() {
 
 	Context("when retrieving metrics history", func() {
 		BeforeEach(func() {
-			serverUrl.Path = TestPathMemoryMetricHistories
+			serverUrl.Path = TestPathMetricHistories
 		})
 
 		JustBeforeEach(func() {
@@ -80,9 +80,9 @@ var _ = Describe("Server", func() {
 		})
 	})
 
-	Context("when using wrong method to retrieve memory metric histories", func() {
+	Context("when using wrong method to retrieve metric histories", func() {
 		BeforeEach(func() {
-			serverUrl.Path = TestPathMemoryMetricHistories
+			serverUrl.Path = TestPathMetricHistories
 		})
 
 		JustBeforeEach(func() {
