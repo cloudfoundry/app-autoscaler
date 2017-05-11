@@ -139,8 +139,6 @@ cf:
 db:
   policy_db_url: postgres://pqgotest:password@localhost/pqgotest
   instance_metrics_db_url: postgres://pqgotest:password@localhost/pqgotest
-lock:
-  consul_cluster_config: http://127.0.0.1:8500
 `)
 			})
 
@@ -210,17 +208,6 @@ lock:
 
 			It("should error", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: InstanceMetrics DB url is empty")))
-			})
-		})
-
-		Context("when consul_cluster_config is not set", func() {
-
-			BeforeEach(func() {
-				conf.Lock.ConsulClusterConfig = ""
-			})
-
-			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: Consul cluster config is empty")))
 			})
 		})
 
