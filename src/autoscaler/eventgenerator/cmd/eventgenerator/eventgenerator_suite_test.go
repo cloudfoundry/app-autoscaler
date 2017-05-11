@@ -27,10 +27,12 @@ import (
 )
 
 var (
-	egPath          string
-	testAppId       string = "testAppId"
-	metricType      string = models.MetricNameMemory
-	regPath                = regexp.MustCompile(`^/v1/apps/.*/scale$`)
+	egPath     string
+	testAppId  string = "an-app-id"
+	metricType string = "a-metric-type"
+	metricUnit string = "a-metric-unit"
+
+	regPath         = regexp.MustCompile(`^/v1/apps/.*/scale$`)
 	configFile      *os.File
 	conf            *config.Config
 	metricCollector *ghttp.Server
@@ -42,7 +44,7 @@ var (
 			InstanceIndex: 0,
 			CollectedAt:   111111,
 			Name:          metricType,
-			Unit:          models.UnitMegaBytes,
+			Unit:          metricUnit,
 			Value:         "500",
 			Timestamp:     111100,
 		},
@@ -51,7 +53,7 @@ var (
 			InstanceIndex: 1,
 			CollectedAt:   111111,
 			Name:          metricType,
-			Unit:          models.UnitMegaBytes,
+			Unit:          metricUnit,
 			Value:         "600",
 			Timestamp:     110000,
 		},
@@ -61,7 +63,7 @@ var (
 			InstanceIndex: 0,
 			CollectedAt:   222222,
 			Name:          metricType,
-			Unit:          models.UnitMegaBytes,
+			Unit:          metricUnit,
 			Value:         "700",
 			Timestamp:     222200,
 		},
@@ -70,7 +72,7 @@ var (
 			InstanceIndex: 1,
 			CollectedAt:   222222,
 			Name:          metricType,
-			Unit:          models.UnitMegaBytes,
+			Unit:          metricUnit,
 			Value:         "800",
 			Timestamp:     220000,
 		},
@@ -131,7 +133,7 @@ func initDB() {
 		   "instance_max_count":5,
 		   "scaling_rules":[
 		      {
-		         "metric_type":"memoryused",
+		         "metric_type":"a-metric-type",
 		         "stat_window_secs":300,
 		         "breach_duration_secs":300,
 		         "threshold":300,
@@ -172,7 +174,7 @@ func initHttpEndPoints() {
 	scalingEngine.HTTPTestServer.TLS = seTLSConfig
 	scalingEngine.HTTPTestServer.StartTLS()
 
-	metricCollector.RouteToHandler("GET", "/v1/apps/"+testAppId+"/metric_histories/memoryused", ghttp.RespondWithJSONEncoded(http.StatusOK,
+	metricCollector.RouteToHandler("GET", "/v1/apps/"+testAppId+"/metric_histories/"+metricType, ghttp.RespondWithJSONEncoded(http.StatusOK,
 		&metrics))
 	scalingEngine.RouteToHandler("POST", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
 }
