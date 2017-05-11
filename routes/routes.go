@@ -13,9 +13,6 @@ const (
 	MemoryMetricPath         = "/v1/apps/{appid}/metrics/memoryused"
 	GetMemoryMetricRouteName = "GetMemoryMetric"
 
-	MemoryMetricHistoriesPath         = "/v1/apps/{appid}/metric_histories/memoryused"
-	GetMemoryMetricHistoriesRouteName = "GetMemoryMetricHistories"
-
 	ScalePath      = "/v1/apps/{appid}/scale"
 	ScaleRouteName = "Scale"
 
@@ -44,7 +41,6 @@ func newRouters() *AutoScalerRoute {
 	}
 
 	instance.metricsCollectorRoutes.Path(MemoryMetricPath).Methods(http.MethodGet).Name(GetMemoryMetricRouteName)
-	instance.metricsCollectorRoutes.Path(MemoryMetricHistoriesPath).Methods(http.MethodGet).Name(GetMemoryMetricHistoriesRouteName)
 	instance.metricsCollectorRoutes.Path(MetricHistoriesPath).Methods(http.MethodGet).Name(GetMetricHistoriesRouteName)
 
 	instance.scalingEngineRoutes.Path(ScalePath).Methods(http.MethodPost).Name(ScaleRouteName)

@@ -19,7 +19,8 @@ import (
 var _ = Describe("MetricPoller", func() {
 	var testAppId string = "testAppId"
 	var timestamp int64 = time.Now().UnixNano()
-	var metricType string = models.MetricNameMemory
+	var testMetricType string = "a-metric-type"
+	var testMetricUnit string = "a-metric-unit"
 	var logger *lagertest.TestLogger
 	var appMonitorsChan chan *models.AppMonitor
 	var appMetricDatabase *fakes.FakeAppMetricDB
@@ -31,8 +32,8 @@ var _ = Describe("MetricPoller", func() {
 			AppId:         testAppId,
 			InstanceIndex: 0,
 			CollectedAt:   111111,
-			Name:          metricType,
-			Unit:          models.UnitMegaBytes,
+			Name:          testMetricType,
+			Unit:          testMetricUnit,
 			Value:         "100",
 			Timestamp:     111100,
 		},
@@ -40,8 +41,8 @@ var _ = Describe("MetricPoller", func() {
 			AppId:         testAppId,
 			InstanceIndex: 1,
 			CollectedAt:   111111,
-			Name:          metricType,
-			Unit:          models.UnitMegaBytes,
+			Name:          testMetricType,
+			Unit:          testMetricUnit,
 			Value:         "200",
 			Timestamp:     110000,
 		},
@@ -50,8 +51,8 @@ var _ = Describe("MetricPoller", func() {
 			AppId:         testAppId,
 			InstanceIndex: 0,
 			CollectedAt:   222222,
-			Name:          metricType,
-			Unit:          models.UnitMegaBytes,
+			Name:          testMetricType,
+			Unit:          testMetricUnit,
 			Value:         "300",
 			Timestamp:     222200,
 		},
@@ -59,8 +60,8 @@ var _ = Describe("MetricPoller", func() {
 			AppId:         testAppId,
 			InstanceIndex: 1,
 			CollectedAt:   222222,
-			Name:          metricType,
-			Unit:          models.UnitMegaBytes,
+			Name:          testMetricType,
+			Unit:          testMetricUnit,
 			Value:         "400",
 			Timestamp:     220000,
 		},
@@ -73,7 +74,7 @@ var _ = Describe("MetricPoller", func() {
 		appMetricDatabase = &fakes.FakeAppMetricDB{}
 		metricServer = nil
 
-		path, err := routes.MetricsCollectorRoutes().Get(routes.GetMemoryMetricHistoriesRouteName).URLPath("appid", testAppId)
+		path, err := routes.MetricsCollectorRoutes().Get(routes.GetMetricHistoriesRouteName).URLPath("appid", testAppId, "metrictype", testMetricType)
 		Expect(err).NotTo(HaveOccurred())
 		urlPath = path.Path
 	})
@@ -84,7 +85,7 @@ var _ = Describe("MetricPoller", func() {
 		BeforeEach(func() {
 			appMonitor = &models.AppMonitor{
 				AppId:      testAppId,
-				MetricType: metricType,
+				MetricType: testMetricType,
 				StatWindow: 10,
 			}
 
@@ -116,7 +117,7 @@ var _ = Describe("MetricPoller", func() {
 		BeforeEach(func() {
 			appMonitor = &models.AppMonitor{
 				AppId:      testAppId,
-				MetricType: metricType,
+				MetricType: testMetricType,
 				StatWindow: 10,
 			}
 
@@ -137,20 +138,6 @@ var _ = Describe("MetricPoller", func() {
 			metricServer.Close()
 		})
 
-		Context("with a non-memoryused type", func() {
-			BeforeEach(func() {
-				appMonitor.MetricType = "garbage"
-			})
-
-			It("logs an error", func() {
-				Eventually(logger.Buffer).Should(Say("Unsupported metric type"))
-			})
-
-			It("does not save any metrics", func() {
-				Consistently(appMetricDatabase.SaveAppMetricCallCount).Should(BeZero())
-			})
-		})
-
 		Context("when metrics are successfully retrieved", func() {
 			It("saves the average metrics", func() {
 				Eventually(appMetricDatabase.SaveAppMetricCallCount).Should(Equal(1))
@@ -159,9 +146,9 @@ var _ = Describe("MetricPoller", func() {
 
 				Expect(actualAppMetric).To(Equal(&models.AppMetric{
 					AppId:      testAppId,
-					MetricType: metricType,
+					MetricType: testMetricType,
 					Value:      "250",
-					Unit:       models.UnitMegaBytes,
+					Unit:       testMetricUnit,
 					Timestamp:  timestamp}))
 			})
 		})
@@ -229,7 +216,7 @@ var _ = Describe("MetricPoller", func() {
 
 			appMonitorsChan <- &models.AppMonitor{
 				AppId:      testAppId,
-				MetricType: metricType,
+				MetricType: testMetricType,
 				StatWindow: 10,
 			}
 		})

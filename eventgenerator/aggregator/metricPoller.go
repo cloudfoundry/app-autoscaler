@@ -59,13 +59,9 @@ func (m *MetricPoller) retrieveMetric(app *models.AppMonitor) {
 	metricType := app.MetricType
 	endTime := time.Now()
 	startTime := endTime.Add(0 - app.StatWindow)
-	if metricType != models.MetricNameMemory {
-		m.logger.Error("Unsupported metric type", fmt.Errorf("%s is not supported", metricType))
-		return
-	}
 
 	var url string
-	path, _ := routes.MetricsCollectorRoutes().Get(routes.GetMemoryMetricHistoriesRouteName).URLPath("appid", app.AppId)
+	path, _ := routes.MetricsCollectorRoutes().Get(routes.GetMetricHistoriesRouteName).URLPath("appid", app.AppId, "metrictype", metricType)
 	parameters := path.Query()
 	parameters.Add("start", strconv.FormatInt(startTime.UnixNano(), 10))
 	parameters.Add("end", strconv.FormatInt(endTime.UnixNano(), 10))
@@ -110,7 +106,7 @@ func (m *MetricPoller) aggregate(appId string, metricType string, metrics []*mod
 		unit = metric.Unit
 		metricValue, err := strconv.ParseInt(metric.Value, 10, 64)
 		if err != nil {
-			m.logger.Error("failed-to-aggregate", err, lager.Data{"value": metric.Value})
+			m.logger.Error("failed-to-aggregate", err, lager.Data{"appid": appId, "metrictype": metricType, "value": metric.Value})
 		} else {
 			count++
 			sum += metricValue

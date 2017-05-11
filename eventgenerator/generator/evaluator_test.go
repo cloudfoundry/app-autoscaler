@@ -25,7 +25,8 @@ var _ = Describe("Evaluator", func() {
 		scalingEngine  *ghttp.Server
 		evaluator      *Evaluator
 		testAppId      string = "testAppId"
-		testMetricType string = models.MetricNameMemory
+		testMetricType string = "testMetricType"
+		testMetricUnit string = "testMetricUnit"
 		urlPath        string
 		triggerArrayGT []*models.Trigger = []*models.Trigger{{
 			AppId:                 testAppId,
@@ -90,34 +91,34 @@ var _ = Describe("Evaluator", func() {
 			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "600",
-				Unit:       models.UnitMegaBytes,
+				Unit:       testMetricUnit,
 				Timestamp:  time.Now().UnixNano()},
 			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "650",
-				Unit:       models.UnitMegaBytes,
+				Unit:       testMetricUnit,
 				Timestamp:  time.Now().UnixNano()},
 			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "620",
-				Unit:       models.UnitMegaBytes,
+				Unit:       testMetricUnit,
 				Timestamp:  time.Now().UnixNano()},
 		}
 		appMetricGTNotBreach []*models.AppMetric = []*models.AppMetric{
 			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "200",
-				Unit:       models.UnitMegaBytes,
+				Unit:       testMetricUnit,
 				Timestamp:  time.Now().UnixNano()},
 			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "150",
-				Unit:       models.UnitMegaBytes,
+				Unit:       testMetricUnit,
 				Timestamp:  time.Now().UnixNano()},
 			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "600",
-				Unit:       models.UnitMegaBytes,
+				Unit:       testMetricUnit,
 				Timestamp:  time.Now().UnixNano()},
 		}
 
@@ -126,34 +127,34 @@ var _ = Describe("Evaluator", func() {
 			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "600",
-				Unit:       models.UnitMegaBytes,
+				Unit:       testMetricUnit,
 				Timestamp:  time.Now().UnixNano()},
 			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "500",
-				Unit:       models.UnitMegaBytes,
+				Unit:       testMetricUnit,
 				Timestamp:  time.Now().UnixNano()},
 			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "700",
-				Unit:       models.UnitMegaBytes,
+				Unit:       testMetricUnit,
 				Timestamp:  time.Now().UnixNano()},
 		}
 		appMetricGENotBreach []*models.AppMetric = []*models.AppMetric{
 			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "200",
-				Unit:       models.UnitMegaBytes,
+				Unit:       testMetricUnit,
 				Timestamp:  time.Now().UnixNano()},
 			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "500",
-				Unit:       models.UnitMegaBytes,
+				Unit:       testMetricUnit,
 				Timestamp:  time.Now().UnixNano()},
 			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "120",
-				Unit:       models.UnitMegaBytes,
+				Unit:       testMetricUnit,
 				Timestamp:  time.Now().UnixNano()},
 		}
 
@@ -162,34 +163,34 @@ var _ = Describe("Evaluator", func() {
 			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "600",
-				Unit:       models.UnitMegaBytes,
+				Unit:       testMetricUnit,
 				Timestamp:  time.Now().UnixNano()},
 			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "300",
-				Unit:       models.UnitMegaBytes,
+				Unit:       testMetricUnit,
 				Timestamp:  time.Now().UnixNano()},
 			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "200",
-				Unit:       models.UnitMegaBytes,
+				Unit:       testMetricUnit,
 				Timestamp:  time.Now().UnixNano()},
 		}
 		appMetricLTBreach []*models.AppMetric = []*models.AppMetric{
 			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "200",
-				Unit:       models.UnitMegaBytes,
+				Unit:       testMetricUnit,
 				Timestamp:  time.Now().UnixNano()},
 			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "150",
-				Unit:       models.UnitMegaBytes,
+				Unit:       testMetricUnit,
 				Timestamp:  time.Now().UnixNano()},
 			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "320",
-				Unit:       models.UnitMegaBytes,
+				Unit:       testMetricUnit,
 				Timestamp:  time.Now().UnixNano()},
 		}
 
@@ -198,34 +199,34 @@ var _ = Describe("Evaluator", func() {
 			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "600",
-				Unit:       models.UnitMegaBytes,
+				Unit:       testMetricUnit,
 				Timestamp:  time.Now().UnixNano()},
 			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "500",
-				Unit:       models.UnitMegaBytes,
+				Unit:       testMetricUnit,
 				Timestamp:  time.Now().UnixNano()},
 			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "300",
-				Unit:       models.UnitMegaBytes,
+				Unit:       testMetricUnit,
 				Timestamp:  time.Now().UnixNano()},
 		}
 		appMetricLEBreach []*models.AppMetric = []*models.AppMetric{
 			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "500",
-				Unit:       models.UnitMegaBytes,
+				Unit:       testMetricUnit,
 				Timestamp:  time.Now().UnixNano()},
 			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "300",
-				Unit:       models.UnitMegaBytes,
+				Unit:       testMetricUnit,
 				Timestamp:  time.Now().UnixNano()},
 			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "200",
-				Unit:       models.UnitMegaBytes,
+				Unit:       testMetricUnit,
 				Timestamp:  time.Now().UnixNano()},
 		}
 
@@ -233,17 +234,17 @@ var _ = Describe("Evaluator", func() {
 			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "500",
-				Unit:       models.UnitMegaBytes,
+				Unit:       testMetricUnit,
 				Timestamp:  time.Now().UnixNano()},
 			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "500",
-				Unit:       models.UnitMegaBytes,
+				Unit:       testMetricUnit,
 				Timestamp:  time.Now().UnixNano()},
 			{AppId: testAppId,
 				MetricType: testMetricType,
 				Value:      "500",
-				Unit:       models.UnitMegaBytes,
+				Unit:       testMetricUnit,
 				Timestamp:  time.Now().UnixNano()},
 		}
 	)
@@ -343,7 +344,7 @@ var _ = Describe("Evaluator", func() {
 								return appMetricNilValue, nil
 							}
 						})
-						It("should send trigger alarm to scaling engine", func() {
+						It("should not send trigger alarm to scaling engine", func() {
 							Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
 							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("should not send trigger alarm to scaling engine because there is empty value metric")))
 						})
@@ -397,7 +398,7 @@ var _ = Describe("Evaluator", func() {
 								return appMetricNilValue, nil
 							}
 						})
-						It("should send trigger alarm to scaling engine", func() {
+						It("should not send trigger alarm to scaling engine", func() {
 							Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
 							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("should not send trigger alarm to scaling engine because there is empty value metric")))
 						})
@@ -451,7 +452,7 @@ var _ = Describe("Evaluator", func() {
 								return appMetricNilValue, nil
 							}
 						})
-						It("should send trigger alarm to scaling engine", func() {
+						It("should not send trigger alarm to scaling engine", func() {
 							Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
 							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("should not send trigger alarm to scaling engine because there is empty value metric")))
 						})
@@ -505,7 +506,7 @@ var _ = Describe("Evaluator", func() {
 								return appMetricNilValue, nil
 							}
 						})
-						It("should send trigger alarm to scaling engine", func() {
+						It("should not send trigger alarm to scaling engine", func() {
 							Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
 							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("should not send trigger alarm to scaling engine because there is empty value metric")))
 						})
