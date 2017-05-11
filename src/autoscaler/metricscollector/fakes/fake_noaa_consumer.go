@@ -19,6 +19,22 @@ type FakeNoaaConsumer struct {
 		result1 []*events.Envelope
 		result2 error
 	}
+	StreamStub        func(appGuid string, authToken string) (outputChan <-chan *events.Envelope, errorChan <-chan error)
+	streamMutex       sync.RWMutex
+	streamArgsForCall []struct {
+		appGuid   string
+		authToken string
+	}
+	streamReturns struct {
+		result1 <-chan *events.Envelope
+		result2 <-chan error
+	}
+	CloseStub        func() error
+	closeMutex       sync.RWMutex
+	closeArgsForCall []struct{}
+	closeReturns     struct {
+		result1 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -58,11 +74,75 @@ func (fake *FakeNoaaConsumer) ContainerEnvelopesReturns(result1 []*events.Envelo
 	}{result1, result2}
 }
 
+func (fake *FakeNoaaConsumer) Stream(appGuid string, authToken string) (outputChan <-chan *events.Envelope, errorChan <-chan error) {
+	fake.streamMutex.Lock()
+	fake.streamArgsForCall = append(fake.streamArgsForCall, struct {
+		appGuid   string
+		authToken string
+	}{appGuid, authToken})
+	fake.recordInvocation("Stream", []interface{}{appGuid, authToken})
+	fake.streamMutex.Unlock()
+	if fake.StreamStub != nil {
+		return fake.StreamStub(appGuid, authToken)
+	} else {
+		return fake.streamReturns.result1, fake.streamReturns.result2
+	}
+}
+
+func (fake *FakeNoaaConsumer) StreamCallCount() int {
+	fake.streamMutex.RLock()
+	defer fake.streamMutex.RUnlock()
+	return len(fake.streamArgsForCall)
+}
+
+func (fake *FakeNoaaConsumer) StreamArgsForCall(i int) (string, string) {
+	fake.streamMutex.RLock()
+	defer fake.streamMutex.RUnlock()
+	return fake.streamArgsForCall[i].appGuid, fake.streamArgsForCall[i].authToken
+}
+
+func (fake *FakeNoaaConsumer) StreamReturns(result1 <-chan *events.Envelope, result2 <-chan error) {
+	fake.StreamStub = nil
+	fake.streamReturns = struct {
+		result1 <-chan *events.Envelope
+		result2 <-chan error
+	}{result1, result2}
+}
+
+func (fake *FakeNoaaConsumer) Close() error {
+	fake.closeMutex.Lock()
+	fake.closeArgsForCall = append(fake.closeArgsForCall, struct{}{})
+	fake.recordInvocation("Close", []interface{}{})
+	fake.closeMutex.Unlock()
+	if fake.CloseStub != nil {
+		return fake.CloseStub()
+	} else {
+		return fake.closeReturns.result1
+	}
+}
+
+func (fake *FakeNoaaConsumer) CloseCallCount() int {
+	fake.closeMutex.RLock()
+	defer fake.closeMutex.RUnlock()
+	return len(fake.closeArgsForCall)
+}
+
+func (fake *FakeNoaaConsumer) CloseReturns(result1 error) {
+	fake.CloseStub = nil
+	fake.closeReturns = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakeNoaaConsumer) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
 	fake.containerEnvelopesMutex.RLock()
 	defer fake.containerEnvelopesMutex.RUnlock()
+	fake.streamMutex.RLock()
+	defer fake.streamMutex.RUnlock()
+	fake.closeMutex.RLock()
+	defer fake.closeMutex.RUnlock()
 	return fake.invocations
 }
 
