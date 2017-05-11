@@ -204,6 +204,34 @@ var _ = Describe("Eventgenerator", func() {
 		})
 	})
 
+	Context("when no consul is configured", func() {
+		BeforeEach(func() {
+			noConsulConf := conf
+			noConsulConf.Lock.ConsulClusterConfig = ""
+			runner.configPath = writeConfig(noConsulConf).Name()
+			runner.startCheck = ""
+			runner.Start()
+		})
+
+		AfterEach(func() {
+			os.Remove(runner.configPath)
+		})
+
+		It("should not get eventgenerator service", func() {
+			Eventually(func() map[string]*api.AgentService {
+				services, err := consulClient.Agent().Services()
+				Expect(err).ToNot(HaveOccurred())
+				return services
+			}).ShouldNot(HaveKey("eventgenerator"))
+		})
+
+		It("should start eventgenerator", func() {
+			Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("eventgenerator.started"))
+			Consistently(runner.Session).ShouldNot(Exit())
+		})
+
+	})
+
 	Context("when an interrupt is sent", func() {
 		BeforeEach(func() {
 			runner.Start()

@@ -16,7 +16,7 @@ scalingEngine:
   scaling_engine_url: "http://localhost:8082"
 metricCollector:
   metric_collector_url: "http://localhost:8083"
-lock:
-  lock_ttl: 15s
-  lock_retry_interval: 10s
-  consul_cluster_config: http://127.0.0.1:8500
+#lock:
+#  lock_ttl: 15s
+#  lock_retry_interval: 10s
+#  consul_cluster_config: http://127.0.0.1:8500
