@@ -139,11 +139,6 @@ func (c *Config) Validate() error {
 	if c.Lock.LockTTL <= 0 {
 		return fmt.Errorf("Configuration error: lock ttl is less than or equal to 0")
 	}
-
-	if c.Lock.ConsulClusterConfig == "" {
-		return fmt.Errorf("Configuration error: Consul Cluster Config is empty")
-	}
-
 	return nil
 
 }
