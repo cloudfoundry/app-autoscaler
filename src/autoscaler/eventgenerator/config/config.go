@@ -115,9 +115,6 @@ func (c *Config) Validate() error {
 	if c.MetricCollector.MetricCollectorUrl == "" {
 		return fmt.Errorf("Configuration error: Metric collector url is empty")
 	}
-	if c.Lock.ConsulClusterConfig == "" {
-		return fmt.Errorf("Configuration error: Consul Cluster Config is empty")
-	}
 	if c.Aggregator.AggregatorExecuteInterval <= time.Duration(0) {
 		return fmt.Errorf("Configuration error: aggregator execute interval is less-equal than 0")
 	}
