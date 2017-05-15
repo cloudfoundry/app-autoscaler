@@ -94,7 +94,7 @@ var _ = Describe("AppStreamer", func() {
 				}))
 
 			})
-			Context("when database fails", func() {
+			Context("when saving to database fails", func() {
 				BeforeEach(func() {
 					database.SaveMetricReturns(errors.New("an error"))
 				})
@@ -112,7 +112,7 @@ var _ = Describe("AppStreamer", func() {
 					msgChan <- noaa.NewHttpStartStopEnvelope(222222, 300000000, 600000000, 0)
 				}()
 
-				By("collecting and computing througput and responsetime for first interval")
+				By("collecting and computing throughput and responsetime for first interval")
 				Consistently(database.SaveMetricCallCount).Should(Equal(0))
 
 				By("save throughput and responsetime metric after the first collect interval")
@@ -144,7 +144,7 @@ var _ = Describe("AppStreamer", func() {
 					msgChan <- noaa.NewHttpStartStopEnvelope(666666, 300000000, 700000000, 1)
 				}()
 
-				By("collecting and computing througput and responsetime for second interval")
+				By("collecting and computing throughput and responsetime for second interval")
 				Consistently(database.SaveMetricCallCount).Should(Equal(2))
 
 				By("save throughput and responsetime metric after the second collect interval")
@@ -211,7 +211,7 @@ var _ = Describe("AppStreamer", func() {
 
 		})
 
-		Context("when there is no conatinermetrics or httpstartstop event", func() {
+		Context("when there is no containermetrics or httpstartstop event", func() {
 			BeforeEach(func() {
 				go func() {
 					eventType := events.Envelope_CounterEvent
@@ -219,6 +219,7 @@ var _ = Describe("AppStreamer", func() {
 				}()
 			})
 			It("Saves nothing to database", func() {
+				fclock.WaitForWatcherAndIncrement(TestCollectInterval)
 				Consistently(database.SaveMetricCallCount).Should(BeZero())
 			})
 		})
