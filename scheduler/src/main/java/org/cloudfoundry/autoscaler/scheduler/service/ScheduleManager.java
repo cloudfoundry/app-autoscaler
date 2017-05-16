@@ -764,8 +764,8 @@ public class ScheduleManager {
 		int updateCount = 0;
 		int deleteCount = 0;
 		Map<String, PolicyJsonEntity> policyMap = new HashMap<String, PolicyJsonEntity>();
-		Map<String, List<RecurringScheduleEntity>> recurringScheduleMap = new HashMap<String, List<RecurringScheduleEntity>>();
-		Map<String, List<SpecificDateScheduleEntity>> specificDateScheduleMap = new HashMap<String, List<SpecificDateScheduleEntity>>();
+		Map<String, String> recurringScheduleMap = new HashMap<String, String>();
+		Map<String, String> specificDateScheduleMap = new HashMap<String, String>();
 		List<PolicyJsonEntity> policyList = policyJsonDao.getAllPolicies();
 		List<RecurringScheduleEntity> recurringScheduleList = recurringScheduleDao.findAllRecurringSchedules();
 		List<SpecificDateScheduleEntity> specificDateScheduleList = specificDateScheduleDao.findAllSpecificDateSchedules();
@@ -778,34 +778,19 @@ public class ScheduleManager {
 		
 		if(recurringScheduleList != null && recurringScheduleList.size() > 0){
 			for(RecurringScheduleEntity recurringSchedule : recurringScheduleList){
-				if(recurringScheduleMap.get(recurringSchedule.getAppId()) == null){
-					List<RecurringScheduleEntity> tmpRecurringList = new ArrayList<RecurringScheduleEntity>();
-					tmpRecurringList.add(recurringSchedule);
-					recurringScheduleMap.put(recurringSchedule.getAppId(), tmpRecurringList);
-				}else{
-					List<RecurringScheduleEntity> tmpRecurringList = recurringScheduleMap.get(recurringSchedule.getAppId());
-					tmpRecurringList.add(recurringSchedule);
-					recurringScheduleMap.put(recurringSchedule.getAppId(), tmpRecurringList);
-				}
+				recurringScheduleMap.put(recurringSchedule.getAppId(), recurringSchedule.getGuid());
 			}
 		}
 		
 		if(specificDateScheduleList != null && specificDateScheduleList.size() > 0){
 			for(SpecificDateScheduleEntity specificDateSchedule : specificDateScheduleList){
 				if(specificDateScheduleMap.get(specificDateSchedule.getAppId()) == null){
-					List<SpecificDateScheduleEntity> tmpSpecificDateList = new ArrayList<SpecificDateScheduleEntity>();
-					tmpSpecificDateList.add(specificDateSchedule);
-					specificDateScheduleMap.put(specificDateSchedule.getAppId(), tmpSpecificDateList);
-				}else{
-					List<SpecificDateScheduleEntity> tmpSpecificDateList = specificDateScheduleMap.get(specificDateSchedule.getAppId());
-					tmpSpecificDateList.add(specificDateSchedule);
-					specificDateScheduleMap.put(specificDateSchedule.getAppId(), tmpSpecificDateList);
+					specificDateScheduleMap.put(specificDateSchedule.getAppId(), specificDateSchedule.getGuid());
 				}
 			}
 		}
 		
 		List<PolicyJsonEntity> toCreatePolicyList = new ArrayList<PolicyJsonEntity>();
-//		List<PolicyJsonEntity> toUpdatePolicyList = new ArrayList<PolicyJsonEntity>();
 		Set<String> toDeletedAppIds = new HashSet<String>();
 		for (String appIdInPolicy : policyMap.keySet()) {
 			if (policyMap.get(appIdInPolicy).getSchedules() != null
@@ -814,12 +799,12 @@ public class ScheduleManager {
 						&& policyMap.get(appIdInPolicy).getSchedules().getSchedules().getRecurringSchedule()
 								.size() > 0) {
 					if (recurringScheduleMap.get(appIdInPolicy) == null
-							|| recurringScheduleMap.get(appIdInPolicy).size() == 0) {
+							|| recurringScheduleMap.get(appIdInPolicy) == null) {
 						toCreatePolicyList.add(policyMap.get(appIdInPolicy));
 						createCount++;
 						continue;
 					} else if (!policyMap.get(appIdInPolicy).getGuid()
-							.equals(recurringScheduleMap.get(appIdInPolicy).get(0).getGuid())) {
+							.equals(recurringScheduleMap.get(appIdInPolicy))) {
 						toCreatePolicyList.add(policyMap.get(appIdInPolicy));
 						toDeletedAppIds.add(appIdInPolicy);
 						updateCount++;
@@ -831,12 +816,12 @@ public class ScheduleManager {
 						&& policyMap.get(appIdInPolicy).getSchedules().getSchedules().getSpecificDate()
 								.size() > 0) {
 					if (specificDateScheduleMap.get(appIdInPolicy) == null
-							|| specificDateScheduleMap.get(appIdInPolicy).size() == 0) {
+							|| specificDateScheduleMap.get(appIdInPolicy) == null) {
 						toCreatePolicyList.add(policyMap.get(appIdInPolicy));
 						createCount++;
 						continue;
 					} else if (!policyMap.get(appIdInPolicy).getGuid()
-							.equals(specificDateScheduleMap.get(appIdInPolicy).get(0).getGuid())) {
+							.equals(specificDateScheduleMap.get(appIdInPolicy))) {
 						toCreatePolicyList.add(policyMap.get(appIdInPolicy));
 						toDeletedAppIds.add(appIdInPolicy);
 						updateCount++;
