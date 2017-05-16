@@ -118,6 +118,14 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("Configuration error: InstanceMetrics DB url is empty")
 	}
 
+	if c.Collector.CollectInterval == time.Duration(0) {
+		return fmt.Errorf("Configuration error: CollectInterval is 0")
+	}
+
+	if c.Collector.RefreshInterval == time.Duration(0) {
+		return fmt.Errorf("Configuration error: RefreshInterval is 0")
+	}
+
 	return nil
 
 }
