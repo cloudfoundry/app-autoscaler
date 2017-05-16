@@ -16,7 +16,7 @@
 			</Policies>
 		</RollingFile> -->
         <Console name="Console" target="SYSTEM_OUT" follow="true">
-            <PatternLayout pattern="${LOG_PATTERN}"/>
+            <JSONLayout compact="true" eventEol="true" properties="true" />
         </Console>
     </Appenders>
     <Loggers>
