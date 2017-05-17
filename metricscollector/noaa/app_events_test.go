@@ -1,18 +1,19 @@
-package models_test
+package noaa_test
 
 import (
-	. "autoscaler/models"
+	. "autoscaler/metricscollector/noaa"
+	"autoscaler/models"
 
 	"github.com/cloudfoundry/sonde-go/events"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Metrics", func() {
+var _ = Describe("AppEvents", func() {
 	Describe("GetInstanceMemoryMetricFromContainerMetricsEvent", func() {
 		var (
 			event  *events.Envelope
-			metric *AppInstanceMetric
+			metric *models.AppInstanceMetric
 		)
 		JustBeforeEach(func() {
 			metric = GetInstanceMemoryMetricFromContainerMetricEvent(123456, "an-app-id", event)
@@ -23,12 +24,12 @@ var _ = Describe("Metrics", func() {
 				event = NewContainerEnvelope(111111, "an-app-id", 0, 12.11, 88623692, 233300000)
 			})
 			It("returns the memory metric", func() {
-				Expect(metric).To(Equal(&AppInstanceMetric{
+				Expect(metric).To(Equal(&models.AppInstanceMetric{
 					AppId:         "an-app-id",
 					InstanceIndex: 0,
 					CollectedAt:   123456,
-					Name:          MetricNameMemory,
-					Unit:          UnitMegaBytes,
+					Name:          models.MetricNameMemory,
+					Unit:          models.UnitMegaBytes,
 					Value:         "85",
 					Timestamp:     111111,
 				}))
@@ -59,7 +60,7 @@ var _ = Describe("Metrics", func() {
 	Describe("GetInstanceMemoryMetricFromContainerEnvelopes", func() {
 		var (
 			containerEnvelops []*events.Envelope
-			metrics           []*AppInstanceMetric
+			metrics           []*models.AppInstanceMetric
 		)
 
 		JustBeforeEach(func() {
@@ -101,21 +102,21 @@ var _ = Describe("Metrics", func() {
 
 			It("should return instance memory metrics from given app", func() {
 				Expect(metrics).To(ConsistOf(
-					&AppInstanceMetric{
+					&models.AppInstanceMetric{
 						AppId:         "an-app-id",
 						InstanceIndex: 0,
 						CollectedAt:   123456,
-						Name:          MetricNameMemory,
-						Unit:          UnitMegaBytes,
+						Name:          models.MetricNameMemory,
+						Unit:          models.UnitMegaBytes,
 						Value:         "1",
 						Timestamp:     111111,
 					},
-					&AppInstanceMetric{
+					&models.AppInstanceMetric{
 						AppId:         "an-app-id",
 						InstanceIndex: 1,
 						CollectedAt:   123456,
-						Name:          MetricNameMemory,
-						Unit:          UnitMegaBytes,
+						Name:          models.MetricNameMemory,
+						Unit:          models.UnitMegaBytes,
 						Value:         "85",
 						Timestamp:     333333,
 					},

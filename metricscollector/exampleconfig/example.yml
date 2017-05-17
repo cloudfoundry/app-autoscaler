@@ -11,8 +11,8 @@ db:
   policy_db_url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
   instance_metrics_db_url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
 collector:
-  refresh_interval: 60s
-  poll_interval: 10s
+  refresh_interval: 30s
+  collect_interval: 10s
 # lock:
 #   lock_ttl: 15s
 #   lock_retry_interval: 10s

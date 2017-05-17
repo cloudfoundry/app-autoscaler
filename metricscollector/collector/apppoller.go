@@ -4,7 +4,6 @@ import (
 	"autoscaler/cf"
 	"autoscaler/db"
 	"autoscaler/metricscollector/noaa"
-	"autoscaler/models"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
@@ -20,26 +19,26 @@ type AppPoller interface {
 }
 
 type appPoller struct {
-	appId        string
-	pollInterval time.Duration
-	logger       lager.Logger
-	cfc          cf.CfClient
-	noaaConsumer noaa.NoaaConsumer
-	database     db.InstanceMetricsDB
-	pclock       clock.Clock
-	doneChan     chan bool
+	appId           string
+	collectInterval time.Duration
+	logger          lager.Logger
+	cfc             cf.CfClient
+	noaaConsumer    noaa.NoaaConsumer
+	database        db.InstanceMetricsDB
+	pclock          clock.Clock
+	doneChan        chan bool
 }
 
-func NewAppPoller(logger lager.Logger, appId string, pollInterval time.Duration, cfc cf.CfClient, noaaConsumer noaa.NoaaConsumer, database db.InstanceMetricsDB, pclock clock.Clock) AppPoller {
+func NewAppPoller(logger lager.Logger, appId string, collectInterval time.Duration, cfc cf.CfClient, noaaConsumer noaa.NoaaConsumer, database db.InstanceMetricsDB, pclock clock.Clock) AppPoller {
 	return &appPoller{
-		appId:        appId,
-		pollInterval: pollInterval,
-		logger:       logger,
-		cfc:          cfc,
-		noaaConsumer: noaaConsumer,
-		database:     database,
-		pclock:       pclock,
-		doneChan:     make(chan bool),
+		appId:           appId,
+		collectInterval: collectInterval,
+		logger:          logger,
+		cfc:             cfc,
+		noaaConsumer:    noaaConsumer,
+		database:        database,
+		pclock:          pclock,
+		doneChan:        make(chan bool),
 	}
 
 }
@@ -47,7 +46,7 @@ func NewAppPoller(logger lager.Logger, appId string, pollInterval time.Duration,
 func (ap *appPoller) Start() {
 	go ap.startPollMetrics()
 
-	ap.logger.Info("app-poller-started", lager.Data{"appid": ap.appId, "poll-interval": ap.pollInterval})
+	ap.logger.Info("app-poller-started", lager.Data{"appid": ap.appId, "collect-interval": ap.collectInterval})
 }
 
 func (ap *appPoller) Stop() {
@@ -58,7 +57,7 @@ func (ap *appPoller) Stop() {
 func (ap *appPoller) startPollMetrics() {
 	for {
 		ap.pollMetric()
-		timer := ap.pclock.NewTimer(ap.pollInterval)
+		timer := ap.pclock.NewTimer(ap.collectInterval)
 		select {
 		case <-ap.doneChan:
 			timer.Stop()
@@ -89,7 +88,7 @@ func (ap *appPoller) pollMetric() {
 		return
 	}
 
-	metrics := models.GetInstanceMemoryMetricFromContainerEnvelopes(ap.pclock.Now().UnixNano(), ap.appId, containerEnvelopes)
+	metrics := noaa.GetInstanceMemoryMetricFromContainerEnvelopes(ap.pclock.Now().UnixNano(), ap.appId, containerEnvelopes)
 	logger.Debug("poll-metric-get-memory-metric", lager.Data{"metrics": metrics})
 
 	for _, metric := range metrics {
