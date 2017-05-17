@@ -61,7 +61,7 @@ server:
 				configBytes = []byte(`
 collector:
   refresh_interval: 20a
-  poll_interval: 10s  
+  collect_interval: 10s  
 `)
 			})
 
@@ -93,7 +93,7 @@ db:
   instance_metrics_db_url: postgres://pqgotest:password@localhost/pqgotest
 collector:
   refresh_interval: 20s
-  poll_interval: 10s
+  collect_interval: 10s
 lock:
   lock_ttl: 15s
   lock_retry_interval: 10s
@@ -119,7 +119,7 @@ lock:
 				Expect(conf.Db.InstanceMetricsDbUrl).To(Equal("postgres://pqgotest:password@localhost/pqgotest"))
 
 				Expect(conf.Collector.RefreshInterval).To(Equal(20 * time.Second))
-				Expect(conf.Collector.PollInterval).To(Equal(10 * time.Second))
+				Expect(conf.Collector.CollectInterval).To(Equal(10 * time.Second))
 
 				Expect(conf.Server.TLS.KeyFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/server.key"))
 				Expect(conf.Server.TLS.CertFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/server.crt"))
@@ -149,7 +149,7 @@ db:
 				Expect(conf.Server.Port).To(Equal(8080))
 				Expect(conf.Logging.Level).To(Equal(DefaultLoggingLevel))
 				Expect(conf.Collector.RefreshInterval).To(Equal(DefaultRefreshInterval))
-				Expect(conf.Collector.PollInterval).To(Equal(DefaultPollInterval))
+				Expect(conf.Collector.CollectInterval).To(Equal(DefaultCollectInterval))
 
 				Expect(conf.Lock.LockRetryInterval).To(Equal(DefaultRetryInterval))
 				Expect(conf.Lock.LockTTL).To(Equal(DefaultLockTTL))
@@ -167,6 +167,8 @@ db:
 			conf.Db.PolicyDbUrl = "postgres://pqgotest:password@exampl.com/pqgotest"
 			conf.Db.InstanceMetricsDbUrl = "postgres://pqgotest:password@exampl.com/pqgotest"
 			conf.Lock.ConsulClusterConfig = "http://127.0.0.1:8500"
+			conf.Collector.CollectInterval = time.Duration(30 * time.Second)
+			conf.Collector.RefreshInterval = time.Duration(60 * time.Second)
 		})
 
 		JustBeforeEach(func() {
@@ -190,7 +192,6 @@ db:
 		})
 
 		Context("when policy db url is not set", func() {
-
 			BeforeEach(func() {
 				conf.Db.PolicyDbUrl = ""
 			})
@@ -201,13 +202,32 @@ db:
 		})
 
 		Context("when metrics db url is not set", func() {
-
 			BeforeEach(func() {
 				conf.Db.InstanceMetricsDbUrl = ""
 			})
 
 			It("should error", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: InstanceMetrics DB url is empty")))
+			})
+		})
+
+		Context("when collect interval is 0", func() {
+			BeforeEach(func() {
+				conf.Collector.CollectInterval = time.Duration(0)
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: CollectInterval is 0")))
+			})
+		})
+
+		Context("when refresh interval is 0", func() {
+			BeforeEach(func() {
+				conf.Collector.RefreshInterval = time.Duration(0)
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: RefreshInterval is 0")))
 			})
 		})
 

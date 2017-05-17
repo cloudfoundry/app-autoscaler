@@ -10,8 +10,8 @@ import (
 
 // make sure TestPollInterval is less than TestRefreshInterval
 const (
-	TestPollInterval    time.Duration = 1 * time.Second
 	TestRefreshInterval time.Duration = 3 * time.Second
+	TestCollectInterval time.Duration = 1 * time.Second
 )
 
 func TestCollector(t *testing.T) {

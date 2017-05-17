@@ -91,12 +91,12 @@ func main() {
 	}
 	defer policyDB.Close()
 
-	createPoller := func(appId string) collector.AppPoller {
-		return collector.NewAppPoller(logger.Session("app-poller"), appId, conf.Collector.PollInterval, cfClient, noaa, instanceMetricsDB, mcClock)
+	createAppCollector := func(appId string) collector.AppCollector {
+		return collector.NewAppPoller(logger.Session("app-poller"), appId, conf.Collector.CollectInterval, cfClient, noaa, instanceMetricsDB, mcClock)
 	}
 
 	collectServer := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
-		mc := collector.NewCollector(conf.Collector.RefreshInterval, logger.Session("collector"), policyDB, mcClock, createPoller)
+		mc := collector.NewCollector(conf.Collector.RefreshInterval, logger.Session("collector"), policyDB, mcClock, createAppCollector)
 		mc.Start()
 
 		close(ready)

@@ -18,7 +18,7 @@ import (
 const (
 	DefaultLoggingLevel                  = "info"
 	DefaultRefreshInterval time.Duration = 60 * time.Second
-	DefaultPollInterval    time.Duration = 30 * time.Second
+	DefaultCollectInterval time.Duration = 30 * time.Second
 	DefaultLockTTL         time.Duration = locket.DefaultSessionTTL
 	DefaultRetryInterval   time.Duration = locket.RetryInterval
 )
@@ -51,12 +51,12 @@ type DbConfig struct {
 
 type CollectorConfig struct {
 	RefreshInterval time.Duration `yaml:"refresh_interval"`
-	PollInterval    time.Duration `yaml:"poll_interval"`
+	CollectInterval time.Duration `yaml:"collect_interval"`
 }
 
 var defaultCollectorConfig = CollectorConfig{
 	RefreshInterval: DefaultRefreshInterval,
-	PollInterval:    DefaultPollInterval,
+	CollectInterval: DefaultCollectInterval,
 }
 
 type LockConfig struct {
@@ -116,6 +116,14 @@ func (c *Config) Validate() error {
 
 	if c.Db.InstanceMetricsDbUrl == "" {
 		return fmt.Errorf("Configuration error: InstanceMetrics DB url is empty")
+	}
+
+	if c.Collector.CollectInterval == time.Duration(0) {
+		return fmt.Errorf("Configuration error: CollectInterval is 0")
+	}
+
+	if c.Collector.RefreshInterval == time.Duration(0) {
+		return fmt.Errorf("Configuration error: RefreshInterval is 0")
 	}
 
 	return nil
