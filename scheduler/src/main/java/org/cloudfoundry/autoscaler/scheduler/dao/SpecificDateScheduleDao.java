@@ -12,6 +12,6 @@ public interface SpecificDateScheduleDao extends GenericDao<SpecificDateSchedule
 
 	public List<SpecificDateScheduleEntity> findAllSpecificDateSchedulesByAppId(String appId);
 	
-	public List<SpecificDateScheduleEntity> findAllSpecificDateSchedules();
+	public List getDistinctAppIdAndGuidList();
 
 }

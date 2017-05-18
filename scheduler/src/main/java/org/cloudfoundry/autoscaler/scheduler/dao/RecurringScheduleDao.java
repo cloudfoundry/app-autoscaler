@@ -8,6 +8,6 @@ public interface RecurringScheduleDao extends GenericDao<RecurringScheduleEntity
 
 	public List<RecurringScheduleEntity> findAllRecurringSchedulesByAppId(String appId);
 	
-	public List<RecurringScheduleEntity> findAllRecurringSchedules();
+	public List getDistinctAppIdAndGuidList();
 
 }

@@ -45,6 +45,7 @@ import org.cloudfoundry.autoscaler.scheduler.rest.model.SynchronizeResult;
 import org.cloudfoundry.autoscaler.scheduler.util.ConsulUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.PolicyJsonEntityBuilder;
 import org.cloudfoundry.autoscaler.scheduler.util.RecurringScheduleEntitiesBuilder;
+import org.cloudfoundry.autoscaler.scheduler.util.ScheduleBuilder;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleTypeEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.SpecificDateScheduleEntitiesBuilder;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
@@ -663,15 +664,15 @@ public class ScheduleManagerTest {
 	public void testSynchronizeSchedules_with_no_policy_and_no_schedules() {
 
 		when(policyJsonDao.getAllPolicies()).thenReturn(new ArrayList<PolicyJsonEntity>());
-		when(recurringScheduleDao.findAllRecurringSchedules()).thenReturn(new ArrayList<RecurringScheduleEntity>());
-		when(specificDateScheduleDao.findAllSpecificDateSchedules())
-				.thenReturn(new ArrayList<SpecificDateScheduleEntity>());
+		when(recurringScheduleDao.getDistinctAppIdAndGuidList()).thenReturn(new ArrayList<Object[]>());
+		when(specificDateScheduleDao.getDistinctAppIdAndGuidList())
+				.thenReturn(new ArrayList<Object[]>());
 		SynchronizeResult result = scheduleManager.synchronizeSchedules();
 		
 		assertEquals(result.equals(new SynchronizeResult(0,0,0)), true);
 		verify(policyJsonDao, times(1)).getAllPolicies();
-		verify(recurringScheduleDao, times(1)).findAllRecurringSchedules();
-		verify(specificDateScheduleDao, times(1)).findAllSpecificDateSchedules();
+		verify(recurringScheduleDao, times(1)).getDistinctAppIdAndGuidList();
+		verify(specificDateScheduleDao, times(1)).getDistinctAppIdAndGuidList();
 
 		verify(recurringScheduleDao, never()).create(any());
 		verify(specificDateScheduleDao, never()).create(any());
@@ -695,17 +696,19 @@ public class ScheduleManagerTest {
 		int noOfDOMRecurringSchedules = 3;
 		int noOfDOWRecurringSchedules = 3;
 
-		Schedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, guid, true,
-				noOfSpecificDateSchedules, noOfDOMRecurringSchedules, noOfDOWRecurringSchedules);
+		List<RecurringScheduleEntity> recurringEntities = new RecurringScheduleEntitiesBuilder(noOfDOMRecurringSchedules, noOfDOWRecurringSchedules).setAppId(appId).setGuid(guid).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
+		List<SpecificDateScheduleEntity> specificDateEntities = new SpecificDateScheduleEntitiesBuilder(noOfSpecificDateSchedules).setAppid(appId).setGuid(guid).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
+		Schedules schedules = new ScheduleBuilder().setSpecificDate(specificDateEntities).setRecurringSchedule(recurringEntities).build();
+
 		List<PolicyJsonEntity> policyJsonList = new ArrayList<PolicyJsonEntity>() {
 			{
 				add(new PolicyJsonEntityBuilder(appId, guid, schedules).build());
 			}
 		};
 		when(policyJsonDao.getAllPolicies()).thenReturn(policyJsonList);
-		when(specificDateScheduleDao.findAllSpecificDateSchedules())
-				.thenReturn(new ArrayList<SpecificDateScheduleEntity>());
-		when(recurringScheduleDao.findAllRecurringSchedules()).thenReturn(new ArrayList<RecurringScheduleEntity>());
+		when(specificDateScheduleDao.getDistinctAppIdAndGuidList())
+				.thenReturn(new ArrayList<Object[]>());
+		when(recurringScheduleDao.getDistinctAppIdAndGuidList()).thenReturn(new ArrayList<Object[]>());
 		Mockito.when(specificDateScheduleDao.create(Mockito.anyObject()))
 				.thenReturn(schedules.getSpecificDate().get(0));
 		Mockito.when(recurringScheduleDao.create(Mockito.anyObject()))
@@ -727,13 +730,15 @@ public class ScheduleManagerTest {
 		int noOfSpecificDateSchedules = 3;
 		int noOfDOMRecurringSchedules = 3;
 		int noOfDOWRecurringSchedules = 3;
-
-		Schedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, guid, true,
-				noOfSpecificDateSchedules, noOfDOMRecurringSchedules, noOfDOWRecurringSchedules);
-
+		
+		List<RecurringScheduleEntity> recurringEntities = new RecurringScheduleEntitiesBuilder(noOfDOMRecurringSchedules, noOfDOWRecurringSchedules).setAppId(appId).setGuid(guid).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
+		List<SpecificDateScheduleEntity> specificDateEntities = new SpecificDateScheduleEntitiesBuilder(noOfSpecificDateSchedules).setAppid(appId).setGuid(guid).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
+		Schedules schedules = new ScheduleBuilder().setSpecificDate(specificDateEntities).setRecurringSchedule(recurringEntities).build();
+		String[] appIdAndGuid = {appId, guid};
+		
 		when(policyJsonDao.getAllPolicies()).thenReturn(new ArrayList<PolicyJsonEntity>());
-		when(specificDateScheduleDao.findAllSpecificDateSchedules()).thenReturn(schedules.getSpecificDate());
-		when(recurringScheduleDao.findAllRecurringSchedules()).thenReturn(schedules.getRecurringSchedule());
+		when(specificDateScheduleDao.getDistinctAppIdAndGuidList()).thenReturn(new ArrayList(){{add(appIdAndGuid);}});
+		when(recurringScheduleDao.getDistinctAppIdAndGuidList()).thenReturn(new ArrayList(){{add(appIdAndGuid);}});
 		when(specificDateScheduleDao.findAllSpecificDateSchedulesByAppId(appId))
 				.thenReturn(schedules.getSpecificDate());
 		when(recurringScheduleDao.findAllRecurringSchedulesByAppId(appId)).thenReturn(schedules.getRecurringSchedule());
@@ -755,11 +760,15 @@ public class ScheduleManagerTest {
 		int noOfSpecificDateSchedules = 3;
 		int noOfDOMRecurringSchedules = 3;
 		int noOfDOWRecurringSchedules = 3;
-
-		Schedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, guid, true,
-				noOfSpecificDateSchedules, noOfDOMRecurringSchedules, noOfDOWRecurringSchedules);
-		Schedules anotherSchedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, anotherGuid, true,
-				noOfSpecificDateSchedules, noOfDOMRecurringSchedules, noOfDOWRecurringSchedules);
+		
+		List<RecurringScheduleEntity> recurringEntities = new RecurringScheduleEntitiesBuilder(noOfDOMRecurringSchedules, noOfDOWRecurringSchedules).setAppId(appId).setGuid(guid).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
+		List<SpecificDateScheduleEntity> specificDateEntities = new SpecificDateScheduleEntitiesBuilder(noOfSpecificDateSchedules).setAppid(appId).setGuid(guid).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
+		Schedules schedules = new ScheduleBuilder().setSpecificDate(specificDateEntities).setRecurringSchedule(recurringEntities).build();
+		
+		List<RecurringScheduleEntity> anotherRecurringEntities = new RecurringScheduleEntitiesBuilder(noOfDOMRecurringSchedules, noOfDOWRecurringSchedules).setAppId(appId).setGuid(guid).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
+		List<SpecificDateScheduleEntity>  anotherSpecificDateEntities = new SpecificDateScheduleEntitiesBuilder(noOfSpecificDateSchedules).setAppid(appId).setGuid(guid).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
+		Schedules  anotherSchedules = new ScheduleBuilder().setSpecificDate(anotherSpecificDateEntities).setRecurringSchedule(anotherRecurringEntities).build();
+		String[] appIdAndGuid = {appId, guid};
 
 		List<PolicyJsonEntity> policyJsonList = new ArrayList<PolicyJsonEntity>() {
 			{
@@ -767,8 +776,8 @@ public class ScheduleManagerTest {
 			}
 		};
 		when(policyJsonDao.getAllPolicies()).thenReturn(policyJsonList);
-		when(specificDateScheduleDao.findAllSpecificDateSchedules()).thenReturn(schedules.getSpecificDate());
-		when(recurringScheduleDao.findAllRecurringSchedules()).thenReturn(schedules.getRecurringSchedule());
+		when(specificDateScheduleDao.getDistinctAppIdAndGuidList()).thenReturn(new ArrayList(){{add(appIdAndGuid);}});
+		when(recurringScheduleDao.getDistinctAppIdAndGuidList()).thenReturn(new ArrayList(){{add(appIdAndGuid);}});
 		when(specificDateScheduleDao.findAllSpecificDateSchedulesByAppId(appId))
 				.thenReturn(schedules.getSpecificDate());
 		when(recurringScheduleDao.findAllRecurringSchedulesByAppId(appId)).thenReturn(schedules.getRecurringSchedule());

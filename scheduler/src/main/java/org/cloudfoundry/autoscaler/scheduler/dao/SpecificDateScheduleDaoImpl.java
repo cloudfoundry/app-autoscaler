@@ -40,11 +40,10 @@ public class SpecificDateScheduleDaoImpl extends GenericDaoImpl<SpecificDateSche
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<SpecificDateScheduleEntity> findAllSpecificDateSchedules() {
+	public List getDistinctAppIdAndGuidList() {
 		// TODO Auto-generated method stub
 		try {
-			return entityManager.createNamedQuery(SpecificDateScheduleEntity.query_specificDateSchedulesAll,
-					SpecificDateScheduleEntity.class).getResultList();
+			return entityManager.createNamedQuery(SpecificDateScheduleEntity.query_specificDateSchedulesAll).getResultList();
 
 		} catch (Exception e) {
 

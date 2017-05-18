@@ -764,29 +764,28 @@ public class ScheduleManager {
 		int updateCount = 0;
 		int deleteCount = 0;
 		Map<String, PolicyJsonEntity> policyMap = new HashMap<String, PolicyJsonEntity>();
-		Map<String, String> recurringScheduleMap = new HashMap<String, String>();
-		Map<String, String> specificDateScheduleMap = new HashMap<String, String>();
+		Map<String, String> appIdAndGuidMap = new HashMap<String, String>();
 		List<PolicyJsonEntity> policyList = policyJsonDao.getAllPolicies();
-		List<RecurringScheduleEntity> recurringScheduleList = recurringScheduleDao.findAllRecurringSchedules();
-		List<SpecificDateScheduleEntity> specificDateScheduleList = specificDateScheduleDao.findAllSpecificDateSchedules();
+		List recurringScheduleList = recurringScheduleDao.getDistinctAppIdAndGuidList();
+		List specificDateScheduleList = specificDateScheduleDao.getDistinctAppIdAndGuidList();
 		//create or updated
-		if(policyList != null && policyList.size() > 0){
+		if(policyList.size() > 0){
 			for(PolicyJsonEntity policy : policyList){
 				policyMap.put(policy.getAppId(), policy);
 			}
 		}
 		
-		if(recurringScheduleList != null && recurringScheduleList.size() > 0){
-			for(RecurringScheduleEntity recurringSchedule : recurringScheduleList){
-				recurringScheduleMap.put(recurringSchedule.getAppId(), recurringSchedule.getGuid());
+		if(recurringScheduleList.size() > 0){
+			for(Object ro : recurringScheduleList){
+				Object[] roArray = (Object[])ro;
+				appIdAndGuidMap.put((String)(roArray[0]), (String)(roArray[1]));
 			}
 		}
 		
-		if(specificDateScheduleList != null && specificDateScheduleList.size() > 0){
-			for(SpecificDateScheduleEntity specificDateSchedule : specificDateScheduleList){
-				if(specificDateScheduleMap.get(specificDateSchedule.getAppId()) == null){
-					specificDateScheduleMap.put(specificDateSchedule.getAppId(), specificDateSchedule.getGuid());
-				}
+		if(specificDateScheduleList.size() > 0){
+			for(Object so : specificDateScheduleList){
+				Object[] soArray = (Object[])so;
+				appIdAndGuidMap.put((String)(soArray[0]), (String)(soArray[1]));
 			}
 		}
 		
@@ -798,13 +797,12 @@ public class ScheduleManager {
 				if (policyMap.get(appIdInPolicy).getSchedules().getSchedules().getRecurringSchedule() != null
 						&& policyMap.get(appIdInPolicy).getSchedules().getSchedules().getRecurringSchedule()
 								.size() > 0) {
-					if (recurringScheduleMap.get(appIdInPolicy) == null
-							|| recurringScheduleMap.get(appIdInPolicy) == null) {
+					if (appIdAndGuidMap.get(appIdInPolicy) == null) {
 						toCreatePolicyList.add(policyMap.get(appIdInPolicy));
 						createCount++;
 						continue;
 					} else if (!policyMap.get(appIdInPolicy).getGuid()
-							.equals(recurringScheduleMap.get(appIdInPolicy))) {
+							.equals(appIdAndGuidMap.get(appIdInPolicy))) {
 						toCreatePolicyList.add(policyMap.get(appIdInPolicy));
 						toDeletedAppIds.add(appIdInPolicy);
 						updateCount++;
@@ -815,13 +813,12 @@ public class ScheduleManager {
 				if (policyMap.get(appIdInPolicy).getSchedules().getSchedules().getSpecificDate() != null
 						&& policyMap.get(appIdInPolicy).getSchedules().getSchedules().getSpecificDate()
 								.size() > 0) {
-					if (specificDateScheduleMap.get(appIdInPolicy) == null
-							|| specificDateScheduleMap.get(appIdInPolicy) == null) {
+					if (appIdAndGuidMap.get(appIdInPolicy) == null) {
 						toCreatePolicyList.add(policyMap.get(appIdInPolicy));
 						createCount++;
 						continue;
 					} else if (!policyMap.get(appIdInPolicy).getGuid()
-							.equals(specificDateScheduleMap.get(appIdInPolicy))) {
+							.equals(appIdAndGuidMap.get(appIdInPolicy))) {
 						toCreatePolicyList.add(policyMap.get(appIdInPolicy));
 						toDeletedAppIds.add(appIdInPolicy);
 						updateCount++;
@@ -832,11 +829,9 @@ public class ScheduleManager {
 			}
 		}
 		
-		
 		Set<String> appIdInScheduleSet = new HashSet<String>();
 		Set<String> appIdInPolicySet = policyMap.keySet();
-		appIdInScheduleSet.addAll(specificDateScheduleMap.keySet());
-		appIdInScheduleSet.addAll(recurringScheduleMap.keySet());
+		appIdInScheduleSet.addAll(appIdAndGuidMap.keySet());
 		for(String appId : appIdInScheduleSet){
 			if(!appIdInPolicySet.contains(appId)){
 				toDeletedAppIds.add(appId);

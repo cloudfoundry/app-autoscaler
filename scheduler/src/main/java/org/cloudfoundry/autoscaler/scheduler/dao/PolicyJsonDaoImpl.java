@@ -21,7 +21,6 @@ public class PolicyJsonDaoImpl extends JdbcDaoSupport implements PolicyJsonDao {
 	@Override
 	@Transactional(readOnly = true)
 	public List<PolicyJsonEntity> getAllPolicies() {
-		// TODO Auto-generated method stub
 		List<PolicyJsonEntity> list = getJdbcTemplate().query("SELECT * FROM policy_json", new PolicyJsonEntity());
 		return list;
 	}

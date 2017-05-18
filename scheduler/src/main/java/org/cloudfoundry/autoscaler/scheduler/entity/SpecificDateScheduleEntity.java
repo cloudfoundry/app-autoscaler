@@ -68,7 +68,7 @@ public class SpecificDateScheduleEntity extends ScheduleEntity {
 			+ " WHERE app_id = :appId";
 
 	public static final String query_specificDateSchedulesAll = "SpecificDateScheduleEntity.schedulesAll";
-	static final String jpql_specificDateSchedulesAll = " FROM SpecificDateScheduleEntity";
+	static final String jpql_specificDateSchedulesAll = "SELECT DISTINCT appId,guid FROM SpecificDateScheduleEntity";
 
 	@Override
 	public boolean equals(Object o) {

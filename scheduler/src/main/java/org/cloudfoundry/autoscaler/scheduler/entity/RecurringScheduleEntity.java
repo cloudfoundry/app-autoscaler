@@ -30,7 +30,7 @@ import io.swagger.annotations.ApiModelProperty;
 @Table(name = "app_scaling_recurring_schedule")
 @NamedQueries({
 		@NamedQuery(name = RecurringScheduleEntity.query_recurringSchedulesByAppId, query = RecurringScheduleEntity.jpql_recurringSchedulesByAppId),
-		@NamedQuery(name = RecurringScheduleEntity.query_recurringSchedulesAll, query = RecurringScheduleEntity.jpql_recurringSchedulesAll)})
+		@NamedQuery(name = RecurringScheduleEntity.queryFindAppIdAndGuidFromRecurringSchedule, query = RecurringScheduleEntity.jpqlFindAppIdAndGuidFromRecurringSchedule)})
 public class RecurringScheduleEntity extends ScheduleEntity {
 
 	@ApiModelProperty(example = DateHelper.TIME_FORMAT, dataType = "java.lang.String", required = true, position = 3)
@@ -128,8 +128,8 @@ public class RecurringScheduleEntity extends ScheduleEntity {
 	public static final String query_recurringSchedulesByAppId = "RecurringScheduleEntity.schedulesByAppId";
 	static final String jpql_recurringSchedulesByAppId = " FROM RecurringScheduleEntity"
 			+ " WHERE app_id = :appId";
-	public static final String query_recurringSchedulesAll = "RecurringScheduleEntity.schedulesAll";
-	static final String jpql_recurringSchedulesAll = " FROM RecurringScheduleEntity";
+	public static final String queryFindAppIdAndGuidFromRecurringSchedule = "RecurringScheduleEntity.findDistinctAppIdAndGuid";
+	static final String jpqlFindAppIdAndGuidFromRecurringSchedule = "SELECT DISTINCT appId, guid FROM RecurringScheduleEntity";
 
 	@Override
 	public boolean equals(Object o) {

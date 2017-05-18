@@ -14,6 +14,7 @@ import javax.transaction.Transactional;
 
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.util.ConsulUtil;
+import org.cloudfoundry.autoscaler.scheduler.util.RecurringScheduleEntitiesBuilder;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationException;
@@ -59,14 +60,13 @@ public class RecurringScheduleDaoImplTest {
 		// Add fake test records.
 		String appId = "appId1";
 		String guid = TestDataSetupHelper.generateGuid();
-		List<RecurringScheduleEntity> entities = TestDataSetupHelper.generateRecurringScheduleEntities(appId, guid,false, 1,
-				0);
+		List<RecurringScheduleEntity> entities = new RecurringScheduleEntitiesBuilder(1, 0).setAppId(appId).setGuid(guid).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).build();
 		testDataDbUtil.insertRecurringSchedule(entities);
 		entity1 = entities.get(0);
 
 		appId = "appId3";
 		guid = TestDataSetupHelper.generateGuid();
-		entities = TestDataSetupHelper.generateRecurringScheduleEntities(appId, guid, false, 0, 1);
+		entities =new RecurringScheduleEntitiesBuilder(1, 0).setAppId(appId).setGuid(guid).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).build();;
 		testDataDbUtil.insertRecurringSchedule(entities);
 		entity2 = entities.get(0);
 	}
@@ -92,16 +92,16 @@ public class RecurringScheduleDaoImplTest {
 	}
 
 	@Test
-	public void testFindAllRecurringSchedules() {
+	public void testGetDistinctAppIdAndGuidList() {
 		String appId1 = "appId1";
 		String appId3 = "appId3";
-		List<RecurringScheduleEntity> foundEntityList = recurringScheduleDao.findAllRecurringSchedules();
+		List foundEntityList = recurringScheduleDao.getDistinctAppIdAndGuidList();
 
 		assertThat("It should have two record", foundEntityList.size(), is(2));
 		Set<String> appIdSet = new HashSet<String>() {
 			{
-				add(foundEntityList.get(0).getAppId());
-				add(foundEntityList.get(1).getAppId());
+				add((String)((Object[])(foundEntityList.get(0)))[0]);
+				add((String)((Object[])(foundEntityList.get(1)))[0]);
 			}
 		};
 		assertThat("It should contains the two inserted entities",

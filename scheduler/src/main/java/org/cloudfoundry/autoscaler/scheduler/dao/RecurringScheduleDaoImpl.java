@@ -23,11 +23,10 @@ public class RecurringScheduleDaoImpl extends GenericDaoImpl<RecurringScheduleEn
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<RecurringScheduleEntity> findAllRecurringSchedules() {
+	public List getDistinctAppIdAndGuidList() {
 		// TODO Auto-generated method stub
 		try {
-			return entityManager.createNamedQuery(RecurringScheduleEntity.query_recurringSchedulesAll,
-					RecurringScheduleEntity.class).getResultList();
+			return entityManager.createNamedQuery(RecurringScheduleEntity.queryFindAppIdAndGuidFromRecurringSchedule).getResultList();
 		} catch (Exception e) {
 			throw new DatabaseValidationException("Find All recurring schedules failed", e);
 		}
