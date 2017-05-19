@@ -8,18 +8,14 @@ public class PolicyJsonEntityBuilder {
 	
 	private PolicyJsonEntity policyJson;
 	
-	public PolicyJsonEntityBuilder(){
-		this.policyJson = new PolicyJsonEntity();
-	}
-	
 	public PolicyJsonEntityBuilder(String appId, String guid){
-		this();
+		this.policyJson = new PolicyJsonEntity();
 		this.policyJson.setAppId(appId);
 		this.policyJson.setGuid(guid);
 	}
 	
 	public PolicyJsonEntityBuilder(String appId, String guid, Schedules schedules){
-		this();
+		this.policyJson = new PolicyJsonEntity();
 		this.policyJson.setAppId(appId);
 		this.policyJson.setGuid(guid);
 		ApplicationSchedules applicationSchedules = new ApplicationSchedules();

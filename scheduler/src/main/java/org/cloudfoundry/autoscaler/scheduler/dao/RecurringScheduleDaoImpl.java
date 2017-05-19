@@ -24,7 +24,6 @@ public class RecurringScheduleDaoImpl extends GenericDaoImpl<RecurringScheduleEn
 	@Override
 	@Transactional(readOnly = true)
 	public List getDistinctAppIdAndGuidList() {
-		// TODO Auto-generated method stub
 		try {
 			return entityManager.createNamedQuery(RecurringScheduleEntity.queryFindAppIdAndGuidFromRecurringSchedule).getResultList();
 		} catch (Exception e) {

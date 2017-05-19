@@ -1,6 +1,8 @@
 package org.cloudfoundry.autoscaler.scheduler.rest;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.Matchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -81,7 +83,7 @@ public class ScheduleSyncRestControllerTest {
 	}
 
 	@Test
-	public void testSynchronizeSchedules_with_both_policy_and_schedules_existed() throws Exception {
+	public void testSynchronizeSchedules_with_both_policy_and_schedules_existed_and_guid_are_different() throws Exception {
 
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
@@ -102,8 +104,34 @@ public class ScheduleSyncRestControllerTest {
 		SynchronizeResult result = new ObjectMapper()
 				.readValue(resultActions.andReturn().getResponse().getContentAsString(), SynchronizeResult.class);
 		assertEquals(result.equals(new SynchronizeResult(0, 1, 0)), true);
+		assertThat("It should update the shedules",result, is(new SynchronizeResult(0, 1, 0)));
 
 	}
+	
+	@Test
+	public void testSynchronizeSchedules_with_both_policy_and_schedules_existed_and_guid_are_the_same() throws Exception {
+
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		String guid = TestDataSetupHelper.generateGuid();
+		int noOfSpecificDateSchedules = 3;
+		int noOfDOMRecurringSchedules = 3;
+		int noOfDOWRecurringSchedules = 3;
+
+		Schedules schedules = TestDataSetupHelper.generateSchedulesWithEntitiesOnly(appId, guid, false,
+				noOfSpecificDateSchedules, noOfDOMRecurringSchedules, noOfDOWRecurringSchedules);
+
+		testDataDbUtil.insertRecurringSchedule(schedules.getRecurringSchedule());
+		testDataDbUtil.insertSpecificDateSchedule(schedules.getSpecificDate());
+		testDataDbUtil.insertPolicyJson(appId, guid);
+
+		ResultActions resultActions = mockMvc.perform(put("/v2/syncSchedules"));
+		resultActions.andExpect(status().isOk());
+		SynchronizeResult result = new ObjectMapper()
+				.readValue(resultActions.andReturn().getResponse().getContentAsString(), SynchronizeResult.class);
+		assertThat("It should not update or create schedule",result, is(new SynchronizeResult(0, 0, 0)));
+
+	}
+	
 	@Test
 	public void testSynchronizeSchedules_with_no_policy_and_existed_schedules() throws Exception {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
@@ -122,7 +150,7 @@ public class ScheduleSyncRestControllerTest {
 		resultActions.andExpect(status().isOk());
 		SynchronizeResult result = new ObjectMapper()
 				.readValue(resultActions.andReturn().getResponse().getContentAsString(), SynchronizeResult.class);
-		assertEquals(result.equals(new SynchronizeResult(0, 0, 1)), true);
+		assertThat("It should delete the schedules",result, is(new SynchronizeResult(0, 0, 1)));
 		
 	}
 	@Test
@@ -135,7 +163,7 @@ public class ScheduleSyncRestControllerTest {
 		resultActions.andExpect(status().isOk());
 		SynchronizeResult result = new ObjectMapper()
 				.readValue(resultActions.andReturn().getResponse().getContentAsString(), SynchronizeResult.class);
-		assertEquals(result.equals(new SynchronizeResult(1, 0, 0)), true);
+		assertThat("It should create schedules",result, is(new SynchronizeResult(1, 0, 0)));
 	}
 	@Test
 	public void testSynchronizeSchedules_with_no_policy_and_no_schedules() throws Exception {
@@ -144,7 +172,7 @@ public class ScheduleSyncRestControllerTest {
 		resultActions.andExpect(status().isOk());
 		SynchronizeResult result = new ObjectMapper()
 				.readValue(resultActions.andReturn().getResponse().getContentAsString(), SynchronizeResult.class);
-		assertEquals(result.equals(new SynchronizeResult(0, 0, 0)), true);
+		assertThat("It should do nothing",result, is(new SynchronizeResult(0, 0, 0)));
 	}
 
 }

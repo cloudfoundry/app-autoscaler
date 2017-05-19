@@ -73,7 +73,6 @@ public class PolicyJsonEntity implements RowMapper<PolicyJsonEntity> {
 
 	@Override
 	public PolicyJsonEntity mapRow(ResultSet rs, int rowNum) throws SQLException {
-		// TODO Auto-generated method stub
 		PolicyJsonEntity policyJsonEntity = new PolicyJsonEntity();
 		policyJsonEntity.setAppId(rs.getString("app_id"));
 		policyJsonEntity.setPolicyJson(rs.getString("policy_json"));
@@ -109,7 +108,6 @@ public class PolicyJsonEntity implements RowMapper<PolicyJsonEntity> {
 			}
 			
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			policyJsonEntity.setSchedules(null);
 		}

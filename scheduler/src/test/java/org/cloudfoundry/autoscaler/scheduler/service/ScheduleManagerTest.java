@@ -709,9 +709,9 @@ public class ScheduleManagerTest {
 		when(specificDateScheduleDao.getDistinctAppIdAndGuidList())
 				.thenReturn(new ArrayList<Object[]>());
 		when(recurringScheduleDao.getDistinctAppIdAndGuidList()).thenReturn(new ArrayList<Object[]>());
-		Mockito.when(specificDateScheduleDao.create(Mockito.anyObject()))
+		when(specificDateScheduleDao.create(Mockito.anyObject()))
 				.thenReturn(schedules.getSpecificDate().get(0));
-		Mockito.when(recurringScheduleDao.create(Mockito.anyObject()))
+		when(recurringScheduleDao.create(Mockito.anyObject()))
 				.thenReturn(schedules.getRecurringSchedule().get(0));
 
 		SynchronizeResult result = scheduleManager.synchronizeSchedules();
@@ -753,7 +753,7 @@ public class ScheduleManagerTest {
 	}
 
 	@Test
-	public void testSynchronizeSchedules_with_both_policy_and_schedules_existed() {
+	public void testSynchronizeSchedules_with_both_policy_and_schedules_existed_and_guid_are_different() {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
 		String anotherGuid = TestDataSetupHelper.generateGuid();
@@ -786,12 +786,57 @@ public class ScheduleManagerTest {
 
 		SynchronizeResult result = scheduleManager.synchronizeSchedules();
 		
-		assertEquals(result.equals(new SynchronizeResult(0,1,0)), true);
+		assertThat("It should update the shedules",result, is(new SynchronizeResult(0, 1, 0)));
 
 		this.assertDeleteSchedules(schedules);
 		this.assertCreateSchedules(anotherSchedules, anotherSchedules.getSpecificDate().get(0),
 				anotherSchedules.getRecurringSchedule().get(0), noOfSpecificDateSchedules, noOfDOMRecurringSchedules,
 				noOfDOWRecurringSchedules);
+	}
+	
+	@Test
+	public void testSynchronizeSchedules_with_both_policy_and_schedules_existed_and_guid_are_the_same() {
+		String appId = TestDataSetupHelper.generateAppIds(1)[0];
+		String guid = TestDataSetupHelper.generateGuid();
+		int noOfSpecificDateSchedules = 3;
+		int noOfDOMRecurringSchedules = 3;
+		int noOfDOWRecurringSchedules = 3;
+		
+		List<RecurringScheduleEntity> recurringEntities = new RecurringScheduleEntitiesBuilder(noOfDOMRecurringSchedules, noOfDOWRecurringSchedules).setAppId(appId).setGuid(guid).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
+		List<SpecificDateScheduleEntity> specificDateEntities = new SpecificDateScheduleEntitiesBuilder(noOfSpecificDateSchedules).setAppid(appId).setGuid(guid).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
+		Schedules schedules = new ScheduleBuilder().setSpecificDate(specificDateEntities).setRecurringSchedule(recurringEntities).build();
+		
+		List<RecurringScheduleEntity> anotherRecurringEntities = new RecurringScheduleEntitiesBuilder(noOfDOMRecurringSchedules, noOfDOWRecurringSchedules).setAppId(appId).setGuid(guid).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
+		List<SpecificDateScheduleEntity>  anotherSpecificDateEntities = new SpecificDateScheduleEntitiesBuilder(noOfSpecificDateSchedules).setAppid(appId).setGuid(guid).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
+		Schedules  anotherSchedules = new ScheduleBuilder().setSpecificDate(anotherSpecificDateEntities).setRecurringSchedule(anotherRecurringEntities).build();
+		String[] appIdAndGuid = {appId, guid};
+
+		List<PolicyJsonEntity> policyJsonList = new ArrayList<PolicyJsonEntity>() {
+			{
+				add(new PolicyJsonEntityBuilder(appId, guid, anotherSchedules).build());
+			}
+		};
+		when(policyJsonDao.getAllPolicies()).thenReturn(policyJsonList);
+		when(specificDateScheduleDao.getDistinctAppIdAndGuidList()).thenReturn(new ArrayList(){{add(appIdAndGuid);}});
+		when(recurringScheduleDao.getDistinctAppIdAndGuidList()).thenReturn(new ArrayList(){{add(appIdAndGuid);}});
+		when(specificDateScheduleDao.findAllSpecificDateSchedulesByAppId(appId))
+				.thenReturn(schedules.getSpecificDate());
+		when(recurringScheduleDao.findAllRecurringSchedulesByAppId(appId)).thenReturn(schedules.getRecurringSchedule());
+
+		SynchronizeResult result = scheduleManager.synchronizeSchedules();
+		
+		assertThat("It should not update or create schedule",result, is(new SynchronizeResult(0, 0, 0)));
+		
+		verify(recurringScheduleDao, never()).create(any());
+		verify(specificDateScheduleDao, never()).create(any());
+		verify(activeScheduleDao, never()).create(any());
+
+		verify(recurringScheduleDao, never()).delete(any());
+		verify(specificDateScheduleDao, never()).delete(any());
+		verify(activeScheduleDao, never()).deleteActiveSchedulesByAppId(anyString());
+		verify(scheduleJobManager, never()).createCronJob(any());
+		verify(scheduleJobManager, never()).createSimpleJob(any());
+		verify(scheduleJobManager, never()).deleteJob(anyString(), anyLong(), any());
 	}
 
 	private void assertCreateSchedules(Schedules schedules, SpecificDateScheduleEntity specificDateScheduleEntity,

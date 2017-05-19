@@ -105,7 +105,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 	})
 
 	Describe("Synchronized Schedule", func() {
-		Context("when the app's policy has been updated", func() {
+		Context("when the app's policy has been updated ", func() {
 			BeforeEach(func() {
 				policyStr = string(setPolicyDateTime(readPolicyFromFile("fakePolicyWithSpecificDateSchedule.json")))
 				resp, err := createSchedule(testAppId, testGuid, policyStr)
@@ -124,6 +124,31 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 
 				Eventually(func() bool {
+					return activeScheduleExists(testAppId)
+				}, 2*time.Minute, 5*time.Second).Should(BeTrue())
+
+			})
+		})
+
+		Context("when the app's policy has been updated with the same guid ", func() {
+			BeforeEach(func() {
+				policyStr = string(setPolicyDateTime(readPolicyFromFile("fakePolicyWithSpecificDateSchedule.json")))
+				resp, err := createSchedule(testAppId, testGuid, policyStr)
+				checkResponseIsEmpty(resp, err, http.StatusOK)
+
+				Eventually(func() bool {
+					return activeScheduleExists(testAppId)
+				}, 2*time.Minute, 5*time.Second).Should(BeTrue())
+
+				insertPolicyDirectly(testAppId, policyStr, testGuid)
+
+			})
+			It("not update or create any schedule", func() {
+				resp, err := synchronizeSchedule()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+
+				Consistently(func() bool {
 					return activeScheduleExists(testAppId)
 				}, 2*time.Minute, 5*time.Second).Should(BeTrue())
 
@@ -197,7 +222,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 
-				Eventually(func() bool {
+				Consistently(func() bool {
 					return activeScheduleExists(testAppId)
 				}, 2*time.Minute, 5*time.Second).Should(BeFalse())
 
