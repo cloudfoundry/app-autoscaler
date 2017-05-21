@@ -103,7 +103,6 @@ public class ScheduleSyncRestControllerTest {
 		resultActions.andExpect(status().isOk());
 		SynchronizeResult result = new ObjectMapper()
 				.readValue(resultActions.andReturn().getResponse().getContentAsString(), SynchronizeResult.class);
-		assertEquals(result.equals(new SynchronizeResult(0, 1, 0)), true);
 		assertThat("It should update the shedules",result, is(new SynchronizeResult(0, 1, 0)));
 
 	}

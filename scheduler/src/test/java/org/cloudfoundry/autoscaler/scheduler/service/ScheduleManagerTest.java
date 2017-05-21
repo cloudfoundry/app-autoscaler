@@ -40,8 +40,10 @@ import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.PolicyJsonEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
+import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationSchedules;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.Schedules;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.SynchronizeResult;
+import org.cloudfoundry.autoscaler.scheduler.util.ApplicationPolicyBuilder;
 import org.cloudfoundry.autoscaler.scheduler.util.ConsulUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.PolicyJsonEntityBuilder;
 import org.cloudfoundry.autoscaler.scheduler.util.RecurringScheduleEntitiesBuilder;
@@ -78,6 +80,8 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestOperations;
 import org.springframework.web.client.RestTemplate;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -669,7 +673,7 @@ public class ScheduleManagerTest {
 				.thenReturn(new ArrayList<Object[]>());
 		SynchronizeResult result = scheduleManager.synchronizeSchedules();
 		
-		assertEquals(result.equals(new SynchronizeResult(0,0,0)), true);
+		assertThat("It should do nothing",result, is(new SynchronizeResult(0, 0, 0)));
 		verify(policyJsonDao, times(1)).getAllPolicies();
 		verify(recurringScheduleDao, times(1)).getDistinctAppIdAndGuidList();
 		verify(specificDateScheduleDao, times(1)).getDistinctAppIdAndGuidList();
@@ -688,7 +692,7 @@ public class ScheduleManagerTest {
 	}
 
 	@Test
-	public void testSynchronizeSchedules_with_existed_policy_and_no_schedule() {
+	public void testSynchronizeSchedules_with_existed_policy_and_no_schedule() throws JsonProcessingException {
 
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
@@ -696,13 +700,14 @@ public class ScheduleManagerTest {
 		int noOfDOMRecurringSchedules = 3;
 		int noOfDOWRecurringSchedules = 3;
 
-		List<RecurringScheduleEntity> recurringEntities = new RecurringScheduleEntitiesBuilder(noOfDOMRecurringSchedules, noOfDOWRecurringSchedules).setAppId(appId).setGuid(guid).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
-		List<SpecificDateScheduleEntity> specificDateEntities = new SpecificDateScheduleEntitiesBuilder(noOfSpecificDateSchedules).setAppid(appId).setGuid(guid).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
-		Schedules schedules = new ScheduleBuilder().setSpecificDate(specificDateEntities).setRecurringSchedule(recurringEntities).build();
-
+		List<RecurringScheduleEntity> recurringEntities = new RecurringScheduleEntitiesBuilder(noOfDOMRecurringSchedules, noOfDOWRecurringSchedules).setAppId(appId).setGuid(guid).setTimeZone("timeZone").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
+		List<SpecificDateScheduleEntity> specificDateEntities = new SpecificDateScheduleEntitiesBuilder(noOfSpecificDateSchedules).setAppid(appId).setGuid(guid).setTimeZone("timeZone").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
+		Schedules schedules = new ScheduleBuilder().setSpecificDate(specificDateEntities).setRecurringSchedule(recurringEntities).setTimeZone("timeZone").build();
+		ApplicationSchedules applicationSchedule = new ApplicationPolicyBuilder(1,5).setSchedules(schedules).build();
+		
 		List<PolicyJsonEntity> policyJsonList = new ArrayList<PolicyJsonEntity>() {
 			{
-				add(new PolicyJsonEntityBuilder(appId, guid, schedules).build());
+				add(new PolicyJsonEntityBuilder(appId, guid, applicationSchedule).build());
 			}
 		};
 		when(policyJsonDao.getAllPolicies()).thenReturn(policyJsonList);
@@ -716,7 +721,7 @@ public class ScheduleManagerTest {
 
 		SynchronizeResult result = scheduleManager.synchronizeSchedules();
 		
-		assertEquals(result.equals(new SynchronizeResult(1,0,0)), true);
+		assertEquals("It should create schedules",result,new SynchronizeResult(1, 0, 0));
 
 		this.assertCreateSchedules(schedules, schedules.getSpecificDate().get(0),
 				schedules.getRecurringSchedule().get(0), noOfSpecificDateSchedules, noOfDOMRecurringSchedules,
@@ -731,9 +736,9 @@ public class ScheduleManagerTest {
 		int noOfDOMRecurringSchedules = 3;
 		int noOfDOWRecurringSchedules = 3;
 		
-		List<RecurringScheduleEntity> recurringEntities = new RecurringScheduleEntitiesBuilder(noOfDOMRecurringSchedules, noOfDOWRecurringSchedules).setAppId(appId).setGuid(guid).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
-		List<SpecificDateScheduleEntity> specificDateEntities = new SpecificDateScheduleEntitiesBuilder(noOfSpecificDateSchedules).setAppid(appId).setGuid(guid).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
-		Schedules schedules = new ScheduleBuilder().setSpecificDate(specificDateEntities).setRecurringSchedule(recurringEntities).build();
+		List<RecurringScheduleEntity> recurringEntities = new RecurringScheduleEntitiesBuilder(noOfDOMRecurringSchedules, noOfDOWRecurringSchedules).setAppId(appId).setGuid(guid).setTimeZone("timeZone").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
+		List<SpecificDateScheduleEntity> specificDateEntities = new SpecificDateScheduleEntitiesBuilder(noOfSpecificDateSchedules).setAppid(appId).setGuid(guid).setTimeZone("timeZone").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
+		Schedules schedules = new ScheduleBuilder().setSpecificDate(specificDateEntities).setRecurringSchedule(recurringEntities).setTimeZone("tomeZone").build();
 		String[] appIdAndGuid = {appId, guid};
 		
 		when(policyJsonDao.getAllPolicies()).thenReturn(new ArrayList<PolicyJsonEntity>());
@@ -745,7 +750,7 @@ public class ScheduleManagerTest {
 
 		SynchronizeResult result = scheduleManager.synchronizeSchedules();
 		
-		assertEquals(result.equals(new SynchronizeResult(0,0,1)), true);
+		assertThat("It should delete the schedules",result, is(new SynchronizeResult(0, 0, 1)));
 
 		this.assertDeleteSchedules(schedules);
 		
@@ -753,7 +758,7 @@ public class ScheduleManagerTest {
 	}
 
 	@Test
-	public void testSynchronizeSchedules_with_both_policy_and_schedules_existed_and_guid_are_different() {
+	public void testSynchronizeSchedules_with_both_policy_and_schedules_existed_and_guid_are_different() throws JsonProcessingException {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
 		String anotherGuid = TestDataSetupHelper.generateGuid();
@@ -761,18 +766,20 @@ public class ScheduleManagerTest {
 		int noOfDOMRecurringSchedules = 3;
 		int noOfDOWRecurringSchedules = 3;
 		
-		List<RecurringScheduleEntity> recurringEntities = new RecurringScheduleEntitiesBuilder(noOfDOMRecurringSchedules, noOfDOWRecurringSchedules).setAppId(appId).setGuid(guid).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
-		List<SpecificDateScheduleEntity> specificDateEntities = new SpecificDateScheduleEntitiesBuilder(noOfSpecificDateSchedules).setAppid(appId).setGuid(guid).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
-		Schedules schedules = new ScheduleBuilder().setSpecificDate(specificDateEntities).setRecurringSchedule(recurringEntities).build();
+		List<RecurringScheduleEntity> recurringEntities = new RecurringScheduleEntitiesBuilder(noOfDOMRecurringSchedules, noOfDOWRecurringSchedules).setAppId(appId).setGuid(guid).setTimeZone("timeZone").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
+		List<SpecificDateScheduleEntity> specificDateEntities = new SpecificDateScheduleEntitiesBuilder(noOfSpecificDateSchedules).setAppid(appId).setGuid(guid).setTimeZone("timeZone").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
+		Schedules schedules = new ScheduleBuilder().setSpecificDate(specificDateEntities).setRecurringSchedule(recurringEntities).setTimeZone("tomeZone").build();
 		
-		List<RecurringScheduleEntity> anotherRecurringEntities = new RecurringScheduleEntitiesBuilder(noOfDOMRecurringSchedules, noOfDOWRecurringSchedules).setAppId(appId).setGuid(guid).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
-		List<SpecificDateScheduleEntity>  anotherSpecificDateEntities = new SpecificDateScheduleEntitiesBuilder(noOfSpecificDateSchedules).setAppid(appId).setGuid(guid).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
-		Schedules  anotherSchedules = new ScheduleBuilder().setSpecificDate(anotherSpecificDateEntities).setRecurringSchedule(anotherRecurringEntities).build();
+		List<RecurringScheduleEntity> anotherRecurringEntities = new RecurringScheduleEntitiesBuilder(noOfDOMRecurringSchedules, noOfDOWRecurringSchedules).setAppId(appId).setGuid(anotherGuid).setTimeZone("timeZone").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
+		List<SpecificDateScheduleEntity>  anotherSpecificDateEntities = new SpecificDateScheduleEntitiesBuilder(noOfSpecificDateSchedules).setAppid(appId).setGuid(anotherGuid).setTimeZone("timeZone").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
+		Schedules  anotherSchedules = new ScheduleBuilder().setSpecificDate(anotherSpecificDateEntities).setRecurringSchedule(anotherRecurringEntities).setTimeZone("timeZone").build();
+		ApplicationSchedules anotherApplicationSchedule = new ApplicationPolicyBuilder(1,5).setSchedules(anotherSchedules).build();
+		
 		String[] appIdAndGuid = {appId, guid};
 
 		List<PolicyJsonEntity> policyJsonList = new ArrayList<PolicyJsonEntity>() {
 			{
-				add(new PolicyJsonEntityBuilder(appId, anotherGuid, anotherSchedules).build());
+				add(new PolicyJsonEntityBuilder(appId, anotherGuid, anotherApplicationSchedule).build());
 			}
 		};
 		when(policyJsonDao.getAllPolicies()).thenReturn(policyJsonList);
@@ -795,25 +802,27 @@ public class ScheduleManagerTest {
 	}
 	
 	@Test
-	public void testSynchronizeSchedules_with_both_policy_and_schedules_existed_and_guid_are_the_same() {
+	public void testSynchronizeSchedules_with_both_policy_and_schedules_existed_and_guid_are_the_same() throws JsonProcessingException {
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
 		int noOfSpecificDateSchedules = 3;
 		int noOfDOMRecurringSchedules = 3;
 		int noOfDOWRecurringSchedules = 3;
 		
-		List<RecurringScheduleEntity> recurringEntities = new RecurringScheduleEntitiesBuilder(noOfDOMRecurringSchedules, noOfDOWRecurringSchedules).setAppId(appId).setGuid(guid).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
-		List<SpecificDateScheduleEntity> specificDateEntities = new SpecificDateScheduleEntitiesBuilder(noOfSpecificDateSchedules).setAppid(appId).setGuid(guid).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
-		Schedules schedules = new ScheduleBuilder().setSpecificDate(specificDateEntities).setRecurringSchedule(recurringEntities).build();
+		List<RecurringScheduleEntity> recurringEntities = new RecurringScheduleEntitiesBuilder(noOfDOMRecurringSchedules, noOfDOWRecurringSchedules).setAppId(appId).setGuid(guid).setTimeZone("timeZone").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
+		List<SpecificDateScheduleEntity> specificDateEntities = new SpecificDateScheduleEntitiesBuilder(noOfSpecificDateSchedules).setAppid(appId).setGuid(guid).setTimeZone("timeZone").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
+		Schedules schedules = new ScheduleBuilder().setSpecificDate(specificDateEntities).setRecurringSchedule(recurringEntities).setTimeZone("tomeZone").build();
 		
-		List<RecurringScheduleEntity> anotherRecurringEntities = new RecurringScheduleEntitiesBuilder(noOfDOMRecurringSchedules, noOfDOWRecurringSchedules).setAppId(appId).setGuid(guid).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
-		List<SpecificDateScheduleEntity>  anotherSpecificDateEntities = new SpecificDateScheduleEntitiesBuilder(noOfSpecificDateSchedules).setAppid(appId).setGuid(guid).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
-		Schedules  anotherSchedules = new ScheduleBuilder().setSpecificDate(anotherSpecificDateEntities).setRecurringSchedule(anotherRecurringEntities).build();
+		List<RecurringScheduleEntity> anotherRecurringEntities = new RecurringScheduleEntitiesBuilder(noOfDOMRecurringSchedules, noOfDOWRecurringSchedules).setAppId(appId).setGuid(guid).setTimeZone("timeZone").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
+		List<SpecificDateScheduleEntity>  anotherSpecificDateEntities = new SpecificDateScheduleEntitiesBuilder(noOfSpecificDateSchedules).setAppid(appId).setGuid(guid).setTimeZone("timeZone").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).setScheduleId().build();
+		Schedules  anotherSchedules = new ScheduleBuilder().setSpecificDate(anotherSpecificDateEntities).setRecurringSchedule(anotherRecurringEntities).setTimeZone("tomeZone").build();
+		ApplicationSchedules anotherapplicationSchedule = new ApplicationPolicyBuilder(1,5).setSchedules(anotherSchedules).build();
+		
 		String[] appIdAndGuid = {appId, guid};
 
 		List<PolicyJsonEntity> policyJsonList = new ArrayList<PolicyJsonEntity>() {
 			{
-				add(new PolicyJsonEntityBuilder(appId, guid, anotherSchedules).build());
+				add(new PolicyJsonEntityBuilder(appId, guid, anotherapplicationSchedule).build());
 			}
 		};
 		when(policyJsonDao.getAllPolicies()).thenReturn(policyJsonList);
@@ -838,20 +847,29 @@ public class ScheduleManagerTest {
 		verify(scheduleJobManager, never()).createSimpleJob(any());
 		verify(scheduleJobManager, never()).deleteJob(anyString(), anyLong(), any());
 	}
-
+	@Captor ArgumentCaptor<RecurringScheduleEntity> recurringCaptor;
+	@Captor ArgumentCaptor<SpecificDateScheduleEntity> specificDateCaptor;
 	private void assertCreateSchedules(Schedules schedules, SpecificDateScheduleEntity specificDateScheduleEntity,
 			RecurringScheduleEntity recurringScheduleEntity, int noOfSpecificDateSchedules,
 			int noOfDOMRecurringSchedules, int noOfDOWRecurringSchedules) {
-
+		
 		if (schedules.getSpecificDate() != null) {
+			Mockito.verify(specificDateScheduleDao, Mockito.times(noOfSpecificDateSchedules)).create(specificDateCaptor.capture());
+			List<SpecificDateScheduleEntity> specificDateList = specificDateCaptor.getAllValues();
+			int i = 0;
 			for (SpecificDateScheduleEntity foundSpecificDateScheduleEntity : schedules.getSpecificDate()) {
-				Mockito.verify(specificDateScheduleDao, Mockito.times(1)).create(foundSpecificDateScheduleEntity);
+				assertEquals(foundSpecificDateScheduleEntity,specificDateList.get(i));
+				i++;
 			}
 		}
 
 		if (schedules.getRecurringSchedule() != null) {
+			Mockito.verify(recurringScheduleDao, Mockito.times(noOfDOMRecurringSchedules + noOfDOWRecurringSchedules)).create(recurringCaptor.capture());
+			List<RecurringScheduleEntity> recurringList = recurringCaptor.getAllValues();
+			int i = 0;
 			for (RecurringScheduleEntity foundRecurringScheduleEntity : schedules.getRecurringSchedule()) {
-				Mockito.verify(recurringScheduleDao, Mockito.times(1)).create(foundRecurringScheduleEntity);
+				assertEquals(foundRecurringScheduleEntity,recurringList.get(i));
+				i++;
 			}
 		}
 

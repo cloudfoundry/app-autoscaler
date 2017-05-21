@@ -97,7 +97,7 @@ public class SpecificDateScheduleEntity extends ScheduleEntity {
 
 	@Override
 	public String toString() {
-		return "SpecificDateScheduleEntity [startDateTime=" + startDateTime + ", endDateTime=" + endDateTime + "]";
+		return super.toString() + ", SpecificDateScheduleEntity [startDateTime=" + startDateTime + ", endDateTime=" + endDateTime + "]";
 	}
 
 }

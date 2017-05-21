@@ -25,8 +25,18 @@ public class Schedules {
 	private List<RecurringScheduleEntity> recurringSchedule;
 
 	public boolean hasSchedules() {
-		if ((specificDate == null || specificDate.isEmpty())
-				&& (recurringSchedule == null || recurringSchedule.isEmpty())) {
+		return this.hasRecurringSchedule() || this.hasSpecificDateSchedule();
+	}
+
+	public boolean hasRecurringSchedule() {
+		if ((recurringSchedule == null || recurringSchedule.isEmpty())) {
+			return false;
+		}
+		return true;
+	}
+
+	public boolean hasSpecificDateSchedule() {
+		if ((specificDate == null || specificDate.isEmpty())) {
 			return false;
 		}
 		return true;

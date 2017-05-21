@@ -169,7 +169,7 @@ public class RecurringScheduleEntity extends ScheduleEntity {
 
 	@Override
 	public String toString() {
-		return "RecurringScheduleEntity [startTime=" + startTime + ", endTime=" + endTime + ", startDate=" + startDate
+		return super.toString() + ", RecurringScheduleEntity [startTime=" + startTime + ", endTime=" + endTime + ", startDate=" + startDate
 				+ ", endDate=" + endDate + ", dayOfWeek=" + Arrays.toString(daysOfWeek) + ", dayOfMonth="
 				+ Arrays.toString(daysOfMonth) + "]";
 	}

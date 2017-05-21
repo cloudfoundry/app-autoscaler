@@ -115,7 +115,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 					return activeScheduleExists(testAppId)
 				}, 2*time.Minute, 5*time.Second).Should(BeTrue())
 
-				insertPolicyDirectly(testAppId, policyStr, anouterGuid)
+				insertPolicy(testAppId, policyStr, anouterGuid)
 
 			})
 			It("updates the schedules", func() {
@@ -140,7 +140,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 					return activeScheduleExists(testAppId)
 				}, 2*time.Minute, 5*time.Second).Should(BeTrue())
 
-				insertPolicyDirectly(testAppId, policyStr, testGuid)
+				insertPolicy(testAppId, policyStr, testGuid)
 
 			})
 			It("not update or create any schedule", func() {
@@ -183,7 +183,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 		Context("when the app's policy has been created", func() {
 			BeforeEach(func() {
 				policyStr = string(setPolicyDateTime(readPolicyFromFile("fakePolicyWithSpecificDateSchedule.json")))
-				insertPolicyDirectly(testAppId, policyStr, anouterGuid)
+				insertPolicy(testAppId, policyStr, anouterGuid)
 
 				_, err := deleteSchedule(testAppId)
 				Expect(err).NotTo(HaveOccurred())

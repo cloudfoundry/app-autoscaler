@@ -1,5 +1,6 @@
 package org.cloudfoundry.autoscaler.scheduler.service;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -43,6 +44,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestOperations;
+
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Service class to persist the schedule entity in the database and create
@@ -763,15 +767,17 @@ public class ScheduleManager {
 		int createCount = 0;
 		int updateCount = 0;
 		int deleteCount = 0;
-		Map<String, PolicyJsonEntity> policyMap = new HashMap<String, PolicyJsonEntity>();
+		Map<String, ApplicationSchedules> policySchedulesMap = new HashMap<String, ApplicationSchedules>();
 		Map<String, String> appIdAndGuidMap = new HashMap<String, String>();
+		Map<String, String> scheduleAppIdGuidMap = new HashMap<String, String>();
 		List<PolicyJsonEntity> policyList = policyJsonDao.getAllPolicies();
 		List recurringScheduleList = recurringScheduleDao.getDistinctAppIdAndGuidList();
 		List specificDateScheduleList = specificDateScheduleDao.getDistinctAppIdAndGuidList();
 		//create or updated
 		if(policyList.size() > 0){
 			for(PolicyJsonEntity policy : policyList){
-				policyMap.put(policy.getAppId(), policy);
+				policySchedulesMap.put(policy.getAppId(), this.parseSchedulesFromPolicy(policy));
+				scheduleAppIdGuidMap.put(policy.getAppId(), policy.getGuid());
 			}
 		}
 		
@@ -789,37 +795,32 @@ public class ScheduleManager {
 			}
 		}
 		
-		List<PolicyJsonEntity> toCreatePolicyList = new ArrayList<PolicyJsonEntity>();
+		List<ApplicationSchedules> toCreateScheduleList = new ArrayList<ApplicationSchedules>();
 		Set<String> toDeletedAppIds = new HashSet<String>();
-		for (String appIdInPolicy : policyMap.keySet()) {
-			if (policyMap.get(appIdInPolicy).getSchedules() != null
-					&& policyMap.get(appIdInPolicy).getSchedules().getSchedules() != null) {
-				if (policyMap.get(appIdInPolicy).getSchedules().getSchedules().getRecurringSchedule() != null
-						&& policyMap.get(appIdInPolicy).getSchedules().getSchedules().getRecurringSchedule()
-								.size() > 0) {
+		for (String appIdInPolicy : policySchedulesMap.keySet()) {
+			if (policySchedulesMap.get(appIdInPolicy).getSchedules() != null) {
+				if (policySchedulesMap.get(appIdInPolicy).getSchedules().hasRecurringSchedule()) {
 					if (appIdAndGuidMap.get(appIdInPolicy) == null) {
-						toCreatePolicyList.add(policyMap.get(appIdInPolicy));
+						toCreateScheduleList.add(policySchedulesMap.get(appIdInPolicy));
 						createCount++;
 						continue;
-					} else if (!policyMap.get(appIdInPolicy).getGuid()
+					} else if (!scheduleAppIdGuidMap.get(appIdInPolicy)
 							.equals(appIdAndGuidMap.get(appIdInPolicy))) {
-						toCreatePolicyList.add(policyMap.get(appIdInPolicy));
+						toCreateScheduleList.add(policySchedulesMap.get(appIdInPolicy));
 						toDeletedAppIds.add(appIdInPolicy);
 						updateCount++;
 						continue;
 					}
 				}
 				
-				if (policyMap.get(appIdInPolicy).getSchedules().getSchedules().getSpecificDate() != null
-						&& policyMap.get(appIdInPolicy).getSchedules().getSchedules().getSpecificDate()
-								.size() > 0) {
+				if (policySchedulesMap.get(appIdInPolicy).getSchedules().hasSpecificDateSchedule()) {
 					if (appIdAndGuidMap.get(appIdInPolicy) == null) {
-						toCreatePolicyList.add(policyMap.get(appIdInPolicy));
+						toCreateScheduleList.add(policySchedulesMap.get(appIdInPolicy));
 						createCount++;
 						continue;
-					} else if (!policyMap.get(appIdInPolicy).getGuid()
+					} else if (!scheduleAppIdGuidMap.get(appIdInPolicy)
 							.equals(appIdAndGuidMap.get(appIdInPolicy))) {
-						toCreatePolicyList.add(policyMap.get(appIdInPolicy));
+						toCreateScheduleList.add(policySchedulesMap.get(appIdInPolicy));
 						toDeletedAppIds.add(appIdInPolicy);
 						updateCount++;
 						continue;
@@ -830,7 +831,7 @@ public class ScheduleManager {
 		}
 		
 		Set<String> appIdInScheduleSet = new HashSet<String>();
-		Set<String> appIdInPolicySet = policyMap.keySet();
+		Set<String> appIdInPolicySet = policySchedulesMap.keySet();
 		appIdInScheduleSet.addAll(appIdAndGuidMap.keySet());
 		for(String appId : appIdInScheduleSet){
 			if(!appIdInPolicySet.contains(appId)){
@@ -842,14 +843,52 @@ public class ScheduleManager {
 			this.deleteSchedules(appId);
 		}
 		
-		for(PolicyJsonEntity policyJson : toCreatePolicyList){
-			this.createSchedules(policyJson.getSchedules().getSchedules());
+		for(ApplicationSchedules schedule : toCreateScheduleList){
+			this.createSchedules(schedule.getSchedules());
 		}		
 		
 		return new SynchronizeResult(createCount,updateCount,deleteCount);
 		
 	}
 	
+	private ApplicationSchedules parseSchedulesFromPolicy(PolicyJsonEntity policyJsonEntity){
+		ObjectMapper mapper = new ObjectMapper();
+		String policyJson = policyJsonEntity.getPolicyJson();
+		ApplicationSchedules applicationSchedules = null;
+		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		try {
+			applicationSchedules = mapper.readValue(policyJson, ApplicationSchedules.class);
+			if(applicationSchedules!=null && applicationSchedules.getSchedules()!=null&&applicationSchedules.getSchedules().hasSchedules()){
+				Schedules schedules = applicationSchedules.getSchedules();
+				List<RecurringScheduleEntity> recurringSchedules = schedules.getRecurringSchedule();
+				List<SpecificDateScheduleEntity> specificDateSchedules = schedules.getSpecificDate();
+				if(recurringSchedules != null){
+					for(RecurringScheduleEntity recurring : recurringSchedules){
+						recurring.setAppId(policyJsonEntity.getAppId());
+						recurring.setTimeZone(schedules.getTimeZone());
+						recurring.setDefaultInstanceMinCount(applicationSchedules.getInstanceMinCount());
+						recurring.setDefaultInstanceMaxCount(applicationSchedules.getInstanceMaxCount());
+						recurring.setGuid(policyJsonEntity.getGuid());
+					}
+				}
+				if(specificDateSchedules != null){
+					for(SpecificDateScheduleEntity specificDate : specificDateSchedules){
+						specificDate.setAppId(policyJsonEntity.getAppId());
+						specificDate.setTimeZone(schedules.getTimeZone());
+						specificDate.setDefaultInstanceMinCount(applicationSchedules.getInstanceMinCount());
+						specificDate.setDefaultInstanceMaxCount(applicationSchedules.getInstanceMaxCount());
+						specificDate.setGuid(policyJsonEntity.getGuid());
+					}
+				}
+				 
+			}
+			
+		} catch (IOException e) {
+			e.printStackTrace();
+			applicationSchedules = null;
+		}
+		return applicationSchedules;
+	}
 	private void notifyScalingEngineForDelete(String appId, long scheduleId) {
 		String scalingEnginePathActiveSchedule = ScalingEngineUtil.getScalingEngineActiveSchedulePath(scalingEngineUrl,
 				appId, scheduleId);
