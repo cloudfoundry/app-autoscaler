@@ -3,39 +3,40 @@
 var path = require('path');
 var expect = require('chai').expect;
 var configSetting = require(path.join(__dirname, '../../lib/config/setting.js'));
-var defaultConfig = {
-  "port": 80,
-  "username": "username",
-  "password": "password",
-  "db": {
-    "maxConnections": 10,
-    "minConnections": 0,
-    "idleTimeout": 1000,
-    "uri": "postgres://postgres@server:80/dbname"
-  },
-  "apiserver": {
-    "uri": "https://autoscaler.boshlite.com",
-    "tls": {
-      "keyFile":"../test-certs/api.key",
-      "certFile":"../test-certs/api.crt",
-      "caCertFile":"../test-certs/autoscaler-ca.crt"
-      }
-  },
-  "httpRequestTimeout": 5000,
-  "tls": {
-    "keyFile": "keyFilePath",
-    "certFile": "certFilePath",
-    "caCertFile": "caCertFilePath"
-  },
-  "serviceCatalogPath" : "catalogPath"
-}
+var defaultConfig;
 
 var settingTmp = {};
 var settings;
 
 describe('config setting Test Suite', function() {
   beforeEach(function() {
-    settings = configSetting(defaultConfig)
+    defaultConfig = {
+      "port": 80,
+      "username": "username",
+      "password": "password",
+      "db": {
+        "maxConnections": 10,
+        "minConnections": 0,
+        "idleTimeout": 1000,
+        "uri": "postgres://postgres@server:80/dbname"
+      },
+      "apiserver": {
+        "uri": "https://autoscaler.boshlite.com",
+        "tls": {
+          "keyFile":"../test-certs/api.key",
+          "certFile":"../test-certs/api.crt",
+          "caCertFile":"../test-certs/autoscaler-ca.crt"
+          }
+      },
+      "httpRequestTimeout": 5000,
+      "tls": {
+        "keyFile": "keyFilePath",
+        "certFile": "certFilePath",
+        "caCertFile": "caCertFilePath"
+      },
+      "serviceCatalogPath" : "catalogPath"
+    };
+    settings = configSetting(defaultConfig);
   });
 
   it('Should contain the default configuration', function() {
@@ -71,24 +72,28 @@ describe('config setting Test Suite', function() {
         it('Should return false', function() {
           settings.port = null;
           expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("The port must be a number");
         })
       });
       context('When port is undefined', function() {
         it('Should return false', function() {
           delete settings.port
           expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("The port must be a number");
         })
       });
       context('When port is not an integer', function() {
         it('Should return false', function() {
           settings.port = "80";
           expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("The port must be a number");
         })
       });
       context('When the port is out of range', function() {
         it('Should return false', function() {
           settings.port = 70000
           expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("The value of port must between 0 and 65536");
         })
       });
     });
@@ -98,12 +103,14 @@ describe('config setting Test Suite', function() {
         it('Should return false', function() {
           settings.username = null;
           expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("username is required");
         })
       });
       context('When username is undefined', function() {
         it('Should return false', function() {
           delete settings.username
           expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("username is required");
         })
       });
     });
@@ -113,12 +120,14 @@ describe('config setting Test Suite', function() {
         it('Should return false', function() {
           settings.password = null
           expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("password is required");
         })
       });
       context('When password is undefined', function() {
         it('Should return false', function() {
           delete settings.password
           expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("password is required");
         })
       });
     });
@@ -127,24 +136,28 @@ describe('config setting Test Suite', function() {
         it('Should return false', function() {
           settings.db.maxConnections = null;
           expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("maxConnections is required");
         })
       });
       context('When db.maxConnections is undefined', function() {
         it('Should return false', function() {
           delete settings.db.maxConnections
           expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("maxConnections is required");
         })
       });
       context('When db.maxConnections is not an integer', function() {
         it('Should return false', function() {
           settings.db.maxConnections = "10";
           expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("maxConnections is required");
         })
       });
       context('When the db.maxConnections is out of range', function() {
         it('Should return false', function() {
           settings.db.maxConnections = -10;
           expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("maxConnections must be greater than 0");
         })
       });
     });
@@ -154,24 +167,28 @@ describe('config setting Test Suite', function() {
         it('Should return false', function() {
           settings.db.minConnections = null;
           expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("minConnections is required");
         })
       });
       context('When db.minConnections is undefined', function() {
         it('Should return false', function() {
           delete settings.db.minConnections
           expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("minConnections is required");
         })
       });
       context('When db.minConnections is not an integer', function() {
         it('Should return false', function() {
           settings.db.minConnections = "10";
           expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("minConnections is required");
         })
       });
       context('When the db.minConnections is out of range', function() {
         it('Should return false', function() {
           settings.db.minConnections = -10;
           expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("minConnections must be greater than 0");
         })
       });
     });
@@ -181,24 +198,28 @@ describe('config setting Test Suite', function() {
         it('Should return false', function() {
           settings.db.idleTimeout = null;
           expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("idleTimeout is required");
         })
       });
       context('When db.idleTimeout is undefined', function() {
         it('Should return false', function() {
           delete settings.db.idleTimeout
           expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("idleTimeout is required");
         })
       });
       context('When db.idleTimeout is not an integer', function() {
         it('Should return false', function() {
           settings.db.idleTimeout = "1000";
           expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("idleTimeout is required");
         })
       });
       context('When the db.idleTimeout is out of range', function() {
         it('Should return false', function() {
           settings.db.idleTimeout = -1000;
           expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("idleTimeout must be greater than 0");
         })
       });
     });
@@ -207,12 +228,14 @@ describe('config setting Test Suite', function() {
         it('Should return false', function() {
           settings.db.uri = null
           expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("dbUri is required");
         })
       });
       context('When db.uri is undefined', function() {
         it('Should return false', function() {
           delete settings.db.uri
           expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("dbUri is required");
         })
       });
     });
@@ -253,12 +276,14 @@ describe('config setting Test Suite', function() {
         it('Should return false', function() {
           settings.apiserver.uri = null
           expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("apiserver uri is required");
         })
       });
       context('When apiserver uri is undefined', function() {
         it('Should return false', function() {
           delete settings.apiserver.uri
           expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("apiserver uri is required");
         })
       });
     });
@@ -268,24 +293,28 @@ describe('config setting Test Suite', function() {
         it('Should return false', function() {
           settings.httpRequestTimeout = null;
           expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("The httpRequestTimeout must be a number");
         })
       });
       context('When httpRequestTimeout is undefined', function() {
         it('Should return false', function() {
           delete settings.httpRequestTimeout
           expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("The httpRequestTimeout must be a number");
         })
       });
       context('When httpRequestTimeout is not an integer', function() {
         it('Should return false', function() {
           settings.httpRequestTimeout = "1000";
           expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("The httpRequestTimeout must be a number");
         })
       });
       context('When the httpRequestTimeout is out of range', function() {
         it('Should return false', function() {
           settings.httpRequestTimeout = -1
           expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("The value of httpRequestTimeout must be greater than 0");
         })
       });
   });
@@ -294,19 +323,22 @@ describe('config setting Test Suite', function() {
     context('When tls is null', function(){
       it('Should return false',function(){
         settings.tls = null;
-        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("tls is required");
       });
     });
     context('When tls is undefined', function(){
       it('Should return false',function(){
         delete settings.tls;
-        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("tls is required");
       });
     });
     context('When tls is not an object', function(){
       it('Should return false',function(){
         settings.tls = "notobject";
-        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("tls must be an object");
       });
     });
   });
@@ -315,13 +347,15 @@ describe('config setting Test Suite', function() {
     context('When tls.keyFile is null', function(){
       it('Should return false',function(){
         settings.tls.keyFile = null;
-        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("tls.keyFile is required");
       });
     });
     context('When tls.keyFile is undefined', function(){
       it('Should return false',function(){
         delete settings.tls.keyFile;
-        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("tls.keyFile is required");
       });
     });
   });
@@ -330,13 +364,15 @@ describe('config setting Test Suite', function() {
     context('When tls.certFile is null', function(){
       it('Should return false',function(){
         settings.tls.certFile = null;
-        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("tls.certFile is required");
       });
     });
     context('When tls.certFile is undefined', function(){
       it('Should return false',function(){
         delete settings.tls.certFile;
-        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("tls.certFile is required");
       });
     });
   });
@@ -345,13 +381,15 @@ describe('config setting Test Suite', function() {
     context('When tls.caCertFile is null', function(){
       it('Should return false',function(){
         settings.tls.caCertFile = null;
-        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("tls.caCertFile is required");
       });
     });
     context('When tls.caCertFile is undefined', function(){
       it('Should return false',function(){
         delete settings.tls.caCertFile;
-        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("tls.caCertFile is required");
       });
     });
   });
@@ -360,13 +398,15 @@ context('Validate apiserver client tls.keyFile', function(){
     context('When apiserver client tls.keyFile is null', function(){
       it('Should return false',function(){
         settings.apiserver.tls.keyFile = null;
-        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("apiserver tls.keyFile is required");
       });
     });
     context('When apiserver client tls.keyFile is undefined', function(){
       it('Should return false',function(){
         delete settings.apiserver.tls.keyFile;
-        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("apiserver tls.keyFile is required");
       });
     });
   });
@@ -375,13 +415,15 @@ context('Validate apiserver client tls.keyFile', function(){
     context('When apiserver client tls.certFile is null', function(){
       it('Should return false',function(){
         settings.apiserver.tls.certFile = null;
-        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("apiserver tls.certFile is required");
       });
     });
     context('When apiserver client tls.certFile is undefined', function(){
       it('Should return false',function(){
         delete settings.apiserver.tls.certFile;
-        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("apiserver tls.certFile is required");
       });
     });
   });
@@ -390,13 +432,15 @@ context('Validate apiserver client tls.keyFile', function(){
     context('When apiserver client tls.caCertFile is null', function(){
       it('Should return false',function(){
         settings.apiserver.tls.caCertFile = null;
-        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("apiserver tls.caCertFile is required");
       });
     });
     context('When apiserver client tls.caCertFile is undefined', function(){
       it('Should return false',function(){
         delete settings.apiserver.tls.caCertFile;
-        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("apiserver tls.caCertFile is required");
       });
     });
   });
@@ -405,19 +449,22 @@ context('Validate apiserver client tls.keyFile', function(){
     context('When apiserver client tls is null', function(){
       it('Should return false',function(){
         settings.apiserver.tls = null;
-        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("apiserver tls is required");
       });
     });
     context('When apiserver client tls  is undefined', function(){
       it('Should return false',function(){
         delete settings.apiserver.tls;
-        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("apiserver tls is required");
       });
     });
     context('When apiserver client tls is not an object', function(){
       it('Should return false',function(){
         settings.apiserver.tls = "notobject";
-        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("apiserver tls must be an object");
       });
     });
 });
@@ -426,13 +473,15 @@ context('Validate Service Catalog', function(){
     context('When catalogPath is null', function(){
       it('Should return false',function(){
         settings.serviceCatalogPath = null;
-        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("serviceCatalogPath is required");
       });
     });
     context('When catalogPath is undefined', function(){
       it('Should return false',function(){
         delete settings.serviceCatalogPath;
-        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("serviceCatalogPath is required");
       });
     });
   });
