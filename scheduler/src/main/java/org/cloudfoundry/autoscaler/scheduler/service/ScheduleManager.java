@@ -798,35 +798,18 @@ public class ScheduleManager {
 		List<ApplicationSchedules> toCreateScheduleList = new ArrayList<ApplicationSchedules>();
 		Set<String> toDeletedAppIds = new HashSet<String>();
 		for (String appIdInPolicy : policySchedulesMap.keySet()) {
-			if (policySchedulesMap.get(appIdInPolicy).getSchedules() != null) {
-				if (policySchedulesMap.get(appIdInPolicy).getSchedules().hasRecurringSchedule()) {
-					if (appIdAndGuidMap.get(appIdInPolicy) == null) {
-						toCreateScheduleList.add(policySchedulesMap.get(appIdInPolicy));
-						createCount++;
-						continue;
-					} else if (!scheduleAppIdGuidMap.get(appIdInPolicy)
-							.equals(appIdAndGuidMap.get(appIdInPolicy))) {
-						toCreateScheduleList.add(policySchedulesMap.get(appIdInPolicy));
-						toDeletedAppIds.add(appIdInPolicy);
-						updateCount++;
-						continue;
-					}
+			if (policySchedulesMap.get(appIdInPolicy).getSchedules() != null
+					&& policySchedulesMap.get(appIdInPolicy).getSchedules().hasSchedules()) {
+				if (appIdAndGuidMap.get(appIdInPolicy) == null) {
+					toCreateScheduleList.add(policySchedulesMap.get(appIdInPolicy));
+					createCount++;
+					continue;
+				} else if (!scheduleAppIdGuidMap.get(appIdInPolicy).equals(appIdAndGuidMap.get(appIdInPolicy))) {
+					toCreateScheduleList.add(policySchedulesMap.get(appIdInPolicy));
+					toDeletedAppIds.add(appIdInPolicy);
+					updateCount++;
+					continue;
 				}
-				
-				if (policySchedulesMap.get(appIdInPolicy).getSchedules().hasSpecificDateSchedule()) {
-					if (appIdAndGuidMap.get(appIdInPolicy) == null) {
-						toCreateScheduleList.add(policySchedulesMap.get(appIdInPolicy));
-						createCount++;
-						continue;
-					} else if (!scheduleAppIdGuidMap.get(appIdInPolicy)
-							.equals(appIdAndGuidMap.get(appIdInPolicy))) {
-						toCreateScheduleList.add(policySchedulesMap.get(appIdInPolicy));
-						toDeletedAppIds.add(appIdInPolicy);
-						updateCount++;
-						continue;
-					}
-				}
-				
 			}
 		}
 		
@@ -884,7 +867,6 @@ public class ScheduleManager {
 			}
 			
 		} catch (IOException e) {
-			e.printStackTrace();
 			applicationSchedules = null;
 		}
 		return applicationSchedules;

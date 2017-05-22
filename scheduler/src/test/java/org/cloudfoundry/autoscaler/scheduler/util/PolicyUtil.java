@@ -18,7 +18,7 @@ public class PolicyUtil {
 				jsonPolicyStr += tmp;
 			}
 		} catch (IOException e) {
-			e.printStackTrace();
+			return null;
 		}
 		jsonPolicyStr = jsonPolicyStr.replaceAll("\\s+", " ");
 		return jsonPolicyStr;

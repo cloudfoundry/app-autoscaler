@@ -856,20 +856,16 @@ public class ScheduleManagerTest {
 		if (schedules.getSpecificDate() != null) {
 			Mockito.verify(specificDateScheduleDao, Mockito.times(noOfSpecificDateSchedules)).create(specificDateCaptor.capture());
 			List<SpecificDateScheduleEntity> specificDateList = specificDateCaptor.getAllValues();
-			int i = 0;
 			for (SpecificDateScheduleEntity foundSpecificDateScheduleEntity : schedules.getSpecificDate()) {
-				assertEquals(foundSpecificDateScheduleEntity,specificDateList.get(i));
-				i++;
+				assert(specificDateList.contains(foundSpecificDateScheduleEntity));
 			}
 		}
 
 		if (schedules.getRecurringSchedule() != null) {
 			Mockito.verify(recurringScheduleDao, Mockito.times(noOfDOMRecurringSchedules + noOfDOWRecurringSchedules)).create(recurringCaptor.capture());
 			List<RecurringScheduleEntity> recurringList = recurringCaptor.getAllValues();
-			int i = 0;
 			for (RecurringScheduleEntity foundRecurringScheduleEntity : schedules.getRecurringSchedule()) {
-				assertEquals(foundRecurringScheduleEntity,recurringList.get(i));
-				i++;
+				assert(recurringList.contains(foundRecurringScheduleEntity));
 			}
 		}
 

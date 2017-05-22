@@ -27,7 +27,6 @@ public class ScheduleSyncRestController {
 			SynchronizeResult result = scheduleManager.synchronizeSchedules();
 			return new ResponseEntity<>(result, null, HttpStatus.OK);
 		}catch(Exception e){
-			e.printStackTrace();
 			logger.error("Internal error", e.getMessage());
 			return new ResponseEntity<>(null, null, HttpStatus.INTERNAL_SERVER_ERROR);
 		}
