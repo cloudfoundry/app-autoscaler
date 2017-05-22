@@ -43,11 +43,18 @@ type Components struct {
 	Ports       Ports
 }
 
-type DBConfig struct {
+type BrokerDBConfig struct {
 	URI            string `json:"uri"`
 	MinConnections int    `json:"minConnections"`
 	MaxConnections int    `json:"maxConnections"`
 	IdleTimeout    int    `json:"idleTimeout"`
+}
+type ApiServerDBConfig struct {
+	PolicyDbURI        string `json:"policyDbUri"`
+	ScalingEngineDbUri string `json:"scalingEngineDbUri"`
+	MinConnections     int    `json:"minConnections"`
+	MaxConnections     int    `json:"maxConnections"`
+	IdleTimeout        int    `json:"idleTimeout"`
 }
 type APIServerClient struct {
 	Uri string          `json:"uri"`
@@ -60,7 +67,7 @@ type ServiceBrokerConfig struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 
-	DB DBConfig `json:"db"`
+	DB BrokerDBConfig `json:"db"`
 
 	APIServerClient    APIServerClient `json:"apiserver"`
 	HttpRequestTimeout int             `json:"httpRequestTimeout"`
@@ -74,7 +81,7 @@ type SchedulerClient struct {
 type APIServerConfig struct {
 	Port int `json:"port"`
 
-	DB DBConfig `json:"db"`
+	DB ApiServerDBConfig `json:"db"`
 
 	SchedulerClient SchedulerClient `json:"scheduler"`
 
@@ -176,7 +183,7 @@ func (components *Components) PrepareServiceBrokerConfig(port int, username stri
 		Port:     port,
 		Username: username,
 		Password: password,
-		DB: DBConfig{
+		DB: BrokerDBConfig{
 			URI:            dbUri,
 			MinConnections: 1,
 			MaxConnections: 10,
@@ -211,11 +218,12 @@ func (components *Components) PrepareApiServerConfig(port int, dbUri string, sch
 	apiConfig := APIServerConfig{
 		Port: port,
 
-		DB: DBConfig{
-			URI:            dbUri,
-			MinConnections: 1,
-			MaxConnections: 10,
-			IdleTimeout:    1000,
+		DB: ApiServerDBConfig{
+			PolicyDbURI:        dbUri,
+			ScalingEngineDbUri: dbUri,
+			MinConnections:     1,
+			MaxConnections:     10,
+			IdleTimeout:        1000,
 		},
 
 		SchedulerClient: SchedulerClient{
