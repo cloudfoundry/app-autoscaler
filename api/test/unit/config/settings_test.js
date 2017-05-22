@@ -9,7 +9,8 @@ var defaultConfig = {
     "maxConnections": 10,
     "minConnections": 0,
     "idleTimeout": 1000,
-    "uri": "postgres://postgres@server:80/dbname",
+    "policyDbUri": "postgres://postgres@server:80/policydbname",
+    "scalingEngineDbUri": "postgres://postgres@server:81/scalingenginedbname",
   },
   "scheduler": {
     "uri": "http://scheduleruri",
@@ -38,9 +39,12 @@ describe('config setting Test Suite', function() {
     expect(settings.db.maxConnections).to.equal(defaultConfig.db.maxConnections);
     expect(settings.db.minConnections).to.equal(defaultConfig.db.minConnections);
     expect(settings.db.idleTimeout).to.equal(defaultConfig.db.idleTimeout);
-    expect(settings.db.uri).to.equal(defaultConfig.db.uri);
-    expect(settings.db.server).to.equal('postgres://postgres@server:80');
-    expect(settings.db.name).to.equal('dbname');
+    expect(settings.db.policyDb.uri).to.equal(defaultConfig.db.policyDbUri);
+    expect(settings.db.policyDb.server).to.equal('postgres://postgres@server:80');
+    expect(settings.db.policyDb.name).to.equal('policydbname');
+    expect(settings.db.scalingEngineDb.uri).to.equal(defaultConfig.db.scalingEngineDbUri);
+    expect(settings.db.scalingEngineDb.server).to.equal('postgres://postgres@server:81');
+    expect(settings.db.scalingEngineDb.name).to.equal('scalingenginedbname');
     expect(settings.tls.keyFile).to.equal(defaultConfig.tls.keyFile);
     expect(settings.tls.certFile).to.equal(defaultConfig.tls.certFile);
     expect(settings.tls.caCertFile).to.equal(defaultConfig.tls.caCertFile);
@@ -167,34 +171,55 @@ describe('config setting Test Suite', function() {
     });
 
 
-    context('Validate dbUri', function() {
-      context('When dbUri is null', function() {
+    context('Validate policyDbUri', function() {
+      context('When policyDbUri is null', function() {
         it('Should return false', function() {
-          settings.db.uri = null
+          settings.db.policyDb.uri = null
           expect(settings.validate().valid).to.equal(false);
         })
       });
-      context('When dbUri is undefined', function() {
+      context('When policyDbUri is undefined', function() {
         it('Should return false', function() {
-          delete settings.db.uri
+          delete settings.db.policyDb.uri
+          expect(settings.validate().valid).to.equal(false);
+        })
+      });
+    });
+
+    context('Validate scalingEngineDbUri', function() {
+      context('When scalingEngineDbUri is null', function() {
+        it('Should return false', function() {
+          settings.db.scalingEngineDb.uri = null
+          expect(settings.validate().valid).to.equal(false);
+        })
+      });
+      context('When scalingEngineDbUri is undefined', function() {
+        it('Should return false', function() {
+          delete settings.db.scalingEngineDb.uri
           expect(settings.validate().valid).to.equal(false);
         })
       });
     });
 
     
-  context('dbUri', function() {
+  context('DbUri', function() {
     it('Should filter the last slash', function() {
-      var dbSetting = configSetting({ db: { uri: defaultConfig.db.uri + '/' }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls } }).db;
-      expect(dbSetting.uri).to.equal(defaultConfig.db.uri);
-      expect(dbSetting.server).to.equal("postgres://postgres@server:80");
-      expect(dbSetting.name).to.equal("dbname");
+      var dbSetting = configSetting({ db: { policyDbUri: defaultConfig.db.policyDbUri + '/', scalingEngineDbUri: defaultConfig.db.scalingEngineDbUri + '/'}, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls } }).db;
+      
+      expect(dbSetting.policyDb.uri).to.equal(defaultConfig.db.policyDbUri);
+      expect(dbSetting.policyDb.server).to.equal("postgres://postgres@server:80");
+      expect(dbSetting.policyDb.name).to.equal("policydbname");
+
+      expect(dbSetting.scalingEngineDb.uri).to.equal(defaultConfig.db.scalingEngineDbUri);
+      expect(dbSetting.scalingEngineDb.server).to.equal("postgres://postgres@server:81");
+      expect(dbSetting.scalingEngineDb.name).to.equal("scalingenginedbname");
     });
 
     context('When the dbUri is mixed case', function() {
       it('Should be lowercased', function() {
-        var dbSetting = configSetting({ db: { uri:defaultConfig.db.uri.toUpperCase() }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls } }).db;
-        expect(dbSetting.uri).to.equal(defaultConfig.db.uri);
+        var dbSetting = configSetting({ db: { policyDbUri:defaultConfig.db.policyDbUri.toUpperCase(), scalingEngineDbUri: defaultConfig.db.scalingEngineDbUri.toUpperCase() }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls } }).db;
+        expect(dbSetting.policyDb.uri).to.equal(defaultConfig.db.policyDbUri);
+        expect(dbSetting.scalingEngineDb.uri).to.equal(defaultConfig.db.scalingEngineDbUri);
       });
     });
   });
