@@ -29,14 +29,22 @@ module.exports = function(settingsObj) {
     tls: settingsObj.tls
   };
   if (settingsObj.db) {
-    var dbObj = db(settingsObj.db.uri);
+    var policyDbObj = db(settingsObj.db.policyDbUri);
+    var scalingEngineDbObj = db(settingsObj.db.scalingEngineDbUri);
     settings.db = {
         maxConnections: settingsObj.db.maxConnections,
         minConnections: settingsObj.db.minConnections,
         idleTimeout: settingsObj.db.idleTimeout,
-        uri: dbObj.uri,
-        name: dbObj.name,
-        server: dbObj.server
+        policyDb: {
+          uri: policyDbObj.uri,
+          name: policyDbObj.name,
+          server: policyDbObj.server
+        },
+        scalingEngineDb: {
+          uri: scalingEngineDbObj.uri,
+          name: scalingEngineDbObj.name,
+          server: scalingEngineDbObj.server
+        }
       }
 
   }
@@ -66,8 +74,11 @@ module.exports = function(settingsObj) {
     if(settings.db.idleTimeout < 0) {
       return {valid:false,message:"idleTimeout must be greater than 0"};
     }
-    if(typeof(settings.db.uri) != "string") {
-      return {valid:false,message:"dbUri is required"};
+    if(typeof(settings.db.policyDb.uri) != "string") {
+      return {valid:false,message:"policyDbUri is required"};
+    }
+    if(typeof(settings.db.scalingEngineDb.uri) != "string") {
+      return {valid:false,message:"scalingEngineDbUri is required"};
     }
     if (!settings.tls) {
       return { valid: false, message: "tls is required" };

@@ -48,7 +48,9 @@ module.exports = function(configFilePath) {
   var server = https.createServer(options, app).listen(port || 3002, function() {
       logger.info('Autoscaler API server started',{'port':server.address().port} ); 
       var policies = require('./lib/routes/policies')(settings);
+      var scalingHistory = require('./lib/routes/scalingHistory')(settings);
       app.use('/v1/policies',policies);
+      app.use('/v1/apps',scalingHistory);
       app.use(function(err, req, res, next) {
         var errorResponse = {};
         if (err) {
