@@ -64,28 +64,28 @@ describe('config setting Test Suite', function() {
         it('Should return false', function() {
           settings.port = null;
           expect(settings.validate().valid).to.equal(false);
-          expect(settings.validate().message).to.equal("The port must be a number");
+          expect(settings.validate().message).to.equal("port is required");
         })
       });
       context('When port is undefined', function() {
         it('Should return false', function() {
-          delete settings.port
+          delete settings.port;
           expect(settings.validate().valid).to.equal(false);
-          expect(settings.validate().message).to.equal("The port must be a number");
+          expect(settings.validate().message).to.equal("port is required");
         })
       });
       context('When port is not an integer', function() {
         it('Should return false', function() {
           settings.port = "80";
           expect(settings.validate().valid).to.equal(false);
-          expect(settings.validate().message).to.equal("The port must be a number");
+          expect(settings.validate().message).to.equal("port must be a number");
         })
       });
       context('When the port is out of range', function() {
         it('Should return false', function() {
-          settings.port = 70000
+          settings.port = 70000;
           expect(settings.validate().valid).to.equal(false);
-          expect(settings.validate().message).to.equal("The value of port must between 0 and 65536");
+          expect(settings.validate().message).to.equal("value of port must between 0 and 65536");
         })
       });
     });
@@ -95,28 +95,28 @@ describe('config setting Test Suite', function() {
         it('Should return false', function() {
           settings.db.maxConnections = null;
           expect(settings.validate().valid).to.equal(false);
-          expect(settings.validate().message).to.equal("maxConnections is required");
+          expect(settings.validate().message).to.equal("db.maxConnections is required");
         })
       });
       context('When db.maxConnections is undefined', function() {
         it('Should return false', function() {
-          delete settings.db.maxConnections
+          delete settings.db.maxConnections;
           expect(settings.validate().valid).to.equal(false);
-          expect(settings.validate().message).to.equal("maxConnections is required");
+          expect(settings.validate().message).to.equal("db.maxConnections is required");
         })
       });
       context('When db.maxConnections is not an integer', function() {
         it('Should return false', function() {
           settings.db.maxConnections = "10";
           expect(settings.validate().valid).to.equal(false);
-          expect(settings.validate().message).to.equal("maxConnections is required");
+          expect(settings.validate().message).to.equal("db.maxConnections must be a number");
         })
       });
       context('When the db.maxConnections is out of range', function() {
         it('Should return false', function() {
           settings.db.maxConnections = -10;
           expect(settings.validate().valid).to.equal(false);
-          expect(settings.validate().message).to.equal("maxConnections must be greater than 0");
+          expect(settings.validate().message).to.equal("db.maxConnections must be greater than 0");
         })
       });
     });
@@ -126,28 +126,28 @@ describe('config setting Test Suite', function() {
         it('Should return false', function() {
           settings.db.minConnections = null;
           expect(settings.validate().valid).to.equal(false);
-          expect(settings.validate().message).to.equal("minConnections is required");
+          expect(settings.validate().message).to.equal("db.minConnections is required");
         })
       });
       context('When db.minConnections is undefined', function() {
         it('Should return false', function() {
-          delete settings.db.minConnections
+          delete settings.db.minConnections;
           expect(settings.validate().valid).to.equal(false);
-          expect(settings.validate().message).to.equal("minConnections is required");
+          expect(settings.validate().message).to.equal("db.minConnections is required");
         })
       });
       context('When db.minConnections is not an integer', function() {
         it('Should return false', function() {
           settings.db.minConnections = "10";
           expect(settings.validate().valid).to.equal(false);
-          expect(settings.validate().message).to.equal("minConnections is required");
+          expect(settings.validate().message).to.equal("db.minConnections must be a number");
         })
       });
       context('When the db.minConnections is out of range', function() {
         it('Should return false', function() {
           settings.db.minConnections = -10;
           expect(settings.validate().valid).to.equal(false);
-          expect(settings.validate().message).to.equal("minConnections must be greater than 0");
+          expect(settings.validate().message).to.equal("db.minConnections must be greater than or equal to 0");
         })
       });
     });
@@ -157,52 +157,59 @@ describe('config setting Test Suite', function() {
         it('Should return false', function() {
           settings.db.idleTimeout = null;
           expect(settings.validate().valid).to.equal(false);
-          expect(settings.validate().message).to.equal("idleTimeout is required");
+          expect(settings.validate().message).to.equal("db.idleTimeout is required");
         })
       });
       context('When db.idleTimeout is undefined', function() {
         it('Should return false', function() {
-          delete settings.db.idleTimeout
+          delete settings.db.idleTimeout;
           expect(settings.validate().valid).to.equal(false);
-          expect(settings.validate().message).to.equal("idleTimeout is required");
+          expect(settings.validate().message).to.equal("db.idleTimeout is required");
         })
       });
       context('When db.idleTimeout is not an integer', function() {
         it('Should return false', function() {
           settings.db.idleTimeout = "1000";
           expect(settings.validate().valid).to.equal(false);
-          expect(settings.validate().message).to.equal("idleTimeout is required");
+          expect(settings.validate().message).to.equal("db.idleTimeout must be a number");
         })
       });
       context('When the db.idleTimeout is out of range', function() {
         it('Should return false', function() {
           settings.db.idleTimeout = -1000;
           expect(settings.validate().valid).to.equal(false);
-          expect(settings.validate().message).to.equal("idleTimeout must be greater than 0");
+          expect(settings.validate().message).to.equal("db.idleTimeout must be greater than 0");
         })
       });
     });
 
 
-    context('Validate dbUri', function() {
-      context('When dbUri is null', function() {
+    context('Validate db.uri', function() {
+      context('When db.uri is null', function() {
         it('Should return false', function() {
-          settings.db.uri = null
+          settings.db.uri = null;
           expect(settings.validate().valid).to.equal(false);
-          expect(settings.validate().message).to.equal("dbUri is required");
+          expect(settings.validate().message).to.equal("db.uri is required");
         })
       });
-      context('When dbUri is undefined', function() {
+      context('When db.uri is undefined', function() {
         it('Should return false', function() {
-          delete settings.db.uri
+          delete settings.db.uri;
           expect(settings.validate().valid).to.equal(false);
-          expect(settings.validate().message).to.equal("dbUri is required");
+          expect(settings.validate().message).to.equal("db.uri is required");
+        })
+      });
+      context('When db.uri is not a string', function() {
+        it('Should return false', function() {
+          settings.db.uri = 12345;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("db.uri must be a string");
         })
       });
     });
 
     
-  context('dbUri', function() {
+  context('db.uri', function() {
     it('Should filter the last slash', function() {
       var dbSetting = configSetting({ db: { uri: defaultConfig.db.uri + '/' }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls } }).db;
       expect(dbSetting.uri).to.equal(defaultConfig.db.uri);
@@ -210,7 +217,7 @@ describe('config setting Test Suite', function() {
       expect(dbSetting.name).to.equal("dbname");
     });
 
-    context('When the dbUri is mixed case', function() {
+    context('When the db.uri is mixed case', function() {
       it('Should be lowercased', function() {
         var dbSetting = configSetting({ db: { uri:defaultConfig.db.uri.toUpperCase() }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls } }).db;
         expect(dbSetting.uri).to.equal(defaultConfig.db.uri);
@@ -218,13 +225,13 @@ describe('config setting Test Suite', function() {
     });
   });
 
-  context('scheduler uri', function() {
+  context('scheduler.uri', function() {
     it('Should filter the last slash', function() {
       var apiSetting = configSetting({ scheduler : { uri: defaultConfig.scheduler.uri + '/' }}).scheduler;
       expect(apiSetting.uri).to.equal(defaultConfig.scheduler.uri);
     });
 
-    context('When the scheduler uri is upper case', function() {
+    context('When the scheduler.uri is upper case', function() {
       it('Should be lowercased', function() {
         var apiSetting = configSetting({ scheduler : { uri: defaultConfig.scheduler.uri.toUpperCase() }}).scheduler;
         expect(apiSetting.uri).to.equal(defaultConfig.scheduler.uri);
@@ -232,19 +239,26 @@ describe('config setting Test Suite', function() {
     });
   });
 
- context('Validate scheduler uri', function() {
-      context('When scheduler uri is null', function() {
+ context('Validate scheduler.uri', function() {
+      context('When scheduler.uri is null', function() {
         it('Should return false', function() {
-          settings.scheduler.uri = null
+          settings.scheduler.uri = null;
           expect(settings.validate().valid).to.equal(false);
-          expect(settings.validate().message).to.equal("scheduler uri is required");
+          expect(settings.validate().message).to.equal("scheduler.uri is required");
         })
       });
-      context('When scheduler uri is undefined', function() {
+      context('When scheduler.uri is undefined', function() {
         it('Should return false', function() {
-          delete settings.scheduler.uri
+          delete settings.scheduler.uri;
           expect(settings.validate().valid).to.equal(false);
-          expect(settings.validate().message).to.equal("scheduler uri is required");
+          expect(settings.validate().message).to.equal("scheduler.uri is required");
+        })
+      });
+      context('When scheduler.uri is not a string', function() {
+        it('Should return false', function() {
+          settings.scheduler.uri = 1234;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("scheduler.uri must be a string");
         })
       });
     });
@@ -290,6 +304,13 @@ describe('config setting Test Suite', function() {
         expect(settings.validate().message).to.equal("tls.keyFile is required");
       });
     });
+    context('When tls.keyFile is not a string', function(){
+      it('Should return false',function(){
+        settings.tls.keyFile = 1234;
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("tls.keyFile must be a string");
+      });
+    });
   });
 
   context('Validate tls.certFile', function(){
@@ -305,6 +326,13 @@ describe('config setting Test Suite', function() {
         delete settings.tls.certFile;
         expect(settings.validate().valid).to.equal(false);
         expect(settings.validate().message).to.equal("tls.certFile is required");
+      });
+    });
+    context('When tls.certFile is not a string', function(){
+      it('Should return false',function(){
+        settings.tls.certFile = 1234;
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("tls.certFile must be a string");
       });
     });
   });
@@ -324,6 +352,13 @@ describe('config setting Test Suite', function() {
         expect(settings.validate().message).to.equal("tls.caCertFile is required");
       });
     });
+    context('When tls.caCertFile is not a string', function(){
+      it('Should return false',function(){
+        settings.tls.caCertFile = 1234;
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("tls.caCertFile must be a string");
+      });
+    });
   });
   
  context('Validate scheduler client tls.keyFile', function(){
@@ -339,6 +374,13 @@ describe('config setting Test Suite', function() {
         delete settings.scheduler.tls.keyFile;
         expect(settings.validate().valid).to.equal(false);
         expect(settings.validate().message).to.equal("scheduler.tls.keyFile is required");
+      });
+    });
+    context('When scheduler client tls.keyFile is not a string', function(){
+      it('Should return false',function(){
+        settings.scheduler.tls.keyFile = 1234;
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("scheduler.tls.keyFile must be a string");
       });
     });
   });
@@ -358,6 +400,13 @@ describe('config setting Test Suite', function() {
         expect(settings.validate().message).to.equal("scheduler.tls.certFile is required");
       });
     });
+    context('When scheduler client tls.certFile is not a string', function(){
+      it('Should return false',function(){
+        settings.scheduler.tls.certFile = 1234;
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("scheduler.tls.certFile must be a string");
+      });
+    });
   });
 
   context('Validate scheduler client tls.caCertFile', function(){
@@ -375,6 +424,13 @@ describe('config setting Test Suite', function() {
         expect(settings.validate().message).to.equal("scheduler.tls.caCertFile is required");
       });
     });
+    context('When scheduler client tls.caCertFile is not a string', function(){
+      it('Should return false',function(){
+        settings.scheduler.tls.caCertFile = 1234;
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("scheduler.tls.caCertFile must be a string");
+      });
+    });
   });
 
   context('Validate scheduler client tls', function(){
@@ -382,21 +438,21 @@ describe('config setting Test Suite', function() {
       it('Should return false',function(){
         settings.scheduler.tls = null;
         expect(settings.validate().valid).to.equal(false);
-        expect(settings.validate().message).to.equal("scheduler tls is required");
+        expect(settings.validate().message).to.equal("scheduler.tls is required");
       });
     });
     context('When scheduler client tls  is undefined', function(){
       it('Should return false',function(){
         delete settings.scheduler.tls;
         expect(settings.validate().valid).to.equal(false);
-        expect(settings.validate().message).to.equal("scheduler.tls should be an object");
+        expect(settings.validate().message).to.equal("scheduler.tls is required");
       });
     });
     context('When scheduler client tls is not an object', function(){
       it('Should return false',function(){
         settings.scheduler.tls = "notobject";
         expect(settings.validate().valid).to.equal(false);
-        expect(settings.validate().message).to.equal("scheduler.tls should be an object");
+        expect(settings.validate().message).to.equal("scheduler.tls must be an object");
       });
     });
   });
