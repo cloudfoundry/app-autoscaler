@@ -24,7 +24,7 @@ var _ = Describe("AppStreamer", func() {
 		cfc          *fakes.FakeCfClient
 		noaaConsumer *fakes.FakeNoaaConsumer
 		database     *fakes.FakeInstanceMetricsDB
-		streamer     AppStreamer
+		streamer     AppCollector
 		buffer       *gbytes.Buffer
 		msgChan      chan *events.Envelope
 		errChan      chan error
@@ -60,7 +60,7 @@ var _ = Describe("AppStreamer", func() {
 			cfc.GetTokensReturns(cf.Tokens{AccessToken: "test-access-token"})
 			noaaConsumer.StreamStub = func(appId string, authToken string) (outputChan <-chan *events.Envelope, errorChan <-chan error) {
 				Expect(appId).To(Equal("an-app-id"))
-				Expect(authToken).To(Equal("test-access-token"))
+				Expect(authToken).To(Equal("bearer test-access-token"))
 				return msgChan, errChan
 			}
 		})

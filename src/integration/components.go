@@ -310,7 +310,7 @@ spring.data.jpa.repositories.enabled=false
 }
 
 func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port int, ccNOAAUAAUrl string, cfGrantTypePassword string, collectInterval time.Duration,
-	refreshInterval time.Duration, tmpDir string, lockTTL time.Duration, lockRetryInterval time.Duration, ConsulClusterConfig string) string {
+	refreshInterval time.Duration, collectMethod string, tmpDir string, lockTTL time.Duration, lockRetryInterval time.Duration, ConsulClusterConfig string) string {
 	cfg := mcConfig.Config{
 		Cf: cf.CfConfig{
 			Api:       ccNOAAUAAUrl,
@@ -336,6 +336,7 @@ func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port i
 		Collector: mcConfig.CollectorConfig{
 			CollectInterval: collectInterval,
 			RefreshInterval: refreshInterval,
+			CollectMethod:   collectMethod,
 		},
 		Lock: mcConfig.LockConfig{
 			LockTTL:             lockTTL,

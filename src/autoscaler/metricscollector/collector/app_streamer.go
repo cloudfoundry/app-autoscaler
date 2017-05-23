@@ -14,11 +14,6 @@ import (
 	"time"
 )
 
-type AppStreamer interface {
-	Start()
-	Stop()
-}
-
 type appStreamer struct {
 	appId           string
 	logger          lager.Logger
@@ -33,7 +28,7 @@ type appStreamer struct {
 	ticker          clock.Ticker
 }
 
-func NewAppStreamer(logger lager.Logger, appId string, interval time.Duration, cfc cf.CfClient, noaaConsumer noaa.NoaaConsumer, database db.InstanceMetricsDB, sclock clock.Clock) AppStreamer {
+func NewAppStreamer(logger lager.Logger, appId string, interval time.Duration, cfc cf.CfClient, noaaConsumer noaa.NoaaConsumer, database db.InstanceMetricsDB, sclock clock.Clock) AppCollector {
 	return &appStreamer{
 		appId:           appId,
 		logger:          logger,
@@ -58,7 +53,7 @@ func (as *appStreamer) Stop() {
 }
 
 func (as *appStreamer) streamMetrics() {
-	eventChan, errorChan := as.noaaConsumer.Stream(as.appId, as.cfc.GetTokens().AccessToken)
+	eventChan, errorChan := as.noaaConsumer.Stream(as.appId, "bearer "+as.cfc.GetTokens().AccessToken)
 	as.ticker = as.sclock.NewTicker(as.collectInterval)
 	for {
 		select {

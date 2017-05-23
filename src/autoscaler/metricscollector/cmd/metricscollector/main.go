@@ -91,8 +91,17 @@ func main() {
 	}
 	defer policyDB.Close()
 
-	createAppCollector := func(appId string) collector.AppCollector {
-		return collector.NewAppPoller(logger.Session("app-poller"), appId, conf.Collector.CollectInterval, cfClient, noaa, instanceMetricsDB, mcClock)
+	var createAppCollector func(string) collector.AppCollector
+	if conf.Collector.CollectMethod == config.CollectMethodPolling {
+		createAppCollector = func(appId string) collector.AppCollector {
+			return collector.NewAppPoller(logger.Session("app-poller"), appId, conf.Collector.CollectInterval, cfClient, noaa, instanceMetricsDB, mcClock)
+		}
+	} else {
+		createAppCollector = func(appId string) collector.AppCollector {
+			noaaConsumer := consumer.New(dopplerUrl, tlsConfig, nil)
+			noaaConsumer.RefreshTokenFrom(cfClient)
+			return collector.NewAppStreamer(logger.Session("app-streamer"), appId, conf.Collector.CollectInterval, cfClient, noaaConsumer, instanceMetricsDB, mcClock)
+		}
 	}
 
 	collectServer := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
