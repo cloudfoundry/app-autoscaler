@@ -28,6 +28,7 @@ import (
 	"autoscaler/cf"
 	"autoscaler/db"
 	"autoscaler/metricscollector/config"
+	"autoscaler/metricscollector/testhelpers"
 
 	"code.cloudfoundry.org/locket"
 )
@@ -38,6 +39,7 @@ var (
 	mcPort         int
 	configFile     *os.File
 	ccNOAAUAA      *ghttp.Server
+	messagesToSend chan []byte
 	isTokenExpired bool
 	eLock          *sync.Mutex
 	httpClient     *http.Client
@@ -120,6 +122,10 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		},
 	)
 
+	messagesToSend = make(chan []byte, 256)
+	wsHandler := testhelpers.NewWebsocketHandler(messagesToSend, 100*time.Millisecond)
+	ccNOAAUAA.RouteToHandler("GET", "/apps/an-app-id/stream", wsHandler.ServeWebsocket)
+
 	consulRunner = consulrunner.NewClusterRunner(
 		consulrunner.ClusterRunnerConfig{
 			StartingPort: 9001 + GinkgoParallelNode()*consulrunner.PortOffsetLength,
@@ -151,6 +157,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	cfg.Collector.CollectInterval = 10 * time.Second
 	cfg.Collector.RefreshInterval = 30 * time.Second
+	cfg.Collector.CollectMethod = config.CollectMethodPolling
 
 	cfg.Lock.ConsulClusterConfig = consulRunner.ConsulCluster()
 	cfg.Lock.LockRetryInterval = locket.RetryInterval

@@ -21,6 +21,9 @@ const (
 	DefaultCollectInterval time.Duration = 30 * time.Second
 	DefaultLockTTL         time.Duration = locket.DefaultSessionTTL
 	DefaultRetryInterval   time.Duration = locket.RetryInterval
+
+	CollectMethodPolling   = "polling"
+	CollectMethodStreaming = "streaming"
 )
 
 var defaultCfConfig = cf.CfConfig{
@@ -52,11 +55,13 @@ type DbConfig struct {
 type CollectorConfig struct {
 	RefreshInterval time.Duration `yaml:"refresh_interval"`
 	CollectInterval time.Duration `yaml:"collect_interval"`
+	CollectMethod   string        `yaml:"collect_method"`
 }
 
 var defaultCollectorConfig = CollectorConfig{
 	RefreshInterval: DefaultRefreshInterval,
 	CollectInterval: DefaultCollectInterval,
+	CollectMethod:   CollectMethodStreaming,
 }
 
 type LockConfig struct {
@@ -100,6 +105,7 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 
 	conf.Cf.GrantType = strings.ToLower(conf.Cf.GrantType)
 	conf.Logging.Level = strings.ToLower(conf.Logging.Level)
+	conf.Collector.CollectMethod = strings.ToLower(conf.Collector.CollectMethod)
 
 	return conf, nil
 }
@@ -126,6 +132,9 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("Configuration error: RefreshInterval is 0")
 	}
 
+	if (c.Collector.CollectMethod != CollectMethodPolling) && (c.Collector.CollectMethod != CollectMethodStreaming) {
+		return fmt.Errorf("Configuration error: invalid collecting method")
+	}
 	return nil
 
 }

@@ -13,11 +13,6 @@ import (
 	"time"
 )
 
-type AppPoller interface {
-	Start()
-	Stop()
-}
-
 type appPoller struct {
 	appId           string
 	collectInterval time.Duration
@@ -29,7 +24,7 @@ type appPoller struct {
 	doneChan        chan bool
 }
 
-func NewAppPoller(logger lager.Logger, appId string, collectInterval time.Duration, cfc cf.CfClient, noaaConsumer noaa.NoaaConsumer, database db.InstanceMetricsDB, pclock clock.Clock) AppPoller {
+func NewAppPoller(logger lager.Logger, appId string, collectInterval time.Duration, cfc cf.CfClient, noaaConsumer noaa.NoaaConsumer, database db.InstanceMetricsDB, pclock clock.Clock) AppCollector {
 	return &appPoller{
 		appId:           appId,
 		collectInterval: collectInterval,

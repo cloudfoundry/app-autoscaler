@@ -94,6 +94,7 @@ db:
 collector:
   refresh_interval: 20s
   collect_interval: 10s
+  collect_method: polling
 lock:
   lock_ttl: 15s
   lock_retry_interval: 10s
@@ -120,6 +121,7 @@ lock:
 
 				Expect(conf.Collector.RefreshInterval).To(Equal(20 * time.Second))
 				Expect(conf.Collector.CollectInterval).To(Equal(10 * time.Second))
+				Expect(conf.Collector.CollectMethod).To(Equal(CollectMethodPolling))
 
 				Expect(conf.Server.TLS.KeyFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/server.key"))
 				Expect(conf.Server.TLS.CertFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/server.crt"))
@@ -150,6 +152,7 @@ db:
 				Expect(conf.Logging.Level).To(Equal(DefaultLoggingLevel))
 				Expect(conf.Collector.RefreshInterval).To(Equal(DefaultRefreshInterval))
 				Expect(conf.Collector.CollectInterval).To(Equal(DefaultCollectInterval))
+				Expect(conf.Collector.CollectMethod).To(Equal(CollectMethodStreaming))
 
 				Expect(conf.Lock.LockRetryInterval).To(Equal(DefaultRetryInterval))
 				Expect(conf.Lock.LockTTL).To(Equal(DefaultLockTTL))
@@ -169,6 +172,7 @@ db:
 			conf.Lock.ConsulClusterConfig = "http://127.0.0.1:8500"
 			conf.Collector.CollectInterval = time.Duration(30 * time.Second)
 			conf.Collector.RefreshInterval = time.Duration(60 * time.Second)
+			conf.Collector.CollectMethod = CollectMethodPolling
 		})
 
 		JustBeforeEach(func() {
@@ -228,6 +232,16 @@ db:
 
 			It("should error", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: RefreshInterval is 0")))
+			})
+		})
+
+		Context("when collecting method is not valid", func() {
+			BeforeEach(func() {
+				conf.Collector.CollectMethod = "method-not-support"
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: invalid collecting method")))
 			})
 		})
 

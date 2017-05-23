@@ -20,6 +20,7 @@ import (
 
 	"autoscaler/cf"
 	"autoscaler/metricscollector"
+	"autoscaler/metricscollector/config"
 
 	"code.cloudfoundry.org/consuladapter"
 	"github.com/onsi/gomega/gbytes"
@@ -238,7 +239,7 @@ var _ = Describe("MetricsCollector", func() {
 		})
 	})
 
-	Describe("when a request for memory metrics comes", func() {
+	Context("when a request for memory metrics comes", func() {
 		Context("when token is not expired", func() {
 			BeforeEach(func() {
 				eLock.Lock()
@@ -272,7 +273,7 @@ var _ = Describe("MetricsCollector", func() {
 
 	})
 
-	Describe("when a request for metrics history comes", func() {
+	Context("when a request for metrics history comes", func() {
 		BeforeEach(func() {
 			runner.Start()
 		})
@@ -284,4 +285,21 @@ var _ = Describe("MetricsCollector", func() {
 			rsp.Body.Close()
 		})
 	})
+
+	Context("when using streaming for metrics collection", func() {
+		BeforeEach(func() {
+			streamingCfg := cfg
+			streamingCfg.Collector.CollectMethod = config.CollectMethodStreaming
+			runner.configPath = writeConfig(&streamingCfg).Name()
+			runner.Start()
+		})
+
+		It("returns with a 200 for metric query", func() {
+			rsp, err := httpClient.Get(fmt.Sprintf("https://127.0.0.1:%d/v1/apps/an-app-id/metric_histories/a-metric-type", mcPort))
+			Expect(err).NotTo(HaveOccurred())
+			Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+			rsp.Body.Close()
+		})
+	})
+
 })
