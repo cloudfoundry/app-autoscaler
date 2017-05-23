@@ -78,9 +78,10 @@ var _ = Describe("Apppoller", func() {
 						return []*events.Envelope{
 							&events.Envelope{
 								ContainerMetric: &events.ContainerMetric{
-									ApplicationId: proto.String("test-app-id"),
-									InstanceIndex: proto.Int32(0),
-									MemoryBytes:   proto.Uint64(12345678),
+									ApplicationId:    proto.String("test-app-id"),
+									InstanceIndex:    proto.Int32(0),
+									MemoryBytes:      proto.Uint64(1000),
+									MemoryBytesQuota: proto.Uint64(3000),
 								},
 								Timestamp: &timestamp,
 							},
@@ -93,8 +94,8 @@ var _ = Describe("Apppoller", func() {
 							InstanceIndex: 0,
 							CollectedAt:   fclock.Now().UnixNano(),
 							Name:          models.MetricNameMemory,
-							Unit:          models.UnitMegaBytes,
-							Value:         "12",
+							Unit:          models.UnitPercentage,
+							Value:         "33",
 							Timestamp:     111111,
 						}))
 						return nil
@@ -147,9 +148,10 @@ var _ = Describe("Apppoller", func() {
 							return []*events.Envelope{
 								&events.Envelope{
 									ContainerMetric: &events.ContainerMetric{
-										ApplicationId: proto.String("test-app-id"),
-										InstanceIndex: proto.Int32(0),
-										MemoryBytes:   proto.Uint64(12345678),
+										ApplicationId:    proto.String("test-app-id"),
+										InstanceIndex:    proto.Int32(0),
+										MemoryBytes:      proto.Uint64(1000),
+										MemoryBytesQuota: proto.Uint64(3000),
 									},
 									Timestamp: &timestamp,
 								},
@@ -163,8 +165,8 @@ var _ = Describe("Apppoller", func() {
 							InstanceIndex: 0,
 							CollectedAt:   fclock.Now().UnixNano(),
 							Name:          models.MetricNameMemory,
-							Unit:          models.UnitMegaBytes,
-							Value:         "12",
+							Unit:          models.UnitPercentage,
+							Value:         "33",
 							Timestamp:     111111,
 						}))
 						return nil
@@ -216,9 +218,10 @@ var _ = Describe("Apppoller", func() {
 						return []*events.Envelope{
 							&events.Envelope{
 								ContainerMetric: &events.ContainerMetric{
-									ApplicationId: proto.String("test-app-id"),
-									InstanceIndex: proto.Int32(0),
-									MemoryBytes:   proto.Uint64(12345678),
+									ApplicationId:    proto.String("test-app-id"),
+									InstanceIndex:    proto.Int32(0),
+									MemoryBytes:      proto.Uint64(1000),
+									MemoryBytesQuota: proto.Uint64(3000),
 								},
 							},
 						}, nil

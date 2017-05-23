@@ -68,8 +68,8 @@ var _ = Describe("AppStreamer", func() {
 		Context("when there are containermetric events", func() {
 			BeforeEach(func() {
 				go func() {
-					msgChan <- noaa.NewContainerEnvelope(111111, "an-app-id", 0, 12.8, 12345678, 987654321)
-					msgChan <- noaa.NewContainerEnvelope(222222, "an-app-id", 1, 12.8, 23563212, 987654321)
+					msgChan <- noaa.NewContainerEnvelope(111111, "an-app-id", 0, 12.8, 1000, 1000, 3000, 2000)
+					msgChan <- noaa.NewContainerEnvelope(222222, "an-app-id", 1, 12.8, 2000, 1000, 3000, 2000)
 				}()
 			})
 			It("Saves metrics to database", func() {
@@ -79,8 +79,8 @@ var _ = Describe("AppStreamer", func() {
 					InstanceIndex: 0,
 					CollectedAt:   fclock.Now().UnixNano(),
 					Name:          models.MetricNameMemory,
-					Unit:          models.UnitMegaBytes,
-					Value:         "12",
+					Unit:          models.UnitPercentage,
+					Value:         "33",
 					Timestamp:     111111,
 				}))
 				Expect(database.SaveMetricArgsForCall(1)).To(Equal(&models.AppInstanceMetric{
@@ -88,8 +88,8 @@ var _ = Describe("AppStreamer", func() {
 					InstanceIndex: 1,
 					CollectedAt:   fclock.Now().UnixNano(),
 					Name:          models.MetricNameMemory,
-					Unit:          models.UnitMegaBytes,
-					Value:         "22",
+					Unit:          models.UnitPercentage,
+					Value:         "67",
 					Timestamp:     222222,
 				}))
 
@@ -125,7 +125,7 @@ var _ = Describe("AppStreamer", func() {
 					CollectedAt:   fclock.Now().UnixNano(),
 					Name:          models.MetricNameThroughput,
 					Unit:          models.UnitRPS,
-					Value:         "2.0",
+					Value:         "2",
 					Timestamp:     fclock.Now().UnixNano(),
 				}))
 				Expect(database.SaveMetricArgsForCall(1)).To(Equal(&models.AppInstanceMetric{
@@ -157,7 +157,7 @@ var _ = Describe("AppStreamer", func() {
 					CollectedAt:   fclock.Now().UnixNano(),
 					Name:          models.MetricNameThroughput,
 					Unit:          models.UnitRPS,
-					Value:         "3.0",
+					Value:         "3",
 					Timestamp:     fclock.Now().UnixNano(),
 				}))
 				Expect(database.SaveMetricArgsForCall(3)).To(Equal(&models.AppInstanceMetric{

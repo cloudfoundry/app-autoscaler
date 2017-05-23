@@ -76,17 +76,19 @@ var _ = Describe("MetricHandler", func() {
 					consumer.ContainerEnvelopesReturns([]*events.Envelope{
 						&events.Envelope{
 							ContainerMetric: &events.ContainerMetric{
-								ApplicationId: proto.String("an-app-id"),
-								InstanceIndex: proto.Int32(0),
-								MemoryBytes:   proto.Uint64(12345678),
+								ApplicationId:    proto.String("an-app-id"),
+								InstanceIndex:    proto.Int32(0),
+								MemoryBytes:      proto.Uint64(1000),
+								MemoryBytesQuota: proto.Uint64(3000),
 							},
 							Timestamp: &timestamp,
 						},
 						&events.Envelope{
 							ContainerMetric: &events.ContainerMetric{
-								ApplicationId: proto.String("an-app-id"),
-								InstanceIndex: proto.Int32(1),
-								MemoryBytes:   proto.Uint64(87654321),
+								ApplicationId:    proto.String("an-app-id"),
+								InstanceIndex:    proto.Int32(1),
+								MemoryBytes:      proto.Uint64(2000),
+								MemoryBytesQuota: proto.Uint64(3000),
 							},
 							Timestamp: &timestamp,
 						},
@@ -106,8 +108,8 @@ var _ = Describe("MetricHandler", func() {
 						"AppId":         Equal("an-app-id"),
 						"InstanceIndex": BeEquivalentTo(0),
 						"Name":          Equal(models.MetricNameMemory),
-						"Unit":          Equal(models.UnitMegaBytes),
-						"Value":         Equal("12"),
+						"Unit":          Equal(models.UnitPercentage),
+						"Value":         Equal("33"),
 						"Timestamp":     BeEquivalentTo(111111),
 					}))
 
@@ -115,8 +117,8 @@ var _ = Describe("MetricHandler", func() {
 						"AppId":         Equal("an-app-id"),
 						"InstanceIndex": BeEquivalentTo(1),
 						"Name":          Equal(models.MetricNameMemory),
-						"Unit":          Equal(models.UnitMegaBytes),
-						"Value":         Equal("84"),
+						"Unit":          Equal(models.UnitPercentage),
+						"Value":         Equal("67"),
 						"Timestamp":     BeEquivalentTo(111111),
 					}))
 

@@ -25,7 +25,7 @@ var _ = Describe("PolicyPoller", func() {
 		   "instance_max_count":5,
 		   "scaling_rules":[
 		      {
-		         "metric_type":"memoryused",
+		         "metric_type":"memoryutil",
 		         "stat_window_secs":300,
 		         "breach_duration_secs":300,
 		         "threshold":30,

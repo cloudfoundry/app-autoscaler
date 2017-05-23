@@ -8,7 +8,7 @@ const (
 	UnitRPS          = "rps"
 )
 
-const MetricNameMemory = "memoryused"
+const MetricNameMemory = "memoryutil"
 const MetricNameThroughput = "throughput"
 const MetricNameResponseTime = "responsetime"
 

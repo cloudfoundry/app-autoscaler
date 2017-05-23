@@ -57,7 +57,7 @@ var getDaysInMonthInISOFormat = function() {
 };
 
 var getMetricTypes = function() {
-  var metricTypeEnum = ['memoryused'];
+  var metricTypeEnum = ['memoryutil', 'responsetime', 'throughput'];
   return metricTypeEnum;
 };
 

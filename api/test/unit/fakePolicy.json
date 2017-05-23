@@ -3,7 +3,7 @@
    "instance_max_count":4,
    "scaling_rules":[
       {
-         "metric_type":"memoryused",
+         "metric_type":"memoryutil",
          "stat_window_secs":300,
          "breach_duration_secs":600,
          "threshold":30,
@@ -12,7 +12,7 @@
          "adjustment":"-1"
       },
       {
-         "metric_type":"memoryused",
+         "metric_type":"memoryutil",
          "stat_window_secs":300,
          "breach_duration_secs":600,
          "threshold":90,
