@@ -8,18 +8,14 @@ import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationSchedules;
 
 public class PolicyUtil {
 
-	public static String getPolicyJsonContent() {
+	public static String getPolicyJsonContent() throws IOException {
 		BufferedReader br = new BufferedReader(
 				new InputStreamReader(ApplicationSchedules.class.getResourceAsStream("/fakePolicy.json")));
 		String tmp;
 		String jsonPolicyStr = "";
-		try {
 			while ((tmp = br.readLine()) != null) {
 				jsonPolicyStr += tmp;
 			}
-		} catch (IOException e) {
-			return null;
-		}
 		jsonPolicyStr = jsonPolicyStr.replaceAll("\\s+", " ");
 		return jsonPolicyStr;
 	}

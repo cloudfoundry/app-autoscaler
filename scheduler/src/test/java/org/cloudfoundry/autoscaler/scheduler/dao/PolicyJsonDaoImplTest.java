@@ -43,7 +43,7 @@ public class PolicyJsonDaoImplTest{
 		consulUtil.stop();
 	}
 	@Before
-	public void before(){
+	public void before() throws IOException{
 		String appId = "the_app_id";
 		String guid = UUID.randomUUID().toString();
 		testDataDbUtil.cleanupData();

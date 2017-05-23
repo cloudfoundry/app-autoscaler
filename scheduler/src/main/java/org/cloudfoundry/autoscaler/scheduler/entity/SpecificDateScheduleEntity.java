@@ -26,7 +26,7 @@ import io.swagger.annotations.ApiModelProperty;
 @Table(name = "app_scaling_specific_date_schedule")
 @NamedQueries({
 		@NamedQuery(name = SpecificDateScheduleEntity.query_specificDateSchedulesByAppId, query = SpecificDateScheduleEntity.jpql_specificDateSchedulesByAppId),
-		@NamedQuery(name = SpecificDateScheduleEntity.query_specificDateSchedulesAll, query = SpecificDateScheduleEntity.jpql_specificDateSchedulesAll) })
+		@NamedQuery(name = SpecificDateScheduleEntity.query_findDistinctAppIdAndGuidFromSpecificDateSchedule, query = SpecificDateScheduleEntity.jpql_findDistinctAppIdAndGuidFromSpecificDateSchedule) })
 public class SpecificDateScheduleEntity extends ScheduleEntity {
 
 	@ApiModelProperty(example = DateHelper.DATE_TIME_FORMAT, required = true, position = 1)
@@ -67,8 +67,8 @@ public class SpecificDateScheduleEntity extends ScheduleEntity {
 	static final String jpql_specificDateSchedulesByAppId = " FROM SpecificDateScheduleEntity"
 			+ " WHERE app_id = :appId";
 
-	public static final String query_specificDateSchedulesAll = "SpecificDateScheduleEntity.schedulesAll";
-	static final String jpql_specificDateSchedulesAll = "SELECT DISTINCT appId,guid FROM SpecificDateScheduleEntity";
+	public static final String query_findDistinctAppIdAndGuidFromSpecificDateSchedule = "SpecificDateScheduleEntity.findDistinctAppIdAndGuid";
+	static final String jpql_findDistinctAppIdAndGuidFromSpecificDateSchedule = "SELECT DISTINCT appId,guid FROM SpecificDateScheduleEntity";
 
 	@Override
 	public boolean equals(Object o) {

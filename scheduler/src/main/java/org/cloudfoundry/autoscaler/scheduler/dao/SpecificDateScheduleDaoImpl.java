@@ -42,7 +42,7 @@ public class SpecificDateScheduleDaoImpl extends GenericDaoImpl<SpecificDateSche
 	@Transactional(readOnly = true)
 	public List getDistinctAppIdAndGuidList() {
 		try {
-			return entityManager.createNamedQuery(SpecificDateScheduleEntity.query_specificDateSchedulesAll).getResultList();
+			return entityManager.createNamedQuery(SpecificDateScheduleEntity.query_findDistinctAppIdAndGuidFromSpecificDateSchedule).getResultList();
 
 		} catch (Exception e) {
 

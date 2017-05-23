@@ -1,5 +1,6 @@
 package org.cloudfoundry.autoscaler.scheduler.util;
 
+import java.io.IOException;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -139,7 +140,7 @@ public class TestDataDbUtil {
 				+ "VALUES (?, ?, ?, ?, ?, ?)", objects);
 	}
 	@Transactional(value = "policyDbTransactionManager")
-	public void insertPolicyJson(String appId, String guid){
+	public void insertPolicyJson(String appId, String guid) throws IOException{
 		JdbcTemplate policyDbJdbcTemplate = new JdbcTemplate(policyDbDataSource);
 		Object[] objects = new Object[] { appId, PolicyUtil.getPolicyJsonContent(), guid };
 		policyDbJdbcTemplate.update("INSERT INTO policy_json(app_id, policy_json, guid) VALUES (?, to_json(?::json), ?)", objects);
