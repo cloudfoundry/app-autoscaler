@@ -3,6 +3,7 @@ package integration_test
 import (
 	"autoscaler/cf"
 	"autoscaler/db"
+	"autoscaler/metricscollector/testhelpers"
 	"autoscaler/models"
 	"bytes"
 	. "integration"
@@ -55,13 +56,18 @@ var (
 	brokerPassword           string = "password"
 	brokerAuth               string
 	dbUrl                    string
-	ccNOAAUAARegPath         = regexp.MustCompile(`^/apps/.*/containermetrics$`)
+	noaaPollingRegPath       = regexp.MustCompile(`^/apps/.*/containermetrics$`)
+	noaaStreamingRegPath     = regexp.MustCompile(`^/apps/.*/stream$`)
 	appInstanceRegPath       = regexp.MustCompile(`^/v2/apps/.*$`)
 	dbHelper                 *sql.DB
 	fakeScheduler            *ghttp.Server
 	fakeCCNOAAUAA            *ghttp.Server
-	processMap               map[string]ifrit.Process = map[string]ifrit.Process{}
-	schedulerProcess         ifrit.Process
+	messagesToSend           chan []byte
+	streamingDoneChan        chan bool
+	emptyMessageChannel      chan []byte
+
+	processMap       map[string]ifrit.Process = map[string]ifrit.Process{}
+	schedulerProcess ifrit.Process
 
 	brokerApiHttpRequestTimeout              time.Duration = 5 * time.Second
 	apiSchedulerHttpRequestTimeout           time.Duration = 5 * time.Second
@@ -461,23 +467,13 @@ func startFakeCCNOAAUAA(instanceCount int) {
 
 }
 
-func fakeMetrics(appId string, memoryValue uint64) {
+func fakeMetricsPolling(appId string, memoryValue uint64) {
 
 	eLock = &sync.Mutex{}
-	fakeCCNOAAUAA.RouteToHandler("GET", ccNOAAUAARegPath,
+	fakeCCNOAAUAA.RouteToHandler("GET", noaaPollingRegPath,
 		func(rw http.ResponseWriter, r *http.Request) {
-			eLock.Lock()
-			defer eLock.Unlock()
-			if isTokenExpired {
-				isTokenExpired = false
-				rw.WriteHeader(http.StatusUnauthorized)
-				return
-			}
-
 			mp := multipart.NewWriter(rw)
 			defer mp.Close()
-
-			guid := appId
 
 			rw.Header().Set("Content-Type", `multipart/x-protobuf; boundary=`+mp.Boundary())
 			timestamp := time.Now().UnixNano()
@@ -485,15 +481,51 @@ func fakeMetrics(appId string, memoryValue uint64) {
 			message2 := marshalMessage(createContainerMetric(appId, 1, 4.0, memoryValue, 2048, timestamp))
 			message3 := marshalMessage(createContainerMetric(appId, 2, 5.0, memoryValue, 2048, timestamp))
 
-			messages := map[string][][]byte{}
-			messages[appId] = [][]byte{message1, message2, message3}
-			for _, msg := range messages[guid] {
+			messages := [][]byte{message1, message2, message3}
+			for _, msg := range messages {
 				partWriter, _ := mp.CreatePart(nil)
 				partWriter.Write(msg)
 			}
 		},
 	)
+
 }
+
+func fakeMetricsStreaming(appId string, memoryValue uint64) {
+	messagesToSend = make(chan []byte, 256)
+	wsHandler := testhelpers.NewWebsocketHandler(messagesToSend, 100*time.Millisecond)
+	fakeCCNOAAUAA.RouteToHandler("GET", "/apps/"+appId+"/stream", wsHandler.ServeWebsocket)
+
+	streamingDoneChan = make(chan bool)
+	ticker := time.NewTicker(500 * time.Millisecond)
+	go func() {
+		select {
+		case <-streamingDoneChan:
+			ticker.Stop()
+			return
+		case <-ticker.C:
+			timestamp := time.Now().UnixNano()
+			message1 := marshalMessage(createContainerMetric(appId, 0, 3.0, memoryValue, 2048, timestamp))
+			messagesToSend <- message1
+			message2 := marshalMessage(createContainerMetric(appId, 1, 4.0, memoryValue, 2048, timestamp))
+			messagesToSend <- message2
+			message3 := marshalMessage(createContainerMetric(appId, 2, 5.0, memoryValue, 2048, timestamp))
+			messagesToSend <- message3
+		}
+	}()
+
+	emptyMessageChannel = make(chan []byte, 256)
+	emptyWsHandler := testhelpers.NewWebsocketHandler(emptyMessageChannel, 200*time.Millisecond)
+	fakeCCNOAAUAA.RouteToHandler("GET", noaaStreamingRegPath, emptyWsHandler.ServeWebsocket)
+
+}
+
+func closeFakeMetricsStreaming() {
+	close(streamingDoneChan)
+	close(messagesToSend)
+	close(emptyMessageChannel)
+}
+
 func createContainerMetric(appId string, instanceIndex int32, cpuPercentage float64, memoryBytes uint64, diskByte uint64, timestamp int64) *events.Envelope {
 	if timestamp == 0 {
 		timestamp = time.Now().UnixNano()

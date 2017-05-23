@@ -24,7 +24,7 @@ var _ = Describe("Apppoller", func() {
 		cfc       *fakes.FakeCfClient
 		noaa      *fakes.FakeNoaaConsumer
 		database  *fakes.FakeInstanceMetricsDB
-		poller    AppPoller
+		poller    AppCollector
 		fclock    *fakeclock.FakeClock
 		buffer    *gbytes.Buffer
 		timestamp int64
