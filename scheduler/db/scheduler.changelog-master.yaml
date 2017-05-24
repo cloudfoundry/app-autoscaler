@@ -208,14 +208,24 @@ databaseChangeLog:
             - column:
                 name: guid
                 type: varchar(50)
-                constraints:
-                  nullable: false
         - addColumn:
             tableName: app_scaling_specific_date_schedule
             columns:
             - column:
                 name: guid
                 type: varchar(50)
-                constraints:
-                  nullable: false
+   - changeSet:
+      id: 6
+      author: fujitsu
+      changes:
+        - addNotNullConstraint:
+            columnDataType: varchar(50)
+            columnName: guid
+            defaultNullValue: "1"
+            tableName: app_scaling_recurring_schedule
+        - addNotNullConstraint:
+            columnDataType: varchar(50)
+            columnName: guid
+            defaultNullValue: "1"
+            tableName: app_scaling_specific_date_schedule
 

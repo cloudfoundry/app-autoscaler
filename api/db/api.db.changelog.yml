@@ -30,4 +30,15 @@ databaseChangeLog:
                   constraints:
                     nullable: false
             tableName: policy_json
+   - changeSet:
+      id: 2
+      author: fujitsu
+      changes:
+      - update:
+          columns:
+          - column:
+              name: guid
+              type: varchar(50)
+              value: "1"
+          tableName: policy_json
 
