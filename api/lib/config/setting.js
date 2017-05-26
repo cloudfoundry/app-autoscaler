@@ -57,8 +57,8 @@ module.exports = function(settingsObj) {
     if (!isNumber(settings.port)) {
       return {valid:false,message:"port must be a number"};
     }
-    if (settings.port < 0 || settings.port > 65536) {
-      return {valid:false,message:"value of port must between 0 and 65536"};
+    if (settings.port < 1 || settings.port > 65535) {
+      return {valid:false,message:"value of port must between 1 and 65535"};
     }
 
     if (isMissing(settings.db.maxConnections)){

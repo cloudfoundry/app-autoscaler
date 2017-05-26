@@ -93,7 +93,7 @@ describe('config setting Test Suite', function() {
         it('Should return false', function() {
           settings.port = 70000;
           expect(settings.validate().valid).to.equal(false);
-          expect(settings.validate().message).to.equal("value of port must between 0 and 65536");
+          expect(settings.validate().message).to.equal("value of port must between 1 and 65535");
         })
       });
     });
