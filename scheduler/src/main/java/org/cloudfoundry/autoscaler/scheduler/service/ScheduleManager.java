@@ -770,9 +770,18 @@ public class ScheduleManager {
 		Map<String, ApplicationSchedules> policySchedulesMap = new HashMap<String, ApplicationSchedules>();
 		Map<String, String> appIdAndGuidMap = new HashMap<String, String>();
 		Map<String, String> scheduleAppIdGuidMap = new HashMap<String, String>();
-		List<PolicyJsonEntity> policyList = policyJsonDao.getAllPolicies();
-		List recurringScheduleList = recurringScheduleDao.getDistinctAppIdAndGuidList();
-		List specificDateScheduleList = specificDateScheduleDao.getDistinctAppIdAndGuidList();
+		List<PolicyJsonEntity> policyList = null;
+		List recurringScheduleList = null;
+		List specificDateScheduleList = null;
+		try{
+			policyList = policyJsonDao.getAllPolicies();
+			recurringScheduleList = recurringScheduleDao.getDistinctAppIdAndGuidList();
+			specificDateScheduleList = specificDateScheduleDao.getDistinctAppIdAndGuidList();
+		}catch(Exception e){
+			logger.error("Failed to synchronize schedules", e);
+			throw e;
+		}
+		
 		//create or updated
 		if(policyList.size() > 0){
 			for(PolicyJsonEntity policy : policyList){
@@ -867,6 +876,7 @@ public class ScheduleManager {
 			}
 			
 		} catch (IOException e) {
+			logger.error("Failed to parse policy, policy_json:" + policyJson, e);
 			applicationSchedules = null;
 		}
 		return applicationSchedules;
