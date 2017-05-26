@@ -23,8 +23,6 @@ module.exports = function(settingsObj) {
   settingsObj.scheduler.uri = cleanupSchedulerURI(settingsObj.scheduler.uri);
   var settings = {
     port: settingsObj.port,
-    username: settingsObj.username,
-    password: settingsObj.password,
     scheduler: settingsObj.scheduler,
     tls: settingsObj.tls
   };
@@ -40,70 +38,118 @@ module.exports = function(settingsObj) {
       }
 
   }
+  var isMissing = function(value){
+    return typeof(value) === "undefined" || value === null;
+  }
+  var isNumber = function(value){
+    return typeof(value) === "number";
+  }
+  var isString = function(value){
+    return typeof(value) === "string";
+  }
+  var isObject = function(value){
+    return typeof(value) === "object";
+  }
   settings.validate = function(){
-    if(typeof(settings.port) != "number") {
-      return {valid:false,message:"The port must be a number"};
+    if (isMissing(settings.port)){
+      return{valid:false, message:"port is required"}
     }
-    if (settings.port < 0 || settings.port > 65536) {
-      return {valid:false,message:"The value of port must between 0 and 65536"};
+    if (!isNumber(settings.port)) {
+      return {valid:false,message:"port must be a number"};
+    }
+    if (settings.port < 1 || settings.port > 65535) {
+      return {valid:false,message:"value of port must between 1 and 65535"};
     }
 
-    if(typeof(settings.db.maxConnections) != "number") {
-      return {valid:false,message:"maxConnections is required"};
+    if (isMissing(settings.db.maxConnections)){
+      return {valid:false,message:"db.maxConnections is required"};
     }
-    if(settings.db.maxConnections < 0) {
-      return {valid:false,message:"maxConnections must be greater than 0"};
+    if (!isNumber(settings.db.maxConnections)) {
+      return {valid:false,message:"db.maxConnections must be a number"};
     }
-    if(typeof(settings.db.minConnections) != "number") {
-      return {valid:false,message:"minConnections is required"};
+    if (settings.db.maxConnections <= 0) {
+      return {valid:false,message:"db.maxConnections must be greater than 0"};
     }
-    if(settings.db.minConnections < 0) {
-      return {valid:false,message:"minConnections must be greater than 0"};
+    if (isMissing(settings.db.minConnections)){
+      return {valid:false,message:"db.minConnections is required"};
     }
-    if(typeof(settings.db.idleTimeout) != "number") {
-      return {valid:false,message:"idleTimeout is required"};
+    if (!isNumber(settings.db.minConnections)) {
+      return {valid:false,message:"db.minConnections must be a number"};
     }
-    if(settings.db.idleTimeout < 0) {
-      return {valid:false,message:"idleTimeout must be greater than 0"};
+    if (settings.db.minConnections < 0) {
+      return {valid:false,message:"db.minConnections must be greater than or equal to 0"};
     }
-    if(typeof(settings.db.uri) != "string") {
-      return {valid:false,message:"dbUri is required"};
+    if (isMissing(settings.db.idleTimeout)){
+      return {valid:false,message:"db.idleTimeout is required"};
     }
-    if (!settings.tls) {
+    if (!isNumber(settings.db.idleTimeout)) {
+      return {valid:false,message:"db.idleTimeout must be a number"};
+    }
+    if (settings.db.idleTimeout <= 0) {
+      return {valid:false,message:"db.idleTimeout must be greater than 0"};
+    }
+    if (isMissing(settings.db.uri)) {
+      return {valid:false,message:"db.uri is required"};
+    }
+    if (!isString(settings.db.uri)) {
+      return {valid:false,message:"db.uri must be a string"};
+    }
+    if (isMissing(settings.tls)) {
       return { valid: false, message: "tls is required" };
     }
-    if(typeof(settings.tls) != "object"){
+    if (!isObject(settings.tls)){
       return { valid: false, message: "tls must be an object" };
     } 
-    if (typeof(settings.tls.keyFile) != "string") {
+    if (isMissing(settings.tls.keyFile)) {
       return { valid: false, message: "tls.keyFile is required" };
     }
-    if (typeof(settings.tls.certFile) != "string") {
+    if (!isString(settings.tls.keyFile)) {
+      return { valid: false, message: "tls.keyFile must be a string" };
+    }
+    if (isMissing(settings.tls.certFile)) {
       return { valid: false, message: "tls.certFile is required" };
     }
-    if (typeof(settings.tls.caCertFile) != "string") {
+    if (!isString(settings.tls.certFile)) {
+      return { valid: false, message: "tls.certFile must be a string" };
+    }
+    if (isMissing(settings.tls.caCertFile)) {
       return { valid: false, message: "tls.caCertFile is required" };
     }
-    if (!settings.scheduler) {
-      return { valid: false, message: "scheduler details required" };
+    if (!isString(settings.tls.caCertFile)) {
+      return { valid: false, message: "tls.caCertFile must be a string" };
     }
-    if (typeof (settings.scheduler.tls) != "object") {
-      return { valid: false, message: "scheduler.tls should be an object" };
+    if (isMissing(settings.scheduler)) {
+      return { valid: false, message: "scheduler is required" };
     }
-    if (!settings.scheduler.uri) {
-      return { valid: false, message: "scheduler uri is required" };
+    if (isMissing(settings.scheduler.uri)) {
+      return { valid: false, message: "scheduler.uri is required" };
     }
-    if (!settings.scheduler.tls) {
-      return { valid: false, message: "scheduler tls is required" };
+    if (!isString(settings.scheduler.uri)) {
+      return { valid: false, message: "scheduler.uri must be a string" };
     }
-    if (!settings.scheduler.tls.keyFile) {
+    if (isMissing(settings.scheduler.tls)) {
+      return { valid: false, message: "scheduler.tls is required" };
+    }
+    if (!isObject(settings.scheduler.tls)) {
+      return { valid: false, message: "scheduler.tls must be an object" };
+    }
+    if (isMissing(settings.scheduler.tls.keyFile)) {
       return { valid: false, message: "scheduler.tls.keyFile is required" };
     }
-    if (!settings.scheduler.tls.caCertFile) {
+    if (!isString(settings.scheduler.tls.keyFile)) {
+      return { valid: false, message: "scheduler.tls.keyFile must be a string" };
+    }
+    if (isMissing(settings.scheduler.tls.caCertFile)) {
       return { valid: false, message: "scheduler.tls.caCertFile is required" };
     }
-    if (!settings.scheduler.tls.certFile) {
+    if (!isString(settings.scheduler.tls.caCertFile)) {
+      return { valid: false, message: "scheduler.tls.caCertFile must be a string" };
+    }
+    if (isMissing(settings.scheduler.tls.certFile)) {
       return { valid: false, message: "scheduler.tls.certFile is required" };
+    }
+    if (!isString(settings.scheduler.tls.certFile)) {
+      return { valid: false, message: "scheduler.tls.certFile must be a string" };
     }
     return {valid:true}
   }
