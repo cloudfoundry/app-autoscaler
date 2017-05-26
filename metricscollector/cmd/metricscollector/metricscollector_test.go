@@ -239,67 +239,74 @@ var _ = Describe("MetricsCollector", func() {
 		})
 	})
 
-	Context("when a request for memory metrics comes", func() {
-		Context("when token is not expired", func() {
-			BeforeEach(func() {
-				eLock.Lock()
-				isTokenExpired = false
-				eLock.Unlock()
-				runner.Start()
+	Describe("MetricsCollector REST API", func() {
+		Context("when a request for memory metrics comes", func() {
+			Context("when token is not expired", func() {
+				BeforeEach(func() {
+					eLock.Lock()
+					isTokenExpired = false
+					eLock.Unlock()
+					runner.Start()
+				})
+
+				It("returns with a 200", func() {
+					rsp, err := httpClient.Get(fmt.Sprintf("https://127.0.0.1:%d/v1/apps/an-app-id/metrics/memoryused", mcPort))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+					rsp.Body.Close()
+				})
 			})
 
-			It("returns with a 200", func() {
-				rsp, err := httpClient.Get(fmt.Sprintf("https://127.0.0.1:%d/v1/apps/an-app-id/metrics/memoryused", mcPort))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
-				rsp.Body.Close()
+			Context("when token is expired", func() {
+				BeforeEach(func() {
+					eLock.Lock()
+					isTokenExpired = true
+					eLock.Unlock()
+					runner.Start()
+				})
+				It("refreshes the token and returns with a 200", func() {
+					rsp, err := httpClient.Get(fmt.Sprintf("https://127.0.0.1:%d/v1/apps/an-app-id/metrics/memoryused", mcPort))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+					rsp.Body.Close()
+				})
 			})
 		})
 
-		Context("when token is expired", func() {
-			BeforeEach(func() {
-				eLock.Lock()
-				isTokenExpired = true
-				eLock.Unlock()
-				runner.Start()
+		Context("when a request for metrics history comes", func() {
+			Context("when using polling for metrics collection", func() {
+				BeforeEach(func() {
+					runner.Start()
+				})
+
+				It("returns with a 200", func() {
+					rsp, err := httpClient.Get(fmt.Sprintf("https://127.0.0.1:%d/v1/apps/an-app-id/metric_histories/a-metric-type", mcPort))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+					rsp.Body.Close()
+				})
 			})
-			It("refreshes the token and returns with a 200", func() {
-				rsp, err := httpClient.Get(fmt.Sprintf("https://127.0.0.1:%d/v1/apps/an-app-id/metrics/memoryused", mcPort))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
-				rsp.Body.Close()
+			Context("when using streaming for metrics collection", func() {
+				BeforeEach(func() {
+					streamingCfg := cfg
+					streamingCfg.Collector.CollectMethod = config.CollectMethodStreaming
+					runner.configPath = writeConfig(&streamingCfg).Name()
+					runner.Start()
+				})
+
+				AfterEach(func() {
+					os.Remove(runner.configPath)
+				})
+
+				It("returns with a 200", func() {
+					rsp, err := httpClient.Get(fmt.Sprintf("https://127.0.0.1:%d/v1/apps/an-app-id/metric_histories/a-metric-type", mcPort))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+					rsp.Body.Close()
+				})
 			})
 		})
 
-	})
-
-	Context("when a request for metrics history comes", func() {
-		BeforeEach(func() {
-			runner.Start()
-		})
-
-		It("returns with a 200", func() {
-			rsp, err := httpClient.Get(fmt.Sprintf("https://127.0.0.1:%d/v1/apps/an-app-id/metric_histories/a-metric-type", mcPort))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.StatusCode).To(Equal(http.StatusOK))
-			rsp.Body.Close()
-		})
-	})
-
-	Context("when using streaming for metrics collection", func() {
-		BeforeEach(func() {
-			streamingCfg := cfg
-			streamingCfg.Collector.CollectMethod = config.CollectMethodStreaming
-			runner.configPath = writeConfig(&streamingCfg).Name()
-			runner.Start()
-		})
-
-		It("returns with a 200 for metric query", func() {
-			rsp, err := httpClient.Get(fmt.Sprintf("https://127.0.0.1:%d/v1/apps/an-app-id/metric_histories/a-metric-type", mcPort))
-			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.StatusCode).To(Equal(http.StatusOK))
-			rsp.Body.Close()
-		})
 	})
 
 })
