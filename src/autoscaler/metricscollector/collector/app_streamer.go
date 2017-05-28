@@ -113,7 +113,7 @@ func (as *appStreamer) computeAndSaveMetrics() {
 				CollectedAt:   as.sclock.Now().UnixNano(),
 				Name:          models.MetricNameThroughput,
 				Unit:          models.UnitRPS,
-				Value:         fmt.Sprintf("%.1f", float64(numReq)/as.collectInterval.Seconds()),
+				Value:         fmt.Sprintf("%d", int(float64(numReq)/as.collectInterval.Seconds()+0.5)),
 				Timestamp:     as.sclock.Now().UnixNano(),
 			}
 			as.logger.Debug("compute-throughput", lager.Data{"throughput": througput})

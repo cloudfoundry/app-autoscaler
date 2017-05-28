@@ -6,17 +6,19 @@ import (
 	"github.com/cloudfoundry/sonde-go/events"
 )
 
-func NewContainerEnvelope(timestamp int64, appId string, index int32, cpu float64, memory uint64, disk uint64) *events.Envelope {
+func NewContainerEnvelope(timestamp int64, appId string, index int32, cpu float64, memory uint64, disk uint64, memQuota uint64, diskQuota uint64) *events.Envelope {
 	eventType := events.Envelope_ContainerMetric
 	return &events.Envelope{
 		EventType: &eventType,
 		Timestamp: &timestamp,
 		ContainerMetric: &events.ContainerMetric{
-			ApplicationId: &appId,
-			InstanceIndex: &index,
-			CpuPercentage: &cpu,
-			MemoryBytes:   &memory,
-			DiskBytes:     &disk,
+			ApplicationId:    &appId,
+			InstanceIndex:    &index,
+			CpuPercentage:    &cpu,
+			MemoryBytes:      &memory,
+			DiskBytes:        &disk,
+			MemoryBytesQuota: &memQuota,
+			DiskBytesQuota:   &diskQuota,
 		},
 	}
 }
@@ -53,8 +55,8 @@ func GetInstanceMemoryMetricFromContainerMetricEvent(collectAt int64, appId stri
 			InstanceIndex: uint32(cm.GetInstanceIndex()),
 			CollectedAt:   collectAt,
 			Name:          models.MetricNameMemory,
-			Unit:          models.UnitMegaBytes,
-			Value:         fmt.Sprintf("%d", int(float64(cm.GetMemoryBytes())/(1024*1024)+0.5)),
+			Unit:          models.UnitPercentage,
+			Value:         fmt.Sprintf("%d", int(float64(cm.GetMemoryBytes())/float64(cm.GetMemoryBytesQuota())*100+0.5)),
 			Timestamp:     event.GetTimestamp(),
 		}
 	}

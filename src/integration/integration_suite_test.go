@@ -461,7 +461,7 @@ func startFakeCCNOAAUAA(instanceCount int) {
 
 }
 
-func fakeMetrics(appId string, memoryValue uint64) {
+func fakeMetrics(appId string, memoryValue uint64, memQuota uint64) {
 
 	eLock = &sync.Mutex{}
 	fakeCCNOAAUAA.RouteToHandler("GET", ccNOAAUAARegPath,
@@ -481,9 +481,9 @@ func fakeMetrics(appId string, memoryValue uint64) {
 
 			rw.Header().Set("Content-Type", `multipart/x-protobuf; boundary=`+mp.Boundary())
 			timestamp := time.Now().UnixNano()
-			message1 := marshalMessage(createContainerMetric(appId, 0, 3.0, memoryValue, 2048, timestamp))
-			message2 := marshalMessage(createContainerMetric(appId, 1, 4.0, memoryValue, 2048, timestamp))
-			message3 := marshalMessage(createContainerMetric(appId, 2, 5.0, memoryValue, 2048, timestamp))
+			message1 := marshalMessage(createContainerMetric(appId, 0, 3.0, memoryValue, 2048, memQuota, 4096, timestamp))
+			message2 := marshalMessage(createContainerMetric(appId, 1, 4.0, memoryValue, 2048, memQuota, 4096, timestamp))
+			message3 := marshalMessage(createContainerMetric(appId, 2, 5.0, memoryValue, 2048, memQuota, 4096, timestamp))
 
 			messages := map[string][][]byte{}
 			messages[appId] = [][]byte{message1, message2, message3}
@@ -494,17 +494,19 @@ func fakeMetrics(appId string, memoryValue uint64) {
 		},
 	)
 }
-func createContainerMetric(appId string, instanceIndex int32, cpuPercentage float64, memoryBytes uint64, diskByte uint64, timestamp int64) *events.Envelope {
+func createContainerMetric(appId string, instanceIndex int32, cpuPercentage float64, memoryBytes uint64, diskByte uint64, memQuota uint64, diskQuota uint64, timestamp int64) *events.Envelope {
 	if timestamp == 0 {
 		timestamp = time.Now().UnixNano()
 	}
 
 	cm := &events.ContainerMetric{
-		ApplicationId: proto.String(appId),
-		InstanceIndex: proto.Int32(instanceIndex),
-		CpuPercentage: proto.Float64(cpuPercentage),
-		MemoryBytes:   proto.Uint64(memoryBytes),
-		DiskBytes:     proto.Uint64(diskByte),
+		ApplicationId:    proto.String(appId),
+		InstanceIndex:    proto.Int32(instanceIndex),
+		CpuPercentage:    proto.Float64(cpuPercentage),
+		MemoryBytes:      proto.Uint64(memoryBytes),
+		DiskBytes:        proto.Uint64(diskByte),
+		MemoryBytesQuota: proto.Uint64(memQuota),
+		DiskBytesQuota:   proto.Uint64(diskQuota),
 	}
 
 	return &events.Envelope{

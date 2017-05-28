@@ -24,7 +24,7 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 	BeforeEach(func() {
 		testAppId = getRandomId()
 		startFakeCCNOAAUAA(initInstanceCount)
-		fakeMetrics(testAppId, 400*1024*1024)
+		fakeMetrics(testAppId, 2048, 4096)
 		metricsCollectorConfPath = components.PrepareMetricsCollectorConfig(dbUrl, components.Ports[MetricsCollector], fakeCCNOAAUAA.URL(), cf.GrantTypePassword, collectInterval,
 			refreshInterval, tmpDir, locket.DefaultSessionTTL, locket.RetryInterval, consulRunner.ConsulCluster())
 		eventGeneratorConfPath = components.PrepareEventGeneratorConfig(dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), aggregatorExecuteInterval, policyPollerInterval, evaluationManagerInterval, tmpDir, locket.DefaultSessionTTL, locket.RetryInterval, consulRunner.ConsulCluster())
@@ -48,7 +48,7 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 							MetricType:            models.MetricNameMemory,
 							StatWindowSeconds:     30,
 							BreachDurationSeconds: 30,
-							Threshold:             90,
+							Threshold:             30,
 							Operator:              ">=",
 							CoolDownSeconds:       30,
 							Adjustment:            "+1",
@@ -77,7 +77,7 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 							MetricType:            models.MetricNameMemory,
 							StatWindowSeconds:     30,
 							BreachDurationSeconds: 30,
-							Threshold:             900,
+							Threshold:             80,
 							Operator:              ">=",
 							CoolDownSeconds:       30,
 							Adjustment:            "+1",
@@ -107,7 +107,7 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 							MetricType:            models.MetricNameMemory,
 							StatWindowSeconds:     30,
 							BreachDurationSeconds: 30,
-							Threshold:             900,
+							Threshold:             80,
 							Operator:              "<",
 							CoolDownSeconds:       300,
 							Adjustment:            "-1",
@@ -135,10 +135,10 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 							MetricType:            models.MetricNameMemory,
 							StatWindowSeconds:     30,
 							BreachDurationSeconds: 30,
-							Threshold:             90,
+							Threshold:             30,
 							Operator:              "<",
 							CoolDownSeconds:       30,
-							Adjustment:            "+1",
+							Adjustment:            "-1",
 						},
 					},
 				}
