@@ -1,23 +1,31 @@
 package org.cloudfoundry.autoscaler.scheduler.service;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cloudfoundry.autoscaler.scheduler.dao.ActiveScheduleDao;
+import org.cloudfoundry.autoscaler.scheduler.dao.PolicyJsonDao;
 import org.cloudfoundry.autoscaler.scheduler.dao.RecurringScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.dao.SpecificDateScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
+import org.cloudfoundry.autoscaler.scheduler.entity.PolicyJsonEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationSchedules;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.Schedules;
+import org.cloudfoundry.autoscaler.scheduler.rest.model.SynchronizeResult;
 import org.cloudfoundry.autoscaler.scheduler.util.DataValidationHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.DateHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.RecurringScheduleTime;
@@ -37,6 +45,9 @@ import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestOperations;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 /**
  * Service class to persist the schedule entity in the database and create
  * scheduled job.
@@ -50,6 +61,8 @@ public class ScheduleManager {
 	private RecurringScheduleDao recurringScheduleDao;
 	@Autowired
 	private ActiveScheduleDao activeScheduleDao;
+	@Autowired
+	private PolicyJsonDao policyJsonDao;
 	@Autowired
 	private ScheduleJobManager scheduleJobManager;
 	@Autowired
@@ -748,7 +761,126 @@ public class ScheduleManager {
 			throw new SchedulerInternalException("Database error", dve);
 		}
 	}
-
+	
+	@Transactional
+	public SynchronizeResult synchronizeSchedules(){
+		int createCount = 0;
+		int updateCount = 0;
+		int deleteCount = 0;
+		Map<String, ApplicationSchedules> policySchedulesMap = new HashMap<String, ApplicationSchedules>();
+		Map<String, String> appIdAndGuidMap = new HashMap<String, String>();
+		Map<String, String> scheduleAppIdGuidMap = new HashMap<String, String>();
+		List<PolicyJsonEntity> policyList = null;
+		List recurringScheduleList = null;
+		List specificDateScheduleList = null;
+		try{
+			policyList = policyJsonDao.getAllPolicies();
+			recurringScheduleList = recurringScheduleDao.getDistinctAppIdAndGuidList();
+			specificDateScheduleList = specificDateScheduleDao.getDistinctAppIdAndGuidList();
+		}catch(Exception e){
+			logger.error("Failed to synchronize schedules", e);
+			throw e;
+		}
+		
+		//create or updated
+		if(policyList.size() > 0){
+			for(PolicyJsonEntity policy : policyList){
+				policySchedulesMap.put(policy.getAppId(), this.parseSchedulesFromPolicy(policy));
+				scheduleAppIdGuidMap.put(policy.getAppId(), policy.getGuid());
+			}
+		}
+		
+		if(recurringScheduleList.size() > 0){
+			for(Object ro : recurringScheduleList){
+				Object[] roArray = (Object[])ro;
+				appIdAndGuidMap.put((String)(roArray[0]), (String)(roArray[1]));
+			}
+		}
+		
+		if(specificDateScheduleList.size() > 0){
+			for(Object so : specificDateScheduleList){
+				Object[] soArray = (Object[])so;
+				appIdAndGuidMap.put((String)(soArray[0]), (String)(soArray[1]));
+			}
+		}
+		
+		List<ApplicationSchedules> toCreateScheduleList = new ArrayList<ApplicationSchedules>();
+		Set<String> toDeletedAppIds = new HashSet<String>();
+		for (String appIdInPolicy : policySchedulesMap.keySet()) {
+			if (policySchedulesMap.get(appIdInPolicy).getSchedules() != null
+					&& policySchedulesMap.get(appIdInPolicy).getSchedules().hasSchedules()) {
+				if (appIdAndGuidMap.get(appIdInPolicy) == null) {
+					toCreateScheduleList.add(policySchedulesMap.get(appIdInPolicy));
+					createCount++;
+					continue;
+				} else if (!scheduleAppIdGuidMap.get(appIdInPolicy).equals(appIdAndGuidMap.get(appIdInPolicy))) {
+					toCreateScheduleList.add(policySchedulesMap.get(appIdInPolicy));
+					toDeletedAppIds.add(appIdInPolicy);
+					updateCount++;
+					continue;
+				}
+			}
+		}
+		
+		Set<String> appIdInScheduleSet = new HashSet<String>();
+		Set<String> appIdInPolicySet = policySchedulesMap.keySet();
+		appIdInScheduleSet.addAll(appIdAndGuidMap.keySet());
+		for(String appId : appIdInScheduleSet){
+			if(!appIdInPolicySet.contains(appId)){
+				toDeletedAppIds.add(appId);
+				deleteCount++;
+			}
+		}
+		for(String appId : toDeletedAppIds){
+			this.deleteSchedules(appId);
+		}
+		
+		for(ApplicationSchedules schedule : toCreateScheduleList){
+			this.createSchedules(schedule.getSchedules());
+		}		
+		
+		return new SynchronizeResult(createCount,updateCount,deleteCount);
+		
+	}
+	
+	private ApplicationSchedules parseSchedulesFromPolicy(PolicyJsonEntity policyJsonEntity){
+		ObjectMapper mapper = new ObjectMapper();
+		String policyJson = policyJsonEntity.getPolicyJson();
+		ApplicationSchedules applicationSchedules = null;
+		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		try {
+			applicationSchedules = mapper.readValue(policyJson, ApplicationSchedules.class);
+			if(applicationSchedules!=null && applicationSchedules.getSchedules()!=null&&applicationSchedules.getSchedules().hasSchedules()){
+				Schedules schedules = applicationSchedules.getSchedules();
+				List<RecurringScheduleEntity> recurringSchedules = schedules.getRecurringSchedule();
+				List<SpecificDateScheduleEntity> specificDateSchedules = schedules.getSpecificDate();
+				if(recurringSchedules != null){
+					for(RecurringScheduleEntity recurring : recurringSchedules){
+						recurring.setAppId(policyJsonEntity.getAppId());
+						recurring.setTimeZone(schedules.getTimeZone());
+						recurring.setDefaultInstanceMinCount(applicationSchedules.getInstanceMinCount());
+						recurring.setDefaultInstanceMaxCount(applicationSchedules.getInstanceMaxCount());
+						recurring.setGuid(policyJsonEntity.getGuid());
+					}
+				}
+				if(specificDateSchedules != null){
+					for(SpecificDateScheduleEntity specificDate : specificDateSchedules){
+						specificDate.setAppId(policyJsonEntity.getAppId());
+						specificDate.setTimeZone(schedules.getTimeZone());
+						specificDate.setDefaultInstanceMinCount(applicationSchedules.getInstanceMinCount());
+						specificDate.setDefaultInstanceMaxCount(applicationSchedules.getInstanceMaxCount());
+						specificDate.setGuid(policyJsonEntity.getGuid());
+					}
+				}
+				 
+			}
+			
+		} catch (IOException e) {
+			logger.error("Failed to parse policy, policy_json:" + policyJson, e);
+			applicationSchedules = null;
+		}
+		return applicationSchedules;
+	}
 	private void notifyScalingEngineForDelete(String appId, long scheduleId) {
 		String scalingEnginePathActiveSchedule = ScalingEngineUtil.getScalingEngineActiveSchedulePath(scalingEngineUrl,
 				appId, scheduleId);

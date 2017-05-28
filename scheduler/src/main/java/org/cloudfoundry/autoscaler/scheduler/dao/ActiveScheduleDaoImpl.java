@@ -2,6 +2,7 @@ package org.cloudfoundry.autoscaler.scheduler.dao;
 
 import java.util.List;
 
+import javax.annotation.Resource;
 import javax.sql.DataSource;
 
 import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
@@ -29,7 +30,7 @@ public class ActiveScheduleDaoImpl extends JdbcDaoSupport implements ActiveSched
 
 	private static final String SELECT_BY_APPID_SQL = "SELECT * FROM " + TABLE_NAME + " WHERE app_id=?";
 
-	@Autowired
+	@Resource(name="dataSource")
 	private void setupDataSource(DataSource dataSource) {
 		setDataSource(dataSource);
 	}

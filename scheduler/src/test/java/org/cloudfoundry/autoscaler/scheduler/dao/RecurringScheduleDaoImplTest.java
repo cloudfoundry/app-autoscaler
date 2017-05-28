@@ -6,12 +6,15 @@ import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.transaction.Transactional;
 
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.util.ConsulUtil;
+import org.cloudfoundry.autoscaler.scheduler.util.RecurringScheduleEntitiesBuilder;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationException;
@@ -36,6 +39,9 @@ public class RecurringScheduleDaoImplTest {
 
 	private static ConsulUtil consulUtil;
 
+	private String appId1, appId2;
+	private String guid1, guid2;
+
 	@BeforeClass
 	public static void beforeClass() throws IOException {
 		consulUtil = new ConsulUtil();
@@ -53,14 +59,17 @@ public class RecurringScheduleDaoImplTest {
 		testDataDbUtil.cleanupData();
 
 		// Add fake test records.
-		String appId = "appId1";
-		String guid = TestDataSetupHelper.generateGuid();
-		List<RecurringScheduleEntity> entities = TestDataSetupHelper.generateRecurringScheduleEntities(appId, guid, 1, 0);
+		appId1 = "appId1";
+		appId2 = "appId3";
+		guid1 = TestDataSetupHelper.generateGuid();
+		guid2 = TestDataSetupHelper.generateGuid();
+		
+		List<RecurringScheduleEntity> entities = new RecurringScheduleEntitiesBuilder(1, 0).setAppId(appId1).setGuid(guid1).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).build();
 		testDataDbUtil.insertRecurringSchedule(entities);
 
-		appId = "appId3";
-		guid = TestDataSetupHelper.generateGuid();
-		entities = TestDataSetupHelper.generateRecurringScheduleEntities(appId, guid, 0, 1);
+		
+		
+		entities =new RecurringScheduleEntitiesBuilder(1, 0).setAppId(appId2).setGuid(guid2).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).build();;
 		testDataDbUtil.insertRecurringSchedule(entities);
 	}
 
@@ -85,11 +94,33 @@ public class RecurringScheduleDaoImplTest {
 	}
 
 	@Test
+	public void testGetDistinctAppIdAndGuidList() {
+		//add another rows with the same appId and guid
+		List<RecurringScheduleEntity> entities = new RecurringScheduleEntitiesBuilder(1, 0).setAppId(appId1).setGuid(guid1).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).build();
+		testDataDbUtil.insertRecurringSchedule(entities);
+		entities =new RecurringScheduleEntitiesBuilder(1, 0).setAppId(appId2).setGuid(guid2).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).build();;
+		testDataDbUtil.insertRecurringSchedule(entities);
+		
+		List foundEntityList = recurringScheduleDao.getDistinctAppIdAndGuidList();
+
+		assertThat("It should have two record", foundEntityList.size(), is(2));
+		Set<String> appIdSet = new HashSet<String>() {
+			{
+				add((String)((Object[])(foundEntityList.get(0)))[0]);
+				add((String)((Object[])(foundEntityList.get(1)))[0]);
+			}
+		};
+		assertThat("It should contains the two inserted entities",
+				appIdSet.contains(appId1) && appIdSet.contains(appId2), is(true));
+
+	}
+
+	@Test
 	public void testCreateRecurringSchedule() {
 		String appId = "appId2";
 		String guid = TestDataSetupHelper.generateGuid();
 		RecurringScheduleEntity recurringScheduleEntity = TestDataSetupHelper
-				.generateRecurringScheduleEntities(appId, guid, 1, 0).get(0);
+				.generateRecurringScheduleEntities(appId, guid, false, 1, 0).get(0);
 
 		assertThat("It should no recurring schedule", testDataDbUtil.getNumberOfRecurringSchedulesByAppId(appId),
 				is(0));
@@ -136,7 +167,7 @@ public class RecurringScheduleDaoImplTest {
 			recurringScheduleDao.findAllRecurringSchedulesByAppId(null);
 			fail("Should fail");
 		} catch (DatabaseValidationException dve) {
-			assertThat(dve.getMessage(), is("Find All recurring schedules failed"));
+			assertThat(dve.getMessage(), is("Find All recurring schedules by app id failed"));
 		}
 	}
 

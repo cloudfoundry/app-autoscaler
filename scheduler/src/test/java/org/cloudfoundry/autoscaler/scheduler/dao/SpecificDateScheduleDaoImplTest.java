@@ -5,12 +5,15 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.transaction.Transactional;
 
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.util.ConsulUtil;
+import org.cloudfoundry.autoscaler.scheduler.util.SpecificDateScheduleEntitiesBuilder;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationException;
@@ -35,6 +38,9 @@ public class SpecificDateScheduleDaoImplTest {
 	private TestDataDbUtil testDataDbUtil;
 
 	private static ConsulUtil consulUtil;
+	
+	private String appId1, appId2;
+	private String guid1, guid2;
 
 	@BeforeClass
 	public static void beforeClass() throws IOException {
@@ -51,16 +57,17 @@ public class SpecificDateScheduleDaoImplTest {
 	public void before() {
 		// Remove All ActiveSchedules
 		testDataDbUtil.cleanupData();
-
+		
 		// Add fake test records.
-		String appId = "appId1";
-		String guid = TestDataSetupHelper.generateGuid();
-		List<SpecificDateScheduleEntity> entities = TestDataSetupHelper.generateSpecificDateScheduleEntities(appId, guid, 1);
+		appId1 = "appId1";
+		appId2 = "appId3";
+		guid1 = TestDataSetupHelper.generateGuid();
+		guid2 = TestDataSetupHelper.generateGuid();
+		
+		List<SpecificDateScheduleEntity> entities = new SpecificDateScheduleEntitiesBuilder(1).setAppid(appId1).setGuid(guid1).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).build();
 		testDataDbUtil.insertSpecificDateSchedule(entities);
 
-		appId = "appId3";
-		guid = TestDataSetupHelper.generateGuid();
-		entities = TestDataSetupHelper.generateSpecificDateScheduleEntities(appId, guid, 1);
+		entities = new SpecificDateScheduleEntitiesBuilder(1).setAppid(appId2).setGuid(guid2).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).build();
 		testDataDbUtil.insertSpecificDateSchedule(entities);
 	}
 
@@ -87,11 +94,35 @@ public class SpecificDateScheduleDaoImplTest {
 	}
 
 	@Test
+	public void testGetDistinctAppIdAndGuidList(){
+		
+		//add another rows with the same appId and guid
+		List<SpecificDateScheduleEntity> entities = new SpecificDateScheduleEntitiesBuilder(1).setAppid(appId1).setGuid(guid1).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).build();
+		testDataDbUtil.insertSpecificDateSchedule(entities);
+
+		entities = new SpecificDateScheduleEntitiesBuilder(1).setAppid(appId2).setGuid(guid2).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).build();
+		testDataDbUtil.insertSpecificDateSchedule(entities);
+		
+		List foundEntityList = specificDateScheduleDao.getDistinctAppIdAndGuidList();
+		
+		assertThat("It should have two record", foundEntityList.size(), is(2));
+		
+		Set<String> appIdSet = new HashSet<String>() {
+			{
+				add((String)((Object[])(foundEntityList.get(0)))[0]);
+				add((String)((Object[])(foundEntityList.get(1)))[0]);
+			}
+		};
+		assertThat("It should contains the two inserted entities",
+				appIdSet.contains(appId1) && appIdSet.contains(appId2), is(true));
+	}
+	
+	@Test
 	public void testCreateSpecificDateSchedule() {
 		String appId = "appId2";
 		String guid = TestDataSetupHelper.generateGuid();
 		SpecificDateScheduleEntity specificDateScheduleEntity = TestDataSetupHelper
-				.generateSpecificDateScheduleEntities(appId, guid, 1).get(0);
+				.generateSpecificDateScheduleEntities(appId, guid, false, 1).get(0);
 
 		assertThat("It should have no specific date schedule",
 				testDataDbUtil.getNumberOfRecurringSchedulesByAppId(appId), is(0));
@@ -139,7 +170,7 @@ public class SpecificDateScheduleDaoImplTest {
 			specificDateScheduleDao.findAllSpecificDateSchedulesByAppId(null);
 			fail("Should fail");
 		} catch (DatabaseValidationException dve) {
-			assertThat(dve.getMessage(), is("Find All specific date schedules failed"));
+			assertThat(dve.getMessage(), is("Find All specific date schedules by app id failed"));
 		}
 	}
 

@@ -260,6 +260,11 @@ spring.datasource.driverClassName=org.postgresql.Driver
 spring.datasource.url=%s
 spring.datasource.username=%s
 spring.datasource.password=%s
+#policy db
+spring.policyDbDataSource.driverClassName=org.postgresql.Driver
+spring.policyDbDataSource.url=%s
+spring.policyDbDataSource.username=%s
+spring.policyDbDataSource.password=%s
 #quartz job
 scalingenginejob.reschedule.interval.millisecond=10000
 scalingenginejob.reschedule.maxcount=3
@@ -296,7 +301,7 @@ spring.aop.auto=false
 endpoints.enabled=false
 spring.data.jpa.repositories.enabled=false
 `
-	settingJsonStr := fmt.Sprintf(settingStrTemplate, jdbcDBUri, userName, password, scalingEngineUri, testCertDir, testCertDir, testCertDir, testCertDir, components.Ports[Scheduler], components.Ports[Scheduler], consulPort)
+	settingJsonStr := fmt.Sprintf(settingStrTemplate, jdbcDBUri, userName, password, jdbcDBUri, userName, password, scalingEngineUri, testCertDir, testCertDir, testCertDir, testCertDir, components.Ports[Scheduler], components.Ports[Scheduler], consulPort)
 	cfgFile, err := os.Create(filepath.Join(tmpDir, "application.properties"))
 	Expect(err).NotTo(HaveOccurred())
 	ioutil.WriteFile(cfgFile.Name(), []byte(settingJsonStr), 0777)

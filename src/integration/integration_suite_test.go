@@ -346,6 +346,13 @@ func deleteSchedule(appId string) (*http.Response, error) {
 	return httpClient.Do(req)
 }
 
+func synchronizeSchedule() (*http.Response, error) {
+	req, err := http.NewRequest("PUT", fmt.Sprintf("https://127.0.0.1:%d/v2/syncSchedules", components.Ports[Scheduler]), strings.NewReader(""))
+	Expect(err).NotTo(HaveOccurred())
+	req.Header.Set("Content-Type", "application/json")
+	return httpClient.Do(req)
+}
+
 func getActiveSchedule(appId string) (*http.Response, error) {
 	req, err := http.NewRequest("GET", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/active_schedules", components.Ports[ScalingEngine], appId), strings.NewReader(""))
 	Expect(err).NotTo(HaveOccurred())
@@ -391,15 +398,18 @@ func clearDatabase() {
 	Expect(err).NotTo(HaveOccurred())
 }
 
-func insertPolicy(appId string, scalingPolicy models.ScalingPolicy) {
+func insertPolicy(appId string, policyStr string, guid string) {
 	query := "INSERT INTO policy_json(app_id, policy_json, guid) VALUES($1, $2, $3)"
-	policyBytes, err := json.Marshal(scalingPolicy)
-	Expect(err).NotTo(HaveOccurred())
-	_, err = dbHelper.Exec(query, appId, string(policyBytes), "1234")
+	_, err := dbHelper.Exec(query, appId, policyStr, guid)
 	Expect(err).NotTo(HaveOccurred())
 
 }
 
+func deletePolicy(appId string) {
+	query := "DELETE FROM policy_json WHERE app_id=$1"
+	_, err := dbHelper.Exec(query, appId)
+	Expect(err).NotTo(HaveOccurred())
+}
 func getScalingHistoryCount(appId string, oldInstanceCount int, newInstanceCount int) int {
 	var count int
 	query := "SELECT COUNT(*) FROM scalinghistory WHERE appid=$1 AND oldinstances=$2 AND newinstances=$3"

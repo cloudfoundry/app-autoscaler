@@ -11,5 +11,7 @@ import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 public interface SpecificDateScheduleDao extends GenericDao<SpecificDateScheduleEntity> {
 
 	public List<SpecificDateScheduleEntity> findAllSpecificDateSchedulesByAppId(String appId);
+	
+	public List getDistinctAppIdAndGuidList();
 
 }

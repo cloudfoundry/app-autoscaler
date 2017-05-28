@@ -25,7 +25,8 @@ import io.swagger.annotations.ApiModelProperty;
 @Entity
 @Table(name = "app_scaling_specific_date_schedule")
 @NamedQueries({
-		@NamedQuery(name = SpecificDateScheduleEntity.query_specificDateSchedulesByAppId, query = SpecificDateScheduleEntity.jpql_specificDateSchedulesByAppId) })
+		@NamedQuery(name = SpecificDateScheduleEntity.query_specificDateSchedulesByAppId, query = SpecificDateScheduleEntity.jpql_specificDateSchedulesByAppId),
+		@NamedQuery(name = SpecificDateScheduleEntity.query_findDistinctAppIdAndGuidFromSpecificDateSchedule, query = SpecificDateScheduleEntity.jpql_findDistinctAppIdAndGuidFromSpecificDateSchedule) })
 public class SpecificDateScheduleEntity extends ScheduleEntity {
 
 	@ApiModelProperty(example = DateHelper.DATE_TIME_FORMAT, required = true, position = 1)
@@ -66,6 +67,9 @@ public class SpecificDateScheduleEntity extends ScheduleEntity {
 	static final String jpql_specificDateSchedulesByAppId = " FROM SpecificDateScheduleEntity"
 			+ " WHERE app_id = :appId";
 
+	public static final String query_findDistinctAppIdAndGuidFromSpecificDateSchedule = "SpecificDateScheduleEntity.findDistinctAppIdAndGuid";
+	static final String jpql_findDistinctAppIdAndGuidFromSpecificDateSchedule = "SELECT DISTINCT appId,guid FROM SpecificDateScheduleEntity";
+
 	@Override
 	public boolean equals(Object o) {
 		if (this == o)
@@ -93,7 +97,7 @@ public class SpecificDateScheduleEntity extends ScheduleEntity {
 
 	@Override
 	public String toString() {
-		return "SpecificDateScheduleEntity [startDateTime=" + startDateTime + ", endDateTime=" + endDateTime + "]";
+		return super.toString() + ", SpecificDateScheduleEntity [startDateTime=" + startDateTime + ", endDateTime=" + endDateTime + "]";
 	}
 
 }

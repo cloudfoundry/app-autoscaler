@@ -40,18 +40,33 @@
         </property>
     </bean>
 
-    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"
+    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" primary="true"
           destroy-method="close">
         <property name="driverClassName" value="${spring.datasource.driverClassName}"/>
         <property name="url" value="${spring.datasource.url}"/>
         <property name="username" value="${spring.datasource.username}"/>
         <property name="password" value="${spring.datasource.password}"/>
     </bean>
+    
+    <bean id="policyDbDataSource" class="org.apache.commons.dbcp.BasicDataSource"
+          destroy-method="close">
+        <property name="driverClassName" value="${spring.policyDbDataSource.driverClassName}"/>
+        <property name="url" value="${spring.policyDbDataSource.url}"/>
+        <property name="username" value="${spring.policyDbDataSource.username}"/>
+        <property name="password" value="${spring.policyDbDataSource.password}"/>
+    </bean>
 
     <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
         <property name="entityManagerFactory" ref="entityManagerFactory"/>
     </bean>
+    <bean id="policyDbTransactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
+        <property name="dataSource" ref="policyDbDataSource"/>
+        <qualifier value="policyDbTransactionManager"/>
+    </bean>
+    
     <tx:annotation-driven/>
+    
+    
 
     <bean id="quartzScheduler"
           class="org.springframework.scheduling.quartz.SchedulerFactoryBean"

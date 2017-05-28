@@ -66,13 +66,13 @@ public class TestDataSetupHelper {
 
 	}
 
-	public static Schedules generateSchedulesWithEntitiesOnly(String appId, String guid, int noOfSpecificSchedules,
+	public static Schedules generateSchedulesWithEntitiesOnly(String appId, String guid, boolean generateScheduleId, int noOfSpecificSchedules,
 			int noOfDOMRecurringSchedules, int noOfDOWRecurringSchedules) {
 
-		List<SpecificDateScheduleEntity> specificDateSchedules = generateSpecificDateScheduleEntities(appId, guid,
+		List<SpecificDateScheduleEntity> specificDateSchedules = generateSpecificDateScheduleEntities(appId, guid, generateScheduleId,
 				noOfSpecificSchedules);
 
-		List<RecurringScheduleEntity> recurringSchedules = generateRecurringScheduleEntities(appId, guid,
+		List<RecurringScheduleEntity> recurringSchedules = generateRecurringScheduleEntities(appId, guid, generateScheduleId,
 				noOfDOMRecurringSchedules, noOfDOWRecurringSchedules);
 
 		return new ScheduleBuilder().setSpecificDate(specificDateSchedules).setRecurringSchedule(recurringSchedules)
@@ -81,17 +81,26 @@ public class TestDataSetupHelper {
 	}
 
 	public static List<SpecificDateScheduleEntity> generateSpecificDateScheduleEntities(String appId, String guid,
-			int noOfSpecificDateSchedulesToSetUp) {
-		return new SpecificDateScheduleEntitiesBuilder(noOfSpecificDateSchedulesToSetUp).setAppid(appId).setGuid(guid)
-				.setTimeZone(timeZone).setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).build();
+			boolean generateScheduleId, int noOfSpecificDateSchedulesToSetUp) {
+		SpecificDateScheduleEntitiesBuilder builder = new SpecificDateScheduleEntitiesBuilder(
+				noOfSpecificDateSchedulesToSetUp);
+		if (generateScheduleId) {
+			builder.setScheduleId();
+		}
+		return builder.setAppid(appId).setGuid(guid).setTimeZone(timeZone).setDefaultInstanceMinCount(1)
+				.setDefaultInstanceMaxCount(5).build();
 	}
 
 	public static List<RecurringScheduleEntity> generateRecurringScheduleEntities(String appId, String guid,
-			int noOfDOMRecurringSchedules, int noOfDOWRecurringSchedules) {
+			boolean generateScheduleId, int noOfDOMRecurringSchedules, int noOfDOWRecurringSchedules) {
 
-		return new RecurringScheduleEntitiesBuilder(noOfDOMRecurringSchedules, noOfDOWRecurringSchedules)
-				.setAppId(appId).setGuid(guid).setTimeZone(timeZone).setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5)
-				.build();
+		RecurringScheduleEntitiesBuilder builder = new RecurringScheduleEntitiesBuilder(noOfDOMRecurringSchedules,
+				noOfDOWRecurringSchedules);
+		if (generateScheduleId) {
+			builder.setScheduleId();
+		}
+		return builder.setAppId(appId).setGuid(guid).setTimeZone(timeZone).setDefaultInstanceMinCount(1)
+				.setDefaultInstanceMaxCount(5).build();
 	}
 
 	public static String generateJsonSchedule(int noOfSpecificDateSchedulesToSetUp, int noOfRecurringSchedulesToSetUp)

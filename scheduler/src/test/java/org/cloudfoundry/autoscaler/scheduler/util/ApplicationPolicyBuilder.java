@@ -6,7 +6,11 @@ import org.cloudfoundry.autoscaler.scheduler.rest.model.Schedules;
 public class ApplicationPolicyBuilder {
 	
 	private ApplicationSchedules applicationPolicy;
-	
+	public ApplicationPolicyBuilder(int instanceMinCount, int instanceMaxCount){
+		applicationPolicy = new ApplicationSchedules();
+		applicationPolicy.setInstanceMinCount(instanceMinCount);
+		applicationPolicy.setInstanceMaxCount(instanceMaxCount);
+	}
 	public ApplicationPolicyBuilder(int instanceMinCount, int instanceMaxCount, String timezone,
 			int noOfSpecificDateSchedules, int noOfDOMRecurringSchedules, int noOfDOWRecurringSchedules) {
 		applicationPolicy = new ApplicationSchedules();

@@ -5,6 +5,7 @@ import (
 
 	"autoscaler/cf"
 	"autoscaler/models"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -54,7 +55,9 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 						},
 					},
 				}
-				insertPolicy(testAppId, testPolicy)
+				policyBytes, err := json.Marshal(testPolicy)
+				Expect(err).NotTo(HaveOccurred())
+				insertPolicy(testAppId, string(policyBytes), "1234")
 
 			})
 			It("should scale out", func() {
@@ -81,7 +84,9 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 						},
 					},
 				}
-				insertPolicy(testAppId, testPolicy)
+				policyBytes, err := json.Marshal(testPolicy)
+				Expect(err).NotTo(HaveOccurred())
+				insertPolicy(testAppId, string(policyBytes), "1234")
 			})
 			It("shouldn't scale out", func() {
 				Consistently(func() int {
@@ -109,7 +114,9 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 						},
 					},
 				}
-				insertPolicy(testAppId, testPolicy)
+				policyBytes, err := json.Marshal(testPolicy)
+				Expect(err).NotTo(HaveOccurred())
+				insertPolicy(testAppId, string(policyBytes), "1234")
 			})
 			It("should scale in", func() {
 				Eventually(func() int {
@@ -135,7 +142,9 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 						},
 					},
 				}
-				insertPolicy(testAppId, testPolicy)
+				policyBytes, err := json.Marshal(testPolicy)
+				Expect(err).NotTo(HaveOccurred())
+				insertPolicy(testAppId, string(policyBytes), "1234")
 			})
 			It("shouldn't scale in", func() {
 				Consistently(func() int {

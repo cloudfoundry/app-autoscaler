@@ -12,9 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +25,8 @@ import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationSchedules;
 import org.cloudfoundry.autoscaler.scheduler.util.ConsulUtil;
+
+import org.cloudfoundry.autoscaler.scheduler.util.PolicyUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
@@ -110,20 +110,20 @@ public class ScheduleRestControllerTest {
 		String appId = "appId_1";
 		guid1 = TestDataSetupHelper.generateGuid();
 		List<SpecificDateScheduleEntity> specificDateScheduleEntities = TestDataSetupHelper
-				.generateSpecificDateScheduleEntities(appId,guid1, 1);
+				.generateSpecificDateScheduleEntities(appId,guid1,false, 1);
 		testDataDbUtil.insertSpecificDateSchedule(specificDateScheduleEntities);
 
 		appId = "appId_2";
 		guid2 = TestDataSetupHelper.generateGuid();
 		List<RecurringScheduleEntity> recurringScheduleEntities = TestDataSetupHelper
-				.generateRecurringScheduleEntities(appId,guid2, 1, 0);
+				.generateRecurringScheduleEntities(appId,guid2,false, 1, 0);
 		testDataDbUtil.insertRecurringSchedule(recurringScheduleEntities);
 
 		appId = "appId_3";
 		guid3 = TestDataSetupHelper.generateGuid();
-		specificDateScheduleEntities = TestDataSetupHelper.generateSpecificDateScheduleEntities(appId,guid3, 2);
+		specificDateScheduleEntities = TestDataSetupHelper.generateSpecificDateScheduleEntities(appId,guid3,false, 2);
 		testDataDbUtil.insertSpecificDateSchedule(specificDateScheduleEntities);
-		recurringScheduleEntities = TestDataSetupHelper.generateRecurringScheduleEntities(appId,guid3, 1, 2);
+		recurringScheduleEntities = TestDataSetupHelper.generateRecurringScheduleEntities(appId,guid3,false, 1, 2);
 		testDataDbUtil.insertRecurringSchedule(recurringScheduleEntities);
 	}
 
@@ -181,7 +181,7 @@ public class ScheduleRestControllerTest {
 
 	@Test
 	public void testCreateAndGetSchedules_from_jsonFile() throws Exception {
-		String policyJsonStr = getPolicyJsonContent();
+		String policyJsonStr = PolicyUtil.getPolicyJsonContent();
 		String appId = TestDataSetupHelper.generateAppIds(1)[0];
 		String guid = TestDataSetupHelper.generateGuid();
 		ResultActions resultActions = mockMvc.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid)
@@ -648,21 +648,5 @@ public class ScheduleRestControllerTest {
 		mapper.setDateFormat(DateFormat.getDateInstance(DateFormat.LONG));
 		return mapper.readValue(resultActions.andReturn().getResponse().getContentAsString(),
 				ApplicationSchedules.class);
-	}
-
-	public static String getPolicyJsonContent() {
-		BufferedReader br = new BufferedReader(
-				new InputStreamReader(ApplicationSchedules.class.getResourceAsStream("/fakePolicy.json")));
-		String tmp;
-		String jsonPolicyStr = "";
-		try {
-			while ((tmp = br.readLine()) != null) {
-				jsonPolicyStr += tmp;
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		jsonPolicyStr = jsonPolicyStr.replaceAll("\\s+", " ");
-		return jsonPolicyStr;
 	}
 }
