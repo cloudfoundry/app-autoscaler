@@ -117,60 +117,58 @@ module.exports = function(settingsObj) {
     }
     if (settings.httpRequestTimeout <= 0) {
       return { valid: false, message: "value of httpRequestTimeout must be greater than 0" };
-    }
-    if (isMissing(settings.apiserver.tls)) {
-      return { valid: false, message: "apiserver.tls is required" };
-    }
-    if (!isObject(settings.apiserver.tls)){
-      return { valid: false, message: "apiserver.tls must be an object" };
     } 
     if (isMissing(settings.apiserver.uri)){
       return { valid: false, message: "apiserver.uri is required" };
     }
     if (!isString(settings.apiserver.uri)){
       return { valid: false, message: "apiserver.uri must be a string" };
+    }
+    if (!isMissing(settings.apiserver.tls)){
+      if (!isObject(settings.apiserver.tls)){
+        return { valid: false, message: "apiserver.tls must be an object" };
+      }
+      if (isMissing(settings.apiserver.tls.keyFile)) {
+        return { valid: false, message: "apiserver.tls.keyFile is required" };
+      }
+      if (!isString(settings.apiserver.tls.keyFile)) {
+        return { valid: false, message: "apiserver.tls.keyFile must be a string" };
+      }
+      if (isMissing(settings.apiserver.tls.certFile)) {
+        return { valid: false, message: "apiserver.tls.certFile is required" };
+      }
+      if (!isString(settings.apiserver.tls.certFile)) {
+        return { valid: false, message: "apiserver.tls.certFile must be a string" };
+      }
+      if (isMissing(settings.apiserver.tls.caCertFile)) {
+        return { valid: false, message: "apiserver.tls.caCertFile is required" };
+      }
+      if (!isString(settings.apiserver.tls.caCertFile)) {
+        return { valid: false, message: "apiserver.tls.caCertFile must be a string" };
+      }
     } 
-    if (isMissing(settings.apiserver.tls.keyFile)) {
-      return { valid: false, message: "apiserver.tls.keyFile is required" };
-    }
-    if (!isString(settings.apiserver.tls.keyFile)) {
-      return { valid: false, message: "apiserver.tls.keyFile must be a string" };
-    }
-    if (isMissing(settings.apiserver.tls.certFile)) {
-      return { valid: false, message: "apiserver.tls.certFile is required" };
-    }
-    if (!isString(settings.apiserver.tls.certFile)) {
-      return { valid: false, message: "apiserver.tls.certFile must be a string" };
-    }
-    if (isMissing(settings.apiserver.tls.caCertFile)) {
-      return { valid: false, message: "apiserver.tls.caCertFile is required" };
-    }
-    if (!isString(settings.apiserver.tls.caCertFile)) {
-      return { valid: false, message: "apiserver.tls.caCertFile must be a string" };
-    }
-    if (isMissing(settings.tls)) {
-      return { valid: false, message: "tls is required" };
-    }
-    if(!isObject(settings.tls)){
-      return { valid: false, message: "tls must be an object" };
-    } 
-    if (isMissing(settings.tls.keyFile)) {
-      return { valid: false, message: "tls.keyFile is required" };
-    }
-    if (!isString(settings.tls.keyFile)) {
-      return { valid: false, message: "tls.keyFile must be a string" };
-    }
-    if (isMissing(settings.tls.certFile)) {
-      return { valid: false, message: "tls.certFile is required" };
-    }
-    if (!isString(settings.tls.certFile)) {
-      return { valid: false, message: "tls.certFile must be a string" };
-    }
-    if (isMissing(settings.tls.caCertFile)) {
-      return { valid: false, message: "tls.caCertFile is required" };
-    }
-    if (!isString(settings.tls.caCertFile)) {
-      return { valid: false, message: "tls.caCertFile must be a string" };
+    if(!isMissing(settings.tls)){
+      if(!isObject(settings.tls)){
+        return { valid: false, message: "tls must be an object" };
+      } 
+      if (isMissing(settings.tls.keyFile)) {
+        return { valid: false, message: "tls.keyFile is required" };
+      }
+      if (!isString(settings.tls.keyFile)) {
+        return { valid: false, message: "tls.keyFile must be a string" };
+      }
+      if (isMissing(settings.tls.certFile)) {
+        return { valid: false, message: "tls.certFile is required" };
+      }
+      if (!isString(settings.tls.certFile)) {
+        return { valid: false, message: "tls.certFile must be a string" };
+      }
+      if (isMissing(settings.tls.caCertFile)) {
+        return { valid: false, message: "tls.caCertFile is required" };
+      }
+      if (!isString(settings.tls.caCertFile)) {
+        return { valid: false, message: "tls.caCertFile must be a string" };
+      }
     }
     if (isMissing(settings.serviceCatalogPath)) {
       return {valid: false, message: "serviceCatalogPath is required"}

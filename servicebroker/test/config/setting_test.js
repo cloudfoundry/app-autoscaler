@@ -349,17 +349,15 @@ describe('config setting Test Suite', function() {
 
   context('Validate tls', function(){
     context('When tls is null', function(){
-      it('Should return false',function(){
+      it('Should return true',function(){
         settings.tls = null;
-        expect(settings.validate().valid).to.equal(false);
-        expect(settings.validate().message).to.equal("tls is required");
+        expect(settings.validate().valid).to.equal(true);
       });
     });
     context('When tls is undefined', function(){
-      it('Should return false',function(){
+      it('Should return true',function(){
         delete settings.tls;
-        expect(settings.validate().valid).to.equal(false);
-        expect(settings.validate().message).to.equal("tls is required");
+        expect(settings.validate().valid).to.equal(true);
       });
     });
     context('When tls is not an object', function(){
@@ -517,17 +515,15 @@ context('Validate apiserver client tls.keyFile', function(){
 
   context('Validate apiserver client tls', function(){
     context('When apiserver client tls is null', function(){
-      it('Should return false',function(){
+      it('Should return true',function(){
         settings.apiserver.tls = null;
-        expect(settings.validate().valid).to.equal(false);
-        expect(settings.validate().message).to.equal("apiserver.tls is required");
+        expect(settings.validate().valid).to.equal(true);
       });
     });
     context('When apiserver client tls  is undefined', function(){
-      it('Should return false',function(){
+      it('Should return true',function(){
         delete settings.apiserver.tls;
-        expect(settings.validate().valid).to.equal(false);
-        expect(settings.validate().message).to.equal("apiserver.tls is required");
+        expect(settings.validate().valid).to.equal(true);
       });
     });
     context('When apiserver client tls is not an object', function(){
