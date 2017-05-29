@@ -45,22 +45,22 @@ module.exports = function(configFilePath) {
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: false }));
   app.use('/health', require('express-healthcheck')());
+  var policies = require('./lib/routes/policies')(settings);
+  app.use('/v1/policies',policies);
+  app.use(function(err, req, res, next) {
+    var errorResponse = {};
+    if (err) {
+      errorResponse = {
+        'success': false,
+        'error': err,
+        'result': null
+      };
+    }
+    res.status(HttpStatus.BAD_REQUEST).json(errorResponse);
+  });
+  
   var server = https.createServer(options, app).listen(port || 3002, function() {
-      logger.info('Autoscaler API server started',{'port':server.address().port} ); 
-      var policies = require('./lib/routes/policies')(settings);
-      app.use('/v1/policies',policies);
-      app.use(function(err, req, res, next) {
-        var errorResponse = {};
-        if (err) {
-          errorResponse = {
-            'success': false,
-            'error': err,
-            'result': null
-          };
-        }
-        res.status(HttpStatus.BAD_REQUEST).json(errorResponse);
-      });
-        
+      logger.info('Autoscaler API server started',{'port':server.address().port} );   
   });  
 
   var gracefulShutdown = function(signal) {
