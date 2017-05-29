@@ -1,6 +1,7 @@
 'use strict';
 module.exports = function(configFilePath) {
-    var https = require('https')
+    var https = require('https');
+    var http = require('http');
     var express = require('express');
     var basicAuth = require('basic-auth');
     var bodyParser = require('body-parser');
@@ -23,23 +24,25 @@ module.exports = function(configFilePath) {
     var port = settings.port;
     var options = {};
     
-    if(!fs.existsSync(settings.tls.keyFile)){
-        logger.error("Invalid TLS key path: " + settings.tls.keyFile);
-        throw new Error("Invalid TLS key path: " + settings.tls.keyFile);
-    }
-    if(!fs.existsSync(settings.tls.certFile)){
-        logger.error("Invalid TLS certificate path: " + settings.tls.certFile);
-        throw new Error("Invalid TLS certificate path: " + settings.tls.certFile);
-    }
-    if(!fs.existsSync(settings.tls.caCertFile)){
-        logger.error("Invalid TLS ca certificate path: " + settings.tls.caCertFile);
-        throw new Error("Invalid TLS ca certificate path: " + settings.tls.caCertFile);
-    }
+    if(settings.tls){
+        if(!fs.existsSync(settings.tls.keyFile)){
+            logger.error("Invalid TLS key path: " + settings.tls.keyFile);
+            throw new Error("Invalid TLS key path: " + settings.tls.keyFile);
+        }
+        if(!fs.existsSync(settings.tls.certFile)){
+            logger.error("Invalid TLS certificate path: " + settings.tls.certFile);
+            throw new Error("Invalid TLS certificate path: " + settings.tls.certFile);
+        }
+        if(!fs.existsSync(settings.tls.caCertFile)){
+            logger.error("Invalid TLS ca certificate path: " + settings.tls.caCertFile);
+            throw new Error("Invalid TLS ca certificate path: " + settings.tls.caCertFile);
+        }
 
-    options = {
-        key: fs.readFileSync(settings.tls.keyFile),
-        cert: fs.readFileSync(settings.tls.certFile),
-        ca: fs.readFileSync(settings.tls.caCertFile)
+        options = {
+            key: fs.readFileSync(settings.tls.keyFile),
+            cert: fs.readFileSync(settings.tls.certFile),
+            ca: fs.readFileSync(settings.tls.caCertFile)
+        }
     }
 
     var app = express();
@@ -59,7 +62,6 @@ module.exports = function(configFilePath) {
         } else {
             return unauthorized(res);
         };
-        next();
     };
 
     //define the sequence of middleware
@@ -69,10 +71,18 @@ module.exports = function(configFilePath) {
     require('./routes')(app, settings,catalog);
 
 
-    var server = https.createServer(options, app).listen(port, function() {
-        var port = server.address().port;
-        logger.info('Service broker app is running', { port: port });
-    });
+    var server;
+    if(settings.tls){
+        server = https.createServer(options, app).listen(port, function() {
+            var port = server.address().port;
+            logger.info('Service broker app is running in secure mode', { port: port });
+        });
+    }else{
+        server = http.createServer(app).listen(port, function() {
+            var port = server.address().port;
+            logger.info('Service broker app is running', { port: port });
+        });
+    }
 
     var gracefulShutdown = function(signal) {
         logger.info("Received " + signal + " signal, shutting down gracefully...");
