@@ -5,40 +5,55 @@ module.exports = function(schedulerSettings) {
   var HttpStatus = require('http-status-codes');
   var fs = require('fs');
   var schedulerUtilObj = {};
-  var schedulerTLSOptions = {
+
+  var getOptions = function(appId, policy, policyGuid ){
+    var schedulerTLSOptions = {
       key: fs.readFileSync(schedulerSettings.tls.keyFile),
       cert: fs.readFileSync(schedulerSettings.tls.certFile),
       ca: fs.readFileSync(schedulerSettings.tls.caCertFile)
-  };
+    };
+    
+    var options = { 
+      json: true,
+      timeout: 10000,
+      cert: schedulerTLSOptions.cert,
+      key: schedulerTLSOptions.key,
+      ca: schedulerTLSOptions.ca
+    };
+    
+    if(policy && policyGuid){
+      options.body = policy;
+      options.url = schedulerSettings.uri + '/v2/schedules/' + appId + "?guid=" + policyGuid;
+    }else{
+      options.url = schedulerSettings.uri + '/v2/schedules/' + appId;
+    }
+  
+    return options;
+  }
+
+  
   schedulerUtilObj.createOrUpdateSchedule = function createOrUpdateSchedule(req,callback) {
-    var schedulerURI = schedulerSettings.uri;
-    if(!req.body.schedules) {
-      logger.info('Policy does not have schedule info ',{ 'app id':req.params.app_id });
+    var appId = req.params.app_id;
+    var policyGuid = req.query.policy_guid;
+    var policy = req.body;
+    if(!policy.schedules) {
+      logger.info('Policy does not have schedule info ',{ 'app id':appId });
       callback(null);
     }
     else{
       logger.info('Policy has schedules, creating/updating schedules ..',
-      { 'app id':req.params.app_id });
-      var options = { 
-        url: schedulerURI + '/v2/schedules/' + req.params.app_id + "?guid=" + req.query.policy_guid,
-        method: 'PUT',
-        body: req.body,
-        json: true,
-        timeout: 10000,
-        cert: schedulerTLSOptions.cert,
-        key: schedulerTLSOptions.key,
-        ca: schedulerTLSOptions.ca 
-      };
-      request(options, function(error, response, body) {
+      { 'app id':appId });
+      var options = getOptions(appId, policy,  policyGuid);
+      request.put(options, function(error, response, body) {
         if(error) {
           logger.error('Error occurred during schedule creation/update ',
-                { 'app id': req.params.app_id,'error':error });
+                { 'app id': appId,'error':error });
           error.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
           callback(error); 
         }
         else if(response.statusCode === HttpStatus.NO_CONTENT 
             || response.statusCode === HttpStatus.OK) { 
-          logger.info('Schedules created/updated successfully',{ 'app id': req.params.app_id });
+          logger.info('Schedules created/updated successfully',{ 'app id': appId });
           callback(null);
         }
         else if(response.statusCode === HttpStatus.BAD_REQUEST) {
@@ -47,7 +62,7 @@ module.exports = function(schedulerSettings) {
           var validationError = { 'message':'Failed to create schedules due to validation' + 
               ' error in scheduler','details':response.body };
           logger.error('Error occurred during creation/update of schedules ',
-              { 'app id': req.params.app_id,'error':validationError });
+              { 'app id': appId,'error':validationError });
           validationError.statusCode = HttpStatus.BAD_REQUEST;
           callback(validationError);
         }
@@ -56,7 +71,7 @@ module.exports = function(schedulerSettings) {
           var internalError = { 'message':'Failed to create schedules due to an internal' + 
                   ' error in scheduler','details':response.body };
           logger.error('Error occurred in scheduler module during creation/update ',
-              { 'app id': req.params.app_id,'error':internalError });
+              { 'app id': appId,'error':internalError });
           internalError.statusCode = HttpStatus.INTERNAL_SERVER_ERROR
           callback(internalError);
         }
@@ -66,19 +81,11 @@ module.exports = function(schedulerSettings) {
   };
 
   schedulerUtilObj.deleteSchedules = function deleteSchedules(req, callback) {
-    logger.info('Deleting schedules for application',{ 'app id': req.params.app_id });
     var appId = req.params.app_id;
-    var schedulerURI = schedulerSettings.uri;
-    var options = { 
-      url: schedulerURI + '/v2/schedules/' + appId,
-      method: 'DELETE',
-      timeout: 10000,
-      cert: schedulerTLSOptions.cert,
-      key: schedulerTLSOptions.key,
-      ca: schedulerTLSOptions.ca 
-    };
+    logger.info('Deleting schedules for application',{ 'app id': appId });
     
-    request(options, function(error, response, body) {
+    var options = getOptions(appId);
+    request.delete(options, function(error, response, body) {
       if(error) {
         logger.error('Error occurred during schedule deletion ', { 'app id': appId,'error':error });
         error.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
