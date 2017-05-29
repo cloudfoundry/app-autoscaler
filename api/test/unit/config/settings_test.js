@@ -267,17 +267,15 @@ describe('config setting Test Suite', function() {
 
   context('Validate tls', function(){
     context('When tls is null', function(){
-      it('Should return false',function(){
+      it('Should return true',function(){
         settings.tls = null;
-        expect(settings.validate().valid).to.equal(false);
-        expect(settings.validate().message).to.equal("tls is required");
+        expect(settings.validate().valid).to.equal(true);
       });
     });
     context('When tls is undefined', function(){
-      it('Should return false',function(){
+      it('Should return true',function(){
         delete settings.tls;
-        expect(settings.validate().valid).to.equal(false);
-        expect(settings.validate().message).to.equal("tls is required");
+        expect(settings.validate().valid).to.equal(true);
       });
     });
     context('When tls is not an object', function(){
@@ -435,17 +433,15 @@ describe('config setting Test Suite', function() {
 
   context('Validate scheduler client tls', function(){
     context('When scheduler client tls is null', function(){
-      it('Should return false',function(){
+      it('Should return true',function(){
         settings.scheduler.tls = null;
-        expect(settings.validate().valid).to.equal(false);
-        expect(settings.validate().message).to.equal("scheduler.tls is required");
+        expect(settings.validate().valid).to.equal(true);
       });
     });
     context('When scheduler client tls  is undefined', function(){
-      it('Should return false',function(){
+      it('Should return true',function(){
         delete settings.scheduler.tls;
-        expect(settings.validate().valid).to.equal(false);
-        expect(settings.validate().message).to.equal("scheduler.tls is required");
+        expect(settings.validate().valid).to.equal(true);
       });
     });
     context('When scheduler client tls is not an object', function(){

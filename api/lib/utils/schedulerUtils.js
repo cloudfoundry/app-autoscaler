@@ -7,18 +7,9 @@ module.exports = function(schedulerSettings) {
   var schedulerUtilObj = {};
 
   var getOptions = function(appId, policy, policyGuid ){
-    var schedulerTLSOptions = {
-      key: fs.readFileSync(schedulerSettings.tls.keyFile),
-      cert: fs.readFileSync(schedulerSettings.tls.certFile),
-      ca: fs.readFileSync(schedulerSettings.tls.caCertFile)
-    };
-    
     var options = { 
       json: true,
-      timeout: 10000,
-      cert: schedulerTLSOptions.cert,
-      key: schedulerTLSOptions.key,
-      ca: schedulerTLSOptions.ca
+      timeout: 10000
     };
     
     if(policy && policyGuid){
@@ -27,7 +18,16 @@ module.exports = function(schedulerSettings) {
     }else{
       options.url = schedulerSettings.uri + '/v2/schedules/' + appId;
     }
-  
+    if(schedulerSettings.tls){
+      var schedulerTLSOptions = {
+        key: fs.readFileSync(schedulerSettings.tls.keyFile),
+        cert: fs.readFileSync(schedulerSettings.tls.certFile),
+        ca: fs.readFileSync(schedulerSettings.tls.caCertFile)
+      };
+      options.cert = schedulerTLSOptions.cert,
+      options.key = schedulerTLSOptions.key,
+      options.ca = schedulerTLSOptions.ca
+    }
     return options;
   }
 

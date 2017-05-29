@@ -94,29 +94,28 @@ module.exports = function(settingsObj) {
     if (!isString(settings.db.uri)) {
       return {valid:false,message:"db.uri must be a string"};
     }
-    if (isMissing(settings.tls)) {
-      return { valid: false, message: "tls is required" };
-    }
-    if (!isObject(settings.tls)){
-      return { valid: false, message: "tls must be an object" };
-    } 
-    if (isMissing(settings.tls.keyFile)) {
-      return { valid: false, message: "tls.keyFile is required" };
-    }
-    if (!isString(settings.tls.keyFile)) {
-      return { valid: false, message: "tls.keyFile must be a string" };
-    }
-    if (isMissing(settings.tls.certFile)) {
-      return { valid: false, message: "tls.certFile is required" };
-    }
-    if (!isString(settings.tls.certFile)) {
-      return { valid: false, message: "tls.certFile must be a string" };
-    }
-    if (isMissing(settings.tls.caCertFile)) {
-      return { valid: false, message: "tls.caCertFile is required" };
-    }
-    if (!isString(settings.tls.caCertFile)) {
-      return { valid: false, message: "tls.caCertFile must be a string" };
+    if (!isMissing(settings.tls)){
+      if (!isObject(settings.tls)){
+        return { valid: false, message: "tls must be an object" };
+      } 
+      if (isMissing(settings.tls.keyFile)) {
+        return { valid: false, message: "tls.keyFile is required" };
+      }
+      if (!isString(settings.tls.keyFile)) {
+        return { valid: false, message: "tls.keyFile must be a string" };
+      }
+      if (isMissing(settings.tls.certFile)) {
+        return { valid: false, message: "tls.certFile is required" };
+      }
+      if (!isString(settings.tls.certFile)) {
+        return { valid: false, message: "tls.certFile must be a string" };
+      }
+      if (isMissing(settings.tls.caCertFile)) {
+        return { valid: false, message: "tls.caCertFile is required" };
+      }
+      if (!isString(settings.tls.caCertFile)) {
+        return { valid: false, message: "tls.caCertFile must be a string" };
+      }
     }
     if (isMissing(settings.scheduler)) {
       return { valid: false, message: "scheduler is required" };
@@ -127,29 +126,28 @@ module.exports = function(settingsObj) {
     if (!isString(settings.scheduler.uri)) {
       return { valid: false, message: "scheduler.uri must be a string" };
     }
-    if (isMissing(settings.scheduler.tls)) {
-      return { valid: false, message: "scheduler.tls is required" };
-    }
-    if (!isObject(settings.scheduler.tls)) {
-      return { valid: false, message: "scheduler.tls must be an object" };
-    }
-    if (isMissing(settings.scheduler.tls.keyFile)) {
-      return { valid: false, message: "scheduler.tls.keyFile is required" };
-    }
-    if (!isString(settings.scheduler.tls.keyFile)) {
-      return { valid: false, message: "scheduler.tls.keyFile must be a string" };
-    }
-    if (isMissing(settings.scheduler.tls.caCertFile)) {
-      return { valid: false, message: "scheduler.tls.caCertFile is required" };
-    }
-    if (!isString(settings.scheduler.tls.caCertFile)) {
-      return { valid: false, message: "scheduler.tls.caCertFile must be a string" };
-    }
-    if (isMissing(settings.scheduler.tls.certFile)) {
-      return { valid: false, message: "scheduler.tls.certFile is required" };
-    }
-    if (!isString(settings.scheduler.tls.certFile)) {
-      return { valid: false, message: "scheduler.tls.certFile must be a string" };
+    if (!isMissing(settings.scheduler.tls)){
+      if (!isObject(settings.scheduler.tls)) {
+        return { valid: false, message: "scheduler.tls must be an object" };
+      }
+      if (isMissing(settings.scheduler.tls.keyFile)) {
+        return { valid: false, message: "scheduler.tls.keyFile is required" };
+      }
+      if (!isString(settings.scheduler.tls.keyFile)) {
+        return { valid: false, message: "scheduler.tls.keyFile must be a string" };
+      }
+      if (isMissing(settings.scheduler.tls.caCertFile)) {
+        return { valid: false, message: "scheduler.tls.caCertFile is required" };
+      }
+      if (!isString(settings.scheduler.tls.caCertFile)) {
+        return { valid: false, message: "scheduler.tls.caCertFile must be a string" };
+      }
+      if (isMissing(settings.scheduler.tls.certFile)) {
+        return { valid: false, message: "scheduler.tls.certFile is required" };
+      }
+      if (!isString(settings.scheduler.tls.certFile)) {
+        return { valid: false, message: "scheduler.tls.certFile must be a string" };
+      }
     }
     return {valid:true}
   }
