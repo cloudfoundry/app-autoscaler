@@ -218,50 +218,126 @@ var _ = Describe("ScalingHandler", func() {
 					}))
 				})
 			})
+
+			Context("when there are multiple order pararmeters in query string", func() {
+				BeforeEach(func() {
+					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?order=1&order=0", nil)
+					Expect(err).ToNot(HaveOccurred())
+
+				})
+
+				It("returns 400", func() {
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
+
+					errJson := &models.ErrorResponse{}
+					err = json.Unmarshal(resp.Body.Bytes(), errJson)
+
+					Expect(err).ToNot(HaveOccurred())
+					Expect(errJson).To(Equal(&models.ErrorResponse{
+						Code:    "Bad-Request",
+						Message: "Incorrect order parameter in query string",
+					}))
+				})
+			})
+
+			Context("when order is not a number", func() {
+				BeforeEach(func() {
+					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?order=abc", nil)
+					Expect(err).ToNot(HaveOccurred())
+
+				})
+
+				It("returns 400", func() {
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
+
+					errJson := &models.ErrorResponse{}
+					err = json.Unmarshal(resp.Body.Bytes(), errJson)
+
+					Expect(err).ToNot(HaveOccurred())
+					Expect(errJson).To(Equal(&models.ErrorResponse{
+						Code:    "Bad-Request",
+						Message: "Error parsing order",
+					}))
+				})
+			})
+
+			Context("when order value is invalid", func() {
+				BeforeEach(func() {
+					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?order=2", nil)
+					Expect(err).ToNot(HaveOccurred())
+
+				})
+
+				It("returns 400", func() {
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
+
+					errJson := &models.ErrorResponse{}
+					err = json.Unmarshal(resp.Body.Bytes(), errJson)
+
+					Expect(err).ToNot(HaveOccurred())
+					Expect(errJson).To(Equal(&models.ErrorResponse{
+						Code:    "Bad-Request",
+						Message: "Incorrect order parameter in query string, the value can only be 0 or 1",
+					}))
+				})
+			})
 		})
 
 		Context("when request query string is valid", func() {
-			Context("when there are both start and end time in query string", func() {
+			Context("when start, end and order are all in query string", func() {
 				BeforeEach(func() {
-					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?start=123&end=567", nil)
+					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?start=123&end=567&order=0", nil)
 					Expect(err).ToNot(HaveOccurred())
 				})
 
-				It("retrieves scaling histories from database with the given start and end time ", func() {
-					appid, start, end := scalingEngineDB.RetrieveScalingHistoriesArgsForCall(0)
+				It("retrieves scaling histories from database with the given start and end time and order ", func() {
+					appid, start, end, order := scalingEngineDB.RetrieveScalingHistoriesArgsForCall(0)
 					Expect(appid).To(Equal("an-app-id"))
 					Expect(start).To(Equal(int64(123)))
 					Expect(end).To(Equal(int64(567)))
+					Expect(order).To(Equal(int64(0)))
 				})
 			})
 
 			Context("when there is no start time in query string", func() {
 				BeforeEach(func() {
-					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?end=123", nil)
+					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?end=123&order=0", nil)
 					Expect(err).ToNot(HaveOccurred())
 				})
 
-				It("queries metrics from database with start time  0", func() {
-					_, start, _ := scalingEngineDB.RetrieveScalingHistoriesArgsForCall(0)
+				It("queries scaling histories from database with start time  0", func() {
+					_, start, _, _ := scalingEngineDB.RetrieveScalingHistoriesArgsForCall(0)
 					Expect(start).To(Equal(int64(0)))
 				})
 			})
 
 			Context("when there is no end time in query string", func() {
 				BeforeEach(func() {
-					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?start=123", nil)
+					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?start=123&order=0", nil)
 					Expect(err).ToNot(HaveOccurred())
 				})
 
-				It("queries metrics from database with end time -1 ", func() {
-					_, _, end := scalingEngineDB.RetrieveScalingHistoriesArgsForCall(0)
+				It("queries scaling histories from database with end time -1 ", func() {
+					_, _, end, _ := scalingEngineDB.RetrieveScalingHistoriesArgsForCall(0)
 					Expect(end).To(Equal(int64(-1)))
+				})
+			})
+
+			Context("when there is no order in query string", func() {
+				BeforeEach(func() {
+					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?start=123&end234", nil)
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				It("queries scaling histories from database with order 0(desc) ", func() {
+					_, _, _, order := scalingEngineDB.RetrieveScalingHistoriesArgsForCall(0)
+					Expect(order).To(Equal(int64(0)))
 				})
 			})
 
 			Context("when query database succeeds", func() {
 				BeforeEach(func() {
-					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?start=123&end=567", nil)
+					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?start=123&end=567&order=0", nil)
 					Expect(err).ToNot(HaveOccurred())
 
 					history1 = &models.AppScalingHistory{
@@ -286,7 +362,7 @@ var _ = Describe("ScalingHandler", func() {
 						Error:        "an error",
 					}
 
-					scalingEngineDB.RetrieveScalingHistoriesReturns([]*models.AppScalingHistory{history1, history2}, nil)
+					scalingEngineDB.RetrieveScalingHistoriesReturns([]*models.AppScalingHistory{history2, history1}, nil)
 				})
 
 				It("returns 200 with scaling histories in message body", func() {
@@ -296,13 +372,13 @@ var _ = Describe("ScalingHandler", func() {
 					err = json.Unmarshal(resp.Body.Bytes(), histories)
 
 					Expect(err).ToNot(HaveOccurred())
-					Expect(*histories).To(Equal([]models.AppScalingHistory{*history1, *history2}))
+					Expect(*histories).To(Equal([]models.AppScalingHistory{*history2, *history1}))
 				})
 			})
 
 			Context("when query database fails", func() {
 				BeforeEach(func() {
-					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?start=123&end=567", nil)
+					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?start=123&end=567&order=0", nil)
 					Expect(err).ToNot(HaveOccurred())
 					scalingEngineDB.RetrieveScalingHistoriesReturns(nil, errors.New("database error"))
 				})

@@ -22,6 +22,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 		history        *models.AppScalingHistory
 		start          int64
 		end            int64
+		order          int64
 		appId          string
 		histories      []*models.AppScalingHistory
 		canScale       bool
@@ -147,6 +148,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 			start = 0
 			end = -1
 			appId = "an-app-id"
+			order = 0
 		})
 
 		AfterEach(func() {
@@ -191,7 +193,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 			err = sdb.SaveScalingHistory(history)
 			Expect(err).NotTo(HaveOccurred())
 
-			histories, err = sdb.RetrieveScalingHistories(appId, start, end)
+			histories, err = sdb.RetrieveScalingHistories(appId, start, end, order)
 		})
 
 		Context("When the app has no hisotry", func() {
@@ -257,8 +259,11 @@ var _ = Describe("ScalingEngineSqldb", func() {
 			})
 		})
 
-		Context("when retrieving all the histories( start = 0, end = -1) ", func() {
-			It("returns all the histories of the app ordered by timestamp", func() {
+		Context("when retrieving all the histories( start = 0, end = -1, order = 1) ", func() {
+			BeforeEach(func() {
+				order = 1
+			})
+			It("returns all the histories of the app ordered by timestamp asc", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(histories).To(Equal([]*models.AppScalingHistory{
 					&models.AppScalingHistory{
@@ -306,20 +311,18 @@ var _ = Describe("ScalingEngineSqldb", func() {
 			})
 		})
 
-		Context("When retrieving part of the histories", func() {
+		Context("when retrieving all the histories( start = 0, end = -1, order = 0) ", func() {
 			BeforeEach(func() {
-				start = 333333
-				end = 555566
+				order = 0
 			})
-
-			It("return correct histories", func() {
+			It("returns all the histories of the app ordered by timestamp desc", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(histories).To(Equal([]*models.AppScalingHistory{
 					&models.AppScalingHistory{
 						AppId:        "an-app-id",
-						Timestamp:    333333,
-						ScalingType:  models.ScalingTypeSchedule,
-						Status:       models.ScalingStatusIgnored,
+						Timestamp:    666666,
+						ScalingType:  models.ScalingTypeDynamic,
+						Status:       models.ScalingStatusSucceeded,
 						OldInstances: 2,
 						NewInstances: 4,
 						Reason:       "a reason",
@@ -335,6 +338,63 @@ var _ = Describe("ScalingEngineSqldb", func() {
 						Reason:       "a reason",
 						Message:      "a message",
 						Error:        "an error",
+					},
+					&models.AppScalingHistory{
+						AppId:        "an-app-id",
+						Timestamp:    333333,
+						ScalingType:  models.ScalingTypeSchedule,
+						Status:       models.ScalingStatusIgnored,
+						OldInstances: 2,
+						NewInstances: 4,
+						Reason:       "a reason",
+						Message:      "a message",
+					},
+					&models.AppScalingHistory{
+						AppId:        "an-app-id",
+						Timestamp:    222222,
+						ScalingType:  models.ScalingTypeDynamic,
+						Status:       models.ScalingStatusFailed,
+						OldInstances: 2,
+						NewInstances: 4,
+						Reason:       "a reason",
+						Message:      "a message",
+						Error:        "an error",
+					},
+				}))
+			})
+		})
+
+		Context("When retrieving part of the histories", func() {
+			BeforeEach(func() {
+				start = 333333
+				end = 555566
+				order = 0
+
+			})
+
+			It("return correct histories", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(histories).To(Equal([]*models.AppScalingHistory{
+
+					&models.AppScalingHistory{
+						AppId:        "an-app-id",
+						Timestamp:    555555,
+						ScalingType:  models.ScalingTypeSchedule,
+						Status:       models.ScalingStatusFailed,
+						OldInstances: 2,
+						NewInstances: 4,
+						Reason:       "a reason",
+						Message:      "a message",
+						Error:        "an error",
+					}, &models.AppScalingHistory{
+						AppId:        "an-app-id",
+						Timestamp:    333333,
+						ScalingType:  models.ScalingTypeSchedule,
+						Status:       models.ScalingStatusIgnored,
+						OldInstances: 2,
+						NewInstances: 4,
+						Reason:       "a reason",
+						Message:      "a message",
 					}}))
 
 			})
