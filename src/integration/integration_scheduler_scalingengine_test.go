@@ -16,7 +16,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 	var (
 		testAppId         string
 		testGuid          string
-		anouterGuid       string
+		anotherGuid       string
 		initInstanceCount int = 2
 		policyStr         string
 	)
@@ -26,7 +26,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 
 		testAppId = getRandomId()
 		testGuid = getRandomId()
-		anouterGuid = getRandomId()
+		anotherGuid = getRandomId()
 		startFakeCCNOAAUAA(initInstanceCount)
 
 		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), cf.GrantTypePassword, tmpDir, consulRunner.ConsulCluster())
@@ -35,8 +35,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 		schedulerConfPath = components.PrepareSchedulerConfig(dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), tmpDir, strings.Split(consulRunner.Address(), ":")[1])
 		schedulerProcess = startScheduler()
 
-		policyByte := readPolicyFromFile("fakePolicyWithSpecificDateSchedule.json")
-		policyStr = setPolicyDateTime(policyByte)
+		policyStr = setPolicyDateTime(readPolicyFromFile("fakePolicyWithSpecificDateSchedule.json"))
 
 	})
 
@@ -52,7 +51,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 
 			It("creates active schedule in scaling engine", func() {
 				resp, err := createSchedule(testAppId, testGuid, policyStr)
-				checkResponseIsEmpty(resp, err, http.StatusOK)
+				checkResponseEmptyAndStatusCode(resp, err, http.StatusOK)
 
 				Eventually(func() bool {
 					return activeScheduleExists(testAppId)
@@ -68,7 +67,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 
 			It("should create an active schedule in scaling engine after restart", func() {
 				resp, err := createSchedule(testAppId, testGuid, policyStr)
-				checkResponseIsEmpty(resp, err, http.StatusOK)
+				checkResponseEmptyAndStatusCode(resp, err, http.StatusOK)
 
 				Consistently(func() error {
 					_, err := getActiveSchedule(testAppId)
@@ -78,7 +77,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 				startScalingEngine()
 				Eventually(func() bool {
 					return activeScheduleExists(testAppId)
-				}, 20*time.Second, 1*time.Second).Should(BeTrue())
+				}, 30*time.Second, 1*time.Second).Should(BeTrue())
 			})
 		})
 
@@ -87,7 +86,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 	Describe("Delete Schedule", func() {
 		BeforeEach(func() {
 			resp, err := createSchedule(testAppId, testGuid, policyStr)
-			checkResponseIsEmpty(resp, err, http.StatusOK)
+			checkResponseEmptyAndStatusCode(resp, err, http.StatusOK)
 
 			Eventually(func() bool {
 				return activeScheduleExists(testAppId)
@@ -96,7 +95,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 
 		It("deletes active schedule in scaling engine", func() {
 			resp, err := deleteSchedule(testAppId)
-			checkResponseIsEmpty(resp, err, http.StatusNoContent)
+			checkResponseEmptyAndStatusCode(resp, err, http.StatusNoContent)
 
 			Eventually(func() bool {
 				return activeScheduleExists(testAppId)
@@ -107,15 +106,14 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 	Describe("Synchronized Schedule", func() {
 		Context("when the app's policy has been updated ", func() {
 			BeforeEach(func() {
-				policyStr = string(setPolicyDateTime(readPolicyFromFile("fakePolicyWithSpecificDateSchedule.json")))
 				resp, err := createSchedule(testAppId, testGuid, policyStr)
-				checkResponseIsEmpty(resp, err, http.StatusOK)
+				checkResponseEmptyAndStatusCode(resp, err, http.StatusOK)
 
 				Eventually(func() bool {
 					return activeScheduleExists(testAppId)
 				}, 2*time.Minute, 5*time.Second).Should(BeTrue())
 
-				insertPolicy(testAppId, policyStr, anouterGuid)
+				insertPolicy(testAppId, policyStr, anotherGuid)
 
 			})
 			It("updates the schedules", func() {
@@ -132,9 +130,8 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 
 		Context("when the app's policy has been updated with the same guid ", func() {
 			BeforeEach(func() {
-				policyStr = string(setPolicyDateTime(readPolicyFromFile("fakePolicyWithSpecificDateSchedule.json")))
 				resp, err := createSchedule(testAppId, testGuid, policyStr)
-				checkResponseIsEmpty(resp, err, http.StatusOK)
+				checkResponseEmptyAndStatusCode(resp, err, http.StatusOK)
 
 				Eventually(func() bool {
 					return activeScheduleExists(testAppId)
@@ -157,9 +154,8 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 
 		Context("when the app's policy has been deleted", func() {
 			BeforeEach(func() {
-				policyStr = string(setPolicyDateTime(readPolicyFromFile("fakePolicyWithSpecificDateSchedule.json")))
 				resp, err := createSchedule(testAppId, testGuid, policyStr)
-				checkResponseIsEmpty(resp, err, http.StatusOK)
+				checkResponseEmptyAndStatusCode(resp, err, http.StatusOK)
 
 				Eventually(func() bool {
 					return activeScheduleExists(testAppId)
@@ -182,8 +178,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 
 		Context("when the app's policy has been created", func() {
 			BeforeEach(func() {
-				policyStr = string(setPolicyDateTime(readPolicyFromFile("fakePolicyWithSpecificDateSchedule.json")))
-				insertPolicy(testAppId, policyStr, anouterGuid)
+				insertPolicy(testAppId, policyStr, anotherGuid)
 
 				_, err := deleteSchedule(testAppId)
 				Expect(err).NotTo(HaveOccurred())
@@ -242,7 +237,7 @@ func setPolicyDateTime(policyByte []byte) string {
 	return fmt.Sprintf(string(policyByte), timeZone, startTime, timeNowInTimeZone.Add(2*time.Hour).Format(dateTimeFormat))
 }
 
-func checkResponseIsEmpty(resp *http.Response, err error, expectedStatus int) {
+func checkResponseEmptyAndStatusCode(resp *http.Response, err error, expectedStatus int) {
 	Expect(err).NotTo(HaveOccurred())
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
