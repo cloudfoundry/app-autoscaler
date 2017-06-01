@@ -14,20 +14,22 @@ module.exports = function(settingsObj) {
     }
   };
 
-  var cleanupAPIServerURI = function(apiServerUri) {
+  var cleanupURI = function(apiServerUri) {
     if (apiServerUri != null) {
       return apiServerUri.replace(/\/$/g, "").toLowerCase();
     }
   };
-  settingsObj.apiserver.uri = cleanupAPIServerURI(settingsObj.apiserver.uri);
+  settingsObj.apiserver.uri = cleanupURI(settingsObj.apiserver.uri);
+  settingsObj.dashboardRedirectUri = cleanupURI(settingsObj.dashboardRedirectUri);
   var settings = {
     port: settingsObj.port,
     username: settingsObj.username,
     password: settingsObj.password,
-    apiserver:settingsObj.apiserver,
+    apiserver: settingsObj.apiserver,
     httpRequestTimeout: settingsObj.httpRequestTimeout,
     tls: settingsObj.tls,
-    serviceCatalogPath:settingsObj.serviceCatalogPath
+    serviceCatalogPath: settingsObj.serviceCatalogPath,
+    dashboardRedirectUri: settingsObj.dashboardRedirectUri
   };
   if (settingsObj.db) {
     var dbObj = db(settingsObj.db.uri);
@@ -175,6 +177,9 @@ module.exports = function(settingsObj) {
     }
     if (!isString(settings.serviceCatalogPath)) {
       return {valid: false, message: "serviceCatalogPath must be a string"}
+    }
+    if (!isMissing(settings.dashboardRedirectUri) && !isString(settings.dashboardRedirectUri)) {
+      return {valid: false, message: "dashboardRedirectUri must be a string"}
     }
     return { valid: true }
   }

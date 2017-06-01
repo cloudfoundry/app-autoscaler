@@ -1,10 +1,20 @@
 'use strict';
 
 
-module.exports = function(app, settings) {
+module.exports = function(app, settings, catalog) {
   var path = require('path');
   var logger = require(path.join(__dirname, '../logger/logger.js'));
   var models = require(path.join(__dirname, '../models'))(settings.db);
+
+  var getDashboardUrl = function(serviceInstanceId){
+    if(catalog.services[0].dashboard_client && catalog.services[0].dashboard_client.redirect_uri){
+      return catalog.services[0].dashboard_client.redirect_uri + "/manage/" + serviceInstanceId;
+    }else if(settings.dashboardRedirectUri){
+      return settings.dashboardRedirectUri + "/manage/" + serviceInstanceId;
+    }else{
+      return "";
+    }
+  }
 
   app.put('/v2/service_instances/:instanceId', function(req, res) {
     var serviceInstanceId = req.params.instanceId;
@@ -27,7 +37,7 @@ module.exports = function(app, settings) {
       } else {
         res.status(200);
       }
-      res.json({ "dashboard_url": "" });
+      res.json({ "dashboard_url": getDashboardUrl(serviceInstanceId) });
     }).catch(function(err) {
       if (err instanceof models.sequelize.UniqueConstraintError) {
         res.status(409);
