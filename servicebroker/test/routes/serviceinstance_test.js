@@ -24,36 +24,96 @@ describe('service instance RESTful API', function() {
   spaceIdAgain = uuid.v4();
 
 
-  before(function() {
-    server = BrokerServer(settings, catalog);
-  });
-
-  after(function(done) {
-    server.close(done);
-  });
-
   beforeEach(function() {
-    return serviceInstance.truncate({ cascade: true });
+    settings = require(path.join(__dirname, '../../lib/config/setting.js'))((JSON.parse(
+      fs.readFileSync(configFilePath, 'utf8'))));
+    catalog = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/catalog.json'), 'utf8'));
+    serviceInstance.truncate({ cascade: true });
+  });
+
+  afterEach(function(done) {
+    server.close(done);
   });
 
   context('Provision service', function() {
     context('when there is no record', function() {
-      it("creates a new instance with 201", function(done) {
-        supertest(server)
-          .put("/v2/service_instances/" + serviceInstanceId)
-          .set("Authorization", "Basic " + auth)
-          .send({ "organization_guid": orgId, "space_guid": spaceId })
-          .expect(201)
-          .expect('Content-Type', /json/)
-          .expect({
-            dashboard_url: ''
-          }, done);
+      context('when settings.dashboardRedirectUri and catalog.services[0].dashboard_client.redirect_uri both are present',function(){
+        beforeEach(function(){
+          server = BrokerServer(settings, catalog);
+        })
+        it("creates a new instance with 201 with catalog.services[0].dashboard_client.redirect_uri as dashboard base uri", function(done) {
+          supertest(server)
+            .put("/v2/service_instances/" + serviceInstanceId)
+            .set("Authorization", "Basic " + auth)
+            .send({ "organization_guid": orgId, "space_guid": spaceId })
+            .expect(201)
+            .expect('Content-Type', /json/)
+            .expect({
+              dashboard_url: 'https://dashboard-redirect-uri-catalog.example.com/manage/'+ serviceInstanceId
+            }, done);
+        });
+      });
+
+      context('when only catalog.services[0].dashboard_client.redirect_uri is present',function(){
+        beforeEach(function(){
+          delete settings.dashboardRedirectUri;
+          server = BrokerServer(settings, catalog);
+        });
+        it("creates a new instance with 201 with catalog.services[0].dashboard_client.redirect_uri as dashboard base uri", function(done) {
+          supertest(server)
+            .put("/v2/service_instances/" + serviceInstanceId)
+            .set("Authorization", "Basic " + auth)
+            .send({ "organization_guid": orgId, "space_guid": spaceId })
+            .expect(201)
+            .expect('Content-Type', /json/)
+            .expect({
+              dashboard_url: 'https://dashboard-redirect-uri-catalog.example.com/manage/'+ serviceInstanceId
+            }, done);
+        });
+      });
+      
+      context('when only settings.dashboardRedirectUri is present',function(){
+        beforeEach(function(){
+          delete catalog.services[0].dashboard_client;
+          server = BrokerServer(settings, catalog);
+        });
+        it("creates a new instance with 201 with settings.dashboardRedirectUri as dashboard base uri", function(done) {
+          supertest(server)
+            .put("/v2/service_instances/" + serviceInstanceId)
+            .set("Authorization", "Basic " + auth)
+            .send({ "organization_guid": orgId, "space_guid": spaceId })
+            .expect(201)
+            .expect('Content-Type', /json/)
+            .expect({
+              dashboard_url: 'https://dashboard-redirect-uri-settings.example.com/manage/'+ serviceInstanceId
+            }, done);
+        });
+      });
+      
+      context('when settings.dashboardRedirectUri and catalog.services[0].dashboard_client.redirect_uri both are absent',function(){
+        beforeEach(function(){
+          delete catalog.services[0].dashboard_client;
+          delete settings.dashboardRedirectUri;
+          server = BrokerServer(settings, catalog);
+        });
+        it("creates a new instance with 201 with empty string as dashboard_url", function(done) {
+          supertest(server)
+            .put("/v2/service_instances/" + serviceInstanceId)
+            .set("Authorization", "Basic " + auth)
+            .send({ "organization_guid": orgId, "space_guid": spaceId })
+            .expect(201)
+            .expect('Content-Type', /json/)
+            .expect({
+              dashboard_url: ''
+            }, done);
+        });
       });
     });
 
     context('when an instance already exists', function() {
 
       beforeEach(function(done) {
+        server = BrokerServer(settings, catalog);
         supertest(server)
           .put("/v2/service_instances/" + serviceInstanceId)
           .set("Authorization", "Basic " + auth)
@@ -61,7 +121,7 @@ describe('service instance RESTful API', function() {
           .expect(201)
           .expect('Content-Type', /json/)
           .expect({
-            dashboard_url: ''
+            dashboard_url: 'https://dashboard-redirect-uri-catalog.example.com/manage/'+ serviceInstanceId
           }, done);
       });
 
@@ -75,7 +135,7 @@ describe('service instance RESTful API', function() {
             .expect(200)
             .expect('Content-Type', /json/)
             .expect({
-              dashboard_url: ''
+              dashboard_url: 'https://dashboard-redirect-uri-catalog.example.com/manage/'+ serviceInstanceId
             }, done);
         });
       });
@@ -95,6 +155,10 @@ describe('service instance RESTful API', function() {
 
 
   context('Deprovision service ', function() {
+    beforeEach(function(){
+      server = BrokerServer(settings, catalog);
+    });
+
     context('when there is no record', function() {
       it("delete an nonexist instance with 410", function(done) {
         supertest(server)
@@ -115,7 +179,7 @@ describe('service instance RESTful API', function() {
             .expect(201)
             .expect('Content-Type', /json/)
             .expect({
-              dashboard_url: ''
+              dashboard_url: 'https://dashboard-redirect-uri-catalog.example.com/manage/'+ serviceInstanceId
             }, done);
       });
 

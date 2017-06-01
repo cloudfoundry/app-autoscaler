@@ -22,5 +22,6 @@
         "certFile":"../test-certs/servicebroker.crt",
         "caCertFile":"../test-certs/autoscaler-ca.crt"
     },
-    "serviceCatalogPath": "../servicebroker/config/catalog.json"
+    "serviceCatalogPath": "../servicebroker/config/catalog.json",
+    "dashboardRedirectUri": "https://dashboard-redirect-uri-settings.example.com"
 }

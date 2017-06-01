@@ -8,6 +8,11 @@
       "id": "autoscaler-free-plan-id",
       "name": "autoscaler-free-plan",
       "description": "This is the free service plan for the Auto-Scaling service."
-    }]
+    }],
+    "dashboard_client": {
+      "id": "cf-autoscaler-dashboard-client",
+      "secret": "cf-autoscaler-dashboard-secret",
+      "redirect_uri": "https://dashboard-redirect-uri-catalog.example.com"
+    }
   }]
 }

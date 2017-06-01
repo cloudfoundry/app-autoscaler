@@ -34,7 +34,8 @@ describe('config setting Test Suite', function() {
         "certFile": "certFilePath",
         "caCertFile": "caCertFilePath"
       },
-      "serviceCatalogPath" : "catalogPath"
+      "serviceCatalogPath" : "catalogPath",
+      "dashboardRedirectUri": "https://dashboard-redirect-uri-settings.example.com"
     };
     settings = configSetting(defaultConfig);
   });
@@ -58,6 +59,7 @@ describe('config setting Test Suite', function() {
     expect(settings.apiserver.tls.caCertFile).to.equal(defaultConfig.apiserver.tls.caCertFile);
     expect(settings.apiserver.tls.certFile).to.equal(defaultConfig.apiserver.tls.certFile);
     expect(settings.serviceCatalogPath).to.equal(defaultConfig.serviceCatalogPath);
+    expect(settings.dashboardRedirectUri).to.equal(defaultConfig.dashboardRedirectUri);
   });
 
   describe('validate', function() {
@@ -555,6 +557,28 @@ context('Validate Service Catalog', function(){
         settings.serviceCatalogPath = 1234;
         expect(settings.validate().valid).to.equal(false);
         expect(settings.validate().message).to.equal("serviceCatalogPath must be a string");
+      });
+    });
+  });
+
+  context('Validate Dashboard Redirect Uri', function(){
+    context('When dashboardRedirectUri is null', function(){
+      it('Should return true',function(){
+        settings.dashboardRedirectUri = null;
+        expect(settings.validate().valid).to.equal(true);
+      });
+    });
+    context('When dashboardRedirectUri is undefined', function(){
+      it('Should return true',function(){
+        delete settings.dashboardRedirectUri;
+        expect(settings.validate().valid).to.equal(true);
+      });
+    });
+    context('When dashboardRedirectUri is not a string', function(){
+      it('Should return false',function(){
+        settings.dashboardRedirectUri = 1234;
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("dashboardRedirectUri must be a string");
       });
     });
   });
