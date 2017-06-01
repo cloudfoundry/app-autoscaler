@@ -16,13 +16,13 @@ type FakeScalingEngineDB struct {
 	saveScalingHistoryReturns struct {
 		result1 error
 	}
-	RetrieveScalingHistoriesStub        func(appId string, start int64, end int64, order int64) ([]*models.AppScalingHistory, error)
+	RetrieveScalingHistoriesStub        func(appId string, start int64, end int64, orderType db.OrderType) ([]*models.AppScalingHistory, error)
 	retrieveScalingHistoriesMutex       sync.RWMutex
 	retrieveScalingHistoriesArgsForCall []struct {
-		appId string
-		start int64
-		end   int64
-		order int64
+		appId     string
+		start     int64
+		end       int64
+		orderType db.OrderType
 	}
 	retrieveScalingHistoriesReturns struct {
 		result1 []*models.AppScalingHistory
@@ -129,18 +129,18 @@ func (fake *FakeScalingEngineDB) SaveScalingHistoryReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeScalingEngineDB) RetrieveScalingHistories(appId string, start int64, end int64, order int64) ([]*models.AppScalingHistory, error) {
+func (fake *FakeScalingEngineDB) RetrieveScalingHistories(appId string, start int64, end int64, orderType db.OrderType) ([]*models.AppScalingHistory, error) {
 	fake.retrieveScalingHistoriesMutex.Lock()
 	fake.retrieveScalingHistoriesArgsForCall = append(fake.retrieveScalingHistoriesArgsForCall, struct {
-		appId string
-		start int64
-		end   int64
-		order int64
-	}{appId, start, end, order})
-	fake.recordInvocation("RetrieveScalingHistories", []interface{}{appId, start, end, order})
+		appId     string
+		start     int64
+		end       int64
+		orderType db.OrderType
+	}{appId, start, end, orderType})
+	fake.recordInvocation("RetrieveScalingHistories", []interface{}{appId, start, end, orderType})
 	fake.retrieveScalingHistoriesMutex.Unlock()
 	if fake.RetrieveScalingHistoriesStub != nil {
-		return fake.RetrieveScalingHistoriesStub(appId, start, end, order)
+		return fake.RetrieveScalingHistoriesStub(appId, start, end, orderType)
 	}
 	return fake.retrieveScalingHistoriesReturns.result1, fake.retrieveScalingHistoriesReturns.result2
 }
@@ -151,10 +151,10 @@ func (fake *FakeScalingEngineDB) RetrieveScalingHistoriesCallCount() int {
 	return len(fake.retrieveScalingHistoriesArgsForCall)
 }
 
-func (fake *FakeScalingEngineDB) RetrieveScalingHistoriesArgsForCall(i int) (string, int64, int64, int64) {
+func (fake *FakeScalingEngineDB) RetrieveScalingHistoriesArgsForCall(i int) (string, int64, int64, db.OrderType) {
 	fake.retrieveScalingHistoriesMutex.RLock()
 	defer fake.retrieveScalingHistoriesMutex.RUnlock()
-	return fake.retrieveScalingHistoriesArgsForCall[i].appId, fake.retrieveScalingHistoriesArgsForCall[i].start, fake.retrieveScalingHistoriesArgsForCall[i].end, fake.retrieveScalingHistoriesArgsForCall[i].order
+	return fake.retrieveScalingHistoriesArgsForCall[i].appId, fake.retrieveScalingHistoriesArgsForCall[i].start, fake.retrieveScalingHistoriesArgsForCall[i].end, fake.retrieveScalingHistoriesArgsForCall[i].orderType
 }
 
 func (fake *FakeScalingEngineDB) RetrieveScalingHistoriesReturns(result1 []*models.AppScalingHistory, result2 error) {

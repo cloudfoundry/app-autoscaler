@@ -1,6 +1,7 @@
 package sqldb_test
 
 import (
+	"autoscaler/db"
 	. "autoscaler/db/sqldb"
 	"autoscaler/models"
 
@@ -22,7 +23,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 		history        *models.AppScalingHistory
 		start          int64
 		end            int64
-		order          int64
+		orderType      db.OrderType
 		appId          string
 		histories      []*models.AppScalingHistory
 		canScale       bool
@@ -148,7 +149,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 			start = 0
 			end = -1
 			appId = "an-app-id"
-			order = 0
+			orderType = db.DESC
 		})
 
 		AfterEach(func() {
@@ -193,7 +194,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 			err = sdb.SaveScalingHistory(history)
 			Expect(err).NotTo(HaveOccurred())
 
-			histories, err = sdb.RetrieveScalingHistories(appId, start, end, order)
+			histories, err = sdb.RetrieveScalingHistories(appId, start, end, orderType)
 		})
 
 		Context("When the app has no hisotry", func() {
@@ -259,9 +260,9 @@ var _ = Describe("ScalingEngineSqldb", func() {
 			})
 		})
 
-		Context("when retrieving all the histories( start = 0, end = -1, order = 1) ", func() {
+		Context("when retrieving all the histories( start = 0, end = -1, orderType = ASC) ", func() {
 			BeforeEach(func() {
-				order = 1
+				orderType = db.ASC
 			})
 			It("returns all the histories of the app ordered by timestamp asc", func() {
 				Expect(err).NotTo(HaveOccurred())
@@ -311,9 +312,9 @@ var _ = Describe("ScalingEngineSqldb", func() {
 			})
 		})
 
-		Context("when retrieving all the histories( start = 0, end = -1, order = 0) ", func() {
+		Context("when retrieving all the histories( start = 0, end = -1, orderType = DESC) ", func() {
 			BeforeEach(func() {
-				order = 0
+				orderType = db.DESC
 			})
 			It("returns all the histories of the app ordered by timestamp desc", func() {
 				Expect(err).NotTo(HaveOccurred())
@@ -368,7 +369,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 			BeforeEach(func() {
 				start = 333333
 				end = 555566
-				order = 0
+				orderType = db.DESC
 
 			})
 

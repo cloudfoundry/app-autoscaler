@@ -9,8 +9,10 @@ import (
 	"code.cloudfoundry.org/lager"
 
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type ScalingHandler struct {
@@ -70,7 +72,7 @@ func (h *ScalingHandler) GetScalingHistories(w http.ResponseWriter, r *http.Requ
 	var err error
 	start := int64(0)
 	end := int64(-1)
-	order := int64(0) // 0=>desc, 1=>asc
+	order := db.DESC
 
 	if len(startParam) == 1 {
 		start, err = strconv.ParseInt(startParam[0], 10, 64)
@@ -107,19 +109,17 @@ func (h *ScalingHandler) GetScalingHistories(w http.ResponseWriter, r *http.Requ
 	}
 
 	if len(orderParam) == 1 {
-		order, err = strconv.ParseInt(orderParam[0], 10, 0)
-		if err != nil {
-			logger.Error("failed-to-parse-order", err, lager.Data{"order": orderParam})
-			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
-				Code:    "Bad-Request",
-				Message: "Error parsing order"})
-			return
-		}
-		if order != 0 && order != 1 {
+		orderStr := strings.ToUpper(orderParam[0])
+		if orderStr == "DESC" {
+			order = db.DESC
+		} else if orderStr == "ASC" {
+			order = db.ASC
+		} else {
 			logger.Error("failed-to-get-order", err, lager.Data{"order": orderParam})
 			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 				Code:    "Bad-Request",
-				Message: "Incorrect order parameter in query string, the value can only be 0 or 1"})
+				Message: fmt.Sprintf("Incorrect order parameter in query string, the value can only be %s or %s", db.ASC, db.DESC),
+			})
 			return
 		}
 	} else if len(orderParam) > 1 {

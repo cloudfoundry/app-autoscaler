@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"autoscaler/db"
 	"autoscaler/models"
 	"autoscaler/scalingengine"
 	"autoscaler/scalingengine/fakes"
@@ -14,6 +15,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 )
@@ -221,7 +223,7 @@ var _ = Describe("ScalingHandler", func() {
 
 			Context("when there are multiple order pararmeters in query string", func() {
 				BeforeEach(func() {
-					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?order=1&order=0", nil)
+					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?order=asc&order=asc", nil)
 					Expect(err).ToNot(HaveOccurred())
 
 				})
@@ -240,30 +242,9 @@ var _ = Describe("ScalingHandler", func() {
 				})
 			})
 
-			Context("when order is not a number", func() {
-				BeforeEach(func() {
-					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?order=abc", nil)
-					Expect(err).ToNot(HaveOccurred())
-
-				})
-
-				It("returns 400", func() {
-					Expect(resp.Code).To(Equal(http.StatusBadRequest))
-
-					errJson := &models.ErrorResponse{}
-					err = json.Unmarshal(resp.Body.Bytes(), errJson)
-
-					Expect(err).ToNot(HaveOccurred())
-					Expect(errJson).To(Equal(&models.ErrorResponse{
-						Code:    "Bad-Request",
-						Message: "Error parsing order",
-					}))
-				})
-			})
-
 			Context("when order value is invalid", func() {
 				BeforeEach(func() {
-					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?order=2", nil)
+					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?order=not-order-type", nil)
 					Expect(err).ToNot(HaveOccurred())
 
 				})
@@ -277,7 +258,7 @@ var _ = Describe("ScalingHandler", func() {
 					Expect(err).ToNot(HaveOccurred())
 					Expect(errJson).To(Equal(&models.ErrorResponse{
 						Code:    "Bad-Request",
-						Message: "Incorrect order parameter in query string, the value can only be 0 or 1",
+						Message: fmt.Sprintf("Incorrect order parameter in query string, the value can only be %s or %s", db.ASC, db.DESC),
 					}))
 				})
 			})
@@ -286,7 +267,7 @@ var _ = Describe("ScalingHandler", func() {
 		Context("when request query string is valid", func() {
 			Context("when start, end and order are all in query string", func() {
 				BeforeEach(func() {
-					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?start=123&end=567&order=0", nil)
+					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?start=123&end=567&order=desc", nil)
 					Expect(err).ToNot(HaveOccurred())
 				})
 
@@ -295,13 +276,13 @@ var _ = Describe("ScalingHandler", func() {
 					Expect(appid).To(Equal("an-app-id"))
 					Expect(start).To(Equal(int64(123)))
 					Expect(end).To(Equal(int64(567)))
-					Expect(order).To(Equal(int64(0)))
+					Expect(order).To(Equal(db.DESC))
 				})
 			})
 
 			Context("when there is no start time in query string", func() {
 				BeforeEach(func() {
-					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?end=123&order=0", nil)
+					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?end=123&order=desc", nil)
 					Expect(err).ToNot(HaveOccurred())
 				})
 
@@ -313,7 +294,7 @@ var _ = Describe("ScalingHandler", func() {
 
 			Context("when there is no end time in query string", func() {
 				BeforeEach(func() {
-					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?start=123&order=0", nil)
+					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?start=123&order=desc", nil)
 					Expect(err).ToNot(HaveOccurred())
 				})
 
@@ -325,19 +306,19 @@ var _ = Describe("ScalingHandler", func() {
 
 			Context("when there is no order in query string", func() {
 				BeforeEach(func() {
-					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?start=123&end234", nil)
+					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?start=123&end=567", nil)
 					Expect(err).ToNot(HaveOccurred())
 				})
 
 				It("queries scaling histories from database with order 0(desc) ", func() {
 					_, _, _, order := scalingEngineDB.RetrieveScalingHistoriesArgsForCall(0)
-					Expect(order).To(Equal(int64(0)))
+					Expect(order).To(Equal(db.DESC))
 				})
 			})
 
 			Context("when query database succeeds", func() {
 				BeforeEach(func() {
-					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?start=123&end=567&order=0", nil)
+					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?start=123&end=567&order=desc", nil)
 					Expect(err).ToNot(HaveOccurred())
 
 					history1 = &models.AppScalingHistory{
@@ -378,7 +359,7 @@ var _ = Describe("ScalingHandler", func() {
 
 			Context("when query database fails", func() {
 				BeforeEach(func() {
-					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?start=123&end=567&order=0", nil)
+					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?start=123&end=567&order=desc", nil)
 					Expect(err).ToNot(HaveOccurred())
 					scalingEngineDB.RetrieveScalingHistoriesReturns(nil, errors.New("database error"))
 				})

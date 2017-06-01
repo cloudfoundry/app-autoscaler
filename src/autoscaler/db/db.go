@@ -6,6 +6,13 @@ import (
 
 const PostgresDriverName = "postgres"
 
+type OrderType uint8
+
+const (
+	DESC OrderType = iota
+	ASC
+)
+
 type InstanceMetricsDB interface {
 	RetrieveInstanceMetrics(appid string, name string, start int64, end int64) ([]*models.AppInstanceMetric, error)
 	SaveMetric(metric *models.AppInstanceMetric) error
@@ -29,7 +36,7 @@ type AppMetricDB interface {
 
 type ScalingEngineDB interface {
 	SaveScalingHistory(history *models.AppScalingHistory) error
-	RetrieveScalingHistories(appId string, start int64, end int64, order int64) ([]*models.AppScalingHistory, error)
+	RetrieveScalingHistories(appId string, start int64, end int64, orderType OrderType) ([]*models.AppScalingHistory, error)
 	PruneScalingHistories(before int64) error
 	UpdateScalingCooldownExpireTime(appId string, expireAt int64) error
 	CanScaleApp(appId string) (bool, error)
