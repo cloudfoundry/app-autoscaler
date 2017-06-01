@@ -9,11 +9,12 @@ var configFilePath = path.join(__dirname, '../../config/settings.json');
 var settings = require(path.join(__dirname, '../../lib/config/setting.js'))((JSON.parse(
   fs.readFileSync(configFilePath, 'utf8'))));
 var auth = new Buffer(settings.username + ":" + settings.password).toString('base64');
+var catalog = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/catalog.json'), 'utf8'));
 
 describe('getCatalog RESTful API', function() {
   var server;
   beforeEach(function() {
-    server = BrokerServer(configFilePath);
+    server = BrokerServer(settings, catalog);
   });
 
   afterEach(function(done) {
@@ -21,7 +22,6 @@ describe('getCatalog RESTful API', function() {
   });
 
   it("should return catalog json", function(done) {
-    var catalog = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/catalog.json'), 'utf8'));
 
     supertest(server)
       .get("/v2/catalog")
