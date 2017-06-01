@@ -9,12 +9,13 @@ var BrokerServer = require(path.join(__dirname, '../lib/server.js'));
 var configFilePath = path.join(__dirname, '../config/settings.json');
 var settings = require(path.join(__dirname, '../lib/config/setting.js'))((JSON.parse(
   fs.readFileSync(configFilePath, 'utf8'))));
+var catalog = JSON.parse(fs.readFileSync(path.join(__dirname, '../config/catalog.json'), 'utf8'));
 var auth = new Buffer(settings.username + ":" + settings.password).toString('base64')
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 describe("Invalid path for RESTful API", function() {
   var server;
   before(function() {
-    server = BrokerServer(configFilePath);
+    server = BrokerServer(settings, catalog);
   });
 
   after(function(done) {
@@ -34,7 +35,7 @@ describe("Invalid path for RESTful API", function() {
 describe("Auth for RESTful API", function() {
   var server;
   before(function() {
-    server = BrokerServer(configFilePath);
+    server = BrokerServer(settings, catalog);
   });
 
   after(function(done) {
