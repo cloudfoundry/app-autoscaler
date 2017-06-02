@@ -63,9 +63,9 @@ func (sdb *ScalingEngineSQLDB) SaveScalingHistory(history *models.AppScalingHist
 func (sdb *ScalingEngineSQLDB) RetrieveScalingHistories(appId string, start int64, end int64, orderType db.OrderType) ([]*models.AppScalingHistory, error) {
 	var orderStr string
 	if orderType == db.DESC {
-		orderStr = "DESC"
+		orderStr = db.DESCSTR
 	} else {
-		orderStr = "ASC"
+		orderStr = db.ASCSTR
 	}
 	query := "SELECT timestamp, scalingtype, status, oldinstances, newinstances, reason, message, error FROM scalinghistory WHERE" +
 		" appid = $1 " +

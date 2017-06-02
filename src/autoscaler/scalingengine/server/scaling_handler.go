@@ -110,9 +110,9 @@ func (h *ScalingHandler) GetScalingHistories(w http.ResponseWriter, r *http.Requ
 
 	if len(orderParam) == 1 {
 		orderStr := strings.ToUpper(orderParam[0])
-		if orderStr == "DESC" {
+		if orderStr == db.DESCSTR {
 			order = db.DESC
-		} else if orderStr == "ASC" {
+		} else if orderStr == db.ASCSTR {
 			order = db.ASC
 		} else {
 			logger.Error("failed-to-get-order", err, lager.Data{"order": orderParam})

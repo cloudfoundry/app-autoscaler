@@ -12,6 +12,10 @@ const (
 	DESC OrderType = iota
 	ASC
 )
+const (
+	DESCSTR string = "DESC"
+	ASCSTR  string = "ASC"
+)
 
 type InstanceMetricsDB interface {
 	RetrieveInstanceMetrics(appid string, name string, start int64, end int64) ([]*models.AppInstanceMetric, error)

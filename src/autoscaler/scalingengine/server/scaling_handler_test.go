@@ -310,7 +310,7 @@ var _ = Describe("ScalingHandler", func() {
 					Expect(err).ToNot(HaveOccurred())
 				})
 
-				It("queries scaling histories from database with order 0(desc) ", func() {
+				It("queries scaling histories from database with order desc", func() {
 					_, _, _, order := scalingEngineDB.RetrieveScalingHistoriesArgsForCall(0)
 					Expect(order).To(Equal(db.DESC))
 				})
