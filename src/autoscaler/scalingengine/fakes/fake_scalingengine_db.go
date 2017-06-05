@@ -16,12 +16,13 @@ type FakeScalingEngineDB struct {
 	saveScalingHistoryReturns struct {
 		result1 error
 	}
-	RetrieveScalingHistoriesStub        func(appId string, start int64, end int64) ([]*models.AppScalingHistory, error)
+	RetrieveScalingHistoriesStub        func(appId string, start int64, end int64, orderType db.OrderType) ([]*models.AppScalingHistory, error)
 	retrieveScalingHistoriesMutex       sync.RWMutex
 	retrieveScalingHistoriesArgsForCall []struct {
-		appId string
-		start int64
-		end   int64
+		appId     string
+		start     int64
+		end       int64
+		orderType db.OrderType
 	}
 	retrieveScalingHistoriesReturns struct {
 		result1 []*models.AppScalingHistory
@@ -105,9 +106,8 @@ func (fake *FakeScalingEngineDB) SaveScalingHistory(history *models.AppScalingHi
 	fake.saveScalingHistoryMutex.Unlock()
 	if fake.SaveScalingHistoryStub != nil {
 		return fake.SaveScalingHistoryStub(history)
-	} else {
-		return fake.saveScalingHistoryReturns.result1
 	}
+	return fake.saveScalingHistoryReturns.result1
 }
 
 func (fake *FakeScalingEngineDB) SaveScalingHistoryCallCount() int {
@@ -129,20 +129,20 @@ func (fake *FakeScalingEngineDB) SaveScalingHistoryReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeScalingEngineDB) RetrieveScalingHistories(appId string, start int64, end int64) ([]*models.AppScalingHistory, error) {
+func (fake *FakeScalingEngineDB) RetrieveScalingHistories(appId string, start int64, end int64, orderType db.OrderType) ([]*models.AppScalingHistory, error) {
 	fake.retrieveScalingHistoriesMutex.Lock()
 	fake.retrieveScalingHistoriesArgsForCall = append(fake.retrieveScalingHistoriesArgsForCall, struct {
-		appId string
-		start int64
-		end   int64
-	}{appId, start, end})
-	fake.recordInvocation("RetrieveScalingHistories", []interface{}{appId, start, end})
+		appId     string
+		start     int64
+		end       int64
+		orderType db.OrderType
+	}{appId, start, end, orderType})
+	fake.recordInvocation("RetrieveScalingHistories", []interface{}{appId, start, end, orderType})
 	fake.retrieveScalingHistoriesMutex.Unlock()
 	if fake.RetrieveScalingHistoriesStub != nil {
-		return fake.RetrieveScalingHistoriesStub(appId, start, end)
-	} else {
-		return fake.retrieveScalingHistoriesReturns.result1, fake.retrieveScalingHistoriesReturns.result2
+		return fake.RetrieveScalingHistoriesStub(appId, start, end, orderType)
 	}
+	return fake.retrieveScalingHistoriesReturns.result1, fake.retrieveScalingHistoriesReturns.result2
 }
 
 func (fake *FakeScalingEngineDB) RetrieveScalingHistoriesCallCount() int {
@@ -151,10 +151,10 @@ func (fake *FakeScalingEngineDB) RetrieveScalingHistoriesCallCount() int {
 	return len(fake.retrieveScalingHistoriesArgsForCall)
 }
 
-func (fake *FakeScalingEngineDB) RetrieveScalingHistoriesArgsForCall(i int) (string, int64, int64) {
+func (fake *FakeScalingEngineDB) RetrieveScalingHistoriesArgsForCall(i int) (string, int64, int64, db.OrderType) {
 	fake.retrieveScalingHistoriesMutex.RLock()
 	defer fake.retrieveScalingHistoriesMutex.RUnlock()
-	return fake.retrieveScalingHistoriesArgsForCall[i].appId, fake.retrieveScalingHistoriesArgsForCall[i].start, fake.retrieveScalingHistoriesArgsForCall[i].end
+	return fake.retrieveScalingHistoriesArgsForCall[i].appId, fake.retrieveScalingHistoriesArgsForCall[i].start, fake.retrieveScalingHistoriesArgsForCall[i].end, fake.retrieveScalingHistoriesArgsForCall[i].orderType
 }
 
 func (fake *FakeScalingEngineDB) RetrieveScalingHistoriesReturns(result1 []*models.AppScalingHistory, result2 error) {
@@ -174,9 +174,8 @@ func (fake *FakeScalingEngineDB) PruneScalingHistories(before int64) error {
 	fake.pruneScalingHistoriesMutex.Unlock()
 	if fake.PruneScalingHistoriesStub != nil {
 		return fake.PruneScalingHistoriesStub(before)
-	} else {
-		return fake.pruneScalingHistoriesReturns.result1
 	}
+	return fake.pruneScalingHistoriesReturns.result1
 }
 
 func (fake *FakeScalingEngineDB) PruneScalingHistoriesCallCount() int {
@@ -208,9 +207,8 @@ func (fake *FakeScalingEngineDB) UpdateScalingCooldownExpireTime(appId string, e
 	fake.updateScalingCooldownExpireTimeMutex.Unlock()
 	if fake.UpdateScalingCooldownExpireTimeStub != nil {
 		return fake.UpdateScalingCooldownExpireTimeStub(appId, expireAt)
-	} else {
-		return fake.updateScalingCooldownExpireTimeReturns.result1
 	}
+	return fake.updateScalingCooldownExpireTimeReturns.result1
 }
 
 func (fake *FakeScalingEngineDB) UpdateScalingCooldownExpireTimeCallCount() int {
@@ -241,9 +239,8 @@ func (fake *FakeScalingEngineDB) CanScaleApp(appId string) (bool, error) {
 	fake.canScaleAppMutex.Unlock()
 	if fake.CanScaleAppStub != nil {
 		return fake.CanScaleAppStub(appId)
-	} else {
-		return fake.canScaleAppReturns.result1, fake.canScaleAppReturns.result2
 	}
+	return fake.canScaleAppReturns.result1, fake.canScaleAppReturns.result2
 }
 
 func (fake *FakeScalingEngineDB) CanScaleAppCallCount() int {
@@ -275,9 +272,8 @@ func (fake *FakeScalingEngineDB) GetActiveSchedule(appId string) (*models.Active
 	fake.getActiveScheduleMutex.Unlock()
 	if fake.GetActiveScheduleStub != nil {
 		return fake.GetActiveScheduleStub(appId)
-	} else {
-		return fake.getActiveScheduleReturns.result1, fake.getActiveScheduleReturns.result2
 	}
+	return fake.getActiveScheduleReturns.result1, fake.getActiveScheduleReturns.result2
 }
 
 func (fake *FakeScalingEngineDB) GetActiveScheduleCallCount() int {
@@ -307,9 +303,8 @@ func (fake *FakeScalingEngineDB) GetActiveSchedules() (map[string]string, error)
 	fake.getActiveSchedulesMutex.Unlock()
 	if fake.GetActiveSchedulesStub != nil {
 		return fake.GetActiveSchedulesStub()
-	} else {
-		return fake.getActiveSchedulesReturns.result1, fake.getActiveSchedulesReturns.result2
 	}
+	return fake.getActiveSchedulesReturns.result1, fake.getActiveSchedulesReturns.result2
 }
 
 func (fake *FakeScalingEngineDB) GetActiveSchedulesCallCount() int {
@@ -336,9 +331,8 @@ func (fake *FakeScalingEngineDB) SetActiveSchedule(appId string, schedule *model
 	fake.setActiveScheduleMutex.Unlock()
 	if fake.SetActiveScheduleStub != nil {
 		return fake.SetActiveScheduleStub(appId, schedule)
-	} else {
-		return fake.setActiveScheduleReturns.result1
 	}
+	return fake.setActiveScheduleReturns.result1
 }
 
 func (fake *FakeScalingEngineDB) SetActiveScheduleCallCount() int {
@@ -369,9 +363,8 @@ func (fake *FakeScalingEngineDB) RemoveActiveSchedule(appId string) error {
 	fake.removeActiveScheduleMutex.Unlock()
 	if fake.RemoveActiveScheduleStub != nil {
 		return fake.RemoveActiveScheduleStub(appId)
-	} else {
-		return fake.removeActiveScheduleReturns.result1
 	}
+	return fake.removeActiveScheduleReturns.result1
 }
 
 func (fake *FakeScalingEngineDB) RemoveActiveScheduleCallCount() int {
@@ -400,9 +393,8 @@ func (fake *FakeScalingEngineDB) Close() error {
 	fake.closeMutex.Unlock()
 	if fake.CloseStub != nil {
 		return fake.CloseStub()
-	} else {
-		return fake.closeReturns.result1
 	}
+	return fake.closeReturns.result1
 }
 
 func (fake *FakeScalingEngineDB) CloseCallCount() int {

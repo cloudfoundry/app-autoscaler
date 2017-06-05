@@ -60,11 +60,17 @@ func (sdb *ScalingEngineSQLDB) SaveScalingHistory(history *models.AppScalingHist
 	return err
 }
 
-func (sdb *ScalingEngineSQLDB) RetrieveScalingHistories(appId string, start int64, end int64) ([]*models.AppScalingHistory, error) {
+func (sdb *ScalingEngineSQLDB) RetrieveScalingHistories(appId string, start int64, end int64, orderType db.OrderType) ([]*models.AppScalingHistory, error) {
+	var orderStr string
+	if orderType == db.DESC {
+		orderStr = db.DESCSTR
+	} else {
+		orderStr = db.ASCSTR
+	}
 	query := "SELECT timestamp, scalingtype, status, oldinstances, newinstances, reason, message, error FROM scalinghistory WHERE" +
 		" appid = $1 " +
 		" AND timestamp >= $2" +
-		" AND timestamp <= $3 ORDER BY timestamp"
+		" AND timestamp <= $3 ORDER BY timestamp " + orderStr
 
 	if end < 0 {
 		end = time.Now().UnixNano()
@@ -74,7 +80,7 @@ func (sdb *ScalingEngineSQLDB) RetrieveScalingHistories(appId string, start int6
 	rows, err := sdb.sqldb.Query(query, appId, start, end)
 	if err != nil {
 		sdb.logger.Error("retrieve-scaling-histories", err,
-			lager.Data{"query": query, "appid": appId, "start": start, "end": end})
+			lager.Data{"query": query, "appid": appId, "start": start, "end": end, "orderType": orderType})
 		return nil, err
 	}
 

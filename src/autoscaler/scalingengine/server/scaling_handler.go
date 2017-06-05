@@ -9,8 +9,10 @@ import (
 	"code.cloudfoundry.org/lager"
 
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 )
 
 type ScalingHandler struct {
@@ -64,11 +66,13 @@ func (h *ScalingHandler) GetScalingHistories(w http.ResponseWriter, r *http.Requ
 
 	startParam := r.URL.Query()["start"]
 	endParam := r.URL.Query()["end"]
+	orderParam := r.URL.Query()["order"]
 	logger.Debug("handling", lager.Data{"start": startParam, "end": endParam})
 
 	var err error
 	start := int64(0)
 	end := int64(-1)
+	order := db.DESC
 
 	if len(startParam) == 1 {
 		start, err = strconv.ParseInt(startParam[0], 10, 64)
@@ -104,9 +108,30 @@ func (h *ScalingHandler) GetScalingHistories(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	if len(orderParam) == 1 {
+		orderStr := strings.ToUpper(orderParam[0])
+		if orderStr == db.DESCSTR {
+			order = db.DESC
+		} else if orderStr == db.ASCSTR {
+			order = db.ASC
+		} else {
+			logger.Error("failed-to-get-order", err, lager.Data{"order": orderParam})
+			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
+				Code:    "Bad-Request",
+				Message: fmt.Sprintf("Incorrect order parameter in query string, the value can only be %s or %s", db.ASC, db.DESC),
+			})
+			return
+		}
+	} else if len(orderParam) > 1 {
+		logger.Error("failed-to-get-order", err, lager.Data{"order": orderParam})
+		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
+			Code:    "Bad-Request",
+			Message: "Incorrect order parameter in query string"})
+		return
+	}
 	var histories []*models.AppScalingHistory
 
-	histories, err = h.scalingEngineDB.RetrieveScalingHistories(appId, start, end)
+	histories, err = h.scalingEngineDB.RetrieveScalingHistories(appId, start, end, order)
 	if err != nil {
 		logger.Error("failed-to-retrieve-histories", err, lager.Data{"start": start, "end": end})
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
