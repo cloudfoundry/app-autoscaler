@@ -46,8 +46,8 @@ func (pdb *PolicySQLDB) Close() error {
 	return nil
 }
 
-func (pdb *PolicySQLDB) GetAppIds() (map[string]bool, error) {
-	appIds := make(map[string]bool)
+func (pdb *PolicySQLDB) GetAppIds() (map[string]struct{}, error) {
+	appIds := make(map[string]struct{})
 	query := "SELECT app_id FROM policy_json"
 
 	rows, err := pdb.sqldb.Query(query)
@@ -63,7 +63,7 @@ func (pdb *PolicySQLDB) GetAppIds() (map[string]bool, error) {
 			pdb.logger.Error("get-appids-scan", err)
 			return nil, err
 		}
-		appIds[id] = true
+		appIds[id] = struct{}{}
 	}
 	return appIds, nil
 }

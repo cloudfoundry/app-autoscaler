@@ -1,0 +1,6 @@
+logging:
+  level: "debug"
+db:
+  policy_db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  scheduler_db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+synchronize_interval: 12h

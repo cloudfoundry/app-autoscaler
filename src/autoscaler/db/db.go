@@ -25,7 +25,7 @@ type InstanceMetricsDB interface {
 }
 
 type PolicyDB interface {
-	GetAppIds() (map[string]bool, error)
+	GetAppIds() (map[string]struct{}, error)
 	GetAppPolicy(appId string) (*models.ScalingPolicy, error)
 	RetrievePolicies() ([]*models.PolicyJson, error)
 	Close() error
@@ -53,5 +53,6 @@ type ScalingEngineDB interface {
 
 type SchedulerDB interface {
 	GetActiveSchedules() (map[string]*models.ActiveSchedule, error)
+	SynchronizeActiveSchedules(map[string]struct{}) error
 	Close() error
 }

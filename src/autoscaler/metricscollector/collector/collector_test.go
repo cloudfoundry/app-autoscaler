@@ -63,7 +63,7 @@ var _ = Describe("Collector", func() {
 
 			Context("when no apps in policy database", func() {
 				BeforeEach(func() {
-					database.GetAppIdsReturns(make(map[string]bool), nil)
+					database.GetAppIdsReturns(make(map[string]struct{}), nil)
 				})
 
 				It("does nothing", func() {
@@ -76,7 +76,7 @@ var _ = Describe("Collector", func() {
 
 			Context("when refresh does not have app changes", func() {
 				BeforeEach(func() {
-					database.GetAppIdsReturns(map[string]bool{"app-id-1": true, "app-id-2": true, "app-id-3": true}, nil)
+					database.GetAppIdsReturns(map[string]struct{}{"app-id-1": struct{}{}, "app-id-2": struct{}{}, "app-id-3": struct{}{}}, nil)
 				})
 
 				It("should always poll the same set of apps", func() {
@@ -91,14 +91,14 @@ var _ = Describe("Collector", func() {
 
 			Context("when refresh has new apps", func() {
 				BeforeEach(func() {
-					database.GetAppIdsStub = func() (map[string]bool, error) {
+					database.GetAppIdsStub = func() (map[string]struct{}, error) {
 						switch database.GetAppIdsCallCount() {
 						case 1:
-							return map[string]bool{"app-id-1": true}, nil
+							return map[string]struct{}{"app-id-1": struct{}{}}, nil
 						case 2:
-							return map[string]bool{"app-id-1": true, "app-id-2": true}, nil
+							return map[string]struct{}{"app-id-1": struct{}{}, "app-id-2": struct{}{}}, nil
 						default:
-							return map[string]bool{"app-id-1": true, "app-id-2": true, "app-id-3": true}, nil
+							return map[string]struct{}{"app-id-1": struct{}{}, "app-id-2": struct{}{}, "app-id-3": struct{}{}}, nil
 						}
 					}
 				})
@@ -121,14 +121,14 @@ var _ = Describe("Collector", func() {
 
 			Context("when refresh has app removals", func() {
 				BeforeEach(func() {
-					database.GetAppIdsStub = func() (map[string]bool, error) {
+					database.GetAppIdsStub = func() (map[string]struct{}, error) {
 						switch database.GetAppIdsCallCount() {
 						case 1:
-							return map[string]bool{"app-id-1": true, "app-id-2": true, "app-id-3": true}, nil
+							return map[string]struct{}{"app-id-1": struct{}{}, "app-id-2": struct{}{}, "app-id-3": struct{}{}}, nil
 						case 2:
-							return map[string]bool{"app-id-2": true, "app-id-3": true}, nil
+							return map[string]struct{}{"app-id-2": struct{}{}, "app-id-3": struct{}{}}, nil
 						default:
-							return map[string]bool{"app-id-3": true}, nil
+							return map[string]struct{}{"app-id-3": struct{}{}}, nil
 						}
 					}
 				})
@@ -151,14 +151,14 @@ var _ = Describe("Collector", func() {
 
 			Context("when refresh has both new apps and app removals", func() {
 				BeforeEach(func() {
-					database.GetAppIdsStub = func() (map[string]bool, error) {
+					database.GetAppIdsStub = func() (map[string]struct{}, error) {
 						switch database.GetAppIdsCallCount() {
 						case 1:
-							return map[string]bool{"app-id-1": true, "app-id-3": true}, nil
+							return map[string]struct{}{"app-id-1": struct{}{}, "app-id-3": struct{}{}}, nil
 						case 2:
-							return map[string]bool{"app-id-2": true, "app-id-3": true}, nil
+							return map[string]struct{}{"app-id-2": struct{}{}, "app-id-3": struct{}{}}, nil
 						default:
-							return map[string]bool{"app-id-1": true, "app-id-2": true}, nil
+							return map[string]struct{}{"app-id-1": struct{}{}, "app-id-2": struct{}{}}, nil
 						}
 					}
 				})
@@ -202,7 +202,7 @@ var _ = Describe("Collector", func() {
 
 	Describe("Stop", func() {
 		BeforeEach(func() {
-			database.GetAppIdsReturns(map[string]bool{"app-id-1": true, "app-id-2": true, "app-id-3": true}, nil)
+			database.GetAppIdsReturns(map[string]struct{}{"app-id-1": struct{}{}, "app-id-2": struct{}{}, "app-id-3": struct{}{}}, nil)
 			coll.Start()
 		})
 
