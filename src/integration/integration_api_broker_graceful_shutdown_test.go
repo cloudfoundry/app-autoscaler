@@ -42,7 +42,7 @@ var _ = Describe("Integration_Api_Broker_Graceful_Shutdown", func() {
 				initializeHttpClient("api.crt", "api.key", "autoscaler-ca.crt", apiSchedulerHttpRequestTimeout)
 
 				fakeScheduler = ghttp.NewServer()
-				apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], dbUrl, fakeScheduler.URL(), tmpDir)
+				apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], dbUrl, fakeScheduler.URL(), "", tmpDir)
 				runner = startApiServer()
 				buffer = runner.Buffer()
 			})

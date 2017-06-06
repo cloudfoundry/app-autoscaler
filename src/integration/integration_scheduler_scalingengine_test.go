@@ -245,7 +245,6 @@ func checkResponseEmptyAndStatusCode(resp *http.Response, err error, expectedSta
 	Expect(body).To(HaveLen(0))
 	Expect(resp.StatusCode).To(Equal(expectedStatus))
 }
-
 func activeScheduleExists(appId string) bool {
 	resp, err := getActiveSchedule(appId)
 	Expect(err).NotTo(HaveOccurred())
