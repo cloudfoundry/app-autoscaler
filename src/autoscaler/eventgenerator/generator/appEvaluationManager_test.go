@@ -39,11 +39,11 @@ var _ = Describe("AppEvaluationManager", func() {
 					InstanceMin: 1,
 					ScalingRules: []*models.ScalingRule{
 						{
-							MetricType:            models.MetricNameMemory,
+							MetricType:            "test-metric-name",
 							StatWindowSeconds:     200,
 							BreachDurationSeconds: 200,
 							CoolDownSeconds:       200,
-							Threshold:             80.0,
+							Threshold:             80,
 							Operator:              ">=",
 							Adjustment:            "1",
 						},
@@ -57,11 +57,11 @@ var _ = Describe("AppEvaluationManager", func() {
 					InstanceMin: 1,
 					ScalingRules: []*models.ScalingRule{
 						{
-							MetricType:            models.MetricNameMemory,
+							MetricType:            "test-metric-name",
 							StatWindowSeconds:     300,
 							BreachDurationSeconds: 300,
 							CoolDownSeconds:       300,
-							Threshold:             20.0,
+							Threshold:             20,
 							Operator:              "<=",
 							Adjustment:            "-1",
 						},
@@ -113,20 +113,20 @@ var _ = Describe("AppEvaluationManager", func() {
 				Expect(triggerArray).Should(ContainElement(
 					[]*models.Trigger{{
 						AppId:                 testAppId,
-						MetricType:            models.MetricNameMemory,
+						MetricType:            "test-metric-name",
 						BreachDurationSeconds: 200,
 						CoolDownSeconds:       200,
-						Threshold:             80.0,
+						Threshold:             80,
 						Operator:              ">=",
 						Adjustment:            "1",
 					}}))
 				Expect(triggerArray).Should(ContainElement(
 					[]*models.Trigger{{
 						AppId:                 testAppId2,
-						MetricType:            models.MetricNameMemory,
+						MetricType:            "test-metric-name",
 						BreachDurationSeconds: 300,
 						CoolDownSeconds:       300,
-						Threshold:             20.0,
+						Threshold:             20,
 						Operator:              "<=",
 						Adjustment:            "-1",
 					}}))

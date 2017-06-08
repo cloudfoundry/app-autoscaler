@@ -57,7 +57,7 @@ var getDaysInMonthInISOFormat = function() {
 };
 
 var getMetricTypes = function() {
-  var metricTypeEnum = ['memoryused'];
+  var metricTypeEnum = ['memoryused', 'memoryutil', 'responsetime', 'throughput']
   return metricTypeEnum;
 };
 
@@ -93,7 +93,7 @@ var getScalingRuleSchema = function() {
       'metric_type':{ 'type':'string' ,'enum':metricTypeEnum },
       'stat_window_secs':{ 'type':'number','minimum': 60,'maximum': 3600 },
       'breach_duration_secs':{ 'type':'number','minimum': 60,'maximum': 3600 },
-      'threshold':{ 'type':'number','minimum': 1},
+      'threshold':{ 'type':'number','minimum': 0},
       'operator':{ 'type':'string','enum': validOperators },
       'cool_down_secs':{ 'type':'number','minimum': 60,'maximum': 3600 },
       'adjustment':{ 'type':'string','pattern': adjustmentPattern }

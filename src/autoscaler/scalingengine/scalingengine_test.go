@@ -53,10 +53,11 @@ var _ = Describe("ScalingEngine", func() {
 	Describe("Scale", func() {
 		BeforeEach(func() {
 			trigger = &models.Trigger{
-				MetricType:            models.MetricNameMemory,
+				MetricType:            "test-metric-type",
+				MetricUnit:            "test-unit",
 				BreachDurationSeconds: 100,
 				CoolDownSeconds:       30,
-				Threshold:             222,
+				Threshold:             80,
 				Operator:              ">",
 				Adjustment:            "+1",
 			}
@@ -92,7 +93,7 @@ var _ = Describe("ScalingEngine", func() {
 					Status:       models.ScalingStatusSucceeded,
 					OldInstances: 2,
 					NewInstances: 3,
-					Reason:       "+1 instance(s) because memoryused > 222 for 100 seconds",
+					Reason:       "+1 instance(s) because test-metric-type > 80test-unit for 100 seconds",
 				}))
 
 			})
@@ -115,7 +116,7 @@ var _ = Describe("ScalingEngine", func() {
 					Status:       models.ScalingStatusIgnored,
 					OldInstances: 2,
 					NewInstances: 2,
-					Reason:       "+1 instance(s) because memoryused > 222 for 100 seconds",
+					Reason:       "+1 instance(s) because test-metric-type > 80test-unit for 100 seconds",
 					Message:      "app in cooldown period",
 				}))
 
@@ -143,7 +144,7 @@ var _ = Describe("ScalingEngine", func() {
 					Status:       models.ScalingStatusIgnored,
 					OldInstances: 2,
 					NewInstances: 2,
-					Reason:       "+20% instance(s) because memoryused > 222 for 100 seconds",
+					Reason:       "+20% instance(s) because test-metric-type > 80test-unit for 100 seconds",
 				}))
 
 			})
@@ -173,7 +174,7 @@ var _ = Describe("ScalingEngine", func() {
 					Status:       models.ScalingStatusSucceeded,
 					OldInstances: 5,
 					NewInstances: 6,
-					Reason:       "+2 instance(s) because memoryused > 222 for 100 seconds",
+					Reason:       "+2 instance(s) because test-metric-type > 80test-unit for 100 seconds",
 					Message:      "limited by max instances 6",
 				}))
 
@@ -204,7 +205,7 @@ var _ = Describe("ScalingEngine", func() {
 					Status:       models.ScalingStatusSucceeded,
 					OldInstances: 3,
 					NewInstances: 2,
-					Reason:       "-60% instance(s) because memoryused > 222 for 100 seconds",
+					Reason:       "-60% instance(s) because test-metric-type > 80test-unit for 100 seconds",
 					Message:      "limited by min instances 2",
 				}))
 
@@ -243,7 +244,7 @@ var _ = Describe("ScalingEngine", func() {
 						Status:       models.ScalingStatusSucceeded,
 						OldInstances: 6,
 						NewInstances: 7,
-						Reason:       "+2 instance(s) because memoryused > 222 for 100 seconds",
+						Reason:       "+2 instance(s) because test-metric-type > 80test-unit for 100 seconds",
 						Message:      "limited by max instances 7",
 					}))
 
@@ -273,7 +274,7 @@ var _ = Describe("ScalingEngine", func() {
 						Status:       models.ScalingStatusSucceeded,
 						OldInstances: 5,
 						NewInstances: 3,
-						Reason:       "-60% instance(s) because memoryused > 222 for 100 seconds",
+						Reason:       "-60% instance(s) because test-metric-type > 80test-unit for 100 seconds",
 						Message:      "limited by min instances 3",
 					}))
 
@@ -299,7 +300,7 @@ var _ = Describe("ScalingEngine", func() {
 					Status:       models.ScalingStatusFailed,
 					OldInstances: -1,
 					NewInstances: -1,
-					Reason:       "+1 instance(s) because memoryused > 222 for 100 seconds",
+					Reason:       "+1 instance(s) because test-metric-type > 80test-unit for 100 seconds",
 					Error:        "failed to get app instances",
 				}))
 
@@ -323,7 +324,7 @@ var _ = Describe("ScalingEngine", func() {
 					Status:       models.ScalingStatusFailed,
 					OldInstances: 2,
 					NewInstances: -1,
-					Reason:       "+1 instance(s) because memoryused > 222 for 100 seconds",
+					Reason:       "+1 instance(s) because test-metric-type > 80test-unit for 100 seconds",
 					Error:        "failed to check app cooldown setting",
 				}))
 
@@ -348,7 +349,7 @@ var _ = Describe("ScalingEngine", func() {
 					Status:       models.ScalingStatusFailed,
 					OldInstances: 2,
 					NewInstances: -1,
-					Reason:       "+a instance(s) because memoryused > 222 for 100 seconds",
+					Reason:       "+a instance(s) because test-metric-type > 80test-unit for 100 seconds",
 					Error:        "failed to compute new app instances",
 				}))
 			})
@@ -373,7 +374,7 @@ var _ = Describe("ScalingEngine", func() {
 					Status:       models.ScalingStatusFailed,
 					OldInstances: 2,
 					NewInstances: -1,
-					Reason:       "+1 instance(s) because memoryused > 222 for 100 seconds",
+					Reason:       "+1 instance(s) because test-metric-type > 80test-unit for 100 seconds",
 					Error:        "failed to get active schedule",
 				}))
 
@@ -399,7 +400,7 @@ var _ = Describe("ScalingEngine", func() {
 					Status:       models.ScalingStatusFailed,
 					OldInstances: 2,
 					NewInstances: -1,
-					Reason:       "+1 instance(s) because memoryused > 222 for 100 seconds",
+					Reason:       "+1 instance(s) because test-metric-type > 80test-unit for 100 seconds",
 					Error:        "failed to get scaling policy",
 				}))
 
@@ -426,7 +427,7 @@ var _ = Describe("ScalingEngine", func() {
 					Status:       models.ScalingStatusFailed,
 					OldInstances: 2,
 					NewInstances: 3,
-					Reason:       "+1 instance(s) because memoryused > 222 for 100 seconds",
+					Reason:       "+1 instance(s) because test-metric-type > 80test-unit for 100 seconds",
 					Error:        "failed to set app instances",
 				}))
 

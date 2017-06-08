@@ -67,6 +67,7 @@ func (r *ScalingRule) CoolDown() time.Duration {
 type Trigger struct {
 	AppId                 string `json:"app_id"`
 	MetricType            string `json:"metric_type"`
+	MetricUnit            string `json:"metric_unit"`
 	BreachDurationSeconds int    `json:"breach_duration_secs"`
 	Threshold             int64  `json:"threshold"`
 	Operator              string `json:"operator"`

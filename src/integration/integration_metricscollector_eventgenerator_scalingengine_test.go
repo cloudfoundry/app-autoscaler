@@ -19,7 +19,7 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 
 	var (
 		testAppId         string
-		timeout           time.Duration = 30 * time.Second
+		timeout           time.Duration = 20 * time.Second
 		initInstanceCount int           = 2
 		collectMethod     string        = config.CollectMethodPolling
 	)
@@ -43,17 +43,17 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 		stopAll()
 	})
 	Describe("Scale out", func() {
-		Context("application's metrics break the upper scaling rule for more than breach duration time", func() {
+		Context("application's metrics break the scaling out rule for more than breach duration", func() {
 			BeforeEach(func() {
 				testPolicy := models.ScalingPolicy{
 					InstanceMin: 1,
 					InstanceMax: 5,
 					ScalingRules: []*models.ScalingRule{
 						{
-							MetricType:            models.MetricNameMemory,
+							MetricType:            models.MetricNameMemoryUtil,
 							StatWindowSeconds:     10,
 							BreachDurationSeconds: 10,
-							Threshold:             90,
+							Threshold:             30,
 							Operator:              ">=",
 							CoolDownSeconds:       10,
 							Adjustment:            "+1",
@@ -66,19 +66,19 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 			})
 			Context("when using polling for metrics collection", func() {
 				BeforeEach(func() {
-					fakeMetricsPolling(testAppId, 400*1024*1024)
+					fakeMetricsPolling(testAppId, 102400000, 204800000)
 					collectMethod = config.CollectMethodPolling
 				})
 				It("should scale out", func() {
 					Eventually(func() int {
 						return getScalingHistoryCount(testAppId, initInstanceCount, initInstanceCount+1)
-					}, timeout, 15*time.Second, 1*time.Second).Should(BeNumerically(">=", 1))
+					}, timeout, 1*time.Second).Should(BeNumerically(">=", 1))
 				})
 			})
 
 			Context("when using streaming for metrics collection", func() {
 				BeforeEach(func() {
-					fakeMetricsStreaming(testAppId, 400*1024*1024)
+					fakeMetricsStreaming(testAppId, 102400000, 204800000)
 					collectMethod = config.CollectMethodStreaming
 				})
 				AfterEach(func() {
@@ -87,22 +87,22 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 				It("should scale out", func() {
 					Eventually(func() int {
 						return getScalingHistoryCount(testAppId, initInstanceCount, initInstanceCount+1)
-					}, timeout, 15*time.Second, 1*time.Second).Should(BeNumerically(">=", 1))
+					}, timeout, 1*time.Second).Should(BeNumerically(">=", 1))
 				})
 			})
 
 		})
-		Context("application's metrics do not break the upper scaling rule", func() {
+		Context("application's metrics do not break the scaling out rule", func() {
 			BeforeEach(func() {
 				testPolicy := models.ScalingPolicy{
 					InstanceMin: 1,
 					InstanceMax: 5,
 					ScalingRules: []*models.ScalingRule{
 						{
-							MetricType:            models.MetricNameMemory,
+							MetricType:            models.MetricNameMemoryUtil,
 							StatWindowSeconds:     10,
 							BreachDurationSeconds: 10,
-							Threshold:             900,
+							Threshold:             80,
 							Operator:              ">=",
 							CoolDownSeconds:       10,
 							Adjustment:            "+1",
@@ -115,19 +115,19 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 			})
 			Context("when using polling for metrics collection", func() {
 				BeforeEach(func() {
-					fakeMetricsPolling(testAppId, 400*1024*1024)
+					fakeMetricsPolling(testAppId, 102400000, 204800000)
 					collectMethod = config.CollectMethodPolling
 				})
 				It("shouldn't scale out", func() {
 					Consistently(func() int {
 						return getScalingHistoryCount(testAppId, initInstanceCount, initInstanceCount+1)
-					}, timeout, 15*time.Second, 1*time.Second).Should(Equal(0))
+					}, timeout, 1*time.Second).Should(Equal(0))
 				})
 			})
 
 			Context("when using streaming for metrics collection", func() {
 				BeforeEach(func() {
-					fakeMetricsStreaming(testAppId, 400*1024*1024)
+					fakeMetricsStreaming(testAppId, 102400000, 204800000)
 					collectMethod = config.CollectMethodStreaming
 				})
 				AfterEach(func() {
@@ -136,24 +136,24 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 				It("shouldn't scale out", func() {
 					Consistently(func() int {
 						return getScalingHistoryCount(testAppId, initInstanceCount, initInstanceCount+1)
-					}, timeout, 15*time.Second, 1*time.Second).Should(Equal(0))
+					}, timeout, 1*time.Second).Should(Equal(0))
 				})
 			})
 
 		})
 	})
 	Describe("Scale in", func() {
-		Context("application's metrics break the lower scaling rule for more than breach duration time", func() {
+		Context("application's metrics break the scaling in rule for more than breach duration", func() {
 			BeforeEach(func() {
 				testPolicy := models.ScalingPolicy{
 					InstanceMin: 1,
 					InstanceMax: 5,
 					ScalingRules: []*models.ScalingRule{
 						{
-							MetricType:            models.MetricNameMemory,
+							MetricType:            models.MetricNameMemoryUtil,
 							StatWindowSeconds:     10,
 							BreachDurationSeconds: 10,
-							Threshold:             900,
+							Threshold:             80,
 							Operator:              "<",
 							CoolDownSeconds:       10,
 							Adjustment:            "-1",
@@ -167,19 +167,19 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 
 			Context("when using polling for metrics collection", func() {
 				BeforeEach(func() {
-					fakeMetricsPolling(testAppId, 400*1024*1024)
+					fakeMetricsPolling(testAppId, 102400000, 204800000)
 					collectMethod = config.CollectMethodPolling
 				})
 				It("should scale in", func() {
 					Eventually(func() int {
 						return getScalingHistoryCount(testAppId, initInstanceCount, initInstanceCount-1)
-					}, timeout, 15*time.Second, 1*time.Second).Should(BeNumerically(">=", 1))
+					}, timeout, 1*time.Second).Should(BeNumerically(">=", 1))
 				})
 			})
 
 			Context("when using streaming for metrics collection", func() {
 				BeforeEach(func() {
-					fakeMetricsStreaming(testAppId, 400*1024*1024)
+					fakeMetricsStreaming(testAppId, 102400000, 204800000)
 					collectMethod = config.CollectMethodStreaming
 				})
 				AfterEach(func() {
@@ -188,25 +188,25 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 				It("should scale in", func() {
 					Eventually(func() int {
 						return getScalingHistoryCount(testAppId, initInstanceCount, initInstanceCount-1)
-					}, timeout, 15*time.Second, 1*time.Second).Should(BeNumerically(">=", 1))
+					}, timeout, 1*time.Second).Should(BeNumerically(">=", 1))
 				})
 			})
 
 		})
-		Context("application's metrics do not break the lower scaling rule", func() {
+		Context("application's metrics do not break the scaling in rule", func() {
 			BeforeEach(func() {
 				testPolicy := models.ScalingPolicy{
 					InstanceMin: 1,
 					InstanceMax: 5,
 					ScalingRules: []*models.ScalingRule{
 						{
-							MetricType:            models.MetricNameMemory,
+							MetricType:            models.MetricNameMemoryUtil,
 							StatWindowSeconds:     10,
 							BreachDurationSeconds: 10,
-							Threshold:             90,
+							Threshold:             30,
 							Operator:              "<",
-							CoolDownSeconds:       10,
-							Adjustment:            "+1",
+							CoolDownSeconds:       30,
+							Adjustment:            "-1",
 						},
 					},
 				}
@@ -217,19 +217,19 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 
 			Context("when using polling for metrics collection", func() {
 				BeforeEach(func() {
-					fakeMetricsPolling(testAppId, 400*1024*1024)
+					fakeMetricsPolling(testAppId, 102400000, 204800000)
 					collectMethod = config.CollectMethodPolling
 				})
 				It("shouldn't scale in", func() {
 					Consistently(func() int {
 						return getScalingHistoryCount(testAppId, initInstanceCount, initInstanceCount-1)
-					}, timeout, 15*time.Second, 1*time.Second).Should(Equal(0))
+					}, timeout, 1*time.Second).Should(Equal(0))
 				})
 			})
 
 			Context("when using streaming for metrics collection", func() {
 				BeforeEach(func() {
-					fakeMetricsStreaming(testAppId, 400*1024*1024)
+					fakeMetricsStreaming(testAppId, 102400000, 204800000)
 					collectMethod = config.CollectMethodStreaming
 				})
 				AfterEach(func() {
@@ -238,7 +238,7 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 				It("shouldn't scale in", func() {
 					Consistently(func() int {
 						return getScalingHistoryCount(testAppId, initInstanceCount, initInstanceCount-1)
-					}, timeout, 15*time.Second, 1*time.Second).Should(Equal(0))
+					}, timeout, 1*time.Second).Should(Equal(0))
 				})
 			})
 

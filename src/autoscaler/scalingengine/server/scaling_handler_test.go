@@ -58,7 +58,7 @@ var _ = Describe("ScalingHandler", func() {
 				scalingEngine.ScaleReturns(3, nil)
 
 				trigger = &models.Trigger{
-					MetricType: models.MetricNameMemory,
+					MetricType: "test-metric-name",
 					Adjustment: "+1",
 				}
 				body, err = json.Marshal(trigger)
@@ -107,7 +107,7 @@ var _ = Describe("ScalingHandler", func() {
 				scalingEngine.ScaleReturns(0, errors.New("an error"))
 
 				trigger = &models.Trigger{
-					MetricType: models.MetricNameMemory,
+					MetricType: "test-metric-name",
 					Adjustment: "+1",
 				}
 				body, err = json.Marshal(trigger)

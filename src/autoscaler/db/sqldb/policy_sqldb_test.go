@@ -113,7 +113,7 @@ var _ = Describe("PolicySQLDB", func() {
 				InstanceMin: 1,
 				InstanceMax: 6,
 				ScalingRules: []*models.ScalingRule{{
-					MetricType:            models.MetricNameMemory,
+					MetricType:            "test-metric-name",
 					StatWindowSeconds:     120,
 					BreachDurationSeconds: 180,
 					Threshold:             1048576000,
@@ -124,7 +124,7 @@ var _ = Describe("PolicySQLDB", func() {
 				InstanceMin: 2,
 				InstanceMax: 8,
 				ScalingRules: []*models.ScalingRule{{
-					MetricType:            models.MetricNameMemory,
+					MetricType:            "test-metric-name",
 					StatWindowSeconds:     120,
 					BreachDurationSeconds: 300,
 					Threshold:             104857600,
@@ -153,7 +153,7 @@ var _ = Describe("PolicySQLDB", func() {
 					InstanceMin: 1,
 					InstanceMax: 6,
 					ScalingRules: []*models.ScalingRule{{
-						MetricType:            models.MetricNameMemory,
+						MetricType:            "test-metric-name",
 						StatWindowSeconds:     120,
 						BreachDurationSeconds: 180,
 						Threshold:             1048576000,
