@@ -24,18 +24,20 @@ describe('ScalingEngine Utility functions', function() {
     });
     context('all parameters are valid', function() {
       var histories = [
-        { 'app_guid': theAppId, 'timestamp': 150, 'scaling_type': 1, 'status': 1, 'old_instances': 2, 'new_instances': 4, 'reason': 'a reason', 'message': '', 'error': '' },
-        { 'app_guid': theAppId, 'timestamp': 120, 'scaling_type': 0, 'status': 0, 'old_instances': 2, 'new_instances': 4, 'reason': 'a reason', 'message': '', 'error': '' },
+        { 'app_id': theAppId, 'timestamp': 150, 'scaling_type': 1, 'status': 1, 'old_instances': 2, 'new_instances': 4, 'reason': 'a reason', 'message': '', 'error': '' },
+        { 'app_id': theAppId, 'timestamp': 120, 'scaling_type': 0, 'status': 0, 'old_instances': 2, 'new_instances': 4, 'reason': 'a reason', 'message': '', 'error': '' },
       ]
       it('should get the scaling histories', function(done) {
         nock(scalingEngineUri)
           .get(/\/v1\/apps\/.+\/scaling_histories/)
           .reply(200, histories);
-        var mockRequest = {
-          params: { 'guid': theAppId },
-          query: { 'start-time': 100, 'end-time': 200, 'order': 'desc' }
+        var mockParameters = {
+          appId: theAppId,
+          startTime: 100,
+          endTime: 200,
+          order: 'desc'
         };
-        scalingEngineUtils.getScalingHistory(mockRequest, function(error, result) {
+        scalingEngineUtils.getScalingHistory(mockParameters, function(error, result) {
           expect(error).to.be.null;
           expect(result.statusCode).to.equal(200);
           expect(result.body).to.deep.equal(histories);
@@ -53,11 +55,13 @@ describe('ScalingEngine Utility functions', function() {
         nock(scalingEngineUri)
           .get(/\/v1\/apps\/.+\/scaling_histories/)
           .replyWithError(mockError);
-        var mockRequest = {
-          params: { 'guid': theAppId },
-          query: { 'start-time': 100, 'end-time': 200, 'order': 'desc' }
+        var mockParameters = {
+          appId: theAppId,
+          startTime: 100,
+          endTime: 200,
+          order: 'desc'
         };
-        scalingEngineUtils.getScalingHistory(mockRequest, function(error, result) {
+        scalingEngineUtils.getScalingHistory(mockParameters, function(error, result) {
           expect(error).to.not.be.null;
           expect(error).to.deep.equal(mockError);
           done();
@@ -71,11 +75,13 @@ describe('ScalingEngine Utility functions', function() {
         nock(scalingEngineUri)
           .get(/\/v1\/apps\/.+\/scaling_histories/)
           .reply(400, mockBody);
-        var mockRequest = {
-          params: { 'guid': theAppId },
-          query: { 'start-time': 'not-integer', 'end-time': 200, 'order': 'desc' }
+        var mockParameters = {
+          appId: theAppId,
+          startTime: 'not-integer',
+          endTime: 200,
+          order: 'desc'
         };
-        scalingEngineUtils.getScalingHistory(mockRequest, function(error, result) {
+        scalingEngineUtils.getScalingHistory(mockParameters, function(error, result) {
           expect(error).to.not.be.null;
           expect(error).to.deep.equal({ statusCode: 400, message: 'Error parsing start time' })
           done();
@@ -89,13 +95,35 @@ describe('ScalingEngine Utility functions', function() {
         nock(scalingEngineUri)
           .get(/\/v1\/apps\/.+\/scaling_histories/)
           .reply(400, mockBody);
-        var mockRequest = {
-          params: { 'guid': theAppId },
-          query: { 'start-time': 100, 'end-time': 'not-integer', 'order': 'desc' }
+        var mockParameters = {
+          appId: theAppId,
+          startTime: 100,
+          endTime: 'not-integer',
+          order: 'desc'
         };
-        scalingEngineUtils.getScalingHistory(mockRequest, function(error, result) {
+        scalingEngineUtils.getScalingHistory(mockParameters, function(error, result) {
           expect(error).to.not.be.null;
           expect(error).to.deep.equal({ statusCode: 400, message: 'Error parsing end time' })
+          done();
+        });
+      });
+    });
+
+    context('order is not desc or asc', function() {
+      var mockBody = { code: 'Bad-Request', message: 'Incorrect order parameter in query string, the value can only be desc or asc' };
+      it('should fail to get the scaling histories', function(done) {
+        nock(scalingEngineUri)
+          .get(/\/v1\/apps\/.+\/scaling_histories/)
+          .reply(400, mockBody);
+        var mockParameters = {
+          appId: theAppId,
+          startTime: 100,
+          endTime: 200,
+          order: 'not-desc-asc'
+        };
+        scalingEngineUtils.getScalingHistory(mockParameters, function(error, result) {
+          expect(error).to.not.be.null;
+          expect(error).to.deep.equal({ statusCode: 400, message: 'Incorrect order parameter in query string, the value can only be desc or asc' })
           done();
         });
       });
@@ -107,11 +135,13 @@ describe('ScalingEngine Utility functions', function() {
         nock(scalingEngineUri)
           .get(/\/v1\/apps\/.+\/scaling_histories/)
           .reply(500, mockBody);
-        var mockRequest = {
-          params: { 'guid': theAppId },
-          query: { 'start-time': 100, 'end-time': 200, 'order': 'desc' }
+        var mockParameters = {
+          appId: theAppId,
+          startTime: 100,
+          endTime: 200,
+          order: 'desc'
         };
-        scalingEngineUtils.getScalingHistory(mockRequest, function(error, result) {
+        scalingEngineUtils.getScalingHistory(mockParameters, function(error, result) {
           expect(error).to.not.be.null;
           expect(error).to.deep.equal({ statusCode: 500, message: 'Error getting scaling histories from database' })
           done();

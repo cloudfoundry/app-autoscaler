@@ -5,9 +5,9 @@ module.exports = function(scalingEngineSettings) {
   var HttpStatus = require("http-status-codes");
   var fs = require("fs");
   var scalingEngineUtilObj = {};
-  var getOptions = function(appGuid, startTime, endTime, order) {
+  var getOptions = function(appId, startTime, endTime, order) {
     var options = {
-      url: scalingEngineSettings.uri + "/v1/apps/" + appGuid + "/scaling_histories",
+      url: scalingEngineSettings.uri + "/v1/apps/" + appId + "/scaling_histories",
       qs: { "start": startTime, "end": endTime, "order": order },
       method: "GET",
       json: true,
@@ -25,27 +25,27 @@ module.exports = function(scalingEngineSettings) {
     }
     return options;
   }
-  scalingEngineUtilObj.getScalingHistory = function getScalingHistory(req, callback) {
-    var appGuid = req.params.guid;
-    var startTime = req.query["start-time"];
-    var endTime = req.query["end-time"];
-    var order = req.query["order"];
-    logger.info("Get scaling histories", { "appGuid": appGuid, "startTime": startTime, "endTime": endTime, "order": order });
-    var options = getOptions(appGuid, startTime, endTime, order);
+  scalingEngineUtilObj.getScalingHistory = function getScalingHistory(parameters, callback) {
+    var appId = parameters.appId;
+    var startTime = parameters.startTime;
+    var endTime = parameters.endTime;
+    var order = parameters.order;
+    logger.info("Get scaling histories", { "appId": appId, "startTime": startTime, "endTime": endTime, "order": order });
+    var options = getOptions(appId, startTime, endTime, order);
     request(options, function(error, response, body) {
       if (error) {
-        logger.error("Error occurred during get scaling histories ", { "appGuid": appGuid, "startTime": startTime, "endTime": endTime, "error": error });
+        logger.error("Error occurred during get scaling histories ", { "appId": appId, "startTime": startTime, "endTime": endTime, "error": error });
         error.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
         callback(error, null);
       } else if (response.statusCode === HttpStatus.OK) {
-        logger.info("Get scaling histories successfully", { "appGuid": appGuid, "startTime": startTime, "endTime": endTime });
+        logger.info("Get scaling histories successfully", { "appId": appId, "startTime": startTime, "endTime": endTime });
         callback(null, { "statusCode": HttpStatus.OK, "body": body });
       } else {
         var errorObj = {
           "statusCode": response.statusCode,
           "message": body.message
         };
-        logger.error("Error occurred during getting scaling histories ", { "appGuid": appGuid, "startTime": startTime, "endTime": endTime, "error": errorObj });
+        logger.error("Error occurred during getting scaling histories ", { "appId": appId, "startTime": startTime, "endTime": endTime, "error": errorObj });
         callback(errorObj, null);
       }
     });

@@ -25,7 +25,7 @@ const (
 )
 
 type AppScalingHistory struct {
-	AppId        string        `json:"app_guid"`
+	AppId        string        `json:"app_id"`
 	Timestamp    int64         `json:"timestamp"`
 	ScalingType  ScalingType   `json:"scaling_type"`
 	Status       ScalingStatus `json:"status"`

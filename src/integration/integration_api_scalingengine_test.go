@@ -47,11 +47,7 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 		Context("ScalingEngine is down", func() {
 			JustBeforeEach(func() {
 				stopScalingEngine()
-				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order": "desc", "page": "0", "results-per-page": "5"}
-			})
-
-			AfterEach(func() {
-				startScalingEngine()
+				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order": "desc", "page": "1", "results-per-page": "5"}
 			})
 
 			It("should error", func() {
@@ -91,11 +87,11 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 			})
 			It("should get the scaling histories ", func() {
 				By("get the 1st page")
-				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order": "desc", "page": "0", "results-per-page": "2"}
+				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order": "desc", "page": "1", "results-per-page": "2"}
 				result := ScalingHistoryResult{
 					TotalResults: 5,
 					TotalPages:   3,
-					Page:         0,
+					Page:         1,
 					Resources: []models.AppScalingHistory{
 						models.AppScalingHistory{
 							AppId:        appId,
@@ -124,11 +120,11 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 				checkScalingHistoryResult(appId, parameters, result)
 
 				By("get the 2nd page")
-				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order": "desc", "page": "1", "results-per-page": "2"}
+				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order": "desc", "page": "2", "results-per-page": "2"}
 				result = ScalingHistoryResult{
 					TotalResults: 5,
 					TotalPages:   3,
-					Page:         1,
+					Page:         2,
 					Resources: []models.AppScalingHistory{
 						models.AppScalingHistory{
 							AppId:        appId,
@@ -157,11 +153,11 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 				checkScalingHistoryResult(appId, parameters, result)
 
 				By("get the 3rd page")
-				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order": "desc", "page": "2", "results-per-page": "2"}
+				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order": "desc", "page": "3", "results-per-page": "2"}
 				result = ScalingHistoryResult{
 					TotalResults: 5,
 					TotalPages:   3,
-					Page:         2,
+					Page:         3,
 					Resources: []models.AppScalingHistory{
 						models.AppScalingHistory{
 							AppId:        appId,
@@ -179,11 +175,11 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 				checkScalingHistoryResult(appId, parameters, result)
 
 				By("the 4th page should be empty")
-				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order": "desc", "page": "3", "results-per-page": "2"}
+				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order": "desc", "page": "4", "results-per-page": "2"}
 				result = ScalingHistoryResult{
 					TotalResults: 5,
 					TotalPages:   3,
-					Page:         3,
+					Page:         4,
 					Resources:    []models.AppScalingHistory{},
 				}
 				checkScalingHistoryResult(appId, parameters, result)

@@ -297,12 +297,14 @@ describe('config setting Test Suite', function() {
       it('Should return false', function() {
         settings.scalingEngine.uri = null
         expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("scalingEngine.uri is required");
       })
     });
     context('When scalingEngine uri is undefined', function() {
       it('Should return false', function() {
         delete settings.scalingEngine.uri
         expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("scalingEngine.uri is required");
       })
     });
     context('When scalingEngine.uri is not a string', function() {
@@ -511,12 +513,14 @@ describe('config setting Test Suite', function() {
       it('Should return false', function() {
         settings.scalingEngine.tls.keyFile = null;
         expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().message).to.equal("scalingEngine.tls.keyFile is required");
       });
     });
     context('When scalingEngine client tls.keyFile is undefined', function() {
       it('Should return false', function() {
         delete settings.scalingEngine.tls.keyFile;
         expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().message).to.equal("scalingEngine.tls.keyFile is required");
       });
     });
     context('When scalingEngine client tls.keyFile is not a string', function(){
@@ -533,12 +537,14 @@ describe('config setting Test Suite', function() {
       it('Should return false', function() {
         settings.scalingEngine.tls.certFile = null;
         expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().message).to.equal("scalingEngine.tls.certFile is required");
       });
     });
     context('When scalingEngine client tls.certFile is undefined', function() {
       it('Should return false', function() {
         delete settings.scalingEngine.tls.certFile;
         expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().message).to.equal("scalingEngine.tls.certFile is required");
       });
     });
     context('When scalingEngine client tls.certFile is not a string', function(){
@@ -555,12 +561,14 @@ describe('config setting Test Suite', function() {
       it('Should return false', function() {
         settings.scalingEngine.tls.caCertFile = null;
         expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().message).to.equal("scalingEngine.tls.caCertFile is required");
       });
     });
     context('When scalingEngine client tls.caCertFile is undefined', function() {
       it('Should return false', function() {
         delete settings.scalingEngine.tls.caCertFile;
         expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().message).to.equal("scalingEngine.tls.caCertFile is required");
       });
     });
     context('When scalingEngine client tls.caCertFile is not a string', function(){
@@ -576,19 +584,20 @@ describe('config setting Test Suite', function() {
     context('When scalingEngine client tls is null', function() {
       it('Should return true', function() {
         settings.scalingEngine.tls = null;
-        expect(settings.validate().valid).to.equal(true)
+        expect(settings.validate().valid).to.equal(true);
       });
     });
     context('When scalingEngine client tls  is undefined', function() {
       it('Should return true', function() {
         delete settings.scalingEngine.tls;
-        expect(settings.validate().valid).to.equal(true)
+        expect(settings.validate().valid).to.equal(true);
       });
     });
     context('When scalingEngine client tls is not an object', function() {
       it('Should return false', function() {
         settings.scalingEngine.tls = "notobject";
-        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("scalingEngine.tls must be an object");
       });
     });
   });

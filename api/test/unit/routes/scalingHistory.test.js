@@ -27,29 +27,26 @@ describe("Routing ScalingHistory", function() {
     nock.cleanAll();
   });
   var histories = [
-    { "app_guid": theAppId, "timestamp": 300, "scaling_type": 0, "status": 0, "old_instances": 2, "new_instances": 4, "reason": "a reason", "message": "", "error": "" },
-    { "app_guid": theAppId, "timestamp": 250, "scaling_type": 1, "status": 1, "old_instances": 2, "new_instances": 4, "reason": "a reason", "message": "", "error": "" },
-    { "app_guid": theAppId, "timestamp": 200, "scaling_type": 0, "status": 0, "old_instances": 2, "new_instances": 4, "reason": "a reason", "message": "", "error": "" },
-    { "app_guid": theAppId, "timestamp": 150, "scaling_type": 1, "status": 1, "old_instances": 2, "new_instances": 4, "reason": "a reason", "message": "", "error": "" },
-    { "app_guid": theAppId, "timestamp": 100, "scaling_type": 0, "status": 0, "old_instances": 2, "new_instances": 4, "reason": "a reason", "message": "", "error": "" }
+    { "app_id": theAppId, "timestamp": 300, "scaling_type": 0, "status": 0, "old_instances": 2, "new_instances": 4, "reason": "a reason", "message": "", "error": "" },
+    { "app_id": theAppId, "timestamp": 250, "scaling_type": 1, "status": 1, "old_instances": 2, "new_instances": 4, "reason": "a reason", "message": "", "error": "" },
+    { "app_id": theAppId, "timestamp": 200, "scaling_type": 0, "status": 0, "old_instances": 2, "new_instances": 4, "reason": "a reason", "message": "", "error": "" },
+    { "app_id": theAppId, "timestamp": 150, "scaling_type": 1, "status": 1, "old_instances": 2, "new_instances": 4, "reason": "a reason", "message": "", "error": "" },
+    { "app_id": theAppId, "timestamp": 100, "scaling_type": 0, "status": 0, "old_instances": 2, "new_instances": 4, "reason": "a reason", "message": "", "error": "" }
   ]
   describe("get scaling history", function() {
     context("parameters", function() {
 
       context("start-time", function() {
-        it("should return 400 when start-time is not provided", function(done) {
+        it("should return 200 when start-time is not provided", function(done) {
           nock(scalingEngineUri)
             .get(/\/v1\/apps\/.+\/scaling_histories/)
             .reply(200, histories);
           request(app)
             .get("/v1/apps/12345/scaling_histories")
-            .query({ "end-time": 200, "order": "desc", "page": 0, "results-per-page": 2 })
+            .query({ "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
-              expect(result.statusCode).to.equal(400);
-              expect(result.body).to.deep.equal({
-                "description": "start-time is required"
-              });
+              expect(result.statusCode).to.equal(200);
               done();
             });
         });
@@ -60,7 +57,7 @@ describe("Routing ScalingHistory", function() {
             .reply(200, histories);
           request(app)
             .get("/v1/apps/12345/scaling_histories")
-            .query({ "start-time": "not-integer", "end-time": 200, "order": "desc", "page": 0, "results-per-page": 2 })
+            .query({ "start-time": "not-integer", "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(400);
@@ -73,19 +70,16 @@ describe("Routing ScalingHistory", function() {
       });
 
       context("end-time", function() {
-        it("should return 400 when end-time is not provided", function(done) {
+        it("should return 200 when end-time is not provided", function(done) {
           nock(scalingEngineUri)
             .get(/\/v1\/apps\/.+\/scaling_histories/)
             .reply(200, histories);
           request(app)
             .get("/v1/apps/12345/scaling_histories")
-            .query({ "start-time": 100, "order": "desc", "page": 0, "results-per-page": 2 })
+            .query({ "start-time": 100, "order": "desc", "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
-              expect(result.statusCode).to.equal(400);
-              expect(result.body).to.deep.equal({
-                "description": "end-time is required"
-              });
+              expect(result.statusCode).to.equal(200);
               done();
             });
         });
@@ -96,7 +90,7 @@ describe("Routing ScalingHistory", function() {
             .reply(200, histories);
           request(app)
             .get("/v1/apps/12345/scaling_histories")
-            .query({ "end-time": "not-integer", "start-time": 100, "order": "desc", "page": 0, "results-per-page": 2 })
+            .query({ "end-time": "not-integer", "start-time": 100, "order": "desc", "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(400);
@@ -108,19 +102,33 @@ describe("Routing ScalingHistory", function() {
         });
       });
 
-      context("start-time and end-time", function() {
-        it("should return 400 when start-time is greater than end-time", function(done) {
+      context("order", function() {
+        it("should return 200 when order is not provided", function(done) {
           nock(scalingEngineUri)
             .get(/\/v1\/apps\/.+\/scaling_histories/)
             .reply(200, histories);
           request(app)
             .get("/v1/apps/12345/scaling_histories")
-            .query({ "start-time": 200, "end-time": 100, "order": "desc", "page": 0, "results-per-page": 2 })
+            .query({ "start-time": 100, "end-time": 200, "page": 1, "results-per-page": 2 })
+            .end(function(error, result) {
+              expect(error).to.equal(null);
+              expect(result.statusCode).to.equal(200);
+              done();
+            });
+        });
+
+        it("should return 400 when order is not desc or asc", function(done) {
+          nock(scalingEngineUri)
+            .get(/\/v1\/apps\/.+\/scaling_histories/)
+            .reply(200, histories);
+          request(app)
+            .get("/v1/apps/12345/scaling_histories")
+            .query({ "start-time": 100, "end-time": 200, "order": "not-desc-asc", "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(400);
               expect(result.body).to.deep.equal({
-                "description": "start-time must be smaller than end-time"
+                "description": "order must be desc or asc"
               });
               done();
             });
@@ -128,7 +136,7 @@ describe("Routing ScalingHistory", function() {
       });
 
       context("page", function() {
-        it("should return 400 when page is not provided", function(done) {
+        it("should return 200 when page is not provided", function(done) {
           nock(scalingEngineUri)
             .get(/\/v1\/apps\/.+\/scaling_histories/)
             .reply(200, histories);
@@ -137,10 +145,7 @@ describe("Routing ScalingHistory", function() {
             .query({ "start-time": 100, "end-time": 200, "order": "desc", "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
-              expect(result.statusCode).to.equal(400);
-              expect(result.body).to.deep.equal({
-                "description": "page is required"
-              });
+              expect(result.statusCode).to.equal(200);
               done();
             });
         });
@@ -164,19 +169,17 @@ describe("Routing ScalingHistory", function() {
       });
 
       context("results-per-page", function() {
-        it("should return 400 when results-per-page is not provided", function(done) {
+        it("should return 200 when results-per-page is not provided", function(done) {
           nock(scalingEngineUri)
             .get(/\/v1\/apps\/.+\/scaling_histories/)
             .reply(200, histories);
           request(app)
             .get("/v1/apps/12345/scaling_histories")
-            .query({ "start-time": 100, "end-time": 200, "order": "desc", "page": 0 })
+            .query({ "start-time": 100, "end-time": 200, "order": "desc", "page": 1 })
             .end(function(error, result) {
               expect(error).to.equal(null);
-              expect(result.statusCode).to.equal(400);
-              expect(result.body).to.deep.equal({
-                "description": "results-per-page is required"
-              });
+              expect(result.statusCode).to.equal(200);
+              
               done();
             });
         });
@@ -187,7 +190,7 @@ describe("Routing ScalingHistory", function() {
             .reply(200, histories);
           request(app)
             .get("/v1/apps/12345/scaling_histories")
-            .query({ "start-time": 100, "end-time": 200, "order": "desc", "page": 0, "results-per-page": "not-integer" })
+            .query({ "start-time": 100, "end-time": 200, "order": "desc", "page": 1, "results-per-page": "not-integer" })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(400);
@@ -209,7 +212,7 @@ describe("Routing ScalingHistory", function() {
           });
         request(app)
           .get("/v1/apps/12345/scaling_histories")
-          .query({ "start-time": 100, "end-time": 200, "order": "desc", "page": 0, "results-per-page": 2 })
+          .query({ "start-time": 100, "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);
             expect(result.statusCode).to.equal(500);
@@ -224,13 +227,9 @@ describe("Routing ScalingHistory", function() {
         nock(scalingEngineUri)
           .get(/\/v1\/apps\/.+\/scaling_histories/)
           .reply(500, { code: 'Interal-Server-Error', message: 'Error getting scaling histories from database' });
-        var mockRequest = {
-          params: { 'guid': theAppId },
-          query: { 'start-time': 100, 'end-time': 200 }
-        };
         request(app)
           .get("/v1/apps/12345/scaling_histories")
-          .query({ "start-time": 100, "end-time": 200, "order": "desc", "page": 0, "results-per-page": 2 })
+          .query({ "start-time": 100, "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);
             expect(result.statusCode).to.equal(500);
@@ -249,26 +248,6 @@ describe("Routing ScalingHistory", function() {
           .reply(200, histories);
         request(app)
           .get("/v1/apps/12345/scaling_histories")
-          .query({ "start-time": 100, "end-time": 500, "order": "desc", "page": 0, "results-per-page": 2 })
-          .end(function(error, result) {
-            expect(error).to.equal(null);
-            expect(result.statusCode).to.equal(200);
-            expect(result.body).to.deep.equal({
-              total_results: 5,
-              total_pages: 3,
-              page: 0,
-              resources: histories.slice(0, 2)
-            });
-            done();
-          });
-      });
-
-      it("get the 2nd page", function(done) {
-        nock(scalingEngineUri)
-          .get(/\/v1\/apps\/.+\/scaling_histories/)
-          .reply(200, histories);
-        request(app)
-          .get("/v1/apps/12345/scaling_histories")
           .query({ "start-time": 100, "end-time": 500, "order": "desc", "page": 1, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);
@@ -277,13 +256,13 @@ describe("Routing ScalingHistory", function() {
               total_results: 5,
               total_pages: 3,
               page: 1,
-              resources: histories.slice(2, 4)
+              resources: histories.slice(0, 2)
             });
             done();
           });
       });
 
-      it("get the 3rd page and only has one record", function(done) {
+      it("get the 2nd page", function(done) {
         nock(scalingEngineUri)
           .get(/\/v1\/apps\/.+\/scaling_histories/)
           .reply(200, histories);
@@ -297,6 +276,26 @@ describe("Routing ScalingHistory", function() {
               total_results: 5,
               total_pages: 3,
               page: 2,
+              resources: histories.slice(2, 4)
+            });
+            done();
+          });
+      });
+
+      it("get the 3rd page and only has one record", function(done) {
+        nock(scalingEngineUri)
+          .get(/\/v1\/apps\/.+\/scaling_histories/)
+          .reply(200, histories);
+        request(app)
+          .get("/v1/apps/12345/scaling_histories")
+          .query({ "start-time": 100, "end-time": 500, "order": "desc", "page": 3, "results-per-page": 2 })
+          .end(function(error, result) {
+            expect(error).to.equal(null);
+            expect(result.statusCode).to.equal(200);
+            expect(result.body).to.deep.equal({
+              total_results: 5,
+              total_pages: 3,
+              page: 3,
               resources: histories.slice(4)
             });
             done();
