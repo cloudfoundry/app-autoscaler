@@ -179,7 +179,7 @@ describe("Routing ScalingHistory", function() {
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(200);
-              
+
               done();
             });
         });
@@ -321,9 +321,6 @@ describe("Routing ScalingHistory", function() {
             done();
           });
       });
-
     });
-
   });
-
 });
