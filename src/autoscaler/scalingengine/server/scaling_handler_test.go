@@ -37,6 +37,7 @@ var _ = Describe("ScalingHandler", func() {
 		buffer             *gbytes.Buffer
 		history1, history2 *models.AppScalingHistory
 		activeSchedule     *models.ActiveSchedule
+		testMetricName     string = "Test-Metric-Name"
 	)
 
 	BeforeEach(func() {
@@ -58,7 +59,7 @@ var _ = Describe("ScalingHandler", func() {
 				scalingEngine.ScaleReturns(3, nil)
 
 				trigger = &models.Trigger{
-					MetricType: "test-metric-name",
+					MetricType: testMetricName,
 					Adjustment: "+1",
 				}
 				body, err = json.Marshal(trigger)
@@ -107,7 +108,7 @@ var _ = Describe("ScalingHandler", func() {
 				scalingEngine.ScaleReturns(0, errors.New("an error"))
 
 				trigger = &models.Trigger{
-					MetricType: "test-metric-name",
+					MetricType: testMetricName,
 					Adjustment: "+1",
 				}
 				body, err = json.Marshal(trigger)

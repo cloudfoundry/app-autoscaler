@@ -15,15 +15,16 @@ import (
 
 var _ = Describe("PolicySQLDB", func() {
 	var (
-		pdb           *PolicySQLDB
-		url           string
-		logger        lager.Logger
-		err           error
-		appIds        map[string]bool
-		scalingPolicy *models.ScalingPolicy
-		policyJson    []byte
-		appId         string
-		policies      []*models.PolicyJson
+		pdb            *PolicySQLDB
+		url            string
+		logger         lager.Logger
+		err            error
+		appIds         map[string]bool
+		scalingPolicy  *models.ScalingPolicy
+		policyJson     []byte
+		appId          string
+		policies       []*models.PolicyJson
+		testMetricName string = "TestMetricName"
 	)
 
 	BeforeEach(func() {
@@ -113,7 +114,7 @@ var _ = Describe("PolicySQLDB", func() {
 				InstanceMin: 1,
 				InstanceMax: 6,
 				ScalingRules: []*models.ScalingRule{{
-					MetricType:            "test-metric-name",
+					MetricType:            testMetricName,
 					StatWindowSeconds:     120,
 					BreachDurationSeconds: 180,
 					Threshold:             1048576000,
@@ -124,7 +125,7 @@ var _ = Describe("PolicySQLDB", func() {
 				InstanceMin: 2,
 				InstanceMax: 8,
 				ScalingRules: []*models.ScalingRule{{
-					MetricType:            "test-metric-name",
+					MetricType:            testMetricName,
 					StatWindowSeconds:     120,
 					BreachDurationSeconds: 300,
 					Threshold:             104857600,
@@ -153,7 +154,7 @@ var _ = Describe("PolicySQLDB", func() {
 					InstanceMin: 1,
 					InstanceMax: 6,
 					ScalingRules: []*models.ScalingRule{{
-						MetricType:            "test-metric-name",
+						MetricType:            testMetricName,
 						StatWindowSeconds:     120,
 						BreachDurationSeconds: 180,
 						Threshold:             1048576000,

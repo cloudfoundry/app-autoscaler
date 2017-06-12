@@ -17,18 +17,21 @@ import (
 
 var _ = Describe("InstancemetricsSqldb", func() {
 	var (
-		url        string
-		idb        *InstanceMetricsSQLDB
-		logger     lager.Logger
-		err        error
-		metric     *models.AppInstanceMetric
-		mtrcs      []*models.AppInstanceMetric
-		start      int64
-		end        int64
-		orderType  db.OrderType
-		before     int64
-		appId      string
-		metricName string
+		url       string
+		idb       *InstanceMetricsSQLDB
+		logger    lager.Logger
+		err       error
+		metric    *models.AppInstanceMetric
+		mtrcs     []*models.AppInstanceMetric
+		start     int64
+		end       int64
+		before    int64
+		orderType db.OrderType
+
+		appId          string
+		metricName     string
+		testMetricName string = "TestMetricType"
+		testMetricUnit string = "TestMetricUnit"
 	)
 
 	BeforeEach(func() {
@@ -84,8 +87,8 @@ var _ = Describe("InstancemetricsSqldb", func() {
 					AppId:         "test-app-id",
 					InstanceIndex: 0,
 					CollectedAt:   111111,
-					Name:          "test-metric-name",
-					Unit:          "test-metric-unit",
+					Name:          testMetricName,
+					Unit:          testMetricUnit,
 					Value:         "123",
 					Timestamp:     110000,
 				}
@@ -94,7 +97,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 
 			It("has the metric in database", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(hasInstanceMetric("test-app-id", 0, "test-metric-name", 110000)).To(BeTrue())
+				Expect(hasInstanceMetric("test-app-id", 0, testMetricName, 110000)).To(BeTrue())
 			})
 		})
 
@@ -102,8 +105,8 @@ var _ = Describe("InstancemetricsSqldb", func() {
 			BeforeEach(func() {
 				metric = &models.AppInstanceMetric{
 					AppId: "test-app-id",
-					Name:  "test-metric-name",
-					Unit:  "test-metric-unit",
+					Name:  testMetricName,
+					Unit:  testMetricUnit,
 				}
 				metric.InstanceIndex = 0
 				metric.CollectedAt = 111111
@@ -128,9 +131,9 @@ var _ = Describe("InstancemetricsSqldb", func() {
 			})
 
 			It("has all the metrics in database", func() {
-				Expect(hasInstanceMetric("test-app-id", 0, "test-metric-name", 111100)).To(BeTrue())
-				Expect(hasInstanceMetric("test-app-id", 1, "test-metric-name", 110000)).To(BeTrue())
-				Expect(hasInstanceMetric("test-app-id", 0, "test-metric-name", 220000)).To(BeTrue())
+				Expect(hasInstanceMetric("test-app-id", 0, testMetricName, 111100)).To(BeTrue())
+				Expect(hasInstanceMetric("test-app-id", 1, testMetricName, 110000)).To(BeTrue())
+				Expect(hasInstanceMetric("test-app-id", 0, testMetricName, 220000)).To(BeTrue())
 			})
 		})
 	})
@@ -143,8 +146,8 @@ var _ = Describe("InstancemetricsSqldb", func() {
 
 			metric = &models.AppInstanceMetric{
 				AppId: "test-app-id",
-				Name:  "test-metric-name",
-				Unit:  "test-metric-unit",
+				Name:  testMetricName,
+				Unit:  testMetricUnit,
 			}
 
 			metric.InstanceIndex = 0
@@ -178,7 +181,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 			start = 0
 			end = -1
 			appId = "test-app-id"
-			metricName = "test-metric-name"
+			metricName = testMetricName
 			orderType = db.DESC
 
 		})
@@ -226,8 +229,8 @@ var _ = Describe("InstancemetricsSqldb", func() {
 					"AppId":         Equal("test-app-id"),
 					"InstanceIndex": BeEquivalentTo(1),
 					"CollectedAt":   BeEquivalentTo(111111),
-					"Name":          Equal("test-metric-name"),
-					"Unit":          Equal("test-metric-unit"),
+					"Name":          Equal(testMetricName),
+					"Unit":          Equal(testMetricUnit),
 					"Value":         Equal("214365"),
 					"Timestamp":     BeEquivalentTo(110000),
 				}))
@@ -236,8 +239,8 @@ var _ = Describe("InstancemetricsSqldb", func() {
 					"AppId":         Equal("test-app-id"),
 					"InstanceIndex": BeEquivalentTo(0),
 					"CollectedAt":   BeNumerically(">=", 111111),
-					"Name":          Equal("test-metric-name"),
-					"Unit":          Equal("test-metric-unit"),
+					"Name":          Equal(testMetricName),
+					"Unit":          Equal(testMetricUnit),
 					"Value":         Equal("654321"),
 					"Timestamp":     BeEquivalentTo(111100),
 				}))
@@ -246,8 +249,8 @@ var _ = Describe("InstancemetricsSqldb", func() {
 					"AppId":         Equal("test-app-id"),
 					"InstanceIndex": BeEquivalentTo(1),
 					"CollectedAt":   BeEquivalentTo(222222),
-					"Name":          Equal("test-metric-name"),
-					"Unit":          Equal("test-metric-unit"),
+					"Name":          Equal(testMetricName),
+					"Unit":          Equal(testMetricUnit),
 					"Value":         Equal("321765"),
 					"Timestamp":     BeEquivalentTo(222200),
 				}))
@@ -354,8 +357,8 @@ var _ = Describe("InstancemetricsSqldb", func() {
 					"AppId":         Equal("test-app-id"),
 					"InstanceIndex": BeEquivalentTo(0),
 					"CollectedAt":   BeNumerically(">=", 111111),
-					"Name":          Equal("test-metric-name"),
-					"Unit":          Equal("test-metric-unit"),
+					"Name":          Equal(testMetricName),
+					"Unit":          Equal(testMetricUnit),
 					"Value":         Equal("654321"),
 					"Timestamp":     BeEquivalentTo(111100),
 				}))
@@ -363,8 +366,8 @@ var _ = Describe("InstancemetricsSqldb", func() {
 					"AppId":         Equal("test-app-id"),
 					"InstanceIndex": BeEquivalentTo(1),
 					"CollectedAt":   BeEquivalentTo(222222),
-					"Name":          Equal("test-metric-name"),
-					"Unit":          Equal("test-metric-unit"),
+					"Name":          Equal(testMetricName),
+					"Unit":          Equal(testMetricUnit),
 					"Value":         Equal("321765"),
 					"Timestamp":     BeEquivalentTo(222200),
 				}))
@@ -392,8 +395,8 @@ var _ = Describe("InstancemetricsSqldb", func() {
 
 			metric = &models.AppInstanceMetric{
 				AppId: "test-app-id",
-				Name:  "test-metric-name",
-				Unit:  "test-metric-unit",
+				Name:  testMetricName,
+				Unit:  testMetricUnit,
 			}
 
 			metric.InstanceIndex = 0

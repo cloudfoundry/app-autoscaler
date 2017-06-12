@@ -29,6 +29,7 @@ var _ = Describe("AppEvaluationManager", func() {
 		triggerArrayChan     chan []*models.Trigger
 		testAppId            string = "testAppId"
 		testAppId2           string = "testAppId2"
+		testMetricName       string = "Test-Metric-Name"
 		fakeScalingEngine    *ghttp.Server
 		regPath              *regexp.Regexp               = regexp.MustCompile(`^/v1/apps/.*/scale$`)
 		policyMap            map[string]*models.AppPolicy = map[string]*models.AppPolicy{
@@ -39,7 +40,7 @@ var _ = Describe("AppEvaluationManager", func() {
 					InstanceMin: 1,
 					ScalingRules: []*models.ScalingRule{
 						{
-							MetricType:            "test-metric-name",
+							MetricType:            testMetricName,
 							StatWindowSeconds:     200,
 							BreachDurationSeconds: 200,
 							CoolDownSeconds:       200,
@@ -57,7 +58,7 @@ var _ = Describe("AppEvaluationManager", func() {
 					InstanceMin: 1,
 					ScalingRules: []*models.ScalingRule{
 						{
-							MetricType:            "test-metric-name",
+							MetricType:            testMetricName,
 							StatWindowSeconds:     300,
 							BreachDurationSeconds: 300,
 							CoolDownSeconds:       300,
@@ -113,7 +114,7 @@ var _ = Describe("AppEvaluationManager", func() {
 				Expect(triggerArray).Should(ContainElement(
 					[]*models.Trigger{{
 						AppId:                 testAppId,
-						MetricType:            "test-metric-name",
+						MetricType:            testMetricName,
 						BreachDurationSeconds: 200,
 						CoolDownSeconds:       200,
 						Threshold:             80,
@@ -123,7 +124,7 @@ var _ = Describe("AppEvaluationManager", func() {
 				Expect(triggerArray).Should(ContainElement(
 					[]*models.Trigger{{
 						AppId:                 testAppId2,
-						MetricType:            "test-metric-name",
+						MetricType:            testMetricName,
 						BreachDurationSeconds: 300,
 						CoolDownSeconds:       300,
 						Threshold:             20,
