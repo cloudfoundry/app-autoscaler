@@ -49,7 +49,9 @@ module.exports = function(configFilePath) {
   app.use(bodyParser.urlencoded({ extended: false }));
   app.use('/health', require('express-healthcheck')());
   var policies = require('./lib/routes/policies')(settings);
+  var scalingHistories = require('./lib/routes/scalingHistories')(settings);
   app.use('/v1/policies',policies);
+  app.use('/v1/apps',scalingHistories);
   app.use(function(err, req, res, next) {
     var errorResponse = {};
     if (err) {

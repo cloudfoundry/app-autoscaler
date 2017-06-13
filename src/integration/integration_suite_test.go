@@ -71,6 +71,7 @@ var (
 
 	brokerApiHttpRequestTimeout              time.Duration = 5 * time.Second
 	apiSchedulerHttpRequestTimeout           time.Duration = 5 * time.Second
+	apiScalingEngineHttpRequestTimeout       time.Duration = 10 * time.Second
 	schedulerScalingEngineHttpRequestTimeout time.Duration = 10 * time.Second
 
 	collectInterval           time.Duration = 1 * time.Second
@@ -365,7 +366,19 @@ func getActiveSchedule(appId string) (*http.Response, error) {
 	req.Header.Set("Content-Type", "application/json")
 	return httpClient.Do(req)
 }
-
+func getScalingHistories(appId string, parameters map[string]string) (*http.Response, error) {
+	url := "https://127.0.0.1:%d/v1/apps/%s/scaling_histories"
+	if parameters != nil && len(parameters) > 0 {
+		url += "?any=any"
+		for paramName, paramValue := range parameters {
+			url += "&" + paramName + "=" + paramValue
+		}
+	}
+	req, err := http.NewRequest("GET", fmt.Sprintf(url, components.Ports[APIServer], appId), strings.NewReader(""))
+	Expect(err).NotTo(HaveOccurred())
+	req.Header.Set("Content-Type", "application/json")
+	return httpClient.Do(req)
+}
 func readPolicyFromFile(filename string) []byte {
 	content, err := ioutil.ReadFile(filename)
 	Expect(err).NotTo(HaveOccurred())
@@ -416,6 +429,15 @@ func deletePolicy(appId string) {
 	_, err := dbHelper.Exec(query, appId)
 	Expect(err).NotTo(HaveOccurred())
 }
+func insertScalingHistory(history *models.AppScalingHistory) {
+	query := "INSERT INTO scalinghistory" +
+		"(appid, timestamp, scalingtype, status, oldinstances, newinstances, reason, message, error) " +
+		" VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)"
+	_, err := dbHelper.Exec(query, history.AppId, history.Timestamp, history.ScalingType, history.Status,
+		history.OldInstances, history.NewInstances, history.Reason, history.Message, history.Error)
+
+	Expect(err).NotTo(HaveOccurred())
+}
 func getScalingHistoryCount(appId string, oldInstanceCount int, newInstanceCount int) int {
 	var count int
 	query := "SELECT COUNT(*) FROM scalinghistory WHERE appid=$1 AND oldinstances=$2 AND newinstances=$3"
@@ -425,9 +447,18 @@ func getScalingHistoryCount(appId string, oldInstanceCount int, newInstanceCount
 }
 
 type GetResponse func(id string) (*http.Response, error)
+type GetResponseWithParameters func(id string, parameters map[string]string) (*http.Response, error)
 
 func checkResponseContent(getResponse GetResponse, id string, expectHttpStatus int, expectResponseMap map[string]interface{}) {
 	resp, err := getResponse(id)
+	checkResponse(resp, err, expectHttpStatus, expectResponseMap)
+
+}
+func checkResponseContentWithParameters(getResponseWithParameters GetResponseWithParameters, id string, parameters map[string]string, expectHttpStatus int, expectResponseMap map[string]interface{}) {
+	resp, err := getResponseWithParameters(id, parameters)
+	checkResponse(resp, err, expectHttpStatus, expectResponseMap)
+}
+func checkResponse(resp *http.Response, err error, expectHttpStatus int, expectResponseMap map[string]interface{}) {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.StatusCode).To(Equal(expectHttpStatus))
 	var actual map[string]interface{}
@@ -436,7 +467,6 @@ func checkResponseContent(getResponse GetResponse, id string, expectHttpStatus i
 	Expect(actual).To(Equal(expectResponseMap))
 	resp.Body.Close()
 }
-
 func checkSchedule(getResponse GetResponse, id string, expectHttpStatus int, expectResponseMap map[string]int) {
 	resp, err := getResponse(id)
 	Expect(err).NotTo(HaveOccurred())

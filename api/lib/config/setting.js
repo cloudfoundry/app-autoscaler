@@ -15,15 +15,17 @@ module.exports = function(settingsObj) {
     }
   };
 
-  var cleanupSchedulerURI = function(schedulerUri) {
-    if (schedulerUri != null) {
-      return schedulerUri.replace(/\/$/g, "").toLowerCase();
-    }
-  };
-  settingsObj.scheduler.uri = cleanupSchedulerURI(settingsObj.scheduler.uri);
+  var cleanUpUri = function(uri) {
+    if (uri != null) {
+       return uri.replace(/\/$/g, "").toLowerCase();
+      }
+    };
+  settingsObj.scheduler.uri = cleanUpUri(settingsObj.scheduler.uri);
+  settingsObj.scalingEngine.uri = cleanUpUri(settingsObj.scalingEngine.uri);
   var settings = {
     port: settingsObj.port,
     scheduler: settingsObj.scheduler,
+    scalingEngine: settingsObj.scalingEngine,
     tls: settingsObj.tls
   };
   if (settingsObj.db) {
@@ -149,6 +151,40 @@ module.exports = function(settingsObj) {
         return { valid: false, message: "scheduler.tls.certFile must be a string" };
       }
     }
+
+    if (isMissing(settings.scalingEngine)) {
+      return { valid: false, message: "scalingEngine is required" };
+    }
+    if (isMissing(settings.scalingEngine.uri)) {
+      return { valid: false, message: "scalingEngine.uri is required" };
+    }
+    if (!isString(settings.scalingEngine.uri)) {
+      return { valid: false, message: "scalingEngine.uri must be a string" };
+    }
+    if (!isMissing(settings.scalingEngine.tls)){
+      if (!isObject(settings.scalingEngine.tls)) {
+        return { valid: false, message: "scalingEngine.tls must be an object" };
+      }
+      if (isMissing(settings.scalingEngine.tls.keyFile)) {
+        return { valid: false, message: "scalingEngine.tls.keyFile is required" };
+      }
+      if (!isString(settings.scalingEngine.tls.keyFile)) {
+        return { valid: false, message: "scalingEngine.tls.keyFile must be a string" };
+      }
+      if (isMissing(settings.scalingEngine.tls.caCertFile)) {
+        return { valid: false, message: "scalingEngine.tls.caCertFile is required" };
+      }
+      if (!isString(settings.scalingEngine.tls.caCertFile)) {
+        return { valid: false, message: "scalingEngine.tls.caCertFile must be a string" };
+      }
+      if (isMissing(settings.scalingEngine.tls.certFile)) {
+        return { valid: false, message: "scalingEngine.tls.certFile is required" };
+      }
+      if (!isString(settings.scalingEngine.tls.certFile)) {
+        return { valid: false, message: "scalingEngine.tls.certFile must be a string" };
+      }
+    }
+    
     return {valid:true}
   }
 

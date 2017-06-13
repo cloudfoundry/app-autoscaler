@@ -71,12 +71,17 @@ type SchedulerClient struct {
 	Uri string          `json:"uri"`
 	TLS models.TLSCerts `json:"tls"`
 }
+type ScalingEngineClient struct {
+	Uri string          `json:"uri"`
+	TLS models.TLSCerts `json:"tls"`
+}
 type APIServerConfig struct {
 	Port int `json:"port"`
 
 	DB DBConfig `json:"db"`
 
-	SchedulerClient SchedulerClient `json:"scheduler"`
+	SchedulerClient     SchedulerClient     `json:"scheduler"`
+	ScalingEngineClient ScalingEngineClient `json:"scalingEngine"`
 
 	TLS models.TLSCerts `json:"tls"`
 }
@@ -207,7 +212,7 @@ func (components *Components) PrepareServiceBrokerConfig(port int, username stri
 	return cfgFile.Name()
 }
 
-func (components *Components) PrepareApiServerConfig(port int, dbUri string, schedulerUri string, tmpDir string) string {
+func (components *Components) PrepareApiServerConfig(port int, dbUri string, schedulerUri string, scalingEngineUri string, tmpDir string) string {
 	apiConfig := APIServerConfig{
 		Port: port,
 
@@ -223,6 +228,14 @@ func (components *Components) PrepareApiServerConfig(port int, dbUri string, sch
 			TLS: models.TLSCerts{
 				KeyFile:    filepath.Join(testCertDir, "scheduler.key"),
 				CertFile:   filepath.Join(testCertDir, "scheduler.crt"),
+				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			},
+		},
+		ScalingEngineClient: ScalingEngineClient{
+			Uri: scalingEngineUri,
+			TLS: models.TLSCerts{
+				KeyFile:    filepath.Join(testCertDir, "scalingengine.key"),
+				CertFile:   filepath.Join(testCertDir, "scalingengine.crt"),
 				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 			},
 		},
