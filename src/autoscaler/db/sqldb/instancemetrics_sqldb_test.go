@@ -1,6 +1,7 @@
 package sqldb_test
 
 import (
+	"autoscaler/db"
 	. "autoscaler/db/sqldb"
 	"autoscaler/models"
 
@@ -24,6 +25,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 		mtrcs      []*models.AppInstanceMetric
 		start      int64
 		end        int64
+		orderType  db.OrderType
 		before     int64
 		appId      string
 		metricName string
@@ -177,6 +179,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 			end = -1
 			appId = "test-app-id"
 			metricName = models.MetricNameMemory
+			orderType = db.DESC
 
 		})
 
@@ -186,7 +189,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 		})
 
 		JustBeforeEach(func() {
-			mtrcs, err = idb.RetrieveInstanceMetrics(appId, metricName, start, end)
+			mtrcs, err = idb.RetrieveInstanceMetrics(appId, metricName, start, end, orderType)
 		})
 
 		Context("The app has no instance metrics", func() {
@@ -212,8 +215,11 @@ var _ = Describe("InstancemetricsSqldb", func() {
 			})
 		})
 
-		Context("when retriving all the metrics( start = 0, end = -1) ", func() {
-			It("removes duplicates and returns all the instance metrics of the app ordered by timestamp", func() {
+		Context("when retriving all the metrics( start = 0, end = -1, orderType = ASC) ", func() {
+			BeforeEach(func() {
+				orderType = db.ASC
+			})
+			It("removes duplicates and returns all the instance metrics of the app ordered by timestamp asc", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(mtrcs).To(HaveLen(3))
 				Expect(*mtrcs[0]).To(gstruct.MatchAllFields(gstruct.Fields{
@@ -237,6 +243,42 @@ var _ = Describe("InstancemetricsSqldb", func() {
 				}))
 
 				Expect(*mtrcs[2]).To(gstruct.MatchAllFields(gstruct.Fields{
+					"AppId":         Equal("test-app-id"),
+					"InstanceIndex": BeEquivalentTo(1),
+					"CollectedAt":   BeEquivalentTo(222222),
+					"Name":          Equal(models.MetricNameMemory),
+					"Unit":          Equal(models.UnitMegaBytes),
+					"Value":         Equal("321765"),
+					"Timestamp":     BeEquivalentTo(222200),
+				}))
+			})
+		})
+
+		Context("when retriving all the metrics( start = 0, end = -1, orderType = DESC) ", func() {
+			It("removes duplicates and returns all the instance metrics of the app ordered by timestamp desc", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(mtrcs).To(HaveLen(3))
+				Expect(*mtrcs[2]).To(gstruct.MatchAllFields(gstruct.Fields{
+					"AppId":         Equal("test-app-id"),
+					"InstanceIndex": BeEquivalentTo(1),
+					"CollectedAt":   BeEquivalentTo(111111),
+					"Name":          Equal(models.MetricNameMemory),
+					"Unit":          Equal(models.UnitMegaBytes),
+					"Value":         Equal("214365"),
+					"Timestamp":     BeEquivalentTo(110000),
+				}))
+
+				Expect(*mtrcs[1]).To(gstruct.MatchAllFields(gstruct.Fields{
+					"AppId":         Equal("test-app-id"),
+					"InstanceIndex": BeEquivalentTo(0),
+					"CollectedAt":   BeNumerically(">=", 111111),
+					"Name":          Equal(models.MetricNameMemory),
+					"Unit":          Equal(models.UnitMegaBytes),
+					"Value":         Equal("654321"),
+					"Timestamp":     BeEquivalentTo(111100),
+				}))
+
+				Expect(*mtrcs[0]).To(gstruct.MatchAllFields(gstruct.Fields{
 					"AppId":         Equal("test-app-id"),
 					"InstanceIndex": BeEquivalentTo(1),
 					"CollectedAt":   BeEquivalentTo(222222),
@@ -308,7 +350,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 			It("returns correct metrics", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(mtrcs).To(HaveLen(2))
-				Expect(*mtrcs[0]).To(gstruct.MatchAllFields(gstruct.Fields{
+				Expect(*mtrcs[1]).To(gstruct.MatchAllFields(gstruct.Fields{
 					"AppId":         Equal("test-app-id"),
 					"InstanceIndex": BeEquivalentTo(0),
 					"CollectedAt":   BeNumerically(">=", 111111),
@@ -317,7 +359,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 					"Value":         Equal("654321"),
 					"Timestamp":     BeEquivalentTo(111100),
 				}))
-				Expect(*mtrcs[1]).To(gstruct.MatchAllFields(gstruct.Fields{
+				Expect(*mtrcs[0]).To(gstruct.MatchAllFields(gstruct.Fields{
 					"AppId":         Equal("test-app-id"),
 					"InstanceIndex": BeEquivalentTo(1),
 					"CollectedAt":   BeEquivalentTo(222222),

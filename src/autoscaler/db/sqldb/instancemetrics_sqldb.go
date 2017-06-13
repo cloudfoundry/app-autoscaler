@@ -57,13 +57,19 @@ func (idb *InstanceMetricsSQLDB) SaveMetric(metric *models.AppInstanceMetric) er
 	return err
 }
 
-func (idb *InstanceMetricsSQLDB) RetrieveInstanceMetrics(appid string, name string, start int64, end int64) ([]*models.AppInstanceMetric, error) {
+func (idb *InstanceMetricsSQLDB) RetrieveInstanceMetrics(appid string, name string, start int64, end int64, orderType db.OrderType) ([]*models.AppInstanceMetric, error) {
+	var orderStr string
+	if orderType == db.DESC {
+		orderStr = db.DESCSTR
+	} else {
+		orderStr = db.ASCSTR
+	}
 	query := "SELECT instanceindex, collectedat, unit, value, timestamp FROM appinstancemetrics WHERE " +
 		" appid = $1 " +
 		" AND name = $2 " +
 		" AND timestamp >= $3" +
 		" AND timestamp <= $4" +
-		" ORDER BY timestamp, instanceindex"
+		" ORDER BY timestamp " + orderStr + ", instanceindex"
 
 	if end < 0 {
 		end = time.Now().UnixNano()
@@ -72,7 +78,7 @@ func (idb *InstanceMetricsSQLDB) RetrieveInstanceMetrics(appid string, name stri
 	rows, err := idb.sqldb.Query(query, appid, name, start, end)
 	if err != nil {
 		idb.logger.Error("failed-retrieve-instancemetrics-from-appinstancemetrics-table", err,
-			lager.Data{"query": query, "appid": appid, "metricName": name, "start": start, "end": end})
+			lager.Data{"query": query, "appid": appid, "metricName": name, "start": start, "end": end, "orderType": orderType})
 		return nil, err
 	}
 	defer rows.Close()

@@ -8,13 +8,14 @@ import (
 )
 
 type FakeInstanceMetricsDB struct {
-	RetrieveInstanceMetricsStub        func(appid string, name string, start int64, end int64) ([]*models.AppInstanceMetric, error)
+	RetrieveInstanceMetricsStub        func(appid string, name string, start int64, end int64, orderType db.OrderType) ([]*models.AppInstanceMetric, error)
 	retrieveInstanceMetricsMutex       sync.RWMutex
 	retrieveInstanceMetricsArgsForCall []struct {
-		appid string
-		name  string
-		start int64
-		end   int64
+		appid     string
+		name      string
+		start     int64
+		end       int64
+		orderType db.OrderType
 	}
 	retrieveInstanceMetricsReturns struct {
 		result1 []*models.AppInstanceMetric
@@ -46,21 +47,21 @@ type FakeInstanceMetricsDB struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeInstanceMetricsDB) RetrieveInstanceMetrics(appid string, name string, start int64, end int64) ([]*models.AppInstanceMetric, error) {
+func (fake *FakeInstanceMetricsDB) RetrieveInstanceMetrics(appid string, name string, start int64, end int64, orderType db.OrderType) ([]*models.AppInstanceMetric, error) {
 	fake.retrieveInstanceMetricsMutex.Lock()
 	fake.retrieveInstanceMetricsArgsForCall = append(fake.retrieveInstanceMetricsArgsForCall, struct {
-		appid string
-		name  string
-		start int64
-		end   int64
-	}{appid, name, start, end})
-	fake.recordInvocation("RetrieveInstanceMetrics", []interface{}{appid, name, start, end})
+		appid     string
+		name      string
+		start     int64
+		end       int64
+		orderType db.OrderType
+	}{appid, name, start, end, orderType})
+	fake.recordInvocation("RetrieveInstanceMetrics", []interface{}{appid, name, start, end, orderType})
 	fake.retrieveInstanceMetricsMutex.Unlock()
 	if fake.RetrieveInstanceMetricsStub != nil {
-		return fake.RetrieveInstanceMetricsStub(appid, name, start, end)
-	} else {
-		return fake.retrieveInstanceMetricsReturns.result1, fake.retrieveInstanceMetricsReturns.result2
+		return fake.RetrieveInstanceMetricsStub(appid, name, start, end, orderType)
 	}
+	return fake.retrieveInstanceMetricsReturns.result1, fake.retrieveInstanceMetricsReturns.result2
 }
 
 func (fake *FakeInstanceMetricsDB) RetrieveInstanceMetricsCallCount() int {
@@ -69,10 +70,10 @@ func (fake *FakeInstanceMetricsDB) RetrieveInstanceMetricsCallCount() int {
 	return len(fake.retrieveInstanceMetricsArgsForCall)
 }
 
-func (fake *FakeInstanceMetricsDB) RetrieveInstanceMetricsArgsForCall(i int) (string, string, int64, int64) {
+func (fake *FakeInstanceMetricsDB) RetrieveInstanceMetricsArgsForCall(i int) (string, string, int64, int64, db.OrderType) {
 	fake.retrieveInstanceMetricsMutex.RLock()
 	defer fake.retrieveInstanceMetricsMutex.RUnlock()
-	return fake.retrieveInstanceMetricsArgsForCall[i].appid, fake.retrieveInstanceMetricsArgsForCall[i].name, fake.retrieveInstanceMetricsArgsForCall[i].start, fake.retrieveInstanceMetricsArgsForCall[i].end
+	return fake.retrieveInstanceMetricsArgsForCall[i].appid, fake.retrieveInstanceMetricsArgsForCall[i].name, fake.retrieveInstanceMetricsArgsForCall[i].start, fake.retrieveInstanceMetricsArgsForCall[i].end, fake.retrieveInstanceMetricsArgsForCall[i].orderType
 }
 
 func (fake *FakeInstanceMetricsDB) RetrieveInstanceMetricsReturns(result1 []*models.AppInstanceMetric, result2 error) {
@@ -92,9 +93,8 @@ func (fake *FakeInstanceMetricsDB) SaveMetric(metric *models.AppInstanceMetric) 
 	fake.saveMetricMutex.Unlock()
 	if fake.SaveMetricStub != nil {
 		return fake.SaveMetricStub(metric)
-	} else {
-		return fake.saveMetricReturns.result1
 	}
+	return fake.saveMetricReturns.result1
 }
 
 func (fake *FakeInstanceMetricsDB) SaveMetricCallCount() int {
@@ -125,9 +125,8 @@ func (fake *FakeInstanceMetricsDB) PruneInstanceMetrics(before int64) error {
 	fake.pruneInstanceMetricsMutex.Unlock()
 	if fake.PruneInstanceMetricsStub != nil {
 		return fake.PruneInstanceMetricsStub(before)
-	} else {
-		return fake.pruneInstanceMetricsReturns.result1
 	}
+	return fake.pruneInstanceMetricsReturns.result1
 }
 
 func (fake *FakeInstanceMetricsDB) PruneInstanceMetricsCallCount() int {
@@ -156,9 +155,8 @@ func (fake *FakeInstanceMetricsDB) Close() error {
 	fake.closeMutex.Unlock()
 	if fake.CloseStub != nil {
 		return fake.CloseStub()
-	} else {
-		return fake.closeReturns.result1
 	}
+	return fake.closeReturns.result1
 }
 
 func (fake *FakeInstanceMetricsDB) CloseCallCount() int {
