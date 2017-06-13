@@ -82,6 +82,7 @@ func (as *appStreamer) streamMetrics() {
 
 func (as *appStreamer) processEvent(event *events.Envelope) {
 	if event.GetEventType() == events.Envelope_ContainerMetric {
+		as.logger.Debug("process-event-get-containermetric-event", lager.Data{"event": event})
 		metric := noaa.GetInstanceMemoryMetricFromContainerMetricEvent(as.sclock.Now().UnixNano(), as.appId, event)
 		as.logger.Debug("process-event-get-memory-metric", lager.Data{"metric": metric})
 		if metric != nil {
@@ -91,6 +92,7 @@ func (as *appStreamer) processEvent(event *events.Envelope) {
 			}
 		}
 	} else if event.GetEventType() == events.Envelope_HttpStartStop {
+		as.logger.Debug("process-event-get-httpstartstop-event", lager.Data{"event": event})
 		ss := event.GetHttpStartStop()
 		if ss != nil {
 			as.numRequests[ss.GetInstanceIndex()]++

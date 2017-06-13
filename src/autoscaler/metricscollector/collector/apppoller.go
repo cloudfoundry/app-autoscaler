@@ -71,17 +71,17 @@ func (ap *appPoller) pollMetric() {
 
 	for attempt := 0; attempt < 3; attempt++ {
 		logger.Debug("poll-metric-from-noaa-retry", lager.Data{"attempt": attempt + 1})
-
 		containerEnvelopes, err = ap.noaaConsumer.ContainerEnvelopes(ap.appId, "bearer "+ap.cfc.GetTokens().AccessToken)
 		if err == nil {
 			break
 		}
 	}
-
 	if err != nil {
 		logger.Error("poll-metric-from-noaa", err)
 		return
 	}
+
+	logger.Debug("poll-metric-get-containerenvelopes", lager.Data{"envelops": containerEnvelopes})
 
 	metrics := noaa.GetInstanceMemoryMetricFromContainerEnvelopes(ap.pclock.Now().UnixNano(), ap.appId, containerEnvelopes)
 	logger.Debug("poll-metric-get-memory-metric", lager.Data{"metrics": metrics})
