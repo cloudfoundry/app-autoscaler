@@ -65,6 +65,7 @@ func (m *MetricPoller) retrieveMetric(app *models.AppMonitor) {
 	parameters := path.Query()
 	parameters.Add("start", strconv.FormatInt(startTime.UnixNano(), 10))
 	parameters.Add("end", strconv.FormatInt(endTime.UnixNano(), 10))
+	parameters.Add("order", db.ASCSTR)
 	url = m.metricCollectorUrl + path.RequestURI() + "?" + parameters.Encode()
 	resp, err := m.httpClient.Get(url)
 	if err != nil {

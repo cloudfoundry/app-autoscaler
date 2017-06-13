@@ -133,7 +133,7 @@ func (h *ScalingHandler) GetScalingHistories(w http.ResponseWriter, r *http.Requ
 
 	histories, err = h.scalingEngineDB.RetrieveScalingHistories(appId, start, end, order)
 	if err != nil {
-		logger.Error("failed-to-retrieve-histories", err, lager.Data{"start": start, "end": end})
+		logger.Error("failed-to-retrieve-histories", err, lager.Data{"start": start, "end": end, "order": order})
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 			Code:    "Interal-Server-Error",
 			Message: "Error getting scaling histories from database"})
