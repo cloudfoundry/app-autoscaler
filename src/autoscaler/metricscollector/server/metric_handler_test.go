@@ -330,7 +330,7 @@ var _ = Describe("MetricHandler", func() {
 
 				It("queries metrics from database with end time -1 ", func() {
 					_, _, _, _, order := database.RetrieveInstanceMetricsArgsForCall(0)
-					Expect(order).To(Equal(db.DESC))
+					Expect(order).To(Equal(db.ASC))
 				})
 
 			})
