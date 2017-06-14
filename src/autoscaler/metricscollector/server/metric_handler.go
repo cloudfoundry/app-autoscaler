@@ -78,7 +78,7 @@ func (h *MetricHandler) GetMetricHistories(w http.ResponseWriter, r *http.Reques
 	var err error
 	start := int64(0)
 	end := int64(-1)
-	order := db.DESC
+	order := db.ASC
 
 	if len(startParam) == 1 {
 		start, err = strconv.ParseInt(startParam[0], 10, 64)
