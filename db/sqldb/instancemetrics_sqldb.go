@@ -59,10 +59,10 @@ func (idb *InstanceMetricsSQLDB) SaveMetric(metric *models.AppInstanceMetric) er
 
 func (idb *InstanceMetricsSQLDB) RetrieveInstanceMetrics(appid string, name string, start int64, end int64, orderType db.OrderType) ([]*models.AppInstanceMetric, error) {
 	var orderStr string
-	if orderType == db.DESC {
-		orderStr = db.DESCSTR
-	} else {
+	if orderType == db.ASC {
 		orderStr = db.ASCSTR
+	} else {
+		orderStr = db.DESCSTR
 	}
 	query := "SELECT instanceindex, collectedat, unit, value, timestamp FROM appinstancemetrics WHERE " +
 		" appid = $1 " +
