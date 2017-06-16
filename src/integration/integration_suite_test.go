@@ -69,6 +69,7 @@ var (
 	brokerApiHttpRequestTimeout              time.Duration = 5 * time.Second
 	apiSchedulerHttpRequestTimeout           time.Duration = 5 * time.Second
 	apiScalingEngineHttpRequestTimeout       time.Duration = 10 * time.Second
+	apiMetricsCollectorHttpRequestTimeout    time.Duration = 10 * time.Second
 	schedulerScalingEngineHttpRequestTimeout time.Duration = 10 * time.Second
 
 	collectInterval           time.Duration = 1 * time.Second
@@ -232,7 +233,9 @@ func stopScheduler(schedulerProcess ifrit.Process) {
 func stopScalingEngine() {
 	ginkgomon.Kill(processMap[ScalingEngine], 5*time.Second)
 }
-
+func stopMetricsCollector() {
+	ginkgomon.Kill(processMap[MetricsCollector], 5*time.Second)
+}
 func sendSigusr2Signal(component string) {
 	process := processMap[component]
 	if process != nil {
@@ -376,6 +379,19 @@ func getScalingHistories(appId string, parameters map[string]string) (*http.Resp
 	req.Header.Set("Content-Type", "application/json")
 	return httpClient.Do(req)
 }
+func getAppMetrics(appId string, parameters map[string]string) (*http.Response, error) {
+	url := "https://127.0.0.1:%d/v1/apps/%s/metrics"
+	if parameters != nil && len(parameters) > 0 {
+		url += "?any=any"
+		for paramName, paramValue := range parameters {
+			url += "&" + paramName + "=" + paramValue
+		}
+	}
+	req, err := http.NewRequest("GET", fmt.Sprintf(url, components.Ports[APIServer], appId), strings.NewReader(""))
+	Expect(err).NotTo(HaveOccurred())
+	req.Header.Set("Content-Type", "application/json")
+	return httpClient.Do(req)
+}
 func readPolicyFromFile(filename string) []byte {
 	content, err := ioutil.ReadFile(filename)
 	Expect(err).NotTo(HaveOccurred())
@@ -441,6 +457,13 @@ func getScalingHistoryCount(appId string, oldInstanceCount int, newInstanceCount
 	err := dbHelper.QueryRow(query, appId, oldInstanceCount, newInstanceCount).Scan(&count)
 	Expect(err).NotTo(HaveOccurred())
 	return count
+}
+func insertAppInstanceMetric(appInstanceMetric *models.AppInstanceMetric) {
+	query := "INSERT INTO appinstancemetrics" +
+		"(appid, instanceindex, collectedat, name, unit, value, timestamp) " +
+		"VALUES($1, $2, $3, $4, $5, $6, $7)"
+	_, err := dbHelper.Exec(query, appInstanceMetric.AppId, appInstanceMetric.InstanceIndex, appInstanceMetric.CollectedAt, appInstanceMetric.Name, appInstanceMetric.Unit, appInstanceMetric.Value, appInstanceMetric.Timestamp)
+	Expect(err).NotTo(HaveOccurred())
 }
 
 type GetResponse func(id string) (*http.Response, error)

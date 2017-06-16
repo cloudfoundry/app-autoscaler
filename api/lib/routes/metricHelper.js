@@ -4,6 +4,7 @@ exports.parseParameter = function(req) {
   var routeHelper = require("./routeHelper");
   var parameters = {};
   var appId = req.params.app_id;
+  var metricType = req.query["metric-type"];
   var startTime = req.query["start-time"];
   var endTime = req.query["end-time"];
   var order = req.query["order"];
@@ -15,6 +16,15 @@ exports.parseParameter = function(req) {
     return { valid: false, message: "app_id is required" };
   } else {
     parameters.appId = appId;
+  }
+  if (routeHelper.isMissing(metricType)) {
+    return { valid: false, message: "metric-type is required" };
+  } else {
+    if (!routeHelper.isString(metricType)) {
+      return { valid: false, message: "metric-type must be a string" };
+    }else{
+      parameters.metricType = metricType;
+    }
   }
   if (routeHelper.isMissing(startTime)) {
     parameters.startTime = 0;
@@ -46,7 +56,7 @@ exports.parseParameter = function(req) {
       order = order.toLowerCase();
       if (order !== DESC && order !== ASC) {
         return { valid: false, message: "order must be desc or asc" };
-      }else{
+      } else {
         parameters.order = order;
       }
     }
@@ -80,4 +90,3 @@ exports.parseParameter = function(req) {
 
   return { valid: true, parameters: parameters }
 }
-

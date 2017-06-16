@@ -22,10 +22,12 @@ module.exports = function(settingsObj) {
     };
   settingsObj.scheduler.uri = cleanUpUri(settingsObj.scheduler.uri);
   settingsObj.scalingEngine.uri = cleanUpUri(settingsObj.scalingEngine.uri);
+  settingsObj.metricsCollector.uri = cleanUpUri(settingsObj.metricsCollector.uri);
   var settings = {
     port: settingsObj.port,
     scheduler: settingsObj.scheduler,
     scalingEngine: settingsObj.scalingEngine,
+    metricsCollector: settingsObj.metricsCollector,
     tls: settingsObj.tls
   };
   if (settingsObj.db) {
@@ -182,6 +184,39 @@ module.exports = function(settingsObj) {
       }
       if (!isString(settings.scalingEngine.tls.certFile)) {
         return { valid: false, message: "scalingEngine.tls.certFile must be a string" };
+      }
+    }
+
+    if (isMissing(settings.metricsCollector)) {
+      return { valid: false, message: "metricsCollector is required" };
+    }
+    if (isMissing(settings.metricsCollector.uri)) {
+      return { valid: false, message: "metricsCollector.uri is required" };
+    }
+    if (!isString(settings.metricsCollector.uri)) {
+      return { valid: false, message: "metricsCollector.uri must be a string" };
+    }
+    if (!isMissing(settings.metricsCollector.tls)){
+      if (!isObject(settings.metricsCollector.tls)) {
+        return { valid: false, message: "metricsCollector.tls must be an object" };
+      }
+      if (isMissing(settings.metricsCollector.tls.keyFile)) {
+        return { valid: false, message: "metricsCollector.tls.keyFile is required" };
+      }
+      if (!isString(settings.metricsCollector.tls.keyFile)) {
+        return { valid: false, message: "metricsCollector.tls.keyFile must be a string" };
+      }
+      if (isMissing(settings.metricsCollector.tls.caCertFile)) {
+        return { valid: false, message: "metricsCollector.tls.caCertFile is required" };
+      }
+      if (!isString(settings.metricsCollector.tls.caCertFile)) {
+        return { valid: false, message: "metricsCollector.tls.caCertFile must be a string" };
+      }
+      if (isMissing(settings.metricsCollector.tls.certFile)) {
+        return { valid: false, message: "metricsCollector.tls.certFile is required" };
+      }
+      if (!isString(settings.metricsCollector.tls.certFile)) {
+        return { valid: false, message: "metricsCollector.tls.certFile must be a string" };
       }
     }
     

@@ -22,6 +22,14 @@
          "caCertFile":"../test-certs/autoscaler-ca.crt"
       }
   },
+  "metricsCollector": {
+     "uri": "http://autoscaler.boshlite.com",
+      "tls": {
+         "keyFile":"../test-certs/metricscollector.key",
+         "certFile":"../test-certs/metricscollector.crt",
+         "caCertFile":"../test-certs/autoscaler-ca.crt"
+      }
+  },
   "tls": {
         "keyFile":"../test-certs/api.key",
         "certFile":"../test-certs/api.crt",

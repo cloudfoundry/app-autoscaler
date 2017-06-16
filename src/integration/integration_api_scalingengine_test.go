@@ -33,7 +33,7 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), cf.GrantTypePassword, tmpDir, consulRunner.ConsulCluster())
 		startScalingEngine()
 
-		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), tmpDir)
+		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), tmpDir)
 		startApiServer()
 		appId = getRandomId()
 
@@ -84,6 +84,12 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 
 				history.Timestamp = 444444
 				insertScalingHistory(history)
+
+				//add some other app id
+				history.AppId = "some-other-app-id"
+				history.Timestamp = 444444
+				insertScalingHistory(history)
+
 			})
 			It("should get the scaling histories ", func() {
 				By("get the 1st page")

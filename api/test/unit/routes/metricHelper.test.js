@@ -1,13 +1,14 @@
 "use strict"
 var path = require("path");
 var expect = require("chai").expect;
-var helper = require(path.join(__dirname, "../../../lib/routes/scalingHistoryHelper.js"));
+var helper = require(path.join(__dirname, "../../../lib/routes/metricHelper.js"));
 var defaultRequest = function() {
   var obj = {
     params: {
       "app_id": "123456"
     },
     query: {
+      "metric-type": "memoryused",
       "start-time": "100",
       "end-time": "200",
       "order": "desc",
@@ -17,7 +18,7 @@ var defaultRequest = function() {
   }
   return obj;
 }
-describe("ScalingHistoryHelper", function() {
+describe("metricHelper", function() {
 
   describe("validate parameters", function() {
     var validateResult;
@@ -57,6 +58,35 @@ describe("ScalingHistoryHelper", function() {
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(false);
           expect(validateResult.message).to.equal("app_id is required");
+        });
+      });
+    });
+
+    context("validate metric-type", function() {
+      context("metric-type is undefined", function() {
+        it("valid is false", function() {
+          delete requestObj.query["metric-type"];
+          validateResult = helper.parseParameter(requestObj);
+          expect(validateResult.valid).to.equal(false);
+          expect(validateResult.message).to.equal("metric-type is required");
+        });
+      });
+
+      context("metric-type is null", function() {
+        it("valid is false", function() {
+          requestObj.query["metric-type"] = null;
+          validateResult = helper.parseParameter(requestObj);
+          expect(validateResult.valid).to.equal(false);
+          expect(validateResult.message).to.equal("metric-type is required");
+        });
+      });
+
+      context("metric-type is not string", function() {
+        it("valid is false", function() {
+          requestObj.query["metric-type"] = 123;
+          validateResult = helper.parseParameter(requestObj);
+          expect(validateResult.valid).to.equal(false);
+          expect(validateResult.message).to.equal("metric-type must be a string");
         });
       });
     });
