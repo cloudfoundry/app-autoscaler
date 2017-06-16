@@ -215,7 +215,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 			})
 		})
 
-		Context("when retriving all the metrics( start = 0, end = -1, orderType = ASC) ", func() {
+		Context("when retrieving all the metrics( start = 0, end = -1, orderType = ASC) ", func() {
 			BeforeEach(func() {
 				orderType = db.ASC
 			})
@@ -254,7 +254,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 			})
 		})
 
-		Context("when retriving all the metrics( start = 0, end = -1, orderType = DESC) ", func() {
+		Context("when retrieving all the metrics( start = 0, end = -1, orderType = DESC) ", func() {
 			It("removes duplicates and returns all the instance metrics of the app ordered by timestamp desc", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(mtrcs).To(HaveLen(3))
