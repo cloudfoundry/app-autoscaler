@@ -24,6 +24,7 @@ type MetricResult struct {
 var _ = Describe("Integration_Api_MetricsCollector", func() {
 	var (
 		appId             string
+		pathVariables     []string
 		parameters        map[string]string
 		metric            *models.AppInstanceMetric
 		metricType        string = "memoryused"
@@ -42,6 +43,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), tmpDir)
 		startApiServer()
 		appId = getRandomId()
+		pathVariables = []string{appId, metricType}
 
 	})
 
@@ -57,7 +59,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 			})
 
 			It("should error", func() {
-				checkResponseContentWithParameters(getAppMetrics, appId, parameters, http.StatusInternalServerError, map[string]interface{}{"description": fmt.Sprintf("connect ECONNREFUSED 127.0.0.1:%d", components.Ports[MetricsCollector])})
+				checkResponseContentWithParameters(getAppMetrics, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{"description": fmt.Sprintf("connect ECONNREFUSED 127.0.0.1:%d", components.Ports[MetricsCollector])})
 
 			})
 
@@ -135,7 +137,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 						},
 					},
 				}
-				checkMetricResult(appId, parameters, result)
+				checkMetricResult(pathVariables, parameters, result)
 
 				By("get the 2nd page")
 				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "metric-type": metricType, "order": "asc", "page": "2", "results-per-page": "2"}
@@ -164,7 +166,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 						},
 					},
 				}
-				checkMetricResult(appId, parameters, result)
+				checkMetricResult(pathVariables, parameters, result)
 
 				By("get the 3rd page")
 				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "metric-type": metricType, "order": "asc", "page": "3", "results-per-page": "2"}
@@ -184,7 +186,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 						},
 					},
 				}
-				checkMetricResult(appId, parameters, result)
+				checkMetricResult(pathVariables, parameters, result)
 
 				By("the 4th page should be empty")
 				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "metric-type": metricType, "order": "asc", "page": "4", "results-per-page": "2"}
@@ -194,16 +196,16 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 					Page:         4,
 					Resources:    []models.AppInstanceMetric{},
 				}
-				checkMetricResult(appId, parameters, result)
+				checkMetricResult(pathVariables, parameters, result)
 			})
 
 		})
 	})
 })
 
-func checkMetricResult(appId string, parameters map[string]string, result MetricResult) {
+func checkMetricResult(pathVariables []string, parameters map[string]string, result MetricResult) {
 	var actual MetricResult
-	resp, err := getAppMetrics(appId, parameters)
+	resp, err := getAppMetrics(pathVariables, parameters)
 	defer resp.Body.Close()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.StatusCode).To(Equal(http.StatusOK))

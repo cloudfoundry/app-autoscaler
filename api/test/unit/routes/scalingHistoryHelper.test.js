@@ -26,7 +26,7 @@ describe("ScalingHistoryHelper", function() {
       requestObj = defaultRequest();
     });
     context("all parameters are valid", function() {
-      it("valid is true", function() {
+      it("return true", function() {
         validateResult = helper.parseParameter(requestObj);
         expect(validateResult.valid).to.equal(true);
       });
@@ -34,7 +34,7 @@ describe("ScalingHistoryHelper", function() {
 
     context("validate app_id", function() {
       context("app_id is undefined", function() {
-        it("valid is false", function() {
+        it("return false", function() {
           delete requestObj.params.app_id;
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(false);
@@ -43,7 +43,7 @@ describe("ScalingHistoryHelper", function() {
       });
 
       context("app_id is null", function() {
-        it("valid is false", function() {
+        it("return false", function() {
           requestObj.params.app_id = null;
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(false);
@@ -52,7 +52,7 @@ describe("ScalingHistoryHelper", function() {
       });
 
       context("app_id is empty", function() {
-        it("valid is false", function() {
+        it("return false", function() {
           requestObj.params.app_id = "";
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(false);
@@ -63,7 +63,7 @@ describe("ScalingHistoryHelper", function() {
 
     context("validate start-time", function() {
       context("start-time is undefined", function() {
-        it("valid is true, startTime is set to 0", function() {
+        it("return true, startTime is set to 0", function() {
           delete requestObj.query["start-time"];
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(true);
@@ -72,7 +72,7 @@ describe("ScalingHistoryHelper", function() {
       });
 
       context("start-time is null", function() {
-        it("valid is true, startTime is set to 0", function() {
+        it("return true, startTime is set to 0", function() {
           requestObj.query["start-time"] = null;
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(true);
@@ -81,7 +81,7 @@ describe("ScalingHistoryHelper", function() {
       });
 
       context("start-time is not integer", function() {
-        it("valid is false", function() {
+        it("return false", function() {
           requestObj.query["start-time"] = "not-integer";
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(false);
@@ -92,7 +92,7 @@ describe("ScalingHistoryHelper", function() {
 
     context("validate end-time", function() {
       context("end-time is undefined", function() {
-        it("valid is true, endTime is set to -1", function() {
+        it("return true, endTime is set to -1", function() {
           delete requestObj.query["end-time"];
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(true);
@@ -101,7 +101,7 @@ describe("ScalingHistoryHelper", function() {
       });
 
       context("end-time is null", function() {
-        it("valid is true, endTime is set to -1", function() {
+        it("return true, endTime is set to -1", function() {
           requestObj.query["end-time"] = null;
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(true);
@@ -110,7 +110,7 @@ describe("ScalingHistoryHelper", function() {
       });
 
       context("end-time is not integer", function() {
-        it("valid is false", function() {
+        it("return false", function() {
           requestObj.query["end-time"] = "not-integer";
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(false);
@@ -120,7 +120,7 @@ describe("ScalingHistoryHelper", function() {
     });
     context("validate order", function() {
       context("order is undefined", function() {
-        it("valid is true, order is set to desc", function() {
+        it("return true, order is set to desc", function() {
           delete requestObj.query["order"];
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(true);
@@ -129,7 +129,7 @@ describe("ScalingHistoryHelper", function() {
 
       });
       context("order is null", function() {
-        it("valid is true, order is set to desc", function() {
+        it("return true, order is set to desc", function() {
           requestObj.query["order"] = null;
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(true);
@@ -138,7 +138,7 @@ describe("ScalingHistoryHelper", function() {
 
       });
       context("order is not string", function() {
-        it("valid is false", function() {
+        it("return false", function() {
           requestObj.query["order"] = 1;
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(false);
@@ -147,7 +147,7 @@ describe("ScalingHistoryHelper", function() {
 
       });
       context("order is not desc or asc", function() {
-        it("valid is false", function() {
+        it("return false", function() {
           requestObj.query["order"] = "not-desc-asc";
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(false);
@@ -158,7 +158,7 @@ describe("ScalingHistoryHelper", function() {
     });
     context("validate page", function() {
       context("page is undefined", function() {
-        it("valid is true, page is set to 1", function() {
+        it("return true, page is set to 1", function() {
           delete requestObj.query["page"];
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(true);
@@ -167,7 +167,7 @@ describe("ScalingHistoryHelper", function() {
       });
 
       context("page is null", function() {
-        it("valid is true, page is set to 1", function() {
+        it("return true, page is set to 1", function() {
           requestObj.query["page"] = null;
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(true);
@@ -176,7 +176,7 @@ describe("ScalingHistoryHelper", function() {
       });
 
       context("page is not integer", function() {
-        it("valid is false", function() {
+        it("return false", function() {
           requestObj.query["page"] = "not-integer";
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(false);
@@ -185,7 +185,7 @@ describe("ScalingHistoryHelper", function() {
       });
 
       context("page is an integer but smaller than 1", function() {
-        it("valid is false", function() {
+        it("return false", function() {
           requestObj.query["page"] = 0;
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(false);
@@ -196,25 +196,25 @@ describe("ScalingHistoryHelper", function() {
 
     context("validate results-per-page", function() {
       context("results-per-page is undefined", function() {
-        it("valid is true, reulstsPerPage is set to 10", function() {
+        it("return true, reulstsPerPage is set to 50", function() {
           delete requestObj.query["results-per-page"];
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(true);
-          expect(validateResult.parameters.resultsPerPage).to.equal(10);
+          expect(validateResult.parameters.resultsPerPage).to.equal(50);
         });
       });
 
       context("results-per-page is null", function() {
-        it("valid is true, reulstsPerPage is set to 10", function() {
+        it("return true, reulstsPerPage is set to 50", function() {
           requestObj.query["results-per-page"] = null;
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(true);
-          expect(validateResult.parameters.resultsPerPage).to.equal(10);
+          expect(validateResult.parameters.resultsPerPage).to.equal(50);
         });
       });
 
       context("results-per-page is not integer", function() {
-        it("valid is false", function() {
+        it("return false", function() {
           requestObj.query["results-per-page"] = "not-integer";
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(false);
@@ -223,7 +223,7 @@ describe("ScalingHistoryHelper", function() {
       });
 
       context("results-per-page is an integer but smaller than 1", function() {
-        it("valid is false", function() {
+        it("return false", function() {
           requestObj.query["results-per-page"] = 0;
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(false);

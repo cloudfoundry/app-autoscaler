@@ -4,7 +4,7 @@ exports.parseParameter = function(req) {
   var routeHelper = require("./routeHelper");
   var parameters = {};
   var appId = req.params.app_id;
-  var metricType = req.query["metric-type"];
+  var metricType = req.params.metric_type;
   var startTime = req.query["start-time"];
   var endTime = req.query["end-time"];
   var order = req.query["order"];
@@ -17,14 +17,10 @@ exports.parseParameter = function(req) {
   } else {
     parameters.appId = appId;
   }
-  if (routeHelper.isMissing(metricType)) {
-    return { valid: false, message: "metric-type is required" };
+  if (!metricType) {
+    return { valid: false, message: "metric_type is required" };
   } else {
-    if (!routeHelper.isString(metricType)) {
-      return { valid: false, message: "metric-type must be a string" };
-    }else{
-      parameters.metricType = metricType;
-    }
+    parameters.metricType = metricType;
   }
   if (routeHelper.isMissing(startTime)) {
     parameters.startTime = 0;
@@ -48,7 +44,7 @@ exports.parseParameter = function(req) {
     }
   }
   if (routeHelper.isMissing(order)) {
-    parameters.order = DESC;
+    parameters.order = ASC;
   } else {
     if (!routeHelper.isString(order)) {
       return { valid: false, message: "order must be a string" };
@@ -75,7 +71,7 @@ exports.parseParameter = function(req) {
   }
 
   if (routeHelper.isMissing(resultsPerPage)) {
-    parameters.resultsPerPage = 10;
+    parameters.resultsPerPage = 50;
   } else {
     resultsPerPage = parseInt(resultsPerPage)
     if (!routeHelper.isInteger(resultsPerPage)) {

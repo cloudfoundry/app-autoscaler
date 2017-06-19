@@ -366,7 +366,7 @@ func getActiveSchedule(appId string) (*http.Response, error) {
 	req.Header.Set("Content-Type", "application/json")
 	return httpClient.Do(req)
 }
-func getScalingHistories(appId string, parameters map[string]string) (*http.Response, error) {
+func getScalingHistories(pathVariables []string, parameters map[string]string) (*http.Response, error) {
 	url := "https://127.0.0.1:%d/v1/apps/%s/scaling_histories"
 	if parameters != nil && len(parameters) > 0 {
 		url += "?any=any"
@@ -374,20 +374,20 @@ func getScalingHistories(appId string, parameters map[string]string) (*http.Resp
 			url += "&" + paramName + "=" + paramValue
 		}
 	}
-	req, err := http.NewRequest("GET", fmt.Sprintf(url, components.Ports[APIServer], appId), strings.NewReader(""))
+	req, err := http.NewRequest("GET", fmt.Sprintf(url, components.Ports[APIServer], pathVariables[0]), strings.NewReader(""))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
 	return httpClient.Do(req)
 }
-func getAppMetrics(appId string, parameters map[string]string) (*http.Response, error) {
-	url := "https://127.0.0.1:%d/v1/apps/%s/metrics"
+func getAppMetrics(pathVariables []string, parameters map[string]string) (*http.Response, error) {
+	url := "https://127.0.0.1:%d/v1/apps/%s/metric_histories/%s"
 	if parameters != nil && len(parameters) > 0 {
 		url += "?any=any"
 		for paramName, paramValue := range parameters {
 			url += "&" + paramName + "=" + paramValue
 		}
 	}
-	req, err := http.NewRequest("GET", fmt.Sprintf(url, components.Ports[APIServer], appId), strings.NewReader(""))
+	req, err := http.NewRequest("GET", fmt.Sprintf(url, components.Ports[APIServer], pathVariables[0], pathVariables[1]), strings.NewReader(""))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
 	return httpClient.Do(req)
@@ -467,15 +467,15 @@ func insertAppInstanceMetric(appInstanceMetric *models.AppInstanceMetric) {
 }
 
 type GetResponse func(id string) (*http.Response, error)
-type GetResponseWithParameters func(id string, parameters map[string]string) (*http.Response, error)
+type GetResponseWithParameters func(pathVariables []string, parameters map[string]string) (*http.Response, error)
 
 func checkResponseContent(getResponse GetResponse, id string, expectHttpStatus int, expectResponseMap map[string]interface{}) {
 	resp, err := getResponse(id)
 	checkResponse(resp, err, expectHttpStatus, expectResponseMap)
 
 }
-func checkResponseContentWithParameters(getResponseWithParameters GetResponseWithParameters, id string, parameters map[string]string, expectHttpStatus int, expectResponseMap map[string]interface{}) {
-	resp, err := getResponseWithParameters(id, parameters)
+func checkResponseContentWithParameters(getResponseWithParameters GetResponseWithParameters, pathVariables []string, parameters map[string]string, expectHttpStatus int, expectResponseMap map[string]interface{}) {
+	resp, err := getResponseWithParameters(pathVariables, parameters)
 	checkResponse(resp, err, expectHttpStatus, expectResponseMap)
 }
 func checkResponse(resp *http.Response, err error, expectHttpStatus int, expectResponseMap map[string]interface{}) {

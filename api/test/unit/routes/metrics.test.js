@@ -36,29 +36,13 @@ describe("Routing Metrics", function() {
   describe("get metrics", function() {
     context("parameters", function() {
 
-      context("metric-type", function() {
-        it("should return 400 when metric-type is not provided", function(done) {
-          nock(metricsCollectorUri)
-            .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
-            .reply(200, histories);
-          request(app)
-            .get("/v1/apps/12345/metrics")
-            .query({ "start-time": 100, "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
-            .end(function(error, result) {
-              expect(error).to.equal(null);
-              expect(result.statusCode).to.equal(400);
-              done();
-            });
-        });
-      });
-
       context("start-time", function() {
         it("should return 200 when start-time is not provided", function(done) {
           nock(metricsCollectorUri)
             .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
             .reply(200, histories);
           request(app)
-            .get("/v1/apps/12345/metrics")
+            .get("/v1/apps/12345/metric_histories/" + metricType)
             .query({ "metric-type": metricType, "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
@@ -72,7 +56,7 @@ describe("Routing Metrics", function() {
             .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
             .reply(200, histories);
           request(app)
-            .get("/v1/apps/12345/metrics")
+            .get("/v1/apps/12345/metric_histories/" + metricType)
             .query({ "metric-type": metricType, "start-time": "not-integer", "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
@@ -91,7 +75,7 @@ describe("Routing Metrics", function() {
             .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
             .reply(200, histories);
           request(app)
-            .get("/v1/apps/12345/metrics")
+            .get("/v1/apps/12345/metric_histories/" + metricType)
             .query({ "metric-type": metricType, "start-time": 100, "order": "desc", "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
@@ -105,7 +89,7 @@ describe("Routing Metrics", function() {
             .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
             .reply(200, histories);
           request(app)
-            .get("/v1/apps/12345/metrics")
+            .get("/v1/apps/12345/metric_histories/" + metricType)
             .query({ "metric-type": metricType, "end-time": "not-integer", "start-time": 100, "order": "desc", "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
@@ -124,7 +108,7 @@ describe("Routing Metrics", function() {
             .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
             .reply(200, histories);
           request(app)
-            .get("/v1/apps/12345/metrics")
+            .get("/v1/apps/12345/metric_histories/" + metricType)
             .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
@@ -138,7 +122,7 @@ describe("Routing Metrics", function() {
             .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
             .reply(200, histories);
           request(app)
-            .get("/v1/apps/12345/metrics")
+            .get("/v1/apps/12345/metric_histories/" + metricType)
             .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "not-desc-asc", "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
@@ -157,7 +141,7 @@ describe("Routing Metrics", function() {
             .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
             .reply(200, histories);
           request(app)
-            .get("/v1/apps/12345/metrics")
+            .get("/v1/apps/12345/metric_histories/" + metricType)
             .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "desc", "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
@@ -171,7 +155,7 @@ describe("Routing Metrics", function() {
             .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
             .reply(200, histories);
           request(app)
-            .get("/v1/apps/12345/metrics")
+            .get("/v1/apps/12345/metric_histories/" + metricType)
             .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "desc", "page": "not-integer", "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
@@ -190,7 +174,7 @@ describe("Routing Metrics", function() {
             .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
             .reply(200, histories);
           request(app)
-            .get("/v1/apps/12345/metrics")
+            .get("/v1/apps/12345/metric_histories/" + metricType)
             .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "desc", "page": 1 })
             .end(function(error, result) {
               expect(error).to.equal(null);
@@ -205,7 +189,7 @@ describe("Routing Metrics", function() {
             .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
             .reply(200, histories);
           request(app)
-            .get("/v1/apps/12345/metrics")
+            .get("/v1/apps/12345/metric_histories/" + metricType)
             .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "desc", "page": 1, "results-per-page": "not-integer" })
             .end(function(error, result) {
               expect(error).to.equal(null);
@@ -227,7 +211,7 @@ describe("Routing Metrics", function() {
             'details': 'fake body'
           });
         request(app)
-          .get("/v1/apps/12345/metrics")
+          .get("/v1/apps/12345/metric_histories/" + metricType)
           .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);
@@ -244,7 +228,7 @@ describe("Routing Metrics", function() {
           .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
           .reply(500, { code: 'Interal-Server-Error', message: 'Error getting scaling histories from database' });
         request(app)
-          .get("/v1/apps/12345/metrics")
+          .get("/v1/apps/12345/metric_histories/" + metricType)
           .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);
@@ -263,7 +247,7 @@ describe("Routing Metrics", function() {
           .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
           .reply(200, histories);
         request(app)
-          .get("/v1/apps/12345/metrics")
+          .get("/v1/apps/12345/metric_histories/" + metricType)
           .query({ "metric-type": metricType, "start-time": 100, "end-time": 500, "order": "desc", "page": 1, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);
@@ -283,7 +267,7 @@ describe("Routing Metrics", function() {
           .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
           .reply(200, histories);
         request(app)
-          .get("/v1/apps/12345/metrics")
+          .get("/v1/apps/12345/metric_histories/" + metricType)
           .query({ "metric-type": metricType, "start-time": 100, "end-time": 500, "order": "desc", "page": 2, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);
@@ -303,7 +287,7 @@ describe("Routing Metrics", function() {
           .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
           .reply(200, histories);
         request(app)
-          .get("/v1/apps/12345/metrics")
+          .get("/v1/apps/12345/metric_histories/" + metricType)
           .query({ "metric-type": metricType, "start-time": 100, "end-time": 500, "order": "desc", "page": 3, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);
@@ -323,7 +307,7 @@ describe("Routing Metrics", function() {
           .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
           .reply(200, histories);
         request(app)
-          .get("/v1/apps/12345/metrics")
+          .get("/v1/apps/12345/metric_histories/" + metricType)
           .query({ "metric-type": metricType, "start-time": 100, "end-time": 500, "order": "desc", "page": 4, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);

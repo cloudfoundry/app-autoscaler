@@ -65,7 +65,7 @@ exports.parseParameter = function(req) {
   }
 
   if (routeHelper.isMissing(resultsPerPage)) {
-    parameters.resultsPerPage = 10;
+    parameters.resultsPerPage = 50;
   } else {
     resultsPerPage = parseInt(resultsPerPage)
     if (!routeHelper.isInteger(resultsPerPage)) {

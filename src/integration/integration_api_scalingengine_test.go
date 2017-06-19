@@ -23,6 +23,7 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 	var (
 		initInstanceCount int = 2
 		appId             string
+		pathVariables     []string
 		parameters        map[string]string
 		history           *models.AppScalingHistory
 	)
@@ -36,6 +37,7 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), tmpDir)
 		startApiServer()
 		appId = getRandomId()
+		pathVariables = []string{appId}
 
 	})
 
@@ -51,7 +53,7 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 			})
 
 			It("should error", func() {
-				checkResponseContentWithParameters(getScalingHistories, appId, parameters, http.StatusInternalServerError, map[string]interface{}{"description": fmt.Sprintf("connect ECONNREFUSED 127.0.0.1:%d", components.Ports[ScalingEngine])})
+				checkResponseContentWithParameters(getScalingHistories, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{"description": fmt.Sprintf("connect ECONNREFUSED 127.0.0.1:%d", components.Ports[ScalingEngine])})
 
 			})
 
@@ -123,7 +125,7 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 						},
 					},
 				}
-				checkScalingHistoryResult(appId, parameters, result)
+				checkScalingHistoryResult(pathVariables, parameters, result)
 
 				By("get the 2nd page")
 				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order": "desc", "page": "2", "results-per-page": "2"}
@@ -156,7 +158,7 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 						},
 					},
 				}
-				checkScalingHistoryResult(appId, parameters, result)
+				checkScalingHistoryResult(pathVariables, parameters, result)
 
 				By("get the 3rd page")
 				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order": "desc", "page": "3", "results-per-page": "2"}
@@ -178,7 +180,7 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 						},
 					},
 				}
-				checkScalingHistoryResult(appId, parameters, result)
+				checkScalingHistoryResult(pathVariables, parameters, result)
 
 				By("the 4th page should be empty")
 				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order": "desc", "page": "4", "results-per-page": "2"}
@@ -188,16 +190,16 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 					Page:         4,
 					Resources:    []models.AppScalingHistory{},
 				}
-				checkScalingHistoryResult(appId, parameters, result)
+				checkScalingHistoryResult(pathVariables, parameters, result)
 			})
 
 		})
 	})
 })
 
-func checkScalingHistoryResult(appId string, parameters map[string]string, result ScalingHistoryResult) {
+func checkScalingHistoryResult(pathVariables []string, parameters map[string]string, result ScalingHistoryResult) {
 	var actual ScalingHistoryResult
-	resp, err := getScalingHistories(appId, parameters)
+	resp, err := getScalingHistories(pathVariables, parameters)
 	defer resp.Body.Close()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.StatusCode).To(Equal(http.StatusOK))
