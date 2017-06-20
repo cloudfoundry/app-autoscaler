@@ -1,7 +1,7 @@
 'use strict';
 
-exports.DESC = "desc";
-exports.ASC = "asc";
+exports.DESC = "DESC";
+exports.ASC = "ASC";
 
 exports.isMissing = function(value) {
   return typeof(value) === "undefined" || value === null;

@@ -49,9 +49,9 @@ exports.parseParameter = function(req) {
     if (!routeHelper.isString(order)) {
       return { valid: false, message: "order must be a string" };
     } else {
-      order = order.toLowerCase();
+      order = order.toUpperCase();
       if (order !== DESC && order !== ASC) {
-        return { valid: false, message: "order must be desc or asc" };
+        return { valid: false, message: "order must be DESC or ASC" };
       } else {
         parameters.order = order;
       }

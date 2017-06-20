@@ -128,7 +128,7 @@ describe("Routing Metrics", function() {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(400);
               expect(result.body).to.deep.equal({
-                "description": "order must be desc or asc"
+                "description": "order must be DESC or ASC"
               });
               done();
             });

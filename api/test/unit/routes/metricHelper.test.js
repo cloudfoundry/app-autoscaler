@@ -11,7 +11,7 @@ var defaultRequest = function() {
     query: {
       "start-time": "100",
       "end-time": "200",
-      "order": "desc",
+      "order": "DESC",
       "page": "1",
       "results-per-page": "10"
     }
@@ -150,20 +150,20 @@ describe("metricHelper", function() {
     });
     context("validate order", function() {
       context("order is undefined", function() {
-        it("return true, order is set to asc", function() {
+        it("return true, order is set to ASC", function() {
           delete requestObj.query["order"];
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(true);
-          expect(validateResult.parameters.order).to.equal("asc");
+          expect(validateResult.parameters.order).to.equal("ASC");
         });
 
       });
       context("order is null", function() {
-        it("return true, order is set to asc", function() {
+        it("return true, order is set to ASC", function() {
           requestObj.query["order"] = null;
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(true);
-          expect(validateResult.parameters.order).to.equal("asc");
+          expect(validateResult.parameters.order).to.equal("ASC");
         });
 
       });
@@ -176,12 +176,12 @@ describe("metricHelper", function() {
         });
 
       });
-      context("order is not desc or asc", function() {
+      context("order is not DESC or ASC", function() {
         it("return false", function() {
-          requestObj.query["order"] = "not-desc-asc";
+          requestObj.query["order"] = "not-DESC-ASC";
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(false);
-          expect(validateResult.message).to.equal("order must be desc or asc");
+          expect(validateResult.message).to.equal("order must be DESC or ASC");
         });
 
       });
