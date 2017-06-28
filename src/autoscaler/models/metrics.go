@@ -1,14 +1,15 @@
 package models
 
 const (
-	UnitPercentage   = "percentage"
-	UnitMegaBytes    = "megabytes"
-	UnitNum          = "num"
-	UnitMilliseconds = "milliseconds"
+	UnitPercentage   = "%"
+	UnitMegaBytes    = "MB"
+	UnitNum          = ""
+	UnitMilliseconds = "ms"
 	UnitRPS          = "rps"
 )
 
-const MetricNameMemory = "memoryused"
+const MetricNameMemoryUtil = "memoryutil"
+const MetricNameMemoryUsed = "memoryused"
 const MetricNameThroughput = "throughput"
 const MetricNameResponseTime = "responsetime"
 

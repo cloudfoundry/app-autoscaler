@@ -118,8 +118,10 @@ func (e *Evaluator) doEvaluate(triggerArray []*models.Trigger) {
 		}
 
 		if isBreached {
+			triggerToSent := *trigger
+			triggerToSent.MetricUnit = appMetricList[0].Unit
 			e.logger.Info("send trigger alarm to scaling engine", lager.Data{"trigger": trigger})
-			e.sendTriggerAlarm(trigger)
+			e.sendTriggerAlarm(&triggerToSent)
 			return
 		}
 	}

@@ -23,6 +23,9 @@ var _ = Describe("AppMetricSQLDB", func() {
 		start, end        int64
 		before            int64
 		appId, metricName string
+		testMetricName    string = "Test-Metric-Name"
+		testMetricUnit    string = "Test-Metric-Unit"
+		testAppId         string = "Test-App-ID"
 	)
 
 	BeforeEach(func() {
@@ -75,9 +78,9 @@ var _ = Describe("AppMetricSQLDB", func() {
 		Context("When inserting a metric of an app", func() {
 			BeforeEach(func() {
 				appMetric := &models.AppMetric{
-					AppId:      "test-app-id",
-					MetricType: models.MetricNameMemory,
-					Unit:       models.UnitMegaBytes,
+					AppId:      testAppId,
+					MetricType: testMetricName,
+					Unit:       testMetricUnit,
 					Timestamp:  11111111,
 					Value:      "300",
 				}
@@ -86,7 +89,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 
 			It("has the appMetric in database", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(hasAppMetric("test-app-id", models.MetricNameMemory, 11111111)).To(BeTrue())
+				Expect(hasAppMetric(testAppId, testMetricName, 11111111)).To(BeTrue())
 			})
 		})
 
@@ -98,9 +101,9 @@ var _ = Describe("AppMetricSQLDB", func() {
 			cleanAppMetricTable()
 
 			appMetric := &models.AppMetric{
-				AppId:      "test-app-id",
-				MetricType: models.MetricNameMemory,
-				Unit:       models.UnitMegaBytes,
+				AppId:      testAppId,
+				MetricType: testMetricName,
+				Unit:       testMetricUnit,
 				Timestamp:  11111111,
 				Value:      "100",
 			}
@@ -117,8 +120,8 @@ var _ = Describe("AppMetricSQLDB", func() {
 			err = adb.SaveAppMetric(appMetric)
 			Expect(err).NotTo(HaveOccurred())
 
-			appId = "test-app-id"
-			metricName = models.MetricNameMemory
+			appId = testAppId
+			metricName = testMetricName
 			start = 0
 			end = time.Now().UnixNano()
 
@@ -197,23 +200,23 @@ var _ = Describe("AppMetricSQLDB", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(appMetrics).To(Equal([]*models.AppMetric{
 					&models.AppMetric{
-						AppId:      "test-app-id",
-						MetricType: models.MetricNameMemory,
-						Unit:       models.UnitMegaBytes,
+						AppId:      testAppId,
+						MetricType: testMetricName,
+						Unit:       testMetricUnit,
 						Timestamp:  11111111,
 						Value:      "100",
 					},
 					&models.AppMetric{
-						AppId:      "test-app-id",
-						MetricType: models.MetricNameMemory,
-						Unit:       models.UnitMegaBytes,
+						AppId:      testAppId,
+						MetricType: testMetricName,
+						Unit:       testMetricUnit,
 						Timestamp:  33333333,
 						Value:      "200",
 					},
 					&models.AppMetric{
-						AppId:      "test-app-id",
-						MetricType: models.MetricNameMemory,
-						Unit:       models.UnitMegaBytes,
+						AppId:      testAppId,
+						MetricType: testMetricName,
+						Unit:       testMetricUnit,
 						Timestamp:  55555555,
 						Value:      "300",
 					}}))
@@ -229,16 +232,16 @@ var _ = Describe("AppMetricSQLDB", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(appMetrics).To(Equal([]*models.AppMetric{
 					&models.AppMetric{
-						AppId:      "test-app-id",
-						MetricType: models.MetricNameMemory,
-						Unit:       models.UnitMegaBytes,
+						AppId:      testAppId,
+						MetricType: testMetricName,
+						Unit:       testMetricUnit,
 						Timestamp:  33333333,
 						Value:      "200",
 					},
 					&models.AppMetric{
-						AppId:      "test-app-id",
-						MetricType: models.MetricNameMemory,
-						Unit:       models.UnitMegaBytes,
+						AppId:      testAppId,
+						MetricType: testMetricName,
+						Unit:       testMetricUnit,
 						Timestamp:  55555555,
 						Value:      "300",
 					}}))
@@ -255,9 +258,9 @@ var _ = Describe("AppMetricSQLDB", func() {
 			cleanAppMetricTable()
 
 			appMetric := &models.AppMetric{
-				AppId:      "test-app-id",
-				MetricType: models.MetricNameMemory,
-				Unit:       models.UnitMegaBytes,
+				AppId:      testAppId,
+				MetricType: testMetricName,
+				Unit:       testMetricUnit,
 				Timestamp:  11111111,
 				Value:      "100",
 			}
@@ -316,7 +319,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 			It("removes metrics before the time specified", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(getNumberOfAppMetrics()).To(Equal(1))
-				Expect(hasAppMetric("test-app-id", models.MetricNameMemory, 55555555)).To(BeTrue())
+				Expect(hasAppMetric(testAppId, testMetricName, 55555555)).To(BeTrue())
 			})
 		})
 

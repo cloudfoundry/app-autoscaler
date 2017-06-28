@@ -340,11 +340,12 @@ func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) er
 }
 
 func getDynamicScalingReason(trigger *models.Trigger) string {
-	return fmt.Sprintf("%s instance(s) because %s %s %d for %d seconds",
+	return fmt.Sprintf("%s instance(s) because %s %s %d%s for %d seconds",
 		trigger.Adjustment,
 		trigger.MetricType,
 		trigger.Operator,
 		trigger.Threshold,
+		trigger.MetricUnit,
 		trigger.BreachDurationSeconds)
 }
 

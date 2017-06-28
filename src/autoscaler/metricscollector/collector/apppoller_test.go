@@ -78,38 +78,43 @@ var _ = Describe("Apppoller", func() {
 						return []*events.Envelope{
 							&events.Envelope{
 								ContainerMetric: &events.ContainerMetric{
-									ApplicationId: proto.String("test-app-id"),
-									InstanceIndex: proto.Int32(0),
-									MemoryBytes:   proto.Uint64(12345678),
+									ApplicationId:    proto.String("test-app-id"),
+									InstanceIndex:    proto.Int32(0),
+									MemoryBytes:      proto.Uint64(100000000),
+									MemoryBytesQuota: proto.Uint64(300000000),
 								},
 								Timestamp: &timestamp,
 							},
 						}, nil
 					}
-
-					database.SaveMetricStub = func(metric *models.AppInstanceMetric) error {
-						Expect(metric).To(Equal(&models.AppInstanceMetric{
-							AppId:         "test-app-id",
-							InstanceIndex: 0,
-							CollectedAt:   fclock.Now().UnixNano(),
-							Name:          models.MetricNameMemory,
-							Unit:          models.UnitMegaBytes,
-							Value:         "12",
-							Timestamp:     111111,
-						}))
-						return nil
-					}
-
 				})
 
 				It("saves the metrics to database", func() {
-					Eventually(database.SaveMetricCallCount).Should(Equal(1))
-
-					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
 					Eventually(database.SaveMetricCallCount).Should(Equal(2))
+					Expect(database.SaveMetricArgsForCall(0)).To(Equal(&models.AppInstanceMetric{
+						AppId:         "test-app-id",
+						InstanceIndex: 0,
+						CollectedAt:   fclock.Now().UnixNano(),
+						Name:          models.MetricNameMemoryUsed,
+						Unit:          models.UnitMegaBytes,
+						Value:         "95",
+						Timestamp:     111111,
+					}))
+					Expect(database.SaveMetricArgsForCall(1)).To(Equal(&models.AppInstanceMetric{
+						AppId:         "test-app-id",
+						InstanceIndex: 0,
+						CollectedAt:   fclock.Now().UnixNano(),
+						Name:          models.MetricNameMemoryUtil,
+						Unit:          models.UnitPercentage,
+						Value:         "33",
+						Timestamp:     111111,
+					}))
 
 					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
-					Eventually(database.SaveMetricCallCount).Should(Equal(3))
+					Eventually(database.SaveMetricCallCount).Should(Equal(4))
+
+					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
+					Eventually(database.SaveMetricCallCount).Should(Equal(6))
 				})
 			})
 
@@ -147,39 +152,44 @@ var _ = Describe("Apppoller", func() {
 							return []*events.Envelope{
 								&events.Envelope{
 									ContainerMetric: &events.ContainerMetric{
-										ApplicationId: proto.String("test-app-id"),
-										InstanceIndex: proto.Int32(0),
-										MemoryBytes:   proto.Uint64(12345678),
+										ApplicationId:    proto.String("test-app-id"),
+										InstanceIndex:    proto.Int32(0),
+										MemoryBytes:      proto.Uint64(100000000),
+										MemoryBytesQuota: proto.Uint64(300000000),
 									},
 									Timestamp: &timestamp,
 								},
 							}, nil
 						}
 					}
-
-					database.SaveMetricStub = func(metric *models.AppInstanceMetric) error {
-						Expect(metric).To(Equal(&models.AppInstanceMetric{
-							AppId:         "test-app-id",
-							InstanceIndex: 0,
-							CollectedAt:   fclock.Now().UnixNano(),
-							Name:          models.MetricNameMemory,
-							Unit:          models.UnitMegaBytes,
-							Value:         "12",
-							Timestamp:     111111,
-						}))
-						return nil
-					}
-
 				})
 
 				It("saves metrics in non-empty container envelops to database", func() {
-					Eventually(database.SaveMetricCallCount).Should(Equal(1))
-
-					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
-					Consistently(database.SaveMetricCallCount).Should(Equal(1))
-
-					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
 					Eventually(database.SaveMetricCallCount).Should(Equal(2))
+					Expect(database.SaveMetricArgsForCall(0)).To(Equal(&models.AppInstanceMetric{
+						AppId:         "test-app-id",
+						InstanceIndex: 0,
+						CollectedAt:   fclock.Now().UnixNano(),
+						Name:          models.MetricNameMemoryUsed,
+						Unit:          models.UnitMegaBytes,
+						Value:         "95",
+						Timestamp:     111111,
+					}))
+					Expect(database.SaveMetricArgsForCall(1)).To(Equal(&models.AppInstanceMetric{
+						AppId:         "test-app-id",
+						InstanceIndex: 0,
+						CollectedAt:   fclock.Now().UnixNano(),
+						Name:          models.MetricNameMemoryUtil,
+						Unit:          models.UnitPercentage,
+						Value:         "33",
+						Timestamp:     111111,
+					}))
+
+					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
+					Consistently(database.SaveMetricCallCount).Should(Equal(2))
+
+					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
+					Eventually(database.SaveMetricCallCount).Should(Equal(4))
 				})
 			})
 		})
@@ -216,9 +226,10 @@ var _ = Describe("Apppoller", func() {
 						return []*events.Envelope{
 							&events.Envelope{
 								ContainerMetric: &events.ContainerMetric{
-									ApplicationId: proto.String("test-app-id"),
-									InstanceIndex: proto.Int32(0),
-									MemoryBytes:   proto.Uint64(12345678),
+									ApplicationId:    proto.String("test-app-id"),
+									InstanceIndex:    proto.Int32(0),
+									MemoryBytes:      proto.Uint64(100000000),
+									MemoryBytesQuota: proto.Uint64(300000000),
 								},
 							},
 						}, nil

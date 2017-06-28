@@ -68,6 +68,7 @@ var _ = Describe("Evaluator", func() {
 		firstTrigger = models.Trigger{
 			AppId:                 testAppId,
 			MetricType:            testMetricType,
+			MetricUnit:            testMetricUnit,
 			BreachDurationSeconds: 300,
 			CoolDownSeconds:       300,
 			Threshold:             500,
@@ -78,6 +79,7 @@ var _ = Describe("Evaluator", func() {
 		secondTrigger = models.Trigger{
 			AppId:                 testAppId,
 			MetricType:            testMetricType,
+			MetricUnit:            testMetricUnit,
 			BreachDurationSeconds: 300,
 			CoolDownSeconds:       300,
 			Threshold:             500,

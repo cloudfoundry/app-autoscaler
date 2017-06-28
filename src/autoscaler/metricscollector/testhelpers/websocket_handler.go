@@ -3,6 +3,7 @@ package testhelpers
 import (
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -11,10 +12,15 @@ import (
 type websocketHandler struct {
 	messages  <-chan []byte
 	keepAlive time.Duration
+	lock      *sync.Mutex
 }
 
 func NewWebsocketHandler(m <-chan []byte, keepAlive time.Duration) *websocketHandler {
-	return &websocketHandler{messages: m, keepAlive: keepAlive}
+	return &websocketHandler{
+		messages:  m,
+		keepAlive: keepAlive,
+		lock:      &sync.Mutex{},
+	}
 }
 
 func (h *websocketHandler) ServeWebsocket(rw http.ResponseWriter, r *http.Request) {
@@ -39,7 +45,10 @@ func (h *websocketHandler) runWebsocketUntilClosed(ws *websocket.Conn) (closeCod
 
 	go func() {
 		for {
+			h.lock.Lock()
 			_, _, err := ws.ReadMessage()
+			h.lock.Unlock()
+
 			if err != nil {
 				close(clientWentAway)
 				return
@@ -48,7 +57,7 @@ func (h *websocketHandler) runWebsocketUntilClosed(ws *websocket.Conn) (closeCod
 	}()
 
 	go func() {
-		NewKeepAlive(ws, h.keepAlive).Run()
+		NewKeepAlive(h.lock, ws, h.keepAlive).Run()
 		close(keepAliveExpired)
 	}()
 
@@ -75,13 +84,15 @@ func (h *websocketHandler) runWebsocketUntilClosed(ws *websocket.Conn) (closeCod
 }
 
 type KeepAlive struct {
+	lock              *sync.Mutex
 	conn              *websocket.Conn
 	pongChan          chan struct{}
 	keepAliveInterval time.Duration
 }
 
-func NewKeepAlive(conn *websocket.Conn, keepAliveInterval time.Duration) *KeepAlive {
+func NewKeepAlive(lock *sync.Mutex, conn *websocket.Conn, keepAliveInterval time.Duration) *KeepAlive {
 	return &KeepAlive{
+		lock:              lock,
 		conn:              conn,
 		pongChan:          make(chan struct{}, 1),
 		keepAliveInterval: keepAliveInterval,
@@ -89,8 +100,15 @@ func NewKeepAlive(conn *websocket.Conn, keepAliveInterval time.Duration) *KeepAl
 }
 
 func (k *KeepAlive) Run() {
+	k.lock.Lock()
 	k.conn.SetPongHandler(k.pongHandler)
-	defer k.conn.SetPongHandler(nil)
+	k.lock.Unlock()
+
+	defer func() {
+		k.lock.Lock()
+		k.conn.SetPongHandler(nil)
+		k.lock.Unlock()
+	}()
 
 	timeout := time.NewTimer(k.keepAliveInterval)
 	for {

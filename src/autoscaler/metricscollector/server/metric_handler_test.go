@@ -47,7 +47,7 @@ var _ = Describe("MetricHandler", func() {
 		handler = NewMetricHandler(logger, cfc, consumer, database)
 	})
 
-	Describe("GetMemoryMetric", func() {
+	Describe("GetMemoryMetrics", func() {
 		JustBeforeEach(func() {
 			handler.GetMemoryMetric(resp, nil, map[string]string{"appid": "an-app-id"})
 		})
@@ -78,17 +78,19 @@ var _ = Describe("MetricHandler", func() {
 					consumer.ContainerEnvelopesReturns([]*events.Envelope{
 						&events.Envelope{
 							ContainerMetric: &events.ContainerMetric{
-								ApplicationId: proto.String("an-app-id"),
-								InstanceIndex: proto.Int32(0),
-								MemoryBytes:   proto.Uint64(12345678),
+								ApplicationId:    proto.String("an-app-id"),
+								InstanceIndex:    proto.Int32(0),
+								MemoryBytes:      proto.Uint64(100000000),
+								MemoryBytesQuota: proto.Uint64(300000000),
 							},
 							Timestamp: &timestamp,
 						},
 						&events.Envelope{
 							ContainerMetric: &events.ContainerMetric{
-								ApplicationId: proto.String("an-app-id"),
-								InstanceIndex: proto.Int32(1),
-								MemoryBytes:   proto.Uint64(87654321),
+								ApplicationId:    proto.String("an-app-id"),
+								InstanceIndex:    proto.Int32(1),
+								MemoryBytes:      proto.Uint64(200000000),
+								MemoryBytesQuota: proto.Uint64(300000000),
 							},
 							Timestamp: &timestamp,
 						},
@@ -102,23 +104,41 @@ var _ = Describe("MetricHandler", func() {
 					err = json.Unmarshal(resp.Body.Bytes(), &metrics)
 
 					Expect(err).ToNot(HaveOccurred())
-					Expect(metrics).To(HaveLen(2))
+					Expect(metrics).To(HaveLen(4))
 
 					Expect(metrics[0]).To(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
 						"AppId":         Equal("an-app-id"),
 						"InstanceIndex": BeEquivalentTo(0),
-						"Name":          Equal(models.MetricNameMemory),
+						"Name":          Equal(models.MetricNameMemoryUsed),
 						"Unit":          Equal(models.UnitMegaBytes),
-						"Value":         Equal("12"),
+						"Value":         Equal("95"),
 						"Timestamp":     BeEquivalentTo(111111),
 					}))
 
 					Expect(metrics[1]).To(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
 						"AppId":         Equal("an-app-id"),
+						"InstanceIndex": BeEquivalentTo(0),
+						"Name":          Equal(models.MetricNameMemoryUtil),
+						"Unit":          Equal(models.UnitPercentage),
+						"Value":         Equal("33"),
+						"Timestamp":     BeEquivalentTo(111111),
+					}))
+
+					Expect(metrics[2]).To(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+						"AppId":         Equal("an-app-id"),
 						"InstanceIndex": BeEquivalentTo(1),
-						"Name":          Equal(models.MetricNameMemory),
+						"Name":          Equal(models.MetricNameMemoryUsed),
 						"Unit":          Equal(models.UnitMegaBytes),
-						"Value":         Equal("84"),
+						"Value":         Equal("191"),
+						"Timestamp":     BeEquivalentTo(111111),
+					}))
+
+					Expect(metrics[3]).To(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
+						"AppId":         Equal("an-app-id"),
+						"InstanceIndex": BeEquivalentTo(1),
+						"Name":          Equal(models.MetricNameMemoryUtil),
+						"Unit":          Equal(models.UnitPercentage),
+						"Value":         Equal("67"),
 						"Timestamp":     BeEquivalentTo(111111),
 					}))
 

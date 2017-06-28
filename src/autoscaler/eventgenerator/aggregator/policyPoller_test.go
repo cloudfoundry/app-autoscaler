@@ -14,18 +14,18 @@ import (
 
 var _ = Describe("PolicyPoller", func() {
 	var (
-		database   *fakes.FakePolicyDB
-		clock      *fakeclock.FakeClock
-		poller     *PolicyPoller
-		logger     lager.Logger
-		testAppId1 = "testAppId"
-		policyStr1 = `
+		database  *fakes.FakePolicyDB
+		clock     *fakeclock.FakeClock
+		poller    *PolicyPoller
+		logger    lager.Logger
+		testAppId = "testAppId"
+		policyStr = `
 		{
 		   "instance_min_count":1,
 		   "instance_max_count":5,
 		   "scaling_rules":[
 		      {
-		         "metric_type":"memoryused",
+		         "metric_type":"test-metric-name",
 		         "stat_window_secs":300,
 		         "breach_duration_secs":300,
 		         "threshold":30,
@@ -57,7 +57,7 @@ var _ = Describe("PolicyPoller", func() {
 		Context("when the poller is started", func() {
 			BeforeEach(func() {
 				database.RetrievePoliciesStub = func() ([]*models.PolicyJson, error) {
-					return []*models.PolicyJson{{AppId: testAppId1, PolicyStr: policyStr1}}, nil
+					return []*models.PolicyJson{{AppId: testAppId, PolicyStr: policyStr}}, nil
 				}
 
 			})
@@ -70,7 +70,7 @@ var _ = Describe("PolicyPoller", func() {
 			Context("when retrieve policies and compute triggers successfully", func() {
 				BeforeEach(func() {
 					database.RetrievePoliciesStub = func() ([]*models.PolicyJson, error) {
-						return []*models.PolicyJson{{AppId: testAppId1, PolicyStr: policyStr1}}, nil
+						return []*models.PolicyJson{{AppId: testAppId, PolicyStr: policyStr}}, nil
 					}
 				})
 				It("should call the consumer with the new triggers for every interval", func() {
@@ -79,13 +79,13 @@ var _ = Describe("PolicyPoller", func() {
 					clock.Increment(1 * testPolicyPollerInterval)
 					Eventually(database.RetrievePoliciesCallCount).Should(BeNumerically(">=", 2))
 					policyMap := poller.GetPolicies()
-					Expect(policyMap[testAppId1]).To(Equal(&models.AppPolicy{
-						AppId: testAppId1,
+					Expect(policyMap[testAppId]).To(Equal(&models.AppPolicy{
+						AppId: testAppId,
 						ScalingPolicy: &models.ScalingPolicy{
 							InstanceMax: 5,
 							InstanceMin: 1,
 							ScalingRules: []*models.ScalingRule{{
-								MetricType:            models.MetricNameMemory,
+								MetricType:            "test-metric-name",
 								StatWindowSeconds:     300,
 								BreachDurationSeconds: 300,
 								CoolDownSeconds:       300,

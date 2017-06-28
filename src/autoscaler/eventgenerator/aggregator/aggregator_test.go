@@ -28,7 +28,7 @@ var _ = Describe("Aggregator", func() {
 					InstanceMin: 1,
 					ScalingRules: []*models.ScalingRule{
 						{
-							MetricType:            models.MetricNameMemory,
+							MetricType:            "test-metric-name",
 							StatWindowSeconds:     300,
 							BreachDurationSeconds: 300,
 							CoolDownSeconds:       300,

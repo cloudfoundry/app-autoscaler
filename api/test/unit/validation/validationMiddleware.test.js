@@ -62,7 +62,7 @@ describe('Validate Policy JSON Schema structure', function() {
     });
 
   });
-  it('should fail validate policy schema in as instance_min_count value is note in range ', function(done) {
+  it('should fail validate policy schema in as instance_min_count value is not in range ', function(done) {
     fakePolicy.instance_min_count = -1;
     request(app)
     .put('/v1/policies/12343',validationMiddleware)
@@ -117,8 +117,8 @@ describe('Validate Policy JSON Schema structure', function() {
       expect(result.body.success).to.equal(false);
       expect(result.body.error).to.not.be.null;
       expect(result.body.error[0].property).to.equal('instance.scaling_rules[0].threshold');
-      expect(result.body.error[0].message).to.equal('must have a minimum value of 1');
-      expect(result.body.error[0].stack).to.equal('instance.scaling_rules[0].threshold must have a minimum value of 1');
+      expect(result.body.error[0].message).to.equal('must have a minimum value of 0');
+      expect(result.body.error[0].stack).to.equal('instance.scaling_rules[0].threshold must have a minimum value of 0');
       done();
     });
 
@@ -156,6 +156,25 @@ describe('Validate Policy JSON Schema structure', function() {
     });
 
   });
+
+  it('should fail to validate policy schema with not supported metric_type in scaling_rules', function(done) {
+    fakePolicy.scaling_rules[0].metric_type = "not-supported-metric";
+    request(app)
+    .put('/v1/policies/12348',validationMiddleware)
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(400);
+      expect(result.body.success).to.equal(false);
+      expect(result.body.error).to.not.be.null;
+      expect(result.body.error[0].property).to.equal('instance.scaling_rules[0].metric_type');
+      expect(result.body.error[0].message).to.equal('is not one of enum values: memoryused,memoryutil,responsetime,throughput');
+      expect(result.body.error[0].stack).to.equal('instance.scaling_rules[0].metric_type is not one of enum values: memoryused,memoryutil,responsetime,throughput');
+      done();
+    });
+
+  });
+
+
   it('should fail to validate policy schema with wrong adjustment parameter value in scaling_rules', function(done) {
     fakePolicy.scaling_rules[0].adjustment = '10%';
     request(app)

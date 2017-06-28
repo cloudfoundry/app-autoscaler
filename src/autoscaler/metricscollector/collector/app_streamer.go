@@ -83,14 +83,24 @@ func (as *appStreamer) streamMetrics() {
 func (as *appStreamer) processEvent(event *events.Envelope) {
 	if event.GetEventType() == events.Envelope_ContainerMetric {
 		as.logger.Debug("process-event-get-containermetric-event", lager.Data{"event": event})
-		metric := noaa.GetInstanceMemoryMetricFromContainerMetricEvent(as.sclock.Now().UnixNano(), as.appId, event)
-		as.logger.Debug("process-event-get-memory-metric", lager.Data{"metric": metric})
+
+		metric := noaa.GetInstanceMemoryUsedMetricFromContainerMetricEvent(as.sclock.Now().UnixNano(), as.appId, event)
+		as.logger.Debug("process-event-get-memoryused-metric", lager.Data{"metric": metric})
 		if metric != nil {
 			err := as.database.SaveMetric(metric)
 			if err != nil {
 				as.logger.Error("process-event-save-metric", err, lager.Data{"metric": metric})
 			}
 		}
+		metric = noaa.GetInstanceMemoryUtilMetricFromContainerMetricEvent(as.sclock.Now().UnixNano(), as.appId, event)
+		as.logger.Debug("process-event-get-memoryutil-metric", lager.Data{"metric": metric})
+		if metric != nil {
+			err := as.database.SaveMetric(metric)
+			if err != nil {
+				as.logger.Error("process-event-save-metric", err, lager.Data{"metric": metric})
+			}
+		}
+
 	} else if event.GetEventType() == events.Envelope_HttpStartStop {
 		as.logger.Debug("process-event-get-httpstartstop-event", lager.Data{"event": event})
 		ss := event.GetHttpStartStop()
@@ -110,7 +120,7 @@ func (as *appStreamer) computeAndSaveMetrics() {
 				CollectedAt:   as.sclock.Now().UnixNano(),
 				Name:          models.MetricNameThroughput,
 				Unit:          models.UnitRPS,
-				Value:         fmt.Sprintf("%.1f", float64(numReq)/as.collectInterval.Seconds()),
+				Value:         fmt.Sprintf("%d", int(float64(numReq)/as.collectInterval.Seconds()+0.5)),
 				Timestamp:     as.sclock.Now().UnixNano(),
 			}
 			as.logger.Debug("compute-throughput", lager.Data{"throughput": througput})

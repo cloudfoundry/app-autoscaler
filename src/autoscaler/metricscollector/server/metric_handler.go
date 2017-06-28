@@ -49,9 +49,9 @@ func (h *MetricHandler) GetMemoryMetric(w http.ResponseWriter, r *http.Request, 
 			Message: "Error getting memory metrics from doppler"})
 		return
 	}
-	h.logger.Debug("Get-memory-metric-from-noaa", lager.Data{"appId": appId, "containerEnvelopes": containerEnvelopes})
+	h.logger.Debug("Get-memory-metrics-from-noaa", lager.Data{"appId": appId, "containerEnvelopes": containerEnvelopes})
 
-	metrics := noaa.GetInstanceMemoryMetricFromContainerEnvelopes(time.Now().UnixNano(), appId, containerEnvelopes)
+	metrics := noaa.GetInstanceMemoryMetricsFromContainerEnvelopes(time.Now().UnixNano(), appId, containerEnvelopes)
 	var body []byte
 	body, err = json.Marshal(metrics)
 	if err != nil {
