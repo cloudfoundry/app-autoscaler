@@ -90,9 +90,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	ccNOAAUAA.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK,
 		cf.Tokens{}))
 
-	message1 := marshalMessage(createContainerMetric("an-app-id", 0, 3.0, 1024, 2048, 0))
-	message2 := marshalMessage(createContainerMetric("an-app-id", 1, 4.0, 1024, 2048, 0))
-	message3 := marshalMessage(createContainerMetric("an-app-id", 2, 5.0, 1024, 2048, 0))
+	message1 := marshalMessage(createContainerMetric("an-app-id", 0, 3.0, 102400000, 2048000000, 306900000, 3069000000, 1234))
+	message2 := marshalMessage(createContainerMetric("an-app-id", 1, 4.0, 102400000, 2048000000, 306900000, 3069000000, 1234))
+	message3 := marshalMessage(createContainerMetric("an-app-id", 2, 5.0, 102400000, 2048000000, 306900000, 3069000000, 1234))
 
 	messages := map[string][][]byte{}
 	messages["an-app-id"] = [][]byte{message1, message2, message3}
@@ -246,17 +246,19 @@ func (mc *MetricsCollectorRunner) KillWithFire() {
 	}
 }
 
-func createContainerMetric(appId string, instanceIndex int32, cpuPercentage float64, memoryBytes uint64, diskByte uint64, timestamp int64) *events.Envelope {
+func createContainerMetric(appId string, instanceIndex int32, cpuPercentage float64, memoryBytes uint64, diskByte uint64, memQuota uint64, diskQuota uint64, timestamp int64) *events.Envelope {
 	if timestamp == 0 {
 		timestamp = time.Now().UnixNano()
 	}
 
 	cm := &events.ContainerMetric{
-		ApplicationId: proto.String(appId),
-		InstanceIndex: proto.Int32(instanceIndex),
-		CpuPercentage: proto.Float64(cpuPercentage),
-		MemoryBytes:   proto.Uint64(memoryBytes),
-		DiskBytes:     proto.Uint64(diskByte),
+		ApplicationId:    proto.String(appId),
+		InstanceIndex:    proto.Int32(instanceIndex),
+		CpuPercentage:    proto.Float64(cpuPercentage),
+		MemoryBytes:      proto.Uint64(memoryBytes),
+		DiskBytes:        proto.Uint64(diskByte),
+		MemoryBytesQuota: proto.Uint64(memQuota),
+		DiskBytesQuota:   proto.Uint64(diskQuota),
 	}
 
 	return &events.Envelope{

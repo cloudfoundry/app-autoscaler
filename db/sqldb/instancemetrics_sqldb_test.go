@@ -17,18 +17,22 @@ import (
 
 var _ = Describe("InstancemetricsSqldb", func() {
 	var (
-		url        string
-		idb        *InstanceMetricsSQLDB
-		logger     lager.Logger
-		err        error
-		metric     *models.AppInstanceMetric
-		mtrcs      []*models.AppInstanceMetric
-		start      int64
-		end        int64
-		orderType  db.OrderType
-		before     int64
-		appId      string
-		metricName string
+		url       string
+		idb       *InstanceMetricsSQLDB
+		logger    lager.Logger
+		err       error
+		metric    *models.AppInstanceMetric
+		mtrcs     []*models.AppInstanceMetric
+		start     int64
+		end       int64
+		before    int64
+		orderType db.OrderType
+
+		appId          string
+		metricName     string
+		testAppId      string = "Test-App-ID"
+		testMetricName string = "TestMetricType"
+		testMetricUnit string = "TestMetricUnit"
 	)
 
 	BeforeEach(func() {
@@ -81,11 +85,11 @@ var _ = Describe("InstancemetricsSqldb", func() {
 		Context("When inserting a metric", func() {
 			BeforeEach(func() {
 				metric = &models.AppInstanceMetric{
-					AppId:         "test-app-id",
+					AppId:         testAppId,
 					InstanceIndex: 0,
 					CollectedAt:   111111,
-					Name:          models.MetricNameMemory,
-					Unit:          models.UnitMegaBytes,
+					Name:          testMetricName,
+					Unit:          testMetricUnit,
 					Value:         "123",
 					Timestamp:     110000,
 				}
@@ -94,16 +98,16 @@ var _ = Describe("InstancemetricsSqldb", func() {
 
 			It("has the metric in database", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(hasInstanceMetric("test-app-id", 0, models.MetricNameMemory, 110000)).To(BeTrue())
+				Expect(hasInstanceMetric(testAppId, 0, testMetricName, 110000)).To(BeTrue())
 			})
 		})
 
 		Context("When inserting multiple metrics", func() {
 			BeforeEach(func() {
 				metric = &models.AppInstanceMetric{
-					AppId: "test-app-id",
-					Name:  models.MetricNameMemory,
-					Unit:  models.UnitMegaBytes,
+					AppId: testAppId,
+					Name:  testMetricName,
+					Unit:  testMetricUnit,
 				}
 				metric.InstanceIndex = 0
 				metric.CollectedAt = 111111
@@ -128,9 +132,9 @@ var _ = Describe("InstancemetricsSqldb", func() {
 			})
 
 			It("has all the metrics in database", func() {
-				Expect(hasInstanceMetric("test-app-id", 0, models.MetricNameMemory, 111100)).To(BeTrue())
-				Expect(hasInstanceMetric("test-app-id", 1, models.MetricNameMemory, 110000)).To(BeTrue())
-				Expect(hasInstanceMetric("test-app-id", 0, models.MetricNameMemory, 220000)).To(BeTrue())
+				Expect(hasInstanceMetric(testAppId, 0, testMetricName, 111100)).To(BeTrue())
+				Expect(hasInstanceMetric(testAppId, 1, testMetricName, 110000)).To(BeTrue())
+				Expect(hasInstanceMetric(testAppId, 0, testMetricName, 220000)).To(BeTrue())
 			})
 		})
 	})
@@ -142,9 +146,9 @@ var _ = Describe("InstancemetricsSqldb", func() {
 			cleanInstanceMetricsTable()
 
 			metric = &models.AppInstanceMetric{
-				AppId: "test-app-id",
-				Name:  models.MetricNameMemory,
-				Unit:  models.UnitMegaBytes,
+				AppId: testAppId,
+				Name:  testMetricName,
+				Unit:  testMetricUnit,
 			}
 
 			metric.InstanceIndex = 0
@@ -177,8 +181,8 @@ var _ = Describe("InstancemetricsSqldb", func() {
 
 			start = 0
 			end = -1
-			appId = "test-app-id"
-			metricName = models.MetricNameMemory
+			appId = testAppId
+			metricName = testMetricName
 			orderType = db.DESC
 
 		})
@@ -223,31 +227,31 @@ var _ = Describe("InstancemetricsSqldb", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(mtrcs).To(HaveLen(3))
 				Expect(*mtrcs[0]).To(gstruct.MatchAllFields(gstruct.Fields{
-					"AppId":         Equal("test-app-id"),
+					"AppId":         Equal(testAppId),
 					"InstanceIndex": BeEquivalentTo(1),
 					"CollectedAt":   BeEquivalentTo(111111),
-					"Name":          Equal(models.MetricNameMemory),
-					"Unit":          Equal(models.UnitMegaBytes),
+					"Name":          Equal(testMetricName),
+					"Unit":          Equal(testMetricUnit),
 					"Value":         Equal("214365"),
 					"Timestamp":     BeEquivalentTo(110000),
 				}))
 
 				Expect(*mtrcs[1]).To(gstruct.MatchAllFields(gstruct.Fields{
-					"AppId":         Equal("test-app-id"),
+					"AppId":         Equal(testAppId),
 					"InstanceIndex": BeEquivalentTo(0),
 					"CollectedAt":   BeNumerically(">=", 111111),
-					"Name":          Equal(models.MetricNameMemory),
-					"Unit":          Equal(models.UnitMegaBytes),
+					"Name":          Equal(testMetricName),
+					"Unit":          Equal(testMetricUnit),
 					"Value":         Equal("654321"),
 					"Timestamp":     BeEquivalentTo(111100),
 				}))
 
 				Expect(*mtrcs[2]).To(gstruct.MatchAllFields(gstruct.Fields{
-					"AppId":         Equal("test-app-id"),
+					"AppId":         Equal(testAppId),
 					"InstanceIndex": BeEquivalentTo(1),
 					"CollectedAt":   BeEquivalentTo(222222),
-					"Name":          Equal(models.MetricNameMemory),
-					"Unit":          Equal(models.UnitMegaBytes),
+					"Name":          Equal(testMetricName),
+					"Unit":          Equal(testMetricUnit),
 					"Value":         Equal("321765"),
 					"Timestamp":     BeEquivalentTo(222200),
 				}))
@@ -259,31 +263,31 @@ var _ = Describe("InstancemetricsSqldb", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(mtrcs).To(HaveLen(3))
 				Expect(*mtrcs[2]).To(gstruct.MatchAllFields(gstruct.Fields{
-					"AppId":         Equal("test-app-id"),
+					"AppId":         Equal(testAppId),
 					"InstanceIndex": BeEquivalentTo(1),
 					"CollectedAt":   BeEquivalentTo(111111),
-					"Name":          Equal(models.MetricNameMemory),
-					"Unit":          Equal(models.UnitMegaBytes),
+					"Name":          Equal(testMetricName),
+					"Unit":          Equal(testMetricUnit),
 					"Value":         Equal("214365"),
 					"Timestamp":     BeEquivalentTo(110000),
 				}))
 
 				Expect(*mtrcs[1]).To(gstruct.MatchAllFields(gstruct.Fields{
-					"AppId":         Equal("test-app-id"),
+					"AppId":         Equal(testAppId),
 					"InstanceIndex": BeEquivalentTo(0),
 					"CollectedAt":   BeNumerically(">=", 111111),
-					"Name":          Equal(models.MetricNameMemory),
-					"Unit":          Equal(models.UnitMegaBytes),
+					"Name":          Equal(testMetricName),
+					"Unit":          Equal(testMetricUnit),
 					"Value":         Equal("654321"),
 					"Timestamp":     BeEquivalentTo(111100),
 				}))
 
 				Expect(*mtrcs[0]).To(gstruct.MatchAllFields(gstruct.Fields{
-					"AppId":         Equal("test-app-id"),
+					"AppId":         Equal(testAppId),
 					"InstanceIndex": BeEquivalentTo(1),
 					"CollectedAt":   BeEquivalentTo(222222),
-					"Name":          Equal(models.MetricNameMemory),
-					"Unit":          Equal(models.UnitMegaBytes),
+					"Name":          Equal(testMetricName),
+					"Unit":          Equal(testMetricUnit),
 					"Value":         Equal("321765"),
 					"Timestamp":     BeEquivalentTo(222200),
 				}))
@@ -351,20 +355,20 @@ var _ = Describe("InstancemetricsSqldb", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(mtrcs).To(HaveLen(2))
 				Expect(*mtrcs[1]).To(gstruct.MatchAllFields(gstruct.Fields{
-					"AppId":         Equal("test-app-id"),
+					"AppId":         Equal(testAppId),
 					"InstanceIndex": BeEquivalentTo(0),
 					"CollectedAt":   BeNumerically(">=", 111111),
-					"Name":          Equal(models.MetricNameMemory),
-					"Unit":          Equal(models.UnitMegaBytes),
+					"Name":          Equal(testMetricName),
+					"Unit":          Equal(testMetricUnit),
 					"Value":         Equal("654321"),
 					"Timestamp":     BeEquivalentTo(111100),
 				}))
 				Expect(*mtrcs[0]).To(gstruct.MatchAllFields(gstruct.Fields{
-					"AppId":         Equal("test-app-id"),
+					"AppId":         Equal(testAppId),
 					"InstanceIndex": BeEquivalentTo(1),
 					"CollectedAt":   BeEquivalentTo(222222),
-					"Name":          Equal(models.MetricNameMemory),
-					"Unit":          Equal(models.UnitMegaBytes),
+					"Name":          Equal(testMetricName),
+					"Unit":          Equal(testMetricUnit),
 					"Value":         Equal("321765"),
 					"Timestamp":     BeEquivalentTo(222200),
 				}))
@@ -391,9 +395,9 @@ var _ = Describe("InstancemetricsSqldb", func() {
 			cleanInstanceMetricsTable()
 
 			metric = &models.AppInstanceMetric{
-				AppId: "test-app-id",
-				Name:  models.MetricNameMemory,
-				Unit:  models.UnitMegaBytes,
+				AppId: testAppId,
+				Name:  testMetricName,
+				Unit:  testMetricUnit,
 			}
 
 			metric.InstanceIndex = 0
