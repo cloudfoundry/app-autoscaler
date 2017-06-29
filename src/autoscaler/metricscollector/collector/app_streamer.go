@@ -119,7 +119,7 @@ func (as *appStreamer) computeAndSaveMetrics() {
 			CollectedAt:   as.sclock.Now().UnixNano(),
 			Name:          models.MetricNameThroughput,
 			Unit:          models.UnitRPS,
-			Value:         "0.0",
+			Value:         "0",
 			Timestamp:     as.sclock.Now().UnixNano(),
 		}
 		as.logger.Debug("compute-throughput", lager.Data{"message": "write 0 throughput due to no requests"})
@@ -131,7 +131,7 @@ func (as *appStreamer) computeAndSaveMetrics() {
 	}
 
 	for instanceIdx, numReq := range as.numRequests {
-		througput := &models.AppInstanceMetric{
+		throughput := &models.AppInstanceMetric{
 			AppId:         as.appId,
 			InstanceIndex: uint32(instanceIdx),
 			CollectedAt:   as.sclock.Now().UnixNano(),
@@ -140,7 +140,12 @@ func (as *appStreamer) computeAndSaveMetrics() {
 			Value:         fmt.Sprintf("%d", int(float64(numReq)/as.collectInterval.Seconds()+0.5)),
 			Timestamp:     as.sclock.Now().UnixNano(),
 		}
-		as.logger.Debug("compute-throughput", lager.Data{"throughput": througput})
+		as.logger.Debug("compute-throughput", lager.Data{"throughput": throughput})
+
+		err := as.database.SaveMetric(throughput)
+		if err != nil {
+			as.logger.Error("save-metric-to-database", err, lager.Data{"throughput": throughput})
+		}
 
 		responseTime := &models.AppInstanceMetric{
 			AppId:         as.appId,

@@ -119,7 +119,7 @@ var _ = Describe("AppStreamer", func() {
 				By("save throughput after the collect interval")
 				fclock.WaitForWatcherAndIncrement(TestCollectInterval)
 				Eventually(database.SaveMetricCallCount).Should(Equal(5))
-				Expect(database.SaveMetricArgsForCall(2)).To(Equal(&models.AppInstanceMetric{
+				Expect(database.SaveMetricArgsForCall(4)).To(Equal(&models.AppInstanceMetric{
 					AppId:         "an-app-id",
 					InstanceIndex: 0,
 					CollectedAt:   fclock.Now().UnixNano(),
@@ -267,7 +267,7 @@ var _ = Describe("AppStreamer", func() {
 					CollectedAt:   fclock.Now().UnixNano(),
 					Name:          models.MetricNameThroughput,
 					Unit:          models.UnitRPS,
-					Value:         "0.0",
+					Value:         "0",
 					Timestamp:     fclock.Now().UnixNano(),
 				}))
 			})
