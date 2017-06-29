@@ -72,7 +72,7 @@ var _ = Describe("AppStreamer", func() {
 					msgChan <- noaa.NewContainerEnvelope(222222, "an-app-id", 1, 30.6, 200000000, 1000000000, 300000000, 2000000000)
 				}()
 			})
-			It("Saves metrics to database", func() {
+			It("Saves memory and throughput metrics to database", func() {
 				Eventually(database.SaveMetricCallCount).Should(Equal(4))
 				Expect(database.SaveMetricArgsForCall(0)).To(Equal(&models.AppInstanceMetric{
 					AppId:         "an-app-id",
@@ -113,7 +113,23 @@ var _ = Describe("AppStreamer", func() {
 					Timestamp:     222222,
 				}))
 
+				By("collecting and computing throughput")
+				Consistently(database.SaveMetricCallCount).Should(Equal(4))
+
+				By("save throughput after the collect interval")
+				fclock.WaitForWatcherAndIncrement(TestCollectInterval)
+				Eventually(database.SaveMetricCallCount).Should(Equal(5))
+				Expect(database.SaveMetricArgsForCall(4)).To(Equal(&models.AppInstanceMetric{
+					AppId:         "an-app-id",
+					InstanceIndex: 0,
+					CollectedAt:   fclock.Now().UnixNano(),
+					Name:          models.MetricNameThroughput,
+					Unit:          models.UnitRPS,
+					Value:         "0",
+					Timestamp:     fclock.Now().UnixNano(),
+				}))
 			})
+
 			Context("when saving to database fails", func() {
 				BeforeEach(func() {
 					database.SaveMetricReturns(errors.New("an error"))
@@ -126,7 +142,7 @@ var _ = Describe("AppStreamer", func() {
 		})
 
 		Context("when there are httpstartstop events", func() {
-			It("Saves metrics to database with the given time interval", func() {
+			It("Saves throughput and responsetime metrics to database with the given time interval", func() {
 				go func() {
 					msgChan <- noaa.NewHttpStartStopEnvelope(111111, 100000000, 200000000, 0)
 					msgChan <- noaa.NewHttpStartStopEnvelope(222222, 300000000, 600000000, 0)
@@ -238,9 +254,22 @@ var _ = Describe("AppStreamer", func() {
 					msgChan <- &events.Envelope{EventType: &eventType}
 				}()
 			})
-			It("Saves nothing to database", func() {
+			It("Saves throughput metric to database", func() {
+				By("collecting and computing throughput")
+				Consistently(database.SaveMetricCallCount).Should(Equal(0))
+
+				By("save throughput after the collect interval")
 				fclock.WaitForWatcherAndIncrement(TestCollectInterval)
-				Consistently(database.SaveMetricCallCount).Should(BeZero())
+				Eventually(database.SaveMetricCallCount).Should(Equal(1))
+				Expect(database.SaveMetricArgsForCall(0)).To(Equal(&models.AppInstanceMetric{
+					AppId:         "an-app-id",
+					InstanceIndex: 0,
+					CollectedAt:   fclock.Now().UnixNano(),
+					Name:          models.MetricNameThroughput,
+					Unit:          models.UnitRPS,
+					Value:         "0",
+					Timestamp:     fclock.Now().UnixNano(),
+				}))
 			})
 		})
 		Context("when there is error  streaming events", func() {

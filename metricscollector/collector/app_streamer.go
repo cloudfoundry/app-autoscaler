@@ -112,40 +112,55 @@ func (as *appStreamer) processEvent(event *events.Envelope) {
 }
 
 func (as *appStreamer) computeAndSaveMetrics() {
+	if len(as.numRequests) == 0 {
+		throughput := &models.AppInstanceMetric{
+			AppId:         as.appId,
+			InstanceIndex: 0,
+			CollectedAt:   as.sclock.Now().UnixNano(),
+			Name:          models.MetricNameThroughput,
+			Unit:          models.UnitRPS,
+			Value:         "0",
+			Timestamp:     as.sclock.Now().UnixNano(),
+		}
+		as.logger.Debug("compute-throughput", lager.Data{"message": "write 0 throughput due to no requests"})
+		err := as.database.SaveMetric(throughput)
+		if err != nil {
+			as.logger.Error("save-metric-to-database", err, lager.Data{"throughput": throughput})
+		}
+		return
+	}
+
 	for instanceIdx, numReq := range as.numRequests {
-		if numReq != 0 {
-			througput := &models.AppInstanceMetric{
-				AppId:         as.appId,
-				InstanceIndex: uint32(instanceIdx),
-				CollectedAt:   as.sclock.Now().UnixNano(),
-				Name:          models.MetricNameThroughput,
-				Unit:          models.UnitRPS,
-				Value:         fmt.Sprintf("%d", int(float64(numReq)/as.collectInterval.Seconds()+0.5)),
-				Timestamp:     as.sclock.Now().UnixNano(),
-			}
-			as.logger.Debug("compute-throughput", lager.Data{"throughput": througput})
+		throughput := &models.AppInstanceMetric{
+			AppId:         as.appId,
+			InstanceIndex: uint32(instanceIdx),
+			CollectedAt:   as.sclock.Now().UnixNano(),
+			Name:          models.MetricNameThroughput,
+			Unit:          models.UnitRPS,
+			Value:         fmt.Sprintf("%d", int(float64(numReq)/as.collectInterval.Seconds()+0.5)),
+			Timestamp:     as.sclock.Now().UnixNano(),
+		}
+		as.logger.Debug("compute-throughput", lager.Data{"throughput": throughput})
 
-			responseTime := &models.AppInstanceMetric{
-				AppId:         as.appId,
-				InstanceIndex: uint32(instanceIdx),
-				CollectedAt:   as.sclock.Now().UnixNano(),
-				Name:          models.MetricNameResponseTime,
-				Unit:          models.UnitMilliseconds,
-				Value:         fmt.Sprintf("%d", as.sumReponseTimes[instanceIdx]/(numReq*1000*1000)),
-				Timestamp:     as.sclock.Now().UnixNano(),
-			}
-			as.logger.Debug("compute-responsetime", lager.Data{"responsetime": responseTime})
+		err := as.database.SaveMetric(throughput)
+		if err != nil {
+			as.logger.Error("save-metric-to-database", err, lager.Data{"throughput": throughput})
+		}
 
-			err := as.database.SaveMetric(througput)
-			if err != nil {
-				as.logger.Error("save-metric-to-database", err, lager.Data{"throughput": througput})
-			}
+		responseTime := &models.AppInstanceMetric{
+			AppId:         as.appId,
+			InstanceIndex: uint32(instanceIdx),
+			CollectedAt:   as.sclock.Now().UnixNano(),
+			Name:          models.MetricNameResponseTime,
+			Unit:          models.UnitMilliseconds,
+			Value:         fmt.Sprintf("%d", as.sumReponseTimes[instanceIdx]/(numReq*1000*1000)),
+			Timestamp:     as.sclock.Now().UnixNano(),
+		}
+		as.logger.Debug("compute-responsetime", lager.Data{"responsetime": responseTime})
 
-			err = as.database.SaveMetric(responseTime)
-			if err != nil {
-				as.logger.Error("save-metric-to-database", err, lager.Data{"responsetime": responseTime})
-			}
-
+		err = as.database.SaveMetric(responseTime)
+		if err != nil {
+			as.logger.Error("save-metric-to-database", err, lager.Data{"responsetime": responseTime})
 		}
 	}
 
