@@ -73,7 +73,7 @@ module.exports = function(app, settings, catalog) {
                 switch(statusCode){
                   case 200:
                   case 201:
-                    commitTransaction(t, res, statusCode, {});
+                    commitTransaction(t, res, statusCode, {credentials: {}});
                     return;
                   case 400:
                     rollbackTransaction(t, res, statusCode, {error: response.body.error});
