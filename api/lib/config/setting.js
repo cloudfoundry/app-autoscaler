@@ -4,7 +4,7 @@ module.exports = function(settingsObj) {
   var settingObj = {};
   var db = function(dbUri) {
     if (dbUri != null) {
-      let uri = dbUri.replace(/\/$/g, "").toLowerCase();
+      let uri = dbUri.replace(/\/$/g, "");
       let name = uri.slice(uri.lastIndexOf("/") + 1, uri.length);
       let server = uri.slice(0, uri.lastIndexOf("/"));
       return {
