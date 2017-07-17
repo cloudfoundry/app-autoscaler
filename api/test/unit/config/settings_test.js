@@ -232,12 +232,6 @@ describe('config setting Test Suite', function() {
         expect(dbSetting.name).to.equal("dbname");
       });
 
-      context('When the db.uri is mixed case', function() {
-        it('Should be lowercased', function() {
-          var dbSetting = configSetting({ db: { uri: defaultConfig.db.uri.toUpperCase() }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls } }).db;
-          expect(dbSetting.uri).to.equal(defaultConfig.db.uri);
-        });
-      });
     });
 
     context('scheduler.uri', function() {
