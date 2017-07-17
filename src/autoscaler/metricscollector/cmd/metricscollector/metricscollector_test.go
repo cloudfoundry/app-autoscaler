@@ -31,7 +31,9 @@ import (
 var _ = Describe("MetricsCollector", func() {
 	var (
 		runner       *MetricsCollectorRunner
+		secondRunner *MetricsCollectorRunner
 		consulClient consuladapter.Client
+		consulConfig config.Config
 	)
 
 	BeforeEach(func() {
@@ -44,198 +46,201 @@ var _ = Describe("MetricsCollector", func() {
 		runner.KillWithFire()
 	})
 
-	Context("when the metricscollector acquires the lock", func() {
-		BeforeEach(func() {
-			runner.startCheck = ""
-			runner.Start()
+	Describe("Using consul distributed lock", func() {
 
-			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say(runner.acquiredLockCheck))
-		})
-
-		It("registers itself with consul", func() {
-			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.registration-runner.succeeded-registering-service"))
-
-			services, err := consulClient.Agent().Services()
-			Expect(err).ToNot(HaveOccurred())
-
-			Expect(services).To(HaveKeyWithValue("metricscollector",
-				&api.AgentService{
-					Service: "metricscollector",
-					ID:      "metricscollector",
-					Port:    cfg.Server.Port,
-				}))
-		})
-
-		It("registers a TTL healthcheck", func() {
-			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.registration-runner.succeeded-registering-service"))
-
-			checks, err := consulClient.Agent().Checks()
-			Expect(err).ToNot(HaveOccurred())
-
-			Expect(checks).To(HaveKeyWithValue("service:metricscollector",
-				&api.AgentCheck{
-					Node:        "0",
-					CheckID:     "service:metricscollector",
-					Name:        "Service 'metricscollector' check",
-					Status:      "passing",
-					ServiceID:   "metricscollector",
-					ServiceName: "metricscollector",
-				}))
-		})
-
-		It("should start", func() {
-			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.collector.collector-started"))
-			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.started"))
-			Consistently(runner.Session).ShouldNot(Exit())
-		})
-	})
-
-	Context("when the metricscollector loses the lock", func() {
-		BeforeEach(func() {
-			runner.startCheck = ""
-			runner.Start()
-
-			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say(runner.acquiredLockCheck))
-			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.started"))
-
-			consulRunner.Reset()
-		})
-
-		It("exits with failure", func() {
-			Eventually(runner.Session.Buffer, 4*time.Second).Should(gbytes.Say("exited-with-failure"))
-			Eventually(runner.Session).Should(Exit(1))
-		})
-	})
-
-	Context("when the metricscollector initially does not have the lock", func() {
-		var competingMetricsCollectorProcess ifrit.Process
-
-		BeforeEach(func() {
-			logger := lagertest.NewTestLogger("competing-process")
-			buffer := logger.Buffer()
-
-			competingMetricsCollectorLock := locket.NewLock(logger, consulClient, metricscollector.MetricsCollectorLockSchemaPath(), []byte{}, clock.NewClock(), cfg.Lock.LockRetryInterval, cfg.Lock.LockTTL)
-			competingMetricsCollectorProcess = ifrit.Invoke(competingMetricsCollectorLock)
-			Eventually(buffer, 2*time.Second).Should(gbytes.Say("competing-process.lock.acquire-lock-succeeded"))
-
-			runner.startCheck = ""
-			runner.Start()
-		})
-
-		It("should not start", func() {
-			Consistently(runner.Session.Buffer, 2*time.Second).ShouldNot(gbytes.Say("metricscollector.collector.collector-started"))
-			Consistently(runner.Session.Buffer, 2*time.Second).ShouldNot(gbytes.Say("metricscollector.registration-runner"))
-			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.lock.acquiring-lock"))
-			Consistently(runner.Session.Buffer, 2*time.Second).ShouldNot(gbytes.Say("metricscollector.started"))
-		})
-
-		Describe("when the lock becomes available", func() {
+		Context("when the metricscollector acquires the lock", func() {
 			BeforeEach(func() {
-				ginkgomon.Kill(competingMetricsCollectorProcess)
+				runner.startCheck = ""
+				runner.Start()
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say(runner.acquiredLockCheck))
 			})
 
-			It("acquires the lock and starts", func() {
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say(runner.acquiredLockCheck))
+			It("registers itself with consul", func() {
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.registration-runner.succeeded-registering-service"))
+
+				services, err := consulClient.Agent().Services()
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(services).To(HaveKeyWithValue("metricscollector",
+					&api.AgentService{
+						Service: "metricscollector",
+						ID:      "metricscollector",
+						Port:    cfg.Server.Port,
+					}))
+			})
+
+			It("registers a TTL healthcheck", func() {
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.registration-runner.succeeded-registering-service"))
+
+				checks, err := consulClient.Agent().Checks()
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(checks).To(HaveKeyWithValue("service:metricscollector",
+					&api.AgentCheck{
+						Node:        "0",
+						CheckID:     "service:metricscollector",
+						Name:        "Service 'metricscollector' check",
+						Status:      "passing",
+						ServiceID:   "metricscollector",
+						ServiceName: "metricscollector",
+					}))
+			})
+
+			It("should start", func() {
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.collector.collector-started"))
 				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.started"))
 				Consistently(runner.Session).ShouldNot(Exit())
 			})
+		})
 
+		Context("when the metricscollector loses the lock", func() {
+			BeforeEach(func() {
+				runner.startCheck = ""
+				runner.Start()
+
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say(runner.acquiredLockCheck))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.started"))
+
+				consulRunner.Reset()
+			})
+
+			It("exits with failure", func() {
+				Eventually(runner.Session.Buffer, 4*time.Second).Should(gbytes.Say("exited-with-failure"))
+				Eventually(runner.Session).Should(Exit(1))
+			})
+		})
+
+		Context("when the metricscollector initially does not have the lock", func() {
+			var competingMetricsCollectorProcess ifrit.Process
+
+			BeforeEach(func() {
+				logger := lagertest.NewTestLogger("competing-process")
+				buffer := logger.Buffer()
+
+				competingMetricsCollectorLock := locket.NewLock(logger, consulClient, metricscollector.MetricsCollectorLockSchemaPath(), []byte{}, clock.NewClock(), cfg.Lock.LockRetryInterval, cfg.Lock.LockTTL)
+				competingMetricsCollectorProcess = ifrit.Invoke(competingMetricsCollectorLock)
+				Eventually(buffer, 2*time.Second).Should(gbytes.Say("competing-process.lock.acquire-lock-succeeded"))
+
+				runner.startCheck = ""
+				runner.Start()
+			})
+
+			It("should not start", func() {
+				Consistently(runner.Session.Buffer, 2*time.Second).ShouldNot(gbytes.Say("metricscollector.collector.collector-started"))
+				Consistently(runner.Session.Buffer, 2*time.Second).ShouldNot(gbytes.Say("metricscollector.registration-runner"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.lock.acquiring-lock"))
+				Consistently(runner.Session.Buffer, 2*time.Second).ShouldNot(gbytes.Say("metricscollector.started"))
+			})
+
+			Describe("when the lock becomes available", func() {
+				BeforeEach(func() {
+					ginkgomon.Kill(competingMetricsCollectorProcess)
+				})
+
+				It("acquires the lock and starts", func() {
+					Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say(runner.acquiredLockCheck))
+					Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.started"))
+					Consistently(runner.Session).ShouldNot(Exit())
+				})
+
+			})
+		})
+		Context("when an interrupt is sent", func() {
+			BeforeEach(func() {
+				runner.Start()
+			})
+
+			It("should stop", func() {
+				runner.Session.Interrupt()
+				Eventually(runner.Session, 5).Should(Exit(0))
+			})
 		})
 	})
 
-	Context("with a missing config file", func() {
-		BeforeEach(func() {
-			runner.startCheck = ""
-			runner.configPath = "bogus"
-			runner.Start()
+	Describe("Metricscollector configuration check", func() {
+
+		Context("with a missing config file", func() {
+			BeforeEach(func() {
+				runner.startCheck = ""
+				runner.configPath = "bogus"
+				runner.Start()
+			})
+
+			It("fails with an error", func() {
+				Eventually(runner.Session).Should(Exit(1))
+				Expect(runner.Session.Buffer()).To(Say("failed to open config file"))
+			})
 		})
 
-		It("fails with an error", func() {
-			Eventually(runner.Session).Should(Exit(1))
-			Expect(runner.Session.Buffer()).To(Say("failed to open config file"))
-		})
-	})
+		Context("with an invalid config file", func() {
+			BeforeEach(func() {
+				runner.startCheck = ""
+				badfile, err := ioutil.TempFile("", "bad-mc-config")
+				Expect(err).NotTo(HaveOccurred())
+				runner.configPath = badfile.Name()
+				ioutil.WriteFile(runner.configPath, []byte("bogus"), os.ModePerm)
+				runner.Start()
+			})
 
-	Context("with an invalid config file", func() {
-		BeforeEach(func() {
-			runner.startCheck = ""
-			badfile, err := ioutil.TempFile("", "bad-mc-config")
-			Expect(err).NotTo(HaveOccurred())
-			runner.configPath = badfile.Name()
-			ioutil.WriteFile(runner.configPath, []byte("bogus"), os.ModePerm)
-			runner.Start()
-		})
+			AfterEach(func() {
+				os.Remove(runner.configPath)
+			})
 
-		AfterEach(func() {
-			os.Remove(runner.configPath)
-		})
-
-		It("fails with an error", func() {
-			Eventually(runner.Session).Should(Exit(1))
-			Expect(runner.Session.Buffer()).To(Say("failed to read config file"))
-		})
-	})
-
-	Context("with missing configuration", func() {
-		BeforeEach(func() {
-			runner.startCheck = ""
-			missingConfig := cfg
-			missingConfig.Cf = cf.CfConfig{
-				Api: ccNOAAUAA.URL(),
-			}
-
-			missingConfig.Server.Port = 7000 + GinkgoParallelNode()
-			missingConfig.Logging.Level = "debug"
-			runner.configPath = writeConfig(&missingConfig).Name()
-			runner.Start()
+			It("fails with an error", func() {
+				Eventually(runner.Session).Should(Exit(1))
+				Expect(runner.Session.Buffer()).To(Say("failed to read config file"))
+			})
 		})
 
-		AfterEach(func() {
-			os.Remove(runner.configPath)
+		Context("with missing configuration", func() {
+			BeforeEach(func() {
+				runner.startCheck = ""
+				missingConfig := cfg
+				missingConfig.Cf = cf.CfConfig{
+					Api: ccNOAAUAA.URL(),
+				}
+
+				missingConfig.Server.Port = 7000 + GinkgoParallelNode()
+				missingConfig.Logging.Level = "debug"
+				runner.configPath = writeConfig(&missingConfig).Name()
+				runner.Start()
+			})
+
+			AfterEach(func() {
+				os.Remove(runner.configPath)
+			})
+
+			It("should fail validation", func() {
+				Eventually(runner.Session).Should(Exit(1))
+				Expect(runner.Session.Buffer()).To(Say("failed to validate configuration"))
+			})
 		})
 
-		It("should fail validation", func() {
-			Eventually(runner.Session).Should(Exit(1))
-			Expect(runner.Session.Buffer()).To(Say("failed to validate configuration"))
-		})
-	})
+		Context("when no consul is configured", func() {
+			BeforeEach(func() {
+				noConsulConf := cfg
+				noConsulConf.Lock.ConsulClusterConfig = ""
+				runner.configPath = writeConfig(&noConsulConf).Name()
+				runner.startCheck = ""
+				runner.Start()
+			})
 
-	Context("when no consul is configured", func() {
-		BeforeEach(func() {
-			noConsulConf := cfg
-			noConsulConf.Lock.ConsulClusterConfig = ""
-			runner.configPath = writeConfig(&noConsulConf).Name()
-			runner.startCheck = ""
-			runner.Start()
-		})
+			AfterEach(func() {
+				os.Remove(runner.configPath)
+			})
 
-		AfterEach(func() {
-			os.Remove(runner.configPath)
-		})
+			It("should not get metricscollector service", func() {
+				Eventually(func() map[string]*api.AgentService {
+					services, err := consulClient.Agent().Services()
+					Expect(err).ToNot(HaveOccurred())
+					return services
+				}).ShouldNot(HaveKey("metricscollector"))
+			})
 
-		It("should not get metricscollector service", func() {
-			Eventually(func() map[string]*api.AgentService {
-				services, err := consulClient.Agent().Services()
-				Expect(err).ToNot(HaveOccurred())
-				return services
-			}).ShouldNot(HaveKey("metricscollector"))
-		})
-
-		It("should start", func() {
-			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.started"))
-			Consistently(runner.Session).ShouldNot(Exit())
-		})
-
-	})
-
-	Context("when an interrupt is sent", func() {
-		BeforeEach(func() {
-			runner.Start()
-		})
-
-		It("should stop", func() {
-			runner.Session.Interrupt()
-			Eventually(runner.Session, 5).Should(Exit(0))
+			It("should start", func() {
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.started"))
+				Consistently(runner.Session).ShouldNot(Exit())
+			})
 		})
 	})
 
@@ -307,6 +312,158 @@ var _ = Describe("MetricsCollector", func() {
 			})
 		})
 
+	})
+
+	Describe("Using Database lock", func() {
+
+		BeforeEach(func() {
+			consulConfig = cfg
+			consulConfig.EnableDBLock = true
+			consulConfig.Lock.ConsulClusterConfig = ""
+			runner.startCheck = ""
+			runner.configPath = writeConfig(&consulConfig).Name()
+		})
+
+		AfterEach(func() {
+			runner.ClearLockDatabase()
+		})
+
+		Context("when metricscollector acquires the lock in first attempt", func() {
+			BeforeEach(func() {
+				runner.Start()
+			})
+
+			It("successfully acquired lock and started", func() {
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.lock-acquired-in-first-attempt"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.started"))
+			})
+		})
+
+		Context("when metricscollector have the lock", func() {
+			BeforeEach(func() {
+				runner.Start()
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.started"))
+			})
+
+			It("should retry acquiring lock to renew it's presence", func() {
+				Eventually(runner.Session.Buffer, 8*time.Second).Should(gbytes.Say("metricscollector.retry-acquiring-lock"))
+
+			})
+		})
+
+		Context("when interrupt occurs", func() {
+			BeforeEach(func() {
+				runner.Start()
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.started"))
+			})
+
+			It("successfully release lock and exit", func() {
+				runner.Interrupt()
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.received-interrupt-signal"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.successfully-released-lock"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.exited"))
+			})
+		})
+
+		Context("When one instance of metricscollector owns lock and the other is waiting to get the lock", func() {
+			BeforeEach(func() {
+				runner.Start()
+				Eventually(runner.Session.Buffer, 5*time.Second).Should(gbytes.Say("metricscollector.started"))
+
+				secondRunner = NewMetricsCollectorRunner()
+				consulConfig.Server.Port = 8000
+				consulConfig.DBLock.Owner = "second-owner"
+				secondRunner.startCheck = ""
+				secondRunner.configPath = writeConfig(&consulConfig).Name()
+				secondRunner.Start()
+
+			})
+
+			AfterEach(func() {
+				secondRunner.KillWithFire()
+			})
+
+			It("Competing instance should not get lock in first attempt", func() {
+				Consistently(secondRunner.Session.Buffer, 5*time.Second).ShouldNot(gbytes.Say("metricscollector.lock-acquired-in-first-attempt"))
+				Consistently(secondRunner.Session.Buffer, 5*time.Second).ShouldNot(gbytes.Say("metricscollector.successfully-acquired-lock"))
+			})
+		})
+
+		Context("when the running metricscollector instance stopped", func() {
+			BeforeEach(func() {
+				runner.Start()
+				Eventually(runner.Session.Buffer, 10*time.Second).Should(gbytes.Say("metricscollector.started"))
+				secondRunner = NewMetricsCollectorRunner()
+				consulConfig.Server.Port = 8000
+				consulConfig.DBLock.Owner = "second-owner"
+				secondRunner.configPath = writeConfig(&consulConfig).Name()
+				secondRunner.startCheck = ""
+				secondRunner.Start()
+				Consistently(secondRunner.Session.Buffer, 10*time.Second).ShouldNot(gbytes.Say("metricscollector.lock-acquired-in-first-attempt"))
+			})
+
+			AfterEach(func() {
+				secondRunner.ClearLockDatabase()
+				secondRunner.KillWithFire()
+			})
+
+			It("competing metricscollector instance should acquire the lock", func() {
+				runner.Interrupt()
+				Eventually(runner.Session.Buffer, 5*time.Second).Should(gbytes.Say("metricscollector.received-interrupt-signal"))
+				Eventually(runner.Session.Buffer, 5*time.Second).Should(gbytes.Say("metricscollector.successfully-released-lock"))
+				Eventually(secondRunner.Session.Buffer, 10*time.Second).Should(gbytes.Say("metricscollector.successfully-acquired-lock"))
+				Eventually(secondRunner.Session.Buffer, 10*time.Second).Should(gbytes.Say("metricscollector.started"))
+			})
+		})
+
+		Context("when the metricscollector acquires the lock and consul configuration is provided", func() {
+			JustBeforeEach(func() {
+				consulConfig = cfg
+				consulConfig.EnableDBLock = true
+				runner.configPath = writeConfig(&consulConfig).Name()
+				runner.Start()
+
+			})
+
+			It("should registers itself with consul", func() {
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.lock-acquired-in-first-attempt"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.registration-runner.succeeded-registering-service"))
+
+				services, err := consulClient.Agent().Services()
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(services).To(HaveKeyWithValue("metricscollector",
+					&api.AgentService{
+						Service: "metricscollector",
+						ID:      "metricscollector",
+						Port:    cfg.Server.Port,
+					}))
+			})
+
+			It("should registers a TTL healthcheck", func() {
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.lock-acquired-in-first-attempt"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.registration-runner.succeeded-registering-service"))
+
+				checks, err := consulClient.Agent().Checks()
+				Expect(err).ToNot(HaveOccurred())
+
+				Expect(checks).To(HaveKeyWithValue("service:metricscollector",
+					&api.AgentCheck{
+						Node:        "0",
+						CheckID:     "service:metricscollector",
+						Name:        "Service 'metricscollector' check",
+						Status:      "passing",
+						ServiceID:   "metricscollector",
+						ServiceName: "metricscollector",
+					}))
+			})
+
+			It("should start", func() {
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.collector.collector-started"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.started"))
+				Consistently(runner.Session).ShouldNot(Exit())
+			})
+		})
 	})
 
 })

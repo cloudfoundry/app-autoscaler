@@ -194,3 +194,14 @@ func insertSchedulerActiveSchedule(id int, appId string, startJobIdentifier int,
 	}
 	return e
 }
+
+func insertLockDetails(lock models.Lock) error {
+	query := "INSERT INTO locks (owner,lock_timestamp,ttl) VALUES ($1,$2,$3)"
+	_, err := dbHelper.Exec(query, lock.Owner, lock.LastModifiedTimestamp, lock.Ttl)
+	return err
+}
+
+func cleanLockTable() error {
+	_, e := dbHelper.Exec("DELETE FROM locks")
+	return e
+}
