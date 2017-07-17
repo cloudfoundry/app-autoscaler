@@ -13,7 +13,12 @@ db:
 collector:
   refresh_interval: 30s
   collect_interval: 10s
-# lock:
-#   lock_ttl: 15s
-#   lock_retry_interval: 10s
-#   consul_cluster_config: http://127.0.0.1:8500
+#lock:
+#  lock_ttl: 15s
+#  lock_retry_interval: 10s
+#  consul_cluster_config: http://127.0.0.1:8500
+#db_lock:
+#  owner: 1234575
+#  ttl: 30s
+#  url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
+#enable_db_lock: true
