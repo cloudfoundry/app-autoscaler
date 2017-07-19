@@ -34,7 +34,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 
 	BeforeEach(func() {
 		startFakeCCNOAAUAA(initInstanceCount)
-		fakeMetricsPolling(appId, 400*1024*1024)
+		fakeMetricsPolling(appId, 400*1024*1024, 600*1024*1024)
 		initializeHttpClient("api.crt", "api.key", "autoscaler-ca.crt", apiMetricsCollectorHttpRequestTimeout)
 		metricsCollectorConfPath = components.PrepareMetricsCollectorConfig(dbUrl, components.Ports[MetricsCollector], fakeCCNOAAUAA.URL(), cf.GrantTypePassword, collectInterval,
 			refreshInterval, collectMethod, tmpDir, locket.DefaultSessionTTL, locket.RetryInterval, consulRunner.ConsulCluster())
@@ -70,7 +70,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 				metric = &models.AppInstanceMetric{
 					AppId:       appId,
 					CollectedAt: 111111,
-					Name:        models.MetricNameMemory,
+					Name:        models.MetricNameMemoryUsed,
 					Unit:        models.UnitMegaBytes,
 					Value:       "123456",
 				}
@@ -103,7 +103,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 				insertAppInstanceMetric(metric)
 				//add some  other appId
 				metric.AppId = "some-other-app-id"
-				metric.Name = models.MetricNameMemory
+				metric.Name = models.MetricNameMemoryUsed
 				metric.Unit = models.UnitMegaBytes
 				metric.Timestamp = 444444
 				metric.InstanceIndex = 1
@@ -121,7 +121,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 							AppId:         appId,
 							InstanceIndex: 0,
 							CollectedAt:   111111,
-							Name:          models.MetricNameMemory,
+							Name:          models.MetricNameMemoryUsed,
 							Unit:          models.UnitMegaBytes,
 							Value:         "123456",
 							Timestamp:     333333,
@@ -130,7 +130,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 							AppId:         appId,
 							InstanceIndex: 1,
 							CollectedAt:   111111,
-							Name:          models.MetricNameMemory,
+							Name:          models.MetricNameMemoryUsed,
 							Unit:          models.UnitMegaBytes,
 							Value:         "123456",
 							Timestamp:     444444,
@@ -150,7 +150,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 							AppId:         appId,
 							InstanceIndex: 0,
 							CollectedAt:   111111,
-							Name:          models.MetricNameMemory,
+							Name:          models.MetricNameMemoryUsed,
 							Unit:          models.UnitMegaBytes,
 							Value:         "123456",
 							Timestamp:     555555,
@@ -159,7 +159,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 							AppId:         appId,
 							InstanceIndex: 1,
 							CollectedAt:   111111,
-							Name:          models.MetricNameMemory,
+							Name:          models.MetricNameMemoryUsed,
 							Unit:          models.UnitMegaBytes,
 							Value:         "123456",
 							Timestamp:     555555,
@@ -179,7 +179,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 							AppId:         appId,
 							InstanceIndex: 0,
 							CollectedAt:   111111,
-							Name:          models.MetricNameMemory,
+							Name:          models.MetricNameMemoryUsed,
 							Unit:          models.UnitMegaBytes,
 							Value:         "123456",
 							Timestamp:     666666,
