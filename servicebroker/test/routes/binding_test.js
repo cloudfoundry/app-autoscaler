@@ -121,7 +121,7 @@ describe('binding RESTful API', function() {
             .send({ "app_guid": appId })
             .expect(201)
             .expect('Content-Type', /json/)
-            .expect({})
+            .expect({credentials: {}})
             .end(function(err, res) {
               binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
                 expect(countRes).to.equal(1);

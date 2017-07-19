@@ -58,7 +58,7 @@ module.exports = function(app, settings, catalog) {
             timestamp: new Date().getTime()
           }, { transaction: t }).then(function(result) {
             if (typeof(policyJSON) === "undefined") {
-              commitTransaction(t, res, 201, {});
+              commitTransaction(t, res, 201, {credentials: {}});
               return;
             } else {
               apiServerUtil.attachPolicy(appId, policyJSON, function(error, response) {
@@ -115,9 +115,6 @@ module.exports = function(app, settings, catalog) {
           res.status(409).json({ "description": messageUtil.getMessage("DUPLICATE_BIND", { "applicationId": appId }) });
         }
       });
-    }).catch(function(error2) { //catch transaction
-      logger.error("Bind failed: transaction error", { error: error2 });
-      rollbackTransaction(t, res, 500, {});
     });
 
   });
