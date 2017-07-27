@@ -178,7 +178,7 @@ module.exports = function(app, settings, catalog) {
       });
     }).catch(function(error2) {
       logger.error("Unbind failed: transaction error", { error: error2 });
-      rollbackTransaction(t, res, 500, {});
+      rollbackTransaction(t, res, 500, {}); 
     });
   });
 }
