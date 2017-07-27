@@ -87,12 +87,12 @@ module.exports = function(app, settings, catalog) {
               });
             }
 
-          }).catch(function(error1) { //catch findorcreate
-            logger.error("Bind failed: create error", { error: error1 });
-            if (error1 instanceof models.sequelize.UniqueConstraintError) {
+          }).catch(function(error) { //catch findorcreate
+            logger.error("Bind failed: create error", { error: error });
+            if (error instanceof models.sequelize.UniqueConstraintError) {
               rollbackTransaction(t, res, 409, {});
               return;
-            } else if (error1 instanceof models.sequelize.ForeignKeyConstraintError) {
+            } else if (error instanceof models.sequelize.ForeignKeyConstraintError) {
               rollbackTransaction(t, res, 404, { "description": messageUtil.getMessage("SERVICEINSTANCE_NOT_EXIST", { "serviceInstanceId": serviceInstanceId }) });
               return;
             }
