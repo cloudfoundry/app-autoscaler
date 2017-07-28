@@ -11,10 +11,11 @@ var API = require("../../../app.js");
 var app;
 var logger = require("../../../lib/log/logger");
 var nock = require("nock");
-var scalingEngineUri = settings.scalingEngine.uri;
+var metricsCollectorUri = settings.metricsCollector.uri;
 var theAppId = "the-app-guid";
+var metricType = "memoryused";
 
-describe("Routing ScalingHistory", function() {
+describe("Routing Metrics", function() {
 
   before(function() {
     app = API(path.join(__dirname, "../../../config/settings.json"));
@@ -26,23 +27,23 @@ describe("Routing ScalingHistory", function() {
     nock.cleanAll();
   });
   var histories = [
-    { "app_id": theAppId, "timestamp": 300, "scaling_type": 0, "status": 0, "old_instances": 2, "new_instances": 4, "reason": "a reason", "message": "", "error": "" },
-    { "app_id": theAppId, "timestamp": 250, "scaling_type": 1, "status": 1, "old_instances": 2, "new_instances": 4, "reason": "a reason", "message": "", "error": "" },
-    { "app_id": theAppId, "timestamp": 200, "scaling_type": 0, "status": 0, "old_instances": 2, "new_instances": 4, "reason": "a reason", "message": "", "error": "" },
-    { "app_id": theAppId, "timestamp": 150, "scaling_type": 1, "status": 1, "old_instances": 2, "new_instances": 4, "reason": "a reason", "message": "", "error": "" },
-    { "app_id": theAppId, "timestamp": 100, "scaling_type": 0, "status": 0, "old_instances": 2, "new_instances": 4, "reason": "a reason", "message": "", "error": "" }
+    { "app_id": theAppId, "timestamp": 100, "instance_index": 0, "collected_at": 0, "name": "memoryused", "unit": "megabytes", "value": "200"},
+    { "app_id": theAppId, "timestamp": 110, "instance_index": 1, "collected_at": 1, "name": "memoryused", "unit": "megabytes", "value": "200"},
+    { "app_id": theAppId, "timestamp": 150, "instance_index": 0, "collected_at": 0, "name": "memoryused", "unit": "megabytes", "value": "200"},
+    { "app_id": theAppId, "timestamp": 170, "instance_index": 1, "collected_at": 1, "name": "memoryused", "unit": "megabytes", "value": "200"},
+    { "app_id": theAppId, "timestamp": 200, "instance_index": 0, "collected_at": 0, "name": "memoryused", "unit": "megabytes", "value": "200"}
   ]
-  describe("get scaling history", function() {
+  describe("get metrics", function() {
     context("parameters", function() {
 
       context("start-time", function() {
         it("should return 200 when start-time is not provided", function(done) {
-          nock(scalingEngineUri)
-            .get(/\/v1\/apps\/.+\/scaling_histories/)
+          nock(metricsCollectorUri)
+            .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
             .reply(200, histories);
           request(app)
-            .get("/v1/apps/12345/scaling_histories")
-            .query({ "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
+            .get("/v1/apps/12345/metric_histories/" + metricType)
+            .query({ "metric-type": metricType, "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(200);
@@ -51,12 +52,12 @@ describe("Routing ScalingHistory", function() {
         });
 
         it("should return 400 when start-time is not integer", function(done) {
-          nock(scalingEngineUri)
-            .get(/\/v1\/apps\/.+\/scaling_histories/)
+          nock(metricsCollectorUri)
+            .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
             .reply(200, histories);
           request(app)
-            .get("/v1/apps/12345/scaling_histories")
-            .query({ "start-time": "not-integer", "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
+            .get("/v1/apps/12345/metric_histories/" + metricType)
+            .query({ "metric-type": metricType, "start-time": "not-integer", "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(400);
@@ -70,12 +71,12 @@ describe("Routing ScalingHistory", function() {
 
       context("end-time", function() {
         it("should return 200 when end-time is not provided", function(done) {
-          nock(scalingEngineUri)
-            .get(/\/v1\/apps\/.+\/scaling_histories/)
+          nock(metricsCollectorUri)
+            .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
             .reply(200, histories);
           request(app)
-            .get("/v1/apps/12345/scaling_histories")
-            .query({ "start-time": 100, "order": "desc", "page": 1, "results-per-page": 2 })
+            .get("/v1/apps/12345/metric_histories/" + metricType)
+            .query({ "metric-type": metricType, "start-time": 100, "order": "desc", "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(200);
@@ -84,12 +85,12 @@ describe("Routing ScalingHistory", function() {
         });
 
         it("should return 400 when end-time is not integer", function(done) {
-          nock(scalingEngineUri)
-            .get(/\/v1\/apps\/.+\/scaling_histories/)
+          nock(metricsCollectorUri)
+            .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
             .reply(200, histories);
           request(app)
-            .get("/v1/apps/12345/scaling_histories")
-            .query({ "end-time": "not-integer", "start-time": 100, "order": "desc", "page": 1, "results-per-page": 2 })
+            .get("/v1/apps/12345/metric_histories/" + metricType)
+            .query({ "metric-type": metricType, "end-time": "not-integer", "start-time": 100, "order": "desc", "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(400);
@@ -103,12 +104,12 @@ describe("Routing ScalingHistory", function() {
 
       context("order", function() {
         it("should return 200 when order is not provided", function(done) {
-          nock(scalingEngineUri)
-            .get(/\/v1\/apps\/.+\/scaling_histories/)
+          nock(metricsCollectorUri)
+            .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
             .reply(200, histories);
           request(app)
-            .get("/v1/apps/12345/scaling_histories")
-            .query({ "start-time": 100, "end-time": 200, "page": 1, "results-per-page": 2 })
+            .get("/v1/apps/12345/metric_histories/" + metricType)
+            .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(200);
@@ -117,12 +118,12 @@ describe("Routing ScalingHistory", function() {
         });
 
         it("should return 400 when order is not desc or asc", function(done) {
-          nock(scalingEngineUri)
-            .get(/\/v1\/apps\/.+\/scaling_histories/)
+          nock(metricsCollectorUri)
+            .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
             .reply(200, histories);
           request(app)
-            .get("/v1/apps/12345/scaling_histories")
-            .query({ "start-time": 100, "end-time": 200, "order": "not-desc-asc", "page": 1, "results-per-page": 2 })
+            .get("/v1/apps/12345/metric_histories/" + metricType)
+            .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "not-desc-asc", "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(400);
@@ -136,12 +137,12 @@ describe("Routing ScalingHistory", function() {
 
       context("page", function() {
         it("should return 200 when page is not provided", function(done) {
-          nock(scalingEngineUri)
-            .get(/\/v1\/apps\/.+\/scaling_histories/)
+          nock(metricsCollectorUri)
+            .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
             .reply(200, histories);
           request(app)
-            .get("/v1/apps/12345/scaling_histories")
-            .query({ "start-time": 100, "end-time": 200, "order": "desc", "results-per-page": 2 })
+            .get("/v1/apps/12345/metric_histories/" + metricType)
+            .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "desc", "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(200);
@@ -150,12 +151,12 @@ describe("Routing ScalingHistory", function() {
         });
 
         it("should return 400 when page is not integer", function(done) {
-          nock(scalingEngineUri)
-            .get(/\/v1\/apps\/.+\/scaling_histories/)
+          nock(metricsCollectorUri)
+            .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
             .reply(200, histories);
           request(app)
-            .get("/v1/apps/12345/scaling_histories")
-            .query({ "start-time": 100, "end-time": 200, "order": "desc", "page": "not-integer", "results-per-page": 2 })
+            .get("/v1/apps/12345/metric_histories/" + metricType)
+            .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "desc", "page": "not-integer", "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(400);
@@ -169,12 +170,12 @@ describe("Routing ScalingHistory", function() {
 
       context("results-per-page", function() {
         it("should return 200 when results-per-page is not provided", function(done) {
-          nock(scalingEngineUri)
-            .get(/\/v1\/apps\/.+\/scaling_histories/)
+          nock(metricsCollectorUri)
+            .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
             .reply(200, histories);
           request(app)
-            .get("/v1/apps/12345/scaling_histories")
-            .query({ "start-time": 100, "end-time": 200, "order": "desc", "page": 1 })
+            .get("/v1/apps/12345/metric_histories/" + metricType)
+            .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "desc", "page": 1 })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(200);
@@ -184,12 +185,12 @@ describe("Routing ScalingHistory", function() {
         });
 
         it("should return 400 when results-per-page is not integer", function(done) {
-          nock(scalingEngineUri)
-            .get(/\/v1\/apps\/.+\/scaling_histories/)
+          nock(metricsCollectorUri)
+            .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
             .reply(200, histories);
           request(app)
-            .get("/v1/apps/12345/scaling_histories")
-            .query({ "start-time": 100, "end-time": 200, "order": "desc", "page": 1, "results-per-page": "not-integer" })
+            .get("/v1/apps/12345/metric_histories/" + metricType)
+            .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "desc", "page": 1, "results-per-page": "not-integer" })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(400);
@@ -201,34 +202,34 @@ describe("Routing ScalingHistory", function() {
         });
       });
     });
-    context("scalingEngine error", function() {
-      it("should return 500 when there is error when requesting to scalingEngine", function(done) {
-        nock(scalingEngineUri)
-          .get(/\/v1\/apps\/.+\/scaling_histories/)
+    context("metricsCollector error", function() {
+      it("should return 500 when there is error when requesting to metricsCollector", function(done) {
+        nock(metricsCollectorUri)
+          .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
           .replyWithError({
-            'message': 'Error in requests scalingEngine',
+            'message': 'Error in requests metricsCollector',
             'details': 'fake body'
           });
         request(app)
-          .get("/v1/apps/12345/scaling_histories")
-          .query({ "start-time": 100, "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
+          .get("/v1/apps/12345/metric_histories/" + metricType)
+          .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);
             expect(result.statusCode).to.equal(500);
             expect(result.body).to.deep.equal({
-              description: 'Error in requests scalingEngine'
+              description: 'Error in requests metricsCollector'
             });
             done();
           });
       });
 
-      it('should return 500 when there is internal error in scalingEngine', function(done) {
-        nock(scalingEngineUri)
-          .get(/\/v1\/apps\/.+\/scaling_histories/)
+      it('should return 500 when there is internal error in metricsCollector', function(done) {
+        nock(metricsCollectorUri)
+          .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
           .reply(500, { code: 'Interal-Server-Error', message: 'Error getting scaling histories from database' });
         request(app)
-          .get("/v1/apps/12345/scaling_histories")
-          .query({ "start-time": 100, "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
+          .get("/v1/apps/12345/metric_histories/" + metricType)
+          .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);
             expect(result.statusCode).to.equal(500);
@@ -240,14 +241,14 @@ describe("Routing ScalingHistory", function() {
       });
     });
 
-    context("get scaling histories", function() {
+    context("get metrics", function() {
       it("get the 1st page", function(done) {
-        nock(scalingEngineUri)
-          .get(/\/v1\/apps\/.+\/scaling_histories/)
+        nock(metricsCollectorUri)
+          .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
           .reply(200, histories);
         request(app)
-          .get("/v1/apps/12345/scaling_histories")
-          .query({ "start-time": 100, "end-time": 500, "order": "desc", "page": 1, "results-per-page": 2 })
+          .get("/v1/apps/12345/metric_histories/" + metricType)
+          .query({ "metric-type": metricType, "start-time": 100, "end-time": 500, "order": "desc", "page": 1, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);
             expect(result.statusCode).to.equal(200);
@@ -262,12 +263,12 @@ describe("Routing ScalingHistory", function() {
       });
 
       it("get the 2nd page", function(done) {
-        nock(scalingEngineUri)
-          .get(/\/v1\/apps\/.+\/scaling_histories/)
+        nock(metricsCollectorUri)
+          .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
           .reply(200, histories);
         request(app)
-          .get("/v1/apps/12345/scaling_histories")
-          .query({ "start-time": 100, "end-time": 500, "order": "desc", "page": 2, "results-per-page": 2 })
+          .get("/v1/apps/12345/metric_histories/" + metricType)
+          .query({ "metric-type": metricType, "start-time": 100, "end-time": 500, "order": "desc", "page": 2, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);
             expect(result.statusCode).to.equal(200);
@@ -282,12 +283,12 @@ describe("Routing ScalingHistory", function() {
       });
 
       it("get the 3rd page and only has one record", function(done) {
-        nock(scalingEngineUri)
-          .get(/\/v1\/apps\/.+\/scaling_histories/)
+        nock(metricsCollectorUri)
+          .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
           .reply(200, histories);
         request(app)
-          .get("/v1/apps/12345/scaling_histories")
-          .query({ "start-time": 100, "end-time": 500, "order": "desc", "page": 3, "results-per-page": 2 })
+          .get("/v1/apps/12345/metric_histories/" + metricType)
+          .query({ "metric-type": metricType, "start-time": 100, "end-time": 500, "order": "desc", "page": 3, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);
             expect(result.statusCode).to.equal(200);
@@ -302,12 +303,12 @@ describe("Routing ScalingHistory", function() {
       });
 
       it("get the 4th page and there is no record", function(done) {
-        nock(scalingEngineUri)
-          .get(/\/v1\/apps\/.+\/scaling_histories/)
+        nock(metricsCollectorUri)
+          .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
           .reply(200, histories);
         request(app)
-          .get("/v1/apps/12345/scaling_histories")
-          .query({ "start-time": 100, "end-time": 500, "order": "desc", "page": 4, "results-per-page": 2 })
+          .get("/v1/apps/12345/metric_histories/" + metricType)
+          .query({ "metric-type": metricType, "start-time": 100, "end-time": 500, "order": "desc", "page": 4, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);
             expect(result.statusCode).to.equal(200);

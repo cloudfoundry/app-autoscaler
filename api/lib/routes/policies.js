@@ -6,7 +6,7 @@ module.exports = function(settings){
   var logger = require('../log/logger');
   var HttpStatus = require('http-status-codes');
   var validationMiddleWare = require('../validation/validationMiddleware');
-  var routeHelper = require('./routeHelper')(settings.db);
+  var policyHelper = require('./policyHelper')(settings.db);
   var schedulerUtil = require('../utils/schedulerUtils')(settings.scheduler);
   var async = require('async');
   var uuidV4 = require('uuid/v4');
@@ -16,7 +16,7 @@ module.exports = function(settings){
     req.query.policy_guid = uuidV4();
     logger.info('Policy guid ' + req.query.policy_guid);
     async.waterfall([async.apply(schedulerUtil.createOrUpdateSchedule, req),
-      async.apply(routeHelper.createOrUpdatePolicy, req)],
+      async.apply(policyHelper.createOrUpdatePolicy, req)],
       function(error, result) {
         var responseDecorator = { };
         var statusCode = HttpStatus.OK;
@@ -45,7 +45,7 @@ module.exports = function(settings){
 
   router.delete('/:app_id',function(req,res) {
     logger.info('Policy deletion request received for application', { 'app id': req.params.app_id });
-    async.waterfall([async.apply(routeHelper.deletePolicy, req),
+    async.waterfall([async.apply(policyHelper.deletePolicy, req),
                      async.apply(schedulerUtil.deleteSchedules, req)],
     function(error, result) {
       var responseDecorator = { };
