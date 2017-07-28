@@ -113,6 +113,23 @@ describe('binding RESTful API', function() {
             })
           });
       });
+      context('when there is no policy in request', function() {
+        it("return a 201", function(done) {
+          supertest(server)
+            .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
+            .set("Authorization", "Basic " + auth)
+            .send({ "app_guid": appId })
+            .expect(201)
+            .expect('Content-Type', /json/)
+            .expect({credentials: {}})
+            .end(function(err, res) {
+              binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+                expect(countRes).to.equal(1);
+                done();
+              })
+            });
+        });
+      });
       context("when the api server returns error", function() {
         it("return a 400", function(done) {
           initNockApiServerBindError(400);
@@ -341,25 +358,6 @@ describe('binding RESTful API', function() {
           });
       });
     });
-
-    context('when there is no policy in request', function() {
-      it("return a 400", function(done) {
-        supertest(server)
-          .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
-          .set("Authorization", "Basic " + auth)
-          .send({ "app_guid": appId })
-          .expect(400)
-          .expect('Content-Type', /json/)
-          .expect({ "description": messageUtil.getMessage("POLICY_REQUIRED") })
-          .end(function(err, res) {
-            binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
-              expect(countRes).to.equal(0);
-              done();
-            })
-          });
-      });
-    });
-
 
     context('when the service instance does not exist', function() {
       it("return a 404", function(done) {

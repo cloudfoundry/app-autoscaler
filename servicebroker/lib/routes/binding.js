@@ -47,19 +47,20 @@ module.exports = function(app, settings, catalog) {
       res.status(400).json({});
       return;
     }
-    if (typeof(policyJSON) === "undefined") {
-      res.status(400).json({ "description": messageUtil.getMessage("POLICY_REQUIRED") });
-    } else {
-      models.sequelize.transaction().then(function(t) {
-        models.binding.findAll({ where: { appId: appId } }).then(function(result) {
-          var length = result.length;
-          if (length === 0) { //no binding , so create one
-            models.binding.create({
-              bindingId: bindingId,
-              appId: appId,
-              serviceInstanceId: serviceInstanceId,
-              timestamp: new Date().getTime()
-            }, { transaction: t }).then(function(result) {
+    models.sequelize.transaction().then(function(t) {
+      models.binding.findAll({ where: { appId: appId } }).then(function(result) {
+        var length = result.length;
+        if (length === 0) { //no binding , so create one
+          models.binding.create({
+            bindingId: bindingId,
+            appId: appId,
+            serviceInstanceId: serviceInstanceId,
+            timestamp: new Date().getTime()
+          }, { transaction: t }).then(function(result) {
+            if (typeof(policyJSON) === "undefined") {
+              commitTransaction(t, res, 201, {credentials: {}});
+              return;
+            } else {
               apiServerUtil.attachPolicy(appId, policyJSON, function(error, response) {
                 if (error != null) {
                   logger.error("Bind failed: attach policy error", { error: error });
@@ -70,13 +71,13 @@ module.exports = function(app, settings, catalog) {
                 var statusCode = response.statusCode;
                 logger.info("Api Server response", { status_code: statusCode, response: response.body });
 
-                switch(statusCode){
+                switch (statusCode) {
                   case 200:
                   case 201:
                     commitTransaction(t, res, statusCode, {credentials: {}});
                     return;
                   case 400:
-                    rollbackTransaction(t, res, statusCode, {error: response.body.error});
+                    rollbackTransaction(t, res, statusCode, { error: response.body.error });
                     return;
                   default:
                     rollbackTransaction(t, res, 500, {});
@@ -84,39 +85,37 @@ module.exports = function(app, settings, catalog) {
                 }
 
               });
-            }).catch(function(error1) { //catch findorcreate
-              logger.error("Bind failed: create error", { error: error1 });
-              if (error1 instanceof models.sequelize.UniqueConstraintError) {
-                rollbackTransaction(t, res, 409, {});
-                return;
-              } else if (error1 instanceof models.sequelize.ForeignKeyConstraintError) {
-                rollbackTransaction(t, res, 404, { "description": messageUtil.getMessage("SERVICEINSTANCE_NOT_EXIST", { "serviceInstanceId": serviceInstanceId }) });
-                return;
-              }
+            }
 
-              rollbackTransaction(t, res, 500, {});
-            });
-          } else if (length > 1) { // an app has been bound to more than one service instance, this error should not exist
-            logger.error("Bind failed: duplicate bind", { app_guid: appId });
-            res.status(409).json({ "description": messageUtil.getMessage("DUPLICATE_BIND", { "applicationId": appId }) });
-            return;
-          } else if (length == 1) { // an app has been bound to a service instance
-            var bindingRecord = result[0];
-            if (bindingRecord.serviceInstanceId === serviceInstanceId) {
-              logger.error("Bind failed: app already bound", { app_guid: appId, serviceInstanceId: serviceInstanceId });
-              res.status(409).json({});
+          }).catch(function(error) { //catch findorcreate
+            logger.error("Bind failed: create error", { error: error });
+            if (error instanceof models.sequelize.UniqueConstraintError) {
+              rollbackTransaction(t, res, 409, {});
+              return;
+            } else if (error instanceof models.sequelize.ForeignKeyConstraintError) {
+              rollbackTransaction(t, res, 404, { "description": messageUtil.getMessage("SERVICEINSTANCE_NOT_EXIST", { "serviceInstanceId": serviceInstanceId }) });
               return;
             }
 
-            logger.error("Bind failed: duplicate bind", { app_guid: appId });
-            res.status(409).json({ "description": messageUtil.getMessage("DUPLICATE_BIND", { "applicationId": appId }) });
+            rollbackTransaction(t, res, 500, {});
+          });
+        } else if (length > 1) { // an app has been bound to more than one service instance, this error should not exist
+          logger.error("Bind failed: duplicate bind", { app_guid: appId });
+          res.status(409).json({ "description": messageUtil.getMessage("DUPLICATE_BIND", { "applicationId": appId }) });
+          return;
+        } else if (length == 1) { // an app has been bound to a service instance
+          var bindingRecord = result[0];
+          if (bindingRecord.serviceInstanceId === serviceInstanceId) {
+            logger.error("Bind failed: app already bound", { app_guid: appId, serviceInstanceId: serviceInstanceId });
+            res.status(409).json({});
+            return;
           }
-        });
-      }).catch(function(error2) { //catch transaction
-        logger.error("Bind failed: transaction error", { error: error2 });
-        rollbackTransaction(t, res, 500, {});
+
+          logger.error("Bind failed: duplicate bind", { app_guid: appId });
+          res.status(409).json({ "description": messageUtil.getMessage("DUPLICATE_BIND", { "applicationId": appId }) });
+        }
       });
-    }
+    });
 
   });
 
@@ -179,7 +178,7 @@ module.exports = function(app, settings, catalog) {
       });
     }).catch(function(error2) {
       logger.error("Unbind failed: transaction error", { error: error2 });
-      rollbackTransaction(t, res, 500, {});
+      rollbackTransaction(t, res, 500, {}); 
     });
   });
 }
