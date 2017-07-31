@@ -64,7 +64,7 @@ var _ = Describe("Sync", func() {
 			Eventually(schedulerDB.GetActiveSchedulesCallCount).Should(Equal(1))
 			Eventually(engineDB.GetActiveSchedulesCallCount).Should(Equal(1))
 
-			fclock.Increment(TestSyncInterval)
+			fclock.WaitForWatcherAndIncrement(TestSyncInterval)
 			Eventually(schedulerDB.GetActiveSchedulesCallCount).Should(Equal(2))
 			Eventually(engineDB.GetActiveSchedulesCallCount).Should(Equal(2))
 
