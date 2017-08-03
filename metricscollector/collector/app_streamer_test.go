@@ -60,7 +60,7 @@ var _ = Describe("AppStreamer", func() {
 			cfc.GetTokensReturns(cf.Tokens{AccessToken: "test-access-token"})
 			noaaConsumer.StreamStub = func(appId string, authToken string) (outputChan <-chan *events.Envelope, errorChan <-chan error) {
 				Expect(appId).To(Equal("an-app-id"))
-				Expect(authToken).To(Equal("bearer test-access-token"))
+				Expect(authToken).To(Equal("Bearer test-access-token"))
 				return msgChan, errChan
 			}
 		})
@@ -276,10 +276,21 @@ var _ = Describe("AppStreamer", func() {
 			BeforeEach(func() {
 				errChan <- errors.New("an error")
 			})
-			It("logs the error", func() {
+			It("logs the error and reconnect in next tick", func() {
 				Eventually(buffer).Should(gbytes.Say("stream-metrics"))
 				Eventually(buffer).Should(gbytes.Say("an-app-id"))
 				Eventually(buffer).Should(gbytes.Say("an error"))
+
+				fclock.WaitForWatcherAndIncrement(TestCollectInterval)
+				Eventually(noaaConsumer.CloseCallCount).Should(Equal(1))
+				Eventually(noaaConsumer.StreamCallCount).Should(Equal(2))
+				Eventually(buffer).Should(gbytes.Say("noaa-reconnected"))
+				Eventually(buffer).Should(gbytes.Say("an-app-id"))
+				Consistently(buffer).ShouldNot(gbytes.Say("compute-and-save-metrics"))
+
+				fclock.Increment(TestCollectInterval)
+				Consistently(buffer).ShouldNot(gbytes.Say("noaa-reconnected"))
+				Eventually(buffer).Should(gbytes.Say("compute-and-save-metrics"))
 			})
 		})
 	})
@@ -300,15 +311,16 @@ var _ = Describe("AppStreamer", func() {
 				noaaConsumer.CloseReturns(errors.New("an error"))
 			})
 			It("logs the error", func() {
-				Eventually(buffer).Should(gbytes.Say("close-noaa-connections"))
+				Eventually(buffer).Should(gbytes.Say("close-noaa-connection"))
 				Eventually(buffer).Should(gbytes.Say("an-app-id"))
 				Eventually(buffer).Should(gbytes.Say("an error"))
 			})
 		})
 		Context("when closing the connection succeeds", func() {
 			It("logs the message", func() {
-				Eventually(buffer).Should(gbytes.Say("noaa-connections-closed"))
+				Eventually(buffer).Should(gbytes.Say("noaa-connection-closed"))
 				Eventually(buffer).Should(gbytes.Say("an-app-id"))
+				Eventually(buffer).Should(gbytes.Say("app-streamer-stopped"))
 			})
 		})
 
