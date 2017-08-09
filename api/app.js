@@ -1,4 +1,4 @@
-'use strict';
+'use strict'; 
 module.exports = function(configFilePath) {
   var https = require('https');
   var http = require('http');
