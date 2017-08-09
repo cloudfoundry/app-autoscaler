@@ -53,29 +53,40 @@ func (as *appStreamer) Stop() {
 }
 
 func (as *appStreamer) streamMetrics() {
-	eventChan, errorChan := as.noaaConsumer.Stream(as.appId, "bearer "+as.cfc.GetTokens().AccessToken)
+	eventChan, errorChan := as.noaaConsumer.Stream(as.appId, cf.TokenTypeBearer+" "+as.cfc.GetTokens().AccessToken)
 	as.ticker = as.sclock.NewTicker(as.collectInterval)
+	var err error
 	for {
 		select {
 		case <-as.doneChan:
 			as.ticker.Stop()
 			err := as.noaaConsumer.Close()
 			if err == nil {
-				as.logger.Info("noaa-connections-closed", lager.Data{"appid": as.appId})
+				as.logger.Info("noaa-connection-closed", lager.Data{"appid": as.appId})
 			} else {
-				as.logger.Error("close-noaa-connections", err, lager.Data{"appid": as.appId})
+				as.logger.Error("close-noaa-connection", err, lager.Data{"appid": as.appId})
 			}
 			as.logger.Info("app-streamer-stopped", lager.Data{"appid": as.appId})
 			return
 
-		case err := <-errorChan:
+		case err = <-errorChan:
 			as.logger.Error("stream-metrics", err, lager.Data{"appid": as.appId})
 
 		case event := <-eventChan:
 			as.processEvent(event)
 
 		case <-as.ticker.C():
-			as.computeAndSaveMetrics()
+			if err != nil {
+				closeErr := as.noaaConsumer.Close()
+				if closeErr != nil {
+					as.logger.Error("close-noaa-connection", err, lager.Data{"appid": as.appId})
+				}
+				eventChan, errorChan = as.noaaConsumer.Stream(as.appId, cf.TokenTypeBearer+" "+as.cfc.GetTokens().AccessToken)
+				as.logger.Info("noaa-reconnected", lager.Data{"appid": as.appId})
+				err = nil
+			} else {
+				as.computeAndSaveMetrics()
+			}
 		}
 	}
 }
@@ -112,6 +123,7 @@ func (as *appStreamer) processEvent(event *events.Envelope) {
 }
 
 func (as *appStreamer) computeAndSaveMetrics() {
+	as.logger.Debug("compute-and-save-metrics", lager.Data{"message": "start to compute and save metrics"})
 	if len(as.numRequests) == 0 {
 		throughput := &models.AppInstanceMetric{
 			AppId:         as.appId,

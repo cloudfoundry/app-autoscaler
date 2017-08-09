@@ -71,7 +71,7 @@ func (ap *appPoller) pollMetric() {
 
 	for attempt := 0; attempt < 3; attempt++ {
 		logger.Debug("poll-metric-from-noaa-retry", lager.Data{"attempt": attempt + 1})
-		containerEnvelopes, err = ap.noaaConsumer.ContainerEnvelopes(ap.appId, "bearer "+ap.cfc.GetTokens().AccessToken)
+		containerEnvelopes, err = ap.noaaConsumer.ContainerEnvelopes(ap.appId, cf.TokenTypeBearer+" "+ap.cfc.GetTokens().AccessToken)
 		if err == nil {
 			break
 		}
