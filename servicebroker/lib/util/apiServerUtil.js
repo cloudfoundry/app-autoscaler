@@ -7,7 +7,7 @@ module.exports = function(settings) {
 
   var getOptions = function(appId, policy){
     var options = { 
-      uri: settings.apiserver.uri + '/v1/policies/' + appId,
+      uri: settings.apiserver.uri + '/v1/apps/' + appId + '/policy',
       timeout: settings.httpRequestTimeout,
     };
     if(policy){

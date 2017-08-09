@@ -51,7 +51,7 @@ module.exports = function(configFilePath) {
   var policies = require('./lib/routes/policies')(settings);
   var scalingHistories = require('./lib/routes/scalingHistories')(settings);
   var metrics = require('./lib/routes/metrics')(settings);
-  app.use('/v1/policies',policies);
+  app.use('/v1/apps',policies);
   app.use('/v1/apps',scalingHistories);
   app.use('/v1/apps',metrics);
   app.use(function(err, req, res, next) {

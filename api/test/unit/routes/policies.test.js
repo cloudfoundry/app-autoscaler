@@ -35,12 +35,12 @@ describe('Routing Policy Creation', function() {
     .query({'guid':/.*/})
     .reply(200);
     request(app)
-    .put('/v1/policies/12345')
+    .put('/v1/apps/12345/policy')
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(201);
       expect(result.headers.location).exist;
-      expect(result.headers.location).to.be.equal('/v1/policies/12345');
+      expect(result.headers.location).to.be.equal('/v1/apps/12345/policy');
       expect(result.body.success).to.equal(true);
       expect(result.body.error).to.be.null;
       expect(result.body.result.policy_json).eql(fakePolicy);
@@ -55,7 +55,7 @@ describe('Routing Policy Creation', function() {
     .query({'guid':/.*/})
     .reply(400);
     request(app)
-    .put('/v1/policies/12346')
+    .put('/v1/apps/12346/policy')
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(400);
@@ -73,7 +73,7 @@ describe('Routing Policy Creation', function() {
     .query({'guid':/.*/})
     .replyWithError(mockError);
     request(app)
-    .put('/v1/policies/12347')
+    .put('/v1/apps/12347/policy')
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(500);
@@ -93,7 +93,7 @@ describe('Routing Policy Creation', function() {
       .query({'guid':/.*/})
       .reply(200);
       request(app)
-      .put('/v1/policies/12345')
+      .put('/v1/apps/12345/policy')
       .send(fakePolicy).end(function(error, result) {
         initialGuid = result.body.result.guid;
         done();
@@ -106,7 +106,7 @@ describe('Routing Policy Creation', function() {
       .query({'guid':/.*/})
       .reply(204);
       request(app)
-      .put('/v1/policies/12345')
+      .put('/v1/apps/12345/policy')
       .send(fakePolicy)
       .end(function(error,result) {
         expect(result.statusCode).to.equal(200);
@@ -120,7 +120,7 @@ describe('Routing Policy Creation', function() {
 
     it('should successfully get the details of the policy with app id 12345',function(done){
       request(app)
-      .get('/v1/policies/12345')
+      .get('/v1/apps/12345/policy')
       .end(function(error,result) {
         expect(result.statusCode).to.equal(200);
         expect(result.body).to.deep.equal(fakePolicy);
@@ -134,7 +134,7 @@ describe('Routing Policy Creation', function() {
       .reply(200);
       
       request(app)
-      .delete('/v1/policies/12345')
+      .delete('/v1/apps/12345/policy')
       .expect(200)
       .end(function(error) {
         expect(error).to.be.null;
@@ -148,7 +148,7 @@ describe('Routing Policy Creation', function() {
         .reply(500);
         
         request(app)
-        .delete('/v1/policies/12345')
+        .delete('/v1/apps/12345/policy')
         .end(function(error,result) {
           expect(result.statusCode).to.equal(500);
           done();
@@ -161,7 +161,7 @@ describe('Routing Policy Creation', function() {
     it('should return 404 while deleting policy with app id 12345',function(done){
     
       request(app)
-      .delete('/v1/policies/12345')
+      .delete('/v1/apps/12345/policy')
       .end(function(error,result) {
         expect(result.statusCode).to.equal(404);
         done();
@@ -170,7 +170,7 @@ describe('Routing Policy Creation', function() {
     
     it('should fail to get the details of a non existing policy with app id 12345',function(done){
       request(app)
-      .get('/v1/policies/12345')
+      .get('/v1/apps/12345/policy')
       .end(function(error,result) {
         expect(result.statusCode).to.equal(404);
         expect(result.body).eql({});

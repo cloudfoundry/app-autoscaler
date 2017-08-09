@@ -157,7 +157,7 @@ describe('Policy Route helper ', function() {
 			policyHelper.deletePolicy(mockRequest, function(error){
 				expect(error).to.be.null;
 				request(app)
-				  .get('/v1/policies/12348')
+				  .get('/v1/apps/12348/policy')
 				  .end(function(error,result) {
 				      expect(result.statusCode).to.equal(404);
 				      done();
@@ -174,7 +174,7 @@ describe('Policy Route helper ', function() {
 				expect(error).to.not.be.null;
 				expect(error.statusCode).to.equal(500);
 				request(app)
-				  .get('/v1/policies/12348')
+				  .get('/v1/apps/12348/policy')
 				  .end(function(error,result) {
 				      expect(result.statusCode).to.equal(200);
 				      expect(result.body).to.deep.equal(fakePolicy);
