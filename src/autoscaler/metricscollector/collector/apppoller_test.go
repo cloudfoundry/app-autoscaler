@@ -74,7 +74,7 @@ var _ = Describe("Apppoller", func() {
 				BeforeEach(func() {
 					noaa.ContainerEnvelopesStub = func(appid string, token string) ([]*events.Envelope, error) {
 						Expect(appid).To(Equal("test-app-id"))
-						Expect(token).To(Equal("bearer test-access-token"))
+						Expect(token).To(Equal("Bearer test-access-token"))
 						return []*events.Envelope{
 							&events.Envelope{
 								ContainerMetric: &events.ContainerMetric{
@@ -122,7 +122,7 @@ var _ = Describe("Apppoller", func() {
 				BeforeEach(func() {
 					noaa.ContainerEnvelopesStub = func(appid string, token string) ([]*events.Envelope, error) {
 						Expect(appid).To(Equal("test-app-id"))
-						Expect(token).To(Equal("bearer test-access-token"))
+						Expect(token).To(Equal("Bearer test-access-token"))
 
 						return []*events.Envelope{}, nil
 					}
@@ -144,7 +144,7 @@ var _ = Describe("Apppoller", func() {
 				BeforeEach(func() {
 					noaa.ContainerEnvelopesStub = func(appid string, token string) ([]*events.Envelope, error) {
 						Expect(appid).To(Equal("test-app-id"))
-						Expect(token).To(Equal("bearer test-access-token"))
+						Expect(token).To(Equal("Bearer test-access-token"))
 
 						if noaa.ContainerEnvelopesCallCount()%2 == 0 {
 							return []*events.Envelope{}, nil
@@ -218,7 +218,7 @@ var _ = Describe("Apppoller", func() {
 
 				noaa.ContainerEnvelopesStub = func(appid string, token string) ([]*events.Envelope, error) {
 					Expect(appid).To(Equal("test-app-id"))
-					Expect(token).To(Equal("bearer test-access-token"))
+					Expect(token).To(Equal("Bearer test-access-token"))
 
 					if noaa.ContainerEnvelopesCallCount() < 3 {
 						return nil, errors.New("apppoller test error")

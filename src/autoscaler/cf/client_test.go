@@ -257,7 +257,7 @@ var _ = Describe("Client", func() {
 
 				It("logs in and returns valid token", func() {
 					Expect(err).NotTo(HaveOccurred())
-					Expect(authToken).To(Equal("test-access-token"))
+					Expect(authToken).To(Equal("Bearer test-access-token"))
 					Expect(cfc.GetTokens().AccessToken).To(Equal("test-access-token"))
 					Expect(cfc.GetTokens().RefreshToken).To(Equal("test-refresh-token"))
 					Expect(cfc.GetTokens().ExpiresIn).To(Equal(int64(12000)))
@@ -327,7 +327,7 @@ var _ = Describe("Client", func() {
 
 				It("returns refreshed token", func() {
 					Expect(err).NotTo(HaveOccurred())
-					Expect(authToken).To(Equal("test-access-token-refreshed"))
+					Expect(authToken).To(Equal("Bearer test-access-token-refreshed"))
 					Expect(cfc.GetTokens().AccessToken).To(Equal("test-access-token-refreshed"))
 					Expect(cfc.GetTokens().RefreshToken).To(Equal("test-refresh-token-refreshed"))
 					Expect(cfc.GetTokens().ExpiresIn).To(Equal(int64(24000)))
@@ -375,7 +375,7 @@ var _ = Describe("Client", func() {
 					})
 					It("returns valid tokens", func() {
 						Expect(err).NotTo(HaveOccurred())
-						Expect(authToken).To(Equal("test-access-token"))
+						Expect(authToken).To(Equal("Bearer test-access-token"))
 						Expect(cfc.GetTokens().AccessToken).To(Equal("test-access-token"))
 						Expect(cfc.GetTokens().RefreshToken).To(Equal("test-refresh-token"))
 						Expect(cfc.GetTokens().ExpiresIn).To(Equal(int64(12000)))
