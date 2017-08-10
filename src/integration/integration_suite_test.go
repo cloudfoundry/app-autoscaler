@@ -310,20 +310,20 @@ func unbindService(bindingId string, appId string, serviceInstanceId string) (*h
 }
 
 func getPolicy(appId string) (*http.Response, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("https://127.0.0.1:%d/v1/policies/%s", components.Ports[APIServer], appId), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/policy", components.Ports[APIServer], appId), nil)
 	Expect(err).NotTo(HaveOccurred())
 	return httpClient.Do(req)
 }
 
 func detachPolicy(appId string) (*http.Response, error) {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("https://127.0.0.1:%d/v1/policies/%s", components.Ports[APIServer], appId), strings.NewReader(""))
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/policy", components.Ports[APIServer], appId), strings.NewReader(""))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
 	return httpClient.Do(req)
 }
 
 func attachPolicy(appId string, policy []byte) (*http.Response, error) {
-	req, err := http.NewRequest("PUT", fmt.Sprintf("https://127.0.0.1:%d/v1/policies/%s", components.Ports[APIServer], appId), bytes.NewReader(policy))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/policy", components.Ports[APIServer], appId), bytes.NewReader(policy))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
 	return httpClient.Do(req)

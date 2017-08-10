@@ -26,7 +26,7 @@ var VALIDATION_ERROR_FROM_API_SERVER = "validation error from apiserver";
 
 function initNockBind(statusCode) {
   scope = nock(settings.apiserver.uri)
-    .put(/\/v1\/policies\/.*/)
+    .put(/\/v1\/apps\/.*\/policy/)
     .reply(statusCode, {
       'success': true,
       'error': null,
@@ -36,7 +36,7 @@ function initNockBind(statusCode) {
 
 function initNockUnBind(statusCode) {
   scope = nock(settings.apiserver.uri)
-    .delete(/\/v1\/policies\/.*/)
+    .delete(/\/v1\/apps\/.*\/policy/)
     .reply(statusCode, {
       'success': true,
       'error': null,
@@ -46,7 +46,7 @@ function initNockUnBind(statusCode) {
 
 function initNockApiServerBindError(statusCode) {
   scope = nock(settings.apiserver.uri)
-    .put(/\/v1\/policies\/.*/)
+    .put(/\/v1\/apps\/.*\/policy/)
     .reply(statusCode, {
       'success': false,
       'error': VALIDATION_ERROR_FROM_API_SERVER,
