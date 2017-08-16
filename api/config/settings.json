@@ -1,5 +1,6 @@
 {
   "port": 8080,
+  "publicPort": 8088,
   "db": {
     "maxConnections": 10,
     "minConnections": 0,
@@ -31,6 +32,11 @@
       }
   },
   "tls": {
+        "keyFile":"../test-certs/api.key",
+        "certFile":"../test-certs/api.crt",
+        "caCertFile":"../test-certs/autoscaler-ca.crt"
+    },
+  "publicTls": {
         "keyFile":"../test-certs/api.key",
         "certFile":"../test-certs/api.crt",
         "caCertFile":"../test-certs/autoscaler-ca.crt"

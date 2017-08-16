@@ -9,6 +9,8 @@ var settings = require(path.join(__dirname, "../../../lib/config/setting.js"))((
   fs.readFileSync(path.join(__dirname, "../../../config/settings.json"), "utf8"))));
 var API = require("../../../app.js");
 var app;
+var publicApp;
+var servers;
 var logger = require("../../../lib/log/logger");
 var nock = require("nock");
 var metricsCollectorUri = settings.metricsCollector.uri;
@@ -18,10 +20,14 @@ var metricType = "memoryused";
 describe("Routing Metrics", function() {
 
   before(function() {
-    app = API(path.join(__dirname, "../../../config/settings.json"));
+    servers = API(path.join(__dirname, "../../../config/settings.json"));
+    app = servers.internalServer;
+    publicApp = servers.publicServer;
   })
   after(function(done) {
-    app.close(done);
+    app.close(function(){
+      publicApp.close(done);
+    });
   })
   beforeEach(function() {
     nock.cleanAll();
