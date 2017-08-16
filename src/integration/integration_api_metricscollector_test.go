@@ -36,11 +36,12 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 		startFakeCCNOAAUAA(initInstanceCount)
 		fakeMetricsPolling(appId, 400*1024*1024, 600*1024*1024)
 		initializeHttpClient("api.crt", "api.key", "autoscaler-ca.crt", apiMetricsCollectorHttpRequestTimeout)
+		initializeHttpClientForPublicApi("api.crt", "api.key", "autoscaler-ca.crt", apiMetricsCollectorHttpRequestTimeout)
 		metricsCollectorConfPath = components.PrepareMetricsCollectorConfig(dbUrl, components.Ports[MetricsCollector], fakeCCNOAAUAA.URL(), cf.GrantTypePassword, collectInterval,
 			refreshInterval, collectMethod, tmpDir, locket.DefaultSessionTTL, locket.RetryInterval, consulRunner.ConsulCluster())
 		startMetricsCollector()
 
-		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), tmpDir)
+		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], components.Ports[APIPublicServer], dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), tmpDir)
 		startApiServer()
 		appId = getRandomId()
 		pathVariables = []string{appId, metricType}
@@ -59,7 +60,10 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 			})
 
 			It("should error", func() {
-				checkResponseContentWithParameters(getAppMetrics, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{"description": fmt.Sprintf("connect ECONNREFUSED 127.0.0.1:%d", components.Ports[MetricsCollector])})
+				By("check internal api")
+				checkResponseContentWithParameters(getAppMetrics, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{"description": fmt.Sprintf("connect ECONNREFUSED 127.0.0.1:%d", components.Ports[MetricsCollector])}, INTERNAL)
+				By("check public api")
+				checkResponseContentWithParameters(getAppMetrics, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{"description": fmt.Sprintf("connect ECONNREFUSED 127.0.0.1:%d", components.Ports[MetricsCollector])}, PUBLIC)
 
 			})
 
@@ -137,7 +141,10 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 						},
 					},
 				}
-				checkMetricResult(pathVariables, parameters, result)
+				By("check internal api")
+				checkMetricResult(pathVariables, parameters, result, INTERNAL)
+				By("check public api")
+				checkMetricResult(pathVariables, parameters, result, PUBLIC)
 
 				By("get the 2nd page")
 				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "metric-type": metricType, "order": "asc", "page": "2", "results-per-page": "2"}
@@ -166,7 +173,10 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 						},
 					},
 				}
-				checkMetricResult(pathVariables, parameters, result)
+				By("check internal api")
+				checkMetricResult(pathVariables, parameters, result, INTERNAL)
+				By("check public api")
+				checkMetricResult(pathVariables, parameters, result, PUBLIC)
 
 				By("get the 3rd page")
 				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "metric-type": metricType, "order": "asc", "page": "3", "results-per-page": "2"}
@@ -186,7 +196,10 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 						},
 					},
 				}
-				checkMetricResult(pathVariables, parameters, result)
+				By("check internal api")
+				checkMetricResult(pathVariables, parameters, result, INTERNAL)
+				By("check public api")
+				checkMetricResult(pathVariables, parameters, result, PUBLIC)
 
 				By("the 4th page should be empty")
 				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "metric-type": metricType, "order": "asc", "page": "4", "results-per-page": "2"}
@@ -196,16 +209,19 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 					Page:         4,
 					Resources:    []models.AppInstanceMetric{},
 				}
-				checkMetricResult(pathVariables, parameters, result)
+				By("check internal api")
+				checkMetricResult(pathVariables, parameters, result, INTERNAL)
+				By("check public api")
+				checkMetricResult(pathVariables, parameters, result, PUBLIC)
 			})
 
 		})
 	})
 })
 
-func checkMetricResult(pathVariables []string, parameters map[string]string, result MetricResult) {
+func checkMetricResult(pathVariables []string, parameters map[string]string, result MetricResult, apiType APIType) {
 	var actual MetricResult
-	resp, err := getAppMetrics(pathVariables, parameters)
+	resp, err := getAppMetrics(pathVariables, parameters, apiType)
 	defer resp.Body.Close()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.StatusCode).To(Equal(http.StatusOK))

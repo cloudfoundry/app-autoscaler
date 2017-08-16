@@ -30,11 +30,12 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 
 	BeforeEach(func() {
 		initializeHttpClient("api.crt", "api.key", "autoscaler-ca.crt", apiScalingEngineHttpRequestTimeout)
+		initializeHttpClientForPublicApi("api.crt", "api.key", "autoscaler-ca.crt", apiMetricsCollectorHttpRequestTimeout)
 		startFakeCCNOAAUAA(initInstanceCount)
 		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), cf.GrantTypePassword, tmpDir, consulRunner.ConsulCluster())
 		startScalingEngine()
 
-		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), tmpDir)
+		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], components.Ports[APIPublicServer], dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), tmpDir)
 		startApiServer()
 		appId = getRandomId()
 		pathVariables = []string{appId}
@@ -53,7 +54,10 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 			})
 
 			It("should error", func() {
-				checkResponseContentWithParameters(getScalingHistories, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{"description": fmt.Sprintf("connect ECONNREFUSED 127.0.0.1:%d", components.Ports[ScalingEngine])})
+				By("check internal api")
+				checkResponseContentWithParameters(getScalingHistories, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{"description": fmt.Sprintf("connect ECONNREFUSED 127.0.0.1:%d", components.Ports[ScalingEngine])}, INTERNAL)
+				By("check public api")
+				checkResponseContentWithParameters(getScalingHistories, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{"description": fmt.Sprintf("connect ECONNREFUSED 127.0.0.1:%d", components.Ports[ScalingEngine])}, PUBLIC)
 
 			})
 
@@ -125,7 +129,10 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 						},
 					},
 				}
-				checkScalingHistoryResult(pathVariables, parameters, result)
+				By("check internal api")
+				checkScalingHistoryResult(pathVariables, parameters, result, INTERNAL)
+				By("check public api")
+				checkScalingHistoryResult(pathVariables, parameters, result, PUBLIC)
 
 				By("get the 2nd page")
 				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order": "desc", "page": "2", "results-per-page": "2"}
@@ -158,7 +165,10 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 						},
 					},
 				}
-				checkScalingHistoryResult(pathVariables, parameters, result)
+				By("check internal api")
+				checkScalingHistoryResult(pathVariables, parameters, result, INTERNAL)
+				By("check public api")
+				checkScalingHistoryResult(pathVariables, parameters, result, PUBLIC)
 
 				By("get the 3rd page")
 				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order": "desc", "page": "3", "results-per-page": "2"}
@@ -180,7 +190,10 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 						},
 					},
 				}
-				checkScalingHistoryResult(pathVariables, parameters, result)
+				By("check internal api")
+				checkScalingHistoryResult(pathVariables, parameters, result, INTERNAL)
+				By("check public api")
+				checkScalingHistoryResult(pathVariables, parameters, result, PUBLIC)
 
 				By("the 4th page should be empty")
 				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order": "desc", "page": "4", "results-per-page": "2"}
@@ -190,16 +203,19 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 					Page:         4,
 					Resources:    []models.AppScalingHistory{},
 				}
-				checkScalingHistoryResult(pathVariables, parameters, result)
+				By("check internal api")
+				checkScalingHistoryResult(pathVariables, parameters, result, INTERNAL)
+				By("check public api")
+				checkScalingHistoryResult(pathVariables, parameters, result, PUBLIC)
 			})
 
 		})
 	})
 })
 
-func checkScalingHistoryResult(pathVariables []string, parameters map[string]string, result ScalingHistoryResult) {
+func checkScalingHistoryResult(pathVariables []string, parameters map[string]string, result ScalingHistoryResult, apiType APIType) {
 	var actual ScalingHistoryResult
-	resp, err := getScalingHistories(pathVariables, parameters)
+	resp, err := getScalingHistories(pathVariables, parameters, apiType)
 	defer resp.Body.Close()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.StatusCode).To(Equal(http.StatusOK))

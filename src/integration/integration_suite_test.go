@@ -40,6 +40,13 @@ import (
 	"github.com/tedsuo/ifrit/grouper"
 )
 
+type APIType uint8
+
+const (
+	INTERNAL APIType = iota
+	PUBLIC
+)
+
 var (
 	components               Components
 	tmpDir                   string
@@ -78,8 +85,9 @@ var (
 	policyPollerInterval      time.Duration = 1 * time.Second
 	evaluationManagerInterval time.Duration = 1 * time.Second
 
-	httpClient *http.Client
-	logger     lager.Logger
+	httpClient             *http.Client
+	httpClientForPublicApi *http.Client
+	logger                 lager.Logger
 
 	testCertDir string = "../../test-certs"
 
@@ -147,6 +155,7 @@ var _ = SynchronizedAfterSuite(func() {
 var _ = BeforeEach(func() {
 	consulRunner.Reset()
 	httpClient = cfhttp.NewClient()
+	httpClientForPublicApi = cfhttp.NewClient()
 	logger = lager.NewLogger("test")
 	logger.RegisterSink(lager.NewWriterSink(GinkgoWriter, lager.DEBUG))
 })
@@ -174,6 +183,7 @@ func CompileTestedExecutables() Executables {
 func PreparePorts() Ports {
 	return Ports{
 		APIServer:        10000 + GinkgoParallelNode(),
+		APIPublicServer:  16000 + GinkgoParallelNode(),
 		ServiceBroker:    11000 + GinkgoParallelNode(),
 		Scheduler:        12000 + GinkgoParallelNode(),
 		MetricsCollector: 13000 + GinkgoParallelNode(),
@@ -270,6 +280,16 @@ func initializeHttpClient(certFileName string, keyFileName string, caCertFileNam
 	httpClient.Transport.(*http.Transport).TLSClientConfig = TLSConfig
 	httpClient.Timeout = httpRequestTimeout
 }
+func initializeHttpClientForPublicApi(certFileName string, keyFileName string, caCertFileName string, httpRequestTimeout time.Duration) {
+	TLSConfig, err := cfhttp.NewTLSConfig(
+		filepath.Join(testCertDir, certFileName),
+		filepath.Join(testCertDir, keyFileName),
+		filepath.Join(testCertDir, caCertFileName),
+	)
+	Expect(err).NotTo(HaveOccurred())
+	httpClientForPublicApi.Transport.(*http.Transport).TLSClientConfig = TLSConfig
+	httpClientForPublicApi.Timeout = httpRequestTimeout
+}
 
 func provisionServiceInstance(serviceInstanceId string, orgId string, spaceId string) (*http.Response, error) {
 	req, err := http.NewRequest("PUT", fmt.Sprintf("https://127.0.0.1:%d/v2/service_instances/%s", components.Ports[ServiceBroker], serviceInstanceId), strings.NewReader(fmt.Sprintf(`{"organization_guid":"%s","space_guid":"%s"}`, orgId, spaceId)))
@@ -309,27 +329,54 @@ func unbindService(bindingId string, appId string, serviceInstanceId string) (*h
 	return httpClient.Do(req)
 }
 
-func getPolicy(appId string) (*http.Response, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/policy", components.Ports[APIServer], appId), nil)
+func getPolicy(appId string, apiType APIType) (*http.Response, error) {
+	var apiServerPort int
+	var httpClientTmp *http.Client
+	if apiType == INTERNAL {
+		apiServerPort = components.Ports[APIServer]
+		httpClientTmp = httpClient
+	} else {
+		apiServerPort = components.Ports[APIPublicServer]
+		httpClientTmp = httpClientForPublicApi
+	}
+	req, err := http.NewRequest("GET", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/policy", apiServerPort, appId), nil)
 	Expect(err).NotTo(HaveOccurred())
-	return httpClient.Do(req)
+	return httpClientTmp.Do(req)
 }
 
-func detachPolicy(appId string) (*http.Response, error) {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/policy", components.Ports[APIServer], appId), strings.NewReader(""))
+func detachPolicy(appId string, apiType APIType) (*http.Response, error) {
+	var apiServerPort int
+	var httpClientTmp *http.Client
+	if apiType == INTERNAL {
+		apiServerPort = components.Ports[APIServer]
+		httpClientTmp = httpClient
+	} else {
+		apiServerPort = components.Ports[APIPublicServer]
+		httpClientTmp = httpClientForPublicApi
+	}
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/policy", apiServerPort, appId), strings.NewReader(""))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
-	return httpClient.Do(req)
+	return httpClientTmp.Do(req)
 }
 
-func attachPolicy(appId string, policy []byte) (*http.Response, error) {
-	req, err := http.NewRequest("PUT", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/policy", components.Ports[APIServer], appId), bytes.NewReader(policy))
+func attachPolicy(appId string, policy []byte, apiType APIType) (*http.Response, error) {
+	var apiServerPort int
+	var httpClientTmp *http.Client
+	if apiType == INTERNAL {
+		apiServerPort = components.Ports[APIServer]
+		httpClientTmp = httpClient
+	} else {
+		apiServerPort = components.Ports[APIPublicServer]
+		httpClientTmp = httpClientForPublicApi
+	}
+	req, err := http.NewRequest("PUT", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/policy", apiServerPort, appId), bytes.NewReader(policy))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
-	return httpClient.Do(req)
+	return httpClientTmp.Do(req)
 }
 
-func getSchedules(appId string) (*http.Response, error) {
+func getSchedules(appId string, apiType APIType) (*http.Response, error) {
 	req, err := http.NewRequest("GET", fmt.Sprintf("https://127.0.0.1:%d/v2/schedules/%s", components.Ports["scheduler"], appId), strings.NewReader(""))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
@@ -366,7 +413,16 @@ func getActiveSchedule(appId string) (*http.Response, error) {
 	req.Header.Set("Content-Type", "application/json")
 	return httpClient.Do(req)
 }
-func getScalingHistories(pathVariables []string, parameters map[string]string) (*http.Response, error) {
+func getScalingHistories(pathVariables []string, parameters map[string]string, apiType APIType) (*http.Response, error) {
+	var apiServerPort int
+	var httpClientTmp *http.Client
+	if apiType == INTERNAL {
+		apiServerPort = components.Ports[APIServer]
+		httpClientTmp = httpClient
+	} else {
+		apiServerPort = components.Ports[APIPublicServer]
+		httpClientTmp = httpClientForPublicApi
+	}
 	url := "https://127.0.0.1:%d/v1/apps/%s/scaling_histories"
 	if parameters != nil && len(parameters) > 0 {
 		url += "?any=any"
@@ -374,12 +430,21 @@ func getScalingHistories(pathVariables []string, parameters map[string]string) (
 			url += "&" + paramName + "=" + paramValue
 		}
 	}
-	req, err := http.NewRequest("GET", fmt.Sprintf(url, components.Ports[APIServer], pathVariables[0]), strings.NewReader(""))
+	req, err := http.NewRequest("GET", fmt.Sprintf(url, apiServerPort, pathVariables[0]), strings.NewReader(""))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
-	return httpClient.Do(req)
+	return httpClientTmp.Do(req)
 }
-func getAppMetrics(pathVariables []string, parameters map[string]string) (*http.Response, error) {
+func getAppMetrics(pathVariables []string, parameters map[string]string, apiType APIType) (*http.Response, error) {
+	var apiServerPort int
+	var httpClientTmp *http.Client
+	if apiType == INTERNAL {
+		apiServerPort = components.Ports[APIServer]
+		httpClientTmp = httpClient
+	} else {
+		apiServerPort = components.Ports[APIPublicServer]
+		httpClientTmp = httpClientForPublicApi
+	}
 	url := "https://127.0.0.1:%d/v1/apps/%s/metric_histories/%s"
 	if parameters != nil && len(parameters) > 0 {
 		url += "?any=any"
@@ -387,10 +452,10 @@ func getAppMetrics(pathVariables []string, parameters map[string]string) (*http.
 			url += "&" + paramName + "=" + paramValue
 		}
 	}
-	req, err := http.NewRequest("GET", fmt.Sprintf(url, components.Ports[APIServer], pathVariables[0], pathVariables[1]), strings.NewReader(""))
+	req, err := http.NewRequest("GET", fmt.Sprintf(url, apiServerPort, pathVariables[0], pathVariables[1]), strings.NewReader(""))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
-	return httpClient.Do(req)
+	return httpClientTmp.Do(req)
 }
 func readPolicyFromFile(filename string) []byte {
 	content, err := ioutil.ReadFile(filename)
@@ -466,16 +531,16 @@ func insertAppInstanceMetric(appInstanceMetric *models.AppInstanceMetric) {
 	Expect(err).NotTo(HaveOccurred())
 }
 
-type GetResponse func(id string) (*http.Response, error)
-type GetResponseWithParameters func(pathVariables []string, parameters map[string]string) (*http.Response, error)
+type GetResponse func(id string, apiType APIType) (*http.Response, error)
+type GetResponseWithParameters func(pathVariables []string, parameters map[string]string, apiType APIType) (*http.Response, error)
 
-func checkResponseContent(getResponse GetResponse, id string, expectHttpStatus int, expectResponseMap map[string]interface{}) {
-	resp, err := getResponse(id)
+func checkResponseContent(getResponse GetResponse, id string, expectHttpStatus int, expectResponseMap map[string]interface{}, apiType APIType) {
+	resp, err := getResponse(id, apiType)
 	checkResponse(resp, err, expectHttpStatus, expectResponseMap)
 
 }
-func checkResponseContentWithParameters(getResponseWithParameters GetResponseWithParameters, pathVariables []string, parameters map[string]string, expectHttpStatus int, expectResponseMap map[string]interface{}) {
-	resp, err := getResponseWithParameters(pathVariables, parameters)
+func checkResponseContentWithParameters(getResponseWithParameters GetResponseWithParameters, pathVariables []string, parameters map[string]string, expectHttpStatus int, expectResponseMap map[string]interface{}, apiType APIType) {
+	resp, err := getResponseWithParameters(pathVariables, parameters, apiType)
 	checkResponse(resp, err, expectHttpStatus, expectResponseMap)
 }
 func checkResponse(resp *http.Response, err error, expectHttpStatus int, expectResponseMap map[string]interface{}) {
@@ -487,8 +552,8 @@ func checkResponse(resp *http.Response, err error, expectHttpStatus int, expectR
 	Expect(actual).To(Equal(expectResponseMap))
 	resp.Body.Close()
 }
-func checkSchedule(getResponse GetResponse, id string, expectHttpStatus int, expectResponseMap map[string]int) {
-	resp, err := getResponse(id)
+func checkSchedule(getResponse GetResponse, id string, expectHttpStatus int, expectResponseMap map[string]int, apiType APIType) {
+	resp, err := getResponse(id, apiType)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.StatusCode).To(Equal(expectHttpStatus))
 	var actual map[string]interface{}
