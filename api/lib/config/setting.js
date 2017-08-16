@@ -76,7 +76,9 @@ module.exports = function(settingsObj) {
     if (settings.publicPort < 1 || settings.publicPort > 65535) {
       return {valid:false,message:"value of publicPort must between 1 and 65535"};
     }
-
+    if (settings.port == settings.publicPort){
+      return {valid:false,message:"internal api port and public api port should be different"}
+    }
     if (isMissing(settings.db.maxConnections)){
       return {valid:false,message:"db.maxConnections is required"};
     }

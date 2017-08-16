@@ -103,11 +103,11 @@ module.exports = function(configFilePath) {
 
   var publicServer;
   if(settings.publicTls){
-    publicServer = https.createServer(publicOptions, app).listen(publicPort || 3002, function() {
+    publicServer = https.createServer(publicOptions, app).listen(publicPort || 3003, function() {
         logger.info('Autoscaler public API server started in secure mode',{'port':publicServer.address().port} );    
     });
   }else{
-    publicServer = http.createServer(app).listen(publicPort || 3002, function() {
+    publicServer = http.createServer(app).listen(publicPort || 3003, function() {
         logger.info('Autoscaler public API server started',{'port':publicServer.address().port} );    
     });
   }

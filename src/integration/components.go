@@ -264,8 +264,8 @@ func (components *Components) PrepareApiServerConfig(port int, publicPort int, d
 		},
 
 		PublicTLS: models.TLSCerts{
-			KeyFile:    filepath.Join(testCertDir, "api.key"),
-			CertFile:   filepath.Join(testCertDir, "api.crt"),
+			KeyFile:    filepath.Join(testCertDir, "api_public.key"),
+			CertFile:   filepath.Join(testCertDir, "api_public.crt"),
 			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 		},
 	}

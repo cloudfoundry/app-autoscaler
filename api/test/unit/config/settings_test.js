@@ -160,7 +160,16 @@ describe('config setting Test Suite', function() {
         })
       });
     });
-
+    context('Validate internal port and public port',function(){
+      context('When publicPort is equal to internal port', function() {
+        it('Should return false', function() {
+          settings.publicPort = 3002;
+          settings.port = 3002;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("internal api port and public api port should be different");
+        })
+      });
+    });
     context('Validate db.maxConnections', function() {
       context('When db.maxConnections is null', function() {
         it('Should return false', function() {
