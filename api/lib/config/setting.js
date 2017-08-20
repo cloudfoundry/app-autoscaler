@@ -64,7 +64,7 @@ module.exports = function(settingsObj) {
       return {valid:false,message:"port must be a number"};
     }
     if (settings.port < 1 || settings.port > 65535) {
-      return {valid:false,message:"value of port must between 1 and 65535"};
+      return {valid:false,message:"value of port must be between 1 and 65535"};
     }
 
     if (isMissing(settings.publicPort)){
@@ -74,7 +74,7 @@ module.exports = function(settingsObj) {
       return {valid:false,message:"publicPort must be a number"};
     }
     if (settings.publicPort < 1 || settings.publicPort > 65535) {
-      return {valid:false,message:"value of publicPort must between 1 and 65535"};
+      return {valid:false,message:"value of publicPort must be between 1 and 65535"};
     }
     if (settings.port == settings.publicPort){
       return {valid:false,message:"internal api port and public api port should be different"}

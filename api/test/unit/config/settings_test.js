@@ -125,7 +125,7 @@ describe('config setting Test Suite', function() {
         it('Should return false', function() {
           settings.port = 70000;
           expect(settings.validate().valid).to.equal(false);
-          expect(settings.validate().message).to.equal("value of port must between 1 and 65535");
+          expect(settings.validate().message).to.equal("value of port must be between 1 and 65535");
         })
       });
     });
@@ -156,7 +156,7 @@ describe('config setting Test Suite', function() {
         it('Should return false', function() {
           settings.publicPort = 70000;
           expect(settings.validate().valid).to.equal(false);
-          expect(settings.validate().message).to.equal("value of publicPort must between 1 and 65535");
+          expect(settings.validate().message).to.equal("value of publicPort must be between 1 and 65535");
         })
       });
     });
