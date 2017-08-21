@@ -32,9 +32,13 @@ certstrap --depot-path ${depot_path} sign eventgenerator --CA autoscaler-ca
 certstrap --depot-path ${depot_path} request-cert --passphrase '' --common-name servicebroker --ip 127.0.0.1
 certstrap --depot-path ${depot_path} sign servicebroker --CA autoscaler-ca
 
-# api certificate
+# api certificate for internal connection
 certstrap --depot-path ${depot_path} request-cert --passphrase '' --common-name api --ip 127.0.0.1
 certstrap --depot-path ${depot_path} sign api --CA autoscaler-ca
+
+# api certificate for public api
+certstrap --depot-path ${depot_path} request-cert --passphrase '' --common-name api_public --ip 127.0.0.1
+certstrap --depot-path ${depot_path} sign api_public --CA autoscaler-ca
 
 # scheduler certificate
 certstrap --depot-path ${depot_path} request-cert --passphrase '' --common-name scheduler --ip 127.0.0.1

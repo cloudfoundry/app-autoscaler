@@ -20,14 +20,15 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 
 	BeforeEach(func() {
 		initializeHttpClient("api.crt", "api.key", "autoscaler-ca.crt", apiSchedulerHttpRequestTimeout)
+		initializeHttpClientForPublicApi("api_public.crt", "api_public.key", "autoscaler-ca.crt", apiMetricsCollectorHttpRequestTimeout)
 
 		schedulerConfPath = components.PrepareSchedulerConfig(dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), tmpDir, strings.Split(consulRunner.Address(), ":")[1])
 		schedulerProcess = startScheduler()
 
-		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), tmpDir)
+		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], components.Ports[APIPublicServer], dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), tmpDir)
 		startApiServer()
 		appId = getRandomId()
-		resp, err := detachPolicy(appId)
+		resp, err := detachPolicy(appId, INTERNAL)
 		Expect(err).NotTo(HaveOccurred())
 		resp.Body.Close()
 	})
@@ -47,184 +48,257 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 		})
 
 		Context("Create policy", func() {
-			It("should not create policy", func() {
-				policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
-				resp, err := attachPolicy(appId, policyStr)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(http.StatusInternalServerError))
-				resp.Body.Close()
-
-				By("checking the API Server")
-				resp, err = getPolicy(appId)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
-				resp.Body.Close()
+			Context("internal api", func() {
+				It("should not create policy", func() {
+					policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
+					doAttachPolicy(appId, policyStr, http.StatusInternalServerError, INTERNAL)
+					checkApiServerStatus(appId, http.StatusNotFound, INTERNAL)
+				})
 			})
+
+			Context("public api", func() {
+				It("should not create policy", func() {
+					policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
+					doAttachPolicy(appId, policyStr, http.StatusInternalServerError, PUBLIC)
+					checkApiServerStatus(appId, http.StatusNotFound, PUBLIC)
+				})
+			})
+
 		})
 
 		Context("Delete policy", func() {
-			BeforeEach(func() {
-				//attach a policy first with 4 recurring and 2 specific_date schedules
-				policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
-				resp, err := attachPolicy(appId, policyStr)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(http.StatusCreated))
-				resp.Body.Close()
+			Context("internal api", func() {
+				BeforeEach(func() {
+					//attach a policy first with 4 recurring and 2 specific_date schedules
+					policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
+
+					doAttachPolicy(appId, policyStr, http.StatusCreated, INTERNAL)
+				})
+
+				It("should delete policy in API server", func() {
+					doDetachPolicy(appId, http.StatusInternalServerError, "", INTERNAL)
+					checkApiServerStatus(appId, http.StatusNotFound, INTERNAL)
+				})
 			})
 
-			It("should delete policy in API server", func() {
-				resp, err := detachPolicy(appId)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(http.StatusInternalServerError))
-				resp.Body.Close()
+			Context("public api", func() {
+				BeforeEach(func() {
+					//attach a policy first with 4 recurring and 2 specific_date schedules
+					policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
 
-				By("checking the API Server")
-				resp, err = getPolicy(appId)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
-				resp.Body.Close()
+					doAttachPolicy(appId, policyStr, http.StatusCreated, PUBLIC)
+				})
+
+				It("should delete policy in API server", func() {
+					doDetachPolicy(appId, http.StatusInternalServerError, "", PUBLIC)
+					checkApiServerStatus(appId, http.StatusNotFound, PUBLIC)
+				})
 			})
+
 		})
 
 	})
 
 	Describe("Create policy", func() {
-		Context("Policies with schedules", func() {
-			It("creates a policy and associated schedules", func() {
-				policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
-				resp, err := attachPolicy(appId, policyStr)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(http.StatusCreated))
-				resp.Body.Close()
+		Context("internal api", func() {
+			Context("Policies with schedules", func() {
+				It("creates a policy and associated schedules", func() {
+					policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
 
-				By("checking the API Server")
-				var expected map[string]interface{}
-				err = json.Unmarshal(policyStr, &expected)
-				Expect(err).NotTo(HaveOccurred())
-				checkResponseContent(getPolicy, appId, http.StatusOK, expected)
+					doAttachPolicy(appId, policyStr, http.StatusCreated, INTERNAL)
+					checkApiServerContent(appId, policyStr, http.StatusOK, INTERNAL)
+					checkSchedulerContent(appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2}, INTERNAL)
+				})
 
-				By("checking the Scheduler")
-				checkSchedule(getSchedules, appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})
+				It("fails with an invalid policy", func() {
+					policyStr = readPolicyFromFile("fakeInvalidPolicy.json")
+
+					doAttachPolicy(appId, policyStr, http.StatusBadRequest, INTERNAL)
+					checkApiServerStatus(appId, http.StatusNotFound, INTERNAL)
+					checkSchedulerStatus(appId, http.StatusNotFound, INTERNAL)
+				})
+
 			})
 
-			It("fails with an invalid policy", func() {
-				policyStr = readPolicyFromFile("fakeInvalidPolicy.json")
-				resp, err := attachPolicy(appId, policyStr)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
-				resp.Body.Close()
+			Context("Policies without schedules", func() {
+				It("creates only the policy", func() {
+					policyStr = readPolicyFromFile("fakePolicyWithoutSchedule.json")
 
-				By("checking the API Server")
-				resp, err = getPolicy(appId)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
-				resp.Body.Close()
+					doAttachPolicy(appId, policyStr, http.StatusCreated, INTERNAL)
+					checkApiServerContent(appId, policyStr, http.StatusOK, INTERNAL)
+					checkSchedulerStatus(appId, http.StatusNotFound, INTERNAL)
 
-				By("checking the Scheduler")
-				resp, err = getSchedules(appId)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
-				resp.Body.Close()
-			})
-
-		})
-
-		Context("Policies without schedules", func() {
-			It("creates only the policy", func() {
-				policyStr = readPolicyFromFile("fakePolicyWithoutSchedule.json")
-				resp, err := attachPolicy(appId, policyStr)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(http.StatusCreated))
-				resp.Body.Close()
-
-				By("checking the API Server")
-				var expected map[string]interface{}
-				err = json.Unmarshal(policyStr, &expected)
-				Expect(err).NotTo(HaveOccurred())
-
-				checkResponseContent(getPolicy, appId, http.StatusOK, expected)
-
-				By("checking the Scheduler")
-				resp, err = getSchedules(appId)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
-				resp.Body.Close()
-
+				})
 			})
 		})
+
+		Context("public api", func() {
+			Context("Policies with schedules", func() {
+				It("creates a policy and associated schedules", func() {
+					policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
+
+					doAttachPolicy(appId, policyStr, http.StatusCreated, PUBLIC)
+					checkApiServerContent(appId, policyStr, http.StatusOK, PUBLIC)
+					checkSchedulerContent(appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2}, PUBLIC)
+				})
+
+				It("fails with an invalid policy", func() {
+					policyStr = readPolicyFromFile("fakeInvalidPolicy.json")
+
+					doAttachPolicy(appId, policyStr, http.StatusBadRequest, PUBLIC)
+					checkApiServerStatus(appId, http.StatusNotFound, PUBLIC)
+					checkSchedulerStatus(appId, http.StatusNotFound, PUBLIC)
+				})
+
+			})
+
+			Context("Policies without schedules", func() {
+				It("creates only the policy", func() {
+					policyStr = readPolicyFromFile("fakePolicyWithoutSchedule.json")
+
+					doAttachPolicy(appId, policyStr, http.StatusCreated, PUBLIC)
+					checkApiServerContent(appId, policyStr, http.StatusOK, PUBLIC)
+					checkSchedulerStatus(appId, http.StatusNotFound, PUBLIC)
+
+				})
+			})
+		})
+
 	})
 
 	Describe("Update policy", func() {
-		Context("Update policies with schedules", func() {
-			BeforeEach(func() {
-				//attach a policy first with 4 recurring and 2 specific_date schedules
-				policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
-				resp, err := attachPolicy(appId, policyStr)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(http.StatusCreated))
-				resp.Body.Close()
-			})
+		Context("internal api", func() {
+			Context("Update policies with schedules", func() {
+				BeforeEach(func() {
+					//attach a policy first with 4 recurring and 2 specific_date schedules
+					policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
 
-			It("updates the policy and schedules", func() {
-				//attach another policy with 3 recurring and 1 specific_date schedules
-				policyStr = readPolicyFromFile("fakePolicyWithScheduleAnother.json")
-				resp, err := attachPolicy(appId, policyStr)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
-				resp.Body.Close()
+					doAttachPolicy(appId, policyStr, http.StatusCreated, INTERNAL)
+				})
 
-				By("checking the API Server")
-				var expected map[string]interface{}
-				err = json.Unmarshal(policyStr, &expected)
-				Expect(err).NotTo(HaveOccurred())
-				checkResponseContent(getPolicy, appId, http.StatusOK, expected)
+				It("updates the policy and schedules", func() {
+					//attach another policy with 3 recurring and 1 specific_date schedules
+					policyStr = readPolicyFromFile("fakePolicyWithScheduleAnother.json")
 
-				By("checking the Scheduler")
-				checkSchedule(getSchedules, appId, http.StatusOK, map[string]int{"recurring_schedule": 3, "specific_date": 1})
+					doAttachPolicy(appId, policyStr, http.StatusOK, INTERNAL)
+					checkApiServerContent(appId, policyStr, http.StatusOK, INTERNAL)
+					checkSchedulerContent(appId, http.StatusOK, map[string]int{"recurring_schedule": 3, "specific_date": 1}, INTERNAL)
+				})
 			})
 		})
+
+		Context("public api", func() {
+			Context("Update policies with schedules", func() {
+				BeforeEach(func() {
+					//attach a policy first with 4 recurring and 2 specific_date schedules
+					policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
+
+					doAttachPolicy(appId, policyStr, http.StatusCreated, PUBLIC)
+				})
+
+				It("updates the policy and schedules", func() {
+					//attach another policy with 3 recurring and 1 specific_date schedules
+					policyStr = readPolicyFromFile("fakePolicyWithScheduleAnother.json")
+
+					doAttachPolicy(appId, policyStr, http.StatusOK, PUBLIC)
+					checkApiServerContent(appId, policyStr, http.StatusOK, PUBLIC)
+					checkSchedulerContent(appId, http.StatusOK, map[string]int{"recurring_schedule": 3, "specific_date": 1}, PUBLIC)
+				})
+			})
+		})
+
 	})
 
 	Describe("Delete Policies", func() {
-		Context("for a non-existing app", func() {
-			It("Should return a NOT FOUND (404)", func() {
-				resp, err := detachPolicy(appId)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
-				respBody, err := ioutil.ReadAll(resp.Body)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(string(respBody)).To(Equal(`{"success":false,"error":{"message":"No policy bound with application","statusCode":404},"result":null}`))
-				resp.Body.Close()
+		Context("internal api", func() {
+			Context("for a non-existing app", func() {
+				It("Should return a NOT FOUND (404)", func() {
+					doDetachPolicy(appId, http.StatusNotFound, `{"success":false,"error":{"message":"No policy bound with application","statusCode":404},"result":null}`, INTERNAL)
+				})
+			})
+
+			Context("with an existing app", func() {
+				BeforeEach(func() {
+					//attach a policy first with 4 recurring and 2 specific_date schedules
+					policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
+
+					doAttachPolicy(appId, policyStr, http.StatusCreated, INTERNAL)
+				})
+
+				It("deletes the policy and schedules", func() {
+					doDetachPolicy(appId, http.StatusOK, "", INTERNAL)
+					checkApiServerStatus(appId, http.StatusNotFound, INTERNAL)
+					checkSchedulerStatus(appId, http.StatusNotFound, INTERNAL)
+				})
 			})
 		})
 
-		Context("with an existing app", func() {
-			BeforeEach(func() {
-				//attach a policy first with 4 recurring and 2 specific_date schedules
-				policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
-				resp, err := attachPolicy(appId, policyStr)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(http.StatusCreated))
-				resp.Body.Close()
+		Context("public api", func() {
+			Context("for a non-existing app", func() {
+				It("Should return a NOT FOUND (404)", func() {
+					doDetachPolicy(appId, http.StatusNotFound, `{"success":false,"error":{"message":"No policy bound with application","statusCode":404},"result":null}`, PUBLIC)
+				})
 			})
 
-			It("deletes the policy and schedules", func() {
-				resp, err := detachPolicy(appId)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(http.StatusOK))
-				resp.Body.Close()
-				By("checking the API Server")
-				resp, err = getPolicy(appId)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
-				resp.Body.Close()
+			Context("with an existing app", func() {
+				BeforeEach(func() {
+					//attach a policy first with 4 recurring and 2 specific_date schedules
+					policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
 
-				By("checking the Scheduler")
-				resp, err = getSchedules(appId)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
-				resp.Body.Close()
+					doAttachPolicy(appId, policyStr, http.StatusCreated, PUBLIC)
+				})
+
+				It("deletes the policy and schedules", func() {
+					doDetachPolicy(appId, http.StatusOK, "", PUBLIC)
+					checkApiServerStatus(appId, http.StatusNotFound, PUBLIC)
+					checkSchedulerStatus(appId, http.StatusNotFound, PUBLIC)
+				})
 			})
 		})
+
 	})
 })
+
+func doAttachPolicy(appId string, policyStr []byte, statusCode int, apiType APIType) {
+	resp, err := attachPolicy(appId, policyStr, apiType)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(resp.StatusCode).To(Equal(statusCode))
+	resp.Body.Close()
+
+}
+func doDetachPolicy(appId string, statusCode int, msg string, apiType APIType) {
+	resp, err := detachPolicy(appId, apiType)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(resp.StatusCode).To(Equal(statusCode))
+	if msg != "" {
+		respBody, err := ioutil.ReadAll(resp.Body)
+		Expect(err).NotTo(HaveOccurred())
+		Expect(string(respBody)).To(Equal(msg))
+	}
+	resp.Body.Close()
+}
+func checkApiServerStatus(appId string, statusCode int, apiType APIType) {
+	By("checking the API Server")
+	resp, err := getPolicy(appId, apiType)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(resp.StatusCode).To(Equal(statusCode))
+	resp.Body.Close()
+}
+func checkApiServerContent(appId string, policyStr []byte, statusCode int, apiType APIType) {
+	By("checking the API Server")
+	var expected map[string]interface{}
+	err := json.Unmarshal(policyStr, &expected)
+	Expect(err).NotTo(HaveOccurred())
+	checkResponseContent(getPolicy, appId, statusCode, expected, apiType)
+}
+func checkSchedulerStatus(appId string, statusCode int, apiType APIType) {
+	By("checking the Scheduler")
+	resp, err := getSchedules(appId, apiType)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(resp.StatusCode).To(Equal(statusCode))
+	resp.Body.Close()
+}
+func checkSchedulerContent(appId string, statusCode int, expectedScheduleNumMap map[string]int, apiType APIType) {
+	By("checking the Scheduler")
+	checkSchedule(getSchedules, appId, statusCode, expectedScheduleNumMap, apiType)
+}

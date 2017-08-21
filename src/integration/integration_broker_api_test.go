@@ -32,7 +32,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 		initializeHttpClient("servicebroker.crt", "servicebroker.key", "autoscaler-ca.crt", brokerApiHttpRequestTimeout)
 
 		fakeScheduler = ghttp.NewServer()
-		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], dbUrl, fakeScheduler.URL(), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), tmpDir)
+		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], components.Ports[APIPublicServer], dbUrl, fakeScheduler.URL(), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), tmpDir)
 		serviceBrokerConfPath = components.PrepareServiceBrokerConfig(components.Ports[ServiceBroker], brokerUserName, brokerPassword, dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[APIServer]), brokerApiHttpRequestTimeout, tmpDir)
 
 		startApiServer()
@@ -91,7 +91,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 				err = json.Unmarshal(schedulePolicyJson, &expected)
 				Expect(err).NotTo(HaveOccurred())
 
-				checkResponseContent(getPolicy, appId, http.StatusOK, expected)
+				checkResponseContent(getPolicy, appId, http.StatusOK, expected, INTERNAL)
 			})
 		})
 
@@ -111,7 +111,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 				Consistently(fakeScheduler.ReceivedRequests).Should(HaveLen(schedulerCount))
 
 				By("checking the API Server")
-				resp, err = getPolicy(appId)
+				resp, err = getPolicy(appId, INTERNAL)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
 				resp.Body.Close()
@@ -134,7 +134,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 				Consistently(fakeScheduler.ReceivedRequests).Should(HaveLen(schedulerCount))
 
 				By("checking the API Server")
-				resp, err = getPolicy(appId)
+				resp, err = getPolicy(appId, INTERNAL)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
 				resp.Body.Close()
@@ -144,7 +144,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 		Context("ApiServer is down", func() {
 			BeforeEach(func() {
 				stopApiServer()
-				_, err := getPolicy(appId)
+				_, err := getPolicy(appId, INTERNAL)
 				Expect(err).To(HaveOccurred())
 				fakeScheduler.RouteToHandler("PUT", regPath, ghttp.RespondWith(http.StatusInternalServerError, "error"))
 			})
@@ -173,7 +173,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 				Consistently(fakeScheduler.ReceivedRequests).Should(HaveLen(schedulerCount + 1))
 
 				By("checking the API Server")
-				resp, err = getPolicy(appId)
+				resp, err = getPolicy(appId, INTERNAL)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
 				resp.Body.Close()
@@ -203,7 +203,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 			resp.Body.Close()
 
 			By("checking the API Server")
-			resp, err = getPolicy(appId)
+			resp, err = getPolicy(appId, INTERNAL)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
 			resp.Body.Close()
@@ -213,7 +213,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 			BeforeEach(func() {
 				fakeScheduler.RouteToHandler("DELETE", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
 				//detach the appId's policy first
-				resp, err := detachPolicy(appId)
+				resp, err := detachPolicy(appId, INTERNAL)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 				resp.Body.Close()
@@ -230,7 +230,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 		Context("APIServer is down", func() {
 			BeforeEach(func() {
 				stopApiServer()
-				_, err := detachPolicy(appId)
+				_, err := detachPolicy(appId, INTERNAL)
 				Expect(err).To(HaveOccurred())
 				fakeScheduler.RouteToHandler("DELETE", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
 			})
@@ -255,7 +255,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 				resp.Body.Close()
 
 				By("checking the API Server")
-				resp, err = getPolicy(appId)
+				resp, err = getPolicy(appId, INTERNAL)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
 				resp.Body.Close()
