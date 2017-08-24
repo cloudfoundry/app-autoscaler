@@ -113,8 +113,9 @@ describe('Validate Policy JSON Schema structure', function() {
     });
 
   });
-  it('should fail to validate policy schema as threshold value is negative', function(done) {
+  it('should fail to validate policy with negative threshold value for metric_type memoryused', function(done) {
     fakePolicy.scaling_rules[0].threshold = -300;
+    fakePolicy.scaling_rules[0].metric_type = 'memoryused';
     request(app)
     .put('/v1/apps/12346/policy',validationMiddleware)
     .send(fakePolicy)
@@ -122,13 +123,145 @@ describe('Validate Policy JSON Schema structure', function() {
       expect(result.statusCode).to.equal(400);
       expect(result.body.success).to.equal(false);
       expect(result.body.error).to.not.be.null;
-      expect(result.body.error[0].property).to.equal('instance.scaling_rules[0].threshold');
-      expect(result.body.error[0].message).to.equal('must have a minimum value of 0');
-      expect(result.body.error[0].stack).to.equal('instance.scaling_rules[0].threshold must have a minimum value of 0');
+      expect(result.body.error[0].property).to.equal('scaling_rules[0].threshold');
+      expect(result.body.error[0].message).to.equal('threshold value for metric_type memoryused should be greater than 0');
+      expect(result.body.error[0].stack).to.equal('scaling_rules[0].threshold value should be greater than 0');
       done();
     });
-
   });
+  it('should successfully validate policy with positive threshold value for metric_type memoryused', function(done) {
+    fakePolicy.scaling_rules[0].threshold = 300;
+    fakePolicy.scaling_rules[0].metric_type = 'memoryused';
+    nock(schedulerURI)
+    .put('/v2/schedules/12346')
+    .query({'guid':/.*/})
+    .reply(200);
+    request(app)
+    .put('/v1/apps/12346/policy',validationMiddleware)
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(201);
+      expect(result.body.success).to.equal(true);
+      expect(result.body.error).to.be.null;
+      done();
+    });
+  });
+  it('should fail to validate policy with negative threshold value for metric_type memoryutil', function(done) {
+    fakePolicy.scaling_rules[0].threshold = -300;
+    fakePolicy.scaling_rules[0].metric_type = 'memoryutil';
+    request(app)
+    .put('/v1/apps/12346/policy',validationMiddleware)
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(400);
+      expect(result.body.success).to.equal(false);
+      expect(result.body.error).to.not.be.null;
+      expect(result.body.error[0].property).to.equal('scaling_rules[0].threshold');
+      expect(result.body.error[0].message).to.equal('threshold value for metric_type memoryutil should be greater than 0 and less than equal to 100');
+      expect(result.body.error[0].stack).to.equal('scaling_rules[0].threshold value should be greater than 0 and less than equal to 100');
+      done();
+    });
+  });
+  it('should fail to validate policy with above 100 threshold value for metric_type memoryutil', function(done) {
+    fakePolicy.scaling_rules[0].threshold = 200;
+    fakePolicy.scaling_rules[0].metric_type = 'memoryutil';
+    request(app)
+    .put('/v1/apps/12346/policy',validationMiddleware)
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(400);
+      expect(result.body.success).to.equal(false);
+      expect(result.body.error).to.not.be.null;
+      expect(result.body.error[0].property).to.equal('scaling_rules[0].threshold');
+      expect(result.body.error[0].message).to.equal('threshold value for metric_type memoryutil should be greater than 0 and less than equal to 100');
+      expect(result.body.error[0].stack).to.equal('scaling_rules[0].threshold value should be greater than 0 and less than equal to 100');
+      done();
+    });
+  });
+  it('should successfully validate policy between 0 and 100 threshold value for metric_type memoryutil', function(done) {
+    fakePolicy.scaling_rules[0].threshold = 50;
+    fakePolicy.scaling_rules[0].metric_type = 'memoryutil';
+    nock(schedulerURI)
+    .put('/v2/schedules/12346')
+    .query({'guid':/.*/})
+    .reply(200);
+    request(app)
+    .put('/v1/apps/12346/policy',validationMiddleware)
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(201);
+      expect(result.body.success).to.equal(true);
+      expect(result.body.error).to.be.null;
+      done();
+    });
+  });
+  it('should fail to validate policy with negative threshold value for metric_type responsetime', function(done) {
+    fakePolicy.scaling_rules[0].threshold = -300;
+    fakePolicy.scaling_rules[0].metric_type = 'responsetime';
+    request(app)
+    .put('/v1/apps/12346/policy',validationMiddleware)
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(400);
+      expect(result.body.success).to.equal(false);
+      expect(result.body.error).to.not.be.null;
+      expect(result.body.error[0].property).to.equal('scaling_rules[0].threshold');
+      expect(result.body.error[0].message).to.equal('threshold value for metric_type responsetime should be greater than 0');
+      expect(result.body.error[0].stack).to.equal('scaling_rules[0].threshold value should be greater than 0');
+      done();
+    });
+  });
+  it('should successfully validate policy with positive threshold value for metric_type responsetime', function(done) {
+    fakePolicy.scaling_rules[0].threshold = 300;
+    fakePolicy.scaling_rules[0].metric_type = 'responsetime';
+    nock(schedulerURI)
+    .put('/v2/schedules/12346')
+    .query({'guid':/.*/})
+    .reply(200);
+    request(app)
+    .put('/v1/apps/12346/policy',validationMiddleware)
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(201);
+      expect(result.body.success).to.equal(true);
+      expect(result.body.error).to.be.null;
+      done();
+    });
+  });
+  it('should fail to validate policy with negative threshold value for metric_type throughput', function(done) {
+    fakePolicy.scaling_rules[0].threshold = -300;
+    fakePolicy.scaling_rules[0].metric_type = 'throughput';
+    request(app)
+    .put('/v1/apps/12346/policy',validationMiddleware)
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(400);
+      expect(result.body.success).to.equal(false);
+      expect(result.body.error).to.not.be.null;
+      expect(result.body.error[0].property).to.equal('scaling_rules[0].threshold');
+      expect(result.body.error[0].message).to.equal('threshold value for metric_type throughput should be greater than 0');
+      expect(result.body.error[0].stack).to.equal('scaling_rules[0].threshold value should be greater than 0');
+       done();
+    });
+  });
+  it('should successfully validate policy with positive threshold value for metric_type throughput', function(done) {
+    fakePolicy.scaling_rules[0].threshold = 300;
+    fakePolicy.scaling_rules[0].metric_type = 'throughput';
+    nock(schedulerURI)
+    .put('/v2/schedules/12346')
+    .query({'guid':/.*/})
+    .reply(200);
+    request(app)
+    .put('/v1/apps/12346/policy',validationMiddleware)
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(201);
+      expect(result.body.success).to.equal(true);
+      expect(result.body.error).to.be.null;
+      done();
+    });
+  });
+
   it('should validate policy schema without stat_window_secs in scaling_rules',function(done) {
     nock(schedulerURI)
     .put('/v2/schedules/12347')
