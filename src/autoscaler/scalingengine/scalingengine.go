@@ -21,12 +21,13 @@ type ScalingEngine interface {
 }
 
 type scalingEngine struct {
-	logger          lager.Logger
-	cfClient        cf.CfClient
-	policyDB        db.PolicyDB
-	scalingEngineDB db.ScalingEngineDB
-	appLock         *StripedLock
-	clock           clock.Clock
+	logger              lager.Logger
+	cfClient            cf.CfClient
+	policyDB            db.PolicyDB
+	scalingEngineDB     db.ScalingEngineDB
+	appLock             *StripedLock
+	clock               clock.Clock
+	defaultCoolDownSecs int
 }
 
 type ActiveScheduleNotFoundError struct {
@@ -36,14 +37,15 @@ func (ase *ActiveScheduleNotFoundError) Error() string {
 	return fmt.Sprintf("active schedule not found")
 }
 
-func NewScalingEngine(logger lager.Logger, cfClient cf.CfClient, policyDB db.PolicyDB, scalingEngineDB db.ScalingEngineDB, clock clock.Clock) ScalingEngine {
+func NewScalingEngine(logger lager.Logger, cfClient cf.CfClient, policyDB db.PolicyDB, scalingEngineDB db.ScalingEngineDB, clock clock.Clock, defaultCoolDownSecs int) ScalingEngine {
 	return &scalingEngine{
-		logger:          logger.Session("scale"),
-		cfClient:        cfClient,
-		policyDB:        policyDB,
-		scalingEngineDB: scalingEngineDB,
-		appLock:         NewStripedLock(32),
-		clock:           clock,
+		logger:              logger.Session("scale"),
+		cfClient:            cfClient,
+		policyDB:            policyDB,
+		scalingEngineDB:     scalingEngineDB,
+		appLock:             NewStripedLock(32),
+		clock:               clock,
+		defaultCoolDownSecs: defaultCoolDownSecs,
 	}
 }
 
@@ -147,7 +149,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (int, error
 
 	history.Status = models.ScalingStatusSucceeded
 
-	err = s.scalingEngineDB.UpdateScalingCooldownExpireTime(appId, now.Add(trigger.CoolDown()).UnixNano())
+	err = s.scalingEngineDB.UpdateScalingCooldownExpireTime(appId, now.Add(trigger.CoolDown(s.defaultCoolDownSecs)).UnixNano())
 	if err != nil {
 		logger.Error("failed-to-update-scaling-cool-down-expire-time", err, lager.Data{"newInstances": newInstances})
 	}

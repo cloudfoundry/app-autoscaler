@@ -16,6 +16,8 @@ scalingEngine:
   scaling_engine_url: "http://localhost:8082"
 metricCollector:
   metric_collector_url: "http://localhost:8083"
+defaultStatWindowSecs: 300
+defaultBreachDurationSecs: 600
 #lock:
 #  lock_ttl: 15s
 #  lock_retry_interval: 10s

@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"code.cloudfoundry.org/locket"
+	yaml "gopkg.in/yaml.v2"
 
-	"gopkg.in/yaml.v2"
+	"code.cloudfoundry.org/locket"
 
 	"autoscaler/models"
 )
@@ -64,13 +64,15 @@ type LockConfig struct {
 }
 
 type Config struct {
-	Logging         LoggingConfig         `yaml:"logging"`
-	DB              DBConfig              `yaml:"db"`
-	Aggregator      AggregatorConfig      `yaml:"aggregator"`
-	Evaluator       EvaluatorConfig       `yaml:"evaluator"`
-	ScalingEngine   ScalingEngineConfig   `yaml:"scalingEngine"`
-	MetricCollector MetricCollectorConfig `yaml:"metricCollector"`
-	Lock            LockConfig            `yaml:"lock"`
+	Logging                   LoggingConfig         `yaml:"logging"`
+	DB                        DBConfig              `yaml:"db"`
+	Aggregator                AggregatorConfig      `yaml:"aggregator"`
+	Evaluator                 EvaluatorConfig       `yaml:"evaluator"`
+	ScalingEngine             ScalingEngineConfig   `yaml:"scalingEngine"`
+	MetricCollector           MetricCollectorConfig `yaml:"metricCollector"`
+	Lock                      LockConfig            `yaml:"lock"`
+	DefaultStatWindowSecs     int                   `yaml:"defaultStatWindowSecs"`
+	DefaultBreachDurationSecs int                   `yaml:"defaultBreachDurationSecs"`
 }
 
 func LoadConfig(bytes []byte) (*Config, error) {
@@ -141,6 +143,12 @@ func (c *Config) Validate() error {
 	}
 	if c.Lock.LockTTL <= 0 {
 		return fmt.Errorf("Configuration error: lock ttl is less than or equal to 0")
+	}
+	if c.DefaultBreachDurationSecs < 60 || c.DefaultBreachDurationSecs > 3600 {
+		return fmt.Errorf("Configuration error: defaultBreachDurationSecs should be between 60 and 3600")
+	}
+	if c.DefaultStatWindowSecs < 60 || c.DefaultStatWindowSecs > 3600 {
+		return fmt.Errorf("Configuration error: defaultStatWindowSecs should be between 60 and 3600")
 	}
 	return nil
 

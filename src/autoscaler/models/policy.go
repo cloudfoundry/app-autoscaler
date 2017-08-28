@@ -52,15 +52,24 @@ type ScalingRule struct {
 	Adjustment            string `json:"adjustment"`
 }
 
-func (r *ScalingRule) StatWindow() time.Duration {
+func (r *ScalingRule) StatWindow(defaultStatWindowSecs int) time.Duration {
+	if r.StatWindowSeconds <= 0 {
+		return time.Duration(defaultStatWindowSecs) * time.Second
+	}
 	return time.Duration(r.StatWindowSeconds) * time.Second
 }
 
-func (r *ScalingRule) BreachDuration() time.Duration {
+func (r *ScalingRule) BreachDuration(defaultBreachDurationSecs int) time.Duration {
+	if r.BreachDurationSeconds <= 0 {
+		return time.Duration(defaultBreachDurationSecs) * time.Second
+	}
 	return time.Duration(r.BreachDurationSeconds) * time.Second
 }
 
-func (r *ScalingRule) CoolDown() time.Duration {
+func (r *ScalingRule) CoolDown(defaultCoolDownSecs int) time.Duration {
+	if r.CoolDownSeconds <= 0 {
+		return time.Duration(defaultCoolDownSecs) * time.Second
+	}
 	return time.Duration(r.CoolDownSeconds) * time.Second
 }
 
@@ -75,11 +84,17 @@ type Trigger struct {
 	Adjustment            string `json:"adjustment"`
 }
 
-func (t Trigger) BreachDuration() time.Duration {
+func (t Trigger) BreachDuration(defaultBreachDurationSecs int) time.Duration {
+	if t.BreachDurationSeconds <= 0 {
+		return time.Duration(defaultBreachDurationSecs) * time.Second
+	}
 	return time.Duration(t.BreachDurationSeconds) * time.Second
 }
 
-func (t Trigger) CoolDown() time.Duration {
+func (t Trigger) CoolDown(defaultCoolDownSecs int) time.Duration {
+	if t.CoolDownSeconds <= 0 {
+		return time.Duration(defaultCoolDownSecs) * time.Second
+	}
 	return time.Duration(t.CoolDownSeconds) * time.Second
 }
 
