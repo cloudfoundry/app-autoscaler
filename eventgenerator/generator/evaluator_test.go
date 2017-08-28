@@ -17,6 +17,9 @@ import (
 )
 
 var _ = Describe("Evaluator", func() {
+	const (
+		fakeBreachDurationSecs = 300
+	)
 	var (
 		logger         *lagertest.TestLogger
 		httpClient     *http.Client
@@ -265,7 +268,7 @@ var _ = Describe("Evaluator", func() {
 
 	Context("Start", func() {
 		JustBeforeEach(func() {
-			evaluator = NewEvaluator(logger, httpClient, scalingEngine.URL(), triggerChan, database)
+			evaluator = NewEvaluator(logger, httpClient, scalingEngine.URL(), triggerChan, database, fakeBreachDurationSecs)
 			evaluator.Start()
 		})
 
@@ -661,7 +664,7 @@ var _ = Describe("Evaluator", func() {
 			database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
 				return nil, errors.New("no alarm")
 			}
-			evaluator = NewEvaluator(logger, httpClient, scalingEngine.URL(), triggerChan, database)
+			evaluator = NewEvaluator(logger, httpClient, scalingEngine.URL(), triggerChan, database, fakeBreachDurationSecs)
 			evaluator.Start()
 			Expect(triggerChan).To(BeSent(triggerArrayGT))
 			Eventually(database.RetrieveAppMetricsCallCount).Should(Equal(1))
@@ -680,7 +683,7 @@ var _ = Describe("Evaluator", func() {
 			database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
 				return appMetricGTBreach, nil
 			}
-			evaluator = NewEvaluator(logger, httpClient, scalingEngine.URL(), triggerChan, database)
+			evaluator = NewEvaluator(logger, httpClient, scalingEngine.URL(), triggerChan, database, fakeBreachDurationSecs)
 			evaluator.Start()
 			Expect(triggerChan).To(BeSent(triggerArrayGT))
 		})
