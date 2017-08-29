@@ -81,10 +81,10 @@ type MetricsCollectorClient struct {
 	TLS models.TLSCerts `json:"tls"`
 }
 type APIServerConfig struct {
-	Port       int `json:"port"`
-	PublicPort int `json:"publicPort"`
-
-	DB DBConfig `json:"db"`
+	Port       int      `json:"port"`
+	PublicPort int      `json:"publicPort"`
+	CFAPI      string   `json:"cfApi"`
+	DB         DBConfig `json:"db"`
 
 	SchedulerClient        SchedulerClient        `json:"scheduler"`
 	ScalingEngineClient    ScalingEngineClient    `json:"scalingEngine"`
@@ -220,11 +220,11 @@ func (components *Components) PrepareServiceBrokerConfig(port int, username stri
 	return cfgFile.Name()
 }
 
-func (components *Components) PrepareApiServerConfig(port int, publicPort int, dbUri string, schedulerUri string, scalingEngineUri string, metricsCollectorUri string, tmpDir string) string {
+func (components *Components) PrepareApiServerConfig(port int, publicPort int, cfApi string, dbUri string, schedulerUri string, scalingEngineUri string, metricsCollectorUri string, tmpDir string) string {
 	apiConfig := APIServerConfig{
 		Port:       port,
 		PublicPort: publicPort,
-
+		CFAPI:      cfApi,
 		DB: DBConfig{
 			URI:            dbUri,
 			MinConnections: 1,

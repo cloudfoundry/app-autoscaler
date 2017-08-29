@@ -12,6 +12,7 @@ describe('config setting Test Suite', function() {
     defaultConfig = {
       "port": 8080,
       "publicPort": 8081,
+      "cfApi": "https://api.bosh-lite.com",
       "db": {
         "maxConnections": 10,
         "minConnections": 0,
@@ -60,6 +61,8 @@ describe('config setting Test Suite', function() {
     expect(settings.port).to.equal(defaultConfig.port);
 
     expect(settings.publicPort).to.equal(defaultConfig.publicPort);
+
+    expect(settings.cfApi).to.equal(defaultConfig.cfApi);
 
     expect(settings.db.maxConnections).to.equal(defaultConfig.db.maxConnections);
     expect(settings.db.minConnections).to.equal(defaultConfig.db.minConnections);
@@ -160,6 +163,7 @@ describe('config setting Test Suite', function() {
         })
       });
     });
+
     context('Validate internal port and public port',function(){
       context('When publicPort is equal to internal port', function() {
         it('Should return false', function() {
@@ -170,6 +174,31 @@ describe('config setting Test Suite', function() {
         })
       });
     });
+
+    context('Validate cfApi', function() {
+      context('When cfApi is null', function() {
+        it('Should return false', function() {
+          settings.cfApi = null;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("cfApi is required");
+        })
+      });
+      context('When cfApi is undefined', function() {
+        it('Should return false', function() {
+          delete settings.cfApi;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("cfApi is required");
+        })
+      });
+      context('When cfApi is not a string', function() {
+        it('Should return false', function() {
+          settings.cfApi = 12345;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("cfApi must be a string");
+        })
+      });
+    });
+
     context('Validate db.maxConnections', function() {
       context('When db.maxConnections is null', function() {
         it('Should return false', function() {

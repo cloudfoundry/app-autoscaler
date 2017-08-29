@@ -25,6 +25,7 @@ module.exports = function(settingsObj) {
   settingsObj.metricsCollector.uri = cleanUpUri(settingsObj.metricsCollector.uri);
   var settings = {
     port: settingsObj.port,
+    cfApi: settingsObj.cfApi,
     publicPort: settingsObj.publicPort,
     scheduler: settingsObj.scheduler,
     scalingEngine: settingsObj.scalingEngine,
@@ -78,6 +79,12 @@ module.exports = function(settingsObj) {
     }
     if (settings.port == settings.publicPort){
       return {valid:false,message:"internal api port and public api port should be different"}
+    }
+    if (isMissing(settings.cfApi)){
+      return{valid:false, message:"cfApi is required"}
+    }
+    if (!isString(settings.cfApi)) {
+      return {valid:false,message:"cfApi must be a string"};
     }
     if (isMissing(settings.db.maxConnections)){
       return {valid:false,message:"db.maxConnections is required"};

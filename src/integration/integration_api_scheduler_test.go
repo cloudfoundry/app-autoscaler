@@ -9,23 +9,26 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/ghttp"
 	"strings"
 )
 
 var _ = Describe("Integration_Api_Scheduler", func() {
 	var (
-		appId     string
-		policyStr []byte
+		appId             string
+		policyStr         []byte
+		initInstanceCount int = 2
 	)
 
 	BeforeEach(func() {
+		startFakeCCNOAAUAA(initInstanceCount)
 		initializeHttpClient("api.crt", "api.key", "autoscaler-ca.crt", apiSchedulerHttpRequestTimeout)
 		initializeHttpClientForPublicApi("api_public.crt", "api_public.key", "autoscaler-ca.crt", apiMetricsCollectorHttpRequestTimeout)
 
 		schedulerConfPath = components.PrepareSchedulerConfig(dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), tmpDir, strings.Split(consulRunner.Address(), ":")[1])
 		schedulerProcess = startScheduler()
 
-		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], components.Ports[APIPublicServer], dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), tmpDir)
+		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], components.Ports[APIPublicServer], fakeCCNOAAUAA.URL(), dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), tmpDir)
 		startApiServer()
 		appId = getRandomId()
 		resp, err := detachPolicy(appId, INTERNAL)
@@ -36,6 +39,37 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 	AfterEach(func() {
 		stopApiServer()
 		stopScheduler(schedulerProcess)
+	})
+
+	Context("Check user authorization failed", func() {
+		BeforeEach(func() {
+			fakeCCNOAAUAA.RouteToHandler("GET", checkUserSpaceRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
+				struct {
+					TotalResults int `json:"total_results"`
+				}{
+					0,
+				}))
+		})
+		Context("Create policy", func() {
+			It("should error when access public api", func() {
+				By("check public api")
+				policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
+				doAttachPolicy(appId, policyStr, http.StatusUnauthorized, PUBLIC)
+				checkApiServerStatus(appId, http.StatusUnauthorized, PUBLIC)
+			})
+		})
+		Context("Delete policy", func() {
+			BeforeEach(func() {
+				policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
+				doAttachPolicy(appId, policyStr, http.StatusUnauthorized, PUBLIC)
+			})
+
+			It("should delete policy in API server", func() {
+				doDetachPolicy(appId, http.StatusUnauthorized, "", PUBLIC)
+				checkApiServerStatus(appId, http.StatusUnauthorized, PUBLIC)
+			})
+		})
+
 	})
 
 	Context("Scheduler is down", func() {

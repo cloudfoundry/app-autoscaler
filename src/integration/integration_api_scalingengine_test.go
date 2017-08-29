@@ -10,6 +10,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/ghttp"
 )
 
 type ScalingHistoryResult struct {
@@ -35,7 +36,7 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), cf.GrantTypePassword, tmpDir, consulRunner.ConsulCluster())
 		startScalingEngine()
 
-		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], components.Ports[APIPublicServer], dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), tmpDir)
+		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], components.Ports[APIPublicServer], fakeCCNOAAUAA.URL(), dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), tmpDir)
 		startApiServer()
 		appId = getRandomId()
 		pathVariables = []string{appId}
@@ -47,6 +48,22 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 		stopScalingEngine()
 	})
 	Describe("Get scaling histories", func() {
+		Context("Check user authorization failed", func() {
+			BeforeEach(func() {
+				fakeCCNOAAUAA.RouteToHandler("GET", checkUserSpaceRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
+					struct {
+						TotalResults int `json:"total_results"`
+					}{
+						0,
+					}))
+				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order": "desc", "page": "1", "results-per-page": "5"}
+			})
+			It("should error when access public api", func() {
+				By("check public api")
+				checkResponseContentWithParameters(getScalingHistories, pathVariables, parameters, http.StatusUnauthorized, map[string]interface{}{}, PUBLIC)
+			})
+		})
+
 		Context("ScalingEngine is down", func() {
 			JustBeforeEach(func() {
 				stopScalingEngine()
