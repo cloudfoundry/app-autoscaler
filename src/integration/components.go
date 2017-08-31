@@ -426,6 +426,8 @@ func (components *Components) PrepareEventGeneratorConfig(dbUri string, metricsC
 			LockRetryInterval:   lockRetryInterval,
 			ConsulClusterConfig: ConsulClusterConfig,
 		},
+		DefaultBreachDurationSecs: 600,
+		DefaultStatWindowSecs:     300,
 	}
 	return writeYmlConfig(tmpDir, EventGenerator, &conf)
 }
@@ -460,6 +462,7 @@ func (components *Components) PrepareScalingEngineConfig(dbUri string, port int,
 		Consul: seConfig.ConsulConfig{
 			Cluster: consulClusterConfig,
 		},
+		DefaultCoolDownSecs: 300,
 	}
 
 	return writeYmlConfig(tmpDir, ScalingEngine, &conf)

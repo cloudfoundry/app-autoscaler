@@ -221,6 +221,8 @@ func initConfig() {
 			LockTTL:             locket.DefaultSessionTTL,
 			ConsulClusterConfig: consulRunner.ConsulCluster(),
 		},
+		DefaultBreachDurationSecs: 600,
+		DefaultStatWindowSecs:     300,
 	}
 	configFile = writeConfig(conf)
 }

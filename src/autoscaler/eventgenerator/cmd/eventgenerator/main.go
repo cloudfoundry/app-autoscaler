@@ -78,7 +78,7 @@ func main() {
 	appMonitorsChan := make(chan *models.AppMonitor, conf.Aggregator.AppMonitorChannelSize)
 	metricPollers, err := createMetricPollers(logger, conf, appMonitorsChan, appMetricDB)
 	aggregator, err := aggregator.NewAggregator(logger, egClock, conf.Aggregator.AggregatorExecuteInterval,
-		appMonitorsChan, policyPoller.GetPolicies)
+		appMonitorsChan, policyPoller.GetPolicies, conf.DefaultStatWindowSecs)
 	if err != nil {
 		logger.Error("failed to create Aggregator", err)
 		os.Exit(1)
@@ -216,7 +216,7 @@ func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan cha
 
 	evaluators := make([]*generator.Evaluator, count)
 	for i := 0; i < count; i++ {
-		evaluators[i] = generator.NewEvaluator(logger, client, scalingEngineUrl, triggersChan, database)
+		evaluators[i] = generator.NewEvaluator(logger, client, scalingEngineUrl, triggersChan, database, conf.DefaultBreachDurationSecs)
 	}
 
 	return evaluators, nil

@@ -5,33 +5,37 @@ import (
 	"autoscaler/models"
 	"autoscaler/routes"
 	"bytes"
-	"code.cloudfoundry.org/lager"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
+
+	"code.cloudfoundry.org/lager"
 )
 
 var validOperators []string = []string{">", ">=", "<", "<="}
 
 type Evaluator struct {
-	logger           lager.Logger
-	httpClient       *http.Client
-	scalingEngineUrl string
-	triggerChan      chan []*models.Trigger
-	doneChan         chan bool
-	database         db.AppMetricDB
+	logger                    lager.Logger
+	httpClient                *http.Client
+	scalingEngineUrl          string
+	triggerChan               chan []*models.Trigger
+	doneChan                  chan bool
+	database                  db.AppMetricDB
+	defaultBreachDurationSecs int
 }
 
-func NewEvaluator(logger lager.Logger, httpClient *http.Client, scalingEngineUrl string, triggerChan chan []*models.Trigger, database db.AppMetricDB) *Evaluator {
+func NewEvaluator(logger lager.Logger, httpClient *http.Client, scalingEngineUrl string, triggerChan chan []*models.Trigger,
+	database db.AppMetricDB, defaultBreachDurationSecs int) *Evaluator {
 	return &Evaluator{
-		logger:           logger.Session("Evaluator"),
-		httpClient:       httpClient,
-		scalingEngineUrl: scalingEngineUrl,
-		triggerChan:      triggerChan,
-		doneChan:         make(chan bool),
-		database:         database,
+		logger:                    logger.Session("Evaluator"),
+		httpClient:                httpClient,
+		scalingEngineUrl:          scalingEngineUrl,
+		triggerChan:               triggerChan,
+		doneChan:                  make(chan bool),
+		database:                  database,
+		defaultBreachDurationSecs: defaultBreachDurationSecs,
 	}
 }
 
@@ -130,7 +134,7 @@ func (e *Evaluator) doEvaluate(triggerArray []*models.Trigger) {
 
 func (e *Evaluator) retrieveAppMetrics(trigger *models.Trigger) ([]*models.AppMetric, error) {
 	endTime := time.Now()
-	startTime := endTime.Add(0 - trigger.BreachDuration())
+	startTime := endTime.Add(0 - trigger.BreachDuration(e.defaultBreachDurationSecs))
 	appMetrics, err := e.database.RetrieveAppMetrics(trigger.AppId, trigger.MetricType, startTime.UnixNano(), endTime.UnixNano())
 	if err != nil {
 		e.logger.Error("retrieve appMetrics", err, lager.Data{"trigger": trigger})

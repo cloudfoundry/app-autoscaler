@@ -16,10 +16,11 @@ type Aggregator struct {
 	cclock                    clock.Clock
 	aggregatorExecuteInterval time.Duration
 	getPolicies               models.GetPolicies
+	defaultStatWindowSecs     int
 }
 
 func NewAggregator(logger lager.Logger, clock clock.Clock, aggregatorExecuteInterval time.Duration,
-	appMonitorChan chan *models.AppMonitor, getPolicies models.GetPolicies) (*Aggregator, error) {
+	appMonitorChan chan *models.AppMonitor, getPolicies models.GetPolicies, defaultStatWindowSecs int) (*Aggregator, error) {
 	aggregator := &Aggregator{
 		logger:   logger.Session("Aggregator"),
 		doneChan: make(chan bool),
@@ -27,6 +28,7 @@ func NewAggregator(logger lager.Logger, clock clock.Clock, aggregatorExecuteInte
 		cclock:   clock,
 		aggregatorExecuteInterval: aggregatorExecuteInterval,
 		getPolicies:               getPolicies,
+		defaultStatWindowSecs:     defaultStatWindowSecs,
 	}
 	return aggregator, nil
 }
@@ -41,7 +43,7 @@ func (a *Aggregator) getAppMonitors(policyMap map[string]*models.AppPolicy) []*m
 			appMonitors = append(appMonitors, &models.AppMonitor{
 				AppId:      appId,
 				MetricType: rule.MetricType,
-				StatWindow: rule.StatWindow(),
+				StatWindow: rule.StatWindow(a.defaultStatWindowSecs),
 			})
 		}
 	}

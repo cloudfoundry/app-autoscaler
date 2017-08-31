@@ -4,13 +4,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/ghttp"
 	. "integration"
 	"io/ioutil"
 	"net/http"
 	"regexp"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/ghttp"
 )
 
 var _ = Describe("Integration_Broker_Api", func() {
@@ -18,14 +19,15 @@ var _ = Describe("Integration_Broker_Api", func() {
 	var (
 		regPath = regexp.MustCompile(`^/v2/schedules/.*$`)
 
-		serviceInstanceId       string
-		bindingId               string
-		orgId                   string
-		spaceId                 string
-		appId                   string
-		schedulePolicyJson      []byte
-		invalidSchemaPolicyJson []byte
-		invalidDataPolicyJson   []byte
+		serviceInstanceId            string
+		bindingId                    string
+		orgId                        string
+		spaceId                      string
+		appId                        string
+		schedulePolicyJson           []byte
+		invalidSchemaPolicyJson      []byte
+		invalidDataPolicyJson        []byte
+		minimalScalingRulePolicyJson []byte
 	)
 
 	BeforeEach(func() {
@@ -52,6 +54,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 		schedulePolicyJson = readPolicyFromFile("fakePolicyWithSchedule.json")
 		invalidSchemaPolicyJson = readPolicyFromFile("fakeInvalidPolicy.json")
 		invalidDataPolicyJson = readPolicyFromFile("fakeInvalidDataPolicy.json")
+		minimalScalingRulePolicyJson = readPolicyFromFile("fakeMinimalScalingRulePolicy.json")
 	})
 
 	AfterEach(func() {
@@ -89,6 +92,37 @@ var _ = Describe("Integration_Broker_Api", func() {
 				By("checking the API Server")
 				var expected map[string]interface{}
 				err = json.Unmarshal(schedulePolicyJson, &expected)
+				Expect(err).NotTo(HaveOccurred())
+
+				checkResponseContent(getPolicy, appId, http.StatusOK, expected, INTERNAL)
+			})
+		})
+
+		Context("Policy with minimal Scaling Rules", func() {
+			BeforeEach(func() {
+				fakeScheduler.RouteToHandler("PUT", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
+				fakeScheduler.RouteToHandler("DELETE", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
+			})
+
+			AfterEach(func() {
+				//clear the binding
+				resp, err := unbindService(bindingId, appId, serviceInstanceId)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				resp.Body.Close()
+			})
+
+			It("creates a binding", func() {
+				schedulerRequestCount := len(fakeScheduler.ReceivedRequests())
+				resp, err := bindService(bindingId, appId, serviceInstanceId, minimalScalingRulePolicyJson)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+				resp.Body.Close()
+				Consistently(fakeScheduler.ReceivedRequests).Should(HaveLen(schedulerRequestCount + 1))
+
+				By("checking the API Server")
+				var expected map[string]interface{}
+				err = json.Unmarshal(minimalScalingRulePolicyJson, &expected)
 				Expect(err).NotTo(HaveOccurred())
 
 				checkResponseContent(getPolicy, appId, http.StatusOK, expected, INTERNAL)

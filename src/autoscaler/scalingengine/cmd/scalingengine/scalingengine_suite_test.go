@@ -15,7 +15,6 @@ import (
 	"github.com/onsi/gomega/ghttp"
 	"gopkg.in/yaml.v2"
 
-	"code.cloudfoundry.org/consuladapter/consulrunner"
 	"database/sql"
 	"fmt"
 	"io/ioutil"
@@ -25,6 +24,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"code.cloudfoundry.org/consuladapter/consulrunner"
 )
 
 func TestScalingengine(t *testing.T) {
@@ -98,6 +99,7 @@ var _ = SynchronizedBeforeSuite(
 		conf.Synchronizer.ActiveScheduleSyncInterval = 10 * time.Minute
 
 		conf.Consul.Cluster = consulRunner.ConsulCluster()
+		conf.DefaultCoolDownSecs = 300
 
 		configFile = writeConfig(&conf)
 
