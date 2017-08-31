@@ -8,16 +8,17 @@ var path = require("path");
 var HttpStatus = require('http-status-codes');
 
 var logger = require("../../../lib/log/logger");
-var oauth = require("../../../lib/oauth/oauth")(path.join(__dirname, "../../../config/settings.json"));
+var oauth;
 var nock = require("nock");
 var theAppId = "the-app-guid";
 var theUserId = "the-user-id";
 var req = {};
 var cloudControllerEndpoint;
 var oauthEndpoint;
-describe("Routing Metrics", function() {
+describe("Oauth", function() {
   this.timeout(10000 + 1000); //timeout is 10s and here wait 11s
   beforeEach(function() {
+    oauth = require("../../../lib/oauth/oauth")(path.join(__dirname, "../../../config/settings.json"));
     req = {
       protocol: "https",
       host: "app.bosh-lite.com",
@@ -34,7 +35,18 @@ describe("Routing Metrics", function() {
     nock.cleanAll();
   });
   describe("oauth", function() {
-
+    context("appId is not provided",function(){
+      beforeEach(function(){
+        req.path = "/v1/apps//routes";
+      });
+      it("should return error", function(done) {
+        oauth.checkUserAuthorization(req, function(error, result) {
+          expect(result).to.equal(null);
+          expect(error.message).to.equal("Failed to get appId");
+          done();
+        });
+      });
+    });
     context("user token is not provided", function() {
       beforeEach(function() {
         req.header = function(hearName) {
@@ -49,7 +61,7 @@ describe("Routing Metrics", function() {
         });
       });
     });
-    context("cloudController info endpoint is down", function() {
+    context("Cloud Controller API endpoint is not available", function() {
       it("should return error", function(done) {
         oauth.checkUserAuthorization(req, function(error, result) {
           expect(result).to.equal(null);
@@ -59,7 +71,7 @@ describe("Routing Metrics", function() {
       });
     });
 
-    context("cloudController info endpoint returns error", function() {
+    context("Cloud Controller /v2/info returns 400", function() {
       beforeEach(function() {
         nock("https://api.bosh-lite.com")
           .get("/v2/info")
@@ -76,7 +88,7 @@ describe("Routing Metrics", function() {
       });
     });
 
-    context("authorizationEndpoint is down", function() {
+    context("Authorization endpoint is not available", function() {
       beforeEach(function() {
         nock("https://api.bosh-lite.com")
           .get("/v2/info")
@@ -91,7 +103,7 @@ describe("Routing Metrics", function() {
       });
     });
 
-    context("authorizationEndpoint returns error", function() {
+    context("Authorization endpoint returns 400", function() {
       beforeEach(function() {
         nock("https://api.bosh-lite.com")
           .get("/v2/info")
@@ -113,7 +125,7 @@ describe("Routing Metrics", function() {
       });
     });
 
-    context("check user space endpoint is down", function() {
+    context("Cloud Controller user spaces API is not available", function() {
       beforeEach(function() {
         nock("https://api.bosh-lite.com/v2/info")
           .get("*")
@@ -132,7 +144,7 @@ describe("Routing Metrics", function() {
       });
     });
 
-    context("check user space endpoint returns error", function() {
+    context("Cloud Controller user spaces api returns 400", function() {
       beforeEach(function() {
         nock("https://api.bosh-lite.com")
           .get("/v2/info")
@@ -157,31 +169,6 @@ describe("Routing Metrics", function() {
       });
     });
 
-    context("check user space endpoint returns error", function() {
-      beforeEach(function() {
-        nock("https://api.bosh-lite.com")
-          .get("/v2/info")
-          .reply(HttpStatus.OK, { "authorization_endpoint": "https://uaa.bosh-lite.com" });
-
-        nock("https://uaa.bosh-lite.com")
-          .get("/userinfo")
-          .reply(HttpStatus.OK, { "user_id": theUserId });
-        // "/v2/users/" + userId + "/spaces?q=app_guid:" + appId + "&q=developer_guid:" + userId
-        nock("https://api.bosh-lite.com")
-          .get(/\/v2\/users\/.+\/spaces\?.+/)
-          .reply(HttpStatus.BAD_REQUEST, { "message": "bad request" });
-
-      });
-      it("should return error", function(done) {
-        oauth.checkUserAuthorization(req, function(error, result) {
-          expect(result).to.equal(null);
-          expect(error).to.deep.equal({
-            "statusCode": HttpStatus.BAD_REQUEST
-          });
-          done();
-        });
-      });
-    });
 
     context("user is not space developer", function() {
       beforeEach(function() {

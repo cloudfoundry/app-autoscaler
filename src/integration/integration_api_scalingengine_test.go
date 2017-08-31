@@ -5,12 +5,12 @@ import (
 	"autoscaler/models"
 	"encoding/json"
 	"fmt"
-	. "integration"
-	"net/http"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
+	. "integration"
+	"net/http"
+	"strings"
 )
 
 type ScalingHistoryResult struct {
@@ -48,7 +48,37 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 		stopScalingEngine()
 	})
 	Describe("Get scaling histories", func() {
-		Context("Check user authorization failed", func() {
+
+		Context("Cloud Controller api is not available", func() {
+			BeforeEach(func() {
+				fakeCCNOAAUAA.Reset()
+				fakeCCNOAAUAA.AllowUnhandledRequests = true
+				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order": "desc", "page": "1", "results-per-page": "5"}
+			})
+			It("should error when access public api", func() {
+				By("check public api")
+				checkResponseContentWithParameters(getScalingHistories, pathVariables, parameters, http.StatusBadRequest, map[string]interface{}{}, PUBLIC)
+			})
+		})
+
+		Context("UAA api is not available", func() {
+			BeforeEach(func() {
+				fakeCCNOAAUAA.Reset()
+				fakeCCNOAAUAA.AllowUnhandledRequests = true
+				fakeCCNOAAUAA.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
+					cf.Endpoints{
+						AuthEndpoint:    fakeCCNOAAUAA.URL(),
+						DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
+					}))
+				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order": "desc", "page": "1", "results-per-page": "5"}
+			})
+			It("should error when access public api", func() {
+				By("check public api")
+				checkResponseContentWithParameters(getScalingHistories, pathVariables, parameters, http.StatusBadRequest, map[string]interface{}{}, PUBLIC)
+			})
+		})
+
+		Context("Check permission not passed", func() {
 			BeforeEach(func() {
 				fakeCCNOAAUAA.RouteToHandler("GET", checkUserSpaceRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
 					struct {

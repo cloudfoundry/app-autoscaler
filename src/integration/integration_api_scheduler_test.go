@@ -1,15 +1,15 @@
 package integration_test
 
 import (
+	"autoscaler/cf"
 	"encoding/json"
 	"fmt"
-	. "integration"
-	"io/ioutil"
-	"net/http"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
+	. "integration"
+	"io/ioutil"
+	"net/http"
 	"strings"
 )
 
@@ -41,7 +41,66 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 		stopScheduler(schedulerProcess)
 	})
 
-	Context("Check user authorization failed", func() {
+	Context("Cloud Controller api is not available", func() {
+		BeforeEach(func() {
+			fakeCCNOAAUAA.Reset()
+			fakeCCNOAAUAA.AllowUnhandledRequests = true
+		})
+		Context("Create policy", func() {
+			It("should error when access public api", func() {
+				By("check public api")
+				policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
+				doAttachPolicy(appId, policyStr, http.StatusBadRequest, PUBLIC)
+				checkApiServerStatus(appId, http.StatusBadRequest, PUBLIC)
+			})
+		})
+		Context("Delete policy", func() {
+			BeforeEach(func() {
+				policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
+				doAttachPolicy(appId, policyStr, http.StatusBadRequest, PUBLIC)
+			})
+
+			It("should delete policy in API server", func() {
+				doDetachPolicy(appId, http.StatusBadRequest, "", PUBLIC)
+				checkApiServerStatus(appId, http.StatusBadRequest, PUBLIC)
+			})
+		})
+
+	})
+
+	Context("UAA api is not available", func() {
+		BeforeEach(func() {
+			fakeCCNOAAUAA.Reset()
+			fakeCCNOAAUAA.AllowUnhandledRequests = true
+			fakeCCNOAAUAA.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
+				cf.Endpoints{
+					AuthEndpoint:    fakeCCNOAAUAA.URL(),
+					DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
+				}))
+		})
+		Context("Create policy", func() {
+			It("should error when access public api", func() {
+				By("check public api")
+				policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
+				doAttachPolicy(appId, policyStr, http.StatusBadRequest, PUBLIC)
+				checkApiServerStatus(appId, http.StatusBadRequest, PUBLIC)
+			})
+		})
+		Context("Delete policy", func() {
+			BeforeEach(func() {
+				policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
+				doAttachPolicy(appId, policyStr, http.StatusBadRequest, PUBLIC)
+			})
+
+			It("should delete policy in API server", func() {
+				doDetachPolicy(appId, http.StatusBadRequest, "", PUBLIC)
+				checkApiServerStatus(appId, http.StatusBadRequest, PUBLIC)
+			})
+		})
+
+	})
+
+	Context("Check permission not passed", func() {
 		BeforeEach(func() {
 			fakeCCNOAAUAA.RouteToHandler("GET", checkUserSpaceRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
 				struct {
