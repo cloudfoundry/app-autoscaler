@@ -90,7 +90,7 @@ func main() {
 	}
 	defer schedulerDB.Close()
 
-	scalingEngine := scalingengine.NewScalingEngine(logger, cfClient, policyDB, scalingEngineDB, eClock)
+	scalingEngine := scalingengine.NewScalingEngine(logger, cfClient, policyDB, scalingEngineDB, eClock, conf.DefaultCoolDownSecs)
 	httpServer, err := server.NewServer(logger.Session("http-server"), conf, scalingEngineDB, scalingEngine)
 	if err != nil {
 		logger.Error("failed to create http server", err)

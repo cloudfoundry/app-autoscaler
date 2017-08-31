@@ -37,6 +37,7 @@ server:
   port: 8989
 consul:
   cluster: http://127.0.0.1:8500
+defaultCoolDownSecs: 300
 `)
 			})
 
@@ -84,6 +85,7 @@ synchronizer:
   active_schedule_sync_interval: 300s
 consul:
   cluster: http://127.0.0.1:8500
+defaultCoolDownSecs: 300
 `)
 			})
 
@@ -111,6 +113,8 @@ consul:
 				Expect(conf.Synchronizer.ActiveScheduleSyncInterval).To(Equal(5 * time.Minute))
 
 				Expect(conf.Consul.Cluster).To(Equal("http://127.0.0.1:8500"))
+
+				Expect(conf.DefaultCoolDownSecs).To(Equal(300))
 			})
 		})
 
@@ -123,6 +127,7 @@ db:
   policy_db_url: test-policy-db-url
   scalingengine_db_url: test-scalingengine-db-url
   scheduler_db_url: test-scheduler-db-url
+defaultCoolDownSecs: 300
 `)
 			})
 
@@ -147,6 +152,7 @@ db:
 			conf.Db.PolicyDbUrl = "test-policy-db-url"
 			conf.Db.ScalingEngineDbUrl = "test-scalingengine-db-url"
 			conf.Db.SchedulerDbUrl = "test-scheduler-db-url"
+			conf.DefaultCoolDownSecs = 300
 		})
 
 		JustBeforeEach(func() {
@@ -196,6 +202,26 @@ db:
 
 			It("should error", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: Scheduler DB url is empty")))
+			})
+		})
+
+		Context("when DefaultCoolDownSecs < 60", func() {
+			BeforeEach(func() {
+				conf.DefaultCoolDownSecs = 10
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: DefaultCoolDownSecs should be between 60 and 3600")))
+			})
+		})
+
+		Context("when DefaultCoolDownSecs > 3600", func() {
+			BeforeEach(func() {
+				conf.DefaultCoolDownSecs = 5000
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: DefaultCoolDownSecs should be between 60 and 3600")))
 			})
 		})
 	})

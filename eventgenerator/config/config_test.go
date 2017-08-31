@@ -57,6 +57,8 @@ lock:
   lock_ttl: 15s
   lock_retry_interval: 10s
   consul_cluster_config: http://127.0.0.1:8500
+defaultStatWindowSecs: 300
+defaultBreachDurationSecs: 600
 `)
 			})
 
@@ -95,6 +97,8 @@ lock:
 						LockRetryInterval:   10 * time.Second,
 						ConsulClusterConfig: "http://127.0.0.1:8500",
 					},
+					DefaultBreachDurationSecs: 600,
+					DefaultStatWindowSecs:     300,
 				}))
 			})
 		})
@@ -121,6 +125,8 @@ metricCollector:
   metric_collector_url: http://localhost:8083
 lock:
   consul_cluster_config: http://127.0.0.1:8500
+defaultStatWindowSecs: 300
+defaultBreachDurationSecs: 600
 `)
 			})
 
@@ -152,6 +158,8 @@ metricCollector:
   metric_collector_url: http://localhost:8083
 lock:
   consul_cluster_config: http://127.0.0.1:8500
+defaultStatWindowSecs: 300
+defaultBreachDurationSecs: 600
 `)
 			})
 
@@ -183,6 +191,8 @@ metricCollector:
   metric_collector_url: http://localhost:8083
 lock:
   consul_cluster_config: http://127.0.0.1:8500
+defaultStatWindowSecs: 300
+defaultBreachDurationSecs: 600
 `)
 			})
 
@@ -214,6 +224,8 @@ metricCollector:
   metric_collector_url: http://localhost:8083
 lock:
   consul_cluster_config: http://127.0.0.1:8500
+defaultStatWindowSecs: 300
+defaultBreachDurationSecs: 600
 `)
 			})
 
@@ -245,6 +257,8 @@ metricCollector:
   metric_collector_url: http://localhost:8083
 lock:
   consul_cluster_config: http://127.0.0.1:8500
+defaultStatWindowSecs: 300
+defaultBreachDurationSecs: 600
 `)
 			})
 
@@ -276,6 +290,8 @@ metricCollector:
   metric_collector_url: http://localhost:8083
 lock:
   consul_cluster_config: http://127.0.0.1:8500
+defaultStatWindowSecs: 300
+defaultBreachDurationSecs: 600
 `)
 			})
 
@@ -307,6 +323,8 @@ metricCollector:
   metric_collector_url: http://localhost:8083
 lock:
   consul_cluster_config: http://127.0.0.1:8500	
+defaultStatWindowSecs: 300
+defaultBreachDurationSecs: 600
 `)
 			})
 
@@ -337,6 +355,8 @@ metricCollector:
   metric_collector_url: http://localhost:8083
 lock:
   consul_cluster_config: http://127.0.0.1:8500
+defaultStatWindowSecs: 300
+defaultBreachDurationSecs: 600
 `)
 			})
 
@@ -370,6 +390,8 @@ lock:
   lock_ttl: NOT-INTEGER-VALUE
   lock_retry_interval: 10s
   consul_cluster_config: http://127.0.0.1:8500
+defaultStatWindowSecs: 300
+defaultBreachDurationSecs: 600
 `)
 			})
 
@@ -403,11 +425,82 @@ lock:
   lock_ttl: 15s
   lock_retry_interval: NOT-INTEGER-VALUE
   consul_cluster_config: http://127.0.0.1:8500
+defaultStatWindowSecs: 300
+defaultBreachDurationSecs: 600
 `)
 			})
 
 			It("should error", func() {
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
+			})
+		})
+
+		Context("when it gives a non integer defaultStatWindowSecs", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: info
+db:
+  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+aggregator: 
+  aggregator_execute_interval: 30s
+  policy_poller_interval: 30s
+  metric_poller_count: 10
+  app_monitor_channel_size: 100
+evaluator:
+  evaluation_manager_execute_interval: 30s
+  evaluator_count: 10
+  trigger_array_channel_size: 100
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+metricCollector:
+  metric_collector_url: http://localhost:8083
+lock:
+  lock_ttl: 15s
+  lock_retry_interval: 10s
+  consul_cluster_config: http://127.0.0.1:8500
+defaultStatWindowSecs: NOT-INTEGER-VALUE
+defaultBreachDurationSecs: 600
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal !!str `NOT-INT...` into int")))
+			})
+		})
+		Context("when it gives a non integer defaultStatWindowSecs", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: info
+db:
+  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+aggregator: 
+  aggregator_execute_interval: 30s
+  policy_poller_interval: 30s
+  metric_poller_count: 10
+  app_monitor_channel_size: 100
+evaluator:
+  evaluation_manager_execute_interval: 30s
+  evaluator_count: 10
+  trigger_array_channel_size: 100
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+metricCollector:
+  metric_collector_url: http://localhost:8083
+lock:
+  lock_ttl: 15s
+  lock_retry_interval: 10s
+  consul_cluster_config: http://127.0.0.1:8500
+defaultStatWindowSecs: 300
+defaultBreachDurationSecs: NOT-INTEGER-VALUE
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal !!str `NOT-INT...` into int")))
 			})
 		})
 
@@ -421,6 +514,8 @@ scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
   metric_collector_url: http://localhost:8083
+defaultStatWindowSecs: 300
+defaultBreachDurationSecs: 600
 `)
 			})
 
@@ -446,6 +541,8 @@ metricCollector:
 					Lock: LockConfig{
 						LockRetryInterval: DefaultRetryInterval,
 						LockTTL:           DefaultLockTTL},
+					DefaultBreachDurationSecs: 600,
+					DefaultStatWindowSecs:     300,
 				}))
 			})
 		})
@@ -472,7 +569,10 @@ metricCollector:
 					MetricCollectorUrl: "http://localhost:8083"},
 				Lock: LockConfig{
 					LockRetryInterval: DefaultRetryInterval,
-					LockTTL:           DefaultLockTTL}}
+					LockTTL:           DefaultLockTTL},
+				DefaultBreachDurationSecs: 600,
+				DefaultStatWindowSecs:     300,
+			}
 		})
 
 		JustBeforeEach(func() {
@@ -599,6 +699,42 @@ metricCollector:
 			})
 			It("should error", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: trigger-array channel size is less-equal than 0")))
+			})
+		})
+
+		Context("when DefaultBreachDurationSecs < 60", func() {
+			BeforeEach(func() {
+				conf.DefaultBreachDurationSecs = 10
+			})
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: defaultBreachDurationSecs should be between 60 and 3600")))
+			})
+		})
+
+		Context("when DefaultStatWindowSecs < 60", func() {
+			BeforeEach(func() {
+				conf.DefaultStatWindowSecs = 10
+			})
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: defaultStatWindowSecs should be between 60 and 3600")))
+			})
+		})
+
+		Context("when DefaultBreachDurationSecs > 3600", func() {
+			BeforeEach(func() {
+				conf.DefaultBreachDurationSecs = 5000
+			})
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: defaultBreachDurationSecs should be between 60 and 3600")))
+			})
+		})
+
+		Context("when DefaultStatWindowSecs > 3600", func() {
+			BeforeEach(func() {
+				conf.DefaultStatWindowSecs = 5000
+			})
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: defaultStatWindowSecs should be between 60 and 3600")))
 			})
 		})
 
