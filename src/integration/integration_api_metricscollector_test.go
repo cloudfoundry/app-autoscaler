@@ -62,9 +62,9 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 				fakeCCNOAAUAA.AllowUnhandledRequests = true
 				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "metric-type": metricType, "order": "asc", "page": "1", "results-per-page": "5"}
 			})
-			It("should error when access public api", func() {
+			It("should error when access public api with status 500", func() {
 				By("check public api")
-				checkResponseContentWithParameters(getAppMetrics, pathVariables, parameters, http.StatusBadRequest, map[string]interface{}{}, PUBLIC)
+				checkResponseContentWithParameters(getAppMetrics, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{}, PUBLIC)
 			})
 		})
 
@@ -79,9 +79,26 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 					}))
 				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "metric-type": metricType, "order": "asc", "page": "1", "results-per-page": "5"}
 			})
-			It("should error when access public api", func() {
+			It("should error when access public api with status 500", func() {
 				By("check public api")
-				checkResponseContentWithParameters(getAppMetrics, pathVariables, parameters, http.StatusBadRequest, map[string]interface{}{}, PUBLIC)
+				checkResponseContentWithParameters(getAppMetrics, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{}, PUBLIC)
+			})
+		})
+		Context("UAA api returns 401", func() {
+			BeforeEach(func() {
+				fakeCCNOAAUAA.Reset()
+				fakeCCNOAAUAA.AllowUnhandledRequests = true
+				fakeCCNOAAUAA.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
+					cf.Endpoints{
+						AuthEndpoint:    fakeCCNOAAUAA.URL(),
+						DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
+					}))
+				fakeCCNOAAUAA.RouteToHandler("GET", "/userinfo", ghttp.RespondWithJSONEncoded(http.StatusUnauthorized, struct{}{}))
+				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "metric-type": metricType, "order": "asc", "page": "1", "results-per-page": "5"}
+			})
+			It("should error when access public api with status 401", func() {
+				By("check public api")
+				checkResponseContentWithParameters(getAppMetrics, pathVariables, parameters, http.StatusUnauthorized, map[string]interface{}{}, PUBLIC)
 			})
 		})
 
@@ -95,7 +112,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 					}))
 				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "metric-type": metricType, "order": "asc", "page": "1", "results-per-page": "5"}
 			})
-			It("should error when access public api", func() {
+			It("should error when access public api with status 401", func() {
 				By("check public api")
 				checkResponseContentWithParameters(getAppMetrics, pathVariables, parameters, http.StatusUnauthorized, map[string]interface{}{}, PUBLIC)
 			})

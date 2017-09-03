@@ -12,7 +12,7 @@ describe('config setting Test Suite', function() {
     defaultConfig = {
       "port": 8080,
       "publicPort": 8081,
-      "cfApi": "http://api.bosh-lite.com",
+      "cfApi": "https://api.bosh-lite.com",
       "db": {
         "maxConnections": 10,
         "minConnections": 0,
@@ -198,7 +198,7 @@ describe('config setting Test Suite', function() {
         })
       });
       it("Should add http if no protocol",function(){
-        var apiSetting = configSetting({ cfApi: defaultConfig.cfApi.replace("http://",""), db: { uri: defaultConfig.db.uri}, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls },metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls } });
+        var apiSetting = configSetting({ cfApi: defaultConfig.cfApi.replace("https://",""), db: { uri: defaultConfig.db.uri}, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls },metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls } });
         expect(apiSetting.cfApi).to.equal(defaultConfig.cfApi);
       });
       it("Should filter the last slash",function(){
@@ -339,7 +339,7 @@ describe('config setting Test Suite', function() {
     context('scheduler.uri', function() {
 
       it('Should add http if no protocol', function() {
-        var apiSetting = configSetting({ scheduler: { uri: defaultConfig.scheduler.uri.replace("http://","") }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls },metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls } }).scheduler;
+        var apiSetting = configSetting({ scheduler: { uri: defaultConfig.scheduler.uri.replace("https://","") }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls },metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls } }).scheduler;
         expect(apiSetting.uri).to.equal(defaultConfig.scheduler.uri);
       });
 
@@ -358,7 +358,7 @@ describe('config setting Test Suite', function() {
     context('scalingEngine uri', function() {
 
       it('Should add http if no protocol', function() {
-        var apiSetting = configSetting({ scalingEngine: { uri: defaultConfig.scalingEngine.uri.replace("http://","") }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls },metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls } }).scalingEngine;
+        var apiSetting = configSetting({ scalingEngine: { uri: defaultConfig.scalingEngine.uri.replace("https://","") }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls },metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls } }).scalingEngine;
         expect(apiSetting.uri).to.equal(defaultConfig.scalingEngine.uri);
       });
 
@@ -377,7 +377,7 @@ describe('config setting Test Suite', function() {
     context('metricsCollector uri', function() {
 
       it('Should add http if no protocol', function() {
-        var apiSetting = configSetting({ metricsCollector: { uri: defaultConfig.metricsCollector.uri.replace("http://","") }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls } }).metricsCollector;
+        var apiSetting = configSetting({ metricsCollector: { uri: defaultConfig.metricsCollector.uri.replace("https://","") }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls } }).metricsCollector;
         expect(apiSetting.uri).to.equal(defaultConfig.metricsCollector.uri);
       });
 

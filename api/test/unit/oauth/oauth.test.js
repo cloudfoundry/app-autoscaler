@@ -26,7 +26,7 @@ describe("Oauth", function() {
       params: {
         "app_id": theAppId
       },
-      header: function(hearName) {
+      header: function(headerName) {
         return "fake-token";
       }
     };
@@ -35,21 +35,21 @@ describe("Oauth", function() {
     nock.cleanAll();
   });
   describe("oauth", function() {
-    context("appId is not provided",function(){
-      beforeEach(function(){
+    context("appId is not provided", function() {
+      beforeEach(function() {
         req.path = "/v1/apps//routes";
       });
       it("should return error", function(done) {
         oauth.checkUserAuthorization(req, function(error, result) {
           expect(result).to.equal(null);
-          expect(error.message).to.equal("Failed to get appId");
+          expect(error).to.deep.equal({ statusCode: HttpStatus.UNAUTHORIZED, message: "Failed to get appId" });
           done();
         });
       });
     });
     context("user token is not provided", function() {
       beforeEach(function() {
-        req.header = function(hearName) {
+        req.header = function(headerName) {
           return null;
         }
       });
@@ -71,17 +71,17 @@ describe("Oauth", function() {
       });
     });
 
-    context("Cloud Controller /v2/info returns 400", function() {
+    context("Cloud Controller /v2/info returns status except 200", function() {
       beforeEach(function() {
         nock("https://api.bosh-lite.com")
           .get("/v2/info")
-          .reply(HttpStatus.BAD_REQUEST, { "message": "bad request" });
+          .reply(HttpStatus.SERVICE_UNAVAILABLE, { "message": "SERVICE_UNAVAILABLE" });
       });
-      it("should return error", function(done) {
+      it("should return error with status code of Cloud Controller /v2/info", function(done) {
         oauth.checkUserAuthorization(req, function(error, result) {
           expect(result).to.equal(null);
           expect(error).to.deep.equal({
-            "statusCode": HttpStatus.BAD_REQUEST
+            "statusCode": HttpStatus.SERVICE_UNAVAILABLE
           });
           done();
         });
@@ -103,7 +103,7 @@ describe("Oauth", function() {
       });
     });
 
-    context("Authorization endpoint returns 400", function() {
+    context("Authorization endpoint returns 401", function() {
       beforeEach(function() {
         nock("https://api.bosh-lite.com")
           .get("/v2/info")
@@ -111,14 +111,35 @@ describe("Oauth", function() {
 
         nock("https://uaa.bosh-lite.com")
           .get("/userinfo")
-          .reply(HttpStatus.BAD_REQUEST, { "message": "bad request" });
+          .reply(HttpStatus.UNAUTHORIZED, { "message": "UNAUTHORIZED" });
 
       });
       it("should return error", function(done) {
         oauth.checkUserAuthorization(req, function(error, result) {
           expect(result).to.equal(null);
           expect(error).to.deep.equal({
-            "statusCode": HttpStatus.BAD_REQUEST
+            "statusCode": HttpStatus.UNAUTHORIZED
+          });
+          done();
+        });
+      });
+    });
+    context("Authorization endpoint returns status except 200 and 401", function() {
+      beforeEach(function() {
+        nock("https://api.bosh-lite.com")
+          .get("/v2/info")
+          .reply(HttpStatus.OK, { "authorization_endpoint": "https://uaa.bosh-lite.com" });
+
+        nock("https://uaa.bosh-lite.com")
+          .get("/userinfo")
+          .reply(HttpStatus.SERVICE_UNAVAILABLE, { "message": "SERVICE_UNAVAILABLE" });
+
+      });
+      it("should return error with status code of Authorization endpoint", function(done) {
+        oauth.checkUserAuthorization(req, function(error, result) {
+          expect(result).to.equal(null);
+          expect(error).to.deep.equal({
+            "statusCode": HttpStatus.SERVICE_UNAVAILABLE
           });
           done();
         });
@@ -144,7 +165,7 @@ describe("Oauth", function() {
       });
     });
 
-    context("Cloud Controller user spaces api returns 400", function() {
+    context("Cloud Controller user spaces api returns 401", function() {
       beforeEach(function() {
         nock("https://api.bosh-lite.com")
           .get("/v2/info")
@@ -155,19 +176,44 @@ describe("Oauth", function() {
           .reply(HttpStatus.OK, { "user_id": theUserId });
         nock("https://api.bosh-lite.com")
           .get(/\/v2\/users\/.+\/spaces\?.+/)
-          .reply(HttpStatus.BAD_REQUEST, { "message": "bad request" });
+          .reply(HttpStatus.UNAUTHORIZED, { "message": "UNAUTHORIZED" });
 
       });
       it("should return error", function(done) {
         oauth.checkUserAuthorization(req, function(error, result) {
           expect(result).to.equal(null);
           expect(error).to.deep.equal({
-            "statusCode": HttpStatus.BAD_REQUEST
+            "statusCode": HttpStatus.UNAUTHORIZED
           });
           done();
         });
       });
     });
+    context("Cloud Controller user spaces api returns status except 200 and 401", function() {
+      beforeEach(function() {
+        nock("https://api.bosh-lite.com")
+          .get("/v2/info")
+          .reply(HttpStatus.OK, { "authorization_endpoint": "https://uaa.bosh-lite.com" });
+
+        nock("https://uaa.bosh-lite.com")
+          .get("/userinfo")
+          .reply(HttpStatus.OK, { "user_id": theUserId });
+        nock("https://api.bosh-lite.com")
+          .get(/\/v2\/users\/.+\/spaces\?.+/)
+          .reply(HttpStatus.SERVICE_UNAVAILABLE, { "message": "SERVICE_UNAVAILABLE" });
+
+      });
+      it("should return error with status code of Cloud Controller user spaces api", function(done) {
+        oauth.checkUserAuthorization(req, function(error, result) {
+          expect(result).to.equal(null);
+          expect(error).to.deep.equal({
+            "statusCode": HttpStatus.SERVICE_UNAVAILABLE
+          });
+          done();
+        });
+      });
+    });
+
 
 
     context("user is not space developer", function() {

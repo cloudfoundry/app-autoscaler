@@ -16,7 +16,7 @@ module.exports = function(configFilePath) {
     var appId = reqPath.substring(startIndex, endIndex);
     if (!appId) {
       logger.error("Failed to get appId");
-      callback({ "message": "Failed to get appId" }, null);
+      callback({ "statusCode": HttpStatus.UNAUTHORIZED, "message": "Failed to get appId" }, null);
       return;
     }
     var ccEndpoint = getCloudControllerEndpoint(req);
@@ -42,6 +42,7 @@ module.exports = function(configFilePath) {
         };
         request(options, function(error1, response, body) {
           if (error1) {
+            error1.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
             logger.error("Failed to get space with userId and AppId during permission check", { "appId": appId, "userId": userId, "error": error1 });
             callback(error1, null);
           } else {
@@ -71,12 +72,12 @@ module.exports = function(configFilePath) {
 
   }
 
-  function getCloudControllerEndpoint(req) {
+  function getCloudControllerEndpoint() {
     return settings.cfApi;;
   };
 
-  function getCloudFoundryInfo(req, callback) {
-    var ccEndpoint = getCloudControllerEndpoint(req);
+  function getCloudFoundryInfo(callback) {
+    var ccEndpoint = getCloudControllerEndpoint();
     var options = {
       url: ccEndpoint + "/v2/info",
       method: "GET",
@@ -86,8 +87,8 @@ module.exports = function(configFilePath) {
     };
     request(options, function(error, response, body) {
       if (error) {
-        logger.error("Failed to get Cloud Foundry API information", { "info url": options.url, "error": error });
         error.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+        logger.error("Failed to get Cloud Foundry API information", { "info url": options.url, "error": error });
         callback(error, null);
       } else if (response.statusCode === HttpStatus.OK) {
         logger.info("Get Cloud Foundry API information successfully", { "info url": options.url });
@@ -103,71 +104,47 @@ module.exports = function(configFilePath) {
   }
 
 
+  function requestUserInfoFromUAA(req, callback) {
+    var userToken = req.header("Authorization");
+    var options = {
+      url: obj.authorizationEndpoint + "/userinfo",
+      method: "GET",
+      json: true,
+      timeout: 10000,
+      headers: {
+        "Authorization": userToken,
+        "Content-Type": "application/json"
+      }
+    };
+    request(options, function(error1, response, body) {
+      if (error1) {
+        logger.error("Failed to get user info from UAA", { "userToken": userToken, "http-options": options, "error": error1 });
+        error1.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+        callback(error1, null);
+      } else {
+        if (response.statusCode == HttpStatus.OK) {
+          callback(null, body.user_id);
+        } else {
+          var errorObj = {
+            "statusCode": response.statusCode
+          };
+          logger.error("Failed to get user info from UAA", { "userToken": userToken, "http-options": options, "error": errorObj });
+          callback(errorObj, null);
+        }
+      }
+    });
+  }
 
   function getUserInfo(req, callback) {
     if (obj.authorizationEndpoint) {
-      var userToken = req.header("Authorization");
-      var options = {
-        url: obj.authorizationEndpoint + "/userinfo",
-        method: "GET",
-        json: true,
-        timeout: 10000,
-        headers: {
-          "Authorization": userToken,
-          "Content-Type": "application/json"
-        }
-      };
-      request(options, function(error1, response, body) {
-        if (error1) {
-          logger.error("Failed to get user info from UAA", { "userToken": userToken, "http-options": options, "error": error1 });
-          error1.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
-          callback(error1, null);
-        } else {
-          if (response.statusCode == HttpStatus.OK) {
-            callback(null, body.user_id);
-          } else {
-            var errorObj = {
-              "statusCode": response.statusCode
-            };
-            logger.error("Failed to get user info from UAA", { "userToken": userToken, "http-options": options, "error": errorObj });
-            callback(errorObj, null);
-          }
-        }
-      });
+      requestUserInfoFromUAA(req, callback);
     } else {
-      getCloudFoundryInfo(req, function(error, responseBody) {
+      getCloudFoundryInfo(function(error, responseBody) {
         if (error) {
           callback(error, null);
         } else {
-          var userToken = req.header("Authorization");
           obj.authorizationEndpoint = responseBody.body.authorization_endpoint;
-          var options = {
-            url: obj.authorizationEndpoint + "/userinfo",
-            method: "GET",
-            json: true,
-            timeout: 10000,
-            headers: {
-              "Authorization": userToken,
-              "Content-Type": "application/json"
-            }
-          };
-          request(options, function(error1, response, body) {
-            if (error1) {
-              logger.error("Failed to get user info from UAA", { "userToken": userToken, "http-options": options, "error": error1 });
-              error1.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
-              callback(error1, null);
-            } else {
-              if (response.statusCode == HttpStatus.OK) {
-                callback(null, body.user_id);
-              } else {
-                var errorObj = {
-                  "statusCode": response.statusCode
-                };
-                logger.error("Failed to get user info from UAA", { "userToken": userToken, "http-options": options, "error": errorObj });
-                callback(errorObj, null);
-              }
-            }
-          });
+          requestUserInfoFromUAA(req, callback);
         }
       });
     }

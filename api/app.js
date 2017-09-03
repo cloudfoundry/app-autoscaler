@@ -98,7 +98,11 @@ module.exports = function(configFilePath) {
   publicApp.use(function(req, res, next){
     oauth.checkUserAuthorization(req,function(error,isSpaceDeveloper){
       if(error){
-        res.status(HttpStatus.BAD_REQUEST).send({});
+        if(error.statusCode == HttpStatus.UNAUTHORIZED){
+          res.status(HttpStatus.UNAUTHORIZED).send({});
+        }else{
+          res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({});
+        }
       }else{
         if(isSpaceDeveloper){
           next();

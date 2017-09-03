@@ -47,22 +47,22 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 			fakeCCNOAAUAA.AllowUnhandledRequests = true
 		})
 		Context("Create policy", func() {
-			It("should error when access public api", func() {
+			It("should error when access public api with status 500", func() {
 				By("check public api")
 				policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
-				doAttachPolicy(appId, policyStr, http.StatusBadRequest, PUBLIC)
-				checkApiServerStatus(appId, http.StatusBadRequest, PUBLIC)
+				doAttachPolicy(appId, policyStr, http.StatusInternalServerError, PUBLIC)
+				checkApiServerStatus(appId, http.StatusInternalServerError, PUBLIC)
 			})
 		})
 		Context("Delete policy", func() {
 			BeforeEach(func() {
 				policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
-				doAttachPolicy(appId, policyStr, http.StatusBadRequest, PUBLIC)
+				doAttachPolicy(appId, policyStr, http.StatusInternalServerError, PUBLIC)
 			})
 
-			It("should delete policy in API server", func() {
-				doDetachPolicy(appId, http.StatusBadRequest, "", PUBLIC)
-				checkApiServerStatus(appId, http.StatusBadRequest, PUBLIC)
+			It("should error when access public api with status 500", func() {
+				doDetachPolicy(appId, http.StatusInternalServerError, "", PUBLIC)
+				checkApiServerStatus(appId, http.StatusInternalServerError, PUBLIC)
 			})
 		})
 
@@ -79,22 +79,54 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 				}))
 		})
 		Context("Create policy", func() {
-			It("should error when access public api", func() {
+			It("should error when access public api with status 500", func() {
 				By("check public api")
 				policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
-				doAttachPolicy(appId, policyStr, http.StatusBadRequest, PUBLIC)
-				checkApiServerStatus(appId, http.StatusBadRequest, PUBLIC)
+				doAttachPolicy(appId, policyStr, http.StatusInternalServerError, PUBLIC)
+				checkApiServerStatus(appId, http.StatusInternalServerError, PUBLIC)
 			})
 		})
 		Context("Delete policy", func() {
 			BeforeEach(func() {
 				policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
-				doAttachPolicy(appId, policyStr, http.StatusBadRequest, PUBLIC)
+				doAttachPolicy(appId, policyStr, http.StatusInternalServerError, PUBLIC)
 			})
 
-			It("should delete policy in API server", func() {
-				doDetachPolicy(appId, http.StatusBadRequest, "", PUBLIC)
-				checkApiServerStatus(appId, http.StatusBadRequest, PUBLIC)
+			It("should error when access public api with status 500", func() {
+				doDetachPolicy(appId, http.StatusInternalServerError, "", PUBLIC)
+				checkApiServerStatus(appId, http.StatusInternalServerError, PUBLIC)
+			})
+		})
+
+	})
+	Context("UAA api returns 401", func() {
+		BeforeEach(func() {
+			fakeCCNOAAUAA.Reset()
+			fakeCCNOAAUAA.AllowUnhandledRequests = true
+			fakeCCNOAAUAA.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
+				cf.Endpoints{
+					AuthEndpoint:    fakeCCNOAAUAA.URL(),
+					DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
+				}))
+			fakeCCNOAAUAA.RouteToHandler("GET", "/userinfo", ghttp.RespondWithJSONEncoded(http.StatusUnauthorized, struct{}{}))
+		})
+		Context("Create policy", func() {
+			It("should error when access public api with status 401", func() {
+				By("check public api")
+				policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
+				doAttachPolicy(appId, policyStr, http.StatusUnauthorized, PUBLIC)
+				checkApiServerStatus(appId, http.StatusUnauthorized, PUBLIC)
+			})
+		})
+		Context("Delete policy", func() {
+			BeforeEach(func() {
+				policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
+				doAttachPolicy(appId, policyStr, http.StatusUnauthorized, PUBLIC)
+			})
+
+			It("should error when access public api with status 401", func() {
+				doDetachPolicy(appId, http.StatusUnauthorized, "", PUBLIC)
+				checkApiServerStatus(appId, http.StatusUnauthorized, PUBLIC)
 			})
 		})
 
@@ -110,7 +142,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 				}))
 		})
 		Context("Create policy", func() {
-			It("should error when access public api", func() {
+			It("should error when access public api with status 401", func() {
 				By("check public api")
 				policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
 				doAttachPolicy(appId, policyStr, http.StatusUnauthorized, PUBLIC)
@@ -123,7 +155,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 				doAttachPolicy(appId, policyStr, http.StatusUnauthorized, PUBLIC)
 			})
 
-			It("should delete policy in API server", func() {
+			It("should error when access public api with status 401", func() {
 				doDetachPolicy(appId, http.StatusUnauthorized, "", PUBLIC)
 				checkApiServerStatus(appId, http.StatusUnauthorized, PUBLIC)
 			})
