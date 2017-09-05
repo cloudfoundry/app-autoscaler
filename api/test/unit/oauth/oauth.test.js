@@ -13,16 +13,16 @@ var nock = require("nock");
 var theAppId = "the-app-guid";
 var theUserId = "the-user-id";
 var req = {};
-var cloudControllerEndpoint;
-var oauthEndpoint;
 describe("Oauth", function() {
   this.timeout(10000 + 1000); //timeout is 10s and here wait 11s
+  
   beforeEach(function() {
+    nock.cleanAll();
     oauth = require("../../../lib/oauth/oauth")(path.join(__dirname, "../../../config/settings.json"));
     req = {
       protocol: "https",
       host: "app.bosh-lite.com",
-      path: "/v1/apps/1503978853156012454/routes",
+      path: "/v1/apps/" + theAppId + "/routes",
       params: {
         "app_id": theAppId
       },
@@ -30,19 +30,17 @@ describe("Oauth", function() {
         return "fake-token";
       }
     };
-  })
-  beforeEach(function() {
-    nock.cleanAll();
   });
   describe("oauth", function() {
     context("appId is not provided", function() {
       beforeEach(function() {
         req.path = "/v1/apps//routes";
+        req.params = {"app_id": "" };
       });
       it("should return error", function(done) {
         oauth.checkUserAuthorization(req, function(error, result) {
           expect(result).to.equal(null);
-          expect(error).to.deep.equal({ statusCode: HttpStatus.UNAUTHORIZED, message: "Failed to get appId" });
+          expect(error).to.deep.equal({ statusCode: HttpStatus.NotFound, message: "Failed to get appId" });
           done();
         });
       });

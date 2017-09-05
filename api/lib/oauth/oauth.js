@@ -8,15 +8,11 @@ module.exports = function(configFilePath) {
     fs.readFileSync(configFilePath, 'utf8'))));
   var HttpStatus = require('http-status-codes');
   var obj = {};
-  var prefix = "/v1/apps/";
   obj.checkUserAuthorization = function(req, callback) {
-    var reqPath = req.path;
-    var startIndex = reqPath.indexOf(prefix) + prefix.length;
-    var endIndex = reqPath.indexOf("/", startIndex);
-    var appId = reqPath.substring(startIndex, endIndex);
+    var appId = req.params.app_id;
     if (!appId) {
       logger.error("Failed to get appId");
-      callback({ "statusCode": HttpStatus.UNAUTHORIZED, "message": "Failed to get appId" }, null);
+      callback({ "statusCode": HttpStatus.NotFound, "message": "Failed to get appId" }, null);
       return;
     }
     var ccEndpoint = getCloudControllerEndpoint(req);
@@ -116,11 +112,11 @@ module.exports = function(configFilePath) {
         "Content-Type": "application/json"
       }
     };
-    request(options, function(error1, response, body) {
-      if (error1) {
-        logger.error("Failed to get user info from UAA", { "userToken": userToken, "http-options": options, "error": error1 });
-        error1.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
-        callback(error1, null);
+    request(options, function(error, response, body) {
+      if (error) {
+        logger.error("Failed to get user info from UAAss", { "userToken": userToken, "http-options": options, "error": error });
+        error.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+        callback(error, null);
       } else {
         if (response.statusCode == HttpStatus.OK) {
           callback(null, body.user_id);

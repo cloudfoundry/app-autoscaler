@@ -95,7 +95,7 @@ module.exports = function(configFilePath) {
   var publicApp = express();
   publicApp.use(bodyParser.json());
   publicApp.use(bodyParser.urlencoded({ extended: false }));
-  publicApp.use(function(req, res, next){
+  publicApp.use('/v1/apps/:app_id/*',function(req, res, next){
     oauth.checkUserAuthorization(req,function(error,isSpaceDeveloper){
       if(error){
         if(error.statusCode == HttpStatus.UNAUTHORIZED){
