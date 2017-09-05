@@ -114,7 +114,7 @@ module.exports = function(configFilePath) {
     };
     request(options, function(error, response, body) {
       if (error) {
-        logger.error("Failed to get user info from UAAss", { "userToken": userToken, "http-options": options, "error": error });
+        logger.error("Failed to get user info from UAA", { "userToken": userToken, "http-options": options, "error": error });
         error.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
         callback(error, null);
       } else {
