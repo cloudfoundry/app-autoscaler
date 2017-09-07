@@ -23,7 +23,7 @@ module.exports = function(settingsObj) {
     };
   var addProtocol = function(uri) {
     if(uri && (uri.indexOf("https://") < 0 && uri.indexOf("http://") < 0)){
-      uri = "https://" + uri;
+      uri = "http://" + uri;
     }
     return uri;
   }

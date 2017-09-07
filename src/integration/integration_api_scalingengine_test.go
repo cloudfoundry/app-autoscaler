@@ -55,7 +55,7 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 				fakeCCNOAAUAA.AllowUnhandledRequests = true
 				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order": "desc", "page": "1", "results-per-page": "5"}
 			})
-			It("should error when access public api with status 500", func() {
+			It("should error with status code 500", func() {
 				By("check public api")
 				checkResponseContentWithParameters(getScalingHistories, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{}, PUBLIC)
 			})
@@ -72,7 +72,7 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 					}))
 				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order": "desc", "page": "1", "results-per-page": "5"}
 			})
-			It("should error when access public api with status 500", func() {
+			It("should error with status code 500", func() {
 				By("check public api")
 				checkResponseContentWithParameters(getScalingHistories, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{}, PUBLIC)
 			})
@@ -90,7 +90,7 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 				fakeCCNOAAUAA.RouteToHandler("GET", "/userinfo", ghttp.RespondWithJSONEncoded(http.StatusUnauthorized, struct{}{}))
 				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order": "desc", "page": "1", "results-per-page": "5"}
 			})
-			It("should error when access public api with status 401", func() {
+			It("should error with status code 401", func() {
 				By("check public api")
 				checkResponseContentWithParameters(getScalingHistories, pathVariables, parameters, http.StatusUnauthorized, map[string]interface{}{}, PUBLIC)
 			})
@@ -106,7 +106,7 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 					}))
 				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order": "desc", "page": "1", "results-per-page": "5"}
 			})
-			It("should error when access public api", func() {
+			It("should error with status code 401", func() {
 				By("check public api")
 				checkResponseContentWithParameters(getScalingHistories, pathVariables, parameters, http.StatusUnauthorized, map[string]interface{}{}, PUBLIC)
 			})
@@ -118,7 +118,7 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order": "desc", "page": "1", "results-per-page": "5"}
 			})
 
-			It("should error", func() {
+			It("should error with status code 500", func() {
 				By("check internal api")
 				checkResponseContentWithParameters(getScalingHistories, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{"description": fmt.Sprintf("connect ECONNREFUSED 127.0.0.1:%d", components.Ports[ScalingEngine])}, INTERNAL)
 				By("check public api")

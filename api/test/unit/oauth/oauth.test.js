@@ -69,7 +69,7 @@ describe("Oauth", function() {
       });
     });
 
-    context("Cloud Controller /v2/info returns status except 200", function() {
+    context("Cloud Controller /v2/info returns 503", function() {
       beforeEach(function() {
         nock("https://api.bosh-lite.com")
           .get("/v2/info")
@@ -122,7 +122,7 @@ describe("Oauth", function() {
         });
       });
     });
-    context("Authorization endpoint returns status except 200 and 401", function() {
+    context("Authorization endpoint returns 503", function() {
       beforeEach(function() {
         nock("https://api.bosh-lite.com")
           .get("/v2/info")
@@ -187,7 +187,7 @@ describe("Oauth", function() {
         });
       });
     });
-    context("Cloud Controller user spaces api returns status except 200 and 401", function() {
+    context("Cloud Controller user spaces api returns 503", function() {
       beforeEach(function() {
         nock("https://api.bosh-lite.com")
           .get("/v2/info")
