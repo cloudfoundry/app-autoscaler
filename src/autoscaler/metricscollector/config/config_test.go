@@ -101,7 +101,6 @@ lock:
   consul_cluster_config: http://127.0.0.1:8500
 enable_db_lock: true
 db_lock:
-  owner: 123445687
   ttl: 30s
   url: postgres://pqgotest:password@localhost/pqgotest
 `)
@@ -138,7 +137,6 @@ db_lock:
 
 				Expect(conf.DBLock.LockDBURL).To(Equal("postgres://pqgotest:password@localhost/pqgotest"))
 				Expect(conf.DBLock.LockTTL).To(Equal(30 * time.Second))
-				Expect(conf.DBLock.Owner).To(Equal("123445687"))
 				Expect(conf.EnableDBLock).To(Equal(true))
 			})
 		})
@@ -185,7 +183,6 @@ db:
 			conf.Collector.CollectMethod = CollectMethodPolling
 			conf.DBLock.LockDBURL = "postgres://pqgotest:password@exampl.com/pqgotest"
 			conf.DBLock.LockTTL = time.Duration(30 * time.Second)
-			conf.DBLock.Owner = "123456"
 			conf.EnableDBLock = true
 		})
 
@@ -280,17 +277,5 @@ db:
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: Lock TTL is empty")))
 			})
 		})
-
-		Context("when lock owner is not set but dblock enabled", func() {
-			BeforeEach(func() {
-				conf.EnableDBLock = true
-				conf.DBLock.Owner = ""
-			})
-
-			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: Lock Owner is empty")))
-			})
-		})
-
 	})
 })

@@ -71,7 +71,6 @@ type LockConfig struct {
 }
 
 type DBLockConfig struct {
-	Owner     string        `yaml:"owner"`
 	LockTTL   time.Duration `yaml:"ttl"`
 	LockDBURL string        `yaml:"url"`
 }
@@ -151,10 +150,6 @@ func (c *Config) Validate() error {
 
 	if c.EnableDBLock && c.DBLock.LockTTL == time.Duration(0) {
 		return fmt.Errorf("Configuration error: Lock TTL is empty ")
-	}
-
-	if c.EnableDBLock && c.DBLock.Owner == "" {
-		return fmt.Errorf("Configuration error: Lock Owner is empty ")
 	}
 
 	return nil

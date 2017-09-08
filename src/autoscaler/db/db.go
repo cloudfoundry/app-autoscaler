@@ -2,7 +2,6 @@ package db
 
 import (
 	"autoscaler/models"
-	"time"
 )
 
 const PostgresDriverName = "postgres"
@@ -58,11 +57,7 @@ type SchedulerDB interface {
 }
 
 type LockDB interface {
-	GetDatabaseTimestamp() (time.Time, error)
 	Lock(lock *models.Lock) (bool, error)
-	Fetch() (*models.Lock, error)
-	Acquire(lock *models.Lock) error
 	Release(owner string) error
-	Renew(owner string) error
 	Close() error
 }

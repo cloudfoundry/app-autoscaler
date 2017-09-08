@@ -59,7 +59,7 @@ databaseChangeLog:
       author: paltanmoy
       changes:
         - createTable:
-            tableName: locks
+            tableName: mc_lock
             columns:
               - column:
                   name: owner

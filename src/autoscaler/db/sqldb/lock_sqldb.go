@@ -2,6 +2,7 @@ package sqldb
 
 import (
 	"database/sql"
+	"database/sql/driver"
 	"time"
 
 	"code.cloudfoundry.org/lager"
@@ -14,10 +15,11 @@ import (
 type LockSQLDB struct {
 	url    string
 	logger lager.Logger
+	table  string
 	sqldb  *sql.DB
 }
 
-func NewLockSQLDB(url string, logger lager.Logger) (*LockSQLDB, error) {
+func NewLockSQLDB(url string, table string, logger lager.Logger) (*LockSQLDB, error) {
 	sqldb, err := sql.Open(db.PostgresDriverName, url)
 	if err != nil {
 		logger.Error("open-lock-db", err, lager.Data{"url": url})
@@ -35,6 +37,7 @@ func NewLockSQLDB(url string, logger lager.Logger) (*LockSQLDB, error) {
 		url:    url,
 		logger: logger,
 		sqldb:  sqldb,
+		table:  table,
 	}, nil
 }
 
@@ -47,102 +50,57 @@ func (ldb *LockSQLDB) Close() error {
 	return nil
 }
 
-func (ldb *LockSQLDB) Fetch() (lock *models.Lock, err error) {
-	ldb.logger.Info("fetching locks ")
+func (ldb *LockSQLDB) fetch(tx *sql.Tx) (*models.Lock, error) {
+	ldb.logger.Debug("fetching-lock")
 	var (
 		owner     string
 		timestamp time.Time
 		ttl       time.Duration
 	)
-	tx, err := ldb.sqldb.Begin()
+	query := "SELECT owner,lock_timestamp,ttl FROM " + ldb.table + " LIMIT 1 FOR UPDATE NOWAIT"
+	row := tx.QueryRow(query)
+	err := row.Scan(&owner, &timestamp, &ttl)
 	if err != nil {
-		ldb.logger.Error("error-fetching-lock-transaction", err)
-		return nil, err
-	}
-	query := "SELECT * FROM locks"
-	err = tx.QueryRow(query).Scan(&owner, &timestamp, &ttl)
-	if err != nil {
-		return &models.Lock{}, err
-	}
-	err = tx.Commit()
-	if err != nil {
-		ldb.logger.Error("failed-to-commit-fetching-lock-transaction", err)
+		ldb.logger.Error("failed-to-fetch-lock-details", err)
 		return &models.Lock{}, err
 	}
 	fetchedLock := &models.Lock{Owner: owner, LastModifiedTimestamp: timestamp, Ttl: ttl}
 	return fetchedLock, nil
 }
 
-func (ldb *LockSQLDB) Acquire(lockDetails *models.Lock) error {
-	ldb.logger.Info("acquiring-the-lock", lager.Data{"Owner": lockDetails.Owner, "LastModifiedTimestamp": lockDetails.LastModifiedTimestamp, "Ttl": lockDetails.Ttl})
-	tx, err := ldb.sqldb.Begin()
+func (ldb *LockSQLDB) remove(owner string, tx *sql.Tx) error {
+	ldb.logger.Debug("removing-lock", lager.Data{"Owner": owner})
+	query := "DELETE FROM " + ldb.table + " WHERE owner = $2"
+	if _, err := tx.Exec(query, owner); err != nil {
+		ldb.logger.Error("failed-to-delete-lock-details-during-release-lock", err)
+		return err
+	}
+	return nil
+}
+
+func (ldb *LockSQLDB) insert(lockDetails *models.Lock, tx *sql.Tx) error {
+	ldb.logger.Info("inserting-the-lock-details", lager.Data{"Owner": lockDetails.Owner, "LastModifiedTimestamp": lockDetails.LastModifiedTimestamp, "Ttl": lockDetails.Ttl})
+	currentTimestamp, err := ldb.getDatabaseTimestamp(tx)
 	if err != nil {
-		ldb.logger.Error("error-starting-acquire-lock-transaction", err)
+		ldb.logger.Error("error-getting-timestamp-while-inserting-lock-details", err)
 		return err
 	}
-	defer func() {
-		if err != nil {
-			ldb.logger.Error("rolling-back-acquire-lock-transaction!", err)
-			err = tx.Rollback()
-			if err != nil {
-				ldb.logger.Error("failed-to-rollback-acquire-lock-transaction", err)
-			}
-			return
-		}
-		err = tx.Commit()
-		if err != nil {
-			ldb.logger.Error("failed-to-commit-acquire-lock-transaction", err)
-		}
-	}()
-	if _, err = tx.Exec("SELECT * FROM locks FOR UPDATE NOWAIT"); err != nil {
-		ldb.logger.Error("failed-to-select-for-update", err)
-		return err
-	}
-	currentTimestamp, err := ldb.GetDatabaseTimestamp()
-	if err != nil {
-		ldb.logger.Error("error-getting-timestamp-while-acquiring-lock", err)
-		return err
-	}
-	query := "INSERT INTO locks (owner,lock_timestamp,ttl) VALUES ($1,$2,$3)"
+	query := "INSERT INTO " + ldb.table + " (owner,lock_timestamp,ttl) VALUES ($1,$2,$3)"
 	if _, err = tx.Exec(query, lockDetails.Owner, currentTimestamp, int64(lockDetails.Ttl/time.Second)); err != nil {
-		ldb.logger.Error("failed-to-insert-lock-details-during-acquire-lock", err)
+		ldb.logger.Error("failed-to-insert-lock-details", err)
 		return err
 	}
 	return err
 }
 
-func (ldb *LockSQLDB) Renew(owner string) error {
+func (ldb *LockSQLDB) renew(owner string, tx *sql.Tx) error {
 	ldb.logger.Debug("renewing-lock", lager.Data{"Owner": owner})
-	tx, err := ldb.sqldb.Begin()
-	if err != nil {
-		ldb.logger.Error("error-starting-renew-lock-transaction", err)
-		return err
-	}
-	defer func() {
-		if err != nil {
-			ldb.logger.Error("rolling-back-renew-lock-transaction", err)
-			err = tx.Rollback()
-			if err != nil {
-				ldb.logger.Error("failed-to-rollback-renew-lock-transaction", err)
-			}
-			return
-		}
-		err = tx.Commit()
-		if err != nil {
-			ldb.logger.Error("failed-to-commit-renew-lock-transaction", err)
-		}
-	}()
-	query := "SELECT * FROM locks where owner=$1 FOR UPDATE NOWAIT"
-	if _, err = tx.Exec(query, owner); err != nil {
-		ldb.logger.Error("failed-to-select-for-update", err)
-		return err
-	}
-	currentTimestamp, err := ldb.GetDatabaseTimestamp()
+	currentTimestamp, err := ldb.getDatabaseTimestamp(tx)
 	if err != nil {
 		ldb.logger.Error("error-getting-timestamp-while-renewing-lock", err)
 		return err
 	}
-	updatequery := "UPDATE locks SET lock_timestamp=$1 where owner=$2"
+	updatequery := "UPDATE " + ldb.table + " SET lock_timestamp=$1 where owner=$2"
 	if _, err = tx.Exec(updatequery, currentTimestamp, owner); err != nil {
 		ldb.logger.Error("failed-to-update-lock-details-during-lock-renewal", err)
 		return err
@@ -152,90 +110,133 @@ func (ldb *LockSQLDB) Renew(owner string) error {
 
 func (ldb *LockSQLDB) Release(owner string) error {
 	ldb.logger.Debug("releasing-lock", lager.Data{"Owner": owner})
-	tx, err := ldb.sqldb.Begin()
-	if err != nil {
-		ldb.logger.Error("error-starting-release-lock-transaction", err)
-		return err
-	}
-	defer func() {
-		if err != nil {
-			ldb.logger.Error("rolling-back-release-lock-transaction!", err)
-			err = tx.Rollback()
-			if err != nil {
-				ldb.logger.Error("failed-to-rollback-release-lock-transaction", err)
-			}
-			return
+	err := ldb.transact(ldb.sqldb, func(tx *sql.Tx) error {
+		query := "DELETE FROM " + ldb.table + " WHERE owner = $1"
+		if _, err := tx.Exec(query, owner); err != nil {
+			ldb.logger.Error("failed-to-delete-lock-details-during-release-lock", err)
+			return err
 		}
-		err = tx.Commit()
-		if err != nil {
-			ldb.logger.Error("failed-to-commit-release-lock-transaction", err)
-		}
-	}()
-	if _, err := tx.Exec("SELECT * FROM locks FOR UPDATE NOWAIT"); err != nil {
-		ldb.logger.Error("failed-to-select-for-update", err)
-		return err
-	}
-	query := "DELETE FROM locks WHERE owner = $1"
-	if _, err := tx.Exec(query, owner); err != nil {
-		ldb.logger.Error("failed-to-delete-lock-details-during-release-lock", err)
-		return err
-	}
-	return nil
+		return nil
+	})
+	return err
 }
 
 func (ldb *LockSQLDB) Lock(lock *models.Lock) (bool, error) {
-	fetchedLock, err := ldb.Fetch()
-	if err != nil && err == sql.ErrNoRows {
-		ldb.logger.Info("no-one-holds-the-lock")
-		err = ldb.Acquire(lock)
+	ldb.logger.Debug("acquiring-lock", lager.Data{"Owner": lock.Owner})
+	isLockAcquired := true
+	err := ldb.transact(ldb.sqldb, func(tx *sql.Tx) error {
+		newLock := false
+		fetchedLock, err := ldb.fetch(tx)
 		if err != nil {
-			ldb.logger.Error("failed-to-acquire-the-lock", err)
-			return false, err
-		}
-	} else if err != nil && err != sql.ErrNoRows {
-		ldb.logger.Error("failed-to-fetch-lock", err)
-		return false, err
-	} else {
-		if fetchedLock.Owner == lock.Owner {
-			err = ldb.Renew(lock.Owner)
-			if err != nil {
-				ldb.logger.Error("failed-to-renew-lock", err)
-				return false, err
+			if err != sql.ErrNoRows {
+				ldb.logger.Error("failed-to-fetch-lock", err)
+				isLockAcquired = false
+				return err
+			} else {
+				ldb.logger.Info("no-one-holds-the-lock")
+				newLock = true
 			}
-		} else {
+		} else if fetchedLock.Owner != lock.Owner && fetchedLock.Owner != "" {
 			ldb.logger.Debug("someone-else-owns-lock", lager.Data{"Owner": fetchedLock.Owner})
 			lastUpdatedTimestamp := fetchedLock.LastModifiedTimestamp
-			currentTimestamp, err := ldb.GetDatabaseTimestamp()
+			currentTimestamp, err := ldb.getDatabaseTimestamp(tx)
 			if err != nil {
-				ldb.logger.Error("error-getting-timestamp-while-getting-lock", err)
-				return false, err
+				ldb.logger.Error("error-getting-timestamp-while-fetching-lock-details", err)
+				isLockAcquired = false
+				return err
 			}
 			if lastUpdatedTimestamp.Add(time.Second * time.Duration(fetchedLock.Ttl)).Before(currentTimestamp) {
 				ldb.logger.Info("lock-not-renewed-by-owner-forcefully-acquiring-the-lock", lager.Data{"Owner": fetchedLock.Owner})
-				err = ldb.Release(fetchedLock.Owner)
+				err = ldb.remove(fetchedLock.Owner, tx)
 				if err != nil {
 					ldb.logger.Error("failed-to-release-existing-lock", err)
-					return false, err
+					isLockAcquired = false
+					return err
 				}
-				err = ldb.Acquire(lock)
-				if err != nil {
-					ldb.logger.Error("failed-to-acquire-lock", err)
-					return false, err
-				}
+				newLock = true
 			} else {
 				ldb.logger.Debug("lock-renewed-by-owner", lager.Data{"Owner": fetchedLock.Owner})
-				return false, nil
+				isLockAcquired = false
+				return nil
 			}
 		}
-	}
-	return true, nil
+
+		if newLock {
+			err = ldb.insert(lock, tx)
+			if err != nil {
+				ldb.logger.Error("failed-to-insert-lock", err)
+				isLockAcquired = false
+				return err
+			}
+			isLockAcquired = true
+		} else {
+			err = ldb.renew(lock.Owner, tx)
+			if err != nil {
+				ldb.logger.Error("failed-to-renew-lock", err)
+				isLockAcquired = false
+				return err
+			}
+		}
+
+		if err != nil {
+			ldb.logger.Error("failed-updating-lock", err)
+			isLockAcquired = false
+			return err
+		}
+
+		if newLock {
+			ldb.logger.Info("acquired-lock-successfully")
+		} else {
+			ldb.logger.Info("renewed-lock-successfully")
+		}
+		return nil
+	})
+
+	return isLockAcquired, err
 }
 
-func (ldb *LockSQLDB) GetDatabaseTimestamp() (time.Time, error) {
+func (ldb *LockSQLDB) getDatabaseTimestamp(tx *sql.Tx) (time.Time, error) {
 	var currentTimestamp time.Time
-	err := ldb.sqldb.QueryRow("SELECT NOW() AT TIME ZONE 'utc'").Scan(&currentTimestamp)
+	err := tx.QueryRow("SELECT NOW() AT TIME ZONE 'utc'").Scan(&currentTimestamp)
 	if err != nil {
+		ldb.logger.Error("failed-fetching-timestamp", err)
 		return time.Time{}, err
 	}
 	return currentTimestamp, nil
+}
+
+func (ldb *LockSQLDB) transact(db *sql.DB, f func(tx *sql.Tx) error) error {
+	var err error
+	for attempts := 0; attempts < 3; attempts++ {
+		err = func() error {
+			tx, err := db.Begin()
+			if err != nil {
+				ldb.logger.Error("failed-starting-transaction", err)
+				return err
+			}
+			defer tx.Rollback()
+
+			err = f(tx)
+			if err != nil {
+				return err
+			}
+
+			err = tx.Commit()
+			if err != nil {
+				ldb.logger.Error("failed-committing-transaction", err)
+
+			}
+			return err
+		}()
+
+		// golang sql package does not always retry query on ErrBadConn
+		if attempts >= 2 || (err != driver.ErrBadConn) {
+			break
+		} else {
+			ldb.logger.Error("deadlock-transaction", err, lager.Data{"attempts": attempts})
+			time.Sleep(500 * time.Millisecond)
+		}
+	}
+
+	return err
 }

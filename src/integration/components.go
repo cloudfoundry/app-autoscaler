@@ -381,7 +381,6 @@ func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port i
 		},
 		EnableDBLock: enableDBLock,
 		DBLock: mcConfig.DBLockConfig{
-			Owner:     "123456",
 			LockTTL:   time.Duration(10 * time.Second),
 			LockDBURL: dbUri,
 		},

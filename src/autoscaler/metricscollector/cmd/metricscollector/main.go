@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strings"
 	"time"
 
 	"autoscaler/cf"
@@ -15,17 +14,16 @@ import (
 	"autoscaler/metricscollector/collector"
 	"autoscaler/metricscollector/config"
 	"autoscaler/metricscollector/server"
-	"autoscaler/models"
+	sync "autoscaler/sync"
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/consuladapter"
 	"code.cloudfoundry.org/lager"
 	"code.cloudfoundry.org/locket"
-	cfenv "github.com/cloudfoundry-community/go-cfenv"
 	"github.com/cloudfoundry/noaa/consumer"
 	"github.com/hashicorp/consul/api"
-	"github.com/nu7hatch/gouuid"
+	uuid "github.com/nu7hatch/gouuid"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
@@ -131,15 +129,17 @@ func main() {
 	}
 
 	if conf.EnableDBLock {
-		logger.Info("database-lock-feature-enabled")
+		logger.Debug("database-lock-feature-enabled")
 		var lockDB db.LockDB
-		lockDB, err = sqldb.NewLockSQLDB(conf.DBLock.LockDBURL, logger.Session("lock-db"))
+		var lockTableName = "mc_lock"
+		lockDB, err = sqldb.NewLockSQLDB(conf.DBLock.LockDBURL, lockTableName, logger.Session("lock-db"))
 		if err != nil {
 			logger.Error("failed-to-connect-lock-database", err, lager.Data{"url": conf.DBLock.LockDBURL})
 			os.Exit(1)
 		}
 		defer lockDB.Close()
-		dbLockMaintainer := initDBLockRunner(conf, logger, lockDB)
+		mcdl := sync.NewDatabaseLock(logger)
+		dbLockMaintainer := mcdl.InitDBLockRunner(conf.DBLock.LockTTL, generateGUID(logger), lockDB)
 		members = append(grouper.Members{{"db-lock-maintainer", dbLockMaintainer}}, members...)
 	}
 
@@ -174,65 +174,6 @@ func main() {
 		os.Exit(1)
 	}
 	logger.Info("exited")
-}
-
-func initDBLockRunner(conf *config.Config, logger lager.Logger, lockDB db.LockDB) ifrit.Runner {
-	dbLockMaintainer := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
-		ttl := conf.DBLock.LockTTL
-		lockTicker := time.NewTicker(ttl)
-		readyFlag := true
-		owner := getOwner(logger, conf)
-		if owner == "" {
-			logger.Info("failed-to-get-owner-details")
-			os.Exit(1)
-		}
-		lock := &models.Lock{Owner: owner, Ttl: ttl}
-		isLockAcquired, lockErr := lockDB.Lock(lock)
-		if lockErr != nil {
-			logger.Error("failed-to-acquire-lock-in-first-attempt", lockErr)
-		}
-		if isLockAcquired {
-			logger.Info("lock-acquired-in-first-attempt", lager.Data{"owner": owner, "isLockAcquired": isLockAcquired})
-			close(ready)
-			readyFlag = false
-		}
-		for {
-			select {
-			case <-signals:
-				logger.Info("received-interrupt-signal", lager.Data{"owner": owner})
-				lockTicker.Stop()
-				releaseErr := lockDB.Release(owner)
-				if releaseErr != nil {
-					logger.Error("failed-to-release-lock ", releaseErr)
-				} else {
-					logger.Info("successfully-released-lock", lager.Data{"owner": owner})
-				}
-				readyFlag = true
-				return nil
-
-			case <-lockTicker.C:
-				logger.Info("retry-acquiring-lock", lager.Data{"owner": owner})
-				lock := &models.Lock{Owner: owner, Ttl: ttl}
-				isLockAcquired, lockErr := lockDB.Lock(lock)
-				if lockErr != nil {
-					logger.Error("failed-to-acquire-lock", lockErr)
-					releaseErr := lockDB.Release(owner)
-					if releaseErr != nil {
-						logger.Error("failed-to-release-lock ", releaseErr)
-					} else {
-						logger.Info("successfully-released-lock", lager.Data{"owner": owner})
-					}
-					os.Exit(1)
-				}
-				if isLockAcquired && readyFlag {
-					close(ready)
-					readyFlag = false
-					logger.Info("successfully-acquired-lock", lager.Data{"owner": owner})
-				}
-			}
-		}
-	})
-	return dbLockMaintainer
 }
 
 func initLoggerFromConfig(conf *config.LoggingConfig) lager.Logger {
@@ -283,17 +224,4 @@ func generateGUID(logger lager.Logger) string {
 		logger.Fatal("Couldn't generate uuid", err)
 	}
 	return uuid.String()
-}
-
-func getOwner(logger lager.Logger, conf *config.Config) string {
-	var owner string
-	if strings.TrimSpace(os.Getenv("VCAP_APPLICATION")) != "" {
-		appEnv, _ := cfenv.Current()
-		owner = appEnv.ID
-		logger.Info("ownership found in VCAP_APPLICATION", lager.Data{"owner": owner})
-	} else if conf.DBLock.Owner != "" {
-		owner = conf.DBLock.Owner
-		logger.Info("ownership found in config file", lager.Data{"owner": owner})
-	}
-	return owner
 }

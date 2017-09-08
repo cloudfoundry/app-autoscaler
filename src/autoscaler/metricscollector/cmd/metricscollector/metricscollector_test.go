@@ -372,7 +372,6 @@ var _ = Describe("MetricsCollector", func() {
 
 				secondRunner = NewMetricsCollectorRunner()
 				consulConfig.Server.Port = 8000
-				consulConfig.DBLock.Owner = "second-owner"
 				secondRunner.startCheck = ""
 				secondRunner.configPath = writeConfig(&consulConfig).Name()
 				secondRunner.Start()
@@ -395,7 +394,6 @@ var _ = Describe("MetricsCollector", func() {
 				Eventually(runner.Session.Buffer, 10*time.Second).Should(gbytes.Say("metricscollector.started"))
 				secondRunner = NewMetricsCollectorRunner()
 				consulConfig.Server.Port = 8000
-				consulConfig.DBLock.Owner = "second-owner"
 				secondRunner.configPath = writeConfig(&consulConfig).Name()
 				secondRunner.startCheck = ""
 				secondRunner.Start()
