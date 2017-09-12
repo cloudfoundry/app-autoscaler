@@ -77,7 +77,7 @@ module.exports = function(app, settings, catalog) {
                     commitTransaction(t, res, statusCode, {credentials: {}});
                     return;
                   case 400:
-                    rollbackTransaction(t, res, statusCode, { error: response.body.error });
+                    rollbackTransaction(t, res, statusCode, { "description": response.body.error });
                     return;
                   default:
                     rollbackTransaction(t, res, 500, {});

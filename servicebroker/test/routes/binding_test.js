@@ -139,8 +139,9 @@ describe('binding RESTful API', function() {
             .send({ "app_guid": appId, "parameters": policy })
             .expect(400)
             .expect('Content-Type', /json/)
-            .expect({'error': VALIDATION_ERROR_FROM_API_SERVER})
+            .expect({'description': VALIDATION_ERROR_FROM_API_SERVER})
             .end(function(err, res) {
+              console.log(err);
               binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
                 expect(countRes).to.equal(0);
                 done();

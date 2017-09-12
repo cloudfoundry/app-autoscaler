@@ -140,7 +140,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
 				respBody, err := ioutil.ReadAll(resp.Body)
-				Expect(string(respBody)).To(Equal(`{"error":[{"property":"instance","message":"is not any of [subschema 0],[subschema 1]","schema":"/policySchema","instance":{"instance_min_count":10,"instance_max_count":4},"name":"anyOf","argument":["[subschema 0]","[subschema 1]"],"stack":"instance is not any of [subschema 0],[subschema 1]"}]}`))
+				Expect(string(respBody)).To(Equal(`{"description":[{"property":"instance","message":"is not any of [subschema 0],[subschema 1]","schema":"/policySchema","instance":{"instance_min_count":10,"instance_max_count":4},"name":"anyOf","argument":["[subschema 0]","[subschema 1]"],"stack":"instance is not any of [subschema 0],[subschema 1]"}]}`))
 				resp.Body.Close()
 				Consistently(fakeScheduler.ReceivedRequests).Should(HaveLen(schedulerCount))
 
@@ -163,7 +163,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
 				respBody, err := ioutil.ReadAll(resp.Body)
-				Expect(string(respBody)).To(Equal(`{"error":[{"property":"instance.scaling_rules[0].cool_down_secs","message":"must have a minimum value of 60","schema":{"type":"number","minimum":60,"maximum":3600},"instance":-300,"name":"minimum","argument":60,"stack":"instance.scaling_rules[0].cool_down_secs must have a minimum value of 60"}]}`))
+				Expect(string(respBody)).To(Equal(`{"description":[{"property":"instance.scaling_rules[0].cool_down_secs","message":"must have a minimum value of 60","schema":{"type":"number","minimum":60,"maximum":3600},"instance":-300,"name":"minimum","argument":60,"stack":"instance.scaling_rules[0].cool_down_secs must have a minimum value of 60"}]}`))
 				resp.Body.Close()
 				Consistently(fakeScheduler.ReceivedRequests).Should(HaveLen(schedulerCount))
 
