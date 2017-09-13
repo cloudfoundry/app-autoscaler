@@ -64,7 +64,7 @@ describe('config setting Test Suite', function() {
 
     expect(settings.publicPort).to.equal(defaultConfig.publicPort);
 
-    expect(settings.cfApi).to.equal("http://" + defaultConfig.cfApi.toLowerCase());
+    expect(settings.cfApi).to.equal("https://" + defaultConfig.cfApi.toLowerCase());
 
     expect(settings.db.maxConnections).to.equal(defaultConfig.db.maxConnections);
     expect(settings.db.minConnections).to.equal(defaultConfig.db.minConnections);
@@ -81,17 +81,17 @@ describe('config setting Test Suite', function() {
     expect(settings.publicTls.certFile).to.equal(defaultConfig.publicTls.certFile);
     expect(settings.publicTls.caCertFile).to.equal(defaultConfig.publicTls.caCertFile);
 
-    expect(settings.scheduler.uri).to.equal("http://" + defaultConfig.scheduler.uri.toLowerCase());
+    expect(settings.scheduler.uri).to.equal("https://" + defaultConfig.scheduler.uri.toLowerCase());
     expect(settings.scheduler.tls.keyFile).to.equal(defaultConfig.scheduler.tls.keyFile);
     expect(settings.scheduler.tls.caCertFile).to.equal(defaultConfig.scheduler.tls.caCertFile);
     expect(settings.scheduler.tls.certFile).to.equal(defaultConfig.scheduler.tls.certFile);
 
-    expect(settings.scalingEngine.uri).to.equal("http://" + defaultConfig.scalingEngine.uri.toLowerCase());
+    expect(settings.scalingEngine.uri).to.equal("https://" + defaultConfig.scalingEngine.uri.toLowerCase());
     expect(settings.scalingEngine.tls.keyFile).to.equal(defaultConfig.scalingEngine.tls.keyFile);
     expect(settings.scalingEngine.tls.caCertFile).to.equal(defaultConfig.scalingEngine.tls.caCertFile);
     expect(settings.scalingEngine.tls.certFile).to.equal(defaultConfig.scalingEngine.tls.certFile);
 
-    expect(settings.metricsCollector.uri).to.equal("http://" + defaultConfig.metricsCollector.uri.toLowerCase());
+    expect(settings.metricsCollector.uri).to.equal("https://" + defaultConfig.metricsCollector.uri.toLowerCase());
     expect(settings.metricsCollector.tls.keyFile).to.equal(defaultConfig.metricsCollector.tls.keyFile);
     expect(settings.metricsCollector.tls.caCertFile).to.equal(defaultConfig.metricsCollector.tls.caCertFile);
     expect(settings.metricsCollector.tls.certFile).to.equal(defaultConfig.metricsCollector.tls.certFile);
@@ -201,11 +201,11 @@ describe('config setting Test Suite', function() {
       });
       it("Should add http if no protocol",function(){
         var apiSetting = configSetting({ cfApi: defaultConfig.cfApi, db: { uri: defaultConfig.db.uri}, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls },metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls } });
-        expect(apiSetting.cfApi).to.equal("http://" + defaultConfig.cfApi);
+        expect(apiSetting.cfApi).to.equal("https://" + defaultConfig.cfApi);
       });
       it("Should filter the last slash",function(){
         var apiSetting = configSetting({ cfApi: defaultConfig.cfApi + "/", db: { uri: defaultConfig.db.uri}, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls },metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls } });
-        expect(apiSetting.cfApi).to.equal("http://" + defaultConfig.cfApi);
+        expect(apiSetting.cfApi).to.equal("https://" + defaultConfig.cfApi);
       });
       
     });
@@ -342,18 +342,18 @@ describe('config setting Test Suite', function() {
 
       it('Should add http if no protocol', function() {
         var apiSetting = configSetting({ scheduler: { uri: defaultConfig.scheduler.uri }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls },metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls } }).scheduler;
-        expect(apiSetting.uri).to.equal("http://" + defaultConfig.scheduler.uri.toLowerCase());
+        expect(apiSetting.uri).to.equal("https://" + defaultConfig.scheduler.uri.toLowerCase());
       });
 
       it('Should filter the last slash', function() {
         var apiSetting = configSetting({ scheduler: { uri: defaultConfig.scheduler.uri + '/' }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls },metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls } }).scheduler;
-        expect(apiSetting.uri).to.equal("http://" + defaultConfig.scheduler.uri.toLowerCase());
+        expect(apiSetting.uri).to.equal("https://" + defaultConfig.scheduler.uri.toLowerCase());
       });
 
       context('When the scheduler.uri is upper case', function() {
         it('Should be lowercased', function() {
           var apiSetting = configSetting({ scheduler: { uri: defaultConfig.scheduler.uri.toUpperCase() }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls },metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls } }).scheduler;
-          expect(apiSetting.uri).to.equal("http://" + defaultConfig.scheduler.uri.toLowerCase());
+          expect(apiSetting.uri).to.equal("https://" + defaultConfig.scheduler.uri.toLowerCase());
         });
       });
     });
@@ -361,18 +361,18 @@ describe('config setting Test Suite', function() {
 
       it('Should add http if no protocol', function() {
         var apiSetting = configSetting({ scalingEngine: { uri: defaultConfig.scalingEngine.uri }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls },metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls } }).scalingEngine;
-        expect(apiSetting.uri).to.equal("http://" + defaultConfig.scalingEngine.uri.toLowerCase());
+        expect(apiSetting.uri).to.equal("https://" + defaultConfig.scalingEngine.uri.toLowerCase());
       });
 
       it('Should filter the last slash', function() {
         var apiSetting = configSetting({ scalingEngine: { uri: defaultConfig.scalingEngine.uri + '/' }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls },metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls } }).scalingEngine;
-        expect(apiSetting.uri).to.equal("http://" + defaultConfig.scalingEngine.uri.toLowerCase());
+        expect(apiSetting.uri).to.equal("https://" + defaultConfig.scalingEngine.uri.toLowerCase());
       });
 
       context('When the scalingEngine uri is upper case', function() {
         it('Should be lowercased', function() {
           var apiSetting = configSetting({ scalingEngine: { uri: defaultConfig.scalingEngine.uri.toUpperCase() }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls },metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls } }).scalingEngine;
-          expect(apiSetting.uri).to.equal("http://" + defaultConfig.scalingEngine.uri.toLowerCase());
+          expect(apiSetting.uri).to.equal("https://" + defaultConfig.scalingEngine.uri.toLowerCase());
         });
       });
     });
@@ -380,18 +380,18 @@ describe('config setting Test Suite', function() {
 
       it('Should add http if no protocol', function() {
         var apiSetting = configSetting({ metricsCollector: { uri: defaultConfig.metricsCollector.uri }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls } }).metricsCollector;
-        expect(apiSetting.uri).to.equal("http://" + defaultConfig.metricsCollector.uri.toLowerCase());
+        expect(apiSetting.uri).to.equal("https://" + defaultConfig.metricsCollector.uri.toLowerCase());
       });
 
       it('Should filter the last slash', function() {
         var apiSetting = configSetting({ metricsCollector: { uri: defaultConfig.metricsCollector.uri + '/' }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls } }).metricsCollector;
-        expect(apiSetting.uri).to.equal("http://" + defaultConfig.metricsCollector.uri.toLowerCase());
+        expect(apiSetting.uri).to.equal("https://" + defaultConfig.metricsCollector.uri.toLowerCase());
       });
 
       context('When the metricsCollector uri is upper case', function() {
         it('Should be lowercased', function() {
           var apiSetting = configSetting({ metricsCollector: { uri: defaultConfig.metricsCollector.uri.toUpperCase() }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls },scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls } }).metricsCollector;
-          expect(apiSetting.uri).to.equal("http://" + defaultConfig.metricsCollector.uri.toLowerCase());
+          expect(apiSetting.uri).to.equal("https://" + defaultConfig.metricsCollector.uri.toLowerCase());
         });
       });
     });
