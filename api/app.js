@@ -8,6 +8,7 @@ module.exports = function(configFilePath) {
   var bodyParser = require('body-parser');
   var logger = require('./lib/log/logger');
   var HttpStatus = require('http-status-codes');
+  var oauth = require('./lib/oauth/oauth')(configFilePath);
 
   if (!configFilePath || !fs.existsSync(configFilePath)) {
       logger.error("Invalid configuration file path: " + configFilePath);
@@ -68,6 +69,7 @@ module.exports = function(configFilePath) {
         ca: fs.readFileSync(settings.publicTls.caCertFile)
     }
   }
+
   var app = express();
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: false }));
@@ -90,6 +92,45 @@ module.exports = function(configFilePath) {
     res.status(HttpStatus.BAD_REQUEST).json(errorResponse);
   });
 
+  var publicApp = express();
+  publicApp.use(bodyParser.json());
+  publicApp.use(bodyParser.urlencoded({ extended: false }));
+  publicApp.use('/v1/apps/:app_id/*',function(req, res, next){
+    oauth.checkUserAuthorization(req,function(error,isSpaceDeveloper){
+      if(error){
+        if(error.statusCode == HttpStatus.UNAUTHORIZED){
+          res.status(HttpStatus.UNAUTHORIZED).send({});
+        }else{
+          res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({});
+        }
+      }else{
+        if(isSpaceDeveloper){
+          next();
+        }else{
+          res.status(HttpStatus.UNAUTHORIZED).send({});
+        }
+      }
+    });
+  });
+  publicApp.use('/health', require('express-healthcheck')());
+  var policies = require('./lib/routes/policies')(settings);
+  var scalingHistories = require('./lib/routes/scalingHistories')(settings);
+  var metrics = require('./lib/routes/metrics')(settings);
+  publicApp.use('/v1/apps',policies);
+  publicApp.use('/v1/apps',scalingHistories);
+  publicApp.use('/v1/apps',metrics);
+  publicApp.use(function(err, req, res, next) {
+    var errorResponse = {};
+    if (err) {
+      errorResponse = {
+        'success': false,
+        'error': err,
+        'result': null
+      };
+    }
+    res.status(HttpStatus.BAD_REQUEST).json(errorResponse);
+  });
+
   var server;
   if(settings.tls){
     server = https.createServer(options, app).listen(port || 3002, function() {
@@ -100,14 +141,14 @@ module.exports = function(configFilePath) {
         logger.info('Autoscaler API server started',{'port':server.address().port} );    
     });
   }
-
+  
   var publicServer;
   if(settings.publicTls){
-    publicServer = https.createServer(publicOptions, app).listen(publicPort || 3003, function() {
+    publicServer = https.createServer(publicOptions, publicApp).listen(publicPort || 3003, function() {
         logger.info('Autoscaler public API server started in secure mode',{'port':publicServer.address().port} );    
     });
   }else{
-    publicServer = http.createServer(app).listen(publicPort || 3003, function() {
+    publicServer = http.createServer(publicApp).listen(publicPort || 3003, function() {
         logger.info('Autoscaler public API server started',{'port':publicServer.address().port} );    
     });
   }

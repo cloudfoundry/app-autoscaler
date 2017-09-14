@@ -63,12 +63,14 @@ var (
 	noaaPollingRegPath       = regexp.MustCompile(`^/apps/.*/containermetrics$`)
 	noaaStreamingRegPath     = regexp.MustCompile(`^/apps/.*/stream$`)
 	appInstanceRegPath       = regexp.MustCompile(`^/v2/apps/.*$`)
+	checkUserSpaceRegPath    = regexp.MustCompile(`^/v2/users/.+/spaces.*$`)
 	dbHelper                 *sql.DB
 	fakeScheduler            *ghttp.Server
 	fakeCCNOAAUAA            *ghttp.Server
 	messagesToSend           chan []byte
 	streamingDoneChan        chan bool
 	emptyMessageChannel      chan []byte
+	testUserId               string = "testUserId"
 
 	processMap       map[string]ifrit.Process = map[string]ifrit.Process{}
 	schedulerProcess ifrit.Process
@@ -340,6 +342,9 @@ func getPolicy(appId string, apiType APIType) (*http.Response, error) {
 		httpClientTmp = httpClientForPublicApi
 	}
 	req, err := http.NewRequest("GET", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/policy", apiServerPort, appId), nil)
+	if apiType == PUBLIC {
+		req.Header.Set("Authorization", "bearer fake-token")
+	}
 	Expect(err).NotTo(HaveOccurred())
 	return httpClientTmp.Do(req)
 }
@@ -357,6 +362,9 @@ func detachPolicy(appId string, apiType APIType) (*http.Response, error) {
 	req, err := http.NewRequest("DELETE", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/policy", apiServerPort, appId), strings.NewReader(""))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
+	if apiType == PUBLIC {
+		req.Header.Set("Authorization", "bearer fake-token")
+	}
 	return httpClientTmp.Do(req)
 }
 
@@ -373,6 +381,9 @@ func attachPolicy(appId string, policy []byte, apiType APIType) (*http.Response,
 	req, err := http.NewRequest("PUT", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/policy", apiServerPort, appId), bytes.NewReader(policy))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
+	if apiType == PUBLIC {
+		req.Header.Set("Authorization", "bearer fake-token")
+	}
 	return httpClientTmp.Do(req)
 }
 
@@ -433,6 +444,9 @@ func getScalingHistories(pathVariables []string, parameters map[string]string, a
 	req, err := http.NewRequest("GET", fmt.Sprintf(url, apiServerPort, pathVariables[0]), strings.NewReader(""))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
+	if apiType == PUBLIC {
+		req.Header.Set("Authorization", "bearer fake-token")
+	}
 	return httpClientTmp.Do(req)
 }
 func getAppMetrics(pathVariables []string, parameters map[string]string, apiType APIType) (*http.Response, error) {
@@ -455,6 +469,9 @@ func getAppMetrics(pathVariables []string, parameters map[string]string, apiType
 	req, err := http.NewRequest("GET", fmt.Sprintf(url, apiServerPort, pathVariables[0], pathVariables[1]), strings.NewReader(""))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
+	if apiType == PUBLIC {
+		req.Header.Set("Authorization", "bearer fake-token")
+	}
 	return httpClientTmp.Do(req)
 }
 func readPolicyFromFile(filename string) []byte {
@@ -579,9 +596,19 @@ func startFakeCCNOAAUAA(instanceCount int) {
 	fakeCCNOAAUAA.RouteToHandler("GET", appInstanceRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
 		models.AppInfo{Entity: models.AppEntity{Instances: instanceCount}}))
 	fakeCCNOAAUAA.RouteToHandler("PUT", appInstanceRegPath, ghttp.RespondWith(http.StatusCreated, ""))
-
+	fakeCCNOAAUAA.RouteToHandler("GET", "/userinfo", ghttp.RespondWithJSONEncoded(http.StatusOK,
+		struct {
+			UserId string `json:"user_id"`
+		}{
+			testUserId,
+		}))
+	fakeCCNOAAUAA.RouteToHandler("GET", checkUserSpaceRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
+		struct {
+			TotalResults int `json:"total_results"`
+		}{
+			1,
+		}))
 }
-
 func fakeMetricsPolling(appId string, memoryValue uint64, memQuota uint64) {
 	fakeCCNOAAUAA.RouteToHandler("GET", noaaPollingRegPath,
 		func(rw http.ResponseWriter, r *http.Request) {

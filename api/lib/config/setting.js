@@ -16,15 +16,23 @@ module.exports = function(settingsObj) {
   };
 
   var cleanUpUri = function(uri) {
-    if (uri != null) {
-       return uri.replace(/\/$/g, "").toLowerCase();
+    if (uri) {
+       uri = uri.replace(/\/$/g, "").toLowerCase();
       }
+      return uri;
     };
-  settingsObj.scheduler.uri = cleanUpUri(settingsObj.scheduler.uri);
-  settingsObj.scalingEngine.uri = cleanUpUri(settingsObj.scalingEngine.uri);
-  settingsObj.metricsCollector.uri = cleanUpUri(settingsObj.metricsCollector.uri);
+  var addProtocol = function(uri) {
+    if(uri && (uri.indexOf("https://") < 0 && uri.indexOf("http://") < 0)){
+      uri = "https://" + uri;
+    }
+    return uri;
+  }
+  settingsObj.scheduler.uri = addProtocol(cleanUpUri(settingsObj.scheduler.uri));
+  settingsObj.scalingEngine.uri = addProtocol(cleanUpUri(settingsObj.scalingEngine.uri));
+  settingsObj.metricsCollector.uri = addProtocol(cleanUpUri(settingsObj.metricsCollector.uri));
   var settings = {
     port: settingsObj.port,
+    cfApi: addProtocol(cleanUpUri(settingsObj.cfApi)),
     publicPort: settingsObj.publicPort,
     scheduler: settingsObj.scheduler,
     scalingEngine: settingsObj.scalingEngine,
@@ -78,6 +86,12 @@ module.exports = function(settingsObj) {
     }
     if (settings.port == settings.publicPort){
       return {valid:false,message:"internal api port and public api port should be different"}
+    }
+    if (isMissing(settings.cfApi)){
+      return{valid:false, message:"cfApi is required"}
+    }
+    if (!isString(settings.cfApi)) {
+      return {valid:false,message:"cfApi must be a string"};
     }
     if (isMissing(settings.db.maxConnections)){
       return {valid:false,message:"db.maxConnections is required"};
