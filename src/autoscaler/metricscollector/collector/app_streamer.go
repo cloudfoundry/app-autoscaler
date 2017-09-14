@@ -139,6 +139,20 @@ func (as *appStreamer) computeAndSaveMetrics() {
 		if err != nil {
 			as.logger.Error("save-metric-to-database", err, lager.Data{"throughput": throughput})
 		}
+		responseTime := &models.AppInstanceMetric{
+				AppId:         as.appId,
+				InstanceIndex: 0,
+				CollectedAt:   as.sclock.Now().UnixNano(),
+				Name:          models.MetricNameResponseTime,
+				Unit:          models.UnitMilliseconds,
+				Value:         "0",
+				Timestamp:     as.sclock.Now().UnixNano(),
+		}
+		as.logger.Debug("compute-responsetime", lager.Data{"message": "write 0 responsetime due to no requests"})
+		err = as.database.SaveMetric(responseTime)
+		if err != nil {
+						as.logger.Error("save-metric-to-database", err, lager.Data{"responsetime": responseTime})
+		}
 		return
 	}
 
