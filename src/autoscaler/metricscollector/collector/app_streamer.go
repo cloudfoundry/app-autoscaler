@@ -151,7 +151,7 @@ func (as *appStreamer) computeAndSaveMetrics() {
 		as.logger.Debug("compute-responsetime", lager.Data{"message": "write 0 responsetime due to no requests"})
 		err = as.database.SaveMetric(responseTime)
 		if err != nil {
-						as.logger.Error("save-metric-to-database", err, lager.Data{"responsetime": responseTime})
+			as.logger.Error("save-metric-to-database", err, lager.Data{"responsetime": responseTime})
 		}
 		return
 	}
