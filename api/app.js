@@ -1,4 +1,4 @@
-'use strict';
+'use strict'; 
 module.exports = function(configFilePath) {
   var https = require('https');
   var http = require('http');
@@ -21,6 +21,7 @@ module.exports = function(configFilePath) {
       throw new Error('settings.json is invalid');
   }
   var port = settings.port;
+  var publicPort = settings.publicPort;
   
   var options = {};
     
@@ -44,14 +45,39 @@ module.exports = function(configFilePath) {
         ca: fs.readFileSync(settings.tls.caCertFile)
     }
   }
+
+  var publicOptions = {};
+    
+  if(settings.publicTls){
+    if(!fs.existsSync(settings.publicTls.keyFile)){
+        logger.error("Invalid public TLS key path: " + settings.publicTls.keyFile);
+        throw new Error("Invalid publicTls key path: " + settings.publicTls.keyFile);
+    }
+    if(!fs.existsSync(settings.publicTls.certFile)){
+        logger.error("Invalid public TLS certificate path: " + settings.publicTls.certFile);
+        throw new Error("Invalid public TLS certificate path: " + settings.publicTls.certFile);
+    }
+    if(!fs.existsSync(settings.publicTls.caCertFile)){
+        logger.error("Invalid public TLS ca certificate path: " + settings.publicTls.caCertFile);
+        throw new Error("Invalid public TLS ca certificate path: " + settings.publicTls.caCertFile);
+    }
+
+    publicOptions = {
+        key: fs.readFileSync(settings.publicTls.keyFile),
+        cert: fs.readFileSync(settings.publicTls.certFile),
+        ca: fs.readFileSync(settings.publicTls.caCertFile)
+    }
+  }
   var app = express();
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: false }));
   app.use('/health', require('express-healthcheck')());
   var policies = require('./lib/routes/policies')(settings);
   var scalingHistories = require('./lib/routes/scalingHistories')(settings);
-  app.use('/v1/policies',policies);
+  var metrics = require('./lib/routes/metrics')(settings);
+  app.use('/v1/apps',policies);
   app.use('/v1/apps',scalingHistories);
+  app.use('/v1/apps',metrics);
   app.use(function(err, req, res, next) {
     var errorResponse = {};
     if (err) {
@@ -75,13 +101,28 @@ module.exports = function(configFilePath) {
     });
   }
 
+  var publicServer;
+  if(settings.publicTls){
+    publicServer = https.createServer(publicOptions, app).listen(publicPort || 3003, function() {
+        logger.info('Autoscaler public API server started in secure mode',{'port':publicServer.address().port} );    
+    });
+  }else{
+    publicServer = http.createServer(app).listen(publicPort || 3003, function() {
+        logger.info('Autoscaler public API server started',{'port':publicServer.address().port} );    
+    });
+  }
+
 
   var gracefulShutdown = function(signal) {
     logger.info("Received " + signal + " signal, shutting down gracefully...");
     server.close(function() {
-      logger.info('Everything is cleanly shutdown');
-      process.exit();
-    })
+      logger.info('Everything is cleanly shutdown for internal API server');
+      publicServer.close(function() {
+        logger.info('Everything is cleanly shutdown for public API server');
+        process.exit();
+      });
+    });
+    
   }
 
   //listen for SIGUSR2 signal e.g. user-defined signal
@@ -89,6 +130,6 @@ module.exports = function(configFilePath) {
     gracefulShutdown('SIGUSR2')
   });
 
-  return server;
+  return {"internalServer": server, "publicServer": publicServer};
 }
  

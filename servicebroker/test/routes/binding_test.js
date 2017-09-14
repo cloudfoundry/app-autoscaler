@@ -26,7 +26,7 @@ var VALIDATION_ERROR_FROM_API_SERVER = "validation error from apiserver";
 
 function initNockBind(statusCode) {
   scope = nock(settings.apiserver.uri)
-    .put(/\/v1\/policies\/.*/)
+    .put(/\/v1\/apps\/.*\/policy/)
     .reply(statusCode, {
       'success': true,
       'error': null,
@@ -36,7 +36,7 @@ function initNockBind(statusCode) {
 
 function initNockUnBind(statusCode) {
   scope = nock(settings.apiserver.uri)
-    .delete(/\/v1\/policies\/.*/)
+    .delete(/\/v1\/apps\/.*\/policy/)
     .reply(statusCode, {
       'success': true,
       'error': null,
@@ -46,7 +46,7 @@ function initNockUnBind(statusCode) {
 
 function initNockApiServerBindError(statusCode) {
   scope = nock(settings.apiserver.uri)
-    .put(/\/v1\/policies\/.*/)
+    .put(/\/v1\/apps\/.*\/policy/)
     .reply(statusCode, {
       'success': false,
       'error': VALIDATION_ERROR_FROM_API_SERVER,
@@ -113,6 +113,23 @@ describe('binding RESTful API', function() {
             })
           });
       });
+      context('when there is no policy in request', function() {
+        it("return a 201", function(done) {
+          supertest(server)
+            .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
+            .set("Authorization", "Basic " + auth)
+            .send({ "app_guid": appId })
+            .expect(201)
+            .expect('Content-Type', /json/)
+            .expect({credentials: {}})
+            .end(function(err, res) {
+              binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+                expect(countRes).to.equal(1);
+                done();
+              })
+            });
+        });
+      });
       context("when the api server returns error", function() {
         it("return a 400", function(done) {
           initNockApiServerBindError(400);
@@ -122,8 +139,9 @@ describe('binding RESTful API', function() {
             .send({ "app_guid": appId, "parameters": policy })
             .expect(400)
             .expect('Content-Type', /json/)
-            .expect({'error': VALIDATION_ERROR_FROM_API_SERVER})
+            .expect({'description': VALIDATION_ERROR_FROM_API_SERVER})
             .end(function(err, res) {
+              console.log(err);
               binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
                 expect(countRes).to.equal(0);
                 done();
@@ -341,25 +359,6 @@ describe('binding RESTful API', function() {
           });
       });
     });
-
-    context('when there is no policy in request', function() {
-      it("return a 400", function(done) {
-        supertest(server)
-          .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
-          .set("Authorization", "Basic " + auth)
-          .send({ "app_guid": appId })
-          .expect(400)
-          .expect('Content-Type', /json/)
-          .expect({ "description": messageUtil.getMessage("POLICY_REQUIRED") })
-          .end(function(err, res) {
-            binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
-              expect(countRes).to.equal(0);
-              done();
-            })
-          });
-      });
-    });
-
 
     context('when the service instance does not exist', function() {
       it("return a 404", function(done) {

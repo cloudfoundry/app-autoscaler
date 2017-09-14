@@ -11,6 +11,7 @@ describe('config setting Test Suite', function() {
   beforeEach(function() {
     defaultConfig = {
       "port": 8080,
+      "publicPort": 8081,
       "db": {
         "maxConnections": 10,
         "minConnections": 0,
@@ -33,7 +34,20 @@ describe('config setting Test Suite', function() {
           "caCertFile": "caCertFilePath"
         }
       },
+      "metricsCollector": {
+        "uri": "http://metricsCollectorUri",
+        "tls": {
+          "keyFile": "keyFilePath",
+          "certFile": "certFilePath",
+          "caCertFile": "caCertFilePath"
+        }
+      },
       "tls": {
+        "keyFile": "keyFilePath",
+        "certFile": "certFilePath",
+        "caCertFile": "caCertFilePath"
+      },
+      "publicTls": {
         "keyFile": "keyFilePath",
         "certFile": "certFilePath",
         "caCertFile": "caCertFilePath"
@@ -44,6 +58,8 @@ describe('config setting Test Suite', function() {
 
   it('Should contain the default configuration', function() {
     expect(settings.port).to.equal(defaultConfig.port);
+
+    expect(settings.publicPort).to.equal(defaultConfig.publicPort);
 
     expect(settings.db.maxConnections).to.equal(defaultConfig.db.maxConnections);
     expect(settings.db.minConnections).to.equal(defaultConfig.db.minConnections);
@@ -56,6 +72,10 @@ describe('config setting Test Suite', function() {
     expect(settings.tls.certFile).to.equal(defaultConfig.tls.certFile);
     expect(settings.tls.caCertFile).to.equal(defaultConfig.tls.caCertFile);
 
+    expect(settings.publicTls.keyFile).to.equal(defaultConfig.publicTls.keyFile);
+    expect(settings.publicTls.certFile).to.equal(defaultConfig.publicTls.certFile);
+    expect(settings.publicTls.caCertFile).to.equal(defaultConfig.publicTls.caCertFile);
+
     expect(settings.scheduler.uri).to.equal(defaultConfig.scheduler.uri);
     expect(settings.scheduler.tls.keyFile).to.equal(defaultConfig.scheduler.tls.keyFile);
     expect(settings.scheduler.tls.caCertFile).to.equal(defaultConfig.scheduler.tls.caCertFile);
@@ -65,6 +85,11 @@ describe('config setting Test Suite', function() {
     expect(settings.scalingEngine.tls.keyFile).to.equal(defaultConfig.scalingEngine.tls.keyFile);
     expect(settings.scalingEngine.tls.caCertFile).to.equal(defaultConfig.scalingEngine.tls.caCertFile);
     expect(settings.scalingEngine.tls.certFile).to.equal(defaultConfig.scalingEngine.tls.certFile);
+
+    expect(settings.metricsCollector.uri).to.equal(defaultConfig.metricsCollector.uri);
+    expect(settings.metricsCollector.tls.keyFile).to.equal(defaultConfig.metricsCollector.tls.keyFile);
+    expect(settings.metricsCollector.tls.caCertFile).to.equal(defaultConfig.metricsCollector.tls.caCertFile);
+    expect(settings.metricsCollector.tls.certFile).to.equal(defaultConfig.metricsCollector.tls.certFile);
   });
 
   describe('validate', function() {
@@ -100,11 +125,51 @@ describe('config setting Test Suite', function() {
         it('Should return false', function() {
           settings.port = 70000;
           expect(settings.validate().valid).to.equal(false);
-          expect(settings.validate().message).to.equal("value of port must between 1 and 65535");
+          expect(settings.validate().message).to.equal("value of port must be between 1 and 65535");
         })
       });
     });
 
+     context('Validate publicPort', function() {
+      context('When publicPort is null', function() {
+        it('Should return false', function() {
+          settings.publicPort = null;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("publicPort is required");
+        })
+      });
+      context('When publicPort is undefined', function() {
+        it('Should return false', function() {
+          delete settings.publicPort;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("publicPort is required");
+        })
+      });
+      context('When publicPort is not an integer', function() {
+        it('Should return false', function() {
+          settings.publicPort = "80";
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("publicPort must be a number");
+        })
+      });
+      context('When the publicPort is out of range', function() {
+        it('Should return false', function() {
+          settings.publicPort = 70000;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("value of publicPort must be between 1 and 65535");
+        })
+      });
+    });
+    context('Validate internal port and public port',function(){
+      context('When publicPort is equal to internal port', function() {
+        it('Should return false', function() {
+          settings.publicPort = 3002;
+          settings.port = 3002;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("internal api port and public api port should be different");
+        })
+      });
+    });
     context('Validate db.maxConnections', function() {
       context('When db.maxConnections is null', function() {
         it('Should return false', function() {
@@ -226,43 +291,49 @@ describe('config setting Test Suite', function() {
 
     context('db.uri', function() {
       it('Should filter the last slash', function() {
-        var dbSetting = configSetting({ db: { uri: defaultConfig.db.uri + '/' }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls } }).db;
+        var dbSetting = configSetting({ db: { uri: defaultConfig.db.uri + '/' }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls },metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls } }).db;
         expect(dbSetting.uri).to.equal(defaultConfig.db.uri);
         expect(dbSetting.server).to.equal("postgres://postgres@server:80");
         expect(dbSetting.name).to.equal("dbname");
-      });
-
-      context('When the db.uri is mixed case', function() {
-        it('Should be lowercased', function() {
-          var dbSetting = configSetting({ db: { uri: defaultConfig.db.uri.toUpperCase() }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls } }).db;
-          expect(dbSetting.uri).to.equal(defaultConfig.db.uri);
-        });
       });
     });
 
     context('scheduler.uri', function() {
       it('Should filter the last slash', function() {
-        var apiSetting = configSetting({ scheduler: { uri: defaultConfig.scheduler.uri + '/' }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls } }).scheduler;
+        var apiSetting = configSetting({ scheduler: { uri: defaultConfig.scheduler.uri + '/' }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls },metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls } }).scheduler;
         expect(apiSetting.uri).to.equal(defaultConfig.scheduler.uri);
       });
 
       context('When the scheduler.uri is upper case', function() {
         it('Should be lowercased', function() {
-          var apiSetting = configSetting({ scheduler: { uri: defaultConfig.scheduler.uri.toUpperCase() }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls } }).scheduler;
+          var apiSetting = configSetting({ scheduler: { uri: defaultConfig.scheduler.uri.toUpperCase() }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls },metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls } }).scheduler;
           expect(apiSetting.uri).to.equal(defaultConfig.scheduler.uri);
         });
       });
     });
     context('scalingEngine uri', function() {
       it('Should filter the last slash', function() {
-        var apiSetting = configSetting({ scalingEngine: { uri: defaultConfig.scalingEngine.uri + '/' }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls } }).scalingEngine;
+        var apiSetting = configSetting({ scalingEngine: { uri: defaultConfig.scalingEngine.uri + '/' }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls },metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls } }).scalingEngine;
         expect(apiSetting.uri).to.equal(defaultConfig.scalingEngine.uri);
       });
 
       context('When the scalingEngine uri is upper case', function() {
         it('Should be lowercased', function() {
-          var apiSetting = configSetting({ scalingEngine: { uri: defaultConfig.scalingEngine.uri.toUpperCase() }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls } }).scalingEngine;
+          var apiSetting = configSetting({ scalingEngine: { uri: defaultConfig.scalingEngine.uri.toUpperCase() }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls },metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls } }).scalingEngine;
           expect(apiSetting.uri).to.equal(defaultConfig.scalingEngine.uri);
+        });
+      });
+    });
+    context('metricsCollector uri', function() {
+      it('Should filter the last slash', function() {
+        var apiSetting = configSetting({ metricsCollector: { uri: defaultConfig.metricsCollector.uri + '/' }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls } }).metricsCollector;
+        expect(apiSetting.uri).to.equal(defaultConfig.metricsCollector.uri);
+      });
+
+      context('When the metricsCollector uri is upper case', function() {
+        it('Should be lowercased', function() {
+          var apiSetting = configSetting({ metricsCollector: { uri: defaultConfig.metricsCollector.uri.toUpperCase() }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls },scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls } }).metricsCollector;
+          expect(apiSetting.uri).to.equal(defaultConfig.metricsCollector.uri);
         });
       });
     });
@@ -311,6 +382,30 @@ describe('config setting Test Suite', function() {
           settings.scalingEngine.uri = 1234;
           expect(settings.validate().valid).to.equal(false);
           expect(settings.validate().message).to.equal("scalingEngine.uri must be a string");
+        })
+      });
+    });
+
+    context('Validate metricsCollector uri', function() {
+      context('When metricsCollector uri is null', function() {
+        it('Should return false', function() {
+          settings.metricsCollector.uri = null
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("metricsCollector.uri is required");
+        })
+      });
+      context('When metricsCollector uri is undefined', function() {
+        it('Should return false', function() {
+          delete settings.metricsCollector.uri
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("metricsCollector.uri is required");
+        })
+      });
+      context('When metricsCollector.uri is not a string', function() {
+        it('Should return false', function() {
+          settings.metricsCollector.uri = 1234;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("metricsCollector.uri must be a string");
         })
       });
     });
@@ -409,6 +504,100 @@ describe('config setting Test Suite', function() {
         settings.tls.caCertFile = 1234;
         expect(settings.validate().valid).to.equal(false);
         expect(settings.validate().message).to.equal("tls.caCertFile must be a string");
+      });
+    });
+  });
+
+  context('Validate publicTls', function() {
+    context('When publicTls is null', function() {
+      it('Should return true', function() {
+        settings.publicTls = null;
+        expect(settings.validate().valid).to.equal(true);
+      });
+    });
+    context('When publicTls is undefined', function() {
+      it('Should return true', function() {
+        delete settings.publicTls;
+        expect(settings.validate().valid).to.equal(true);
+      });
+    });
+    context('When publicTls is not an object', function() {
+      it('Should return false', function() {
+        settings.publicTls = "notobject";
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("publicTls must be an object");
+      });
+    });
+  });
+
+  context('Validate publicTls.keyFile', function() {
+    context('When publicTls.keyFile is null', function() {
+      it('Should return false', function() {
+        settings.publicTls.keyFile = null;
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("publicTls.keyFile is required");
+      });
+    });
+    context('When publicTls.keyFile is undefined', function() {
+      it('Should return false', function() {
+        delete settings.publicTls.keyFile;
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("publicTls.keyFile is required");
+      });
+    });
+    context('When publicTls.keyFile is not a string', function() {
+      it('Should return false', function() {
+        settings.publicTls.keyFile = 1234;
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("publicTls.keyFile must be a string");
+      });
+    });
+  });
+
+  context('Validate publicTls.certFile', function() {
+    context('When publicTls.certFile is null', function() {
+      it('Should return false', function() {
+        settings.publicTls.certFile = null;
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("publicTls.certFile is required");
+      });
+    });
+    context('When publicTls.certFile is undefined', function() {
+      it('Should return false', function() {
+        delete settings.publicTls.certFile;
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("publicTls.certFile is required");
+      });
+    });
+    context('When publicTls.certFile is not a string', function() {
+      it('Should return false', function() {
+        settings.publicTls.certFile = 1234;
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("publicTls.certFile must be a string");
+      });
+    });
+  });
+
+  context('Validate publicTls.caCertFile', function() {
+    context('When publicTls.caCertFile is null', function() {
+      it('Should return false', function() {
+        settings.publicTls.caCertFile = null;
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("publicTls.caCertFile is required");
+      });
+    });
+    context('When publicTls.caCertFile is undefined', function() {
+      it('Should return false', function() {
+        delete settings.publicTls.caCertFile;
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("publicTls.caCertFile is required");
+      });
+    });
+    context('When publicTls.caCertFile is not a string', function() {
+      it('Should return false', function() {
+        settings.publicTls.caCertFile = 1234;
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("publicTls.caCertFile must be a string");
       });
     });
   });
@@ -597,6 +786,100 @@ describe('config setting Test Suite', function() {
         settings.scalingEngine.tls = "notobject";
         expect(settings.validate().valid).to.equal(false);
         expect(settings.validate().message).to.equal("scalingEngine.tls must be an object");
+      });
+    });
+  });
+
+  context('Validate metricsCollector client tls.keyFile', function() {
+    context('When metricsCollector client tls.keyFile is null', function() {
+      it('Should return false', function() {
+        settings.metricsCollector.tls.keyFile = null;
+        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().message).to.equal("metricsCollector.tls.keyFile is required");
+      });
+    });
+    context('When metricsCollector client tls.keyFile is undefined', function() {
+      it('Should return false', function() {
+        delete settings.metricsCollector.tls.keyFile;
+        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().message).to.equal("metricsCollector.tls.keyFile is required");
+      });
+    });
+    context('When metricsCollector client tls.keyFile is not a string', function() {
+      it('Should return false', function() {
+        settings.metricsCollector.tls.keyFile = 1234;
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("metricsCollector.tls.keyFile must be a string");
+      });
+    });
+  });
+
+  context('Validate metricsCollector client tls.certFile', function() {
+    context('When metricsCollector client tls.certFile is null', function() {
+      it('Should return false', function() {
+        settings.metricsCollector.tls.certFile = null;
+        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().message).to.equal("metricsCollector.tls.certFile is required");
+      });
+    });
+    context('When metricsCollector client tls.certFile is undefined', function() {
+      it('Should return false', function() {
+        delete settings.metricsCollector.tls.certFile;
+        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().message).to.equal("metricsCollector.tls.certFile is required");
+      });
+    });
+    context('When metricsCollector client tls.certFile is not a string', function() {
+      it('Should return false', function() {
+        settings.metricsCollector.tls.certFile = 1234;
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("metricsCollector.tls.certFile must be a string");
+      });
+    });
+  });
+
+  context('Validate metricsCollector client tls.caCertFile', function() {
+    context('When metricsCollector client tls.caCertFile is null', function() {
+      it('Should return false', function() {
+        settings.metricsCollector.tls.caCertFile = null;
+        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().message).to.equal("metricsCollector.tls.caCertFile is required");
+      });
+    });
+    context('When metricsCollector client tls.caCertFile is undefined', function() {
+      it('Should return false', function() {
+        delete settings.metricsCollector.tls.caCertFile;
+        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().message).to.equal("metricsCollector.tls.caCertFile is required");
+      });
+    });
+    context('When metricsCollector client tls.caCertFile is not a string', function() {
+      it('Should return false', function() {
+        settings.metricsCollector.tls.caCertFile = 1234;
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("metricsCollector.tls.caCertFile must be a string");
+      });
+    });
+  });
+
+  context('Validate metricsCollector client tls', function() {
+    context('When metricsCollector client tls is null', function() {
+      it('Should return true', function() {
+        settings.metricsCollector.tls = null;
+        expect(settings.validate().valid).to.equal(true);
+      });
+    });
+    context('When metricsCollector client tls  is undefined', function() {
+      it('Should return true', function() {
+        delete settings.metricsCollector.tls;
+        expect(settings.validate().valid).to.equal(true);
+      });
+    });
+    context('When metricsCollector client tls is not an object', function() {
+      it('Should return false', function() {
+        settings.metricsCollector.tls = "notobject";
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("metricsCollector.tls must be an object");
       });
     });
   });

@@ -12,6 +12,9 @@ import (
 )
 
 var _ = Describe("Aggregator", func() {
+	const (
+		fakeStatWindowSecs = 600
+	)
 	var (
 		getPolicies      models.GetPolicies
 		aggregator       *Aggregator
@@ -61,7 +64,7 @@ var _ = Describe("Aggregator", func() {
 	Describe("Start", func() {
 		JustBeforeEach(func() {
 			var err error
-			aggregator, err = NewAggregator(logger, clock, testAggregatorExecuteInterval, appMonitorsChan, getPolicies)
+			aggregator, err = NewAggregator(logger, clock, testAggregatorExecuteInterval, appMonitorsChan, getPolicies, fakeStatWindowSecs)
 			Expect(err).NotTo(HaveOccurred())
 			aggregator.Start()
 			Eventually(clock.WatcherCount).Should(Equal(1))
@@ -80,7 +83,7 @@ var _ = Describe("Aggregator", func() {
 	Describe("Stop", func() {
 		JustBeforeEach(func() {
 			var err error
-			aggregator, err = NewAggregator(logger, clock, testAggregatorExecuteInterval, appMonitorsChan, getPolicies)
+			aggregator, err = NewAggregator(logger, clock, testAggregatorExecuteInterval, appMonitorsChan, getPolicies, fakeStatWindowSecs)
 			Expect(err).NotTo(HaveOccurred())
 			aggregator.Start()
 			Eventually(clock.WatcherCount).Should(Equal(1))

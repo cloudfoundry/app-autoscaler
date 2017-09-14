@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	TokenTypeBearer = "bearer"
+	TokenTypeBearer = "Bearer"
 	PathApp         = "/v2/apps"
 )
 

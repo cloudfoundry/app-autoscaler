@@ -1,11 +1,12 @@
 "use strict"
 var path = require("path");
 var expect = require("chai").expect;
-var helper = require(path.join(__dirname, "../../../lib/routes/scalingHistoryHelper.js"));
+var helper = require(path.join(__dirname, "../../../lib/routes/metricHelper.js"));
 var defaultRequest = function() {
   var obj = {
     params: {
-      "app_id": "123456"
+      "app_id": "123456",
+      "metric_type": "memoryused"
     },
     query: {
       "start-time": "100",
@@ -17,7 +18,7 @@ var defaultRequest = function() {
   }
   return obj;
 }
-describe("ScalingHistoryHelper", function() {
+describe("metricHelper", function() {
 
   describe("validate parameters", function() {
     var validateResult;
@@ -57,6 +58,35 @@ describe("ScalingHistoryHelper", function() {
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(false);
           expect(validateResult.message).to.equal("app_id is required");
+        });
+      });
+    });
+
+    context("validate metric_type", function() {
+      context("metric_type is undefined", function() {
+        it("return false", function() {
+          delete requestObj.params.metric_type;
+          validateResult = helper.parseParameter(requestObj);
+          expect(validateResult.valid).to.equal(false);
+          expect(validateResult.message).to.equal("metric_type is required");
+        });
+      });
+
+      context("metric_type is null", function() {
+        it("return false", function() {
+          requestObj.params.metric_type = null;
+          validateResult = helper.parseParameter(requestObj);
+          expect(validateResult.valid).to.equal(false);
+          expect(validateResult.message).to.equal("metric_type is required");
+        });
+      });
+
+      context("metric_type is empty", function() {
+        it("return false", function() {
+          requestObj.params.metric_type = "";
+          validateResult = helper.parseParameter(requestObj);
+          expect(validateResult.valid).to.equal(false);
+          expect(validateResult.message).to.equal("metric_type is required");
         });
       });
     });
@@ -120,20 +150,20 @@ describe("ScalingHistoryHelper", function() {
     });
     context("validate order", function() {
       context("order is undefined", function() {
-        it("return true, order is set to DESC", function() {
+        it("return true, order is set to ASC", function() {
           delete requestObj.query["order"];
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(true);
-          expect(validateResult.parameters.order).to.equal("DESC");
+          expect(validateResult.parameters.order).to.equal("ASC");
         });
 
       });
       context("order is null", function() {
-        it("return true, order is set to DESC", function() {
+        it("return true, order is set to ASC", function() {
           requestObj.query["order"] = null;
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(true);
-          expect(validateResult.parameters.order).to.equal("DESC");
+          expect(validateResult.parameters.order).to.equal("ASC");
         });
 
       });

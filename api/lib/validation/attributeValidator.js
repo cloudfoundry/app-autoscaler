@@ -215,6 +215,47 @@ var validateSpecificDateErrors = function(inputSpecificDates) {
   return errors;
 }
 
+var validateScalingRuleThresholdValue = function(scalingRules){
+  var errors = [];
+  var errorCount = 0;
+  for(let i=0; i < scalingRules.length; i++){
+    switch(scalingRules[i]['metric_type']){
+      case 'memoryused':
+        if(scalingRules[i]['threshold'] <= 0){
+          errors[errorCount++] = createErrorResponse('scaling_rules['+i+'].threshold',
+            'threshold value for metric_type memoryused should be greater than 0',scalingRules[i],
+            'scaling_rules['+i+'].threshold value should be greater than 0');
+        }
+        break;
+      case 'memoryutil':
+        if(scalingRules[i]['threshold'] <= 0 || scalingRules[i]['threshold'] > 100){
+          errors[errorCount++] = createErrorResponse('scaling_rules['+i+'].threshold',
+            'threshold value for metric_type memoryutil should be greater than 0 and less than equal to 100',scalingRules[i],
+            'scaling_rules['+i+'].threshold value should be greater than 0 and less than equal to 100');
+        }
+        break;
+      case 'responsetime':
+        if(scalingRules[i]['threshold'] <= 0){
+          errors[errorCount++] = createErrorResponse('scaling_rules['+i+'].threshold',
+            'threshold value for metric_type responsetime should be greater than 0',scalingRules[i],
+            'scaling_rules['+i+'].threshold value should be greater than 0');
+        }
+        break;
+      case 'throughput':
+        if(scalingRules[i]['threshold'] <= 0){
+          errors[errorCount++] = createErrorResponse('scaling_rules['+i+'].threshold',
+            'threshold value for metric_type throughput should be greater than 0',scalingRules[i],
+            'scaling_rules['+i+'].threshold value should be greater than 0');
+        }
+        break;
+      default:
+        break;
+    }
+  }
+  return errors;
+}
+
+
 var validatePolicyJSONValues = function(policyJson) {
   var errorCount = 0;
   var errors = [];
@@ -237,7 +278,11 @@ var validatePolicyJSONValues = function(policyJson) {
     }
     errors = errors.concat(specificDateErrors,recurringScheduleErrors);
   }
-
+  if(policyJson.scaling_rules){
+    var scalingRulesErrors = [];
+    scalingRulesErrors = validateScalingRuleThresholdValue(policyJson.scaling_rules);
+    errors = errors.concat(scalingRulesErrors);
+  }
   return errors;
 }
 

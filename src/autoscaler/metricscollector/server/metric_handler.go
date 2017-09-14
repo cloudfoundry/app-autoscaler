@@ -17,8 +17,6 @@ import (
 	"time"
 )
 
-const TokenTypeBearer = "bearer"
-
 type MetricHandler struct {
 	cfClient     cf.CfClient
 	logger       lager.Logger
@@ -40,7 +38,7 @@ func (h *MetricHandler) GetMemoryMetric(w http.ResponseWriter, r *http.Request, 
 
 	w.Header().Set("Content-Type", "application/json")
 
-	containerEnvelopes, err := h.noaaConsumer.ContainerEnvelopes(appId, TokenTypeBearer+" "+h.cfClient.GetTokens().AccessToken)
+	containerEnvelopes, err := h.noaaConsumer.ContainerEnvelopes(appId, cf.TokenTypeBearer+" "+h.cfClient.GetTokens().AccessToken)
 	if err != nil {
 		h.logger.Error("Get-memory-metric-from-noaa", err, lager.Data{"appId": appId})
 

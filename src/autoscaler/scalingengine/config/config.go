@@ -57,12 +57,13 @@ type ConsulConfig struct {
 var defaultConsulConfig = ConsulConfig{}
 
 type Config struct {
-	Cf           cf.CfConfig        `yaml:"cf"`
-	Logging      LoggingConfig      `yaml:"logging"`
-	Server       ServerConfig       `yaml:"server"`
-	Db           DbConfig           `yaml:"db"`
-	Synchronizer SynchronizerConfig `yaml:"synchronizer"`
-	Consul       ConsulConfig       `yaml:"consul"`
+	Cf                  cf.CfConfig        `yaml:"cf"`
+	Logging             LoggingConfig      `yaml:"logging"`
+	Server              ServerConfig       `yaml:"server"`
+	Db                  DbConfig           `yaml:"db"`
+	Synchronizer        SynchronizerConfig `yaml:"synchronizer"`
+	Consul              ConsulConfig       `yaml:"consul"`
+	DefaultCoolDownSecs int                `yaml:"defaultCoolDownSecs"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
@@ -106,6 +107,10 @@ func (c *Config) Validate() error {
 
 	if c.Db.SchedulerDbUrl == "" {
 		return fmt.Errorf("Configuration error: Scheduler DB url is empty")
+	}
+
+	if c.DefaultCoolDownSecs < 60 || c.DefaultCoolDownSecs > 3600 {
+		return fmt.Errorf("Configuration error: DefaultCoolDownSecs should be between 60 and 3600")
 	}
 
 	return nil

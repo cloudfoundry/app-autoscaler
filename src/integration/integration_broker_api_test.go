@@ -4,13 +4,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/ghttp"
 	. "integration"
 	"io/ioutil"
 	"net/http"
 	"regexp"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/ghttp"
 )
 
 var _ = Describe("Integration_Broker_Api", func() {
@@ -18,21 +19,22 @@ var _ = Describe("Integration_Broker_Api", func() {
 	var (
 		regPath = regexp.MustCompile(`^/v2/schedules/.*$`)
 
-		serviceInstanceId       string
-		bindingId               string
-		orgId                   string
-		spaceId                 string
-		appId                   string
-		schedulePolicyJson      []byte
-		invalidSchemaPolicyJson []byte
-		invalidDataPolicyJson   []byte
+		serviceInstanceId            string
+		bindingId                    string
+		orgId                        string
+		spaceId                      string
+		appId                        string
+		schedulePolicyJson           []byte
+		invalidSchemaPolicyJson      []byte
+		invalidDataPolicyJson        []byte
+		minimalScalingRulePolicyJson []byte
 	)
 
 	BeforeEach(func() {
 		initializeHttpClient("servicebroker.crt", "servicebroker.key", "autoscaler-ca.crt", brokerApiHttpRequestTimeout)
 
 		fakeScheduler = ghttp.NewServer()
-		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], dbUrl, fakeScheduler.URL(), "", tmpDir)
+		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], components.Ports[APIPublicServer], dbUrl, fakeScheduler.URL(), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), tmpDir)
 		serviceBrokerConfPath = components.PrepareServiceBrokerConfig(components.Ports[ServiceBroker], brokerUserName, brokerPassword, dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[APIServer]), brokerApiHttpRequestTimeout, tmpDir)
 
 		startApiServer()
@@ -52,6 +54,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 		schedulePolicyJson = readPolicyFromFile("fakePolicyWithSchedule.json")
 		invalidSchemaPolicyJson = readPolicyFromFile("fakeInvalidPolicy.json")
 		invalidDataPolicyJson = readPolicyFromFile("fakeInvalidDataPolicy.json")
+		minimalScalingRulePolicyJson = readPolicyFromFile("fakeMinimalScalingRulePolicy.json")
 	})
 
 	AfterEach(func() {
@@ -91,7 +94,38 @@ var _ = Describe("Integration_Broker_Api", func() {
 				err = json.Unmarshal(schedulePolicyJson, &expected)
 				Expect(err).NotTo(HaveOccurred())
 
-				checkResponseContent(getPolicy, appId, http.StatusOK, expected)
+				checkResponseContent(getPolicy, appId, http.StatusOK, expected, INTERNAL)
+			})
+		})
+
+		Context("Policy with minimal Scaling Rules", func() {
+			BeforeEach(func() {
+				fakeScheduler.RouteToHandler("PUT", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
+				fakeScheduler.RouteToHandler("DELETE", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
+			})
+
+			AfterEach(func() {
+				//clear the binding
+				resp, err := unbindService(bindingId, appId, serviceInstanceId)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				resp.Body.Close()
+			})
+
+			It("creates a binding", func() {
+				schedulerRequestCount := len(fakeScheduler.ReceivedRequests())
+				resp, err := bindService(bindingId, appId, serviceInstanceId, minimalScalingRulePolicyJson)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+				resp.Body.Close()
+				Consistently(fakeScheduler.ReceivedRequests).Should(HaveLen(schedulerRequestCount + 1))
+
+				By("checking the API Server")
+				var expected map[string]interface{}
+				err = json.Unmarshal(minimalScalingRulePolicyJson, &expected)
+				Expect(err).NotTo(HaveOccurred())
+
+				checkResponseContent(getPolicy, appId, http.StatusOK, expected, INTERNAL)
 			})
 		})
 
@@ -106,12 +140,12 @@ var _ = Describe("Integration_Broker_Api", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
 				respBody, err := ioutil.ReadAll(resp.Body)
-				Expect(string(respBody)).To(Equal(`{"error":[{"property":"instance","message":"is not any of [subschema 0],[subschema 1]","schema":"/policySchema","instance":{"instance_min_count":10,"instance_max_count":4},"name":"anyOf","argument":["[subschema 0]","[subschema 1]"],"stack":"instance is not any of [subschema 0],[subschema 1]"}]}`))
+				Expect(string(respBody)).To(Equal(`{"description":[{"property":"instance","message":"is not any of [subschema 0],[subschema 1]","schema":"/policySchema","instance":{"instance_min_count":10,"instance_max_count":4},"name":"anyOf","argument":["[subschema 0]","[subschema 1]"],"stack":"instance is not any of [subschema 0],[subschema 1]"}]}`))
 				resp.Body.Close()
 				Consistently(fakeScheduler.ReceivedRequests).Should(HaveLen(schedulerCount))
 
 				By("checking the API Server")
-				resp, err = getPolicy(appId)
+				resp, err = getPolicy(appId, INTERNAL)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
 				resp.Body.Close()
@@ -129,12 +163,12 @@ var _ = Describe("Integration_Broker_Api", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
 				respBody, err := ioutil.ReadAll(resp.Body)
-				Expect(string(respBody)).To(Equal(`{"error":[{"property":"instance.scaling_rules[0].cool_down_secs","message":"must have a minimum value of 60","schema":{"type":"number","minimum":60,"maximum":3600},"instance":-300,"name":"minimum","argument":60,"stack":"instance.scaling_rules[0].cool_down_secs must have a minimum value of 60"}]}`))
+				Expect(string(respBody)).To(Equal(`{"description":[{"property":"instance.scaling_rules[0].cool_down_secs","message":"must have a minimum value of 60","schema":{"type":"number","minimum":60,"maximum":3600},"instance":-300,"name":"minimum","argument":60,"stack":"instance.scaling_rules[0].cool_down_secs must have a minimum value of 60"}]}`))
 				resp.Body.Close()
 				Consistently(fakeScheduler.ReceivedRequests).Should(HaveLen(schedulerCount))
 
 				By("checking the API Server")
-				resp, err = getPolicy(appId)
+				resp, err = getPolicy(appId, INTERNAL)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
 				resp.Body.Close()
@@ -144,7 +178,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 		Context("ApiServer is down", func() {
 			BeforeEach(func() {
 				stopApiServer()
-				_, err := getPolicy(appId)
+				_, err := getPolicy(appId, INTERNAL)
 				Expect(err).To(HaveOccurred())
 				fakeScheduler.RouteToHandler("PUT", regPath, ghttp.RespondWith(http.StatusInternalServerError, "error"))
 			})
@@ -173,7 +207,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 				Consistently(fakeScheduler.ReceivedRequests).Should(HaveLen(schedulerCount + 1))
 
 				By("checking the API Server")
-				resp, err = getPolicy(appId)
+				resp, err = getPolicy(appId, INTERNAL)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
 				resp.Body.Close()
@@ -203,7 +237,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 			resp.Body.Close()
 
 			By("checking the API Server")
-			resp, err = getPolicy(appId)
+			resp, err = getPolicy(appId, INTERNAL)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
 			resp.Body.Close()
@@ -213,7 +247,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 			BeforeEach(func() {
 				fakeScheduler.RouteToHandler("DELETE", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
 				//detach the appId's policy first
-				resp, err := detachPolicy(appId)
+				resp, err := detachPolicy(appId, INTERNAL)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 				resp.Body.Close()
@@ -230,7 +264,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 		Context("APIServer is down", func() {
 			BeforeEach(func() {
 				stopApiServer()
-				_, err := detachPolicy(appId)
+				_, err := detachPolicy(appId, INTERNAL)
 				Expect(err).To(HaveOccurred())
 				fakeScheduler.RouteToHandler("DELETE", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
 			})
@@ -255,7 +289,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 				resp.Body.Close()
 
 				By("checking the API Server")
-				resp, err = getPolicy(appId)
+				resp, err = getPolicy(appId, INTERNAL)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
 				resp.Body.Close()

@@ -192,7 +192,7 @@ func (c *cfClient) RefreshAuthToken() (string, error) {
 			return "", err
 		}
 	}
-	return c.tokens.AccessToken, nil
+	return TokenTypeBearer + " " + c.tokens.AccessToken, nil
 }
 
 func (c *cfClient) GetTokens() Tokens {

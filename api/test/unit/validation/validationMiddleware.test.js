@@ -8,6 +8,8 @@ var settings = require(path.join(__dirname, '../../../lib/config/setting.js'))((
   fs.readFileSync(path.join(__dirname, '../../../config/settings.json'), 'utf8'))));
 var API = require('../../../app.js');
 var app;
+var publicApp;
+var servers;
 var logger = require('../../../lib/log/logger');
 var policy = require('../../../lib/models')(settings.db).policy_json;
 var validationMiddleware = require('../../../lib/validation/validationMiddleware');
@@ -20,10 +22,14 @@ describe('Validate Policy JSON Schema structure', function() {
 
   before(function() {
     policyContent = fs.readFileSync(__dirname+'/../fakePolicy.json', 'utf8');
-    app = API(path.join(__dirname, '../../../config/settings.json'));
+    servers = API(path.join(__dirname, "../../../config/settings.json"));
+    app = servers.internalServer;
+    publicApp = servers.publicServer;
   });
   after(function(done){
-      app.close(done);
+      app.close(function(){
+      publicApp.close(done);
+    });
   })
   beforeEach(function() {
     fakePolicy = JSON.parse(policyContent);
@@ -36,7 +42,7 @@ describe('Validate Policy JSON Schema structure', function() {
     .query({'guid':/.*/})
     .reply(200);
     request(app)
-    .put('/v1/policies/12341',validationMiddleware)
+    .put('/v1/apps/12341/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(201);
@@ -49,7 +55,7 @@ describe('Validate Policy JSON Schema structure', function() {
   it('should fail validate policy schema in the absence of required property instance_min_count ', function(done) {
     delete fakePolicy.instance_min_count;
     request(app)
-    .put('/v1/policies/12342',validationMiddleware)
+    .put('/v1/apps/12342/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(400);
@@ -65,7 +71,7 @@ describe('Validate Policy JSON Schema structure', function() {
   it('should fail validate policy schema in as instance_min_count value is not in range ', function(done) {
     fakePolicy.instance_min_count = -1;
     request(app)
-    .put('/v1/policies/12343',validationMiddleware)
+    .put('/v1/apps/12343/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(400);
@@ -80,7 +86,7 @@ describe('Validate Policy JSON Schema structure', function() {
   it('should validate policy schema in the absesnce of schedules ', function(done) {
     delete fakePolicy.schedules;
     request(app)
-    .put('/v1/policies/12344',validationMiddleware)
+    .put('/v1/apps/12344/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(201);
@@ -97,7 +103,7 @@ describe('Validate Policy JSON Schema structure', function() {
     .reply(200);
     delete fakePolicy.scaling_rules;
     request(app)
-    .put('/v1/policies/12345',validationMiddleware)
+    .put('/v1/apps/12345/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(201);
@@ -107,22 +113,155 @@ describe('Validate Policy JSON Schema structure', function() {
     });
 
   });
-  it('should fail to validate policy schema as threshold value is negative', function(done) {
+  it('should fail to validate policy with negative threshold value for metric_type memoryused', function(done) {
     fakePolicy.scaling_rules[0].threshold = -300;
+    fakePolicy.scaling_rules[0].metric_type = 'memoryused';
     request(app)
-    .put('/v1/policies/12346',validationMiddleware)
+    .put('/v1/apps/12346/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(400);
       expect(result.body.success).to.equal(false);
       expect(result.body.error).to.not.be.null;
-      expect(result.body.error[0].property).to.equal('instance.scaling_rules[0].threshold');
-      expect(result.body.error[0].message).to.equal('must have a minimum value of 0');
-      expect(result.body.error[0].stack).to.equal('instance.scaling_rules[0].threshold must have a minimum value of 0');
+      expect(result.body.error[0].property).to.equal('scaling_rules[0].threshold');
+      expect(result.body.error[0].message).to.equal('threshold value for metric_type memoryused should be greater than 0');
+      expect(result.body.error[0].stack).to.equal('scaling_rules[0].threshold value should be greater than 0');
       done();
     });
-
   });
+  it('should successfully validate policy with positive threshold value for metric_type memoryused', function(done) {
+    fakePolicy.scaling_rules[0].threshold = 300;
+    fakePolicy.scaling_rules[0].metric_type = 'memoryused';
+    nock(schedulerURI)
+    .put('/v2/schedules/12346')
+    .query({'guid':/.*/})
+    .reply(200);
+    request(app)
+    .put('/v1/apps/12346/policy',validationMiddleware)
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(201);
+      expect(result.body.success).to.equal(true);
+      expect(result.body.error).to.be.null;
+      done();
+    });
+  });
+  it('should fail to validate policy with negative threshold value for metric_type memoryutil', function(done) {
+    fakePolicy.scaling_rules[0].threshold = -300;
+    fakePolicy.scaling_rules[0].metric_type = 'memoryutil';
+    request(app)
+    .put('/v1/apps/12346/policy',validationMiddleware)
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(400);
+      expect(result.body.success).to.equal(false);
+      expect(result.body.error).to.not.be.null;
+      expect(result.body.error[0].property).to.equal('scaling_rules[0].threshold');
+      expect(result.body.error[0].message).to.equal('threshold value for metric_type memoryutil should be greater than 0 and less than equal to 100');
+      expect(result.body.error[0].stack).to.equal('scaling_rules[0].threshold value should be greater than 0 and less than equal to 100');
+      done();
+    });
+  });
+  it('should fail to validate policy with above 100 threshold value for metric_type memoryutil', function(done) {
+    fakePolicy.scaling_rules[0].threshold = 200;
+    fakePolicy.scaling_rules[0].metric_type = 'memoryutil';
+    request(app)
+    .put('/v1/apps/12346/policy',validationMiddleware)
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(400);
+      expect(result.body.success).to.equal(false);
+      expect(result.body.error).to.not.be.null;
+      expect(result.body.error[0].property).to.equal('scaling_rules[0].threshold');
+      expect(result.body.error[0].message).to.equal('threshold value for metric_type memoryutil should be greater than 0 and less than equal to 100');
+      expect(result.body.error[0].stack).to.equal('scaling_rules[0].threshold value should be greater than 0 and less than equal to 100');
+      done();
+    });
+  });
+  it('should successfully validate policy between 0 and 100 threshold value for metric_type memoryutil', function(done) {
+    fakePolicy.scaling_rules[0].threshold = 50;
+    fakePolicy.scaling_rules[0].metric_type = 'memoryutil';
+    nock(schedulerURI)
+    .put('/v2/schedules/12346')
+    .query({'guid':/.*/})
+    .reply(200);
+    request(app)
+    .put('/v1/apps/12346/policy',validationMiddleware)
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(201);
+      expect(result.body.success).to.equal(true);
+      expect(result.body.error).to.be.null;
+      done();
+    });
+  });
+  it('should fail to validate policy with negative threshold value for metric_type responsetime', function(done) {
+    fakePolicy.scaling_rules[0].threshold = -300;
+    fakePolicy.scaling_rules[0].metric_type = 'responsetime';
+    request(app)
+    .put('/v1/apps/12346/policy',validationMiddleware)
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(400);
+      expect(result.body.success).to.equal(false);
+      expect(result.body.error).to.not.be.null;
+      expect(result.body.error[0].property).to.equal('scaling_rules[0].threshold');
+      expect(result.body.error[0].message).to.equal('threshold value for metric_type responsetime should be greater than 0');
+      expect(result.body.error[0].stack).to.equal('scaling_rules[0].threshold value should be greater than 0');
+      done();
+    });
+  });
+  it('should successfully validate policy with positive threshold value for metric_type responsetime', function(done) {
+    fakePolicy.scaling_rules[0].threshold = 300;
+    fakePolicy.scaling_rules[0].metric_type = 'responsetime';
+    nock(schedulerURI)
+    .put('/v2/schedules/12346')
+    .query({'guid':/.*/})
+    .reply(200);
+    request(app)
+    .put('/v1/apps/12346/policy',validationMiddleware)
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(201);
+      expect(result.body.success).to.equal(true);
+      expect(result.body.error).to.be.null;
+      done();
+    });
+  });
+  it('should fail to validate policy with negative threshold value for metric_type throughput', function(done) {
+    fakePolicy.scaling_rules[0].threshold = -300;
+    fakePolicy.scaling_rules[0].metric_type = 'throughput';
+    request(app)
+    .put('/v1/apps/12346/policy',validationMiddleware)
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(400);
+      expect(result.body.success).to.equal(false);
+      expect(result.body.error).to.not.be.null;
+      expect(result.body.error[0].property).to.equal('scaling_rules[0].threshold');
+      expect(result.body.error[0].message).to.equal('threshold value for metric_type throughput should be greater than 0');
+      expect(result.body.error[0].stack).to.equal('scaling_rules[0].threshold value should be greater than 0');
+       done();
+    });
+  });
+  it('should successfully validate policy with positive threshold value for metric_type throughput', function(done) {
+    fakePolicy.scaling_rules[0].threshold = 300;
+    fakePolicy.scaling_rules[0].metric_type = 'throughput';
+    nock(schedulerURI)
+    .put('/v2/schedules/12346')
+    .query({'guid':/.*/})
+    .reply(200);
+    request(app)
+    .put('/v1/apps/12346/policy',validationMiddleware)
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(201);
+      expect(result.body.success).to.equal(true);
+      expect(result.body.error).to.be.null;
+      done();
+    });
+  });
+
   it('should validate policy schema without stat_window_secs in scaling_rules',function(done) {
     nock(schedulerURI)
     .put('/v2/schedules/12347')
@@ -130,7 +269,7 @@ describe('Validate Policy JSON Schema structure', function() {
     .reply(200);
     delete fakePolicy.scaling_rules[0].stat_window_secs;
     request(app)
-    .put('/v1/policies/12347',validationMiddleware)
+    .put('/v1/apps/12347/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(201);
@@ -143,7 +282,7 @@ describe('Validate Policy JSON Schema structure', function() {
   it('should fail to validate policy schema without metric_type in  scaling_rules', function(done) {
     delete fakePolicy.scaling_rules[0].metric_type;
     request(app)
-    .put('/v1/policies/12348',validationMiddleware)
+    .put('/v1/apps/12348/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(400);
@@ -160,7 +299,7 @@ describe('Validate Policy JSON Schema structure', function() {
   it('should fail to validate policy schema with not supported metric_type in scaling_rules', function(done) {
     fakePolicy.scaling_rules[0].metric_type = "not-supported-metric";
     request(app)
-    .put('/v1/policies/12348',validationMiddleware)
+    .put('/v1/apps/12348/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(400);
@@ -178,7 +317,7 @@ describe('Validate Policy JSON Schema structure', function() {
   it('should fail to validate policy schema with wrong adjustment parameter value in scaling_rules', function(done) {
     fakePolicy.scaling_rules[0].adjustment = '10%';
     request(app)
-    .put('/v1/policies/1230897',validationMiddleware)
+    .put('/v1/apps/1230897/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(400);
@@ -194,7 +333,7 @@ describe('Validate Policy JSON Schema structure', function() {
   it('should fail to validate policy schema with wrong operator parameter value in scaling_rules', function(done) {
     fakePolicy.scaling_rules[0].operator = '+';
     request(app)
-    .put('/v1/policies/12350',validationMiddleware)
+    .put('/v1/apps/12350/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(400);
@@ -210,7 +349,7 @@ describe('Validate Policy JSON Schema structure', function() {
   it('should fail to validate policy schema with wrong timezone in schedules', function(done) {
     fakePolicy.schedules.timezone = '(GMT+08: 00) Wrong/Timezone';
     request(app)
-    .put('/v1/policies/12351',validationMiddleware)
+    .put('/v1/apps/12351/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(400);
@@ -228,7 +367,7 @@ describe('Validate Policy JSON Schema structure', function() {
     .reply(200);
     fakePolicy.schedules.timezone = '   Asia   /  Shanghai ';
     request(app)
-    .put('/v1/policies/12351',validationMiddleware)
+    .put('/v1/apps/12351/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(201);
@@ -245,7 +384,7 @@ describe('Validate Policy JSON Schema structure', function() {
     .reply(200);
     delete fakePolicy.schedules.specific_date;
     request(app)
-    .put('/v1/policies/12352',validationMiddleware)
+    .put('/v1/apps/12352/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(201);
@@ -263,7 +402,7 @@ describe('Validate Policy JSON Schema structure', function() {
     .reply(200);
     delete fakePolicy.schedules.recurring_schedule;
     request(app)
-    .put('/v1/policies/12353',validationMiddleware)
+    .put('/v1/apps/12353/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(201);
@@ -277,7 +416,7 @@ describe('Validate Policy JSON Schema structure', function() {
     delete fakePolicy.schedules.recurring_schedule;
     delete fakePolicy.schedules.specific_date;
     request(app)
-    .put('/v1/policies/12354',validationMiddleware)
+    .put('/v1/apps/12354/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(400);
@@ -293,7 +432,7 @@ describe('Validate Policy JSON Schema structure', function() {
   it('should fail to validate policy schema with wrong days_of_week value', function(done) {
     fakePolicy.schedules.recurring_schedule[0].days_of_week = [16,56];
     request(app)
-    .put('/v1/policies/12355',validationMiddleware)
+    .put('/v1/apps/12355/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(400);
@@ -309,7 +448,7 @@ describe('Validate Policy JSON Schema structure', function() {
   it('should fail to validate policy schema with duplicate days_of_week value', function(done) {
     fakePolicy.schedules.recurring_schedule[0].days_of_week = [1,2,3,2];
     request(app)
-    .put('/v1/policies/12356',validationMiddleware)
+    .put('/v1/apps/12356/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(400);
@@ -325,7 +464,7 @@ describe('Validate Policy JSON Schema structure', function() {
   it('should fail to validate policy schema with duplicate days_of_month value', function(done) {
     fakePolicy.schedules.recurring_schedule[0].days_of_month = [10,23,31,10];
     request(app)
-    .put('/v1/policies/12357',validationMiddleware)
+    .put('/v1/apps/12357/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(400);
@@ -341,7 +480,7 @@ describe('Validate Policy JSON Schema structure', function() {
   it('should fail to validate policy schema with wrong days_of_month value', function(done) {
     fakePolicy.schedules.recurring_schedule[0].days_of_month = [36,56];
     request(app)
-    .put('/v1/policies/12358',validationMiddleware)
+    .put('/v1/apps/12358/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(400);
@@ -357,7 +496,7 @@ describe('Validate Policy JSON Schema structure', function() {
   it('should fail to validate policy schema with wrong start_time format in recurring_schedule', function(done) {
     fakePolicy.schedules.recurring_schedule[0].start_time = '123:566 PM';
     request(app)
-    .put('/v1/policies/12359',validationMiddleware)
+    .put('/v1/apps/12359/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(400);
@@ -373,7 +512,7 @@ describe('Validate Policy JSON Schema structure', function() {
   it('should fail to validate policy schema with wrong start_date_time format in specific_date', function(done) {
     fakePolicy.schedules.specific_date[0].start_date_time = '2015-06-19';
     request(app)
-    .put('/v1/policies/12360',validationMiddleware)
+    .put('/v1/apps/12360/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(400);
@@ -390,7 +529,7 @@ describe('Validate Policy JSON Schema structure', function() {
   it('should fail to validate a valid policy schema with wrong policy attribute value', function(done) {
     fakePolicy.schedules.specific_date[1].start_date_time = '2015-06-02T10:00';
     request(app)
-    .put('/v1/policies/12361',validationMiddleware)
+    .put('/v1/apps/12361/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(400);
@@ -405,7 +544,7 @@ describe('Validate Policy JSON Schema structure', function() {
   it('should fail to validate a policy when start_date_time is same as end_date_time in specific_date', function(done) {
     fakePolicy.schedules.specific_date[1].start_date_time = '2015-02-19T23:15';
     request(app)
-    .put('/v1/policies/12361',validationMiddleware)
+    .put('/v1/apps/12361/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(400);
@@ -420,7 +559,7 @@ describe('Validate Policy JSON Schema structure', function() {
   it('should fail to validate a policy schema with recurring_schedule having both days_of_week and days_of_month property',function(done){
     fakePolicy.schedules.recurring_schedule[0].days_of_month = [1,15];
     request(app)
-    .put('/v1/policies/12355',validationMiddleware)
+    .put('/v1/apps/12355/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(400);
@@ -438,7 +577,7 @@ describe('Validate Policy JSON Schema structure', function() {
     .query({'guid':/.*/})
     .reply(200);
      request(app)
-    .put('/v1/policies/12359',validationMiddleware)
+    .put('/v1/apps/12359/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(201);
@@ -454,7 +593,7 @@ describe('Validate Policy JSON Schema structure', function() {
     .reply(200);
     delete  fakePolicy.schedules.recurring_schedule[0].end_date;
     request(app)
-    .put('/v1/policies/12359',validationMiddleware)
+    .put('/v1/apps/12359/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(201);
@@ -470,7 +609,7 @@ describe('Validate Policy JSON Schema structure', function() {
     .reply(200);
     delete  fakePolicy.schedules.recurring_schedule[0].start_date;
     request(app)
-    .put('/v1/policies/12359',validationMiddleware)
+    .put('/v1/apps/12359/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(201);
@@ -482,7 +621,7 @@ describe('Validate Policy JSON Schema structure', function() {
   it('should fail to validate policy schema with wrong start_date format in recurring_schedule', function(done) {
     fakePolicy.schedules.recurring_schedule[0].start_date = '2016-76-900';
     request(app)
-    .put('/v1/policies/12359',validationMiddleware)
+    .put('/v1/apps/12359/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(400);
@@ -497,7 +636,7 @@ describe('Validate Policy JSON Schema structure', function() {
   it('should fail to validate policy schema with wrong end_date format in recurring_schedule', function(done) {
     fakePolicy.schedules.recurring_schedule[0].end_date = '23-07-2016';
     request(app)
-    .put('/v1/policies/12359',validationMiddleware)
+    .put('/v1/apps/12359/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(400);
@@ -513,7 +652,7 @@ describe('Validate Policy JSON Schema structure', function() {
     fakePolicy.schedules.recurring_schedule[0].start_date = '2016-07-23';
     fakePolicy.schedules.recurring_schedule[0].end_date = '2016-05-12';
     request(app)
-    .put('/v1/policies/12359',validationMiddleware)
+    .put('/v1/apps/12359/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(400);
@@ -534,7 +673,7 @@ describe('Validate Policy JSON Schema structure', function() {
     delete  fakePolicy.schedules.recurring_schedule[0].initial_min_instance_count;
     delete  fakePolicy.schedules.recurring_schedule[1].initial_min_instance_count;
     request(app)
-    .put('/v1/policies/12359',validationMiddleware)
+    .put('/v1/apps/12359/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(201);
@@ -552,7 +691,7 @@ describe('Validate Policy JSON Schema structure', function() {
     delete  fakePolicy.schedules.specific_date[0].initial_min_instance_count;
     delete  fakePolicy.schedules.specific_date[1].initial_min_instance_count;
     request(app)
-    .put('/v1/policies/12359',validationMiddleware)
+    .put('/v1/apps/12359/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(201);
@@ -565,7 +704,7 @@ describe('Validate Policy JSON Schema structure', function() {
   it('should fail to validate policy schema if initial_min_instance_count is greater than instance_max_count in recurring_schedule', function(done) {
     fakePolicy.schedules.recurring_schedule[0].initial_min_instance_count = 11;
     request(app)
-    .put('/v1/policies/12359',validationMiddleware)
+    .put('/v1/apps/12359/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(400);
@@ -581,7 +720,7 @@ describe('Validate Policy JSON Schema structure', function() {
   it('should fail to validate policy schema if initial_min_instance_count is less than instance_min_count in recurring_schedule', function(done) {
     fakePolicy.schedules.recurring_schedule[1].initial_min_instance_count = 1;
     request(app)
-    .put('/v1/policies/12359',validationMiddleware)
+    .put('/v1/apps/12359/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(400);
@@ -596,7 +735,7 @@ describe('Validate Policy JSON Schema structure', function() {
   it('should fail to validate policy schema if initial_min_instance_count is greater than instance_max_count in specific_date schedule', function(done) {
     fakePolicy.schedules.specific_date[0].initial_min_instance_count = 5;
     request(app)
-    .put('/v1/policies/12359',validationMiddleware)
+    .put('/v1/apps/12359/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(400);
@@ -612,7 +751,7 @@ describe('Validate Policy JSON Schema structure', function() {
   it('should fail to validate policy schema if initial_min_instance_count is less than instance_min_count in recurring_schedule', function(done) {
     fakePolicy.schedules.specific_date[1].initial_min_instance_count = 1;
     request(app)
-    .put('/v1/policies/12359',validationMiddleware)
+    .put('/v1/apps/12359/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(400);
@@ -628,7 +767,7 @@ describe('Validate Policy JSON Schema structure', function() {
   it('Should fail to validate the policy for non integer initial_min_instance_count in recurring_schedule',function(done){
       fakePolicy.schedules.recurring_schedule[0].initial_min_instance_count = 1.3;
       request(app)
-      .put('/v1/policies/12359',validationMiddleware)
+      .put('/v1/apps/12359/policy',validationMiddleware)
       .send(fakePolicy)
       .end(function(error,result) {
         expect(result.statusCode).to.equal(400);
@@ -644,7 +783,7 @@ describe('Validate Policy JSON Schema structure', function() {
   it('Should fail to validate the policy for non integer initial_min_instance_count in specific_date',function(done){
     fakePolicy.schedules.specific_date[1].initial_min_instance_count = 1.3;
     request(app)
-    .put('/v1/policies/12359',validationMiddleware)
+    .put('/v1/apps/12359/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(400);
@@ -663,7 +802,7 @@ describe('Validate Policy JSON Schema structure', function() {
     fakePolicy.schedules.recurring_schedule[0].start_time = '18:00';
     fakePolicy.schedules.recurring_schedule[0].end_time = '10:00';
     request(app)
-    .put('/v1/policies/12359',validationMiddleware)
+    .put('/v1/apps/12359/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(400);
@@ -682,7 +821,7 @@ describe('Validate Policy JSON Schema structure', function() {
     fakePolicy.schedules.recurring_schedule[0].start_time = '10:00';
     fakePolicy.schedules.recurring_schedule[0].end_time = '10:00';
     request(app)
-    .put('/v1/policies/12359',validationMiddleware)
+    .put('/v1/apps/12359/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(400);
@@ -701,7 +840,7 @@ describe('Validate Policy JSON Schema structure', function() {
     fakePolicy.schedules.recurring_schedule[0].start_time = '10:00';
     fakePolicy.schedules.recurring_schedule[0].end_time = '18:00';
     request(app)
-    .put('/v1/policies/12359',validationMiddleware)
+    .put('/v1/apps/12359/policy',validationMiddleware)
     .send(fakePolicy)
     .end(function(error,result) {
       expect(result.statusCode).to.equal(201);

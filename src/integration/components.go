@@ -23,6 +23,7 @@ import (
 
 const (
 	APIServer        = "apiServer"
+	APIPublicServer  = "APIPublicServer"
 	ServiceBroker    = "serviceBroker"
 	Scheduler        = "scheduler"
 	MetricsCollector = "metricsCollector"
@@ -75,15 +76,22 @@ type ScalingEngineClient struct {
 	Uri string          `json:"uri"`
 	TLS models.TLSCerts `json:"tls"`
 }
+type MetricsCollectorClient struct {
+	Uri string          `json:"uri"`
+	TLS models.TLSCerts `json:"tls"`
+}
 type APIServerConfig struct {
-	Port int `json:"port"`
+	Port       int `json:"port"`
+	PublicPort int `json:"publicPort"`
 
 	DB DBConfig `json:"db"`
 
-	SchedulerClient     SchedulerClient     `json:"scheduler"`
-	ScalingEngineClient ScalingEngineClient `json:"scalingEngine"`
+	SchedulerClient        SchedulerClient        `json:"scheduler"`
+	ScalingEngineClient    ScalingEngineClient    `json:"scalingEngine"`
+	MetricsCollectorClient MetricsCollectorClient `json:"metricsCollector"`
 
-	TLS models.TLSCerts `json:"tls"`
+	TLS       models.TLSCerts `json:"tls"`
+	PublicTLS models.TLSCerts `json:"publicTls"`
 }
 
 func (components *Components) ServiceBroker(confPath string, argv ...string) *ginkgomon.Runner {
@@ -212,9 +220,10 @@ func (components *Components) PrepareServiceBrokerConfig(port int, username stri
 	return cfgFile.Name()
 }
 
-func (components *Components) PrepareApiServerConfig(port int, dbUri string, schedulerUri string, scalingEngineUri string, tmpDir string) string {
+func (components *Components) PrepareApiServerConfig(port int, publicPort int, dbUri string, schedulerUri string, scalingEngineUri string, metricsCollectorUri string, tmpDir string) string {
 	apiConfig := APIServerConfig{
-		Port: port,
+		Port:       port,
+		PublicPort: publicPort,
 
 		DB: DBConfig{
 			URI:            dbUri,
@@ -239,10 +248,24 @@ func (components *Components) PrepareApiServerConfig(port int, dbUri string, sch
 				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 			},
 		},
+		MetricsCollectorClient: MetricsCollectorClient{
+			Uri: metricsCollectorUri,
+			TLS: models.TLSCerts{
+				KeyFile:    filepath.Join(testCertDir, "metricscollector.key"),
+				CertFile:   filepath.Join(testCertDir, "metricscollector.crt"),
+				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			},
+		},
 
 		TLS: models.TLSCerts{
 			KeyFile:    filepath.Join(testCertDir, "api.key"),
 			CertFile:   filepath.Join(testCertDir, "api.crt"),
+			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+		},
+
+		PublicTLS: models.TLSCerts{
+			KeyFile:    filepath.Join(testCertDir, "api_public.key"),
+			CertFile:   filepath.Join(testCertDir, "api_public.crt"),
 			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 		},
 	}
@@ -403,6 +426,8 @@ func (components *Components) PrepareEventGeneratorConfig(dbUri string, metricsC
 			LockRetryInterval:   lockRetryInterval,
 			ConsulClusterConfig: ConsulClusterConfig,
 		},
+		DefaultBreachDurationSecs: 600,
+		DefaultStatWindowSecs:     300,
 	}
 	return writeYmlConfig(tmpDir, EventGenerator, &conf)
 }
@@ -437,6 +462,7 @@ func (components *Components) PrepareScalingEngineConfig(dbUri string, port int,
 		Consul: seConfig.ConsulConfig{
 			Cluster: consulClusterConfig,
 		},
+		DefaultCoolDownSecs: 300,
 	}
 
 	return writeYmlConfig(tmpDir, ScalingEngine, &conf)

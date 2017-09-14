@@ -9,11 +9,13 @@ var settings = require(path.join(__dirname, '../../../lib/config/setting.js'))((
   fs.readFileSync(path.join(__dirname, '../../../config/settings.json'), 'utf8'))));
 var API = require('../../../app.js');
 var app;
+var publicApp;
+var servers;
 var policy = require('../../../lib/models')(settings.db).policy_json;
 var logger = require('../../../lib/log/logger');
 var nock = require('nock');
 var HttpStatus = require('http-status-codes');
-var routeHelper = require('../../../lib/routes/routeHelper')(settings.db);
+var policyHelper = require('../../../lib/routes/policyHelper')(settings.db);
 var schedulerURI = process.env.SCHEDULER_URI;
 
 
@@ -22,10 +24,14 @@ describe('Policy Route helper ', function() {
 
     before(function() {
 		fakePolicy = JSON.parse(fs.readFileSync(__dirname+'/../fakePolicy.json', 'utf8'));
-		app = API(path.join(__dirname, '../../../config/settings.json'));
+		servers = API(path.join(__dirname, "../../../config/settings.json"));
+	    app = servers.internalServer;
+	    publicApp = servers.publicServer;
 	})
     after(function(done){
-    	app.close(done);
+    	app.close(function(){
+	      publicApp.close(done);
+	    });
   	})
 	beforeEach(function() {
 		return policy.truncate();
@@ -39,7 +45,7 @@ describe('Policy Route helper ', function() {
     				query : { 'policy_guid' : uuidV4()}
     		};
 
-    		routeHelper.createOrUpdatePolicy(mockRequest, function(error,result){
+    		policyHelper.createOrUpdatePolicy(mockRequest, function(error,result){
     			expect(result.statusCode).to.equal(HttpStatus.CREATED);
     			expect(error).to.be.null;
     			done();
@@ -53,7 +59,7 @@ describe('Policy Route helper ', function() {
     				params : { 'key' : 'value' },
     				query : { 'policy_guid' : uuidV4()}
     		};
-    		routeHelper.createOrUpdatePolicy(mockRequest, function(error,result){
+    		policyHelper.createOrUpdatePolicy(mockRequest, function(error,result){
     			expect(error).not.to.be.null;
     			expect(error.name).eql('SequelizeDatabaseError');
     			expect(error.message).eql('null value in column "app_id" violates not-null constraint');
@@ -69,7 +75,7 @@ describe('Policy Route helper ', function() {
     				query : { 'policy_guid' : uuidV4()}
     		};
 
-    		routeHelper.createOrUpdatePolicy(mockRequest, function(error,result){
+    		policyHelper.createOrUpdatePolicy(mockRequest, function(error,result){
     			expect(result.statusCode).to.equal(HttpStatus.CREATED);
     			expect(error).to.be.null;
     			done();
@@ -86,7 +92,7 @@ describe('Policy Route helper ', function() {
     				query : { 'policy_guid' : uuidV4()}
     		};
     		var app_id = '12345';
-    		routeHelper.deletePolicy(mockRequest, function(error){
+    		policyHelper.deletePolicy(mockRequest, function(error){
     			expect(error).to.not.be.null;
     			expect(error.statusCode).to.equal(404);
     			done();
@@ -102,7 +108,7 @@ describe('Policy Route helper ', function() {
 					params : { 'app_id' : '12348' },
     				query : { 'policy_guid' : uuidV4()}
 			};
-			routeHelper.createOrUpdatePolicy(mockRequest, function(error,result){
+			policyHelper.createOrUpdatePolicy(mockRequest, function(error,result){
 				done();
 			});
 		});
@@ -114,7 +120,7 @@ describe('Policy Route helper ', function() {
     				query : { 'policy_guid' : uuidV4()}
 			};
 			
-			routeHelper.createOrUpdatePolicy(mockRequest, function(error,result){
+			policyHelper.createOrUpdatePolicy(mockRequest, function(error,result){
 				expect(error).to.be.null;
 				expect(result.statusCode).to.equal(HttpStatus.OK);
 				done();
@@ -128,7 +134,7 @@ describe('Policy Route helper ', function() {
     				query : { 'policy_guid' : uuidV4()}
 			};
 			
-			routeHelper.createOrUpdatePolicy(mockRequest, function(error,result){
+			policyHelper.createOrUpdatePolicy(mockRequest, function(error,result){
 				expect(error).not.to.be.null;
 				expect(error.name).eql('SequelizeValidationError');
 				expect(error.message).eql('notNull Violation: policy_json cannot be null');
@@ -145,7 +151,7 @@ describe('Policy Route helper ', function() {
     				query : { 'policy_guid' : uuidV4()}
 			};
 
-			routeHelper.createOrUpdatePolicy(mockRequest, function(error,result){
+			policyHelper.createOrUpdatePolicy(mockRequest, function(error,result){
 				done();
 			});
 		});
@@ -154,10 +160,10 @@ describe('Policy Route helper ', function() {
 			var mockRequest = {
 					params : { 'app_id' : '12348' }
 			};
-			routeHelper.deletePolicy(mockRequest, function(error){
+			policyHelper.deletePolicy(mockRequest, function(error){
 				expect(error).to.be.null;
 				request(app)
-				  .get('/v1/policies/12348')
+				  .get('/v1/apps/12348/policy')
 				  .end(function(error,result) {
 				      expect(result.statusCode).to.equal(404);
 				      done();
@@ -170,11 +176,11 @@ describe('Policy Route helper ', function() {
 					params : {} // Not passing the app_id will throw an internal server error
 			};
 
-			routeHelper.deletePolicy(mockRequest, function(error){
+			policyHelper.deletePolicy(mockRequest, function(error){
 				expect(error).to.not.be.null;
 				expect(error.statusCode).to.equal(500);
 				request(app)
-				  .get('/v1/policies/12348')
+				  .get('/v1/apps/12348/policy')
 				  .end(function(error,result) {
 				      expect(result.statusCode).to.equal(200);
 				      expect(result.body).to.deep.equal(fakePolicy);

@@ -6,17 +6,17 @@ module.exports = function(settings){
   var logger = require('../log/logger');
   var HttpStatus = require('http-status-codes');
   var validationMiddleWare = require('../validation/validationMiddleware');
-  var routeHelper = require('./routeHelper')(settings.db);
+  var policyHelper = require('./policyHelper')(settings.db);
   var schedulerUtil = require('../utils/schedulerUtils')(settings.scheduler);
   var async = require('async');
   var uuidV4 = require('uuid/v4');
 
-  router.put('/:app_id',validationMiddleWare,function(req, res) {
+  router.put('/:app_id/policy',validationMiddleWare,function(req, res) {
     logger.info('Policy creation request received',{ 'app id': req.params.app_id });
     req.query.policy_guid = uuidV4();
     logger.info('Policy guid ' + req.query.policy_guid);
     async.waterfall([async.apply(schedulerUtil.createOrUpdateSchedule, req),
-      async.apply(routeHelper.createOrUpdatePolicy, req)],
+      async.apply(policyHelper.createOrUpdatePolicy, req)],
       function(error, result) {
         var responseDecorator = { };
         var statusCode = HttpStatus.OK;
@@ -31,7 +31,7 @@ module.exports = function(settings){
         else {
           statusCode = result.statusCode;
           if(result.statusCode === HttpStatus.CREATED) {
-            res.set('Location', '/v1/policies/' + req.params.app_id);
+            res.set('Location', '/v1/apps/' + req.params.app_id + '/policy');
           }
           responseDecorator = {
             'success': true,
@@ -43,9 +43,9 @@ module.exports = function(settings){
       });
   });
 
-  router.delete('/:app_id',function(req,res) {
+  router.delete('/:app_id/policy',function(req,res) {
     logger.info('Policy deletion request received for application', { 'app id': req.params.app_id });
-    async.waterfall([async.apply(routeHelper.deletePolicy, req),
+    async.waterfall([async.apply(policyHelper.deletePolicy, req),
                      async.apply(schedulerUtil.deleteSchedules, req)],
     function(error, result) {
       var responseDecorator = { };
@@ -65,7 +65,7 @@ module.exports = function(settings){
     });
   });
 
-  router.get('/:app_id',function(req,res) {
+  router.get('/:app_id/policy',function(req,res) {
     logger.info('Request for policy details received',{ 'app id': req.params.app_id });
     models.policy_json.findById(req.params.app_id).then (function(policyExists) {
       if(policyExists) {
