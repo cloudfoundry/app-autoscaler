@@ -8,7 +8,7 @@ databaseChangeLog:
             columns:
               - column:
                   name: appid
-                  type: varchar
+                  type: varchar(255)
                   constraints:
                     nullable: false
               - column:
@@ -38,17 +38,17 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: reason
-                  type: varchar
+                  type: varchar(255)
                   constraints:
                     nullable: false
               - column:
                   name: message
-                  type: varchar
+                  type: varchar(255)
                   constraints:
                     nullable: true
               - column:
                   name: error
-                  type: varchar
+                  type: varchar(255)
                   constraints:
                     nullable: true
         - createTable:
@@ -56,7 +56,7 @@ databaseChangeLog:
             columns:
               - column:
                   name: appid
-                  type: varchar
+                  type: varchar(255)
                   constraints:
                     nullable: false
               - column:
@@ -73,12 +73,12 @@ databaseChangeLog:
             columns:
               - column:
                   name: scheduleid
-                  type: varchar
+                  type: varchar(255)
                   constraints:
                     nullable: false
               - column:
                   name: appid
-                  type: varchar
+                  type: varchar(255)
                   constraints:
                     primaryKey: true
                     nullable: false
