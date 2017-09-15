@@ -1,6 +1,6 @@
 <link href="https://raw.github.com/clownfart/Markdown-CSS/master/markdown.css" rel="stylesheet"></link>
 
-# App-AutoScaler [![Build Status](https://travis-ci.org/cloudfoundry-incubator/app-autoscaler.svg?branch=graceful_shutdown)](https://travis-ci.org/cloudfoundry-incubator/app-autoscaler)
+# App-AutoScaler [![Build Status](https://travis-ci.org/cloudfoundry-incubator/app-autoscaler.svg?branch=develop)](https://travis-ci.org/cloudfoundry-incubator/app-autoscaler)
 
 This is an incubation project for Cloud Foundry. You can follow the development progress on [Pivotal Tracker][t].
 
