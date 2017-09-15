@@ -116,15 +116,24 @@ var _ = Describe("AppStreamer", func() {
 				By("collecting and computing throughput")
 				Consistently(database.SaveMetricCallCount).Should(Equal(4))
 
-				By("save throughput after the collect interval")
+				By("save throughput and responsetime after the collect interval")
 				fclock.WaitForWatcherAndIncrement(TestCollectInterval)
-				Eventually(database.SaveMetricCallCount).Should(Equal(5))
+				Eventually(database.SaveMetricCallCount).Should(Equal(6))
 				Expect(database.SaveMetricArgsForCall(4)).To(Equal(&models.AppInstanceMetric{
 					AppId:         "an-app-id",
 					InstanceIndex: 0,
 					CollectedAt:   fclock.Now().UnixNano(),
 					Name:          models.MetricNameThroughput,
 					Unit:          models.UnitRPS,
+					Value:         "0",
+					Timestamp:     fclock.Now().UnixNano(),
+				}))
+				Expect(database.SaveMetricArgsForCall(5)).To(Equal(&models.AppInstanceMetric{
+					AppId:         "an-app-id",
+					InstanceIndex: 0,
+					CollectedAt:   fclock.Now().UnixNano(),
+					Name:          models.MetricNameResponseTime,
+					Unit:          models.UnitMilliseconds,
 					Value:         "0",
 					Timestamp:     fclock.Now().UnixNano(),
 				}))
@@ -254,19 +263,28 @@ var _ = Describe("AppStreamer", func() {
 					msgChan <- &events.Envelope{EventType: &eventType}
 				}()
 			})
-			It("Saves throughput metric to database", func() {
+			It("Saves throughput and responsetime metric to database", func() {
 				By("collecting and computing throughput")
 				Consistently(database.SaveMetricCallCount).Should(Equal(0))
 
-				By("save throughput after the collect interval")
+				By("save throughput and responsetime after the collect interval")
 				fclock.WaitForWatcherAndIncrement(TestCollectInterval)
-				Eventually(database.SaveMetricCallCount).Should(Equal(1))
+				Eventually(database.SaveMetricCallCount).Should(Equal(2))
 				Expect(database.SaveMetricArgsForCall(0)).To(Equal(&models.AppInstanceMetric{
 					AppId:         "an-app-id",
 					InstanceIndex: 0,
 					CollectedAt:   fclock.Now().UnixNano(),
 					Name:          models.MetricNameThroughput,
 					Unit:          models.UnitRPS,
+					Value:         "0",
+					Timestamp:     fclock.Now().UnixNano(),
+				}))
+				Expect(database.SaveMetricArgsForCall(1)).To(Equal(&models.AppInstanceMetric{
+					AppId:         "an-app-id",
+					InstanceIndex: 0,
+					CollectedAt:   fclock.Now().UnixNano(),
+					Name:          models.MetricNameResponseTime,
+					Unit:          models.UnitMilliseconds,
 					Value:         "0",
 					Timestamp:     fclock.Now().UnixNano(),
 				}))
@@ -323,7 +341,5 @@ var _ = Describe("AppStreamer", func() {
 				Eventually(buffer).Should(gbytes.Say("app-streamer-stopped"))
 			})
 		})
-
 	})
-
 })
