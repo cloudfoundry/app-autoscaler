@@ -65,7 +65,7 @@ databaseChangeLog:
                   constraints:
                     nullable: false
   - changeSet:
-      id: 3
+      id: 2
       author: byang
       changes:
         - createTable:
