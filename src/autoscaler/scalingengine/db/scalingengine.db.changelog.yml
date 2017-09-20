@@ -38,17 +38,17 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: reason
-                  type: varchar(255)
+                  type: text
                   constraints:
                     nullable: false
               - column:
                   name: message
-                  type: varchar(255)
+                  type: text
                   constraints:
                     nullable: true
               - column:
                   name: error
-                  type: varchar(255)
+                  type: text
                   constraints:
                     nullable: true
         - createTable:
