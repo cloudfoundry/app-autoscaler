@@ -8,6 +8,7 @@ const (
 	UnitRPS          = "rps"
 )
 
+const MetricNameCpuPercentage = "cpuPercentage"
 const MetricNameMemoryUtil = "memoryutil"
 const MetricNameMemoryUsed = "memoryused"
 const MetricNameThroughput = "throughput"

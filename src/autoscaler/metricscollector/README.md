@@ -1,6 +1,6 @@
 #Metrics Collector
 
-Metrics Collector is one of the components of CF `app-autoscaler`. It is used to collect application metrics from CF loggretator. The current version only supports memory metrics, it will be extended to include other metrics like throughput and response time at a later time.
+Metrics Collector is one of the components of CF `app-autoscaler`. It is used to collect application metrics from CF loggretator. The current version only supports memory metrics and cpuPercentage, it will be extended to include other metrics like throughput and response time at a later time.
 
 ## Getting started
 

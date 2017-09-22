@@ -82,6 +82,7 @@ var _ = Describe("Apppoller", func() {
 									InstanceIndex:    proto.Int32(0),
 									MemoryBytes:      proto.Uint64(100000000),
 									MemoryBytesQuota: proto.Uint64(300000000),
+									CpuPercentage:    proto.Float64(50.0),
 								},
 								Timestamp: &timestamp,
 							},
@@ -90,7 +91,7 @@ var _ = Describe("Apppoller", func() {
 				})
 
 				It("saves the metrics to database", func() {
-					Eventually(database.SaveMetricCallCount).Should(Equal(2))
+					Eventually(database.SaveMetricCallCount).Should(Equal(3))
 					Expect(database.SaveMetricArgsForCall(0)).To(Equal(&models.AppInstanceMetric{
 						AppId:         "test-app-id",
 						InstanceIndex: 0,
@@ -109,12 +110,21 @@ var _ = Describe("Apppoller", func() {
 						Value:         "33",
 						Timestamp:     111111,
 					}))
-
-					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
-					Eventually(database.SaveMetricCallCount).Should(Equal(4))
+					Expect(database.SaveMetricArgsForCall(2)).To(Equal(&models.AppInstanceMetric{
+						AppId:         "test-app-id",
+						InstanceIndex: 0,
+						CollectedAt:   fclock.Now().UnixNano(),
+						Name:          models.MetricNameCpuPercentage,
+						Unit:          models.UnitPercentage,
+						Value:         "50",
+						Timestamp:     111111,
+					}))
 
 					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
 					Eventually(database.SaveMetricCallCount).Should(Equal(6))
+
+					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
+					Eventually(database.SaveMetricCallCount).Should(Equal(9))
 				})
 			})
 
