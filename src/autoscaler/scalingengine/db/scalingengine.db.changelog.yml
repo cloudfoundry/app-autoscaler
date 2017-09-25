@@ -111,17 +111,27 @@ databaseChangeLog:
           tableName: scalinghistory
           columnName: appid
           newDataType: varchar(255)
+      - modifyDataType:
+          tableName: scalinghistory
           columnName: reason
           newDataType: text
-          columnName: reason
+      - modifyDataType:
+          tableName: scalinghistory
+          columnName: message
           newDataType: text
-          columnName: reason
+      - modifyDataType:
+          tableName: scalinghistory
+          columnName: error
           newDataType: text
+      - modifyDataType:
           tableName: scalingcooldown
           columnName: appid
           newDataType: varchar(255)
+      - modifyDataType:
           tableName: activeschedule
           columnName: scheduleid
           newDataType: varchar(255)
+      - modifyDataType:
+          tableName: activeschedule
           columnName: appid
           newDataType: varchar(255)
