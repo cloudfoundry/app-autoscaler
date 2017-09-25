@@ -8,7 +8,7 @@ databaseChangeLog:
             columns:
               - column:
                   name: appid
-                  type: varchar(255)
+                  type: varchar
                   constraints:
                     nullable: false
               - column:
@@ -38,17 +38,17 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: reason
-                  type: text
+                  type: varchar
                   constraints:
                     nullable: false
               - column:
                   name: message
-                  type: text
+                  type: varchar
                   constraints:
                     nullable: true
               - column:
                   name: error
-                  type: text
+                  type: varchar
                   constraints:
                     nullable: true
         - createTable:
@@ -56,7 +56,7 @@ databaseChangeLog:
             columns:
               - column:
                   name: appid
-                  type: varchar(255)
+                  type: varchar
                   constraints:
                     nullable: false
               - column:
@@ -65,7 +65,7 @@ databaseChangeLog:
                   constraints:
                     nullable: false
   - changeSet:
-      id: 2
+      id: 3
       author: byang
       changes:
         - createTable:
@@ -73,12 +73,12 @@ databaseChangeLog:
             columns:
               - column:
                   name: scheduleid
-                  type: varchar(255)
+                  type: varchar
                   constraints:
                     nullable: false
               - column:
                   name: appid
-                  type: varchar(255)
+                  type: varchar
                   constraints:
                     primaryKey: true
                     nullable: false
@@ -103,3 +103,25 @@ databaseChangeLog:
                   type: integer
                   constraints:
                     nullable: false
+  - changeSet:
+      id: 4
+      author: minjeong
+      changes:
+      - modifyDataType:
+          tableName: scalinghistory
+          columnName: appid
+          newDataType: varchar(255)
+          columnName: reason
+          newDataType: text
+          columnName: reason
+          newDataType: text
+          columnName: reason
+          newDataType: text
+          tableName: scalingcooldown
+          columnName: appid
+          newDataType: varchar(255)
+          tableName: activeschedule
+          columnName: scheduleid
+          newDataType: varchar(255)
+          columnName: appid
+          newDataType: varchar(255)

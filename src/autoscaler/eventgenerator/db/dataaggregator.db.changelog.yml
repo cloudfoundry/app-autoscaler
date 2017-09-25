@@ -20,7 +20,7 @@ databaseChangeLog:
                   name: unit
                   type: varchar(20)
                   constraints:
-                    nullable: false                    
+                    nullable: false
               - column:
                   name: timestamp
                   type: bigint
@@ -28,6 +28,14 @@ databaseChangeLog:
                     nullable: false
               - column:
                   name: value
-                  type: varchar(255)
+                  type: varchar
                   constraints:
                     nullable: true
+  - changeSet:
+      id: 2
+      author: minjeong
+      changes:
+      - modifyDataType:
+          tableName: app_metric
+          columnName: value
+          newDataType: varchar(255)
