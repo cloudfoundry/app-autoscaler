@@ -31,6 +31,7 @@ module.exports = function(configFilePath) {
           method: "GET",
           json: true,
           timeout: 10000,
+          rejectUnauthorized: false,   
           headers: {
             "Authorization": userToken,
             "Content-Type": "application/json"
@@ -79,7 +80,7 @@ module.exports = function(configFilePath) {
       method: "GET",
       json: true,
       timeout: 10000,
-
+      rejectUnauthorized: false,
     };
     request(options, function(error, response, body) {
       if (error) {
@@ -107,6 +108,7 @@ module.exports = function(configFilePath) {
       method: "GET",
       json: true,
       timeout: 10000,
+      rejectUnauthorized: false, 
       headers: {
         "Authorization": userToken,
         "Content-Type": "application/json"
