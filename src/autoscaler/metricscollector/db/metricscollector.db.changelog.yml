@@ -40,7 +40,7 @@ databaseChangeLog:
                   name: timestamp
                   type: bigint
                   constraints:
-                    nullable: false    
+                    nullable: false
         - createIndex:
              columns:
              - column:
@@ -51,6 +51,14 @@ databaseChangeLog:
                  type: varchar(100)
              - column:
                  name: timestamp
-                 type: bigint                
+                 type: bigint
              indexName: idx_instance_metrics
              tableName: appinstancemetrics
+  - changeSet:
+      id: 2
+      author: minjeong
+      changes:
+      - modifyDataType:
+          tableName: appinstancemetrics
+          columnName: value
+          newDataType: varchar(255)

@@ -103,3 +103,35 @@ databaseChangeLog:
                   type: integer
                   constraints:
                     nullable: false
+  - changeSet:
+      id: 4
+      author: minjeong
+      changes:
+      - modifyDataType:
+          tableName: scalinghistory
+          columnName: appid
+          newDataType: varchar(255)
+      - modifyDataType:
+          tableName: scalinghistory
+          columnName: reason
+          newDataType: text
+      - modifyDataType:
+          tableName: scalinghistory
+          columnName: message
+          newDataType: text
+      - modifyDataType:
+          tableName: scalinghistory
+          columnName: error
+          newDataType: text
+      - modifyDataType:
+          tableName: scalingcooldown
+          columnName: appid
+          newDataType: varchar(255)
+      - modifyDataType:
+          tableName: activeschedule
+          columnName: scheduleid
+          newDataType: varchar(255)
+      - modifyDataType:
+          tableName: activeschedule
+          columnName: appid
+          newDataType: varchar(255)
