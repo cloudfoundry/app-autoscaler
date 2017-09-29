@@ -7,7 +7,7 @@ Scaling History API
 **List scaling history of an application**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**GET /v1/apps/:guid/scaling\_history**
+**GET /v1/apps/:guid/scaling\_histories**
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Request**
@@ -130,7 +130,7 @@ Application Metric API
 **List metrics of an application**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**GET /v1/apps/:guid/metrics**
+**GET /v1/apps/:guid/metric_histories**
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Request**
@@ -139,7 +139,7 @@ Application Metric API
 Route
 '''''
 
-    GET /v1/apps/8d0cee08-23ad-4813-a779-ad8118ea0b91/metrics
+    GET /v1/apps/8d0cee08-23ad-4813-a779-ad8118ea0b91/metric_histories
 
 Parameters
 ''''''''''
