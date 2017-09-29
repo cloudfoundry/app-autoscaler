@@ -1,8 +1,10 @@
 package sqldb
 
 import (
-	"code.cloudfoundry.org/lager"
 	"database/sql"
+	"fmt"
+
+	"code.cloudfoundry.org/lager"
 	_ "github.com/lib/pq"
 
 	"autoscaler/db"
@@ -60,17 +62,24 @@ func (sdb *ScalingEngineSQLDB) SaveScalingHistory(history *models.AppScalingHist
 	return err
 }
 
-func (sdb *ScalingEngineSQLDB) RetrieveScalingHistories(appId string, start int64, end int64, orderType db.OrderType) ([]*models.AppScalingHistory, error) {
+func (sdb *ScalingEngineSQLDB) RetrieveScalingHistories(appId string, start int64, end int64, orderType db.OrderType, includeAll bool) ([]*models.AppScalingHistory, error) {
 	var orderStr string
 	if orderType == db.DESC {
 		orderStr = db.DESCSTR
 	} else {
 		orderStr = db.ASCSTR
 	}
+	var includeStr string
+	if !includeAll {
+		includeStr = fmt.Sprintf(" AND status != %d", models.ScalingStatusIgnored)
+	}
+
 	query := "SELECT timestamp, scalingtype, status, oldinstances, newinstances, reason, message, error FROM scalinghistory WHERE" +
 		" appid = $1 " +
 		" AND timestamp >= $2" +
-		" AND timestamp <= $3 ORDER BY timestamp " + orderStr
+		" AND timestamp <= $3" +
+		includeStr +
+		" ORDER BY timestamp " + orderStr
 
 	if end < 0 {
 		end = time.Now().UnixNano()
