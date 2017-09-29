@@ -8,7 +8,7 @@ Scaling History API
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 **GET /v1/apps/:guid/scaling\_histories**
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Request**
 ^^^^^^^^^^^
@@ -130,8 +130,8 @@ Application Metric API
 **List metrics of an application**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**GET /v1/apps/:guid/metric_histories**
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+**GET /v1/apps/:guid/metric_histories/:metric_type**
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Request**
 ^^^^^^^^^^^
@@ -139,7 +139,7 @@ Application Metric API
 Route
 '''''
 
-    GET /v1/apps/8d0cee08-23ad-4813-a779-ad8118ea0b91/metric_histories
+    GET /v1/apps/8d0cee08-23ad-4813-a779-ad8118ea0b91/metric_histories/memoryused
 
 Parameters
 ''''''''''
@@ -149,11 +149,11 @@ Parameters
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
 | guid               | The GUID of the application                                                   |                                                                     | true                  |                                  |
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
-| metric-type        | The metric type                                                               |                                                                     | true                  | metric-type=memoryused           |
+| metric-type        | The metric type                                                               | String, memoryused,memoryutilization,responsetime, throughput       | true                  | metric-type=memoryused           |
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
-| start-time         | The start time                                                                | int, the number of nanoseconds elapsed since January 1, 1970 UTC.   | true                  | start-time=1494989539138350432   |
+| start-time         | The start time                                                                | int, the number of nanoseconds elapsed since January 1, 1970 UTC.   | false                 | start-time=1494989539138350432   |
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
-| end-time           | The end time                                                                  | int, the number of nanoseconds elapsed since January 1, 1970 UTC.   | true                  | end-time=1494989549117047288     |
+| end-time           | The end time                                                                  | int, the number of nanoseconds elapsed since January 1, 1970 UTC.   | false                 | end-time=1494989549117047288     |
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
 | order              | The order type. The scaling history will be order by timestamp asc or desc.   | string,”asc” or “desc”                                              | false. default desc   | order=asc                        |
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
