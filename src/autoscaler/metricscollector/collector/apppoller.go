@@ -83,7 +83,7 @@ func (ap *appPoller) pollMetric() {
 
 	logger.Debug("poll-metric-get-containerenvelopes", lager.Data{"envelops": containerEnvelopes})
 
-	metrics := noaa.GetInstanceMemoryMetricsFromContainerEnvelopes(ap.pclock.Now().UnixNano(), ap.appId, containerEnvelopes)
+	metrics := noaa.GetInstanceMetricsFromContainerEnvelopes(ap.pclock.Now().UnixNano(), ap.appId, containerEnvelopes)
 	logger.Debug("poll-metric-get-memory-metrics", lager.Data{"metrics": metrics})
 
 	for _, metric := range metrics {

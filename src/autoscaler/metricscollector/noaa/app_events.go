@@ -36,6 +36,25 @@ func NewHttpStartStopEnvelope(timestamp, startTime, stopTime int64, instanceIdx 
 	}
 }
 
+func GetInstanceMetricsFromContainerEnvelopes(collectAt int64, appId string, containerEnvelopes []*events.Envelope) []*models.AppInstanceMetric {
+	metrics := []*models.AppInstanceMetric{}
+	for _, event := range containerEnvelopes {
+		instanceMetric := GetInstanceMemoryUsedMetricFromContainerMetricEvent(collectAt, appId, event)
+		if instanceMetric != nil {
+			metrics = append(metrics, instanceMetric)
+		}
+		instanceMetric = GetInstanceMemoryUtilMetricFromContainerMetricEvent(collectAt, appId, event)
+		if instanceMetric != nil {
+			metrics = append(metrics, instanceMetric)
+		}
+		instanceMetric = GetInstanceCpuPercentageMetricFromContainerMetricEvent(collectAt, appId, event)
+		if instanceMetric != nil {
+			metrics = append(metrics, instanceMetric)
+		}
+	}
+	return metrics
+}
+
 func GetInstanceMemoryMetricsFromContainerEnvelopes(collectAt int64, appId string, containerEnvelopes []*events.Envelope) []*models.AppInstanceMetric {
 	metrics := []*models.AppInstanceMetric{}
 	for _, event := range containerEnvelopes {
@@ -77,6 +96,22 @@ func GetInstanceMemoryUtilMetricFromContainerMetricEvent(collectAt int64, appId 
 			Name:          models.MetricNameMemoryUtil,
 			Unit:          models.UnitPercentage,
 			Value:         fmt.Sprintf("%d", int(float64(cm.GetMemoryBytes())/float64(cm.GetMemoryBytesQuota())*100+0.5)),
+			Timestamp:     event.GetTimestamp(),
+		}
+	}
+	return nil
+}
+
+func GetInstanceCpuPercentageMetricFromContainerMetricEvent(collectAt int64, appId string, event *events.Envelope) *models.AppInstanceMetric {
+	cm := event.GetContainerMetric()
+	if (cm != nil) && (*cm.ApplicationId == appId) && (cm.GetCpuPercentage() != 0) {
+		return &models.AppInstanceMetric{
+			AppId:         appId,
+			InstanceIndex: uint32(cm.GetInstanceIndex()),
+			CollectedAt:   collectAt,
+			Name:          models.MetricNameCpuPercentage,
+			Unit:          models.UnitPercentage,
+			Value:         fmt.Sprintf("%d", int(float64(cm.GetCpuPercentage()+0.5))),
 			Timestamp:     event.GetTimestamp(),
 		}
 	}

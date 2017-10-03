@@ -111,7 +111,14 @@ func (as *appStreamer) processEvent(event *events.Envelope) {
 				as.logger.Error("process-event-save-metric", err, lager.Data{"metric": metric})
 			}
 		}
-
+		metric = noaa.GetInstanceCpuPercentageMetricFromContainerMetricEvent(as.sclock.Now().UnixNano(), as.appId, event)
+		as.logger.Debug("process-event-get-cpupercentage-metric", lager.Data{"metric": metric})
+		if metric != nil {
+			err := as.database.SaveMetric(metric)
+			if err != nil {
+				as.logger.Error("process-event-save-metric", err, lager.Data{"metric": metric})
+			}
+		}
 	} else if event.GetEventType() == events.Envelope_HttpStartStop {
 		as.logger.Debug("process-event-get-httpstartstop-event", lager.Data{"event": event})
 		ss := event.GetHttpStartStop()
