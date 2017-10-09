@@ -128,6 +128,11 @@ func main() {
 		{"http_server", httpServer},
 	}
 
+	guid, err := generateGUID(logger)
+	if err != nil {
+		logger.Error("failed-to-generate-guid", err)
+	}
+
 	if conf.EnableDBLock {
 		logger.Debug("database-lock-feature-enabled")
 		var lockDB db.LockDB
@@ -139,7 +144,7 @@ func main() {
 		}
 		defer lockDB.Close()
 		mcdl := sync.NewDatabaseLock(logger)
-		dbLockMaintainer := mcdl.InitDBLockRunner(conf.DBLock.LockTTL, generateGUID(logger), lockDB)
+		dbLockMaintainer := mcdl.InitDBLockRunner(conf.DBLock.LockTTL, guid, lockDB)
 		members = append(grouper.Members{{"db-lock-maintainer", dbLockMaintainer}}, members...)
 	}
 
@@ -153,7 +158,7 @@ func main() {
 		if !conf.EnableDBLock {
 			lockMaintainer := serviceClient.NewMetricsCollectorLockRunner(
 				logger,
-				generateGUID(logger),
+				guid,
 				conf.Lock.LockRetryInterval,
 				conf.Lock.LockTTL,
 			)
@@ -218,10 +223,11 @@ func initializeRegistrationRunner(
 	return locket.NewRegistrationRunner(logger, registration, consulClient, locket.RetryInterval, clock)
 }
 
-func generateGUID(logger lager.Logger) string {
-	uuid, err := uuid.NewV4()
+func generateGUID(logger lager.Logger) (string, error) {
+	guid, err := uuid.NewV4()
 	if err != nil {
 		logger.Fatal("Couldn't generate uuid", err)
+		return "", err
 	}
-	return uuid.String()
+	return guid.String(), nil
 }

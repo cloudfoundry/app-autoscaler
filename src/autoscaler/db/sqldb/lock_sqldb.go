@@ -61,6 +61,10 @@ func (ldb *LockSQLDB) fetch(tx *sql.Tx) (*models.Lock, error) {
 	row := tx.QueryRow(query)
 	err := row.Scan(&owner, &timestamp, &ttl)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			ldb.logger.Error("no-lock-found", err)
+			return nil, nil
+		}
 		ldb.logger.Error("failed-to-fetch-lock-details", err)
 		return &models.Lock{}, err
 	}
@@ -127,15 +131,13 @@ func (ldb *LockSQLDB) Lock(lock *models.Lock) (bool, error) {
 	err := ldb.transact(ldb.sqldb, func(tx *sql.Tx) error {
 		newLock := false
 		fetchedLock, err := ldb.fetch(tx)
-		if err != nil {
-			if err != sql.ErrNoRows {
-				ldb.logger.Error("failed-to-fetch-lock", err)
-				isLockAcquired = false
-				return err
-			} else {
-				ldb.logger.Info("no-one-holds-the-lock")
-				newLock = true
-			}
+		if err == nil && fetchedLock == nil {
+			ldb.logger.Info("no-one-holds-the-lock")
+			newLock = true
+		} else if err != nil {
+			ldb.logger.Error("failed-to-fetch-lock", err)
+			isLockAcquired = false
+			return err
 		} else if fetchedLock.Owner != lock.Owner && fetchedLock.Owner != "" {
 			ldb.logger.Debug("someone-else-owns-lock", lager.Data{"Owner": fetchedLock.Owner})
 			lastUpdatedTimestamp := fetchedLock.LastModifiedTimestamp
@@ -146,7 +148,7 @@ func (ldb *LockSQLDB) Lock(lock *models.Lock) (bool, error) {
 				return err
 			}
 			if lastUpdatedTimestamp.Add(time.Second * time.Duration(fetchedLock.Ttl)).Before(currentTimestamp) {
-				ldb.logger.Info("lock-not-renewed-by-owner-forcefully-acquiring-the-lock", lager.Data{"Owner": fetchedLock.Owner})
+				ldb.logger.Info("lock-expired", lager.Data{"Owner": fetchedLock.Owner})
 				err = ldb.remove(fetchedLock.Owner, tx)
 				if err != nil {
 					ldb.logger.Error("failed-to-release-existing-lock", err)
@@ -155,7 +157,7 @@ func (ldb *LockSQLDB) Lock(lock *models.Lock) (bool, error) {
 				}
 				newLock = true
 			} else {
-				ldb.logger.Debug("lock-renewed-by-owner", lager.Data{"Owner": fetchedLock.Owner})
+				ldb.logger.Debug("lock-still-valid", lager.Data{"Owner": fetchedLock.Owner})
 				isLockAcquired = false
 				return nil
 			}
@@ -168,7 +170,6 @@ func (ldb *LockSQLDB) Lock(lock *models.Lock) (bool, error) {
 				isLockAcquired = false
 				return err
 			}
-			isLockAcquired = true
 		} else {
 			err = ldb.renew(lock.Owner, tx)
 			if err != nil {
@@ -176,12 +177,6 @@ func (ldb *LockSQLDB) Lock(lock *models.Lock) (bool, error) {
 				isLockAcquired = false
 				return err
 			}
-		}
-
-		if err != nil {
-			ldb.logger.Error("failed-updating-lock", err)
-			isLockAcquired = false
-			return err
 		}
 
 		if newLock {
