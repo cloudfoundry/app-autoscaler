@@ -5,12 +5,13 @@ import (
 	"autoscaler/models"
 	"encoding/json"
 	"fmt"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/ghttp"
 	. "integration"
 	"net/http"
 	"strings"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/ghttp"
 )
 
 type ScalingHistoryResult struct {

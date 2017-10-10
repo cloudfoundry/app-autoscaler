@@ -4,13 +4,14 @@ import (
 	"autoscaler/cf"
 	"encoding/json"
 	"fmt"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/ghttp"
 	. "integration"
 	"io/ioutil"
 	"net/http"
 	"strings"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/ghttp"
 )
 
 var _ = Describe("Integration_Api_Scheduler", func() {

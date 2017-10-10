@@ -62,6 +62,7 @@ var (
 	dbUrl                    string
 	noaaPollingRegPath       = regexp.MustCompile(`^/apps/.*/containermetrics$`)
 	noaaStreamingRegPath     = regexp.MustCompile(`^/apps/.*/stream$`)
+	appSummaryRegPath        = regexp.MustCompile(`^/v2/apps/.*/summary$`)
 	appInstanceRegPath       = regexp.MustCompile(`^/v2/apps/.*$`)
 	checkUserSpaceRegPath    = regexp.MustCompile(`^/v2/users/.+/spaces.*$`)
 	dbHelper                 *sql.DB
@@ -593,9 +594,9 @@ func startFakeCCNOAAUAA(instanceCount int) {
 			DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
 		}))
 	fakeCCNOAAUAA.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))
-
-	fakeCCNOAAUAA.RouteToHandler("GET", appInstanceRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
-		models.AppInfo{Entity: models.AppEntity{Instances: instanceCount}}))
+	appState := models.AppStatusStarted
+	fakeCCNOAAUAA.RouteToHandler("GET", appSummaryRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
+		models.AppEntity{Instances: instanceCount, State: &appState}))
 	fakeCCNOAAUAA.RouteToHandler("PUT", appInstanceRegPath, ghttp.RespondWith(http.StatusCreated, ""))
 	fakeCCNOAAUAA.RouteToHandler("GET", "/userinfo", ghttp.RespondWithJSONEncoded(http.StatusOK,
 		struct {
