@@ -2,12 +2,9 @@ package models
 
 import "time"
 
-type AppInfo struct {
-	Entity AppEntity `json:"entity"`
-}
-
 type AppEntity struct {
-	Instances int `json:"instances"`
+	Instances int     `json:"instances"`
+	State     *string `json:"state,omitempty"`
 }
 
 type ScalingType int
@@ -22,6 +19,11 @@ const (
 	ScalingStatusSucceeded ScalingStatus = iota
 	ScalingStatusFailed
 	ScalingStatusIgnored
+)
+
+const (
+	AppStatusStopped = "STOPPED"
+	AppStatusStarted = "STARTED"
 )
 
 type AppScalingHistory struct {

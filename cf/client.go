@@ -9,11 +9,13 @@ import (
 	"net/url"
 	"strings"
 	"sync"
+	"time"
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
-	"time"
+
+	"autoscaler/models"
 )
 
 const (
@@ -43,7 +45,7 @@ type CfClient interface {
 	GetTokens() Tokens
 	GetTokensWithRefresh() Tokens
 	GetEndpoints() Endpoints
-	GetAppInstances(string) (int, error)
+	GetApp(string) (*models.AppEntity, error)
 	SetAppInstances(string, int) error
 }
 
