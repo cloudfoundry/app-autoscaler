@@ -120,7 +120,7 @@ popd
 
 go install github.com/onsi/ginkgo/ginkgo
 export DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
-ginkgo -r -race -p -randomizeAllSpecs src/integration
+ginkgo -r -race -randomizeAllSpecs src/integration
 ```
 
 ## Deploy and use
