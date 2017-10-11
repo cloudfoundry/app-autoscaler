@@ -20,7 +20,7 @@ type ScalingHistoryResult struct {
 	Resources    []models.AppScalingHistory `json:"resources"`
 }
 
-var _ = Describe("Integration_Api_ScalingEngine", func() {
+var _ = FDescribe("Integration_Api_ScalingEngine", func() {
 	var (
 		initInstanceCount int = 2
 		appId             string
@@ -109,6 +109,22 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 			It("should error with status code 401", func() {
 				By("check public api")
 				checkResponseContentWithParameters(getScalingHistories, pathVariables, parameters, http.StatusUnauthorized, map[string]interface{}{}, PUBLIC)
+			})
+		})
+
+		Context("Application does not bind to autoscaler", func() {
+			BeforeEach(func() {
+				fakeCCNOAAUAA.RouteToHandler("GET", checkAppEnvRegPath, ghttp.RespondWith(http.StatusOK, `
+				{
+		            "system_env_json": {
+		              "VCAP_SERVICES": {}
+		            }
+	            }`))
+				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order": "desc", "page": "1", "results-per-page": "5"}
+			})
+			It("should error with status code 400", func() {
+				By("check public api")
+				checkResponseContentWithParameters(getScalingHistories, pathVariables, parameters, http.StatusBadRequest, map[string]interface{}{}, PUBLIC)
 			})
 		})
 
