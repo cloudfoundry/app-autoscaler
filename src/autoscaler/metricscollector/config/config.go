@@ -16,11 +16,13 @@ import (
 )
 
 const (
-	DefaultLoggingLevel                  = "info"
-	DefaultRefreshInterval time.Duration = 60 * time.Second
-	DefaultCollectInterval time.Duration = 30 * time.Second
-	DefaultLockTTL         time.Duration = locket.DefaultSessionTTL
-	DefaultRetryInterval   time.Duration = locket.RetryInterval
+	DefaultLoggingLevel                      = "info"
+	DefaultRefreshInterval     time.Duration = 60 * time.Second
+	DefaultCollectInterval     time.Duration = 30 * time.Second
+	DefaultLockTTL             time.Duration = locket.DefaultSessionTTL
+	DefaultRetryInterval       time.Duration = locket.RetryInterval
+	DefaultDBLockRetryInterval time.Duration = 5 * time.Second
+	DefaultDBLockTTL           time.Duration = 15 * time.Second
 
 	CollectMethodPolling   = "polling"
 	CollectMethodStreaming = "streaming"
@@ -71,8 +73,14 @@ type LockConfig struct {
 }
 
 type DBLockConfig struct {
-	LockTTL   time.Duration `yaml:"ttl"`
-	LockDBURL string        `yaml:"url"`
+	LockTTL           time.Duration `yaml:"ttl"`
+	LockDBURL         string        `yaml:"url"`
+	LockRetryInterval time.Duration `yaml:"retry_interval"`
+}
+
+var defaultDBLockConfig = DBLockConfig{
+	LockTTL:           DefaultDBLockTTL,
+	LockRetryInterval: DefaultDBLockRetryInterval,
 }
 
 var defaultLockConfig = LockConfig{
@@ -98,6 +106,7 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		Server:       defaultServerConfig,
 		Collector:    defaultCollectorConfig,
 		Lock:         defaultLockConfig,
+		DBLock:       defaultDBLockConfig,
 		EnableDBLock: false,
 	}
 
@@ -147,11 +156,6 @@ func (c *Config) Validate() error {
 	if c.EnableDBLock && c.DBLock.LockDBURL == "" {
 		return fmt.Errorf("Configuration error: Lock DB URL is empty")
 	}
-
-	if c.EnableDBLock && c.DBLock.LockTTL == time.Duration(0) {
-		return fmt.Errorf("Configuration error: Lock TTL is empty ")
-	}
-
 	return nil
 
 }

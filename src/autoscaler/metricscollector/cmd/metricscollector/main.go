@@ -144,7 +144,7 @@ func main() {
 		}
 		defer lockDB.Close()
 		mcdl := sync.NewDatabaseLock(logger)
-		dbLockMaintainer := mcdl.InitDBLockRunner(conf.DBLock.LockTTL, guid, lockDB)
+		dbLockMaintainer := mcdl.InitDBLockRunner(conf.DBLock.LockRetryInterval, conf.DBLock.LockTTL, guid, lockDB)
 		members = append(grouper.Members{{"db-lock-maintainer", dbLockMaintainer}}, members...)
 	}
 

@@ -228,7 +228,7 @@ func (ldb *LockSQLDB) transact(db *sql.DB, f func(tx *sql.Tx) error) error {
 		if attempts >= 2 || (err != driver.ErrBadConn) {
 			break
 		} else {
-			ldb.logger.Error("deadlock-transaction", err, lager.Data{"attempts": attempts})
+			ldb.logger.Info("wait-before-retry-for-transaction", lager.Data{"attempts": attempts})
 			time.Sleep(500 * time.Millisecond)
 		}
 	}

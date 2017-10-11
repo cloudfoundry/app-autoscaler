@@ -164,7 +164,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.Lock.LockTTL = locket.DefaultSessionTTL
 
 	cfg.DBLock.LockDBURL = os.Getenv("DBURL")
-	cfg.DBLock.LockTTL = 5 * time.Second
+	cfg.DBLock.LockTTL = 15 * time.Second
+	cfg.DBLock.LockRetryInterval = 5 * time.Second
 	cfg.EnableDBLock = false
 
 	configFile = writeConfig(&cfg)

@@ -21,10 +21,10 @@ func NewDatabaseLock(logger lager.Logger) *DatabaseLock {
 	}
 }
 
-func (dblock *DatabaseLock) InitDBLockRunner(ttl time.Duration, owner string, lockDB db.LockDB) ifrit.Runner {
+func (dblock *DatabaseLock) InitDBLockRunner(retryInterval time.Duration, ttl time.Duration, owner string, lockDB db.LockDB) ifrit.Runner {
 	dbLockMaintainer := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
-		lockTicker := time.NewTicker(ttl)
-		readyFlag := true
+		lockTicker := time.NewTicker(retryInterval)
+		readyToAcquireLock := true
 		if owner == "" {
 			dblock.logger.Info("failed-to-get-owner-details")
 			os.Exit(1)
@@ -37,7 +37,7 @@ func (dblock *DatabaseLock) InitDBLockRunner(ttl time.Duration, owner string, lo
 		if isLockAcquired {
 			dblock.logger.Info("lock-acquired-in-first-attempt", lager.Data{"owner": owner, "isLockAcquired": isLockAcquired})
 			close(ready)
-			readyFlag = false
+			readyToAcquireLock = false
 		}
 		for {
 			select {
@@ -50,7 +50,7 @@ func (dblock *DatabaseLock) InitDBLockRunner(ttl time.Duration, owner string, lo
 				} else {
 					dblock.logger.Info("successfully-released-lock", lager.Data{"owner": owner})
 				}
-				readyFlag = true
+				readyToAcquireLock = true
 				return nil
 
 			case <-lockTicker.C:
@@ -67,9 +67,9 @@ func (dblock *DatabaseLock) InitDBLockRunner(ttl time.Duration, owner string, lo
 					}
 					os.Exit(1)
 				}
-				if isLockAcquired && readyFlag {
+				if isLockAcquired && readyToAcquireLock {
 					close(ready)
-					readyFlag = false
+					readyToAcquireLock = false
 					dblock.logger.Info("successfully-acquired-lock", lager.Data{"owner": owner})
 				}
 			}
