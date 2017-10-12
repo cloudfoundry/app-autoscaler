@@ -62,8 +62,9 @@ var (
 	dbUrl                    string
 	noaaPollingRegPath       = regexp.MustCompile(`^/apps/.*/containermetrics$`)
 	noaaStreamingRegPath     = regexp.MustCompile(`^/apps/.*/stream$`)
-	appInstanceRegPath       = regexp.MustCompile(`^/v2/apps/.*$`)
+	appInstanceRegPath       = regexp.MustCompile(`^/v2/apps/[a-zA-Z0-9\-]*$`)
 	checkUserSpaceRegPath    = regexp.MustCompile(`^/v2/users/.+/spaces.*$`)
+	checkAppEnvRegPath       = regexp.MustCompile(`^/v2/apps/.+/env$`)
 	dbHelper                 *sql.DB
 	fakeScheduler            *ghttp.Server
 	fakeCCNOAAUAA            *ghttp.Server
@@ -608,6 +609,23 @@ func startFakeCCNOAAUAA(instanceCount int) {
 		}{
 			1,
 		}))
+	fakeCCNOAAUAA.RouteToHandler("GET", checkAppEnvRegPath, ghttp.RespondWith(http.StatusOK, `
+		  {
+            "system_env_json": {
+              "VCAP_SERVICES": {
+                "autoscaler": [{
+                  "credentials": {},
+                  "syslog_drain_url": null,
+                  "volume_mounts": [],
+                  "label": "autoscaler",
+                  "provider": null,
+                  "plan": "autoscaler-free-plan",
+                  "name": "serviceName",
+                  "tags": []
+                }]
+              }
+            }
+          }`))
 }
 func fakeMetricsPolling(appId string, memoryValue uint64, memQuota uint64) {
 	fakeCCNOAAUAA.RouteToHandler("GET", noaaPollingRegPath,

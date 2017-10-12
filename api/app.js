@@ -105,7 +105,21 @@ module.exports = function(configFilePath) {
         }
       }else{
         if(isSpaceDeveloper){
-          next();
+          oauth.checkAutoScalerBinding(req, function(error1, hasBinding) {
+            if (error1) {
+              if (error1.statusCode == HttpStatus.BAD_REQUEST) {
+                res.status(HttpStatus.BAD_REQUEST).send({});
+              } else {
+                res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({});
+              }
+            } else {
+              if (hasBinding) {
+                next();
+              } else {
+                res.status(HttpStatus.BAD_REQUEST).send({});
+              }
+            }
+          });
         }else{
           res.status(HttpStatus.UNAUTHORIZED).send({});
         }

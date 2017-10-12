@@ -31,7 +31,7 @@ module.exports = function(configFilePath) {
           method: "GET",
           json: true,
           timeout: 10000,
-          rejectUnauthorized: false,   
+          rejectUnauthorized: false,
           headers: {
             "Authorization": userToken,
             "Content-Type": "application/json"
@@ -65,6 +65,58 @@ module.exports = function(configFilePath) {
       }
 
 
+    });
+
+  }
+
+  obj.checkAutoScalerBinding = function(req, callback) {
+    var appId = req.params.app_id;
+    if (!appId) {
+      logger.error("Failed to get appId");
+      callback({ "statusCode": HttpStatus.NotFound, "message": "Failed to get appId" }, null);
+      return;
+    }
+    var ccEndpoint = getCloudControllerEndpoint(req);
+    var userToken = req.header("Authorization");
+    if (!userToken) {
+      logger.info("User token is not provided");
+      callback(null, false);
+      return;
+    }
+    var options = {
+      url: ccEndpoint + "/v2/apps/" + appId + "/env",
+      method: "GET",
+      json: true,
+      timeout: 10000,
+      headers: {
+        "Authorization": userToken,
+        "Content-Type": "application/json"
+      }
+    };
+    request(options, function(error, response, body) {
+      if (error) {
+        error.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+        logger.error("Failed to get envrionment of application", { "appId": appId, "error": error });
+        callback(error, null);
+      } else {
+        if (response.statusCode == HttpStatus.OK) {
+          if (body && body.system_env_json && body.system_env_json.VCAP_SERVICES && body.system_env_json.VCAP_SERVICES.autoscaler) {
+            callback(null, true);
+          } else {
+            var errorObj = {
+              "statusCode": HttpStatus.BAD_REQUEST
+            };
+            logger.error("Failed to get autoscaler service information for application", { "appId": appId, "error": errorObj });
+            callback(errorObj, null);
+          }
+        } else {
+          var errorObj = {
+            "statusCode": response.statusCode
+          };
+          logger.error("Failed to get envrionment of application", { "appId": appId, "error": errorObj });
+          callback(errorObj, null);
+        }
+      }
     });
 
   }
@@ -108,7 +160,7 @@ module.exports = function(configFilePath) {
       method: "GET",
       json: true,
       timeout: 10000,
-      rejectUnauthorized: false, 
+      rejectUnauthorized: false,
       headers: {
         "Authorization": userToken,
         "Content-Type": "application/json"

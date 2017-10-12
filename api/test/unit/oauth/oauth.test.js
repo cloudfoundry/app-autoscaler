@@ -15,7 +15,7 @@ var theUserId = "the-user-id";
 var req = {};
 describe("Oauth", function() {
   this.timeout(10000 + 1000); //timeout is 10s and here wait 11s
-  
+
   beforeEach(function() {
     nock.cleanAll();
     oauth = require("../../../lib/oauth/oauth")(path.join(__dirname, "../../../config/settings.json"));
@@ -31,11 +31,11 @@ describe("Oauth", function() {
       }
     };
   });
-  describe("oauth", function() {
+  describe("checkUserAuthorization", function() {
     context("appId is not provided", function() {
       beforeEach(function() {
         req.path = "/v1/apps//routes";
-        req.params = {"app_id": "" };
+        req.params = { "app_id": "" };
       });
       it("should return error", function(done) {
         oauth.checkUserAuthorization(req, function(error, result) {
@@ -266,6 +266,123 @@ describe("Oauth", function() {
       });
       it("should return true", function(done) {
         oauth.checkUserAuthorization(req, function(error, result) {
+          expect(result).to.equal(true);
+          expect(error).to.deep.equal(null);
+          done();
+        });
+      });
+    });
+
+  });
+
+  describe("checkAutoScalerBinding", function() {
+    context("appId is not provided", function() {
+      beforeEach(function() {
+        req.path = "/v1/apps//routes";
+        req.params = { "app_id": "" };
+      });
+      it("should return error", function(done) {
+        oauth.checkAutoScalerBinding(req, function(error, result) {
+          expect(result).to.equal(null);
+          expect(error).to.deep.equal({ statusCode: HttpStatus.NotFound, message: "Failed to get appId" });
+          done();
+        });
+      });
+    });
+    context("user token is not provided", function() {
+      beforeEach(function() {
+        req.header = function(headerName) {
+          return null;
+        }
+      });
+      it("should return false", function(done) {
+        oauth.checkAutoScalerBinding(req, function(error, result) {
+          expect(result).to.equal(false);
+          expect(error).to.equal(null);
+          done();
+        });
+      });
+    });
+    context("Cloud Controller API endpoint is not available", function() {
+      it("should return error", function(done) {
+        oauth.checkAutoScalerBinding(req, function(error, result) {
+          expect(result).to.equal(null);
+          expect(error.statusCode).to.equal(HttpStatus.INTERNAL_SERVER_ERROR);
+          done();
+        });
+      });
+    });
+
+    context("Cloud Controller application environment api is not available", function() {
+      it("should return error", function(done) {
+        oauth.checkAutoScalerBinding(req, function(error, result) {
+          expect(result).to.equal(null);
+          expect(error.statusCode).to.equal(HttpStatus.INTERNAL_SERVER_ERROR);
+          done();
+        });
+      });
+    });
+
+    context("Cloud Controller application environment api returns 503", function() {
+      beforeEach(function() {
+        nock("https://api.bosh-lite.com")
+          .get(/\/v2\/apps\/.+\/env/)
+          .reply(HttpStatus.SERVICE_UNAVAILABLE, { "message": "SERVICE_UNAVAILABLE" });
+      });
+      it("should return error with status code of Cloud Controller application environment api", function(done) {
+        oauth.checkAutoScalerBinding(req, function(error, result) {
+          expect(result).to.equal(null);
+          expect(error).to.deep.equal({
+            "statusCode": HttpStatus.SERVICE_UNAVAILABLE
+          });
+          done();
+        });
+      });
+    });
+
+    context("application has not been bound to autoscaler", function() {
+      beforeEach(function() {
+        nock("https://api.bosh-lite.com")
+          .get(/\/v2\/apps\/.+\/env/)
+          .reply(HttpStatus.OK, {
+            "system_env_json": {
+              "VCAP_SERVICES": {}
+            }
+          });
+      });
+
+      it("should return error", function(done) {
+        oauth.checkAutoScalerBinding(req, function(error, result) {
+          expect(result).to.equal(null);
+          expect(error).to.deep.equal({ "statusCode": HttpStatus.BAD_REQUEST });
+          done();
+        });
+      });
+    });
+
+    context("application has been bound to autoscaler", function() {
+      beforeEach(function() {
+        nock("https://api.bosh-lite.com")
+          .get(/\/v2\/apps\/.+\/env/)
+          .reply(HttpStatus.OK, {
+            "system_env_json": {
+              "VCAP_SERVICES": {
+                "autoscaler": [{
+                  "credentials": {},
+                  "syslog_drain_url": null,
+                  "volume_mounts": [],
+                  "label": "autoscaler",
+                  "provider": null,
+                  "plan": "autoscaler-free-plan",
+                  "name": "serviceName",
+                  "tags": []
+                }]
+              }
+            }
+          });
+      });
+      it("should return true", function(done) {
+        oauth.checkAutoScalerBinding(req, function(error, result) {
           expect(result).to.equal(true);
           expect(error).to.deep.equal(null);
           done();

@@ -13,7 +13,7 @@ import (
 	"strings"
 )
 
-var _ = Describe("Integration_Api_Scheduler", func() {
+var _ = FDescribe("Integration_Api_Scheduler", func() {
 	var (
 		appId             string
 		policyStr         []byte
@@ -161,6 +161,36 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 			})
 		})
 
+	})
+
+	Context("Application does not bind to autoscaler", func() {
+		BeforeEach(func() {
+			fakeCCNOAAUAA.RouteToHandler("GET", checkAppEnvRegPath, ghttp.RespondWith(http.StatusOK, `
+				{
+		            "system_env_json": {
+		              "VCAP_SERVICES": {}
+		            }
+	            }`))
+		})
+		Context("Create policy", func() {
+			It("should error with status code 400", func() {
+				By("check public api")
+				policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
+				doAttachPolicy(appId, policyStr, http.StatusBadRequest, PUBLIC)
+				checkApiServerStatus(appId, http.StatusBadRequest, PUBLIC)
+			})
+		})
+		Context("Delete policy", func() {
+			BeforeEach(func() {
+				policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
+				doAttachPolicy(appId, policyStr, http.StatusBadRequest, PUBLIC)
+			})
+
+			It("should error with status code 400", func() {
+				doDetachPolicy(appId, http.StatusBadRequest, "", PUBLIC)
+				checkApiServerStatus(appId, http.StatusBadRequest, PUBLIC)
+			})
+		})
 	})
 
 	Context("Scheduler is down", func() {
