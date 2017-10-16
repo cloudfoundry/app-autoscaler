@@ -28,6 +28,7 @@ var _ = Describe("Apppoller", func() {
 		fclock    *fakeclock.FakeClock
 		buffer    *gbytes.Buffer
 		timestamp int64
+		dataChan  chan *models.AppInstanceMetric
 	)
 
 	BeforeEach(func() {
@@ -39,7 +40,9 @@ var _ = Describe("Apppoller", func() {
 		buffer = logger.Buffer()
 
 		fclock = fakeclock.NewFakeClock(time.Now())
-		poller = NewAppPoller(logger, "test-app-id", TestCollectInterval, cfc, noaa, database, fclock)
+		dataChan = make(chan *models.AppInstanceMetric)
+
+		poller = NewAppPoller(logger, "test-app-id", TestCollectInterval, cfc, noaa, database, fclock, dataChan)
 		timestamp = 111111
 	})
 
@@ -89,9 +92,8 @@ var _ = Describe("Apppoller", func() {
 					}
 				})
 
-				It("saves the metrics to database", func() {
-					Eventually(database.SaveMetricCallCount).Should(Equal(2))
-					Expect(database.SaveMetricArgsForCall(0)).To(Equal(&models.AppInstanceMetric{
+				It("sends the metrics to channel", func() {
+					Expect(<-dataChan).To(Equal(&models.AppInstanceMetric{
 						AppId:         "test-app-id",
 						InstanceIndex: 0,
 						CollectedAt:   fclock.Now().UnixNano(),
@@ -100,7 +102,7 @@ var _ = Describe("Apppoller", func() {
 						Value:         "95",
 						Timestamp:     111111,
 					}))
-					Expect(database.SaveMetricArgsForCall(1)).To(Equal(&models.AppInstanceMetric{
+					Expect(<-dataChan).To(Equal(&models.AppInstanceMetric{
 						AppId:         "test-app-id",
 						InstanceIndex: 0,
 						CollectedAt:   fclock.Now().UnixNano(),
@@ -111,10 +113,12 @@ var _ = Describe("Apppoller", func() {
 					}))
 
 					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
-					Eventually(database.SaveMetricCallCount).Should(Equal(4))
+					Eventually(dataChan).Should(Receive())
+					Eventually(dataChan).Should(Receive())
 
 					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
-					Eventually(database.SaveMetricCallCount).Should(Equal(6))
+					Eventually(dataChan).Should(Receive())
+					Eventually(dataChan).Should(Receive())
 				})
 			})
 
@@ -128,14 +132,14 @@ var _ = Describe("Apppoller", func() {
 					}
 				})
 
-				It("saves nothing to database", func() {
-					Consistently(database.SaveMetricCallCount).Should(BeZero())
+				It("sends nothing to the channel", func() {
+					Consistently(dataChan).ShouldNot(Receive())
 
 					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
-					Consistently(database.SaveMetricCallCount).Should(BeZero())
+					Consistently(dataChan).ShouldNot(Receive())
 
 					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
-					Consistently(database.SaveMetricCallCount).Should(BeZero())
+					Consistently(dataChan).ShouldNot(Receive())
 				})
 
 			})
@@ -164,9 +168,8 @@ var _ = Describe("Apppoller", func() {
 					}
 				})
 
-				It("saves metrics in non-empty container envelops to database", func() {
-					Eventually(database.SaveMetricCallCount).Should(Equal(2))
-					Expect(database.SaveMetricArgsForCall(0)).To(Equal(&models.AppInstanceMetric{
+				It("sends metrics in non-empty container envelops to channel", func() {
+					Expect(<-dataChan).To(Equal(&models.AppInstanceMetric{
 						AppId:         "test-app-id",
 						InstanceIndex: 0,
 						CollectedAt:   fclock.Now().UnixNano(),
@@ -175,7 +178,7 @@ var _ = Describe("Apppoller", func() {
 						Value:         "95",
 						Timestamp:     111111,
 					}))
-					Expect(database.SaveMetricArgsForCall(1)).To(Equal(&models.AppInstanceMetric{
+					Expect(<-dataChan).To(Equal(&models.AppInstanceMetric{
 						AppId:         "test-app-id",
 						InstanceIndex: 0,
 						CollectedAt:   fclock.Now().UnixNano(),
@@ -186,10 +189,12 @@ var _ = Describe("Apppoller", func() {
 					}))
 
 					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
-					Consistently(database.SaveMetricCallCount).Should(Equal(2))
+					Consistently(dataChan).ShouldNot(Receive())
 
 					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
-					Eventually(database.SaveMetricCallCount).Should(Equal(4))
+					Eventually(dataChan).Should(Receive())
+					Eventually(dataChan).Should(Receive())
+
 				})
 			})
 		})
@@ -200,15 +205,15 @@ var _ = Describe("Apppoller", func() {
 				noaa.ContainerEnvelopesReturns(nil, errors.New("test apppoller error"))
 			})
 
-			It("saves nothing to database and logs the errors", func() {
+			It("sends nothing to the channel and logs the errors", func() {
 				Eventually(buffer).Should(gbytes.Say("poll-metric-from-noaa"))
 				Eventually(buffer).Should(gbytes.Say("test apppoller error"))
-				Consistently(database.SaveMetricCallCount).Should(BeZero())
+				Consistently(dataChan).ShouldNot(Receive())
 
 				fclock.WaitForWatcherAndIncrement(TestCollectInterval)
 				Eventually(buffer).Should(gbytes.Say("poll-metric-from-noaa"))
 				Eventually(buffer).Should(gbytes.Say("test apppoller error"))
-				Consistently(database.SaveMetricCallCount).Should(BeZero())
+				Consistently(dataChan).ShouldNot(Receive())
 			})
 		})
 
@@ -245,6 +250,9 @@ var _ = Describe("Apppoller", func() {
 
 				Eventually(buffer).Should(gbytes.Say("poll-metric-get-memory-metric"))
 				Eventually(noaa.ContainerEnvelopesCallCount).Should(Equal(3))
+
+				Eventually(dataChan).Should(Receive())
+				Eventually(dataChan).Should(Receive())
 
 			})
 		})

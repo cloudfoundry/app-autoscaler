@@ -14,6 +14,7 @@ import (
 	"autoscaler/metricscollector/collector"
 	"autoscaler/metricscollector/config"
 	"autoscaler/metricscollector/server"
+	"autoscaler/models"
 	sync "autoscaler/sync"
 
 	"code.cloudfoundry.org/cfhttp"
@@ -92,21 +93,21 @@ func main() {
 	}
 	defer policyDB.Close()
 
-	var createAppCollector func(string) collector.AppCollector
+	var createAppCollector func(string, chan *models.AppInstanceMetric) collector.AppCollector
 	if conf.Collector.CollectMethod == config.CollectMethodPolling {
-		createAppCollector = func(appId string) collector.AppCollector {
-			return collector.NewAppPoller(logger.Session("app-poller"), appId, conf.Collector.CollectInterval, cfClient, noaa, instanceMetricsDB, mcClock)
+		createAppCollector = func(appId string, dataChan chan *models.AppInstanceMetric) collector.AppCollector {
+			return collector.NewAppPoller(logger.Session("app-poller"), appId, conf.Collector.CollectInterval, cfClient, noaa, instanceMetricsDB, mcClock, dataChan)
 		}
 	} else {
-		createAppCollector = func(appId string) collector.AppCollector {
+		createAppCollector = func(appId string, dataChan chan *models.AppInstanceMetric) collector.AppCollector {
 			noaaConsumer := consumer.New(dopplerUrl, tlsConfig, nil)
 			noaaConsumer.RefreshTokenFrom(cfClient)
-			return collector.NewAppStreamer(logger.Session("app-streamer"), appId, conf.Collector.CollectInterval, cfClient, noaaConsumer, instanceMetricsDB, mcClock)
+			return collector.NewAppStreamer(logger.Session("app-streamer"), appId, conf.Collector.CollectInterval, cfClient, noaaConsumer, instanceMetricsDB, mcClock, dataChan)
 		}
 	}
 
 	collectServer := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
-		mc := collector.NewCollector(conf.Collector.RefreshInterval, logger.Session("collector"), policyDB, mcClock, createAppCollector)
+		mc := collector.NewCollector(conf.Collector.RefreshInterval, conf.Collector.CollectInterval, logger.Session("collector"), policyDB, instanceMetricsDB, mcClock, createAppCollector)
 		mc.Start()
 
 		close(ready)
