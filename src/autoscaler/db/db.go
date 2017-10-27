@@ -55,3 +55,9 @@ type SchedulerDB interface {
 	GetActiveSchedules() (map[string]*models.ActiveSchedule, error)
 	Close() error
 }
+
+type LockDB interface {
+	Lock(lock *models.Lock) (bool, error)
+	Release(owner string) error
+	Close() error
+}

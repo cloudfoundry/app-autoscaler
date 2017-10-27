@@ -163,6 +163,11 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.Lock.LockRetryInterval = locket.RetryInterval
 	cfg.Lock.LockTTL = locket.DefaultSessionTTL
 
+	cfg.DBLock.LockDBURL = os.Getenv("DBURL")
+	cfg.DBLock.LockTTL = 15 * time.Second
+	cfg.DBLock.LockRetryInterval = 5 * time.Second
+	cfg.EnableDBLock = false
+
 	configFile = writeConfig(&cfg)
 
 	tlsConfig, err := cfhttp.NewTLSConfig(
@@ -276,4 +281,12 @@ func marshalMessage(message *events.Envelope) []byte {
 	}
 
 	return data
+}
+
+func (mc *MetricsCollectorRunner) ClearLockDatabase() {
+	lockDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = lockDB.Exec("DELETE FROM mc_lock")
+	Expect(err).NotTo(HaveOccurred())
 }

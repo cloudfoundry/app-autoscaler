@@ -4,12 +4,13 @@ import (
 	"autoscaler/cf"
 	"autoscaler/metricscollector/config"
 	"autoscaler/models"
-	"code.cloudfoundry.org/locket"
 	"encoding/json"
 	"fmt"
 	. "integration"
 	"net/http"
 	"strings"
+
+	"code.cloudfoundry.org/locket"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -32,6 +33,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 		metricType        string = "memoryused"
 		collectMethod     string = config.CollectMethodPolling
 		initInstanceCount int    = 2
+		enableDBLock      bool   = false
 	)
 
 	BeforeEach(func() {
@@ -39,7 +41,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 		fakeMetricsPolling(appId, 400*1024*1024, 600*1024*1024)
 		initializeHttpClient("api.crt", "api.key", "autoscaler-ca.crt", apiMetricsCollectorHttpRequestTimeout)
 		initializeHttpClientForPublicApi("api_public.crt", "api_public.key", "autoscaler-ca.crt", apiMetricsCollectorHttpRequestTimeout)
-		metricsCollectorConfPath = components.PrepareMetricsCollectorConfig(dbUrl, components.Ports[MetricsCollector], fakeCCNOAAUAA.URL(), cf.GrantTypePassword, collectInterval,
+		metricsCollectorConfPath = components.PrepareMetricsCollectorConfig(dbUrl, components.Ports[MetricsCollector], enableDBLock, fakeCCNOAAUAA.URL(), cf.GrantTypePassword, collectInterval,
 			refreshInterval, collectMethod, tmpDir, locket.DefaultSessionTTL, locket.RetryInterval, consulRunner.ConsulCluster())
 		startMetricsCollector()
 
