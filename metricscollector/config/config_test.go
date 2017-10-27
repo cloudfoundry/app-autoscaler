@@ -99,6 +99,11 @@ lock:
   lock_ttl: 15s
   lock_retry_interval: 10s
   consul_cluster_config: http://127.0.0.1:8500
+enable_db_lock: true
+db_lock:
+  ttl: 30s
+  url: postgres://pqgotest:password@localhost/pqgotest
+  retry_interval: 5s
 `)
 			})
 
@@ -130,6 +135,11 @@ lock:
 				Expect(conf.Lock.ConsulClusterConfig).To(Equal("http://127.0.0.1:8500"))
 				Expect(conf.Lock.LockRetryInterval).To(Equal(10 * time.Second))
 				Expect(conf.Lock.LockTTL).To(Equal(15 * time.Second))
+
+				Expect(conf.DBLock.LockDBURL).To(Equal("postgres://pqgotest:password@localhost/pqgotest"))
+				Expect(conf.DBLock.LockTTL).To(Equal(30 * time.Second))
+				Expect(conf.EnableDBLock).To(Equal(true))
+				Expect(conf.DBLock.LockRetryInterval).To(Equal(5 * time.Second))
 			})
 		})
 
@@ -156,9 +166,11 @@ db:
 
 				Expect(conf.Lock.LockRetryInterval).To(Equal(DefaultRetryInterval))
 				Expect(conf.Lock.LockTTL).To(Equal(DefaultLockTTL))
+				Expect(conf.EnableDBLock).To(Equal(false))
+				Expect(conf.DBLock.LockTTL).To(Equal(DefaultDBLockTTL))
+				Expect(conf.DBLock.LockRetryInterval).To(Equal(DefaultDBLockRetryInterval))
 			})
 		})
-
 	})
 
 	Describe("Validate", func() {
@@ -173,6 +185,8 @@ db:
 			conf.Collector.CollectInterval = time.Duration(30 * time.Second)
 			conf.Collector.RefreshInterval = time.Duration(60 * time.Second)
 			conf.Collector.CollectMethod = CollectMethodPolling
+			conf.DBLock.LockDBURL = "postgres://pqgotest:password@exampl.com/pqgotest"
+			conf.EnableDBLock = true
 		})
 
 		JustBeforeEach(func() {
@@ -245,5 +259,15 @@ db:
 			})
 		})
 
+		Context("when lock db url is not set but dblock enabled", func() {
+			BeforeEach(func() {
+				conf.EnableDBLock = true
+				conf.DBLock.LockDBURL = ""
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: Lock DB URL is empty")))
+			})
+		})
 	})
 })

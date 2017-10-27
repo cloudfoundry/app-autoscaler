@@ -3,8 +3,11 @@ package sqldb_test
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	"autoscaler/db"
 	"autoscaler/models"
@@ -193,4 +196,82 @@ func insertSchedulerActiveSchedule(id int, appId string, startJobIdentifier int,
 		_, e = dbHelper.Exec(query, id, appId, startJobIdentifier, instanceMin, instanceMax, instanceMinInitial)
 	}
 	return e
+}
+
+func insertLockDetails(lock *models.Lock) (sql.Result, error) {
+	query := "INSERT INTO mc_lock (owner,lock_timestamp,ttl) VALUES ($1,$2,$3)"
+	result, err := dbHelper.Exec(query, lock.Owner, lock.LastModifiedTimestamp, int64(lock.Ttl/time.Second))
+	return result, err
+}
+
+func cleanLockTable() error {
+	_, err := dbHelper.Exec("DELETE FROM mc_lock")
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func dropLockTable() error {
+	_, err := dbHelper.Exec("DROP TABLE mc_lock")
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func createLockTable() error {
+	_, err := dbHelper.Exec(`
+		CREATE TABLE IF NOT EXISTS mc_lock (
+			owner VARCHAR(255) PRIMARY KEY,
+			lock_timestamp TIMESTAMP  NOT NULL,
+			ttl BIGINT DEFAULT 0
+		);
+	`)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func validateLockInDB(ownerid string, expectedLock *models.Lock) error {
+	var (
+		timestamp time.Time
+		ttl       time.Duration
+		owner     string
+	)
+	query := "SELECT owner,lock_timestamp,ttl FROM mc_lock WHERE owner=$1"
+	row := dbHelper.QueryRow(query, ownerid)
+	err := row.Scan(&owner, &timestamp, &ttl)
+	if err != nil {
+		return err
+	}
+	errMsg := ""
+	if expectedLock.Owner != owner {
+		errMsg += fmt.Sprintf("mismatch owner (%d, %d),", expectedLock.Owner, owner)
+	}
+	if expectedLock.Ttl != time.Second*time.Duration(ttl) {
+		errMsg += fmt.Sprintf("mismatch ttl (%d, %d),", expectedLock.Ttl, time.Second*time.Duration(ttl))
+	}
+	if errMsg != "" {
+		return errors.New(errMsg)
+	}
+	return nil
+}
+
+func validateLockNotInDB(owner string) error {
+	var (
+		timestamp time.Time
+		ttl       time.Duration
+	)
+	query := "SELECT owner,lock_timestamp,ttl FROM mc_lock WHERE owner=$1"
+	row := dbHelper.QueryRow(query, owner)
+	err := row.Scan(&owner, &timestamp, &ttl)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil
+		}
+		return err
+	}
+	return fmt.Errorf("lock exists with owner (%s)", owner)
 }
