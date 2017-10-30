@@ -158,6 +158,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.Collector.CollectInterval = 10 * time.Second
 	cfg.Collector.RefreshInterval = 30 * time.Second
 	cfg.Collector.CollectMethod = config.CollectMethodPolling
+	cfg.Collector.SaveInterval = 5 * time.Second
 
 	cfg.Lock.ConsulClusterConfig = consulRunner.ConsulCluster()
 	cfg.Lock.LockRetryInterval = locket.RetryInterval

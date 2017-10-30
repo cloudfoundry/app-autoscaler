@@ -107,7 +107,7 @@ func main() {
 	}
 
 	collectServer := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
-		mc := collector.NewCollector(conf.Collector.RefreshInterval, conf.Collector.CollectInterval, logger.Session("collector"), policyDB, instanceMetricsDB, mcClock, createAppCollector)
+		mc := collector.NewCollector(conf.Collector.RefreshInterval, conf.Collector.CollectInterval, conf.Collector.SaveInterval, logger.Session("collector"), policyDB, instanceMetricsDB, mcClock, createAppCollector)
 		mc.Start()
 
 		close(ready)

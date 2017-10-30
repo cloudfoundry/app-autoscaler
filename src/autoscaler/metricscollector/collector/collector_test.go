@@ -39,7 +39,7 @@ var _ = Describe("Collector", func() {
 		createAppCollector := func(appId string, dataChan chan *models.AppInstanceMetric) AppCollector {
 			return appCollector
 		}
-		coll = NewCollector(TestRefreshInterval, TestCollectInterval, logger, policyDb, instanceMetricsDb, fclock, createAppCollector)
+		coll = NewCollector(TestRefreshInterval, TestCollectInterval, TestSaveInterval, logger, policyDb, instanceMetricsDb, fclock, createAppCollector)
 	})
 
 	Describe("Start", func() {

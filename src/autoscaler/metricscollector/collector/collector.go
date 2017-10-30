@@ -19,6 +19,7 @@ type AppCollector interface {
 type Collector struct {
 	refreshInterval    time.Duration
 	collectInterval    time.Duration
+	saveInterval       time.Duration
 	logger             lager.Logger
 	policyDb           db.PolicyDB
 	instancemetricsDb  db.InstanceMetricsDB
@@ -32,10 +33,11 @@ type Collector struct {
 	dataChan           chan *models.AppInstanceMetric
 }
 
-func NewCollector(refreshInterval time.Duration, collectInterval time.Duration, logger lager.Logger, policyDb db.PolicyDB, instancemetricsDb db.InstanceMetricsDB, cclock clock.Clock, createAppCollector func(string, chan *models.AppInstanceMetric) AppCollector) *Collector {
+func NewCollector(refreshInterval time.Duration, collectInterval time.Duration, saveInterval time.Duration, logger lager.Logger, policyDb db.PolicyDB, instancemetricsDb db.InstanceMetricsDB, cclock clock.Clock, createAppCollector func(string, chan *models.AppInstanceMetric) AppCollector) *Collector {
 	return &Collector{
 		refreshInterval:    refreshInterval,
 		collectInterval:    collectInterval,
+		saveInterval:       saveInterval,
 		logger:             logger,
 		policyDb:           policyDb,
 		instancemetricsDb:  instancemetricsDb,
@@ -124,7 +126,7 @@ func (c *Collector) GetCollectorAppIds() []string {
 }
 
 func (c *Collector) SaveMetricsInDB() {
-	ticker := c.cclock.NewTicker(c.collectInterval)
+	ticker := c.cclock.NewTicker(c.saveInterval)
 	metrics := make([]*models.AppInstanceMetric, 0)
 	for {
 		select {

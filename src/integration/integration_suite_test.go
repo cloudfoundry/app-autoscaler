@@ -83,6 +83,7 @@ var (
 
 	collectInterval           time.Duration = 1 * time.Second
 	refreshInterval           time.Duration = 1 * time.Second
+	saveInterval              time.Duration = 1 * time.Second
 	aggregatorExecuteInterval time.Duration = 1 * time.Second
 	policyPollerInterval      time.Duration = 1 * time.Second
 	evaluationManagerInterval time.Duration = 1 * time.Second
