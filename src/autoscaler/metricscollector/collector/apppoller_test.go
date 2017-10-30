@@ -23,7 +23,6 @@ var _ = Describe("Apppoller", func() {
 	var (
 		cfc       *fakes.FakeCfClient
 		noaa      *fakes.FakeNoaaConsumer
-		database  *fakes.FakeInstanceMetricsDB
 		poller    AppCollector
 		fclock    *fakeclock.FakeClock
 		buffer    *gbytes.Buffer
@@ -34,7 +33,6 @@ var _ = Describe("Apppoller", func() {
 	BeforeEach(func() {
 		cfc = &fakes.FakeCfClient{}
 		noaa = &fakes.FakeNoaaConsumer{}
-		database = &fakes.FakeInstanceMetricsDB{}
 
 		logger := lagertest.NewTestLogger("apppoller-test")
 		buffer = logger.Buffer()
@@ -42,7 +40,7 @@ var _ = Describe("Apppoller", func() {
 		fclock = fakeclock.NewFakeClock(time.Now())
 		dataChan = make(chan *models.AppInstanceMetric)
 
-		poller = NewAppPoller(logger, "test-app-id", TestCollectInterval, cfc, noaa, database, fclock, dataChan)
+		poller = NewAppPoller(logger, "test-app-id", TestCollectInterval, cfc, noaa, fclock, dataChan)
 		timestamp = 111111
 	})
 

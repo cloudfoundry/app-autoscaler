@@ -2,7 +2,6 @@ package collector
 
 import (
 	"autoscaler/cf"
-	"autoscaler/db"
 	"autoscaler/metricscollector/noaa"
 	"autoscaler/models"
 
@@ -15,28 +14,26 @@ import (
 )
 
 type appPoller struct {
-	appId             string
-	collectInterval   time.Duration
-	logger            lager.Logger
-	cfc               cf.CfClient
-	noaaConsumer      noaa.NoaaConsumer
-	instanceMetricsDb db.InstanceMetricsDB
-	pclock            clock.Clock
-	doneChan          chan bool
-	dataChan          chan *models.AppInstanceMetric
+	appId           string
+	collectInterval time.Duration
+	logger          lager.Logger
+	cfc             cf.CfClient
+	noaaConsumer    noaa.NoaaConsumer
+	pclock          clock.Clock
+	doneChan        chan bool
+	dataChan        chan *models.AppInstanceMetric
 }
 
-func NewAppPoller(logger lager.Logger, appId string, collectInterval time.Duration, cfc cf.CfClient, noaaConsumer noaa.NoaaConsumer, instanceMetricsDb db.InstanceMetricsDB, pclock clock.Clock, dataChan chan *models.AppInstanceMetric) AppCollector {
+func NewAppPoller(logger lager.Logger, appId string, collectInterval time.Duration, cfc cf.CfClient, noaaConsumer noaa.NoaaConsumer, pclock clock.Clock, dataChan chan *models.AppInstanceMetric) AppCollector {
 	return &appPoller{
-		appId:             appId,
-		collectInterval:   collectInterval,
-		logger:            logger,
-		cfc:               cfc,
-		noaaConsumer:      noaaConsumer,
-		instanceMetricsDb: instanceMetricsDb,
-		pclock:            pclock,
-		doneChan:          make(chan bool),
-		dataChan:          dataChan,
+		appId:           appId,
+		collectInterval: collectInterval,
+		logger:          logger,
+		cfc:             cfc,
+		noaaConsumer:    noaaConsumer,
+		pclock:          pclock,
+		doneChan:        make(chan bool),
+		dataChan:        dataChan,
 	}
 
 }

@@ -21,28 +21,26 @@ import (
 var _ = Describe("AppStreamer", func() {
 
 	var (
-		cfc               *fakes.FakeCfClient
-		noaaConsumer      *fakes.FakeNoaaConsumer
-		instanceMetricsDb *fakes.FakeInstanceMetricsDB
-		streamer          AppCollector
-		buffer            *gbytes.Buffer
-		msgChan           chan *events.Envelope
-		errChan           chan error
-		fclock            *fakeclock.FakeClock
-		dataChan          chan *models.AppInstanceMetric
+		cfc          *fakes.FakeCfClient
+		noaaConsumer *fakes.FakeNoaaConsumer
+		streamer     AppCollector
+		buffer       *gbytes.Buffer
+		msgChan      chan *events.Envelope
+		errChan      chan error
+		fclock       *fakeclock.FakeClock
+		dataChan     chan *models.AppInstanceMetric
 	)
 
 	BeforeEach(func() {
 		cfc = &fakes.FakeCfClient{}
 		noaaConsumer = &fakes.FakeNoaaConsumer{}
-		instanceMetricsDb = &fakes.FakeInstanceMetricsDB{}
 
 		logger := lagertest.NewTestLogger("AppStreamer-test")
 		buffer = logger.Buffer()
 		fclock = fakeclock.NewFakeClock(time.Now())
 		dataChan = make(chan *models.AppInstanceMetric)
 
-		streamer = NewAppStreamer(logger, "an-app-id", TestCollectInterval, cfc, noaaConsumer, instanceMetricsDb, fclock, dataChan)
+		streamer = NewAppStreamer(logger, "an-app-id", TestCollectInterval, cfc, noaaConsumer, fclock, dataChan)
 
 		msgChan = make(chan *events.Envelope)
 		errChan = make(chan error, 1)
@@ -111,6 +109,21 @@ var _ = Describe("AppStreamer", func() {
 					Value:         "67",
 					Timestamp:     222222,
 				}))
+
+				By("collecting and computing throughput")
+				Consistently(dataChan).ShouldNot(Receive())
+
+				By("sending throughput after the collect interval")
+				fclock.WaitForWatcherAndIncrement(TestCollectInterval)
+				Expect(<-dataChan).To(Equal(&models.AppInstanceMetric{
+					AppId:         "an-app-id",
+					InstanceIndex: 0,
+					CollectedAt:   fclock.Now().UnixNano(),
+					Name:          models.MetricNameThroughput,
+					Unit:          models.UnitRPS,
+					Value:         "0",
+					Timestamp:     fclock.Now().UnixNano(),
+				}))
 			})
 		})
 
@@ -143,6 +156,8 @@ var _ = Describe("AppStreamer", func() {
 				msgChan <- noaa.NewHttpStartStopEnvelope(333333, 100000000, 300000000, 1)
 				msgChan <- noaa.NewHttpStartStopEnvelope(555555, 300000000, 600000000, 1)
 				msgChan <- noaa.NewHttpStartStopEnvelope(666666, 300000000, 700000000, 1)
+				Consistently(dataChan).ShouldNot(Receive())
+
 				fclock.WaitForWatcherAndIncrement(TestCollectInterval)
 
 				Expect(<-dataChan).To(Equal(&models.AppInstanceMetric{

@@ -2,7 +2,6 @@ package collector
 
 import (
 	"autoscaler/cf"
-	"autoscaler/db"
 	"autoscaler/metricscollector/noaa"
 	"autoscaler/models"
 
@@ -20,7 +19,6 @@ type appStreamer struct {
 	collectInterval time.Duration
 	cfc             cf.CfClient
 	noaaConsumer    noaa.NoaaConsumer
-	database        db.InstanceMetricsDB
 	doneChan        chan bool
 	sclock          clock.Clock
 	numRequests     map[int32]int64
@@ -29,14 +27,13 @@ type appStreamer struct {
 	dataChan        chan *models.AppInstanceMetric
 }
 
-func NewAppStreamer(logger lager.Logger, appId string, interval time.Duration, cfc cf.CfClient, noaaConsumer noaa.NoaaConsumer, database db.InstanceMetricsDB, sclock clock.Clock, dataChan chan *models.AppInstanceMetric) AppCollector {
+func NewAppStreamer(logger lager.Logger, appId string, interval time.Duration, cfc cf.CfClient, noaaConsumer noaa.NoaaConsumer, sclock clock.Clock, dataChan chan *models.AppInstanceMetric) AppCollector {
 	return &appStreamer{
 		appId:           appId,
 		logger:          logger,
 		collectInterval: interval,
 		cfc:             cfc,
 		noaaConsumer:    noaaConsumer,
-		database:        database,
 		doneChan:        make(chan bool),
 		sclock:          sclock,
 		numRequests:     make(map[int32]int64),
