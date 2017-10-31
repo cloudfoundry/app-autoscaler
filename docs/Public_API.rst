@@ -424,7 +424,10 @@ Body
 
    }
 
+
 **Available Fields of Policy definition :** 
+
+**Policy Fields:**
 
 +--------------------------------------+------------------------+---------+----------------------------------------------------+
 | Name                                 | Type                   | Required|Description                                         |
@@ -433,20 +436,81 @@ Body
 +--------------------------------------+------------------------+---------+----------------------------------------------------+
 | instance_max_count                   | int                    | true    |maximal number of instance count                    |
 +--------------------------------------+------------------------+---------+----------------------------------------------------+
-| scaling_rules                        | Array<scaling_rules>   | true    |                                                    |
+| scaling_rules                        | Array<scaling_rules>   | true    |dynamic scaling rules                               |
 +--------------------------------------+------------------------+---------+----------------------------------------------------+
-| scaling_rules.stat_window_secs       | int, seconds           |         |interval to take the avergae metric statistic       |
+| schedules                            | Array<schedules>       | false   |schedule definition                                 |
 +--------------------------------------+------------------------+---------+----------------------------------------------------+
-| scaling_rules.breach_duration_secs   | int, seconds           |         |interval to fire scaling event if keeping breach    |
+
+
+**Dynamic Scaling Rules Definition ``scaling_rules`` (part of the ``Policy`` configuration) :**
+
 +--------------------------------------+------------------------+---------+----------------------------------------------------+
-| scaling_rules.threshold              | int                    |         |the number to be breached                           |
+| Name                                 | Type                   | Required|Description                                         |
 +--------------------------------------+------------------------+---------+----------------------------------------------------+
-| scaling_rules.operator               | String                 |         |>, <, >=, <=                                        |
+| stat_window_secs                     | int, seconds           | true    |interval to take the avergae metric statistic       |
 +--------------------------------------+------------------------+---------+----------------------------------------------------+
-| scaling_rules.adjustment             | int                    |         |the adjustment for instance count with each scaling |
+| breach_duration_secs                 | int, seconds           | true    |interval to fire scaling event if keeping breach    |
 +--------------------------------------+------------------------+---------+----------------------------------------------------+
-| scaling_rules.cool_down_secs         | int,seconds            |         |minimal waiting interval between 2 scaling events   |
+| threshold                            | int                    | true    |the number to be breached                           |
 +--------------------------------------+------------------------+---------+----------------------------------------------------+
+| operator                             | String                 | true    |>, <, >=, <=                                        |
++--------------------------------------+------------------------+---------+----------------------------------------------------+
+| adjustment                           | int                    | true    |the adjustment for instance count with each scaling |
++--------------------------------------+------------------------+---------+----------------------------------------------------+
+| cool_down_secs                       | int,seconds            | true    |minimal waiting interval between 2 scaling events   |
++--------------------------------------+------------------------+---------+----------------------------------------------------+
+
+
+**Schedule Definition ``schedules`` (part of the ``Policy`` configuration) :**
+
++--------------------------------------+---------------------------+---------+-----------------------------------------------------------------+
+| Name                                 | Type                      | Required|Description                                                      |
++--------------------------------------+---------------------------+---------+-----------------------------------------------------------------+
+| timezone                             | String                    | true    |Using timezone definition of Java.                               |
+|                                      |                           |         |https://docs.oracle.com/javase/8/docs/api/java/util/TimeZone.html|
++--------------------------------------+---------------------------+---------+-----------------------------------------------------------------+
+| recurring_schedule                   | Array<recurring_schedules>| false   |the schedules which will take effect repeatly                    |
++--------------------------------------+---------------------------+---------+-----------------------------------------------------------------+
+| specific_date                        | Array<specific_date>      | false   |the schedules which take effect only once                        |
++--------------------------------------+---------------------------+---------+-----------------------------------------------------------------+
+
+**Recurring Schedule Definition  ``recurring_schedule`` (part of the ``schedules`` configuration) :**
+
++--------------------------------------+---------------------+---------+-----------------------------------------------------------------------------------------+
+| Name                                 | Type                | Required| Description                                                                             |
++--------------------------------------+---------------------+---------+-----------------------------------------------------------------------------------------+
+| start_date                           | String,"yyyy-mm-dd" | true    | the start date of the schedule                                                          |
++--------------------------------------+---------------------+---------+-----------------------------------------------------------------------------------------+
+| end_date                             | String,"yyyy-mm-dd" | true    | the end date of the schedule                                                            |
++--------------------------------------+---------------------+---------+-----------------------------------------------------------------------------------------+
+| start_time                           | String,"hh:mm"      | true    | the start time of the schedule                                                          |
++--------------------------------------+---------------------+---------+-----------------------------------------------------------------------------------------+
+| end_time                             | String,"hh:mm"      | true    | the end time of the schedule                                                            |
++--------------------------------------+---------------------+---------+-----------------------------------------------------------------------------------------+
+| day_of_week  or  day_of_month        | Array<int>          | true    | recurrence frequency. Use [1,2,..,7] or [1,2,...,31] to define the day of week or month |
++--------------------------------------+---------------------+---------+-----------------------------------------------------------------------------------------+
+| instance_min_count                   | int                 | true    | minimal number of instance count for this schedule                                      |
++--------------------------------------+---------------------+---------+-----------------------------------------------------------------------------------------+
+| instance_max_count                   | int                 | true    | maximal number of instance count for this schedule                                      |
++--------------------------------------+---------------------+---------+-----------------------------------------------------------------------------------------+
+| initial_min_instance_count           |int                  | true    | the initial minimal number of instance count for this schedule                          |
++--------------------------------------+---------------------+---------+-----------------------------------------------------------------------------------------+
+
+**Specific Date Definition  ``specific_date`` (part of the ``schedules`` configuration) :**
+
++--------------------------------------+----------------------------+---------+-----------------------------------------------------------------+
+| Name                                 | Type                       | Required| Description                                                     |
++--------------------------------------+----------------------------+---------+-----------------------------------------------------------------+
+| start_date_time                      | String,"yyyy-mm-ddThh:mm"  | true    | the start time of the schedule                                  |
++--------------------------------------+----------------------------+---------+-----------------------------------------------------------------+
+| start_date_time                      | String,"yyyy-mm-ddThh:mm"  | true    | the end time of the schedule                                    |
++--------------------------------------+----------------------------+---------+-----------------------------------------------------------------+
+| instance_min_count                   | int                        | true    | minimal number of instance count for this schedule              |
++--------------------------------------+----------------------------+---------+-----------------------------------------------------------------+
+| instance_max_count                   | int                        | true    | maximal number of instance count for this schedule              |
++--------------------------------------+----------------------------+---------+-----------------------------------------------------------------+
+| initial_min_instance_count           | int                        | true    | the initial minimal number of instance count for this schedule  |
++--------------------------------------+----------------------------+---------+-----------------------------------------------------------------+
 
 
 
