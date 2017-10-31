@@ -2,7 +2,6 @@ package sqldb
 
 import (
 	"database/sql"
-	"fmt"
 
 	"code.cloudfoundry.org/lager"
 	_ "github.com/lib/pq"
@@ -69,16 +68,11 @@ func (sdb *ScalingEngineSQLDB) RetrieveScalingHistories(appId string, start int6
 	} else {
 		orderStr = db.ASCSTR
 	}
-	var includeStr string
-	if !includeAll {
-		includeStr = fmt.Sprintf(" AND status != %d", models.ScalingStatusIgnored)
-	}
 
 	query := "SELECT timestamp, scalingtype, status, oldinstances, newinstances, reason, message, error FROM scalinghistory WHERE" +
 		" appid = $1 " +
 		" AND timestamp >= $2" +
 		" AND timestamp <= $3" +
-		includeStr +
 		" ORDER BY timestamp " + orderStr
 
 	if end < 0 {
@@ -116,7 +110,10 @@ func (sdb *ScalingEngineSQLDB) RetrieveScalingHistories(appId string, start int6
 			Message:      message,
 			Error:        errorMsg,
 		}
-		histories = append(histories, &history)
+
+		if includeAll || history.Status != models.ScalingStatusIgnored {
+			histories = append(histories, &history)
+		}
 	}
 	return histories, nil
 }
