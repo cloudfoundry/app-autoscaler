@@ -19,6 +19,7 @@ const (
 	DefaultLoggingLevel                      = "info"
 	DefaultRefreshInterval     time.Duration = 60 * time.Second
 	DefaultCollectInterval     time.Duration = 30 * time.Second
+	DefaultSaveInterval        time.Duration = 5 * time.Second
 	DefaultLockTTL             time.Duration = locket.DefaultSessionTTL
 	DefaultRetryInterval       time.Duration = locket.RetryInterval
 	DefaultDBLockRetryInterval time.Duration = 5 * time.Second
@@ -58,12 +59,14 @@ type CollectorConfig struct {
 	RefreshInterval time.Duration `yaml:"refresh_interval"`
 	CollectInterval time.Duration `yaml:"collect_interval"`
 	CollectMethod   string        `yaml:"collect_method"`
+	SaveInterval    time.Duration `yaml:"save_interval"`
 }
 
 var defaultCollectorConfig = CollectorConfig{
 	RefreshInterval: DefaultRefreshInterval,
 	CollectInterval: DefaultCollectInterval,
 	CollectMethod:   CollectMethodStreaming,
+	SaveInterval:    DefaultSaveInterval,
 }
 
 type LockConfig struct {
@@ -147,6 +150,10 @@ func (c *Config) Validate() error {
 
 	if c.Collector.RefreshInterval == time.Duration(0) {
 		return fmt.Errorf("Configuration error: RefreshInterval is 0")
+	}
+
+	if c.Collector.SaveInterval == time.Duration(0) {
+		return fmt.Errorf("Configuration error: SaveInterval is 0")
 	}
 
 	if (c.Collector.CollectMethod != CollectMethodPolling) && (c.Collector.CollectMethod != CollectMethodStreaming) {

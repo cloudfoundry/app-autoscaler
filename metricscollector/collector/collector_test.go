@@ -3,6 +3,7 @@ package collector_test
 import (
 	. "autoscaler/metricscollector/collector"
 	"autoscaler/metricscollector/fakes"
+	"autoscaler/models"
 
 	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/lager/lagertest"
@@ -18,25 +19,27 @@ import (
 var _ = Describe("Collector", func() {
 
 	var (
-		database     *fakes.FakePolicyDB
-		coll         *Collector
-		fclock       *fakeclock.FakeClock
-		appCollector *fakes.FakeAppCollector
-		buffer       *gbytes.Buffer
+		policyDb          *fakes.FakePolicyDB
+		instanceMetricsDb *fakes.FakeInstanceMetricsDB
+		coll              *Collector
+		fclock            *fakeclock.FakeClock
+		appCollector      *fakes.FakeAppCollector
+		buffer            *gbytes.Buffer
 	)
 
 	BeforeEach(func() {
-		database = &fakes.FakePolicyDB{}
+		policyDb = &fakes.FakePolicyDB{}
+		instanceMetricsDb = &fakes.FakeInstanceMetricsDB{}
 
 		logger := lagertest.NewTestLogger("collector-test")
 		buffer = logger.Buffer()
 
 		fclock = fakeclock.NewFakeClock(time.Now())
 		appCollector = &fakes.FakeAppCollector{}
-		createAppCollector := func(appId string) AppCollector {
+		createAppCollector := func(appId string, dataChan chan *models.AppInstanceMetric) AppCollector {
 			return appCollector
 		}
-		coll = NewCollector(TestRefreshInterval, logger, database, fclock, createAppCollector)
+		coll = NewCollector(TestRefreshInterval, TestCollectInterval, TestSaveInterval, logger, policyDb, instanceMetricsDb, fclock, createAppCollector)
 	})
 
 	Describe("Start", func() {
@@ -49,21 +52,21 @@ var _ = Describe("Collector", func() {
 		})
 
 		It("refreshes the apps with given interval", func() {
-			Eventually(database.GetAppIdsCallCount).Should(Equal(1))
+			Eventually(policyDb.GetAppIdsCallCount).Should(Equal(1))
 
 			fclock.Increment(TestRefreshInterval)
-			Eventually(database.GetAppIdsCallCount).Should(Equal(2))
+			Eventually(policyDb.GetAppIdsCallCount).Should(Equal(2))
 
 			fclock.Increment(TestRefreshInterval)
-			Eventually(database.GetAppIdsCallCount).Should(Equal(3))
+			Eventually(policyDb.GetAppIdsCallCount).Should(Equal(3))
 
 		})
 
-		Context("when getting apps from policy database succeeds", func() {
+		Context("when getting apps from policy policyDb succeeds", func() {
 
-			Context("when no apps in policy database", func() {
+			Context("when no apps in policy policyDb", func() {
 				BeforeEach(func() {
-					database.GetAppIdsReturns(make(map[string]bool), nil)
+					policyDb.GetAppIdsReturns(make(map[string]bool), nil)
 				})
 
 				It("does nothing", func() {
@@ -76,7 +79,7 @@ var _ = Describe("Collector", func() {
 
 			Context("when refresh does not have app changes", func() {
 				BeforeEach(func() {
-					database.GetAppIdsReturns(map[string]bool{"app-id-1": true, "app-id-2": true, "app-id-3": true}, nil)
+					policyDb.GetAppIdsReturns(map[string]bool{"app-id-1": true, "app-id-2": true, "app-id-3": true}, nil)
 				})
 
 				It("should always poll the same set of apps", func() {
@@ -91,8 +94,8 @@ var _ = Describe("Collector", func() {
 
 			Context("when refresh has new apps", func() {
 				BeforeEach(func() {
-					database.GetAppIdsStub = func() (map[string]bool, error) {
-						switch database.GetAppIdsCallCount() {
+					policyDb.GetAppIdsStub = func() (map[string]bool, error) {
+						switch policyDb.GetAppIdsCallCount() {
 						case 1:
 							return map[string]bool{"app-id-1": true}, nil
 						case 2:
@@ -121,8 +124,8 @@ var _ = Describe("Collector", func() {
 
 			Context("when refresh has app removals", func() {
 				BeforeEach(func() {
-					database.GetAppIdsStub = func() (map[string]bool, error) {
-						switch database.GetAppIdsCallCount() {
+					policyDb.GetAppIdsStub = func() (map[string]bool, error) {
+						switch policyDb.GetAppIdsCallCount() {
 						case 1:
 							return map[string]bool{"app-id-1": true, "app-id-2": true, "app-id-3": true}, nil
 						case 2:
@@ -151,8 +154,8 @@ var _ = Describe("Collector", func() {
 
 			Context("when refresh has both new apps and app removals", func() {
 				BeforeEach(func() {
-					database.GetAppIdsStub = func() (map[string]bool, error) {
-						switch database.GetAppIdsCallCount() {
+					policyDb.GetAppIdsStub = func() (map[string]bool, error) {
+						switch policyDb.GetAppIdsCallCount() {
 						case 1:
 							return map[string]bool{"app-id-1": true, "app-id-3": true}, nil
 						case 2:
@@ -181,9 +184,9 @@ var _ = Describe("Collector", func() {
 			})
 		})
 
-		Context("when getting apps from policy database fails", func() {
+		Context("when getting apps from policy policyDb fails", func() {
 			BeforeEach(func() {
-				database.GetAppIdsReturns(nil, errors.New("test collector error"))
+				policyDb.GetAppIdsReturns(nil, errors.New("test collector error"))
 			})
 
 			It("does not poll and logs the error", func() {
@@ -191,7 +194,7 @@ var _ = Describe("Collector", func() {
 				Consistently(coll.GetCollectorAppIds).Should(BeEmpty())
 
 				fclock.Increment(TestRefreshInterval)
-				Eventually(database.GetAppIdsCallCount).Should(Equal(2))
+				Eventually(policyDb.GetAppIdsCallCount).Should(Equal(2))
 				Eventually(buffer).Should(gbytes.Say("test collector error"))
 				Consistently(coll.GetCollectorAppIds).Should(BeEmpty())
 			})
@@ -202,20 +205,20 @@ var _ = Describe("Collector", func() {
 
 	Describe("Stop", func() {
 		BeforeEach(func() {
-			database.GetAppIdsReturns(map[string]bool{"app-id-1": true, "app-id-2": true, "app-id-3": true}, nil)
+			policyDb.GetAppIdsReturns(map[string]bool{"app-id-1": true, "app-id-2": true, "app-id-3": true}, nil)
 			coll.Start()
 		})
 
 		It("stops the collecting", func() {
 
 			fclock.Increment(TestRefreshInterval)
-			Eventually(database.GetAppIdsCallCount).Should(Equal(2))
+			Eventually(policyDb.GetAppIdsCallCount).Should(Equal(2))
 
 			coll.Stop()
 			Eventually(appCollector.StopCallCount).Should(Equal(3))
 
 			fclock.Increment(TestRefreshInterval)
-			Consistently(database.GetAppIdsCallCount).Should(Equal(2))
+			Consistently(policyDb.GetAppIdsCallCount).Should(Equal(2))
 		})
 	})
 
