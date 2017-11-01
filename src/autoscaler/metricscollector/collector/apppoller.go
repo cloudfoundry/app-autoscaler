@@ -2,8 +2,8 @@ package collector
 
 import (
 	"autoscaler/cf"
-	"autoscaler/db"
 	"autoscaler/metricscollector/noaa"
+	"autoscaler/models"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
@@ -19,21 +19,21 @@ type appPoller struct {
 	logger          lager.Logger
 	cfc             cf.CfClient
 	noaaConsumer    noaa.NoaaConsumer
-	database        db.InstanceMetricsDB
 	pclock          clock.Clock
 	doneChan        chan bool
+	dataChan        chan *models.AppInstanceMetric
 }
 
-func NewAppPoller(logger lager.Logger, appId string, collectInterval time.Duration, cfc cf.CfClient, noaaConsumer noaa.NoaaConsumer, database db.InstanceMetricsDB, pclock clock.Clock) AppCollector {
+func NewAppPoller(logger lager.Logger, appId string, collectInterval time.Duration, cfc cf.CfClient, noaaConsumer noaa.NoaaConsumer, pclock clock.Clock, dataChan chan *models.AppInstanceMetric) AppCollector {
 	return &appPoller{
 		appId:           appId,
 		collectInterval: collectInterval,
 		logger:          logger,
 		cfc:             cfc,
 		noaaConsumer:    noaaConsumer,
-		database:        database,
 		pclock:          pclock,
 		doneChan:        make(chan bool),
+		dataChan:        dataChan,
 	}
 
 }
@@ -87,9 +87,6 @@ func (ap *appPoller) pollMetric() {
 	logger.Debug("poll-metric-get-memory-metrics", lager.Data{"metrics": metrics})
 
 	for _, metric := range metrics {
-		err = ap.database.SaveMetric(metric)
-		if err != nil {
-			logger.Error("poll-metric-save", err, lager.Data{"metric": metric})
-		}
+		ap.dataChan <- metric
 	}
 }

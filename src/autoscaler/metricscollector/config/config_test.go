@@ -61,7 +61,8 @@ server:
 				configBytes = []byte(`
 collector:
   refresh_interval: 20a
-  collect_interval: 10s  
+  collect_interval: 10s
+  save_interval: 5s
 `)
 			})
 
@@ -95,6 +96,7 @@ collector:
   refresh_interval: 20s
   collect_interval: 10s
   collect_method: polling
+  save_interval: 5s
 lock:
   lock_ttl: 15s
   lock_retry_interval: 10s
@@ -185,6 +187,7 @@ db:
 			conf.Collector.CollectInterval = time.Duration(30 * time.Second)
 			conf.Collector.RefreshInterval = time.Duration(60 * time.Second)
 			conf.Collector.CollectMethod = CollectMethodPolling
+			conf.Collector.SaveInterval = time.Duration(5 * time.Second)
 			conf.DBLock.LockDBURL = "postgres://pqgotest:password@exampl.com/pqgotest"
 			conf.EnableDBLock = true
 		})
@@ -246,6 +249,16 @@ db:
 
 			It("should error", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: RefreshInterval is 0")))
+			})
+		})
+
+		Context("when save interval is 0", func() {
+			BeforeEach(func() {
+				conf.Collector.SaveInterval = time.Duration(0)
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: SaveInterval is 0")))
 			})
 		})
 

@@ -139,6 +139,49 @@ var _ = Describe("InstancemetricsSqldb", func() {
 		})
 	})
 
+	Describe("SaveMetricsInBulk", func() {
+		BeforeEach(func() {
+			idb, err = NewInstanceMetricsSQLDB(url, logger)
+			Expect(err).NotTo(HaveOccurred())
+			cleanInstanceMetricsTable()
+		})
+
+		AfterEach(func() {
+			err = idb.Close()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		Context("When inserting an array of metrics", func() {
+			BeforeEach(func() {
+				metric1 := models.AppInstanceMetric{
+					AppId:         testAppId,
+					InstanceIndex: 0,
+					CollectedAt:   111111,
+					Name:          testMetricName,
+					Unit:          testMetricUnit,
+					Value:         "123",
+					Timestamp:     110000,
+				}
+				metric2 := models.AppInstanceMetric{
+					AppId:         testAppId,
+					InstanceIndex: 1,
+					CollectedAt:   222222,
+					Name:          testMetricName,
+					Unit:          testMetricUnit,
+					Value:         "234",
+					Timestamp:     220000,
+				}
+				err = idb.SaveMetricsInBulk([]*models.AppInstanceMetric{&metric1, &metric2})
+			})
+
+			It("has the metrics in database", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(hasInstanceMetric(testAppId, 0, testMetricName, 110000)).To(BeTrue())
+				Expect(hasInstanceMetric(testAppId, 1, testMetricName, 220000)).To(BeTrue())
+			})
+		})
+	})
+
 	Describe("RetrieveInstanceMetrics", func() {
 		BeforeEach(func() {
 			idb, err = NewInstanceMetricsSQLDB(url, logger)

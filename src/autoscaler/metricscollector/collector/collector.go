@@ -2,11 +2,13 @@ package collector
 
 import (
 	"autoscaler/db"
+	"autoscaler/models"
+
+	"sync"
+	"time"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
-	"sync"
-	"time"
 )
 
 type AppCollector interface {
@@ -16,32 +18,43 @@ type AppCollector interface {
 
 type Collector struct {
 	refreshInterval    time.Duration
+	collectInterval    time.Duration
+	saveInterval       time.Duration
 	logger             lager.Logger
-	database           db.PolicyDB
+	policyDb           db.PolicyDB
+	instancemetricsDb  db.InstanceMetricsDB
 	cclock             clock.Clock
-	createAppCollector func(string) AppCollector
+	createAppCollector func(string, chan *models.AppInstanceMetric) AppCollector
 	doneChan           chan bool
+	doneSaveChan       chan bool
 	appCollectors      map[string]AppCollector
 	ticker             clock.Ticker
 	lock               *sync.Mutex
+	dataChan           chan *models.AppInstanceMetric
 }
 
-func NewCollector(refreshInterval time.Duration, logger lager.Logger, database db.PolicyDB, cclock clock.Clock, createAppCollector func(string) AppCollector) *Collector {
+func NewCollector(refreshInterval time.Duration, collectInterval time.Duration, saveInterval time.Duration, logger lager.Logger, policyDb db.PolicyDB, instancemetricsDb db.InstanceMetricsDB, cclock clock.Clock, createAppCollector func(string, chan *models.AppInstanceMetric) AppCollector) *Collector {
 	return &Collector{
 		refreshInterval:    refreshInterval,
+		collectInterval:    collectInterval,
+		saveInterval:       saveInterval,
 		logger:             logger,
-		database:           database,
+		policyDb:           policyDb,
+		instancemetricsDb:  instancemetricsDb,
 		cclock:             cclock,
 		createAppCollector: createAppCollector,
 		doneChan:           make(chan bool),
+		doneSaveChan:       make(chan bool),
 		appCollectors:      make(map[string]AppCollector),
 		lock:               &sync.Mutex{},
+		dataChan:           make(chan *models.AppInstanceMetric),
 	}
 }
 
 func (c *Collector) Start() {
 	c.ticker = c.cclock.NewTicker(c.refreshInterval)
 	go c.startAppRefresh()
+	go c.SaveMetricsInDB()
 	c.logger.Info("collector-started")
 }
 
@@ -57,7 +70,7 @@ func (c *Collector) startAppRefresh() {
 }
 
 func (c *Collector) refreshApps() {
-	appIds, err := c.database.GetAppIds()
+	appIds, err := c.policyDb.GetAppIds()
 	if err != nil {
 		c.logger.Error("refresh-apps", err)
 		return
@@ -79,7 +92,7 @@ func (c *Collector) refreshApps() {
 		_, exist := c.appCollectors[id]
 		if !exist {
 			c.logger.Debug("refresh-apps-add", lager.Data{"appId": id})
-			ap := c.createAppCollector(id)
+			ap := c.createAppCollector(id, c.dataChan)
 			ap.Start()
 			c.appCollectors[id] = ap
 		}
@@ -91,6 +104,7 @@ func (c *Collector) Stop() {
 	if c.ticker != nil {
 		c.ticker.Stop()
 		close(c.doneChan)
+		close(c.doneSaveChan)
 
 		c.lock.Lock()
 		for _, ap := range c.appCollectors {
@@ -109,4 +123,24 @@ func (c *Collector) GetCollectorAppIds() []string {
 	}
 	c.lock.Unlock()
 	return appIds
+}
+
+func (c *Collector) SaveMetricsInDB() {
+	ticker := c.cclock.NewTicker(c.saveInterval)
+	metrics := make([]*models.AppInstanceMetric, 0)
+	for {
+		select {
+		case metric := <-c.dataChan:
+			metrics = append(metrics, metric)
+		case <-ticker.C():
+			go func(instancemetricsDb db.InstanceMetricsDB, metrics []*models.AppInstanceMetric) {
+				instancemetricsDb.SaveMetricsInBulk(metrics)
+				metrics = nil
+				return
+			}(c.instancemetricsDb, metrics)
+			metrics = nil
+		case <-c.doneSaveChan:
+			return
+		}
+	}
 }

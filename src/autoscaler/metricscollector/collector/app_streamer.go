@@ -2,7 +2,6 @@ package collector
 
 import (
 	"autoscaler/cf"
-	"autoscaler/db"
 	"autoscaler/metricscollector/noaa"
 	"autoscaler/models"
 
@@ -20,26 +19,26 @@ type appStreamer struct {
 	collectInterval time.Duration
 	cfc             cf.CfClient
 	noaaConsumer    noaa.NoaaConsumer
-	database        db.InstanceMetricsDB
 	doneChan        chan bool
 	sclock          clock.Clock
 	numRequests     map[int32]int64
 	sumReponseTimes map[int32]int64
 	ticker          clock.Ticker
+	dataChan        chan *models.AppInstanceMetric
 }
 
-func NewAppStreamer(logger lager.Logger, appId string, interval time.Duration, cfc cf.CfClient, noaaConsumer noaa.NoaaConsumer, database db.InstanceMetricsDB, sclock clock.Clock) AppCollector {
+func NewAppStreamer(logger lager.Logger, appId string, interval time.Duration, cfc cf.CfClient, noaaConsumer noaa.NoaaConsumer, sclock clock.Clock, dataChan chan *models.AppInstanceMetric) AppCollector {
 	return &appStreamer{
 		appId:           appId,
 		logger:          logger,
 		collectInterval: interval,
 		cfc:             cfc,
 		noaaConsumer:    noaaConsumer,
-		database:        database,
 		doneChan:        make(chan bool),
 		sclock:          sclock,
 		numRequests:     make(map[int32]int64),
 		sumReponseTimes: make(map[int32]int64),
+		dataChan:        dataChan,
 	}
 }
 
@@ -98,18 +97,12 @@ func (as *appStreamer) processEvent(event *events.Envelope) {
 		metric := noaa.GetInstanceMemoryUsedMetricFromContainerMetricEvent(as.sclock.Now().UnixNano(), as.appId, event)
 		as.logger.Debug("process-event-get-memoryused-metric", lager.Data{"metric": metric})
 		if metric != nil {
-			err := as.database.SaveMetric(metric)
-			if err != nil {
-				as.logger.Error("process-event-save-metric", err, lager.Data{"metric": metric})
-			}
+			as.dataChan <- metric
 		}
 		metric = noaa.GetInstanceMemoryUtilMetricFromContainerMetricEvent(as.sclock.Now().UnixNano(), as.appId, event)
 		as.logger.Debug("process-event-get-memoryutil-metric", lager.Data{"metric": metric})
 		if metric != nil {
-			err := as.database.SaveMetric(metric)
-			if err != nil {
-				as.logger.Error("process-event-save-metric", err, lager.Data{"metric": metric})
-			}
+			as.dataChan <- metric
 		}
 
 	} else if event.GetEventType() == events.Envelope_HttpStartStop {
@@ -135,10 +128,7 @@ func (as *appStreamer) computeAndSaveMetrics() {
 			Timestamp:     as.sclock.Now().UnixNano(),
 		}
 		as.logger.Debug("compute-throughput", lager.Data{"message": "write 0 throughput due to no requests"})
-		err := as.database.SaveMetric(throughput)
-		if err != nil {
-			as.logger.Error("save-metric-to-database", err, lager.Data{"throughput": throughput})
-		}
+		as.dataChan <- throughput
 		return
 	}
 
@@ -154,10 +144,7 @@ func (as *appStreamer) computeAndSaveMetrics() {
 		}
 		as.logger.Debug("compute-throughput", lager.Data{"throughput": throughput})
 
-		err := as.database.SaveMetric(throughput)
-		if err != nil {
-			as.logger.Error("save-metric-to-database", err, lager.Data{"throughput": throughput})
-		}
+		as.dataChan <- throughput
 
 		responseTime := &models.AppInstanceMetric{
 			AppId:         as.appId,
@@ -170,10 +157,7 @@ func (as *appStreamer) computeAndSaveMetrics() {
 		}
 		as.logger.Debug("compute-responsetime", lager.Data{"responsetime": responseTime})
 
-		err = as.database.SaveMetric(responseTime)
-		if err != nil {
-			as.logger.Error("save-metric-to-database", err, lager.Data{"responsetime": responseTime})
-		}
+		as.dataChan <- responseTime
 	}
 
 	as.numRequests = make(map[int32]int64)
