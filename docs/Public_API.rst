@@ -427,7 +427,7 @@ Body
 
 **Available Fields of Policy definition :** 
 
-**Policy Fields:**
+**Policy Definition:**
 
 +--------------------------------------+------------------------+---------+----------------------------------------------------+
 | Name                                 | Type                   | Required|Description                                         |
