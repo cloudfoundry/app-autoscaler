@@ -8,6 +8,8 @@ import (
 	"autoscaler/eventgenerator/config"
 	"autoscaler/eventgenerator/generator"
 	"autoscaler/models"
+	sync "autoscaler/sync"
+
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -111,6 +113,26 @@ func main() {
 		{"eventGenerator", eventGenerator},
 	}
 
+	guid, err := generateGUID(logger)
+	if err != nil {
+		logger.Error("failed-to-generate-guid", err)
+	}
+
+	if conf.EnableDBLock {
+		logger.Debug("database-lock-feature-enabled")
+		var lockDB db.LockDB
+		var lockTableName = "eg_lock"
+		lockDB, err = sqldb.NewLockSQLDB(conf.DBLock.LockDBURL, lockTableName, logger.Session("lock-db"))
+		if err != nil {
+			logger.Error("failed-to-connect-lock-database", err, lager.Data{"url": conf.DBLock.LockDBURL})
+			os.Exit(1)
+		}
+		defer lockDB.Close()
+		mcdl := sync.NewDatabaseLock(logger)
+		dbLockMaintainer := mcdl.InitDBLockRunner(conf.DBLock.LockRetryInterval, conf.DBLock.LockTTL, guid, lockDB)
+		members = append(grouper.Members{{"db-lock-maintainer", dbLockMaintainer}}, members...)
+	}
+
 	if conf.Lock.ConsulClusterConfig != "" {
 		consulClient, err := consuladapter.NewClientFromUrl(conf.Lock.ConsulClusterConfig)
 		if err != nil {
@@ -118,15 +140,16 @@ func main() {
 		}
 
 		serviceClient := eventgenerator.NewServiceClient(consulClient, egClock)
-
-		lockMaintainer := serviceClient.NewEventGeneratorLockRunner(
-			logger,
-			generateGUID(logger),
-			conf.Lock.LockRetryInterval,
-			conf.Lock.LockTTL,
-		)
+		if !conf.EnableDBLock {
+			lockMaintainer := serviceClient.NewEventGeneratorLockRunner(
+				logger,
+				guid,
+				conf.Lock.LockRetryInterval,
+				conf.Lock.LockTTL,
+			)
+			members = append(grouper.Members{{"lock-maintainer", lockMaintainer}}, members...)
+		}
 		registrationRunner := initializeRegistrationRunner(logger, consulClient, egClock)
-		members = append(grouper.Members{{"lock-maintainer", lockMaintainer}}, members...)
 		members = append(members, grouper.Member{"registration", registrationRunner})
 	}
 
@@ -260,10 +283,11 @@ func initializeRegistrationRunner(
 	return locket.NewRegistrationRunner(logger, registration, consulClient, locket.RetryInterval, clock)
 }
 
-func generateGUID(logger lager.Logger) string {
-	uuid, err := uuid.NewV4()
+func generateGUID(logger lager.Logger) (string, error) {
+	guid, err := uuid.NewV4()
 	if err != nil {
 		logger.Fatal("Couldn't generate uuid", err)
+		return "", err
 	}
-	return uuid.String()
+	return guid.String(), nil
 }
