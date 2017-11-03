@@ -28,6 +28,7 @@ var _ = Describe("ScalingEngine", func() {
 		clock           *fakeclock.FakeClock
 
 		newInstances int
+		appState     string
 		trigger      *models.Trigger
 		buffer       *gbytes.Buffer
 		err          error
@@ -42,6 +43,7 @@ var _ = Describe("ScalingEngine", func() {
 		buffer = logger.Buffer()
 		clock = fakeclock.NewFakeClock(time.Now())
 		scalingEngine = NewScalingEngine(logger, cfc, policyDB, scalingEngineDB, clock, 300)
+		appState = models.AppStatusStarted
 		activeSchedule = &models.ActiveSchedule{
 			ScheduleId:         "a-schedule-id",
 			InstanceMinInitial: 5,
@@ -69,7 +71,7 @@ var _ = Describe("ScalingEngine", func() {
 
 		Context("when scaling succeeds", func() {
 			BeforeEach(func() {
-				cfc.GetAppInstancesReturns(2, nil)
+				cfc.GetAppReturns(&models.AppEntity{Instances: 2, State: &appState}, nil)
 				scalingEngineDB.CanScaleAppReturns(true, nil)
 				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 1, InstanceMax: 6}, nil)
 
@@ -99,9 +101,32 @@ var _ = Describe("ScalingEngine", func() {
 			})
 		})
 
+		Context("When app is not started", func() {
+			BeforeEach(func() {
+				appState = "test-state"
+				cfc.GetAppReturns(&models.AppEntity{Instances: 2, State: &appState}, nil)
+			})
+			It("ignore the scaling and store the ignored scaling history", func() {
+				Eventually(buffer).Should(gbytes.Say("check-app-state"))
+				Eventually(buffer).Should(gbytes.Say("ignore scaling since app is not started"))
+
+				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+					AppId:        "an-app-id",
+					Timestamp:    clock.Now().UnixNano(),
+					ScalingType:  models.ScalingTypeDynamic,
+					Status:       models.ScalingStatusIgnored,
+					OldInstances: 2,
+					NewInstances: 2,
+					Reason:       "+1 instance(s) because test-metric-type > 80test-unit for 100 seconds",
+					Message:      "app is not started",
+				}))
+
+			})
+		})
+
 		Context("when app is in cooldown period", func() {
 			BeforeEach(func() {
-				cfc.GetAppInstancesReturns(2, nil)
+				cfc.GetAppReturns(&models.AppEntity{Instances: 2, State: &appState}, nil)
 				scalingEngineDB.CanScaleAppReturns(false, nil)
 			})
 
@@ -126,7 +151,7 @@ var _ = Describe("ScalingEngine", func() {
 		Context("when app instances not changed", func() {
 			BeforeEach(func() {
 				trigger.Adjustment = "+20%"
-				cfc.GetAppInstancesReturns(2, nil)
+				cfc.GetAppReturns(&models.AppEntity{Instances: 2, State: &appState}, nil)
 				scalingEngineDB.CanScaleAppReturns(true, nil)
 				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 1, InstanceMax: 6}, nil)
 
@@ -153,7 +178,7 @@ var _ = Describe("ScalingEngine", func() {
 		Context("when it exceeds max instances limit in scaling policy", func() {
 			BeforeEach(func() {
 				trigger.Adjustment = "+2"
-				cfc.GetAppInstancesReturns(5, nil)
+				cfc.GetAppReturns(&models.AppEntity{Instances: 5, State: &appState}, nil)
 				scalingEngineDB.CanScaleAppReturns(true, nil)
 				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 1, InstanceMax: 6}, nil)
 
@@ -184,7 +209,7 @@ var _ = Describe("ScalingEngine", func() {
 		Context("when it exceeds min instances limit in scaling policy", func() {
 			BeforeEach(func() {
 				trigger.Adjustment = "-60%"
-				cfc.GetAppInstancesReturns(3, nil)
+				cfc.GetAppReturns(&models.AppEntity{Instances: 3, State: &appState}, nil)
 				scalingEngineDB.CanScaleAppReturns(true, nil)
 				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 2, InstanceMax: 6}, nil)
 
@@ -224,7 +249,7 @@ var _ = Describe("ScalingEngine", func() {
 			Context("when it exceeds max instances limit in active schedule", func() {
 				BeforeEach(func() {
 					trigger.Adjustment = "+2"
-					cfc.GetAppInstancesReturns(6, nil)
+					cfc.GetAppReturns(&models.AppEntity{Instances: 6, State: &appState}, nil)
 					scalingEngineDB.CanScaleAppReturns(true, nil)
 				})
 
@@ -254,7 +279,7 @@ var _ = Describe("ScalingEngine", func() {
 			Context("when it exceeds min instances limit  in active schedule", func() {
 				BeforeEach(func() {
 					trigger.Adjustment = "-60%"
-					cfc.GetAppInstancesReturns(5, nil)
+					cfc.GetAppReturns(&models.AppEntity{Instances: 5, State: &appState}, nil)
 					scalingEngineDB.CanScaleAppReturns(true, nil)
 				})
 
@@ -283,14 +308,14 @@ var _ = Describe("ScalingEngine", func() {
 
 		})
 
-		Context("when getting app instances from cloud controller fails", func() {
+		Context("when getting app info from cloud foundry fails", func() {
 			BeforeEach(func() {
-				cfc.GetAppInstancesReturns(-1, errors.New("test error"))
+				cfc.GetAppReturns(nil, errors.New("test error"))
 			})
 
 			It("should error and store the failed scaling history", func() {
 				Expect(err).To(HaveOccurred())
-				Eventually(buffer).Should(gbytes.Say("failed-to-get-app-instances"))
+				Eventually(buffer).Should(gbytes.Say("failed-to-get-app-info"))
 				Eventually(buffer).Should(gbytes.Say("test error"))
 
 				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
@@ -301,7 +326,7 @@ var _ = Describe("ScalingEngine", func() {
 					OldInstances: -1,
 					NewInstances: -1,
 					Reason:       "+1 instance(s) because test-metric-type > 80test-unit for 100 seconds",
-					Error:        "failed to get app instances",
+					Error:        "failed to get app info",
 				}))
 
 			})
@@ -309,12 +334,12 @@ var _ = Describe("ScalingEngine", func() {
 
 		Context("When checking cooldown fails", func() {
 			BeforeEach(func() {
-				cfc.GetAppInstancesReturns(2, nil)
+				cfc.GetAppReturns(&models.AppEntity{Instances: 2, State: &appState}, nil)
 				scalingEngineDB.CanScaleAppReturns(false, errors.New("test error"))
 			})
 			It("should error and store the failed scaling history", func() {
 				Expect(err).To(HaveOccurred())
-				Eventually(buffer).Should(gbytes.Say("failed-check-cooldown"))
+				Eventually(buffer).Should(gbytes.Say("failed-to-check-cooldown"))
 				Eventually(buffer).Should(gbytes.Say("test error"))
 
 				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
@@ -334,13 +359,13 @@ var _ = Describe("ScalingEngine", func() {
 		Context("when computing new app instances fails", func() {
 			BeforeEach(func() {
 				trigger.Adjustment = "+a"
-				cfc.GetAppInstancesReturns(2, nil)
+				cfc.GetAppReturns(&models.AppEntity{Instances: 2, State: &appState}, nil)
 				scalingEngineDB.CanScaleAppReturns(true, nil)
 			})
 
 			It("should error and store failed scaling history", func() {
 				Expect(err).To(HaveOccurred())
-				Eventually(buffer).Should(gbytes.Say("failed-compute-new-instance"))
+				Eventually(buffer).Should(gbytes.Say("failed-to-compute-new-instance"))
 
 				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 					AppId:        "an-app-id",
@@ -357,14 +382,14 @@ var _ = Describe("ScalingEngine", func() {
 
 		Context("when getting active schedule fails", func() {
 			BeforeEach(func() {
-				cfc.GetAppInstancesReturns(2, nil)
+				cfc.GetAppReturns(&models.AppEntity{Instances: 2, State: &appState}, nil)
 				scalingEngineDB.CanScaleAppReturns(true, nil)
 				scalingEngineDB.GetActiveScheduleReturns(nil, errors.New("test error"))
 			})
 
 			It("should error and store the failed scaling history", func() {
 				Expect(err).To(HaveOccurred())
-				Eventually(buffer).Should(gbytes.Say("failed-get-active-schedule"))
+				Eventually(buffer).Should(gbytes.Say("failed-to-get-active-schedule"))
 				Eventually(buffer).Should(gbytes.Say("test error"))
 
 				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
@@ -383,14 +408,14 @@ var _ = Describe("ScalingEngine", func() {
 
 		Context("when getting policy fails", func() {
 			BeforeEach(func() {
-				cfc.GetAppInstancesReturns(2, nil)
+				cfc.GetAppReturns(&models.AppEntity{Instances: 2, State: &appState}, nil)
 				scalingEngineDB.CanScaleAppReturns(true, nil)
 				policyDB.GetAppPolicyReturns(nil, errors.New("test error"))
 			})
 
 			It("should error and store the failed scaling history", func() {
 				Expect(err).To(HaveOccurred())
-				Eventually(buffer).Should(gbytes.Say("failed-get-app-policy"))
+				Eventually(buffer).Should(gbytes.Say("failed-to-get-app-policy"))
 				Eventually(buffer).Should(gbytes.Say("test error"))
 
 				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
@@ -409,7 +434,7 @@ var _ = Describe("ScalingEngine", func() {
 
 		Context("when set new instances fails", func() {
 			BeforeEach(func() {
-				cfc.GetAppInstancesReturns(2, nil)
+				cfc.GetAppReturns(&models.AppEntity{Instances: 2, State: &appState}, nil)
 				scalingEngineDB.CanScaleAppReturns(true, nil)
 				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 1, InstanceMax: 6}, nil)
 				cfc.SetAppInstancesReturns(errors.New("test error"))
@@ -496,6 +521,10 @@ var _ = Describe("ScalingEngine", func() {
 			err = scalingEngine.SetActiveSchedule("an-app-id", activeSchedule)
 		})
 
+		BeforeEach(func() {
+			cfc.GetAppReturns(&models.AppEntity{}, nil)
+		})
+
 		It("Saves the active schedule to database", func() {
 			Expect(err).NotTo(HaveOccurred())
 			id, schedule := scalingEngineDB.SetActiveScheduleArgsForCall(0)
@@ -505,7 +534,7 @@ var _ = Describe("ScalingEngine", func() {
 
 		Context("when app instance number is greater than InstanceMax in active schedule", func() {
 			BeforeEach(func() {
-				cfc.GetAppInstancesReturns(12, nil)
+				cfc.GetAppReturns(&models.AppEntity{Instances: 12, State: &appState}, nil)
 			})
 
 			It("sets the app instances to be InstanceMax", func() {
@@ -535,7 +564,7 @@ var _ = Describe("ScalingEngine", func() {
 
 			Context("when app instance number is below the InstanceMin in active schedule", func() {
 				BeforeEach(func() {
-					cfc.GetAppInstancesReturns(1, nil)
+					cfc.GetAppReturns(&models.AppEntity{Instances: 1, State: &appState}, nil)
 				})
 
 				It("sets the app instances to be InstanceMin", func() {
@@ -561,7 +590,7 @@ var _ = Describe("ScalingEngine", func() {
 
 			Context("when app instance number is in the range of [InstanceMin, InstanceMax] in active schedule", func() {
 				BeforeEach(func() {
-					cfc.GetAppInstancesReturns(3, nil)
+					cfc.GetAppReturns(&models.AppEntity{Instances: 3, State: &appState}, nil)
 				})
 				It("does not change the instance number", func() {
 					Expect(err).NotTo(HaveOccurred())
@@ -583,7 +612,7 @@ var _ = Describe("ScalingEngine", func() {
 		Context("when initial min instance is set", func() {
 			Context("when app instance number is below the InstanceMinInitial in active schedule", func() {
 				BeforeEach(func() {
-					cfc.GetAppInstancesReturns(3, nil)
+					cfc.GetAppReturns(&models.AppEntity{Instances: 3, State: &appState}, nil)
 				})
 
 				It("sets the app instances to be InstanceMinInitial", func() {
@@ -609,7 +638,7 @@ var _ = Describe("ScalingEngine", func() {
 
 			Context("when app instance number is in the range of [InstanceMinInitial, InstanceMax] in active schedule", func() {
 				BeforeEach(func() {
-					cfc.GetAppInstancesReturns(6, nil)
+					cfc.GetAppReturns(&models.AppEntity{Instances: 6, State: &appState}, nil)
 				})
 				It("does not change the instance number", func() {
 					Expect(err).NotTo(HaveOccurred())
@@ -682,14 +711,14 @@ var _ = Describe("ScalingEngine", func() {
 			})
 		})
 
-		Context("when getting app instances fails", func() {
+		Context("when getting app info from cloud foundry fails", func() {
 			BeforeEach(func() {
-				cfc.GetAppInstancesReturns(0, errors.New("an error"))
+				cfc.GetAppReturns(nil, errors.New("an error"))
 			})
 
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
-				Eventually(buffer).Should(gbytes.Say("failed-to-get-app-instances"))
+				Eventually(buffer).Should(gbytes.Say("failed-to-get-app-info"))
 				Eventually(buffer).Should(gbytes.Say("an error"))
 
 				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
@@ -700,7 +729,7 @@ var _ = Describe("ScalingEngine", func() {
 					OldInstances: -1,
 					NewInstances: -1,
 					Reason:       "schedule starts with instance min 2, instance max 10 and instance min initial 5",
-					Error:        "failed to get app instances",
+					Error:        "failed to get app info",
 				}))
 
 			})
@@ -730,7 +759,6 @@ var _ = Describe("ScalingEngine", func() {
 
 			})
 		})
-
 	})
 
 	Describe("RemoveActiveSchedule", func() {
@@ -745,7 +773,7 @@ var _ = Describe("ScalingEngine", func() {
 		Context("when app instance number is in the default range [InstanceMin, InstianceMax] in the policy", func() {
 			BeforeEach(func() {
 				scalingEngineDB.GetActiveScheduleReturns(&models.ActiveSchedule{ScheduleId: "a-schedule-id"}, nil)
-				cfc.GetAppInstancesReturns(5, nil)
+				cfc.GetAppReturns(&models.AppEntity{Instances: 5, State: &appState}, nil)
 			})
 
 			It("does not change the instance number", func() {
@@ -765,7 +793,7 @@ var _ = Describe("ScalingEngine", func() {
 		Context("when app instance number is below the default InstanceMin in the policy", func() {
 			BeforeEach(func() {
 				scalingEngineDB.GetActiveScheduleReturns(&models.ActiveSchedule{ScheduleId: "a-schedule-id"}, nil)
-				cfc.GetAppInstancesReturns(1, nil)
+				cfc.GetAppReturns(&models.AppEntity{Instances: 1, State: &appState}, nil)
 			})
 
 			It("changes the instance number to InstanceMin", func() {
@@ -789,7 +817,7 @@ var _ = Describe("ScalingEngine", func() {
 		Context("when app instance number is greater than the default InstanaceMax in the policy", func() {
 			BeforeEach(func() {
 				scalingEngineDB.GetActiveScheduleReturns(&models.ActiveSchedule{ScheduleId: "a-schedule-id"}, nil)
-				cfc.GetAppInstancesReturns(8, nil)
+				cfc.GetAppReturns(&models.AppEntity{Instances: 8, State: &appState}, nil)
 			})
 
 			It("changes the instance number to instance-max-count", func() {
@@ -855,15 +883,15 @@ var _ = Describe("ScalingEngine", func() {
 
 		})
 
-		Context("when getting app instances fails", func() {
+		Context("when getting app info from cloud foundry fails", func() {
 			BeforeEach(func() {
 				scalingEngineDB.GetActiveScheduleReturns(&models.ActiveSchedule{ScheduleId: "a-schedule-id"}, nil)
-				cfc.GetAppInstancesReturns(0, errors.New("an error"))
+				cfc.GetAppReturns(nil, errors.New("an error"))
 			})
 
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
-				Eventually(buffer).Should(gbytes.Say("failed-to-get-app-instances"))
+				Eventually(buffer).Should(gbytes.Say("failed-to-get-app-info"))
 				Eventually(buffer).Should(gbytes.Say("an error"))
 
 				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
@@ -874,7 +902,7 @@ var _ = Describe("ScalingEngine", func() {
 					OldInstances: -1,
 					NewInstances: -1,
 					Reason:       "schedule ends",
-					Error:        "failed to get app instances",
+					Error:        "failed to get app info",
 				}))
 
 			})
@@ -883,6 +911,7 @@ var _ = Describe("ScalingEngine", func() {
 		Context("when getting app policy fails", func() {
 			BeforeEach(func() {
 				scalingEngineDB.GetActiveScheduleReturns(&models.ActiveSchedule{ScheduleId: "a-schedule-id"}, nil)
+				cfc.GetAppReturns(&models.AppEntity{Instances: 2, State: &appState}, nil)
 				policyDB.GetAppPolicyReturns(nil, errors.New("an error"))
 			})
 
@@ -896,7 +925,7 @@ var _ = Describe("ScalingEngine", func() {
 					Timestamp:    clock.Now().UnixNano(),
 					ScalingType:  models.ScalingTypeSchedule,
 					Status:       models.ScalingStatusFailed,
-					OldInstances: 0,
+					OldInstances: 2,
 					NewInstances: -1,
 					Reason:       "schedule ends",
 					Error:        "failed to get app policy",
@@ -908,6 +937,7 @@ var _ = Describe("ScalingEngine", func() {
 		Context("when no policy for app in policy db", func() {
 			BeforeEach(func() {
 				scalingEngineDB.GetActiveScheduleReturns(&models.ActiveSchedule{ScheduleId: "a-schedule-id"}, nil)
+				cfc.GetAppReturns(&models.AppEntity{Instances: 2, State: &appState}, nil)
 				policyDB.GetAppPolicyReturns(nil, nil)
 			})
 
@@ -921,6 +951,7 @@ var _ = Describe("ScalingEngine", func() {
 		Context("when setting instance number fails", func() {
 			BeforeEach(func() {
 				scalingEngineDB.GetActiveScheduleReturns(&models.ActiveSchedule{ScheduleId: "a-schedule-id"}, nil)
+				cfc.GetAppReturns(&models.AppEntity{Instances: 2, State: &appState}, nil)
 				cfc.SetAppInstancesReturns(errors.New("an error"))
 			})
 
@@ -934,7 +965,7 @@ var _ = Describe("ScalingEngine", func() {
 					Timestamp:    clock.Now().UnixNano(),
 					ScalingType:  models.ScalingTypeSchedule,
 					Status:       models.ScalingStatusFailed,
-					OldInstances: 0,
+					OldInstances: 2,
 					NewInstances: 3,
 					Reason:       "schedule ends",
 					Error:        "failed to set app instances",
