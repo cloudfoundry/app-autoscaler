@@ -24,8 +24,9 @@ var _ = Describe("App", func() {
 		cfc             CfClient
 		fakeCC          *ghttp.Server
 		fakeLoginServer *ghttp.Server
-		instances       int
 		err             error
+		appState        string
+		appEntity       *models.AppEntity
 	)
 
 	BeforeEach(func() {
@@ -56,25 +57,29 @@ var _ = Describe("App", func() {
 		}
 	})
 
-	Describe("GetAppInstances", func() {
+	Describe("GetAppEntity", func() {
 		JustBeforeEach(func() {
-			instances, err = cfc.GetAppInstances("test-app-id")
+			appEntity, err = cfc.GetApp("test-app-id")
 		})
 		Context("when get app summary succeeds", func() {
+			appState = "test_app_state"
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", PathApp+"/test-app-id"),
-						ghttp.RespondWithJSONEncoded(http.StatusOK, models.AppInfo{
-							models.AppEntity{Instances: 6},
-						}),
+						ghttp.VerifyRequest("GET", PathApp+"/test-app-id/summary"),
+						ghttp.RespondWithJSONEncoded(http.StatusOK,
+							models.AppEntity{
+								Instances: 6,
+								State:     &appState,
+							}),
 					),
 				)
 			})
 
 			It("returns correct instance number", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(instances).To(Equal(6))
+				Expect(appEntity.Instances).To(Equal(6))
+				Expect(*appEntity.State).To(Equal("test_app_state"))
 			})
 		})
 
@@ -88,7 +93,7 @@ var _ = Describe("App", func() {
 			})
 
 			It("should error", func() {
-				Expect(instances).To(Equal(-1))
+				Expect(appEntity).To(BeNil())
 				Expect(err).To(MatchError(MatchRegexp("failed getting application summary: *")))
 			})
 
@@ -101,7 +106,7 @@ var _ = Describe("App", func() {
 			})
 
 			It("should error", func() {
-				Expect(instances).To(Equal(-1))
+				Expect(appEntity).To(BeNil())
 				Expect(err).To(BeAssignableToTypeOf(&url.Error{}))
 				urlErr := err.(*url.Error)
 				Expect(urlErr.Err).To(BeAssignableToTypeOf(&net.OpError{}))
@@ -119,7 +124,7 @@ var _ = Describe("App", func() {
 			})
 
 			It("should error", func() {
-				Expect(instances).To(Equal(-1))
+				Expect(appEntity).To(BeNil())
 				Expect(err).To(BeAssignableToTypeOf(&json.UnmarshalTypeError{}))
 			})
 

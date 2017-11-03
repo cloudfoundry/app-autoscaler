@@ -17,14 +17,14 @@ const (
 	PathApp         = "/v2/apps"
 )
 
-func (c *cfClient) GetAppInstances(appId string) (int, error) {
-	url := c.conf.Api + path.Join(PathApp, appId)
+func (c *cfClient) GetApp(appId string) (*models.AppEntity, error) {
+	url := c.conf.Api + path.Join(PathApp, appId, "summary")
 	c.logger.Debug("get-app-instances", lager.Data{"url": url})
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		c.logger.Error("get-app-instances-new-request", err)
-		return -1, err
+		return nil, err
 	}
 	req.Header.Set("Authorization", TokenTypeBearer+" "+c.GetTokensWithRefresh().AccessToken)
 
@@ -33,35 +33,35 @@ func (c *cfClient) GetAppInstances(appId string) (int, error) {
 
 	if err != nil {
 		c.logger.Error("get-app-instances-do-request", err)
-		return -1, err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		err = fmt.Errorf("failed getting application summary: %s [%d] %s", url, resp.StatusCode, resp.Status)
 		c.logger.Error("get-app-instances-response", err)
-		return -1, err
+		return nil, err
 	}
 
-	appInfo := &models.AppInfo{}
-	err = json.NewDecoder(resp.Body).Decode(appInfo)
+	appEntity := &models.AppEntity{}
+	err = json.NewDecoder(resp.Body).Decode(appEntity)
 	if err != nil {
 		c.logger.Error("get-app-instances-decode", err)
-		return -1, err
+		return nil, err
 	}
-	return appInfo.Entity.Instances, nil
+	return appEntity, nil
 }
 
 func (c *cfClient) SetAppInstances(appId string, num int) error {
 	url := c.conf.Api + path.Join(PathApp, appId)
 	c.logger.Debug("set-app-instances", lager.Data{"url": url})
 
-	entity := models.AppEntity{
+	appEntity := models.AppEntity{
 		Instances: num,
 	}
-	body, err := json.Marshal(entity)
+	body, err := json.Marshal(appEntity)
 	if err != nil {
-		c.logger.Error("set-app-instances-marshal", err, lager.Data{"appid": appId, "entity": entity})
+		c.logger.Error("set-app-instances-marshal", err, lager.Data{"appid": appId, "appEntity": appEntity})
 		return err
 	}
 

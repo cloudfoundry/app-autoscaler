@@ -3,6 +3,7 @@ package fakes
 
 import (
 	"autoscaler/cf"
+	"autoscaler/models"
 	"sync"
 )
 
@@ -54,17 +55,17 @@ type FakeCfClient struct {
 	getEndpointsReturnsOnCall map[int]struct {
 		result1 cf.Endpoints
 	}
-	GetAppInstancesStub        func(string) (int, error)
-	getAppInstancesMutex       sync.RWMutex
-	getAppInstancesArgsForCall []struct {
+	GetAppStub        func(string) (*models.AppEntity, error)
+	getAppMutex       sync.RWMutex
+	getAppArgsForCall []struct {
 		arg1 string
 	}
-	getAppInstancesReturns struct {
-		result1 int
+	getAppReturns struct {
+		result1 *models.AppEntity
 		result2 error
 	}
-	getAppInstancesReturnsOnCall map[int]struct {
-		result1 int
+	getAppReturnsOnCall map[int]struct {
+		result1 *models.AppEntity
 		result2 error
 	}
 	SetAppInstancesStub        func(string, int) error
@@ -286,53 +287,53 @@ func (fake *FakeCfClient) GetEndpointsReturnsOnCall(i int, result1 cf.Endpoints)
 	}{result1}
 }
 
-func (fake *FakeCfClient) GetAppInstances(arg1 string) (int, error) {
-	fake.getAppInstancesMutex.Lock()
-	ret, specificReturn := fake.getAppInstancesReturnsOnCall[len(fake.getAppInstancesArgsForCall)]
-	fake.getAppInstancesArgsForCall = append(fake.getAppInstancesArgsForCall, struct {
+func (fake *FakeCfClient) GetApp(arg1 string) (*models.AppEntity, error) {
+	fake.getAppMutex.Lock()
+	ret, specificReturn := fake.getAppReturnsOnCall[len(fake.getAppArgsForCall)]
+	fake.getAppArgsForCall = append(fake.getAppArgsForCall, struct {
 		arg1 string
 	}{arg1})
-	fake.recordInvocation("GetAppInstances", []interface{}{arg1})
-	fake.getAppInstancesMutex.Unlock()
-	if fake.GetAppInstancesStub != nil {
-		return fake.GetAppInstancesStub(arg1)
+	fake.recordInvocation("GetApp", []interface{}{arg1})
+	fake.getAppMutex.Unlock()
+	if fake.GetAppStub != nil {
+		return fake.GetAppStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	return fake.getAppInstancesReturns.result1, fake.getAppInstancesReturns.result2
+	return fake.getAppReturns.result1, fake.getAppReturns.result2
 }
 
-func (fake *FakeCfClient) GetAppInstancesCallCount() int {
-	fake.getAppInstancesMutex.RLock()
-	defer fake.getAppInstancesMutex.RUnlock()
-	return len(fake.getAppInstancesArgsForCall)
+func (fake *FakeCfClient) GetAppCallCount() int {
+	fake.getAppMutex.RLock()
+	defer fake.getAppMutex.RUnlock()
+	return len(fake.getAppArgsForCall)
 }
 
-func (fake *FakeCfClient) GetAppInstancesArgsForCall(i int) string {
-	fake.getAppInstancesMutex.RLock()
-	defer fake.getAppInstancesMutex.RUnlock()
-	return fake.getAppInstancesArgsForCall[i].arg1
+func (fake *FakeCfClient) GetAppArgsForCall(i int) string {
+	fake.getAppMutex.RLock()
+	defer fake.getAppMutex.RUnlock()
+	return fake.getAppArgsForCall[i].arg1
 }
 
-func (fake *FakeCfClient) GetAppInstancesReturns(result1 int, result2 error) {
-	fake.GetAppInstancesStub = nil
-	fake.getAppInstancesReturns = struct {
-		result1 int
+func (fake *FakeCfClient) GetAppReturns(result1 *models.AppEntity, result2 error) {
+	fake.GetAppStub = nil
+	fake.getAppReturns = struct {
+		result1 *models.AppEntity
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeCfClient) GetAppInstancesReturnsOnCall(i int, result1 int, result2 error) {
-	fake.GetAppInstancesStub = nil
-	if fake.getAppInstancesReturnsOnCall == nil {
-		fake.getAppInstancesReturnsOnCall = make(map[int]struct {
-			result1 int
+func (fake *FakeCfClient) GetAppReturnsOnCall(i int, result1 *models.AppEntity, result2 error) {
+	fake.GetAppStub = nil
+	if fake.getAppReturnsOnCall == nil {
+		fake.getAppReturnsOnCall = make(map[int]struct {
+			result1 *models.AppEntity
 			result2 error
 		})
 	}
-	fake.getAppInstancesReturnsOnCall[i] = struct {
-		result1 int
+	fake.getAppReturnsOnCall[i] = struct {
+		result1 *models.AppEntity
 		result2 error
 	}{result1, result2}
 }
@@ -399,8 +400,8 @@ func (fake *FakeCfClient) Invocations() map[string][][]interface{} {
 	defer fake.getTokensWithRefreshMutex.RUnlock()
 	fake.getEndpointsMutex.RLock()
 	defer fake.getEndpointsMutex.RUnlock()
-	fake.getAppInstancesMutex.RLock()
-	defer fake.getAppInstancesMutex.RUnlock()
+	fake.getAppMutex.RLock()
+	defer fake.getAppMutex.RUnlock()
 	fake.setAppInstancesMutex.RLock()
 	defer fake.setAppInstancesMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
