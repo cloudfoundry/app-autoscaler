@@ -5,6 +5,7 @@ module.exports = function(configFilePath) {
   var fs = require('fs');
   var path = require('path');
   var express = require('express');
+  var helmet = require('helmet')
   var bodyParser = require('body-parser');
   var logger = require('./lib/log/logger');
   var HttpStatus = require('http-status-codes');
@@ -71,6 +72,15 @@ module.exports = function(configFilePath) {
   }
 
   var app = express();
+  app.use(helmet())
+  app.use(helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc : ['\'self\'' ],
+      scriptSrc : [ '\'self\''],
+    },
+    browserSniff: false
+  }))
+  app.use(helmet.noCache())
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: false }));
   app.use('/health', require('express-healthcheck')());
@@ -93,6 +103,15 @@ module.exports = function(configFilePath) {
   });
 
   var publicApp = express();
+  publicApp.use(helmet())
+  publicApp.use(helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc : ['\'self\'' ],
+      scriptSrc : [ '\'self\''],
+    },
+    browserSniff: false
+  }))
+  publicApp.use(helmet.noCache())
   publicApp.use(bodyParser.json());
   publicApp.use(bodyParser.urlencoded({ extended: false }));
   publicApp.use('/v1/apps/:app_id/*',function(req, res, next){
