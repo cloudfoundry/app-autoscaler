@@ -55,6 +55,29 @@ describe('Routing Policy Creation', function() {
     });
   });
 
+  it('dummy call to test CSP response headers', function(done) {
+    nock(schedulerURI)
+    .put('/v2/schedules/12344')
+    .query({'guid':/.*/})
+    .reply(200);
+    request(app)
+    .put('/v1/apps/12344/policy')
+    .send(fakePolicy)
+    .end(function(error,result) {
+      expect(result.statusCode).to.equal(201);
+      expect(result.headers.location).exist;
+      expect(result.headers.location).to.be.equal('/v1/apps/12344/policy');
+      expect(result.body.success).to.equal(true);
+      expect(result.body.error).to.be.null;
+      expect(result.body.result.policy_json).eql(fakePolicy);
+      expect(result.body.result.guid).to.not.be.null;
+      expect(result.headers).to.have.deep.property('content-security-policy', 'default-src \'self\'; script-src \'self\'');
+      expect(result.headers).to.have.deep.property('x-content-type-options','nosniff')
+      expect(result.headers).to.have.deep.property('cache-control','no-store, no-cache, must-revalidate, proxy-revalidate')
+      done();
+    });
+  });
+
   it('should fail to create a policy for validation error in scheduler for app id 12346', function(done) {
     nock(schedulerURI)
     .put('/v2/schedules/12346')
