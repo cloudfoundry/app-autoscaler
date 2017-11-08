@@ -131,7 +131,14 @@ func initLoggerFromConfig(conf *config.LoggingConfig) lager.Logger {
 		os.Exit(1)
 	}
 	logger := lager.NewLogger("pruner")
-	logger.RegisterSink(lager.NewWriterSink(os.Stdout, logLevel))
+
+	keyPatterns := []string{"[Pp]wd", "[Pp]ass", "[Ss]ecret", "[Tt]oken", "dbur[il]"}
+
+	redactedSink, err := lager.NewRedactingWriterSink(os.Stdout, logLevel, keyPatterns, nil)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed to create redacted sink", err.Error())
+	}
+	logger.RegisterSink(redactedSink)
 
 	return logger
 }
