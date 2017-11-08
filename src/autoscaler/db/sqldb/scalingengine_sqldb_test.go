@@ -30,6 +30,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 		activeSchedule *models.ActiveSchedule
 		schedules      map[string]string
 		before         int64
+		includeAll     bool
 	)
 
 	BeforeEach(func() {
@@ -150,6 +151,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 			end = -1
 			appId = "an-app-id"
 			orderType = db.DESC
+			includeAll = true
 		})
 
 		AfterEach(func() {
@@ -194,7 +196,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 			err = sdb.SaveScalingHistory(history)
 			Expect(err).NotTo(HaveOccurred())
 
-			histories, err = sdb.RetrieveScalingHistories(appId, start, end, orderType)
+			histories, err = sdb.RetrieveScalingHistories(appId, start, end, orderType, includeAll)
 		})
 
 		Context("When the app has no hisotry", func() {
@@ -376,7 +378,6 @@ var _ = Describe("ScalingEngineSqldb", func() {
 			It("return correct histories", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(histories).To(Equal([]*models.AppScalingHistory{
-
 					&models.AppScalingHistory{
 						AppId:        "an-app-id",
 						Timestamp:    555555,
@@ -400,6 +401,49 @@ var _ = Describe("ScalingEngineSqldb", func() {
 
 			})
 
+		})
+
+		Context("when only retrieving succeeded and failed history", func() {
+			BeforeEach(func() {
+				includeAll = false
+			})
+
+			It("skips ingored scaling history", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(histories).To(Equal([]*models.AppScalingHistory{
+					&models.AppScalingHistory{
+						AppId:        "an-app-id",
+						Timestamp:    666666,
+						ScalingType:  models.ScalingTypeDynamic,
+						Status:       models.ScalingStatusSucceeded,
+						OldInstances: 2,
+						NewInstances: 4,
+						Reason:       "a reason",
+						Message:      "a message",
+					},
+					&models.AppScalingHistory{
+						AppId:        "an-app-id",
+						Timestamp:    555555,
+						ScalingType:  models.ScalingTypeSchedule,
+						Status:       models.ScalingStatusFailed,
+						OldInstances: 2,
+						NewInstances: 4,
+						Reason:       "a reason",
+						Message:      "a message",
+						Error:        "an error",
+					},
+					&models.AppScalingHistory{
+						AppId:        "an-app-id",
+						Timestamp:    222222,
+						ScalingType:  models.ScalingTypeDynamic,
+						Status:       models.ScalingStatusFailed,
+						OldInstances: 2,
+						NewInstances: 4,
+						Reason:       "a reason",
+						Message:      "a message",
+						Error:        "an error",
+					}}))
+			})
 		})
 	})
 
