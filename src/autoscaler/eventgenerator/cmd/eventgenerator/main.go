@@ -1,6 +1,7 @@
 package main
 
 import (
+	utils "autoscaler/commons"
 	"autoscaler/db"
 	"autoscaler/db/sqldb"
 	"autoscaler/eventgenerator"
@@ -22,7 +23,6 @@ import (
 	"code.cloudfoundry.org/lager"
 	"code.cloudfoundry.org/locket"
 	"github.com/hashicorp/consul/api"
-	uuid "github.com/nu7hatch/gouuid"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
@@ -113,15 +113,14 @@ func main() {
 		{"eventGenerator", eventGenerator},
 	}
 
-	guid, err := generateGUID(logger)
+	guid, err := utils.GenerateGUID(logger)
 	if err != nil {
 		logger.Error("failed-to-generate-guid", err)
 	}
-
+	const lockTableName = "eg_lock"
 	if conf.EnableDBLock {
 		logger.Debug("database-lock-feature-enabled")
 		var lockDB db.LockDB
-		var lockTableName = "eg_lock"
 		lockDB, err = sqldb.NewLockSQLDB(conf.DBLock.LockDBURL, lockTableName, logger.Session("lock-db"))
 		if err != nil {
 			logger.Error("failed-to-connect-lock-database", err, lager.Data{"url": conf.DBLock.LockDBURL})
@@ -281,13 +280,4 @@ func initializeRegistrationRunner(
 		},
 	}
 	return locket.NewRegistrationRunner(logger, registration, consulClient, locket.RetryInterval, clock)
-}
-
-func generateGUID(logger lager.Logger) (string, error) {
-	guid, err := uuid.NewV4()
-	if err != nil {
-		logger.Fatal("Couldn't generate uuid", err)
-		return "", err
-	}
-	return guid.String(), nil
 }
