@@ -442,7 +442,7 @@ Body
 +--------------------------------------+------------------------+---------+----------------------------------------------------+
 
 
-**Dynamic Scaling Rules Definition ``scaling_rules`` (part of the ``Policy`` configuration) :**
+**Dynamic Scaling Rules Definition "scaling_rules" (part of the "Policy" configuration) :**
 
 +--------------------------------------+------------------------+---------+----------------------------------------------------+
 | Name                                 | Type                   | Required|Description                                         |
@@ -461,7 +461,7 @@ Body
 +--------------------------------------+------------------------+---------+----------------------------------------------------+
 
 
-**Schedule Definition ``schedules`` (part of the ``Policy`` configuration) :**
+**Schedule Definition "schedules" (part of the "Policy" configuration) :**
 
 +--------------------------------------+---------------------------+---------+-----------------------------------------------------------------+
 | Name                                 | Type                      | Required|Description                                                      |
@@ -474,7 +474,7 @@ Body
 | specific_date                        | Array<specific_date>      | false   |the schedules which take effect only once                        |
 +--------------------------------------+---------------------------+---------+-----------------------------------------------------------------+
 
-**Recurring Schedule Definition  ``recurring_schedule`` (part of the ``schedules`` configuration) :**
+**Recurring Schedule Definition "recurring_schedule" (part of the "schedules" configuration) :**
 
 +--------------------------------------+---------------------+---------+-----------------------------------------------------------------------------------------+
 | Name                                 | Type                | Required| Description                                                                             |
@@ -496,7 +496,7 @@ Body
 | initial_min_instance_count           |int                  | true    | the initial minimal number of instance count for this schedule                          |
 +--------------------------------------+---------------------+---------+-----------------------------------------------------------------------------------------+
 
-**Specific Date Definition  ``specific_date`` (part of the ``schedules`` configuration) :**
+**Specific Date Definition "specific_date" (part of the "schedules" configuration) :**
 
 +--------------------------------------+----------------------------+---------+-----------------------------------------------------------------+
 | Name                                 | Type                       | Required| Description                                                     |
