@@ -13,6 +13,7 @@ describe('config setting Test Suite', function() {
       "port": 8080,
       "publicPort": 8081,
       "cfApi": "api.bosh-lite.com",
+      "rejectUnauthorized": true,
       "db": {
         "maxConnections": 10,
         "minConnections": 0,
@@ -65,7 +66,7 @@ describe('config setting Test Suite', function() {
     expect(settings.publicPort).to.equal(defaultConfig.publicPort);
 
     expect(settings.cfApi).to.equal("https://" + defaultConfig.cfApi.toLowerCase());
-
+    expect(settings.rejectUnauthorized).to.equal(true);
     expect(settings.db.maxConnections).to.equal(defaultConfig.db.maxConnections);
     expect(settings.db.minConnections).to.equal(defaultConfig.db.minConnections);
     expect(settings.db.idleTimeout).to.equal(defaultConfig.db.idleTimeout);
@@ -173,6 +174,30 @@ describe('config setting Test Suite', function() {
           settings.port = 3002;
           expect(settings.validate().valid).to.equal(false);
           expect(settings.validate().message).to.equal("internal api port and public api port should be different");
+        })
+      });
+    });
+
+    context('Validate rejectUnauthorized', function() {
+      context('When rejectUnauthorized is null', function() {
+        it('Should return false', function() {
+          settings.rejectUnauthorized = null;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal('rejectUnauthorized is required');
+        })
+      });
+      context('When rejectUnauthorized is undefined', function() {
+        it('Should return false', function() {
+          delete settings.rejectUnauthorized;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal('rejectUnauthorized is required');
+        })
+      });
+      context('When rejectUnauthorized is not a boolean', function() {
+        it('Should return false', function() {
+          settings.rejectUnauthorized = "12345";
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal('rejectUnauthorized must be a boolean');
         })
       });
     });
