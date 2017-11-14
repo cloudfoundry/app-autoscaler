@@ -2,7 +2,7 @@
   "port": 8080,
   "publicPort": 8088,
   "cfApi": "https://api.bosh-lite.com",
-  "rejectUnauthorized": true,
+  "skipSSLValidation": false,
   "db": {
     "maxConnections": 10,
     "minConnections": 0,

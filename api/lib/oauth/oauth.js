@@ -31,7 +31,7 @@ module.exports = function(configFilePath) {
           method: "GET",
           json: true,
           timeout: 10000,
-          rejectUnauthorized: settings.rejectUnauthorized,
+          rejectUnauthorized: !settings.skipSSLValidation,
           headers: {
             "Authorization": userToken,
             "Content-Type": "application/json"
@@ -80,7 +80,7 @@ module.exports = function(configFilePath) {
       method: "GET",
       json: true,
       timeout: 10000,
-      rejectUnauthorized: settings.rejectUnauthorized,
+      rejectUnauthorized: !settings.skipSSLValidation,
     };
     request(options, function(error, response, body) {
       if (error) {
@@ -108,7 +108,7 @@ module.exports = function(configFilePath) {
       method: "GET",
       json: true,
       timeout: 10000,
-      rejectUnauthorized: settings.rejectUnauthorized,
+      rejectUnauthorized: !settings.skipSSLValidation,
       headers: {
         "Authorization": userToken,
         "Content-Type": "application/json"
