@@ -33,6 +33,7 @@ module.exports = function(settingsObj) {
   var settings = {
     port: settingsObj.port,
     cfApi: addProtocol(cleanUpUri(settingsObj.cfApi)),
+    skipSSLValidation: settingsObj.skipSSLValidation,
     publicPort: settingsObj.publicPort,
     scheduler: settingsObj.scheduler,
     scalingEngine: settingsObj.scalingEngine,
@@ -64,6 +65,10 @@ module.exports = function(settingsObj) {
   var isObject = function(value){
     return typeof(value) === "object";
   }
+  var isBoolean = function(value){
+    return typeof(value) === "boolean";
+  }
+
   settings.validate = function(){
     if (isMissing(settings.port)){
       return{valid:false, message:"port is required"}
@@ -92,6 +97,12 @@ module.exports = function(settingsObj) {
     }
     if (!isString(settings.cfApi)) {
       return {valid:false,message:"cfApi must be a string"};
+    }
+    if (isMissing(settings.skipSSLValidation)){
+      return{valid:false, message:'skipSSLValidation is required'};
+    }
+    if (!isBoolean(settings.skipSSLValidation)) {
+      return {valid:false,message:'skipSSLValidation must be a boolean'};
     }
     if (isMissing(settings.db.maxConnections)){
       return {valid:false,message:"db.maxConnections is required"};
