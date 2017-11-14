@@ -69,6 +69,7 @@ cf:
   password: admin
   client_id: client-id
   secret: client-secret
+  skip_ssl_validation: false
 server:
   port: 8989
   tls:
@@ -98,6 +99,7 @@ defaultCoolDownSecs: 300
 				Expect(conf.Cf.Password).To(Equal("admin"))
 				Expect(conf.Cf.ClientId).To(Equal("client-id"))
 				Expect(conf.Cf.Secret).To(Equal("client-secret"))
+				Expect(conf.Cf.SkipSSLValidation).To(Equal(false))
 
 				Expect(conf.Server.Port).To(Equal(8989))
 				Expect(conf.Server.TLS.KeyFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/server.key"))
@@ -135,6 +137,7 @@ defaultCoolDownSecs: 300
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(conf.Cf.GrantType).To(Equal(cf.GrantTypePassword))
+				Expect(conf.Cf.SkipSSLValidation).To(Equal(false))
 				Expect(conf.Server.Port).To(Equal(8080))
 				Expect(conf.Logging.Level).To(Equal("info"))
 				Expect(conf.Synchronizer.ActiveScheduleSyncInterval).To(Equal(DefaultActiveScheduleSyncInterval))
@@ -148,6 +151,7 @@ defaultCoolDownSecs: 300
 			conf = &Config{}
 			conf.Cf.Api = "http://api.example.com"
 			conf.Cf.GrantType = cf.GrantTypePassword
+			conf.Cf.SkipSSLValidation = false
 			conf.Cf.Username = "admin"
 			conf.Db.PolicyDbUrl = "test-policy-db-url"
 			conf.Db.ScalingEngineDbUrl = "test-scalingengine-db-url"

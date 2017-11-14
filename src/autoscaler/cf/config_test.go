@@ -21,6 +21,7 @@ var _ = Describe("Config", func() {
 			conf.GrantType = GrantTypePassword
 			conf.Username = "admin"
 			conf.ClientId = "admin"
+			conf.SkipSSLValidation = false
 		})
 
 		JustBeforeEach(func() {
@@ -34,6 +35,23 @@ var _ = Describe("Config", func() {
 
 			It("should error", func() {
 				Expect(err).To(MatchError("Configuration error: cf api is empty"))
+			})
+		})
+		Context("when SkipSSLValidation is not set", func() {
+			It("should set SkipSSLValidation to default false value", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(conf.SkipSSLValidation).To(Equal(false))
+			})
+		})
+
+		Context("when SkipSSLValidation is set", func() {
+			BeforeEach(func() {
+				conf.SkipSSLValidation = true
+			})
+
+			It("should not error", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(conf.SkipSSLValidation).To(Equal(true))
 			})
 		})
 
