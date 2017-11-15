@@ -39,7 +39,8 @@ module.exports = function(settingsObj) {
     scalingEngine: settingsObj.scalingEngine,
     metricsCollector: settingsObj.metricsCollector,
     tls: settingsObj.tls,
-    publicTls: settingsObj.publicTls
+    publicTls: settingsObj.publicTls,
+    infoFilePath: settingsObj.infoFilePath
   };
   if (settingsObj.db) {
     var dbObj = db(settingsObj.db.uri);
@@ -91,6 +92,12 @@ module.exports = function(settingsObj) {
     }
     if (settings.port == settings.publicPort){
       return {valid:false,message:"internal api port and public api port should be different"}
+    }
+    if (isMissing(settings.infoFilePath)){
+      return{valid:false, message:"infoFilePath is required"}
+    }
+    if (!isString(settings.infoFilePath)) {
+      return {valid:false,message:"infoFilePath must be a string"};
     }
     if (isMissing(settings.cfApi)){
       return{valid:false, message:"cfApi is required"}

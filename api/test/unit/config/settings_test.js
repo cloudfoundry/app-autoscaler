@@ -12,6 +12,7 @@ describe('config setting Test Suite', function() {
     defaultConfigTemplate = {
       "port": 8080,
       "publicPort": 8081,
+      "infoFilePath": "../api/config/info.json",
       "cfApi": "api.bosh-lite.com",
       "skipSSLValidation": false,
       "db": {
