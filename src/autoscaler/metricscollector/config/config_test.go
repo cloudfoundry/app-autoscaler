@@ -81,6 +81,7 @@ cf:
   password: admin
   client_id: client-id
   secret: client-secret
+  skip_ssl_validation: false
 server:
   port: 8989
   tls:
@@ -118,6 +119,7 @@ db_lock:
 				Expect(conf.Cf.Password).To(Equal("admin"))
 				Expect(conf.Cf.ClientId).To(Equal("client-id"))
 				Expect(conf.Cf.Secret).To(Equal("client-secret"))
+				Expect(conf.Cf.SkipSSLValidation).To(Equal(false))
 
 				Expect(conf.Server.Port).To(Equal(8989))
 
@@ -160,6 +162,7 @@ db:
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(conf.Cf.GrantType).To(Equal(cf.GrantTypePassword))
+				Expect(conf.Cf.SkipSSLValidation).To(Equal(false))
 				Expect(conf.Server.Port).To(Equal(8080))
 				Expect(conf.Logging.Level).To(Equal(DefaultLoggingLevel))
 				Expect(conf.Collector.RefreshInterval).To(Equal(DefaultRefreshInterval))
@@ -181,6 +184,7 @@ db:
 			conf.Cf.Api = "http://api.example.com"
 			conf.Cf.GrantType = cf.GrantTypePassword
 			conf.Cf.Username = "admin"
+			conf.Cf.SkipSSLValidation = false
 			conf.Db.PolicyDbUrl = "postgres://pqgotest:password@exampl.com/pqgotest"
 			conf.Db.InstanceMetricsDbUrl = "postgres://pqgotest:password@exampl.com/pqgotest"
 			conf.Lock.ConsulClusterConfig = "http://127.0.0.1:8500"

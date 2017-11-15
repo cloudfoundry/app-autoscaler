@@ -73,7 +73,7 @@ func main() {
 
 	dopplerUrl := cfClient.GetEndpoints().DopplerEndpoint
 	logger.Info("create-noaa-client", map[string]interface{}{"dopplerUrl": dopplerUrl})
-	tlsConfig := &tls.Config{InsecureSkipVerify: true}
+	tlsConfig := &tls.Config{InsecureSkipVerify: conf.Cf.SkipSSLValidation}
 	noaa := consumer.New(dopplerUrl, tlsConfig, nil)
 	noaa.RefreshTokenFrom(cfClient)
 

@@ -16,7 +16,8 @@ import (
 const DefaultActiveScheduleSyncInterval time.Duration = 10 * time.Minute
 
 var defaultCfConfig = cf.CfConfig{
-	GrantType: cf.GrantTypePassword,
+	GrantType:         cf.GrantTypePassword,
+	SkipSSLValidation: false,
 }
 
 type ServerConfig struct {
