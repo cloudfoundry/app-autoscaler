@@ -88,7 +88,7 @@ func NewCfClient(conf *CfConfig, logger lager.Logger, clk clock.Clock) CfClient 
 	}
 
 	c.httpClient = cfhttp.NewClient()
-	c.httpClient.Transport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	c.httpClient.Transport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: conf.SkipSSLValidation}
 
 	c.lock = &sync.Mutex{}
 

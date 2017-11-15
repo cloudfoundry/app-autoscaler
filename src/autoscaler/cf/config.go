@@ -13,6 +13,7 @@ type CfConfig struct {
 	Password  string `yaml:"password"`
 	ClientId  string `yaml:"client_id"`
 	Secret    string `yaml:"secret"`
+	SkipSSLValidation bool `yaml:"skip_ssl_validation"`
 }
 
 func (conf *CfConfig) Validate() error {
