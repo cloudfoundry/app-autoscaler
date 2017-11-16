@@ -8,9 +8,9 @@ module.exports = function(settings) {
 
   var router = express.Router();
   var infoFilePath = path.resolve(settings.infoFilePath);
-  var catalog = JSON.parse(fs.readFileSync(infoFilePath, 'utf8'));
+  var info = JSON.parse(fs.readFileSync(infoFilePath, 'utf8'));
   router.get("/info", function(req, resp) {
-  	resp.status(HttpStatus.OK).json(catalog);
+  	resp.status(HttpStatus.OK).json(info);
   });
   return router;
 }

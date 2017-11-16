@@ -11,7 +11,7 @@ var API = require("../../../app.js");
 var app;
 var publicApp;
 var servers;
-
+var info = JSON.parse(fs.readFileSync(path.join(__dirname, '../../../config/info.json'), 'utf8'));
 describe("Routing info", function() {
 
   before(function() {
@@ -35,12 +35,7 @@ describe("Routing info", function() {
             expect(error).to.equal(null);
             console.log(result.body)
             expect(result.statusCode).to.equal(200);
-            expect(result.body).to.deep.equal({
-              "name": "autoscaler",
-              "build": "001",
-              "support": "https://github.com/cloudfoundry-incubator/app-autoscaler",
-              "description": "Automatically increase or decrease the number of application instances based on a policy you define."
-            });
+            expect(JSON.stringify(result.body)).to.be.equal(JSON.stringify(info));
             done();
           });
       });
