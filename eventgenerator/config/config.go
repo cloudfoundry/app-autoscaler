@@ -23,6 +23,8 @@ const (
 	DefaultTriggerArrayChannelSize   int           = 200
 	DefaultLockTTL                   time.Duration = locket.DefaultSessionTTL
 	DefaultRetryInterval             time.Duration = locket.RetryInterval
+	DefaultDBLockRetryInterval       time.Duration = 5 * time.Second
+	DefaultDBLockTTL                 time.Duration = 15 * time.Second
 )
 
 type LoggingConfig struct {
@@ -63,6 +65,17 @@ type LockConfig struct {
 	ConsulClusterConfig string        `yaml:"consul_cluster_config"`
 }
 
+type DBLockConfig struct {
+	LockTTL           time.Duration `yaml:"ttl"`
+	LockDBURL         string        `yaml:"url"`
+	LockRetryInterval time.Duration `yaml:"retry_interval"`
+}
+
+var defaultDBLockConfig = DBLockConfig{
+	LockTTL:           DefaultDBLockTTL,
+	LockRetryInterval: DefaultDBLockRetryInterval,
+}
+
 type Config struct {
 	Logging                   LoggingConfig         `yaml:"logging"`
 	DB                        DBConfig              `yaml:"db"`
@@ -73,6 +86,8 @@ type Config struct {
 	Lock                      LockConfig            `yaml:"lock"`
 	DefaultStatWindowSecs     int                   `yaml:"defaultStatWindowSecs"`
 	DefaultBreachDurationSecs int                   `yaml:"defaultBreachDurationSecs"`
+	DBLock                    DBLockConfig          `yaml:"db_lock"`
+	EnableDBLock              bool                  `yaml:"enable_db_lock"`
 }
 
 func LoadConfig(bytes []byte) (*Config, error) {
@@ -95,6 +110,8 @@ func LoadConfig(bytes []byte) (*Config, error) {
 			LockRetryInterval: DefaultRetryInterval,
 			LockTTL:           DefaultLockTTL,
 		},
+		DBLock:       defaultDBLockConfig,
+		EnableDBLock: false,
 	}
 	err := yaml.Unmarshal(bytes, &conf)
 	if err != nil {
@@ -149,6 +166,9 @@ func (c *Config) Validate() error {
 	}
 	if c.DefaultStatWindowSecs < 60 || c.DefaultStatWindowSecs > 3600 {
 		return fmt.Errorf("Configuration error: defaultStatWindowSecs should be between 60 and 3600")
+	}
+	if c.EnableDBLock && c.DBLock.LockDBURL == "" {
+		return fmt.Errorf("Configuration error: Lock DB URL is empty")
 	}
 	return nil
 

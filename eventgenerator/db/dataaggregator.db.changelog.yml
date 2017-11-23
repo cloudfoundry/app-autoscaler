@@ -31,3 +31,26 @@ databaseChangeLog:
                   type: varchar
                   constraints:
                     nullable: true
+  - changeSet:
+        id: 2
+        author: paltanmoy
+        changes:
+          - createTable:
+              tableName: eg_lock
+              columns:
+                - column:
+                    name: owner
+                    type: varchar(255)
+                    constraints:
+                      primaryKey: true
+                - column:
+                    name: lock_timestamp
+                    type: timestamp
+                    constraints:
+                      nullable: false
+                - column:
+                    name: ttl
+                    type: bigint
+                    defaultValue: 0
+                    constraints:
+                      nullable: false

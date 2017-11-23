@@ -34,7 +34,7 @@ var (
 
 	regPath         = regexp.MustCompile(`^/v1/apps/.*/scale$`)
 	configFile      *os.File
-	conf            *config.Config
+	conf            config.Config
 	metricCollector *ghttp.Server
 	scalingEngine   *ghttp.Server
 	consulRunner    *consulrunner.ClusterRunner
@@ -181,7 +181,7 @@ func initHttpEndPoints() {
 
 func initConfig() {
 	testCertDir := "../../../../../test-certs"
-	conf = &config.Config{
+	conf = config.Config{
 		Logging: config.LoggingConfig{
 			Level: "debug",
 		},
@@ -221,10 +221,16 @@ func initConfig() {
 			LockTTL:             locket.DefaultSessionTTL,
 			ConsulClusterConfig: consulRunner.ConsulCluster(),
 		},
+		DBLock: config.DBLockConfig{
+			LockDBURL:         os.Getenv("DBURL"),
+			LockTTL:           15 * time.Second,
+			LockRetryInterval: 5 * time.Second,
+		},
+		EnableDBLock:              false,
 		DefaultBreachDurationSecs: 600,
 		DefaultStatWindowSecs:     300,
 	}
-	configFile = writeConfig(conf)
+	configFile = writeConfig(&conf)
 }
 
 func writeConfig(c *config.Config) *os.File {
@@ -281,4 +287,12 @@ func (eg *EventGeneratorRunner) KillWithFire() {
 	if eg.Session != nil {
 		eg.Session.Kill().Wait(5 * time.Second)
 	}
+}
+
+func (mc *EventGeneratorRunner) ClearLockDatabase() {
+	lockDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = lockDB.Exec("DELETE FROM eg_lock")
+	Expect(err).NotTo(HaveOccurred())
 }
