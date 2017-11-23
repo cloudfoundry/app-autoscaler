@@ -12,6 +12,7 @@ describe('config setting Test Suite', function() {
     defaultConfigTemplate = {
       "port": 8080,
       "publicPort": 8081,
+      "infoFilePath": "../api/config/info.json",
       "cfApi": "api.bosh-lite.com",
       "skipSSLValidation": false,
       "db": {
@@ -66,6 +67,7 @@ describe('config setting Test Suite', function() {
     expect(settings.publicPort).to.equal(defaultConfig.publicPort);
 
     expect(settings.cfApi).to.equal("https://" + defaultConfig.cfApi.toLowerCase());
+    expect(settings.infoFilePath).to.equal(defaultConfig.infoFilePath);
     expect(settings.skipSSLValidation).to.equal(false);
     expect(settings.db.maxConnections).to.equal(defaultConfig.db.maxConnections);
     expect(settings.db.minConnections).to.equal(defaultConfig.db.minConnections);
@@ -198,6 +200,30 @@ describe('config setting Test Suite', function() {
           settings.skipSSLValidation = "12345";
           expect(settings.validate().valid).to.equal(false);
           expect(settings.validate().message).to.equal('skipSSLValidation must be a boolean');
+        })
+      });
+    });
+
+    context('Validate infoFilePath', function() {
+      context('When infoFilePath is null', function() {
+        it('Should return false', function() {
+          settings.infoFilePath = null;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("infoFilePath is required");
+        })
+      });
+      context('When infoFilePath is undefined', function() {
+        it('Should return false', function() {
+          delete settings.infoFilePath;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("infoFilePath is required");
+        })
+      });
+      context('When infoFilePath is not a string', function() {
+        it('Should return false', function() {
+          settings.infoFilePath = 12345;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("infoFilePath must be a string");
         })
       });
     });
