@@ -35,6 +35,7 @@ const (
 var testCertDir string = "../../test-certs"
 
 var serviceCatalogPath string = "../../servicebroker/config/catalog.json"
+var apiServerInfoFilePath string = "../../api/config/info.json"
 
 type Executables map[string]string
 type Ports map[string]int
@@ -81,12 +82,12 @@ type MetricsCollectorClient struct {
 	TLS models.TLSCerts `json:"tls"`
 }
 type APIServerConfig struct {
-	Port              int      `json:"port"`
-	PublicPort        int      `json:"publicPort"`
-	CFAPI             string   `json:"cfApi"`
-	SkipSSLValidation bool     `json:"skipSSLValidation"`
-	DB                DBConfig `json:"db"`
-
+	Port                   int                    `json:"port"`
+	PublicPort             int                    `json:"publicPort"`
+	InfoFilePath           string                 `json:"infoFilePath"`
+	CFAPI                  string                 `json:"cfApi"`
+	SkipSSLValidation      bool                   `json:"skipSSLValidation"`
+	DB                     DBConfig               `json:"db"`
 	SchedulerClient        SchedulerClient        `json:"scheduler"`
 	ScalingEngineClient    ScalingEngineClient    `json:"scalingEngine"`
 	MetricsCollectorClient MetricsCollectorClient `json:"metricsCollector"`
@@ -225,6 +226,7 @@ func (components *Components) PrepareApiServerConfig(port int, publicPort int, s
 	apiConfig := APIServerConfig{
 		Port:              port,
 		PublicPort:        publicPort,
+		InfoFilePath:      apiServerInfoFilePath,
 		CFAPI:             cfApi,
 		SkipSSLValidation: skipSSLValidation,
 		DB: DBConfig{

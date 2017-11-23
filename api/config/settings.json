@@ -1,6 +1,7 @@
 {
   "port": 8080,
   "publicPort": 8088,
+  "infoFilePath": "../api/config/info.json",
   "cfApi": "https://api.bosh-lite.com",
   "skipSSLValidation": false,
   "db": {
