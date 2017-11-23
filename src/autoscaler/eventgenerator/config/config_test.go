@@ -57,6 +57,11 @@ lock:
   lock_ttl: 15s
   lock_retry_interval: 10s
   consul_cluster_config: http://127.0.0.1:8500
+db_lock:
+  ttl: 15s
+  url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  retry_interval: 5s
+enable_db_lock: false
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -97,6 +102,12 @@ defaultBreachDurationSecs: 600
 						LockRetryInterval:   10 * time.Second,
 						ConsulClusterConfig: "http://127.0.0.1:8500",
 					},
+					DBLock: DBLockConfig{
+						LockTTL:           15 * time.Second,
+						LockRetryInterval: 5 * time.Second,
+						LockDBURL:         "postgres://postgres:password@localhost/autoscaler?sslmode=disable",
+					},
+					EnableDBLock:              false,
 					DefaultBreachDurationSecs: 600,
 					DefaultStatWindowSecs:     300,
 				}))
@@ -541,6 +552,11 @@ defaultBreachDurationSecs: 600
 					Lock: LockConfig{
 						LockRetryInterval: DefaultRetryInterval,
 						LockTTL:           DefaultLockTTL},
+					DBLock: DBLockConfig{
+						LockTTL:           DefaultDBLockTTL,
+						LockRetryInterval: DefaultDBLockRetryInterval,
+					},
+					EnableDBLock:              false,
 					DefaultBreachDurationSecs: 600,
 					DefaultStatWindowSecs:     300,
 				}))

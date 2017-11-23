@@ -1,6 +1,7 @@
 package main
 
 import (
+	utils "autoscaler/commons"
 	"autoscaler/db"
 	"autoscaler/db/sqldb"
 	"autoscaler/eventgenerator"
@@ -8,6 +9,8 @@ import (
 	"autoscaler/eventgenerator/config"
 	"autoscaler/eventgenerator/generator"
 	"autoscaler/models"
+	sync "autoscaler/sync"
+
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -20,7 +23,6 @@ import (
 	"code.cloudfoundry.org/lager"
 	"code.cloudfoundry.org/locket"
 	"github.com/hashicorp/consul/api"
-	uuid "github.com/nu7hatch/gouuid"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
@@ -111,6 +113,25 @@ func main() {
 		{"eventGenerator", eventGenerator},
 	}
 
+	guid, err := utils.GenerateGUID(logger)
+	if err != nil {
+		logger.Error("failed-to-generate-guid", err)
+	}
+	const lockTableName = "eg_lock"
+	if conf.EnableDBLock {
+		logger.Debug("database-lock-feature-enabled")
+		var lockDB db.LockDB
+		lockDB, err = sqldb.NewLockSQLDB(conf.DBLock.LockDBURL, lockTableName, logger.Session("lock-db"))
+		if err != nil {
+			logger.Error("failed-to-connect-lock-database", err, lager.Data{"url": conf.DBLock.LockDBURL})
+			os.Exit(1)
+		}
+		defer lockDB.Close()
+		mcdl := sync.NewDatabaseLock(logger)
+		dbLockMaintainer := mcdl.InitDBLockRunner(conf.DBLock.LockRetryInterval, conf.DBLock.LockTTL, guid, lockDB)
+		members = append(grouper.Members{{"db-lock-maintainer", dbLockMaintainer}}, members...)
+	}
+
 	if conf.Lock.ConsulClusterConfig != "" {
 		consulClient, err := consuladapter.NewClientFromUrl(conf.Lock.ConsulClusterConfig)
 		if err != nil {
@@ -118,15 +139,16 @@ func main() {
 		}
 
 		serviceClient := eventgenerator.NewServiceClient(consulClient, egClock)
-
-		lockMaintainer := serviceClient.NewEventGeneratorLockRunner(
-			logger,
-			generateGUID(logger),
-			conf.Lock.LockRetryInterval,
-			conf.Lock.LockTTL,
-		)
+		if !conf.EnableDBLock {
+			lockMaintainer := serviceClient.NewEventGeneratorLockRunner(
+				logger,
+				guid,
+				conf.Lock.LockRetryInterval,
+				conf.Lock.LockTTL,
+			)
+			members = append(grouper.Members{{"lock-maintainer", lockMaintainer}}, members...)
+		}
 		registrationRunner := initializeRegistrationRunner(logger, consulClient, egClock)
-		members = append(grouper.Members{{"lock-maintainer", lockMaintainer}}, members...)
 		members = append(members, grouper.Member{"registration", registrationRunner})
 	}
 
@@ -258,12 +280,4 @@ func initializeRegistrationRunner(
 		},
 	}
 	return locket.NewRegistrationRunner(logger, registration, consulClient, locket.RetryInterval, clock)
-}
-
-func generateGUID(logger lager.Logger) string {
-	uuid, err := uuid.NewV4()
-	if err != nil {
-		logger.Fatal("Couldn't generate uuid", err)
-	}
-	return uuid.String()
 }

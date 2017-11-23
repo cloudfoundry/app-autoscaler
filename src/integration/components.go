@@ -393,7 +393,7 @@ func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port i
 	return writeYmlConfig(tmpDir, MetricsCollector, &cfg)
 }
 
-func (components *Components) PrepareEventGeneratorConfig(dbUri string, metricsCollectorUrl string, scalingEngineUrl string, aggregatorExecuteInterval time.Duration, policyPollerInterval time.Duration,
+func (components *Components) PrepareEventGeneratorConfig(dbUri string, enableDBLock bool, metricsCollectorUrl string, scalingEngineUrl string, aggregatorExecuteInterval time.Duration, policyPollerInterval time.Duration,
 	evaluationManagerInterval time.Duration, tmpDir string, lockTTL time.Duration, lockRetryInterval time.Duration, ConsulClusterConfig string) string {
 	conf := &egConfig.Config{
 		Logging: egConfig.LoggingConfig{
@@ -434,6 +434,12 @@ func (components *Components) PrepareEventGeneratorConfig(dbUri string, metricsC
 			LockTTL:             lockTTL,
 			LockRetryInterval:   lockRetryInterval,
 			ConsulClusterConfig: ConsulClusterConfig,
+		},
+		EnableDBLock: enableDBLock,
+		DBLock: egConfig.DBLockConfig{
+			LockTTL:           time.Duration(10 * time.Second),
+			LockDBURL:         dbUri,
+			LockRetryInterval: time.Duration(2 * time.Second),
 		},
 		DefaultBreachDurationSecs: 600,
 		DefaultStatWindowSecs:     300,
