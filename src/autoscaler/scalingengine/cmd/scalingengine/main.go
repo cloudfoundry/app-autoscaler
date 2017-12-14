@@ -9,6 +9,7 @@ import (
 	"autoscaler/cf"
 	"autoscaler/db"
 	"autoscaler/db/sqldb"
+	alogger "autoscaler/logger"
 	"autoscaler/scalingengine"
 	"autoscaler/scalingengine/config"
 	"autoscaler/scalingengine/schedule"
@@ -136,9 +137,9 @@ func initLoggerFromConfig(conf *config.LoggingConfig) lager.Logger {
 	}
 	logger := lager.NewLogger("scalingengine")
 
-	keyPatterns := []string{"[Pp]wd", "[Pp]ass", "[Ss]ecret", "[Tt]oken", "dbur[il]"}
+	keyPatterns := []string{"[Pp]wd", "[Pp]ass", "[Ss]ecret", "[Tt]oken"}
 
-	redactedSink, err := lager.NewRedactingWriterSink(os.Stdout, logLevel, keyPatterns, nil)
+	redactedSink, err := alogger.NewRedactingWriterWithURLCredSink(os.Stdout, logLevel, keyPatterns, nil)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create redacted sink", err.Error())
 	}

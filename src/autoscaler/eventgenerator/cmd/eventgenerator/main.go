@@ -7,6 +7,7 @@ import (
 	"autoscaler/eventgenerator/aggregator"
 	"autoscaler/eventgenerator/config"
 	"autoscaler/eventgenerator/generator"
+	alogger "autoscaler/logger"
 	"autoscaler/models"
 	"flag"
 	"fmt"
@@ -151,9 +152,9 @@ func initLoggerFromConfig(conf *config.LoggingConfig) lager.Logger {
 	}
 	logger := lager.NewLogger("eventgenerator")
 
-	keyPatterns := []string{"[Pp]wd", "[Pp]ass", "[Ss]ecret", "[Tt]oken", "dbur[il]"}
+	keyPatterns := []string{"[Pp]wd", "[Pp]ass", "[Ss]ecret", "[Tt]oken"}
 
-	redactedSink, err := lager.NewRedactingWriterSink(os.Stdout, logLevel, keyPatterns, nil)
+	redactedSink, err := alogger.NewRedactingWriterWithURLCredSink(os.Stdout, logLevel, keyPatterns, nil)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create redacted sink", err.Error())
 	}
