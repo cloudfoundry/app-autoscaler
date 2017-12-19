@@ -37,13 +37,14 @@ cf uninstall-plugin AutoScaler
 Set or view AutoScaler service API endpoint
 
 ```
-cf autoscaling-api [URL] [--unset] 
+cf autoscaling-api [URL] [--unset] [--skip-ssl-validation]
 ```
 
 **ALIAS**: asa
 
 **OPTIONS**
 - `--unset`: Unset the api endpoint
+- `--skip-ssl-validation` : Skip verification of the API endpoint. Not recommended!
 
 ### `cf autoscaling-policy` 
 

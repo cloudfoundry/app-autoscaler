@@ -1,9 +1,13 @@
 package main
 
 import (
-	"fmt"
+	"os"
+
+	"cli/commands"
+	"cli/ui"
 
 	"code.cloudfoundry.org/cli/plugin"
+	"github.com/jessevdk/go-flags"
 )
 
 type AutoScaler struct{}
@@ -22,9 +26,10 @@ func (as *AutoScaler) GetMetadata() plugin.PluginMetadata {
 				Alias:    "asa",
 				HelpText: "Set or view AutoScaler service API endpoint",
 				UsageDetails: plugin.Usage{
-					Usage: `cf autoscaling-api [URL] [--unset] 
+					Usage: `cf autoscaling-api [URL] [--unset] [--skip-ssl-validation]
 OPTIONS:
-	--unset	Unset the api endpoint`,
+	--unset                 Unset the api endpoint,
+	--skip-ssl-validation   Skip verification of the api endpoint. Not recommended! Inherit "cf" --skip-ssl-validation setting by default`,
 				},
 			},
 			{
@@ -85,10 +90,21 @@ OPTIONS:
 	}
 }
 
-func (as *AutoScaler) Run(cliConnection plugin.CliConnection, args []string) {
-	fmt.Println("Hello AutoScaler")
-}
-
 func main() {
 	plugin.Start(new(AutoScaler))
+}
+
+func (as *AutoScaler) Run(cliConnection plugin.CliConnection, args []string) {
+
+	commands.AutoScaler.CLIConnection = cliConnection
+	parser := flags.NewParser(&commands.AutoScaler, flags.HelpFlag|flags.PassDoubleDash)
+	parser.NamespaceDelimiter = "-"
+
+	_, err := parser.ParseArgs(args)
+	if err != nil {
+		ui.SayFailed()
+		ui.SayMessage("Error: %s", err.Error())
+		os.Exit(1)
+	}
+
 }
