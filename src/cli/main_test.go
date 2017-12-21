@@ -1,8 +1,10 @@
 package main_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -391,15 +393,51 @@ var _ = Describe("App-AutoScaler Commands", func() {
 								)
 							})
 
-							It("Succeed", func() {
+							It("Succeed to print the policy to stdout", func() {
 
 								args = []string{ts.Port(), "autoscaling-policy", "appName"}
 								session, err = gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
 								Expect(err).NotTo(HaveOccurred())
 								session.Wait()
 
+								Expect(session.Out).To(gbytes.Say("OK"))
+								policy := bytes.TrimLeft(session.Out.Contents(), "OK")
+
 								var actualPolicy ScalingPolicy
-								_ = json.Unmarshal(session.Out.Contents(), &actualPolicy)
+								_ = json.Unmarshal(policy, &actualPolicy)
+
+								Expect(actualPolicy).To(MatchFields(IgnoreExtras, Fields{
+									"InstanceMin": BeNumerically("==", fakePolicy.InstanceMin),
+									"InstanceMax": BeNumerically("==", fakePolicy.InstanceMax),
+								}))
+
+								Expect(*actualPolicy.ScalingRules[0]).To(MatchFields(IgnoreExtras, Fields{
+									"MetricType":            Equal(fakePolicy.ScalingRules[0].MetricType),
+									"StatWindowSeconds":     BeNumerically("==", fakePolicy.ScalingRules[0].StatWindowSeconds),
+									"BreachDurationSeconds": BeNumerically("==", fakePolicy.ScalingRules[0].BreachDurationSeconds),
+									"Threshold":             BeNumerically("==", fakePolicy.ScalingRules[0].Threshold),
+									"Operator":              Equal(fakePolicy.ScalingRules[0].Operator),
+									"CoolDownSeconds":       BeNumerically("==", fakePolicy.ScalingRules[0].CoolDownSeconds),
+									"Adjustment":            Equal(fakePolicy.ScalingRules[0].Adjustment),
+								}))
+
+							})
+
+							It("Succeed to print the policy to file", func() {
+
+								args = []string{ts.Port(), "autoscaling-policy", "appName", "--output", "policy.json"}
+								session, err = gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+								Expect(err).NotTo(HaveOccurred())
+								session.Wait()
+
+								Expect(session).To(gbytes.Say("OK"))
+
+								Expect("policy.json").To(BeARegularFile())
+								contents, err := ioutil.ReadFile("policy.json")
+								Expect(err).NotTo(HaveOccurred())
+
+								var actualPolicy ScalingPolicy
+								_ = json.Unmarshal(contents, &actualPolicy)
 
 								Expect(actualPolicy).To(MatchFields(IgnoreExtras, Fields{
 									"InstanceMin": BeNumerically("==", fakePolicy.InstanceMin),

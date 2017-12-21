@@ -4,6 +4,7 @@ import (
 	"cli/api"
 	"cli/ui"
 	"errors"
+	"io/ioutil"
 	"os"
 )
 
@@ -13,14 +14,14 @@ type PolicyCommand struct {
 }
 
 type PolicyPositionalArgs struct {
-	AppName string `positional-arg-name:"APP_NAME" required:"true" description:"The autoscaler API endpoint"`
+	AppName string `positional-arg-name:"APP_NAME" required:"true"`
 }
 
 func (command PolicyCommand) Execute([]string) error {
-	return RetrievePolicy(AutoScaler.CLIConnection, command.RequiredlArgs.AppName)
+	return RetrievePolicy(AutoScaler.CLIConnection, command.RequiredlArgs.AppName, command.Output)
 }
 
-func RetrievePolicy(cliConnection api.Connection, appName string) error {
+func RetrievePolicy(cliConnection api.Connection, appName string, output string) error {
 
 	cfclient, err := api.NewCFClient(cliConnection)
 	if err != nil {
@@ -45,6 +46,16 @@ func RetrievePolicy(cliConnection api.Connection, appName string) error {
 		return err
 	}
 
-	ui.SayMessage(policy)
+	if output != "" {
+		err = ioutil.WriteFile(output, []byte(policy), 0666)
+		if err != nil {
+			return err
+		}
+		ui.SayOK()
+	} else {
+		ui.SayOK()
+		ui.SayMessage(policy)
+	}
+
 	return nil
 }
