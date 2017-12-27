@@ -259,15 +259,18 @@ var validateScalingRuleThresholdValue = function(scalingRules){
 var validatePolicyJSONValues = function(policyJson) {
   var errorCount = 0;
   var errors = [];
+
+  if(policyJson.instance_min_count >= policyJson.instance_max_count) {
+    errors[errorCount++] = createErrorResponse('instance_min_count','instance_min_count and ' + 
+        'instance_max_count values are not compatible', policyJson,'instance_min_count ' + 
+        policyJson.instance_min_count + ' is higher or equal to instance_max_count ' + 
+        policyJson.instance_max_count + ' in policy_json');
+  }
+  
   if(policyJson.schedules) {
     var inputRecurringSchedules = policyJson.schedules.recurring_schedule;
     var inputSpecificDates = policyJson.schedules.specific_date;
-    if(policyJson.instance_min_count >= policyJson.instance_max_count) {
-      errors[errorCount++] = createErrorResponse('instance_min_count','instance_min_count and ' + 
-          'instance_max_count values are not compatible', policyJson,'instance_min_count ' + 
-          policyJson.instance_min_count + ' is higher or equal to instance_max_count ' + 
-          policyJson.instance_max_count + ' in policy_json');
-    }
+
     var specificDateErrors = [];
     var recurringScheduleErrors = [];
     if(inputSpecificDates) {
