@@ -5,7 +5,10 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
@@ -14,9 +17,9 @@ import (
 	"time"
 
 	"autoscaler/models"
-	e "cli/errors"
 	"cli/ui"
 	. "cli/util/http"
+	cjson "cli/util/json"
 
 	"code.cloudfoundry.org/cli/cf/trace"
 )
@@ -80,7 +83,7 @@ func (helper *APIHelper) DoRequest(req *http.Request, host string) (*http.Respon
 		if innerErr != nil {
 			switch typedInnerErr := innerErr.(type) {
 			case x509.UnknownAuthorityError, x509.HostnameError, x509.CertificateInvalidError:
-				return nil, e.NewAccessError(fmt.Sprintf(ui.InvalidSSLCerts, host))
+				return nil, fmt.Errorf(ui.InvalidSSLCerts, host)
 			default:
 				return nil, typedInnerErr
 			}
@@ -89,6 +92,48 @@ func (helper *APIHelper) DoRequest(req *http.Request, host string) (*http.Respon
 
 	return resp, nil
 
+}
+
+func parseErrResponse(raw []byte) (string, error) {
+
+	var f interface{}
+	err := json.Unmarshal(raw, &f)
+	if err != nil {
+		return "", err
+	}
+
+	m := f.(map[string]interface{})
+
+	retMsg := ""
+	for k, v := range m {
+		if k == "error" {
+			switch vv := v.(type) {
+			case map[string]interface{}:
+				for ik, iv := range vv {
+					if ik == "message" {
+						retMsg = fmt.Sprintf("%v", iv)
+					}
+				}
+			case []interface{}:
+				for _, entry := range vv {
+					mentry := entry.(map[string]interface{})
+					for ik, iv := range mentry {
+						if ik == "stack" {
+							retMsg = fmt.Sprintf("%v", iv)
+							break
+						}
+					}
+				}
+			default:
+			}
+			if retMsg == "" {
+				retMsg = fmt.Sprintf("%v", v)
+			}
+
+		}
+	}
+
+	return retMsg, nil
 }
 
 func (helper *APIHelper) CheckHealth() error {
@@ -110,18 +155,18 @@ func (helper *APIHelper) CheckHealth() error {
 			errorMsg = fmt.Sprintf(ui.InvalidAPIEndpoint, baseURL)
 		}
 
-		return e.NewAccessError(errorMsg)
+		return errors.New(errorMsg)
 	}
 
 	return nil
 
 }
 
-func (helper *APIHelper) GetPolicy() (string, error) {
+func (helper *APIHelper) GetPolicy() ([]byte, error) {
 
 	err := helper.CheckHealth()
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	baseURL := helper.Endpoint.URL
@@ -131,9 +176,11 @@ func (helper *APIHelper) GetPolicy() (string, error) {
 
 	resp, err := helper.DoRequest(req, baseURL)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer resp.Body.Close()
+
+	raw, err := ioutil.ReadAll(resp.Body)
 	if resp.StatusCode != http.StatusOK {
 		var errorMsg string
 		switch resp.StatusCode {
@@ -142,23 +189,121 @@ func (helper *APIHelper) GetPolicy() (string, error) {
 		case 404:
 			errorMsg = fmt.Sprintf(ui.PolicyNotFound, helper.Client.AppName)
 		default:
-			_ = json.NewDecoder(resp.Body).Decode(&errorMsg)
+			errorMsg, err = parseErrResponse(raw)
+			if err != nil {
+				return nil, err
+			}
 		}
-		return "", e.NewAccessError(errorMsg)
+		return nil, errors.New(errorMsg)
 	}
 
 	var policy *models.ScalingPolicy
-	err = json.NewDecoder(resp.Body).Decode(&policy)
+	err = json.Unmarshal(raw, &policy)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	var policyJSON bytes.Buffer
-	enc := json.NewEncoder(&policyJSON)
-	enc.SetEscapeHTML(false)
-	enc.SetIndent("", "\t")
-	enc.Encode(policy)
+	prettyPolicy, err := cjson.MarshalWithoutHTMLEscape(policy)
+	if err != nil {
+		return nil, err
+	}
 
-	return policyJSON.String(), nil
+	return prettyPolicy, nil
+
+}
+
+func (helper *APIHelper) CreatePolicy(data interface{}) error {
+
+	err := helper.CheckHealth()
+	if err != nil {
+		return err
+	}
+
+	baseURL := helper.Endpoint.URL
+	requestURL := fmt.Sprintf("%s%s", baseURL, strings.Replace(PolicyPath, "{appId}", helper.Client.AppId, -1))
+
+	var body io.Reader
+	if data != nil {
+		jsonByte, e := json.Marshal(data)
+		if e != nil {
+			return fmt.Errorf(ui.InvalidPolicy, e)
+		}
+		body = bytes.NewBuffer(jsonByte)
+	}
+
+	req, err := http.NewRequest("PUT", requestURL, body)
+	req.Header.Add("Authorization", helper.Client.AuthToken)
+	req.Header.Add("Content-Type", "application/json")
+
+	resp, err := helper.DoRequest(req, baseURL)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	raw, err := ioutil.ReadAll(resp.Body)
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+
+		var errorMsg string
+		switch resp.StatusCode {
+		case 401:
+			errorMsg = fmt.Sprintf(ui.Unauthorized, baseURL, helper.Client.CCAPIEndpoint)
+		case 400:
+			errorMsg, err = parseErrResponse(raw)
+			if err != nil {
+				return err
+			}
+			errorMsg = fmt.Sprintf(ui.InvalidPolicy, errorMsg)
+
+		default:
+			errorMsg, err = parseErrResponse(raw)
+			if err != nil {
+				return err
+			}
+		}
+		return errors.New(errorMsg)
+	}
+
+	return nil
+}
+
+func (helper *APIHelper) DeletePolicy() error {
+
+	err := helper.CheckHealth()
+	if err != nil {
+		return err
+	}
+
+	baseURL := helper.Endpoint.URL
+	requestURL := fmt.Sprintf("%s%s", baseURL, strings.Replace(PolicyPath, "{appId}", helper.Client.AppId, -1))
+
+	req, err := http.NewRequest("DELETE", requestURL, nil)
+	req.Header.Add("Authorization", helper.Client.AuthToken)
+
+	resp, err := helper.DoRequest(req, baseURL)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	raw, err := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		var errorMsg string
+		switch resp.StatusCode {
+		case 401:
+			errorMsg = fmt.Sprintf(ui.Unauthorized, baseURL, helper.Client.CCAPIEndpoint)
+		case 404:
+			errorMsg = fmt.Sprintf(ui.PolicyNotFound, helper.Client.AppName)
+		default:
+			errorMsg, err = parseErrResponse(raw)
+			if err != nil {
+				return err
+			}
+		}
+		return errors.New(errorMsg)
+	}
+
+	return nil
 
 }

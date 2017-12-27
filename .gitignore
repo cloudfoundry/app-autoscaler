@@ -8,4 +8,4 @@
 /.settings/
 *.coverprofile
 **/.idea
-src/cli/ascli
+**/ascli

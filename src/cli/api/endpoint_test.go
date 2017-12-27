@@ -3,11 +3,9 @@ package api_test
 import (
 	"fmt"
 	"io/ioutil"
-	"path/filepath"
+	"os"
 
 	. "cli/api"
-
-	"code.cloudfoundry.org/cli/cf/configuration/confighelpers"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -27,9 +25,8 @@ var _ = Describe("Endpoint Helper Test", func() {
 	)
 
 	BeforeEach(func() {
-		defaultCFConfigPath, _ := confighelpers.DefaultFilePath()
-		targetsPath := filepath.Join(filepath.Dir(defaultCFConfigPath), "plugins", "autoscaler_config")
-		configFilePath = filepath.Join(targetsPath, "config.json")
+		os.Setenv("AUTOSCALER_CONFIG_FILE", "test_config.json")
+		configFilePath = ConfigFile()
 	})
 
 	AfterEach(func() {
@@ -38,11 +35,11 @@ var _ = Describe("Endpoint Helper Test", func() {
 	Context("Set API endpoint", func() {
 
 		It("Set a valid json in config file", func() {
-			endpoint, err = SetEndpoint(fakeApiEndpoint, false)
+			err = SetEndpoint(fakeApiEndpoint, false)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(endpoint.URL).Should(Equal(fakeApiEndpoint))
 
 			content, err = ioutil.ReadFile(configFilePath)
+			Expect(err).NotTo(HaveOccurred())
 			Expect(content).Should(MatchJSON(fmt.Sprintf(`{"URL":"%s", "SkipSSLValidation":%t}`, fakeApiEndpoint, false)))
 		})
 	})
@@ -60,6 +57,7 @@ var _ = Describe("Endpoint Helper Test", func() {
 			Expect(err).NotTo(HaveOccurred())
 
 			content, err = ioutil.ReadFile(configFilePath)
+			Expect(err).NotTo(HaveOccurred())
 			Expect(len(content)).Should(Equal(0))
 		})
 	})
@@ -100,6 +98,7 @@ var _ = Describe("Endpoint Helper Test", func() {
 			BeforeEach(func() {
 				invalidConfig := []byte(`{"invalidJSON": invalidJSON}`)
 				err = ioutil.WriteFile(configFilePath, invalidConfig, 0600)
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("No error thrown out and unset API endpoint", func() {
@@ -108,6 +107,7 @@ var _ = Describe("Endpoint Helper Test", func() {
 				Expect(endpoint.URL).Should(Equal(""))
 
 				content, err = ioutil.ReadFile(configFilePath)
+				Expect(err).NotTo(HaveOccurred())
 				Expect(len(content)).Should(Equal(0))
 			})
 
@@ -118,6 +118,7 @@ var _ = Describe("Endpoint Helper Test", func() {
 			BeforeEach(func() {
 				invalidConfig := []byte(`{"invalidJSON": invalidJSON}`)
 				err = ioutil.WriteFile(configFilePath, invalidConfig, 0600)
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("No error thrown out and unset API endpoint when missing URL definition in JSON config", func() {
@@ -126,6 +127,7 @@ var _ = Describe("Endpoint Helper Test", func() {
 				Expect(endpoint.URL).Should(Equal(""))
 
 				content, err = ioutil.ReadFile(configFilePath)
+				Expect(err).NotTo(HaveOccurred())
 				Expect(len(content)).Should(Equal(0))
 			})
 		})

@@ -51,7 +51,7 @@ func (cmd *ApiCommand) GetEndpoint() error {
 	if endpoint.URL == "" {
 		ui.SayMessage(ui.NoEndpoint)
 	} else {
-		ui.SayMessage(ui.APIEndpoint+"\n", endpoint.URL)
+		ui.SayMessage(ui.APIEndpoint, endpoint.URL)
 	}
 	return nil
 }
@@ -96,7 +96,7 @@ func (cmd *ApiCommand) SetEndpoint(cliConnection api.Connection, url string, ski
 		return err
 	}
 
-	_, err = api.SetEndpoint(url, skipSSLValidation)
+	err = api.SetEndpoint(url, skipSSLValidation)
 	if err != nil {
 		return err
 	}

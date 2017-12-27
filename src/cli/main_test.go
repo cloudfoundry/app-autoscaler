@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -12,6 +13,7 @@ import (
 
 	. "autoscaler/models"
 	"cli/ui"
+	cjson "cli/util/json"
 
 	"code.cloudfoundry.org/cli/plugin/models"
 	"code.cloudfoundry.org/cli/util/testhelpers/rpcserver"
@@ -27,8 +29,10 @@ import (
 
 var _ = Describe("App-AutoScaler Commands", func() {
 	const (
+		fakeAppName     string = "fakeAppName"
 		fakeAppId       string = "fakeAppId"
 		fakeAccessToken string = "fakeAccessToken"
+		policyFile      string = "policy.json"
 	)
 
 	var (
@@ -60,6 +64,7 @@ var _ = Describe("App-AutoScaler Commands", func() {
 	BeforeEach(func() {
 
 		os.Unsetenv("CF_TRACE")
+		os.Setenv("AUTOSCALER_CONFIG_FILE", "test_config.json")
 
 		//start rpc server to test cf cli plugin
 		rpcHandlers = new(rpcserverfakes.FakeHandlers)
@@ -87,7 +92,7 @@ var _ = Describe("App-AutoScaler Commands", func() {
 		//start fake AutoScaler API server
 		apiServer = ghttp.NewServer()
 		apiServer.RouteToHandler("GET", "/health",
-			ghttp.RespondWithJSONEncoded(http.StatusOK, ""),
+			ghttp.RespondWith(http.StatusOK, ""),
 		)
 
 		apiEndpoint = apiServer.URL()
@@ -97,9 +102,13 @@ var _ = Describe("App-AutoScaler Commands", func() {
 	AfterEach(func() {
 		ts.Stop()
 		apiServer.Close()
+		if _, err = os.Stat(policyFile); !os.IsNotExist(err) {
+			err = os.Remove(policyFile)
+		}
+
 	})
 
-	Describe("Commands autoscaling-api", func() {
+	Describe("Commands autoscaling-api, asa", func() {
 
 		Context("Set api endpoint", func() {
 
@@ -136,7 +145,7 @@ var _ = Describe("App-AutoScaler Commands", func() {
 
 					BeforeEach(func() {
 						apiServer.RouteToHandler("GET", "/health",
-							ghttp.RespondWithJSONEncoded(http.StatusNotFound, ""),
+							ghttp.RespondWith(http.StatusNotFound, ""),
 						)
 					})
 
@@ -161,7 +170,7 @@ var _ = Describe("App-AutoScaler Commands", func() {
 					apiTLSServer = ghttp.NewTLSServer()
 
 					apiTLSServer.RouteToHandler("GET", "/health",
-						ghttp.RespondWithJSONEncoded(http.StatusOK, ""),
+						ghttp.RespondWith(http.StatusOK, ""),
 					)
 					apiTLSEndpoint = apiTLSServer.URL()
 				})
@@ -264,7 +273,7 @@ var _ = Describe("App-AutoScaler Commands", func() {
 
 	})
 
-	Describe("Commands autoscaling-policy", func() {
+	Describe("Commands autoscaling-policy, asp", func() {
 
 		Context("autoscaling-policy", func() {
 
@@ -282,7 +291,7 @@ var _ = Describe("App-AutoScaler Commands", func() {
 
 			Context("when cf not login", func() {
 				It("exits with 'You must be logged in' error ", func() {
-					args = []string{ts.Port(), "autoscaling-policy", "appName"}
+					args = []string{ts.Port(), "autoscaling-policy", fakeAppName}
 					session, err := gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
 					Expect(err).NotTo(HaveOccurred())
 					session.Wait()
@@ -307,7 +316,7 @@ var _ = Describe("App-AutoScaler Commands", func() {
 					})
 
 					It("exits with 'App not found' error ", func() {
-						args = []string{ts.Port(), "autoscaling-policy", "appName"}
+						args = []string{ts.Port(), "autoscaling-policy", fakeAppName}
 						session, err := gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
 						Expect(err).NotTo(HaveOccurred())
 						session.Wait()
@@ -341,12 +350,12 @@ var _ = Describe("App-AutoScaler Commands", func() {
 							}
 
 							apiServer.RouteToHandler("GET", "/v1/apps/"+fakeAppId+"/policy",
-								ghttp.RespondWithJSONEncoded(http.StatusUnauthorized, ""),
+								ghttp.RespondWith(http.StatusUnauthorized, ""),
 							)
 						})
 
 						It("failed with 401 error", func() {
-							args = []string{ts.Port(), "autoscaling-policy", "appName"}
+							args = []string{ts.Port(), "autoscaling-policy", fakeAppName}
 							session, err = gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
 							Expect(err).NotTo(HaveOccurred())
 							session.Wait()
@@ -364,26 +373,26 @@ var _ = Describe("App-AutoScaler Commands", func() {
 							}
 						})
 
-						Context("when NO policy defined", func() {
+						Context("when policy not found", func() {
 							BeforeEach(func() {
 								apiServer.RouteToHandler("GET", "/v1/apps/"+fakeAppId+"/policy",
-									ghttp.RespondWithJSONEncoded(http.StatusNotFound, ""),
+									ghttp.RespondWith(http.StatusNotFound, ""),
 								)
 							})
 
 							It("404 returned", func() {
-								args = []string{ts.Port(), "autoscaling-policy", "appName"}
+								args = []string{ts.Port(), "autoscaling-policy", fakeAppName}
 								session, err = gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
 								Expect(err).NotTo(HaveOccurred())
 								session.Wait()
 
-								Expect(session).To(gbytes.Say(ui.PolicyNotFound, "appName"))
+								Expect(session).To(gbytes.Say(ui.PolicyNotFound, fakeAppName))
 								Expect(session.ExitCode()).To(Equal(1))
 
 							})
 						})
 
-						Context("when policy already defined ", func() {
+						Context("when policy exist ", func() {
 							BeforeEach(func() {
 								apiServer.RouteToHandler("GET", "/v1/apps/"+fakeAppId+"/policy",
 									ghttp.CombineHandlers(
@@ -395,14 +404,16 @@ var _ = Describe("App-AutoScaler Commands", func() {
 
 							It("Succeed to print the policy to stdout", func() {
 
-								args = []string{ts.Port(), "autoscaling-policy", "appName"}
+								args = []string{ts.Port(), "autoscaling-policy", fakeAppName}
 								session, err = gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
 								Expect(err).NotTo(HaveOccurred())
 								session.Wait()
 
+								Expect(session.Out).To(gbytes.Say(ui.ShowPolicyHint, fakeAppName))
 								Expect(session.Out).To(gbytes.Say("OK"))
-								policy := bytes.TrimLeft(session.Out.Contents(), "OK")
+								policy := bytes.TrimLeft(session.Out.Contents(), fmt.Sprintf(ui.ShowPolicyHint+"\nOK", fakeAppName))
 
+								fmt.Println(string(policy))
 								var actualPolicy ScalingPolicy
 								_ = json.Unmarshal(policy, &actualPolicy)
 
@@ -423,38 +434,448 @@ var _ = Describe("App-AutoScaler Commands", func() {
 
 							})
 
-							It("Succeed to print the policy to file", func() {
+							Context("Succeed to print the policy to file", func() {
 
-								args = []string{ts.Port(), "autoscaling-policy", "appName", "--output", "policy.json"}
+								It("Succeed", func() {
+									args = []string{ts.Port(), "autoscaling-policy", fakeAppName, "--output", policyFile}
+									session, err = gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+									Expect(err).NotTo(HaveOccurred())
+									session.Wait()
+
+									Expect(session).To(gbytes.Say("OK"))
+
+									Expect(policyFile).To(BeARegularFile())
+									contents, err := ioutil.ReadFile(policyFile)
+									Expect(err).NotTo(HaveOccurred())
+
+									var actualPolicy ScalingPolicy
+									_ = json.Unmarshal(contents, &actualPolicy)
+
+									Expect(actualPolicy).To(MatchFields(IgnoreExtras, Fields{
+										"InstanceMin": BeNumerically("==", fakePolicy.InstanceMin),
+										"InstanceMax": BeNumerically("==", fakePolicy.InstanceMax),
+									}))
+
+									Expect(*actualPolicy.ScalingRules[0]).To(MatchFields(IgnoreExtras, Fields{
+										"MetricType":            Equal(fakePolicy.ScalingRules[0].MetricType),
+										"StatWindowSeconds":     BeNumerically("==", fakePolicy.ScalingRules[0].StatWindowSeconds),
+										"BreachDurationSeconds": BeNumerically("==", fakePolicy.ScalingRules[0].BreachDurationSeconds),
+										"Threshold":             BeNumerically("==", fakePolicy.ScalingRules[0].Threshold),
+										"Operator":              Equal(fakePolicy.ScalingRules[0].Operator),
+										"CoolDownSeconds":       BeNumerically("==", fakePolicy.ScalingRules[0].CoolDownSeconds),
+										"Adjustment":            Equal(fakePolicy.ScalingRules[0].Adjustment),
+									}))
+
+								})
+
+							})
+						})
+
+					})
+
+				})
+
+			})
+		})
+	})
+
+	Describe("Commands attach-autoscaling-policy, aasp", func() {
+
+		Context("attach-autoscaling-policy", func() {
+
+			Context("when the args are not properly provided", func() {
+				It("Require both APP_NAME and PATH_TO_POLICY_FILE as argument", func() {
+					args = []string{ts.Port(), "attach-autoscaling-policy"}
+					session, err := gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+					session.Wait()
+
+					Expect(session).To(gbytes.Say("the required arguments `APP_NAME` and `PATH_TO_POLICY_FILE` were not provided"))
+					Expect(session.ExitCode()).To(Equal(1))
+				})
+
+				It("Require PATH_TO_POLICY_FILE as argument", func() {
+					args = []string{ts.Port(), "attach-autoscaling-policy", fakeAppName}
+					session, err := gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+					session.Wait()
+
+					Expect(session).To(gbytes.Say("the required argument `PATH_TO_POLICY_FILE` was not provided"))
+					Expect(session.ExitCode()).To(Equal(1))
+				})
+			})
+
+			Context("when cf not login", func() {
+				It("exits with 'You must be logged in' error ", func() {
+					args = []string{ts.Port(), "attach-autoscaling-policy", fakeAppName, policyFile}
+					session, err := gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+					session.Wait()
+					Expect(session).To(gbytes.Say("You must be logged in"))
+					Expect(session.ExitCode()).To(Equal(1))
+				})
+			})
+
+			Context("when cf login", func() {
+				BeforeEach(func() {
+					rpcHandlers.IsLoggedInStub = func(args string, retVal *bool) error {
+						*retVal = true
+						return nil
+					}
+				})
+
+				Context("when app not found", func() {
+					BeforeEach(func() {
+						rpcHandlers.GetAppStub = func(_ string, retVal *plugin_models.GetAppModel) error {
+							return errors.New("App fakeApp not found")
+						}
+					})
+
+					It("exits with 'App not found' error ", func() {
+						args = []string{ts.Port(), "attach-autoscaling-policy", fakeAppName, policyFile}
+						session, err := gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+						Expect(err).NotTo(HaveOccurred())
+						session.Wait()
+						Expect(session).To(gbytes.Say("App fakeApp not found"))
+						Expect(session.ExitCode()).To(Equal(1))
+					})
+				})
+
+				Context("when the app is found", func() {
+					BeforeEach(func() {
+						rpcHandlers.GetAppStub = func(_ string, retVal *plugin_models.GetAppModel) error {
+							*retVal = plugin_models.GetAppModel{
+								Guid: fakeAppId,
+							}
+							return nil
+						}
+					})
+
+					JustBeforeEach(func() {
+						args = []string{ts.Port(), "autoscaling-api", apiEndpoint}
+						session, err = gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+						Expect(err).NotTo(HaveOccurred())
+						session.Wait()
+					})
+
+					Context("when policy file is not exist", func() {
+						BeforeEach(func() {
+							err = os.Remove(policyFile)
+						})
+
+						It("Failed when policy file not exist", func() {
+							args = []string{ts.Port(), "attach-autoscaling-policy", fakeAppName, policyFile}
+							session, err := gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+							Expect(err).NotTo(HaveOccurred())
+							session.Wait()
+							Expect(session).To(gbytes.Say(ui.FailToLoadPolicyFile, policyFile))
+							Expect(session.ExitCode()).To(Equal(1))
+						})
+					})
+
+					Context("when policy file is empty", func() {
+						BeforeEach(func() {
+							err = ioutil.WriteFile(policyFile, nil, 0666)
+							Expect(err).NotTo(HaveOccurred())
+						})
+
+						It("Failed when policy file is empty", func() {
+							args = []string{ts.Port(), "attach-autoscaling-policy", fakeAppName, policyFile}
+							session, err := gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+							Expect(err).NotTo(HaveOccurred())
+							session.Wait()
+							Expect(session).To(gbytes.Say(strings.TrimSuffix(ui.InvalidPolicy, "%v.")))
+							Expect(session.ExitCode()).To(Equal(1))
+						})
+					})
+
+					Context("when policy file is invalid json", func() {
+						BeforeEach(func() {
+							invalidPolicy := []byte(`{"policy":invalidPolicy}`)
+							err = ioutil.WriteFile(policyFile, invalidPolicy, 0666)
+							Expect(err).NotTo(HaveOccurred())
+						})
+
+						It("Failed when policy file is empty", func() {
+							args = []string{ts.Port(), "attach-autoscaling-policy", fakeAppName, policyFile}
+							session, err := gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+							Expect(err).NotTo(HaveOccurred())
+							session.Wait()
+							Expect(session).To(gbytes.Say(strings.TrimSuffix(ui.InvalidPolicy, "%v.")))
+							Expect(session.ExitCode()).To(Equal(1))
+						})
+					})
+
+					Context("when both app & policy is written in json format correctly", func() {
+
+						BeforeEach(func() {
+							policyBytes, err := cjson.MarshalWithoutHTMLEscape(fakePolicy)
+							Expect(err).NotTo(HaveOccurred())
+							err = ioutil.WriteFile(policyFile, policyBytes, 0666)
+							Expect(err).NotTo(HaveOccurred())
+						})
+
+						Context("when access token is wrong", func() {
+							BeforeEach(func() {
+								rpcHandlers.AccessTokenStub = func(args string, retVal *string) error {
+									*retVal = "incorrectAccessToken"
+									return nil
+								}
+
+								apiServer.RouteToHandler("PUT", "/v1/apps/"+fakeAppId+"/policy",
+									ghttp.RespondWith(http.StatusUnauthorized, ""),
+								)
+							})
+
+							It("failed with 401 error", func() {
+								args = []string{ts.Port(), "attach-autoscaling-policy", fakeAppName, policyFile}
 								session, err = gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
 								Expect(err).NotTo(HaveOccurred())
 								session.Wait()
 
-								Expect(session).To(gbytes.Say("OK"))
+								Expect(session).To(gbytes.Say("Failed to access AutoScaler API Endpoint"))
+								Expect(session.ExitCode()).To(Equal(1))
+							})
+						})
 
-								Expect("policy.json").To(BeARegularFile())
-								contents, err := ioutil.ReadFile("policy.json")
-								Expect(err).NotTo(HaveOccurred())
+						Context("when access token is correct", func() {
+							BeforeEach(func() {
+								rpcHandlers.AccessTokenStub = func(args string, retVal *string) error {
+									*retVal = fakeAccessToken
+									return nil
+								}
+							})
 
-								var actualPolicy ScalingPolicy
-								_ = json.Unmarshal(contents, &actualPolicy)
+							Context("when No policy defined previously", func() {
+								BeforeEach(func() {
+									apiServer.RouteToHandler("PUT", "/v1/apps/"+fakeAppId+"/policy",
+										ghttp.CombineHandlers(
+											ghttp.RespondWith(http.StatusCreated, ""),
+											ghttp.VerifyHeaderKV("Authorization", fakeAccessToken),
+										),
+									)
+								})
 
-								Expect(actualPolicy).To(MatchFields(IgnoreExtras, Fields{
-									"InstanceMin": BeNumerically("==", fakePolicy.InstanceMin),
-									"InstanceMax": BeNumerically("==", fakePolicy.InstanceMax),
-								}))
+								It("Succeed with 201", func() {
+									args = []string{ts.Port(), "attach-autoscaling-policy", fakeAppName, policyFile}
+									session, err = gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+									Expect(err).NotTo(HaveOccurred())
+									session.Wait()
 
-								Expect(*actualPolicy.ScalingRules[0]).To(MatchFields(IgnoreExtras, Fields{
-									"MetricType":            Equal(fakePolicy.ScalingRules[0].MetricType),
-									"StatWindowSeconds":     BeNumerically("==", fakePolicy.ScalingRules[0].StatWindowSeconds),
-									"BreachDurationSeconds": BeNumerically("==", fakePolicy.ScalingRules[0].BreachDurationSeconds),
-									"Threshold":             BeNumerically("==", fakePolicy.ScalingRules[0].Threshold),
-									"Operator":              Equal(fakePolicy.ScalingRules[0].Operator),
-									"CoolDownSeconds":       BeNumerically("==", fakePolicy.ScalingRules[0].CoolDownSeconds),
-									"Adjustment":            Equal(fakePolicy.ScalingRules[0].Adjustment),
-								}))
+									Expect(session.Out).To(gbytes.Say(ui.AttachPolicyHint, fakeAppName))
+									Expect(session.Out).To(gbytes.Say("OK"))
+
+								})
+							})
+
+							Context("when policy exist previously ", func() {
+								BeforeEach(func() {
+									apiServer.RouteToHandler("PUT", "/v1/apps/"+fakeAppId+"/policy",
+										ghttp.CombineHandlers(
+											ghttp.RespondWith(http.StatusOK, ""),
+											ghttp.VerifyHeaderKV("Authorization", fakeAccessToken),
+										),
+									)
+								})
+
+								It("Succeed with 200", func() {
+
+									args = []string{ts.Port(), "attach-autoscaling-policy", fakeAppName, policyFile}
+									session, err = gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+									Expect(err).NotTo(HaveOccurred())
+									session.Wait()
+
+									Expect(session.Out).To(gbytes.Say(ui.AttachPolicyHint, fakeAppName))
+									Expect(session.Out).To(gbytes.Say("OK"))
+
+								})
 
 							})
+
+							Context("when attached policy definition is invalid ", func() {
+								BeforeEach(func() {
+									apiServer.RouteToHandler("PUT", "/v1/apps/"+fakeAppId+"/policy",
+										ghttp.CombineHandlers(
+											ghttp.RespondWith(http.StatusBadRequest, `{"success":false,"error":[{"property":"instance_min_count","message":"instance_min_count and instance_max_count values are not compatible","instance":{"instance_max_count":2,"instance_min_count":10,"scaling_rules":[{"adjustment":"+1","breach_duration_secs":600,"cool_down_secs":300,"metric_type":"memoryused","operator":">","stat_window_secs":300,"threshold":100},{"adjustment":"-1","breach_duration_secs":600,"cool_down_secs":300,"metric_type":"memoryused","operator":"<=","stat_window_secs":300,"threshold":5}]},"stack":"instance_min_count 10 is higher or equal to instance_max_count 2 in policy_json"}],"result":null}`),
+											ghttp.VerifyHeaderKV("Authorization", fakeAccessToken),
+										),
+									)
+
+									fakePolicy.InstanceMin = 10
+									fakePolicy.InstanceMax = 2
+									policyBytes, err := cjson.MarshalWithoutHTMLEscape(fakePolicy)
+									Expect(err).NotTo(HaveOccurred())
+									err = ioutil.WriteFile(policyFile, policyBytes, 0666)
+									Expect(err).NotTo(HaveOccurred())
+
+								})
+
+								It("Failed with 400", func() {
+
+									args = []string{ts.Port(), "attach-autoscaling-policy", fakeAppName, policyFile}
+									session, err = gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+									Expect(err).NotTo(HaveOccurred())
+									session.Wait()
+
+									Expect(session.Out).To(gbytes.Say(ui.AttachPolicyHint, fakeAppName))
+									Expect(session).To(gbytes.Say("FAILED"))
+									Expect(session).To(gbytes.Say(ui.InvalidPolicy, "instance_min_count 10 is higher or equal to instance_max_count 2 in policy_json"))
+									Expect(session.ExitCode()).To(Equal(1))
+
+								})
+
+							})
+
+						})
+					})
+
+				})
+
+			})
+		})
+	})
+
+	Describe("Commands detach-autoscaling-policy, dasp", func() {
+
+		Context("detach-autoscaling-policy", func() {
+
+			Context("when the args are not properly provided", func() {
+				It("Require APP_NAME as argument", func() {
+					args = []string{ts.Port(), "detach-autoscaling-policy"}
+					session, err := gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+					session.Wait()
+
+					Expect(session).To(gbytes.Say("required argument `APP_NAME` was not provided"))
+					Expect(session.ExitCode()).To(Equal(1))
+				})
+			})
+
+			Context("when cf not login", func() {
+				It("exits with 'You must be logged in' error ", func() {
+					args = []string{ts.Port(), "detach-autoscaling-policy", fakeAppName}
+					session, err := gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+					session.Wait()
+					Expect(session).To(gbytes.Say("You must be logged in"))
+					Expect(session.ExitCode()).To(Equal(1))
+				})
+			})
+
+			Context("when cf login", func() {
+				BeforeEach(func() {
+					rpcHandlers.IsLoggedInStub = func(args string, retVal *bool) error {
+						*retVal = true
+						return nil
+					}
+				})
+
+				Context("when app not found", func() {
+					BeforeEach(func() {
+						rpcHandlers.GetAppStub = func(_ string, retVal *plugin_models.GetAppModel) error {
+							return errors.New("App fakeApp not found")
+						}
+					})
+
+					It("exits with 'App not found' error ", func() {
+						args = []string{ts.Port(), "detach-autoscaling-policy", fakeAppName}
+						session, err := gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+						Expect(err).NotTo(HaveOccurred())
+						session.Wait()
+						Expect(session).To(gbytes.Say("App fakeApp not found"))
+						Expect(session.ExitCode()).To(Equal(1))
+					})
+				})
+
+				Context("when the app is found", func() {
+					BeforeEach(func() {
+						rpcHandlers.GetAppStub = func(_ string, retVal *plugin_models.GetAppModel) error {
+							*retVal = plugin_models.GetAppModel{
+								Guid: fakeAppId,
+							}
+							return nil
+						}
+					})
+
+					JustBeforeEach(func() {
+						args = []string{ts.Port(), "autoscaling-api", apiEndpoint}
+						session, err = gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+						Expect(err).NotTo(HaveOccurred())
+						session.Wait()
+					})
+
+					Context("when access token is wrong", func() {
+						BeforeEach(func() {
+							rpcHandlers.AccessTokenStub = func(args string, retVal *string) error {
+								*retVal = "incorrectAccessToken"
+								return nil
+							}
+
+							apiServer.RouteToHandler("DELETE", "/v1/apps/"+fakeAppId+"/policy",
+								ghttp.RespondWith(http.StatusUnauthorized, ""),
+							)
+						})
+
+						It("failed with 401 error", func() {
+							args = []string{ts.Port(), "detach-autoscaling-policy", fakeAppName}
+							session, err = gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+							Expect(err).NotTo(HaveOccurred())
+							session.Wait()
+
+							Expect(session).To(gbytes.Say("Failed to access AutoScaler API Endpoint"))
+							Expect(session.ExitCode()).To(Equal(1))
+						})
+					})
+
+					Context("when access token is correct", func() {
+						BeforeEach(func() {
+							rpcHandlers.AccessTokenStub = func(args string, retVal *string) error {
+								*retVal = fakeAccessToken
+								return nil
+							}
+						})
+
+						Context("when policy not found", func() {
+							BeforeEach(func() {
+								apiServer.RouteToHandler("DELETE", "/v1/apps/"+fakeAppId+"/policy",
+									ghttp.RespondWith(http.StatusNotFound, ""),
+								)
+							})
+
+							It("404 returned", func() {
+								args = []string{ts.Port(), "detach-autoscaling-policy", fakeAppName}
+								session, err = gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+								Expect(err).NotTo(HaveOccurred())
+								session.Wait()
+
+								Expect(session.Out).To(gbytes.Say(ui.DetachPolicyHint, fakeAppName))
+								Expect(session).To(gbytes.Say(ui.PolicyNotFound, fakeAppName))
+								Expect(session.ExitCode()).To(Equal(1))
+
+							})
+						})
+
+						Context("when policy exist ", func() {
+							BeforeEach(func() {
+								apiServer.RouteToHandler("DELETE", "/v1/apps/"+fakeAppId+"/policy",
+									ghttp.CombineHandlers(
+										ghttp.RespondWith(http.StatusOK, ""),
+										ghttp.VerifyHeaderKV("Authorization", fakeAccessToken),
+									),
+								)
+							})
+
+							It("Succeed", func() {
+
+								args = []string{ts.Port(), "detach-autoscaling-policy", fakeAppName}
+								session, err = gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+								Expect(err).NotTo(HaveOccurred())
+								session.Wait()
+
+								Expect(session.Out).To(gbytes.Say(ui.DetachPolicyHint, fakeAppName))
+								Expect(session.Out).To(gbytes.Say("OK"))
+							})
+
 						})
 
 					})

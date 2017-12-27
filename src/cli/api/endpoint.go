@@ -14,18 +14,21 @@ type APIEndpoint struct {
 	SkipSSLValidation bool
 }
 
-var configFileName = func() string {
-
+var ConfigFile = func() string {
 	defaultCFConfigPath, _ := confighelpers.DefaultFilePath()
 	targetsPath := filepath.Join(filepath.Dir(defaultCFConfigPath), "plugins", "autoscaler_config")
 	os.Mkdir(targetsPath, 0700)
 
-	return filepath.Join(targetsPath, "config.json")
+	defaultConfigFileName := "config.json"
+	if os.Getenv("AUTOSCALER_CONFIG_FILE") != "" {
+		defaultConfigFileName = os.Getenv("AUTOSCALER_CONFIG_FILE")
+	}
+	return filepath.Join(targetsPath, defaultConfigFileName)
 }
 
 func GetEndpoint() (*APIEndpoint, error) {
 
-	configFilePath := configFileName()
+	configFilePath := ConfigFile()
 	content, err := ioutil.ReadFile(configFilePath)
 	if err != nil {
 		return nil, err
@@ -42,7 +45,7 @@ func GetEndpoint() (*APIEndpoint, error) {
 
 func UnsetEndpoint() error {
 
-	configFilePath := configFileName()
+	configFilePath := ConfigFile()
 	err := ioutil.WriteFile(configFilePath, nil, 0600)
 	if err != nil {
 		return err
@@ -50,7 +53,7 @@ func UnsetEndpoint() error {
 	return nil
 }
 
-func SetEndpoint(url string, skipSSLValidation bool) (*APIEndpoint, error) {
+func SetEndpoint(url string, skipSSLValidation bool) error {
 
 	endpoint := &APIEndpoint{
 		URL:               url,
@@ -59,13 +62,13 @@ func SetEndpoint(url string, skipSSLValidation bool) (*APIEndpoint, error) {
 
 	urlConfig, err := json.Marshal(endpoint)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	err = ioutil.WriteFile(configFileName(), urlConfig, 0600)
+	err = ioutil.WriteFile(ConfigFile(), urlConfig, 0600)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	return endpoint, nil
+	return nil
 }

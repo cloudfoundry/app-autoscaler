@@ -41,20 +41,22 @@ func RetrievePolicy(cliConnection api.Connection, appName string, output string)
 	}
 
 	apihelper := api.NewAPIHelper(endpoint, cfclient, os.Getenv("CF_TRACE"))
+
+	ui.SayMessage(ui.ShowPolicyHint, appName)
 	policy, err := apihelper.GetPolicy()
 	if err != nil {
 		return err
 	}
 
 	if output != "" {
-		err = ioutil.WriteFile(output, []byte(policy), 0666)
+		err = ioutil.WriteFile(output, policy, 0666)
 		if err != nil {
 			return err
 		}
 		ui.SayOK()
 	} else {
 		ui.SayOK()
-		ui.SayMessage(policy)
+		ui.SayMessage(string(policy))
 	}
 
 	return nil
