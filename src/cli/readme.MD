@@ -84,7 +84,7 @@ cf detach-as-policy APP_NAME
 Retrieve the metrics of an application
 
 ```
-cf autoscaling-metrics APP_NAME METRIC_NAME [--start  START_TIME] [--end END_TIME] [--desc] [--output PATH_TO_FILE]
+cf autoscaling-metrics APP_NAME METRIC_NAME [--start START_TIME] [--end END_TIME] [--desc] [--output PATH_TO_FILE]
 ```
 **ALIAS**: asm
 
@@ -100,7 +100,7 @@ cf autoscaling-metrics APP_NAME METRIC_NAME [--start  START_TIME] [--end END_TIM
 Retrieve the scaling history of an application.
 
 ```
-cf autoscaling-history APP_NAME [--start  START_TIME] [--end END_TIME] [--desc] [--output PATH_TO_FILE]
+cf autoscaling-history APP_NAME [--start START_TIME] [--end END_TIME] [--desc] [--output PATH_TO_FILE]
 ```
 
 **ALIAS**: ash
