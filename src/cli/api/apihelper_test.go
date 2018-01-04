@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	. "autoscaler/models"
 	. "cli/api"
+	. "cli/models"
 	"cli/ui"
 
 	. "github.com/onsi/ginkgo"
@@ -385,6 +387,294 @@ var _ = Describe("API Helper Test", func() {
 
 				It("Fail with 500 error", func() {
 					err = apihelper.DeletePolicy()
+					Expect(err).Should(HaveOccurred())
+					Expect(err).Should(MatchError("Internal error"))
+				})
+			})
+
+		})
+
+		Context("Get Metrics", func() {
+			var urlpath = "/v1/apps/" + fakeAppId + "/metric_histories/memoryused"
+			var now int64
+			var metrics, reversedMetrics []*AppInstanceMetric
+
+			BeforeEach(func() {
+				now = time.Now().UnixNano()
+
+				for i := 0; i < 30; i++ {
+					metrics = append(metrics, &AppInstanceMetric{
+						AppId:         fakeAppId,
+						InstanceIndex: 0,
+						CollectedAt:   now + int64(i*30*1E9),
+						Name:          "memoryused",
+						Unit:          "MB",
+						Value:         "100",
+						Timestamp:     now + int64(i*30*1E9),
+					})
+				}
+
+				for i := 0; i < 30; i++ {
+					reversedMetrics = append(reversedMetrics, metrics[len(metrics)-1-i])
+				}
+			})
+
+			Context("With valid auth token", func() {
+
+				Context("Query multiple pages with order asc", func() {
+					BeforeEach(func() {
+						apiServer.AppendHandlers(
+							ghttp.CombineHandlers(
+								ghttp.RespondWithJSONEncoded(http.StatusOK, &MetricsResults{
+									TotalResults: 30,
+									TotalPages:   3,
+									Page:         1,
+									Metrics:      metrics[0:10],
+								}),
+								ghttp.VerifyHeaderKV("Authorization", fakeAccessToken),
+								ghttp.VerifyRequest("GET", urlpath, "order=asc&page=1"),
+							),
+						)
+
+						apiServer.AppendHandlers(
+							ghttp.CombineHandlers(
+								ghttp.RespondWithJSONEncoded(http.StatusOK, &MetricsResults{
+									TotalResults: 30,
+									TotalPages:   3,
+									Page:         2,
+									Metrics:      metrics[10:20],
+								}),
+								ghttp.VerifyHeaderKV("Authorization", fakeAccessToken),
+								ghttp.VerifyRequest("GET", urlpath, "order=asc&page=2"),
+							),
+						)
+
+						apiServer.AppendHandlers(
+							ghttp.CombineHandlers(
+								ghttp.RespondWithJSONEncoded(http.StatusOK, &MetricsResults{
+									TotalResults: 30,
+									TotalPages:   3,
+									Page:         3,
+									Metrics:      metrics[20:30],
+								}),
+								ghttp.VerifyHeaderKV("Authorization", fakeAccessToken),
+								ghttp.VerifyRequest("GET", urlpath, "order=asc&page=3"),
+							),
+						)
+					})
+
+					It("Succeed", func() {
+
+						next, data, err := apihelper.GetMetrics("memoryused", 0, 0, false, uint64(1))
+						Expect(err).NotTo(HaveOccurred())
+						Expect(next).To(BeTrue())
+						Expect(len(data)).To(Equal(10))
+
+						for i, row := range data {
+							Expect(row[0]).To(Equal("memoryused"))
+							Expect(row[1]).To(Equal("0"))
+							Expect(row[2]).To(Equal("100MB"))
+							Expect(row[3]).To(Equal(time.Unix(0, now+int64(i*30*1E9)).Format(time.RFC3339)))
+						}
+
+						next, data, err = apihelper.GetMetrics("memoryused", 0, 0, false, uint64(2))
+						Expect(err).NotTo(HaveOccurred())
+						Expect(next).To(BeTrue())
+						Expect(len(data)).To(Equal(10))
+
+						for i, row := range data {
+							Expect(row[0]).To(Equal("memoryused"))
+							Expect(row[1]).To(Equal("0"))
+							Expect(row[2]).To(Equal("100MB"))
+							Expect(row[3]).To(Equal(time.Unix(0, now+int64((i+10)*30*1E9)).Format(time.RFC3339)))
+						}
+
+						next, data, err = apihelper.GetMetrics("memoryused", 0, 0, false, uint64(3))
+						Expect(err).NotTo(HaveOccurred())
+						Expect(next).To(BeFalse())
+						Expect(len(data)).To(Equal(10))
+
+						for i, row := range data {
+							Expect(row[0]).To(Equal("memoryused"))
+							Expect(row[1]).To(Equal("0"))
+							Expect(row[2]).To(Equal("100MB"))
+							Expect(row[3]).To(Equal(time.Unix(0, now+int64((i+20)*30*1E9)).Format(time.RFC3339)))
+						}
+
+					})
+				})
+
+				Context("Query multiple pages with order desc", func() {
+					BeforeEach(func() {
+						apiServer.AppendHandlers(
+							ghttp.CombineHandlers(
+								ghttp.RespondWithJSONEncoded(http.StatusOK, &MetricsResults{
+									TotalResults: 30,
+									TotalPages:   3,
+									Page:         1,
+									Metrics:      reversedMetrics[0:10],
+								}),
+								ghttp.VerifyHeaderKV("Authorization", fakeAccessToken),
+								ghttp.VerifyRequest("GET", urlpath, "order=desc&page=1"),
+							),
+						)
+
+						apiServer.AppendHandlers(
+							ghttp.CombineHandlers(
+								ghttp.RespondWithJSONEncoded(http.StatusOK, &MetricsResults{
+									TotalResults: 30,
+									TotalPages:   3,
+									Page:         2,
+									Metrics:      reversedMetrics[10:20],
+								}),
+								ghttp.VerifyHeaderKV("Authorization", fakeAccessToken),
+								ghttp.VerifyRequest("GET", urlpath, "order=desc&page=2"),
+							),
+						)
+
+						apiServer.AppendHandlers(
+							ghttp.CombineHandlers(
+								ghttp.RespondWithJSONEncoded(http.StatusOK, &MetricsResults{
+									TotalResults: 30,
+									TotalPages:   3,
+									Page:         3,
+									Metrics:      reversedMetrics[20:30],
+								}),
+								ghttp.VerifyHeaderKV("Authorization", fakeAccessToken),
+								ghttp.VerifyRequest("GET", urlpath, "order=desc&page=3"),
+							),
+						)
+					})
+
+					It("Succeed", func() {
+
+						next, data, err := apihelper.GetMetrics("memoryused", 0, 0, true, uint64(1))
+						Expect(err).NotTo(HaveOccurred())
+						Expect(next).To(BeTrue())
+						Expect(len(data)).To(Equal(10))
+
+						for i, row := range data {
+							Expect(row[0]).To(Equal("memoryused"))
+							Expect(row[1]).To(Equal("0"))
+							Expect(row[2]).To(Equal("100MB"))
+							Expect(row[3]).To(Equal(time.Unix(0, now+int64((29-i)*30*1E9)).Format(time.RFC3339)))
+						}
+
+						next, data, err = apihelper.GetMetrics("memoryused", 0, 0, true, uint64(2))
+						Expect(err).NotTo(HaveOccurred())
+						Expect(next).To(BeTrue())
+						Expect(len(data)).To(Equal(10))
+
+						for i, row := range data {
+							Expect(row[0]).To(Equal("memoryused"))
+							Expect(row[1]).To(Equal("0"))
+							Expect(row[2]).To(Equal("100MB"))
+							Expect(row[3]).To(Equal(time.Unix(0, now+int64((19-i)*30*1E9)).Format(time.RFC3339)))
+						}
+
+						next, data, err = apihelper.GetMetrics("memoryused", 0, 0, true, uint64(3))
+						Expect(err).NotTo(HaveOccurred())
+						Expect(next).To(BeFalse())
+						Expect(len(data)).To(Equal(10))
+
+						for i, row := range data {
+							Expect(row[0]).To(Equal("memoryused"))
+							Expect(row[1]).To(Equal("0"))
+							Expect(row[2]).To(Equal("100MB"))
+							Expect(row[3]).To(Equal(time.Unix(0, now+int64((9-i)*30*1E9)).Format(time.RFC3339)))
+						}
+
+					})
+				})
+
+				Context("Query with asc & start time & end time ", func() {
+					BeforeEach(func() {
+						apiServer.AppendHandlers(
+							ghttp.CombineHandlers(
+								ghttp.RespondWithJSONEncoded(http.StatusOK, &MetricsResults{
+									TotalResults: 10,
+									TotalPages:   1,
+									Page:         1,
+									Metrics:      metrics[0:10],
+								}),
+								ghttp.VerifyHeaderKV("Authorization", fakeAccessToken),
+								ghttp.VerifyRequest("GET", urlpath, fmt.Sprintf("order=asc&page=1&start-time=%v&end-time=%v", now, now+int64(9*30*1E9))),
+							),
+						)
+					})
+
+					It("Succeed", func() {
+
+						next, data, err := apihelper.GetMetrics("memoryused", now, now+int64(9*30*1E9), false, uint64(1))
+						Expect(err).NotTo(HaveOccurred())
+						Expect(next).To(BeFalse())
+						Expect(len(data)).To(Equal(10))
+
+						for i, row := range data {
+							Expect(row[0]).To(Equal("memoryused"))
+							Expect(row[1]).To(Equal("0"))
+							Expect(row[2]).To(Equal("100MB"))
+							Expect(row[3]).To(Equal(time.Unix(0, now+int64(i*30*1E9)).Format(time.RFC3339)))
+						}
+
+					})
+				})
+
+				Context("Query when no metrics avaialable in desired period", func() {
+					BeforeEach(func() {
+						apiServer.AppendHandlers(
+							ghttp.CombineHandlers(
+								ghttp.RespondWithJSONEncoded(http.StatusOK, &MetricsResults{
+									TotalResults: 0,
+									TotalPages:   0,
+									Page:         1,
+									Metrics:      []*AppInstanceMetric{},
+								}),
+								ghttp.VerifyHeaderKV("Authorization", fakeAccessToken),
+								ghttp.VerifyRequest("GET", urlpath, fmt.Sprintf("order=asc&page=1&start-time=%v&end-time=%v", now, now+int64(9*30*1E9))),
+							),
+						)
+					})
+
+					It("Succeed", func() {
+						next, data, err := apihelper.GetMetrics("memoryused", now, now+int64(9*30*1E9), false, uint64(1))
+						Expect(err).NotTo(HaveOccurred())
+						Expect(next).To(BeFalse())
+						Expect(len(data)).To(Equal(0))
+
+					})
+				})
+			})
+
+			Context("Unauthorized Access", func() {
+				BeforeEach(func() {
+					apiServer.AppendHandlers(
+						ghttp.CombineHandlers(
+							ghttp.RespondWith(http.StatusUnauthorized, ""),
+							ghttp.VerifyRequest("GET", urlpath, "order=asc&page=1"),
+						),
+					)
+				})
+
+				It("Fail with 401 error", func() {
+					_, _, err = apihelper.GetMetrics("memoryused", 0, 0, false, uint64(1))
+					Expect(err).Should(HaveOccurred())
+					Expect(err).Should(MatchError(fmt.Sprintf(ui.Unauthorized, apihelper.Endpoint.URL, apihelper.Client.CCAPIEndpoint)))
+				})
+			})
+
+			Context("Default error handling", func() {
+				BeforeEach(func() {
+					apiServer.AppendHandlers(
+						ghttp.CombineHandlers(
+							ghttp.RespondWith(http.StatusInternalServerError, `{"success":false,"error":{"message":"Internal error","statusCode":500},"result":null}`),
+							ghttp.VerifyRequest("GET", urlpath, "order=asc&page=1"),
+						),
+					)
+				})
+
+				It("Fail with 500 error", func() {
+					_, _, err = apihelper.GetMetrics("memoryused", 0, 0, false, uint64(1))
 					Expect(err).Should(HaveOccurred())
 					Expect(err).Should(MatchError("Internal error"))
 				})

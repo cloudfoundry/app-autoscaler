@@ -90,8 +90,9 @@ cf autoscaling-metrics APP_NAME METRIC_NAME [--start START_TIME] [--end END_TIME
 
 
 **OPTIONS**
-- `--start` : start time of metrics collected with format "yyyy-MM-ddTHH:mm:ss+/-HHmm" or "yyyy-MM-ddTHH:mm:ssZ", default to very beginning if not specified.
-- `--end` : end time of the metrics collected  with format "yyyy-MM-ddTHH:mm:ss+/-HHmm" or "yyyy-MM-ddTHH:mm:ssZ", default to current time if not speficied.
+- `METRIC_NAME` : available metric name: memoryused, memoryutil, responsetime,throughput.
+- `--start` : start time of metrics collected with format "yyyy-MM-ddTHH:mm:ss+/-HH:mm" or "yyyy-MM-ddTHH:mm:ssZ", default to very beginning if not specified.
+- `--end` : end time of the metrics collected  with format "yyyy-MM-ddTHH:mm:ss+/-HH:mm" or "yyyy-MM-ddTHH:mm:ssZ", default to current time if not speficied.
 - `--desc` : display in descending order, default to ascending order if not specified
 - `--output` : dump the metrics to a file in JSON format
 
@@ -106,7 +107,7 @@ cf autoscaling-history APP_NAME [--start START_TIME] [--end END_TIME] [--desc] [
 **ALIAS**: ash
 
 **OPTIONS**
-- `--start` : start time of the scaling history with format "yyyy-MM-ddTHH:mm:ss+/-HHmm" or "yyyy-MM-ddTHH:mm:ssZ", default to very beginning if not specified.
-- `--end` : end time of the scaling history with format "yyyy-MM-ddTHH:mm:ss+/-HHmm" or "yyyy-MM-ddTHH:mm:ssZ", default to current time if not speficied.
+- `--start` : start time of the scaling history with format "yyyy-MM-ddTHH:mm:ss+/-HH:mm" or "yyyy-MM-ddTHH:mm:ssZ", default to very beginning if not specified.
+- `--end` : end time of the scaling history with format "yyyy-MM-ddTHH:mm:ss+/-HH:mm" or "yyyy-MM-ddTHH:mm:ssZ", default to current time if not speficied.
 - `--desc` : display in descending order, default to ascending order if not specified
 - `--output` : dump the scaling history to a file in JSON format

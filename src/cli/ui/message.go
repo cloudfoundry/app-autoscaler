@@ -21,4 +21,11 @@ const (
 	ShowPolicyHint   = "Showing policy for app %s..."
 	AttachPolicyHint = "Attaching policy for app %s..."
 	DetachPolicyHint = "Detaching policy for app %s..."
+	ShowMetricsHint  = "Showing metrics for app %s..."
+
+	UnrecognizedTimeFormat = "Unrecognized date time input: %s. \nSupported formats are yyyy-MM-ddTHH:mm:ss+/-hhmm, yyyy-MM-ddTHH:mm:ssZ."
+	UnrecognizedMetricName = "Unrecognized metric name input: %s. \nSupported value: memoryused, memoryutil, responsetime, throughput."
+	InvalidTimeRange       = "Invalid time range. The start time %s is greater than the end time %s."
+
+	MetricsNotFound = "No metrics found for app %s."
 )

@@ -4,7 +4,8 @@ import (
 	"cli/api"
 	"cli/ui"
 	"errors"
-	"io/ioutil"
+	"fmt"
+	"io"
 	"os"
 )
 
@@ -18,10 +19,26 @@ type PolicyPositionalArgs struct {
 }
 
 func (command PolicyCommand) Execute([]string) error {
-	return RetrievePolicy(AutoScaler.CLIConnection, command.RequiredlArgs.AppName, command.Output)
+
+	var (
+		err    error
+		writer *os.File
+	)
+
+	if command.Output != "" {
+		writer, err = os.OpenFile(command.Output, os.O_CREATE|os.O_WRONLY, 0666)
+		if err != nil {
+			return err
+		}
+		defer writer.Close()
+	} else {
+		writer = os.Stdout
+	}
+
+	return RetrievePolicy(AutoScaler.CLIConnection, command.RequiredlArgs.AppName, writer)
 }
 
-func RetrievePolicy(cliConnection api.Connection, appName string, output string) error {
+func RetrievePolicy(cliConnection api.Connection, appName string, writer io.Writer) error {
 
 	cfclient, err := api.NewCFClient(cliConnection)
 	if err != nil {
@@ -43,21 +60,13 @@ func RetrievePolicy(cliConnection api.Connection, appName string, output string)
 	apihelper := api.NewAPIHelper(endpoint, cfclient, os.Getenv("CF_TRACE"))
 
 	ui.SayMessage(ui.ShowPolicyHint, appName)
+
 	policy, err := apihelper.GetPolicy()
 	if err != nil {
 		return err
 	}
 
-	if output != "" {
-		err = ioutil.WriteFile(output, policy, 0666)
-		if err != nil {
-			return err
-		}
-		ui.SayOK()
-	} else {
-		ui.SayOK()
-		ui.SayMessage(string(policy))
-	}
-
+	ui.SayOK()
+	fmt.Fprintf(writer, string(policy))
 	return nil
 }

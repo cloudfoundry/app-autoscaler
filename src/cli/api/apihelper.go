@@ -13,10 +13,12 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
 	"autoscaler/models"
+	cmodels "cli/models"
 	"cli/ui"
 	. "cli/util/http"
 	cjson "cli/util/json"
@@ -264,7 +266,6 @@ func (helper *APIHelper) CreatePolicy(data interface{}) error {
 		}
 		return errors.New(errorMsg)
 	}
-
 	return nil
 }
 
@@ -305,5 +306,76 @@ func (helper *APIHelper) DeletePolicy() error {
 	}
 
 	return nil
+
+}
+
+func (helper *APIHelper) GetMetrics(metricName string, startTime, endTime int64, desc bool, page uint64) (bool, [][]string, error) {
+
+	next := false
+	if page <= 1 {
+		err := helper.CheckHealth()
+		if err != nil {
+			return next, nil, err
+		}
+	}
+
+	baseURL := helper.Endpoint.URL
+	queryMetricURL := strings.Replace(MetricPath, "{appId}", helper.Client.AppId, -1)
+	queryMetricURL = strings.Replace(queryMetricURL, "{metric_type}", metricName, -1)
+	requestURL := fmt.Sprintf("%s%s", baseURL, queryMetricURL)
+
+	req, err := http.NewRequest("GET", requestURL, nil)
+	req.Header.Add("Authorization", helper.Client.AuthToken)
+	q := req.URL.Query()
+	if startTime != 0 {
+		q.Add("start-time", strconv.FormatInt(startTime, 10))
+	}
+	if endTime != 0 {
+		q.Add("end-time", strconv.FormatInt(endTime, 10))
+	}
+	if desc {
+		q.Add("order", "desc")
+	} else {
+		q.Add("order", "asc")
+	}
+	q.Add("page", strconv.FormatUint(page, 10))
+	req.URL.RawQuery = q.Encode()
+
+	resp, err := helper.DoRequest(req, baseURL)
+	if err != nil {
+		return next, nil, err
+	}
+	defer resp.Body.Close()
+
+	raw, err := ioutil.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		var errorMsg string
+		switch resp.StatusCode {
+		case 401:
+			errorMsg = fmt.Sprintf(ui.Unauthorized, baseURL, helper.Client.CCAPIEndpoint)
+		default:
+			errorMsg, err = parseErrResponse(raw)
+			if err != nil {
+				return next, nil, err
+			}
+		}
+		return next, nil, errors.New(errorMsg)
+	}
+
+	var metrics cmodels.MetricsResults
+	err = json.Unmarshal(raw, &metrics)
+	if err != nil {
+		return next, nil, err
+	}
+
+	var data [][]string
+	for _, metric := range metrics.Metrics {
+		data = append(data, []string{metric.Name, fmt.Sprint(metric.InstanceIndex), metric.Value + metric.Unit, time.Unix(0, metric.Timestamp).Format(time.RFC3339)})
+	}
+
+	if metrics.Page < metrics.TotalPages {
+		next = true
+	}
+	return next, data, nil
 
 }
