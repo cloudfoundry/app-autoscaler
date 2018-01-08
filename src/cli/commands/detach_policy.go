@@ -25,7 +25,7 @@ func DetachPolicy(cliConnection api.Connection, appName string) error {
 	if err != nil {
 		return err
 	}
-	err = cfclient.SetApp(appName)
+	err = cfclient.Configure(appName)
 	if err != nil {
 		return err
 	}

@@ -29,7 +29,7 @@ func CreatePolicy(cliConnection api.Connection, appName string, policyFile strin
 	if err != nil {
 		return err
 	}
-	err = cfclient.SetApp(appName)
+	err = cfclient.Configure(appName)
 	if err != nil {
 		return err
 	}

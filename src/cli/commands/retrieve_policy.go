@@ -44,7 +44,7 @@ func RetrievePolicy(cliConnection api.Connection, appName string, writer io.Writ
 	if err != nil {
 		return err
 	}
-	err = cfclient.SetApp(appName)
+	err = cfclient.Configure(appName)
 	if err != nil {
 		return err
 	}

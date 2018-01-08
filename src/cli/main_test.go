@@ -1172,7 +1172,7 @@ var _ = Describe("App-AutoScaler Commands", func() {
 									for i, row := range metricsTable {
 										colomns := strings.Split(row, "\t")
 										if i == 0 {
-											Expect(strings.Trim(colomns[0], " ")).To(Equal("Metrics"))
+											Expect(strings.Trim(colomns[0], " ")).To(Equal("Metrics Name"))
 											Expect(strings.Trim(colomns[1], " ")).To(Equal("Instance Index"))
 											Expect(strings.Trim(colomns[2], " ")).To(Equal("Value"))
 											Expect(strings.Trim(colomns[3], " ")).To(Equal("At"))
@@ -1254,7 +1254,7 @@ var _ = Describe("App-AutoScaler Commands", func() {
 										colomns := strings.Split(row, "\t")
 										if i == 0 {
 											//header line
-											Expect(strings.Trim(colomns[0], " ")).To(Equal("Metrics"))
+											Expect(strings.Trim(colomns[0], " ")).To(Equal("Metrics Name"))
 											Expect(strings.Trim(colomns[1], " ")).To(Equal("Instance Index"))
 											Expect(strings.Trim(colomns[2], " ")).To(Equal("Value"))
 											Expect(strings.Trim(colomns[3], " ")).To(Equal("At"))
@@ -1338,7 +1338,7 @@ var _ = Describe("App-AutoScaler Commands", func() {
 									for i, row := range metricsTable {
 										colomns := strings.Split(row, "\t")
 										if i == 0 {
-											Expect(strings.Trim(colomns[0], " ")).To(Equal("Metrics"))
+											Expect(strings.Trim(colomns[0], " ")).To(Equal("Metrics Name"))
 											Expect(strings.Trim(colomns[1], " ")).To(Equal("Instance Index"))
 											Expect(strings.Trim(colomns[2], " ")).To(Equal("Value"))
 											Expect(strings.Trim(colomns[3], " ")).To(Equal("At"))
@@ -1391,7 +1391,7 @@ var _ = Describe("App-AutoScaler Commands", func() {
 									for i, row := range metricsTable {
 										colomns := strings.Split(row, "\t")
 										if i == 0 {
-											Expect(strings.Trim(colomns[0], " ")).To(Equal("Metrics"))
+											Expect(strings.Trim(colomns[0], " ")).To(Equal("Metrics Name"))
 											Expect(strings.Trim(colomns[1], " ")).To(Equal("Instance Index"))
 											Expect(strings.Trim(colomns[2], " ")).To(Equal("Value"))
 											Expect(strings.Trim(colomns[3], " ")).To(Equal("At"))

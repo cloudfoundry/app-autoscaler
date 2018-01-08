@@ -20,7 +20,7 @@ type MetricsCommand struct {
 
 type MetricsPositionalArgs struct {
 	AppName    string `positional-arg-name:"APP_NAME" required:"true"`
-	MetricName string `positional-arg-name:"METRIC_NAME" required:"true" description:"available metric name: \n memoryused, memoryutil, responsetime, throughput"`
+	MetricName string `positional-arg-name:"METRIC_NAME" required:"true" description:"available metric supported: \n memoryused, memoryutil, responsetime, throughput"`
 }
 
 func (command MetricsCommand) Execute([]string) error {
@@ -77,7 +77,7 @@ func RetrieveMetrics(cliConnection api.Connection, appName, metricName string, s
 	if err != nil {
 		return err
 	}
-	err = cfclient.SetApp(appName)
+	err = cfclient.Configure(appName)
 	if err != nil {
 		return err
 	}
@@ -94,7 +94,7 @@ func RetrieveMetrics(cliConnection api.Connection, appName, metricName string, s
 
 	ui.SayMessage(ui.ShowMetricsHint, appName)
 
-	table := ui.NewTable(writer, []string{"Metrics", "Instance Index", "Value", "At"})
+	table := ui.NewTable(writer, []string{"Metrics Name", "Instance Index", "Value", "At"})
 	var (
 		page     uint64 = 1
 		next     bool   = true

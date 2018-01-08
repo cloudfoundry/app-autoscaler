@@ -47,7 +47,7 @@ func NewCFClient(connection Connection) (*CFClient, error) {
 
 }
 
-func (client *CFClient) SetApp(appName string) error {
+func (client *CFClient) Configure(appName string) error {
 
 	if connected, err := client.connection.IsLoggedIn(); !connected {
 		if err != nil {

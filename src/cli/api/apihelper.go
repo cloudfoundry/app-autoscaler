@@ -71,7 +71,7 @@ func makeTransport(skipSSLValidation bool, logger trace.Printer) http.RoundTripp
 	}, logger)
 }
 
-func (helper *APIHelper) DoRequest(req *http.Request, host string) (*http.Response, error) {
+func (helper *APIHelper) DoRequest(req *http.Request) (*http.Response, error) {
 
 	client := newHTTPClient(helper.Endpoint.SkipSSLValidation || helper.Client.IsSSLDisabled, helper.Logger)
 	resp, err := client.Do(req)
@@ -85,7 +85,7 @@ func (helper *APIHelper) DoRequest(req *http.Request, host string) (*http.Respon
 		if innerErr != nil {
 			switch typedInnerErr := innerErr.(type) {
 			case x509.UnknownAuthorityError, x509.HostnameError, x509.CertificateInvalidError:
-				return nil, fmt.Errorf(ui.InvalidSSLCerts, host)
+				return nil, fmt.Errorf(ui.InvalidSSLCerts, req.URL.Scheme+"://"+req.URL.Host)
 			default:
 				return nil, typedInnerErr
 			}
@@ -143,7 +143,7 @@ func (helper *APIHelper) CheckHealth() error {
 	requestURL := fmt.Sprintf("%s%s", baseURL, HealthPath)
 	req, err := http.NewRequest("GET", requestURL, nil)
 
-	resp, err := helper.DoRequest(req, baseURL)
+	resp, err := helper.DoRequest(req)
 	if err != nil {
 		return err
 	}
@@ -176,7 +176,7 @@ func (helper *APIHelper) GetPolicy() ([]byte, error) {
 	req, err := http.NewRequest("GET", requestURL, nil)
 	req.Header.Add("Authorization", helper.Client.AuthToken)
 
-	resp, err := helper.DoRequest(req, baseURL)
+	resp, err := helper.DoRequest(req)
 	if err != nil {
 		return nil, err
 	}
@@ -237,7 +237,7 @@ func (helper *APIHelper) CreatePolicy(data interface{}) error {
 	req.Header.Add("Authorization", helper.Client.AuthToken)
 	req.Header.Add("Content-Type", "application/json")
 
-	resp, err := helper.DoRequest(req, baseURL)
+	resp, err := helper.DoRequest(req)
 	if err != nil {
 		return err
 	}
@@ -282,7 +282,7 @@ func (helper *APIHelper) DeletePolicy() error {
 	req, err := http.NewRequest("DELETE", requestURL, nil)
 	req.Header.Add("Authorization", helper.Client.AuthToken)
 
-	resp, err := helper.DoRequest(req, baseURL)
+	resp, err := helper.DoRequest(req)
 	if err != nil {
 		return err
 	}
@@ -311,11 +311,11 @@ func (helper *APIHelper) DeletePolicy() error {
 
 func (helper *APIHelper) GetMetrics(metricName string, startTime, endTime int64, desc bool, page uint64) (bool, [][]string, error) {
 
-	next := false
+	hasNext := false
 	if page <= 1 {
 		err := helper.CheckHealth()
 		if err != nil {
-			return next, nil, err
+			return hasNext, nil, err
 		}
 	}
 
@@ -327,10 +327,10 @@ func (helper *APIHelper) GetMetrics(metricName string, startTime, endTime int64,
 	req, err := http.NewRequest("GET", requestURL, nil)
 	req.Header.Add("Authorization", helper.Client.AuthToken)
 	q := req.URL.Query()
-	if startTime != 0 {
+	if startTime > 0 {
 		q.Add("start-time", strconv.FormatInt(startTime, 10))
 	}
-	if endTime != 0 {
+	if endTime > 0 {
 		q.Add("end-time", strconv.FormatInt(endTime, 10))
 	}
 	if desc {
@@ -341,9 +341,9 @@ func (helper *APIHelper) GetMetrics(metricName string, startTime, endTime int64,
 	q.Add("page", strconv.FormatUint(page, 10))
 	req.URL.RawQuery = q.Encode()
 
-	resp, err := helper.DoRequest(req, baseURL)
+	resp, err := helper.DoRequest(req)
 	if err != nil {
-		return next, nil, err
+		return hasNext, nil, err
 	}
 	defer resp.Body.Close()
 
@@ -356,16 +356,16 @@ func (helper *APIHelper) GetMetrics(metricName string, startTime, endTime int64,
 		default:
 			errorMsg, err = parseErrResponse(raw)
 			if err != nil {
-				return next, nil, err
+				return hasNext, nil, err
 			}
 		}
-		return next, nil, errors.New(errorMsg)
+		return hasNext, nil, errors.New(errorMsg)
 	}
 
 	var metrics cmodels.MetricsResults
 	err = json.Unmarshal(raw, &metrics)
 	if err != nil {
-		return next, nil, err
+		return hasNext, nil, err
 	}
 
 	var data [][]string
@@ -374,8 +374,8 @@ func (helper *APIHelper) GetMetrics(metricName string, startTime, endTime int64,
 	}
 
 	if metrics.Page < metrics.TotalPages {
-		next = true
+		hasNext = true
 	}
-	return next, data, nil
+	return hasNext, data, nil
 
 }
