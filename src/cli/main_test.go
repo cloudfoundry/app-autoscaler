@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 
@@ -423,7 +424,7 @@ var _ = Describe("App-AutoScaler Commands", func() {
 								session.Wait()
 
 								Expect(session.Out).To(gbytes.Say(ui.ShowPolicyHint, fakeAppName))
-								policy := bytes.TrimLeft(session.Out.Contents(), fmt.Sprintf(ui.ShowPolicyHint+"\nOK", fakeAppName))
+								policy := bytes.TrimPrefix(session.Out.Contents(), []byte(fmt.Sprintf(ui.ShowPolicyHint+"\n", fakeAppName)))
 
 								var actualPolicy ScalingPolicy
 								_ = json.Unmarshal(policy, &actualPolicy)
@@ -980,7 +981,7 @@ var _ = Describe("App-AutoScaler Commands", func() {
 				})
 
 				It("Failed when --desc is wrong spelled", func() {
-					args = []string{ts.Port(), "autoscaling-metrics", fakeAppName, metricName, "--asc"}
+					args = []string{ts.Port(), "autoscaling-metrics", fakeAppName, metricName, "--dddesc"}
 					session, err := gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
 					Expect(err).NotTo(HaveOccurred())
 					session.Wait()
@@ -1167,7 +1168,7 @@ var _ = Describe("App-AutoScaler Commands", func() {
 									session.Wait()
 
 									Expect(session.Out).To(gbytes.Say(ui.ShowMetricsHint, fakeAppName))
-									metricsRaw := bytes.TrimLeft(session.Out.Contents(), fmt.Sprintf(ui.ShowMetricsHint+"\nOK", fakeAppName))
+									metricsRaw := bytes.TrimPrefix(session.Out.Contents(), []byte(fmt.Sprintf(ui.ShowMetricsHint+"\n", fakeAppName)))
 									metricsTable := strings.Split(string(bytes.TrimRight(metricsRaw, "\n")), "\n")
 									for i, row := range metricsTable {
 										colomns := strings.Split(row, "\t")
@@ -1248,7 +1249,7 @@ var _ = Describe("App-AutoScaler Commands", func() {
 									session.Wait()
 
 									Expect(session.Out).To(gbytes.Say(ui.ShowMetricsHint, fakeAppName))
-									metricsRaw := bytes.TrimLeft(session.Out.Contents(), fmt.Sprintf(ui.ShowMetricsHint+"\nOK", fakeAppName))
+									metricsRaw := bytes.TrimPrefix(session.Out.Contents(), []byte(fmt.Sprintf(ui.ShowMetricsHint+"\n", fakeAppName)))
 									metricsTable := strings.Split(string(bytes.TrimRight(metricsRaw, "\n")), "\n")
 									for i, row := range metricsTable {
 										colomns := strings.Split(row, "\t")
@@ -1333,7 +1334,7 @@ var _ = Describe("App-AutoScaler Commands", func() {
 									session.Wait()
 
 									Expect(session.Out).To(gbytes.Say(ui.ShowMetricsHint, fakeAppName))
-									metricsRaw := bytes.TrimLeft(session.Out.Contents(), fmt.Sprintf(ui.ShowMetricsHint+"\nOK", fakeAppName))
+									metricsRaw := bytes.TrimPrefix(session.Out.Contents(), []byte(fmt.Sprintf(ui.ShowMetricsHint+"\n", fakeAppName)))
 									metricsTable := strings.Split(string(bytes.TrimRight(metricsRaw, "\n")), "\n")
 									for i, row := range metricsTable {
 										colomns := strings.Split(row, "\t")
@@ -1400,6 +1401,575 @@ var _ = Describe("App-AutoScaler Commands", func() {
 											Expect(strings.Trim(colomns[1], " ")).To(Equal("0"))
 											Expect(strings.Trim(colomns[2], " ")).To(Equal("100MB"))
 											Expect(strings.Trim(colomns[3], " ")).To(Equal(time.Unix(0, now.UnixNano()+int64((i-1)*30*1E9)).Format(time.RFC3339)))
+										}
+									}
+									Expect(session.ExitCode()).To(Equal(0))
+								})
+
+							})
+
+						})
+
+					})
+
+				})
+
+			})
+		})
+	})
+
+	Describe("Commands autoscaling-history, ash", func() {
+
+		var (
+			urlpath               = "/v1/apps/" + fakeAppId + "/scaling_histories"
+			now                   = time.Now()
+			lowPrecisionNowInNano = (now.UnixNano() / 1E9) * 1E9
+		)
+
+		Context("autoscaling-history", func() {
+
+			Context("when the args or options are not properly provided", func() {
+
+				It("Require APP_NAME as argument", func() {
+					args = []string{ts.Port(), "autoscaling-history"}
+					session, err := gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+					session.Wait()
+
+					Expect(session).To(gbytes.Say("the required argument `APP_NAME` was not provided"))
+					Expect(session.ExitCode()).To(Equal(1))
+				})
+
+				It("Failed when start/end time is defined in unsupported time format", func() {
+					invalidTime := now.Format(time.UnixDate)
+					args = []string{ts.Port(), "autoscaling-history", fakeAppName, "--start", invalidTime}
+					session, err := gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+					session.Wait()
+
+					Expect(session).To(gbytes.Say("Unrecognized date time input"))
+					Expect(session.ExitCode()).To(Equal(1))
+
+					args = []string{ts.Port(), "autoscaling-history", fakeAppName, "--end", invalidTime}
+					session, err = gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+					session.Wait()
+
+					Expect(session).To(gbytes.Say("Unrecognized date time input"))
+					Expect(session.ExitCode()).To(Equal(1))
+				})
+
+				It("Failed when start time is greater than end time", func() {
+					args = []string{ts.Port(), "autoscaling-history", fakeAppName,
+						"--start", now.Format(time.RFC3339),
+						"--end", time.Unix(0, now.UnixNano()-int64(30*1E9)).Format(time.RFC3339),
+					}
+					session, err := gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+					session.Wait()
+
+					expects := strings.Split(ui.InvalidTimeRange, "%s")
+					for _, expect := range expects {
+						Expect(session).To(gbytes.Say(expect))
+					}
+					Expect(session.ExitCode()).To(Equal(1))
+				})
+
+				It("Failed when --desc is wrong spelled", func() {
+					args = []string{ts.Port(), "autoscaling-history", fakeAppName, "--dddesc"}
+					session, err := gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+					session.Wait()
+
+					Expect(session).To(gbytes.Say("unknown flag"))
+					Expect(session.ExitCode()).To(Equal(1))
+				})
+
+				It("Failed when output file path is invalid", func() {
+					args = []string{ts.Port(), "autoscaling-history", fakeAppName, "--output", "invalidDir/invalidFile"}
+					session, err := gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+					session.Wait()
+
+					Expect(session).To(gbytes.Say("open invalidDir/invalidFile: no such file or directory"))
+					Expect(session.ExitCode()).To(Equal(1))
+				})
+
+			})
+
+			Context("when cf not login", func() {
+				It("exits with 'You must be logged in' error ", func() {
+					args = []string{ts.Port(), "autoscaling-history", fakeAppName}
+					session, err := gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+					session.Wait()
+					Expect(session).To(gbytes.Say("You must be logged in"))
+					Expect(session.ExitCode()).To(Equal(1))
+				})
+			})
+
+			Context("when cf login", func() {
+				BeforeEach(func() {
+					rpcHandlers.IsLoggedInStub = func(args string, retVal *bool) error {
+						*retVal = true
+						return nil
+					}
+				})
+
+				Context("when app not found", func() {
+					BeforeEach(func() {
+						rpcHandlers.GetAppStub = func(_ string, retVal *plugin_models.GetAppModel) error {
+							return errors.New("App fakeApp not found")
+						}
+					})
+
+					It("exits with 'App not found' error ", func() {
+						args = []string{ts.Port(), "autoscaling-history", fakeAppName}
+						session, err := gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+						Expect(err).NotTo(HaveOccurred())
+						session.Wait()
+						Expect(session).To(gbytes.Say("App fakeApp not found"))
+						Expect(session.ExitCode()).To(Equal(1))
+					})
+				})
+
+				Context("when the app is found", func() {
+					BeforeEach(func() {
+						rpcHandlers.GetAppStub = func(_ string, retVal *plugin_models.GetAppModel) error {
+							*retVal = plugin_models.GetAppModel{
+								Guid: fakeAppId,
+							}
+							return nil
+						}
+					})
+
+					JustBeforeEach(func() {
+						args = []string{ts.Port(), "autoscaling-api", apiEndpoint}
+						session, err = gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+						Expect(err).NotTo(HaveOccurred())
+						session.Wait()
+					})
+
+					Context("when access token is wrong", func() {
+						BeforeEach(func() {
+							rpcHandlers.AccessTokenStub = func(args string, retVal *string) error {
+								*retVal = "incorrectAccessToken"
+								return nil
+							}
+
+							apiServer.RouteToHandler("GET", urlpath,
+								ghttp.CombineHandlers(
+									ghttp.RespondWith(http.StatusUnauthorized, ""),
+								),
+							)
+						})
+
+						It("failed with 401 error", func() {
+							args = []string{ts.Port(), "autoscaling-history", fakeAppName}
+							session, err = gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+							Expect(err).NotTo(HaveOccurred())
+							session.Wait()
+
+							Expect(session).To(gbytes.Say("Failed to access AutoScaler API Endpoint"))
+							Expect(session.ExitCode()).To(Equal(1))
+						})
+					})
+
+					Context("when access token is correct", func() {
+
+						BeforeEach(func() {
+							rpcHandlers.AccessTokenStub = func(args string, retVal *string) error {
+								*retVal = fakeAccessToken
+								return nil
+							}
+						})
+
+						Context("when no history record in desired duration", func() {
+							BeforeEach(func() {
+
+								apiServer.RouteToHandler("GET", urlpath,
+									ghttp.CombineHandlers(
+										ghttp.RespondWithJSONEncoded(http.StatusOK, &HistoryResults{
+											TotalResults: 0,
+											TotalPages:   0,
+											Page:         1,
+											Histories:    []*AppScalingHistory{},
+										}),
+										ghttp.VerifyHeaderKV("Authorization", fakeAccessToken),
+									),
+								)
+							})
+
+							It("Succeed but no record returned", func() {
+								args = []string{ts.Port(), "autoscaling-history", fakeAppName,
+									"--start", now.Format(time.RFC3339),
+									"--end", time.Unix(0, lowPrecisionNowInNano+int64(9*120*1E9)).Format(time.RFC3339)}
+
+								session, err = gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+								Expect(err).NotTo(HaveOccurred())
+								session.Wait()
+
+								Expect(session).To(gbytes.Say("OK"))
+								Expect(session).To(gbytes.Say(ui.HistoryNotFound, fakeAppName))
+								Expect(session.ExitCode()).To(Equal(0))
+
+							})
+						})
+
+						Context("when history record are available", func() {
+							var histories, reversedHistories []*AppScalingHistory
+
+							BeforeEach(func() {
+								for i := 0; i < 10; i++ {
+									histories = append(histories, &AppScalingHistory{
+										AppId:        fakeAppId,
+										Timestamp:    now.UnixNano() + int64(i*120*1E9),
+										ScalingType:  0, //dynamic
+										Status:       0, //succeed
+										OldInstances: i + 1,
+										NewInstances: i + 2,
+										Reason:       "fakeReason",
+										Message:      "fakeMsg",
+										Error:        "fakeError",
+									})
+								}
+
+								for i := 10; i < 20; i++ {
+									histories = append(histories, &AppScalingHistory{
+										AppId:        fakeAppId,
+										Timestamp:    now.UnixNano() + int64(i*120*1E9),
+										ScalingType:  1, //scheduled
+										Status:       0, //succeed
+										OldInstances: i + 1,
+										NewInstances: i + 2,
+										Reason:       "fakeReason",
+										Message:      "fakeMsg",
+										Error:        "fakeError",
+									})
+								}
+
+								for i := 20; i < 30; i++ {
+									histories = append(histories, &AppScalingHistory{
+										AppId:        fakeAppId,
+										Timestamp:    now.UnixNano() + int64(i*120*1E9),
+										ScalingType:  1, //scheduled
+										Status:       1, //failed
+										OldInstances: i + 1,
+										NewInstances: i + 2,
+										Reason:       "fakeReason",
+										Message:      "fakeMsg",
+										Error:        "fakeError",
+									})
+								}
+
+								for i := 0; i < 30; i++ {
+									reversedHistories = append(reversedHistories, histories[len(histories)-1-i])
+								}
+
+							})
+							Context("Query with default options ", func() {
+
+								BeforeEach(func() {
+									apiServer.RouteToHandler("GET", urlpath,
+										ghttp.CombineHandlers(
+											ghttp.RespondWithJSONEncoded(http.StatusOK, &HistoryResults{
+												TotalResults: 10,
+												TotalPages:   1,
+												Page:         1,
+												Histories:    histories[0:10],
+											}),
+											ghttp.VerifyHeaderKV("Authorization", fakeAccessToken),
+										),
+									)
+
+								})
+
+								It("Succeed to print the histories to stdout with asc order", func() {
+
+									args = []string{ts.Port(), "autoscaling-history", fakeAppName}
+
+									session, err = gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+									Expect(err).NotTo(HaveOccurred())
+									session.Wait()
+
+									Expect(session.Out).To(gbytes.Say(ui.ShowHistoryHint, fakeAppName))
+									historyRaw := bytes.TrimPrefix(session.Out.Contents(), []byte(fmt.Sprintf(ui.ShowHistoryHint+"\n", fakeAppName)))
+									historyTable := strings.Split(string(bytes.TrimRight(historyRaw, "\n")), "\n")
+									for i, row := range historyTable {
+										colomns := strings.Split(row, "\t")
+										if i == 0 {
+											Expect(strings.Trim(colomns[0], " ")).To(Equal("Scaling Type"))
+											Expect(strings.Trim(colomns[1], " ")).To(Equal("Status"))
+											Expect(strings.Trim(colomns[2], " ")).To(Equal("Before Scale"))
+											Expect(strings.Trim(colomns[3], " ")).To(Equal("After Scale"))
+											Expect(strings.Trim(colomns[4], " ")).To(Equal("Time"))
+											Expect(strings.Trim(colomns[5], " ")).To(Equal("Event"))
+											Expect(strings.Trim(colomns[6], " ")).To(Equal("Error"))
+
+										} else {
+
+											Expect(strings.Trim(colomns[0], " ")).To(Equal("Dynamic"))
+											Expect(strings.Trim(colomns[1], " ")).To(Equal("Succeed"))
+											Expect(strings.Trim(colomns[2], " ")).To(Equal(strconv.Itoa(i - 1 + 1)))
+											Expect(strings.Trim(colomns[3], " ")).To(Equal(strconv.Itoa(i - 1 + 2)))
+											Expect(strings.Trim(colomns[4], " ")).To(Equal(time.Unix(0, now.UnixNano()+int64((i-1)*120*1E9)).Format(time.RFC3339)))
+											Expect(strings.Trim(colomns[5], " ")).To(Equal("fakeReason"))
+											Expect(strings.Trim(colomns[6], " ")).To(Equal("fakeError"))
+										}
+									}
+									Expect(session.ExitCode()).To(Equal(0))
+								})
+
+							})
+
+							Context("Query multiple pages with asc order ", func() {
+
+								BeforeEach(func() {
+									//simulate the asc response from api server
+									apiServer.AppendHandlers(
+										ghttp.CombineHandlers(
+											ghttp.RespondWithJSONEncoded(http.StatusOK, &HistoryResults{
+												TotalResults: 30,
+												TotalPages:   3,
+												Page:         1,
+												Histories:    histories[0:10],
+											}),
+											ghttp.VerifyHeaderKV("Authorization", fakeAccessToken),
+											ghttp.VerifyRequest("GET", urlpath,
+												fmt.Sprintf("order=asc&page=1&start-time=%v&end-time=%v", lowPrecisionNowInNano, lowPrecisionNowInNano+int64(29*120*1E9)),
+											),
+										),
+									)
+									apiServer.AppendHandlers(
+										ghttp.CombineHandlers(
+											ghttp.RespondWithJSONEncoded(http.StatusOK, &HistoryResults{
+												TotalResults: 30,
+												TotalPages:   3,
+												Page:         2,
+												Histories:    histories[10:20],
+											}),
+											ghttp.VerifyHeaderKV("Authorization", fakeAccessToken),
+											ghttp.VerifyRequest("GET", urlpath,
+												fmt.Sprintf("order=asc&page=2&start-time=%v&end-time=%v", lowPrecisionNowInNano, lowPrecisionNowInNano+int64(29*120*1E9)),
+											),
+										),
+									)
+									apiServer.AppendHandlers(
+										ghttp.CombineHandlers(
+											ghttp.RespondWithJSONEncoded(http.StatusOK, &HistoryResults{
+												TotalResults: 30,
+												TotalPages:   3,
+												Page:         3,
+												Histories:    histories[20:30],
+											}),
+											ghttp.VerifyHeaderKV("Authorization", fakeAccessToken),
+											ghttp.VerifyRequest("GET", urlpath,
+												fmt.Sprintf("order=asc&page=3&start-time=%v&end-time=%v", lowPrecisionNowInNano, lowPrecisionNowInNano+int64(29*120*1E9)),
+											),
+										),
+									)
+
+								})
+
+								It("Succeed to print the metrics to stdout with asc order", func() {
+
+									args = []string{ts.Port(), "autoscaling-history", fakeAppName,
+										"--start", now.Format(time.RFC3339),
+										"--end", time.Unix(0, lowPrecisionNowInNano+int64(29*120*1E9)).Format(time.RFC3339)}
+
+									session, err = gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+									Expect(err).NotTo(HaveOccurred())
+									session.Wait()
+
+									Expect(session.Out).To(gbytes.Say(ui.ShowHistoryHint, fakeAppName))
+									historyRaw := bytes.TrimPrefix(session.Out.Contents(), []byte(fmt.Sprintf(ui.ShowHistoryHint+"\n", fakeAppName)))
+									historyTable := strings.Split(string(bytes.TrimRight(historyRaw, "\n")), "\n")
+									for i, row := range historyTable {
+										colomns := strings.Split(row, "\t")
+										if i == 0 {
+											//header line
+											Expect(strings.Trim(colomns[0], " ")).To(Equal("Scaling Type"))
+											Expect(strings.Trim(colomns[1], " ")).To(Equal("Status"))
+											Expect(strings.Trim(colomns[2], " ")).To(Equal("Before Scale"))
+											Expect(strings.Trim(colomns[3], " ")).To(Equal("After Scale"))
+											Expect(strings.Trim(colomns[4], " ")).To(Equal("Time"))
+											Expect(strings.Trim(colomns[5], " ")).To(Equal("Event"))
+											Expect(strings.Trim(colomns[6], " ")).To(Equal("Error"))
+										} else {
+											//use (i-1) to skip header
+											Expect(strings.Trim(colomns[2], " ")).To(Equal(strconv.Itoa(i - 1 + 1)))
+											Expect(strings.Trim(colomns[3], " ")).To(Equal(strconv.Itoa(i - 1 + 2)))
+											Expect(strings.Trim(colomns[4], " ")).To(Equal(time.Unix(0, now.UnixNano()+int64((i-1)*120*1E9)).Format(time.RFC3339)))
+											Expect(strings.Trim(colomns[5], " ")).To(Equal("fakeReason"))
+											Expect(strings.Trim(colomns[6], " ")).To(Equal("fakeError"))
+
+											if i < 11 {
+												Expect(strings.Trim(colomns[0], " ")).To(Equal("Dynamic"))
+												Expect(strings.Trim(colomns[1], " ")).To(Equal("Succeed"))
+											} else if i < 21 {
+												Expect(strings.Trim(colomns[0], " ")).To(Equal("Scheduled"))
+												Expect(strings.Trim(colomns[1], " ")).To(Equal("Succeed"))
+											} else {
+												Expect(strings.Trim(colomns[0], " ")).To(Equal("Scheduled"))
+												Expect(strings.Trim(colomns[1], " ")).To(Equal("Failed"))
+											}
+										}
+									}
+									Expect(session.ExitCode()).To(Equal(0))
+								})
+
+							})
+
+							Context("Query multiple pages with desc order ", func() {
+
+								BeforeEach(func() {
+									//simulate the desc response from api server
+									apiServer.AppendHandlers(
+										ghttp.CombineHandlers(
+											ghttp.RespondWithJSONEncoded(http.StatusOK, &HistoryResults{
+												TotalResults: 30,
+												TotalPages:   3,
+												Page:         1,
+												Histories:    reversedHistories[0:10],
+											}),
+											ghttp.VerifyHeaderKV("Authorization", fakeAccessToken),
+											ghttp.VerifyRequest("GET", urlpath,
+												fmt.Sprintf("order=desc&page=1&start-time=%v&end-time=%v", lowPrecisionNowInNano, lowPrecisionNowInNano+int64(29*120*1E9)),
+											),
+										),
+									)
+									apiServer.AppendHandlers(
+										ghttp.CombineHandlers(
+											ghttp.RespondWithJSONEncoded(http.StatusOK, &HistoryResults{
+												TotalResults: 30,
+												TotalPages:   3,
+												Page:         2,
+												Histories:    reversedHistories[10:20],
+											}),
+											ghttp.VerifyHeaderKV("Authorization", fakeAccessToken),
+											ghttp.VerifyRequest("GET", urlpath,
+												fmt.Sprintf("order=desc&page=2&start-time=%v&end-time=%v", lowPrecisionNowInNano, lowPrecisionNowInNano+int64(29*120*1E9)),
+											),
+										),
+									)
+									apiServer.AppendHandlers(
+										ghttp.CombineHandlers(
+											ghttp.RespondWithJSONEncoded(http.StatusOK, &HistoryResults{
+												TotalResults: 30,
+												TotalPages:   3,
+												Page:         3,
+												Histories:    reversedHistories[20:30],
+											}),
+											ghttp.VerifyHeaderKV("Authorization", fakeAccessToken),
+											ghttp.VerifyRequest("GET", urlpath,
+												fmt.Sprintf("order=desc&page=3&start-time=%v&end-time=%v", lowPrecisionNowInNano, lowPrecisionNowInNano+int64(29*120*1E9)),
+											),
+										),
+									)
+
+								})
+
+								It("Succeed to print the metrics to stdout with desc order", func() {
+
+									args = []string{ts.Port(), "autoscaling-history", fakeAppName,
+										"--start", now.Format(time.RFC3339),
+										"--end", time.Unix(0, lowPrecisionNowInNano+int64(29*120*1E9)).Format(time.RFC3339),
+										"--desc",
+									}
+
+									session, err = gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+									Expect(err).NotTo(HaveOccurred())
+									session.Wait()
+
+									Expect(session.Out).To(gbytes.Say(ui.ShowHistoryHint, fakeAppName))
+									historyRaw := bytes.TrimPrefix(session.Out.Contents(), []byte(fmt.Sprintf(ui.ShowHistoryHint+"\n", fakeAppName)))
+									historyTable := strings.Split(string(bytes.TrimRight(historyRaw, "\n")), "\n")
+									for i, row := range historyTable {
+										colomns := strings.Split(row, "\t")
+										if i == 0 {
+											Expect(strings.Trim(colomns[0], " ")).To(Equal("Scaling Type"))
+											Expect(strings.Trim(colomns[1], " ")).To(Equal("Status"))
+											Expect(strings.Trim(colomns[2], " ")).To(Equal("Before Scale"))
+											Expect(strings.Trim(colomns[3], " ")).To(Equal("After Scale"))
+											Expect(strings.Trim(colomns[4], " ")).To(Equal("Time"))
+											Expect(strings.Trim(colomns[5], " ")).To(Equal("Event"))
+											Expect(strings.Trim(colomns[6], " ")).To(Equal("Error"))
+										} else {
+											//use "29-(i-1)" to simulate the expected output in desc order
+											Expect(strings.Trim(colomns[2], " ")).To(Equal(strconv.Itoa(29 - (i - 1) + 1)))
+											Expect(strings.Trim(colomns[3], " ")).To(Equal(strconv.Itoa(29 - (i - 1) + 2)))
+											Expect(strings.Trim(colomns[4], " ")).To(Equal(time.Unix(0, now.UnixNano()+int64((29-(i-1))*120*1E9)).Format(time.RFC3339)))
+											Expect(strings.Trim(colomns[5], " ")).To(Equal("fakeReason"))
+											Expect(strings.Trim(colomns[6], " ")).To(Equal("fakeError"))
+
+											if i < 11 {
+												Expect(strings.Trim(colomns[0], " ")).To(Equal("Scheduled"))
+												Expect(strings.Trim(colomns[1], " ")).To(Equal("Failed"))
+											} else if i < 21 {
+												Expect(strings.Trim(colomns[0], " ")).To(Equal("Scheduled"))
+												Expect(strings.Trim(colomns[1], " ")).To(Equal("Succeed"))
+											} else {
+												Expect(strings.Trim(colomns[0], " ")).To(Equal("Dynamic"))
+												Expect(strings.Trim(colomns[1], " ")).To(Equal("Succeed"))
+											}
+										}
+									}
+									Expect(session.ExitCode()).To(Equal(0))
+								})
+
+							})
+
+							Context(" Print the output to a file", func() {
+
+								BeforeEach(func() {
+									apiServer.RouteToHandler("GET", urlpath,
+										ghttp.CombineHandlers(
+											ghttp.RespondWithJSONEncoded(http.StatusOK, &HistoryResults{
+												TotalResults: 10,
+												TotalPages:   1,
+												Page:         1,
+												Histories:    histories[0:10],
+											}),
+											ghttp.VerifyHeaderKV("Authorization", fakeAccessToken),
+										),
+									)
+
+								})
+
+								It("Succeed to print the metrics to stdout with asc order", func() {
+
+									args = []string{ts.Port(), "autoscaling-history", fakeAppName, "--output", outputFile}
+
+									session, err = gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+									Expect(err).NotTo(HaveOccurred())
+									session.Wait()
+
+									Expect(session.Out).To(gbytes.Say(ui.ShowHistoryHint, fakeAppName))
+									Expect(session.Out).To(gbytes.Say("OK"))
+
+									Expect(outputFile).To(BeARegularFile())
+									contents, err := ioutil.ReadFile(outputFile)
+									Expect(err).NotTo(HaveOccurred())
+
+									historyTable := strings.Split(string(bytes.TrimRight(contents, "\n")), "\n")
+									for i, row := range historyTable {
+										colomns := strings.Split(row, "\t")
+										if i == 0 {
+											Expect(strings.Trim(colomns[0], " ")).To(Equal("Scaling Type"))
+											Expect(strings.Trim(colomns[1], " ")).To(Equal("Status"))
+											Expect(strings.Trim(colomns[2], " ")).To(Equal("Before Scale"))
+											Expect(strings.Trim(colomns[3], " ")).To(Equal("After Scale"))
+											Expect(strings.Trim(colomns[4], " ")).To(Equal("Time"))
+											Expect(strings.Trim(colomns[5], " ")).To(Equal("Event"))
+											Expect(strings.Trim(colomns[6], " ")).To(Equal("Error"))
+										} else {
+											Expect(strings.Trim(colomns[0], " ")).To(Equal("Dynamic"))
+											Expect(strings.Trim(colomns[1], " ")).To(Equal("Succeed"))
+											Expect(strings.Trim(colomns[2], " ")).To(Equal(strconv.Itoa(i - 1 + 1)))
+											Expect(strings.Trim(colomns[3], " ")).To(Equal(strconv.Itoa(i - 1 + 2)))
+											Expect(strings.Trim(colomns[4], " ")).To(Equal(time.Unix(0, now.UnixNano()+int64((i-1)*120*1E9)).Format(time.RFC3339)))
+											Expect(strings.Trim(colomns[5], " ")).To(Equal("fakeReason"))
+											Expect(strings.Trim(colomns[6], " ")).To(Equal("fakeError"))
 										}
 									}
 									Expect(session.ExitCode()).To(Equal(0))

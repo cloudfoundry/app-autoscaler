@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	. "autoscaler/models"
@@ -675,6 +676,346 @@ var _ = Describe("API Helper Test", func() {
 
 				It("Fail with 500 error", func() {
 					_, _, err = apihelper.GetMetrics("memoryused", 0, 0, false, uint64(1))
+					Expect(err).Should(HaveOccurred())
+					Expect(err).Should(MatchError("Internal error"))
+				})
+			})
+
+		})
+
+		Context("Get Histrory", func() {
+			var urlpath = "/v1/apps/" + fakeAppId + "/scaling_histories"
+			var now int64
+			var histories, reversedHistories []*AppScalingHistory
+
+			BeforeEach(func() {
+				now = time.Now().UnixNano()
+
+				for i := 0; i < 10; i++ {
+					histories = append(histories, &AppScalingHistory{
+						AppId:        fakeAppId,
+						Timestamp:    now + int64(i*120*1E9),
+						ScalingType:  0, //dynamic
+						Status:       0, //succeed
+						OldInstances: i + 1,
+						NewInstances: i + 2,
+						Reason:       "fakeReason",
+						Message:      "fakeMsg",
+						Error:        "fakeError",
+					})
+				}
+
+				for i := 10; i < 20; i++ {
+					histories = append(histories, &AppScalingHistory{
+						AppId:        fakeAppId,
+						Timestamp:    now + int64(i*120*1E9),
+						ScalingType:  1, //scheduled
+						Status:       0, //succeed
+						OldInstances: i + 1,
+						NewInstances: i + 2,
+						Reason:       "fakeReason",
+						Message:      "fakeMsg",
+						Error:        "fakeError",
+					})
+				}
+
+				for i := 20; i < 30; i++ {
+					histories = append(histories, &AppScalingHistory{
+						AppId:        fakeAppId,
+						Timestamp:    now + int64(i*120*1E9),
+						ScalingType:  1, //scheduled
+						Status:       1, //failed
+						OldInstances: i + 1,
+						NewInstances: i + 2,
+						Reason:       "fakeReason",
+						Message:      "fakeMsg",
+						Error:        "fakeError",
+					})
+				}
+
+				for i := 0; i < 30; i++ {
+					reversedHistories = append(reversedHistories, histories[len(histories)-1-i])
+				}
+			})
+
+			Context("With valid auth token", func() {
+
+				Context("Query multiple pages with order asc", func() {
+					BeforeEach(func() {
+						apiServer.AppendHandlers(
+							ghttp.CombineHandlers(
+								ghttp.RespondWithJSONEncoded(http.StatusOK, &HistoryResults{
+									TotalResults: 30,
+									TotalPages:   3,
+									Page:         1,
+									Histories:    histories[0:10],
+								}),
+								ghttp.VerifyHeaderKV("Authorization", fakeAccessToken),
+								ghttp.VerifyRequest("GET", urlpath, "order=asc&page=1"),
+							),
+						)
+
+						apiServer.AppendHandlers(
+							ghttp.CombineHandlers(
+								ghttp.RespondWithJSONEncoded(http.StatusOK, &HistoryResults{
+									TotalResults: 30,
+									TotalPages:   3,
+									Page:         2,
+									Histories:    histories[10:20],
+								}),
+								ghttp.VerifyHeaderKV("Authorization", fakeAccessToken),
+								ghttp.VerifyRequest("GET", urlpath, "order=asc&page=2"),
+							),
+						)
+
+						apiServer.AppendHandlers(
+							ghttp.CombineHandlers(
+								ghttp.RespondWithJSONEncoded(http.StatusOK, &HistoryResults{
+									TotalResults: 30,
+									TotalPages:   3,
+									Page:         3,
+									Histories:    histories[20:30],
+								}),
+								ghttp.VerifyHeaderKV("Authorization", fakeAccessToken),
+								ghttp.VerifyRequest("GET", urlpath, "order=asc&page=3"),
+							),
+						)
+					})
+
+					It("Succeed", func() {
+
+						next, data, err := apihelper.GetHistory(0, 0, false, uint64(1))
+						Expect(err).NotTo(HaveOccurred())
+						Expect(next).To(BeTrue())
+						Expect(len(data)).To(Equal(10))
+
+						for i, row := range data {
+							Expect(row[0]).To(Equal("Dynamic"))
+							Expect(row[1]).To(Equal("Succeed"))
+							Expect(row[2]).To(Equal(strconv.Itoa(i + 1)))
+							Expect(row[3]).To(Equal(strconv.Itoa(i + 2)))
+							Expect(row[4]).To(Equal(time.Unix(0, now+int64(i*120*1E9)).Format(time.RFC3339)))
+							Expect(row[5]).To(Equal("fakeReason"))
+							Expect(row[6]).To(Equal("fakeError"))
+						}
+
+						next, data, err = apihelper.GetHistory(0, 0, false, uint64(2))
+						Expect(err).NotTo(HaveOccurred())
+						Expect(next).To(BeTrue())
+						Expect(len(data)).To(Equal(10))
+
+						for i, row := range data {
+							Expect(row[0]).To(Equal("Scheduled"))
+							Expect(row[1]).To(Equal("Succeed"))
+							Expect(row[2]).To(Equal(strconv.Itoa(i + 10 + 1)))
+							Expect(row[3]).To(Equal(strconv.Itoa(i + 10 + 2)))
+							Expect(row[4]).To(Equal(time.Unix(0, now+int64((i+10)*120*1E9)).Format(time.RFC3339)))
+							Expect(row[5]).To(Equal("fakeReason"))
+							Expect(row[6]).To(Equal("fakeError"))
+						}
+
+						next, data, err = apihelper.GetHistory(0, 0, false, uint64(3))
+						Expect(err).NotTo(HaveOccurred())
+						Expect(next).To(BeFalse())
+						Expect(len(data)).To(Equal(10))
+
+						for i, row := range data {
+							Expect(row[0]).To(Equal("Scheduled"))
+							Expect(row[1]).To(Equal("Failed"))
+							Expect(row[2]).To(Equal(strconv.Itoa(i + 20 + 1)))
+							Expect(row[3]).To(Equal(strconv.Itoa(i + 20 + 2)))
+							Expect(row[4]).To(Equal(time.Unix(0, now+int64((i+20)*120*1E9)).Format(time.RFC3339)))
+							Expect(row[5]).To(Equal("fakeReason"))
+							Expect(row[6]).To(Equal("fakeError"))
+
+						}
+
+					})
+				})
+
+				Context("Query multiple pages with order desc", func() {
+					BeforeEach(func() {
+						apiServer.AppendHandlers(
+							ghttp.CombineHandlers(
+								ghttp.RespondWithJSONEncoded(http.StatusOK, &HistoryResults{
+									TotalResults: 30,
+									TotalPages:   3,
+									Page:         1,
+									Histories:    reversedHistories[0:10],
+								}),
+								ghttp.VerifyHeaderKV("Authorization", fakeAccessToken),
+								ghttp.VerifyRequest("GET", urlpath, "order=desc&page=1"),
+							),
+						)
+
+						apiServer.AppendHandlers(
+							ghttp.CombineHandlers(
+								ghttp.RespondWithJSONEncoded(http.StatusOK, &HistoryResults{
+									TotalResults: 30,
+									TotalPages:   3,
+									Page:         2,
+									Histories:    reversedHistories[10:20],
+								}),
+								ghttp.VerifyHeaderKV("Authorization", fakeAccessToken),
+								ghttp.VerifyRequest("GET", urlpath, "order=desc&page=2"),
+							),
+						)
+
+						apiServer.AppendHandlers(
+							ghttp.CombineHandlers(
+								ghttp.RespondWithJSONEncoded(http.StatusOK, &HistoryResults{
+									TotalResults: 30,
+									TotalPages:   3,
+									Page:         3,
+									Histories:    reversedHistories[20:30],
+								}),
+								ghttp.VerifyHeaderKV("Authorization", fakeAccessToken),
+								ghttp.VerifyRequest("GET", urlpath, "order=desc&page=3"),
+							),
+						)
+					})
+
+					It("Succeed", func() {
+
+						next, data, err := apihelper.GetHistory(0, 0, true, uint64(1))
+						Expect(err).NotTo(HaveOccurred())
+						Expect(next).To(BeTrue())
+						Expect(len(data)).To(Equal(10))
+
+						for i, row := range data {
+							Expect(row[0]).To(Equal("Scheduled"))
+							Expect(row[1]).To(Equal("Failed"))
+							Expect(row[2]).To(Equal(strconv.Itoa(29 - i + 1)))
+							Expect(row[3]).To(Equal(strconv.Itoa(29 - i + 2)))
+							Expect(row[4]).To(Equal(time.Unix(0, now+int64((29-i)*120*1E9)).Format(time.RFC3339)))
+							Expect(row[5]).To(Equal("fakeReason"))
+							Expect(row[6]).To(Equal("fakeError"))
+						}
+
+						next, data, err = apihelper.GetHistory(0, 0, true, uint64(2))
+						Expect(err).NotTo(HaveOccurred())
+						Expect(next).To(BeTrue())
+						Expect(len(data)).To(Equal(10))
+
+						for i, row := range data {
+							Expect(row[0]).To(Equal("Scheduled"))
+							Expect(row[1]).To(Equal("Succeed"))
+							Expect(row[2]).To(Equal(strconv.Itoa(19 - i + 1)))
+							Expect(row[3]).To(Equal(strconv.Itoa(19 - i + 2)))
+							Expect(row[4]).To(Equal(time.Unix(0, now+int64((19-i)*120*1E9)).Format(time.RFC3339)))
+							Expect(row[5]).To(Equal("fakeReason"))
+							Expect(row[6]).To(Equal("fakeError"))
+						}
+
+						next, data, err = apihelper.GetHistory(0, 0, true, uint64(3))
+						Expect(err).NotTo(HaveOccurred())
+						Expect(next).To(BeFalse())
+						Expect(len(data)).To(Equal(10))
+
+						for i, row := range data {
+							Expect(row[0]).To(Equal("Dynamic"))
+							Expect(row[1]).To(Equal("Succeed"))
+							Expect(row[2]).To(Equal(strconv.Itoa(9 - i + 1)))
+							Expect(row[3]).To(Equal(strconv.Itoa(9 - i + 2)))
+							Expect(row[4]).To(Equal(time.Unix(0, now+int64((9-i)*120*1E9)).Format(time.RFC3339)))
+							Expect(row[5]).To(Equal("fakeReason"))
+							Expect(row[6]).To(Equal("fakeError"))
+						}
+
+					})
+				})
+
+				Context("Query with asc & start time & end time ", func() {
+					BeforeEach(func() {
+						apiServer.AppendHandlers(
+							ghttp.CombineHandlers(
+								ghttp.RespondWithJSONEncoded(http.StatusOK, &HistoryResults{
+									TotalResults: 10,
+									TotalPages:   1,
+									Page:         1,
+									Histories:    histories[0:10],
+								}),
+								ghttp.VerifyHeaderKV("Authorization", fakeAccessToken),
+								ghttp.VerifyRequest("GET", urlpath, fmt.Sprintf("order=asc&page=1&start-time=%v&end-time=%v", now, now+int64(9*120*1E9))),
+							),
+						)
+					})
+
+					It("Succeed", func() {
+
+						next, data, err := apihelper.GetHistory(now, now+int64(9*120*1E9), false, uint64(1))
+						Expect(err).NotTo(HaveOccurred())
+						Expect(next).To(BeFalse())
+						Expect(len(data)).To(Equal(10))
+
+						for i, row := range data {
+							Expect(row[0]).To(Equal("Dynamic"))
+							Expect(row[1]).To(Equal("Succeed"))
+							Expect(row[2]).To(Equal(strconv.Itoa(i + 1)))
+							Expect(row[3]).To(Equal(strconv.Itoa(i + 2)))
+							Expect(row[4]).To(Equal(time.Unix(0, now+int64(i*120*1E9)).Format(time.RFC3339)))
+							Expect(row[5]).To(Equal("fakeReason"))
+							Expect(row[6]).To(Equal("fakeError"))
+						}
+
+					})
+				})
+
+				Context("Query when no history avaialable in desired period", func() {
+					BeforeEach(func() {
+						apiServer.AppendHandlers(
+							ghttp.CombineHandlers(
+								ghttp.RespondWithJSONEncoded(http.StatusOK, &HistoryResults{
+									TotalResults: 0,
+									TotalPages:   0,
+									Page:         1,
+									Histories:    []*AppScalingHistory{},
+								}),
+								ghttp.VerifyHeaderKV("Authorization", fakeAccessToken),
+								ghttp.VerifyRequest("GET", urlpath, fmt.Sprintf("order=asc&page=1&start-time=%v&end-time=%v", now, now+int64(9*120*1E9))),
+							),
+						)
+					})
+
+					It("Succeed", func() {
+						next, data, err := apihelper.GetHistory(now, now+int64(9*120*1E9), false, uint64(1))
+						Expect(err).NotTo(HaveOccurred())
+						Expect(next).To(BeFalse())
+						Expect(len(data)).To(Equal(0))
+
+					})
+				})
+			})
+
+			Context("Unauthorized Access", func() {
+				BeforeEach(func() {
+					apiServer.AppendHandlers(
+						ghttp.CombineHandlers(
+							ghttp.RespondWith(http.StatusUnauthorized, ""),
+							ghttp.VerifyRequest("GET", urlpath, "order=asc&page=1"),
+						),
+					)
+				})
+
+				It("Fail with 401 error", func() {
+					_, _, err := apihelper.GetHistory(0, 0, false, uint64(1))
+					Expect(err).Should(HaveOccurred())
+					Expect(err).Should(MatchError(fmt.Sprintf(ui.Unauthorized, apihelper.Endpoint.URL, apihelper.Client.CCAPIEndpoint)))
+				})
+			})
+
+			Context("Default error handling", func() {
+				BeforeEach(func() {
+					apiServer.AppendHandlers(
+						ghttp.CombineHandlers(
+							ghttp.RespondWith(http.StatusInternalServerError, `{"success":false,"error":{"message":"Internal error","statusCode":500},"result":null}`),
+							ghttp.VerifyRequest("GET", urlpath, "order=asc&page=1"),
+						),
+					)
+				})
+
+				It("Fail with 500 error", func() {
+					_, _, err := apihelper.GetHistory(0, 0, false, uint64(1))
 					Expect(err).Should(HaveOccurred())
 					Expect(err).Should(MatchError("Internal error"))
 				})

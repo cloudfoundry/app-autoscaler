@@ -66,7 +66,9 @@ func RetrievePolicy(cliConnection api.Connection, appName string, writer io.Writ
 		return err
 	}
 
-	ui.SayOK()
+	if writer != os.Stdout {
+		ui.SayOK()
+	}
 	fmt.Fprintf(writer, string(policy))
 	return nil
 }
