@@ -54,3 +54,20 @@ databaseChangeLog:
                     defaultValue: 0
                     constraints:
                       nullable: false
+  - changeSet:
+      id: 3
+      author: tanmoypal
+      changes:
+        - createIndex:
+             columns:
+              - column:
+                  name: app_id
+                  type: varchar(255)
+              - column:
+                  name: metric_type
+                  type: varchar(100)
+              - column:
+                  name: timestamp
+                  type: bigint
+             indexName: index_app_metrics
+             tableName: app_metric
