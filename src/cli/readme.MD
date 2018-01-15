@@ -37,13 +37,14 @@ cf uninstall-plugin AutoScaler
 Set or view AutoScaler service API endpoint
 
 ```
-cf autoscaling-api [URL] [--unset] 
+cf autoscaling-api [URL] [--unset] [--skip-ssl-validation]
 ```
 
 **ALIAS**: asa
 
 **OPTIONS**
 - `--unset`: Unset the api endpoint
+- `--skip-ssl-validation` : Skip verification of the API endpoint. Not recommended!
 
 ### `cf autoscaling-policy` 
 
@@ -83,14 +84,15 @@ cf detach-as-policy APP_NAME
 Retrieve the metrics of an application
 
 ```
-cf autoscaling-metrics APP_NAME METRIC_NAME [--start  START_TIME] [--end END_TIME] [--desc] [--output PATH_TO_FILE]
+cf autoscaling-metrics APP_NAME METRIC_NAME [--start START_TIME] [--end END_TIME] [--desc] [--output PATH_TO_FILE]
 ```
 **ALIAS**: asm
 
 
 **OPTIONS**
-- `--start` : start time of metrics collected with format "yyyy-MM-ddTHH:mm:ss+/-HHmm" or "yyyy-MM-ddTHH:mm:ssZ", default to very beginning if not specified.
-- `--end` : end time of the metrics collected  with format "yyyy-MM-ddTHH:mm:ss+/-HHmm" or "yyyy-MM-ddTHH:mm:ssZ", default to current time if not speficied.
+- `METRIC_NAME` : available metric supported: memoryused, memoryutil, responsetime,throughput.
+- `--start` : start time of metrics collected with format "yyyy-MM-ddTHH:mm:ss+/-HH:mm" or "yyyy-MM-ddTHH:mm:ssZ", default to very beginning if not specified.
+- `--end` : end time of the metrics collected  with format "yyyy-MM-ddTHH:mm:ss+/-HH:mm" or "yyyy-MM-ddTHH:mm:ssZ", default to current time if not speficied.
 - `--desc` : display in descending order, default to ascending order if not specified
 - `--output` : dump the metrics to a file in JSON format
 
@@ -99,13 +101,13 @@ cf autoscaling-metrics APP_NAME METRIC_NAME [--start  START_TIME] [--end END_TIM
 Retrieve the scaling history of an application.
 
 ```
-cf autoscaling-history APP_NAME [--start  START_TIME] [--end END_TIME] [--desc] [--output PATH_TO_FILE]
+cf autoscaling-history APP_NAME [--start START_TIME] [--end END_TIME] [--desc] [--output PATH_TO_FILE]
 ```
 
 **ALIAS**: ash
 
 **OPTIONS**
-- `--start` : start time of the scaling history with format "yyyy-MM-ddTHH:mm:ss+/-HHmm" or "yyyy-MM-ddTHH:mm:ssZ", default to very beginning if not specified.
-- `--end` : end time of the scaling history with format "yyyy-MM-ddTHH:mm:ss+/-HHmm" or "yyyy-MM-ddTHH:mm:ssZ", default to current time if not speficied.
+- `--start` : start time of the scaling history with format "yyyy-MM-ddTHH:mm:ss+/-HH:mm" or "yyyy-MM-ddTHH:mm:ssZ", default to very beginning if not specified.
+- `--end` : end time of the scaling history with format "yyyy-MM-ddTHH:mm:ss+/-HH:mm" or "yyyy-MM-ddTHH:mm:ssZ", default to current time if not speficied.
 - `--desc` : display in descending order, default to ascending order if not specified
 - `--output` : dump the scaling history to a file in JSON format

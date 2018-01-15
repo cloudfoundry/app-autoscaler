@@ -7,3 +7,5 @@
 /.project
 /.settings/
 *.coverprofile
+**/.idea
+**/ascli
