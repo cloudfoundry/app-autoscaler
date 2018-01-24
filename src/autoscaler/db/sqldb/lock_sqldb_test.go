@@ -123,6 +123,13 @@ var _ = Describe("LockSqldb", func() {
 				})
 
 				Context("and lock expired", func() {
+					BeforeEach(func() {
+						lock = &models.Lock{Owner: "24165435", Ttl: testTTL}
+						isLockAcquired, err = ldb.Lock(lock)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(isLockAcquired).To(BeTrue())
+						Expect(validateLockInDB("24165435", lock)).To(Succeed())
+					})
 					It("competing instance should successfully acquire the lock", func() {
 						time.Sleep(testTTL + 5*time.Second) //waiting for the ttl to expire
 						lock = &models.Lock{Owner: "123456", Ttl: testTTL}

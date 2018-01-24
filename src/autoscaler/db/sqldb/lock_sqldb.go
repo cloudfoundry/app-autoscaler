@@ -74,7 +74,7 @@ func (ldb *LockSQLDB) fetch(tx *sql.Tx) (*models.Lock, error) {
 
 func (ldb *LockSQLDB) remove(owner string, tx *sql.Tx) error {
 	ldb.logger.Debug("removing-lock", lager.Data{"Owner": owner})
-	query := "DELETE FROM " + ldb.table + " WHERE owner = $2"
+	query := "DELETE FROM " + ldb.table + " WHERE owner = $1"
 	if _, err := tx.Exec(query, owner); err != nil {
 		ldb.logger.Error("failed-to-delete-lock-details-during-release-lock", err)
 		return err
