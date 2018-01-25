@@ -1,7 +1,9 @@
 package org.cloudfoundry.autoscaler.scheduler;
 
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.hibernate.exception.GenericJDBCException;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.actuate.autoconfigure.AuditAutoConfiguration;
 import org.springframework.boot.actuate.autoconfigure.EndpointAutoConfiguration;
@@ -31,6 +33,7 @@ import org.springframework.cloud.autoconfigure.LifecycleMvcEndpointAutoConfigura
 import org.springframework.cloud.client.CommonsClientAutoConfiguration;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.client.loadbalancer.AsyncLoadBalancerAutoConfiguration;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ImportResource;
 import org.springframework.context.event.EventListener;
@@ -64,7 +67,23 @@ public class SchedulerApplication {
 	}
 
 	public static void main(String[] args) {
-		SpringApplication.run(SchedulerApplication.class, args);
+		ConfigurableApplicationContext context = null;
+		try {
+			SpringApplication app = new SpringApplication(SchedulerApplication.class);
+			context = app.run(args);
+		} catch (Exception e) {
+			// Check if it is a DB error.
+			int index = ExceptionUtils.indexOfThrowable(e, GenericJDBCException.class);
+			if (index != -1) {
+				LogManager.getLogger().error("Failed to connect to scheduler database", e);
+				// Exit JVM
+				System.exit(1);
+			}
+		} finally {
+			// Finished so close the context
+			if (context != null)
+				context.close();
+		}
 	}
 
 	@Bean
@@ -73,5 +92,4 @@ public class SchedulerApplication {
 				.apis(RequestHandlerSelectors.basePackage("org.cloudfoundry.autoscaler.scheduler"))
 				.paths(PathSelectors.any()).build();
 	}
-
 }
