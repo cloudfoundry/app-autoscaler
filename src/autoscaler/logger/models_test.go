@@ -19,6 +19,12 @@ var _ = Describe("Logger Models", func() {
 	var logTime time.Time
 	var template string = `{"timestamp":"%s","source":"log-source","message":"message","log_level":1,"data":{"log-data":"log-data"},"log_time":"%s"}`
 	var writer *copyWriter
+	var tlf TimeLogFormat
+
+	JustBeforeEach(func() {
+		tlf = NewTimeLogFormat(log)
+	})
+
 	Context("when all values of LogFormat are valid", func() {
 		BeforeEach(func() {
 			logTime = time.Now()
@@ -32,11 +38,11 @@ var _ = Describe("Logger Models", func() {
 			writer = NewCopyWriter()
 		})
 		It("add RFC3339 format field log_time by the value LogFormat.Timestamp to output", func() {
-			tlf := NewTimeLogFormat(log)
 			result := fmt.Sprintf(template, timestamp2String(logTime.UnixNano()), time.Time.Format(logTime, time.RFC3339))
 			Expect(tlf.ToJSON()).To(MatchJSON(result))
 		})
 	})
+
 	Context("when there is no LogFormat.Timestamp", func() {
 		BeforeEach(func() {
 			logTime = time.Now()
@@ -48,11 +54,11 @@ var _ = Describe("Logger Models", func() {
 			}
 		})
 		It("add RFC3339 format field log_time by the value 0 to output", func() {
-			tlf := NewTimeLogFormat(log)
 			result := fmt.Sprintf(template, "", time.Time.Format(time.Unix(0, 0), time.RFC3339))
 			Expect(tlf.ToJSON()).To(MatchJSON(result))
 		})
 	})
+
 	Context("when the value of LogFormat.Timestamp is an invalid float", func() {
 		BeforeEach(func() {
 			logTime = time.Now()
@@ -65,11 +71,11 @@ var _ = Describe("Logger Models", func() {
 			}
 		})
 		It("add RFC3339 format field log_time by the value 0 to output", func() {
-			tlf := NewTimeLogFormat(log)
 			result := fmt.Sprintf(template, "not-an-invalid-float-string", time.Time.Format(time.Unix(0, 0), time.RFC3339))
 			Expect(tlf.ToJSON()).To(MatchJSON(result))
 		})
 	})
+
 	Context("when a unserializable object is passed into LogFormat.Data", func() {
 		BeforeEach(func() {
 			logTime = time.Now()
@@ -81,11 +87,8 @@ var _ = Describe("Logger Models", func() {
 				Data:      map[string]interface{}{"log-data": func() {}},
 			}
 		})
-
 		It("logs the serialization error", func() {
-			tlf := NewTimeLogFormat(log)
 			message := map[string]interface{}{}
-			fmt.Printf("===>%s\n", tlf.ToJSON())
 			json.Unmarshal(tlf.ToJSON(), &message)
 			Expect(message["message"]).To(Equal("message"))
 			Expect(message["timestamp"]).To(Equal(timestamp2String(logTime.UnixNano())))
