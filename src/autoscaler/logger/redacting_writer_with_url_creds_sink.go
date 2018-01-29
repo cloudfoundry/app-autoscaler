@@ -31,11 +31,10 @@ func (sink *redactingWriterWithURLCredSink) Log(log lager.LogFormat) {
 	if log.LogLevel < sink.minLogLevel {
 		return
 	}
-
+	timeLogFormat := NewTimeLogFormat(log)
 	sink.writeL.Lock()
-	v := log.ToJSON()
+	v := timeLogFormat.ToJSON()
 	rv := sink.jsonRedacterWithURLCred.Redact(v)
-
 	sink.writer.Write(rv)
 	sink.writer.Write([]byte("\n"))
 	sink.writeL.Unlock()
