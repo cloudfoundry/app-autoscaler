@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	"code.cloudfoundry.org/lager"
 
@@ -18,9 +19,11 @@ var _ = Describe("RedactingWriterSinkWithUrlCred", func() {
 
 	var sink lager.Sink
 	var writer *copyWriter
+	var logTime time.Time
 
 	BeforeEach(func() {
 		writer = NewCopyWriter()
+		logTime = time.Now()
 		var err error
 		sink, err = logger.NewRedactingWriterWithURLCredSink(writer, lager.INFO, nil, nil)
 		Expect(err).NotTo(HaveOccurred())
@@ -28,17 +31,17 @@ var _ = Describe("RedactingWriterSinkWithUrlCred", func() {
 
 	Context("when logging above the minimum log level", func() {
 		BeforeEach(func() {
-			sink.Log(lager.LogFormat{LogLevel: lager.INFO, Message: "hello world", Data: lager.Data{"password": "abcd", "dburl": "postgresql://username:password@hostname:5432/dbname?sslmode=disabled"}})
+			sink.Log(lager.LogFormat{Timestamp: timestamp2String(logTime.UnixNano()), LogLevel: lager.INFO, Message: "hello world", Data: lager.Data{"password": "abcd", "dburl": "postgresql://username:password@hostname:5432/dbname?sslmode=disabled"}})
 		})
 
 		It("writes to the given writer", func() {
-			Expect(writer.Copy()).To(MatchJSON(`{"message":"hello world","log_level":1,"timestamp":"","source":"","data":{"password":"*REDACTED*","dburl":"postgresql://username:*REDACTED*@hostname:5432/dbname?sslmode=disabled"}}`))
+			Expect(writer.Copy()).To(MatchJSON(fmt.Sprintf(`{"message":"hello world","log_level":1,"timestamp":"%s","log_time": "%s","source":"","data":{"password":"*REDACTED*","dburl":"postgresql://username:*REDACTED*@hostname:5432/dbname?sslmode=disabled"}}`, timestamp2String(logTime.UnixNano()), time.Time.Format(logTime, time.RFC3339))))
 		})
 	})
 
 	Context("when a unserializable object is passed into data", func() {
 		BeforeEach(func() {
-			sink.Log(lager.LogFormat{LogLevel: lager.INFO, Message: "hello world", Data: map[string]interface{}{"some_key": func() {}}})
+			sink.Log(lager.LogFormat{Timestamp: timestamp2String(logTime.UnixNano()), LogLevel: lager.INFO, Message: "hello world", Data: map[string]interface{}{"some_key": func() {}}})
 		})
 
 		It("logs the serialization error", func() {
@@ -53,7 +56,7 @@ var _ = Describe("RedactingWriterSinkWithUrlCred", func() {
 
 	Context("when logging below the minimum log level", func() {
 		BeforeEach(func() {
-			sink.Log(lager.LogFormat{LogLevel: lager.DEBUG, Message: "hello world"})
+			sink.Log(lager.LogFormat{Timestamp: timestamp2String(logTime.UnixNano()), LogLevel: lager.DEBUG, Message: "hello world"})
 		})
 
 		It("does not write to the given writer", func() {
@@ -69,7 +72,7 @@ var _ = Describe("RedactingWriterSinkWithUrlCred", func() {
 			for i := 0; i < MaxThreads; i++ {
 				wg.Add(1)
 				go func() {
-					sink.Log(lager.LogFormat{LogLevel: lager.INFO, Message: content})
+					sink.Log(lager.LogFormat{Timestamp: timestamp2String(logTime.UnixNano()), LogLevel: lager.INFO, Message: content})
 					wg.Done()
 				}()
 			}
@@ -82,7 +85,7 @@ var _ = Describe("RedactingWriterSinkWithUrlCred", func() {
 				if line == "" {
 					continue
 				}
-				Expect(line).To(MatchJSON(fmt.Sprintf(`{"message":"%s","log_level":1,"timestamp":"","source":"","data":null}`, content)))
+				Expect(line).To(MatchJSON(fmt.Sprintf(`{"message":"%s","log_level":1,"timestamp":"%s","log_time": "%s","source":"","data":null}`, content, timestamp2String(logTime.UnixNano()), time.Time.Format(logTime, time.RFC3339))))
 			}
 		})
 	})
