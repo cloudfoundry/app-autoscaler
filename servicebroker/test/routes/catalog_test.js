@@ -14,7 +14,7 @@ var catalog = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/cata
 describe('getCatalog RESTful API', function() {
   var server;
   beforeEach(function() {
-    server = BrokerServer(settings, catalog);
+    server = BrokerServer(settings, catalog, function(){});
   });
 
   afterEach(function(done) {

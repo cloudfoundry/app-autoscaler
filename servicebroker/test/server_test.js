@@ -2,6 +2,8 @@
 
 var supertest = require("supertest");
 var uuid = require('uuid');
+var sinon = require('sinon');
+var expect = require('chai').expect;
 
 var fs = require('fs');
 var path = require('path');
@@ -15,7 +17,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 describe("Invalid path for RESTful API", function() {
   var server;
   before(function() {
-    server = BrokerServer(settings, catalog);
+    server = BrokerServer(settings, catalog, function() {});
   });
 
   after(function(done) {
@@ -35,7 +37,7 @@ describe("Invalid path for RESTful API", function() {
 describe("Auth for RESTful API", function() {
   var server;
   before(function() {
-    server = BrokerServer(settings, catalog);
+    server = BrokerServer(settings, catalog, function() {});
   });
 
   after(function(done) {
@@ -71,4 +73,31 @@ describe("Auth for RESTful API", function() {
 
   });
 
+});
+
+describe("Incorrect database configuration", function() {
+  var server;
+  var stub;
+  beforeEach(function() {
+    settings.db.uri = "postgres://postgres@127.0.0.1:5432/wrong-db-name";
+    stub = sinon.stub(process, 'exit');
+  });
+
+  afterEach(function(done) {
+    server.close(done);
+    stub.restore();
+  });
+  it("server should exit", function(done) {
+    server = BrokerServer(settings, catalog, function(err) {
+      if (err) {
+        process.exit(1);
+      }
+      expect(process.exit.isSinonProxy).to.equal(true);
+      sinon.assert.called(process.exit);
+      sinon.assert.calledWith(process.exit, 1);
+
+      done();
+    });
+
+  });
 });

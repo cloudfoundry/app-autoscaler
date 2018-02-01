@@ -19,9 +19,7 @@ module.exports = function(dbSettings, callback) {
 
   sequelize.authenticate()
     .then(function() {
-      if (callback) {
-        callback();
-      }
+      logger.info('DB Connection has been established successfully');
     })
     .catch(function(error) {
       logger.error('DB Connection failed ', error);

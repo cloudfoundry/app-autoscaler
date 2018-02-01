@@ -1,12 +1,11 @@
 'use strict';
 
 
-module.exports = function(app, settings, catalog) {
+module.exports = function(app, settings, catalog, models) {
   var path = require('path');
   var fs = require('fs');
   var request = require('request');
   var logger = require(path.join(__dirname, '../logger/logger.js'));
-  var models = require(path.join(__dirname, '../models'))(settings.db);
 
   var apiServerUtil = require(path.join(__dirname, '../util/apiServerUtil.js'))(settings);
   var messageUtil = require(path.join(__dirname, '../util/messageUtil.js'))(catalog);

@@ -1,10 +1,9 @@
 'use strict';
 
 
-module.exports = function(app, settings, catalog) {
+module.exports = function(app, settings, catalog, models) {
   var path = require('path');
   var logger = require(path.join(__dirname, '../logger/logger.js'));
-  var models = require(path.join(__dirname, '../models'))(settings.db);
 
   var getDashboardUrl = function(serviceInstanceId){
     if(catalog.services[0].dashboard_client && catalog.services[0].dashboard_client.redirect_uri){
