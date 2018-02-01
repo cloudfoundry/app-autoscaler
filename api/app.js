@@ -1,5 +1,5 @@
 'use strict'; 
-module.exports = function(configFilePath) {
+module.exports = function(settings, callback) {
   var https = require('https');
   var http = require('http');
   var fs = require('fs');
@@ -9,14 +9,10 @@ module.exports = function(configFilePath) {
   var bodyParser = require('body-parser');
   var logger = require('./lib/log/logger');
   var HttpStatus = require('http-status-codes');
-  var oauth = require('./lib/oauth/oauth')(configFilePath);
-
-  if (!configFilePath || !fs.existsSync(configFilePath)) {
-      logger.error("Invalid configuration file path: " + configFilePath);
-      throw new Error('configuration file does not exist:' + configFilePath);
-  }
-  var settings = require(path.join(__dirname, './lib/config/setting.js'))((JSON.parse(
-        fs.readFileSync(configFilePath, 'utf8'))));
+  
+  var oauth = require('./lib/oauth/oauth')(settings);
+  var models = require('./lib/models')(settings.db, callback);
+  
   var validateResult = settings.validate();
   if (validateResult.valid === false) {
       logger.error("Invalid configuration: " + validateResult.message);
@@ -84,7 +80,7 @@ module.exports = function(configFilePath) {
   app.use(bodyParser.json());
   app.use(bodyParser.urlencoded({ extended: false }));
   app.use('/health', require('express-healthcheck')());
-  var policies = require('./lib/routes/policies')(settings);
+  var policies = require('./lib/routes/policies')(settings, models);
   var scalingHistories = require('./lib/routes/scalingHistories')(settings);
   var metrics = require('./lib/routes/metrics')(settings);
   app.use('/v1/apps',policies);
@@ -132,9 +128,6 @@ module.exports = function(configFilePath) {
     });
   });
   publicApp.use('/health', require('express-healthcheck')());
-  var policies = require('./lib/routes/policies')(settings);
-  var scalingHistories = require('./lib/routes/scalingHistories')(settings);
-  var metrics = require('./lib/routes/metrics')(settings);
   var info = require('./lib/routes/info')(settings);
   publicApp.use('/v1', info);
   publicApp.use('/v1/apps',policies);

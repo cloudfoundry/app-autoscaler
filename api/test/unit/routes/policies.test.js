@@ -22,7 +22,7 @@ describe('Routing Policy Creation', function() {
 
   before(function() {
     fakePolicy = JSON.parse(fs.readFileSync(__dirname+'/../fakePolicy.json', 'utf8'));
-    servers = API(path.join(__dirname, "../../../config/settings.json"));
+    servers = API(settings, function(){});
     app = servers.internalServer;
     publicApp = servers.publicServer;
   })

@@ -7,6 +7,9 @@ var fs = require("fs");
 var path = require("path");
 var HttpStatus = require('http-status-codes');
 
+var configFilePath = path.join(__dirname, '../../../config/settings.json');
+var settings = require(path.join(__dirname, '../../../lib/config/setting.js'))((JSON.parse(
+  fs.readFileSync(configFilePath, 'utf8'))));
 var logger = require("../../../lib/log/logger");
 var oauth;
 var nock = require("nock");
@@ -18,7 +21,7 @@ describe("Oauth", function() {
   
   beforeEach(function() {
     nock.cleanAll();
-    oauth = require("../../../lib/oauth/oauth")(path.join(__dirname, "../../../config/settings.json"));
+    oauth = require("../../../lib/oauth/oauth")(settings);
     req = {
       protocol: "https",
       host: "app.bosh-lite.com",

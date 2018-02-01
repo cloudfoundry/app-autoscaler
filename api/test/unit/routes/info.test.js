@@ -15,7 +15,7 @@ var info = JSON.parse(fs.readFileSync(path.join(__dirname, '../../../config/info
 describe("Routing info", function() {
 
   before(function() {
-    servers = API(path.join(__dirname, "../../../config/settings.json"));
+    servers = API(settings, function(){});
     app = servers.internalServer;
     publicApp = servers.publicServer;
   })

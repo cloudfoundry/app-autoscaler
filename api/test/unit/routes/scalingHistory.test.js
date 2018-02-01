@@ -19,7 +19,7 @@ var theAppId = "the-app-guid";
 describe("Routing ScalingHistory", function() {
 
   before(function() {
-    servers = API(path.join(__dirname, "../../../config/settings.json"));
+    servers = API(settings, function(){});
     app = servers.internalServer;
     publicApp = servers.publicServer;
   })
