@@ -55,7 +55,7 @@
         <property name="username" value="${spring.policyDbDataSource.username}"/>
         <property name="password" value="${spring.policyDbDataSource.password}"/>
     </bean>
-
+	
     <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
         <property name="entityManagerFactory" ref="entityManagerFactory"/>
     </bean>
@@ -98,4 +98,5 @@
             </props>
         </property>
     </bean>
+    <bean id="datasourceBeanPostProcessor" class="org.cloudfoundry.autoscaler.scheduler.beanPostProcessor.DatasourceBeanPostProcessor"/>
 </beans>
