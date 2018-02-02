@@ -1,5 +1,5 @@
 'use strict';
-
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 var request = require('supertest');
 var expect = require('chai').expect;
 var fs = require('fs');
@@ -22,7 +22,7 @@ describe('Validate Policy JSON Schema structure', function() {
 
   before(function() {
     policyContent = fs.readFileSync(__dirname+'/../fakePolicy.json', 'utf8');
-    servers = API(path.join(__dirname, "../../../config/settings.json"));
+    servers = API(settings, function(){});
     app = servers.internalServer;
     publicApp = servers.publicServer;
   });
