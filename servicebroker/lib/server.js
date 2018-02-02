@@ -1,5 +1,5 @@
 'use strict';
-module.exports = function(settings, catalog) {
+module.exports = function(settings, catalog, callback) {
     var https = require('https');
     var http = require('http');
     var express = require('express');
@@ -8,7 +8,7 @@ module.exports = function(settings, catalog) {
     var fs = require('fs');
     var path = require('path');
     var logger = require(path.join(__dirname, './logger/logger.js'));
-    
+    var models = require(path.join(__dirname, './models'))(settings.db, callback);
     var port = settings.port;
     var options = {};
     
@@ -52,11 +52,12 @@ module.exports = function(settings, catalog) {
         };
     };
 
+
     //define the sequence of middleware
     app.use(auth);
     app.use(bodyParser.urlencoded({ extended: true }));
     app.use(bodyParser.json());
-    require('./routes')(app, settings,catalog);
+    require('./routes')(app, settings, catalog, models);
 
 
     var server;

@@ -1,7 +1,7 @@
 var fs = require('fs');
 var path = require('path');
 
-module.exports = function(app, settings,catalog) {
+module.exports = function(app, settings, catalog, models) {
   fs
     .readdirSync(__dirname)
     .filter(function(file) {
@@ -9,6 +9,6 @@ module.exports = function(app, settings,catalog) {
     })
     .forEach(function(file) {
       var name = file.substr(0, file.indexOf('.'));
-      require(path.join(__dirname, file))(app, settings,catalog);
+      require(path.join(__dirname, file))(app, settings, catalog, models);
     });
 }

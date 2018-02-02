@@ -77,7 +77,7 @@ describe('binding RESTful API', function() {
   };
   var policy = { "policy": "testPolicy" };
   before(function(done) {
-    server = BrokerServer(settings, catalog);
+    server = BrokerServer(settings, catalog, function(){});
     done();
   });
   after(function(done) {
