@@ -23,10 +23,10 @@ if (validateResult.valid === false) {
     logger.error("Invalid configuration: " + validateResult.message);
     throw new Error('settings.json is invalid');
 }
-var dbErrorCallback = function(err){
+var errorCallback = function(err){
         if(err){
-            logger.error('DB configuration is incorrect, server will exit', err);
-            process.exit(1);
+            logger.error('server will exit', err);
+            throw err;
         }
     }
-var server = require(path.join(__dirname, '../lib/server.js'))(settings, catalog, dbErrorCallback);
+var server = require(path.join(__dirname, '../lib/server.js'))(settings, catalog, errorCallback);
