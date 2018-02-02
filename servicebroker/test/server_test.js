@@ -86,7 +86,11 @@ describe("Fatal configuration error", function() {
   context("Wrong db configuration", function() {
     var server;
     afterEach(function(done) {
+      if(server){
       server.close(done);
+      }else{
+        done();
+      }
     })
     it("should throw error", function(done) {
       settings.db.uri = "postgres://postgres@127.0.0.1:5432/wrong-db-name";
