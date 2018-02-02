@@ -29,6 +29,7 @@ describe('service instance RESTful API', function() {
       fs.readFileSync(configFilePath, 'utf8'))));
     catalog = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/catalog.json'), 'utf8'));
     serviceInstance.truncate({ cascade: true });
+    server = BrokerServer(settings, catalog, function(){});
   });
 
   afterEach(function(done) {
@@ -39,7 +40,7 @@ describe('service instance RESTful API', function() {
     context('when there is no record', function() {
       context('when settings.dashboardRedirectUri and catalog.services[0].dashboard_client.redirect_uri both are present',function(){
         beforeEach(function(){
-          server = BrokerServer(settings, catalog);
+  
         })
         it("creates a new instance with 201 with catalog.services[0].dashboard_client.redirect_uri as dashboard base uri", function(done) {
           supertest(server)
@@ -57,7 +58,7 @@ describe('service instance RESTful API', function() {
       context('when only catalog.services[0].dashboard_client.redirect_uri is present',function(){
         beforeEach(function(){
           delete settings.dashboardRedirectUri;
-          server = BrokerServer(settings, catalog);
+  
         });
         it("creates a new instance with 201 with catalog.services[0].dashboard_client.redirect_uri as dashboard base uri", function(done) {
           supertest(server)
@@ -75,7 +76,7 @@ describe('service instance RESTful API', function() {
       context('when only settings.dashboardRedirectUri is present',function(){
         beforeEach(function(){
           delete catalog.services[0].dashboard_client;
-          server = BrokerServer(settings, catalog);
+  
         });
         it("creates a new instance with 201 with settings.dashboardRedirectUri as dashboard base uri", function(done) {
           supertest(server)
@@ -94,7 +95,7 @@ describe('service instance RESTful API', function() {
         beforeEach(function(){
           delete catalog.services[0].dashboard_client;
           delete settings.dashboardRedirectUri;
-          server = BrokerServer(settings, catalog);
+  
         });
         it("creates a new instance with 201 with empty string as dashboard_url", function(done) {
           supertest(server)
@@ -113,7 +114,6 @@ describe('service instance RESTful API', function() {
     context('when an instance already exists', function() {
 
       beforeEach(function(done) {
-        server = BrokerServer(settings, catalog);
         supertest(server)
           .put("/v2/service_instances/" + serviceInstanceId)
           .set("Authorization", "Basic " + auth)
@@ -155,9 +155,6 @@ describe('service instance RESTful API', function() {
 
 
   context('Deprovision service ', function() {
-    beforeEach(function(){
-      server = BrokerServer(settings, catalog);
-    });
 
     context('when there is no record', function() {
       it("delete an nonexist instance with 410", function(done) {

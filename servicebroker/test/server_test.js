@@ -2,6 +2,8 @@
 
 var supertest = require("supertest");
 var uuid = require('uuid');
+var sinon = require('sinon');
+var expect = require('chai').expect;
 
 var fs = require('fs');
 var path = require('path');
@@ -15,7 +17,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 describe("Invalid path for RESTful API", function() {
   var server;
   before(function() {
-    server = BrokerServer(settings, catalog);
+    server = BrokerServer(settings, catalog, function() {});
   });
 
   after(function(done) {
@@ -35,7 +37,7 @@ describe("Invalid path for RESTful API", function() {
 describe("Auth for RESTful API", function() {
   var server;
   before(function() {
-    server = BrokerServer(settings, catalog);
+    server = BrokerServer(settings, catalog, function() {});
   });
 
   after(function(done) {
@@ -69,6 +71,80 @@ describe("Auth for RESTful API", function() {
       .set("Authorization", "Basic " + new Buffer(settings.username + ":" + "incorrectpassword").toString('base64'))
       .expect(401, done);
 
+  });
+
+});
+
+describe("Fatal configuration error", function() {
+  var settings;
+
+  beforeEach(function() {
+    settings = require(path.join(__dirname, '../lib/config/setting.js'))((JSON.parse(
+  fs.readFileSync(configFilePath, 'utf8'))));
+  });
+
+  context("Wrong db configuration", function() {
+    var server;
+    afterEach(function(done) {
+      if(server){
+      server.close(done);
+      }else{
+        done();
+      }
+    })
+    it("should throw error", function(done) {
+      settings.db.uri = "postgres://postgres@127.0.0.1:5432/wrong-db-name";
+      server = BrokerServer(settings, catalog, function(err) {
+        expect(err).not.to.be.null;
+        expect(err.message).to.equal("database \"wrong-db-name\" does not exist");
+        done();
+      });
+    });
+  });
+
+  context("Setting is invalid", function() {
+    it("should throw error", function() {
+      settings.port = "not-valid-port";
+      try {
+        BrokerServer(settings, catalog);
+      } catch (e) {
+        expect(e.message).to.equal("settings.json is invalid");
+      }
+    });
+  });
+
+  context("TLS key file does not exist", function() {
+    it("should throw error", function() {
+      settings.tls.keyFile = "invalid-file-path";
+      try {
+        BrokerServer(settings, catalog);
+      } catch (e) {
+        console.log(e)
+        expect(e.message).to.equal("Invalid TLS key path: " + settings.tls.keyFile);
+      }
+    });
+  });
+
+  context("TLS cert file does not exist", function() {
+    it("should throw error", function() {
+      settings.tls.certFile = "invalid-file-path";
+      try {
+        BrokerServer(settings, catalog);
+      } catch (e) {
+        expect(e.message).to.equal("Invalid TLS certificate path: " + settings.tls.certFile);
+      }
+    });
+  });
+
+  context("TLS ca cert file does not exist", function() {
+    it("should throw error", function() {
+      settings.tls.caCertFile = "invalid-file-path";
+      try {
+        BrokerServer(settings, catalog);
+      } catch (e) {
+        expect(e.message).to.equal("Invalid TLS ca certificate path: " + settings.tls.caCertFile);
+      }
+    });
   });
 
 });
