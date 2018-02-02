@@ -1,40 +1,114 @@
 'use strict';
 
-var sinon = require('sinon');
 var expect = require('chai').expect;
 
 var fs = require('fs');
 var path = require('path');
 var ApiServer = require(path.join(__dirname, '../../app.js'));
 var configFilePath = path.join(__dirname, '../../config/settings.json');
-var settings = require(path.join(__dirname, '../../lib/config/setting.js'))((JSON.parse(
-  fs.readFileSync(configFilePath, 'utf8'))));
 
-describe("Incorrect database configuration", function() {
-  var server;
-  var stub;
+
+describe("Fatal configuration error", function() {
+  var settings;
+
   beforeEach(function() {
-    settings.db.uri = "postgres://postgres@127.0.0.1:5432/wrong-db-name";
-    stub = sinon.stub(process, 'exit');
+    settings = require(path.join(__dirname, '../../lib/config/setting.js'))((JSON.parse(
+      fs.readFileSync(configFilePath, 'utf8'))));
   });
 
-  afterEach(function(done) {
-    server.internalServer.close(function(){
-      server.publicServer.close(done);
+  context("Wrong db configuration", function() {
+    var server;
+    afterEach(function(done) {
+      server.internalServer.close(function() {
+        server.publicServer.close(done);
+      });
+    })
+    it("should throw error", function(done) {
+      settings.db.uri = "postgres://postgres@127.0.0.1:5432/wrong-db-name";
+      server = ApiServer(settings, function(err) {
+        expect(err).not.to.be.null;
+        expect(err.message).to.equal("database \"wrong-db-name\" does not exist");
+        done();
+      });
     });
-    stub.restore();
   });
-  it("server should exit", function(done) {
-    server = ApiServer(settings, function(err) {
-      if (err) {
-        process.exit(1);
+
+  context("Setting is invalid", function() {
+    it("should throw error", function() {
+      settings.port = "not-valid-port";
+      try {
+        ApiServer(settings);
+      } catch (e) {
+        expect(e.message).to.equal("settings.json is invalid");
       }
-      expect(process.exit.isSinonProxy).to.equal(true);
-      sinon.assert.called(process.exit);
-      sinon.assert.calledWith(process.exit, 1);
-
-      done();
     });
-
   });
+
+  context("TLS key file does not exist", function() {
+    it("should throw error", function() {
+      settings.tls.keyFile = "invalid-file-path";
+      try {
+        ApiServer(settings);
+      } catch (e) {
+        console.log(e)
+        expect(e.message).to.equal("Invalid TLS key path: " + settings.tls.keyFile);
+      }
+    });
+  });
+
+  context("TLS cert file does not exist", function() {
+    it("should throw error", function() {
+      settings.tls.certFile = "invalid-file-path";
+      try {
+        ApiServer(settings);
+      } catch (e) {
+        expect(e.message).to.equal("Invalid TLS certificate path: " + settings.tls.certFile);
+      }
+    });
+  });
+
+  context("TLS ca cert file does not exist", function() {
+    it("should throw error", function() {
+      settings.tls.caCertFile = "invalid-file-path";
+      try {
+        ApiServer(settings);
+      } catch (e) {
+        expect(e.message).to.equal("Invalid TLS ca certificate path: " + settings.tls.caCertFile);
+      }
+    });
+  });
+
+  context("Public TLS key file does not exist", function() {
+    it("should throw error", function() {
+      settings.publicTls.keyFile = "invalid-file-path";
+      try {
+        ApiServer(settings);
+      } catch (e) {
+        expect(e.message).to.equal("Invalid public TLS key path: " + settings.publicTls.keyFile);
+      }
+    });
+  });
+
+  context("Public TLS cert file does not exist", function() {
+    it("should throw error", function() {
+      settings.publicTls.certFile = "invalid-file-path";
+      try {
+        ApiServer(settings);
+      } catch (e) {
+        expect(e.message).to.equal("Invalid public TLS certificate path: " + settings.publicTls.certFile);
+      }
+    });
+  });
+
+  context("Public TLS ca cert file does not exist", function() {
+    it("should throw error", function() {
+      settings.publicTls.caCertFile = "invalid-file-path";
+      try {
+        ApiServer(settings);
+      } catch (e) {
+        expect(e.message).to.equal("Invalid public TLS ca certificate path: " + settings.publicTls.caCertFile);
+      }
+    });
+  });
+
 });

@@ -10,14 +10,16 @@ module.exports = function(settings, callback) {
   var logger = require('./lib/log/logger');
   var HttpStatus = require('http-status-codes');
   
-  var oauth = require('./lib/oauth/oauth')(settings);
-  var models = require('./lib/models')(settings.db, callback);
-  
   var validateResult = settings.validate();
   if (validateResult.valid === false) {
       logger.error("Invalid configuration: " + validateResult.message);
       throw new Error('settings.json is invalid');
   }
+
+  var oauth = require('./lib/oauth/oauth')(settings);
+  var models = require('./lib/models')(settings.db, callback);
+  
+  
   var port = settings.port;
   var publicPort = settings.publicPort;
   
@@ -49,7 +51,7 @@ module.exports = function(settings, callback) {
   if(settings.publicTls){
     if(!fs.existsSync(settings.publicTls.keyFile)){
         logger.error("Invalid public TLS key path: " + settings.publicTls.keyFile);
-        throw new Error("Invalid publicTls key path: " + settings.publicTls.keyFile);
+        throw new Error("Invalid public TLS key path: " + settings.publicTls.keyFile);
     }
     if(!fs.existsSync(settings.publicTls.certFile)){
         logger.error("Invalid public TLS certificate path: " + settings.publicTls.certFile);
