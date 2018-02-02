@@ -1,11 +1,9 @@
 'use strict';
-module.exports = function(configFilePath) {
+module.exports = function(settings) {
   var request = require("request");
   var logger = require('../log/logger');
   var path = require('path');
   var fs = require('fs');
-  var settings = require(path.join(__dirname, './../config/setting.js'))((JSON.parse(
-    fs.readFileSync(configFilePath, 'utf8'))));
   var HttpStatus = require('http-status-codes');
   var obj = {};
   obj.checkUserAuthorization = function(req, callback) {

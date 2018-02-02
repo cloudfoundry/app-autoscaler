@@ -7,15 +7,16 @@ var path = require('path');
 var uuidV4 = require('uuid/v4');
 var settings = require(path.join(__dirname, '../../../lib/config/setting.js'))((JSON.parse(
   fs.readFileSync(path.join(__dirname, '../../../config/settings.json'), 'utf8'))));
+var models = require('../../../lib/models')(settings.db, function(){});
 var API = require('../../../app.js');
 var app;
 var publicApp;
 var servers;
-var policy = require('../../../lib/models')(settings.db).policy_json;
+var policy = models.policy_json;
 var logger = require('../../../lib/log/logger');
 var nock = require('nock');
 var HttpStatus = require('http-status-codes');
-var policyHelper = require('../../../lib/routes/policyHelper')(settings.db);
+var policyHelper = require('../../../lib/routes/policyHelper')(models);
 var schedulerURI = process.env.SCHEDULER_URI;
 
 
@@ -24,7 +25,7 @@ describe('Policy Route helper ', function() {
 
     before(function() {
 		fakePolicy = JSON.parse(fs.readFileSync(__dirname+'/../fakePolicy.json', 'utf8'));
-		servers = API(path.join(__dirname, "../../../config/settings.json"));
+		servers = API(settings, function(){});
 	    app = servers.internalServer;
 	    publicApp = servers.publicServer;
 	})
