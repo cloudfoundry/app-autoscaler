@@ -5,22 +5,24 @@ var request = require("supertest");
 var expect = require("chai").expect;
 var fs = require("fs");
 var path = require("path");
-var settings = require(path.join(__dirname, "../../../lib/config/setting.js"))((JSON.parse(
-  fs.readFileSync(path.join(__dirname, "../../../config/settings.json"), "utf8"))));
+var settings = require(path.join(__dirname, '../../../lib/config/setting.js'))((JSON.parse(
+  fs.readFileSync(path.join(__dirname, '../../../config/settings.json'), 'utf8'))));
+var relativePath = path.relative(process.cwd(), path.join(__dirname, "../../../../test-certs"));
+var testSetting = require(path.join(__dirname, '../test.helper.js'))(relativePath,settings);
 var API = require("../../../app.js");
 var app;
 var publicApp;
 var servers;
 var logger = require("../../../lib/log/logger");
 var nock = require("nock");
-var metricsCollectorUri = settings.metricsCollector.uri;
+var metricsCollectorUri = testSetting.metricsCollector.uri;
 var theAppId = "the-app-guid";
 var metricType = "memoryused";
 
 describe("Routing Metrics", function() {
 
   before(function() {
-    servers = API(settings, function(){});
+    servers = API(testSetting, function(){});
     app = servers.internalServer;
     publicApp = servers.publicServer;
   })

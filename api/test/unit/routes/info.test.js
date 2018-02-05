@@ -1,12 +1,13 @@
 "use strict";
 
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 var request = require("supertest");
 var expect = require("chai").expect;
 var fs = require("fs");
 var path = require("path");
-var settings = require(path.join(__dirname, "../../../lib/config/setting.js"))((JSON.parse(
-  fs.readFileSync(path.join(__dirname, "../../../config/settings.json"), "utf8"))));
+var settings = require(path.join(__dirname, '../../../lib/config/setting.js'))((JSON.parse(
+  fs.readFileSync(path.join(__dirname, '../../../config/settings.json'), 'utf8'))));
+var relativePath = path.relative(process.cwd(), path.join(__dirname, "../../../../test-certs"));
+var testSetting = require(path.join(__dirname, '../test.helper.js'))(relativePath,settings);
 var API = require("../../../app.js");
 var app;
 var publicApp;
@@ -15,7 +16,7 @@ var info = JSON.parse(fs.readFileSync(path.join(__dirname, '../../../config/info
 describe("Routing info", function() {
 
   before(function() {
-    servers = API(settings, function(){});
+    servers = API(testSetting, function(){});
     app = servers.internalServer;
     publicApp = servers.publicServer;
   })
