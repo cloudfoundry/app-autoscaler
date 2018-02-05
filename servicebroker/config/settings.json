@@ -1,5 +1,6 @@
 {
-    "port": 8080,
+    "port": 8088,
+    "publicPort": 8080,
     "username": "username",
     "password": "password",
     "db": {
@@ -17,9 +18,14 @@
         }
     },
     "httpRequestTimeout": 5000,
-    "tls": {
+    "publicTls": {
         "keyFile":"../test-certs/servicebroker.key",
         "certFile":"../test-certs/servicebroker.crt",
+        "caCertFile":"../test-certs/autoscaler-ca.crt"
+    },
+    "tls": {
+        "keyFile":"../test-certs/servicebroker_internal.key",
+        "certFile":"../test-certs/servicebroker_internal.crt",
         "caCertFile":"../test-certs/autoscaler-ca.crt"
     },
     "serviceCatalogPath": "../servicebroker/config/catalog.json",

@@ -186,13 +186,14 @@ func CompileTestedExecutables() Executables {
 
 func PreparePorts() Ports {
 	return Ports{
-		APIServer:        10000 + GinkgoParallelNode(),
-		APIPublicServer:  16000 + GinkgoParallelNode(),
-		ServiceBroker:    11000 + GinkgoParallelNode(),
-		Scheduler:        12000 + GinkgoParallelNode(),
-		MetricsCollector: 13000 + GinkgoParallelNode(),
-		ScalingEngine:    14000 + GinkgoParallelNode(),
-		ConsulCluster:    15000 + GinkgoParallelNode()*consulrunner.PortOffsetLength,
+		APIServer:             10000 + GinkgoParallelNode(),
+		APIPublicServer:       16000 + GinkgoParallelNode(),
+		ServiceBroker:         11000 + GinkgoParallelNode(),
+		ServiceBrokerInternal: 17000 + GinkgoParallelNode(),
+		Scheduler:             12000 + GinkgoParallelNode(),
+		MetricsCollector:      13000 + GinkgoParallelNode(),
+		ScalingEngine:         14000 + GinkgoParallelNode(),
+		ConsulCluster:         15000 + GinkgoParallelNode()*consulrunner.PortOffsetLength,
 	}
 }
 
