@@ -22,14 +22,15 @@ import (
 )
 
 const (
-	APIServer        = "apiServer"
-	APIPublicServer  = "APIPublicServer"
-	ServiceBroker    = "serviceBroker"
-	Scheduler        = "scheduler"
-	MetricsCollector = "metricsCollector"
-	EventGenerator   = "eventGenerator"
-	ScalingEngine    = "scalingEngine"
-	ConsulCluster    = "consulCluster"
+	APIServer             = "apiServer"
+	APIPublicServer       = "APIPublicServer"
+	ServiceBroker         = "serviceBroker"
+	ServiceBrokerInternal = "serviceBrokerInternal"
+	Scheduler             = "scheduler"
+	MetricsCollector      = "metricsCollector"
+	EventGenerator        = "eventGenerator"
+	ScalingEngine         = "scalingEngine"
+	ConsulCluster         = "consulCluster"
 )
 
 var testCertDir string = "../../test-certs"
@@ -57,7 +58,8 @@ type APIServerClient struct {
 }
 
 type ServiceBrokerConfig struct {
-	Port int `json:"port"`
+	Port       int `json:"port"`
+	PublicPort int `json:"publicPort"`
 
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -67,6 +69,7 @@ type ServiceBrokerConfig struct {
 	APIServerClient    APIServerClient `json:"apiserver"`
 	HttpRequestTimeout int             `json:"httpRequestTimeout"`
 	TLS                models.TLSCerts `json:"tls"`
+	PublicTLS          models.TLSCerts `json:"publicTls"`
 	ServiceCatalogPath string          `json:"serviceCatalogPath"`
 }
 type SchedulerClient struct {
@@ -186,11 +189,12 @@ func (components *Components) ScalingEngine(confPath string, argv ...string) *gi
 	})
 }
 
-func (components *Components) PrepareServiceBrokerConfig(port int, username string, password string, dbUri string, apiServerUri string, brokerApiHttpRequestTimeout time.Duration, tmpDir string) string {
+func (components *Components) PrepareServiceBrokerConfig(publicPort int, port int, username string, password string, dbUri string, apiServerUri string, brokerApiHttpRequestTimeout time.Duration, tmpDir string) string {
 	brokerConfig := ServiceBrokerConfig{
-		Port:     port,
-		Username: username,
-		Password: password,
+		Port:       port,
+		PublicPort: publicPort,
+		Username:   username,
+		Password:   password,
 		DB: DBConfig{
 			URI:            dbUri,
 			MinConnections: 1,
@@ -206,9 +210,14 @@ func (components *Components) PrepareServiceBrokerConfig(port int, username stri
 			},
 		},
 		HttpRequestTimeout: int(brokerApiHttpRequestTimeout / time.Millisecond),
-		TLS: models.TLSCerts{
+		PublicTLS: models.TLSCerts{
 			KeyFile:    filepath.Join(testCertDir, "servicebroker.key"),
 			CertFile:   filepath.Join(testCertDir, "servicebroker.crt"),
+			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+		},
+		TLS: models.TLSCerts{
+			KeyFile:    filepath.Join(testCertDir, "servicebroker_internal.key"),
+			CertFile:   filepath.Join(testCertDir, "servicebroker_internal.crt"),
 			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 		},
 		ServiceCatalogPath: serviceCatalogPath,

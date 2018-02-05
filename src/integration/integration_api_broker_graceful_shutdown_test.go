@@ -149,7 +149,7 @@ var _ = Describe("Integration_Api_Broker_Graceful_Shutdown", func() {
 				Expect(err).NotTo(HaveOccurred())
 				httpClient.Timeout = brokerApiHttpRequestTimeout
 				httpClient.Transport.(*http.Transport).TLSClientConfig = brokerTLSConfig
-				serviceBrokerConfPath = components.PrepareServiceBrokerConfig(components.Ports[ServiceBroker], brokerUserName, brokerPassword, dbUrl, fakeApiServer.URL(), brokerApiHttpRequestTimeout, tmpDir)
+				serviceBrokerConfPath = components.PrepareServiceBrokerConfig(components.Ports[ServiceBroker], components.Ports[ServiceBrokerInternal], brokerUserName, brokerPassword, dbUrl, fakeApiServer.URL(), brokerApiHttpRequestTimeout, tmpDir)
 				runner = startServiceBroker()
 				buffer = runner.Buffer()
 

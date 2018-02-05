@@ -16,7 +16,7 @@ var serviceInstance = models.service_instance;
 var auth = new Buffer(settings.username + ":" + settings.password).toString('base64');
 
 describe('service instance RESTful API', function() {
-  var server, serviceInstanceId, orgId, spaceId, orgIdAgain, spaceIdAgain;
+  var servers, publicServer, internalServer, serviceInstanceId, orgId, spaceId, orgIdAgain, spaceIdAgain;
   serviceInstanceId = uuid.v4();
   orgId = uuid.v4();
   spaceId = uuid.v4();
@@ -29,21 +29,24 @@ describe('service instance RESTful API', function() {
       fs.readFileSync(configFilePath, 'utf8'))));
     catalog = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/catalog.json'), 'utf8'));
     serviceInstance.truncate({ cascade: true });
-    server = BrokerServer(settings, catalog, function(){});
+
+    servers = BrokerServer(settings, catalog, function(){});
+    publicServer = servers.publicServer;
+    internalServer = servers.internalServer;
   });
 
   afterEach(function(done) {
-    server.close(done);
+    publicServer.close(function(){
+      internalServer.close(done);
+    })
   });
 
   context('Provision service', function() {
     context('when there is no record', function() {
       context('when settings.dashboardRedirectUri and catalog.services[0].dashboard_client.redirect_uri both are present',function(){
-        beforeEach(function(){
-  
-        })
+
         it("creates a new instance with 201 with catalog.services[0].dashboard_client.redirect_uri as dashboard base uri", function(done) {
-          supertest(server)
+          supertest(publicServer)
             .put("/v2/service_instances/" + serviceInstanceId)
             .set("Authorization", "Basic " + auth)
             .send({ "organization_guid": orgId, "space_guid": spaceId })
@@ -58,10 +61,9 @@ describe('service instance RESTful API', function() {
       context('when only catalog.services[0].dashboard_client.redirect_uri is present',function(){
         beforeEach(function(){
           delete settings.dashboardRedirectUri;
-  
         });
         it("creates a new instance with 201 with catalog.services[0].dashboard_client.redirect_uri as dashboard base uri", function(done) {
-          supertest(server)
+          supertest(publicServer)
             .put("/v2/service_instances/" + serviceInstanceId)
             .set("Authorization", "Basic " + auth)
             .send({ "organization_guid": orgId, "space_guid": spaceId })
@@ -76,10 +78,9 @@ describe('service instance RESTful API', function() {
       context('when only settings.dashboardRedirectUri is present',function(){
         beforeEach(function(){
           delete catalog.services[0].dashboard_client;
-  
         });
         it("creates a new instance with 201 with settings.dashboardRedirectUri as dashboard base uri", function(done) {
-          supertest(server)
+          supertest(publicServer)
             .put("/v2/service_instances/" + serviceInstanceId)
             .set("Authorization", "Basic " + auth)
             .send({ "organization_guid": orgId, "space_guid": spaceId })
@@ -95,10 +96,9 @@ describe('service instance RESTful API', function() {
         beforeEach(function(){
           delete catalog.services[0].dashboard_client;
           delete settings.dashboardRedirectUri;
-  
         });
         it("creates a new instance with 201 with empty string as dashboard_url", function(done) {
-          supertest(server)
+          supertest(publicServer)
             .put("/v2/service_instances/" + serviceInstanceId)
             .set("Authorization", "Basic " + auth)
             .send({ "organization_guid": orgId, "space_guid": spaceId })
@@ -114,7 +114,7 @@ describe('service instance RESTful API', function() {
     context('when an instance already exists', function() {
 
       beforeEach(function(done) {
-        supertest(server)
+        supertest(publicServer)
           .put("/v2/service_instances/" + serviceInstanceId)
           .set("Authorization", "Basic " + auth)
           .send({ "organization_guid": orgId, "space_guid": spaceId })
@@ -127,7 +127,7 @@ describe('service instance RESTful API', function() {
 
       context('when orgId and spaceId are identical', function() {
         it('returns a 200', function(done) {
-          supertest(server)
+          supertest(publicServer)
             .put("/v2/service_instances/" + serviceInstanceId)
             .set("Authorization", "Basic " + auth)
             .set('Accept', 'application/json')
@@ -142,7 +142,7 @@ describe('service instance RESTful API', function() {
 
       context('when orgId and spaceId are conflict to previous record', function() {
         it('returns a 409', function(done) {
-          supertest(server)
+          supertest(publicServer)
             .put("/v2/service_instances/" + serviceInstanceId)
             .set("Authorization", "Basic " + auth)
             .send({ "organization_guid": orgIdAgain, "space_guid": spaceIdAgain })
@@ -155,10 +155,9 @@ describe('service instance RESTful API', function() {
 
 
   context('Deprovision service ', function() {
-
     context('when there is no record', function() {
       it("delete an nonexist instance with 410", function(done) {
-        supertest(server)
+        supertest(publicServer)
           .delete("/v2/service_instances/" + "nonexistid")
           .set("Authorization", "Basic " + auth)
           .expect(410)
@@ -169,7 +168,7 @@ describe('service instance RESTful API', function() {
 
     context('when an instance already exists', function() {
       beforeEach(function(done) {
-        supertest(server)
+        supertest(publicServer)
             .put("/v2/service_instances/" + serviceInstanceId)
             .set("Authorization", "Basic " + auth)
             .send({ "organization_guid": orgId, "space_guid": spaceId })
@@ -181,7 +180,7 @@ describe('service instance RESTful API', function() {
       });
 
       it("delete an instance with 200", function(done) {
-        supertest(server)
+        supertest(publicServer)
           .delete("/v2/service_instances/" + serviceInstanceId)
           .set("Authorization", "Basic " + auth)
           .expect(200)
