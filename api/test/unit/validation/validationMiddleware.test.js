@@ -53,7 +53,6 @@ describe('Validate Policy JSON Schema structure', function() {
       expect(result.body.error).to.be.null;
       done();
     });
-
   });
   it('should fail validate policy schema in the absence of required property instance_min_count ', function(done) {
     delete fakePolicy.instance_min_count;
