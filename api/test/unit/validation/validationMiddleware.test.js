@@ -1,33 +1,36 @@
 'use strict';
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+
+
 var request = require('supertest');
 var expect = require('chai').expect;
 var fs = require('fs');
 var path = require('path');
 var settings = require(path.join(__dirname, '../../../lib/config/setting.js'))((JSON.parse(
   fs.readFileSync(path.join(__dirname, '../../../config/settings.json'), 'utf8'))));
+var relativePath = path.relative(process.cwd(), path.join(__dirname, "../../../../test-certs"));
+var testSetting = require(path.join(__dirname, '../test.helper.js'))(relativePath,settings);
 var API = require('../../../app.js');
 var app;
 var publicApp;
 var servers;
 var logger = require('../../../lib/log/logger');
-var policy = require('../../../lib/models')(settings.db).policy_json;
+var policy = require('../../../lib/models')(testSetting.db).policy_json;
 var validationMiddleware = require('../../../lib/validation/validationMiddleware');
 var nock = require('nock');
-var schedulerURI = settings.scheduler.uri;
+var schedulerURI = testSetting.scheduler.uri;
 
 describe('Validate Policy JSON Schema structure', function() {
   var policyContent;
   var fakePolicy;
 
   before(function() {
-    policyContent = fs.readFileSync(__dirname+'/../fakePolicy.json', 'utf8');
-    servers = API(settings, function(){});
+    servers = API(testSetting, function(){});
     app = servers.internalServer;
     publicApp = servers.publicServer;
+    policyContent = fs.readFileSync(__dirname+'/../fakePolicy.json', 'utf8');
   });
   after(function(done){
-      app.close(function(){
+    app.close(function(){
       publicApp.close(done);
     });
   })
@@ -50,7 +53,6 @@ describe('Validate Policy JSON Schema structure', function() {
       expect(result.body.error).to.be.null;
       done();
     });
-
   });
   it('should fail validate policy schema in the absence of required property instance_min_count ', function(done) {
     delete fakePolicy.instance_min_count;
