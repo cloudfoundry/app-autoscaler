@@ -19,7 +19,7 @@ var logger = require('../../../lib/log/logger');
 var nock = require('nock');
 var HttpStatus = require('http-status-codes');
 var policyHelper = require('../../../lib/routes/policyHelper')(models);
-var schedulerURI = process.env.SCHEDULER_URI;
+var serviceBrokerURI = settings.serviceBroker.uri;
 
 
 describe('Policy Route helper ', function() {
@@ -37,6 +37,9 @@ describe('Policy Route helper ', function() {
 		});
   	})
 	beforeEach(function() {
+		nock(serviceBrokerURI)
+	    .get(/\/v1\/apps\/.+\/service_bindings/)
+	    .reply(200, {"message": "binding_info_exists"});
 		return policy.truncate();
 	});
 

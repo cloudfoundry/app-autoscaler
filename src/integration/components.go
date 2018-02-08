@@ -22,14 +22,15 @@ import (
 )
 
 const (
-	APIServer        = "apiServer"
-	APIPublicServer  = "APIPublicServer"
-	ServiceBroker    = "serviceBroker"
-	Scheduler        = "scheduler"
-	MetricsCollector = "metricsCollector"
-	EventGenerator   = "eventGenerator"
-	ScalingEngine    = "scalingEngine"
-	ConsulCluster    = "consulCluster"
+	APIServer             = "apiServer"
+	APIPublicServer       = "APIPublicServer"
+	ServiceBroker         = "serviceBroker"
+	ServiceBrokerInternal = "serviceBrokerInternal"
+	Scheduler             = "scheduler"
+	MetricsCollector      = "metricsCollector"
+	EventGenerator        = "eventGenerator"
+	ScalingEngine         = "scalingEngine"
+	ConsulCluster         = "consulCluster"
 )
 
 var testCertDir string = "../../test-certs"
@@ -57,7 +58,8 @@ type APIServerClient struct {
 }
 
 type ServiceBrokerConfig struct {
-	Port int `json:"port"`
+	Port       int `json:"port"`
+	PublicPort int `json:"publicPort"`
 
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -67,6 +69,7 @@ type ServiceBrokerConfig struct {
 	APIServerClient    APIServerClient `json:"apiserver"`
 	HttpRequestTimeout int             `json:"httpRequestTimeout"`
 	TLS                models.TLSCerts `json:"tls"`
+	PublicTLS          models.TLSCerts `json:"publicTls"`
 	ServiceCatalogPath string          `json:"serviceCatalogPath"`
 }
 type SchedulerClient struct {
@@ -81,6 +84,10 @@ type MetricsCollectorClient struct {
 	Uri string          `json:"uri"`
 	TLS models.TLSCerts `json:"tls"`
 }
+type ServiceBrokerClient struct {
+	Uri string          `json:"uri"`
+	TLS models.TLSCerts `json:"tls"`
+}
 type APIServerConfig struct {
 	Port                   int                    `json:"port"`
 	PublicPort             int                    `json:"publicPort"`
@@ -91,6 +98,7 @@ type APIServerConfig struct {
 	SchedulerClient        SchedulerClient        `json:"scheduler"`
 	ScalingEngineClient    ScalingEngineClient    `json:"scalingEngine"`
 	MetricsCollectorClient MetricsCollectorClient `json:"metricsCollector"`
+	ServiceBrokerClient    ServiceBrokerClient    `json:"serviceBroker"`
 
 	TLS       models.TLSCerts `json:"tls"`
 	PublicTLS models.TLSCerts `json:"publicTls"`
@@ -186,11 +194,12 @@ func (components *Components) ScalingEngine(confPath string, argv ...string) *gi
 	})
 }
 
-func (components *Components) PrepareServiceBrokerConfig(port int, username string, password string, dbUri string, apiServerUri string, brokerApiHttpRequestTimeout time.Duration, tmpDir string) string {
+func (components *Components) PrepareServiceBrokerConfig(publicPort int, internalPort int, username string, password string, dbUri string, apiServerUri string, brokerApiHttpRequestTimeout time.Duration, tmpDir string) string {
 	brokerConfig := ServiceBrokerConfig{
-		Port:     port,
-		Username: username,
-		Password: password,
+		Port:       internalPort,
+		PublicPort: publicPort,
+		Username:   username,
+		Password:   password,
 		DB: DBConfig{
 			URI:            dbUri,
 			MinConnections: 1,
@@ -206,9 +215,14 @@ func (components *Components) PrepareServiceBrokerConfig(port int, username stri
 			},
 		},
 		HttpRequestTimeout: int(brokerApiHttpRequestTimeout / time.Millisecond),
-		TLS: models.TLSCerts{
+		PublicTLS: models.TLSCerts{
 			KeyFile:    filepath.Join(testCertDir, "servicebroker.key"),
 			CertFile:   filepath.Join(testCertDir, "servicebroker.crt"),
+			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+		},
+		TLS: models.TLSCerts{
+			KeyFile:    filepath.Join(testCertDir, "servicebroker_internal.key"),
+			CertFile:   filepath.Join(testCertDir, "servicebroker_internal.crt"),
 			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 		},
 		ServiceCatalogPath: serviceCatalogPath,
@@ -222,7 +236,7 @@ func (components *Components) PrepareServiceBrokerConfig(port int, username stri
 	return cfgFile.Name()
 }
 
-func (components *Components) PrepareApiServerConfig(port int, publicPort int, skipSSLValidation bool, cfApi string, dbUri string, schedulerUri string, scalingEngineUri string, metricsCollectorUri string, tmpDir string) string {
+func (components *Components) PrepareApiServerConfig(port int, publicPort int, skipSSLValidation bool, cfApi string, dbUri string, schedulerUri string, scalingEngineUri string, metricsCollectorUri string, serviceBrokerUri string, tmpDir string) string {
 	apiConfig := APIServerConfig{
 		Port:              port,
 		PublicPort:        publicPort,
@@ -257,6 +271,14 @@ func (components *Components) PrepareApiServerConfig(port int, publicPort int, s
 			TLS: models.TLSCerts{
 				KeyFile:    filepath.Join(testCertDir, "metricscollector.key"),
 				CertFile:   filepath.Join(testCertDir, "metricscollector.crt"),
+				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			},
+		},
+		ServiceBrokerClient: ServiceBrokerClient{
+			Uri: serviceBrokerUri,
+			TLS: models.TLSCerts{
+				KeyFile:    filepath.Join(testCertDir, "servicebroker_internal.key"),
+				CertFile:   filepath.Join(testCertDir, "servicebroker_internal.crt"),
 				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 			},
 		},

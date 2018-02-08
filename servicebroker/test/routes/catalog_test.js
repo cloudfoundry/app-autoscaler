@@ -12,18 +12,22 @@ var auth = new Buffer(settings.username + ":" + settings.password).toString('bas
 var catalog = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/catalog.json'), 'utf8'));
 
 describe('getCatalog RESTful API', function() {
-  var server;
+  var servers, publicServer, internalServer;
   beforeEach(function() {
-    server = BrokerServer(settings, catalog, function(){});
+    servers = BrokerServer(settings, catalog, function(){});
+    publicServer = servers.publicServer;
+    internalServer = servers.internalServer;
   });
 
-  afterEach(function(done) {
-    server.close(done);
+  after(function(done) {
+    publicServer.close(function(){
+      internalServer.close(done);
+    })
   });
 
   it("should return catalog json", function(done) {
 
-    supertest(server)
+    supertest(publicServer)
       .get("/v2/catalog")
       .set("Authorization", "Basic " + auth)
       .expect(200)

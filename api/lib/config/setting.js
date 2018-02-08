@@ -30,6 +30,7 @@ module.exports = function(settingsObj) {
   settingsObj.scheduler.uri = addProtocol(cleanUpUri(settingsObj.scheduler.uri));
   settingsObj.scalingEngine.uri = addProtocol(cleanUpUri(settingsObj.scalingEngine.uri));
   settingsObj.metricsCollector.uri = addProtocol(cleanUpUri(settingsObj.metricsCollector.uri));
+  settingsObj.serviceBroker.uri = addProtocol(cleanUpUri(settingsObj.serviceBroker.uri));
   var settings = {
     port: settingsObj.port,
     cfApi: addProtocol(cleanUpUri(settingsObj.cfApi)),
@@ -38,6 +39,7 @@ module.exports = function(settingsObj) {
     scheduler: settingsObj.scheduler,
     scalingEngine: settingsObj.scalingEngine,
     metricsCollector: settingsObj.metricsCollector,
+    serviceBroker: settingsObj.serviceBroker,
     tls: settingsObj.tls,
     publicTls: settingsObj.publicTls,
     infoFilePath: settingsObj.infoFilePath
@@ -286,6 +288,39 @@ module.exports = function(settingsObj) {
       }
       if (!isString(settings.metricsCollector.tls.certFile)) {
         return { valid: false, message: "metricsCollector.tls.certFile must be a string" };
+      }
+    }
+
+    if (isMissing(settings.serviceBroker)) {
+      return { valid: false, message: "serviceBroker is required" };
+    }
+    if (isMissing(settings.serviceBroker.uri)) {
+      return { valid: false, message: "serviceBroker.uri is required" };
+    }
+    if (!isString(settings.serviceBroker.uri)) {
+      return { valid: false, message: "serviceBroker.uri must be a string" };
+    }
+    if (!isMissing(settings.serviceBroker.tls)){
+      if (!isObject(settings.serviceBroker.tls)) {
+        return { valid: false, message: "serviceBroker.tls must be an object" };
+      }
+      if (isMissing(settings.serviceBroker.tls.keyFile)) {
+        return { valid: false, message: "serviceBroker.tls.keyFile is required" };
+      }
+      if (!isString(settings.serviceBroker.tls.keyFile)) {
+        return { valid: false, message: "serviceBroker.tls.keyFile must be a string" };
+      }
+      if (isMissing(settings.serviceBroker.tls.caCertFile)) {
+        return { valid: false, message: "serviceBroker.tls.caCertFile is required" };
+      }
+      if (!isString(settings.serviceBroker.tls.caCertFile)) {
+        return { valid: false, message: "serviceBroker.tls.caCertFile must be a string" };
+      }
+      if (isMissing(settings.serviceBroker.tls.certFile)) {
+        return { valid: false, message: "serviceBroker.tls.certFile is required" };
+      }
+      if (!isString(settings.serviceBroker.tls.certFile)) {
+        return { valid: false, message: "serviceBroker.tls.certFile must be a string" };
       }
     }
     

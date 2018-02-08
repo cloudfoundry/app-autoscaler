@@ -55,7 +55,7 @@ function initNockApiServerBindError(statusCode) {
 }
 
 describe('binding RESTful API', function() {
-  var server, serviceInstanceId, serviceInstanceId2, orgId, spaceId, appId, appId2, bindingId;
+  var servers, publicServer, internalServer, serviceInstanceId, serviceInstanceId2, orgId, spaceId, appId, appId2, bindingId;
   serviceInstanceId = uuid.v4();
   orgId = uuid.v4();
   spaceId = uuid.v4();
@@ -77,11 +77,16 @@ describe('binding RESTful API', function() {
   };
   var policy = { "policy": "testPolicy" };
   before(function(done) {
-    server = BrokerServer(settings, catalog, function(){});
+
+    servers = BrokerServer(settings, catalog, function(){});
+    publicServer = servers.publicServer;
+    internalServer = servers.internalServer;
     done();
   });
   after(function(done) {
-    server.close(done)
+    publicServer.close(function(){
+      internalServer.close(done);
+    })
   });
   beforeEach(function(done) {
     binding.truncate({ cascade: true }).then(function(result) {
@@ -99,7 +104,7 @@ describe('binding RESTful API', function() {
     context('when there is no record', function() {
       it("creates a new binding with 201", function(done) {
         initNockBind(201);
-        supertest(server)
+        supertest(publicServer)
           .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
           .set("Authorization", "Basic " + auth)
           .send({ "app_guid": appId, "parameters": policy })
@@ -115,11 +120,11 @@ describe('binding RESTful API', function() {
       });
       context('when there is no policy in request', function() {
         it("return a 201", function(done) {
-          supertest(server)
+          supertest(publicServer)
             .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
             .set("Authorization", "Basic " + auth)
             .send({ "app_guid": appId })
-            .expect(201)
+            .expect(202)
             .expect('Content-Type', /json/)
             .expect({credentials: {}})
             .end(function(err, res) {
@@ -133,7 +138,7 @@ describe('binding RESTful API', function() {
       context("when the api server returns error", function() {
         it("return a 400", function(done) {
           initNockApiServerBindError(400);
-          supertest(server)
+          supertest(publicServer)
             .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
             .set("Authorization", "Basic " + auth)
             .send({ "app_guid": appId, "parameters": policy })
@@ -150,7 +155,7 @@ describe('binding RESTful API', function() {
         });
         it("return a 500", function(done) {
           initNockBind(500);
-          supertest(server)
+          supertest(publicServer)
             .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
             .set("Authorization", "Basic " + auth)
             .send({ "app_guid": appId, "parameters": policy })
@@ -167,7 +172,7 @@ describe('binding RESTful API', function() {
         context('when the api server returns other error than 400, 500', function() {
           it('returns a 500', function(done) {
             initNockBind(300);
-            supertest(server)
+            supertest(publicServer)
               .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
               .set("Authorization", "Basic " + auth)
               .set('Accept', 'application/json')
@@ -190,7 +195,7 @@ describe('binding RESTful API', function() {
 
       beforeEach(function(done) {
         initNockBind(201);
-        supertest(server)
+        supertest(publicServer)
           .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
           .set("Authorization", "Basic " + auth)
           .send({ "app_guid": appId, "parameters": policy })
@@ -207,7 +212,7 @@ describe('binding RESTful API', function() {
 
       context('when an app is already bound', function() {
         it('returns a 409', function(done) {
-          supertest(server)
+          supertest(publicServer)
             .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
             .set("Authorization", "Basic " + auth)
             .set('Accept', 'application/json')
@@ -230,7 +235,7 @@ describe('binding RESTful API', function() {
           });
         });
         it('returns a 409', function(done) {
-          supertest(server)
+          supertest(publicServer)
             .put("/v2/service_instances/" + serviceInstanceId2 + "/service_bindings/" + bindingId)
             .set("Authorization", "Basic " + auth)
             .set('Accept', 'application/json')
@@ -253,7 +258,7 @@ describe('binding RESTful API', function() {
           });
         });
         it('returns a 409', function(done) {
-          supertest(server)
+          supertest(publicServer)
             .put("/v2/service_instances/" + serviceInstanceId2 + "/service_bindings/" + bindingId)
             .set("Authorization", "Basic " + auth)
             .set('Accept', 'application/json')
@@ -271,7 +276,7 @@ describe('binding RESTful API', function() {
     });
     context('when serviceInstanceId is undefined', function() {
       it("return a 404", function(done) {
-        supertest(server)
+        supertest(publicServer)
           .put("/v2/service_instances//service_bindings/" + bindingId)
           .set("Authorization", "Basic " + auth)
           .send({ "app_guid": appId })
@@ -286,7 +291,7 @@ describe('binding RESTful API', function() {
     });
     context('when serviceInstanceId is blank space', function() {
       it("return a 400", function(done) {
-        supertest(server)
+        supertest(publicServer)
           .put("/v2/service_instances/   /service_bindings/" + bindingId)
           .set("Authorization", "Basic " + auth)
           .send({ "app_guid": appId })
@@ -301,7 +306,7 @@ describe('binding RESTful API', function() {
     });
     context('when bindingId is undefined', function() {
       it("return a 404", function(done) {
-        supertest(server)
+        supertest(publicServer)
           .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/")
           .set("Authorization", "Basic " + auth)
           .send({ "app_guid": appId })
@@ -316,7 +321,7 @@ describe('binding RESTful API', function() {
     });
     context('when bindingId is blank space', function() {
       it("return a 404", function(done) {
-        supertest(server)
+        supertest(publicServer)
           .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + "   ")
           .set("Authorization", "Basic " + auth)
           .send({ "app_guid": appId })
@@ -332,7 +337,7 @@ describe('binding RESTful API', function() {
 
     context('when appId is undefined', function() {
       it("return a 400", function(done) {
-        supertest(server)
+        supertest(publicServer)
           .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
           .set("Authorization", "Basic " + auth)
           .expect(400)
@@ -346,7 +351,7 @@ describe('binding RESTful API', function() {
     });
     context('when appId is blank space', function() {
       it("return a 404", function(done) {
-        supertest(server)
+        supertest(publicServer)
           .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
           .set("Authorization", "Basic " + auth)
           .send({ "app_guid": "  " })
@@ -362,7 +367,7 @@ describe('binding RESTful API', function() {
 
     context('when the service instance does not exist', function() {
       it("return a 404", function(done) {
-        supertest(server)
+        supertest(publicServer)
           .put("/v2/service_instances/" + serviceInstanceId2 + "/service_bindings/" + bindingId)
           .set("Authorization", "Basic " + auth)
           .send({ "app_guid": appId, "parameters": policy })
@@ -383,7 +388,7 @@ describe('binding RESTful API', function() {
     context('when a binding exists for the app', function() {
       beforeEach(function(done) {
         initNockBind(201);
-        supertest(server)
+        supertest(publicServer)
           .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
           .set("Authorization", "Basic " + auth)
           .send({ "app_guid": appId, "parameters": policy })
@@ -399,7 +404,7 @@ describe('binding RESTful API', function() {
       });
       it("it deletes the binding", function(done) {
         initNockUnBind(200);
-        supertest(server)
+        supertest(publicServer)
           .delete("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
           .set("Authorization", "Basic " + auth)
           .expect(200)
@@ -416,7 +421,7 @@ describe('binding RESTful API', function() {
         context("when the api server returns a 400", function() {
           it("return a 400", function(done) {
             initNockUnBind(400);
-            supertest(server)
+            supertest(publicServer)
               .delete("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
               .set("Authorization", "Basic " + auth)
               .expect(500)
@@ -434,7 +439,7 @@ describe('binding RESTful API', function() {
         context("when the api server returns a 404", function() {
           it("return a 404", function(done) {
             initNockUnBind(404);
-            supertest(server)
+            supertest(publicServer)
               .delete("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
               .set("Authorization", "Basic " + auth)
               .expect(200)
@@ -452,7 +457,7 @@ describe('binding RESTful API', function() {
         context("when the api server returns a 500", function() {
           it("return a 500", function(done) {
             initNockUnBind(500);
-            supertest(server)
+            supertest(publicServer)
               .delete("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
               .set("Authorization", "Basic " + auth)
               .expect(500)
@@ -470,7 +475,7 @@ describe('binding RESTful API', function() {
         context('when the api server returns other error than 400, 500', function() {
           it('returns a 500', function(done) {
             initNockUnBind(300);
-            supertest(server)
+            supertest(publicServer)
               .delete("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
               .set("Authorization", "Basic " + auth)
               .set('Accept', 'application/json')
@@ -489,7 +494,7 @@ describe('binding RESTful API', function() {
     });
     context('when serviceInstanceId is undefined', function() {
       it("return a 404", function(done) {
-        supertest(server)
+        supertest(publicServer)
           .put("/v2/service_instances//service_bindings/" + bindingId)
           .set("Authorization", "Basic " + auth)
           .expect(404)
@@ -503,7 +508,7 @@ describe('binding RESTful API', function() {
     });
     context('when serviceInstanceId is blank space', function() {
       it("return a 400", function(done) {
-        supertest(server)
+        supertest(publicServer)
           .put("/v2/service_instances/   /service_bindings/" + bindingId)
           .set("Authorization", "Basic " + auth)
           .expect(400)
@@ -518,7 +523,7 @@ describe('binding RESTful API', function() {
 
     context('when bindingId is undefined', function() {
       it("return a 404", function(done) {
-        supertest(server)
+        supertest(publicServer)
           .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/")
           .set("Authorization", "Basic " + auth)
           .expect(404)
@@ -532,7 +537,7 @@ describe('binding RESTful API', function() {
     });
     context('when bindingId is blank space', function() {
       it("return a 404", function(done) {
-        supertest(server)
+        supertest(publicServer)
           .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + "   ")
           .set("Authorization", "Basic " + auth)
           .expect(404)
@@ -546,7 +551,7 @@ describe('binding RESTful API', function() {
     });
     context('when the binding does not exist for the app', function() {
       it('return 410', function(done) {
-        supertest(server)
+        supertest(publicServer)
           .delete("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
           .set("Authorization", "Basic " + auth)
           .expect(410)
