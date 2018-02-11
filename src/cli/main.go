@@ -113,5 +113,4 @@ func (as *AutoScaler) Run(cliConnection plugin.CliConnection, args []string) {
 		ui.SayMessage("Error: %s", err.Error())
 		os.Exit(1)
 	}
-
 }

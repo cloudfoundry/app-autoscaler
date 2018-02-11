@@ -168,7 +168,7 @@ var _ = Describe("API Helper Test", func() {
 		})
 
 		Context("Check Health", func() {
-			It("Succeed", func() {
+			It("succeed", func() {
 				err = apihelper.CheckHealth()
 				Expect(err).NotTo(HaveOccurred())
 			})
@@ -187,7 +187,7 @@ var _ = Describe("API Helper Test", func() {
 					)
 				})
 
-				It("Succeed", func() {
+				It("succeed", func() {
 					response, err := apihelper.GetPolicy()
 					Expect(err).NotTo(HaveOccurred())
 
@@ -266,7 +266,7 @@ var _ = Describe("API Helper Test", func() {
 					)
 				})
 
-				It("Succeed", func() {
+				It("succeed", func() {
 					err = apihelper.CreatePolicy(fakePolicy)
 					Expect(err).NotTo(HaveOccurred())
 				})
@@ -282,7 +282,7 @@ var _ = Describe("API Helper Test", func() {
 					)
 				})
 
-				It("Succeed", func() {
+				It("succeed", func() {
 					err = apihelper.CreatePolicy(fakePolicy)
 					Expect(err).NotTo(HaveOccurred())
 				})
@@ -345,7 +345,7 @@ var _ = Describe("API Helper Test", func() {
 					)
 				})
 
-				It("Succeed", func() {
+				It("succeed", func() {
 					err = apihelper.DeletePolicy()
 					Expect(err).NotTo(HaveOccurred())
 				})
@@ -464,7 +464,7 @@ var _ = Describe("API Helper Test", func() {
 						)
 					})
 
-					It("Succeed", func() {
+					It("succeed", func() {
 
 						next, data, err := apihelper.GetMetrics("memoryused", 0, 0, false, uint64(1))
 						Expect(err).NotTo(HaveOccurred())
@@ -547,7 +547,7 @@ var _ = Describe("API Helper Test", func() {
 						)
 					})
 
-					It("Succeed", func() {
+					It("succeed", func() {
 
 						next, data, err := apihelper.GetMetrics("memoryused", 0, 0, true, uint64(1))
 						Expect(err).NotTo(HaveOccurred())
@@ -604,7 +604,7 @@ var _ = Describe("API Helper Test", func() {
 						)
 					})
 
-					It("Succeed", func() {
+					It("succeed", func() {
 
 						next, data, err := apihelper.GetMetrics("memoryused", now, now+int64(9*30*1E9), false, uint64(1))
 						Expect(err).NotTo(HaveOccurred())
@@ -637,7 +637,7 @@ var _ = Describe("API Helper Test", func() {
 						)
 					})
 
-					It("Succeed", func() {
+					It("succeed", func() {
 						next, data, err := apihelper.GetMetrics("memoryused", now, now+int64(9*30*1E9), false, uint64(1))
 						Expect(err).NotTo(HaveOccurred())
 						Expect(next).To(BeFalse())
@@ -700,7 +700,7 @@ var _ = Describe("API Helper Test", func() {
 						OldInstances: i + 1,
 						NewInstances: i + 2,
 						Reason:       "fakeReason",
-						Message:      "fakeMsg",
+						Message:      "",
 						Error:        "fakeError",
 					})
 				}
@@ -714,7 +714,7 @@ var _ = Describe("API Helper Test", func() {
 						OldInstances: i + 1,
 						NewInstances: i + 2,
 						Reason:       "fakeReason",
-						Message:      "fakeMsg",
+						Message:      "",
 						Error:        "fakeError",
 					})
 				}
@@ -728,17 +728,81 @@ var _ = Describe("API Helper Test", func() {
 						OldInstances: i + 1,
 						NewInstances: i + 2,
 						Reason:       "fakeReason",
-						Message:      "fakeMsg",
+						Message:      "",
 						Error:        "fakeError",
 					})
 				}
-
-				for i := 0; i < 30; i++ {
+				for i := 0; i < len(histories); i++ {
 					reversedHistories = append(reversedHistories, histories[len(histories)-1-i])
 				}
 			})
 
 			Context("With valid auth token", func() {
+
+				var histories_ut []*AppScalingHistory
+				Context("Query single pages wiht different history format", func() {
+					BeforeEach(func() {
+
+						histories_ut = append(histories_ut, &AppScalingHistory{
+							AppId:        fakeAppId,
+							Timestamp:    now,
+							ScalingType:  0, //dynamic
+							Status:       0, //succeed
+							OldInstances: 10,
+							NewInstances: 11,
+							Reason:       "fakeReason",
+							Message:      "",
+							Error:        "fakeError",
+						})
+						histories_ut = append(histories_ut, &AppScalingHistory{
+							AppId:        fakeAppId,
+							Timestamp:    now + int64(120*1E9),
+							ScalingType:  0, //dynamic
+							Status:       0, //succeed
+							OldInstances: 11,
+							NewInstances: 2,
+							Reason:       "fakeReason",
+							Message:      "fakeMsg",
+							Error:        "fakeError",
+						})
+
+						apiServer.AppendHandlers(
+							ghttp.CombineHandlers(
+								ghttp.RespondWithJSONEncoded(http.StatusOK, &HistoryResults{
+									TotalResults: 2,
+									TotalPages:   1,
+									Page:         1,
+									Histories:    histories_ut[0:2],
+								}),
+								ghttp.VerifyHeaderKV("Authorization", fakeAccessToken),
+								ghttp.VerifyRequest("GET", urlpath, "order=asc&page=1"),
+							),
+						)
+
+					})
+
+					It("succeed", func() {
+						next, data, err := apihelper.GetHistory(0, 0, false, uint64(1))
+						Expect(err).NotTo(HaveOccurred())
+						Expect(next).To(BeFalse())
+						Expect(len(data)).To(Equal(2))
+
+						Expect(data[0][0]).To(Equal("dynamic"))
+						Expect(data[0][1]).To(Equal("succeed"))
+						Expect(data[0][2]).To(Equal("10->11"))
+						Expect(data[0][3]).To(Equal(time.Unix(0, now).Format(time.RFC3339)))
+						Expect(data[0][4]).To(Equal("fakeReason"))
+						Expect(data[0][5]).To(Equal("fakeError"))
+
+						Expect(data[1][0]).To(Equal("dynamic"))
+						Expect(data[1][1]).To(Equal("succeed"))
+						Expect(data[1][2]).To(Equal("11->2"))
+						Expect(data[1][3]).To(Equal(time.Unix(0, now+int64(120*1E9)).Format(time.RFC3339)))
+						Expect(data[1][4]).To(Equal("-9 instance(s) because fakeMsg"))
+						Expect(data[1][5]).To(Equal("fakeError"))
+
+					})
+				})
 
 				Context("Query multiple pages with order asc", func() {
 					BeforeEach(func() {
@@ -746,7 +810,7 @@ var _ = Describe("API Helper Test", func() {
 							ghttp.CombineHandlers(
 								ghttp.RespondWithJSONEncoded(http.StatusOK, &HistoryResults{
 									TotalResults: 30,
-									TotalPages:   3,
+									TotalPages:   4,
 									Page:         1,
 									Histories:    histories[0:10],
 								}),
@@ -780,9 +844,10 @@ var _ = Describe("API Helper Test", func() {
 								ghttp.VerifyRequest("GET", urlpath, "order=asc&page=3"),
 							),
 						)
+
 					})
 
-					It("Succeed", func() {
+					It("succeed", func() {
 
 						next, data, err := apihelper.GetHistory(0, 0, false, uint64(1))
 						Expect(err).NotTo(HaveOccurred())
@@ -790,13 +855,12 @@ var _ = Describe("API Helper Test", func() {
 						Expect(len(data)).To(Equal(10))
 
 						for i, row := range data {
-							Expect(row[0]).To(Equal("Dynamic"))
-							Expect(row[1]).To(Equal("Succeed"))
-							Expect(row[2]).To(Equal(strconv.Itoa(i + 1)))
-							Expect(row[3]).To(Equal(strconv.Itoa(i + 2)))
-							Expect(row[4]).To(Equal(time.Unix(0, now+int64(i*120*1E9)).Format(time.RFC3339)))
-							Expect(row[5]).To(Equal("fakeReason"))
-							Expect(row[6]).To(Equal("fakeError"))
+							Expect(row[0]).To(Equal("dynamic"))
+							Expect(row[1]).To(Equal("succeed"))
+							Expect(row[2]).To(Equal(strconv.Itoa(i+1) + "->" + strconv.Itoa(i+2)))
+							Expect(row[3]).To(Equal(time.Unix(0, now+int64(i*120*1E9)).Format(time.RFC3339)))
+							Expect(row[4]).To(Equal("fakeReason"))
+							Expect(row[5]).To(Equal("fakeError"))
 						}
 
 						next, data, err = apihelper.GetHistory(0, 0, false, uint64(2))
@@ -805,13 +869,12 @@ var _ = Describe("API Helper Test", func() {
 						Expect(len(data)).To(Equal(10))
 
 						for i, row := range data {
-							Expect(row[0]).To(Equal("Scheduled"))
-							Expect(row[1]).To(Equal("Succeed"))
-							Expect(row[2]).To(Equal(strconv.Itoa(i + 10 + 1)))
-							Expect(row[3]).To(Equal(strconv.Itoa(i + 10 + 2)))
-							Expect(row[4]).To(Equal(time.Unix(0, now+int64((i+10)*120*1E9)).Format(time.RFC3339)))
-							Expect(row[5]).To(Equal("fakeReason"))
-							Expect(row[6]).To(Equal("fakeError"))
+							Expect(row[0]).To(Equal("scheduled"))
+							Expect(row[1]).To(Equal("succeed"))
+							Expect(row[2]).To(Equal(strconv.Itoa(i+10+1) + "->" + strconv.Itoa(i+10+2)))
+							Expect(row[3]).To(Equal(time.Unix(0, now+int64((i+10)*120*1E9)).Format(time.RFC3339)))
+							Expect(row[4]).To(Equal("fakeReason"))
+							Expect(row[5]).To(Equal("fakeError"))
 						}
 
 						next, data, err = apihelper.GetHistory(0, 0, false, uint64(3))
@@ -820,14 +883,12 @@ var _ = Describe("API Helper Test", func() {
 						Expect(len(data)).To(Equal(10))
 
 						for i, row := range data {
-							Expect(row[0]).To(Equal("Scheduled"))
-							Expect(row[1]).To(Equal("Failed"))
-							Expect(row[2]).To(Equal(strconv.Itoa(i + 20 + 1)))
-							Expect(row[3]).To(Equal(strconv.Itoa(i + 20 + 2)))
-							Expect(row[4]).To(Equal(time.Unix(0, now+int64((i+20)*120*1E9)).Format(time.RFC3339)))
-							Expect(row[5]).To(Equal("fakeReason"))
-							Expect(row[6]).To(Equal("fakeError"))
-
+							Expect(row[0]).To(Equal("scheduled"))
+							Expect(row[1]).To(Equal("failed"))
+							Expect(row[2]).To(Equal(strconv.Itoa(i+20+1) + "->" + strconv.Itoa(i+20+2)))
+							Expect(row[3]).To(Equal(time.Unix(0, now+int64((i+20)*120*1E9)).Format(time.RFC3339)))
+							Expect(row[4]).To(Equal("fakeReason"))
+							Expect(row[5]).To(Equal("fakeError"))
 						}
 
 					})
@@ -875,7 +936,7 @@ var _ = Describe("API Helper Test", func() {
 						)
 					})
 
-					It("Succeed", func() {
+					It("succeed", func() {
 
 						next, data, err := apihelper.GetHistory(0, 0, true, uint64(1))
 						Expect(err).NotTo(HaveOccurred())
@@ -883,13 +944,12 @@ var _ = Describe("API Helper Test", func() {
 						Expect(len(data)).To(Equal(10))
 
 						for i, row := range data {
-							Expect(row[0]).To(Equal("Scheduled"))
-							Expect(row[1]).To(Equal("Failed"))
-							Expect(row[2]).To(Equal(strconv.Itoa(29 - i + 1)))
-							Expect(row[3]).To(Equal(strconv.Itoa(29 - i + 2)))
-							Expect(row[4]).To(Equal(time.Unix(0, now+int64((29-i)*120*1E9)).Format(time.RFC3339)))
-							Expect(row[5]).To(Equal("fakeReason"))
-							Expect(row[6]).To(Equal("fakeError"))
+							Expect(row[0]).To(Equal("scheduled"))
+							Expect(row[1]).To(Equal("failed"))
+							Expect(row[2]).To(Equal(strconv.Itoa(29-i+1) + "->" + strconv.Itoa(29-i+2)))
+							Expect(row[3]).To(Equal(time.Unix(0, now+int64((29-i)*120*1E9)).Format(time.RFC3339)))
+							Expect(row[4]).To(Equal("fakeReason"))
+							Expect(row[5]).To(Equal("fakeError"))
 						}
 
 						next, data, err = apihelper.GetHistory(0, 0, true, uint64(2))
@@ -898,13 +958,12 @@ var _ = Describe("API Helper Test", func() {
 						Expect(len(data)).To(Equal(10))
 
 						for i, row := range data {
-							Expect(row[0]).To(Equal("Scheduled"))
-							Expect(row[1]).To(Equal("Succeed"))
-							Expect(row[2]).To(Equal(strconv.Itoa(19 - i + 1)))
-							Expect(row[3]).To(Equal(strconv.Itoa(19 - i + 2)))
-							Expect(row[4]).To(Equal(time.Unix(0, now+int64((19-i)*120*1E9)).Format(time.RFC3339)))
-							Expect(row[5]).To(Equal("fakeReason"))
-							Expect(row[6]).To(Equal("fakeError"))
+							Expect(row[0]).To(Equal("scheduled"))
+							Expect(row[1]).To(Equal("succeed"))
+							Expect(row[2]).To(Equal(strconv.Itoa(19-i+1) + "->" + strconv.Itoa(19-i+2)))
+							Expect(row[3]).To(Equal(time.Unix(0, now+int64((19-i)*120*1E9)).Format(time.RFC3339)))
+							Expect(row[4]).To(Equal("fakeReason"))
+							Expect(row[5]).To(Equal("fakeError"))
 						}
 
 						next, data, err = apihelper.GetHistory(0, 0, true, uint64(3))
@@ -913,13 +972,12 @@ var _ = Describe("API Helper Test", func() {
 						Expect(len(data)).To(Equal(10))
 
 						for i, row := range data {
-							Expect(row[0]).To(Equal("Dynamic"))
-							Expect(row[1]).To(Equal("Succeed"))
-							Expect(row[2]).To(Equal(strconv.Itoa(9 - i + 1)))
-							Expect(row[3]).To(Equal(strconv.Itoa(9 - i + 2)))
-							Expect(row[4]).To(Equal(time.Unix(0, now+int64((9-i)*120*1E9)).Format(time.RFC3339)))
-							Expect(row[5]).To(Equal("fakeReason"))
-							Expect(row[6]).To(Equal("fakeError"))
+							Expect(row[0]).To(Equal("dynamic"))
+							Expect(row[1]).To(Equal("succeed"))
+							Expect(row[2]).To(Equal(strconv.Itoa(9-i+1) + "->" + strconv.Itoa(9-i+2)))
+							Expect(row[3]).To(Equal(time.Unix(0, now+int64((9-i)*120*1E9)).Format(time.RFC3339)))
+							Expect(row[4]).To(Equal("fakeReason"))
+							Expect(row[5]).To(Equal("fakeError"))
 						}
 
 					})
@@ -941,7 +999,7 @@ var _ = Describe("API Helper Test", func() {
 						)
 					})
 
-					It("Succeed", func() {
+					It("succeed", func() {
 
 						next, data, err := apihelper.GetHistory(now, now+int64(9*120*1E9), false, uint64(1))
 						Expect(err).NotTo(HaveOccurred())
@@ -949,13 +1007,12 @@ var _ = Describe("API Helper Test", func() {
 						Expect(len(data)).To(Equal(10))
 
 						for i, row := range data {
-							Expect(row[0]).To(Equal("Dynamic"))
-							Expect(row[1]).To(Equal("Succeed"))
-							Expect(row[2]).To(Equal(strconv.Itoa(i + 1)))
-							Expect(row[3]).To(Equal(strconv.Itoa(i + 2)))
-							Expect(row[4]).To(Equal(time.Unix(0, now+int64(i*120*1E9)).Format(time.RFC3339)))
-							Expect(row[5]).To(Equal("fakeReason"))
-							Expect(row[6]).To(Equal("fakeError"))
+							Expect(row[0]).To(Equal("dynamic"))
+							Expect(row[1]).To(Equal("succeed"))
+							Expect(row[2]).To(Equal(strconv.Itoa(i+1) + "->" + strconv.Itoa(i+2)))
+							Expect(row[3]).To(Equal(time.Unix(0, now+int64(i*120*1E9)).Format(time.RFC3339)))
+							Expect(row[4]).To(Equal("fakeReason"))
+							Expect(row[5]).To(Equal("fakeError"))
 						}
 
 					})
@@ -977,7 +1034,7 @@ var _ = Describe("API Helper Test", func() {
 						)
 					})
 
-					It("Succeed", func() {
+					It("succeed", func() {
 						next, data, err := apihelper.GetHistory(now, now+int64(9*120*1E9), false, uint64(1))
 						Expect(err).NotTo(HaveOccurred())
 						Expect(next).To(BeFalse())

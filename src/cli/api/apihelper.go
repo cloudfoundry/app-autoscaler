@@ -439,16 +439,21 @@ func (helper *APIHelper) GetHistory(startTime, endTime int64, desc bool, page ui
 
 	var data [][]string
 	for _, entry := range history.Histories {
-		scalingType := "Dynamic"
+		scalingType := "dynamic"
 		if entry.ScalingType == 1 {
-			scalingType = "Scheduled"
+			scalingType = "scheduled"
 		}
-		status := "Succeed"
+		status := "succeed"
 		if entry.Status == 1 {
-			status = "Failed"
+			status = "failed"
+		}
+
+		var adjustment = entry.NewInstances - entry.OldInstances
+		if entry.Message != "" {
+			entry.Reason = fmt.Sprintf("%d instance(s) because %s", adjustment, entry.Message)
 		}
 		data = append(data, []string{scalingType, status,
-			strconv.Itoa(entry.OldInstances), strconv.Itoa(entry.NewInstances),
+			strconv.Itoa(entry.OldInstances) + "->" + strconv.Itoa(entry.NewInstances),
 			time.Unix(0, entry.Timestamp).Format(time.RFC3339),
 			entry.Reason, entry.Error,
 		})

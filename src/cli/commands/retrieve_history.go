@@ -85,7 +85,7 @@ func RetrieveHistory(cliConnection api.Connection, appName string, startTime, en
 
 	ui.SayMessage(ui.ShowHistoryHint, appName)
 
-	table := ui.NewTable(writer, []string{"Scaling Type", "Status", "Before Scale", "After Scale", "Time", "Event", "Error"})
+	table := ui.NewTable(writer, []string{"Scaling Type", "Status", "Instance Changes", "Time", "Action", "Error"})
 	var (
 		page     uint64 = 1
 		next     bool   = true

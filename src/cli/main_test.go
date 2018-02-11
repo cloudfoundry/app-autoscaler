@@ -120,7 +120,7 @@ var _ = Describe("App-AutoScaler Commands", func() {
 			})
 
 			Context("with http server", func() {
-				Context("Succeed", func() {
+				Context("succeed", func() {
 					It("to say 'Setting AutoScaler api endpoint to ...' ", func() {
 						session, err = gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
 						Expect(err).NotTo(HaveOccurred())
@@ -213,7 +213,7 @@ var _ = Describe("App-AutoScaler Commands", func() {
 
 		Context("Unset api endpoint", func() {
 
-			It("Succeed", func() {
+			It("succeed", func() {
 				args = []string{ts.Port(), "autoscaling-api", "--unset"}
 				session, err = gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
 				Expect(err).NotTo(HaveOccurred())
@@ -449,7 +449,7 @@ var _ = Describe("App-AutoScaler Commands", func() {
 
 							Context("Succeed to print the policy to file", func() {
 
-								It("Succeed", func() {
+								It("succeed", func() {
 									args = []string{ts.Port(), "autoscaling-policy", fakeAppName, "--output", outputFile}
 									session, err = gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
 									Expect(err).NotTo(HaveOccurred())
@@ -880,7 +880,7 @@ var _ = Describe("App-AutoScaler Commands", func() {
 								)
 							})
 
-							It("Succeed", func() {
+							It("succeed", func() {
 
 								args = []string{ts.Port(), "detach-autoscaling-policy", fakeAppName}
 								session, err = gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
@@ -957,6 +957,19 @@ var _ = Describe("App-AutoScaler Commands", func() {
 
 					args = []string{ts.Port(), "autoscaling-metrics", fakeAppName, metricName, "--end", invalidTime}
 					session, err = gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+					session.Wait()
+
+					Expect(session).To(gbytes.Say("Unrecognized date time input"))
+					Expect(session.ExitCode()).To(Equal(1))
+				})
+
+				It("Failed when start/end time is prior to 1970-01-01T00:00:00Z", func() {
+					args = []string{ts.Port(), "autoscaling-metrics", fakeAppName, metricName,
+						"--start", "1969-12-31-T00:00:00Z",
+						"--end", "1969-12-31-T23:59:59Z",
+					}
+					session, err := gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
 					Expect(err).NotTo(HaveOccurred())
 					session.Wait()
 
@@ -1459,6 +1472,19 @@ var _ = Describe("App-AutoScaler Commands", func() {
 					Expect(session.ExitCode()).To(Equal(1))
 				})
 
+				It("Failed when start/end time is prior to 1970-01-01T00:00:00Z", func() {
+					args = []string{ts.Port(), "autoscaling-history", fakeAppName,
+						"--start", "1969-12-31-T00:00:00Z",
+						"--end", "1969-12-31-T23:59:59Z",
+					}
+					session, err := gexec.Start(exec.Command(validPluginPath, args...), GinkgoWriter, GinkgoWriter)
+					Expect(err).NotTo(HaveOccurred())
+					session.Wait()
+
+					Expect(session).To(gbytes.Say("Unrecognized date time input"))
+					Expect(session.ExitCode()).To(Equal(1))
+				})
+
 				It("Failed when start time is greater than end time", func() {
 					args = []string{ts.Port(), "autoscaling-history", fakeAppName,
 						"--start", now.Format(time.RFC3339),
@@ -1629,7 +1655,7 @@ var _ = Describe("App-AutoScaler Commands", func() {
 										OldInstances: i + 1,
 										NewInstances: i + 2,
 										Reason:       "fakeReason",
-										Message:      "fakeMsg",
+										Message:      "",
 										Error:        "fakeError",
 									})
 								}
@@ -1643,7 +1669,7 @@ var _ = Describe("App-AutoScaler Commands", func() {
 										OldInstances: i + 1,
 										NewInstances: i + 2,
 										Reason:       "fakeReason",
-										Message:      "fakeMsg",
+										Message:      "",
 										Error:        "fakeError",
 									})
 								}
@@ -1657,7 +1683,7 @@ var _ = Describe("App-AutoScaler Commands", func() {
 										OldInstances: i + 1,
 										NewInstances: i + 2,
 										Reason:       "fakeReason",
-										Message:      "fakeMsg",
+										Message:      "",
 										Error:        "fakeError",
 									})
 								}
@@ -1700,21 +1726,18 @@ var _ = Describe("App-AutoScaler Commands", func() {
 										if i == 0 {
 											Expect(strings.Trim(colomns[0], " ")).To(Equal("Scaling Type"))
 											Expect(strings.Trim(colomns[1], " ")).To(Equal("Status"))
-											Expect(strings.Trim(colomns[2], " ")).To(Equal("Before Scale"))
-											Expect(strings.Trim(colomns[3], " ")).To(Equal("After Scale"))
-											Expect(strings.Trim(colomns[4], " ")).To(Equal("Time"))
-											Expect(strings.Trim(colomns[5], " ")).To(Equal("Event"))
-											Expect(strings.Trim(colomns[6], " ")).To(Equal("Error"))
+											Expect(strings.Trim(colomns[2], " ")).To(Equal("Instance Changes"))
+											Expect(strings.Trim(colomns[3], " ")).To(Equal("Time"))
+											Expect(strings.Trim(colomns[4], " ")).To(Equal("Action"))
+											Expect(strings.Trim(colomns[5], " ")).To(Equal("Error"))
 
 										} else {
-
-											Expect(strings.Trim(colomns[0], " ")).To(Equal("Dynamic"))
-											Expect(strings.Trim(colomns[1], " ")).To(Equal("Succeed"))
-											Expect(strings.Trim(colomns[2], " ")).To(Equal(strconv.Itoa(i - 1 + 1)))
-											Expect(strings.Trim(colomns[3], " ")).To(Equal(strconv.Itoa(i - 1 + 2)))
-											Expect(strings.Trim(colomns[4], " ")).To(Equal(time.Unix(0, now.UnixNano()+int64((i-1)*120*1E9)).Format(time.RFC3339)))
-											Expect(strings.Trim(colomns[5], " ")).To(Equal("fakeReason"))
-											Expect(strings.Trim(colomns[6], " ")).To(Equal("fakeError"))
+											Expect(strings.Trim(colomns[0], " ")).To(Equal("dynamic"))
+											Expect(strings.Trim(colomns[1], " ")).To(Equal("succeed"))
+											Expect(strings.Trim(colomns[2], " ")).To(Equal(strconv.Itoa(i-1+1) + "->" + strconv.Itoa(i-1+2)))
+											Expect(strings.Trim(colomns[3], " ")).To(Equal(time.Unix(0, now.UnixNano()+int64((i-1)*120*1E9)).Format(time.RFC3339)))
+											Expect(strings.Trim(colomns[4], " ")).To(Equal("fakeReason"))
+											Expect(strings.Trim(colomns[5], " ")).To(Equal("fakeError"))
 										}
 									}
 									Expect(session.ExitCode()).To(Equal(0))
@@ -1787,31 +1810,29 @@ var _ = Describe("App-AutoScaler Commands", func() {
 									for i, row := range historyTable {
 										colomns := strings.Split(row, "\t")
 										if i == 0 {
-											//header line
 											Expect(strings.Trim(colomns[0], " ")).To(Equal("Scaling Type"))
 											Expect(strings.Trim(colomns[1], " ")).To(Equal("Status"))
-											Expect(strings.Trim(colomns[2], " ")).To(Equal("Before Scale"))
-											Expect(strings.Trim(colomns[3], " ")).To(Equal("After Scale"))
-											Expect(strings.Trim(colomns[4], " ")).To(Equal("Time"))
-											Expect(strings.Trim(colomns[5], " ")).To(Equal("Event"))
-											Expect(strings.Trim(colomns[6], " ")).To(Equal("Error"))
+											Expect(strings.Trim(colomns[2], " ")).To(Equal("Instance Changes"))
+											Expect(strings.Trim(colomns[3], " ")).To(Equal("Time"))
+											Expect(strings.Trim(colomns[4], " ")).To(Equal("Action"))
+											Expect(strings.Trim(colomns[5], " ")).To(Equal("Error"))
+											//header line
 										} else {
 											//use (i-1) to skip header
-											Expect(strings.Trim(colomns[2], " ")).To(Equal(strconv.Itoa(i - 1 + 1)))
-											Expect(strings.Trim(colomns[3], " ")).To(Equal(strconv.Itoa(i - 1 + 2)))
-											Expect(strings.Trim(colomns[4], " ")).To(Equal(time.Unix(0, now.UnixNano()+int64((i-1)*120*1E9)).Format(time.RFC3339)))
-											Expect(strings.Trim(colomns[5], " ")).To(Equal("fakeReason"))
-											Expect(strings.Trim(colomns[6], " ")).To(Equal("fakeError"))
+											Expect(strings.Trim(colomns[2], " ")).To(Equal(strconv.Itoa(i-1+1) + "->" + strconv.Itoa(i-1+2)))
+											Expect(strings.Trim(colomns[3], " ")).To(Equal(time.Unix(0, now.UnixNano()+int64((i-1)*120*1E9)).Format(time.RFC3339)))
+											Expect(strings.Trim(colomns[4], " ")).To(Equal("fakeReason"))
+											Expect(strings.Trim(colomns[5], " ")).To(Equal("fakeError"))
 
 											if i < 11 {
-												Expect(strings.Trim(colomns[0], " ")).To(Equal("Dynamic"))
-												Expect(strings.Trim(colomns[1], " ")).To(Equal("Succeed"))
+												Expect(strings.Trim(colomns[0], " ")).To(Equal("dynamic"))
+												Expect(strings.Trim(colomns[1], " ")).To(Equal("succeed"))
 											} else if i < 21 {
-												Expect(strings.Trim(colomns[0], " ")).To(Equal("Scheduled"))
-												Expect(strings.Trim(colomns[1], " ")).To(Equal("Succeed"))
+												Expect(strings.Trim(colomns[0], " ")).To(Equal("scheduled"))
+												Expect(strings.Trim(colomns[1], " ")).To(Equal("succeed"))
 											} else {
-												Expect(strings.Trim(colomns[0], " ")).To(Equal("Scheduled"))
-												Expect(strings.Trim(colomns[1], " ")).To(Equal("Failed"))
+												Expect(strings.Trim(colomns[0], " ")).To(Equal("scheduled"))
+												Expect(strings.Trim(colomns[1], " ")).To(Equal("failed"))
 											}
 										}
 									}
@@ -1889,28 +1910,25 @@ var _ = Describe("App-AutoScaler Commands", func() {
 										if i == 0 {
 											Expect(strings.Trim(colomns[0], " ")).To(Equal("Scaling Type"))
 											Expect(strings.Trim(colomns[1], " ")).To(Equal("Status"))
-											Expect(strings.Trim(colomns[2], " ")).To(Equal("Before Scale"))
-											Expect(strings.Trim(colomns[3], " ")).To(Equal("After Scale"))
-											Expect(strings.Trim(colomns[4], " ")).To(Equal("Time"))
-											Expect(strings.Trim(colomns[5], " ")).To(Equal("Event"))
-											Expect(strings.Trim(colomns[6], " ")).To(Equal("Error"))
+											Expect(strings.Trim(colomns[2], " ")).To(Equal("Instance Changes"))
+											Expect(strings.Trim(colomns[3], " ")).To(Equal("Time"))
+											Expect(strings.Trim(colomns[4], " ")).To(Equal("Action"))
+											Expect(strings.Trim(colomns[5], " ")).To(Equal("Error"))
 										} else {
 											//use "29-(i-1)" to simulate the expected output in desc order
-											Expect(strings.Trim(colomns[2], " ")).To(Equal(strconv.Itoa(29 - (i - 1) + 1)))
-											Expect(strings.Trim(colomns[3], " ")).To(Equal(strconv.Itoa(29 - (i - 1) + 2)))
-											Expect(strings.Trim(colomns[4], " ")).To(Equal(time.Unix(0, now.UnixNano()+int64((29-(i-1))*120*1E9)).Format(time.RFC3339)))
-											Expect(strings.Trim(colomns[5], " ")).To(Equal("fakeReason"))
-											Expect(strings.Trim(colomns[6], " ")).To(Equal("fakeError"))
-
+											Expect(strings.Trim(colomns[2], " ")).To(Equal(strconv.Itoa(29-(i-1)+1) + "->" + strconv.Itoa(29-(i-1)+2)))
+											Expect(strings.Trim(colomns[3], " ")).To(Equal(time.Unix(0, now.UnixNano()+int64((29-(i-1))*120*1E9)).Format(time.RFC3339)))
+											Expect(strings.Trim(colomns[4], " ")).To(Equal("fakeReason"))
+											Expect(strings.Trim(colomns[5], " ")).To(Equal("fakeError"))
 											if i < 11 {
-												Expect(strings.Trim(colomns[0], " ")).To(Equal("Scheduled"))
-												Expect(strings.Trim(colomns[1], " ")).To(Equal("Failed"))
+												Expect(strings.Trim(colomns[0], " ")).To(Equal("scheduled"))
+												Expect(strings.Trim(colomns[1], " ")).To(Equal("failed"))
 											} else if i < 21 {
-												Expect(strings.Trim(colomns[0], " ")).To(Equal("Scheduled"))
-												Expect(strings.Trim(colomns[1], " ")).To(Equal("Succeed"))
+												Expect(strings.Trim(colomns[0], " ")).To(Equal("scheduled"))
+												Expect(strings.Trim(colomns[1], " ")).To(Equal("succeed"))
 											} else {
-												Expect(strings.Trim(colomns[0], " ")).To(Equal("Dynamic"))
-												Expect(strings.Trim(colomns[1], " ")).To(Equal("Succeed"))
+												Expect(strings.Trim(colomns[0], " ")).To(Equal("dynamic"))
+												Expect(strings.Trim(colomns[1], " ")).To(Equal("succeed"))
 											}
 										}
 									}
@@ -1957,19 +1975,17 @@ var _ = Describe("App-AutoScaler Commands", func() {
 										if i == 0 {
 											Expect(strings.Trim(colomns[0], " ")).To(Equal("Scaling Type"))
 											Expect(strings.Trim(colomns[1], " ")).To(Equal("Status"))
-											Expect(strings.Trim(colomns[2], " ")).To(Equal("Before Scale"))
-											Expect(strings.Trim(colomns[3], " ")).To(Equal("After Scale"))
-											Expect(strings.Trim(colomns[4], " ")).To(Equal("Time"))
-											Expect(strings.Trim(colomns[5], " ")).To(Equal("Event"))
-											Expect(strings.Trim(colomns[6], " ")).To(Equal("Error"))
+											Expect(strings.Trim(colomns[2], " ")).To(Equal("Instance Changes"))
+											Expect(strings.Trim(colomns[3], " ")).To(Equal("Time"))
+											Expect(strings.Trim(colomns[4], " ")).To(Equal("Action"))
+											Expect(strings.Trim(colomns[5], " ")).To(Equal("Error"))
 										} else {
-											Expect(strings.Trim(colomns[0], " ")).To(Equal("Dynamic"))
-											Expect(strings.Trim(colomns[1], " ")).To(Equal("Succeed"))
-											Expect(strings.Trim(colomns[2], " ")).To(Equal(strconv.Itoa(i - 1 + 1)))
-											Expect(strings.Trim(colomns[3], " ")).To(Equal(strconv.Itoa(i - 1 + 2)))
-											Expect(strings.Trim(colomns[4], " ")).To(Equal(time.Unix(0, now.UnixNano()+int64((i-1)*120*1E9)).Format(time.RFC3339)))
-											Expect(strings.Trim(colomns[5], " ")).To(Equal("fakeReason"))
-											Expect(strings.Trim(colomns[6], " ")).To(Equal("fakeError"))
+											Expect(strings.Trim(colomns[0], " ")).To(Equal("dynamic"))
+											Expect(strings.Trim(colomns[1], " ")).To(Equal("succeed"))
+											Expect(strings.Trim(colomns[2], " ")).To(Equal(strconv.Itoa(i-1+1) + "->" + strconv.Itoa(i-1+2)))
+											Expect(strings.Trim(colomns[3], " ")).To(Equal(time.Unix(0, now.UnixNano()+int64((i-1)*120*1E9)).Format(time.RFC3339)))
+											Expect(strings.Trim(colomns[4], " ")).To(Equal("fakeReason"))
+											Expect(strings.Trim(colomns[5], " ")).To(Equal("fakeError"))
 										}
 									}
 									Expect(session.ExitCode()).To(Equal(0))

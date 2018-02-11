@@ -19,7 +19,9 @@ func ParseTimeFormat(input string) (ns int64, e error) {
 			t, e := time.Parse(format, input)
 			if e == nil {
 				ns = t.UnixNano()
-				return ns, nil
+				if ns >= 0 {
+					return ns, nil
+				}
 			}
 		}
 	}
