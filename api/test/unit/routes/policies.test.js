@@ -123,13 +123,13 @@ describe('Routing Policy Creation', function() {
       beforeEach(function() {
         mockBroker404(1);
       });
-      it('should return 404', function(done) {
+      it('should return 403', function(done) {
         request(publicApp)
           .put('/v1/apps/12345/policy')
           .set("Authorization","fake-token")
           .send(fakePolicy)
           .end(function(error, result) {
-            expect(result.statusCode).to.equal(404);
+            expect(result.statusCode).to.equal(403);
             done();
           });
       });
@@ -246,13 +246,13 @@ describe('Routing Policy Creation', function() {
         mockBroker404(1);
         mockSchedulerPut(1,204);
       });
-      it('should return 404', function(done) {
+      it('should return 403', function(done) {
         request(publicApp)
         .put('/v1/apps/12345/policy')
         .set("Authorization","fake-token")
         .send(fakePolicy)
         .end(function(error,result) {
-          expect(result.statusCode).to.equal(404);
+          expect(result.statusCode).to.equal(403);
           done();
         });
       });
@@ -297,11 +297,11 @@ describe('Routing Policy Creation', function() {
         mockBroker404(1);
         mockSchedulerPut(1,200);
       });
-      it('should return 404',function(done){
+      it('should return 403',function(done){
         request(publicApp)
         .delete('/v1/apps/12345/policy')
         .set("Authorization","fake-token")
-        .expect(404)
+        .expect(403)
         .end(function(error) {
           expect(error).to.be.null;
           done();
@@ -386,12 +386,12 @@ describe('Routing Policy Creation', function() {
           mockBroker404(1);
           done();
         });
-        it('should return 404',function(done){
+        it('should return 403',function(done){
           request(publicApp)
           .get('/v1/apps/12345/policy')
           .set("Authorization","fake-token")
           .end(function(error,result) {
-            expect(result.statusCode).to.equal(404);
+            expect(result.statusCode).to.equal(403);
             done();
           });    
         });
