@@ -443,7 +443,7 @@ func (helper *APIHelper) GetHistory(startTime, endTime int64, desc bool, page ui
 		if entry.ScalingType == 1 {
 			scalingType = "scheduled"
 		}
-		status := "succeed"
+		status := "succeeded"
 		if entry.Status == 1 {
 			status = "failed"
 		}

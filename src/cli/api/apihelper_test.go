@@ -788,14 +788,14 @@ var _ = Describe("API Helper Test", func() {
 						Expect(len(data)).To(Equal(2))
 
 						Expect(data[0][0]).To(Equal("dynamic"))
-						Expect(data[0][1]).To(Equal("succeed"))
+						Expect(data[0][1]).To(Equal("succeeded"))
 						Expect(data[0][2]).To(Equal("10->11"))
 						Expect(data[0][3]).To(Equal(time.Unix(0, now).Format(time.RFC3339)))
 						Expect(data[0][4]).To(Equal("fakeReason"))
 						Expect(data[0][5]).To(Equal("fakeError"))
 
 						Expect(data[1][0]).To(Equal("dynamic"))
-						Expect(data[1][1]).To(Equal("succeed"))
+						Expect(data[1][1]).To(Equal("succeeded"))
 						Expect(data[1][2]).To(Equal("11->2"))
 						Expect(data[1][3]).To(Equal(time.Unix(0, now+int64(120*1E9)).Format(time.RFC3339)))
 						Expect(data[1][4]).To(Equal("-9 instance(s) because fakeMsg"))
@@ -856,7 +856,7 @@ var _ = Describe("API Helper Test", func() {
 
 						for i, row := range data {
 							Expect(row[0]).To(Equal("dynamic"))
-							Expect(row[1]).To(Equal("succeed"))
+							Expect(row[1]).To(Equal("succeeded"))
 							Expect(row[2]).To(Equal(strconv.Itoa(i+1) + "->" + strconv.Itoa(i+2)))
 							Expect(row[3]).To(Equal(time.Unix(0, now+int64(i*120*1E9)).Format(time.RFC3339)))
 							Expect(row[4]).To(Equal("fakeReason"))
@@ -870,7 +870,7 @@ var _ = Describe("API Helper Test", func() {
 
 						for i, row := range data {
 							Expect(row[0]).To(Equal("scheduled"))
-							Expect(row[1]).To(Equal("succeed"))
+							Expect(row[1]).To(Equal("succeeded"))
 							Expect(row[2]).To(Equal(strconv.Itoa(i+10+1) + "->" + strconv.Itoa(i+10+2)))
 							Expect(row[3]).To(Equal(time.Unix(0, now+int64((i+10)*120*1E9)).Format(time.RFC3339)))
 							Expect(row[4]).To(Equal("fakeReason"))
@@ -959,7 +959,7 @@ var _ = Describe("API Helper Test", func() {
 
 						for i, row := range data {
 							Expect(row[0]).To(Equal("scheduled"))
-							Expect(row[1]).To(Equal("succeed"))
+							Expect(row[1]).To(Equal("succeeded"))
 							Expect(row[2]).To(Equal(strconv.Itoa(19-i+1) + "->" + strconv.Itoa(19-i+2)))
 							Expect(row[3]).To(Equal(time.Unix(0, now+int64((19-i)*120*1E9)).Format(time.RFC3339)))
 							Expect(row[4]).To(Equal("fakeReason"))
@@ -973,7 +973,7 @@ var _ = Describe("API Helper Test", func() {
 
 						for i, row := range data {
 							Expect(row[0]).To(Equal("dynamic"))
-							Expect(row[1]).To(Equal("succeed"))
+							Expect(row[1]).To(Equal("succeeded"))
 							Expect(row[2]).To(Equal(strconv.Itoa(9-i+1) + "->" + strconv.Itoa(9-i+2)))
 							Expect(row[3]).To(Equal(time.Unix(0, now+int64((9-i)*120*1E9)).Format(time.RFC3339)))
 							Expect(row[4]).To(Equal("fakeReason"))
@@ -1008,7 +1008,7 @@ var _ = Describe("API Helper Test", func() {
 
 						for i, row := range data {
 							Expect(row[0]).To(Equal("dynamic"))
-							Expect(row[1]).To(Equal("succeed"))
+							Expect(row[1]).To(Equal("succeeded"))
 							Expect(row[2]).To(Equal(strconv.Itoa(i+1) + "->" + strconv.Itoa(i+2)))
 							Expect(row[3]).To(Equal(time.Unix(0, now+int64(i*120*1E9)).Format(time.RFC3339)))
 							Expect(row[4]).To(Equal("fakeReason"))
