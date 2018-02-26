@@ -35,10 +35,10 @@ module.exports = function(serviceBorkerSettings) {
         callback(error, null);
       } else if (response.statusCode === HttpStatus.OK) {
         if(response.body.binding){
-          logger.info("Service Binding exists", { "appId": appId });
+          logger.info("Service binding exists", { "appId": appId });
           callback(null, { "statusCode": HttpStatus.OK });
         }else{
-          logger.info("Service Binding does not exists", { "appId": appId });
+          logger.info("Service binding does not exists", { "appId": appId });
           callback(null, { "statusCode": HttpStatus.NOT_FOUND });
         }
       }else {
