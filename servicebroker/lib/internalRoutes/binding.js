@@ -14,18 +14,22 @@ module.exports = function(app, settings) {
       res.status(400).json({});
       return;
     }
-    models.binding.count({ where: { appId: appId } }).then(function(count) {
-      if (count > 0) {
-        res.status(200).json({"message": "binding_info_exists"});
+    models.binding.findAll({ where: { appId: appId } }).then(function(result) {
+      var length = result.length;
+      if (length === 0) {
+        logger.info("Service binding does not exist", { "appId": appId });
+        res.status(200).json({ "binding": null });
         return;
       } else {
-        res.status(404).json({ "message": "binding_info_not_found" });
+        var bindingRecord = result[0];
+        logger.info("Service binding does not exist", { "appId": appId, "binding": bindingRecord });
+        res.status(200).json({ "binding": bindingRecord });
         return;
       }
     }).catch(function(err) {
-      logger.error("Fail to query binding info: ", { "appId": appId, err: err });
+      logger.error("Fail to query binding info: ", { "appId": appId, "err": err });
       res.status(500).json({});
       return;
-    });
+    });;
   });
 }

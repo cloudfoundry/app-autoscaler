@@ -76,7 +76,7 @@ module.exports = function(settings, callback) {
         if(result.statusCode == HttpStatus.OK){
           next();
         }else if(result.statusCode == HttpStatus.NOT_FOUND){
-          res.status(HttpStatus.FORBIDDEN).send({"message": "The request cannot be performed without an existing service binding"});
+          res.status(HttpStatus.FORBIDDEN).send({"message": "The application is not bound to Auto-Scaling service"});
         }else{
           res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({});
         }

@@ -18,11 +18,17 @@ describe('serviceBroker Utility functions', function() {
     beforeEach(function() {
       nock.cleanAll();
     });
-    context('serviceBroker returns 200', function() {
+    context('serviceBroker returns 200 with binding', function() {
       it('should return 200', function(done) {
         nock(serviceBrokerUri)
           .get(/\/v1\/apps\/.+\/service_bindings/)
-          .reply(200, {});
+          .reply(200, {
+            "binding": {
+              "bindingId": "an-binding-id",
+              "appId": "an-app-id",
+              "serviceInstanceId": "an-service-instance-id"
+            }
+          });
         var mockParameters = {
           appId: theAppId
         };
@@ -33,7 +39,21 @@ describe('serviceBroker Utility functions', function() {
         });
       });
     });
-
+    context('serviceBroker returns 200 with null binding', function() {
+      it('should return 404', function(done) {
+        nock(serviceBrokerUri)
+          .get(/\/v1\/apps\/.+\/service_bindings/)
+          .reply(200, { "binding": null });
+        var mockParameters = {
+          appId: theAppId
+        };
+        serviceBrokerUtils.checkBinding(mockParameters, function(error, result) {
+          expect(error).to.be.null;
+          expect(result.statusCode).to.equal(404);
+          done();
+        });
+      });
+    });
     context('there is error when requesting serviceBroker ', function() {
       var mockError = {
         'message': 'Error in requests serviceBroker',
@@ -55,27 +75,13 @@ describe('serviceBroker Utility functions', function() {
       });
     });
 
-    context('serviceBroker returns 404 with message', function() {
-      it('should return 404', function(done) {
-        nock(serviceBrokerUri)
-          .get(/\/v1\/apps\/.+\/service_bindings/)
-          .reply(404, { "message": "binding_info_not_found" });
-        var mockParameters = {
-          appId: theAppId
-        };
-        serviceBrokerUtils.checkBinding(mockParameters, function(error, result) {
-          expect(error).to.be.null;
-          expect(result.statusCode).to.equal(404);
-          done();
-        });
-      });
-    });
+    
 
-    context('serviceBroker returns 404 without message', function() {
+    context('serviceBroker returns 500 ', function() {
       it('should return 500', function(done) {
         nock(serviceBrokerUri)
           .get(/\/v1\/apps\/.+\/service_bindings/)
-          .reply(404);
+          .reply(500);
         var mockParameters = {
           appId: theAppId
         };

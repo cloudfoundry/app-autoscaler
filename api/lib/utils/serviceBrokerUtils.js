@@ -34,18 +34,14 @@ module.exports = function(serviceBorkerSettings) {
         error.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
         callback(error, null);
       } else if (response.statusCode === HttpStatus.OK) {
-        logger.info("Binding info exists", { "appId": appId });
-        callback(null, { "statusCode": HttpStatus.OK });
-      } else if (response.statusCode === HttpStatus.NOT_FOUND) {
-        if (body && body.message && body.message === "binding_info_not_found") {
-          logger.info("Binding info does not exist", { "appId": appId });
-          callback(null, { "statusCode": HttpStatus.NOT_FOUND});
-        } else {
-          logger.info("Error occurred during check binding, service broker can not be reached", { "appId": appId,"response":body });
-          callback({ "statusCode": HttpStatus.INTERNAL_SERVER_ERROR }, null);
+        if(response.body.binding){
+          logger.info("Service Binding exists", { "appId": appId });
+          callback(null, { "statusCode": HttpStatus.OK });
+        }else{
+          logger.info("Service Binding does not exists", { "appId": appId });
+          callback(null, { "statusCode": HttpStatus.NOT_FOUND });
         }
-
-      } else {
+      }else {
         var errorObj = {
           "statusCode": response.statusCode,
         };

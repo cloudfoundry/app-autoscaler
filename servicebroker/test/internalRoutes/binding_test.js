@@ -70,13 +70,13 @@ describe('binding RESTful API', function() {
 
   context("check binding", function() {
     context("application has not been bound to autoscaler", function() {
-      it("return 404", function(done) {
+      it("return 200 with null", function(done) {
         supertest(internalServer)
           .get("/v1/apps/" + appId + "/service_bindings")
           .end(function(error, result) {
             expect(error).to.equal(null);
-            expect(result.statusCode).to.equal(404);
-            expect(result.body.message).to.equal("binding_info_not_found");
+            expect(result.statusCode).to.equal(200);
+            expect(result.body.binding).to.deep.equal(null);
             done();
           });
       });
@@ -99,13 +99,15 @@ describe('binding RESTful API', function() {
             })
           });
       });
-      it("return 200", function(done) {
+      it("return 200 with binding", function(done) {
         supertest(internalServer)
           .get("/v1/apps/" + appId + "/service_bindings")
           .end(function(error, result) {
             expect(error).to.equal(null);
             expect(result.statusCode).to.equal(200);
-            expect(result.body.message).to.equal("binding_info_exists");
+            expect(result.body.binding.bindingId).to.equal(bindingId);
+            expect(result.body.binding.appId).to.equal(appId);
+            expect(result.body.binding.serviceInstanceId).to.equal(serviceInstanceId);
             done();
           });
       });
