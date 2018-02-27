@@ -34,6 +34,14 @@
          "caCertFile":"../test-certs/autoscaler-ca.crt"
       }
   },
+  "serviceBroker": {
+     "uri": "http://autoscaler.boshlite.com",
+      "tls": {
+         "keyFile":"../test-certs/servicebroker_internal.key",
+         "certFile":"../test-certs/servicebroker_internal.crt",
+         "caCertFile":"../test-certs/autoscaler-ca.crt"
+      }
+  },
   "tls": {
         "keyFile":"../test-certs/api.key",
         "certFile":"../test-certs/api.crt",

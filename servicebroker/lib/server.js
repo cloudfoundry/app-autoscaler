@@ -9,7 +9,32 @@ module.exports = function(settings, catalog, callback) {
     var path = require('path');
     var logger = require(path.join(__dirname, './logger/logger.js'));
     var models = require(path.join(__dirname, './models'))(settings.db, callback);
+    
+    var publicPort = settings.publicPort;
     var port = settings.port;
+    var publicOptions = {};
+    
+    if(settings.publicTls){
+        if(!fs.existsSync(settings.publicTls.keyFile)){
+            logger.error("Invalid TLS key path: " + settings.publicTls.keyFile);
+            throw new Error("Invalid TLS key path: " + settings.publicTls.keyFile);
+        }
+        if(!fs.existsSync(settings.publicTls.certFile)){
+            logger.error("Invalid TLS certificate path: " + settings.publicTls.certFile);
+            throw new Error("Invalid TLS certificate path: " + settings.publicTls.certFile);
+        }
+        if(!fs.existsSync(settings.publicTls.caCertFile)){
+            logger.error("Invalid TLS ca certificate path: " + settings.publicTls.caCertFile);
+            throw new Error("Invalid TLS ca certificate path: " + settings.publicTls.caCertFile);
+        }
+
+        publicOptions = {
+            key: fs.readFileSync(settings.publicTls.keyFile),
+            cert: fs.readFileSync(settings.publicTls.certFile),
+            ca: fs.readFileSync(settings.publicTls.caCertFile)
+        }
+    }
+
     var options = {};
     
     if(settings.tls){
@@ -59,26 +84,47 @@ module.exports = function(settings, catalog, callback) {
     app.use(bodyParser.json());
     require('./routes')(app, settings, catalog, models);
 
+    var internalApp = express();
+    internalApp.use(bodyParser.urlencoded({ extended: true }));
+    internalApp.use(bodyParser.json());
+    require('./internalRoutes')(internalApp, settings);
 
-    var server;
-    if(settings.tls){
-        server = https.createServer(options, app).listen(port, function() {
-            var port = server.address().port;
-            logger.info('Service broker app is running in secure mode', { port: port });
+
+    var publicServer;
+    if(settings.publicTls){
+        publicServer = https.createServer(publicOptions, app).listen(publicPort, function() {
+            var port = publicServer.address().port;
+            logger.info('Service broker app is running in secure mode', { 'port': port });
         });
     }else{
-        server = http.createServer(app).listen(port, function() {
-            var port = server.address().port;
-            logger.info('Service broker app is running', { port: port });
+        publicServer = http.createServer(app).listen(publicPort, function() {
+            var port = publicServer.address().port;
+            logger.info('Service broker app is running', { 'port': port });
+        });
+    }
+
+    var internalServer;
+    if(settings.tls){
+        internalServer = https.createServer(options, internalApp).listen(port, function() {
+            var port = internalServer.address().port;
+            logger.info('Service broker internal app is running in secure mode', { 'port': port });
+        });
+    }else{
+        internalServer = http.createServer(internalApp).listen(port, function() {
+            var port = internalServer.address().port;
+            logger.info('Service broker internal app is running', { 'port': port });
         });
     }
 
     var gracefulShutdown = function(signal) {
         logger.info("Received " + signal + " signal, shutting down gracefully...");
-        server.close(function() {
-            logger.info('Everything is cleanly shutdown');
-            process.exit();
-        })
+        publicServer.close(function() {
+            logger.info('Everything is cleanly shutdown for service broker server');
+            internalServer.close(function() {
+                logger.info('Everything is cleanly shutdown for service broker internal server');
+                process.exit();
+            });
+        });
     }
 
     //listen for SIGUSR2 signal e.g. user-defined signal
@@ -86,5 +132,5 @@ module.exports = function(settings, catalog, callback) {
         gracefulShutdown('SIGUSR2')
     });
 
-    return server;
+    return  {"internalServer": internalServer, "publicServer": publicServer};;
 }
