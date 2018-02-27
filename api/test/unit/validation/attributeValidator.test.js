@@ -35,7 +35,7 @@ describe('Validating Policy JSON properties',function(){
         });
 
         it('Should fail to validate the policy as instance_min_count is greater than instance_max_count without schedule defined',function(){
-          fakePolicy.schedules = null
+          delete fakePolicy.schedules
           attributeValidator.validatePolicy(fakePolicy,function(result){
             expect(result[0]).to.have.property('stack').and.equal('instance_min_count 10 is higher or equal to instance_max_count 5 in policy_json');
             expect(result[0]).to.have.property('message').and.equal('instance_min_count and instance_max_count values are not compatible');
@@ -43,8 +43,8 @@ describe('Validating Policy JSON properties',function(){
           });
         });
 
-        it('Should fail to validate the policy as instance_min_count is greater than instance_max_count without schedule defined',function(){
-          fakePolicy.scaling_rules = null
+        it('Should fail to validate the policy as instance_min_count is greater than instance_max_count without scaling_rule defined',function(){
+          delete fakePolicy.scaling_rules
           attributeValidator.validatePolicy(fakePolicy,function(result){
             expect(result[0]).to.have.property('stack').and.equal('instance_min_count 10 is higher or equal to instance_max_count 5 in policy_json');
             expect(result[0]).to.have.property('message').and.equal('instance_min_count and instance_max_count values are not compatible');

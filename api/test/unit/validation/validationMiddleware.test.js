@@ -60,10 +60,10 @@ describe('Validate Policy JSON Schema structure', function () {
       publicApp.close(done);
     });
   })
-  beforeEach(function() {
+  beforeEach(function () {
     nock(serviceBrokerURI)
-    .get(/\/v1\/apps\/.+\/service_bindings/)
-    .reply(200, {"message": "binding_info_exists"});
+      .get(/\/v1\/apps\/.+\/service_bindings/)
+      .reply(200, { "message": "binding_info_exists" });
     fakePolicy = JSON.parse(policyContent);
     return policy.truncate();
   });
@@ -77,6 +77,8 @@ describe('Validate Policy JSON Schema structure', function () {
 
   context('policy schema & attribute', function () {
     var requiredProperties = schemaValidatorPrivate.__get__('getPolicySchema')().required;
+    var allProperties = Object.keys(schemaValidatorPrivate.__get__('getPolicySchema')().properties);
+
     var validInstanceCountSettings = [
       { instance_min_count: 1, instance_max_count: 2 },
       { instance_min_count: 1000, instance_max_count: 2000 },
@@ -125,6 +127,7 @@ describe('Validate Policy JSON Schema structure', function () {
     });
 
     context('should fail to validate policy', function () {
+
       it('failed with the absence of neither scaling_rules nor schedules  ', function (done) {
         delete fakePolicy.scaling_rules;
         delete fakePolicy.schedules;
@@ -143,6 +146,24 @@ describe('Validate Policy JSON Schema structure', function () {
       });
 
       policyTypes.forEach(function (type) {
+        allProperties.forEach(function (property) {
+          it('failed with property instance.' + property + ' set to NULL, policy type :' + type, function (done) {
+            buildTestPolicy(fakePolicy, type);
+            fakePolicy[property] = null;
+            request(app)
+              .put('/v1/apps/fakeID/policy', validationMiddleware)
+              .send(fakePolicy)
+              .end(function (error, result) {
+                expect(result.statusCode).to.equal(400);
+                expect(result.body.success).to.equal(false);
+                expect(result.body.error).to.not.be.null;
+                expect(result.body.error[0].message).to.contains('is not of a type(s)');
+                expect(result.body.error[0].stack).to.contains('instance.' + property + ' is not of a type(s)');
+                done();
+              });
+          });
+        });
+
         requiredProperties.forEach(function (required) {
           it('failed with the absence of required property ' + required + ', policy type :' + type, function (done) {
             buildTestPolicy(fakePolicy, type);
@@ -197,6 +218,8 @@ describe('Validate Policy JSON Schema structure', function () {
   context('scaling rule schema', function () {
 
     var requiredProperties = schemaValidatorPrivate.__get__('getScalingRuleSchema')().required;
+    var allProperties = Object.keys(schemaValidatorPrivate.__get__('getScalingRuleSchema')().properties);
+
     var metricTypes = schemaValidatorPrivate.__get__('getMetricTypes')();
     var validMetricThresholdSettings = [
       { metric_type: "memoryutil", thresholds: [30, 100] },
@@ -338,6 +361,25 @@ describe('Validate Policy JSON Schema structure', function () {
       });
 
       context('should fail to validate', function () {
+
+        allProperties.forEach(function (property) {
+          it('failed with property instance.scaling_rules[0].' + property + ' set to NULL, policy type :' + type, function (done) {
+            buildTestPolicy(fakePolicy, type);
+            fakePolicy.scaling_rules[0][property] = null;
+            request(app)
+              .put('/v1/apps/fakeID/policy', validationMiddleware)
+              .send(fakePolicy)
+              .end(function (error, result) {
+                expect(result.statusCode).to.equal(400);
+                expect(result.body.success).to.equal(false);
+                expect(result.body.error).to.not.be.null;
+                expect(result.body.error[0].message).to.contains('is not of a type(s)');
+                expect(result.body.error[0].stack).to.contains('instance.scaling_rules[0].' + property + ' is not of a type(s)');
+                done();
+              });
+          });
+        });
+
         requiredProperties.forEach(function (required) {
           it('failed with the absence of required property scaling_rules[0].' + required + ', policy type :' + type, function (done) {
             buildTestPolicy(fakePolicy, type);
@@ -469,6 +511,7 @@ describe('Validate Policy JSON Schema structure', function () {
 
   context('scheduler schema', function () {
     var requiredProperties = schemaValidatorPrivate.__get__('getScheduleSchema')().required;
+    var allProperties = Object.keys(schemaValidatorPrivate.__get__('getScheduleSchema')().properties);
     var validTimezone = [
       "Asia/Shanghai",
       "Etc/UTC",
@@ -537,6 +580,27 @@ describe('Validate Policy JSON Schema structure', function () {
         });
 
         scheduleTypes.forEach(function (scheduleType) {
+
+          allProperties.forEach(function (property) {
+            it('failed with property instance.schedules.' + property + ' set to NULL, policy type :' + type, function (done) {
+              buildTestPolicy(fakePolicy, type);
+              fakePolicy.schedules[property] = null;
+              request(app)
+                .put('/v1/apps/fakeID/policy', validationMiddleware)
+                .send(fakePolicy)
+                .end(function (error, result) {
+                  expect(result.statusCode).to.equal(400);
+                  expect(result.body.success).to.equal(false);
+                  expect(result.body.error).to.not.be.null;
+                  console.log(result.body);
+                  console.log("=========");
+                  expect(result.body.error[0].message).to.contains('is not of a type(s)');
+                  expect(result.body.error[0].stack).to.contains('instance.schedules.' + property + ' is not of a type(s)');
+                  done();
+                });
+            });
+          });
+
           requiredProperties.forEach(function (required) {
             it('failed with the absence of required property schedules.' + required + ', policy type :' + type, function (done) {
               buildTestPolicy(fakePolicy, type);
@@ -581,6 +645,7 @@ describe('Validate Policy JSON Schema structure', function () {
 
   context('recurring schedule schema', function () {
     var requiredProperties = schemaValidatorPrivate.__get__('getRecurringSchema')().required;
+    var allProperties = Object.keys(schemaValidatorPrivate.__get__('getRecurringSchema')().properties);
     var validTimeSettings = [
       { start_time: "00:00", end_time: "00:01" },
       { start_time: "23:00", end_time: "24:00" },
@@ -943,6 +1008,28 @@ describe('Validate Policy JSON Schema structure', function () {
         });
 
         context('should fail to validate', function () {
+          allProperties.forEach(function (property) {
+            it('failed with property instance.schedules.recurring_schedule[0].' + property + ' set to NULL, policy type :' + type, function (done) {
+              buildTestPolicy(fakePolicy, type);
+              fakePolicy.schedules.recurring_schedule[0][property] = null;
+              request(app)
+                .put('/v1/apps/fakeID/policy', validationMiddleware)
+                .send(fakePolicy)
+                .end(function (error, result) {
+                  expect(result.statusCode).to.equal(400);
+                  expect(result.body.success).to.equal(false);
+                  expect(result.body.error).to.not.be.null;
+                  if (property === "start_date" || property === "end_date") {
+                    expect(result.body.error[0].message).to.contains('is not any of [subschema 0],[subschema 1]');
+                    expect(result.body.error[0].stack).to.contains('instance.schedules.recurring_schedule[0].' + property + ' is not any of [subschema 0],[subschema 1]');
+                  } else {
+                    expect(result.body.error[0].message).to.contains('is not of a type(s)');
+                    expect(result.body.error[0].stack).to.contains('instance.schedules.recurring_schedule[0].' + property + ' is not of a type(s)');
+                  }
+                  done();
+                });
+            });
+          });
 
           requiredProperties.forEach(function (required) {
             it('failed with the absence of required property schedules.recurring_schedule.' + required + ', policy type :' + type + ', schedule type ' + scheduleType, function (done) {
@@ -1203,6 +1290,7 @@ describe('Validate Policy JSON Schema structure', function () {
 
   context('specific date schema', function () {
     var requiredProperties = schemaValidatorPrivate.__get__('getSpecificDateSchema')().required;
+    var allProperties = Object.keys(schemaValidatorPrivate.__get__('getSpecificDateSchema')().properties);
     var validDateTimeSettings = [
       { start_date_time: "2017-12-31T00:00", end_date_time: "2017-12-31T24:00" },
       { start_date_time: "2017-12-31T23:59", end_date_time: "2018-01-01T00:01" },
@@ -1359,6 +1447,23 @@ describe('Validate Policy JSON Schema structure', function () {
         });
 
         context('should fail to validate', function () {
+          allProperties.forEach(function (property) {
+            it('failed with property instance.schedules.specific_date[0].' + property + ' set to NULL, policy type :' + type, function (done) {
+              buildTestPolicy(fakePolicy, type);
+              fakePolicy.schedules.specific_date[0][property] = null;
+              request(app)
+                .put('/v1/apps/fakeID/policy', validationMiddleware)
+                .send(fakePolicy)
+                .end(function (error, result) {
+                  expect(result.statusCode).to.equal(400);
+                  expect(result.body.success).to.equal(false);
+                  expect(result.body.error).to.not.be.null;
+                  expect(result.body.error[0].message).to.contains('is not of a type(s)');
+                  expect(result.body.error[0].stack).to.contains('instance.schedules.specific_date[0].' + property + ' is not of a type(s)');
+                  done();
+                });
+            });
+          });
 
           requiredProperties.forEach(function (required) {
             it('failed with the absence of required property schedules.specific_date.' + required + ', policy type :' + type + ', schedule type ' + scheduleType, function (done) {

@@ -24,13 +24,15 @@ var getTimeZones = function() {
 }
 
 JSONValidator.prototype.customFormats.timeZoneFormat = function(inputTimeZone) {
-  var result = false;
+  if (inputTimeZone === "undefined" || inputTimeZone === null) {
+    return false;
+  }
   var trimmedTimeZone = inputTimeZone.replace(/\s+/g, '');
   var timeZoneList = getTimeZones();
   if(_.contains(timeZoneList,trimmedTimeZone)) {
-    result = true;
+    return true;
   }
-  return result;
+  return false;
 };
 
 
