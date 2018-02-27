@@ -22,12 +22,14 @@ module.exports = function(settingsObj) {
   settingsObj.apiserver.uri = cleanupURI(settingsObj.apiserver.uri);
   settingsObj.dashboardRedirectUri = cleanupURI(settingsObj.dashboardRedirectUri);
   var settings = {
-    port: settingsObj.port,
+    publicPort: settingsObj.publicPort,
+    port : settingsObj.port,
     username: settingsObj.username,
     password: settingsObj.password,
     apiserver: settingsObj.apiserver,
     httpRequestTimeout: settingsObj.httpRequestTimeout,
     tls: settingsObj.tls,
+    publicTls: settingsObj.publicTls,
     serviceCatalogPath: settingsObj.serviceCatalogPath,
     dashboardRedirectUri: settingsObj.dashboardRedirectUri
   };
@@ -56,6 +58,16 @@ module.exports = function(settingsObj) {
     return typeof(value) === "object";
   }
   settings.validate = function() {
+    if (isMissing(settings.publicPort)) {
+      return { valid: false, message: "publicPort is required" };
+    }
+    if (!isNumber(settings.publicPort)) {
+      return { valid: false, message: "publicPort must be a number" };
+    }
+    if (settings.publicPort < 1 || settings.publicPort > 65535) {
+      return { valid: false, message: "value of publicPort must between 1 and 65535" };
+    }
+
     if (isMissing(settings.port)) {
       return { valid: false, message: "port is required" };
     }
@@ -172,6 +184,31 @@ module.exports = function(settingsObj) {
         return { valid: false, message: "tls.caCertFile must be a string" };
       }
     }
+
+    if(!isMissing(settings.publicTls)){
+      if(!isObject(settings.publicTls)){
+        return { valid: false, message: "publicTls must be an object" };
+      } 
+      if (isMissing(settings.publicTls.keyFile)) {
+        return { valid: false, message: "publicTls.keyFile is required" };
+      }
+      if (!isString(settings.publicTls.keyFile)) {
+        return { valid: false, message: "publicTls.keyFile must be a string" };
+      }
+      if (isMissing(settings.publicTls.certFile)) {
+        return { valid: false, message: "publicTls.certFile is required" };
+      }
+      if (!isString(settings.publicTls.certFile)) {
+        return { valid: false, message: "publicTls.certFile must be a string" };
+      }
+      if (isMissing(settings.publicTls.caCertFile)) {
+        return { valid: false, message: "publicTls.caCertFile is required" };
+      }
+      if (!isString(settings.publicTls.caCertFile)) {
+        return { valid: false, message: "publicTls.caCertFile must be a string" };
+      }
+    }
+
     if (isMissing(settings.serviceCatalogPath)) {
       return {valid: false, message: "serviceCatalogPath is required"}
     }

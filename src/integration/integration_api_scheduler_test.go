@@ -2,6 +2,7 @@ package integration_test
 
 import (
 	"autoscaler/cf"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	. "integration"
@@ -19,6 +20,10 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 		appId             string
 		policyStr         []byte
 		initInstanceCount int = 2
+		serviceInstanceId string
+		bindingId         string
+		orgId             string
+		spaceId           string
 	)
 
 	BeforeEach(func() {
@@ -29,16 +34,26 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 		schedulerConfPath = components.PrepareSchedulerConfig(dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), tmpDir, strings.Split(consulRunner.Address(), ":")[1])
 		schedulerProcess = startScheduler()
 
-		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], components.Ports[APIPublicServer], false, fakeCCNOAAUAA.URL(), dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), tmpDir)
+		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], components.Ports[APIPublicServer], false, fakeCCNOAAUAA.URL(), dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ServiceBrokerInternal]), tmpDir)
+		serviceBrokerConfPath = components.PrepareServiceBrokerConfig(components.Ports[ServiceBroker], components.Ports[ServiceBrokerInternal], brokerUserName, brokerPassword, dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[APIServer]), brokerApiHttpRequestTimeout, tmpDir)
+		startServiceBroker()
 		startApiServer()
+
 		appId = getRandomId()
 		resp, err := detachPolicy(appId, INTERNAL)
 		Expect(err).NotTo(HaveOccurred())
 		resp.Body.Close()
+
+		serviceInstanceId = getRandomId()
+		orgId = getRandomId()
+		spaceId = getRandomId()
+		bindingId = getRandomId()
+		brokerAuth = base64.StdEncoding.EncodeToString([]byte("username:password"))
 	})
 
 	AfterEach(func() {
 		stopApiServer()
+		stopServiceBroker()
 		stopScheduler(schedulerProcess)
 	})
 
@@ -168,8 +183,11 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 		JustBeforeEach(func() {
 			stopScheduler(schedulerProcess)
 		})
-
+		BeforeEach(func() {
+			provisionAndBind(serviceInstanceId, orgId, spaceId, bindingId, appId, nil)
+		})
 		AfterEach(func() {
+			unbindAndDeprovision(bindingId, appId, serviceInstanceId)
 			schedulerProcess = startScheduler()
 		})
 
@@ -226,6 +244,12 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 	})
 
 	Describe("Create policy", func() {
+		BeforeEach(func() {
+			provisionAndBind(serviceInstanceId, orgId, spaceId, bindingId, appId, nil)
+		})
+		AfterEach(func() {
+			unbindAndDeprovision(bindingId, appId, serviceInstanceId)
+		})
 		Context("internal api", func() {
 			Context("Policies with schedules", func() {
 				It("creates a policy and associated schedules", func() {
@@ -293,6 +317,12 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 	})
 
 	Describe("Update policy", func() {
+		BeforeEach(func() {
+			provisionAndBind(serviceInstanceId, orgId, spaceId, bindingId, appId, nil)
+		})
+		AfterEach(func() {
+			unbindAndDeprovision(bindingId, appId, serviceInstanceId)
+		})
 		Context("internal api", func() {
 			Context("Update policies with schedules", func() {
 				BeforeEach(func() {
@@ -336,6 +366,12 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 	})
 
 	Describe("Delete Policies", func() {
+		BeforeEach(func() {
+			provisionAndBind(serviceInstanceId, orgId, spaceId, bindingId, appId, nil)
+		})
+		AfterEach(func() {
+			unbindAndDeprovision(bindingId, appId, serviceInstanceId)
+		})
 		Context("internal api", func() {
 			Context("for a non-existing app", func() {
 				It("Should return a NOT FOUND (404)", func() {

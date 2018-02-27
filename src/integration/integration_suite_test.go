@@ -186,13 +186,14 @@ func CompileTestedExecutables() Executables {
 
 func PreparePorts() Ports {
 	return Ports{
-		APIServer:        10000 + GinkgoParallelNode(),
-		APIPublicServer:  16000 + GinkgoParallelNode(),
-		ServiceBroker:    11000 + GinkgoParallelNode(),
-		Scheduler:        12000 + GinkgoParallelNode(),
-		MetricsCollector: 13000 + GinkgoParallelNode(),
-		ScalingEngine:    14000 + GinkgoParallelNode(),
-		ConsulCluster:    15000 + GinkgoParallelNode()*consulrunner.PortOffsetLength,
+		APIServer:             10000 + GinkgoParallelNode(),
+		APIPublicServer:       16000 + GinkgoParallelNode(),
+		ServiceBroker:         11000 + GinkgoParallelNode(),
+		ServiceBrokerInternal: 17000 + GinkgoParallelNode(),
+		Scheduler:             12000 + GinkgoParallelNode(),
+		MetricsCollector:      13000 + GinkgoParallelNode(),
+		ScalingEngine:         14000 + GinkgoParallelNode(),
+		ConsulCluster:         15000 + GinkgoParallelNode()*consulrunner.PortOffsetLength,
 	}
 }
 
@@ -249,6 +250,9 @@ func stopScalingEngine() {
 }
 func stopMetricsCollector() {
 	ginkgomon.Kill(processMap[MetricsCollector], 5*time.Second)
+}
+func stopServiceBroker() {
+	ginkgomon.Kill(processMap[ServiceBroker], 5*time.Second)
 }
 func sendSigusr2Signal(component string) {
 	process := processMap[component]
@@ -312,11 +316,19 @@ func deprovisionServiceInstance(serviceInstanceId string) (*http.Response, error
 }
 
 func bindService(bindingId string, appId string, serviceInstanceId string, policy []byte) (*http.Response, error) {
-	rawParameters := json.RawMessage(policy)
-	bindBody := map[string]interface{}{
-		"app_guid":   appId,
-		"parameters": &rawParameters,
+	var bindBody map[string]interface{}
+	if policy != nil {
+		rawParameters := json.RawMessage(policy)
+		bindBody = map[string]interface{}{
+			"app_guid":   appId,
+			"parameters": &rawParameters,
+		}
+	} else {
+		bindBody = map[string]interface{}{
+			"app_guid": appId,
+		}
 	}
+
 	body, err := json.Marshal(bindBody)
 	req, err := http.NewRequest("PUT", fmt.Sprintf("https://127.0.0.1:%d/v2/service_instances/%s/service_bindings/%s", components.Ports[ServiceBroker], serviceInstanceId, bindingId), bytes.NewReader(body))
 	Expect(err).NotTo(HaveOccurred())
@@ -333,6 +345,29 @@ func unbindService(bindingId string, appId string, serviceInstanceId string) (*h
 	return httpClient.Do(req)
 }
 
+func provisionAndBind(serviceInstanceId string, orgId string, spaceId string, bindingId string, appId string, policy []byte) {
+	resp, err := provisionServiceInstance(serviceInstanceId, orgId, spaceId)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+	resp.Body.Close()
+
+	resp, err = bindService(bindingId, appId, serviceInstanceId, policy)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+	resp.Body.Close()
+}
+func unbindAndDeprovision(bindingId string, appId string, serviceInstanceId string) {
+	resp, err := unbindService(bindingId, appId, serviceInstanceId)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(resp.StatusCode).To(Equal(http.StatusOK))
+	resp.Body.Close()
+
+	resp, err = deprovisionServiceInstance(serviceInstanceId)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(resp.StatusCode).To(Equal(http.StatusOK))
+	resp.Body.Close()
+
+}
 func getPolicy(appId string, apiType APIType) (*http.Response, error) {
 	var apiServerPort int
 	var httpClientTmp *http.Client

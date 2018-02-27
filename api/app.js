@@ -15,7 +15,7 @@ module.exports = function(settings, callback) {
       logger.error("Invalid configuration: " + validateResult.message);
       throw new Error('settings.json is invalid');
   }
-
+  var serviceBrokerUtil = require('./lib/utils/serviceBrokerUtils')(settings.serviceBroker);
   var oauth = require('./lib/oauth/oauth')(settings);
   var models = require('./lib/models')(settings.db, callback);
   
@@ -68,7 +68,21 @@ module.exports = function(settings, callback) {
         ca: fs.readFileSync(settings.publicTls.caCertFile)
     }
   }
-
+  var checkBinding = function(req, res, next){
+    serviceBrokerUtil.checkBinding(req.params,function(error,result){
+      if(error){
+        res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({});
+      }else{
+        if(result.statusCode == HttpStatus.OK){
+          next();
+        }else if(result.statusCode == HttpStatus.NOT_FOUND){
+          res.status(HttpStatus.FORBIDDEN).send({"message": "The application is not bound to Auto-Scaling service"});
+        }else{
+          res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({});
+        }
+      }
+    });
+  }
   var app = express();
   app.use(helmet())
   app.use(helmet.contentSecurityPolicy({
@@ -85,6 +99,8 @@ module.exports = function(settings, callback) {
   var policies = require('./lib/routes/policies')(settings, models);
   var scalingHistories = require('./lib/routes/scalingHistories')(settings);
   var metrics = require('./lib/routes/metrics')(settings);
+
+  // app.use('/v1/apps/:app_id/policy', checkBinding);
   app.use('/v1/apps',policies);
   app.use('/v1/apps',scalingHistories);
   app.use('/v1/apps',metrics);
@@ -131,6 +147,8 @@ module.exports = function(settings, callback) {
   });
   publicApp.use('/health', require('express-healthcheck')());
   var info = require('./lib/routes/info')(settings);
+  
+  publicApp.use('/v1/apps/:app_id/policy', checkBinding);
   publicApp.use('/v1', info);
   publicApp.use('/v1/apps',policies);
   publicApp.use('/v1/apps',scalingHistories);
