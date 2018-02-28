@@ -514,3 +514,4 @@ func writeYmlConfig(dir string, componentName string, c interface{}) string {
 	return cfgFile.Name()
 
 }
+

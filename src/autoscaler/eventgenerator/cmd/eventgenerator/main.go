@@ -12,6 +12,8 @@ import (
 	"autoscaler/models"
 	sync "autoscaler/sync"
 
+	"github.com/rubyist/circuitbreaker"
+
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -65,16 +67,17 @@ func main() {
 	policyPoller := aggregator.NewPolicyPoller(logger, egClock, conf.Aggregator.PolicyPollerInterval, policyDB)
 
 	triggersChan := make(chan []*models.Trigger, conf.Evaluator.TriggerArrayChannelSize)
-	evaluators, err := createEvaluators(logger, conf, triggersChan, appMetricDB)
+
+	evaluationManager, err := generator.NewAppEvaluationManager(logger, conf.Evaluator.EvaluationManagerInterval, egClock,
+		triggersChan, policyPoller.GetPolicies, conf.CircuitBreaker)
 	if err != nil {
-		logger.Error("failed to create Evaluators", err)
+		logger.Error("failed to create Evaluation Manager", err)
 		os.Exit(1)
 	}
 
-	evaluationManager, err := generator.NewAppEvaluationManager(logger, conf.Evaluator.EvaluationManagerInterval, egClock,
-		triggersChan, policyPoller.GetPolicies)
+	evaluators, err := createEvaluators(logger, conf, triggersChan, appMetricDB, evaluationManager.GetBreaker)
 	if err != nil {
-		logger.Error("failed to create Evaluation Manager", err)
+		logger.Error("failed to create Evaluators", err)
 		os.Exit(1)
 	}
 
@@ -178,7 +181,7 @@ func initLoggerFromConfig(conf *config.LoggingConfig) lager.Logger {
 
 	redactedSink, err := alogger.NewRedactingWriterWithURLCredSink(os.Stdout, logLevel, keyPatterns, nil)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to create redacted sink", err.Error())
+		fmt.Fprintf(os.Stderr, "Failed to create redacted sink: %s", err.Error())
 	}
 	logger.RegisterSink(redactedSink)
 
@@ -225,7 +228,8 @@ func loadConfig(path string) (*config.Config, error) {
 	return conf, nil
 }
 
-func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan chan []*models.Trigger, database db.AppMetricDB) ([]*generator.Evaluator, error) {
+func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan chan []*models.Trigger,
+	database db.AppMetricDB, getBreaker func(string) *circuit.Breaker) ([]*generator.Evaluator, error) {
 	count := conf.Evaluator.EvaluatorCount
 	scalingEngineUrl := conf.ScalingEngine.ScalingEngineUrl
 
@@ -246,13 +250,15 @@ func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan cha
 
 	evaluators := make([]*generator.Evaluator, count)
 	for i := 0; i < count; i++ {
-		evaluators[i] = generator.NewEvaluator(logger, client, scalingEngineUrl, triggersChan, database, conf.DefaultBreachDurationSecs)
+		evaluators[i] = generator.NewEvaluator(logger, client, scalingEngineUrl, triggersChan, database,
+			conf.DefaultBreachDurationSecs, getBreaker)
 	}
 
 	return evaluators, nil
 }
 
-func createMetricPollers(logger lager.Logger, conf *config.Config, appChan chan *models.AppMonitor, database db.AppMetricDB) ([]*aggregator.MetricPoller, error) {
+func createMetricPollers(logger lager.Logger, conf *config.Config, appChan chan *models.AppMonitor,
+	database db.AppMetricDB) ([]*aggregator.MetricPoller, error) {
 	tlsCerts := &conf.MetricCollector.TLSClientCerts
 	if tlsCerts.CertFile == "" || tlsCerts.KeyFile == "" {
 		tlsCerts = nil
