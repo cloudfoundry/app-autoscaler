@@ -136,7 +136,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	LOGLEVEL = os.Getenv("LOGLEVEL")
 	if LOGLEVEL == "" {
-		LOGLEVEL = "debug"
+		LOGLEVEL = "info"
 	}
 
 	consulRunner = consulrunner.NewClusterRunner(
