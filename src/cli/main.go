@@ -74,7 +74,7 @@ OPTIONS:
 	--start		Start time of metrics collected with format "yyyy-MM-ddTHH:mm:ss+/-HH:mm" or "yyyy-MM-ddTHH:mm:ssZ", default to very beginning if not specified.
 	--end		End time of the metrics collected with format "yyyy-MM-ddTHH:mm:ss+/-HH:mm" or "yyyy-MM-ddTHH:mm:ssZ", default to current time if not speficied.
 	--desc		Display in descending order, default to ascending order if not specified.
-	--output	Dump the metrics to a file in JSON format.
+	--output	Dump the metrics to a file in table format.
 					`,
 				},
 			},
@@ -89,7 +89,7 @@ OPTIONS:
 	--start		Start time of the scaling history with format "yyyy-MM-ddTHH:mm:ss+/-HH:mm" or "yyyy-MM-ddTHH:mm:ssZ", default to very beginning if not specified.
 	--end		End time of the scaling history with format "yyyy-MM-ddTHH:mm:ss+/-HH:mm" or "yyyy-MM-ddTHH:mm:ssZ", default to current time if not speficied.
 	--desc		Display in descending order, default to ascending order if not specified.
-	--output	Dump the scaling history to a file in JSON format.
+	--output	Dump the scaling history to a file in table format.
 					`,
 				},
 			},
@@ -113,5 +113,4 @@ func (as *AutoScaler) Run(cliConnection plugin.CliConnection, args []string) {
 		ui.SayMessage("Error: %s", err.Error())
 		os.Exit(1)
 	}
-
 }
