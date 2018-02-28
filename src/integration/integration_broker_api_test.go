@@ -1,10 +1,9 @@
-package integration_test
+package integration
 
 import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	. "integration"
 	"io/ioutil"
 	"net/http"
 	"regexp"

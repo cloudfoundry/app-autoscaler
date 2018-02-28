@@ -1,4 +1,4 @@
-package integration_test
+package integration
 
 import (
 	"autoscaler/cf"
@@ -6,7 +6,6 @@ import (
 	"autoscaler/metricscollector/testhelpers"
 	"autoscaler/models"
 	"bytes"
-	. "integration"
 
 	"database/sql"
 	"encoding/json"
@@ -60,6 +59,7 @@ var (
 	brokerPassword           string = "password"
 	brokerAuth               string
 	dbUrl                    string
+	LOGLEVEL                 string
 	noaaPollingRegPath       = regexp.MustCompile(`^/apps/.*/containermetrics$`)
 	noaaStreamingRegPath     = regexp.MustCompile(`^/apps/.*/stream$`)
 	appSummaryRegPath        = regexp.MustCompile(`^/v2/apps/.*/summary$`)
@@ -133,6 +133,11 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	dbUrl = os.Getenv("DBURL")
 	dbHelper, err = sql.Open(db.PostgresDriverName, dbUrl)
 	Expect(err).NotTo(HaveOccurred())
+
+	LOGLEVEL = os.Getenv("LOGLEVEL")
+	if LOGLEVEL == "" {
+		LOGLEVEL = "debug"
+	}
 
 	consulRunner = consulrunner.NewClusterRunner(
 		consulrunner.ClusterRunnerConfig{

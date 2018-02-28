@@ -1,11 +1,10 @@
-package integration_test
+package integration
 
 import (
 	"autoscaler/cf"
 	"autoscaler/models"
 	"encoding/json"
 	"fmt"
-	. "integration"
 	"net/http"
 	"strings"
 
