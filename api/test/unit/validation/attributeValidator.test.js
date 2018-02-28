@@ -13,31 +13,56 @@ describe('Validating Policy JSON properties',function(){
     beforeEach(function(){
       fakePolicy = JSON.parse(fs.readFileSync(__dirname+'/../fakePolicy.json', 'utf8'));
     });
-    
+
     it('Should validate the policy JSON successfully',function(){
       attributeValidator.validatePolicy(fakePolicy,function(result){
         expect(result).to.be.empty;
       });
     });
-    it('Should fail to validate the policy as instance_min_count is greater than instance_max_count with schedule defined',function(){
-      fakePolicy.instance_min_count = 10;
-      fakePolicy.instance_max_count = 5;
-      attributeValidator.validatePolicy(fakePolicy,function(result){
-        expect(result[0]).to.have.property('stack').and.equal('instance_min_count 10 is higher or equal to instance_max_count 5 in policy_json');
-        expect(result[0]).to.have.property('message').and.equal('instance_min_count and instance_max_count values are not compatible');
-        expect(result[0]).to.have.property('property').and.equal('instance_min_count');
+
+    context('Validating instance_min/max_count properties',function(){
+      beforeEach(function(){
+        fakePolicy.instance_min_count = 10;
+        fakePolicy.instance_max_count = 5;
       });
+
+      it('Should fail to validate the policy as instance_min_count is greater than instance_max_count with schedule defined',function(){
+          attributeValidator.validatePolicy(fakePolicy,function(result){
+            expect(result[0]).to.have.property('stack').and.equal('instance_min_count 10 is higher or equal to instance_max_count 5 in policy_json');
+            expect(result[0]).to.have.property('message').and.equal('instance_min_count and instance_max_count values are not compatible');
+            expect(result[0]).to.have.property('property').and.equal('instance_min_count');
+          });
+        });
+
+        it('Should fail to validate the policy as instance_min_count is greater than instance_max_count without schedule defined',function(){
+          delete fakePolicy.schedules
+          attributeValidator.validatePolicy(fakePolicy,function(result){
+            expect(result[0]).to.have.property('stack').and.equal('instance_min_count 10 is higher or equal to instance_max_count 5 in policy_json');
+            expect(result[0]).to.have.property('message').and.equal('instance_min_count and instance_max_count values are not compatible');
+            expect(result[0]).to.have.property('property').and.equal('instance_min_count');
+          });
+        });
+
+        it('Should fail to validate the policy as instance_min_count is greater than instance_max_count without scaling_rule defined',function(){
+          delete fakePolicy.scaling_rules
+          attributeValidator.validatePolicy(fakePolicy,function(result){
+            expect(result[0]).to.have.property('stack').and.equal('instance_min_count 10 is higher or equal to instance_max_count 5 in policy_json');
+            expect(result[0]).to.have.property('message').and.equal('instance_min_count and instance_max_count values are not compatible');
+            expect(result[0]).to.have.property('property').and.equal('instance_min_count');
+          });
+        });
+
     });
-    it('Should fail to validate the policy as instance_min_count is greater than instance_max_count without schedule defined',function(){
-      fakePolicy.instance_min_count = 10;
-      fakePolicy.instance_max_count = 5;
-      fakePolicy.schedules = null
-      attributeValidator.validatePolicy(fakePolicy,function(result){
-        expect(result[0]).to.have.property('stack').and.equal('instance_min_count 10 is higher or equal to instance_max_count 5 in policy_json');
-        expect(result[0]).to.have.property('message').and.equal('instance_min_count and instance_max_count values are not compatible');
-        expect(result[0]).to.have.property('property').and.equal('instance_min_count');
-      });
+
+    it('Should fail to validate the policy as threshold <=0 ',function(){
+        fakePolicy.scaling_rules[0].threshold = 0
+        attributeValidator.validatePolicy(fakePolicy,function(result){
+          expect(result[0]).to.have.property('stack').and.equal('scaling_rules[0].threshold value should be greater than 0');
+          expect(result[0]).to.have.property('message').and.equal('threshold value for metric_type memoryused should be greater than 0');
+          expect(result[0]).to.have.property('property').and.equal('scaling_rules[0].threshold');
+        });
     });
+  
     it('Should fail to validate the policy as end_date is before start_date',function(){
       fakePolicy.schedules.specific_date[0].start_date_time = '2016-06-19T10:30';
       fakePolicy.schedules.specific_date[0].end_date_time = '2014-06-19T13:30';
