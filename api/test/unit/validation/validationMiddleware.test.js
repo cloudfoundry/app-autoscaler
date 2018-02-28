@@ -592,8 +592,6 @@ describe('Validate Policy JSON Schema structure', function () {
                   expect(result.statusCode).to.equal(400);
                   expect(result.body.success).to.equal(false);
                   expect(result.body.error).to.not.be.null;
-                  console.log(result.body);
-                  console.log("=========");
                   expect(result.body.error[0].message).to.contains('is not of a type(s)');
                   expect(result.body.error[0].stack).to.contains('instance.schedules.' + property + ' is not of a type(s)');
                   done();
