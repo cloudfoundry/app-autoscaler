@@ -36,6 +36,8 @@ const (
 var serviceCatalogPath string = "../../servicebroker/config/catalog.json"
 var apiServerInfoFilePath string = "../../api/config/info.json"
 
+// var testCertDir string = "../../test-certs"
+
 type Executables map[string]string
 type Ports map[string]int
 
@@ -247,7 +249,6 @@ func (components *Components) PrepareApiServerConfig(port int, publicPort int, s
 			MaxConnections: 10,
 			IdleTimeout:    1000,
 		},
-
 		SchedulerClient: SchedulerClient{
 			Uri: schedulerUri,
 			TLS: models.TLSCerts{
@@ -462,6 +463,11 @@ func (components *Components) PrepareEventGeneratorConfig(dbUri string, enableDB
 			LockTTL:           time.Duration(10 * time.Second),
 			LockDBURL:         dbUri,
 			LockRetryInterval: time.Duration(2 * time.Second),
+		},
+		CircuitBreaker: egConfig.CircuitBreakerConfig{
+			BackOffInitialInterval:  5 * time.Minute,
+			BackOffMaxInterval:      120 * time.Minute,
+			ConsecutiveFailureCount: 3,
 		},
 		DefaultBreachDurationSecs: 600,
 		DefaultStatWindowSecs:     300,

@@ -226,6 +226,11 @@ func initConfig() {
 			LockTTL:           15 * time.Second,
 			LockRetryInterval: 5 * time.Second,
 		},
+		CircuitBreaker: config.CircuitBreakerConfig{
+			BackOffInitialInterval:  5 * time.Minute,
+			BackOffMaxInterval:      2 * time.Hour,
+			ConsecutiveFailureCount: 3,
+		},
 		EnableDBLock:              false,
 		DefaultBreachDurationSecs: 600,
 		DefaultStatWindowSecs:     300,

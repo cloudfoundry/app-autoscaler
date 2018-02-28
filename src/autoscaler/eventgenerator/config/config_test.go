@@ -64,6 +64,10 @@ db_lock:
 enable_db_lock: false
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
+circuitBreaker:
+  back_off_initial_interval: 10s
+  back_off_max_interval: 60m
+  consecutive_failure_count: 5
 `)
 			})
 
@@ -110,6 +114,11 @@ defaultBreachDurationSecs: 600
 					EnableDBLock:              false,
 					DefaultBreachDurationSecs: 600,
 					DefaultStatWindowSecs:     300,
+					CircuitBreaker: CircuitBreakerConfig{
+						BackOffInitialInterval:  10 * time.Second,
+						BackOffMaxInterval:      1 * time.Hour,
+						ConsecutiveFailureCount: 5,
+					},
 				}))
 			})
 		})
@@ -146,7 +155,7 @@ defaultBreachDurationSecs: 600
 			})
 		})
 
-		Context("when it gives a non integer aggregator_execute_interval", func() {
+		Context("when aggregator_execute_interval is not a time duration", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
 logging:
@@ -155,7 +164,7 @@ db:
   policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
   app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
 aggregator: 
-  aggregator_execute_interval: NOT-INTEGER-VALUE
+  aggregator_execute_interval: 5k
   policy_poller_interval: 30s
   metric_poller_count: 10
   app_monitor_channel_size: 100
@@ -179,7 +188,7 @@ defaultBreachDurationSecs: 600
 			})
 		})
 
-		Context("when it gives a non integer policy_poller_interval", func() {
+		Context("when policy_poller_interval is not  a time duration", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
 logging:
@@ -189,7 +198,7 @@ db:
   app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
 aggregator: 
   aggregator_execute_interval: 30s
-  policy_poller_interval: NOT-INTEGER-VALUE
+  policy_poller_interval: 7u
   metric_poller_count: 10
   app_monitor_channel_size: 100
 evaluator:
@@ -376,7 +385,7 @@ defaultBreachDurationSecs: 600
 			})
 		})
 
-		Context("when it gives a non integer lock_ttl", func() {
+		Context("when lock_ttl is not a time duration", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
 logging:
@@ -398,7 +407,7 @@ scalingEngine:
 metricCollector:
   metric_collector_url: http://localhost:8083
 lock:
-  lock_ttl: NOT-INTEGER-VALUE
+  lock_ttl: 9R
   lock_retry_interval: 10s
   consul_cluster_config: http://127.0.0.1:8500
 defaultStatWindowSecs: 300
@@ -411,7 +420,7 @@ defaultBreachDurationSecs: 600
 			})
 		})
 
-		Context("when it gives a non integer lock_retry_interval", func() {
+		Context("when lock_retry_interval is not a time duration", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
 logging:
@@ -434,7 +443,7 @@ metricCollector:
   metric_collector_url: http://localhost:8083
 lock:
   lock_ttl: 15s
-  lock_retry_interval: NOT-INTEGER-VALUE
+  lock_retry_interval: 8j
   consul_cluster_config: http://127.0.0.1:8500
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
@@ -559,6 +568,11 @@ defaultBreachDurationSecs: 600
 					EnableDBLock:              false,
 					DefaultBreachDurationSecs: 600,
 					DefaultStatWindowSecs:     300,
+					CircuitBreaker: CircuitBreakerConfig{
+						BackOffInitialInterval:  DefaultBackOffInitialInterval,
+						BackOffMaxInterval:      DefaultBackOffMaxInterval,
+						ConsecutiveFailureCount: DefaultBreakerConsecutiveFailureCount,
+					},
 				}))
 			})
 		})
