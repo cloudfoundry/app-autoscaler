@@ -150,7 +150,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.Server.TLS.CertFile = filepath.Join(testCertDir, "metricscollector.crt")
 	cfg.Server.TLS.CACertFile = filepath.Join(testCertDir, "autoscaler-ca.crt")
 
-	cfg.Logging.Level = "debug"
+	cfg.Logging.Level = "info"
 
 	cfg.Db.InstanceMetricsDbUrl = os.Getenv("DBURL")
 	cfg.Db.PolicyDbUrl = os.Getenv("DBURL")
