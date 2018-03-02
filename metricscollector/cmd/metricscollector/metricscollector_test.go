@@ -410,7 +410,7 @@ var _ = Describe("MetricsCollector", func() {
 				Eventually(runner.Session.Buffer, 5*time.Second).Should(gbytes.Say("metricscollector.received-interrupt-signal"))
 				Eventually(runner.Session.Buffer, 5*time.Second).Should(gbytes.Say("metricscollector.successfully-released-lock"))
 				Eventually(secondRunner.Session.Buffer, 10*time.Second).Should(gbytes.Say("metricscollector.successfully-acquired-lock"))
-				Eventually(secondRunner.Session.Buffer, 10*time.Second).Should(gbytes.Say("metricscollector.started"))
+				Eventually(secondRunner.Session.Buffer, 15*time.Second).Should(gbytes.Say("metricscollector.started"))
 			})
 		})
 

@@ -183,7 +183,7 @@ func initConfig() {
 	testCertDir := "../../../../../test-certs"
 	conf = config.Config{
 		Logging: config.LoggingConfig{
-			Level: "debug",
+			Level: "info",
 		},
 		Aggregator: config.AggregatorConfig{
 			AggregatorExecuteInterval: 1 * time.Second,
