@@ -145,7 +145,6 @@ describe('Routing Policy Creation', function() {
           .set("Authorization", "fake-token")
           .send(fakePolicy)
           .end(function(error, result) {
-            console.log(result);
             expect(result.statusCode).to.equal(403);
             done();
           });
