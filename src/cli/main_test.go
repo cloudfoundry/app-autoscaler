@@ -686,7 +686,7 @@ var _ = Describe("App-AutoScaler Commands", func() {
 
 									Expect(session.Out).To(gbytes.Say(ui.AttachPolicyHint, fakeAppName))
 									Expect(session).To(gbytes.Say("FAILED"))
-									Expect(session).To(gbytes.Say(ui.InvalidPolicy, "instance_min_count 10 is higher or equal to instance_max_count 2 in policy_json"))
+									Expect(session).To(gbytes.Say(ui.InvalidPolicy, "\n"+"instance_min_count 10 is higher or equal to instance_max_count 2 in policy_json"))
 									Expect(session.ExitCode()).To(Equal(1))
 
 								})

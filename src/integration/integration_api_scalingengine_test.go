@@ -121,9 +121,9 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 
 			It("should error with status code 500", func() {
 				By("check internal api")
-				checkResponseContentWithParameters(getScalingHistories, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{"description": fmt.Sprintf("connect ECONNREFUSED 127.0.0.1:%d", components.Ports[ScalingEngine])}, INTERNAL)
+				checkResponseContentWithParameters(getScalingHistories, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{"error": fmt.Sprintf("connect ECONNREFUSED 127.0.0.1:%d", components.Ports[ScalingEngine])}, INTERNAL)
 				By("check public api")
-				checkResponseContentWithParameters(getScalingHistories, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{"description": fmt.Sprintf("connect ECONNREFUSED 127.0.0.1:%d", components.Ports[ScalingEngine])}, PUBLIC)
+				checkResponseContentWithParameters(getScalingHistories, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{"error": fmt.Sprintf("connect ECONNREFUSED 127.0.0.1:%d", components.Ports[ScalingEngine])}, PUBLIC)
 
 			})
 

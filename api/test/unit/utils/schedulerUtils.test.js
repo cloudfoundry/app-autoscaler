@@ -102,8 +102,7 @@ describe('Scheduler Utility functions', function() {
 		    schedulerUtils.createOrUpdateSchedule(mockRequest,function(error){
 		      expect(error.statusCode).to.equal(400);
 		      expect(error).to.not.be.null;
-		      expect(error.details).to.equal('fake body');
-		      expect(error.message).to.equal('Failed to create schedules due to validation error in scheduler');
+		      expect(error.message).to.equal('Failed to create schedules due to validation error in scheduler, details:\n' + 'fake body');
 		      done();
 		    });
 		  });
@@ -126,8 +125,7 @@ describe('Scheduler Utility functions', function() {
 		    schedulerUtils.createOrUpdateSchedule(mockRequest,function(error){
 		      expect(error.statusCode).to.equal(500);
 		      expect(error).to.not.be.null;
-		      expect(error.details).to.equal('fake body');
-		      expect(error.message).to.equal('Failed to create schedules due to an internal error in scheduler');
+		      expect(error.message).to.equal('Failed to create schedules due to an internal error in scheduler, details:\n' + 'fake body');
 		      done();
 		    });
 	   });

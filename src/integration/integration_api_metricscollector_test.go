@@ -128,9 +128,9 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 
 			It("should error with status code 500", func() {
 				By("check internal api")
-				checkResponseContentWithParameters(getAppMetrics, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{"description": fmt.Sprintf("connect ECONNREFUSED 127.0.0.1:%d", components.Ports[MetricsCollector])}, INTERNAL)
+				checkResponseContentWithParameters(getAppMetrics, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{"error": fmt.Sprintf("connect ECONNREFUSED 127.0.0.1:%d", components.Ports[MetricsCollector])}, INTERNAL)
 				By("check public api")
-				checkResponseContentWithParameters(getAppMetrics, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{"description": fmt.Sprintf("connect ECONNREFUSED 127.0.0.1:%d", components.Ports[MetricsCollector])}, PUBLIC)
+				checkResponseContentWithParameters(getAppMetrics, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{"error": fmt.Sprintf("connect ECONNREFUSED 127.0.0.1:%d", components.Ports[MetricsCollector])}, PUBLIC)
 
 			})
 

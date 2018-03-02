@@ -99,8 +99,6 @@ describe('Validate Policy JSON Schema structure', function () {
             .send(fakePolicy)
             .end(function (error, result) {
               expect(result.statusCode).to.equal(201);
-              expect(result.body.success).to.equal(true);
-              expect(result.body.error).to.be.null;
               done();
             });
         });
@@ -117,8 +115,6 @@ describe('Validate Policy JSON Schema structure', function () {
               .send(fakePolicy)
               .end(function (error, result) {
                 expect(result.statusCode).to.equal(201);
-                expect(result.body.success).to.equal(true);
-                expect(result.body.error).to.be.null;
                 done();
               });
           });
@@ -136,7 +132,6 @@ describe('Validate Policy JSON Schema structure', function () {
           .send(fakePolicy)
           .end(function (error, result) {
             expect(result.statusCode).to.equal(400);
-            expect(result.body.success).to.equal(false);
             expect(result.body.error).to.not.be.null;
             expect(result.body.error[0].message).to.equal('is not any of [subschema 0],[subschema 1]');
             expect(result.body.error[0].stack).to.equal('instance is not any of [subschema 0],[subschema 1]');
@@ -155,7 +150,6 @@ describe('Validate Policy JSON Schema structure', function () {
               .send(fakePolicy)
               .end(function (error, result) {
                 expect(result.statusCode).to.equal(400);
-                expect(result.body.success).to.equal(false);
                 expect(result.body.error).to.not.be.null;
                 expect(result.body.error[0].message).to.contains('is not of a type(s)');
                 expect(result.body.error[0].stack).to.contains('instance.' + property + ' is not of a type(s)');
@@ -173,7 +167,6 @@ describe('Validate Policy JSON Schema structure', function () {
               .send(fakePolicy)
               .end(function (error, result) {
                 expect(result.statusCode).to.equal(400);
-                expect(result.body.success).to.equal(false);
                 expect(result.body.error).to.not.be.null;
                 expect(result.body.error[0].message).to.equal('requires property "' + required + '"');
                 expect(result.body.error[0].stack).to.equal('instance requires property "' + required + '"');
@@ -195,7 +188,6 @@ describe('Validate Policy JSON Schema structure', function () {
               .send(fakePolicy)
               .end(function (error, result) {
                 expect(result.statusCode).to.equal(400);
-                expect(result.body.success).to.equal(false);
                 expect(result.body.error).to.not.be.null;
                 if (setting.error === "outofrange") {
                   expect(result.body.error[0].message).to.equal('must have a minimum value of 1');
@@ -265,8 +257,6 @@ describe('Validate Policy JSON Schema structure', function () {
             .send(fakePolicy)
             .end(function (error, result) {
               expect(result.statusCode).to.equal(201);
-              expect(result.body.success).to.equal(true);
-              expect(result.body.error).to.be.null;
               done();
             });
         });
@@ -282,8 +272,6 @@ describe('Validate Policy JSON Schema structure', function () {
               .send(fakePolicy)
               .end(function (error, result) {
                 expect(result.statusCode).to.equal(201);
-                expect(result.body.success).to.equal(true);
-                expect(result.body.error).to.be.null;
                 done();
               });
           });
@@ -301,8 +289,6 @@ describe('Validate Policy JSON Schema structure', function () {
                 .send(fakePolicy)
                 .end(function (error, result) {
                   expect(result.statusCode).to.equal(201);
-                  expect(result.body.success).to.equal(true);
-                  expect(result.body.error).to.be.null;
                   done();
                 });
             });
@@ -319,8 +305,6 @@ describe('Validate Policy JSON Schema structure', function () {
                 .send(fakePolicy)
                 .end(function (error, result) {
                   expect(result.statusCode).to.equal(201);
-                  expect(result.body.success).to.equal(true);
-                  expect(result.body.error).to.be.null;
                   done();
                 });
             });
@@ -336,8 +320,6 @@ describe('Validate Policy JSON Schema structure', function () {
               .send(fakePolicy)
               .end(function (error, result) {
                 expect(result.statusCode).to.equal(201);
-                expect(result.body.success).to.equal(true);
-                expect(result.body.error).to.be.null;
                 done();
               });
           });
@@ -352,8 +334,6 @@ describe('Validate Policy JSON Schema structure', function () {
               .send(fakePolicy)
               .end(function (error, result) {
                 expect(result.statusCode).to.equal(201);
-                expect(result.body.success).to.equal(true);
-                expect(result.body.error).to.be.null;
                 done();
               });
           });
@@ -371,7 +351,6 @@ describe('Validate Policy JSON Schema structure', function () {
               .send(fakePolicy)
               .end(function (error, result) {
                 expect(result.statusCode).to.equal(400);
-                expect(result.body.success).to.equal(false);
                 expect(result.body.error).to.not.be.null;
                 expect(result.body.error[0].message).to.contains('is not of a type(s)');
                 expect(result.body.error[0].stack).to.contains('instance.scaling_rules[0].' + property + ' is not of a type(s)');
@@ -389,7 +368,6 @@ describe('Validate Policy JSON Schema structure', function () {
               .send(fakePolicy)
               .end(function (error, result) {
                 expect(result.statusCode).to.equal(400);
-                expect(result.body.success).to.equal(false);
                 expect(result.body.error).to.not.be.null;
                 expect(result.body.error[0].message).to.equal('requires property "' + required + '"');
                 expect(result.body.error[0].stack).to.equal('instance.scaling_rules[0] requires property "' + required + '"');
@@ -407,7 +385,6 @@ describe('Validate Policy JSON Schema structure', function () {
             .send(fakePolicy)
             .end(function (error, result) {
               expect(result.statusCode).to.equal(400);
-              expect(result.body.success).to.equal(false);
               expect(result.body.error).to.not.be.null;
               expect(result.body.error[0].property).to.equal('instance.scaling_rules[0].metric_type');
               expect(result.body.error[0].message).to.equal('is not one of enum values: memoryused,memoryutil,responsetime,throughput');
@@ -428,7 +405,6 @@ describe('Validate Policy JSON Schema structure', function () {
                 .send(fakePolicy)
                 .end(function (error, result) {
                   expect(result.statusCode).to.equal(400);
-                  expect(result.body.success).to.equal(false);
                   expect(result.body.error).to.not.be.null;
                   expect(result.body.error[0].property).to.equal('scaling_rules[0].threshold');
                   if (metricType != "memoryutil") {
@@ -455,7 +431,6 @@ describe('Validate Policy JSON Schema structure', function () {
                 .send(fakePolicy)
                 .end(function (error, result) {
                   expect(result.statusCode).to.equal(400);
-                  expect(result.body.success).to.equal(false);
                   expect(result.body.error).to.not.be.null;
                   expect(result.body.error[0].property).to.equal('instance.scaling_rules[0].' + durationType);
                   expect(result.body.error[0].message === 'must have a minimum value of 60' ||
@@ -476,7 +451,6 @@ describe('Validate Policy JSON Schema structure', function () {
             .send(fakePolicy)
             .end(function (error, result) {
               expect(result.statusCode).to.equal(400);
-              expect(result.body.success).to.equal(false);
               expect(result.body.error).to.not.be.null;
               expect(result.body.error[0].property).to.equal('instance.scaling_rules[0].operator');
               expect(result.body.error[0].message).to.equal('is not one of enum values: <,>,<=,>=');
@@ -494,7 +468,6 @@ describe('Validate Policy JSON Schema structure', function () {
               .send(fakePolicy)
               .end(function (error, result) {
                 expect(result.statusCode).to.equal(400);
-                expect(result.body.success).to.equal(false);
                 expect(result.body.error).to.not.be.null;
                 expect(result.body.error[0].property).to.equal('instance.scaling_rules[0].adjustment');
                 expect(result.body.error[0].message).to.equal('does not match pattern "^[-|+][1-9]+[0-9]*$"');
@@ -536,8 +509,6 @@ describe('Validate Policy JSON Schema structure', function () {
               .send(fakePolicy)
               .end(function (error, result) {
                 expect(result.statusCode).to.equal(201);
-                expect(result.body.success).to.equal(true);
-                expect(result.body.error).to.be.null;
                 done();
               });
           });
@@ -552,8 +523,6 @@ describe('Validate Policy JSON Schema structure', function () {
                 .send(fakePolicy)
                 .end(function (error, result) {
                   expect(result.statusCode).to.equal(201);
-                  expect(result.body.success).to.equal(true);
-                  expect(result.body.error).to.be.null;
                   done();
                 });
             });
@@ -570,7 +539,6 @@ describe('Validate Policy JSON Schema structure', function () {
             .send(fakePolicy)
             .end(function (error, result) {
               expect(result.statusCode).to.equal(400);
-              expect(result.body.success).to.equal(false);
               expect(result.body.error).to.not.be.null;
               expect(result.body.error[0].message).to.equal('is not any of [subschema 0],[subschema 1]');
               expect(result.body.error[0].stack).to.equal('instance.schedules is not any of [subschema 0],[subschema 1]');
@@ -590,7 +558,6 @@ describe('Validate Policy JSON Schema structure', function () {
                 .send(fakePolicy)
                 .end(function (error, result) {
                   expect(result.statusCode).to.equal(400);
-                  expect(result.body.success).to.equal(false);
                   expect(result.body.error).to.not.be.null;
                   expect(result.body.error[0].message).to.contains('is not of a type(s)');
                   expect(result.body.error[0].stack).to.contains('instance.schedules.' + property + ' is not of a type(s)');
@@ -609,7 +576,6 @@ describe('Validate Policy JSON Schema structure', function () {
                 .send(fakePolicy)
                 .end(function (error, result) {
                   expect(result.statusCode).to.equal(400);
-                  expect(result.body.success).to.equal(false);
                   expect(result.body.error).to.not.be.null;
                   done();
                 });
@@ -626,7 +592,6 @@ describe('Validate Policy JSON Schema structure', function () {
                 .send(fakePolicy)
                 .end(function (error, result) {
                   expect(result.statusCode).to.equal(400);
-                  expect(result.body.success).to.equal(false);
                   expect(result.body.error).to.not.be.null;
                   expect(result.body.error[0].message).to.equal('does not conform to the "timeZoneFormat" format');
                   expect(result.body.error[0].property).to.equal('instance.schedules.timezone');
@@ -866,8 +831,6 @@ describe('Validate Policy JSON Schema structure', function () {
               .send(fakePolicy)
               .end(function (error, result) {
                 expect(result.statusCode).to.equal(201);
-                expect(result.body.success).to.equal(true);
-                expect(result.body.error).to.be.null;
                 done();
               });
           });
@@ -883,8 +846,6 @@ describe('Validate Policy JSON Schema structure', function () {
                 .send(fakePolicy)
                 .end(function (error, result) {
                   expect(result.statusCode).to.equal(201);
-                  expect(result.body.success).to.equal(true);
-                  expect(result.body.error).to.be.null;
                   done();
                 });
             });
@@ -900,8 +861,6 @@ describe('Validate Policy JSON Schema structure', function () {
                 .send(fakePolicy)
                 .end(function (error, result) {
                   expect(result.statusCode).to.equal(201);
-                  expect(result.body.success).to.equal(true);
-                  expect(result.body.error).to.be.null;
                   done();
                 });
             });
@@ -923,8 +882,6 @@ describe('Validate Policy JSON Schema structure', function () {
                   .send(fakePolicy)
                   .end(function (error, result) {
                     expect(result.statusCode).to.equal(201);
-                    expect(result.body.success).to.equal(true);
-                    expect(result.body.error).to.be.null;
                     done();
                   });
               });
@@ -943,8 +900,6 @@ describe('Validate Policy JSON Schema structure', function () {
                 .send(fakePolicy)
                 .end(function (error, result) {
                   expect(result.statusCode).to.equal(201);
-                  expect(result.body.success).to.equal(true);
-                  expect(result.body.error).to.be.null;
                   done();
                 });
             });
@@ -963,8 +918,6 @@ describe('Validate Policy JSON Schema structure', function () {
                 .send(fakePolicy)
                 .end(function (error, result) {
                   expect(result.statusCode).to.equal(201);
-                  expect(result.body.success).to.equal(true);
-                  expect(result.body.error).to.be.null;
                   done();
                 });
             });
@@ -996,8 +949,6 @@ describe('Validate Policy JSON Schema structure', function () {
                 .send(fakePolicy)
                 .end(function (error, result) {
                   expect(result.statusCode).to.equal(201);
-                  expect(result.body.success).to.equal(true);
-                  expect(result.body.error).to.be.null;
                   done();
                 });
             });
@@ -1015,7 +966,6 @@ describe('Validate Policy JSON Schema structure', function () {
                 .send(fakePolicy)
                 .end(function (error, result) {
                   expect(result.statusCode).to.equal(400);
-                  expect(result.body.success).to.equal(false);
                   expect(result.body.error).to.not.be.null;
                   if (property === "start_date" || property === "end_date") {
                     expect(result.body.error[0].message).to.contains('is not any of [subschema 0],[subschema 1]');
@@ -1039,7 +989,6 @@ describe('Validate Policy JSON Schema structure', function () {
                 .send(fakePolicy)
                 .end(function (error, result) {
                   expect(result.statusCode).to.equal(400);
-                  expect(result.body.success).to.equal(false);
                   expect(result.body.error).to.not.be.null;
                   done();
                 });
@@ -1059,7 +1008,6 @@ describe('Validate Policy JSON Schema structure', function () {
               .send(fakePolicy)
               .end(function (error, result) {
                 expect(result.statusCode).to.equal(400);
-                expect(result.body.success).to.equal(false);
                 expect(result.body.error).to.not.be.null;
                 expect(result.body.error[0].message).to.equal('is not exactly one from [subschema 0],[subschema 1]');
                 expect(result.body.error[0].property).to.equal('instance.schedules.recurring_schedule[0]');
@@ -1078,7 +1026,6 @@ describe('Validate Policy JSON Schema structure', function () {
               .send(fakePolicy)
               .end(function (error, result) {
                 expect(result.statusCode).to.equal(400);
-                expect(result.body.success).to.equal(false);
                 expect(result.body.error).to.not.be.null;
                 expect(result.body.error[0].message).to.equal('is not exactly one from [subschema 0],[subschema 1]');
                 expect(result.body.error[0].property).to.equal('instance.schedules.recurring_schedule[0]');
@@ -1098,7 +1045,6 @@ describe('Validate Policy JSON Schema structure', function () {
                 .send(fakePolicy)
                 .end(function (error, result) {
                   expect(result.statusCode).to.equal(400);
-                  expect(result.body.success).to.equal(false);
                   expect(result.body.error).to.not.be.null;
                   if (setting.error === "incorrectFormat") {
                     expect(result.body.error[0].message).to.equal('does not conform to the "timeFormat" format');
@@ -1126,7 +1072,6 @@ describe('Validate Policy JSON Schema structure', function () {
                 .send(fakePolicy)
                 .end(function (error, result) {
                   expect(result.statusCode).to.equal(400);
-                  expect(result.body.success).to.equal(false);
                   expect(result.body.error).to.not.be.null;
                   if (setting.error === "incorrectFormat") {
                     expect(result.body.error[0].message).to.equal('is not any of [subschema 0],[subschema 1]');
@@ -1159,7 +1104,6 @@ describe('Validate Policy JSON Schema structure', function () {
                   .send(fakePolicy)
                   .end(function (error, result) {
                     expect(result.statusCode).to.equal(400);
-                    expect(result.body.success).to.equal(false);
                     expect(result.body.error).to.not.be.null;
                     if (setting.error === "outofrange") {
                       expect(result.body.error[0].message).to.equal('must have a minimum value of 1');
@@ -1188,7 +1132,6 @@ describe('Validate Policy JSON Schema structure', function () {
                 .send(fakePolicy)
                 .end(function (error, result) {
                   expect(result.statusCode).to.equal(400);
-                  expect(result.body.success).to.equal(false);
                   expect(result.body.error).to.not.be.null;
                   if (setting.error === "invalidType") {
                     expect(result.body.error[0].message).to.equal('is not of a type(s) array');
@@ -1223,7 +1166,6 @@ describe('Validate Policy JSON Schema structure', function () {
                 .send(fakePolicy)
                 .end(function (error, result) {
                   expect(result.statusCode).to.equal(400);
-                  expect(result.body.success).to.equal(false);
                   expect(result.body.error).to.not.be.null;
                   if (setting.error === "invalidType") {
                     expect(result.body.error[0].message).to.equal('is not of a type(s) array');
@@ -1271,7 +1213,6 @@ describe('Validate Policy JSON Schema structure', function () {
                 .send(fakePolicy)
                 .end(function (error, result) {
                   expect(result.statusCode).to.equal(400);
-                  expect(result.body.success).to.equal(false);
                   expect(result.body.error).to.not.be.null;
                   expect(result.body.error[0].stack).to.contains("overlapped with time range");
                   done();
@@ -1364,8 +1305,6 @@ describe('Validate Policy JSON Schema structure', function () {
               .send(fakePolicy)
               .end(function (error, result) {
                 expect(result.statusCode).to.equal(201);
-                expect(result.body.success).to.equal(true);
-                expect(result.body.error).to.be.null;
                 done();
               });
           });
@@ -1381,8 +1320,6 @@ describe('Validate Policy JSON Schema structure', function () {
                 .send(fakePolicy)
                 .end(function (error, result) {
                   expect(result.statusCode).to.equal(201);
-                  expect(result.body.success).to.equal(true);
-                  expect(result.body.error).to.be.null;
                   done();
                 });
             });
@@ -1404,8 +1341,6 @@ describe('Validate Policy JSON Schema structure', function () {
                   .send(fakePolicy)
                   .end(function (error, result) {
                     expect(result.statusCode).to.equal(201);
-                    expect(result.body.success).to.equal(true);
-                    expect(result.body.error).to.be.null;
                     done();
                   });
               });
@@ -1435,8 +1370,6 @@ describe('Validate Policy JSON Schema structure', function () {
                 .send(fakePolicy)
                 .end(function (error, result) {
                   expect(result.statusCode).to.equal(201);
-                  expect(result.body.success).to.equal(true);
-                  expect(result.body.error).to.be.null;
                   done();
                 });
             });
@@ -1454,7 +1387,6 @@ describe('Validate Policy JSON Schema structure', function () {
                 .send(fakePolicy)
                 .end(function (error, result) {
                   expect(result.statusCode).to.equal(400);
-                  expect(result.body.success).to.equal(false);
                   expect(result.body.error).to.not.be.null;
                   expect(result.body.error[0].message).to.contains('is not of a type(s)');
                   expect(result.body.error[0].stack).to.contains('instance.schedules.specific_date[0].' + property + ' is not of a type(s)');
@@ -1473,7 +1405,6 @@ describe('Validate Policy JSON Schema structure', function () {
                 .send(fakePolicy)
                 .end(function (error, result) {
                   expect(result.statusCode).to.equal(400);
-                  expect(result.body.success).to.equal(false);
                   expect(result.body.error).to.not.be.null;
                   done();
                 });
@@ -1491,7 +1422,6 @@ describe('Validate Policy JSON Schema structure', function () {
                 .send(fakePolicy)
                 .end(function (error, result) {
                   expect(result.statusCode).to.equal(400);
-                  expect(result.body.success).to.equal(false);
                   expect(result.body.error).to.not.be.null;
                   if (setting.error === "incorrectFormat") {
                     expect(result.body.error[0].message).to.equal('does not conform to the "dateTimeFormat" format');
@@ -1524,7 +1454,6 @@ describe('Validate Policy JSON Schema structure', function () {
                   .send(fakePolicy)
                   .end(function (error, result) {
                     expect(result.statusCode).to.equal(400);
-                    expect(result.body.success).to.equal(false);
                     expect(result.body.error).to.not.be.null;
                     if (setting.error === "outofrange") {
                       expect(result.body.error[0].message).to.equal('must have a minimum value of 1');
@@ -1564,7 +1493,6 @@ describe('Validate Policy JSON Schema structure', function () {
                 .send(fakePolicy)
                 .end(function (error, result) {
                   expect(result.statusCode).to.equal(400);
-                  expect(result.body.success).to.equal(false);
                   expect(result.body.error).to.not.be.null;
                   expect(result.body.error[0].stack).to.contains("overlapped with date range");
                   done();

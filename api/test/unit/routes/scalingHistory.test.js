@@ -68,7 +68,7 @@ describe("Routing ScalingHistory", function() {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(400);
               expect(result.body).to.deep.equal({
-                "description": "start-time must be an integer"
+                "error": "start-time must be an integer"
               });
               done();
             });
@@ -101,7 +101,7 @@ describe("Routing ScalingHistory", function() {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(400);
               expect(result.body).to.deep.equal({
-                "description": "end-time must be an integer"
+                "error": "end-time must be an integer"
               });
               done();
             });
@@ -134,7 +134,7 @@ describe("Routing ScalingHistory", function() {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(400);
               expect(result.body).to.deep.equal({
-                "description": "order must be DESC or ASC"
+                "error": "order must be DESC or ASC"
               });
               done();
             });
@@ -167,7 +167,7 @@ describe("Routing ScalingHistory", function() {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(400);
               expect(result.body).to.deep.equal({
-                "description": "page must be an integer"
+                "error": "page must be an integer"
               });
               done();
             });
@@ -201,7 +201,7 @@ describe("Routing ScalingHistory", function() {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(400);
               expect(result.body).to.deep.equal({
-                "description": "results-per-page must be an integer"
+                "error": "results-per-page must be an integer"
               });
               done();
             });
@@ -223,7 +223,7 @@ describe("Routing ScalingHistory", function() {
             expect(error).to.equal(null);
             expect(result.statusCode).to.equal(500);
             expect(result.body).to.deep.equal({
-              description: 'Error in requests scalingEngine'
+              error: 'Error in requests scalingEngine'
             });
             done();
           });
@@ -240,7 +240,7 @@ describe("Routing ScalingHistory", function() {
             expect(error).to.equal(null);
             expect(result.statusCode).to.equal(500);
             expect(result.body).to.deep.equal({
-              description: 'Error getting scaling histories from database'
+              error: 'Error getting scaling histories from database'
             });
             done();
           });
