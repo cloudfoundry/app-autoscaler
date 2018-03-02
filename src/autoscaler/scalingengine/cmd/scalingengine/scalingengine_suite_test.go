@@ -92,7 +92,7 @@ var _ = SynchronizedBeforeSuite(
 		conf.Server.TLS.CertFile = filepath.Join(testCertDir, "scalingengine.crt")
 		conf.Server.TLS.CACertFile = filepath.Join(testCertDir, "autoscaler-ca.crt")
 
-		conf.Logging.Level = "debug"
+		conf.Logging.Level = "info"
 
 		conf.Db.PolicyDbUrl = os.Getenv("DBURL")
 		conf.Db.ScalingEngineDbUrl = os.Getenv("DBURL")

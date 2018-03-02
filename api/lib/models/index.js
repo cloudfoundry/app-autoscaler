@@ -10,6 +10,7 @@ module.exports = function(dbSettings, callback) {
   const DEFAULT_DB_MAX_IDLETIME = 1000;
 
   var sequelize = new Sequelize(dbSettings.uri, {
+    logging: false,
     pool: {
       max: dbSettings.maxConnections || DEFAULT_DB_MAX_CONNECTIONS,
       min: dbSettings.minConnections || DEFAULT_DB_MIN_CONNECTIONS,

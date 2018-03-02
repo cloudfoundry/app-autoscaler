@@ -1,11 +1,10 @@
-package integration_test
+package integration
 
 import (
 	"autoscaler/cf"
 	"fmt"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	. "integration"
 	"io/ioutil"
 	"net/http"
 	"strings"

@@ -17,6 +17,7 @@ env:
     - DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
     - NODE_VERSION=6.2
     - GO_VERSION=1.7
+    - LOGLEVEL=info
 
 before_install:
   - source .envrc

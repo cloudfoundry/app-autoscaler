@@ -1,9 +1,8 @@
-package integration_test
+package integration
 
 import (
 	"encoding/base64"
 	"fmt"
-	. "integration"
 	"net/http"
 	"path/filepath"
 
