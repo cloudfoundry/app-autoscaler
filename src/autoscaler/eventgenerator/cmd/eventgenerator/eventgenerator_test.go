@@ -342,7 +342,7 @@ var _ = Describe("Eventgenerator", func() {
 				Eventually(runner.Session.Buffer, 5*time.Second).Should(gbytes.Say("eventgenerator.received-interrupt-signal"))
 				Eventually(runner.Session.Buffer, 5*time.Second).Should(gbytes.Say("eventgenerator.successfully-released-lock"))
 				Eventually(secondRunner.Session.Buffer, 10*time.Second).Should(gbytes.Say("eventgenerator.successfully-acquired-lock"))
-				Eventually(secondRunner.Session.Buffer, 10*time.Second).Should(gbytes.Say("eventgenerator.started"))
+				Eventually(secondRunner.Session.Buffer, 15*time.Second).Should(gbytes.Say("eventgenerator.started"))
 			})
 		})
 

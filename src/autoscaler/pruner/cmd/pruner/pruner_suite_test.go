@@ -65,7 +65,7 @@ func initConsul() {
 }
 
 func initConfig() {
-	cfg.Logging.Level = "debug"
+	cfg.Logging.Level = "info"
 	dbUrl := os.Getenv("DBURL")
 	if dbUrl == "" {
 		Fail("environment variable $DBURL is not set")

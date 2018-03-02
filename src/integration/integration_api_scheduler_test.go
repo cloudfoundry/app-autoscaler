@@ -1,11 +1,10 @@
-package integration_test
+package integration
 
 import (
 	"autoscaler/cf"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	. "integration"
 	"io/ioutil"
 	"net/http"
 	"strings"

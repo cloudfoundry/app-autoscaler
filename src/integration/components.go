@@ -33,8 +33,6 @@ const (
 	ConsulCluster         = "consulCluster"
 )
 
-var testCertDir string = "../../test-certs"
-
 var serviceCatalogPath string = "../../servicebroker/config/catalog.json"
 var apiServerInfoFilePath string = "../../api/config/info.json"
 
@@ -389,7 +387,7 @@ func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port i
 			},
 		},
 		Logging: mcConfig.LoggingConfig{
-			Level: "debug",
+			Level: LOGLEVEL,
 		},
 		Db: mcConfig.DbConfig{
 			InstanceMetricsDbUrl: dbUri,
@@ -421,7 +419,7 @@ func (components *Components) PrepareEventGeneratorConfig(dbUri string, enableDB
 	evaluationManagerInterval time.Duration, tmpDir string, lockTTL time.Duration, lockRetryInterval time.Duration, ConsulClusterConfig string) string {
 	conf := &egConfig.Config{
 		Logging: egConfig.LoggingConfig{
-			Level: "debug",
+			Level: LOGLEVEL,
 		},
 		Aggregator: egConfig.AggregatorConfig{
 			AggregatorExecuteInterval: aggregatorExecuteInterval,
@@ -488,7 +486,7 @@ func (components *Components) PrepareScalingEngineConfig(dbUri string, port int,
 			},
 		},
 		Logging: seConfig.LoggingConfig{
-			Level: "debug",
+			Level: LOGLEVEL,
 		},
 		Db: seConfig.DbConfig{
 			PolicyDbUrl:        dbUri,
