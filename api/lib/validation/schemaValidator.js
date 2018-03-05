@@ -43,7 +43,7 @@ var getValidOperators = function() {
 };
 
 var getAdjustmentPattern = function() {
-  var adjustmentPattern = '^[-|+][1-9]+[0-9]*$';
+  var adjustmentPattern = '^[-+][1-9]+[0-9]*$';
   return adjustmentPattern;
 };
 

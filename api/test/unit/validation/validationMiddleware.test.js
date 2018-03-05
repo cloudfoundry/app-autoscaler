@@ -246,7 +246,7 @@ describe('Validate Policy JSON Schema structure', function () {
       { duration_type: "breach_duration_secs", values: [30, 59, 3601] },
       { duration_type: "cool_down_secs", values: [30, 59, 3601] }
     ];
-    var invalidAdjustmentPattern = ['0', '1', '+09', '-10%'];
+    var invalidAdjustmentPattern = ['0', '1', '+09', '-10%', '|10'];
 
     policyTypes.forEach(function (type) {
       if (type === "schedules_only") {
@@ -497,8 +497,8 @@ describe('Validate Policy JSON Schema structure', function () {
                 expect(result.body.success).to.equal(false);
                 expect(result.body.error).to.not.be.null;
                 expect(result.body.error[0].property).to.equal('instance.scaling_rules[0].adjustment');
-                expect(result.body.error[0].message).to.equal('does not match pattern "^[-|+][1-9]+[0-9]*$"');
-                expect(result.body.error[0].stack).to.equal('instance.scaling_rules[0].adjustment does not match pattern "^[-|+][1-9]+[0-9]*$"');
+                expect(result.body.error[0].message).to.equal('does not match pattern "^[-+][1-9]+[0-9]*$"');
+                expect(result.body.error[0].stack).to.equal('instance.scaling_rules[0].adjustment does not match pattern "^[-+][1-9]+[0-9]*$"');
                 done();
               });
           });
