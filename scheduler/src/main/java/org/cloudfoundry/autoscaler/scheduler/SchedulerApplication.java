@@ -26,11 +26,6 @@ import org.springframework.boot.autoconfigure.transaction.jta.JtaAutoConfigurati
 import org.springframework.boot.autoconfigure.validation.ValidationAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.WebClientAutoConfiguration;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.cloud.autoconfigure.ConfigurationPropertiesRebinderAutoConfiguration;
-import org.springframework.cloud.autoconfigure.LifecycleMvcEndpointAutoConfiguration;
-import org.springframework.cloud.client.CommonsClientAutoConfiguration;
-import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
-import org.springframework.cloud.client.loadbalancer.AsyncLoadBalancerAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ImportResource;
 import org.springframework.context.event.EventListener;
@@ -45,16 +40,13 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @SpringBootApplication(exclude = { AopAutoConfiguration.class, HealthIndicatorAutoConfiguration.class,
 		AuditAutoConfiguration.class, PropertyPlaceholderAutoConfiguration.class, PublicMetricsAutoConfiguration.class,
 		InfoContributorAutoConfiguration.class, WebClientAutoConfiguration.class, EndpointAutoConfiguration.class,
-		ConfigurationPropertiesAutoConfiguration.class, CommonsClientAutoConfiguration.class,
-		MetricRepositoryAutoConfiguration.class, ProjectInfoAutoConfiguration.class,
-		AsyncLoadBalancerAutoConfiguration.class, ConfigurationPropertiesRebinderAutoConfiguration.class,
-		LifecycleMvcEndpointAutoConfiguration.class, MetricExportAutoConfiguration.class,
-		DataSourceAutoConfiguration.class, GsonAutoConfiguration.class, ValidationAutoConfiguration.class,
+		ConfigurationPropertiesAutoConfiguration.class, MetricRepositoryAutoConfiguration.class,
+		ProjectInfoAutoConfiguration.class, MetricExportAutoConfiguration.class, DataSourceAutoConfiguration.class,
+		GsonAutoConfiguration.class, ValidationAutoConfiguration.class,
 		DataSourceTransactionManagerAutoConfiguration.class, EndpointWebMvcAutoConfiguration.class,
 		JacksonAutoConfiguration.class, JdbcTemplateAutoConfiguration.class, JtaAutoConfiguration.class,
 		ManagementServerPropertiesAutoConfiguration.class })
 @ImportResource("classpath:applicationContext.xml")
-@EnableDiscoveryClient
 public class SchedulerApplication {
 	private Logger logger = LogManager.getLogger(this.getClass());
 

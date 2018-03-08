@@ -347,13 +347,6 @@ client.ssl.protocol=TLSv1.2
 #Quartz
 org.quartz.scheduler.instanceName=app-autoscaler-%d
 org.quartz.scheduler.instanceId=app-autoscaler-%d
-#consul
-spring.cloud.consul.port=%s
-spring.cloud.consul.discovery.serviceName=scheduler
-spring.cloud.consul.discovery.instanceId=scheduler
-spring.cloud.consul.discovery.heartbeat.enabled=true
-spring.cloud.consul.discovery.heartbeat.ttlValue=20
-spring.cloud.consul.discovery.hostname=
 
 spring.application.name=scheduler
 spring.mvc.servlet.load-on-startup=1

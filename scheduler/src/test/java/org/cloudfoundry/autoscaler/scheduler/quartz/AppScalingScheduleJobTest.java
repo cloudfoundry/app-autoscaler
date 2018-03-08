@@ -23,7 +23,6 @@ import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.cloudfoundry.autoscaler.scheduler.dao.ActiveScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
-import org.cloudfoundry.autoscaler.scheduler.util.ConsulUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.EmbeddedTomcatUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.JobActionEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper;
@@ -99,20 +98,15 @@ public class AppScalingScheduleJobTest {
 
 	private static EmbeddedTomcatUtil embeddedTomcatUtil;
 
-	private static ConsulUtil consulUtil;
-
 	@BeforeClass
 	public static void beforeClass() throws IOException {
 		embeddedTomcatUtil = new EmbeddedTomcatUtil();
 		embeddedTomcatUtil.start();
 
-		consulUtil = new ConsulUtil();
-		consulUtil.start();
 	}
 
 	@AfterClass
 	public static void afterClass() throws IOException, InterruptedException {
-		consulUtil.stop();
 		embeddedTomcatUtil.stop();
 	}
 

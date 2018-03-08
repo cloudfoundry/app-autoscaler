@@ -17,10 +17,7 @@ import (
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/clock"
-	"code.cloudfoundry.org/consuladapter"
 	"code.cloudfoundry.org/lager"
-	"code.cloudfoundry.org/locket"
-	"github.com/hashicorp/consul/api"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
@@ -106,16 +103,6 @@ func main() {
 		{"schedule_synchronizer", synchronizer},
 	}
 
-	if conf.Consul.Cluster != "" {
-		consulClient, err := consuladapter.NewClientFromUrl(conf.Consul.Cluster)
-		if err != nil {
-			logger.Fatal("new consul client failed", err)
-		}
-
-		registrationRunner := initializeRegistrationRunner(logger, consulClient, conf.Server.Port, eClock)
-		members = append(members, grouper.Member{"registration", registrationRunner})
-	}
-
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
 
 	logger.Info("started")
@@ -146,23 +133,6 @@ func initLoggerFromConfig(conf *config.LoggingConfig) lager.Logger {
 	logger.RegisterSink(redactedSink)
 
 	return logger
-}
-
-func initializeRegistrationRunner(
-	logger lager.Logger,
-	consulClient consuladapter.Client,
-	port int,
-	clock clock.Clock) ifrit.Runner {
-
-	registration := &api.AgentServiceRegistration{
-		Name: "scalingengine",
-		Port: port,
-		Check: &api.AgentServiceCheck{
-			TTL: "20s",
-		},
-	}
-
-	return locket.NewRegistrationRunner(logger, registration, consulClient, locket.RetryInterval, clock)
 }
 
 func getLogLevel(level string) (lager.LogLevel, error) {
