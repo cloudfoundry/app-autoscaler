@@ -18,14 +18,12 @@ module.exports = function(settings, models){
     async.waterfall([async.apply(schedulerUtil.createOrUpdateSchedule, req),
       async.apply(policyHelper.createOrUpdatePolicy, req)],
       function(error, result) {
-        var responseDecorator = { };
+        var responseBody = {};
         var statusCode = HttpStatus.OK;
         if(error) {
           statusCode = error.statusCode;
-          responseDecorator = {
-            'success': false,
-            'error': error,
-            'result': null
+          responseBody = {
+            'error': error.message,
           };
         }
         else {
@@ -33,13 +31,9 @@ module.exports = function(settings, models){
           if(result.statusCode === HttpStatus.CREATED) {
             res.set('Location', '/v1/apps/' + req.params.app_id + '/policy');
           }
-          responseDecorator = {
-            'success': true,
-            'error': null,
-            'result': result.response    
-          }
+          responseBody = result.response;
         }
-        res.status(statusCode).json(responseDecorator);
+        res.status(statusCode).json(responseBody);
       });
   });
 
@@ -48,20 +42,18 @@ module.exports = function(settings, models){
     async.waterfall([async.apply(policyHelper.deletePolicy, req),
                      async.apply(schedulerUtil.deleteSchedules, req)],
     function(error, result) {
-      var responseDecorator = { };
+      var responseBody = {};
       var status = HttpStatus.OK;
       if(error) {
         status = error.statusCode;
-        responseDecorator = {
-          'success': false,
-          'error': error,
-          'result': null
+        responseBody = {
+          'error': error.message,
         };
       } 
       else {
         status = HttpStatus.OK;
       }
-      res.status(status).json(responseDecorator);
+      res.status(status).json(responseBody);
     });
   });
 
@@ -79,7 +71,10 @@ module.exports = function(settings, models){
     }).catch(function(error) {
       logger.error ('Failed to retrieve policy details',
           { 'app id': req.params.app_id,'error':error });
-      res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(error);
+      var responseBody = {
+            'error': error.message,
+      };
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).json(responseBody);
     });
   });
 

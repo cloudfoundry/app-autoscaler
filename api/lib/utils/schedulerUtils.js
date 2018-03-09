@@ -47,7 +47,7 @@ module.exports = function(schedulerSettings) {
       request.put(options, function(error, response, body) {
         if(error) {
           logger.error('Error occurred during schedule creation/update ',
-                { 'app id': appId,'error':error });
+                { 'app id': appId,'error':error.message });
           error.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
           callback(error); 
         }
@@ -60,7 +60,7 @@ module.exports = function(schedulerSettings) {
           /* Creating the error object for Validation Error in scheduler with status code 400 
           to call the main callback in the waterfall immediately after getting this error. */
           var validationError = { 'message':'Failed to create schedules due to validation' + 
-              ' error in scheduler','details':response.body };
+              ' error in scheduler, details:\n' + response.body };
           logger.error('Error occurred during creation/update of schedules ',
               { 'app id': appId,'error':validationError });
           validationError.statusCode = HttpStatus.BAD_REQUEST;
@@ -69,7 +69,7 @@ module.exports = function(schedulerSettings) {
         // For any other error response received from Scheduler
         else {
           var internalError = { 'message':'Failed to create schedules due to an internal' + 
-                  ' error in scheduler','details':response.body };
+                  ' error in scheduler, details:\n' + response.body };
           logger.error('Error occurred in scheduler module during creation/update ',
               { 'app id': appId,'error':internalError });
           internalError.statusCode = HttpStatus.INTERNAL_SERVER_ERROR
@@ -102,7 +102,7 @@ module.exports = function(schedulerSettings) {
       }
       else {
         var internalError = { 'message':'Failed to delete schedules due to an internal' + 
-              ' error in scheduler','details':response.body };
+              ' error in scheduler, details:\n' + response.body };
         logger.error('Error occurred in scheduler module during deletion ',
               { 'app id': appId,'error':internalError });
         internalError.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;

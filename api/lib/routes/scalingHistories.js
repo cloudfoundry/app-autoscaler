@@ -19,7 +19,7 @@ module.exports = function(settings) {
     var parseResult = scalingHistoryHelper.parseParameter(req);
     if (!parseResult.valid) {
       logger.error("Failed to get scaling history", { "app_id": appId, "start-time": startTime, "end-time": endTime, "order": order, "page": page, "results-per-page": resultsPerPage, "message": parseResult.message });
-      resp.status(HttpStatus.BAD_REQUEST).json({ "description": parseResult.message });
+      resp.status(HttpStatus.BAD_REQUEST).json({ "error": parseResult.message });
       return;
     }
     var parameters = parseResult.parameters;
@@ -28,7 +28,9 @@ module.exports = function(settings) {
       var statusCode;
       if (err) {
         statusCode = err.statusCode;
-        responseBody.description = err.message;
+        responseBody = {
+          'error': err.message,
+        };
       } else {
         statusCode = result.statusCode;
         if (statusCode === HttpStatus.OK) {
@@ -36,7 +38,9 @@ module.exports = function(settings) {
           var resultsPerPage = parameters.resultsPerPage;
           responseBody = routeHelper.pagination(result.body, page, resultsPerPage);
         } else {
-          responseBody.description = result.message;
+          responseBody = {
+            'error': result.message,
+          };
         }
       }
       resp.status(statusCode).json(responseBody);

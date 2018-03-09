@@ -312,7 +312,7 @@ var _ = Describe("API Helper Test", func() {
 				It("Fail with 400 error", func() {
 					err = apihelper.CreatePolicy(fakePolicy)
 					Expect(err).Should(HaveOccurred())
-					Expect(err).Should(MatchError(fmt.Sprintf(ui.InvalidPolicy, "instance_min_count 10 is higher or equal to instance_max_count 2 in policy_json")))
+					Expect(err).Should(MatchError(fmt.Sprintf(ui.InvalidPolicy, "\n"+"instance_min_count 10 is higher or equal to instance_max_count 2 in policy_json")))
 				})
 			})
 

@@ -121,7 +121,7 @@ func parseErrResponse(raw []byte) (string, error) {
 					mentry := entry.(map[string]interface{})
 					for ik, iv := range mentry {
 						if ik == "stack" {
-							retMsg = fmt.Sprintf("%v", iv)
+							retMsg = retMsg + "\n" + fmt.Sprintf("%v", iv)
 							break
 						}
 					}
