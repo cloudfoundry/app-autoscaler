@@ -374,7 +374,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 		Context("internal api", func() {
 			Context("for a non-existing app", func() {
 				It("Should return a NOT FOUND (404)", func() {
-					doDetachPolicy(appId, http.StatusNotFound, `{"success":false,"error":{"message":"No policy bound with application","statusCode":404},"result":null}`, INTERNAL)
+					doDetachPolicy(appId, http.StatusNotFound, `{"error":"No policy bound with application"}`, INTERNAL)
 				})
 			})
 
@@ -397,7 +397,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 		Context("public api", func() {
 			Context("for a non-existing app", func() {
 				It("Should return a NOT FOUND (404)", func() {
-					doDetachPolicy(appId, http.StatusNotFound, `{"success":false,"error":{"message":"No policy bound with application","statusCode":404},"result":null}`, PUBLIC)
+					doDetachPolicy(appId, http.StatusNotFound, `{"error":"No policy bound with application"}`, PUBLIC)
 				})
 			})
 

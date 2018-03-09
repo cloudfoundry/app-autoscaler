@@ -76,7 +76,7 @@ module.exports = function(settings, callback) {
         if(result.statusCode == HttpStatus.OK){
           next();
         }else if(result.statusCode == HttpStatus.NOT_FOUND){
-          res.status(HttpStatus.FORBIDDEN).send({"message": "The application is not bound to Auto-Scaling service"});
+          res.status(HttpStatus.FORBIDDEN).send({"error": "The application is not bound to Auto-Scaling service"});
         }else{
           res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({});
         }
@@ -108,9 +108,7 @@ module.exports = function(settings, callback) {
     var errorResponse = {};
     if (err) {
       errorResponse = {
-        'success': false,
         'error': err,
-        'result': null
       };
     }
     res.status(HttpStatus.BAD_REQUEST).json(errorResponse);
@@ -157,9 +155,7 @@ module.exports = function(settings, callback) {
     var errorResponse = {};
     if (err) {
       errorResponse = {
-        'success': false,
         'error': err,
-        'result': null
       };
     }
     res.status(HttpStatus.BAD_REQUEST).json(errorResponse);

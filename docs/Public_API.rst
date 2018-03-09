@@ -538,13 +538,6 @@ Body
 ''''
 
    {
-
-    "app\_id": "8d0cee08-23ad-4813-a779-ad8118ea0b91",
-
-    "guid": "c29be336-7851-4d61-a0a9-084d625b4d43",
-
-    "policy\_json": {
-
         "instance\_min\_count": 1,
     
         "instance\_max\_count": 4,
@@ -713,9 +706,7 @@ Body
         
             }]
         
-          }
-    
-    }
+       }
 
    }
 
@@ -983,3 +974,15 @@ Body
      }
 
    }
+
+Error Response
+-------------------
+
+All error response are presented with a appropriate HTTP response code (like 4xx or 5xx) and a body containing a valid JSON Object.
+The error response body is specified as: 
+
+{
+  
+  "error": "error msg"
+
+}

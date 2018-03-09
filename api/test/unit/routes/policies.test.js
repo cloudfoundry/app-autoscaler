@@ -56,6 +56,13 @@ function mockSchedulerPutError(count, err) {
     .query({ 'guid': /.*/ })
     .replyWithError(err);
 }
+function mockSchedulerPutMessage(count, statusCode, message) {
+  nock(schedulerURI)
+    .put(/\/v2\/schedules\/.+/)
+    .times(count)
+    .query({ 'guid': /.*/ })
+    .reply(statusCode, message);
+}
 
 function mockSchedulerDelete(count, statusCode) {
   nock(schedulerURI)
@@ -122,10 +129,7 @@ describe('Routing Policy Creation', function() {
             expect(result.statusCode).to.equal(201);
             expect(result.headers.location).exist;
             expect(result.headers.location).to.be.equal('/v1/apps/12345/policy');
-            expect(result.body.success).to.equal(true);
-            expect(result.body.error).to.be.null;
-            expect(result.body.result.policy_json).eql(fakePolicy);
-            expect(result.body.result.guid).to.not.be.null;
+            expect(result.body).eql(fakePolicy);
             done();
           });
       });
@@ -161,10 +165,7 @@ describe('Routing Policy Creation', function() {
             expect(result.statusCode).to.equal(201);
             expect(result.headers.location).exist;
             expect(result.headers.location).to.be.equal('/v1/apps/12344/policy');
-            expect(result.body.success).to.equal(true);
-            expect(result.body.error).to.be.null;
-            expect(result.body.result.policy_json).eql(fakePolicy);
-            expect(result.body.result.guid).to.not.be.null;
+            expect(result.body).eql(fakePolicy);
             expect(result.headers).to.have.deep.property('content-security-policy', 'default-src \'self\'; script-src \'self\'');
             expect(result.headers).to.have.deep.property('x-content-type-options', 'nosniff')
             expect(result.headers).to.have.deep.property('cache-control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
@@ -176,7 +177,7 @@ describe('Routing Policy Creation', function() {
     context("when there is validation error in scheduler", function() {
       beforeEach(function() {
         mockBroker200WithBinding(1);
-        mockSchedulerPut(1, 400);
+        mockSchedulerPutMessage(1, 400,'Specific Date Schedule start_date_time should be after current date');
       });
       it('should fail to create a policy for app id 12346', function(done) {
         request(publicApp)
@@ -185,8 +186,7 @@ describe('Routing Policy Creation', function() {
           .send(fakePolicy)
           .end(function(error, result) {
             expect(result.statusCode).to.equal(400);
-            expect(result.body.error.message).eql('Failed to create schedules due to validation error in scheduler');
-            expect(result.body.success).eql(false);
+            expect(result.body.error).eql('Failed to create schedules due to validation error in scheduler, details:\nSpecific Date Schedule start_date_time should be after current date');
             done();
           });
       });
@@ -195,9 +195,7 @@ describe('Routing Policy Creation', function() {
     context("when there is internal error in scheduler", function() {
       beforeEach(function() {
         var mockError = {
-          'message': 'Failed to create schedules due to an internal' +
-            ' error in scheduler',
-          'details': 'fake body'
+          'message': 'Failed to create schedules due to an internal error in scheduler',
         };
         mockBroker200WithBinding(1);
         mockSchedulerPutError(1, mockError)
@@ -209,9 +207,7 @@ describe('Routing Policy Creation', function() {
           .send(fakePolicy)
           .end(function(error, result) {
             expect(result.statusCode).to.equal(500);
-            expect(result.body.error.message).eql('Failed to create schedules due to an internal error in scheduler');
-            expect(result.body.error.details).eql('fake body');
-            expect(result.body.success).eql(false);
+            expect(result.body.error).eql('Failed to create schedules due to an internal error in scheduler');
             done();
           });
       });
@@ -220,8 +216,6 @@ describe('Routing Policy Creation', function() {
   }); //end of create policy
 
   context("update policy", function() {
-    var initialGuid;
-
     beforeEach(function(done) {
       mockBroker200WithBinding(1);
       mockSchedulerPut(1, 200);
@@ -229,7 +223,6 @@ describe('Routing Policy Creation', function() {
         .put('/v1/apps/12345/policy')
         .set("Authorization", "fake-token")
         .send(fakePolicy).end(function(error, result) {
-          initialGuid = result.body.result.guid;
           done();
         })
     });
@@ -245,10 +238,7 @@ describe('Routing Policy Creation', function() {
           .send(fakePolicy)
           .end(function(error, result) {
             expect(result.statusCode).to.equal(200);
-            expect(result.body.success).to.equal(true);
-            expect(result.body.result[0].policy_json).eql(fakePolicy);
-            expect(result.body.error).to.be.null;
-            expect(result.body.result[0].guid).to.not.eql(initialGuid);
+            expect(result.body).eql(fakePolicy);
             done();
           });
       });
@@ -273,7 +263,6 @@ describe('Routing Policy Creation', function() {
 
 
   context('delete policy', function() {
-    var initialGuid;
 
     beforeEach(function(done) {
       mockBroker200WithBinding(1);
@@ -282,7 +271,6 @@ describe('Routing Policy Creation', function() {
         .put('/v1/apps/12345/policy')
         .set("Authorization", "fake-token")
         .send(fakePolicy).end(function(error, result) {
-          initialGuid = result.body.result.guid;
           done();
         })
     });
@@ -363,7 +351,6 @@ describe('Routing Policy Creation', function() {
   }); //end of delete policy
 
   context('get policy', function() {
-    var initialGuid;
     context('when policy exists', function() {
       beforeEach(function(done) {
         mockBroker200WithBinding(1);
@@ -372,7 +359,6 @@ describe('Routing Policy Creation', function() {
           .put('/v1/apps/12345/policy')
           .set("Authorization", "fake-token")
           .send(fakePolicy).end(function(error, result) {
-            initialGuid = result.body.result.guid;
             done();
           })
       });
