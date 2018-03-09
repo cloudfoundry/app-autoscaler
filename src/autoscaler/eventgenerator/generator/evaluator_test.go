@@ -11,9 +11,11 @@ import (
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/lager/lagertest"
+	"github.com/cenk/backoff"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
+	"github.com/rubyist/circuitbreaker"
 )
 
 var _ = Describe("Evaluator", func() {
@@ -31,6 +33,8 @@ var _ = Describe("Evaluator", func() {
 		testMetricType string = "testMetricType"
 		testMetricUnit string = "testMetricUnit"
 		urlPath        string
+		getBreaker     func(string) *circuit.Breaker
+		cbEventChan    <-chan circuit.BreakerEvent
 		triggerArrayGT []*models.Trigger = []*models.Trigger{{
 			AppId:                 testAppId,
 			MetricType:            testMetricType,
@@ -258,17 +262,23 @@ var _ = Describe("Evaluator", func() {
 		httpClient = cfhttp.NewClient()
 		triggerChan = make(chan []*models.Trigger, 1)
 		database = &fakes.FakeAppMetricDB{}
-		scalingEngine = nil
+		// scalingEngine = nil
 
 		path, err := routes.ScalingEngineRoutes().Get(routes.ScaleRouteName).URLPath("appid", testAppId)
 		Expect(err).NotTo(HaveOccurred())
 		urlPath = path.Path
 
+		getBreaker = func(appID string) *circuit.Breaker {
+			return nil
+		}
+	})
+	AfterEach(func() {
+		close(triggerChan)
 	})
 
 	Context("Start", func() {
 		JustBeforeEach(func() {
-			evaluator = NewEvaluator(logger, httpClient, scalingEngine.URL(), triggerChan, database, fakeBreachDurationSecs)
+			evaluator = NewEvaluator(logger, httpClient, scalingEngine.URL(), triggerChan, database, fakeBreachDurationSecs, getBreaker)
 			evaluator.Start()
 		})
 
@@ -584,7 +594,7 @@ var _ = Describe("Evaluator", func() {
 
 			})
 
-			Context("send trigger failed", func() {
+			Context("sending trigger failed", func() {
 				BeforeEach(func() {
 					database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
 						return appMetricGTBreach, nil
@@ -598,7 +608,7 @@ var _ = Describe("Evaluator", func() {
 
 					It("should log the error", func() {
 						Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
-						Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("scaling engine error,failed to send trigger alarm")))
+						Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("failed-send-trigger-alarm")))
 					})
 				})
 
@@ -618,12 +628,98 @@ var _ = Describe("Evaluator", func() {
 
 					It("should log the error", func() {
 						Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
-						Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("failed to read body from scaling engine's response")))
+						Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("failed-read-response-body-from-scaling-engine")))
 					})
 				})
 			})
 
-			Context("when retrieve appMetrics from database failed", func() {
+			Context("circuit break for scaling failures", func() {
+				BeforeEach(func() {
+					database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+						return appMetricGTBreach, nil
+					}
+					bf := backoff.NewExponentialBackOff()
+					bf.InitialInterval = 500 * time.Millisecond
+					bf.MaxInterval = 1 * time.Second
+					bf.MaxElapsedTime = 0
+					bf.RandomizationFactor = 0
+					bf.Multiplier = 2
+					bf.Reset()
+					breaker := circuit.NewBreakerWithOptions(&circuit.Options{
+						BackOff:    bf,
+						ShouldTrip: circuit.ConsecutiveTripFunc(1),
+					})
+					cbEventChan = breaker.Subscribe()
+					getBreaker = func(appID string) *circuit.Breaker {
+						return breaker
+					}
+				})
+				It("open and close the circuit breaker", func() {
+					By("scaling failure causes circuit breaker to be open")
+					scalingEngine.RouteToHandler("POST", urlPath, ghttp.RespondWithJSONEncoded(http.StatusBadRequest, "error"))
+					Expect(triggerChan).To(BeSent(triggerArrayGT))
+					Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
+					Eventually(cbEventChan).Should(Receive(Equal(circuit.BreakerFail)))
+					Eventually(cbEventChan).Should(Receive(Equal(circuit.BreakerTripped)))
+
+					By("return directly when circuit breaker is open")
+					Expect(triggerChan).To(BeSent(triggerArrayGT))
+					Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(1))
+
+					By("circuit breaker becomes half open when timeout")
+					time.Sleep(500 * time.Millisecond)
+					Expect(triggerChan).To(BeSent(triggerArrayGT))
+					Eventually(cbEventChan).Should(Receive(Equal(circuit.BreakerReady)))
+					Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(2))
+
+					By("circuit breaker goes to open again for retry failuer")
+					Eventually(cbEventChan).Should(Receive(Equal(circuit.BreakerFail)))
+					Expect(triggerChan).To(BeSent(triggerArrayGT))
+					Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(2))
+
+					By("circuit breaker doubles the timeout interval")
+					time.Sleep(500 * time.Millisecond)
+					Expect(triggerChan).To(BeSent(triggerArrayGT))
+					Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(2))
+
+					By("circuit breaker becomes half open second time when time out")
+					time.Sleep(500 * time.Millisecond)
+					Expect(triggerChan).To(BeSent(triggerArrayGT))
+					Eventually(cbEventChan).Should(Receive(Equal(circuit.BreakerReady)))
+					Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(3))
+					Eventually(cbEventChan).Should(Receive(Equal(circuit.BreakerFail)))
+
+					By("circuit breaker caps the next timeout interval")
+					time.Sleep(1 * time.Second)
+					Expect(triggerChan).To(BeSent(triggerArrayGT))
+					Eventually(cbEventChan).Should(Receive(Equal(circuit.BreakerReady)))
+					Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(4))
+					Eventually(cbEventChan).Should(Receive(Equal(circuit.BreakerFail)))
+
+					By("circuit breaker becomes closed due to successful scaling")
+					scalingEngine.RouteToHandler("POST", urlPath, ghttp.RespondWithJSONEncoded(http.StatusOK, "success"))
+					time.Sleep(1 * time.Second)
+					Expect(triggerChan).To(BeSent(triggerArrayGT))
+					Eventually(cbEventChan).Should(Receive(Equal(circuit.BreakerReady)))
+					Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(5))
+
+					By("Circuit breaker sends request to scaling engine when it is open")
+					Expect(triggerChan).To(BeSent(triggerArrayGT))
+					Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(6))
+
+					By("Circuit breaker resets timeout interval")
+					scalingEngine.RouteToHandler("POST", urlPath, ghttp.RespondWithJSONEncoded(http.StatusBadRequest, "error"))
+					Expect(triggerChan).To(BeSent(triggerArrayGT))
+					Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(7))
+					Eventually(cbEventChan).Should(Receive(Equal(circuit.BreakerFail)))
+					Eventually(cbEventChan).Should(Receive(Equal(circuit.BreakerTripped)))
+					time.Sleep(500 * time.Millisecond)
+					Expect(triggerChan).To(BeSent(triggerArrayGT))
+					Eventually(cbEventChan).Should(Receive(Equal(circuit.BreakerReady)))
+				})
+			})
+
+			Context("when retrieving appMetrics from database failed", func() {
 				BeforeEach(func() {
 					database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
 						return nil, errors.New("error when retrieve appMetrics from database")
@@ -664,7 +760,7 @@ var _ = Describe("Evaluator", func() {
 			database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
 				return nil, errors.New("no alarm")
 			}
-			evaluator = NewEvaluator(logger, httpClient, scalingEngine.URL(), triggerChan, database, fakeBreachDurationSecs)
+			evaluator = NewEvaluator(logger, httpClient, scalingEngine.URL(), triggerChan, database, fakeBreachDurationSecs, getBreaker)
 			evaluator.Start()
 			Expect(triggerChan).To(BeSent(triggerArrayGT))
 			Eventually(database.RetrieveAppMetricsCallCount).Should(Equal(1))
@@ -683,7 +779,7 @@ var _ = Describe("Evaluator", func() {
 			database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
 				return appMetricGTBreach, nil
 			}
-			evaluator = NewEvaluator(logger, httpClient, scalingEngine.URL(), triggerChan, database, fakeBreachDurationSecs)
+			evaluator = NewEvaluator(logger, httpClient, scalingEngine.URL(), triggerChan, database, fakeBreachDurationSecs, getBreaker)
 			evaluator.Start()
 			Expect(triggerChan).To(BeSent(triggerArrayGT))
 		})
@@ -694,7 +790,7 @@ var _ = Describe("Evaluator", func() {
 		})
 
 		It("should log the error", func() {
-			Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("http reqeust error,failed to send trigger alarm")))
+			Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("failed-send-trigger-alarm-request")))
 		})
 	})
 })
