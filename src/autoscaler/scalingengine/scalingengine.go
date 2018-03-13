@@ -5,6 +5,7 @@ import (
 	"autoscaler/db"
 	"autoscaler/models"
 
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -39,7 +40,7 @@ func (ase *ActiveScheduleNotFoundError) Error() string {
 
 func NewScalingEngine(logger lager.Logger, cfClient cf.CfClient, policyDB db.PolicyDB, scalingEngineDB db.ScalingEngineDB, clock clock.Clock, defaultCoolDownSecs int) ScalingEngine {
 	return &scalingEngine{
-		logger:              logger.Session("scale"),
+		logger:              logger.Session("scalingEngine"),
 		cfClient:            cfClient,
 		policyDB:            policyDB,
 		scalingEngineDB:     scalingEngineDB,
@@ -120,17 +121,22 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (int, error
 		instanceMin = schedule.InstanceMin
 		instanceMax = schedule.InstanceMax
 	} else {
-		var policy *models.ScalingPolicy
-		policy, err = s.policyDB.GetAppPolicy(appId)
+		policy, err := s.policyDB.GetAppPolicy(appId)
 		if err != nil {
 			logger.Error("failed-to-get-app-policy", err)
 			history.Status = models.ScalingStatusFailed
 			history.Error = "failed to get scaling policy"
 			return -1, err
-		} else {
-			instanceMin = policy.InstanceMin
-			instanceMax = policy.InstanceMax
 		}
+		if policy == nil {
+			history.Status = models.ScalingStatusFailed
+			history.Error = "app does not have policy set"
+			err = errors.New("app does not have policy set")
+			logger.Error("failed-to-get-app-policy", err)
+			return -1, err
+		}
+		instanceMin = policy.InstanceMin
+		instanceMax = policy.InstanceMax
 	}
 
 	if newInstances < instanceMin {
@@ -202,9 +208,8 @@ func (s *scalingEngine) SetActiveSchedule(appId string, schedule *models.ActiveS
 		if schedule.ScheduleId == currentSchedule.ScheduleId {
 			logger.Info("set-active-schedule", lager.Data{"message": "duplicate request to set active schedule"})
 			return nil
-		} else {
-			logger.Info("set-active-schedule", lager.Data{"message": "an active schedule exists in database", "currentSchedule": currentSchedule})
 		}
+		logger.Info("set-active-schedule", lager.Data{"message": "an active schedule exists in database", "currentSchedule": currentSchedule})
 	}
 
 	err = s.scalingEngineDB.SetActiveSchedule(appId, schedule)
