@@ -127,6 +127,11 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (int, error
 			history.Status = models.ScalingStatusFailed
 			history.Error = "failed to get scaling policy"
 			return -1, err
+		} else if policy == nil {
+			logger.Error("policy-does-not-exist", nil, lager.Data{"appId": appId})
+			history.Status = models.ScalingStatusFailed
+			history.Error = "policy does not exist"
+			return -1, nil
 		} else {
 			instanceMin = policy.InstanceMin
 			instanceMax = policy.InstanceMax

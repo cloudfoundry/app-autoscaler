@@ -432,6 +432,31 @@ var _ = Describe("ScalingEngine", func() {
 			})
 		})
 
+		Context("when policy does not exist", func() {
+			BeforeEach(func() {
+				cfc.GetAppReturns(&models.AppEntity{Instances: 2, State: &appState}, nil)
+				scalingEngineDB.CanScaleAppReturns(true, nil)
+				policyDB.GetAppPolicyReturns(nil, nil)
+			})
+
+			It("should store the failed scaling history", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Eventually(buffer).Should(gbytes.Say("policy-does-not-exist"))
+
+				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+					AppId:        "an-app-id",
+					Timestamp:    clock.Now().UnixNano(),
+					ScalingType:  models.ScalingTypeDynamic,
+					Status:       models.ScalingStatusFailed,
+					OldInstances: 2,
+					NewInstances: -1,
+					Reason:       "+1 instance(s) because test-metric-type > 80test-unit for 100 seconds",
+					Error:        "policy does not exist",
+				}))
+
+			})
+		})
+
 		Context("when set new instances fails", func() {
 			BeforeEach(func() {
 				cfc.GetAppReturns(&models.AppEntity{Instances: 2, State: &appState}, nil)

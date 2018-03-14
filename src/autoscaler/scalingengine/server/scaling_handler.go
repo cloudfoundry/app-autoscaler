@@ -49,7 +49,7 @@ func (h *ScalingHandler) Scale(w http.ResponseWriter, r *http.Request, vars map[
 
 	newInstances, err = h.scalingEngine.Scale(appId, trigger)
 
-	if err != nil {
+	if err != nil || newInstances == -1 {
 		logger.Error("failed-to-scale", err, lager.Data{"trigger": trigger})
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 			Code:    "Internal-server-error",
