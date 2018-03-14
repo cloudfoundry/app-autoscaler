@@ -55,37 +55,6 @@ var _ = Describe("MetricsCollector", func() {
 				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say(runner.acquiredLockCheck))
 			})
 
-			It("registers itself with consul", func() {
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.registration-runner.succeeded-registering-service"))
-
-				services, err := consulClient.Agent().Services()
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(services).To(HaveKeyWithValue("metricscollector",
-					&api.AgentService{
-						Service: "metricscollector",
-						ID:      "metricscollector",
-						Port:    cfg.Server.Port,
-					}))
-			})
-
-			It("registers a TTL healthcheck", func() {
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.registration-runner.succeeded-registering-service"))
-
-				checks, err := consulClient.Agent().Checks()
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(checks).To(HaveKeyWithValue("service:metricscollector",
-					&api.AgentCheck{
-						Node:        "0",
-						CheckID:     "service:metricscollector",
-						Name:        "Service 'metricscollector' check",
-						Status:      "passing",
-						ServiceID:   "metricscollector",
-						ServiceName: "metricscollector",
-					}))
-			})
-
 			It("should start", func() {
 				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.collector.collector-started"))
 				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.started"))
@@ -421,39 +390,6 @@ var _ = Describe("MetricsCollector", func() {
 				runner.configPath = writeConfig(&consulConfig).Name()
 				runner.Start()
 
-			})
-
-			It("should registers itself with consul", func() {
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.lock-acquired-in-first-attempt"))
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.registration-runner.succeeded-registering-service"))
-
-				services, err := consulClient.Agent().Services()
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(services).To(HaveKeyWithValue("metricscollector",
-					&api.AgentService{
-						Service: "metricscollector",
-						ID:      "metricscollector",
-						Port:    cfg.Server.Port,
-					}))
-			})
-
-			It("should registers a TTL healthcheck", func() {
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.lock-acquired-in-first-attempt"))
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.registration-runner.succeeded-registering-service"))
-
-				checks, err := consulClient.Agent().Checks()
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(checks).To(HaveKeyWithValue("service:metricscollector",
-					&api.AgentCheck{
-						Node:        "0",
-						CheckID:     "service:metricscollector",
-						Name:        "Service 'metricscollector' check",
-						Status:      "passing",
-						ServiceID:   "metricscollector",
-						ServiceName: "metricscollector",
-					}))
 			})
 
 			It("should start", func() {

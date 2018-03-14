@@ -50,36 +50,6 @@ var _ = Describe("Eventgenerator", func() {
 				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say(runner.acquiredLockCheck))
 			})
 
-			It("registers itself with consul", func() {
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("eventgenerator.registration-runner.succeeded-registering-service"))
-
-				services, err := consulClient.Agent().Services()
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(services).To(HaveKeyWithValue("eventgenerator",
-					&api.AgentService{
-						Service: "eventgenerator",
-						ID:      "eventgenerator",
-					}))
-			})
-
-			It("registers a TTL healthcheck", func() {
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("eventgenerator.registration-runner.succeeded-registering-service"))
-
-				checks, err := consulClient.Agent().Checks()
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(checks).To(HaveKeyWithValue("service:eventgenerator",
-					&api.AgentCheck{
-						Node:        "0",
-						CheckID:     "service:eventgenerator",
-						Name:        "Service 'eventgenerator' check",
-						Status:      "passing",
-						ServiceID:   "eventgenerator",
-						ServiceName: "eventgenerator",
-					}))
-			})
-
 			It("should start", func() {
 				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("eventgenerator.started"))
 				Consistently(runner.Session).ShouldNot(Exit())
@@ -355,37 +325,6 @@ var _ = Describe("Eventgenerator", func() {
 				runner.Start()
 			})
 
-			It("registers itself with consul", func() {
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("eventgenerator.lock-acquired-in-first-attempt"))
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("eventgenerator.registration-runner.succeeded-registering-service"))
-
-				services, err := consulClient.Agent().Services()
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(services).To(HaveKeyWithValue("eventgenerator",
-					&api.AgentService{
-						Service: "eventgenerator",
-						ID:      "eventgenerator",
-					}))
-			})
-
-			It("registers a TTL healthcheck", func() {
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("eventgenerator.lock-acquired-in-first-attempt"))
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("eventgenerator.registration-runner.succeeded-registering-service"))
-
-				checks, err := consulClient.Agent().Checks()
-				Expect(err).ToNot(HaveOccurred())
-
-				Expect(checks).To(HaveKeyWithValue("service:eventgenerator",
-					&api.AgentCheck{
-						Node:        "0",
-						CheckID:     "service:eventgenerator",
-						Name:        "Service 'eventgenerator' check",
-						Status:      "passing",
-						ServiceID:   "eventgenerator",
-						ServiceName: "eventgenerator",
-					}))
-			})
 			It("should start", func() {
 				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("eventgenerator.started"))
 				Consistently(runner.Session).ShouldNot(Exit())

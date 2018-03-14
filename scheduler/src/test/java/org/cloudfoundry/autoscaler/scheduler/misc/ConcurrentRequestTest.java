@@ -12,7 +12,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.cloudfoundry.autoscaler.scheduler.util.ConsulUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.EmbeddedTomcatUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.ScalingEngineUtil;
 import org.junit.AfterClass;
@@ -37,20 +36,14 @@ public class ConcurrentRequestTest {
 
 	private static EmbeddedTomcatUtil embeddedTomcatUtil;
 
-	private static ConsulUtil consulUtil;
-
 	@BeforeClass
 	public static void beforeClass() throws IOException {
 		embeddedTomcatUtil = new EmbeddedTomcatUtil();
 		embeddedTomcatUtil.start();
-
-		consulUtil = new ConsulUtil();
-		consulUtil.start();
 	}
 
 	@AfterClass
 	public static void afterClass() throws IOException, InterruptedException {
-		consulUtil.stop();
 		embeddedTomcatUtil.stop();
 	}
 

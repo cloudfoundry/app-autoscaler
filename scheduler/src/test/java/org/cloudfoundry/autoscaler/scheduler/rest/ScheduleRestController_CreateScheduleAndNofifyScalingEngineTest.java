@@ -24,7 +24,6 @@ import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationSchedules;
 import org.cloudfoundry.autoscaler.scheduler.util.ApplicationPolicyBuilder;
-import org.cloudfoundry.autoscaler.scheduler.util.ConsulUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.EmbeddedTomcatUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.JobActionEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
@@ -35,7 +34,6 @@ import org.hamcrest.Matchers;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -94,20 +92,15 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest {
 
 	private static EmbeddedTomcatUtil embeddedTomcatUtil;
 
-	private static ConsulUtil consulUtil;
 
 	@BeforeClass
 	public static void beforeClass() throws IOException {
 		embeddedTomcatUtil = new EmbeddedTomcatUtil();
 		embeddedTomcatUtil.start();
-
-		consulUtil = new ConsulUtil();
-		consulUtil.start();
 	}
 
 	@AfterClass
 	public static void afterClass() throws IOException, InterruptedException {
-		consulUtil.stop();
 		embeddedTomcatUtil.stop();
 	}
 

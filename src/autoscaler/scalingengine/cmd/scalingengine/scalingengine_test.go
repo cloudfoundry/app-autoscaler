@@ -8,24 +8,20 @@ import (
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gexec"
 
-	"github.com/hashicorp/consul/api"
 	"github.com/onsi/gomega/gbytes"
 
 	"bytes"
-	"code.cloudfoundry.org/consuladapter"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
-	"time"
 )
 
 var _ = Describe("Main", func() {
 
 	var (
-		runner       *ScalingEngineRunner
-		consulClient consuladapter.Client
+		runner *ScalingEngineRunner
 	)
 
 	BeforeEach(func() {
@@ -97,96 +93,6 @@ var _ = Describe("Main", func() {
 		It("should fail validation", func() {
 			Eventually(runner.Session).Should(Exit(1))
 			Expect(runner.Session.Buffer()).To(gbytes.Say("failed to validate configuration"))
-		})
-	})
-
-	Context("Scaling engine is registered with consul", func() {
-		BeforeEach(func() {
-			consulClient = consulRunner.NewClient()
-			runner.startCheck = ""
-		})
-
-		JustBeforeEach(func() {
-			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("scalingengine.registration-runner.succeeded-registering-service"))
-			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("scalingengine.started"))
-		})
-
-		It("should get scaling engine service", func() {
-			services, err := consulClient.Agent().Services()
-			Expect(err).ToNot(HaveOccurred())
-
-			Expect(services).To(HaveKeyWithValue("scalingengine",
-				&api.AgentService{
-					Service: "scalingengine",
-					ID:      "scalingengine",
-					Port:    conf.Server.Port,
-				}))
-		})
-
-		It("should get status passing", func() {
-			checks, err := consulClient.Agent().Checks()
-			Expect(err).NotTo(HaveOccurred())
-
-			Expect(checks).To(HaveKeyWithValue("service:scalingengine",
-				&api.AgentCheck{
-					Node:        "0",
-					CheckID:     "service:scalingengine",
-					Name:        "Service 'scalingengine' check",
-					Status:      "passing",
-					ServiceID:   "scalingengine",
-					ServiceName: "scalingengine",
-				}))
-		})
-	})
-
-	Context("Scaling engine is deregistered with consul", func() {
-		BeforeEach(func() {
-			consulClient = consulRunner.NewClient()
-			runner.startCheck = ""
-		})
-
-		JustBeforeEach(func() {
-			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("scalingengine.registration-runner.succeeded-registering-service"))
-			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("scalingengine.started"))
-
-			runner.Interrupt()
-		})
-
-		It("should not get scaling engine service", func() {
-			Eventually(func() map[string]*api.AgentService {
-				services, err := consulClient.Agent().Services()
-				Expect(err).ToNot(HaveOccurred())
-
-				return services
-			}).ShouldNot(HaveKey("scalingengine"))
-		})
-	})
-
-	Context("when no consul", func() {
-		BeforeEach(func() {
-			noConsulConf := conf
-			noConsulConf.Consul.Cluster = ""
-			cfg := writeConfig(&noConsulConf)
-			runner.configPath = cfg.Name()
-			runner.startCheck = ""
-			consulClient = consulRunner.NewClient()
-		})
-
-		JustBeforeEach(func() {
-			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("scalingengine.started"))
-		})
-
-		AfterEach(func() {
-			os.Remove(runner.configPath)
-		})
-
-		It("should not get scaling engine service", func() {
-			Eventually(func() map[string]*api.AgentService {
-				services, err := consulClient.Agent().Services()
-				Expect(err).ToNot(HaveOccurred())
-
-				return services
-			}).ShouldNot(HaveKey("scalingengine"))
 		})
 	})
 
