@@ -8,11 +8,8 @@ import java.util.List;
 import java.util.UUID;
 
 import org.cloudfoundry.autoscaler.scheduler.entity.PolicyJsonEntity;
-import org.cloudfoundry.autoscaler.scheduler.util.ConsulUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,18 +27,6 @@ public class PolicyJsonDaoImplTest{
 	@Autowired
 	private TestDataDbUtil testDataDbUtil;
 	
-	private static ConsulUtil consulUtil;
-	
-	@BeforeClass
-	public static void beforeClass() throws IOException{
-		consulUtil = new ConsulUtil();
-		consulUtil.start();
-		
-	}
-	@AfterClass
-	public static void afterClass() throws IOException, InterruptedException{
-		consulUtil.stop();
-	}
 	@Before
 	public void before() throws IOException{
 		String appId = "the_app_id";

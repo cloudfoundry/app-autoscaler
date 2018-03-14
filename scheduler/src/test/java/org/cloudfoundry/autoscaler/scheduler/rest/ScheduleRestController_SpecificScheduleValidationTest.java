@@ -5,7 +5,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -16,16 +15,13 @@ import org.cloudfoundry.autoscaler.scheduler.dao.SpecificDateScheduleDao;
 import org.cloudfoundry.autoscaler.scheduler.entity.ScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.entity.SpecificDateScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationSchedules;
-import org.cloudfoundry.autoscaler.scheduler.util.ConsulUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.DateHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleTypeEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
 import org.hamcrest.Matchers;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -75,19 +71,6 @@ public class ScheduleRestController_SpecificScheduleValidationTest {
 	String guid = TestDataSetupHelper.generateGuid();
 
 	private String scheduleBeingProcessed = ScheduleTypeEnum.SPECIFIC_DATE.getDescription();
-
-	private static ConsulUtil consulUtil;
-
-	@BeforeClass
-	public static void beforeClass() throws IOException {
-		consulUtil = new ConsulUtil();
-		consulUtil.start();
-	}
-
-	@AfterClass
-	public static void afterClass() throws IOException, InterruptedException {
-		consulUtil.stop();
-	}
 
 	@Before
 	public void beforeTest() throws Exception {

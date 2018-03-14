@@ -4,7 +4,6 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
-import java.io.IOException;
 import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.List;
@@ -13,14 +12,11 @@ import java.util.Set;
 import javax.transaction.Transactional;
 
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
-import org.cloudfoundry.autoscaler.scheduler.util.ConsulUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.RecurringScheduleEntitiesBuilder;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationException;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,21 +33,8 @@ public class RecurringScheduleDaoImplTest {
 	@Autowired
 	private TestDataDbUtil testDataDbUtil;
 
-	private static ConsulUtil consulUtil;
-
 	private String appId1, appId2;
 	private String guid1, guid2;
-
-	@BeforeClass
-	public static void beforeClass() throws IOException {
-		consulUtil = new ConsulUtil();
-		consulUtil.start();
-	}
-
-	@AfterClass
-	public static void afterClass() throws IOException, InterruptedException {
-		consulUtil.stop();
-	}
 
 	@Before
 	public void before() throws SQLException {

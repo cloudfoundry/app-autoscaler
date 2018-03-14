@@ -43,36 +43,6 @@ var _ = Describe("Pruner", func() {
 			Eventually(runner.Session.Buffer, 2*time.Second).Should(Say(runner.acquiredLockCheck))
 		})
 
-		It("registers itself with consul", func() {
-			Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("pruner.registration-runner.succeeded-registering-service"))
-
-			services, err := consulClient.Agent().Services()
-			Expect(err).ToNot(HaveOccurred())
-
-			Expect(services).To(HaveKeyWithValue("pruner",
-				&api.AgentService{
-					Service: "pruner",
-					ID:      "pruner",
-				}))
-		})
-
-		It("registers a TTL healthcheck", func() {
-			Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("pruner.registration-runner.succeeded-registering-service"))
-
-			checks, err := consulClient.Agent().Checks()
-			Expect(err).ToNot(HaveOccurred())
-
-			Expect(checks).To(HaveKeyWithValue("service:pruner",
-				&api.AgentCheck{
-					Node:        "0",
-					CheckID:     "service:pruner",
-					Name:        "Service 'pruner' check",
-					Status:      "passing",
-					ServiceID:   "pruner",
-					ServiceName: "pruner",
-				}))
-		})
-
 		It("should start instancemetrics dbpruner", func() {
 			Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("pruner.instancemetrics-dbpruner.started"))
 			Consistently(runner.Session).ShouldNot(Exit())

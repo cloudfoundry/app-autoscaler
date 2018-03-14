@@ -4,18 +4,14 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.Assert.assertThat;
 
-import java.io.IOException;
 import java.util.List;
 
 import javax.transaction.Transactional;
 
 import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
-import org.cloudfoundry.autoscaler.scheduler.util.ConsulUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataSetupHelper;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,19 +28,6 @@ public class ActiveScheduleDaoImplTest {
 
 	@Autowired
 	private TestDataDbUtil testDataDbUtil;
-
-	private static ConsulUtil consulUtil;
-
-	@BeforeClass
-	public static void beforeClass() throws IOException {
-		consulUtil = new ConsulUtil();
-		consulUtil.start();
-	}
-
-	@AfterClass
-	public static void afterClass() throws IOException, InterruptedException {
-		consulUtil.stop();
-	}
 
 	@Before
 	public void before() {

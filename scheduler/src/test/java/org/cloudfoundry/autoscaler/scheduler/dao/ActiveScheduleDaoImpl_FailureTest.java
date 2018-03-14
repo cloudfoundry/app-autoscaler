@@ -4,18 +4,14 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
-import java.io.IOException;
 import java.sql.SQLException;
 
 import javax.sql.DataSource;
 
 import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
-import org.cloudfoundry.autoscaler.scheduler.util.ConsulUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationException;
-import org.junit.AfterClass;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -37,18 +33,6 @@ public class ActiveScheduleDaoImpl_FailureTest {
 	@Autowired
 	TestDataDbUtil testDataDbUtil;
 
-	private static ConsulUtil consulUtil;
-
-	@BeforeClass
-	public static void beforeClass() throws IOException {
-		consulUtil = new ConsulUtil();
-		consulUtil.start();
-	}
-
-	@AfterClass
-	public static void afterClass() throws IOException, InterruptedException {
-		consulUtil.stop();
-	}
 
 	@Before
 	public void before() throws SQLException, InterruptedException {
