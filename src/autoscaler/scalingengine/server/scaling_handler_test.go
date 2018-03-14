@@ -103,9 +103,37 @@ var _ = Describe("ScalingHandler", func() {
 			})
 		})
 
-		Context("when scaling app fails", func() {
+		Context("when scaling app fails with error", func() {
 			BeforeEach(func() {
 				scalingEngine.ScaleReturns(0, errors.New("an error"))
+
+				trigger = &models.Trigger{
+					MetricType: testMetricName,
+					Adjustment: "+1",
+				}
+				body, err = json.Marshal(trigger)
+				Expect(err).NotTo(HaveOccurred())
+
+				req, err = http.NewRequest("POST", "", bytes.NewReader(body))
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("returns 500", func() {
+				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
+
+				errJson := &models.ErrorResponse{}
+				err = json.Unmarshal(resp.Body.Bytes(), errJson)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(errJson).To(Equal(&models.ErrorResponse{
+					Code:    "Internal-server-error",
+					Message: "Error taking scaling action",
+				}))
+			})
+		})
+
+		Context("when scaling app fails with newInstances=-1", func() {
+			BeforeEach(func() {
+				scalingEngine.ScaleReturns(-1, nil)
 
 				trigger = &models.Trigger{
 					MetricType: testMetricName,
