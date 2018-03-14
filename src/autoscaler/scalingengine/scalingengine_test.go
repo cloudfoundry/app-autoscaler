@@ -2,17 +2,15 @@ package scalingengine_test
 
 import (
 	"autoscaler/models"
+	. "autoscaler/scalingengine"
 	"autoscaler/scalingengine/fakes"
+
+	"errors"
 	"strconv"
 	"time"
 
-	. "autoscaler/scalingengine"
-
 	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/lager/lagertest"
-
-	"errors"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
@@ -427,6 +425,33 @@ var _ = Describe("ScalingEngine", func() {
 					NewInstances: -1,
 					Reason:       "+1 instance(s) because test-metric-type > 80test-unit for 100 seconds",
 					Error:        "failed to get scaling policy",
+				}))
+
+			})
+		})
+
+		Context("when app does not have policy set", func() {
+			BeforeEach(func() {
+				cfc.GetAppReturns(&models.AppEntity{Instances: 2, State: &appState}, nil)
+				scalingEngineDB.CanScaleAppReturns(true, nil)
+				policyDB.GetAppPolicyReturns(nil, nil)
+			})
+
+			It("should error and store the failed scaling history", func() {
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(Equal(errors.New("app does not have policy set")))
+				Eventually(buffer).Should(gbytes.Say("failed-to-get-app-policy"))
+				Eventually(buffer).Should(gbytes.Say("app does not have policy set"))
+
+				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+					AppId:        "an-app-id",
+					Timestamp:    clock.Now().UnixNano(),
+					ScalingType:  models.ScalingTypeDynamic,
+					Status:       models.ScalingStatusFailed,
+					OldInstances: 2,
+					NewInstances: -1,
+					Reason:       "+1 instance(s) because test-metric-type > 80test-unit for 100 seconds",
+					Error:        "app does not have policy set",
 				}))
 
 			})
