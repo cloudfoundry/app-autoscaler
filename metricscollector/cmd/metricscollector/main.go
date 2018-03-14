@@ -23,9 +23,7 @@ import (
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/consuladapter"
 	"code.cloudfoundry.org/lager"
-	"code.cloudfoundry.org/locket"
 	"github.com/cloudfoundry/noaa/consumer"
-	"github.com/hashicorp/consul/api"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
@@ -165,9 +163,6 @@ func main() {
 			)
 			members = append(grouper.Members{{"lock-maintainer", lockMaintainer}}, members...)
 		}
-		registrationRunner := initializeRegistrationRunner(logger, consulClient, conf.Server.Port, mcClock)
-
-		members = append(members, grouper.Member{"registration", registrationRunner})
 	}
 
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
@@ -214,19 +209,4 @@ func getLogLevel(level string) (lager.LogLevel, error) {
 	default:
 		return -1, fmt.Errorf("Error: unsupported log level:%s", level)
 	}
-}
-
-func initializeRegistrationRunner(
-	logger lager.Logger,
-	consulClient consuladapter.Client,
-	port int,
-	clock clock.Clock) ifrit.Runner {
-	registration := &api.AgentServiceRegistration{
-		Name: "metricscollector",
-		Port: port,
-		Check: &api.AgentServiceCheck{
-			TTL: "20s",
-		},
-	}
-	return locket.NewRegistrationRunner(logger, registration, consulClient, locket.RetryInterval, clock)
 }
