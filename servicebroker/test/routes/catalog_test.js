@@ -33,6 +33,7 @@ describe('getCatalog RESTful API', function() {
       .expect(200)
       .expect("Content-type", /json/)
       .end(function(err, res) {
+        expect(res.body.services[0].plans[0]).to.have.property('schemas');
         expect(JSON.stringify(res.body)).to.be.equal(JSON.stringify(catalog));
         done();
       });
