@@ -8,10 +8,9 @@ import (
 	"time"
 
 	"autoscaler/cf"
-	utils "autoscaler/commons"
 	"autoscaler/db"
 	"autoscaler/db/sqldb"
-	alogger "autoscaler/logger"
+	"autoscaler/helpers"
 	"autoscaler/metricscollector"
 	"autoscaler/metricscollector/collector"
 	"autoscaler/metricscollector/config"
@@ -128,9 +127,10 @@ func main() {
 		{"http_server", httpServer},
 	}
 
-	guid, err := utils.GenerateGUID(logger)
+	guid, err := helpers.GenerateGUID(logger)
 	if err != nil {
 		logger.Error("failed-to-generate-guid", err)
+		os.Exit(1)
 	}
 	const lockTableName = "mc_lock"
 	if conf.EnableDBLock {
@@ -187,7 +187,7 @@ func initLoggerFromConfig(conf *config.LoggingConfig) lager.Logger {
 
 	keyPatterns := []string{"[Pp]wd", "[Pp]ass", "[Ss]ecret", "[Tt]oken"}
 
-	redactedSink, err := alogger.NewRedactingWriterWithURLCredSink(os.Stdout, logLevel, keyPatterns, nil)
+	redactedSink, err := helpers.NewRedactingWriterWithURLCredSink(os.Stdout, logLevel, keyPatterns, nil)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create redacted sink", err.Error())
 	}
