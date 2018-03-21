@@ -6,15 +6,17 @@ import (
 	"autoscaler/routes"
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"time"
 
 	"code.cloudfoundry.org/lager"
+	"github.com/rubyist/circuitbreaker"
 )
 
-var validOperators []string = []string{">", ">=", "<", "<="}
+var validOperators = []string{">", ">=", "<", "<="}
 
 type Evaluator struct {
 	logger                    lager.Logger
@@ -24,10 +26,11 @@ type Evaluator struct {
 	doneChan                  chan bool
 	database                  db.AppMetricDB
 	defaultBreachDurationSecs int
+	getBreaker                func(string) *circuit.Breaker
 }
 
 func NewEvaluator(logger lager.Logger, httpClient *http.Client, scalingEngineUrl string, triggerChan chan []*models.Trigger,
-	database db.AppMetricDB, defaultBreachDurationSecs int) *Evaluator {
+	database db.AppMetricDB, defaultBreachDurationSecs int, getBreaker func(string) *circuit.Breaker) *Evaluator {
 	return &Evaluator{
 		logger:                    logger.Session("Evaluator"),
 		httpClient:                httpClient,
@@ -36,6 +39,7 @@ func NewEvaluator(logger lager.Logger, httpClient *http.Client, scalingEngineUrl
 		doneChan:                  make(chan bool),
 		database:                  database,
 		defaultBreachDurationSecs: defaultBreachDurationSecs,
+		getBreaker:                getBreaker,
 	}
 }
 
@@ -56,12 +60,12 @@ func (e *Evaluator) start() {
 }
 
 func (e *Evaluator) Stop() {
+	e.doneChan <- true
 	close(e.doneChan)
 	e.logger.Info("stopped")
 }
 
 func (e *Evaluator) doEvaluate(triggerArray []*models.Trigger) {
-
 	for _, trigger := range triggerArray {
 		threshold := trigger.Threshold
 		operator := trigger.Operator
@@ -122,10 +126,16 @@ func (e *Evaluator) doEvaluate(triggerArray []*models.Trigger) {
 		}
 
 		if isBreached {
-			triggerToSent := *trigger
-			triggerToSent.MetricUnit = appMetricList[0].Unit
+			trigger.MetricUnit = appMetricList[0].Unit
 			e.logger.Info("send trigger alarm to scaling engine", lager.Data{"trigger": trigger})
-			e.sendTriggerAlarm(&triggerToSent)
+
+			if appBreaker := e.getBreaker(trigger.AppId); appBreaker != nil {
+				appBreaker.Call(func() error {
+					return e.sendTriggerAlarm(trigger)
+				}, 0)
+			} else {
+				e.sendTriggerAlarm(trigger)
+			}
 			return
 		}
 	}
@@ -144,27 +154,34 @@ func (e *Evaluator) retrieveAppMetrics(trigger *models.Trigger) ([]*models.AppMe
 	return appMetrics, nil
 }
 
-func (e *Evaluator) sendTriggerAlarm(trigger *models.Trigger) {
-	jsonBytes, jsonEncodeError := json.Marshal(trigger)
-	if jsonEncodeError != nil {
-		e.logger.Error("failed to json.Marshal trigger", jsonEncodeError)
+func (e *Evaluator) sendTriggerAlarm(trigger *models.Trigger) error {
+	jsonBytes, err := json.Marshal(trigger)
+	if err != nil {
+		e.logger.Error("failed-marshal-trigger", err)
+		return nil
 	}
+
 	path, _ := routes.ScalingEngineRoutes().Get(routes.ScaleRouteName).URLPath("appid", trigger.AppId)
-	resp, respErr := e.httpClient.Post(e.scalingEngineUrl+path.Path, "application/json", bytes.NewReader(jsonBytes))
-	if respErr != nil {
-		e.logger.Error("http reqeust error,failed to send trigger alarm", respErr, lager.Data{"trigger": trigger})
-		return
+	resp, err := e.httpClient.Post(e.scalingEngineUrl+path.Path, "application/json", bytes.NewReader(jsonBytes))
+	if err != nil {
+		e.logger.Error("failed-send-trigger-alarm-request", err, lager.Data{"trigger": trigger})
+		return err
 	}
+
 	defer resp.Body.Close()
-	if resp.StatusCode == http.StatusOK {
-		e.logger.Info("successfully send trigger alarm", lager.Data{"trigger": trigger})
-	} else {
-		respBody, readError := ioutil.ReadAll(resp.Body)
-		if readError != nil {
-			e.logger.Error("failed to read body from scaling engine's response", readError)
-		}
-		e.logger.Error("scaling engine error,failed to send trigger alarm", nil, lager.Data{"responseCode": resp.StatusCode, "responseBody": respBody})
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		e.logger.Error("failed-read-response-body-from-scaling-engine", err)
 	}
+
+	if resp.StatusCode == http.StatusOK {
+		e.logger.Info("successfully-send-trigger-alarm", lager.Data{"trigger": trigger})
+		return nil
+	}
+	err = fmt.Errorf("Got %d when sending trigger alarm", resp.StatusCode)
+	e.logger.Error("failed-send-trigger-alarm", err, lager.Data{"trigger": trigger, "responseBody": respBody})
+	return err
+
 }
 func (e *Evaluator) isValidOperator(operator string) bool {
 	for _, o := range validOperators {
