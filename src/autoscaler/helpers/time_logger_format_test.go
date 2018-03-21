@@ -1,11 +1,11 @@
-package logger_test
+package helpers_test
 
 import (
 	"encoding/json"
 	"fmt"
 	"time"
 
-	. "autoscaler/logger"
+	. "autoscaler/helpers"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -13,7 +13,7 @@ import (
 	"code.cloudfoundry.org/lager"
 )
 
-var _ = Describe("Logger Models", func() {
+var _ = Describe("TimeLoggerFormat", func() {
 
 	var log lager.LogFormat
 	var logTime time.Time

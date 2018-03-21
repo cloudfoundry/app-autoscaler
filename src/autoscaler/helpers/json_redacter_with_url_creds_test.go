@@ -1,7 +1,7 @@
-package logger_test
+package helpers_test
 
 import (
-	"autoscaler/logger"
+	"autoscaler/helpers"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -11,11 +11,11 @@ var _ = Describe("JSON Redacter With URL Cred", func() {
 	var (
 		resp         []byte
 		err          error
-		jsonRedacter *logger.JSONRedacterWithURLCred
+		jsonRedacter *helpers.JSONRedacterWithURLCred
 	)
 
 	BeforeEach(func() {
-		jsonRedacter, err = logger.NewJSONRedacterWithURLCred([]string{"[Pp]wd", "[Pp]ass"}, []string{`AKIA[A-Z0-9]{16}`})
+		jsonRedacter, err = helpers.NewJSONRedacterWithURLCred([]string{"[Pp]wd", "[Pp]ass"}, []string{`AKIA[A-Z0-9]{16}`})
 		Expect(err).NotTo(HaveOccurred())
 	})
 
