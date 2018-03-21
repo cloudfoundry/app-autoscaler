@@ -1,4 +1,4 @@
-package logger_test
+package helpers_test
 
 import (
 	"fmt"
@@ -10,9 +10,9 @@ import (
 	"testing"
 )
 
-func TestLogger(t *testing.T) {
+func TestHelpers(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Logger Suite")
+	RunSpecs(t, "Helpers Suite")
 }
 
 // copyWriter is an INTENTIONALLY UNSAFE writer. Use it to test code that
