@@ -1,14 +1,13 @@
 package main
 
 import (
-	utils "autoscaler/commons"
 	"autoscaler/db"
 	"autoscaler/db/sqldb"
 	"autoscaler/eventgenerator"
 	"autoscaler/eventgenerator/aggregator"
 	"autoscaler/eventgenerator/config"
 	"autoscaler/eventgenerator/generator"
-	alogger "autoscaler/logger"
+	"autoscaler/helpers"
 	"autoscaler/models"
 	sync "autoscaler/sync"
 
@@ -112,9 +111,10 @@ func main() {
 		{"eventGenerator", eventGenerator},
 	}
 
-	guid, err := utils.GenerateGUID(logger)
+	guid, err := helpers.GenerateGUID(logger)
 	if err != nil {
 		logger.Error("failed-to-generate-guid", err)
+		os.Exit(1)
 	}
 	const lockTableName = "eg_lock"
 	if conf.EnableDBLock {
@@ -172,7 +172,7 @@ func initLoggerFromConfig(conf *config.LoggingConfig) lager.Logger {
 
 	keyPatterns := []string{"[Pp]wd", "[Pp]ass", "[Ss]ecret", "[Tt]oken"}
 
-	redactedSink, err := alogger.NewRedactingWriterWithURLCredSink(os.Stdout, logLevel, keyPatterns, nil)
+	redactedSink, err := helpers.NewRedactingWriterWithURLCredSink(os.Stdout, logLevel, keyPatterns, nil)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create redacted sink", err.Error())
 	}

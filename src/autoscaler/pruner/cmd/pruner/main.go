@@ -1,19 +1,18 @@
 package main
 
 import (
+	"autoscaler/helpers"
 	"flag"
 	"fmt"
 	"os"
 
 	"autoscaler/db/sqldb"
-	alogger "autoscaler/logger"
 	"autoscaler/pruner"
 	"autoscaler/pruner/config"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/consuladapter"
 	"code.cloudfoundry.org/lager"
-	uuid "github.com/nu7hatch/gouuid"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
@@ -97,9 +96,14 @@ func main() {
 
 		serviceClient := pruner.NewServiceClient(consulClient, prClock)
 
+		guid, err := helpers.GenerateGUID(logger)
+		if err != nil {
+			logger.Error("failed-to-generate-guid", err)
+			os.Exit(1)
+		}
 		lockMaintainer := serviceClient.NewPrunerLockRunner(
 			logger,
-			generateGUID(logger),
+			guid,
 			conf.Lock.LockRetryInterval,
 			conf.Lock.LockTTL,
 		)
@@ -131,7 +135,7 @@ func initLoggerFromConfig(conf *config.LoggingConfig) lager.Logger {
 
 	keyPatterns := []string{"[Pp]wd", "[Pp]ass", "[Ss]ecret", "[Tt]oken"}
 
-	redactedSink, err := alogger.NewRedactingWriterWithURLCredSink(os.Stdout, logLevel, keyPatterns, nil)
+	redactedSink, err := helpers.NewRedactingWriterWithURLCredSink(os.Stdout, logLevel, keyPatterns, nil)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create redacted sink", err.Error())
 	}
@@ -153,12 +157,4 @@ func getLogLevel(level string) (lager.LogLevel, error) {
 	default:
 		return -1, fmt.Errorf("Error: unsupported log level:%s", level)
 	}
-}
-
-func generateGUID(logger lager.Logger) string {
-	uuid, err := uuid.NewV4()
-	if err != nil {
-		logger.Fatal("Couldn't generate uuid", err)
-	}
-	return uuid.String()
 }

@@ -1,7 +1,7 @@
-package logger_test
+package helpers_test
 
 import (
-	"autoscaler/logger"
+	"autoscaler/helpers"
 	"encoding/json"
 	"fmt"
 	"strings"
@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/lager"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -25,7 +24,7 @@ var _ = Describe("RedactingWriterSinkWithUrlCred", func() {
 		writer = NewCopyWriter()
 		logTime = time.Now()
 		var err error
-		sink, err = logger.NewRedactingWriterWithURLCredSink(writer, lager.INFO, nil, nil)
+		sink, err = helpers.NewRedactingWriterWithURLCredSink(writer, lager.INFO, nil, nil)
 		Expect(err).NotTo(HaveOccurred())
 	})
 
