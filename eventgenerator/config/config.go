@@ -13,18 +13,21 @@ import (
 )
 
 const (
-	DefaultLoggingLevel              string        = "info"
-	DefaultPolicyPollerInterval      time.Duration = 40 * time.Second
-	DefaultAggregatorExecuteInterval time.Duration = 40 * time.Second
-	DefaultMetricPollerCount         int           = 20
-	DefaultAppMonitorChannelSize     int           = 200
-	DefaultEvaluationExecuteInterval time.Duration = 40 * time.Second
-	DefaultEvaluatorCount            int           = 20
-	DefaultTriggerArrayChannelSize   int           = 200
-	DefaultLockTTL                   time.Duration = locket.DefaultSessionTTL
-	DefaultRetryInterval             time.Duration = locket.RetryInterval
-	DefaultDBLockRetryInterval       time.Duration = 5 * time.Second
-	DefaultDBLockTTL                 time.Duration = 15 * time.Second
+	DefaultLoggingLevel                   string        = "info"
+	DefaultPolicyPollerInterval           time.Duration = 40 * time.Second
+	DefaultAggregatorExecuteInterval      time.Duration = 40 * time.Second
+	DefaultMetricPollerCount              int           = 20
+	DefaultAppMonitorChannelSize          int           = 200
+	DefaultEvaluationExecuteInterval      time.Duration = 40 * time.Second
+	DefaultEvaluatorCount                 int           = 20
+	DefaultTriggerArrayChannelSize        int           = 200
+	DefaultLockTTL                        time.Duration = locket.DefaultSessionTTL
+	DefaultRetryInterval                  time.Duration = locket.RetryInterval
+	DefaultDBLockRetryInterval            time.Duration = 5 * time.Second
+	DefaultDBLockTTL                      time.Duration = 15 * time.Second
+	DefaultBackOffInitialInterval         time.Duration = 5 * time.Minute
+	DefaultBackOffMaxInterval             time.Duration = 2 * time.Hour
+	DefaultBreakerConsecutiveFailureCount int64         = 3
 )
 
 type LoggingConfig struct {
@@ -71,6 +74,12 @@ type DBLockConfig struct {
 	LockRetryInterval time.Duration `yaml:"retry_interval"`
 }
 
+type CircuitBreakerConfig struct {
+	BackOffInitialInterval  time.Duration `yaml:"back_off_initial_interval"`
+	BackOffMaxInterval      time.Duration `yaml:"back_off_max_interval"`
+	ConsecutiveFailureCount int64         `yaml:"consecutive_failure_count"`
+}
+
 var defaultDBLockConfig = DBLockConfig{
 	LockTTL:           DefaultDBLockTTL,
 	LockRetryInterval: DefaultDBLockRetryInterval,
@@ -88,6 +97,7 @@ type Config struct {
 	DefaultBreachDurationSecs int                   `yaml:"defaultBreachDurationSecs"`
 	DBLock                    DBLockConfig          `yaml:"db_lock"`
 	EnableDBLock              bool                  `yaml:"enable_db_lock"`
+	CircuitBreaker            CircuitBreakerConfig  `yaml:"circuitBreaker"`
 }
 
 func LoadConfig(bytes []byte) (*Config, error) {
@@ -117,7 +127,17 @@ func LoadConfig(bytes []byte) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	conf.Logging.Level = strings.ToLower(conf.Logging.Level)
+	if conf.CircuitBreaker.ConsecutiveFailureCount == 0 {
+		conf.CircuitBreaker.ConsecutiveFailureCount = DefaultBreakerConsecutiveFailureCount
+	}
+	if conf.CircuitBreaker.BackOffInitialInterval == 0 {
+		conf.CircuitBreaker.BackOffInitialInterval = DefaultBackOffInitialInterval
+	}
+	if conf.CircuitBreaker.BackOffMaxInterval == 0 {
+		conf.CircuitBreaker.BackOffMaxInterval = DefaultBackOffMaxInterval
+	}
 	return conf, nil
 }
 
