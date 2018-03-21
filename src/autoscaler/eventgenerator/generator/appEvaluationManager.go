@@ -1,32 +1,43 @@
 package generator
 
 import (
+	"autoscaler/eventgenerator/config"
 	"autoscaler/models"
+	"sync"
 	"time"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
+	"github.com/cenk/backoff"
+	"github.com/rubyist/circuitbreaker"
 )
 
 type ConsumeAppMonitorMap func(map[string][]*models.Trigger, chan []*models.Trigger)
+
 type AppEvaluationManager struct {
 	evaluateInterval time.Duration
 	logger           lager.Logger
-	cclock           clock.Clock
+	emClock          clock.Clock
 	doneChan         chan bool
 	triggerChan      chan []*models.Trigger
 	getPolicies      models.GetPolicies
+	breakerConfig    config.CircuitBreakerConfig
+	breakers         map[string]*circuit.Breaker
+	lock             *sync.Mutex
 }
 
-func NewAppEvaluationManager(logger lager.Logger, evaluateInterval time.Duration, cclock clock.Clock,
-	triggerChan chan []*models.Trigger, getPolicies models.GetPolicies) (*AppEvaluationManager, error) {
+func NewAppEvaluationManager(logger lager.Logger, evaluateInterval time.Duration, emClock clock.Clock,
+	triggerChan chan []*models.Trigger, getPolicies models.GetPolicies,
+	breakerConfig config.CircuitBreakerConfig) (*AppEvaluationManager, error) {
 	return &AppEvaluationManager{
 		evaluateInterval: evaluateInterval,
 		logger:           logger.Session("AppEvaluationManager"),
-		cclock:           cclock,
+		emClock:          emClock,
 		doneChan:         make(chan bool),
 		triggerChan:      triggerChan,
 		getPolicies:      getPolicies,
+		breakerConfig:    breakerConfig,
+		lock:             &sync.Mutex{},
 	}, nil
 }
 
@@ -60,6 +71,7 @@ func (a *AppEvaluationManager) getTriggers(policyMap map[string]*models.AppPolic
 
 func (a *AppEvaluationManager) Start() {
 	go a.doEvaluate()
+	a.logger.Info("started")
 }
 
 func (a *AppEvaluationManager) Stop() {
@@ -68,18 +80,48 @@ func (a *AppEvaluationManager) Stop() {
 }
 
 func (a *AppEvaluationManager) doEvaluate() {
-	ticker := a.cclock.NewTicker(a.evaluateInterval)
+	ticker := a.emClock.NewTicker(a.evaluateInterval)
 	defer ticker.Stop()
 	for {
 		select {
 		case <-a.doneChan:
 			return
 		case <-ticker.C():
-			triggers := a.getTriggers(a.getPolicies())
+			policies := a.getPolicies()
+			newBreakers := map[string]*circuit.Breaker{}
+			for appID := range policies {
+				cb, found := a.breakers[appID]
+				if found {
+					newBreakers[appID] = cb
+				} else {
+					bf := backoff.NewExponentialBackOff()
+					bf.InitialInterval = a.breakerConfig.BackOffInitialInterval
+					bf.MaxInterval = a.breakerConfig.BackOffMaxInterval
+					bf.MaxElapsedTime = 0      // never stop retry
+					bf.RandomizationFactor = 0 // do not randomize
+					bf.Multiplier = 2
+					bf.Reset()
+					newBreakers[appID] = circuit.NewBreakerWithOptions(&circuit.Options{
+						BackOff:    bf,
+						ShouldTrip: circuit.ConsecutiveTripFunc(a.breakerConfig.ConsecutiveFailureCount),
+					})
+				}
+			}
+
+			a.lock.Lock()
+			a.breakers = newBreakers
+			a.lock.Unlock()
+
+			triggers := a.getTriggers(policies)
 			for _, triggerArray := range triggers {
 				a.triggerChan <- triggerArray
 			}
 		}
 	}
-	a.logger.Info("started")
+}
+
+func (a *AppEvaluationManager) GetBreaker(appID string) *circuit.Breaker {
+	a.lock.Lock()
+	defer a.lock.Unlock()
+	return a.breakers[appID]
 }

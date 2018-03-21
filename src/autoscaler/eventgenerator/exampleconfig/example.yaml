@@ -18,6 +18,11 @@ metricCollector:
   metric_collector_url: "http://localhost:8083"
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
+circuitBreaker:
+  back_off_initial_interval: 5m
+  back_off_max_interval: 120m
+  consecutive_failure_count: 3
+  
 #lock:
 #  lock_ttl: 15s
 #  lock_retry_interval: 10s

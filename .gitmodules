@@ -76,3 +76,15 @@
 [submodule "src/github.com/fatih/color"]
 	path = src/github.com/fatih/color
 	url = https://github.com/fatih/color
+[submodule "src/github.com/rubyist/circuitbreaker"]
+	path = src/github.com/rubyist/circuitbreaker
+	url = https://github.com/rubyist/circuitbreaker
+[submodule "src/golang.org/x/net"]
+	path = src/golang.org/x/net
+	url = https://github.com/golang/net
+[submodule "src/github.com/cenk/backoff"]
+	path = src/github.com/cenk/backoff
+	url = https://github.com/cenk/backoff
+[submodule "src/github.com/facebookgo/clock"]
+	path = src/github.com/facebookgo/clock
+	url = https://github.com/facebookgo/clock
