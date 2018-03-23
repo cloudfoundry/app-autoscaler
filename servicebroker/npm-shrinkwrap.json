@@ -17,6 +17,11 @@
       "from": "acorn-jsx@>=3.0.0 <4.0.0",
       "resolved": "https://registry.npmjs.org/acorn-jsx/-/acorn-jsx-3.0.1.tgz"
     },
+    "ajv": {
+      "version": "6.3.0",
+      "from": "ajv@>=6.3.0 <7.0.0",
+      "resolved": "https://registry.npmjs.org/ajv/-/ajv-6.3.0.tgz"
+    },
     "ansi-escapes": {
       "version": "1.4.0",
       "from": "ansi-escapes@>=1.1.0 <2.0.0",
@@ -450,6 +455,16 @@
       "from": "extsprintf@1.0.2",
       "resolved": "https://registry.npmjs.org/extsprintf/-/extsprintf-1.0.2.tgz"
     },
+    "fast-deep-equal": {
+      "version": "1.1.0",
+      "from": "fast-deep-equal@>=1.0.0 <2.0.0",
+      "resolved": "https://registry.npmjs.org/fast-deep-equal/-/fast-deep-equal-1.1.0.tgz"
+    },
+    "fast-json-stable-stringify": {
+      "version": "2.0.0",
+      "from": "fast-json-stable-stringify@>=2.0.0 <3.0.0",
+      "resolved": "https://registry.npmjs.org/fast-json-stable-stringify/-/fast-json-stable-stringify-2.0.0.tgz"
+    },
     "fast-levenshtein": {
       "version": "1.1.4",
       "from": "fast-levenshtein@>=1.1.0 <2.0.0",
@@ -723,6 +738,11 @@
       "version": "0.2.2",
       "from": "json-schema@0.2.2",
       "resolved": "https://registry.npmjs.org/json-schema/-/json-schema-0.2.2.tgz"
+    },
+    "json-schema-traverse": {
+      "version": "0.3.1",
+      "from": "json-schema-traverse@>=0.3.0 <0.4.0",
+      "resolved": "https://registry.npmjs.org/json-schema-traverse/-/json-schema-traverse-0.3.1.tgz"
     },
     "json-stable-stringify": {
       "version": "1.0.1",
