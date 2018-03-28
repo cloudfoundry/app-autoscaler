@@ -145,7 +145,20 @@ var _ = Describe("Evaluator", func() {
 					Eventually(database.RetrieveAppMetricsCallCount).Should(Equal(1))
 				})
 			})
-
+			Context("when the appMetrics are not enough", func() {
+				BeforeEach(func() {
+					scalingEngine.RouteToHandler("POST", urlPath, ghttp.RespondWith(http.StatusOK, "successful"))
+					Expect(triggerChan).To(BeSent(triggerArrayGT))
+					appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{600, 650, 620}, breachDurationSecs, false)
+					database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+						return appMetrics, nil
+					}
+				})
+				It("should not send trigger alarm to scaling engine", func() {
+					Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
+					Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("the appmetrics are not enough for evaluation")))
+				})
+			})
 			Context("operators", func() {
 				BeforeEach(func() {
 					scalingEngine.RouteToHandler("POST", urlPath, ghttp.RespondWith(http.StatusOK, "successful"))
@@ -155,57 +168,28 @@ var _ = Describe("Evaluator", func() {
 						Expect(triggerChan).To(BeSent(triggerArrayGT))
 					})
 					Context("when the appMetrics breach the trigger", func() {
-						Context("when the appMetrics are enough", func() {
-							BeforeEach(func() {
-								appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{600, 650, 620}, breachDurationSecs, true)
-								database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
-									return appMetrics, nil
-								}
-							})
-							It("should send trigger alarm to scaling engine", func() {
-								Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
-								Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("send trigger alarm to scaling engine")))
-							})
+						BeforeEach(func() {
+							appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{600, 650, 620}, breachDurationSecs, true)
+							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+								return appMetrics, nil
+							}
 						})
-
-						Context("when the appMetrics are not enough", func() {
-							BeforeEach(func() {
-								appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{600, 650, 620}, breachDurationSecs, false)
-								database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
-									return appMetrics, nil
-								}
-							})
-							It("should not send trigger alarm to scaling engine", func() {
-								Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
-								Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("the appmetrics are not enough for evaluation")))
-							})
+						It("should send trigger alarm to scaling engine", func() {
+							Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
+							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("send trigger alarm to scaling engine")))
 						})
 
 					})
 					Context("when the appMetrics do not breach the trigger", func() {
-						Context("when the appMetrics are enough", func() {
-							BeforeEach(func() {
-								appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{200, 150, 600}, breachDurationSecs, true)
-								database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
-									return appMetrics, nil
-								}
-							})
-							It("should not send trigger alarm to scaling engine", func() {
-								Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
-								Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("should not send trigger alarm to scaling engine")))
-							})
+						BeforeEach(func() {
+							appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{200, 150, 600}, breachDurationSecs, true)
+							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+								return appMetrics, nil
+							}
 						})
-						Context("when the appMetrics are not enough", func() {
-							BeforeEach(func() {
-								appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{200, 150, 600}, breachDurationSecs, false)
-								database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
-									return appMetrics, nil
-								}
-							})
-							It("should not send trigger alarm to scaling engine", func() {
-								Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
-								Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("the appmetrics are not enough for evaluation")))
-							})
+						It("should not send trigger alarm to scaling engine", func() {
+							Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
+							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("should not send trigger alarm to scaling engine")))
 						})
 
 					})
@@ -244,57 +228,28 @@ var _ = Describe("Evaluator", func() {
 					})
 
 					Context("when the appMetrics breach the trigger", func() {
-						Context("when the appMetrics are enough", func() {
-							BeforeEach(func() {
-								appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{600, 500, 500}, breachDurationSecs, true)
-								database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
-									return appMetrics, nil
-								}
-							})
-							It("should send trigger alarm to scaling engine", func() {
-								Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
-								Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("send trigger alarm to scaling engine")))
-							})
+						BeforeEach(func() {
+							appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{600, 500, 500}, breachDurationSecs, true)
+							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+								return appMetrics, nil
+							}
 						})
-
-						Context("when the appMetrics are not enough", func() {
-							BeforeEach(func() {
-								appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{600, 500, 500}, breachDurationSecs, false)
-								database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
-									return appMetrics, nil
-								}
-							})
-							It("should not send trigger alarm to scaling engine", func() {
-								Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
-								Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("the appmetrics are not enough for evaluation")))
-							})
+						It("should send trigger alarm to scaling engine", func() {
+							Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
+							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("send trigger alarm to scaling engine")))
 						})
 
 					})
 					Context("when the appMetrics do not breach the trigger", func() {
-						Context("when the appMetrics are enough", func() {
-							BeforeEach(func() {
-								appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{200, 150, 600}, breachDurationSecs, true)
-								database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
-									return appMetrics, nil
-								}
-							})
-							It("should not send trigger alarm to scaling engine", func() {
-								Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
-								Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("should not send trigger alarm to scaling engine")))
-							})
+						BeforeEach(func() {
+							appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{200, 150, 600}, breachDurationSecs, true)
+							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+								return appMetrics, nil
+							}
 						})
-						Context("when the appMetrics are not enough", func() {
-							BeforeEach(func() {
-								appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{200, 150, 600}, breachDurationSecs, false)
-								database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
-									return appMetrics, nil
-								}
-							})
-							It("should not send trigger alarm to scaling engine", func() {
-								Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
-								Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("the appmetrics are not enough for evaluation")))
-							})
+						It("should not send trigger alarm to scaling engine", func() {
+							Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
+							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("should not send trigger alarm to scaling engine")))
 						})
 
 					})
@@ -332,57 +287,28 @@ var _ = Describe("Evaluator", func() {
 						Expect(triggerChan).To(BeSent(triggerArrayLT))
 					})
 					Context("when the appMetrics breach the trigger", func() {
-						Context("when the appMetrics are enough", func() {
-							BeforeEach(func() {
-								appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{200, 300, 400}, breachDurationSecs, true)
-								database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
-									return appMetrics, nil
-								}
-							})
-							It("should send trigger alarm to scaling engine", func() {
-								Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
-								Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("send trigger alarm to scaling engine")))
-							})
+						BeforeEach(func() {
+							appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{200, 300, 400}, breachDurationSecs, true)
+							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+								return appMetrics, nil
+							}
 						})
-
-						Context("when the appMetrics are not enough", func() {
-							BeforeEach(func() {
-								appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{200, 300, 400}, breachDurationSecs, false)
-								database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
-									return appMetrics, nil
-								}
-							})
-							It("should not send trigger alarm to scaling engine", func() {
-								Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
-								Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("the appmetrics are not enough for evaluation")))
-							})
+						It("should send trigger alarm to scaling engine", func() {
+							Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
+							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("send trigger alarm to scaling engine")))
 						})
 
 					})
 					Context("when the appMetrics do not breach the trigger", func() {
-						Context("when the appMetrics are enough", func() {
-							BeforeEach(func() {
-								appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{500, 550, 600}, breachDurationSecs, true)
-								database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
-									return appMetrics, nil
-								}
-							})
-							It("should not send trigger alarm to scaling engine", func() {
-								Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
-								Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("should not send trigger alarm to scaling engine")))
-							})
+						BeforeEach(func() {
+							appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{500, 550, 600}, breachDurationSecs, true)
+							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+								return appMetrics, nil
+							}
 						})
-						Context("when the appMetrics are not enough", func() {
-							BeforeEach(func() {
-								appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{500, 550, 600}, breachDurationSecs, false)
-								database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
-									return appMetrics, nil
-								}
-							})
-							It("should not send trigger alarm to scaling engine", func() {
-								Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
-								Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("the appmetrics are not enough for evaluation")))
-							})
+						It("should not send trigger alarm to scaling engine", func() {
+							Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
+							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("should not send trigger alarm to scaling engine")))
 						})
 
 					})
@@ -420,57 +346,28 @@ var _ = Describe("Evaluator", func() {
 						Expect(triggerChan).To(BeSent(triggerArrayLE))
 					})
 					Context("when the appMetrics breach the trigger", func() {
-						Context("when the appMetrics are enough", func() {
-							BeforeEach(func() {
-								appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{200, 500, 500}, breachDurationSecs, true)
-								database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
-									return appMetrics, nil
-								}
-							})
-							It("should send trigger alarm to scaling engine", func() {
-								Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
-								Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("send trigger alarm to scaling engine")))
-							})
+						BeforeEach(func() {
+							appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{200, 500, 500}, breachDurationSecs, true)
+							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+								return appMetrics, nil
+							}
 						})
-
-						Context("when the appMetrics are not enough", func() {
-							BeforeEach(func() {
-								appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{200, 500, 500}, breachDurationSecs, false)
-								database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
-									return appMetrics, nil
-								}
-							})
-							It("should not send trigger alarm to scaling engine", func() {
-								Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
-								Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("the appmetrics are not enough for evaluation")))
-							})
+						It("should send trigger alarm to scaling engine", func() {
+							Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
+							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("send trigger alarm to scaling engine")))
 						})
 
 					})
 					Context("when the appMetrics do not breach the trigger", func() {
-						Context("when the appMetrics are enough", func() {
-							BeforeEach(func() {
-								appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{500, 550, 600}, breachDurationSecs, true)
-								database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
-									return appMetrics, nil
-								}
-							})
-							It("should not send trigger alarm to scaling engine", func() {
-								Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
-								Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("should not send trigger alarm to scaling engine")))
-							})
+						BeforeEach(func() {
+							appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{500, 550, 600}, breachDurationSecs, true)
+							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+								return appMetrics, nil
+							}
 						})
-						Context("when the appMetrics are not enough", func() {
-							BeforeEach(func() {
-								appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{500, 550, 600}, breachDurationSecs, false)
-								database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
-									return appMetrics, nil
-								}
-							})
-							It("should not send trigger alarm to scaling engine", func() {
-								Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
-								Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("the appmetrics are not enough for evaluation")))
-							})
+						It("should not send trigger alarm to scaling engine", func() {
+							Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(0))
+							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("should not send trigger alarm to scaling engine")))
 						})
 
 					})
