@@ -188,8 +188,10 @@ func initConfig() {
 		Aggregator: config.AggregatorConfig{
 			AggregatorExecuteInterval: 1 * time.Second,
 			PolicyPollerInterval:      1 * time.Second,
+			SaveInterval:              1 * time.Second,
 			MetricPollerCount:         1,
 			AppMonitorChannelSize:     1,
+			AppMetricChannelSize:      1,
 		},
 		Evaluator: config.EvaluatorConfig{
 			EvaluationManagerInterval: 1 * time.Second,

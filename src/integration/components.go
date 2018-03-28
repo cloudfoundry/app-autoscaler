@@ -409,7 +409,7 @@ func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port i
 }
 
 func (components *Components) PrepareEventGeneratorConfig(dbUri string, enableDBLock bool, metricsCollectorUrl string, scalingEngineUrl string, aggregatorExecuteInterval time.Duration, policyPollerInterval time.Duration,
-	evaluationManagerInterval time.Duration, tmpDir string, lockTTL time.Duration, lockRetryInterval time.Duration, ConsulClusterConfig string) string {
+	saveInterval time.Duration, evaluationManagerInterval time.Duration, tmpDir string, lockTTL time.Duration, lockRetryInterval time.Duration, ConsulClusterConfig string) string {
 	conf := &egConfig.Config{
 		Logging: egConfig.LoggingConfig{
 			Level: LOGLEVEL,
@@ -417,8 +417,10 @@ func (components *Components) PrepareEventGeneratorConfig(dbUri string, enableDB
 		Aggregator: egConfig.AggregatorConfig{
 			AggregatorExecuteInterval: aggregatorExecuteInterval,
 			PolicyPollerInterval:      policyPollerInterval,
+			SaveInterval:              saveInterval,
 			MetricPollerCount:         1,
 			AppMonitorChannelSize:     1,
+			AppMetricChannelSize:      1,
 		},
 		Evaluator: egConfig.EvaluatorConfig{
 			EvaluationManagerInterval: evaluationManagerInterval,
@@ -507,4 +509,3 @@ func writeYmlConfig(dir string, componentName string, c interface{}) string {
 	return cfgFile.Name()
 
 }
-

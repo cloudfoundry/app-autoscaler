@@ -16,8 +16,10 @@ const (
 	DefaultLoggingLevel                   string        = "info"
 	DefaultPolicyPollerInterval           time.Duration = 40 * time.Second
 	DefaultAggregatorExecuteInterval      time.Duration = 40 * time.Second
+	DefaultSaveInterval                   time.Duration = 30 * time.Second
 	DefaultMetricPollerCount              int           = 20
 	DefaultAppMonitorChannelSize          int           = 200
+	DefaultAppMetricChannelSize           int           = 200
 	DefaultEvaluationExecuteInterval      time.Duration = 40 * time.Second
 	DefaultEvaluatorCount                 int           = 20
 	DefaultTriggerArrayChannelSize        int           = 200
@@ -42,8 +44,10 @@ type DBConfig struct {
 type AggregatorConfig struct {
 	MetricPollerCount         int           `yaml:"metric_poller_count"`
 	AppMonitorChannelSize     int           `yaml:"app_monitor_channel_size"`
+	AppMetricChannelSize      int           `yaml:"app_metric_channel_size"`
 	AggregatorExecuteInterval time.Duration `yaml:"aggregator_execute_interval"`
 	PolicyPollerInterval      time.Duration `yaml:"policy_poller_interval"`
+	SaveInterval              time.Duration `yaml:"save_interval"`
 }
 
 type EvaluatorConfig struct {
@@ -108,8 +112,10 @@ func LoadConfig(bytes []byte) (*Config, error) {
 		Aggregator: AggregatorConfig{
 			AggregatorExecuteInterval: DefaultAggregatorExecuteInterval,
 			PolicyPollerInterval:      DefaultPolicyPollerInterval,
+			SaveInterval:              DefaultSaveInterval,
 			MetricPollerCount:         DefaultMetricPollerCount,
 			AppMonitorChannelSize:     DefaultAppMonitorChannelSize,
+			AppMetricChannelSize:      DefaultAppMetricChannelSize,
 		},
 		Evaluator: EvaluatorConfig{
 			EvaluationManagerInterval: DefaultEvaluationExecuteInterval,
@@ -160,11 +166,17 @@ func (c *Config) Validate() error {
 	if c.Aggregator.PolicyPollerInterval <= time.Duration(0) {
 		return fmt.Errorf("Configuration error: policy poller interval is less-equal than 0")
 	}
+	if c.Aggregator.SaveInterval <= time.Duration(0) {
+		return fmt.Errorf("Configuration error: save interval is less-equal than 0")
+	}
 	if c.Aggregator.MetricPollerCount <= 0 {
 		return fmt.Errorf("Configuration error: metric poller count is less-equal than 0")
 	}
 	if c.Aggregator.AppMonitorChannelSize <= 0 {
 		return fmt.Errorf("Configuration error: appMonitor channel size is less-equal than 0")
+	}
+	if c.Aggregator.AppMetricChannelSize <= 0 {
+		return fmt.Errorf("Configuration error: appMetric channel size is less-equal than 0")
 	}
 	if c.Evaluator.EvaluationManagerInterval <= time.Duration(0) {
 		return fmt.Errorf("Configuration error: evalution manager execeute interval is less-equal than 0")

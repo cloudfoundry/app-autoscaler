@@ -19,17 +19,17 @@ type MetricPoller struct {
 	doneChan           chan bool
 	appChan            chan *models.AppMonitor
 	httpClient         *http.Client
-	appMetricDB        db.AppMetricDB
+	appMetricChan      chan *models.AppMetric
 }
 
-func NewMetricPoller(logger lager.Logger, metricCollectorUrl string, appChan chan *models.AppMonitor, httpClient *http.Client, appMetricDB db.AppMetricDB) *MetricPoller {
+func NewMetricPoller(logger lager.Logger, metricCollectorUrl string, appChan chan *models.AppMonitor, httpClient *http.Client, appMetricChan chan *models.AppMetric) *MetricPoller {
 	return &MetricPoller{
 		metricCollectorUrl: metricCollectorUrl,
 		logger:             logger.Session("MetricPoller"),
 		appChan:            appChan,
 		doneChan:           make(chan bool),
 		httpClient:         httpClient,
-		appMetricDB:        appMetricDB,
+		appMetricChan:      appMetricChan,
 	}
 }
 
@@ -91,11 +91,9 @@ func (m *MetricPoller) retrieveMetric(app *models.AppMonitor) {
 	if avgMetric == nil {
 		return
 	}
+	m.logger.Debug("Save aggregated appmetric", lager.Data{"appId": appId, "appMetric": avgMetric})
+	m.appMetricChan <- avgMetric
 
-	err = m.appMetricDB.SaveAppMetric(avgMetric)
-	if err != nil {
-		m.logger.Error("Failed to save appmetric", err, lager.Data{"appmetric": avgMetric})
-	}
 }
 
 func (m *MetricPoller) aggregate(appId string, metricType string, metrics []*models.AppInstanceMetric) *models.AppMetric {

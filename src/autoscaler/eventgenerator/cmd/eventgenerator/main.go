@@ -79,9 +79,10 @@ func main() {
 	}
 
 	appMonitorsChan := make(chan *models.AppMonitor, conf.Aggregator.AppMonitorChannelSize)
-	metricPollers, err := createMetricPollers(logger, conf, appMonitorsChan, appMetricDB)
-	aggregator, err := aggregator.NewAggregator(logger, egClock, conf.Aggregator.AggregatorExecuteInterval,
-		appMonitorsChan, policyPoller.GetPolicies, conf.DefaultStatWindowSecs)
+	appMetricChan := make(chan *models.AppMetric, conf.Aggregator.AppMetricChannelSize)
+	metricPollers, err := createMetricPollers(logger, conf, appMonitorsChan, appMetricChan)
+	aggregator, err := aggregator.NewAggregator(logger, egClock, conf.Aggregator.AggregatorExecuteInterval, conf.Aggregator.SaveInterval,
+		appMonitorsChan, policyPoller.GetPolicies, conf.DefaultStatWindowSecs, appMetricChan, appMetricDB)
 	if err != nil {
 		logger.Error("failed to create Aggregator", err)
 		os.Exit(1)
@@ -253,8 +254,7 @@ func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan cha
 	return evaluators, nil
 }
 
-func createMetricPollers(logger lager.Logger, conf *config.Config, appChan chan *models.AppMonitor,
-	database db.AppMetricDB) ([]*aggregator.MetricPoller, error) {
+func createMetricPollers(logger lager.Logger, conf *config.Config, appChan chan *models.AppMonitor, appMetricChan chan *models.AppMetric) ([]*aggregator.MetricPoller, error) {
 	tlsCerts := &conf.MetricCollector.TLSClientCerts
 	if tlsCerts.CertFile == "" || tlsCerts.KeyFile == "" {
 		tlsCerts = nil
@@ -270,10 +270,9 @@ func createMetricPollers(logger lager.Logger, conf *config.Config, appChan chan 
 		}
 		client.Transport.(*http.Transport).TLSClientConfig = tlsConfig
 	}
-
 	pollers := make([]*aggregator.MetricPoller, count)
 	for i := 0; i < count; i++ {
-		pollers[i] = aggregator.NewMetricPoller(logger, conf.MetricCollector.MetricCollectorUrl, appChan, client, database)
+		pollers[i] = aggregator.NewMetricPoller(logger, conf.MetricCollector.MetricCollectorUrl, appChan, client, appMetricChan)
 	}
 
 	return pollers, nil
