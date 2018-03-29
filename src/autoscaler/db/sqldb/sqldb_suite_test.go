@@ -101,7 +101,7 @@ func cleanAppMetricTable() {
 }
 
 func hasAppMetric(appId, metricType string, timestamp int64, value string) bool {
-	query := "SELECT * FROM app_metric WHERE app_id = $1 AND metric_type = $2 AND timestamp = $3 and value = $4"
+	query := "SELECT * FROM app_metric WHERE app_id = $1 AND metric_type = $2 AND timestamp = $3 AND value = $4"
 	rows, e := dbHelper.Query(query, appId, metricType, timestamp, value)
 	if e != nil {
 		Fail("can not query table app_metric: " + e.Error())
