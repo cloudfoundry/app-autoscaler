@@ -101,6 +101,7 @@ var _ = SynchronizedBeforeSuite(
 
 		conf.Consul.Cluster = consulRunner.ConsulCluster()
 		conf.DefaultCoolDownSecs = 300
+		conf.LockSize = 32
 
 		configFile = writeConfig(&conf)
 
