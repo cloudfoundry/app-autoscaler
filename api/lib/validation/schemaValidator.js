@@ -147,9 +147,9 @@ var getRecurringSchema = function() {
       'instance_min_count':{ 'type':'integer','minimum':1 },
       'instance_max_count':{ 'type':'integer','minimum':1 },
       'initial_min_instance_count':{ 'type':'integer','minimum':1 },
-      'days_of_week':{ 'type':'array','uniqueItems': true,
+      'days_of_week':{ 'type':'array','uniqueItems': true, 'minItems': 1,
         'items':{ 'type':'number','enum':weekEnum } },
-      'days_of_month':{ 'type':'array','uniqueItems': true,
+      'days_of_month':{ 'type':'array','uniqueItems': true, 'minItems': 1,
         'items':{ 'type':'number','enum':monthEnum } }
     },
     'required' : ['start_time','end_time','instance_min_count','instance_max_count'],
