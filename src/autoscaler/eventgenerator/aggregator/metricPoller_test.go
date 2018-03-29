@@ -211,7 +211,7 @@ var _ = Describe("MetricPoller", func() {
 			metricPoller = NewMetricPoller(logger, metricServer.URL(), appMonitorsChan, httpClient, appMetricChan)
 			metricPoller.Start()
 			metricPoller.Stop()
-
+			Eventually(logger.Buffer).Should(Say("stopped"))
 			Expect(appMonitorsChan).Should(BeSent(&models.AppMonitor{
 				AppId:      testAppId,
 				MetricType: testMetricType,

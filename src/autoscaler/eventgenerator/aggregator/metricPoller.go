@@ -40,13 +40,13 @@ func (m *MetricPoller) Start() {
 
 func (m *MetricPoller) Stop() {
 	close(m.doneChan)
-	m.logger.Info("stopped")
 }
 
 func (m *MetricPoller) startMetricRetrieve() {
 	for {
 		select {
 		case <-m.doneChan:
+			m.logger.Info("stopped")
 			return
 		case app := <-m.appChan:
 			m.retrieveMetric(app)
