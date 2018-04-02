@@ -493,6 +493,7 @@ func (components *Components) PrepareScalingEngineConfig(dbUri string, port int,
 			Cluster: consulClusterConfig,
 		},
 		DefaultCoolDownSecs: 300,
+		LockSize:            32,
 	}
 
 	return writeYmlConfig(tmpDir, ScalingEngine, &conf)
@@ -507,4 +508,3 @@ func writeYmlConfig(dir string, componentName string, c interface{}) string {
 	return cfgFile.Name()
 
 }
-

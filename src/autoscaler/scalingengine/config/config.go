@@ -65,6 +65,7 @@ type Config struct {
 	Synchronizer        SynchronizerConfig `yaml:"synchronizer"`
 	Consul              ConsulConfig       `yaml:"consul"`
 	DefaultCoolDownSecs int                `yaml:"defaultCoolDownSecs"`
+	LockSize            int                `yaml:"lockSize"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
@@ -112,6 +113,10 @@ func (c *Config) Validate() error {
 
 	if c.DefaultCoolDownSecs < 60 || c.DefaultCoolDownSecs > 3600 {
 		return fmt.Errorf("Configuration error: DefaultCoolDownSecs should be between 60 and 3600")
+	}
+
+	if c.LockSize <= 0 {
+		return fmt.Errorf("Configuration error: LockSize is less than or equal to 0")
 	}
 
 	return nil
