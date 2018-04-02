@@ -16,21 +16,22 @@ import (
 
 var _ = Describe("ScalingEngineSqldb", func() {
 	var (
-		dbConfig       db.DatabaseConfig
-		logger         lager.Logger
-		sdb            *ScalingEngineSQLDB
-		err            error
-		history        *models.AppScalingHistory
-		start          int64
-		end            int64
-		orderType      db.OrderType
-		appId          string
-		histories      []*models.AppScalingHistory
-		canScale       bool
-		activeSchedule *models.ActiveSchedule
-		schedules      map[string]string
-		before         int64
-		includeAll     bool
+		dbConfig          db.DatabaseConfig
+		logger            lager.Logger
+		sdb               *ScalingEngineSQLDB
+		err               error
+		history           *models.AppScalingHistory
+		start             int64
+		end               int64
+		orderType         db.OrderType
+		appId             string
+		histories         []*models.AppScalingHistory
+		canScale          bool
+		cooldownExpiredAt int64
+		activeSchedule    *models.ActiveSchedule
+		schedules         map[string]string
+		before            int64
+		includeAll        bool
 	)
 
 	BeforeEach(func() {
@@ -581,35 +582,40 @@ var _ = Describe("ScalingEngineSqldb", func() {
 		})
 
 		JustBeforeEach(func() {
-			canScale, err = sdb.CanScaleApp("an-app-id")
+			canScale, cooldownExpiredAt, err = sdb.CanScaleApp("an-app-id")
 		})
 
 		Context("when there is no cooldown record before", func() {
 			It("returns true", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(canScale).To(BeTrue())
+				Expect(cooldownExpiredAt).To(Equal(int64(0)))
 			})
 		})
 
 		Context("when the app is still in cooldown period", func() {
+			fakeCoolDownExpiredTime := time.Now().Add(100 * time.Second).UnixNano()
 			BeforeEach(func() {
-				err = sdb.UpdateScalingCooldownExpireTime("an-app-id", time.Now().Add(10*time.Second).UnixNano())
+				err = sdb.UpdateScalingCooldownExpireTime("an-app-id", fakeCoolDownExpiredTime)
 				Expect(err).NotTo(HaveOccurred())
 			})
 			It("returns false", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(canScale).To(BeFalse())
+				Expect(cooldownExpiredAt).To(Equal(fakeCoolDownExpiredTime))
 			})
 		})
 
 		Context("when the app passes cooldown period", func() {
+			fakeCoolDownExpiredTime := time.Now().Add(0 - 100*time.Second).UnixNano()
 			BeforeEach(func() {
-				err = sdb.UpdateScalingCooldownExpireTime("an-app-id", time.Now().Add(-10*time.Second).UnixNano())
+				err = sdb.UpdateScalingCooldownExpireTime("an-app-id", fakeCoolDownExpiredTime)
 				Expect(err).NotTo(HaveOccurred())
 			})
-			It("returns false", func() {
+			It("returns true", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(canScale).To(BeTrue())
+				Expect(cooldownExpiredAt).To(Equal(fakeCoolDownExpiredTime))
 			})
 		})
 	})

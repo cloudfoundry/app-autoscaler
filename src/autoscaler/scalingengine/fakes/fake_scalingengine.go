@@ -8,18 +8,18 @@ import (
 )
 
 type FakeScalingEngine struct {
-	ScaleStub        func(appId string, trigger *models.Trigger) (int, error)
+	ScaleStub        func(appId string, trigger *models.Trigger) (*models.AppScalingResult, error)
 	scaleMutex       sync.RWMutex
 	scaleArgsForCall []struct {
 		appId   string
 		trigger *models.Trigger
 	}
 	scaleReturns struct {
-		result1 int
+		result1 *models.AppScalingResult
 		result2 error
 	}
 	scaleReturnsOnCall map[int]struct {
-		result1 int
+		result1 *models.AppScalingResult
 		result2 error
 	}
 	ComputeNewInstancesStub        func(currentInstances int, adjustment string) (int, error)
@@ -64,7 +64,7 @@ type FakeScalingEngine struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeScalingEngine) Scale(appId string, trigger *models.Trigger) (int, error) {
+func (fake *FakeScalingEngine) Scale(appId string, trigger *models.Trigger) (*models.AppScalingResult, error) {
 	fake.scaleMutex.Lock()
 	ret, specificReturn := fake.scaleReturnsOnCall[len(fake.scaleArgsForCall)]
 	fake.scaleArgsForCall = append(fake.scaleArgsForCall, struct {
@@ -94,24 +94,24 @@ func (fake *FakeScalingEngine) ScaleArgsForCall(i int) (string, *models.Trigger)
 	return fake.scaleArgsForCall[i].appId, fake.scaleArgsForCall[i].trigger
 }
 
-func (fake *FakeScalingEngine) ScaleReturns(result1 int, result2 error) {
+func (fake *FakeScalingEngine) ScaleReturns(result1 *models.AppScalingResult, result2 error) {
 	fake.ScaleStub = nil
 	fake.scaleReturns = struct {
-		result1 int
+		result1 *models.AppScalingResult
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeScalingEngine) ScaleReturnsOnCall(i int, result1 int, result2 error) {
+func (fake *FakeScalingEngine) ScaleReturnsOnCall(i int, result1 *models.AppScalingResult, result2 error) {
 	fake.ScaleStub = nil
 	if fake.scaleReturnsOnCall == nil {
 		fake.scaleReturnsOnCall = make(map[int]struct {
-			result1 int
+			result1 *models.AppScalingResult
 			result2 error
 		})
 	}
 	fake.scaleReturnsOnCall[i] = struct {
-		result1 int
+		result1 *models.AppScalingResult
 		result2 error
 	}{result1, result2}
 }

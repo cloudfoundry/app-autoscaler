@@ -5,8 +5,7 @@ import (
 	"autoscaler/eventgenerator/config"
 	. "autoscaler/eventgenerator/generator"
 	"autoscaler/models"
-	"net/http"
-	"regexp"
+	"reflect"
 	"time"
 
 	"code.cloudfoundry.org/clock/fakeclock"
@@ -14,7 +13,6 @@ import (
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/ghttp"
 	"github.com/rubyist/circuitbreaker"
 )
 
@@ -33,8 +31,7 @@ var _ = Describe("AppEvaluationManager", func() {
 		testAppId2           string                      = "testAppId2"
 		testMetricName       string                      = "Test-Metric-Name"
 		testBreakerConfig    config.CircuitBreakerConfig = config.CircuitBreakerConfig{}
-		fakeScalingEngine    *ghttp.Server
-		regPath              *regexp.Regexp = regexp.MustCompile(`^/v1/apps/.*/scale$`)
+		fakeTime             time.Time                   = time.Now()
 
 		appPolicy1 = &models.AppPolicy{
 			AppId: testAppId1,
@@ -76,12 +73,10 @@ var _ = Describe("AppEvaluationManager", func() {
 	)
 
 	BeforeEach(func() {
-		fclock = fakeclock.NewFakeClock(time.Now())
+		fclock = fakeclock.NewFakeClock(fakeTime)
 		testEvaluateInterval = 1 * time.Second
 		logger = lagertest.NewTestLogger("ApplicationManager-test")
 		triggerArrayChan = make(chan []*models.Trigger, 10)
-		fakeScalingEngine = ghttp.NewServer()
-		fakeScalingEngine.RouteToHandler("POST", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
 		database = &fakes.FakeAppMetricDB{}
 		testEvaluatorCount = 0
 	})
@@ -100,43 +95,86 @@ var _ = Describe("AppEvaluationManager", func() {
 		})
 
 		Context("when there are triggers for evaluation", func() {
-			BeforeEach(func() {
-				getPolicies = func() map[string]*models.AppPolicy {
-					return map[string]*models.AppPolicy{
-						testAppId1: appPolicy1,
-						testAppId2: appPolicy2,
+
+			Context("when there is no cooldownExpiredAt setting", func() {
+				BeforeEach(func() {
+					getPolicies = func() map[string]*models.AppPolicy {
+						return map[string]*models.AppPolicy{
+							testAppId1: appPolicy1,
+							testAppId2: appPolicy2,
+						}
 					}
-				}
+				})
+
+				It("should add triggers to evaluate", func() {
+					fclock.Increment(10 * testEvaluateInterval)
+					var arr []*models.Trigger
+					var triggerArray [][]*models.Trigger = [][]*models.Trigger{}
+					Eventually(triggerArrayChan).Should(Receive(&arr))
+					triggerArray = append(triggerArray, arr)
+					Eventually(triggerArrayChan).Should(Receive(&arr))
+					triggerArray = append(triggerArray, arr)
+					Expect(triggerArray).Should(ContainElement(
+						[]*models.Trigger{{
+							AppId:                 testAppId1,
+							MetricType:            testMetricName,
+							BreachDurationSeconds: 200,
+							CoolDownSeconds:       200,
+							Threshold:             80,
+							Operator:              ">=",
+							Adjustment:            "1",
+						}}))
+					Expect(triggerArray).Should(ContainElement(
+						[]*models.Trigger{{
+							AppId:                 testAppId2,
+							MetricType:            testMetricName,
+							BreachDurationSeconds: 300,
+							CoolDownSeconds:       300,
+							Threshold:             20,
+							Operator:              "<=",
+							Adjustment:            "-1",
+						}}))
+				})
 			})
 
-			It("should add triggers to evaluate", func() {
-				fclock.Increment(10 * testEvaluateInterval)
-				var arr []*models.Trigger
-				var triggerArray [][]*models.Trigger = [][]*models.Trigger{}
-				Eventually(triggerArrayChan).Should(Receive(&arr))
-				triggerArray = append(triggerArray, arr)
-				Eventually(triggerArrayChan).Should(Receive(&arr))
-				triggerArray = append(triggerArray, arr)
-				Expect(triggerArray).Should(ContainElement(
-					[]*models.Trigger{{
-						AppId:                 testAppId1,
-						MetricType:            testMetricName,
-						BreachDurationSeconds: 200,
-						CoolDownSeconds:       200,
-						Threshold:             80,
-						Operator:              ">=",
-						Adjustment:            "1",
-					}}))
-				Expect(triggerArray).Should(ContainElement(
-					[]*models.Trigger{{
-						AppId:                 testAppId2,
-						MetricType:            testMetricName,
-						BreachDurationSeconds: 300,
-						CoolDownSeconds:       300,
-						Threshold:             20,
-						Operator:              "<=",
-						Adjustment:            "-1",
-					}}))
+			Context("when there is cooldownExpiredAt setting for testAppId2", func() {
+
+				BeforeEach(func() {
+					getPolicies = func() map[string]*models.AppPolicy {
+						return map[string]*models.AppPolicy{
+							testAppId2: appPolicy2,
+						}
+					}
+				})
+
+				JustBeforeEach(func() {
+					manager.SetCoolDownExpired(testAppId2, fakeTime.Add(time.Duration(30)*time.Second).UnixNano())
+				})
+
+				It("should add triggers to evaluate", func() {
+					var arr []*models.Trigger
+					var triggerArray [][]*models.Trigger = [][]*models.Trigger{}
+					fclock.Increment(10 * testEvaluateInterval)
+					Consistently(triggerArrayChan).ShouldNot(Receive())
+
+					fclock.Increment(10 * testEvaluateInterval)
+					Consistently(triggerArrayChan).ShouldNot(Receive())
+
+					fclock.Increment(10 * testEvaluateInterval)
+					Eventually(triggerArrayChan).Should(Receive(&arr))
+
+					triggerArray = append(triggerArray, arr)
+					Expect(triggerArray).Should(ContainElement(
+						[]*models.Trigger{{
+							AppId:                 testAppId2,
+							MetricType:            testMetricName,
+							BreachDurationSeconds: 300,
+							CoolDownSeconds:       300,
+							Threshold:             20,
+							Operator:              "<=",
+							Adjustment:            "-1",
+						}}))
+				})
 			})
 		})
 
@@ -152,6 +190,7 @@ var _ = Describe("AppEvaluationManager", func() {
 				Consistently(triggerArrayChan).ShouldNot(Receive())
 			})
 		})
+
 	})
 
 	Describe("Stop", func() {
@@ -216,5 +255,48 @@ var _ = Describe("AppEvaluationManager", func() {
 		AfterEach(func() {
 			manager.Stop()
 		})
+	})
+
+	Describe("SetCoolDownExpired", func() {
+		BeforeEach(func() {
+			getPolicies = func() map[string]*models.AppPolicy {
+				return map[string]*models.AppPolicy{
+					testAppId1: appPolicy1,
+					testAppId2: appPolicy2,
+				}
+			}
+
+			var err error
+			manager, err = NewAppEvaluationManager(logger, testEvaluateInterval, fclock, triggerArrayChan, getPolicies, testBreakerConfig)
+			Expect(err).NotTo(HaveOccurred())
+			manager.Start()
+			Eventually(fclock.WatcherCount).Should(Equal(1))
+		})
+
+		It("insert the cooldownExpiredAt records in map", func() {
+
+			manager.SetCoolDownExpired(testAppId1, fakeTime.Add(time.Duration(20)*time.Second).UnixNano())
+			manager.SetCoolDownExpired(testAppId2, fakeTime.Add(time.Duration(30)*time.Second).UnixNano())
+
+			v := reflect.ValueOf(manager).Elem()
+			coolDownExpiredReflect := v.FieldByName("cooldownExpired")
+			Expect(coolDownExpiredReflect.Len()).Should(Equal(2))
+			for _, key := range coolDownExpiredReflect.MapKeys() {
+				value := coolDownExpiredReflect.MapIndex(key).Int()
+				if key.String() == testAppId1 {
+					Expect(value).Should(Equal(fakeTime.Add(time.Duration(20) * time.Second).UnixNano()))
+				}
+				if key.String() == testAppId2 {
+					Expect(value).Should(Equal(fakeTime.Add(time.Duration(30) * time.Second).UnixNano()))
+				}
+
+			}
+
+		})
+
+		AfterEach(func() {
+			manager.Stop()
+		})
+
 	})
 })

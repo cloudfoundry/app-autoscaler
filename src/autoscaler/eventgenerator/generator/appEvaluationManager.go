@@ -23,6 +23,7 @@ type AppEvaluationManager struct {
 	getPolicies      models.GetPolicies
 	breakerConfig    config.CircuitBreakerConfig
 	breakers         map[string]*circuit.Breaker
+	cooldownExpired  map[string]int64
 	lock             *sync.Mutex
 }
 
@@ -37,6 +38,7 @@ func NewAppEvaluationManager(logger lager.Logger, evaluateInterval time.Duration
 		triggerChan:      triggerChan,
 		getPolicies:      getPolicies,
 		breakerConfig:    breakerConfig,
+		cooldownExpired:  map[string]int64{},
 		lock:             &sync.Mutex{},
 	}, nil
 }
@@ -45,10 +47,16 @@ func (a *AppEvaluationManager) getTriggers(policyMap map[string]*models.AppPolic
 	if policyMap == nil {
 		return nil
 	}
-
 	triggersByType := make(map[string][]*models.Trigger)
+	now := a.emClock.Now().UnixNano()
 	for appId, policy := range policyMap {
 		for _, rule := range policy.ScalingPolicy.ScalingRules {
+			cooldownExpiredAt, found := a.cooldownExpired[appId]
+			if found {
+				if cooldownExpiredAt > now {
+					continue
+				}
+			}
 			triggerKey := appId + "#" + rule.MetricType
 			triggers, exist := triggersByType[triggerKey]
 			if !exist {
@@ -124,4 +132,10 @@ func (a *AppEvaluationManager) GetBreaker(appID string) *circuit.Breaker {
 	a.lock.Lock()
 	defer a.lock.Unlock()
 	return a.breakers[appID]
+}
+
+func (a *AppEvaluationManager) SetCoolDownExpired(appID string, expiredAt int64) {
+	a.lock.Lock()
+	defer a.lock.Unlock()
+	a.cooldownExpired[appID] = expiredAt
 }

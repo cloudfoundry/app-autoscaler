@@ -79,6 +79,13 @@ var (
 			Timestamp:     220000,
 		},
 	}
+
+	scalingResult *models.AppScalingResult = &models.AppScalingResult{
+		AppId:             testAppId,
+		Adjustment:        1,
+		Status:            models.ScalingStatusSucceeded,
+		CooldownExpiredAt: time.Now().Add(time.Duration(300) * time.Second).UnixNano(),
+	}
 )
 
 func TestEventgenerator(t *testing.T) {
@@ -178,7 +185,7 @@ func initHttpEndPoints() {
 
 	metricCollector.RouteToHandler("GET", "/v1/apps/"+testAppId+"/metric_histories/"+metricType, ghttp.RespondWithJSONEncoded(http.StatusOK,
 		&metrics))
-	scalingEngine.RouteToHandler("POST", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
+	scalingEngine.RouteToHandler("POST", regPath, ghttp.RespondWithJSONEncoded(http.StatusOK, &scalingResult))
 }
 
 func initConfig() {

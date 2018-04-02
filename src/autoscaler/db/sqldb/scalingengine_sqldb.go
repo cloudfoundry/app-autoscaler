@@ -130,29 +130,30 @@ func (sdb *ScalingEngineSQLDB) PruneScalingHistories(before int64) error {
 	return err
 }
 
-func (sdb *ScalingEngineSQLDB) CanScaleApp(appId string) (bool, error) {
+func (sdb *ScalingEngineSQLDB) CanScaleApp(appId string) (bool, int64, error) {
+	var expireAt int64 = 0
 	query := "SELECT expireat FROM scalingcooldown where appid = $1"
 	rows, err := sdb.sqldb.Query(query, appId)
 	if err != nil {
 		sdb.logger.Error("can-scale-app-query-record", err, lager.Data{"query": query, "appid": appId})
-		return false, err
+		return false, expireAt, err
 	}
 	defer rows.Close()
 
 	if rows.Next() {
-		var expireAt int64
+
 		if err = rows.Scan(&expireAt); err != nil {
 			sdb.logger.Error("can-scale-app-scan", err, lager.Data{"query": query, "appid": appId})
-			return false, err
+			return false, expireAt, err
 		}
 		if expireAt < time.Now().UnixNano() {
-			return true, nil
+			return true, expireAt, nil
 		} else {
-			return false, nil
+			return false, expireAt, nil
 		}
 	}
 
-	return true, nil
+	return true, expireAt, nil
 }
 
 func (sdb *ScalingEngineSQLDB) UpdateScalingCooldownExpireTime(appId string, expireAt int64) error {
