@@ -38,6 +38,7 @@ server:
 consul:
   cluster: http://127.0.0.1:8500
 defaultCoolDownSecs: 300
+lockSize: 32
 `)
 			})
 
@@ -87,6 +88,7 @@ synchronizer:
 consul:
   cluster: http://127.0.0.1:8500
 defaultCoolDownSecs: 300
+lockSize: 32
 `)
 			})
 
@@ -117,6 +119,8 @@ defaultCoolDownSecs: 300
 				Expect(conf.Consul.Cluster).To(Equal("http://127.0.0.1:8500"))
 
 				Expect(conf.DefaultCoolDownSecs).To(Equal(300))
+
+				Expect(conf.LockSize).To(Equal(32))
 			})
 		})
 
@@ -130,6 +134,7 @@ db:
   scalingengine_db_url: test-scalingengine-db-url
   scheduler_db_url: test-scheduler-db-url
 defaultCoolDownSecs: 300
+lockSize: 32
 `)
 			})
 
@@ -157,6 +162,7 @@ defaultCoolDownSecs: 300
 			conf.Db.ScalingEngineDbUrl = "test-scalingengine-db-url"
 			conf.Db.SchedulerDbUrl = "test-scheduler-db-url"
 			conf.DefaultCoolDownSecs = 300
+			conf.LockSize = 32
 		})
 
 		JustBeforeEach(func() {
@@ -226,6 +232,16 @@ defaultCoolDownSecs: 300
 
 			It("should error", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: DefaultCoolDownSecs should be between 60 and 3600")))
+			})
+		})
+
+		Context("when LockSize <= 0", func() {
+			BeforeEach(func() {
+				conf.LockSize = 0
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: LockSize is less than or equal to 0")))
 			})
 		})
 	})
