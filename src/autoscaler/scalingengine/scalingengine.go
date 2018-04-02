@@ -38,13 +38,13 @@ func (ase *ActiveScheduleNotFoundError) Error() string {
 	return fmt.Sprintf("active schedule not found")
 }
 
-func NewScalingEngine(logger lager.Logger, cfClient cf.CfClient, policyDB db.PolicyDB, scalingEngineDB db.ScalingEngineDB, clock clock.Clock, defaultCoolDownSecs int) ScalingEngine {
+func NewScalingEngine(logger lager.Logger, cfClient cf.CfClient, policyDB db.PolicyDB, scalingEngineDB db.ScalingEngineDB, clock clock.Clock, defaultCoolDownSecs int, lockSize int) ScalingEngine {
 	return &scalingEngine{
 		logger:              logger.Session("scalingEngine"),
 		cfClient:            cfClient,
 		policyDB:            policyDB,
 		scalingEngineDB:     scalingEngineDB,
-		appLock:             NewStripedLock(32),
+		appLock:             NewStripedLock(lockSize),
 		clock:               clock,
 		defaultCoolDownSecs: defaultCoolDownSecs,
 	}

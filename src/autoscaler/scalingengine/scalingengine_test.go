@@ -40,7 +40,7 @@ var _ = Describe("ScalingEngine", func() {
 		logger := lagertest.NewTestLogger("schedule-test")
 		buffer = logger.Buffer()
 		clock = fakeclock.NewFakeClock(time.Now())
-		scalingEngine = NewScalingEngine(logger, cfc, policyDB, scalingEngineDB, clock, 300)
+		scalingEngine = NewScalingEngine(logger, cfc, policyDB, scalingEngineDB, clock, 300, 32)
 		appState = models.AppStatusStarted
 		activeSchedule = &models.ActiveSchedule{
 			ScheduleId:         "a-schedule-id",
