@@ -7,6 +7,7 @@ import (
 	"autoscaler/routes"
 	"errors"
 	"net/http"
+	"sync"
 	"time"
 
 	"code.cloudfoundry.org/cfhttp"
@@ -38,7 +39,9 @@ var _ = Describe("Evaluator", func() {
 		setCoolDownExpired func(string, int64)
 		cbEventChan        <-chan circuit.BreakerEvent
 		cooldownExpired    map[string]int64
-		fakeTime           time.Time         = time.Now()
+		fakeTime           time.Time   = time.Now()
+		lock               *sync.Mutex = &sync.Mutex{}
+		scalingResult      *models.AppScalingResult
 		triggerArrayGT     []*models.Trigger = []*models.Trigger{{
 			AppId:                 testAppId,
 			MetricType:            testMetricType,
@@ -99,12 +102,6 @@ var _ = Describe("Evaluator", func() {
 		}
 		triggerArrayMultipleTriggers []*models.Trigger = []*models.Trigger{&firstTrigger, &secondTrigger}
 
-		scalingResult *models.AppScalingResult = &models.AppScalingResult{
-			AppId:             testAppId,
-			Adjustment:        1,
-			Status:            models.ScalingStatusSucceeded,
-			CooldownExpiredAt: fakeTime.Add(time.Duration(300) * time.Second).UnixNano(),
-		}
 	)
 	BeforeEach(func() {
 		logger = lagertest.NewTestLogger("Evaluator-test")
@@ -119,8 +116,18 @@ var _ = Describe("Evaluator", func() {
 		getBreaker = func(appID string) *circuit.Breaker {
 			return nil
 		}
+
+		scalingResult = &models.AppScalingResult{
+			AppId:             testAppId,
+			Adjustment:        1,
+			Status:            models.ScalingStatusSucceeded,
+			CooldownExpiredAt: fakeTime.Add(time.Duration(300) * time.Second).UnixNano(),
+		}
+
 		cooldownExpired = map[string]int64{}
 		setCoolDownExpired = func(appId string, expiredAt int64) {
+			lock.Lock()
+			defer lock.Unlock()
 			cooldownExpired[appId] = expiredAt
 		}
 
@@ -437,7 +444,6 @@ var _ = Describe("Evaluator", func() {
 					})
 					It("should send alarm of first trigger to scaling engine", func() {
 						Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
-						Eventually(cooldownExpired[testAppId]).Should(Equal(fakeTime.Add(time.Duration(300) * time.Second).UnixNano()))
 						Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("send trigger alarm to scaling engine")))
 						Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("successfully-send-trigger-alarm with trigger")))
 
@@ -460,7 +466,6 @@ var _ = Describe("Evaluator", func() {
 					})
 					It("should send alarm  of second trigger to scaling engine", func() {
 						Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
-						Eventually(cooldownExpired[testAppId]).Should(Equal(fakeTime.Add(time.Duration(300) * time.Second).UnixNano()))
 						Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("send trigger alarm to scaling engine")))
 						Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("successfully-send-trigger-alarm with trigger")))
 
@@ -485,7 +490,6 @@ var _ = Describe("Evaluator", func() {
 						Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
 						Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("send trigger alarm to scaling engine")))
 						Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("successfully-send-trigger-alarm with trigger")))
-						Eventually(cooldownExpired[testAppId]).Should(Equal(fakeTime.Add(time.Duration(300) * time.Second).UnixNano()))
 					})
 				})
 
@@ -515,8 +519,10 @@ var _ = Describe("Evaluator", func() {
 							Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
 							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("send trigger alarm to scaling engine")))
 							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("successfully-send-trigger-alarm with trigger")))
+							lock.Lock()
 							Eventually(cooldownExpired).Should(HaveLen(1))
 							Eventually(cooldownExpired[testAppId]).Should(Equal(fakeTime.Add(time.Duration(300) * time.Second).UnixNano()))
+							lock.Unlock()
 						})
 					})
 
@@ -536,7 +542,9 @@ var _ = Describe("Evaluator", func() {
 							Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
 							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("send trigger alarm to scaling engine")))
 							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("successfully-send-trigger-alarm with trigger")))
+							lock.Lock()
 							Eventually(cooldownExpired).Should(HaveLen(0))
+							lock.Unlock()
 						})
 					})
 
@@ -554,7 +562,9 @@ var _ = Describe("Evaluator", func() {
 							Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
 							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("send trigger alarm to scaling engine")))
 							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("successfully-send-trigger-alarm with trigger")))
+							lock.Lock()
 							Eventually(cooldownExpired).Should(HaveLen(0))
+							lock.Unlock()
 						})
 					})
 
@@ -572,7 +582,9 @@ var _ = Describe("Evaluator", func() {
 							Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
 							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("send trigger alarm to scaling engine")))
 							Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("successfully-send-trigger-alarm, but received wrong response")))
+							lock.Lock()
 							Eventually(cooldownExpired).Should(HaveLen(0))
+							lock.Unlock()
 						})
 					})
 				})

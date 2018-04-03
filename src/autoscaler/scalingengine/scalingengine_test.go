@@ -75,7 +75,7 @@ var _ = Describe("ScalingEngine", func() {
 
 			})
 
-			FIt("sets the new app instance number and stores the succeeded scaling history", func() {
+			It("sets the new app instance number and stores the succeeded scaling history", func() {
 				Expect(err).NotTo(HaveOccurred())
 				id, num := cfc.SetAppInstancesArgsForCall(0)
 				Expect(id).To(Equal("an-app-id"))
@@ -126,7 +126,7 @@ var _ = Describe("ScalingEngine", func() {
 				Expect(scalingResult.AppId).To(Equal("an-app-id"))
 				Expect(scalingResult.Status).To(Equal(models.ScalingStatusIgnored))
 				Expect(scalingResult.Adjustment).To(Equal(0))
-				Expect(scalingResult.CooldownExpiredAt).To(Equal(0))
+				Expect(scalingResult.CooldownExpiredAt).To(Equal(int64(0)))
 
 			})
 		})
@@ -260,7 +260,7 @@ var _ = Describe("ScalingEngine", func() {
 
 				Expect(scalingResult.AppId).To(Equal("an-app-id"))
 				Expect(scalingResult.Status).To(Equal(models.ScalingStatusSucceeded))
-				Expect(scalingResult.Adjustment).To(Equal(1))
+				Expect(scalingResult.Adjustment).To(Equal(-1))
 				Expect(scalingResult.CooldownExpiredAt).To(Equal(clock.Now().Add(30 * time.Second).UnixNano()))
 
 			})
@@ -303,7 +303,7 @@ var _ = Describe("ScalingEngine", func() {
 
 					Expect(scalingResult.AppId).To(Equal("an-app-id"))
 					Expect(scalingResult.Status).To(Equal(models.ScalingStatusSucceeded))
-					Expect(scalingResult.Adjustment).To(Equal(2))
+					Expect(scalingResult.Adjustment).To(Equal(1))
 					Expect(scalingResult.CooldownExpiredAt).To(Equal(clock.Now().Add(30 * time.Second).UnixNano()))
 
 				})
@@ -337,7 +337,7 @@ var _ = Describe("ScalingEngine", func() {
 
 					Expect(scalingResult.AppId).To(Equal("an-app-id"))
 					Expect(scalingResult.Status).To(Equal(models.ScalingStatusSucceeded))
-					Expect(scalingResult.Adjustment).To(Equal(0))
+					Expect(scalingResult.Adjustment).To(Equal(-2))
 					Expect(scalingResult.CooldownExpiredAt).To(Equal(clock.Now().Add(30 * time.Second).UnixNano()))
 
 				})
@@ -366,10 +366,7 @@ var _ = Describe("ScalingEngine", func() {
 					Error:        "failed to get app info",
 				}))
 
-				Expect(scalingResult.AppId).To(Equal("an-app-id"))
-				Expect(scalingResult.Status).To(Equal(models.ScalingStatusFailed))
-				Expect(scalingResult.Adjustment).To(Equal(0))
-				Expect(scalingResult.CooldownExpiredAt).To(Equal(0))
+				Expect(scalingResult).To(BeNil())
 
 			})
 		})
@@ -395,11 +392,7 @@ var _ = Describe("ScalingEngine", func() {
 					Error:        "failed to check app cooldown setting",
 				}))
 
-				Expect(scalingResult.AppId).To(Equal("an-app-id"))
-				Expect(scalingResult.Status).To(Equal(models.ScalingStatusFailed))
-				Expect(scalingResult.Adjustment).To(Equal(0))
-				Expect(scalingResult.CooldownExpiredAt).To(Equal(0))
-
+				Expect(scalingResult).To(BeNil())
 			})
 		})
 
@@ -426,10 +419,8 @@ var _ = Describe("ScalingEngine", func() {
 					Error:        "failed to compute new app instances",
 				}))
 
-				Expect(scalingResult.AppId).To(Equal("an-app-id"))
-				Expect(scalingResult.Status).To(Equal(models.ScalingStatusFailed))
-				Expect(scalingResult.Adjustment).To(Equal(0))
-				Expect(scalingResult.CooldownExpiredAt).To(Equal(0))
+				Expect(scalingResult).To(BeNil())
+
 			})
 		})
 
@@ -456,10 +447,7 @@ var _ = Describe("ScalingEngine", func() {
 					Error:        "failed to get active schedule",
 				}))
 
-				Expect(scalingResult.AppId).To(Equal("an-app-id"))
-				Expect(scalingResult.Status).To(Equal(models.ScalingStatusFailed))
-				Expect(scalingResult.Adjustment).To(Equal(0))
-				Expect(scalingResult.CooldownExpiredAt).To(Equal(0))
+				Expect(scalingResult).To(BeNil())
 
 			})
 		})
@@ -487,10 +475,7 @@ var _ = Describe("ScalingEngine", func() {
 					Error:        "failed to get scaling policy",
 				}))
 
-				Expect(scalingResult.AppId).To(Equal("an-app-id"))
-				Expect(scalingResult.Status).To(Equal(models.ScalingStatusFailed))
-				Expect(scalingResult.Adjustment).To(Equal(0))
-				Expect(scalingResult.CooldownExpiredAt).To(Equal(0))
+				Expect(scalingResult).To(BeNil())
 
 			})
 		})
@@ -519,10 +504,7 @@ var _ = Describe("ScalingEngine", func() {
 					Error:        "app does not have policy set",
 				}))
 
-				Expect(scalingResult.AppId).To(Equal("an-app-id"))
-				Expect(scalingResult.Status).To(Equal(models.ScalingStatusFailed))
-				Expect(scalingResult.Adjustment).To(Equal(0))
-				Expect(scalingResult.CooldownExpiredAt).To(Equal(0))
+				Expect(scalingResult).To(BeNil())
 
 			})
 		})
@@ -551,10 +533,7 @@ var _ = Describe("ScalingEngine", func() {
 					Error:        "failed to set app instances",
 				}))
 
-				Expect(scalingResult.AppId).To(Equal("an-app-id"))
-				Expect(scalingResult.Status).To(Equal(models.ScalingStatusFailed))
-				Expect(scalingResult.Adjustment).To(Equal(0))
-				Expect(scalingResult.CooldownExpiredAt).To(Equal(0))
+				Expect(scalingResult).To(BeNil())
 
 			})
 		})

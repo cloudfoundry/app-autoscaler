@@ -80,7 +80,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 		history.Status = models.ScalingStatusFailed
 		history.Error = "failed to get app info"
 		result.Status = history.Status
-		return result, err
+		return nil, err
 	}
 	history.OldInstances = appEntity.Instances
 
@@ -99,7 +99,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 		history.Status = models.ScalingStatusFailed
 		history.Error = "failed to check app cooldown setting"
 		result.Status = history.Status
-		return result, err
+		return nil, err
 	}
 	result.CooldownExpiredAt = expiredAt
 	if !ok {
@@ -116,7 +116,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 		history.Status = models.ScalingStatusFailed
 		history.Error = "failed to compute new app instances"
 		result.Status = models.ScalingStatusFailed
-		return result, err
+		return nil, err
 	}
 
 	schedule, err := s.scalingEngineDB.GetActiveSchedule(appId)
@@ -125,7 +125,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 		history.Status = models.ScalingStatusFailed
 		history.Error = "failed to get active schedule"
 		result.Status = history.Status
-		return result, err
+		return nil, err
 	}
 
 	var instanceMin, instanceMax int
@@ -140,7 +140,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 			history.Status = models.ScalingStatusFailed
 			history.Error = "failed to get scaling policy"
 			result.Status = history.Status
-			return result, err
+			return nil, err
 		}
 		if policy == nil {
 			history.Status = models.ScalingStatusFailed
@@ -148,7 +148,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 			err = errors.New("app does not have policy set")
 			logger.Error("failed-to-get-app-policy", err)
 			result.Status = history.Status
-			return result, err
+			return nil, err
 		}
 		instanceMin = policy.InstanceMin
 		instanceMax = policy.InstanceMax
@@ -175,7 +175,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 		history.Status = models.ScalingStatusFailed
 		history.Error = "failed to set app instances"
 		result.Status = history.Status
-		return result, err
+		return nil, err
 	}
 
 	history.Status = models.ScalingStatusSucceeded

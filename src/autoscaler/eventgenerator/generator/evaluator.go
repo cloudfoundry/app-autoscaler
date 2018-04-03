@@ -196,17 +196,17 @@ func (e *Evaluator) sendTriggerAlarm(trigger *models.Trigger) error {
 		var scalingResult *models.AppScalingResult
 		err = json.Unmarshal(respBody, &scalingResult)
 		if err != nil {
-			e.logger.Error("successfully-send-trigger-alarm, but received wrong response", err, lager.Data{"trigger": trigger, "responseBody": respBody})
+			e.logger.Error("successfully-send-trigger-alarm, but received wrong response", err, lager.Data{"trigger": trigger, "responseBody": string(respBody)})
 			return err
 		}
-		e.logger.Info("successfully-send-trigger-alarm with trigger", lager.Data{"trigger": trigger})
+		e.logger.Info("successfully-send-trigger-alarm with trigger", lager.Data{"trigger": trigger, "responseBody": string(respBody)})
 		if scalingResult.CooldownExpiredAt != 0 {
 			e.setCoolDownExpired(trigger.AppId, scalingResult.CooldownExpiredAt)
 		}
 		return nil
 	}
 	err = fmt.Errorf("Got %d when sending trigger alarm", resp.StatusCode)
-	e.logger.Error("failed-send-trigger-alarm", err, lager.Data{"trigger": trigger, "responseBody": respBody})
+	e.logger.Error("failed-send-trigger-alarm", err, lager.Data{"trigger": trigger, "responseBody": string(respBody)})
 	return err
 
 }
