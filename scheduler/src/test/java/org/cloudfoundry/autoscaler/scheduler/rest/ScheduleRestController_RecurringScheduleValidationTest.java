@@ -540,8 +540,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 		ResultActions resultActions = mockMvc
 				.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid).contentType(MediaType.APPLICATION_JSON).content(content));
 
-		String errorMessage = messageBundleResourceHelper.lookupMessage("data.invalid.noSchedules", "app_id=" + appId);
-		assertErrorMessage(resultActions, errorMessage);
+		assertResponseStatusEquals(resultActions, status().isOk());
 	}
 
 	@Test
@@ -560,8 +559,7 @@ public class ScheduleRestController_RecurringScheduleValidationTest {
 		ResultActions resultActions = mockMvc
 				.perform(put(TestDataSetupHelper.getSchedulerPath(appId)).param("guid", guid).contentType(MediaType.APPLICATION_JSON).content(content));
 
-		String errorMessage = messageBundleResourceHelper.lookupMessage("data.invalid.noSchedules", "app_id=" + appId);
-		assertErrorMessage(resultActions, errorMessage);
+		assertResponseStatusEquals(resultActions, status().isOk());
 	}
 
 	@Test

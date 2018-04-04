@@ -36,47 +36,45 @@ module.exports = function(schedulerSettings) {
     var appId = req.params.app_id;
     var policyGuid = req.query.policy_guid;
     var policy = req.body;
-    if(!policy.schedules) {
-      logger.info('Policy does not have schedule info ',{ 'app id':appId });
-      callback(null);
-    }
-    else{
-      logger.info('Policy has schedules, creating/updating schedules ..',
-      { 'app id':appId });
-      var options = getOptions(appId, policy,  policyGuid);
-      request.put(options, function(error, response, body) {
-        if(error) {
-          logger.error('Error occurred during schedule creation/update ',
-                { 'app id': appId,'error':error.message });
-          error.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
-          callback(error); 
-        }
-        else if(response.statusCode === HttpStatus.NO_CONTENT 
-            || response.statusCode === HttpStatus.OK) { 
-          logger.info('Schedules created/updated successfully',{ 'app id': appId });
-          callback(null);
-        }
-        else if(response.statusCode === HttpStatus.BAD_REQUEST) {
-          /* Creating the error object for Validation Error in scheduler with status code 400 
-          to call the main callback in the waterfall immediately after getting this error. */
-          var validationError = { 'message':'Failed to create schedules due to validation' + 
-              ' error in scheduler, details:\n' + response.body };
-          logger.error('Error occurred during creation/update of schedules ',
-              { 'app id': appId,'error':validationError });
-          validationError.statusCode = HttpStatus.BAD_REQUEST;
-          callback(validationError);
-        }
-        // For any other error response received from Scheduler
-        else {
-          var internalError = { 'message':'Failed to create schedules due to an internal' + 
-                  ' error in scheduler, details:\n' + response.body };
-          logger.error('Error occurred in scheduler module during creation/update ',
-              { 'app id': appId,'error':internalError });
-          internalError.statusCode = HttpStatus.INTERNAL_SERVER_ERROR
-          callback(internalError);
-        }
-      });
-    }
+
+    var options = getOptions(appId, policy, policyGuid);
+    request.put(options, function (error, response, body) {
+      if (error) {
+        logger.error('Error occurred during schedule creation/update ',
+          { 'app id': appId, 'error': error.message });
+        error.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
+        callback(error);
+      }
+      else if (response.statusCode === HttpStatus.NO_CONTENT
+        || response.statusCode === HttpStatus.OK) {
+        logger.info('Schedules created/updated successfully', { 'app id': appId });
+        callback(null);
+      }
+      else if (response.statusCode === HttpStatus.BAD_REQUEST) {
+        /* Creating the error object for Validation Error in scheduler with status code 400 
+        to call the main callback in the waterfall immediately after getting this error. */
+        var validationError = {
+          'message': 'Failed to create schedules due to validation' +
+            ' error in scheduler, details:\n' + response.body
+        };
+        logger.error('Error occurred during creation/update of schedules ',
+          { 'app id': appId, 'error': validationError });
+        validationError.statusCode = HttpStatus.BAD_REQUEST;
+        callback(validationError);
+      }
+      // For any other error response received from Scheduler
+      else {
+        var internalError = {
+          'message': 'Failed to create schedules due to an internal' +
+            ' error in scheduler, details:\n' + response.body
+        };
+        logger.error('Error occurred in scheduler module during creation/update ',
+          { 'app id': appId, 'error': internalError });
+        internalError.statusCode = HttpStatus.INTERNAL_SERVER_ERROR
+        callback(internalError);
+      }
+    });
+    
 
   };
 
