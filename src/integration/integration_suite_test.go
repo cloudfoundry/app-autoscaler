@@ -88,6 +88,7 @@ var (
 	aggregatorExecuteInterval time.Duration = 1 * time.Second
 	policyPollerInterval      time.Duration = 1 * time.Second
 	evaluationManagerInterval time.Duration = 1 * time.Second
+	breachDurationSecs        int           = 5
 
 	httpClient             *http.Client
 	httpClientForPublicApi *http.Client
@@ -687,12 +688,16 @@ func fakeMetricsStreaming(appId string, memoryValue uint64, memQuota uint64) {
 			return
 		case <-ticker.C:
 			timestamp := time.Now().UnixNano()
-			message1 := marshalMessage(createContainerMetric(appId, 0, 3.0, memoryValue, 2048000000, memQuota, 4096000000, timestamp))
+			message1 := marshalMessage(createContainerMetric(appId, 0, 3.0, memoryValue, 2048000000, memQuota, 4096000000, timestamp-int64(time.Duration(breachDurationSecs)*time.Second)))
 			messagesToSend <- message1
 			message2 := marshalMessage(createContainerMetric(appId, 1, 4.0, memoryValue, 2048000000, memQuota, 4096000000, timestamp))
 			messagesToSend <- message2
 			message3 := marshalMessage(createContainerMetric(appId, 2, 5.0, memoryValue, 2048000000, memQuota, 4096000000, timestamp))
 			messagesToSend <- message3
+			message4 := marshalMessage(createContainerMetric(appId, 2, 5.0, memoryValue, 2048000000, memQuota, 4096000000, timestamp))
+			messagesToSend <- message4
+			message5 := marshalMessage(createContainerMetric(appId, 2, 5.0, memoryValue, 2048000000, memQuota, 4096000000, timestamp+int64(time.Duration(breachDurationSecs)*time.Second)))
+			messagesToSend <- message5
 		}
 	}()
 

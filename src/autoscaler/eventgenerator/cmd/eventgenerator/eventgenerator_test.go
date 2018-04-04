@@ -54,7 +54,7 @@ var _ = Describe("Eventgenerator", func() {
 				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("eventgenerator.started"))
 				Consistently(runner.Session).ShouldNot(Exit())
 				Eventually(func() bool { return len(metricCollector.ReceivedRequests()) >= 1 }, 5*time.Second).Should(BeTrue())
-				Eventually(func() bool { return len(scalingEngine.ReceivedRequests()) >= 1 }, 5*time.Second).Should(BeTrue())
+				Eventually(func() bool { return len(scalingEngine.ReceivedRequests()) >= 1 }, time.Duration(2*breachDurationSecs)*time.Second).Should(BeTrue())
 			})
 		})
 
@@ -105,7 +105,7 @@ var _ = Describe("Eventgenerator", func() {
 					Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("eventgenerator.started"))
 					Consistently(runner.Session).ShouldNot(Exit())
 					Eventually(func() bool { return len(metricCollector.ReceivedRequests()) >= 1 }, 5*time.Second).Should(BeTrue())
-					Eventually(func() bool { return len(scalingEngine.ReceivedRequests()) >= 1 }, 5*time.Second).Should(BeTrue())
+					Eventually(func() bool { return len(scalingEngine.ReceivedRequests()) >= 1 }, time.Duration(2*breachDurationSecs)*time.Second).Should(BeTrue())
 				})
 
 			})
@@ -329,7 +329,7 @@ var _ = Describe("Eventgenerator", func() {
 				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("eventgenerator.started"))
 				Consistently(runner.Session).ShouldNot(Exit())
 				Eventually(func() bool { return len(metricCollector.ReceivedRequests()) >= 1 }, 5*time.Second).Should(BeTrue())
-				Eventually(func() bool { return len(scalingEngine.ReceivedRequests()) >= 1 }, 5*time.Second).Should(BeTrue())
+				Eventually(func() bool { return len(scalingEngine.ReceivedRequests()) >= 1 }, time.Duration(2*breachDurationSecs)*time.Second).Should(BeTrue())
 			})
 		})
 	})

@@ -143,15 +143,30 @@ func (e *Evaluator) doEvaluate(triggerArray []*models.Trigger) {
 }
 
 func (e *Evaluator) retrieveAppMetrics(trigger *models.Trigger) ([]*models.AppMetric, error) {
-	endTime := time.Now()
-	startTime := endTime.Add(0 - trigger.BreachDuration(e.defaultBreachDurationSecs))
-	appMetrics, err := e.database.RetrieveAppMetrics(trigger.AppId, trigger.MetricType, startTime.UnixNano(), endTime.UnixNano())
+	queryEndTime := time.Now()
+	queryStartTime := queryEndTime.Add(0 - 2*trigger.BreachDuration(e.defaultBreachDurationSecs))
+	breachStartTime := queryEndTime.Add(0 - trigger.BreachDuration(e.defaultBreachDurationSecs))
+	appMetrics, err := e.database.RetrieveAppMetrics(trigger.AppId, trigger.MetricType, queryStartTime.UnixNano(), queryEndTime.UnixNano())
 	if err != nil {
 		e.logger.Error("retrieve appMetrics", err, lager.Data{"trigger": trigger})
 		return nil, err
 	}
 	e.logger.Debug("appMetrics", lager.Data{"appMetrics": appMetrics})
-	return appMetrics, nil
+	result := []*models.AppMetric{}
+	if len(appMetrics) > 0 {
+		if appMetrics[0].Timestamp < breachStartTime.UnixNano() {
+			for i := len(appMetrics) - 1; i >= 0; i-- {
+				if appMetrics[i].Timestamp >= breachStartTime.UnixNano() {
+					result = append(result, appMetrics[i])
+				} else {
+					break
+				}
+			}
+		} else {
+			e.logger.Debug("the appmetrics are not enough for evaluation", lager.Data{"trigger": trigger, "appMetrics": appMetrics})
+		}
+	}
+	return result, nil
 }
 
 func (e *Evaluator) sendTriggerAlarm(trigger *models.Trigger) error {

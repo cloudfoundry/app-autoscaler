@@ -18,7 +18,7 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 
 	var (
 		testAppId         string
-		timeout           time.Duration = 20 * time.Second
+		timeout           time.Duration = 2 * time.Duration(breachDurationSecs) * time.Second
 		initInstanceCount int           = 2
 		collectMethod     string        = config.CollectMethodPolling
 		enableDBLock      bool          = false
@@ -59,7 +59,7 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 							{
 								MetricType:            models.MetricNameMemoryUtil,
 								StatWindowSeconds:     10,
-								BreachDurationSeconds: 10,
+								BreachDurationSeconds: breachDurationSecs,
 								Threshold:             30,
 								Operator:              ">=",
 								CoolDownSeconds:       10,
@@ -108,7 +108,7 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 							{
 								MetricType:            models.MetricNameMemoryUtil,
 								StatWindowSeconds:     10,
-								BreachDurationSeconds: 10,
+								BreachDurationSeconds: breachDurationSecs,
 								Threshold:             80,
 								Operator:              ">=",
 								CoolDownSeconds:       10,
@@ -159,7 +159,7 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 							{
 								MetricType:            models.MetricNameMemoryUtil,
 								StatWindowSeconds:     10,
-								BreachDurationSeconds: 10,
+								BreachDurationSeconds: breachDurationSecs,
 								Threshold:             80,
 								Operator:              "<",
 								CoolDownSeconds:       10,
@@ -209,7 +209,7 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 							{
 								MetricType:            models.MetricNameMemoryUtil,
 								StatWindowSeconds:     10,
-								BreachDurationSeconds: 10,
+								BreachDurationSeconds: breachDurationSecs,
 								Threshold:             30,
 								Operator:              "<",
 								CoolDownSeconds:       30,
@@ -269,7 +269,7 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 							{
 								MetricType:            models.MetricNameMemoryUtil,
 								StatWindowSeconds:     10,
-								BreachDurationSeconds: 10,
+								BreachDurationSeconds: breachDurationSecs,
 								Threshold:             30,
 								Operator:              ">=",
 								CoolDownSeconds:       10,
@@ -318,7 +318,7 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 							{
 								MetricType:            models.MetricNameMemoryUtil,
 								StatWindowSeconds:     10,
-								BreachDurationSeconds: 10,
+								BreachDurationSeconds: breachDurationSecs,
 								Threshold:             80,
 								Operator:              ">=",
 								CoolDownSeconds:       10,
@@ -369,7 +369,7 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 							{
 								MetricType:            models.MetricNameMemoryUtil,
 								StatWindowSeconds:     10,
-								BreachDurationSeconds: 10,
+								BreachDurationSeconds: breachDurationSecs,
 								Threshold:             80,
 								Operator:              "<",
 								CoolDownSeconds:       10,
@@ -419,7 +419,7 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 							{
 								MetricType:            models.MetricNameMemoryUtil,
 								StatWindowSeconds:     10,
-								BreachDurationSeconds: 10,
+								BreachDurationSeconds: breachDurationSecs,
 								Threshold:             30,
 								Operator:              "<",
 								CoolDownSeconds:       30,
