@@ -8,6 +8,7 @@ import (
 	"autoscaler/eventgenerator/config"
 	"autoscaler/models"
 	"database/sql"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -32,13 +33,14 @@ var (
 	metricType string = "a-metric-type"
 	metricUnit string = "a-metric-unit"
 
-	regPath         = regexp.MustCompile(`^/v1/apps/.*/scale$`)
-	configFile      *os.File
-	conf            config.Config
-	metricCollector *ghttp.Server
-	scalingEngine   *ghttp.Server
-	consulRunner    *consulrunner.ClusterRunner
-	metrics         []*models.AppInstanceMetric = []*models.AppInstanceMetric{
+	regPath            = regexp.MustCompile(`^/v1/apps/.*/scale$`)
+	configFile         *os.File
+	conf               config.Config
+	metricCollector    *ghttp.Server
+	scalingEngine      *ghttp.Server
+	consulRunner       *consulrunner.ClusterRunner
+	breachDurationSecs int                         = 10
+	metrics            []*models.AppInstanceMetric = []*models.AppInstanceMetric{
 		{
 			AppId:         testAppId,
 			InstanceIndex: 0,
@@ -127,7 +129,7 @@ func initDB() {
 	_, err = egDB.Exec("DELETE from policy_json")
 	Expect(err).NotTo(HaveOccurred())
 
-	policy := `
+	policy := fmt.Sprintf(`
 		{
 		   "instance_min_count":1,
 		   "instance_max_count":5,
@@ -135,14 +137,14 @@ func initDB() {
 		      {
 		         "metric_type":"a-metric-type",
 		         "stat_window_secs":300,
-		         "breach_duration_secs":300,
+		         "breach_duration_secs":%d,
 		         "threshold":300,
 		         "operator":">",
 		         "cool_down_secs":300,
 		         "adjustment":"+1"
 		      }
 		   ]
-		}`
+		}`, breachDurationSecs)
 	query := "INSERT INTO policy_json(app_id, policy_json, guid) values($1, $2, $3)"
 	_, err = egDB.Exec(query, testAppId, policy, "1234")
 	Expect(err).NotTo(HaveOccurred())
