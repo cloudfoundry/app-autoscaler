@@ -4,7 +4,6 @@ import (
 	"autoscaler/cf"
 	"autoscaler/db"
 	"autoscaler/models"
-	"math"
 
 	"errors"
 	"fmt"
@@ -180,10 +179,14 @@ func (s *scalingEngine) ComputeNewInstances(currentInstances int, adjustment str
 			s.logger.Error("failed-to-parse-percentage", err, lager.Data{"adjustment": adjustment})
 			return -1, err
 		}
-		if percentage >= 0 {
-			newInstances = int(math.Ceil(float64(currentInstances) * (1 + percentage/100)))
-		} else {
-			newInstances = int(math.Floor(float64(currentInstances) * (1 + percentage/100)))
+		newInstances = int(float64(currentInstances)*(1+percentage/100) + 0.5)
+
+		if newInstances == currentInstances {
+			if percentage >= 0 { 
+				newInstances = currentInstances + 1
+			} else {
+				newInstances = currentInstances - 1
+			}
 		}
 
 	} else {

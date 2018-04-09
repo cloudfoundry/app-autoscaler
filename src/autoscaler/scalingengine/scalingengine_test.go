@@ -520,13 +520,23 @@ var _ = Describe("ScalingEngine", func() {
 		})
 
 		Context("when adjustment is valid", func() {
-			Context("when adjustment is by percentage", func() {
+			Context("when adjustment is defined as a positive percentage value", func() {
 				BeforeEach(func() {
 					adjustment = "10%"
 				})
 				It("returns correct new instance number", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(newInstances).To(Equal(4))
+				})
+			})
+
+			Context("when adjustment is defined as a negative  percentage value", func() {
+				BeforeEach(func() {
+					adjustment = "-10%"
+				})
+				It("returns correct new instance number", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(newInstances).To(Equal(2))
 				})
 			})
 
