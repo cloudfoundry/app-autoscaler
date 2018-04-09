@@ -1,6 +1,7 @@
 package config_test
 
 import (
+	"autoscaler/db"
 	. "autoscaler/eventgenerator/config"
 	"autoscaler/models"
 
@@ -8,6 +9,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"gopkg.in/yaml.v2"
 )
 
 var _ = Describe("Config", func() {
@@ -30,8 +32,16 @@ var _ = Describe("Config", func() {
 logging:
   level: info
 db:
-  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
-  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  policy_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  app_metrics_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
 aggregator: 
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
@@ -61,7 +71,11 @@ lock:
   consul_cluster_config: http://127.0.0.1:8500
 db_lock:
   ttl: 15s
-  url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  lock_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
   retry_interval: 5s
 enable_db_lock: false
 defaultStatWindowSecs: 300
@@ -77,7 +91,20 @@ circuitBreaker:
 				Expect(err).NotTo(HaveOccurred())
 				Expect(conf).To(Equal(&Config{
 					Logging: LoggingConfig{Level: "info"},
-					DB:      DBConfig{PolicyDBUrl: "postgres://postgres:password@localhost/autoscaler?sslmode=disable", AppMetricDBUrl: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"},
+					DB: DBConfig{
+						PolicyDB: db.DatabaseConfig{
+							Url:                   "postgres://postgres:password@localhost/autoscaler?sslmode=disable",
+							MaxOpenConnections:    10,
+							MaxIdleConnections:    5,
+							ConnectionMaxLifetime: 60 * time.Second,
+						},
+						AppMetricDB: db.DatabaseConfig{
+							Url:                   "postgres://postgres:password@localhost/autoscaler?sslmode=disable",
+							MaxOpenConnections:    10,
+							MaxIdleConnections:    5,
+							ConnectionMaxLifetime: 60 * time.Second,
+						},
+					},
 					Aggregator: AggregatorConfig{
 						AggregatorExecuteInterval: 30 * time.Second,
 						PolicyPollerInterval:      30 * time.Second,
@@ -114,7 +141,12 @@ circuitBreaker:
 					DBLock: DBLockConfig{
 						LockTTL:           15 * time.Second,
 						LockRetryInterval: 5 * time.Second,
-						LockDBURL:         "postgres://postgres:password@localhost/autoscaler?sslmode=disable",
+						LockDB: db.DatabaseConfig{
+							Url:                   "postgres://postgres:password@localhost/autoscaler?sslmode=disable",
+							MaxOpenConnections:    10,
+							MaxIdleConnections:    5,
+							ConnectionMaxLifetime: 60 * time.Second,
+						},
 					},
 					EnableDBLock:              false,
 					DefaultBreachDurationSecs: 600,
@@ -133,8 +165,16 @@ circuitBreaker:
   logging:
   level: info
 db:
-  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
-  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  policy_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  app_metrics_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
 aggregator: 
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
@@ -161,6 +201,331 @@ defaultBreachDurationSecs: 600
 				Expect(err).To(MatchError(MatchRegexp(".*did not find expected <document start>.*")))
 			})
 		})
+		Context("with partial config", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+db:
+  policy_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  app_metrics_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+metricCollector:
+  metric_collector_url: http://localhost:8083
+defaultStatWindowSecs: 300
+defaultBreachDurationSecs: 600
+`)
+			})
+
+			It("returns default values", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(conf.Aggregator.PolicyPollerInterval).To(Equal(time.Duration(DefaultPolicyPollerInterval)))
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(conf).To(Equal(&Config{
+					Logging: LoggingConfig{Level: "info"},
+					DB: DBConfig{
+						PolicyDB: db.DatabaseConfig{
+							Url:                   "postgres://postgres:password@localhost/autoscaler?sslmode=disable",
+							MaxOpenConnections:    0,
+							MaxIdleConnections:    0,
+							ConnectionMaxLifetime: 0 * time.Second,
+						},
+						AppMetricDB: db.DatabaseConfig{
+							Url:                   "postgres://postgres:password@localhost/autoscaler?sslmode=disable",
+							MaxOpenConnections:    0,
+							MaxIdleConnections:    0,
+							ConnectionMaxLifetime: 0 * time.Second,
+						},
+					},
+					Aggregator: AggregatorConfig{
+						AggregatorExecuteInterval: DefaultAggregatorExecuteInterval,
+						PolicyPollerInterval:      DefaultPolicyPollerInterval,
+						MetricPollerCount:         DefaultMetricPollerCount,
+						AppMonitorChannelSize:     DefaultAppMonitorChannelSize,
+						AppMetricChannelSize:      DefaultAppMetricChannelSize,
+						SaveInterval:              DefaultSaveInterval,
+					},
+					Evaluator: EvaluatorConfig{
+						EvaluationManagerInterval: DefaultEvaluationExecuteInterval,
+						EvaluatorCount:            DefaultEvaluatorCount,
+						TriggerArrayChannelSize:   DefaultTriggerArrayChannelSize,
+					},
+					ScalingEngine: ScalingEngineConfig{
+						ScalingEngineUrl: "http://localhost:8082"},
+					MetricCollector: MetricCollectorConfig{
+						MetricCollectorUrl: "http://localhost:8083"},
+					Lock: LockConfig{
+						LockRetryInterval: DefaultRetryInterval,
+						LockTTL:           DefaultLockTTL},
+					DBLock: DBLockConfig{
+						LockTTL:           DefaultDBLockTTL,
+						LockRetryInterval: DefaultDBLockRetryInterval,
+					},
+					EnableDBLock:              false,
+					DefaultBreachDurationSecs: 600,
+					DefaultStatWindowSecs:     300,
+					CircuitBreaker: CircuitBreakerConfig{
+						BackOffInitialInterval:  DefaultBackOffInitialInterval,
+						BackOffMaxInterval:      DefaultBackOffMaxInterval,
+						ConsecutiveFailureCount: DefaultBreakerConsecutiveFailureCount,
+					},
+				}))
+			})
+		})
+
+		Context("when it gives a non integer max_open_connections of policydb", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: info
+db:
+  policy_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: NOT-INTEGER-VALUE
+    max_idle_connections: 5
+    connection_max_lifetime: 6k
+  app_metrics_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+aggregator: 
+  aggregator_execute_interval: 60s
+  policy_poller_interval: 30s
+  metric_poller_count: 10
+  app_monitor_channel_size: 100
+evaluator:
+  evaluation_manager_execute_interval: 30s
+  evaluator_count: 10
+  trigger_array_channel_size: 100
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+metricCollector:
+  metric_collector_url: http://localhost:8083
+lock:
+  consul_cluster_config: http://127.0.0.1:8500
+defaultStatWindowSecs: 300
+defaultBreachDurationSecs: 600
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+			})
+		})
+
+		Context("when it gives a non integer max_idle_connections of policydb", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: info
+db:
+  policy_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: NOT-INTEGER-VALUE
+    connection_max_lifetime: 6k
+  app_metrics_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+aggregator: 
+  aggregator_execute_interval: 60s
+  policy_poller_interval: 30s
+  metric_poller_count: 10
+  app_monitor_channel_size: 100
+evaluator:
+  evaluation_manager_execute_interval: 30s
+  evaluator_count: 10
+  trigger_array_channel_size: 100
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+metricCollector:
+  metric_collector_url: http://localhost:8083
+lock:
+  consul_cluster_config: http://127.0.0.1:8500
+defaultStatWindowSecs: 300
+defaultBreachDurationSecs: 600
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+			})
+		})
+
+		Context("when connection_max_lifetime of policydb is not a time duration", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: info
+db:
+  policy_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 6k
+  app_metrics_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+aggregator: 
+  aggregator_execute_interval: 60s
+  policy_poller_interval: 30s
+  metric_poller_count: 10
+  app_monitor_channel_size: 100
+evaluator:
+  evaluation_manager_execute_interval: 30s
+  evaluator_count: 10
+  trigger_array_channel_size: 100
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+metricCollector:
+  metric_collector_url: http://localhost:8083
+lock:
+  consul_cluster_config: http://127.0.0.1:8500
+defaultStatWindowSecs: 300
+defaultBreachDurationSecs: 600
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
+			})
+		})
+
+		Context("when it gives a non integer max_open_connections of app_metrics_db", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: info
+db:
+  policy_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 6k
+  app_metrics_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: NOT-INTEGER-VALUE
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+aggregator: 
+  aggregator_execute_interval: 60s
+  policy_poller_interval: 30s
+  metric_poller_count: 10
+  app_monitor_channel_size: 100
+evaluator:
+  evaluation_manager_execute_interval: 30s
+  evaluator_count: 10
+  trigger_array_channel_size: 100
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+metricCollector:
+  metric_collector_url: http://localhost:8083
+lock:
+  consul_cluster_config: http://127.0.0.1:8500
+defaultStatWindowSecs: 300
+defaultBreachDurationSecs: 600
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+			})
+		})
+
+		Context("when it gives a non integer max_idle_connections of app_metrics_db", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: info
+db:
+  policy_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 6k
+  app_metrics_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: NOT-INTEGER-VALUE
+    connection_max_lifetime: 60s
+aggregator: 
+  aggregator_execute_interval: 60s
+  policy_poller_interval: 30s
+  metric_poller_count: 10
+  app_monitor_channel_size: 100
+evaluator:
+  evaluation_manager_execute_interval: 30s
+  evaluator_count: 10
+  trigger_array_channel_size: 100
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+metricCollector:
+  metric_collector_url: http://localhost:8083
+lock:
+  consul_cluster_config: http://127.0.0.1:8500
+defaultStatWindowSecs: 300
+defaultBreachDurationSecs: 600
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+			})
+		})
+
+		Context("when connection_max_lifetime of app_metrics_db is not a time duration", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: info
+db:
+  policy_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  app_metrics_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 6k
+aggregator: 
+  aggregator_execute_interval: 60s
+  policy_poller_interval: 30s
+  metric_poller_count: 10
+  app_monitor_channel_size: 100
+evaluator:
+  evaluation_manager_execute_interval: 30s
+  evaluator_count: 10
+  trigger_array_channel_size: 100
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+metricCollector:
+  metric_collector_url: http://localhost:8083
+lock:
+  consul_cluster_config: http://127.0.0.1:8500
+defaultStatWindowSecs: 300
+defaultBreachDurationSecs: 600
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
+			})
+		})
 
 		Context("when aggregator_execute_interval is not a time duration", func() {
 			BeforeEach(func() {
@@ -168,8 +533,16 @@ defaultBreachDurationSecs: 600
 logging:
   level: info
 db:
-  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
-  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  policy_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  app_metrics_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
 aggregator: 
   aggregator_execute_interval: 5k
   policy_poller_interval: 30s
@@ -191,6 +564,7 @@ defaultBreachDurationSecs: 600
 			})
 
 			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
 			})
 		})
@@ -201,8 +575,16 @@ defaultBreachDurationSecs: 600
 logging:
   level: info
 db:
-  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
-  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  policy_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  app_metrics_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
 aggregator: 
   aggregator_execute_interval: 30s
   policy_poller_interval: 7u
@@ -224,6 +606,7 @@ defaultBreachDurationSecs: 600
 			})
 
 			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
 			})
 		})
@@ -258,6 +641,7 @@ defaultBreachDurationSecs: 600
 			})
 
 			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
 			})
 		})
@@ -268,8 +652,16 @@ defaultBreachDurationSecs: 600
 logging:
   level: info
 db:
-  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
-  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  policy_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  app_metrics_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
 aggregator: 
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
@@ -291,6 +683,7 @@ defaultBreachDurationSecs: 600
 			})
 
 			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
 			})
 		})
@@ -301,8 +694,16 @@ defaultBreachDurationSecs: 600
 logging:
   level: info
 db:
-  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
-  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  policy_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  app_metrics_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
 aggregator: 
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
@@ -324,6 +725,7 @@ defaultBreachDurationSecs: 600
 			})
 
 			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
 			})
 		})
@@ -358,6 +760,7 @@ defaultBreachDurationSecs: 600
 			})
 
 			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
 			})
 		})
@@ -368,8 +771,16 @@ defaultBreachDurationSecs: 600
 logging:
   level: info
 db:
-  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
-  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  policy_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  app_metrics_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
 aggregator: 
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
@@ -391,6 +802,7 @@ defaultBreachDurationSecs: 600
 			})
 
 			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
 			})
 		})
@@ -401,8 +813,16 @@ defaultBreachDurationSecs: 600
 logging:
   level: info
 db:
-  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
-  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  policy_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  app_metrics_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
 aggregator: 
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
@@ -424,6 +844,7 @@ defaultBreachDurationSecs: 600
 			})
 
 			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
 			})
 		})
@@ -433,8 +854,16 @@ defaultBreachDurationSecs: 600
 logging:
   level: info
 db:
-  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
-  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  policy_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  app_metrics_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
 aggregator: 
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
@@ -456,6 +885,7 @@ defaultBreachDurationSecs: 600
 			})
 
 			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
 			})
 		})
@@ -466,8 +896,16 @@ defaultBreachDurationSecs: 600
 logging:
   level: info
 db:
-  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
-  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  policy_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  app_metrics_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
 aggregator: 
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
@@ -491,6 +929,7 @@ defaultBreachDurationSecs: 600
 			})
 
 			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
 			})
 		})
@@ -501,8 +940,16 @@ defaultBreachDurationSecs: 600
 logging:
   level: info
 db:
-  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
-  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  policy_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  app_metrics_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
 aggregator: 
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
@@ -526,6 +973,7 @@ defaultBreachDurationSecs: 600
 			})
 
 			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
 			})
 		})
@@ -536,8 +984,16 @@ defaultBreachDurationSecs: 600
 logging:
   level: info
 db:
-  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
-  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  policy_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  app_metrics_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
 aggregator: 
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
@@ -561,6 +1017,7 @@ defaultBreachDurationSecs: 600
 			})
 
 			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal !!str `NOT-INT...` into int")))
 			})
 		})
@@ -570,8 +1027,16 @@ defaultBreachDurationSecs: 600
 logging:
   level: info
 db:
-  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
-  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  policy_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  app_metrics_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
 aggregator: 
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
@@ -595,6 +1060,7 @@ defaultBreachDurationSecs: NOT-INTEGER-VALUE
 			})
 
 			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal !!str `NOT-INT...` into int")))
 			})
 		})
@@ -603,8 +1069,10 @@ defaultBreachDurationSecs: NOT-INTEGER-VALUE
 			BeforeEach(func() {
 				configBytes = []byte(`
 db:
-  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
-  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  policy_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  app_metrics_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
 scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
@@ -621,7 +1089,20 @@ defaultBreachDurationSecs: 600
 				Expect(err).NotTo(HaveOccurred())
 				Expect(conf).To(Equal(&Config{
 					Logging: LoggingConfig{Level: "info"},
-					DB:      DBConfig{PolicyDBUrl: "postgres://postgres:password@localhost/autoscaler?sslmode=disable", AppMetricDBUrl: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"},
+					DB: DBConfig{
+						PolicyDB: db.DatabaseConfig{
+							Url:                   "postgres://postgres:password@localhost/autoscaler?sslmode=disable",
+							MaxOpenConnections:    0,
+							MaxIdleConnections:    0,
+							ConnectionMaxLifetime: 0 * time.Second,
+						},
+						AppMetricDB: db.DatabaseConfig{
+							Url:                   "postgres://postgres:password@localhost/autoscaler?sslmode=disable",
+							MaxOpenConnections:    0,
+							MaxIdleConnections:    0,
+							ConnectionMaxLifetime: 0 * time.Second,
+						},
+					},
 					Aggregator: AggregatorConfig{
 						AggregatorExecuteInterval: DefaultAggregatorExecuteInterval,
 						PolicyPollerInterval:      DefaultPolicyPollerInterval,
@@ -662,7 +1143,20 @@ defaultBreachDurationSecs: 600
 		BeforeEach(func() {
 			conf = &Config{
 				Logging: LoggingConfig{Level: "info"},
-				DB:      DBConfig{PolicyDBUrl: "postgres://postgres:password@localhost/autoscaler?sslmode=disable", AppMetricDBUrl: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"},
+				DB: DBConfig{
+					PolicyDB: db.DatabaseConfig{
+						Url:                   "postgres://postgres:password@localhost/autoscaler?sslmode=disable",
+						MaxOpenConnections:    10,
+						MaxIdleConnections:    5,
+						ConnectionMaxLifetime: 60 * time.Second,
+					},
+					AppMetricDB: db.DatabaseConfig{
+						Url:                   "postgres://postgres:password@localhost/autoscaler?sslmode=disable",
+						MaxOpenConnections:    10,
+						MaxIdleConnections:    5,
+						ConnectionMaxLifetime: 60 * time.Second,
+					},
+				},
 				Aggregator: AggregatorConfig{
 					AggregatorExecuteInterval: 30 * time.Second,
 					PolicyPollerInterval:      30 * time.Second,
@@ -694,7 +1188,7 @@ defaultBreachDurationSecs: 600
 		Context("when policy db url is not set", func() {
 
 			BeforeEach(func() {
-				conf.DB.PolicyDBUrl = ""
+				conf.DB.PolicyDB.Url = ""
 			})
 
 			It("should error", func() {
@@ -705,7 +1199,7 @@ defaultBreachDurationSecs: 600
 		Context("when appmetric db url is not set", func() {
 
 			BeforeEach(func() {
-				conf.DB.AppMetricDBUrl = ""
+				conf.DB.AppMetricDB.Url = ""
 			})
 
 			It("should error", func() {

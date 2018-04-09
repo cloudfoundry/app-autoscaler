@@ -10,39 +10,41 @@ import (
 )
 
 type AppMetricSQLDB struct {
-	url    string
-	logger lager.Logger
-	sqldb  *sql.DB
+	dbConfig db.DatabaseConfig
+	logger   lager.Logger
+	sqldb    *sql.DB
 }
 
-func NewAppMetricSQLDB(url string, logger lager.Logger) (*AppMetricSQLDB, error) {
-	appMetricDB := &AppMetricSQLDB{
-		url:    url,
-		logger: logger,
-	}
-
+func NewAppMetricSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*AppMetricSQLDB, error) {
 	var err error
 
-	appMetricDB.sqldb, err = sql.Open(db.PostgresDriverName, url)
+	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.Url)
 	if err != nil {
-		logger.Error("open-AppMetric-db", err, lager.Data{"url": url})
+		logger.Error("open-AppMetric-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
 	}
 
-	err = appMetricDB.sqldb.Ping()
+	err = sqldb.Ping()
 	if err != nil {
-		appMetricDB.sqldb.Close()
-		logger.Error("ping-AppMetric-db", err, lager.Data{"url": url})
+		sqldb.Close()
+		logger.Error("ping-AppMetric-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
 	}
+	sqldb.SetConnMaxLifetime(dbConfig.ConnectionMaxLifetime)
+	sqldb.SetMaxIdleConns(dbConfig.MaxIdleConnections)
+	sqldb.SetMaxOpenConns(dbConfig.MaxOpenConnections)
 
-	return appMetricDB, nil
+	return &AppMetricSQLDB{
+		dbConfig: dbConfig,
+		logger:   logger,
+		sqldb:    sqldb,
+	}, nil
 }
 
 func (adb *AppMetricSQLDB) Close() error {
 	err := adb.sqldb.Close()
 	if err != nil {
-		adb.logger.Error("Close-AppMetric-db", err, lager.Data{"url": adb.url})
+		adb.logger.Error("Close-AppMetric-db", err, lager.Data{"dbConfig": adb.dbConfig})
 		return err
 	}
 	return nil

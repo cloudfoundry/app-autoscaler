@@ -2,6 +2,7 @@ package config_test
 
 import (
 	"autoscaler/cf"
+	"autoscaler/db"
 	. "autoscaler/scalingengine/config"
 
 	. "github.com/onsi/ginkgo"
@@ -47,19 +48,6 @@ lockSize: 32
 			})
 		})
 
-		Context("when it gives a non integer port", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
-server:
-  port: port
-`)
-			})
-
-			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-			})
-		})
-
 		Context("with valid yaml", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
@@ -80,9 +68,21 @@ server:
 logging:
   level: DeBug
 db:
-  policy_db_url: test-policy-db-url
-  scalingengine_db_url: test-scalingengine-db-url
-  scheduler_db_url: test-scheduler-db-url
+  policy_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  scalingengine_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  scheduler_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
 synchronizer:
   active_schedule_sync_interval: 300s
 consul:
@@ -110,9 +110,27 @@ lockSize: 32
 
 				Expect(conf.Logging.Level).To(Equal("debug"))
 
-				Expect(conf.Db.PolicyDbUrl).To(Equal("test-policy-db-url"))
-				Expect(conf.Db.ScalingEngineDbUrl).To(Equal("test-scalingengine-db-url"))
-				Expect(conf.Db.SchedulerDbUrl).To(Equal("test-scheduler-db-url"))
+				Expect(conf.Db.PolicyDb).To(Equal(
+					db.DatabaseConfig{
+						Url:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+						MaxOpenConnections:    10,
+						MaxIdleConnections:    5,
+						ConnectionMaxLifetime: 60 * time.Second,
+					}))
+				Expect(conf.Db.ScalingEngineDb).To(Equal(
+					db.DatabaseConfig{
+						Url:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+						MaxOpenConnections:    10,
+						MaxIdleConnections:    5,
+						ConnectionMaxLifetime: 60 * time.Second,
+					}))
+				Expect(conf.Db.SchedulerDb).To(Equal(
+					db.DatabaseConfig{
+						Url:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+						MaxOpenConnections:    10,
+						MaxIdleConnections:    5,
+						ConnectionMaxLifetime: 60 * time.Second,
+					}))
 
 				Expect(conf.Synchronizer.ActiveScheduleSyncInterval).To(Equal(5 * time.Minute))
 
@@ -130,9 +148,12 @@ lockSize: 32
 cf:
   api: https://api.example.com
 db:
-  policy_db_url: test-policy-db-url
-  scalingengine_db_url: test-scalingengine-db-url
-  scheduler_db_url: test-scheduler-db-url
+  policy_db:
+    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
+  scalingengine_db:
+    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
+  scheduler_db:
+    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
 defaultCoolDownSecs: 300
 lockSize: 32
 `)
@@ -145,7 +166,640 @@ lockSize: 32
 				Expect(conf.Cf.SkipSSLValidation).To(Equal(false))
 				Expect(conf.Server.Port).To(Equal(8080))
 				Expect(conf.Logging.Level).To(Equal("info"))
+				Expect(conf.Db.PolicyDb).To(Equal(
+					db.DatabaseConfig{
+						Url:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+						MaxOpenConnections:    0,
+						MaxIdleConnections:    0,
+						ConnectionMaxLifetime: 0 * time.Second,
+					}))
+				Expect(conf.Db.ScalingEngineDb).To(Equal(
+					db.DatabaseConfig{
+						Url:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+						MaxOpenConnections:    0,
+						MaxIdleConnections:    0,
+						ConnectionMaxLifetime: 0 * time.Second,
+					}))
+				Expect(conf.Db.SchedulerDb).To(Equal(
+					db.DatabaseConfig{
+						Url:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+						MaxOpenConnections:    0,
+						MaxIdleConnections:    0,
+						ConnectionMaxLifetime: 0 * time.Second,
+					}))
 				Expect(conf.Synchronizer.ActiveScheduleSyncInterval).To(Equal(DefaultActiveScheduleSyncInterval))
+			})
+		})
+
+		Context("when it gives a non integer port", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+server:
+  port: port
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+			})
+		})
+		Context("when it gives a non integer max_open_connections of policydb", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+cf:
+  api: https://api.example.com
+  grant_type: PassWord
+  username: admin
+  password: admin
+  client_id: client-id
+  secret: client-secret
+  skip_ssl_validation: false
+server:
+  port: 8989
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
+logging:
+  level: DeBug
+db:
+  policy_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: NOT-INTEGER-VALUE
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  scalingengine_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  scheduler_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+synchronizer:
+  active_schedule_sync_interval: 300s
+consul:
+  cluster: http://127.0.0.1:8500
+defaultCoolDownSecs: 300
+lockSize: 32
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+			})
+		})
+
+		Context("when it gives a non integer max_idle_connections of policydb", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+cf:
+  api: https://api.example.com
+  grant_type: PassWord
+  username: admin
+  password: admin
+  client_id: client-id
+  secret: client-secret
+  skip_ssl_validation: false
+server:
+  port: 8989
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
+logging:
+  level: DeBug
+db:
+  policy_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: NOT-INTEGER-VALUE
+    connection_max_lifetime: 60s
+  scalingengine_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  scheduler_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+synchronizer:
+  active_schedule_sync_interval: 300s
+consul:
+  cluster: http://127.0.0.1:8500
+defaultCoolDownSecs: 300
+lockSize: 32
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+			})
+		})
+
+		Context("when connection_max_lifetime of policydb is not a time duration", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+cf:
+  api: https://api.example.com
+  grant_type: PassWord
+  username: admin
+  password: admin
+  client_id: client-id
+  secret: client-secret
+  skip_ssl_validation: false
+server:
+  port: 8989
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
+logging:
+  level: DeBug
+db:
+  policy_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60k
+  scalingengine_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  scheduler_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+synchronizer:
+  active_schedule_sync_interval: 300s
+consul:
+  cluster: http://127.0.0.1:8500
+defaultCoolDownSecs: 300
+lockSize: 32
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
+			})
+		})
+
+		Context("when it gives a non integer max_open_connections of scalingengine_db", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+cf:
+  api: https://api.example.com
+  grant_type: PassWord
+  username: admin
+  password: admin
+  client_id: client-id
+  secret: client-secret
+  skip_ssl_validation: false
+server:
+  port: 8989
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
+logging:
+  level: DeBug
+db:
+  policy_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  scalingengine_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: NOT-INTEGER-VALUE
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  scheduler_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+synchronizer:
+  active_schedule_sync_interval: 300s
+consul:
+  cluster: http://127.0.0.1:8500
+defaultCoolDownSecs: 300
+lockSize: 32
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+			})
+		})
+
+		Context("when it gives a non integer max_idle_connections of scalingengine_db", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+cf:
+  api: https://api.example.com
+  grant_type: PassWord
+  username: admin
+  password: admin
+  client_id: client-id
+  secret: client-secret
+  skip_ssl_validation: false
+server:
+  port: 8989
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
+logging:
+  level: DeBug
+db:
+  policy_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  scalingengine_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: NOT-INTEGER-VALUE
+    connection_max_lifetime: 60s
+  scheduler_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+synchronizer:
+  active_schedule_sync_interval: 300s
+consul:
+  cluster: http://127.0.0.1:8500
+defaultCoolDownSecs: 300
+lockSize: 32
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+			})
+		})
+
+		Context("when connection_max_lifetime of scalingengine_db is not a time duration", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+cf:
+  api: https://api.example.com
+  grant_type: PassWord
+  username: admin
+  password: admin
+  client_id: client-id
+  secret: client-secret
+  skip_ssl_validation: false
+server:
+  port: 8989
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
+logging:
+  level: DeBug
+db:
+  policy_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60
+  scalingengine_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60k
+  scheduler_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+synchronizer:
+  active_schedule_sync_interval: 300s
+consul:
+  cluster: http://127.0.0.1:8500
+defaultCoolDownSecs: 300
+lockSize: 32
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
+			})
+		})
+		Context("when it gives a non integer max_open_connections of scheduler_db", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+cf:
+  api: https://api.example.com
+  grant_type: PassWord
+  username: admin
+  password: admin
+  client_id: client-id
+  secret: client-secret
+  skip_ssl_validation: false
+server:
+  port: 8989
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
+logging:
+  level: DeBug
+db:
+  policy_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  scalingengine_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  scheduler_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: NOT-INTEGER-VALUE
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+synchronizer:
+  active_schedule_sync_interval: 300s
+consul:
+  cluster: http://127.0.0.1:8500
+defaultCoolDownSecs: 300
+lockSize: 32
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+			})
+		})
+
+		Context("when it gives a non integer max_idle_connections of scheduler_db", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+cf:
+  api: https://api.example.com
+  grant_type: PassWord
+  username: admin
+  password: admin
+  client_id: client-id
+  secret: client-secret
+  skip_ssl_validation: false
+server:
+  port: 8989
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
+logging:
+  level: DeBug
+db:
+  policy_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  scalingengine_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  scheduler_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: NOT-INTEGER-VALUE
+    connection_max_lifetime: 60
+synchronizer:
+  active_schedule_sync_interval: 300s
+consul:
+  cluster: http://127.0.0.1:8500
+defaultCoolDownSecs: 300
+lockSize: 32
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+			})
+		})
+
+		Context("when connection_max_lifetime of scheduler_db is not a time duration", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+cf:
+  api: https://api.example.com
+  grant_type: PassWord
+  username: admin
+  password: admin
+  client_id: client-id
+  secret: client-secret
+  skip_ssl_validation: false
+server:
+  port: 8989
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
+logging:
+  level: DeBug
+db:
+  policy_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60
+  scalingengine_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60
+  scheduler_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60k
+synchronizer:
+  active_schedule_sync_interval: 300s
+consul:
+  cluster: http://127.0.0.1:8500
+defaultCoolDownSecs: 300
+lockSize: 32
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
+			})
+		})
+
+		Context("when active_schedule_sync_interval of synchronizer is not a time duration", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+cf:
+  api: https://api.example.com
+  grant_type: PassWord
+  username: admin
+  password: admin
+  client_id: client-id
+  secret: client-secret
+  skip_ssl_validation: false
+server:
+  port: 8989
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
+logging:
+  level: DeBug
+db:
+  policy_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60
+  scalingengine_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60
+  scheduler_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+synchronizer:
+  active_schedule_sync_interval: 300k
+consul:
+  cluster: http://127.0.0.1:8500
+defaultCoolDownSecs: 300
+lockSize: 32
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
+			})
+		})
+
+		Context("when it gives a non integer of defaultCoolDownSecs", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+cf:
+  api: https://api.example.com
+  grant_type: PassWord
+  username: admin
+  password: admin
+  client_id: client-id
+  secret: client-secret
+  skip_ssl_validation: false
+server:
+  port: 8989
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
+logging:
+  level: DeBug
+db:
+  policy_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60
+  scalingengine_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60
+  scheduler_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+synchronizer:
+  active_schedule_sync_interval: 300
+consul:
+  cluster: http://127.0.0.1:8500
+defaultCoolDownSecs: NOT-INTEGER-VALUE
+lockSize: 32
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+			})
+		})
+
+		Context("when it gives a non integer of lockSize", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+cf:
+  api: https://api.example.com
+  grant_type: PassWord
+  username: admin
+  password: admin
+  client_id: client-id
+  secret: client-secret
+  skip_ssl_validation: false
+server:
+  port: 8989
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
+logging:
+  level: DeBug
+db:
+  policy_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60
+  scalingengine_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60
+  scheduler_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+synchronizer:
+  active_schedule_sync_interval: 300
+consul:
+  cluster: http://127.0.0.1:8500
+defaultCoolDownSecs: 300
+lockSize: NOT-INTEGER-VALUE
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
 			})
 		})
 
@@ -158,9 +812,9 @@ lockSize: 32
 			conf.Cf.GrantType = cf.GrantTypePassword
 			conf.Cf.SkipSSLValidation = false
 			conf.Cf.Username = "admin"
-			conf.Db.PolicyDbUrl = "test-policy-db-url"
-			conf.Db.ScalingEngineDbUrl = "test-scalingengine-db-url"
-			conf.Db.SchedulerDbUrl = "test-scheduler-db-url"
+			conf.Db.PolicyDb.Url = "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+			conf.Db.ScalingEngineDb.Url = "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+			conf.Db.SchedulerDb.Url = "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
 			conf.DefaultCoolDownSecs = 300
 			conf.LockSize = 32
 		})
@@ -187,7 +841,7 @@ lockSize: 32
 
 		Context("when policy db url is not set", func() {
 			BeforeEach(func() {
-				conf.Db.PolicyDbUrl = ""
+				conf.Db.PolicyDb.Url = ""
 			})
 
 			It("should error", func() {
@@ -197,7 +851,7 @@ lockSize: 32
 
 		Context("when scalingengine db url is not set", func() {
 			BeforeEach(func() {
-				conf.Db.ScalingEngineDbUrl = ""
+				conf.Db.ScalingEngineDb.Url = ""
 			})
 
 			It("should error", func() {
@@ -207,7 +861,7 @@ lockSize: 32
 
 		Context("when scheduler db url is not set", func() {
 			BeforeEach(func() {
-				conf.Db.SchedulerDbUrl = ""
+				conf.Db.SchedulerDb.Url = ""
 			})
 
 			It("should error", func() {

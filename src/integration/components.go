@@ -2,6 +2,7 @@ package integration
 
 import (
 	"autoscaler/cf"
+	"autoscaler/db"
 	egConfig "autoscaler/eventgenerator/config"
 	mcConfig "autoscaler/metricscollector/config"
 	"autoscaler/models"
@@ -383,8 +384,12 @@ func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port i
 			Level: LOGLEVEL,
 		},
 		Db: mcConfig.DbConfig{
-			InstanceMetricsDbUrl: dbUri,
-			PolicyDbUrl:          dbUri,
+			InstanceMetricsDb: db.DatabaseConfig{
+				Url: dbUri,
+			},
+			PolicyDb: db.DatabaseConfig{
+				Url: dbUri,
+			},
 		},
 		Collector: mcConfig.CollectorConfig{
 			CollectInterval: collectInterval,
@@ -399,8 +404,10 @@ func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port i
 		},
 		EnableDBLock: enableDBLock,
 		DBLock: mcConfig.DBLockConfig{
-			LockTTL:           time.Duration(10 * time.Second),
-			LockDBURL:         dbUri,
+			LockTTL: time.Duration(10 * time.Second),
+			LockDB: db.DatabaseConfig{
+				Url: dbUri,
+			},
 			LockRetryInterval: time.Duration(2 * time.Second),
 		},
 	}
@@ -428,8 +435,12 @@ func (components *Components) PrepareEventGeneratorConfig(dbUri string, enableDB
 			TriggerArrayChannelSize:   1,
 		},
 		DB: egConfig.DBConfig{
-			PolicyDBUrl:    dbUri,
-			AppMetricDBUrl: dbUri,
+			PolicyDB: db.DatabaseConfig{
+				Url: dbUri,
+			},
+			AppMetricDB: db.DatabaseConfig{
+				Url: dbUri,
+			},
 		},
 		ScalingEngine: egConfig.ScalingEngineConfig{
 			ScalingEngineUrl: scalingEngineUrl,
@@ -454,8 +465,10 @@ func (components *Components) PrepareEventGeneratorConfig(dbUri string, enableDB
 		},
 		EnableDBLock: enableDBLock,
 		DBLock: egConfig.DBLockConfig{
-			LockTTL:           time.Duration(10 * time.Second),
-			LockDBURL:         dbUri,
+			LockTTL: time.Duration(10 * time.Second),
+			LockDB: db.DatabaseConfig{
+				Url: dbUri,
+			},
 			LockRetryInterval: time.Duration(2 * time.Second),
 		},
 		DefaultBreachDurationSecs: 600,
@@ -484,9 +497,15 @@ func (components *Components) PrepareScalingEngineConfig(dbUri string, port int,
 			Level: LOGLEVEL,
 		},
 		Db: seConfig.DbConfig{
-			PolicyDbUrl:        dbUri,
-			ScalingEngineDbUrl: dbUri,
-			SchedulerDbUrl:     dbUri,
+			PolicyDb: db.DatabaseConfig{
+				Url: dbUri,
+			},
+			ScalingEngineDb: db.DatabaseConfig{
+				Url: dbUri,
+			},
+			SchedulerDb: db.DatabaseConfig{
+				Url: dbUri,
+			},
 		},
 		Synchronizer: seConfig.SynchronizerConfig{
 			ActiveScheduleSyncInterval: 10 * time.Second,

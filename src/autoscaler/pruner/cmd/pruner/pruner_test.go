@@ -212,7 +212,7 @@ var _ = Describe("Pruner", func() {
 
 	Context("when connection to instancemetrics db fails", func() {
 		BeforeEach(func() {
-			cfg.InstanceMetricsDb.DbUrl = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
+			cfg.InstanceMetricsDb.Db.Url = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 			cfg := writeConfig(&cfg)
 			runner.configPath = cfg.Name()
 			runner.Start()
@@ -231,7 +231,7 @@ var _ = Describe("Pruner", func() {
 
 	Context("when connection to appmetrics db fails", func() {
 		BeforeEach(func() {
-			cfg.AppMetricsDb.DbUrl = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
+			cfg.AppMetricsDb.Db.Url = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 			cfg := writeConfig(&cfg)
 			runner.configPath = cfg.Name()
 			runner.Start()
@@ -250,7 +250,7 @@ var _ = Describe("Pruner", func() {
 
 	Context("when connection to scalingengine db fails", func() {
 		BeforeEach(func() {
-			cfg.ScalingEngineDb.DbUrl = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
+			cfg.ScalingEngineDb.Db.Url = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 			cfg := writeConfig(&cfg)
 			runner.configPath = cfg.Name()
 			runner.Start()

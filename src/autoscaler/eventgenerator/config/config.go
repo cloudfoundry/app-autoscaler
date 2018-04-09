@@ -9,6 +9,7 @@ import (
 
 	"code.cloudfoundry.org/locket"
 
+	"autoscaler/db"
 	"autoscaler/models"
 )
 
@@ -37,8 +38,8 @@ type LoggingConfig struct {
 }
 
 type DBConfig struct {
-	PolicyDBUrl    string `yaml:"policy_db_url"`
-	AppMetricDBUrl string `yaml:"app_metrics_db_url"`
+	PolicyDB    db.DatabaseConfig `yaml:"policy_db"`
+	AppMetricDB db.DatabaseConfig `yaml:"app_metrics_db"`
 }
 
 type AggregatorConfig struct {
@@ -73,9 +74,9 @@ type LockConfig struct {
 }
 
 type DBLockConfig struct {
-	LockTTL           time.Duration `yaml:"ttl"`
-	LockDBURL         string        `yaml:"url"`
-	LockRetryInterval time.Duration `yaml:"retry_interval"`
+	LockTTL           time.Duration     `yaml:"ttl"`
+	LockDB            db.DatabaseConfig `yaml:"lock_db"`
+	LockRetryInterval time.Duration     `yaml:"retry_interval"`
 }
 
 type CircuitBreakerConfig struct {
@@ -148,10 +149,10 @@ func LoadConfig(bytes []byte) (*Config, error) {
 }
 
 func (c *Config) Validate() error {
-	if c.DB.PolicyDBUrl == "" {
+	if c.DB.PolicyDB.Url == "" {
 		return fmt.Errorf("Configuration error: Policy DB url is empty")
 	}
-	if c.DB.AppMetricDBUrl == "" {
+	if c.DB.AppMetricDB.Url == "" {
 		return fmt.Errorf("Configuration error: AppMetric DB url is empty")
 	}
 	if c.ScalingEngine.ScalingEngineUrl == "" {
@@ -199,7 +200,7 @@ func (c *Config) Validate() error {
 	if c.DefaultStatWindowSecs < 60 || c.DefaultStatWindowSecs > 3600 {
 		return fmt.Errorf("Configuration error: defaultStatWindowSecs should be between 60 and 3600")
 	}
-	if c.EnableDBLock && c.DBLock.LockDBURL == "" {
+	if c.EnableDBLock && c.DBLock.LockDB.Url == "" {
 		return fmt.Errorf("Configuration error: Lock DB URL is empty")
 	}
 	return nil

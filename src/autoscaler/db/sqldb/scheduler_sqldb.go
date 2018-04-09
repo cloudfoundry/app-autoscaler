@@ -12,36 +12,40 @@ import (
 )
 
 type SchedulerSQLDB struct {
-	sqldb  *sql.DB
-	logger lager.Logger
-	url    string
+	sqldb    *sql.DB
+	logger   lager.Logger
+	dbConfig db.DatabaseConfig
 }
 
-func NewSchedulerSQLDB(url string, logger lager.Logger) (*SchedulerSQLDB, error) {
-	sqldb, err := sql.Open(db.PostgresDriverName, url)
+func NewSchedulerSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*SchedulerSQLDB, error) {
+	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.Url)
 	if err != nil {
-		logger.Error("failed-open-scheduler-db", err, lager.Data{"url": url})
+		logger.Error("failed-open-scheduler-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
 	}
 
 	err = sqldb.Ping()
 	if err != nil {
 		sqldb.Close()
-		logger.Error("failed-ping-scheduler-db", err, lager.Data{"url": url})
+		logger.Error("failed-ping-scheduler-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
 	}
 
+	sqldb.SetConnMaxLifetime(dbConfig.ConnectionMaxLifetime)
+	sqldb.SetMaxIdleConns(dbConfig.MaxIdleConnections)
+	sqldb.SetMaxOpenConns(dbConfig.MaxOpenConnections)
+
 	return &SchedulerSQLDB{
-		url:    url,
-		logger: logger,
-		sqldb:  sqldb,
+		dbConfig: dbConfig,
+		logger:   logger,
+		sqldb:    sqldb,
 	}, nil
 }
 
 func (sdb *SchedulerSQLDB) Close() error {
 	err := sdb.sqldb.Close()
 	if err != nil {
-		sdb.logger.Error("failed-close-scheduler-db", err, lager.Data{"url": sdb.url})
+		sdb.logger.Error("failed-close-scheduler-db", err, lager.Data{"dbConfig": sdb.dbConfig})
 		return err
 	}
 	return nil

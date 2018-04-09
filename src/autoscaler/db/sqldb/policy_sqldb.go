@@ -11,36 +11,40 @@ import (
 )
 
 type PolicySQLDB struct {
-	url    string
-	logger lager.Logger
-	sqldb  *sql.DB
+	dbConfig db.DatabaseConfig
+	logger   lager.Logger
+	sqldb    *sql.DB
 }
 
-func NewPolicySQLDB(url string, logger lager.Logger) (*PolicySQLDB, error) {
-	sqldb, err := sql.Open(db.PostgresDriverName, url)
+func NewPolicySQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*PolicySQLDB, error) {
+	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.Url)
 	if err != nil {
-		logger.Error("open-policy-db", err, lager.Data{"url": url})
+		logger.Error("open-policy-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
 	}
 
 	err = sqldb.Ping()
 	if err != nil {
 		sqldb.Close()
-		logger.Error("ping-policy-db", err, lager.Data{"url": url})
+		logger.Error("ping-policy-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
 	}
 
+	sqldb.SetConnMaxLifetime(dbConfig.ConnectionMaxLifetime)
+	sqldb.SetMaxIdleConns(dbConfig.MaxIdleConnections)
+	sqldb.SetMaxOpenConns(dbConfig.MaxOpenConnections)
+
 	return &PolicySQLDB{
-		url:    url,
-		logger: logger,
-		sqldb:  sqldb,
+		dbConfig: dbConfig,
+		logger:   logger,
+		sqldb:    sqldb,
 	}, nil
 }
 
 func (pdb *PolicySQLDB) Close() error {
 	err := pdb.sqldb.Close()
 	if err != nil {
-		pdb.logger.Error("Close-policy-db", err, lager.Data{"url": pdb.url})
+		pdb.logger.Error("Close-policy-db", err, lager.Data{"dbConfig": pdb.dbConfig})
 		return err
 	}
 	return nil

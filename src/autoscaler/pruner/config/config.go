@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"autoscaler/db"
+
 	"code.cloudfoundry.org/locket"
 
 	"gopkg.in/yaml.v2"
@@ -25,21 +27,21 @@ type LoggingConfig struct {
 }
 
 type InstanceMetricsDbPrunerConfig struct {
-	DbUrl           string        `yaml:"db_url"`
-	RefreshInterval time.Duration `yaml:"refresh_interval"`
-	CutoffDays      int           `yaml:"cutoff_days"`
+	Db              db.DatabaseConfig `yaml:"db"`
+	RefreshInterval time.Duration     `yaml:"refresh_interval"`
+	CutoffDays      int               `yaml:"cutoff_days"`
 }
 
 type AppMetricsDbPrunerConfig struct {
-	DbUrl           string        `yaml:"db_url"`
-	RefreshInterval time.Duration `yaml:"refresh_interval"`
-	CutoffDays      int           `yaml:"cutoff_days"`
+	Db              db.DatabaseConfig `yaml:"db"`
+	RefreshInterval time.Duration     `yaml:"refresh_interval"`
+	CutoffDays      int               `yaml:"cutoff_days"`
 }
 
 type ScalingEngineDbPrunerConfig struct {
-	DbUrl           string        `yaml:"db_url"`
-	RefreshInterval time.Duration `yaml:"refresh_interval"`
-	CutoffDays      int           `yaml:"cutoff_days"`
+	Db              db.DatabaseConfig `yaml:"db"`
+	RefreshInterval time.Duration     `yaml:"refresh_interval"`
+	CutoffDays      int               `yaml:"cutoff_days"`
 }
 
 type LockConfig struct {
@@ -96,7 +98,7 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 
 func (c *Config) Validate() error {
 
-	if c.InstanceMetricsDb.DbUrl == "" {
+	if c.InstanceMetricsDb.Db.Url == "" {
 		return fmt.Errorf("Configuration error: InstanceMetrics DB url is empty")
 	}
 
@@ -108,7 +110,7 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("Configuration error: InstanceMetrics DB cutoff days is negative")
 	}
 
-	if c.AppMetricsDb.DbUrl == "" {
+	if c.AppMetricsDb.Db.Url == "" {
 		return fmt.Errorf("Configuration error: AppMetrics DB url is empty")
 	}
 
@@ -120,7 +122,7 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("Configuration error: AppMetrics DB cutoff days is negative")
 	}
 
-	if c.ScalingEngineDb.DbUrl == "" {
+	if c.ScalingEngineDb.Db.Url == "" {
 		return fmt.Errorf("Configuration error: ScalingEngine DB url is empty")
 	}
 
