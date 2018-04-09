@@ -90,12 +90,14 @@ public class ScheduleRestController {
 		if (isUpdateScheduleRequest) {// Request to update the schedules
 			logger.info("Update schedules for application: " + appId);
 
-			logger.info("Delete schedules for application: " + appId);
+			logger.info("Delete existing schedules for application: " + appId);
 			scheduleManager.deleteSchedules(appId);
 		}
 
-		logger.info("Create schedules for application: " + appId);
-		scheduleManager.createSchedules(rawApplicationPolicy.getSchedules());
+		if (rawApplicationPolicy.getSchedules() != null ) {
+			logger.info("Create schedules for application: " + appId);
+			scheduleManager.createSchedules(rawApplicationPolicy.getSchedules());
+		}
 
 		if (isUpdateScheduleRequest) {
 			return new ResponseEntity<>(null, null, HttpStatus.NO_CONTENT);
