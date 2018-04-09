@@ -33,7 +33,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 		url = os.Getenv("DBURL")
 	})
 
-	Describe("NewAppMetricSQLDB", func() {
+	Context("NewAppMetricSQLDB", func() {
 		JustBeforeEach(func() {
 			adb, err = NewAppMetricSQLDB(url, logger)
 		})
@@ -63,7 +63,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 		})
 	})
 
-	Describe("SaveAppMetric", func() {
+	Context("SaveAppMetric", func() {
 		BeforeEach(func() {
 			adb, err = NewAppMetricSQLDB(url, logger)
 			Expect(err).NotTo(HaveOccurred())
@@ -75,7 +75,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
-		Context("When inserting a metric of an app", func() {
+		Context("When inserting an app_metric", func() {
 			BeforeEach(func() {
 				appMetric := &models.AppMetric{
 					AppId:      testAppId,
@@ -85,16 +85,55 @@ var _ = Describe("AppMetricSQLDB", func() {
 					Value:      "300",
 				}
 				err = adb.SaveAppMetric(appMetric)
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("has the appMetric in database", func() {
-				Expect(err).NotTo(HaveOccurred())
-				Expect(hasAppMetric(testAppId, testMetricName, 11111111)).To(BeTrue())
+				Expect(hasAppMetric(testAppId, testMetricName, 11111111, "300")).To(BeTrue())
 			})
 		})
 
 	})
-	Describe("RetrieveAppMetrics", func() {
+	Context("SaveAppMetricsInBulk", func() {
+		BeforeEach(func() {
+			adb, err = NewAppMetricSQLDB(url, logger)
+			Expect(err).NotTo(HaveOccurred())
+			cleanAppMetricTable()
+		})
+
+		AfterEach(func() {
+			err = adb.Close()
+			Expect(err).NotTo(HaveOccurred())
+		})
+		Context("When inserting an array of app_metric", func() {
+			BeforeEach(func() {
+				appMetrics := []*models.AppMetric{
+					&models.AppMetric{
+						AppId:      testAppId,
+						MetricType: testMetricName,
+						Unit:       testMetricUnit,
+						Timestamp:  11111111,
+						Value:      "300",
+					},
+					&models.AppMetric{
+						AppId:      testAppId,
+						MetricType: testMetricName,
+						Unit:       testMetricUnit,
+						Timestamp:  22222222,
+						Value:      "400",
+					},
+				}
+
+				err = adb.SaveAppMetricsInBulk(appMetrics)
+				Expect(err).NotTo(HaveOccurred())
+			})
+			It("has the array of app_metric in database", func() {
+				Expect(hasAppMetric(testAppId, testMetricName, 11111111, "300")).To(BeTrue())
+				Expect(hasAppMetric(testAppId, testMetricName, 22222222, "400")).To(BeTrue())
+			})
+		})
+	})
+	Context("RetrieveAppMetrics", func() {
 		BeforeEach(func() {
 			adb, err = NewAppMetricSQLDB(url, logger)
 			Expect(err).NotTo(HaveOccurred())
@@ -250,7 +289,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 
 	})
 
-	Describe("PruneAppMetrics", func() {
+	Context("PruneAppMetrics", func() {
 		BeforeEach(func() {
 			adb, err = NewAppMetricSQLDB(url, logger)
 			Expect(err).NotTo(HaveOccurred())
@@ -319,7 +358,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 			It("removes metrics before the time specified", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(getNumberOfAppMetrics()).To(Equal(1))
-				Expect(hasAppMetric(testAppId, testMetricName, 55555555)).To(BeTrue())
+				Expect(hasAppMetric(testAppId, testMetricName, 55555555, "200")).To(BeTrue())
 			})
 		})
 

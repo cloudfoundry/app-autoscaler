@@ -2,16 +2,16 @@ package aggregator_test
 
 import (
 	. "autoscaler/eventgenerator/aggregator"
-	"autoscaler/eventgenerator/aggregator/fakes"
 	"autoscaler/models"
 	"autoscaler/routes"
+
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/lager/lagertest"
-	"errors"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/ghttp"
+
 	"net/http"
 	"time"
 )
@@ -23,7 +23,7 @@ var _ = Describe("MetricPoller", func() {
 	var testMetricUnit string = "a-metric-unit"
 	var logger *lagertest.TestLogger
 	var appMonitorsChan chan *models.AppMonitor
-	var appMetricDatabase *fakes.FakeAppMetricDB
+	var appMetricChan chan *models.AppMetric
 	var metricPoller *MetricPoller
 	var httpClient *http.Client
 	var metricServer *ghttp.Server
@@ -71,7 +71,7 @@ var _ = Describe("MetricPoller", func() {
 		logger = lagertest.NewTestLogger("MetricPoller-test")
 		httpClient = cfhttp.NewClient()
 		appMonitorsChan = make(chan *models.AppMonitor, 1)
-		appMetricDatabase = &fakes.FakeAppMetricDB{}
+		appMetricChan = make(chan *models.AppMetric, 1)
 		metricServer = nil
 
 		path, err := routes.MetricsCollectorRoutes().Get(routes.GetMetricHistoriesRouteName).URLPath("appid", testAppId, "metrictype", testMetricType)
@@ -91,10 +91,10 @@ var _ = Describe("MetricPoller", func() {
 
 			metricServer = ghttp.NewUnstartedServer()
 
-			metricPoller = NewMetricPoller(logger, metricServer.URL(), appMonitorsChan, httpClient, appMetricDatabase)
+			metricPoller = NewMetricPoller(logger, metricServer.URL(), appMonitorsChan, httpClient, appMetricChan)
 			metricPoller.Start()
 
-			appMonitorsChan <- appMonitor
+			Expect(appMonitorsChan).Should(BeSent(appMonitor))
 		})
 
 		AfterEach(func() {
@@ -107,12 +107,13 @@ var _ = Describe("MetricPoller", func() {
 		})
 
 		It("does not save any metrics", func() {
-			Consistently(appMetricDatabase.SaveAppMetricCallCount).Should(BeZero())
+			Consistently(appMetricChan).ShouldNot(Receive())
 		})
 	})
 
 	Context("Start", func() {
 		var appMonitor *models.AppMonitor
+		var appMetric *models.AppMetric
 
 		BeforeEach(func() {
 			appMonitor = &models.AppMonitor{
@@ -127,10 +128,10 @@ var _ = Describe("MetricPoller", func() {
 		})
 
 		JustBeforeEach(func() {
-			metricPoller = NewMetricPoller(logger, metricServer.URL(), appMonitorsChan, httpClient, appMetricDatabase)
+			metricPoller = NewMetricPoller(logger, metricServer.URL(), appMonitorsChan, httpClient, appMetricChan)
 			metricPoller.Start()
 
-			appMonitorsChan <- appMonitor
+			Expect(appMonitorsChan).Should(BeSent(appMonitor))
 		})
 
 		AfterEach(func() {
@@ -139,12 +140,11 @@ var _ = Describe("MetricPoller", func() {
 		})
 
 		Context("when metrics are successfully retrieved", func() {
-			It("saves the average metrics", func() {
-				Eventually(appMetricDatabase.SaveAppMetricCallCount).Should(Equal(1))
-				actualAppMetric := appMetricDatabase.SaveAppMetricArgsForCall(0)
-				actualAppMetric.Timestamp = timestamp
+			It("send the average metrics to appMetric channel", func() {
+				appMetric = <-appMetricChan
+				appMetric.Timestamp = timestamp
 
-				Expect(actualAppMetric).To(Equal(&models.AppMetric{
+				Expect(appMetric).To(Equal(&models.AppMetric{
 					AppId:      testAppId,
 					MetricType: testMetricType,
 					Value:      "250",
@@ -163,8 +163,8 @@ var _ = Describe("MetricPoller", func() {
 				Eventually(logger.Buffer).Should(Say("Failed to parse response"))
 			})
 
-			It("does not save any metrics", func() {
-				Consistently(appMetricDatabase.SaveAppMetricCallCount).Should(BeZero())
+			It("should not send any metrics to appmetric channel", func() {
+				Consistently(appMetricChan).ShouldNot(Receive())
 			})
 		})
 
@@ -174,9 +174,16 @@ var _ = Describe("MetricPoller", func() {
 					&[]*models.AppInstanceMetric{}))
 			})
 
-			It("saves the average metrics with no value", func() {
-				Eventually(appMetricDatabase.SaveAppMetricCallCount).Should(Equal(1))
-				Expect(appMetricDatabase.SaveAppMetricArgsForCall(0).Value).To(BeEmpty())
+			It("send the average metrics with no value to appmetric channel", func() {
+				appMetric = <-appMetricChan
+				appMetric.Timestamp = timestamp
+
+				Expect(appMetric).To(Equal(&models.AppMetric{
+					AppId:      testAppId,
+					MetricType: testMetricType,
+					Value:      "",
+					Unit:       "",
+					Timestamp:  timestamp}))
 			})
 		})
 
@@ -188,20 +195,11 @@ var _ = Describe("MetricPoller", func() {
 						Message: "Error"}))
 			})
 
-			It("does not save any metrics", func() {
-				Consistently(appMetricDatabase.SaveAppMetricCallCount).Should(Equal(0))
+			It("should not send any metrics to appmetric channel", func() {
+				Consistently(appMetricChan).ShouldNot(Receive())
 			})
 		})
 
-		Context("when the save fails", func() {
-			BeforeEach(func() {
-				appMetricDatabase.SaveAppMetricReturns(errors.New("db error"))
-			})
-
-			It("logs an error", func() {
-				Eventually(logger.Buffer).Should(Say("Failed to save"))
-			})
-		})
 	})
 
 	Context("Stop", func() {
@@ -210,19 +208,19 @@ var _ = Describe("MetricPoller", func() {
 			metricServer.RouteToHandler("GET", urlPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
 				&metrics))
 
-			metricPoller = NewMetricPoller(logger, metricServer.URL(), appMonitorsChan, httpClient, appMetricDatabase)
+			metricPoller = NewMetricPoller(logger, metricServer.URL(), appMonitorsChan, httpClient, appMetricChan)
 			metricPoller.Start()
 			metricPoller.Stop()
-
-			appMonitorsChan <- &models.AppMonitor{
+			Eventually(logger.Buffer).Should(Say("stopped"))
+			Expect(appMonitorsChan).Should(BeSent(&models.AppMonitor{
 				AppId:      testAppId,
 				MetricType: testMetricType,
 				StatWindow: 10,
-			}
+			}))
 		})
 
 		It("stops the aggregating", func() {
-			Consistently(appMetricDatabase.SaveAppMetricCallCount).Should(Or(Equal(0), Equal(1)))
+			Consistently(appMetricChan).ShouldNot(Receive())
 		})
 	})
 })

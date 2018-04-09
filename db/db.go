@@ -34,6 +34,7 @@ type PolicyDB interface {
 
 type AppMetricDB interface {
 	SaveAppMetric(appMetric *models.AppMetric) error
+	SaveAppMetricsInBulk(metrics []*models.AppMetric) error
 	RetrieveAppMetrics(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error)
 	PruneAppMetrics(before int64) error
 	Close() error
