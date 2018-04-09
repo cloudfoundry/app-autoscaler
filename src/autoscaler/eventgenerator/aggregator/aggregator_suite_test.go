@@ -12,7 +12,7 @@ import (
 const (
 	testAggregatorExecuteInterval = 1 * time.Millisecond
 	testPolicyPollerInterval      = 10 * time.Millisecond
-	testEvaluateInteval           = 1 * time.Millisecond
+	testSaveInterval              = 1 * time.Millisecond
 )
 
 func TestPolicyPoller(t *testing.T) {
