@@ -16,7 +16,7 @@ const (
 	DefaultLoggingLevel                   string        = "info"
 	DefaultPolicyPollerInterval           time.Duration = 40 * time.Second
 	DefaultAggregatorExecuteInterval      time.Duration = 40 * time.Second
-	DefaultSaveInterval                   time.Duration = 30 * time.Second
+	DefaultSaveInterval                   time.Duration = 5 * time.Second
 	DefaultMetricPollerCount              int           = 20
 	DefaultAppMonitorChannelSize          int           = 200
 	DefaultAppMetricChannelSize           int           = 200

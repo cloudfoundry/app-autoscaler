@@ -62,9 +62,6 @@ var _ = Describe("Aggregator", func() {
 		logger = lager.NewLogger("Aggregator-test")
 
 		appMonitorsChan = make(chan *models.AppMonitor, 10)
-		if testEvaluateInterval > fakeWaitDuration {
-			fakeWaitDuration = testEvaluateInterval
-		}
 		if testAggregatorExecuteInterval > fakeWaitDuration {
 			fakeWaitDuration = testAggregatorExecuteInterval
 		}

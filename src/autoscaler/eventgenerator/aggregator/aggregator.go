@@ -15,7 +15,6 @@ type Aggregator struct {
 	appChan                   chan *models.AppMonitor
 	metricPollerArray         []*MetricPoller
 	cclock                    clock.Clock
-	saveClock                 clock.Clock
 	aggregatorExecuteInterval time.Duration
 	saveInterval              time.Duration
 	getPolicies               models.GetPolicies
@@ -103,10 +102,9 @@ func (a *Aggregator) startSavingAppMetric() {
 		case <-ticker.C():
 			go func(appMetricDB db.AppMetricDB, metrics []*models.AppMetric) {
 				appMetricDB.SaveAppMetricsInBulk(metrics)
-				metrics = nil
 				return
 			}(a.appMetricDB, appMetricArray)
-			appMetricArray = nil
+			appMetricArray = []*models.AppMetric{}
 		}
 	}
 }
