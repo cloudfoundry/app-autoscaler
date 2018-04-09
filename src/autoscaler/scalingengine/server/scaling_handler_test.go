@@ -86,6 +86,9 @@ var _ = Describe("ScalingHandler", func() {
 				err = json.Unmarshal(resp.Body.Bytes(), props)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(props.Adjustment).To(Equal(1))
+				Expect(props.AppId).To(Equal("an-app-id"))
+				Expect(props.Status).To(Equal(models.ScalingStatusSucceeded))
+				Expect(props.CooldownExpiredAt).To(Equal(int64(10000)))
 			})
 		})
 

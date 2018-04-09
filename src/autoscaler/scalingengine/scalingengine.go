@@ -79,7 +79,6 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 		logger.Error("failed-to-get-app-info", err)
 		history.Status = models.ScalingStatusFailed
 		history.Error = "failed to get app info"
-		result.Status = history.Status
 		return nil, err
 	}
 	history.OldInstances = appEntity.Instances
@@ -98,7 +97,6 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 		logger.Error("failed-to-check-cooldown", err)
 		history.Status = models.ScalingStatusFailed
 		history.Error = "failed to check app cooldown setting"
-		result.Status = history.Status
 		return nil, err
 	}
 	result.CooldownExpiredAt = expiredAt
@@ -115,7 +113,6 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 		logger.Error("failed-to-compute-new-instance", err, lager.Data{"instances": appEntity.Instances, "adjustment": trigger.Adjustment})
 		history.Status = models.ScalingStatusFailed
 		history.Error = "failed to compute new app instances"
-		result.Status = models.ScalingStatusFailed
 		return nil, err
 	}
 
@@ -124,7 +121,6 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 		logger.Error("failed-to-get-active-schedule", err)
 		history.Status = models.ScalingStatusFailed
 		history.Error = "failed to get active schedule"
-		result.Status = history.Status
 		return nil, err
 	}
 
@@ -139,7 +135,6 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 			logger.Error("failed-to-get-app-policy", err)
 			history.Status = models.ScalingStatusFailed
 			history.Error = "failed to get scaling policy"
-			result.Status = history.Status
 			return nil, err
 		}
 		if policy == nil {
@@ -147,7 +142,6 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 			history.Error = "app does not have policy set"
 			err = errors.New("app does not have policy set")
 			logger.Error("failed-to-get-app-policy", err)
-			result.Status = history.Status
 			return nil, err
 		}
 		instanceMin = policy.InstanceMin
@@ -166,20 +160,21 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 	if newInstances == appEntity.Instances {
 		history.Status = models.ScalingStatusIgnored
 		result.Status = history.Status
-		return result, nil
+		result.Adjustment = 0
+		result.CooldownExpiredAt = now.Add(trigger.CoolDown(s.defaultCoolDownSecs)).UnixNano()
+		return result,nil
 	}
-
+	
 	err = s.cfClient.SetAppInstances(appId, newInstances)
 	if err != nil {
 		logger.Error("failed-to-set-app-instances", err, lager.Data{"newInstances": newInstances})
 		history.Status = models.ScalingStatusFailed
 		history.Error = "failed to set app instances"
-		result.Status = history.Status
 		return nil, err
 	}
-
+	
 	history.Status = models.ScalingStatusSucceeded
-	result.Status = models.ScalingStatusSucceeded
+	result.Status = history.Status
 	result.Adjustment = newInstances - appEntity.Instances
 	result.CooldownExpiredAt = now.Add(trigger.CoolDown(s.defaultCoolDownSecs)).UnixNano()
 	err = s.scalingEngineDB.UpdateScalingCooldownExpireTime(appId, result.CooldownExpiredAt)

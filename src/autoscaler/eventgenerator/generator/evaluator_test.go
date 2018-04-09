@@ -504,7 +504,7 @@ var _ = Describe("Evaluator", func() {
 					Expect(triggerChan).To(BeSent(triggerArrayGT))
 				})
 
-				Context("when the scaling engine returs OK with different scalingResults", func() {
+				Context("when the scaling engine returns 200 with different scalingResults", func() {
 					Context("when cooldownExpiredAt is set to a valid timestamp in scalingResult ", func() {
 						BeforeEach(func() {
 							scalingEngine.AppendHandlers(
@@ -568,7 +568,7 @@ var _ = Describe("Evaluator", func() {
 						})
 					})
 
-					Context("when response is not a valid for type scalingResult", func() {
+					Context("when response is not a valid type scalingResult", func() {
 						BeforeEach(func() {
 							scalingEngine.AppendHandlers(
 								ghttp.CombineHandlers(
@@ -616,28 +616,6 @@ var _ = Describe("Evaluator", func() {
 					It("should log the error", func() {
 						Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
 						Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("failed-read-response-body-from-scaling-engine")))
-					})
-				})
-
-				Context("when the scaling ", func() {
-					BeforeEach(func() {
-						scalingEngine.RouteToHandler("POST", urlPath, ghttp.RespondWithJSONEncoded(http.StatusBadRequest, "error"))
-					})
-
-					It("should log the error", func() {
-						Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
-						Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("failed-send-trigger-alarm")))
-					})
-				})
-
-				Context("when the scaling engine returns error", func() {
-					BeforeEach(func() {
-						scalingEngine.RouteToHandler("POST", urlPath, ghttp.RespondWithJSONEncoded(http.StatusBadRequest, "error"))
-					})
-
-					It("should log the error", func() {
-						Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
-						Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("failed-send-trigger-alarm")))
 					})
 				})
 

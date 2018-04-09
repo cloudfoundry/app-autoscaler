@@ -187,7 +187,7 @@ var _ = Describe("ScalingEngine", func() {
 				Expect(scalingResult.AppId).To(Equal("an-app-id"))
 				Expect(scalingResult.Status).To(Equal(models.ScalingStatusIgnored))
 				Expect(scalingResult.Adjustment).To(Equal(0))
-				Expect(scalingResult.CooldownExpiredAt).To(Equal(clock.Now().Add(0 - 30*time.Second).UnixNano()))
+				Expect(scalingResult.CooldownExpiredAt).To(Equal(clock.Now().Add(30*time.Second).UnixNano()))
 
 			})
 		})
@@ -226,6 +226,40 @@ var _ = Describe("ScalingEngine", func() {
 				Expect(scalingResult.AppId).To(Equal("an-app-id"))
 				Expect(scalingResult.Status).To(Equal(models.ScalingStatusSucceeded))
 				Expect(scalingResult.Adjustment).To(Equal(1))
+				Expect(scalingResult.CooldownExpiredAt).To(Equal(clock.Now().Add(30 * time.Second).UnixNano()))
+
+			})
+		})
+
+		Context("when current instance equals to the max instances limit in scaling policy", func() {
+			BeforeEach(func() {
+				trigger.Adjustment = "+2"
+				cfc.GetAppReturns(&models.AppEntity{Instances: 6, State: &appState}, nil)
+				scalingEngineDB.CanScaleAppReturns(true, clock.Now().Add(0-30*time.Second).UnixNano(), nil)
+				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 1, InstanceMax: 6}, nil)
+
+			})
+
+			It("updates the app instance with  max instances and stores the succeeded scaling history", func() {
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(cfc.SetAppInstancesCallCount()).To(BeZero())
+				Expect(scalingEngineDB.UpdateScalingCooldownExpireTimeCallCount()).To(BeZero())
+
+				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
+					AppId:        "an-app-id",
+					Timestamp:    clock.Now().UnixNano(),
+					ScalingType:  models.ScalingTypeDynamic,
+					Status:       models.ScalingStatusIgnored,
+					OldInstances: 6,
+					NewInstances: 6,
+					Reason:       "+2 instance(s) because test-metric-type > 80test-unit for 100 seconds",
+					Message:      "limited by max instances 6",
+				}))
+
+				Expect(scalingResult.AppId).To(Equal("an-app-id"))
+				Expect(scalingResult.Status).To(Equal(models.ScalingStatusIgnored))
+				Expect(scalingResult.Adjustment).To(Equal(0))
 				Expect(scalingResult.CooldownExpiredAt).To(Equal(clock.Now().Add(30 * time.Second).UnixNano()))
 
 			})
