@@ -4,7 +4,7 @@ import (
 	"autoscaler/db"
 	"autoscaler/models"
 	"code.cloudfoundry.org/lager"
-	_ "github.com/lib/pq"
+	. "github.com/lib/pq"
 
 	"database/sql"
 )
@@ -56,6 +56,45 @@ func (adb *AppMetricSQLDB) SaveAppMetric(appMetric *models.AppMetric) error {
 	}
 
 	return err
+}
+func (adb *AppMetricSQLDB) SaveAppMetricsInBulk(appMetrics []*models.AppMetric) error {
+	txn, err := adb.sqldb.Begin()
+	if err != nil {
+		adb.logger.Error("failed-to-start-transaction", err)
+		return err
+	}
+
+	stmt, err := txn.Prepare(CopyIn("app_metric", "app_id", "metric_type", "unit", "timestamp", "value"))
+	if err != nil {
+		adb.logger.Error("failed-to-prepare-statement", err)
+		return err
+	}
+	for _, appMetric := range appMetrics {
+		_, err := stmt.Exec(appMetric.AppId, appMetric.MetricType, appMetric.Unit, appMetric.Timestamp, appMetric.Value)
+		if err != nil {
+			adb.logger.Error("failed-to-execute", err)
+		}
+	}
+
+	_, err = stmt.Exec()
+	if err != nil {
+		adb.logger.Error("failed-to-execute-statement", err)
+		return err
+	}
+
+	err = stmt.Close()
+	if err != nil {
+		adb.logger.Error("failed-to-close-statement", err)
+		return err
+	}
+
+	err = txn.Commit()
+	if err != nil {
+		adb.logger.Error("failed-to-commit-transaction", err)
+		return err
+	}
+
+	return nil
 }
 func (adb *AppMetricSQLDB) RetrieveAppMetrics(appIdP string, metricTypeP string, startP int64, endP int64) ([]*models.AppMetric, error) {
 	query := "SELECT app_id,metric_type,value,unit,timestamp FROM app_metric WHERE app_id=$1 AND metric_type=$2 AND timestamp>=$3 AND timestamp<=$4 ORDER BY timestamp ASC"

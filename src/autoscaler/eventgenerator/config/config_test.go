@@ -35,8 +35,10 @@ db:
 aggregator: 
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
+  save_interval: 30s
   metric_poller_count: 10
   app_monitor_channel_size: 100
+  app_metric_channel_size: 100
 evaluator:
   evaluation_manager_execute_interval: 30s
   evaluator_count: 10
@@ -79,8 +81,11 @@ circuitBreaker:
 					Aggregator: AggregatorConfig{
 						AggregatorExecuteInterval: 30 * time.Second,
 						PolicyPollerInterval:      30 * time.Second,
+						SaveInterval:              30 * time.Second,
 						MetricPollerCount:         10,
-						AppMonitorChannelSize:     100},
+						AppMonitorChannelSize:     100,
+						AppMetricChannelSize:      100,
+					},
 					Evaluator: EvaluatorConfig{
 						EvaluationManagerInterval: 30 * time.Second,
 						EvaluatorCount:            10,
@@ -133,8 +138,10 @@ db:
 aggregator: 
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
+  save_interval: 30s
   metric_poller_count: 10
   app_monitor_channel_size: 100
+  app_metric_channel_size: 100
 evaluator:
   evaluation_manager_execute_interval: 30s
   evaluator_count: 10
@@ -221,6 +228,40 @@ defaultBreachDurationSecs: 600
 			})
 		})
 
+		Context("when save_interval is not  a time duration", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: info
+db:
+  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+aggregator: 
+  aggregator_execute_interval: 30s
+  policy_poller_interval: 30s
+  save_interval: 7u
+  metric_poller_count: 10
+  app_monitor_channel_size: 100
+evaluator:
+  evaluation_manager_execute_interval: 30s
+  evaluator_count: 10
+  trigger_array_channel_size: 100
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+metricCollector:
+  metric_collector_url: http://localhost:8083
+lock:
+  consul_cluster_config: http://127.0.0.1:8500
+defaultStatWindowSecs: 300
+defaultBreachDurationSecs: 600
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
+			})
+		})
+
 		Context("when it gives a non integer metric_poller_count", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
@@ -267,6 +308,40 @@ aggregator:
   policy_poller_interval: 30s
   metric_poller_count: 10
   app_monitor_channel_size: NOT-INTEGER-VALUE
+evaluator:
+  evaluation_manager_execute_interval: 30s
+  evaluator_count: 10
+  trigger_array_channel_size: 100
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+metricCollector:
+  metric_collector_url: http://localhost:8083
+lock:
+  consul_cluster_config: http://127.0.0.1:8500
+defaultStatWindowSecs: 300
+defaultBreachDurationSecs: 600
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+			})
+		})
+
+		Context("when it gives a non integer app_metric_channel_size", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: info
+db:
+  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+aggregator: 
+  aggregator_execute_interval: 30s
+  policy_poller_interval: 30s
+  metric_poller_count: 10
+  app_monitor_channel_size: 10
+  app_metric_channel_size: NOT-INTEGER-VALUE
 evaluator:
   evaluation_manager_execute_interval: 30s
   evaluator_count: 10
@@ -547,10 +622,14 @@ defaultBreachDurationSecs: 600
 				Expect(conf).To(Equal(&Config{
 					Logging: LoggingConfig{Level: "info"},
 					DB:      DBConfig{PolicyDBUrl: "postgres://postgres:password@localhost/autoscaler?sslmode=disable", AppMetricDBUrl: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"},
-					Aggregator: AggregatorConfig{AggregatorExecuteInterval: DefaultAggregatorExecuteInterval,
-						PolicyPollerInterval:  DefaultPolicyPollerInterval,
-						MetricPollerCount:     DefaultMetricPollerCount,
-						AppMonitorChannelSize: DefaultAppMonitorChannelSize},
+					Aggregator: AggregatorConfig{
+						AggregatorExecuteInterval: DefaultAggregatorExecuteInterval,
+						PolicyPollerInterval:      DefaultPolicyPollerInterval,
+						SaveInterval:              DefaultSaveInterval,
+						MetricPollerCount:         DefaultMetricPollerCount,
+						AppMonitorChannelSize:     DefaultAppMonitorChannelSize,
+						AppMetricChannelSize:      DefaultAppMetricChannelSize,
+					},
 					Evaluator: EvaluatorConfig{EvaluationManagerInterval: DefaultEvaluationExecuteInterval,
 						EvaluatorCount:          DefaultEvaluatorCount,
 						TriggerArrayChannelSize: DefaultTriggerArrayChannelSize},
@@ -587,8 +666,11 @@ defaultBreachDurationSecs: 600
 				Aggregator: AggregatorConfig{
 					AggregatorExecuteInterval: 30 * time.Second,
 					PolicyPollerInterval:      30 * time.Second,
+					SaveInterval:              30 * time.Second,
 					MetricPollerCount:         10,
-					AppMonitorChannelSize:     100},
+					AppMonitorChannelSize:     100,
+					AppMetricChannelSize:      100,
+				},
 				Evaluator: EvaluatorConfig{
 					EvaluationManagerInterval: 30 * time.Second,
 					EvaluatorCount:            10,
@@ -669,6 +751,15 @@ defaultBreachDurationSecs: 600
 			})
 		})
 
+		Context("when SaveInterval:  <= 0", func() {
+			BeforeEach(func() {
+				conf.Aggregator.SaveInterval = 0
+			})
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: save interval is less-equal than 0")))
+			})
+		})
+
 		Context("when MetricPollerCount <= 0", func() {
 			BeforeEach(func() {
 				conf.Aggregator.MetricPollerCount = 0
@@ -684,6 +775,15 @@ defaultBreachDurationSecs: 600
 			})
 			It("should error", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: appMonitor channel size is less-equal than 0")))
+			})
+		})
+
+		Context("when AppMetricChannelSize <= 0", func() {
+			BeforeEach(func() {
+				conf.Aggregator.AppMetricChannelSize = 0
+			})
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: appMetric channel size is less-equal than 0")))
 			})
 		})
 
