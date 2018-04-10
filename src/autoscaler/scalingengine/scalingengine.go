@@ -182,9 +182,9 @@ func (s *scalingEngine) ComputeNewInstances(currentInstances int, adjustment str
 		newInstances = int(float64(currentInstances)*(1+percentage/100) + 0.5)
 
 		if newInstances == currentInstances {
-			if percentage >= 0 { 
+			if percentage > 0 { 
 				newInstances = currentInstances + 1
-			} else {
+			} else if percentage < 0 { 
 				newInstances = currentInstances - 1
 			}
 		}
