@@ -97,7 +97,7 @@ describe('Validating Policy JSON schema construction',function(){
     it('should validate the getAdjustmentPattern successfully',function(){
     var adjustmentPattern = schemaValidatorPrivate.__get__('getAdjustmentPattern')();
     expect(adjustmentPattern).to.not.be.null;
-    expect(adjustmentPattern).to.equal('^[-+][1-9]+[0-9]*$');
+    expect(adjustmentPattern).to.equal('^[-+][1-9]+[0-9]*[%]?$');
   });
     
     it('should validate the getDaysInWeeksInISOFormat successfully',function(){
