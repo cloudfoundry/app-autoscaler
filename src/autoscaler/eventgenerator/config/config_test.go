@@ -285,7 +285,7 @@ db:
     url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
     max_open_connections: NOT-INTEGER-VALUE
     max_idle_connections: 5
-    connection_max_lifetime: 6k
+    connection_max_lifetime: 60s
   app_metrics_db:
     url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
     max_open_connections: 10
@@ -327,7 +327,7 @@ db:
     url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
     max_open_connections: 10
     max_idle_connections: NOT-INTEGER-VALUE
-    connection_max_lifetime: 6k
+    connection_max_lifetime: 60s
   app_metrics_db:
     url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
     max_open_connections: 10
@@ -411,7 +411,7 @@ db:
     url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
     max_open_connections: 10
     max_idle_connections: 5
-    connection_max_lifetime: 6k
+    connection_max_lifetime: 60s
   app_metrics_db:
     url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
     max_open_connections: NOT-INTEGER-VALUE
@@ -453,7 +453,7 @@ db:
     url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
     max_open_connections: 10
     max_idle_connections: 5
-    connection_max_lifetime: 6k
+    connection_max_lifetime: 60s
   app_metrics_db:
     url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
     max_open_connections: 10
@@ -617,8 +617,16 @@ defaultBreachDurationSecs: 600
 logging:
   level: info
 db:
-  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
-  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  policy_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  app_metrics_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
 aggregator: 
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
@@ -1021,7 +1029,7 @@ defaultBreachDurationSecs: 600
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal !!str `NOT-INT...` into int")))
 			})
 		})
-		Context("when it gives a non integer defaultStatWindowSecs", func() {
+		Context("when it gives a non integer defaultBreachDurationSecs", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
 logging:
