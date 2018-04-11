@@ -180,6 +180,15 @@ func (s *scalingEngine) ComputeNewInstances(currentInstances int, adjustment str
 			return -1, err
 		}
 		newInstances = int(float64(currentInstances)*(1+percentage/100) + 0.5)
+
+		if newInstances == currentInstances {
+			if percentage > 0 { 
+				newInstances = currentInstances + 1
+			} else if percentage < 0 { 
+				newInstances = currentInstances - 1
+			}
+		}
+
 	} else {
 		step, err := strconv.ParseInt(adjustment, 10, 32)
 		if err != nil {
