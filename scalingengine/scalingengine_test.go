@@ -148,26 +148,27 @@ var _ = Describe("ScalingEngine", func() {
 
 		Context("when app instances not changed", func() {
 			BeforeEach(func() {
-				trigger.Adjustment = "+20%"
-				cfc.GetAppReturns(&models.AppEntity{Instances: 2, State: &appState}, nil)
+				trigger.Adjustment = "+1"
+				cfc.GetAppReturns(&models.AppEntity{Instances: 6, State: &appState}, nil)
 				scalingEngineDB.CanScaleAppReturns(true, nil)
-				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 1, InstanceMax: 6}, nil)
+				policyDB.GetAppPolicyReturns(&models.ScalingPolicy{InstanceMin: 2, InstanceMax: 6}, nil)
 
 			})
 
 			It("does not update the app and stores the ignored scaling history", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(cfc.SetAppInstancesCallCount()).To(BeZero())
-				Expect(newInstances).To(Equal(2))
+				Expect(newInstances).To(Equal(6))
 
 				Expect(scalingEngineDB.SaveScalingHistoryArgsForCall(0)).To(Equal(&models.AppScalingHistory{
 					AppId:        "an-app-id",
 					Timestamp:    clock.Now().UnixNano(),
 					ScalingType:  models.ScalingTypeDynamic,
 					Status:       models.ScalingStatusIgnored,
-					OldInstances: 2,
-					NewInstances: 2,
-					Reason:       "+20% instance(s) because test-metric-type > 80test-unit for 100 seconds",
+					OldInstances: 6,
+					NewInstances: 6,
+					Reason:       "+1 instance(s) because test-metric-type > 80test-unit for 100 seconds",
+					Message:      "limited by max instances 6",
 				}))
 
 			})
@@ -519,13 +520,23 @@ var _ = Describe("ScalingEngine", func() {
 		})
 
 		Context("when adjustment is valid", func() {
-			Context("when adjustment is by percentage", func() {
+			Context("when adjustment is defined as a positive percentage value", func() {
 				BeforeEach(func() {
-					adjustment = "50%"
+					adjustment = "10%"
 				})
 				It("returns correct new instance number", func() {
 					Expect(err).NotTo(HaveOccurred())
-					Expect(newInstances).To(Equal(5))
+					Expect(newInstances).To(Equal(4))
+				})
+			})
+
+			Context("when adjustment is defined as a negative  percentage value", func() {
+				BeforeEach(func() {
+					adjustment = "-10%"
+				})
+				It("returns correct new instance number", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(newInstances).To(Equal(2))
 				})
 			})
 
