@@ -131,7 +131,7 @@ func (sdb *ScalingEngineSQLDB) PruneScalingHistories(before int64) error {
 }
 
 func (sdb *ScalingEngineSQLDB) CanScaleApp(appId string) (bool, int64, error) {
-	query := "SELECT expireat FROM scalingcooldown where appid = $1"
+	query := "SELECT expireat FROM scalingcooldown WHERE appid = $1"
 	rows, err := sdb.sqldb.Query(query, appId)
 	if err != nil {
 		sdb.logger.Error("can-scale-app-query-record", err, lager.Data{"query": query, "appid": appId})
@@ -155,7 +155,7 @@ func (sdb *ScalingEngineSQLDB) CanScaleApp(appId string) (bool, int64, error) {
 }
 
 func (sdb *ScalingEngineSQLDB) UpdateScalingCooldownExpireTime(appId string, expireAt int64) error {
-	_, err := sdb.sqldb.Exec("DELETE FROM scalingcooldown where appid = $1", appId)
+	_, err := sdb.sqldb.Exec("DELETE FROM scalingcooldown WHERE appid = $1", appId)
 	if err != nil {
 		sdb.logger.Error("update-scaling-cooldown-time-delete", err, lager.Data{"appid": appId})
 		return err

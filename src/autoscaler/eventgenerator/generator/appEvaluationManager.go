@@ -24,7 +24,8 @@ type AppEvaluationManager struct {
 	breakerConfig    config.CircuitBreakerConfig
 	breakers         map[string]*circuit.Breaker
 	cooldownExpired  map[string]int64
-	lock             *sync.Mutex
+	breakerLock      *sync.Mutex
+	cooldownLock     *sync.Mutex
 }
 
 func NewAppEvaluationManager(logger lager.Logger, evaluateInterval time.Duration, emClock clock.Clock,
@@ -39,7 +40,8 @@ func NewAppEvaluationManager(logger lager.Logger, evaluateInterval time.Duration
 		getPolicies:      getPolicies,
 		breakerConfig:    breakerConfig,
 		cooldownExpired:  map[string]int64{},
-		lock:             &sync.Mutex{},
+		breakerLock:      &sync.Mutex{},
+		cooldownLock:     &sync.Mutex{},
 	}, nil
 }
 
@@ -116,9 +118,9 @@ func (a *AppEvaluationManager) doEvaluate() {
 				}
 			}
 
-			a.lock.Lock()
+			a.breakerLock.Lock()
 			a.breakers = newBreakers
-			a.lock.Unlock()
+			a.breakerLock.Unlock()
 
 			triggers := a.getTriggers(policies)
 			for _, triggerArray := range triggers {
@@ -129,13 +131,13 @@ func (a *AppEvaluationManager) doEvaluate() {
 }
 
 func (a *AppEvaluationManager) GetBreaker(appID string) *circuit.Breaker {
-	a.lock.Lock()
-	defer a.lock.Unlock()
+	a.breakerLock.Lock()
+	defer a.breakerLock.Unlock()
 	return a.breakers[appID]
 }
 
 func (a *AppEvaluationManager) SetCoolDownExpired(appID string, expiredAt int64) {
-	a.lock.Lock()
-	defer a.lock.Unlock()
+	a.cooldownLock.Lock()
+	defer a.cooldownLock.Unlock()
 	a.cooldownExpired[appID] = expiredAt
 }
