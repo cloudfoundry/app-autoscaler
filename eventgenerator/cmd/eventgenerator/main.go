@@ -46,17 +46,17 @@ func main() {
 	logger := initLoggerFromConfig(&conf.Logging)
 	egClock := clock.NewClock()
 
-	appMetricDB, err := sqldb.NewAppMetricSQLDB(conf.DB.AppMetricDBUrl, logger.Session("appMetric-db"))
+	appMetricDB, err := sqldb.NewAppMetricSQLDB(conf.DB.AppMetricDB, logger.Session("appMetric-db"))
 	if err != nil {
-		logger.Error("failed to connect app-metric database", err, lager.Data{"url": conf.DB.AppMetricDBUrl})
+		logger.Error("failed to connect app-metric database", err, lager.Data{"dbConfig": conf.DB.AppMetricDB})
 		os.Exit(1)
 	}
 	defer appMetricDB.Close()
 
 	var policyDB db.PolicyDB
-	policyDB, err = sqldb.NewPolicySQLDB(conf.DB.PolicyDBUrl, logger.Session("policy-db"))
+	policyDB, err = sqldb.NewPolicySQLDB(conf.DB.PolicyDB, logger.Session("policy-db"))
 	if err != nil {
-		logger.Error("failed to connect policy database", err, lager.Data{"url": conf.DB.PolicyDBUrl})
+		logger.Error("failed to connect policy database", err, lager.Data{"dbConfig": conf.DB.PolicyDB})
 		os.Exit(1)
 	}
 	defer policyDB.Close()
@@ -124,9 +124,9 @@ func main() {
 	if conf.EnableDBLock {
 		logger.Debug("database-lock-feature-enabled")
 		var lockDB db.LockDB
-		lockDB, err = sqldb.NewLockSQLDB(conf.DBLock.LockDBURL, lockTableName, logger.Session("lock-db"))
+		lockDB, err = sqldb.NewLockSQLDB(conf.DBLock.LockDB, lockTableName, logger.Session("lock-db"))
 		if err != nil {
-			logger.Error("failed-to-connect-lock-database", err, lager.Data{"url": conf.DBLock.LockDBURL})
+			logger.Error("failed-to-connect-lock-database", err, lager.Data{"dbConfig": conf.DBLock.LockDB})
 			os.Exit(1)
 		}
 		defer lockDB.Close()

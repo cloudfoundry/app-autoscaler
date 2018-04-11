@@ -12,6 +12,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"autoscaler/cf"
+	"autoscaler/db"
 	"autoscaler/models"
 )
 
@@ -52,8 +53,8 @@ var defaultLoggingConfig = LoggingConfig{
 }
 
 type DbConfig struct {
-	PolicyDbUrl          string `yaml:"policy_db_url"`
-	InstanceMetricsDbUrl string `yaml:"instance_metrics_db_url"`
+	PolicyDb          db.DatabaseConfig `yaml:"policy_db"`
+	InstanceMetricsDb db.DatabaseConfig `yaml:"instance_metrics_db"`
 }
 
 type CollectorConfig struct {
@@ -77,9 +78,9 @@ type LockConfig struct {
 }
 
 type DBLockConfig struct {
-	LockTTL           time.Duration `yaml:"ttl"`
-	LockDBURL         string        `yaml:"url"`
-	LockRetryInterval time.Duration `yaml:"retry_interval"`
+	LockTTL           time.Duration     `yaml:"ttl"`
+	LockDB            db.DatabaseConfig `yaml:"lock_db"`
+	LockRetryInterval time.Duration     `yaml:"retry_interval"`
 }
 
 var defaultDBLockConfig = DBLockConfig{
@@ -137,11 +138,11 @@ func (c *Config) Validate() error {
 		return err
 	}
 
-	if c.Db.PolicyDbUrl == "" {
+	if c.Db.PolicyDb.Url == "" {
 		return fmt.Errorf("Configuration error: Policy DB url is empty")
 	}
 
-	if c.Db.InstanceMetricsDbUrl == "" {
+	if c.Db.InstanceMetricsDb.Url == "" {
 		return fmt.Errorf("Configuration error: InstanceMetrics DB url is empty")
 	}
 
@@ -161,8 +162,8 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("Configuration error: invalid collecting method")
 	}
 
-	if c.EnableDBLock && c.DBLock.LockDBURL == "" {
-		return fmt.Errorf("Configuration error: Lock DB URL is empty")
+	if c.EnableDBLock && c.DBLock.LockDB.Url == "" {
+		return fmt.Errorf("Configuration error: Lock DB Url is empty")
 	}
 	return nil
 

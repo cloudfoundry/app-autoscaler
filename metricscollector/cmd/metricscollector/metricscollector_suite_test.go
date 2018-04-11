@@ -152,8 +152,18 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	cfg.Logging.Level = "info"
 
-	cfg.Db.InstanceMetricsDbUrl = os.Getenv("DBURL")
-	cfg.Db.PolicyDbUrl = os.Getenv("DBURL")
+	cfg.Db.InstanceMetricsDb = db.DatabaseConfig{
+		Url:                   os.Getenv("DBURL"),
+		MaxOpenConnections:    10,
+		MaxIdleConnections:    5,
+		ConnectionMaxLifetime: 10 * time.Second,
+	}
+	cfg.Db.PolicyDb = db.DatabaseConfig{
+		Url:                   os.Getenv("DBURL"),
+		MaxOpenConnections:    10,
+		MaxIdleConnections:    5,
+		ConnectionMaxLifetime: 10 * time.Second,
+	}
 
 	cfg.Collector.CollectInterval = 10 * time.Second
 	cfg.Collector.RefreshInterval = 30 * time.Second
@@ -164,7 +174,12 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.Lock.LockRetryInterval = locket.RetryInterval
 	cfg.Lock.LockTTL = locket.DefaultSessionTTL
 
-	cfg.DBLock.LockDBURL = os.Getenv("DBURL")
+	cfg.DBLock.LockDB = db.DatabaseConfig{
+		Url:                   os.Getenv("DBURL"),
+		MaxOpenConnections:    10,
+		MaxIdleConnections:    5,
+		ConnectionMaxLifetime: 10 * time.Second,
+	}
 	cfg.DBLock.LockTTL = 15 * time.Second
 	cfg.DBLock.LockRetryInterval = 5 * time.Second
 	cfg.EnableDBLock = false

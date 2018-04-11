@@ -1,6 +1,7 @@
 package sqldb_test
 
 import (
+	"autoscaler/db"
 	. "autoscaler/db/sqldb"
 	"autoscaler/models"
 
@@ -16,7 +17,7 @@ import (
 var _ = Describe("AppMetricSQLDB", func() {
 	var (
 		adb               *AppMetricSQLDB
-		url               string
+		dbConfig          db.DatabaseConfig
 		logger            lager.Logger
 		err               error
 		appMetrics        []*models.AppMetric
@@ -30,12 +31,17 @@ var _ = Describe("AppMetricSQLDB", func() {
 
 	BeforeEach(func() {
 		logger = lager.NewLogger("appmetric-sqldb-test")
-		url = os.Getenv("DBURL")
+		dbConfig = db.DatabaseConfig{
+			Url:                   os.Getenv("DBURL"),
+			MaxOpenConnections:    10,
+			MaxIdleConnections:    5,
+			ConnectionMaxLifetime: 10 * time.Second,
+		}
 	})
 
 	Context("NewAppMetricSQLDB", func() {
 		JustBeforeEach(func() {
-			adb, err = NewAppMetricSQLDB(url, logger)
+			adb, err = NewAppMetricSQLDB(dbConfig, logger)
 		})
 
 		AfterEach(func() {
@@ -47,7 +53,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 
 		Context("when db url is not correct", func() {
 			BeforeEach(func() {
-				url = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
+				dbConfig.Url = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&pq.Error{}))
@@ -65,7 +71,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 
 	Context("SaveAppMetric", func() {
 		BeforeEach(func() {
-			adb, err = NewAppMetricSQLDB(url, logger)
+			adb, err = NewAppMetricSQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
 			cleanAppMetricTable()
 		})
@@ -96,7 +102,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 	})
 	Context("SaveAppMetricsInBulk", func() {
 		BeforeEach(func() {
-			adb, err = NewAppMetricSQLDB(url, logger)
+			adb, err = NewAppMetricSQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
 			cleanAppMetricTable()
 		})
@@ -135,7 +141,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 	})
 	Context("RetrieveAppMetrics", func() {
 		BeforeEach(func() {
-			adb, err = NewAppMetricSQLDB(url, logger)
+			adb, err = NewAppMetricSQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
 			cleanAppMetricTable()
 
@@ -291,7 +297,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 
 	Context("PruneAppMetrics", func() {
 		BeforeEach(func() {
-			adb, err = NewAppMetricSQLDB(url, logger)
+			adb, err = NewAppMetricSQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
 
 			cleanAppMetricTable()

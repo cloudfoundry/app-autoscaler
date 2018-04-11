@@ -13,38 +13,42 @@ import (
 )
 
 type LockSQLDB struct {
-	url    string
-	logger lager.Logger
-	table  string
-	sqldb  *sql.DB
+	dbConfig db.DatabaseConfig
+	logger   lager.Logger
+	table    string
+	sqldb    *sql.DB
 }
 
-func NewLockSQLDB(url string, table string, logger lager.Logger) (*LockSQLDB, error) {
-	sqldb, err := sql.Open(db.PostgresDriverName, url)
+func NewLockSQLDB(dbConfig db.DatabaseConfig, table string, logger lager.Logger) (*LockSQLDB, error) {
+	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.Url)
 	if err != nil {
-		logger.Error("open-lock-db", err, lager.Data{"url": url})
+		logger.Error("open-lock-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
 	}
 
 	err = sqldb.Ping()
 	if err != nil {
 		sqldb.Close()
-		logger.Error("ping-lock-db", err, lager.Data{"url": url})
+		logger.Error("ping-lock-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
 	}
 
+	sqldb.SetConnMaxLifetime(dbConfig.ConnectionMaxLifetime)
+	sqldb.SetMaxIdleConns(dbConfig.MaxIdleConnections)
+	sqldb.SetMaxOpenConns(dbConfig.MaxOpenConnections)
+
 	return &LockSQLDB{
-		url:    url,
-		logger: logger,
-		sqldb:  sqldb,
-		table:  table,
+		dbConfig: dbConfig,
+		logger:   logger,
+		sqldb:    sqldb,
+		table:    table,
 	}, nil
 }
 
 func (ldb *LockSQLDB) Close() error {
 	err := ldb.sqldb.Close()
 	if err != nil {
-		ldb.logger.Error("close-lock-db", err, lager.Data{"url": ldb.url})
+		ldb.logger.Error("close-lock-db", err, lager.Data{"dbConfig": ldb.dbConfig})
 		return err
 	}
 	return nil

@@ -13,36 +13,39 @@ import (
 )
 
 type ScalingEngineSQLDB struct {
-	url    string
-	logger lager.Logger
-	sqldb  *sql.DB
+	dbConfig db.DatabaseConfig
+	logger   lager.Logger
+	sqldb    *sql.DB
 }
 
-func NewScalingEngineSQLDB(url string, logger lager.Logger) (*ScalingEngineSQLDB, error) {
-	sqldb, err := sql.Open(db.PostgresDriverName, url)
+func NewScalingEngineSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*ScalingEngineSQLDB, error) {
+	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.Url)
 	if err != nil {
-		logger.Error("open-scaling-engine-db", err, lager.Data{"url": url})
+		logger.Error("open-scaling-engine-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
 	}
 
 	err = sqldb.Ping()
 	if err != nil {
 		sqldb.Close()
-		logger.Error("ping-scaling-engine-db", err, lager.Data{"url": url})
+		logger.Error("ping-scaling-engine-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
 	}
 
+	sqldb.SetConnMaxLifetime(dbConfig.ConnectionMaxLifetime)
+	sqldb.SetMaxIdleConns(dbConfig.MaxIdleConnections)
+	sqldb.SetMaxOpenConns(dbConfig.MaxOpenConnections)
 	return &ScalingEngineSQLDB{
-		url:    url,
-		logger: logger,
-		sqldb:  sqldb,
+		dbConfig: dbConfig,
+		logger:   logger,
+		sqldb:    sqldb,
 	}, nil
 }
 
 func (sdb *ScalingEngineSQLDB) Close() error {
 	err := sdb.sqldb.Close()
 	if err != nil {
-		sdb.logger.Error("close-scaling-engine-db", err, lager.Data{"url": sdb.url})
+		sdb.logger.Error("close-scaling-engine-db", err, lager.Data{"dbConfig": sdb.dbConfig})
 		return err
 	}
 	return nil

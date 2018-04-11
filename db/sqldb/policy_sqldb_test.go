@@ -1,6 +1,7 @@
 package sqldb_test
 
 import (
+	"autoscaler/db"
 	. "autoscaler/db/sqldb"
 	"autoscaler/models"
 
@@ -11,12 +12,13 @@ import (
 
 	"encoding/json"
 	"os"
+	"time"
 )
 
 var _ = Describe("PolicySQLDB", func() {
 	var (
 		pdb            *PolicySQLDB
-		url            string
+		dbConfig       db.DatabaseConfig
 		logger         lager.Logger
 		err            error
 		appIds         map[string]bool
@@ -29,12 +31,17 @@ var _ = Describe("PolicySQLDB", func() {
 
 	BeforeEach(func() {
 		logger = lager.NewLogger("policy-sqldb-test")
-		url = os.Getenv("DBURL")
+		dbConfig = db.DatabaseConfig{
+			Url:                   os.Getenv("DBURL"),
+			MaxOpenConnections:    10,
+			MaxIdleConnections:    5,
+			ConnectionMaxLifetime: 10 * time.Second,
+		}
 	})
 
 	Describe("NewPolicySQLDB", func() {
 		JustBeforeEach(func() {
-			pdb, err = NewPolicySQLDB(url, logger)
+			pdb, err = NewPolicySQLDB(dbConfig, logger)
 		})
 
 		AfterEach(func() {
@@ -46,7 +53,7 @@ var _ = Describe("PolicySQLDB", func() {
 
 		Context("when db url is not correct", func() {
 			BeforeEach(func() {
-				url = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
+				dbConfig.Url = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&pq.Error{}))
@@ -64,7 +71,7 @@ var _ = Describe("PolicySQLDB", func() {
 
 	Describe("GetAppIds", func() {
 		BeforeEach(func() {
-			pdb, err = NewPolicySQLDB(url, logger)
+			pdb, err = NewPolicySQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
 
 			cleanPolicyTable()
@@ -105,7 +112,7 @@ var _ = Describe("PolicySQLDB", func() {
 
 	Describe("GetAppPolicy", func() {
 		BeforeEach(func() {
-			pdb, err = NewPolicySQLDB(url, logger)
+			pdb, err = NewPolicySQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
 
 			cleanPolicyTable()
@@ -179,7 +186,7 @@ var _ = Describe("PolicySQLDB", func() {
 
 	Describe("RetrievePolicies", func() {
 		BeforeEach(func() {
-			pdb, err = NewPolicySQLDB(url, logger)
+			pdb, err = NewPolicySQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
 
 			cleanPolicyTable()
