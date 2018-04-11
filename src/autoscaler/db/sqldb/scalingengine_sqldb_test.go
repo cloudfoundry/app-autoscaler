@@ -16,7 +16,7 @@ import (
 
 var _ = Describe("ScalingEngineSqldb", func() {
 	var (
-		url            string
+		dbConfig       db.DatabaseConfig
 		logger         lager.Logger
 		sdb            *ScalingEngineSQLDB
 		err            error
@@ -35,12 +35,17 @@ var _ = Describe("ScalingEngineSqldb", func() {
 
 	BeforeEach(func() {
 		logger = lager.NewLogger("history-sqldb-test")
-		url = os.Getenv("DBURL")
+		dbConfig = db.DatabaseConfig{
+			Url:                   os.Getenv("DBURL"),
+			MaxOpenConnections:    10,
+			MaxIdleConnections:    5,
+			ConnectionMaxLifetime: 10 * time.Second,
+		}
 	})
 
 	Describe("NewHistorySQLDB", func() {
 		JustBeforeEach(func() {
-			sdb, err = NewScalingEngineSQLDB(url, logger)
+			sdb, err = NewScalingEngineSQLDB(dbConfig, logger)
 		})
 
 		AfterEach(func() {
@@ -52,7 +57,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 
 		Context("when db url is not correct", func() {
 			BeforeEach(func() {
-				url = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
+				dbConfig.Url = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&pq.Error{}))
@@ -70,7 +75,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 
 	Describe("SaveScalingHistory", func() {
 		BeforeEach(func() {
-			sdb, err = NewScalingEngineSQLDB(url, logger)
+			sdb, err = NewScalingEngineSQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
 			cleanScalingHistoryTable()
 		})
@@ -143,7 +148,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 	Describe("RetrieveScalingHistories", func() {
 
 		BeforeEach(func() {
-			sdb, err = NewScalingEngineSQLDB(url, logger)
+			sdb, err = NewScalingEngineSQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
 			cleanScalingHistoryTable()
 
@@ -449,7 +454,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 
 	Describe("PruneScalingHistories", func() {
 		BeforeEach(func() {
-			sdb, err = NewScalingEngineSQLDB(url, logger)
+			sdb, err = NewScalingEngineSQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
 			cleanScalingHistoryTable()
 
@@ -528,7 +533,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 
 	Describe("UpdateScalingCooldownExpireTime", func() {
 		BeforeEach(func() {
-			sdb, err = NewScalingEngineSQLDB(url, logger)
+			sdb, err = NewScalingEngineSQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
 			cleanScalingCooldownTable()
 		})
@@ -565,7 +570,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 
 	Describe("CanScaleApp", func() {
 		BeforeEach(func() {
-			sdb, err = NewScalingEngineSQLDB(url, logger)
+			sdb, err = NewScalingEngineSQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
 			cleanScalingCooldownTable()
 		})
@@ -611,7 +616,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 
 	Describe("GetActiveSchedule", func() {
 		BeforeEach(func() {
-			sdb, err = NewScalingEngineSQLDB(url, logger)
+			sdb, err = NewScalingEngineSQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
 			err = cleanActiveScheduleTable()
 			Expect(err).NotTo(HaveOccurred())
@@ -660,7 +665,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 
 	Describe("GetActiveSchedules", func() {
 		BeforeEach(func() {
-			sdb, err = NewScalingEngineSQLDB(url, logger)
+			sdb, err = NewScalingEngineSQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
 			err = cleanActiveScheduleTable()
 			Expect(err).NotTo(HaveOccurred())
@@ -712,7 +717,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 
 	Describe("RemoveActiveSchedule", func() {
 		BeforeEach(func() {
-			sdb, err = NewScalingEngineSQLDB(url, logger)
+			sdb, err = NewScalingEngineSQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
 			err = cleanActiveScheduleTable()
 			Expect(err).NotTo(HaveOccurred())
@@ -759,7 +764,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 
 	Describe("SetActiveSchedule", func() {
 		BeforeEach(func() {
-			sdb, err = NewScalingEngineSQLDB(url, logger)
+			sdb, err = NewScalingEngineSQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
 			err = cleanActiveScheduleTable()
 			Expect(err).NotTo(HaveOccurred())

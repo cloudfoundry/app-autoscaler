@@ -1,8 +1,16 @@
 logging:
   level: "debug"
 db:
-  policy_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
-  app_metrics_db_url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
+  policy_db:
+    url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  app_metrics_db:
+    url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
 aggregator: 
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
@@ -24,8 +32,15 @@ circuitBreaker:
   back_off_initial_interval: 5m
   back_off_max_interval: 120m
   consecutive_failure_count: 3
-  
-#lock:
-#  lock_ttl: 15s
-#  lock_retry_interval: 10s
-#  consul_cluster_config: http://127.0.0.1:8500
+# lock:
+#   lock_ttl: 15s
+#   lock_retry_interval: 10s
+#   consul_cluster_config: http://127.0.0.1:8500
+# db_lock:
+#   ttl: 30s
+#   lock_db:
+#     url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
+#     max_open_connections: 10
+#     max_idle_connections: 5
+#     connection_max_lifetime: 60s
+# enable_db_lock: true

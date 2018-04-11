@@ -201,8 +201,18 @@ func initConfig() {
 			TriggerArrayChannelSize:   1,
 		},
 		DB: config.DBConfig{
-			PolicyDBUrl:    os.Getenv("DBURL"),
-			AppMetricDBUrl: os.Getenv("DBURL"),
+			PolicyDB: db.DatabaseConfig{
+				Url:                   os.Getenv("DBURL"),
+				MaxOpenConnections:    10,
+				MaxIdleConnections:    5,
+				ConnectionMaxLifetime: 10 * time.Second,
+			},
+			AppMetricDB: db.DatabaseConfig{
+				Url:                   os.Getenv("DBURL"),
+				MaxOpenConnections:    10,
+				MaxIdleConnections:    5,
+				ConnectionMaxLifetime: 10 * time.Second,
+			},
 		},
 		ScalingEngine: config.ScalingEngineConfig{
 			ScalingEngineUrl: scalingEngine.URL(),
@@ -226,7 +236,12 @@ func initConfig() {
 			ConsulClusterConfig: consulRunner.ConsulCluster(),
 		},
 		DBLock: config.DBLockConfig{
-			LockDBURL:         os.Getenv("DBURL"),
+			LockDB: db.DatabaseConfig{
+				Url:                   os.Getenv("DBURL"),
+				MaxOpenConnections:    10,
+				MaxIdleConnections:    5,
+				ConnectionMaxLifetime: 10 * time.Second,
+			},
 			LockTTL:           15 * time.Second,
 			LockRetryInterval: 5 * time.Second,
 		},

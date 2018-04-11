@@ -10,6 +10,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"autoscaler/cf"
+	"autoscaler/db"
 	"autoscaler/models"
 )
 
@@ -38,9 +39,9 @@ var defaultLoggingConfig = LoggingConfig{
 }
 
 type DbConfig struct {
-	PolicyDbUrl        string `yaml:"policy_db_url"`
-	ScalingEngineDbUrl string `yaml:"scalingengine_db_url"`
-	SchedulerDbUrl     string `yaml:"scheduler_db_url"`
+	PolicyDb        db.DatabaseConfig `yaml:"policy_db"`
+	ScalingEngineDb db.DatabaseConfig `yaml:"scalingengine_db"`
+	SchedulerDb     db.DatabaseConfig `yaml:"scheduler_db"`
 }
 
 type SynchronizerConfig struct {
@@ -99,15 +100,15 @@ func (c *Config) Validate() error {
 		return err
 	}
 
-	if c.Db.PolicyDbUrl == "" {
+	if c.Db.PolicyDb.Url == "" {
 		return fmt.Errorf("Configuration error: Policy DB url is empty")
 	}
 
-	if c.Db.ScalingEngineDbUrl == "" {
+	if c.Db.ScalingEngineDb.Url == "" {
 		return fmt.Errorf("Configuration error: ScalingEngine DB url is empty")
 	}
 
-	if c.Db.SchedulerDbUrl == "" {
+	if c.Db.SchedulerDb.Url == "" {
 		return fmt.Errorf("Configuration error: Scheduler DB url is empty")
 	}
 

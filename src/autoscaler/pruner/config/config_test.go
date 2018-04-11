@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"time"
 
+	"autoscaler/db"
 	"autoscaler/pruner/config"
 
 	. "github.com/onsi/ginkgo"
@@ -31,15 +32,27 @@ var _ = Describe("Config", func() {
  logging:
   level: "debug"
 instance_metrics_db:
-  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
   refresh_interval: 12h
   cutoff_days: 10
 app_metrics_db:
-  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
   refresh_interval: 24h
   cutoff_days: 20
 scaling_engine_db:
-  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_days: 30
 lock:
@@ -52,48 +65,33 @@ lock:
 			})
 		})
 
-		Context("when it gives a non integer cutoff_days", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
-logging:
-  level: "debug"
-instance_metrics_db:
-  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-  refresh_interval: 12h
-  cutoff_days: 10
-app_metrics_db:
-  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-  refresh_interval: 24h
-  cutoff_days: 20
-scaling_engine_db:
-  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-  refresh_interval: 36h
-  cutoff_days: 30s
-lock:
-  consul_cluster_config: "http://127.0.0.1:8500"
-`)
-			})
-
-			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-			})
-		})
-
 		Context("with valid yaml", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
 logging:
   level: "debug"
 instance_metrics_db:
-  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
   refresh_interval: 12h
   cutoff_days: 20
 app_metrics_db:
-  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
   refresh_interval: 10h
   cutoff_days: 15
 scaling_engine_db:
-  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_days: 30
 lock:
@@ -108,15 +106,30 @@ lock:
 
 				Expect(conf.Logging.Level).To(Equal("debug"))
 
-				Expect(conf.InstanceMetricsDb.DbUrl).To(Equal("postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"))
+				Expect(conf.InstanceMetricsDb.Db).To(Equal(db.DatabaseConfig{
+					Url:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+					MaxOpenConnections:    10,
+					MaxIdleConnections:    5,
+					ConnectionMaxLifetime: 60 * time.Second,
+				}))
 				Expect(conf.InstanceMetricsDb.RefreshInterval).To(Equal(12 * time.Hour))
 				Expect(conf.InstanceMetricsDb.CutoffDays).To(Equal(20))
 
-				Expect(conf.AppMetricsDb.DbUrl).To(Equal("postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"))
+				Expect(conf.AppMetricsDb.Db).To(Equal(db.DatabaseConfig{
+					Url:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+					MaxOpenConnections:    10,
+					MaxIdleConnections:    5,
+					ConnectionMaxLifetime: 60 * time.Second,
+				}))
 				Expect(conf.AppMetricsDb.RefreshInterval).To(Equal(10 * time.Hour))
 				Expect(conf.AppMetricsDb.CutoffDays).To(Equal(15))
 
-				Expect(conf.ScalingEngineDb.DbUrl).To(Equal("postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"))
+				Expect(conf.ScalingEngineDb.Db).To(Equal(db.DatabaseConfig{
+					Url:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+					MaxOpenConnections:    10,
+					MaxIdleConnections:    5,
+					ConnectionMaxLifetime: 60 * time.Second,
+				}))
 				Expect(conf.ScalingEngineDb.RefreshInterval).To(Equal(36 * time.Hour))
 				Expect(conf.ScalingEngineDb.CutoffDays).To(Equal(30))
 
@@ -131,11 +144,14 @@ lock:
 			BeforeEach(func() {
 				configBytes = []byte(`
 instance_metrics_db:
-  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
 app_metrics_db:
-  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
 scaling_engine_db:
-  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable" 
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable" 
 `)
 			})
 
@@ -144,12 +160,28 @@ scaling_engine_db:
 
 				Expect(conf.Logging.Level).To(Equal(config.DefaultLoggingLevel))
 
+				Expect(conf.InstanceMetricsDb.Db).To(Equal(db.DatabaseConfig{
+					Url:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+					MaxOpenConnections:    0,
+					MaxIdleConnections:    0,
+					ConnectionMaxLifetime: 0 * time.Second,
+				}))
 				Expect(conf.InstanceMetricsDb.RefreshInterval).To(Equal(config.DefaultRefreshInterval))
 				Expect(conf.InstanceMetricsDb.CutoffDays).To(Equal(config.DefaultCutoffDays))
-
+				Expect(conf.AppMetricsDb.Db).To(Equal(db.DatabaseConfig{
+					Url:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+					MaxOpenConnections:    0,
+					MaxIdleConnections:    0,
+					ConnectionMaxLifetime: 0 * time.Second,
+				}))
 				Expect(conf.AppMetricsDb.RefreshInterval).To(Equal(config.DefaultRefreshInterval))
 				Expect(conf.AppMetricsDb.CutoffDays).To(Equal(config.DefaultCutoffDays))
-
+				Expect(conf.ScalingEngineDb.Db).To(Equal(db.DatabaseConfig{
+					Url:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+					MaxOpenConnections:    0,
+					MaxIdleConnections:    0,
+					ConnectionMaxLifetime: 0 * time.Second,
+				}))
 				Expect(conf.ScalingEngineDb.RefreshInterval).To(Equal(config.DefaultRefreshInterval))
 				Expect(conf.ScalingEngineDb.CutoffDays).To(Equal(config.DefaultCutoffDays))
 
@@ -157,61 +189,713 @@ scaling_engine_db:
 				Expect(conf.Lock.LockRetryInterval).To(Equal(config.DefaultRetryInterval))
 			})
 		})
-
-		Context("when it gives a non integer lock ttl", func() {
+		Context("when it gives a non integer cutoff_days of instance_metrics_db", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
 logging:
   level: "debug"
 instance_metrics_db:
-  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
   refresh_interval: 12h
-  cutoff_days: 10
+  cutoff_days: NOT-INTEGER-VALUE
 app_metrics_db:
-  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-  refresh_interval: 24h
-  cutoff_days: 20
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 10h
+  cutoff_days: 15
 scaling_engine_db:
-  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
   refresh_interval: 36h
-  cutoff_days: 30s
+  cutoff_days: 30
 lock:
-  lock_ttl: NON-INTEGER-VALUE
+  lock_ttl: 15s
   lock_retry_interval: 10s
   consul_cluster_config: "http://127.0.0.1:8500"
 `)
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
 			})
 		})
 
-		Context("when it gives a non integer lock retry interval", func() {
+		Context("when refresh_interval of instance_metrics_db is not a time duration", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
 logging:
   level: "debug"
 instance_metrics_db:
-  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-  refresh_interval: 12h
-  cutoff_days: 10
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 12k
+  cutoff_days: 15
 app_metrics_db:
-  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-  refresh_interval: 24h
-  cutoff_days: 20
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 10h
+  cutoff_days: 15
 scaling_engine_db:
-  db_url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
   refresh_interval: 36h
-  cutoff_days: 30s
+  cutoff_days: 30
 lock:
   lock_ttl: 15s
-  lock_retry_interval: NON-INTEGER-VALUE
+  lock_retry_interval: 10s
   consul_cluster_config: "http://127.0.0.1:8500"
 `)
 			})
 
 			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+			})
+		})
+
+		Context("when it gives a non integer max_open_connections of instance_metrics_db", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: "debug"
+instance_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: NOT-INTEGER-VALUE
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 12h
+  cutoff_days: 20
+app_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 10h
+  cutoff_days: 15
+scaling_engine_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 36h
+  cutoff_days: 30
+lock:
+  lock_ttl: 15s
+  lock_retry_interval: 10s
+  consul_cluster_config: "http://127.0.0.1:8500"
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+			})
+		})
+
+		Context("when it gives a non integer max_idle_connections of instance_metrics_db", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: "debug"
+instance_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: NOT-INTEGER-VALUE
+    connection_max_lifetime: 60s
+  refresh_interval: 12h
+  cutoff_days: 20
+app_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 10h
+  cutoff_days: 15
+scaling_engine_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 36h
+  cutoff_days: 30
+lock:
+  lock_ttl: 15s
+  lock_retry_interval: 10s
+  consul_cluster_config: "http://127.0.0.1:8500"
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+			})
+		})
+
+		Context("when connection_max_lifetime of instance_metrics_db is not a time duration", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: "debug"
+instance_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60k
+  refresh_interval: 12h
+  cutoff_days: 20
+app_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 10h
+  cutoff_days: 15
+scaling_engine_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 36h
+  cutoff_days: 30
+lock:
+  lock_ttl: 15s
+  lock_retry_interval: 10s
+  consul_cluster_config: "http://127.0.0.1:8500"
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
+			})
+		})
+		Context("when it gives a non integer cutoff_days of app_metrics_db", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: "debug"
+instance_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 12h
+  cutoff_days: 15
+app_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 10h
+  cutoff_days: NOT-INTEGER-VALUE
+scaling_engine_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 36h
+  cutoff_days: 30
+lock:
+  lock_ttl: 15s
+  lock_retry_interval: 10s
+  consul_cluster_config: "http://127.0.0.1:8500"
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+			})
+		})
+
+		Context("when refresh_interval of app_metrics_db is not a time duration", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: "debug"
+instance_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 12h
+  cutoff_days: 15
+app_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 10k
+  cutoff_days: 15
+scaling_engine_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 36h
+  cutoff_days: 30
+lock:
+  lock_ttl: 15s
+  lock_retry_interval: 10s
+  consul_cluster_config: "http://127.0.0.1:8500"
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
+			})
+		})
+
+		Context("when it gives a non integer max_open_connections of app_metrics_db", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: "debug"
+instance_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 12h
+  cutoff_days: 20
+app_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: NOT-INTEGER-VALUE
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 10h
+  cutoff_days: 15
+scaling_engine_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 36h
+  cutoff_days: 30
+lock:
+  lock_ttl: 15s
+  lock_retry_interval: 10s
+  consul_cluster_config: "http://127.0.0.1:8500"
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+			})
+		})
+
+		Context("when it gives a non integer max_idle_connections of app_metrics_db", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: "debug"
+instance_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 12h
+  cutoff_days: 20
+app_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: NOT-INTEGER-VALUE
+    connection_max_lifetime: 60s
+  refresh_interval: 10h
+  cutoff_days: 15
+scaling_engine_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 36h
+  cutoff_days: 30
+lock:
+  lock_ttl: 15s
+  lock_retry_interval: 10s
+  consul_cluster_config: "http://127.0.0.1:8500"
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+			})
+		})
+
+		Context("when connection_max_lifetime of app_metrics_db is not a time duration", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: "debug"
+instance_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 12h
+  cutoff_days: 20
+app_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60k
+  refresh_interval: 10h
+  cutoff_days: 15
+scaling_engine_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 36h
+  cutoff_days: 30
+lock:
+  lock_ttl: 15s
+  lock_retry_interval: 10s
+  consul_cluster_config: "http://127.0.0.1:8500"
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
+			})
+		})
+
+		Context("when it gives a non integer cutoff_days of scaling_engine_db", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: "debug"
+instance_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 12h
+  cutoff_days: 15
+app_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 10h
+  cutoff_days: 15
+scaling_engine_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 36h
+  cutoff_days: NOT-INTEGER-VALUE
+lock:
+  lock_ttl: 15s
+  lock_retry_interval: 10s
+  consul_cluster_config: "http://127.0.0.1:8500"
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+			})
+		})
+
+		Context("when refresh_interval of scaling_engine_db is not a time duration", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: "debug"
+instance_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 12h
+  cutoff_days: 15
+app_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 10
+  cutoff_days: 15
+scaling_engine_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 36k
+  cutoff_days: 30
+lock:
+  lock_ttl: 15s
+  lock_retry_interval: 10s
+  consul_cluster_config: "http://127.0.0.1:8500"
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
+			})
+		})
+
+		Context("when it gives a non integer max_open_connections of scaling_engine_db", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: "debug"
+instance_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 12h
+  cutoff_days: 20
+app_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 10h
+  cutoff_days: 15
+scaling_engine_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: NOT-INTEGER-VALUE
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 36h
+  cutoff_days: 30
+lock:
+  lock_ttl: 15s
+  lock_retry_interval: 10s
+  consul_cluster_config: "http://127.0.0.1:8500"
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+			})
+		})
+
+		Context("when it gives a non integer max_idle_connections of scaling_engine_db", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: "debug"
+instance_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 12h
+  cutoff_days: 20
+app_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 10h
+  cutoff_days: 15
+scaling_engine_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: NOT-INTEGER-VALUE
+    connection_max_lifetime: 60s
+  refresh_interval: 36h
+  cutoff_days: 30
+lock:
+  lock_ttl: 15s
+  lock_retry_interval: 10s
+  consul_cluster_config: "http://127.0.0.1:8500"
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+			})
+		})
+
+		Context("when connection_max_lifetime of scaling_engine_db is not a time duration", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: "debug"
+instance_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 12h
+  cutoff_days: 20
+app_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60
+  refresh_interval: 10h
+  cutoff_days: 15
+scaling_engine_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60k
+  refresh_interval: 36h
+  cutoff_days: 30
+lock:
+  lock_ttl: 15s
+  lock_retry_interval: 10s
+  consul_cluster_config: "http://127.0.0.1:8500"
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
+			})
+		})
+
+		Context("when lock_ttl of lock is not a time duration", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: "debug"
+instance_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 12h
+  cutoff_days: 10
+app_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 24h
+  cutoff_days: 20
+scaling_engine_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 36h
+  cutoff_days: 30s
+lock:
+  lock_ttl: 10k
+  lock_retry_interval: 10s
+  consul_cluster_config: "http://127.0.0.1:8500"
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
+			})
+		})
+
+		Context("when lock_retry_interval of lock is not a time duration", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: "debug"
+instance_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 12h
+  cutoff_days: 10
+app_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 24h
+  cutoff_days: 20
+scaling_engine_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 36h
+  cutoff_days: 30s
+lock:
+  lock_ttl: 15s
+  lock_retry_interval: 10k
+  consul_cluster_config: "http://127.0.0.1:8500"
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
 			})
 		})
@@ -222,15 +906,15 @@ lock:
 		BeforeEach(func() {
 			conf = &config.Config{}
 
-			conf.InstanceMetricsDb.DbUrl = "postgres://pqgotest:password@exampl.com/pqgotest"
+			conf.InstanceMetricsDb.Db.Url = "postgres://pqgotest:password@exampl.com/pqgotest"
 			conf.InstanceMetricsDb.RefreshInterval = 12 * time.Hour
 			conf.InstanceMetricsDb.CutoffDays = 30
 
-			conf.AppMetricsDb.DbUrl = "postgres://pqgotest:password@exampl.com/pqgotest"
+			conf.AppMetricsDb.Db.Url = "postgres://pqgotest:password@exampl.com/pqgotest"
 			conf.AppMetricsDb.RefreshInterval = 10 * time.Hour
 			conf.AppMetricsDb.CutoffDays = 15
 
-			conf.ScalingEngineDb.DbUrl = "postgres://pqgotest:password@exampl.com/pqgotest"
+			conf.ScalingEngineDb.Db.Url = "postgres://pqgotest:password@exampl.com/pqgotest"
 			conf.ScalingEngineDb.RefreshInterval = 36 * time.Hour
 			conf.ScalingEngineDb.CutoffDays = 20
 
@@ -253,7 +937,7 @@ lock:
 		Context("when InstanceMetrics db url is not set", func() {
 
 			BeforeEach(func() {
-				conf.InstanceMetricsDb.DbUrl = ""
+				conf.InstanceMetricsDb.Db.Url = ""
 			})
 
 			It("should error", func() {
@@ -264,7 +948,7 @@ lock:
 		Context("when AppMetrics db url is not set", func() {
 
 			BeforeEach(func() {
-				conf.AppMetricsDb.DbUrl = ""
+				conf.AppMetricsDb.Db.Url = ""
 			})
 
 			It("should error", func() {
@@ -275,7 +959,7 @@ lock:
 		Context("when ScalingEngine db url is not set", func() {
 
 			BeforeEach(func() {
-				conf.ScalingEngineDb.DbUrl = ""
+				conf.ScalingEngineDb.Db.Url = ""
 			})
 
 			It("should error", func() {

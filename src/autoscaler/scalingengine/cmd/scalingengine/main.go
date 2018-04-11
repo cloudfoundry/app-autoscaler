@@ -65,25 +65,25 @@ func main() {
 	}
 
 	var policyDB db.PolicyDB
-	policyDB, err = sqldb.NewPolicySQLDB(conf.Db.PolicyDbUrl, logger.Session("policy-db"))
+	policyDB, err = sqldb.NewPolicySQLDB(conf.Db.PolicyDb, logger.Session("policy-db"))
 	if err != nil {
-		logger.Error("failed to connect policy database", err, lager.Data{"url": conf.Db.PolicyDbUrl})
+		logger.Error("failed to connect policy database", err, lager.Data{"dbConfig": conf.Db.PolicyDb})
 		os.Exit(1)
 	}
 	defer policyDB.Close()
 
 	var scalingEngineDB db.ScalingEngineDB
-	scalingEngineDB, err = sqldb.NewScalingEngineSQLDB(conf.Db.ScalingEngineDbUrl, logger.Session("scalingengine-db"))
+	scalingEngineDB, err = sqldb.NewScalingEngineSQLDB(conf.Db.ScalingEngineDb, logger.Session("scalingengine-db"))
 	if err != nil {
-		logger.Error("failed to connect scalingengine database", err, lager.Data{"url": conf.Db.ScalingEngineDbUrl})
+		logger.Error("failed to connect scalingengine database", err, lager.Data{"dbConfig": conf.Db.ScalingEngineDb})
 		os.Exit(1)
 	}
 	defer scalingEngineDB.Close()
 
 	var schedulerDB db.SchedulerDB
-	schedulerDB, err = sqldb.NewSchedulerSQLDB(conf.Db.SchedulerDbUrl, logger.Session("scheduler-db"))
+	schedulerDB, err = sqldb.NewSchedulerSQLDB(conf.Db.SchedulerDb, logger.Session("scheduler-db"))
 	if err != nil {
-		logger.Error("failed to connect scheduler database", err, lager.Data{"url": conf.Db.SchedulerDbUrl})
+		logger.Error("failed to connect scheduler database", err, lager.Data{"dbConfig": conf.Db.SchedulerDb})
 		os.Exit(1)
 	}
 	defer schedulerDB.Close()
