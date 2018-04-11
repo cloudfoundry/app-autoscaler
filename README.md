@@ -127,6 +127,9 @@ ginkgo -r -race -randomizeAllSpecs src/integration
 
 Go to [app-autoscaler-release][r] project for how to BOSH deploy `App-AutoScaler` and use the service
 
+## Command line tool 
+
+Go to [app-autoscaler-cli-plugin][s] project to manage `App-AutoScaler` service with CLI tool.
 
 ## License
 
@@ -143,3 +146,4 @@ This project is released under version 2.0 of the [Apache License][l].
 [t]: https://www.pivotaltracker.com/projects/1566795
 [p]: https://www.postgresql.org/
 [r]: https://github.com/cloudfoundry-incubator/app-autoscaler-release
+[s]: https://github.com/cloudfoundry-incubator/app-autoscaler-cli-plugin
