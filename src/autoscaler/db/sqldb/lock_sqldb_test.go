@@ -1,6 +1,7 @@
 package sqldb_test
 
 import (
+	"autoscaler/db"
 	. "autoscaler/db/sqldb"
 	"autoscaler/models"
 	"os"
@@ -17,7 +18,7 @@ import (
 var _ = Describe("LockSqldb", func() {
 	var (
 		ldb            *LockSQLDB
-		url            string
+		dbConfig       db.DatabaseConfig
 		logger         lager.Logger
 		err            error
 		lock           *models.Lock
@@ -27,13 +28,18 @@ var _ = Describe("LockSqldb", func() {
 
 	BeforeEach(func() {
 		logger = lager.NewLogger("lock-sqldb-test")
-		url = os.Getenv("DBURL")
+		dbConfig = db.DatabaseConfig{
+			Url:                   os.Getenv("DBURL"),
+			MaxOpenConnections:    10,
+			MaxIdleConnections:    5,
+			ConnectionMaxLifetime: 10 * time.Second,
+		}
 		testTTL = time.Duration(15) * time.Second
 	})
 
 	Describe("NewLockSQLDB", func() {
 		JustBeforeEach(func() {
-			ldb, err = NewLockSQLDB(url, "mc_lock", logger)
+			ldb, err = NewLockSQLDB(dbConfig, "mc_lock", logger)
 		})
 
 		AfterEach(func() {
@@ -45,7 +51,7 @@ var _ = Describe("LockSqldb", func() {
 
 		Context("when lock db url is not correct", func() {
 			BeforeEach(func() {
-				url = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
+				dbConfig.Url = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 			})
 			It("should throw an error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&pq.Error{}))
@@ -63,7 +69,7 @@ var _ = Describe("LockSqldb", func() {
 
 	Describe("Lock", func() {
 		BeforeEach(func() {
-			ldb, err = NewLockSQLDB(url, "mc_lock", logger)
+			ldb, err = NewLockSQLDB(dbConfig, "mc_lock", logger)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -166,7 +172,7 @@ var _ = Describe("LockSqldb", func() {
 
 	Describe("Release Lock", func() {
 		BeforeEach(func() {
-			ldb, err = NewLockSQLDB(url, "mc_lock", logger)
+			ldb, err = NewLockSQLDB(dbConfig, "mc_lock", logger)
 			Expect(err).NotTo(HaveOccurred())
 			lock = &models.Lock{Owner: "654321", Ttl: testTTL}
 		})

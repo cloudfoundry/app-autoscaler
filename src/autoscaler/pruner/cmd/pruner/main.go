@@ -50,23 +50,23 @@ func main() {
 	logger := initLoggerFromConfig(&conf.Logging)
 	prClock := clock.NewClock()
 
-	instanceMetricsDb, err := sqldb.NewInstanceMetricsSQLDB(conf.InstanceMetricsDb.DbUrl, logger.Session("instancemetrics-db"))
+	instanceMetricsDb, err := sqldb.NewInstanceMetricsSQLDB(conf.InstanceMetricsDb.Db, logger.Session("instancemetrics-db"))
 	if err != nil {
-		logger.Error("failed to connect instancemetrics db", err, lager.Data{"url": conf.InstanceMetricsDb.DbUrl})
+		logger.Error("failed to connect instancemetrics db", err, lager.Data{"dbConfig": conf.InstanceMetricsDb.Db})
 		os.Exit(1)
 	}
 	defer instanceMetricsDb.Close()
 
-	appMetricsDb, err := sqldb.NewAppMetricSQLDB(conf.AppMetricsDb.DbUrl, logger.Session("appmetrics-db"))
+	appMetricsDb, err := sqldb.NewAppMetricSQLDB(conf.AppMetricsDb.Db, logger.Session("appmetrics-db"))
 	if err != nil {
-		logger.Error("failed to connect appmetrics db", err, lager.Data{"url": conf.AppMetricsDb.DbUrl})
+		logger.Error("failed to connect appmetrics db", err, lager.Data{"dbConfig": conf.AppMetricsDb.Db})
 		os.Exit(1)
 	}
 	defer appMetricsDb.Close()
 
-	scalingEngineDb, err := sqldb.NewScalingEngineSQLDB(conf.ScalingEngineDb.DbUrl, logger.Session("scalingengine-db"))
+	scalingEngineDb, err := sqldb.NewScalingEngineSQLDB(conf.ScalingEngineDb.Db, logger.Session("scalingengine-db"))
 	if err != nil {
-		logger.Error("failed to connect scalingengine db", err, lager.Data{"url": conf.ScalingEngineDb.DbUrl})
+		logger.Error("failed to connect scalingengine db", err, lager.Data{"dbConfig": conf.ScalingEngineDb.Db})
 		os.Exit(1)
 	}
 	defer scalingEngineDb.Close()

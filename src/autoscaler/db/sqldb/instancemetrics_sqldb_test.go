@@ -17,7 +17,7 @@ import (
 
 var _ = Describe("InstancemetricsSqldb", func() {
 	var (
-		url       string
+		dbConfig  db.DatabaseConfig
 		idb       *InstanceMetricsSQLDB
 		logger    lager.Logger
 		err       error
@@ -37,12 +37,17 @@ var _ = Describe("InstancemetricsSqldb", func() {
 
 	BeforeEach(func() {
 		logger = lager.NewLogger("instance-metrics-sqldb-test")
-		url = os.Getenv("DBURL")
+		dbConfig = db.DatabaseConfig{
+			Url:                   os.Getenv("DBURL"),
+			MaxOpenConnections:    10,
+			MaxIdleConnections:    5,
+			ConnectionMaxLifetime: 10 * time.Second,
+		}
 	})
 
 	Describe("NewInstanceMetricsSQLDB", func() {
 		JustBeforeEach(func() {
-			idb, err = NewInstanceMetricsSQLDB(url, logger)
+			idb, err = NewInstanceMetricsSQLDB(dbConfig, logger)
 		})
 
 		AfterEach(func() {
@@ -54,7 +59,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 
 		Context("when db url is not correct", func() {
 			BeforeEach(func() {
-				url = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
+				dbConfig.Url = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&pq.Error{}))
@@ -72,7 +77,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 
 	Describe("SaveMetric", func() {
 		BeforeEach(func() {
-			idb, err = NewInstanceMetricsSQLDB(url, logger)
+			idb, err = NewInstanceMetricsSQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
 			cleanInstanceMetricsTable()
 		})
@@ -141,7 +146,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 
 	Describe("SaveMetricsInBulk", func() {
 		BeforeEach(func() {
-			idb, err = NewInstanceMetricsSQLDB(url, logger)
+			idb, err = NewInstanceMetricsSQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
 			cleanInstanceMetricsTable()
 		})
@@ -184,7 +189,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 
 	Describe("RetrieveInstanceMetrics", func() {
 		BeforeEach(func() {
-			idb, err = NewInstanceMetricsSQLDB(url, logger)
+			idb, err = NewInstanceMetricsSQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
 			cleanInstanceMetricsTable()
 
@@ -432,7 +437,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 
 	Describe("PruneMetrics", func() {
 		BeforeEach(func() {
-			idb, err = NewInstanceMetricsSQLDB(url, logger)
+			idb, err = NewInstanceMetricsSQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
 
 			cleanInstanceMetricsTable()

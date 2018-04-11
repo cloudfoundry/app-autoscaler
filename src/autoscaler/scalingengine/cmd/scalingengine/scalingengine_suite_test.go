@@ -94,9 +94,24 @@ var _ = SynchronizedBeforeSuite(
 
 		conf.Logging.Level = "info"
 
-		conf.Db.PolicyDbUrl = os.Getenv("DBURL")
-		conf.Db.ScalingEngineDbUrl = os.Getenv("DBURL")
-		conf.Db.SchedulerDbUrl = os.Getenv("DBURL")
+		conf.Db.PolicyDb = db.DatabaseConfig{
+			Url:                   os.Getenv("DBURL"),
+			MaxOpenConnections:    10,
+			MaxIdleConnections:    5,
+			ConnectionMaxLifetime: 10 * time.Second,
+		}
+		conf.Db.ScalingEngineDb = db.DatabaseConfig{
+			Url:                   os.Getenv("DBURL"),
+			MaxOpenConnections:    10,
+			MaxIdleConnections:    5,
+			ConnectionMaxLifetime: 10 * time.Second,
+		}
+		conf.Db.SchedulerDb = db.DatabaseConfig{
+			Url:                   os.Getenv("DBURL"),
+			MaxOpenConnections:    10,
+			MaxIdleConnections:    5,
+			ConnectionMaxLifetime: 10 * time.Second,
+		}
 		conf.Synchronizer.ActiveScheduleSyncInterval = 10 * time.Minute
 
 		conf.Consul.Cluster = consulRunner.ConsulCluster()

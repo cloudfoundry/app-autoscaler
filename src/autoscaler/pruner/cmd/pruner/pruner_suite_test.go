@@ -15,6 +15,7 @@ import (
 	"github.com/onsi/gomega/gexec"
 	"gopkg.in/yaml.v2"
 
+	"autoscaler/db"
 	"autoscaler/pruner/config"
 )
 
@@ -71,15 +72,30 @@ func initConfig() {
 		Fail("environment variable $DBURL is not set")
 	}
 
-	cfg.InstanceMetricsDb.DbUrl = dbUrl
+	cfg.InstanceMetricsDb.Db = db.DatabaseConfig{
+		Url:                   dbUrl,
+		MaxOpenConnections:    10,
+		MaxIdleConnections:    5,
+		ConnectionMaxLifetime: 10 * time.Second,
+	}
 	cfg.InstanceMetricsDb.RefreshInterval = 12 * time.Hour
 	cfg.InstanceMetricsDb.CutoffDays = 20
 
-	cfg.AppMetricsDb.DbUrl = dbUrl
+	cfg.AppMetricsDb.Db = db.DatabaseConfig{
+		Url:                   dbUrl,
+		MaxOpenConnections:    10,
+		MaxIdleConnections:    5,
+		ConnectionMaxLifetime: 10 * time.Second,
+	}
 	cfg.AppMetricsDb.RefreshInterval = 12 * time.Hour
 	cfg.AppMetricsDb.CutoffDays = 20
 
-	cfg.ScalingEngineDb.DbUrl = dbUrl
+	cfg.ScalingEngineDb.Db = db.DatabaseConfig{
+		Url:                   dbUrl,
+		MaxOpenConnections:    10,
+		MaxIdleConnections:    5,
+		ConnectionMaxLifetime: 10 * time.Second,
+	}
 	cfg.ScalingEngineDb.RefreshInterval = 12 * time.Hour
 	cfg.ScalingEngineDb.CutoffDays = 20
 

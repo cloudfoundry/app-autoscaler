@@ -12,36 +12,40 @@ import (
 )
 
 type InstanceMetricsSQLDB struct {
-	logger lager.Logger
-	url    string
-	sqldb  *sql.DB
+	logger   lager.Logger
+	dbConfig db.DatabaseConfig
+	sqldb    *sql.DB
 }
 
-func NewInstanceMetricsSQLDB(url string, logger lager.Logger) (*InstanceMetricsSQLDB, error) {
-	sqldb, err := sql.Open(db.PostgresDriverName, url)
+func NewInstanceMetricsSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*InstanceMetricsSQLDB, error) {
+	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.Url)
 	if err != nil {
-		logger.Error("failed-open-instancemetrics-db", err, lager.Data{"url": url})
+		logger.Error("failed-open-instancemetrics-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
 	}
 
 	err = sqldb.Ping()
 	if err != nil {
 		sqldb.Close()
-		logger.Error("failed-ping-instancemetrics-db", err, lager.Data{"url": url})
+		logger.Error("failed-ping-instancemetrics-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
 	}
 
+	sqldb.SetConnMaxLifetime(dbConfig.ConnectionMaxLifetime)
+	sqldb.SetMaxIdleConns(dbConfig.MaxIdleConnections)
+	sqldb.SetMaxOpenConns(dbConfig.MaxOpenConnections)
+
 	return &InstanceMetricsSQLDB{
-		sqldb:  sqldb,
-		logger: logger,
-		url:    url,
+		sqldb:    sqldb,
+		logger:   logger,
+		dbConfig: dbConfig,
 	}, nil
 }
 
 func (idb *InstanceMetricsSQLDB) Close() error {
 	err := idb.sqldb.Close()
 	if err != nil {
-		idb.logger.Error("failed-close-instancemetrics-db", err, lager.Data{"url": idb.url})
+		idb.logger.Error("failed-close-instancemetrics-db", err, lager.Data{"dbConfig": idb.dbConfig})
 		return err
 	}
 	return nil
