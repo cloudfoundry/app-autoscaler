@@ -67,15 +67,6 @@
 [submodule "src/github.com/cloudfoundry/dropsonde"]
 	path = src/github.com/cloudfoundry/dropsonde
 	url = https://github.com/cloudfoundry/dropsonde
-[submodule "src/github.com/jessevdk/go-flags"]
-	path = src/github.com/jessevdk/go-flags
-	url = https://github.com/jessevdk/go-flags
-[submodule "src/code.cloudfoundry.org/cli"]
-	path = src/code.cloudfoundry.org/cli
-	url = https://github.com/cloudfoundry/cli
-[submodule "src/github.com/fatih/color"]
-	path = src/github.com/fatih/color
-	url = https://github.com/fatih/color
 [submodule "src/github.com/rubyist/circuitbreaker"]
 	path = src/github.com/rubyist/circuitbreaker
 	url = https://github.com/rubyist/circuitbreaker
