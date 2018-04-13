@@ -156,7 +156,7 @@ module.exports = function(app, settings, catalog, models) {
                   return;
                 }
 
-                logger.error("Bind failed: detach policy error", { error: error });
+                logger.error("Unbind failed: detach policy error", { error: error });
                 rollbackTransaction(t, res, 500, {});
               });
               return;
