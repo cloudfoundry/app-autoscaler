@@ -45,9 +45,7 @@ func (h *ScalingHandler) Scale(w http.ResponseWriter, r *http.Request, vars map[
 
 	logger.Debug("handling", lager.Data{"trigger": trigger})
 
-	var newInstances int
-
-	newInstances, err = h.scalingEngine.Scale(appId, trigger)
+	result, err := h.scalingEngine.Scale(appId, trigger)
 
 	if err != nil {
 		logger.Error("failed-to-scale", err, lager.Data{"trigger": trigger})
@@ -57,7 +55,7 @@ func (h *ScalingHandler) Scale(w http.ResponseWriter, r *http.Request, vars map[
 		return
 	}
 
-	handlers.WriteJSONResponse(w, http.StatusOK, models.AppEntity{Instances: newInstances})
+	handlers.WriteJSONResponse(w, http.StatusOK, result)
 }
 
 func (h *ScalingHandler) GetScalingHistories(w http.ResponseWriter, r *http.Request, vars map[string]string) {

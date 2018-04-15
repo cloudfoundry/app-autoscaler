@@ -23,7 +23,9 @@ type AppEvaluationManager struct {
 	getPolicies      models.GetPolicies
 	breakerConfig    config.CircuitBreakerConfig
 	breakers         map[string]*circuit.Breaker
-	lock             *sync.Mutex
+	cooldownExpired  map[string]int64
+	breakerLock      *sync.Mutex
+	cooldownLock     *sync.Mutex
 }
 
 func NewAppEvaluationManager(logger lager.Logger, evaluateInterval time.Duration, emClock clock.Clock,
@@ -37,7 +39,9 @@ func NewAppEvaluationManager(logger lager.Logger, evaluateInterval time.Duration
 		triggerChan:      triggerChan,
 		getPolicies:      getPolicies,
 		breakerConfig:    breakerConfig,
-		lock:             &sync.Mutex{},
+		cooldownExpired:  map[string]int64{},
+		breakerLock:      &sync.Mutex{},
+		cooldownLock:     &sync.Mutex{},
 	}, nil
 }
 
@@ -45,10 +49,16 @@ func (a *AppEvaluationManager) getTriggers(policyMap map[string]*models.AppPolic
 	if policyMap == nil {
 		return nil
 	}
-
 	triggersByType := make(map[string][]*models.Trigger)
+	now := a.emClock.Now().UnixNano()
 	for appId, policy := range policyMap {
 		for _, rule := range policy.ScalingPolicy.ScalingRules {
+			cooldownExpiredAt, found := a.cooldownExpired[appId]
+			if found {
+				if cooldownExpiredAt > now {
+					continue
+				}
+			}
 			triggerKey := appId + "#" + rule.MetricType
 			triggers, exist := triggersByType[triggerKey]
 			if !exist {
@@ -108,9 +118,9 @@ func (a *AppEvaluationManager) doEvaluate() {
 				}
 			}
 
-			a.lock.Lock()
+			a.breakerLock.Lock()
 			a.breakers = newBreakers
-			a.lock.Unlock()
+			a.breakerLock.Unlock()
 
 			triggers := a.getTriggers(policies)
 			for _, triggerArray := range triggers {
@@ -121,7 +131,13 @@ func (a *AppEvaluationManager) doEvaluate() {
 }
 
 func (a *AppEvaluationManager) GetBreaker(appID string) *circuit.Breaker {
-	a.lock.Lock()
-	defer a.lock.Unlock()
+	a.breakerLock.Lock()
+	defer a.breakerLock.Unlock()
 	return a.breakers[appID]
+}
+
+func (a *AppEvaluationManager) SetCoolDownExpired(appID string, expiredAt int64) {
+	a.cooldownLock.Lock()
+	defer a.cooldownLock.Unlock()
+	a.cooldownExpired[appID] = expiredAt
 }

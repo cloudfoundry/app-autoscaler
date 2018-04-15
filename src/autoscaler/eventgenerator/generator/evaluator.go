@@ -27,10 +27,11 @@ type Evaluator struct {
 	database                  db.AppMetricDB
 	defaultBreachDurationSecs int
 	getBreaker                func(string) *circuit.Breaker
+	setCoolDownExpired        func(string, int64)
 }
 
 func NewEvaluator(logger lager.Logger, httpClient *http.Client, scalingEngineUrl string, triggerChan chan []*models.Trigger,
-	database db.AppMetricDB, defaultBreachDurationSecs int, getBreaker func(string) *circuit.Breaker) *Evaluator {
+	database db.AppMetricDB, defaultBreachDurationSecs int, getBreaker func(string) *circuit.Breaker, setCoolDownExpired func(string, int64)) *Evaluator {
 	return &Evaluator{
 		logger:                    logger.Session("Evaluator"),
 		httpClient:                httpClient,
@@ -40,6 +41,7 @@ func NewEvaluator(logger lager.Logger, httpClient *http.Client, scalingEngineUrl
 		database:                  database,
 		defaultBreachDurationSecs: defaultBreachDurationSecs,
 		getBreaker:                getBreaker,
+		setCoolDownExpired:        setCoolDownExpired,
 	}
 }
 
@@ -184,17 +186,27 @@ func (e *Evaluator) sendTriggerAlarm(trigger *models.Trigger) error {
 	}
 
 	defer resp.Body.Close()
+
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		e.logger.Error("failed-read-response-body-from-scaling-engine", err)
 	}
 
 	if resp.StatusCode == http.StatusOK {
-		e.logger.Info("successfully-send-trigger-alarm", lager.Data{"trigger": trigger})
+		var scalingResult *models.AppScalingResult
+		err = json.Unmarshal(respBody, &scalingResult)
+		if err != nil {
+			e.logger.Error("successfully-send-trigger-alarm, but received wrong response", err, lager.Data{"trigger": trigger, "responseBody": string(respBody)})
+			return err
+		}
+		e.logger.Info("successfully-send-trigger-alarm with trigger", lager.Data{"trigger": trigger, "responseBody": string(respBody)})
+		if scalingResult.CooldownExpiredAt != 0 {
+			e.setCoolDownExpired(trigger.AppId, scalingResult.CooldownExpiredAt)
+		}
 		return nil
 	}
 	err = fmt.Errorf("Got %d when sending trigger alarm", resp.StatusCode)
-	e.logger.Error("failed-send-trigger-alarm", err, lager.Data{"trigger": trigger, "responseBody": respBody})
+	e.logger.Error("failed-send-trigger-alarm", err, lager.Data{"trigger": trigger, "responseBody": string(respBody)})
 	return err
 
 }
