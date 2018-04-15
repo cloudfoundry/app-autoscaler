@@ -35,9 +35,9 @@ func (dblock *DatabaseLock) InitDBLockRunner(retryInterval time.Duration, ttl ti
 			dblock.logger.Error("failed-to-acquire-lock-in-first-attempt", lockErr)
 		}
 		if isLockAcquired {
+			readyToAcquireLock = false
 			dblock.logger.Info("lock-acquired-in-first-attempt", lager.Data{"owner": owner, "isLockAcquired": isLockAcquired})
 			close(ready)
-			readyToAcquireLock = false
 		}
 		for {
 			select {
@@ -68,9 +68,9 @@ func (dblock *DatabaseLock) InitDBLockRunner(retryInterval time.Duration, ttl ti
 					os.Exit(1)
 				}
 				if isLockAcquired && readyToAcquireLock {
-					close(ready)
 					readyToAcquireLock = false
 					dblock.logger.Info("successfully-acquired-lock", lager.Data{"owner": owner})
+					close(ready)
 				}
 			}
 		}
