@@ -72,7 +72,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	evaluators, err := createEvaluators(logger, conf, triggersChan, appMetricDB, evaluationManager.GetBreaker)
+	evaluators, err := createEvaluators(logger, conf, triggersChan, appMetricDB, evaluationManager.GetBreaker, evaluationManager.SetCoolDownExpired)
 	if err != nil {
 		logger.Error("failed to create Evaluators", err)
 		os.Exit(1)
@@ -226,7 +226,7 @@ func loadConfig(path string) (*config.Config, error) {
 }
 
 func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan chan []*models.Trigger,
-	database db.AppMetricDB, getBreaker func(string) *circuit.Breaker) ([]*generator.Evaluator, error) {
+	database db.AppMetricDB, getBreaker func(string) *circuit.Breaker, setCoolDownExpired func(string, int64)) ([]*generator.Evaluator, error) {
 	count := conf.Evaluator.EvaluatorCount
 	scalingEngineUrl := conf.ScalingEngine.ScalingEngineUrl
 
@@ -248,7 +248,7 @@ func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan cha
 	evaluators := make([]*generator.Evaluator, count)
 	for i := 0; i < count; i++ {
 		evaluators[i] = generator.NewEvaluator(logger, client, scalingEngineUrl, triggersChan, database,
-			conf.DefaultBreachDurationSecs, getBreaker)
+			conf.DefaultBreachDurationSecs, getBreaker, setCoolDownExpired)
 	}
 
 	return evaluators, nil

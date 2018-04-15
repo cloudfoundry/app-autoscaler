@@ -51,3 +51,10 @@ type AppMetric struct {
 	Unit       string
 	Timestamp  int64
 }
+
+type AppScalingResult struct {
+	AppId             string        `json:"app_id"`
+	Status            ScalingStatus `json:"status"`
+	Adjustment        int           `json:"adjustment"`
+	CooldownExpiredAt int64         `json:"cool_down_expired_at"`
+}
