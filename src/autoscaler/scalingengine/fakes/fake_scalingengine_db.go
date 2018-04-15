@@ -59,18 +59,20 @@ type FakeScalingEngineDB struct {
 	updateScalingCooldownExpireTimeReturnsOnCall map[int]struct {
 		result1 error
 	}
-	CanScaleAppStub        func(appId string) (bool, error)
+	CanScaleAppStub        func(appId string) (bool, int64, error)
 	canScaleAppMutex       sync.RWMutex
 	canScaleAppArgsForCall []struct {
 		appId string
 	}
 	canScaleAppReturns struct {
 		result1 bool
-		result2 error
+		result2 int64
+		result3 error
 	}
 	canScaleAppReturnsOnCall map[int]struct {
 		result1 bool
-		result2 error
+		result2 int64
+		result3 error
 	}
 	GetActiveScheduleStub        func(appId string) (*models.ActiveSchedule, error)
 	getActiveScheduleMutex       sync.RWMutex
@@ -332,7 +334,7 @@ func (fake *FakeScalingEngineDB) UpdateScalingCooldownExpireTimeReturnsOnCall(i 
 	}{result1}
 }
 
-func (fake *FakeScalingEngineDB) CanScaleApp(appId string) (bool, error) {
+func (fake *FakeScalingEngineDB) CanScaleApp(appId string) (bool, int64, error) {
 	fake.canScaleAppMutex.Lock()
 	ret, specificReturn := fake.canScaleAppReturnsOnCall[len(fake.canScaleAppArgsForCall)]
 	fake.canScaleAppArgsForCall = append(fake.canScaleAppArgsForCall, struct {
@@ -344,9 +346,9 @@ func (fake *FakeScalingEngineDB) CanScaleApp(appId string) (bool, error) {
 		return fake.CanScaleAppStub(appId)
 	}
 	if specificReturn {
-		return ret.result1, ret.result2
+		return ret.result1, ret.result2, ret.result3
 	}
-	return fake.canScaleAppReturns.result1, fake.canScaleAppReturns.result2
+	return fake.canScaleAppReturns.result1, fake.canScaleAppReturns.result2, fake.canScaleAppReturns.result3
 }
 
 func (fake *FakeScalingEngineDB) CanScaleAppCallCount() int {
@@ -361,26 +363,29 @@ func (fake *FakeScalingEngineDB) CanScaleAppArgsForCall(i int) string {
 	return fake.canScaleAppArgsForCall[i].appId
 }
 
-func (fake *FakeScalingEngineDB) CanScaleAppReturns(result1 bool, result2 error) {
+func (fake *FakeScalingEngineDB) CanScaleAppReturns(result1 bool, result2 int64, result3 error) {
 	fake.CanScaleAppStub = nil
 	fake.canScaleAppReturns = struct {
 		result1 bool
-		result2 error
-	}{result1, result2}
+		result2 int64
+		result3 error
+	}{result1, result2, result3}
 }
 
-func (fake *FakeScalingEngineDB) CanScaleAppReturnsOnCall(i int, result1 bool, result2 error) {
+func (fake *FakeScalingEngineDB) CanScaleAppReturnsOnCall(i int, result1 bool, result2 int64, result3 error) {
 	fake.CanScaleAppStub = nil
 	if fake.canScaleAppReturnsOnCall == nil {
 		fake.canScaleAppReturnsOnCall = make(map[int]struct {
 			result1 bool
-			result2 error
+			result2 int64
+			result3 error
 		})
 	}
 	fake.canScaleAppReturnsOnCall[i] = struct {
 		result1 bool
-		result2 error
-	}{result1, result2}
+		result2 int64
+		result3 error
+	}{result1, result2, result3}
 }
 
 func (fake *FakeScalingEngineDB) GetActiveSchedule(appId string) (*models.ActiveSchedule, error) {

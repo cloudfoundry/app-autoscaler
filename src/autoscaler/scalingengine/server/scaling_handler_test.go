@@ -56,7 +56,12 @@ var _ = Describe("ScalingHandler", func() {
 
 		Context("when scaling app succeeds", func() {
 			BeforeEach(func() {
-				scalingEngine.ScaleReturns(3, nil)
+				scalingEngine.ScaleReturns(&models.AppScalingResult{
+					AppId:             "an-app-id",
+					Status:            models.ScalingStatusSucceeded,
+					Adjustment:        1,
+					CooldownExpiredAt: 10000,
+				}, nil)
 
 				trigger = &models.Trigger{
 					MetricType: testMetricName,
@@ -77,10 +82,13 @@ var _ = Describe("ScalingHandler", func() {
 				Expect(appId).To(Equal("an-app-id"))
 				Expect(scaleTrigger).To(Equal(trigger))
 
-				props := &models.AppEntity{}
+				props := &models.AppScalingResult{}
 				err = json.Unmarshal(resp.Body.Bytes(), props)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(props.Instances).To(Equal(3))
+				Expect(props.Adjustment).To(Equal(1))
+				Expect(props.AppId).To(Equal("an-app-id"))
+				Expect(props.Status).To(Equal(models.ScalingStatusSucceeded))
+				Expect(props.CooldownExpiredAt).To(Equal(int64(10000)))
 			})
 		})
 
@@ -105,7 +113,12 @@ var _ = Describe("ScalingHandler", func() {
 
 		Context("when scaling app fails", func() {
 			BeforeEach(func() {
-				scalingEngine.ScaleReturns(0, errors.New("an error"))
+				scalingEngine.ScaleReturns(&models.AppScalingResult{
+					AppId:             "an-app-id",
+					Status:            models.ScalingStatusFailed,
+					Adjustment:        0,
+					CooldownExpiredAt: 0,
+				}, errors.New("an error"))
 
 				trigger = &models.Trigger{
 					MetricType: testMetricName,

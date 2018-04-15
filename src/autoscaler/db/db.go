@@ -52,7 +52,7 @@ type ScalingEngineDB interface {
 	RetrieveScalingHistories(appId string, start int64, end int64, orderType OrderType, includeAll bool) ([]*models.AppScalingHistory, error)
 	PruneScalingHistories(before int64) error
 	UpdateScalingCooldownExpireTime(appId string, expireAt int64) error
-	CanScaleApp(appId string) (bool, error)
+	CanScaleApp(appId string) (bool, int64, error)
 	GetActiveSchedule(appId string) (*models.ActiveSchedule, error)
 	GetActiveSchedules() (map[string]string, error)
 	SetActiveSchedule(appId string, schedule *models.ActiveSchedule) error
