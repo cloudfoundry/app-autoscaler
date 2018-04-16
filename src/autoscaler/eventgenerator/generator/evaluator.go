@@ -132,6 +132,9 @@ func (e *Evaluator) doEvaluate(triggerArray []*models.Trigger) {
 			e.logger.Info("send trigger alarm to scaling engine", lager.Data{"trigger": trigger})
 
 			if appBreaker := e.getBreaker(trigger.AppId); appBreaker != nil {
+				if appBreaker.Tripped() {
+					e.logger.Info("circuit-tripped", lager.Data{"appId": trigger.AppId, "consecutiveFailures": appBreaker.ConsecFailures()})
+				}
 				appBreaker.Call(func() error {
 					return e.sendTriggerAlarm(trigger)
 				}, 0)

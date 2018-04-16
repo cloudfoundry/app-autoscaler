@@ -153,9 +153,12 @@ var _ = Describe("App", func() {
 
 		Context("when updating app instances returns non-200 status code", func() {
 			BeforeEach(func() {
+				responseMap := make(map[string]interface{})
+				responseMap["description"] = "You have exceeded the instance memory limit for your space's quota"
+				responseMap["error_code"] = "SpaceQuotaInstanceMemoryLimitExceeded"
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.RespondWithJSONEncoded(http.StatusNotFound, ""),
+						ghttp.RespondWithJSONEncoded(http.StatusBadRequest, responseMap),
 					),
 				)
 			})
