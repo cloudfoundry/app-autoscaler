@@ -78,7 +78,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 	if err != nil {
 		logger.Error("failed-to-get-app-info", err)
 		history.Status = models.ScalingStatusFailed
-		history.Error = "failed to get app info"
+		history.Error = "failed to get app info: " + err.Error()
 		return nil, err
 	}
 	history.OldInstances = appEntity.Instances
@@ -162,17 +162,17 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 		result.Status = history.Status
 		result.Adjustment = 0
 		result.CooldownExpiredAt = now.Add(trigger.CoolDown(s.defaultCoolDownSecs)).UnixNano()
-		return result,nil
+		return result, nil
 	}
-	
+
 	err = s.cfClient.SetAppInstances(appId, newInstances)
 	if err != nil {
 		logger.Error("failed-to-set-app-instances", err, lager.Data{"newInstances": newInstances})
 		history.Status = models.ScalingStatusFailed
-		history.Error = "failed to set app instances"
+		history.Error = "failed to set app instances: " + err.Error()
 		return nil, err
 	}
-	
+
 	history.Status = models.ScalingStatusSucceeded
 	result.Status = history.Status
 	result.Adjustment = newInstances - appEntity.Instances
@@ -196,9 +196,9 @@ func (s *scalingEngine) ComputeNewInstances(currentInstances int, adjustment str
 		newInstances = int(float64(currentInstances)*(1+percentage/100) + 0.5)
 
 		if newInstances == currentInstances {
-			if percentage > 0 { 
+			if percentage > 0 {
 				newInstances = currentInstances + 1
-			} else if percentage < 0 { 
+			} else if percentage < 0 {
 				newInstances = currentInstances - 1
 			}
 		}
@@ -256,7 +256,7 @@ func (s *scalingEngine) SetActiveSchedule(appId string, schedule *models.ActiveS
 	if err != nil {
 		logger.Error("failed-to-get-app-info", err)
 		history.Status = models.ScalingStatusFailed
-		history.Error = "failed to get app info"
+		history.Error = "failed to get app info: " + err.Error()
 		return err
 	}
 	history.OldInstances = appEntity.Instances
@@ -286,7 +286,7 @@ func (s *scalingEngine) SetActiveSchedule(appId string, schedule *models.ActiveS
 	if err != nil {
 		logger.Error("failed-to-set-app-instances", err)
 		history.Status = models.ScalingStatusFailed
-		history.Error = "failed to set app instances"
+		history.Error = "failed to set app instances: " + err.Error()
 		return err
 	}
 	history.Status = models.ScalingStatusSucceeded
@@ -332,7 +332,7 @@ func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) er
 	if err != nil {
 		logger.Error("failed-to-get-app-info", err)
 		history.Status = models.ScalingStatusFailed
-		history.Error = "failed to get app info"
+		history.Error = "failed to get app info: " + err.Error()
 		return err
 	}
 	history.OldInstances = appEntity.Instances
@@ -370,7 +370,7 @@ func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) er
 	if err != nil {
 		logger.Error("failed-to-set-app-instances", err)
 		history.Status = models.ScalingStatusFailed
-		history.Error = "failed to set app instances"
+		history.Error = "failed to set app instances: " + err.Error()
 		return err
 	}
 	history.Status = models.ScalingStatusSucceeded

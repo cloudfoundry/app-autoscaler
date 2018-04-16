@@ -101,7 +101,6 @@ var _ = Describe("Evaluator", func() {
 			Adjustment:            "-1",
 		}
 		triggerArrayMultipleTriggers []*models.Trigger = []*models.Trigger{&firstTrigger, &secondTrigger}
-
 	)
 	BeforeEach(func() {
 		logger = lagertest.NewTestLogger("Evaluator-test")
@@ -653,6 +652,7 @@ var _ = Describe("Evaluator", func() {
 
 					By("return directly when circuit breaker is open")
 					Expect(triggerChan).To(BeSent(triggerArrayGT))
+					Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("circuit-tripped")))
 					Consistently(scalingEngine.ReceivedRequests).Should(HaveLen(1))
 
 					By("circuit breaker becomes half open when timeout")
