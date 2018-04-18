@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"path"
 
@@ -83,10 +84,22 @@ func (c *cfClient) SetAppInstances(appId string, num int) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusCreated {
-		err = fmt.Errorf("failed setting application instances: %s [%d] %s", url, resp.StatusCode, resp.Status)
-		c.logger.Error("set-app-instances-response", err)
+		respBody, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			c.logger.Error("failed-to-read-response-body-while-setting-app-instance", err, lager.Data{"appid": appId})
+			return err
+		}
+		var bodydata map[string]interface{}
+		err = json.Unmarshal([]byte(respBody), &bodydata)
+		if err != nil {
+			c.logger.Error("failed-to-unmarshal-response-body-while-setting-app-instance", err, lager.Data{"appid": appId})
+			return err
+		}
+		errorDescription := bodydata["description"].(string)
+		errorCode := bodydata["error_code"].(string)
+		err = fmt.Errorf("failed setting application instances: [%d] %s: %s", resp.StatusCode, errorCode, errorDescription)
+		c.logger.Error("set-app-instances-response", err, lager.Data{"appid": appId, "statusCode": resp.StatusCode, "description": errorDescription, "errorCode": errorCode})
 		return err
 	}
-
 	return nil
 }
