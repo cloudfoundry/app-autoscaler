@@ -187,7 +187,7 @@ var _ = Describe("ScalingEngine", func() {
 				Expect(scalingResult.AppId).To(Equal("an-app-id"))
 				Expect(scalingResult.Status).To(Equal(models.ScalingStatusIgnored))
 				Expect(scalingResult.Adjustment).To(Equal(0))
-				Expect(scalingResult.CooldownExpiredAt).To(Equal(clock.Now().Add(30*time.Second).UnixNano()))
+				Expect(scalingResult.CooldownExpiredAt).To(Equal(clock.Now().Add(30 * time.Second).UnixNano()))
 
 			})
 		})
@@ -397,7 +397,7 @@ var _ = Describe("ScalingEngine", func() {
 					OldInstances: -1,
 					NewInstances: -1,
 					Reason:       "+1 instance(s) because test-metric-type > 80test-unit for 100 seconds",
-					Error:        "failed to get app info",
+					Error:        "failed to get app info: test error",
 				}))
 
 				Expect(scalingResult).To(BeNil())
@@ -564,7 +564,7 @@ var _ = Describe("ScalingEngine", func() {
 					OldInstances: 2,
 					NewInstances: 3,
 					Reason:       "+1 instance(s) because test-metric-type > 80test-unit for 100 seconds",
-					Error:        "failed to set app instances",
+					Error:        "failed to set app instances: test error",
 				}))
 
 				Expect(scalingResult).To(BeNil())
@@ -853,7 +853,7 @@ var _ = Describe("ScalingEngine", func() {
 					OldInstances: -1,
 					NewInstances: -1,
 					Reason:       "schedule starts with instance min 2, instance max 10 and instance min initial 5",
-					Error:        "failed to get app info",
+					Error:        "failed to get app info: an error",
 				}))
 
 			})
@@ -878,7 +878,7 @@ var _ = Describe("ScalingEngine", func() {
 					NewInstances: 5,
 					Reason:       "schedule starts with instance min 2, instance max 10 and instance min initial 5",
 					Message:      "limited by min instances 5",
-					Error:        "failed to set app instances",
+					Error:        "failed to set app instances: an error",
 				}))
 
 			})
@@ -1026,7 +1026,7 @@ var _ = Describe("ScalingEngine", func() {
 					OldInstances: -1,
 					NewInstances: -1,
 					Reason:       "schedule ends",
-					Error:        "failed to get app info",
+					Error:        "failed to get app info: an error",
 				}))
 
 			})
@@ -1092,7 +1092,7 @@ var _ = Describe("ScalingEngine", func() {
 					OldInstances: 2,
 					NewInstances: 3,
 					Reason:       "schedule ends",
-					Error:        "failed to set app instances",
+					Error:        "failed to set app instances: an error",
 					Message:      "limited by min instances 3",
 				}))
 
