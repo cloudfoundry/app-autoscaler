@@ -123,13 +123,13 @@ export DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
 ginkgo -r -race -randomizeAllSpecs src/integration
 ```
 
-## Deploy and use
+## Deploy and offer Auto-Scaler as a service
 
 Go to [app-autoscaler-release][r] project for how to BOSH deploy `App-AutoScaler` and use the service
 
-## Command line tool 
+## End-user manual 
 
-Go to [app-autoscaler-cli-plugin][s] project to manage `App-AutoScaler` service with CLI tool.
+[Docs][u] describes more deep knowledge of `App-AutoScaler` from end-user's perspective, including policy definition, supported metric type, public API definition , commond line tool support and etc. 
 
 ## License
 
@@ -146,4 +146,4 @@ This project is released under version 2.0 of the [Apache License][l].
 [t]: https://www.pivotaltracker.com/projects/1566795
 [p]: https://www.postgresql.org/
 [r]: https://github.com/cloudfoundry-incubator/app-autoscaler-release
-[s]: https://github.com/cloudfoundry-incubator/app-autoscaler-cli-plugin
+[u]: https://github.com/cloudfoundry-incubator/app-autoscaler/tree/develop/docs
