@@ -21,7 +21,7 @@ App-AutoScaler Policy Definition
 +--------------------------------------+------------------------+---------+----------------------------------------------------+
 | Name                                 | Type                   | Required|Description                                         |
 +--------------------------------------+------------------------+---------+----------------------------------------------------+
-| metric-type                          | String                 | true    |one of the support metric types:                    |
+| metric_type                          | String                 | true    |one of the support metric types:                    |
 |                                      |                        |         |memoryused,memoryutil,responsetime, throughput      |
 +--------------------------------------+------------------------+---------+----------------------------------------------------+
 | stat_window_secs                     | int, seconds           | false   |interval to take the avergae metric statistic       |

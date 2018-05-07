@@ -109,7 +109,7 @@ throughput/response time as metrics
 * Design dynamic scaling rules carefully when using multiple metric types
 
 
-[aa]: https://github.com/cloudfoundry-incubator/app-autoscaler/blob/develop/docs/Policy_defnition.rst
+[aa]: https://github.com/cloudfoundry-incubator/app-autoscaler/blob/develop/docs/Policy_definition.rst
 [ab]: https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md
 [ac]: https://github.com/cloudfoundry/cli
 [ad]: https://github.com/cloudfoundry-incubator/app-autoscaler-cli-plugin
