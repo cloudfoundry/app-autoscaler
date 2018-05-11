@@ -64,9 +64,9 @@ App-AutoScaler Policy Definition
 +--------------------------------------+---------------------+---------+-----------------------------------------------------------------------------------------+
 | end_time                             | String,"hh:mm"      | true    | the end time of the schedule                                                            |
 +--------------------------------------+---------------------+---------+-----------------------------------------------------------------------------------------+
-| day_of_week                          | Array<int>          | Exactly | recurrence frequency. Use [1,2,..,7] to define the day of week                          |
+| days_of_week                         | Array<int>          | Exactly | recurrence frequency. Use [1,2,..,7] to define the day of week                          |
 +--------------------------------------+---------------------+ one of  +-----------------------------------------------------------------------------------------+
-| day_of_month                         | Array<int>          | the two | recurrence frequency. Use [1,2,...,31] to define the day of month                       |
+| days_of_month                        | Array<int>          | the two | recurrence frequency. Use [1,2,...,31] to define the day of month                       |
 +--------------------------------------+---------------------+---------+-----------------------------------------------------------------------------------------+
 | instance_min_count                   | int                 | true    | minimal number of instance count for this schedule                                      |
 +--------------------------------------+---------------------+---------+-----------------------------------------------------------------------------------------+
