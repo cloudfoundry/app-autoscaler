@@ -98,6 +98,11 @@ lock:
   lock_ttl: 15s
   lock_retry_interval: 10s
   consul_cluster_config: "http://127.0.0.1:8500"
+db_lock:
+  ttl: 15s
+  url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  retry_interval: 5s
+enable_db_lock: false
 `)
 			})
 
@@ -137,6 +142,9 @@ lock:
 				Expect(conf.Lock.LockRetryInterval).To(Equal(10 * time.Second))
 				Expect(conf.Lock.ConsulClusterConfig).To(Equal("http://127.0.0.1:8500"))
 
+				Expect(conf.DBLock.LockTTL).To(Equal(15 * time.Second))
+				Expect(conf.DBLock.LockRetryInterval).To(Equal(5 * time.Second))
+				Expect(conf.EnableDBLock).To(BeFalse())
 			})
 		})
 
@@ -187,6 +195,10 @@ scaling_engine_db:
 
 				Expect(conf.Lock.LockTTL).To(Equal(config.DefaultLockTTL))
 				Expect(conf.Lock.LockRetryInterval).To(Equal(config.DefaultRetryInterval))
+
+				Expect(conf.DBLock.LockTTL).To(Equal(config.DefaultDBLockTTL))
+				Expect(conf.DBLock.LockRetryInterval).To(Equal(config.DefaultDBLockRetryInterval))
+
 			})
 		})
 		Context("when it gives a non integer cutoff_days of instance_metrics_db", func() {

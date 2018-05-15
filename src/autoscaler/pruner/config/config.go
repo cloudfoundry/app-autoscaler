@@ -10,16 +10,17 @@ import (
 	"autoscaler/db"
 
 	"code.cloudfoundry.org/locket"
-
-	"gopkg.in/yaml.v2"
+        "gopkg.in/yaml.v2"
 )
 
 const (
-	DefaultLoggingLevel    string        = "info"
-	DefaultRefreshInterval time.Duration = 24 * time.Hour
-	DefaultCutoffDays      int           = 30
-	DefaultLockTTL         time.Duration = locket.DefaultSessionTTL
-	DefaultRetryInterval   time.Duration = locket.RetryInterval
+	DefaultLoggingLevel        string        = "info"
+	DefaultRefreshInterval     time.Duration = 24 * time.Hour
+	DefaultCutoffDays          int           = 30
+	DefaultLockTTL             time.Duration = locket.DefaultSessionTTL
+	DefaultRetryInterval       time.Duration = locket.RetryInterval
+	DefaultDBLockRetryInterval time.Duration = 5 * time.Second
+	DefaultDBLockTTL           time.Duration = 15 * time.Second
 )
 
 type LoggingConfig struct {
@@ -50,12 +51,25 @@ type LockConfig struct {
 	ConsulClusterConfig string        `yaml:"consul_cluster_config"`
 }
 
+type DBLockConfig struct {
+	LockTTL           time.Duration     `yaml:"ttl"`
+	LockRetryInterval time.Duration     `yaml:"retry_interval"`
+	LockDB            db.DatabaseConfig `yaml:"lock_db"`
+}
+
+var defaultDBLockConfig = DBLockConfig{
+	LockTTL:           DefaultDBLockTTL,
+	LockRetryInterval: DefaultDBLockRetryInterval,
+}
+
 type Config struct {
 	Logging           LoggingConfig                 `yaml:"logging"`
 	InstanceMetricsDb InstanceMetricsDbPrunerConfig `yaml:"instance_metrics_db"`
 	AppMetricsDb      AppMetricsDbPrunerConfig      `yaml:"app_metrics_db"`
 	ScalingEngineDb   ScalingEngineDbPrunerConfig   `yaml:"scaling_engine_db"`
 	Lock              LockConfig                    `yaml:"lock"`
+	DBLock            DBLockConfig                  `yaml:"db_lock"`
+	EnableDBLock      bool                          `yaml:"enable_db_lock"`
 }
 
 var defaultDbConfig = Config{
@@ -76,6 +90,8 @@ var defaultDbConfig = Config{
 		LockRetryInterval: DefaultRetryInterval,
 		LockTTL:           DefaultLockTTL,
 	},
+	DBLock:       defaultDBLockConfig,
+	EnableDBLock: false,
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
@@ -141,6 +157,11 @@ func (c *Config) Validate() error {
 	if c.Lock.LockTTL <= 0 {
 		return fmt.Errorf("Configuration error: lock ttl is less than or equal to 0")
 	}
+
+	if c.EnableDBLock && c.DBLock.LockDB.Url == "" {
+		return fmt.Errorf("Configuration error: Lock DB Url is empty")
+	}
+
 	return nil
 
 }
