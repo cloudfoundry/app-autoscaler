@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"database/sql"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -102,6 +103,17 @@ func initConfig() {
 	cfg.Lock.ConsulClusterConfig = consulRunner.ConsulCluster()
 	cfg.Lock.LockRetryInterval = locket.RetryInterval
 	cfg.Lock.LockTTL = locket.DefaultSessionTTL
+
+	cfg.DBLock.LockDB = db.DatabaseConfig{
+		Url:                   os.Getenv("DBURL"),
+		MaxOpenConnections:    10,
+		MaxIdleConnections:    5,
+		ConnectionMaxLifetime: 10 * time.Second,
+	}
+
+	cfg.DBLock.LockTTL = 15 * time.Second
+	cfg.DBLock.LockRetryInterval = 5 * time.Second
+	cfg.EnableDBLock = false
 }
 
 func writeConfig(c *config.Config) *os.File {
@@ -158,4 +170,12 @@ func (pr *PrunerRunner) KillWithFire() {
 	if pr.Session != nil {
 		pr.Session.Kill().Wait(5 * time.Second)
 	}
+}
+
+func (pr *PrunerRunner) ClearLockDatabase() {
+	lockDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = lockDB.Exec("DELETE FROM pruner_lock")
+	Expect(err).NotTo(HaveOccurred())
 }
