@@ -1,14 +1,15 @@
 package main
 
 import (
+	"autoscaler/db"
+	"autoscaler/db/sqldb"
 	"autoscaler/helpers"
+	"autoscaler/pruner"
+	"autoscaler/pruner/config"
+	sync "autoscaler/sync"
 	"flag"
 	"fmt"
 	"os"
-
-	"autoscaler/db/sqldb"
-	"autoscaler/pruner"
-	"autoscaler/pruner/config"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/consuladapter"
@@ -88,6 +89,26 @@ func main() {
 		{"appmetrics-dbpruner", appMetricsDbPrunerRunner},
 		{"scalingEngine-dbpruner", scalingEngineDbPrunerRunner},
 	}
+
+	guid, err := helpers.GenerateGUID(logger)
+	if err != nil {
+		logger.Error("failed-to-generate-guid", err)
+	}
+	const lockTableName = "pruner_lock"
+	if conf.EnableDBLock {
+		logger.Debug("database-lock-feature-enabled")
+		var lockDB db.LockDB
+		lockDB, err = sqldb.NewLockSQLDB(conf.DBLock.LockDB, lockTableName, logger.Session("lock-db"))
+		if err != nil {
+			logger.Error("failed-to-connect-lock-database", err, lager.Data{"dbConfig": conf.DBLock.LockDB})
+			os.Exit(1)
+		}
+		defer lockDB.Close()
+		prdl := sync.NewDatabaseLock(logger)
+		dbLockMaintainer := prdl.InitDBLockRunner(conf.DBLock.LockRetryInterval, conf.DBLock.LockTTL, guid, lockDB)
+		members = append(grouper.Members{{"db-lock-maintainer", dbLockMaintainer}}, members...)
+	}
+
 	if conf.Lock.ConsulClusterConfig != "" {
 		consulClient, err := consuladapter.NewClientFromUrl(conf.Lock.ConsulClusterConfig)
 		if err != nil {
@@ -101,14 +122,15 @@ func main() {
 			logger.Error("failed-to-generate-guid", err)
 			os.Exit(1)
 		}
-		lockMaintainer := serviceClient.NewPrunerLockRunner(
-			logger,
-			guid,
-			conf.Lock.LockRetryInterval,
-			conf.Lock.LockTTL,
-		)
-
-		members = append([]grouper.Member{grouper.Member{"lock-maintainer", lockMaintainer}}, members...)
+		if !conf.EnableDBLock {
+			lockMaintainer := serviceClient.NewPrunerLockRunner(
+				logger,
+				guid,
+				conf.Lock.LockRetryInterval,
+				conf.Lock.LockTTL,
+			)
+			members = append(grouper.Members{{"lock-maintainer", lockMaintainer}}, members...)
+		}
 	}
 
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
