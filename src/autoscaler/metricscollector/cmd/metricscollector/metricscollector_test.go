@@ -357,6 +357,26 @@ var _ = Describe("MetricsCollector", func() {
 			})
 		})
 
+		Context("When more than one instances of metricscollector try to get the lock simultaneously", func() {
+			BeforeEach(func() {
+				runner.Start()
+				secondRunner = NewMetricsCollectorRunner()
+				consulConfig.Server.Port = 8000
+				secondRunner.startCheck = ""
+				secondRunner.configPath = writeConfig(&consulConfig).Name()
+				secondRunner.Start()
+			})
+
+			AfterEach(func() {
+				secondRunner.KillWithFire()
+			})
+
+			It("Only one instance should get the lock", func() {
+				Eventually(func() int { return runner.GetLockDetails() }, 5*time.Second, 1*time.Second).Should(Equal(1))
+				Consistently(func() int { return runner.GetLockDetails() }, 30*time.Second, 5*time.Second).ShouldNot(BeNumerically(">", 1))
+			})
+		})
+
 		Context("when the running metricscollector instance stopped", func() {
 			BeforeEach(func() {
 				runner.Start()

@@ -61,6 +61,12 @@ func (ldb *LockSQLDB) fetch(tx *sql.Tx) (*models.Lock, error) {
 		timestamp time.Time
 		ttl       time.Duration
 	)
+	tquery := "LOCK TABLE " + ldb.table + " IN ACCESS EXCLUSIVE MODE"
+	if _, err := tx.Exec(tquery); err != nil {
+		ldb.logger.Error("failed-to-set-table-level-lock", err)
+		return &models.Lock{}, err
+	}
+
 	query := "SELECT owner,lock_timestamp,ttl FROM " + ldb.table + " LIMIT 1 FOR UPDATE NOWAIT"
 	row := tx.QueryRow(query)
 	err := row.Scan(&owner, &timestamp, &ttl)

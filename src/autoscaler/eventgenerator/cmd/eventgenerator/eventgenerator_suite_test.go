@@ -320,10 +320,20 @@ func (eg *EventGeneratorRunner) KillWithFire() {
 	}
 }
 
-func (mc *EventGeneratorRunner) ClearLockDatabase() {
+func (eg *EventGeneratorRunner) ClearLockDatabase() {
 	lockDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = lockDB.Exec("DELETE FROM eg_lock")
 	Expect(err).NotTo(HaveOccurred())
+}
+
+func (eg *EventGeneratorRunner) GetLockDetails() int {
+	lockDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
+	Expect(err).NotTo(HaveOccurred())
+	var count int
+	row := lockDB.QueryRow("SELECT COUNT(*) FROM eg_lock")
+	err = row.Scan(&count)
+	Expect(err).NotTo(HaveOccurred())
+	return count
 }
