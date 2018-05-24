@@ -2,6 +2,7 @@ package org.cloudfoundry.autoscaler.scheduler.quartz;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -34,7 +35,19 @@ abstract class AppScalingScheduleStartJob extends AppScalingScheduleJob {
 			throws JobExecutionException;
 
 	boolean shouldExecuteStartJob(JobExecutionContext jobExecutionContext, ZonedDateTime startJobStartTime,
-			ZonedDateTime endJobStartTime) {
+			ZonedDateTime endJobStartTime) throws JobExecutionException {
+
+		JobDataMap jobDataMap = jobExecutionContext.getJobDetail().getJobDataMap();
+		String appId = jobDataMap.getString(ScheduleJobHelper.APP_ID);
+		
+		if (hasActiveSchedules(appId)){
+			String message = messageBundleResourceHelper.lookupMessage(
+					"scheduler.job.start.schedule.skipped.conflict",
+					jobExecutionContext.getJobDetail().getKey(), appId,
+					jobDataMap.getLong(ScheduleJobHelper.SCHEDULE_ID));
+			logger.warn(message);
+			return false;
+		}
 		return true;
 	}
 
@@ -44,12 +57,13 @@ abstract class AppScalingScheduleStartJob extends AppScalingScheduleJob {
 		ZonedDateTime startJobStartTime = ZonedDateTime.ofInstant(jobExecutionContext.getFireTime().toInstant(),
 				ZoneId.systemDefault());
 		ZonedDateTime endJobStartTime = calculateEndJobStartTime(jobExecutionContext);
+		
 		if (shouldExecuteStartJob(jobExecutionContext, startJobStartTime, endJobStartTime)) {
 
 			JobDataMap jobDataMap = jobExecutionContext.getJobDetail().getJobDataMap();
 			ActiveScheduleEntity activeScheduleEntity = ScheduleJobHelper.setupActiveSchedule(jobDataMap);
 			activeScheduleEntity.setStartJobIdentifier(jobExecutionContext.getFireTime().getTime());
-
+			
 			String executingMessage = messageBundleResourceHelper.lookupMessage("scheduler.job.start",
 					jobExecutionContext.getJobDetail().getKey(), activeScheduleEntity.getAppId(),
 					activeScheduleEntity.getId(), jobStart);
@@ -106,6 +120,23 @@ abstract class AppScalingScheduleStartJob extends AppScalingScheduleJob {
 						maxJobRescheduleCount);
 				throw new JobExecutionException(errorMessage, dve);
 			}
+		}
+	}
+	
+	@Transactional
+	private boolean hasActiveSchedules(String appId) throws JobExecutionException {
+		try {
+			List<ActiveScheduleEntity> activeScheduleEntities = activeScheduleDao.findByAppId(appId);
+			if (activeScheduleEntities != null && activeScheduleEntities.size() >0) {
+				return true;
+			} 
+			return false;
+		} catch (DatabaseValidationException dve) {
+			String errorMessage = messageBundleResourceHelper.lookupMessage(
+					"database.error.get.failed", dve.getMessage(),appId);
+			logger.error(errorMessage, dve);
+
+			throw new JobExecutionException(errorMessage, dve);
 		}
 	}
 

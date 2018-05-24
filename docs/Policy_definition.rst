@@ -91,8 +91,32 @@ App-AutoScaler Policy Definition
 | initial_min_instance_count           | int                        | false   | the initial minimal number of instance count for this schedule             |
 +--------------------------------------+----------------------------+---------+----------------------------------------------------------------------------+
 
+**Note**
+
+You need to aware the following facts when define multiple schedules in policy:
+
+* If one schedule overlaps another, the one which starts first will be guaranteed, while the later one is completely ignored. For example: 
+
++-----+---------------------------------------------------------------------------------------+
+|Index|Schedule                                                                               |
++-----+---------------------------------------------------------------------------------------+
+|1    |8:00AM ~ 8:00PM every Tuesday , with instance_min_count=1, instance_max_count=10       |
++-----+---------------------------------------------------------------------------------------+
+|2    |10:00AM ~ 10:00PM on 2019-01-01, with instance_min_count=5, instance_max_count=50      |
++-----+---------------------------------------------------------------------------------------+
+
+With above definition, on the day of 2019-01-01 (which is Tuesday), schedule #1 will be executed as it occurs first, and schedule #2 will be discarded. 
+
+* If a schedule's start time is earlier than the policy creation/update time, the schedule will not be executed. For example: 
+
++-----+---------------------------------------------------------------------------------------+
+|Index|Schedule                                                                               |
++-----+---------------------------------------------------------------------------------------+
+|1    |8:00AM ~ 8:00PM every Tuesday , with instance_min_count=1, instance_max_count=10       |
++-----+---------------------------------------------------------------------------------------+
+
+You may create above schedule at 9:00AM 2019-01-01 (which is Tuesday). Then, it won't take effect on the day of 2019-01-01, but will be certainly triggered on the next Tuesday. 
 
 **Reference**
 
 `Sample policy <https://github.com/cloudfoundry-incubator/app-autoscaler/blob/develop/src/integration/fakePolicyWithSchedule.json>`_
-
