@@ -320,7 +320,7 @@ func (eg *EventGeneratorRunner) KillWithFire() {
 	}
 }
 
-func (mc *EventGeneratorRunner) ClearLockDatabase() {
+func (eg *EventGeneratorRunner) ClearLockDatabase() {
 	lockDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
 	Expect(err).NotTo(HaveOccurred())
 
