@@ -357,6 +357,50 @@ var _ = Describe("Pruner", func() {
 			})
 		})
 
+		Context("When more than one instances of pruner try to get the lock simultaneously", func() {
+
+			var runnerAcquiredLock bool
+
+			BeforeEach(func() {
+				runner.Start()
+				secondRunner = NewPrunerRunner()
+				secondRunner.startCheck = ""
+				secondRunner.configPath = writeConfig(&consulConfig).Name()
+				secondRunner.Start()
+			})
+
+			JustBeforeEach(func() {
+				runnerAcquiredLock = true
+				buffer := runner.Session.Out
+				secondBuffer := secondRunner.Session.Out
+				select {
+				case <-buffer.Detect("pruner.lock-acquired-in-first-attempt"):
+					runnerAcquiredLock = true
+				case <-secondBuffer.Detect("pruner.lock-acquired-in-first-attempt"):
+					runnerAcquiredLock = false
+				case <-time.After(2 * time.Second):
+				}
+				buffer.CancelDetects()
+				secondBuffer.CancelDetects()
+			})
+
+			AfterEach(func() {
+				secondRunner.KillWithFire()
+			})
+
+			It("Only one instance should get the lock", func() {
+				if runnerAcquiredLock {
+					Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("pruner.started"))
+					Consistently(secondRunner.Session.Buffer, 5*time.Second).ShouldNot(gbytes.Say("pruner.lock-acquired-in-first-attempt"))
+					Consistently(secondRunner.Session.Buffer, 5*time.Second).ShouldNot(gbytes.Say("pruner.started"))
+				} else {
+					Eventually(secondRunner.Session.Buffer, 2*time.Second).Should(gbytes.Say("pruner.started"))
+					Consistently(runner.Session.Buffer, 5*time.Second).ShouldNot(gbytes.Say("pruner.lock-acquired-in-first-attempt"))
+					Consistently(runner.Session.Buffer, 5*time.Second).ShouldNot(gbytes.Say("pruner.started"))
+				}
+			})
+		})
+
 		Context("when the running pruner instance stopped", func() {
 			BeforeEach(func() {
 				runner.Start()
