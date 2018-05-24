@@ -357,6 +357,51 @@ var _ = Describe("MetricsCollector", func() {
 			})
 		})
 
+		Context("When more than one instances of metricscollector try to get the lock simultaneously", func() {
+
+			var runnerAcquiredLock bool
+
+			BeforeEach(func() {
+				runner.Start()
+				secondRunner = NewMetricsCollectorRunner()
+				consulConfig.Server.Port = 8000
+				secondRunner.startCheck = ""
+				secondRunner.configPath = writeConfig(&consulConfig).Name()
+				secondRunner.Start()
+			})
+
+			JustBeforeEach(func() {
+				runnerAcquiredLock = true
+				buffer := runner.Session.Out
+				secondBuffer := secondRunner.Session.Out
+				select {
+				case <-buffer.Detect("metricscollector.lock-acquired-in-first-attempt"):
+					runnerAcquiredLock = true
+				case <-secondBuffer.Detect("metricscollector.lock-acquired-in-first-attempt"):
+					runnerAcquiredLock = false
+				case <-time.After(2 * time.Second):
+				}
+				buffer.CancelDetects()
+				secondBuffer.CancelDetects()
+			})
+
+			AfterEach(func() {
+				secondRunner.KillWithFire()
+			})
+
+			It("Only one instance should get the lock", func() {
+				if runnerAcquiredLock {
+					Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.started"))
+					Consistently(secondRunner.Session.Buffer, 5*time.Second).ShouldNot(gbytes.Say("metricscollector.lock-acquired-in-first-attempt"))
+					Consistently(secondRunner.Session.Buffer, 5*time.Second).ShouldNot(gbytes.Say("metricscollector.started"))
+				} else {
+					Eventually(secondRunner.Session.Buffer, 2*time.Second).Should(gbytes.Say("metricscollector.started"))
+					Consistently(runner.Session.Buffer, 5*time.Second).ShouldNot(gbytes.Say("metricscollector.lock-acquired-in-first-attempt"))
+					Consistently(runner.Session.Buffer, 5*time.Second).ShouldNot(gbytes.Say("metricscollector.started"))
+				}
+			})
+		})
+
 		Context("when the running metricscollector instance stopped", func() {
 			BeforeEach(func() {
 				runner.Start()
