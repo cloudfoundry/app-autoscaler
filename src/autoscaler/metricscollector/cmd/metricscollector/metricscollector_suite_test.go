@@ -306,13 +306,3 @@ func (mc *MetricsCollectorRunner) ClearLockDatabase() {
 	_, err = lockDB.Exec("DELETE FROM mc_lock")
 	Expect(err).NotTo(HaveOccurred())
 }
-
-func (mc *MetricsCollectorRunner) GetLockDetails() int {
-	lockDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
-	Expect(err).NotTo(HaveOccurred())
-	var count int
-	row := lockDB.QueryRow("SELECT COUNT(*) FROM mc_lock")
-	err = row.Scan(&count)
-	Expect(err).NotTo(HaveOccurred())
-	return count
-}

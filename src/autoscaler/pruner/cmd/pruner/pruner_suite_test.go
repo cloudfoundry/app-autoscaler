@@ -179,13 +179,3 @@ func (pr *PrunerRunner) ClearLockDatabase() {
 	_, err = lockDB.Exec("DELETE FROM pruner_lock")
 	Expect(err).NotTo(HaveOccurred())
 }
-
-func (pr *PrunerRunner) GetLockDetails() int {
-	lockDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
-	Expect(err).NotTo(HaveOccurred())
-	var count int
-	row := lockDB.QueryRow("SELECT COUNT(*) FROM pruner_lock")
-	err = row.Scan(&count)
-	Expect(err).NotTo(HaveOccurred())
-	return count
-}
