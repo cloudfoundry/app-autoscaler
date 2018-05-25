@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"code.cloudfoundry.org/locket"
 	"gopkg.in/yaml.v2"
 
 	"autoscaler/cf"
@@ -14,7 +15,13 @@ import (
 	"autoscaler/models"
 )
 
-const DefaultActiveScheduleSyncInterval time.Duration = 10 * time.Minute
+const (
+	DefaultActiveScheduleSyncInterval time.Duration = 10 * time.Minute
+	DefaultLockTTL                    time.Duration = locket.DefaultSessionTTL
+	DefaultRetryInterval              time.Duration = locket.RetryInterval
+	DefaultDBLockRetryInterval        time.Duration = 5 * time.Second
+	DefaultDBLockTTL                  time.Duration = 15 * time.Second
+)
 
 var defaultCfConfig = cf.CfConfig{
 	GrantType:         cf.GrantTypePassword,
@@ -52,11 +59,16 @@ var defaultSynchronizerConfig = SynchronizerConfig{
 	ActiveScheduleSyncInterval: DefaultActiveScheduleSyncInterval,
 }
 
-type ConsulConfig struct {
-	Cluster string `yaml:"cluster"`
+type DBLockConfig struct {
+	LockTTL           time.Duration     `yaml:"ttl"`
+	LockDB            db.DatabaseConfig `yaml:"lock_db"`
+	LockRetryInterval time.Duration     `yaml:"retry_interval"`
 }
 
-var defaultConsulConfig = ConsulConfig{}
+var defaultDBLockConfig = DBLockConfig{
+	LockTTL:           DefaultDBLockTTL,
+	LockRetryInterval: DefaultDBLockRetryInterval,
+}
 
 type Config struct {
 	Cf                  cf.CfConfig        `yaml:"cf"`
@@ -64,9 +76,10 @@ type Config struct {
 	Server              ServerConfig       `yaml:"server"`
 	Db                  DbConfig           `yaml:"db"`
 	Synchronizer        SynchronizerConfig `yaml:"synchronizer"`
-	Consul              ConsulConfig       `yaml:"consul"`
 	DefaultCoolDownSecs int                `yaml:"defaultCoolDownSecs"`
 	LockSize            int                `yaml:"lockSize"`
+	DBLock              DBLockConfig       `yaml:"db_lock"`
+	EnableDBLock        bool               `yaml:"enable_db_lock"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
@@ -75,7 +88,8 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		Logging:      defaultLoggingConfig,
 		Server:       defaultServerConfig,
 		Synchronizer: defaultSynchronizerConfig,
-		Consul:       defaultConsulConfig,
+		DBLock:       defaultDBLockConfig,
+		EnableDBLock: false,
 	}
 
 	bytes, err := ioutil.ReadAll(reader)
@@ -118,6 +132,10 @@ func (c *Config) Validate() error {
 
 	if c.LockSize <= 0 {
 		return fmt.Errorf("Configuration error: LockSize is less than or equal to 0")
+	}
+
+	if c.EnableDBLock && c.DBLock.LockDB.Url == "" {
+		return fmt.Errorf("Configuration error: Lock DB Url is empty")
 	}
 
 	return nil

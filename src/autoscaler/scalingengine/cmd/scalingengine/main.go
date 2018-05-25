@@ -2,6 +2,7 @@ package main
 
 import (
 	"autoscaler/helpers"
+	"autoscaler/sync"
 	"flag"
 	"fmt"
 	"os"
@@ -98,18 +99,47 @@ func main() {
 	synchronizer := schedule.NewActiveScheduleSychronizer(logger.Session("synchronizer"), schedulerDB, scalingEngineDB, scalingEngine,
 		conf.Synchronizer.ActiveScheduleSyncInterval, eClock)
 
-	members := grouper.Members{
+	nonLockMembers := grouper.Members{
 		{"http_server", httpServer},
+	}
+
+	lockMembers := grouper.Members{
 		{"schedule_synchronizer", synchronizer},
 	}
 
-	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
+	if conf.EnableDBLock {
+		const lockTableName = "scalingengine_lock"
+		guid, err := helpers.GenerateGUID(logger)
+		if err != nil {
+			logger.Error("failed-to-generate-guid", err)
+		}
+		logger.Debug("database-lock-feature-enabled")
+		var lockDB db.LockDB
+		lockDB, err = sqldb.NewLockSQLDB(conf.DBLock.LockDB, lockTableName, logger.Session("lock-db"))
+		if err != nil {
+			logger.Error("failed-to-connect-lock-database", err, lager.Data{"dbConfig": conf.DBLock.LockDB})
+			os.Exit(1)
+		}
+		defer lockDB.Close()
+		sedl := sync.NewDatabaseLock(logger)
+		dbLockMaintainer := sedl.InitDBLockRunner(conf.DBLock.LockRetryInterval, conf.DBLock.LockTTL, guid, lockDB)
+		lockMembers = append(grouper.Members{{"db-lock-maintainer", dbLockMaintainer}}, lockMembers...)
+	}
+
+	nonLockMonitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, nonLockMembers)))
+	lockMonitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, lockMembers)))
 
 	logger.Info("started")
 
-	err = <-monitor.Wait()
+	err = <-nonLockMonitor.Wait()
 	if err != nil {
-		logger.Error("exited-with-failure", err)
+		logger.Error("http-server-exited-with-failure", err)
+		os.Exit(1)
+	}
+
+	err = <-lockMonitor.Wait()
+	if err != nil {
+		logger.Error("sync-exited-with-failure", err)
 		os.Exit(1)
 	}
 
