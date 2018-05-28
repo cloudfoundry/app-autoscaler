@@ -91,31 +91,21 @@ App-AutoScaler Policy Definition
 | initial_min_instance_count           | int                        | false   | the initial minimal number of instance count for this schedule             |
 +--------------------------------------+----------------------------+---------+----------------------------------------------------------------------------+
 
-**Note**
+**Constraints**
 
-You need to aware the following facts when define multiple schedules in policy:
+* If one schedule overlaps another, the one which **starts** first will be guaranteed, while the later one is completely ignored. For example: 
 
-* If one schedule overlaps another, the one which starts first will be guaranteed, while the later one is completely ignored. For example: 
+    - Schedule #1:  --------sssssssssss---------------------------- 
+    - Schedule #2:  ---------------ssssssssssssss-----------------
+    - Schedule #3:  --------------------------sssssssss------------     
 
-+-----+---------------------------------------------------------------------------------------+
-|Index|Schedule                                                                               |
-+-----+---------------------------------------------------------------------------------------+
-|1    |8:00AM ~ 8:00PM every Tuesday , with instance_min_count=1, instance_max_count=10       |
-+-----+---------------------------------------------------------------------------------------+
-|2    |10:00AM ~ 10:00PM on 2019-01-01, with instance_min_count=5, instance_max_count=50      |
-+-----+---------------------------------------------------------------------------------------+
-
-With above definition, on the day of 2019-01-01 (which is Tuesday), schedule #1 will be executed as it occurs first, and schedule #2 will be discarded. 
+    With above definition, schedule #1 and #3 will be applied, while scheudle #2 is ignored.
 
 * If a schedule's start time is earlier than the policy creation/update time, the schedule will not be executed. For example: 
 
-+-----+---------------------------------------------------------------------------------------+
-|Index|Schedule                                                                               |
-+-----+---------------------------------------------------------------------------------------+
-|1    |8:00AM ~ 8:00PM every Tuesday , with instance_min_count=1, instance_max_count=10       |
-+-----+---------------------------------------------------------------------------------------+
-
-You may create above schedule at 9:00AM 2019-01-01 (which is Tuesday). Then, it won't take effect on the day of 2019-01-01, but will be certainly triggered on the next Tuesday. 
+    - Schedule #1:  09:00 - 13:00 , Everyday
+   
+    If above schedule is created at 10:00AM someday, it won't take effect on the today it creates, but will be certainly triggered on the next day.  
 
 **Reference**
 
