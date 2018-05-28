@@ -71,8 +71,6 @@ var _ = Describe("Main", func() {
 
 				It("should stop", func() {
 					runner.Session.Interrupt()
-					Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("scalingengine.received-interrupt-signal"))
-					Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("scalingengine.successfully-released-lock"))
 					Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("scalingengine.exited"))
 					Eventually(runner.Session, 5).Should(Exit(0))
 				})

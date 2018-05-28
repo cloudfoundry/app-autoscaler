@@ -120,7 +120,11 @@ func main() {
 			logger.Error("failed-to-connect-lock-database", err, lager.Data{"dbConfig": conf.DBLock.LockDB})
 			os.Exit(1)
 		}
-		defer lockDB.Close()
+		defer func() {
+			lockDB.Release(guid)
+			lockDB.Close()
+		}()
+
 		sedl := sync.NewDatabaseLock(logger)
 		dbLockMaintainer := sedl.InitDBLockRunner(conf.DBLock.LockRetryInterval, conf.DBLock.LockTTL, guid, lockDB)
 		lockMembers = append(grouper.Members{{"db-lock-maintainer", dbLockMaintainer}}, lockMembers...)
@@ -131,16 +135,17 @@ func main() {
 
 	logger.Info("started")
 
-	err = <-nonLockMonitor.Wait()
-	if err != nil {
-		logger.Error("http-server-exited-with-failure", err)
-		os.Exit(1)
-	}
-
-	err = <-lockMonitor.Wait()
-	if err != nil {
-		logger.Error("sync-exited-with-failure", err)
-		os.Exit(1)
+	select {
+	case err = <-nonLockMonitor.Wait():
+		if err != nil {
+			logger.Error("http-server-exited-with-failure", err)
+			os.Exit(1)
+		}
+	case err = <-lockMonitor.Wait():
+		if err != nil {
+			logger.Error("sync-exited-with-failure", err)
+			os.Exit(1)
+		}
 	}
 
 	logger.Info("exited")
