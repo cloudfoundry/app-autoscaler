@@ -105,7 +105,7 @@ App-AutoScaler Policy Definition
 
     - Schedule #1:  09:00 - 13:00 , Everyday
    
-    If above schedule is created at 10:00AM someday, it won't take effect on the today it creates, but will be certainly triggered on the next day.  
+    If above schedule is created at 10:00AM someday, it won't take effect when it creates, but will be certainly triggered on the next day.  
 
 **Reference**
 
