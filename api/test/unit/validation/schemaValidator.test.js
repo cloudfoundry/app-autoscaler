@@ -158,6 +158,13 @@ describe('Validating policy JSON schema against sample policy',function(){
     expect(validator.validate(scaling_rules_schema,fakePolicy.scaling_rules[0])).to.be.false;
   });
 
+  it('should validate empty scaling_rules',function(){
+    expect(validator.validate(total_schema,fakePolicy)).to.be.true;
+    fakePolicy.scaling_rules = [];
+    expect(validator.validate(total_schema,fakePolicy)).to.be.false;
+    expect(validator.errors[0].message).to.equal('should NOT have less than 1 items');
+  });
+
   it('should validate specific_date schedules',function() {
     expect(validator.validate(specific_date_schema,fakePolicy.schedules.specific_date[0])).to.be.true;
     fakePolicy.schedules.specific_date[0].start_date_time = '2015-15-04T20:00';
