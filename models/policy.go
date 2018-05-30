@@ -37,9 +37,9 @@ func (p *PolicyJson) GetAppPolicy() *AppPolicy {
 }
 
 type ScalingPolicy struct {
-	InstanceMin  int            `json:"instance_min_count"`
-	InstanceMax  int            `json:"instance_max_count"`
-	ScalingRules []*ScalingRule `json:"scaling_rules,omitempty"`
+	InstanceMin  int               `json:"instance_min_count"`
+	InstanceMax  int               `json:"instance_max_count"`
+	ScalingRules []*ScalingRule    `json:"scaling_rules,omitempty"`
 	Schedules    *ScalingSchedules `json:"schedules,omitempty"`
 }
 
@@ -64,6 +64,8 @@ type RecurringSchedule struct {
 	EndTime               string `json:"end_time"`
 	DaysOfWeek            []int  `json:"days_of_week,omitempty"`
 	DaysOfMonth           []int  `json:"days_of_month,omitempty"`
+	StartDate             string `json:"start_date,omitempty"`
+	EndDate               string `json:"end_date,omitempty"`
 	ScheduledInstanceMin  int    `json:"instance_min_count"`
 	ScheduledInstanceMax  int    `json:"instance_max_count"`
 	ScheduledInstanceInit int    `json:"initial_min_instance_count"`
@@ -76,7 +78,6 @@ type SpecificDateSchedule struct {
 	ScheduledInstanceMax  int    `json:"instance_max_count"`
 	ScheduledInstanceInit int    `json:"initial_min_instance_count"`
 }
-
 
 func (r *ScalingRule) StatWindow(defaultStatWindowSecs int) time.Duration {
 	if r.StatWindowSeconds <= 0 {
