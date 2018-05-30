@@ -73,6 +73,7 @@ var getPolicySchema = function() {
       'instance_max_count': { 'type':'integer','minimum':1 },
       'scaling_rules': {
         'type':'array',
+        'minItems': 1,
         'items': { '$ref': '/scaling_rules' }
       },
       'schedules': { '$ref':'/schedules' }
