@@ -156,13 +156,11 @@ var _ = Describe("Main", func() {
 						Eventually(runner.Session.Buffer, 5*time.Second).Should(gbytes.Say("scalingengine.received-interrupt-signal"))
 						Eventually(runner.Session.Buffer, 5*time.Second).Should(gbytes.Say("scalingengine.successfully-released-lock"))
 						Eventually(secondRunner.Session.Buffer, 10*time.Second).Should(gbytes.Say("scalingengine.successfully-acquired-lock"))
-						Eventually(secondRunner.Session.Buffer, 15*time.Second).Should(gbytes.Say("scalingengine.started"))
 					} else {
 						secondRunner.Interrupt()
 						Eventually(secondRunner.Session.Buffer, 5*time.Second).Should(gbytes.Say("scalingengine.received-interrupt-signal"))
 						Eventually(secondRunner.Session.Buffer, 5*time.Second).Should(gbytes.Say("scalingengine.successfully-released-lock"))
 						Eventually(runner.Session.Buffer, 10*time.Second).Should(gbytes.Say("scalingengine.successfully-acquired-lock"))
-						Eventually(runner.Session.Buffer, 15*time.Second).Should(gbytes.Say("scalingengine.started"))
 					}
 				})
 

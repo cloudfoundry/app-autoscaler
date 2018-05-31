@@ -131,9 +131,9 @@ func main() {
 	}
 
 	nonLockMonitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, nonLockMembers)))
-	lockMonitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, lockMembers)))
-
 	logger.Info("started")
+
+	lockMonitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, lockMembers)))
 
 	select {
 	case err = <-nonLockMonitor.Wait():
