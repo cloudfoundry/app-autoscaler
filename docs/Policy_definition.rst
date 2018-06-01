@@ -91,8 +91,22 @@ App-AutoScaler Policy Definition
 | initial_min_instance_count           | int                        | false   | the initial minimal number of instance count for this schedule             |
 +--------------------------------------+----------------------------+---------+----------------------------------------------------------------------------+
 
+**Constraints**
+
+* If one schedule overlaps another, the one which **starts** first will be guaranteed, while the later one is completely ignored. For example: 
+
+    - Schedule #1:  --------sssssssssss---------------------------- 
+    - Schedule #2:  ---------------ssssssssssssss-----------------
+    - Schedule #3:  --------------------------sssssssss------------     
+
+    With above definition, schedule #1 and #3 will be applied, while scheudle #2 is ignored.
+
+* If a schedule's start time is earlier than the policy creation/update time, the schedule will not be executed. For example: 
+
+    - Schedule #1:  09:00 - 13:00 , Everyday
+   
+    If above schedule is created at 10:00AM someday, it won't take effect when it creates, but will be certainly triggered on the next day.  
 
 **Reference**
 
 `Sample policy <https://github.com/cloudfoundry-incubator/app-autoscaler/blob/develop/src/integration/fakePolicyWithSchedule.json>`_
-
