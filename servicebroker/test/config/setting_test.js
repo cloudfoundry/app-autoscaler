@@ -41,6 +41,7 @@ describe('config setting Test Suite', function() {
         "caCertFile": "caCertFilePath"
       },
       "serviceCatalogPath" : "catalogPath",
+      "schemaValidationPath" : "schemaPath",
       "dashboardRedirectUri": "https://dashboard-redirect-uri-settings.example.com"
     };
     settings = configSetting(defaultConfig);
@@ -75,6 +76,7 @@ describe('config setting Test Suite', function() {
     expect(settings.apiserver.tls.certFile).to.equal(defaultConfig.apiserver.tls.certFile);
 
     expect(settings.serviceCatalogPath).to.equal(defaultConfig.serviceCatalogPath);
+    expect(settings.schemaValidationPath).to.equal(defaultConfig.schemaValidationPath);
     expect(settings.dashboardRedirectUri).to.equal(defaultConfig.dashboardRedirectUri);
   });
 
