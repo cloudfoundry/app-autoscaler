@@ -126,11 +126,11 @@ ginkgo -r -race -randomizeAllSpecs src/integration
 
 ## Deploy and offer Auto-Scaler as a service
 
-Go to [app-autoscaler-release][r] project for how to BOSH deploy `App-AutoScaler` and use the service
+Go to [app-autoscaler-release][r] project for how to BOSH deploy `App-AutoScaler`
 
-## End-user manual 
+## Use Auto-Scaler service
 
-[Docs][u] describes more deep knowledge of `App-AutoScaler` from end-user's perspective, including policy definition, supported metric type, public API definition , commond line tool support and etc. 
+Refer to [user guide][u] for the details of how to use the Auto-Scaler service, including policy definition, supported metrics, public API specification and commond line tool.
 
 ## License
 
@@ -147,4 +147,4 @@ This project is released under version 2.0 of the [Apache License][l].
 [t]: https://www.pivotaltracker.com/projects/1566795
 [p]: https://www.postgresql.org/
 [r]: https://github.com/cloudfoundry-incubator/app-autoscaler-release
-[u]: https://github.com/cloudfoundry-incubator/app-autoscaler/tree/develop/docs
+[u]: docs/Readme.md

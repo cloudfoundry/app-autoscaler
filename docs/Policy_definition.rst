@@ -12,30 +12,30 @@ App-AutoScaler Policy Definition
 +--------------------------------------+------------------------+---------+----------------------------------------------------+
 | scaling_rules                        | Array<scaling_rules>   | AnyOf   |dynamic scaling rules                               |
 +--------------------------------------+------------------------+ the two +----------------------------------------------------+
-| schedules                            | Array<schedules>       |         |schedule definition                                 |
+| schedules                            | Array<schedules>       |         |scheduled scaling rules                             |
 +--------------------------------------+------------------------+---------+----------------------------------------------------+
 
 
 **Dynamic Scaling Rules Definition "scaling_rules" (part of the "Policy" configuration) :**
 
-+--------------------------------------+------------------------+---------+----------------------------------------------------+
-| Name                                 | Type                   | Required|Description                                         |
-+--------------------------------------+------------------------+---------+----------------------------------------------------+
-| metric_type                          | String                 | true    |one of the support metric types:                    |
-|                                      |                        |         |memoryused,memoryutil,responsetime, throughput      |
-+--------------------------------------+------------------------+---------+----------------------------------------------------+
-| stat_window_secs                     | int, seconds           | false   |interval to take the avergae metric statistic       |
-+--------------------------------------+------------------------+---------+----------------------------------------------------+
-| breach_duration_secs                 | int, seconds           | false   |interval to fire scaling event if keeping breach    |
-+--------------------------------------+------------------------+---------+----------------------------------------------------+
-| threshold                            | int                    | true    |the number to be breached                           |
-+--------------------------------------+------------------------+---------+----------------------------------------------------+
-| operator                             | String                 | true    |>, <, >=, <=                                        |
-+--------------------------------------+------------------------+---------+----------------------------------------------------+
-| adjustment                           | int                    | true    |the adjustment for instance count with each scaling |
-+--------------------------------------+------------------------+---------+----------------------------------------------------+
-| cool_down_secs                       | int,seconds            | false   |minimal waiting interval between 2 scaling events   |
-+--------------------------------------+------------------------+---------+----------------------------------------------------+
++--------------------------------------+------------------------+---------+----------------------------------------------------------------+
+| Name                                 | Type                   | Required|Description                                                     |
++--------------------------------------+------------------------+---------+----------------------------------------------------------------+
+| metric_type                          | String                 | true    |one of the following metric types:                              |
+|                                      |                        |         |memoryused,memoryutil,responsetime, throughput                  |
++--------------------------------------+------------------------+---------+----------------------------------------------------------------+
+| stat_window_secs                     | int, seconds           | false   |time interval to average metric values                          |
++--------------------------------------+------------------------+---------+----------------------------------------------------------------+
+| breach_duration_secs                 | int, seconds           | false   |time duration to fire scaling event if it keeps breaching       |
++--------------------------------------+------------------------+---------+----------------------------------------------------------------+
+| threshold                            | int                    | true    |the boundary when metric value exceeds is considered as a breach|
++--------------------------------------+------------------------+---------+----------------------------------------------------------------+
+| operator                             | String                 | true    |>, <, >=, <=                                                    |
++--------------------------------------+------------------------+---------+----------------------------------------------------------------+
+| adjustment                           | int                    | true    |the adjustment for instance count with each scaling             |
++--------------------------------------+------------------------+---------+----------------------------------------------------------------+
+| cool_down_secs                       | int,seconds            | false   |the time duration to wait before the next scaling kicks in      |
++--------------------------------------+------------------------+---------+----------------------------------------------------------------+
 
 
 **Schedule Definition "schedules" (part of the "Policy" configuration) :**
@@ -56,17 +56,17 @@ App-AutoScaler Policy Definition
 +--------------------------------------+---------------------+---------+-----------------------------------------------------------------------------------------+
 | Name                                 | Type                | Required| Description                                                                             |
 +--------------------------------------+---------------------+---------+-----------------------------------------------------------------------------------------+
-| start_date                           | String,"yyyy-mm-dd" | false   | the start date of the schedule. Must be a future time greater than "NOW".               |
+| start_date                           | String,"yyyy-mm-dd" | false   | the start date of the schedule. Must be a future time .                                 |
 +--------------------------------------+---------------------+---------+-----------------------------------------------------------------------------------------+
-| end_date                             | String,"yyyy-mm-dd" | false   | the end date of the schedule. Must be a future time greater than "NOW".                 |
+| end_date                             | String,"yyyy-mm-dd" | false   | the end date of the schedule. Must be a future time.                                    |
 +--------------------------------------+---------------------+---------+-----------------------------------------------------------------------------------------+
 | start_time                           | String,"hh:mm"      | true    | the start time of the schedule                                                          |
 +--------------------------------------+---------------------+---------+-----------------------------------------------------------------------------------------+
 | end_time                             | String,"hh:mm"      | true    | the end time of the schedule                                                            |
 +--------------------------------------+---------------------+---------+-----------------------------------------------------------------------------------------+
-| days_of_week                         | Array<int>          | Exactly | recurrence frequency. Use [1,2,..,7] to define the day of week                          |
+| days_of_week                         | Array<int>          | Exactly | recurring days of a week. Use [1,2,..,7] to define it                                   |
 +--------------------------------------+---------------------+ one of  +-----------------------------------------------------------------------------------------+
-| days_of_month                        | Array<int>          | the two | recurrence frequency. Use [1,2,...,31] to define the day of month                       |
+| days_of_month                        | Array<int>          | the two | recurring days of a month . Use [1,2,...,31] to define it                               |
 +--------------------------------------+---------------------+---------+-----------------------------------------------------------------------------------------+
 | instance_min_count                   | int                 | true    | minimal number of instance count for this schedule                                      |
 +--------------------------------------+---------------------+---------+-----------------------------------------------------------------------------------------+
@@ -80,9 +80,9 @@ App-AutoScaler Policy Definition
 +--------------------------------------+----------------------------+---------+----------------------------------------------------------------------------+
 | Name                                 | Type                       | Required| Description                                                                |
 +--------------------------------------+----------------------------+---------+----------------------------------------------------------------------------+
-| start_date_time                      | String,"yyyy-mm-ddThh:mm"  | true    | the start time of the schedule. Must be a future time greater than "NOW".  |
+| start_date_time                      | String,"yyyy-mm-ddThh:mm"  | true    | the start time of the schedule. Must be a future time                      |
 +--------------------------------------+----------------------------+---------+----------------------------------------------------------------------------+
-| start_date_time                      | String,"yyyy-mm-ddThh:mm"  | true    | the end time of the schedule. Must be a future time greater than "NOW".    |
+| start_date_time                      | String,"yyyy-mm-ddThh:mm"  | true    | the end time of the schedule. Must be a future time                        |
 +--------------------------------------+----------------------------+---------+----------------------------------------------------------------------------+
 | instance_min_count                   | int                        | true    | minimal number of instance count for this schedule                         |
 +--------------------------------------+----------------------------+---------+----------------------------------------------------------------------------+
