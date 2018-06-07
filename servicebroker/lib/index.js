@@ -16,13 +16,18 @@ if (!configFilePath || !fs.existsSync(configFilePath)) {
 }
 var settings = require(path.join(__dirname, './config/setting.js'))((JSON.parse(
   fs.readFileSync(configFilePath, 'utf8'))));
-var serviceCatalogPath = path.resolve(settings.serviceCatalogPath);
-var catalog = JSON.parse(fs.readFileSync(serviceCatalogPath, 'utf8'));
 var validateResult = settings.validate();
 if (validateResult.valid === false) {
   logger.error("Invalid configuration: " + validateResult.message);
   throw new Error('settings.json is invalid');
 }
+
+var catalog = JSON.parse(fs.readFileSync(path.resolve(settings.serviceCatalogPath), 'utf8'));
+var schemaValidation = JSON.parse(fs.readFileSync(path.resolve(settings.schemaValidationPath), 'utf8'));
+for (let i = 0; i < catalog.services[0].plans.length; i++) {
+  catalog.services[0].plans[i].schemas = schemaValidation.schemas
+}
+
 var errorCallback = function(err) {
   if (err) {
     logger.error('server will exit', err);

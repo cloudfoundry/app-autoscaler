@@ -31,6 +31,7 @@ module.exports = function(settingsObj) {
     tls: settingsObj.tls,
     publicTls: settingsObj.publicTls,
     serviceCatalogPath: settingsObj.serviceCatalogPath,
+    schemaValidationPath: settingsObj.schemaValidationPath,
     dashboardRedirectUri: settingsObj.dashboardRedirectUri
   };
   if (settingsObj.db) {
@@ -214,6 +215,12 @@ module.exports = function(settingsObj) {
     }
     if (!isString(settings.serviceCatalogPath)) {
       return {valid: false, message: "serviceCatalogPath must be a string"}
+    }
+    if (isMissing(settings.schemaValidationPath)) {
+      return {valid: false, message: "schemaValidationPath is required"}
+    }
+    if (!isString(settings.schemaValidationPath)) {
+      return {valid: false, message: "schemaValidationPath must be a string"}
     }
     if (!isMissing(settings.dashboardRedirectUri) && !isString(settings.dashboardRedirectUri)) {
       return {valid: false, message: "dashboardRedirectUri must be a string"}

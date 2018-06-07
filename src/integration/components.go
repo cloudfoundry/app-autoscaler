@@ -35,6 +35,7 @@ const (
 )
 
 var serviceCatalogPath string = "../../servicebroker/config/catalog.json"
+var schemaValidationPath string = "../../servicebroker/config/catalog.schema.json"
 var apiServerInfoFilePath string = "../../api/config/info.json"
 
 type Executables map[string]string
@@ -65,11 +66,12 @@ type ServiceBrokerConfig struct {
 
 	DB DBConfig `json:"db"`
 
-	APIServerClient    APIServerClient `json:"apiserver"`
-	HttpRequestTimeout int             `json:"httpRequestTimeout"`
-	TLS                models.TLSCerts `json:"tls"`
-	PublicTLS          models.TLSCerts `json:"publicTls"`
-	ServiceCatalogPath string          `json:"serviceCatalogPath"`
+	APIServerClient      APIServerClient `json:"apiserver"`
+	HttpRequestTimeout   int             `json:"httpRequestTimeout"`
+	TLS                  models.TLSCerts `json:"tls"`
+	PublicTLS            models.TLSCerts `json:"publicTls"`
+	ServiceCatalogPath   string          `json:"serviceCatalogPath"`
+	SchemaValidationPath string          `json:"schemaValidationPath"`
 }
 type SchedulerClient struct {
 	Uri string          `json:"uri"`
@@ -224,7 +226,8 @@ func (components *Components) PrepareServiceBrokerConfig(publicPort int, interna
 			CertFile:   filepath.Join(testCertDir, "servicebroker_internal.crt"),
 			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 		},
-		ServiceCatalogPath: serviceCatalogPath,
+		ServiceCatalogPath:   serviceCatalogPath,
+		SchemaValidationPath: schemaValidationPath,
 	}
 
 	cfgFile, err := ioutil.TempFile(tmpDir, ServiceBroker)

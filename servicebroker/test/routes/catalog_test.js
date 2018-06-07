@@ -10,8 +10,14 @@ var configFilePath = path.join(__dirname, '../../config/settings.json');
 var settings = require(path.join(__dirname, '../../lib/config/setting.js'))((JSON.parse(
   fs.readFileSync(configFilePath, 'utf8'))));
 var auth = new Buffer(settings.username + ":" + settings.password).toString('base64');
-var catalog = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/catalog.json'), 'utf8'));
 var fakeValidPolicy = JSON.parse(fs.readFileSync(path.join(__dirname, '../fakePolicy.json'), 'utf8'));
+
+var catalog = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/catalog.json'), 'utf8'));
+var schemaValidation = JSON.parse(fs.readFileSync(path.resolve(settings.schemaValidationPath), 'utf8'));
+for (let i = 0; i < catalog.services[0].plans.length; i++) {
+  catalog.services[0].plans[i].schemas = schemaValidation.schemas
+}
+
 var ajv = new Ajv();
 ajv.addMetaSchema(require('ajv/lib/refs/json-schema-draft-06.json'));
 
