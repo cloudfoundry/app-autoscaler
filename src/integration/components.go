@@ -366,8 +366,8 @@ spring.data.jpa.repositories.enabled=false
 	return cfgFile.Name()
 }
 
-func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port int, enableDBLock bool, ccNOAAUAAUrl string, cfGrantTypePassword string, collectInterval time.Duration,
-	refreshInterval time.Duration, saveInterval time.Duration, collectMethod string, tmpDir string, lockTTL time.Duration, lockRetryInterval time.Duration, ConsulClusterConfig string) string {
+func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port int, ccNOAAUAAUrl string, cfGrantTypePassword string, collectInterval time.Duration,
+	refreshInterval time.Duration, saveInterval time.Duration, collectMethod string, tmpDir string) string {
 	cfg := mcConfig.Config{
 		Cf: cf.CfConfig{
 			Api:       ccNOAAUAAUrl,
@@ -382,6 +382,8 @@ func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port i
 				CertFile:   filepath.Join(testCertDir, "metricscollector.crt"),
 				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 			},
+			NodeAddrs: []string{"localhost"},
+			NodeIndex: 0,
 		},
 		Logging: mcConfig.LoggingConfig{
 			Level: LOGLEVEL,
@@ -400,21 +402,7 @@ func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port i
 			CollectMethod:   collectMethod,
 			SaveInterval:    saveInterval,
 		},
-		Lock: mcConfig.LockConfig{
-			LockTTL:             lockTTL,
-			LockRetryInterval:   lockRetryInterval,
-			ConsulClusterConfig: ConsulClusterConfig,
-		},
-		EnableDBLock: enableDBLock,
-		DBLock: mcConfig.DBLockConfig{
-			LockTTL: time.Duration(10 * time.Second),
-			LockDB: db.DatabaseConfig{
-				Url: dbUri,
-			},
-			LockRetryInterval: time.Duration(2 * time.Second),
-		},
 	}
-
 	return writeYmlConfig(tmpDir, MetricsCollector, &cfg)
 }
 

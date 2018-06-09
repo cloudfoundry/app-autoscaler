@@ -29,8 +29,6 @@ import (
 	"autoscaler/db"
 	"autoscaler/metricscollector/config"
 	"autoscaler/metricscollector/testhelpers"
-
-	"code.cloudfoundry.org/locket"
 )
 
 var (
@@ -149,6 +147,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.Server.TLS.KeyFile = filepath.Join(testCertDir, "metricscollector.key")
 	cfg.Server.TLS.CertFile = filepath.Join(testCertDir, "metricscollector.crt")
 	cfg.Server.TLS.CACertFile = filepath.Join(testCertDir, "autoscaler-ca.crt")
+	cfg.Server.NodeAddrs = []string{"localhost"}
+	cfg.Server.NodeIndex = 0
 
 	cfg.Logging.Level = "info"
 
@@ -169,20 +169,6 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.Collector.RefreshInterval = 30 * time.Second
 	cfg.Collector.CollectMethod = config.CollectMethodPolling
 	cfg.Collector.SaveInterval = 5 * time.Second
-
-	cfg.Lock.ConsulClusterConfig = consulRunner.ConsulCluster()
-	cfg.Lock.LockRetryInterval = locket.RetryInterval
-	cfg.Lock.LockTTL = locket.DefaultSessionTTL
-
-	cfg.DBLock.LockDB = db.DatabaseConfig{
-		Url:                   os.Getenv("DBURL"),
-		MaxOpenConnections:    10,
-		MaxIdleConnections:    5,
-		ConnectionMaxLifetime: 10 * time.Second,
-	}
-	cfg.DBLock.LockTTL = 15 * time.Second
-	cfg.DBLock.LockRetryInterval = 5 * time.Second
-	cfg.EnableDBLock = false
 
 	configFile = writeConfig(&cfg)
 
@@ -223,17 +209,15 @@ func writeConfig(c *config.Config) *os.File {
 }
 
 type MetricsCollectorRunner struct {
-	configPath        string
-	startCheck        string
-	acquiredLockCheck string
-	Session           *gexec.Session
+	configPath string
+	startCheck string
+	Session    *gexec.Session
 }
 
 func NewMetricsCollectorRunner() *MetricsCollectorRunner {
 	return &MetricsCollectorRunner{
-		configPath:        configFile.Name(),
-		startCheck:        "metricscollector.started",
-		acquiredLockCheck: "metricscollector.lock.acquire-lock-succeeded",
+		configPath: configFile.Name(),
+		startCheck: "metricscollector.started",
 	}
 }
 
@@ -297,12 +281,4 @@ func marshalMessage(message *events.Envelope) []byte {
 	}
 
 	return data
-}
-
-func (mc *MetricsCollectorRunner) ClearLockDatabase() {
-	lockDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
-	Expect(err).NotTo(HaveOccurred())
-
-	_, err = lockDB.Exec("DELETE FROM mc_lock")
-	Expect(err).NotTo(HaveOccurred())
 }
