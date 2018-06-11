@@ -10,7 +10,6 @@ import (
 	"code.cloudfoundry.org/cfhttp"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
 	"gopkg.in/yaml.v2"
@@ -24,8 +23,6 @@ import (
 	"strings"
 	"testing"
 	"time"
-
-	"code.cloudfoundry.org/consuladapter/consulrunner"
 )
 
 func TestScalingengine(t *testing.T) {
@@ -34,14 +31,13 @@ func TestScalingengine(t *testing.T) {
 }
 
 var (
-	enginePath   string
-	conf         config.Config
-	port         int
-	configFile   *os.File
-	ccUAA        *ghttp.Server
-	appId        string
-	httpClient   *http.Client
-	consulRunner *consulrunner.ClusterRunner
+	enginePath string
+	conf       config.Config
+	port       int
+	configFile *os.File
+	ccUAA      *ghttp.Server
+	appId      string
+	httpClient *http.Client
 )
 
 var _ = SynchronizedBeforeSuite(
@@ -51,16 +47,6 @@ var _ = SynchronizedBeforeSuite(
 		return []byte(compiledPath)
 	},
 	func(pathBytes []byte) {
-		consulRunner = consulrunner.NewClusterRunner(
-			consulrunner.ClusterRunnerConfig{
-				StartingPort: 9001 + GinkgoParallelNode()*consulrunner.PortOffsetLength,
-				NumNodes:     1,
-				Scheme:       "http",
-			},
-		)
-		consulRunner.Start()
-		consulRunner.WaitUntilReady()
-
 		enginePath = string(pathBytes)
 
 		ccUAA = ghttp.NewServer()
@@ -114,9 +100,19 @@ var _ = SynchronizedBeforeSuite(
 		}
 		conf.Synchronizer.ActiveScheduleSyncInterval = 10 * time.Minute
 
-		conf.Consul.Cluster = consulRunner.ConsulCluster()
 		conf.DefaultCoolDownSecs = 300
 		conf.LockSize = 32
+
+		conf.DBLock.LockDB = db.DatabaseConfig{
+			Url:                   os.Getenv("DBURL"),
+			MaxOpenConnections:    10,
+			MaxIdleConnections:    5,
+			ConnectionMaxLifetime: 10 * time.Second,
+		}
+
+		conf.DBLock.LockTTL = 15 * time.Second
+		conf.DBLock.LockRetryInterval = 5 * time.Second
+		conf.EnableDBLock = true
 
 		configFile = writeConfig(&conf)
 
@@ -161,9 +157,6 @@ var _ = SynchronizedBeforeSuite(
 
 var _ = SynchronizedAfterSuite(
 	func() {
-		if consulRunner != nil {
-			consulRunner.Stop()
-		}
 		ccUAA.Close()
 		os.Remove(configFile.Name())
 	},
@@ -189,6 +182,7 @@ func writeConfig(c *config.Config) *os.File {
 type ScalingEngineRunner struct {
 	configPath string
 	startCheck string
+	port       int
 	Session    *gexec.Session
 }
 
@@ -210,11 +204,6 @@ func (engine *ScalingEngineRunner) Start() {
 		gexec.NewPrefixedWriter("\x1b[91m[e]\x1b[32m[engine]\x1b[0m ", GinkgoWriter),
 	)
 	Expect(err).NotTo(HaveOccurred())
-
-	if engine.startCheck != "" {
-		Eventually(engineSession.Buffer, 2).Should(gbytes.Say(engine.startCheck))
-	}
-
 	engine.Session = engineSession
 }
 
@@ -228,4 +217,12 @@ func (engine *ScalingEngineRunner) KillWithFire() {
 	if engine.Session != nil {
 		engine.Session.Kill().Wait(5 * time.Second)
 	}
+}
+
+func ClearLockDatabase() {
+	lockDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = lockDB.Exec("DELETE FROM scalingengine_lock")
+	Expect(err).NotTo(HaveOccurred())
 }

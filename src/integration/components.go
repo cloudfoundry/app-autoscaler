@@ -513,9 +513,6 @@ func (components *Components) PrepareScalingEngineConfig(dbUri string, port int,
 		Synchronizer: seConfig.SynchronizerConfig{
 			ActiveScheduleSyncInterval: 10 * time.Second,
 		},
-		Consul: seConfig.ConsulConfig{
-			Cluster: consulClusterConfig,
-		},
 		DefaultCoolDownSecs: 300,
 		LockSize:            32,
 	}
