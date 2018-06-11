@@ -36,8 +36,6 @@ var _ = Describe("Config", func() {
   user: admin
 server:
   port: 8989
-consul:
-  cluster: http://127.0.0.1:8500
 defaultCoolDownSecs: 300
 lockSize: 32
 `)
@@ -85,10 +83,13 @@ db:
     connection_max_lifetime: 60s
 synchronizer:
   active_schedule_sync_interval: 300s
-consul:
-  cluster: http://127.0.0.1:8500
 defaultCoolDownSecs: 300
 lockSize: 32
+db_lock:
+  ttl: 15s
+  url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  retry_interval: 5s
+enable_db_lock: false
 `)
 			})
 
@@ -134,11 +135,13 @@ lockSize: 32
 
 				Expect(conf.Synchronizer.ActiveScheduleSyncInterval).To(Equal(5 * time.Minute))
 
-				Expect(conf.Consul.Cluster).To(Equal("http://127.0.0.1:8500"))
-
 				Expect(conf.DefaultCoolDownSecs).To(Equal(300))
 
 				Expect(conf.LockSize).To(Equal(32))
+
+				Expect(conf.DBLock.LockTTL).To(Equal(15 * time.Second))
+				Expect(conf.DBLock.LockRetryInterval).To(Equal(5 * time.Second))
+				Expect(conf.EnableDBLock).To(BeFalse())
 			})
 		})
 
@@ -188,6 +191,10 @@ lockSize: 32
 						ConnectionMaxLifetime: 0 * time.Second,
 					}))
 				Expect(conf.Synchronizer.ActiveScheduleSyncInterval).To(Equal(DefaultActiveScheduleSyncInterval))
+
+				Expect(conf.DBLock.LockTTL).To(Equal(DefaultDBLockTTL))
+				Expect(conf.DBLock.LockRetryInterval).To(Equal(DefaultDBLockRetryInterval))
+
 			})
 		})
 
@@ -241,8 +248,6 @@ db:
     connection_max_lifetime: 60s
 synchronizer:
   active_schedule_sync_interval: 300s
-consul:
-  cluster: http://127.0.0.1:8500
 defaultCoolDownSecs: 300
 lockSize: 32
 `)
@@ -291,8 +296,6 @@ db:
     connection_max_lifetime: 60s
 synchronizer:
   active_schedule_sync_interval: 300s
-consul:
-  cluster: http://127.0.0.1:8500
 defaultCoolDownSecs: 300
 lockSize: 32
 `)
@@ -341,8 +344,6 @@ db:
     connection_max_lifetime: 60s
 synchronizer:
   active_schedule_sync_interval: 300s
-consul:
-  cluster: http://127.0.0.1:8500
 defaultCoolDownSecs: 300
 lockSize: 32
 `)
@@ -391,8 +392,6 @@ db:
     connection_max_lifetime: 60s
 synchronizer:
   active_schedule_sync_interval: 300s
-consul:
-  cluster: http://127.0.0.1:8500
 defaultCoolDownSecs: 300
 lockSize: 32
 `)
@@ -441,8 +440,6 @@ db:
     connection_max_lifetime: 60s
 synchronizer:
   active_schedule_sync_interval: 300s
-consul:
-  cluster: http://127.0.0.1:8500
 defaultCoolDownSecs: 300
 lockSize: 32
 `)
@@ -491,8 +488,6 @@ db:
     connection_max_lifetime: 60s
 synchronizer:
   active_schedule_sync_interval: 300s
-consul:
-  cluster: http://127.0.0.1:8500
 defaultCoolDownSecs: 300
 lockSize: 32
 `)
@@ -540,8 +535,6 @@ db:
     connection_max_lifetime: 60s
 synchronizer:
   active_schedule_sync_interval: 300s
-consul:
-  cluster: http://127.0.0.1:8500
 defaultCoolDownSecs: 300
 lockSize: 32
 `)
@@ -590,8 +583,6 @@ db:
     connection_max_lifetime: 60
 synchronizer:
   active_schedule_sync_interval: 300s
-consul:
-  cluster: http://127.0.0.1:8500
 defaultCoolDownSecs: 300
 lockSize: 32
 `)
@@ -640,8 +631,6 @@ db:
     connection_max_lifetime: 60k
 synchronizer:
   active_schedule_sync_interval: 300s
-consul:
-  cluster: http://127.0.0.1:8500
 defaultCoolDownSecs: 300
 lockSize: 32
 `)
@@ -690,8 +679,6 @@ db:
     connection_max_lifetime: 60s
 synchronizer:
   active_schedule_sync_interval: 300k
-consul:
-  cluster: http://127.0.0.1:8500
 defaultCoolDownSecs: 300
 lockSize: 32
 `)
@@ -740,8 +727,6 @@ db:
     connection_max_lifetime: 60s
 synchronizer:
   active_schedule_sync_interval: 300
-consul:
-  cluster: http://127.0.0.1:8500
 defaultCoolDownSecs: NOT-INTEGER-VALUE
 lockSize: 32
 `)
@@ -790,8 +775,6 @@ db:
     connection_max_lifetime: 60s
 synchronizer:
   active_schedule_sync_interval: 300
-consul:
-  cluster: http://127.0.0.1:8500
 defaultCoolDownSecs: 300
 lockSize: NOT-INTEGER-VALUE
 `)

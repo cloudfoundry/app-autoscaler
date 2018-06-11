@@ -675,7 +675,7 @@ var _ = Describe("ScalingEngine", func() {
 					OldInstances: 12,
 					NewInstances: 10,
 					Reason:       "schedule starts with instance min 2, instance max 10 and instance min initial 5",
-					Message:      "limited by max instances 5",
+					Message:      "limited by max instances 10",
 				}))
 
 			})

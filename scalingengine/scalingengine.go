@@ -272,7 +272,7 @@ func (s *scalingEngine) SetActiveSchedule(appId string, schedule *models.ActiveS
 		history.Message = fmt.Sprintf("limited by min instances %d", instanceMin)
 	} else if newInstances > schedule.InstanceMax {
 		newInstances = schedule.InstanceMax
-		history.Message = fmt.Sprintf("limited by max instances %d", instanceMin)
+		history.Message = fmt.Sprintf("limited by max instances %d", schedule.InstanceMax)
 	}
 
 	history.NewInstances = newInstances
