@@ -103,3 +103,26 @@ databaseChangeLog:
                   type: integer
                   constraints:
                     nullable: false
+  - changeSet:
+        id: 4
+        author: cdlliuy
+        changes:
+          - createTable:
+              tableName: scalingengine_lock
+              columns:
+                - column:
+                    name: owner
+                    type: varchar(255)
+                    constraints:
+                      primaryKey: true
+                - column:
+                    name: lock_timestamp
+                    type: timestamp
+                    constraints:
+                      nullable: false
+                - column:
+                    name: ttl
+                    type: bigint
+                    defaultValue: 0
+                    constraints:
+                      nullable: false                    
