@@ -97,6 +97,9 @@ var _ = Describe("Main", func() {
 			It("2 http server instances start", func() {
 				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("scalingengine.http-server.new-http-server"))
 				Eventually(secondRunner.Session.Buffer, 2*time.Second).Should(gbytes.Say("scalingengine.http-server.new-http-server"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("scalingengine.started"))
+				Eventually(secondRunner.Session.Buffer, 2*time.Second).Should(gbytes.Say("scalingengine.started"))
+
 				Consistently(runner.Session).ShouldNot(Exit())
 				Consistently(secondRunner.Session).ShouldNot(Exit())
 			})
