@@ -13,13 +13,13 @@ The `App-AutoScaler` provides the capability to automatically adjust the instanc
 
     Dynamic scaling adjusts the application instance number based on the rules defined on performance metrics. It is used to scale application in response to dynamically changing workload
 
-* Schedued scaling
+* Scheduled scaling
 
     Scheduled scaling adjusts the application instance number at a predefined time slot. It is mainly used when application resource demand is predictable.  
 
 ### Metrics supported for dynamic scaling
 
-The following  metrics are supported right now. More metrics and custom metrics will be supported in the near future. 
+The following metrics are supported right now. More metrics and custom metrics will be supported in the near future. 
 
 * memoryused 
 
@@ -42,7 +42,7 @@ The following  metrics are supported right now. More metrics and custom metrics 
 
     The metric "througput" is the total number of the processed requests occurred in a specific time window (aka, collection interval) for an application instance.
     
-    The  unit of "throughput" is "rps" (request per second).
+    The unit of "throughput" is "rps" (request per second).
 
 Note: 
 
@@ -107,7 +107,7 @@ Also, here are some general guidelines:
 * Allow enough quota of your organization for scaling out
 * Carefully set the threshold, don’t push too high. Make sure it will not exceed memory limit 
 * Scale down less aggressively
-* For CPU intensive app, be aware of that CPU is actually weighted shared with other apps on the same host vm.  Use other metrics like throughput/responsetime for scaling
+* For CPU intensive app, be aware of that CPU is actually weighted shared with other apps on the same host vm. Use other metrics like throughput/responsetime for scaling
 * Design dynamic scaling rules carefully when using multiple metrics
 
 
