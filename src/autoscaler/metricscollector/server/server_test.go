@@ -7,7 +7,6 @@ import (
 	"net/http"
 )
 
-const TestPathMemoryMetrics = "/v1/apps/an-app-id/metrics/memoryused"
 const TestPathMetricHistories = "/v1/apps/an-app-id/metric_histories/a-metric-type"
 
 var _ = Describe("Server", func() {
@@ -15,22 +14,6 @@ var _ = Describe("Server", func() {
 		rsp *http.Response
 		err error
 	)
-
-	Context("when retrieving memory metric", func() {
-		BeforeEach(func() {
-			serverUrl.Path = TestPathMemoryMetrics
-		})
-
-		JustBeforeEach(func() {
-			rsp, err = http.Get(serverUrl.String())
-		})
-
-		It("should return 200", func() {
-			Expect(err).ToNot(HaveOccurred())
-			Expect(rsp.StatusCode).To(Equal(http.StatusOK))
-			rsp.Body.Close()
-		})
-	})
 
 	Context("when retrieving metrics history", func() {
 		BeforeEach(func() {
@@ -55,22 +38,6 @@ var _ = Describe("Server", func() {
 
 		JustBeforeEach(func() {
 			rsp, err = http.Get(serverUrl.String())
-		})
-
-		It("should return 404", func() {
-			Expect(err).ToNot(HaveOccurred())
-			Expect(rsp.StatusCode).To(Equal(http.StatusNotFound))
-			rsp.Body.Close()
-		})
-	})
-
-	Context("when using wrong method to retrieve memory metrics", func() {
-		BeforeEach(func() {
-			serverUrl.Path = TestPathMemoryMetrics
-		})
-
-		JustBeforeEach(func() {
-			rsp, err = http.Post(serverUrl.String(), "garbage", nil)
 		})
 
 		It("should return 404", func() {

@@ -10,9 +10,6 @@ const (
 	MetricHistoriesPath         = "/v1/apps/{appid}/metric_histories/{metrictype}"
 	GetMetricHistoriesRouteName = "GetMetricHistories"
 
-	MemoryMetricPath         = "/v1/apps/{appid}/metrics/memoryused"
-	GetMemoryMetricRouteName = "GetMemoryMetric"
-
 	ScalePath      = "/v1/apps/{appid}/scale"
 	ScaleRouteName = "Scale"
 
@@ -32,7 +29,7 @@ type AutoScalerRoute struct {
 	scalingEngineRoutes    *mux.Router
 }
 
-var autoScalerRouteInstance *AutoScalerRoute = newRouters()
+var autoScalerRouteInstance = newRouters()
 
 func newRouters() *AutoScalerRoute {
 	instance := &AutoScalerRoute{
@@ -40,7 +37,6 @@ func newRouters() *AutoScalerRoute {
 		scalingEngineRoutes:    mux.NewRouter(),
 	}
 
-	instance.metricsCollectorRoutes.Path(MemoryMetricPath).Methods(http.MethodGet).Name(GetMemoryMetricRouteName)
 	instance.metricsCollectorRoutes.Path(MetricHistoriesPath).Methods(http.MethodGet).Name(GetMetricHistoriesRouteName)
 
 	instance.scalingEngineRoutes.Path(ScalePath).Methods(http.MethodPost).Name(ScaleRouteName)
