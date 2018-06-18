@@ -15,32 +15,6 @@ var _ = Describe("Routes", func() {
 		testMetricType string = "testMetricType"
 	)
 	Describe("MetricsCollectorRoutes", func() {
-		Context("GetMemoryMetricRoute", func() {
-			Context("when provide correct route variable", func() {
-				It("should return the correct path", func() {
-					path, err := routes.MetricsCollectorRoutes().Get(routes.GetMemoryMetricRouteName).URLPath("appid", testAppId)
-					Expect(err).NotTo(HaveOccurred())
-					Expect(path.Path).To(Equal("/v1/apps/" + testAppId + "/metrics/memoryused"))
-				})
-			})
-
-			Context("when provide wrong route variable", func() {
-				It("should return error", func() {
-					_, err := routes.MetricsCollectorRoutes().Get(routes.GetMemoryMetricRouteName).URLPath("wrongVariable", testAppId)
-					Expect(err).To(HaveOccurred())
-
-				})
-			})
-
-			Context("when provide not enough route variable", func() {
-				It("should return error", func() {
-					_, err := routes.MetricsCollectorRoutes().Get(routes.GetMemoryMetricRouteName).URLPath()
-					Expect(err).To(HaveOccurred())
-
-				})
-			})
-		})
-
 		Context("GetMetricHistoriesRoute", func() {
 			Context("when provide correct route variable", func() {
 				It("should return the correct path", func() {
