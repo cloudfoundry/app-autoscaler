@@ -27,6 +27,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 		testMetricName    string = "Test-Metric-Name"
 		testMetricUnit    string = "Test-Metric-Unit"
 		testAppId         string = "Test-App-ID"
+		orderType         db.OrderType
 	)
 
 	BeforeEach(func() {
@@ -144,6 +145,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 			adb, err = NewAppMetricSQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
 			cleanAppMetricTable()
+			orderType = db.ASC
 
 			appMetric := &models.AppMetric{
 				AppId:      testAppId,
@@ -168,7 +170,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 			appId = testAppId
 			metricName = testMetricName
 			start = 0
-			end = time.Now().UnixNano()
+			end = -1
 
 		})
 
@@ -178,7 +180,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 		})
 
 		JustBeforeEach(func() {
-			appMetrics, err = adb.RetrieveAppMetrics(appId, metricName, start, end)
+			appMetrics, err = adb.RetrieveAppMetrics(appId, metricName, start, end, orderType)
 		})
 
 		Context("The app has no metrics", func() {
@@ -268,7 +270,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 			})
 		})
 
-		Context("when retriving part of the appMetrics)", func() {
+		Context("when retriving part of the appMetrics", func() {
 			BeforeEach(func() {
 				start = 22222222
 				end = 66666666
@@ -293,6 +295,37 @@ var _ = Describe("AppMetricSQLDB", func() {
 			})
 		})
 
+		Context("when retriving the appMetrics with descending order)", func() {
+			BeforeEach(func() {
+				orderType = db.DESC
+			})
+			It("returns all the appMetrics ordered by timestamp with descending order", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(appMetrics).To(Equal([]*models.AppMetric{
+					&models.AppMetric{
+						AppId:      testAppId,
+						MetricType: testMetricName,
+						Unit:       testMetricUnit,
+						Timestamp:  55555555,
+						Value:      "300",
+					},
+					&models.AppMetric{
+						AppId:      testAppId,
+						MetricType: testMetricName,
+						Unit:       testMetricUnit,
+						Timestamp:  33333333,
+						Value:      "200",
+					},
+					&models.AppMetric{
+						AppId:      testAppId,
+						MetricType: testMetricName,
+						Unit:       testMetricUnit,
+						Timestamp:  11111111,
+						Value:      "100",
+					},
+				}))
+			})
+		})
 	})
 
 	Context("PruneAppMetrics", func() {

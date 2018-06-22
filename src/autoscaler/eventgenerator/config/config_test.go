@@ -31,6 +31,12 @@ var _ = Describe("Config", func() {
 				configBytes = []byte(`
 logging:
   level: info
+server:
+  port: 9080
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 db:
   policy_db:
     url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
@@ -91,6 +97,14 @@ circuitBreaker:
 				Expect(err).NotTo(HaveOccurred())
 				Expect(conf).To(Equal(&Config{
 					Logging: LoggingConfig{Level: "info"},
+					Server: ServerConfig{
+						Port: 9080,
+						TLS: models.TLSCerts{
+							KeyFile:    "/var/vcap/jobs/autoscaler/config/certs/server.key",
+							CertFile:   "/var/vcap/jobs/autoscaler/config/certs/server.crt",
+							CACertFile: "/var/vcap/jobs/autoscaler/config/certs/ca.crt",
+						},
+					},
 					DB: DBConfig{
 						PolicyDB: db.DatabaseConfig{
 							Url:                   "postgres://postgres:password@localhost/autoscaler?sslmode=disable",
@@ -225,6 +239,10 @@ defaultBreachDurationSecs: 600
 				Expect(err).NotTo(HaveOccurred())
 				Expect(conf).To(Equal(&Config{
 					Logging: LoggingConfig{Level: "info"},
+					Server: ServerConfig{
+						Port: 8080,
+						TLS:  models.TLSCerts{},
+					},
 					DB: DBConfig{
 						PolicyDB: db.DatabaseConfig{
 							Url:                   "postgres://postgres:password@localhost/autoscaler?sslmode=disable",
@@ -1070,78 +1088,6 @@ defaultBreachDurationSecs: NOT-INTEGER-VALUE
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal !!str `NOT-INT...` into int")))
-			})
-		})
-
-		Context("with partial config", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
-db:
-  policy_db:
-    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
-  app_metrics_db:
-    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
-scalingEngine:
-  scaling_engine_url: http://localhost:8082
-metricCollector:
-  metric_collector_url: http://localhost:8083
-defaultStatWindowSecs: 300
-defaultBreachDurationSecs: 600
-`)
-			})
-
-			It("returns default values", func() {
-				Expect(err).NotTo(HaveOccurred())
-				Expect(conf.Aggregator.PolicyPollerInterval).To(Equal(time.Duration(DefaultPolicyPollerInterval)))
-
-				Expect(err).NotTo(HaveOccurred())
-				Expect(conf).To(Equal(&Config{
-					Logging: LoggingConfig{Level: "info"},
-					DB: DBConfig{
-						PolicyDB: db.DatabaseConfig{
-							Url:                   "postgres://postgres:password@localhost/autoscaler?sslmode=disable",
-							MaxOpenConnections:    0,
-							MaxIdleConnections:    0,
-							ConnectionMaxLifetime: 0 * time.Second,
-						},
-						AppMetricDB: db.DatabaseConfig{
-							Url:                   "postgres://postgres:password@localhost/autoscaler?sslmode=disable",
-							MaxOpenConnections:    0,
-							MaxIdleConnections:    0,
-							ConnectionMaxLifetime: 0 * time.Second,
-						},
-					},
-					Aggregator: AggregatorConfig{
-						AggregatorExecuteInterval: DefaultAggregatorExecuteInterval,
-						PolicyPollerInterval:      DefaultPolicyPollerInterval,
-						SaveInterval:              DefaultSaveInterval,
-						MetricPollerCount:         DefaultMetricPollerCount,
-						AppMonitorChannelSize:     DefaultAppMonitorChannelSize,
-						AppMetricChannelSize:      DefaultAppMetricChannelSize,
-					},
-					Evaluator: EvaluatorConfig{EvaluationManagerInterval: DefaultEvaluationExecuteInterval,
-						EvaluatorCount:          DefaultEvaluatorCount,
-						TriggerArrayChannelSize: DefaultTriggerArrayChannelSize},
-					ScalingEngine: ScalingEngineConfig{
-						ScalingEngineUrl: "http://localhost:8082"},
-					MetricCollector: MetricCollectorConfig{
-						MetricCollectorUrl: "http://localhost:8083"},
-					Lock: LockConfig{
-						LockRetryInterval: DefaultRetryInterval,
-						LockTTL:           DefaultLockTTL},
-					DBLock: DBLockConfig{
-						LockTTL:           DefaultDBLockTTL,
-						LockRetryInterval: DefaultDBLockRetryInterval,
-					},
-					EnableDBLock:              false,
-					DefaultBreachDurationSecs: 600,
-					DefaultStatWindowSecs:     300,
-					CircuitBreaker: CircuitBreakerConfig{
-						BackOffInitialInterval:  DefaultBackOffInitialInterval,
-						BackOffMaxInterval:      DefaultBackOffMaxInterval,
-						ConsecutiveFailureCount: DefaultBreakerConsecutiveFailureCount,
-					},
-				}))
 			})
 		})
 

@@ -15,6 +15,7 @@ import (
 
 const (
 	DefaultLoggingLevel                   string        = "info"
+	DefaultServerPort                     int           = 8080
 	DefaultPolicyPollerInterval           time.Duration = 40 * time.Second
 	DefaultAggregatorExecuteInterval      time.Duration = 40 * time.Second
 	DefaultSaveInterval                   time.Duration = 5 * time.Second
@@ -35,6 +36,11 @@ const (
 
 type LoggingConfig struct {
 	Level string `yaml:"level"`
+}
+
+type ServerConfig struct {
+	Port int             `yaml:"port"`
+	TLS  models.TLSCerts `yaml:"tls"`
 }
 
 type DBConfig struct {
@@ -92,6 +98,7 @@ var defaultDBLockConfig = DBLockConfig{
 
 type Config struct {
 	Logging                   LoggingConfig         `yaml:"logging"`
+	Server                    ServerConfig          `yaml:"server"`
 	DB                        DBConfig              `yaml:"db"`
 	Aggregator                AggregatorConfig      `yaml:"aggregator"`
 	Evaluator                 EvaluatorConfig       `yaml:"evaluator"`
@@ -109,6 +116,9 @@ func LoadConfig(bytes []byte) (*Config, error) {
 	conf := &Config{
 		Logging: LoggingConfig{
 			Level: DefaultLoggingLevel,
+		},
+		Server: ServerConfig{
+			Port: DefaultServerPort,
 		},
 		Aggregator: AggregatorConfig{
 			AggregatorExecuteInterval: DefaultAggregatorExecuteInterval,

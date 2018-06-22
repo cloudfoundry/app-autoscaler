@@ -36,6 +36,8 @@ var (
 	regPath            = regexp.MustCompile(`^/v1/apps/.*/scale$`)
 	configFile         *os.File
 	conf               config.Config
+	egPort             int
+	httpClient         *http.Client
 	metricCollector    *ghttp.Server
 	scalingEngine      *ghttp.Server
 	consulRunner       *consulrunner.ClusterRunner
@@ -190,9 +192,19 @@ func initHttpEndPoints() {
 
 func initConfig() {
 	testCertDir := "../../../../../test-certs"
+
+	egPort = 7000 + GinkgoParallelNode()
 	conf = config.Config{
 		Logging: config.LoggingConfig{
 			Level: "info",
+		},
+		Server: config.ServerConfig{
+			Port: egPort,
+			TLS: models.TLSCerts{
+				KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
+				CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
+				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			},
 		},
 		Aggregator: config.AggregatorConfig{
 			AggregatorExecuteInterval: 1 * time.Second,
@@ -262,6 +274,18 @@ func initConfig() {
 		DefaultStatWindowSecs:     300,
 	}
 	configFile = writeConfig(&conf)
+
+	tlsConfig, err := cfhttp.NewTLSConfig(
+		filepath.Join(testCertDir, "api.crt"),
+		filepath.Join(testCertDir, "api.key"),
+		filepath.Join(testCertDir, "autoscaler-ca.crt"))
+	Expect(err).NotTo(HaveOccurred())
+	httpClient = &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: tlsConfig,
+		},
+	}
+
 }
 
 func writeConfig(c *config.Config) *os.File {
