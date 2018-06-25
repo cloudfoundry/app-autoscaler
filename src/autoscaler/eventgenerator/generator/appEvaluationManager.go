@@ -53,7 +53,9 @@ func (a *AppEvaluationManager) getTriggers(policyMap map[string]*models.AppPolic
 	now := a.emClock.Now().UnixNano()
 	for appId, policy := range policyMap {
 		for _, rule := range policy.ScalingPolicy.ScalingRules {
+			a.cooldownLock.Lock()
 			cooldownExpiredAt, found := a.cooldownExpired[appId]
+			a.cooldownLock.Unlock()
 			if found {
 				if cooldownExpiredAt > now {
 					continue

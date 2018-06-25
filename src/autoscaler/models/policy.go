@@ -45,7 +45,6 @@ type ScalingPolicy struct {
 
 type ScalingRule struct {
 	MetricType            string `json:"metric_type"`
-	StatWindowSeconds     int    `json:"stat_window_secs,omitempty"`
 	BreachDurationSeconds int    `json:"breach_duration_secs,omitempty"`
 	Threshold             int64  `json:"threshold"`
 	Operator              string `json:"operator"`
@@ -80,10 +79,7 @@ type SpecificDateSchedule struct {
 }
 
 func (r *ScalingRule) StatWindow(defaultStatWindowSecs int) time.Duration {
-	if r.StatWindowSeconds <= 0 {
-		return time.Duration(defaultStatWindowSecs) * time.Second
-	}
-	return time.Duration(r.StatWindowSeconds) * time.Second
+	return time.Duration(defaultStatWindowSecs) * time.Second
 }
 
 func (r *ScalingRule) BreachDuration(defaultBreachDurationSecs int) time.Duration {

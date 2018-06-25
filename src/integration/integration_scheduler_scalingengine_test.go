@@ -3,12 +3,13 @@ package integration
 import (
 	"autoscaler/cf"
 	"fmt"
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
+
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Integration_Scheduler_ScalingEngine", func() {

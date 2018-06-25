@@ -97,10 +97,10 @@ func (m *MetricPoller) retrieveMetric(app *models.AppMonitor) {
 }
 
 func (m *MetricPoller) aggregate(appId string, metricType string, metrics []*models.AppInstanceMetric) *models.AppMetric {
-	var count int64 = 0
-	var sum int64 = 0
+	var count int64
+	var sum int64
 	var unit string
-	var timestamp int64 = time.Now().UnixNano()
+	timestamp := time.Now().UnixNano()
 	for _, metric := range metrics {
 		unit = metric.Unit
 		metricValue, err := strconv.ParseInt(metric.Value, 10, 64)
