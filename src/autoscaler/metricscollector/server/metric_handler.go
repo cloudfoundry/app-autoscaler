@@ -14,7 +14,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type MetricHandler struct {
@@ -31,37 +30,6 @@ func NewMetricHandler(logger lager.Logger, cfc cf.CfClient, consumer noaa.NoaaCo
 		logger:       logger,
 		database:     database,
 	}
-}
-
-func (h *MetricHandler) GetMemoryMetric(w http.ResponseWriter, r *http.Request, vars map[string]string) {
-	appId := vars["appid"]
-
-	w.Header().Set("Content-Type", "application/json")
-
-	containerEnvelopes, err := h.noaaConsumer.ContainerEnvelopes(appId, cf.TokenTypeBearer+" "+h.cfClient.GetTokens().AccessToken)
-	if err != nil {
-		h.logger.Error("Get-memory-metric-from-noaa", err, lager.Data{"appId": appId})
-
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: "Error getting memory metrics from doppler"})
-		return
-	}
-	h.logger.Debug("Get-memory-metrics-from-noaa", lager.Data{"appId": appId, "containerEnvelopes": containerEnvelopes})
-
-	metrics := noaa.GetInstanceMemoryMetricsFromContainerEnvelopes(time.Now().UnixNano(), appId, containerEnvelopes)
-	var body []byte
-	body, err = json.Marshal(metrics)
-	if err != nil {
-		h.logger.Error("get-memory-metrics-marshal", err, lager.Data{"appId": appId, "metrics": metrics})
-
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: "Error getting memory metrics from doppler"})
-		return
-	}
-
-	w.Write(body)
 }
 
 func (h *MetricHandler) GetMetricHistories(w http.ResponseWriter, r *http.Request, vars map[string]string) {

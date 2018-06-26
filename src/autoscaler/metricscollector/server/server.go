@@ -28,7 +28,6 @@ func NewServer(logger lager.Logger, conf *config.Config, cfc cf.CfClient, consum
 	mh := NewMetricHandler(logger, cfc, consumer, database)
 
 	r := routes.MetricsCollectorRoutes()
-	r.Get(routes.GetMemoryMetricRouteName).Handler(VarsFunc(mh.GetMemoryMetric))
 	r.Get(routes.GetMetricHistoriesRouteName).Handler(VarsFunc(mh.GetMetricHistories))
 
 	addr := fmt.Sprintf("0.0.0.0:%d", conf.Server.Port)
