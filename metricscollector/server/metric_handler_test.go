@@ -7,11 +7,8 @@ import (
 	"autoscaler/models"
 
 	"code.cloudfoundry.org/lager"
-	"github.com/cloudfoundry/sonde-go/events"
-	"github.com/gogo/protobuf/proto"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gstruct"
 
 	"encoding/json"
 	"errors"
@@ -45,123 +42,6 @@ var _ = Describe("MetricHandler", func() {
 		database = &fakes.FakeInstanceMetricsDB{}
 		resp = httptest.NewRecorder()
 		handler = NewMetricHandler(logger, cfc, consumer, database)
-	})
-
-	Describe("GetMemoryMetrics", func() {
-		JustBeforeEach(func() {
-			handler.GetMemoryMetric(resp, nil, map[string]string{"appid": "an-app-id"})
-		})
-
-		Context("when retrieving container metrics fail", func() {
-			BeforeEach(func() {
-				consumer.ContainerEnvelopesReturns(nil, errors.New("an error"))
-			})
-
-			It("returns a 500", func() {
-				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-
-				errJson := &models.ErrorResponse{}
-				err = json.Unmarshal(resp.Body.Bytes(), errJson)
-
-				Expect(err).ToNot(HaveOccurred())
-				Expect(errJson).To(Equal(&models.ErrorResponse{
-					Code:    "Interal-Server-Error",
-					Message: "Error getting memory metrics from doppler",
-				}))
-			})
-		})
-
-		Context("when retrieving container metrics succeeds", func() {
-			Context("container metrics is not empty", func() {
-				BeforeEach(func() {
-					timestamp := int64(111111)
-					consumer.ContainerEnvelopesReturns([]*events.Envelope{
-						&events.Envelope{
-							ContainerMetric: &events.ContainerMetric{
-								ApplicationId:    proto.String("an-app-id"),
-								InstanceIndex:    proto.Int32(0),
-								MemoryBytes:      proto.Uint64(100000000),
-								MemoryBytesQuota: proto.Uint64(300000000),
-							},
-							Timestamp: &timestamp,
-						},
-						&events.Envelope{
-							ContainerMetric: &events.ContainerMetric{
-								ApplicationId:    proto.String("an-app-id"),
-								InstanceIndex:    proto.Int32(1),
-								MemoryBytes:      proto.Uint64(200000000),
-								MemoryBytesQuota: proto.Uint64(300000000),
-							},
-							Timestamp: &timestamp,
-						},
-					}, nil)
-				})
-
-				It("returns a 200 response with metrics", func() {
-					Expect(resp.Code).To(Equal(http.StatusOK))
-
-					metrics := []models.AppInstanceMetric{}
-					err = json.Unmarshal(resp.Body.Bytes(), &metrics)
-
-					Expect(err).ToNot(HaveOccurred())
-					Expect(metrics).To(HaveLen(4))
-
-					Expect(metrics[0]).To(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
-						"AppId":         Equal("an-app-id"),
-						"InstanceIndex": BeEquivalentTo(0),
-						"Name":          Equal(models.MetricNameMemoryUsed),
-						"Unit":          Equal(models.UnitMegaBytes),
-						"Value":         Equal("95"),
-						"Timestamp":     BeEquivalentTo(111111),
-					}))
-
-					Expect(metrics[1]).To(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
-						"AppId":         Equal("an-app-id"),
-						"InstanceIndex": BeEquivalentTo(0),
-						"Name":          Equal(models.MetricNameMemoryUtil),
-						"Unit":          Equal(models.UnitPercentage),
-						"Value":         Equal("33"),
-						"Timestamp":     BeEquivalentTo(111111),
-					}))
-
-					Expect(metrics[2]).To(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
-						"AppId":         Equal("an-app-id"),
-						"InstanceIndex": BeEquivalentTo(1),
-						"Name":          Equal(models.MetricNameMemoryUsed),
-						"Unit":          Equal(models.UnitMegaBytes),
-						"Value":         Equal("191"),
-						"Timestamp":     BeEquivalentTo(111111),
-					}))
-
-					Expect(metrics[3]).To(gstruct.MatchFields(gstruct.IgnoreExtras, gstruct.Fields{
-						"AppId":         Equal("an-app-id"),
-						"InstanceIndex": BeEquivalentTo(1),
-						"Name":          Equal(models.MetricNameMemoryUtil),
-						"Unit":          Equal(models.UnitPercentage),
-						"Value":         Equal("67"),
-						"Timestamp":     BeEquivalentTo(111111),
-					}))
-
-				})
-			})
-
-			Context("container metrics is empty", func() {
-				BeforeEach(func() {
-					consumer.ContainerEnvelopesReturns([]*events.Envelope{}, nil)
-				})
-
-				It("returns a 200 with empty metrics", func() {
-					Expect(resp.Code).To(Equal(http.StatusOK))
-
-					metrics := []models.AppInstanceMetric{}
-					err = json.Unmarshal(resp.Body.Bytes(), &metrics)
-
-					Expect(err).ToNot(HaveOccurred())
-					Expect(metrics).To(BeEmpty())
-				})
-			})
-
-		})
 	})
 
 	Describe("GetMetricHistory", func() {
