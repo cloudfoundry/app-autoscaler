@@ -24,8 +24,6 @@ App-AutoScaler Policy Definition
 | metric_type                          | String                 | true    |one of the following metric types:                              |
 |                                      |                        |         |memoryused,memoryutil,responsetime, throughput                  |
 +--------------------------------------+------------------------+---------+----------------------------------------------------------------+
-| stat_window_secs                     | int, seconds           | false   |time interval to average metric values                          |
-+--------------------------------------+------------------------+---------+----------------------------------------------------------------+
 | breach_duration_secs                 | int, seconds           | false   |time duration to fire scaling event if it keeps breaching       |
 +--------------------------------------+------------------------+---------+----------------------------------------------------------------+
 | threshold                            | int                    | true    |the boundary when metric value exceeds is considered as a breach|

@@ -146,15 +146,6 @@ describe("Validate schema definition",function(){
       expect(ajv.validate(catalogSchema,fakePolicy)).to.be.true;
     });
 
-    it("validate stat_window_secs if exists",function(){
-      fakePolicy.scaling_rules[0].stat_window_secs = 3601;
-      expect(ajv.validate(catalogSchema,fakePolicy)).to.be.false;
-      fakePolicy.scaling_rules[0].stat_window_secs = 59;
-      expect(ajv.validate(catalogSchema,fakePolicy)).to.be.false;
-      delete fakePolicy.scaling_rules[0].stat_window_secs;
-      expect(ajv.validate(catalogSchema,fakePolicy)).to.be.true;
-    });
-
     it("validate cool_down_secs if exists",function(){
       fakePolicy.scaling_rules[0].cool_down_secs = 3601;
       expect(ajv.validate(catalogSchema,fakePolicy)).to.be.false;
