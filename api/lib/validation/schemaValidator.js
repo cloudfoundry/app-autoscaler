@@ -94,7 +94,6 @@ var getScalingRuleSchema = function() {
     'id':'/scaling_rules',
     'properties' : {
       'metric_type':{ 'type':'string' ,'enum':metricTypeEnum },
-      'stat_window_secs':{ 'type':'number','minimum': 60,'maximum': 3600 },
       'breach_duration_secs':{ 'type':'number','minimum': 60,'maximum': 3600 },
       'threshold':{ 'type':'number'},
       'operator':{ 'type':'string','enum': validOperators },

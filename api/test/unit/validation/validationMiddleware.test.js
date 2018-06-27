@@ -220,7 +220,6 @@ describe('Validate Policy JSON Schema structure', function () {
       { metric_type: "throughput", thresholds: [30, 100, 1000] },
     ];
     var validDurationSettings = [
-      { duration_type: "stat_window_secs", values: [60, 1800, 3600] },
       { duration_type: "breach_duration_secs", values: [60, 1800, 3600] },
       { duration_type: "cool_down_secs", values: [60, 1800, 3600] }
     ];
@@ -234,7 +233,6 @@ describe('Validate Policy JSON Schema structure', function () {
       { metric_type: "throughput", thresholds: [-1, 0] },
     ];
     var invalidDurationSettings = [
-      { duration_type: "stat_window_secs", values: [30, 59, 3601] },
       { duration_type: "breach_duration_secs", values: [30, 59, 3601] },
       { duration_type: "cool_down_secs", values: [30, 59, 3601] }
     ];
@@ -248,7 +246,6 @@ describe('Validate Policy JSON Schema structure', function () {
         it('succeed with the absence of all optional fields, policy type ' + type, function (done) {
           buildTestPolicy(fakePolicy, type);
           for (let i = 0; i < fakePolicy.scaling_rules.length; i++) {
-            delete fakePolicy.scaling_rules[i].stat_window_secs
             delete fakePolicy.scaling_rules[i].breach_duration_secs
             delete fakePolicy.scaling_rules[i].cool_down_secs
           }
