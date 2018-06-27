@@ -63,20 +63,4 @@ var _ = Describe("Server", func() {
 		})
 	})
 
-	Context("when using wrong method to retrieve aggreated metric histories", func() {
-		BeforeEach(func() {
-			serverUrl.Path = TestPathAggregatedMetricHistories
-		})
-
-		JustBeforeEach(func() {
-			rsp, err = http.Post(serverUrl.String(), "garbage", nil)
-		})
-
-		It("should return 404", func() {
-			Expect(err).ToNot(HaveOccurred())
-			Expect(rsp.StatusCode).To(Equal(http.StatusNotFound))
-			rsp.Body.Close()
-		})
-	})
-
 })

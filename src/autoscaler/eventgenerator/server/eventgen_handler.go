@@ -32,7 +32,7 @@ func (h *EventGenHandler) GetAggregatedMetricHistories(w http.ResponseWriter, r 
 	endParam := r.URL.Query()["end"]
 	orderParam := r.URL.Query()["order"]
 
-	h.logger.Debug("get-aggregateed-metric-histories", lager.Data{"appid": appID, "metrictype": metricType, "start": startParam, "end": endParam, "order": orderParam})
+	h.logger.Debug("get-aggregated-metric-histories", lager.Data{"appid": appID, "metrictype": metricType, "start": startParam, "end": endParam, "order": orderParam})
 
 	var err error
 	start := int64(0)
@@ -42,14 +42,14 @@ func (h *EventGenHandler) GetAggregatedMetricHistories(w http.ResponseWriter, r 
 	if len(startParam) == 1 {
 		start, err = strconv.ParseInt(startParam[0], 10, 64)
 		if err != nil {
-			h.logger.Error("get-aggregateed-metric-histories-parse-start-time", err, lager.Data{"start": startParam})
+			h.logger.Error("get-aggregated-metric-histories-parse-start-time", err, lager.Data{"start": startParam})
 			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 				Code:    "Bad-Request",
 				Message: "Error parsing start time"})
 			return
 		}
 	} else if len(startParam) > 1 {
-		h.logger.Error("get-aggregateed-metric-histories-get-start-time", err, lager.Data{"start": startParam})
+		h.logger.Error("get-aggregated-metric-histories-get-start-time", err, lager.Data{"start": startParam})
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 			Code:    "Bad-Request",
 			Message: "Incorrect start parameter in query string"})
@@ -59,14 +59,14 @@ func (h *EventGenHandler) GetAggregatedMetricHistories(w http.ResponseWriter, r 
 	if len(endParam) == 1 {
 		end, err = strconv.ParseInt(endParam[0], 10, 64)
 		if err != nil {
-			h.logger.Error("get-aggregateed-metric-histories-parse-end-time", err, lager.Data{"end": endParam})
+			h.logger.Error("get-aggregated-metric-histories-parse-end-time", err, lager.Data{"end": endParam})
 			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 				Code:    "Bad-Request",
 				Message: "Error parsing end time"})
 			return
 		}
 	} else if len(endParam) > 1 {
-		h.logger.Error("get-aggregateed-metric-histories-get-end-time", err, lager.Data{"end": endParam})
+		h.logger.Error("get-aggregated-metric-histories-get-end-time", err, lager.Data{"end": endParam})
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 			Code:    "Bad-Request",
 			Message: "Incorrect end parameter in query string"})
@@ -80,7 +80,7 @@ func (h *EventGenHandler) GetAggregatedMetricHistories(w http.ResponseWriter, r 
 		} else if orderStr == db.ASCSTR {
 			order = db.ASC
 		} else {
-			h.logger.Error("get-aggregateed-metric-histories-parse-order", err, lager.Data{"order": orderParam})
+			h.logger.Error("get-aggregated-metric-histories-parse-order", err, lager.Data{"order": orderParam})
 			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 				Code:    "Bad-Request",
 				Message: fmt.Sprintf("Incorrect order parameter in query string, the value can only be %s or %s", db.ASCSTR, db.DESCSTR),
@@ -88,7 +88,7 @@ func (h *EventGenHandler) GetAggregatedMetricHistories(w http.ResponseWriter, r 
 			return
 		}
 	} else if len(orderParam) > 1 {
-		h.logger.Error("get-aggregateed-metric-histories-parse-order", err, lager.Data{"order": orderParam})
+		h.logger.Error("get-aggregated-metric-histories-parse-order", err, lager.Data{"order": orderParam})
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 			Code:    "Bad-Request",
 			Message: "Incorrect order parameter in query string"})
@@ -99,7 +99,7 @@ func (h *EventGenHandler) GetAggregatedMetricHistories(w http.ResponseWriter, r 
 
 	mtrcs, err = h.database.RetrieveAppMetrics(appID, metricType, start, end, order)
 	if err != nil {
-		h.logger.Error("get-aggregateed-metric-histories-retrieve-metrics", err, lager.Data{"appid": appID, "metrictype": metricType, "start": start, "end": end, "order": order})
+		h.logger.Error("get-aggregated-metric-histories-retrieve-metrics", err, lager.Data{"appid": appID, "metrictype": metricType, "start": start, "end": end, "order": order})
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 			Code:    "Interal-Server-Error",
 			Message: "Error getting aggregated metric histories from database"})
@@ -109,7 +109,7 @@ func (h *EventGenHandler) GetAggregatedMetricHistories(w http.ResponseWriter, r 
 	var body []byte
 	body, err = json.Marshal(mtrcs)
 	if err != nil {
-		h.logger.Error("get-aggregateed-metric-histories-marshal", err, lager.Data{"appid": appID, "metrictype": metricType, "metrics": mtrcs})
+		h.logger.Error("get-aggregated-metric-histories-marshal", err, lager.Data{"appid": appID, "metrictype": metricType, "metrics": mtrcs})
 
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 			Code:    "Interal-Server-Error",
