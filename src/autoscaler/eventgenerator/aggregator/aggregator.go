@@ -51,7 +51,7 @@ func (a *Aggregator) getAppMonitors(policyMap map[string]*models.AppPolicy) map[
 			appMonitors[fmt.Sprintf("%s-%s", appID, rule.MetricType)] = &models.AppMonitor{
 				AppId:      appID,
 				MetricType: rule.MetricType,
-				StatWindow: rule.StatWindow(a.defaultStatWindowSecs),
+				StatWindow: time.Second * time.Duration(a.defaultStatWindowSecs),
 			}
 		}
 	}

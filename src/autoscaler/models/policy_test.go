@@ -142,11 +142,6 @@ var _ = Describe("Policy", func() {
 			policy = policyJson.GetAppPolicy()
 		})
 
-		It("returns default statistics window", func() {
-			Expect(policy.ScalingPolicy.ScalingRules[0].StatWindow(DefaultStatWindowSecs)).To(Equal(
-				time.Duration(DefaultStatWindowSecs) * time.Second))
-		})
-
 		Context("When scaling rule has breach_duration_secs and cool_down_secs", func() {
 			BeforeEach(func() {
 				policyJson = &PolicyJson{AppId: testAppId, PolicyStr: policyStr}

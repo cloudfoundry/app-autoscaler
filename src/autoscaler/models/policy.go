@@ -78,10 +78,6 @@ type SpecificDateSchedule struct {
 	ScheduledInstanceInit int    `json:"initial_min_instance_count"`
 }
 
-func (r *ScalingRule) StatWindow(defaultStatWindowSecs int) time.Duration {
-	return time.Duration(defaultStatWindowSecs) * time.Second
-}
-
 func (r *ScalingRule) BreachDuration(defaultBreachDurationSecs int) time.Duration {
 	if r.BreachDurationSeconds <= 0 {
 		return time.Duration(defaultBreachDurationSecs) * time.Second
