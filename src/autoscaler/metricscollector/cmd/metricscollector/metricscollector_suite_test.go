@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/cfhttp"
-	"code.cloudfoundry.org/consuladapter/consulrunner"
 	"github.com/cloudfoundry/sonde-go/events"
 	"github.com/gogo/protobuf/proto"
 	. "github.com/onsi/ginkgo"
@@ -41,7 +40,6 @@ var (
 	isTokenExpired bool
 	eLock          *sync.Mutex
 	httpClient     *http.Client
-	consulRunner   *consulrunner.ClusterRunner
 )
 
 func TestMetricsCollector(t *testing.T) {
@@ -124,16 +122,6 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	wsHandler := testhelpers.NewWebsocketHandler(messagesToSend, 100*time.Millisecond)
 	ccNOAAUAA.RouteToHandler("GET", "/apps/an-app-id/stream", wsHandler.ServeWebsocket)
 
-	consulRunner = consulrunner.NewClusterRunner(
-		consulrunner.ClusterRunnerConfig{
-			StartingPort: 9001 + GinkgoParallelNode()*consulrunner.PortOffsetLength,
-			NumNodes:     1,
-			Scheme:       "http",
-		},
-	)
-	consulRunner.Start()
-	consulRunner.WaitUntilReady()
-
 	cfg.Cf = cf.CfConfig{
 		Api:       ccNOAAUAA.URL(),
 		GrantType: cf.GrantTypePassword,
@@ -185,9 +173,6 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 })
 
 var _ = SynchronizedAfterSuite(func() {
-	if consulRunner != nil {
-		consulRunner.Stop()
-	}
 	ccNOAAUAA.Close()
 	os.Remove(configFile.Name())
 }, func() {
