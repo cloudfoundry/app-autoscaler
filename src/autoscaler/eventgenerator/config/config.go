@@ -7,8 +7,6 @@ import (
 
 	yaml "gopkg.in/yaml.v2"
 
-	"code.cloudfoundry.org/locket"
-
 	"autoscaler/db"
 	"autoscaler/models"
 )
@@ -25,10 +23,6 @@ const (
 	DefaultEvaluationExecuteInterval      time.Duration = 40 * time.Second
 	DefaultEvaluatorCount                 int           = 20
 	DefaultTriggerArrayChannelSize        int           = 200
-	DefaultLockTTL                        time.Duration = locket.DefaultSessionTTL
-	DefaultRetryInterval                  time.Duration = locket.RetryInterval
-	DefaultDBLockRetryInterval            time.Duration = 5 * time.Second
-	DefaultDBLockTTL                      time.Duration = 15 * time.Second
 	DefaultBackOffInitialInterval         time.Duration = 5 * time.Minute
 	DefaultBackOffMaxInterval             time.Duration = 2 * time.Hour
 	DefaultBreakerConsecutiveFailureCount int64         = 3
@@ -39,10 +33,11 @@ type LoggingConfig struct {
 }
 
 type ServerConfig struct {
-	Port int             `yaml:"port"`
-	TLS  models.TLSCerts `yaml:"tls"`
+	Port      int             `yaml:"port"`
+	TLS       models.TLSCerts `yaml:"tls"`
+	NodeAddrs []string        `yaml:"node_addrs"`
+	NodeIndex int             `yaml:"node_index"`
 }
-
 type DBConfig struct {
 	PolicyDB    db.DatabaseConfig `yaml:"policy_db"`
 	AppMetricDB db.DatabaseConfig `yaml:"app_metrics_db"`
@@ -73,27 +68,10 @@ type MetricCollectorConfig struct {
 	TLSClientCerts     models.TLSCerts `yaml:"tls"`
 }
 
-type LockConfig struct {
-	LockTTL             time.Duration `yaml:"lock_ttl"`
-	LockRetryInterval   time.Duration `yaml:"lock_retry_interval"`
-	ConsulClusterConfig string        `yaml:"consul_cluster_config"`
-}
-
-type DBLockConfig struct {
-	LockTTL           time.Duration     `yaml:"ttl"`
-	LockDB            db.DatabaseConfig `yaml:"lock_db"`
-	LockRetryInterval time.Duration     `yaml:"retry_interval"`
-}
-
 type CircuitBreakerConfig struct {
 	BackOffInitialInterval  time.Duration `yaml:"back_off_initial_interval"`
 	BackOffMaxInterval      time.Duration `yaml:"back_off_max_interval"`
 	ConsecutiveFailureCount int64         `yaml:"consecutive_failure_count"`
-}
-
-var defaultDBLockConfig = DBLockConfig{
-	LockTTL:           DefaultDBLockTTL,
-	LockRetryInterval: DefaultDBLockRetryInterval,
 }
 
 type Config struct {
@@ -104,11 +82,8 @@ type Config struct {
 	Evaluator                 EvaluatorConfig       `yaml:"evaluator"`
 	ScalingEngine             ScalingEngineConfig   `yaml:"scalingEngine"`
 	MetricCollector           MetricCollectorConfig `yaml:"metricCollector"`
-	Lock                      LockConfig            `yaml:"lock"`
 	DefaultStatWindowSecs     int                   `yaml:"defaultStatWindowSecs"`
 	DefaultBreachDurationSecs int                   `yaml:"defaultBreachDurationSecs"`
-	DBLock                    DBLockConfig          `yaml:"db_lock"`
-	EnableDBLock              bool                  `yaml:"enable_db_lock"`
 	CircuitBreaker            CircuitBreakerConfig  `yaml:"circuitBreaker"`
 }
 
@@ -133,12 +108,6 @@ func LoadConfig(bytes []byte) (*Config, error) {
 			EvaluatorCount:            DefaultEvaluatorCount,
 			TriggerArrayChannelSize:   DefaultTriggerArrayChannelSize,
 		},
-		Lock: LockConfig{
-			LockRetryInterval: DefaultRetryInterval,
-			LockTTL:           DefaultLockTTL,
-		},
-		DBLock:       defaultDBLockConfig,
-		EnableDBLock: false,
 	}
 	err := yaml.Unmarshal(bytes, &conf)
 	if err != nil {
@@ -198,20 +167,15 @@ func (c *Config) Validate() error {
 	if c.Evaluator.TriggerArrayChannelSize <= 0 {
 		return fmt.Errorf("Configuration error: trigger-array channel size is less-equal than 0")
 	}
-	if c.Lock.LockRetryInterval <= 0 {
-		return fmt.Errorf("Configuration error: lock retry interval is less than or equal to 0")
-	}
-	if c.Lock.LockTTL <= 0 {
-		return fmt.Errorf("Configuration error: lock ttl is less than or equal to 0")
-	}
 	if c.DefaultBreachDurationSecs < 60 || c.DefaultBreachDurationSecs > 3600 {
 		return fmt.Errorf("Configuration error: defaultBreachDurationSecs should be between 60 and 3600")
 	}
 	if c.DefaultStatWindowSecs < 60 || c.DefaultStatWindowSecs > 3600 {
 		return fmt.Errorf("Configuration error: defaultStatWindowSecs should be between 60 and 3600")
 	}
-	if c.EnableDBLock && c.DBLock.LockDB.Url == "" {
-		return fmt.Errorf("Configuration error: Lock DB URL is empty")
+
+	if (c.Server.NodeIndex >= len(c.Server.NodeAddrs)) || (c.Server.NodeIndex < 0) {
+		return fmt.Errorf("Configuration error: node_index out of range")
 	}
 	return nil
 

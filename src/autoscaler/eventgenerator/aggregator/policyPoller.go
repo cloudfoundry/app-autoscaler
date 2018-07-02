@@ -2,6 +2,7 @@ package aggregator
 
 import (
 	"autoscaler/db"
+	"autoscaler/helpers"
 	"autoscaler/models"
 	"sync"
 	"time"
@@ -15,26 +16,30 @@ type Consumer func(map[string]*models.AppPolicy, chan *models.AppMonitor)
 type PolicyPoller struct {
 	logger    lager.Logger
 	interval  time.Duration
+	nodeNum   int
+	nodeIndex int
 	database  db.PolicyDB
 	clock     clock.Clock
 	doneChan  chan bool
 	policyMap map[string]*models.AppPolicy
-	lock      sync.Mutex
+	lock      sync.RWMutex
 }
 
-func NewPolicyPoller(logger lager.Logger, clock clock.Clock, interval time.Duration, database db.PolicyDB) *PolicyPoller {
+func NewPolicyPoller(logger lager.Logger, clock clock.Clock, interval time.Duration, nodeNum, nodeIndex int, database db.PolicyDB) *PolicyPoller {
 	return &PolicyPoller{
 		logger:    logger.Session("PolicyPoller"),
 		clock:     clock,
 		interval:  interval,
+		nodeNum:   nodeNum,
+		nodeIndex: nodeIndex,
 		database:  database,
 		doneChan:  make(chan bool),
 		policyMap: make(map[string]*models.AppPolicy),
 	}
 }
 func (p *PolicyPoller) GetPolicies() map[string]*models.AppPolicy {
-	p.lock.Lock()
-	defer p.lock.Unlock()
+	p.lock.RLock()
+	defer p.lock.RUnlock()
 	return p.policyMap
 }
 func (p *PolicyPoller) Start() {
@@ -81,10 +86,11 @@ func (p *PolicyPoller) retrievePolicies() ([]*models.PolicyJson, error) {
 
 func (p *PolicyPoller) computePolicies(policyJsons []*models.PolicyJson) map[string]*models.AppPolicy {
 	policyMap := make(map[string]*models.AppPolicy)
-	for _, policyRow := range policyJsons {
-		tmpPolicy := policyRow.GetAppPolicy()
-		policyMap[policyRow.AppId] = tmpPolicy
+	for _, policyJSON := range policyJsons {
+		if (p.nodeNum == 1) || (helpers.FNVHash(policyJSON.AppId)%uint32(p.nodeNum) == uint32(p.nodeIndex)) {
+			appPolicy := policyJSON.GetAppPolicy()
+			policyMap[policyJSON.AppId] = appPolicy
+		}
 	}
-	p.logger.Info("policy count", lager.Data{"count": len(policyMap)})
 	return policyMap
 }

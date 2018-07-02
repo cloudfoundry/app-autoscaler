@@ -19,8 +19,6 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/cfhttp"
-	"code.cloudfoundry.org/consuladapter/consulrunner"
-	"code.cloudfoundry.org/locket"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
@@ -40,7 +38,6 @@ var (
 	httpClient         *http.Client
 	metricCollector    *ghttp.Server
 	scalingEngine      *ghttp.Server
-	consulRunner       *consulrunner.ClusterRunner
 	breachDurationSecs int                         = 10
 	metrics            []*models.AppInstanceMetric = []*models.AppInstanceMetric{
 		{
@@ -103,30 +100,14 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 }, func(pathByte []byte) {
 	egPath = string(pathByte)
 	initHttpEndPoints()
-	initConsul()
 	initConfig()
 })
 
 var _ = SynchronizedAfterSuite(func() {
 	os.Remove(configFile.Name())
-	if consulRunner != nil {
-		consulRunner.Stop()
-	}
 }, func() {
 	gexec.CleanupBuildArtifacts()
 })
-
-func initConsul() {
-	consulRunner = consulrunner.NewClusterRunner(
-		consulrunner.ClusterRunnerConfig{
-			StartingPort: 9001 + GinkgoParallelNode()*consulrunner.PortOffsetLength,
-			NumNodes:     1,
-			Scheme:       "http",
-		},
-	)
-	consulRunner.Start()
-	consulRunner.WaitUntilReady()
-}
 
 func initDB() {
 	egDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
@@ -204,6 +185,8 @@ func initConfig() {
 				CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
 				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 			},
+			NodeAddrs: []string{"localhost"},
+			NodeIndex: 0,
 		},
 		Aggregator: config.AggregatorConfig{
 			AggregatorExecuteInterval: 1 * time.Second,
@@ -248,27 +231,11 @@ func initConfig() {
 				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 			},
 		},
-		Lock: config.LockConfig{
-			LockRetryInterval:   locket.RetryInterval,
-			LockTTL:             locket.DefaultSessionTTL,
-			ConsulClusterConfig: consulRunner.ConsulCluster(),
-		},
-		DBLock: config.DBLockConfig{
-			LockDB: db.DatabaseConfig{
-				Url:                   os.Getenv("DBURL"),
-				MaxOpenConnections:    10,
-				MaxIdleConnections:    5,
-				ConnectionMaxLifetime: 10 * time.Second,
-			},
-			LockTTL:           15 * time.Second,
-			LockRetryInterval: 5 * time.Second,
-		},
 		CircuitBreaker: config.CircuitBreakerConfig{
 			BackOffInitialInterval:  5 * time.Minute,
 			BackOffMaxInterval:      2 * time.Hour,
 			ConsecutiveFailureCount: 3,
 		},
-		EnableDBLock:              false,
 		DefaultBreachDurationSecs: 600,
 		DefaultStatWindowSecs:     300,
 	}
@@ -299,17 +266,15 @@ func writeConfig(c *config.Config) *os.File {
 }
 
 type EventGeneratorRunner struct {
-	configPath        string
-	startCheck        string
-	acquiredLockCheck string
-	Session           *gexec.Session
+	configPath string
+	startCheck string
+	Session    *gexec.Session
 }
 
 func NewEventGeneratorRunner() *EventGeneratorRunner {
 	return &EventGeneratorRunner{
-		configPath:        configFile.Name(),
-		startCheck:        "eventgenerator.started",
-		acquiredLockCheck: "eventgenerator.lock.acquire-lock-succeeded",
+		configPath: configFile.Name(),
+		startCheck: "eventgenerator.started",
 	}
 }
 
@@ -341,12 +306,4 @@ func (eg *EventGeneratorRunner) KillWithFire() {
 	if eg.Session != nil {
 		eg.Session.Kill().Wait(5 * time.Second)
 	}
-}
-
-func (eg *EventGeneratorRunner) ClearLockDatabase() {
-	lockDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
-	Expect(err).NotTo(HaveOccurred())
-
-	_, err = lockDB.Exec("DELETE FROM eg_lock")
-	Expect(err).NotTo(HaveOccurred())
 }
