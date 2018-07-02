@@ -95,7 +95,7 @@ You might consider to take the following steps when creating the scaling policy:
 * Identify the performance bottleneck from the benchmarking result, and decide which metric should be used to dynamically adjust the instance number.
 * Scale application manually to understand how the application behaves when scaling out/in 
 * Define the initial scaling policy and enable the service
-* Drive load and test with the policy to see how it works. Adjust detailed settings of the policy, including thresholds, steps of scaling, statistics window, breach duration and cool-down period
+* Drive load and test with the policy to see how it works. Adjust detailed settings of the policy, including thresholds, steps of scaling, breach duration and cool-down period
 * Define scheduled scaling for peak hours 
 * Simulate the peak hour workload, and adjust the min/max instance number settings in the scheduled policy
 * Apply the refined policy 
