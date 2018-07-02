@@ -219,12 +219,6 @@
                   "type": "string",
                   "description": "Operator is used in combination with the threshold value to compare the current metric value"
                 },
-                "stat_window_secs": {
-                  "maximum": 3600,
-                  "minimum": 60,
-                  "type": "number",
-                  "description": "Interval to aggregate metrics statictics in seconds"
-                },
                 "threshold": {
                   "type": "number"
                 }

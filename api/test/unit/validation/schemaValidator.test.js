@@ -67,7 +67,6 @@ describe('Validating Policy JSON schema construction',function(){
     var metricTypeEnum = schemaValidatorPrivate.__get__('getMetricTypes')();
     expect(schema.id).to.equal('/scaling_rules');
     expect(schema.properties.metric_type).to.deep.equal({ 'type':'string','enum':metricTypeEnum});
-    expect(schema.properties.stat_window_secs).to.deep.equal({ 'type':'number','minimum': 60,'maximum': 3600 });
     expect(schema.properties.breach_duration_secs).to.deep.equal({ 'type':'number','minimum': 60,'maximum': 3600 });
     expect(schema.properties.threshold).to.deep.equal({ 'type':'number'});
     expect(schema.properties.operator).to.deep.equal({ 'type':'string','enum':validOperator });

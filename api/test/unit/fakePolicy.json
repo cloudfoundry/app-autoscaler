@@ -4,7 +4,6 @@
    "scaling_rules":[
       {
          "metric_type":"memoryused",
-         "stat_window_secs":300,
          "breach_duration_secs":600,
          "threshold":30,
          "operator":"<",
@@ -13,7 +12,6 @@
       },
       {
          "metric_type":"memoryutil",
-         "stat_window_secs":300,
          "breach_duration_secs":600,
          "threshold":90,
          "operator":">=",

@@ -263,8 +263,6 @@ Body
 
             "metric\_type": "memoryused",
         
-            "stat\_window\_secs": 300,
-        
             "breach\_duration\_secs": 600,
         
             "threshold": 30,
@@ -280,8 +278,6 @@ Body
         {
     
             "metric\_type": "memoryused",
-        
-            "stat\_window\_secs": 300,
         
             "breach\_duration\_secs": 600,
         
@@ -460,8 +456,6 @@ Body
     
                 "metric\_type": "memoryused",
             
-                "stat\_window\_secs": 300,
-            
                 "breach\_duration\_secs": 600,
             
                 "threshold": 30,
@@ -477,8 +471,6 @@ Body
             {
         
                 "metric\_type": "memoryused",
-            
-                "stat\_window\_secs": 300,
             
                 "breach\_duration\_secs": 600,
             
@@ -725,8 +717,6 @@ Body
 
             "metric\_type": "memoryused",
         
-            "stat\_window\_secs": 300,
-        
             "breach\_duration\_secs": 600,
         
             "threshold": 30,
@@ -742,8 +732,6 @@ Body
         {
     
             "metric\_type": "memoryused",
-        
-            "stat\_window\_secs": 300,
         
             "breach\_duration\_secs": 600,
         
