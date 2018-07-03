@@ -7,8 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"code.cloudfoundry.org/locket"
-
 	"gopkg.in/yaml.v2"
 
 	"autoscaler/cf"
@@ -17,14 +15,10 @@ import (
 )
 
 const (
-	DefaultLoggingLevel                      = "info"
-	DefaultRefreshInterval     time.Duration = 60 * time.Second
-	DefaultCollectInterval     time.Duration = 30 * time.Second
-	DefaultSaveInterval        time.Duration = 5 * time.Second
-	DefaultLockTTL             time.Duration = locket.DefaultSessionTTL
-	DefaultRetryInterval       time.Duration = locket.RetryInterval
-	DefaultDBLockRetryInterval time.Duration = 5 * time.Second
-	DefaultDBLockTTL           time.Duration = 15 * time.Second
+	DefaultLoggingLevel                  = "info"
+	DefaultRefreshInterval time.Duration = 60 * time.Second
+	DefaultCollectInterval time.Duration = 30 * time.Second
+	DefaultSaveInterval    time.Duration = 5 * time.Second
 
 	CollectMethodPolling   = "polling"
 	CollectMethodStreaming = "streaming"
@@ -36,8 +30,10 @@ var defaultCfConfig = cf.CfConfig{
 }
 
 type ServerConfig struct {
-	Port int             `yaml:"port"`
-	TLS  models.TLSCerts `yaml:"tls"`
+	Port      int             `yaml:"port"`
+	TLS       models.TLSCerts `yaml:"tls"`
+	NodeAddrs []string        `yaml:"node_addrs"`
+	NodeIndex int             `yaml:"node_index"`
 }
 
 var defaultServerConfig = ServerConfig{
@@ -71,48 +67,20 @@ var defaultCollectorConfig = CollectorConfig{
 	SaveInterval:    DefaultSaveInterval,
 }
 
-type LockConfig struct {
-	LockTTL             time.Duration `yaml:"lock_ttl"`
-	LockRetryInterval   time.Duration `yaml:"lock_retry_interval"`
-	ConsulClusterConfig string        `yaml:"consul_cluster_config"`
-}
-
-type DBLockConfig struct {
-	LockTTL           time.Duration     `yaml:"ttl"`
-	LockDB            db.DatabaseConfig `yaml:"lock_db"`
-	LockRetryInterval time.Duration     `yaml:"retry_interval"`
-}
-
-var defaultDBLockConfig = DBLockConfig{
-	LockTTL:           DefaultDBLockTTL,
-	LockRetryInterval: DefaultDBLockRetryInterval,
-}
-
-var defaultLockConfig = LockConfig{
-	LockTTL:           DefaultLockTTL,
-	LockRetryInterval: DefaultRetryInterval,
-}
-
 type Config struct {
-	Cf           cf.CfConfig     `yaml:"cf"`
-	Logging      LoggingConfig   `yaml:"logging"`
-	Server       ServerConfig    `yaml:"server"`
-	Db           DbConfig        `yaml:"db"`
-	Collector    CollectorConfig `yaml:"collector"`
-	Lock         LockConfig      `yaml:"lock"`
-	DBLock       DBLockConfig    `yaml:"db_lock"`
-	EnableDBLock bool            `yaml:"enable_db_lock"`
+	Cf        cf.CfConfig     `yaml:"cf"`
+	Logging   LoggingConfig   `yaml:"logging"`
+	Server    ServerConfig    `yaml:"server"`
+	Db        DbConfig        `yaml:"db"`
+	Collector CollectorConfig `yaml:"collector"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
 	conf := &Config{
-		Cf:           defaultCfConfig,
-		Logging:      defaultLoggingConfig,
-		Server:       defaultServerConfig,
-		Collector:    defaultCollectorConfig,
-		Lock:         defaultLockConfig,
-		DBLock:       defaultDBLockConfig,
-		EnableDBLock: false,
+		Cf:        defaultCfConfig,
+		Logging:   defaultLoggingConfig,
+		Server:    defaultServerConfig,
+		Collector: defaultCollectorConfig,
 	}
 
 	bytes, err := ioutil.ReadAll(reader)
@@ -162,8 +130,8 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("Configuration error: invalid collecting method")
 	}
 
-	if c.EnableDBLock && c.DBLock.LockDB.Url == "" {
-		return fmt.Errorf("Configuration error: Lock DB Url is empty")
+	if (c.Server.NodeIndex >= len(c.Server.NodeAddrs)) || (c.Server.NodeIndex < 0) {
+		return fmt.Errorf("Configuration error: node_index out of range")
 	}
 	return nil
 

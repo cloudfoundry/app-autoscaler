@@ -77,3 +77,9 @@ databaseChangeLog:
                   defaultValue: 0
                   constraints:
                     nullable: false
+  - changeSet:
+      id: 3
+      author: byang
+      changes:
+        - dropTable:
+            tableName: mc_lock

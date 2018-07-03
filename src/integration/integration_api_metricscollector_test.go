@@ -9,8 +9,6 @@ import (
 	"net/http"
 	"strings"
 
-	"code.cloudfoundry.org/locket"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
@@ -32,7 +30,6 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 		metricType        string = "memoryused"
 		collectMethod     string = config.CollectMethodPolling
 		initInstanceCount int    = 2
-		enableDBLock      bool   = false
 	)
 
 	BeforeEach(func() {
@@ -40,8 +37,8 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 		fakeMetricsPolling(appId, 400*1024*1024, 600*1024*1024)
 		initializeHttpClient("api.crt", "api.key", "autoscaler-ca.crt", apiMetricsCollectorHttpRequestTimeout)
 		initializeHttpClientForPublicApi("api_public.crt", "api_public.key", "autoscaler-ca.crt", apiMetricsCollectorHttpRequestTimeout)
-		metricsCollectorConfPath = components.PrepareMetricsCollectorConfig(dbUrl, components.Ports[MetricsCollector], enableDBLock, fakeCCNOAAUAA.URL(), cf.GrantTypePassword, collectInterval,
-			refreshInterval, saveInterval, collectMethod, tmpDir, locket.DefaultSessionTTL, locket.RetryInterval, consulRunner.ConsulCluster())
+		metricsCollectorConfPath = components.PrepareMetricsCollectorConfig(dbUrl, components.Ports[MetricsCollector], fakeCCNOAAUAA.URL(), cf.GrantTypePassword, collectInterval,
+			refreshInterval, saveInterval, collectMethod, tmpDir)
 		startMetricsCollector()
 
 		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], components.Ports[APIPublicServer], false, fakeCCNOAAUAA.URL(), dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ServiceBrokerInternal]), tmpDir)

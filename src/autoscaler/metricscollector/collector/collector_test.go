@@ -19,31 +19,36 @@ import (
 var _ = Describe("Collector", func() {
 
 	var (
-		policyDb          *fakes.FakePolicyDB
-		instanceMetricsDb *fakes.FakeInstanceMetricsDB
-		coll              *Collector
-		fclock            *fakeclock.FakeClock
-		appCollector      *fakes.FakeAppCollector
-		buffer            *gbytes.Buffer
+		policyDb           *fakes.FakePolicyDB
+		instanceMetricsDb  *fakes.FakeInstanceMetricsDB
+		coll               *Collector
+		fclock             *fakeclock.FakeClock
+		appCollector       *fakes.FakeAppCollector
+		buffer             *gbytes.Buffer
+		logger             *lagertest.TestLogger
+		nodeNum            int
+		nodeIndex          int
+		createAppCollector func(string, chan *models.AppInstanceMetric) AppCollector
 	)
 
 	BeforeEach(func() {
+		nodeNum = 1
+		nodeIndex = 0
 		policyDb = &fakes.FakePolicyDB{}
 		instanceMetricsDb = &fakes.FakeInstanceMetricsDB{}
-
-		logger := lagertest.NewTestLogger("collector-test")
+		logger = lagertest.NewTestLogger("collector-test")
 		buffer = logger.Buffer()
-
 		fclock = fakeclock.NewFakeClock(time.Now())
 		appCollector = &fakes.FakeAppCollector{}
-		createAppCollector := func(appId string, dataChan chan *models.AppInstanceMetric) AppCollector {
+		createAppCollector = func(appId string, dataChan chan *models.AppInstanceMetric) AppCollector {
 			return appCollector
 		}
-		coll = NewCollector(TestRefreshInterval, TestCollectInterval, TestSaveInterval, logger, policyDb, instanceMetricsDb, fclock, createAppCollector)
+
 	})
 
 	Describe("Start", func() {
 		JustBeforeEach(func() {
+			coll = NewCollector(TestRefreshInterval, TestCollectInterval, TestSaveInterval, nodeIndex, nodeNum, logger, policyDb, instanceMetricsDb, fclock, createAppCollector)
 			coll.Start()
 		})
 
@@ -166,7 +171,7 @@ var _ = Describe("Collector", func() {
 					}
 				})
 
-				It("pools the new apps and stops polling removed apps", func() {
+				It("polls the new apps and stops polling removed apps", func() {
 					Eventually(appCollector.StartCallCount).Should(Equal(2))
 					Eventually(coll.GetCollectorAppIds).Should(ConsistOf("app-id-1", "app-id-3"))
 
@@ -179,6 +184,81 @@ var _ = Describe("Collector", func() {
 					Eventually(appCollector.StartCallCount).Should(Equal(4))
 					Eventually(appCollector.StopCallCount).Should(Equal(2))
 					Eventually(coll.GetCollectorAppIds).Should(ConsistOf("app-id-1", "app-id-2"))
+				})
+
+			})
+
+			Context("when running with 3 nodes", func() {
+				BeforeEach(func() {
+					nodeNum = 3
+					policyDb.GetAppIdsStub = func() (map[string]bool, error) {
+						switch policyDb.GetAppIdsCallCount() {
+						case 1:
+							return map[string]bool{"app-id-1": true, "app-id-2": true, "app-id-3": true, "app-id-4": true}, nil
+						case 2:
+							return map[string]bool{"app-id-3": true, "app-id-4": true, "app-id-5": true, "app-id-6": true}, nil
+						default:
+							return map[string]bool{"app-id-5": true, "app-id-6": true, "app-id-7": true, "app-id-8": true}, nil
+						}
+					}
+				})
+				Context("when current index is 0", func() {
+					BeforeEach(func() {
+						nodeIndex = 0
+					})
+					It("polls the app shard 0", func() {
+						Eventually(appCollector.StartCallCount).Should(Equal(2))
+						Eventually(coll.GetCollectorAppIds).Should(ConsistOf("app-id-3", "app-id-4"))
+
+						fclock.Increment(TestRefreshInterval)
+						Consistently(appCollector.StartCallCount).Should(Equal(2))
+						Consistently(appCollector.StopCallCount).Should(Equal(0))
+						Eventually(coll.GetCollectorAppIds).Should(ConsistOf("app-id-3", "app-id-4"))
+
+						fclock.Increment(TestRefreshInterval)
+						Eventually(appCollector.StartCallCount).Should(Equal(3))
+						Eventually(appCollector.StopCallCount).Should(Equal(2))
+						Eventually(coll.GetCollectorAppIds).Should(ConsistOf("app-id-8"))
+					})
+				})
+				Context("when current index is 1", func() {
+					BeforeEach(func() {
+						nodeIndex = 1
+					})
+					It("polls app shard 1", func() {
+						Eventually(appCollector.StartCallCount).Should(Equal(0))
+
+						fclock.Increment(TestRefreshInterval)
+						Eventually(appCollector.StartCallCount).Should(Equal(2))
+						Consistently(appCollector.StopCallCount).Should(Equal(0))
+						Eventually(coll.GetCollectorAppIds).Should(ConsistOf("app-id-5", "app-id-6"))
+
+						fclock.Increment(TestRefreshInterval)
+						Consistently(appCollector.StartCallCount).Should(Equal(2))
+						Consistently(appCollector.StopCallCount).Should(Equal(0))
+						Consistently(coll.GetCollectorAppIds).Should(ConsistOf("app-id-5", "app-id-6"))
+
+					})
+				})
+				Context("when current index is 2", func() {
+					BeforeEach(func() {
+						nodeIndex = 2
+					})
+					It("polls app shard 2", func() {
+						Eventually(appCollector.StartCallCount).Should(Equal(2))
+						Eventually(coll.GetCollectorAppIds).Should(ConsistOf("app-id-1", "app-id-2"))
+
+						fclock.Increment(TestRefreshInterval)
+						Consistently(appCollector.StartCallCount).Should(Equal(2))
+						Eventually(appCollector.StopCallCount).Should(Equal(2))
+						Eventually(coll.GetCollectorAppIds).Should(BeEmpty())
+
+						fclock.Increment(TestRefreshInterval)
+						Eventually(appCollector.StartCallCount).Should(Equal(3))
+						Consistently(appCollector.StopCallCount).Should(Equal(2))
+						Eventually(coll.GetCollectorAppIds).Should(ConsistOf("app-id-7"))
+
+					})
 				})
 
 			})
@@ -206,6 +286,7 @@ var _ = Describe("Collector", func() {
 	Describe("Stop", func() {
 		BeforeEach(func() {
 			policyDb.GetAppIdsReturns(map[string]bool{"app-id-1": true, "app-id-2": true, "app-id-3": true}, nil)
+			coll = NewCollector(TestRefreshInterval, TestCollectInterval, TestSaveInterval, nodeIndex, nodeNum, logger, policyDb, instanceMetricsDb, fclock, createAppCollector)
 			coll.Start()
 		})
 

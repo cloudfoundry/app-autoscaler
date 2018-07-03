@@ -11,16 +11,13 @@ import (
 	"autoscaler/db"
 	"autoscaler/db/sqldb"
 	"autoscaler/helpers"
-	"autoscaler/metricscollector"
 	"autoscaler/metricscollector/collector"
 	"autoscaler/metricscollector/config"
 	"autoscaler/metricscollector/server"
 	"autoscaler/models"
-	sync "autoscaler/sync"
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/clock"
-	"code.cloudfoundry.org/consuladapter"
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry/noaa/consumer"
 	"github.com/tedsuo/ifrit"
@@ -105,7 +102,10 @@ func main() {
 	}
 
 	collectServer := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
-		mc := collector.NewCollector(conf.Collector.RefreshInterval, conf.Collector.CollectInterval, conf.Collector.SaveInterval, logger.Session("collector"), policyDB, instanceMetricsDB, mcClock, createAppCollector)
+		logger.Info("starting collector", lager.Data{"NodeIndex": conf.Server.NodeIndex, "NodeAddrs": conf.Server.NodeAddrs})
+		mc := collector.NewCollector(conf.Collector.RefreshInterval, conf.Collector.CollectInterval, conf.Collector.SaveInterval,
+			conf.Server.NodeIndex, len(conf.Server.NodeAddrs), logger.Session("collector"),
+			policyDB, instanceMetricsDB, mcClock, createAppCollector)
 		mc.Start()
 
 		close(ready)
@@ -126,45 +126,6 @@ func main() {
 		{"collector", collectServer},
 		{"http_server", httpServer},
 	}
-
-	guid, err := helpers.GenerateGUID(logger)
-	if err != nil {
-		logger.Error("failed-to-generate-guid", err)
-		os.Exit(1)
-	}
-	const lockTableName = "mc_lock"
-	if conf.EnableDBLock {
-		logger.Debug("database-lock-feature-enabled")
-		var lockDB db.LockDB
-		lockDB, err = sqldb.NewLockSQLDB(conf.DBLock.LockDB, lockTableName, logger.Session("lock-db"))
-		if err != nil {
-			logger.Error("failed-to-connect-lock-database", err, lager.Data{"dbConfig": conf.DBLock.LockDB})
-			os.Exit(1)
-		}
-		defer lockDB.Close()
-		mcdl := sync.NewDatabaseLock(logger)
-		dbLockMaintainer := mcdl.InitDBLockRunner(conf.DBLock.LockRetryInterval, conf.DBLock.LockTTL, guid, lockDB)
-		members = append(grouper.Members{{"db-lock-maintainer", dbLockMaintainer}}, members...)
-	}
-
-	if conf.Lock.ConsulClusterConfig != "" {
-		consulClient, err := consuladapter.NewClientFromUrl(conf.Lock.ConsulClusterConfig)
-		if err != nil {
-			logger.Fatal("new consul client failed", err)
-		}
-
-		serviceClient := metricscollector.NewServiceClient(consulClient, mcClock)
-		if !conf.EnableDBLock {
-			lockMaintainer := serviceClient.NewMetricsCollectorLockRunner(
-				logger,
-				guid,
-				conf.Lock.LockRetryInterval,
-				conf.Lock.LockTTL,
-			)
-			members = append(grouper.Members{{"lock-maintainer", lockMaintainer}}, members...)
-		}
-	}
-
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
 
 	logger.Info("started")
