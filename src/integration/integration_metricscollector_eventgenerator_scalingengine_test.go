@@ -29,8 +29,8 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 	})
 
 	JustBeforeEach(func() {
-		metricsCollectorConfPath = components.PrepareMetricsCollectorConfig(dbUrl, components.Ports[MetricsCollector], enableDBLock, fakeCCNOAAUAA.URL(), cf.GrantTypePassword, collectInterval,
-			refreshInterval, saveInterval, collectMethod, tmpDir, locket.DefaultSessionTTL, locket.RetryInterval, consulRunner.ConsulCluster())
+		metricsCollectorConfPath = components.PrepareMetricsCollectorConfig(dbUrl, components.Ports[MetricsCollector], fakeCCNOAAUAA.URL(), cf.GrantTypePassword, collectInterval,
+			refreshInterval, saveInterval, collectMethod, tmpDir)
 		eventGeneratorConfPath = components.PrepareEventGeneratorConfig(dbUrl, enableDBLock, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), aggregatorExecuteInterval, policyPollerInterval, saveInterval, evaluationManagerInterval, tmpDir, locket.DefaultSessionTTL, locket.RetryInterval, consulRunner.ConsulCluster())
 		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), cf.GrantTypePassword, tmpDir, consulRunner.ConsulCluster())
 		startMetricsCollector()
