@@ -2,8 +2,8 @@ package collector
 
 import (
 	"autoscaler/db"
+	"autoscaler/helpers"
 	"autoscaler/models"
-
 	"sync"
 	"time"
 
@@ -20,6 +20,8 @@ type Collector struct {
 	refreshInterval    time.Duration
 	collectInterval    time.Duration
 	saveInterval       time.Duration
+	nodeNum            int
+	nodeIndex          int
 	logger             lager.Logger
 	policyDb           db.PolicyDB
 	instancemetricsDb  db.InstanceMetricsDB
@@ -33,11 +35,15 @@ type Collector struct {
 	dataChan           chan *models.AppInstanceMetric
 }
 
-func NewCollector(refreshInterval time.Duration, collectInterval time.Duration, saveInterval time.Duration, logger lager.Logger, policyDb db.PolicyDB, instancemetricsDb db.InstanceMetricsDB, cclock clock.Clock, createAppCollector func(string, chan *models.AppInstanceMetric) AppCollector) *Collector {
+func NewCollector(refreshInterval time.Duration, collectInterval time.Duration, saveInterval time.Duration,
+	nodeIndex, nodeNum int, logger lager.Logger, policyDb db.PolicyDB, instancemetricsDb db.InstanceMetricsDB,
+	cclock clock.Clock, createAppCollector func(string, chan *models.AppInstanceMetric) AppCollector) *Collector {
 	return &Collector{
 		refreshInterval:    refreshInterval,
 		collectInterval:    collectInterval,
 		saveInterval:       saveInterval,
+		nodeIndex:          nodeIndex,
+		nodeNum:            nodeNum,
 		logger:             logger,
 		policyDb:           policyDb,
 		instancemetricsDb:  instancemetricsDb,
@@ -76,11 +82,20 @@ func (c *Collector) refreshApps() {
 		return
 	}
 
-	c.logger.Debug("refresh-apps", lager.Data{"appIds": appIds})
+	appShard := map[string]bool{}
+	if c.nodeNum == 1 {
+		appShard = appIds
+	} else {
+		for id := range appIds {
+			if helpers.FNVHash(id)%uint32(c.nodeNum) == uint32(c.nodeIndex) {
+				appShard[id] = true
+			}
+		}
+	}
 
 	c.lock.Lock()
 	for id, ap := range c.appCollectors {
-		_, exist := appIds[id]
+		_, exist := appShard[id]
 		if !exist {
 			c.logger.Debug("refresh-apps-remove", lager.Data{"appId": id})
 			ap.Stop()
@@ -88,7 +103,7 @@ func (c *Collector) refreshApps() {
 		}
 	}
 
-	for id, _ := range appIds {
+	for id := range appShard {
 		_, exist := c.appCollectors[id]
 		if !exist {
 			c.logger.Debug("refresh-apps-add", lager.Data{"appId": id})
@@ -118,7 +133,7 @@ func (c *Collector) Stop() {
 func (c *Collector) GetCollectorAppIds() []string {
 	var appIds []string
 	c.lock.Lock()
-	for id, _ := range c.appCollectors {
+	for id := range c.appCollectors {
 		appIds = append(appIds, id)
 	}
 	c.lock.Unlock()
