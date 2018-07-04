@@ -151,7 +151,7 @@ func (e *Evaluator) retrieveAppMetrics(trigger *models.Trigger) ([]*models.AppMe
 	queryEndTime := time.Now()
 	queryStartTime := queryEndTime.Add(0 - 2*trigger.BreachDuration(e.defaultBreachDurationSecs))
 	breachStartTime := queryEndTime.Add(0 - trigger.BreachDuration(e.defaultBreachDurationSecs))
-	appMetrics, err := e.database.RetrieveAppMetrics(trigger.AppId, trigger.MetricType, queryStartTime.UnixNano(), queryEndTime.UnixNano())
+	appMetrics, err := e.database.RetrieveAppMetrics(trigger.AppId, trigger.MetricType, queryStartTime.UnixNano(), queryEndTime.UnixNano(), db.ASC)
 	if err != nil {
 		e.logger.Error("retrieve appMetrics", err, lager.Data{"trigger": trigger})
 		return nil, err
