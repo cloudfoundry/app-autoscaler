@@ -7,6 +7,7 @@ import (
 	"autoscaler/eventgenerator/aggregator"
 	"autoscaler/eventgenerator/config"
 	"autoscaler/eventgenerator/generator"
+	"autoscaler/eventgenerator/server"
 	"autoscaler/helpers"
 	"autoscaler/models"
 	sync "autoscaler/sync"
@@ -111,8 +112,15 @@ func main() {
 		return nil
 	})
 
+	httpServer, err := server.NewServer(logger.Session("http_server"), conf, appMetricDB)
+	if err != nil {
+		logger.Error("failed to create http server", err)
+		os.Exit(1)
+	}
+
 	members := grouper.Members{
 		{"eventGenerator", eventGenerator},
+		{"http_server", httpServer},
 	}
 
 	guid, err := helpers.GenerateGUID(logger)
@@ -228,7 +236,7 @@ func loadConfig(path string) (*config.Config, error) {
 func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan chan []*models.Trigger,
 	database db.AppMetricDB, getBreaker func(string) *circuit.Breaker, setCoolDownExpired func(string, int64)) ([]*generator.Evaluator, error) {
 	count := conf.Evaluator.EvaluatorCount
-	scalingEngineUrl := conf.ScalingEngine.ScalingEngineUrl
+	scalingEngineURL := conf.ScalingEngine.ScalingEngineUrl
 
 	tlsCerts := &conf.ScalingEngine.TLSClientCerts
 	if tlsCerts.CertFile == "" || tlsCerts.KeyFile == "" {
@@ -247,7 +255,7 @@ func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan cha
 
 	evaluators := make([]*generator.Evaluator, count)
 	for i := 0; i < count; i++ {
-		evaluators[i] = generator.NewEvaluator(logger, client, scalingEngineUrl, triggersChan, database,
+		evaluators[i] = generator.NewEvaluator(logger, client, scalingEngineURL, triggersChan, database,
 			conf.DefaultBreachDurationSecs, getBreaker, setCoolDownExpired)
 	}
 
