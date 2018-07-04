@@ -58,7 +58,6 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 						ScalingRules: []*models.ScalingRule{
 							{
 								MetricType:            models.MetricNameMemoryUtil,
-								StatWindowSeconds:     10,
 								BreachDurationSeconds: breachDurationSecs,
 								Threshold:             30,
 								Operator:              ">=",
@@ -107,7 +106,6 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 						ScalingRules: []*models.ScalingRule{
 							{
 								MetricType:            models.MetricNameMemoryUtil,
-								StatWindowSeconds:     10,
 								BreachDurationSeconds: breachDurationSecs,
 								Threshold:             80,
 								Operator:              ">=",
@@ -158,7 +156,6 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 						ScalingRules: []*models.ScalingRule{
 							{
 								MetricType:            models.MetricNameMemoryUtil,
-								StatWindowSeconds:     10,
 								BreachDurationSeconds: breachDurationSecs,
 								Threshold:             80,
 								Operator:              "<",
@@ -208,7 +205,6 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 						ScalingRules: []*models.ScalingRule{
 							{
 								MetricType:            models.MetricNameMemoryUtil,
-								StatWindowSeconds:     10,
 								BreachDurationSeconds: breachDurationSecs,
 								Threshold:             30,
 								Operator:              "<",
@@ -268,7 +264,6 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 						ScalingRules: []*models.ScalingRule{
 							{
 								MetricType:            models.MetricNameMemoryUtil,
-								StatWindowSeconds:     10,
 								BreachDurationSeconds: breachDurationSecs,
 								Threshold:             30,
 								Operator:              ">=",
@@ -317,7 +312,6 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 						ScalingRules: []*models.ScalingRule{
 							{
 								MetricType:            models.MetricNameMemoryUtil,
-								StatWindowSeconds:     10,
 								BreachDurationSeconds: breachDurationSecs,
 								Threshold:             80,
 								Operator:              ">=",
@@ -368,7 +362,6 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 						ScalingRules: []*models.ScalingRule{
 							{
 								MetricType:            models.MetricNameMemoryUtil,
-								StatWindowSeconds:     10,
 								BreachDurationSeconds: breachDurationSecs,
 								Threshold:             80,
 								Operator:              "<",
@@ -418,7 +411,6 @@ var _ = Describe("Integration_Metricscollector_Eventgenerator_Scalingengine", fu
 						ScalingRules: []*models.ScalingRule{
 							{
 								MetricType:            models.MetricNameMemoryUtil,
-								StatWindowSeconds:     10,
 								BreachDurationSeconds: breachDurationSecs,
 								Threshold:             30,
 								Operator:              "<",

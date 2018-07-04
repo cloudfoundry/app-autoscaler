@@ -143,7 +143,6 @@ func initDB() {
 		   "scaling_rules":[
 		      {
 		         "metric_type":"a-metric-type",
-		         "stat_window_secs":300,
 		         "breach_duration_secs":%d,
 		         "threshold":300,
 		         "operator":">",

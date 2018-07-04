@@ -24,7 +24,7 @@ type AppEvaluationManager struct {
 	breakerConfig    config.CircuitBreakerConfig
 	breakers         map[string]*circuit.Breaker
 	cooldownExpired  map[string]int64
-	breakerLock      *sync.Mutex
+	breakerLock      *sync.RWMutex
 	cooldownLock     *sync.Mutex
 }
 
@@ -40,7 +40,7 @@ func NewAppEvaluationManager(logger lager.Logger, evaluateInterval time.Duration
 		getPolicies:      getPolicies,
 		breakerConfig:    breakerConfig,
 		cooldownExpired:  map[string]int64{},
-		breakerLock:      &sync.Mutex{},
+		breakerLock:      &sync.RWMutex{},
 		cooldownLock:     &sync.Mutex{},
 	}, nil
 }
@@ -53,7 +53,9 @@ func (a *AppEvaluationManager) getTriggers(policyMap map[string]*models.AppPolic
 	now := a.emClock.Now().UnixNano()
 	for appId, policy := range policyMap {
 		for _, rule := range policy.ScalingPolicy.ScalingRules {
+			a.cooldownLock.Lock()
 			cooldownExpiredAt, found := a.cooldownExpired[appId]
+			a.cooldownLock.Unlock()
 			if found {
 				if cooldownExpiredAt > now {
 					continue
@@ -131,8 +133,8 @@ func (a *AppEvaluationManager) doEvaluate() {
 }
 
 func (a *AppEvaluationManager) GetBreaker(appID string) *circuit.Breaker {
-	a.breakerLock.Lock()
-	defer a.breakerLock.Unlock()
+	a.breakerLock.RLock()
+	defer a.breakerLock.RUnlock()
 	return a.breakers[appID]
 }
 

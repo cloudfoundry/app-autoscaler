@@ -41,7 +41,6 @@ var _ = Describe("AppEvaluationManager", func() {
 				ScalingRules: []*models.ScalingRule{
 					{
 						MetricType:            testMetricName,
-						StatWindowSeconds:     200,
 						BreachDurationSeconds: 200,
 						CoolDownSeconds:       200,
 						Threshold:             80,
@@ -60,7 +59,6 @@ var _ = Describe("AppEvaluationManager", func() {
 				ScalingRules: []*models.ScalingRule{
 					{
 						MetricType:            testMetricName,
-						StatWindowSeconds:     300,
 						BreachDurationSeconds: 300,
 						CoolDownSeconds:       300,
 						Threshold:             20,
@@ -148,7 +146,7 @@ var _ = Describe("AppEvaluationManager", func() {
 				})
 
 				JustBeforeEach(func() {
-					manager.SetCoolDownExpired(testAppId2, fakeTime.Add(time.Duration(30 * testEvaluateInterval)).UnixNano())
+					manager.SetCoolDownExpired(testAppId2, fakeTime.Add(time.Duration(30*testEvaluateInterval)).UnixNano())
 				})
 
 				It("should add triggers to evaluate after cooldown expired", func() {
