@@ -463,7 +463,7 @@ func (components *Components) PrepareEventGeneratorConfig(dbUri string, enableDB
 			LockRetryInterval: time.Duration(2 * time.Second),
 		},
 		DefaultBreachDurationSecs: 600,
-		DefaultStatWindowSecs:     300,
+		DefaultStatWindowSecs:     60,
 	}
 	return writeYmlConfig(tmpDir, EventGenerator, &conf)
 }

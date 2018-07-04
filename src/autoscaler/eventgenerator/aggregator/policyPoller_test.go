@@ -4,12 +4,13 @@ import (
 	. "autoscaler/eventgenerator/aggregator"
 	"autoscaler/eventgenerator/aggregator/fakes"
 	"autoscaler/models"
+	"errors"
+	"time"
+
 	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/lager"
-	"errors"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"time"
 )
 
 var _ = Describe("PolicyPoller", func() {
@@ -26,7 +27,6 @@ var _ = Describe("PolicyPoller", func() {
 		   "scaling_rules":[
 		      {
 		         "metric_type":"test-metric-name",
-		         "stat_window_secs":300,
 		         "breach_duration_secs":300,
 		         "threshold":30,
 		         "operator":"<",
@@ -86,7 +86,6 @@ var _ = Describe("PolicyPoller", func() {
 							InstanceMin: 1,
 							ScalingRules: []*models.ScalingRule{{
 								MetricType:            "test-metric-name",
-								StatWindowSeconds:     300,
 								BreachDurationSeconds: 300,
 								CoolDownSeconds:       300,
 								Threshold:             30,

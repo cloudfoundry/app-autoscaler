@@ -3,6 +3,7 @@ package aggregator
 import (
 	"autoscaler/db"
 	"autoscaler/models"
+	"fmt"
 	"time"
 
 	"code.cloudfoundry.org/clock"
@@ -40,18 +41,18 @@ func NewAggregator(logger lager.Logger, clock clock.Clock, aggregatorExecuteInte
 	return aggregator, nil
 }
 
-func (a *Aggregator) getAppMonitors(policyMap map[string]*models.AppPolicy) []*models.AppMonitor {
+func (a *Aggregator) getAppMonitors(policyMap map[string]*models.AppPolicy) map[string]*models.AppMonitor {
 	if policyMap == nil {
 		return nil
 	}
-	appMonitors := make([]*models.AppMonitor, 0, len(policyMap))
-	for appId, appPolicy := range policyMap {
+	appMonitors := map[string]*models.AppMonitor{}
+	for appID, appPolicy := range policyMap {
 		for _, rule := range appPolicy.ScalingPolicy.ScalingRules {
-			appMonitors = append(appMonitors, &models.AppMonitor{
-				AppId:      appId,
+			appMonitors[fmt.Sprintf("%s-%s", appID, rule.MetricType)] = &models.AppMonitor{
+				AppId:      appID,
 				MetricType: rule.MetricType,
-				StatWindow: rule.StatWindow(a.defaultStatWindowSecs),
-			})
+				StatWindow: time.Second * time.Duration(a.defaultStatWindowSecs),
+			}
 		}
 	}
 
