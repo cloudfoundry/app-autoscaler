@@ -37,7 +37,6 @@ var _ = Describe("Aggregator", func() {
 					ScalingRules: []*models.ScalingRule{
 						{
 							MetricType:            testMetricType,
-							StatWindowSeconds:     300,
 							BreachDurationSeconds: 300,
 							CoolDownSeconds:       300,
 							Threshold:             30,

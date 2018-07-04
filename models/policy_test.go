@@ -25,7 +25,6 @@ var _ = Describe("Policy", func() {
    "scaling_rules":[
       {
          "metric_type":"memoryused",
-         "stat_window_secs":300,
          "breach_duration_secs":300,
          "threshold":30,
          "operator":"<",
@@ -41,7 +40,6 @@ var _ = Describe("Policy", func() {
    "scaling_rules":[
       {
          "metric_type":"memoryused",
-         "stat_window_secs":300,
          "breach_duration_secs":600,
          "threshold":30,
          "operator":"<",
@@ -129,7 +127,6 @@ var _ = Describe("Policy", func() {
 					ScalingRules: []*ScalingRule{
 						&ScalingRule{
 							MetricType:            "memoryused",
-							StatWindowSeconds:     300,
 							BreachDurationSeconds: 300,
 							CoolDownSeconds:       300,
 							Threshold:             30,
@@ -144,44 +141,27 @@ var _ = Describe("Policy", func() {
 		JustBeforeEach(func() {
 			policy = policyJson.GetAppPolicy()
 		})
-		Context("When scaling rule has stat_window_secs, breach_duration_secs and cool_down_secs", func() {
+
+		Context("When scaling rule has breach_duration_secs and cool_down_secs", func() {
 			BeforeEach(func() {
 				policyJson = &PolicyJson{AppId: testAppId, PolicyStr: policyStr}
 			})
-			It("should return actual stat_window_secs, breach_duration_secs and cool_down_secs", func() {
-				Expect(policy.ScalingPolicy.ScalingRules[0].StatWindow(DefaultStatWindowSecs)).To(Equal(
-					time.Duration(policy.ScalingPolicy.ScalingRules[0].StatWindowSeconds) * time.Second))
-				Expect(policy.ScalingPolicy.ScalingRules[0].StatWindow(DefaultStatWindowSecs)).To(Not(Equal(
-					time.Duration(DefaultStatWindowSecs) * time.Second)))
-
+			It("should return actual breach_duration_secs and cool_down_secs", func() {
 				Expect(policy.ScalingPolicy.ScalingRules[0].BreachDuration(DefaultBreachDurationSecs)).To(Equal(
 					time.Duration(policy.ScalingPolicy.ScalingRules[0].BreachDurationSeconds) * time.Second))
-				Expect(policy.ScalingPolicy.ScalingRules[0].BreachDuration(DefaultBreachDurationSecs)).To(Not(Equal(
-					time.Duration(DefaultBreachDurationSecs) * time.Second)))
 
 				Expect(policy.ScalingPolicy.ScalingRules[0].CoolDown(DefaultCoolDownSecs)).To(Equal(
 					time.Duration(policy.ScalingPolicy.ScalingRules[0].CoolDownSeconds) * time.Second))
-				Expect(policy.ScalingPolicy.ScalingRules[0].CoolDown(DefaultCoolDownSecs)).To(Not(Equal(
-					time.Duration(DefaultCoolDownSecs) * time.Second)))
 			})
 		})
-		Context("When scaling rule doesn't have stat_window_secs, breach_duration_secs and cool_down_secs", func() {
+		Context("When scaling rule doesn't have  breach_duration_secs and cool_down_secs", func() {
 			BeforeEach(func() {
 				policyJson = &PolicyJson{AppId: testAppId, PolicyStr: policyStrMinimalScalingRuleParameter}
 			})
-			It("should return default stat_window_secs, breach_duration_secs and cool_down_secs", func() {
-				Expect(policy.ScalingPolicy.ScalingRules[0].StatWindow(DefaultStatWindowSecs)).To(Not(Equal(
-					time.Duration(policy.ScalingPolicy.ScalingRules[0].StatWindowSeconds) * time.Second)))
-				Expect(policy.ScalingPolicy.ScalingRules[0].StatWindow(DefaultStatWindowSecs)).To(Equal(
-					time.Duration(DefaultStatWindowSecs) * time.Second))
-
-				Expect(policy.ScalingPolicy.ScalingRules[0].BreachDuration(DefaultBreachDurationSecs)).To(Not(Equal(
-					time.Duration(policy.ScalingPolicy.ScalingRules[0].BreachDurationSeconds) * time.Second)))
+			It("should return default breach_duration_secs and cool_down_secs", func() {
 				Expect(policy.ScalingPolicy.ScalingRules[0].BreachDuration(DefaultBreachDurationSecs)).To(Equal(
 					time.Duration(DefaultBreachDurationSecs) * time.Second))
 
-				Expect(policy.ScalingPolicy.ScalingRules[0].CoolDown(DefaultCoolDownSecs)).To(Not(Equal(
-					time.Duration(policy.ScalingPolicy.ScalingRules[0].CoolDownSeconds) * time.Second)))
 				Expect(policy.ScalingPolicy.ScalingRules[0].CoolDown(DefaultCoolDownSecs)).To(Equal(
 					time.Duration(DefaultCoolDownSecs) * time.Second))
 			})
