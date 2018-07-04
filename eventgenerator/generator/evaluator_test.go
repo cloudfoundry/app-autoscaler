@@ -1,6 +1,7 @@
 package generator_test
 
 import (
+	"autoscaler/db"
 	"autoscaler/eventgenerator/aggregator/fakes"
 	. "autoscaler/eventgenerator/generator"
 	"autoscaler/models"
@@ -156,7 +157,7 @@ var _ = Describe("Evaluator", func() {
 				BeforeEach(func() {
 					appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{600, 650, 620}, breachDurationSecs, true)
 					scalingEngine.RouteToHandler("POST", urlPath, ghttp.RespondWith(http.StatusOK, "successful"))
-					database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+					database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 						return appMetrics, nil
 					}
 					Expect(triggerChan).To(BeSent(triggerArrayGT))
@@ -171,7 +172,7 @@ var _ = Describe("Evaluator", func() {
 					scalingEngine.RouteToHandler("POST", urlPath, ghttp.RespondWith(http.StatusOK, "successful"))
 					Expect(triggerChan).To(BeSent(triggerArrayGT))
 					appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{600, 650, 620}, breachDurationSecs, false)
-					database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+					database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 						return appMetrics, nil
 					}
 				})
@@ -191,7 +192,7 @@ var _ = Describe("Evaluator", func() {
 					Context("when the appMetrics breach the trigger", func() {
 						BeforeEach(func() {
 							appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{600, 650, 620}, breachDurationSecs, true)
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 								return appMetrics, nil
 							}
 						})
@@ -204,7 +205,7 @@ var _ = Describe("Evaluator", func() {
 					Context("when the appMetrics do not breach the trigger", func() {
 						BeforeEach(func() {
 							appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{200, 150, 600}, breachDurationSecs, true)
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 								return appMetrics, nil
 							}
 						})
@@ -216,7 +217,7 @@ var _ = Describe("Evaluator", func() {
 					})
 					Context("when appMetrics is empty", func() {
 						BeforeEach(func() {
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 								return []*models.AppMetric{}, nil
 							}
 						})
@@ -233,7 +234,7 @@ var _ = Describe("Evaluator", func() {
 								Value:      "",
 								Unit:       "",
 								Timestamp:  time.Now().UnixNano()})
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 								return appMetrics, nil
 							}
 						})
@@ -251,7 +252,7 @@ var _ = Describe("Evaluator", func() {
 					Context("when the appMetrics breach the trigger", func() {
 						BeforeEach(func() {
 							appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{600, 500, 500}, breachDurationSecs, true)
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 								return appMetrics, nil
 							}
 						})
@@ -264,7 +265,7 @@ var _ = Describe("Evaluator", func() {
 					Context("when the appMetrics do not breach the trigger", func() {
 						BeforeEach(func() {
 							appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{200, 150, 600}, breachDurationSecs, true)
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 								return appMetrics, nil
 							}
 						})
@@ -276,7 +277,7 @@ var _ = Describe("Evaluator", func() {
 					})
 					Context("when appMetrics is empty", func() {
 						BeforeEach(func() {
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 								return []*models.AppMetric{}, nil
 							}
 						})
@@ -293,7 +294,7 @@ var _ = Describe("Evaluator", func() {
 								Value:      "",
 								Unit:       "",
 								Timestamp:  time.Now().UnixNano()})
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 								return appMetrics, nil
 							}
 						})
@@ -310,7 +311,7 @@ var _ = Describe("Evaluator", func() {
 					Context("when the appMetrics breach the trigger", func() {
 						BeforeEach(func() {
 							appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{200, 300, 400}, breachDurationSecs, true)
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 								return appMetrics, nil
 							}
 						})
@@ -323,7 +324,7 @@ var _ = Describe("Evaluator", func() {
 					Context("when the appMetrics do not breach the trigger", func() {
 						BeforeEach(func() {
 							appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{500, 550, 600}, breachDurationSecs, true)
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 								return appMetrics, nil
 							}
 						})
@@ -335,7 +336,7 @@ var _ = Describe("Evaluator", func() {
 					})
 					Context("when appMetrics is empty", func() {
 						BeforeEach(func() {
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 								return []*models.AppMetric{}, nil
 							}
 						})
@@ -352,7 +353,7 @@ var _ = Describe("Evaluator", func() {
 								Value:      "",
 								Unit:       "",
 								Timestamp:  time.Now().UnixNano()})
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 								return appMetrics, nil
 							}
 						})
@@ -369,7 +370,7 @@ var _ = Describe("Evaluator", func() {
 					Context("when the appMetrics breach the trigger", func() {
 						BeforeEach(func() {
 							appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{200, 500, 500}, breachDurationSecs, true)
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 								return appMetrics, nil
 							}
 						})
@@ -382,7 +383,7 @@ var _ = Describe("Evaluator", func() {
 					Context("when the appMetrics do not breach the trigger", func() {
 						BeforeEach(func() {
 							appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{500, 550, 600}, breachDurationSecs, true)
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 								return appMetrics, nil
 							}
 						})
@@ -394,7 +395,7 @@ var _ = Describe("Evaluator", func() {
 					})
 					Context("when appMetrics is empty", func() {
 						BeforeEach(func() {
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 								return []*models.AppMetric{}, nil
 							}
 						})
@@ -411,7 +412,7 @@ var _ = Describe("Evaluator", func() {
 								Value:      "",
 								Unit:       "",
 								Timestamp:  time.Now().UnixNano()})
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 								return appMetrics, nil
 							}
 						})
@@ -437,7 +438,7 @@ var _ = Describe("Evaluator", func() {
 							),
 						)
 						appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{500, 550, 600}, breachDurationSecs, true)
-						database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+						database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 							return appMetrics, nil
 						}
 					})
@@ -459,7 +460,7 @@ var _ = Describe("Evaluator", func() {
 							),
 						)
 						appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{300, 400, 500}, breachDurationSecs, true)
-						database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+						database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 							return appMetrics, nil
 						}
 					})
@@ -481,7 +482,7 @@ var _ = Describe("Evaluator", func() {
 							),
 						)
 						appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{500, 500, 500}, breachDurationSecs, true)
-						database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+						database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 							return appMetrics, nil
 						}
 					})
@@ -497,7 +498,7 @@ var _ = Describe("Evaluator", func() {
 			Context("sending trigger ", func() {
 				BeforeEach(func() {
 					appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{600, 650, 620}, breachDurationSecs, true)
-					database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+					database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 						return appMetrics, nil
 					}
 					Expect(triggerChan).To(BeSent(triggerArrayGT))
@@ -623,7 +624,7 @@ var _ = Describe("Evaluator", func() {
 			Context("circuit break for scaling failures", func() {
 				BeforeEach(func() {
 					appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{600, 650, 620}, breachDurationSecs, true)
-					database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+					database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 						return appMetrics, nil
 					}
 					bf := backoff.NewExponentialBackOff()
@@ -710,7 +711,7 @@ var _ = Describe("Evaluator", func() {
 
 			Context("when retrieving appMetrics from database failed", func() {
 				BeforeEach(func() {
-					database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+					database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 						return nil, errors.New("error when retrieve appMetrics from database")
 					}
 				})
@@ -746,7 +747,7 @@ var _ = Describe("Evaluator", func() {
 	Context("Stop", func() {
 		BeforeEach(func() {
 			scalingEngine = ghttp.NewServer()
-			database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+			database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 				return nil, errors.New("no alarm")
 			}
 			evaluator = NewEvaluator(logger, httpClient, scalingEngine.URL(), triggerChan, database, fakeBreachDurationSecs, getBreaker, setCoolDownExpired)
@@ -766,7 +767,7 @@ var _ = Describe("Evaluator", func() {
 		BeforeEach(func() {
 			scalingEngine = ghttp.NewUnstartedServer()
 			appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{600, 650, 620}, breachDurationSecs, true)
-			database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64) ([]*models.AppMetric, error) {
+			database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 				return appMetrics, nil
 			}
 			evaluator = NewEvaluator(logger, httpClient, scalingEngine.URL(), triggerChan, database, fakeBreachDurationSecs, getBreaker, setCoolDownExpired)

@@ -3,6 +3,8 @@ package sqldb
 import (
 	"autoscaler/db"
 	"autoscaler/models"
+	"time"
+
 	"code.cloudfoundry.org/lager"
 	. "github.com/lib/pq"
 
@@ -98,8 +100,19 @@ func (adb *AppMetricSQLDB) SaveAppMetricsInBulk(appMetrics []*models.AppMetric) 
 
 	return nil
 }
-func (adb *AppMetricSQLDB) RetrieveAppMetrics(appIdP string, metricTypeP string, startP int64, endP int64) ([]*models.AppMetric, error) {
-	query := "SELECT app_id,metric_type,value,unit,timestamp FROM app_metric WHERE app_id=$1 AND metric_type=$2 AND timestamp>=$3 AND timestamp<=$4 ORDER BY timestamp ASC"
+func (adb *AppMetricSQLDB) RetrieveAppMetrics(appIdP string, metricTypeP string, startP int64, endP int64, orderType db.OrderType) ([]*models.AppMetric, error) {
+	var orderStr string
+	if orderType == db.ASC {
+		orderStr = db.ASCSTR
+	} else {
+		orderStr = db.DESCSTR
+	}
+
+	if endP < 0 {
+		endP = time.Now().UnixNano()
+	}
+
+	query := "SELECT app_id,metric_type,value,unit,timestamp FROM app_metric WHERE app_id=$1 AND metric_type=$2 AND timestamp>=$3 AND timestamp<=$4 ORDER BY timestamp " + orderStr
 	appMetricList := []*models.AppMetric{}
 	rows, err := adb.sqldb.Query(query, appIdP, metricTypeP, startP, endP)
 	if err != nil {
