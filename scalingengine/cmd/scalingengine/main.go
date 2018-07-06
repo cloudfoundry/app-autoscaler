@@ -131,23 +131,26 @@ func main() {
 	}
 
 	nonLockMonitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, nonLockMembers)))
+
+	goRoutineDone := make(chan struct{})
 	go func() {
+		defer close(goRoutineDone)
 		lockMonitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, lockMembers)))
 		lmerr := <-lockMonitor.Wait()
 		if lmerr != nil {
-			logger.Error("sync-exited-with-failure", err)
+			logger.Error("sync-exited-with-failure", lmerr)
 			os.Exit(1)
 		}
 	}()
 
 	logger.Info("started")
-
 	nlmerr := <-nonLockMonitor.Wait()
 	if nlmerr != nil {
-		logger.Error("http-server-exited-with-failure", err)
+		logger.Error("http-server-exited-with-failure", nlmerr)
 		os.Exit(1)
 	}
 
+	<-goRoutineDone
 	logger.Info("exited")
 }
 
