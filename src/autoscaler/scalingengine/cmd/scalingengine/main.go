@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	gsync "sync"
 	"time"
 
 	"autoscaler/cf"
@@ -133,28 +132,26 @@ func main() {
 
 	nonLockMonitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, nonLockMembers)))
 
-	var wg gsync.WaitGroup
+	var done = make(chan struct{})
 
-	wg.Add(1)
 	go func() {
-		defer wg.Done()
+		defer close(done)
 		lockMonitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, lockMembers)))
 		lmerr := <-lockMonitor.Wait()
 		if lmerr != nil {
-			logger.Error("sync-exited-with-failure", err)
+			logger.Error("sync-exited-with-failure", lmerr)
 			os.Exit(1)
 		}
 	}()
 
 	logger.Info("started")
-
 	nlmerr := <-nonLockMonitor.Wait()
 	if nlmerr != nil {
-		logger.Error("http-server-exited-with-failure", err)
+		logger.Error("http-server-exited-with-failure", nlmerr)
 		os.Exit(1)
 	}
 
-	wg.Wait()
+	<-done
 	logger.Info("exited")
 }
 
