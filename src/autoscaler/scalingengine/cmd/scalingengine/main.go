@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	gsync "sync"
 	"time"
 
 	"autoscaler/cf"
@@ -131,7 +132,12 @@ func main() {
 	}
 
 	nonLockMonitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, nonLockMembers)))
+
+	var wg gsync.WaitGroup
+
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		lockMonitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, lockMembers)))
 		lmerr := <-lockMonitor.Wait()
 		if lmerr != nil {
@@ -148,6 +154,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	wg.Wait()
 	logger.Info("exited")
 }
 

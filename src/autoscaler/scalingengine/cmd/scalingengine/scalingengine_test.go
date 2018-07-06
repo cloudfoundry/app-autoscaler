@@ -155,11 +155,13 @@ var _ = Describe("Main", func() {
 
 				It("When the running sychronizer loses the lock, the other one takes over", func() {
 					if runnerAcquiredLock {
+						Eventually(secondRunner.Session.Buffer, 10*time.Second).Should(gbytes.Say("retry-acquiring-lock"))
 						runner.Interrupt()
 						Eventually(runner.Session.Buffer, 5*time.Second).Should(gbytes.Say("scalingengine.received-interrupt-signal"))
 						Eventually(runner.Session.Buffer, 5*time.Second).Should(gbytes.Say("scalingengine.successfully-released-lock"))
 						Eventually(secondRunner.Session.Buffer, 10*time.Second).Should(gbytes.Say("scalingengine.successfully-acquired-lock"))
 					} else {
+						Eventually(runner.Session.Buffer, 10*time.Second).Should(gbytes.Say("retry-acquiring-lock"))
 						secondRunner.Interrupt()
 						Eventually(secondRunner.Session.Buffer, 5*time.Second).Should(gbytes.Say("scalingengine.received-interrupt-signal"))
 						Eventually(secondRunner.Session.Buffer, 5*time.Second).Should(gbytes.Say("scalingengine.successfully-released-lock"))
