@@ -132,10 +132,9 @@ func main() {
 
 	nonLockMonitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, nonLockMembers)))
 
-	var done = make(chan struct{})
-
+	goRoutineDone := make(chan struct{})
 	go func() {
-		defer close(done)
+		defer close(goRoutineDone)
 		lockMonitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, lockMembers)))
 		lmerr := <-lockMonitor.Wait()
 		if lmerr != nil {
@@ -151,7 +150,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	<-done
+	<-goRoutineDone
 	logger.Info("exited")
 }
 
