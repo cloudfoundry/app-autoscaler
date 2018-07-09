@@ -71,3 +71,9 @@ databaseChangeLog:
                   type: bigint
              indexName: index_app_metrics
              tableName: app_metric
+  - changeSet:
+      id: 4
+      author: byang
+      changes:
+        - dropTable:
+            tableName: eg_lock 

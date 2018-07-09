@@ -406,11 +406,15 @@ func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port i
 	return writeYmlConfig(tmpDir, MetricsCollector, &cfg)
 }
 
-func (components *Components) PrepareEventGeneratorConfig(dbUri string, enableDBLock bool, metricsCollectorUrl string, scalingEngineUrl string, aggregatorExecuteInterval time.Duration, policyPollerInterval time.Duration,
-	saveInterval time.Duration, evaluationManagerInterval time.Duration, tmpDir string, lockTTL time.Duration, lockRetryInterval time.Duration, ConsulClusterConfig string) string {
+func (components *Components) PrepareEventGeneratorConfig(dbUri string, metricsCollectorUrl string, scalingEngineUrl string, aggregatorExecuteInterval time.Duration,
+	policyPollerInterval time.Duration, saveInterval time.Duration, evaluationManagerInterval time.Duration, tmpDir string) string {
 	conf := &egConfig.Config{
 		Logging: egConfig.LoggingConfig{
 			Level: LOGLEVEL,
+		},
+		Server: egConfig.ServerConfig{
+			NodeAddrs: []string{"localhost"},
+			NodeIndex: 0,
 		},
 		Aggregator: egConfig.AggregatorConfig{
 			AggregatorExecuteInterval: aggregatorExecuteInterval,
@@ -448,19 +452,6 @@ func (components *Components) PrepareEventGeneratorConfig(dbUri string, enableDB
 				CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
 				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 			},
-		},
-		Lock: egConfig.LockConfig{
-			LockTTL:             lockTTL,
-			LockRetryInterval:   lockRetryInterval,
-			ConsulClusterConfig: ConsulClusterConfig,
-		},
-		EnableDBLock: enableDBLock,
-		DBLock: egConfig.DBLockConfig{
-			LockTTL: time.Duration(10 * time.Second),
-			LockDB: db.DatabaseConfig{
-				Url: dbUri,
-			},
-			LockRetryInterval: time.Duration(2 * time.Second),
 		},
 		DefaultBreachDurationSecs: 600,
 		DefaultStatWindowSecs:     60,

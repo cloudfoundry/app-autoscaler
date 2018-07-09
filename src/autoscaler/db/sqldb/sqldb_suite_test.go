@@ -37,9 +37,17 @@ var _ = BeforeSuite(func() {
 		Fail("can not connect database: " + e.Error())
 	}
 
+	e = createLockTable()
+	if e != nil {
+		Fail("can not create test lock table: " + e.Error())
+	}
 })
 
 var _ = AfterSuite(func() {
+	e := dropLockTable()
+	if e != nil {
+		Fail("can not drop test lock table: " + e.Error())
+	}
 	if dbHelper != nil {
 		dbHelper.Close()
 	}
@@ -199,13 +207,13 @@ func insertSchedulerActiveSchedule(id int, appId string, startJobIdentifier int,
 }
 
 func insertLockDetails(lock *models.Lock) (sql.Result, error) {
-	query := "INSERT INTO eg_lock (owner,lock_timestamp,ttl) VALUES ($1,$2,$3)"
+	query := "INSERT INTO test_lock (owner,lock_timestamp,ttl) VALUES ($1,$2,$3)"
 	result, err := dbHelper.Exec(query, lock.Owner, lock.LastModifiedTimestamp, int64(lock.Ttl/time.Second))
 	return result, err
 }
 
 func cleanLockTable() error {
-	_, err := dbHelper.Exec("DELETE FROM eg_lock")
+	_, err := dbHelper.Exec("DELETE FROM test_lock")
 	if err != nil {
 		return err
 	}
@@ -213,7 +221,7 @@ func cleanLockTable() error {
 }
 
 func dropLockTable() error {
-	_, err := dbHelper.Exec("DROP TABLE eg_lock")
+	_, err := dbHelper.Exec("DROP TABLE test_lock")
 	if err != nil {
 		return err
 	}
@@ -222,7 +230,7 @@ func dropLockTable() error {
 
 func createLockTable() error {
 	_, err := dbHelper.Exec(`
-		CREATE TABLE IF NOT EXISTS eg_lock (
+		CREATE TABLE IF NOT EXISTS test_lock (
 			owner VARCHAR(255) PRIMARY KEY,
 			lock_timestamp TIMESTAMP  NOT NULL,
 			ttl BIGINT DEFAULT 0
@@ -240,7 +248,7 @@ func validateLockInDB(ownerid string, expectedLock *models.Lock) error {
 		ttl       time.Duration
 		owner     string
 	)
-	query := "SELECT owner,lock_timestamp,ttl FROM eg_lock WHERE owner=$1"
+	query := "SELECT owner,lock_timestamp,ttl FROM test_lock WHERE owner=$1"
 	row := dbHelper.QueryRow(query, ownerid)
 	err := row.Scan(&owner, &timestamp, &ttl)
 	if err != nil {
@@ -264,7 +272,7 @@ func validateLockNotInDB(owner string) error {
 		timestamp time.Time
 		ttl       time.Duration
 	)
-	query := "SELECT owner,lock_timestamp,ttl FROM eg_lock WHERE owner=$1"
+	query := "SELECT owner,lock_timestamp,ttl FROM test_lock WHERE owner=$1"
 	row := dbHelper.QueryRow(query, owner)
 	err := row.Scan(&owner, &timestamp, &ttl)
 	if err != nil {

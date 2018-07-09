@@ -39,7 +39,7 @@ var _ = Describe("LockSqldb", func() {
 
 	Describe("NewLockSQLDB", func() {
 		JustBeforeEach(func() {
-			ldb, err = NewLockSQLDB(dbConfig, "eg_lock", logger)
+			ldb, err = NewLockSQLDB(dbConfig, "test_lock", logger)
 		})
 
 		AfterEach(func() {
@@ -69,7 +69,7 @@ var _ = Describe("LockSqldb", func() {
 
 	Describe("Lock", func() {
 		BeforeEach(func() {
-			ldb, err = NewLockSQLDB(dbConfig, "eg_lock", logger)
+			ldb, err = NewLockSQLDB(dbConfig, "test_lock", logger)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -172,7 +172,7 @@ var _ = Describe("LockSqldb", func() {
 
 	Describe("Release Lock", func() {
 		BeforeEach(func() {
-			ldb, err = NewLockSQLDB(dbConfig, "eg_lock", logger)
+			ldb, err = NewLockSQLDB(dbConfig, "test_lock", logger)
 			Expect(err).NotTo(HaveOccurred())
 			lock = &models.Lock{Owner: "654321", Ttl: testTTL}
 		})
