@@ -3,8 +3,10 @@ package sqldb_test
 import (
 	"autoscaler/db"
 	. "autoscaler/db/sqldb"
+	"autoscaler/db/sqldb/fakes"
 	"autoscaler/models"
 
+	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/lager"
 	"github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
@@ -202,7 +204,7 @@ var _ = Describe("PolicySQLDB", func() {
 			policies, err = pdb.RetrievePolicies()
 		})
 
-		Context("when retriving all the policies)", func() {
+		Context("when retriving all the policies", func() {
 			It("returns all the policies", func() {
 				Expect(err).NotTo(HaveOccurred())
 
@@ -226,4 +228,36 @@ var _ = Describe("PolicySQLDB", func() {
 			})
 		})
 	})
+
+	Describe("EmitHealthMetrics", func() {
+		var interval time.Duration
+		var clock *fakeclock.FakeClock
+		var health *fakes.FakeHealth
+
+		BeforeEach(func() {
+			pdb, err = NewPolicySQLDB(dbConfig, logger)
+			Expect(err).NotTo(HaveOccurred())
+			cleanPolicyTable()
+
+			health = &fakes.FakeHealth{}
+			interval = 2 * time.Second
+			clock = fakeclock.NewFakeClock(time.Now())
+			pdb.EmitHealthMetrics(health, clock, interval)
+			Eventually(clock.WatcherCount).Should(Equal(1))
+		})
+
+		AfterEach(func() {
+			err = pdb.Close()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("will call out to set health data", func() {
+			clock.Increment(1 * interval)
+			Eventually(func() int {
+				return health.SetCallCount()
+			}).Should(Equal(1))
+		})
+
+	})
+
 })

@@ -5,6 +5,9 @@ cf:
   password: "admin"
 server:
   port: 8080
+health:
+  port: 6180
+  emit_interval: 15s  
 logging:
   level: "debug"
 db:

@@ -3,10 +3,12 @@ package sqldb
 import (
 	"database/sql"
 
+	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
 	_ "github.com/lib/pq"
 
 	"autoscaler/db"
+	"autoscaler/healthendpoint"
 	"autoscaler/models"
 
 	"time"
@@ -139,7 +141,7 @@ func (sdb *ScalingEngineSQLDB) CanScaleApp(appId string) (bool, int64, error) {
 	}
 	defer rows.Close()
 
-	var expireAt int64 = 0;
+	var expireAt int64 = 0
 	if rows.Next() {
 		if err = rows.Scan(&expireAt); err != nil {
 			sdb.logger.Error("can-scale-app-scan", err, lager.Data{"query": query, "appid": appId})
@@ -238,4 +240,14 @@ func (sdb *ScalingEngineSQLDB) SetActiveSchedule(appId string, schedule *models.
 		sdb.logger.Error("failed-set-active-scheudle-insert", err, lager.Data{"appid": appId, "schedule": schedule})
 	}
 	return err
+}
+
+func (sdb *ScalingEngineSQLDB) EmitHealthMetrics(h healthendpoint.Health, cclock clock.Clock, interval time.Duration) {
+	go func() {
+		ticker := cclock.NewTicker(interval)
+		defer ticker.Stop()
+		for range ticker.C() {
+			h.Set("openConnection_scalingEngineDB", float64(sdb.sqldb.Stats().OpenConnections))
+		}
+	}()
 }

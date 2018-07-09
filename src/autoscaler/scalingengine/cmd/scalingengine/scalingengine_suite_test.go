@@ -31,13 +31,15 @@ func TestScalingengine(t *testing.T) {
 }
 
 var (
-	enginePath string
-	conf       config.Config
-	port       int
-	configFile *os.File
-	ccUAA      *ghttp.Server
-	appId      string
-	httpClient *http.Client
+	enginePath       string
+	conf             config.Config
+	port             int
+	healthport       int
+	configFile       *os.File
+	ccUAA            *ghttp.Server
+	appId            string
+	httpClient       *http.Client
+	healthHttpClient *http.Client
 )
 
 var _ = SynchronizedBeforeSuite(
@@ -72,12 +74,14 @@ var _ = SynchronizedBeforeSuite(
 		}
 
 		port = 7000 + GinkgoParallelNode()
+		healthport = 8000 + GinkgoParallelNode()
 		testCertDir := "../../../../../test-certs"
 		conf.Server.Port = port
 		conf.Server.TLS.KeyFile = filepath.Join(testCertDir, "scalingengine.key")
 		conf.Server.TLS.CertFile = filepath.Join(testCertDir, "scalingengine.crt")
 		conf.Server.TLS.CACertFile = filepath.Join(testCertDir, "autoscaler-ca.crt")
-
+		conf.Health.Port = healthport
+		conf.Health.EmitInterval = 1 * time.Second
 		conf.Logging.Level = "info"
 
 		conf.Db.PolicyDb = db.DatabaseConfig{
@@ -152,6 +156,7 @@ var _ = SynchronizedBeforeSuite(
 				TLSClientConfig: tlsConfig,
 			},
 		}
+		healthHttpClient = &http.Client{}
 
 	})
 

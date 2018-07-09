@@ -11,6 +11,7 @@ import (
 	"autoscaler/cf"
 	"autoscaler/db"
 	"autoscaler/db/sqldb"
+	"autoscaler/healthendpoint"
 	"autoscaler/scalingengine"
 	"autoscaler/scalingengine/config"
 	"autoscaler/scalingengine/schedule"
@@ -19,6 +20,7 @@ import (
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
@@ -53,11 +55,48 @@ func main() {
 		os.Exit(1)
 	}
 
+	logger := initLoggerFromConfig(&conf.Logging)
+
+	promRegistry := prometheus.NewRegistry()
+	healthRegistry := healthendpoint.New(promRegistry, map[string]prometheus.Gauge{
+		// Number of concurrent http request
+		"concurrentHTTPReq": prometheus.NewGauge(
+			prometheus.GaugeOpts{
+				Namespace: "autoscaler",
+				Subsystem: "scalingengine",
+				Name:      "concurrentHTTPReq",
+				Help:      "Number of concurrent http request",
+			},
+		),
+		"openConnection_policyDB": prometheus.NewGauge(
+			prometheus.GaugeOpts{
+				Namespace: "autoscaler",
+				Subsystem: "scalingengine",
+				Name:      "openConnection_policyDB",
+				Help:      "Number of open connection to policy DB",
+			},
+		),
+		"openConnection_scalingEngineDB": prometheus.NewGauge(
+			prometheus.GaugeOpts{
+				Namespace: "autoscaler",
+				Subsystem: "scalingengine",
+				Name:      "openConnection_scalingEngineDB",
+				Help:      "Number of open connection to scaling engine DB",
+			},
+		),
+		"openConnection_schedulerDB": prometheus.NewGauge(
+			prometheus.GaugeOpts{
+				Namespace: "autoscaler",
+				Subsystem: "scalingengine",
+				Name:      "openConnection_schedulerDB",
+				Help:      "Number of open connection to scheduler DB",
+			},
+		),
+	}, true, logger.Session("scalingengine-prometheus"))
+
 	cfhttp.Initialize(5 * time.Second)
 
-	logger := initLoggerFromConfig(&conf.Logging)
 	eClock := clock.NewClock()
-
 	cfClient := cf.NewCfClient(&conf.Cf, logger.Session("cf"), eClock)
 	err = cfClient.Login()
 	if err != nil {
@@ -71,6 +110,7 @@ func main() {
 		logger.Error("failed to connect policy database", err, lager.Data{"dbConfig": conf.Db.PolicyDb})
 		os.Exit(1)
 	}
+	policyDB.EmitHealthMetrics(healthRegistry, eClock, conf.Health.EmitInterval)
 	defer policyDB.Close()
 
 	var scalingEngineDB db.ScalingEngineDB
@@ -79,6 +119,7 @@ func main() {
 		logger.Error("failed to connect scalingengine database", err, lager.Data{"dbConfig": conf.Db.ScalingEngineDb})
 		os.Exit(1)
 	}
+	scalingEngineDB.EmitHealthMetrics(healthRegistry, eClock, conf.Health.EmitInterval)
 	defer scalingEngineDB.Close()
 
 	var schedulerDB db.SchedulerDB
@@ -87,21 +128,30 @@ func main() {
 		logger.Error("failed to connect scheduler database", err, lager.Data{"dbConfig": conf.Db.SchedulerDb})
 		os.Exit(1)
 	}
+	schedulerDB.EmitHealthMetrics(healthRegistry, eClock, conf.Health.EmitInterval)
 	defer schedulerDB.Close()
 
 	scalingEngine := scalingengine.NewScalingEngine(logger, cfClient, policyDB, scalingEngineDB, eClock, conf.DefaultCoolDownSecs, conf.LockSize)
-	httpServer, err := server.NewServer(logger.Session("http-server"), conf, scalingEngineDB, scalingEngine)
+
+	httpServer, err := server.NewServer(logger.Session("http-server"), conf, scalingEngineDB, scalingEngine, healthRegistry)
 	if err != nil {
 		logger.Error("failed to create http server", err)
 		os.Exit(1)
 	}
 
-	synchronizer := schedule.NewActiveScheduleSychronizer(logger.Session("synchronizer"), schedulerDB, scalingEngineDB, scalingEngine,
-		conf.Synchronizer.ActiveScheduleSyncInterval, eClock)
+	healthServer, err := healthendpoint.NewServer(logger.Session("health-server"), conf.Health.Port, promRegistry)
+	if err != nil {
+		logger.Error("failed to create health server", err)
+		os.Exit(1)
+	}
 
 	nonLockMembers := grouper.Members{
 		{"http_server", httpServer},
+		{"health_server", healthServer},
 	}
+
+	synchronizer := schedule.NewActiveScheduleSychronizer(logger.Session("synchronizer"), schedulerDB, scalingEngineDB, scalingEngine,
+		conf.Synchronizer.ActiveScheduleSyncInterval, eClock)
 
 	lockMembers := grouper.Members{
 		{"schedule_synchronizer", synchronizer},
@@ -130,8 +180,6 @@ func main() {
 		lockMembers = append(grouper.Members{{"db-lock-maintainer", dbLockMaintainer}}, lockMembers...)
 	}
 
-	nonLockMonitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, nonLockMembers)))
-
 	goRoutineDone := make(chan struct{})
 	go func() {
 		defer close(goRoutineDone)
@@ -142,7 +190,7 @@ func main() {
 			os.Exit(1)
 		}
 	}()
-
+	nonLockMonitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, nonLockMembers)))
 	logger.Info("started")
 	nlmerr := <-nonLockMonitor.Wait()
 	if nlmerr != nil {
