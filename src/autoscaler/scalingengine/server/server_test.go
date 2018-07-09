@@ -38,7 +38,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	}
 	scalingEngineDB = &fakes.FakeScalingEngineDB{}
 	scalingEngine := &fakes.FakeScalingEngine{}
-	httpServer, err := NewServer(lager.NewLogger("test"), conf, scalingEngineDB, scalingEngine)
+	health := &fakes.FakeHealth{}
+	httpServer, err := NewServer(lager.NewLogger("test"), conf, scalingEngineDB, scalingEngine, health)
 	Expect(err).NotTo(HaveOccurred())
 	server = ginkgomon.Invoke(httpServer)
 	serverUrl = fmt.Sprintf("http://127.0.0.1:%d", conf.Server.Port)

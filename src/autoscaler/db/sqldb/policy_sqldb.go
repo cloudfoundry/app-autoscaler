@@ -1,12 +1,16 @@
 package sqldb
 
 import (
-	"code.cloudfoundry.org/lager"
 	"database/sql"
 	"encoding/json"
+	"time"
+
+	"code.cloudfoundry.org/clock"
+	"code.cloudfoundry.org/lager"
 	_ "github.com/lib/pq"
 
 	"autoscaler/db"
+	"autoscaler/healthendpoint"
 	"autoscaler/models"
 )
 
@@ -121,4 +125,14 @@ func (pdb *PolicySQLDB) GetAppPolicy(appId string) (*models.ScalingPolicy, error
 		return nil, err
 	}
 	return scalingPolicy, nil
+}
+
+func (pdb *PolicySQLDB) EmitHealthMetrics(h healthendpoint.Health, cclock clock.Clock, interval time.Duration) {
+	go func() {
+		ticker := cclock.NewTicker(interval)
+		defer ticker.Stop()
+		for range ticker.C() {
+			h.Set("openConnection_policyDB", float64(pdb.sqldb.Stats().OpenConnections))
+		}
+	}()
 }

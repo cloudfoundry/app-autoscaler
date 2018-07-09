@@ -2,6 +2,7 @@ package server
 
 import (
 	"autoscaler/db"
+	"autoscaler/healthendpoint"
 	"autoscaler/models"
 	"autoscaler/scalingengine"
 
@@ -19,17 +20,22 @@ type ScalingHandler struct {
 	logger          lager.Logger
 	scalingEngineDB db.ScalingEngineDB
 	scalingEngine   scalingengine.ScalingEngine
+	health          healthendpoint.Health
 }
 
-func NewScalingHandler(logger lager.Logger, scalingEngineDB db.ScalingEngineDB, scalingEngine scalingengine.ScalingEngine) *ScalingHandler {
+func NewScalingHandler(logger lager.Logger, scalingEngineDB db.ScalingEngineDB, scalingEngine scalingengine.ScalingEngine, health healthendpoint.Health) *ScalingHandler {
 	return &ScalingHandler{
 		logger:          logger.Session("scaling-handler"),
 		scalingEngineDB: scalingEngineDB,
 		scalingEngine:   scalingEngine,
+		health:          health,
 	}
 }
 
 func (h *ScalingHandler) Scale(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+	h.health.Inc("concurrentHTTPReq")
+	defer h.health.Dec("concurrentHTTPReq")
+
 	appId := vars["appid"]
 	logger := h.logger.Session("scale", lager.Data{"appId": appId})
 
@@ -59,6 +65,9 @@ func (h *ScalingHandler) Scale(w http.ResponseWriter, r *http.Request, vars map[
 }
 
 func (h *ScalingHandler) GetScalingHistories(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+	h.health.Inc("concurrentHTTPReq")
+	defer h.health.Dec("concurrentHTTPReq")
+
 	appId := vars["appid"]
 	logger := h.logger.Session("get-scaling-histories", lager.Data{"appId": appId})
 
@@ -176,6 +185,9 @@ func (h *ScalingHandler) GetScalingHistories(w http.ResponseWriter, r *http.Requ
 }
 
 func (h *ScalingHandler) StartActiveSchedule(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+	h.health.Inc("concurrentHTTPReq")
+	defer h.health.Dec("concurrentHTTPReq")
+
 	appId := vars["appid"]
 	scheduleId := vars["scheduleid"]
 
@@ -206,6 +218,9 @@ func (h *ScalingHandler) StartActiveSchedule(w http.ResponseWriter, r *http.Requ
 }
 
 func (h *ScalingHandler) RemoveActiveSchedule(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+	h.health.Inc("concurrentHTTPReq")
+	defer h.health.Dec("concurrentHTTPReq")
+
 	appId := vars["appid"]
 	scheduleId := vars["scheduleid"]
 
@@ -235,6 +250,9 @@ func (h *ScalingHandler) RemoveActiveSchedule(w http.ResponseWriter, r *http.Req
 }
 
 func (h *ScalingHandler) GetActiveSchedule(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+	h.health.Inc("concurrentHTTPReq")
+	defer h.health.Dec("concurrentHTTPReq")
+
 	appId := vars["appid"]
 
 	logger := h.logger.Session("get-active-schedule", lager.Data{"appid": appId})

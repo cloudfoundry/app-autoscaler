@@ -3,8 +3,12 @@ package fakes
 
 import (
 	"autoscaler/db"
+	"autoscaler/healthendpoint"
 	"autoscaler/models"
 	"sync"
+	"time"
+
+	"code.cloudfoundry.org/clock"
 )
 
 type FakeSchedulerDB struct {
@@ -27,6 +31,13 @@ type FakeSchedulerDB struct {
 	}
 	closeReturnsOnCall map[int]struct {
 		result1 error
+	}
+	EmitHealthMetricsStub        func(h healthendpoint.Health, cclock clock.Clock, interval time.Duration)
+	emitHealthMetricsMutex       sync.RWMutex
+	emitHealthMetricsArgsForCall []struct {
+		h        healthendpoint.Health
+		cclock   clock.Clock
+		interval time.Duration
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
@@ -115,6 +126,32 @@ func (fake *FakeSchedulerDB) CloseReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
+func (fake *FakeSchedulerDB) EmitHealthMetrics(h healthendpoint.Health, cclock clock.Clock, interval time.Duration) {
+	fake.emitHealthMetricsMutex.Lock()
+	fake.emitHealthMetricsArgsForCall = append(fake.emitHealthMetricsArgsForCall, struct {
+		h        healthendpoint.Health
+		cclock   clock.Clock
+		interval time.Duration
+	}{h, cclock, interval})
+	fake.recordInvocation("EmitHealthMetrics", []interface{}{h, cclock, interval})
+	fake.emitHealthMetricsMutex.Unlock()
+	if fake.EmitHealthMetricsStub != nil {
+		fake.EmitHealthMetricsStub(h, cclock, interval)
+	}
+}
+
+func (fake *FakeSchedulerDB) EmitHealthMetricsCallCount() int {
+	fake.emitHealthMetricsMutex.RLock()
+	defer fake.emitHealthMetricsMutex.RUnlock()
+	return len(fake.emitHealthMetricsArgsForCall)
+}
+
+func (fake *FakeSchedulerDB) EmitHealthMetricsArgsForCall(i int) (healthendpoint.Health, clock.Clock, time.Duration) {
+	fake.emitHealthMetricsMutex.RLock()
+	defer fake.emitHealthMetricsMutex.RUnlock()
+	return fake.emitHealthMetricsArgsForCall[i].h, fake.emitHealthMetricsArgsForCall[i].cclock, fake.emitHealthMetricsArgsForCall[i].interval
+}
+
 func (fake *FakeSchedulerDB) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -122,6 +159,8 @@ func (fake *FakeSchedulerDB) Invocations() map[string][][]interface{} {
 	defer fake.getActiveSchedulesMutex.RUnlock()
 	fake.closeMutex.RLock()
 	defer fake.closeMutex.RUnlock()
+	fake.emitHealthMetricsMutex.RLock()
+	defer fake.emitHealthMetricsMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
