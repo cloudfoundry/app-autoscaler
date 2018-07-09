@@ -28,6 +28,7 @@ var _ = Describe("ScalingHandler", func() {
 	var (
 		scalingEngineDB              *fakes.FakeScalingEngineDB
 		scalingEngine                *fakes.FakeScalingEngine
+		health                       *fakes.FakeHealth
 		handler                      *ScalingHandler
 		resp                         *httptest.ResponseRecorder
 		req                          *http.Request
@@ -45,13 +46,16 @@ var _ = Describe("ScalingHandler", func() {
 		buffer = logger.Buffer()
 		scalingEngineDB = &fakes.FakeScalingEngineDB{}
 		scalingEngine = &fakes.FakeScalingEngine{}
-		handler = NewScalingHandler(logger, scalingEngineDB, scalingEngine)
+		health = &fakes.FakeHealth{}
+		handler = NewScalingHandler(logger, scalingEngineDB, scalingEngine, health)
 		resp = httptest.NewRecorder()
 	})
 
 	Describe("Scale", func() {
 		JustBeforeEach(func() {
 			handler.Scale(resp, req, map[string]string{"appid": "an-app-id"})
+			Expect(health.IncCallCount()).To(Equal(1))
+			Expect(health.DecCallCount()).To(Equal(1))
 		})
 
 		Context("when scaling app succeeds", func() {
@@ -148,6 +152,8 @@ var _ = Describe("ScalingHandler", func() {
 	Describe("GetScalingHistories", func() {
 		JustBeforeEach(func() {
 			handler.GetScalingHistories(resp, req, map[string]string{"appid": "an-app-id"})
+			Expect(health.IncCallCount()).To(Equal(1))
+			Expect(health.DecCallCount()).To(Equal(1))
 		})
 
 		Context("when request query string is invalid", func() {
@@ -155,7 +161,6 @@ var _ = Describe("ScalingHandler", func() {
 				BeforeEach(func() {
 					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?start=123&start=231", nil)
 					Expect(err).ToNot(HaveOccurred())
-
 				})
 
 				It("returns 400", func() {
@@ -176,7 +181,6 @@ var _ = Describe("ScalingHandler", func() {
 				BeforeEach(func() {
 					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?start=abc", nil)
 					Expect(err).ToNot(HaveOccurred())
-
 				})
 
 				It("returns 400", func() {
@@ -197,7 +201,6 @@ var _ = Describe("ScalingHandler", func() {
 				BeforeEach(func() {
 					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?end=123&end=231", nil)
 					Expect(err).ToNot(HaveOccurred())
-
 				})
 
 				It("returns 400", func() {
@@ -218,7 +221,6 @@ var _ = Describe("ScalingHandler", func() {
 				BeforeEach(func() {
 					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?end=abc", nil)
 					Expect(err).ToNot(HaveOccurred())
-
 				})
 
 				It("returns 400", func() {
@@ -239,7 +241,6 @@ var _ = Describe("ScalingHandler", func() {
 				BeforeEach(func() {
 					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?order=asc&order=asc", nil)
 					Expect(err).ToNot(HaveOccurred())
-
 				})
 
 				It("returns 400", func() {
@@ -260,7 +261,6 @@ var _ = Describe("ScalingHandler", func() {
 				BeforeEach(func() {
 					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?order=invalid-order", nil)
 					Expect(err).ToNot(HaveOccurred())
-
 				})
 
 				It("returns 400", func() {
@@ -281,7 +281,6 @@ var _ = Describe("ScalingHandler", func() {
 				BeforeEach(func() {
 					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?include=all&include=all", nil)
 					Expect(err).ToNot(HaveOccurred())
-
 				})
 
 				It("returns 400", func() {
@@ -302,7 +301,6 @@ var _ = Describe("ScalingHandler", func() {
 				BeforeEach(func() {
 					req, err = http.NewRequest(http.MethodGet, testUrlScalingHistories+"?include=invalid-include-value", nil)
 					Expect(err).ToNot(HaveOccurred())
-
 				})
 
 				It("returns 400", func() {
@@ -466,6 +464,8 @@ var _ = Describe("ScalingHandler", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			handler.StartActiveSchedule(resp, req, map[string]string{"appid": "an-app-id", "schduleid": "a-schdule-id"})
+			Expect(health.IncCallCount()).To(Equal(1))
+			Expect(health.DecCallCount()).To(Equal(1))
 		})
 
 		Context("when active schedule is valid", func() {
@@ -522,6 +522,8 @@ var _ = Describe("ScalingHandler", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			handler.RemoveActiveSchedule(resp, req, map[string]string{"appid": "an-app-id", "schduleid": "a-schdule-id"})
+			Expect(health.IncCallCount()).To(Equal(1))
+			Expect(health.DecCallCount()).To(Equal(1))
 		})
 
 		Context("when removing active schedule succeeds", func() {
@@ -570,13 +572,14 @@ var _ = Describe("ScalingHandler", func() {
 	Describe("GetActiveSchedule", func() {
 		JustBeforeEach(func() {
 			handler.GetActiveSchedule(resp, req, map[string]string{"appid": "invalid-app-id"})
+			Expect(health.IncCallCount()).To(Equal(1))
+			Expect(health.DecCallCount()).To(Equal(1))
 		})
 
 		Context("when app id is invalid", func() {
 			BeforeEach(func() {
 				req, err = http.NewRequest(http.MethodGet, testUrlAppActiveSchedule, nil)
 				Expect(err).ToNot(HaveOccurred())
-
 				scalingEngineDB.GetActiveScheduleReturns(nil, nil)
 			})
 
