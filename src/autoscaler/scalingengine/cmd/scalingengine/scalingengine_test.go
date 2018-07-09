@@ -86,6 +86,7 @@ var _ = Describe("Main", func() {
 			JustBeforeEach(func() {
 				secondRunner = NewScalingEngineRunner()
 				conf.Server.Port += 1
+				conf.Health.Port += 1
 				secondRunner.configPath = writeConfig(&conf).Name()
 				secondRunner.Start()
 			})
@@ -285,4 +286,27 @@ var _ = Describe("Main", func() {
 		})
 	})
 
+	Describe("when Health server is ready to serve RESTful API", func() {
+		JustBeforeEach(func() {
+			Eventually(runner.Session.Buffer, 2).Should(gbytes.Say("scalingengine.started"))
+		})
+
+		Context("when a request to query health comes", func() {
+			It("returns with a 200", func() {
+				rsp, err := healthHttpClient.Get(fmt.Sprintf("http://127.0.0.1:%d/health", healthport))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+				raw, _ := ioutil.ReadAll(rsp.Body)
+				healthData := string(raw)
+				Expect(healthData).To(ContainSubstring("autoscaler_scalingengine_concurrentHTTPReq"))
+				Expect(healthData).To(ContainSubstring("autoscaler_scalingengine_openConnection_policyDB"))
+				Expect(healthData).To(ContainSubstring("autoscaler_scalingengine_openConnection_scalingEngineDB"))
+				Expect(healthData).To(ContainSubstring("autoscaler_scalingengine_openConnection_schedulerDB"))
+				Expect(healthData).To(ContainSubstring("go_goroutines"))
+				Expect(healthData).To(ContainSubstring("go_memstats_alloc_bytes"))
+				rsp.Body.Close()
+
+			})
+		})
+	})
 })

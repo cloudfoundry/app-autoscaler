@@ -37,6 +37,16 @@ var defaultServerConfig = ServerConfig{
 	Port: 8080,
 }
 
+type HealthConfig struct {
+	Port         int           `yaml:"port"`
+	EmitInterval time.Duration `yaml:"emit_interval"`
+}
+
+var defaultHealthConfig = HealthConfig{
+	Port:         8081,
+	EmitInterval: 15 * time.Second,
+}
+
 type LoggingConfig struct {
 	Level string `yaml:"level"`
 }
@@ -74,6 +84,7 @@ type Config struct {
 	Cf                  cf.CfConfig        `yaml:"cf"`
 	Logging             LoggingConfig      `yaml:"logging"`
 	Server              ServerConfig       `yaml:"server"`
+	Health              HealthConfig       `yaml:"health"`
 	Db                  DbConfig           `yaml:"db"`
 	Synchronizer        SynchronizerConfig `yaml:"synchronizer"`
 	DefaultCoolDownSecs int                `yaml:"defaultCoolDownSecs"`
@@ -87,6 +98,7 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		Cf:           defaultCfConfig,
 		Logging:      defaultLoggingConfig,
 		Server:       defaultServerConfig,
+		Health:       defaultHealthConfig,
 		Synchronizer: defaultSynchronizerConfig,
 		DBLock:       defaultDBLockConfig,
 		EnableDBLock: false,
@@ -104,6 +116,9 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 
 	conf.Cf.GrantType = strings.ToLower(conf.Cf.GrantType)
 	conf.Logging.Level = strings.ToLower(conf.Logging.Level)
+	if conf.Health.EmitInterval <= 0*time.Second {
+		conf.Health.EmitInterval = defaultHealthConfig.EmitInterval
+	}
 
 	return conf, nil
 }

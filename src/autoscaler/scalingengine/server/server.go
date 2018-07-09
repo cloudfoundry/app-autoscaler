@@ -2,6 +2,7 @@ package server
 
 import (
 	"autoscaler/db"
+	"autoscaler/healthendpoint"
 	"autoscaler/routes"
 	"autoscaler/scalingengine"
 	"autoscaler/scalingengine/config"
@@ -23,8 +24,8 @@ func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vh(w, r, vars)
 }
 
-func NewServer(logger lager.Logger, conf *config.Config, scalingEngineDB db.ScalingEngineDB, scalingEngine scalingengine.ScalingEngine) (ifrit.Runner, error) {
-	handler := NewScalingHandler(logger, scalingEngineDB, scalingEngine)
+func NewServer(logger lager.Logger, conf *config.Config, scalingEngineDB db.ScalingEngineDB, scalingEngine scalingengine.ScalingEngine, health healthendpoint.Health) (ifrit.Runner, error) {
+	handler := NewScalingHandler(logger, scalingEngineDB, scalingEngine, health)
 
 	r := routes.ScalingEngineRoutes()
 	r.Get(routes.ScaleRouteName).Handler(VarsFunc(handler.Scale))

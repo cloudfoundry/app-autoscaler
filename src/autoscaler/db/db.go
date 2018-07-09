@@ -1,8 +1,11 @@
 package db
 
 import (
+	"autoscaler/healthendpoint"
 	"autoscaler/models"
 	"time"
+
+	"code.cloudfoundry.org/clock"
 )
 
 const PostgresDriverName = "postgres"
@@ -24,6 +27,7 @@ type DatabaseConfig struct {
 	MaxIdleConnections    int           `yaml:"max_idle_connections"`
 	ConnectionMaxLifetime time.Duration `yaml:"connection_max_lifetime"`
 }
+
 type InstanceMetricsDB interface {
 	RetrieveInstanceMetrics(appid string, name string, start int64, end int64, orderType OrderType) ([]*models.AppInstanceMetric, error)
 	SaveMetric(metric *models.AppInstanceMetric) error
@@ -37,6 +41,7 @@ type PolicyDB interface {
 	GetAppPolicy(appId string) (*models.ScalingPolicy, error)
 	RetrievePolicies() ([]*models.PolicyJson, error)
 	Close() error
+	EmitHealthMetrics(h healthendpoint.Health, cclock clock.Clock, interval time.Duration)
 }
 
 type AppMetricDB interface {
@@ -58,11 +63,13 @@ type ScalingEngineDB interface {
 	SetActiveSchedule(appId string, schedule *models.ActiveSchedule) error
 	RemoveActiveSchedule(appId string) error
 	Close() error
+	EmitHealthMetrics(h healthendpoint.Health, cclock clock.Clock, interval time.Duration)
 }
 
 type SchedulerDB interface {
 	GetActiveSchedules() (map[string]*models.ActiveSchedule, error)
 	Close() error
+	EmitHealthMetrics(h healthendpoint.Health, cclock clock.Clock, interval time.Duration)
 }
 
 type LockDB interface {
