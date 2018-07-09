@@ -37,6 +37,8 @@ server:
     key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
+  node_addrs: [address1, address2]
+  node_index: 1  
 db:
   policy_db:
     url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
@@ -71,19 +73,6 @@ metricCollector:
     key_file: /var/vcap/jobs/autoscaler/config/certs/mc.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/mc.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-lock:
-  lock_ttl: 15s
-  lock_retry_interval: 10s
-  consul_cluster_config: http://127.0.0.1:8500
-db_lock:
-  ttl: 15s
-  lock_db:
-    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-  retry_interval: 5s
-enable_db_lock: false
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 circuitBreaker:
@@ -104,6 +93,8 @@ circuitBreaker:
 							CertFile:   "/var/vcap/jobs/autoscaler/config/certs/server.crt",
 							CACertFile: "/var/vcap/jobs/autoscaler/config/certs/ca.crt",
 						},
+						NodeAddrs: []string{"address1", "address2"},
+						NodeIndex: 1,
 					},
 					DB: DBConfig{
 						PolicyDB: db.DatabaseConfig{
@@ -147,22 +138,6 @@ circuitBreaker:
 							CACertFile: "/var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt",
 						},
 					},
-					Lock: LockConfig{
-						LockTTL:             15 * time.Second,
-						LockRetryInterval:   10 * time.Second,
-						ConsulClusterConfig: "http://127.0.0.1:8500",
-					},
-					DBLock: DBLockConfig{
-						LockTTL:           15 * time.Second,
-						LockRetryInterval: 5 * time.Second,
-						LockDB: db.DatabaseConfig{
-							Url:                   "postgres://postgres:password@localhost/autoscaler?sslmode=disable",
-							MaxOpenConnections:    10,
-							MaxIdleConnections:    5,
-							ConnectionMaxLifetime: 60 * time.Second,
-						},
-					},
-					EnableDBLock:              false,
 					DefaultBreachDurationSecs: 600,
 					DefaultStatWindowSecs:     300,
 					CircuitBreaker: CircuitBreakerConfig{
@@ -204,8 +179,6 @@ scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
   metric_collector_url: http://localhost:8083
-lock:
-  consul_cluster_config: http://127.0.0.1:8500
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -274,14 +247,6 @@ defaultBreachDurationSecs: 600
 						ScalingEngineUrl: "http://localhost:8082"},
 					MetricCollector: MetricCollectorConfig{
 						MetricCollectorUrl: "http://localhost:8083"},
-					Lock: LockConfig{
-						LockRetryInterval: DefaultRetryInterval,
-						LockTTL:           DefaultLockTTL},
-					DBLock: DBLockConfig{
-						LockTTL:           DefaultDBLockTTL,
-						LockRetryInterval: DefaultDBLockRetryInterval,
-					},
-					EnableDBLock:              false,
 					DefaultBreachDurationSecs: 600,
 					DefaultStatWindowSecs:     300,
 					CircuitBreaker: CircuitBreakerConfig{
@@ -322,8 +287,6 @@ scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
   metric_collector_url: http://localhost:8083
-lock:
-  consul_cluster_config: http://127.0.0.1:8500
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -364,8 +327,6 @@ scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
   metric_collector_url: http://localhost:8083
-lock:
-  consul_cluster_config: http://127.0.0.1:8500
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -406,8 +367,6 @@ scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
   metric_collector_url: http://localhost:8083
-lock:
-  consul_cluster_config: http://127.0.0.1:8500
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -448,8 +407,6 @@ scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
   metric_collector_url: http://localhost:8083
-lock:
-  consul_cluster_config: http://127.0.0.1:8500
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -490,8 +447,6 @@ scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
   metric_collector_url: http://localhost:8083
-lock:
-  consul_cluster_config: http://127.0.0.1:8500
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -532,8 +487,6 @@ scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
   metric_collector_url: http://localhost:8083
-lock:
-  consul_cluster_config: http://127.0.0.1:8500
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -574,8 +527,6 @@ scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
   metric_collector_url: http://localhost:8083
-lock:
-  consul_cluster_config: http://127.0.0.1:8500
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -616,8 +567,6 @@ scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
   metric_collector_url: http://localhost:8083
-lock:
-  consul_cluster_config: http://127.0.0.1:8500
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -659,8 +608,6 @@ scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
   metric_collector_url: http://localhost:8083
-lock:
-  consul_cluster_config: http://127.0.0.1:8500
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -701,8 +648,6 @@ scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
   metric_collector_url: http://localhost:8083
-lock:
-  consul_cluster_config: http://127.0.0.1:8500
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -743,8 +688,6 @@ scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
   metric_collector_url: http://localhost:8083
-lock:
-  consul_cluster_config: http://127.0.0.1:8500
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -778,8 +721,6 @@ scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
   metric_collector_url: http://localhost:8083
-lock:
-  consul_cluster_config: http://127.0.0.1:8500
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -820,8 +761,6 @@ scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
   metric_collector_url: http://localhost:8083
-lock:
-  consul_cluster_config: http://127.0.0.1:8500
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -862,8 +801,6 @@ scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
   metric_collector_url: http://localhost:8083
-lock:
-  consul_cluster_config: http://127.0.0.1:8500	
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -903,8 +840,6 @@ scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
   metric_collector_url: http://localhost:8083
-lock:
-  consul_cluster_config: http://127.0.0.1:8500
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: 600
 `)
@@ -913,94 +848,6 @@ defaultBreachDurationSecs: 600
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
-			})
-		})
-
-		Context("when lock_ttl is not a time duration", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
-logging:
-  level: info
-db:
-  policy_db:
-    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-  app_metrics_db:
-    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-aggregator: 
-  aggregator_execute_interval: 30s
-  policy_poller_interval: 30s
-  metric_poller_count: 10
-  app_monitor_channel_size: 100
-evaluator:
-  evaluation_manager_execute_interval: 30s
-  evaluator_count: 10
-  trigger_array_channel_size: 100
-scalingEngine:
-  scaling_engine_url: http://localhost:8082
-metricCollector:
-  metric_collector_url: http://localhost:8083
-lock:
-  lock_ttl: 9R
-  lock_retry_interval: 10s
-  consul_cluster_config: http://127.0.0.1:8500
-defaultStatWindowSecs: 300
-defaultBreachDurationSecs: 600
-`)
-			})
-
-			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
-			})
-		})
-
-		Context("when lock_retry_interval is not a time duration", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
-logging:
-  level: info
-db:
-  policy_db:
-    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-  app_metrics_db:
-    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-aggregator: 
-  aggregator_execute_interval: 30s
-  policy_poller_interval: 30s
-  metric_poller_count: 10
-  app_monitor_channel_size: 100
-evaluator:
-  evaluation_manager_execute_interval: 30s
-  evaluator_count: 10
-  trigger_array_channel_size: 100
-scalingEngine:
-  scaling_engine_url: http://localhost:8082
-metricCollector:
-  metric_collector_url: http://localhost:8083
-lock:
-  lock_ttl: 15s
-  lock_retry_interval: 8j
-  consul_cluster_config: http://127.0.0.1:8500
-defaultStatWindowSecs: 300
-defaultBreachDurationSecs: 600
-`)
-			})
-
-			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
 			})
 		})
 
@@ -1033,10 +880,6 @@ scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
   metric_collector_url: http://localhost:8083
-lock:
-  lock_ttl: 15s
-  lock_retry_interval: 10s
-  consul_cluster_config: http://127.0.0.1:8500
 defaultStatWindowSecs: NOT-INTEGER-VALUE
 defaultBreachDurationSecs: 600
 `)
@@ -1076,10 +919,6 @@ scalingEngine:
   scaling_engine_url: http://localhost:8082
 metricCollector:
   metric_collector_url: http://localhost:8083
-lock:
-  lock_ttl: 15s
-  lock_retry_interval: 10s
-  consul_cluster_config: http://127.0.0.1:8500
 defaultStatWindowSecs: 300
 defaultBreachDurationSecs: NOT-INTEGER-VALUE
 `)
@@ -1097,6 +936,10 @@ defaultBreachDurationSecs: NOT-INTEGER-VALUE
 		BeforeEach(func() {
 			conf = &Config{
 				Logging: LoggingConfig{Level: "info"},
+				Server: ServerConfig{
+					NodeAddrs: []string{"address1", "address2"},
+					NodeIndex: 0,
+				},
 				DB: DBConfig{
 					PolicyDB: db.DatabaseConfig{
 						Url:                   "postgres://postgres:password@localhost/autoscaler?sslmode=disable",
@@ -1127,9 +970,6 @@ defaultBreachDurationSecs: NOT-INTEGER-VALUE
 					ScalingEngineUrl: "http://localhost:8082"},
 				MetricCollector: MetricCollectorConfig{
 					MetricCollectorUrl: "http://localhost:8083"},
-				Lock: LockConfig{
-					LockRetryInterval: DefaultRetryInterval,
-					LockTTL:           DefaultLockTTL},
 				DefaultBreachDurationSecs: 600,
 				DefaultStatWindowSecs:     300,
 			}
@@ -1244,24 +1084,6 @@ defaultBreachDurationSecs: NOT-INTEGER-VALUE
 			})
 		})
 
-		Context("when LockRetryInterval <= 0", func() {
-			BeforeEach(func() {
-				conf.Lock.LockRetryInterval = 0
-			})
-			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: lock retry interval is less than or equal to 0")))
-			})
-		})
-
-		Context("when LockTTL <= 0", func() {
-			BeforeEach(func() {
-				conf.Lock.LockTTL = 0
-			})
-			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: lock ttl is less than or equal to 0")))
-			})
-		})
-
 		Context("when EvaluatorCount <= 0", func() {
 			BeforeEach(func() {
 				conf.Evaluator.EvaluatorCount = 0
@@ -1314,6 +1136,28 @@ defaultBreachDurationSecs: NOT-INTEGER-VALUE
 			It("should error", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: defaultStatWindowSecs should be between 60 and 3600")))
 			})
+		})
+
+		Context("when node index is out of range", func() {
+			Context("when node index is negative", func() {
+				BeforeEach(func() {
+					conf.Server.NodeIndex = -1
+				})
+				It("should error", func() {
+					Expect(err).To(MatchError(MatchRegexp("Configuration error: node_index out of range")))
+				})
+			})
+
+			Context("when node index is >= number of nodes", func() {
+				BeforeEach(func() {
+					conf.Server.NodeIndex = 2
+					conf.Server.NodeAddrs = []string{"address1", "address2"}
+				})
+				It("should error", func() {
+					Expect(err).To(MatchError(MatchRegexp("Configuration error: node_index out of range")))
+				})
+			})
+
 		})
 
 	})
