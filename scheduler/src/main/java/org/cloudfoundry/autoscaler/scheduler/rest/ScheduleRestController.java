@@ -30,7 +30,7 @@ import io.swagger.annotations.ApiResponses;
  *
  */
 @RestController
-@RequestMapping(value = "/v2/schedules/{app_id}")
+@RequestMapping(value = "/v1/apps/{app_id}/schedules")
 public class ScheduleRestController {
 
 	@Autowired

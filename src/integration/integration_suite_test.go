@@ -431,14 +431,14 @@ func attachPolicy(appId string, policy []byte, apiType APIType) (*http.Response,
 }
 
 func getSchedules(appId string, apiType APIType) (*http.Response, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("https://127.0.0.1:%d/v2/schedules/%s", components.Ports["scheduler"], appId), strings.NewReader(""))
+	req, err := http.NewRequest("GET", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/schedules", components.Ports["scheduler"], appId), strings.NewReader(""))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
 	return httpClient.Do(req)
 }
 
 func createSchedule(appId string, guid string, schedule string) (*http.Response, error) {
-	req, err := http.NewRequest("PUT", fmt.Sprintf("https://127.0.0.1:%d/v2/schedules/%s?guid=%s", components.Ports[Scheduler], appId, guid), bytes.NewReader([]byte(schedule)))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/schedules?guid=%s", components.Ports[Scheduler], appId, guid), bytes.NewReader([]byte(schedule)))
 	if err != nil {
 		panic(err)
 	}
@@ -448,14 +448,14 @@ func createSchedule(appId string, guid string, schedule string) (*http.Response,
 }
 
 func deleteSchedule(appId string) (*http.Response, error) {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("https://127.0.0.1:%d/v2/schedules/%s", components.Ports[Scheduler], appId), strings.NewReader(""))
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/schedules", components.Ports[Scheduler], appId), strings.NewReader(""))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
 	return httpClient.Do(req)
 }
 
 func synchronizeSchedule() (*http.Response, error) {
-	req, err := http.NewRequest("PUT", fmt.Sprintf("https://127.0.0.1:%d/v2/syncSchedules", components.Ports[Scheduler]), strings.NewReader(""))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("https://127.0.0.1:%d/v1/syncSchedules", components.Ports[Scheduler]), strings.NewReader(""))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
 	return httpClient.Do(req)

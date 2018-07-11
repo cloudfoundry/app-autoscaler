@@ -16,7 +16,7 @@ import (
 var _ = Describe("Integration_Broker_Api", func() {
 
 	var (
-		regPath = regexp.MustCompile(`^/v2/schedules/.*$`)
+		regPath = regexp.MustCompile(`^/v1/apps/.*/schedules`)
 
 		serviceInstanceId            string
 		bindingId                    string
