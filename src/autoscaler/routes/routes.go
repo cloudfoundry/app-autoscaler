@@ -40,8 +40,10 @@ const (
 	BrokerCreateBindingRouteName = "CreateBinding"
 	BrokerDeleteBindingRouteName = "DeleteBinding"
 
-	EnvelopePath            = "/v1/envelopes"
-	EnvelopeReportRouteName = "ReportEnvelope"
+	EnvelopePath               = "/v1/envelopes"
+	EnvelopeReportRouteName    = "ReportEnvelope"
+	CustomMetricsPath          = "/v1/{appid}/metrics"
+	PostCustomMetricsRouteName = "PostCustomMetrics"
 )
 
 type AutoScalerRoute struct {
@@ -50,6 +52,7 @@ type AutoScalerRoute struct {
 	scalingEngineRoutes    *mux.Router
 	brokerRoutes           *mux.Router
 	metricServerRoutes     *mux.Router
+	metricsForwarderRoutes *mux.Router
 }
 
 var autoScalerRouteInstance = newRouters()
@@ -61,6 +64,7 @@ func newRouters() *AutoScalerRoute {
 		scalingEngineRoutes:    mux.NewRouter(),
 		brokerRoutes:           mux.NewRouter(),
 		metricServerRoutes:     mux.NewRouter(),
+		metricsForwarderRoutes: mux.NewRouter(),
 	}
 
 	instance.metricsCollectorRoutes.Path(MetricHistoriesPath).Methods(http.MethodGet).Name(GetMetricHistoriesRouteName)
@@ -81,6 +85,7 @@ func newRouters() *AutoScalerRoute {
 
 	instance.brokerRoutes.Path(BrokerBindingPath).Methods(http.MethodPut).Name(BrokerCreateBindingRouteName)
 	instance.brokerRoutes.Path(BrokerBindingPath).Methods(http.MethodDelete).Name(BrokerDeleteBindingRouteName)
+	instance.metricsForwarderRoutes.Path(CustomMetricsPath).Methods(http.MethodPost).Name(PostCustomMetricsRouteName)
 
 	instance.metricServerRoutes.Path(EnvelopePath).Name(EnvelopeReportRouteName)
 
@@ -105,4 +110,7 @@ func BrokerRoutes() *mux.Router {
 
 func MetricServerRoutes() *mux.Router {
 	return autoScalerRouteInstance.metricServerRoutes
+}
+func MetricsForwarderRoutes() *mux.Router {
+	return autoScalerRouteInstance.metricsForwarderRoutes
 }
