@@ -406,13 +406,14 @@ func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port i
 	return writeYmlConfig(tmpDir, MetricsCollector, &cfg)
 }
 
-func (components *Components) PrepareEventGeneratorConfig(dbUri string, metricsCollectorUrl string, scalingEngineUrl string, aggregatorExecuteInterval time.Duration,
+func (components *Components) PrepareEventGeneratorConfig(dbUri string, port int, metricsCollectorUrl string, scalingEngineUrl string, aggregatorExecuteInterval time.Duration,
 	policyPollerInterval time.Duration, saveInterval time.Duration, evaluationManagerInterval time.Duration, tmpDir string) string {
 	conf := &egConfig.Config{
 		Logging: egConfig.LoggingConfig{
 			Level: LOGLEVEL,
 		},
 		Server: egConfig.ServerConfig{
+			Port:      port,
 			NodeAddrs: []string{"localhost"},
 			NodeIndex: 0,
 		},

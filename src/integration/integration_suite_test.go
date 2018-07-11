@@ -198,8 +198,9 @@ func PreparePorts() Ports {
 		ServiceBrokerInternal: 17000 + GinkgoParallelNode(),
 		Scheduler:             12000 + GinkgoParallelNode(),
 		MetricsCollector:      13000 + GinkgoParallelNode(),
-		ScalingEngine:         14000 + GinkgoParallelNode(),
-		ConsulCluster:         15000 + GinkgoParallelNode()*consulrunner.PortOffsetLength,
+		EventGenerator:        14000 + GinkgoParallelNode(),
+		ScalingEngine:         15000 + GinkgoParallelNode(),
+		ConsulCluster:         16000 + GinkgoParallelNode()*consulrunner.PortOffsetLength,
 	}
 }
 
