@@ -8,12 +8,15 @@ var settings = require(path.join(__dirname, '../../lib/config/setting.js'))((JSO
 var models = require('../../lib/models')(settings.db);
 var serviceInstance = models.service_instance;
 var binding = models.binding;
+var credentials = models.credentials;
 
 var serviceInstanceId = "test_serviceinstance";
 var orgId = "test_org";
 var spaceId = "test_space";
 var appId = "test_app";
 var bindingId = "test_binding";
+var userName = "test_username";
+var password = "test_password";
 
 var appId2 = "test_app2";
 var bindingId2 = "test_binding2";
@@ -35,6 +38,12 @@ var binding_condition2 = {
   'serviceInstanceId': serviceInstanceId,
   'appId': appId2,
   'bindingId': bindingId
+};
+
+var credential_condition = {
+  'bindingId': bindingId,
+  'username': userName,
+  'password': password
 };
 
 describe('Binding Model Definition Test Suite', function() {
@@ -128,7 +137,9 @@ describe('Binding Model Definition Test Suite', function() {
     context('when an instance already exists ', function() {
       beforeEach(function(done) {
         return binding.create(binding_condition).then(function(result) {
-          done();
+          credentials.create(credential_condition).then(function(result){
+            done();
+          })
         }).catch(function(error) {
           done(error);
         });
@@ -147,6 +158,21 @@ describe('Binding Model Definition Test Suite', function() {
             })
         })
       });
+
+      it('should delete credentials associated with the binding instance', function() {
+        return binding.destroy({
+          where: {
+            bindingId: binding_condition.bindingId
+          }
+        }).then(function(count) {
+          expect(count).to.equal(1);
+          return credentials.findById(userName)
+            .then(function(instance) {
+              expect(instance).to.be.null;
+            })
+        })
+      });
+
 
     });
   });

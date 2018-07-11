@@ -98,5 +98,61 @@
       }]
 
     }
+  },{
+    "changeSet":{
+      "id": 4,
+      "author": "paltanmoy",
+      "changes": [{
+        "createTable": {
+          "tableName": "credentials",
+          "columns": [{
+            "column": {
+              "name": "binding_id",
+              "type": "varchar(40)",
+              "constraints": {
+                "nullable": false
+              }
+            }
+          },{
+            "column": {
+            "name": "username",
+            "type": "varchar(100)",
+            "constraints": {
+              "primaryKey": true,
+              "nullable": false
+            }
+          }},{
+            "column": {
+              "name": "password",
+              "type": "varchar(100)",
+              "constraints": {
+                "nullable": false
+              }
+            }
+          }]
+        }, "addForeignKeyConstraint":{
+          "baseColumnNames": "binding_id",
+          "baseTableName": "credentials",
+          "constraintName": "fk_credentials_binding",
+          "deferrable": true,
+          "initiallyDeferred": true,
+          "onDelete": "CASCADE",
+          "onUpdate": "CASCADE",
+          "referencedColumnNames": "binding_id",
+          "referencedTableName": "binding"
+        }, "createIndex": {
+          "columns": [
+            {
+              "column": {
+                "name": "username",
+                "type": "varchar(255)"
+              }
+            }]
+          ,
+          "indexName": "idx_credentials",
+          "tableName": "credentials"
+        }
+      }]
+    }
   }]
 }
