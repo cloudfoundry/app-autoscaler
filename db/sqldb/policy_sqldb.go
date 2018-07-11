@@ -3,12 +3,13 @@ package sqldb
 import (
 	"autoscaler/db"
 	"autoscaler/models"
+	"database/sql"
+	"encoding/json"
+	"errors"
 
 	"code.cloudfoundry.org/lager"
 	_ "github.com/lib/pq"
-
-	"database/sql"
-	"encoding/json"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type PolicySQLDB struct {
@@ -135,4 +136,57 @@ func (pdb *PolicySQLDB) DeletePolicy(appId string) error {
 
 func (pdb *PolicySQLDB) GetDBStatus() sql.DBStats {
 	return pdb.sqldb.Stats()
+}
+
+func (pdb *PolicySQLDB) GetCustomMetricsCreds(appId string) (string, string, error) {
+	var password string
+	var username string
+	query := "SELECT username,password from credentials WHERE id = $1"
+	err := pdb.sqldb.QueryRow(query, appId).Scan(&username, &password)
+
+	if err != nil {
+		pdb.logger.Error("get-custom-metrics-creds-from-credentials-table", err, lager.Data{"query": query})
+		return "", "", err
+	}
+	return username, password, nil
+}
+
+func (pdb *PolicySQLDB) ValidateCustomMetricsCreds(appid, username, password string) bool { //
+	encryptedUsername, encryptedPassword, err := pdb.GetCustomMetricsCreds(appid)
+	if err != nil {
+		pdb.logger.Error("error-during-getting-binding-credentials", err)
+		return false
+	}
+	isUsernameAuthenticated := bcrypt.CompareHashAndPassword([]byte(encryptedUsername), []byte(username))
+	isPasswordAuthenticated := bcrypt.CompareHashAndPassword([]byte(encryptedPassword), []byte(password))
+	if isPasswordAuthenticated == nil && isUsernameAuthenticated == nil { // password matching successfull
+		return true
+	}
+	pdb.logger.Debug("failed-to-authorize-credentials")
+	return false
+}
+
+func (pdb *PolicySQLDB) ValidateCustomMetricTypes(appGUID string, metricsConsumer *models.MetricsConsumer) (bool, error) {
+	scalingPolicy, err := pdb.GetAppPolicy(appGUID)
+	if err != nil {
+		pdb.logger.Error("errorr-getting-policy", err, lager.Data{"appId": appGUID})
+		return false, errors.New("not able to get policy details")
+	}
+	if err == nil && scalingPolicy == nil {
+		pdb.logger.Debug("no-policy-found", lager.Data{"appId": appGUID})
+		return false, errors.New("no policy found")
+	}
+	allowedMetricTypeSet := make(map[string]struct{}, len(scalingPolicy.ScalingRules))
+	for _, metrictype := range scalingPolicy.ScalingRules {
+		allowedMetricTypeSet[metrictype.MetricType] = struct{}{}
+	}
+	pdb.logger.Debug("allowed-metrics-types", lager.Data{"metrics": allowedMetricTypeSet})
+	for _, metric := range metricsConsumer.CustomMetrics {
+		_, ok := allowedMetricTypeSet[metric.Name]
+		if !ok { // If any of the custom metrics is not defined during policy binding, it should fail
+			pdb.logger.Info("unmatched-custom-metric-type", lager.Data{"metric": metric.Type})
+			return false, errors.New("CustomMetric name does not match with metric defined in policy")
+		}
+	}
+	return true, nil
 }
