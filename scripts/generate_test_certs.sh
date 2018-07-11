@@ -16,6 +16,11 @@ certstrap --depot-path ${depot_path} init --passphrase '' --common-name autoscal
 mv -f ${depot_path}/autoscalerCA.crt ${depot_path}/autoscaler-ca.crt
 mv -f ${depot_path}/autoscalerCA.key ${depot_path}/autoscaler-ca.key
 
+# CA to distribute to dummy loggregator_agent certs
+certstrap --depot-path ${depot_path} init --passphrase '' --common-name loggregatorCA
+mv -f ${depot_path}/loggregatorCA.crt ${depot_path}/loggregator-ca.crt
+mv -f ${depot_path}/loggregatorCA.key ${depot_path}/loggregator-ca.key
+
 # metricscollector certificate
 certstrap --depot-path ${depot_path} request-cert --passphrase '' --common-name metricscollector --ip 127.0.0.1
 certstrap --depot-path ${depot_path} sign metricscollector --CA autoscaler-ca --years "20"
@@ -48,3 +53,7 @@ certstrap --depot-path ${depot_path} request-cert --passphrase '' --common-name 
 certstrap --depot-path ${depot_path} sign scheduler --CA autoscaler-ca --years "20"
 openssl pkcs12 -export -in ${depot_path}/scheduler.crt -inkey ${depot_path}/scheduler.key -out ${depot_path}/scheduler.p12 -name scheduler -password pass:123456
 keytool -importcert -alias autoscaler -file ${depot_path}/autoscaler-ca.crt -keystore ${depot_path}/autoscaler.truststore -storeType pkcs12 -storepass 123456 -noprompt
+
+# metricsforwarder certificate for loggregator_agent
+certstrap --depot-path ${depot_path} request-cert --passphrase '' --common-name metron --ip 127.0.0.1
+certstrap --depot-path ${depot_path} sign metron --CA loggregator-ca

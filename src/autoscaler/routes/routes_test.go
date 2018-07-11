@@ -313,4 +313,13 @@ var _ = Describe("Routes", func() {
 			})
 		})
 	})
+	Context("PostCustomMetricsRoute", func() {
+		Context("when provide correct route variable", func() {
+			It("should return the correct path", func() {
+				path, err := routes.MetricsForwarderRoutes().Get(routes.PostCustomMetricsRouteName).URLPath("appid", testAppId)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(path.Path).To(Equal("/v1/" + testAppId + "/metrics"))
+			})
+		})
+	})
 })
