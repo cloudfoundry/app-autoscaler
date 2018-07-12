@@ -9,10 +9,10 @@ var settings = require(path.join(__dirname, '../../../lib/config/setting.js'))((
 var logger = require('../../../lib/log/logger');
 var nock = require('nock');
 
-var serviceBrokerUtils = require('../../../lib/utils/serviceBrokerUtils')(settings.serviceBroker);
-var serviceBrokerUri = settings.serviceBroker.uri;
-
+var serviceBrokerUtils = require('../../../lib/utils/serviceBrokerUtils')(settings.serviceOffering.serviceBroker);
+var serviceBrokerUri = settings.serviceOffering.serviceBroker.uri;
 var theAppId = 'an-app-id';
+
 describe('serviceBroker Utility functions', function() {
   context('Check binding', function() {
     beforeEach(function() {

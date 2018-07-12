@@ -85,6 +85,10 @@ type MetricsCollectorClient struct {
 	Uri string          `json:"uri"`
 	TLS models.TLSCerts `json:"tls"`
 }
+type ServiceOffering struct {
+	Enabled             bool                `json:"enabled"`
+	ServiceBrokerClient ServiceBrokerClient `json:"serviceBroker"`
+}
 type ServiceBrokerClient struct {
 	Uri string          `json:"uri"`
 	TLS models.TLSCerts `json:"tls"`
@@ -99,7 +103,7 @@ type APIServerConfig struct {
 	SchedulerClient        SchedulerClient        `json:"scheduler"`
 	ScalingEngineClient    ScalingEngineClient    `json:"scalingEngine"`
 	MetricsCollectorClient MetricsCollectorClient `json:"metricsCollector"`
-	ServiceBrokerClient    ServiceBrokerClient    `json:"serviceBroker"`
+	ServiceOffering        ServiceOffering        `json:"serviceOffering"`
 
 	TLS       models.TLSCerts `json:"tls"`
 	PublicTLS models.TLSCerts `json:"publicTls"`
@@ -239,6 +243,7 @@ func (components *Components) PrepareServiceBrokerConfig(publicPort int, interna
 }
 
 func (components *Components) PrepareApiServerConfig(port int, publicPort int, skipSSLValidation bool, cfApi string, dbUri string, schedulerUri string, scalingEngineUri string, metricsCollectorUri string, serviceBrokerUri string, tmpDir string) string {
+
 	apiConfig := APIServerConfig{
 		Port:              port,
 		PublicPort:        publicPort,
@@ -276,12 +281,15 @@ func (components *Components) PrepareApiServerConfig(port int, publicPort int, s
 				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 			},
 		},
-		ServiceBrokerClient: ServiceBrokerClient{
-			Uri: serviceBrokerUri,
-			TLS: models.TLSCerts{
-				KeyFile:    filepath.Join(testCertDir, "servicebroker_internal.key"),
-				CertFile:   filepath.Join(testCertDir, "servicebroker_internal.crt"),
-				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+		ServiceOffering: ServiceOffering{
+			Enabled: true,
+			ServiceBrokerClient: ServiceBrokerClient{
+				Uri: serviceBrokerUri,
+				TLS: models.TLSCerts{
+					KeyFile:    filepath.Join(testCertDir, "servicebroker_internal.key"),
+					CertFile:   filepath.Join(testCertDir, "servicebroker_internal.crt"),
+					CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+				},
 			},
 		},
 
