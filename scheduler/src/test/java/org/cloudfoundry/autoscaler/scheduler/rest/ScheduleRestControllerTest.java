@@ -268,7 +268,7 @@ public class ScheduleRestControllerTest {
 		String content = mapper.writeValueAsString(applicationPolicy);
 
 		ResultActions resultActions = mockMvc
-				.perform(put("/v2/schedules").contentType(MediaType.APPLICATION_JSON).content(content));
+				.perform(put("/v1/apps/schedules").contentType(MediaType.APPLICATION_JSON).content(content));
 
 		resultActions.andExpect(status().isNotFound());
 

@@ -31,7 +31,7 @@ describe('Scheduler Utility functions', function() {
   context ('Creating schedules during policy creation', function () {
 	  it('should create new schedules for app id 12345',function(done){
 		    nock(schedulerURI)
-		    .put('/v2/schedules/12345')
+		    .put('/v1/apps/12345/schedules')
 		    .query({guid: 'random-guid'})
 		    .reply(204);
 		    var mockRequest = {
@@ -49,7 +49,7 @@ describe('Scheduler Utility functions', function() {
 		    var mockError = { 'message':'Failed to create schedules due to an internal' + 
 		        ' error in scheduler','details':'fake body' };
 		    nock(schedulerURI)
-		    .put('/v2/schedules/12346')
+		    .put('/v1/apps/12346/schedules')
 		    .query({guid: 'random-guid'})
 		    .replyWithError(mockError);
 		    var mockRequest = {
@@ -67,7 +67,7 @@ describe('Scheduler Utility functions', function() {
 
 	  it('should fail to create schedules due to request timeout',function(done){
 		    nock(schedulerURI)
-		    .put('/v2/schedules/12349_RequestTimeout')
+		    .put('/v1/apps/12349_RequestTimeout/schedules')
 		    .query({guid: 'random-guid'})
 		    .socketDelay(20000) // Adding a timeout of 20 Seconds
 		    .reply(204);
@@ -86,7 +86,7 @@ describe('Scheduler Utility functions', function() {
 
 	  it('should fail to create schedules due to internal validation error in scheduler module for app id 12347',function(done){
 		    nock(schedulerURI)
-		    .put('/v2/schedules/12347')
+		    .put('/v1/apps/12347/schedules')
 		    .query({guid: 'random-guid'})
 		    .reply(function(uri, requestBody) {
 		      return [
@@ -109,7 +109,7 @@ describe('Scheduler Utility functions', function() {
 		  
       it('should fail to create schedules due to un-accepted response code (other than 400 ) in scheduler module for app id 12348',function(done){
 		    nock(schedulerURI)
-		    .put('/v2/schedules/12348')
+		    .put('/v1/apps/12348/schedules')
 		    .query({guid: 'random-guid'})
 		    .reply(function(uri, requestBody) {
 		      return [
@@ -136,7 +136,7 @@ describe('Scheduler Utility functions', function() {
 	  
 	  it('should pass (No error) if the scheduler returns 404 (No schedules) for app',function(done){
 	    	nock(schedulerURI)
-	        .delete('/v2/schedules/12345_NoSchedules')
+	        .delete('/v1/apps/12345_NoSchedules/schedules')
 	        .reply(404);
 	        var mockRequest = {
 	                body : fakePolicy,
@@ -150,7 +150,7 @@ describe('Scheduler Utility functions', function() {
 
 	  it('should fail due to an internal server error 500 response code from scheduler',function(done){
 	  	  nock(schedulerURI)
-	      .delete('/v2/schedules/12345_ErrorFromScheduler')
+	      .delete('/v1/apps/12345/schedules_ErrorFromScheduler')
 	      .reply(500);
 
 	  	  var mockRequest = {
@@ -166,7 +166,7 @@ describe('Scheduler Utility functions', function() {
 
 	  it('should fail to delete schedules due to request timeout',function(done){
 		    nock(schedulerURI)
-		     .delete('/v2/schedules/12345_RequestTimeoutError')
+		     .delete('/v1/apps/12345_RequestTimeoutError/schedules')
 		     .socketDelay(20000) // Adding a timeout of 20 Seconds
 		     .reply(500);
 		     var mockRequest = {
@@ -184,7 +184,7 @@ describe('Scheduler Utility functions', function() {
 
 	  it('should fail due to an internal error with the request',function(done){
 		  	nock(schedulerURI)
-		      .delete('/v2/schedules')
+		      .delete('/v1/apps/123456/schedules')
 		      .reply(503);
 		      var mockRequest = {
 		              body : fakePolicy,
@@ -199,7 +199,7 @@ describe('Scheduler Utility functions', function() {
 	  
 	  it('should successfully delete schedules for app id 12345',function(done){
 		  	nock(schedulerURI)
-		      .delete('/v2/schedules/12345')
+		      .delete('/v1/apps/12345/schedules')
 		      .reply(200);
 		      var mockRequest = {
 		              body : fakePolicy,
@@ -216,7 +216,7 @@ describe('Scheduler Utility functions', function() {
   context('when schedules already exists' ,function() {
     beforeEach(function(done) {
       nock(schedulerURI)
-      .put('/v2/schedules/12345')
+      .put('/v1/apps/12345/schedules')
       .query({guid: 'random-guid'})
       .reply(204);
       var mockRequest = {
@@ -230,7 +230,7 @@ describe('Scheduler Utility functions', function() {
     });
     it('should update a schedule for app id 12345',function(done){
       nock(schedulerURI)
-      .put('/v2/schedules/12345')
+      .put('/v1/apps/12345/schedules')
       .query({guid: 'random-guid'})
       .reply(200);
       var mockRequest = {

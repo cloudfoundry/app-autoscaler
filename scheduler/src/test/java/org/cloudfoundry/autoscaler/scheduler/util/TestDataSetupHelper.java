@@ -268,7 +268,7 @@ public class TestDataSetupHelper {
 		return genAppIds;
 	}
 	public static String getSchedulerPath(String appId) {
-		return String.format("/v2/schedules/%s", appId);
+		return String.format("/v1/apps/%s/schedules", appId);
 	}
 	static String getTimeZone() {
 		return timeZone;

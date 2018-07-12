@@ -43,7 +43,7 @@ function mockCF(count) {
 
 function mockSchedulerPut(count, statusCode) {
   nock(schedulerURI)
-    .put(/\/v2\/schedules\/.+/)
+    .put(/\/v1\/apps\/.+\/schedules/)
     .times(count)
     .query({ 'guid': /.*/ })
     .reply(statusCode);
@@ -51,14 +51,14 @@ function mockSchedulerPut(count, statusCode) {
 
 function mockSchedulerPutError(count, err) {
   nock(schedulerURI)
-    .put(/\/v2\/schedules\/.+/)
+    .put(/\/v1\/apps\/.+\/schedules/)
     .times(count)
     .query({ 'guid': /.*/ })
     .replyWithError(err);
 }
 function mockSchedulerPutMessage(count, statusCode, message) {
   nock(schedulerURI)
-    .put(/\/v2\/schedules\/.+/)
+    .put(/\/v1\/apps\/.+\/schedules/)
     .times(count)
     .query({ 'guid': /.*/ })
     .reply(statusCode, message);
@@ -66,7 +66,7 @@ function mockSchedulerPutMessage(count, statusCode, message) {
 
 function mockSchedulerDelete(count, statusCode) {
   nock(schedulerURI)
-    .delete(/\/v2\/schedules\/.+/)
+    .delete(/\/v1\/apps\/.+\/schedules/)
     .times(count)
     .query({ 'guid': /.*/ })
     .reply(statusCode);
