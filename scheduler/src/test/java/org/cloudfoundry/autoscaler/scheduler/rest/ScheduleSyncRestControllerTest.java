@@ -80,7 +80,7 @@ public class ScheduleSyncRestControllerTest {
 		testDataDbUtil.insertSpecificDateSchedule(schedules.getSpecificDate());
 		testDataDbUtil.insertPolicyJson(appId, anotherGuid);
 
-		ResultActions resultActions = mockMvc.perform(put("/v2/syncSchedules"));
+		ResultActions resultActions = mockMvc.perform(put("/v1/syncSchedules"));
 		resultActions.andExpect(status().isOk());
 		SynchronizeResult result = new ObjectMapper()
 				.readValue(resultActions.andReturn().getResponse().getContentAsString(), SynchronizeResult.class);
@@ -104,7 +104,7 @@ public class ScheduleSyncRestControllerTest {
 		testDataDbUtil.insertSpecificDateSchedule(schedules.getSpecificDate());
 		testDataDbUtil.insertPolicyJson(appId, guid);
 
-		ResultActions resultActions = mockMvc.perform(put("/v2/syncSchedules"));
+		ResultActions resultActions = mockMvc.perform(put("/v1/syncSchedules"));
 		resultActions.andExpect(status().isOk());
 		SynchronizeResult result = new ObjectMapper()
 				.readValue(resultActions.andReturn().getResponse().getContentAsString(), SynchronizeResult.class);
@@ -126,7 +126,7 @@ public class ScheduleSyncRestControllerTest {
 		testDataDbUtil.insertRecurringSchedule(schedules.getRecurringSchedule());
 		testDataDbUtil.insertSpecificDateSchedule(schedules.getSpecificDate());
 
-		ResultActions resultActions = mockMvc.perform(put("/v2/syncSchedules"));
+		ResultActions resultActions = mockMvc.perform(put("/v1/syncSchedules"));
 		resultActions.andExpect(status().isOk());
 		SynchronizeResult result = new ObjectMapper()
 				.readValue(resultActions.andReturn().getResponse().getContentAsString(), SynchronizeResult.class);
@@ -139,7 +139,7 @@ public class ScheduleSyncRestControllerTest {
 		String anotherGuid = TestDataSetupHelper.generateGuid();
 		testDataDbUtil.insertPolicyJson(appId, anotherGuid);
 
-		ResultActions resultActions = mockMvc.perform(put("/v2/syncSchedules"));
+		ResultActions resultActions = mockMvc.perform(put("/v1/syncSchedules"));
 		resultActions.andExpect(status().isOk());
 		SynchronizeResult result = new ObjectMapper()
 				.readValue(resultActions.andReturn().getResponse().getContentAsString(), SynchronizeResult.class);
@@ -148,7 +148,7 @@ public class ScheduleSyncRestControllerTest {
 	@Test
 	public void testSynchronizeSchedules_with_no_policy_and_no_schedules() throws Exception {
 
-		ResultActions resultActions = mockMvc.perform(put("/v2/syncSchedules"));
+		ResultActions resultActions = mockMvc.perform(put("/v1/syncSchedules"));
 		resultActions.andExpect(status().isOk());
 		SynchronizeResult result = new ObjectMapper()
 				.readValue(resultActions.andReturn().getResponse().getContentAsString(), SynchronizeResult.class);

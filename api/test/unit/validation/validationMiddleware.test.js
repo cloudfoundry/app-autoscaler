@@ -70,7 +70,7 @@ describe('Validate Policy JSON Schema structure', function () {
 
   beforeEach(function () {
     nock(schedulerURI)
-      .put('/v2/schedules/fakeID')
+      .put('/v1/apps/fakeID/schedules')
       .query({ 'guid': /.*/ })
       .reply(200);
   });

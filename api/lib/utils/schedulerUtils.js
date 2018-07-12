@@ -14,9 +14,9 @@ module.exports = function(schedulerSettings) {
     
     if(policy && policyGuid){
       options.body = policy;
-      options.url = schedulerSettings.uri + '/v2/schedules/' + appId + "?guid=" + policyGuid;
+      options.url = schedulerSettings.uri + '/v1/apps/' + appId + "/schedules" + "?guid=" + policyGuid;
     }else{
-      options.url = schedulerSettings.uri + '/v2/schedules/' + appId;
+      options.url = schedulerSettings.uri + '/v1/apps/' + appId + "/schedules";
     }
     if(schedulerSettings.tls){
       var schedulerTLSOptions = {
