@@ -6,6 +6,7 @@ import (
 	"log"
 	"mime/multipart"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,6 +16,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/cfhttp"
+	"github.com/cloudfoundry/noaa/test_helpers"
 	"github.com/cloudfoundry/sonde-go/events"
 	"github.com/gogo/protobuf/proto"
 	. "github.com/onsi/ginkgo"
@@ -31,17 +33,20 @@ import (
 )
 
 var (
-	mcPath           string
-	cfg              config.Config
-	mcPort           int
-	healthport       int
-	configFile       *os.File
-	ccNOAAUAA        *ghttp.Server
-	messagesToSend   chan []byte
-	isTokenExpired   bool
-	eLock            *sync.Mutex
-	httpClient       *http.Client
-	healthHttpClient *http.Client
+	mcPath               string
+	cfg                  config.Config
+	mcPort               int
+	healthport           int
+	configFile           *os.File
+	ccNOAAUAA            *ghttp.Server
+	messagesToSend       chan []byte
+	isTokenExpired       bool
+	eLock                *sync.Mutex
+	httpClient           *http.Client
+	healthHttpClient     *http.Client
+	trafficControllerURL string
+	testServer           *httptest.Server
+	fakeHandler          *test_helpers.FakeHandler
 )
 
 func TestMetricsCollector(t *testing.T) {
@@ -123,6 +128,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	messagesToSend = make(chan []byte, 256)
 	wsHandler := testhelpers.NewWebsocketHandler(messagesToSend, 100*time.Millisecond)
 	ccNOAAUAA.RouteToHandler("GET", "/apps/an-app-id/stream", wsHandler.ServeWebsocket)
+	ccNOAAUAA.RouteToHandler("GET", "/firehose/autoscalerFirhoseId", wsHandler.ServeWebsocket)
 
 	cfg.CF = cf.CFConfig{
 		API:       ccNOAAUAA.URL(),

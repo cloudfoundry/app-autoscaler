@@ -8,6 +8,7 @@ import (
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
+	"github.com/cloudfoundry/noaa/consumer"
 	"github.com/cloudfoundry/sonde-go/events"
 
 	"fmt"
@@ -15,39 +16,46 @@ import (
 )
 
 type appStreamer struct {
-	appId           string
-	logger          lager.Logger
-	collectInterval time.Duration
-	cache           *collection.TSDCache
-	cfc             cf.CFClient
-	noaaConsumer    noaa.NoaaConsumer
-	doneChan        chan bool
-	sclock          clock.Clock
-	numRequests     map[int32]int64
-	sumReponseTimes map[int32]int64
-	ticker          clock.Ticker
-	dataChan        chan *models.AppInstanceMetric
+	appId                    string
+	logger                   lager.Logger
+	collectInterval          time.Duration
+	cfc                      cf.CfClient
+	noaaConsumerForStreaming noaa.NoaaConsumer
+	noaaConsumerForFirehose  noaa.NoaaConsumer
+	doneChan                 chan bool
+	sclock                   clock.Clock
+	numRequests              map[int32]int64
+	sumReponseTimes          map[int32]int64
+	streamTicker             clock.Ticker
+	firehoseTicker           clock.Ticker
+	dataChan                 chan *models.AppInstanceMetric
 }
 
-func NewAppStreamer(logger lager.Logger, appId string, interval time.Duration, cacheSize int, cfc cf.CFClient, noaaConsumer noaa.NoaaConsumer, sclock clock.Clock, dataChan chan *models.AppInstanceMetric) AppCollector {
+const autoscalerFirehoseId = "autoscalerFirhoseId"
+const autoscalerEventOrigin = "autoscaler_metrics_forwarder"
+
+func NewAppStreamer(logger lager.Logger, appId string, interval time.Duration, cfc cf.CfClient, noaaConsumerForStreaming noaa.NoaaConsumer, noaaConsumerForFirehose noaa.NoaaConsumer, sclock clock.Clock, dataChan chan *models.AppInstanceMetric) AppCollector {
 	return &appStreamer{
-		appId:           appId,
-		logger:          logger,
-		collectInterval: interval,
-		cache:           collection.NewTSDCache(cacheSize),
-		cfc:             cfc,
-		noaaConsumer:    noaaConsumer,
-		doneChan:        make(chan bool),
-		sclock:          sclock,
-		numRequests:     make(map[int32]int64),
-		sumReponseTimes: make(map[int32]int64),
-		dataChan:        dataChan,
+		appId:                    appId,
+		logger:                   logger,
+		collectInterval:          interval,
+		cache:                    collection.NewTSDCache(cacheSize),
+		cfc:                      cfc,
+		noaaConsumerForStreaming: noaaConsumerForStreaming,
+		noaaConsumerForFirehose:  noaaConsumerForFirehose,
+		doneChan:                 make(chan bool),
+		sclock:                   sclock,
+		numRequests:              make(map[int32]int64),
+		sumReponseTimes:          make(map[int32]int64),
+		dataChan:                 dataChan,
 	}
 }
 
 func (as *appStreamer) Start() {
 	go as.streamMetrics()
 	as.logger.Info("app-streamer-started", lager.Data{"appid": as.appId})
+	go as.readFirehose()
+	as.logger.Info("app-firehose-started")
 }
 
 func (as *appStreamer) Stop() {
@@ -55,14 +63,14 @@ func (as *appStreamer) Stop() {
 }
 
 func (as *appStreamer) streamMetrics() {
-	eventChan, errorChan := as.noaaConsumer.Stream(as.appId, cf.TokenTypeBearer+" "+as.cfc.GetTokens().AccessToken)
-	as.ticker = as.sclock.NewTicker(as.collectInterval)
+	eventChan, errorChan := as.noaaConsumerForStreaming.Stream(as.appId, cf.TokenTypeBearer+" "+as.cfc.GetTokens().AccessToken)
+	as.streamTicker = as.sclock.NewTicker(as.collectInterval)
 	var err error
 	for {
 		select {
 		case <-as.doneChan:
-			as.ticker.Stop()
-			err := as.noaaConsumer.Close()
+			as.streamTicker.Stop()
+			err := as.noaaConsumerForStreaming.Close()
 			if err == nil {
 				as.logger.Info("noaa-connection-closed", lager.Data{"appid": as.appId})
 			} else {
@@ -72,22 +80,61 @@ func (as *appStreamer) streamMetrics() {
 			return
 
 		case err = <-errorChan:
-			as.logger.Error("stream-metrics", err, lager.Data{"appid": as.appId})
+			as.logger.Error("error-stream-metrics", err, lager.Data{"appid": as.appId})
 
 		case event := <-eventChan:
 			as.processEvent(event)
 
-		case <-as.ticker.C():
+		case <-as.streamTicker.C():
 			if err != nil {
-				closeErr := as.noaaConsumer.Close()
+				closeErr := as.noaaConsumerForStreaming.Close()
 				if closeErr != nil {
 					as.logger.Error("close-noaa-connection", err, lager.Data{"appid": as.appId})
 				}
-				eventChan, errorChan = as.noaaConsumer.Stream(as.appId, cf.TokenTypeBearer+" "+as.cfc.GetTokens().AccessToken)
+				eventChan, errorChan = as.noaaConsumerForStreaming.Stream(as.appId, cf.TokenTypeBearer+" "+as.cfc.GetTokens().AccessToken)
 				as.logger.Info("noaa-reconnected", lager.Data{"appid": as.appId})
 				err = nil
 			} else {
 				as.computeAndSaveMetrics()
+			}
+		}
+	}
+}
+
+func (as *appStreamer) readFirehose() {
+	var err error
+	eventChan, errorChan := as.noaaConsumerForFirehose.FilteredFirehose(autoscalerFirehoseId, "", consumer.Metrics)
+	as.firehoseTicker = as.sclock.NewTicker(as.collectInterval)
+	for {
+		select {
+		case <-as.doneChan:
+			as.firehoseTicker.Stop()
+			err := as.noaaConsumerForFirehose.Close()
+			if err == nil {
+				as.logger.Info("noaa-connection-closed", lager.Data{"appid": as.appId})
+			} else {
+				as.logger.Error("close-noaa-connection", err, lager.Data{"appid": as.appId})
+			}
+			as.logger.Info("app-streamer-stopped", lager.Data{"appid": as.appId})
+			return
+
+		case err = <-errorChan:
+			as.logger.Error("firehose-metrics-error", err, lager.Data{"appid": as.appId})
+
+		case event := <-eventChan:
+			if event.GetEventType() == events.Envelope_ValueMetric {
+				as.processEvent(event)
+			}
+
+		case <-as.firehoseTicker.C():
+			if err != nil {
+				closeErr := as.noaaConsumerForFirehose.Close()
+				if closeErr != nil {
+					as.logger.Error("close-noaa-connection", err, lager.Data{"appid": as.appId})
+				}
+				eventChan, errorChan = as.noaaConsumerForFirehose.FilteredFirehose(autoscalerFirehoseId, "", consumer.Metrics)
+				as.logger.Info("noaa-reconnected", lager.Data{"appid": as.appId})
+				err = nil
 			}
 		}
 	}
@@ -107,6 +154,16 @@ func (as *appStreamer) processEvent(event *events.Envelope) {
 		if ss != nil {
 			as.numRequests[ss.GetInstanceIndex()]++
 			as.sumReponseTimes[ss.GetInstanceIndex()] += (ss.GetStopTimestamp() - ss.GetStartTimestamp())
+		}
+	} else if event.GetEventType() == events.Envelope_ValueMetric {
+		as.logger.Debug("process-event-get-value-metric-event", lager.Data{"event": event})
+		ss := event.GetValueMetric()
+		if ss != nil && event.GetOrigin() == autoscalerEventOrigin {
+			valuemetric := noaa.GetCustomMetricFromValueMetricEvent(as.sclock.Now().UnixNano(), event)
+			as.logger.Debug("process-event-get-custom-value-metric", lager.Data{"metric": valuemetric})
+			if valuemetric != nil {
+				as.dataChan <- valuemetric
+			}
 		}
 	}
 }

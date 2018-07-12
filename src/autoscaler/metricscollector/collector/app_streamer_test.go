@@ -7,9 +7,11 @@ import (
 	. "autoscaler/metricscollector/collector"
 	"autoscaler/metricscollector/noaa"
 	"autoscaler/models"
+	"strconv"
 
 	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/lager/lagertest"
+	"github.com/cloudfoundry/noaa/consumer"
 	"github.com/cloudfoundry/sonde-go/events"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -19,23 +21,47 @@ import (
 	"time"
 )
 
+func newValueMetricEnvelope(name string, value float64, unit string) *events.Envelope {
+	eventType := events.Envelope_ValueMetric
+	tags := make(map[string]string)
+	tags["instance_id"] = "0"
+	tags["applicationGuid"] = "dummy-guid"
+	origin := "autoscaler_metrics_forwarder"
+	timestamp := int64(99999999)
+	return &events.Envelope{
+		EventType: &eventType,
+		Tags:      tags,
+		Origin:    &origin,
+		Timestamp: &timestamp,
+		ValueMetric: &events.ValueMetric{
+			Name:  &name,
+			Value: &value,
+			Unit:  &unit,
+		},
+	}
+}
+
 var _ = Describe("AppStreamer", func() {
 
 	var (
-		cfc          *fakes.FakeCFClient
-		noaaConsumer *fakes.FakeNoaaConsumer
-		streamer     AppCollector
-		buffer       *gbytes.Buffer
-		msgChan      chan *events.Envelope
-		errChan      chan error
-		fclock       *fakeclock.FakeClock
-		dataChan     chan *models.AppInstanceMetric
-		cacheSize    int
+		cfc           *fakes.FakeCfClient
+		noaaConsumer  *fakes.FakeNoaaConsumer
+		noaaConsumer2 *fakes.FakeNoaaConsumer
+		streamer      AppCollector
+		buffer        *gbytes.Buffer
+		msgChan       chan *events.Envelope
+		errChan       chan error
+		msgChan2      chan *events.Envelope
+		errChan2      chan error
+		fclock        *fakeclock.FakeClock
+		dataChan      chan *models.AppInstanceMetric
+		cacheSize     int
 	)
 
 	BeforeEach(func() {
 		cfc = &fakes.FakeCFClient{}
 		noaaConsumer = &fakes.FakeNoaaConsumer{}
+		noaaConsumer2 = &fakes.FakeNoaaConsumer{}
 
 		logger := lagertest.NewTestLogger("AppStreamer-test")
 		buffer = logger.Buffer()
@@ -43,13 +69,15 @@ var _ = Describe("AppStreamer", func() {
 		dataChan = make(chan *models.AppInstanceMetric)
 		cacheSize = 100
 
-		streamer = NewAppStreamer(logger, "an-app-id", TestCollectInterval, cacheSize, cfc, noaaConsumer, fclock, dataChan)
+		streamer = NewAppStreamer(logger, "an-app-id", TestCollectInterval, cacheSize, cfc, noaaConsumer, noaaConsumer2, fclock, dataChan)
 
 		msgChan = make(chan *events.Envelope)
 		errChan = make(chan error, 1)
+		msgChan2 = make(chan *events.Envelope)
+		errChan2 = make(chan error, 1)
 	})
 
-	Describe("Start", func() {
+	Describe("Streamer Start", func() {
 
 		JustBeforeEach(func() {
 			streamer.Start()
@@ -315,6 +343,70 @@ var _ = Describe("AppStreamer", func() {
 				Eventually(buffer).Should(gbytes.Say("noaa-reconnected"))
 				Eventually(buffer).Should(gbytes.Say("an-app-id"))
 				Consistently(buffer).ShouldNot(gbytes.Say("compute-and-save-metrics"))
+			})
+		})
+	})
+
+	Describe("Firehose Start", func() {
+
+		JustBeforeEach(func() {
+			streamer.Start()
+		})
+
+		AfterEach(func() {
+			streamer.Stop()
+		})
+
+		BeforeEach(func() {
+			cfc.GetAuthTokenReturns("Bearer test-access-token", nil)
+			noaaConsumer2.FilteredFirehoseStub = func(subscriptionId string, authToken string, filter consumer.EnvelopeFilter) (outputChan <-chan *events.Envelope, errorChan <-chan error) {
+				Expect(subscriptionId).To(Equal("autoscalerFirhoseId"))
+				return msgChan2, errChan2
+			}
+		})
+
+		Context("when there are valuemetric events", func() {
+
+			BeforeEach(func() {
+				go func() {
+					msgChan2 <- newValueMetricEnvelope("custom-metric", 12.37, "unit")
+					msgChan2 <- newValueMetricEnvelope("custom-metric", 15.85, "unit")
+				}()
+			})
+			It("sends value metrics to channel", func() {
+				instanceId, _ := strconv.Atoi("0")
+				Expect(<-dataChan).To(Equal(&models.AppInstanceMetric{
+					AppId:         "dummy-guid",
+					InstanceIndex: uint32(instanceId),
+					CollectedAt:   fclock.Now().UnixNano(),
+					Name:          "custom-metric",
+					Unit:          "unit",
+					Value:         "12",
+					Timestamp:     99999999,
+				}))
+				Expect(<-dataChan).To(Equal(&models.AppInstanceMetric{
+					AppId:         "dummy-guid",
+					InstanceIndex: uint32(instanceId),
+					CollectedAt:   fclock.Now().UnixNano(),
+					Name:          "custom-metric",
+					Unit:          "unit",
+					Value:         "16",
+					Timestamp:     99999999,
+				}))
+			})
+		})
+
+		Context("when there is error streaming custom metrics", func() {
+			BeforeEach(func() {
+				errChan2 <- errors.New("firehose-metrics-error")
+			})
+			It("logs the error and reconnect in next tick", func() {
+				Eventually(buffer).Should(gbytes.Say("firehose-metrics-error"))
+				fclock.WaitForWatcherAndIncrement(TestCollectInterval)
+				Eventually(noaaConsumer2.CloseCallCount).Should(Equal(1))
+				Eventually(noaaConsumer2.FilteredFirehoseCallCount).Should(Equal(2))
+				Eventually(buffer).Should(gbytes.Say("noaa-reconnected"))
+				Eventually(buffer).Should(gbytes.Say("an-app-id"))
 			})
 		})
 	})

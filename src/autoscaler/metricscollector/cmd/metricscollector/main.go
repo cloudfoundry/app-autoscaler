@@ -67,6 +67,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	uaaClient := cf.NewUaaClient(&conf.CF, logger.Session("uaa"), cfClient.GetEndpoints().TokenEndpoint)
+
 	dopplerUrl := cfClient.GetEndpoints().DopplerEndpoint
 	logger.Info("create-noaa-client", map[string]interface{}{"dopplerUrl": dopplerUrl})
 	tlsConfig := &tls.Config{InsecureSkipVerify: conf.CF.SkipSSLValidation}
@@ -104,9 +106,11 @@ func main() {
 		}
 	} else {
 		createAppCollector = func(appId string, dataChan chan *models.AppInstanceMetric) collector.AppCollector {
-			noaaConsumer := consumer.New(dopplerUrl, tlsConfig, nil)
-			noaaConsumer.RefreshTokenFrom(cfClient)
-			return collector.NewAppStreamer(logger.Session("app-streamer"), appId, conf.Collector.CollectInterval, conf.Collector.MetricCacheSizePerApp, cfClient, noaaConsumer, mcClock, dataChan)
+			noaaConsumerForStreaming := consumer.New(dopplerUrl, tlsConfig, nil)
+			noaaConsumerForStreaming.RefreshTokenFrom(cfClient)
+			noaaConsumerForFirehose := consumer.New(dopplerUrl, tlsConfig, nil)
+			noaaConsumerForFirehose.RefreshTokenFrom(uaaClient)
+			return collector.NewAppStreamer(logger.Session("app-streamer"), appId, conf.Collector.CollectInterval, cfClient, noaaConsumerForStreaming, noaaConsumerForFirehose, mcClock, dataChan)
 		}
 	}
 
