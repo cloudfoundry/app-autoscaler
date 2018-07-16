@@ -20,7 +20,6 @@ var policy = require('../../../lib/models')(testSetting.db).policy_json;
 var validationMiddleware = require('../../../lib/validation/validationMiddleware');
 var nock = require('nock');
 var schedulerURI = testSetting.scheduler.uri;
-var serviceBrokerURI = testSetting.serviceBroker.uri;
 
 var schemaValidator = require('../../../lib/validation/schemaValidator');
 var rewire = require('rewire');
@@ -61,9 +60,11 @@ describe('Validate Policy JSON Schema structure', function () {
     });
   })
   beforeEach(function () {
-    nock(serviceBrokerURI)
-      .get(/\/v1\/apps\/.+\/service_bindings/)
-      .reply(200, { "message": "binding_info_exists" });
+    if (testSetting.serviceOffering) {
+      nock(testSetting.serviceOffering.serviceBroker.uri)
+        .get(/\/v1\/apps\/.+\/service_bindings/)
+        .reply(200, { "message": "binding_info_exists" });
+    }
     fakePolicy = JSON.parse(policyContent);
     return policy.truncate();
   });

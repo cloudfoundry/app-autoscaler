@@ -41,11 +41,11 @@ module.exports = function (basedir, settings) {
             caCertFile: path.join(basedir, path.basename(settings.scheduler.tls.caCertFile))
         };
     };
-    if (!isMissing(settings.serviceBroker.tls)) {
-        settings.serviceBroker.tls = {
-            keyFile: path.join(basedir, path.basename(settings.serviceBroker.tls.keyFile)),
-            certFile: path.join(basedir, path.basename(settings.serviceBroker.tls.certFile)),
-            caCertFile: path.join(basedir, path.basename(settings.serviceBroker.tls.caCertFile))
+    if (!isMissing(settings.serviceOffering.serviceBroker.tls)) {
+        settings.serviceOffering.serviceBroker.tls = {
+            keyFile: path.join(basedir, path.basename(settings.serviceOffering.serviceBroker.tls.keyFile)),
+            certFile: path.join(basedir, path.basename(settings.serviceOffering.serviceBroker.tls.certFile)),
+            caCertFile: path.join(basedir, path.basename(settings.serviceOffering.serviceBroker.tls.caCertFile))
         };
     };
     if (!isMissing(settings.infoFilePath)) {

@@ -1,8 +1,7 @@
 'use strict';
 var path = require('path');
-module.exports = function(settingsObj) {
-  var settingObj = {};
-  var db = function(dbUri) {
+module.exports = function (settingsObj) {
+  var db = function (dbUri) {
     if (dbUri != null) {
       let uri = dbUri.replace(/\/$/g, "");
       let name = uri.slice(uri.lastIndexOf("/") + 1, uri.length);
@@ -15,22 +14,35 @@ module.exports = function(settingsObj) {
     }
   };
 
-  var cleanUpUri = function(uri) {
+  var cleanUpUri = function (uri) {
     if (uri) {
-       uri = uri.replace(/\/$/g, "").toLowerCase();
-      }
-      return uri;
-    };
-  var addProtocol = function(uri) {
-    if(uri && (uri.indexOf("https://") < 0 && uri.indexOf("http://") < 0)){
+      uri = uri.replace(/\/$/g, "").toLowerCase();
+    }
+    return uri;
+  };
+  var addProtocol = function (uri) {
+    if (uri && (uri.indexOf("https://") < 0 && uri.indexOf("http://") < 0)) {
       uri = "https://" + uri;
     }
     return uri;
   }
-  settingsObj.scheduler.uri = addProtocol(cleanUpUri(settingsObj.scheduler.uri));
-  settingsObj.scalingEngine.uri = addProtocol(cleanUpUri(settingsObj.scalingEngine.uri));
-  settingsObj.metricsCollector.uri = addProtocol(cleanUpUri(settingsObj.metricsCollector.uri));
-  settingsObj.serviceBroker.uri = addProtocol(cleanUpUri(settingsObj.serviceBroker.uri));
+
+  var isMissing = function (value) {
+    return typeof (value) === "undefined" || value === null;
+  }
+  var isNumber = function (value) {
+    return typeof (value) === "number";
+  }
+  var isString = function (value) {
+    return typeof (value) === "string";
+  }
+  var isObject = function (value) {
+    return typeof (value) === "object";
+  }
+  var isBoolean = function (value) {
+    return typeof (value) === "boolean";
+  }
+
   var settings = {
     port: settingsObj.port,
     cfApi: addProtocol(cleanUpUri(settingsObj.cfApi)),
@@ -39,117 +51,113 @@ module.exports = function(settingsObj) {
     scheduler: settingsObj.scheduler,
     scalingEngine: settingsObj.scalingEngine,
     metricsCollector: settingsObj.metricsCollector,
-    serviceBroker: settingsObj.serviceBroker,
     tls: settingsObj.tls,
     publicTls: settingsObj.publicTls,
-    infoFilePath: settingsObj.infoFilePath
+    infoFilePath: settingsObj.infoFilePath,
+    serviceOffering: settingsObj.serviceOffering,
   };
   if (settingsObj.db) {
     var dbObj = db(settingsObj.db.uri);
     settings.db = {
-        maxConnections: settingsObj.db.maxConnections,
-        minConnections: settingsObj.db.minConnections,
-        idleTimeout: settingsObj.db.idleTimeout,
-        uri: dbObj.uri,
-        name: dbObj.name,
-        server: dbObj.server
-      }
-
+      maxConnections: settingsObj.db.maxConnections,
+      minConnections: settingsObj.db.minConnections,
+      idleTimeout: settingsObj.db.idleTimeout,
+      uri: dbObj.uri,
+      name: dbObj.name,
+      server: dbObj.server
+    }
   }
-  var isMissing = function(value){
-    return typeof(value) === "undefined" || value === null;
+  if (!isMissing(settings.scheduler)) {
+    settings.scheduler.uri = addProtocol(cleanUpUri(settings.scheduler.uri));
   }
-  var isNumber = function(value){
-    return typeof(value) === "number";
+  if (!isMissing(settings.scalingEngine))  {
+    settings.scalingEngine.uri = addProtocol(cleanUpUri(settings.scalingEngine.uri));
   }
-  var isString = function(value){
-    return typeof(value) === "string";
+  if (!isMissing(settings.metricsCollector))  {
+    settings.metricsCollector.uri = addProtocol(cleanUpUri(settings.metricsCollector.uri));
   }
-  var isObject = function(value){
-    return typeof(value) === "object";
-  }
-  var isBoolean = function(value){
-    return typeof(value) === "boolean";
+  if (!isMissing(settings.serviceOffering.serviceBroker)) {
+    settings.serviceOffering.serviceBroker.uri = addProtocol(cleanUpUri(settings.serviceOffering.serviceBroker.uri));
   }
 
-  settings.validate = function(){
-    if (isMissing(settings.port)){
-      return{valid:false, message:"port is required"}
+  settings.validate = function () {
+    if (isMissing(settings.port)) {
+      return { valid: false, message: "port is required" }
     }
     if (!isNumber(settings.port)) {
-      return {valid:false,message:"port must be a number"};
+      return { valid: false, message: "port must be a number" };
     }
     if (settings.port < 1 || settings.port > 65535) {
-      return {valid:false,message:"value of port must be between 1 and 65535"};
+      return { valid: false, message: "value of port must be between 1 and 65535" };
     }
 
-    if (isMissing(settings.publicPort)){
-      return{valid:false, message:"publicPort is required"}
+    if (isMissing(settings.publicPort)) {
+      return { valid: false, message: "publicPort is required" }
     }
     if (!isNumber(settings.publicPort)) {
-      return {valid:false,message:"publicPort must be a number"};
+      return { valid: false, message: "publicPort must be a number" };
     }
     if (settings.publicPort < 1 || settings.publicPort > 65535) {
-      return {valid:false,message:"value of publicPort must be between 1 and 65535"};
+      return { valid: false, message: "value of publicPort must be between 1 and 65535" };
     }
-    if (settings.port == settings.publicPort){
-      return {valid:false,message:"internal api port and public api port should be different"}
+    if (settings.port == settings.publicPort) {
+      return { valid: false, message: "internal api port and public api port should be different" }
     }
-    if (isMissing(settings.infoFilePath)){
-      return{valid:false, message:"infoFilePath is required"}
+    if (isMissing(settings.infoFilePath)) {
+      return { valid: false, message: "infoFilePath is required" }
     }
     if (!isString(settings.infoFilePath)) {
-      return {valid:false,message:"infoFilePath must be a string"};
+      return { valid: false, message: "infoFilePath must be a string" };
     }
-    if (isMissing(settings.cfApi)){
-      return{valid:false, message:"cfApi is required"}
+    if (isMissing(settings.cfApi)) {
+      return { valid: false, message: "cfApi is required" }
     }
     if (!isString(settings.cfApi)) {
-      return {valid:false,message:"cfApi must be a string"};
+      return { valid: false, message: "cfApi must be a string" };
     }
-    if (isMissing(settings.skipSSLValidation)){
-      return{valid:false, message:'skipSSLValidation is required'};
+    if (isMissing(settings.skipSSLValidation)) {
+      return { valid: false, message: 'skipSSLValidation is required' };
     }
     if (!isBoolean(settings.skipSSLValidation)) {
-      return {valid:false,message:'skipSSLValidation must be a boolean'};
+      return { valid: false, message: 'skipSSLValidation must be a boolean' };
     }
-    if (isMissing(settings.db.maxConnections)){
-      return {valid:false,message:"db.maxConnections is required"};
+    if (isMissing(settings.db.maxConnections)) {
+      return { valid: false, message: "db.maxConnections is required" };
     }
     if (!isNumber(settings.db.maxConnections)) {
-      return {valid:false,message:"db.maxConnections must be a number"};
+      return { valid: false, message: "db.maxConnections must be a number" };
     }
     if (settings.db.maxConnections <= 0) {
-      return {valid:false,message:"db.maxConnections must be greater than 0"};
+      return { valid: false, message: "db.maxConnections must be greater than 0" };
     }
-    if (isMissing(settings.db.minConnections)){
-      return {valid:false,message:"db.minConnections is required"};
+    if (isMissing(settings.db.minConnections)) {
+      return { valid: false, message: "db.minConnections is required" };
     }
     if (!isNumber(settings.db.minConnections)) {
-      return {valid:false,message:"db.minConnections must be a number"};
+      return { valid: false, message: "db.minConnections must be a number" };
     }
     if (settings.db.minConnections < 0) {
-      return {valid:false,message:"db.minConnections must be greater than or equal to 0"};
+      return { valid: false, message: "db.minConnections must be greater than or equal to 0" };
     }
-    if (isMissing(settings.db.idleTimeout)){
-      return {valid:false,message:"db.idleTimeout is required"};
+    if (isMissing(settings.db.idleTimeout)) {
+      return { valid: false, message: "db.idleTimeout is required" };
     }
     if (!isNumber(settings.db.idleTimeout)) {
-      return {valid:false,message:"db.idleTimeout must be a number"};
+      return { valid: false, message: "db.idleTimeout must be a number" };
     }
     if (settings.db.idleTimeout <= 0) {
-      return {valid:false,message:"db.idleTimeout must be greater than 0"};
+      return { valid: false, message: "db.idleTimeout must be greater than 0" };
     }
     if (isMissing(settings.db.uri)) {
-      return {valid:false,message:"db.uri is required"};
+      return { valid: false, message: "db.uri is required" };
     }
     if (!isString(settings.db.uri)) {
-      return {valid:false,message:"db.uri must be a string"};
+      return { valid: false, message: "db.uri must be a string" };
     }
-    if (!isMissing(settings.tls)){
-      if (!isObject(settings.tls)){
+    if (!isMissing(settings.tls)) {
+      if (!isObject(settings.tls)) {
         return { valid: false, message: "tls must be an object" };
-      } 
+      }
       if (isMissing(settings.tls.keyFile)) {
         return { valid: false, message: "tls.keyFile is required" };
       }
@@ -169,10 +177,10 @@ module.exports = function(settingsObj) {
         return { valid: false, message: "tls.caCertFile must be a string" };
       }
     }
-    if (!isMissing(settings.publicTls)){
-      if (!isObject(settings.publicTls)){
+    if (!isMissing(settings.publicTls)) {
+      if (!isObject(settings.publicTls)) {
         return { valid: false, message: "publicTls must be an object" };
-      } 
+      }
       if (isMissing(settings.publicTls.keyFile)) {
         return { valid: false, message: "publicTls.keyFile is required" };
       }
@@ -201,7 +209,7 @@ module.exports = function(settingsObj) {
     if (!isString(settings.scheduler.uri)) {
       return { valid: false, message: "scheduler.uri must be a string" };
     }
-    if (!isMissing(settings.scheduler.tls)){
+    if (!isMissing(settings.scheduler.tls)) {
       if (!isObject(settings.scheduler.tls)) {
         return { valid: false, message: "scheduler.tls must be an object" };
       }
@@ -234,7 +242,7 @@ module.exports = function(settingsObj) {
     if (!isString(settings.scalingEngine.uri)) {
       return { valid: false, message: "scalingEngine.uri must be a string" };
     }
-    if (!isMissing(settings.scalingEngine.tls)){
+    if (!isMissing(settings.scalingEngine.tls)) {
       if (!isObject(settings.scalingEngine.tls)) {
         return { valid: false, message: "scalingEngine.tls must be an object" };
       }
@@ -267,7 +275,7 @@ module.exports = function(settingsObj) {
     if (!isString(settings.metricsCollector.uri)) {
       return { valid: false, message: "metricsCollector.uri must be a string" };
     }
-    if (!isMissing(settings.metricsCollector.tls)){
+    if (!isMissing(settings.metricsCollector.tls)) {
       if (!isObject(settings.metricsCollector.tls)) {
         return { valid: false, message: "metricsCollector.tls must be an object" };
       }
@@ -291,40 +299,54 @@ module.exports = function(settingsObj) {
       }
     }
 
-    if (isMissing(settings.serviceBroker)) {
-      return { valid: false, message: "serviceBroker is required" };
+    if (isMissing(settings.serviceOffering)) {
+      return { valid: false, message: 'serviceOffering is required' };
     }
-    if (isMissing(settings.serviceBroker.uri)) {
-      return { valid: false, message: "serviceBroker.uri is required" };
+    if (!isObject(settings.serviceOffering)) {
+      return { valid: false, message: 'serviceOffering must be an object' };
     }
-    if (!isString(settings.serviceBroker.uri)) {
-      return { valid: false, message: "serviceBroker.uri must be a string" };
+    if (isMissing(settings.serviceOffering.enabled)) {
+      return { valid: false, message: 'serviceOffering.enabled is required' };
     }
-    if (!isMissing(settings.serviceBroker.tls)){
-      if (!isObject(settings.serviceBroker.tls)) {
-        return { valid: false, message: "serviceBroker.tls must be an object" };
+    if (!isBoolean(settings.serviceOffering.enabled)) {
+      return { valid: false, message: 'serviceOffering.enabled must be a boolean' };
+    }
+    if (settings.serviceOffering.enabled) {
+      if (isMissing(settings.serviceOffering.serviceBroker)) {
+        return { valid: false, message: "serviceOffering.serviceBroker is required" };
       }
-      if (isMissing(settings.serviceBroker.tls.keyFile)) {
-        return { valid: false, message: "serviceBroker.tls.keyFile is required" };
+      if (isMissing(settings.serviceOffering.serviceBroker.uri)) {
+        return { valid: false, message: "serviceOffering.serviceBroker.uri is required" };
       }
-      if (!isString(settings.serviceBroker.tls.keyFile)) {
-        return { valid: false, message: "serviceBroker.tls.keyFile must be a string" };
+      if (!isString(settings.serviceOffering.serviceBroker.uri)) {
+        return { valid: false, message: "serviceOffering.serviceBroker.uri must be a string" };
       }
-      if (isMissing(settings.serviceBroker.tls.caCertFile)) {
-        return { valid: false, message: "serviceBroker.tls.caCertFile is required" };
-      }
-      if (!isString(settings.serviceBroker.tls.caCertFile)) {
-        return { valid: false, message: "serviceBroker.tls.caCertFile must be a string" };
-      }
-      if (isMissing(settings.serviceBroker.tls.certFile)) {
-        return { valid: false, message: "serviceBroker.tls.certFile is required" };
-      }
-      if (!isString(settings.serviceBroker.tls.certFile)) {
-        return { valid: false, message: "serviceBroker.tls.certFile must be a string" };
+      if (!isMissing(settings.serviceOffering.serviceBroker.tls)) {
+        if (!isObject(settings.serviceOffering.serviceBroker.tls)) {
+          return { valid: false, message: "serviceOffering.serviceBroker.tls must be an object" };
+        }
+        if (isMissing(settings.serviceOffering.serviceBroker.tls.keyFile)) {
+          return { valid: false, message: "serviceOffering.serviceBroker.tls.keyFile is required" };
+        }
+        if (!isString(settings.serviceOffering.serviceBroker.tls.keyFile)) {
+          return { valid: false, message: "serviceOffering.serviceBroker.tls.keyFile must be a string" };
+        }
+        if (isMissing(settings.serviceOffering.serviceBroker.tls.caCertFile)) {
+          return { valid: false, message: "serviceOffering.serviceBroker.tls.caCertFile is required" };
+        }
+        if (!isString(settings.serviceOffering.serviceBroker.tls.caCertFile)) {
+          return { valid: false, message: "serviceOffering.serviceBroker.tls.caCertFile must be a string" };
+        }
+        if (isMissing(settings.serviceOffering.serviceBroker.tls.certFile)) {
+          return { valid: false, message: "serviceOffering.serviceBroker.tls.certFile is required" };
+        }
+        if (!isString(settings.serviceOffering.serviceBroker.tls.certFile)) {
+          return { valid: false, message: "serviceOffering.serviceBroker.tls.certFile must be a string" };
+        }
       }
     }
-    
-    return {valid:true}
+
+    return { valid: true }
   }
 
   return settings;

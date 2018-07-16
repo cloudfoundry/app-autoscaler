@@ -18,7 +18,6 @@ var policy = require('../../../lib/models')(settings.db).policy_json;
 var logger = require('../../../lib/log/logger');
 var nock = require('nock');
 var schedulerURI = testSetting.scheduler.uri;
-var serviceBrokerURI = testSetting.serviceBroker.uri;
 var theUserId = "the-user-id";
 
 function mockCF(count) {
@@ -73,59 +72,65 @@ function mockSchedulerDelete(count, statusCode) {
 }
 
 function mockBroker200WithBinding(count) {
-  nock(serviceBrokerURI)
-    .get(/\/v1\/apps\/.+\/service_bindings/)
-    .times(count)
-    .reply(200, {
-      "binding": {
-        "bindingId": "an-binding-id",
-        "appId": "an-app-id",
-        "serviceInstanceId": "an-service-instance-id"
-      }
-    });
+
+  if (testSetting.serviceOffering.enabled) {
+    nock(testSetting.serviceOffering.serviceBroker.uri)
+      .get(/\/v1\/apps\/.+\/service_bindings/)
+      .times(count)
+      .reply(200, {
+        "binding": {
+          "bindingId": "an-binding-id",
+          "appId": "an-app-id",
+          "serviceInstanceId": "an-service-instance-id"
+        }
+      });
+  }
+
 }
 
 function mockBroker200WithoutBinding(count) {
-  nock(serviceBrokerURI)
-    .get(/\/v1\/apps\/.+\/service_bindings/)
-    .times(count)
-    .reply(200, { "binding": null });
+  if (testSetting.serviceOffering.enabled) {
+    nock(testSetting.serviceOffering.serviceBroker.uri)
+      .get(/\/v1\/apps\/.+\/service_bindings/)
+      .times(count)
+      .reply(200, { "binding": null });
+  }
 }
 
-describe('Routing Policy Creation', function() {
+describe('Routing Policy Creation', function () {
   var fakePolicy;
 
 
-  before(function() {
+  before(function () {
     fakePolicy = JSON.parse(fs.readFileSync(__dirname + '/../fakePolicy.json', 'utf8'));
-    servers = API(testSetting, function() {});
+    servers = API(testSetting, function () { });
     app = servers.internalServer;
     publicApp = servers.publicServer;
   })
-  after(function(done) {
-    app.close(function() {
+  after(function (done) {
+    app.close(function () {
       publicApp.close(done);
     });
   })
-  beforeEach(function() {
+  beforeEach(function () {
     nock.cleanAll();
     mockCF(3);
 
     return policy.truncate();
   });
 
-  context("create policy", function() {
-    context("when binding info exists", function() {
-      beforeEach(function() {
+  context("create policy", function () {
+    context("when binding info exists", function () {
+      beforeEach(function () {
         mockBroker200WithBinding(1);
         mockSchedulerPut(1, 200);
       });
-      it('should create a policy for app id 12345', function(done) {
+      it('should create a policy for app id 12345', function (done) {
         request(publicApp)
           .put('/v1/apps/12345/policy')
           .set("Authorization", "fake-token")
           .send(fakePolicy)
-          .end(function(error, result) {
+          .end(function (error, result) {
             expect(result.statusCode).to.equal(201);
             expect(result.headers.location).exist;
             expect(result.headers.location).to.be.equal('/v1/apps/12345/policy');
@@ -135,33 +140,37 @@ describe('Routing Policy Creation', function() {
       });
     });
 
-    context("when binding info does not exist", function() {
-      beforeEach(function() {
+    context("when binding info does not exist", function () {
+      beforeEach(function () {
         mockBroker200WithoutBinding(1);
       });
-      it('should return 403', function(done) {
-        request(publicApp)
-          .put('/v1/apps/12345/policy')
-          .set("Authorization", "fake-token")
-          .send(fakePolicy)
-          .end(function(error, result) {
-            expect(result.statusCode).to.equal(403);
-            done();
-          });
+      it('should return 403', function (done) {
+        if (testSetting.serviceOffering.enabled) {
+          request(publicApp)
+            .put('/v1/apps/12345/policy')
+            .set("Authorization", "fake-token")
+            .send(fakePolicy)
+            .end(function (error, result) {
+              expect(result.statusCode).to.equal(403);
+              done();
+            });
+        } else {
+          this.skip();
+        }
       });
     });
 
-    context("CSP", function() {
-      beforeEach(function() {
+    context("CSP", function () {
+      beforeEach(function () {
         mockBroker200WithBinding(1);
         mockSchedulerPut(1, 200);
       });
-      it('dummy call to test CSP response headers', function(done) {
+      it('dummy call to test CSP response headers', function (done) {
         request(publicApp)
           .put('/v1/apps/12344/policy')
           .set("Authorization", "fake-token")
           .send(fakePolicy)
-          .end(function(error, result) {
+          .end(function (error, result) {
             expect(result.statusCode).to.equal(201);
             expect(result.headers.location).exist;
             expect(result.headers.location).to.be.equal('/v1/apps/12344/policy');
@@ -174,17 +183,17 @@ describe('Routing Policy Creation', function() {
       });
     });
 
-    context("when there is validation error in scheduler", function() {
-      beforeEach(function() {
+    context("when there is validation error in scheduler", function () {
+      beforeEach(function () {
         mockBroker200WithBinding(1);
-        mockSchedulerPutMessage(1, 400,'Specific Date Schedule start_date_time should be after current date');
+        mockSchedulerPutMessage(1, 400, 'Specific Date Schedule start_date_time should be after current date');
       });
-      it('should fail to create a policy for app id 12346', function(done) {
+      it('should fail to create a policy for app id 12346', function (done) {
         request(publicApp)
           .put('/v1/apps/12346/policy')
           .set("Authorization", "fake-token")
           .send(fakePolicy)
-          .end(function(error, result) {
+          .end(function (error, result) {
             expect(result.statusCode).to.equal(400);
             expect(result.body.error).eql('Failed to create schedules due to validation error in scheduler, details:\nSpecific Date Schedule start_date_time should be after current date');
             done();
@@ -192,20 +201,20 @@ describe('Routing Policy Creation', function() {
       });
     });
 
-    context("when there is internal error in scheduler", function() {
-      beforeEach(function() {
+    context("when there is internal error in scheduler", function () {
+      beforeEach(function () {
         var mockError = {
           'message': 'Failed to create schedules due to an internal error in scheduler',
         };
         mockBroker200WithBinding(1);
         mockSchedulerPutError(1, mockError)
       });
-      it('should fail to create a policy for app id 12347', function(done) {
+      it('should fail to create a policy for app id 12347', function (done) {
         request(publicApp)
           .put('/v1/apps/12347/policy')
           .set("Authorization", "fake-token")
           .send(fakePolicy)
-          .end(function(error, result) {
+          .end(function (error, result) {
             expect(result.statusCode).to.equal(500);
             expect(result.body.error).eql('Failed to create schedules due to an internal error in scheduler');
             done();
@@ -215,132 +224,140 @@ describe('Routing Policy Creation', function() {
 
   }); //end of create policy
 
-  context("update policy", function() {
-    beforeEach(function(done) {
+  context("update policy", function () {
+    beforeEach(function (done) {
       mockBroker200WithBinding(1);
       mockSchedulerPut(1, 200);
       request(publicApp)
         .put('/v1/apps/12345/policy')
         .set("Authorization", "fake-token")
-        .send(fakePolicy).end(function(error, result) {
+        .send(fakePolicy).end(function (error, result) {
           done();
         })
     });
-    context("when binding info exists", function() {
-      beforeEach(function() {
+    context("when binding info exists", function () {
+      beforeEach(function () {
         mockBroker200WithBinding(1);
         mockSchedulerPut(1, 204);
       });
-      it('should update the existing policy for app id 12345', function(done) {
+      it('should update the existing policy for app id 12345', function (done) {
         request(publicApp)
           .put('/v1/apps/12345/policy')
           .set("Authorization", "fake-token")
           .send(fakePolicy)
-          .end(function(error, result) {
+          .end(function (error, result) {
             expect(result.statusCode).to.equal(200);
             expect(result.body).eql(fakePolicy);
             done();
           });
       });
     });
-    context("when binding info does not exist", function() {
-      beforeEach(function() {
+    context("when binding info does not exist", function () {
+      beforeEach(function () {
         mockBroker200WithoutBinding(1);
         mockSchedulerPut(1, 204);
       });
-      it('should return 403', function(done) {
-        request(publicApp)
-          .put('/v1/apps/12345/policy')
-          .set("Authorization", "fake-token")
-          .send(fakePolicy)
-          .end(function(error, result) {
-            expect(result.statusCode).to.equal(403);
-            done();
-          });
+      it('should return 403', function (done) {
+        if (testSetting.serviceOffering.enabled) {
+          request(publicApp)
+            .put('/v1/apps/12345/policy')
+            .set("Authorization", "fake-token")
+            .send(fakePolicy)
+            .end(function (error, result) {
+              expect(result.statusCode).to.equal(403);
+              done();
+            });
+        } else {
+          this.skip();
+        }
       });
     });
   });
 
 
-  context('delete policy', function() {
+  context('delete policy', function () {
 
-    beforeEach(function(done) {
+    beforeEach(function (done) {
       mockBroker200WithBinding(1);
       mockSchedulerPut(1, 200);
       request(publicApp)
         .put('/v1/apps/12345/policy')
         .set("Authorization", "fake-token")
-        .send(fakePolicy).end(function(error, result) {
+        .send(fakePolicy).end(function (error, result) {
           done();
         })
     });
 
-    context("when binding info exists", function() {
-      beforeEach(function() {
+    context("when binding info exists", function () {
+      beforeEach(function () {
         mockBroker200WithBinding(1);
         mockSchedulerDelete(1, 200);
       });
-      it('should successfully delete the policy with app id 12345', function(done) {
+      it('should successfully delete the policy with app id 12345', function (done) {
         request(publicApp)
           .delete('/v1/apps/12345/policy')
           .set("Authorization", "fake-token")
           .expect(200)
-          .end(function(error) {
+          .end(function (error) {
             expect(error).to.be.null;
             done();
           });
       });
     });
 
-    context("when binding info does not exist", function() {
-      beforeEach(function() {
+    context("when binding info does not exist", function () {
+      beforeEach(function () {
         mockBroker200WithoutBinding(1);
         mockSchedulerPut(1, 200);
       });
-      it('should return 403', function(done) {
-        request(publicApp)
-          .delete('/v1/apps/12345/policy')
-          .set("Authorization", "fake-token")
-          .expect(403)
-          .end(function(error) {
-            expect(error).to.be.null;
-            done();
-          });
+      it('should return 403', function (done) {
+        if (testSetting.serviceOffering.enabled) {
+          request(publicApp)
+            .delete('/v1/apps/12345/policy')
+            .set("Authorization", "fake-token")
+            .expect(403)
+            .end(function (error) {
+              expect(error).to.be.null;
+              done();
+            });
+        } else {
+          this.skip();
+        }
       });
     });
-    context('when policy does not exist', function() {
-      beforeEach(function(done) {
+    context('when policy does not exist', function () {
+      beforeEach(function (done) {
         mockBroker200WithBinding(2);
         mockSchedulerDelete(1, 200);
         request(publicApp)
           .delete('/v1/apps/12345/policy')
           .set("Authorization", "fake-token")
-          .end(function(error, result) {
+          .end(function (error, result) {
             expect(result.statusCode).to.equal(200);
             done();
           });
       });
 
-      it('should return 404 while deleting policy with app id 12345', function(done) {
+      it('should return 404 while deleting policy with app id 12345', function (done) {
         request(publicApp)
           .delete('/v1/apps/12345/policy')
           .set("Authorization", "fake-token")
-          .end(function(error, result) {
+          .end(function (error, result) {
             expect(result.statusCode).to.equal(404);
             done();
           });
       });
     });
-    context("when there is internal error in scheduler", function() {
-      beforeEach(function() {
+    context("when there is internal error in scheduler", function () {
+      beforeEach(function () {
         mockBroker200WithBinding(1);
         mockSchedulerDelete(1, 500)
       });
-      it('should fail to delete the policy with app id 12345 due to internal server error', function(done) {
+      it('should fail to delete the policy with app id 12345 due to internal server error', function (done) {
         request(publicApp)
           .delete('/v1/apps/12345/policy')
           .set("Authorization", "fake-token")
-          .end(function(error, result) {
+          .end(function (error, result) {
             expect(result.statusCode).to.equal(500);
             done();
           });
@@ -350,62 +367,67 @@ describe('Routing Policy Creation', function() {
 
   }); //end of delete policy
 
-  context('get policy', function() {
-    context('when policy exists', function() {
-      beforeEach(function(done) {
+  context('get policy', function () {
+    context('when policy exists', function () {
+      beforeEach(function (done) {
         mockBroker200WithBinding(1);
         mockSchedulerPut(1, 200);
         request(publicApp)
           .put('/v1/apps/12345/policy')
           .set("Authorization", "fake-token")
-          .send(fakePolicy).end(function(error, result) {
+          .send(fakePolicy).end(function (error, result) {
             done();
           })
       });
-      context("when binding info exists", function() {
-        beforeEach(function(done) {
+      context("when binding info exists", function () {
+        beforeEach(function (done) {
           mockBroker200WithBinding(1);
           done();
         });
-        it('should successfully get the details of the policy with app id 12345', function(done) {
+        it('should successfully get the details of the policy with app id 12345', function (done) {
           request(publicApp)
             .get('/v1/apps/12345/policy')
             .set("Authorization", "fake-token")
-            .end(function(error, result) {
+            .end(function (error, result) {
               expect(result.statusCode).to.equal(200);
               expect(result.body).to.deep.equal(fakePolicy);
               done();
             });
+
         });
       });
 
-      context("when binding info does not exist", function() {
-        beforeEach(function(done) {
+      context("when binding info does not exist", function () {
+        beforeEach(function (done) {
           mockBroker200WithoutBinding(1);
           done();
         });
-        it('should return 403', function(done) {
-          request(publicApp)
-            .get('/v1/apps/12345/policy')
-            .set("Authorization", "fake-token")
-            .end(function(error, result) {
-              expect(result.statusCode).to.equal(403);
-              done();
-            });
+        it('should return 403', function (done) {
+          if (testSetting.serviceOffering.enabled) {
+            request(publicApp)
+              .get('/v1/apps/12345/policy')
+              .set("Authorization", "fake-token")
+              .end(function (error, result) {
+                expect(result.statusCode).to.equal(403);
+                done();
+              });
+          } else {
+            this.skip();
+          }
         });
       });
     });
 
-    context('when policy does not exist', function() {
-      beforeEach(function() {
+    context('when policy does not exist', function () {
+      beforeEach(function () {
         mockBroker200WithBinding(1);
       });
 
-      it('should fail to get the details of a non existing policy with app id 12345', function(done) {
+      it('should fail to get the details of a non existing policy with app id 12345', function (done) {
         request(publicApp)
           .get('/v1/apps/12345/policy')
           .set("Authorization", "fake-token")
-          .end(function(error, result) {
+          .end(function (error, result) {
             expect(result.statusCode).to.equal(404);
             expect(result.body).eql({});
             done();
