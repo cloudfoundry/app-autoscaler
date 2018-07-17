@@ -80,6 +80,7 @@ var (
 	apiSchedulerHttpRequestTimeout           time.Duration = 5 * time.Second
 	apiScalingEngineHttpRequestTimeout       time.Duration = 10 * time.Second
 	apiMetricsCollectorHttpRequestTimeout    time.Duration = 10 * time.Second
+	apiEventGeneratorHttpRequestTimeout      time.Duration = 10 * time.Second
 	schedulerScalingEngineHttpRequestTimeout time.Duration = 10 * time.Second
 
 	collectInterval           time.Duration = 1 * time.Second
@@ -193,14 +194,14 @@ func CompileTestedExecutables() Executables {
 func PreparePorts() Ports {
 	return Ports{
 		APIServer:             10000 + GinkgoParallelNode(),
-		APIPublicServer:       16000 + GinkgoParallelNode(),
-		ServiceBroker:         11000 + GinkgoParallelNode(),
-		ServiceBrokerInternal: 17000 + GinkgoParallelNode(),
-		Scheduler:             12000 + GinkgoParallelNode(),
-		MetricsCollector:      13000 + GinkgoParallelNode(),
-		EventGenerator:        14000 + GinkgoParallelNode(),
-		ScalingEngine:         15000 + GinkgoParallelNode(),
-		ConsulCluster:         16000 + GinkgoParallelNode()*consulrunner.PortOffsetLength,
+		APIPublicServer:       12000 + GinkgoParallelNode(),
+		ServiceBroker:         13000 + GinkgoParallelNode(),
+		ServiceBrokerInternal: 14000 + GinkgoParallelNode(),
+		Scheduler:             15000 + GinkgoParallelNode(),
+		MetricsCollector:      16000 + GinkgoParallelNode(),
+		EventGenerator:        17000 + GinkgoParallelNode(),
+		ScalingEngine:         18000 + GinkgoParallelNode(),
+		ConsulCluster:         19000 + GinkgoParallelNode()*consulrunner.PortOffsetLength,
 	}
 }
 
@@ -257,6 +258,9 @@ func stopScalingEngine() {
 }
 func stopMetricsCollector() {
 	ginkgomon.Kill(processMap[MetricsCollector], 5*time.Second)
+}
+func stopEventGenerator() {
+	ginkgomon.Kill(processMap[EventGenerator], 5*time.Second)
 }
 func stopServiceBroker() {
 	ginkgomon.Kill(processMap[ServiceBroker], 5*time.Second)
@@ -493,7 +497,7 @@ func getScalingHistories(pathVariables []string, parameters map[string]string, a
 	}
 	return httpClientTmp.Do(req)
 }
-func getAppMetrics(pathVariables []string, parameters map[string]string, apiType APIType) (*http.Response, error) {
+func getAppInstanceMetrics(pathVariables []string, parameters map[string]string, apiType APIType) (*http.Response, error) {
 	var apiServerPort int
 	var httpClientTmp *http.Client
 	if apiType == INTERNAL {
@@ -518,6 +522,33 @@ func getAppMetrics(pathVariables []string, parameters map[string]string, apiType
 	}
 	return httpClientTmp.Do(req)
 }
+
+func getAppAggregatedMetrics(pathVariables []string, parameters map[string]string, apiType APIType) (*http.Response, error) {
+	var apiServerPort int
+	var httpClientTmp *http.Client
+	if apiType == INTERNAL {
+		apiServerPort = components.Ports[APIServer]
+		httpClientTmp = httpClient
+	} else {
+		apiServerPort = components.Ports[APIPublicServer]
+		httpClientTmp = httpClientForPublicApi
+	}
+	url := "https://127.0.0.1:%d/v1/apps/%s/aggregated_metric_histories/%s"
+	if parameters != nil && len(parameters) > 0 {
+		url += "?any=any"
+		for paramName, paramValue := range parameters {
+			url += "&" + paramName + "=" + paramValue
+		}
+	}
+	req, err := http.NewRequest("GET", fmt.Sprintf(url, apiServerPort, pathVariables[0], pathVariables[1]), strings.NewReader(""))
+	Expect(err).NotTo(HaveOccurred())
+	req.Header.Set("Content-Type", "application/json")
+	if apiType == PUBLIC {
+		req.Header.Set("Authorization", "bearer fake-token")
+	}
+	return httpClientTmp.Do(req)
+}
+
 func readPolicyFromFile(filename string) []byte {
 	content, err := ioutil.ReadFile(filename)
 	Expect(err).NotTo(HaveOccurred())
@@ -589,6 +620,13 @@ func insertAppInstanceMetric(appInstanceMetric *models.AppInstanceMetric) {
 		"(appid, instanceindex, collectedat, name, unit, value, timestamp) " +
 		"VALUES($1, $2, $3, $4, $5, $6, $7)"
 	_, err := dbHelper.Exec(query, appInstanceMetric.AppId, appInstanceMetric.InstanceIndex, appInstanceMetric.CollectedAt, appInstanceMetric.Name, appInstanceMetric.Unit, appInstanceMetric.Value, appInstanceMetric.Timestamp)
+	Expect(err).NotTo(HaveOccurred())
+}
+func insertAppMetric(appMetrics *models.AppMetric) {
+	query := "INSERT INTO app_metric" +
+		"(app_id, metric_type, unit, value, timestamp) " +
+		"VALUES($1, $2, $3, $4, $5)"
+	_, err := dbHelper.Exec(query, appMetrics.AppId, appMetrics.MetricType, appMetrics.Unit, appMetrics.Value, appMetrics.Timestamp)
 	Expect(err).NotTo(HaveOccurred())
 }
 
