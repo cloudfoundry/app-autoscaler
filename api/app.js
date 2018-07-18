@@ -83,6 +83,8 @@ module.exports = function(settings, callback) {
           }
         }
       });
+    } else {
+      next();
     }
   }
   var app = express();
@@ -146,7 +148,7 @@ module.exports = function(settings, callback) {
   });
   publicApp.use('/health', require('express-healthcheck')());
   var info = require('./lib/routes/info')(settings);
-  
+
   publicApp.use('/v1/apps/:app_id/policy', checkBinding);
   publicApp.use('/v1', info);
   publicApp.use('/v1/apps',policies);
