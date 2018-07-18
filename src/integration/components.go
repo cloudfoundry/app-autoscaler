@@ -242,7 +242,7 @@ func (components *Components) PrepareServiceBrokerConfig(publicPort int, interna
 	return cfgFile.Name()
 }
 
-func (components *Components) PrepareApiServerConfig(port int, publicPort int, skipSSLValidation bool, cfApi string, dbUri string, schedulerUri string, scalingEngineUri string, metricsCollectorUri string, serviceBrokerUri string, tmpDir string) string {
+func (components *Components) PrepareApiServerConfig(port int, publicPort int, skipSSLValidation bool, cfApi string, dbUri string, schedulerUri string, scalingEngineUri string, metricsCollectorUri string, serviceBrokerUri string, serviceOffering bool, tmpDir string) string {
 
 	apiConfig := APIServerConfig{
 		Port:              port,
@@ -282,7 +282,7 @@ func (components *Components) PrepareApiServerConfig(port int, publicPort int, s
 			},
 		},
 		ServiceOffering: ServiceOffering{
-			Enabled: true,
+			Enabled: serviceOffering,
 			ServiceBrokerClient: ServiceBrokerClient{
 				Uri: serviceBrokerUri,
 				TLS: models.TLSCerts{
