@@ -222,7 +222,6 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 					BeforeEach(func() {
 						//attach a policy first with 4 recurring and 2 specific_date schedules
 						policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
-
 						doAttachPolicy(appId, policyStr, http.StatusCreated, INTERNAL)
 					})
 
@@ -257,11 +256,6 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 				unbindAndDeprovision(bindingId, appId, serviceInstanceId)
 			})
 			Context("internal api", func() {
-				BeforeEach(func() {
-					//attach a policy first with 4 recurring and 2 specific_date schedules
-					policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
-
-					doAttachPolicy(appId, policyStr, http.StatusCreated, INTERNAL)
 				Context("Policies with schedules", func() {
 					It("creates a policy and associated schedules", func() {
 						policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
@@ -278,11 +272,6 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 						checkApiServerStatus(appId, http.StatusNotFound, INTERNAL)
 						checkSchedulerStatus(appId, http.StatusNotFound, INTERNAL)
 					})
-
-				BeforeEach(func() {
-					//attach a policy first with 4 recurring and 2 specific_date schedules
-					policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
-					doAttachPolicy(appId, policyStr, http.StatusCreated, INTERNAL)
 				})
 
 				Context("Policies without schedules", func() {
@@ -298,11 +287,6 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 			})
 
 			Context("public api", func() {
-				BeforeEach(func() {
-					//attach a policy first with 4 recurring and 2 specific_date schedules
-					policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
-
-					doAttachPolicy(appId, policyStr, http.StatusCreated, PUBLIC)
 				Context("Policies with schedules", func() {
 					It("creates a policy and associated schedules", func() {
 						policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
@@ -319,11 +303,6 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 						checkApiServerStatus(appId, http.StatusNotFound, PUBLIC)
 						checkSchedulerStatus(appId, http.StatusNotFound, PUBLIC)
 					})
-
-				BeforeEach(func() {
-					//attach a policy first with 4 recurring and 2 specific_date schedules
-					policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
-					doAttachPolicy(appId, policyStr, http.StatusCreated, PUBLIC)
 				})
 
 				Context("Policies without schedules", func() {
