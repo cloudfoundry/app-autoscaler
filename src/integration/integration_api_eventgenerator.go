@@ -32,7 +32,6 @@ var _ = Describe("Integration_Api_EventGenerator", func() {
 
 	BeforeEach(func() {
 		startFakeCCNOAAUAA(initInstanceCount)
-		fakeMetricsPolling(appId, 400*1024*1024, 600*1024*1024)
 		initializeHttpClient("api.crt", "api.key", "autoscaler-ca.crt", apiEventGeneratorHttpRequestTimeout)
 		initializeHttpClientForPublicApi("api_public.crt", "api_public.key", "autoscaler-ca.crt", apiEventGeneratorHttpRequestTimeout)
 
@@ -55,7 +54,6 @@ var _ = Describe("Integration_Api_EventGenerator", func() {
 			BeforeEach(func() {
 				fakeCCNOAAUAA.Reset()
 				fakeCCNOAAUAA.AllowUnhandledRequests = true
-				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "metric-type": metricType, "order": "asc", "page": "1", "results-per-page": "5"}
 			})
 			It("should error with status code 500", func() {
 				By("check public api")
@@ -72,7 +70,6 @@ var _ = Describe("Integration_Api_EventGenerator", func() {
 						AuthEndpoint:    fakeCCNOAAUAA.URL(),
 						DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
 					}))
-				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "metric-type": metricType, "order": "asc", "page": "1", "results-per-page": "5"}
 			})
 			It("should error with status code 500", func() {
 				By("check public api")
@@ -89,7 +86,6 @@ var _ = Describe("Integration_Api_EventGenerator", func() {
 						DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
 					}))
 				fakeCCNOAAUAA.RouteToHandler("GET", "/userinfo", ghttp.RespondWithJSONEncoded(http.StatusUnauthorized, struct{}{}))
-				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "metric-type": metricType, "order": "asc", "page": "1", "results-per-page": "5"}
 			})
 			It("should error with status code 401", func() {
 				By("check public api")
@@ -105,7 +101,6 @@ var _ = Describe("Integration_Api_EventGenerator", func() {
 					}{
 						0,
 					}))
-				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "metric-type": metricType, "order": "asc", "page": "1", "results-per-page": "5"}
 			})
 			It("should error with status code 401", func() {
 				By("check public api")
@@ -116,7 +111,6 @@ var _ = Describe("Integration_Api_EventGenerator", func() {
 		Context("EventGenerator is down", func() {
 			JustBeforeEach(func() {
 				stopEventGenerator()
-				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "metric-type": metricType, "order": "asc", "page": "1", "results-per-page": "5"}
 			})
 
 			It("should error with status code 500", func() {
