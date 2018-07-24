@@ -202,7 +202,7 @@ func (e *Evaluator) sendTriggerAlarm(trigger *models.Trigger) error {
 			e.logger.Error("successfully-send-trigger-alarm, but received wrong response", err, lager.Data{"trigger": trigger, "responseBody": string(respBody)})
 			return err
 		}
-		e.logger.Info("successfully-send-trigger-alarm with trigger", lager.Data{"trigger": trigger, "responseBody": string(respBody)})
+		e.logger.Debug("successfully-send-trigger-alarm with trigger", lager.Data{"trigger": trigger, "responseBody": string(respBody)})
 		if scalingResult.CooldownExpiredAt != 0 {
 			e.setCoolDownExpired(trigger.AppId, scalingResult.CooldownExpiredAt)
 		}

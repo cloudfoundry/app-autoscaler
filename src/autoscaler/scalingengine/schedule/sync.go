@@ -70,7 +70,7 @@ func (ss *ActiveScheduleSychronizer) synchronizeActiveSchedules() {
 	for appId, schedule := range asScheduler {
 		scheduleId := asEngine[appId]
 		if scheduleId == "" || scheduleId != schedule.ScheduleId {
-			ss.logger.Info("synchronize-active-schedules-find-missing-active-schedule-start", lager.Data{"appId": appId, "schedule": schedule})
+			ss.logger.Debug("synchronize-active-schedules-find-missing-active-schedule-start", lager.Data{"appId": appId, "schedule": schedule})
 			wg.Add(1)
 			go func(aid string, as *models.ActiveSchedule) {
 				defer wg.Done()
@@ -81,7 +81,7 @@ func (ss *ActiveScheduleSychronizer) synchronizeActiveSchedules() {
 
 	for appId, scheduleId := range asEngine {
 		if asScheduler[appId] == nil {
-			ss.logger.Info("synchronize-active-schedules-find-missing-active-schedule-end", lager.Data{"appId": appId, "scheduleId": scheduleId})
+			ss.logger.Debug("synchronize-active-schedules-find-missing-active-schedule-end", lager.Data{"appId": appId, "scheduleId": scheduleId})
 			wg.Add(1)
 			go func(aid, sid string) {
 				defer wg.Done()
