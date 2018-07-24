@@ -10,28 +10,53 @@ var settings = require(path.join(__dirname, '../../../lib/config/setting.js'))((
 var relativePath = path.relative(process.cwd(), path.join(__dirname, "../../../../test-certs"));
 var testSetting = require(path.join(__dirname, '../test.helper.js'))(relativePath,settings);
 var API = require("../../../app.js");
+var nock = require("nock");
+var HttpStatus = require('http-status-codes');
+
 var app;
 var publicApp;
 var servers;
-var logger = require("../../../lib/log/logger");
-var nock = require("nock");
 var eventGeneratorUri = testSetting.eventGenerator.uri;
 var theAppId = "the-app-guid";
 var metricType = "memoryused";
+var theUserId = "the-user-id";
+var theUserToken = "the-user-token"
 
 describe("Routing Aggregated App Metrics", function() {
 
   before(function() {
+    testSetting.eventGenerator.tls = null;
     servers = API(testSetting, function(){});
     app = servers.internalServer;
     publicApp = servers.publicServer;
   })
   after(function(done) {
-    app.close(function(){
+    app.close(function() {
       publicApp.close(done);
     });
   })
+
   beforeEach(function() {
+    nock.cleanAll();
+    nock("https://api.bosh-lite.com")
+    .get("/v2/info")
+    .reply(HttpStatus.OK, { "authorization_endpoint": "https://uaa.bosh-lite.com" });
+
+    nock("https://uaa.bosh-lite.com")
+    .get("/userinfo")
+    .reply(HttpStatus.OK, { "user_id": theUserId });
+    
+    nock("https://api.bosh-lite.com")
+    .get(/\/v2\/users\/.+\/spaces\?.+/)
+    .reply(HttpStatus.OK, {
+      "total_results": 1,
+      "total_pages": 1,
+      "prev_url": null,
+      "next_url": null
+    });
+  });
+
+  afterEach(function(){
     nock.cleanAll();
   });
 
@@ -50,8 +75,9 @@ describe("Routing Aggregated App Metrics", function() {
           nock(eventGeneratorUri)
             .get(/\/v1\/apps\/.+\/aggregated_metric_histories\/memoryused/)
             .reply(200, histories);
-          request(app)
+          request(publicApp)
             .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
+            .set("Authorization",theUserToken)
             .query({ "metric-type": metricType, "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
@@ -64,8 +90,9 @@ describe("Routing Aggregated App Metrics", function() {
           nock(eventGeneratorUri)
             .get(/\/v1\/apps\/.+\/aggregated_metric_histories\/memoryused/)
             .reply(200, histories);
-          request(app)
+          request(publicApp)
             .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
+            .set("Authorization",theUserToken) 
             .query({ "metric-type": metricType, "start-time": "not-integer", "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
@@ -83,8 +110,9 @@ describe("Routing Aggregated App Metrics", function() {
           nock(eventGeneratorUri)
             .get(/\/v1\/apps\/.+\/aggregated_metric_histories\/memoryused/)
             .reply(200, histories);
-          request(app)
+          request(publicApp)
             .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
+            .set("Authorization",theUserToken)
             .query({ "metric-type": metricType, "start-time": 100, "order": "desc", "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
@@ -97,8 +125,9 @@ describe("Routing Aggregated App Metrics", function() {
           nock(eventGeneratorUri)
             .get(/\/v1\/apps\/.+\/aggregated_metric_histories\/memoryused/)
             .reply(200, histories);
-          request(app)
+          request(publicApp)
             .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
+            .set("Authorization",theUserToken)
             .query({ "metric-type": metricType, "end-time": "not-integer", "start-time": 100, "order": "desc", "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
@@ -116,8 +145,9 @@ describe("Routing Aggregated App Metrics", function() {
           nock(eventGeneratorUri)
             .get(/\/v1\/apps\/.+\/aggregated_metric_histories\/memoryused/)
             .reply(200, histories);
-          request(app)
+          request(publicApp)
             .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
+            .set("Authorization",theUserToken)
             .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
@@ -130,8 +160,9 @@ describe("Routing Aggregated App Metrics", function() {
           nock(eventGeneratorUri)
             .get(/\/v1\/apps\/.+\/aggregated_metric_histories\/memoryused/)
             .reply(200, histories);
-          request(app)
+          request(publicApp)
             .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
+            .set("Authorization",theUserToken)
             .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "not-desc-asc", "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
@@ -149,8 +180,9 @@ describe("Routing Aggregated App Metrics", function() {
           nock(eventGeneratorUri)
             .get(/\/v1\/apps\/.+\/aggregated_metric_histories\/memoryused/)
             .reply(200, histories);
-          request(app)
+          request(publicApp)
             .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
+            .set("Authorization",theUserToken)
             .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "desc", "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
@@ -163,8 +195,9 @@ describe("Routing Aggregated App Metrics", function() {
           nock(eventGeneratorUri)
             .get(/\/v1\/apps\/.+\/aggregated_metric_histories\/memoryused/)
             .reply(200, histories);
-          request(app)
+          request(publicApp)
             .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
+            .set("Authorization",theUserToken)
             .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "desc", "page": "not-integer", "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
@@ -182,8 +215,9 @@ describe("Routing Aggregated App Metrics", function() {
           nock(eventGeneratorUri)
             .get(/\/v1\/apps\/.+\/aggregated_metric_histories\/memoryused/)
             .reply(200, histories);
-          request(app)
+          request(publicApp)
             .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
+            .set("Authorization",theUserToken)
             .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "desc", "page": 1 })
             .end(function(error, result) {
               expect(error).to.equal(null);
@@ -197,8 +231,9 @@ describe("Routing Aggregated App Metrics", function() {
           nock(eventGeneratorUri)
             .get(/\/v1\/apps\/.+\/aggregated_metric_histories\/memoryused/)
             .reply(200, histories);
-          request(app)
+          request(publicApp)
             .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
+            .set("Authorization",theUserToken)
             .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "desc", "page": 1, "results-per-page": "not-integer" })
             .end(function(error, result) {
               expect(error).to.equal(null);
@@ -211,33 +246,35 @@ describe("Routing Aggregated App Metrics", function() {
         });
       });
     });
-    context("metricsCollector error", function() {
-      it("should return 500 when there is error when requesting to metricsCollector", function(done) {
+    context("eventGenerator error", function() {
+      it("should return 500 when there is error when requesting to eventGenerator", function(done) {
         nock(eventGeneratorUri)
           .get(/\/v1\/apps\/.+\/aggregated_metric_histories\/memoryused/)
           .replyWithError({
-            'message': 'Error in requests metricsCollector',
+            'message': 'Error in requests eventGenerator',
             'details': 'fake body'
           });
-        request(app)
+        request(publicApp)
           .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
+          .set("Authorization",theUserToken)
           .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);
             expect(result.statusCode).to.equal(500);
             expect(result.body).to.deep.equal({
-              error: 'Error in requests metricsCollector'
+              error: 'Error in requests eventGenerator'
             });
             done();
           });
       });
 
-      it('should return 500 when there is internal error in metricsCollector', function(done) {
+      it('should return 500 when there is internal error in eventGenerator', function(done) {
         nock(eventGeneratorUri)
           .get(/\/v1\/apps\/.+\/aggregated_metric_histories\/memoryused/)
           .reply(500, { code: 'Interal-Server-Error', message: 'Error getting scaling histories from database' });
-        request(app)
+        request(publicApp)
           .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
+          .set("Authorization",theUserToken)
           .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);
@@ -255,8 +292,9 @@ describe("Routing Aggregated App Metrics", function() {
         nock(eventGeneratorUri)
           .get(/\/v1\/apps\/.+\/aggregated_metric_histories\/memoryused/)
           .reply(200, histories);
-        request(app)
+        request(publicApp)
           .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
+          .set("Authorization",theUserToken)
           .query({ "metric-type": metricType, "start-time": 100, "end-time": 500, "order": "desc", "page": 1, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);
@@ -275,8 +313,9 @@ describe("Routing Aggregated App Metrics", function() {
         nock(eventGeneratorUri)
           .get(/\/v1\/apps\/.+\/aggregated_metric_histories\/memoryused/)
           .reply(200, histories);
-        request(app)
+        request(publicApp)
           .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
+          .set("Authorization",theUserToken)
           .query({ "metric-type": metricType, "start-time": 100, "end-time": 500, "order": "desc", "page": 2, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);
@@ -295,8 +334,9 @@ describe("Routing Aggregated App Metrics", function() {
         nock(eventGeneratorUri)
           .get(/\/v1\/apps\/.+\/aggregated_metric_histories\/memoryused/)
           .reply(200, histories);
-        request(app)
+        request(publicApp)
           .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
+          .set("Authorization",theUserToken)
           .query({ "metric-type": metricType, "start-time": 100, "end-time": 500, "order": "desc", "page": 3, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);
@@ -315,8 +355,9 @@ describe("Routing Aggregated App Metrics", function() {
         nock(eventGeneratorUri)
           .get(/\/v1\/apps\/.+\/aggregated_metric_histories\/memoryused/)
           .reply(200, histories);
-        request(app)
+        request(publicApp)
           .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
+          .set("Authorization",theUserToken)
           .query({ "metric-type": metricType, "start-time": 100, "end-time": 500, "order": "desc", "page": 4, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);

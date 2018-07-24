@@ -108,7 +108,6 @@ module.exports = function(settings, callback) {
   app.use('/v1/apps',policies);
   app.use('/v1/apps',scalingHistories);
   app.use('/v1/apps',metrics);
-  app.use('/v1/apps',aggregatedMetrics);
   app.use(function(err, req, res, next) {
     var errorResponse = {};
     if (err) {

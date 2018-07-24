@@ -526,13 +526,8 @@ func getAppInstanceMetrics(pathVariables []string, parameters map[string]string,
 func getAppAggregatedMetrics(pathVariables []string, parameters map[string]string, apiType APIType) (*http.Response, error) {
 	var apiServerPort int
 	var httpClientTmp *http.Client
-	if apiType == INTERNAL {
-		apiServerPort = components.Ports[APIServer]
-		httpClientTmp = httpClient
-	} else {
-		apiServerPort = components.Ports[APIPublicServer]
-		httpClientTmp = httpClientForPublicApi
-	}
+	apiServerPort = components.Ports[APIPublicServer]
+	httpClientTmp = httpClientForPublicApi
 	url := "https://127.0.0.1:%d/v1/apps/%s/aggregated_metric_histories/%s"
 	if parameters != nil && len(parameters) > 0 {
 		url += "?any=any"
@@ -543,9 +538,7 @@ func getAppAggregatedMetrics(pathVariables []string, parameters map[string]strin
 	req, err := http.NewRequest("GET", fmt.Sprintf(url, apiServerPort, pathVariables[0], pathVariables[1]), strings.NewReader(""))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
-	if apiType == PUBLIC {
-		req.Header.Set("Authorization", "bearer fake-token")
-	}
+	req.Header.Set("Authorization", "bearer fake-token")
 	return httpClientTmp.Do(req)
 }
 

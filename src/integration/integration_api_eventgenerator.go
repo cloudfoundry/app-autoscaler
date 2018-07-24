@@ -114,8 +114,6 @@ var _ = Describe("Integration_Api_EventGenerator", func() {
 			})
 
 			It("should error with status code 500", func() {
-				By("check internal api")
-				checkResponseContentWithParameters(getAppAggregatedMetrics, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{"error": fmt.Sprintf("connect ECONNREFUSED 127.0.0.1:%d", components.Ports[EventGenerator])}, INTERNAL)
 				By("check public api")
 				checkResponseContentWithParameters(getAppAggregatedMetrics, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{"error": fmt.Sprintf("connect ECONNREFUSED 127.0.0.1:%d", components.Ports[EventGenerator])}, PUBLIC)
 			})
@@ -181,10 +179,8 @@ var _ = Describe("Integration_Api_EventGenerator", func() {
 						},
 					},
 				}
-				By("check internal api")
-				checkAggregatedMetricResult(pathVariables, parameters, result, INTERNAL)
 				By("check public api")
-				checkAggregatedMetricResult(pathVariables, parameters, result, PUBLIC)
+				checkAggregatedMetricResult(pathVariables, parameters, result)
 
 				By("get the 2nd page")
 				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "metric-type": metricType, "order": "asc", "page": "2", "results-per-page": "2"}
@@ -209,10 +205,8 @@ var _ = Describe("Integration_Api_EventGenerator", func() {
 						},
 					},
 				}
-				By("check internal api")
-				checkAggregatedMetricResult(pathVariables, parameters, result, INTERNAL)
 				By("check public api")
-				checkAggregatedMetricResult(pathVariables, parameters, result, PUBLIC)
+				checkAggregatedMetricResult(pathVariables, parameters, result)
 
 				By("get the 3rd page")
 				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "metric-type": metricType, "order": "asc", "page": "3", "results-per-page": "2"}
@@ -230,10 +224,8 @@ var _ = Describe("Integration_Api_EventGenerator", func() {
 						},
 					},
 				}
-				By("check internal api")
-				checkAggregatedMetricResult(pathVariables, parameters, result, INTERNAL)
 				By("check public api")
-				checkAggregatedMetricResult(pathVariables, parameters, result, PUBLIC)
+				checkAggregatedMetricResult(pathVariables, parameters, result)
 
 				By("the 4th page should be empty")
 				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "metric-type": metricType, "order": "asc", "page": "4", "results-per-page": "2"}
@@ -243,19 +235,17 @@ var _ = Describe("Integration_Api_EventGenerator", func() {
 					Page:         4,
 					Resources:    []models.AppMetric{},
 				}
-				By("check internal api")
-				checkAggregatedMetricResult(pathVariables, parameters, result, INTERNAL)
 				By("check public api")
-				checkAggregatedMetricResult(pathVariables, parameters, result, PUBLIC)
+				checkAggregatedMetricResult(pathVariables, parameters, result)
 			})
 
 		})
 	})
 })
 
-func checkAggregatedMetricResult(pathVariables []string, parameters map[string]string, result AppAggregatedMetricResult, apiType APIType) {
+func checkAggregatedMetricResult(pathVariables []string, parameters map[string]string, result AppAggregatedMetricResult) {
 	var actual AppAggregatedMetricResult
-	resp, err := getAppAggregatedMetrics(pathVariables, parameters, apiType)
+	resp, err := getAppAggregatedMetrics(pathVariables, parameters, PUBLIC)
 	defer resp.Body.Close()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.StatusCode).To(Equal(http.StatusOK))
