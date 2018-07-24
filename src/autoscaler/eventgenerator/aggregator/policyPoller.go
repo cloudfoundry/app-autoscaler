@@ -80,7 +80,7 @@ func (p *PolicyPoller) retrievePolicies() ([]*models.PolicyJson, error) {
 		p.logger.Error("retrieve policyJsons", err)
 		return nil, err
 	}
-	p.logger.Info("policy count", lager.Data{"count": len(policyJsons)})
+	p.logger.Debug("policy count", lager.Data{"count": len(policyJsons)})
 	return policyJsons, nil
 }
 
