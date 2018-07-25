@@ -51,6 +51,7 @@ module.exports = function (settingsObj) {
     scheduler: settingsObj.scheduler,
     scalingEngine: settingsObj.scalingEngine,
     metricsCollector: settingsObj.metricsCollector,
+    eventGenerator: settingsObj.eventGenerator,
     tls: settingsObj.tls,
     publicTls: settingsObj.publicTls,
     infoFilePath: settingsObj.infoFilePath,
@@ -76,6 +77,9 @@ module.exports = function (settingsObj) {
   if (!isMissing(settings.metricsCollector))  {
     settings.metricsCollector.uri = addProtocol(cleanUpUri(settings.metricsCollector.uri));
   }
+  if (!isMissing(settings.eventGenerator))  {
+    settings.eventGenerator.uri = addProtocol(cleanUpUri(settings.eventGenerator.uri));
+  }  
   if (!isMissing(settings.serviceOffering.serviceBroker)) {
     settings.serviceOffering.serviceBroker.uri = addProtocol(cleanUpUri(settings.serviceOffering.serviceBroker.uri));
   }
@@ -296,6 +300,39 @@ module.exports = function (settingsObj) {
       }
       if (!isString(settings.metricsCollector.tls.certFile)) {
         return { valid: false, message: "metricsCollector.tls.certFile must be a string" };
+      }
+    }
+
+    if (isMissing(settings.eventGenerator)) {
+      return { valid: false, message: "eventGenerator is required" };
+    }
+    if (isMissing(settings.eventGenerator.uri)) {
+      return { valid: false, message: "eventGenerator.uri is required" };
+    }
+    if (!isString(settings.eventGenerator.uri)) {
+      return { valid: false, message: "eventGenerator.uri must be a string" };
+    }
+    if (!isMissing(settings.eventGenerator.tls)) {
+      if (!isObject(settings.eventGenerator.tls)) {
+        return { valid: false, message: "eventGenerator.tls must be an object" };
+      }
+      if (isMissing(settings.eventGenerator.tls.keyFile)) {
+        return { valid: false, message: "eventGenerator.tls.keyFile is required" };
+      }
+      if (!isString(settings.eventGenerator.tls.keyFile)) {
+        return { valid: false, message: "eventGenerator.tls.keyFile must be a string" };
+      }
+      if (isMissing(settings.eventGenerator.tls.caCertFile)) {
+        return { valid: false, message: "eventGenerator.tls.caCertFile is required" };
+      }
+      if (!isString(settings.eventGenerator.tls.caCertFile)) {
+        return { valid: false, message: "eventGenerator.tls.caCertFile must be a string" };
+      }
+      if (isMissing(settings.eventGenerator.tls.certFile)) {
+        return { valid: false, message: "eventGenerator.tls.certFile is required" };
+      }
+      if (!isString(settings.eventGenerator.tls.certFile)) {
+        return { valid: false, message: "eventGenerator.tls.certFile must be a string" };
       }
     }
 

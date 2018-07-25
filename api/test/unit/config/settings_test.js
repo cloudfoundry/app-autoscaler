@@ -44,6 +44,14 @@ describe('config setting Test Suite', function () {
           "caCertFile": "caCertFilePath"
         }
       },
+      "eventGenerator": {
+        "uri": "eventGeneratorUri",
+        "tls": {
+          "keyFile": "keyFilePath",
+          "certFile": "certFilePath",
+          "caCertFile": "caCertFilePath"
+        }
+      },
       "serviceOffering": {
         "enabled": true,
         "serviceBroker": {
@@ -110,6 +118,11 @@ describe('config setting Test Suite', function () {
     expect(settings.metricsCollector.tls.caCertFile).to.equal(defaultConfig.metricsCollector.tls.caCertFile);
     expect(settings.metricsCollector.tls.certFile).to.equal(defaultConfig.metricsCollector.tls.certFile);
 
+    expect(settings.eventGenerator.uri).to.equal("https://" + defaultConfig.eventGenerator.uri.toLowerCase());
+    expect(settings.eventGenerator.tls.keyFile).to.equal(defaultConfig.eventGenerator.tls.keyFile);
+    expect(settings.eventGenerator.tls.caCertFile).to.equal(defaultConfig.eventGenerator.tls.caCertFile);
+    expect(settings.eventGenerator.tls.certFile).to.equal(defaultConfig.eventGenerator.tls.certFile);
+
     expect(settings.serviceOffering.enabled).to.equal(true);
     expect(settings.serviceOffering.serviceBroker.uri).to.equal("https://" + defaultConfig.serviceOffering.serviceBroker.uri.toLowerCase());
     expect(settings.serviceOffering.serviceBroker.tls.keyFile).to.equal(defaultConfig.serviceOffering.serviceBroker.tls.keyFile);
@@ -141,18 +154,18 @@ describe('config setting Test Suite', function () {
       context('scheduler.uri', function () {
 
         it('Should add http if no protocol', function () {
-          var apiSetting = configSetting({ scheduler: { uri: defaultConfig.scheduler.uri }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls }, metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls }, serviceOffering: { enabled: true, serviceBroker: { uri: defaultConfig.serviceOffering.serviceBroker.uri, tls: defaultConfig.serviceOffering.serviceBroker.tls } } }).scheduler;
+          var apiSetting = configSetting({ scheduler: { uri: defaultConfig.scheduler.uri }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls }, metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls }, eventGenerator: { uri: defaultConfig.eventGenerator.uri }, serviceOffering: { enabled: true, serviceBroker: { uri: defaultConfig.serviceOffering.serviceBroker.uri, tls: defaultConfig.serviceOffering.serviceBroker.tls } } }).scheduler;
           expect(apiSetting.uri).to.equal("https://" + defaultConfig.scheduler.uri.toLowerCase());
         });
 
         it('Should filter the last slash', function () {
-          var apiSetting = configSetting({ scheduler: { uri: defaultConfig.scheduler.uri + '/' }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls }, metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls }, serviceOffering: { enabled: true, serviceBroker: { uri: defaultConfig.serviceOffering.serviceBroker.uri, tls: defaultConfig.serviceOffering.serviceBroker.tls } } }).scheduler;
+          var apiSetting = configSetting({ scheduler: { uri: defaultConfig.scheduler.uri + '/' }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls }, metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls }, eventGenerator: { uri: defaultConfig.eventGenerator.uri }, serviceOffering: { enabled: true, serviceBroker: { uri: defaultConfig.serviceOffering.serviceBroker.uri, tls: defaultConfig.serviceOffering.serviceBroker.tls } } }).scheduler;
           expect(apiSetting.uri).to.equal("https://" + defaultConfig.scheduler.uri.toLowerCase());
         });
 
         context('When the scheduler.uri is upper case', function () {
           it('Should be lowercased', function () {
-            var apiSetting = configSetting({ scheduler: { uri: defaultConfig.scheduler.uri.toUpperCase() }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls }, metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls }, serviceOffering: { enabled: true, serviceBroker: { uri: defaultConfig.serviceOffering.serviceBroker.uri, tls: defaultConfig.serviceOffering.serviceBroker.tls } } }).scheduler;
+            var apiSetting = configSetting({ scheduler: { uri: defaultConfig.scheduler.uri.toUpperCase() }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls }, metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls }, eventGenerator: { uri: defaultConfig.eventGenerator.uri }, serviceOffering: { enabled: true, serviceBroker: { uri: defaultConfig.serviceOffering.serviceBroker.uri, tls: defaultConfig.serviceOffering.serviceBroker.tls } } }).scheduler;
             expect(apiSetting.uri).to.equal("https://" + defaultConfig.scheduler.uri.toLowerCase());
           });
         });
@@ -160,18 +173,18 @@ describe('config setting Test Suite', function () {
       context('scalingEngine uri', function () {
 
         it('Should add http if no protocol', function () {
-          var apiSetting = configSetting({ scalingEngine: { uri: defaultConfig.scalingEngine.uri }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls }, serviceOffering: { enabled: true, serviceBroker: { uri: defaultConfig.serviceOffering.serviceBroker.uri, tls: defaultConfig.serviceOffering.serviceBroker.tls } } }).scalingEngine;
+          var apiSetting = configSetting({ scalingEngine: { uri: defaultConfig.scalingEngine.uri }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls }, eventGenerator: { uri: defaultConfig.eventGenerator.uri }, serviceOffering: { enabled: true, serviceBroker: { uri: defaultConfig.serviceOffering.serviceBroker.uri, tls: defaultConfig.serviceOffering.serviceBroker.tls } } }).scalingEngine;
           expect(apiSetting.uri).to.equal("https://" + defaultConfig.scalingEngine.uri.toLowerCase());
         });
 
         it('Should filter the last slash', function () {
-          var apiSetting = configSetting({ scalingEngine: { uri: defaultConfig.scalingEngine.uri + '/' }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls }, serviceOffering: { enabled: true, serviceBroker: { uri: defaultConfig.serviceOffering.serviceBroker.uri, tls: defaultConfig.serviceOffering.serviceBroker.tls } } }).scalingEngine;
+          var apiSetting = configSetting({ scalingEngine: { uri: defaultConfig.scalingEngine.uri + '/' }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls }, eventGenerator: { uri: defaultConfig.eventGenerator.uri }, serviceOffering: { enabled: true, serviceBroker: { uri: defaultConfig.serviceOffering.serviceBroker.uri, tls: defaultConfig.serviceOffering.serviceBroker.tls } } }).scalingEngine;
           expect(apiSetting.uri).to.equal("https://" + defaultConfig.scalingEngine.uri.toLowerCase());
         });
 
         context('When the scalingEngine uri is upper case', function () {
           it('Should be lowercased', function () {
-            var apiSetting = configSetting({ scalingEngine: { uri: defaultConfig.scalingEngine.uri.toUpperCase() }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls }, serviceOffering: { enabled: true, serviceBroker: { uri: defaultConfig.serviceOffering.serviceBroker.uri, tls: defaultConfig.serviceOffering.serviceBroker.tls } } }).scalingEngine;
+            var apiSetting = configSetting({ scalingEngine: { uri: defaultConfig.scalingEngine.uri.toUpperCase() }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls }, eventGenerator: { uri: defaultConfig.eventGenerator.uri }, serviceOffering: { enabled: true, serviceBroker: { uri: defaultConfig.serviceOffering.serviceBroker.uri, tls: defaultConfig.serviceOffering.serviceBroker.tls } } }).scalingEngine;
             expect(apiSetting.uri).to.equal("https://" + defaultConfig.scalingEngine.uri.toLowerCase());
           });
         });
@@ -179,37 +192,56 @@ describe('config setting Test Suite', function () {
       context('metricsCollector uri', function () {
 
         it('Should add http if no protocol', function () {
-          var apiSetting = configSetting({ metricsCollector: { uri: defaultConfig.metricsCollector.uri }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls }, serviceOffering: { enabled: true, serviceBroker: { uri: defaultConfig.serviceOffering.serviceBroker.uri, tls: defaultConfig.serviceOffering.serviceBroker.tls } } }).metricsCollector;
+          var apiSetting = configSetting({ metricsCollector: { uri: defaultConfig.metricsCollector.uri }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls }, eventGenerator: { uri: defaultConfig.eventGenerator.uri }, serviceOffering: { enabled: true, serviceBroker: { uri: defaultConfig.serviceOffering.serviceBroker.uri, tls: defaultConfig.serviceOffering.serviceBroker.tls } } }).metricsCollector;
           expect(apiSetting.uri).to.equal("https://" + defaultConfig.metricsCollector.uri.toLowerCase());
         });
 
         it('Should filter the last slash', function () {
-          var apiSetting = configSetting({ metricsCollector: { uri: defaultConfig.metricsCollector.uri + '/' }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls }, serviceOffering: { enabled: true, serviceBroker: { uri: defaultConfig.serviceOffering.serviceBroker.uri, tls: defaultConfig.serviceOffering.serviceBroker.tls } } }).metricsCollector;
+          var apiSetting = configSetting({ metricsCollector: { uri: defaultConfig.metricsCollector.uri + '/' }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls }, eventGenerator: { uri: defaultConfig.eventGenerator.uri }, serviceOffering: { enabled: true, serviceBroker: { uri: defaultConfig.serviceOffering.serviceBroker.uri, tls: defaultConfig.serviceOffering.serviceBroker.tls } } }).metricsCollector;
           expect(apiSetting.uri).to.equal("https://" + defaultConfig.metricsCollector.uri.toLowerCase());
         });
 
         context('When the metricsCollector uri is upper case', function () {
           it('Should be lowercased', function () {
-            var apiSetting = configSetting({ metricsCollector: { uri: defaultConfig.metricsCollector.uri.toUpperCase() }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls }, serviceOffering: { enabled: true, serviceBroker: { uri: defaultConfig.serviceOffering.serviceBroker.uri, tls: defaultConfig.serviceOffering.serviceBroker.tls } } }).metricsCollector;
+            var apiSetting = configSetting({ metricsCollector: { uri: defaultConfig.metricsCollector.uri.toUpperCase() }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls }, eventGenerator: { uri: defaultConfig.eventGenerator.uri }, serviceOffering: { enabled: true, serviceBroker: { uri: defaultConfig.serviceOffering.serviceBroker.uri, tls: defaultConfig.serviceOffering.serviceBroker.tls } } }).metricsCollector;
             expect(apiSetting.uri).to.equal("https://" + defaultConfig.metricsCollector.uri.toLowerCase());
           });
         });
       });
+      context('eventGenerator uri', function () {
 
+        it('Should add http if no protocol', function () {
+          var apiSetting = configSetting({ eventGenerator: { uri: defaultConfig.eventGenerator.uri }, metricsCollector: { uri: defaultConfig.metricsCollector.uri }, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls }, serviceOffering: { enabled: true, serviceBroker: { uri: defaultConfig.serviceOffering.serviceBroker.uri, tls: defaultConfig.serviceOffering.serviceBroker.tls } } }).eventGenerator;
+          expect(apiSetting.uri).to.equal("https://" + defaultConfig.eventGenerator.uri.toLowerCase());
+        });
+
+        it('Should filter the last slash', function () {
+          var apiSetting = configSetting({ eventGenerator: { uri: defaultConfig.eventGenerator.uri + '/'}, metricsCollector: { uri: defaultConfig.metricsCollector.uri}, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls }, serviceOffering: { enabled: true, serviceBroker: { uri: defaultConfig.serviceOffering.serviceBroker.uri, tls: defaultConfig.serviceOffering.serviceBroker.tls } } }).eventGenerator;
+          expect(apiSetting.uri).to.equal("https://" + defaultConfig.eventGenerator.uri.toLowerCase());
+        });
+
+        context('When the eventGenerator uri is upper case', function () {
+          it('Should be lowercased', function () {
+            var apiSetting = configSetting({ eventGenerator: { uri: defaultConfig.eventGenerator.uri.toUpperCase() }, metricsCollector: { uri: defaultConfig.metricsCollector.uri}, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls }, serviceOffering: { enabled: true, serviceBroker: { uri: defaultConfig.serviceOffering.serviceBroker.uri, tls: defaultConfig.serviceOffering.serviceBroker.tls } } }).eventGenerator;
+            expect(apiSetting.uri).to.equal("https://" + defaultConfig.eventGenerator.uri.toLowerCase());
+          });
+        });
+      });
+      
       context('serviceBroker uri', function () {
         it('Should add http if no protocol', function () {
-          var apiSetting = configSetting({ serviceOffering:{enabled:true, serviceBroker: { uri: defaultConfig.serviceOffering.serviceBroker.uri }}, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls }, metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls } }).serviceOffering.serviceBroker;
+          var apiSetting = configSetting({ serviceOffering:{enabled:true, serviceBroker: { uri: defaultConfig.serviceOffering.serviceBroker.uri }}, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls }, metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls } , eventGenerator: { uri: defaultConfig.eventGenerator.uri }}).serviceOffering.serviceBroker;
           expect(apiSetting.uri).to.equal("https://" + defaultConfig.serviceOffering.serviceBroker.uri.toLowerCase());
         });
 
         it('Should filter the last slash', function () {
-          var apiSetting = configSetting({ serviceOffering:{enabled:true, serviceBroker: { uri: defaultConfig.serviceOffering.serviceBroker.uri + '/' }}, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls }, metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls } }).serviceOffering.serviceBroker;
+          var apiSetting = configSetting({ serviceOffering:{enabled:true, serviceBroker: { uri: defaultConfig.serviceOffering.serviceBroker.uri + '/' }}, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls }, metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls } , eventGenerator: { uri: defaultConfig.eventGenerator.uri }}).serviceOffering.serviceBroker;
           expect(apiSetting.uri).to.equal("https://" + defaultConfig.serviceOffering.serviceBroker.uri.toLowerCase());
         });
 
         context('When the serviceBroker uri is upper case', function () {
           it('Should be lowercased', function () {
-            var apiSetting = configSetting({ serviceOffering:{enabled:true, serviceBroker: { uri: defaultConfig.serviceOffering.serviceBroker.uri.toUpperCase() }}, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls }, metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls } }).serviceOffering.serviceBroker;
+            var apiSetting = configSetting({ serviceOffering:{enabled:true, serviceBroker: { uri: defaultConfig.serviceOffering.serviceBroker.uri.toUpperCase() }}, scheduler: { uri: defaultConfig.scheduler.uri, tls: defaultConfig.scheduler.tls }, scalingEngine: { uri: defaultConfig.scalingEngine.uri, tls: defaultConfig.scalingEngine.tls }, metricsCollector: { uri: defaultConfig.metricsCollector.uri, tls: defaultConfig.metricsCollector.tls } , eventGenerator: { uri: defaultConfig.eventGenerator.uri }}).serviceOffering.serviceBroker;
             expect(apiSetting.uri).to.equal("https://" + defaultConfig.serviceOffering.serviceBroker.uri.toLowerCase());
           });
         });
@@ -598,6 +630,30 @@ describe('config setting Test Suite', function () {
           settings.metricsCollector.uri = 1234;
           expect(settings.validate().valid).to.equal(false);
           expect(settings.validate().message).to.equal("metricsCollector.uri must be a string");
+        })
+      });
+    });
+
+    context('Validate eventGenerator uri', function () {
+      context('When eventGenerator uri is null', function () {
+        it('Should return false', function () {
+          settings.eventGenerator.uri = null
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("eventGenerator.uri is required");
+        })
+      });
+      context('When eventGenerator uri is undefined', function () {
+        it('Should return false', function () {
+          delete settings.eventGenerator.uri
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("eventGenerator.uri is required");
+        })
+      });
+      context('When eventGenerator.uri is not a string', function () {
+        it('Should return false', function () {
+          settings.eventGenerator.uri = 1234;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("eventGenerator.uri must be a string");
         })
       });
     });
@@ -1099,6 +1155,99 @@ describe('config setting Test Suite', function () {
     });
   });
 
+  context('Validate eventGenerator client tls.keyFile', function () {
+    context('When eventGenerator client tls.keyFile is null', function () {
+      it('Should return false', function () {
+        settings.eventGenerator.tls.keyFile = null;
+        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().message).to.equal("eventGenerator.tls.keyFile is required");
+      });
+    });
+    context('When eventGenerator client tls.keyFile is undefined', function () {
+      it('Should return false', function () {
+        delete settings.eventGenerator.tls.keyFile;
+        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().message).to.equal("eventGenerator.tls.keyFile is required");
+      });
+    });
+    context('When eventGenerator client tls.keyFile is not a string', function () {
+      it('Should return false', function () {
+        settings.eventGenerator.tls.keyFile = 1234;
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("eventGenerator.tls.keyFile must be a string");
+      });
+    });
+  });
+
+  context('Validate eventGenerator client tls.certFile', function () {
+    context('When eventGenerator client tls.certFile is null', function () {
+      it('Should return false', function () {
+        settings.eventGenerator.tls.certFile = null;
+        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().message).to.equal("eventGenerator.tls.certFile is required");
+      });
+    });
+    context('When eventGenerator client tls.certFile is undefined', function () {
+      it('Should return false', function () {
+        delete settings.eventGenerator.tls.certFile;
+        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().message).to.equal("eventGenerator.tls.certFile is required");
+      });
+    });
+    context('When eventGenerator client tls.certFile is not a string', function () {
+      it('Should return false', function () {
+        settings.eventGenerator.tls.certFile = 1234;
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("eventGenerator.tls.certFile must be a string");
+      });
+    });
+  });
+
+  context('Validate eventGenerator client tls.caCertFile', function () {
+    context('When eventGenerator client tls.caCertFile is null', function () {
+      it('Should return false', function () {
+        settings.eventGenerator.tls.caCertFile = null;
+        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().message).to.equal("eventGenerator.tls.caCertFile is required");
+      });
+    });
+    context('When eventGenerator client tls.caCertFile is undefined', function () {
+      it('Should return false', function () {
+        delete settings.eventGenerator.tls.caCertFile;
+        expect(settings.validate().valid).to.equal(false)
+        expect(settings.validate().message).to.equal("eventGenerator.tls.caCertFile is required");
+      });
+    });
+    context('When eventGenerator client tls.caCertFile is not a string', function () {
+      it('Should return false', function () {
+        settings.eventGenerator.tls.caCertFile = 1234;
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("eventGenerator.tls.caCertFile must be a string");
+      });
+    });
+  });
+
+  context('Validate eventGenerator client tls', function () {
+    context('When eventGenerator client tls is null', function () {
+      it('Should return true', function () {
+        settings.eventGenerator.tls = null;
+        expect(settings.validate().valid).to.equal(true);
+      });
+    });
+    context('When eventGenerator client tls  is undefined', function () {
+      it('Should return true', function () {
+        delete settings.eventGenerator.tls;
+        expect(settings.validate().valid).to.equal(true);
+      });
+    });
+    context('When eventGenerator client tls is not an object', function () {
+      it('Should return false', function () {
+        settings.eventGenerator.tls = "notobject";
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("eventGenerator.tls must be an object");
+      });
+    });
+  });
 
   context('Validate serviceBroker client tls.keyFile', function () {
     context('When serviceBroker client tls.keyFile is null', function () {

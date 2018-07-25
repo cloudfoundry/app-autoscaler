@@ -45,11 +45,11 @@ type AppMonitor struct {
 }
 
 type AppMetric struct {
-	AppId      string
-	MetricType string
-	Value      string
-	Unit       string
-	Timestamp  int64
+	AppId      string `json:"app_id"`
+	MetricType string `json:"name"`
+	Value      string `json:"value"`
+	Unit       string `json:"unit"`
+	Timestamp  int64  `json:"timestamp"`
 }
 
 type AppScalingResult struct {

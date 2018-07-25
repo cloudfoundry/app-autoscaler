@@ -85,6 +85,10 @@ type MetricsCollectorClient struct {
 	Uri string          `json:"uri"`
 	TLS models.TLSCerts `json:"tls"`
 }
+type EventGeneratorClient struct {
+	Uri string          `json:"uri"`
+	TLS models.TLSCerts `json:"tls"`
+}
 type ServiceOffering struct {
 	Enabled             bool                `json:"enabled"`
 	ServiceBrokerClient ServiceBrokerClient `json:"serviceBroker"`
@@ -103,6 +107,7 @@ type APIServerConfig struct {
 	SchedulerClient        SchedulerClient        `json:"scheduler"`
 	ScalingEngineClient    ScalingEngineClient    `json:"scalingEngine"`
 	MetricsCollectorClient MetricsCollectorClient `json:"metricsCollector"`
+	EventGeneratorClient   EventGeneratorClient   `json:"eventGenerator"`
 	ServiceOffering        ServiceOffering        `json:"serviceOffering"`
 
 	TLS       models.TLSCerts `json:"tls"`
@@ -242,7 +247,7 @@ func (components *Components) PrepareServiceBrokerConfig(publicPort int, interna
 	return cfgFile.Name()
 }
 
-func (components *Components) PrepareApiServerConfig(port int, publicPort int, skipSSLValidation bool, cfApi string, dbUri string, schedulerUri string, scalingEngineUri string, metricsCollectorUri string, serviceBrokerUri string, serviceOfferingEnabled bool, tmpDir string) string {
+func (components *Components) PrepareApiServerConfig(port int, publicPort int, skipSSLValidation bool, cfApi string, dbUri string, schedulerUri string, scalingEngineUri string, metricsCollectorUri string, eventGeneratorUri string, serviceBrokerUri string, serviceOfferingEnabled bool, tmpDir string) string {
 
 	apiConfig := APIServerConfig{
 		Port:              port,
@@ -278,6 +283,14 @@ func (components *Components) PrepareApiServerConfig(port int, publicPort int, s
 			TLS: models.TLSCerts{
 				KeyFile:    filepath.Join(testCertDir, "metricscollector.key"),
 				CertFile:   filepath.Join(testCertDir, "metricscollector.crt"),
+				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			},
+		},
+		EventGeneratorClient: EventGeneratorClient{
+			Uri: eventGeneratorUri,
+			TLS: models.TLSCerts{
+				KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
+				CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
 				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 			},
 		},
@@ -421,7 +434,12 @@ func (components *Components) PrepareEventGeneratorConfig(dbUri string, port int
 			Level: LOGLEVEL,
 		},
 		Server: egConfig.ServerConfig{
-			Port:      port,
+			Port: port,
+			TLS: models.TLSCerts{
+				KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
+				CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
+				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			},
 			NodeAddrs: []string{"localhost"},
 			NodeIndex: 0,
 		},
