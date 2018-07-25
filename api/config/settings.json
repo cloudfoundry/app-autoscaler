@@ -1,58 +1,66 @@
 {
-  "port": 8080,
-  "publicPort": 8088,
-  "infoFilePath": "../api/config/info.json",
-  "cfApi": "https://api.bosh-lite.com",
-  "skipSSLValidation": false,
-  "db": {
-    "maxConnections": 10,
-    "minConnections": 0,
-    "idleTimeout": 1000,
-    "uri": "postgres://postgres@127.0.0.1:5432/autoscaler"
-  },
-  "scheduler": {
-    "uri": "http://autoscaler.boshlite.com",
-    "tls": {
-        "keyFile":"../test-certs/scheduler.key",
-        "certFile":"../test-certs/scheduler.crt",
-        "caCertFile":"../test-certs/autoscaler-ca.crt"
-    }
-  },
-  "scalingEngine": {
-     "uri": "http://autoscaler.boshlite.com",
-      "tls": {
-         "keyFile":"../test-certs/scalingengine.key",
-         "certFile":"../test-certs/scalingengine.crt",
-         "caCertFile":"../test-certs/autoscaler-ca.crt"
-      }
-  },
-  "metricsCollector": {
-     "uri": "http://autoscaler.boshlite.com",
-      "tls": {
-         "keyFile":"../test-certs/metricscollector.key",
-         "certFile":"../test-certs/metricscollector.crt",
-         "caCertFile":"../test-certs/autoscaler-ca.crt"
-      }
-  },
-  "serviceOffering": {
-      "enabled" : true,
-      "serviceBroker": {
-         "uri": "http://autoscaler.boshlite.com",
-         "tls": {
-            "keyFile":"../test-certs/servicebroker_internal.key",
-            "certFile":"../test-certs/servicebroker_internal.crt",
-             "caCertFile":"../test-certs/autoscaler-ca.crt"
+    "port": 8080,
+    "publicPort": 8088,
+    "infoFilePath": "../api/config/info.json",
+    "cfApi": "https://api.bosh-lite.com",
+    "skipSSLValidation": false,
+    "db": {
+        "maxConnections": 10,
+        "minConnections": 0,
+        "idleTimeout": 1000,
+        "uri": "postgres://postgres@127.0.0.1:5432/autoscaler"
+    },
+    "scheduler": {
+        "uri": "http://autoscaler.boshlite.com",
+        "tls": {
+            "keyFile": "../test-certs/scheduler.key",
+            "certFile": "../test-certs/scheduler.crt",
+            "caCertFile": "../test-certs/autoscaler-ca.crt"
+        }
+    },
+    "scalingEngine": {
+        "uri": "http://autoscaler.boshlite.com",
+        "tls": {
+            "keyFile": "../test-certs/scalingengine.key",
+            "certFile": "../test-certs/scalingengine.crt",
+            "caCertFile": "../test-certs/autoscaler-ca.crt"
+        }
+    },
+    "metricsCollector": {
+        "uri": "http://autoscaler.boshlite.com",
+        "tls": {
+            "keyFile": "../test-certs/metricscollector.key",
+            "certFile": "../test-certs/metricscollector.crt",
+            "caCertFile": "../test-certs/autoscaler-ca.crt"
+        }
+    },
+    "eventGenerator": {
+        "uri": "http://autoscaler.boshlite.com",
+        "tls": {
+            "keyFile": "../test-certs/eventgenerator.key",
+            "certFile": "../test-certs/eventgenerator.crt",
+            "caCertFile": "../test-certs/autoscaler-ca.crt"
+        }
+    },
+    "serviceOffering": {
+        "enabled": true,
+        "serviceBroker": {
+            "uri": "http://autoscaler.boshlite.com",
+            "tls": {
+                "keyFile": "../test-certs/servicebroker_internal.key",
+                "certFile": "../test-certs/servicebroker_internal.crt",
+                "caCertFile": "../test-certs/autoscaler-ca.crt"
             }
         }
     },
-  "tls": {
-        "keyFile":"../test-certs/api.key",
-        "certFile":"../test-certs/api.crt",
-        "caCertFile":"../test-certs/autoscaler-ca.crt"
+    "tls": {
+        "keyFile": "../test-certs/api.key",
+        "certFile": "../test-certs/api.crt",
+        "caCertFile": "../test-certs/autoscaler-ca.crt"
     },
-  "publicTls": {
-        "keyFile":"../test-certs/api_public.key",
-        "certFile":"../test-certs/api_public.crt",
-        "caCertFile":"../test-certs/autoscaler-ca.crt"
+    "publicTls": {
+        "keyFile": "../test-certs/api_public.key",
+        "certFile": "../test-certs/api_public.crt",
+        "caCertFile": "../test-certs/autoscaler-ca.crt"
     }
 }

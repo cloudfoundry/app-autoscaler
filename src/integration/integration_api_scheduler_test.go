@@ -52,7 +52,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 	Describe("When offered as a service", func() {
 
 		BeforeEach(func() {
-			apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], components.Ports[APIPublicServer], false, fakeCCNOAAUAA.URL(), dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ServiceBrokerInternal]), true, tmpDir)
+			apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], components.Ports[APIPublicServer], false, fakeCCNOAAUAA.URL(), dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[EventGenerator]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ServiceBrokerInternal]), true, tmpDir)
 			startApiServer()
 
 			resp, err := detachPolicy(appId, INTERNAL)
@@ -222,7 +222,6 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 					BeforeEach(func() {
 						//attach a policy first with 4 recurring and 2 specific_date schedules
 						policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
-
 						doAttachPolicy(appId, policyStr, http.StatusCreated, INTERNAL)
 					})
 
@@ -273,7 +272,6 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 						checkApiServerStatus(appId, http.StatusNotFound, INTERNAL)
 						checkSchedulerStatus(appId, http.StatusNotFound, INTERNAL)
 					})
-
 				})
 
 				Context("Policies without schedules", func() {
@@ -305,7 +303,6 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 						checkApiServerStatus(appId, http.StatusNotFound, PUBLIC)
 						checkSchedulerStatus(appId, http.StatusNotFound, PUBLIC)
 					})
-
 				})
 
 				Context("Policies without schedules", func() {
@@ -429,7 +426,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 
 	Describe("When offered as a built-in experience", func() {
 		BeforeEach(func() {
-			apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], components.Ports[APIPublicServer], false, fakeCCNOAAUAA.URL(), dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ServiceBrokerInternal]), false, tmpDir)
+			apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], components.Ports[APIPublicServer], false, fakeCCNOAAUAA.URL(), dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[EventGenerator]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ServiceBrokerInternal]), false, tmpDir)
 			startApiServer()
 
 			resp, err := detachPolicy(appId, INTERNAL)

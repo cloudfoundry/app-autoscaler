@@ -103,6 +103,7 @@ module.exports = function(settings, callback) {
   var policies = require('./lib/routes/policies')(settings, models);
   var scalingHistories = require('./lib/routes/scalingHistories')(settings);
   var metrics = require('./lib/routes/metrics')(settings);
+  var aggregatedMetrics = require('./lib/routes/aggregated_metrics')(settings);
 
   app.use('/v1/apps',policies);
   app.use('/v1/apps',scalingHistories);
@@ -154,6 +155,7 @@ module.exports = function(settings, callback) {
   publicApp.use('/v1/apps',policies);
   publicApp.use('/v1/apps',scalingHistories);
   publicApp.use('/v1/apps',metrics);
+  publicApp.use('/v1/apps',aggregatedMetrics);
   publicApp.use(function(err, req, res, next) {
     var errorResponse = {};
     if (err) {
