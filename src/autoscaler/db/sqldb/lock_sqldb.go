@@ -158,7 +158,7 @@ func (ldb *LockSQLDB) Lock(lock *models.Lock) (bool, error) {
 				return err
 			}
 			if lastUpdatedTimestamp.Add(time.Second * time.Duration(fetchedLock.Ttl)).Before(currentTimestamp) {
-				ldb.logger.Debug("lock-expired", lager.Data{"Owner": fetchedLock.Owner})
+				ldb.logger.Info("lock-expired", lager.Data{"Owner": fetchedLock.Owner})
 				err = ldb.remove(fetchedLock.Owner, tx)
 				if err != nil {
 					ldb.logger.Error("failed-to-release-existing-lock", err)
