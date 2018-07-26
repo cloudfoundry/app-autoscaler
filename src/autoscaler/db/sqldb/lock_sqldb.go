@@ -190,7 +190,7 @@ func (ldb *LockSQLDB) Lock(lock *models.Lock) (bool, error) {
 		}
 
 		if newLock {
-			ldb.logger.Debug("acquired-lock-successfully")
+			ldb.logger.Info("acquired-lock-successfully")
 		} else {
 			ldb.logger.Debug("renewed-lock-successfully")
 		}
