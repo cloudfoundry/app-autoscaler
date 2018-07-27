@@ -10,18 +10,22 @@ var settings = require(path.join(__dirname, '../../../lib/config/setting.js'))((
 var relativePath = path.relative(process.cwd(), path.join(__dirname, "../../../../test-certs"));
 var testSetting = require(path.join(__dirname, '../test.helper.js'))(relativePath,settings);
 var API = require("../../../app.js");
+var nock = require("nock");
+var HttpStatus = require('http-status-codes');
+
 var app;
 var publicApp;
 var servers;
-var logger = require("../../../lib/log/logger");
-var nock = require("nock");
 var metricsCollectorUri = testSetting.metricsCollector.uri;
 var theAppId = "the-app-guid";
 var metricType = "memoryused";
+var theUserId = "the-user-id";
+var theUserToken = "the-user-token"
 
 describe("Routing Metrics", function() {
 
   before(function() {
+    testSetting.metricsCollector.tls = null;
     servers = API(testSetting, function(){});
     app = servers.internalServer;
     publicApp = servers.publicServer;
@@ -33,6 +37,23 @@ describe("Routing Metrics", function() {
   })
   beforeEach(function() {
     nock.cleanAll();
+    nock("https://api.bosh-lite.com")
+    .get("/v2/info")
+    .reply(HttpStatus.OK, { "authorization_endpoint": "https://uaa.bosh-lite.com" });
+
+    nock("https://uaa.bosh-lite.com")
+    .get("/userinfo")
+    .reply(HttpStatus.OK, { "user_id": theUserId });
+    
+    nock("https://api.bosh-lite.com")
+    .get(/\/v2\/users\/.+\/spaces\?.+/)
+    .reply(HttpStatus.OK, {
+      "total_results": 1,
+      "total_pages": 1,
+      "prev_url": null,
+      "next_url": null
+    });
+
   });
   var histories = [
     { "app_id": theAppId, "timestamp": 100, "instance_index": 0, "collected_at": 0, "name": "memoryused", "unit": "megabytes", "value": "200"},
@@ -49,9 +70,10 @@ describe("Routing Metrics", function() {
           nock(metricsCollectorUri)
             .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
             .reply(200, histories);
-          request(app)
+          request(publicApp)
             .get("/v1/apps/12345/metric_histories/" + metricType)
-            .query({ "metric-type": metricType, "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
+            .set("Authorization",theUserToken)
+            .query({"end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(200);
@@ -63,9 +85,10 @@ describe("Routing Metrics", function() {
           nock(metricsCollectorUri)
             .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
             .reply(200, histories);
-          request(app)
+          request(publicApp)
             .get("/v1/apps/12345/metric_histories/" + metricType)
-            .query({ "metric-type": metricType, "start-time": "not-integer", "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
+            .set("Authorization",theUserToken)            
+            .query({"start-time": "not-integer", "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(400);
@@ -82,9 +105,10 @@ describe("Routing Metrics", function() {
           nock(metricsCollectorUri)
             .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
             .reply(200, histories);
-          request(app)
+          request(publicApp)
             .get("/v1/apps/12345/metric_histories/" + metricType)
-            .query({ "metric-type": metricType, "start-time": 100, "order": "desc", "page": 1, "results-per-page": 2 })
+            .set("Authorization",theUserToken)            
+            .query({"start-time": 100, "order": "desc", "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(200);
@@ -96,9 +120,10 @@ describe("Routing Metrics", function() {
           nock(metricsCollectorUri)
             .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
             .reply(200, histories);
-          request(app)
+          request(publicApp)
             .get("/v1/apps/12345/metric_histories/" + metricType)
-            .query({ "metric-type": metricType, "end-time": "not-integer", "start-time": 100, "order": "desc", "page": 1, "results-per-page": 2 })
+            .set("Authorization",theUserToken)            
+            .query({"end-time": "not-integer", "start-time": 100, "order": "desc", "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(400);
@@ -115,9 +140,10 @@ describe("Routing Metrics", function() {
           nock(metricsCollectorUri)
             .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
             .reply(200, histories);
-          request(app)
+          request(publicApp)
             .get("/v1/apps/12345/metric_histories/" + metricType)
-            .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "page": 1, "results-per-page": 2 })
+            .set("Authorization",theUserToken)  
+            .query({"start-time": 100, "end-time": 200, "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(200);
@@ -129,9 +155,10 @@ describe("Routing Metrics", function() {
           nock(metricsCollectorUri)
             .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
             .reply(200, histories);
-          request(app)
+          request(publicApp)
             .get("/v1/apps/12345/metric_histories/" + metricType)
-            .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "not-desc-asc", "page": 1, "results-per-page": 2 })
+            .set("Authorization",theUserToken)            
+            .query({"start-time": 100, "end-time": 200, "order": "not-desc-asc", "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(400);
@@ -148,9 +175,10 @@ describe("Routing Metrics", function() {
           nock(metricsCollectorUri)
             .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
             .reply(200, histories);
-          request(app)
+          request(publicApp)
             .get("/v1/apps/12345/metric_histories/" + metricType)
-            .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "desc", "results-per-page": 2 })
+            .set("Authorization",theUserToken)            
+            .query({"start-time": 100, "end-time": 200, "order": "desc", "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(200);
@@ -162,9 +190,10 @@ describe("Routing Metrics", function() {
           nock(metricsCollectorUri)
             .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
             .reply(200, histories);
-          request(app)
+          request(publicApp)
             .get("/v1/apps/12345/metric_histories/" + metricType)
-            .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "desc", "page": "not-integer", "results-per-page": 2 })
+            .set("Authorization",theUserToken)            
+            .query({"start-time": 100, "end-time": 200, "order": "desc", "page": "not-integer", "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(400);
@@ -181,9 +210,10 @@ describe("Routing Metrics", function() {
           nock(metricsCollectorUri)
             .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
             .reply(200, histories);
-          request(app)
+          request(publicApp)
             .get("/v1/apps/12345/metric_histories/" + metricType)
-            .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "desc", "page": 1 })
+            .set("Authorization",theUserToken)            
+            .query({"start-time": 100, "end-time": 200, "order": "desc", "page": 1 })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(200);
@@ -196,9 +226,10 @@ describe("Routing Metrics", function() {
           nock(metricsCollectorUri)
             .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
             .reply(200, histories);
-          request(app)
+          request(publicApp)
             .get("/v1/apps/12345/metric_histories/" + metricType)
-            .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "desc", "page": 1, "results-per-page": "not-integer" })
+            .set("Authorization",theUserToken)            
+            .query({"start-time": 100, "end-time": 200, "order": "desc", "page": 1, "results-per-page": "not-integer" })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(400);
@@ -218,9 +249,10 @@ describe("Routing Metrics", function() {
             'message': 'Error in requests metricsCollector',
             'details': 'fake body'
           });
-        request(app)
+        request(publicApp)
           .get("/v1/apps/12345/metric_histories/" + metricType)
-          .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
+          .set("Authorization",theUserToken)            
+          .query({"start-time": 100, "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);
             expect(result.statusCode).to.equal(500);
@@ -235,9 +267,10 @@ describe("Routing Metrics", function() {
         nock(metricsCollectorUri)
           .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
           .reply(500, { code: 'Interal-Server-Error', message: 'Error getting scaling histories from database' });
-        request(app)
+        request(publicApp)
           .get("/v1/apps/12345/metric_histories/" + metricType)
-          .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
+          .set("Authorization",theUserToken)            
+          .query({"start-time": 100, "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);
             expect(result.statusCode).to.equal(500);
@@ -254,9 +287,10 @@ describe("Routing Metrics", function() {
         nock(metricsCollectorUri)
           .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
           .reply(200, histories);
-        request(app)
+        request(publicApp)
           .get("/v1/apps/12345/metric_histories/" + metricType)
-          .query({ "metric-type": metricType, "start-time": 100, "end-time": 500, "order": "desc", "page": 1, "results-per-page": 2 })
+          .set("Authorization",theUserToken)            
+          .query({"start-time": 100, "end-time": 500, "order": "desc", "page": 1, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);
             expect(result.statusCode).to.equal(200);
@@ -274,9 +308,10 @@ describe("Routing Metrics", function() {
         nock(metricsCollectorUri)
           .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
           .reply(200, histories);
-        request(app)
+        request(publicApp)
           .get("/v1/apps/12345/metric_histories/" + metricType)
-          .query({ "metric-type": metricType, "start-time": 100, "end-time": 500, "order": "desc", "page": 2, "results-per-page": 2 })
+          .set("Authorization",theUserToken)            
+          .query({"start-time": 100, "end-time": 500, "order": "desc", "page": 2, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);
             expect(result.statusCode).to.equal(200);
@@ -294,9 +329,10 @@ describe("Routing Metrics", function() {
         nock(metricsCollectorUri)
           .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
           .reply(200, histories);
-        request(app)
+        request(publicApp)
           .get("/v1/apps/12345/metric_histories/" + metricType)
-          .query({ "metric-type": metricType, "start-time": 100, "end-time": 500, "order": "desc", "page": 3, "results-per-page": 2 })
+          .set("Authorization",theUserToken)            
+          .query({"start-time": 100, "end-time": 500, "order": "desc", "page": 3, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);
             expect(result.statusCode).to.equal(200);
@@ -314,9 +350,10 @@ describe("Routing Metrics", function() {
         nock(metricsCollectorUri)
           .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
           .reply(200, histories);
-        request(app)
+        request(publicApp)
           .get("/v1/apps/12345/metric_histories/" + metricType)
-          .query({ "metric-type": metricType, "start-time": 100, "end-time": 500, "order": "desc", "page": 4, "results-per-page": 2 })
+          .set("Authorization",theUserToken)            
+          .query({"start-time": 100, "end-time": 500, "order": "desc", "page": 4, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);
             expect(result.statusCode).to.equal(200);

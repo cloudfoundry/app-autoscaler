@@ -56,10 +56,6 @@ describe("Routing Aggregated App Metrics", function() {
     });
   });
 
-  afterEach(function(){
-    nock.cleanAll();
-  });
-
   var histories = [
     { "app_id": theAppId, "timestamp": 100,"name": "memoryused", "unit": "megabytes", "value": "200"},
     { "app_id": theAppId, "timestamp": 110,"name": "memoryused", "unit": "megabytes", "value": "200"},
@@ -78,7 +74,7 @@ describe("Routing Aggregated App Metrics", function() {
           request(publicApp)
             .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
             .set("Authorization",theUserToken)
-            .query({ "metric-type": metricType, "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
+            .query({"end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(200);
@@ -93,7 +89,7 @@ describe("Routing Aggregated App Metrics", function() {
           request(publicApp)
             .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
             .set("Authorization",theUserToken) 
-            .query({ "metric-type": metricType, "start-time": "not-integer", "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
+            .query({"start-time": "not-integer", "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(400);
@@ -113,7 +109,7 @@ describe("Routing Aggregated App Metrics", function() {
           request(publicApp)
             .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
             .set("Authorization",theUserToken)
-            .query({ "metric-type": metricType, "start-time": 100, "order": "desc", "page": 1, "results-per-page": 2 })
+            .query({"start-time": 100, "order": "desc", "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(200);
@@ -128,7 +124,7 @@ describe("Routing Aggregated App Metrics", function() {
           request(publicApp)
             .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
             .set("Authorization",theUserToken)
-            .query({ "metric-type": metricType, "end-time": "not-integer", "start-time": 100, "order": "desc", "page": 1, "results-per-page": 2 })
+            .query({"end-time": "not-integer", "start-time": 100, "order": "desc", "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(400);
@@ -148,7 +144,7 @@ describe("Routing Aggregated App Metrics", function() {
           request(publicApp)
             .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
             .set("Authorization",theUserToken)
-            .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "page": 1, "results-per-page": 2 })
+            .query({"start-time": 100, "end-time": 200, "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(200);
@@ -163,7 +159,7 @@ describe("Routing Aggregated App Metrics", function() {
           request(publicApp)
             .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
             .set("Authorization",theUserToken)
-            .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "not-desc-asc", "page": 1, "results-per-page": 2 })
+            .query({"start-time": 100, "end-time": 200, "order": "not-desc-asc", "page": 1, "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(400);
@@ -183,7 +179,7 @@ describe("Routing Aggregated App Metrics", function() {
           request(publicApp)
             .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
             .set("Authorization",theUserToken)
-            .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "desc", "results-per-page": 2 })
+            .query({"start-time": 100, "end-time": 200, "order": "desc", "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(200);
@@ -198,7 +194,7 @@ describe("Routing Aggregated App Metrics", function() {
           request(publicApp)
             .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
             .set("Authorization",theUserToken)
-            .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "desc", "page": "not-integer", "results-per-page": 2 })
+            .query({"start-time": 100, "end-time": 200, "order": "desc", "page": "not-integer", "results-per-page": 2 })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(400);
@@ -218,7 +214,7 @@ describe("Routing Aggregated App Metrics", function() {
           request(publicApp)
             .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
             .set("Authorization",theUserToken)
-            .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "desc", "page": 1 })
+            .query({"start-time": 100, "end-time": 200, "order": "desc", "page": 1 })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(200);
@@ -234,7 +230,7 @@ describe("Routing Aggregated App Metrics", function() {
           request(publicApp)
             .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
             .set("Authorization",theUserToken)
-            .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "desc", "page": 1, "results-per-page": "not-integer" })
+            .query({"start-time": 100, "end-time": 200, "order": "desc", "page": 1, "results-per-page": "not-integer" })
             .end(function(error, result) {
               expect(error).to.equal(null);
               expect(result.statusCode).to.equal(400);
@@ -257,7 +253,7 @@ describe("Routing Aggregated App Metrics", function() {
         request(publicApp)
           .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
           .set("Authorization",theUserToken)
-          .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
+          .query({"start-time": 100, "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);
             expect(result.statusCode).to.equal(500);
@@ -275,7 +271,7 @@ describe("Routing Aggregated App Metrics", function() {
         request(publicApp)
           .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
           .set("Authorization",theUserToken)
-          .query({ "metric-type": metricType, "start-time": 100, "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
+          .query({"start-time": 100, "end-time": 200, "order": "desc", "page": 1, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);
             expect(result.statusCode).to.equal(500);
@@ -295,7 +291,7 @@ describe("Routing Aggregated App Metrics", function() {
         request(publicApp)
           .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
           .set("Authorization",theUserToken)
-          .query({ "metric-type": metricType, "start-time": 100, "end-time": 500, "order": "desc", "page": 1, "results-per-page": 2 })
+          .query({"start-time": 100, "end-time": 500, "order": "desc", "page": 1, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);
             expect(result.statusCode).to.equal(200);
@@ -316,7 +312,7 @@ describe("Routing Aggregated App Metrics", function() {
         request(publicApp)
           .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
           .set("Authorization",theUserToken)
-          .query({ "metric-type": metricType, "start-time": 100, "end-time": 500, "order": "desc", "page": 2, "results-per-page": 2 })
+          .query({"start-time": 100, "end-time": 500, "order": "desc", "page": 2, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);
             expect(result.statusCode).to.equal(200);
@@ -337,7 +333,7 @@ describe("Routing Aggregated App Metrics", function() {
         request(publicApp)
           .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
           .set("Authorization",theUserToken)
-          .query({ "metric-type": metricType, "start-time": 100, "end-time": 500, "order": "desc", "page": 3, "results-per-page": 2 })
+          .query({"start-time": 100, "end-time": 500, "order": "desc", "page": 3, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);
             expect(result.statusCode).to.equal(200);
@@ -358,7 +354,7 @@ describe("Routing Aggregated App Metrics", function() {
         request(publicApp)
           .get("/v1/apps/12345/aggregated_metric_histories/" + metricType)
           .set("Authorization",theUserToken)
-          .query({ "metric-type": metricType, "start-time": 100, "end-time": 500, "order": "desc", "page": 4, "results-per-page": 2 })
+          .query({"start-time": 100, "end-time": 500, "order": "desc", "page": 4, "results-per-page": 2 })
           .end(function(error, result) {
             expect(error).to.equal(null);
             expect(result.statusCode).to.equal(200);

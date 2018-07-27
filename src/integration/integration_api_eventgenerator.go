@@ -57,7 +57,7 @@ var _ = Describe("Integration_Api_EventGenerator", func() {
 			})
 			It("should error with status code 500", func() {
 				By("check public api")
-				checkResponseContentWithParameters(getAppAggregatedMetrics, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{}, PUBLIC)
+				checkPublicAPIResponseContentWithParameters(getAppAggregatedMetrics, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{})
 			})
 		})
 
@@ -73,7 +73,7 @@ var _ = Describe("Integration_Api_EventGenerator", func() {
 			})
 			It("should error with status code 500", func() {
 				By("check public api")
-				checkResponseContentWithParameters(getAppAggregatedMetrics, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{}, PUBLIC)
+				checkPublicAPIResponseContentWithParameters(getAppAggregatedMetrics, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{})
 			})
 		})
 		Context("UAA api returns 401", func() {
@@ -89,7 +89,7 @@ var _ = Describe("Integration_Api_EventGenerator", func() {
 			})
 			It("should error with status code 401", func() {
 				By("check public api")
-				checkResponseContentWithParameters(getAppAggregatedMetrics, pathVariables, parameters, http.StatusUnauthorized, map[string]interface{}{}, PUBLIC)
+				checkPublicAPIResponseContentWithParameters(getAppAggregatedMetrics, pathVariables, parameters, http.StatusUnauthorized, map[string]interface{}{})
 			})
 		})
 
@@ -104,7 +104,7 @@ var _ = Describe("Integration_Api_EventGenerator", func() {
 			})
 			It("should error with status code 401", func() {
 				By("check public api")
-				checkResponseContentWithParameters(getAppAggregatedMetrics, pathVariables, parameters, http.StatusUnauthorized, map[string]interface{}{}, PUBLIC)
+				checkPublicAPIResponseContentWithParameters(getAppAggregatedMetrics, pathVariables, parameters, http.StatusUnauthorized, map[string]interface{}{})
 			})
 		})
 
@@ -115,7 +115,7 @@ var _ = Describe("Integration_Api_EventGenerator", func() {
 
 			It("should error with status code 500", func() {
 				By("check public api")
-				checkResponseContentWithParameters(getAppAggregatedMetrics, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{"error": fmt.Sprintf("connect ECONNREFUSED 127.0.0.1:%d", components.Ports[EventGenerator])}, PUBLIC)
+				checkPublicAPIResponseContentWithParameters(getAppAggregatedMetrics, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{"error": fmt.Sprintf("connect ECONNREFUSED 127.0.0.1:%d", components.Ports[EventGenerator])})
 			})
 		})
 
@@ -245,7 +245,7 @@ var _ = Describe("Integration_Api_EventGenerator", func() {
 
 func checkAggregatedMetricResult(pathVariables []string, parameters map[string]string, result AppAggregatedMetricResult) {
 	var actual AppAggregatedMetricResult
-	resp, err := getAppAggregatedMetrics(pathVariables, parameters, PUBLIC)
+	resp, err := getAppAggregatedMetrics(pathVariables, parameters)
 	defer resp.Body.Close()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.StatusCode).To(Equal(http.StatusOK))
