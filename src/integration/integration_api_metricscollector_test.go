@@ -62,7 +62,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 			})
 			It("should error with status code 500", func() {
 				By("check public api")
-				checkResponseContentWithParameters(getAppInstanceMetrics, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{}, PUBLIC)
+				checkPublicAPIResponseContentWithParameters(getAppInstanceMetrics, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{})
 			})
 		})
 
@@ -79,7 +79,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 			})
 			It("should error with status code 500", func() {
 				By("check public api")
-				checkResponseContentWithParameters(getAppInstanceMetrics, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{}, PUBLIC)
+				checkPublicAPIResponseContentWithParameters(getAppInstanceMetrics, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{})
 			})
 		})
 		Context("UAA api returns 401", func() {
@@ -96,7 +96,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 			})
 			It("should error with status code 401", func() {
 				By("check public api")
-				checkResponseContentWithParameters(getAppInstanceMetrics, pathVariables, parameters, http.StatusUnauthorized, map[string]interface{}{}, PUBLIC)
+				checkPublicAPIResponseContentWithParameters(getAppInstanceMetrics, pathVariables, parameters, http.StatusUnauthorized, map[string]interface{}{})
 			})
 		})
 
@@ -112,7 +112,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 			})
 			It("should error with status code 401", func() {
 				By("check public api")
-				checkResponseContentWithParameters(getAppInstanceMetrics, pathVariables, parameters, http.StatusUnauthorized, map[string]interface{}{}, PUBLIC)
+				checkPublicAPIResponseContentWithParameters(getAppInstanceMetrics, pathVariables, parameters, http.StatusUnauthorized, map[string]interface{}{})
 			})
 		})
 
@@ -124,9 +124,9 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 
 			It("should error with status code 500", func() {
 				By("check internal api")
-				checkResponseContentWithParameters(getAppInstanceMetrics, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{"error": fmt.Sprintf("connect ECONNREFUSED 127.0.0.1:%d", components.Ports[MetricsCollector])}, INTERNAL)
+				checkPublicAPIResponseContentWithParameters(getAppInstanceMetrics, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{"error": fmt.Sprintf("connect ECONNREFUSED 127.0.0.1:%d", components.Ports[MetricsCollector])})
 				By("check public api")
-				checkResponseContentWithParameters(getAppInstanceMetrics, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{"error": fmt.Sprintf("connect ECONNREFUSED 127.0.0.1:%d", components.Ports[MetricsCollector])}, PUBLIC)
+				checkPublicAPIResponseContentWithParameters(getAppInstanceMetrics, pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{"error": fmt.Sprintf("connect ECONNREFUSED 127.0.0.1:%d", components.Ports[MetricsCollector])})
 
 			})
 
@@ -204,10 +204,9 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 						},
 					},
 				}
-				By("check internal api")
-				checkAppInstanceMetricResult(pathVariables, parameters, result, INTERNAL)
+
 				By("check public api")
-				checkAppInstanceMetricResult(pathVariables, parameters, result, PUBLIC)
+				checkAppInstanceMetricResult(pathVariables, parameters, result)
 
 				By("get the 2nd page")
 				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "metric-type": metricType, "order": "asc", "page": "2", "results-per-page": "2"}
@@ -236,10 +235,8 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 						},
 					},
 				}
-				By("check internal api")
-				checkAppInstanceMetricResult(pathVariables, parameters, result, INTERNAL)
 				By("check public api")
-				checkAppInstanceMetricResult(pathVariables, parameters, result, PUBLIC)
+				checkAppInstanceMetricResult(pathVariables, parameters, result)
 
 				By("get the 3rd page")
 				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "metric-type": metricType, "order": "asc", "page": "3", "results-per-page": "2"}
@@ -259,10 +256,8 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 						},
 					},
 				}
-				By("check internal api")
-				checkAppInstanceMetricResult(pathVariables, parameters, result, INTERNAL)
 				By("check public api")
-				checkAppInstanceMetricResult(pathVariables, parameters, result, PUBLIC)
+				checkAppInstanceMetricResult(pathVariables, parameters, result)
 
 				By("the 4th page should be empty")
 				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "metric-type": metricType, "order": "asc", "page": "4", "results-per-page": "2"}
@@ -272,19 +267,17 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 					Page:         4,
 					Resources:    []models.AppInstanceMetric{},
 				}
-				By("check internal api")
-				checkAppInstanceMetricResult(pathVariables, parameters, result, INTERNAL)
 				By("check public api")
-				checkAppInstanceMetricResult(pathVariables, parameters, result, PUBLIC)
+				checkAppInstanceMetricResult(pathVariables, parameters, result)
 			})
 
 		})
 	})
 })
 
-func checkAppInstanceMetricResult(pathVariables []string, parameters map[string]string, result AppInstanceMetricResult, apiType APIType) {
+func checkAppInstanceMetricResult(pathVariables []string, parameters map[string]string, result AppInstanceMetricResult) {
 	var actual AppInstanceMetricResult
-	resp, err := getAppInstanceMetrics(pathVariables, parameters, apiType)
+	resp, err := getAppInstanceMetrics(pathVariables, parameters)
 	defer resp.Body.Close()
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.StatusCode).To(Equal(http.StatusOK))
