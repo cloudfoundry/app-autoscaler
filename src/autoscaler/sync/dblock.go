@@ -63,13 +63,13 @@ func (dblock *DatabaseLock) InitDBLockRunner(retryInterval time.Duration, ttl ti
 					if releaseErr != nil {
 						dblock.logger.Error("failed-to-release-lock ", releaseErr)
 					} else {
-						dblock.logger.Debug("successfully-released-lock", lager.Data{"owner": owner})
+						dblock.logger.Info("successfully-released-lock", lager.Data{"owner": owner})
 					}
 					os.Exit(1)
 				}
 				if isLockAcquired && readyToAcquireLock {
 					readyToAcquireLock = false
-					dblock.logger.Debug("successfully-acquired-lock", lager.Data{"owner": owner})
+					dblock.logger.Info("successfully-acquired-lock", lager.Data{"owner": owner})
 					close(ready)
 				}
 			}
