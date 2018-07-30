@@ -1,4 +1,4 @@
-package pruner_test
+package operator_test
 
 import (
 	"time"
@@ -13,7 +13,7 @@ const (
 	TestRefreshInterval time.Duration = 12 * time.Hour
 )
 
-func TestConfig(t *testing.T) {
+func TestOperators(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Pruners Suite")
+	RunSpecs(t, "Operators Test Suite")
 }

@@ -6,6 +6,7 @@ import (
 	egConfig "autoscaler/eventgenerator/config"
 	mcConfig "autoscaler/metricscollector/config"
 	"autoscaler/models"
+	opConfig "autoscaler/operator/config"
 	seConfig "autoscaler/scalingengine/config"
 	"encoding/json"
 	"fmt"
@@ -31,6 +32,7 @@ const (
 	MetricsCollector      = "metricsCollector"
 	EventGenerator        = "eventGenerator"
 	ScalingEngine         = "scalingEngine"
+	Operator              = "operator"
 	ConsulCluster         = "consulCluster"
 )
 
@@ -119,7 +121,7 @@ func (components *Components) ServiceBroker(confPath string, argv ...string) *gi
 		Name:              ServiceBroker,
 		AnsiColorCode:     "32m",
 		StartCheck:        "Service broker app is running",
-		StartCheckTimeout: 10 * time.Second,
+		StartCheckTimeout: 20 * time.Second,
 		Command: exec.Command(
 			"node", append([]string{components.Executables[ServiceBroker], "-c", confPath}, argv...)...,
 		),
@@ -133,7 +135,7 @@ func (components *Components) ApiServer(confPath string, argv ...string) *ginkgo
 		Name:              APIServer,
 		AnsiColorCode:     "33m",
 		StartCheck:        "Autoscaler API server started",
-		StartCheckTimeout: 10 * time.Second,
+		StartCheckTimeout: 20 * time.Second,
 		Command: exec.Command(
 			"node", append([]string{components.Executables[APIServer], "-c", confPath}, argv...)...,
 		),
@@ -162,7 +164,7 @@ func (components *Components) MetricsCollector(confPath string, argv ...string) 
 		Name:              MetricsCollector,
 		AnsiColorCode:     "35m",
 		StartCheck:        `"metricscollector.started"`,
-		StartCheckTimeout: 10 * time.Second,
+		StartCheckTimeout: 20 * time.Second,
 		Command: exec.Command(
 			components.Executables[MetricsCollector],
 			append([]string{
@@ -178,7 +180,7 @@ func (components *Components) EventGenerator(confPath string, argv ...string) *g
 		Name:              EventGenerator,
 		AnsiColorCode:     "36m",
 		StartCheck:        `"eventgenerator.started"`,
-		StartCheckTimeout: 10 * time.Second,
+		StartCheckTimeout: 20 * time.Second,
 		Command: exec.Command(
 			components.Executables[EventGenerator],
 			append([]string{
@@ -194,9 +196,25 @@ func (components *Components) ScalingEngine(confPath string, argv ...string) *gi
 		Name:              ScalingEngine,
 		AnsiColorCode:     "37m",
 		StartCheck:        `"scalingengine.started"`,
-		StartCheckTimeout: 10 * time.Second,
+		StartCheckTimeout: 20 * time.Second,
 		Command: exec.Command(
 			components.Executables[ScalingEngine],
+			append([]string{
+				"-c", confPath,
+			}, argv...)...,
+		),
+	})
+}
+
+func (components *Components) Operator(confPath string, argv ...string) *ginkgomon.Runner {
+
+	return ginkgomon.New(ginkgomon.Config{
+		Name:              Operator,
+		AnsiColorCode:     "38m",
+		StartCheck:        `"operator.started"`,
+		StartCheckTimeout: 20 * time.Second,
+		Command: exec.Command(
+			components.Executables[Operator],
 			append([]string{
 				"-c", confPath,
 			}, argv...)...,
@@ -486,7 +504,7 @@ func (components *Components) PrepareEventGeneratorConfig(dbUri string, port int
 	return writeYmlConfig(tmpDir, EventGenerator, &conf)
 }
 
-func (components *Components) PrepareScalingEngineConfig(dbUri string, port int, ccUAAUrl string, cfGrantTypePassword string, tmpDir string, consulClusterConfig string) string {
+func (components *Components) PrepareScalingEngineConfig(dbUri string, port int, ccUAAUrl string, cfGrantTypePassword string, tmpDir string) string {
 	conf := seConfig.Config{
 		Cf: cf.CfConfig{
 			Api:       ccUAAUrl,
@@ -516,14 +534,72 @@ func (components *Components) PrepareScalingEngineConfig(dbUri string, port int,
 				Url: dbUri,
 			},
 		},
-		Synchronizer: seConfig.SynchronizerConfig{
-			ActiveScheduleSyncInterval: 10 * time.Second,
-		},
 		DefaultCoolDownSecs: 300,
 		LockSize:            32,
 	}
 
 	return writeYmlConfig(tmpDir, ScalingEngine, &conf)
+}
+
+func (components *Components) PrepareOperatorConfig(dbUri string, scalingEngineUrl string, schedulerUrl string, syncInterval time.Duration, cutOffDays int, tmpDir string) string {
+	conf := &opConfig.Config{
+		Logging: opConfig.LoggingConfig{
+			Level: LOGLEVEL,
+		},
+		InstanceMetricsDb: opConfig.InstanceMetricsDbPrunerConfig{
+			RefreshInterval: 2 * time.Minute,
+			CutoffDays:      cutOffDays,
+			Db: db.DatabaseConfig{
+				Url: dbUri,
+			},
+		},
+		AppMetricsDb: opConfig.AppMetricsDbPrunerConfig{
+			RefreshInterval: 2 * time.Minute,
+			CutoffDays:      cutOffDays,
+			Db: db.DatabaseConfig{
+				Url: dbUri,
+			},
+		},
+		ScalingEngineDb: opConfig.ScalingEngineDbPrunerConfig{
+			RefreshInterval: 2 * time.Minute,
+			CutoffDays:      cutOffDays,
+			Db: db.DatabaseConfig{
+				Url: dbUri,
+			},
+		},
+		ScalingEngine: opConfig.ScalingEngineConfig{
+			Url:          scalingEngineUrl,
+			SyncInterval: syncInterval,
+			TLSClientCerts: models.TLSCerts{
+				KeyFile:    filepath.Join(testCertDir, "scalingengine.key"),
+				CertFile:   filepath.Join(testCertDir, "scalingengine.crt"),
+				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			},
+		},
+		Scheduler: opConfig.SchedulerConfig{
+			Url:          schedulerUrl,
+			SyncInterval: syncInterval,
+			TLSClientCerts: models.TLSCerts{
+				KeyFile:    filepath.Join(testCertDir, "scheduler.key"),
+				CertFile:   filepath.Join(testCertDir, "scheduler.crt"),
+				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			},
+		},
+		Lock: opConfig.LockConfig{
+			LockTTL:             15 * time.Second,
+			LockRetryInterval:   5 * time.Second,
+			ConsulClusterConfig: consulRunner.ConsulCluster(),
+		},
+		EnableDBLock: true,
+		DBLock: opConfig.DBLockConfig{
+			LockTTL: 30 * time.Second,
+			LockDB: db.DatabaseConfig{
+				Url: dbUri,
+			},
+			LockRetryInterval: 15 * time.Second,
+		},
+	}
+	return writeYmlConfig(tmpDir, Operator, &conf)
 }
 
 func writeYmlConfig(dir string, componentName string, c interface{}) string {

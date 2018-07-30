@@ -1,11 +1,11 @@
-package pruner_test
+package operator_test
 
 import (
 	"errors"
 	"time"
 
 	"autoscaler/metricscollector/fakes"
-	"autoscaler/pruner"
+	"autoscaler/operator"
 
 	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/lager/lagertest"
@@ -21,7 +21,7 @@ var _ = Describe("InstanceMetricsDB Prune", func() {
 		fclock                  *fakeclock.FakeClock
 		cutoffDays              int
 		buffer                  *gbytes.Buffer
-		instanceMetricsDbPruner *pruner.InstanceMetricsDbPruner
+		instanceMetricsDbPruner *operator.InstanceMetricsDbPruner
 	)
 
 	BeforeEach(func() {
@@ -33,13 +33,13 @@ var _ = Describe("InstanceMetricsDB Prune", func() {
 		instanceMetricsDb = &fakes.FakeInstanceMetricsDB{}
 		fclock = fakeclock.NewFakeClock(time.Now())
 
-		instanceMetricsDbPruner = pruner.NewInstanceMetricsDbPruner(instanceMetricsDb, cutoffDays, fclock, logger)
+		instanceMetricsDbPruner = operator.NewInstanceMetricsDbPruner(instanceMetricsDb, cutoffDays, fclock, logger)
 
 	})
 
 	Describe("Prune", func() {
 		JustBeforeEach(func() {
-			instanceMetricsDbPruner.Prune()
+			instanceMetricsDbPruner.Operate()
 		})
 
 		Context("when pruning metrics records from instancemetrics db", func() {
@@ -51,12 +51,12 @@ var _ = Describe("InstanceMetricsDB Prune", func() {
 
 		Context("when pruning records from instancemetrics db fails", func() {
 			BeforeEach(func() {
-				instanceMetricsDb.PruneInstanceMetricsReturns(errors.New("test pruner error"))
+				instanceMetricsDb.PruneInstanceMetricsReturns(errors.New("test operator. error"))
 			})
 
 			It("should error", func() {
 				Eventually(instanceMetricsDb.PruneInstanceMetricsCallCount).Should(Equal(1))
-				Eventually(buffer).Should(gbytes.Say("test pruner error"))
+				Eventually(buffer).Should(gbytes.Say("test operator. error"))
 			})
 		})
 	})

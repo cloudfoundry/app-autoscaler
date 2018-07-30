@@ -2,7 +2,6 @@ package main
 
 import (
 	"autoscaler/helpers"
-	"autoscaler/sync"
 	"flag"
 	"fmt"
 	"os"
@@ -132,8 +131,9 @@ func main() {
 	defer schedulerDB.Close()
 
 	scalingEngine := scalingengine.NewScalingEngine(logger, cfClient, policyDB, scalingEngineDB, eClock, conf.DefaultCoolDownSecs, conf.LockSize)
+	synchronizer := schedule.NewActiveScheduleSychronizer(logger, schedulerDB, scalingEngineDB, scalingEngine)
 
-	httpServer, err := server.NewServer(logger.Session("http-server"), conf, scalingEngineDB, scalingEngine, healthRegistry)
+	httpServer, err := server.NewServer(logger.Session("http-server"), conf, scalingEngineDB, scalingEngine, synchronizer, healthRegistry)
 	if err != nil {
 		logger.Error("failed to create http server", err)
 		os.Exit(1)
@@ -145,60 +145,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	nonLockMembers := grouper.Members{
+	members := grouper.Members{
 		{"http_server", httpServer},
 		{"health_server", healthServer},
 	}
 
-	synchronizer := schedule.NewActiveScheduleSychronizer(logger.Session("synchronizer"), schedulerDB, scalingEngineDB, scalingEngine,
-		conf.Synchronizer.ActiveScheduleSyncInterval, eClock)
-
-	lockMembers := grouper.Members{
-		{"schedule_synchronizer", synchronizer},
-	}
-
-	if conf.EnableDBLock {
-		const lockTableName = "scalingengine_lock"
-		guid, err := helpers.GenerateGUID(logger)
-		if err != nil {
-			logger.Error("failed-to-generate-guid", err)
-		}
-		logger.Debug("database-lock-feature-enabled")
-		var lockDB db.LockDB
-		lockDB, err = sqldb.NewLockSQLDB(conf.DBLock.LockDB, lockTableName, logger.Session("lock-db"))
-		if err != nil {
-			logger.Error("failed-to-connect-lock-database", err, lager.Data{"dbConfig": conf.DBLock.LockDB})
-			os.Exit(1)
-		}
-		defer func() {
-			lockDB.Release(guid)
-			lockDB.Close()
-		}()
-
-		sedl := sync.NewDatabaseLock(logger)
-		dbLockMaintainer := sedl.InitDBLockRunner(conf.DBLock.LockRetryInterval, conf.DBLock.LockTTL, guid, lockDB)
-		lockMembers = append(grouper.Members{{"db-lock-maintainer", dbLockMaintainer}}, lockMembers...)
-	}
-
-	goRoutineDone := make(chan struct{})
-	go func() {
-		defer close(goRoutineDone)
-		lockMonitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, lockMembers)))
-		lmerr := <-lockMonitor.Wait()
-		if lmerr != nil {
-			logger.Error("sync-exited-with-failure", lmerr)
-			os.Exit(1)
-		}
-	}()
-	nonLockMonitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, nonLockMembers)))
+	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
 	logger.Info("started")
-	nlmerr := <-nonLockMonitor.Wait()
-	if nlmerr != nil {
-		logger.Error("http-server-exited-with-failure", nlmerr)
+	err = <-monitor.Wait()
+	if err != nil {
+		logger.Error("http-server-exited-with-failure", err)
 		os.Exit(1)
 	}
-
-	<-goRoutineDone
 	logger.Info("exited")
 }
 
