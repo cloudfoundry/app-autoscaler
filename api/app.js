@@ -106,8 +106,6 @@ module.exports = function(settings, callback) {
   var aggregatedMetrics = require('./lib/routes/aggregated_metrics')(settings);
 
   app.use('/v1/apps',policies);
-  app.use('/v1/apps',scalingHistories);
-  app.use('/v1/apps',metrics);
   app.use(function(err, req, res, next) {
     var errorResponse = {};
     if (err) {
