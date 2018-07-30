@@ -472,16 +472,12 @@ func getActiveSchedule(appId string) (*http.Response, error) {
 	req.Header.Set("Content-Type", "application/json")
 	return httpClient.Do(req)
 }
-func getScalingHistories(pathVariables []string, parameters map[string]string, apiType APIType) (*http.Response, error) {
+func getScalingHistories(pathVariables []string, parameters map[string]string) (*http.Response, error) {
 	var apiServerPort int
 	var httpClientTmp *http.Client
-	if apiType == INTERNAL {
-		apiServerPort = components.Ports[APIServer]
-		httpClientTmp = httpClient
-	} else {
-		apiServerPort = components.Ports[APIPublicServer]
-		httpClientTmp = httpClientForPublicApi
-	}
+	apiServerPort = components.Ports[APIPublicServer]
+	httpClientTmp = httpClientForPublicApi
+
 	url := "https://127.0.0.1:%d/v1/apps/%s/scaling_histories"
 	if parameters != nil && len(parameters) > 0 {
 		url += "?any=any"
@@ -492,21 +488,14 @@ func getScalingHistories(pathVariables []string, parameters map[string]string, a
 	req, err := http.NewRequest("GET", fmt.Sprintf(url, apiServerPort, pathVariables[0]), strings.NewReader(""))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
-	if apiType == PUBLIC {
-		req.Header.Set("Authorization", "bearer fake-token")
-	}
+	req.Header.Set("Authorization", "bearer fake-token")
 	return httpClientTmp.Do(req)
 }
-func getAppInstanceMetrics(pathVariables []string, parameters map[string]string, apiType APIType) (*http.Response, error) {
+func getAppInstanceMetrics(pathVariables []string, parameters map[string]string) (*http.Response, error) {
 	var apiServerPort int
 	var httpClientTmp *http.Client
-	if apiType == INTERNAL {
-		apiServerPort = components.Ports[APIServer]
-		httpClientTmp = httpClient
-	} else {
-		apiServerPort = components.Ports[APIPublicServer]
-		httpClientTmp = httpClientForPublicApi
-	}
+	apiServerPort = components.Ports[APIPublicServer]
+	httpClientTmp = httpClientForPublicApi
 	url := "https://127.0.0.1:%d/v1/apps/%s/metric_histories/%s"
 	if parameters != nil && len(parameters) > 0 {
 		url += "?any=any"
@@ -517,13 +506,11 @@ func getAppInstanceMetrics(pathVariables []string, parameters map[string]string,
 	req, err := http.NewRequest("GET", fmt.Sprintf(url, apiServerPort, pathVariables[0], pathVariables[1]), strings.NewReader(""))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
-	if apiType == PUBLIC {
-		req.Header.Set("Authorization", "bearer fake-token")
-	}
+	req.Header.Set("Authorization", "bearer fake-token")
 	return httpClientTmp.Do(req)
 }
 
-func getAppAggregatedMetrics(pathVariables []string, parameters map[string]string, apiType APIType) (*http.Response, error) {
+func getAppAggregatedMetrics(pathVariables []string, parameters map[string]string) (*http.Response, error) {
 	var apiServerPort int
 	var httpClientTmp *http.Client
 	apiServerPort = components.Ports[APIPublicServer]
@@ -624,15 +611,15 @@ func insertAppMetric(appMetrics *models.AppMetric) {
 }
 
 type GetResponse func(id string, apiType APIType) (*http.Response, error)
-type GetResponseWithParameters func(pathVariables []string, parameters map[string]string, apiType APIType) (*http.Response, error)
+type GetResponseWithParameters func(pathVariables []string, parameters map[string]string) (*http.Response, error)
 
 func checkResponseContent(getResponse GetResponse, id string, expectHttpStatus int, expectResponseMap map[string]interface{}, apiType APIType) {
 	resp, err := getResponse(id, apiType)
 	checkResponse(resp, err, expectHttpStatus, expectResponseMap)
 
 }
-func checkResponseContentWithParameters(getResponseWithParameters GetResponseWithParameters, pathVariables []string, parameters map[string]string, expectHttpStatus int, expectResponseMap map[string]interface{}, apiType APIType) {
-	resp, err := getResponseWithParameters(pathVariables, parameters, apiType)
+func checkPublicAPIResponseContentWithParameters(getResponseWithParameters GetResponseWithParameters, pathVariables []string, parameters map[string]string, expectHttpStatus int, expectResponseMap map[string]interface{}) {
+	resp, err := getResponseWithParameters(pathVariables, parameters)
 	checkResponse(resp, err, expectHttpStatus, expectResponseMap)
 }
 func checkResponse(resp *http.Response, err error, expectHttpStatus int, expectResponseMap map[string]interface{}) {
