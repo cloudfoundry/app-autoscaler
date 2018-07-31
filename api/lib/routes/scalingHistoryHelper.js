@@ -6,7 +6,7 @@ exports.parseParameter = function(req) {
   var appId = req.params.app_id;
   var startTime = req.query["start-time"];
   var endTime = req.query["end-time"];
-  var order = req.query["order"];
+  var orderDirection = req.query["order-direction"];
   var page = req.query["page"];
   var resultsPerPage = req.query["results-per-page"];
   var ASC = routeHelper.ASC;
@@ -37,17 +37,17 @@ exports.parseParameter = function(req) {
       parameters.endTime = endTime;
     }
   }
-  if (routeHelper.isMissing(order)) {
-    parameters.order = DESC;
+  if (routeHelper.isMissing(orderDirection)) {
+    parameters["order"] = DESC;
   } else {
-    if (!routeHelper.isString(order)) {
-      return { valid: false, message: "order must be a string" };
+    if (!routeHelper.isString(orderDirection)) {
+      return { valid: false, message: "order-direction must be a string" };
     } else {
-      order = order.toUpperCase();
-      if (order !== DESC && order !== ASC) {
-        return { valid: false, message: "order must be DESC or ASC" };
+      orderDirection = orderDirection.toUpperCase();
+      if (orderDirection !== DESC && orderDirection !== ASC) {
+        return { valid: false, message: "order-direction must be DESC or ASC" };
       }else{
-        parameters.order = order;
+        parameters["order"] = orderDirection;
       }
     }
   }

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 
 	. "github.com/onsi/ginkgo"
@@ -17,6 +18,8 @@ type ScalingHistoryResult struct {
 	TotalResults int                        `json:"total_results"`
 	TotalPages   int                        `json:"total_pages"`
 	Page         int                        `json:"page"`
+	PrevUrl      string                     `json:"prev_url"`
+	NextUrl      string                     `json:"next_url"`
 	Resources    []models.AppScalingHistory `json:"resources"`
 }
 
@@ -53,7 +56,7 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 			BeforeEach(func() {
 				fakeCCNOAAUAA.Reset()
 				fakeCCNOAAUAA.AllowUnhandledRequests = true
-				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order": "desc", "page": "1", "results-per-page": "5"}
+				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order-direction": "desc", "page": "1", "results-per-page": "5"}
 			})
 			It("should error with status code 500", func() {
 				By("check public api")
@@ -70,7 +73,7 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 						AuthEndpoint:    fakeCCNOAAUAA.URL(),
 						DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
 					}))
-				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order": "desc", "page": "1", "results-per-page": "5"}
+				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order-direction": "desc", "page": "1", "results-per-page": "5"}
 			})
 			It("should error with status code 500", func() {
 				By("check public api")
@@ -88,7 +91,7 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 						DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
 					}))
 				fakeCCNOAAUAA.RouteToHandler("GET", "/userinfo", ghttp.RespondWithJSONEncoded(http.StatusUnauthorized, struct{}{}))
-				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order": "desc", "page": "1", "results-per-page": "5"}
+				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order-direction": "desc", "page": "1", "results-per-page": "5"}
 			})
 			It("should error with status code 401", func() {
 				By("check public api")
@@ -104,7 +107,7 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 					}{
 						0,
 					}))
-				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order": "desc", "page": "1", "results-per-page": "5"}
+				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order-direction": "desc", "page": "1", "results-per-page": "5"}
 			})
 			It("should error with status code 401", func() {
 				By("check public api")
@@ -115,7 +118,7 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 		Context("ScalingEngine is down", func() {
 			JustBeforeEach(func() {
 				stopScalingEngine()
-				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order": "desc", "page": "1", "results-per-page": "5"}
+				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order-direction": "desc", "page": "1", "results-per-page": "5"}
 			})
 
 			It("should error with status code 500", func() {
@@ -162,11 +165,12 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 			})
 			It("should get the scaling histories ", func() {
 				By("get the 1st page")
-				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order": "desc", "page": "1", "results-per-page": "2"}
+				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order-direction": "desc", "page": "1", "results-per-page": "2"}
 				result := ScalingHistoryResult{
 					TotalResults: 5,
 					TotalPages:   3,
 					Page:         1,
+					NextUrl:      getScalingHistoriesUrl(appId, parameters, 2),
 					Resources: []models.AppScalingHistory{
 						models.AppScalingHistory{
 							AppId:        appId,
@@ -196,11 +200,13 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 				checkScalingHistoryResult(pathVariables, parameters, result)
 
 				By("get the 2nd page")
-				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order": "desc", "page": "2", "results-per-page": "2"}
+				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order-direction": "desc", "page": "2", "results-per-page": "2"}
 				result = ScalingHistoryResult{
 					TotalResults: 5,
 					TotalPages:   3,
 					Page:         2,
+					PrevUrl:      getScalingHistoriesUrl(appId, parameters, 1),
+					NextUrl:      getScalingHistoriesUrl(appId, parameters, 3),
 					Resources: []models.AppScalingHistory{
 						models.AppScalingHistory{
 							AppId:        appId,
@@ -230,11 +236,12 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 				checkScalingHistoryResult(pathVariables, parameters, result)
 
 				By("get the 3rd page")
-				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order": "desc", "page": "3", "results-per-page": "2"}
+				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order-direction": "desc", "page": "3", "results-per-page": "2"}
 				result = ScalingHistoryResult{
 					TotalResults: 5,
 					TotalPages:   3,
 					Page:         3,
+					PrevUrl:      getScalingHistoriesUrl(appId, parameters, 2),
 					Resources: []models.AppScalingHistory{
 						models.AppScalingHistory{
 							AppId:        appId,
@@ -253,11 +260,12 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 				checkScalingHistoryResult(pathVariables, parameters, result)
 
 				By("the 4th page should be empty")
-				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order": "desc", "page": "4", "results-per-page": "2"}
+				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order-direction": "desc", "page": "4", "results-per-page": "2"}
 				result = ScalingHistoryResult{
 					TotalResults: 5,
 					TotalPages:   3,
 					Page:         4,
+					PrevUrl:      getScalingHistoriesUrl(appId, parameters, 3),
 					Resources:    []models.AppScalingHistory{},
 				}
 				By("check public api")
@@ -268,6 +276,33 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 	})
 })
 
+func getScalingHistoriesUrl(appId string, parameteters map[string]string, pageNo int) string {
+	return fmt.Sprintf("/v1/apps/%s/scaling_histories?any=any&start-time=%s&end-time=%s&order-direction=%s&page=%d&results-per-page=%s", appId, parameteters["start-time"], parameteters["end-time"], parameteters["order-direction"], pageNo, parameteters["results-per-page"])
+}
+
+func compareScalingHistoryResult(o1, o2 ScalingHistoryResult) {
+	Expect(o1.Page).To(Equal(o2.Page))
+	Expect(o1.TotalPages).To(Equal(o2.TotalPages))
+	Expect(o1.TotalResults).To(Equal(o2.TotalResults))
+	Expect(o1.Resources).To(Equal(o2.Resources))
+
+	prevUrl1, err1 := url.Parse(o1.PrevUrl)
+	Expect(err1).NotTo(HaveOccurred())
+	prevUrl2, err2 := url.Parse(o2.PrevUrl)
+	Expect(err2).NotTo(HaveOccurred())
+	queries1 := prevUrl1.Query()
+	queries2 := prevUrl2.Query()
+	Expect(queries1).To(Equal(queries2))
+
+	nextUrl1, err1 := url.Parse(o1.NextUrl)
+	Expect(err1).NotTo(HaveOccurred())
+	nextUrl2, err2 := url.Parse(o2.NextUrl)
+	Expect(err2).NotTo(HaveOccurred())
+	queries1 = nextUrl1.Query()
+	queries2 = nextUrl2.Query()
+	Expect(queries1).To(Equal(queries2))
+
+}
 func checkScalingHistoryResult(pathVariables []string, parameters map[string]string, result ScalingHistoryResult) {
 	var actual ScalingHistoryResult
 	resp, err := getScalingHistories(pathVariables, parameters)
@@ -276,6 +311,6 @@ func checkScalingHistoryResult(pathVariables []string, parameters map[string]str
 	Expect(resp.StatusCode).To(Equal(http.StatusOK))
 	err = json.NewDecoder(resp.Body).Decode(&actual)
 	Expect(err).NotTo(HaveOccurred())
-	Expect(actual).To(Equal(result))
+	compareScalingHistoryResult(actual, result)
 
 }

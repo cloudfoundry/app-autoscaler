@@ -12,13 +12,13 @@ module.exports = function(settings) {
     var appId = req.params.app_id;
     var startTime = req.query["start-time"];
     var endTime = req.query["end-time"];
-    var order = req.query["order"];
+    var orderDirection = req.query["order-direction"];
     var page = req.query["page"];
     var resultsPerPage = req.query["results-per-page"];
-    logger.info("Get scalinghistory", { "app_id": appId, "start-time": startTime, "end-time": endTime, "order": order, "page": page, "results-per-page": resultsPerPage });
+    logger.info("Get scalinghistory", { "app_id": appId, "start-time": startTime, "end-time": endTime, "order-direction": orderDirection, "page": page, "results-per-page": resultsPerPage });
     var parseResult = scalingHistoryHelper.parseParameter(req);
     if (!parseResult.valid) {
-      logger.error("Failed to get scaling history", { "app_id": appId, "start-time": startTime, "end-time": endTime, "order": order, "page": page, "results-per-page": resultsPerPage, "message": parseResult.message });
+      logger.error("Failed to get scaling history", { "app_id": appId, "start-time": startTime, "end-time": endTime, "order-direction": orderDirection, "page": page, "results-per-page": resultsPerPage, "message": parseResult.message });
       resp.status(HttpStatus.BAD_REQUEST).json({ "error": parseResult.message });
       return;
     }
@@ -36,7 +36,7 @@ module.exports = function(settings) {
         if (statusCode === HttpStatus.OK) {
           var page = parameters.page;
           var resultsPerPage = parameters.resultsPerPage;
-          responseBody = routeHelper.pagination(result.body, page, resultsPerPage);
+          responseBody = routeHelper.pagination(result.body, page, resultsPerPage, req);
         } else {
           responseBody = {
             'error': result.message,

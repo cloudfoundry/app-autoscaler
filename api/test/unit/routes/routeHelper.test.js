@@ -95,6 +95,7 @@ describe("routeHelper", function() {
   describe("pagination", function() {
     var resultList = [];
     var result = {};
+    var request = {};
     context("paginate the resultList", function() {
       resultList = [
         { 'app_id': "theAppId", 'timestamp': 300, 'scaling_type': 0, 'status': 0, 'old_instances': 2, 'new_instances': 4, 'reason': 'a reason', 'message': '', 'error': '' },
@@ -103,45 +104,91 @@ describe("routeHelper", function() {
         { 'app_id': "theAppId", 'timestamp': 150, 'scaling_type': 1, 'status': 1, 'old_instances': 2, 'new_instances': 4, 'reason': 'a reason', 'message': '', 'error': '' },
         { 'app_id': "theAppId", 'timestamp': 100, 'scaling_type': 0, 'status': 0, 'old_instances': 2, 'new_instances': 4, 'reason': 'a reason', 'message': '', 'error': '' }
       ];
-      it("get the 1st page", function() {
-        result = helper.pagination(resultList, 1, 2);
-        expect(result).to.deep.equal({
-          total_results: 5,
-          total_pages: 3,
-          page: 1,
-          resources: resultList.slice(0, 2)
+      context("get the 1st page", function() {
+        beforeEach(function() {
+          request = { "originalUrl": "/v1/someroute/?page=1&resuts-per-page=2" };
+        });
+        it("return the 1st page", function() {
+          result = helper.pagination(resultList, 1, 2, request);
+          expect(result).to.deep.equal({
+            total_results: 5,
+            total_pages: 3,
+            page: 1,
+            prev_url: null,
+            next_url: "/v1/someroute/?page=2&resuts-per-page=2",
+            resources: resultList.slice(0, 2)
+          });
         });
       });
 
-      it("get the 2nd page", function() {
-        result = helper.pagination(resultList, 2, 2);
-        expect(result).to.deep.equal({
-          total_results: 5,
-          total_pages: 3,
-          page: 2,
-          resources: resultList.slice(2, 4)
+      context("get the 2nd page", function() {
+        beforeEach(function() {
+          request = { "originalUrl": "/v1/someroute/?page=2&resuts-per-page=2" };
+        });
+        it("get the 2nd page", function() {
+          result = helper.pagination(resultList, 2, 2, request);
+          expect(result).to.deep.equal({
+            total_results: 5,
+            total_pages: 3,
+            page: 2,
+            prev_url: "/v1/someroute/?page=1&resuts-per-page=2",
+            next_url: "/v1/someroute/?page=3&resuts-per-page=2",
+            resources: resultList.slice(2, 4)
+          });
         });
       });
 
-      it("get the 3rd page and only has one record", function() {
-        result = helper.pagination(resultList, 3, 2);
-        expect(result).to.deep.equal({
-          total_results: 5,
-          total_pages: 3,
-          page: 3,
-          resources: resultList.slice(4)
+      context("get the 3rd page", function() {
+        beforeEach(function() {
+          request = { "originalUrl": "/v1/someroute/?page=3&resuts-per-page=2" };
+        });
+        it("get the 3rd page and only has one record", function() {
+          result = helper.pagination(resultList, 3, 2, request);
+          expect(result).to.deep.equal({
+            total_results: 5,
+            total_pages: 3,
+            page: 3,
+            prev_url: "/v1/someroute/?page=2&resuts-per-page=2",
+            next_url: null,
+            resources: resultList.slice(4)
+          });
         });
       });
 
-      it("get the 4th page and there is no record", function() {
-        result = helper.pagination(resultList, 4, 2);
-        expect(result).to.deep.equal({
-          total_results: 5,
-          total_pages: 3,
-          page: 4,
-          resources: []
+      context("get the 4th page", function() {
+        beforeEach(function() {
+          request = { "originalUrl": "/v1/someroute/?page=4&resuts-per-page=2" };
+        });
+        it("get the 4th page and there is no record", function() {
+          result = helper.pagination(resultList, 4, 2, request);
+          expect(result).to.deep.equal({
+            total_results: 5,
+            total_pages: 3,
+            page: 4,
+            prev_url: "/v1/someroute/?page=3&resuts-per-page=2",
+            next_url: null,
+            resources: []
+          });
         });
       });
+
+      context("get the 5th page", function() {
+        beforeEach(function() {
+          request = { "originalUrl": "/v1/someroute/?page=5&resuts-per-page=2" };
+        });
+        it("get the 5th page and there is no record and the prev_url and next_url are both null", function() {
+          result = helper.pagination(resultList, 5, 2, request);
+          expect(result).to.deep.equal({
+            total_results: 5,
+            total_pages: 3,
+            page: 5,
+            prev_url: null,
+            next_url: null,
+            resources: []
+          });
+        });
+      });
+
 
     });
   });

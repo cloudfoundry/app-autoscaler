@@ -30,7 +30,7 @@ Parameters
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
 | end-time           | The end time                                                                  | int, the number of nanoseconds elapsed since January 1, 1970 UTC.   | false. default 'now'  | end-time=1494989549117047288     |
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
-| order              | The order type. The scaling history will be order by timestamp asc or desc.   | string,”asc” or “desc”                                              | false. default desc   | order=desc                       |
+| order-direction    | The order type. The scaling history will be order by timestamp asc or desc.   | string,”asc” or “desc”                                              | false. default desc   | order=desc                       |
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
 | page               | The page number to query                                                      | int                                                                 | false.  default 1     | page=1                           |
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
@@ -45,7 +45,7 @@ Headers
 
 cURL
 ''''
-    | curl "https://[the-api-server-url]:[port]/v1/apps/8d0cee08-23ad-4813-a779-ad8118ea0b91/scaling\_histories?start-time=1494989539138350432&end-time=1494989539138399999&order=desc&page=1&results-per-page=10" \\
+    | curl "https://[the-api-server-url]:[port]/v1/apps/8d0cee08-23ad-4813-a779-ad8118ea0b91/scaling\_histories?start-time=1494989539138350432&end-time=1494989539138399999&order-direction=desc&page=1&results-per-page=10" \\
     | -X GET \\
     | -H "Authorization: bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoidWFhLWlkLTQwOCIsImVtYWlsIjoiZW1haWwtMzAzQHNvbWVkb21haW4uY29tIiwic2NvcGUiOlsiY2xvdWRfY29udHJvbGxlci5hZG1pbiJdLCJhdWQiOlsiY2xvdWRfY29udHJvbGxlciJdLCJleHAiOjE0NDU1NTc5NzF9.RMJZvSzCSxpj4jjZBmzbO7eoSfTAcIWVSHqFu5\_Iu\_o" 
 
@@ -67,6 +67,10 @@ Body
     "total\_pages": 1,
 
     "page": 1,
+
+    "prev\_url": null,
+
+    "next\_url": "/v1/apps/8d0cee08-23ad-4813-a779-ad8118ea0b91/scaling\_histories?start-time=1494989539138350432&end-time=1494989539138399999&order-direction=desc&page=2&results-per-page=10",
 
     "resources": [{
 
@@ -145,7 +149,7 @@ Parameters
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
 | end-time           | The end time                                                                  | int, the number of nanoseconds elapsed since January 1, 1970 UTC.   | false, default "now"  | end-time=1494989549117047288     |
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
-| order              | The order type. The scaling history will be order by timestamp asc or desc.   | string,”asc” or “desc”                                              | false. default desc   | order=asc                        |
+| order-direction    | The order type. The scaling history will be order by timestamp asc or desc.   | string,”asc” or “desc”                                              | false. default desc   | order=asc                        |
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
 | page               | The page number to query                                                      | int                                                                 | false, default 1      | page=1                           |
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
@@ -159,7 +163,7 @@ Headers
 
 cURL
 ''''
-    | curl "https://[the-api-server-url]:[port]/v1/apps/8d0cee08-23ad-4813-a779-ad8118ea0b91/metric_histories/memoryused?start-time=1494989539138350432&end-time=1494989539138399999&order=asc&page=1&results-per-page=10" \\
+    | curl "https://[the-api-server-url]:[port]/v1/apps/8d0cee08-23ad-4813-a779-ad8118ea0b91/metric_histories/memoryused?start-time=1494989539138350432&end-time=1494989539138399999&order-direction=asc&page=1&results-per-page=10" \\
     | -X GET \\
     | -H "Authorization: bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoidWFhLWlkLTQwOCIsImVtYWlsIjoiZW1haWwtMzAzQHNvbWVkb21haW4uY29tIiwic2NvcGUiOlsiY2xvdWRfY29udHJvbGxlci5hZG1pbiJdLCJhdWQiOlsiY2xvdWRfY29udHJvbGxlciJdLCJleHAiOjE0NDU1NTc5NzF9.RMJZvSzCSxpj4jjZBmzbO7eoSfTAcIWVSHqFu5\_Iu\_o" 
 
@@ -182,6 +186,10 @@ Body
     "total\_pages": 1,
 
     "page": 1,
+
+    "prev\_url": null,
+
+    "next\_url": "/v1/apps/8d0cee08-23ad-4813-a779-ad8118ea0b91/metric_histories/memoryused?start-time=1494989539138350432&end-time=1494989539138399999&order-direction=asc&page=2&results-per-page=10",
 
     "resources": [{
 
@@ -251,7 +259,7 @@ Parameters
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
 | end-time           | The end time                                                                  | int, the number of nanoseconds elapsed since January 1, 1970 UTC.   | false, default "now"  | end-time=1494989549117047288     |
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
-| order              | The order type. The scaling history will be order by timestamp asc or desc.   | string,”asc” or “desc”                                              | false. default desc   | order=asc                        |
+| order-direction    | The order type. The scaling history will be order by timestamp asc or desc.   | string,”asc” or “desc”                                              | false. default desc   | order=asc                        |
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
 | page               | The page number to query                                                      | int                                                                 | false, default 1      | page=1                           |
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
@@ -265,7 +273,7 @@ Headers
 
 cURL
 ''''
-    | curl "https://[the-api-server-url]:[port]/v1/apps/8d0cee08-23ad-4813-a779-ad8118ea0b91/aggregated_metric_histories?start-time=1494989539138350432&end-time=1494989539138399999&order=asc&page=1&results-per-page=10" \\
+    | curl "https://[the-api-server-url]:[port]/v1/apps/8d0cee08-23ad-4813-a779-ad8118ea0b91/aggregated_metric_histories?start-time=1494989539138350432&end-time=1494989539138399999&order-direction=asc&page=1&results-per-page=10" \\
     | -X GET \\
     | -H "Authorization: bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoidWFhLWlkLTQwOCIsImVtYWlsIjoiZW1haWwtMzAzQHNvbWVkb21haW4uY29tIiwic2NvcGUiOlsiY2xvdWRfY29udHJvbGxlci5hZG1pbiJdLCJhdWQiOlsiY2xvdWRfY29udHJvbGxlciJdLCJleHAiOjE0NDU1NTc5NzF9.RMJZvSzCSxpj4jjZBmzbO7eoSfTAcIWVSHqFu5\_Iu\_o" 
 
@@ -288,6 +296,10 @@ Body
     "total\_pages": 1,
 
     "page": 1,
+
+    "prev\_url": null,
+
+    "next\_url": "/v1/apps/8d0cee08-23ad-4813-a779-ad8118ea0b91/aggregated_metric_histories?start-time=1494989539138350432&end-time=1494989539138399999&order-direction=asc&page=2&results-per-page=10",
 
     "resources": [{
 

@@ -11,7 +11,7 @@ var defaultRequest = function() {
     query: {
       "start-time": "100",
       "end-time": "200",
-      "order": "DESC",
+      "order-direction": "DESC",
       "page": "1",
       "results-per-page": "10"
     }
@@ -148,40 +148,40 @@ describe("metricHelper", function() {
         });
       });
     });
-    context("validate order", function() {
-      context("order is undefined", function() {
-        it("return true, order is set to ASC", function() {
-          delete requestObj.query["order"];
+    context("validate order-direction", function() {
+      context("order-direction is undefined", function() {
+        it("return true, order-direction is set to ASC", function() {
+          delete requestObj.query["order-direction"];
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(true);
-          expect(validateResult.parameters.order).to.equal("ASC");
+          expect(validateResult.parameters["order"]).to.equal("ASC");
         });
 
       });
-      context("order is null", function() {
-        it("return true, order is set to ASC", function() {
-          requestObj.query["order"] = null;
+      context("order-direction is null", function() {
+        it("return true, order-direction is set to ASC", function() {
+          requestObj.query["order-direction"] = null;
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(true);
-          expect(validateResult.parameters.order).to.equal("ASC");
+          expect(validateResult.parameters["order"]).to.equal("ASC");
         });
 
       });
-      context("order is not string", function() {
+      context("order-direction is not string", function() {
         it("return false", function() {
-          requestObj.query["order"] = 1;
+          requestObj.query["order-direction"] = 1;
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(false);
-          expect(validateResult.message).to.equal("order must be a string");
+          expect(validateResult.message).to.equal("order-direction must be a string");
         });
 
       });
-      context("order is not DESC or ASC", function() {
+      context("order-direction is not DESC or ASC", function() {
         it("return false", function() {
-          requestObj.query["order"] = "not-DESC-ASC";
+          requestObj.query["order-direction"] = "not-DESC-ASC";
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(false);
-          expect(validateResult.message).to.equal("order must be DESC or ASC");
+          expect(validateResult.message).to.equal("order-direction must be DESC or ASC");
         });
 
       });
