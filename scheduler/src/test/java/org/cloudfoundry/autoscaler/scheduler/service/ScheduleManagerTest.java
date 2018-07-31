@@ -815,7 +815,7 @@ public class ScheduleManagerTest {
 
 		SynchronizeResult result = scheduleManager.synchronizeSchedules();
 		
-		assertThat("It should update the shedules",result, is(new SynchronizeResult(0, 0, 1)));
+		assertThat("It should update the shedules",result, is(new SynchronizeResult(0, 1, 0)));
 
 		this.assertDeleteSchedules(schedules);
 	}
