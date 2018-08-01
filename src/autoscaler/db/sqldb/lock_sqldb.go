@@ -142,7 +142,7 @@ func (ldb *LockSQLDB) Lock(lock *models.Lock) (bool, error) {
 		newLock := false
 		fetchedLock, err := ldb.fetch(tx)
 		if err == nil && fetchedLock == nil {
-			ldb.logger.Info("no-one-holds-the-lock")
+			ldb.logger.Debug("no-one-holds-the-lock")
 			newLock = true
 		} else if err != nil {
 			ldb.logger.Error("failed-to-fetch-lock", err)
@@ -192,7 +192,7 @@ func (ldb *LockSQLDB) Lock(lock *models.Lock) (bool, error) {
 		if newLock {
 			ldb.logger.Info("acquired-lock-successfully")
 		} else {
-			ldb.logger.Info("renewed-lock-successfully")
+			ldb.logger.Debug("renewed-lock-successfully")
 		}
 		return nil
 	})
@@ -238,7 +238,7 @@ func (ldb *LockSQLDB) transact(db *sql.DB, f func(tx *sql.Tx) error) error {
 		if attempts >= 2 || (err != driver.ErrBadConn) {
 			break
 		} else {
-			ldb.logger.Info("wait-before-retry-for-transaction", lager.Data{"attempts": attempts})
+			ldb.logger.Debug("wait-before-retry-for-transaction", lager.Data{"attempts": attempts})
 			time.Sleep(500 * time.Millisecond)
 		}
 	}
