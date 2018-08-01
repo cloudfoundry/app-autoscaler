@@ -48,13 +48,13 @@ func (dblock *DatabaseLock) InitDBLockRunner(retryInterval time.Duration, ttl ti
 				if releaseErr != nil {
 					dblock.logger.Error("failed-to-release-lock ", releaseErr)
 				} else {
-					dblock.logger.Info("successfully-released-lock", lager.Data{"owner": owner})
+					dblock.logger.Debug("successfully-released-lock", lager.Data{"owner": owner})
 				}
 				readyToAcquireLock = true
 				return nil
 
 			case <-lockTicker.C:
-				dblock.logger.Info("retry-acquiring-lock", lager.Data{"owner": owner})
+				dblock.logger.Debug("retry-acquiring-lock", lager.Data{"owner": owner})
 				lock := &models.Lock{Owner: owner, Ttl: ttl}
 				isLockAcquired, lockErr := lockDB.Lock(lock)
 				if lockErr != nil {
