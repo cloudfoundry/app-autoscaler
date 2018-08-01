@@ -82,7 +82,7 @@ var _ = SynchronizedBeforeSuite(
 		conf.Server.TLS.CACertFile = filepath.Join(testCertDir, "autoscaler-ca.crt")
 		conf.Health.Port = healthport
 		conf.Health.EmitInterval = 1 * time.Second
-		conf.Logging.Level = "info"
+		conf.Logging.Level = "debug"
 
 		conf.Db.PolicyDb = db.DatabaseConfig{
 			Url:                   os.Getenv("DBURL"),
