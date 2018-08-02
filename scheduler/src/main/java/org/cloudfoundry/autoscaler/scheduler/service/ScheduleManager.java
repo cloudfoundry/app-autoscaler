@@ -818,6 +818,10 @@ public class ScheduleManager {
 					updateCount++;
 					continue;
 				}
+			}else{
+				// there is no schedule in the new policy, so the old schedules of this app should be deleted.
+				toDeletedAppIds.add(appIdInPolicy);
+				updateCount++;
 			}
 		}
 		
@@ -832,6 +836,7 @@ public class ScheduleManager {
 		}
 		for(String appId : toDeletedAppIds){
 			this.deleteSchedules(appId);
+			
 		}
 		
 		for(ApplicationSchedules schedule : toCreateScheduleList){
