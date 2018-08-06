@@ -54,7 +54,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger := initLoggerFromConfig(&conf.Logging)
+	logger := helpers.InitLoggerFromConfig(&conf.Logging, "scalingengine")
 
 	promRegistry := prometheus.NewRegistry()
 	healthRegistry := healthendpoint.New(promRegistry, map[string]prometheus.Gauge{
@@ -158,38 +158,4 @@ func main() {
 		os.Exit(1)
 	}
 	logger.Info("exited")
-}
-
-func initLoggerFromConfig(conf *config.LoggingConfig) lager.Logger {
-	logLevel, err := getLogLevel(conf.Level)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to initialize logger: %s\n", err.Error())
-		os.Exit(1)
-	}
-	logger := lager.NewLogger("scalingengine")
-
-	keyPatterns := []string{"[Pp]wd", "[Pp]ass", "[Ss]ecret", "[Tt]oken"}
-
-	redactedSink, err := helpers.NewRedactingWriterWithURLCredSink(os.Stdout, logLevel, keyPatterns, nil)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to create redacted sink: %s", err.Error())
-	}
-	logger.RegisterSink(redactedSink)
-
-	return logger
-}
-
-func getLogLevel(level string) (lager.LogLevel, error) {
-	switch level {
-	case "debug":
-		return lager.DEBUG, nil
-	case "info":
-		return lager.INFO, nil
-	case "error":
-		return lager.ERROR, nil
-	case "fatal":
-		return lager.FATAL, nil
-	default:
-		return -1, fmt.Errorf("Error: unsupported log level:%s", level)
-	}
 }

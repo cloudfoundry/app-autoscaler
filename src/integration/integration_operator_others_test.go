@@ -168,7 +168,6 @@ var _ = Describe("Integration_Operator_Others", func() {
 					doAttachPolicy(testAppId, []byte(policyStr), http.StatusCreated, INTERNAL)
 					Expect(checkSchedule(testAppId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})).To(BeTrue())
 
-					By("update policy in policy db directly")
 					newPolicyStr := string(readPolicyFromFile("fakePolicyWithScheduleAnother.json"))
 					deletePolicy(testAppId)
 					insertPolicy(testAppId, newPolicyStr, testGuid)
@@ -176,6 +175,7 @@ var _ = Describe("Integration_Operator_Others", func() {
 					By("the schedules should not be updated before operator triggers the sync")
 					Expect(checkSchedule(testAppId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})).To(BeTrue())
 				})
+
 				It("operator should sync the updated schedule to scheduler ", func() {
 					Eventually(func() bool {
 						return checkSchedule(testAppId, http.StatusOK, map[string]int{"recurring_schedule": 3, "specific_date": 1})
@@ -201,6 +201,16 @@ var _ = Describe("Integration_Operator_Others", func() {
 			insertAppInstanceMetric(metric)
 			Expect(getAppInstanceMetricTotalCount(testAppId)).To(Equal(1))
 
+			appmetric := &models.AppMetric{
+				AppId:      testAppId,
+				MetricType: models.MetricNameMemoryUsed,
+				Unit:       models.UnitMegaBytes,
+				Value:      "123456",
+				Timestamp:  time.Now().Add(-24 * time.Hour).UnixNano(),
+			}
+			insertAppMetric(appmetric)
+			Expect(getAppMetricTotalCount(testAppId)).To(Equal(1))
+
 			history := &models.AppScalingHistory{
 				AppId:        testAppId,
 				Timestamp:    time.Now().Add(-24 * time.Hour).UnixNano(),
@@ -217,10 +227,10 @@ var _ = Describe("Integration_Operator_Others", func() {
 
 		})
 
-		It("operator should sync the updated schedule to scheduler ", func() {
+		It("opeator should remove the staled records ", func() {
 			Eventually(func() bool {
 				return getAppInstanceMetricTotalCount(testAppId) == 0 &&
-					getScalingHistoryTotalCount(testAppId) == 0
+					getScalingHistoryTotalCount(testAppId) == 0 && getScalingHistoryTotalCount(testAppId) == 0
 			}, 2*time.Minute, 5*time.Second).Should(BeTrue())
 
 		})

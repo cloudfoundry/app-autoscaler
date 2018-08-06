@@ -1,15 +1,12 @@
 package operator
 
 import (
+	"autoscaler/routes"
 	"fmt"
 	"net/http"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
-)
-
-const (
-	SyncSchedulePath = "/v1/syncSchedules"
 )
 
 type ScheduleSynchronizer struct {
@@ -29,7 +26,7 @@ func NewScheduleSynchronizer(client *http.Client, url string, clock clock.Clock,
 }
 
 func (s ScheduleSynchronizer) Operate() {
-	syncURL := s.url + SyncSchedulePath
+	syncURL := s.url + routes.SyncActiveSchedulesPath
 	s.logger.Debug(fmt.Sprintf("Sync schedules of %s", syncURL))
 
 	req, err := http.NewRequest("PUT", syncURL, nil)

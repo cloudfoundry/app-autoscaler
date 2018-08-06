@@ -2,6 +2,7 @@ package operator_test
 
 import (
 	"autoscaler/operator"
+	"autoscaler/routes"
 	"net/http"
 	"time"
 
@@ -38,7 +39,7 @@ var _ = Describe("ScheduleSynchronizer", func() {
 
 		Context("when sync server is available", func() {
 			BeforeEach(func() {
-				fakeSyncServer.RouteToHandler("PUT", operator.SyncSchedulePath, ghttp.RespondWith(http.StatusOK, "successful"))
+				fakeSyncServer.RouteToHandler("PUT", routes.SyncActiveSchedulesPath, ghttp.RespondWith(http.StatusOK, "successful"))
 			})
 			It("raise sync request successfully", func() {
 				Eventually(fakeSyncServer.ReceivedRequests).Should(HaveLen(1))

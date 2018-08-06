@@ -4,6 +4,7 @@ import (
 	"autoscaler/cf"
 	"autoscaler/db"
 	egConfig "autoscaler/eventgenerator/config"
+	"autoscaler/helpers"
 	mcConfig "autoscaler/metricscollector/config"
 	"autoscaler/models"
 	opConfig "autoscaler/operator/config"
@@ -424,7 +425,7 @@ func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port i
 			NodeAddrs: []string{"localhost"},
 			NodeIndex: 0,
 		},
-		Logging: mcConfig.LoggingConfig{
+		Logging: helpers.LoggingConfig{
 			Level: LOGLEVEL,
 		},
 		Db: mcConfig.DbConfig{
@@ -448,7 +449,7 @@ func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port i
 func (components *Components) PrepareEventGeneratorConfig(dbUri string, port int, metricsCollectorUrl string, scalingEngineUrl string, aggregatorExecuteInterval time.Duration,
 	policyPollerInterval time.Duration, saveInterval time.Duration, evaluationManagerInterval time.Duration, tmpDir string) string {
 	conf := &egConfig.Config{
-		Logging: egConfig.LoggingConfig{
+		Logging: helpers.LoggingConfig{
 			Level: LOGLEVEL,
 		},
 		Server: egConfig.ServerConfig{
@@ -520,7 +521,7 @@ func (components *Components) PrepareScalingEngineConfig(dbUri string, port int,
 				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 			},
 		},
-		Logging: seConfig.LoggingConfig{
+		Logging: helpers.LoggingConfig{
 			Level: LOGLEVEL,
 		},
 		Db: seConfig.DbConfig{
@@ -543,7 +544,7 @@ func (components *Components) PrepareScalingEngineConfig(dbUri string, port int,
 
 func (components *Components) PrepareOperatorConfig(dbUri string, scalingEngineUrl string, schedulerUrl string, syncInterval time.Duration, cutOffDays int, tmpDir string) string {
 	conf := &opConfig.Config{
-		Logging: opConfig.LoggingConfig{
+		Logging: helpers.LoggingConfig{
 			Level: LOGLEVEL,
 		},
 		InstanceMetricsDb: opConfig.InstanceMetricsDbPrunerConfig{

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"autoscaler/db"
+	"autoscaler/helpers"
 	"autoscaler/models"
 
 	"code.cloudfoundry.org/locket"
@@ -24,10 +25,6 @@ const (
 	DefaultDBLockRetryInterval time.Duration = 5 * time.Second
 	DefaultDBLockTTL           time.Duration = 15 * time.Second
 )
-
-type LoggingConfig struct {
-	Level string `yaml:"level"`
-}
 
 type InstanceMetricsDbPrunerConfig struct {
 	Db              db.DatabaseConfig `yaml:"db"`
@@ -77,7 +74,7 @@ type SchedulerConfig struct {
 }
 
 type Config struct {
-	Logging           LoggingConfig                 `yaml:"logging"`
+	Logging           helpers.LoggingConfig         `yaml:"logging"`
 	InstanceMetricsDb InstanceMetricsDbPrunerConfig `yaml:"instance_metrics_db"`
 	AppMetricsDb      AppMetricsDbPrunerConfig      `yaml:"app_metrics_db"`
 	ScalingEngineDb   ScalingEngineDbPrunerConfig   `yaml:"scaling_engine_db"`
@@ -89,7 +86,7 @@ type Config struct {
 }
 
 var defaultConfig = Config{
-	Logging: LoggingConfig{Level: DefaultLoggingLevel},
+	Logging: helpers.LoggingConfig{Level: DefaultLoggingLevel},
 	InstanceMetricsDb: InstanceMetricsDbPrunerConfig{
 		RefreshInterval: DefaultRefreshInterval,
 		CutoffDays:      DefaultCutoffDays,

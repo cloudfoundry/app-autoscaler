@@ -257,11 +257,9 @@ func startOperator() {
 func stopApiServer() {
 	ginkgomon.Kill(processMap[APIServer], 5*time.Second)
 }
-
 func stopScheduler() {
 	ginkgomon.Kill(processMap[Scheduler], 5*time.Second)
 }
-
 func stopScalingEngine() {
 	ginkgomon.Kill(processMap[ScalingEngine], 5*time.Second)
 }
@@ -275,7 +273,7 @@ func stopServiceBroker() {
 	ginkgomon.Kill(processMap[ServiceBroker], 5*time.Second)
 }
 func stopOperator() {
-	ginkgomon.Interrupt(processMap[Operator], 5*time.Second)
+	ginkgomon.Kill(processMap[Operator], 5*time.Second)
 }
 
 func sendSigusr2Signal(component string) {
@@ -646,6 +644,14 @@ func insertAppMetric(appMetrics *models.AppMetric) {
 func getAppInstanceMetricTotalCount(appId string) int {
 	var count int
 	query := "SELECT COUNT(*) FROM appinstancemetrics WHERE appid=$1"
+	err := dbHelper.QueryRow(query, appId).Scan(&count)
+	Expect(err).NotTo(HaveOccurred())
+	return count
+}
+
+func getAppMetricTotalCount(appId string) int {
+	var count int
+	query := "SELECT COUNT(*) FROM app_metric WHERE app_id=$1"
 	err := dbHelper.QueryRow(query, appId).Scan(&count)
 	Expect(err).NotTo(HaveOccurred())
 	return count

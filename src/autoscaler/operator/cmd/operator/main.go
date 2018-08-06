@@ -4,16 +4,13 @@ import (
 	"autoscaler/db"
 	"autoscaler/db/sqldb"
 	"autoscaler/helpers"
-	"autoscaler/models"
 	"autoscaler/operator"
 	"autoscaler/operator/config"
 	sync "autoscaler/sync"
 	"flag"
 	"fmt"
-	"net/http"
 	"os"
 
-	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/consuladapter"
 	"code.cloudfoundry.org/lager"
@@ -51,7 +48,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger := initLoggerFromConfig(&conf.Logging)
+	logger := helpers.InitLoggerFromConfig(&conf.Logging, "operator")
 	prClock := clock.NewClock()
 
 	instanceMetricsDb, err := sqldb.NewInstanceMetricsSQLDB(conf.InstanceMetricsDb.Db, logger.Session("instancemetrics-db"))
@@ -75,12 +72,12 @@ func main() {
 	}
 	defer scalingEngineDb.Close()
 
-	scalingEngineHttpclient, err := createHTTPClient(&conf.ScalingEngine.TLSClientCerts)
+	scalingEngineHttpclient, err := helpers.CreateHTTPClient(&conf.ScalingEngine.TLSClientCerts)
 	if err != nil {
 		logger.Error("failed to create http client for scalingengine", err, lager.Data{"scalingengineTLS": conf.ScalingEngine.TLSClientCerts})
 		os.Exit(1)
 	}
-	schedulerHttpclient, err := createHTTPClient(&conf.Scheduler.TLSClientCerts)
+	schedulerHttpclient, err := helpers.CreateHTTPClient(&conf.Scheduler.TLSClientCerts)
 	if err != nil {
 		logger.Error("failed to create http client for scheduler", err, lager.Data{"schedulerTLS": conf.Scheduler.TLSClientCerts})
 		os.Exit(1)
@@ -168,55 +165,4 @@ func main() {
 
 	logger.Info("exited")
 
-}
-
-func createHTTPClient(tlsCerts *models.TLSCerts) (*http.Client, error) {
-	if tlsCerts.CertFile == "" || tlsCerts.KeyFile == "" {
-		tlsCerts = nil
-	}
-
-	client := cfhttp.NewClient()
-	if tlsCerts != nil {
-		tlsConfig, err := cfhttp.NewTLSConfig(tlsCerts.CertFile, tlsCerts.KeyFile, tlsCerts.CACertFile)
-		if err != nil {
-			return nil, err
-		}
-		client.Transport.(*http.Transport).TLSClientConfig = tlsConfig
-	}
-
-	return client, nil
-}
-
-func initLoggerFromConfig(conf *config.LoggingConfig) lager.Logger {
-	logLevel, err := getLogLevel(conf.Level)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to initialize logger: %s\n", err.Error())
-		os.Exit(1)
-	}
-	logger := lager.NewLogger("operator")
-
-	keyPatterns := []string{"[Pp]wd", "[Pp]ass", "[Ss]ecret", "[Tt]oken"}
-
-	redactedSink, err := helpers.NewRedactingWriterWithURLCredSink(os.Stdout, logLevel, keyPatterns, nil)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to create redacted sink", err.Error())
-	}
-	logger.RegisterSink(redactedSink)
-
-	return logger
-}
-
-func getLogLevel(level string) (lager.LogLevel, error) {
-	switch level {
-	case "debug":
-		return lager.DEBUG, nil
-	case "info":
-		return lager.INFO, nil
-	case "error":
-		return lager.ERROR, nil
-	case "fatal":
-		return lager.FATAL, nil
-	default:
-		return -1, fmt.Errorf("Error: unsupported log level:%s", level)
-	}
 }
