@@ -28,11 +28,13 @@ exports.pagination = function(resultList, page, resultsPerPage, req) {
   var originalUrl = req.originalUrl
   if (page > 1 && page <= totalPages + 1) {
     var prevPage = page - 1;
-    prevUrl = originalUrl.replace("page=" + page, "page=" + prevPage)
+    prevUrl = originalUrl.replace("?page=" + page, "?page=" + prevPage);
+    prevUrl = prevUrl.replace("&page=" + page, "&page=" + prevPage);
   }
   if (page < totalPages) {
     var nextPage = page + 1;
-    nextUrl = originalUrl.replace("page=" + page, "page=" + nextPage);
+    nextUrl = originalUrl.replace("?page=" + page, "?page=" + nextPage);
+    nextUrl = nextUrl.replace("&page=" + page, "&page=" + nextPage);
   }
   result.total_results = totalResults;
   result.total_pages = Number.parseInt(totalPages);

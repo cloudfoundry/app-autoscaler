@@ -12,7 +12,7 @@ module.exports = function(settings) {
     var appId = req.params.app_id;
     var startTime = req.query["start-time"];
     var endTime = req.query["end-time"];
-    var orderDirection = req.query["order-direction"];
+    var orderDirection = req.query["order-direction"] ? req.query["order-direction"] : req.query["order"];
     var page = req.query["page"];
     var resultsPerPage = req.query["results-per-page"];
     logger.info("Get scalinghistory", { "app_id": appId, "start-time": startTime, "end-time": endTime, "order-direction": orderDirection, "page": page, "results-per-page": resultsPerPage });

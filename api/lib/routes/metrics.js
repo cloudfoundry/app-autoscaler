@@ -13,7 +13,7 @@ module.exports = function(settings) {
     var metricType = req.params.metric_type;
     var startTime = req.query["start-time"];
     var endTime = req.query["end-time"];
-    var orderDirection = req.query["order-direction"];
+    var orderDirection = req.query["order-direction"] ? req.query["order-direction"] : req.query["order"];
     var page = req.query["page"];
     var resultsPerPage = req.query["results-per-page"];
     logger.info("Get metrics", { "app_id": appId, "metric_type":metricType, "start-time": startTime, "end-time": endTime, "order-direction": orderDirection, "page": page, "results-per-page": resultsPerPage });
