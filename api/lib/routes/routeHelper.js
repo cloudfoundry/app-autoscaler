@@ -28,13 +28,11 @@ exports.pagination = function(resultList, page, resultsPerPage, req) {
   var originalUrl = req.originalUrl
   if (page > 1 && page <= totalPages + 1) {
     var prevPage = page - 1;
-    prevUrl = originalUrl.replace("?page=" + page, "?page=" + prevPage);
-    prevUrl = prevUrl.replace("&page=" + page, "&page=" + prevPage);
+    prevUrl = getPageUrl(req, prevPage);
   }
   if (page < totalPages) {
     var nextPage = page + 1;
-    nextUrl = originalUrl.replace("?page=" + page, "?page=" + nextPage);
-    nextUrl = nextUrl.replace("&page=" + page, "&page=" + nextPage);
+    nextUrl = getPageUrl(req, nextPage);
   }
   result.total_results = totalResults;
   result.total_pages = Number.parseInt(totalPages);
@@ -43,4 +41,20 @@ exports.pagination = function(resultList, page, resultsPerPage, req) {
   result.next_url = nextUrl;
   result.resources = resources;
   return result;
+}
+
+function getPageUrl(req, targetPageNo) {
+  var queries = req.query;
+  if (queries && queries["page"]) {
+    queries["page"] = targetPageNo;
+  }
+  var queryStr = "";
+  if (queries) {
+    queryStr += "?";
+    for (var key in queries) {
+      queryStr += "&" + key + "=" + queries[key];
+    }
+    queryStr = queryStr.replace("&", "");
+  }
+  return req.baseUrl + req.path + queryStr;
 }

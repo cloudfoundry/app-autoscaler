@@ -106,7 +106,14 @@ describe("routeHelper", function() {
       ];
       context("get the 1st page", function() {
         beforeEach(function() {
-          request = { "originalUrl": "/v1/someroute/?page=1&resuts-per-page=2" };
+          request = {
+            "baseUrl": "/v1",
+            "path": "/someroute",
+            "query": {
+              "page": 1,
+              "resuts-per-page": 2
+            }
+          };
         });
         it("return the 1st page", function() {
           result = helper.pagination(resultList, 1, 2, request);
@@ -115,7 +122,7 @@ describe("routeHelper", function() {
             total_pages: 3,
             page: 1,
             prev_url: null,
-            next_url: "/v1/someroute/?page=2&resuts-per-page=2",
+            next_url: "/v1/someroute?page=2&resuts-per-page=2",
             resources: resultList.slice(0, 2)
           });
         });
@@ -123,7 +130,14 @@ describe("routeHelper", function() {
 
       context("get the 2nd page", function() {
         beforeEach(function() {
-          request = { "originalUrl": "/v1/someroute/?page=2&resuts-per-page=2" };
+          request = {
+            "baseUrl": "/v1",
+            "path": "/someroute",
+            "query": {
+              "page": 2,
+              "resuts-per-page": 2
+            }
+          };
         });
         it("get the 2nd page", function() {
           result = helper.pagination(resultList, 2, 2, request);
@@ -131,8 +145,8 @@ describe("routeHelper", function() {
             total_results: 5,
             total_pages: 3,
             page: 2,
-            prev_url: "/v1/someroute/?page=1&resuts-per-page=2",
-            next_url: "/v1/someroute/?page=3&resuts-per-page=2",
+            prev_url: "/v1/someroute?page=1&resuts-per-page=2",
+            next_url: "/v1/someroute?page=3&resuts-per-page=2",
             resources: resultList.slice(2, 4)
           });
         });
@@ -140,7 +154,14 @@ describe("routeHelper", function() {
 
       context("get the 3rd page", function() {
         beforeEach(function() {
-          request = { "originalUrl": "/v1/someroute/?page=3&resuts-per-page=2" };
+          request = {
+            "baseUrl": "/v1",
+            "path": "/someroute",
+            "query": {
+              "page": 3,
+              "resuts-per-page": 2
+            }
+          };
         });
         it("get the 3rd page and only has one record", function() {
           result = helper.pagination(resultList, 3, 2, request);
@@ -148,7 +169,7 @@ describe("routeHelper", function() {
             total_results: 5,
             total_pages: 3,
             page: 3,
-            prev_url: "/v1/someroute/?page=2&resuts-per-page=2",
+            prev_url: "/v1/someroute?page=2&resuts-per-page=2",
             next_url: null,
             resources: resultList.slice(4)
           });
@@ -157,7 +178,14 @@ describe("routeHelper", function() {
 
       context("get the 4th page", function() {
         beforeEach(function() {
-          request = { "originalUrl": "/v1/someroute/?page=4&resuts-per-page=2" };
+          request = {
+            "baseUrl": "/v1",
+            "path": "/someroute",
+            "query": {
+              "page": 4,
+              "resuts-per-page": 2
+            }
+          };
         });
         it("get the 4th page and there is no record", function() {
           result = helper.pagination(resultList, 4, 2, request);
@@ -165,7 +193,7 @@ describe("routeHelper", function() {
             total_results: 5,
             total_pages: 3,
             page: 4,
-            prev_url: "/v1/someroute/?page=3&resuts-per-page=2",
+            prev_url: "/v1/someroute?page=3&resuts-per-page=2",
             next_url: null,
             resources: []
           });
@@ -174,7 +202,15 @@ describe("routeHelper", function() {
 
       context("get the 5th page", function() {
         beforeEach(function() {
-          request = { "originalUrl": "/v1/someroute/?page=5&resuts-per-page=2" };
+          request = {
+            "baseUrl": "/v1",
+            "path": "/someroute",
+            "query": {
+              "page": 5,
+              "resuts-per-page": 2
+            }
+          };
+
         });
         it("get the 5th page and there is no record and the prev_url and next_url are both null", function() {
           result = helper.pagination(resultList, 5, 2, request);
