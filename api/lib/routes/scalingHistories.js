@@ -5,7 +5,6 @@ module.exports = function(settings) {
   var logger = require("../log/logger");
   var HttpStatus = require("http-status-codes");
   var scalingEngineUtil = require("../utils/scalingEngineUtils")(settings.scalingEngine);
-  var scalingHistoryHelper = require("./scalingHistoryHelper");
   var routeHelper = require("./routeHelper");
 
   router.get("/:app_id/scaling_histories", function(req, resp) {
@@ -16,7 +15,7 @@ module.exports = function(settings) {
     var page = req.query["page"];
     var resultsPerPage = req.query["results-per-page"];
     logger.info("Get scalinghistory", { "app_id": appId, "start-time": startTime, "end-time": endTime, "order-direction": orderDirection, "page": page, "results-per-page": resultsPerPage });
-    var parseResult = scalingHistoryHelper.parseParameter(req);
+    var parseResult = routeHelper.parseParameter(req);
     if (!parseResult.valid) {
       logger.error("Failed to get scaling history", { "app_id": appId, "start-time": startTime, "end-time": endTime, "order-direction": orderDirection, "page": page, "results-per-page": resultsPerPage, "message": parseResult.message });
       resp.status(HttpStatus.BAD_REQUEST).json({ "error": parseResult.message });
