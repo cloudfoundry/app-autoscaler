@@ -1,0 +1,79 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: qiyang
+      changes:
+        - createTable:
+            tableName: app_metric
+            columns:
+              - column:
+                  name: app_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: metric_type
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: unit
+                  type: varchar(20)
+                  constraints:
+                    nullable: false                    
+              - column:
+                  name: timestamp
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: value
+                  type: varchar
+                  constraints:
+                    nullable: true
+  - changeSet:
+        id: 2
+        author: paltanmoy
+        changes:
+          - createTable:
+              tableName: eg_lock
+              columns:
+                - column:
+                    name: owner
+                    type: varchar(255)
+                    constraints:
+                      primaryKey: true
+                - column:
+                    name: lock_timestamp
+                    type: timestamp
+                    constraints:
+                      nullable: false
+                - column:
+                    name: ttl
+                    type: bigint
+                    defaultValue: 0
+                    constraints:
+                      nullable: false
+  - changeSet:
+      id: 3
+      author: tanmoypal
+      changes:
+        - createIndex:
+             columns:
+              - column:
+                  name: app_id
+                  type: varchar(255)
+              - column:
+                  name: metric_type
+                  type: varchar(100)
+              - column:
+                  name: timestamp
+                  type: bigint
+             indexName: index_app_metrics
+             tableName: app_metric
+  - changeSet:
+      id: 4
+      author: byang
+      changes:
+        - dropTable:
+            tableName: eg_lock 
