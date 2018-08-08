@@ -1,0 +1,44 @@
+--- 
+databaseChangeLog:
+   - property:
+      name: policy_json.type
+      value: json
+      dbms: postgresql
+   - property:
+      name: policy_json.type
+      value: text
+      dbms: h2
+   - changeSet:
+      id: 1
+      author: pradyutsarma
+      changes:
+        - createTable:
+            tableName: policy_json
+            columns:
+              - column:
+                  name: app_id
+                  type: varchar(50)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: policy_json
+                  type: ${policy_json.type}
+              - column:
+                  name: guid
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+            tableName: policy_json
+   - changeSet:
+      id: 2
+      author: fujitsu
+      changes:
+      - update:
+          columns:
+          - column:
+              name: guid
+              type: varchar(50)
+              value: "1"
+          tableName: policy_json
+

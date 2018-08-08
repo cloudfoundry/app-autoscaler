@@ -2,7 +2,9 @@
 /.DS_Store
 /.metadata
 /pkg/
-/bin/ginkgo
+/bin/
 /.recommenders
 /.project
 /.settings/
+*.coverprofile
+**/.idea

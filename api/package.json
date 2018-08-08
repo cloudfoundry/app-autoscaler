@@ -1,0 +1,42 @@
+{
+  "name": "autoscaler-api",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "node index.js -c config/settings.json",
+    "test": "mocha --recursive test",
+    "cover": "istanbul cover node_modules/mocha/bin/_mocha -- --recursive test",
+    "lint": "eslint lib"
+  },
+  "dependencies": {
+    "async": "^2.0.1",
+    "body-parser": "^1.15.2",
+    "eslint": "^3.1.1",
+    "express": "^4.14.0",
+    "express-healthcheck": "0.1.0",
+    "helmet": "^3.9.0",
+    "http-status-codes": "^1.0.6",
+    "intersect": "^1.0.1",
+    "jsonschema": "^1.1.0",
+    "moment": "^2.13.0",
+    "moment-range": "^2.2.0",
+    "moment-timezone": "^0.5.4",
+    "pg": "^6.0.3",
+    "request": "^2.74.0",
+    "sequelize": "^3.23.6",
+    "underscore": "^1.8.3",
+    "uuid": "^3.0.1"
+  },
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "cross-env": "^2.0.0",
+    "eslint": "^3.1.1",
+    "istanbul": "^0.4.4",
+    "mocha": "^2.5.3",
+    "moment": "^2.14.1",
+    "rewire": "^2.5.2",
+    "supertest": "^1.2.0",
+    "underscore": "^1.8.3",
+    "nock": "^8.0.0",
+    "ajv": "^6.3.0"
+  }
+}

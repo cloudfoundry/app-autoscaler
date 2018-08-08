@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="
+	http://www.springframework.org/schema/beans 
+	http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/context 
+    http://www.springframework.org/schema/context/spring-context.xsd
+	http://www.springframework.org/schema/tx 
+	http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+    <!-- This will automatically locate any and all property files you have
+        within your classpath, provided they fall under the resources directory.
+        The located property files are parsed and their values can then be used within
+        application context files in the form of ${propertyKey}. -->
+    <context:property-placeholder location="classpath*:application.properties"/>
+    <!-- Turn on AspectJ @Configurable support. As a result, any time you instantiate
+        an object, Spring will attempt to perform dependency injection on that object. -->
+    <context:spring-configured/>
+    <!-- This declaration will cause Spring to locate every @Component, @Repository
+        and @Service in your application. -->
+    <context:component-scan base-package="org.cloudfoundry.autoscaler.scheduler"/>
+
+    <bean id="entityManagerFactory"
+          class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="packagesToScan" value="org.cloudfoundry.autoscaler.scheduler"/>
+        <property name="jpaVendorAdapter">
+            <bean class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter"/>
+        </property>
+        <property name="jpaProperties">
+            <props>
+                <prop key="hibernate.archive.autodetection">class,hbm</prop>
+                <prop key="hibernate.hbm2ddl.auto">none</prop>
+                <prop key="hibernate.show_sql">false</prop>
+                <prop key="hibernate.dialect">org.hibernate.dialect.PostgreSQL94Dialect</prop>
+            </props>
+        </property>
+    </bean>
+
+    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" primary="true"
+          destroy-method="close">
+        <property name="driverClassName" value="${spring.datasource.driverClassName}"/>
+        <property name="url" value="${spring.datasource.url}"/>
+        <property name="username" value="${spring.datasource.username}"/>
+        <property name="password" value="${spring.datasource.password}"/>
+    </bean>
+    
+    <bean id="policyDbDataSource" class="org.apache.commons.dbcp.BasicDataSource"
+          destroy-method="close">
+        <property name="driverClassName" value="${spring.policyDbDataSource.driverClassName}"/>
+        <property name="url" value="${spring.policyDbDataSource.url}"/>
+        <property name="username" value="${spring.policyDbDataSource.username}"/>
+        <property name="password" value="${spring.policyDbDataSource.password}"/>
+    </bean>
+	
+    <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
+        <property name="entityManagerFactory" ref="entityManagerFactory"/>
+    </bean>
+    <bean id="policyDbTransactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
+        <property name="dataSource" ref="policyDbDataSource"/>
+        <qualifier value="policyDbTransactionManager"/>
+    </bean>
+    
+    <tx:annotation-driven/>
+    
+    
+
+    <bean id="quartzScheduler"
+          class="org.springframework.scheduling.quartz.SchedulerFactoryBean"
+          lazy-init="false">
+        <property name="autoStartup" value="true"/>
+        <property name="applicationContextSchedulerContextKey" value="applicationContext"/>
+        <property name="waitForJobsToCompleteOnShutdown" value="true"/>
+        <property name="overwriteExistingJobs" value="true"/>
+        <property name="schedulerName" value="${org.quartz.scheduler.instanceName}"/>
+        <property name="dataSource">
+            <ref bean="dataSource"/>
+        </property>
+        <property name="transactionManager">
+            <ref bean="transactionManager"/>
+        </property>
+        <property name="jobFactory">
+            <bean class="org.cloudfoundry.autoscaler.scheduler.quartz.QuartzJobFactory"/>
+        </property>
+        <property name="quartzProperties">
+            <props>
+                <!-- The the number of milliseconds the scheduler will ‘tolerate’ a trigger to pass its next-fire-time by,
+                before being considered “misfired”. The default value (if not specified in  configuration) is 60000 (60 seconds). -->
+                <prop key="org.quartz.jobStore.misfireThreshold">120000</prop>
+                <prop key="org.quartz.jobStore.driverDelegateClass">org.quartz.impl.jdbcjobstore.PostgreSQLDelegate
+                </prop>
+                <prop key="org.quartz.jobStore.isClustered">true</prop>
+                <prop key="org.quartz.scheduler.instanceId">${org.quartz.scheduler.instanceId}</prop>
+                <prop key="org.quartz.threadPool.threadCount">10</prop>
+            </props>
+        </property>
+    </bean>
+    <bean id="datasourceBeanPostProcessor" class="org.cloudfoundry.autoscaler.scheduler.beanPostProcessor.DatasourceBeanPostProcessor"/>
+</beans>

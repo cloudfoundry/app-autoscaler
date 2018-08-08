@@ -1,0 +1,36 @@
+{
+  "name": "abacus-cfpack",
+  "description": "CloudFoundry app package build script",
+  "license": "Apache-2.0",
+  "version": "0.0.5",
+  "private": true,
+  "homepage": "https://github.com/cloudfoundry-incubator/cf-abacus/tools/cfpack",
+  "bugs": {
+    "url": "https://github.com/cloudfoundry-incubator/cf-abacus/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "http://github.com/cloudfoundry-incubator/cf-abacus.git"
+  },
+  "keywords": [
+    "cf",
+    "abacus"
+  ],
+  "files": [
+    ".npmrc",
+    "cfpack",
+    "src/"
+  ],
+  "main": "src/index.js",
+  "bin": {
+    "cfpack": "./cfpack"
+  },
+  "dependencies": {
+    "commander": "^2.8.1",
+    "underscore": "^1.8.3"
+  },
+  "engines": {
+    "node": ">=5.11.1",
+    "npm": ">=3.8.6"
+  }
+}

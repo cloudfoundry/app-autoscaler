@@ -1,0 +1,13 @@
+--- 
+databaseChangeLog:
+   - changeSet:
+      id: 1
+      author: Fujitsu
+      changes:
+      - sqlFile:
+         dbms: postgresql
+         encoding: utf8
+         path: quartz_tables_postgres.sql
+         relativeToChangelogFile: true
+         splitStatements: true
+         stripComments: true

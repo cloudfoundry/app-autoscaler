@@ -1,9 +1,4 @@
-src/**/.DS_Store
+node_modules/*
+cfpackage/*
+*.log
 
-/.classpath
-/.project
-/.settings
-/*.log
-/build
-/target
-/WebContent

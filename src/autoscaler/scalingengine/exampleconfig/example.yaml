@@ -1,0 +1,40 @@
+cf:
+  api: "https://api.bosh-lite.com"
+  grant_type: "password"
+  username: "admin"
+  password: "admin"
+server:
+  port: 8080
+health:
+  port: 6180
+  emit_interval: 15s  
+logging:
+  level: "debug"
+db:
+  policy_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  scalingengine_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  scheduler_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+synchronizer:
+  active_schedule_sync_interval: 600s
+defaultCoolDownSecs: 300
+lockSize: 32
+db_lock:
+   ttl: 30s
+   lock_db:
+     url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
+     max_open_connections: 10
+     max_idle_connections: 5
+     connection_max_lifetime: 60s
+enable_db_lock: true

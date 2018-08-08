@@ -1,9 +1,6 @@
-src/**/.DS_Store
-
-/.classpath
-/.project
-/.settings
-/*.log
-/build
-/target
-/WebContent
+npm-debug.log
+*.sqlite
+node_modules/*
+coverage/*
+.project
+.settings/*
