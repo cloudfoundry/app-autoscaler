@@ -18,7 +18,6 @@ import (
 	"net/http"
 	"os"
 
-	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
 	"github.com/tedsuo/ifrit"
@@ -41,7 +40,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger := initLoggerFromConfig(&conf.Logging)
+	logger := helpers.InitLoggerFromConfig(&conf.Logging, "eventgenerator")
 	egClock := clock.NewClock()
 
 	appMetricDB, err := sqldb.NewAppMetricSQLDB(conf.DB.AppMetricDB, logger.Session("appMetric-db"))
@@ -133,41 +132,6 @@ func main() {
 
 	logger.Info("exited")
 }
-
-func initLoggerFromConfig(conf *config.LoggingConfig) lager.Logger {
-	logLevel, err := getLogLevel(conf.Level)
-	if err != nil {
-		fmt.Fprintf(os.Stdout, "failed to initialize logger: %s\n", err.Error())
-		os.Exit(1)
-	}
-	logger := lager.NewLogger("eventgenerator")
-
-	keyPatterns := []string{"[Pp]wd", "[Pp]ass", "[Ss]ecret", "[Tt]oken"}
-
-	redactedSink, err := helpers.NewRedactingWriterWithURLCredSink(os.Stdout, logLevel, keyPatterns, nil)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to create redacted sink: %s", err.Error())
-	}
-	logger.RegisterSink(redactedSink)
-
-	return logger
-}
-
-func getLogLevel(level string) (lager.LogLevel, error) {
-	switch level {
-	case "debug":
-		return lager.DEBUG, nil
-	case "info":
-		return lager.INFO, nil
-	case "error":
-		return lager.ERROR, nil
-	case "fatal":
-		return lager.FATAL, nil
-	default:
-		return -1, fmt.Errorf("Error: unsupported log level:%s", level)
-	}
-}
-
 func loadConfig(path string) (*config.Config, error) {
 	configFile, err := os.Open(path)
 	if err != nil {
@@ -197,19 +161,10 @@ func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan cha
 	database db.AppMetricDB, getBreaker func(string) *circuit.Breaker, setCoolDownExpired func(string, int64)) ([]*generator.Evaluator, error) {
 	count := conf.Evaluator.EvaluatorCount
 
-	tlsCerts := &conf.ScalingEngine.TLSClientCerts
-	if tlsCerts.CertFile == "" || tlsCerts.KeyFile == "" {
-		tlsCerts = nil
-	}
-
-	client := cfhttp.NewClient()
-	client.Transport.(*http.Transport).MaxIdleConnsPerHost = count
-	if tlsCerts != nil {
-		tlsConfig, err := cfhttp.NewTLSConfig(tlsCerts.CertFile, tlsCerts.KeyFile, tlsCerts.CACertFile)
-		if err != nil {
-			return nil, err
-		}
-		client.Transport.(*http.Transport).TLSClientConfig = tlsConfig
+	client, err := helpers.CreateHTTPClient(&conf.ScalingEngine.TLSClientCerts)
+	if err != nil {
+		logger.Error("failed to create http client for ScalingEngine", err, lager.Data{"scalingengineTLS": conf.ScalingEngine.TLSClientCerts})
+		os.Exit(1)
 	}
 
 	evaluators := make([]*generator.Evaluator, count)
@@ -222,21 +177,15 @@ func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan cha
 }
 
 func createMetricPollers(logger lager.Logger, conf *config.Config, appChan chan *models.AppMonitor, appMetricChan chan *models.AppMetric) ([]*aggregator.MetricPoller, error) {
-	tlsCerts := &conf.MetricCollector.TLSClientCerts
-	if tlsCerts.CertFile == "" || tlsCerts.KeyFile == "" {
-		tlsCerts = nil
-	}
 
-	count := conf.Aggregator.MetricPollerCount
-	client := cfhttp.NewClient()
-	client.Transport.(*http.Transport).MaxIdleConnsPerHost = count
-	if tlsCerts != nil {
-		tlsConfig, err := cfhttp.NewTLSConfig(tlsCerts.CertFile, tlsCerts.KeyFile, tlsCerts.CACertFile)
-		if err != nil {
-			return nil, err
-		}
-		client.Transport.(*http.Transport).TLSClientConfig = tlsConfig
+	client, err := helpers.CreateHTTPClient(&conf.MetricCollector.TLSClientCerts)
+	if err != nil {
+		logger.Error("failed to create http client for MetricCollector", err, lager.Data{"metriccollectorTLS": conf.MetricCollector.TLSClientCerts})
+		os.Exit(1)
 	}
+	count := conf.Aggregator.MetricPollerCount
+	client.Transport.(*http.Transport).MaxIdleConnsPerHost = count
+
 	pollers := make([]*aggregator.MetricPoller, count)
 	for i := 0; i < count; i++ {
 		pollers[i] = aggregator.NewMetricPoller(logger, conf.MetricCollector.MetricCollectorUrl, appChan, client, appMetricChan)

@@ -4,8 +4,8 @@ import (
 	"autoscaler/db"
 	"autoscaler/db/sqldb"
 	"autoscaler/helpers"
-	"autoscaler/pruner"
-	"autoscaler/pruner/config"
+	"autoscaler/operator"
+	"autoscaler/operator/config"
 	sync "autoscaler/sync"
 	"flag"
 	"fmt"
@@ -48,7 +48,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger := initLoggerFromConfig(&conf.Logging)
+	logger := helpers.InitLoggerFromConfig(&conf.Logging, "operator")
 	prClock := clock.NewClock()
 
 	instanceMetricsDb, err := sqldb.NewInstanceMetricsSQLDB(conf.InstanceMetricsDb.Db, logger.Session("instancemetrics-db"))
@@ -72,29 +72,49 @@ func main() {
 	}
 	defer scalingEngineDb.Close()
 
-	prunerLoggerSessionName := "instancemetrics-dbpruner"
-	instanceMetricDbPruner := pruner.NewInstanceMetricsDbPruner(instanceMetricsDb, conf.InstanceMetricsDb.CutoffDays, prClock, logger.Session(prunerLoggerSessionName))
-	instanceMetricsDbPrunerRunner := pruner.NewDbPrunerRunner(instanceMetricDbPruner, conf.InstanceMetricsDb.RefreshInterval, prClock, logger.Session(prunerLoggerSessionName))
+	scalingEngineHttpclient, err := helpers.CreateHTTPClient(&conf.ScalingEngine.TLSClientCerts)
+	if err != nil {
+		logger.Error("failed to create http client for scalingengine", err, lager.Data{"scalingengineTLS": conf.ScalingEngine.TLSClientCerts})
+		os.Exit(1)
+	}
+	schedulerHttpclient, err := helpers.CreateHTTPClient(&conf.Scheduler.TLSClientCerts)
+	if err != nil {
+		logger.Error("failed to create http client for scheduler", err, lager.Data{"schedulerTLS": conf.Scheduler.TLSClientCerts})
+		os.Exit(1)
+	}
 
-	prunerLoggerSessionName = "appmetrics-dbpruner"
-	appMetricsDbPruner := pruner.NewAppMetricsDbPruner(appMetricsDb, conf.AppMetricsDb.CutoffDays, prClock, logger.Session(prunerLoggerSessionName))
-	appMetricsDbPrunerRunner := pruner.NewDbPrunerRunner(appMetricsDbPruner, conf.AppMetricsDb.RefreshInterval, prClock, logger.Session(prunerLoggerSessionName))
+	loggerSessionName := "instancemetrics-dbpruner"
+	instanceMetricDbPruner := operator.NewInstanceMetricsDbPruner(instanceMetricsDb, conf.InstanceMetricsDb.CutoffDays, prClock, logger.Session(loggerSessionName))
+	instanceMetricsDbOperatorRunner := operator.NewOperatorRunner(instanceMetricDbPruner, conf.InstanceMetricsDb.RefreshInterval, prClock, logger.Session(loggerSessionName))
 
-	prunerLoggerSessionName = "scalingengine-dbpruner"
-	scalingEngineDbPruner := pruner.NewScalingEngineDbPruner(scalingEngineDb, conf.ScalingEngineDb.CutoffDays, prClock, logger.Session(prunerLoggerSessionName))
-	scalingEngineDbPrunerRunner := pruner.NewDbPrunerRunner(scalingEngineDbPruner, conf.ScalingEngineDb.RefreshInterval, prClock, logger.Session(prunerLoggerSessionName))
+	loggerSessionName = "appmetrics-dbpruner"
+	appMetricsDbPruner := operator.NewAppMetricsDbPruner(appMetricsDb, conf.AppMetricsDb.CutoffDays, prClock, logger.Session(loggerSessionName))
+	appMetricsDbOperatorRunner := operator.NewOperatorRunner(appMetricsDbPruner, conf.AppMetricsDb.RefreshInterval, prClock, logger.Session(loggerSessionName))
+
+	loggerSessionName = "scalingengine-dbpruner"
+	scalingEngineDbPruner := operator.NewScalingEngineDbPruner(scalingEngineDb, conf.ScalingEngineDb.CutoffDays, prClock, logger.Session(loggerSessionName))
+	scalingEngineDbOperatorRunner := operator.NewOperatorRunner(scalingEngineDbPruner, conf.ScalingEngineDb.RefreshInterval, prClock, logger.Session(loggerSessionName))
+	loggerSessionName = "scalingengine-sync"
+	scalingEngineSync := operator.NewScheduleSynchronizer(scalingEngineHttpclient, conf.ScalingEngine.Url, prClock, logger.Session(loggerSessionName))
+	scalingEngineSyncRunner := operator.NewOperatorRunner(scalingEngineSync, conf.ScalingEngine.SyncInterval, prClock, logger.Session(loggerSessionName))
+
+	loggerSessionName = "scheduler-sync"
+	schedulerSync := operator.NewScheduleSynchronizer(schedulerHttpclient, conf.Scheduler.Url, prClock, logger.Session(loggerSessionName))
+	schedulerSyncRunner := operator.NewOperatorRunner(schedulerSync, conf.Scheduler.SyncInterval, prClock, logger.Session(loggerSessionName))
 
 	members := grouper.Members{
-		{"instancemetrics-dbpruner", instanceMetricsDbPrunerRunner},
-		{"appmetrics-dbpruner", appMetricsDbPrunerRunner},
-		{"scalingEngine-dbpruner", scalingEngineDbPrunerRunner},
+		{"instancemetrics-dbpruner", instanceMetricsDbOperatorRunner},
+		{"appmetrics-dbpruner", appMetricsDbOperatorRunner},
+		{"scalingEngine-dbpruner", scalingEngineDbOperatorRunner},
+		{"scalingEngine-sync", scalingEngineSyncRunner},
+		{"scheduler-sync", schedulerSyncRunner},
 	}
 
 	guid, err := helpers.GenerateGUID(logger)
 	if err != nil {
 		logger.Error("failed-to-generate-guid", err)
 	}
-	const lockTableName = "pruner_lock"
+	const lockTableName = "operator_lock"
 	if conf.EnableDBLock {
 		logger.Debug("database-lock-feature-enabled")
 		var lockDB db.LockDB
@@ -115,7 +135,7 @@ func main() {
 			logger.Fatal("new consul client failed", err)
 		}
 
-		serviceClient := pruner.NewServiceClient(consulClient, prClock)
+		serviceClient := operator.NewServiceClient(consulClient, prClock)
 
 		guid, err := helpers.GenerateGUID(logger)
 		if err != nil {
@@ -145,38 +165,4 @@ func main() {
 
 	logger.Info("exited")
 
-}
-
-func initLoggerFromConfig(conf *config.LoggingConfig) lager.Logger {
-	logLevel, err := getLogLevel(conf.Level)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to initialize logger: %s\n", err.Error())
-		os.Exit(1)
-	}
-	logger := lager.NewLogger("pruner")
-
-	keyPatterns := []string{"[Pp]wd", "[Pp]ass", "[Ss]ecret", "[Tt]oken"}
-
-	redactedSink, err := helpers.NewRedactingWriterWithURLCredSink(os.Stdout, logLevel, keyPatterns, nil)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to create redacted sink", err.Error())
-	}
-	logger.RegisterSink(redactedSink)
-
-	return logger
-}
-
-func getLogLevel(level string) (lager.LogLevel, error) {
-	switch level {
-	case "debug":
-		return lager.DEBUG, nil
-	case "info":
-		return lager.INFO, nil
-	case "error":
-		return lager.ERROR, nil
-	case "fatal":
-		return lager.FATAL, nil
-	default:
-		return -1, fmt.Errorf("Error: unsupported log level:%s", level)
-	}
 }

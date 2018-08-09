@@ -35,10 +35,9 @@ var _ = Describe("Main", func() {
 
 	AfterEach(func() {
 		runner.KillWithFire()
-		ClearLockDatabase()
 	})
 
-	Describe("with a correct config with db lock enabled", func() {
+	Describe("with a correct config", func() {
 
 		Context("when starting 1 scaling engine instance", func() {
 			It("scaling engine should start", func() {
@@ -50,32 +49,9 @@ var _ = Describe("Main", func() {
 				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("scalingengine.http-server.new-http-server"))
 			})
 
-			Context("schedule sychronizer acquires the lock ", func() {
-				It("acquired the first lock and started", func() {
-					Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("scalingengine.lock-acquired-in-first-attempt"))
-					Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("scalingengine.synchronizer.started"))
-				})
-
-				It("started and renew the lock", func() {
-					Eventually(runner.Session.Buffer, 2).Should(gbytes.Say("scalingengine.synchronizer.started"))
-					Eventually(runner.Session.Buffer, 8*time.Second).Should(gbytes.Say("scalingengine.retry-acquiring-lock"))
-					Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("scalingengine.lock-db.renewed-lock-successfully"))
-
-				})
+			It("health server starts directly", func() {
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("scalingengine.health-server.new-health-server"))
 			})
-
-			Context("when an interrupt is sent", func() {
-				JustBeforeEach(func() {
-					Eventually(runner.Session.Buffer, 2).Should(gbytes.Say("scalingengine.started"))
-				})
-
-				It("should stop", func() {
-					runner.Session.Interrupt()
-					Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("scalingengine.exited"))
-					Eventually(runner.Session, 5).Should(Exit(0))
-				})
-			})
-
 		})
 
 		Context("when starting multiple scaling engine instances", func() {
@@ -103,73 +79,6 @@ var _ = Describe("Main", func() {
 
 				Consistently(runner.Session).ShouldNot(Exit())
 				Consistently(secondRunner.Session).ShouldNot(Exit())
-			})
-
-			Context("Only 1 schedule sychronizer starts ", func() {
-
-				var (
-					runnerAcquiredLock bool
-				)
-
-				JustBeforeEach(func() {
-					runnerAcquiredLock = true
-					buffer := runner.Session.Out
-					secondBuffer := secondRunner.Session.Out
-					select {
-					case <-buffer.Detect("scalingengine.lock-acquired-in-first-attempt"):
-						runnerAcquiredLock = true
-					case <-secondBuffer.Detect("scalingengine.lock-acquired-in-first-attempt"):
-						runnerAcquiredLock = false
-					case <-time.After(2 * time.Second):
-					}
-					buffer.CancelDetects()
-					secondBuffer.CancelDetects()
-				})
-
-				It("Only 1 schedule sychronizer could acquire the lock and start", func() {
-					if runnerAcquiredLock {
-						Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("scalingengine.synchronizer.started"))
-						Eventually(secondRunner.Session.Buffer, 2*time.Second).ShouldNot(gbytes.Say("scalingengine.lock-acquired-in-first-attempt"))
-						Eventually(secondRunner.Session.Buffer, 2*time.Second).ShouldNot(gbytes.Say("scalingengine.synchronizer.started"))
-					} else {
-						Eventually(secondRunner.Session.Buffer, 2*time.Second).Should(gbytes.Say("scalingengine.synchronizer.started"))
-						Eventually(runner.Session.Buffer, 2*time.Second).ShouldNot(gbytes.Say("scalingengine.lock-acquired-in-first-attempt"))
-						Eventually(runner.Session.Buffer, 2*time.Second).ShouldNot(gbytes.Say("scalingengine.synchronizer.started"))
-					}
-				})
-
-				It("Only 1 schedule sychronizer could renew the lock successfully", func() {
-					if runnerAcquiredLock {
-						Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("scalingengine.synchronizer.started"))
-						Eventually(runner.Session.Buffer, 8*time.Second).Should(gbytes.Say("scalingengine.retry-acquiring-lock"))
-						Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("scalingengine.lock-db.renewed-lock-successfully"))
-						Eventually(secondRunner.Session.Buffer, 8*time.Second).ShouldNot(gbytes.Say("scalingengine.retry-acquiring-lock"))
-						Eventually(secondRunner.Session.Buffer, 2*time.Second).ShouldNot(gbytes.Say("scalingengine.lock-db.renewed-lock-successfully"))
-					} else {
-						Eventually(secondRunner.Session.Buffer, 2*time.Second).Should(gbytes.Say("scalingengine.synchronizer.started"))
-						Eventually(secondRunner.Session.Buffer, 8*time.Second).Should(gbytes.Say("scalingengine.retry-acquiring-lock"))
-						Eventually(secondRunner.Session.Buffer, 2*time.Second).Should(gbytes.Say("scalingengine.lock-db.renewed-lock-successfully"))
-						Eventually(runner.Session.Buffer, 8*time.Second).ShouldNot(gbytes.Say("scalingengine.retry-acquiring-lock"))
-						Eventually(runner.Session.Buffer, 2*time.Second).ShouldNot(gbytes.Say("scalingengine.lock-db.renewed-lock-successfully"))
-					}
-				})
-
-				It("When the running sychronizer loses the lock, the other one takes over", func() {
-					if runnerAcquiredLock {
-						Eventually(secondRunner.Session.Buffer, 10*time.Second).Should(gbytes.Say("retry-acquiring-lock"))
-						runner.Interrupt()
-						Eventually(runner.Session.Buffer, 5*time.Second).Should(gbytes.Say("scalingengine.received-interrupt-signal"))
-						Eventually(runner.Session.Buffer, 5*time.Second).Should(gbytes.Say("scalingengine.successfully-released-lock"))
-						Eventually(secondRunner.Session.Buffer, 10*time.Second).Should(gbytes.Say("scalingengine.successfully-acquired-lock"))
-					} else {
-						Eventually(runner.Session.Buffer, 10*time.Second).Should(gbytes.Say("retry-acquiring-lock"))
-						secondRunner.Interrupt()
-						Eventually(secondRunner.Session.Buffer, 5*time.Second).Should(gbytes.Say("scalingengine.received-interrupt-signal"))
-						Eventually(secondRunner.Session.Buffer, 5*time.Second).Should(gbytes.Say("scalingengine.successfully-released-lock"))
-						Eventually(runner.Session.Buffer, 10*time.Second).Should(gbytes.Say("scalingengine.successfully-acquired-lock"))
-					}
-				})
-
 			})
 
 		})

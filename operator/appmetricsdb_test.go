@@ -1,11 +1,11 @@
-package pruner_test
+package operator_test
 
 import (
 	"errors"
 	"time"
 
 	"autoscaler/eventgenerator/aggregator/fakes"
-	"autoscaler/pruner"
+	"autoscaler/operator"
 
 	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/lager/lagertest"
@@ -21,7 +21,7 @@ var _ = Describe("AppMetricsDB Prune", func() {
 		fclock             *fakeclock.FakeClock
 		cutoffDays         int
 		buffer             *gbytes.Buffer
-		appMetricsDbPruner *pruner.AppMetricsDbPruner
+		appMetricsDbPruner *operator.AppMetricsDbPruner
 	)
 
 	BeforeEach(func() {
@@ -33,13 +33,13 @@ var _ = Describe("AppMetricsDB Prune", func() {
 		appMetricsDb = &fakes.FakeAppMetricDB{}
 		fclock = fakeclock.NewFakeClock(time.Now())
 
-		appMetricsDbPruner = pruner.NewAppMetricsDbPruner(appMetricsDb, cutoffDays, fclock, logger)
+		appMetricsDbPruner = operator.NewAppMetricsDbPruner(appMetricsDb, cutoffDays, fclock, logger)
 
 	})
 
 	Describe("Prune", func() {
 		JustBeforeEach(func() {
-			appMetricsDbPruner.Prune()
+			appMetricsDbPruner.Operate()
 		})
 
 		Context("when pruning metrics records from app metrics db", func() {

@@ -1,4 +1,4 @@
-package pruner
+package operator
 
 import (
 	"autoscaler/db"
@@ -23,7 +23,7 @@ func NewInstanceMetricsDbPruner(instanceMetricsDb db.InstanceMetricsDB, cutoffDa
 	}
 }
 
-func (idp InstanceMetricsDbPruner) Prune() {
+func (idp InstanceMetricsDbPruner) Operate() {
 	idp.logger.Debug("Pruning instance metrics")
 
 	timestamp := idp.clock.Now().AddDate(0, 0, -idp.cutoffDays).UnixNano()

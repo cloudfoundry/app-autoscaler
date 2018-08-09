@@ -3,6 +3,7 @@ package config_test
 import (
 	"autoscaler/db"
 	. "autoscaler/eventgenerator/config"
+	"autoscaler/helpers"
 	"autoscaler/models"
 
 	"time"
@@ -85,7 +86,7 @@ circuitBreaker:
 			It("returns the config", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(conf).To(Equal(&Config{
-					Logging: LoggingConfig{Level: "info"},
+					Logging: helpers.LoggingConfig{Level: "info"},
 					Server: ServerConfig{
 						Port: 9080,
 						TLS: models.TLSCerts{
@@ -211,7 +212,7 @@ defaultBreachDurationSecs: 600
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(conf).To(Equal(&Config{
-					Logging: LoggingConfig{Level: "info"},
+					Logging: helpers.LoggingConfig{Level: "info"},
 					Server: ServerConfig{
 						Port: 8080,
 						TLS:  models.TLSCerts{},
@@ -935,7 +936,7 @@ defaultBreachDurationSecs: NOT-INTEGER-VALUE
 	Describe("Validate", func() {
 		BeforeEach(func() {
 			conf = &Config{
-				Logging: LoggingConfig{Level: "info"},
+				Logging: helpers.LoggingConfig{Level: "info"},
 				Server: ServerConfig{
 					NodeAddrs: []string{"address1", "address2"},
 					NodeIndex: 0,
