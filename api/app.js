@@ -1,5 +1,5 @@
 'use strict'; 
-module.exports = function(settings, callback) {
+module.exports = function(settings, credentialCache, callback) {
   var https = require('https');
   var http = require('http');
   var fs = require('fs');
@@ -104,7 +104,7 @@ module.exports = function(settings, callback) {
   var scalingHistories = require('./lib/routes/scalingHistories')(settings);
   var metrics = require('./lib/routes/metrics')(settings);
   var aggregatedMetrics = require('./lib/routes/aggregated_metrics')(settings);
-
+  var creds = require('./lib/routes/credentials')(models,credentialCache,settings.cacheTTL);
   app.use('/v1/apps',policies);
   app.use(function(err, req, res, next) {
     var errorResponse = {};
@@ -154,6 +154,7 @@ module.exports = function(settings, callback) {
   publicApp.use('/v1/apps',scalingHistories);
   publicApp.use('/v1/apps',metrics);
   publicApp.use('/v1/apps',aggregatedMetrics);
+  app.use('/v1/apps',creds);
   publicApp.use(function(err, req, res, next) {
     var errorResponse = {};
     if (err) {

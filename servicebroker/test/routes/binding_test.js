@@ -34,6 +34,42 @@ function initNockBind(statusCode) {
     });
 }
 
+function initNockBindWithCred(statusCode) {
+  scope = nock(settings.apiserver.uri)
+    .get(/\/v1\/apps\/.*\/creds/)
+    .reply(statusCode, {
+      'success': true,
+      'error': null,
+      'result': "created"
+    });
+}
+
+var mockError = {
+  'error': VALIDATION_ERROR_FROM_API_SERVER,
+};
+
+function initNockBindWithCredError(statusCode) {
+  scope = nock(settings.apiserver.uri)
+    .get(/\/v1\/apps\/.*\/creds/)
+    .replyWithError(mockError);
+}
+
+function initNockUnbindWithCred(statusCode) {
+  scope = nock(settings.apiserver.uri)
+    .delete(/\/v1\/apps\/.*\/creds/)
+    .reply(statusCode, {
+      'success': true,
+      'error': null,
+      'result': "created"
+    });
+}
+
+function initNockUnbindWithCredError(statusCode) {
+  scope = nock(settings.apiserver.uri)
+    .delete(/\/v1\/apps\/.*\/creds/)
+    .replyWithError(mockError);
+}
+
 function initNockUnBind(statusCode) {
   scope = nock(settings.apiserver.uri)
     .delete(/\/v1\/apps\/.*\/policy/)
@@ -104,6 +140,7 @@ describe('binding RESTful API', function() {
     context('when there is no record', function() {
       it("creates a new binding with 201", function(done) {
         initNockBind(201);
+        initNockBindWithCred(200);
         supertest(publicServer)
           .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
           .set("Authorization", "Basic " + auth)
@@ -118,6 +155,26 @@ describe('binding RESTful API', function() {
             })
           });
       });
+
+      it("failed to create a new binding because of credential generation failure", function(done) {
+        initNockBindWithCredError(500);
+        initNockBind(201);
+        supertest(publicServer)
+          .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
+          .set("Authorization", "Basic " + auth)
+          .send({ "app_guid": appId, "parameters": policy })
+          .expect(500)
+          .expect('Content-Type', /json/)
+          .expect({})
+          .end(function(err, res) {
+            binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+              expect(countRes).to.equal(0);
+              expect(res.statusCode).to.equal(500);
+              done();
+            })
+          });
+      });
+
       context('when there is no policy in request', function() {
         it("return a 201", function(done) {
           supertest(publicServer)
@@ -195,6 +252,7 @@ describe('binding RESTful API', function() {
 
       beforeEach(function(done) {
         initNockBind(201);
+        initNockBindWithCred(200);
         supertest(publicServer)
           .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
           .set("Authorization", "Basic " + auth)
@@ -388,6 +446,7 @@ describe('binding RESTful API', function() {
     context('when a binding exists for the app', function() {
       beforeEach(function(done) {
         initNockBind(201);
+        initNockBindWithCred(200);
         supertest(publicServer)
           .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
           .set("Authorization", "Basic " + auth)
@@ -404,6 +463,7 @@ describe('binding RESTful API', function() {
       });
       it("it deletes the binding", function(done) {
         initNockUnBind(200);
+        initNockUnbindWithCred(200);
         supertest(publicServer)
           .delete("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
           .set("Authorization", "Basic " + auth)
@@ -417,6 +477,25 @@ describe('binding RESTful API', function() {
             })
           });
       });
+
+      it("it could not delete the binding because of credential deletion failure", function(done) {
+        initNockUnBind(200);
+        initNockUnbindWithCredError(500);
+        supertest(publicServer)
+          .delete("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
+          .set("Authorization", "Basic " + auth)
+          .expect(500)
+          .expect('Content-Type', /json/)
+          .expect({})
+          .end(function(err, res) {
+            binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+              expect(countRes).to.equal(1);
+              expect(res.statusCode).to.equal(500);
+              done();
+            })
+          });
+      });
+
       context("when the api server returns error", function() {
         context("when the api server returns a 400", function() {
           it("return a 400", function(done) {

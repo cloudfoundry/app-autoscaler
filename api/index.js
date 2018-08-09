@@ -1,6 +1,7 @@
 'use strict'
 var path = require('path');
 var fs = require('fs');
+var NodeCache = require('node-cache');
 var args = process.argv;
 if (!(args.length == 4 && args[2] == "-c" && args[3] != "")) {
   throw new Error("missing config file\nUsage:use '-c' option to specify the config file path");
@@ -19,4 +20,5 @@ var errorCallback = function(err) {
     throw err;
   }
 }
-var apiServer = require(path.join(__dirname, 'app.js'))(settings, errorCallback);
+var credentialCache = new NodeCache();
+var apiServer = require(path.join(__dirname, 'app.js'))(settings, credentialCache, errorCallback);

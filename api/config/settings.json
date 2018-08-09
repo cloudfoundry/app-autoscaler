@@ -4,6 +4,7 @@
     "infoFilePath": "../api/config/info.json",
     "cfApi": "https://api.bosh-lite.com",
     "skipSSLValidation": false,
+    "cacheTTL": 10,
     "db": {
         "maxConnections": 10,
         "minConnections": 0,

@@ -33,6 +33,16 @@ function initNockBind(statusCode) {
     });
 }
 
+function initNockBindWithCred(statusCode) {
+  scope = nock(settings.apiserver.uri)
+    .get(/\/v1\/apps\/.*\/creds/)
+    .reply(statusCode, {
+      'success': true,
+      'error': null,
+      'result': "created"
+    });
+}
+
 describe('binding RESTful API', function() {
   var servers, publicServer, internalServer, serviceInstanceId, orgId, spaceId, appId, bindingId;
   serviceInstanceId = uuid.v4();
@@ -85,6 +95,7 @@ describe('binding RESTful API', function() {
     context("application has been bound to autoscaler", function() {
       beforeEach(function(done) {
         initNockBind(201);
+        initNockBindWithCred(200);
         supertest(publicServer)
           .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
           .set("Authorization", "Basic " + auth)

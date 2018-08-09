@@ -14,6 +14,7 @@ describe('config setting Test Suite', function () {
       "infoFilePath": "../api/config/info.json",
       "cfApi": "api.bosh-lite.com",
       "skipSSLValidation": false,
+      "cacheTTL": 200,
       "db": {
         "maxConnections": 10,
         "minConnections": 0,
@@ -87,6 +88,7 @@ describe('config setting Test Suite', function () {
     expect(settings.cfApi).to.equal("https://" + defaultConfig.cfApi.toLowerCase());
     expect(settings.infoFilePath).to.equal(defaultConfig.infoFilePath);
     expect(settings.skipSSLValidation).to.equal(false);
+    expect(settings.cacheTTL).to.equal(defaultConfig.cacheTTL);
 
     expect(settings.db.maxConnections).to.equal(defaultConfig.db.maxConnections);
     expect(settings.db.minConnections).to.equal(defaultConfig.db.minConnections);
