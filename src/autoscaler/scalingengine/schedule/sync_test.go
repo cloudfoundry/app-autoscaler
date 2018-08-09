@@ -5,14 +5,12 @@ import (
 	"autoscaler/scalingengine/fakes"
 	. "autoscaler/scalingengine/schedule"
 
-	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 
 	"errors"
-	"os"
 	"time"
 )
 
@@ -24,11 +22,8 @@ var _ = Describe("Sync", func() {
 		schedulerDB  *fakes.FakeSchedulerDB
 		engineDB     *fakes.FakeScalingEngineDB
 		engine       *fakes.FakeScalingEngine
-		fclock       *fakeclock.FakeClock
-		synchronizer *ActiveScheduleSychronizer
+		synchronizer ActiveScheduleSychronizer
 		buffer       *gbytes.Buffer
-		signals      chan os.Signal
-		ready        chan struct{}
 	)
 
 	BeforeEach(func() {
@@ -37,38 +32,19 @@ var _ = Describe("Sync", func() {
 		engine = &fakes.FakeScalingEngine{}
 		logger := lagertest.NewTestLogger("active-schedule-synchronizer-test")
 		buffer = logger.Buffer()
-		fclock = fakeclock.NewFakeClock(time.Now())
-		synchronizer = NewActiveScheduleSychronizer(logger, schedulerDB, engineDB, engine, TestSyncInterval, fclock)
+		synchronizer = NewActiveScheduleSychronizer(logger, schedulerDB, engineDB, engine)
 	})
 
-	Describe("Run", func() {
-		BeforeEach(func() {
-			signals = make(chan os.Signal)
-			ready = make(chan struct{})
-		})
-		AfterEach(func() {
-			close(signals)
-		})
-		JustBeforeEach(func() {
-			go synchronizer.Run(signals, ready)
-		})
+	Describe("Sync", func() {
 
-		It("starts synchronization and can be stopped", func() {
-			Eventually(buffer).Should(gbytes.Say("started"))
-			signals <- os.Interrupt
-			Eventually(buffer).Should(gbytes.Say("stopped"))
+		JustBeforeEach(func() {
+			go synchronizer.Sync()
+			Eventually(buffer).Should(gbytes.Say("synchronizing-active-schedules"))
 		})
 
 		It("synchronizes data between scheduler and scaling engine with the given time interval", func() {
-			fclock.WaitForWatcherAndIncrement(TestSyncInterval)
 			Eventually(schedulerDB.GetActiveSchedulesCallCount).Should(Equal(1))
 			Eventually(engineDB.GetActiveSchedulesCallCount).Should(Equal(1))
-
-			fclock.WaitForWatcherAndIncrement(TestSyncInterval)
-			Eventually(schedulerDB.GetActiveSchedulesCallCount).Should(Equal(2))
-			Eventually(engineDB.GetActiveSchedulesCallCount).Should(Equal(2))
-
-			signals <- os.Interrupt
 		})
 
 		Context("when data are consistent", func() {
@@ -87,12 +63,8 @@ var _ = Describe("Sync", func() {
 					"app-id-2": "schedule-id-2",
 				}, nil)
 			})
-			AfterEach(func() {
-				signals <- os.Interrupt
-			})
 
 			It("does nothing", func() {
-				fclock.WaitForWatcherAndIncrement(TestSyncInterval)
 				Consistently(engineDB.SetActiveScheduleCallCount).Should(BeZero())
 				Consistently(engineDB.RemoveActiveScheduleCallCount).Should(BeZero())
 			})
@@ -113,12 +85,8 @@ var _ = Describe("Sync", func() {
 					"app-id-1": "schedule-id-1",
 				}, nil)
 			})
-			AfterEach(func() {
-				signals <- os.Interrupt
-			})
 
 			It("set the active schedule", func() {
-				fclock.WaitForWatcherAndIncrement(TestSyncInterval)
 				Eventually(buffer).Should(gbytes.Say("synchronize-active-schedules-find-missing-active-schedule-start"))
 				Eventually(engine.SetActiveScheduleCallCount).Should(Equal(1))
 				appId, schedule := engine.SetActiveScheduleArgsForCall(0)
@@ -143,12 +111,8 @@ var _ = Describe("Sync", func() {
 					"app-id-2": "schedule-id-2-1",
 				}, nil)
 			})
-			AfterEach(func() {
-				signals <- os.Interrupt
-			})
 
 			It("set the new active schedule", func() {
-				fclock.WaitForWatcherAndIncrement(TestSyncInterval)
 				Eventually(buffer).Should(gbytes.Say("synchronize-active-schedules-find-missing-active-schedule-start"))
 				Eventually(engine.SetActiveScheduleCallCount).Should(Equal(1))
 				appId, schedule := engine.SetActiveScheduleArgsForCall(0)
@@ -170,12 +134,8 @@ var _ = Describe("Sync", func() {
 					"app-id-2": "schedule-id-2",
 				}, nil)
 			})
-			AfterEach(func() {
-				signals <- os.Interrupt
-			})
 
 			It("set the active schedule", func() {
-				fclock.WaitForWatcherAndIncrement(TestSyncInterval)
 				Eventually(buffer).Should(gbytes.Say("synchronize-active-schedules-find-missing-active-schedule-end"))
 				Eventually(engine.RemoveActiveScheduleCallCount).Should(Equal(1))
 				appId, scheduleId := engine.RemoveActiveScheduleArgsForCall(0)
@@ -188,12 +148,8 @@ var _ = Describe("Sync", func() {
 			BeforeEach(func() {
 				schedulerDB.GetActiveSchedulesReturns(nil, errors.New("an error"))
 			})
-			AfterEach(func() {
-				signals <- os.Interrupt
-			})
 
 			It("skips the synchronization", func() {
-				fclock.WaitForWatcherAndIncrement(TestSyncInterval)
 				Eventually(buffer).Should(gbytes.Say("failed-synchronize-active-schedules-get-schedules-from-schedulerDB"))
 				Eventually(buffer).Should(gbytes.Say("an error"))
 			})
@@ -203,11 +159,8 @@ var _ = Describe("Sync", func() {
 			BeforeEach(func() {
 				engineDB.GetActiveSchedulesReturns(nil, errors.New("an error"))
 			})
-			AfterEach(func() {
-				signals <- os.Interrupt
-			})
+
 			It("skips the synchronization", func() {
-				fclock.WaitForWatcherAndIncrement(TestSyncInterval)
 				Eventually(buffer).Should(gbytes.Say("failed-synchronize-active-schedules-get-schedules-from-engineDB"))
 				Eventually(buffer).Should(gbytes.Say("an error"))
 			})

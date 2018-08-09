@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"autoscaler/db"
-	"autoscaler/pruner/config"
+	"autoscaler/operator/config"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -94,6 +94,20 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_days: 30
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+scheduler:
+  scheduler_url: http://localhost:8083
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 lock:
   lock_ttl: 15s
   lock_retry_interval: 10s
@@ -193,6 +207,9 @@ scaling_engine_db:
 				Expect(conf.ScalingEngineDb.RefreshInterval).To(Equal(config.DefaultRefreshInterval))
 				Expect(conf.ScalingEngineDb.CutoffDays).To(Equal(config.DefaultCutoffDays))
 
+				Expect(conf.ScalingEngine.SyncInterval).To(Equal(config.DefaultSyncInterval))
+				Expect(conf.Scheduler.SyncInterval).To(Equal(config.DefaultSyncInterval))
+
 				Expect(conf.Lock.LockTTL).To(Equal(config.DefaultLockTTL))
 				Expect(conf.Lock.LockRetryInterval).To(Equal(config.DefaultRetryInterval))
 
@@ -230,6 +247,20 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_days: 30
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+scheduler:
+  scheduler_url: http://localhost:8083
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 lock:
   lock_ttl: 15s
   lock_retry_interval: 10s
@@ -271,6 +302,20 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_days: 30
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+scheduler:
+  scheduler_url: http://localhost:8083
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 lock:
   lock_ttl: 15s
   lock_retry_interval: 10s
@@ -312,6 +357,20 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_days: 30
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+scheduler:
+  scheduler_url: http://localhost:8083
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 lock:
   lock_ttl: 15s
   lock_retry_interval: 10s
@@ -354,6 +413,20 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_days: 30
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+scheduler:
+  scheduler_url: http://localhost:8083
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 lock:
   lock_ttl: 15s
   lock_retry_interval: 10s
@@ -396,6 +469,20 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_days: 30
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+scheduler:
+  scheduler_url: http://localhost:8083
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 lock:
   lock_ttl: 15s
   lock_retry_interval: 10s
@@ -437,6 +524,20 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_days: 30
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+scheduler:
+  scheduler_url: http://localhost:8083
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 lock:
   lock_ttl: 15s
   lock_retry_interval: 10s
@@ -479,6 +580,20 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_days: 30
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+scheduler:
+  scheduler_url: http://localhost:8083
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 lock:
   lock_ttl: 15s
   lock_retry_interval: 10s
@@ -521,6 +636,20 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_days: 30
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+scheduler:
+  scheduler_url: http://localhost:8083
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 lock:
   lock_ttl: 15s
   lock_retry_interval: 10s
@@ -563,6 +692,20 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_days: 30
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+scheduler:
+  scheduler_url: http://localhost:8083
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 lock:
   lock_ttl: 15s
   lock_retry_interval: 10s
@@ -605,6 +748,20 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_days: 30
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+scheduler:
+  scheduler_url: http://localhost:8083
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 lock:
   lock_ttl: 15s
   lock_retry_interval: 10s
@@ -647,6 +804,20 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_days: NOT-INTEGER-VALUE
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+scheduler:
+  scheduler_url: http://localhost:8083
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 lock:
   lock_ttl: 15s
   lock_retry_interval: 10s
@@ -689,6 +860,20 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36k
   cutoff_days: 30
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+scheduler:
+  scheduler_url: http://localhost:8083
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 lock:
   lock_ttl: 15s
   lock_retry_interval: 10s
@@ -731,6 +916,20 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_days: 30
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+scheduler:
+  scheduler_url: http://localhost:8083
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 lock:
   lock_ttl: 15s
   lock_retry_interval: 10s
@@ -773,6 +972,20 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_days: 30
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+scheduler:
+  scheduler_url: http://localhost:8083
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 lock:
   lock_ttl: 15s
   lock_retry_interval: 10s
@@ -815,6 +1028,20 @@ scaling_engine_db:
     connection_max_lifetime: 60k
   refresh_interval: 36h
   cutoff_days: 30
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+scheduler:
+  scheduler_url: http://localhost:8083
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 lock:
   lock_ttl: 15s
   lock_retry_interval: 10s
@@ -857,6 +1084,20 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_days: 30s
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+scheduler:
+  scheduler_url: http://localhost:8083
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 lock:
   lock_ttl: 10k
   lock_retry_interval: 10s
@@ -899,6 +1140,132 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_days: 30s
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+scheduler:
+  scheduler_url: http://localhost:8083
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+lock:
+  lock_ttl: 15s
+  lock_retry_interval: 10k
+  consul_cluster_config: "http://127.0.0.1:8500"
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
+			})
+		})
+
+		Context("when scaling engine sync interval is not a time duration", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+level: "debug"
+instance_metrics_db:
+db:
+  url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  max_open_connections: 10
+  max_idle_connections: 5
+  connection_max_lifetime: 60s
+refresh_interval: 12h
+cutoff_days: 10
+app_metrics_db:
+db:
+  url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  max_open_connections: 10
+  max_idle_connections: 5
+  connection_max_lifetime: 60s
+refresh_interval: 24h
+cutoff_days: 20
+scaling_engine_db:
+db:
+  url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  max_open_connections: 10
+  max_idle_connections: 5
+  connection_max_lifetime: 60s
+refresh_interval: 36h
+cutoff_days: 30s
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+  sync_interval: 60k
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+scheduler:
+  scheduler_url: http://localhost:8083
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+lock:
+  lock_ttl: 15s
+  lock_retry_interval: 10k
+  consul_cluster_config: "http://127.0.0.1:8500"
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
+			})
+		})
+
+		Context("when scheduler sync interval is not a time duration", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+level: "debug"
+instance_metrics_db:
+db:
+  url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  max_open_connections: 10
+  max_idle_connections: 5
+  connection_max_lifetime: 60s
+refresh_interval: 12h
+cutoff_days: 10
+app_metrics_db:
+db:
+  url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  max_open_connections: 10
+  max_idle_connections: 5
+  connection_max_lifetime: 60s
+refresh_interval: 24h
+cutoff_days: 20
+scaling_engine_db:
+db:
+  url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+  max_open_connections: 10
+  max_idle_connections: 5
+  connection_max_lifetime: 60s
+refresh_interval: 36h
+cutoff_days: 30s
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+scheduler:
+  scheduler_url: http://localhost:8083
+  sync_interval: 60k
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 lock:
   lock_ttl: 15s
   lock_retry_interval: 10k
@@ -929,6 +1296,12 @@ lock:
 			conf.ScalingEngineDb.Db.Url = "postgres://pqgotest:password@exampl.com/pqgotest"
 			conf.ScalingEngineDb.RefreshInterval = 36 * time.Hour
 			conf.ScalingEngineDb.CutoffDays = 20
+
+			conf.ScalingEngine.Url = "http://localhost:8082"
+			conf.ScalingEngine.SyncInterval = 15 * time.Minute
+
+			conf.Scheduler.Url = "http://localhost:8083"
+			conf.Scheduler.SyncInterval = 15 * time.Minute
 
 			conf.Lock.LockTTL = 15 * time.Second
 			conf.Lock.LockRetryInterval = 10 * time.Second
@@ -986,7 +1359,7 @@ lock:
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: InstanceMetrics DB refresh interval is negative")))
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: InstanceMetrics DB refresh interval is less than or equal to 0")))
 			})
 		})
 
@@ -997,7 +1370,7 @@ lock:
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: AppMetrics DB refresh interval is negative")))
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: AppMetrics DB refresh interval is less than or equal to 0")))
 			})
 		})
 
@@ -1008,7 +1381,7 @@ lock:
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: ScalingEngine DB refresh interval is negative")))
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: ScalingEngine DB refresh interval is less than or equal to 0")))
 			})
 		})
 
@@ -1019,7 +1392,7 @@ lock:
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: InstanceMetrics DB cutoff days is negative")))
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: InstanceMetrics DB cutoff days is less than or equal to 0")))
 			})
 		})
 
@@ -1030,7 +1403,7 @@ lock:
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: AppMetrics DB cutoff days is negative")))
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: AppMetrics DB cutoff days is less than or equal to 0")))
 			})
 		})
 
@@ -1041,7 +1414,51 @@ lock:
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: ScalingEngine DB cutoff days is negative")))
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: ScalingEngine DB cutoff days is less than or equal to 0")))
+			})
+		})
+
+		Context("when ScalingEngine url is not set", func() {
+
+			BeforeEach(func() {
+				conf.ScalingEngine.Url = ""
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: ScalingEngine url is empty")))
+			})
+		})
+
+		Context("when Scheduler url is not set", func() {
+
+			BeforeEach(func() {
+				conf.Scheduler.Url = ""
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: Scheduler url is empty")))
+			})
+		})
+
+		Context("when ScalingEngine sync interval is set to 0", func() {
+
+			BeforeEach(func() {
+				conf.ScalingEngine.SyncInterval = 0
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: ScalingEngine sync interval is less than or equal to 0")))
+			})
+		})
+
+		Context("when Scheduler sync interval is set to 0", func() {
+
+			BeforeEach(func() {
+				conf.Scheduler.SyncInterval = 0
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: Scheduler sync interval is less than or equal to 0")))
 			})
 		})
 

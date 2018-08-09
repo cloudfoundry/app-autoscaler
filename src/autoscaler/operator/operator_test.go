@@ -1,10 +1,11 @@
-package pruner_test
+package operator_test
 
 import (
 	"time"
 
-	"autoscaler/pruner"
-	"autoscaler/pruner/fakes"
+	"autoscaler/operator"
+	"autoscaler/operator/fakes"
+
 	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/lager/lagertest"
 
@@ -15,13 +16,13 @@ import (
 	"github.com/tedsuo/ifrit/ginkgomon"
 )
 
-var _ = Describe("DbPruner", func() {
+var _ = Describe("Operator", func() {
 	var (
-		proc         ifrit.Process
-		fclock       *fakeclock.FakeClock
-		buffer       *gbytes.Buffer
-		fakeDbPruner *fakes.FakeDbPruner
-		prunerRunner *pruner.DbPrunerRunner
+		proc           ifrit.Process
+		fclock         *fakeclock.FakeClock
+		buffer         *gbytes.Buffer
+		fakeOperator   *fakes.FakeOperator
+		operatorRunner *operator.OperatorRunner
 	)
 
 	BeforeEach(func() {
@@ -29,13 +30,13 @@ var _ = Describe("DbPruner", func() {
 		buffer = logger.Buffer()
 		fclock = fakeclock.NewFakeClock(time.Now())
 
-		fakeDbPruner = &fakes.FakeDbPruner{}
-		prunerRunner = pruner.NewDbPrunerRunner(fakeDbPruner, TestRefreshInterval, fclock, logger)
+		fakeOperator = &fakes.FakeOperator{}
+		operatorRunner = operator.NewOperatorRunner(fakeOperator, TestRefreshInterval, fclock, logger)
 
 	})
 
 	JustBeforeEach(func() {
-		proc = ifrit.Invoke(prunerRunner)
+		proc = ifrit.Invoke(operatorRunner)
 		Eventually(buffer).Should(gbytes.Say("started"))
 	})
 
@@ -46,20 +47,20 @@ var _ = Describe("DbPruner", func() {
 
 	Context("when pruning", func() {
 		It("prunes after given interval", func() {
-			Eventually(fakeDbPruner.PruneCallCount).Should(Equal(1))
+			Eventually(fakeOperator.OperateCallCount).Should(Equal(1))
 
 			fclock.Increment(TestRefreshInterval)
-			Eventually(fakeDbPruner.PruneCallCount).Should(Equal(2))
+			Eventually(fakeOperator.OperateCallCount).Should(Equal(2))
 
 			fclock.Increment(TestRefreshInterval)
-			Eventually(fakeDbPruner.PruneCallCount).Should(Equal(3))
+			Eventually(fakeOperator.OperateCallCount).Should(Equal(3))
 		})
 	})
 
 	Context("when an interrupt is sent", func() {
 		It("should stop", func() {
 			fclock.Increment(TestRefreshInterval)
-			Eventually(fakeDbPruner.PruneCallCount).Should(Equal(2))
+			Eventually(fakeOperator.OperateCallCount).Should(Equal(2))
 
 			ginkgomon.Kill(proc)
 			Eventually(proc.Wait()).Should(Receive(BeNil()))
@@ -67,7 +68,7 @@ var _ = Describe("DbPruner", func() {
 			Eventually(buffer).Should(gbytes.Say("stopped"))
 
 			fclock.Increment(TestRefreshInterval)
-			Consistently(fakeDbPruner.PruneCallCount).Should(Equal(2))
+			Consistently(fakeOperator.OperateCallCount).Should(Equal(2))
 		})
 	})
 })

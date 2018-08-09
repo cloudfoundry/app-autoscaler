@@ -31,7 +31,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 		initializeHttpClientForPublicApi("api_public.crt", "api_public.key", "autoscaler-ca.crt", apiMetricsCollectorHttpRequestTimeout)
 
 		schedulerConfPath = components.PrepareSchedulerConfig(dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), tmpDir, strings.Split(consulRunner.Address(), ":")[1])
-		schedulerProcess = startScheduler()
+		startScheduler()
 
 		serviceBrokerConfPath = components.PrepareServiceBrokerConfig(components.Ports[ServiceBroker], components.Ports[ServiceBrokerInternal], brokerUserName, brokerPassword, dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[APIServer]), brokerApiHttpRequestTimeout, tmpDir)
 		startServiceBroker()
@@ -46,7 +46,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 
 	AfterEach(func() {
 		stopServiceBroker()
-		stopScheduler(schedulerProcess)
+		stopScheduler()
 	})
 
 	Describe("When offered as a service", func() {
@@ -187,15 +187,16 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 		})
 
 		Context("Scheduler is down", func() {
+
 			JustBeforeEach(func() {
-				stopScheduler(schedulerProcess)
+				stopScheduler()
 			})
 			BeforeEach(func() {
 				provisionAndBind(serviceInstanceId, orgId, spaceId, bindingId, appId, nil)
 			})
 			AfterEach(func() {
 				unbindAndDeprovision(bindingId, appId, serviceInstanceId)
-				schedulerProcess = startScheduler()
+				startScheduler()
 			})
 
 			Context("Create policy", func() {
@@ -262,7 +263,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 
 						doAttachPolicy(appId, policyStr, http.StatusCreated, INTERNAL)
 						checkApiServerContent(appId, policyStr, http.StatusOK, INTERNAL)
-						checkSchedulerContent(appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2}, INTERNAL)
+						Expect(checkSchedule(appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})).To(BeTrue())
 					})
 
 					It("fails with an invalid policy", func() {
@@ -270,7 +271,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 
 						doAttachPolicy(appId, policyStr, http.StatusBadRequest, INTERNAL)
 						checkApiServerStatus(appId, http.StatusNotFound, INTERNAL)
-						checkSchedulerStatus(appId, http.StatusNotFound, INTERNAL)
+						checkSchedulerStatus(appId, http.StatusNotFound)
 					})
 				})
 
@@ -280,7 +281,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 
 						doAttachPolicy(appId, policyStr, http.StatusCreated, INTERNAL)
 						checkApiServerContent(appId, policyStr, http.StatusOK, INTERNAL)
-						checkSchedulerStatus(appId, http.StatusNotFound, INTERNAL)
+						checkSchedulerStatus(appId, http.StatusNotFound)
 
 					})
 				})
@@ -293,7 +294,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 
 						doAttachPolicy(appId, policyStr, http.StatusCreated, PUBLIC)
 						checkApiServerContent(appId, policyStr, http.StatusOK, PUBLIC)
-						checkSchedulerContent(appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2}, PUBLIC)
+						Expect(checkSchedule(appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})).To(BeTrue())
 					})
 
 					It("fails with an invalid policy", func() {
@@ -301,7 +302,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 
 						doAttachPolicy(appId, policyStr, http.StatusBadRequest, PUBLIC)
 						checkApiServerStatus(appId, http.StatusNotFound, PUBLIC)
-						checkSchedulerStatus(appId, http.StatusNotFound, PUBLIC)
+						checkSchedulerStatus(appId, http.StatusNotFound)
 					})
 				})
 
@@ -311,7 +312,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 
 						doAttachPolicy(appId, policyStr, http.StatusCreated, PUBLIC)
 						checkApiServerContent(appId, policyStr, http.StatusOK, PUBLIC)
-						checkSchedulerStatus(appId, http.StatusNotFound, PUBLIC)
+						checkSchedulerStatus(appId, http.StatusNotFound)
 
 					})
 				})
@@ -341,7 +342,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 
 						doAttachPolicy(appId, policyStr, http.StatusOK, INTERNAL)
 						checkApiServerContent(appId, policyStr, http.StatusOK, INTERNAL)
-						checkSchedulerContent(appId, http.StatusOK, map[string]int{"recurring_schedule": 3, "specific_date": 1}, INTERNAL)
+						Expect(checkSchedule(appId, http.StatusOK, map[string]int{"recurring_schedule": 3, "specific_date": 1})).To(BeTrue())
 					})
 				})
 			})
@@ -361,7 +362,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 
 						doAttachPolicy(appId, policyStr, http.StatusOK, PUBLIC)
 						checkApiServerContent(appId, policyStr, http.StatusOK, PUBLIC)
-						checkSchedulerContent(appId, http.StatusOK, map[string]int{"recurring_schedule": 3, "specific_date": 1}, PUBLIC)
+						Expect(checkSchedule(appId, http.StatusOK, map[string]int{"recurring_schedule": 3, "specific_date": 1})).To(BeTrue())
 					})
 				})
 			})
@@ -393,7 +394,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 					It("deletes the policy and schedules", func() {
 						doDetachPolicy(appId, http.StatusOK, "", INTERNAL)
 						checkApiServerStatus(appId, http.StatusNotFound, INTERNAL)
-						checkSchedulerStatus(appId, http.StatusNotFound, INTERNAL)
+						checkSchedulerStatus(appId, http.StatusNotFound)
 					})
 				})
 			})
@@ -409,14 +410,13 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 					BeforeEach(func() {
 						//attach a policy first with 4 recurring and 2 specific_date schedules
 						policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
-
 						doAttachPolicy(appId, policyStr, http.StatusCreated, PUBLIC)
 					})
 
 					It("deletes the policy and schedules", func() {
 						doDetachPolicy(appId, http.StatusOK, "", PUBLIC)
 						checkApiServerStatus(appId, http.StatusNotFound, PUBLIC)
-						checkSchedulerStatus(appId, http.StatusNotFound, PUBLIC)
+						checkSchedulerStatus(appId, http.StatusNotFound)
 					})
 				})
 			})
@@ -445,7 +445,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 
 						doAttachPolicy(appId, policyStr, http.StatusCreated, INTERNAL)
 						checkApiServerContent(appId, policyStr, http.StatusOK, INTERNAL)
-						checkSchedulerContent(appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2}, INTERNAL)
+						Expect(checkSchedule(appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})).To(BeTrue())
 					})
 
 					It("fails with an invalid policy", func() {
@@ -453,7 +453,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 
 						doAttachPolicy(appId, policyStr, http.StatusBadRequest, INTERNAL)
 						checkApiServerStatus(appId, http.StatusNotFound, INTERNAL)
-						checkSchedulerStatus(appId, http.StatusNotFound, INTERNAL)
+						checkSchedulerStatus(appId, http.StatusNotFound)
 					})
 
 				})
@@ -464,7 +464,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 
 						doAttachPolicy(appId, policyStr, http.StatusCreated, INTERNAL)
 						checkApiServerContent(appId, policyStr, http.StatusOK, INTERNAL)
-						checkSchedulerStatus(appId, http.StatusNotFound, INTERNAL)
+						checkSchedulerStatus(appId, http.StatusNotFound)
 
 					})
 				})
@@ -477,7 +477,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 
 						doAttachPolicy(appId, policyStr, http.StatusCreated, PUBLIC)
 						checkApiServerContent(appId, policyStr, http.StatusOK, PUBLIC)
-						checkSchedulerContent(appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2}, PUBLIC)
+						Expect(checkSchedule(appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})).To(BeTrue())
 					})
 
 					It("fails with an invalid policy", func() {
@@ -485,7 +485,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 
 						doAttachPolicy(appId, policyStr, http.StatusBadRequest, PUBLIC)
 						checkApiServerStatus(appId, http.StatusNotFound, PUBLIC)
-						checkSchedulerStatus(appId, http.StatusNotFound, PUBLIC)
+						checkSchedulerStatus(appId, http.StatusNotFound)
 					})
 
 				})
@@ -496,7 +496,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 
 						doAttachPolicy(appId, policyStr, http.StatusCreated, PUBLIC)
 						checkApiServerContent(appId, policyStr, http.StatusOK, PUBLIC)
-						checkSchedulerStatus(appId, http.StatusNotFound, PUBLIC)
+						checkSchedulerStatus(appId, http.StatusNotFound)
 
 					})
 				})
@@ -519,7 +519,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 
 						doAttachPolicy(appId, policyStr, http.StatusOK, INTERNAL)
 						checkApiServerContent(appId, policyStr, http.StatusOK, INTERNAL)
-						checkSchedulerContent(appId, http.StatusOK, map[string]int{"recurring_schedule": 3, "specific_date": 1}, INTERNAL)
+						Expect(checkSchedule(appId, http.StatusOK, map[string]int{"recurring_schedule": 3, "specific_date": 1})).To(BeTrue())
 					})
 				})
 			})
@@ -538,7 +538,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 
 						doAttachPolicy(appId, policyStr, http.StatusOK, PUBLIC)
 						checkApiServerContent(appId, policyStr, http.StatusOK, PUBLIC)
-						checkSchedulerContent(appId, http.StatusOK, map[string]int{"recurring_schedule": 3, "specific_date": 1}, PUBLIC)
+						Expect(checkSchedule(appId, http.StatusOK, map[string]int{"recurring_schedule": 3, "specific_date": 1})).To(BeTrue())
 					})
 				})
 			})
@@ -564,7 +564,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 					It("deletes the policy and schedules", func() {
 						doDetachPolicy(appId, http.StatusOK, "", INTERNAL)
 						checkApiServerStatus(appId, http.StatusNotFound, INTERNAL)
-						checkSchedulerStatus(appId, http.StatusNotFound, INTERNAL)
+						checkSchedulerStatus(appId, http.StatusNotFound)
 					})
 				})
 			})
@@ -586,7 +586,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 					It("deletes the policy and schedules", func() {
 						doDetachPolicy(appId, http.StatusOK, "", PUBLIC)
 						checkApiServerStatus(appId, http.StatusNotFound, PUBLIC)
-						checkSchedulerStatus(appId, http.StatusNotFound, PUBLIC)
+						checkSchedulerStatus(appId, http.StatusNotFound)
 					})
 				})
 			})
@@ -628,14 +628,10 @@ func checkApiServerContent(appId string, policyStr []byte, statusCode int, apiTy
 	Expect(err).NotTo(HaveOccurred())
 	checkResponseContent(getPolicy, appId, statusCode, expected, apiType)
 }
-func checkSchedulerStatus(appId string, statusCode int, apiType APIType) {
+func checkSchedulerStatus(appId string, statusCode int) {
 	By("checking the Scheduler")
-	resp, err := getSchedules(appId, apiType)
+	resp, err := getSchedules(appId)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.StatusCode).To(Equal(statusCode))
 	resp.Body.Close()
-}
-func checkSchedulerContent(appId string, statusCode int, expectedScheduleNumMap map[string]int, apiType APIType) {
-	By("checking the Scheduler")
-	checkSchedule(getSchedules, appId, statusCode, expectedScheduleNumMap, apiType)
 }

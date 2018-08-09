@@ -8,6 +8,7 @@ import (
 	yaml "gopkg.in/yaml.v2"
 
 	"autoscaler/db"
+	"autoscaler/helpers"
 	"autoscaler/models"
 )
 
@@ -27,10 +28,6 @@ const (
 	DefaultBackOffMaxInterval             time.Duration = 2 * time.Hour
 	DefaultBreakerConsecutiveFailureCount int64         = 3
 )
-
-type LoggingConfig struct {
-	Level string `yaml:"level"`
-}
 
 type ServerConfig struct {
 	Port      int             `yaml:"port"`
@@ -75,7 +72,7 @@ type CircuitBreakerConfig struct {
 }
 
 type Config struct {
-	Logging                   LoggingConfig         `yaml:"logging"`
+	Logging                   helpers.LoggingConfig `yaml:"logging"`
 	Server                    ServerConfig          `yaml:"server"`
 	DB                        DBConfig              `yaml:"db"`
 	Aggregator                AggregatorConfig      `yaml:"aggregator"`
@@ -89,7 +86,7 @@ type Config struct {
 
 func LoadConfig(bytes []byte) (*Config, error) {
 	conf := &Config{
-		Logging: LoggingConfig{
+		Logging: helpers.LoggingConfig{
 			Level: DefaultLoggingLevel,
 		},
 		Server: ServerConfig{

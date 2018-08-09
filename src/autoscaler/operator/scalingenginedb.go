@@ -1,4 +1,4 @@
-package pruner
+package operator
 
 import (
 	"autoscaler/db"
@@ -23,7 +23,7 @@ func NewScalingEngineDbPruner(scalingEngineDb db.ScalingEngineDB, cutoffDays int
 	}
 }
 
-func (sdp ScalingEngineDbPruner) Prune() {
+func (sdp ScalingEngineDbPruner) Operate() {
 	sdp.logger.Debug("Pruning  scaling histories")
 
 	timestamp := sdp.clock.Now().AddDate(0, 0, -sdp.cutoffDays).UnixNano()

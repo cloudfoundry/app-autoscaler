@@ -12,6 +12,7 @@ import (
 
 	"autoscaler/cf"
 	"autoscaler/db"
+	"autoscaler/helpers"
 	"autoscaler/models"
 )
 
@@ -47,11 +48,7 @@ var defaultHealthConfig = HealthConfig{
 	EmitInterval: 15 * time.Second,
 }
 
-type LoggingConfig struct {
-	Level string `yaml:"level"`
-}
-
-var defaultLoggingConfig = LoggingConfig{
+var defaultLoggingConfig = helpers.LoggingConfig{
 	Level: "info",
 }
 
@@ -69,39 +66,22 @@ var defaultSynchronizerConfig = SynchronizerConfig{
 	ActiveScheduleSyncInterval: DefaultActiveScheduleSyncInterval,
 }
 
-type DBLockConfig struct {
-	LockTTL           time.Duration     `yaml:"ttl"`
-	LockDB            db.DatabaseConfig `yaml:"lock_db"`
-	LockRetryInterval time.Duration     `yaml:"retry_interval"`
-}
-
-var defaultDBLockConfig = DBLockConfig{
-	LockTTL:           DefaultDBLockTTL,
-	LockRetryInterval: DefaultDBLockRetryInterval,
-}
-
 type Config struct {
-	Cf                  cf.CfConfig        `yaml:"cf"`
-	Logging             LoggingConfig      `yaml:"logging"`
-	Server              ServerConfig       `yaml:"server"`
-	Health              HealthConfig       `yaml:"health"`
-	Db                  DbConfig           `yaml:"db"`
-	Synchronizer        SynchronizerConfig `yaml:"synchronizer"`
-	DefaultCoolDownSecs int                `yaml:"defaultCoolDownSecs"`
-	LockSize            int                `yaml:"lockSize"`
-	DBLock              DBLockConfig       `yaml:"db_lock"`
-	EnableDBLock        bool               `yaml:"enable_db_lock"`
+	Cf                  cf.CfConfig           `yaml:"cf"`
+	Logging             helpers.LoggingConfig `yaml:"logging"`
+	Server              ServerConfig          `yaml:"server"`
+	Health              HealthConfig          `yaml:"health"`
+	Db                  DbConfig              `yaml:"db"`
+	DefaultCoolDownSecs int                   `yaml:"defaultCoolDownSecs"`
+	LockSize            int                   `yaml:"lockSize"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
 	conf := &Config{
-		Cf:           defaultCfConfig,
-		Logging:      defaultLoggingConfig,
-		Server:       defaultServerConfig,
-		Health:       defaultHealthConfig,
-		Synchronizer: defaultSynchronizerConfig,
-		DBLock:       defaultDBLockConfig,
-		EnableDBLock: false,
+		Cf:      defaultCfConfig,
+		Logging: defaultLoggingConfig,
+		Server:  defaultServerConfig,
+		Health:  defaultHealthConfig,
 	}
 
 	bytes, err := ioutil.ReadAll(reader)
@@ -148,11 +128,6 @@ func (c *Config) Validate() error {
 	if c.LockSize <= 0 {
 		return fmt.Errorf("Configuration error: LockSize is less than or equal to 0")
 	}
-
-	if c.EnableDBLock && c.DBLock.LockDB.Url == "" {
-		return fmt.Errorf("Configuration error: Lock DB Url is empty")
-	}
-
 	return nil
 
 }

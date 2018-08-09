@@ -6,6 +6,7 @@ import (
 	"autoscaler/routes"
 	"autoscaler/scalingengine"
 	"autoscaler/scalingengine/config"
+	"autoscaler/scalingengine/schedule"
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/lager"
@@ -24,8 +25,9 @@ func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vh(w, r, vars)
 }
 
-func NewServer(logger lager.Logger, conf *config.Config, scalingEngineDB db.ScalingEngineDB, scalingEngine scalingengine.ScalingEngine, health healthendpoint.Health) (ifrit.Runner, error) {
+func NewServer(logger lager.Logger, conf *config.Config, scalingEngineDB db.ScalingEngineDB, scalingEngine scalingengine.ScalingEngine, synchronizer schedule.ActiveScheduleSychronizer, health healthendpoint.Health) (ifrit.Runner, error) {
 	handler := NewScalingHandler(logger, scalingEngineDB, scalingEngine, health)
+	sync_handler := NewSyncHandler(logger, synchronizer)
 
 	r := routes.ScalingEngineRoutes()
 	r.Get(routes.ScaleRouteName).Handler(VarsFunc(handler.Scale))
@@ -34,6 +36,8 @@ func NewServer(logger lager.Logger, conf *config.Config, scalingEngineDB db.Scal
 	r.Get(routes.SetActiveScheduleRouteName).Handler(VarsFunc(handler.StartActiveSchedule))
 	r.Get(routes.DeleteActiveScheduleRouteName).Handler(VarsFunc(handler.RemoveActiveSchedule))
 	r.Get(routes.GetActiveSchedulesRouteName).Handler(VarsFunc(handler.GetActiveSchedule))
+
+	r.Get(routes.SyncActiveSchedulesRouteName).Handler(VarsFunc(sync_handler.Sync))
 
 	addr := fmt.Sprintf("0.0.0.0:%d", conf.Server.Port)
 	logger.Info("new-http-server", lager.Data{"serverConfig": conf.Server})
