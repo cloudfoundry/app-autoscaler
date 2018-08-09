@@ -532,7 +532,8 @@ cURL
     | curl
       "https://[the-api-server-url]:[port]/v1/apps/8d0cee08-23ad-4813-a779-ad8118ea0b91/policy" \\
     | -d @policy.json \\
-    | -X POST \\
+    | -X PUT \\
+    | -H "Content-Type: application/json" 
     | -H "Authorization: bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c2VyX2lkIjoidWFhLWlkLTI5MSIsImVtYWlsIjoiZW1haWwtMTk0QHNvbWVkb21haW4uY29tIiwic2NvcGUiOlsiY2xvdWRfY29udHJvbGxlci5hZG1pbiJdLCJhdWQiOlsiY2xvdWRfY29udHJvbGxlciJdLCJleHAiOjE0NDU1NTc5NTd9.p3cHAMwwVASl1RWxrQuOMLYRZRe4rTbaIH1RRux3Q5Y"
      
 Response
