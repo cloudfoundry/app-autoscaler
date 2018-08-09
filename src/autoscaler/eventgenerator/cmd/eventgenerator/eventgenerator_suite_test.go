@@ -6,6 +6,7 @@ import (
 
 	"autoscaler/db"
 	"autoscaler/eventgenerator/config"
+	"autoscaler/helpers"
 	"autoscaler/models"
 	"database/sql"
 	"fmt"
@@ -175,7 +176,7 @@ func initConfig() {
 
 	egPort = 7000 + GinkgoParallelNode()
 	conf = config.Config{
-		Logging: config.LoggingConfig{
+		Logging: helpers.LoggingConfig{
 			Level: "info",
 		},
 		Server: config.ServerConfig{

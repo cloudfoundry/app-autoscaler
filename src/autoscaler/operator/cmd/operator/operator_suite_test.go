@@ -17,7 +17,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"autoscaler/db"
-	"autoscaler/pruner/config"
+	"autoscaler/operator/config"
 )
 
 var (
@@ -27,13 +27,13 @@ var (
 	consulRunner *consulrunner.ClusterRunner
 )
 
-func TestPruner(t *testing.T) {
+func TestOperator(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Pruner Suite")
+	RunSpecs(t, "Operator Main Suite")
 }
 
 var _ = SynchronizedBeforeSuite(func() []byte {
-	pr, err := gexec.Build("autoscaler/pruner/cmd/pruner", "-race")
+	pr, err := gexec.Build("autoscaler/operator/cmd/operator", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
 	return []byte(pr)
@@ -100,6 +100,16 @@ func initConfig() {
 	cfg.ScalingEngineDb.RefreshInterval = 12 * time.Hour
 	cfg.ScalingEngineDb.CutoffDays = 20
 
+	cfg.ScalingEngine = config.ScalingEngineConfig{
+		Url:          "http://localhost:8082",
+		SyncInterval: 10 * time.Second,
+	}
+
+	cfg.Scheduler = config.SchedulerConfig{
+		Url:          "http://localhost:8083",
+		SyncInterval: 10 * time.Second,
+	}
+
 	cfg.Lock.ConsulClusterConfig = consulRunner.ConsulCluster()
 	cfg.Lock.LockRetryInterval = locket.RetryInterval
 	cfg.Lock.LockTTL = locket.DefaultSessionTTL
@@ -114,6 +124,7 @@ func initConfig() {
 	cfg.DBLock.LockTTL = 15 * time.Second
 	cfg.DBLock.LockRetryInterval = 5 * time.Second
 	cfg.EnableDBLock = false
+
 }
 
 func writeConfig(c *config.Config) *os.File {
@@ -131,22 +142,22 @@ func writeConfig(c *config.Config) *os.File {
 	return cfg
 }
 
-type PrunerRunner struct {
+type OperatorRunner struct {
 	configPath        string
 	startCheck        string
 	acquiredLockCheck string
 	Session           *gexec.Session
 }
 
-func NewPrunerRunner() *PrunerRunner {
-	return &PrunerRunner{
+func NewOperatorRunner() *OperatorRunner {
+	return &OperatorRunner{
 		configPath:        configFile.Name(),
-		startCheck:        "pruner.started",
-		acquiredLockCheck: "pruner.lock.acquire-lock-succeeded",
+		startCheck:        "operator.started",
+		acquiredLockCheck: "operator.lock.acquire-lock-succeeded",
 	}
 }
 
-func (pr *PrunerRunner) Start() {
+func (pr *OperatorRunner) Start() {
 	prSession, err := gexec.Start(exec.Command(
 		prPath,
 		"-c",
@@ -160,22 +171,22 @@ func (pr *PrunerRunner) Start() {
 	pr.Session = prSession
 }
 
-func (pr *PrunerRunner) Interrupt() {
+func (pr *OperatorRunner) Interrupt() {
 	if pr.Session != nil {
 		pr.Session.Interrupt().Wait(5 * time.Second)
 	}
 }
 
-func (pr *PrunerRunner) KillWithFire() {
+func (pr *OperatorRunner) KillWithFire() {
 	if pr.Session != nil {
 		pr.Session.Kill().Wait(5 * time.Second)
 	}
 }
 
-func (pr *PrunerRunner) ClearLockDatabase() {
+func (pr *OperatorRunner) ClearLockDatabase() {
 	lockDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
 	Expect(err).NotTo(HaveOccurred())
 
-	_, err = lockDB.Exec("DELETE FROM pruner_lock")
+	_, err = lockDB.Exec("DELETE FROM operator_lock")
 	Expect(err).NotTo(HaveOccurred())
 }

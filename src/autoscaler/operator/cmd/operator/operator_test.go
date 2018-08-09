@@ -1,8 +1,8 @@
 package main_test
 
 import (
-	"autoscaler/pruner"
-	"autoscaler/pruner/config"
+	"autoscaler/operator"
+	"autoscaler/operator/config"
 	"io/ioutil"
 	"os"
 	"time"
@@ -21,11 +21,11 @@ import (
 	"github.com/tedsuo/ifrit/ginkgomon"
 )
 
-var _ = Describe("Pruner", func() {
+var _ = Describe("Operator", func() {
 
 	var (
-		runner       *PrunerRunner
-		secondRunner *PrunerRunner
+		runner       *OperatorRunner
+		secondRunner *OperatorRunner
 		consulClient consuladapter.Client
 		consulConfig config.Config
 	)
@@ -33,7 +33,7 @@ var _ = Describe("Pruner", func() {
 		initConfig()
 		consulRunner.Reset()
 		consulClient = consulRunner.NewClient()
-		runner = NewPrunerRunner()
+		runner = NewOperatorRunner()
 	})
 
 	AfterEach(func() {
@@ -42,7 +42,7 @@ var _ = Describe("Pruner", func() {
 
 	Describe("Using Consul distributed lock", func() {
 
-		Context("when the pruner acquires the lock", func() {
+		Context("when the operator acquires the lock", func() {
 			BeforeEach(func() {
 				runner.startCheck = ""
 				runner.Start()
@@ -50,33 +50,42 @@ var _ = Describe("Pruner", func() {
 			})
 
 			It("should start instancemetrics dbpruner", func() {
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("pruner.instancemetrics-dbpruner.started"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.instancemetrics-dbpruner.started"))
 				Consistently(runner.Session).ShouldNot(Exit())
 			})
 
 			It("should start appmetrics dbpruner", func() {
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("pruner.appmetrics-dbpruner.started"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.appmetrics-dbpruner.started"))
 				Consistently(runner.Session).ShouldNot(Exit())
 			})
 
 			It("should start scalingengine dbpruner", func() {
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("pruner.scalingengine-dbpruner.started"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.scalingengine-dbpruner.started"))
 				Consistently(runner.Session).ShouldNot(Exit())
 			})
 
-			It("should have pruner started", func() {
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("pruner.started"))
+			It("should start scalingengine sync", func() {
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.scalingengine-sync.started"))
+				Consistently(runner.Session).ShouldNot(Exit())
+			})
+			It("should start scalingengine sync", func() {
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.scheduler-sync.started"))
+				Consistently(runner.Session).ShouldNot(Exit())
+			})
+
+			It("should have operator started", func() {
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.started"))
 				Consistently(runner.Session).ShouldNot(Exit())
 			})
 		})
 
-		Context("when the pruner loses the lock", func() {
+		Context("when the operator loses the lock", func() {
 			BeforeEach(func() {
 				runner.startCheck = ""
 				runner.Start()
 
 				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say(runner.acquiredLockCheck))
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("pruner.started"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.started"))
 
 				consulRunner.Reset()
 			})
@@ -87,15 +96,15 @@ var _ = Describe("Pruner", func() {
 			})
 		})
 
-		Context("when the pruner initially does not have the lock", func() {
-			var competingPrunerProcess ifrit.Process
+		Context("when the operator initially does not have the lock", func() {
+			var competingOperatorProcess ifrit.Process
 
 			BeforeEach(func() {
 				logger := lagertest.NewTestLogger("competing-process")
 				buffer := logger.Buffer()
 
-				competingPrunerLock := locket.NewLock(logger, consulClient, pruner.PrunerLockSchemaPath(), []byte{}, clock.NewClock(), cfg.Lock.LockRetryInterval, cfg.Lock.LockTTL)
-				competingPrunerProcess = ifrit.Invoke(competingPrunerLock)
+				competingOperatorLock := locket.NewLock(logger, consulClient, operator.PrunerLockSchemaPath(), []byte{}, clock.NewClock(), cfg.Lock.LockRetryInterval, cfg.Lock.LockTTL)
+				competingOperatorProcess = ifrit.Invoke(competingOperatorLock)
 				Eventually(buffer, 2*time.Second).Should(Say("competing-process.lock.acquire-lock-succeeded"))
 
 				runner.startCheck = ""
@@ -103,35 +112,35 @@ var _ = Describe("Pruner", func() {
 			})
 
 			It("should not start", func() {
-				Eventually(runner.Session.Buffer).Should(Say("pruner.lock.acquiring-lock"))
-				Consistently(runner.Session.Buffer).ShouldNot(Say("pruner.started"))
+				Eventually(runner.Session.Buffer).Should(Say("operator.lock.acquiring-lock"))
+				Consistently(runner.Session.Buffer).ShouldNot(Say("operator.started"))
 			})
 
 			Describe("when the lock becomes available", func() {
 				BeforeEach(func() {
-					ginkgomon.Kill(competingPrunerProcess)
+					ginkgomon.Kill(competingOperatorProcess)
 				})
 
 				It("should acquire the lock and start instancemetrics dbpruner", func() {
 					Eventually(runner.Session.Buffer, 2*time.Second).Should(Say(runner.acquiredLockCheck))
-					Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("pruner.instancemetrics-dbpruner.started"))
+					Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.instancemetrics-dbpruner.started"))
 					Consistently(runner.Session).ShouldNot(Exit())
 				})
 
 				It("should acquire the lock and start appmetrics dbpruner", func() {
 					Eventually(runner.Session.Buffer, 2*time.Second).Should(Say(runner.acquiredLockCheck))
-					Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("pruner.appmetrics-dbpruner.started"))
+					Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.appmetrics-dbpruner.started"))
 					Consistently(runner.Session).ShouldNot(Exit())
 				})
 
 				It("should acquire the lock and start scalingengine dbpruner", func() {
 					Eventually(runner.Session.Buffer, 2*time.Second).Should(Say(runner.acquiredLockCheck))
-					Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("pruner.scalingengine-dbpruner.started"))
+					Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.scalingengine-dbpruner.started"))
 					Consistently(runner.Session).ShouldNot(Exit())
 				})
 
 				It("should have pruner started", func() {
-					Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("pruner.started"))
+					Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.started"))
 					Consistently(runner.Session).ShouldNot(Exit())
 				})
 			})
@@ -201,16 +210,16 @@ var _ = Describe("Pruner", func() {
 				os.Remove(runner.configPath)
 			})
 
-			It("should not get pruner service", func() {
+			It("should not get operator service", func() {
 				Eventually(func() map[string]*api.AgentService {
 					services, err := consulClient.Agent().Services()
 					Expect(err).ToNot(HaveOccurred())
 					return services
-				}).ShouldNot(HaveKey("pruner"))
+				}).ShouldNot(HaveKey("operator"))
 			})
 
-			It("should start pruner", func() {
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("pruner.started"))
+			It("should start operator", func() {
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.started"))
 				Consistently(runner.Session).ShouldNot(Exit())
 			})
 
@@ -299,25 +308,25 @@ var _ = Describe("Pruner", func() {
 			runner.ClearLockDatabase()
 		})
 
-		Context("when pruner acquires the lock in first attempt", func() {
+		Context("when operator acquires the lock in first attempt", func() {
 			BeforeEach(func() {
 				runner.Start()
 			})
 
 			It("successfully acquired lock and started", func() {
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("pruner.lock-acquired-in-first-attempt"))
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("pruner.started"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("operator.lock-acquired-in-first-attempt"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("operator.started"))
 			})
 		})
 
-		Context("when pruner have the lock", func() {
+		Context("when operator have the lock", func() {
 			BeforeEach(func() {
 				runner.Start()
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("pruner.started"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("operator.started"))
 			})
 
 			It("should retry acquiring lock to renew it's presence", func() {
-				Eventually(runner.Session.Buffer, 8*time.Second).Should(gbytes.Say("pruner.retry-acquiring-lock"))
+				Eventually(runner.Session.Buffer, 8*time.Second).Should(gbytes.Say("operator.retry-acquiring-lock"))
 
 			})
 		})
@@ -325,22 +334,22 @@ var _ = Describe("Pruner", func() {
 		Context("when interrupt occurs", func() {
 			BeforeEach(func() {
 				runner.Start()
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("pruner.started"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("operator.started"))
 			})
 
 			It("successfully release lock and exit", func() {
 				runner.Interrupt()
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("pruner.received-interrupt-signal"))
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("pruner.successfully-released-lock"))
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("pruner.exited"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("operator.received-interrupt-signal"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("operator.successfully-released-lock"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("operator.exited"))
 			})
 		})
 
-		Context("When one instance of pruner owns lock and the other is waiting to get the lock", func() {
+		Context("When one instance of operator owns lock and the other is waiting to get the lock", func() {
 			BeforeEach(func() {
 				runner.Start()
-				Eventually(runner.Session.Buffer, 5*time.Second).Should(gbytes.Say("pruner.started"))
-				secondRunner = NewPrunerRunner()
+				Eventually(runner.Session.Buffer, 5*time.Second).Should(gbytes.Say("operator.started"))
+				secondRunner = NewOperatorRunner()
 				secondRunner.startCheck = ""
 				secondRunner.configPath = writeConfig(&consulConfig).Name()
 				secondRunner.Start()
@@ -352,18 +361,18 @@ var _ = Describe("Pruner", func() {
 			})
 
 			It("Competing instance should not get lock in first attempt", func() {
-				Consistently(secondRunner.Session.Buffer, 5*time.Second).ShouldNot(gbytes.Say("pruner.lock-acquired-in-first-attempt"))
-				Consistently(secondRunner.Session.Buffer, 5*time.Second).ShouldNot(gbytes.Say("pruner.successfully-acquired-lock"))
+				Consistently(secondRunner.Session.Buffer, 5*time.Second).ShouldNot(gbytes.Say("operator.lock-acquired-in-first-attempt"))
+				Consistently(secondRunner.Session.Buffer, 5*time.Second).ShouldNot(gbytes.Say("operator.successfully-acquired-lock"))
 			})
 		})
 
-		Context("When more than one instances of pruner try to get the lock simultaneously", func() {
+		Context("When more than one instances of operator try to get the lock simultaneously", func() {
 
 			var runnerAcquiredLock bool
 
 			BeforeEach(func() {
 				runner.Start()
-				secondRunner = NewPrunerRunner()
+				secondRunner = NewOperatorRunner()
 				secondRunner.startCheck = ""
 				secondRunner.configPath = writeConfig(&consulConfig).Name()
 				secondRunner.Start()
@@ -374,9 +383,9 @@ var _ = Describe("Pruner", func() {
 				buffer := runner.Session.Out
 				secondBuffer := secondRunner.Session.Out
 				select {
-				case <-buffer.Detect("pruner.lock-acquired-in-first-attempt"):
+				case <-buffer.Detect("operator.lock-acquired-in-first-attempt"):
 					runnerAcquiredLock = true
-				case <-secondBuffer.Detect("pruner.lock-acquired-in-first-attempt"):
+				case <-secondBuffer.Detect("operator.lock-acquired-in-first-attempt"):
 					runnerAcquiredLock = false
 				case <-time.After(2 * time.Second):
 				}
@@ -390,26 +399,26 @@ var _ = Describe("Pruner", func() {
 
 			It("Only one instance should get the lock", func() {
 				if runnerAcquiredLock {
-					Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("pruner.started"))
-					Consistently(secondRunner.Session.Buffer, 5*time.Second).ShouldNot(gbytes.Say("pruner.lock-acquired-in-first-attempt"))
-					Consistently(secondRunner.Session.Buffer, 5*time.Second).ShouldNot(gbytes.Say("pruner.started"))
+					Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("operator.started"))
+					Consistently(secondRunner.Session.Buffer, 5*time.Second).ShouldNot(gbytes.Say("operator.lock-acquired-in-first-attempt"))
+					Consistently(secondRunner.Session.Buffer, 5*time.Second).ShouldNot(gbytes.Say("operator.started"))
 				} else {
-					Eventually(secondRunner.Session.Buffer, 2*time.Second).Should(gbytes.Say("pruner.started"))
-					Consistently(runner.Session.Buffer, 5*time.Second).ShouldNot(gbytes.Say("pruner.lock-acquired-in-first-attempt"))
-					Consistently(runner.Session.Buffer, 5*time.Second).ShouldNot(gbytes.Say("pruner.started"))
+					Eventually(secondRunner.Session.Buffer, 2*time.Second).Should(gbytes.Say("operator.started"))
+					Consistently(runner.Session.Buffer, 5*time.Second).ShouldNot(gbytes.Say("operator.lock-acquired-in-first-attempt"))
+					Consistently(runner.Session.Buffer, 5*time.Second).ShouldNot(gbytes.Say("operator.started"))
 				}
 			})
 		})
 
-		Context("when the running pruner instance stopped", func() {
+		Context("when the running operator instance stopped", func() {
 			BeforeEach(func() {
 				runner.Start()
-				Eventually(runner.Session.Buffer, 10*time.Second).Should(gbytes.Say("pruner.started"))
-				secondRunner = NewPrunerRunner()
+				Eventually(runner.Session.Buffer, 10*time.Second).Should(gbytes.Say("operator.started"))
+				secondRunner = NewOperatorRunner()
 				secondRunner.configPath = writeConfig(&consulConfig).Name()
 				secondRunner.startCheck = ""
 				secondRunner.Start()
-				Consistently(secondRunner.Session.Buffer, 10*time.Second).ShouldNot(gbytes.Say("pruner.lock-acquired-in-first-attempt"))
+				Consistently(secondRunner.Session.Buffer, 10*time.Second).ShouldNot(gbytes.Say("operator.lock-acquired-in-first-attempt"))
 			})
 
 			AfterEach(func() {
@@ -417,16 +426,16 @@ var _ = Describe("Pruner", func() {
 				secondRunner.KillWithFire()
 			})
 
-			It("competing pruner instance should acquire the lock", func() {
+			It("competing operator instance should acquire the lock", func() {
 				runner.Interrupt()
-				Eventually(runner.Session.Buffer, 5*time.Second).Should(gbytes.Say("pruner.received-interrupt-signal"))
-				Eventually(runner.Session.Buffer, 5*time.Second).Should(gbytes.Say("pruner.successfully-released-lock"))
-				Eventually(secondRunner.Session.Buffer, 10*time.Second).Should(gbytes.Say("pruner.successfully-acquired-lock"))
-				Eventually(secondRunner.Session.Buffer, 15*time.Second).Should(gbytes.Say("pruner.started"))
+				Eventually(runner.Session.Buffer, 5*time.Second).Should(gbytes.Say("operator.received-interrupt-signal"))
+				Eventually(runner.Session.Buffer, 5*time.Second).Should(gbytes.Say("operator.successfully-released-lock"))
+				Eventually(secondRunner.Session.Buffer, 10*time.Second).Should(gbytes.Say("operator.successfully-acquired-lock"))
+				Eventually(secondRunner.Session.Buffer, 15*time.Second).Should(gbytes.Say("operator.started"))
 			})
 		})
 
-		Context("when the pruner acquires the lock and consul configuration is provided", func() {
+		Context("when the operator acquires the lock and consul configuration is provided", func() {
 			JustBeforeEach(func() {
 				consulConfig = cfg
 				Expect(consulConfig.Lock.ConsulClusterConfig).ShouldNot(BeEmpty())
@@ -436,22 +445,22 @@ var _ = Describe("Pruner", func() {
 			})
 
 			It("should start instancemetrics dbpruner", func() {
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("pruner.instancemetrics-dbpruner.started"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.instancemetrics-dbpruner.started"))
 				Consistently(runner.Session).ShouldNot(Exit())
 			})
 
 			It("should start appmetrics dbpruner", func() {
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("pruner.appmetrics-dbpruner.started"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.appmetrics-dbpruner.started"))
 				Consistently(runner.Session).ShouldNot(Exit())
 			})
 
 			It("should start scalingengine dbpruner", func() {
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("pruner.scalingengine-dbpruner.started"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.scalingengine-dbpruner.started"))
 				Consistently(runner.Session).ShouldNot(Exit())
 			})
 
-			It("should have pruner started", func() {
-				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("pruner.started"))
+			It("should have operator started", func() {
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.started"))
 				Consistently(runner.Session).ShouldNot(Exit())
 			})
 

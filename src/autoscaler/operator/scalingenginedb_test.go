@@ -1,10 +1,10 @@
-package pruner_test
+package operator_test
 
 import (
 	"errors"
 	"time"
 
-	"autoscaler/pruner"
+	"autoscaler/operator"
 	"autoscaler/scalingengine/fakes"
 
 	"code.cloudfoundry.org/clock/fakeclock"
@@ -21,7 +21,7 @@ var _ = Describe("ScalingEngineDbPruner", func() {
 		fclock                *fakeclock.FakeClock
 		cutoffDays            int
 		buffer                *gbytes.Buffer
-		scalingEngineDbPruner *pruner.ScalingEngineDbPruner
+		scalingEngineDbPruner *operator.ScalingEngineDbPruner
 	)
 
 	BeforeEach(func() {
@@ -30,12 +30,12 @@ var _ = Describe("ScalingEngineDbPruner", func() {
 		buffer = logger.Buffer()
 		scalingEngineDB = &fakes.FakeScalingEngineDB{}
 		fclock = fakeclock.NewFakeClock(time.Now())
-		scalingEngineDbPruner = pruner.NewScalingEngineDbPruner(scalingEngineDB, cutoffDays, fclock, logger)
+		scalingEngineDbPruner = operator.NewScalingEngineDbPruner(scalingEngineDB, cutoffDays, fclock, logger)
 	})
 
 	Describe("Prune", func() {
 		JustBeforeEach(func() {
-			scalingEngineDbPruner.Prune()
+			scalingEngineDbPruner.Operate()
 		})
 
 		Context("when pruning records from scalinghistory table", func() {

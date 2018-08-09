@@ -1,4 +1,4 @@
-package pruner
+package operator
 
 import (
 	"autoscaler/db"
@@ -23,7 +23,7 @@ func NewAppMetricsDbPruner(appMetricsDb db.AppMetricDB, cutoffDays int, clock cl
 	}
 }
 
-func (amdp AppMetricsDbPruner) Prune() {
+func (amdp AppMetricsDbPruner) Operate() {
 	amdp.logger.Debug("Pruning app metrics")
 
 	timestamp := amdp.clock.Now().AddDate(0, 0, -amdp.cutoffDays).UnixNano()

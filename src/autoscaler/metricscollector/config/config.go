@@ -11,6 +11,7 @@ import (
 
 	"autoscaler/cf"
 	"autoscaler/db"
+	"autoscaler/helpers"
 	"autoscaler/models"
 )
 
@@ -40,11 +41,7 @@ var defaultServerConfig = ServerConfig{
 	Port: 8080,
 }
 
-type LoggingConfig struct {
-	Level string `yaml:"level"`
-}
-
-var defaultLoggingConfig = LoggingConfig{
+var defaultLoggingConfig = helpers.LoggingConfig{
 	Level: DefaultLoggingLevel,
 }
 
@@ -68,11 +65,11 @@ var defaultCollectorConfig = CollectorConfig{
 }
 
 type Config struct {
-	Cf        cf.CfConfig     `yaml:"cf"`
-	Logging   LoggingConfig   `yaml:"logging"`
-	Server    ServerConfig    `yaml:"server"`
-	Db        DbConfig        `yaml:"db"`
-	Collector CollectorConfig `yaml:"collector"`
+	Cf        cf.CfConfig           `yaml:"cf"`
+	Logging   helpers.LoggingConfig `yaml:"logging"`
+	Server    ServerConfig          `yaml:"server"`
+	Db        DbConfig              `yaml:"db"`
+	Collector CollectorConfig       `yaml:"collector"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {

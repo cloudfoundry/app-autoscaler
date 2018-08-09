@@ -9,5 +9,5 @@ import (
 
 func TestConfig(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Pruner Config Suite")
+	RunSpecs(t, "Operator Config Suite")
 }

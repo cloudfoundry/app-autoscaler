@@ -102,21 +102,9 @@ var _ = SynchronizedBeforeSuite(
 			MaxIdleConnections:    5,
 			ConnectionMaxLifetime: 10 * time.Second,
 		}
-		conf.Synchronizer.ActiveScheduleSyncInterval = 10 * time.Minute
 
 		conf.DefaultCoolDownSecs = 300
 		conf.LockSize = 32
-
-		conf.DBLock.LockDB = db.DatabaseConfig{
-			Url:                   os.Getenv("DBURL"),
-			MaxOpenConnections:    10,
-			MaxIdleConnections:    5,
-			ConnectionMaxLifetime: 10 * time.Second,
-		}
-
-		conf.DBLock.LockTTL = 15 * time.Second
-		conf.DBLock.LockRetryInterval = 5 * time.Second
-		conf.EnableDBLock = true
 
 		configFile = writeConfig(&conf)
 
@@ -222,12 +210,4 @@ func (engine *ScalingEngineRunner) KillWithFire() {
 	if engine.Session != nil {
 		engine.Session.Kill().Wait(5 * time.Second)
 	}
-}
-
-func ClearLockDatabase() {
-	lockDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
-	Expect(err).NotTo(HaveOccurred())
-
-	_, err = lockDB.Exec("DELETE FROM scalingengine_lock")
-	Expect(err).NotTo(HaveOccurred())
 }

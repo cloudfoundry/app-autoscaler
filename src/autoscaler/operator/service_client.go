@@ -1,4 +1,4 @@
-package pruner
+package operator
 
 import (
 	"time"
