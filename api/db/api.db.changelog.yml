@@ -50,7 +50,7 @@ databaseChangeLog:
             columns:
               - column:
                   name: id
-                  type: varchar(40)
+                  type: varchar(50)
                   constraints:
                     primaryKey: true
                     nullable: false
