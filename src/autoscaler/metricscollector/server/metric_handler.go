@@ -3,6 +3,7 @@ package server
 import (
 	"autoscaler/cf"
 	"autoscaler/db"
+	"autoscaler/metricscollector/collector"
 	"autoscaler/metricscollector/noaa"
 	"autoscaler/models"
 
@@ -20,14 +21,16 @@ type MetricHandler struct {
 	cfClient     cf.CFClient
 	logger       lager.Logger
 	noaaConsumer noaa.NoaaConsumer
+	queryFunc    collector.MetricQueryFunc
 	database     db.InstanceMetricsDB
 }
 
-func NewMetricHandler(logger lager.Logger, cfc cf.CFClient, consumer noaa.NoaaConsumer, database db.InstanceMetricsDB) *MetricHandler {
+func NewMetricHandler(logger lager.Logger, cfc cf.CFClient, consumer noaa.NoaaConsumer, query collector.MetricQueryFunc, database db.InstanceMetricsDB) *MetricHandler {
 	return &MetricHandler{
 		cfClient:     cfc,
-		noaaConsumer: consumer,
 		logger:       logger,
+		noaaConsumer: consumer,
+		queryFunc:    query,
 		database:     database,
 	}
 }
@@ -128,15 +131,21 @@ func (h *MetricHandler) GetMetricHistories(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	var mtrcs []*models.AppInstanceMetric
-
-	mtrcs, err = h.database.RetrieveInstanceMetrics(appId, int(instanceIndex), metricType, start, end, order)
-	if err != nil {
-		h.logger.Error("get-metric-histories-retrieve-metrics", err, lager.Data{"appId": appId, "metrictype": metricType, "instanceIndex": instanceIndex, "start": start, "end": end, "order": order})
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: "Error getting metric histories from database"})
-		return
+	labels := map[string]string{models.MetricLabelName: metricType}
+	if instanceIndex >= 0 {
+		labels[models.MetricLabelInstanceIndex] = fmt.Sprintf("%d", instanceIndex)
+	}
+	mtrcs, ok := h.queryFunc(appId, start, end, order, labels)
+	if !ok {
+		h.logger.Debug("get-metric-histories-query-cache-miss", lager.Data{"appId": appId, "metrictype": metricType, "instanceIndex": instanceIndex, "start": start, "end": end, "order": order})
+		mtrcs, err = h.database.RetrieveInstanceMetrics(appId, int(instanceIndex), metricType, start, end, order)
+		if err != nil {
+			h.logger.Error("get-metric-histories-retrieve-metrics", err, lager.Data{"appId": appId, "metrictype": metricType, "instanceIndex": instanceIndex, "start": start, "end": end, "order": order})
+			handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+				Code:    "Interal-Server-Error",
+				Message: "Error getting metric histories from database"})
+			return
+		}
 	}
 
 	var body []byte

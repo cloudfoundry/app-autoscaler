@@ -61,8 +61,8 @@ type APIServerClient struct {
 }
 
 type ServiceBrokerConfig struct {
-	Port       int `json:"port"`
-	PublicPort int `json:"publicPort"`
+	Port                int  `json:"port"`
+	PublicPort          int  `json:"publicPort"`
 	EnableCustomMetrics bool `json:"enableCustomMetrics"`
 
 	Username string `json:"username"`
@@ -227,10 +227,10 @@ func (components *Components) Operator(confPath string, argv ...string) *ginkgom
 
 func (components *Components) PrepareServiceBrokerConfig(publicPort int, internalPort int, username string, password string, enableCustomMetrics bool, dbUri string, apiServerUri string, brokerApiHttpRequestTimeout time.Duration, tmpDir string) string {
 	brokerConfig := ServiceBrokerConfig{
-		Port:       internalPort,
-		PublicPort: publicPort,
-		Username:   username,
-		Password:   password,
+		Port:                internalPort,
+		PublicPort:          publicPort,
+		Username:            username,
+		Password:            password,
 		EnableCustomMetrics: enableCustomMetrics,
 		DB: DBConfig{
 			URI:            dbUri,
@@ -441,10 +441,11 @@ func (components *Components) PrepareMetricsCollectorConfig(dbURI string, port i
 			},
 		},
 		Collector: mcConfig.CollectorConfig{
-			CollectInterval: collectInterval,
-			RefreshInterval: refreshInterval,
-			CollectMethod:   collectMethod,
-			SaveInterval:    saveInterval,
+			CollectInterval:       collectInterval,
+			RefreshInterval:       refreshInterval,
+			CollectMethod:         collectMethod,
+			SaveInterval:          saveInterval,
+			MetricCacheSizePerApp: 500,
 		},
 	}
 	return writeYmlConfig(tmpDir, MetricsCollector, &cfg)

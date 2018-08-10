@@ -2,6 +2,7 @@ package collector
 
 import (
 	"autoscaler/cf"
+	"autoscaler/collection"
 	"autoscaler/metricscollector/noaa"
 	"autoscaler/models"
 
@@ -17,6 +18,7 @@ type appStreamer struct {
 	appId           string
 	logger          lager.Logger
 	collectInterval time.Duration
+	cache           *collection.TSDCache
 	cfc             cf.CFClient
 	noaaConsumer    noaa.NoaaConsumer
 	doneChan        chan bool
@@ -27,11 +29,12 @@ type appStreamer struct {
 	dataChan        chan *models.AppInstanceMetric
 }
 
-func NewAppStreamer(logger lager.Logger, appId string, interval time.Duration, cfc cf.CFClient, noaaConsumer noaa.NoaaConsumer, sclock clock.Clock, dataChan chan *models.AppInstanceMetric) AppCollector {
+func NewAppStreamer(logger lager.Logger, appId string, interval time.Duration, cacheSize int, cfc cf.CFClient, noaaConsumer noaa.NoaaConsumer, sclock clock.Clock, dataChan chan *models.AppInstanceMetric) AppCollector {
 	return &appStreamer{
 		appId:           appId,
 		logger:          logger,
 		collectInterval: interval,
+		cache:           collection.NewTSDCache(cacheSize),
 		cfc:             cfc,
 		noaaConsumer:    noaaConsumer,
 		doneChan:        make(chan bool),
@@ -97,11 +100,13 @@ func (as *appStreamer) processEvent(event *events.Envelope) {
 		metric := noaa.GetInstanceMemoryUsedMetricFromContainerMetricEvent(as.sclock.Now().UnixNano(), as.appId, event)
 		as.logger.Debug("process-event-get-memoryused-metric", lager.Data{"metric": metric})
 		if metric != nil {
+			as.cache.Put(metric)
 			as.dataChan <- metric
 		}
 		metric = noaa.GetInstanceMemoryUtilMetricFromContainerMetricEvent(as.sclock.Now().UnixNano(), as.appId, event)
 		as.logger.Debug("process-event-get-memoryutil-metric", lager.Data{"metric": metric})
 		if metric != nil {
+			as.cache.Put(metric)
 			as.dataChan <- metric
 		}
 
@@ -128,6 +133,7 @@ func (as *appStreamer) computeAndSaveMetrics() {
 			Timestamp:     as.sclock.Now().UnixNano(),
 		}
 		as.logger.Debug("compute-throughput", lager.Data{"message": "write 0 throughput due to no requests"})
+		as.cache.Put(throughput)
 		as.dataChan <- throughput
 		return
 	}
@@ -143,7 +149,7 @@ func (as *appStreamer) computeAndSaveMetrics() {
 			Timestamp:     as.sclock.Now().UnixNano(),
 		}
 		as.logger.Debug("compute-throughput", lager.Data{"throughput": throughput})
-
+		as.cache.Put(throughput)
 		as.dataChan <- throughput
 
 		responseTime := &models.AppInstanceMetric{
@@ -156,10 +162,14 @@ func (as *appStreamer) computeAndSaveMetrics() {
 			Timestamp:     as.sclock.Now().UnixNano(),
 		}
 		as.logger.Debug("compute-responsetime", lager.Data{"responsetime": responseTime})
-
+		as.cache.Put(responseTime)
 		as.dataChan <- responseTime
 	}
 
 	as.numRequests = make(map[int32]int64)
 	as.sumReponseTimes = make(map[int32]int64)
+}
+
+func (as *appStreamer) Query(start, end int64, labels map[string]string) ([]collection.TSD, bool) {
+	return as.cache.Query(start, end, labels)
 }

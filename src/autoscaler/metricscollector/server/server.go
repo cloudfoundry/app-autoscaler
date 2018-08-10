@@ -6,6 +6,7 @@ import (
 
 	"autoscaler/cf"
 	"autoscaler/db"
+	"autoscaler/metricscollector/collector"
 	"autoscaler/metricscollector/config"
 	"autoscaler/metricscollector/noaa"
 	"autoscaler/routes"
@@ -24,8 +25,8 @@ func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vh(w, r, vars)
 }
 
-func NewServer(logger lager.Logger, conf *config.Config, cfc cf.CFClient, consumer noaa.NoaaConsumer, database db.InstanceMetricsDB) (ifrit.Runner, error) {
-	mh := NewMetricHandler(logger, cfc, consumer, database)
+func NewServer(logger lager.Logger, conf *config.Config, cfc cf.CFClient, consumer noaa.NoaaConsumer, query collector.MetricQueryFunc, database db.InstanceMetricsDB) (ifrit.Runner, error) {
+	mh := NewMetricHandler(logger, cfc, consumer, query, database)
 
 	r := routes.MetricsCollectorRoutes()
 	r.Get(routes.GetMetricHistoriesRouteName).Handler(VarsFunc(mh.GetMetricHistories))

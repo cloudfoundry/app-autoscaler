@@ -1,9 +1,11 @@
 package server_test
 
 import (
+	"autoscaler/db"
 	"autoscaler/metricscollector/config"
 	"autoscaler/metricscollector/fakes"
 	"autoscaler/metricscollector/server"
+	"autoscaler/models"
 	"net/url"
 	"strconv"
 
@@ -36,8 +38,11 @@ var _ = BeforeSuite(func() {
 		},
 	}
 	database := &fakes.FakeInstanceMetricsDB{}
+	queryFunc := func(appID string, start int64, end int64, order db.OrderType, labels map[string]string) ([]*models.AppInstanceMetric, bool) {
+		return nil, false
+	}
 
-	httpServer, err := server.NewServer(lager.NewLogger("test"), conf, cfc, consumer, database)
+	httpServer, err := server.NewServer(lager.NewLogger("test"), conf, cfc, consumer, queryFunc, database)
 	Expect(err).NotTo(HaveOccurred())
 
 	serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(port))
