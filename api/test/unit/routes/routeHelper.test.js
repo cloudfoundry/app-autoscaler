@@ -530,7 +530,7 @@ describe("routeHelper", function() {
         request.query = null;
       });
       it("return null",function(){
-        expect(helper.getPageUrl(request,1)).to.equal(null);
+        expect(helper.getPageUrl(request,2)).to.equal(null);
       });
     });
     context("request.query is undefined", function() {
@@ -538,12 +538,12 @@ describe("routeHelper", function() {
         delete request.query;
       });
       it("return null",function(){
-        expect(helper.getPageUrl(request,1)).to.equal(null);
+        expect(helper.getPageUrl(request,2)).to.equal(null);
       });
     });
     context("get page url", function() {
       it("return page url",function(){
-        expect(helper.getPageUrl(request,1)).to.equal("/v1/someroute?page=1&resuts-per-page=2");
+        expect(helper.getPageUrl(request,2)).to.equal("/v1/someroute?page=2&resuts-per-page=2");
       });
     });
   })
