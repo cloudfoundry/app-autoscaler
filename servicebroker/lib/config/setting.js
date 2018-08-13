@@ -21,6 +21,7 @@ module.exports = function(settingsObj) {
   };
   settingsObj.apiserver.uri = cleanupURI(settingsObj.apiserver.uri);
   settingsObj.dashboardRedirectUri = cleanupURI(settingsObj.dashboardRedirectUri);
+  settingsObj.customMetricsUrl = cleanupURI(settingsObj.customMetricsUrl);
   var settings = {
     publicPort: settingsObj.publicPort,
     port : settingsObj.port,
@@ -32,7 +33,8 @@ module.exports = function(settingsObj) {
     publicTls: settingsObj.publicTls,
     serviceCatalogPath: settingsObj.serviceCatalogPath,
     schemaValidationPath: settingsObj.schemaValidationPath,
-    dashboardRedirectUri: settingsObj.dashboardRedirectUri
+    dashboardRedirectUri: settingsObj.dashboardRedirectUri,
+    customMetricsUrl: settingsObj.customMetricsUrl
   };
   if (settingsObj.db) {
     var dbObj = db(settingsObj.db.uri);
@@ -224,6 +226,9 @@ module.exports = function(settingsObj) {
     }
     if (!isMissing(settings.dashboardRedirectUri) && !isString(settings.dashboardRedirectUri)) {
       return {valid: false, message: "dashboardRedirectUri must be a string"}
+    }
+    if (!isMissing(settings.customMetricsUrl) && !isString(settings.customMetricsUrl)) {
+      return {valid: false, message: "customMetricsUrl must be a string"}
     }
     return { valid: true }
   }

@@ -23,6 +23,7 @@ var messageUtil = require(path.join(__dirname, '../../lib/util/messageUtil.js'))
 var scope;
 
 var VALIDATION_ERROR_FROM_API_SERVER = "validation error from apiserver";
+var CREDENTIAL_CREATION_ERROR = "credential creation error during service binding"
 
 function initNockBind(statusCode) {
   scope = nock(settings.apiserver.uri)
@@ -50,6 +51,16 @@ function initNockApiServerBindError(statusCode) {
     .reply(statusCode, {
       'success': false,
       'error': VALIDATION_ERROR_FROM_API_SERVER,
+      'result': null
+    });
+}
+
+function initNockApiServerBindErrorForCrdential(statusCode) {
+  scope = nock(settings.apiserver.uri)
+    .put(/\/v1\/apps\/.*\/policy/)
+    .reply(statusCode, {
+      'success': false,
+      'error': CREDENTIAL_CREATION_ERROR,
       'result': null
     });
 }
@@ -153,6 +164,24 @@ describe('binding RESTful API', function() {
               })
             });
         });
+        it("return 500 for credential creation error", function(done) {
+          initNockApiServerBindErrorForCrdential(500);
+          supertest(publicServer)
+            .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
+            .set("Authorization", "Basic " + auth)
+            .send({ "app_guid": appId, "parameters": policy })
+            .expect(500)
+            .expect('Content-Type', /json/)
+            .expect({'description': CREDENTIAL_CREATION_ERROR})
+            .end(function(err, res) {
+              console.log(err);
+              binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
+                expect(countRes).to.equal(0);
+                done();
+              })
+            });
+        });
+
         it("return a 500", function(done) {
           initNockBind(500);
           supertest(publicServer)

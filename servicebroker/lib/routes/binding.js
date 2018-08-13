@@ -9,7 +9,7 @@ module.exports = function(app, settings, catalog, models) {
 
   var apiServerUtil = require(path.join(__dirname, '../util/apiServerUtil.js'))(settings);
   var messageUtil = require(path.join(__dirname, '../util/messageUtil.js'))(catalog);
-
+  var credUtil = require(path.join(__dirname,'../util/credUtil.js'))() 
   function commitTransaction(transaction, response, statusCode, responseBody) {
     transaction.commit().then(function(res) {
       response.status(statusCode).json(responseBody || {});
@@ -25,6 +25,18 @@ module.exports = function(app, settings, catalog, models) {
       response.status(500).json(responseBody || {});
     });
   }
+
+  function generateCredentials(username,password) {
+    return {
+        credentials: {
+            custom_metrics:{
+              username: username,
+              password: password,
+              url: settings.customMetricsUrl
+            }
+        },
+    };
+}
 
   app.put('/v2/service_instances/:instance_id/service_bindings/:binding_id', function(req, res) {
     var serviceInstanceId = req.params.instance_id;
@@ -46,46 +58,58 @@ module.exports = function(app, settings, catalog, models) {
       res.status(400).json({});
       return;
     }
+
+    var username = credUtil.getUserName();
+    var password = credUtil.getPassword()
+    var credentialsObject = generateCredentials(username,password);
     models.sequelize.transaction().then(function(t) {
-      models.binding.findAll({ where: { appId: appId } }).then(function(result) {
-        var length = result.length;
-        if (length === 0) { //no binding , so create one
+      models.binding.findAll({ where: { appId: appId } }).then(function(bindings) {
+        var bindCount = bindings.length;
+        if (bindCount === 0) { //no binding , so create one
           models.binding.create({
             bindingId: bindingId,
             appId: appId,
             serviceInstanceId: serviceInstanceId,
             timestamp: new Date().getTime()
-          }, { transaction: t }).then(function(result) {
-            if (typeof(policyJSON) === "undefined") {
-              commitTransaction(t, res, 201, {credentials: {}});
-              return;
-            } else {
-              apiServerUtil.attachPolicy(appId, policyJSON, function(error, response) {
-                if (error != null) {
-                  logger.error("Bind failed: attach policy error", { error: error });
-                  rollbackTransaction(t, res, 500, {});
-                  return;
-                }
-
-                var statusCode = response.statusCode;
-                logger.info("Api Server response", { status_code: statusCode, response: response.body });
-
-                switch (statusCode) {
-                  case 200:
-                  case 201:
-                    commitTransaction(t, res, statusCode, {credentials: {}});
-                    return;
-                  case 400:
-                    rollbackTransaction(t, res, statusCode, { "description": response.body.error });
-                    return;
-                  default:
+          }, { transaction: t }).then(function(bind) {
+          }).then(function(){
+            models.credentials.create({
+              bindingId: bindingId,
+              username: username,
+              password: models.credentials.generateHash(password),
+              metricsForwarderURL: settings.customMetricsUrl,
+            },{ transaction: t }).then(function(){
+              if (typeof(policyJSON) === "undefined") {
+                commitTransaction(t, res, 201, credentialsObject);
+                return;
+              } else {
+                apiServerUtil.attachPolicy(appId, policyJSON, function(error, response) {
+                  if (error != null) {
+                    logger.error("Bind failed: attach policy error", { error: error });
                     rollbackTransaction(t, res, 500, {});
                     return;
-                }
-
-              });
-            }
-
+                  }
+                  var statusCode = response.statusCode;
+                  logger.info("Api Server response", { status_code: statusCode, response: response.body });
+                  switch (statusCode) {
+                    case 200:
+                    case 201:
+                      commitTransaction(t, res, statusCode, credentialsObject);
+                      return;
+                    case 400:
+                      rollbackTransaction(t, res, statusCode, { "description": response.body.error });
+                      return;
+                    default:
+                      rollbackTransaction(t, res, 500, {});
+                      return;
+                  }
+                });
+              }
+            }).catch(function(err){ //catch credential creation
+              logger.error("Credentials creation failure for err:",{error: err});
+              res.status(500).json({ "description": messageUtil.getMessage("CREDENTIAL_CREATION", { "applicationId": appId }) });
+              return;
+            });
           }).catch(function(error) { //catch findorcreate
             logger.error("Bind failed: create error", { error: error });
             if (error instanceof models.sequelize.UniqueConstraintError) {
@@ -95,21 +119,19 @@ module.exports = function(app, settings, catalog, models) {
               rollbackTransaction(t, res, 404, { "description": messageUtil.getMessage("SERVICEINSTANCE_NOT_EXIST", { "serviceInstanceId": serviceInstanceId }) });
               return;
             }
-
             rollbackTransaction(t, res, 500, {});
           });
-        } else if (length > 1) { // an app has been bound to more than one service instance, this error should not exist
+        } else if (bindCount > 1) { // an app has been bound to more than one service instance, this error should not exist
           logger.error("Bind failed: duplicate bind", { app_guid: appId });
           res.status(409).json({ "description": messageUtil.getMessage("DUPLICATE_BIND", { "applicationId": appId }) });
           return;
-        } else if (length == 1) { // an app has been bound to a service instance
-          var bindingRecord = result[0];
+        } else if (bindCount == 1) { // an app has been bound to a service instance
+          var bindingRecord = bindings[0];
           if (bindingRecord.serviceInstanceId === serviceInstanceId) {
             logger.error("Bind failed: app already bound", { app_guid: appId, serviceInstanceId: serviceInstanceId });
             res.status(409).json({});
             return;
           }
-
           logger.error("Bind failed: duplicate bind", { app_guid: appId });
           res.status(409).json({ "description": messageUtil.getMessage("DUPLICATE_BIND", { "applicationId": appId }) });
         }
