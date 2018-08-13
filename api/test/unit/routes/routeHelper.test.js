@@ -512,4 +512,39 @@ describe("routeHelper", function() {
 
     });
   });
+
+  describe("getPageUrl", function() {
+    var request;
+    beforeEach(function() {
+      request = {
+        "baseUrl": "/v1",
+        "path": "/someroute",
+        "query": {
+          "page": 1,
+          "resuts-per-page": 2
+        }
+      };
+    });
+    context("request.query is null", function() {
+      beforeEach(function() {
+        request.query = null;
+      });
+      it("return null",function(){
+        expect(helper.getPageUrl(request,1)).to.equal(null);
+      });
+    });
+    context("request.query is undefined", function() {
+      beforeEach(function() {
+        delete request.query;
+      });
+      it("return null",function(){
+        expect(helper.getPageUrl(request,1)).to.equal(null);
+      });
+    });
+    context("get page url", function() {
+      it("return page url",function(){
+        expect(helper.getPageUrl(request,1)).to.equal("/v1/someroute?page=1&resuts-per-page=2");
+      });
+    });
+  })
 });

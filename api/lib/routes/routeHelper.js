@@ -21,7 +21,7 @@ exports.parseParameter = function(req) {
   var orderDirection = req.query["order-direction"] ? req.query["order-direction"] : req.query["order"];
   var page = req.query["page"];
   var resultsPerPage = req.query["results-per-page"];
-  
+
   if (!appId) {
     return { valid: false, message: "app_id is required" };
   } else {
@@ -57,7 +57,7 @@ exports.parseParameter = function(req) {
       orderDirection = orderDirection.toUpperCase();
       if (orderDirection !== DESC && orderDirection !== ASC) {
         return { valid: false, message: "order-direction must be DESC or ASC" };
-      }else{
+      } else {
         parameters["order"] = orderDirection;
       }
     }
@@ -122,18 +122,16 @@ exports.pagination = function(resultList, page, resultsPerPage, req) {
   return result;
 }
 
-function getPageUrl(req, targetPageNo) {
+var getPageUrl = exports.getPageUrl = function(req, targetPageNo) {
   var queries = req.query;
-  if (queries && queries["page"]) {
-    queries["page"] = targetPageNo;
+  if (!queries || !queries["page"]) {
+    return null;
   }
-  var queryStr = "";
-  if (queries) {
-    queryStr += "?";
-    for (var key in queries) {
-      queryStr += "&" + key + "=" + queries[key];
-    }
-    queryStr = queryStr.replace("&", "");
+  queries["page"] = targetPageNo;
+  var pageStr = req.baseUrl + req.path + "?";
+  for (var key in queries) {
+    pageStr += "&" + key + "=" + queries[key];
   }
-  return req.baseUrl + req.path + queryStr;
+  pageStr = pageStr.replace("&", "");
+  return pageStr;
 }
