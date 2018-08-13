@@ -103,7 +103,7 @@ var _ = Describe("Operator", func() {
 				logger := lagertest.NewTestLogger("competing-process")
 				buffer := logger.Buffer()
 
-				competingOperatorLock := locket.NewLock(logger, consulClient, operator.PrunerLockSchemaPath(), []byte{}, clock.NewClock(), cfg.Lock.LockRetryInterval, cfg.Lock.LockTTL)
+				competingOperatorLock := locket.NewLock(logger, consulClient, operator.OperatorLockSchemaPath(), []byte{}, clock.NewClock(), cfg.Lock.LockRetryInterval, cfg.Lock.LockTTL)
 				competingOperatorProcess = ifrit.Invoke(competingOperatorLock)
 				Eventually(buffer, 2*time.Second).Should(Say("competing-process.lock.acquire-lock-succeeded"))
 
