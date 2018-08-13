@@ -143,7 +143,7 @@ func main() {
 			os.Exit(1)
 		}
 		if !conf.EnableDBLock {
-			lockMaintainer := serviceClient.NewPrunerLockRunner(
+			lockMaintainer := serviceClient.NewOperatorLockRunner(
 				logger,
 				guid,
 				conf.Lock.LockRetryInterval,

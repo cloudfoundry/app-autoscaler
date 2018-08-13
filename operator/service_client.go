@@ -10,14 +10,14 @@ import (
 	"github.com/tedsuo/ifrit"
 )
 
-const PrunerLockSchemaKey = "pruner_lock"
+const OperatorLockSchemaKey = "operator_lock"
 
-func PrunerLockSchemaPath() string {
-	return locket.LockSchemaPath(PrunerLockSchemaKey)
+func OperatorLockSchemaPath() string {
+	return locket.LockSchemaPath(OperatorLockSchemaKey)
 }
 
 type ServiceClient interface {
-	NewPrunerLockRunner(logger lager.Logger, PrunerID string, retryInterval, lockTTL time.Duration) ifrit.Runner
+	NewOperatorLockRunner(logger lager.Logger, OperatorID string, retryInterval, lockTTL time.Duration) ifrit.Runner
 }
 
 type serviceClient struct {
@@ -32,6 +32,6 @@ func NewServiceClient(consulClient consuladapter.Client, clock clock.Clock) Serv
 	}
 }
 
-func (c serviceClient) NewPrunerLockRunner(logger lager.Logger, PrunerID string, retryInterval, lockTTL time.Duration) ifrit.Runner {
-	return locket.NewLock(logger, c.consulClient, PrunerLockSchemaPath(), []byte(PrunerID), c.clock, retryInterval, lockTTL)
+func (c serviceClient) NewOperatorLockRunner(logger lager.Logger, OperatorID string, retryInterval, lockTTL time.Duration) ifrit.Runner {
+	return locket.NewLock(logger, c.consulClient, OperatorLockSchemaPath(), []byte(OperatorID), c.clock, retryInterval, lockTTL)
 }
