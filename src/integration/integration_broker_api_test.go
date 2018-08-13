@@ -32,8 +32,8 @@ var _ = Describe("Integration_Broker_Api", func() {
 	BeforeEach(func() {
 		initializeHttpClient("servicebroker.crt", "servicebroker.key", "autoscaler-ca.crt", brokerApiHttpRequestTimeout)
 		fakeScheduler = ghttp.NewServer()
-		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], components.Ports[APIPublicServer], false, "", dbUrl, fakeScheduler.URL(), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[EventGenerator]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ServiceBrokerInternal]), true, tmpDir)
-		serviceBrokerConfPath = components.PrepareServiceBrokerConfig(components.Ports[ServiceBroker], components.Ports[ServiceBrokerInternal], brokerUserName, brokerPassword, dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[APIServer]), brokerApiHttpRequestTimeout, tmpDir)
+		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], components.Ports[APIPublicServer], false, 200, "", dbUrl, fakeScheduler.URL(), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[EventGenerator]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ServiceBrokerInternal]), true, tmpDir)
+		serviceBrokerConfPath = components.PrepareServiceBrokerConfig(components.Ports[ServiceBroker], components.Ports[ServiceBrokerInternal], brokerUserName, brokerPassword, false, dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[APIServer]), brokerApiHttpRequestTimeout, tmpDir)
 
 		startApiServer()
 		startServiceBroker()
@@ -209,6 +209,40 @@ var _ = Describe("Integration_Broker_Api", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
 				resp.Body.Close()
+			})
+		})
+
+		Context("Policy with schedules where Custom Metrics feature Enabled", func() {
+			BeforeEach(func() {
+				fakeScheduler.RouteToHandler("PUT", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
+				fakeScheduler.RouteToHandler("DELETE", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
+			})
+
+			AfterEach(func() {
+				//clear the binding
+				resp, err := unbindService(bindingId, appId, serviceInstanceId)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				resp.Body.Close()
+			})
+
+			JustBeforeEach(func() {
+				serviceBrokerConfPath = components.PrepareServiceBrokerConfig(components.Ports[ServiceBroker], components.Ports[ServiceBrokerInternal], brokerUserName, brokerPassword, true, dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[APIServer]), brokerApiHttpRequestTimeout, tmpDir)
+			})
+
+			It("creates a binding", func() {
+				resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+				resp.Body.Close()
+				Consistently(fakeScheduler.ReceivedRequests).Should(HaveLen(1))
+
+				By("checking the API Server")
+				var expected map[string]interface{}
+				err = json.Unmarshal(schedulePolicyJson, &expected)
+				Expect(err).NotTo(HaveOccurred())
+
+				checkResponseContent(getPolicy, appId, http.StatusOK, expected, INTERNAL)
 			})
 		})
 	})
