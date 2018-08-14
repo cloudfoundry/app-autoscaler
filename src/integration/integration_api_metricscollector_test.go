@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 
 	. "github.com/onsi/ginkgo"
@@ -18,6 +19,8 @@ type AppInstanceMetricResult struct {
 	TotalResults int                        `json:"total_results"`
 	TotalPages   int                        `json:"total_pages"`
 	Page         int                        `json:"page"`
+	PrevUrl      string                     `json:"prev_url"`
+	NextUrl      string                     `json:"next_url"`
 	Resources    []models.AppInstanceMetric `json:"resources"`
 }
 
@@ -58,7 +61,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 			BeforeEach(func() {
 				fakeCCNOAAUAA.Reset()
 				fakeCCNOAAUAA.AllowUnhandledRequests = true
-				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "metric-type": metricType, "order": "asc", "page": "1", "results-per-page": "5"}
+				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order-direction": "asc", "page": "1", "results-per-page": "5"}
 			})
 			It("should error with status code 500", func() {
 				By("check public api")
@@ -75,7 +78,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 						AuthEndpoint:    fakeCCNOAAUAA.URL(),
 						DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
 					}))
-				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "metric-type": metricType, "order": "asc", "page": "1", "results-per-page": "5"}
+				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order-direction": "asc", "page": "1", "results-per-page": "5"}
 			})
 			It("should error with status code 500", func() {
 				By("check public api")
@@ -92,7 +95,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 						DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
 					}))
 				fakeCCNOAAUAA.RouteToHandler("GET", "/userinfo", ghttp.RespondWithJSONEncoded(http.StatusUnauthorized, struct{}{}))
-				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "metric-type": metricType, "order": "asc", "page": "1", "results-per-page": "5"}
+				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order-direction": "asc", "page": "1", "results-per-page": "5"}
 			})
 			It("should error with status code 401", func() {
 				By("check public api")
@@ -108,7 +111,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 					}{
 						0,
 					}))
-				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "metric-type": metricType, "order": "asc", "page": "1", "results-per-page": "5"}
+				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order-direction": "asc", "page": "1", "results-per-page": "5"}
 			})
 			It("should error with status code 401", func() {
 				By("check public api")
@@ -119,7 +122,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 		Context("MetricsCollector is down", func() {
 			JustBeforeEach(func() {
 				stopMetricsCollector()
-				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "metric-type": metricType, "order": "asc", "page": "1", "results-per-page": "5"}
+				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order-direction": "asc", "page": "1", "results-per-page": "5"}
 			})
 
 			It("should error with status code 500", func() {
@@ -178,11 +181,12 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 			})
 			It("should get the metrics ", func() {
 				By("get the 1st page")
-				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "metric-type": metricType, "order": "asc", "page": "1", "results-per-page": "2"}
+				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order-direction": "asc", "page": "1", "results-per-page": "2"}
 				result := AppInstanceMetricResult{
 					TotalResults: 5,
 					TotalPages:   3,
 					Page:         1,
+					NextUrl:      getInstanceMetricsUrl(appId, metricType, parameters, 2),
 					Resources: []models.AppInstanceMetric{
 						models.AppInstanceMetric{
 							AppId:         appId,
@@ -209,11 +213,13 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 				checkAppInstanceMetricResult(pathVariables, parameters, result)
 
 				By("get the 2nd page")
-				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "metric-type": metricType, "order": "asc", "page": "2", "results-per-page": "2"}
+				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order-direction": "asc", "page": "2", "results-per-page": "2"}
 				result = AppInstanceMetricResult{
 					TotalResults: 5,
 					TotalPages:   3,
 					Page:         2,
+					PrevUrl:      getInstanceMetricsUrl(appId, metricType, parameters, 1),
+					NextUrl:      getInstanceMetricsUrl(appId, metricType, parameters, 3),
 					Resources: []models.AppInstanceMetric{
 						models.AppInstanceMetric{
 							AppId:         appId,
@@ -239,11 +245,12 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 				checkAppInstanceMetricResult(pathVariables, parameters, result)
 
 				By("get the 3rd page")
-				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "metric-type": metricType, "order": "asc", "page": "3", "results-per-page": "2"}
+				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order-direction": "asc", "page": "3", "results-per-page": "2"}
 				result = AppInstanceMetricResult{
 					TotalResults: 5,
 					TotalPages:   3,
 					Page:         3,
+					PrevUrl:      getInstanceMetricsUrl(appId, metricType, parameters, 2),
 					Resources: []models.AppInstanceMetric{
 						models.AppInstanceMetric{
 							AppId:         appId,
@@ -260,11 +267,12 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 				checkAppInstanceMetricResult(pathVariables, parameters, result)
 
 				By("the 4th page should be empty")
-				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "metric-type": metricType, "order": "asc", "page": "4", "results-per-page": "2"}
+				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order-direction": "asc", "page": "4", "results-per-page": "2"}
 				result = AppInstanceMetricResult{
 					TotalResults: 5,
 					TotalPages:   3,
 					Page:         4,
+					PrevUrl:      getInstanceMetricsUrl(appId, metricType, parameters, 3),
 					Resources:    []models.AppInstanceMetric{},
 				}
 				By("check public api")
@@ -275,6 +283,33 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 	})
 })
 
+func getInstanceMetricsUrl(appId string, metricType string, parameteters map[string]string, pageNo int) string {
+	return fmt.Sprintf("/v1/apps/%s/metric_histories/%s?any=any&start-time=%s&end-time=%s&order-direction=%s&page=%d&results-per-page=%s", appId, metricType, parameteters["start-time"], parameteters["end-time"], parameteters["order-direction"], pageNo, parameteters["results-per-page"])
+}
+
+func compareAppInstanceMetricResult(o1, o2 AppInstanceMetricResult) {
+	Expect(o1.Page).To(Equal(o2.Page))
+	Expect(o1.TotalPages).To(Equal(o2.TotalPages))
+	Expect(o1.TotalResults).To(Equal(o2.TotalResults))
+	Expect(o1.Resources).To(Equal(o2.Resources))
+
+	prevUrl1, err1 := url.Parse(o1.PrevUrl)
+	Expect(err1).NotTo(HaveOccurred())
+	prevUrl2, err2 := url.Parse(o2.PrevUrl)
+	Expect(err2).NotTo(HaveOccurred())
+	queries1 := prevUrl1.Query()
+	queries2 := prevUrl2.Query()
+	Expect(queries1).To(Equal(queries2))
+
+	nextUrl1, err1 := url.Parse(o1.NextUrl)
+	Expect(err1).NotTo(HaveOccurred())
+	nextUrl2, err2 := url.Parse(o2.NextUrl)
+	Expect(err2).NotTo(HaveOccurred())
+	queries1 = nextUrl1.Query()
+	queries2 = nextUrl2.Query()
+	Expect(queries1).To(Equal(queries2))
+
+}
 func checkAppInstanceMetricResult(pathVariables []string, parameters map[string]string, result AppInstanceMetricResult) {
 	var actual AppInstanceMetricResult
 	resp, err := getAppInstanceMetrics(pathVariables, parameters)
@@ -283,6 +318,6 @@ func checkAppInstanceMetricResult(pathVariables []string, parameters map[string]
 	Expect(resp.StatusCode).To(Equal(http.StatusOK))
 	err = json.NewDecoder(resp.Body).Decode(&actual)
 	Expect(err).NotTo(HaveOccurred())
-	Expect(actual).To(Equal(result))
+	compareAppInstanceMetricResult(actual, result)
 
 }
