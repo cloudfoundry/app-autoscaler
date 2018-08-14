@@ -26,9 +26,9 @@ describe('metricsCollector Utility functions', function() {
     context('all parameters are valid', function() {
       var metrics = [
         { "app_id": theAppId, "timestamp": 100, "instance_index": 0, "collected_at": 0, "name": metricType, "unit": "megabytes", "value": "200" },
-        { "app_id": theAppId, "timestamp": 110, "instance_index": 1, "collected_at": 1, "name": metricType, "unit": "megabytes", "value": "200" },
+        { "app_id": theAppId, "timestamp": 110, "instance_index": 0, "collected_at": 1, "name": metricType, "unit": "megabytes", "value": "200" },
         { "app_id": theAppId, "timestamp": 150, "instance_index": 0, "collected_at": 0, "name": metricType, "unit": "megabytes", "value": "200" },
-        { "app_id": theAppId, "timestamp": 170, "instance_index": 1, "collected_at": 1, "name": metricType, "unit": "megabytes", "value": "200" },
+        { "app_id": theAppId, "timestamp": 170, "instance_index": 0, "collected_at": 1, "name": metricType, "unit": "megabytes", "value": "200" },
         { "app_id": theAppId, "timestamp": 200, "instance_index": 0, "collected_at": 0, "name": metricType, "unit": "megabytes", "value": "200" }
       ];
       it('should get the metrics', function(done) {
@@ -38,6 +38,7 @@ describe('metricsCollector Utility functions', function() {
         var mockParameters = {
           appId: theAppId,
           metricType: metricType,
+          instanceIndex: 0,
           startTime: 100,
           endTime: 200,
           order: 'desc'
@@ -63,6 +64,7 @@ describe('metricsCollector Utility functions', function() {
         var mockParameters = {
           appId: theAppId,
           metricType: metricType,
+          instanceIndex: 0,
           startTime: 100,
           endTime: 200,
           order: 'desc'
@@ -75,7 +77,29 @@ describe('metricsCollector Utility functions', function() {
       });
     });
 
-    context('start-time is not number', function() {
+    context('instanceindex is not a number', function() {
+      var mockBody = { code: 'Bad-Request', message: 'Error parsing instanceIndex' };
+      it('should fail to get the metrics', function(done) {
+        nock(metricsCollectorUri)
+          .get(/\/v1\/apps\/.+\/metric_histories/)
+          .reply(400, mockBody);
+        var mockParameters = {
+          appId: theAppId,
+          metricType: metricType,
+          instanceIndex: 'not-integer',
+          startTime: 100,
+          endTime: 200,
+          order: 'desc'
+        };
+        metricsCollectorUtils.getMetricHistory(mockParameters, function(error, result) {
+          expect(error).to.not.be.null;
+          expect(error).to.deep.equal({ statusCode: 400, message: 'Error parsing instanceIndex' })
+          done();
+        });
+      });
+    });
+
+    context('start-time is not a number', function() {
       var mockBody = { code: 'Bad-Request', message: 'Error parsing start time' };
       it('should fail to get the metrics', function(done) {
         nock(metricsCollectorUri)
@@ -84,6 +108,7 @@ describe('metricsCollector Utility functions', function() {
         var mockParameters = {
           appId: theAppId,
           metricType: metricType,
+          instanceIndex: 0,
           startTime: 'not-integer',
           endTime: 200,
           order: 'desc'
@@ -96,7 +121,7 @@ describe('metricsCollector Utility functions', function() {
       });
     });
 
-    context('end-time is not number', function() {
+    context('end-time is not a number', function() {
       var mockBody = { code: 'Bad-Request', message: 'Error parsing end time' };
       it('should fail to get the metrics', function(done) {
         nock(metricsCollectorUri)
@@ -105,6 +130,7 @@ describe('metricsCollector Utility functions', function() {
         var mockParameters = {
           appId: theAppId,
           metricType: metricType,
+          instanceIndex: 0,
           startTime: 100,
           endTime: 'not-integer',
           order: 'desc'
@@ -126,6 +152,7 @@ describe('metricsCollector Utility functions', function() {
         var mockParameters = {
           appId: theAppId,
           metricType: metricType,
+          instanceIndex: 0,
           startTime: 100,
           endTime: 200,
           order: 'not-desc-asc'
@@ -147,6 +174,7 @@ describe('metricsCollector Utility functions', function() {
         var mockParameters = {
           appId: theAppId,
           metricType: metricType,
+          instanceIndex: 0,
           startTime: 100,
           endTime: 200,
           order: 'desc'

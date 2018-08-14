@@ -29,6 +29,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 		orderType db.OrderType
 
 		appId          string
+		instanceIndex  int64
 		metricName     string
 		testAppId      string = "Test-App-ID"
 		testMetricName string = "TestMetricType"
@@ -43,6 +44,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 			MaxIdleConnections:    5,
 			ConnectionMaxLifetime: 10 * time.Second,
 		}
+		instanceIndex = -1
 	})
 
 	Describe("NewInstanceMetricsSQLDB", func() {
@@ -241,12 +243,24 @@ var _ = Describe("InstancemetricsSqldb", func() {
 		})
 
 		JustBeforeEach(func() {
-			mtrcs, err = idb.RetrieveInstanceMetrics(appId, metricName, start, end, orderType)
+			mtrcs, err = idb.RetrieveInstanceMetrics(appId, instanceIndex, metricName, start, end, orderType)
 		})
 
 		Context("The app has no instance metrics", func() {
 			BeforeEach(func() {
 				appId = "app-id-no-metric"
+			})
+
+			It("returns empty metrics", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(mtrcs).To(BeEmpty())
+			})
+
+		})
+
+		Context("The app has no instance metrics for a given instance index", func() {
+			BeforeEach(func() {
+				instanceIndex = 2
 			})
 
 			It("returns empty metrics", func() {
@@ -267,9 +281,10 @@ var _ = Describe("InstancemetricsSqldb", func() {
 			})
 		})
 
-		Context("when retrieving all the metrics( start = 0, end = -1, orderType = ASC) ", func() {
+		Context("when retrieving all the metrics of all the instances( start = 0, end = -1, orderType = ASC) ", func() {
 			BeforeEach(func() {
 				orderType = db.ASC
+				instanceIndex = -1
 			})
 			It("removes duplicates and returns all the instance metrics of the app ordered by timestamp asc", func() {
 				Expect(err).NotTo(HaveOccurred())
@@ -306,7 +321,11 @@ var _ = Describe("InstancemetricsSqldb", func() {
 			})
 		})
 
-		Context("when retrieving all the metrics( start = 0, end = -1, orderType = DESC) ", func() {
+		Context("when retrieving all the metrics of all the instances( start = 0, end = -1, orderType = DESC) ", func() {
+			BeforeEach(func() {
+				orderType = db.DESC
+				instanceIndex = -1
+			})
 			It("removes duplicates and returns all the instance metrics of the app ordered by timestamp desc", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(mtrcs).To(HaveLen(3))
@@ -328,6 +347,65 @@ var _ = Describe("InstancemetricsSqldb", func() {
 					"Unit":          Equal(testMetricUnit),
 					"Value":         Equal("654321"),
 					"Timestamp":     BeEquivalentTo(111100),
+				}))
+
+				Expect(*mtrcs[0]).To(gstruct.MatchAllFields(gstruct.Fields{
+					"AppId":         Equal(testAppId),
+					"InstanceIndex": BeEquivalentTo(1),
+					"CollectedAt":   BeEquivalentTo(222222),
+					"Name":          Equal(testMetricName),
+					"Unit":          Equal(testMetricUnit),
+					"Value":         Equal("321765"),
+					"Timestamp":     BeEquivalentTo(222200),
+				}))
+			})
+		})
+
+		Context("when retrieving all the metrics of a given instance index( start = 0, end = -1, orderType = ASC) ", func() {
+			BeforeEach(func() {
+				orderType = db.ASC
+				instanceIndex = 1
+			})
+			It("removes duplicates and returns all the instance metrics of the app ordered by timestamp asc", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(mtrcs).To(HaveLen(2))
+				Expect(*mtrcs[0]).To(gstruct.MatchAllFields(gstruct.Fields{
+					"AppId":         Equal(testAppId),
+					"InstanceIndex": BeEquivalentTo(1),
+					"CollectedAt":   BeEquivalentTo(111111),
+					"Name":          Equal(testMetricName),
+					"Unit":          Equal(testMetricUnit),
+					"Value":         Equal("214365"),
+					"Timestamp":     BeEquivalentTo(110000),
+				}))
+
+				Expect(*mtrcs[1]).To(gstruct.MatchAllFields(gstruct.Fields{
+					"AppId":         Equal(testAppId),
+					"InstanceIndex": BeEquivalentTo(1),
+					"CollectedAt":   BeEquivalentTo(222222),
+					"Name":          Equal(testMetricName),
+					"Unit":          Equal(testMetricUnit),
+					"Value":         Equal("321765"),
+					"Timestamp":     BeEquivalentTo(222200),
+				}))
+			})
+		})
+
+		Context("when retrieving all the metrics of a given instance index( start = 0, end = -1, orderType = DESC) ", func() {
+			BeforeEach(func() {
+				instanceIndex = 1
+			})
+			It("removes duplicates and returns all the instance metrics of the app ordered by timestamp desc", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(mtrcs).To(HaveLen(2))
+				Expect(*mtrcs[1]).To(gstruct.MatchAllFields(gstruct.Fields{
+					"AppId":         Equal(testAppId),
+					"InstanceIndex": BeEquivalentTo(1),
+					"CollectedAt":   BeEquivalentTo(111111),
+					"Name":          Equal(testMetricName),
+					"Unit":          Equal(testMetricUnit),
+					"Value":         Equal("214365"),
+					"Timestamp":     BeEquivalentTo(110000),
 				}))
 
 				Expect(*mtrcs[0]).To(gstruct.MatchAllFields(gstruct.Fields{
@@ -393,7 +471,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 			})
 		})
 
-		Context("when retrieving part of the metrics", func() {
+		Context("when retrieving part of all the instances's metrics", func() {
 			BeforeEach(func() {
 				start = 111100
 				end = 222222
@@ -411,6 +489,28 @@ var _ = Describe("InstancemetricsSqldb", func() {
 					"Value":         Equal("654321"),
 					"Timestamp":     BeEquivalentTo(111100),
 				}))
+				Expect(*mtrcs[0]).To(gstruct.MatchAllFields(gstruct.Fields{
+					"AppId":         Equal(testAppId),
+					"InstanceIndex": BeEquivalentTo(1),
+					"CollectedAt":   BeEquivalentTo(222222),
+					"Name":          Equal(testMetricName),
+					"Unit":          Equal(testMetricUnit),
+					"Value":         Equal("321765"),
+					"Timestamp":     BeEquivalentTo(222200),
+				}))
+			})
+		})
+
+		Context("when retrieving part of a given instance's metrics", func() {
+			BeforeEach(func() {
+				start = 111100
+				end = 222222
+				instanceIndex = 1
+			})
+
+			It("returns correct metrics", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(mtrcs).To(HaveLen(1))
 				Expect(*mtrcs[0]).To(gstruct.MatchAllFields(gstruct.Fields{
 					"AppId":         Equal(testAppId),
 					"InstanceIndex": BeEquivalentTo(1),

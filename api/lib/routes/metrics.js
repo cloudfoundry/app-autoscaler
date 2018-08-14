@@ -11,15 +11,16 @@ module.exports = function(settings) {
   router.get("/:app_id/metric_histories/:metric_type", function(req, resp) {
     var appId = req.params.app_id;
     var metricType = req.params.metric_type;
+    var instanceIndex = req.query["instance-index"];
     var startTime = req.query["start-time"];
     var endTime = req.query["end-time"];
     var orderDirection = req.query["order-direction"] ? req.query["order-direction"] : req.query["order"];
     var page = req.query["page"];
     var resultsPerPage = req.query["results-per-page"];
-    logger.info("Get metrics", { "app_id": appId, "metric_type":metricType, "start-time": startTime, "end-time": endTime, "order-direction": orderDirection, "page": page, "results-per-page": resultsPerPage });
+    logger.info("Get metrics", { "app_id": appId, "metric_type":metricType, "instance-index": instanceIndex, "start-time": startTime, "end-time": endTime, "page": page, "results-per-page": resultsPerPage });
     var parseResult = metricHelper.parseParameter(req);
     if (!parseResult.valid) {
-      logger.error("Failed to get metrics", { "app_id": appId, "metric_type":metricType, "start-time": startTime, "end-time": endTime, "order-direction": orderDirection, "page": page, "results-per-page": resultsPerPage, "message": parseResult.message });
+      logger.error("Failed to get metrics", { "app_id": appId, "metric_type":metricType, "instance-index": instanceIndex, "start-time": startTime, "end-time": endTime, "page": page, "results-per-page": resultsPerPage, "message": parseResult.message });
       resp.status(HttpStatus.BAD_REQUEST).json({ "error": parseResult.message });
       return;
     }
