@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 
 	. "github.com/onsi/ginkgo"
@@ -17,6 +18,8 @@ type AppAggregatedMetricResult struct {
 	TotalResults int                `json:"total_results"`
 	TotalPages   int                `json:"total_pages"`
 	Page         int                `json:"page"`
+	PrevUrl      string             `json:"prev_url"`
+	NextUrl      string             `json:"next_url"`
 	Resources    []models.AppMetric `json:"resources"`
 }
 
@@ -157,11 +160,12 @@ var _ = Describe("Integration_Api_EventGenerator", func() {
 			})
 			It("should get the metrics ", func() {
 				By("get the 1st page")
-				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "metric-type": metricType, "order": "asc", "page": "1", "results-per-page": "2"}
+				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order-direction": "asc", "page": "1", "results-per-page": "2"}
 				result := AppAggregatedMetricResult{
 					TotalResults: 5,
 					TotalPages:   3,
 					Page:         1,
+					NextUrl:      getAppAggregatedMetricUrl(appId, metricType, parameters, 2),
 					Resources: []models.AppMetric{
 						models.AppMetric{
 							AppId:      appId,
@@ -183,11 +187,13 @@ var _ = Describe("Integration_Api_EventGenerator", func() {
 				checkAggregatedMetricResult(pathVariables, parameters, result)
 
 				By("get the 2nd page")
-				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "metric-type": metricType, "order": "asc", "page": "2", "results-per-page": "2"}
+				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order-direction": "asc", "page": "2", "results-per-page": "2"}
 				result = AppAggregatedMetricResult{
 					TotalResults: 5,
 					TotalPages:   3,
 					Page:         2,
+					PrevUrl:      getAppAggregatedMetricUrl(appId, metricType, parameters, 1),
+					NextUrl:      getAppAggregatedMetricUrl(appId, metricType, parameters, 3),
 					Resources: []models.AppMetric{
 						models.AppMetric{
 							AppId:      appId,
@@ -209,11 +215,12 @@ var _ = Describe("Integration_Api_EventGenerator", func() {
 				checkAggregatedMetricResult(pathVariables, parameters, result)
 
 				By("get the 3rd page")
-				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "metric-type": metricType, "order": "asc", "page": "3", "results-per-page": "2"}
+				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order-direction": "asc", "page": "3", "results-per-page": "2"}
 				result = AppAggregatedMetricResult{
 					TotalResults: 5,
 					TotalPages:   3,
 					Page:         3,
+					PrevUrl:      getAppAggregatedMetricUrl(appId, metricType, parameters, 2),
 					Resources: []models.AppMetric{
 						models.AppMetric{
 							AppId:      appId,
@@ -228,11 +235,12 @@ var _ = Describe("Integration_Api_EventGenerator", func() {
 				checkAggregatedMetricResult(pathVariables, parameters, result)
 
 				By("the 4th page should be empty")
-				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "metric-type": metricType, "order": "asc", "page": "4", "results-per-page": "2"}
+				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order-direction": "asc", "page": "4", "results-per-page": "2"}
 				result = AppAggregatedMetricResult{
 					TotalResults: 5,
 					TotalPages:   3,
 					Page:         4,
+					PrevUrl:      getAppAggregatedMetricUrl(appId, metricType, parameters, 3),
 					Resources:    []models.AppMetric{},
 				}
 				By("check public api")
@@ -243,6 +251,33 @@ var _ = Describe("Integration_Api_EventGenerator", func() {
 	})
 })
 
+func getAppAggregatedMetricUrl(appId string, metricType string, parameteters map[string]string, pageNo int) string {
+	return fmt.Sprintf("/v1/apps/%s/aggregated_metric_histories/%s?any=any&start-time=%s&end-time=%s&order-direction=%s&page=%d&results-per-page=%s", appId, metricType, parameteters["start-time"], parameteters["end-time"], parameteters["order-direction"], pageNo, parameteters["results-per-page"])
+}
+
+func compareAppAggregatedMetricResult(o1, o2 AppAggregatedMetricResult) {
+	Expect(o1.Page).To(Equal(o2.Page))
+	Expect(o1.TotalPages).To(Equal(o2.TotalPages))
+	Expect(o1.TotalResults).To(Equal(o2.TotalResults))
+	Expect(o1.Resources).To(Equal(o2.Resources))
+
+	prevUrl1, err1 := url.Parse(o1.PrevUrl)
+	Expect(err1).NotTo(HaveOccurred())
+	prevUrl2, err2 := url.Parse(o2.PrevUrl)
+	Expect(err2).NotTo(HaveOccurred())
+	queries1 := prevUrl1.Query()
+	queries2 := prevUrl2.Query()
+	Expect(queries1).To(Equal(queries2))
+
+	nextUrl1, err1 := url.Parse(o1.NextUrl)
+	Expect(err1).NotTo(HaveOccurred())
+	nextUrl2, err2 := url.Parse(o2.NextUrl)
+	Expect(err2).NotTo(HaveOccurred())
+	queries1 = nextUrl1.Query()
+	queries2 = nextUrl2.Query()
+	Expect(queries1).To(Equal(queries2))
+
+}
 func checkAggregatedMetricResult(pathVariables []string, parameters map[string]string, result AppAggregatedMetricResult) {
 	var actual AppAggregatedMetricResult
 	resp, err := getAppAggregatedMetrics(pathVariables, parameters)
@@ -251,6 +286,6 @@ func checkAggregatedMetricResult(pathVariables []string, parameters map[string]s
 	Expect(resp.StatusCode).To(Equal(http.StatusOK))
 	err = json.NewDecoder(resp.Body).Decode(&actual)
 	Expect(err).NotTo(HaveOccurred())
-	Expect(actual).To(Equal(result))
+	compareAppAggregatedMetricResult(actual, result)
 
 }
