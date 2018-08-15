@@ -1,5 +1,5 @@
 'use strict';
-module.exports = function(models) {
+module.exports = function(models, credentialCache, cacheTTL) {
   var logger = require('../log/logger');
   var HttpStatus = require('http-status-codes');
   var uuidv4 = require('uuid/v4');
@@ -12,6 +12,13 @@ module.exports = function(models) {
 
   function validateHash(input, hash) {
     return bcrypt.compareSync(input, hash);
+  }
+
+  function validateCredentialDetails(username,usernamehash,password, passwordhash){
+    var isUsernameValid = validateHash(username, usernamehash);
+    var isPasswordValid = validateHash(password, passwordhash);
+    var isValidCred = isUsernameValid && isPasswordValid;
+    return isValidCred;
   }
 
   credhelper.createOrUpdateCredentials = function(req, callback) {
@@ -92,6 +99,7 @@ module.exports = function(models) {
     var appId = req.params.app_id;
     var username = req.query["username"];
     var password = req.query["password"];
+    var creds,isValidCred,cachedCred;
     if (!username || !password) {
       var insufficientQueryparamError = new Error();
       insufficientQueryparamError.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -103,6 +111,21 @@ module.exports = function(models) {
       callback(insufficientQueryparamError);
       return;
     }
+    // Try to find credentials in cache
+    try{
+      creds = credentialCache.get(appId, true);
+      isValidCred = validateCredentialDetails(username, creds.username, password, creds.password);
+      logger.info('Credentials hasbeen found successfully in cache', {
+          'app_id': appId,
+          'isValid': isValidCred
+      });
+      callback(null, {
+          'statusCode': HttpStatus.OK,
+          'isValid': isValidCred,
+      });
+    }
+    catch(err){
+    // Did not find credentials in cache, lets find in database.
     models.credentials.find({
       where: {
         id: appId
@@ -120,12 +143,17 @@ module.exports = function(models) {
         callback(error);
       }
       else {
+        isValidCred = validateCredentialDetails(username, creds.username, password, creds.password);
         logger.info('Credentials hasbeen found successfully in database', {
-          'app_id': appId
+          'app_id': appId,
+          'isValid': isValidCred
         });
-        var isUsernameValid = validateHash(username, creds.username);
-        var isPasswordValid = validateHash(password, creds.password);
-        var isValidCred = isUsernameValid && isPasswordValid;
+        cachedCred = {
+            'username': creds.username,
+            'password': creds.password
+        };
+        var isCached = credentialCache.set(appId, cachedCred, cacheTTL);
+        logger.info('Credential cached',{ 'app_id':appId, 'isCached':isCached });
         callback(null, {
           'statusCode': HttpStatus.OK,
           'isValid': isValidCred
@@ -139,6 +167,7 @@ module.exports = function(models) {
       err.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
       callback(err);
     });
+    }
   }
   return credhelper;
 }

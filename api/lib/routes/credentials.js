@@ -1,11 +1,11 @@
 'use strict';
-module.exports = function(models,credentialCache, cacheTTL) {
+module.exports = function(models, credentialCache, cacheTTL) {
 
   var express = require('express');
   var router = express.Router();
   var logger = require('../log/logger');
   var HttpStatus = require('http-status-codes');
-  var credHelper = require('./credentialHelper')(models);
+  var credHelper = require('./credentialHelper')(models, credentialCache, cacheTTL);
 
   router.get('/:app_id/creds', function(req, resp) {
     var appId = req.params.app_id;
@@ -57,18 +57,7 @@ module.exports = function(models,credentialCache, cacheTTL) {
     logger.info('Request for credential validation received', {
       'app_id': appId
     });
-    try {
-      var value = credentialCache.get(appId, true);
-      resp.status(HttpStatus.OK).json({
-        'isValid': value.isValid
-      });
-      return;
-    } 
-    catch (err) {
-      logger.info('Credentials not found in cache', {
-        'app_id': appId, 'err':err
-      });
-      credHelper.validateCredentials(req, function(err, result) {
+    credHelper.validateCredentials(req, function(err, result) {
         var responseBody = {};
         var statusCode;
         if (err) {
@@ -82,12 +71,9 @@ module.exports = function(models,credentialCache, cacheTTL) {
           responseBody = {
             'isValid': result.isValid
           }
-          var isCached = credentialCache.set(appId, responseBody, cacheTTL);
-          logger.info('Credential cached',{ 'app_id':appId, 'isCached':isCached });
         }
         resp.status(statusCode).json(responseBody)
       });
-    }
   });
   return router;
 }

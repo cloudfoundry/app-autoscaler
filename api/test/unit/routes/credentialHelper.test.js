@@ -3,6 +3,7 @@
 var expect = require('chai').expect;
 var fs = require('fs');
 var path = require('path');
+var NodeCache = require('node-cache');
 var settings = require(path.join(__dirname, '../../../lib/config/setting.js'))((JSON.parse(
     fs.readFileSync(path.join(__dirname, '../../../config/settings.json'), 'utf8'))));
 var relativePath = path.relative(process.cwd(), path.join(__dirname, '../../../../test-certs'));
@@ -11,9 +12,10 @@ var API = require('../../../app.js');
 var app;
 var publicApp;
 var servers;
+var credentialCache = new NodeCache();
 var HttpStatus = require('http-status-codes');
 var models = require('../../../lib/models')(settings.db);
-var credHelper = require('../../../lib/routes/credentialHelper')(models);
+var credHelper = require('../../../lib/routes/credentialHelper')(models,credentialCache);
 var credentials = models.credentials;
 
 describe('Credential Management helper ', function() {
