@@ -180,12 +180,12 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 				insertAppInstanceMetric(metric)
 			})
 			Context("instance-index is not provided", func() {
-				It("should get the metrics of instance 0 ", func() {
+				It("should get the metrics of all instances", func() {
 					By("get the 1st page")
 					parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order-direction": "asc", "page": "1", "results-per-page": "2"}
 					result := AppInstanceMetricResult{
-						TotalResults: 3,
-						TotalPages:   2,
+						TotalResults: 5,
+						TotalPages:   3,
 						Page:         1,
 						NextUrl:      getInstanceMetricsUrl(appId, metricType, parameters, 2),
 						Resources: []models.AppInstanceMetric{
@@ -200,12 +200,12 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 							},
 							models.AppInstanceMetric{
 								AppId:         appId,
-								InstanceIndex: 0,
+								InstanceIndex: 1,
 								CollectedAt:   111111,
 								Name:          models.MetricNameMemoryUsed,
 								Unit:          models.UnitMegaBytes,
 								Value:         "123456",
-								Timestamp:     555555,
+								Timestamp:     444444,
 							},
 						},
 					}
@@ -216,10 +216,42 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 					By("get the 2nd page")
 					parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order-direction": "asc", "page": "2", "results-per-page": "2"}
 					result = AppInstanceMetricResult{
-						TotalResults: 3,
-						TotalPages:   2,
+						TotalResults: 5,
+						TotalPages:   3,
 						Page:         2,
 						PrevUrl:      getInstanceMetricsUrl(appId, metricType, parameters, 1),
+						NextUrl:      getInstanceMetricsUrl(appId, metricType, parameters, 3),
+						Resources: []models.AppInstanceMetric{
+							models.AppInstanceMetric{
+								AppId:         appId,
+								InstanceIndex: 0,
+								CollectedAt:   111111,
+								Name:          models.MetricNameMemoryUsed,
+								Unit:          models.UnitMegaBytes,
+								Value:         "123456",
+								Timestamp:     555555,
+							},
+							models.AppInstanceMetric{
+								AppId:         appId,
+								InstanceIndex: 1,
+								CollectedAt:   111111,
+								Name:          models.MetricNameMemoryUsed,
+								Unit:          models.UnitMegaBytes,
+								Value:         "123456",
+								Timestamp:     555555,
+							},
+						},
+					}
+					By("check public api")
+					checkAppInstanceMetricResult(pathVariables, parameters, result)
+
+					By("get the 3rd page")
+					parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order-direction": "asc", "page": "3", "results-per-page": "2"}
+					result = AppInstanceMetricResult{
+						TotalResults: 5,
+						TotalPages:   3,
+						Page:         3,
+						PrevUrl:      getInstanceMetricsUrl(appId, metricType, parameters, 2),
 						Resources: []models.AppInstanceMetric{
 							models.AppInstanceMetric{
 								AppId:         appId,
@@ -235,13 +267,24 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 					By("check public api")
 					checkAppInstanceMetricResult(pathVariables, parameters, result)
 
-					By("the 3rd page should be empty")
-					parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order-direction": "asc", "page": "3", "results-per-page": "2"}
+					By("the 4th page should be empty")
+					parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order-direction": "asc", "page": "4", "results-per-page": "2"}
 					result = AppInstanceMetricResult{
-						TotalResults: 3,
-						TotalPages:   2,
-						Page:         3,
-						PrevUrl:      getInstanceMetricsUrl(appId, metricType, parameters, 2),
+						TotalResults: 5,
+						TotalPages:   3,
+						Page:         4,
+						PrevUrl:      getInstanceMetricsUrl(appId, metricType, parameters, 3),
+						Resources:    []models.AppInstanceMetric{},
+					}
+					By("check public api")
+					checkAppInstanceMetricResult(pathVariables, parameters, result)
+
+					By("the 5th page should be empty")
+					parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order-direction": "asc", "page": "5", "results-per-page": "2"}
+					result = AppInstanceMetricResult{
+						TotalResults: 5,
+						TotalPages:   3,
+						Page:         5,
 						Resources:    []models.AppInstanceMetric{},
 					}
 					By("check public api")

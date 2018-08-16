@@ -57,6 +57,13 @@ func (h *MetricHandler) GetMetricHistories(w http.ResponseWriter, r *http.Reques
 				Message: "Error parsing instanceIndex"})
 			return
 		}
+		if instanceIndex < 0 {
+			h.logger.Error("get-metric-histories-parse-instance-index", err, lager.Data{"instanceIndex": instanceIndexParam})
+			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
+				Code:    "Bad-Request",
+				Message: "InstanceIndex must be greater than or equal to 0"})
+			return
+		}
 	} else if len(instanceIndexParam) > 1 {
 		h.logger.Error("get-metric-histories-get-instance-index", err, lager.Data{"instanceIndex": instanceIndexParam})
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{

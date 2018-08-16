@@ -75,20 +75,18 @@ describe("metricHelper", function() {
 
     context("validate instance-index", function() {
       context("instance-index is undefined", function() {
-        it("return true with default instance-index 0", function() {
+        it("return true", function() {
           delete requestObj.query["instance-index"];
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(true);
-          expect(validateResult.parameters.instanceIndex).to.equal(0);
         });
       });
 
       context("instance-index is null", function() {
-        it("return true with default instance-index 0", function() {
+        it("return true", function() {
           requestObj.query["instance-index"] = null;
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(true);
-          expect(validateResult.parameters.instanceIndex).to.equal(0);
         });
       });
 
@@ -98,6 +96,15 @@ describe("metricHelper", function() {
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(false);
           expect(validateResult.message).to.equal("instance-index must be an integer");
+        });
+      });
+
+      context("instance-index is smaller than 0", function() {
+        it("return false", function() {
+          requestObj.query["instance-index"] = -1;
+          validateResult = helper.parseParameter(requestObj);
+          expect(validateResult.valid).to.equal(false);
+          expect(validateResult.message).to.equal("instance-index must be greater than or equal to 0");
         });
       });
     });

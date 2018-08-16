@@ -93,6 +93,27 @@ var _ = Describe("MetricHandler", func() {
 				})
 			})
 
+			Context("when instanceindex time is smaller than 0", func() {
+				BeforeEach(func() {
+					req, err = http.NewRequest(http.MethodGet, testUrlMetricHistories+"?instanceindex=-1", nil)
+					Expect(err).ToNot(HaveOccurred())
+
+				})
+
+				It("returns 400", func() {
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
+
+					errJson := &models.ErrorResponse{}
+					err = json.Unmarshal(resp.Body.Bytes(), errJson)
+
+					Expect(err).ToNot(HaveOccurred())
+					Expect(errJson).To(Equal(&models.ErrorResponse{
+						Code:    "Bad-Request",
+						Message: "InstanceIndex must be greater than or equal to 0",
+					}))
+				})
+			})
+
 			Context("when there are multiple start pararmeters in query string", func() {
 				BeforeEach(func() {
 					req, err = http.NewRequest(http.MethodGet, testUrlMetricHistories+"?start=123&start=231", nil)
