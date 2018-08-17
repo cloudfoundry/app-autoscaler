@@ -72,7 +72,7 @@ var _ = Describe("MetricHandler", func() {
 				})
 			})
 
-			Context("when instanceindex time is not a number", func() {
+			Context("when instanceindex is not a number", func() {
 				BeforeEach(func() {
 					req, err = http.NewRequest(http.MethodGet, testUrlMetricHistories+"?instanceindex=abc", nil)
 					Expect(err).ToNot(HaveOccurred())
@@ -93,7 +93,7 @@ var _ = Describe("MetricHandler", func() {
 				})
 			})
 
-			Context("when instanceindex time is smaller than 0", func() {
+			Context("when instanceindex is smaller than 0", func() {
 				BeforeEach(func() {
 					req, err = http.NewRequest(http.MethodGet, testUrlMetricHistories+"?instanceindex=-1", nil)
 					Expect(err).ToNot(HaveOccurred())
