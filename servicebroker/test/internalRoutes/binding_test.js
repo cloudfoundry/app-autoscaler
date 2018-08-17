@@ -35,7 +35,7 @@ function initNockBind(statusCode) {
 
 function initNockBindWithCred(statusCode) {
   scope = nock(settings.apiserver.uri)
-    .get(/\/v1\/apps\/.*\/creds/)
+    .post(/\/v1\/apps\/.*\/credentials/)
     .reply(statusCode, {
       'success': true,
       'error': null,

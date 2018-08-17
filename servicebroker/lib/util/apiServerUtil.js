@@ -29,7 +29,7 @@ module.exports = function(settings) {
   var credentialOptions = function(appId){
     var options = { 
       timeout: settings.httpRequestTimeout,
-      uri: settings.apiserver.uri + '/v1/apps/' + appId + '/creds',
+      uri: settings.apiserver.uri + '/v1/apps/' + appId + '/credentials',
     };
     if(settings.apiserver.tls){
       var apiserverTLSOptions = {
@@ -48,7 +48,7 @@ module.exports = function(settings) {
     var appId = parameters.appId;
     var options = { 
       timeout: settings.httpRequestTimeout,
-      uri: settings.apiserver.uri + '/v1/apps/' + appId + '/creds/validate',
+      uri: settings.apiserver.uri + '/v1/apps/' + appId + '/credentials/validate',
       qs: { "username": parameters.username, "password":parameters.password }
     };
     if(settings.apiserver.tls){
@@ -78,7 +78,7 @@ module.exports = function(settings) {
   };
   apiUtil.getCreds = function(appId, callback){
     var options = credentialOptions(appId);
-    request(options,function(error, response, body){
+    request.post(options,function(error, response, body){
       callback(error,response);
     });
   };
@@ -92,7 +92,7 @@ module.exports = function(settings) {
 
   apiUtil.validateCreds = function(parameters, callback){
     var options = credentialValidateOptions(parameters);
-    request(options,function(error, response, body){
+    request.post(options,function(error, response, body){
       callback(error,response);
     });
   };

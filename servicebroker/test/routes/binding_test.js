@@ -36,7 +36,7 @@ function initNockBind(statusCode) {
 
 function initNockBindWithCred(statusCode) {
   scope = nock(settings.apiserver.uri)
-    .get(/\/v1\/apps\/.*\/creds/)
+    .post(/\/v1\/apps\/.*\/credentials/)
     .reply(statusCode, {
       'success': true,
       'error': null,
@@ -50,13 +50,13 @@ var mockError = {
 
 function initNockBindWithCredError(statusCode) {
   scope = nock(settings.apiserver.uri)
-    .get(/\/v1\/apps\/.*\/creds/)
+    .post(/\/v1\/apps\/.*\/credentials/)
     .replyWithError(mockError);
 }
 
 function initNockUnbindWithCred(statusCode) {
   scope = nock(settings.apiserver.uri)
-    .delete(/\/v1\/apps\/.*\/creds/)
+    .delete(/\/v1\/apps\/.*\/credentials/)
     .reply(statusCode, {
       'success': true,
       'error': null,
@@ -66,7 +66,7 @@ function initNockUnbindWithCred(statusCode) {
 
 function initNockUnbindWithCredError(statusCode) {
   scope = nock(settings.apiserver.uri)
-    .delete(/\/v1\/apps\/.*\/creds/)
+    .delete(/\/v1\/apps\/.*\/credentials/)
     .replyWithError(mockError);
 }
 

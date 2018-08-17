@@ -43,7 +43,7 @@ describe('Custom Metrics Credential Management', function() {
   context('create credentials when credentials does not exists', function() {
     it('should return 201', function(done) {
       request(app)
-        .get('/v1/apps/12345/creds')
+        .post('/v1/apps/12345/credentials')
         .end(function(error, result) {
           expect(error).to.equal(null);
           expect(result.statusCode).to.equal(201);
@@ -62,7 +62,7 @@ describe('Custom Metrics Credential Management', function() {
   context('update credentials when credentials already exists', function() {
     beforeEach(function(done) {
       request(app)
-      .get('/v1/apps/12345/creds')
+      .post('/v1/apps/12345/credentials')
       .end(function(error, result) {
         expect(error).to.equal(null);
         expect(result.statusCode).to.equal(201);
@@ -71,7 +71,7 @@ describe('Custom Metrics Credential Management', function() {
     });
     it('should return 200', function(done) {
       request(app)
-      .get('/v1/apps/12345/creds')
+      .post('/v1/apps/12345/credentials')
       .end(function(error, result) {
         expect(error).to.equal(null);
         expect(result.statusCode).to.equal(200);
@@ -90,7 +90,7 @@ describe('Custom Metrics Credential Management', function() {
   context('delete credentials when credentials does not exists', function() {
     it('should return 404', function(done) {
       request(app)
-      .delete('/v1/apps/12345/creds')
+      .delete('/v1/apps/12345/credentials')
       .end(function(error, result) {
         expect(error).to.equal(null);
         expect(result.statusCode).to.equal(404);
@@ -102,14 +102,14 @@ describe('Custom Metrics Credential Management', function() {
   context('delete credentials when credentials exists', function() {
     beforeEach(function(done) {
       request(app)
-      .get('/v1/apps/12345/creds')
+      .post('/v1/apps/12345/credentials')
       .end(function(error, result) {
         done();
       });
     });
     it('should return 200', function(done) {
       request(app)
-      .delete('/v1/apps/12345/creds')
+      .delete('/v1/apps/12345/credentials')
       .end(function(error, result) {
         expect(error).to.equal(null);
         expect(result.statusCode).to.equal(200);
@@ -129,7 +129,7 @@ describe('Custom Metrics Credential Management', function() {
     var username, password;
     beforeEach(function(done) {
       request(app)
-      .get('/v1/apps/12345/creds')
+      .post('/v1/apps/12345/credentials')
       .end(function(error, result) {
         username = result.body.username;
         password = result.body.password;
@@ -141,7 +141,7 @@ describe('Custom Metrics Credential Management', function() {
     });
     it('should return 200 while returning non-cached credentials', function(done) {
       request(app)
-      .get('/v1/apps/12345/creds/validate')
+      .post('/v1/apps/12345/credentials/validate')
       .query({
         'username': username,
         'password': password
@@ -155,14 +155,14 @@ describe('Custom Metrics Credential Management', function() {
     });
     it('should return 200 while returning cached credentials', function(done) {
       request(app)
-      .get('/v1/apps/12345/creds/validate')
+      .post('/v1/apps/12345/credentials/validate')
       .query({
         'username': username,
         'password': password
       })
       .end(function(error, result) {
         request(app)
-        .get('/v1/apps/12345/creds/validate')
+        .post('/v1/apps/12345/credentials/validate')
         .query({
           'username': username,
           'password': password
@@ -179,7 +179,7 @@ describe('Custom Metrics Credential Management', function() {
 
     it('should return 200 for invalid username', function(done) {
       request(app)
-      .get('/v1/apps/12345/creds/validate')
+      .post('/v1/apps/12345/credentials/validate')
       .query({
         'username': 'username1',
         'password': password
@@ -194,7 +194,7 @@ describe('Custom Metrics Credential Management', function() {
 
     it('should return 404 if credential does not exist', function(done) {
       request(app)
-      .get('/v1/apps/123456/creds/validate')
+      .post('/v1/apps/123456/credentials/validate')
       .query({
         'username': username,
         'password': password
@@ -208,7 +208,7 @@ describe('Custom Metrics Credential Management', function() {
 
     it('should return 500 if query parameters not available', function(done) {
       request(app)
-      .get('/v1/apps/12345/creds/validate')
+      .post('/v1/apps/12345/credentials/validate')
       .end(function(error, result) {
         expect(error).to.equal(null);
         expect(result.statusCode).to.equal(500);
@@ -219,7 +219,7 @@ describe('Custom Metrics Credential Management', function() {
 
     it('should return 500 if required parameter not sent', function(done) {
       request(app)
-      .get('/v1/apps/12345/creds/validate')
+      .post('/v1/apps/12345/credentials/validate')
       .query({
         'username': username
       })

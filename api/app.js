@@ -106,6 +106,7 @@ module.exports = function(settings, credentialCache, callback) {
   var aggregatedMetrics = require('./lib/routes/aggregated_metrics')(settings);
   var creds = require('./lib/routes/credentials')(models,credentialCache,settings.cacheTTL);
   app.use('/v1/apps',policies);
+  app.use('/v1/apps',creds);
   app.use(function(err, req, res, next) {
     var errorResponse = {};
     if (err) {
@@ -154,7 +155,6 @@ module.exports = function(settings, credentialCache, callback) {
   publicApp.use('/v1/apps',scalingHistories);
   publicApp.use('/v1/apps',metrics);
   publicApp.use('/v1/apps',aggregatedMetrics);
-  app.use('/v1/apps',creds);
   publicApp.use(function(err, req, res, next) {
     var errorResponse = {};
     if (err) {

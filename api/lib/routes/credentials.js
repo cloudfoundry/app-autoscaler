@@ -4,10 +4,9 @@ module.exports = function(models, credentialCache, cacheTTL) {
   var express = require('express');
   var router = express.Router();
   var logger = require('../log/logger');
-  var HttpStatus = require('http-status-codes');
   var credHelper = require('./credentialHelper')(models, credentialCache, cacheTTL);
 
-  router.get('/:app_id/creds', function(req, resp) {
+  router.post('/:app_id/credentials', function(req, resp) {
     var appId = req.params.app_id;
     logger.info('Request for credentials creation received', {
       'app_id': appId
@@ -20,7 +19,7 @@ module.exports = function(models, credentialCache, cacheTTL) {
         responseBody = {
           'error': err.message
         };
-      } 
+      }
       else {
         statusCode = result.statusCode;
         responseBody = {
@@ -32,7 +31,7 @@ module.exports = function(models, credentialCache, cacheTTL) {
     });
   });
 
-  router.delete('/:app_id/creds', function(req, res) {
+  router.delete('/:app_id/credentials', function(req, res) {
     logger.info('Request for credentials deletion received', {
       'app_id': req.params.app_id
     });
@@ -44,7 +43,7 @@ module.exports = function(models, credentialCache, cacheTTL) {
         responseBody = {
           'error': err.message
         };
-      } 
+      }
       else {
         statusCode = result.statusCode;
       }
@@ -52,28 +51,28 @@ module.exports = function(models, credentialCache, cacheTTL) {
     });
   });
 
-  router.get('/:app_id/creds/validate', function(req, resp) {
+  router.post('/:app_id/credentials/validate', function(req, resp) {
     var appId = req.params.app_id;
     logger.info('Request for credential validation received', {
       'app_id': appId
     });
     credHelper.validateCredentials(req, function(err, result) {
-        var responseBody = {};
-        var statusCode;
-        if (err) {
-          statusCode = err.statusCode;
-          responseBody = {
-            'error': err.message
-          };
-        } 
-        else {
-          statusCode = result.statusCode;
-          responseBody = {
-            'isValid': result.isValid
-          }
+      var responseBody = {};
+      var statusCode;
+      if (err) {
+        statusCode = err.statusCode;
+        responseBody = {
+          'error': err.message
+        };
+      }
+      else {
+        statusCode = result.statusCode;
+        responseBody = {
+          'isValid': result.isValid
         }
-        resp.status(statusCode).json(responseBody)
-      });
+      }
+      resp.status(statusCode).json(responseBody)
+    });
   });
   return router;
 }

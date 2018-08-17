@@ -24,14 +24,15 @@ module.exports = function(models, credentialCache, cacheTTL) {
   credhelper.createOrUpdateCredentials = function(req, callback) {
     var username = uuidv4();
     var password = uuidv4();
+    var appId = req.params.app_id;
     models.credentials.upsert({
       id: req.params.app_id,
       username: generateHash(username),
       password: generateHash(password)
-    }).then(function(updatedData) {
-      if (updatedData) {
+    }).then(function(createdData) {
+      if (createdData) {
         logger.info('New credentials hasbeen generated successfully', {
-          'app_id': req.params.app_id
+          'app_id': appId
         });
         callback(null, {
           'statusCode': HttpStatus.CREATED,
@@ -41,8 +42,14 @@ module.exports = function(models, credentialCache, cacheTTL) {
       }
       else {
         logger.info('Existing credentials hasbeen updated successfully', {
-          'app_id': req.params.app_id
+          'app_id': appId
         });
+        var deleted = credentialCache.del(appId);
+        if (deleted != 1) {
+          logger.info('Cache invalidation failed', {
+            'app_id': appId
+          });
+        }
         callback(null, {
           'statusCode': HttpStatus.OK,
           'username': username,
@@ -51,7 +58,7 @@ module.exports = function(models, credentialCache, cacheTTL) {
       }
     }).catch(function(error) {
       logger.error('Failed to create custom metrics credentials', {
-        'app_id': req.params.app_id,
+        'app_id': appId,
         'error': error
       });
       error.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
@@ -70,6 +77,12 @@ module.exports = function(models, credentialCache, cacheTTL) {
         logger.info('Successfully deleted the custom metrics credentials for application', {
           'app id': appId
         });
+        var deleted = credentialCache.del(appId);
+        if (deleted != 1) {
+          logger.info('Cache invalidation failed', {
+            'app_id': appId
+          });
+        }
         callback(null, {
           'statusCode': HttpStatus.OK
         });

@@ -15,7 +15,7 @@ var servers;
 var credentialCache = new NodeCache();
 var HttpStatus = require('http-status-codes');
 var models = require('../../../lib/models')(settings.db);
-var credHelper = require('../../../lib/routes/credentialHelper')(models,credentialCache);
+var credHelper = require('../../../lib/routes/credentialHelper')(models,credentialCache,settings.cacheTTL);
 var credentials = models.credentials;
 
 describe('Credential Management helper ', function() {
