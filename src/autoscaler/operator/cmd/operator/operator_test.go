@@ -180,7 +180,7 @@ var _ = Describe("Operator", func() {
 		Context("with missing/invalid configuration", func() {
 			BeforeEach(func() {
 
-				cfg.InstanceMetricsDb.CutoffDays = -1
+				cfg.InstanceMetricsDB.CutoffDays = -1
 
 				cfg := writeConfig(&cfg)
 				runner.configPath = cfg.Name()
@@ -227,7 +227,7 @@ var _ = Describe("Operator", func() {
 
 		Context("when connection to instancemetrics db fails", func() {
 			BeforeEach(func() {
-				cfg.InstanceMetricsDb.Db.Url = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
+				cfg.InstanceMetricsDB.DB.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 				cfg := writeConfig(&cfg)
 				runner.configPath = cfg.Name()
 				runner.Start()
@@ -246,7 +246,7 @@ var _ = Describe("Operator", func() {
 
 		Context("when connection to appmetrics db fails", func() {
 			BeforeEach(func() {
-				cfg.AppMetricsDb.Db.Url = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
+				cfg.AppMetricsDB.DB.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 				cfg := writeConfig(&cfg)
 				runner.configPath = cfg.Name()
 				runner.Start()
@@ -265,7 +265,7 @@ var _ = Describe("Operator", func() {
 
 		Context("when connection to scalingengine db fails", func() {
 			BeforeEach(func() {
-				cfg.ScalingEngineDb.Db.Url = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
+				cfg.ScalingEngineDB.DB.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 				cfg := writeConfig(&cfg)
 				runner.configPath = cfg.Name()
 				runner.Start()

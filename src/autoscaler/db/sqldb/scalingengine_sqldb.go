@@ -21,7 +21,7 @@ type ScalingEngineSQLDB struct {
 }
 
 func NewScalingEngineSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*ScalingEngineSQLDB, error) {
-	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.Url)
+	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.URL)
 	if err != nil {
 		logger.Error("open-scaling-engine-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err

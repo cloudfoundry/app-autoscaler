@@ -22,7 +22,7 @@ const (
 )
 
 type DatabaseConfig struct {
-	Url                   string        `yaml:"url"`
+	URL                   string        `yaml:"url"`
 	MaxOpenConnections    int           `yaml:"max_open_connections"`
 	MaxIdleConnections    int           `yaml:"max_idle_connections"`
 	ConnectionMaxLifetime time.Duration `yaml:"connection_max_lifetime"`

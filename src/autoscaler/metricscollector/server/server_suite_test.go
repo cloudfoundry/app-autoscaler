@@ -28,7 +28,7 @@ func TestServer(t *testing.T) {
 
 var _ = BeforeSuite(func() {
 	port := 1111 + GinkgoParallelNode()
-	cfc := &fakes.FakeCfClient{}
+	cfc := &fakes.FakeCFClient{}
 	consumer := &fakes.FakeNoaaConsumer{}
 	conf := &config.Config{
 		Server: config.ServerConfig{

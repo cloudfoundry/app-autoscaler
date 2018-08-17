@@ -122,8 +122,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	wsHandler := testhelpers.NewWebsocketHandler(messagesToSend, 100*time.Millisecond)
 	ccNOAAUAA.RouteToHandler("GET", "/apps/an-app-id/stream", wsHandler.ServeWebsocket)
 
-	cfg.Cf = cf.CfConfig{
-		Api:       ccNOAAUAA.URL(),
+	cfg.CF = cf.CFConfig{
+		API:       ccNOAAUAA.URL(),
 		GrantType: cf.GrantTypePassword,
 		Username:  "admin",
 		Password:  "admin",
@@ -140,14 +140,14 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	cfg.Logging.Level = "info"
 
-	cfg.Db.InstanceMetricsDb = db.DatabaseConfig{
-		Url:                   os.Getenv("DBURL"),
+	cfg.DB.InstanceMetricsDB = db.DatabaseConfig{
+		URL:                   os.Getenv("DBURL"),
 		MaxOpenConnections:    10,
 		MaxIdleConnections:    5,
 		ConnectionMaxLifetime: 10 * time.Second,
 	}
-	cfg.Db.PolicyDb = db.DatabaseConfig{
-		Url:                   os.Getenv("DBURL"),
+	cfg.DB.PolicyDB = db.DatabaseConfig{
+		URL:                   os.Getenv("DBURL"),
 		MaxOpenConnections:    10,
 		MaxIdleConnections:    5,
 		ConnectionMaxLifetime: 10 * time.Second,

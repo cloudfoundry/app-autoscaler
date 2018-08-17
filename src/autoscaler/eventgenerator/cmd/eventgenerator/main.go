@@ -169,7 +169,7 @@ func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan cha
 
 	evaluators := make([]*generator.Evaluator, count)
 	for i := 0; i < count; i++ {
-		evaluators[i] = generator.NewEvaluator(logger, client, conf.ScalingEngine.ScalingEngineUrl, triggersChan, database,
+		evaluators[i] = generator.NewEvaluator(logger, client, conf.ScalingEngine.ScalingEngineURL, triggersChan, database,
 			conf.DefaultBreachDurationSecs, getBreaker, setCoolDownExpired)
 	}
 
@@ -188,7 +188,7 @@ func createMetricPollers(logger lager.Logger, conf *config.Config, appChan chan 
 
 	pollers := make([]*aggregator.MetricPoller, count)
 	for i := 0; i < count; i++ {
-		pollers[i] = aggregator.NewMetricPoller(logger, conf.MetricCollector.MetricCollectorUrl, appChan, client, appMetricChan)
+		pollers[i] = aggregator.NewMetricPoller(logger, conf.MetricCollector.MetricCollectorURL, appChan, client, appMetricChan)
 	}
 
 	return pollers, nil

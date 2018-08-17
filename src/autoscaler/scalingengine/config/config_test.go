@@ -95,13 +95,13 @@ lockSize: 32
 			It("returns the config", func() {
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(conf.Cf.Api).To(Equal("https://api.example.com"))
-				Expect(conf.Cf.GrantType).To(Equal("password"))
-				Expect(conf.Cf.Username).To(Equal("admin"))
-				Expect(conf.Cf.Password).To(Equal("admin"))
-				Expect(conf.Cf.ClientId).To(Equal("client-id"))
-				Expect(conf.Cf.Secret).To(Equal("client-secret"))
-				Expect(conf.Cf.SkipSSLValidation).To(Equal(false))
+				Expect(conf.CF.API).To(Equal("https://api.example.com"))
+				Expect(conf.CF.GrantType).To(Equal("password"))
+				Expect(conf.CF.Username).To(Equal("admin"))
+				Expect(conf.CF.Password).To(Equal("admin"))
+				Expect(conf.CF.ClientID).To(Equal("client-id"))
+				Expect(conf.CF.Secret).To(Equal("client-secret"))
+				Expect(conf.CF.SkipSSLValidation).To(Equal(false))
 
 				Expect(conf.Server.Port).To(Equal(8989))
 				Expect(conf.Server.TLS.KeyFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/server.key"))
@@ -112,23 +112,23 @@ lockSize: 32
 				Expect(conf.Health.EmitInterval).To(Equal(15 * time.Second))
 				Expect(conf.Logging.Level).To(Equal("debug"))
 
-				Expect(conf.Db.PolicyDb).To(Equal(
+				Expect(conf.DB.PolicyDB).To(Equal(
 					db.DatabaseConfig{
-						Url:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+						URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
 						MaxOpenConnections:    10,
 						MaxIdleConnections:    5,
 						ConnectionMaxLifetime: 60 * time.Second,
 					}))
-				Expect(conf.Db.ScalingEngineDb).To(Equal(
+				Expect(conf.DB.ScalingEngineDB).To(Equal(
 					db.DatabaseConfig{
-						Url:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+						URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
 						MaxOpenConnections:    10,
 						MaxIdleConnections:    5,
 						ConnectionMaxLifetime: 60 * time.Second,
 					}))
-				Expect(conf.Db.SchedulerDb).To(Equal(
+				Expect(conf.DB.SchedulerDB).To(Equal(
 					db.DatabaseConfig{
-						Url:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+						URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
 						MaxOpenConnections:    10,
 						MaxIdleConnections:    5,
 						ConnectionMaxLifetime: 60 * time.Second,
@@ -160,29 +160,29 @@ lockSize: 32
 			It("returns default values", func() {
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(conf.Cf.GrantType).To(Equal(cf.GrantTypePassword))
-				Expect(conf.Cf.SkipSSLValidation).To(Equal(false))
+				Expect(conf.CF.GrantType).To(Equal(cf.GrantTypePassword))
+				Expect(conf.CF.SkipSSLValidation).To(Equal(false))
 				Expect(conf.Server.Port).To(Equal(8080))
 				Expect(conf.Health.Port).To(Equal(8081))
 				Expect(conf.Health.EmitInterval).To(Equal(15 * time.Second))
 				Expect(conf.Logging.Level).To(Equal("info"))
-				Expect(conf.Db.PolicyDb).To(Equal(
+				Expect(conf.DB.PolicyDB).To(Equal(
 					db.DatabaseConfig{
-						Url:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+						URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
 						MaxOpenConnections:    0,
 						MaxIdleConnections:    0,
 						ConnectionMaxLifetime: 0 * time.Second,
 					}))
-				Expect(conf.Db.ScalingEngineDb).To(Equal(
+				Expect(conf.DB.ScalingEngineDB).To(Equal(
 					db.DatabaseConfig{
-						Url:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+						URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
 						MaxOpenConnections:    0,
 						MaxIdleConnections:    0,
 						ConnectionMaxLifetime: 0 * time.Second,
 					}))
-				Expect(conf.Db.SchedulerDb).To(Equal(
+				Expect(conf.DB.SchedulerDB).To(Equal(
 					db.DatabaseConfig{
-						Url:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+						URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
 						MaxOpenConnections:    0,
 						MaxIdleConnections:    0,
 						ConnectionMaxLifetime: 0 * time.Second,
@@ -200,7 +200,7 @@ server:
 
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
 			})
 		})
 
@@ -215,7 +215,7 @@ health:
 
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
 			})
 		})
 
@@ -279,7 +279,7 @@ lockSize: 32
 
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
 			})
 		})
 
@@ -328,7 +328,7 @@ lockSize: 32
 
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
 			})
 		})
 
@@ -426,7 +426,7 @@ lockSize: 32
 
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
 			})
 		})
 
@@ -475,7 +475,7 @@ lockSize: 32
 
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
 			})
 		})
 
@@ -572,7 +572,7 @@ lockSize: 32
 
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .*into int")))
 			})
 		})
 
@@ -621,7 +621,7 @@ lockSize: 32
 
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
 			})
 		})
 
@@ -719,7 +719,7 @@ lockSize: 32
 
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
 			})
 		})
 
@@ -768,7 +768,7 @@ lockSize: NOT-INTEGER-VALUE
 
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
 			})
 		})
 
@@ -777,13 +777,13 @@ lockSize: NOT-INTEGER-VALUE
 	Describe("Validate", func() {
 		BeforeEach(func() {
 			conf = &Config{}
-			conf.Cf.Api = "http://api.example.com"
-			conf.Cf.GrantType = cf.GrantTypePassword
-			conf.Cf.SkipSSLValidation = false
-			conf.Cf.Username = "admin"
-			conf.Db.PolicyDb.Url = "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-			conf.Db.ScalingEngineDb.Url = "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-			conf.Db.SchedulerDb.Url = "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+			conf.CF.API = "http://api.example.com"
+			conf.CF.GrantType = cf.GrantTypePassword
+			conf.CF.SkipSSLValidation = false
+			conf.CF.Username = "admin"
+			conf.DB.PolicyDB.URL = "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+			conf.DB.ScalingEngineDB.URL = "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+			conf.DB.SchedulerDB.URL = "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
 			conf.DefaultCoolDownSecs = 300
 			conf.LockSize = 32
 		})
@@ -800,7 +800,7 @@ lockSize: NOT-INTEGER-VALUE
 
 		Context("when cf config is not valid", func() {
 			BeforeEach(func() {
-				conf.Cf.Api = ""
+				conf.CF.API = ""
 			})
 
 			It("should error", func() {
@@ -810,31 +810,31 @@ lockSize: NOT-INTEGER-VALUE
 
 		Context("when policy db url is not set", func() {
 			BeforeEach(func() {
-				conf.Db.PolicyDb.Url = ""
+				conf.DB.PolicyDB.URL = ""
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: Policy DB url is empty")))
+				Expect(err).To(MatchError("Configuration error: db.policy_db.url is empty"))
 			})
 		})
 
 		Context("when scalingengine db url is not set", func() {
 			BeforeEach(func() {
-				conf.Db.ScalingEngineDb.Url = ""
+				conf.DB.ScalingEngineDB.URL = ""
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: ScalingEngine DB url is empty")))
+				Expect(err).To(MatchError("Configuration error: db.scalingengine_db.url is empty"))
 			})
 		})
 
 		Context("when scheduler db url is not set", func() {
 			BeforeEach(func() {
-				conf.Db.SchedulerDb.Url = ""
+				conf.DB.SchedulerDB.URL = ""
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: Scheduler DB url is empty")))
+				Expect(err).To(MatchError("Configuration error: db.scheduler_db.url is empty"))
 			})
 		})
 
@@ -844,7 +844,7 @@ lockSize: NOT-INTEGER-VALUE
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: DefaultCoolDownSecs should be between 60 and 3600")))
+				Expect(err).To(MatchError("Configuration error: DefaultCoolDownSecs should be between 60 and 3600"))
 			})
 		})
 
@@ -854,7 +854,7 @@ lockSize: NOT-INTEGER-VALUE
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: DefaultCoolDownSecs should be between 60 and 3600")))
+				Expect(err).To(MatchError("Configuration error: DefaultCoolDownSecs should be between 60 and 3600"))
 			})
 		})
 
@@ -864,7 +864,7 @@ lockSize: NOT-INTEGER-VALUE
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: LockSize is less than or equal to 0")))
+				Expect(err).To(MatchError("Configuration error: LockSize is less than or equal to 0"))
 			})
 		})
 	})

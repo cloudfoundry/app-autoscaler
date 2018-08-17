@@ -25,7 +25,7 @@ const (
 	CollectMethodStreaming = "streaming"
 )
 
-var defaultCfConfig = cf.CfConfig{
+var defaultCFConfig = cf.CFConfig{
 	GrantType:         cf.GrantTypePassword,
 	SkipSSLValidation: false,
 }
@@ -45,9 +45,9 @@ var defaultLoggingConfig = helpers.LoggingConfig{
 	Level: DefaultLoggingLevel,
 }
 
-type DbConfig struct {
-	PolicyDb          db.DatabaseConfig `yaml:"policy_db"`
-	InstanceMetricsDb db.DatabaseConfig `yaml:"instance_metrics_db"`
+type DBConfig struct {
+	PolicyDB          db.DatabaseConfig `yaml:"policy_db"`
+	InstanceMetricsDB db.DatabaseConfig `yaml:"instance_metrics_db"`
 }
 
 type CollectorConfig struct {
@@ -65,16 +65,16 @@ var defaultCollectorConfig = CollectorConfig{
 }
 
 type Config struct {
-	Cf        cf.CfConfig           `yaml:"cf"`
+	CF        cf.CFConfig           `yaml:"cf"`
 	Logging   helpers.LoggingConfig `yaml:"logging"`
 	Server    ServerConfig          `yaml:"server"`
-	Db        DbConfig              `yaml:"db"`
+	DB        DBConfig              `yaml:"db"`
 	Collector CollectorConfig       `yaml:"collector"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
 	conf := &Config{
-		Cf:        defaultCfConfig,
+		CF:        defaultCFConfig,
 		Logging:   defaultLoggingConfig,
 		Server:    defaultServerConfig,
 		Collector: defaultCollectorConfig,
@@ -90,7 +90,7 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		return nil, err
 	}
 
-	conf.Cf.GrantType = strings.ToLower(conf.Cf.GrantType)
+	conf.CF.GrantType = strings.ToLower(conf.CF.GrantType)
 	conf.Logging.Level = strings.ToLower(conf.Logging.Level)
 	conf.Collector.CollectMethod = strings.ToLower(conf.Collector.CollectMethod)
 
@@ -98,37 +98,37 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 }
 
 func (c *Config) Validate() error {
-	err := c.Cf.Validate()
+	err := c.CF.Validate()
 	if err != nil {
 		return err
 	}
 
-	if c.Db.PolicyDb.Url == "" {
-		return fmt.Errorf("Configuration error: Policy DB url is empty")
+	if c.DB.PolicyDB.URL == "" {
+		return fmt.Errorf("Configuration error: db.policy_db.url is empty")
 	}
 
-	if c.Db.InstanceMetricsDb.Url == "" {
-		return fmt.Errorf("Configuration error: InstanceMetrics DB url is empty")
+	if c.DB.InstanceMetricsDB.URL == "" {
+		return fmt.Errorf("Configuration error: db.instance_metrics_db.url is empty")
 	}
 
 	if c.Collector.CollectInterval == time.Duration(0) {
-		return fmt.Errorf("Configuration error: CollectInterval is 0")
+		return fmt.Errorf("Configuration error: collector.collect_interval is 0")
 	}
 
 	if c.Collector.RefreshInterval == time.Duration(0) {
-		return fmt.Errorf("Configuration error: RefreshInterval is 0")
+		return fmt.Errorf("Configuration error: collector.refresh_interval is 0")
 	}
 
 	if c.Collector.SaveInterval == time.Duration(0) {
-		return fmt.Errorf("Configuration error: SaveInterval is 0")
+		return fmt.Errorf("Configuration error: collector.save_interval is 0")
 	}
 
 	if (c.Collector.CollectMethod != CollectMethodPolling) && (c.Collector.CollectMethod != CollectMethodStreaming) {
-		return fmt.Errorf("Configuration error: invalid collecting method")
+		return fmt.Errorf("Configuration error: invalid collector.collect_method")
 	}
 
 	if (c.Server.NodeIndex >= len(c.Server.NodeAddrs)) || (c.Server.NodeIndex < 0) {
-		return fmt.Errorf("Configuration error: node_index out of range")
+		return fmt.Errorf("Configuration error: server.node_index out of range")
 	}
 	return nil
 

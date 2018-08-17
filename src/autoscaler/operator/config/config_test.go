@@ -114,7 +114,8 @@ lock:
   consul_cluster_config: "http://127.0.0.1:8500"
 db_lock:
   ttl: 15s
-  url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
   retry_interval: 5s
 enable_db_lock: false
 `)
@@ -125,32 +126,32 @@ enable_db_lock: false
 
 				Expect(conf.Logging.Level).To(Equal("debug"))
 
-				Expect(conf.InstanceMetricsDb.Db).To(Equal(db.DatabaseConfig{
-					Url:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+				Expect(conf.InstanceMetricsDB.DB).To(Equal(db.DatabaseConfig{
+					URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
 					MaxOpenConnections:    10,
 					MaxIdleConnections:    5,
 					ConnectionMaxLifetime: 60 * time.Second,
 				}))
-				Expect(conf.InstanceMetricsDb.RefreshInterval).To(Equal(12 * time.Hour))
-				Expect(conf.InstanceMetricsDb.CutoffDays).To(Equal(20))
+				Expect(conf.InstanceMetricsDB.RefreshInterval).To(Equal(12 * time.Hour))
+				Expect(conf.InstanceMetricsDB.CutoffDays).To(Equal(20))
 
-				Expect(conf.AppMetricsDb.Db).To(Equal(db.DatabaseConfig{
-					Url:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+				Expect(conf.AppMetricsDB.DB).To(Equal(db.DatabaseConfig{
+					URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
 					MaxOpenConnections:    10,
 					MaxIdleConnections:    5,
 					ConnectionMaxLifetime: 60 * time.Second,
 				}))
-				Expect(conf.AppMetricsDb.RefreshInterval).To(Equal(10 * time.Hour))
-				Expect(conf.AppMetricsDb.CutoffDays).To(Equal(15))
+				Expect(conf.AppMetricsDB.RefreshInterval).To(Equal(10 * time.Hour))
+				Expect(conf.AppMetricsDB.CutoffDays).To(Equal(15))
 
-				Expect(conf.ScalingEngineDb.Db).To(Equal(db.DatabaseConfig{
-					Url:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+				Expect(conf.ScalingEngineDB.DB).To(Equal(db.DatabaseConfig{
+					URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
 					MaxOpenConnections:    10,
 					MaxIdleConnections:    5,
 					ConnectionMaxLifetime: 60 * time.Second,
 				}))
-				Expect(conf.ScalingEngineDb.RefreshInterval).To(Equal(36 * time.Hour))
-				Expect(conf.ScalingEngineDb.CutoffDays).To(Equal(30))
+				Expect(conf.ScalingEngineDB.RefreshInterval).To(Equal(36 * time.Hour))
+				Expect(conf.ScalingEngineDB.CutoffDays).To(Equal(30))
 
 				Expect(conf.Lock.LockTTL).To(Equal(15 * time.Second))
 				Expect(conf.Lock.LockRetryInterval).To(Equal(10 * time.Second))
@@ -158,6 +159,7 @@ enable_db_lock: false
 
 				Expect(conf.DBLock.LockTTL).To(Equal(15 * time.Second))
 				Expect(conf.DBLock.LockRetryInterval).To(Equal(5 * time.Second))
+				Expect(conf.DBLock.DB.URL).To(Equal("postgres://postgres:password@localhost/autoscaler?sslmode=disable"))
 				Expect(conf.EnableDBLock).To(BeFalse())
 			})
 		})
@@ -182,30 +184,30 @@ scaling_engine_db:
 
 				Expect(conf.Logging.Level).To(Equal(config.DefaultLoggingLevel))
 
-				Expect(conf.InstanceMetricsDb.Db).To(Equal(db.DatabaseConfig{
-					Url:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+				Expect(conf.InstanceMetricsDB.DB).To(Equal(db.DatabaseConfig{
+					URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
 					MaxOpenConnections:    0,
 					MaxIdleConnections:    0,
 					ConnectionMaxLifetime: 0 * time.Second,
 				}))
-				Expect(conf.InstanceMetricsDb.RefreshInterval).To(Equal(config.DefaultRefreshInterval))
-				Expect(conf.InstanceMetricsDb.CutoffDays).To(Equal(config.DefaultCutoffDays))
-				Expect(conf.AppMetricsDb.Db).To(Equal(db.DatabaseConfig{
-					Url:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+				Expect(conf.InstanceMetricsDB.RefreshInterval).To(Equal(config.DefaultRefreshInterval))
+				Expect(conf.InstanceMetricsDB.CutoffDays).To(Equal(config.DefaultCutoffDays))
+				Expect(conf.AppMetricsDB.DB).To(Equal(db.DatabaseConfig{
+					URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
 					MaxOpenConnections:    0,
 					MaxIdleConnections:    0,
 					ConnectionMaxLifetime: 0 * time.Second,
 				}))
-				Expect(conf.AppMetricsDb.RefreshInterval).To(Equal(config.DefaultRefreshInterval))
-				Expect(conf.AppMetricsDb.CutoffDays).To(Equal(config.DefaultCutoffDays))
-				Expect(conf.ScalingEngineDb.Db).To(Equal(db.DatabaseConfig{
-					Url:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+				Expect(conf.AppMetricsDB.RefreshInterval).To(Equal(config.DefaultRefreshInterval))
+				Expect(conf.AppMetricsDB.CutoffDays).To(Equal(config.DefaultCutoffDays))
+				Expect(conf.ScalingEngineDB.DB).To(Equal(db.DatabaseConfig{
+					URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
 					MaxOpenConnections:    0,
 					MaxIdleConnections:    0,
 					ConnectionMaxLifetime: 0 * time.Second,
 				}))
-				Expect(conf.ScalingEngineDb.RefreshInterval).To(Equal(config.DefaultRefreshInterval))
-				Expect(conf.ScalingEngineDb.CutoffDays).To(Equal(config.DefaultCutoffDays))
+				Expect(conf.ScalingEngineDB.RefreshInterval).To(Equal(config.DefaultRefreshInterval))
+				Expect(conf.ScalingEngineDB.CutoffDays).To(Equal(config.DefaultCutoffDays))
 
 				Expect(conf.ScalingEngine.SyncInterval).To(Equal(config.DefaultSyncInterval))
 				Expect(conf.Scheduler.SyncInterval).To(Equal(config.DefaultSyncInterval))
@@ -380,7 +382,7 @@ lock:
 
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
 			})
 		})
 
@@ -436,7 +438,7 @@ lock:
 
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
 			})
 		})
 
@@ -547,7 +549,7 @@ lock:
 
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
 			})
 		})
 
@@ -659,7 +661,7 @@ lock:
 
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
 			})
 		})
 
@@ -715,7 +717,7 @@ lock:
 
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
 			})
 		})
 
@@ -827,7 +829,7 @@ lock:
 
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
 			})
 		})
 
@@ -939,7 +941,7 @@ lock:
 
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
 			})
 		})
 
@@ -995,7 +997,7 @@ lock:
 
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
 			})
 		})
 
@@ -1285,22 +1287,22 @@ lock:
 		BeforeEach(func() {
 			conf = &config.Config{}
 
-			conf.InstanceMetricsDb.Db.Url = "postgres://pqgotest:password@exampl.com/pqgotest"
-			conf.InstanceMetricsDb.RefreshInterval = 12 * time.Hour
-			conf.InstanceMetricsDb.CutoffDays = 30
+			conf.InstanceMetricsDB.DB.URL = "postgres://pqgotest:password@exampl.com/pqgotest"
+			conf.InstanceMetricsDB.RefreshInterval = 12 * time.Hour
+			conf.InstanceMetricsDB.CutoffDays = 30
 
-			conf.AppMetricsDb.Db.Url = "postgres://pqgotest:password@exampl.com/pqgotest"
-			conf.AppMetricsDb.RefreshInterval = 10 * time.Hour
-			conf.AppMetricsDb.CutoffDays = 15
+			conf.AppMetricsDB.DB.URL = "postgres://pqgotest:password@exampl.com/pqgotest"
+			conf.AppMetricsDB.RefreshInterval = 10 * time.Hour
+			conf.AppMetricsDB.CutoffDays = 15
 
-			conf.ScalingEngineDb.Db.Url = "postgres://pqgotest:password@exampl.com/pqgotest"
-			conf.ScalingEngineDb.RefreshInterval = 36 * time.Hour
-			conf.ScalingEngineDb.CutoffDays = 20
+			conf.ScalingEngineDB.DB.URL = "postgres://pqgotest:password@exampl.com/pqgotest"
+			conf.ScalingEngineDB.RefreshInterval = 36 * time.Hour
+			conf.ScalingEngineDB.CutoffDays = 20
 
-			conf.ScalingEngine.Url = "http://localhost:8082"
+			conf.ScalingEngine.URL = "http://localhost:8082"
 			conf.ScalingEngine.SyncInterval = 15 * time.Minute
 
-			conf.Scheduler.Url = "http://localhost:8083"
+			conf.Scheduler.URL = "http://localhost:8083"
 			conf.Scheduler.SyncInterval = 15 * time.Minute
 
 			conf.Lock.LockTTL = 15 * time.Second
@@ -1322,121 +1324,121 @@ lock:
 		Context("when InstanceMetrics db url is not set", func() {
 
 			BeforeEach(func() {
-				conf.InstanceMetricsDb.Db.Url = ""
+				conf.InstanceMetricsDB.DB.URL = ""
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: InstanceMetrics DB url is empty")))
+				Expect(err).To(MatchError("Configuration error: instance_metrics_db.db.url is empty"))
 			})
 		})
 
 		Context("when AppMetrics db url is not set", func() {
 
 			BeforeEach(func() {
-				conf.AppMetricsDb.Db.Url = ""
+				conf.AppMetricsDB.DB.URL = ""
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: AppMetrics DB url is empty")))
+				Expect(err).To(MatchError("Configuration error: app_metrics_db.db.url is empty"))
 			})
 		})
 
 		Context("when ScalingEngine db url is not set", func() {
 
 			BeforeEach(func() {
-				conf.ScalingEngineDb.Db.Url = ""
+				conf.ScalingEngineDB.DB.URL = ""
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: ScalingEngine DB url is empty")))
+				Expect(err).To(MatchError("Configuration error: scaling_engine_db.db.url is empty"))
 			})
 		})
 
 		Context("when InstanceMetrics db refresh interval in hours is set to a negative value", func() {
 
 			BeforeEach(func() {
-				conf.InstanceMetricsDb.RefreshInterval = -1
+				conf.InstanceMetricsDB.RefreshInterval = -1
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: InstanceMetrics DB refresh interval is less than or equal to 0")))
+				Expect(err).To(MatchError("Configuration error: instance_metrics_db.refresh_interval is less than or equal to 0"))
 			})
 		})
 
 		Context("when AppMetrics db refresh interval in hours is set to a negative value", func() {
 
 			BeforeEach(func() {
-				conf.AppMetricsDb.RefreshInterval = -1
+				conf.AppMetricsDB.RefreshInterval = -1
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: AppMetrics DB refresh interval is less than or equal to 0")))
+				Expect(err).To(MatchError("Configuration error: app_metrics_db.refresh_interval is less than or equal to 0"))
 			})
 		})
 
 		Context("when ScalingEngine db refresh interval in hours is set to a negative value", func() {
 
 			BeforeEach(func() {
-				conf.ScalingEngineDb.RefreshInterval = -1
+				conf.ScalingEngineDB.RefreshInterval = -1
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: ScalingEngine DB refresh interval is less than or equal to 0")))
+				Expect(err).To(MatchError("Configuration error: scaling_engine_db.refresh_interval is less than or equal to 0"))
 			})
 		})
 
 		Context("when InstanceMetrics db cutoff days is set to a negative value", func() {
 
 			BeforeEach(func() {
-				conf.InstanceMetricsDb.CutoffDays = -1
+				conf.InstanceMetricsDB.CutoffDays = -1
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: InstanceMetrics DB cutoff days is less than or equal to 0")))
+				Expect(err).To(MatchError("Configuration error: instance_metrics_db.cutoff_days is less than or equal to 0"))
 			})
 		})
 
 		Context("when AppMetrics db cutoff days is set to a negative value", func() {
 
 			BeforeEach(func() {
-				conf.AppMetricsDb.CutoffDays = -1
+				conf.AppMetricsDB.CutoffDays = -1
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: AppMetrics DB cutoff days is less than or equal to 0")))
+				Expect(err).To(MatchError("Configuration error: app_metrics_db.cutoff_days is less than or equal to 0"))
 			})
 		})
 
 		Context("when ScalingEngine db cutoff days is set to a negative value", func() {
 
 			BeforeEach(func() {
-				conf.ScalingEngineDb.CutoffDays = -1
+				conf.ScalingEngineDB.CutoffDays = -1
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: ScalingEngine DB cutoff days is less than or equal to 0")))
+				Expect(err).To(MatchError("Configuration error: scaling_engine_db.cutoff_days is less than or equal to 0"))
 			})
 		})
 
 		Context("when ScalingEngine url is not set", func() {
 
 			BeforeEach(func() {
-				conf.ScalingEngine.Url = ""
+				conf.ScalingEngine.URL = ""
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: ScalingEngine url is empty")))
+				Expect(err).To(MatchError("Configuration error: scaling_engine.scaling_engine_url is empty"))
 			})
 		})
 
 		Context("when Scheduler url is not set", func() {
 
 			BeforeEach(func() {
-				conf.Scheduler.Url = ""
+				conf.Scheduler.URL = ""
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: Scheduler url is empty")))
+				Expect(err).To(MatchError("Configuration error: scheduler.scheduler_url is empty"))
 			})
 		})
 
@@ -1447,7 +1449,7 @@ lock:
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: ScalingEngine sync interval is less than or equal to 0")))
+				Expect(err).To(MatchError("Configuration error: scaling_engine.sync_interval is less than or equal to 0"))
 			})
 		})
 
@@ -1458,7 +1460,7 @@ lock:
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: Scheduler sync interval is less than or equal to 0")))
+				Expect(err).To(MatchError("Configuration error: scheduler.sync_interval is less than or equal to 0"))
 			})
 		})
 
@@ -1469,7 +1471,7 @@ lock:
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: lock ttl is less than or equal to 0")))
+				Expect(err).To(MatchError("Configuration error: lock.lock_ttl is less than or equal to 0"))
 			})
 		})
 
@@ -1480,7 +1482,19 @@ lock:
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: lock retry interval is less than or equal to 0")))
+				Expect(err).To(MatchError("Configuration error: lock.lock_retry_interval is less than or equal to 0"))
+			})
+		})
+
+		Context("when db lock is enabled but db url is empty", func() {
+
+			BeforeEach(func() {
+				conf.EnableDBLock = true
+				conf.DBLock.DB.URL = ""
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError("Configuration error: db_lock.db.url is empty"))
 			})
 		})
 

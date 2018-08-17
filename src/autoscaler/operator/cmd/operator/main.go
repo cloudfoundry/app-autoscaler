@@ -51,26 +51,26 @@ func main() {
 	logger := helpers.InitLoggerFromConfig(&conf.Logging, "operator")
 	prClock := clock.NewClock()
 
-	instanceMetricsDb, err := sqldb.NewInstanceMetricsSQLDB(conf.InstanceMetricsDb.Db, logger.Session("instancemetrics-db"))
+	instanceMetricsDB, err := sqldb.NewInstanceMetricsSQLDB(conf.InstanceMetricsDB.DB, logger.Session("instancemetrics-db"))
 	if err != nil {
-		logger.Error("failed to connect instancemetrics db", err, lager.Data{"dbConfig": conf.InstanceMetricsDb.Db})
+		logger.Error("failed to connect instancemetrics db", err, lager.Data{"dbConfig": conf.InstanceMetricsDB.DB})
 		os.Exit(1)
 	}
-	defer instanceMetricsDb.Close()
+	defer instanceMetricsDB.Close()
 
-	appMetricsDb, err := sqldb.NewAppMetricSQLDB(conf.AppMetricsDb.Db, logger.Session("appmetrics-db"))
+	appMetricsDB, err := sqldb.NewAppMetricSQLDB(conf.AppMetricsDB.DB, logger.Session("appmetrics-db"))
 	if err != nil {
-		logger.Error("failed to connect appmetrics db", err, lager.Data{"dbConfig": conf.AppMetricsDb.Db})
+		logger.Error("failed to connect appmetrics db", err, lager.Data{"dbConfig": conf.AppMetricsDB.DB})
 		os.Exit(1)
 	}
-	defer appMetricsDb.Close()
+	defer appMetricsDB.Close()
 
-	scalingEngineDb, err := sqldb.NewScalingEngineSQLDB(conf.ScalingEngineDb.Db, logger.Session("scalingengine-db"))
+	scalingEngineDB, err := sqldb.NewScalingEngineSQLDB(conf.ScalingEngineDB.DB, logger.Session("scalingengine-db"))
 	if err != nil {
-		logger.Error("failed to connect scalingengine db", err, lager.Data{"dbConfig": conf.ScalingEngineDb.Db})
+		logger.Error("failed to connect scalingengine db", err, lager.Data{"dbConfig": conf.ScalingEngineDB.DB})
 		os.Exit(1)
 	}
-	defer scalingEngineDb.Close()
+	defer scalingEngineDB.Close()
 
 	scalingEngineHttpclient, err := helpers.CreateHTTPClient(&conf.ScalingEngine.TLSClientCerts)
 	if err != nil {
@@ -84,28 +84,28 @@ func main() {
 	}
 
 	loggerSessionName := "instancemetrics-dbpruner"
-	instanceMetricDbPruner := operator.NewInstanceMetricsDbPruner(instanceMetricsDb, conf.InstanceMetricsDb.CutoffDays, prClock, logger.Session(loggerSessionName))
-	instanceMetricsDbOperatorRunner := operator.NewOperatorRunner(instanceMetricDbPruner, conf.InstanceMetricsDb.RefreshInterval, prClock, logger.Session(loggerSessionName))
+	instanceMetricDBPruner := operator.NewInstanceMetricsDbPruner(instanceMetricsDB, conf.InstanceMetricsDB.CutoffDays, prClock, logger.Session(loggerSessionName))
+	instanceMetricsDBOperatorRunner := operator.NewOperatorRunner(instanceMetricDBPruner, conf.InstanceMetricsDB.RefreshInterval, prClock, logger.Session(loggerSessionName))
 
 	loggerSessionName = "appmetrics-dbpruner"
-	appMetricsDbPruner := operator.NewAppMetricsDbPruner(appMetricsDb, conf.AppMetricsDb.CutoffDays, prClock, logger.Session(loggerSessionName))
-	appMetricsDbOperatorRunner := operator.NewOperatorRunner(appMetricsDbPruner, conf.AppMetricsDb.RefreshInterval, prClock, logger.Session(loggerSessionName))
+	appMetricsDBPruner := operator.NewAppMetricsDbPruner(appMetricsDB, conf.AppMetricsDB.CutoffDays, prClock, logger.Session(loggerSessionName))
+	appMetricsDBOperatorRunner := operator.NewOperatorRunner(appMetricsDBPruner, conf.AppMetricsDB.RefreshInterval, prClock, logger.Session(loggerSessionName))
 
 	loggerSessionName = "scalingengine-dbpruner"
-	scalingEngineDbPruner := operator.NewScalingEngineDbPruner(scalingEngineDb, conf.ScalingEngineDb.CutoffDays, prClock, logger.Session(loggerSessionName))
-	scalingEngineDbOperatorRunner := operator.NewOperatorRunner(scalingEngineDbPruner, conf.ScalingEngineDb.RefreshInterval, prClock, logger.Session(loggerSessionName))
+	scalingEngineDBPruner := operator.NewScalingEngineDbPruner(scalingEngineDB, conf.ScalingEngineDB.CutoffDays, prClock, logger.Session(loggerSessionName))
+	scalingEngineDBOperatorRunner := operator.NewOperatorRunner(scalingEngineDBPruner, conf.ScalingEngineDB.RefreshInterval, prClock, logger.Session(loggerSessionName))
 	loggerSessionName = "scalingengine-sync"
-	scalingEngineSync := operator.NewScheduleSynchronizer(scalingEngineHttpclient, conf.ScalingEngine.Url, prClock, logger.Session(loggerSessionName))
+	scalingEngineSync := operator.NewScheduleSynchronizer(scalingEngineHttpclient, conf.ScalingEngine.URL, prClock, logger.Session(loggerSessionName))
 	scalingEngineSyncRunner := operator.NewOperatorRunner(scalingEngineSync, conf.ScalingEngine.SyncInterval, prClock, logger.Session(loggerSessionName))
 
 	loggerSessionName = "scheduler-sync"
-	schedulerSync := operator.NewScheduleSynchronizer(schedulerHttpclient, conf.Scheduler.Url, prClock, logger.Session(loggerSessionName))
+	schedulerSync := operator.NewScheduleSynchronizer(schedulerHttpclient, conf.Scheduler.URL, prClock, logger.Session(loggerSessionName))
 	schedulerSyncRunner := operator.NewOperatorRunner(schedulerSync, conf.Scheduler.SyncInterval, prClock, logger.Session(loggerSessionName))
 
 	members := grouper.Members{
-		{"instancemetrics-dbpruner", instanceMetricsDbOperatorRunner},
-		{"appmetrics-dbpruner", appMetricsDbOperatorRunner},
-		{"scalingEngine-dbpruner", scalingEngineDbOperatorRunner},
+		{"instancemetrics-dbpruner", instanceMetricsDBOperatorRunner},
+		{"appmetrics-dbpruner", appMetricsDBOperatorRunner},
+		{"scalingEngine-dbpruner", scalingEngineDBOperatorRunner},
 		{"scalingEngine-sync", scalingEngineSyncRunner},
 		{"scheduler-sync", schedulerSyncRunner},
 	}
@@ -118,9 +118,9 @@ func main() {
 	if conf.EnableDBLock {
 		logger.Debug("database-lock-feature-enabled")
 		var lockDB db.LockDB
-		lockDB, err = sqldb.NewLockSQLDB(conf.DBLock.LockDB, lockTableName, logger.Session("lock-db"))
+		lockDB, err = sqldb.NewLockSQLDB(conf.DBLock.DB, lockTableName, logger.Session("lock-db"))
 		if err != nil {
-			logger.Error("failed-to-connect-lock-database", err, lager.Data{"dbConfig": conf.DBLock.LockDB})
+			logger.Error("failed-to-connect-lock-database", err, lager.Data{"dbConfig": conf.DBLock.DB})
 			os.Exit(1)
 		}
 		defer lockDB.Close()
