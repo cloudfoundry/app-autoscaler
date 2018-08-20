@@ -38,9 +38,8 @@ function initNockBindWithCred(statusCode) {
   scope = nock(settings.apiserver.uri)
     .post(/\/v1\/apps\/.*\/credentials/)
     .reply(statusCode, {
-      'success': true,
-      'error': null,
-      'result': "created"
+      'username': "newusername",
+      'password': "newpassword"
     });
 }
 
@@ -140,7 +139,7 @@ describe('binding RESTful API', function() {
     context('when there is no record', function() {
       it("creates a new binding with 201", function(done) {
         initNockBind(201);
-        initNockBindWithCred(200);
+        initNockBindWithCred(201);
         supertest(publicServer)
           .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
           .set("Authorization", "Basic " + auth)
@@ -149,6 +148,9 @@ describe('binding RESTful API', function() {
           .expect('Content-Type', /json/)
           .expect({})
           .end(function(err, res) {
+            expect(res.body.credentials.custom_metrics.username).to.equal('newusername');
+            expect(res.body.credentials.custom_metrics.password).to.equal('newpassword');
+
             binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
               expect(countRes).to.equal(1);
               done();
@@ -177,6 +179,7 @@ describe('binding RESTful API', function() {
 
       context('when there is no policy in request', function() {
         it("return a 201", function(done) {
+          initNockBindWithCred(201);
           supertest(publicServer)
             .put("/v2/service_instances/" + serviceInstanceId + "/service_bindings/" + bindingId)
             .set("Authorization", "Basic " + auth)
@@ -185,6 +188,8 @@ describe('binding RESTful API', function() {
             .expect('Content-Type', /json/)
             .expect({credentials: {}})
             .end(function(err, res) {
+              expect(res.body.credentials.custom_metrics.username).to.equal('newusername');
+              expect(res.body.credentials.custom_metrics.password).to.equal('newpassword');
               binding.count({ where: { bindingId: bindingId } }).then(function(countRes) {
                 expect(countRes).to.equal(1);
                 done();

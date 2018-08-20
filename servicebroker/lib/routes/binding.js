@@ -71,7 +71,23 @@ module.exports = function(app, settings, catalog, models) {
             timestamp: new Date().getTime()
           }, { transaction: t }).then(function(result) {
             if (typeof(policyJSON) === "undefined") {
-              commitTransaction(t, res, 201, {credentials: {}});
+              if (settings.enableCustomMetrics) { // Create Custom Metrics Credentials only if feature is enabled
+                logger.info("custom metrics feature enabled, generating credentials");
+                apiServerUtil.getCreds(appId,function(credError, credResponse) {
+                  if (credError != null) {
+                    logger.error("Bind failed: credential generation error", { "error": credError });
+                    rollbackTransaction(t, res, 500, {});
+                    return;
+                  }
+                  var parsedResponse = JSON.parse(credResponse.body);
+                  var credentialsObject = generateCredentials(parsedResponse.username,parsedResponse.password);
+                  logger.info("credentials created/updated successfully",credentialsObject);
+                  commitTransaction(t, res, 201, credentialsObject);
+                });
+              } else {
+                logger.info("custom metrics feature not enabled");
+                commitTransaction(t, res, 201, {credentials: {}});
+              }
               return;
             } else {
               apiServerUtil.attachPolicy(appId, policyJSON, function(attachError, attachResponse) {
