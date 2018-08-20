@@ -657,6 +657,14 @@ func getAppMetricTotalCount(appId string) int {
 	return count
 }
 
+func getCredentialsCount(appId string) int {
+	var count int
+	query := "SELECT COUNT(*) FROM credentials WHERE id=$1"
+	err := dbHelper.QueryRow(query, appId).Scan(&count)
+	Expect(err).NotTo(HaveOccurred())
+	return count
+}
+
 type GetResponse func(id string, apiType APIType) (*http.Response, error)
 type GetResponseWithParameters func(pathVariables []string, parameters map[string]string) (*http.Response, error)
 

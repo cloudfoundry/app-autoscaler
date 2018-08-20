@@ -91,6 +91,9 @@ var _ = Describe("Integration_Broker_Api", func() {
 				var expected map[string]interface{}
 				err = json.Unmarshal(schedulePolicyJson, &expected)
 				Expect(err).NotTo(HaveOccurred())
+				// If custom metrics not enabled, credentials should not be created
+				By("checking the credential table content")
+				Expect(getCredentialsCount(appId)).To(Equal(0))
 
 				checkResponseContent(getPolicy, appId, http.StatusOK, expected, INTERNAL)
 			})
@@ -122,6 +125,10 @@ var _ = Describe("Integration_Broker_Api", func() {
 				var expected map[string]interface{}
 				err = json.Unmarshal(minimalScalingRulePolicyJson, &expected)
 				Expect(err).NotTo(HaveOccurred())
+
+				// If custom metrics not enabled, credentials should not be created
+				By("checking the credential table content")
+				Expect(getCredentialsCount(appId)).To(Equal(0))
 
 				checkResponseContent(getPolicy, appId, http.StatusOK, expected, INTERNAL)
 			})
@@ -227,7 +234,10 @@ var _ = Describe("Integration_Broker_Api", func() {
 			})
 
 			JustBeforeEach(func() {
+				// Restarting servicebroker after enabling Custom Metrics feature
+				stopServiceBroker()
 				serviceBrokerConfPath = components.PrepareServiceBrokerConfig(components.Ports[ServiceBroker], components.Ports[ServiceBrokerInternal], brokerUserName, brokerPassword, true, dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[APIServer]), brokerApiHttpRequestTimeout, tmpDir)
+				startServiceBroker()
 			})
 
 			It("creates a binding", func() {
@@ -241,6 +251,10 @@ var _ = Describe("Integration_Broker_Api", func() {
 				var expected map[string]interface{}
 				err = json.Unmarshal(schedulePolicyJson, &expected)
 				Expect(err).NotTo(HaveOccurred())
+
+				// If custom metrics enabled, credentials should be created
+				By("checking the credential table content")
+				Expect(getCredentialsCount(appId)).To(Equal(1))
 
 				checkResponseContent(getPolicy, appId, http.StatusOK, expected, INTERNAL)
 			})
@@ -326,6 +340,46 @@ var _ = Describe("Integration_Broker_Api", func() {
 				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
 				resp.Body.Close()
 			})
+		})
+	})
+
+	Describe("Unbind Service with Custom Metrics enabled", func() {
+		BeforeEach(func() {
+			// Restarting servicebroker after enabling Custom Metrics feature
+			stopServiceBroker()
+			serviceBrokerConfPath = components.PrepareServiceBrokerConfig(components.Ports[ServiceBroker], components.Ports[ServiceBrokerInternal], brokerUserName, brokerPassword, true, dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[APIServer]), brokerApiHttpRequestTimeout, tmpDir)
+			startServiceBroker()
+
+			brokerAuth = base64.StdEncoding.EncodeToString([]byte("username:password"))
+			//do a bind first
+			fakeScheduler.RouteToHandler("PUT", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
+			resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+			resp.Body.Close()
+
+			By("checking the credential table content")
+			Expect(getCredentialsCount(appId)).To(Equal(1))
+		})
+
+		BeforeEach(func() {
+			fakeScheduler.RouteToHandler("DELETE", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
+		})
+
+		It("should return 200", func() {
+			resp, err := unbindService(bindingId, appId, serviceInstanceId)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.StatusCode).To(Equal(http.StatusOK))
+			resp.Body.Close()
+
+			By("checking the API Server")
+			resp, err = getPolicy(appId, INTERNAL)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
+			resp.Body.Close()
+
+			By("checking the credential table content")
+			Expect(getCredentialsCount(appId)).To(Equal(0))
 		})
 	})
 })
