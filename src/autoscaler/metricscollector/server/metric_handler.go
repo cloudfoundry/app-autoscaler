@@ -130,7 +130,7 @@ func (h *MetricHandler) GetMetricHistories(w http.ResponseWriter, r *http.Reques
 
 	var mtrcs []*models.AppInstanceMetric
 
-	mtrcs, err = h.database.RetrieveInstanceMetrics(appId, instanceIndex, metricType, start, end, order)
+	mtrcs, err = h.database.RetrieveInstanceMetrics(appId, int(instanceIndex), metricType, start, end, order)
 	if err != nil {
 		h.logger.Error("get-metric-histories-retrieve-metrics", err, lager.Data{"appId": appId, "metrictype": metricType, "instanceIndex": instanceIndex, "start": start, "end": end, "order": order})
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{

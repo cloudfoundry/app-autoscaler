@@ -101,7 +101,7 @@ func (idb *InstanceMetricsSQLDB) SaveMetricsInBulk(metrics []*models.AppInstance
 	return nil
 }
 
-func (idb *InstanceMetricsSQLDB) RetrieveInstanceMetrics(appid string, instanceIndex int64, name string, start int64, end int64, orderType db.OrderType) ([]*models.AppInstanceMetric, error) {
+func (idb *InstanceMetricsSQLDB) RetrieveInstanceMetrics(appid string, instanceIndex int, name string, start int64, end int64, orderType db.OrderType) ([]*models.AppInstanceMetric, error) {
 	var orderStr string
 	if orderType == db.ASC {
 		orderStr = db.ASCSTR
@@ -127,22 +127,21 @@ func (idb *InstanceMetricsSQLDB) RetrieveInstanceMetrics(appid string, instanceI
 		end = time.Now().UnixNano()
 	}
 	var rows *sql.Rows
+	var err error
 	if instanceIndex >= 0 {
-		rows1, err := idb.sqldb.Query(queryByInstanceIndex, appid, instanceIndex, name, start, end)
+		rows, err = idb.sqldb.Query(queryByInstanceIndex, appid, instanceIndex, name, start, end)
 		if err != nil {
 			idb.logger.Error("failed-retrieve-instancemetrics-from-appinstancemetrics-table", err,
 				lager.Data{"query": query, "appid": appid, "instanceindex": instanceIndex, "metricName": name, "start": start, "end": end, "orderType": orderType})
 			return nil, err
 		}
-		rows = rows1
 	} else {
-		rows2, err := idb.sqldb.Query(query, appid, name, start, end)
+		rows, err = idb.sqldb.Query(query, appid, name, start, end)
 		if err != nil {
 			idb.logger.Error("failed-retrieve-instancemetrics-from-appinstancemetrics-table", err,
 				lager.Data{"query": query, "appid": appid, "metricName": name, "start": start, "end": end, "orderType": orderType})
 			return nil, err
 		}
-		rows = rows2
 	}
 
 	defer rows.Close()

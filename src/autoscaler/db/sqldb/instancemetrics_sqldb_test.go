@@ -29,7 +29,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 		orderType db.OrderType
 
 		appId          string
-		instanceIndex  int64
+		instanceIndex  int
 		metricName     string
 		testAppId      string = "Test-App-ID"
 		testMetricName string = "TestMetricType"

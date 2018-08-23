@@ -8,11 +8,11 @@ import (
 )
 
 type FakeInstanceMetricsDB struct {
-	RetrieveInstanceMetricsStub        func(appid string, instanceIndex int64, name string, start int64, end int64, orderType db.OrderType) ([]*models.AppInstanceMetric, error)
+	RetrieveInstanceMetricsStub        func(appid string, instanceIndex int, name string, start int64, end int64, orderType db.OrderType) ([]*models.AppInstanceMetric, error)
 	retrieveInstanceMetricsMutex       sync.RWMutex
 	retrieveInstanceMetricsArgsForCall []struct {
 		appid         string
-		instanceIndex int64
+		instanceIndex int
 		name          string
 		start         int64
 		end           int64
@@ -56,11 +56,11 @@ type FakeInstanceMetricsDB struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeInstanceMetricsDB) RetrieveInstanceMetrics(appid string, instanceIndex int64, name string, start int64, end int64, orderType db.OrderType) ([]*models.AppInstanceMetric, error) {
+func (fake *FakeInstanceMetricsDB) RetrieveInstanceMetrics(appid string, instanceIndex int, name string, start int64, end int64, orderType db.OrderType) ([]*models.AppInstanceMetric, error) {
 	fake.retrieveInstanceMetricsMutex.Lock()
 	fake.retrieveInstanceMetricsArgsForCall = append(fake.retrieveInstanceMetricsArgsForCall, struct {
 		appid         string
-		instanceIndex int64
+		instanceIndex int
 		name          string
 		start         int64
 		end           int64
@@ -80,7 +80,7 @@ func (fake *FakeInstanceMetricsDB) RetrieveInstanceMetricsCallCount() int {
 	return len(fake.retrieveInstanceMetricsArgsForCall)
 }
 
-func (fake *FakeInstanceMetricsDB) RetrieveInstanceMetricsArgsForCall(i int) (string, int64, string, int64, int64, db.OrderType) {
+func (fake *FakeInstanceMetricsDB) RetrieveInstanceMetricsArgsForCall(i int) (string, int, string, int64, int64, db.OrderType) {
 	fake.retrieveInstanceMetricsMutex.RLock()
 	defer fake.retrieveInstanceMetricsMutex.RUnlock()
 	return fake.retrieveInstanceMetricsArgsForCall[i].appid, fake.retrieveInstanceMetricsArgsForCall[i].instanceIndex, fake.retrieveInstanceMetricsArgsForCall[i].name, fake.retrieveInstanceMetricsArgsForCall[i].start, fake.retrieveInstanceMetricsArgsForCall[i].end, fake.retrieveInstanceMetricsArgsForCall[i].orderType

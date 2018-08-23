@@ -251,7 +251,7 @@ var _ = Describe("MetricHandler", func() {
 
 				It("queries metrics from database with the given start, end and order ", func() {
 					appid, instanceIndex, name, start, end, order := database.RetrieveInstanceMetricsArgsForCall(0)
-					Expect(instanceIndex).To(Equal(int64(0)))
+					Expect(instanceIndex).To(Equal(0))
 					Expect(appid).To(Equal("an-app-id"))
 					Expect(name).To(Equal("a-metric-type"))
 					Expect(start).To(Equal(int64(123)))
@@ -269,7 +269,7 @@ var _ = Describe("MetricHandler", func() {
 
 				It("queries metrics from database with instanceindex  -1", func() {
 					_, instanceIndex, _, _, _, _ := database.RetrieveInstanceMetricsArgsForCall(0)
-					Expect(instanceIndex).To(Equal(int64(-1)))
+					Expect(instanceIndex).To(Equal(-1))
 				})
 
 			})
