@@ -128,14 +128,24 @@ module.exports = function(models, credentialCache, cacheTTL) {
     try{
       creds = credentialCache.get(appId, true);
       isValidCred = validateCredentialDetails(username, creds.username, password, creds.password);
-      logger.info('Credentials hasbeen found successfully in cache', {
+      // If cache contains old or invalid credentials
+      if (!isValidCred){
+        logger.info('Credentials not valid', {
           'app_id': appId,
           'isValid': isValidCred
-      });
-      callback(null, {
+        });
+        throw new Error('Invalid or old credentials found in cache');
+      }
+      else {
+        logger.info('valid credentials hasbeen found successfully in cache', {
+          'app_id': appId,
+          'isValid': isValidCred
+        });
+        callback(null, {
           'statusCode': HttpStatus.OK,
           'isValid': isValidCred,
-      });
+        });
+      }
     }
     catch(err){
     // Did not find credentials in cache, lets find in database.
