@@ -65,6 +65,59 @@ describe("Routing Metrics", function() {
   describe("get metrics", function() {
     context("parameters", function() {
 
+      context("instance_index", function() {
+        it("should return 200 when instance_index is not provided", function(done) {
+          nock(metricsCollectorUri)
+            .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
+            .reply(200, histories);
+          request(publicApp)
+            .get("/v1/apps/12345/metric_histories/" + metricType)
+            .set("Authorization", theUserToken)
+            .query({ "end-time": 200, "order-direction": "desc", "page": 1, "results-per-page": 2 })
+            .end(function(error, result) {
+              expect(error).to.equal(null);
+              expect(result.statusCode).to.equal(200);
+              done();
+            });
+        });
+
+        it("should return 400 when instance_index is not integer", function(done) {
+          nock(metricsCollectorUri)
+            .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
+            .reply(200, histories);
+          request(publicApp)
+            .get("/v1/apps/12345/metric_histories/" + metricType)
+            .set("Authorization", theUserToken)
+            .query({ "instance-index": "not-integer", "start-time": 100, "end-time": 200, "order-direction": "desc", "page": 1, "results-per-page": 2 })
+            .end(function(error, result) {
+              expect(error).to.equal(null);
+              expect(result.statusCode).to.equal(400);
+              expect(result.body).to.deep.equal({
+                "error": "instance-index must be an integer"
+              });
+              done();
+            });
+        });
+
+        it("should return 400 when instance_index is smaller than 0", function(done) {
+          nock(metricsCollectorUri)
+            .get(/\/v1\/apps\/.+\/metric_histories\/memoryused/)
+            .reply(200, histories);
+          request(publicApp)
+            .get("/v1/apps/12345/metric_histories/" + metricType)
+            .set("Authorization", theUserToken)
+            .query({ "instance-index": -1,"start-time": 100, "end-time": 200, "order-direction": "desc", "page": 1, "results-per-page": 2 })
+            .end(function(error, result) {
+              expect(error).to.equal(null);
+              expect(result.statusCode).to.equal(400);
+              expect(result.body).to.deep.equal({
+                "error": "instance-index must be greater than or equal to 0"
+              });
+              done();
+            });
+        });
+      });
+
       context("start-time", function() {
         it("should return 200 when start-time is not provided", function(done) {
           nock(metricsCollectorUri)
