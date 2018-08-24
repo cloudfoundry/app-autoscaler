@@ -29,7 +29,7 @@ type DatabaseConfig struct {
 }
 
 type InstanceMetricsDB interface {
-	RetrieveInstanceMetrics(appid string, name string, start int64, end int64, orderType OrderType) ([]*models.AppInstanceMetric, error)
+	RetrieveInstanceMetrics(appid string, instanceIndex int, name string, start int64, end int64, orderType OrderType) ([]*models.AppInstanceMetric, error)
 	SaveMetric(metric *models.AppInstanceMetric) error
 	SaveMetricsInBulk(metrics []*models.AppInstanceMetric) error
 	PruneInstanceMetrics(before int64) error

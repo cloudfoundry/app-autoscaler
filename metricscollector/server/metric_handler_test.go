@@ -50,6 +50,70 @@ var _ = Describe("MetricHandler", func() {
 		})
 
 		Context("when request query string is invalid", func() {
+
+			Context("when there are multiple instanceindex pararmeters in query string", func() {
+				BeforeEach(func() {
+					req, err = http.NewRequest(http.MethodGet, testUrlMetricHistories+"?instanceindex=123&instanceindex=231", nil)
+					Expect(err).ToNot(HaveOccurred())
+
+				})
+
+				It("returns 400", func() {
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
+
+					errJson := &models.ErrorResponse{}
+					err = json.Unmarshal(resp.Body.Bytes(), errJson)
+
+					Expect(err).ToNot(HaveOccurred())
+					Expect(errJson).To(Equal(&models.ErrorResponse{
+						Code:    "Bad-Request",
+						Message: "Incorrect instanceIndex parameter in query string",
+					}))
+				})
+			})
+
+			Context("when instanceindex is not a number", func() {
+				BeforeEach(func() {
+					req, err = http.NewRequest(http.MethodGet, testUrlMetricHistories+"?instanceindex=abc", nil)
+					Expect(err).ToNot(HaveOccurred())
+
+				})
+
+				It("returns 400", func() {
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
+
+					errJson := &models.ErrorResponse{}
+					err = json.Unmarshal(resp.Body.Bytes(), errJson)
+
+					Expect(err).ToNot(HaveOccurred())
+					Expect(errJson).To(Equal(&models.ErrorResponse{
+						Code:    "Bad-Request",
+						Message: "Error parsing instanceIndex",
+					}))
+				})
+			})
+
+			Context("when instanceindex is smaller than 0", func() {
+				BeforeEach(func() {
+					req, err = http.NewRequest(http.MethodGet, testUrlMetricHistories+"?instanceindex=-1", nil)
+					Expect(err).ToNot(HaveOccurred())
+
+				})
+
+				It("returns 400", func() {
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
+
+					errJson := &models.ErrorResponse{}
+					err = json.Unmarshal(resp.Body.Bytes(), errJson)
+
+					Expect(err).ToNot(HaveOccurred())
+					Expect(errJson).To(Equal(&models.ErrorResponse{
+						Code:    "Bad-Request",
+						Message: "InstanceIndex must be greater than or equal to 0",
+					}))
+				})
+			})
+
 			Context("when there are multiple start pararmeters in query string", func() {
 				BeforeEach(func() {
 					req, err = http.NewRequest(http.MethodGet, testUrlMetricHistories+"?start=123&start=231", nil)
@@ -181,12 +245,13 @@ var _ = Describe("MetricHandler", func() {
 		Context("when request query string is valid", func() {
 			Context("when start,end and order are all in query string", func() {
 				BeforeEach(func() {
-					req, err = http.NewRequest(http.MethodGet, testUrlMetricHistories+"?start=123&end=567&order=desc", nil)
+					req, err = http.NewRequest(http.MethodGet, testUrlMetricHistories+"?instanceindex=0&start=123&end=567&order=desc", nil)
 					Expect(err).ToNot(HaveOccurred())
 				})
 
 				It("queries metrics from database with the given start, end and order ", func() {
-					appid, name, start, end, order := database.RetrieveInstanceMetricsArgsForCall(0)
+					appid, instanceIndex, name, start, end, order := database.RetrieveInstanceMetricsArgsForCall(0)
+					Expect(instanceIndex).To(Equal(0))
 					Expect(appid).To(Equal("an-app-id"))
 					Expect(name).To(Equal("a-metric-type"))
 					Expect(start).To(Equal(int64(123)))
@@ -196,14 +261,27 @@ var _ = Describe("MetricHandler", func() {
 
 			})
 
+			Context("when there is no instanceindex in query string", func() {
+				BeforeEach(func() {
+					req, err = http.NewRequest(http.MethodGet, testUrlMetricHistories+"?start=123&end=567&order=desc", nil)
+					Expect(err).ToNot(HaveOccurred())
+				})
+
+				It("queries metrics from database with instanceindex  -1", func() {
+					_, instanceIndex, _, _, _, _ := database.RetrieveInstanceMetricsArgsForCall(0)
+					Expect(instanceIndex).To(Equal(-1))
+				})
+
+			})
+
 			Context("when there is no start time in query string", func() {
 				BeforeEach(func() {
-					req, err = http.NewRequest(http.MethodGet, testUrlMetricHistories+"?end=123&order=desc", nil)
+					req, err = http.NewRequest(http.MethodGet, testUrlMetricHistories+"?instanceindex=0&end=123&order=desc", nil)
 					Expect(err).ToNot(HaveOccurred())
 				})
 
 				It("queries metrics from database with start time  0", func() {
-					_, _, start, _, _ := database.RetrieveInstanceMetricsArgsForCall(0)
+					_, _, _, start, _, _ := database.RetrieveInstanceMetricsArgsForCall(0)
 					Expect(start).To(Equal(int64(0)))
 				})
 
@@ -211,12 +289,12 @@ var _ = Describe("MetricHandler", func() {
 
 			Context("when there is no end time in query string", func() {
 				BeforeEach(func() {
-					req, err = http.NewRequest(http.MethodGet, testUrlMetricHistories+"?start=123&order=desc", nil)
+					req, err = http.NewRequest(http.MethodGet, testUrlMetricHistories+"?instanceindex=0&start=123&order=desc", nil)
 					Expect(err).ToNot(HaveOccurred())
 				})
 
 				It("queries metrics from database with end time -1 ", func() {
-					_, _, _, end, _ := database.RetrieveInstanceMetricsArgsForCall(0)
+					_, _, _, _, end, _ := database.RetrieveInstanceMetricsArgsForCall(0)
 					Expect(end).To(Equal(int64(-1)))
 				})
 
@@ -224,12 +302,12 @@ var _ = Describe("MetricHandler", func() {
 
 			Context("when there is no order in query string", func() {
 				BeforeEach(func() {
-					req, err = http.NewRequest(http.MethodGet, testUrlMetricHistories+"?start=123&end=567", nil)
+					req, err = http.NewRequest(http.MethodGet, testUrlMetricHistories+"?instanceindex=0&start=123&end=567", nil)
 					Expect(err).ToNot(HaveOccurred())
 				})
 
 				It("queries metrics from database with end time -1 ", func() {
-					_, _, _, _, order := database.RetrieveInstanceMetricsArgsForCall(0)
+					_, _, _, _, _, order := database.RetrieveInstanceMetricsArgsForCall(0)
 					Expect(order).To(Equal(db.ASC))
 				})
 
@@ -237,7 +315,7 @@ var _ = Describe("MetricHandler", func() {
 
 			Context("when query database succeeds", func() {
 				BeforeEach(func() {
-					req, err = http.NewRequest(http.MethodGet, testUrlMetricHistories+"?start=123&end=567&order=desc", nil)
+					req, err = http.NewRequest(http.MethodGet, testUrlMetricHistories+"?instanceindex=0&start=123&end=567&order=desc", nil)
 					Expect(err).ToNot(HaveOccurred())
 
 					metric1 = models.AppInstanceMetric{
@@ -252,7 +330,7 @@ var _ = Describe("MetricHandler", func() {
 
 					metric2 = models.AppInstanceMetric{
 						AppId:         "an-app-id",
-						InstanceIndex: 1,
+						InstanceIndex: 0,
 						CollectedAt:   111122,
 						Name:          "a-metric-type",
 						Unit:          "metric-unit",
@@ -275,7 +353,7 @@ var _ = Describe("MetricHandler", func() {
 
 			Context("when query database fails", func() {
 				BeforeEach(func() {
-					req, err = http.NewRequest(http.MethodGet, testUrlMetricHistories+"?start=123&end=567&order=desc", nil)
+					req, err = http.NewRequest(http.MethodGet, testUrlMetricHistories+"?instanceindex=0&start=123&end=567&order=desc", nil)
 					Expect(err).ToNot(HaveOccurred())
 
 					database.RetrieveInstanceMetricsReturns(nil, errors.New("database error"))
