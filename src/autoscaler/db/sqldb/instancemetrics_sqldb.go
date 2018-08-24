@@ -101,7 +101,7 @@ func (idb *InstanceMetricsSQLDB) SaveMetricsInBulk(metrics []*models.AppInstance
 	return nil
 }
 
-func (idb *InstanceMetricsSQLDB) RetrieveInstanceMetrics(appid string, name string, start int64, end int64, orderType db.OrderType) ([]*models.AppInstanceMetric, error) {
+func (idb *InstanceMetricsSQLDB) RetrieveInstanceMetrics(appid string, instanceIndex int, name string, start int64, end int64, orderType db.OrderType) ([]*models.AppInstanceMetric, error) {
 	var orderStr string
 	if orderType == db.ASC {
 		orderStr = db.ASCSTR
@@ -115,16 +115,35 @@ func (idb *InstanceMetricsSQLDB) RetrieveInstanceMetrics(appid string, name stri
 		" AND timestamp <= $4" +
 		" ORDER BY timestamp " + orderStr + ", instanceindex"
 
+	queryByInstanceIndex := "SELECT instanceindex, collectedat, unit, value, timestamp FROM appinstancemetrics WHERE " +
+		" appid = $1 " +
+		" AND instanceindex = $2" +
+		" AND name = $3 " +
+		" AND timestamp >= $4" +
+		" AND timestamp <= $5" +
+		" ORDER BY timestamp " + orderStr
+
 	if end < 0 {
 		end = time.Now().UnixNano()
 	}
-
-	rows, err := idb.sqldb.Query(query, appid, name, start, end)
-	if err != nil {
-		idb.logger.Error("failed-retrieve-instancemetrics-from-appinstancemetrics-table", err,
-			lager.Data{"query": query, "appid": appid, "metricName": name, "start": start, "end": end, "orderType": orderType})
-		return nil, err
+	var rows *sql.Rows
+	var err error
+	if instanceIndex >= 0 {
+		rows, err = idb.sqldb.Query(queryByInstanceIndex, appid, instanceIndex, name, start, end)
+		if err != nil {
+			idb.logger.Error("failed-retrieve-instancemetrics-from-appinstancemetrics-table", err,
+				lager.Data{"query": query, "appid": appid, "instanceindex": instanceIndex, "metricName": name, "start": start, "end": end, "orderType": orderType})
+			return nil, err
+		}
+	} else {
+		rows, err = idb.sqldb.Query(query, appid, name, start, end)
+		if err != nil {
+			idb.logger.Error("failed-retrieve-instancemetrics-from-appinstancemetrics-table", err,
+				lager.Data{"query": query, "appid": appid, "metricName": name, "start": start, "end": end, "orderType": orderType})
+			return nil, err
+		}
 	}
+
 	defer rows.Close()
 
 	mtrcs := []*models.AppInstanceMetric{}
@@ -133,7 +152,7 @@ func (idb *InstanceMetricsSQLDB) RetrieveInstanceMetrics(appid string, name stri
 	var unit, value string
 
 	for rows.Next() {
-		if err = rows.Scan(&index, &collectedAt, &unit, &value, &timestamp); err != nil {
+		if err := rows.Scan(&index, &collectedAt, &unit, &value, &timestamp); err != nil {
 			idb.logger.Error("failed-scan-instancemetric-from-search-result", err)
 			return nil, err
 		}
@@ -156,7 +175,6 @@ func (idb *InstanceMetricsSQLDB) RetrieveInstanceMetrics(appid string, name stri
 	}
 	return mtrcs, nil
 }
-
 func (idb *InstanceMetricsSQLDB) PruneInstanceMetrics(before int64) error {
 	query := "DELETE FROM appinstancemetrics WHERE timestamp <= $1"
 	_, err := idb.sqldb.Exec(query, before)

@@ -31,24 +31,48 @@ describe('metricsCollector Utility functions', function() {
         { "app_id": theAppId, "timestamp": 170, "instance_index": 1, "collected_at": 1, "name": metricType, "unit": "megabytes", "value": "200" },
         { "app_id": theAppId, "timestamp": 200, "instance_index": 0, "collected_at": 0, "name": metricType, "unit": "megabytes", "value": "200" }
       ];
-      it('should get the metrics', function(done) {
-        nock(metricsCollectorUri)
-          .get(/\/v1\/apps\/.+\/metric_histories/)
-          .reply(200, metrics);
-        var mockParameters = {
-          appId: theAppId,
-          metricType: metricType,
-          startTime: 100,
-          endTime: 200,
-          order: 'desc'
-        };
-        metricsCollectorUtils.getMetricHistory(mockParameters, function(error, result) {
-          expect(error).to.be.null;
-          expect(result.statusCode).to.equal(200);
-          expect(result.body).to.deep.equal(metrics);
-          done();
+      context("instanceIndex is not provided", function() {
+        it('should get the metrics of all instances', function(done) {
+          nock(metricsCollectorUri)
+            .get(/\/v1\/apps\/.+\/metric_histories/)
+            .reply(200, metrics);
+          var mockParameters = {
+            appId: theAppId,
+            metricType: metricType,
+            startTime: 100,
+            endTime: 200,
+            order: 'desc'
+          };
+          metricsCollectorUtils.getMetricHistory(mockParameters, function(error, result) {
+            expect(error).to.be.null;
+            expect(result.statusCode).to.equal(200);
+            expect(result.body).to.deep.equal(metrics);
+            done();
+          });
         });
       });
+      context("instanceIndex is provided", function() {
+        it('should get the metrics of the provided instance', function(done) {
+          nock(metricsCollectorUri)
+            .get(/\/v1\/apps\/.+\/metric_histories/)
+            .reply(200, [metrics[0], metrics[2], metrics[4]]);
+          var mockParameters = {
+            appId: theAppId,
+            metricType: metricType,
+            instanceIndex: 0,
+            startTime: 100,
+            endTime: 200,
+            order: 'desc'
+          };
+          metricsCollectorUtils.getMetricHistory(mockParameters, function(error, result) {
+            expect(error).to.be.null;
+            expect(result.statusCode).to.equal(200);
+            expect(result.body).to.deep.equal([metrics[0], metrics[2], metrics[4]]);
+            done();
+          });
+        });
+      });
+
     });
 
     context('there is error when requesting metricsCollector ', function() {
@@ -63,6 +87,7 @@ describe('metricsCollector Utility functions', function() {
         var mockParameters = {
           appId: theAppId,
           metricType: metricType,
+          instanceIndex: 0,
           startTime: 100,
           endTime: 200,
           order: 'desc'
@@ -75,7 +100,51 @@ describe('metricsCollector Utility functions', function() {
       });
     });
 
-    context('start-time is not number', function() {
+    context('instanceindex is not a number', function() {
+      var mockBody = { code: 'Bad-Request', message: 'Error parsing instanceIndex' };
+      it('should fail to get the metrics', function(done) {
+        nock(metricsCollectorUri)
+          .get(/\/v1\/apps\/.+\/metric_histories/)
+          .reply(400, mockBody);
+        var mockParameters = {
+          appId: theAppId,
+          metricType: metricType,
+          instanceIndex: 'not-integer',
+          startTime: 100,
+          endTime: 200,
+          order: 'desc'
+        };
+        metricsCollectorUtils.getMetricHistory(mockParameters, function(error, result) {
+          expect(error).to.not.be.null;
+          expect(error).to.deep.equal({ statusCode: 400, message: 'Error parsing instanceIndex' })
+          done();
+        });
+      });
+    });
+
+    context('instanceindex is smaller than 0', function() {
+      var mockBody = { code: 'Bad-Request', message: 'InstanceIndex must be greater than or equal to 0' };
+      it('should fail to get the metrics', function(done) {
+        nock(metricsCollectorUri)
+          .get(/\/v1\/apps\/.+\/metric_histories/)
+          .reply(400, mockBody);
+        var mockParameters = {
+          appId: theAppId,
+          metricType: metricType,
+          instanceIndex: -1,
+          startTime: 100,
+          endTime: 200,
+          order: 'desc'
+        };
+        metricsCollectorUtils.getMetricHistory(mockParameters, function(error, result) {
+          expect(error).to.not.be.null;
+          expect(error).to.deep.equal({ statusCode: 400, message: 'InstanceIndex must be greater than or equal to 0' })
+          done();
+        });
+      });
+    });
+
+    context('start-time is not a number', function() {
       var mockBody = { code: 'Bad-Request', message: 'Error parsing start time' };
       it('should fail to get the metrics', function(done) {
         nock(metricsCollectorUri)
@@ -84,6 +153,7 @@ describe('metricsCollector Utility functions', function() {
         var mockParameters = {
           appId: theAppId,
           metricType: metricType,
+          instanceIndex: 0,
           startTime: 'not-integer',
           endTime: 200,
           order: 'desc'
@@ -96,7 +166,7 @@ describe('metricsCollector Utility functions', function() {
       });
     });
 
-    context('end-time is not number', function() {
+    context('end-time is not a number', function() {
       var mockBody = { code: 'Bad-Request', message: 'Error parsing end time' };
       it('should fail to get the metrics', function(done) {
         nock(metricsCollectorUri)
@@ -105,6 +175,7 @@ describe('metricsCollector Utility functions', function() {
         var mockParameters = {
           appId: theAppId,
           metricType: metricType,
+          instanceIndex: 0,
           startTime: 100,
           endTime: 'not-integer',
           order: 'desc'
@@ -126,6 +197,7 @@ describe('metricsCollector Utility functions', function() {
         var mockParameters = {
           appId: theAppId,
           metricType: metricType,
+          instanceIndex: 0,
           startTime: 100,
           endTime: 200,
           order: 'not-desc-asc'
@@ -147,6 +219,7 @@ describe('metricsCollector Utility functions', function() {
         var mockParameters = {
           appId: theAppId,
           metricType: metricType,
+          instanceIndex: 0,
           startTime: 100,
           endTime: 200,
           order: 'desc'
