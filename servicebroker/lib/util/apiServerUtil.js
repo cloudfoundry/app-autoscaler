@@ -89,14 +89,5 @@ module.exports = function(settings) {
       callback(error,response);
     });
   };
-
-  apiUtil.validateCreds = function(parameters, callback){
-    var options = credentialValidateOptions(parameters);
-    request.post(options,function(error, response, body){
-      callback(error,response);
-    });
-  };
-
-
   return apiUtil;
 }

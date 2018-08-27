@@ -26,12 +26,12 @@ module.exports = function(models, credentialCache, cacheTTL) {
     var password = uuidv4();
     var appId = req.params.app_id;
     models.credentials.upsert({
-      id: req.params.app_id,
+      id: appId,
       username: generateHash(username),
       password: generateHash(password)
     }).then(function(createdData) {
       if (createdData) {
-        logger.info('New credentials hasbeen generated successfully', {
+        logger.info('New credentials has been generated successfully', {
           'app_id': appId
         });
         callback(null, {
@@ -41,7 +41,7 @@ module.exports = function(models, credentialCache, cacheTTL) {
         });
       }
       else {
-        logger.info('Existing credentials hasbeen updated successfully', {
+        logger.info('Existing credentials has been updated successfully', {
           'app_id': appId
         });
         var deleted = credentialCache.del(appId);
@@ -143,7 +143,7 @@ module.exports = function(models, credentialCache, cacheTTL) {
         });
         callback(null, {
           'statusCode': HttpStatus.OK,
-          'isValid': isValidCred,
+          'isValid': isValidCred
         });
       }
     }

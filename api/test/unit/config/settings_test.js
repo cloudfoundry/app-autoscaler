@@ -319,6 +319,30 @@ describe('config setting Test Suite', function () {
       });
     });
 
+    context('Validate cacheTTL', function () {
+      context('When cacheTTL is null', function () {
+        it('Should return false', function () {
+          settings.cacheTTL = null;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("cacheTTL is required");
+        })
+      });
+      context('When cacheTTL is undefined', function () {
+        it('Should return false', function () {
+          delete settings.cacheTTL;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("cacheTTL is required");
+        })
+      });
+      context('When cacheTTL is not an integer', function () {
+        it('Should return false', function () {
+          settings.cacheTTL = "800";
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("cacheTTL must be a number");
+        })
+      });
+    });
+
     context('Validate internal port and public port', function () {
       context('When publicPort is equal to internal port', function () {
         it('Should return false', function () {
