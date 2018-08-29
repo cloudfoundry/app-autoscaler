@@ -56,12 +56,12 @@ type EvaluatorConfig struct {
 }
 
 type ScalingEngineConfig struct {
-	ScalingEngineUrl string          `yaml:"scaling_engine_url"`
+	ScalingEngineURL string          `yaml:"scaling_engine_url"`
 	TLSClientCerts   models.TLSCerts `yaml:"tls"`
 }
 
 type MetricCollectorConfig struct {
-	MetricCollectorUrl string          `yaml:"metric_collector_url"`
+	MetricCollectorURL string          `yaml:"metric_collector_url"`
 	TLSClientCerts     models.TLSCerts `yaml:"tls"`
 }
 
@@ -125,44 +125,44 @@ func LoadConfig(bytes []byte) (*Config, error) {
 }
 
 func (c *Config) Validate() error {
-	if c.DB.PolicyDB.Url == "" {
-		return fmt.Errorf("Configuration error: Policy DB url is empty")
+	if c.DB.PolicyDB.URL == "" {
+		return fmt.Errorf("Configuration error: db.policy_db.url is empty")
 	}
-	if c.DB.AppMetricDB.Url == "" {
-		return fmt.Errorf("Configuration error: AppMetric DB url is empty")
+	if c.DB.AppMetricDB.URL == "" {
+		return fmt.Errorf("Configuration error: db.app_metrics_db.url is empty")
 	}
-	if c.ScalingEngine.ScalingEngineUrl == "" {
-		return fmt.Errorf("Configuration error: Scaling engine url is empty")
+	if c.ScalingEngine.ScalingEngineURL == "" {
+		return fmt.Errorf("Configuration error: scalingEngine.scaling_engine_url is empty")
 	}
-	if c.MetricCollector.MetricCollectorUrl == "" {
-		return fmt.Errorf("Configuration error: Metric collector url is empty")
+	if c.MetricCollector.MetricCollectorURL == "" {
+		return fmt.Errorf("Configuration error: metricCollector.metric_collector_url is empty")
 	}
 	if c.Aggregator.AggregatorExecuteInterval <= time.Duration(0) {
-		return fmt.Errorf("Configuration error: aggregator execute interval is less-equal than 0")
+		return fmt.Errorf("Configuration error: aggregator.aggregator_execute_interval is less-equal than 0")
 	}
 	if c.Aggregator.PolicyPollerInterval <= time.Duration(0) {
-		return fmt.Errorf("Configuration error: policy poller interval is less-equal than 0")
+		return fmt.Errorf("Configuration error: aggregator.policy_poller_interval is less-equal than 0")
 	}
 	if c.Aggregator.SaveInterval <= time.Duration(0) {
-		return fmt.Errorf("Configuration error: save interval is less-equal than 0")
+		return fmt.Errorf("Configuration error: aggregator.save_interval is less-equal than 0")
 	}
 	if c.Aggregator.MetricPollerCount <= 0 {
-		return fmt.Errorf("Configuration error: metric poller count is less-equal than 0")
+		return fmt.Errorf("Configuration error: aggregator.metric_poller_count is less-equal than 0")
 	}
 	if c.Aggregator.AppMonitorChannelSize <= 0 {
-		return fmt.Errorf("Configuration error: appMonitor channel size is less-equal than 0")
+		return fmt.Errorf("Configuration error: aggregator.app_monitor_channel_size is less-equal than 0")
 	}
 	if c.Aggregator.AppMetricChannelSize <= 0 {
-		return fmt.Errorf("Configuration error: appMetric channel size is less-equal than 0")
+		return fmt.Errorf("Configuration error: aggregator.app_metric_channel_size is less-equal than 0")
 	}
 	if c.Evaluator.EvaluationManagerInterval <= time.Duration(0) {
-		return fmt.Errorf("Configuration error: evalution manager execeute interval is less-equal than 0")
+		return fmt.Errorf("Configuration error: evaluator.evaluation_manager_execute_interval is less-equal than 0")
 	}
 	if c.Evaluator.EvaluatorCount <= 0 {
-		return fmt.Errorf("Configuration error: evaluator count is less-equal than 0")
+		return fmt.Errorf("Configuration error: evaluator.evaluator_count is less-equal than 0")
 	}
 	if c.Evaluator.TriggerArrayChannelSize <= 0 {
-		return fmt.Errorf("Configuration error: trigger-array channel size is less-equal than 0")
+		return fmt.Errorf("Configuration error: evaluator.trigger_array_channel_size is less-equal than 0")
 	}
 	if c.DefaultBreachDurationSecs < 60 || c.DefaultBreachDurationSecs > 3600 {
 		return fmt.Errorf("Configuration error: defaultBreachDurationSecs should be between 60 and 3600")
@@ -172,7 +172,7 @@ func (c *Config) Validate() error {
 	}
 
 	if (c.Server.NodeIndex >= len(c.Server.NodeAddrs)) || (c.Server.NodeIndex < 0) {
-		return fmt.Errorf("Configuration error: node_index out of range")
+		return fmt.Errorf("Configuration error: server.node_index out of range")
 	}
 	return nil
 

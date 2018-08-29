@@ -21,7 +21,7 @@ import (
 var _ = Describe("Apppoller", func() {
 
 	var (
-		cfc       *fakes.FakeCfClient
+		cfc       *fakes.FakeCFClient
 		noaa      *fakes.FakeNoaaConsumer
 		poller    AppCollector
 		fclock    *fakeclock.FakeClock
@@ -31,7 +31,7 @@ var _ = Describe("Apppoller", func() {
 	)
 
 	BeforeEach(func() {
-		cfc = &fakes.FakeCfClient{}
+		cfc = &fakes.FakeCFClient{}
 		noaa = &fakes.FakeNoaaConsumer{}
 
 		logger := lagertest.NewTestLogger("apppoller-test")

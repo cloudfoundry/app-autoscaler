@@ -7,7 +7,7 @@ import (
 	"sync"
 )
 
-type FakeCfClient struct {
+type FakeCFClient struct {
 	LoginStub        func() error
 	loginMutex       sync.RWMutex
 	loginArgsForCall []struct{}
@@ -84,7 +84,7 @@ type FakeCfClient struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeCfClient) Login() error {
+func (fake *FakeCFClient) Login() error {
 	fake.loginMutex.Lock()
 	ret, specificReturn := fake.loginReturnsOnCall[len(fake.loginArgsForCall)]
 	fake.loginArgsForCall = append(fake.loginArgsForCall, struct{}{})
@@ -99,20 +99,20 @@ func (fake *FakeCfClient) Login() error {
 	return fake.loginReturns.result1
 }
 
-func (fake *FakeCfClient) LoginCallCount() int {
+func (fake *FakeCFClient) LoginCallCount() int {
 	fake.loginMutex.RLock()
 	defer fake.loginMutex.RUnlock()
 	return len(fake.loginArgsForCall)
 }
 
-func (fake *FakeCfClient) LoginReturns(result1 error) {
+func (fake *FakeCFClient) LoginReturns(result1 error) {
 	fake.LoginStub = nil
 	fake.loginReturns = struct {
 		result1 error
 	}{result1}
 }
 
-func (fake *FakeCfClient) LoginReturnsOnCall(i int, result1 error) {
+func (fake *FakeCFClient) LoginReturnsOnCall(i int, result1 error) {
 	fake.LoginStub = nil
 	if fake.loginReturnsOnCall == nil {
 		fake.loginReturnsOnCall = make(map[int]struct {
@@ -124,7 +124,7 @@ func (fake *FakeCfClient) LoginReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeCfClient) RefreshAuthToken() (string, error) {
+func (fake *FakeCFClient) RefreshAuthToken() (string, error) {
 	fake.refreshAuthTokenMutex.Lock()
 	ret, specificReturn := fake.refreshAuthTokenReturnsOnCall[len(fake.refreshAuthTokenArgsForCall)]
 	fake.refreshAuthTokenArgsForCall = append(fake.refreshAuthTokenArgsForCall, struct{}{})
@@ -139,13 +139,13 @@ func (fake *FakeCfClient) RefreshAuthToken() (string, error) {
 	return fake.refreshAuthTokenReturns.result1, fake.refreshAuthTokenReturns.result2
 }
 
-func (fake *FakeCfClient) RefreshAuthTokenCallCount() int {
+func (fake *FakeCFClient) RefreshAuthTokenCallCount() int {
 	fake.refreshAuthTokenMutex.RLock()
 	defer fake.refreshAuthTokenMutex.RUnlock()
 	return len(fake.refreshAuthTokenArgsForCall)
 }
 
-func (fake *FakeCfClient) RefreshAuthTokenReturns(result1 string, result2 error) {
+func (fake *FakeCFClient) RefreshAuthTokenReturns(result1 string, result2 error) {
 	fake.RefreshAuthTokenStub = nil
 	fake.refreshAuthTokenReturns = struct {
 		result1 string
@@ -153,7 +153,7 @@ func (fake *FakeCfClient) RefreshAuthTokenReturns(result1 string, result2 error)
 	}{result1, result2}
 }
 
-func (fake *FakeCfClient) RefreshAuthTokenReturnsOnCall(i int, result1 string, result2 error) {
+func (fake *FakeCFClient) RefreshAuthTokenReturnsOnCall(i int, result1 string, result2 error) {
 	fake.RefreshAuthTokenStub = nil
 	if fake.refreshAuthTokenReturnsOnCall == nil {
 		fake.refreshAuthTokenReturnsOnCall = make(map[int]struct {
@@ -167,7 +167,7 @@ func (fake *FakeCfClient) RefreshAuthTokenReturnsOnCall(i int, result1 string, r
 	}{result1, result2}
 }
 
-func (fake *FakeCfClient) GetTokens() cf.Tokens {
+func (fake *FakeCFClient) GetTokens() cf.Tokens {
 	fake.getTokensMutex.Lock()
 	ret, specificReturn := fake.getTokensReturnsOnCall[len(fake.getTokensArgsForCall)]
 	fake.getTokensArgsForCall = append(fake.getTokensArgsForCall, struct{}{})
@@ -182,20 +182,20 @@ func (fake *FakeCfClient) GetTokens() cf.Tokens {
 	return fake.getTokensReturns.result1
 }
 
-func (fake *FakeCfClient) GetTokensCallCount() int {
+func (fake *FakeCFClient) GetTokensCallCount() int {
 	fake.getTokensMutex.RLock()
 	defer fake.getTokensMutex.RUnlock()
 	return len(fake.getTokensArgsForCall)
 }
 
-func (fake *FakeCfClient) GetTokensReturns(result1 cf.Tokens) {
+func (fake *FakeCFClient) GetTokensReturns(result1 cf.Tokens) {
 	fake.GetTokensStub = nil
 	fake.getTokensReturns = struct {
 		result1 cf.Tokens
 	}{result1}
 }
 
-func (fake *FakeCfClient) GetTokensReturnsOnCall(i int, result1 cf.Tokens) {
+func (fake *FakeCFClient) GetTokensReturnsOnCall(i int, result1 cf.Tokens) {
 	fake.GetTokensStub = nil
 	if fake.getTokensReturnsOnCall == nil {
 		fake.getTokensReturnsOnCall = make(map[int]struct {
@@ -207,7 +207,7 @@ func (fake *FakeCfClient) GetTokensReturnsOnCall(i int, result1 cf.Tokens) {
 	}{result1}
 }
 
-func (fake *FakeCfClient) GetTokensWithRefresh() cf.Tokens {
+func (fake *FakeCFClient) GetTokensWithRefresh() cf.Tokens {
 	fake.getTokensWithRefreshMutex.Lock()
 	ret, specificReturn := fake.getTokensWithRefreshReturnsOnCall[len(fake.getTokensWithRefreshArgsForCall)]
 	fake.getTokensWithRefreshArgsForCall = append(fake.getTokensWithRefreshArgsForCall, struct{}{})
@@ -222,20 +222,20 @@ func (fake *FakeCfClient) GetTokensWithRefresh() cf.Tokens {
 	return fake.getTokensWithRefreshReturns.result1
 }
 
-func (fake *FakeCfClient) GetTokensWithRefreshCallCount() int {
+func (fake *FakeCFClient) GetTokensWithRefreshCallCount() int {
 	fake.getTokensWithRefreshMutex.RLock()
 	defer fake.getTokensWithRefreshMutex.RUnlock()
 	return len(fake.getTokensWithRefreshArgsForCall)
 }
 
-func (fake *FakeCfClient) GetTokensWithRefreshReturns(result1 cf.Tokens) {
+func (fake *FakeCFClient) GetTokensWithRefreshReturns(result1 cf.Tokens) {
 	fake.GetTokensWithRefreshStub = nil
 	fake.getTokensWithRefreshReturns = struct {
 		result1 cf.Tokens
 	}{result1}
 }
 
-func (fake *FakeCfClient) GetTokensWithRefreshReturnsOnCall(i int, result1 cf.Tokens) {
+func (fake *FakeCFClient) GetTokensWithRefreshReturnsOnCall(i int, result1 cf.Tokens) {
 	fake.GetTokensWithRefreshStub = nil
 	if fake.getTokensWithRefreshReturnsOnCall == nil {
 		fake.getTokensWithRefreshReturnsOnCall = make(map[int]struct {
@@ -247,7 +247,7 @@ func (fake *FakeCfClient) GetTokensWithRefreshReturnsOnCall(i int, result1 cf.To
 	}{result1}
 }
 
-func (fake *FakeCfClient) GetEndpoints() cf.Endpoints {
+func (fake *FakeCFClient) GetEndpoints() cf.Endpoints {
 	fake.getEndpointsMutex.Lock()
 	ret, specificReturn := fake.getEndpointsReturnsOnCall[len(fake.getEndpointsArgsForCall)]
 	fake.getEndpointsArgsForCall = append(fake.getEndpointsArgsForCall, struct{}{})
@@ -262,20 +262,20 @@ func (fake *FakeCfClient) GetEndpoints() cf.Endpoints {
 	return fake.getEndpointsReturns.result1
 }
 
-func (fake *FakeCfClient) GetEndpointsCallCount() int {
+func (fake *FakeCFClient) GetEndpointsCallCount() int {
 	fake.getEndpointsMutex.RLock()
 	defer fake.getEndpointsMutex.RUnlock()
 	return len(fake.getEndpointsArgsForCall)
 }
 
-func (fake *FakeCfClient) GetEndpointsReturns(result1 cf.Endpoints) {
+func (fake *FakeCFClient) GetEndpointsReturns(result1 cf.Endpoints) {
 	fake.GetEndpointsStub = nil
 	fake.getEndpointsReturns = struct {
 		result1 cf.Endpoints
 	}{result1}
 }
 
-func (fake *FakeCfClient) GetEndpointsReturnsOnCall(i int, result1 cf.Endpoints) {
+func (fake *FakeCFClient) GetEndpointsReturnsOnCall(i int, result1 cf.Endpoints) {
 	fake.GetEndpointsStub = nil
 	if fake.getEndpointsReturnsOnCall == nil {
 		fake.getEndpointsReturnsOnCall = make(map[int]struct {
@@ -287,7 +287,7 @@ func (fake *FakeCfClient) GetEndpointsReturnsOnCall(i int, result1 cf.Endpoints)
 	}{result1}
 }
 
-func (fake *FakeCfClient) GetApp(arg1 string) (*models.AppEntity, error) {
+func (fake *FakeCFClient) GetApp(arg1 string) (*models.AppEntity, error) {
 	fake.getAppMutex.Lock()
 	ret, specificReturn := fake.getAppReturnsOnCall[len(fake.getAppArgsForCall)]
 	fake.getAppArgsForCall = append(fake.getAppArgsForCall, struct {
@@ -304,19 +304,19 @@ func (fake *FakeCfClient) GetApp(arg1 string) (*models.AppEntity, error) {
 	return fake.getAppReturns.result1, fake.getAppReturns.result2
 }
 
-func (fake *FakeCfClient) GetAppCallCount() int {
+func (fake *FakeCFClient) GetAppCallCount() int {
 	fake.getAppMutex.RLock()
 	defer fake.getAppMutex.RUnlock()
 	return len(fake.getAppArgsForCall)
 }
 
-func (fake *FakeCfClient) GetAppArgsForCall(i int) string {
+func (fake *FakeCFClient) GetAppArgsForCall(i int) string {
 	fake.getAppMutex.RLock()
 	defer fake.getAppMutex.RUnlock()
 	return fake.getAppArgsForCall[i].arg1
 }
 
-func (fake *FakeCfClient) GetAppReturns(result1 *models.AppEntity, result2 error) {
+func (fake *FakeCFClient) GetAppReturns(result1 *models.AppEntity, result2 error) {
 	fake.GetAppStub = nil
 	fake.getAppReturns = struct {
 		result1 *models.AppEntity
@@ -324,7 +324,7 @@ func (fake *FakeCfClient) GetAppReturns(result1 *models.AppEntity, result2 error
 	}{result1, result2}
 }
 
-func (fake *FakeCfClient) GetAppReturnsOnCall(i int, result1 *models.AppEntity, result2 error) {
+func (fake *FakeCFClient) GetAppReturnsOnCall(i int, result1 *models.AppEntity, result2 error) {
 	fake.GetAppStub = nil
 	if fake.getAppReturnsOnCall == nil {
 		fake.getAppReturnsOnCall = make(map[int]struct {
@@ -338,7 +338,7 @@ func (fake *FakeCfClient) GetAppReturnsOnCall(i int, result1 *models.AppEntity, 
 	}{result1, result2}
 }
 
-func (fake *FakeCfClient) SetAppInstances(arg1 string, arg2 int) error {
+func (fake *FakeCFClient) SetAppInstances(arg1 string, arg2 int) error {
 	fake.setAppInstancesMutex.Lock()
 	ret, specificReturn := fake.setAppInstancesReturnsOnCall[len(fake.setAppInstancesArgsForCall)]
 	fake.setAppInstancesArgsForCall = append(fake.setAppInstancesArgsForCall, struct {
@@ -356,26 +356,26 @@ func (fake *FakeCfClient) SetAppInstances(arg1 string, arg2 int) error {
 	return fake.setAppInstancesReturns.result1
 }
 
-func (fake *FakeCfClient) SetAppInstancesCallCount() int {
+func (fake *FakeCFClient) SetAppInstancesCallCount() int {
 	fake.setAppInstancesMutex.RLock()
 	defer fake.setAppInstancesMutex.RUnlock()
 	return len(fake.setAppInstancesArgsForCall)
 }
 
-func (fake *FakeCfClient) SetAppInstancesArgsForCall(i int) (string, int) {
+func (fake *FakeCFClient) SetAppInstancesArgsForCall(i int) (string, int) {
 	fake.setAppInstancesMutex.RLock()
 	defer fake.setAppInstancesMutex.RUnlock()
 	return fake.setAppInstancesArgsForCall[i].arg1, fake.setAppInstancesArgsForCall[i].arg2
 }
 
-func (fake *FakeCfClient) SetAppInstancesReturns(result1 error) {
+func (fake *FakeCFClient) SetAppInstancesReturns(result1 error) {
 	fake.SetAppInstancesStub = nil
 	fake.setAppInstancesReturns = struct {
 		result1 error
 	}{result1}
 }
 
-func (fake *FakeCfClient) SetAppInstancesReturnsOnCall(i int, result1 error) {
+func (fake *FakeCFClient) SetAppInstancesReturnsOnCall(i int, result1 error) {
 	fake.SetAppInstancesStub = nil
 	if fake.setAppInstancesReturnsOnCall == nil {
 		fake.setAppInstancesReturnsOnCall = make(map[int]struct {
@@ -387,7 +387,7 @@ func (fake *FakeCfClient) SetAppInstancesReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeCfClient) Invocations() map[string][][]interface{} {
+func (fake *FakeCFClient) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
 	fake.loginMutex.RLock()
@@ -411,7 +411,7 @@ func (fake *FakeCfClient) Invocations() map[string][][]interface{} {
 	return copiedInvocations
 }
 
-func (fake *FakeCfClient) recordInvocation(key string, args []interface{}) {
+func (fake *FakeCFClient) recordInvocation(key string, args []interface{}) {
 	fake.invocationsMutex.Lock()
 	defer fake.invocationsMutex.Unlock()
 	if fake.invocations == nil {
@@ -423,4 +423,4 @@ func (fake *FakeCfClient) recordInvocation(key string, args []interface{}) {
 	fake.invocations[key] = append(fake.invocations[key], args)
 }
 
-var _ cf.CfClient = new(FakeCfClient)
+var _ cf.CFClient = new(FakeCFClient)

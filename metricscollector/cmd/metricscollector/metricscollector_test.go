@@ -68,8 +68,8 @@ var _ = Describe("MetricsCollector", func() {
 			BeforeEach(func() {
 				runner.startCheck = ""
 				missingConfig := cfg
-				missingConfig.Cf = cf.CfConfig{
-					Api: ccNOAAUAA.URL(),
+				missingConfig.CF = cf.CFConfig{
+					API: ccNOAAUAA.URL(),
 				}
 
 				missingConfig.Server.Port = 7000 + GinkgoParallelNode()

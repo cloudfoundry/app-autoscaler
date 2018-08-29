@@ -68,45 +68,45 @@ func initConsul() {
 
 func initConfig() {
 	cfg.Logging.Level = "debug"
-	dbUrl := os.Getenv("DBURL")
-	if dbUrl == "" {
+	dbURL := os.Getenv("DBURL")
+	if dbURL == "" {
 		Fail("environment variable $DBURL is not set")
 	}
 
-	cfg.InstanceMetricsDb.Db = db.DatabaseConfig{
-		Url:                   dbUrl,
+	cfg.InstanceMetricsDB.DB = db.DatabaseConfig{
+		URL:                   dbURL,
 		MaxOpenConnections:    10,
 		MaxIdleConnections:    5,
 		ConnectionMaxLifetime: 10 * time.Second,
 	}
-	cfg.InstanceMetricsDb.RefreshInterval = 12 * time.Hour
-	cfg.InstanceMetricsDb.CutoffDays = 20
+	cfg.InstanceMetricsDB.RefreshInterval = 12 * time.Hour
+	cfg.InstanceMetricsDB.CutoffDays = 20
 
-	cfg.AppMetricsDb.Db = db.DatabaseConfig{
-		Url:                   dbUrl,
+	cfg.AppMetricsDB.DB = db.DatabaseConfig{
+		URL:                   dbURL,
 		MaxOpenConnections:    10,
 		MaxIdleConnections:    5,
 		ConnectionMaxLifetime: 10 * time.Second,
 	}
-	cfg.AppMetricsDb.RefreshInterval = 12 * time.Hour
-	cfg.AppMetricsDb.CutoffDays = 20
+	cfg.AppMetricsDB.RefreshInterval = 12 * time.Hour
+	cfg.AppMetricsDB.CutoffDays = 20
 
-	cfg.ScalingEngineDb.Db = db.DatabaseConfig{
-		Url:                   dbUrl,
+	cfg.ScalingEngineDB.DB = db.DatabaseConfig{
+		URL:                   dbURL,
 		MaxOpenConnections:    10,
 		MaxIdleConnections:    5,
 		ConnectionMaxLifetime: 10 * time.Second,
 	}
-	cfg.ScalingEngineDb.RefreshInterval = 12 * time.Hour
-	cfg.ScalingEngineDb.CutoffDays = 20
+	cfg.ScalingEngineDB.RefreshInterval = 12 * time.Hour
+	cfg.ScalingEngineDB.CutoffDays = 20
 
 	cfg.ScalingEngine = config.ScalingEngineConfig{
-		Url:          "http://localhost:8082",
+		URL:          "http://localhost:8082",
 		SyncInterval: 10 * time.Second,
 	}
 
 	cfg.Scheduler = config.SchedulerConfig{
-		Url:          "http://localhost:8083",
+		URL:          "http://localhost:8083",
 		SyncInterval: 10 * time.Second,
 	}
 
@@ -114,8 +114,8 @@ func initConfig() {
 	cfg.Lock.LockRetryInterval = locket.RetryInterval
 	cfg.Lock.LockTTL = locket.DefaultSessionTTL
 
-	cfg.DBLock.LockDB = db.DatabaseConfig{
-		Url:                   os.Getenv("DBURL"),
+	cfg.DBLock.DB = db.DatabaseConfig{
+		URL:                   os.Getenv("DBURL"),
 		MaxOpenConnections:    10,
 		MaxIdleConnections:    5,
 		ConnectionMaxLifetime: 10 * time.Second,

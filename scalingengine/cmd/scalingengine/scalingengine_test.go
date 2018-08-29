@@ -121,8 +121,8 @@ var _ = Describe("Main", func() {
 			BeforeEach(func() {
 				runner.startCheck = ""
 				missingParamConf := conf
-				missingParamConf.Cf = cf.CfConfig{
-					Api: ccUAA.URL(),
+				missingParamConf.CF = cf.CFConfig{
+					API: ccUAA.URL(),
 				}
 
 				missingParamConf.Server.Port = 7000 + GinkgoParallelNode()

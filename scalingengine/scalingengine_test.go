@@ -20,7 +20,7 @@ var _ = Describe("ScalingEngine", func() {
 	var (
 		scalingEngine   ScalingEngine
 		activeSchedule  *models.ActiveSchedule
-		cfc             *fakes.FakeCfClient
+		cfc             *fakes.FakeCFClient
 		policyDB        *fakes.FakePolicyDB
 		scalingEngineDB *fakes.FakeScalingEngineDB
 		clock           *fakeclock.FakeClock
@@ -33,7 +33,7 @@ var _ = Describe("ScalingEngine", func() {
 	)
 
 	BeforeEach(func() {
-		cfc = &fakes.FakeCfClient{}
+		cfc = &fakes.FakeCFClient{}
 		policyDB = &fakes.FakePolicyDB{}
 		scalingEngineDB = &fakes.FakeScalingEngineDB{}
 

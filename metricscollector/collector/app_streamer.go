@@ -17,7 +17,7 @@ type appStreamer struct {
 	appId           string
 	logger          lager.Logger
 	collectInterval time.Duration
-	cfc             cf.CfClient
+	cfc             cf.CFClient
 	noaaConsumer    noaa.NoaaConsumer
 	doneChan        chan bool
 	sclock          clock.Clock
@@ -27,7 +27,7 @@ type appStreamer struct {
 	dataChan        chan *models.AppInstanceMetric
 }
 
-func NewAppStreamer(logger lager.Logger, appId string, interval time.Duration, cfc cf.CfClient, noaaConsumer noaa.NoaaConsumer, sclock clock.Clock, dataChan chan *models.AppInstanceMetric) AppCollector {
+func NewAppStreamer(logger lager.Logger, appId string, interval time.Duration, cfc cf.CFClient, noaaConsumer noaa.NoaaConsumer, sclock clock.Clock, dataChan chan *models.AppInstanceMetric) AppCollector {
 	return &appStreamer{
 		appId:           appId,
 		logger:          logger,

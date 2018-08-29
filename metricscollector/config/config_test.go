@@ -87,28 +87,28 @@ collector:
 			It("returns the config", func() {
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(conf.Cf.Api).To(Equal("https://api.example.com"))
-				Expect(conf.Cf.GrantType).To(Equal("password"))
-				Expect(conf.Cf.Username).To(Equal("admin"))
-				Expect(conf.Cf.Password).To(Equal("admin"))
-				Expect(conf.Cf.ClientId).To(Equal("client-id"))
-				Expect(conf.Cf.Secret).To(Equal("client-secret"))
-				Expect(conf.Cf.SkipSSLValidation).To(Equal(false))
+				Expect(conf.CF.API).To(Equal("https://api.example.com"))
+				Expect(conf.CF.GrantType).To(Equal("password"))
+				Expect(conf.CF.Username).To(Equal("admin"))
+				Expect(conf.CF.Password).To(Equal("admin"))
+				Expect(conf.CF.ClientID).To(Equal("client-id"))
+				Expect(conf.CF.Secret).To(Equal("client-secret"))
+				Expect(conf.CF.SkipSSLValidation).To(Equal(false))
 
 				Expect(conf.Server.Port).To(Equal(8989))
 
 				Expect(conf.Logging.Level).To(Equal("debug"))
 
-				Expect(conf.Db.PolicyDb).To(Equal(
+				Expect(conf.DB.PolicyDB).To(Equal(
 					db.DatabaseConfig{
-						Url:                   "postgres://pqgotest:password@localhost/pqgotest",
+						URL:                   "postgres://pqgotest:password@localhost/pqgotest",
 						MaxOpenConnections:    10,
 						MaxIdleConnections:    5,
 						ConnectionMaxLifetime: 60 * time.Second,
 					}))
-				Expect(conf.Db.InstanceMetricsDb).To(Equal(
+				Expect(conf.DB.InstanceMetricsDB).To(Equal(
 					db.DatabaseConfig{
-						Url:                   "postgres://pqgotest:password@localhost/pqgotest",
+						URL:                   "postgres://pqgotest:password@localhost/pqgotest",
 						MaxOpenConnections:    10,
 						MaxIdleConnections:    5,
 						ConnectionMaxLifetime: 60 * time.Second,
@@ -142,20 +142,20 @@ db:
 			It("returns default values", func() {
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(conf.Cf.GrantType).To(Equal(cf.GrantTypePassword))
-				Expect(conf.Cf.SkipSSLValidation).To(Equal(false))
+				Expect(conf.CF.GrantType).To(Equal(cf.GrantTypePassword))
+				Expect(conf.CF.SkipSSLValidation).To(Equal(false))
 				Expect(conf.Server.Port).To(Equal(8080))
 				Expect(conf.Logging.Level).To(Equal(DefaultLoggingLevel))
-				Expect(conf.Db.PolicyDb).To(Equal(
+				Expect(conf.DB.PolicyDB).To(Equal(
 					db.DatabaseConfig{
-						Url:                   "postgres://pqgotest:password@localhost/pqgotest",
+						URL:                   "postgres://pqgotest:password@localhost/pqgotest",
 						MaxOpenConnections:    0,
 						MaxIdleConnections:    0,
 						ConnectionMaxLifetime: 0 * time.Second,
 					}))
-				Expect(conf.Db.InstanceMetricsDb).To(Equal(
+				Expect(conf.DB.InstanceMetricsDB).To(Equal(
 					db.DatabaseConfig{
-						Url:                   "postgres://pqgotest:password@localhost/pqgotest",
+						URL:                   "postgres://pqgotest:password@localhost/pqgotest",
 						MaxOpenConnections:    0,
 						MaxIdleConnections:    0,
 						ConnectionMaxLifetime: 0 * time.Second,
@@ -625,18 +625,18 @@ collector:
 	Describe("Validate", func() {
 		BeforeEach(func() {
 			conf = &Config{}
-			conf.Cf.Api = "http://api.example.com"
-			conf.Cf.GrantType = cf.GrantTypePassword
-			conf.Cf.Username = "admin"
-			conf.Cf.SkipSSLValidation = false
-			conf.Db.PolicyDb = db.DatabaseConfig{
-				Url:                   "postgres://pqgotest:password@localhost/pqgotest",
+			conf.CF.API = "http://api.example.com"
+			conf.CF.GrantType = cf.GrantTypePassword
+			conf.CF.Username = "admin"
+			conf.CF.SkipSSLValidation = false
+			conf.DB.PolicyDB = db.DatabaseConfig{
+				URL:                   "postgres://pqgotest:password@localhost/pqgotest",
 				MaxOpenConnections:    10,
 				MaxIdleConnections:    5,
 				ConnectionMaxLifetime: 60 * time.Second,
 			}
-			conf.Db.InstanceMetricsDb = db.DatabaseConfig{
-				Url:                   "postgres://pqgotest:password@localhost/pqgotest",
+			conf.DB.InstanceMetricsDB = db.DatabaseConfig{
+				URL:                   "postgres://pqgotest:password@localhost/pqgotest",
 				MaxOpenConnections:    10,
 				MaxIdleConnections:    5,
 				ConnectionMaxLifetime: 60 * time.Second,
@@ -661,7 +661,7 @@ collector:
 
 		Context("when cf config is not valid", func() {
 			BeforeEach(func() {
-				conf.Cf.Api = ""
+				conf.CF.API = ""
 			})
 
 			It("should error", func() {
@@ -671,21 +671,21 @@ collector:
 
 		Context("when policy db url is not set", func() {
 			BeforeEach(func() {
-				conf.Db.PolicyDb.Url = ""
+				conf.DB.PolicyDB.URL = ""
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: Policy DB url is empty")))
+				Expect(err).To(MatchError("Configuration error: db.policy_db.url is empty"))
 			})
 		})
 
 		Context("when metrics db url is not set", func() {
 			BeforeEach(func() {
-				conf.Db.InstanceMetricsDb.Url = ""
+				conf.DB.InstanceMetricsDB.URL = ""
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: InstanceMetrics DB url is empty")))
+				Expect(err).To(MatchError("Configuration error: db.instance_metrics_db.url is empty"))
 			})
 		})
 
@@ -695,7 +695,7 @@ collector:
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: CollectInterval is 0")))
+				Expect(err).To(MatchError("Configuration error: collector.collect_interval is 0"))
 			})
 		})
 
@@ -705,7 +705,7 @@ collector:
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: RefreshInterval is 0")))
+				Expect(err).To(MatchError("Configuration error: collector.refresh_interval is 0"))
 			})
 		})
 
@@ -715,7 +715,7 @@ collector:
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: SaveInterval is 0")))
+				Expect(err).To(MatchError("Configuration error: collector.save_interval is 0"))
 			})
 		})
 
@@ -725,7 +725,7 @@ collector:
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: invalid collecting method")))
+				Expect(err).To(MatchError("Configuration error: invalid collector.collect_method"))
 			})
 		})
 
@@ -735,7 +735,7 @@ collector:
 					conf.Server.NodeIndex = -1
 				})
 				It("should error", func() {
-					Expect(err).To(MatchError(MatchRegexp("Configuration error: node_index out of range")))
+					Expect(err).To(MatchError("Configuration error: server.node_index out of range"))
 				})
 			})
 
@@ -745,7 +745,7 @@ collector:
 					conf.Server.NodeAddrs = []string{"address1", "address2"}
 				})
 				It("should error", func() {
-					Expect(err).To(MatchError(MatchRegexp("Configuration error: node_index out of range")))
+					Expect(err).To(MatchError("Configuration error: server.node_index out of range"))
 				})
 			})
 

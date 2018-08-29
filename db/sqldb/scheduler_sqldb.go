@@ -22,7 +22,7 @@ type SchedulerSQLDB struct {
 }
 
 func NewSchedulerSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*SchedulerSQLDB, error) {
-	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.Url)
+	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.URL)
 	if err != nil {
 		logger.Error("failed-open-scheduler-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
