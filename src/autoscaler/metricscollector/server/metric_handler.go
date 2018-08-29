@@ -17,13 +17,13 @@ import (
 )
 
 type MetricHandler struct {
-	cfClient     cf.CfClient
+	cfClient     cf.CFClient
 	logger       lager.Logger
 	noaaConsumer noaa.NoaaConsumer
 	database     db.InstanceMetricsDB
 }
 
-func NewMetricHandler(logger lager.Logger, cfc cf.CfClient, consumer noaa.NoaaConsumer, database db.InstanceMetricsDB) *MetricHandler {
+func NewMetricHandler(logger lager.Logger, cfc cf.CFClient, consumer noaa.NoaaConsumer, database db.InstanceMetricsDB) *MetricHandler {
 	return &MetricHandler{
 		cfClient:     cfc,
 		noaaConsumer: consumer,

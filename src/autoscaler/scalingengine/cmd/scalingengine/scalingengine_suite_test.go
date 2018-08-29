@@ -66,8 +66,8 @@ var _ = SynchronizedBeforeSuite(
 			models.AppEntity{Instances: 2, State: &appState}))
 		ccUAA.RouteToHandler("PUT", "/v2/apps/"+appId, ghttp.RespondWith(http.StatusCreated, ""))
 
-		conf.Cf = cf.CfConfig{
-			Api:       ccUAA.URL(),
+		conf.CF = cf.CFConfig{
+			API:       ccUAA.URL(),
 			GrantType: cf.GrantTypePassword,
 			Username:  "admin",
 			Password:  "admin",
@@ -84,20 +84,20 @@ var _ = SynchronizedBeforeSuite(
 		conf.Health.EmitInterval = 1 * time.Second
 		conf.Logging.Level = "debug"
 
-		conf.Db.PolicyDb = db.DatabaseConfig{
-			Url:                   os.Getenv("DBURL"),
+		conf.DB.PolicyDB = db.DatabaseConfig{
+			URL:                   os.Getenv("DBURL"),
 			MaxOpenConnections:    10,
 			MaxIdleConnections:    5,
 			ConnectionMaxLifetime: 10 * time.Second,
 		}
-		conf.Db.ScalingEngineDb = db.DatabaseConfig{
-			Url:                   os.Getenv("DBURL"),
+		conf.DB.ScalingEngineDB = db.DatabaseConfig{
+			URL:                   os.Getenv("DBURL"),
 			MaxOpenConnections:    10,
 			MaxIdleConnections:    5,
 			ConnectionMaxLifetime: 10 * time.Second,
 		}
-		conf.Db.SchedulerDb = db.DatabaseConfig{
-			Url:                   os.Getenv("DBURL"),
+		conf.DB.SchedulerDB = db.DatabaseConfig{
+			URL:                   os.Getenv("DBURL"),
 			MaxOpenConnections:    10,
 			MaxIdleConnections:    5,
 			ConnectionMaxLifetime: 10 * time.Second,

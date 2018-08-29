@@ -30,11 +30,3 @@ synchronizer:
   active_schedule_sync_interval: 600s
 defaultCoolDownSecs: 300
 lockSize: 32
-db_lock:
-   ttl: 30s
-   lock_db:
-     url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
-     max_open_connections: 10
-     max_idle_connections: 5
-     connection_max_lifetime: 60s
-enable_db_lock: true

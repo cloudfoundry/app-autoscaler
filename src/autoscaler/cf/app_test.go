@@ -20,8 +20,8 @@ import (
 var _ = Describe("App", func() {
 
 	var (
-		conf            *CfConfig
-		cfc             CfClient
+		conf            *CFConfig
+		cfc             CFClient
 		fakeCC          *ghttp.Server
 		fakeLoginServer *ghttp.Server
 		err             error
@@ -32,19 +32,19 @@ var _ = Describe("App", func() {
 	BeforeEach(func() {
 		fakeCC = ghttp.NewServer()
 		fakeLoginServer = ghttp.NewServer()
-		fakeCC.RouteToHandler("GET", PathCfInfo, ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
+		fakeCC.RouteToHandler("GET", PathCFInfo, ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
 			AuthEndpoint:    fakeLoginServer.URL(),
 			TokenEndpoint:   "test-token-endpoint",
 			DopplerEndpoint: "test-doppler-endpoint",
 		}))
-		fakeLoginServer.RouteToHandler("POST", PathCfAuth, ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
+		fakeLoginServer.RouteToHandler("POST", PathCFAuth, ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
 			AccessToken:  "test-access-token",
 			RefreshToken: "test-refresh-token",
 			ExpiresIn:    12000,
 		}))
-		conf = &CfConfig{}
-		conf.Api = fakeCC.URL()
-		cfc = NewCfClient(conf, lager.NewLogger("cf"), clock.NewClock())
+		conf = &CFConfig{}
+		conf.API = fakeCC.URL()
+		cfc = NewCFClient(conf, lager.NewLogger("cf"), clock.NewClock())
 		cfc.Login()
 	})
 

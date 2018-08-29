@@ -410,11 +410,11 @@ spring.data.jpa.repositories.enabled=false
 	return cfgFile.Name()
 }
 
-func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port int, ccNOAAUAAUrl string, cfGrantTypePassword string, collectInterval time.Duration,
+func (components *Components) PrepareMetricsCollectorConfig(dbURI string, port int, ccNOAAUAAURL string, cfGrantTypePassword string, collectInterval time.Duration,
 	refreshInterval time.Duration, saveInterval time.Duration, collectMethod string, tmpDir string) string {
 	cfg := mcConfig.Config{
-		Cf: cf.CfConfig{
-			Api:       ccNOAAUAAUrl,
+		CF: cf.CFConfig{
+			API:       ccNOAAUAAURL,
 			GrantType: cfGrantTypePassword,
 			Username:  "admin",
 			Password:  "admin",
@@ -432,12 +432,12 @@ func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port i
 		Logging: helpers.LoggingConfig{
 			Level: LOGLEVEL,
 		},
-		Db: mcConfig.DbConfig{
-			InstanceMetricsDb: db.DatabaseConfig{
-				Url: dbUri,
+		DB: mcConfig.DBConfig{
+			InstanceMetricsDB: db.DatabaseConfig{
+				URL: dbURI,
 			},
-			PolicyDb: db.DatabaseConfig{
-				Url: dbUri,
+			PolicyDB: db.DatabaseConfig{
+				URL: dbURI,
 			},
 		},
 		Collector: mcConfig.CollectorConfig{
@@ -450,7 +450,7 @@ func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port i
 	return writeYmlConfig(tmpDir, MetricsCollector, &cfg)
 }
 
-func (components *Components) PrepareEventGeneratorConfig(dbUri string, port int, metricsCollectorUrl string, scalingEngineUrl string, aggregatorExecuteInterval time.Duration,
+func (components *Components) PrepareEventGeneratorConfig(dbUri string, port int, metricsCollectorURL string, scalingEngineURL string, aggregatorExecuteInterval time.Duration,
 	policyPollerInterval time.Duration, saveInterval time.Duration, evaluationManagerInterval time.Duration, tmpDir string) string {
 	conf := &egConfig.Config{
 		Logging: helpers.LoggingConfig{
@@ -481,14 +481,14 @@ func (components *Components) PrepareEventGeneratorConfig(dbUri string, port int
 		},
 		DB: egConfig.DBConfig{
 			PolicyDB: db.DatabaseConfig{
-				Url: dbUri,
+				URL: dbUri,
 			},
 			AppMetricDB: db.DatabaseConfig{
-				Url: dbUri,
+				URL: dbUri,
 			},
 		},
 		ScalingEngine: egConfig.ScalingEngineConfig{
-			ScalingEngineUrl: scalingEngineUrl,
+			ScalingEngineURL: scalingEngineURL,
 			TLSClientCerts: models.TLSCerts{
 				KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
 				CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
@@ -496,7 +496,7 @@ func (components *Components) PrepareEventGeneratorConfig(dbUri string, port int
 			},
 		},
 		MetricCollector: egConfig.MetricCollectorConfig{
-			MetricCollectorUrl: metricsCollectorUrl,
+			MetricCollectorURL: metricsCollectorURL,
 			TLSClientCerts: models.TLSCerts{
 				KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
 				CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
@@ -509,10 +509,10 @@ func (components *Components) PrepareEventGeneratorConfig(dbUri string, port int
 	return writeYmlConfig(tmpDir, EventGenerator, &conf)
 }
 
-func (components *Components) PrepareScalingEngineConfig(dbUri string, port int, ccUAAUrl string, cfGrantTypePassword string, tmpDir string) string {
+func (components *Components) PrepareScalingEngineConfig(dbURI string, port int, ccUAAURL string, cfGrantTypePassword string, tmpDir string) string {
 	conf := seConfig.Config{
-		Cf: cf.CfConfig{
-			Api:       ccUAAUrl,
+		CF: cf.CFConfig{
+			API:       ccUAAURL,
 			GrantType: cfGrantTypePassword,
 			Username:  "admin",
 			Password:  "admin",
@@ -528,15 +528,15 @@ func (components *Components) PrepareScalingEngineConfig(dbUri string, port int,
 		Logging: helpers.LoggingConfig{
 			Level: LOGLEVEL,
 		},
-		Db: seConfig.DbConfig{
-			PolicyDb: db.DatabaseConfig{
-				Url: dbUri,
+		DB: seConfig.DBConfig{
+			PolicyDB: db.DatabaseConfig{
+				URL: dbURI,
 			},
-			ScalingEngineDb: db.DatabaseConfig{
-				Url: dbUri,
+			ScalingEngineDB: db.DatabaseConfig{
+				URL: dbURI,
 			},
-			SchedulerDb: db.DatabaseConfig{
-				Url: dbUri,
+			SchedulerDB: db.DatabaseConfig{
+				URL: dbURI,
 			},
 		},
 		DefaultCoolDownSecs: 300,
@@ -546,34 +546,34 @@ func (components *Components) PrepareScalingEngineConfig(dbUri string, port int,
 	return writeYmlConfig(tmpDir, ScalingEngine, &conf)
 }
 
-func (components *Components) PrepareOperatorConfig(dbUri string, scalingEngineUrl string, schedulerUrl string, syncInterval time.Duration, cutOffDays int, tmpDir string) string {
+func (components *Components) PrepareOperatorConfig(dbURI string, scalingEngineURL string, schedulerURL string, syncInterval time.Duration, cutOffDays int, tmpDir string) string {
 	conf := &opConfig.Config{
 		Logging: helpers.LoggingConfig{
 			Level: LOGLEVEL,
 		},
-		InstanceMetricsDb: opConfig.InstanceMetricsDbPrunerConfig{
+		InstanceMetricsDB: opConfig.InstanceMetricsDbPrunerConfig{
 			RefreshInterval: 2 * time.Minute,
 			CutoffDays:      cutOffDays,
-			Db: db.DatabaseConfig{
-				Url: dbUri,
+			DB: db.DatabaseConfig{
+				URL: dbURI,
 			},
 		},
-		AppMetricsDb: opConfig.AppMetricsDbPrunerConfig{
+		AppMetricsDB: opConfig.AppMetricsDBPrunerConfig{
 			RefreshInterval: 2 * time.Minute,
 			CutoffDays:      cutOffDays,
-			Db: db.DatabaseConfig{
-				Url: dbUri,
+			DB: db.DatabaseConfig{
+				URL: dbURI,
 			},
 		},
-		ScalingEngineDb: opConfig.ScalingEngineDbPrunerConfig{
+		ScalingEngineDB: opConfig.ScalingEngineDBPrunerConfig{
 			RefreshInterval: 2 * time.Minute,
 			CutoffDays:      cutOffDays,
-			Db: db.DatabaseConfig{
-				Url: dbUri,
+			DB: db.DatabaseConfig{
+				URL: dbURI,
 			},
 		},
 		ScalingEngine: opConfig.ScalingEngineConfig{
-			Url:          scalingEngineUrl,
+			URL:          scalingEngineURL,
 			SyncInterval: syncInterval,
 			TLSClientCerts: models.TLSCerts{
 				KeyFile:    filepath.Join(testCertDir, "scalingengine.key"),
@@ -582,7 +582,7 @@ func (components *Components) PrepareOperatorConfig(dbUri string, scalingEngineU
 			},
 		},
 		Scheduler: opConfig.SchedulerConfig{
-			Url:          schedulerUrl,
+			URL:          schedulerURL,
 			SyncInterval: syncInterval,
 			TLSClientCerts: models.TLSCerts{
 				KeyFile:    filepath.Join(testCertDir, "scheduler.key"),
@@ -598,8 +598,8 @@ func (components *Components) PrepareOperatorConfig(dbUri string, scalingEngineU
 		EnableDBLock: true,
 		DBLock: opConfig.DBLockConfig{
 			LockTTL: 30 * time.Second,
-			LockDB: db.DatabaseConfig{
-				Url: dbUri,
+			DB: db.DatabaseConfig{
+				URL: dbURI,
 			},
 			LockRetryInterval: 15 * time.Second,
 		},
