@@ -24,7 +24,7 @@ const (
 	DefaultDBLockTTL                  time.Duration = 15 * time.Second
 )
 
-var defaultCfConfig = cf.CfConfig{
+var defaultCFConfig = cf.CFConfig{
 	GrantType:         cf.GrantTypePassword,
 	SkipSSLValidation: false,
 }
@@ -52,10 +52,10 @@ var defaultLoggingConfig = helpers.LoggingConfig{
 	Level: "info",
 }
 
-type DbConfig struct {
-	PolicyDb        db.DatabaseConfig `yaml:"policy_db"`
-	ScalingEngineDb db.DatabaseConfig `yaml:"scalingengine_db"`
-	SchedulerDb     db.DatabaseConfig `yaml:"scheduler_db"`
+type DBConfig struct {
+	PolicyDB        db.DatabaseConfig `yaml:"policy_db"`
+	ScalingEngineDB db.DatabaseConfig `yaml:"scalingengine_db"`
+	SchedulerDB     db.DatabaseConfig `yaml:"scheduler_db"`
 }
 
 type SynchronizerConfig struct {
@@ -67,18 +67,18 @@ var defaultSynchronizerConfig = SynchronizerConfig{
 }
 
 type Config struct {
-	Cf                  cf.CfConfig           `yaml:"cf"`
+	CF                  cf.CFConfig           `yaml:"cf"`
 	Logging             helpers.LoggingConfig `yaml:"logging"`
 	Server              ServerConfig          `yaml:"server"`
 	Health              HealthConfig          `yaml:"health"`
-	Db                  DbConfig              `yaml:"db"`
+	DB                  DBConfig              `yaml:"db"`
 	DefaultCoolDownSecs int                   `yaml:"defaultCoolDownSecs"`
 	LockSize            int                   `yaml:"lockSize"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
 	conf := &Config{
-		Cf:      defaultCfConfig,
+		CF:      defaultCFConfig,
 		Logging: defaultLoggingConfig,
 		Server:  defaultServerConfig,
 		Health:  defaultHealthConfig,
@@ -94,7 +94,7 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		return nil, err
 	}
 
-	conf.Cf.GrantType = strings.ToLower(conf.Cf.GrantType)
+	conf.CF.GrantType = strings.ToLower(conf.CF.GrantType)
 	conf.Logging.Level = strings.ToLower(conf.Logging.Level)
 	if conf.Health.EmitInterval <= 0*time.Second {
 		conf.Health.EmitInterval = defaultHealthConfig.EmitInterval
@@ -104,21 +104,21 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 }
 
 func (c *Config) Validate() error {
-	err := c.Cf.Validate()
+	err := c.CF.Validate()
 	if err != nil {
 		return err
 	}
 
-	if c.Db.PolicyDb.Url == "" {
-		return fmt.Errorf("Configuration error: Policy DB url is empty")
+	if c.DB.PolicyDB.URL == "" {
+		return fmt.Errorf("Configuration error: db.policy_db.url is empty")
 	}
 
-	if c.Db.ScalingEngineDb.Url == "" {
-		return fmt.Errorf("Configuration error: ScalingEngine DB url is empty")
+	if c.DB.ScalingEngineDB.URL == "" {
+		return fmt.Errorf("Configuration error: db.scalingengine_db.url is empty")
 	}
 
-	if c.Db.SchedulerDb.Url == "" {
-		return fmt.Errorf("Configuration error: Scheduler DB url is empty")
+	if c.DB.SchedulerDB.URL == "" {
+		return fmt.Errorf("Configuration error: db.scheduler_db.url is empty")
 	}
 
 	if c.DefaultCoolDownSecs < 60 || c.DefaultCoolDownSecs > 3600 {

@@ -21,7 +21,7 @@ type PolicySQLDB struct {
 }
 
 func NewPolicySQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*PolicySQLDB, error) {
-	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.Url)
+	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.URL)
 	if err != nil {
 		logger.Error("open-policy-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err

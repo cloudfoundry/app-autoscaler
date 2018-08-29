@@ -59,31 +59,31 @@ func main() {
 	logger := helpers.InitLoggerFromConfig(&conf.Logging, "metricscollector")
 	mcClock := clock.NewClock()
 
-	cfClient := cf.NewCfClient(&conf.Cf, logger.Session("cf"), mcClock)
+	cfClient := cf.NewCFClient(&conf.CF, logger.Session("cf"), mcClock)
 	err = cfClient.Login()
 	if err != nil {
-		logger.Error("failed to login cloud foundry", err, lager.Data{"Api": conf.Cf.Api})
+		logger.Error("failed to login cloud foundry", err, lager.Data{"Api": conf.CF.API})
 		os.Exit(1)
 	}
 
 	dopplerUrl := cfClient.GetEndpoints().DopplerEndpoint
 	logger.Info("create-noaa-client", map[string]interface{}{"dopplerUrl": dopplerUrl})
-	tlsConfig := &tls.Config{InsecureSkipVerify: conf.Cf.SkipSSLValidation}
+	tlsConfig := &tls.Config{InsecureSkipVerify: conf.CF.SkipSSLValidation}
 	noaa := consumer.New(dopplerUrl, tlsConfig, nil)
 	noaa.RefreshTokenFrom(cfClient)
 
 	var instanceMetricsDB db.InstanceMetricsDB
-	instanceMetricsDB, err = sqldb.NewInstanceMetricsSQLDB(conf.Db.InstanceMetricsDb, logger.Session("instancemetrics-db"))
+	instanceMetricsDB, err = sqldb.NewInstanceMetricsSQLDB(conf.DB.InstanceMetricsDB, logger.Session("instancemetrics-db"))
 	if err != nil {
-		logger.Error("failed to connect instancemetrics database", err, lager.Data{"dbConfig": conf.Db.InstanceMetricsDb})
+		logger.Error("failed to connect instancemetrics database", err, lager.Data{"dbConfig": conf.DB.InstanceMetricsDB})
 		os.Exit(1)
 	}
 	defer instanceMetricsDB.Close()
 
 	var policyDB db.PolicyDB
-	policyDB, err = sqldb.NewPolicySQLDB(conf.Db.PolicyDb, logger.Session("policy-db"))
+	policyDB, err = sqldb.NewPolicySQLDB(conf.DB.PolicyDB, logger.Session("policy-db"))
 	if err != nil {
-		logger.Error("failed to connect policy database", err, lager.Data{"dbConfig": conf.Db.PolicyDb})
+		logger.Error("failed to connect policy database", err, lager.Data{"dbConfig": conf.DB.PolicyDB})
 		os.Exit(1)
 	}
 	defer policyDB.Close()

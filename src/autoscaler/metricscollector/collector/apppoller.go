@@ -17,14 +17,14 @@ type appPoller struct {
 	appId           string
 	collectInterval time.Duration
 	logger          lager.Logger
-	cfc             cf.CfClient
+	cfc             cf.CFClient
 	noaaConsumer    noaa.NoaaConsumer
 	pclock          clock.Clock
 	doneChan        chan bool
 	dataChan        chan *models.AppInstanceMetric
 }
 
-func NewAppPoller(logger lager.Logger, appId string, collectInterval time.Duration, cfc cf.CfClient, noaaConsumer noaa.NoaaConsumer, pclock clock.Clock, dataChan chan *models.AppInstanceMetric) AppCollector {
+func NewAppPoller(logger lager.Logger, appId string, collectInterval time.Duration, cfc cf.CFClient, noaaConsumer noaa.NoaaConsumer, pclock clock.Clock, dataChan chan *models.AppInstanceMetric) AppCollector {
 	return &appPoller{
 		appId:           appId,
 		collectInterval: collectInterval,

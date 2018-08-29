@@ -20,7 +20,7 @@ type AppMetricSQLDB struct {
 func NewAppMetricSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*AppMetricSQLDB, error) {
 	var err error
 
-	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.Url)
+	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.URL)
 	if err != nil {
 		logger.Error("open-AppMetric-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err

@@ -27,19 +27,19 @@ const (
 )
 
 type InstanceMetricsDbPrunerConfig struct {
-	Db              db.DatabaseConfig `yaml:"db"`
+	DB              db.DatabaseConfig `yaml:"db"`
 	RefreshInterval time.Duration     `yaml:"refresh_interval"`
 	CutoffDays      int               `yaml:"cutoff_days"`
 }
 
-type AppMetricsDbPrunerConfig struct {
-	Db              db.DatabaseConfig `yaml:"db"`
+type AppMetricsDBPrunerConfig struct {
+	DB              db.DatabaseConfig `yaml:"db"`
 	RefreshInterval time.Duration     `yaml:"refresh_interval"`
 	CutoffDays      int               `yaml:"cutoff_days"`
 }
 
-type ScalingEngineDbPrunerConfig struct {
-	Db              db.DatabaseConfig `yaml:"db"`
+type ScalingEngineDBPrunerConfig struct {
+	DB              db.DatabaseConfig `yaml:"db"`
 	RefreshInterval time.Duration     `yaml:"refresh_interval"`
 	CutoffDays      int               `yaml:"cutoff_days"`
 }
@@ -53,7 +53,7 @@ type LockConfig struct {
 type DBLockConfig struct {
 	LockTTL           time.Duration     `yaml:"ttl"`
 	LockRetryInterval time.Duration     `yaml:"retry_interval"`
-	LockDB            db.DatabaseConfig `yaml:"lock_db"`
+	DB                db.DatabaseConfig `yaml:"db"`
 }
 
 var defaultDBLockConfig = DBLockConfig{
@@ -62,22 +62,22 @@ var defaultDBLockConfig = DBLockConfig{
 }
 
 type ScalingEngineConfig struct {
-	Url            string          `yaml:"scaling_engine_url"`
+	URL            string          `yaml:"scaling_engine_url"`
 	SyncInterval   time.Duration   `yaml:"sync_interval"`
 	TLSClientCerts models.TLSCerts `yaml:"tls"`
 }
 
 type SchedulerConfig struct {
-	Url            string          `yaml:"scheduler_url"`
+	URL            string          `yaml:"scheduler_url"`
 	SyncInterval   time.Duration   `yaml:"sync_interval"`
 	TLSClientCerts models.TLSCerts `yaml:"tls"`
 }
 
 type Config struct {
 	Logging           helpers.LoggingConfig         `yaml:"logging"`
-	InstanceMetricsDb InstanceMetricsDbPrunerConfig `yaml:"instance_metrics_db"`
-	AppMetricsDb      AppMetricsDbPrunerConfig      `yaml:"app_metrics_db"`
-	ScalingEngineDb   ScalingEngineDbPrunerConfig   `yaml:"scaling_engine_db"`
+	InstanceMetricsDB InstanceMetricsDbPrunerConfig `yaml:"instance_metrics_db"`
+	AppMetricsDB      AppMetricsDBPrunerConfig      `yaml:"app_metrics_db"`
+	ScalingEngineDB   ScalingEngineDBPrunerConfig   `yaml:"scaling_engine_db"`
 	ScalingEngine     ScalingEngineConfig           `yaml:"scaling_engine"`
 	Scheduler         SchedulerConfig               `yaml:"scheduler"`
 	Lock              LockConfig                    `yaml:"lock"`
@@ -87,15 +87,15 @@ type Config struct {
 
 var defaultConfig = Config{
 	Logging: helpers.LoggingConfig{Level: DefaultLoggingLevel},
-	InstanceMetricsDb: InstanceMetricsDbPrunerConfig{
+	InstanceMetricsDB: InstanceMetricsDbPrunerConfig{
 		RefreshInterval: DefaultRefreshInterval,
 		CutoffDays:      DefaultCutoffDays,
 	},
-	AppMetricsDb: AppMetricsDbPrunerConfig{
+	AppMetricsDB: AppMetricsDBPrunerConfig{
 		RefreshInterval: DefaultRefreshInterval,
 		CutoffDays:      DefaultCutoffDays,
 	},
-	ScalingEngineDb: ScalingEngineDbPrunerConfig{
+	ScalingEngineDB: ScalingEngineDBPrunerConfig{
 		RefreshInterval: DefaultRefreshInterval,
 		CutoffDays:      DefaultCutoffDays,
 	},
@@ -133,64 +133,64 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 
 func (c *Config) Validate() error {
 
-	if c.InstanceMetricsDb.Db.Url == "" {
-		return fmt.Errorf("Configuration error: InstanceMetrics DB url is empty")
+	if c.InstanceMetricsDB.DB.URL == "" {
+		return fmt.Errorf("Configuration error: instance_metrics_db.db.url is empty")
 	}
 
-	if c.InstanceMetricsDb.RefreshInterval <= 0 {
-		return fmt.Errorf("Configuration error: InstanceMetrics DB refresh interval is less than or equal to 0")
+	if c.InstanceMetricsDB.RefreshInterval <= 0 {
+		return fmt.Errorf("Configuration error: instance_metrics_db.refresh_interval is less than or equal to 0")
 	}
 
-	if c.InstanceMetricsDb.CutoffDays <= 0 {
-		return fmt.Errorf("Configuration error: InstanceMetrics DB cutoff days is less than or equal to 0")
+	if c.InstanceMetricsDB.CutoffDays <= 0 {
+		return fmt.Errorf("Configuration error: instance_metrics_db.cutoff_days is less than or equal to 0")
 	}
 
-	if c.AppMetricsDb.Db.Url == "" {
-		return fmt.Errorf("Configuration error: AppMetrics DB url is empty")
+	if c.AppMetricsDB.DB.URL == "" {
+		return fmt.Errorf("Configuration error: app_metrics_db.db.url is empty")
 	}
 
-	if c.AppMetricsDb.RefreshInterval <= 0 {
-		return fmt.Errorf("Configuration error: AppMetrics DB refresh interval is less than or equal to 0")
+	if c.AppMetricsDB.RefreshInterval <= 0 {
+		return fmt.Errorf("Configuration error: app_metrics_db.refresh_interval is less than or equal to 0")
 	}
 
-	if c.AppMetricsDb.CutoffDays <= 0 {
-		return fmt.Errorf("Configuration error: AppMetrics DB cutoff days is less than or equal to 0")
+	if c.AppMetricsDB.CutoffDays <= 0 {
+		return fmt.Errorf("Configuration error: app_metrics_db.cutoff_days is less than or equal to 0")
 	}
 
-	if c.ScalingEngineDb.Db.Url == "" {
-		return fmt.Errorf("Configuration error: ScalingEngine DB url is empty")
+	if c.ScalingEngineDB.DB.URL == "" {
+		return fmt.Errorf("Configuration error: scaling_engine_db.db.url is empty")
 	}
 
-	if c.ScalingEngineDb.RefreshInterval <= 0 {
-		return fmt.Errorf("Configuration error: ScalingEngine DB refresh interval is less than or equal to 0")
+	if c.ScalingEngineDB.RefreshInterval <= 0 {
+		return fmt.Errorf("Configuration error: scaling_engine_db.refresh_interval is less than or equal to 0")
 	}
 
-	if c.ScalingEngineDb.CutoffDays <= 0 {
-		return fmt.Errorf("Configuration error: ScalingEngine DB cutoff days is less than or equal to 0")
+	if c.ScalingEngineDB.CutoffDays <= 0 {
+		return fmt.Errorf("Configuration error: scaling_engine_db.cutoff_days is less than or equal to 0")
 	}
-	if c.ScalingEngine.Url == "" {
-		return fmt.Errorf("Configuration error: ScalingEngine url is empty")
+	if c.ScalingEngine.URL == "" {
+		return fmt.Errorf("Configuration error: scaling_engine.scaling_engine_url is empty")
 	}
 	if c.ScalingEngine.SyncInterval <= 0 {
-		return fmt.Errorf("Configuration error: ScalingEngine sync interval is less than or equal to 0")
+		return fmt.Errorf("Configuration error: scaling_engine.sync_interval is less than or equal to 0")
 	}
-	if c.Scheduler.Url == "" {
-		return fmt.Errorf("Configuration error: Scheduler url is empty")
+	if c.Scheduler.URL == "" {
+		return fmt.Errorf("Configuration error: scheduler.scheduler_url is empty")
 	}
 	if c.Scheduler.SyncInterval <= 0 {
-		return fmt.Errorf("Configuration error: Scheduler sync interval is less than or equal to 0")
+		return fmt.Errorf("Configuration error: scheduler.sync_interval is less than or equal to 0")
 	}
 
 	if c.Lock.LockRetryInterval <= 0 {
-		return fmt.Errorf("Configuration error: lock retry interval is less than or equal to 0")
+		return fmt.Errorf("Configuration error: lock.lock_retry_interval is less than or equal to 0")
 	}
 
 	if c.Lock.LockTTL <= 0 {
-		return fmt.Errorf("Configuration error: lock ttl is less than or equal to 0")
+		return fmt.Errorf("Configuration error: lock.lock_ttl is less than or equal to 0")
 	}
 
-	if c.EnableDBLock && c.DBLock.LockDB.Url == "" {
-		return fmt.Errorf("Configuration error: Lock DB Url is empty")
+	if c.EnableDBLock && c.DBLock.DB.URL == "" {
+		return fmt.Errorf("Configuration error: db_lock.db.url is empty")
 	}
 
 	return nil

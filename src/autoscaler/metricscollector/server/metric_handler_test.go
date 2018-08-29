@@ -22,7 +22,7 @@ var testUrlMetricHistories = "http://localhost/v1/apps/an-app-id/metric_historie
 var _ = Describe("MetricHandler", func() {
 
 	var (
-		cfc      *fakes.FakeCfClient
+		cfc      *fakes.FakeCFClient
 		consumer *fakes.FakeNoaaConsumer
 		handler  *MetricHandler
 		database *fakes.FakeInstanceMetricsDB
@@ -36,7 +36,7 @@ var _ = Describe("MetricHandler", func() {
 	)
 
 	BeforeEach(func() {
-		cfc = &fakes.FakeCfClient{}
+		cfc = &fakes.FakeCFClient{}
 		consumer = &fakes.FakeNoaaConsumer{}
 		logger := lager.NewLogger("handler-test")
 		database = &fakes.FakeInstanceMetricsDB{}

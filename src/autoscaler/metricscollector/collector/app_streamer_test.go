@@ -21,7 +21,7 @@ import (
 var _ = Describe("AppStreamer", func() {
 
 	var (
-		cfc          *fakes.FakeCfClient
+		cfc          *fakes.FakeCFClient
 		noaaConsumer *fakes.FakeNoaaConsumer
 		streamer     AppCollector
 		buffer       *gbytes.Buffer
@@ -32,7 +32,7 @@ var _ = Describe("AppStreamer", func() {
 	)
 
 	BeforeEach(func() {
-		cfc = &fakes.FakeCfClient{}
+		cfc = &fakes.FakeCFClient{}
 		noaaConsumer = &fakes.FakeNoaaConsumer{}
 
 		logger := lagertest.NewTestLogger("AppStreamer-test")

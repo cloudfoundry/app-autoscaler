@@ -19,7 +19,7 @@ const (
 )
 
 func (c *cfClient) GetApp(appId string) (*models.AppEntity, error) {
-	url := c.conf.Api + path.Join(PathApp, appId, "summary")
+	url := c.conf.API + path.Join(PathApp, appId, "summary")
 	c.logger.Debug("get-app-instances", lager.Data{"url": url})
 
 	req, err := http.NewRequest("GET", url, nil)
@@ -53,8 +53,8 @@ func (c *cfClient) GetApp(appId string) (*models.AppEntity, error) {
 	return appEntity, nil
 }
 
-func (c *cfClient) SetAppInstances(appId string, num int) error {
-	url := c.conf.Api + path.Join(PathApp, appId)
+func (c *cfClient) SetAppInstances(appID string, num int) error {
+	url := c.conf.API + path.Join(PathApp, appID)
 	c.logger.Debug("set-app-instances", lager.Data{"url": url})
 
 	appEntity := models.AppEntity{
@@ -62,7 +62,7 @@ func (c *cfClient) SetAppInstances(appId string, num int) error {
 	}
 	body, err := json.Marshal(appEntity)
 	if err != nil {
-		c.logger.Error("set-app-instances-marshal", err, lager.Data{"appid": appId, "appEntity": appEntity})
+		c.logger.Error("set-app-instances-marshal", err, lager.Data{"appid": appID, "appEntity": appEntity})
 		return err
 	}
 
@@ -86,19 +86,19 @@ func (c *cfClient) SetAppInstances(appId string, num int) error {
 	if resp.StatusCode != http.StatusCreated {
 		respBody, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			c.logger.Error("failed-to-read-response-body-while-setting-app-instance", err, lager.Data{"appid": appId})
+			c.logger.Error("failed-to-read-response-body-while-setting-app-instance", err, lager.Data{"appid": appID})
 			return err
 		}
 		var bodydata map[string]interface{}
 		err = json.Unmarshal([]byte(respBody), &bodydata)
 		if err != nil {
-			c.logger.Error("failed-to-unmarshal-response-body-while-setting-app-instance", err, lager.Data{"appid": appId})
+			c.logger.Error("failed-to-unmarshal-response-body-while-setting-app-instance", err, lager.Data{"appid": appID})
 			return err
 		}
 		errorDescription := bodydata["description"].(string)
 		errorCode := bodydata["error_code"].(string)
 		err = fmt.Errorf("failed setting application instances: [%d] %s: %s", resp.StatusCode, errorCode, errorDescription)
-		c.logger.Error("set-app-instances-response", err, lager.Data{"appid": appId, "statusCode": resp.StatusCode, "description": errorDescription, "errorCode": errorCode})
+		c.logger.Error("set-app-instances-response", err, lager.Data{"appid": appID, "statusCode": resp.StatusCode, "description": errorDescription, "errorCode": errorCode})
 		return err
 	}
 	return nil

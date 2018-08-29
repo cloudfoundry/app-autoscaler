@@ -18,7 +18,7 @@ type InstanceMetricsSQLDB struct {
 }
 
 func NewInstanceMetricsSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*InstanceMetricsSQLDB, error) {
-	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.Url)
+	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.URL)
 	if err != nil {
 		logger.Error("failed-open-instancemetrics-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err

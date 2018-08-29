@@ -96,35 +96,35 @@ func main() {
 	cfhttp.Initialize(5 * time.Second)
 
 	eClock := clock.NewClock()
-	cfClient := cf.NewCfClient(&conf.Cf, logger.Session("cf"), eClock)
+	cfClient := cf.NewCFClient(&conf.CF, logger.Session("cf"), eClock)
 	err = cfClient.Login()
 	if err != nil {
-		logger.Error("failed to login cloud foundry", err, lager.Data{"Api": conf.Cf.Api})
+		logger.Error("failed to login cloud foundry", err, lager.Data{"API": conf.CF.API})
 		os.Exit(1)
 	}
 
 	var policyDB db.PolicyDB
-	policyDB, err = sqldb.NewPolicySQLDB(conf.Db.PolicyDb, logger.Session("policy-db"))
+	policyDB, err = sqldb.NewPolicySQLDB(conf.DB.PolicyDB, logger.Session("policy-db"))
 	if err != nil {
-		logger.Error("failed to connect policy database", err, lager.Data{"dbConfig": conf.Db.PolicyDb})
+		logger.Error("failed to connect policy database", err, lager.Data{"dbConfig": conf.DB.PolicyDB})
 		os.Exit(1)
 	}
 	policyDB.EmitHealthMetrics(healthRegistry, eClock, conf.Health.EmitInterval)
 	defer policyDB.Close()
 
 	var scalingEngineDB db.ScalingEngineDB
-	scalingEngineDB, err = sqldb.NewScalingEngineSQLDB(conf.Db.ScalingEngineDb, logger.Session("scalingengine-db"))
+	scalingEngineDB, err = sqldb.NewScalingEngineSQLDB(conf.DB.ScalingEngineDB, logger.Session("scalingengine-db"))
 	if err != nil {
-		logger.Error("failed to connect scalingengine database", err, lager.Data{"dbConfig": conf.Db.ScalingEngineDb})
+		logger.Error("failed to connect scalingengine database", err, lager.Data{"dbConfig": conf.DB.ScalingEngineDB})
 		os.Exit(1)
 	}
 	scalingEngineDB.EmitHealthMetrics(healthRegistry, eClock, conf.Health.EmitInterval)
 	defer scalingEngineDB.Close()
 
 	var schedulerDB db.SchedulerDB
-	schedulerDB, err = sqldb.NewSchedulerSQLDB(conf.Db.SchedulerDb, logger.Session("scheduler-db"))
+	schedulerDB, err = sqldb.NewSchedulerSQLDB(conf.DB.SchedulerDB, logger.Session("scheduler-db"))
 	if err != nil {
-		logger.Error("failed to connect scheduler database", err, lager.Data{"dbConfig": conf.Db.SchedulerDb})
+		logger.Error("failed to connect scheduler database", err, lager.Data{"dbConfig": conf.DB.SchedulerDB})
 		os.Exit(1)
 	}
 	schedulerDB.EmitHealthMetrics(healthRegistry, eClock, conf.Health.EmitInterval)
