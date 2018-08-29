@@ -88,12 +88,11 @@ var getPolicySchema = function() {
 var getScalingRuleSchema = function() {
   var validOperators = getValidOperators();
   var adjustmentPattern = getAdjustmentPattern();
-  var metricTypeEnum = getMetricTypes();
   var schema = {
     'type': 'object',
     'id':'/scaling_rules',
     'properties' : {
-      'metric_type':{ 'type':'string' ,'enum':metricTypeEnum },
+      'metric_type':{ 'type':'string' },
       'breach_duration_secs':{ 'type':'number','minimum': 60,'maximum': 3600 },
       'threshold':{ 'type':'number'},
       'operator':{ 'type':'string','enum': validOperators },

@@ -63,6 +63,7 @@ type APIServerClient struct {
 type ServiceBrokerConfig struct {
 	Port       int `json:"port"`
 	PublicPort int `json:"publicPort"`
+	EnableCustomMetrics bool `json:"enableCustomMetrics"`
 
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -106,6 +107,7 @@ type APIServerConfig struct {
 	InfoFilePath           string                 `json:"infoFilePath"`
 	CFAPI                  string                 `json:"cfApi"`
 	SkipSSLValidation      bool                   `json:"skipSSLValidation"`
+	CacheTTL               int                    `json:"cacheTTL"`
 	DB                     DBConfig               `json:"db"`
 	SchedulerClient        SchedulerClient        `json:"scheduler"`
 	ScalingEngineClient    ScalingEngineClient    `json:"scalingEngine"`
@@ -223,12 +225,13 @@ func (components *Components) Operator(confPath string, argv ...string) *ginkgom
 	})
 }
 
-func (components *Components) PrepareServiceBrokerConfig(publicPort int, internalPort int, username string, password string, dbUri string, apiServerUri string, brokerApiHttpRequestTimeout time.Duration, tmpDir string) string {
+func (components *Components) PrepareServiceBrokerConfig(publicPort int, internalPort int, username string, password string, enableCustomMetrics bool, dbUri string, apiServerUri string, brokerApiHttpRequestTimeout time.Duration, tmpDir string) string {
 	brokerConfig := ServiceBrokerConfig{
 		Port:       internalPort,
 		PublicPort: publicPort,
 		Username:   username,
 		Password:   password,
+		EnableCustomMetrics: enableCustomMetrics,
 		DB: DBConfig{
 			URI:            dbUri,
 			MinConnections: 1,
@@ -266,7 +269,7 @@ func (components *Components) PrepareServiceBrokerConfig(publicPort int, interna
 	return cfgFile.Name()
 }
 
-func (components *Components) PrepareApiServerConfig(port int, publicPort int, skipSSLValidation bool, cfApi string, dbUri string, schedulerUri string, scalingEngineUri string, metricsCollectorUri string, eventGeneratorUri string, serviceBrokerUri string, serviceOfferingEnabled bool, tmpDir string) string {
+func (components *Components) PrepareApiServerConfig(port int, publicPort int, skipSSLValidation bool, cacheTTL int, cfApi string, dbUri string, schedulerUri string, scalingEngineUri string, metricsCollectorUri string, eventGeneratorUri string, serviceBrokerUri string, serviceOfferingEnabled bool, tmpDir string) string {
 
 	apiConfig := APIServerConfig{
 		Port:              port,
@@ -274,6 +277,7 @@ func (components *Components) PrepareApiServerConfig(port int, publicPort int, s
 		InfoFilePath:      apiServerInfoFilePath,
 		CFAPI:             cfApi,
 		SkipSSLValidation: skipSSLValidation,
+		CacheTTL:          cacheTTL,
 		DB: DBConfig{
 			URI:            dbUri,
 			MinConnections: 1,
