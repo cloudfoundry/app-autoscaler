@@ -26,11 +26,25 @@ module.exports = function(app, settings, catalog, models) {
     });
   }
 
+  function generateCredentials(username,password) {
+    return {
+        credentials: {
+            custom_metrics:{
+              username: username,
+              password: password,
+              url: settings.customMetricsUrl
+            }
+        },
+    };
+  }
+
   app.put('/v2/service_instances/:instance_id/service_bindings/:binding_id', function(req, res) {
     var serviceInstanceId = req.params.instance_id;
     var bindingId = req.params.binding_id;
     var appId = req.body.app_guid;
     var policyJSON = req.body.parameters;
+    var credentialsObject;
+
     if (serviceInstanceId == null || serviceInstanceId.trim() === "") {
       logger.error("serviceInstanceId is required");
       res.status(400).json({});
@@ -57,32 +71,61 @@ module.exports = function(app, settings, catalog, models) {
             timestamp: new Date().getTime()
           }, { transaction: t }).then(function(result) {
             if (typeof(policyJSON) === "undefined") {
-              commitTransaction(t, res, 201, {credentials: {}});
+              if (settings.enableCustomMetrics) { // Create Custom Metrics Credentials only if feature is enabled
+                logger.info("custom metrics feature enabled, generating credentials");
+                apiServerUtil.getCreds(appId,function(credError, credResponse) {
+                  if (credError != null) {
+                    logger.error("Bind failed: credential generation error", { "error": credError });
+                    rollbackTransaction(t, res, 500, {});
+                    return;
+                  }
+                  var parsedResponse = JSON.parse(credResponse.body);
+                  var credentialsObject = generateCredentials(parsedResponse.username,parsedResponse.password);
+                  logger.info("credentials created/updated successfully",credentialsObject);
+                  commitTransaction(t, res, 201, credentialsObject);
+                });
+              } else {
+                logger.info("custom metrics feature not enabled");
+                commitTransaction(t, res, 201, {credentials: {}});
+              }
               return;
             } else {
-              apiServerUtil.attachPolicy(appId, policyJSON, function(error, response) {
-                if (error != null) {
-                  logger.error("Bind failed: attach policy error", { error: error });
+              apiServerUtil.attachPolicy(appId, policyJSON, function(attachError, attachResponse) {
+                if (attachError != null) {
+                  logger.error("Bind failed: attach policy error", { error: attachError });
                   rollbackTransaction(t, res, 500, {});
                   return;
                 }
-
-                var statusCode = response.statusCode;
-                logger.info("Api Server response", { status_code: statusCode, response: response.body });
-
-                switch (statusCode) {
-                  case 200:
-                  case 201:
-                    commitTransaction(t, res, statusCode, {credentials: {}});
-                    return;
-                  case 400:
-                    rollbackTransaction(t, res, statusCode, { "description": response.body.error });
-                    return;
-                  default:
-                    rollbackTransaction(t, res, 500, {});
-                    return;
-                }
-
+                var attachmentStatusCode = attachResponse.statusCode;
+                logger.info("Api Server response", { status_code: attachmentStatusCode, response: attachResponse.body });
+                  switch (attachmentStatusCode) {
+                    case 200:
+                    case 201:
+                      if (settings.enableCustomMetrics){ // Create Custom Metrics Credentials only if feature is enabled
+                        logger.info("custom metrics feature enabled, generating credentials");
+                        apiServerUtil.getCreds(appId,function(credError, credResponse) {
+                          if (credError != null) {
+                            logger.error("Bind failed: credential generation error", { "error": credError });
+                            rollbackTransaction(t, res, 500, {});
+                            return;
+                          }
+                          var parsedResponse = JSON.parse(credResponse.body);
+                          var credentialsObject = generateCredentials(parsedResponse.username,parsedResponse.password);
+                          logger.info("credentials created/updated successfully");
+                          commitTransaction(t, res, attachmentStatusCode, credentialsObject);
+                        });
+                      } else {
+                        logger.info("custom metrics feature not enabled");
+                        commitTransaction(t, res, attachmentStatusCode, {credentials: {}});
+                      }
+                      return;;
+                    case 400:
+                      rollbackTransaction(t, res, attachmentStatusCode, { "description": attachResponse.body.error });
+                      return;
+                    default:
+                      rollbackTransaction(t, res, 500, {});
+                      return;
+                    }
               });
             }
 
@@ -95,7 +138,6 @@ module.exports = function(app, settings, catalog, models) {
               rollbackTransaction(t, res, 404, { "description": messageUtil.getMessage("SERVICEINSTANCE_NOT_EXIST", { "serviceInstanceId": serviceInstanceId }) });
               return;
             }
-
             rollbackTransaction(t, res, 500, {});
           });
         } else if (length > 1) { // an app has been bound to more than one service instance, this error should not exist
@@ -143,13 +185,25 @@ module.exports = function(app, settings, catalog, models) {
                   var statusCode = response.statusCode;
                   logger.info("Api Server response", { status_code: statusCode, response: response.body });
                   if (statusCode === 200) {
-                    commitTransaction(t, res, statusCode, {});
+                    if (settings.enableCustomMetrics) { // Delete Custom Metrics Credentials only if feature is enabled
+                      logger.info("Custom Metrics enabled deleting credentials");
+                      apiServerUtil.deleteCreds(appId,function(credError, credResponse) {
+                        if (credError != null) {
+                          logger.error("Unbind failed: credential deletion error", { "error": credError });
+                          rollbackTransaction(t, res, 500, {});
+                        } else {
+                          logger.info("credential deleted successfully");
+                          commitTransaction(t, res, statusCode, {});
+                        }
+                      });
+                    } else {
+                      commitTransaction(t, res, statusCode, {});
+                    }
                     return;
                   } else if (statusCode === 404) {
                     commitTransaction(t, res, 200, {});
                     return;
                   }
-
                   //for 400,500 and other status, return 500
                   logger.error("Unbind failed: detach policy failed", { status_code: statusCode });
                   rollbackTransaction(t, res, 500, {});
@@ -161,7 +215,6 @@ module.exports = function(app, settings, catalog, models) {
               });
               return;
             }
-
             rollbackTransaction(t, res, 410, {});
           }).catch(function(error1) {
             logger.error("Unbind failed: destroy error", { error: error1 });
@@ -169,7 +222,6 @@ module.exports = function(app, settings, catalog, models) {
           });
           return;
         }
-
         rollbackTransaction(t, res, 410, {});
       }).catch(function(error3) {
         logger.error("Unbind failed: find binding failed", { error: error3 });

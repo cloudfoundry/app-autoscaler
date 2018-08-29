@@ -47,6 +47,7 @@ module.exports = function (settingsObj) {
     port: settingsObj.port,
     cfApi: addProtocol(cleanUpUri(settingsObj.cfApi)),
     skipSSLValidation: settingsObj.skipSSLValidation,
+    cacheTTL: settingsObj.cacheTTL,
     publicPort: settingsObj.publicPort,
     scheduler: settingsObj.scheduler,
     scalingEngine: settingsObj.scalingEngine,
@@ -124,6 +125,12 @@ module.exports = function (settingsObj) {
     }
     if (!isBoolean(settings.skipSSLValidation)) {
       return { valid: false, message: 'skipSSLValidation must be a boolean' };
+    }
+    if (isMissing(settings.cacheTTL)) {
+      return { valid: false, message: "cacheTTL is required" }
+    }
+    if (!isNumber(settings.cacheTTL)) {
+      return { valid: false, message: "cacheTTL must be a number" };
     }
     if (isMissing(settings.db.maxConnections)) {
       return { valid: false, message: "db.maxConnections is required" };

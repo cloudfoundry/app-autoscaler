@@ -14,6 +14,7 @@ describe('config setting Test Suite', function () {
       "infoFilePath": "../api/config/info.json",
       "cfApi": "api.bosh-lite.com",
       "skipSSLValidation": false,
+      "cacheTTL": 200,
       "db": {
         "maxConnections": 10,
         "minConnections": 0,
@@ -87,6 +88,7 @@ describe('config setting Test Suite', function () {
     expect(settings.cfApi).to.equal("https://" + defaultConfig.cfApi.toLowerCase());
     expect(settings.infoFilePath).to.equal(defaultConfig.infoFilePath);
     expect(settings.skipSSLValidation).to.equal(false);
+    expect(settings.cacheTTL).to.equal(defaultConfig.cacheTTL);
 
     expect(settings.db.maxConnections).to.equal(defaultConfig.db.maxConnections);
     expect(settings.db.minConnections).to.equal(defaultConfig.db.minConnections);
@@ -313,6 +315,30 @@ describe('config setting Test Suite', function () {
           settings.publicPort = 70000;
           expect(settings.validate().valid).to.equal(false);
           expect(settings.validate().message).to.equal("value of publicPort must be between 1 and 65535");
+        })
+      });
+    });
+
+    context('Validate cacheTTL', function () {
+      context('When cacheTTL is null', function () {
+        it('Should return false', function () {
+          settings.cacheTTL = null;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("cacheTTL is required");
+        })
+      });
+      context('When cacheTTL is undefined', function () {
+        it('Should return false', function () {
+          delete settings.cacheTTL;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("cacheTTL is required");
+        })
+      });
+      context('When cacheTTL is not an integer', function () {
+        it('Should return false', function () {
+          settings.cacheTTL = "800";
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("cacheTTL must be a number");
         })
       });
     });

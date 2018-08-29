@@ -3,6 +3,7 @@
     "publicPort": 8080,
     "username": "username",
     "password": "password",
+    "enableCustomMetrics": true,
     "db": {
         "maxConnections": 10,
         "minConnections": 0,
@@ -30,5 +31,6 @@
     },
     "serviceCatalogPath": "../servicebroker/config/catalog.json",
     "schemaValidationPath": "../servicebroker/config/catalog.schema.json",    
-    "dashboardRedirectUri": "https://dashboard-redirect-uri-settings.example.com"
+    "dashboardRedirectUri": "https://dashboard-redirect-uri-settings.example.com",
+    "customMetricsUrl": "http://metrics.example.com/v1/metrics"
 }
