@@ -1,18 +1,18 @@
 package config
 
 import (
+	"autoscaler/cf"
+	"autoscaler/db"
+	"autoscaler/helpers"
+	"autoscaler/models"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"strings"
 	"time"
 
-	"autoscaler/db"
-	"autoscaler/helpers"
-	"autoscaler/models"
-
 	"code.cloudfoundry.org/locket"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
 const (
@@ -73,19 +73,30 @@ type SchedulerConfig struct {
 	TLSClientCerts models.TLSCerts `yaml:"tls"`
 }
 
+type AppSyncerConfig struct {
+	DB           db.DatabaseConfig `yaml:"db"`
+	SyncInterval time.Duration     `yaml:"sync_interval"`
+}
+
 type Config struct {
+	CF                cf.CFConfig                   `yaml:"cf"`
 	Logging           helpers.LoggingConfig         `yaml:"logging"`
 	InstanceMetricsDB InstanceMetricsDbPrunerConfig `yaml:"instance_metrics_db"`
 	AppMetricsDB      AppMetricsDBPrunerConfig      `yaml:"app_metrics_db"`
 	ScalingEngineDB   ScalingEngineDBPrunerConfig   `yaml:"scaling_engine_db"`
 	ScalingEngine     ScalingEngineConfig           `yaml:"scaling_engine"`
 	Scheduler         SchedulerConfig               `yaml:"scheduler"`
+	AppSyncer         AppSyncerConfig               `yaml:"app_syncer"`
 	Lock              LockConfig                    `yaml:"lock"`
 	DBLock            DBLockConfig                  `yaml:"db_lock"`
 	EnableDBLock      bool                          `yaml:"enable_db_lock"`
 }
 
 var defaultConfig = Config{
+	CF: cf.CFConfig{
+		GrantType:         cf.GrantTypePassword,
+		SkipSSLValidation: false,
+	},
 	Logging: helpers.LoggingConfig{Level: DefaultLoggingLevel},
 	InstanceMetricsDB: InstanceMetricsDbPrunerConfig{
 		RefreshInterval: DefaultRefreshInterval,
@@ -108,6 +119,9 @@ var defaultConfig = Config{
 	Lock: LockConfig{
 		LockRetryInterval: DefaultRetryInterval,
 		LockTTL:           DefaultLockTTL,
+	},
+	AppSyncer: AppSyncerConfig{
+		SyncInterval: DefaultSyncInterval,
 	},
 	DBLock:       defaultDBLockConfig,
 	EnableDBLock: false,
@@ -191,6 +205,13 @@ func (c *Config) Validate() error {
 
 	if c.EnableDBLock && c.DBLock.DB.URL == "" {
 		return fmt.Errorf("Configuration error: db_lock.db.url is empty")
+	}
+
+	if c.AppSyncer.DB.URL == "" {
+		return fmt.Errorf("Configuration error: appSyncer.db.url is empty")
+	}
+	if c.AppSyncer.SyncInterval <= 0 {
+		return fmt.Errorf("Configuration error: appSyncer.sync_interval is less than or equal to 0")
 	}
 
 	return nil
