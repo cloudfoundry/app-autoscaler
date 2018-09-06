@@ -2,6 +2,7 @@ package cf_test
 
 import (
 	. "autoscaler/cf"
+	"autoscaler/helpers"
 	"autoscaler/models"
 	"io"
 
@@ -16,6 +17,12 @@ import (
 	"net/http"
 	"net/url"
 )
+
+type CFSummaryResponse struct {
+	Description string `json:"description"`
+	ErrorCode   string `json:"error_code"`
+	Code        int    `json:"code"`
+}
 
 var _ = Describe("App", func() {
 
@@ -83,11 +90,35 @@ var _ = Describe("App", func() {
 			})
 		})
 
-		Context("when get app summary return non-200 status code", func() {
+		Context("when get app summary return 404 status code", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.RespondWithJSONEncoded(http.StatusNotFound, ""),
+						ghttp.RespondWithJSONEncoded(http.StatusNotFound, CFSummaryResponse{
+							Description: "The app could not be found: 7efa8f58-1aba-4493-bf9e-30d69c40dbb42",
+							ErrorCode:   "CF-AppNotFound",
+							Code:        100004,
+						}),
+					),
+				)
+			})
+
+			It("should error", func() {
+				Expect(appEntity).To(BeNil())
+				Expect(err).To(Equal(helpers.NewAppNotFoundErr("The app could not be found: 7efa8f58-1aba-4493-bf9e-30d69c40dbb42")))
+				Expect(err).To(MatchError(MatchRegexp("The app could not be found: *")))
+			})
+		})
+
+		Context("when get app summary return non-200 and non-404 status code", func() {
+			BeforeEach(func() {
+				fakeCC.AppendHandlers(
+					ghttp.CombineHandlers(
+						ghttp.RespondWithJSONEncoded(http.StatusInternalServerError, CFSummaryResponse{
+							Description: "Server error",
+							ErrorCode:   "ServerError",
+							Code:        100001,
+						}),
 					),
 				)
 			})

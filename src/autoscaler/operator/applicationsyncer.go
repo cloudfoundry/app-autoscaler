@@ -3,6 +3,7 @@ package operator
 import (
 	"autoscaler/cf"
 	"autoscaler/db"
+	"autoscaler/helpers"
 
 	"code.cloudfoundry.org/lager"
 )
@@ -34,13 +35,16 @@ func (as ApplicationSynchronizer) Operate() {
 		_, err = as.cfClient.GetApp(appID)
 		if err != nil {
 			as.logger.Error("failed-to-get-app-info", err)
-			// Application does not exist, lets clean up app details from policyDB
-			err = as.policyDb.DeletePolicy(appID)
-			if err != nil {
-				as.logger.Error("failed-to-prune-non-existent-application-details", err)
-				return
+			_, ok := err.(*helpers.AppNotFoundErr)
+			if ok {
+				// Application does not exist, lets clean up app details from policyDB
+				err = as.policyDb.DeletePolicy(appID)
+				if err != nil {
+					as.logger.Error("failed-to-prune-non-existent-application-details", err)
+					return
+				}
+				as.logger.Info("successfully-pruned-non-existent-applcation", lager.Data{"appid": appID})
 			}
-			as.logger.Info("successfully-pruned-non-existent-applcation", lager.Data{"appid": appID})
 		}
 	}
 }
