@@ -47,7 +47,7 @@ func (c *TSDCache) binarySearch(t int64) int {
 		if l > r {
 			return l
 		}
-		m := (l + r) / 2
+		m := l + (r-l)/2
 		if t <= c.data[m%c.capacity].GetTimestamp() {
 			r = m - 1
 		} else {

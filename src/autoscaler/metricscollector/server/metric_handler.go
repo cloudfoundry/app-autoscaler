@@ -135,7 +135,7 @@ func (h *MetricHandler) GetMetricHistories(w http.ResponseWriter, r *http.Reques
 	if instanceIndex >= 0 {
 		labels[models.MetricLabelInstanceIndex] = fmt.Sprintf("%d", instanceIndex)
 	}
-	mtrcs, ok := h.queryFunc(appId, start, end, order, labels)
+	mtrcs, ok := h.queryFunc(appId, start, end+1, order, labels)
 	if !ok {
 		h.logger.Debug("get-metric-histories-query-cache-miss", lager.Data{"appId": appId, "metrictype": metricType, "instanceIndex": instanceIndex, "start": start, "end": end, "order": order})
 		mtrcs, err = h.database.RetrieveInstanceMetrics(appId, int(instanceIndex), metricType, start, end, order)
