@@ -18,7 +18,7 @@ import (
 	"net/url"
 )
 
-type CFSummaryResponse struct {
+type ErrorResponse struct {
 	Description string `json:"description"`
 	ErrorCode   string `json:"error_code"`
 	Code        int    `json:"code"`
@@ -94,7 +94,7 @@ var _ = Describe("App", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.RespondWithJSONEncoded(http.StatusNotFound, CFSummaryResponse{
+						ghttp.RespondWithJSONEncoded(http.StatusNotFound, ErrorResponse{
 							Description: "The app could not be found: 7efa8f58-1aba-4493-bf9e-30d69c40dbb42",
 							ErrorCode:   "CF-AppNotFound",
 							Code:        100004,
@@ -114,11 +114,27 @@ var _ = Describe("App", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.RespondWithJSONEncoded(http.StatusInternalServerError, CFSummaryResponse{
+						ghttp.RespondWithJSONEncoded(http.StatusInternalServerError, ErrorResponse{
 							Description: "Server error",
 							ErrorCode:   "ServerError",
 							Code:        100001,
 						}),
+					),
+				)
+			})
+
+			It("should error", func() {
+				Expect(appEntity).To(BeNil())
+				Expect(err).To(MatchError(MatchRegexp("failed getting application summary: *")))
+			})
+
+		})
+
+		Context("when get app summary return non-200 and non-404 status code with non-JSON response", func() {
+			BeforeEach(func() {
+				fakeCC.AppendHandlers(
+					ghttp.CombineHandlers(
+						ghttp.RespondWithJSONEncoded(http.StatusInternalServerError, ""),
 					),
 				)
 			})

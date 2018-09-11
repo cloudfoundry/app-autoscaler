@@ -41,28 +41,34 @@ func (c *cfClient) GetApp(appId string) (*models.AppEntity, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		respBody, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			c.logger.Error("failed-to-read-response-body-while-getting-app-summary", err, lager.Data{"appid": appId})
-			return nil, err
-		}
-		var bodydata map[string]interface{}
-		err = json.Unmarshal([]byte(respBody), &bodydata)
-		if err != nil {
-			c.logger.Error("failed-to-unmarshal-response-body-while-getting-app-summary", err, lager.Data{"appid": appId})
-			return nil, err
-		}
-		errorDescription := bodydata["description"].(string)
-		errorCode := bodydata["error_code"].(string)
-		code := bodydata["code"].(float64)
+		if resp.StatusCode == 404 {
+			respBody, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				c.logger.Error("failed-to-read-response-body-while-getting-app-summary", err, lager.Data{"appid": appId})
+				return nil, err
+			}
+			var bodydata map[string]interface{}
+			err = json.Unmarshal([]byte(respBody), &bodydata)
+			if err != nil {
+				c.logger.Error("failed-to-unmarshal-response-body-while-getting-app-summary", err, lager.Data{"appid": appId})
+				return nil, err
+			}
+			errorDescription := bodydata["description"].(string)
+			errorCode := bodydata["error_code"].(string)
+			code := bodydata["code"].(float64)
 
-		if errorCode == CFAppNotFound && code == 100004 {
-			// Application does not exists
-			err = helpers.NewAppNotFoundErr(errorDescription)
-		} else {
-			err = fmt.Errorf("failed getting application summary: [%d] %s: %s", resp.StatusCode, errorCode, errorDescription)
+			if errorCode == CFAppNotFound && code == 100004 {
+				// Application does not exists
+				err = helpers.NewAppNotFoundErr(errorDescription)
+			} else {
+				err = fmt.Errorf("failed getting application summary: [%d] %s: %s", resp.StatusCode, errorCode, errorDescription)
+			}
+			c.logger.Error("get-app-summary-response", err, lager.Data{"appid": appId, "statusCode": resp.StatusCode, "description": errorDescription, "errorCode": errorCode})
+			return nil, err
 		}
-		c.logger.Error("get-app-summary-response", err, lager.Data{"appid": appId, "statusCode": resp.StatusCode, "description": errorDescription, "errorCode": errorCode})
+		// For Non 404 Error type
+		err = fmt.Errorf("failed getting application summary: %s [%d] %s", url, resp.StatusCode, resp.Status)
+		c.logger.Error("get-app-instances-response", err)
 		return nil, err
 	}
 
