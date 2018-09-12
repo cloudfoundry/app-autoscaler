@@ -1,7 +1,6 @@
 package operator_test
 
 import (
-	"autoscaler/helpers"
 	"autoscaler/models"
 	"autoscaler/operator"
 	"autoscaler/operator/fakes"
@@ -52,7 +51,7 @@ var _ = Describe("AppSynchronizer", func() {
 
 		Context("when trying to delete non-existent application records from policy db", func() {
 			BeforeEach(func() {
-				err := helpers.NewAppNotFoundErr("The app could not be found")
+				err := models.NewAppNotFoundErr("The app could not be found")
 				cfc.GetAppReturns(nil, err)
 			})
 			It("should successfully delete", func() {

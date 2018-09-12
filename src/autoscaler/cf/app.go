@@ -10,7 +10,6 @@ import (
 
 	"code.cloudfoundry.org/lager"
 
-	"autoscaler/helpers"
 	"autoscaler/models"
 )
 
@@ -59,7 +58,7 @@ func (c *cfClient) GetApp(appId string) (*models.AppEntity, error) {
 
 			if errorCode == CFAppNotFound && code == 100004 {
 				// Application does not exists
-				err = helpers.NewAppNotFoundErr(errorDescription)
+				err = models.NewAppNotFoundErr(errorDescription)
 			} else {
 				err = fmt.Errorf("failed getting application summary: [%d] %s: %s", resp.StatusCode, errorCode, errorDescription)
 			}

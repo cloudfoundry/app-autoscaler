@@ -19,7 +19,7 @@ const (
 	DefaultLoggingLevel        string        = "info"
 	DefaultRefreshInterval     time.Duration = 24 * time.Hour
 	DefaultCutoffDays          int           = 30
-	DefaultSyncInterval        time.Duration = 10 * time.Minute
+	DefaultSyncInterval        time.Duration = 24 * time.Hour
 	DefaultLockTTL             time.Duration = locket.DefaultSessionTTL
 	DefaultRetryInterval       time.Duration = locket.RetryInterval
 	DefaultDBLockRetryInterval time.Duration = 5 * time.Second
