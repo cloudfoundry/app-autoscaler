@@ -70,7 +70,7 @@ var _ = Describe("Integration_Api_EventGenerator", func() {
 				fakeCCNOAAUAA.AllowUnhandledRequests = true
 				fakeCCNOAAUAA.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
 					cf.Endpoints{
-						AuthEndpoint:    fakeCCNOAAUAA.URL(),
+						TokenEndpoint:   fakeCCNOAAUAA.URL(),
 						DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
 					}))
 			})
@@ -85,7 +85,7 @@ var _ = Describe("Integration_Api_EventGenerator", func() {
 				fakeCCNOAAUAA.AllowUnhandledRequests = true
 				fakeCCNOAAUAA.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
 					cf.Endpoints{
-						AuthEndpoint:    fakeCCNOAAUAA.URL(),
+						TokenEndpoint:   fakeCCNOAAUAA.URL(),
 						DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
 					}))
 				fakeCCNOAAUAA.RouteToHandler("GET", "/userinfo", ghttp.RespondWithJSONEncoded(http.StatusUnauthorized, struct{}{}))

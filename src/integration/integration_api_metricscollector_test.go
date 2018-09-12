@@ -76,6 +76,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 				fakeCCNOAAUAA.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
 					cf.Endpoints{
 						AuthEndpoint:    fakeCCNOAAUAA.URL(),
+						TokenEndpoint:   fakeCCNOAAUAA.URL(),
 						DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
 					}))
 				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order-direction": "asc", "page": "1", "results-per-page": "5"}
@@ -92,6 +93,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 				fakeCCNOAAUAA.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
 					cf.Endpoints{
 						AuthEndpoint:    fakeCCNOAAUAA.URL(),
+						TokenEndpoint:   fakeCCNOAAUAA.URL(),
 						DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
 					}))
 				fakeCCNOAAUAA.RouteToHandler("GET", "/userinfo", ghttp.RespondWithJSONEncoded(http.StatusUnauthorized, struct{}{}))
