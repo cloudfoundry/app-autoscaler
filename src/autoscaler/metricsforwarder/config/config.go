@@ -3,6 +3,7 @@ package config
 import (
 	"autoscaler/db"
 	"fmt"
+	"time"
 	"io"
 	"io/ioutil"
 
@@ -15,6 +16,7 @@ type Config struct {
 	MetronAddress     string            `yaml:"metron_address"`
 	LoggregatorConfig LoggregatorConfig `yaml:"loggregator"`
 	Db                DbConfig          `yaml:"db"`
+	CacheTTL          time.Duration     `yaml:cache_ttl"`
 }
 
 type ServerConfig struct {
@@ -45,6 +47,7 @@ type DbConfig struct {
 
 const (
 	defaultMetronAddress = "127.0.0.1:3458"
+	defaultCacheTTL      time.Duration = 15 * time.Minute
 )
 
 func LoadConfig(reader io.Reader) (*Config, error) {
