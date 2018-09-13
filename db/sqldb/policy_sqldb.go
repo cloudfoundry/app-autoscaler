@@ -9,7 +9,14 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	_ "github.com/lib/pq"
+<<<<<<< HEAD
 	"golang.org/x/crypto/bcrypt"
+=======
+
+	"autoscaler/db"
+	"autoscaler/healthendpoint"
+	"autoscaler/models"
+>>>>>>> Added credential cache
 )
 
 type PolicySQLDB struct {
@@ -149,21 +156,6 @@ func (pdb *PolicySQLDB) GetCustomMetricsCreds(appId string) (string, string, err
 		return "", "", err
 	}
 	return username, password, nil
-}
-
-func (pdb *PolicySQLDB) ValidateCustomMetricsCreds(appid, username, password string) bool { //
-	encryptedUsername, encryptedPassword, err := pdb.GetCustomMetricsCreds(appid)
-	if err != nil {
-		pdb.logger.Error("error-during-getting-binding-credentials", err)
-		return false
-	}
-	isUsernameAuthenticated := bcrypt.CompareHashAndPassword([]byte(encryptedUsername), []byte(username))
-	isPasswordAuthenticated := bcrypt.CompareHashAndPassword([]byte(encryptedPassword), []byte(password))
-	if isPasswordAuthenticated == nil && isUsernameAuthenticated == nil { // password matching successfull
-		return true
-	}
-	pdb.logger.Debug("failed-to-authorize-credentials")
-	return false
 }
 
 func (pdb *PolicySQLDB) ValidateCustomMetricTypes(appGUID string, metricsConsumer *models.MetricsConsumer) (bool, error) {
