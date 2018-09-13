@@ -14,3 +14,8 @@ type MetricsConsumer struct {
 	InstanceIndex uint32          `json:"instance_index"`
 	CustomMetrics []*CustomMetric `json:"metrics"`
 }
+
+type CustomMetricCredentials struct {
+	Username string
+	Password string
+}

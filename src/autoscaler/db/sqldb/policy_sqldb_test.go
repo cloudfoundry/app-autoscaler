@@ -9,7 +9,6 @@ import (
 	"github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"golang.org/x/crypto/bcrypt"
 
 	"encoding/json"
 	"os"
@@ -30,9 +29,6 @@ var _ = Describe("PolicySQLDB", func() {
 		testMetricName    string = "TestMetricName"
 		username          string
 		password          string
-		encryptedPassword []byte
-		encryptedUsername []byte
-		isValid           bool
 		isMetricTypeValid bool
 	)
 
@@ -315,38 +311,6 @@ var _ = Describe("PolicySQLDB", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(password).To(Equal("password"))
 				Expect(username).To(Equal("username"))
-			})
-
-		})
-	})
-
-	Describe("ValidateCustomMetricsCreds", func() {
-		BeforeEach(func() {
-			pdb, err = NewPolicySQLDB(dbConfig, logger)
-			Expect(err).NotTo(HaveOccurred())
-
-			cleanCredentialsTable()
-			encryptedUsername, _ = bcrypt.GenerateFromPassword([]byte("username"), 8)
-			encryptedPassword, _ = bcrypt.GenerateFromPassword([]byte("password"), 8)
-		})
-
-		AfterEach(func() {
-			err = pdb.Close()
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		JustBeforeEach(func() {
-			isValid = pdb.ValidateCustomMetricsCreds("an-app-id", "username", "password")
-		})
-
-		Context("when policy table is not empty", func() {
-			BeforeEach(func() {
-				insertCustomMetricsBindingCredentials("an-app-id", string(encryptedUsername[:]), string(encryptedPassword[:]))
-			})
-
-			It("Should get the password", func() {
-				Expect(err).NotTo(HaveOccurred())
-				Expect(isValid).To(BeTrue())
 			})
 
 		})

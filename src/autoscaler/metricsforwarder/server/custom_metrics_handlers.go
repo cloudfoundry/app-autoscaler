@@ -9,21 +9,28 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	"code.cloudfoundry.org/cfhttp/handlers"
 	"code.cloudfoundry.org/lager"
+	"github.com/patrickmn/go-cache"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type CustomMetricsHandler struct {
 	metricForwarder forwarder.MetricForwarder
 	policyDB        db.PolicyDB
+	credentialCache cache.Cache
+	cacheTTL        time.Duration
 	logger          lager.Logger
 }
 
-func NewCustomMetricsHandler(logger lager.Logger, metricForwarder forwarder.MetricForwarder, policyDB db.PolicyDB) *CustomMetricsHandler {
+func NewCustomMetricsHandler(logger lager.Logger, metricForwarder forwarder.MetricForwarder, policyDB db.PolicyDB, credentialCache cache.Cache, cacheTTL time.Duration) *CustomMetricsHandler {
 	return &CustomMetricsHandler{
 		metricForwarder: metricForwarder,
 		policyDB:        policyDB,
+		credentialCache: credentialCache,
+		cacheTTL:        cacheTTL,
 		logger:          logger,
 	}
 }
@@ -53,13 +60,56 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 
 	pair := strings.SplitN(string(payload), ":", 2)
 
-	if len(pair) != 2 || !mh.policyDB.ValidateCustomMetricsCreds(appID, pair[0], pair[1]) {
-		mh.logger.Error("error-validating-authorizaion-header", err, lager.Data{"authheader": auth})
+	if len(pair) != 2 {
+		mh.logger.Error("error-processing-authorizaion-header", err, lager.Data{"authheader": auth})
 		http.Error(w, "Authorization failed", http.StatusUnauthorized)
 		handlers.WriteJSONResponse(w, http.StatusUnauthorized, models.ErrorResponse{
 			Code:    "Authorization-Failure-Error",
-			Message: "Basic authorization credential does not match"})
+			Message: "Basic authorization credential is not used properly"})
 		return
+	}
+
+	username := pair[0]
+	password := pair[1]
+	var isValid bool
+	var credentials models.CustomMetricCredentials
+
+	res, found := mh.credentialCache.Get(appID)
+	if found {
+		// Credentials found in cache
+		credentials = res.(models.CustomMetricCredentials)
+		isValid = mh.validateCredentials(username, credentials.Username, password, credentials.Password)
+	}
+
+	// Credentials not found in cache or
+	// stale cache entry with invalid credential found in cache
+	// search in the database and update the cache
+	if !found || !isValid {
+		usernameHash, passwordHash, err := mh.policyDB.GetCustomMetricsCreds(appID)
+		if err != nil {
+			mh.logger.Error("error-during-getting-binding-credentials-from-policyDB", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+				Code:    "Interal-Server-Error",
+				Message: "Error reading custom metrics request body"})
+			return
+		}
+		credentials = models.CustomMetricCredentials{
+			Username: usernameHash,
+			Password: passwordHash,
+		}
+		isValid = mh.validateCredentials(username, credentials.Username, password, credentials.Password)
+		// If Credentials in DB is not valid
+		if !isValid {
+			mh.logger.Error("error-validating-authorizaion-header", err, lager.Data{"authheader": auth})
+			http.Error(w, "Authorization failed", http.StatusUnauthorized)
+			handlers.WriteJSONResponse(w, http.StatusUnauthorized, models.ErrorResponse{
+				Code:    "Authorization-Failure-Error",
+				Message: "Basic authorization credential does not match"})
+			return
+		}
+		// Valid credentials found in DB so update the cache
+		mh.credentialCache.Set(appID, credentials, mh.cacheTTL)
 	}
 
 	body, err := ioutil.ReadAll(r.Body)
@@ -106,6 +156,16 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 		mh.metricForwarder.EmitMetric(metric)
 	}
 	w.WriteHeader(http.StatusOK)
+}
+
+func (mh *CustomMetricsHandler) validateCredentials(username string, usernameHash string, password string, passwordHash string) bool {
+	isUsernameAuthenticated := bcrypt.CompareHashAndPassword([]byte(usernameHash), []byte(username))
+	isPasswordAuthenticated := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(password))
+	if isPasswordAuthenticated == nil && isUsernameAuthenticated == nil { // password matching successfull
+		return true
+	}
+	mh.logger.Debug("failed-to-authorize-credentials")
+	return false
 }
 
 func (mh *CustomMetricsHandler) parseMetrics(metricsConsumer *models.MetricsConsumer) []*models.CustomMetric {
