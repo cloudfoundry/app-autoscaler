@@ -14,6 +14,7 @@ import (
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
+	"github.com/patrickmn/go-cache"
 )
 
 func main() {
@@ -55,7 +56,9 @@ func main() {
 	}
 	defer policyDB.Close()
 
-	httpServer, err := server.NewServer(logger.Session("custom_metrics_server"), conf, policyDB)
+	credentialCache := cache.New(conf.CacheTTL, -1)
+
+	httpServer, err := server.NewServer(logger.Session("custom_metrics_server"), conf, policyDB, *credentialCache)
 	if err != nil {
 		logger.Error("failed-to-create-custommetrics-server", err)
 		os.Exit(1)
