@@ -6,6 +6,7 @@ import (
 	. "autoscaler/metricsforwarder/server"
 
 	"fmt"
+	"time"
 	"path/filepath"
 
 	"code.cloudfoundry.org/lager"
@@ -13,6 +14,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/ginkgomon"
+	"github.com/patrickmn/go-cache"
 
 	"testing"
 )
@@ -21,6 +23,8 @@ var (
 	serverProcess ifrit.Process
 	serverUrl     string
 	policyDB      *fakes.FakePolicyDB
+
+	credentialCache cache.Cache
 )
 
 func TestServer(t *testing.T) {
@@ -51,7 +55,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		LoggregatorConfig: loggregatorConfig,
 	}
 	policyDB = &fakes.FakePolicyDB{}
-	httpServer, err := NewServer(lager.NewLogger("test"), conf, policyDB)
+	credentialCache = *cache.New(10 * time.Minute, -1)
+	httpServer, err := NewServer(lager.NewLogger("test"), conf, policyDB, credentialCache)
 	Expect(err).NotTo(HaveOccurred())
 	serverUrl = fmt.Sprintf("http://127.0.0.1:%d", conf.Server.Port)
 	serverProcess = ginkgomon.Invoke(httpServer)

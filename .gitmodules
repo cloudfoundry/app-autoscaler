@@ -148,3 +148,6 @@
 [submodule "src/github.com/golang/protobuf"]
 	path = src/github.com/golang/protobuf
 	url = https://github.com/golang/protobuf
+[submodule "src/github.com/patrickmn/go-cache"]
+	path = src/github.com/patrickmn/go-cache
+	url = https://github.com/patrickmn/go-cache
