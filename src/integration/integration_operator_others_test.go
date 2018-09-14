@@ -40,7 +40,7 @@ var _ = Describe("Integration_Operator_Others", func() {
 	})
 
 	JustBeforeEach(func() {
-		operatorConfPath = components.PrepareOperatorConfig(dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), 10*time.Second, 1, tmpDir)
+		operatorConfPath = components.PrepareOperatorConfig(dbUrl, fakeCCNOAAUAA.URL(), cf.GrantTypePassword, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), 10*time.Second, 1, tmpDir)
 		startOperator()
 	})
 

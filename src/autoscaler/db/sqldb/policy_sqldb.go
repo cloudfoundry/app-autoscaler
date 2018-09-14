@@ -136,3 +136,12 @@ func (pdb *PolicySQLDB) EmitHealthMetrics(h healthendpoint.Health, cclock clock.
 		}
 	}()
 }
+
+func (pdb *PolicySQLDB) DeletePolicy(appId string) error {
+	query := "DELETE FROM policy_json WHERE app_id = $1"
+	_, err := pdb.sqldb.Exec(query, appId)
+	if err != nil {
+		pdb.logger.Error("failed-to-delete-application-details", err, lager.Data{"query": query, "appId": appId})
+	}
+	return err
+}
