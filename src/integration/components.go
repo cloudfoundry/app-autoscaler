@@ -61,8 +61,8 @@ type APIServerClient struct {
 }
 
 type ServiceBrokerConfig struct {
-	Port       int `json:"port"`
-	PublicPort int `json:"publicPort"`
+	Port                int  `json:"port"`
+	PublicPort          int  `json:"publicPort"`
 	EnableCustomMetrics bool `json:"enableCustomMetrics"`
 
 	Username string `json:"username"`
@@ -227,10 +227,10 @@ func (components *Components) Operator(confPath string, argv ...string) *ginkgom
 
 func (components *Components) PrepareServiceBrokerConfig(publicPort int, internalPort int, username string, password string, enableCustomMetrics bool, dbUri string, apiServerUri string, brokerApiHttpRequestTimeout time.Duration, tmpDir string) string {
 	brokerConfig := ServiceBrokerConfig{
-		Port:       internalPort,
-		PublicPort: publicPort,
-		Username:   username,
-		Password:   password,
+		Port:                internalPort,
+		PublicPort:          publicPort,
+		Username:            username,
+		Password:            password,
 		EnableCustomMetrics: enableCustomMetrics,
 		DB: DBConfig{
 			URI:            dbUri,
@@ -546,10 +546,16 @@ func (components *Components) PrepareScalingEngineConfig(dbURI string, port int,
 	return writeYmlConfig(tmpDir, ScalingEngine, &conf)
 }
 
-func (components *Components) PrepareOperatorConfig(dbURI string, scalingEngineURL string, schedulerURL string, syncInterval time.Duration, cutOffDays int, tmpDir string) string {
+func (components *Components) PrepareOperatorConfig(dbURI string, ccUAAURL string, cfGrantTypePassword string, scalingEngineURL string, schedulerURL string, syncInterval time.Duration, cutOffDays int, tmpDir string) string {
 	conf := &opConfig.Config{
 		Logging: helpers.LoggingConfig{
 			Level: LOGLEVEL,
+		},
+		CF: cf.CFConfig{
+			API:       ccUAAURL,
+			GrantType: cfGrantTypePassword,
+			Username:  "admin",
+			Password:  "admin",
 		},
 		InstanceMetricsDB: opConfig.InstanceMetricsDbPrunerConfig{
 			RefreshInterval: 2 * time.Minute,
@@ -602,6 +608,12 @@ func (components *Components) PrepareOperatorConfig(dbURI string, scalingEngineU
 				URL: dbURI,
 			},
 			LockRetryInterval: 15 * time.Second,
+		},
+		AppSyncer: opConfig.AppSyncerConfig{
+			SyncInterval: 60 * time.Second,
+			DB: db.DatabaseConfig{
+				URL: dbURI,
+			},
 		},
 	}
 	return writeYmlConfig(tmpDir, Operator, &conf)

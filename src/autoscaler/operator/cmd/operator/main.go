@@ -1,6 +1,7 @@
 package main
 
 import (
+	"autoscaler/cf"
 	"autoscaler/db"
 	"autoscaler/db/sqldb"
 	"autoscaler/helpers"
@@ -72,6 +73,20 @@ func main() {
 	}
 	defer scalingEngineDB.Close()
 
+	cfClient := cf.NewCFClient(&conf.CF, logger.Session("cf"), prClock)
+	err = cfClient.Login()
+	if err != nil {
+		logger.Error("failed to login cloud foundry", err, lager.Data{"API": conf.CF.API})
+		os.Exit(1)
+	}
+
+	policyDB, err := sqldb.NewPolicySQLDB(conf.AppSyncer.DB, logger.Session("policy-db"))
+	if err != nil {
+		logger.Error("failed to connect policy db", err, lager.Data{"dbConfig": conf.AppSyncer.DB})
+		os.Exit(1)
+	}
+	defer policyDB.Close()
+
 	scalingEngineHttpclient, err := helpers.CreateHTTPClient(&conf.ScalingEngine.TLSClientCerts)
 	if err != nil {
 		logger.Error("failed to create http client for scalingengine", err, lager.Data{"scalingengineTLS": conf.ScalingEngine.TLSClientCerts})
@@ -102,12 +117,17 @@ func main() {
 	schedulerSync := operator.NewScheduleSynchronizer(schedulerHttpclient, conf.Scheduler.URL, prClock, logger.Session(loggerSessionName))
 	schedulerSyncRunner := operator.NewOperatorRunner(schedulerSync, conf.Scheduler.SyncInterval, prClock, logger.Session(loggerSessionName))
 
+	loggerSessionName = "application-sync"
+	applicationSync := operator.NewApplicationSynchronizer(cfClient, policyDB, logger.Session(loggerSessionName))
+	applicationSyncRunner := operator.NewOperatorRunner(applicationSync, conf.AppSyncer.SyncInterval, prClock, logger.Session(loggerSessionName))
+
 	members := grouper.Members{
 		{"instancemetrics-dbpruner", instanceMetricsDBOperatorRunner},
 		{"appmetrics-dbpruner", appMetricsDBOperatorRunner},
 		{"scalingEngine-dbpruner", scalingEngineDBOperatorRunner},
 		{"scalingEngine-sync", scalingEngineSyncRunner},
 		{"scheduler-sync", schedulerSyncRunner},
+		{"application-sync", applicationSyncRunner},
 	}
 
 	guid, err := helpers.GenerateGUID(logger)

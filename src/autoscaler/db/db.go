@@ -42,6 +42,7 @@ type PolicyDB interface {
 	RetrievePolicies() ([]*models.PolicyJson, error)
 	Close() error
 	EmitHealthMetrics(h healthendpoint.Health, cclock clock.Clock, interval time.Duration)
+	DeletePolicy(appId string) error
 }
 
 type AppMetricDB interface {

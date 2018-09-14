@@ -63,6 +63,17 @@ type FakePolicyDB struct {
 		cclock   clock.Clock
 		interval time.Duration
 	}
+	DeletePolicyStub        func(appId string) error
+	deletePolicyMutex       sync.RWMutex
+	deletePolicyArgsForCall []struct {
+		appId string
+	}
+	deletePolicyReturns struct {
+		result1 error
+	}
+	deletePolicyReturnsOnCall map[int]struct {
+		result1 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -270,6 +281,54 @@ func (fake *FakePolicyDB) EmitHealthMetricsArgsForCall(i int) (healthendpoint.He
 	return fake.emitHealthMetricsArgsForCall[i].h, fake.emitHealthMetricsArgsForCall[i].cclock, fake.emitHealthMetricsArgsForCall[i].interval
 }
 
+func (fake *FakePolicyDB) DeletePolicy(appId string) error {
+	fake.deletePolicyMutex.Lock()
+	ret, specificReturn := fake.deletePolicyReturnsOnCall[len(fake.deletePolicyArgsForCall)]
+	fake.deletePolicyArgsForCall = append(fake.deletePolicyArgsForCall, struct {
+		appId string
+	}{appId})
+	fake.recordInvocation("DeletePolicy", []interface{}{appId})
+	fake.deletePolicyMutex.Unlock()
+	if fake.DeletePolicyStub != nil {
+		return fake.DeletePolicyStub(appId)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fake.deletePolicyReturns.result1
+}
+
+func (fake *FakePolicyDB) DeletePolicyCallCount() int {
+	fake.deletePolicyMutex.RLock()
+	defer fake.deletePolicyMutex.RUnlock()
+	return len(fake.deletePolicyArgsForCall)
+}
+
+func (fake *FakePolicyDB) DeletePolicyArgsForCall(i int) string {
+	fake.deletePolicyMutex.RLock()
+	defer fake.deletePolicyMutex.RUnlock()
+	return fake.deletePolicyArgsForCall[i].appId
+}
+
+func (fake *FakePolicyDB) DeletePolicyReturns(result1 error) {
+	fake.DeletePolicyStub = nil
+	fake.deletePolicyReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakePolicyDB) DeletePolicyReturnsOnCall(i int, result1 error) {
+	fake.DeletePolicyStub = nil
+	if fake.deletePolicyReturnsOnCall == nil {
+		fake.deletePolicyReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.deletePolicyReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakePolicyDB) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -283,6 +342,8 @@ func (fake *FakePolicyDB) Invocations() map[string][][]interface{} {
 	defer fake.closeMutex.RUnlock()
 	fake.emitHealthMetricsMutex.RLock()
 	defer fake.emitHealthMetricsMutex.RUnlock()
+	fake.deletePolicyMutex.RLock()
+	defer fake.deletePolicyMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

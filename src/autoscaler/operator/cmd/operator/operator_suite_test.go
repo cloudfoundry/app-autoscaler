@@ -3,8 +3,10 @@ package main_test
 import (
 	"database/sql"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"os/exec"
+	"strings"
 	"testing"
 	"time"
 
@@ -14,9 +16,12 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
+	"github.com/onsi/gomega/ghttp"
 	"gopkg.in/yaml.v2"
 
+	"autoscaler/cf"
 	"autoscaler/db"
+	"autoscaler/models"
 	"autoscaler/operator/config"
 )
 
@@ -25,6 +30,8 @@ var (
 	cfg          config.Config
 	configFile   *os.File
 	consulRunner *consulrunner.ClusterRunner
+	cfServer     *ghttp.Server
+	appId        string
 )
 
 func TestOperator(t *testing.T) {
@@ -67,6 +74,27 @@ func initConsul() {
 }
 
 func initConfig() {
+
+	cfServer = ghttp.NewServer()
+	cfServer.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
+		cf.Endpoints{
+			AuthEndpoint:    cfServer.URL(),
+			DopplerEndpoint: strings.Replace(cfServer.URL(), "http", "ws", 1),
+		}))
+
+	cfServer.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))
+
+	appState := models.AppStatusStarted
+	cfServer.RouteToHandler("GET", "/v2/apps/an-app-id/summary", ghttp.RespondWithJSONEncoded(http.StatusOK,
+		models.AppEntity{Instances: 2, State: &appState}))
+
+	cfg.CF = cf.CFConfig{
+		API:       cfServer.URL(),
+		GrantType: cf.GrantTypePassword,
+		Username:  "admin",
+		Password:  "admin",
+	}
+
 	cfg.Logging.Level = "debug"
 	dbURL := os.Getenv("DBURL")
 	if dbURL == "" {
@@ -124,6 +152,13 @@ func initConfig() {
 	cfg.DBLock.LockTTL = 15 * time.Second
 	cfg.DBLock.LockRetryInterval = 5 * time.Second
 	cfg.EnableDBLock = false
+	cfg.AppSyncer.DB = db.DatabaseConfig{
+		URL:                   dbURL,
+		MaxOpenConnections:    10,
+		MaxIdleConnections:    5,
+		ConnectionMaxLifetime: 10 * time.Second,
+	}
+	cfg.AppSyncer.SyncInterval = 60 * time.Second
 
 }
 

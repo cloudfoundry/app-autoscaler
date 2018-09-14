@@ -68,6 +68,14 @@ lock:
 		Context("with valid yaml", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
+cf:
+  api: https://api.example.com
+  grant_type: PassWord
+  username: admin
+  password: admin
+  client_id: client-id
+  secret: client-secret
+  skip_ssl_validation: false
 logging:
   level: "debug"
 instance_metrics_db:
@@ -108,6 +116,13 @@ scheduler:
     key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+app_syncer:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  sync_interval: 60s
 lock:
   lock_ttl: 15s
   lock_retry_interval: 10s
@@ -123,6 +138,14 @@ enable_db_lock: false
 
 			It("returns the config", func() {
 				Expect(err).NotTo(HaveOccurred())
+
+				Expect(conf.CF.API).To(Equal("https://api.example.com"))
+				Expect(conf.CF.GrantType).To(Equal("PassWord"))
+				Expect(conf.CF.Username).To(Equal("admin"))
+				Expect(conf.CF.Password).To(Equal("admin"))
+				Expect(conf.CF.ClientID).To(Equal("client-id"))
+				Expect(conf.CF.Secret).To(Equal("client-secret"))
+				Expect(conf.CF.SkipSSLValidation).To(Equal(false))
 
 				Expect(conf.Logging.Level).To(Equal("debug"))
 
@@ -161,6 +184,14 @@ enable_db_lock: false
 				Expect(conf.DBLock.LockRetryInterval).To(Equal(5 * time.Second))
 				Expect(conf.DBLock.DB.URL).To(Equal("postgres://postgres:password@localhost/autoscaler?sslmode=disable"))
 				Expect(conf.EnableDBLock).To(BeFalse())
+
+				Expect(conf.AppSyncer.DB).To(Equal(db.DatabaseConfig{
+					URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+					MaxOpenConnections:    10,
+					MaxIdleConnections:    5,
+					ConnectionMaxLifetime: 60 * time.Second,
+				}))
+				Expect(conf.AppSyncer.SyncInterval).To(Equal(60 * time.Second))
 			})
 		})
 
@@ -175,7 +206,10 @@ app_metrics_db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
 scaling_engine_db:
   db:
-    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable" 
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+app_syncer:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
 `)
 			})
 
@@ -217,6 +251,14 @@ scaling_engine_db:
 
 				Expect(conf.DBLock.LockTTL).To(Equal(config.DefaultDBLockTTL))
 				Expect(conf.DBLock.LockRetryInterval).To(Equal(config.DefaultDBLockRetryInterval))
+
+				Expect(conf.AppSyncer.SyncInterval).To(Equal(config.DefaultSyncInterval))
+				Expect(conf.AppSyncer.DB).To(Equal(db.DatabaseConfig{
+					URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+					MaxOpenConnections:    0,
+					MaxIdleConnections:    0,
+					ConnectionMaxLifetime: 0 * time.Second,
+				}))
 
 			})
 		})
@@ -318,6 +360,76 @@ scheduler:
     key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+lock:
+  lock_ttl: 15s
+  lock_retry_interval: 10s
+  consul_cluster_config: "http://127.0.0.1:8500"
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+			})
+		})
+
+		Context("when sync_interval of app_syncer is not a time duration", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+cf:
+  api: https://api.example.com
+  grant_type: PassWord
+  username: admin
+  password: admin
+  client_id: client-id
+  secret: client-secret
+  skip_ssl_validation: false
+logging:
+  level: "debug"
+instance_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 12k
+  cutoff_days: 15
+app_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 10h
+  cutoff_days: 15
+scaling_engine_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 36h
+  cutoff_days: 30
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+scheduler:
+  scheduler_url: http://localhost:8083
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+app_syncer:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  sync_interval: 60kl
 lock:
   lock_ttl: 15s
   lock_retry_interval: 10s
@@ -1309,6 +1421,9 @@ lock:
 			conf.Lock.LockRetryInterval = 10 * time.Second
 			conf.Lock.ConsulClusterConfig = "http://127.0.0.1:8500"
 
+			conf.AppSyncer.SyncInterval = 60 * time.Second
+			conf.AppSyncer.DB.URL = "postgres://pqgotest:password@exampl.com/pqgotest"
+
 		})
 
 		JustBeforeEach(func() {
@@ -1351,6 +1466,28 @@ lock:
 
 			It("should error", func() {
 				Expect(err).To(MatchError("Configuration error: scaling_engine_db.db.url is empty"))
+			})
+		})
+
+		Context("when AppSyncer db url is not set", func() {
+
+			BeforeEach(func() {
+				conf.AppSyncer.DB.URL = ""
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError("Configuration error: appSyncer.db.url is empty"))
+			})
+		})
+
+		Context("when AppSyncer sync interval is set to a negative value", func() {
+
+			BeforeEach(func() {
+				conf.AppSyncer.SyncInterval = -1
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError("Configuration error: appSyncer.sync_interval is less than or equal to 0"))
 			})
 		})
 

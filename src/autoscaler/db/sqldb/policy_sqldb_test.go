@@ -260,4 +260,51 @@ var _ = Describe("PolicySQLDB", func() {
 
 	})
 
+	Describe("DeletePolicy", func() {
+		BeforeEach(func() {
+			pdb, err = NewPolicySQLDB(dbConfig, logger)
+			Expect(err).NotTo(HaveOccurred())
+
+			cleanPolicyTable()
+		})
+
+		AfterEach(func() {
+			err = pdb.Close()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		JustBeforeEach(func() {
+			err = pdb.DeletePolicy("an-app-id")
+		})
+
+		Context("when there is no policy in the table", func() {
+			It("should not error", func() {
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when policy table is not empty", func() {
+			BeforeEach(func() {
+				scalingPolicy = &models.ScalingPolicy{InstanceMax: 1, InstanceMin: 6}
+				insertPolicy("an-app-id", scalingPolicy)
+			})
+
+			It("should delete the policy", func() {
+				Expect(err).NotTo(HaveOccurred())
+				policy, err := pdb.GetAppPolicy("an-app-id")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(policy).To(BeNil())
+			})
+		})
+
+		Context("when there is database error", func() {
+			BeforeEach(func() {
+				pdb.Close()
+			})
+			It("should error", func() {
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
+
 })

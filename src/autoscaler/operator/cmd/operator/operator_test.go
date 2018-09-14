@@ -73,6 +73,11 @@ var _ = Describe("Operator", func() {
 				Consistently(runner.Session).ShouldNot(Exit())
 			})
 
+			It("should start appsyncer", func() {
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.application-sync.started"))
+				Consistently(runner.Session).ShouldNot(Exit())
+			})
+
 			It("should have operator started", func() {
 				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.started"))
 				Consistently(runner.Session).ShouldNot(Exit())
@@ -136,6 +141,12 @@ var _ = Describe("Operator", func() {
 				It("should acquire the lock and start scalingengine dbpruner", func() {
 					Eventually(runner.Session.Buffer, 2*time.Second).Should(Say(runner.acquiredLockCheck))
 					Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.scalingengine-dbpruner.started"))
+					Consistently(runner.Session).ShouldNot(Exit())
+				})
+
+				It("should acquire the lock and start appsyncer", func() {
+					Eventually(runner.Session.Buffer, 2*time.Second).Should(Say(runner.acquiredLockCheck))
+					Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.application-sync.started"))
 					Consistently(runner.Session).ShouldNot(Exit())
 				})
 
@@ -278,6 +289,25 @@ var _ = Describe("Operator", func() {
 			It("should error", func() {
 				Eventually(runner.Session).Should(Exit(1))
 				Expect(runner.Session.Buffer()).To(Say("failed to connect scalingengine db"))
+			})
+
+		})
+
+		Context("when connection to apsyncer policy db fails", func() {
+			BeforeEach(func() {
+				cfg.AppSyncer.DB.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
+				cfg := writeConfig(&cfg)
+				runner.configPath = cfg.Name()
+				runner.Start()
+			})
+
+			AfterEach(func() {
+				os.Remove(runner.configPath)
+			})
+
+			It("should error", func() {
+				Eventually(runner.Session).Should(Exit(1))
+				Expect(runner.Session.Buffer()).To(Say("failed to connect policy db"))
 			})
 
 		})
@@ -456,6 +486,11 @@ var _ = Describe("Operator", func() {
 
 			It("should start scalingengine dbpruner", func() {
 				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.scalingengine-dbpruner.started"))
+				Consistently(runner.Session).ShouldNot(Exit())
+			})
+
+			It("should start appsyncer", func() {
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("operator.application-sync.started"))
 				Consistently(runner.Session).ShouldNot(Exit())
 			})
 
