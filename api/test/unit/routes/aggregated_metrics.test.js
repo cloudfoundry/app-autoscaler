@@ -40,7 +40,7 @@ describe("Routing Aggregated App Metrics", function() {
     nock.cleanAll();
     nock("https://api.bosh-lite.com")
       .get("/v2/info")
-      .reply(HttpStatus.OK, { "authorization_endpoint": "https://uaa.bosh-lite.com" });
+      .reply(HttpStatus.OK, { "token_endpoint": "https://uaa.bosh-lite.com" });
 
     nock("https://uaa.bosh-lite.com")
       .get("/userinfo")

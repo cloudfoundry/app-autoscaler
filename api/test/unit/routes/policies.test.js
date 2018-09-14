@@ -24,7 +24,7 @@ function mockCF(count) {
   nock("https://api.bosh-lite.com")
     .get("/v2/info")
     .times(count)
-    .reply(200, { "authorization_endpoint": "https://uaa.bosh-lite.com" });
+    .reply(200, { "token_endpoint": "https://uaa.bosh-lite.com" });
   nock("https://uaa.bosh-lite.com")
     .get("/userinfo")
     .times(count)
