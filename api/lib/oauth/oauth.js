@@ -102,7 +102,7 @@ module.exports = function(settings) {
   function requestUserInfoFromUAA(req, callback) {
     var userToken = req.header("Authorization");
     var options = {
-      url: obj.authorizationEndpoint + "/userinfo",
+      url: obj.tokenEndpoint + "/userinfo",
       method: "GET",
       json: true,
       timeout: 10000,
@@ -132,14 +132,14 @@ module.exports = function(settings) {
   }
 
   function getUserInfo(req, callback) {
-    if (obj.authorizationEndpoint) {
+    if (obj.tokenEndpoint) {
       requestUserInfoFromUAA(req, callback);
     } else {
       getCloudFoundryInfo(function(error, responseBody) {
         if (error) {
           callback(error, null);
         } else {
-          obj.authorizationEndpoint = responseBody.body.authorization_endpoint;
+          obj.tokenEndpoint = responseBody.body.token_endpoint;
           requestUserInfoFromUAA(req, callback);
         }
       });
