@@ -31,8 +31,10 @@ var _ = Describe("MetricHandler", func() {
 		req  *http.Request
 		err  error
 
-		metric1 models.AppInstanceMetric
-		metric2 models.AppInstanceMetric
+		metric1  models.AppInstanceMetric
+		metric2  models.AppInstanceMetric
+		metrics  []*models.AppInstanceMetric
+		cacheHit bool
 	)
 
 	BeforeEach(func() {
@@ -41,7 +43,11 @@ var _ = Describe("MetricHandler", func() {
 		logger := lager.NewLogger("handler-test")
 		database = &fakes.FakeInstanceMetricsDB{}
 		resp = httptest.NewRecorder()
-		handler = NewMetricHandler(logger, cfc, consumer, database)
+		cacheHit = false
+		queryFunc := func(appID string, start int64, end int64, order db.OrderType, labels map[string]string) ([]*models.AppInstanceMetric, bool) {
+			return metrics, cacheHit
+		}
+		handler = NewMetricHandler(logger, cfc, consumer, queryFunc, database)
 	})
 
 	Describe("GetMetricHistory", func() {
@@ -249,7 +255,7 @@ var _ = Describe("MetricHandler", func() {
 					Expect(err).ToNot(HaveOccurred())
 				})
 
-				It("queries metrics from database with the given start, end and order ", func() {
+				It("queries metrics  with the given start, end and order ", func() {
 					appid, instanceIndex, name, start, end, order := database.RetrieveInstanceMetricsArgsForCall(0)
 					Expect(instanceIndex).To(Equal(0))
 					Expect(appid).To(Equal("an-app-id"))
@@ -280,7 +286,7 @@ var _ = Describe("MetricHandler", func() {
 					Expect(err).ToNot(HaveOccurred())
 				})
 
-				It("queries metrics from database with start time  0", func() {
+				It("queries metrics  with start time  0", func() {
 					_, _, _, start, _, _ := database.RetrieveInstanceMetricsArgsForCall(0)
 					Expect(start).To(Equal(int64(0)))
 				})
@@ -293,7 +299,7 @@ var _ = Describe("MetricHandler", func() {
 					Expect(err).ToNot(HaveOccurred())
 				})
 
-				It("queries metrics from database with end time -1 ", func() {
+				It("queries metrics with end time -1 ", func() {
 					_, _, _, _, end, _ := database.RetrieveInstanceMetricsArgsForCall(0)
 					Expect(end).To(Equal(int64(-1)))
 				})
@@ -306,14 +312,14 @@ var _ = Describe("MetricHandler", func() {
 					Expect(err).ToNot(HaveOccurred())
 				})
 
-				It("queries metrics from database with end time -1 ", func() {
+				It("queries metrics  with end time -1 ", func() {
 					_, _, _, _, _, order := database.RetrieveInstanceMetricsArgsForCall(0)
 					Expect(order).To(Equal(db.ASC))
 				})
 
 			})
 
-			Context("when query database succeeds", func() {
+			Context("when query succeeds", func() {
 				BeforeEach(func() {
 					req, err = http.NewRequest(http.MethodGet, testUrlMetricHistories+"?instanceindex=0&start=123&end=567&order=desc", nil)
 					Expect(err).ToNot(HaveOccurred())
@@ -321,33 +327,54 @@ var _ = Describe("MetricHandler", func() {
 					metric1 = models.AppInstanceMetric{
 						AppId:         "an-app-id",
 						InstanceIndex: 0,
-						CollectedAt:   111122,
+						CollectedAt:   111,
 						Name:          "a-metric-type",
 						Unit:          "metric-unit",
 						Value:         "12345678",
-						Timestamp:     111100,
+						Timestamp:     345,
 					}
 
 					metric2 = models.AppInstanceMetric{
 						AppId:         "an-app-id",
 						InstanceIndex: 0,
-						CollectedAt:   111122,
+						CollectedAt:   222,
 						Name:          "a-metric-type",
 						Unit:          "metric-unit",
 						Value:         "87654321",
-						Timestamp:     111111,
+						Timestamp:     456,
 					}
-					database.RetrieveInstanceMetricsReturns([]*models.AppInstanceMetric{&metric2, &metric1}, nil)
+
 				})
 
-				It("returns 200 with metrics in message body", func() {
-					Expect(resp.Code).To(Equal(http.StatusOK))
+				Context("when cache hits", func() {
+					BeforeEach(func() {
+						cacheHit = true
+						metrics = []*models.AppInstanceMetric{&metric1, &metric2}
+					})
 
-					mtrcs := &[]models.AppInstanceMetric{}
-					err = json.Unmarshal(resp.Body.Bytes(), mtrcs)
+					It("returns 200 with metrics from cache in message body", func() {
+						Expect(resp.Code).To(Equal(http.StatusOK))
+						result := &[]models.AppInstanceMetric{}
+						err = json.Unmarshal(resp.Body.Bytes(), result)
 
-					Expect(err).ToNot(HaveOccurred())
-					Expect(*mtrcs).To(Equal([]models.AppInstanceMetric{metric2, metric1}))
+						Expect(err).ToNot(HaveOccurred())
+						Expect(*result).To(Equal([]models.AppInstanceMetric{metric1, metric2}))
+					})
+
+				})
+				Context("when cache misses", func() {
+					BeforeEach(func() {
+						database.RetrieveInstanceMetricsReturns([]*models.AppInstanceMetric{&metric2, &metric1}, nil)
+					})
+					It("returns 200 with metrics  from database in message body", func() {
+						Expect(resp.Code).To(Equal(http.StatusOK))
+
+						result := &[]models.AppInstanceMetric{}
+						err = json.Unmarshal(resp.Body.Bytes(), result)
+
+						Expect(err).ToNot(HaveOccurred())
+						Expect(*result).To(Equal([]models.AppInstanceMetric{metric2, metric1}))
+					})
 				})
 			})
 

@@ -2,6 +2,7 @@
 package fakes
 
 import (
+	"autoscaler/collection"
 	"autoscaler/metricscollector/collector"
 	"sync"
 )
@@ -13,6 +14,21 @@ type FakeAppCollector struct {
 	StopStub         func()
 	stopMutex        sync.RWMutex
 	stopArgsForCall  []struct{}
+	QueryStub        func(int64, int64, map[string]string) ([]collection.TSD, bool)
+	queryMutex       sync.RWMutex
+	queryArgsForCall []struct {
+		arg1 int64
+		arg2 int64
+		arg3 map[string]string
+	}
+	queryReturns struct {
+		result1 []collection.TSD
+		result2 bool
+	}
+	queryReturnsOnCall map[int]struct {
+		result1 []collection.TSD
+		result2 bool
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -49,6 +65,59 @@ func (fake *FakeAppCollector) StopCallCount() int {
 	return len(fake.stopArgsForCall)
 }
 
+func (fake *FakeAppCollector) Query(arg1 int64, arg2 int64, arg3 map[string]string) ([]collection.TSD, bool) {
+	fake.queryMutex.Lock()
+	ret, specificReturn := fake.queryReturnsOnCall[len(fake.queryArgsForCall)]
+	fake.queryArgsForCall = append(fake.queryArgsForCall, struct {
+		arg1 int64
+		arg2 int64
+		arg3 map[string]string
+	}{arg1, arg2, arg3})
+	fake.recordInvocation("Query", []interface{}{arg1, arg2, arg3})
+	fake.queryMutex.Unlock()
+	if fake.QueryStub != nil {
+		return fake.QueryStub(arg1, arg2, arg3)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fake.queryReturns.result1, fake.queryReturns.result2
+}
+
+func (fake *FakeAppCollector) QueryCallCount() int {
+	fake.queryMutex.RLock()
+	defer fake.queryMutex.RUnlock()
+	return len(fake.queryArgsForCall)
+}
+
+func (fake *FakeAppCollector) QueryArgsForCall(i int) (int64, int64, map[string]string) {
+	fake.queryMutex.RLock()
+	defer fake.queryMutex.RUnlock()
+	return fake.queryArgsForCall[i].arg1, fake.queryArgsForCall[i].arg2, fake.queryArgsForCall[i].arg3
+}
+
+func (fake *FakeAppCollector) QueryReturns(result1 []collection.TSD, result2 bool) {
+	fake.QueryStub = nil
+	fake.queryReturns = struct {
+		result1 []collection.TSD
+		result2 bool
+	}{result1, result2}
+}
+
+func (fake *FakeAppCollector) QueryReturnsOnCall(i int, result1 []collection.TSD, result2 bool) {
+	fake.QueryStub = nil
+	if fake.queryReturnsOnCall == nil {
+		fake.queryReturnsOnCall = make(map[int]struct {
+			result1 []collection.TSD
+			result2 bool
+		})
+	}
+	fake.queryReturnsOnCall[i] = struct {
+		result1 []collection.TSD
+		result2 bool
+	}{result1, result2}
+}
+
 func (fake *FakeAppCollector) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -56,6 +125,8 @@ func (fake *FakeAppCollector) Invocations() map[string][][]interface{} {
 	defer fake.startMutex.RUnlock()
 	fake.stopMutex.RLock()
 	defer fake.stopMutex.RUnlock()
+	fake.queryMutex.RLock()
+	defer fake.queryMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value
