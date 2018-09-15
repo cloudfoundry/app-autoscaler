@@ -1,6 +1,7 @@
 package collector
 
 import (
+	"autoscaler/collection"
 	"autoscaler/db"
 	"autoscaler/helpers"
 	"autoscaler/models"
@@ -11,9 +12,12 @@ import (
 	"code.cloudfoundry.org/lager"
 )
 
+type MetricQueryFunc func(string, int64, int64, db.OrderType, map[string]string) ([]*models.AppInstanceMetric, bool)
+
 type AppCollector interface {
 	Start()
 	Stop()
+	Query(int64, int64, map[string]string) ([]collection.TSD, bool)
 }
 
 type Collector struct {
@@ -31,7 +35,7 @@ type Collector struct {
 	doneSaveChan       chan bool
 	appCollectors      map[string]AppCollector
 	ticker             clock.Ticker
-	lock               *sync.Mutex
+	lock               *sync.RWMutex
 	dataChan           chan *models.AppInstanceMetric
 }
 
@@ -52,7 +56,7 @@ func NewCollector(refreshInterval time.Duration, collectInterval time.Duration, 
 		doneChan:           make(chan bool),
 		doneSaveChan:       make(chan bool),
 		appCollectors:      make(map[string]AppCollector),
-		lock:               &sync.Mutex{},
+		lock:               &sync.RWMutex{},
 		dataChan:           make(chan *models.AppInstanceMetric),
 	}
 }
@@ -121,23 +125,48 @@ func (c *Collector) Stop() {
 		close(c.doneChan)
 		close(c.doneSaveChan)
 
-		c.lock.Lock()
+		c.lock.RLock()
 		for _, ap := range c.appCollectors {
 			ap.Stop()
 		}
-		c.lock.Unlock()
+		c.lock.RUnlock()
 	}
 	c.logger.Info("collector-stopped")
 }
 
 func (c *Collector) GetCollectorAppIds() []string {
 	var appIds []string
-	c.lock.Lock()
+	c.lock.RLock()
 	for id := range c.appCollectors {
 		appIds = append(appIds, id)
 	}
-	c.lock.Unlock()
+	c.lock.RUnlock()
 	return appIds
+}
+
+func (c *Collector) QueryMetrics(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppInstanceMetric, bool) {
+	c.lock.RLock()
+	appCollector, exist := c.appCollectors[appID]
+	c.lock.RUnlock()
+	if !exist {
+		return nil, false
+	}
+
+	result, ok := appCollector.Query(start, end, labels)
+	if !ok {
+		return nil, false
+	}
+	metrics := make([]*models.AppInstanceMetric, len(result))
+	if order == db.ASC {
+		for index, tsd := range result {
+			metrics[index] = tsd.(*models.AppInstanceMetric)
+		}
+	} else {
+		for index, tsd := range result {
+			metrics[len(result)-1-index] = tsd.(*models.AppInstanceMetric)
+		}
+	}
+	return metrics, true
 }
 
 func (c *Collector) SaveMetricsInDB() {

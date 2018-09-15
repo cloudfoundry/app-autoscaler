@@ -81,6 +81,7 @@ collector:
   collect_interval: 10s
   collect_method: polling
   save_interval: 5s
+  metric_cache_size_per_app: 100
 `)
 			})
 
@@ -117,6 +118,7 @@ collector:
 				Expect(conf.Collector.RefreshInterval).To(Equal(20 * time.Second))
 				Expect(conf.Collector.CollectInterval).To(Equal(10 * time.Second))
 				Expect(conf.Collector.CollectMethod).To(Equal(CollectMethodPolling))
+				Expect(conf.Collector.MetricCacheSizePerApp).To(Equal(100))
 
 				Expect(conf.Server.TLS.KeyFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/server.key"))
 				Expect(conf.Server.TLS.CertFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/server.crt"))
@@ -163,6 +165,7 @@ db:
 				Expect(conf.Collector.RefreshInterval).To(Equal(DefaultRefreshInterval))
 				Expect(conf.Collector.CollectInterval).To(Equal(DefaultCollectInterval))
 				Expect(conf.Collector.CollectMethod).To(Equal(CollectMethodStreaming))
+				Expect(conf.Collector.MetricCacheSizePerApp).To(Equal(DefaultMetricCacheSizePerApp))
 			})
 		})
 
@@ -645,6 +648,7 @@ collector:
 			conf.Collector.RefreshInterval = time.Duration(60 * time.Second)
 			conf.Collector.CollectMethod = CollectMethodPolling
 			conf.Collector.SaveInterval = time.Duration(5 * time.Second)
+			conf.Collector.MetricCacheSizePerApp = 100
 			conf.Server.NodeAddrs = []string{"address1", "address2"}
 			conf.Server.NodeIndex = 0
 		})
@@ -726,6 +730,15 @@ collector:
 
 			It("should error", func() {
 				Expect(err).To(MatchError("Configuration error: invalid collector.collect_method"))
+			})
+		})
+
+		Context("when metrics cache size per app is invalid", func() {
+			BeforeEach(func() {
+				conf.Collector.MetricCacheSizePerApp = 0
+			})
+			It("should error", func() {
+				Expect(err).To(MatchError("Configuration error: invalid collector.metric_cache_size_per_app"))
 			})
 		})
 
