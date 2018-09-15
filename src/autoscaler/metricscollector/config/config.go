@@ -16,10 +16,11 @@ import (
 )
 
 const (
-	DefaultLoggingLevel                  = "info"
-	DefaultRefreshInterval time.Duration = 60 * time.Second
-	DefaultCollectInterval time.Duration = 30 * time.Second
-	DefaultSaveInterval    time.Duration = 5 * time.Second
+	DefaultLoggingLevel                        = "info"
+	DefaultRefreshInterval       time.Duration = 60 * time.Second
+	DefaultCollectInterval       time.Duration = 30 * time.Second
+	DefaultSaveInterval          time.Duration = 5 * time.Second
+	DefaultMetricCacheSizePerApp               = 1000
 
 	CollectMethodPolling   = "polling"
 	CollectMethodStreaming = "streaming"
@@ -51,17 +52,19 @@ type DBConfig struct {
 }
 
 type CollectorConfig struct {
-	RefreshInterval time.Duration `yaml:"refresh_interval"`
-	CollectInterval time.Duration `yaml:"collect_interval"`
-	CollectMethod   string        `yaml:"collect_method"`
-	SaveInterval    time.Duration `yaml:"save_interval"`
+	RefreshInterval       time.Duration `yaml:"refresh_interval"`
+	CollectInterval       time.Duration `yaml:"collect_interval"`
+	CollectMethod         string        `yaml:"collect_method"`
+	SaveInterval          time.Duration `yaml:"save_interval"`
+	MetricCacheSizePerApp int           `yaml:"metric_cache_size_per_app"`
 }
 
 var defaultCollectorConfig = CollectorConfig{
-	RefreshInterval: DefaultRefreshInterval,
-	CollectInterval: DefaultCollectInterval,
-	CollectMethod:   CollectMethodStreaming,
-	SaveInterval:    DefaultSaveInterval,
+	RefreshInterval:       DefaultRefreshInterval,
+	CollectInterval:       DefaultCollectInterval,
+	CollectMethod:         CollectMethodStreaming,
+	SaveInterval:          DefaultSaveInterval,
+	MetricCacheSizePerApp: DefaultMetricCacheSizePerApp,
 }
 
 type Config struct {
@@ -98,6 +101,7 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 }
 
 func (c *Config) Validate() error {
+
 	err := c.CF.Validate()
 	if err != nil {
 		return err
@@ -125,6 +129,10 @@ func (c *Config) Validate() error {
 
 	if (c.Collector.CollectMethod != CollectMethodPolling) && (c.Collector.CollectMethod != CollectMethodStreaming) {
 		return fmt.Errorf("Configuration error: invalid collector.collect_method")
+	}
+
+	if c.Collector.MetricCacheSizePerApp <= 0 {
+		return fmt.Errorf("Configuration error: invalid collector.metric_cache_size_per_app")
 	}
 
 	if (c.Server.NodeIndex >= len(c.Server.NodeAddrs)) || (c.Server.NodeIndex < 0) {

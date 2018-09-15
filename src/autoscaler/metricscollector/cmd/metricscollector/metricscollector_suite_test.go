@@ -157,6 +157,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.Collector.RefreshInterval = 30 * time.Second
 	cfg.Collector.CollectMethod = config.CollectMethodPolling
 	cfg.Collector.SaveInterval = 5 * time.Second
+	cfg.Collector.MetricCacheSizePerApp = 100
 
 	configFile = writeConfig(&cfg)
 

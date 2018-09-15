@@ -91,21 +91,22 @@ func main() {
 	var createAppCollector func(string, chan *models.AppInstanceMetric) collector.AppCollector
 	if conf.Collector.CollectMethod == config.CollectMethodPolling {
 		createAppCollector = func(appId string, dataChan chan *models.AppInstanceMetric) collector.AppCollector {
-			return collector.NewAppPoller(logger.Session("app-poller"), appId, conf.Collector.CollectInterval, cfClient, noaa, mcClock, dataChan)
+			return collector.NewAppPoller(logger.Session("app-poller"), appId, conf.Collector.CollectInterval, conf.Collector.MetricCacheSizePerApp, cfClient, noaa, mcClock, dataChan)
 		}
 	} else {
 		createAppCollector = func(appId string, dataChan chan *models.AppInstanceMetric) collector.AppCollector {
 			noaaConsumer := consumer.New(dopplerUrl, tlsConfig, nil)
 			noaaConsumer.RefreshTokenFrom(cfClient)
-			return collector.NewAppStreamer(logger.Session("app-streamer"), appId, conf.Collector.CollectInterval, cfClient, noaaConsumer, mcClock, dataChan)
+			return collector.NewAppStreamer(logger.Session("app-streamer"), appId, conf.Collector.CollectInterval, conf.Collector.MetricCacheSizePerApp, cfClient, noaaConsumer, mcClock, dataChan)
 		}
 	}
 
+	mc := collector.NewCollector(conf.Collector.RefreshInterval, conf.Collector.CollectInterval, conf.Collector.SaveInterval,
+		conf.Server.NodeIndex, len(conf.Server.NodeAddrs), logger.Session("collector"),
+		policyDB, instanceMetricsDB, mcClock, createAppCollector)
+
 	collectServer := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
 		logger.Info("starting collector", lager.Data{"NodeIndex": conf.Server.NodeIndex, "NodeAddrs": conf.Server.NodeAddrs})
-		mc := collector.NewCollector(conf.Collector.RefreshInterval, conf.Collector.CollectInterval, conf.Collector.SaveInterval,
-			conf.Server.NodeIndex, len(conf.Server.NodeAddrs), logger.Session("collector"),
-			policyDB, instanceMetricsDB, mcClock, createAppCollector)
 		mc.Start()
 
 		close(ready)
@@ -116,7 +117,7 @@ func main() {
 		return nil
 	})
 
-	httpServer, err := server.NewServer(logger.Session("http_server"), conf, cfClient, noaa, instanceMetricsDB)
+	httpServer, err := server.NewServer(logger.Session("http_server"), conf, cfClient, noaa, mc.QueryMetrics, instanceMetricsDB)
 	if err != nil {
 		logger.Error("failed to create http server", err)
 		os.Exit(1)
