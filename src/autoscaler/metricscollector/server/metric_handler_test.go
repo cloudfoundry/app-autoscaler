@@ -5,6 +5,7 @@ import (
 	"autoscaler/metricscollector/fakes"
 	. "autoscaler/metricscollector/server"
 	"autoscaler/models"
+	"net/url"
 
 	"code.cloudfoundry.org/lager"
 	. "github.com/onsi/ginkgo"
@@ -17,15 +18,17 @@ import (
 	"net/http/httptest"
 )
 
-var testUrlMetricHistories = "http://localhost/v1/apps/an-app-id/metric_histories/a-metric-type"
+var testUrlMetricHistories = "http://metrics_collector_hostname/v1/apps/an-app-id/metric_histories/a-metric-type"
 
 var _ = Describe("MetricHandler", func() {
 
 	var (
-		cfc      *fakes.FakeCFClient
-		consumer *fakes.FakeNoaaConsumer
-		handler  *MetricHandler
-		database *fakes.FakeInstanceMetricsDB
+		cfc       *fakes.FakeCFClient
+		consumer  *fakes.FakeNoaaConsumer
+		handler   *MetricHandler
+		database  *fakes.FakeInstanceMetricsDB
+		nodeIndex int
+		nodeAddrs []string
 
 		resp *httptest.ResponseRecorder
 		req  *http.Request
@@ -40,18 +43,20 @@ var _ = Describe("MetricHandler", func() {
 	BeforeEach(func() {
 		cfc = &fakes.FakeCFClient{}
 		consumer = &fakes.FakeNoaaConsumer{}
-		logger := lager.NewLogger("handler-test")
+		nodeIndex = 0
+		nodeAddrs = []string{"localhost:8080"}
 		database = &fakes.FakeInstanceMetricsDB{}
 		resp = httptest.NewRecorder()
 		cacheHit = false
-		queryFunc := func(appID string, start int64, end int64, order db.OrderType, labels map[string]string) ([]*models.AppInstanceMetric, bool) {
-			return metrics, cacheHit
-		}
-		handler = NewMetricHandler(logger, cfc, consumer, queryFunc, database)
 	})
 
 	Describe("GetMetricHistory", func() {
 		JustBeforeEach(func() {
+			logger := lager.NewLogger("handler-test")
+			queryFunc := func(appID string, start int64, end int64, order db.OrderType, labels map[string]string) ([]*models.AppInstanceMetric, bool) {
+				return metrics, cacheHit
+			}
+			handler = NewMetricHandler(logger, nodeIndex, nodeAddrs, cfc, consumer, queryFunc, database)
 			handler.GetMetricHistories(resp, req, map[string]string{"appid": "an-app-id", "metrictype": "a-metric-type"})
 		})
 
@@ -374,6 +379,47 @@ var _ = Describe("MetricHandler", func() {
 
 						Expect(err).ToNot(HaveOccurred())
 						Expect(*result).To(Equal([]models.AppInstanceMetric{metric2, metric1}))
+					})
+				})
+			})
+
+			Context("when requesting app metrics in other shard", func() {
+				BeforeEach(func() {
+					nodeIndex = 1
+					nodeAddrs = []string{"localhost:8080", "localhost:9090"}
+				})
+				Context("when it is not a redirect", func() {
+					BeforeEach(func() {
+						req, err = http.NewRequest(http.MethodGet, testUrlMetricHistories+"?instanceindex=0&start=123&end=567&order=desc", nil)
+						Expect(err).ToNot(HaveOccurred())
+					})
+
+					It("Redirects to the right shard", func() {
+						Expect(resp.Code).To(Equal(http.StatusFound))
+						Expect(resp.Header()["Location"]).To(HaveLen(1))
+						redirecURL, err := url.Parse(resp.Header()["Location"][0])
+						Expect(err).NotTo(HaveOccurred())
+						Expect(redirecURL.Scheme).To(Equal("https"))
+						Expect(redirecURL.Host).To(Equal("localhost:8080"))
+						Expect(redirecURL.Path).To(Equal("/v1/apps/an-app-id/metric_histories/a-metric-type"))
+						Expect(redirecURL.Query()).To(BeEquivalentTo(map[string][]string{
+							"instanceindex": []string{"0"},
+							"start":         []string{"123"},
+							"end":           []string{"567"},
+							"order":         []string{"desc"},
+							"referer":       []string{"localhost:9090"},
+						}))
+					})
+				})
+
+				Context("when it is a redirect from other node", func() {
+					BeforeEach(func() {
+						req, err = http.NewRequest(http.MethodGet, testUrlMetricHistories+"?instanceindex=0&start=123&end=567&order=desc&referer=another-node", nil)
+						Expect(err).ToNot(HaveOccurred())
+					})
+
+					It("does not redirect again", func() {
+						Expect(resp.Code).To(Equal(http.StatusOK))
 					})
 				})
 			})

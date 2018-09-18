@@ -6,6 +6,7 @@ import (
 	"autoscaler/metricscollector/fakes"
 	"autoscaler/metricscollector/server"
 	"autoscaler/models"
+	"fmt"
 	"net/url"
 	"strconv"
 
@@ -29,12 +30,15 @@ func TestServer(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
+
 	port := 1111 + GinkgoParallelNode()
 	cfc := &fakes.FakeCFClient{}
 	consumer := &fakes.FakeNoaaConsumer{}
 	conf := &config.Config{
 		Server: config.ServerConfig{
-			Port: port,
+			Port:      port,
+			NodeAddrs: []string{fmt.Sprintf("%s:%s", "localhost", port)},
+			NodeIndex: 0,
 		},
 	}
 	database := &fakes.FakeInstanceMetricsDB{}
