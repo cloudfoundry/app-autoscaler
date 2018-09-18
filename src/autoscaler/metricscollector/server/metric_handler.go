@@ -3,6 +3,7 @@ package server
 import (
 	"autoscaler/cf"
 	"autoscaler/db"
+	"autoscaler/helpers"
 	"autoscaler/metricscollector/collector"
 	"autoscaler/metricscollector/noaa"
 	"autoscaler/models"
@@ -18,6 +19,8 @@ import (
 )
 
 type MetricHandler struct {
+	nodeIndex    int
+	nodeAdds     []string
 	cfClient     cf.CFClient
 	logger       lager.Logger
 	noaaConsumer noaa.NoaaConsumer
@@ -25,8 +28,10 @@ type MetricHandler struct {
 	database     db.InstanceMetricsDB
 }
 
-func NewMetricHandler(logger lager.Logger, cfc cf.CFClient, consumer noaa.NoaaConsumer, query collector.MetricQueryFunc, database db.InstanceMetricsDB) *MetricHandler {
+func NewMetricHandler(logger lager.Logger, nodeIndex int, nodeAdds []string, cfc cf.CFClient, consumer noaa.NoaaConsumer, query collector.MetricQueryFunc, database db.InstanceMetricsDB) *MetricHandler {
 	return &MetricHandler{
+		nodeIndex:    nodeIndex,
+		nodeAdds:     nodeAdds,
 		cfClient:     cfc,
 		logger:       logger,
 		noaaConsumer: consumer,
@@ -37,6 +42,17 @@ func NewMetricHandler(logger lager.Logger, cfc cf.CFClient, consumer noaa.NoaaCo
 
 func (h *MetricHandler) GetMetricHistories(w http.ResponseWriter, r *http.Request, vars map[string]string) {
 	appId := vars["appid"]
+	if r.URL.Query()["referer"] == nil {
+		shardID := helpers.FNVHash(appId) % uint32(len(h.nodeAdds))
+		if shardID != uint32(h.nodeIndex) {
+			params := r.URL.Query()
+			params.Add("referer", h.nodeAdds[h.nodeIndex])
+			newURL := "https://" + h.nodeAdds[shardID] + r.URL.Path + "?" + params.Encode()
+			h.logger.Debug("get-metric-histories-redirect", lager.Data{"appId": appId, "newURL": newURL})
+			http.Redirect(w, r, newURL, http.StatusFound)
+			return
+		}
+	}
 	metricType := vars["metrictype"]
 	instanceIndexParam := r.URL.Query()["instanceindex"]
 	startParam := r.URL.Query()["start"]
