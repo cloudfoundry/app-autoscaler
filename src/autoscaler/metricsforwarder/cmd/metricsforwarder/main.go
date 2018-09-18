@@ -92,7 +92,8 @@ func initLoggerFromConfig(logLevelConfig string) lager.Logger {
 
 	redactedSink, err := helpers.NewRedactingWriterWithURLCredSink(os.Stdout, logLevel, keyPatterns, nil)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create redacted sink", err.Error())
+		fmt.Fprintf(os.Stderr, "Failed to create redacted sink: %s\n", err.Error())
+		os.Exit(1)
 	}
 	logger.RegisterSink(redactedSink)
 
