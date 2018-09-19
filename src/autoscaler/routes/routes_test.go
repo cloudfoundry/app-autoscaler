@@ -318,7 +318,7 @@ var _ = Describe("Routes", func() {
 			It("should return the correct path", func() {
 				path, err := routes.MetricsForwarderRoutes().Get(routes.PostCustomMetricsRouteName).URLPath("appid", testAppId)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(path.Path).To(Equal("/v1/" + testAppId + "/metrics"))
+				Expect(path.Path).To(Equal("/v1/apps/" + testAppId + "/metrics"))
 			})
 		})
 	})

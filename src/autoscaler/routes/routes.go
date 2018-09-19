@@ -41,6 +41,8 @@ const (
 	BrokerDeleteBindingRouteName = "DeleteBinding"
 	CustomMetricsPath            = "/v1/{appid}/metrics"
 	PostCustomMetricsRouteName   = "PostCustomMetrics"
+	CustomMetricsPath            = "/v1/apps/{appid}/metrics"
+	PostCustomMetricsRouteName   = "PostCustomMetrics"
 )
 
 type AutoScalerRoute struct {
