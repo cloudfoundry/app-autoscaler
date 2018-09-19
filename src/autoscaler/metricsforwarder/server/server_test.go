@@ -39,7 +39,7 @@ var _ = Describe("CustomMetrics Server", func() {
 			credentials.Password = "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G"
 			credentialCache.Set("an-app-id", credentials, 10 * time.Minute)
 			client := &http.Client{}
-			req, err = http.NewRequest("POST", serverUrl+"/v1/an-app-id/metrics", bytes.NewReader(body))
+			req, err = http.NewRequest("POST", serverUrl+"/v1/apps/an-app-id/metrics", bytes.NewReader(body))
 			req.Header.Add("Content-Type", "application/json")
 			req.Header.Add("Authorization", "Basic dXNlcm5hbWU6cGFzc3dvcmQ=")
 			resp, err = client.Do(req)
@@ -62,7 +62,7 @@ var _ = Describe("CustomMetrics Server", func() {
 			body, err = json.Marshal(models.CustomMetric{Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 123, AppGUID: "an-app-id"})
 			Expect(err).NotTo(HaveOccurred())
 			client := &http.Client{}
-			req, err = http.NewRequest("POST", serverUrl+"/v1/an-app-id/metrics", bytes.NewReader(body))
+			req, err = http.NewRequest("POST", serverUrl+"/v1/apps/an-app-id/metrics", bytes.NewReader(body))
 			req.Header.Add("Content-Type", "application/json")
 			resp, err = client.Do(req)
 			Expect(err).NotTo(HaveOccurred())
@@ -84,7 +84,7 @@ var _ = Describe("CustomMetrics Server", func() {
 			body, err = json.Marshal(models.CustomMetric{Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 123, AppGUID: "an-app-id"})
 			Expect(err).NotTo(HaveOccurred())
 			client := &http.Client{}
-			req, err = http.NewRequest("POST", serverUrl+"/v1/an-app-id/metrics", bytes.NewReader(body))
+			req, err = http.NewRequest("POST", serverUrl+"/v1/apps/san-app-id/metrics", bytes.NewReader(body))
 			req.Header.Add("Content-Type", "application/json")
 			req.Header.Add("Authorization", "dXNlcm5hbWU6cGFzc3dvcmQ=")
 			resp, err = client.Do(req)
@@ -107,7 +107,7 @@ var _ = Describe("CustomMetrics Server", func() {
 			body, err = json.Marshal(models.CustomMetric{Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 123, AppGUID: "an-app-id"})
 			Expect(err).NotTo(HaveOccurred())
 			client := &http.Client{}
-			req, err = http.NewRequest("POST", serverUrl+"/v1/an-app-id/metrics", bytes.NewReader(body))
+			req, err = http.NewRequest("POST", serverUrl+"/v1/apps/an-app-id/metrics", bytes.NewReader(body))
 			req.Header.Add("Content-Type", "application/json")
 			req.Header.Add("Authorization", "Basic M2YxZWY2MTJiMThlYTM5YmJlODRjZjUxMzY4MWYwYjc6YWYyNjk1Y2RmZDE0MzA4NThhMWY3MzJhYTI5NTQ2ZTk=")
 			resp, err = client.Do(req)
@@ -131,7 +131,7 @@ var _ = Describe("CustomMetrics Server", func() {
 			body, err = json.Marshal(models.CustomMetric{Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 123, AppGUID: "an-app-id"})
 			Expect(err).NotTo(HaveOccurred())
 			client := &http.Client{}
-			req, err = http.NewRequest("POST", serverUrl+"/v1/an-app-id/metrics", bytes.NewReader(body))
+			req, err = http.NewRequest("POST", serverUrl+"/v1/apps/an-app-id/metrics", bytes.NewReader(body))
 			req.Header.Add("Content-Type", "application/json")
 			req.Header.Add("Authorization", "Basic dXNlcm5hbWU6cGFzc3dvcmQ=")
 			resp, err = client.Do(req)
