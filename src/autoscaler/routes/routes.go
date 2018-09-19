@@ -42,7 +42,7 @@ const (
 
 	EnvelopePath               = "/v1/envelopes"
 	EnvelopeReportRouteName    = "ReportEnvelope"
-	CustomMetricsPath          = "/v1/{appid}/metrics"
+	CustomMetricsPath          = "/v1/apps/{appid}/metrics"
 	PostCustomMetricsRouteName = "PostCustomMetrics"
 )
 
