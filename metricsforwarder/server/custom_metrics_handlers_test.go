@@ -53,7 +53,7 @@ var _ = Describe("MetricHandler", func() {
 
 	Describe("PublishMetrics", func() {
 		JustBeforeEach(func() {
-			req, err = http.NewRequest(http.MethodPost, serverUrl+"/v1/an-app-id/metrics", bytes.NewReader(body))
+			req, err = http.NewRequest(http.MethodPost, serverUrl+"/v1/apps/an-app-id/metrics", bytes.NewReader(body))
 			req.Header.Add("Content-Type", "application/json")
 			req.Header.Add("Authorization", "Basic dXNlcm5hbWU6cGFzc3dvcmQ=")
 			Expect(err).ToNot(HaveOccurred())
