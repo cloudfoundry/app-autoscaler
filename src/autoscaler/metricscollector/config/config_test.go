@@ -82,6 +82,7 @@ collector:
   collect_method: polling
   save_interval: 5s
   metric_cache_size_per_app: 100
+http_request_timeout: 10s
 `)
 			})
 
@@ -125,6 +126,8 @@ collector:
 				Expect(conf.Server.TLS.CACertFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/ca.crt"))
 				Expect(conf.Server.NodeAddrs).To(Equal([]string{"address1", "address2"}))
 				Expect(conf.Server.NodeIndex).To(Equal(1))
+
+				Expect(conf.HTTPRequestTimeout).To(Equal(10 * time.Second))
 			})
 		})
 
@@ -166,6 +169,8 @@ db:
 				Expect(conf.Collector.CollectInterval).To(Equal(DefaultCollectInterval))
 				Expect(conf.Collector.CollectMethod).To(Equal(CollectMethodStreaming))
 				Expect(conf.Collector.MetricCacheSizePerApp).To(Equal(DefaultMetricCacheSizePerApp))
+
+				Expect(conf.HTTPRequestTimeout).To(Equal(5 * time.Second))
 			})
 		})
 
@@ -623,6 +628,51 @@ collector:
 			})
 		})
 
+		Context("when http_request_timeout of http is not a time duration", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+cf:
+  api: https://api.example.com
+  grant_type: PassWord
+  username: admin
+  password: admin
+  client_id: client-id
+  secret: client-secret
+  skip_ssl_validation: false
+server:
+  port: 8989
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
+logging:
+  level: DebuG
+db:
+  policy_db:
+    url: postgres://pqgotest:password@localhost/pqgotest
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  instance_metrics_db:
+    url: postgres://pqgotest:password@localhost/pqgotest
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+collector:
+  refresh_interval: 20s
+  collect_interval: 10s
+  collect_method: polling
+  save_interval: 5s
+http_request_timeout: 10k
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
+			})
+		})
+
 	})
 
 	Describe("Validate", func() {
@@ -651,6 +701,7 @@ collector:
 			conf.Collector.MetricCacheSizePerApp = 100
 			conf.Server.NodeAddrs = []string{"address1", "address2"}
 			conf.Server.NodeIndex = 0
+			conf.HTTPRequestTimeout = 10 * time.Second
 		})
 
 		JustBeforeEach(func() {
@@ -759,6 +810,15 @@ collector:
 				})
 				It("should error", func() {
 					Expect(err).To(MatchError("Configuration error: server.node_index out of range"))
+				})
+			})
+
+			Context("when HTTPRequestTimeout is <= 0", func() {
+				BeforeEach(func() {
+					conf.HTTPRequestTimeout = 0
+				})
+				It("should error", func() {
+					Expect(err).To(MatchError("Configuration error: http_request_timeout is less-equal than 0"))
 				})
 			})
 

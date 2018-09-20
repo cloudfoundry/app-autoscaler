@@ -1,5 +1,5 @@
 "use strict";
-module.exports = function(scalingEngineSettings) {
+module.exports = function(scalingEngineSettings, httpRequestTimeout) {
   var request = require("request");
   var logger = require("../log/logger");
   var HttpStatus = require("http-status-codes");
@@ -11,7 +11,7 @@ module.exports = function(scalingEngineSettings) {
       qs: { "start": startTime, "end": endTime, "order": order },
       method: "GET",
       json: true,
-      timeout: 10000,
+      timeout: httpRequestTimeout,
     }
     if (scalingEngineSettings.tls) {
       var scalingEngineTLSOptions = {

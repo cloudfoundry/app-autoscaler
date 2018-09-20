@@ -4,7 +4,7 @@ module.exports = function(settings) {
   var router = express.Router();
   var logger = require("../log/logger");
   var HttpStatus = require("http-status-codes");
-  var metricsCollectorUtil = require("../utils/metricsCollectorUtils")(settings.metricsCollector);
+  var metricsCollectorUtil = require("../utils/metricsCollectorUtils")(settings.metricsCollector, settings.httpRequestTimeout);
   var metricHelper = require("./metricHelper");
   var routeHelper = require("./routeHelper");
 

@@ -20,6 +20,7 @@ const (
 	DefaultRefreshInterval       time.Duration = 60 * time.Second
 	DefaultCollectInterval       time.Duration = 30 * time.Second
 	DefaultSaveInterval          time.Duration = 5 * time.Second
+	DefaultHTTPRequestTimeout    time.Duration = 5 * time.Second
 	DefaultMetricCacheSizePerApp               = 1000
 
 	CollectMethodPolling   = "polling"
@@ -68,19 +69,21 @@ var defaultCollectorConfig = CollectorConfig{
 }
 
 type Config struct {
-	CF        cf.CFConfig           `yaml:"cf"`
-	Logging   helpers.LoggingConfig `yaml:"logging"`
-	Server    ServerConfig          `yaml:"server"`
-	DB        DBConfig              `yaml:"db"`
-	Collector CollectorConfig       `yaml:"collector"`
+	CF                 cf.CFConfig           `yaml:"cf"`
+	Logging            helpers.LoggingConfig `yaml:"logging"`
+	Server             ServerConfig          `yaml:"server"`
+	DB                 DBConfig              `yaml:"db"`
+	Collector          CollectorConfig       `yaml:"collector"`
+	HTTPRequestTimeout time.Duration         `yaml:"http_request_timeout"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
 	conf := &Config{
-		CF:        defaultCFConfig,
-		Logging:   defaultLoggingConfig,
-		Server:    defaultServerConfig,
-		Collector: defaultCollectorConfig,
+		CF:                 defaultCFConfig,
+		Logging:            defaultLoggingConfig,
+		Server:             defaultServerConfig,
+		Collector:          defaultCollectorConfig,
+		HTTPRequestTimeout: DefaultHTTPRequestTimeout,
 	}
 
 	bytes, err := ioutil.ReadAll(reader)
@@ -137,6 +140,10 @@ func (c *Config) Validate() error {
 
 	if (c.Server.NodeIndex >= len(c.Server.NodeAddrs)) || (c.Server.NodeIndex < 0) {
 		return fmt.Errorf("Configuration error: server.node_index out of range")
+	}
+
+	if c.HTTPRequestTimeout <= time.Duration(0) {
+		return fmt.Errorf("Configuration error: http_request_timeout is less-equal than 0")
 	}
 	return nil
 

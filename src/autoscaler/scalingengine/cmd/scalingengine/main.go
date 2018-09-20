@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"time"
 
 	"autoscaler/cf"
 	"autoscaler/db"
@@ -93,7 +92,7 @@ func main() {
 		),
 	}, true, logger.Session("scalingengine-prometheus"))
 
-	cfhttp.Initialize(5 * time.Second)
+	cfhttp.Initialize(conf.HTTPRequestTimeout)
 
 	eClock := clock.NewClock()
 	cfClient := cf.NewCFClient(&conf.CF, logger.Session("cf"), eClock)

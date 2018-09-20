@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"time"
 
 	"autoscaler/cf"
 	"autoscaler/db"
@@ -54,7 +53,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	cfhttp.Initialize(5 * time.Second)
+	cfhttp.Initialize(conf.HTTPRequestTimeout)
 
 	logger := helpers.InitLoggerFromConfig(&conf.Logging, "metricscollector")
 	mcClock := clock.NewClock()

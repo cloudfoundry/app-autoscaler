@@ -158,6 +158,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.Collector.CollectMethod = config.CollectMethodPolling
 	cfg.Collector.SaveInterval = 5 * time.Second
 	cfg.Collector.MetricCacheSizePerApp = 100
+	cfg.HTTPRequestTimeout = 10 * time.Second
 
 	configFile = writeConfig(&cfg)
 

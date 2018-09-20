@@ -24,6 +24,7 @@ const (
 	DefaultRetryInterval       time.Duration = locket.RetryInterval
 	DefaultDBLockRetryInterval time.Duration = 5 * time.Second
 	DefaultDBLockTTL           time.Duration = 15 * time.Second
+	DefaultHTTPRequestTimeout  time.Duration = 5 * time.Second
 )
 
 type InstanceMetricsDbPrunerConfig struct {
@@ -79,17 +80,18 @@ type AppSyncerConfig struct {
 }
 
 type Config struct {
-	CF                cf.CFConfig                   `yaml:"cf"`
-	Logging           helpers.LoggingConfig         `yaml:"logging"`
-	InstanceMetricsDB InstanceMetricsDbPrunerConfig `yaml:"instance_metrics_db"`
-	AppMetricsDB      AppMetricsDBPrunerConfig      `yaml:"app_metrics_db"`
-	ScalingEngineDB   ScalingEngineDBPrunerConfig   `yaml:"scaling_engine_db"`
-	ScalingEngine     ScalingEngineConfig           `yaml:"scaling_engine"`
-	Scheduler         SchedulerConfig               `yaml:"scheduler"`
-	AppSyncer         AppSyncerConfig               `yaml:"app_syncer"`
-	Lock              LockConfig                    `yaml:"lock"`
-	DBLock            DBLockConfig                  `yaml:"db_lock"`
-	EnableDBLock      bool                          `yaml:"enable_db_lock"`
+	CF                 cf.CFConfig                   `yaml:"cf"`
+	Logging            helpers.LoggingConfig         `yaml:"logging"`
+	InstanceMetricsDB  InstanceMetricsDbPrunerConfig `yaml:"instance_metrics_db"`
+	AppMetricsDB       AppMetricsDBPrunerConfig      `yaml:"app_metrics_db"`
+	ScalingEngineDB    ScalingEngineDBPrunerConfig   `yaml:"scaling_engine_db"`
+	ScalingEngine      ScalingEngineConfig           `yaml:"scaling_engine"`
+	Scheduler          SchedulerConfig               `yaml:"scheduler"`
+	AppSyncer          AppSyncerConfig               `yaml:"app_syncer"`
+	Lock               LockConfig                    `yaml:"lock"`
+	DBLock             DBLockConfig                  `yaml:"db_lock"`
+	EnableDBLock       bool                          `yaml:"enable_db_lock"`
+	HTTPRequestTimeout time.Duration                 `yaml:"http_request_timeout"`
 }
 
 var defaultConfig = Config{
@@ -123,8 +125,9 @@ var defaultConfig = Config{
 	AppSyncer: AppSyncerConfig{
 		SyncInterval: DefaultSyncInterval,
 	},
-	DBLock:       defaultDBLockConfig,
-	EnableDBLock: false,
+	DBLock:             defaultDBLockConfig,
+	EnableDBLock:       false,
+	HTTPRequestTimeout: DefaultHTTPRequestTimeout,
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
@@ -212,6 +215,10 @@ func (c *Config) Validate() error {
 	}
 	if c.AppSyncer.SyncInterval <= 0 {
 		return fmt.Errorf("Configuration error: appSyncer.sync_interval is less than or equal to 0")
+	}
+
+	if c.HTTPRequestTimeout <= time.Duration(0) {
+		return fmt.Errorf("Configuration error: http_request_timeout is less-equal than 0")
 	}
 
 	return nil

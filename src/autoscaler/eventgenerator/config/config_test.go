@@ -32,6 +32,7 @@ var _ = Describe("Config", func() {
 				configBytes = []byte(`
 logging:
   level: info
+http_request_timeout: 10s
 server:
   port: 9080
   tls:
@@ -86,7 +87,8 @@ circuitBreaker:
 			It("returns the config", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(conf).To(Equal(&Config{
-					Logging: helpers.LoggingConfig{Level: "info"},
+					Logging:            helpers.LoggingConfig{Level: "info"},
+					HTTPRequestTimeout: 10 * time.Second,
 					Server: ServerConfig{
 						Port: 9080,
 						TLS: models.TLSCerts{
@@ -212,7 +214,8 @@ defaultBreachDurationSecs: 600
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(conf).To(Equal(&Config{
-					Logging: helpers.LoggingConfig{Level: "info"},
+					Logging:            helpers.LoggingConfig{Level: "info"},
+					HTTPRequestTimeout: 5 * time.Second,
 					Server: ServerConfig{
 						Port: 8080,
 						TLS:  models.TLSCerts{},
@@ -256,6 +259,46 @@ defaultBreachDurationSecs: 600
 						ConsecutiveFailureCount: DefaultBreakerConsecutiveFailureCount,
 					},
 				}))
+			})
+		})
+		Context("when http_request_timeout is not a time duration", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: info
+http_request_timeout: 10k
+db:
+  policy_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  app_metrics_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+aggregator: 
+  aggregator_execute_interval: 60s
+  policy_poller_interval: 30s
+  metric_poller_count: 10
+  app_monitor_channel_size: 100
+evaluator:
+  evaluation_manager_execute_interval: 30s
+  evaluator_count: 10
+  trigger_array_channel_size: 100
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+metricCollector:
+  metric_collector_url: http://localhost:8083
+defaultStatWindowSecs: 300
+defaultBreachDurationSecs: 600
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
 			})
 		})
 
@@ -970,9 +1013,11 @@ defaultBreachDurationSecs: NOT-INTEGER-VALUE
 				ScalingEngine: ScalingEngineConfig{
 					ScalingEngineURL: "http://localhost:8082"},
 				MetricCollector: MetricCollectorConfig{
-					MetricCollectorURL: "http://localhost:8083"},
+					MetricCollectorURL: "http://localhost:8083",
+				},
 				DefaultBreachDurationSecs: 600,
 				DefaultStatWindowSecs:     300,
+				HTTPRequestTimeout:        10 * time.Second,
 			}
 		})
 
@@ -1159,6 +1204,15 @@ defaultBreachDurationSecs: NOT-INTEGER-VALUE
 				})
 			})
 
+		})
+
+		Context("when HTTP RequestTimeout is <= 0", func() {
+			BeforeEach(func() {
+				conf.HTTPRequestTimeout = 0
+			})
+			It("should error", func() {
+				Expect(err).To(MatchError("Configuration error: http_request_timeout is less-equal than 0"))
+			})
 		})
 
 	})
