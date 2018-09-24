@@ -80,6 +80,40 @@ func getNumberOfInstanceMetrics() int {
 	return num
 }
 
+func cleanServiceBindingTable() {
+	_, e := dbHelper.Exec("DELETE from binding")
+	if e != nil {
+		Fail("can not clean table binding: " + e.Error())
+	}
+}
+
+func cleanServiceInstanceTable() {
+	_, e := dbHelper.Exec("DELETE from service_instance")
+	if e != nil {
+		Fail("can not clean table service_instance: " + e.Error())
+	}
+}
+
+func hasServiceInstance(serviceInstanceId string) bool {
+	query := "SELECT * FROM service_instance WHERE service_instance_id = $1 "
+	rows, e := dbHelper.Query(query, serviceInstanceId)
+	if e != nil {
+		Fail("can not query table service_instance: " + e.Error())
+	}
+	defer rows.Close()
+	return rows.Next()
+}
+
+func hasServiceBinding(bindingId string, serviceInstanceId string) bool {
+	query := "SELECT * FROM binding WHERE binding_id = $1 AND service_instance_id = $2 "
+	rows, e := dbHelper.Query(query, bindingId, serviceInstanceId)
+	if e != nil {
+		Fail("can not query table binding: " + e.Error())
+	}
+	defer rows.Close()
+	return rows.Next()
+}
+
 func cleanPolicyTable() {
 	_, e := dbHelper.Exec("DELETE from policy_json")
 	if e != nil {

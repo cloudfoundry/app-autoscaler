@@ -13,6 +13,8 @@ var _ = Describe("Routes", func() {
 		testAppId      string = "testAppId"
 		testScheduleId string = "testScheduleId"
 		testMetricType string = "testMetricType"
+		testInstanceId string = "testInstanceId"
+		testBindingId  string = "testBindingId"
 	)
 	Describe("MetricsCollectorRoutes", func() {
 		Context("GetMetricHistoriesRoute", func() {
@@ -41,6 +43,114 @@ var _ = Describe("Routes", func() {
 			})
 		})
 
+	})
+
+	Describe("BrokerRoutes", func() {
+		Context("BrokerCatalogRouteName", func() {
+			It("should return the correct path", func() {
+				path, err := routes.BrokerRoutes().Get(routes.BrokerCatalogRouteName).URLPath()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(path.Path).To(Equal("/sb/v2/catalog"))
+			})
+		})
+		Context("BrokerCreateInstanceRouteName", func() {
+			Context("when provide correct route variable", func() {
+				It("should return the correct path", func() {
+					path, err := routes.BrokerRoutes().Get(routes.BrokerCreateInstanceRouteName).URLPath("instanceId", testInstanceId)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(path.Path).To(Equal("/sb/v2/service_instances/" + testInstanceId))
+				})
+			})
+
+			Context("when provide wrong route variable", func() {
+				It("should return error", func() {
+					_, err := routes.BrokerRoutes().Get(routes.BrokerCreateInstanceRouteName).URLPath("wrongVariable", testAppId)
+					Expect(err).To(HaveOccurred())
+
+				})
+			})
+
+			Context("when provide not enough route variable", func() {
+				It("should return error", func() {
+					_, err := routes.BrokerRoutes().Get(routes.BrokerCreateInstanceRouteName).URLPath()
+					Expect(err).To(HaveOccurred())
+				})
+			})
+		})
+		Context("BrokerDeleteInstanceRouteName", func() {
+			Context("when provide correct route variable", func() {
+				It("should return the correct path", func() {
+					path, err := routes.BrokerRoutes().Get(routes.BrokerDeleteInstanceRouteName).URLPath("instanceId", testInstanceId)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(path.Path).To(Equal("/sb/v2/service_instances/" + testInstanceId))
+				})
+			})
+
+			Context("when provide wrong route variable", func() {
+				It("should return error", func() {
+					_, err := routes.BrokerRoutes().Get(routes.BrokerDeleteInstanceRouteName).URLPath("wrongVariable", testAppId)
+					Expect(err).To(HaveOccurred())
+
+				})
+			})
+
+			Context("when provide not enough route variable", func() {
+				It("should return error", func() {
+					_, err := routes.BrokerRoutes().Get(routes.BrokerDeleteInstanceRouteName).URLPath()
+					Expect(err).To(HaveOccurred())
+				})
+			})
+		})
+
+		Context("BrokerCreateBindingRouteName", func() {
+			Context("when provide correct route variable", func() {
+				It("should return the correct path", func() {
+					path, err := routes.BrokerRoutes().Get(routes.BrokerCreateBindingRouteName).URLPath("instanceId", testInstanceId, "bindingId", testBindingId)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(path.Path).To(Equal("/sb/v2/service_instances/" + testInstanceId + "/service_bindings/" + testBindingId))
+				})
+			})
+
+			Context("when provide wrong route variable", func() {
+				It("should return error", func() {
+					_, err := routes.BrokerRoutes().Get(routes.BrokerCreateBindingRouteName).URLPath("wrongVariable", testAppId)
+					Expect(err).To(HaveOccurred())
+
+				})
+			})
+
+			Context("when provide not enough route variable", func() {
+				It("should return error", func() {
+					_, err := routes.BrokerRoutes().Get(routes.BrokerCreateBindingRouteName).URLPath("instanceId", testInstanceId)
+					Expect(err).To(HaveOccurred())
+				})
+			})
+		})
+
+		Context("BrokerDeleteBindingRouteName", func() {
+			Context("when provide correct route variable", func() {
+				It("should return the correct path", func() {
+					path, err := routes.BrokerRoutes().Get(routes.BrokerDeleteBindingRouteName).URLPath("instanceId", testInstanceId, "bindingId", testBindingId)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(path.Path).To(Equal("/sb/v2/service_instances/" + testInstanceId + "/service_bindings/" + testBindingId))
+				})
+			})
+
+			Context("when provide wrong route variable", func() {
+				It("should return error", func() {
+					_, err := routes.BrokerRoutes().Get(routes.BrokerDeleteBindingRouteName).URLPath("wrongVariable", testAppId)
+					Expect(err).To(HaveOccurred())
+
+				})
+			})
+
+			Context("when provide not enough route variable", func() {
+				It("should return error", func() {
+					_, err := routes.BrokerRoutes().Get(routes.BrokerDeleteBindingRouteName).URLPath("instanceId", testInstanceId)
+					Expect(err).To(HaveOccurred())
+				})
+			})
+		})
 	})
 
 	Describe("EventGeneratorRoutes", func() {
