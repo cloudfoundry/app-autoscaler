@@ -2,9 +2,10 @@ package db
 
 import (
 	"autoscaler/models"
+	"fmt"
+	"time"
 
 	"database/sql"
-	"time"
 )
 
 const PostgresDriverName = "postgres"
@@ -19,6 +20,9 @@ const (
 	DESCSTR string = "DESC"
 	ASCSTR  string = "ASC"
 )
+
+var ErrAlreadyExists = fmt.Errorf("already exists")
+var ErrDoesNotExist = fmt.Errorf("doesn't exist")
 
 type DatabaseConfig struct {
 	URL                   string        `yaml:"url"`
@@ -45,6 +49,14 @@ type PolicyDB interface {
 	RetrievePolicies() ([]*models.PolicyJson, error)
 	Close() error
 	DeletePolicy(appId string) error
+}
+
+type BindingDB interface {
+	CreateServiceInstance(serviceInstanceId string, orgId string, spaceId string) error
+	DeleteServiceInstance(serviceInstanceId string) error
+	CreateServiceBinding(bindingId string, serviceInstanceId string, appId string) error
+	DeleteServiceBinding(bindingId string) error
+	Close() error
 }
 
 type AppMetricDB interface {
