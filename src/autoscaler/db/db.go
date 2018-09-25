@@ -50,7 +50,6 @@ type PolicyDB interface {
 	Close() error
 	DeletePolicy(appId string) error
 	GetCustomMetricsCreds(appId string) (string, string, error)
-	ValidateCustomMetricTypes(appId string, metricsConsumer *models.MetricsConsumer) (bool, error)
 }
 
 type BindingDB interface {

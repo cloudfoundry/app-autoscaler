@@ -5,18 +5,9 @@ import (
 	"autoscaler/models"
 	"database/sql"
 	"encoding/json"
-	"errors"
 
 	"code.cloudfoundry.org/lager"
 	_ "github.com/lib/pq"
-<<<<<<< HEAD
-	"golang.org/x/crypto/bcrypt"
-=======
-
-	"autoscaler/db"
-	"autoscaler/healthendpoint"
-	"autoscaler/models"
->>>>>>> Added credential cache
 )
 
 type PolicySQLDB struct {
@@ -156,29 +147,4 @@ func (pdb *PolicySQLDB) GetCustomMetricsCreds(appId string) (string, string, err
 		return "", "", err
 	}
 	return username, password, nil
-}
-
-func (pdb *PolicySQLDB) ValidateCustomMetricTypes(appGUID string, metricsConsumer *models.MetricsConsumer) (bool, error) {
-	scalingPolicy, err := pdb.GetAppPolicy(appGUID)
-	if err != nil {
-		pdb.logger.Error("errorr-getting-policy", err, lager.Data{"appId": appGUID})
-		return false, errors.New("not able to get policy details")
-	}
-	if err == nil && scalingPolicy == nil {
-		pdb.logger.Debug("no-policy-found", lager.Data{"appId": appGUID})
-		return false, errors.New("no policy found")
-	}
-	allowedMetricTypeSet := make(map[string]struct{}, len(scalingPolicy.ScalingRules))
-	for _, metrictype := range scalingPolicy.ScalingRules {
-		allowedMetricTypeSet[metrictype.MetricType] = struct{}{}
-	}
-	pdb.logger.Debug("allowed-metrics-types", lager.Data{"metrics": allowedMetricTypeSet})
-	for _, metric := range metricsConsumer.CustomMetrics {
-		_, ok := allowedMetricTypeSet[metric.Name]
-		if !ok { // If any of the custom metrics is not defined during policy binding, it should fail
-			pdb.logger.Info("unmatched-custom-metric-type", lager.Data{"metric": metric.Type})
-			return false, errors.New("CustomMetric name does not match with metric defined in policy")
-		}
-	}
-	return true, nil
 }
