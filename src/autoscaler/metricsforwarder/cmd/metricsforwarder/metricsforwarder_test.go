@@ -97,7 +97,7 @@ var _ = Describe("Metricsforwarder", func() {
 
 	Describe("MetricsForwarder REST API", func() {
 		Context("when a request with custom metrics comes", func() {
-			Context("when using polling for metrics collection", func() {
+			Context("when reading firehose for metrics collection", func() {
 				BeforeEach(func() {
 					runner.Start()
 

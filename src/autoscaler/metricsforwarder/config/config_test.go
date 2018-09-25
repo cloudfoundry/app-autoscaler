@@ -222,15 +222,5 @@ db:
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: Policy DB url is empty")))
 			})
 		})
-
-		Context("when policy db url is not set", func() {
-			BeforeEach(func() {
-				conf.Db.PolicyDb.URL = ""
-			})
-
-			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: Policy DB url is empty")))
-			})
-		})
 	})
 })
