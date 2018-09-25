@@ -2,7 +2,6 @@ package server_test
 
 import (
 	"autoscaler/models"
-	"errors"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -17,17 +16,28 @@ import (
 
 var _ = Describe("CustomMetrics Server", func() {
 	var (
-		resp *http.Response
-		req  *http.Request
-		body []byte
-		err  error
-		credentials models.CustomMetricCredentials
+		resp          *http.Response
+		req           *http.Request
+		body          []byte
+		err           error
+		credentials   models.CustomMetricCredentials
+		scalingPolicy *models.ScalingPolicy
 	)
 
 	Context("when a request to forward custom metrics comes", func() {
 		BeforeEach(func() {
 			credentials = models.CustomMetricCredentials{}
-			policyDB.ValidateCustomMetricTypesReturns(true, nil)
+			scalingPolicy = &models.ScalingPolicy{
+				InstanceMin: 1,
+				InstanceMax: 6,
+				ScalingRules: []*models.ScalingRule{{
+					MetricType:            "queuelength",
+					BreachDurationSeconds: 60,
+					Threshold:             10,
+					Operator:              ">",
+					CoolDownSeconds:       60,
+					Adjustment:            "+1"}}}
+			policyDB.GetAppPolicyReturns(scalingPolicy, nil)
 			customMetrics := []*models.CustomMetric{
 				&models.CustomMetric{
 					Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 1, AppGUID: "an-app-id",
@@ -37,7 +47,7 @@ var _ = Describe("CustomMetrics Server", func() {
 			Expect(err).NotTo(HaveOccurred())
 			credentials.Username = "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu"
 			credentials.Password = "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G"
-			credentialCache.Set("an-app-id", credentials, 10 * time.Minute)
+			credentialCache.Set("an-app-id", credentials, 10*time.Minute)
 			client := &http.Client{}
 			req, err = http.NewRequest("POST", serverUrl+"/v1/apps/an-app-id/metrics", bytes.NewReader(body))
 			req.Header.Add("Content-Type", "application/json")
@@ -58,7 +68,7 @@ var _ = Describe("CustomMetrics Server", func() {
 			credentials = models.CustomMetricCredentials{}
 			credentials.Username = "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu"
 			credentials.Password = "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G"
-			credentialCache.Set("an-app-id", credentials, 10 * time.Minute)
+			credentialCache.Set("an-app-id", credentials, 10*time.Minute)
 			body, err = json.Marshal(models.CustomMetric{Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 123, AppGUID: "an-app-id"})
 			Expect(err).NotTo(HaveOccurred())
 			client := &http.Client{}
@@ -80,7 +90,7 @@ var _ = Describe("CustomMetrics Server", func() {
 			credentials = models.CustomMetricCredentials{}
 			credentials.Username = "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu"
 			credentials.Password = "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G"
-			credentialCache.Set("an-app-id", credentials, 10 * time.Minute)
+			credentialCache.Set("an-app-id", credentials, 10*time.Minute)
 			body, err = json.Marshal(models.CustomMetric{Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 123, AppGUID: "an-app-id"})
 			Expect(err).NotTo(HaveOccurred())
 			client := &http.Client{}
@@ -103,7 +113,7 @@ var _ = Describe("CustomMetrics Server", func() {
 			credentials = models.CustomMetricCredentials{}
 			credentials.Username = "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu"
 			credentials.Password = "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G"
-			credentialCache.Set("an-app-id", credentials, 10 * time.Minute)
+			credentialCache.Set("an-app-id", credentials, 10*time.Minute)
 			body, err = json.Marshal(models.CustomMetric{Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 123, AppGUID: "an-app-id"})
 			Expect(err).NotTo(HaveOccurred())
 			client := &http.Client{}
@@ -126,8 +136,7 @@ var _ = Describe("CustomMetrics Server", func() {
 			credentials = models.CustomMetricCredentials{}
 			credentials.Username = "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu"
 			credentials.Password = "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G"
-			credentialCache.Set("an-app-id", credentials, 10 * time.Minute)
-			policyDB.ValidateCustomMetricTypesReturns(false, errors.New("dummy-error"))
+			credentialCache.Set("an-app-id", credentials, 10*time.Minute)
 			body, err = json.Marshal(models.CustomMetric{Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 123, AppGUID: "an-app-id"})
 			Expect(err).NotTo(HaveOccurred())
 			client := &http.Client{}

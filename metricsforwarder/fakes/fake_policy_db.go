@@ -3,15 +3,21 @@ package fakes
 
 import (
 	"autoscaler/db"
-	"autoscaler/healthendpoint"
 	"autoscaler/models"
+	"database/sql"
 	"sync"
-	"time"
-
-	"code.cloudfoundry.org/clock"
 )
 
 type FakePolicyDB struct {
+	GetDBStatusStub        func() sql.DBStats
+	getDBStatusMutex       sync.RWMutex
+	getDBStatusArgsForCall []struct{}
+	getDBStatusReturns     struct {
+		result1 sql.DBStats
+	}
+	getDBStatusReturnsOnCall map[int]struct {
+		result1 sql.DBStats
+	}
 	GetAppIdsStub        func() (map[string]bool, error)
 	getAppIdsMutex       sync.RWMutex
 	getAppIdsArgsForCall []struct{}
@@ -56,13 +62,6 @@ type FakePolicyDB struct {
 	closeReturnsOnCall map[int]struct {
 		result1 error
 	}
-	EmitHealthMetricsStub        func(h healthendpoint.Health, cclock clock.Clock, interval time.Duration)
-	emitHealthMetricsMutex       sync.RWMutex
-	emitHealthMetricsArgsForCall []struct {
-		h        healthendpoint.Health
-		cclock   clock.Clock
-		interval time.Duration
-	}
 	DeletePolicyStub        func(appId string) error
 	deletePolicyMutex       sync.RWMutex
 	deletePolicyArgsForCall []struct {
@@ -89,22 +88,48 @@ type FakePolicyDB struct {
 		result2 string
 		result3 error
 	}
-	ValidateCustomMetricTypesStub        func(appId string, metricsConsumer *models.MetricsConsumer) (bool, error)
-	validateCustomMetricTypesMutex       sync.RWMutex
-	validateCustomMetricTypesArgsForCall []struct {
-		appId           string
-		metricsConsumer *models.MetricsConsumer
-	}
-	validateCustomMetricTypesReturns struct {
-		result1 bool
-		result2 error
-	}
-	validateCustomMetricTypesReturnsOnCall map[int]struct {
-		result1 bool
-		result2 error
-	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
+}
+
+func (fake *FakePolicyDB) GetDBStatus() sql.DBStats {
+	fake.getDBStatusMutex.Lock()
+	ret, specificReturn := fake.getDBStatusReturnsOnCall[len(fake.getDBStatusArgsForCall)]
+	fake.getDBStatusArgsForCall = append(fake.getDBStatusArgsForCall, struct{}{})
+	fake.recordInvocation("GetDBStatus", []interface{}{})
+	fake.getDBStatusMutex.Unlock()
+	if fake.GetDBStatusStub != nil {
+		return fake.GetDBStatusStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fake.getDBStatusReturns.result1
+}
+
+func (fake *FakePolicyDB) GetDBStatusCallCount() int {
+	fake.getDBStatusMutex.RLock()
+	defer fake.getDBStatusMutex.RUnlock()
+	return len(fake.getDBStatusArgsForCall)
+}
+
+func (fake *FakePolicyDB) GetDBStatusReturns(result1 sql.DBStats) {
+	fake.GetDBStatusStub = nil
+	fake.getDBStatusReturns = struct {
+		result1 sql.DBStats
+	}{result1}
+}
+
+func (fake *FakePolicyDB) GetDBStatusReturnsOnCall(i int, result1 sql.DBStats) {
+	fake.GetDBStatusStub = nil
+	if fake.getDBStatusReturnsOnCall == nil {
+		fake.getDBStatusReturnsOnCall = make(map[int]struct {
+			result1 sql.DBStats
+		})
+	}
+	fake.getDBStatusReturnsOnCall[i] = struct {
+		result1 sql.DBStats
+	}{result1}
 }
 
 func (fake *FakePolicyDB) GetAppIds() (map[string]bool, error) {
@@ -284,32 +309,6 @@ func (fake *FakePolicyDB) CloseReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakePolicyDB) EmitHealthMetrics(h healthendpoint.Health, cclock clock.Clock, interval time.Duration) {
-	fake.emitHealthMetricsMutex.Lock()
-	fake.emitHealthMetricsArgsForCall = append(fake.emitHealthMetricsArgsForCall, struct {
-		h        healthendpoint.Health
-		cclock   clock.Clock
-		interval time.Duration
-	}{h, cclock, interval})
-	fake.recordInvocation("EmitHealthMetrics", []interface{}{h, cclock, interval})
-	fake.emitHealthMetricsMutex.Unlock()
-	if fake.EmitHealthMetricsStub != nil {
-		fake.EmitHealthMetricsStub(h, cclock, interval)
-	}
-}
-
-func (fake *FakePolicyDB) EmitHealthMetricsCallCount() int {
-	fake.emitHealthMetricsMutex.RLock()
-	defer fake.emitHealthMetricsMutex.RUnlock()
-	return len(fake.emitHealthMetricsArgsForCall)
-}
-
-func (fake *FakePolicyDB) EmitHealthMetricsArgsForCall(i int) (healthendpoint.Health, clock.Clock, time.Duration) {
-	fake.emitHealthMetricsMutex.RLock()
-	defer fake.emitHealthMetricsMutex.RUnlock()
-	return fake.emitHealthMetricsArgsForCall[i].h, fake.emitHealthMetricsArgsForCall[i].cclock, fake.emitHealthMetricsArgsForCall[i].interval
-}
-
 func (fake *FakePolicyDB) DeletePolicy(appId string) error {
 	fake.deletePolicyMutex.Lock()
 	ret, specificReturn := fake.deletePolicyReturnsOnCall[len(fake.deletePolicyArgsForCall)]
@@ -412,61 +411,11 @@ func (fake *FakePolicyDB) GetCustomMetricsCredsReturnsOnCall(i int, result1 stri
 	}{result1, result2, result3}
 }
 
-func (fake *FakePolicyDB) ValidateCustomMetricTypes(appId string, metricsConsumer *models.MetricsConsumer) (bool, error) {
-	fake.validateCustomMetricTypesMutex.Lock()
-	ret, specificReturn := fake.validateCustomMetricTypesReturnsOnCall[len(fake.validateCustomMetricTypesArgsForCall)]
-	fake.validateCustomMetricTypesArgsForCall = append(fake.validateCustomMetricTypesArgsForCall, struct {
-		appId           string
-		metricsConsumer *models.MetricsConsumer
-	}{appId, metricsConsumer})
-	fake.recordInvocation("ValidateCustomMetricTypes", []interface{}{appId, metricsConsumer})
-	fake.validateCustomMetricTypesMutex.Unlock()
-	if fake.ValidateCustomMetricTypesStub != nil {
-		return fake.ValidateCustomMetricTypesStub(appId, metricsConsumer)
-	}
-	if specificReturn {
-		return ret.result1, ret.result2
-	}
-	return fake.validateCustomMetricTypesReturns.result1, fake.validateCustomMetricTypesReturns.result2
-}
-
-func (fake *FakePolicyDB) ValidateCustomMetricTypesCallCount() int {
-	fake.validateCustomMetricTypesMutex.RLock()
-	defer fake.validateCustomMetricTypesMutex.RUnlock()
-	return len(fake.validateCustomMetricTypesArgsForCall)
-}
-
-func (fake *FakePolicyDB) ValidateCustomMetricTypesArgsForCall(i int) (string, *models.MetricsConsumer) {
-	fake.validateCustomMetricTypesMutex.RLock()
-	defer fake.validateCustomMetricTypesMutex.RUnlock()
-	return fake.validateCustomMetricTypesArgsForCall[i].appId, fake.validateCustomMetricTypesArgsForCall[i].metricsConsumer
-}
-
-func (fake *FakePolicyDB) ValidateCustomMetricTypesReturns(result1 bool, result2 error) {
-	fake.ValidateCustomMetricTypesStub = nil
-	fake.validateCustomMetricTypesReturns = struct {
-		result1 bool
-		result2 error
-	}{result1, result2}
-}
-
-func (fake *FakePolicyDB) ValidateCustomMetricTypesReturnsOnCall(i int, result1 bool, result2 error) {
-	fake.ValidateCustomMetricTypesStub = nil
-	if fake.validateCustomMetricTypesReturnsOnCall == nil {
-		fake.validateCustomMetricTypesReturnsOnCall = make(map[int]struct {
-			result1 bool
-			result2 error
-		})
-	}
-	fake.validateCustomMetricTypesReturnsOnCall[i] = struct {
-		result1 bool
-		result2 error
-	}{result1, result2}
-}
-
 func (fake *FakePolicyDB) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
+	fake.getDBStatusMutex.RLock()
+	defer fake.getDBStatusMutex.RUnlock()
 	fake.getAppIdsMutex.RLock()
 	defer fake.getAppIdsMutex.RUnlock()
 	fake.getAppPolicyMutex.RLock()
@@ -475,14 +424,10 @@ func (fake *FakePolicyDB) Invocations() map[string][][]interface{} {
 	defer fake.retrievePoliciesMutex.RUnlock()
 	fake.closeMutex.RLock()
 	defer fake.closeMutex.RUnlock()
-	fake.emitHealthMetricsMutex.RLock()
-	defer fake.emitHealthMetricsMutex.RUnlock()
 	fake.deletePolicyMutex.RLock()
 	defer fake.deletePolicyMutex.RUnlock()
 	fake.getCustomMetricsCredsMutex.RLock()
 	defer fake.getCustomMetricsCredsMutex.RUnlock()
-	fake.validateCustomMetricTypesMutex.RLock()
-	defer fake.validateCustomMetricTypesMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

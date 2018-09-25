@@ -15,7 +15,6 @@ import (
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
-	"github.com/cloudfoundry-incubator/uaago"
 
 	"autoscaler/models"
 )
@@ -64,7 +63,6 @@ type cfClient struct {
 	httpClient *http.Client
 	lock       *sync.Mutex
 	grantTime  time.Time
-	uaaClient  *uaago.Client
 }
 
 func NewCFClient(conf *CFConfig, logger lager.Logger, clk clock.Clock) CFClient {
@@ -97,12 +95,6 @@ func NewCFClient(conf *CFConfig, logger lager.Logger, clk clock.Clock) CFClient 
 	}).DialContext
 
 	c.lock = &sync.Mutex{}
-
-	uaaClient, err := uaago.NewClient(c.endpoints.TokenEndpoint)
-	if err != nil {
-		c.logger.Error("Failed to create uaago client:", err)
-	}
-	c.uaaClient = uaaClient
 
 	return c
 }
