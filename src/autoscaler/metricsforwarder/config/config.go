@@ -2,21 +2,22 @@ package config
 
 import (
 	"autoscaler/db"
+	"autoscaler/helpers"
 	"fmt"
-	"time"
 	"io"
 	"io/ioutil"
+	"time"
 
 	yaml "gopkg.in/yaml.v2"
 )
 
 type Config struct {
-	Logging           LoggingConfig     `yaml:"logging"`
-	Server            ServerConfig      `yaml:"server"`
-	MetronAddress     string            `yaml:"metron_address"`
-	LoggregatorConfig LoggregatorConfig `yaml:"loggregator"`
-	Db                DbConfig          `yaml:"db"`
-	CacheTTL          time.Duration     `yaml:cache_ttl"`
+	Logging           helpers.LoggingConfig `yaml:"logging"`
+	Server            ServerConfig          `yaml:"server"`
+	MetronAddress     string                `yaml:"metron_address"`
+	LoggregatorConfig LoggregatorConfig     `yaml:"loggregator"`
+	Db                DbConfig              `yaml:"db"`
+	CacheTTL          time.Duration         `yaml:cache_ttl"`
 }
 
 type ServerConfig struct {
@@ -27,12 +28,12 @@ var defaultServerConfig = ServerConfig{
 	Port: 6110,
 }
 
-type LoggingConfig struct {
-	Level string `yaml:"level"`
+var defaultLoggingConfig = helpers.LoggingConfig{
+	Level: "info",
 }
 
-var defaultLoggingConfig = LoggingConfig{
-	Level: "info",
+type LoggingConfig struct {
+	Level string `yaml:"level"`
 }
 
 type LoggregatorConfig struct {
@@ -46,7 +47,7 @@ type DbConfig struct {
 }
 
 const (
-	defaultMetronAddress = "127.0.0.1:3458"
+	defaultMetronAddress               = "127.0.0.1:3458"
 	defaultCacheTTL      time.Duration = 15 * time.Minute
 )
 

@@ -3,7 +3,6 @@ package forwarder
 import (
 	"autoscaler/metricsforwarder/config"
 	"autoscaler/models"
-	"fmt"
 
 	"code.cloudfoundry.org/go-loggregator"
 	"code.cloudfoundry.org/lager"
@@ -51,13 +50,8 @@ func NewMetricForwarder(logger lager.Logger, conf *config.Config) (MetricForward
 func (mf *metricForwarder) EmitMetric(metric *models.CustomMetric) {
 	mf.logger.Debug("custom-metric-emit-request-received:", lager.Data{"metric": metric})
 
-	gauge_tags := map[string]string{
-		"applicationGuid":     metric.AppGUID,
-		"applicationInstance": fmt.Sprint(metric.InstanceIndex),
-	}
 	options := []loggregator.EmitGaugeOption{
-		loggregator.WithGaugeAppInfo(metric.AppGUID, 0),
-		loggregator.WithEnvelopeTags(gauge_tags),
+		loggregator.WithGaugeAppInfo(metric.AppGUID, int(metric.InstanceIndex)),
 		loggregator.WithGaugeValue(metric.Name, metric.Value, metric.Unit),
 	}
 	mf.client.EmitGauge(options...)

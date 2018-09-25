@@ -11,10 +11,10 @@ import (
 	"os"
 
 	"code.cloudfoundry.org/lager"
+	"github.com/patrickmn/go-cache"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
-	"github.com/patrickmn/go-cache"
 )
 
 func main() {
@@ -46,7 +46,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	logger := initLoggerFromConfig(conf.Logging.Level)
+	logger := helpers.InitLoggerFromConfig(&conf.Logging, "metricsforwarder")
 
 	var policyDB db.PolicyDB
 	policyDB, err = sqldb.NewPolicySQLDB(conf.Db.PolicyDb, logger.Session("policy-db"))
@@ -78,39 +78,4 @@ func main() {
 		os.Exit(1)
 	}
 	logger.Info("exited")
-}
-
-func initLoggerFromConfig(logLevelConfig string) lager.Logger {
-	logLevel, err := getLogLevel(logLevelConfig)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to initialize logger: %s\n", err.Error())
-		os.Exit(1)
-	}
-	logger := lager.NewLogger("metricsforwarder")
-
-	keyPatterns := []string{"[Pp]wd", "[Pp]ass", "[Ss]ecret", "[Tt]oken"}
-
-	redactedSink, err := helpers.NewRedactingWriterWithURLCredSink(os.Stdout, logLevel, keyPatterns, nil)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to create redacted sink: %s\n", err.Error())
-		os.Exit(1)
-	}
-	logger.RegisterSink(redactedSink)
-
-	return logger
-}
-
-func getLogLevel(level string) (lager.LogLevel, error) {
-	switch level {
-	case "debug":
-		return lager.DEBUG, nil
-	case "info":
-		return lager.INFO, nil
-	case "error":
-		return lager.ERROR, nil
-	case "fatal":
-		return lager.FATAL, nil
-	default:
-		return -1, fmt.Errorf("Error: unsupported log level:%s", level)
-	}
 }
