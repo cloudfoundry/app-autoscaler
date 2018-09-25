@@ -1,20 +1,21 @@
 package server_test
 
 import (
+	"autoscaler/helpers"
 	"autoscaler/metricsforwarder/config"
 	"autoscaler/metricsforwarder/fakes"
 	. "autoscaler/metricsforwarder/server"
 
 	"fmt"
-	"time"
 	"path/filepath"
+	"time"
 
 	"code.cloudfoundry.org/lager"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/patrickmn/go-cache"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/ginkgomon"
-	"github.com/patrickmn/go-cache"
 
 	"testing"
 )
@@ -45,7 +46,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	serverConfig := config.ServerConfig{
 		Port: 2222 + GinkgoParallelNode(),
 	}
-	loggerConfig := config.LoggingConfig{
+
+	loggerConfig := helpers.LoggingConfig{
 		Level: "debug",
 	}
 
@@ -55,7 +57,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		LoggregatorConfig: loggregatorConfig,
 	}
 	policyDB = &fakes.FakePolicyDB{}
-	credentialCache = *cache.New(10 * time.Minute, -1)
+	credentialCache = *cache.New(10*time.Minute, -1)
 	httpServer, err := NewServer(lager.NewLogger("test"), conf, policyDB, credentialCache)
 	Expect(err).NotTo(HaveOccurred())
 	serverUrl = fmt.Sprintf("http://127.0.0.1:%d", conf.Server.Port)

@@ -17,19 +17,18 @@ import (
 
 var _ = Describe("PolicySQLDB", func() {
 	var (
-		pdb               *PolicySQLDB
-		dbConfig          db.DatabaseConfig
-		logger            lager.Logger
-		err               error
-		appIds            map[string]bool
-		scalingPolicy     *models.ScalingPolicy
-		policyJson        []byte
-		appId             string
-		policies          []*models.PolicyJson
-		testMetricName    string = "TestMetricName"
-		username          string
-		password          string
-		isMetricTypeValid bool
+		pdb            *PolicySQLDB
+		dbConfig       db.DatabaseConfig
+		logger         lager.Logger
+		err            error
+		appIds         map[string]bool
+		scalingPolicy  *models.ScalingPolicy
+		policyJson     []byte
+		appId          string
+		policies       []*models.PolicyJson
+		testMetricName string = "TestMetricName"
+		username       string
+		password       string
 	)
 
 	BeforeEach(func() {
@@ -314,91 +313,6 @@ var _ = Describe("PolicySQLDB", func() {
 			})
 
 		})
-	})
-
-	Describe("ValidateCustomMetricTypes", func() {
-		BeforeEach(func() {
-			pdb, err = NewPolicySQLDB(dbConfig, logger)
-			Expect(err).NotTo(HaveOccurred())
-
-			cleanPolicyTable()
-		})
-
-		AfterEach(func() {
-			err = pdb.Close()
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		JustBeforeEach(func() {
-			metricsConsumer := &models.MetricsConsumer{
-				AppGUID:       "an-app-id",
-				InstanceIndex: 1,
-				CustomMetrics: []*models.CustomMetric{{
-					Name:          "testMetricName",
-					Value:         12,
-					Unit:          "unit",
-					InstanceIndex: 1,
-					AppGUID:       "an-app-id",
-				}},
-			}
-			isMetricTypeValid, err = pdb.ValidateCustomMetricTypes("an-app-id", metricsConsumer)
-		})
-
-		Context("when policy table does not contain policy", func() {
-
-			It("Should validate fail to validate metrictypes", func() {
-				Expect(isMetricTypeValid).To(BeFalse())
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal("no policy found"))
-			})
-
-		})
-
-		Context("when policy table contains policy with matched metrictypes", func() {
-			BeforeEach(func() {
-				insertPolicy("an-app-id", &models.ScalingPolicy{
-					InstanceMin: 1,
-					InstanceMax: 6,
-					ScalingRules: []*models.ScalingRule{{
-						MetricType:            "testMetricName",
-						BreachDurationSeconds: 180,
-						Threshold:             1048,
-						Operator:              ">",
-						CoolDownSeconds:       300,
-						Adjustment:            "+1"}},
-				})
-			})
-
-			It("Should validate the metrictypes successfully", func() {
-				Expect(isMetricTypeValid).To(BeTrue())
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-		})
-
-		Context("when policy table contains policy with unmatched metrictypes", func() {
-			BeforeEach(func() {
-				insertPolicy("an-app-id", &models.ScalingPolicy{
-					InstanceMin: 1,
-					InstanceMax: 6,
-					ScalingRules: []*models.ScalingRule{{
-						MetricType:            "testMetricNameUnMatched",
-						BreachDurationSeconds: 180,
-						Threshold:             1048,
-						Operator:              ">",
-						CoolDownSeconds:       300,
-						Adjustment:            "+1"}},
-				})
-			})
-
-			It("Should validate the metrictypes", func() {
-				Expect(isMetricTypeValid).To(BeFalse())
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal("CustomMetric name does not match with metric defined in policy"))
-			})
-
-		})
-
 	})
 
 })

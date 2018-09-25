@@ -1,6 +1,7 @@
 package forwarder_test
 
 import (
+	"autoscaler/helpers"
 	"autoscaler/metricsforwarder/config"
 	"autoscaler/metricsforwarder/forwarder"
 	"time"
@@ -48,7 +49,8 @@ var _ = Describe("MetricForwarder", func() {
 		serverConfig := config.ServerConfig{
 			Port: 10000 + GinkgoParallelNode(),
 		}
-		loggerConfig := config.LoggingConfig{
+
+		loggerConfig := helpers.LoggingConfig{
 			Level: "debug",
 		}
 
@@ -85,9 +87,7 @@ var _ = Describe("MetricForwarder", func() {
 				Expect(metrics).NotTo(BeNil())
 				Expect(metrics.GetMetrics()).To(HaveLen(1))
 				Expect(metrics.GetMetrics()["queuelength"].Value).To(Equal(12.5))
-				Expect(env.Tags["applicationGuid"]).To(Equal("dummy-guid"))
-				Expect(env.Tags["applicationInstance"]).To(Equal("123"))
-
+				Expect(env.Tags["origin"]).To(Equal("autoscaler_metrics_forwarder"))
 			})
 
 		})
