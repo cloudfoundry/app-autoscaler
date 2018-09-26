@@ -92,7 +92,7 @@ func main() {
 		),
 	}, true, logger.Session("scalingengine-prometheus"))
 
-	cfhttp.Initialize(conf.HTTPRequestTimeout)
+	cfhttp.Initialize(conf.HttpClientTimeout)
 
 	eClock := clock.NewClock()
 	cfClient := cf.NewCFClient(&conf.CF, logger.Session("cf"), eClock)

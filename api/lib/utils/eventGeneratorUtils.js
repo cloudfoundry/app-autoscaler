@@ -1,5 +1,5 @@
 "use strict";
-module.exports = function(eventGeneratorSettings, httpRequestTimeout) {
+module.exports = function(eventGeneratorSettings, httpClientTimeout) {
   var request = require("request");
   var logger = require("../log/logger");
   var HttpStatus = require("http-status-codes");
@@ -11,7 +11,7 @@ module.exports = function(eventGeneratorSettings, httpRequestTimeout) {
       qs: { "start": startTime, "end": endTime, "order": order },
       method: "GET",
       json: true,
-      timeout: httpRequestTimeout,
+      timeout: httpClientTimeout,
     }
     if (eventGeneratorSettings.tls) {
       var eventGeneratorTLSOptions = {

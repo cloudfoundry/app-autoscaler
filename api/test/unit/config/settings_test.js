@@ -74,7 +74,7 @@ describe('config setting Test Suite', function() {
         "certFile": "certFilePath",
         "caCertFile": "caCertFilePath"
       },
-      "httpRequestTimeout": 5000
+      "httpClientTimeout": 5000
     }
     //setting.js will modifty defaultConfigTemplate, here clone defaultConfigTemplate to defaultConfig first
     defaultConfig = JSON.parse(JSON.stringify(defaultConfigTemplate))
@@ -132,7 +132,7 @@ describe('config setting Test Suite', function() {
     expect(settings.serviceOffering.serviceBroker.tls.caCertFile).to.equal(defaultConfig.serviceOffering.serviceBroker.tls.caCertFile);
     expect(settings.serviceOffering.serviceBroker.tls.certFile).to.equal(defaultConfig.serviceOffering.serviceBroker.tls.certFile);
 
-    expect(settings.httpRequestTimeout).to.equal(defaultConfig.httpRequestTimeout)
+    expect(settings.httpClientTimeout).to.equal(defaultConfig.httpClientTimeout)
   });
 
   describe('URL handling', function() {
@@ -711,33 +711,33 @@ describe('config setting Test Suite', function() {
       });
     });
 
-    context('Validate httpRequestTimeout', function() {
-      context('When httpRequestTimeout is null', function() {
+    context('Validate httpClientTimeout', function() {
+      context('When httpClientTimeout is null', function() {
         it('Should return false', function() {
-          settings.httpRequestTimeout = null;
+          settings.httpClientTimeout = null;
           expect(settings.validate().valid).to.equal(false);
-          expect(settings.validate().message).to.equal("httpRequestTimeout is required");
+          expect(settings.validate().message).to.equal("httpClientTimeout is required");
         })
       });
-      context('When httpRequestTimeout is undefined', function() {
+      context('When httpClientTimeout is undefined', function() {
         it('Should return false', function() {
-          delete settings.httpRequestTimeout;
+          delete settings.httpClientTimeout;
           expect(settings.validate().valid).to.equal(false);
-          expect(settings.validate().message).to.equal("httpRequestTimeout is required");
+          expect(settings.validate().message).to.equal("httpClientTimeout is required");
         })
       });
-      context('When httpRequestTimeout is not an integer', function() {
+      context('When httpClientTimeout is not an integer', function() {
         it('Should return false', function() {
-          settings.httpRequestTimeout = "1000";
+          settings.httpClientTimeout = "1000";
           expect(settings.validate().valid).to.equal(false);
-          expect(settings.validate().message).to.equal("httpRequestTimeout must be a number");
+          expect(settings.validate().message).to.equal("httpClientTimeout must be a number");
         })
       });
-      context('When the httpRequestTimeout is out of range', function() {
+      context('When the httpClientTimeout is out of range', function() {
         it('Should return false', function() {
-          settings.httpRequestTimeout = -1;
+          settings.httpClientTimeout = -1;
           expect(settings.validate().valid).to.equal(false);
-          expect(settings.validate().message).to.equal("value of httpRequestTimeout must be greater than 0");
+          expect(settings.validate().message).to.equal("value of httpClientTimeout must be greater than 0");
         })
       });
   });

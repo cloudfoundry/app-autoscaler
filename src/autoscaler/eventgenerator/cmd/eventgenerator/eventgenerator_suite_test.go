@@ -239,7 +239,7 @@ func initConfig() {
 		},
 		DefaultBreachDurationSecs: 600,
 		DefaultStatWindowSecs:     300,
-		HTTPRequestTimeout:        10 * time.Second,
+		HttpClientTimeout:         10 * time.Second,
 	}
 	configFile = writeConfig(&conf)
 

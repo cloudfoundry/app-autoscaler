@@ -40,7 +40,7 @@ func main() {
 		fmt.Fprintf(os.Stdout, "%s\n", err.Error())
 		os.Exit(1)
 	}
-	cfhttp.Initialize(conf.HTTPRequestTimeout)
+	cfhttp.Initialize(conf.HttpClientTimeout)
 	logger := helpers.InitLoggerFromConfig(&conf.Logging, "eventgenerator")
 	egClock := clock.NewClock()
 

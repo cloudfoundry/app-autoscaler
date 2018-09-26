@@ -46,7 +46,7 @@ public class RestClientConfig {
 			@Value("${client.ssl.trust-store}") String trustStoreFile,
 			@Value("${client.ssl.trust-store-password}") String trustStorePassword,
 			@Value("${client.ssl.protocol}") String protocol,
-			@Value("${client.requestTimeout}") Integer requestTimeout)  throws Exception {
+			@Value("${client.httpClientTimeout}") Integer httpClientTimeout)  throws Exception {
 		KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
 		KeyStore keyStore = KeyStore.getInstance(keyStoreType == null ? KeyStore.getDefaultType() : keyStoreType);
 
@@ -71,9 +71,9 @@ public class RestClientConfig {
 		HttpClientConnectionManager ccm = new PoolingHttpClientConnectionManager(registry);
 		builder.setConnectionManager(ccm);
 		RequestConfig requestConfig = RequestConfig.custom()
-				  .setConnectTimeout(requestTimeout * 1000)
-				  .setConnectionRequestTimeout(requestTimeout * 1000)
-				  .setSocketTimeout(requestTimeout * 1000).build();
+				  .setConnectTimeout(httpClientTimeout * 1000)
+				  .setConnectionRequestTimeout(httpClientTimeout * 1000)
+				  .setSocketTimeout(httpClientTimeout * 1000).build();
 		builder.setDefaultRequestConfig(requestConfig);
 		return builder.build();
 	}

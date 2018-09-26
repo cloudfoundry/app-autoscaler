@@ -20,7 +20,7 @@ const (
 	DefaultRefreshInterval       time.Duration = 60 * time.Second
 	DefaultCollectInterval       time.Duration = 30 * time.Second
 	DefaultSaveInterval          time.Duration = 5 * time.Second
-	DefaultHTTPRequestTimeout    time.Duration = 5 * time.Second
+	DefaultHttpClientTimeout     time.Duration = 5 * time.Second
 	DefaultMetricCacheSizePerApp               = 1000
 
 	CollectMethodPolling   = "polling"
@@ -69,21 +69,21 @@ var defaultCollectorConfig = CollectorConfig{
 }
 
 type Config struct {
-	CF                 cf.CFConfig           `yaml:"cf"`
-	Logging            helpers.LoggingConfig `yaml:"logging"`
-	Server             ServerConfig          `yaml:"server"`
-	DB                 DBConfig              `yaml:"db"`
-	Collector          CollectorConfig       `yaml:"collector"`
-	HTTPRequestTimeout time.Duration         `yaml:"http_request_timeout"`
+	CF                cf.CFConfig           `yaml:"cf"`
+	Logging           helpers.LoggingConfig `yaml:"logging"`
+	Server            ServerConfig          `yaml:"server"`
+	DB                DBConfig              `yaml:"db"`
+	Collector         CollectorConfig       `yaml:"collector"`
+	HttpClientTimeout time.Duration         `yaml:"http_client_timeout"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
 	conf := &Config{
-		CF:                 defaultCFConfig,
-		Logging:            defaultLoggingConfig,
-		Server:             defaultServerConfig,
-		Collector:          defaultCollectorConfig,
-		HTTPRequestTimeout: DefaultHTTPRequestTimeout,
+		CF:                defaultCFConfig,
+		Logging:           defaultLoggingConfig,
+		Server:            defaultServerConfig,
+		Collector:         defaultCollectorConfig,
+		HttpClientTimeout: DefaultHttpClientTimeout,
 	}
 
 	bytes, err := ioutil.ReadAll(reader)
@@ -142,8 +142,8 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("Configuration error: server.node_index out of range")
 	}
 
-	if c.HTTPRequestTimeout <= time.Duration(0) {
-		return fmt.Errorf("Configuration error: http_request_timeout is less-equal than 0")
+	if c.HttpClientTimeout <= time.Duration(0) {
+		return fmt.Errorf("Configuration error: http_client_timeout is less-equal than 0")
 	}
 	return nil
 

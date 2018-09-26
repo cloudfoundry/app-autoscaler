@@ -7,7 +7,7 @@ module.exports = function(settings, models){
   var HttpStatus = require('http-status-codes');
   var validationMiddleWare = require('../validation/validationMiddleware');
   var policyHelper = require('./policyHelper')(models);
-  var schedulerUtil = require('../utils/schedulerUtils')(settings.scheduler, settings.httpRequestTimeout);
+  var schedulerUtil = require('../utils/schedulerUtils')(settings.scheduler, settings.httpClientTimeout);
   var async = require('async');
   var uuidV4 = require('uuid/v4');
 

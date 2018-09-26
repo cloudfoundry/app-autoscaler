@@ -49,7 +49,7 @@ func main() {
 		fmt.Fprintf(os.Stdout, "failed to validate configuration : %s\n", err.Error())
 		os.Exit(1)
 	}
-	cfhttp.Initialize(conf.HTTPRequestTimeout)
+	cfhttp.Initialize(conf.HttpClientTimeout)
 	logger := helpers.InitLoggerFromConfig(&conf.Logging, "operator")
 	prClock := clock.NewClock()
 

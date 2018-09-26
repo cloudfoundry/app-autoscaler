@@ -4,7 +4,7 @@ module.exports = function(settings) {
   var router = express.Router();
   var logger = require("../log/logger");
   var HttpStatus = require("http-status-codes");
-  var scalingEngineUtil = require("../utils/scalingEngineUtils")(settings.scalingEngine, settings.httpRequestTimeout);
+  var scalingEngineUtil = require("../utils/scalingEngineUtils")(settings.scalingEngine, settings.httpClientTimeout);
   var routeHelper = require("./routeHelper");
 
   router.get("/:app_id/scaling_histories", function(req, resp) {

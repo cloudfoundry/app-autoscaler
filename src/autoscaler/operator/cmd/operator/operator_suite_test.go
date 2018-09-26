@@ -159,7 +159,7 @@ func initConfig() {
 		ConnectionMaxLifetime: 10 * time.Second,
 	}
 	cfg.AppSyncer.SyncInterval = 60 * time.Second
-	cfg.HTTPRequestTimeout = 10 * time.Second
+	cfg.HttpClientTimeout = 10 * time.Second
 
 }
 

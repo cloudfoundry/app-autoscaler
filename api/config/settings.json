@@ -64,5 +64,5 @@
         "certFile": "../test-certs/api_public.crt",
         "caCertFile": "../test-certs/autoscaler-ca.crt"
     },
-    "httpRequestTimeout": 5000
+    "httpClientTimeout": 5000
 }

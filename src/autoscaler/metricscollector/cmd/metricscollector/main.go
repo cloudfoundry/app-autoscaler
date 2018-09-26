@@ -53,7 +53,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	cfhttp.Initialize(conf.HTTPRequestTimeout)
+	cfhttp.Initialize(conf.HttpClientTimeout)
 
 	logger := helpers.InitLoggerFromConfig(&conf.Logging, "metricscollector")
 	mcClock := clock.NewClock()

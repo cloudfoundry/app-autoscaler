@@ -133,7 +133,7 @@ db_lock:
     url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
   retry_interval: 5s
 enable_db_lock: false
-http_request_timeout: 10s
+http_client_timeout: 10s
 `)
 			})
 
@@ -193,7 +193,7 @@ http_request_timeout: 10s
 					ConnectionMaxLifetime: 60 * time.Second,
 				}))
 				Expect(conf.AppSyncer.SyncInterval).To(Equal(60 * time.Second))
-				Expect(conf.HTTPRequestTimeout).To(Equal(10 * time.Second))
+				Expect(conf.HttpClientTimeout).To(Equal(10 * time.Second))
 			})
 		})
 
@@ -262,7 +262,7 @@ app_syncer:
 					ConnectionMaxLifetime: 0 * time.Second,
 				}))
 
-				Expect(conf.HTTPRequestTimeout).To(Equal(5 * time.Second))
+				Expect(conf.HttpClientTimeout).To(Equal(5 * time.Second))
 
 			})
 		})
@@ -1397,7 +1397,7 @@ lock:
 			})
 		})
 
-		Context("when http_request_timeout of http is not a time duration", func() {
+		Context("when http_client_timeout of http is not a time duration", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
 logging:
@@ -1444,7 +1444,7 @@ lock:
   lock_ttl: 15s
   lock_retry_interval: 10s
   consul_cluster_config: "http://127.0.0.1:8500"
-http_request_timeout: 10k
+http_client_timeout: 10k
 `)
 			})
 
@@ -1485,7 +1485,7 @@ http_request_timeout: 10k
 			conf.AppSyncer.SyncInterval = 60 * time.Second
 			conf.AppSyncer.DB.URL = "postgres://pqgotest:password@exampl.com/pqgotest"
 
-			conf.HTTPRequestTimeout = 10 * time.Second
+			conf.HttpClientTimeout = 10 * time.Second
 
 		})
 
@@ -1709,12 +1709,12 @@ http_request_timeout: 10k
 			})
 		})
 
-		Context("when HTTPRequestTimeout is <= 0", func() {
+		Context("when HttpClientTimeout is <= 0", func() {
 			BeforeEach(func() {
-				conf.HTTPRequestTimeout = 0
+				conf.HttpClientTimeout = 0
 			})
 			It("should error", func() {
-				Expect(err).To(MatchError("Configuration error: http_request_timeout is less-equal than 0"))
+				Expect(err).To(MatchError("Configuration error: http_client_timeout is less-equal than 0"))
 			})
 		})
 

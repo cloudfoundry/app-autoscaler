@@ -27,7 +27,7 @@ const (
 	DefaultBackOffInitialInterval         time.Duration = 5 * time.Minute
 	DefaultBackOffMaxInterval             time.Duration = 2 * time.Hour
 	DefaultBreakerConsecutiveFailureCount int64         = 3
-	DefaultHTTPRequestTimeout             time.Duration = 5 * time.Second
+	DefaultHttpClientTimeout              time.Duration = 5 * time.Second
 )
 
 type ServerConfig struct {
@@ -83,7 +83,7 @@ type Config struct {
 	DefaultStatWindowSecs     int                   `yaml:"defaultStatWindowSecs"`
 	DefaultBreachDurationSecs int                   `yaml:"defaultBreachDurationSecs"`
 	CircuitBreaker            CircuitBreakerConfig  `yaml:"circuitBreaker"`
-	HTTPRequestTimeout        time.Duration         `yaml:"http_request_timeout"`
+	HttpClientTimeout         time.Duration         `yaml:"http_client_timeout"`
 }
 
 func LoadConfig(bytes []byte) (*Config, error) {
@@ -107,7 +107,7 @@ func LoadConfig(bytes []byte) (*Config, error) {
 			EvaluatorCount:            DefaultEvaluatorCount,
 			TriggerArrayChannelSize:   DefaultTriggerArrayChannelSize,
 		},
-		HTTPRequestTimeout: DefaultHTTPRequestTimeout,
+		HttpClientTimeout: DefaultHttpClientTimeout,
 	}
 	err := yaml.Unmarshal(bytes, &conf)
 	if err != nil {
@@ -178,8 +178,8 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("Configuration error: server.node_index out of range")
 	}
 
-	if c.HTTPRequestTimeout <= time.Duration(0) {
-		return fmt.Errorf("Configuration error: http_request_timeout is less-equal than 0")
+	if c.HttpClientTimeout <= time.Duration(0) {
+		return fmt.Errorf("Configuration error: http_client_timeout is less-equal than 0")
 	}
 	return nil
 

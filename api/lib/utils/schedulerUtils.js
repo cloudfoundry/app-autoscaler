@@ -1,5 +1,5 @@
 'use strict';
-module.exports = function(schedulerSettings, httpRequestTimeout) {
+module.exports = function(schedulerSettings, httpClientTimeout) {
   var request = require('request') ;
   var logger = require('../log/logger');
   var HttpStatus = require('http-status-codes');
@@ -9,7 +9,7 @@ module.exports = function(schedulerSettings, httpRequestTimeout) {
   var getOptions = function(appId, policy, policyGuid ){
     var options = { 
       json: true,
-      timeout: httpRequestTimeout
+      timeout: httpClientTimeout
     };
     
     if(policy && policyGuid){

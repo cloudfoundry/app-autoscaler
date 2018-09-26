@@ -89,7 +89,7 @@ db:
     connection_max_lifetime: 60s
 defaultCoolDownSecs: 300
 lockSize: 32
-http_request_timeout: 10s
+http_client_timeout: 10s
 `)
 			})
 
@@ -139,7 +139,7 @@ http_request_timeout: 10s
 
 				Expect(conf.LockSize).To(Equal(32))
 
-				Expect(conf.HTTPRequestTimeout).To(Equal(10 * time.Second))
+				Expect(conf.HttpClientTimeout).To(Equal(10 * time.Second))
 			})
 		})
 
@@ -191,7 +191,7 @@ lockSize: 32
 						ConnectionMaxLifetime: 0 * time.Second,
 					}))
 
-				Expect(conf.HTTPRequestTimeout).To(Equal(5 * time.Second))
+				Expect(conf.HttpClientTimeout).To(Equal(5 * time.Second))
 			})
 		})
 
@@ -777,7 +777,7 @@ lockSize: NOT-INTEGER-VALUE
 			})
 		})
 
-		Context("when http_request_timeout of http is not a time duration", func() {
+		Context("when http_client_timeout of http is not a time duration", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
 cf:
@@ -817,7 +817,7 @@ db:
     connection_max_lifetime: 60s
 defaultCoolDownSecs: 300
 lockSize: 32
-http_request_timeout: 10k
+http_client_timeout: 10k
 `)
 			})
 
@@ -841,7 +841,7 @@ http_request_timeout: 10k
 			conf.DB.SchedulerDB.URL = "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
 			conf.DefaultCoolDownSecs = 300
 			conf.LockSize = 32
-			conf.HTTPRequestTimeout = 10 * time.Second
+			conf.HttpClientTimeout = 10 * time.Second
 		})
 
 		JustBeforeEach(func() {
@@ -924,12 +924,12 @@ http_request_timeout: 10k
 			})
 		})
 
-		Context("when HTTPRequestTimeout is <= 0", func() {
+		Context("when HttpClientTimeout is <= 0", func() {
 			BeforeEach(func() {
-				conf.HTTPRequestTimeout = 0
+				conf.HttpClientTimeout = 0
 			})
 			It("should error", func() {
-				Expect(err).To(MatchError("Configuration error: http_request_timeout is less-equal than 0"))
+				Expect(err).To(MatchError("Configuration error: http_client_timeout is less-equal than 0"))
 			})
 		})
 	})

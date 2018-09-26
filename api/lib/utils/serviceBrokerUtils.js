@@ -1,5 +1,5 @@
 "use strict";
-module.exports = function(serviceBorkerSettings, httpRequestTimeout) {
+module.exports = function(serviceBorkerSettings, httpClientTimeout) {
   var request = require("request");
   var logger = require("../log/logger");
   var HttpStatus = require("http-status-codes");
@@ -10,7 +10,7 @@ module.exports = function(serviceBorkerSettings, httpRequestTimeout) {
       url: serviceBorkerSettings.uri + "/v1/apps/" + appId + "/service_bindings",
       method: "GET",
       json: true,
-      timeout: httpRequestTimeout,
+      timeout: httpClientTimeout,
     }
     if (serviceBorkerSettings.tls) {
       var serviceBorkerTLSOptions = {

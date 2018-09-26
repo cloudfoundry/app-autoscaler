@@ -57,7 +57,7 @@ module.exports = function(settingsObj) {
     publicTls: settingsObj.publicTls,
     infoFilePath: settingsObj.infoFilePath,
     serviceOffering: settingsObj.serviceOffering,
-    httpRequestTimeout: settingsObj.httpRequestTimeout
+    httpClientTimeout: settingsObj.httpClientTimeout
   };
   if (settingsObj.db) {
     var dbObj = db(settingsObj.db.uri);
@@ -390,14 +390,14 @@ module.exports = function(settingsObj) {
         }
       }
     }
-    if (isMissing(settings.httpRequestTimeout)) {
-      return { valid: false, message: "httpRequestTimeout is required" };
+    if (isMissing(settings.httpClientTimeout)) {
+      return { valid: false, message: "httpClientTimeout is required" };
     }
-    if (!isNumber(settings.httpRequestTimeout)) {
-      return { valid: false, message: "httpRequestTimeout must be a number" };
+    if (!isNumber(settings.httpClientTimeout)) {
+      return { valid: false, message: "httpClientTimeout must be a number" };
     }
-    if (settings.httpRequestTimeout <= 0) {
-      return { valid: false, message: "value of httpRequestTimeout must be greater than 0" };
+    if (settings.httpClientTimeout <= 0) {
+      return { valid: false, message: "value of httpClientTimeout must be greater than 0" };
     } 
     return { valid: true }
   }

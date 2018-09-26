@@ -82,7 +82,7 @@ collector:
   collect_method: polling
   save_interval: 5s
   metric_cache_size_per_app: 100
-http_request_timeout: 10s
+http_client_timeout: 10s
 `)
 			})
 
@@ -127,7 +127,7 @@ http_request_timeout: 10s
 				Expect(conf.Server.NodeAddrs).To(Equal([]string{"address1", "address2"}))
 				Expect(conf.Server.NodeIndex).To(Equal(1))
 
-				Expect(conf.HTTPRequestTimeout).To(Equal(10 * time.Second))
+				Expect(conf.HttpClientTimeout).To(Equal(10 * time.Second))
 			})
 		})
 
@@ -170,7 +170,7 @@ db:
 				Expect(conf.Collector.CollectMethod).To(Equal(CollectMethodStreaming))
 				Expect(conf.Collector.MetricCacheSizePerApp).To(Equal(DefaultMetricCacheSizePerApp))
 
-				Expect(conf.HTTPRequestTimeout).To(Equal(5 * time.Second))
+				Expect(conf.HttpClientTimeout).To(Equal(5 * time.Second))
 			})
 		})
 
@@ -628,7 +628,7 @@ collector:
 			})
 		})
 
-		Context("when http_request_timeout of http is not a time duration", func() {
+		Context("when http_client_timeout of http is not a time duration", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
 cf:
@@ -663,7 +663,7 @@ collector:
   collect_interval: 10s
   collect_method: polling
   save_interval: 5s
-http_request_timeout: 10k
+http_client_timeout: 10k
 `)
 			})
 
@@ -701,7 +701,7 @@ http_request_timeout: 10k
 			conf.Collector.MetricCacheSizePerApp = 100
 			conf.Server.NodeAddrs = []string{"address1", "address2"}
 			conf.Server.NodeIndex = 0
-			conf.HTTPRequestTimeout = 10 * time.Second
+			conf.HttpClientTimeout = 10 * time.Second
 		})
 
 		JustBeforeEach(func() {
@@ -813,12 +813,12 @@ http_request_timeout: 10k
 				})
 			})
 
-			Context("when HTTPRequestTimeout is <= 0", func() {
+			Context("when HttpClientTimeout is <= 0", func() {
 				BeforeEach(func() {
-					conf.HTTPRequestTimeout = 0
+					conf.HttpClientTimeout = 0
 				})
 				It("should error", func() {
-					Expect(err).To(MatchError("Configuration error: http_request_timeout is less-equal than 0"))
+					Expect(err).To(MatchError("Configuration error: http_client_timeout is less-equal than 0"))
 				})
 			})
 

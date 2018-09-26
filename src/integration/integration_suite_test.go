@@ -76,7 +76,7 @@ var (
 
 	processMap map[string]ifrit.Process = map[string]ifrit.Process{}
 
-	defaultHttpRequestTimeout time.Duration = 10 * time.Second
+	defaultHttpClientTimeout time.Duration = 10 * time.Second
 
 	brokerApiHttpRequestTimeout              time.Duration = 10 * time.Second
 	apiSchedulerHttpRequestTimeout           time.Duration = 10 * time.Second

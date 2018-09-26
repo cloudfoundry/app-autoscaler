@@ -105,7 +105,7 @@ var _ = SynchronizedBeforeSuite(
 
 		conf.DefaultCoolDownSecs = 300
 		conf.LockSize = 32
-		conf.HTTPRequestTimeout = 10 * time.Second
+		conf.HttpClientTimeout = 10 * time.Second
 
 		configFile = writeConfig(&conf)
 
