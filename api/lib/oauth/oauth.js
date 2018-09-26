@@ -5,6 +5,7 @@ module.exports = function(settings) {
   var path = require('path');
   var fs = require('fs');
   var HttpStatus = require('http-status-codes');
+  var jwt = require('jsonwebtoken');
   var obj = {};
   obj.checkUserAuthorization = function(req, callback) {
     var appId = req.params.app_id;
@@ -19,6 +20,10 @@ module.exports = function(settings) {
       logger.info("User token is not provided");
       callback(null, false);
       return;
+    }
+    var decodeJson = jwt.decode(userToken.split(' ').length > 0 && userToken.split(' ')[1]);
+    if (decodeJson.scope && decodeJson.scope.indexOf("cloud_controller.admin") >= 0) {
+      callback(null, true);
     }
     getUserInfo(req, function(error, userId) {
       if (error) {
