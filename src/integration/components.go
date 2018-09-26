@@ -394,7 +394,7 @@ client.ssl.key-store-type=PKCS12
 client.ssl.trust-store=%s/autoscaler.truststore
 client.ssl.trust-store-password=123456
 client.ssl.protocol=TLSv1.2
-client.HttpClientTimeout=%d
+client.httpClientTimeout=%d
 #Quartz
 org.quartz.scheduler.instanceName=app-autoscaler-%d
 org.quartz.scheduler.instanceId=app-autoscaler-%d
