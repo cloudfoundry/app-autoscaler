@@ -24,6 +24,7 @@ const (
 	DefaultRetryInterval       time.Duration = locket.RetryInterval
 	DefaultDBLockRetryInterval time.Duration = 5 * time.Second
 	DefaultDBLockTTL           time.Duration = 15 * time.Second
+	DefaultHttpClientTimeout   time.Duration = 5 * time.Second
 )
 
 type InstanceMetricsDbPrunerConfig struct {
@@ -90,6 +91,7 @@ type Config struct {
 	Lock              LockConfig                    `yaml:"lock"`
 	DBLock            DBLockConfig                  `yaml:"db_lock"`
 	EnableDBLock      bool                          `yaml:"enable_db_lock"`
+	HttpClientTimeout time.Duration                 `yaml:"http_client_timeout"`
 }
 
 var defaultConfig = Config{
@@ -123,8 +125,9 @@ var defaultConfig = Config{
 	AppSyncer: AppSyncerConfig{
 		SyncInterval: DefaultSyncInterval,
 	},
-	DBLock:       defaultDBLockConfig,
-	EnableDBLock: false,
+	DBLock:            defaultDBLockConfig,
+	EnableDBLock:      false,
+	HttpClientTimeout: DefaultHttpClientTimeout,
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
@@ -212,6 +215,10 @@ func (c *Config) Validate() error {
 	}
 	if c.AppSyncer.SyncInterval <= 0 {
 		return fmt.Errorf("Configuration error: appSyncer.sync_interval is less than or equal to 0")
+	}
+
+	if c.HttpClientTimeout <= time.Duration(0) {
+		return fmt.Errorf("Configuration error: http_client_timeout is less-equal than 0")
 	}
 
 	return nil
