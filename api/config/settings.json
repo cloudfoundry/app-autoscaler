@@ -63,5 +63,6 @@
         "keyFile": "../test-certs/api_public.key",
         "certFile": "../test-certs/api_public.crt",
         "caCertFile": "../test-certs/autoscaler-ca.crt"
-    }
+    },
+    "httpClientTimeout": 5000
 }

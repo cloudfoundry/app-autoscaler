@@ -133,6 +133,7 @@ db_lock:
     url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
   retry_interval: 5s
 enable_db_lock: false
+http_client_timeout: 10s
 `)
 			})
 
@@ -192,6 +193,7 @@ enable_db_lock: false
 					ConnectionMaxLifetime: 60 * time.Second,
 				}))
 				Expect(conf.AppSyncer.SyncInterval).To(Equal(60 * time.Second))
+				Expect(conf.HttpClientTimeout).To(Equal(10 * time.Second))
 			})
 		})
 
@@ -259,6 +261,8 @@ app_syncer:
 					MaxIdleConnections:    0,
 					ConnectionMaxLifetime: 0 * time.Second,
 				}))
+
+				Expect(conf.HttpClientTimeout).To(Equal(5 * time.Second))
 
 			})
 		})
@@ -1393,6 +1397,63 @@ lock:
 			})
 		})
 
+		Context("when http_client_timeout of http is not a time duration", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: "debug"
+instance_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 12h
+  cutoff_days: 20
+app_metrics_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60
+  refresh_interval: 10h
+  cutoff_days: 15
+scaling_engine_db:
+  db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  refresh_interval: 36h
+  cutoff_days: 30
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+scheduler:
+  scheduler_url: http://localhost:8083
+  sync_interval: 60s
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+lock:
+  lock_ttl: 15s
+  lock_retry_interval: 10s
+  consul_cluster_config: "http://127.0.0.1:8500"
+http_client_timeout: 10k
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
+			})
+		})
+
 	})
 
 	Describe("Validate", func() {
@@ -1423,6 +1484,8 @@ lock:
 
 			conf.AppSyncer.SyncInterval = 60 * time.Second
 			conf.AppSyncer.DB.URL = "postgres://pqgotest:password@exampl.com/pqgotest"
+
+			conf.HttpClientTimeout = 10 * time.Second
 
 		})
 
@@ -1643,6 +1706,15 @@ lock:
 
 			It("should validate successfully", func() {
 				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when HttpClientTimeout is <= 0", func() {
+			BeforeEach(func() {
+				conf.HttpClientTimeout = 0
+			})
+			It("should error", func() {
+				Expect(err).To(MatchError("Configuration error: http_client_timeout is less-equal than 0"))
 			})
 		})
 

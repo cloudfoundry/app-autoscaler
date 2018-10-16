@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"os"
 
+	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/consuladapter"
 	"code.cloudfoundry.org/lager"
@@ -48,7 +49,7 @@ func main() {
 		fmt.Fprintf(os.Stdout, "failed to validate configuration : %s\n", err.Error())
 		os.Exit(1)
 	}
-
+	cfhttp.Initialize(conf.HttpClientTimeout)
 	logger := helpers.InitLoggerFromConfig(&conf.Logging, "operator")
 	prClock := clock.NewClock()
 

@@ -89,6 +89,7 @@ db:
     connection_max_lifetime: 60s
 defaultCoolDownSecs: 300
 lockSize: 32
+http_client_timeout: 10s
 `)
 			})
 
@@ -137,6 +138,8 @@ lockSize: 32
 				Expect(conf.DefaultCoolDownSecs).To(Equal(300))
 
 				Expect(conf.LockSize).To(Equal(32))
+
+				Expect(conf.HttpClientTimeout).To(Equal(10 * time.Second))
 			})
 		})
 
@@ -187,6 +190,8 @@ lockSize: 32
 						MaxIdleConnections:    0,
 						ConnectionMaxLifetime: 0 * time.Second,
 					}))
+
+				Expect(conf.HttpClientTimeout).To(Equal(5 * time.Second))
 			})
 		})
 
@@ -772,6 +777,56 @@ lockSize: NOT-INTEGER-VALUE
 			})
 		})
 
+		Context("when http_client_timeout of http is not a time duration", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+cf:
+  api: https://api.example.com
+  grant_type: PassWord
+  username: admin
+  password: admin
+  client_id: client-id
+  secret: client-secret
+  skip_ssl_validation: false
+server:
+  port: 8989
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
+health:
+  port: 9999
+  emit_interval: 15s
+logging:
+  level: DeBug
+db:
+  policy_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60
+  scalingengine_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60
+  scheduler_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+defaultCoolDownSecs: 300
+lockSize: 32
+http_client_timeout: 10k
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
+			})
+		})
+
 	})
 
 	Describe("Validate", func() {
@@ -786,6 +841,7 @@ lockSize: NOT-INTEGER-VALUE
 			conf.DB.SchedulerDB.URL = "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
 			conf.DefaultCoolDownSecs = 300
 			conf.LockSize = 32
+			conf.HttpClientTimeout = 10 * time.Second
 		})
 
 		JustBeforeEach(func() {
@@ -865,6 +921,15 @@ lockSize: NOT-INTEGER-VALUE
 
 			It("should error", func() {
 				Expect(err).To(MatchError("Configuration error: LockSize is less than or equal to 0"))
+			})
+		})
+
+		Context("when HttpClientTimeout is <= 0", func() {
+			BeforeEach(func() {
+				conf.HttpClientTimeout = 0
+			})
+			It("should error", func() {
+				Expect(err).To(MatchError("Configuration error: http_client_timeout is less-equal than 0"))
 			})
 		})
 	})

@@ -22,6 +22,7 @@ const (
 	DefaultRetryInterval              time.Duration = locket.RetryInterval
 	DefaultDBLockRetryInterval        time.Duration = 5 * time.Second
 	DefaultDBLockTTL                  time.Duration = 15 * time.Second
+	DefaultHttpClientTimeout          time.Duration = 5 * time.Second
 )
 
 var defaultCFConfig = cf.CFConfig{
@@ -74,14 +75,16 @@ type Config struct {
 	DB                  DBConfig              `yaml:"db"`
 	DefaultCoolDownSecs int                   `yaml:"defaultCoolDownSecs"`
 	LockSize            int                   `yaml:"lockSize"`
+	HttpClientTimeout   time.Duration         `yaml:"http_client_timeout"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
 	conf := &Config{
-		CF:      defaultCFConfig,
-		Logging: defaultLoggingConfig,
-		Server:  defaultServerConfig,
-		Health:  defaultHealthConfig,
+		CF:                defaultCFConfig,
+		Logging:           defaultLoggingConfig,
+		Server:            defaultServerConfig,
+		Health:            defaultHealthConfig,
+		HttpClientTimeout: DefaultHttpClientTimeout,
 	}
 
 	bytes, err := ioutil.ReadAll(reader)
@@ -127,6 +130,10 @@ func (c *Config) Validate() error {
 
 	if c.LockSize <= 0 {
 		return fmt.Errorf("Configuration error: LockSize is less than or equal to 0")
+	}
+
+	if c.HttpClientTimeout <= time.Duration(0) {
+		return fmt.Errorf("Configuration error: http_client_timeout is less-equal than 0")
 	}
 	return nil
 
