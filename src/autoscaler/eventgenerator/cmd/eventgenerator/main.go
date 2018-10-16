@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"os"
 
+	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
 	"github.com/tedsuo/ifrit"
@@ -39,7 +40,7 @@ func main() {
 		fmt.Fprintf(os.Stdout, "%s\n", err.Error())
 		os.Exit(1)
 	}
-
+	cfhttp.Initialize(conf.HttpClientTimeout)
 	logger := helpers.InitLoggerFromConfig(&conf.Logging, "eventgenerator")
 	egClock := clock.NewClock()
 

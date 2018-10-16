@@ -28,7 +28,7 @@ module.exports = function(settings) {
           url: ccEndpoint + "/v2/users/" + userId + "/spaces?q=app_guid:" + appId + "&q=developer_guid:" + userId,
           method: "GET",
           json: true,
-          timeout: 10000,
+          timeout: settings.httpClientTimeout,
           rejectUnauthorized: !settings.skipSSLValidation,
           headers: {
             "Authorization": userToken,
@@ -77,7 +77,7 @@ module.exports = function(settings) {
       url: ccEndpoint + "/v2/info",
       method: "GET",
       json: true,
-      timeout: 10000,
+      timeout: settings.httpClientTimeout,
       rejectUnauthorized: !settings.skipSSLValidation,
     };
     request(options, function(error, response, body) {
@@ -105,7 +105,7 @@ module.exports = function(settings) {
       url: obj.tokenEndpoint + "/userinfo",
       method: "GET",
       json: true,
-      timeout: 10000,
+      timeout: settings.httpClientTimeout,
       rejectUnauthorized: !settings.skipSSLValidation,
       headers: {
         "Authorization": userToken,

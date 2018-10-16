@@ -1,5 +1,5 @@
 "use strict";
-module.exports = function(metricsCollectorSettings) {
+module.exports = function(metricsCollectorSettings, httpClientTimeout) {
   var request = require("request");
   var logger = require("../log/logger");
   var HttpStatus = require("http-status-codes");
@@ -11,7 +11,7 @@ module.exports = function(metricsCollectorSettings) {
       qs: { "instanceindex": instanceIndex, "start": startTime, "end": endTime, "order": order },
       method: "GET",
       json: true,
-      timeout: 10000,
+      timeout: httpClientTimeout,
     }
     if (metricsCollectorSettings.tls) {
       var metricsCollectorTLSOptions = {
