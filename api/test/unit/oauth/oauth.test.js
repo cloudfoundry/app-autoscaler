@@ -62,6 +62,19 @@ describe("Oauth", function() {
         });
       });
     });
+    context("user token belongs to admin", function() {
+      beforeEach(function() {
+        req.header = function(headerName) {
+          return "bearer eyJhbGciOiJSUzI1NiIsImtpZCI6ImtleS0xIiwidHlwIjoiSldUIn0.eyJqdGkiOiI5OTIxMjY1MjY2Zjg0MDVhOWI2ZWM5NDQ2MDY1YjIxMyIsInN1YiI6IjA0ZmJmZWEzLWE0ZjQtNDMwYi04NzdhLTQ3NWMxNGNmMTRmZCIsInNjb3BlIjpbIm9wZW5pZCIsInJvdXRpbmcucm91dGVyX2dyb3Vwcy53cml0ZSIsInNjaW0ucmVhZCIsImNsb3VkX2NvbnRyb2xsZXIuYWRtaW4iLCJ1YWEudXNlciIsInJvdXRpbmcucm91dGVyX2dyb3Vwcy5yZWFkIiwiY2xvdWRfY29udHJvbGxlci5yZWFkIiwicGFzc3dvcmQud3JpdGUiLCJjbG91ZF9jb250cm9sbGVyLndyaXRlIiwibmV0d29yay5hZG1pbiIsImRvcHBsZXIuZmlyZWhvc2UiLCJzY2ltLndyaXRlIl0sImNsaWVudF9pZCI6ImNmIiwiY2lkIjoiY2YiLCJhenAiOiJjZiIsImdyYW50X3R5cGUiOiJwYXNzd29yZCIsInVzZXJfaWQiOiIwNGZiZmVhMy1hNGY0LTQzMGItODc3YS00NzVjMTRjZjE0ZmQiLCJvcmlnaW4iOiJ1YWEiLCJ1c2VyX25hbWUiOiJhZG1pbiIsImVtYWlsIjoiYWRtaW4iLCJyZXZfc2lnIjoiMjhhMzIwYjQiLCJpYXQiOjE1Mzc5NTI1OTUsImV4cCI6MTUzNzk1MzE5NSwiaXNzIjoiaHR0cHM6Ly91YWEuYm9zaC1saXRlLmNvbS9vYXV0aC90b2tlbiIsInppZCI6InVhYSIsImF1ZCI6WyJzY2ltIiwiY2xvdWRfY29udHJvbGxlciIsInBhc3N3b3JkIiwiY2YiLCJ1YWEiLCJvcGVuaWQiLCJkb3BwbGVyIiwicm91dGluZy5yb3V0ZXJfZ3JvdXBzIiwibmV0d29yayJdfQ.Gex65d_k_2715a54vzXJqANodUE6hvrZKrITLTucGseFobdV2PnzwiIJT7-GQj-34lWA_aRdeX3rn6aXhmhJtCEETTF72ZVUbb8onuRWR1L3Q6P1j9L1BB3_W6V1GvN7sEPiVugdj9qBQgPeIYgfNMTOUUU9Z2hWkczJUXTX0ynjSeMASoGm8O5M3vCqVw86WKYBg0AfF4qwS2hCzACYngFQNuzrNGwhVGaH5yaAjjHvr1fyyYrJdehuytgUB08c-iGQLemdlLLutAiP3Rss8PF5C3orBQah0AT-OMlKahjlWHuRC9jB88TJ71TS08t98nBwfU8QBgG1z9XCP0NkuQ";
+        }
+      });
+      it("should return true", function() {
+        oauth.checkUserAuthorization(req, function(error, result) {
+          expect(result).to.equal(true);
+          expect(error).to.equal(null);
+        });
+      });
+    });
     context("Cloud Controller API endpoint is not available", function() {
       it("should return error", function(done) {
         oauth.checkUserAuthorization(req, function(error, result) {
