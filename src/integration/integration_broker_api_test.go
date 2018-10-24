@@ -168,7 +168,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
 				respBody, err := ioutil.ReadAll(resp.Body)
-				Expect(string(respBody)).To(Equal(`{"description":[{"property":"instance.scaling_rules[0].cool_down_secs","message":"must have a minimum value of 60","schema":{"type":"number","minimum":60,"maximum":3600},"instance":-300,"name":"minimum","argument":60,"stack":"instance.scaling_rules[0].cool_down_secs must have a minimum value of 60"}]}`))
+				Expect(string(respBody)).To(Equal(`{"description":[{"property":"instance.scaling_rules[0].cool_down_secs","message":"must have a minimum value of 60","schema":{"type":"integer","minimum":60,"maximum":3600},"instance":-300,"name":"minimum","argument":60,"stack":"instance.scaling_rules[0].cool_down_secs must have a minimum value of 60"}]}`))
 				resp.Body.Close()
 				Consistently(fakeScheduler.ReceivedRequests).Should(HaveLen(schedulerCount))
 
