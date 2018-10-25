@@ -2,7 +2,9 @@ package helpers
 
 import (
 	"autoscaler/models"
+	"net"
 	"net/http"
+	"time"
 
 	"code.cloudfoundry.org/cfhttp"
 )
@@ -19,6 +21,9 @@ func CreateHTTPClient(tlsCerts *models.TLSCerts) (*http.Client, error) {
 			return nil, err
 		}
 		client.Transport.(*http.Transport).TLSClientConfig = tlsConfig
+		client.Transport.(*http.Transport).DialContext = (&net.Dialer{
+			Timeout: 30 * time.Second,
+		}).DialContext
 	}
 
 	return client, nil
