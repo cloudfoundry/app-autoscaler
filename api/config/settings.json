@@ -3,8 +3,8 @@
     "publicPort": 8088,
     "infoFilePath": "../api/config/info.json",
     "cfApi": "https://api.bosh-lite.com",
-    "cfClientId": "scalerui_client",
-    "cfClientSecret": "scalerui-secret",
+    "cfClientId": "admin",
+    "cfClientSecret": "admin-secret",
     "skipSSLValidation": false,
     "cacheTTL": 10,
     "db": {

@@ -22,11 +22,13 @@ module.exports = function(settings) {
       return;
     }
     getUserScope(req, function(error, scope) {
-      if (!error && scope && scope.indexOf("cloud_controller.admin") >= 0) {
+      if (error) {
+        callback(error, null);
+      } else if (scope && scope.indexOf("cloud_controller.admin") >= 0) {
+        logger.info("Admin user with scope: " + scope);
         callback(null, true);
-        logger.debug("Admin user with scope: " + scope);
-        return;
       } else {
+        logger.info("Normal user with scope: " + scope);
         getUserInfo(req, function(error, userId) {
           if (error) {
             callback(error, null);
