@@ -13,6 +13,8 @@ describe('config setting Test Suite', function() {
       "publicPort": 8081,
       "infoFilePath": "../api/config/info.json",
       "cfApi": "api.bosh-lite.com",
+      "cfClientId": "admin",
+      "cfClientSecret": "admin-secret",
       "skipSSLValidation": false,
       "cacheTTL": 200,
       "db": {
@@ -87,6 +89,8 @@ describe('config setting Test Suite', function() {
     expect(settings.publicPort).to.equal(defaultConfig.publicPort);
 
     expect(settings.cfApi).to.equal("https://" + defaultConfig.cfApi.toLowerCase());
+    expect(settings.cfClientId).to.equal(defaultConfig.cfClientId);
+    expect(settings.cfClientSecret).to.equal(defaultConfig.cfClientSecret);
     expect(settings.infoFilePath).to.equal(defaultConfig.infoFilePath);
     expect(settings.skipSSLValidation).to.equal(false);
     expect(settings.cacheTTL).to.equal(defaultConfig.cacheTTL);
@@ -425,6 +429,54 @@ describe('config setting Test Suite', function() {
           settings.cfApi = 12345;
           expect(settings.validate().valid).to.equal(false);
           expect(settings.validate().message).to.equal("cfApi must be a string");
+        })
+      });
+    });
+
+    context('Validate cfClientId', function() {
+      context('When cfClientId is null', function() {
+        it('Should return false', function() {
+          settings.cfClientId = null;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("cfClientId is required");
+        })
+      });
+      context('When cfClientId is undefined', function() {
+        it('Should return false', function() {
+          delete settings.cfClientId;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("cfClientId is required");
+        })
+      });
+      context('When cfClientId is not a string', function() {
+        it('Should return false', function() {
+          settings.cfClientId = 12345;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("cfClientId must be a string");
+        })
+      });
+    });
+
+    context('Validate cfClientSecret', function() {
+      context('When cfClientSecret is null', function() {
+        it('Should return false', function() {
+          settings.cfClientSecret = null;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("cfClientSecret is required");
+        })
+      });
+      context('When cfClientSecret is undefined', function() {
+        it('Should return false', function() {
+          delete settings.cfClientSecret;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("cfClientSecret is required");
+        })
+      });
+      context('When cfClientSecret is not a string', function() {
+        it('Should return false', function() {
+          settings.cfClientSecret = 12345;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("cfClientSecret must be a string");
         })
       });
     });
