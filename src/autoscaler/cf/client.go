@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -89,6 +90,9 @@ func NewCFClient(conf *CFConfig, logger lager.Logger, clk clock.Clock) CFClient 
 
 	c.httpClient = cfhttp.NewClient()
 	c.httpClient.Transport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: conf.SkipSSLValidation}
+	c.httpClient.Transport.(*http.Transport).DialContext = (&net.Dialer{
+		Timeout: 30 * time.Second,
+	}).DialContext
 
 	c.lock = &sync.Mutex{}
 
