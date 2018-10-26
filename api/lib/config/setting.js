@@ -46,6 +46,8 @@ module.exports = function(settingsObj) {
   var settings = {
     port: settingsObj.port,
     cfApi: addProtocol(cleanUpUri(settingsObj.cfApi)),
+    cfClientId: settingsObj.cfClientId,
+    cfClientSecret: settingsObj.cfClientSecret,
     skipSSLValidation: settingsObj.skipSSLValidation,
     cacheTTL: settingsObj.cacheTTL,
     publicPort: settingsObj.publicPort,
