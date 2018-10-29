@@ -88,6 +88,12 @@ var _ = Describe("Integration_Api_EventGenerator", func() {
 						TokenEndpoint:   fakeCCNOAAUAA.URL(),
 						DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
 					}))
+				fakeCCNOAAUAA.RouteToHandler("POST", "/check_token", ghttp.RespondWithJSONEncoded(http.StatusOK,
+					struct {
+						Scope [7]string `json:"scope"`
+					}{
+						[7]string{"cloud_controller.read", "cloud_controller.write", "password.write", "openid", "network.admin", "network.write", "uaa.user"},
+					}))
 				fakeCCNOAAUAA.RouteToHandler("GET", "/userinfo", ghttp.RespondWithJSONEncoded(http.StatusUnauthorized, struct{}{}))
 			})
 			It("should error with status code 401", func() {
