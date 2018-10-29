@@ -133,11 +133,10 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 					}))
 				fakeCCNOAAUAA.RouteToHandler("POST", "/check_token", ghttp.RespondWithJSONEncoded(http.StatusOK,
 					struct {
-						Scope [7]string `json:"scope"`
+						Scope []string `json:"scope"`
 					}{
-						[7]string{"cloud_controller.read", "cloud_controller.write", "password.write", "openid", "network.admin", "network.write", "uaa.user"},
+						[]string{"cloud_controller.read", "cloud_controller.write", "password.write", "openid", "network.admin", "network.write", "uaa.user"},
 					}))
-				fakeCCNOAAUAA.RouteToHandler("GET", "/check_token", ghttp.RespondWithJSONEncoded(http.StatusOK, struct{}{}))
 				fakeCCNOAAUAA.RouteToHandler("GET", "/userinfo", ghttp.RespondWithJSONEncoded(http.StatusUnauthorized, struct{}{}))
 			})
 			Context("Create policy", func() {
