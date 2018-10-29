@@ -93,10 +93,10 @@ var getScalingRuleSchema = function() {
     'id':'/scaling_rules',
     'properties' : {
       'metric_type':{ 'type':'string' },
-      'breach_duration_secs':{ 'type':'number','minimum': 60,'maximum': 3600 },
-      'threshold':{ 'type':'number'},
+      'breach_duration_secs':{ 'type':'integer','minimum': 60,'maximum': 3600 },
+      'threshold':{ 'type':'integer'},
       'operator':{ 'type':'string','enum': validOperators },
-      'cool_down_secs':{ 'type':'number','minimum': 60,'maximum': 3600 },
+      'cool_down_secs':{ 'type':'integer','minimum': 60,'maximum': 3600 },
       'adjustment':{ 'type':'string','pattern': adjustmentPattern }
     },
     'required' : ['metric_type','threshold','operator','adjustment']
