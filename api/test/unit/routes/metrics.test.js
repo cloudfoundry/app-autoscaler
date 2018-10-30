@@ -20,7 +20,7 @@ var metricsCollectorUri = testSetting.metricsCollector.uri;
 var theAppId = "the-app-guid";
 var metricType = "memoryused";
 var theUserId = "the-user-id";
-var theUserToken = "the-user-token"
+var theUserToken = "token-type the-user-token"
 
 describe("Routing Metrics", function() {
 
@@ -40,6 +40,10 @@ describe("Routing Metrics", function() {
     nock("https://api.bosh-lite.com")
       .get("/v2/info")
       .reply(HttpStatus.OK, { "token_endpoint": "https://uaa.bosh-lite.com" });
+
+    nock("https://uaa.bosh-lite.com")
+      .post("/check_token?token=the-user-token")
+      .reply(HttpStatus.OK, { "scope": ["cloud_controller.read","password.write","cloud_controller.write","openid","network.admin","network.write","uaa.user"] });
 
     nock("https://uaa.bosh-lite.com")
       .get("/userinfo")

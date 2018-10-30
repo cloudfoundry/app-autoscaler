@@ -130,7 +130,7 @@ module.exports = function(settings, credentialCache, callback) {
   publicApp.use(bodyParser.json());
   publicApp.use(bodyParser.urlencoded({ extended: false }));
   publicApp.use('/v1/apps/:app_id/*',function(req, res, next){
-    oauth.checkUserAuthorization(req,function(error,isSpaceDeveloper){
+    oauth.checkUserAuthorization(req,function(error,isAdminOrSpaceDeveloper){
       if(error){
         if(error.statusCode == HttpStatus.UNAUTHORIZED){
           res.status(HttpStatus.UNAUTHORIZED).send({});
@@ -138,7 +138,7 @@ module.exports = function(settings, credentialCache, callback) {
           res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({});
         }
       }else{
-        if(isSpaceDeveloper){
+        if(isAdminOrSpaceDeveloper){
           next();
         }else{
           res.status(HttpStatus.UNAUTHORIZED).send({});

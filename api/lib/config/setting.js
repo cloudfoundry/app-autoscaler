@@ -46,6 +46,8 @@ module.exports = function(settingsObj) {
   var settings = {
     port: settingsObj.port,
     cfApi: addProtocol(cleanUpUri(settingsObj.cfApi)),
+    cfClientId: settingsObj.cfClientId,
+    cfClientSecret: settingsObj.cfClientSecret,
     skipSSLValidation: settingsObj.skipSSLValidation,
     cacheTTL: settingsObj.cacheTTL,
     publicPort: settingsObj.publicPort,
@@ -120,6 +122,18 @@ module.exports = function(settingsObj) {
     }
     if (!isString(settings.cfApi)) {
       return { valid: false, message: "cfApi must be a string" };
+    }
+    if (isMissing(settings.cfClientId)) {
+      return { valid: false, message: "cfClientId is required" }
+    }
+    if (!isString(settings.cfClientId)) {
+      return { valid: false, message: "cfClientId must be a string" };
+    }
+    if (isMissing(settings.cfClientSecret)) {
+      return { valid: false, message: "cfClientSecret is required" }
+    }
+    if (!isString(settings.cfClientSecret)) {
+      return { valid: false, message: "cfClientSecret must be a string" };
     }
     if (isMissing(settings.skipSSLValidation)) {
       return { valid: false, message: 'skipSSLValidation is required' };

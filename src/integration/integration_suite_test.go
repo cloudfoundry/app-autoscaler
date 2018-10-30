@@ -72,7 +72,8 @@ var (
 	messagesToSend           chan []byte
 	streamingDoneChan        chan bool
 	emptyMessageChannel      chan []byte
-	testUserId               string = "testUserId"
+	testUserId               string   = "testUserId"
+	testUserScope            []string = []string{"cloud_controller.read", "cloud_controller.write", "password.write", "openid", "network.admin", "network.write", "uaa.user"}
 
 	processMap map[string]ifrit.Process = map[string]ifrit.Process{}
 
@@ -725,6 +726,12 @@ func startFakeCCNOAAUAA(instanceCount int) {
 	fakeCCNOAAUAA.RouteToHandler("GET", appSummaryRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
 		models.AppEntity{Instances: instanceCount, State: &appState}))
 	fakeCCNOAAUAA.RouteToHandler("PUT", appInstanceRegPath, ghttp.RespondWith(http.StatusCreated, ""))
+	fakeCCNOAAUAA.RouteToHandler("POST", "/check_token", ghttp.RespondWithJSONEncoded(http.StatusOK,
+		struct {
+			Scope []string `json:"scope"`
+		}{
+			testUserScope,
+		}))
 	fakeCCNOAAUAA.RouteToHandler("GET", "/userinfo", ghttp.RespondWithJSONEncoded(http.StatusOK,
 		struct {
 			UserId string `json:"user_id"`
