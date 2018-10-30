@@ -25,7 +25,8 @@
     "request": "^2.74.0",
     "sequelize": "^3.23.6",
     "underscore": "^1.8.3",
-    "uuid": "^3.0.1"
+    "uuid": "^3.0.1",
+    "js-base64": "^2.4.9"
   },
   "devDependencies": {
     "ajv": "^6.3.0",

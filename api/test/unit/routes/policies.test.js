@@ -11,6 +11,7 @@ var settings = require(path.join(__dirname, '../../../lib/config/setting.js'))((
 var relativePath = path.relative(process.cwd(), path.join(__dirname, "../../../../test-certs"));
 var testSetting = require(path.join(__dirname, '../test.helper.js'))(relativePath, settings);
 var API = require('../../../app.js');
+var HttpStatus = require('http-status-codes');
 var app;
 var publicApp;
 var servers;
@@ -19,20 +20,25 @@ var logger = require('../../../lib/log/logger');
 var nock = require('nock');
 var schedulerURI = testSetting.scheduler.uri;
 var theUserId = "the-user-id";
+var theUserToken = "token-type the-user-token"
 
 function mockCF(count) {
   nock("https://api.bosh-lite.com")
     .get("/v2/info")
     .times(count)
-    .reply(200, { "token_endpoint": "https://uaa.bosh-lite.com" });
+    .reply(HttpStatus.OK, { "token_endpoint": "https://uaa.bosh-lite.com" });
+  nock("https://uaa.bosh-lite.com")
+    .post("/check_token?token=the-user-token")
+    .times(count)
+    .reply(HttpStatus.OK, { "scope": ["cloud_controller.read","password.write","cloud_controller.write","openid","network.admin","network.write","uaa.user"] });
   nock("https://uaa.bosh-lite.com")
     .get("/userinfo")
     .times(count)
-    .reply(200, { "user_id": theUserId });
+    .reply(HttpStatus.OK, { "user_id": theUserId });
   nock("https://api.bosh-lite.com")
     .get(/\/v2\/users\/.+\/spaces\?.+/)
     .times(count)
-    .reply(200, {
+    .reply(HttpStatus.OK, {
       "total_results": 1,
       "total_pages": 1,
       "prev_url": null,
@@ -77,7 +83,7 @@ function mockBroker200WithBinding(count) {
     nock(testSetting.serviceOffering.serviceBroker.uri)
       .get(/\/v1\/apps\/.+\/service_bindings/)
       .times(count)
-      .reply(200, {
+      .reply(HttpStatus.OK, {
         "binding": {
           "bindingId": "an-binding-id",
           "appId": "an-app-id",
@@ -93,7 +99,7 @@ function mockBroker200WithoutBinding(count) {
     nock(testSetting.serviceOffering.serviceBroker.uri)
       .get(/\/v1\/apps\/.+\/service_bindings/)
       .times(count)
-      .reply(200, { "binding": null });
+      .reply(HttpStatus.OK, { "binding": null });
   }
 }
 
@@ -128,7 +134,7 @@ describe('Routing Policy Creation', function () {
       it('should create a policy for app id 12345', function (done) {
         request(publicApp)
           .put('/v1/apps/12345/policy')
-          .set("Authorization", "fake-token")
+          .set("Authorization", theUserToken)
           .send(fakePolicy)
           .end(function (error, result) {
             expect(result.statusCode).to.equal(201);
@@ -148,7 +154,7 @@ describe('Routing Policy Creation', function () {
         if (testSetting.serviceOffering.enabled) {
           request(publicApp)
             .put('/v1/apps/12345/policy')
-            .set("Authorization", "fake-token")
+            .set("Authorization", theUserToken)
             .send(fakePolicy)
             .end(function (error, result) {
               expect(result.statusCode).to.equal(403);
@@ -168,7 +174,7 @@ describe('Routing Policy Creation', function () {
       it('dummy call to test CSP response headers', function (done) {
         request(publicApp)
           .put('/v1/apps/12344/policy')
-          .set("Authorization", "fake-token")
+          .set("Authorization", theUserToken)
           .send(fakePolicy)
           .end(function (error, result) {
             expect(result.statusCode).to.equal(201);
@@ -191,7 +197,7 @@ describe('Routing Policy Creation', function () {
       it('should fail to create a policy for app id 12346', function (done) {
         request(publicApp)
           .put('/v1/apps/12346/policy')
-          .set("Authorization", "fake-token")
+          .set("Authorization", theUserToken)
           .send(fakePolicy)
           .end(function (error, result) {
             expect(result.statusCode).to.equal(400);
@@ -212,7 +218,7 @@ describe('Routing Policy Creation', function () {
       it('should fail to create a policy for app id 12347', function (done) {
         request(publicApp)
           .put('/v1/apps/12347/policy')
-          .set("Authorization", "fake-token")
+          .set("Authorization", theUserToken)
           .send(fakePolicy)
           .end(function (error, result) {
             expect(result.statusCode).to.equal(500);
@@ -230,7 +236,7 @@ describe('Routing Policy Creation', function () {
       mockSchedulerPut(1, 200);
       request(publicApp)
         .put('/v1/apps/12345/policy')
-        .set("Authorization", "fake-token")
+        .set("Authorization", theUserToken)
         .send(fakePolicy).end(function (error, result) {
           done();
         })
@@ -243,7 +249,7 @@ describe('Routing Policy Creation', function () {
       it('should update the existing policy for app id 12345', function (done) {
         request(publicApp)
           .put('/v1/apps/12345/policy')
-          .set("Authorization", "fake-token")
+          .set("Authorization", theUserToken)
           .send(fakePolicy)
           .end(function (error, result) {
             expect(result.statusCode).to.equal(200);
@@ -261,7 +267,7 @@ describe('Routing Policy Creation', function () {
         if (testSetting.serviceOffering.enabled) {
           request(publicApp)
             .put('/v1/apps/12345/policy')
-            .set("Authorization", "fake-token")
+            .set("Authorization", theUserToken)
             .send(fakePolicy)
             .end(function (error, result) {
               expect(result.statusCode).to.equal(403);
@@ -282,7 +288,7 @@ describe('Routing Policy Creation', function () {
       mockSchedulerPut(1, 200);
       request(publicApp)
         .put('/v1/apps/12345/policy')
-        .set("Authorization", "fake-token")
+        .set("Authorization", theUserToken)
         .send(fakePolicy).end(function (error, result) {
           done();
         })
@@ -296,7 +302,7 @@ describe('Routing Policy Creation', function () {
       it('should successfully delete the policy with app id 12345', function (done) {
         request(publicApp)
           .delete('/v1/apps/12345/policy')
-          .set("Authorization", "fake-token")
+          .set("Authorization", theUserToken)
           .expect(200)
           .end(function (error) {
             expect(error).to.be.null;
@@ -314,7 +320,7 @@ describe('Routing Policy Creation', function () {
         if (testSetting.serviceOffering.enabled) {
           request(publicApp)
             .delete('/v1/apps/12345/policy')
-            .set("Authorization", "fake-token")
+            .set("Authorization", theUserToken)
             .expect(403)
             .end(function (error) {
               expect(error).to.be.null;
@@ -331,7 +337,7 @@ describe('Routing Policy Creation', function () {
         mockSchedulerDelete(1, 200);
         request(publicApp)
           .delete('/v1/apps/12345/policy')
-          .set("Authorization", "fake-token")
+          .set("Authorization", theUserToken)
           .end(function (error, result) {
             expect(result.statusCode).to.equal(200);
             done();
@@ -341,7 +347,7 @@ describe('Routing Policy Creation', function () {
       it('should return 404 while deleting policy with app id 12345', function (done) {
         request(publicApp)
           .delete('/v1/apps/12345/policy')
-          .set("Authorization", "fake-token")
+          .set("Authorization", theUserToken)
           .end(function (error, result) {
             expect(result.statusCode).to.equal(404);
             done();
@@ -356,7 +362,7 @@ describe('Routing Policy Creation', function () {
       it('should fail to delete the policy with app id 12345 due to internal server error', function (done) {
         request(publicApp)
           .delete('/v1/apps/12345/policy')
-          .set("Authorization", "fake-token")
+          .set("Authorization", theUserToken)
           .end(function (error, result) {
             expect(result.statusCode).to.equal(500);
             done();
@@ -374,7 +380,7 @@ describe('Routing Policy Creation', function () {
         mockSchedulerPut(1, 200);
         request(publicApp)
           .put('/v1/apps/12345/policy')
-          .set("Authorization", "fake-token")
+          .set("Authorization", theUserToken)
           .send(fakePolicy).end(function (error, result) {
             done();
           })
@@ -387,7 +393,7 @@ describe('Routing Policy Creation', function () {
         it('should successfully get the details of the policy with app id 12345', function (done) {
           request(publicApp)
             .get('/v1/apps/12345/policy')
-            .set("Authorization", "fake-token")
+            .set("Authorization", theUserToken)
             .end(function (error, result) {
               expect(result.statusCode).to.equal(200);
               expect(result.body).to.deep.equal(fakePolicy);
@@ -406,7 +412,7 @@ describe('Routing Policy Creation', function () {
           if (testSetting.serviceOffering.enabled) {
             request(publicApp)
               .get('/v1/apps/12345/policy')
-              .set("Authorization", "fake-token")
+              .set("Authorization", theUserToken)
               .end(function (error, result) {
                 expect(result.statusCode).to.equal(403);
                 done();
@@ -426,7 +432,7 @@ describe('Routing Policy Creation', function () {
       it('should fail to get the details of a non existing policy with app id 12345', function (done) {
         request(publicApp)
           .get('/v1/apps/12345/policy')
-          .set("Authorization", "fake-token")
+          .set("Authorization", theUserToken)
           .end(function (error, result) {
             expect(result.statusCode).to.equal(404);
             expect(result.body).eql({});

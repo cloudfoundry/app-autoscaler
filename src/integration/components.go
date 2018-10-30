@@ -106,6 +106,8 @@ type APIServerConfig struct {
 	PublicPort             int                    `json:"publicPort"`
 	InfoFilePath           string                 `json:"infoFilePath"`
 	CFAPI                  string                 `json:"cfApi"`
+	CFClientId             string                 `json:"cfClientId"`
+	CFClientSecret         string                 `json:"cfClientSecret"`
 	SkipSSLValidation      bool                   `json:"skipSSLValidation"`
 	CacheTTL               int                    `json:"cacheTTL"`
 	DB                     DBConfig               `json:"db"`
@@ -277,6 +279,8 @@ func (components *Components) PrepareApiServerConfig(port int, publicPort int, s
 		PublicPort:        publicPort,
 		InfoFilePath:      apiServerInfoFilePath,
 		CFAPI:             cfApi,
+		CFClientId:        "admin",
+		CFClientSecret:    "admin-secret",
 		SkipSSLValidation: skipSSLValidation,
 		CacheTTL:          cacheTTL,
 		DB: DBConfig{
