@@ -15,6 +15,7 @@ import (
 const (
 	DefaultLoggingLevel                   string        = "info"
 	DefaultServerPort                     int           = 8080
+	DefaultHealthServerPort               int           = 8081
 	DefaultPolicyPollerInterval           time.Duration = 40 * time.Second
 	DefaultAggregatorExecuteInterval      time.Duration = 40 * time.Second
 	DefaultSaveInterval                   time.Duration = 5 * time.Second
@@ -71,10 +72,14 @@ type CircuitBreakerConfig struct {
 	BackOffMaxInterval      time.Duration `yaml:"back_off_max_interval"`
 	ConsecutiveFailureCount int64         `yaml:"consecutive_failure_count"`
 }
+type HealthConfig struct {
+	Port int `yaml:"port"`
+}
 
 type Config struct {
 	Logging                   helpers.LoggingConfig `yaml:"logging"`
 	Server                    ServerConfig          `yaml:"server"`
+	Health                    HealthConfig          `yaml:"health"`
 	DB                        DBConfig              `yaml:"db"`
 	Aggregator                AggregatorConfig      `yaml:"aggregator"`
 	Evaluator                 EvaluatorConfig       `yaml:"evaluator"`
@@ -93,6 +98,9 @@ func LoadConfig(bytes []byte) (*Config, error) {
 		},
 		Server: ServerConfig{
 			Port: DefaultServerPort,
+		},
+		Health: HealthConfig{
+			Port: DefaultHealthServerPort,
 		},
 		Aggregator: AggregatorConfig{
 			AggregatorExecuteInterval: DefaultAggregatorExecuteInterval,

@@ -3,12 +3,12 @@ package sqldb
 import (
 	"autoscaler/db"
 	"autoscaler/models"
-	"time"
 
 	"code.cloudfoundry.org/lager"
 	. "github.com/lib/pq"
 
 	"database/sql"
+	"time"
 )
 
 type AppMetricSQLDB struct {
@@ -151,4 +151,7 @@ func (adb *AppMetricSQLDB) PruneAppMetrics(before int64) error {
 	}
 
 	return err
+}
+func (adb *AppMetricSQLDB) GetDBStatus() sql.DBStats {
+	return adb.sqldb.Stats()
 }

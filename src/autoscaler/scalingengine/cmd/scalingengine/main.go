@@ -55,43 +55,6 @@ func main() {
 
 	logger := helpers.InitLoggerFromConfig(&conf.Logging, "scalingengine")
 
-	promRegistry := prometheus.NewRegistry()
-	healthRegistry := healthendpoint.New(promRegistry, map[string]prometheus.Gauge{
-		// Number of concurrent http request
-		"concurrentHTTPReq": prometheus.NewGauge(
-			prometheus.GaugeOpts{
-				Namespace: "autoscaler",
-				Subsystem: "scalingengine",
-				Name:      "concurrentHTTPReq",
-				Help:      "Number of concurrent http request",
-			},
-		),
-		"openConnection_policyDB": prometheus.NewGauge(
-			prometheus.GaugeOpts{
-				Namespace: "autoscaler",
-				Subsystem: "scalingengine",
-				Name:      "openConnection_policyDB",
-				Help:      "Number of open connection to policy DB",
-			},
-		),
-		"openConnection_scalingEngineDB": prometheus.NewGauge(
-			prometheus.GaugeOpts{
-				Namespace: "autoscaler",
-				Subsystem: "scalingengine",
-				Name:      "openConnection_scalingEngineDB",
-				Help:      "Number of open connection to scaling engine DB",
-			},
-		),
-		"openConnection_schedulerDB": prometheus.NewGauge(
-			prometheus.GaugeOpts{
-				Namespace: "autoscaler",
-				Subsystem: "scalingengine",
-				Name:      "openConnection_schedulerDB",
-				Help:      "Number of open connection to scheduler DB",
-			},
-		),
-	}, true, logger.Session("scalingengine-prometheus"))
-
 	cfhttp.Initialize(conf.HttpClientTimeout)
 
 	eClock := clock.NewClock()
@@ -108,7 +71,6 @@ func main() {
 		logger.Error("failed to connect policy database", err, lager.Data{"dbConfig": conf.DB.PolicyDB})
 		os.Exit(1)
 	}
-	policyDB.EmitHealthMetrics(healthRegistry, eClock, conf.Health.EmitInterval)
 	defer policyDB.Close()
 
 	var scalingEngineDB db.ScalingEngineDB
@@ -117,7 +79,6 @@ func main() {
 		logger.Error("failed to connect scalingengine database", err, lager.Data{"dbConfig": conf.DB.ScalingEngineDB})
 		os.Exit(1)
 	}
-	scalingEngineDB.EmitHealthMetrics(healthRegistry, eClock, conf.Health.EmitInterval)
 	defer scalingEngineDB.Close()
 
 	var schedulerDB db.SchedulerDB
@@ -126,13 +87,21 @@ func main() {
 		logger.Error("failed to connect scheduler database", err, lager.Data{"dbConfig": conf.DB.SchedulerDB})
 		os.Exit(1)
 	}
-	schedulerDB.EmitHealthMetrics(healthRegistry, eClock, conf.Health.EmitInterval)
 	defer schedulerDB.Close()
+
+	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "scalingengine")
+	promRegistry := prometheus.NewRegistry()
+	healthendpoint.RegisterCollectors(promRegistry, []prometheus.Collector{
+		healthendpoint.NewDatabaseStatusCollector("autoscaler", "scalingengine", "policyDB", policyDB),
+		healthendpoint.NewDatabaseStatusCollector("autoscaler", "scalingengine", "scalingengineDB", scalingEngineDB),
+		healthendpoint.NewDatabaseStatusCollector("autoscaler", "scalingengine", "schedulerDB", schedulerDB),
+		httpStatusCollector,
+	}, true, logger.Session("scalingengine-prometheus"))
 
 	scalingEngine := scalingengine.NewScalingEngine(logger, cfClient, policyDB, scalingEngineDB, eClock, conf.DefaultCoolDownSecs, conf.LockSize)
 	synchronizer := schedule.NewActiveScheduleSychronizer(logger, schedulerDB, scalingEngineDB, scalingEngine)
 
-	httpServer, err := server.NewServer(logger.Session("http-server"), conf, scalingEngineDB, scalingEngine, synchronizer, healthRegistry)
+	httpServer, err := server.NewServer(logger.Session("http-server"), conf, scalingEngineDB, scalingEngine, synchronizer, httpStatusCollector)
 	if err != nil {
 		logger.Error("failed to create http server", err)
 		os.Exit(1)

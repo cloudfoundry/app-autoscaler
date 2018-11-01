@@ -42,7 +42,9 @@ type ServerConfig struct {
 var defaultServerConfig = ServerConfig{
 	Port: 8080,
 }
-
+var defaultHealthConfig = HealthConfig{
+	Port: 8081,
+}
 var defaultLoggingConfig = helpers.LoggingConfig{
 	Level: DefaultLoggingLevel,
 }
@@ -68,10 +70,14 @@ var defaultCollectorConfig = CollectorConfig{
 	MetricCacheSizePerApp: DefaultMetricCacheSizePerApp,
 }
 
+type HealthConfig struct {
+	Port int `yaml:"port"`
+}
 type Config struct {
 	CF                cf.CFConfig           `yaml:"cf"`
 	Logging           helpers.LoggingConfig `yaml:"logging"`
 	Server            ServerConfig          `yaml:"server"`
+	Health            HealthConfig          `yaml:"health"`
 	DB                DBConfig              `yaml:"db"`
 	Collector         CollectorConfig       `yaml:"collector"`
 	HttpClientTimeout time.Duration         `yaml:"http_client_timeout"`
@@ -82,6 +88,7 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		CF:                defaultCFConfig,
 		Logging:           defaultLoggingConfig,
 		Server:            defaultServerConfig,
+		Health:            defaultHealthConfig,
 		Collector:         defaultCollectorConfig,
 		HttpClientTimeout: DefaultHttpClientTimeout,
 	}
