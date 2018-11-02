@@ -72,14 +72,10 @@ type CircuitBreakerConfig struct {
 	BackOffMaxInterval      time.Duration `yaml:"back_off_max_interval"`
 	ConsecutiveFailureCount int64         `yaml:"consecutive_failure_count"`
 }
-type HealthConfig struct {
-	Port int `yaml:"port"`
-}
-
 type Config struct {
 	Logging                   helpers.LoggingConfig `yaml:"logging"`
 	Server                    ServerConfig          `yaml:"server"`
-	Health                    HealthConfig          `yaml:"health"`
+	Health                    models.HealthConfig   `yaml:"health"`
 	DB                        DBConfig              `yaml:"db"`
 	Aggregator                AggregatorConfig      `yaml:"aggregator"`
 	Evaluator                 EvaluatorConfig       `yaml:"evaluator"`
@@ -99,7 +95,7 @@ func LoadConfig(bytes []byte) (*Config, error) {
 		Server: ServerConfig{
 			Port: DefaultServerPort,
 		},
-		Health: HealthConfig{
+		Health: models.HealthConfig{
 			Port: DefaultHealthServerPort,
 		},
 		Aggregator: AggregatorConfig{

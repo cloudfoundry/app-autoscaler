@@ -101,7 +101,7 @@ circuitBreaker:
 						NodeAddrs: []string{"address1", "address2"},
 						NodeIndex: 1,
 					},
-					Health: HealthConfig{
+					Health: models.HealthConfig{
 						Port: 9999,
 					},
 					DB: DBConfig{
@@ -225,7 +225,7 @@ defaultBreachDurationSecs: 600
 						Port: 8080,
 						TLS:  models.TLSCerts{},
 					},
-					Health: HealthConfig{
+					Health: models.HealthConfig{
 						Port: 8081,
 					},
 					DB: DBConfig{

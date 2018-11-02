@@ -78,17 +78,14 @@ type AppSyncerConfig struct {
 	DB           db.DatabaseConfig `yaml:"db"`
 	SyncInterval time.Duration     `yaml:"sync_interval"`
 }
-type HealthConfig struct {
-	Port int `yaml:"port"`
-}
 
-var defaultHealthConfig = HealthConfig{
+var defaultHealthConfig = models.HealthConfig{
 	Port: 8081,
 }
 
 type Config struct {
 	CF                cf.CFConfig                   `yaml:"cf"`
-	Health            HealthConfig                  `yaml:"health"`
+	Health            models.HealthConfig           `yaml:"health"`
 	Logging           helpers.LoggingConfig         `yaml:"logging"`
 	InstanceMetricsDB InstanceMetricsDbPrunerConfig `yaml:"instance_metrics_db"`
 	AppMetricsDB      AppMetricsDBPrunerConfig      `yaml:"app_metrics_db"`

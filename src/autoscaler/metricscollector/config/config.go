@@ -42,7 +42,7 @@ type ServerConfig struct {
 var defaultServerConfig = ServerConfig{
 	Port: 8080,
 }
-var defaultHealthConfig = HealthConfig{
+var defaultHealthConfig = models.HealthConfig{
 	Port: 8081,
 }
 var defaultLoggingConfig = helpers.LoggingConfig{
@@ -70,14 +70,11 @@ var defaultCollectorConfig = CollectorConfig{
 	MetricCacheSizePerApp: DefaultMetricCacheSizePerApp,
 }
 
-type HealthConfig struct {
-	Port int `yaml:"port"`
-}
 type Config struct {
 	CF                cf.CFConfig           `yaml:"cf"`
 	Logging           helpers.LoggingConfig `yaml:"logging"`
 	Server            ServerConfig          `yaml:"server"`
-	Health            HealthConfig          `yaml:"health"`
+	Health            models.HealthConfig   `yaml:"health"`
 	DB                DBConfig              `yaml:"db"`
 	Collector         CollectorConfig       `yaml:"collector"`
 	HttpClientTimeout time.Duration         `yaml:"http_client_timeout"`
