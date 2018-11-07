@@ -3,8 +3,8 @@ package operator_test
 import (
 	"time"
 
+	"autoscaler/fakes"
 	"autoscaler/operator"
-	"autoscaler/operator/fakes"
 
 	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/lager/lagertest"

@@ -1,8 +1,8 @@
 package schedule_test
 
 import (
+	"autoscaler/fakes"
 	"autoscaler/models"
-	"autoscaler/scalingengine/fakes"
 	. "autoscaler/scalingengine/schedule"
 
 	"code.cloudfoundry.org/lager/lagertest"

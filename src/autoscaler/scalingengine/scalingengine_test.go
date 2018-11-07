@@ -1,9 +1,9 @@
 package scalingengine_test
 
 import (
+	"autoscaler/fakes"
 	"autoscaler/models"
 	. "autoscaler/scalingengine"
-	"autoscaler/scalingengine/fakes"
 
 	"errors"
 	"strconv"
