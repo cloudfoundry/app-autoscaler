@@ -1,14 +1,14 @@
 package sqldb
 
 import (
-	"database/sql"
-	"time"
+	"autoscaler/db"
+	"autoscaler/models"
 
 	"code.cloudfoundry.org/lager"
 	. "github.com/lib/pq"
 
-	"autoscaler/db"
-	"autoscaler/models"
+	"database/sql"
+	"time"
 )
 
 type InstanceMetricsSQLDB struct {
@@ -183,4 +183,7 @@ func (idb *InstanceMetricsSQLDB) PruneInstanceMetrics(before int64) error {
 	}
 
 	return err
+}
+func (idb *InstanceMetricsSQLDB) GetDBStatus() sql.DBStats {
+	return idb.sqldb.Stats()
 }

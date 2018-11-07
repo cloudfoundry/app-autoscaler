@@ -26,12 +26,14 @@ import (
 )
 
 var (
-	prPath       string
-	cfg          config.Config
-	configFile   *os.File
-	consulRunner *consulrunner.ClusterRunner
-	cfServer     *ghttp.Server
-	appId        string
+	prPath           string
+	cfg              config.Config
+	configFile       *os.File
+	consulRunner     *consulrunner.ClusterRunner
+	cfServer         *ghttp.Server
+	appId            string
+	healthHttpClient *http.Client
+	healthport       int
 )
 
 func TestOperator(t *testing.T) {
@@ -48,7 +50,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	prPath = string(pathsByte)
 	initConsul()
 	initConfig()
-
+	healthHttpClient = &http.Client{}
 	configFile = writeConfig(&cfg)
 })
 
@@ -94,7 +96,8 @@ func initConfig() {
 		Username:  "admin",
 		Password:  "admin",
 	}
-
+	healthport = 8000 + GinkgoParallelNode()
+	cfg.Health.Port = healthport
 	cfg.Logging.Level = "debug"
 	dbURL := os.Getenv("DBURL")
 	if dbURL == "" {

@@ -56,9 +56,9 @@ var _ = Describe("Server", func() {
 			rsp, err = http.Post(serverUrl.String(), "garbage", nil)
 		})
 
-		It("should return 404", func() {
+		It("should return 405", func() {
 			Expect(err).ToNot(HaveOccurred())
-			Expect(rsp.StatusCode).To(Equal(http.StatusNotFound))
+			Expect(rsp.StatusCode).To(Equal(http.StatusMethodNotAllowed))
 			rsp.Body.Close()
 		})
 	})

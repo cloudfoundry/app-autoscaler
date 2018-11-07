@@ -1,11 +1,10 @@
 package db
 
 import (
-	"autoscaler/healthendpoint"
 	"autoscaler/models"
-	"time"
 
-	"code.cloudfoundry.org/clock"
+	"database/sql"
+	"time"
 )
 
 const PostgresDriverName = "postgres"
@@ -27,8 +26,11 @@ type DatabaseConfig struct {
 	MaxIdleConnections    int           `yaml:"max_idle_connections"`
 	ConnectionMaxLifetime time.Duration `yaml:"connection_max_lifetime"`
 }
-
+type DatabaseStatus interface {
+	GetDBStatus() sql.DBStats
+}
 type InstanceMetricsDB interface {
+	DatabaseStatus
 	RetrieveInstanceMetrics(appid string, instanceIndex int, name string, start int64, end int64, orderType OrderType) ([]*models.AppInstanceMetric, error)
 	SaveMetric(metric *models.AppInstanceMetric) error
 	SaveMetricsInBulk(metrics []*models.AppInstanceMetric) error
@@ -37,15 +39,16 @@ type InstanceMetricsDB interface {
 }
 
 type PolicyDB interface {
+	DatabaseStatus
 	GetAppIds() (map[string]bool, error)
 	GetAppPolicy(appId string) (*models.ScalingPolicy, error)
 	RetrievePolicies() ([]*models.PolicyJson, error)
 	Close() error
-	EmitHealthMetrics(h healthendpoint.Health, cclock clock.Clock, interval time.Duration)
 	DeletePolicy(appId string) error
 }
 
 type AppMetricDB interface {
+	DatabaseStatus
 	SaveAppMetric(appMetric *models.AppMetric) error
 	SaveAppMetricsInBulk(metrics []*models.AppMetric) error
 	RetrieveAppMetrics(appId string, metricType string, start int64, end int64, orderType OrderType) ([]*models.AppMetric, error)
@@ -54,6 +57,7 @@ type AppMetricDB interface {
 }
 
 type ScalingEngineDB interface {
+	DatabaseStatus
 	SaveScalingHistory(history *models.AppScalingHistory) error
 	RetrieveScalingHistories(appId string, start int64, end int64, orderType OrderType, includeAll bool) ([]*models.AppScalingHistory, error)
 	PruneScalingHistories(before int64) error
@@ -64,13 +68,12 @@ type ScalingEngineDB interface {
 	SetActiveSchedule(appId string, schedule *models.ActiveSchedule) error
 	RemoveActiveSchedule(appId string) error
 	Close() error
-	EmitHealthMetrics(h healthendpoint.Health, cclock clock.Clock, interval time.Duration)
 }
 
 type SchedulerDB interface {
+	DatabaseStatus
 	GetActiveSchedules() (map[string]*models.ActiveSchedule, error)
 	Close() error
-	EmitHealthMetrics(h healthendpoint.Health, cclock clock.Clock, interval time.Duration)
 }
 
 type LockDB interface {

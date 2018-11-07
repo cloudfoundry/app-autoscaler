@@ -98,6 +98,9 @@ var _ = Describe("TSDCache", func() {
 
 	Describe("Query", func() {
 		Context("when cache is empty", func() {
+			BeforeEach(func() {
+				capacity = 3
+			})
 			It("return empty results", func() {
 				result, ok := cache.Query(0, time.Now().UnixNano(), labels)
 				Expect(ok).To(BeTrue())

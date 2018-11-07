@@ -1,17 +1,14 @@
 package sqldb
 
 import (
-	"database/sql"
-	"encoding/json"
-	"time"
+	"autoscaler/db"
+	"autoscaler/models"
 
-	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
 	_ "github.com/lib/pq"
 
-	"autoscaler/db"
-	"autoscaler/healthendpoint"
-	"autoscaler/models"
+	"database/sql"
+	"encoding/json"
 )
 
 type PolicySQLDB struct {
@@ -127,16 +124,6 @@ func (pdb *PolicySQLDB) GetAppPolicy(appId string) (*models.ScalingPolicy, error
 	return scalingPolicy, nil
 }
 
-func (pdb *PolicySQLDB) EmitHealthMetrics(h healthendpoint.Health, cclock clock.Clock, interval time.Duration) {
-	go func() {
-		ticker := cclock.NewTicker(interval)
-		defer ticker.Stop()
-		for range ticker.C() {
-			h.Set("openConnection_policyDB", float64(pdb.sqldb.Stats().OpenConnections))
-		}
-	}()
-}
-
 func (pdb *PolicySQLDB) DeletePolicy(appId string) error {
 	query := "DELETE FROM policy_json WHERE app_id = $1"
 	_, err := pdb.sqldb.Exec(query, appId)
@@ -144,4 +131,8 @@ func (pdb *PolicySQLDB) DeletePolicy(appId string) error {
 		pdb.logger.Error("failed-to-delete-application-details", err, lager.Data{"query": query, "appId": appId})
 	}
 	return err
+}
+
+func (pdb *PolicySQLDB) GetDBStatus() sql.DBStats {
+	return pdb.sqldb.Stats()
 }

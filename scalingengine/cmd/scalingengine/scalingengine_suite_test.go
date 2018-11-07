@@ -81,7 +81,6 @@ var _ = SynchronizedBeforeSuite(
 		conf.Server.TLS.CertFile = filepath.Join(testCertDir, "scalingengine.crt")
 		conf.Server.TLS.CACertFile = filepath.Join(testCertDir, "autoscaler-ca.crt")
 		conf.Health.Port = healthport
-		conf.Health.EmitInterval = 1 * time.Second
 		conf.Logging.Level = "debug"
 
 		conf.DB.PolicyDB = db.DatabaseConfig{
