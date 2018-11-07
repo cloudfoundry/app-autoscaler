@@ -18,7 +18,6 @@ var _ = Describe("TimeLoggerFormat", func() {
 	var log lager.LogFormat
 	var logTime time.Time
 	var template string = `{"timestamp":"%s","source":"log-source","message":"message","log_level":1,"data":{"log-data":"log-data"},"log_time":"%s"}`
-	var writer *copyWriter
 	var tlf TimeLogFormat
 
 	JustBeforeEach(func() {
@@ -35,7 +34,6 @@ var _ = Describe("TimeLoggerFormat", func() {
 				LogLevel:  lager.INFO,
 				Data:      map[string]interface{}{"log-data": "log-data"},
 			}
-			writer = NewCopyWriter()
 		})
 		It("add RFC3339 format field log_time by the value LogFormat.Timestamp to output", func() {
 			result := fmt.Sprintf(template, timestamp2String(logTime.UnixNano()), time.Time.Format(logTime, time.RFC3339))

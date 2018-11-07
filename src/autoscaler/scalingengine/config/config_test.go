@@ -38,7 +38,6 @@ server:
   port: 8989
 health:
   port: 9999  
-  emit_interval: 15s
 defaultCoolDownSecs: 300
 lockSize: 32
 `)
@@ -68,7 +67,7 @@ server:
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 health:
     port: 9999    
-    emit_interval: 15s  
+ 
 logging:
   level: DeBug
 db:
@@ -110,7 +109,6 @@ http_client_timeout: 10s
 				Expect(conf.Server.TLS.CACertFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/ca.crt"))
 
 				Expect(conf.Health.Port).To(Equal(9999))
-				Expect(conf.Health.EmitInterval).To(Equal(15 * time.Second))
 				Expect(conf.Logging.Level).To(Equal("debug"))
 
 				Expect(conf.DB.PolicyDB).To(Equal(
@@ -167,7 +165,6 @@ lockSize: 32
 				Expect(conf.CF.SkipSSLValidation).To(Equal(false))
 				Expect(conf.Server.Port).To(Equal(8080))
 				Expect(conf.Health.Port).To(Equal(8081))
-				Expect(conf.Health.EmitInterval).To(Equal(15 * time.Second))
 				Expect(conf.Logging.Level).To(Equal("info"))
 				Expect(conf.DB.PolicyDB).To(Equal(
 					db.DatabaseConfig{
@@ -214,7 +211,6 @@ server:
 				configBytes = []byte(`
 health:
   port: port
-  emit_interval: 15s
 `)
 			})
 
@@ -222,21 +218,6 @@ health:
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
 			})
-		})
-
-		Context("when emit_interval of health is not a time duration", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
-health:
-  port: 9999
-  emit_interval: 15k
-`)
-			})
-			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
-			})
-
 		})
 
 		Context("when it gives a non integer max_open_connections of policydb", func() {
@@ -258,7 +239,6 @@ server:
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 health:
   port: 9999   
-  emit_interval: 15s
 logging:
   level: DeBug       
 db:
@@ -307,7 +287,6 @@ server:
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 health:
   port: 9999   
-  emit_interval: 15s
 logging:
   level: DeBug
 db:
@@ -356,7 +335,6 @@ server:
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 health:
   port: 9999   
-  emit_interval: 15s
 logging:
   level: DeBug
 db:
@@ -405,7 +383,6 @@ server:
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 health:
   port: 9999       
-  emit_interval: 15s
 logging:
   level: DeBug
 db:
@@ -454,7 +431,6 @@ server:
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 health:
   port: 9999      
-  emit_interval: 15s 
 logging:
   level: DeBug
 db:
@@ -503,7 +479,6 @@ server:
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 health:
   port: 9999   
-  emit_interval: 15s
 logging:
   level: DeBug
 db:
@@ -551,7 +526,6 @@ server:
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 health:
   port: 9999
-  emit_interval: 15s
 logging:
   level: DeBug
 db:
@@ -600,7 +574,6 @@ server:
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 health:
   port: 9999   
-  emit_interval: 15s 
 logging:
   level: DeBug
 db:
@@ -649,7 +622,6 @@ server:
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 health:
   port: 9999
-  emit_interval: 15s
 logging:
   level: DeBug
 db:
@@ -697,8 +669,7 @@ server:
     cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 health:
-  port: 9999  
-  emit_interval: 15s  
+  port: 9999   
 logging:
   level: DeBug
 db:
@@ -747,7 +718,6 @@ server:
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 health:
   port: 9999   
-  emit_interval: 15s 
 logging:
   level: DeBug
 db:
@@ -796,7 +766,6 @@ server:
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 health:
   port: 9999
-  emit_interval: 15s
 logging:
   level: DeBug
 db:

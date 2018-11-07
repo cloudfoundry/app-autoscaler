@@ -3,7 +3,9 @@ package main_test
 import (
 	"autoscaler/operator"
 	"autoscaler/operator/config"
+	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"time"
 
@@ -499,6 +501,31 @@ var _ = Describe("Operator", func() {
 				Consistently(runner.Session).ShouldNot(Exit())
 			})
 
+		})
+	})
+
+	Describe("when Health server is ready to serve RESTful API", func() {
+		BeforeEach(func() {
+			runner.Start()
+			Eventually(runner.Session.Buffer, 2*time.Second).Should(gbytes.Say("operator.started"))
+
+		})
+		Context("when a request to query health comes", func() {
+			It("returns with a 200", func() {
+				rsp, err := healthHttpClient.Get(fmt.Sprintf("http://127.0.0.1:%d/health", healthport))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+				raw, _ := ioutil.ReadAll(rsp.Body)
+				healthData := string(raw)
+				Expect(healthData).To(ContainSubstring("autoscaler_operator_policyDB"))
+				Expect(healthData).To(ContainSubstring("autoscaler_operator_instanceMetricsDB"))
+				Expect(healthData).To(ContainSubstring("autoscaler_operator_appMetricsDB"))
+				Expect(healthData).To(ContainSubstring("autoscaler_operator_scalingEngineDB"))
+				Expect(healthData).To(ContainSubstring("go_goroutines"))
+				Expect(healthData).To(ContainSubstring("go_memstats_alloc_bytes"))
+				rsp.Body.Close()
+
+			})
 		})
 	})
 })

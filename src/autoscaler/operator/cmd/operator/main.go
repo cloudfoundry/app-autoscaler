@@ -4,6 +4,7 @@ import (
 	"autoscaler/cf"
 	"autoscaler/db"
 	"autoscaler/db/sqldb"
+	"autoscaler/healthendpoint"
 	"autoscaler/helpers"
 	"autoscaler/operator"
 	"autoscaler/operator/config"
@@ -16,6 +17,7 @@ import (
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/consuladapter"
 	"code.cloudfoundry.org/lager"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
@@ -88,6 +90,14 @@ func main() {
 	}
 	defer policyDB.Close()
 
+	promRegistry := prometheus.NewRegistry()
+	healthendpoint.RegisterCollectors(promRegistry, []prometheus.Collector{
+		healthendpoint.NewDatabaseStatusCollector("autoscaler", "operator", "policyDB", policyDB),
+		healthendpoint.NewDatabaseStatusCollector("autoscaler", "operator", "instanceMetricsDB", instanceMetricsDB),
+		healthendpoint.NewDatabaseStatusCollector("autoscaler", "operator", "appMetricsDB", appMetricsDB),
+		healthendpoint.NewDatabaseStatusCollector("autoscaler", "operator", "scalingEngineDB", scalingEngineDB),
+	}, true, logger.Session("operator-prometheus"))
+
 	scalingEngineHttpclient, err := helpers.CreateHTTPClient(&conf.ScalingEngine.TLSClientCerts)
 	if err != nil {
 		logger.Error("failed to create http client for scalingengine", err, lager.Data{"scalingengineTLS": conf.ScalingEngine.TLSClientCerts})
@@ -122,6 +132,11 @@ func main() {
 	applicationSync := operator.NewApplicationSynchronizer(cfClient, policyDB, logger.Session(loggerSessionName))
 	applicationSyncRunner := operator.NewOperatorRunner(applicationSync, conf.AppSyncer.SyncInterval, prClock, logger.Session(loggerSessionName))
 
+	healthServer, err := healthendpoint.NewServer(logger.Session("health-server"), conf.Health.Port, promRegistry)
+	if err != nil {
+		logger.Error("failed to create health server", err)
+		os.Exit(1)
+	}
 	members := grouper.Members{
 		{"instancemetrics-dbpruner", instanceMetricsDBOperatorRunner},
 		{"appmetrics-dbpruner", appMetricsDBOperatorRunner},
@@ -129,6 +144,7 @@ func main() {
 		{"scalingEngine-sync", scalingEngineSyncRunner},
 		{"scheduler-sync", schedulerSyncRunner},
 		{"application-sync", applicationSyncRunner},
+		{"health_server", healthServer},
 	}
 
 	guid, err := helpers.GenerateGUID(logger)

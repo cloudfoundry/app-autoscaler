@@ -63,6 +63,8 @@ server:
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
   node_addrs: [address1, address2]
   node_index: 1
+health:
+  port: 9999
 logging:
   level: DebuG
 db:
@@ -98,7 +100,7 @@ http_client_timeout: 10s
 				Expect(conf.CF.SkipSSLValidation).To(Equal(false))
 
 				Expect(conf.Server.Port).To(Equal(8989))
-
+				Expect(conf.Health.Port).To(Equal(9999))
 				Expect(conf.Logging.Level).To(Equal("debug"))
 
 				Expect(conf.DB.PolicyDB).To(Equal(
@@ -150,6 +152,7 @@ db:
 				Expect(conf.CF.GrantType).To(Equal(cf.GrantTypePassword))
 				Expect(conf.CF.SkipSSLValidation).To(Equal(false))
 				Expect(conf.Server.Port).To(Equal(8080))
+				Expect(conf.Health.Port).To(Equal(8081))
 				Expect(conf.Logging.Level).To(Equal(DefaultLoggingLevel))
 				Expect(conf.DB.PolicyDB).To(Equal(
 					db.DatabaseConfig{
@@ -174,10 +177,24 @@ db:
 			})
 		})
 
-		Context("when it gives a non integer port", func() {
+		Context("when it gives a non integer server port", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
 server:
+  port: port
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+			})
+		})
+
+		Context("when it gives a non integer health server port", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+health:
   port: port
 `)
 			})
@@ -205,6 +222,8 @@ server:
     key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
+health:
+  port: 8081
 logging:
   level: DebuG
 db:
@@ -249,6 +268,8 @@ server:
     key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
+health:
+  port: 8081
 logging:
   level: DebuG
 db:
@@ -293,6 +314,8 @@ server:
     key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
+health:
+  port: 8081
 logging:
   level: DebuG
 db:
@@ -337,6 +360,8 @@ server:
     key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
+health:
+  port: 8081
 logging:
   level: DebuG
 db:
@@ -381,6 +406,8 @@ server:
     key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
+health:
+  port: 8081
 logging:
   level: DebuG
 db:
@@ -425,6 +452,8 @@ server:
     key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
+health:
+  port: 8081
 logging:
   level: DebuG
 db:
@@ -469,6 +498,8 @@ server:
     key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
+health:
+  port: 8081
 logging:
   level: DebuG
 db:
@@ -513,6 +544,8 @@ server:
     key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
+health:
+  port: 8081
 logging:
   level: DebuG
 db:
@@ -557,6 +590,8 @@ server:
     key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
+health:
+  port: 8081
 logging:
   level: DebuG
 db:
@@ -601,6 +636,8 @@ server:
     key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
+health:
+  port: 8081
 logging:
   level: DebuG
 db:
@@ -645,6 +682,8 @@ server:
     key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
+health:
+  port: 8081
 logging:
   level: DebuG
 db:
@@ -702,6 +741,7 @@ http_client_timeout: 10k
 			conf.Server.NodeAddrs = []string{"address1", "address2"}
 			conf.Server.NodeIndex = 0
 			conf.HttpClientTimeout = 10 * time.Second
+			conf.Health.Port = 8081
 		})
 
 		JustBeforeEach(func() {

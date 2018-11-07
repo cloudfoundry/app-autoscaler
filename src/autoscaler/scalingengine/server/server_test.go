@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	asfakes "autoscaler/fakes"
 	"autoscaler/models"
 	"autoscaler/routes"
 	"autoscaler/scalingengine/config"
@@ -22,11 +23,12 @@ import (
 )
 
 var (
-	server          ifrit.Process
-	serverUrl       string
-	scalingEngineDB *fakes.FakeScalingEngineDB
-	scheduleDB      *fakes.FakeSchedulerDB
-	sychronizer     *fakes.FakeActiveScheduleSychronizer
+	server              ifrit.Process
+	serverUrl           string
+	scalingEngineDB     *fakes.FakeScalingEngineDB
+	scheduleDB          *fakes.FakeSchedulerDB
+	sychronizer         *fakes.FakeActiveScheduleSychronizer
+	httpStatusCollector *asfakes.FakeHTTPStatusCollector
 )
 
 var _ = SynchronizedBeforeSuite(func() []byte {
@@ -41,9 +43,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	scalingEngineDB = &fakes.FakeScalingEngineDB{}
 	scalingEngine := &fakes.FakeScalingEngine{}
 	sychronizer = &fakes.FakeActiveScheduleSychronizer{}
-	health := &fakes.FakeHealth{}
+	httpStatusCollector = &asfakes.FakeHTTPStatusCollector{}
 
-	httpServer, err := NewServer(lager.NewLogger("test"), conf, scalingEngineDB, scalingEngine, sychronizer, health)
+	httpServer, err := NewServer(lager.NewLogger("test"), conf, scalingEngineDB, scalingEngine, sychronizer, httpStatusCollector)
 	Expect(err).NotTo(HaveOccurred())
 	server = ginkgomon.Invoke(httpServer)
 	serverUrl = fmt.Sprintf("http://127.0.0.1:%d", conf.Server.Port)
@@ -269,9 +271,9 @@ var _ = Describe("Server", func() {
 				method = http.MethodGet
 			})
 
-			It("should return 404", func() {
+			It("should return 405", func() {
 				Expect(err).ToNot(HaveOccurred())
-				Expect(rsp.StatusCode).To(Equal(http.StatusNotFound))
+				Expect(rsp.StatusCode).To(Equal(http.StatusMethodNotAllowed))
 				rsp.Body.Close()
 			})
 		})

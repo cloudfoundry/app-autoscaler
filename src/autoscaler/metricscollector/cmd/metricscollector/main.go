@@ -9,6 +9,7 @@ import (
 	"autoscaler/cf"
 	"autoscaler/db"
 	"autoscaler/db/sqldb"
+	"autoscaler/healthendpoint"
 	"autoscaler/helpers"
 	"autoscaler/metricscollector/collector"
 	"autoscaler/metricscollector/config"
@@ -19,6 +20,7 @@ import (
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry/noaa/consumer"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
@@ -87,6 +89,14 @@ func main() {
 	}
 	defer policyDB.Close()
 
+	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "metricscollector")
+	promRegistry := prometheus.NewRegistry()
+	healthendpoint.RegisterCollectors(promRegistry, []prometheus.Collector{
+		healthendpoint.NewDatabaseStatusCollector("autoscaler", "metricscollector", "policyDB", policyDB),
+		healthendpoint.NewDatabaseStatusCollector("autoscaler", "metricscollector", "instanceMetricsDB", instanceMetricsDB),
+		httpStatusCollector,
+	}, true, logger.Session("metricscollector-prometheus"))
+
 	var createAppCollector func(string, chan *models.AppInstanceMetric) collector.AppCollector
 	if conf.Collector.CollectMethod == config.CollectMethodPolling {
 		createAppCollector = func(appId string, dataChan chan *models.AppInstanceMetric) collector.AppCollector {
@@ -116,15 +126,20 @@ func main() {
 		return nil
 	})
 
-	httpServer, err := server.NewServer(logger.Session("http_server"), conf, cfClient, noaa, mc.QueryMetrics, instanceMetricsDB)
+	httpServer, err := server.NewServer(logger.Session("http_server"), conf, cfClient, noaa, mc.QueryMetrics, instanceMetricsDB, httpStatusCollector)
 	if err != nil {
 		logger.Error("failed to create http server", err)
 		os.Exit(1)
 	}
-
+	healthServer, err := healthendpoint.NewServer(logger.Session("health-server"), conf.Health.Port, promRegistry)
+	if err != nil {
+		logger.Error("failed to create health server", err)
+		os.Exit(1)
+	}
 	members := grouper.Members{
 		{"collector", collectServer},
 		{"http_server", httpServer},
+		{"health_server", healthServer},
 	}
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
 
