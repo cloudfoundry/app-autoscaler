@@ -21,7 +21,6 @@ var _ = Describe("Aggregator", func() {
 		getPolicies      models.GetPolicies
 		aggregator       *Aggregator
 		clock            *fakeclock.FakeClock
-		saveClock        *fakeclock.FakeClock
 		logger           lager.Logger
 		appMonitorsChan  chan *models.AppMonitor
 		testAppId        string        = "testAppId"
@@ -57,7 +56,6 @@ var _ = Describe("Aggregator", func() {
 		}
 
 		clock = fakeclock.NewFakeClock(time.Now())
-		saveClock = fakeclock.NewFakeClock(time.Now())
 		logger = lager.NewLogger("Aggregator-test")
 
 		appMonitorsChan = make(chan *models.AppMonitor, 10)

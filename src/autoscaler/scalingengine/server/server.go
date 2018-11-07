@@ -25,11 +25,12 @@ func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vh(w, r, vars)
 }
 
-func NewServer(logger lager.Logger, conf *config.Config, scalingEngineDB db.ScalingEngineDB, scalingEngine scalingengine.ScalingEngine, synchronizer schedule.ActiveScheduleSychronizer, health healthendpoint.Health) (ifrit.Runner, error) {
-	handler := NewScalingHandler(logger, scalingEngineDB, scalingEngine, health)
-	sync_handler := NewSyncHandler(logger, synchronizer)
-
+func NewServer(logger lager.Logger, conf *config.Config, scalingEngineDB db.ScalingEngineDB, scalingEngine scalingengine.ScalingEngine, synchronizer schedule.ActiveScheduleSychronizer, httpStatusCollector healthendpoint.HTTPStatusCollector) (ifrit.Runner, error) {
+	handler := NewScalingHandler(logger, scalingEngineDB, scalingEngine)
+	syncHandler := NewSyncHandler(logger, synchronizer)
+	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(httpStatusCollector)
 	r := routes.ScalingEngineRoutes()
+	r.Use(httpStatusCollectMiddleware.Collect)
 	r.Get(routes.ScaleRouteName).Handler(VarsFunc(handler.Scale))
 	r.Get(routes.GetScalingHistoriesRouteName).Handler(VarsFunc(handler.GetScalingHistories))
 
@@ -37,7 +38,7 @@ func NewServer(logger lager.Logger, conf *config.Config, scalingEngineDB db.Scal
 	r.Get(routes.DeleteActiveScheduleRouteName).Handler(VarsFunc(handler.RemoveActiveSchedule))
 	r.Get(routes.GetActiveSchedulesRouteName).Handler(VarsFunc(handler.GetActiveSchedule))
 
-	r.Get(routes.SyncActiveSchedulesRouteName).Handler(VarsFunc(sync_handler.Sync))
+	r.Get(routes.SyncActiveSchedulesRouteName).Handler(VarsFunc(syncHandler.Sync))
 
 	addr := fmt.Sprintf("0.0.0.0:%d", conf.Server.Port)
 	logger.Info("new-http-server", lager.Data{"serverConfig": conf.Server})

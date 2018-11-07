@@ -15,7 +15,6 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 	var (
 		testAppId         string
 		testGuid          string
-		anotherGuid       string
 		initInstanceCount int = 2
 		policyStr         string
 	)
@@ -25,7 +24,6 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 
 		testAppId = getRandomId()
 		testGuid = getRandomId()
-		anotherGuid = getRandomId()
 		startFakeCCNOAAUAA(initInstanceCount)
 
 		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), cf.GrantTypePassword, defaultHttpClientTimeout, tmpDir)

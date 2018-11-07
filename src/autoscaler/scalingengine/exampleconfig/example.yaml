@@ -6,8 +6,7 @@ cf:
 server:
   port: 8080
 health:
-  port: 6180
-  emit_interval: 15s  
+  port: 8081
 logging:
   level: "debug"
 db:

@@ -31,15 +31,17 @@ import (
 )
 
 var (
-	mcPath         string
-	cfg            config.Config
-	mcPort         int
-	configFile     *os.File
-	ccNOAAUAA      *ghttp.Server
-	messagesToSend chan []byte
-	isTokenExpired bool
-	eLock          *sync.Mutex
-	httpClient     *http.Client
+	mcPath           string
+	cfg              config.Config
+	mcPort           int
+	healthport       int
+	configFile       *os.File
+	ccNOAAUAA        *ghttp.Server
+	messagesToSend   chan []byte
+	isTokenExpired   bool
+	eLock            *sync.Mutex
+	httpClient       *http.Client
+	healthHttpClient *http.Client
 )
 
 func TestMetricsCollector(t *testing.T) {
@@ -131,12 +133,14 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	testCertDir := "../../../../../test-certs"
 	mcPort = 7000 + GinkgoParallelNode()
+	healthport = 8000 + GinkgoParallelNode()
 	cfg.Server.Port = mcPort
 	cfg.Server.TLS.KeyFile = filepath.Join(testCertDir, "metricscollector.key")
 	cfg.Server.TLS.CertFile = filepath.Join(testCertDir, "metricscollector.crt")
 	cfg.Server.TLS.CACertFile = filepath.Join(testCertDir, "autoscaler-ca.crt")
 	cfg.Server.NodeAddrs = []string{"localhost"}
 	cfg.Server.NodeIndex = 0
+	cfg.Health.Port = healthport
 
 	cfg.Logging.Level = "info"
 
@@ -172,6 +176,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 			TLSClientConfig: tlsConfig,
 		},
 	}
+	healthHttpClient = &http.Client{}
 })
 
 var _ = SynchronizedAfterSuite(func() {

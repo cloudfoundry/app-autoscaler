@@ -2,12 +2,11 @@ package server_test
 
 import (
 	"autoscaler/db"
+	asfakes "autoscaler/fakes"
 	"autoscaler/metricscollector/config"
 	"autoscaler/metricscollector/fakes"
 	"autoscaler/metricscollector/server"
 	"autoscaler/models"
-	"net/url"
-	"strconv"
 
 	"code.cloudfoundry.org/lager"
 	. "github.com/onsi/ginkgo"
@@ -15,6 +14,8 @@ import (
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/ginkgomon"
 
+	"net/url"
+	"strconv"
 	"testing"
 )
 
@@ -41,8 +42,8 @@ var _ = BeforeSuite(func() {
 	queryFunc := func(appID string, start int64, end int64, order db.OrderType, labels map[string]string) ([]*models.AppInstanceMetric, bool) {
 		return nil, false
 	}
-
-	httpServer, err := server.NewServer(lager.NewLogger("test"), conf, cfc, consumer, queryFunc, database)
+	httpStatusCollector := &asfakes.FakeHTTPStatusCollector{}
+	httpServer, err := server.NewServer(lager.NewLogger("test"), conf, cfc, consumer, queryFunc, database, httpStatusCollector)
 	Expect(err).NotTo(HaveOccurred())
 
 	serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(port))

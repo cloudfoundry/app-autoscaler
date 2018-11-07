@@ -7,6 +7,7 @@ import (
 	"autoscaler/eventgenerator/config"
 	"autoscaler/eventgenerator/generator"
 	"autoscaler/eventgenerator/server"
+	"autoscaler/healthendpoint"
 	"autoscaler/helpers"
 	"autoscaler/models"
 
@@ -21,6 +22,7 @@ import (
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
@@ -58,6 +60,14 @@ func main() {
 		os.Exit(1)
 	}
 	defer policyDB.Close()
+
+	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "eventgenerator")
+	promRegistry := prometheus.NewRegistry()
+	healthendpoint.RegisterCollectors(promRegistry, []prometheus.Collector{
+		healthendpoint.NewDatabaseStatusCollector("autoscaler", "eventgenerator", "appMetricDB", appMetricDB),
+		healthendpoint.NewDatabaseStatusCollector("autoscaler", "eventgenerator", "policyDB", policyDB),
+		httpStatusCollector,
+	}, true, logger.Session("eventgenerator-prometheus"))
 
 	policyPoller := aggregator.NewPolicyPoller(logger, egClock, conf.Aggregator.PolicyPollerInterval,
 		len(conf.Server.NodeAddrs), conf.Server.NodeIndex, policyDB)
@@ -110,15 +120,20 @@ func main() {
 		return nil
 	})
 
-	httpServer, err := server.NewServer(logger.Session("http_server"), conf, appMetricDB)
+	httpServer, err := server.NewServer(logger.Session("http_server"), conf, appMetricDB, httpStatusCollector)
 	if err != nil {
 		logger.Error("failed to create http server", err)
 		os.Exit(1)
 	}
-
+	healthServer, err := healthendpoint.NewServer(logger.Session("health-server"), conf.Health.Port, promRegistry)
+	if err != nil {
+		logger.Error("failed to create health server", err)
+		os.Exit(1)
+	}
 	members := grouper.Members{
 		{"eventGenerator", eventGenerator},
 		{"http_server", httpServer},
+		{"health_server", healthServer},
 	}
 
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))

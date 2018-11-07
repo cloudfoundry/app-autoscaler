@@ -76,6 +76,8 @@ cf:
   client_id: client-id
   secret: client-secret
   skip_ssl_validation: false
+health:
+  port: 9999
 logging:
   level: "debug"
 instance_metrics_db:
@@ -147,7 +149,7 @@ http_client_timeout: 10s
 				Expect(conf.CF.ClientID).To(Equal("client-id"))
 				Expect(conf.CF.Secret).To(Equal("client-secret"))
 				Expect(conf.CF.SkipSSLValidation).To(Equal(false))
-
+				Expect(conf.Health.Port).To(Equal(9999))
 				Expect(conf.Logging.Level).To(Equal("debug"))
 
 				Expect(conf.InstanceMetricsDB.DB).To(Equal(db.DatabaseConfig{
@@ -219,7 +221,7 @@ app_syncer:
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(conf.Logging.Level).To(Equal(config.DefaultLoggingLevel))
-
+				Expect(conf.Health.Port).To(Equal(8081))
 				Expect(conf.InstanceMetricsDB.DB).To(Equal(db.DatabaseConfig{
 					URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
 					MaxOpenConnections:    0,
@@ -271,6 +273,8 @@ app_syncer:
 				configBytes = []byte(`
 logging:
   level: "debug"
+health:
+  port: 9999
 instance_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -326,6 +330,8 @@ lock:
 				configBytes = []byte(`
 logging:
   level: "debug"
+health:
+  port: 9999
 instance_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -389,6 +395,8 @@ cf:
   skip_ssl_validation: false
 logging:
   level: "debug"
+health:
+  port: 9999
 instance_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -451,6 +459,8 @@ lock:
 				configBytes = []byte(`
 logging:
   level: "debug"
+health:
+  port: 9999
 instance_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -507,6 +517,8 @@ lock:
 				configBytes = []byte(`
 logging:
   level: "debug"
+health:
+  port: 9999
 instance_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -563,6 +575,8 @@ lock:
 				configBytes = []byte(`
 logging:
   level: "debug"
+health:
+  port: 9999
 instance_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -618,6 +632,8 @@ lock:
 				configBytes = []byte(`
 logging:
   level: "debug"
+health:
+  port: 9999
 instance_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -674,6 +690,8 @@ lock:
 				configBytes = []byte(`
 logging:
   level: "debug"
+health:
+  port: 9999
 instance_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -730,6 +748,8 @@ lock:
 				configBytes = []byte(`
 logging:
   level: "debug"
+health:
+  port: 9999
 instance_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -786,6 +806,8 @@ lock:
 				configBytes = []byte(`
 logging:
   level: "debug"
+health:
+  port: 9999
 instance_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -842,6 +864,8 @@ lock:
 				configBytes = []byte(`
 logging:
   level: "debug"
+health:
+  port: 9999
 instance_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -898,6 +922,8 @@ lock:
 				configBytes = []byte(`
 logging:
   level: "debug"
+health:
+  port: 9999
 instance_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -954,6 +980,8 @@ lock:
 				configBytes = []byte(`
 logging:
   level: "debug"
+health:
+  port: 9999
 instance_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -1010,6 +1038,8 @@ lock:
 				configBytes = []byte(`
 logging:
   level: "debug"
+health:
+  port: 9999
 instance_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -1066,6 +1096,8 @@ lock:
 				configBytes = []byte(`
 logging:
   level: "debug"
+health:
+  port: 9999
 instance_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -1122,6 +1154,8 @@ lock:
 				configBytes = []byte(`
 logging:
   level: "debug"
+health:
+  port: 9999
 instance_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -1178,6 +1212,8 @@ lock:
 				configBytes = []byte(`
 logging:
   level: "debug"
+health:
+  port: 9999
 instance_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -1234,6 +1270,8 @@ lock:
 				configBytes = []byte(`
 logging:
   level: "debug"
+health:
+  port: 9999
 instance_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -1289,7 +1327,9 @@ lock:
 			BeforeEach(func() {
 				configBytes = []byte(`
 logging:
-level: "debug"
+  level: "debug"
+health:
+  port: 9999
 instance_metrics_db:
 db:
   url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -1345,7 +1385,9 @@ lock:
 			BeforeEach(func() {
 				configBytes = []byte(`
 logging:
-level: "debug"
+  level: "debug"
+health:
+  port: 9999
 instance_metrics_db:
 db:
   url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -1402,6 +1444,8 @@ lock:
 				configBytes = []byte(`
 logging:
   level: "debug"
+health:
+  port: 9999
 instance_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -1486,6 +1530,7 @@ http_client_timeout: 10k
 			conf.AppSyncer.DB.URL = "postgres://pqgotest:password@exampl.com/pqgotest"
 
 			conf.HttpClientTimeout = 10 * time.Second
+			conf.Health.Port = 8081
 
 		})
 

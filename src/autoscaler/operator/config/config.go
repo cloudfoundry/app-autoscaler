@@ -79,8 +79,13 @@ type AppSyncerConfig struct {
 	SyncInterval time.Duration     `yaml:"sync_interval"`
 }
 
+var defaultHealthConfig = models.HealthConfig{
+	Port: 8081,
+}
+
 type Config struct {
 	CF                cf.CFConfig                   `yaml:"cf"`
+	Health            models.HealthConfig           `yaml:"health"`
 	Logging           helpers.LoggingConfig         `yaml:"logging"`
 	InstanceMetricsDB InstanceMetricsDbPrunerConfig `yaml:"instance_metrics_db"`
 	AppMetricsDB      AppMetricsDBPrunerConfig      `yaml:"app_metrics_db"`
@@ -99,6 +104,7 @@ var defaultConfig = Config{
 		GrantType:         cf.GrantTypePassword,
 		SkipSSLValidation: false,
 	},
+	Health:  defaultHealthConfig,
 	Logging: helpers.LoggingConfig{Level: DefaultLoggingLevel},
 	InstanceMetricsDB: InstanceMetricsDbPrunerConfig{
 		RefreshInterval: DefaultRefreshInterval,
