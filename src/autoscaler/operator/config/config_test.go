@@ -38,7 +38,7 @@ instance_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 12h
-  cutoff_days: 10
+  cutoff_duration: 10h
 app_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -46,7 +46,7 @@ app_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 24h
-  cutoff_days: 20
+  cutoff_duration: 20h
 scaling_engine_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -54,7 +54,7 @@ scaling_engine_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 36h
-  cutoff_days: 30
+  cutoff_duration: 30h
 lock:
   consul_cluster_config: "http://127.0.0.1:8500"
 `)
@@ -87,7 +87,7 @@ instance_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 12h
-  cutoff_days: 20
+  cutoff_duration: 20h
 app_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -95,7 +95,7 @@ app_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 10h
-  cutoff_days: 15
+  cutoff_duration: 15h
 scaling_engine_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -103,7 +103,7 @@ scaling_engine_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 36h
-  cutoff_days: 30
+  cutoff_duration: 30h
 scalingEngine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
@@ -159,7 +159,7 @@ http_client_timeout: 10s
 					ConnectionMaxLifetime: 60 * time.Second,
 				}))
 				Expect(conf.InstanceMetricsDB.RefreshInterval).To(Equal(12 * time.Hour))
-				Expect(conf.InstanceMetricsDB.CutoffDays).To(Equal(20))
+				Expect(conf.InstanceMetricsDB.CutoffDuration).To(Equal(20 * time.Hour))
 
 				Expect(conf.AppMetricsDB.DB).To(Equal(db.DatabaseConfig{
 					URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
@@ -168,7 +168,7 @@ http_client_timeout: 10s
 					ConnectionMaxLifetime: 60 * time.Second,
 				}))
 				Expect(conf.AppMetricsDB.RefreshInterval).To(Equal(10 * time.Hour))
-				Expect(conf.AppMetricsDB.CutoffDays).To(Equal(15))
+				Expect(conf.AppMetricsDB.CutoffDuration).To(Equal(15 * time.Hour))
 
 				Expect(conf.ScalingEngineDB.DB).To(Equal(db.DatabaseConfig{
 					URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
@@ -177,7 +177,7 @@ http_client_timeout: 10s
 					ConnectionMaxLifetime: 60 * time.Second,
 				}))
 				Expect(conf.ScalingEngineDB.RefreshInterval).To(Equal(36 * time.Hour))
-				Expect(conf.ScalingEngineDB.CutoffDays).To(Equal(30))
+				Expect(conf.ScalingEngineDB.CutoffDuration).To(Equal(30 * time.Hour))
 
 				Expect(conf.Lock.LockTTL).To(Equal(15 * time.Second))
 				Expect(conf.Lock.LockRetryInterval).To(Equal(10 * time.Second))
@@ -229,7 +229,7 @@ app_syncer:
 					ConnectionMaxLifetime: 0 * time.Second,
 				}))
 				Expect(conf.InstanceMetricsDB.RefreshInterval).To(Equal(config.DefaultRefreshInterval))
-				Expect(conf.InstanceMetricsDB.CutoffDays).To(Equal(config.DefaultCutoffDays))
+				Expect(conf.InstanceMetricsDB.CutoffDuration).To(Equal(config.DefaultCutoffDuration))
 				Expect(conf.AppMetricsDB.DB).To(Equal(db.DatabaseConfig{
 					URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
 					MaxOpenConnections:    0,
@@ -237,7 +237,7 @@ app_syncer:
 					ConnectionMaxLifetime: 0 * time.Second,
 				}))
 				Expect(conf.AppMetricsDB.RefreshInterval).To(Equal(config.DefaultRefreshInterval))
-				Expect(conf.AppMetricsDB.CutoffDays).To(Equal(config.DefaultCutoffDays))
+				Expect(conf.AppMetricsDB.CutoffDuration).To(Equal(config.DefaultCutoffDuration))
 				Expect(conf.ScalingEngineDB.DB).To(Equal(db.DatabaseConfig{
 					URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
 					MaxOpenConnections:    0,
@@ -245,7 +245,7 @@ app_syncer:
 					ConnectionMaxLifetime: 0 * time.Second,
 				}))
 				Expect(conf.ScalingEngineDB.RefreshInterval).To(Equal(config.DefaultRefreshInterval))
-				Expect(conf.ScalingEngineDB.CutoffDays).To(Equal(config.DefaultCutoffDays))
+				Expect(conf.ScalingEngineDB.CutoffDuration).To(Equal(config.DefaultCutoffDuration))
 
 				Expect(conf.ScalingEngine.SyncInterval).To(Equal(config.DefaultSyncInterval))
 				Expect(conf.Scheduler.SyncInterval).To(Equal(config.DefaultSyncInterval))
@@ -268,7 +268,7 @@ app_syncer:
 
 			})
 		})
-		Context("when it gives a non integer cutoff_days of instance_metrics_db", func() {
+		Context("when cutoff_duration of instance_metrics_db is not a time.Duration", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
 logging:
@@ -282,7 +282,7 @@ instance_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 12h
-  cutoff_days: NOT-INTEGER-VALUE
+  cutoff_duration: 7k
 app_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -290,7 +290,7 @@ app_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 10h
-  cutoff_days: 15
+  cutoff_duration: 15h
 scaling_engine_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -298,7 +298,7 @@ scaling_engine_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 36h
-  cutoff_days: 30
+  cutoff_duration: 30h
 scalingEngine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
@@ -339,7 +339,7 @@ instance_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 12k
-  cutoff_days: 15
+  cutoff_duration: 15h
 app_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -347,7 +347,7 @@ app_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 10h
-  cutoff_days: 15
+  cutoff_duration: 15h
 scaling_engine_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -355,7 +355,7 @@ scaling_engine_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 36h
-  cutoff_days: 30
+  cutoff_duration: 30h
 scalingEngine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
@@ -404,7 +404,7 @@ instance_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 12k
-  cutoff_days: 15
+  cutoff_duration: 15h
 app_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -412,7 +412,7 @@ app_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 10h
-  cutoff_days: 15
+  cutoff_duration: 15h
 scaling_engine_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -420,7 +420,7 @@ scaling_engine_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 36h
-  cutoff_days: 30
+  cutoff_duration: 30h
 scalingEngine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
@@ -468,7 +468,7 @@ instance_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 12h
-  cutoff_days: 20
+  cutoff_duration: 20h
 app_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -476,7 +476,7 @@ app_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 10h
-  cutoff_days: 15
+  cutoff_duration: 15h
 scaling_engine_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -484,7 +484,7 @@ scaling_engine_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 36h
-  cutoff_days: 30
+  cutoff_duration: 30h
 scalingEngine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
@@ -526,7 +526,7 @@ instance_metrics_db:
     max_idle_connections: NOT-INTEGER-VALUE
     connection_max_lifetime: 60s
   refresh_interval: 12h
-  cutoff_days: 20
+  cutoff_duration: 20h
 app_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -534,7 +534,7 @@ app_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 10h
-  cutoff_days: 15
+  cutoff_duration: 15h
 scaling_engine_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -542,7 +542,7 @@ scaling_engine_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 36h
-  cutoff_days: 30
+  cutoff_duration: 30h
 scalingEngine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
@@ -584,7 +584,7 @@ instance_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60k
   refresh_interval: 12h
-  cutoff_days: 20
+  cutoff_duration: 20h
 app_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -592,7 +592,7 @@ app_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 10h
-  cutoff_days: 15
+  cutoff_duration: 15h
 scaling_engine_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -600,7 +600,7 @@ scaling_engine_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 36h
-  cutoff_days: 30
+  cutoff_duration: 30h
 scalingEngine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
@@ -627,7 +627,7 @@ lock:
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
 			})
 		})
-		Context("when it gives a non integer cutoff_days of app_metrics_db", func() {
+		Context("when cutoff_duration of app_metrics_db is not a time.Duration", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
 logging:
@@ -641,7 +641,7 @@ instance_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 12h
-  cutoff_days: 15
+  cutoff_duration: 15h
 app_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -649,7 +649,7 @@ app_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 10h
-  cutoff_days: NOT-INTEGER-VALUE
+  cutoff_duration: 7k
 scaling_engine_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -657,7 +657,7 @@ scaling_engine_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 36h
-  cutoff_days: 30
+  cutoff_duration: 30h
 scalingEngine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
@@ -681,7 +681,7 @@ lock:
 
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
 			})
 		})
 
@@ -699,7 +699,7 @@ instance_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 12h
-  cutoff_days: 15
+  cutoff_duration: 15h
 app_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -707,7 +707,7 @@ app_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 10k
-  cutoff_days: 15
+  cutoff_duration: 15h
 scaling_engine_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -715,7 +715,7 @@ scaling_engine_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 36h
-  cutoff_days: 30
+  cutoff_duration: 30h
 scalingEngine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
@@ -757,7 +757,7 @@ instance_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 12h
-  cutoff_days: 20
+  cutoff_duration: 20h
 app_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -765,7 +765,7 @@ app_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 10h
-  cutoff_days: 15
+  cutoff_duration: 15h
 scaling_engine_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -773,7 +773,7 @@ scaling_engine_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 36h
-  cutoff_days: 30
+  cutoff_duration: 30h
 scalingEngine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
@@ -815,7 +815,7 @@ instance_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 12h
-  cutoff_days: 20
+  cutoff_duration: 20h
 app_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -823,7 +823,7 @@ app_metrics_db:
     max_idle_connections: NOT-INTEGER-VALUE
     connection_max_lifetime: 60s
   refresh_interval: 10h
-  cutoff_days: 15
+  cutoff_duration: 15h
 scaling_engine_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -831,7 +831,7 @@ scaling_engine_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 36h
-  cutoff_days: 30
+  cutoff_duration: 30h
 scalingEngine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
@@ -873,7 +873,7 @@ instance_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 12h
-  cutoff_days: 20
+  cutoff_duration: 20h
 app_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -881,7 +881,7 @@ app_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60k
   refresh_interval: 10h
-  cutoff_days: 15
+  cutoff_duration: 15h
 scaling_engine_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -889,7 +889,7 @@ scaling_engine_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 36h
-  cutoff_days: 30
+  cutoff_duration: 30h
 scalingEngine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
@@ -917,7 +917,7 @@ lock:
 			})
 		})
 
-		Context("when it gives a non integer cutoff_days of scaling_engine_db", func() {
+		Context("when cutoff_duration of scaling_engine_db is not a time.Duration", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
 logging:
@@ -931,7 +931,7 @@ instance_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 12h
-  cutoff_days: 15
+  cutoff_duration: 15h
 app_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -939,7 +939,7 @@ app_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 10h
-  cutoff_days: 15
+  cutoff_duration: 15h
 scaling_engine_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -947,7 +947,7 @@ scaling_engine_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 36h
-  cutoff_days: NOT-INTEGER-VALUE
+  cutoff_duration: 7k
 scalingEngine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
@@ -971,7 +971,7 @@ lock:
 
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
 			})
 		})
 
@@ -989,7 +989,7 @@ instance_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 12h
-  cutoff_days: 15
+  cutoff_duration: 15h
 app_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -997,7 +997,7 @@ app_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 10
-  cutoff_days: 15
+  cutoff_duration: 15h
 scaling_engine_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -1005,7 +1005,7 @@ scaling_engine_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 36k
-  cutoff_days: 30
+  cutoff_duration: 30h
 scalingEngine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
@@ -1047,7 +1047,7 @@ instance_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 12h
-  cutoff_days: 20
+  cutoff_duration: 20h
 app_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -1055,7 +1055,7 @@ app_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 10h
-  cutoff_days: 15
+  cutoff_duration: 15h
 scaling_engine_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -1063,7 +1063,7 @@ scaling_engine_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 36h
-  cutoff_days: 30
+  cutoff_duration: 30h
 scalingEngine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
@@ -1105,7 +1105,7 @@ instance_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 12h
-  cutoff_days: 20
+  cutoff_duration: 20h
 app_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -1113,7 +1113,7 @@ app_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 10h
-  cutoff_days: 15
+  cutoff_duration: 15h
 scaling_engine_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -1121,7 +1121,7 @@ scaling_engine_db:
     max_idle_connections: NOT-INTEGER-VALUE
     connection_max_lifetime: 60s
   refresh_interval: 36h
-  cutoff_days: 30
+  cutoff_duration: 30h
 scalingEngine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
@@ -1163,7 +1163,7 @@ instance_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 12h
-  cutoff_days: 20
+  cutoff_duration: 20h
 app_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -1171,7 +1171,7 @@ app_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60
   refresh_interval: 10h
-  cutoff_days: 15
+  cutoff_duration: 15h
 scaling_engine_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -1179,7 +1179,7 @@ scaling_engine_db:
     max_idle_connections: 5
     connection_max_lifetime: 60k
   refresh_interval: 36h
-  cutoff_days: 30
+  cutoff_duration: 30h
 scalingEngine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
@@ -1221,7 +1221,7 @@ instance_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 12h
-  cutoff_days: 10
+  cutoff_duration: 10h
 app_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -1229,7 +1229,7 @@ app_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 24h
-  cutoff_days: 20
+  cutoff_duration: 20h
 scaling_engine_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -1237,7 +1237,7 @@ scaling_engine_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 36h
-  cutoff_days: 30s
+  cutoff_duration: 30h
 scalingEngine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
@@ -1279,7 +1279,7 @@ instance_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 12h
-  cutoff_days: 10
+  cutoff_duration: 10h
 app_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -1287,7 +1287,7 @@ app_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 24h
-  cutoff_days: 20
+  cutoff_duration: 20h
 scaling_engine_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -1295,7 +1295,7 @@ scaling_engine_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 36h
-  cutoff_days: 30s
+  cutoff_duration: 30h
 scalingEngine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
@@ -1337,7 +1337,7 @@ db:
   max_idle_connections: 5
   connection_max_lifetime: 60s
 refresh_interval: 12h
-cutoff_days: 10
+cutoff_duration: 10h
 app_metrics_db:
 db:
   url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -1345,7 +1345,7 @@ db:
   max_idle_connections: 5
   connection_max_lifetime: 60s
 refresh_interval: 24h
-cutoff_days: 20
+cutoff_duration: 20h
 scaling_engine_db:
 db:
   url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -1353,7 +1353,7 @@ db:
   max_idle_connections: 5
   connection_max_lifetime: 60s
 refresh_interval: 36h
-cutoff_days: 30s
+cutoff_duration: 30h
 scalingEngine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60k
@@ -1395,7 +1395,7 @@ db:
   max_idle_connections: 5
   connection_max_lifetime: 60s
 refresh_interval: 12h
-cutoff_days: 10
+cutoff_duration: 10h
 app_metrics_db:
 db:
   url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -1403,7 +1403,7 @@ db:
   max_idle_connections: 5
   connection_max_lifetime: 60s
 refresh_interval: 24h
-cutoff_days: 20
+cutoff_duration: 20h
 scaling_engine_db:
 db:
   url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -1411,7 +1411,7 @@ db:
   max_idle_connections: 5
   connection_max_lifetime: 60s
 refresh_interval: 36h
-cutoff_days: 30s
+cutoff_duration: 30h
 scalingEngine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
@@ -1428,7 +1428,7 @@ scheduler:
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 lock:
   lock_ttl: 15s
-  lock_retry_interval: 10k
+  lock_retry_interval: 10s
   consul_cluster_config: "http://127.0.0.1:8500"
 `)
 			})
@@ -1453,7 +1453,7 @@ instance_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 12h
-  cutoff_days: 20
+  cutoff_duration: 20h
 app_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -1461,7 +1461,7 @@ app_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60
   refresh_interval: 10h
-  cutoff_days: 15
+  cutoff_duration: 15h
 scaling_engine_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -1469,7 +1469,7 @@ scaling_engine_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 36h
-  cutoff_days: 30
+  cutoff_duration: 30h
 scalingEngine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
@@ -1506,15 +1506,15 @@ http_client_timeout: 10k
 
 			conf.InstanceMetricsDB.DB.URL = "postgres://pqgotest:password@exampl.com/pqgotest"
 			conf.InstanceMetricsDB.RefreshInterval = 12 * time.Hour
-			conf.InstanceMetricsDB.CutoffDays = 30
+			conf.InstanceMetricsDB.CutoffDuration = 30 * time.Hour
 
 			conf.AppMetricsDB.DB.URL = "postgres://pqgotest:password@exampl.com/pqgotest"
 			conf.AppMetricsDB.RefreshInterval = 10 * time.Hour
-			conf.AppMetricsDB.CutoffDays = 15
+			conf.AppMetricsDB.CutoffDuration = 15 * time.Hour
 
 			conf.ScalingEngineDB.DB.URL = "postgres://pqgotest:password@exampl.com/pqgotest"
 			conf.ScalingEngineDB.RefreshInterval = 36 * time.Hour
-			conf.ScalingEngineDB.CutoffDays = 20
+			conf.ScalingEngineDB.CutoffDuration = 20 * time.Hour
 
 			conf.ScalingEngine.URL = "http://localhost:8082"
 			conf.ScalingEngine.SyncInterval = 15 * time.Minute
@@ -1632,36 +1632,36 @@ http_client_timeout: 10k
 			})
 		})
 
-		Context("when InstanceMetrics db cutoff days is set to a negative value", func() {
+		Context("when InstanceMetrics db cutoff duration is set to a negative value", func() {
 
 			BeforeEach(func() {
-				conf.InstanceMetricsDB.CutoffDays = -1
+				conf.InstanceMetricsDB.CutoffDuration = -1
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError("Configuration error: instance_metrics_db.cutoff_days is less than or equal to 0"))
+				Expect(err).To(MatchError("Configuration error: instance_metrics_db.cutoff_duration is less than or equal to 0"))
 			})
 		})
 
-		Context("when AppMetrics db cutoff days is set to a negative value", func() {
+		Context("when AppMetrics db cutoff duration is set to a negative value", func() {
 
 			BeforeEach(func() {
-				conf.AppMetricsDB.CutoffDays = -1
+				conf.AppMetricsDB.CutoffDuration = -1
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError("Configuration error: app_metrics_db.cutoff_days is less than or equal to 0"))
+				Expect(err).To(MatchError("Configuration error: app_metrics_db.cutoff_duration is less than or equal to 0"))
 			})
 		})
 
-		Context("when ScalingEngine db cutoff days is set to a negative value", func() {
+		Context("when ScalingEngine db cutoff duration is set to a negative value", func() {
 
 			BeforeEach(func() {
-				conf.ScalingEngineDB.CutoffDays = -1
+				conf.ScalingEngineDB.CutoffDuration = -1
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError("Configuration error: scaling_engine_db.cutoff_days is less than or equal to 0"))
+				Expect(err).To(MatchError("Configuration error: scaling_engine_db.cutoff_duration is less than or equal to 0"))
 			})
 		})
 

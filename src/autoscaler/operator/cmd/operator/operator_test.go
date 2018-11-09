@@ -193,7 +193,7 @@ var _ = Describe("Operator", func() {
 		Context("with missing/invalid configuration", func() {
 			BeforeEach(func() {
 
-				cfg.InstanceMetricsDB.CutoffDays = -1
+				cfg.InstanceMetricsDB.CutoffDuration = -1
 
 				cfg := writeConfig(&cfg)
 				runner.configPath = cfg.Name()

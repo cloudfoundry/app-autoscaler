@@ -18,7 +18,7 @@ import (
 const (
 	DefaultLoggingLevel        string        = "info"
 	DefaultRefreshInterval     time.Duration = 24 * time.Hour
-	DefaultCutoffDays          int           = 30
+	DefaultCutoffDuration      time.Duration = 24 * time.Hour
 	DefaultSyncInterval        time.Duration = 24 * time.Hour
 	DefaultLockTTL             time.Duration = locket.DefaultSessionTTL
 	DefaultRetryInterval       time.Duration = locket.RetryInterval
@@ -30,19 +30,19 @@ const (
 type InstanceMetricsDbPrunerConfig struct {
 	DB              db.DatabaseConfig `yaml:"db"`
 	RefreshInterval time.Duration     `yaml:"refresh_interval"`
-	CutoffDays      int               `yaml:"cutoff_days"`
+	CutoffDuration  time.Duration     `yaml:"cutoff_duration"`
 }
 
 type AppMetricsDBPrunerConfig struct {
 	DB              db.DatabaseConfig `yaml:"db"`
 	RefreshInterval time.Duration     `yaml:"refresh_interval"`
-	CutoffDays      int               `yaml:"cutoff_days"`
+	CutoffDuration  time.Duration     `yaml:"cutoff_duration"`
 }
 
 type ScalingEngineDBPrunerConfig struct {
 	DB              db.DatabaseConfig `yaml:"db"`
 	RefreshInterval time.Duration     `yaml:"refresh_interval"`
-	CutoffDays      int               `yaml:"cutoff_days"`
+	CutoffDuration  time.Duration     `yaml:"cutoff_duration"`
 }
 
 type LockConfig struct {
@@ -108,15 +108,15 @@ var defaultConfig = Config{
 	Logging: helpers.LoggingConfig{Level: DefaultLoggingLevel},
 	InstanceMetricsDB: InstanceMetricsDbPrunerConfig{
 		RefreshInterval: DefaultRefreshInterval,
-		CutoffDays:      DefaultCutoffDays,
+		CutoffDuration:  DefaultCutoffDuration,
 	},
 	AppMetricsDB: AppMetricsDBPrunerConfig{
 		RefreshInterval: DefaultRefreshInterval,
-		CutoffDays:      DefaultCutoffDays,
+		CutoffDuration:  DefaultCutoffDuration,
 	},
 	ScalingEngineDB: ScalingEngineDBPrunerConfig{
 		RefreshInterval: DefaultRefreshInterval,
-		CutoffDays:      DefaultCutoffDays,
+		CutoffDuration:  DefaultCutoffDuration,
 	},
 	ScalingEngine: ScalingEngineConfig{
 		SyncInterval: DefaultSyncInterval,
@@ -164,8 +164,8 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("Configuration error: instance_metrics_db.refresh_interval is less than or equal to 0")
 	}
 
-	if c.InstanceMetricsDB.CutoffDays <= 0 {
-		return fmt.Errorf("Configuration error: instance_metrics_db.cutoff_days is less than or equal to 0")
+	if c.InstanceMetricsDB.CutoffDuration <= 0 {
+		return fmt.Errorf("Configuration error: instance_metrics_db.cutoff_duration is less than or equal to 0")
 	}
 
 	if c.AppMetricsDB.DB.URL == "" {
@@ -176,8 +176,8 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("Configuration error: app_metrics_db.refresh_interval is less than or equal to 0")
 	}
 
-	if c.AppMetricsDB.CutoffDays <= 0 {
-		return fmt.Errorf("Configuration error: app_metrics_db.cutoff_days is less than or equal to 0")
+	if c.AppMetricsDB.CutoffDuration <= 0 {
+		return fmt.Errorf("Configuration error: app_metrics_db.cutoff_duration is less than or equal to 0")
 	}
 
 	if c.ScalingEngineDB.DB.URL == "" {
@@ -188,8 +188,8 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("Configuration error: scaling_engine_db.refresh_interval is less than or equal to 0")
 	}
 
-	if c.ScalingEngineDB.CutoffDays <= 0 {
-		return fmt.Errorf("Configuration error: scaling_engine_db.cutoff_days is less than or equal to 0")
+	if c.ScalingEngineDB.CutoffDuration <= 0 {
+		return fmt.Errorf("Configuration error: scaling_engine_db.cutoff_duration is less than or equal to 0")
 	}
 	if c.ScalingEngine.URL == "" {
 		return fmt.Errorf("Configuration error: scaling_engine.scaling_engine_url is empty")

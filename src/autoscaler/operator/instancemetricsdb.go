@@ -2,6 +2,7 @@ package operator
 
 import (
 	"autoscaler/db"
+	"time"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
@@ -9,15 +10,15 @@ import (
 
 type InstanceMetricsDbPruner struct {
 	instanceMetricsDb db.InstanceMetricsDB
-	cutoffDays        int
+	cutoffDuration    time.Duration
 	clock             clock.Clock
 	logger            lager.Logger
 }
 
-func NewInstanceMetricsDbPruner(instanceMetricsDb db.InstanceMetricsDB, cutoffDays int, clock clock.Clock, logger lager.Logger) *InstanceMetricsDbPruner {
+func NewInstanceMetricsDbPruner(instanceMetricsDb db.InstanceMetricsDB, cutoffDuration time.Duration, clock clock.Clock, logger lager.Logger) *InstanceMetricsDbPruner {
 	return &InstanceMetricsDbPruner{
 		instanceMetricsDb: instanceMetricsDb,
-		cutoffDays:        cutoffDays,
+		cutoffDuration:    cutoffDuration,
 		clock:             clock,
 		logger:            logger,
 	}
@@ -26,8 +27,7 @@ func NewInstanceMetricsDbPruner(instanceMetricsDb db.InstanceMetricsDB, cutoffDa
 func (idp InstanceMetricsDbPruner) Operate() {
 	idp.logger.Debug("Pruning instance metrics")
 
-	timestamp := idp.clock.Now().AddDate(0, 0, -idp.cutoffDays).UnixNano()
-
+	timestamp := idp.clock.Now().Add(-idp.cutoffDuration).UnixNano()
 	err := idp.instanceMetricsDb.PruneInstanceMetrics(timestamp)
 	if err != nil {
 		idp.logger.Error("failed-prune-metrics", err)
