@@ -38,7 +38,6 @@ var _ = Describe("Eventgenerator", func() {
 			Eventually(func() bool { return len(metricCollector.ReceivedRequests()) >= 1 }, 5*time.Second).Should(BeTrue())
 			Eventually(func() bool { return len(scalingEngine.ReceivedRequests()) >= 1 }, time.Duration(2*breachDurationSecs)*time.Second).Should(BeTrue())
 		})
-
 	})
 
 	Context("with a missing config file", func() {

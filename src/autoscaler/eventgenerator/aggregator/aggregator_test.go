@@ -18,16 +18,17 @@ var _ = Describe("Aggregator", func() {
 		fakeStatWindowSecs = 600
 	)
 	var (
-		getPolicies      models.GetPolicies
-		aggregator       *Aggregator
-		clock            *fakeclock.FakeClock
-		logger           lager.Logger
-		appMonitorsChan  chan *models.AppMonitor
-		testAppId        string        = "testAppId"
-		testMetricType   string        = "test-metric-name"
-		testMetricUnit   string        = "a-metric-unit"
-		fakeWaitDuration time.Duration = 0 * time.Millisecond
-		policyMap                      = map[string]*models.AppPolicy{
+		getPolicies          GetPoliciesFunc
+		saveAppMetricToCache SaveAppMetricToCacheFunc
+		aggregator           *Aggregator
+		clock                *fakeclock.FakeClock
+		logger               lager.Logger
+		appMonitorsChan      chan *models.AppMonitor
+		testAppId            string        = "testAppId"
+		testMetricType       string        = "test-metric-name"
+		testMetricUnit       string        = "a-metric-unit"
+		fakeWaitDuration     time.Duration = 0 * time.Millisecond
+		policyMap                          = map[string]*models.AppPolicy{
 			testAppId: {
 				AppId: testAppId,
 				ScalingPolicy: &models.ScalingPolicy{
@@ -55,6 +56,10 @@ var _ = Describe("Aggregator", func() {
 			return policyMap
 		}
 
+		saveAppMetricToCache = func(metric *models.AppMetric) bool {
+			return true
+		}
+
 		clock = fakeclock.NewFakeClock(time.Now())
 		logger = lager.NewLogger("Aggregator-test")
 
@@ -72,7 +77,8 @@ var _ = Describe("Aggregator", func() {
 	Context("Start", func() {
 		JustBeforeEach(func() {
 			var err error
-			aggregator, err = NewAggregator(logger, clock, testAggregatorExecuteInterval, testSaveInterval, appMonitorsChan, getPolicies, fakeStatWindowSecs, appMetricChan, appMetricDatabase)
+			aggregator, err = NewAggregator(logger, clock, testAggregatorExecuteInterval, testSaveInterval, appMonitorsChan,
+				getPolicies, saveAppMetricToCache, fakeStatWindowSecs, appMetricChan, appMetricDatabase)
 			Expect(err).NotTo(HaveOccurred())
 			aggregator.Start()
 			Expect(appMetricChan).Should(BeSent(&models.AppMetric{
@@ -99,7 +105,8 @@ var _ = Describe("Aggregator", func() {
 	Context("Stop", func() {
 		JustBeforeEach(func() {
 			var err error
-			aggregator, err = NewAggregator(logger, clock, testAggregatorExecuteInterval, testSaveInterval, appMonitorsChan, getPolicies, fakeStatWindowSecs, appMetricChan, appMetricDatabase)
+			aggregator, err = NewAggregator(logger, clock, testAggregatorExecuteInterval, testSaveInterval, appMonitorsChan,
+				getPolicies, saveAppMetricToCache, fakeStatWindowSecs, appMetricChan, appMetricDatabase)
 			Expect(err).NotTo(HaveOccurred())
 			aggregator.Start()
 			Eventually(clock.WatcherCount).Should(Equal(2))

@@ -306,7 +306,7 @@ var _ = Describe("Collector", func() {
 		})
 	})
 
-	Describe("QueryMetrics", func() {
+	Describe("QueryMetricsFromCache", func() {
 		JustBeforeEach(func() {
 			coll = NewCollector(TestRefreshInterval, TestCollectInterval, TestSaveInterval, nodeIndex, nodeNum, logger, policyDb, instanceMetricsDb, fclock, createAppCollector)
 			coll.Start()
@@ -338,11 +338,11 @@ var _ = Describe("Collector", func() {
 			It("returns the data in cache", func() {
 				Eventually(policyDb.GetAppIdsCallCount).Should(Equal(1))
 
-				data, ok := coll.QueryMetrics("an-app-id", 0, 5555, db.ASC, map[string]string{})
+				data, ok := coll.QueryMetricsFromCache("an-app-id", 0, 5555, db.ASC, map[string]string{})
 				Expect(ok).To(BeTrue())
 				Expect(data).To(Equal([]*models.AppInstanceMetric{metric1, metric2}))
 
-				data, ok = coll.QueryMetrics("an-app-id", 0, 5555, db.DESC, map[string]string{})
+				data, ok = coll.QueryMetricsFromCache("an-app-id", 0, 5555, db.DESC, map[string]string{})
 				Expect(ok).To(BeTrue())
 				Expect(data).To(Equal([]*models.AppInstanceMetric{metric2, metric1}))
 			})
@@ -352,13 +352,13 @@ var _ = Describe("Collector", func() {
 				appCollector.QueryReturns(nil, false)
 			})
 			It("returns false", func() {
-				_, ok := coll.QueryMetrics("an-app-id", 0, 5555, db.ASC, map[string]string{})
+				_, ok := coll.QueryMetricsFromCache("an-app-id", 0, 5555, db.ASC, map[string]string{})
 				Expect(ok).To(BeFalse())
 			})
 		})
 		Context("when app does not exist", func() {
 			It("returns false", func() {
-				_, ok := coll.QueryMetrics("non-exist-app-id", 0, 5555, db.ASC, map[string]string{})
+				_, ok := coll.QueryMetricsFromCache("non-exist-app-id", 0, 5555, db.ASC, map[string]string{})
 				Expect(ok).To(BeFalse())
 			})
 		})
