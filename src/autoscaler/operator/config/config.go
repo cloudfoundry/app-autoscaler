@@ -18,7 +18,7 @@ import (
 const (
 	DefaultLoggingLevel        string        = "info"
 	DefaultRefreshInterval     time.Duration = 24 * time.Hour
-	DefaultCutoffDuration      time.Duration = 24 * time.Hour
+	DefaultCutoffDuration      time.Duration = 30 * 24 * time.Hour
 	DefaultSyncInterval        time.Duration = 24 * time.Hour
 	DefaultLockTTL             time.Duration = locket.DefaultSessionTTL
 	DefaultRetryInterval       time.Duration = locket.RetryInterval
