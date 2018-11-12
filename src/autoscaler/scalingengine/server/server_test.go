@@ -1,11 +1,10 @@
 package server_test
 
 import (
-	asfakes "autoscaler/fakes"
+	"autoscaler/fakes"
 	"autoscaler/models"
 	"autoscaler/routes"
 	"autoscaler/scalingengine/config"
-	"autoscaler/scalingengine/fakes"
 	. "autoscaler/scalingengine/server"
 
 	"code.cloudfoundry.org/lager"
@@ -28,7 +27,7 @@ var (
 	scalingEngineDB     *fakes.FakeScalingEngineDB
 	scheduleDB          *fakes.FakeSchedulerDB
 	sychronizer         *fakes.FakeActiveScheduleSychronizer
-	httpStatusCollector *asfakes.FakeHTTPStatusCollector
+	httpStatusCollector *fakes.FakeHTTPStatusCollector
 )
 
 var _ = SynchronizedBeforeSuite(func() []byte {
@@ -43,7 +42,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	scalingEngineDB = &fakes.FakeScalingEngineDB{}
 	scalingEngine := &fakes.FakeScalingEngine{}
 	sychronizer = &fakes.FakeActiveScheduleSychronizer{}
-	httpStatusCollector = &asfakes.FakeHTTPStatusCollector{}
+	httpStatusCollector = &fakes.FakeHTTPStatusCollector{}
 
 	httpServer, err := NewServer(lager.NewLogger("test"), conf, scalingEngineDB, scalingEngine, sychronizer, httpStatusCollector)
 	Expect(err).NotTo(HaveOccurred())
