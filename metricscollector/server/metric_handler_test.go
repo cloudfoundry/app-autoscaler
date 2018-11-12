@@ -2,7 +2,7 @@ package server_test
 
 import (
 	"autoscaler/db"
-	"autoscaler/metricscollector/fakes"
+	"autoscaler/fakes"
 	. "autoscaler/metricscollector/server"
 	"autoscaler/models"
 

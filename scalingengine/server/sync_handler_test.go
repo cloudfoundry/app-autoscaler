@@ -1,7 +1,7 @@
 package server_test
 
 import (
-	"autoscaler/scalingengine/fakes"
+	"autoscaler/fakes"
 	. "autoscaler/scalingengine/server"
 
 	"code.cloudfoundry.org/lager/lagertest"

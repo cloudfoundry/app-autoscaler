@@ -2,8 +2,8 @@ package generator_test
 
 import (
 	"autoscaler/db"
-	"autoscaler/eventgenerator/aggregator/fakes"
 	. "autoscaler/eventgenerator/generator"
+	"autoscaler/fakes"
 	"autoscaler/models"
 	"autoscaler/routes"
 	"errors"
