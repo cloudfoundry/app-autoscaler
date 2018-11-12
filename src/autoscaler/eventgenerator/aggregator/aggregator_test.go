@@ -2,7 +2,7 @@ package aggregator_test
 
 import (
 	. "autoscaler/eventgenerator/aggregator"
-	"autoscaler/eventgenerator/aggregator/fakes"
+	"autoscaler/fakes"
 	"autoscaler/models"
 
 	"time"

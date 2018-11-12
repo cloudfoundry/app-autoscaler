@@ -2,9 +2,9 @@ package server_test
 
 import (
 	"autoscaler/db"
+	"autoscaler/fakes"
 	"autoscaler/models"
 	"autoscaler/scalingengine"
-	"autoscaler/scalingengine/fakes"
 	. "autoscaler/scalingengine/server"
 
 	"code.cloudfoundry.org/lager/lagertest"

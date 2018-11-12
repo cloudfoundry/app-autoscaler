@@ -4,8 +4,8 @@ import (
 	"errors"
 	"time"
 
+	"autoscaler/fakes"
 	"autoscaler/operator"
-	"autoscaler/scalingengine/fakes"
 
 	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/lager/lagertest"

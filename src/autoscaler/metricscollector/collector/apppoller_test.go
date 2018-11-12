@@ -4,7 +4,7 @@ import (
 	"autoscaler/cf"
 	"autoscaler/collection"
 	. "autoscaler/metricscollector/collector"
-	"autoscaler/metricscollector/fakes"
+	"autoscaler/fakes"
 	"autoscaler/models"
 
 	"code.cloudfoundry.org/clock/fakeclock"

@@ -2,9 +2,8 @@ package server_test
 
 import (
 	"autoscaler/db"
-	asfakes "autoscaler/fakes"
+	"autoscaler/fakes"
 	"autoscaler/metricscollector/config"
-	"autoscaler/metricscollector/fakes"
 	"autoscaler/metricscollector/server"
 	"autoscaler/models"
 
@@ -42,7 +41,7 @@ var _ = BeforeSuite(func() {
 	queryFunc := func(appID string, start int64, end int64, order db.OrderType, labels map[string]string) ([]*models.AppInstanceMetric, bool) {
 		return nil, false
 	}
-	httpStatusCollector := &asfakes.FakeHTTPStatusCollector{}
+	httpStatusCollector := &fakes.FakeHTTPStatusCollector{}
 	httpServer, err := server.NewServer(lager.NewLogger("test"), conf, cfc, consumer, queryFunc, database, httpStatusCollector)
 	Expect(err).NotTo(HaveOccurred())
 

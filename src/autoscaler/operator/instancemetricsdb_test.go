@@ -4,7 +4,7 @@ import (
 	"errors"
 	"time"
 
-	"autoscaler/metricscollector/fakes"
+	"autoscaler/fakes"
 	"autoscaler/operator"
 
 	"code.cloudfoundry.org/clock/fakeclock"
