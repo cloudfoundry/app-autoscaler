@@ -218,7 +218,7 @@ func (components *Components) Operator(confPath string, argv ...string) *ginkgom
 		Name:              Operator,
 		AnsiColorCode:     "38m",
 		StartCheck:        `"operator.started"`,
-		StartCheckTimeout: 20 * time.Second,
+		StartCheckTimeout: 40 * time.Second,
 		Command: exec.Command(
 			components.Executables[Operator],
 			append([]string{
@@ -557,7 +557,7 @@ func (components *Components) PrepareScalingEngineConfig(dbURI string, port int,
 	return writeYmlConfig(tmpDir, ScalingEngine, &conf)
 }
 
-func (components *Components) PrepareOperatorConfig(dbURI string, ccUAAURL string, cfGrantTypePassword string, scalingEngineURL string, schedulerURL string, syncInterval time.Duration, cutOffDays int, httpClientTimeout time.Duration, tmpDir string) string {
+func (components *Components) PrepareOperatorConfig(dbURI string, ccUAAURL string, cfGrantTypePassword string, scalingEngineURL string, schedulerURL string, syncInterval time.Duration, cutoffDuration time.Duration, httpClientTimeout time.Duration, tmpDir string) string {
 	conf := &opConfig.Config{
 		Logging: helpers.LoggingConfig{
 			Level: LOGLEVEL,
@@ -570,21 +570,21 @@ func (components *Components) PrepareOperatorConfig(dbURI string, ccUAAURL strin
 		},
 		InstanceMetricsDB: opConfig.InstanceMetricsDbPrunerConfig{
 			RefreshInterval: 2 * time.Minute,
-			CutoffDays:      cutOffDays,
+			CutoffDuration:  cutoffDuration,
 			DB: db.DatabaseConfig{
 				URL: dbURI,
 			},
 		},
 		AppMetricsDB: opConfig.AppMetricsDBPrunerConfig{
 			RefreshInterval: 2 * time.Minute,
-			CutoffDays:      cutOffDays,
+			CutoffDuration:  cutoffDuration,
 			DB: db.DatabaseConfig{
 				URL: dbURI,
 			},
 		},
 		ScalingEngineDB: opConfig.ScalingEngineDBPrunerConfig{
 			RefreshInterval: 2 * time.Minute,
-			CutoffDays:      cutOffDays,
+			CutoffDuration:  cutoffDuration,
 			DB: db.DatabaseConfig{
 				URL: dbURI,
 			},

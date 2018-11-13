@@ -19,18 +19,18 @@ var _ = Describe("ScalingEngineDbPruner", func() {
 	var (
 		scalingEngineDB       *fakes.FakeScalingEngineDB
 		fclock                *fakeclock.FakeClock
-		cutoffDays            int
+		cutoffDuration        time.Duration
 		buffer                *gbytes.Buffer
 		scalingEngineDbPruner *operator.ScalingEngineDbPruner
 	)
 
 	BeforeEach(func() {
-		cutoffDays = 20
+		cutoffDuration = 20
 		logger := lagertest.NewTestLogger("pruner-test")
 		buffer = logger.Buffer()
 		scalingEngineDB = &fakes.FakeScalingEngineDB{}
 		fclock = fakeclock.NewFakeClock(time.Now())
-		scalingEngineDbPruner = operator.NewScalingEngineDbPruner(scalingEngineDB, cutoffDays, fclock, logger)
+		scalingEngineDbPruner = operator.NewScalingEngineDbPruner(scalingEngineDB, cutoffDuration, fclock, logger)
 	})
 
 	Describe("Prune", func() {
@@ -41,7 +41,7 @@ var _ = Describe("ScalingEngineDbPruner", func() {
 		Context("when pruning records from scalinghistory table", func() {
 			It("prunes as per given cutoff days", func() {
 				Eventually(scalingEngineDB.PruneScalingHistoriesCallCount).Should(Equal(1))
-				Expect(scalingEngineDB.PruneScalingHistoriesArgsForCall(0)).To(Equal(fclock.Now().AddDate(0, 0, -cutoffDays).UnixNano()))
+				Expect(scalingEngineDB.PruneScalingHistoriesArgsForCall(0)).To(Equal(fclock.Now().Add(-cutoffDuration).UnixNano()))
 			})
 		})
 
