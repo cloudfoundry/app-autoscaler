@@ -19,21 +19,21 @@ var _ = Describe("AppMetricsDB Prune", func() {
 	var (
 		appMetricsDb       *fakes.FakeAppMetricDB
 		fclock             *fakeclock.FakeClock
-		cutoffDays         int
+		cutoffDuration     time.Duration
 		buffer             *gbytes.Buffer
 		appMetricsDbPruner *operator.AppMetricsDbPruner
 	)
 
 	BeforeEach(func() {
 
-		cutoffDays = 20
+		cutoffDuration = 20 * time.Hour
 		logger := lagertest.NewTestLogger("prune-test")
 		buffer = logger.Buffer()
 
 		appMetricsDb = &fakes.FakeAppMetricDB{}
 		fclock = fakeclock.NewFakeClock(time.Now())
 
-		appMetricsDbPruner = operator.NewAppMetricsDbPruner(appMetricsDb, cutoffDays, fclock, logger)
+		appMetricsDbPruner = operator.NewAppMetricsDbPruner(appMetricsDb, cutoffDuration, fclock, logger)
 
 	})
 
@@ -45,7 +45,7 @@ var _ = Describe("AppMetricsDB Prune", func() {
 		Context("when pruning metrics records from app metrics db", func() {
 			It("prunes as per given cutoff days", func() {
 				Eventually(appMetricsDb.PruneAppMetricsCallCount).Should(Equal(1))
-				Expect(appMetricsDb.PruneAppMetricsArgsForCall(0)).To(BeNumerically("==", fclock.Now().AddDate(0, 0, -cutoffDays).UnixNano()))
+				Expect(appMetricsDb.PruneAppMetricsArgsForCall(0)).To(BeNumerically("==", fclock.Now().Add(-cutoffDuration).UnixNano()))
 			})
 		})
 

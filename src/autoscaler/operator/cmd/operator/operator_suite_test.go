@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -26,14 +27,15 @@ import (
 )
 
 var (
-	prPath           string
-	cfg              config.Config
-	configFile       *os.File
-	consulRunner     *consulrunner.ClusterRunner
-	cfServer         *ghttp.Server
-	appId            string
-	healthHttpClient *http.Client
-	healthport       int
+	prPath            string
+	cfg               config.Config
+	configFile        *os.File
+	consulRunner      *consulrunner.ClusterRunner
+	cfServer          *ghttp.Server
+	appId             string
+	healthHttpClient  *http.Client
+	healthport        int
+	appSummaryRegPath = regexp.MustCompile(`^/v2/apps/.*/summary$`)
 )
 
 func TestOperator(t *testing.T) {
@@ -87,7 +89,7 @@ func initConfig() {
 	cfServer.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))
 
 	appState := models.AppStatusStarted
-	cfServer.RouteToHandler("GET", "/v2/apps/an-app-id/summary", ghttp.RespondWithJSONEncoded(http.StatusOK,
+	cfServer.RouteToHandler("GET", appSummaryRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
 		models.AppEntity{Instances: 2, State: &appState}))
 
 	cfg.CF = cf.CFConfig{
@@ -111,7 +113,7 @@ func initConfig() {
 		ConnectionMaxLifetime: 10 * time.Second,
 	}
 	cfg.InstanceMetricsDB.RefreshInterval = 12 * time.Hour
-	cfg.InstanceMetricsDB.CutoffDays = 20
+	cfg.InstanceMetricsDB.CutoffDuration = 20 * 24 * time.Hour
 
 	cfg.AppMetricsDB.DB = db.DatabaseConfig{
 		URL:                   dbURL,
@@ -120,7 +122,7 @@ func initConfig() {
 		ConnectionMaxLifetime: 10 * time.Second,
 	}
 	cfg.AppMetricsDB.RefreshInterval = 12 * time.Hour
-	cfg.AppMetricsDB.CutoffDays = 20
+	cfg.AppMetricsDB.CutoffDuration = 20 * 24 * time.Hour
 
 	cfg.ScalingEngineDB.DB = db.DatabaseConfig{
 		URL:                   dbURL,
@@ -129,7 +131,7 @@ func initConfig() {
 		ConnectionMaxLifetime: 10 * time.Second,
 	}
 	cfg.ScalingEngineDB.RefreshInterval = 12 * time.Hour
-	cfg.ScalingEngineDB.CutoffDays = 20
+	cfg.ScalingEngineDB.CutoffDuration = 20 * 24 * time.Hour
 
 	cfg.ScalingEngine = config.ScalingEngineConfig{
 		URL:          "http://localhost:8082",

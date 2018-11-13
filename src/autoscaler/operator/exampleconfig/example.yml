@@ -9,7 +9,7 @@ instance_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 12h
-  cutoff_days: 30
+  cutoff_duration: 24h
 app_metrics_db:
   db:
     url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
@@ -17,7 +17,7 @@ app_metrics_db:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   refresh_interval: 12h
-  cutoff_days: 30
+  cutoff_duration: 2d
 scaling_engine:
   scaling_engine_url: https://scalingengine.service.cf.internal:6104
   sync_interval: 600s
