@@ -110,15 +110,15 @@ func main() {
 	}
 
 	loggerSessionName := "instancemetrics-dbpruner"
-	instanceMetricDBPruner := operator.NewInstanceMetricsDbPruner(instanceMetricsDB, conf.InstanceMetricsDB.CutoffDays, prClock, logger.Session(loggerSessionName))
+	instanceMetricDBPruner := operator.NewInstanceMetricsDbPruner(instanceMetricsDB, conf.InstanceMetricsDB.CutoffDuration, prClock, logger.Session(loggerSessionName))
 	instanceMetricsDBOperatorRunner := operator.NewOperatorRunner(instanceMetricDBPruner, conf.InstanceMetricsDB.RefreshInterval, prClock, logger.Session(loggerSessionName))
 
 	loggerSessionName = "appmetrics-dbpruner"
-	appMetricsDBPruner := operator.NewAppMetricsDbPruner(appMetricsDB, conf.AppMetricsDB.CutoffDays, prClock, logger.Session(loggerSessionName))
+	appMetricsDBPruner := operator.NewAppMetricsDbPruner(appMetricsDB, conf.AppMetricsDB.CutoffDuration, prClock, logger.Session(loggerSessionName))
 	appMetricsDBOperatorRunner := operator.NewOperatorRunner(appMetricsDBPruner, conf.AppMetricsDB.RefreshInterval, prClock, logger.Session(loggerSessionName))
 
 	loggerSessionName = "scalingengine-dbpruner"
-	scalingEngineDBPruner := operator.NewScalingEngineDbPruner(scalingEngineDB, conf.ScalingEngineDB.CutoffDays, prClock, logger.Session(loggerSessionName))
+	scalingEngineDBPruner := operator.NewScalingEngineDbPruner(scalingEngineDB, conf.ScalingEngineDB.CutoffDuration, prClock, logger.Session(loggerSessionName))
 	scalingEngineDBOperatorRunner := operator.NewOperatorRunner(scalingEngineDBPruner, conf.ScalingEngineDB.RefreshInterval, prClock, logger.Session(loggerSessionName))
 	loggerSessionName = "scalingengine-sync"
 	scalingEngineSync := operator.NewScheduleSynchronizer(scalingEngineHttpclient, conf.ScalingEngine.URL, prClock, logger.Session(loggerSessionName))
