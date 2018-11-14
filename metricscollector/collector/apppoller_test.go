@@ -3,8 +3,8 @@ package collector_test
 import (
 	"autoscaler/cf"
 	"autoscaler/collection"
-	. "autoscaler/metricscollector/collector"
 	"autoscaler/fakes"
+	. "autoscaler/metricscollector/collector"
 	"autoscaler/models"
 
 	"code.cloudfoundry.org/clock/fakeclock"
@@ -40,7 +40,7 @@ var _ = Describe("Apppoller", func() {
 		buffer = logger.Buffer()
 
 		fclock = fakeclock.NewFakeClock(time.Now())
-		dataChan = make(chan *models.AppInstanceMetric)
+		dataChan = make(chan *models.AppInstanceMetric, 10)
 		cacheSize = 100
 
 		poller = NewAppPoller(logger, "test-app-id", TestCollectInterval, cacheSize, cfc, noaa, fclock, dataChan)
@@ -84,6 +84,7 @@ var _ = Describe("Apppoller", func() {
 								ContainerMetric: &events.ContainerMetric{
 									ApplicationId:    proto.String("test-app-id"),
 									InstanceIndex:    proto.Int32(0),
+									CpuPercentage:    proto.Float64(12.2),
 									MemoryBytes:      proto.Uint64(100000000),
 									MemoryBytesQuota: proto.Uint64(300000000),
 								},
@@ -114,25 +115,38 @@ var _ = Describe("Apppoller", func() {
 						Timestamp:     111111,
 					}
 
+					metric3 := &models.AppInstanceMetric{
+						AppId:         "test-app-id",
+						InstanceIndex: 0,
+						CollectedAt:   fclock.Now().UnixNano(),
+						Name:          models.MetricNameCPUUtil,
+						Unit:          models.UnitPercentage,
+						Value:         "12",
+						Timestamp:     111111,
+					}
+
 					Expect(<-dataChan).To(Equal(metric1))
 					Expect(<-dataChan).To(Equal(metric2))
+					Expect(<-dataChan).To(Equal(metric3))
+
 					data, ok := poller.Query(0, fclock.Now().UnixNano()+1, map[string]string{})
 					Expect(ok).To(BeTrue())
-					Expect(data).To(Equal([]collection.TSD{metric1, metric2}))
+					Expect(data).To(Equal([]collection.TSD{metric1, metric2, metric3}))
 
 					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
 					Eventually(dataChan).Should(Receive())
-					Eventually(dataChan).Should(Receive())
-					data, ok = poller.Query(0, fclock.Now().UnixNano()+1, map[string]string{})
-					Expect(ok).To(BeTrue())
-					Expect(data).To(HaveLen(4))
-
-					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
 					Eventually(dataChan).Should(Receive())
 					Eventually(dataChan).Should(Receive())
 					data, ok = poller.Query(0, fclock.Now().UnixNano()+1, map[string]string{})
 					Expect(ok).To(BeTrue())
 					Expect(data).To(HaveLen(6))
+
+					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
+					Eventually(dataChan).Should(Receive())
+					Eventually(dataChan).Should(Receive())
+					data, ok = poller.Query(0, fclock.Now().UnixNano()+1, map[string]string{})
+					Expect(ok).To(BeTrue())
+					Expect(data).To(HaveLen(9))
 
 				})
 			})
@@ -177,6 +191,7 @@ var _ = Describe("Apppoller", func() {
 									ContainerMetric: &events.ContainerMetric{
 										ApplicationId:    proto.String("test-app-id"),
 										InstanceIndex:    proto.Int32(0),
+										CpuPercentage:    proto.Float64(12.2),
 										MemoryBytes:      proto.Uint64(100000000),
 										MemoryBytesQuota: proto.Uint64(300000000),
 									},
@@ -206,24 +221,35 @@ var _ = Describe("Apppoller", func() {
 						Value:         "33",
 						Timestamp:     111111,
 					}
+					metric3 := &models.AppInstanceMetric{
+						AppId:         "test-app-id",
+						InstanceIndex: 0,
+						CollectedAt:   fclock.Now().UnixNano(),
+						Name:          models.MetricNameCPUUtil,
+						Unit:          models.UnitPercentage,
+						Value:         "12",
+						Timestamp:     111111,
+					}
+
 					Expect(<-dataChan).To(Equal(metric1))
 					Expect(<-dataChan).To(Equal(metric2))
+					Expect(<-dataChan).To(Equal(metric3))
 					data, ok := poller.Query(0, fclock.Now().UnixNano()+1, map[string]string{})
 					Expect(ok).To(BeTrue())
-					Expect(data).To(Equal([]collection.TSD{metric1, metric2}))
+					Expect(data).To(Equal([]collection.TSD{metric1, metric2, metric3}))
 
 					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
 					Consistently(dataChan).ShouldNot(Receive())
 					data, ok = poller.Query(0, fclock.Now().UnixNano()+1, map[string]string{})
 					Expect(ok).To(BeTrue())
-					Expect(data).To(HaveLen(2))
+					Expect(data).To(HaveLen(3))
 
 					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
 					Eventually(dataChan).Should(Receive())
 					Eventually(dataChan).Should(Receive())
 					data, ok = poller.Query(0, fclock.Now().UnixNano()+1, map[string]string{})
 					Expect(ok).To(BeTrue())
-					Expect(data).To(HaveLen(4))
+					Expect(data).To(HaveLen(6))
 
 				})
 			})
@@ -268,6 +294,7 @@ var _ = Describe("Apppoller", func() {
 								ContainerMetric: &events.ContainerMetric{
 									ApplicationId:    proto.String("test-app-id"),
 									InstanceIndex:    proto.Int32(0),
+									CpuPercentage:    proto.Float64(12.2),
 									MemoryBytes:      proto.Uint64(100000000),
 									MemoryBytesQuota: proto.Uint64(300000000),
 								},
@@ -281,13 +308,13 @@ var _ = Describe("Apppoller", func() {
 			It("polls container envelopes successfully; logs the retries and errors", func() {
 				Eventually(buffer).Should(gbytes.Say("poll-metric-from-noaa-retry"))
 				Eventually(buffer).Should(gbytes.Say("poll-metric-from-noaa-retry"))
-				Eventually(buffer).Should(gbytes.Say("poll-metric-get-memory-metric"))
+				Eventually(buffer).Should(gbytes.Say("poll-metric-get-metrics"))
 				Eventually(noaa.ContainerEnvelopesCallCount).Should(Equal(3))
 				Eventually(dataChan).Should(Receive())
 				Eventually(dataChan).Should(Receive())
 				data, ok := poller.Query(0, fclock.Now().UnixNano()+1, map[string]string{})
 				Expect(ok).To(BeTrue())
-				Expect(data).To(HaveLen(2))
+				Expect(data).To(HaveLen(3))
 
 			})
 		})
