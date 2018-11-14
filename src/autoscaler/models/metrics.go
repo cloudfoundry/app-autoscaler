@@ -13,6 +13,7 @@ const (
 
 	MetricNameMemoryUtil   = "memoryutil"
 	MetricNameMemoryUsed   = "memoryused"
+	MetricNameCPUUtil      = "cpu"
 	MetricNameThroughput   = "throughput"
 	MetricNameResponseTime = "responsetime"
 

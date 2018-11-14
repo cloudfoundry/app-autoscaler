@@ -3,8 +3,8 @@ package collector_test
 import (
 	"autoscaler/collection"
 	"autoscaler/db"
-	. "autoscaler/metricscollector/collector"
 	"autoscaler/fakes"
+	. "autoscaler/metricscollector/collector"
 	"autoscaler/models"
 
 	"code.cloudfoundry.org/clock/fakeclock"
