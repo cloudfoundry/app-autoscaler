@@ -96,20 +96,11 @@ func (as *appStreamer) streamMetrics() {
 func (as *appStreamer) processEvent(event *events.Envelope) {
 	if event.GetEventType() == events.Envelope_ContainerMetric {
 		as.logger.Debug("process-event-get-containermetric-event", lager.Data{"event": event})
-
-		metric := noaa.GetInstanceMemoryUsedMetricFromContainerMetricEvent(as.sclock.Now().UnixNano(), as.appId, event)
-		as.logger.Debug("process-event-get-memoryused-metric", lager.Data{"metric": metric})
-		if metric != nil {
+		metrics := noaa.GetMetricsFromContainerEnvelope(as.sclock.Now().UnixNano(), as.appId, event)
+		for _, metric := range metrics {
 			as.cache.Put(metric)
 			as.dataChan <- metric
 		}
-		metric = noaa.GetInstanceMemoryUtilMetricFromContainerMetricEvent(as.sclock.Now().UnixNano(), as.appId, event)
-		as.logger.Debug("process-event-get-memoryutil-metric", lager.Data{"metric": metric})
-		if metric != nil {
-			as.cache.Put(metric)
-			as.dataChan <- metric
-		}
-
 	} else if event.GetEventType() == events.Envelope_HttpStartStop {
 		as.logger.Debug("process-event-get-httpstartstop-event", lager.Data{"event": event})
 		ss := event.GetHttpStartStop()
