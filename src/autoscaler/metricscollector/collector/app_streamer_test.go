@@ -3,8 +3,8 @@ package collector_test
 import (
 	"autoscaler/cf"
 	"autoscaler/collection"
-	. "autoscaler/metricscollector/collector"
 	"autoscaler/fakes"
+	. "autoscaler/metricscollector/collector"
 	"autoscaler/metricscollector/noaa"
 	"autoscaler/models"
 
@@ -97,6 +97,15 @@ var _ = Describe("AppStreamer", func() {
 					},
 					&models.AppInstanceMetric{
 						AppId:         "an-app-id",
+						InstanceIndex: 0,
+						CollectedAt:   fclock.Now().UnixNano(),
+						Name:          models.MetricNameCPUUtil,
+						Unit:          models.UnitPercentage,
+						Value:         "13",
+						Timestamp:     111111,
+					},
+					&models.AppInstanceMetric{
+						AppId:         "an-app-id",
 						InstanceIndex: 1,
 						CollectedAt:   fclock.Now().UnixNano(),
 						Name:          models.MetricNameMemoryUsed,
@@ -112,20 +121,36 @@ var _ = Describe("AppStreamer", func() {
 						Unit:          models.UnitPercentage,
 						Value:         "67",
 						Timestamp:     222222,
-					}}
+					},
+					&models.AppInstanceMetric{
+						AppId:         "an-app-id",
+						InstanceIndex: 1,
+						CollectedAt:   fclock.Now().UnixNano(),
+						Name:          models.MetricNameCPUUtil,
+						Unit:          models.UnitPercentage,
+						Value:         "31",
+						Timestamp:     222222,
+					},
+				}
 
 				Expect(<-dataChan).To(Equal(metrics[0]))
 				Expect(<-dataChan).To(Equal(metrics[1]))
 				Expect(<-dataChan).To(Equal(metrics[2]))
 				Expect(<-dataChan).To(Equal(metrics[3]))
+				Expect(<-dataChan).To(Equal(metrics[4]))
+				Expect(<-dataChan).To(Equal(metrics[5]))
 
 				data, ok := streamer.Query(0, 333333, map[string]string{models.MetricLabelName: models.MetricNameMemoryUsed})
 				Expect(ok).To(BeTrue())
-				Expect(data).To(Equal([]collection.TSD{metrics[0], metrics[2]}))
+				Expect(data).To(Equal([]collection.TSD{metrics[0], metrics[3]}))
 
 				data, ok = streamer.Query(0, 333333, map[string]string{models.MetricLabelName: models.MetricNameMemoryUtil})
 				Expect(ok).To(BeTrue())
-				Expect(data).To(Equal([]collection.TSD{metrics[1], metrics[3]}))
+				Expect(data).To(Equal([]collection.TSD{metrics[1], metrics[4]}))
+
+				data, ok = streamer.Query(0, 333333, map[string]string{models.MetricLabelName: models.MetricNameCPUUtil})
+				Expect(ok).To(BeTrue())
+				Expect(data).To(Equal([]collection.TSD{metrics[2], metrics[5]}))
 
 				data, ok = streamer.Query(0, 333333, map[string]string{models.MetricLabelName: models.MetricNameThroughput})
 				Expect(ok).To(BeTrue())
