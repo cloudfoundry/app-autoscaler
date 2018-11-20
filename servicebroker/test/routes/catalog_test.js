@@ -117,9 +117,14 @@ describe("Validate schema definition",function(){
       expect(ajv.validate(catalogSchema,fakePolicy)).to.be.false;
     });
 
-    it("validate metric_type",function(){
-      fakePolicy.scaling_rules[0].metric_type = "mymetrictype"
+    it("validate metric_type with non alphanumeric characters",function(){
+      fakePolicy.scaling_rules[0].metric_type = "ab cd$"
       expect(ajv.validate(catalogSchema,fakePolicy)).to.be.false;
+    });
+
+    it("validate metric_type with underscore",function(){
+      fakePolicy.scaling_rules[0].metric_type = "my_metric2"
+      expect(ajv.validate(catalogSchema,fakePolicy)).to.be.true;
     });
 
     it("validate operator",function(){
