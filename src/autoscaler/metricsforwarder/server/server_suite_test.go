@@ -13,7 +13,7 @@ import (
 	"code.cloudfoundry.org/lager"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/patrickmn/go-cache"
+	cache "github.com/patrickmn/go-cache"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/ginkgomon"
 
@@ -25,7 +25,8 @@ var (
 	serverUrl     string
 	policyDB      *fakes.FakePolicyDB
 
-	credentialCache cache.Cache
+	credentialCache    cache.Cache
+	allowedMetricCache cache.Cache
 )
 
 func TestServer(t *testing.T) {
@@ -58,7 +59,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	}
 	policyDB = &fakes.FakePolicyDB{}
 	credentialCache = *cache.New(10*time.Minute, -1)
-	httpServer, err := NewServer(lager.NewLogger("test"), conf, policyDB, credentialCache)
+	allowedMetricCache = *cache.New(10*time.Minute, -1)
+	httpServer, err := NewServer(lager.NewLogger("test"), conf, policyDB, credentialCache, allowedMetricCache)
 	Expect(err).NotTo(HaveOccurred())
 	serverUrl = fmt.Sprintf("http://127.0.0.1:%d", conf.Server.Port)
 	serverProcess = ginkgomon.Invoke(httpServer)

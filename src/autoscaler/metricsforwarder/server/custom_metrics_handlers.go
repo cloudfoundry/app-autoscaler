@@ -12,25 +12,29 @@ import (
 
 	"code.cloudfoundry.org/cfhttp/handlers"
 	"code.cloudfoundry.org/lager"
-	"github.com/patrickmn/go-cache"
+	cache "github.com/patrickmn/go-cache"
 	"golang.org/x/crypto/bcrypt"
 )
 
+const ALLOWED_METRIC_TYPES = "allowed_metric_types"
+
 type CustomMetricsHandler struct {
-	metricForwarder forwarder.MetricForwarder
-	policyDB        db.PolicyDB
-	credentialCache cache.Cache
-	cacheTTL        time.Duration
-	logger          lager.Logger
+	metricForwarder    forwarder.MetricForwarder
+	policyDB           db.PolicyDB
+	credentialCache    cache.Cache
+	allowedMetricCache cache.Cache
+	cacheTTL           time.Duration
+	logger             lager.Logger
 }
 
-func NewCustomMetricsHandler(logger lager.Logger, metricForwarder forwarder.MetricForwarder, policyDB db.PolicyDB, credentialCache cache.Cache, cacheTTL time.Duration) *CustomMetricsHandler {
+func NewCustomMetricsHandler(logger lager.Logger, metricForwarder forwarder.MetricForwarder, policyDB db.PolicyDB, credentialCache cache.Cache, allowedMetricCache cache.Cache, cacheTTL time.Duration) *CustomMetricsHandler {
 	return &CustomMetricsHandler{
-		metricForwarder: metricForwarder,
-		policyDB:        policyDB,
-		credentialCache: credentialCache,
-		cacheTTL:        cacheTTL,
-		logger:          logger,
+		metricForwarder:    metricForwarder,
+		policyDB:           policyDB,
+		credentialCache:    credentialCache,
+		allowedMetricCache: allowedMetricCache,
+		cacheTTL:           cacheTTL,
+		logger:             logger,
 	}
 }
 
@@ -43,7 +47,7 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 		mh.logger.Info("error-processing-authorizaion-header")
 		handlers.WriteJSONResponse(w, http.StatusUnauthorized, models.ErrorResponse{
 			Code:    "Authorization-Failure-Error",
-			Message: "Error varifying user credentials. Basic authorization is not used properly"})
+			Message: "Error verifying user credentials. Basic authorization is not used properly"})
 		return
 	}
 
@@ -74,6 +78,9 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 			Username: usernameHash,
 			Password: passwordHash,
 		}
+		// update the cache
+		mh.credentialCache.Set(appID, credentials, mh.cacheTTL)
+
 		isValid = mh.validateCredentials(username, credentials.Username, password, credentials.Password)
 		// If Credentials in DB is not valid
 		if !isValid {
@@ -83,8 +90,6 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 				Message: "Basic authorization credential does not match"})
 			return
 		}
-		// Valid credentials found in DB so update the cache
-		mh.credentialCache.Set(appID, credentials, mh.cacheTTL)
 	}
 
 	body, err := ioutil.ReadAll(r.Body)
@@ -146,19 +151,29 @@ func (mh *CustomMetricsHandler) validateCustomMetricTypes(appGUID string, metric
 	standardMetricsTypes[models.MetricNameMemoryUtil] = struct{}{}
 	standardMetricsTypes[models.MetricNameThroughput] = struct{}{}
 	standardMetricsTypes[models.MetricNameResponseTime] = struct{}{}
+	standardMetricsTypes[models.MetricNameCPUUtil] = struct{}{}
 
-	scalingPolicy, err := mh.policyDB.GetAppPolicy(appGUID)
-	if err != nil {
-		mh.logger.Error("errorr-getting-policy", err, lager.Data{"appId": appGUID})
-		return false, errors.New("not able to get policy details")
-	}
-	if err == nil && scalingPolicy == nil {
-		mh.logger.Debug("no-policy-found", lager.Data{"appId": appGUID})
-		return false, errors.New("no policy found")
-	}
-	allowedMetricTypeSet := make(map[string]struct{}, len(scalingPolicy.ScalingRules))
-	for _, metrictype := range scalingPolicy.ScalingRules {
-		allowedMetricTypeSet[metrictype.MetricType] = struct{}{}
+	allowedMetricTypeSet := make(map[string]struct{})
+	res, found := mh.allowedMetricCache.Get(ALLOWED_METRIC_TYPES)
+	if found {
+		// AllowedMetrics found in cache
+		allowedMetricTypeSet = res.(map[string]struct{})
+	} else {
+		//  AllowedMetrics not found in cache, find AllowedMetrics from Database
+		scalingPolicy, err := mh.policyDB.GetAppPolicy(appGUID)
+		if err != nil {
+			mh.logger.Error("error-getting-policy", err, lager.Data{"appId": appGUID})
+			return false, errors.New("not able to get policy details")
+		}
+		if err == nil && scalingPolicy == nil {
+			mh.logger.Debug("no-policy-found", lager.Data{"appId": appGUID})
+			return false, errors.New("no policy found")
+		}
+		for _, metrictype := range scalingPolicy.ScalingRules {
+			allowedMetricTypeSet[metrictype.MetricType] = struct{}{}
+		}
+		//update the cache
+		mh.allowedMetricCache.Set(ALLOWED_METRIC_TYPES, allowedMetricTypeSet, mh.cacheTTL)
 	}
 	mh.logger.Debug("allowed-metrics-types", lager.Data{"metrics": allowedMetricTypeSet})
 	for _, metric := range metricsConsumer.CustomMetrics {
