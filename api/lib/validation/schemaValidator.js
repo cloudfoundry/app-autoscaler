@@ -58,11 +58,6 @@ var getDaysInMonthInISOFormat = function() {
   return monthEnum;
 };
 
-var getMetricTypes = function() {
-  var metricTypeEnum = ['memoryused', 'memoryutil', 'responsetime', 'throughput'];
-  return metricTypeEnum;
-};
-
 
 var getPolicySchema = function() {
   var schema = {
@@ -92,7 +87,7 @@ var getScalingRuleSchema = function() {
     'type': 'object',
     'id':'/scaling_rules',
     'properties' : {
-      'metric_type':{ 'type':'string' },
+      'metric_type':{ 'type':'string', 'pattern':'^[a-zA-Z0-9_]+$' },
       'breach_duration_secs':{ 'type':'integer','minimum': 60,'maximum': 3600 },
       'threshold':{ 'type':'integer'},
       'operator':{ 'type':'string','enum': validOperators },
