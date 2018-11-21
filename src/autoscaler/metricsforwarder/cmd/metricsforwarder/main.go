@@ -11,7 +11,7 @@ import (
 	"os"
 
 	"code.cloudfoundry.org/lager"
-	"github.com/patrickmn/go-cache"
+	cache "github.com/patrickmn/go-cache"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
@@ -57,8 +57,9 @@ func main() {
 	defer policyDB.Close()
 
 	credentialCache := cache.New(conf.CacheTTL, -1)
+	allowedMetricCache := cache.New(conf.CacheTTL, -1)
 
-	httpServer, err := server.NewServer(logger.Session("custom_metrics_server"), conf, policyDB, *credentialCache)
+	httpServer, err := server.NewServer(logger.Session("custom_metrics_server"), conf, policyDB, *credentialCache, *allowedMetricCache)
 	if err != nil {
 		logger.Error("failed-to-create-custommetrics-server", err)
 		os.Exit(1)
