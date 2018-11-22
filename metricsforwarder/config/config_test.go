@@ -222,5 +222,36 @@ db:
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: Policy DB url is empty")))
 			})
 		})
+
+		Context("when Loggregator CACert is not set", func() {
+			BeforeEach(func() {
+				conf.LoggregatorConfig.CACertFile = ""
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: Loggregator CACert is empty")))
+			})
+		})
+
+		Context("when Loggregator ClientCert is not set", func() {
+			BeforeEach(func() {
+				conf.LoggregatorConfig.ClientCertFile = ""
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: Loggregator ClientCert is empty")))
+			})
+		})
+
+		Context("when Loggregator ClientKey is not set", func() {
+			BeforeEach(func() {
+				conf.LoggregatorConfig.ClientKeyFile = ""
+			})
+
+			It("should error", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: Loggregator ClientKey is empty")))
+			})
+		})
+
 	})
 })
