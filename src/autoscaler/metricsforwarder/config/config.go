@@ -76,6 +76,15 @@ func (c *Config) Validate() error {
 	if c.Db.PolicyDb.URL == "" {
 		return fmt.Errorf("Configuration error: Policy DB url is empty")
 	}
+	if c.LoggregatorConfig.CACertFile == "" {
+		return fmt.Errorf("Configuration error: Loggregator CACert is empty")
+	}
+	if c.LoggregatorConfig.ClientCertFile == "" {
+		return fmt.Errorf("Configuration error: Loggregator ClientCert is empty")
+	}
+	if c.LoggregatorConfig.ClientKeyFile == "" {
+		return fmt.Errorf("Configuration error: Loggregator ClientKey is empty")
+	}
 
 	return nil
 
