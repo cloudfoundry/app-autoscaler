@@ -5,6 +5,7 @@ import (
 	"autoscaler/fakes"
 	"autoscaler/models"
 
+	"sync"
 	"time"
 
 	"code.cloudfoundry.org/clock/fakeclock"
@@ -47,8 +48,10 @@ var _ = Describe("Aggregator", func() {
 				},
 			},
 		}
-		appMetricDatabase *fakes.FakeAppMetricDB
-		appMetricChan     chan *models.AppMetric
+		appMetricDatabase    *fakes.FakeAppMetricDB
+		appMetricChan        chan *models.AppMetric
+		cacheLock            sync.RWMutex
+		saveToCacheCallCount int
 	)
 
 	BeforeEach(func() {
@@ -56,7 +59,11 @@ var _ = Describe("Aggregator", func() {
 			return policyMap
 		}
 
+		saveToCacheCallCount = 0
 		saveAppMetricToCache = func(metric *models.AppMetric) bool {
+			cacheLock.Lock()
+			saveToCacheCallCount++
+			cacheLock.Unlock()
 			return true
 		}
 
@@ -98,6 +105,11 @@ var _ = Describe("Aggregator", func() {
 		It("should send appMonitors and save appMetrics", func() {
 			clock.Increment(1 * fakeWaitDuration)
 			Eventually(appMonitorsChan).Should(Receive())
+			Eventually(func() int {
+				cacheLock.RLock()
+				defer cacheLock.RUnlock()
+				return saveToCacheCallCount
+			}).Should(Equal(1))
 			Eventually(appMetricDatabase.SaveAppMetricsInBulkCallCount).Should(Equal(1))
 		})
 	})
@@ -125,6 +137,11 @@ var _ = Describe("Aggregator", func() {
 
 			clock.Increment(1 * fakeWaitDuration)
 			Consistently(appMonitorsChan).ShouldNot(Receive())
+			Consistently(func() int {
+				cacheLock.RLock()
+				defer cacheLock.RUnlock()
+				return saveToCacheCallCount
+			}).Should(BeZero())
 			Consistently(appMetricDatabase.SaveAppMetricsInBulkCallCount).Should(Equal(0))
 		})
 	})
