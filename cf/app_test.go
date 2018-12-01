@@ -20,8 +20,8 @@ import (
 var _ = Describe("App", func() {
 
 	var (
-		conf            *CfConfig
-		cfc             CfClient
+		conf            *CFConfig
+		cfc             CFClient
 		fakeCC          *ghttp.Server
 		fakeLoginServer *ghttp.Server
 		err             error
@@ -32,19 +32,19 @@ var _ = Describe("App", func() {
 	BeforeEach(func() {
 		fakeCC = ghttp.NewServer()
 		fakeLoginServer = ghttp.NewServer()
-		fakeCC.RouteToHandler("GET", PathCfInfo, ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
+		fakeCC.RouteToHandler("GET", PathCFInfo, ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
 			AuthEndpoint:    fakeLoginServer.URL(),
 			TokenEndpoint:   "test-token-endpoint",
 			DopplerEndpoint: "test-doppler-endpoint",
 		}))
-		fakeLoginServer.RouteToHandler("POST", PathCfAuth, ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
+		fakeLoginServer.RouteToHandler("POST", PathCFAuth, ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
 			AccessToken:  "test-access-token",
 			RefreshToken: "test-refresh-token",
 			ExpiresIn:    12000,
 		}))
-		conf = &CfConfig{}
-		conf.Api = fakeCC.URL()
-		cfc = NewCfClient(conf, lager.NewLogger("cf"), clock.NewClock())
+		conf = &CFConfig{}
+		conf.API = fakeCC.URL()
+		cfc = NewCFClient(conf, lager.NewLogger("cf"), clock.NewClock())
 		cfc.Login()
 	})
 
@@ -83,11 +83,51 @@ var _ = Describe("App", func() {
 			})
 		})
 
-		Context("when get app summary return non-200 status code", func() {
+		Context("when get app summary return 404 status code", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.RespondWithJSONEncoded(http.StatusNotFound, ""),
+						ghttp.RespondWithJSONEncoded(http.StatusNotFound, models.CFErrorResponse{
+							Description: "The app could not be found: 7efa8f58-1aba-4493-bf9e-30d69c40dbb42",
+							ErrorCode:   "CF-AppNotFound",
+							Code:        100004,
+						}),
+					),
+				)
+			})
+
+			It("should error", func() {
+				Expect(appEntity).To(BeNil())
+				Expect(err).To(Equal(models.NewAppNotFoundErr("The app could not be found: 7efa8f58-1aba-4493-bf9e-30d69c40dbb42")))
+				Expect(err).To(MatchError(MatchRegexp("The app could not be found: *")))
+			})
+		})
+
+		Context("when get app summary return non-200 and non-404 status code", func() {
+			BeforeEach(func() {
+				fakeCC.AppendHandlers(
+					ghttp.CombineHandlers(
+						ghttp.RespondWithJSONEncoded(http.StatusInternalServerError, models.CFErrorResponse{
+							Description: "Server error",
+							ErrorCode:   "ServerError",
+							Code:        100001,
+						}),
+					),
+				)
+			})
+
+			It("should error", func() {
+				Expect(appEntity).To(BeNil())
+				Expect(err).To(MatchError(MatchRegexp("failed getting application summary: *")))
+			})
+
+		})
+
+		Context("when get app summary return non-200 and non-404 status code with non-JSON response", func() {
+			BeforeEach(func() {
+				fakeCC.AppendHandlers(
+					ghttp.CombineHandlers(
+						ghttp.RespondWithJSONEncoded(http.StatusInternalServerError, ""),
 					),
 				)
 			})

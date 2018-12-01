@@ -5,6 +5,8 @@ server:
     - "localhost:8080"
     - "localhost:9080"
   node_index: 0
+health:
+  port: 8081
 db:
   policy_db:
     url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"

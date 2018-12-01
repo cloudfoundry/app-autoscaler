@@ -2,15 +2,14 @@ package server_test
 
 import (
 	"autoscaler/db"
+	"autoscaler/fakes"
 	"autoscaler/models"
 	"autoscaler/scalingengine"
-	"autoscaler/scalingengine/fakes"
 	. "autoscaler/scalingengine/server"
 
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gbytes"
 
 	"bytes"
 	"encoding/json"
@@ -28,14 +27,12 @@ var _ = Describe("ScalingHandler", func() {
 	var (
 		scalingEngineDB              *fakes.FakeScalingEngineDB
 		scalingEngine                *fakes.FakeScalingEngine
-		health                       *fakes.FakeHealth
 		handler                      *ScalingHandler
 		resp                         *httptest.ResponseRecorder
 		req                          *http.Request
 		body                         []byte
 		err                          error
 		trigger                      *models.Trigger
-		buffer                       *gbytes.Buffer
 		history1, history2, history3 *models.AppScalingHistory
 		activeSchedule               *models.ActiveSchedule
 		testMetricName               string = "Test-Metric-Name"
@@ -43,19 +40,15 @@ var _ = Describe("ScalingHandler", func() {
 
 	BeforeEach(func() {
 		logger := lagertest.NewTestLogger("scaling-handler-test")
-		buffer = logger.Buffer()
 		scalingEngineDB = &fakes.FakeScalingEngineDB{}
 		scalingEngine = &fakes.FakeScalingEngine{}
-		health = &fakes.FakeHealth{}
-		handler = NewScalingHandler(logger, scalingEngineDB, scalingEngine, health)
+		handler = NewScalingHandler(logger, scalingEngineDB, scalingEngine)
 		resp = httptest.NewRecorder()
 	})
 
 	Describe("Scale", func() {
 		JustBeforeEach(func() {
 			handler.Scale(resp, req, map[string]string{"appid": "an-app-id"})
-			Expect(health.IncCallCount()).To(Equal(1))
-			Expect(health.DecCallCount()).To(Equal(1))
 		})
 
 		Context("when scaling app succeeds", func() {
@@ -152,8 +145,6 @@ var _ = Describe("ScalingHandler", func() {
 	Describe("GetScalingHistories", func() {
 		JustBeforeEach(func() {
 			handler.GetScalingHistories(resp, req, map[string]string{"appid": "an-app-id"})
-			Expect(health.IncCallCount()).To(Equal(1))
-			Expect(health.DecCallCount()).To(Equal(1))
 		})
 
 		Context("when request query string is invalid", func() {
@@ -464,8 +455,6 @@ var _ = Describe("ScalingHandler", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			handler.StartActiveSchedule(resp, req, map[string]string{"appid": "an-app-id", "schduleid": "a-schdule-id"})
-			Expect(health.IncCallCount()).To(Equal(1))
-			Expect(health.DecCallCount()).To(Equal(1))
 		})
 
 		Context("when active schedule is valid", func() {
@@ -522,8 +511,6 @@ var _ = Describe("ScalingHandler", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			handler.RemoveActiveSchedule(resp, req, map[string]string{"appid": "an-app-id", "schduleid": "a-schdule-id"})
-			Expect(health.IncCallCount()).To(Equal(1))
-			Expect(health.DecCallCount()).To(Equal(1))
 		})
 
 		Context("when removing active schedule succeeds", func() {
@@ -572,8 +559,6 @@ var _ = Describe("ScalingHandler", func() {
 	Describe("GetActiveSchedule", func() {
 		JustBeforeEach(func() {
 			handler.GetActiveSchedule(resp, req, map[string]string{"appid": "invalid-app-id"})
-			Expect(health.IncCallCount()).To(Equal(1))
-			Expect(health.DecCallCount()).To(Equal(1))
 		})
 
 		Context("when app id is invalid", func() {

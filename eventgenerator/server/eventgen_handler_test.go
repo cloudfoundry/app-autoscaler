@@ -2,8 +2,8 @@ package server_test
 
 import (
 	"autoscaler/db"
-	"autoscaler/eventgenerator/aggregator/fakes"
 	. "autoscaler/eventgenerator/server"
+	"autoscaler/fakes"
 	"autoscaler/models"
 	"encoding/json"
 	"errors"

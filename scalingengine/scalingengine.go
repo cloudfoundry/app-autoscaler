@@ -23,7 +23,7 @@ type ScalingEngine interface {
 
 type scalingEngine struct {
 	logger              lager.Logger
-	cfClient            cf.CfClient
+	cfClient            cf.CFClient
 	policyDB            db.PolicyDB
 	scalingEngineDB     db.ScalingEngineDB
 	appLock             *StripedLock
@@ -38,7 +38,7 @@ func (ase *ActiveScheduleNotFoundError) Error() string {
 	return fmt.Sprintf("active schedule not found")
 }
 
-func NewScalingEngine(logger lager.Logger, cfClient cf.CfClient, policyDB db.PolicyDB, scalingEngineDB db.ScalingEngineDB, clock clock.Clock, defaultCoolDownSecs int, lockSize int) ScalingEngine {
+func NewScalingEngine(logger lager.Logger, cfClient cf.CFClient, policyDB db.PolicyDB, scalingEngineDB db.ScalingEngineDB, clock clock.Clock, defaultCoolDownSecs int, lockSize int) ScalingEngine {
 	return &scalingEngine{
 		logger:              logger.Session("scalingEngine"),
 		cfClient:            cfClient,

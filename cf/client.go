@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -19,8 +20,8 @@ import (
 )
 
 const (
-	PathCfInfo                                   = "/v2/info"
-	PathCfAuth                                   = "/oauth/token"
+	PathCFInfo                                   = "/v2/info"
+	PathCFAuth                                   = "/oauth/token"
 	GrantTypePassword                            = "password"
 	GrantTypeClientCredentials                   = "client_credentials"
 	GrantTypeRefreshToken                        = "refresh_token"
@@ -39,7 +40,7 @@ type Endpoints struct {
 	DopplerEndpoint string `json:"doppler_logging_endpoint"`
 }
 
-type CfClient interface {
+type CFClient interface {
 	Login() error
 	RefreshAuthToken() (string, error)
 	GetTokens() Tokens
@@ -51,12 +52,12 @@ type CfClient interface {
 
 type cfClient struct {
 	logger     lager.Logger
-	conf       *CfConfig
+	conf       *CFConfig
 	clk        clock.Clock
 	tokens     Tokens
 	endpoints  Endpoints
-	infoUrl    string
-	authUrl    string
+	infoURL    string
+	authURL    string
 	loginForm  url.Values
 	authHeader string
 	httpClient *http.Client
@@ -64,12 +65,12 @@ type cfClient struct {
 	grantTime  time.Time
 }
 
-func NewCfClient(conf *CfConfig, logger lager.Logger, clk clock.Clock) CfClient {
+func NewCFClient(conf *CFConfig, logger lager.Logger, clk clock.Clock) CFClient {
 	c := &cfClient{}
 	c.logger = logger
 	c.conf = conf
 	c.clk = clk
-	c.infoUrl = conf.Api + PathCfInfo
+	c.infoURL = conf.API + PathCFInfo
 
 	if conf.GrantType == GrantTypePassword {
 		c.loginForm = url.Values{
@@ -81,14 +82,17 @@ func NewCfClient(conf *CfConfig, logger lager.Logger, clk clock.Clock) CfClient 
 	} else {
 		c.loginForm = url.Values{
 			"grant_type":    {GrantTypeClientCredentials},
-			"client_id":     {conf.ClientId},
+			"client_id":     {conf.ClientID},
 			"client_secret": {conf.Secret},
 		}
-		c.authHeader = "Basic " + base64.StdEncoding.EncodeToString([]byte(conf.ClientId+":"+conf.Secret))
+		c.authHeader = "Basic " + base64.StdEncoding.EncodeToString([]byte(conf.ClientID+":"+conf.Secret))
 	}
 
 	c.httpClient = cfhttp.NewClient()
 	c.httpClient.Transport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: conf.SkipSSLValidation}
+	c.httpClient.Transport.(*http.Transport).DialContext = (&net.Dialer{
+		Timeout: 30 * time.Second,
+	}).DialContext
 
 	c.lock = &sync.Mutex{}
 
@@ -96,9 +100,9 @@ func NewCfClient(conf *CfConfig, logger lager.Logger, clk clock.Clock) CfClient 
 }
 
 func (c *cfClient) retrieveEndpoints() error {
-	c.logger.Info("retrieve-endpoints", lager.Data{"infoUrl": c.infoUrl})
+	c.logger.Info("retrieve-endpoints", lager.Data{"infoURL": c.infoURL})
 
-	resp, err := c.httpClient.Get(c.infoUrl)
+	resp, err := c.httpClient.Get(c.infoURL)
 	if err != nil {
 		c.logger.Error("retrieve-endpoints-get", err)
 		return err
@@ -106,7 +110,7 @@ func (c *cfClient) retrieveEndpoints() error {
 
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		err = fmt.Errorf("Error requesting endpoints: %s [%d] %s", c.infoUrl, resp.StatusCode, resp.Status)
+		err = fmt.Errorf("Error requesting endpoints: %s [%d] %s", c.infoURL, resp.StatusCode, resp.Status)
 		c.logger.Error("retrieve-endpoints-response", err)
 		return err
 	}
@@ -117,14 +121,14 @@ func (c *cfClient) retrieveEndpoints() error {
 		return err
 	}
 
-	c.authUrl = c.endpoints.AuthEndpoint + PathCfAuth
+	c.authURL = c.endpoints.AuthEndpoint + PathCFAuth
 	return nil
 }
 
 func (c *cfClient) requestTokenGrant(formData *url.Values) error {
-	c.logger.Info("request-token-grant", lager.Data{"authUrl": c.authUrl, "form": *formData})
+	c.logger.Info("request-token-grant", lager.Data{"authURL": c.authURL, "form": *formData})
 
-	req, err := http.NewRequest("POST", c.authUrl, strings.NewReader(formData.Encode()))
+	req, err := http.NewRequest("POST", c.authURL, strings.NewReader(formData.Encode()))
 	if err != nil {
 		c.logger.Error("request-token-grant-new-request", err)
 		return err
@@ -141,7 +145,7 @@ func (c *cfClient) requestTokenGrant(formData *url.Values) error {
 
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		err = fmt.Errorf("request token grant failed: %s [%d] %s", c.authUrl, resp.StatusCode, resp.Status)
+		err = fmt.Errorf("request token grant failed: %s [%d] %s", c.authURL, resp.StatusCode, resp.Status)
 		c.logger.Error("request-token-grant-response", err)
 		return err
 	}
@@ -156,7 +160,7 @@ func (c *cfClient) requestTokenGrant(formData *url.Values) error {
 }
 
 func (c *cfClient) Login() error {
-	c.logger.Info("login", lager.Data{"infoUrl": c.infoUrl})
+	c.logger.Info("login", lager.Data{"infoURL": c.infoURL})
 
 	err := c.retrieveEndpoints()
 	if err != nil {
@@ -167,7 +171,7 @@ func (c *cfClient) Login() error {
 }
 
 func (c *cfClient) refresh() error {
-	c.logger.Info("refresh", lager.Data{"authUrl": c.authUrl})
+	c.logger.Info("refresh", lager.Data{"authURL": c.authURL})
 
 	if c.tokens.RefreshToken == "" {
 		err := fmt.Errorf("empty refresh_token")
@@ -185,7 +189,7 @@ func (c *cfClient) refresh() error {
 }
 
 func (c *cfClient) RefreshAuthToken() (string, error) {
-	c.logger.Info("refresh-auth-token", lager.Data{"authUrl": c.authUrl})
+	c.logger.Info("refresh-auth-token", lager.Data{"authURL": c.authURL})
 
 	err := c.refresh()
 	if err != nil {

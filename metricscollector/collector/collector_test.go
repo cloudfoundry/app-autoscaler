@@ -1,8 +1,10 @@
 package collector_test
 
 import (
+	"autoscaler/collection"
+	"autoscaler/db"
+	"autoscaler/fakes"
 	. "autoscaler/metricscollector/collector"
-	"autoscaler/metricscollector/fakes"
 	"autoscaler/models"
 
 	"code.cloudfoundry.org/clock/fakeclock"
@@ -29,6 +31,7 @@ var _ = Describe("Collector", func() {
 		nodeNum            int
 		nodeIndex          int
 		createAppCollector func(string, chan *models.AppInstanceMetric) AppCollector
+		metric1, metric2   *models.AppInstanceMetric
 	)
 
 	BeforeEach(func() {
@@ -300,6 +303,68 @@ var _ = Describe("Collector", func() {
 
 			fclock.Increment(TestRefreshInterval)
 			Consistently(policyDb.GetAppIdsCallCount).Should(Equal(2))
+		})
+	})
+
+	Describe("QueryMetrics", func() {
+		JustBeforeEach(func() {
+			coll = NewCollector(TestRefreshInterval, TestCollectInterval, TestSaveInterval, nodeIndex, nodeNum, logger, policyDb, instanceMetricsDb, fclock, createAppCollector)
+			coll.Start()
+		})
+		BeforeEach(func() {
+			policyDb.GetAppIdsReturns(map[string]bool{"an-app-id": true}, nil)
+			metric1 = &models.AppInstanceMetric{
+				AppId:         "an-app-id",
+				InstanceIndex: 1,
+				CollectedAt:   2222,
+				Name:          models.MetricNameThroughput,
+				Unit:          models.UnitRPS,
+				Value:         "3",
+				Timestamp:     2222,
+			}
+			metric2 = &models.AppInstanceMetric{
+				AppId:         "an-app-id",
+				InstanceIndex: 1,
+				CollectedAt:   3333,
+				Name:          models.MetricNameResponseTime,
+				Unit:          models.UnitMilliseconds,
+				Value:         "300",
+				Timestamp:     3333,
+			}
+			appCollector.QueryReturns([]collection.TSD{metric1, metric2}, true)
+		})
+
+		Context("when cache hits", func() {
+			It("returns the data in cache", func() {
+				Eventually(policyDb.GetAppIdsCallCount).Should(Equal(1))
+
+				data, ok := coll.QueryMetrics("an-app-id", 0, 5555, db.ASC, map[string]string{})
+				Expect(ok).To(BeTrue())
+				Expect(data).To(Equal([]*models.AppInstanceMetric{metric1, metric2}))
+
+				data, ok = coll.QueryMetrics("an-app-id", 0, 5555, db.DESC, map[string]string{})
+				Expect(ok).To(BeTrue())
+				Expect(data).To(Equal([]*models.AppInstanceMetric{metric2, metric1}))
+			})
+		})
+		Context("when cache misses", func() {
+			BeforeEach(func() {
+				appCollector.QueryReturns(nil, false)
+			})
+			It("returns false", func() {
+				_, ok := coll.QueryMetrics("an-app-id", 0, 5555, db.ASC, map[string]string{})
+				Expect(ok).To(BeFalse())
+			})
+		})
+		Context("when app does not exist", func() {
+			It("returns false", func() {
+				_, ok := coll.QueryMetrics("non-exist-app-id", 0, 5555, db.ASC, map[string]string{})
+				Expect(ok).To(BeFalse())
+			})
+		})
+
+		AfterEach(func() {
+			coll.Stop()
 		})
 	})
 

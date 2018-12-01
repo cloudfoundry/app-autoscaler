@@ -31,15 +31,17 @@ import (
 )
 
 var (
-	mcPath         string
-	cfg            config.Config
-	mcPort         int
-	configFile     *os.File
-	ccNOAAUAA      *ghttp.Server
-	messagesToSend chan []byte
-	isTokenExpired bool
-	eLock          *sync.Mutex
-	httpClient     *http.Client
+	mcPath           string
+	cfg              config.Config
+	mcPort           int
+	healthport       int
+	configFile       *os.File
+	ccNOAAUAA        *ghttp.Server
+	messagesToSend   chan []byte
+	isTokenExpired   bool
+	eLock            *sync.Mutex
+	httpClient       *http.Client
+	healthHttpClient *http.Client
 )
 
 func TestMetricsCollector(t *testing.T) {
@@ -122,8 +124,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	wsHandler := testhelpers.NewWebsocketHandler(messagesToSend, 100*time.Millisecond)
 	ccNOAAUAA.RouteToHandler("GET", "/apps/an-app-id/stream", wsHandler.ServeWebsocket)
 
-	cfg.Cf = cf.CfConfig{
-		Api:       ccNOAAUAA.URL(),
+	cfg.CF = cf.CFConfig{
+		API:       ccNOAAUAA.URL(),
 		GrantType: cf.GrantTypePassword,
 		Username:  "admin",
 		Password:  "admin",
@@ -131,23 +133,25 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	testCertDir := "../../../../../test-certs"
 	mcPort = 7000 + GinkgoParallelNode()
+	healthport = 8000 + GinkgoParallelNode()
 	cfg.Server.Port = mcPort
 	cfg.Server.TLS.KeyFile = filepath.Join(testCertDir, "metricscollector.key")
 	cfg.Server.TLS.CertFile = filepath.Join(testCertDir, "metricscollector.crt")
 	cfg.Server.TLS.CACertFile = filepath.Join(testCertDir, "autoscaler-ca.crt")
 	cfg.Server.NodeAddrs = []string{"localhost"}
 	cfg.Server.NodeIndex = 0
+	cfg.Health.Port = healthport
 
 	cfg.Logging.Level = "info"
 
-	cfg.Db.InstanceMetricsDb = db.DatabaseConfig{
-		Url:                   os.Getenv("DBURL"),
+	cfg.DB.InstanceMetricsDB = db.DatabaseConfig{
+		URL:                   os.Getenv("DBURL"),
 		MaxOpenConnections:    10,
 		MaxIdleConnections:    5,
 		ConnectionMaxLifetime: 10 * time.Second,
 	}
-	cfg.Db.PolicyDb = db.DatabaseConfig{
-		Url:                   os.Getenv("DBURL"),
+	cfg.DB.PolicyDB = db.DatabaseConfig{
+		URL:                   os.Getenv("DBURL"),
 		MaxOpenConnections:    10,
 		MaxIdleConnections:    5,
 		ConnectionMaxLifetime: 10 * time.Second,
@@ -157,6 +161,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.Collector.RefreshInterval = 30 * time.Second
 	cfg.Collector.CollectMethod = config.CollectMethodPolling
 	cfg.Collector.SaveInterval = 5 * time.Second
+	cfg.Collector.MetricCacheSizePerApp = 100
+	cfg.HttpClientTimeout = 10 * time.Second
 
 	configFile = writeConfig(&cfg)
 
@@ -170,6 +176,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 			TLSClientConfig: tlsConfig,
 		},
 	}
+	healthHttpClient = &http.Client{}
 })
 
 var _ = SynchronizedAfterSuite(func() {

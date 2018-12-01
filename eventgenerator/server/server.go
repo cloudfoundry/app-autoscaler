@@ -6,6 +6,7 @@ import (
 
 	"autoscaler/db"
 	"autoscaler/eventgenerator/config"
+	"autoscaler/healthendpoint"
 	"autoscaler/routes"
 
 	"code.cloudfoundry.org/cfhttp"
@@ -22,10 +23,11 @@ func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vh(w, r, vars)
 }
 
-func NewServer(logger lager.Logger, conf *config.Config, database db.AppMetricDB) (ifrit.Runner, error) {
+func NewServer(logger lager.Logger, conf *config.Config, database db.AppMetricDB, httpStatusCollector healthendpoint.HTTPStatusCollector) (ifrit.Runner, error) {
 	eh := NewEventGenHandler(logger, database)
-
+	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(httpStatusCollector)
 	r := routes.EventGeneratorRoutes()
+	r.Use(httpStatusCollectMiddleware.Collect)
 	r.Get(routes.GetAggregatedMetricHistoriesRouteName).Handler(VarsFunc(eh.GetAggregatedMetricHistories))
 
 	addr := fmt.Sprintf("0.0.0.0:%d", conf.Server.Port)

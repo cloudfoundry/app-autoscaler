@@ -1,10 +1,10 @@
 package server_test
 
 import (
+	"autoscaler/fakes"
 	"autoscaler/models"
 	"autoscaler/routes"
 	"autoscaler/scalingengine/config"
-	"autoscaler/scalingengine/fakes"
 	. "autoscaler/scalingengine/server"
 
 	"code.cloudfoundry.org/lager"
@@ -22,9 +22,12 @@ import (
 )
 
 var (
-	server          ifrit.Process
-	serverUrl       string
-	scalingEngineDB *fakes.FakeScalingEngineDB
+	server              ifrit.Process
+	serverUrl           string
+	scalingEngineDB     *fakes.FakeScalingEngineDB
+	scheduleDB          *fakes.FakeSchedulerDB
+	sychronizer         *fakes.FakeActiveScheduleSychronizer
+	httpStatusCollector *fakes.FakeHTTPStatusCollector
 )
 
 var _ = SynchronizedBeforeSuite(func() []byte {
@@ -38,8 +41,10 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	}
 	scalingEngineDB = &fakes.FakeScalingEngineDB{}
 	scalingEngine := &fakes.FakeScalingEngine{}
-	health := &fakes.FakeHealth{}
-	httpServer, err := NewServer(lager.NewLogger("test"), conf, scalingEngineDB, scalingEngine, health)
+	sychronizer = &fakes.FakeActiveScheduleSychronizer{}
+	httpStatusCollector = &fakes.FakeHTTPStatusCollector{}
+
+	httpServer, err := NewServer(lager.NewLogger("test"), conf, scalingEngineDB, scalingEngine, sychronizer, httpStatusCollector)
 	Expect(err).NotTo(HaveOccurred())
 	server = ginkgomon.Invoke(httpServer)
 	serverUrl = fmt.Sprintf("http://127.0.0.1:%d", conf.Server.Port)
@@ -61,6 +66,10 @@ var _ = Describe("Server", func() {
 		bodyReader io.Reader
 		route      *mux.Router = routes.ScalingEngineRoutes()
 	)
+
+	BeforeEach(func() {
+
+	})
 
 	Context("when triggering scaling action", func() {
 		BeforeEach(func() {
@@ -229,5 +238,44 @@ var _ = Describe("Server", func() {
 				})
 			})
 		})
+	})
+
+	Context("when requesting sync shedule", func() {
+		JustBeforeEach(func() {
+			uPath, err := route.Get(routes.SyncActiveSchedulesRouteName).URLPath()
+			Expect(err).NotTo(HaveOccurred())
+			urlPath = uPath.Path
+			bodyReader = nil
+
+			req, err = http.NewRequest(method, serverUrl+urlPath, bodyReader)
+			Expect(err).NotTo(HaveOccurred())
+			rsp, err = http.DefaultClient.Do(req)
+		})
+
+		Context("when requesting correctly", func() {
+			BeforeEach(func() {
+				method = http.MethodPut
+			})
+
+			It("should return 200", func() {
+				Eventually(sychronizer.SyncCallCount).Should(Equal(1))
+				Expect(err).ToNot(HaveOccurred())
+				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+				rsp.Body.Close()
+			})
+		})
+
+		Context("when requesting with incorrect http method", func() {
+			BeforeEach(func() {
+				method = http.MethodGet
+			})
+
+			It("should return 405", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(rsp.StatusCode).To(Equal(http.StatusMethodNotAllowed))
+				rsp.Body.Close()
+			})
+		})
+
 	})
 })

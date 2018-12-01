@@ -3,10 +3,8 @@ package sqldb_test
 import (
 	"autoscaler/db"
 	. "autoscaler/db/sqldb"
-	"autoscaler/db/sqldb/fakes"
 	"autoscaler/models"
 
-	"code.cloudfoundry.org/clock/fakeclock"
 	"code.cloudfoundry.org/lager"
 	"github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
@@ -39,7 +37,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 	BeforeEach(func() {
 		logger = lager.NewLogger("history-sqldb-test")
 		dbConfig = db.DatabaseConfig{
-			Url:                   os.Getenv("DBURL"),
+			URL:                   os.Getenv("DBURL"),
 			MaxOpenConnections:    10,
 			MaxIdleConnections:    5,
 			ConnectionMaxLifetime: 10 * time.Second,
@@ -60,7 +58,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 
 		Context("when db url is not correct", func() {
 			BeforeEach(func() {
-				dbConfig.Url = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
+				dbConfig.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&pq.Error{}))
@@ -822,36 +820,6 @@ var _ = Describe("ScalingEngineSqldb", func() {
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
 			})
-		})
-
-	})
-
-	Describe("EmitHealthMetrics", func() {
-		var interval time.Duration
-		var clock *fakeclock.FakeClock
-		var health *fakes.FakeHealth
-
-		BeforeEach(func() {
-			sdb, err = NewScalingEngineSQLDB(dbConfig, logger)
-			Expect(err).NotTo(HaveOccurred())
-
-			health = &fakes.FakeHealth{}
-			interval = 2 * time.Second
-			clock = fakeclock.NewFakeClock(time.Now())
-			sdb.EmitHealthMetrics(health, clock, interval)
-			Eventually(clock.WatcherCount).Should(Equal(1))
-		})
-
-		AfterEach(func() {
-			err = sdb.Close()
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		It("will call out to set health data", func() {
-			clock.Increment(1 * interval)
-			Eventually(func() int {
-				return health.SetCallCount()
-			}).Should(Equal(1))
 		})
 
 	})

@@ -33,7 +33,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 	BeforeEach(func() {
 		logger = lager.NewLogger("appmetric-sqldb-test")
 		dbConfig = db.DatabaseConfig{
-			Url:                   os.Getenv("DBURL"),
+			URL:                   os.Getenv("DBURL"),
 			MaxOpenConnections:    10,
 			MaxIdleConnections:    5,
 			ConnectionMaxLifetime: 10 * time.Second,
@@ -54,7 +54,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 
 		Context("when db url is not correct", func() {
 			BeforeEach(func() {
-				dbConfig.Url = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
+				dbConfig.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&pq.Error{}))

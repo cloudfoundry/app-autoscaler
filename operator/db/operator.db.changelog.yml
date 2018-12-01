@@ -1,0 +1,36 @@
+databaseChangeLog:
+  - changeSet:
+      id: 1
+      author: cdlliuy
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: pruner_lock
+      changes:
+        - dropTable:
+            tableName: pruner_lock                              
+  - changeSet:
+        id: 2
+        author: cdlliuy
+        changes:
+          - createTable:
+              tableName: operator_lock
+              columns:
+                - column:
+                    name: owner
+                    type: varchar(255)
+                    constraints:
+                      primaryKey: true
+                - column:
+                    name: lock_timestamp
+                    type: timestamp
+                    constraints:
+                      nullable: false
+                - column:
+                    name: ttl
+                    type: bigint
+                    defaultValue: 0
+                    constraints:
+                      nullable: false      
+                           
+                    

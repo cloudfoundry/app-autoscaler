@@ -38,7 +38,6 @@ server:
   port: 8989
 health:
   port: 9999  
-  emit_interval: 15s
 defaultCoolDownSecs: 300
 lockSize: 32
 `)
@@ -68,7 +67,7 @@ server:
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 health:
     port: 9999    
-    emit_interval: 15s  
+ 
 logging:
   level: DeBug
 db:
@@ -87,28 +86,22 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-synchronizer:
-  active_schedule_sync_interval: 300s
 defaultCoolDownSecs: 300
 lockSize: 32
-db_lock:
-  ttl: 15s
-  url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
-  retry_interval: 5s
-enable_db_lock: false
+http_client_timeout: 10s
 `)
 			})
 
 			It("returns the config", func() {
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(conf.Cf.Api).To(Equal("https://api.example.com"))
-				Expect(conf.Cf.GrantType).To(Equal("password"))
-				Expect(conf.Cf.Username).To(Equal("admin"))
-				Expect(conf.Cf.Password).To(Equal("admin"))
-				Expect(conf.Cf.ClientId).To(Equal("client-id"))
-				Expect(conf.Cf.Secret).To(Equal("client-secret"))
-				Expect(conf.Cf.SkipSSLValidation).To(Equal(false))
+				Expect(conf.CF.API).To(Equal("https://api.example.com"))
+				Expect(conf.CF.GrantType).To(Equal("password"))
+				Expect(conf.CF.Username).To(Equal("admin"))
+				Expect(conf.CF.Password).To(Equal("admin"))
+				Expect(conf.CF.ClientID).To(Equal("client-id"))
+				Expect(conf.CF.Secret).To(Equal("client-secret"))
+				Expect(conf.CF.SkipSSLValidation).To(Equal(false))
 
 				Expect(conf.Server.Port).To(Equal(8989))
 				Expect(conf.Server.TLS.KeyFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/server.key"))
@@ -116,40 +109,35 @@ enable_db_lock: false
 				Expect(conf.Server.TLS.CACertFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/ca.crt"))
 
 				Expect(conf.Health.Port).To(Equal(9999))
-				Expect(conf.Health.EmitInterval).To(Equal(15 * time.Second))
 				Expect(conf.Logging.Level).To(Equal("debug"))
 
-				Expect(conf.Db.PolicyDb).To(Equal(
+				Expect(conf.DB.PolicyDB).To(Equal(
 					db.DatabaseConfig{
-						Url:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+						URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
 						MaxOpenConnections:    10,
 						MaxIdleConnections:    5,
 						ConnectionMaxLifetime: 60 * time.Second,
 					}))
-				Expect(conf.Db.ScalingEngineDb).To(Equal(
+				Expect(conf.DB.ScalingEngineDB).To(Equal(
 					db.DatabaseConfig{
-						Url:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+						URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
 						MaxOpenConnections:    10,
 						MaxIdleConnections:    5,
 						ConnectionMaxLifetime: 60 * time.Second,
 					}))
-				Expect(conf.Db.SchedulerDb).To(Equal(
+				Expect(conf.DB.SchedulerDB).To(Equal(
 					db.DatabaseConfig{
-						Url:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+						URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
 						MaxOpenConnections:    10,
 						MaxIdleConnections:    5,
 						ConnectionMaxLifetime: 60 * time.Second,
 					}))
-
-				Expect(conf.Synchronizer.ActiveScheduleSyncInterval).To(Equal(5 * time.Minute))
 
 				Expect(conf.DefaultCoolDownSecs).To(Equal(300))
 
 				Expect(conf.LockSize).To(Equal(32))
 
-				Expect(conf.DBLock.LockTTL).To(Equal(15 * time.Second))
-				Expect(conf.DBLock.LockRetryInterval).To(Equal(5 * time.Second))
-				Expect(conf.EnableDBLock).To(BeFalse())
+				Expect(conf.HttpClientTimeout).To(Equal(10 * time.Second))
 			})
 		})
 
@@ -173,38 +161,34 @@ lockSize: 32
 			It("returns default values", func() {
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(conf.Cf.GrantType).To(Equal(cf.GrantTypePassword))
-				Expect(conf.Cf.SkipSSLValidation).To(Equal(false))
+				Expect(conf.CF.GrantType).To(Equal(cf.GrantTypePassword))
+				Expect(conf.CF.SkipSSLValidation).To(Equal(false))
 				Expect(conf.Server.Port).To(Equal(8080))
 				Expect(conf.Health.Port).To(Equal(8081))
-				Expect(conf.Health.EmitInterval).To(Equal(15 * time.Second))
 				Expect(conf.Logging.Level).To(Equal("info"))
-				Expect(conf.Db.PolicyDb).To(Equal(
+				Expect(conf.DB.PolicyDB).To(Equal(
 					db.DatabaseConfig{
-						Url:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+						URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
 						MaxOpenConnections:    0,
 						MaxIdleConnections:    0,
 						ConnectionMaxLifetime: 0 * time.Second,
 					}))
-				Expect(conf.Db.ScalingEngineDb).To(Equal(
+				Expect(conf.DB.ScalingEngineDB).To(Equal(
 					db.DatabaseConfig{
-						Url:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+						URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
 						MaxOpenConnections:    0,
 						MaxIdleConnections:    0,
 						ConnectionMaxLifetime: 0 * time.Second,
 					}))
-				Expect(conf.Db.SchedulerDb).To(Equal(
+				Expect(conf.DB.SchedulerDB).To(Equal(
 					db.DatabaseConfig{
-						Url:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
+						URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
 						MaxOpenConnections:    0,
 						MaxIdleConnections:    0,
 						ConnectionMaxLifetime: 0 * time.Second,
 					}))
-				Expect(conf.Synchronizer.ActiveScheduleSyncInterval).To(Equal(DefaultActiveScheduleSyncInterval))
 
-				Expect(conf.DBLock.LockTTL).To(Equal(DefaultDBLockTTL))
-				Expect(conf.DBLock.LockRetryInterval).To(Equal(DefaultDBLockRetryInterval))
-
+				Expect(conf.HttpClientTimeout).To(Equal(5 * time.Second))
 			})
 		})
 
@@ -218,7 +202,7 @@ server:
 
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
 			})
 		})
 
@@ -227,29 +211,13 @@ server:
 				configBytes = []byte(`
 health:
   port: port
-  emit_interval: 15s
 `)
 			})
 
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
 			})
-		})
-
-		Context("when emit_interval of health is not a time duration", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
-health:
-  port: 9999
-  emit_interval: 15k
-`)
-			})
-			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
-			})
-
 		})
 
 		Context("when it gives a non integer max_open_connections of policydb", func() {
@@ -271,7 +239,6 @@ server:
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 health:
   port: 9999   
-  emit_interval: 15s
 logging:
   level: DeBug       
 db:
@@ -290,8 +257,6 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-synchronizer:
-  active_schedule_sync_interval: 300s
 defaultCoolDownSecs: 300
 lockSize: 32
 `)
@@ -299,7 +264,7 @@ lockSize: 32
 
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
 			})
 		})
 
@@ -322,7 +287,6 @@ server:
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 health:
   port: 9999   
-  emit_interval: 15s
 logging:
   level: DeBug
 db:
@@ -341,8 +305,6 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-synchronizer:
-  active_schedule_sync_interval: 300s
 defaultCoolDownSecs: 300
 lockSize: 32
 `)
@@ -350,7 +312,7 @@ lockSize: 32
 
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
 			})
 		})
 
@@ -373,7 +335,6 @@ server:
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 health:
   port: 9999   
-  emit_interval: 15s
 logging:
   level: DeBug
 db:
@@ -392,8 +353,6 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-synchronizer:
-  active_schedule_sync_interval: 300s
 defaultCoolDownSecs: 300
 lockSize: 32
 `)
@@ -424,7 +383,6 @@ server:
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 health:
   port: 9999       
-  emit_interval: 15s
 logging:
   level: DeBug
 db:
@@ -443,8 +401,6 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-synchronizer:
-  active_schedule_sync_interval: 300s
 defaultCoolDownSecs: 300
 lockSize: 32
 `)
@@ -452,7 +408,7 @@ lockSize: 32
 
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
 			})
 		})
 
@@ -475,7 +431,6 @@ server:
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 health:
   port: 9999      
-  emit_interval: 15s 
 logging:
   level: DeBug
 db:
@@ -494,8 +449,6 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-synchronizer:
-  active_schedule_sync_interval: 300s
 defaultCoolDownSecs: 300
 lockSize: 32
 `)
@@ -503,7 +456,7 @@ lockSize: 32
 
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
 			})
 		})
 
@@ -526,7 +479,6 @@ server:
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 health:
   port: 9999   
-  emit_interval: 15s
 logging:
   level: DeBug
 db:
@@ -545,8 +497,6 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-synchronizer:
-  active_schedule_sync_interval: 300s
 defaultCoolDownSecs: 300
 lockSize: 32
 `)
@@ -576,7 +526,6 @@ server:
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 health:
   port: 9999
-  emit_interval: 15s
 logging:
   level: DeBug
 db:
@@ -595,8 +544,6 @@ db:
     max_open_connections: NOT-INTEGER-VALUE
     max_idle_connections: 5
     connection_max_lifetime: 60s
-synchronizer:
-  active_schedule_sync_interval: 300s
 defaultCoolDownSecs: 300
 lockSize: 32
 `)
@@ -604,7 +551,7 @@ lockSize: 32
 
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .*into int")))
 			})
 		})
 
@@ -627,7 +574,6 @@ server:
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 health:
   port: 9999   
-  emit_interval: 15s 
 logging:
   level: DeBug
 db:
@@ -646,8 +592,6 @@ db:
     max_open_connections: 10
     max_idle_connections: NOT-INTEGER-VALUE
     connection_max_lifetime: 60
-synchronizer:
-  active_schedule_sync_interval: 300s
 defaultCoolDownSecs: 300
 lockSize: 32
 `)
@@ -655,7 +599,7 @@ lockSize: 32
 
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
 			})
 		})
 
@@ -678,7 +622,6 @@ server:
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 health:
   port: 9999
-  emit_interval: 15s
 logging:
   level: DeBug
 db:
@@ -697,59 +640,6 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60k
-synchronizer:
-  active_schedule_sync_interval: 300s
-defaultCoolDownSecs: 300
-lockSize: 32
-`)
-			})
-
-			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
-			})
-		})
-
-		Context("when active_schedule_sync_interval of synchronizer is not a time duration", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
-cf:
-  api: https://api.example.com
-  grant_type: PassWord
-  username: admin
-  password: admin
-  client_id: client-id
-  secret: client-secret
-  skip_ssl_validation: false
-server:
-  port: 8989
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
-health:
-  port: 9999    
-  emit_interval: 15s
-logging:
-  level: DeBug
-db:
-  policy_db:
-    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60
-  scalingengine_db:
-    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60
-  scheduler_db:
-    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-synchronizer:
-  active_schedule_sync_interval: 300k
 defaultCoolDownSecs: 300
 lockSize: 32
 `)
@@ -779,8 +669,7 @@ server:
     cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 health:
-  port: 9999  
-  emit_interval: 15s  
+  port: 9999   
 logging:
   level: DeBug
 db:
@@ -799,8 +688,6 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-synchronizer:
-  active_schedule_sync_interval: 300
 defaultCoolDownSecs: NOT-INTEGER-VALUE
 lockSize: 32
 `)
@@ -808,7 +695,7 @@ lockSize: 32
 
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
 			})
 		})
 
@@ -831,7 +718,6 @@ server:
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 health:
   port: 9999   
-  emit_interval: 15s 
 logging:
   level: DeBug
 db:
@@ -850,8 +736,6 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-synchronizer:
-  active_schedule_sync_interval: 300
 defaultCoolDownSecs: 300
 lockSize: NOT-INTEGER-VALUE
 `)
@@ -859,7 +743,56 @@ lockSize: NOT-INTEGER-VALUE
 
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
+			})
+		})
+
+		Context("when http_client_timeout of http is not a time duration", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+cf:
+  api: https://api.example.com
+  grant_type: PassWord
+  username: admin
+  password: admin
+  client_id: client-id
+  secret: client-secret
+  skip_ssl_validation: false
+server:
+  port: 8989
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
+health:
+  port: 9999
+logging:
+  level: DeBug
+db:
+  policy_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60
+  scalingengine_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60
+  scheduler_db:
+    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+defaultCoolDownSecs: 300
+lockSize: 32
+http_client_timeout: 10k
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
 			})
 		})
 
@@ -868,15 +801,16 @@ lockSize: NOT-INTEGER-VALUE
 	Describe("Validate", func() {
 		BeforeEach(func() {
 			conf = &Config{}
-			conf.Cf.Api = "http://api.example.com"
-			conf.Cf.GrantType = cf.GrantTypePassword
-			conf.Cf.SkipSSLValidation = false
-			conf.Cf.Username = "admin"
-			conf.Db.PolicyDb.Url = "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-			conf.Db.ScalingEngineDb.Url = "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-			conf.Db.SchedulerDb.Url = "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+			conf.CF.API = "http://api.example.com"
+			conf.CF.GrantType = cf.GrantTypePassword
+			conf.CF.SkipSSLValidation = false
+			conf.CF.Username = "admin"
+			conf.DB.PolicyDB.URL = "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+			conf.DB.ScalingEngineDB.URL = "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+			conf.DB.SchedulerDB.URL = "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
 			conf.DefaultCoolDownSecs = 300
 			conf.LockSize = 32
+			conf.HttpClientTimeout = 10 * time.Second
 		})
 
 		JustBeforeEach(func() {
@@ -891,7 +825,7 @@ lockSize: NOT-INTEGER-VALUE
 
 		Context("when cf config is not valid", func() {
 			BeforeEach(func() {
-				conf.Cf.Api = ""
+				conf.CF.API = ""
 			})
 
 			It("should error", func() {
@@ -901,31 +835,31 @@ lockSize: NOT-INTEGER-VALUE
 
 		Context("when policy db url is not set", func() {
 			BeforeEach(func() {
-				conf.Db.PolicyDb.Url = ""
+				conf.DB.PolicyDB.URL = ""
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: Policy DB url is empty")))
+				Expect(err).To(MatchError("Configuration error: db.policy_db.url is empty"))
 			})
 		})
 
 		Context("when scalingengine db url is not set", func() {
 			BeforeEach(func() {
-				conf.Db.ScalingEngineDb.Url = ""
+				conf.DB.ScalingEngineDB.URL = ""
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: ScalingEngine DB url is empty")))
+				Expect(err).To(MatchError("Configuration error: db.scalingengine_db.url is empty"))
 			})
 		})
 
 		Context("when scheduler db url is not set", func() {
 			BeforeEach(func() {
-				conf.Db.SchedulerDb.Url = ""
+				conf.DB.SchedulerDB.URL = ""
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: Scheduler DB url is empty")))
+				Expect(err).To(MatchError("Configuration error: db.scheduler_db.url is empty"))
 			})
 		})
 
@@ -935,7 +869,7 @@ lockSize: NOT-INTEGER-VALUE
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: DefaultCoolDownSecs should be between 60 and 3600")))
+				Expect(err).To(MatchError("Configuration error: DefaultCoolDownSecs should be between 60 and 3600"))
 			})
 		})
 
@@ -945,7 +879,7 @@ lockSize: NOT-INTEGER-VALUE
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: DefaultCoolDownSecs should be between 60 and 3600")))
+				Expect(err).To(MatchError("Configuration error: DefaultCoolDownSecs should be between 60 and 3600"))
 			})
 		})
 
@@ -955,7 +889,16 @@ lockSize: NOT-INTEGER-VALUE
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: LockSize is less than or equal to 0")))
+				Expect(err).To(MatchError("Configuration error: LockSize is less than or equal to 0"))
+			})
+		})
+
+		Context("when HttpClientTimeout is <= 0", func() {
+			BeforeEach(func() {
+				conf.HttpClientTimeout = 0
+			})
+			It("should error", func() {
+				Expect(err).To(MatchError("Configuration error: http_client_timeout is less-equal than 0"))
 			})
 		})
 	})

@@ -1,11 +1,8 @@
 package schedule
 
 import (
-	"os"
 	"sync"
-	"time"
 
-	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
 
 	"autoscaler/db"
@@ -13,44 +10,27 @@ import (
 	"autoscaler/scalingengine"
 )
 
-type ActiveScheduleSychronizer struct {
+type ActiveScheduleSychronizer interface {
+	Sync()
+}
+
+type activeScheduleSychronizer struct {
 	logger      lager.Logger
 	schedulerDB db.SchedulerDB
 	engineDB    db.ScalingEngineDB
 	engine      scalingengine.ScalingEngine
-	interval    time.Duration
-	sClock      clock.Clock
 }
 
-func NewActiveScheduleSychronizer(logger lager.Logger, schedulerDB db.SchedulerDB, engineDB db.ScalingEngineDB, engine scalingengine.ScalingEngine, interval time.Duration, sClock clock.Clock) *ActiveScheduleSychronizer {
-	return &ActiveScheduleSychronizer{
+func NewActiveScheduleSychronizer(logger lager.Logger, schedulerDB db.SchedulerDB, engineDB db.ScalingEngineDB, engine scalingengine.ScalingEngine) *activeScheduleSychronizer {
+	return &activeScheduleSychronizer{
 		logger:      logger,
 		schedulerDB: schedulerDB,
 		engineDB:    engineDB,
 		engine:      engine,
-		interval:    interval,
-		sClock:      sClock,
 	}
 }
 
-func (ss *ActiveScheduleSychronizer) Run(signals <-chan os.Signal, ready chan<- struct{}) error {
-	close(ready)
-	ss.logger.Info("started", lager.Data{"interval": ss.interval})
-
-	timer := ss.sClock.NewTimer(ss.interval)
-	for {
-		select {
-		case <-signals:
-			ss.logger.Info("stopped")
-			return nil
-		case <-timer.C():
-			ss.synchronizeActiveSchedules()
-			timer.Reset(ss.interval)
-		}
-	}
-}
-
-func (ss *ActiveScheduleSychronizer) synchronizeActiveSchedules() {
+func (ss *activeScheduleSychronizer) Sync() {
 	ss.logger.Info("synchronizing-active-schedules")
 
 	asScheduler, err := ss.schedulerDB.GetActiveSchedules()
