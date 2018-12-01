@@ -19,7 +19,7 @@ describe('Model Initialization', function () {
     expect(models.policy_json).to.be.ok;
     expect(_.has(models, 'policy_json')).to.be.equal(true);
     expect(_.has(models, 'sequelize')).to.be.equal(true);
-    expect(_.keys(models).length).to.be.equal(2);
+    expect(_.keys(models).length).to.be.equal(3);
   });
 
   it('returns the sequelize instance with default connection pool', function () {

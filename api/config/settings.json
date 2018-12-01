@@ -3,7 +3,10 @@
     "publicPort": 8088,
     "infoFilePath": "../api/config/info.json",
     "cfApi": "https://api.bosh-lite.com",
+    "cfClientId": "admin",
+    "cfClientSecret": "admin-secret",
     "skipSSLValidation": false,
+    "cacheTTL": 10,
     "db": {
         "maxConnections": 10,
         "minConnections": 0,
@@ -62,5 +65,6 @@
         "keyFile": "../test-certs/api_public.key",
         "certFile": "../test-certs/api_public.crt",
         "caCertFile": "../test-certs/autoscaler-ca.crt"
-    }
+    },
+    "httpClientTimeout": 5000
 }

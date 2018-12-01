@@ -9,8 +9,10 @@ var defaultRequest = function() {
       "metric_type": "memoryused"
     },
     query: {
+      "instance-index": 1,
       "start-time": "100",
       "end-time": "200",
+      "order-direction": "DESC",
       "order": "DESC",
       "page": "1",
       "results-per-page": "10"
@@ -26,42 +28,22 @@ describe("metricHelper", function() {
     beforeEach(function() {
       requestObj = defaultRequest();
     });
-    context("all parameters are valid", function() {
+    context("all parameters and query are valid", function() {
       it("return true", function() {
         validateResult = helper.parseParameter(requestObj);
         expect(validateResult.valid).to.equal(true);
-      });
-    });
-
-    context("validate app_id", function() {
-      context("app_id is undefined", function() {
-        it("return false", function() {
-          delete requestObj.params.app_id;
-          validateResult = helper.parseParameter(requestObj);
-          expect(validateResult.valid).to.equal(false);
-          expect(validateResult.message).to.equal("app_id is required");
-        });
-      });
-
-      context("app_id is null", function() {
-        it("return false", function() {
-          requestObj.params.app_id = null;
-          validateResult = helper.parseParameter(requestObj);
-          expect(validateResult.valid).to.equal(false);
-          expect(validateResult.message).to.equal("app_id is required");
-        });
-      });
-
-      context("app_id is empty", function() {
-        it("return false", function() {
-          requestObj.params.app_id = "";
-          validateResult = helper.parseParameter(requestObj);
-          expect(validateResult.valid).to.equal(false);
-          expect(validateResult.message).to.equal("app_id is required");
+        expect(validateResult.parameters).to.deep.equal({
+          "appId": requestObj.params.app_id,
+          "metricType": requestObj.params.metric_type,
+          "instanceIndex": parseInt(requestObj.query["instance-index"]),
+          "startTime": parseInt(requestObj.query["start-time"]),
+          "endTime": parseInt(requestObj.query["end-time"]),
+          "order": requestObj.query["order-direction"],
+          "page": parseInt(requestObj.query["page"]),
+          "resultsPerPage": parseInt(requestObj.query["results-per-page"])
         });
       });
     });
-
     context("validate metric_type", function() {
       context("metric_type is undefined", function() {
         it("return false", function() {
@@ -91,173 +73,38 @@ describe("metricHelper", function() {
       });
     });
 
-    context("validate start-time", function() {
-      context("start-time is undefined", function() {
-        it("return true, startTime is set to 0", function() {
-          delete requestObj.query["start-time"];
+    context("validate instance-index", function() {
+      context("instance-index is undefined", function() {
+        it("return true", function() {
+          delete requestObj.query["instance-index"];
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(true);
-          expect(validateResult.parameters.startTime).to.equal(0);
         });
       });
 
-      context("start-time is null", function() {
-        it("return true, startTime is set to 0", function() {
-          requestObj.query["start-time"] = null;
+      context("instance-index is null", function() {
+        it("return true", function() {
+          requestObj.query["instance-index"] = null;
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(true);
-          expect(validateResult.parameters.startTime).to.equal(0);
         });
       });
 
-      context("start-time is not integer", function() {
+      context("instance-index is not an integer", function() {
         it("return false", function() {
-          requestObj.query["start-time"] = "not-integer";
+          requestObj.query["instance-index"] = "not-integer";
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(false);
-          expect(validateResult.message).to.equal("start-time must be an integer");
-        });
-      });
-    });
-
-    context("validate end-time", function() {
-      context("end-time is undefined", function() {
-        it("return true, endTime is set to -1", function() {
-          delete requestObj.query["end-time"];
-          validateResult = helper.parseParameter(requestObj);
-          expect(validateResult.valid).to.equal(true);
-          expect(validateResult.parameters.endTime).to.equal(-1);
+          expect(validateResult.message).to.equal("instance-index must be an integer");
         });
       });
 
-      context("end-time is null", function() {
-        it("return true, endTime is set to -1", function() {
-          requestObj.query["end-time"] = null;
-          validateResult = helper.parseParameter(requestObj);
-          expect(validateResult.valid).to.equal(true);
-          expect(validateResult.parameters.endTime).to.equal(-1);
-        });
-      });
-
-      context("end-time is not integer", function() {
+      context("instance-index is smaller than 0", function() {
         it("return false", function() {
-          requestObj.query["end-time"] = "not-integer";
+          requestObj.query["instance-index"] = -1;
           validateResult = helper.parseParameter(requestObj);
           expect(validateResult.valid).to.equal(false);
-          expect(validateResult.message).to.equal("end-time must be an integer");
-        });
-      });
-    });
-    context("validate order", function() {
-      context("order is undefined", function() {
-        it("return true, order is set to ASC", function() {
-          delete requestObj.query["order"];
-          validateResult = helper.parseParameter(requestObj);
-          expect(validateResult.valid).to.equal(true);
-          expect(validateResult.parameters.order).to.equal("ASC");
-        });
-
-      });
-      context("order is null", function() {
-        it("return true, order is set to ASC", function() {
-          requestObj.query["order"] = null;
-          validateResult = helper.parseParameter(requestObj);
-          expect(validateResult.valid).to.equal(true);
-          expect(validateResult.parameters.order).to.equal("ASC");
-        });
-
-      });
-      context("order is not string", function() {
-        it("return false", function() {
-          requestObj.query["order"] = 1;
-          validateResult = helper.parseParameter(requestObj);
-          expect(validateResult.valid).to.equal(false);
-          expect(validateResult.message).to.equal("order must be a string");
-        });
-
-      });
-      context("order is not DESC or ASC", function() {
-        it("return false", function() {
-          requestObj.query["order"] = "not-DESC-ASC";
-          validateResult = helper.parseParameter(requestObj);
-          expect(validateResult.valid).to.equal(false);
-          expect(validateResult.message).to.equal("order must be DESC or ASC");
-        });
-
-      });
-    });
-    context("validate page", function() {
-      context("page is undefined", function() {
-        it("return true, page is set to 1", function() {
-          delete requestObj.query["page"];
-          validateResult = helper.parseParameter(requestObj);
-          expect(validateResult.valid).to.equal(true);
-          expect(validateResult.parameters.page).to.equal(1);
-        });
-      });
-
-      context("page is null", function() {
-        it("return true, page is set to 1", function() {
-          requestObj.query["page"] = null;
-          validateResult = helper.parseParameter(requestObj);
-          expect(validateResult.valid).to.equal(true);
-          expect(validateResult.parameters.page).to.equal(1);
-        });
-      });
-
-      context("page is not integer", function() {
-        it("return false", function() {
-          requestObj.query["page"] = "not-integer";
-          validateResult = helper.parseParameter(requestObj);
-          expect(validateResult.valid).to.equal(false);
-          expect(validateResult.message).to.equal("page must be an integer");
-        });
-      });
-
-      context("page is an integer but smaller than 1", function() {
-        it("return false", function() {
-          requestObj.query["page"] = 0;
-          validateResult = helper.parseParameter(requestObj);
-          expect(validateResult.valid).to.equal(false);
-          expect(validateResult.message).to.equal("page must be greater than 0");
-        });
-      });
-    });
-
-    context("validate results-per-page", function() {
-      context("results-per-page is undefined", function() {
-        it("return true, reulstsPerPage is set to 50", function() {
-          delete requestObj.query["results-per-page"];
-          validateResult = helper.parseParameter(requestObj);
-          expect(validateResult.valid).to.equal(true);
-          expect(validateResult.parameters.resultsPerPage).to.equal(50);
-        });
-      });
-
-      context("results-per-page is null", function() {
-        it("return true, reulstsPerPage is set to 50", function() {
-          requestObj.query["results-per-page"] = null;
-          validateResult = helper.parseParameter(requestObj);
-          expect(validateResult.valid).to.equal(true);
-          expect(validateResult.parameters.resultsPerPage).to.equal(50);
-        });
-      });
-
-      context("results-per-page is not integer", function() {
-        it("return false", function() {
-          requestObj.query["results-per-page"] = "not-integer";
-          validateResult = helper.parseParameter(requestObj);
-          expect(validateResult.valid).to.equal(false);
-          expect(validateResult.message).to.equal("results-per-page must be an integer");
-        });
-      });
-
-      context("results-per-page is an integer but smaller than 1", function() {
-        it("return false", function() {
-          requestObj.query["results-per-page"] = 0;
-          validateResult = helper.parseParameter(requestObj);
-          expect(validateResult.valid).to.equal(false);
-          expect(validateResult.message).to.equal("results-per-page must be greater than 0");
+          expect(validateResult.message).to.equal("instance-index must be greater than or equal to 0");
         });
       });
     });

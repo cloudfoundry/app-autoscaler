@@ -3,6 +3,7 @@ package config_test
 import (
 	"autoscaler/db"
 	. "autoscaler/eventgenerator/config"
+	"autoscaler/helpers"
 	"autoscaler/models"
 
 	"time"
@@ -31,6 +32,7 @@ var _ = Describe("Config", func() {
 				configBytes = []byte(`
 logging:
   level: info
+http_client_timeout: 10s
 server:
   port: 9080
   tls:
@@ -38,7 +40,9 @@ server:
     cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
   node_addrs: [address1, address2]
-  node_index: 1  
+  node_index: 1
+health:
+  port: 9999
 db:
   policy_db:
     url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
@@ -85,7 +89,8 @@ circuitBreaker:
 			It("returns the config", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(conf).To(Equal(&Config{
-					Logging: LoggingConfig{Level: "info"},
+					Logging:           helpers.LoggingConfig{Level: "info"},
+					HttpClientTimeout: 10 * time.Second,
 					Server: ServerConfig{
 						Port: 9080,
 						TLS: models.TLSCerts{
@@ -96,15 +101,18 @@ circuitBreaker:
 						NodeAddrs: []string{"address1", "address2"},
 						NodeIndex: 1,
 					},
+					Health: models.HealthConfig{
+						Port: 9999,
+					},
 					DB: DBConfig{
 						PolicyDB: db.DatabaseConfig{
-							Url:                   "postgres://postgres:password@localhost/autoscaler?sslmode=disable",
+							URL:                   "postgres://postgres:password@localhost/autoscaler?sslmode=disable",
 							MaxOpenConnections:    10,
 							MaxIdleConnections:    5,
 							ConnectionMaxLifetime: 60 * time.Second,
 						},
 						AppMetricDB: db.DatabaseConfig{
-							Url:                   "postgres://postgres:password@localhost/autoscaler?sslmode=disable",
+							URL:                   "postgres://postgres:password@localhost/autoscaler?sslmode=disable",
 							MaxOpenConnections:    10,
 							MaxIdleConnections:    5,
 							ConnectionMaxLifetime: 60 * time.Second,
@@ -123,7 +131,7 @@ circuitBreaker:
 						EvaluatorCount:            10,
 						TriggerArrayChannelSize:   100},
 					ScalingEngine: ScalingEngineConfig{
-						ScalingEngineUrl: "http://localhost:8082",
+						ScalingEngineURL: "http://localhost:8082",
 						TLSClientCerts: models.TLSCerts{
 							KeyFile:    "/var/vcap/jobs/autoscaler/config/certs/se.key",
 							CertFile:   "/var/vcap/jobs/autoscaler/config/certs/se.crt",
@@ -131,7 +139,7 @@ circuitBreaker:
 						},
 					},
 					MetricCollector: MetricCollectorConfig{
-						MetricCollectorUrl: "http://localhost:8083",
+						MetricCollectorURL: "http://localhost:8083",
 						TLSClientCerts: models.TLSCerts{
 							KeyFile:    "/var/vcap/jobs/autoscaler/config/certs/mc.key",
 							CertFile:   "/var/vcap/jobs/autoscaler/config/certs/mc.crt",
@@ -211,20 +219,24 @@ defaultBreachDurationSecs: 600
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(conf).To(Equal(&Config{
-					Logging: LoggingConfig{Level: "info"},
+					Logging:           helpers.LoggingConfig{Level: "info"},
+					HttpClientTimeout: 5 * time.Second,
 					Server: ServerConfig{
 						Port: 8080,
 						TLS:  models.TLSCerts{},
 					},
+					Health: models.HealthConfig{
+						Port: 8081,
+					},
 					DB: DBConfig{
 						PolicyDB: db.DatabaseConfig{
-							Url:                   "postgres://postgres:password@localhost/autoscaler?sslmode=disable",
+							URL:                   "postgres://postgres:password@localhost/autoscaler?sslmode=disable",
 							MaxOpenConnections:    0,
 							MaxIdleConnections:    0,
 							ConnectionMaxLifetime: 0 * time.Second,
 						},
 						AppMetricDB: db.DatabaseConfig{
-							Url:                   "postgres://postgres:password@localhost/autoscaler?sslmode=disable",
+							URL:                   "postgres://postgres:password@localhost/autoscaler?sslmode=disable",
 							MaxOpenConnections:    0,
 							MaxIdleConnections:    0,
 							ConnectionMaxLifetime: 0 * time.Second,
@@ -244,9 +256,9 @@ defaultBreachDurationSecs: 600
 						TriggerArrayChannelSize:   DefaultTriggerArrayChannelSize,
 					},
 					ScalingEngine: ScalingEngineConfig{
-						ScalingEngineUrl: "http://localhost:8082"},
+						ScalingEngineURL: "http://localhost:8082"},
 					MetricCollector: MetricCollectorConfig{
-						MetricCollectorUrl: "http://localhost:8083"},
+						MetricCollectorURL: "http://localhost:8083"},
 					DefaultBreachDurationSecs: 600,
 					DefaultStatWindowSecs:     300,
 					CircuitBreaker: CircuitBreakerConfig{
@@ -255,6 +267,46 @@ defaultBreachDurationSecs: 600
 						ConsecutiveFailureCount: DefaultBreakerConsecutiveFailureCount,
 					},
 				}))
+			})
+		})
+		Context("when http_client_timeout is not a time duration", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: info
+http_client_timeout: 10k
+db:
+  policy_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  app_metrics_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+aggregator: 
+  aggregator_execute_interval: 60s
+  policy_poller_interval: 30s
+  metric_poller_count: 10
+  app_monitor_channel_size: 100
+evaluator:
+  evaluation_manager_execute_interval: 30s
+  evaluator_count: 10
+  trigger_array_channel_size: 100
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+metricCollector:
+  metric_collector_url: http://localhost:8083
+defaultStatWindowSecs: 300
+defaultBreachDurationSecs: 600
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
 			})
 		})
 
@@ -930,25 +982,67 @@ defaultBreachDurationSecs: NOT-INTEGER-VALUE
 			})
 		})
 
+		Context("when it gives a non integer health port", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: info
+db:
+  policy_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  app_metrics_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+aggregator: 
+  aggregator_execute_interval: 30s
+  policy_poller_interval: 30s
+  metric_poller_count: 10
+  app_monitor_channel_size: 100
+evaluator:
+  evaluation_manager_execute_interval: 30s
+  evaluator_count: 10
+  trigger_array_channel_size: 100
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+metricCollector:
+  metric_collector_url: http://localhost:8083
+defaultStatWindowSecs: 300
+defaultBreachDurationSecs: 300
+health:
+  port: NOT-INTEGER-VALUE
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal !!str `NOT-INT...` into int")))
+			})
+		})
+
 	})
 
 	Describe("Validate", func() {
 		BeforeEach(func() {
 			conf = &Config{
-				Logging: LoggingConfig{Level: "info"},
+				Logging: helpers.LoggingConfig{Level: "info"},
 				Server: ServerConfig{
 					NodeAddrs: []string{"address1", "address2"},
 					NodeIndex: 0,
 				},
 				DB: DBConfig{
 					PolicyDB: db.DatabaseConfig{
-						Url:                   "postgres://postgres:password@localhost/autoscaler?sslmode=disable",
+						URL:                   "postgres://postgres:password@localhost/autoscaler?sslmode=disable",
 						MaxOpenConnections:    10,
 						MaxIdleConnections:    5,
 						ConnectionMaxLifetime: 60 * time.Second,
 					},
 					AppMetricDB: db.DatabaseConfig{
-						Url:                   "postgres://postgres:password@localhost/autoscaler?sslmode=disable",
+						URL:                   "postgres://postgres:password@localhost/autoscaler?sslmode=disable",
 						MaxOpenConnections:    10,
 						MaxIdleConnections:    5,
 						ConnectionMaxLifetime: 60 * time.Second,
@@ -967,11 +1061,13 @@ defaultBreachDurationSecs: NOT-INTEGER-VALUE
 					EvaluatorCount:            10,
 					TriggerArrayChannelSize:   100},
 				ScalingEngine: ScalingEngineConfig{
-					ScalingEngineUrl: "http://localhost:8082"},
+					ScalingEngineURL: "http://localhost:8082"},
 				MetricCollector: MetricCollectorConfig{
-					MetricCollectorUrl: "http://localhost:8083"},
+					MetricCollectorURL: "http://localhost:8083",
+				},
 				DefaultBreachDurationSecs: 600,
 				DefaultStatWindowSecs:     300,
+				HttpClientTimeout:         10 * time.Second,
 			}
 		})
 
@@ -982,42 +1078,42 @@ defaultBreachDurationSecs: NOT-INTEGER-VALUE
 		Context("when policy db url is not set", func() {
 
 			BeforeEach(func() {
-				conf.DB.PolicyDB.Url = ""
+				conf.DB.PolicyDB.URL = ""
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: Policy DB url is empty")))
+				Expect(err).To(MatchError("Configuration error: db.policy_db.url is empty"))
 			})
 		})
 
 		Context("when appmetric db url is not set", func() {
 
 			BeforeEach(func() {
-				conf.DB.AppMetricDB.Url = ""
+				conf.DB.AppMetricDB.URL = ""
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: AppMetric DB url is empty")))
+				Expect(err).To(MatchError("Configuration error: db.app_metrics_db.url is empty"))
 			})
 		})
 		Context("when scaling engine url is not set", func() {
 
 			BeforeEach(func() {
-				conf.ScalingEngine.ScalingEngineUrl = ""
+				conf.ScalingEngine.ScalingEngineURL = ""
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: Scaling engine url is empty")))
+				Expect(err).To(MatchError("Configuration error: scalingEngine.scaling_engine_url is empty"))
 			})
 		})
 		Context("when metric collector url is not set", func() {
 
 			BeforeEach(func() {
-				conf.MetricCollector.MetricCollectorUrl = ""
+				conf.MetricCollector.MetricCollectorURL = ""
 			})
 
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: Metric collector url is empty")))
+				Expect(err).To(MatchError("Configuration error: metricCollector.metric_collector_url is empty"))
 			})
 		})
 
@@ -1026,25 +1122,25 @@ defaultBreachDurationSecs: NOT-INTEGER-VALUE
 				conf.Aggregator.AggregatorExecuteInterval = 0
 			})
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: aggregator execute interval is less-equal than 0")))
+				Expect(err).To(MatchError("Configuration error: aggregator.aggregator_execute_interval is less-equal than 0"))
 			})
 		})
 
-		Context("when PolicyPollerInterval:  <= 0", func() {
+		Context("when PolicyPollerInterval is <= 0", func() {
 			BeforeEach(func() {
 				conf.Aggregator.PolicyPollerInterval = 0
 			})
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: policy poller interval is less-equal than 0")))
+				Expect(err).To(MatchError("Configuration error: aggregator.policy_poller_interval is less-equal than 0"))
 			})
 		})
 
-		Context("when SaveInterval:  <= 0", func() {
+		Context("when SaveInterval <= 0", func() {
 			BeforeEach(func() {
 				conf.Aggregator.SaveInterval = 0
 			})
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: save interval is less-equal than 0")))
+				Expect(err).To(MatchError("Configuration error: aggregator.save_interval is less-equal than 0"))
 			})
 		})
 
@@ -1053,7 +1149,7 @@ defaultBreachDurationSecs: NOT-INTEGER-VALUE
 				conf.Aggregator.MetricPollerCount = 0
 			})
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: metric poller count is less-equal than 0")))
+				Expect(err).To(MatchError("Configuration error: aggregator.metric_poller_count is less-equal than 0"))
 			})
 		})
 
@@ -1062,7 +1158,7 @@ defaultBreachDurationSecs: NOT-INTEGER-VALUE
 				conf.Aggregator.AppMonitorChannelSize = 0
 			})
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: appMonitor channel size is less-equal than 0")))
+				Expect(err).To(MatchError("Configuration error: aggregator.app_monitor_channel_size is less-equal than 0"))
 			})
 		})
 
@@ -1071,7 +1167,7 @@ defaultBreachDurationSecs: NOT-INTEGER-VALUE
 				conf.Aggregator.AppMetricChannelSize = 0
 			})
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: appMetric channel size is less-equal than 0")))
+				Expect(err).To(MatchError("Configuration error: aggregator.app_metric_channel_size is less-equal than 0"))
 			})
 		})
 
@@ -1080,7 +1176,7 @@ defaultBreachDurationSecs: NOT-INTEGER-VALUE
 				conf.Evaluator.EvaluationManagerInterval = 0
 			})
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: evalution manager execeute interval is less-equal than 0")))
+				Expect(err).To(MatchError("Configuration error: evaluator.evaluation_manager_execute_interval is less-equal than 0"))
 			})
 		})
 
@@ -1089,7 +1185,7 @@ defaultBreachDurationSecs: NOT-INTEGER-VALUE
 				conf.Evaluator.EvaluatorCount = 0
 			})
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: evaluator count is less-equal than 0")))
+				Expect(err).To(MatchError("Configuration error: evaluator.evaluator_count is less-equal than 0"))
 			})
 		})
 
@@ -1098,7 +1194,7 @@ defaultBreachDurationSecs: NOT-INTEGER-VALUE
 				conf.Evaluator.TriggerArrayChannelSize = 0
 			})
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: trigger-array channel size is less-equal than 0")))
+				Expect(err).To(MatchError("Configuration error: evaluator.trigger_array_channel_size is less-equal than 0"))
 			})
 		})
 
@@ -1107,7 +1203,7 @@ defaultBreachDurationSecs: NOT-INTEGER-VALUE
 				conf.DefaultBreachDurationSecs = 10
 			})
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: defaultBreachDurationSecs should be between 60 and 3600")))
+				Expect(err).To(MatchError("Configuration error: defaultBreachDurationSecs should be between 60 and 3600"))
 			})
 		})
 
@@ -1116,7 +1212,7 @@ defaultBreachDurationSecs: NOT-INTEGER-VALUE
 				conf.DefaultStatWindowSecs = 10
 			})
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: defaultStatWindowSecs should be between 60 and 3600")))
+				Expect(err).To(MatchError("Configuration error: defaultStatWindowSecs should be between 60 and 3600"))
 			})
 		})
 
@@ -1125,7 +1221,7 @@ defaultBreachDurationSecs: NOT-INTEGER-VALUE
 				conf.DefaultBreachDurationSecs = 5000
 			})
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: defaultBreachDurationSecs should be between 60 and 3600")))
+				Expect(err).To(MatchError("Configuration error: defaultBreachDurationSecs should be between 60 and 3600"))
 			})
 		})
 
@@ -1134,7 +1230,7 @@ defaultBreachDurationSecs: NOT-INTEGER-VALUE
 				conf.DefaultStatWindowSecs = 5000
 			})
 			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: defaultStatWindowSecs should be between 60 and 3600")))
+				Expect(err).To(MatchError("Configuration error: defaultStatWindowSecs should be between 60 and 3600"))
 			})
 		})
 
@@ -1144,7 +1240,7 @@ defaultBreachDurationSecs: NOT-INTEGER-VALUE
 					conf.Server.NodeIndex = -1
 				})
 				It("should error", func() {
-					Expect(err).To(MatchError(MatchRegexp("Configuration error: node_index out of range")))
+					Expect(err).To(MatchError("Configuration error: server.node_index out of range"))
 				})
 			})
 
@@ -1154,10 +1250,19 @@ defaultBreachDurationSecs: NOT-INTEGER-VALUE
 					conf.Server.NodeAddrs = []string{"address1", "address2"}
 				})
 				It("should error", func() {
-					Expect(err).To(MatchError(MatchRegexp("Configuration error: node_index out of range")))
+					Expect(err).To(MatchError("Configuration error: server.node_index out of range"))
 				})
 			})
 
+		})
+
+		Context("when HttpClientTimeout is <= 0", func() {
+			BeforeEach(func() {
+				conf.HttpClientTimeout = 0
+			})
+			It("should error", func() {
+				Expect(err).To(MatchError("Configuration error: http_client_timeout is less-equal than 0"))
+			})
 		})
 
 	})

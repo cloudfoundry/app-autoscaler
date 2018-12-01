@@ -4,9 +4,10 @@ var expect = require('chai').expect;
 
 var fs = require('fs');
 var path = require('path');
+var NodeCache = require('node-cache');
 var ApiServer = require(path.join(__dirname, '../../app.js'));
 var configFilePath = path.join(__dirname, '../../config/settings.json');
-
+var credentialCache = new NodeCache();
 
 describe("Fatal configuration error", function() {
   var settings;
@@ -25,7 +26,7 @@ describe("Fatal configuration error", function() {
     })
     it("should throw error", function(done) {
       settings.db.uri = "postgres://postgres@127.0.0.1:5432/wrong-db-name";
-      server = ApiServer(settings, function(err) {
+      server = ApiServer(settings, credentialCache, function(err) {
         expect(err).not.to.be.null;
         expect(err.message).to.equal("database \"wrong-db-name\" does not exist");
         done();

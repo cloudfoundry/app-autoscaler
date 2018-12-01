@@ -2,6 +2,7 @@ package collector
 
 import (
 	"autoscaler/cf"
+	"autoscaler/collection"
 	"autoscaler/metricscollector/noaa"
 	"autoscaler/models"
 
@@ -17,7 +18,8 @@ type appStreamer struct {
 	appId           string
 	logger          lager.Logger
 	collectInterval time.Duration
-	cfc             cf.CfClient
+	cache           *collection.TSDCache
+	cfc             cf.CFClient
 	noaaConsumer    noaa.NoaaConsumer
 	doneChan        chan bool
 	sclock          clock.Clock
@@ -27,11 +29,12 @@ type appStreamer struct {
 	dataChan        chan *models.AppInstanceMetric
 }
 
-func NewAppStreamer(logger lager.Logger, appId string, interval time.Duration, cfc cf.CfClient, noaaConsumer noaa.NoaaConsumer, sclock clock.Clock, dataChan chan *models.AppInstanceMetric) AppCollector {
+func NewAppStreamer(logger lager.Logger, appId string, interval time.Duration, cacheSize int, cfc cf.CFClient, noaaConsumer noaa.NoaaConsumer, sclock clock.Clock, dataChan chan *models.AppInstanceMetric) AppCollector {
 	return &appStreamer{
 		appId:           appId,
 		logger:          logger,
 		collectInterval: interval,
+		cache:           collection.NewTSDCache(cacheSize),
 		cfc:             cfc,
 		noaaConsumer:    noaaConsumer,
 		doneChan:        make(chan bool),
@@ -93,18 +96,11 @@ func (as *appStreamer) streamMetrics() {
 func (as *appStreamer) processEvent(event *events.Envelope) {
 	if event.GetEventType() == events.Envelope_ContainerMetric {
 		as.logger.Debug("process-event-get-containermetric-event", lager.Data{"event": event})
-
-		metric := noaa.GetInstanceMemoryUsedMetricFromContainerMetricEvent(as.sclock.Now().UnixNano(), as.appId, event)
-		as.logger.Debug("process-event-get-memoryused-metric", lager.Data{"metric": metric})
-		if metric != nil {
+		metrics := noaa.GetMetricsFromContainerEnvelope(as.sclock.Now().UnixNano(), as.appId, event)
+		for _, metric := range metrics {
+			as.cache.Put(metric)
 			as.dataChan <- metric
 		}
-		metric = noaa.GetInstanceMemoryUtilMetricFromContainerMetricEvent(as.sclock.Now().UnixNano(), as.appId, event)
-		as.logger.Debug("process-event-get-memoryutil-metric", lager.Data{"metric": metric})
-		if metric != nil {
-			as.dataChan <- metric
-		}
-
 	} else if event.GetEventType() == events.Envelope_HttpStartStop {
 		as.logger.Debug("process-event-get-httpstartstop-event", lager.Data{"event": event})
 		ss := event.GetHttpStartStop()
@@ -128,6 +124,7 @@ func (as *appStreamer) computeAndSaveMetrics() {
 			Timestamp:     as.sclock.Now().UnixNano(),
 		}
 		as.logger.Debug("compute-throughput", lager.Data{"message": "write 0 throughput due to no requests"})
+		as.cache.Put(throughput)
 		as.dataChan <- throughput
 		return
 	}
@@ -143,7 +140,7 @@ func (as *appStreamer) computeAndSaveMetrics() {
 			Timestamp:     as.sclock.Now().UnixNano(),
 		}
 		as.logger.Debug("compute-throughput", lager.Data{"throughput": throughput})
-
+		as.cache.Put(throughput)
 		as.dataChan <- throughput
 
 		responseTime := &models.AppInstanceMetric{
@@ -156,10 +153,14 @@ func (as *appStreamer) computeAndSaveMetrics() {
 			Timestamp:     as.sclock.Now().UnixNano(),
 		}
 		as.logger.Debug("compute-responsetime", lager.Data{"responsetime": responseTime})
-
+		as.cache.Put(responseTime)
 		as.dataChan <- responseTime
 	}
 
 	as.numRequests = make(map[int32]int64)
 	as.sumReponseTimes = make(map[int32]int64)
+}
+
+func (as *appStreamer) Query(start, end int64, labels map[string]string) ([]collection.TSD, bool) {
+	return as.cache.Query(start, end, labels)
 }

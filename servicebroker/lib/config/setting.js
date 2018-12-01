@@ -21,18 +21,21 @@ module.exports = function(settingsObj) {
   };
   settingsObj.apiserver.uri = cleanupURI(settingsObj.apiserver.uri);
   settingsObj.dashboardRedirectUri = cleanupURI(settingsObj.dashboardRedirectUri);
+  settingsObj.customMetricsUrl = cleanupURI(settingsObj.customMetricsUrl);
   var settings = {
     publicPort: settingsObj.publicPort,
     port : settingsObj.port,
     username: settingsObj.username,
     password: settingsObj.password,
+    enableCustomMetrics: settingsObj.enableCustomMetrics,
     apiserver: settingsObj.apiserver,
     httpRequestTimeout: settingsObj.httpRequestTimeout,
     tls: settingsObj.tls,
     publicTls: settingsObj.publicTls,
     serviceCatalogPath: settingsObj.serviceCatalogPath,
     schemaValidationPath: settingsObj.schemaValidationPath,
-    dashboardRedirectUri: settingsObj.dashboardRedirectUri
+    dashboardRedirectUri: settingsObj.dashboardRedirectUri,
+    customMetricsUrl: settingsObj.customMetricsUrl
   };
   if (settingsObj.db) {
     var dbObj = db(settingsObj.db.uri);
@@ -57,6 +60,9 @@ module.exports = function(settingsObj) {
   }
   var isObject = function(value){
     return typeof(value) === "object";
+  }
+  var isBoolean = function(value){
+    return typeof(value) === "boolean";
   }
   settings.validate = function() {
     if (isMissing(settings.publicPort)) {
@@ -90,6 +96,12 @@ module.exports = function(settingsObj) {
     }
     if (!isString(settings.password)) {
       return { valid: false, message: "password must be a string" };
+    }
+    if (isMissing(settings.enableCustomMetrics)) {
+      return { valid: false, message: "enableCustomMetrics is required" };
+    }
+    if (!isBoolean(settings.enableCustomMetrics)) {
+      return { valid: false, message: "enableCustomMetrics must be a boolean" };
     }
     if (isMissing(settings.db.maxConnections)) {
       return { valid: false, message: "db.maxConnections is required" };
@@ -224,6 +236,9 @@ module.exports = function(settingsObj) {
     }
     if (!isMissing(settings.dashboardRedirectUri) && !isString(settings.dashboardRedirectUri)) {
       return {valid: false, message: "dashboardRedirectUri must be a string"}
+    }
+    if (!isMissing(settings.customMetricsUrl) && !isString(settings.customMetricsUrl)) {
+      return {valid: false, message: "customMetricsUrl must be a string"}
     }
     return { valid: true }
   }

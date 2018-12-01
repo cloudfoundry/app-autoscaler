@@ -1,7 +1,6 @@
 package generator_test
 
 import (
-	"autoscaler/eventgenerator/aggregator/fakes"
 	"autoscaler/eventgenerator/config"
 	. "autoscaler/eventgenerator/generator"
 	"autoscaler/models"
@@ -24,8 +23,6 @@ var _ = Describe("AppEvaluationManager", func() {
 		fclock               *fakeclock.FakeClock
 		manager              *AppEvaluationManager
 		testEvaluateInterval time.Duration
-		testEvaluatorCount   int
-		database             *fakes.FakeAppMetricDB
 		triggerArrayChan     chan []*models.Trigger
 		testAppId1           string                      = "testAppId1"
 		testAppId2           string                      = "testAppId2"
@@ -75,8 +72,6 @@ var _ = Describe("AppEvaluationManager", func() {
 		testEvaluateInterval = 1 * time.Second
 		logger = lagertest.NewTestLogger("ApplicationManager-test")
 		triggerArrayChan = make(chan []*models.Trigger, 10)
-		database = &fakes.FakeAppMetricDB{}
-		testEvaluatorCount = 0
 	})
 
 	Describe("Start", func() {

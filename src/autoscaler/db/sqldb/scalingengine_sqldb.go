@@ -1,16 +1,13 @@
 package sqldb
 
 import (
-	"database/sql"
+	"autoscaler/db"
+	"autoscaler/models"
 
-	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
 	_ "github.com/lib/pq"
 
-	"autoscaler/db"
-	"autoscaler/healthendpoint"
-	"autoscaler/models"
-
+	"database/sql"
 	"time"
 )
 
@@ -21,7 +18,7 @@ type ScalingEngineSQLDB struct {
 }
 
 func NewScalingEngineSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*ScalingEngineSQLDB, error) {
-	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.Url)
+	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.URL)
 	if err != nil {
 		logger.Error("open-scaling-engine-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
@@ -242,12 +239,6 @@ func (sdb *ScalingEngineSQLDB) SetActiveSchedule(appId string, schedule *models.
 	return err
 }
 
-func (sdb *ScalingEngineSQLDB) EmitHealthMetrics(h healthendpoint.Health, cclock clock.Clock, interval time.Duration) {
-	go func() {
-		ticker := cclock.NewTicker(interval)
-		defer ticker.Stop()
-		for range ticker.C() {
-			h.Set("openConnection_scalingEngineDB", float64(sdb.sqldb.Stats().OpenConnections))
-		}
-	}()
+func (sdb *ScalingEngineSQLDB) GetDBStatus() sql.DBStats {
+	return sdb.sqldb.Stats()
 }

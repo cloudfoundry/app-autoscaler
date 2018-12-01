@@ -20,7 +20,7 @@ type LockSQLDB struct {
 }
 
 func NewLockSQLDB(dbConfig db.DatabaseConfig, table string, logger lager.Logger) (*LockSQLDB, error) {
-	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.Url)
+	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.URL)
 	if err != nil {
 		logger.Error("open-lock-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err

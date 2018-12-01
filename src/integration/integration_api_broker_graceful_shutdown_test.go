@@ -41,7 +41,7 @@ var _ = Describe("Integration_Api_Broker_Graceful_Shutdown", func() {
 			BeforeEach(func() {
 				initializeHttpClient("api.crt", "api.key", "autoscaler-ca.crt", apiSchedulerHttpRequestTimeout)
 				fakeScheduler = ghttp.NewServer()
-				apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], components.Ports[APIPublicServer], false, "", dbUrl, fakeScheduler.URL(), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[EventGenerator]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ServiceBrokerInternal]), true, tmpDir)
+				apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], components.Ports[APIPublicServer], false, 200, "", dbUrl, fakeScheduler.URL(), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[EventGenerator]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ServiceBrokerInternal]), true, defaultHttpClientTimeout, tmpDir)
 				runner = startApiServer()
 				buffer = runner.Buffer()
 			})
@@ -147,7 +147,7 @@ var _ = Describe("Integration_Api_Broker_Graceful_Shutdown", func() {
 				Expect(err).NotTo(HaveOccurred())
 				httpClient.Timeout = brokerApiHttpRequestTimeout
 				httpClient.Transport.(*http.Transport).TLSClientConfig = brokerTLSConfig
-				serviceBrokerConfPath = components.PrepareServiceBrokerConfig(components.Ports[ServiceBroker], components.Ports[ServiceBrokerInternal], brokerUserName, brokerPassword, dbUrl, fakeApiServer.URL(), brokerApiHttpRequestTimeout, tmpDir)
+				serviceBrokerConfPath = components.PrepareServiceBrokerConfig(components.Ports[ServiceBroker], components.Ports[ServiceBrokerInternal], brokerUserName, brokerPassword, false, dbUrl, fakeApiServer.URL(), brokerApiHttpRequestTimeout, tmpDir)
 				runner = startServiceBroker()
 				buffer = runner.Buffer()
 

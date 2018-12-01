@@ -212,8 +212,7 @@ describe('Validate Policy JSON Schema structure', function () {
 
     var requiredProperties = schemaValidatorPrivate.__get__('getScalingRuleSchema')().required;
     var allProperties = Object.keys(schemaValidatorPrivate.__get__('getScalingRuleSchema')().properties);
-
-    var metricTypes = schemaValidatorPrivate.__get__('getMetricTypes')();
+    var validMetricTypes = ['memoryutil','memoryused','responsetime','throughput','custom_metric'];
     var validMetricThresholdSettings = [
       { metric_type: "memoryutil", thresholds: [30, 100] },
       { metric_type: "memoryused", thresholds: [30, 100, 1000] },
@@ -259,7 +258,7 @@ describe('Validate Policy JSON Schema structure', function () {
             });
         });
 
-        metricTypes.forEach(function (metricType) {
+        validMetricTypes.forEach(function (metricType) {
           it('succeed with valid metric type ' + metricType + ', policy type ' + type, function (done) {
             buildTestPolicy(fakePolicy, type);
             for (let i = 0; i < fakePolicy.scaling_rules.length; i++) {
@@ -374,19 +373,29 @@ describe('Validate Policy JSON Schema structure', function () {
               });
           });
         });
-
-        it('failed with invalid metric type. policy type ' + type, function (done) {
+        it('should fail with custom metric type. policy type ' + type, function (done) {
           buildTestPolicy(fakePolicy, type);
-          fakePolicy.scaling_rules[0].metric_type = 'invalid';
+          fakePolicy.scaling_rules[0].metric_type = 'my metric $';
           request(app)
             .put('/v1/apps/fakeID/policy', validationMiddleware)
             .send(fakePolicy)
             .end(function (error, result) {
               expect(result.statusCode).to.equal(400);
               expect(result.body.error).to.not.be.null;
-              expect(result.body.error[0].property).to.equal('instance.scaling_rules[0].metric_type');
-              expect(result.body.error[0].message).to.equal('is not one of enum values: memoryused,memoryutil,responsetime,throughput');
-              expect(result.body.error[0].stack).to.equal('instance.scaling_rules[0].metric_type is not one of enum values: memoryused,memoryutil,responsetime,throughput');
+              expect(result.body.error[0].message).to.equal('does not match pattern "^[a-zA-Z0-9_]+$"');
+              expect(result.body.error[0].stack).to.equal('instance.scaling_rules[0].metric_type does not match pattern "^[a-zA-Z0-9_]+$"');
+              done();
+            });
+        });
+
+        it('should not fail with custom metric type. policy type ' + type, function (done) {
+          buildTestPolicy(fakePolicy, type);
+          fakePolicy.scaling_rules[0].metric_type = 'custom_metric';
+          request(app)
+            .put('/v1/apps/fakeID/policy', validationMiddleware)
+            .send(fakePolicy)
+            .end(function (error, result) {
+              expect(result.statusCode).to.equal(201);
               done();
             });
         });

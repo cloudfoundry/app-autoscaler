@@ -1,5 +1,5 @@
 'use strict'; 
-module.exports = function(settings, callback) {
+module.exports = function(settings, credentialCache, callback) {
   var https = require('https');
   var http = require('http');
   var fs = require('fs');
@@ -104,8 +104,9 @@ module.exports = function(settings, callback) {
   var scalingHistories = require('./lib/routes/scalingHistories')(settings);
   var metrics = require('./lib/routes/metrics')(settings);
   var aggregatedMetrics = require('./lib/routes/aggregated_metrics')(settings);
-
+  var creds = require('./lib/routes/credentials')(models,credentialCache,settings.cacheTTL);
   app.use('/v1/apps',policies);
+  app.use('/v1/apps',creds);
   app.use(function(err, req, res, next) {
     var errorResponse = {};
     if (err) {
@@ -129,7 +130,7 @@ module.exports = function(settings, callback) {
   publicApp.use(bodyParser.json());
   publicApp.use(bodyParser.urlencoded({ extended: false }));
   publicApp.use('/v1/apps/:app_id/*',function(req, res, next){
-    oauth.checkUserAuthorization(req,function(error,isSpaceDeveloper){
+    oauth.checkUserAuthorization(req,function(error,isAdminOrSpaceDeveloper){
       if(error){
         if(error.statusCode == HttpStatus.UNAUTHORIZED){
           res.status(HttpStatus.UNAUTHORIZED).send({});
@@ -137,7 +138,7 @@ module.exports = function(settings, callback) {
           res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({});
         }
       }else{
-        if(isSpaceDeveloper){
+        if(isAdminOrSpaceDeveloper){
           next();
         }else{
           res.status(HttpStatus.UNAUTHORIZED).send({});

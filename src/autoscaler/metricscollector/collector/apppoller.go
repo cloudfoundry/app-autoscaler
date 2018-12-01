@@ -2,6 +2,7 @@ package collector
 
 import (
 	"autoscaler/cf"
+	"autoscaler/collection"
 	"autoscaler/metricscollector/noaa"
 	"autoscaler/models"
 
@@ -16,18 +17,20 @@ import (
 type appPoller struct {
 	appId           string
 	collectInterval time.Duration
+	cache           *collection.TSDCache
 	logger          lager.Logger
-	cfc             cf.CfClient
+	cfc             cf.CFClient
 	noaaConsumer    noaa.NoaaConsumer
 	pclock          clock.Clock
 	doneChan        chan bool
 	dataChan        chan *models.AppInstanceMetric
 }
 
-func NewAppPoller(logger lager.Logger, appId string, collectInterval time.Duration, cfc cf.CfClient, noaaConsumer noaa.NoaaConsumer, pclock clock.Clock, dataChan chan *models.AppInstanceMetric) AppCollector {
+func NewAppPoller(logger lager.Logger, appId string, collectInterval time.Duration, cacheSize int, cfc cf.CFClient, noaaConsumer noaa.NoaaConsumer, pclock clock.Clock, dataChan chan *models.AppInstanceMetric) AppCollector {
 	return &appPoller{
 		appId:           appId,
 		collectInterval: collectInterval,
+		cache:           collection.NewTSDCache(cacheSize),
 		logger:          logger,
 		cfc:             cfc,
 		noaaConsumer:    noaaConsumer,
@@ -83,10 +86,15 @@ func (ap *appPoller) pollMetric() {
 
 	logger.Debug("poll-metric-get-containerenvelopes", lager.Data{"envelops": containerEnvelopes})
 
-	metrics := noaa.GetInstanceMemoryMetricsFromContainerEnvelopes(ap.pclock.Now().UnixNano(), ap.appId, containerEnvelopes)
-	logger.Debug("poll-metric-get-memory-metrics", lager.Data{"metrics": metrics})
+	metrics := noaa.GetMetricsFromContainerEnvelopes(ap.pclock.Now().UnixNano(), ap.appId, containerEnvelopes)
+	logger.Debug("poll-metric-get-metrics", lager.Data{"metrics": metrics})
 
 	for _, metric := range metrics {
+		ap.cache.Put(metric)
 		ap.dataChan <- metric
 	}
+}
+
+func (ap *appPoller) Query(start, end int64, labels map[string]string) ([]collection.TSD, bool) {
+	return ap.cache.Query(start, end, labels)
 }

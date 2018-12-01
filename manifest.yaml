@@ -19,11 +19,11 @@ applications:
   instances: 1
   host: metricscollector
   path: src/autoscaler/metricscollector
-- name: pruner
+- name: operator
   memory: 512M
   instances: 1
-  host: pruner
-  path: src/autoscaler/pruner
+  host: operator
+  path: src/autoscaler/operator
 - name: scalingengine
   memory: 512M
   instances: 1

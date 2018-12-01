@@ -7,6 +7,7 @@ import (
 	"autoscaler/eventgenerator/config"
 	"autoscaler/eventgenerator/generator"
 	"autoscaler/eventgenerator/server"
+	"autoscaler/healthendpoint"
 	"autoscaler/helpers"
 	"autoscaler/models"
 
@@ -21,6 +22,7 @@ import (
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
@@ -40,8 +42,8 @@ func main() {
 		fmt.Fprintf(os.Stdout, "%s\n", err.Error())
 		os.Exit(1)
 	}
-
-	logger := initLoggerFromConfig(&conf.Logging)
+	cfhttp.Initialize(conf.HttpClientTimeout)
+	logger := helpers.InitLoggerFromConfig(&conf.Logging, "eventgenerator")
 	egClock := clock.NewClock()
 
 	appMetricDB, err := sqldb.NewAppMetricSQLDB(conf.DB.AppMetricDB, logger.Session("appMetric-db"))
@@ -58,6 +60,14 @@ func main() {
 		os.Exit(1)
 	}
 	defer policyDB.Close()
+
+	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "eventgenerator")
+	promRegistry := prometheus.NewRegistry()
+	healthendpoint.RegisterCollectors(promRegistry, []prometheus.Collector{
+		healthendpoint.NewDatabaseStatusCollector("autoscaler", "eventgenerator", "appMetricDB", appMetricDB),
+		healthendpoint.NewDatabaseStatusCollector("autoscaler", "eventgenerator", "policyDB", policyDB),
+		httpStatusCollector,
+	}, true, logger.Session("eventgenerator-prometheus"))
 
 	policyPoller := aggregator.NewPolicyPoller(logger, egClock, conf.Aggregator.PolicyPollerInterval,
 		len(conf.Server.NodeAddrs), conf.Server.NodeIndex, policyDB)
@@ -110,15 +120,20 @@ func main() {
 		return nil
 	})
 
-	httpServer, err := server.NewServer(logger.Session("http_server"), conf, appMetricDB)
+	httpServer, err := server.NewServer(logger.Session("http_server"), conf, appMetricDB, httpStatusCollector)
 	if err != nil {
 		logger.Error("failed to create http server", err)
 		os.Exit(1)
 	}
-
+	healthServer, err := healthendpoint.NewServer(logger.Session("health-server"), conf.Health.Port, promRegistry)
+	if err != nil {
+		logger.Error("failed to create health server", err)
+		os.Exit(1)
+	}
 	members := grouper.Members{
 		{"eventGenerator", eventGenerator},
 		{"http_server", httpServer},
+		{"health_server", healthServer},
 	}
 
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
@@ -133,41 +148,6 @@ func main() {
 
 	logger.Info("exited")
 }
-
-func initLoggerFromConfig(conf *config.LoggingConfig) lager.Logger {
-	logLevel, err := getLogLevel(conf.Level)
-	if err != nil {
-		fmt.Fprintf(os.Stdout, "failed to initialize logger: %s\n", err.Error())
-		os.Exit(1)
-	}
-	logger := lager.NewLogger("eventgenerator")
-
-	keyPatterns := []string{"[Pp]wd", "[Pp]ass", "[Ss]ecret", "[Tt]oken"}
-
-	redactedSink, err := helpers.NewRedactingWriterWithURLCredSink(os.Stdout, logLevel, keyPatterns, nil)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Failed to create redacted sink: %s", err.Error())
-	}
-	logger.RegisterSink(redactedSink)
-
-	return logger
-}
-
-func getLogLevel(level string) (lager.LogLevel, error) {
-	switch level {
-	case "debug":
-		return lager.DEBUG, nil
-	case "info":
-		return lager.INFO, nil
-	case "error":
-		return lager.ERROR, nil
-	case "fatal":
-		return lager.FATAL, nil
-	default:
-		return -1, fmt.Errorf("Error: unsupported log level:%s", level)
-	}
-}
-
 func loadConfig(path string) (*config.Config, error) {
 	configFile, err := os.Open(path)
 	if err != nil {
@@ -197,24 +177,15 @@ func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan cha
 	database db.AppMetricDB, getBreaker func(string) *circuit.Breaker, setCoolDownExpired func(string, int64)) ([]*generator.Evaluator, error) {
 	count := conf.Evaluator.EvaluatorCount
 
-	tlsCerts := &conf.ScalingEngine.TLSClientCerts
-	if tlsCerts.CertFile == "" || tlsCerts.KeyFile == "" {
-		tlsCerts = nil
-	}
-
-	client := cfhttp.NewClient()
-	client.Transport.(*http.Transport).MaxIdleConnsPerHost = count
-	if tlsCerts != nil {
-		tlsConfig, err := cfhttp.NewTLSConfig(tlsCerts.CertFile, tlsCerts.KeyFile, tlsCerts.CACertFile)
-		if err != nil {
-			return nil, err
-		}
-		client.Transport.(*http.Transport).TLSClientConfig = tlsConfig
+	client, err := helpers.CreateHTTPClient(&conf.ScalingEngine.TLSClientCerts)
+	if err != nil {
+		logger.Error("failed to create http client for ScalingEngine", err, lager.Data{"scalingengineTLS": conf.ScalingEngine.TLSClientCerts})
+		os.Exit(1)
 	}
 
 	evaluators := make([]*generator.Evaluator, count)
 	for i := 0; i < count; i++ {
-		evaluators[i] = generator.NewEvaluator(logger, client, conf.ScalingEngine.ScalingEngineUrl, triggersChan, database,
+		evaluators[i] = generator.NewEvaluator(logger, client, conf.ScalingEngine.ScalingEngineURL, triggersChan, database,
 			conf.DefaultBreachDurationSecs, getBreaker, setCoolDownExpired)
 	}
 
@@ -222,24 +193,18 @@ func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan cha
 }
 
 func createMetricPollers(logger lager.Logger, conf *config.Config, appChan chan *models.AppMonitor, appMetricChan chan *models.AppMetric) ([]*aggregator.MetricPoller, error) {
-	tlsCerts := &conf.MetricCollector.TLSClientCerts
-	if tlsCerts.CertFile == "" || tlsCerts.KeyFile == "" {
-		tlsCerts = nil
-	}
 
-	count := conf.Aggregator.MetricPollerCount
-	client := cfhttp.NewClient()
-	client.Transport.(*http.Transport).MaxIdleConnsPerHost = count
-	if tlsCerts != nil {
-		tlsConfig, err := cfhttp.NewTLSConfig(tlsCerts.CertFile, tlsCerts.KeyFile, tlsCerts.CACertFile)
-		if err != nil {
-			return nil, err
-		}
-		client.Transport.(*http.Transport).TLSClientConfig = tlsConfig
+	client, err := helpers.CreateHTTPClient(&conf.MetricCollector.TLSClientCerts)
+	if err != nil {
+		logger.Error("failed to create http client for MetricCollector", err, lager.Data{"metriccollectorTLS": conf.MetricCollector.TLSClientCerts})
+		os.Exit(1)
 	}
+	count := conf.Aggregator.MetricPollerCount
+	client.Transport.(*http.Transport).MaxIdleConnsPerHost = count
+
 	pollers := make([]*aggregator.MetricPoller, count)
 	for i := 0; i < count; i++ {
-		pollers[i] = aggregator.NewMetricPoller(logger, conf.MetricCollector.MetricCollectorUrl, appChan, client, appMetricChan)
+		pollers[i] = aggregator.NewMetricPoller(logger, conf.MetricCollector.MetricCollectorURL, appChan, client, appMetricChan)
 	}
 
 	return pollers, nil

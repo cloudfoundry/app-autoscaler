@@ -12,6 +12,7 @@ import (
 
 	"autoscaler/cf"
 	"autoscaler/db"
+	"autoscaler/helpers"
 	"autoscaler/models"
 )
 
@@ -21,9 +22,10 @@ const (
 	DefaultRetryInterval              time.Duration = locket.RetryInterval
 	DefaultDBLockRetryInterval        time.Duration = 5 * time.Second
 	DefaultDBLockTTL                  time.Duration = 15 * time.Second
+	DefaultHttpClientTimeout          time.Duration = 5 * time.Second
 )
 
-var defaultCfConfig = cf.CfConfig{
+var defaultCFConfig = cf.CFConfig{
 	GrantType:         cf.GrantTypePassword,
 	SkipSSLValidation: false,
 }
@@ -37,28 +39,18 @@ var defaultServerConfig = ServerConfig{
 	Port: 8080,
 }
 
-type HealthConfig struct {
-	Port         int           `yaml:"port"`
-	EmitInterval time.Duration `yaml:"emit_interval"`
+var defaultHealthConfig = models.HealthConfig{
+	Port: 8081,
 }
 
-var defaultHealthConfig = HealthConfig{
-	Port:         8081,
-	EmitInterval: 15 * time.Second,
-}
-
-type LoggingConfig struct {
-	Level string `yaml:"level"`
-}
-
-var defaultLoggingConfig = LoggingConfig{
+var defaultLoggingConfig = helpers.LoggingConfig{
 	Level: "info",
 }
 
-type DbConfig struct {
-	PolicyDb        db.DatabaseConfig `yaml:"policy_db"`
-	ScalingEngineDb db.DatabaseConfig `yaml:"scalingengine_db"`
-	SchedulerDb     db.DatabaseConfig `yaml:"scheduler_db"`
+type DBConfig struct {
+	PolicyDB        db.DatabaseConfig `yaml:"policy_db"`
+	ScalingEngineDB db.DatabaseConfig `yaml:"scalingengine_db"`
+	SchedulerDB     db.DatabaseConfig `yaml:"scheduler_db"`
 }
 
 type SynchronizerConfig struct {
@@ -69,39 +61,24 @@ var defaultSynchronizerConfig = SynchronizerConfig{
 	ActiveScheduleSyncInterval: DefaultActiveScheduleSyncInterval,
 }
 
-type DBLockConfig struct {
-	LockTTL           time.Duration     `yaml:"ttl"`
-	LockDB            db.DatabaseConfig `yaml:"lock_db"`
-	LockRetryInterval time.Duration     `yaml:"retry_interval"`
-}
-
-var defaultDBLockConfig = DBLockConfig{
-	LockTTL:           DefaultDBLockTTL,
-	LockRetryInterval: DefaultDBLockRetryInterval,
-}
-
 type Config struct {
-	Cf                  cf.CfConfig        `yaml:"cf"`
-	Logging             LoggingConfig      `yaml:"logging"`
-	Server              ServerConfig       `yaml:"server"`
-	Health              HealthConfig       `yaml:"health"`
-	Db                  DbConfig           `yaml:"db"`
-	Synchronizer        SynchronizerConfig `yaml:"synchronizer"`
-	DefaultCoolDownSecs int                `yaml:"defaultCoolDownSecs"`
-	LockSize            int                `yaml:"lockSize"`
-	DBLock              DBLockConfig       `yaml:"db_lock"`
-	EnableDBLock        bool               `yaml:"enable_db_lock"`
+	CF                  cf.CFConfig           `yaml:"cf"`
+	Logging             helpers.LoggingConfig `yaml:"logging"`
+	Server              ServerConfig          `yaml:"server"`
+	Health              models.HealthConfig   `yaml:"health"`
+	DB                  DBConfig              `yaml:"db"`
+	DefaultCoolDownSecs int                   `yaml:"defaultCoolDownSecs"`
+	LockSize            int                   `yaml:"lockSize"`
+	HttpClientTimeout   time.Duration         `yaml:"http_client_timeout"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
 	conf := &Config{
-		Cf:           defaultCfConfig,
-		Logging:      defaultLoggingConfig,
-		Server:       defaultServerConfig,
-		Health:       defaultHealthConfig,
-		Synchronizer: defaultSynchronizerConfig,
-		DBLock:       defaultDBLockConfig,
-		EnableDBLock: false,
+		CF:                defaultCFConfig,
+		Logging:           defaultLoggingConfig,
+		Server:            defaultServerConfig,
+		Health:            defaultHealthConfig,
+		HttpClientTimeout: DefaultHttpClientTimeout,
 	}
 
 	bytes, err := ioutil.ReadAll(reader)
@@ -114,31 +91,28 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		return nil, err
 	}
 
-	conf.Cf.GrantType = strings.ToLower(conf.Cf.GrantType)
+	conf.CF.GrantType = strings.ToLower(conf.CF.GrantType)
 	conf.Logging.Level = strings.ToLower(conf.Logging.Level)
-	if conf.Health.EmitInterval <= 0*time.Second {
-		conf.Health.EmitInterval = defaultHealthConfig.EmitInterval
-	}
 
 	return conf, nil
 }
 
 func (c *Config) Validate() error {
-	err := c.Cf.Validate()
+	err := c.CF.Validate()
 	if err != nil {
 		return err
 	}
 
-	if c.Db.PolicyDb.Url == "" {
-		return fmt.Errorf("Configuration error: Policy DB url is empty")
+	if c.DB.PolicyDB.URL == "" {
+		return fmt.Errorf("Configuration error: db.policy_db.url is empty")
 	}
 
-	if c.Db.ScalingEngineDb.Url == "" {
-		return fmt.Errorf("Configuration error: ScalingEngine DB url is empty")
+	if c.DB.ScalingEngineDB.URL == "" {
+		return fmt.Errorf("Configuration error: db.scalingengine_db.url is empty")
 	}
 
-	if c.Db.SchedulerDb.Url == "" {
-		return fmt.Errorf("Configuration error: Scheduler DB url is empty")
+	if c.DB.SchedulerDB.URL == "" {
+		return fmt.Errorf("Configuration error: db.scheduler_db.url is empty")
 	}
 
 	if c.DefaultCoolDownSecs < 60 || c.DefaultCoolDownSecs > 3600 {
@@ -149,10 +123,9 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("Configuration error: LockSize is less than or equal to 0")
 	}
 
-	if c.EnableDBLock && c.DBLock.LockDB.Url == "" {
-		return fmt.Errorf("Configuration error: Lock DB Url is empty")
+	if c.HttpClientTimeout <= time.Duration(0) {
+		return fmt.Errorf("Configuration error: http_client_timeout is less-equal than 0")
 	}
-
 	return nil
 
 }

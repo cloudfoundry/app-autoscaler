@@ -66,8 +66,8 @@ var _ = SynchronizedBeforeSuite(
 			models.AppEntity{Instances: 2, State: &appState}))
 		ccUAA.RouteToHandler("PUT", "/v2/apps/"+appId, ghttp.RespondWith(http.StatusCreated, ""))
 
-		conf.Cf = cf.CfConfig{
-			Api:       ccUAA.URL(),
+		conf.CF = cf.CFConfig{
+			API:       ccUAA.URL(),
 			GrantType: cf.GrantTypePassword,
 			Username:  "admin",
 			Password:  "admin",
@@ -81,42 +81,30 @@ var _ = SynchronizedBeforeSuite(
 		conf.Server.TLS.CertFile = filepath.Join(testCertDir, "scalingengine.crt")
 		conf.Server.TLS.CACertFile = filepath.Join(testCertDir, "autoscaler-ca.crt")
 		conf.Health.Port = healthport
-		conf.Health.EmitInterval = 1 * time.Second
 		conf.Logging.Level = "debug"
 
-		conf.Db.PolicyDb = db.DatabaseConfig{
-			Url:                   os.Getenv("DBURL"),
+		conf.DB.PolicyDB = db.DatabaseConfig{
+			URL:                   os.Getenv("DBURL"),
 			MaxOpenConnections:    10,
 			MaxIdleConnections:    5,
 			ConnectionMaxLifetime: 10 * time.Second,
 		}
-		conf.Db.ScalingEngineDb = db.DatabaseConfig{
-			Url:                   os.Getenv("DBURL"),
+		conf.DB.ScalingEngineDB = db.DatabaseConfig{
+			URL:                   os.Getenv("DBURL"),
 			MaxOpenConnections:    10,
 			MaxIdleConnections:    5,
 			ConnectionMaxLifetime: 10 * time.Second,
 		}
-		conf.Db.SchedulerDb = db.DatabaseConfig{
-			Url:                   os.Getenv("DBURL"),
+		conf.DB.SchedulerDB = db.DatabaseConfig{
+			URL:                   os.Getenv("DBURL"),
 			MaxOpenConnections:    10,
 			MaxIdleConnections:    5,
 			ConnectionMaxLifetime: 10 * time.Second,
 		}
-		conf.Synchronizer.ActiveScheduleSyncInterval = 10 * time.Minute
 
 		conf.DefaultCoolDownSecs = 300
 		conf.LockSize = 32
-
-		conf.DBLock.LockDB = db.DatabaseConfig{
-			Url:                   os.Getenv("DBURL"),
-			MaxOpenConnections:    10,
-			MaxIdleConnections:    5,
-			ConnectionMaxLifetime: 10 * time.Second,
-		}
-
-		conf.DBLock.LockTTL = 15 * time.Second
-		conf.DBLock.LockRetryInterval = 5 * time.Second
-		conf.EnableDBLock = true
+		conf.HttpClientTimeout = 10 * time.Second
 
 		configFile = writeConfig(&conf)
 
@@ -222,12 +210,4 @@ func (engine *ScalingEngineRunner) KillWithFire() {
 	if engine.Session != nil {
 		engine.Session.Kill().Wait(5 * time.Second)
 	}
-}
-
-func ClearLockDatabase() {
-	lockDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
-	Expect(err).NotTo(HaveOccurred())
-
-	_, err = lockDB.Exec("DELETE FROM scalingengine_lock")
-	Expect(err).NotTo(HaveOccurred())
 }
