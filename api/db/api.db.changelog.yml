@@ -41,4 +41,39 @@ databaseChangeLog:
               type: varchar(50)
               value: "1"
           tableName: policy_json
+   - changeSet:
+      id: 3
+      author: paltanmoy
+      changes:
+        - createTable:
+            tableName: credentials
+            columns:
+              - column:
+                  name: id
+                  type: varchar(50)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: username
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: password
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+        - createIndex:
+            columns:
+              - column:
+                  name: id
+                  type: varchar(255)
+            indexName: idx_credentials
+            tableName: credentials
 

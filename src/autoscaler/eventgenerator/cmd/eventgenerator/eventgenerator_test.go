@@ -2,6 +2,7 @@ package main_test
 
 import (
 	"autoscaler/eventgenerator/config"
+	"autoscaler/helpers"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -77,7 +78,7 @@ var _ = Describe("Eventgenerator", func() {
 		BeforeEach(func() {
 			runner.startCheck = ""
 			conf := &config.Config{
-				Logging: config.LoggingConfig{
+				Logging: helpers.LoggingConfig{
 					Level: "debug",
 				},
 				Aggregator: config.AggregatorConfig{

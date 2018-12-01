@@ -201,13 +201,8 @@
                   "description": "The interval between two successive scaling activity"
                 },
                 "metric_type": {
-                  "enum": [
-                    "memoryused",
-                    "memoryutil",
-                    "responsetime",
-                    "throughput"
-                  ],
-                  "type": "string"
+                  "type": "string",
+                  "pattern": "^[a-zA-Z0-9_]+$"
                 },
                 "operator": {
                   "enum": [

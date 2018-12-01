@@ -15,6 +15,7 @@ describe('config setting Test Suite', function() {
       "publicPort": 80,
       "username": "username",
       "password": "password",
+      "enableCustomMetrics": true,
       "db": {
         "maxConnections": 10,
         "minConnections": 0,
@@ -42,7 +43,8 @@ describe('config setting Test Suite', function() {
       },
       "serviceCatalogPath" : "catalogPath",
       "schemaValidationPath" : "schemaPath",
-      "dashboardRedirectUri": "https://dashboard-redirect-uri-settings.example.com"
+      "dashboardRedirectUri": "https://dashboard-redirect-uri-settings.example.com",
+      "customMetricsUrl": "http://metrics.example.com/v1/metrics"
     };
     settings = configSetting(defaultConfig);
   });
@@ -53,6 +55,7 @@ describe('config setting Test Suite', function() {
 
     expect(settings.username).to.equal(defaultConfig.username);
     expect(settings.password).to.equal(defaultConfig.password);
+    expect(settings.enableCustomMetrics).to.equal(true);
 
     expect(settings.db.uri).to.equal(defaultConfig.db.uri);
     expect(settings.db.server).to.equal('postgres://postgres@server:80');
@@ -78,6 +81,7 @@ describe('config setting Test Suite', function() {
     expect(settings.serviceCatalogPath).to.equal(defaultConfig.serviceCatalogPath);
     expect(settings.schemaValidationPath).to.equal(defaultConfig.schemaValidationPath);
     expect(settings.dashboardRedirectUri).to.equal(defaultConfig.dashboardRedirectUri);
+    expect(settings.customMetricsUrl).to.equal(defaultConfig.customMetricsUrl);
   });
 
   describe('validate', function() {
@@ -193,6 +197,29 @@ describe('config setting Test Suite', function() {
           settings.password = 12345
           expect(settings.validate().valid).to.equal(false);
           expect(settings.validate().message).to.equal("password must be a string");
+        })
+      });
+    });
+    context('Validate enableCustomMetrics', function() {
+      context('When enableCustomMetrics is null', function() {
+        it('Should return false', function() {
+          settings.enableCustomMetrics = null;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("enableCustomMetrics is required");
+        })
+      });
+      context('When enableCustomMetrics is undefined', function() {
+        it('Should return false', function() {
+          delete settings.enableCustomMetrics;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("enableCustomMetrics is required");
+        })
+      });
+      context('When enableCustomMetrics is not a boolean', function() {
+        it('Should return false', function() {
+          settings.enableCustomMetrics = 1234;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("enableCustomMetrics must be a boolean");
         })
       });
     });
@@ -716,6 +743,28 @@ context('Validate Service Catalog', function(){
         settings.dashboardRedirectUri = 1234;
         expect(settings.validate().valid).to.equal(false);
         expect(settings.validate().message).to.equal("dashboardRedirectUri must be a string");
+      });
+    });
+  });
+
+  context('Validate Custom Metrics Forwarder Uri', function(){
+    context('When customMetricsUrl is null', function(){
+      it('Should return true',function(){
+        settings.customMetricsUrl = null;
+        expect(settings.validate().valid).to.equal(true);
+      });
+    });
+    context('When customMetricsUrl is undefined', function(){
+      it('Should return true',function(){
+        delete settings.customMetricsUrl;
+        expect(settings.validate().valid).to.equal(true);
+      });
+    });
+    context('When customMetricsUrl is not a string', function(){
+      it('Should return false',function(){
+        settings.customMetricsUrl = 1234;
+        expect(settings.validate().valid).to.equal(false);
+        expect(settings.validate().message).to.equal("customMetricsUrl must be a string");
       });
     });
   });

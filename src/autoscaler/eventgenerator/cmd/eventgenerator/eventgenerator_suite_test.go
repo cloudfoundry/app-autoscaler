@@ -6,6 +6,7 @@ import (
 
 	"autoscaler/db"
 	"autoscaler/eventgenerator/config"
+	"autoscaler/helpers"
 	"autoscaler/models"
 	"database/sql"
 	"fmt"
@@ -175,7 +176,7 @@ func initConfig() {
 
 	egPort = 7000 + GinkgoParallelNode()
 	conf = config.Config{
-		Logging: config.LoggingConfig{
+		Logging: helpers.LoggingConfig{
 			Level: "info",
 		},
 		Server: config.ServerConfig{
@@ -203,20 +204,20 @@ func initConfig() {
 		},
 		DB: config.DBConfig{
 			PolicyDB: db.DatabaseConfig{
-				Url:                   os.Getenv("DBURL"),
+				URL:                   os.Getenv("DBURL"),
 				MaxOpenConnections:    10,
 				MaxIdleConnections:    5,
 				ConnectionMaxLifetime: 10 * time.Second,
 			},
 			AppMetricDB: db.DatabaseConfig{
-				Url:                   os.Getenv("DBURL"),
+				URL:                   os.Getenv("DBURL"),
 				MaxOpenConnections:    10,
 				MaxIdleConnections:    5,
 				ConnectionMaxLifetime: 10 * time.Second,
 			},
 		},
 		ScalingEngine: config.ScalingEngineConfig{
-			ScalingEngineUrl: scalingEngine.URL(),
+			ScalingEngineURL: scalingEngine.URL(),
 			TLSClientCerts: models.TLSCerts{
 				KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
 				CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
@@ -224,7 +225,7 @@ func initConfig() {
 			},
 		},
 		MetricCollector: config.MetricCollectorConfig{
-			MetricCollectorUrl: metricCollector.URL(),
+			MetricCollectorURL: metricCollector.URL(),
 			TLSClientCerts: models.TLSCerts{
 				KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
 				CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
@@ -238,6 +239,7 @@ func initConfig() {
 		},
 		DefaultBreachDurationSecs: 600,
 		DefaultStatWindowSecs:     300,
+		HttpClientTimeout:         10 * time.Second,
 	}
 	configFile = writeConfig(&conf)
 

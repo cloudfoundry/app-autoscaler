@@ -1,11 +1,11 @@
 package server_test
 
 import (
+	"autoscaler/db"
+	"autoscaler/fakes"
 	"autoscaler/metricscollector/config"
-	"autoscaler/metricscollector/fakes"
 	"autoscaler/metricscollector/server"
-	"net/url"
-	"strconv"
+	"autoscaler/models"
 
 	"code.cloudfoundry.org/lager"
 	. "github.com/onsi/ginkgo"
@@ -13,6 +13,8 @@ import (
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/ginkgomon"
 
+	"net/url"
+	"strconv"
 	"testing"
 )
 
@@ -28,7 +30,7 @@ func TestServer(t *testing.T) {
 
 var _ = BeforeSuite(func() {
 	port := 1111 + GinkgoParallelNode()
-	cfc := &fakes.FakeCfClient{}
+	cfc := &fakes.FakeCFClient{}
 	consumer := &fakes.FakeNoaaConsumer{}
 	conf := &config.Config{
 		Server: config.ServerConfig{
@@ -36,8 +38,11 @@ var _ = BeforeSuite(func() {
 		},
 	}
 	database := &fakes.FakeInstanceMetricsDB{}
-
-	httpServer, err := server.NewServer(lager.NewLogger("test"), conf, cfc, consumer, database)
+	queryFunc := func(appID string, start int64, end int64, order db.OrderType, labels map[string]string) ([]*models.AppInstanceMetric, bool) {
+		return nil, false
+	}
+	httpStatusCollector := &fakes.FakeHTTPStatusCollector{}
+	httpServer, err := server.NewServer(lager.NewLogger("test"), conf, cfc, consumer, queryFunc, database, httpStatusCollector)
 	Expect(err).NotTo(HaveOccurred())
 
 	serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(port))

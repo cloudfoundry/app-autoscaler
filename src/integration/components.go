@@ -4,8 +4,10 @@ import (
 	"autoscaler/cf"
 	"autoscaler/db"
 	egConfig "autoscaler/eventgenerator/config"
+	"autoscaler/helpers"
 	mcConfig "autoscaler/metricscollector/config"
 	"autoscaler/models"
+	opConfig "autoscaler/operator/config"
 	seConfig "autoscaler/scalingengine/config"
 	"encoding/json"
 	"fmt"
@@ -31,6 +33,7 @@ const (
 	MetricsCollector      = "metricsCollector"
 	EventGenerator        = "eventGenerator"
 	ScalingEngine         = "scalingEngine"
+	Operator              = "operator"
 	ConsulCluster         = "consulCluster"
 )
 
@@ -58,8 +61,9 @@ type APIServerClient struct {
 }
 
 type ServiceBrokerConfig struct {
-	Port       int `json:"port"`
-	PublicPort int `json:"publicPort"`
+	Port                int  `json:"port"`
+	PublicPort          int  `json:"publicPort"`
+	EnableCustomMetrics bool `json:"enableCustomMetrics"`
 
 	Username string `json:"username"`
 	Password string `json:"password"`
@@ -102,7 +106,10 @@ type APIServerConfig struct {
 	PublicPort             int                    `json:"publicPort"`
 	InfoFilePath           string                 `json:"infoFilePath"`
 	CFAPI                  string                 `json:"cfApi"`
+	CFClientId             string                 `json:"cfClientId"`
+	CFClientSecret         string                 `json:"cfClientSecret"`
 	SkipSSLValidation      bool                   `json:"skipSSLValidation"`
+	CacheTTL               int                    `json:"cacheTTL"`
 	DB                     DBConfig               `json:"db"`
 	SchedulerClient        SchedulerClient        `json:"scheduler"`
 	ScalingEngineClient    ScalingEngineClient    `json:"scalingEngine"`
@@ -110,8 +117,9 @@ type APIServerConfig struct {
 	EventGeneratorClient   EventGeneratorClient   `json:"eventGenerator"`
 	ServiceOffering        ServiceOffering        `json:"serviceOffering"`
 
-	TLS       models.TLSCerts `json:"tls"`
-	PublicTLS models.TLSCerts `json:"publicTls"`
+	TLS               models.TLSCerts `json:"tls"`
+	PublicTLS         models.TLSCerts `json:"publicTls"`
+	HttpClientTimeout int             `json:"httpClientTimeout"`
 }
 
 func (components *Components) ServiceBroker(confPath string, argv ...string) *ginkgomon.Runner {
@@ -119,7 +127,7 @@ func (components *Components) ServiceBroker(confPath string, argv ...string) *gi
 		Name:              ServiceBroker,
 		AnsiColorCode:     "32m",
 		StartCheck:        "Service broker app is running",
-		StartCheckTimeout: 10 * time.Second,
+		StartCheckTimeout: 20 * time.Second,
 		Command: exec.Command(
 			"node", append([]string{components.Executables[ServiceBroker], "-c", confPath}, argv...)...,
 		),
@@ -133,7 +141,7 @@ func (components *Components) ApiServer(confPath string, argv ...string) *ginkgo
 		Name:              APIServer,
 		AnsiColorCode:     "33m",
 		StartCheck:        "Autoscaler API server started",
-		StartCheckTimeout: 10 * time.Second,
+		StartCheckTimeout: 20 * time.Second,
 		Command: exec.Command(
 			"node", append([]string{components.Executables[APIServer], "-c", confPath}, argv...)...,
 		),
@@ -162,7 +170,7 @@ func (components *Components) MetricsCollector(confPath string, argv ...string) 
 		Name:              MetricsCollector,
 		AnsiColorCode:     "35m",
 		StartCheck:        `"metricscollector.started"`,
-		StartCheckTimeout: 10 * time.Second,
+		StartCheckTimeout: 20 * time.Second,
 		Command: exec.Command(
 			components.Executables[MetricsCollector],
 			append([]string{
@@ -178,7 +186,7 @@ func (components *Components) EventGenerator(confPath string, argv ...string) *g
 		Name:              EventGenerator,
 		AnsiColorCode:     "36m",
 		StartCheck:        `"eventgenerator.started"`,
-		StartCheckTimeout: 10 * time.Second,
+		StartCheckTimeout: 20 * time.Second,
 		Command: exec.Command(
 			components.Executables[EventGenerator],
 			append([]string{
@@ -194,7 +202,7 @@ func (components *Components) ScalingEngine(confPath string, argv ...string) *gi
 		Name:              ScalingEngine,
 		AnsiColorCode:     "37m",
 		StartCheck:        `"scalingengine.started"`,
-		StartCheckTimeout: 10 * time.Second,
+		StartCheckTimeout: 20 * time.Second,
 		Command: exec.Command(
 			components.Executables[ScalingEngine],
 			append([]string{
@@ -204,12 +212,29 @@ func (components *Components) ScalingEngine(confPath string, argv ...string) *gi
 	})
 }
 
-func (components *Components) PrepareServiceBrokerConfig(publicPort int, internalPort int, username string, password string, dbUri string, apiServerUri string, brokerApiHttpRequestTimeout time.Duration, tmpDir string) string {
+func (components *Components) Operator(confPath string, argv ...string) *ginkgomon.Runner {
+
+	return ginkgomon.New(ginkgomon.Config{
+		Name:              Operator,
+		AnsiColorCode:     "38m",
+		StartCheck:        `"operator.started"`,
+		StartCheckTimeout: 40 * time.Second,
+		Command: exec.Command(
+			components.Executables[Operator],
+			append([]string{
+				"-c", confPath,
+			}, argv...)...,
+		),
+	})
+}
+
+func (components *Components) PrepareServiceBrokerConfig(publicPort int, internalPort int, username string, password string, enableCustomMetrics bool, dbUri string, apiServerUri string, brokerApiHttpRequestTimeout time.Duration, tmpDir string) string {
 	brokerConfig := ServiceBrokerConfig{
-		Port:       internalPort,
-		PublicPort: publicPort,
-		Username:   username,
-		Password:   password,
+		Port:                internalPort,
+		PublicPort:          publicPort,
+		Username:            username,
+		Password:            password,
+		EnableCustomMetrics: enableCustomMetrics,
 		DB: DBConfig{
 			URI:            dbUri,
 			MinConnections: 1,
@@ -247,14 +272,17 @@ func (components *Components) PrepareServiceBrokerConfig(publicPort int, interna
 	return cfgFile.Name()
 }
 
-func (components *Components) PrepareApiServerConfig(port int, publicPort int, skipSSLValidation bool, cfApi string, dbUri string, schedulerUri string, scalingEngineUri string, metricsCollectorUri string, eventGeneratorUri string, serviceBrokerUri string, serviceOfferingEnabled bool, tmpDir string) string {
+func (components *Components) PrepareApiServerConfig(port int, publicPort int, skipSSLValidation bool, cacheTTL int, cfApi string, dbUri string, schedulerUri string, scalingEngineUri string, metricsCollectorUri string, eventGeneratorUri string, serviceBrokerUri string, serviceOfferingEnabled bool, httpClientTimeout time.Duration, tmpDir string) string {
 
 	apiConfig := APIServerConfig{
 		Port:              port,
 		PublicPort:        publicPort,
 		InfoFilePath:      apiServerInfoFilePath,
 		CFAPI:             cfApi,
+		CFClientId:        "admin",
+		CFClientSecret:    "admin-secret",
 		SkipSSLValidation: skipSSLValidation,
+		CacheTTL:          cacheTTL,
 		DB: DBConfig{
 			URI:            dbUri,
 			MinConnections: 1,
@@ -317,6 +345,7 @@ func (components *Components) PrepareApiServerConfig(port int, publicPort int, s
 			CertFile:   filepath.Join(testCertDir, "api_public.crt"),
 			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 		},
+		HttpClientTimeout: int(httpClientTimeout / time.Millisecond),
 	}
 
 	cfgFile, err := ioutil.TempFile(tmpDir, APIServer)
@@ -327,7 +356,7 @@ func (components *Components) PrepareApiServerConfig(port int, publicPort int, s
 	return cfgFile.Name()
 }
 
-func (components *Components) PrepareSchedulerConfig(dbUri string, scalingEngineUri string, tmpDir string, consulPort string) string {
+func (components *Components) PrepareSchedulerConfig(dbUri string, scalingEngineUri string, tmpDir string, consulPort string, httpClientTimeout time.Duration) string {
 	dbUrl, _ := url.Parse(dbUri)
 	scheme := dbUrl.Scheme
 	host := dbUrl.Host
@@ -369,6 +398,9 @@ client.ssl.key-store-type=PKCS12
 client.ssl.trust-store=%s/autoscaler.truststore
 client.ssl.trust-store-password=123456
 client.ssl.protocol=TLSv1.2
+server.ssl.enabled-protocols[3]=TLSv1,TLSv1.1,TLSv1.2
+server.ssl.ciphers[23]=TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_CBC_SHA256,TLS_RSA_WITH_AES_256_CBC_SHA,TLS_RSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_3DES_EDE_CBC_SHA,TLS_ECDHE_RSA_WITH_RC4_128_SHA,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,SSL_RSA_WITH_RC4_128_SHA
+client.httpClientTimeout=%d
 #Quartz
 org.quartz.scheduler.instanceName=app-autoscaler-%d
 org.quartz.scheduler.instanceId=app-autoscaler-%d
@@ -379,7 +411,7 @@ spring.aop.auto=false
 endpoints.enabled=false
 spring.data.jpa.repositories.enabled=false
 `
-	settingJsonStr := fmt.Sprintf(settingStrTemplate, jdbcDBUri, userName, password, jdbcDBUri, userName, password, scalingEngineUri, testCertDir, testCertDir, testCertDir, testCertDir, components.Ports[Scheduler], components.Ports[Scheduler], consulPort)
+	settingJsonStr := fmt.Sprintf(settingStrTemplate, jdbcDBUri, userName, password, jdbcDBUri, userName, password, scalingEngineUri, testCertDir, testCertDir, testCertDir, testCertDir, components.Ports[Scheduler], components.Ports[Scheduler], consulPort, int(httpClientTimeout/time.Second))
 	cfgFile, err := os.Create(filepath.Join(tmpDir, "application.properties"))
 	Expect(err).NotTo(HaveOccurred())
 	ioutil.WriteFile(cfgFile.Name(), []byte(settingJsonStr), 0777)
@@ -387,11 +419,11 @@ spring.data.jpa.repositories.enabled=false
 	return cfgFile.Name()
 }
 
-func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port int, ccNOAAUAAUrl string, cfGrantTypePassword string, collectInterval time.Duration,
-	refreshInterval time.Duration, saveInterval time.Duration, collectMethod string, tmpDir string) string {
+func (components *Components) PrepareMetricsCollectorConfig(dbURI string, port int, ccNOAAUAAURL string, cfGrantTypePassword string, collectInterval time.Duration,
+	refreshInterval time.Duration, saveInterval time.Duration, collectMethod string, httpClientTimeout time.Duration, tmpDir string) string {
 	cfg := mcConfig.Config{
-		Cf: cf.CfConfig{
-			Api:       ccNOAAUAAUrl,
+		CF: cf.CFConfig{
+			API:       ccNOAAUAAURL,
 			GrantType: cfGrantTypePassword,
 			Username:  "admin",
 			Password:  "admin",
@@ -406,31 +438,33 @@ func (components *Components) PrepareMetricsCollectorConfig(dbUri string, port i
 			NodeAddrs: []string{"localhost"},
 			NodeIndex: 0,
 		},
-		Logging: mcConfig.LoggingConfig{
+		Logging: helpers.LoggingConfig{
 			Level: LOGLEVEL,
 		},
-		Db: mcConfig.DbConfig{
-			InstanceMetricsDb: db.DatabaseConfig{
-				Url: dbUri,
+		DB: mcConfig.DBConfig{
+			InstanceMetricsDB: db.DatabaseConfig{
+				URL: dbURI,
 			},
-			PolicyDb: db.DatabaseConfig{
-				Url: dbUri,
+			PolicyDB: db.DatabaseConfig{
+				URL: dbURI,
 			},
 		},
 		Collector: mcConfig.CollectorConfig{
-			CollectInterval: collectInterval,
-			RefreshInterval: refreshInterval,
-			CollectMethod:   collectMethod,
-			SaveInterval:    saveInterval,
+			CollectInterval:       collectInterval,
+			RefreshInterval:       refreshInterval,
+			CollectMethod:         collectMethod,
+			SaveInterval:          saveInterval,
+			MetricCacheSizePerApp: 500,
 		},
+		HttpClientTimeout: httpClientTimeout,
 	}
 	return writeYmlConfig(tmpDir, MetricsCollector, &cfg)
 }
 
-func (components *Components) PrepareEventGeneratorConfig(dbUri string, port int, metricsCollectorUrl string, scalingEngineUrl string, aggregatorExecuteInterval time.Duration,
-	policyPollerInterval time.Duration, saveInterval time.Duration, evaluationManagerInterval time.Duration, tmpDir string) string {
+func (components *Components) PrepareEventGeneratorConfig(dbUri string, port int, metricsCollectorURL string, scalingEngineURL string, aggregatorExecuteInterval time.Duration,
+	policyPollerInterval time.Duration, saveInterval time.Duration, evaluationManagerInterval time.Duration, httpClientTimeout time.Duration, tmpDir string) string {
 	conf := &egConfig.Config{
-		Logging: egConfig.LoggingConfig{
+		Logging: helpers.LoggingConfig{
 			Level: LOGLEVEL,
 		},
 		Server: egConfig.ServerConfig{
@@ -458,14 +492,14 @@ func (components *Components) PrepareEventGeneratorConfig(dbUri string, port int
 		},
 		DB: egConfig.DBConfig{
 			PolicyDB: db.DatabaseConfig{
-				Url: dbUri,
+				URL: dbUri,
 			},
 			AppMetricDB: db.DatabaseConfig{
-				Url: dbUri,
+				URL: dbUri,
 			},
 		},
 		ScalingEngine: egConfig.ScalingEngineConfig{
-			ScalingEngineUrl: scalingEngineUrl,
+			ScalingEngineURL: scalingEngineURL,
 			TLSClientCerts: models.TLSCerts{
 				KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
 				CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
@@ -473,7 +507,7 @@ func (components *Components) PrepareEventGeneratorConfig(dbUri string, port int
 			},
 		},
 		MetricCollector: egConfig.MetricCollectorConfig{
-			MetricCollectorUrl: metricsCollectorUrl,
+			MetricCollectorURL: metricsCollectorURL,
 			TLSClientCerts: models.TLSCerts{
 				KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
 				CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
@@ -482,14 +516,15 @@ func (components *Components) PrepareEventGeneratorConfig(dbUri string, port int
 		},
 		DefaultBreachDurationSecs: 600,
 		DefaultStatWindowSecs:     60,
+		HttpClientTimeout:         httpClientTimeout,
 	}
 	return writeYmlConfig(tmpDir, EventGenerator, &conf)
 }
 
-func (components *Components) PrepareScalingEngineConfig(dbUri string, port int, ccUAAUrl string, cfGrantTypePassword string, tmpDir string, consulClusterConfig string) string {
+func (components *Components) PrepareScalingEngineConfig(dbURI string, port int, ccUAAURL string, cfGrantTypePassword string, httpClientTimeout time.Duration, tmpDir string) string {
 	conf := seConfig.Config{
-		Cf: cf.CfConfig{
-			Api:       ccUAAUrl,
+		CF: cf.CFConfig{
+			API:       ccUAAURL,
 			GrantType: cfGrantTypePassword,
 			Username:  "admin",
 			Password:  "admin",
@@ -502,28 +537,100 @@ func (components *Components) PrepareScalingEngineConfig(dbUri string, port int,
 				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 			},
 		},
-		Logging: seConfig.LoggingConfig{
+		Logging: helpers.LoggingConfig{
 			Level: LOGLEVEL,
 		},
-		Db: seConfig.DbConfig{
-			PolicyDb: db.DatabaseConfig{
-				Url: dbUri,
+		DB: seConfig.DBConfig{
+			PolicyDB: db.DatabaseConfig{
+				URL: dbURI,
 			},
-			ScalingEngineDb: db.DatabaseConfig{
-				Url: dbUri,
+			ScalingEngineDB: db.DatabaseConfig{
+				URL: dbURI,
 			},
-			SchedulerDb: db.DatabaseConfig{
-				Url: dbUri,
+			SchedulerDB: db.DatabaseConfig{
+				URL: dbURI,
 			},
-		},
-		Synchronizer: seConfig.SynchronizerConfig{
-			ActiveScheduleSyncInterval: 10 * time.Second,
 		},
 		DefaultCoolDownSecs: 300,
 		LockSize:            32,
+		HttpClientTimeout:   httpClientTimeout,
 	}
 
 	return writeYmlConfig(tmpDir, ScalingEngine, &conf)
+}
+
+func (components *Components) PrepareOperatorConfig(dbURI string, ccUAAURL string, cfGrantTypePassword string, scalingEngineURL string, schedulerURL string, syncInterval time.Duration, cutoffDuration time.Duration, httpClientTimeout time.Duration, tmpDir string) string {
+	conf := &opConfig.Config{
+		Logging: helpers.LoggingConfig{
+			Level: LOGLEVEL,
+		},
+		CF: cf.CFConfig{
+			API:       ccUAAURL,
+			GrantType: cfGrantTypePassword,
+			Username:  "admin",
+			Password:  "admin",
+		},
+		InstanceMetricsDB: opConfig.InstanceMetricsDbPrunerConfig{
+			RefreshInterval: 2 * time.Minute,
+			CutoffDuration:  cutoffDuration,
+			DB: db.DatabaseConfig{
+				URL: dbURI,
+			},
+		},
+		AppMetricsDB: opConfig.AppMetricsDBPrunerConfig{
+			RefreshInterval: 2 * time.Minute,
+			CutoffDuration:  cutoffDuration,
+			DB: db.DatabaseConfig{
+				URL: dbURI,
+			},
+		},
+		ScalingEngineDB: opConfig.ScalingEngineDBPrunerConfig{
+			RefreshInterval: 2 * time.Minute,
+			CutoffDuration:  cutoffDuration,
+			DB: db.DatabaseConfig{
+				URL: dbURI,
+			},
+		},
+		ScalingEngine: opConfig.ScalingEngineConfig{
+			URL:          scalingEngineURL,
+			SyncInterval: syncInterval,
+			TLSClientCerts: models.TLSCerts{
+				KeyFile:    filepath.Join(testCertDir, "scalingengine.key"),
+				CertFile:   filepath.Join(testCertDir, "scalingengine.crt"),
+				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			},
+		},
+		Scheduler: opConfig.SchedulerConfig{
+			URL:          schedulerURL,
+			SyncInterval: syncInterval,
+			TLSClientCerts: models.TLSCerts{
+				KeyFile:    filepath.Join(testCertDir, "scheduler.key"),
+				CertFile:   filepath.Join(testCertDir, "scheduler.crt"),
+				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			},
+		},
+		Lock: opConfig.LockConfig{
+			LockTTL:             15 * time.Second,
+			LockRetryInterval:   5 * time.Second,
+			ConsulClusterConfig: consulRunner.ConsulCluster(),
+		},
+		EnableDBLock: true,
+		DBLock: opConfig.DBLockConfig{
+			LockTTL: 30 * time.Second,
+			DB: db.DatabaseConfig{
+				URL: dbURI,
+			},
+			LockRetryInterval: 15 * time.Second,
+		},
+		AppSyncer: opConfig.AppSyncerConfig{
+			SyncInterval: 60 * time.Second,
+			DB: db.DatabaseConfig{
+				URL: dbURI,
+			},
+		},
+		HttpClientTimeout: httpClientTimeout,
+	}
+	return writeYmlConfig(tmpDir, Operator, &conf)
 }
 
 func writeYmlConfig(dir string, componentName string, c interface{}) string {

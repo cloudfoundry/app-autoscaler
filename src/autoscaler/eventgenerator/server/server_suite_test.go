@@ -1,9 +1,9 @@
 package server_test
 
 import (
-	"autoscaler/eventgenerator/aggregator/fakes"
 	"autoscaler/eventgenerator/config"
 	"autoscaler/eventgenerator/server"
+	"autoscaler/fakes"
 
 	"net/url"
 	"strconv"
@@ -34,8 +34,8 @@ var _ = BeforeSuite(func() {
 		},
 	}
 	database := &fakes.FakeAppMetricDB{}
-
-	httpServer, err := server.NewServer(lager.NewLogger("test"), conf, database)
+	httpStatusCollector := &fakes.FakeHTTPStatusCollector{}
+	httpServer, err := server.NewServer(lager.NewLogger("test"), conf, database, httpStatusCollector)
 	Expect(err).NotTo(HaveOccurred())
 
 	serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(port))

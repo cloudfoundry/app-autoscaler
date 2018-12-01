@@ -1,15 +1,11 @@
 package sqldb
 
 import (
-	"time"
+	"autoscaler/db"
+	"autoscaler/models"
 
-	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
 	_ "github.com/lib/pq"
-
-	"autoscaler/db"
-	"autoscaler/healthendpoint"
-	"autoscaler/models"
 
 	"database/sql"
 	"strconv"
@@ -22,7 +18,7 @@ type SchedulerSQLDB struct {
 }
 
 func NewSchedulerSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*SchedulerSQLDB, error) {
-	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.Url)
+	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.URL)
 	if err != nil {
 		logger.Error("failed-open-scheduler-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
@@ -91,12 +87,6 @@ func (sdb *SchedulerSQLDB) GetActiveSchedules() (map[string]*models.ActiveSchedu
 
 }
 
-func (sdb *SchedulerSQLDB) EmitHealthMetrics(h healthendpoint.Health, cclock clock.Clock, interval time.Duration) {
-	go func() {
-		ticker := cclock.NewTicker(interval)
-		defer ticker.Stop()
-		for range ticker.C() {
-			h.Set("openConnection_schedulerDB", float64(sdb.sqldb.Stats().OpenConnections))
-		}
-	}()
+func (sdb *SchedulerSQLDB) GetDBStatus() sql.DBStats {
+	return sdb.sqldb.Stats()
 }

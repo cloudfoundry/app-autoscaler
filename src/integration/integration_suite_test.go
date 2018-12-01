@@ -55,6 +55,7 @@ var (
 	metricsCollectorConfPath string
 	eventGeneratorConfPath   string
 	scalingEngineConfPath    string
+	operatorConfPath         string
 	brokerUserName           string = "username"
 	brokerPassword           string = "password"
 	brokerAuth               string
@@ -71,13 +72,15 @@ var (
 	messagesToSend           chan []byte
 	streamingDoneChan        chan bool
 	emptyMessageChannel      chan []byte
-	testUserId               string = "testUserId"
+	testUserId               string   = "testUserId"
+	testUserScope            []string = []string{"cloud_controller.read", "cloud_controller.write", "password.write", "openid", "network.admin", "network.write", "uaa.user"}
 
-	processMap       map[string]ifrit.Process = map[string]ifrit.Process{}
-	schedulerProcess ifrit.Process
+	processMap map[string]ifrit.Process = map[string]ifrit.Process{}
 
-	brokerApiHttpRequestTimeout              time.Duration = 5 * time.Second
-	apiSchedulerHttpRequestTimeout           time.Duration = 5 * time.Second
+	defaultHttpClientTimeout time.Duration = 10 * time.Second
+
+	brokerApiHttpRequestTimeout              time.Duration = 10 * time.Second
+	apiSchedulerHttpRequestTimeout           time.Duration = 10 * time.Second
 	apiScalingEngineHttpRequestTimeout       time.Duration = 10 * time.Second
 	apiMetricsCollectorHttpRequestTimeout    time.Duration = 10 * time.Second
 	apiEventGeneratorHttpRequestTimeout      time.Duration = 10 * time.Second
@@ -188,6 +191,9 @@ func CompileTestedExecutables() Executables {
 	builtExecutables[ScalingEngine], err = gexec.BuildIn(rootDir, "autoscaler/scalingengine/cmd/scalingengine", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
+	builtExecutables[Operator], err = gexec.BuildIn(rootDir, "autoscaler/operator/cmd/operator", "-race")
+	Expect(err).NotTo(HaveOccurred())
+
 	return builtExecutables
 }
 
@@ -221,9 +227,10 @@ func startServiceBroker() *ginkgomon.Runner {
 	return runner
 }
 
-func startScheduler() ifrit.Process {
-	runner := components.Scheduler(schedulerConfPath)
-	return ginkgomon.Invoke(runner)
+func startScheduler() {
+	processMap[Scheduler] = ginkgomon.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
+		{Scheduler, components.Scheduler(schedulerConfPath)},
+	}))
 }
 
 func startMetricsCollector() {
@@ -239,20 +246,23 @@ func startEventGenerator() {
 }
 
 func startScalingEngine() {
-	runner := components.ScalingEngine(scalingEngineConfPath)
 	processMap[ScalingEngine] = ginkgomon.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
-		{ScalingEngine, runner},
+		{ScalingEngine, components.ScalingEngine(scalingEngineConfPath)},
+	}))
+}
+
+func startOperator() {
+	processMap[Operator] = ginkgomon.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
+		{Operator, components.Operator(operatorConfPath)},
 	}))
 }
 
 func stopApiServer() {
-	ginkgomon.Interrupt(processMap[APIServer], 5*time.Second)
+	ginkgomon.Kill(processMap[APIServer], 5*time.Second)
 }
-
-func stopScheduler(schedulerProcess ifrit.Process) {
-	ginkgomon.Kill(schedulerProcess)
+func stopScheduler() {
+	ginkgomon.Kill(processMap[Scheduler], 5*time.Second)
 }
-
 func stopScalingEngine() {
 	ginkgomon.Kill(processMap[ScalingEngine], 5*time.Second)
 }
@@ -265,6 +275,10 @@ func stopEventGenerator() {
 func stopServiceBroker() {
 	ginkgomon.Kill(processMap[ServiceBroker], 5*time.Second)
 }
+func stopOperator() {
+	ginkgomon.Kill(processMap[Operator], 5*time.Second)
+}
+
 func sendSigusr2Signal(component string) {
 	process := processMap[component]
 	if process != nil {
@@ -426,6 +440,7 @@ func attachPolicy(appId string, policy []byte, apiType APIType) (*http.Response,
 		apiServerPort = components.Ports[APIPublicServer]
 		httpClientTmp = httpClientForPublicApi
 	}
+
 	req, err := http.NewRequest("PUT", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/policy", apiServerPort, appId), bytes.NewReader(policy))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
@@ -435,8 +450,8 @@ func attachPolicy(appId string, policy []byte, apiType APIType) (*http.Response,
 	return httpClientTmp.Do(req)
 }
 
-func getSchedules(appId string, apiType APIType) (*http.Response, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/schedules", components.Ports["scheduler"], appId), strings.NewReader(""))
+func getSchedules(appId string) (*http.Response, error) {
+	req, err := http.NewRequest("GET", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/schedules", components.Ports[Scheduler], appId), strings.NewReader(""))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
 	return httpClient.Do(req)
@@ -459,18 +474,29 @@ func deleteSchedule(appId string) (*http.Response, error) {
 	return httpClient.Do(req)
 }
 
-func synchronizeSchedule() (*http.Response, error) {
-	req, err := http.NewRequest("PUT", fmt.Sprintf("https://127.0.0.1:%d/v1/syncSchedules", components.Ports[Scheduler]), strings.NewReader(""))
-	Expect(err).NotTo(HaveOccurred())
-	req.Header.Set("Content-Type", "application/json")
-	return httpClient.Do(req)
-}
-
 func getActiveSchedule(appId string) (*http.Response, error) {
 	req, err := http.NewRequest("GET", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/active_schedules", components.Ports[ScalingEngine], appId), strings.NewReader(""))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
 	return httpClient.Do(req)
+}
+
+func activeScheduleExists(appId string) bool {
+	resp, err := getActiveSchedule(appId)
+	Expect(err).NotTo(HaveOccurred())
+
+	return resp.StatusCode == http.StatusOK
+}
+
+func setPolicySpecificDateTime(policyByte []byte, start time.Duration, end time.Duration) string {
+	timeZone := "GMT"
+	location, _ := time.LoadLocation(timeZone)
+	timeNowInTimeZone := time.Now().In(location)
+	dateTimeFormat := "2006-01-02T15:04"
+	startTime := timeNowInTimeZone.Add(start).Format(dateTimeFormat)
+	endTime := timeNowInTimeZone.Add(end).Format(dateTimeFormat)
+
+	return fmt.Sprintf(string(policyByte), timeZone, startTime, endTime)
 }
 func getScalingHistories(pathVariables []string, parameters map[string]string) (*http.Response, error) {
 	var apiServerPort int
@@ -579,6 +605,7 @@ func deletePolicy(appId string) {
 	_, err := dbHelper.Exec(query, appId)
 	Expect(err).NotTo(HaveOccurred())
 }
+
 func insertScalingHistory(history *models.AppScalingHistory) {
 	query := "INSERT INTO scalinghistory" +
 		"(appid, timestamp, scalingtype, status, oldinstances, newinstances, reason, message, error) " +
@@ -595,6 +622,13 @@ func getScalingHistoryCount(appId string, oldInstanceCount int, newInstanceCount
 	Expect(err).NotTo(HaveOccurred())
 	return count
 }
+func getScalingHistoryTotalCount(appId string) int {
+	var count int
+	query := "SELECT COUNT(*) FROM scalinghistory WHERE appid=$1"
+	err := dbHelper.QueryRow(query, appId).Scan(&count)
+	Expect(err).NotTo(HaveOccurred())
+	return count
+}
 func insertAppInstanceMetric(appInstanceMetric *models.AppInstanceMetric) {
 	query := "INSERT INTO appinstancemetrics" +
 		"(appid, instanceindex, collectedat, name, unit, value, timestamp) " +
@@ -608,6 +642,30 @@ func insertAppMetric(appMetrics *models.AppMetric) {
 		"VALUES($1, $2, $3, $4, $5)"
 	_, err := dbHelper.Exec(query, appMetrics.AppId, appMetrics.MetricType, appMetrics.Unit, appMetrics.Value, appMetrics.Timestamp)
 	Expect(err).NotTo(HaveOccurred())
+}
+
+func getAppInstanceMetricTotalCount(appId string) int {
+	var count int
+	query := "SELECT COUNT(*) FROM appinstancemetrics WHERE appid=$1"
+	err := dbHelper.QueryRow(query, appId).Scan(&count)
+	Expect(err).NotTo(HaveOccurred())
+	return count
+}
+
+func getAppMetricTotalCount(appId string) int {
+	var count int
+	query := "SELECT COUNT(*) FROM app_metric WHERE app_id=$1"
+	err := dbHelper.QueryRow(query, appId).Scan(&count)
+	Expect(err).NotTo(HaveOccurred())
+	return count
+}
+
+func getCredentialsCount(appId string) int {
+	var count int
+	query := "SELECT COUNT(*) FROM credentials WHERE id=$1"
+	err := dbHelper.QueryRow(query, appId).Scan(&count)
+	Expect(err).NotTo(HaveOccurred())
+	return count
 }
 
 type GetResponse func(id string, apiType APIType) (*http.Response, error)
@@ -631,19 +689,28 @@ func checkResponse(resp *http.Response, err error, expectHttpStatus int, expectR
 	Expect(actual).To(Equal(expectResponseMap))
 	resp.Body.Close()
 }
-func checkSchedule(getResponse GetResponse, id string, expectHttpStatus int, expectResponseMap map[string]int, apiType APIType) {
-	resp, err := getResponse(id, apiType)
+
+func checkResponseEmptyAndStatusCode(resp *http.Response, err error, expectedStatus int) {
+	Expect(err).NotTo(HaveOccurred())
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(body).To(HaveLen(0))
+	Expect(resp.StatusCode).To(Equal(expectedStatus))
+}
+
+func checkSchedule(appId string, expectHttpStatus int, expectResponseMap map[string]int) bool {
+	resp, err := getSchedules(appId)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.StatusCode).To(Equal(expectHttpStatus))
+	defer resp.Body.Close()
 	var actual map[string]interface{}
 	err = json.NewDecoder(resp.Body).Decode(&actual)
 	Expect(err).NotTo(HaveOccurred())
 	var schedules map[string]interface{} = actual["schedules"].(map[string]interface{})
 	var recurring []interface{} = schedules["recurring_schedule"].([]interface{})
 	var specificDate []interface{} = schedules["specific_date"].([]interface{})
-	Expect(len(specificDate)).To(Equal(expectResponseMap["specific_date"]))
-	Expect(len(recurring)).To(Equal(expectResponseMap["recurring_schedule"]))
-	resp.Body.Close()
+	return len(specificDate) == expectResponseMap["specific_date"] && len(recurring) == expectResponseMap["recurring_schedule"]
 }
 
 func startFakeCCNOAAUAA(instanceCount int) {
@@ -651,6 +718,7 @@ func startFakeCCNOAAUAA(instanceCount int) {
 	fakeCCNOAAUAA.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
 		cf.Endpoints{
 			AuthEndpoint:    fakeCCNOAAUAA.URL(),
+			TokenEndpoint:   fakeCCNOAAUAA.URL(),
 			DopplerEndpoint: strings.Replace(fakeCCNOAAUAA.URL(), "http", "ws", 1),
 		}))
 	fakeCCNOAAUAA.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))
@@ -658,6 +726,12 @@ func startFakeCCNOAAUAA(instanceCount int) {
 	fakeCCNOAAUAA.RouteToHandler("GET", appSummaryRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
 		models.AppEntity{Instances: instanceCount, State: &appState}))
 	fakeCCNOAAUAA.RouteToHandler("PUT", appInstanceRegPath, ghttp.RespondWith(http.StatusCreated, ""))
+	fakeCCNOAAUAA.RouteToHandler("POST", "/check_token", ghttp.RespondWithJSONEncoded(http.StatusOK,
+		struct {
+			Scope []string `json:"scope"`
+		}{
+			testUserScope,
+		}))
 	fakeCCNOAAUAA.RouteToHandler("GET", "/userinfo", ghttp.RespondWithJSONEncoded(http.StatusOK,
 		struct {
 			UserId string `json:"user_id"`

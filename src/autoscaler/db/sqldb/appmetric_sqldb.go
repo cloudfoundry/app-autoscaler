@@ -3,12 +3,12 @@ package sqldb
 import (
 	"autoscaler/db"
 	"autoscaler/models"
-	"time"
 
 	"code.cloudfoundry.org/lager"
 	. "github.com/lib/pq"
 
 	"database/sql"
+	"time"
 )
 
 type AppMetricSQLDB struct {
@@ -20,7 +20,7 @@ type AppMetricSQLDB struct {
 func NewAppMetricSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*AppMetricSQLDB, error) {
 	var err error
 
-	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.Url)
+	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.URL)
 	if err != nil {
 		logger.Error("open-AppMetric-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
@@ -151,4 +151,7 @@ func (adb *AppMetricSQLDB) PruneAppMetrics(before int64) error {
 	}
 
 	return err
+}
+func (adb *AppMetricSQLDB) GetDBStatus() sql.DBStats {
+	return adb.sqldb.Stats()
 }

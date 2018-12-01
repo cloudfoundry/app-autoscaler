@@ -25,6 +25,9 @@ const (
 
 	ActiveSchedulesPath         = "/v1/apps/{appid}/active_schedules"
 	GetActiveSchedulesRouteName = "GetActiveSchedules"
+
+	SyncActiveSchedulesPath      = "/v1/syncSchedules"
+	SyncActiveSchedulesRouteName = "SyncActiveSchedules"
 )
 
 type AutoScalerRoute struct {
@@ -51,6 +54,7 @@ func newRouters() *AutoScalerRoute {
 	instance.scalingEngineRoutes.Path(ActiveSchedulePath).Methods(http.MethodPut).Name(SetActiveScheduleRouteName)
 	instance.scalingEngineRoutes.Path(ActiveSchedulePath).Methods(http.MethodDelete).Name(DeleteActiveScheduleRouteName)
 	instance.scalingEngineRoutes.Path(ActiveSchedulesPath).Methods(http.MethodGet).Name(GetActiveSchedulesRouteName)
+	instance.scalingEngineRoutes.Path(SyncActiveSchedulesPath).Methods(http.MethodPut).Name(SyncActiveSchedulesRouteName)
 
 	return instance
 

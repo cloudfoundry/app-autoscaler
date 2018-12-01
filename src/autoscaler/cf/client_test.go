@@ -19,8 +19,8 @@ var _ = Describe("Client", func() {
 	var (
 		fakeCC          *ghttp.Server
 		fakeLoginServer *ghttp.Server
-		cfc             CfClient
-		conf            *CfConfig
+		cfc             CFClient
+		conf            *CFConfig
 		authToken       string
 		tokens          Tokens
 		fclock          *fakeclock.FakeClock
@@ -30,8 +30,8 @@ var _ = Describe("Client", func() {
 	BeforeEach(func() {
 		fakeCC = ghttp.NewServer()
 		fakeLoginServer = ghttp.NewServer()
-		conf = &CfConfig{}
-		conf.Api = fakeCC.URL()
+		conf = &CFConfig{}
+		conf.API = fakeCC.URL()
 		fclock = fakeclock.NewFakeClock(time.Now())
 		err = nil
 	})
@@ -48,7 +48,7 @@ var _ = Describe("Client", func() {
 	Describe("Login", func() {
 
 		JustBeforeEach(func() {
-			cfc = NewCfClient(conf, lager.NewLogger("cf"), fclock)
+			cfc = NewCFClient(conf, lager.NewLogger("cf"), fclock)
 			err = cfc.Login()
 		})
 
@@ -56,7 +56,7 @@ var _ = Describe("Client", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", PathCfInfo),
+						ghttp.VerifyRequest("GET", PathCFInfo),
 						ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
 							AuthEndpoint:    "test-oauth-endpoint",
 							TokenEndpoint:   "test-token-endpoint",
@@ -91,7 +91,7 @@ var _ = Describe("Client", func() {
 				BeforeEach(func() {
 					fakeCC.AppendHandlers(
 						ghttp.CombineHandlers(
-							ghttp.VerifyRequest("GET", PathCfInfo),
+							ghttp.VerifyRequest("GET", PathCFInfo),
 							ghttp.RespondWith(500, ""),
 						),
 					)
@@ -107,7 +107,7 @@ var _ = Describe("Client", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", PathCfInfo),
+						ghttp.VerifyRequest("GET", PathCFInfo),
 						ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
 							AuthEndpoint:    fakeLoginServer.URL(),
 							TokenEndpoint:   "test-token-endpoint",
@@ -132,7 +132,7 @@ var _ = Describe("Client", func() {
 
 						fakeLoginServer.AppendHandlers(
 							ghttp.CombineHandlers(
-								ghttp.VerifyRequest("POST", PathCfAuth),
+								ghttp.VerifyRequest("POST", PathCFAuth),
 								ghttp.VerifyBasicAuth("cf", ""),
 								ghttp.VerifyForm(values),
 								ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
@@ -155,19 +155,19 @@ var _ = Describe("Client", func() {
 				Context("when using client_credentials grant", func() {
 					BeforeEach(func() {
 						conf.GrantType = GrantTypeClientCredentials
-						conf.ClientId = "test-client-id"
+						conf.ClientID = "test-client-id"
 						conf.Secret = "test-client-secret"
 
 						values := url.Values{
 							"grant_type":    {conf.GrantType},
-							"client_id":     {conf.ClientId},
+							"client_id":     {conf.ClientID},
 							"client_secret": {conf.Secret},
 						}
 
 						fakeLoginServer.AppendHandlers(
 							ghttp.CombineHandlers(
-								ghttp.VerifyRequest("POST", PathCfAuth),
-								ghttp.VerifyBasicAuth(conf.ClientId, conf.Secret),
+								ghttp.VerifyRequest("POST", PathCFAuth),
+								ghttp.VerifyBasicAuth(conf.ClientID, conf.Secret),
 								ghttp.VerifyForm(values),
 								ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
 									AccessToken:  "test-access-token",
@@ -204,7 +204,7 @@ var _ = Describe("Client", func() {
 				BeforeEach(func() {
 					fakeLoginServer.AppendHandlers(
 						ghttp.CombineHandlers(
-							ghttp.VerifyRequest("POST", PathCfAuth),
+							ghttp.VerifyRequest("POST", PathCFAuth),
 							ghttp.RespondWith(401, ""),
 						),
 					)
@@ -220,7 +220,7 @@ var _ = Describe("Client", func() {
 
 	Describe("RefreshAuthToken", func() {
 		BeforeEach(func() {
-			cfc = NewCfClient(conf, lager.NewLogger("cf"), fclock)
+			cfc = NewCFClient(conf, lager.NewLogger("cf"), fclock)
 		})
 
 		JustBeforeEach(func() {
@@ -231,7 +231,7 @@ var _ = Describe("Client", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", PathCfInfo),
+						ghttp.VerifyRequest("GET", PathCFInfo),
 						ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
 							AuthEndpoint:    fakeLoginServer.URL(),
 							TokenEndpoint:   "test-token-endpoint",
@@ -245,7 +245,7 @@ var _ = Describe("Client", func() {
 				BeforeEach(func() {
 					fakeLoginServer.AppendHandlers(
 						ghttp.CombineHandlers(
-							ghttp.VerifyRequest("POST", PathCfAuth),
+							ghttp.VerifyRequest("POST", PathCFAuth),
 							ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
 								AccessToken:  "test-access-token",
 								RefreshToken: "test-refresh-token",
@@ -269,7 +269,7 @@ var _ = Describe("Client", func() {
 				BeforeEach(func() {
 					fakeLoginServer.AppendHandlers(
 						ghttp.CombineHandlers(
-							ghttp.VerifyRequest("POST", PathCfAuth),
+							ghttp.VerifyRequest("POST", PathCFAuth),
 							ghttp.RespondWith(401, ""),
 						),
 					)
@@ -286,7 +286,7 @@ var _ = Describe("Client", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("GET", PathCfInfo),
+						ghttp.VerifyRequest("GET", PathCFInfo),
 						ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
 							AuthEndpoint:    fakeLoginServer.URL(),
 							TokenEndpoint:   "test-token-endpoint",
@@ -296,7 +296,7 @@ var _ = Describe("Client", func() {
 				)
 				fakeLoginServer.AppendHandlers(
 					ghttp.CombineHandlers(
-						ghttp.VerifyRequest("POST", PathCfAuth),
+						ghttp.VerifyRequest("POST", PathCFAuth),
 						ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
 							AccessToken:  "test-access-token",
 							RefreshToken: "test-refresh-token",
@@ -311,7 +311,7 @@ var _ = Describe("Client", func() {
 				BeforeEach(func() {
 					fakeLoginServer.AppendHandlers(
 						ghttp.CombineHandlers(
-							ghttp.VerifyRequest("POST", PathCfAuth),
+							ghttp.VerifyRequest("POST", PathCFAuth),
 							ghttp.VerifyForm(url.Values{
 								"grant_type":    {GrantTypeRefreshToken},
 								"refresh_token": {"test-refresh-token"},
@@ -338,7 +338,7 @@ var _ = Describe("Client", func() {
 				BeforeEach(func() {
 					fakeCC.AppendHandlers(
 						ghttp.CombineHandlers(
-							ghttp.VerifyRequest("GET", PathCfInfo),
+							ghttp.VerifyRequest("GET", PathCFInfo),
 							ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
 								AuthEndpoint:    fakeLoginServer.URL(),
 								TokenEndpoint:   "test-token-endpoint",
@@ -349,7 +349,7 @@ var _ = Describe("Client", func() {
 
 					fakeLoginServer.AppendHandlers(
 						ghttp.CombineHandlers(
-							ghttp.VerifyRequest("POST", PathCfAuth),
+							ghttp.VerifyRequest("POST", PathCFAuth),
 							ghttp.VerifyForm(url.Values{
 								"grant_type":    {GrantTypeRefreshToken},
 								"refresh_token": {"test-refresh-token"},
@@ -363,7 +363,7 @@ var _ = Describe("Client", func() {
 					BeforeEach(func() {
 						fakeLoginServer.AppendHandlers(
 							ghttp.CombineHandlers(
-								ghttp.VerifyRequest("POST", PathCfAuth),
+								ghttp.VerifyRequest("POST", PathCFAuth),
 								ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
 									AccessToken:  "test-access-token",
 									RefreshToken: "test-refresh-token",
@@ -387,7 +387,7 @@ var _ = Describe("Client", func() {
 					BeforeEach(func() {
 						fakeLoginServer.AppendHandlers(
 							ghttp.CombineHandlers(
-								ghttp.VerifyRequest("POST", PathCfAuth),
+								ghttp.VerifyRequest("POST", PathCFAuth),
 								ghttp.RespondWith(401, ""),
 							),
 						)
@@ -410,10 +410,10 @@ var _ = Describe("Client", func() {
 		})
 
 		BeforeEach(func() {
-			cfc = NewCfClient(conf, lager.NewLogger("cf"), fclock)
+			cfc = NewCFClient(conf, lager.NewLogger("cf"), fclock)
 			fakeCC.AppendHandlers(
 				ghttp.CombineHandlers(
-					ghttp.VerifyRequest("GET", PathCfInfo),
+					ghttp.VerifyRequest("GET", PathCFInfo),
 					ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
 						AuthEndpoint:    fakeLoginServer.URL(),
 						TokenEndpoint:   "test-token-endpoint",
@@ -423,7 +423,7 @@ var _ = Describe("Client", func() {
 			)
 			fakeLoginServer.AppendHandlers(
 				ghttp.CombineHandlers(
-					ghttp.VerifyRequest("POST", PathCfAuth),
+					ghttp.VerifyRequest("POST", PathCFAuth),
 					ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
 						AccessToken:  "test-access-token",
 						RefreshToken: "test-refresh-token",
@@ -451,7 +451,7 @@ var _ = Describe("Client", func() {
 				BeforeEach(func() {
 					fakeLoginServer.AppendHandlers(
 						ghttp.CombineHandlers(
-							ghttp.VerifyRequest("POST", PathCfAuth),
+							ghttp.VerifyRequest("POST", PathCFAuth),
 							ghttp.VerifyForm(url.Values{
 								"grant_type":    {GrantTypeRefreshToken},
 								"refresh_token": {"test-refresh-token"},

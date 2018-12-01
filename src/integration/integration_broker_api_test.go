@@ -32,8 +32,8 @@ var _ = Describe("Integration_Broker_Api", func() {
 	BeforeEach(func() {
 		initializeHttpClient("servicebroker.crt", "servicebroker.key", "autoscaler-ca.crt", brokerApiHttpRequestTimeout)
 		fakeScheduler = ghttp.NewServer()
-		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], components.Ports[APIPublicServer], false, "", dbUrl, fakeScheduler.URL(), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[EventGenerator]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ServiceBrokerInternal]), true, tmpDir)
-		serviceBrokerConfPath = components.PrepareServiceBrokerConfig(components.Ports[ServiceBroker], components.Ports[ServiceBrokerInternal], brokerUserName, brokerPassword, dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[APIServer]), brokerApiHttpRequestTimeout, tmpDir)
+		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], components.Ports[APIPublicServer], false, 200, "", dbUrl, fakeScheduler.URL(), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[EventGenerator]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ServiceBrokerInternal]), true, defaultHttpClientTimeout, tmpDir)
+		serviceBrokerConfPath = components.PrepareServiceBrokerConfig(components.Ports[ServiceBroker], components.Ports[ServiceBrokerInternal], brokerUserName, brokerPassword, false, dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[APIServer]), brokerApiHttpRequestTimeout, tmpDir)
 
 		startApiServer()
 		startServiceBroker()
@@ -91,6 +91,9 @@ var _ = Describe("Integration_Broker_Api", func() {
 				var expected map[string]interface{}
 				err = json.Unmarshal(schedulePolicyJson, &expected)
 				Expect(err).NotTo(HaveOccurred())
+				// If custom metrics not enabled, credentials should not be created
+				By("checking the credential table content")
+				Expect(getCredentialsCount(appId)).To(Equal(0))
 
 				checkResponseContent(getPolicy, appId, http.StatusOK, expected, INTERNAL)
 			})
@@ -122,6 +125,10 @@ var _ = Describe("Integration_Broker_Api", func() {
 				var expected map[string]interface{}
 				err = json.Unmarshal(minimalScalingRulePolicyJson, &expected)
 				Expect(err).NotTo(HaveOccurred())
+
+				// If custom metrics not enabled, credentials should not be created
+				By("checking the credential table content")
+				Expect(getCredentialsCount(appId)).To(Equal(0))
 
 				checkResponseContent(getPolicy, appId, http.StatusOK, expected, INTERNAL)
 			})
@@ -161,7 +168,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
 				respBody, err := ioutil.ReadAll(resp.Body)
-				Expect(string(respBody)).To(Equal(`{"description":[{"property":"instance.scaling_rules[0].cool_down_secs","message":"must have a minimum value of 60","schema":{"type":"number","minimum":60,"maximum":3600},"instance":-300,"name":"minimum","argument":60,"stack":"instance.scaling_rules[0].cool_down_secs must have a minimum value of 60"}]}`))
+				Expect(string(respBody)).To(Equal(`{"description":[{"property":"instance.scaling_rules[0].cool_down_secs","message":"must have a minimum value of 60","schema":{"type":"integer","minimum":60,"maximum":3600},"instance":-300,"name":"minimum","argument":60,"stack":"instance.scaling_rules[0].cool_down_secs must have a minimum value of 60"}]}`))
 				resp.Body.Close()
 				Consistently(fakeScheduler.ReceivedRequests).Should(HaveLen(schedulerCount))
 
@@ -209,6 +216,47 @@ var _ = Describe("Integration_Broker_Api", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
 				resp.Body.Close()
+			})
+		})
+
+		Context("Policy with schedules where Custom Metrics feature Enabled", func() {
+			BeforeEach(func() {
+				fakeScheduler.RouteToHandler("PUT", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
+				fakeScheduler.RouteToHandler("DELETE", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
+			})
+
+			AfterEach(func() {
+				//clear the binding
+				resp, err := unbindService(bindingId, appId, serviceInstanceId)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resp.StatusCode).To(Equal(http.StatusOK))
+				resp.Body.Close()
+			})
+
+			JustBeforeEach(func() {
+				// Restarting servicebroker after enabling Custom Metrics feature
+				stopServiceBroker()
+				serviceBrokerConfPath = components.PrepareServiceBrokerConfig(components.Ports[ServiceBroker], components.Ports[ServiceBrokerInternal], brokerUserName, brokerPassword, true, dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[APIServer]), brokerApiHttpRequestTimeout, tmpDir)
+				startServiceBroker()
+			})
+
+			It("creates a binding", func() {
+				resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+				resp.Body.Close()
+				Consistently(fakeScheduler.ReceivedRequests).Should(HaveLen(1))
+
+				By("checking the API Server")
+				var expected map[string]interface{}
+				err = json.Unmarshal(schedulePolicyJson, &expected)
+				Expect(err).NotTo(HaveOccurred())
+
+				// If custom metrics enabled, credentials should be created
+				By("checking the credential table content")
+				Expect(getCredentialsCount(appId)).To(Equal(1))
+
+				checkResponseContent(getPolicy, appId, http.StatusOK, expected, INTERNAL)
 			})
 		})
 	})
@@ -292,6 +340,46 @@ var _ = Describe("Integration_Broker_Api", func() {
 				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
 				resp.Body.Close()
 			})
+		})
+	})
+
+	Describe("Unbind Service with Custom Metrics enabled", func() {
+		BeforeEach(func() {
+			// Restarting servicebroker after enabling Custom Metrics feature
+			stopServiceBroker()
+			serviceBrokerConfPath = components.PrepareServiceBrokerConfig(components.Ports[ServiceBroker], components.Ports[ServiceBrokerInternal], brokerUserName, brokerPassword, true, dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[APIServer]), brokerApiHttpRequestTimeout, tmpDir)
+			startServiceBroker()
+
+			brokerAuth = base64.StdEncoding.EncodeToString([]byte("username:password"))
+			//do a bind first
+			fakeScheduler.RouteToHandler("PUT", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
+			resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+			resp.Body.Close()
+
+			By("checking the credential table content")
+			Expect(getCredentialsCount(appId)).To(Equal(1))
+		})
+
+		BeforeEach(func() {
+			fakeScheduler.RouteToHandler("DELETE", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
+		})
+
+		It("should return 200", func() {
+			resp, err := unbindService(bindingId, appId, serviceInstanceId)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.StatusCode).To(Equal(http.StatusOK))
+			resp.Body.Close()
+
+			By("checking the API Server")
+			resp, err = getPolicy(appId, INTERNAL)
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
+			resp.Body.Close()
+
+			By("checking the credential table content")
+			Expect(getCredentialsCount(appId)).To(Equal(0))
 		})
 	})
 })

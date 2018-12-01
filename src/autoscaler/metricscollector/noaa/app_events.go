@@ -3,6 +3,7 @@ package noaa
 import (
 	"autoscaler/models"
 	"fmt"
+
 	"github.com/cloudfoundry/sonde-go/events"
 )
 
@@ -36,25 +37,19 @@ func NewHttpStartStopEnvelope(timestamp, startTime, stopTime int64, instanceIdx 
 	}
 }
 
-func GetInstanceMemoryMetricsFromContainerEnvelopes(collectAt int64, appId string, containerEnvelopes []*events.Envelope) []*models.AppInstanceMetric {
+func GetMetricsFromContainerEnvelopes(collectAt int64, appId string, containerEnvelopes []*events.Envelope) []*models.AppInstanceMetric {
 	metrics := []*models.AppInstanceMetric{}
 	for _, event := range containerEnvelopes {
-		instanceMetric := GetInstanceMemoryUsedMetricFromContainerMetricEvent(collectAt, appId, event)
-		if instanceMetric != nil {
-			metrics = append(metrics, instanceMetric)
-		}
-		instanceMetric = GetInstanceMemoryUtilMetricFromContainerMetricEvent(collectAt, appId, event)
-		if instanceMetric != nil {
-			metrics = append(metrics, instanceMetric)
-		}
+		metrics = append(metrics, GetMetricsFromContainerEnvelope(collectAt, appId, event)...)
 	}
 	return metrics
 }
 
-func GetInstanceMemoryUsedMetricFromContainerMetricEvent(collectAt int64, appId string, event *events.Envelope) *models.AppInstanceMetric {
+func GetMetricsFromContainerEnvelope(collectAt int64, appId string, event *events.Envelope) []*models.AppInstanceMetric {
+	metrics := []*models.AppInstanceMetric{}
 	cm := event.GetContainerMetric()
 	if (cm != nil) && (*cm.ApplicationId == appId) {
-		return &models.AppInstanceMetric{
+		metrics = append(metrics, &models.AppInstanceMetric{
 			AppId:         appId,
 			InstanceIndex: uint32(cm.GetInstanceIndex()),
 			CollectedAt:   collectAt,
@@ -62,23 +57,28 @@ func GetInstanceMemoryUsedMetricFromContainerMetricEvent(collectAt int64, appId 
 			Unit:          models.UnitMegaBytes,
 			Value:         fmt.Sprintf("%d", int(float64(cm.GetMemoryBytes())/(1024*1024)+0.5)),
 			Timestamp:     event.GetTimestamp(),
-		}
-	}
-	return nil
-}
+		})
 
-func GetInstanceMemoryUtilMetricFromContainerMetricEvent(collectAt int64, appId string, event *events.Envelope) *models.AppInstanceMetric {
-	cm := event.GetContainerMetric()
-	if (cm != nil) && (*cm.ApplicationId == appId) && (cm.GetMemoryBytesQuota() != 0) {
-		return &models.AppInstanceMetric{
+		if cm.GetMemoryBytesQuota() != 0 {
+			metrics = append(metrics, &models.AppInstanceMetric{
+				AppId:         appId,
+				InstanceIndex: uint32(cm.GetInstanceIndex()),
+				CollectedAt:   collectAt,
+				Name:          models.MetricNameMemoryUtil,
+				Unit:          models.UnitPercentage,
+				Value:         fmt.Sprintf("%d", int(float64(cm.GetMemoryBytes())/float64(cm.GetMemoryBytesQuota())*100+0.5)),
+				Timestamp:     event.GetTimestamp(),
+			})
+		}
+		metrics = append(metrics, &models.AppInstanceMetric{
 			AppId:         appId,
 			InstanceIndex: uint32(cm.GetInstanceIndex()),
 			CollectedAt:   collectAt,
-			Name:          models.MetricNameMemoryUtil,
+			Name:          models.MetricNameCPUUtil,
 			Unit:          models.UnitPercentage,
-			Value:         fmt.Sprintf("%d", int(float64(cm.GetMemoryBytes())/float64(cm.GetMemoryBytesQuota())*100+0.5)),
+			Value:         fmt.Sprintf("%d", int(float64(cm.GetCpuPercentage()+0.5))),
 			Timestamp:     event.GetTimestamp(),
-		}
+		})
 	}
-	return nil
+	return metrics
 }
