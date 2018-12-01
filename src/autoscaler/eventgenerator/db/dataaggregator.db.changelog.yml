@@ -77,3 +77,14 @@ databaseChangeLog:
       changes:
         - dropTable:
             tableName: eg_lock 
+  - changeSet:
+      id: 5
+      author: byang
+      changes:
+        - createIndex:
+             columns:
+              - column:
+                  name: timestamp
+                  type: bigint
+             indexName: index_app_metrics_timestamp
+             tableName: app_metric

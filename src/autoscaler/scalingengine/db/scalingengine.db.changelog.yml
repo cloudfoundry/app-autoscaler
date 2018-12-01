@@ -125,4 +125,27 @@ databaseChangeLog:
                     type: bigint
                     defaultValue: 0
                     constraints:
-                      nullable: false                    
+                      nullable: false
+  - changeSet:
+      id: 5
+      author: byang
+      changes:
+        - createIndex:
+             columns:
+             - column:
+                 name: appid
+                 type: varchar
+             - column:
+                 name: timestamp
+                 type: bigint                
+             indexName: idx_scaling_history
+             tableName: scalinghistory
+        - createIndex:
+             columns:
+             - column:
+                 name: timestamp
+                 type: bigint                
+             indexName: idx_scaling_history_timestamp
+             tableName: scalinghistory
+
+                    

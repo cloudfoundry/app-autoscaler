@@ -83,3 +83,14 @@ databaseChangeLog:
       changes:
         - dropTable:
             tableName: mc_lock
+  - changeSet:
+      id: 4
+      author: byang
+      changes:
+        - createIndex:
+             columns:
+             - column:
+                 name: timestamp
+                 type: bigint                
+             indexName: idx_instance_metrics_timestamp
+             tableName: appinstancemetrics
