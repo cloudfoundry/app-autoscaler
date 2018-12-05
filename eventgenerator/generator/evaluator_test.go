@@ -21,9 +21,6 @@ import (
 )
 
 var _ = Describe("Evaluator", func() {
-	const (
-		fakeBreachDurationSecs = 300
-	)
 	var (
 		logger             *lagertest.TestLogger
 		httpClient         *http.Client
@@ -44,22 +41,20 @@ var _ = Describe("Evaluator", func() {
 		lock               *sync.Mutex = &sync.Mutex{}
 		scalingResult      *models.AppScalingResult
 		triggerArrayGT     []*models.Trigger = []*models.Trigger{{
-			AppId:                 testAppId,
-			MetricType:            testMetricType,
-			BreachDurationSeconds: breachDurationSecs,
-			CoolDownSeconds:       300,
-			Threshold:             500,
-			Operator:              ">",
-			Adjustment:            "+1",
+			AppId:           testAppId,
+			MetricType:      testMetricType,
+			CoolDownSeconds: 300,
+			Threshold:       500,
+			Operator:        ">",
+			Adjustment:      "+1",
 		}}
 		triggerArrayGE []*models.Trigger = []*models.Trigger{{
-			AppId:                 testAppId,
-			MetricType:            testMetricType,
-			BreachDurationSeconds: breachDurationSecs,
-			CoolDownSeconds:       300,
-			Threshold:             500,
-			Operator:              ">=",
-			Adjustment:            "+1",
+			AppId:           testAppId,
+			MetricType:      testMetricType,
+			CoolDownSeconds: 300,
+			Threshold:       500,
+			Operator:        ">=",
+			Adjustment:      "+1",
 		}}
 		triggerArrayLT []*models.Trigger = []*models.Trigger{{
 			AppId:                 testAppId,
@@ -138,7 +133,7 @@ var _ = Describe("Evaluator", func() {
 
 	Context("Start", func() {
 		JustBeforeEach(func() {
-			evaluator = NewEvaluator(logger, httpClient, scalingEngine.URL(), triggerChan, database, fakeBreachDurationSecs, getBreaker, setCoolDownExpired)
+			evaluator = NewEvaluator(logger, httpClient, scalingEngine.URL(), triggerChan, database, breachDurationSecs, getBreaker, setCoolDownExpired)
 			evaluator.Start()
 		})
 
@@ -195,6 +190,20 @@ var _ = Describe("Evaluator", func() {
 							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 								return appMetrics, nil
 							}
+							scalingEngine.RouteToHandler("POST", urlPath,
+								ghttp.CombineHandlers(
+									ghttp.VerifyJSONRepresenting(models.Trigger{
+										AppId:                 testAppId,
+										MetricType:            testMetricType,
+										MetricUnit:            testMetricUnit,
+										BreachDurationSeconds: breachDurationSecs,
+										CoolDownSeconds:       300,
+										Threshold:             500,
+										Operator:              ">",
+										Adjustment:            "+1",
+									}),
+									ghttp.RespondWithJSONEncoded(http.StatusOK, &scalingResult)),
+							)
 						})
 						It("should send trigger alarm to scaling engine", func() {
 							Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
@@ -750,7 +759,7 @@ var _ = Describe("Evaluator", func() {
 			database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 				return nil, errors.New("no alarm")
 			}
-			evaluator = NewEvaluator(logger, httpClient, scalingEngine.URL(), triggerChan, database, fakeBreachDurationSecs, getBreaker, setCoolDownExpired)
+			evaluator = NewEvaluator(logger, httpClient, scalingEngine.URL(), triggerChan, database, breachDurationSecs, getBreaker, setCoolDownExpired)
 			evaluator.Start()
 			Expect(triggerChan).To(BeSent(triggerArrayGT))
 			Eventually(database.RetrieveAppMetricsCallCount).Should(Equal(1))
@@ -770,7 +779,7 @@ var _ = Describe("Evaluator", func() {
 			database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 				return appMetrics, nil
 			}
-			evaluator = NewEvaluator(logger, httpClient, scalingEngine.URL(), triggerChan, database, fakeBreachDurationSecs, getBreaker, setCoolDownExpired)
+			evaluator = NewEvaluator(logger, httpClient, scalingEngine.URL(), triggerChan, database, breachDurationSecs, getBreaker, setCoolDownExpired)
 			evaluator.Start()
 			Expect(triggerChan).To(BeSent(triggerArrayGT))
 		})
