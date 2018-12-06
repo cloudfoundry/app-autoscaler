@@ -87,7 +87,7 @@ var _ = Describe("MetricHandler", func() {
 					credentials.Password = "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G"
 					credentialCache.Set("an-app-id", credentials, 10*time.Minute)
 					allowedMetricTypeSet["queuelength"] = struct{}{}
-					allowedMetricCache.Set("allowed_metric_types", allowedMetricTypeSet, 10*time.Minute)
+					allowedMetricCache.Set("an-app-id", allowedMetricTypeSet, 10*time.Minute)
 					customMetrics := []*models.CustomMetric{
 						&models.CustomMetric{
 							Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 1, AppGUID: "an-app-id",
@@ -229,7 +229,7 @@ var _ = Describe("MetricHandler", func() {
 					credentials.Password = "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G"
 					credentialCache.Set("an-app-id", credentials, 10*time.Minute)
 					allowedMetricTypeSet["queuelength"] = struct{}{}
-					allowedMetricCache.Set("allowed_metric_types", allowedMetricTypeSet, 10*time.Minute)
+					allowedMetricCache.Set("an-app-id", allowedMetricTypeSet, 10*time.Minute)
 					customMetrics := []*models.CustomMetric{
 						&models.CustomMetric{
 							Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 1, AppGUID: "an-app-id",
@@ -274,7 +274,7 @@ var _ = Describe("MetricHandler", func() {
 				It("should get the allowedMetrics from database and add it to the cache and returns status code 200", func() {
 					Expect(policyDB.GetAppPolicyCallCount()).To(Equal(1))
 					Expect(resp.Code).To(Equal(http.StatusOK))
-					_, found = allowedMetricCache.Get("allowed_metric_types")
+					_, found = allowedMetricCache.Get("an-app-id")
 					Expect(found).To(Equal(true))
 				})
 
