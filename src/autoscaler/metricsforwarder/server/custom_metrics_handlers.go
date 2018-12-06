@@ -16,8 +16,6 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-const ALLOWED_METRIC_TYPES = "allowed_metric_types"
-
 type CustomMetricsHandler struct {
 	metricForwarder    forwarder.MetricForwarder
 	policyDB           db.PolicyDB
@@ -71,7 +69,7 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 			mh.logger.Error("error-during-getting-binding-credentials-from-policyDB", err)
 			handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 				Code:    "Interal-Server-Error",
-				Message: "Error reading custom metrics request body"})
+				Message: "Error getting binding crededntials from policyDB"})
 			return
 		}
 		credentials = models.CustomMetricCredentials{
@@ -105,12 +103,12 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 	if err != nil {
 		mh.logger.Error("error-unmarshaling-metrics", err, lager.Data{"body": r.Body})
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
+			Code:    "Bad-Request",
 			Message: "Error unmarshaling custom metrics request body"})
 		return
 	}
-	isValidRequest, err := mh.validateCustomMetricTypes(appID, metricsConsumer)
-	if !isValidRequest && err != nil {
+	err = mh.validateCustomMetricTypes(appID, metricsConsumer)
+	if err != nil {
 		mh.logger.Error("failed-validating-metrictypes", err, lager.Data{"metrics": metricsConsumer})
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 			Code:    "Bad-Request",
@@ -136,16 +134,16 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 }
 
 func (mh *CustomMetricsHandler) validateCredentials(username string, usernameHash string, password string, passwordHash string) bool {
-	isUsernameAuthenticated := bcrypt.CompareHashAndPassword([]byte(usernameHash), []byte(username))
-	isPasswordAuthenticated := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(password))
-	if isPasswordAuthenticated == nil && isUsernameAuthenticated == nil { // password matching successfull
+	usernameAuthErr := bcrypt.CompareHashAndPassword([]byte(usernameHash), []byte(username))
+	passwordAuthErr := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(password))
+	if usernameAuthErr == nil && passwordAuthErr == nil { // password matching successfull
 		return true
 	}
 	mh.logger.Debug("failed-to-authorize-credentials")
 	return false
 }
 
-func (mh *CustomMetricsHandler) validateCustomMetricTypes(appGUID string, metricsConsumer *models.MetricsConsumer) (bool, error) {
+func (mh *CustomMetricsHandler) validateCustomMetricTypes(appGUID string, metricsConsumer *models.MetricsConsumer) error {
 	standardMetricsTypes := make(map[string]struct{})
 	standardMetricsTypes[models.MetricNameMemoryUsed] = struct{}{}
 	standardMetricsTypes[models.MetricNameMemoryUtil] = struct{}{}
@@ -154,7 +152,7 @@ func (mh *CustomMetricsHandler) validateCustomMetricTypes(appGUID string, metric
 	standardMetricsTypes[models.MetricNameCPUUtil] = struct{}{}
 
 	allowedMetricTypeSet := make(map[string]struct{})
-	res, found := mh.allowedMetricCache.Get(ALLOWED_METRIC_TYPES)
+	res, found := mh.allowedMetricCache.Get(appGUID)
 	if found {
 		// AllowedMetrics found in cache
 		allowedMetricTypeSet = res.(map[string]struct{})
@@ -163,17 +161,17 @@ func (mh *CustomMetricsHandler) validateCustomMetricTypes(appGUID string, metric
 		scalingPolicy, err := mh.policyDB.GetAppPolicy(appGUID)
 		if err != nil {
 			mh.logger.Error("error-getting-policy", err, lager.Data{"appId": appGUID})
-			return false, errors.New("not able to get policy details")
+			return errors.New("not able to get policy details")
 		}
 		if err == nil && scalingPolicy == nil {
 			mh.logger.Debug("no-policy-found", lager.Data{"appId": appGUID})
-			return false, errors.New("no policy found")
+			return errors.New("no policy found")
 		}
 		for _, metrictype := range scalingPolicy.ScalingRules {
 			allowedMetricTypeSet[metrictype.MetricType] = struct{}{}
 		}
 		//update the cache
-		mh.allowedMetricCache.Set(ALLOWED_METRIC_TYPES, allowedMetricTypeSet, mh.cacheTTL)
+		mh.allowedMetricCache.Set(appGUID, allowedMetricTypeSet, mh.cacheTTL)
 	}
 	mh.logger.Debug("allowed-metrics-types", lager.Data{"metrics": allowedMetricTypeSet})
 	for _, metric := range metricsConsumer.CustomMetrics {
@@ -181,16 +179,16 @@ func (mh *CustomMetricsHandler) validateCustomMetricTypes(appGUID string, metric
 		_, stdMetricsExists := standardMetricsTypes[metric.Name]
 		if stdMetricsExists { //it should fail
 			mh.logger.Info("custom-metric-name-matches-with-standard-metrics-name", lager.Data{"metric": metric.Name})
-			return false, errors.New("CustomMetric name matches with standard metrics name")
+			return errors.New("CustomMetric name matches with standard metrics name")
 		}
 		// check if any of the custom metrics not defined during policy binding
 		_, ok := allowedMetricTypeSet[metric.Name]
 		if !ok { // If any of the custom metrics is not defined during policy binding, it should fail
 			mh.logger.Info("unmatched-custom-metric-type", lager.Data{"metric": metric.Name})
-			return false, errors.New("CustomMetric name does not match with metric defined in policy")
+			return errors.New("CustomMetric name does not match with metric defined in policy")
 		}
 	}
-	return true, nil
+	return nil
 }
 
 func (mh *CustomMetricsHandler) getMetrics(appID string, metricsConsumer *models.MetricsConsumer) []*models.CustomMetric {
