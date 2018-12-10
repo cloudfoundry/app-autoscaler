@@ -106,3 +106,15 @@
 [submodule " src/github.com/xeipuuv/gojsonpointer"]
 	path = src/github.com/xeipuuv/gojsonpointer
 	url = https://github.com/xeipuuv/gojsonpointer
+[submodule "src/code.cloudfoundry.org/go-loggregator"]
+	path = src/code.cloudfoundry.org/go-loggregator
+	url = https://github.com/cloudfoundry/go-loggregator
+[submodule "src/code.cloudfoundry.org/go-diodes"]
+	path = src/code.cloudfoundry.org/go-diodes
+	url = https://github.com/cloudfoundry/go-diodes
+[submodule "src/golang.org/x/text"]
+	path = src/golang.org/x/text
+	url = https://go.googlesource.com/text
+[submodule "src/code.cloudfoundry.org/rfc5424"]
+	path = src/code.cloudfoundry.org/rfc5424
+	url = https://github.com/cloudfoundry-incubator/rfc5424
