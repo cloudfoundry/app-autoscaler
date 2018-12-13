@@ -11,13 +11,20 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+const (
+	DefaultMetronAddress                      = "127.0.0.1:3458"
+	DefaultCacheTTL             time.Duration = 15 * time.Minute
+	DefaultCacheCleanupInterval time.Duration = 6 * time.Hour
+)
+
 type Config struct {
-	Logging           helpers.LoggingConfig `yaml:"logging"`
-	Server            ServerConfig          `yaml:"server"`
-	MetronAddress     string                `yaml:"metron_address"`
-	LoggregatorConfig LoggregatorConfig     `yaml:"loggregator"`
-	Db                DbConfig              `yaml:"db"`
-	CacheTTL          time.Duration         `yaml:cache_ttl"`
+	Logging              helpers.LoggingConfig `yaml:"logging"`
+	Server               ServerConfig          `yaml:"server"`
+	MetronAddress        string                `yaml:"metron_address"`
+	LoggregatorConfig    LoggregatorConfig     `yaml:"loggregator"`
+	Db                   DbConfig              `yaml:"db"`
+	CacheTTL             time.Duration         `yaml:"cache_ttl"`
+	CacheCleanupInterval time.Duration         `yaml:"cache_cleanup_interval"`
 }
 
 type ServerConfig struct {
@@ -46,16 +53,13 @@ type DbConfig struct {
 	PolicyDb db.DatabaseConfig `yaml:"policy_db"`
 }
 
-const (
-	defaultMetronAddress               = "127.0.0.1:3458"
-	defaultCacheTTL      time.Duration = 15 * time.Minute
-)
-
 func LoadConfig(reader io.Reader) (*Config, error) {
 	conf := &Config{
-		Server:        defaultServerConfig,
-		Logging:       defaultLoggingConfig,
-		MetronAddress: defaultMetronAddress,
+		Server:               defaultServerConfig,
+		Logging:              defaultLoggingConfig,
+		MetronAddress:        DefaultMetronAddress,
+		CacheTTL:             DefaultCacheTTL,
+		CacheCleanupInterval: DefaultCacheCleanupInterval,
 	}
 
 	bytes, err := ioutil.ReadAll(reader)
