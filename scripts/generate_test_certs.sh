@@ -73,4 +73,4 @@ certstrap --depot-path ${depot_path} sign metricserver_client --CA autoscaler-ca
 
 # metricsforwarder certificate for loggregator_agent
 certstrap --depot-path ${depot_path} request-cert --passphrase '' --common-name metron --ip 127.0.0.1
-certstrap --depot-path ${depot_path} sign metron --CA loggregator-ca
+certstrap --depot-path ${depot_path} sign metron --CA loggregator-ca --years "20"
