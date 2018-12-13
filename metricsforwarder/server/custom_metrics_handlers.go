@@ -102,7 +102,7 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 	err = json.Unmarshal(body, &metricsConsumer)
 	if err != nil {
 		mh.logger.Error("error-unmarshaling-metrics", err, lager.Data{"body": r.Body})
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 			Code:    "Bad-Request",
 			Message: "Error unmarshaling custom metrics request body"})
 		return

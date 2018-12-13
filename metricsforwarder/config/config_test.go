@@ -99,7 +99,9 @@ db:
 				Expect(err).NotTo(HaveOccurred())
 				Expect(conf.Server.Port).To(Equal(6110))
 				Expect(conf.Logging.Level).To(Equal("info"))
-				Expect(conf.MetronAddress).To(Equal("127.0.0.1:3458"))
+				Expect(conf.MetronAddress).To(Equal(DefaultMetronAddress))
+				Expect(conf.CacheTTL).To(Equal(DefaultCacheTTL))
+				Expect(conf.CacheCleanupInterval).To(Equal(DefaultCacheCleanupInterval))
 			})
 		})
 
