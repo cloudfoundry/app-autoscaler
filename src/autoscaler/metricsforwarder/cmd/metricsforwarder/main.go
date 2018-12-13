@@ -56,8 +56,8 @@ func main() {
 	}
 	defer policyDB.Close()
 
-	credentialCache := cache.New(conf.CacheTTL, -1)
-	allowedMetricCache := cache.New(conf.CacheTTL, -1)
+	credentialCache := cache.New(conf.CacheTTL, conf.CacheCleanupInterval)
+	allowedMetricCache := cache.New(conf.CacheTTL, conf.CacheCleanupInterval)
 
 	httpServer, err := server.NewServer(logger.Session("custom_metrics_server"), conf, policyDB, *credentialCache, *allowedMetricCache)
 	if err != nil {
