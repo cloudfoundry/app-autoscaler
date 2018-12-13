@@ -150,6 +150,12 @@ var _ = Describe("MetricHandler", func() {
 				It("should search in both cache & database and returns status code 401", func() {
 					Expect(policyDB.GetCustomMetricsCredsCallCount()).To(Equal(1))
 					Expect(resp.Code).To(Equal(http.StatusUnauthorized))
+					errJson := &models.ErrorResponse{}
+					err = json.Unmarshal(resp.Body.Bytes(), errJson)
+					Expect(errJson).To(Equal(&models.ErrorResponse{
+						Code:    "Authorization-Failure-Error",
+						Message: "Basic authorization credential does not match",
+					}))
 				})
 
 			})
@@ -205,8 +211,14 @@ var _ = Describe("MetricHandler", func() {
 				}`)
 			})
 
-			It("returns status code 500", func() {
-				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
+			It("returns status code 400", func() {
+				Expect(resp.Code).To(Equal(http.StatusBadRequest))
+				errJson := &models.ErrorResponse{}
+				err = json.Unmarshal(resp.Body.Bytes(), errJson)
+				Expect(errJson).To(Equal(&models.ErrorResponse{
+					Code:    "Bad-Request",
+					Message: "Error unmarshaling custom metrics request body",
+				}))
 			})
 
 		})
@@ -294,12 +306,74 @@ var _ = Describe("MetricHandler", func() {
 					Expect(err).NotTo(HaveOccurred())
 				})
 
-				It("should search in both cache & database and returns status code 401", func() {
+				It("should search in both cache & database and returns status code 400", func() {
 					Expect(policyDB.GetAppPolicyCallCount()).To(Equal(1))
 					Expect(resp.Code).To(Equal(http.StatusBadRequest))
+					errJson := &models.ErrorResponse{}
+					err = json.Unmarshal(resp.Body.Bytes(), errJson)
+					Expect(errJson).To(Equal(&models.ErrorResponse{
+						Code:    "Bad-Request",
+						Message: "Error validating custom metrics type",
+					}))
 				})
 
 			})
+		})
+
+		Context("when a request to publish custom metrics comes with standard metric type", func() {
+			BeforeEach(func() {
+				policyDB.GetCustomMetricsCredsReturns("$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu", "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G", nil)
+				body = []byte(`{
+					   "instance_index":0,
+					   "metrics":[
+					      {
+					         "name":"memoryused",
+					         "type":"gauge",
+					         "value":200,
+					         "unit":"unit"
+					      }
+					   ]
+				}`)
+			})
+
+			It("returns status code 400", func() {
+				Expect(resp.Code).To(Equal(http.StatusBadRequest))
+				errJson := &models.ErrorResponse{}
+				err = json.Unmarshal(resp.Body.Bytes(), errJson)
+				Expect(errJson).To(Equal(&models.ErrorResponse{
+					Code:    "Bad-Request",
+					Message: "Error validating custom metrics type",
+				}))
+			})
+
+		})
+
+		Context("when a request to publish custom metrics comes with non allowed metric types", func() {
+			BeforeEach(func() {
+				policyDB.GetCustomMetricsCredsReturns("$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu", "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G", nil)
+				body = []byte(`{
+					   "instance_index":0,
+					   "metrics":[
+					      {
+					         "name":"#$@12_&metric",
+					         "type":"gauge",
+					         "value":200,
+					         "unit":"unit"
+					      }
+					   ]
+				}`)
+			})
+
+			It("returns status code 400", func() {
+				Expect(resp.Code).To(Equal(http.StatusBadRequest))
+				errJson := &models.ErrorResponse{}
+				err = json.Unmarshal(resp.Body.Bytes(), errJson)
+				Expect(errJson).To(Equal(&models.ErrorResponse{
+					Code:    "Bad-Request",
+					Message: "Error validating custom metrics type",
+				}))
+			})
+
 		})
 	})
 
