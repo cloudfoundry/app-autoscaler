@@ -2,6 +2,7 @@
 var path = require('path');
 var fs = require('fs');
 var NodeCache = require('node-cache');
+var logger = require('./lib/log/logger');
 var args = process.argv;
 if (!(args.length == 4 && args[2] == "-c" && args[3] != "")) {
   throw new Error("missing config file\nUsage:use '-c' option to specify the config file path");
