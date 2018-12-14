@@ -137,11 +137,6 @@ var _ = Describe("Aggregator", func() {
 
 			clock.Increment(1 * fakeWaitDuration)
 			Consistently(appMonitorsChan).ShouldNot(Receive())
-			Consistently(func() int {
-				cacheLock.RLock()
-				defer cacheLock.RUnlock()
-				return saveToCacheCallCount
-			}).Should(BeZero())
 			Consistently(appMetricDatabase.SaveAppMetricsInBulkCallCount).Should(Equal(0))
 		})
 	})
