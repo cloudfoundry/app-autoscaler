@@ -1,7 +1,9 @@
 package main_test
 
 import (
+	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 
 	. "github.com/onsi/ginkgo"
@@ -14,6 +16,7 @@ import (
 var _ = Describe("Api", func() {
 	var (
 		runner *ApiRunner
+		rsp    *http.Response
 	)
 
 	BeforeEach(func() {
@@ -94,6 +97,29 @@ var _ = Describe("Api", func() {
 			Eventually(runner.Session, 5).Should(Exit(0))
 		})
 
+	})
+
+	Describe("Broker Rest API", func() {
+		Context("When a request comes to broker catalog", func() {
+			BeforeEach(func() {
+				runner.Start()
+			})
+			It("succeeds with a 200", func() {
+				req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://127.0.0.1:%d/sb/v2/catalog", apPort), nil)
+				Expect(err).NotTo(HaveOccurred())
+
+				req.SetBasicAuth(username, password)
+
+				rsp, err = httpClient.Do(req)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+
+				bodyBytes, err := ioutil.ReadAll(rsp.Body)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(bodyBytes).To(Equal(catalogBytes))
+			})
+		})
 	})
 
 })

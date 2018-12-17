@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"strings"
 
+	"github.com/xeipuuv/gojsonschema"
 	"gopkg.in/yaml.v2"
 
 	"autoscaler/db"
@@ -38,7 +39,8 @@ type Config struct {
 	DB                   DBConfig              `yaml:"db"`
 	BrokerUsername       string                `yaml:"broker_username"`
 	BrokerPassword       string                `yaml:"broker_password"`
-	Catalog              string                `yaml:"catalog"`
+	CatalogPath          string                `yaml:"catalog_path"`
+	CatalogSchemaPath    string                `yaml:"catalog_schema_path"`
 	DashboardRedirectURI string                `yaml:"dashboard_redirect_uri"`
 }
 
@@ -73,8 +75,32 @@ func (c *Config) Validate() error {
 	if c.BrokerPassword == "" {
 		return fmt.Errorf("Configuration error: BrokerPassword is empty")
 	}
-	if c.Catalog == "" {
-		return fmt.Errorf("Configuration error: Catalog is empty")
+	if c.CatalogSchemaPath == "" {
+		return fmt.Errorf("Configuration error: CatalogSchemaPath is empty")
 	}
+	if c.CatalogPath == "" {
+		return fmt.Errorf("Configuration error: CatalogPath is empty")
+	}
+
+	catalogSchemaLoader := gojsonschema.NewReferenceLoader("file://" + c.CatalogSchemaPath)
+	catalogLoader := gojsonschema.NewReferenceLoader("file://" + c.CatalogPath)
+
+	result, err := gojsonschema.Validate(catalogSchemaLoader, catalogLoader)
+	if err != nil {
+		return err
+	}
+	if !result.Valid() {
+		errString := "{"
+		for index, desc := range result.Errors() {
+			if index == len(result.Errors())-1 {
+				errString += fmt.Sprintf("\"%s\"", desc.Description())
+			} else {
+				errString += fmt.Sprintf("\"%s\",", desc.Description())
+			}
+		}
+		errString += "}"
+		return fmt.Errorf(errString)
+	}
+
 	return nil
 }
