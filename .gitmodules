@@ -118,3 +118,12 @@
 [submodule "src/code.cloudfoundry.org/rfc5424"]
 	path = src/code.cloudfoundry.org/rfc5424
 	url = https://github.com/cloudfoundry-incubator/rfc5424
+[submodule "src/github.com/derekparker/delve"]
+	path = src/github.com/derekparker/delve
+	url = https://github.com/derekparker/delve.git
+[submodule "src/github.com/mdempsky/gocode"]
+	path = src/github.com/mdempsky/gocode
+	url = https://github.com/nsf/gocode.git
+[submodule "src/golang.org/x/tools"]
+	path = src/golang.org/x/tools
+	url = https://github.com/golang/tools.git
