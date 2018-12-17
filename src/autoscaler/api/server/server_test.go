@@ -2,8 +2,6 @@ package server_test
 
 import (
 	"io/ioutil"
-
-	// . "autoscaler/api/server"
 	"net/http"
 
 	. "github.com/onsi/ginkgo"
@@ -73,7 +71,7 @@ var _ = Describe("Server", func() {
 			bodyBytes, err := ioutil.ReadAll(rsp.Body)
 			Expect(err).NotTo(HaveOccurred())
 
-			Expect(bodyBytes).To(Equal([]byte(catalog)))
+			Expect(bodyBytes).To(Equal(catalogBytes))
 		})
 	})
 

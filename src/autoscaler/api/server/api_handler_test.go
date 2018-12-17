@@ -1,9 +1,9 @@
 package server_test
 
 import (
-	"autoscaler/api/fakes"
 	. "autoscaler/api/server"
 	"autoscaler/db"
+	"autoscaler/fakes"
 	"autoscaler/models"
 	"bytes"
 	"encoding/json"
@@ -38,7 +38,7 @@ var _ = Describe("ApiHandler", func() {
 		Context("When getBrokerCatalog is called", func() {
 			It("gets the catalog json", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				Expect(resp.Body.Bytes()).To(Equal([]byte(catalog)))
+				Expect(resp.Body.Bytes()).To(Equal(catalogBytes))
 			})
 		})
 	})

@@ -2,8 +2,9 @@ package server_test
 
 import (
 	"autoscaler/api/config"
-	"autoscaler/api/fakes"
 	"autoscaler/api/server"
+	"autoscaler/fakes"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -22,19 +23,6 @@ import (
 const (
 	username = "brokeruser"
 	password = "supersecretpassword"
-	catalog  = `{
-		"services": [{
-		  "id": "autoscaler-guid",
-		  "name": "autoscaler",
-		  "description": "Automatically increase or decrease the number of application instances based on a policy you define.",
-		  "bindable": true,
-		  "plans": [{
-			  "id": "autoscaler-free-plan-id",
-			  "name": "autoscaler-free-plan",
-			  "description": "This is the free service plan for the Auto-Scaling service."
-		  }]
-		}]
-		}`
 )
 
 var (
@@ -42,6 +30,7 @@ var (
 	serverUrl     *url.URL
 	httpClient    *http.Client
 	conf          *config.Config
+	catalogBytes  []byte
 )
 
 func TestServer(t *testing.T) {
@@ -55,9 +44,10 @@ var _ = BeforeSuite(func() {
 		Server: config.ServerConfig{
 			Port: port,
 		},
-		BrokerUsername: username,
-		BrokerPassword: password,
-		Catalog:        catalog,
+		BrokerUsername:    username,
+		BrokerPassword:    password,
+		CatalogPath:       "../exampleconfig/catalog-example.json",
+		CatalogSchemaPath: "../schemas/catalog.schema.json",
 	}
 	fakeBindingDB := &fakes.FakeBindingDB{}
 
@@ -70,6 +60,9 @@ var _ = BeforeSuite(func() {
 	serverProcess = ginkgomon.Invoke(httpServer)
 
 	httpClient = &http.Client{}
+
+	catalogBytes, err = ioutil.ReadFile("../exampleconfig/catalog-example.json")
+	Expect(err).NotTo(HaveOccurred())
 })
 
 var _ = AfterSuite(func() {

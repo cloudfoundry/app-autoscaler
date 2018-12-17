@@ -52,6 +52,7 @@ type PolicyDB interface {
 }
 
 type BindingDB interface {
+	DatabaseStatus
 	CreateServiceInstance(serviceInstanceId string, orgId string, spaceId string) error
 	DeleteServiceInstance(serviceInstanceId string) error
 	CreateServiceBinding(bindingId string, serviceInstanceId string, appId string) error
