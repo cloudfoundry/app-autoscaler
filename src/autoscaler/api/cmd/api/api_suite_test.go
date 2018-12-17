@@ -5,6 +5,7 @@ import (
 	"autoscaler/db"
 	"database/sql"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"os/exec"
 	"time"
@@ -19,12 +20,18 @@ import (
 	"testing"
 )
 
+const (
+	username = "brokeruser"
+	password = "supersecretpassword"
+)
+
 var (
-	apPath     string
-	cfg        config.Config
-	apPort     int
-	configFile *os.File
-	// httpClient *httpClient
+	apPath       string
+	cfg          config.Config
+	apPort       int
+	configFile   *os.File
+	httpClient   *http.Client
+	catalogBytes []byte
 )
 
 func TestApi(t *testing.T) {
@@ -48,6 +55,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	err = apDB.Close()
 	Expect(err).NotTo(HaveOccurred())
 
+	catalogBytes, err = ioutil.ReadFile("../../exampleconfig/catalog-example.json")
+	Expect(err).NotTo(HaveOccurred())
+
 	return []byte(ap)
 }, func(pathsByte []byte) {
 	apPath = string(pathsByte)
@@ -61,24 +71,14 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		MaxIdleConnections:    5,
 		ConnectionMaxLifetime: 10 * time.Second,
 	}
-	cfg.BrokerUsername = "brokeruser"
-	cfg.BrokerPassword = "supersecretpassword"
-	cfg.Catalog = `{
-		"services": [{
-		  "id": "autoscaler-guid",
-		  "name": "autoscaler",
-		  "description": "Automatically increase or decrease the number of application instances based on a policy you define.",
-		  "bindable": true,
-		  "plans": [{
-			  "id": "autoscaler-free-plan-id",
-			  "name": "autoscaler-free-plan",
-			  "description": "This is the free service plan for the Auto-Scaling service."
-		  }]
-		}]
-		}`
+	cfg.BrokerUsername = username
+	cfg.BrokerPassword = password
+	cfg.CatalogPath = "../../exampleconfig/catalog-example.json"
+	cfg.CatalogSchemaPath = "../../schemas/catalog.schema.json"
 
 	configFile = writeConfig(&cfg)
-	// httpClient = &httpClient{}
+
+	httpClient = &http.Client{}
 
 })
 

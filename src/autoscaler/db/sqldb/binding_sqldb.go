@@ -143,3 +143,7 @@ func (bdb *BindingSQLDB) DeleteServiceBinding(bindingId string) error {
 
 	return db.ErrDoesNotExist
 }
+
+func (bdb *BindingSQLDB) GetDBStatus() sql.DBStats {
+	return bdb.sqldb.Stats()
+}

@@ -3,6 +3,7 @@ package fakes
 
 import (
 	db "autoscaler/db"
+	sql "database/sql"
 	sync "sync"
 )
 
@@ -64,6 +65,16 @@ type FakeBindingDB struct {
 	}
 	deleteServiceInstanceReturnsOnCall map[int]struct {
 		result1 error
+	}
+	GetDBStatusStub        func() sql.DBStats
+	getDBStatusMutex       sync.RWMutex
+	getDBStatusArgsForCall []struct {
+	}
+	getDBStatusReturns struct {
+		result1 sql.DBStats
+	}
+	getDBStatusReturnsOnCall map[int]struct {
+		result1 sql.DBStats
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
@@ -365,6 +376,58 @@ func (fake *FakeBindingDB) DeleteServiceInstanceReturnsOnCall(i int, result1 err
 	}{result1}
 }
 
+func (fake *FakeBindingDB) GetDBStatus() sql.DBStats {
+	fake.getDBStatusMutex.Lock()
+	ret, specificReturn := fake.getDBStatusReturnsOnCall[len(fake.getDBStatusArgsForCall)]
+	fake.getDBStatusArgsForCall = append(fake.getDBStatusArgsForCall, struct {
+	}{})
+	fake.recordInvocation("GetDBStatus", []interface{}{})
+	fake.getDBStatusMutex.Unlock()
+	if fake.GetDBStatusStub != nil {
+		return fake.GetDBStatusStub()
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	fakeReturns := fake.getDBStatusReturns
+	return fakeReturns.result1
+}
+
+func (fake *FakeBindingDB) GetDBStatusCallCount() int {
+	fake.getDBStatusMutex.RLock()
+	defer fake.getDBStatusMutex.RUnlock()
+	return len(fake.getDBStatusArgsForCall)
+}
+
+func (fake *FakeBindingDB) GetDBStatusCalls(stub func() sql.DBStats) {
+	fake.getDBStatusMutex.Lock()
+	defer fake.getDBStatusMutex.Unlock()
+	fake.GetDBStatusStub = stub
+}
+
+func (fake *FakeBindingDB) GetDBStatusReturns(result1 sql.DBStats) {
+	fake.getDBStatusMutex.Lock()
+	defer fake.getDBStatusMutex.Unlock()
+	fake.GetDBStatusStub = nil
+	fake.getDBStatusReturns = struct {
+		result1 sql.DBStats
+	}{result1}
+}
+
+func (fake *FakeBindingDB) GetDBStatusReturnsOnCall(i int, result1 sql.DBStats) {
+	fake.getDBStatusMutex.Lock()
+	defer fake.getDBStatusMutex.Unlock()
+	fake.GetDBStatusStub = nil
+	if fake.getDBStatusReturnsOnCall == nil {
+		fake.getDBStatusReturnsOnCall = make(map[int]struct {
+			result1 sql.DBStats
+		})
+	}
+	fake.getDBStatusReturnsOnCall[i] = struct {
+		result1 sql.DBStats
+	}{result1}
+}
+
 func (fake *FakeBindingDB) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -378,6 +441,8 @@ func (fake *FakeBindingDB) Invocations() map[string][][]interface{} {
 	defer fake.deleteServiceBindingMutex.RUnlock()
 	fake.deleteServiceInstanceMutex.RLock()
 	defer fake.deleteServiceInstanceMutex.RUnlock()
+	fake.getDBStatusMutex.RLock()
+	defer fake.getDBStatusMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

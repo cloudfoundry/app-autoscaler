@@ -27,7 +27,7 @@ var _ = Describe("Config", func() {
 		Context("with invalid yaml", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
-server:
+ server:
 	port: 8080,
 logging:
   level: debug
@@ -39,20 +39,9 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-catalog: |
-  {
-    "services": [{
-        "id": "autoscaler-guid",
-        "name": "autoscaler",
-        "description": "Automatically increase or decrease the number of application instances based on a policy you define.",
-        "bindable": true,
-        "plans": [{
-            "id": "autoscaler-free-plan-id",
-            "name": "autoscaler-free-plan",
-            "description": "This is the free service plan for the Auto-Scaling service."
-        }]
-    }]
-  }`)
+catalog_schema_path: '../schemas/catalog.schema.json'
+catalog_path: '../exampleconfig/catalog-example.json'
+`)
 			})
 
 			It("returns an error", func() {
@@ -74,20 +63,8 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-catalog: |
-  {
-    "services": [{
-        "id": "autoscaler-guid",
-        "name": "autoscaler",
-        "description": "Automatically increase or decrease the number of application instances based on a policy you define.",
-        "bindable": true,
-        "plans": [{
-            "id": "autoscaler-free-plan-id",
-            "name": "autoscaler-free-plan",
-            "description": "This is the free service plan for the Auto-Scaling service."
-        }]
-    }]
-  }`)
+catalog_schema_path: '../schemas/catalog.schema.json'
+catalog_path: '../exampleconfig/catalog-example.json'`)
 			})
 
 			It("It returns the config", func() {
@@ -104,19 +81,8 @@ catalog: |
 					}))
 				Expect(conf.BrokerUsername).To(Equal("brokeruser"))
 				Expect(conf.BrokerPassword).To(Equal("supersecretpassword"))
-				Expect(conf.Catalog).To(Equal(`{
-  "services": [{
-      "id": "autoscaler-guid",
-      "name": "autoscaler",
-      "description": "Automatically increase or decrease the number of application instances based on a policy you define.",
-      "bindable": true,
-      "plans": [{
-          "id": "autoscaler-free-plan-id",
-          "name": "autoscaler-free-plan",
-          "description": "This is the free service plan for the Auto-Scaling service."
-      }]
-  }]
-}`))
+				Expect(conf.CatalogPath).To(Equal("../exampleconfig/catalog-example.json"))
+				Expect(conf.CatalogSchemaPath).To(Equal("../schemas/catalog.schema.json"))
 			})
 		})
 		Context("with partial config", func() {
@@ -127,20 +93,8 @@ broker_password: supersecretpassword
 db:
   binding_db:
     url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
-catalog: |
-  {
-    "services": [{
-        "id": "autoscaler-guid",
-        "name": "autoscaler",
-        "description": "Automatically increase or decrease the number of application instances based on a policy you define.",
-        "bindable": true,
-        "plans": [{
-            "id": "autoscaler-free-plan-id",
-            "name": "autoscaler-free-plan",
-            "description": "This is the free service plan for the Auto-Scaling service."
-        }]
-    }]
-  }`)
+catalog_schema_path: '../schemas/catalog.schema.json'
+catalog_path: '../exampleconfig/catalog-example.json'`)
 			})
 			It("It returns the default values", func() {
 				Expect(err).NotTo(HaveOccurred())
@@ -186,20 +140,8 @@ db:
     max_open_connections: NOT-INTEGER-VALUE
     max_idle_connections: 5
     connection_max_lifetime: 60s
-catalog: |
-  {
-    "services": [{
-        "id": "autoscaler-guid",
-        "name": "autoscaler",
-        "description": "Automatically increase or decrease the number of application instances based on a policy you define.",
-        "bindable": true,
-        "plans": [{
-            "id": "autoscaler-free-plan-id",
-            "name": "autoscaler-free-plan",
-            "description": "This is the free service plan for the Auto-Scaling service."
-        }]
-    }]
-  }`)
+catalog_schema_path: '../schemas/catalog.schema.json'
+catalog_path: '../exampleconfig/catalog-example.json'`)
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
@@ -221,20 +163,8 @@ db:
     max_open_connections: 10
     max_idle_connections: NOT-INTEGER-VALUE
     connection_max_lifetime: 60s
-catalog: |
-  {
-    "services": [{
-        "id": "autoscaler-guid",
-        "name": "autoscaler",
-        "description": "Automatically increase or decrease the number of application instances based on a policy you define.",
-        "bindable": true,
-        "plans": [{
-            "id": "autoscaler-free-plan-id",
-            "name": "autoscaler-free-plan",
-            "description": "This is the free service plan for the Auto-Scaling service."
-        }]
-    }]
-  }`)
+catalog_schema_path: '../schemas/catalog.schema.json'
+catalog_path: '../exampleconfig/catalog-example.json'`)
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
@@ -256,20 +186,8 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: NOT-TIME-DURATION
-catalog: |
-  {
-    "services": [{
-        "id": "autoscaler-guid",
-        "name": "autoscaler",
-        "description": "Automatically increase or decrease the number of application instances based on a policy you define.",
-        "bindable": true,
-        "plans": [{
-            "id": "autoscaler-free-plan-id",
-            "name": "autoscaler-free-plan",
-            "description": "This is the free service plan for the Auto-Scaling service."
-        }]
-    }]
-  }`)
+catalog_schema_path: '../schemas/catalog.schema.json'
+catalog_path: '../exampleconfig/catalog-example.json'`)
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
@@ -290,19 +208,8 @@ catalog: |
 			}
 			conf.BrokerUsername = "brokeruser"
 			conf.BrokerPassword = "supersecretpassword"
-			conf.Catalog = `{
-"services": [{
-  "id": "autoscaler-guid",
-  "name": "autoscaler",
-  "description": "Automatically increase or decrease the number of application instances based on a policy you define.",
-  "bindable": true,
-  "plans": [{
-	  "id": "autoscaler-free-plan-id",
-	  "name": "autoscaler-free-plan",
-	  "description": "This is the free service plan for the Auto-Scaling service."
-  }]
-}]
-}`
+			conf.CatalogSchemaPath = "../schemas/catalog.schema.json"
+			conf.CatalogPath = "../exampleconfig/catalog-example.json"
 		})
 		JustBeforeEach(func() {
 			err = conf.Validate()
@@ -341,12 +248,48 @@ catalog: |
 			})
 		})
 
-		Context("when catalog is not set", func() {
+		Context("when catalog schema path is not set", func() {
 			BeforeEach(func() {
-				conf.Catalog = ""
+				conf.CatalogSchemaPath = ""
 			})
 			It("should err", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: Catalog is empty")))
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: CatalogSchemaPath is empty")))
+			})
+		})
+
+		Context("when catalog path is not set", func() {
+			BeforeEach(func() {
+				conf.CatalogPath = ""
+			})
+			It("should err", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: CatalogPath is empty")))
+			})
+		})
+
+		Context("when catalog is not valid json", func() {
+			BeforeEach(func() {
+				conf.CatalogPath = "../exampleconfig/catalog-invalid-json-example.json"
+			})
+			It("should err", func() {
+				Expect(err).To(MatchError("invalid character '[' after object key"))
+			})
+		})
+
+		Context("when catalog is missing required fields", func() {
+			BeforeEach(func() {
+				conf.CatalogPath = "../exampleconfig/catalog-missing-example.json"
+			})
+			It("should err", func() {
+				Expect(err).To(MatchError(MatchRegexp("{\"name is required\"}")))
+			})
+		})
+
+		Context("when catalog has invalid type fields", func() {
+			BeforeEach(func() {
+				conf.CatalogPath = "../exampleconfig/catalog-invalid-example.json"
+			})
+			It("should err", func() {
+				Expect(err).To(MatchError(MatchRegexp("{\"Invalid type. Expected: boolean, given: integer\"}")))
 			})
 		})
 	})

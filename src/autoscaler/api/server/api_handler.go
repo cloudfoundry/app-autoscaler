@@ -6,6 +6,7 @@ import (
 	"autoscaler/models"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	"code.cloudfoundry.org/cfhttp/handlers"
@@ -27,7 +28,14 @@ func NewApiHandler(logger lager.Logger, conf *config.Config, bindingdb db.Bindin
 }
 
 func (h *ApiHandler) GetBrokerCatalog(w http.ResponseWriter, r *http.Request, vars map[string]string) {
-	w.Write([]byte(h.conf.Catalog))
+	catalog, err := ioutil.ReadFile(h.conf.CatalogPath)
+	if err != nil {
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Failed to load catalog"})
+		return
+	}
+	w.Write([]byte(catalog))
 }
 
 func (h *ApiHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Request, vars map[string]string) {
