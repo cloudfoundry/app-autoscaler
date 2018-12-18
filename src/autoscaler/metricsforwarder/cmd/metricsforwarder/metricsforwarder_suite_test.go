@@ -109,6 +109,10 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.Logging.Level = "debug"
 	cfg.MetronAddress = grpcIngressTestServer.GetAddr()
 	cfg.Server.Port = 10000 + GinkgoParallelNode()
+	cfg.Server.NodeAddrs = []string{"localhost"}
+	cfg.Server.NodeIndex = 0
+	cfg.CacheCleanupInterval = 10 * time.Minute
+	cfg.PolicyPollerInterval = 40 * time.Second
 	cfg.Db.PolicyDb = db.DatabaseConfig{
 		URL:                   os.Getenv("DBURL"),
 		MaxOpenConnections:    10,
