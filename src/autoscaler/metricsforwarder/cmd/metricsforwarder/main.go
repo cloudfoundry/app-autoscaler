@@ -10,11 +10,14 @@ import (
 	"fmt"
 	"os"
 
+	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
 	cache "github.com/patrickmn/go-cache"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
+
+	"autoscaler/metricsforwarder/manager"
 )
 
 func main() {
@@ -47,6 +50,7 @@ func main() {
 	}
 
 	logger := helpers.InitLoggerFromConfig(&conf.Logging, "metricsforwarder")
+	mfClock := clock.NewClock()
 
 	var policyDB db.PolicyDB
 	policyDB, err = sqldb.NewPolicySQLDB(conf.Db.PolicyDb, logger.Session("policy-db"))
@@ -65,7 +69,21 @@ func main() {
 		os.Exit(1)
 	}
 
+	policyManager := manager.NewPolicyManager(logger, mfClock, conf.PolicyPollerInterval,
+		len(conf.Server.NodeAddrs), conf.Server.NodeIndex, policyDB, *allowedMetricCache, conf.CacheTTL)
+
+	cacheUpdater := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
+		policyManager.Start()
+
+		close(ready)
+
+		<-signals
+		policyManager.Stop()
+		return nil
+	})
+
 	members := grouper.Members{
+		{"cacheUpdater", cacheUpdater},
 		{"custom_metrics_server", httpServer},
 	}
 
