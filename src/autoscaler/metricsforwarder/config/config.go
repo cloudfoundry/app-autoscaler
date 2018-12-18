@@ -15,6 +15,7 @@ const (
 	DefaultMetronAddress                      = "127.0.0.1:3458"
 	DefaultCacheTTL             time.Duration = 15 * time.Minute
 	DefaultCacheCleanupInterval time.Duration = 6 * time.Hour
+	DefaultPolicyPollerInterval time.Duration = 40 * time.Second
 )
 
 type Config struct {
@@ -25,10 +26,13 @@ type Config struct {
 	Db                   DbConfig              `yaml:"db"`
 	CacheTTL             time.Duration         `yaml:"cache_ttl"`
 	CacheCleanupInterval time.Duration         `yaml:"cache_cleanup_interval"`
+	PolicyPollerInterval time.Duration         `yaml:"policy_poller_interval"`
 }
 
 type ServerConfig struct {
-	Port int `yaml:"port"`
+	Port      int      `yaml:"port"`
+	NodeAddrs []string `yaml:"node_addrs"`
+	NodeIndex int      `yaml:"node_index"`
 }
 
 var defaultServerConfig = ServerConfig{
@@ -54,12 +58,14 @@ type DbConfig struct {
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
+
 	conf := &Config{
 		Server:               defaultServerConfig,
 		Logging:              defaultLoggingConfig,
 		MetronAddress:        DefaultMetronAddress,
 		CacheTTL:             DefaultCacheTTL,
 		CacheCleanupInterval: DefaultCacheCleanupInterval,
+		PolicyPollerInterval: DefaultPolicyPollerInterval,
 	}
 
 	bytes, err := ioutil.ReadAll(reader)
@@ -89,7 +95,9 @@ func (c *Config) Validate() error {
 	if c.LoggregatorConfig.ClientKeyFile == "" {
 		return fmt.Errorf("Configuration error: Loggregator ClientKey is empty")
 	}
-
+	if (c.Server.NodeIndex >= len(c.Server.NodeAddrs)) || (c.Server.NodeIndex < 0) {
+		return fmt.Errorf("Configuration error: server.node_index out of range")
+	}
 	return nil
 
 }
