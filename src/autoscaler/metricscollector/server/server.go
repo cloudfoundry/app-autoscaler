@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"autoscaler/cf"
-	"autoscaler/db"
 	"autoscaler/healthendpoint"
 	"autoscaler/metricscollector/collector"
 	"autoscaler/metricscollector/config"
@@ -26,8 +25,8 @@ func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vh(w, r, vars)
 }
 
-func NewServer(logger lager.Logger, conf *config.Config, cfc cf.CFClient, consumer noaa.NoaaConsumer, query collector.MetricQueryFunc, database db.InstanceMetricsDB, httpStatusCollector healthendpoint.HTTPStatusCollector) (ifrit.Runner, error) {
-	mh := NewMetricHandler(logger, conf.Server.NodeIndex, conf.Server.NodeAddrs, cfc, consumer, query, database)
+func NewServer(logger lager.Logger, conf *config.Config, cfc cf.CFClient, consumer noaa.NoaaConsumer, query collector.MetricQueryFunc, httpStatusCollector healthendpoint.HTTPStatusCollector) (ifrit.Runner, error) {
+	mh := NewMetricHandler(logger, conf.Server.NodeIndex, conf.Server.NodeAddrs, cfc, consumer, query)
 	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(httpStatusCollector)
 
 	r := routes.MetricsCollectorRoutes()
