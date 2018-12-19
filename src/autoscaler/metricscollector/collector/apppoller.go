@@ -15,28 +15,30 @@ import (
 )
 
 type appPoller struct {
-	appId           string
-	collectInterval time.Duration
-	cache           *collection.TSDCache
-	logger          lager.Logger
-	cfc             cf.CFClient
-	noaaConsumer    noaa.NoaaConsumer
-	pclock          clock.Clock
-	doneChan        chan bool
-	dataChan        chan *models.AppInstanceMetric
+	appId                         string
+	collectInterval               time.Duration
+	cache                         *collection.TSDCache
+	logger                        lager.Logger
+	cfc                           cf.CFClient
+	noaaConsumer                  noaa.NoaaConsumer
+	pclock                        clock.Clock
+	doneChan                      chan bool
+	dataChan                      chan *models.AppInstanceMetric
+	isMetricsPersistencySupported bool
 }
 
-func NewAppPoller(logger lager.Logger, appId string, collectInterval time.Duration, cacheSize int, cfc cf.CFClient, noaaConsumer noaa.NoaaConsumer, pclock clock.Clock, dataChan chan *models.AppInstanceMetric) AppCollector {
+func NewAppPoller(logger lager.Logger, appId string, collectInterval time.Duration, cacheSize int, isMetricsPersistencySupported bool, cfc cf.CFClient, noaaConsumer noaa.NoaaConsumer, pclock clock.Clock, dataChan chan *models.AppInstanceMetric) AppCollector {
 	return &appPoller{
-		appId:           appId,
-		collectInterval: collectInterval,
-		cache:           collection.NewTSDCache(cacheSize),
-		logger:          logger,
-		cfc:             cfc,
-		noaaConsumer:    noaaConsumer,
-		pclock:          pclock,
-		doneChan:        make(chan bool),
-		dataChan:        dataChan,
+		appId:                         appId,
+		collectInterval:               collectInterval,
+		cache:                         collection.NewTSDCache(cacheSize),
+		logger:                        logger,
+		cfc:                           cfc,
+		noaaConsumer:                  noaaConsumer,
+		pclock:                        pclock,
+		doneChan:                      make(chan bool),
+		dataChan:                      dataChan,
+		isMetricsPersistencySupported: isMetricsPersistencySupported,
 	}
 
 }
@@ -91,10 +93,12 @@ func (ap *appPoller) pollMetric() {
 
 	for _, metric := range metrics {
 		ap.cache.Put(metric)
-		ap.dataChan <- metric
+		if ap.isMetricsPersistencySupported {
+			ap.dataChan <- metric
+		}
 	}
 }
 
 func (ap *appPoller) Query(start, end int64, labels map[string]string) ([]collection.TSD, bool) {
-	return ap.cache.Query(start, end, labels)
+	return ap.cache.Query(start, end+1, labels)
 }
