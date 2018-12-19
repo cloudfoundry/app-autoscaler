@@ -108,24 +108,29 @@ func (c *TSDCache) String() string {
 
 //
 //  Query returns the time series with the timestamp in [start, end)
-//  If it can not guarantee all the data are in cache, it returns (nil, false)
+//  If it can not guarantee all the data are in cache, it returns ([start, end), false)
 //
 func (c *TSDCache) Query(start, end int64, labels map[string]string) ([]TSD, bool) {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 
-	if c.num > c.capacity && c.data[c.cursor].GetTimestamp() >= start {
-		return nil, false
+	if c.num == 0 {
+		return []TSD{}, false
 	}
 
+	result := []TSD{}
 	from := c.binarySearch(start)
 	to := c.binarySearch(end)
-	result := []TSD{}
 	for i := from; i < to; i++ {
 		d := c.data[i%c.capacity]
 		if d.HasLabels(labels) {
 			result = append(result, d)
 		}
 	}
-	return result, true
+
+	if c.num < c.capacity {
+		return result, c.data[0].GetTimestamp() <= start
+	}
+	return result, c.data[c.cursor].GetTimestamp() <= start
+
 }
