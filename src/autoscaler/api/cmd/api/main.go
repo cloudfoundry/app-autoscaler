@@ -56,7 +56,15 @@ func main() {
 	}
 	defer bindingDB.Close()
 
-	httpServer, err := server.NewServer(logger.Session("http_server"), conf, bindingDB)
+	var policyDB db.PolicyDB
+	policyDB, err = sqldb.NewPolicySQLDB(conf.DB.PolicyDB, logger.Session("policydb-db"))
+	if err != nil {
+		logger.Error("failed to connect policydb database", err, lager.Data{"dbConfig": conf.DB.PolicyDB})
+		os.Exit(1)
+	}
+	defer policyDB.Close()
+
+	httpServer, err := server.NewServer(logger.Session("http_server"), conf, bindingDB, policyDB)
 	if err != nil {
 		logger.Error("failed to create http server", err)
 		os.Exit(1)

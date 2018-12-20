@@ -20,15 +20,17 @@ import (
 var _ = Describe("ApiHandler", func() {
 	var (
 		bindingdb *fakes.FakeBindingDB
+		policydb  *fakes.FakePolicyDB
 		handler   *ApiHandler
 		resp      *httptest.ResponseRecorder
 		req       *http.Request
 	)
 	BeforeEach(func() {
 		bindingdb = &fakes.FakeBindingDB{}
+		policydb = &fakes.FakePolicyDB{}
 		resp = httptest.NewRecorder()
 
-		handler = NewApiHandler(lager.NewLogger("test"), conf, bindingdb)
+		handler = NewApiHandler(lager.NewLogger("test"), conf, bindingdb, policydb)
 	})
 
 	Describe("GetBrokerCatalog", func() {
