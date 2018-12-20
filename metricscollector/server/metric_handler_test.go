@@ -47,6 +47,7 @@ var _ = Describe("MetricHandler", func() {
 		nodeIndex = 0
 		nodeAddrs = []string{"localhost:8080"}
 		resp = httptest.NewRecorder()
+		queryErr = nil
 	})
 
 	Describe("GetMetricHistory", func() {
@@ -350,7 +351,6 @@ var _ = Describe("MetricHandler", func() {
 						Timestamp:     456,
 					}
 					metrics = []*models.AppInstanceMetric{&metric1, &metric2}
-
 				})
 
 				It("returns 200 with metrics in message body", func() {
