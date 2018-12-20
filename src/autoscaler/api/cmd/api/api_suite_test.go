@@ -71,10 +71,17 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		MaxIdleConnections:    5,
 		ConnectionMaxLifetime: 10 * time.Second,
 	}
+	cfg.DB.PolicyDB = db.DatabaseConfig{
+		URL:                   os.Getenv("DBURL"),
+		MaxOpenConnections:    10,
+		MaxIdleConnections:    5,
+		ConnectionMaxLifetime: 10 * time.Second,
+	}
 	cfg.BrokerUsername = username
 	cfg.BrokerPassword = password
 	cfg.CatalogPath = "../../exampleconfig/catalog-example.json"
 	cfg.CatalogSchemaPath = "../../schemas/catalog.schema.json"
+	cfg.PolicySchemaPath = "../../policyvalidator/policy_json.schema.json"
 
 	configFile = writeConfig(&cfg)
 

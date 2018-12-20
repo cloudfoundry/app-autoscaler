@@ -46,6 +46,7 @@ type PolicyDB interface {
 	DatabaseStatus
 	GetAppIds() (map[string]bool, error)
 	GetAppPolicy(appId string) (*models.ScalingPolicy, error)
+	SaveAppPolicy(appId string, policy string, policyGuid string) error
 	RetrievePolicies() ([]*models.PolicyJson, error)
 	Close() error
 	DeletePolicy(appId string) error

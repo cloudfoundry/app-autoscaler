@@ -2,6 +2,7 @@ package server
 
 import (
 	"autoscaler/api/config"
+	"autoscaler/api/policyvalidator"
 	"autoscaler/db"
 	"autoscaler/models"
 	"encoding/json"
@@ -11,19 +12,25 @@ import (
 
 	"code.cloudfoundry.org/cfhttp/handlers"
 	"code.cloudfoundry.org/lager"
+	uuid "github.com/nu7hatch/gouuid"
 )
 
 type ApiHandler struct {
-	logger    lager.Logger
-	conf      *config.Config
-	bindingdb db.BindingDB
+	logger          lager.Logger
+	conf            *config.Config
+	bindingdb       db.BindingDB
+	policydb        db.PolicyDB
+	policyValidator *policyvalidator.PolicyValidator
 }
 
-func NewApiHandler(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB) *ApiHandler {
+func NewApiHandler(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB) *ApiHandler {
+
 	return &ApiHandler{
-		logger:    logger,
-		conf:      conf,
-		bindingdb: bindingdb,
+		logger:          logger,
+		conf:            conf,
+		bindingdb:       bindingdb,
+		policydb:        policydb,
+		policyValidator: policyvalidator.NewPolicyValidator(conf.PolicySchemaPath),
 	}
 }
 
@@ -137,6 +144,34 @@ func (h *ApiHandler) BindServiceInstance(w http.ResponseWriter, r *http.Request,
 			Message: "Malformed or missing mandatory data",
 		})
 		return
+	}
+
+	if body.Policy == "" {
+		h.logger.Info("no policy json provided", lager.Data{})
+	} else {
+		err = h.policyValidator.ValidatePolicy(body.Policy)
+
+		if err != nil {
+			handlers.WriteJSONResponse(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		policyGuid, err := uuid.NewV4()
+		if err != nil {
+			handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+				Code:    "Interal-Server-Error",
+				Message: "Error generating policy guid"})
+			return
+		}
+
+		h.logger.Info("saving policy json", lager.Data{"policy": body.Policy})
+		err = h.policydb.SaveAppPolicy(body.AppID, body.Policy, policyGuid.String())
+		if err != nil {
+			handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+				Code:    "Interal-Server-Error",
+				Message: "Error saving Policy"})
+			return
+		}
 	}
 
 	err = h.bindingdb.CreateServiceBinding(bindingId, instanceId, body.AppID)
