@@ -18,14 +18,15 @@ type Aggregator struct {
 	cclock                    clock.Clock
 	aggregatorExecuteInterval time.Duration
 	saveInterval              time.Duration
-	getPolicies               models.GetPolicies
+	getPolicies               GetPoliciesFunc
+	saveAppMetricToCache      SaveAppMetricToCacheFunc
 	defaultStatWindowSecs     int
 	appMetricChan             chan *models.AppMetric
 	appMetricDB               db.AppMetricDB
 }
 
 func NewAggregator(logger lager.Logger, clock clock.Clock, aggregatorExecuteInterval time.Duration, saveInterval time.Duration,
-	appMonitorChan chan *models.AppMonitor, getPolicies models.GetPolicies, defaultStatWindowSecs int, appMetricChan chan *models.AppMetric, appMetricDB db.AppMetricDB) (*Aggregator, error) {
+	appMonitorChan chan *models.AppMonitor, getPolicies GetPoliciesFunc, saveAppMetricToCache SaveAppMetricToCacheFunc, defaultStatWindowSecs int, appMetricChan chan *models.AppMetric, appMetricDB db.AppMetricDB) (*Aggregator, error) {
 	aggregator := &Aggregator{
 		logger:   logger.Session("Aggregator"),
 		doneChan: make(chan bool),
@@ -34,6 +35,7 @@ func NewAggregator(logger lager.Logger, clock clock.Clock, aggregatorExecuteInte
 		aggregatorExecuteInterval: aggregatorExecuteInterval,
 		saveInterval:              saveInterval,
 		getPolicies:               getPolicies,
+		saveAppMetricToCache:      saveAppMetricToCache,
 		defaultStatWindowSecs:     defaultStatWindowSecs,
 		appMetricChan:             appMetricChan,
 		appMetricDB:               appMetricDB,
@@ -100,6 +102,7 @@ func (a *Aggregator) startSavingAppMetric() {
 			return
 		case appMetric := <-a.appMetricChan:
 			appMetricArray = append(appMetricArray, appMetric)
+			a.saveAppMetricToCache(appMetric)
 		case <-ticker.C():
 			go func(appMetricDB db.AppMetricDB, metrics []*models.AppMetric) {
 				appMetricDB.SaveAppMetricsInBulk(metrics)

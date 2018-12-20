@@ -484,6 +484,7 @@ func (components *Components) PrepareEventGeneratorConfig(dbUri string, port int
 			MetricPollerCount:         1,
 			AppMonitorChannelSize:     1,
 			AppMetricChannelSize:      1,
+			MetricCacheSizePerApp:     50,
 		},
 		Evaluator: egConfig.EvaluatorConfig{
 			EvaluationManagerInterval: evaluationManagerInterval,

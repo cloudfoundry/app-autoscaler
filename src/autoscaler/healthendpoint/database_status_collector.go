@@ -91,8 +91,8 @@ func (c *databaseStatusCollector) Describe(ch chan<- *prometheus.Desc) {
 	ch <- c.MaxIdleClosedGauge.Desc()
 	ch <- c.MaxLifetimeClosedGauge.Desc()
 }
-func (c *databaseStatusCollector) Collect(ch chan<- prometheus.Metric) {
 
+func (c *databaseStatusCollector) Collect(ch chan<- prometheus.Metric) {
 	dbMetrics := c.dbStatus.GetDBStatus()
 	m, _ := prometheus.NewConstMetric(c.MaxOpenConnectionsGauge.Desc(), prometheus.GaugeValue, float64(dbMetrics.MaxOpenConnections))
 	ch <- m
