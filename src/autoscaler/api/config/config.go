@@ -31,6 +31,7 @@ var defaultLoggingConfig = helpers.LoggingConfig{
 
 type DBConfig struct {
 	BindingDB db.DatabaseConfig `yaml:"binding_db"`
+	PolicyDB  db.DatabaseConfig `yaml:"policy_db"`
 }
 
 type Config struct {
@@ -42,6 +43,7 @@ type Config struct {
 	CatalogPath          string                `yaml:"catalog_path"`
 	CatalogSchemaPath    string                `yaml:"catalog_schema_path"`
 	DashboardRedirectURI string                `yaml:"dashboard_redirect_uri"`
+	PolicySchemaPath     string                `yaml:"policy_schema_path"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
@@ -69,6 +71,9 @@ func (c *Config) Validate() error {
 	if c.DB.BindingDB.URL == "" {
 		return fmt.Errorf("Configuration error: BindingDB URL is empty")
 	}
+	if c.DB.PolicyDB.URL == "" {
+		return fmt.Errorf("Configuration error: PolicyDB URL is empty")
+	}
 	if c.BrokerUsername == "" {
 		return fmt.Errorf("Configuration error: BrokerUsername is empty")
 	}
@@ -80,6 +85,9 @@ func (c *Config) Validate() error {
 	}
 	if c.CatalogPath == "" {
 		return fmt.Errorf("Configuration error: CatalogPath is empty")
+	}
+	if c.PolicySchemaPath == "" {
+		return fmt.Errorf("Configuration error: PolicySchemaPath is empty")
 	}
 
 	catalogSchemaLoader := gojsonschema.NewReferenceLoader("file://" + c.CatalogSchemaPath)

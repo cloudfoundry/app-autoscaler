@@ -24,6 +24,7 @@ var _ = Describe("PolicySQLDB", func() {
 		appIds         map[string]bool
 		scalingPolicy  *models.ScalingPolicy
 		policyJson     []byte
+		policyJsonStr  string
 		appId          string
 		policies       []*models.PolicyJson
 		testMetricName string = "TestMetricName"
@@ -223,6 +224,75 @@ var _ = Describe("PolicySQLDB", func() {
 						PolicyStr: string(policyJson),
 					},
 				))
+			})
+		})
+	})
+
+	Describe("SavePolicy", func() {
+		BeforeEach(func() {
+			pdb, err = NewPolicySQLDB(dbConfig, logger)
+			Expect(err).NotTo(HaveOccurred())
+
+			cleanPolicyTable()
+		})
+
+		AfterEach(func() {
+			err = pdb.Close()
+			Expect(err).NotTo(HaveOccurred())
+		})
+		Context("when no policy is present for the app_id", func() {
+			JustBeforeEach(func() {
+				policyJsonStr = `{
+					"instance_max_count":4,
+					"instance_min_count":1,
+					"scaling_rules":[
+					{
+						"metric_type":"memoryutil",
+						"breach_duration_secs":600,
+						"threshold":90,
+						"operator":">=",
+						"cool_down_secs":300,
+						"adjustment":"+1"
+					}]
+				}`
+				err = pdb.SaveAppPolicy("an-app-id", policyJsonStr, "1234")
+			})
+			It("saves the policy", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(getAppPolicy("an-app-id")).To(Equal(policyJsonStr))
+			})
+		})
+
+		Context("when a policy is already present for the app_id", func() {
+			JustBeforeEach(func() {
+				insertPolicy("an-app-id", &models.ScalingPolicy{
+					InstanceMin: 1,
+					InstanceMax: 6,
+					ScalingRules: []*models.ScalingRule{{
+						MetricType:            testMetricName,
+						BreachDurationSeconds: 180,
+						Threshold:             1048576000,
+						Operator:              ">",
+						CoolDownSeconds:       300,
+						Adjustment:            "+10%"}}})
+				policyJsonStr = `{
+					"instance_max_count":4,
+					"instance_min_count":1,
+					"scaling_rules":[
+					{
+						"metric_type":"memoryutil",
+						"breach_duration_secs":600,
+						"threshold":90,
+						"operator":">=",
+						"cool_down_secs":300,
+						"adjustment":"+1"
+					}]
+				}`
+				err = pdb.SaveAppPolicy("an-app-id", policyJsonStr, "1234")
+			})
+			It("updates the policy", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(getAppPolicy("an-app-id")).To(Equal(policyJsonStr))
 			})
 		})
 	})

@@ -37,13 +37,13 @@ func (bam *basicAuthenticationMiddleware) Middleware(next http.Handler) http.Han
 	})
 }
 
-func NewServer(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB) (ifrit.Runner, error) {
+func NewServer(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB) (ifrit.Runner, error) {
 	basicAuthentication := &basicAuthenticationMiddleware{
 		username: conf.BrokerUsername,
 		password: conf.BrokerPassword,
 	}
 
-	ah := NewApiHandler(logger, conf, bindingdb)
+	ah := NewApiHandler(logger, conf, bindingdb, policydb)
 
 	r := routes.BrokerRoutes()
 
