@@ -135,6 +135,23 @@ func insertPolicy(appId string, scalingPolicy *models.ScalingPolicy) {
 	}
 }
 
+func getAppPolicy(appId string) string {
+	query := "SELECT policy_json FROM policy_json WHERE app_id=$1 "
+	rows, err := dbHelper.Query(query, appId)
+	if err != nil {
+		Fail("failed to get policy" + err.Error())
+	}
+	defer rows.Close()
+	var policyJsonStr string
+	if rows.Next() {
+		err = rows.Scan(&policyJsonStr)
+		if err != nil {
+			Fail("failed to scan policy" + err.Error())
+		}
+	}
+	return policyJsonStr
+}
+
 func cleanAppMetricTable() {
 	_, e := dbHelper.Exec("DELETE from app_metric")
 	if e != nil {

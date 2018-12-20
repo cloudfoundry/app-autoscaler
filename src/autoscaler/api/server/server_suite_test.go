@@ -50,8 +50,9 @@ var _ = BeforeSuite(func() {
 		CatalogSchemaPath: "../schemas/catalog.schema.json",
 	}
 	fakeBindingDB := &fakes.FakeBindingDB{}
+	fakePolicyDB := &fakes.FakePolicyDB{}
 
-	httpServer, err := server.NewServer(lager.NewLogger("test"), conf, fakeBindingDB)
+	httpServer, err := server.NewServer(lager.NewLogger("test"), conf, fakeBindingDB, fakePolicyDB)
 	Expect(err).NotTo(HaveOccurred())
 
 	serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(port))
