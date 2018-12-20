@@ -13,3 +13,4 @@ db:
 dashboard_redirect_uri: "https://dashboard-redirect-uri-settings.example.com"
 catalog_schema_path: "/var/vcap/jobs/api/packages/api/config/catalog.schema.json"
 catalog_path: "/var/vcap/jobs/api/packages/api/config/catalog.json"
+policy_schema_path: "/var/vcap/jobs/api/packages/api/config/policy.schema.json"
