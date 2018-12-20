@@ -5,8 +5,6 @@ import (
 	"time"
 )
 
-type GetPolicies func() map[string]*AppPolicy
-
 type AppPolicy struct {
 	AppId         string
 	ScalingPolicy *ScalingPolicy
