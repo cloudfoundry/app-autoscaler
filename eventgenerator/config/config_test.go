@@ -61,6 +61,7 @@ aggregator:
   metric_poller_count: 10
   app_monitor_channel_size: 100
   app_metric_channel_size: 100
+  metric_cache_size_per_app: 500
 evaluator:
   evaluation_manager_execute_interval: 30s
   evaluator_count: 10
@@ -125,6 +126,7 @@ circuitBreaker:
 						MetricPollerCount:         10,
 						AppMonitorChannelSize:     100,
 						AppMetricChannelSize:      100,
+						MetricCacheSizePerApp:     500,
 					},
 					Evaluator: EvaluatorConfig{
 						EvaluationManagerInterval: 30 * time.Second,
@@ -249,6 +251,7 @@ defaultBreachDurationSecs: 600
 						AppMonitorChannelSize:     DefaultAppMonitorChannelSize,
 						AppMetricChannelSize:      DefaultAppMetricChannelSize,
 						SaveInterval:              DefaultSaveInterval,
+						MetricCacheSizePerApp:     DefaultMetricCacheSizePerApp,
 					},
 					Evaluator: EvaluatorConfig{
 						EvaluationManagerInterval: DefaultEvaluationExecuteInterval,
@@ -784,6 +787,39 @@ defaultBreachDurationSecs: 600
 			})
 		})
 
+		Context("when it gives a non integer metric_cache_size_per_app", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: info
+db:
+  policy_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+  app_metrics_db_url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+aggregator: 
+  aggregator_execute_interval: 30s
+  policy_poller_interval: 30s
+  metric_poller_count: 10
+  app_monitor_channel_size: 10
+  app_metric_channel_size: 10
+  metric_cache_size_per_app: NOT-INTEGER-VALUE
+evaluator:
+  evaluation_manager_execute_interval: 30s
+  evaluator_count: 10
+  trigger_array_channel_size: 100
+scalingEngine:
+  scaling_engine_url: http://localhost:8082
+metricCollector:
+  metric_collector_url: http://localhost:8083
+defaultStatWindowSecs: 300
+defaultBreachDurationSecs: 600
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+			})
+		})
 		Context("when it gives a non integer evaluation_manager_execute_interval", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
@@ -1055,6 +1091,7 @@ health:
 					MetricPollerCount:         10,
 					AppMonitorChannelSize:     100,
 					AppMetricChannelSize:      100,
+					MetricCacheSizePerApp:     500,
 				},
 				Evaluator: EvaluatorConfig{
 					EvaluationManagerInterval: 30 * time.Second,
@@ -1168,6 +1205,15 @@ health:
 			})
 			It("should error", func() {
 				Expect(err).To(MatchError("Configuration error: aggregator.app_metric_channel_size is less-equal than 0"))
+			})
+		})
+
+		Context("when MetricCacheSizePerApp <= 0", func() {
+			BeforeEach(func() {
+				conf.Aggregator.MetricCacheSizePerApp = 0
+			})
+			It("should error", func() {
+				Expect(err).To(MatchError("Configuration error: aggregator.metric_cache_size_per_app is less-equal than 0"))
 			})
 		})
 

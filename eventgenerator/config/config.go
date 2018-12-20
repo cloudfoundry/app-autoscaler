@@ -29,6 +29,7 @@ const (
 	DefaultBackOffMaxInterval             time.Duration = 2 * time.Hour
 	DefaultBreakerConsecutiveFailureCount int64         = 3
 	DefaultHttpClientTimeout              time.Duration = 5 * time.Second
+	DefaultMetricCacheSizePerApp                        = 1000
 )
 
 type ServerConfig struct {
@@ -49,6 +50,7 @@ type AggregatorConfig struct {
 	AggregatorExecuteInterval time.Duration `yaml:"aggregator_execute_interval"`
 	PolicyPollerInterval      time.Duration `yaml:"policy_poller_interval"`
 	SaveInterval              time.Duration `yaml:"save_interval"`
+	MetricCacheSizePerApp     int           `yaml:"metric_cache_size_per_app"`
 }
 
 type EvaluatorConfig struct {
@@ -105,6 +107,7 @@ func LoadConfig(bytes []byte) (*Config, error) {
 			MetricPollerCount:         DefaultMetricPollerCount,
 			AppMonitorChannelSize:     DefaultAppMonitorChannelSize,
 			AppMetricChannelSize:      DefaultAppMetricChannelSize,
+			MetricCacheSizePerApp:     DefaultMetricCacheSizePerApp,
 		},
 		Evaluator: EvaluatorConfig{
 			EvaluationManagerInterval: DefaultEvaluationExecuteInterval,
@@ -162,6 +165,11 @@ func (c *Config) Validate() error {
 	if c.Aggregator.AppMetricChannelSize <= 0 {
 		return fmt.Errorf("Configuration error: aggregator.app_metric_channel_size is less-equal than 0")
 	}
+
+	if c.Aggregator.MetricCacheSizePerApp <= 0 {
+		return fmt.Errorf("Configuration error: aggregator.metric_cache_size_per_app is less-equal than 0")
+	}
+
 	if c.Evaluator.EvaluationManagerInterval <= time.Duration(0) {
 		return fmt.Errorf("Configuration error: evaluator.evaluation_manager_execute_interval is less-equal than 0")
 	}
