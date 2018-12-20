@@ -29,7 +29,7 @@ const (
 	DefaultBackOffMaxInterval             time.Duration = 2 * time.Hour
 	DefaultBreakerConsecutiveFailureCount int64         = 3
 	DefaultHttpClientTimeout              time.Duration = 5 * time.Second
-	DefaultMetricCacheSizePerApp                        = 1000
+	DefaultMetricCacheSizePerApp                        = 100
 )
 
 type ServerConfig struct {
