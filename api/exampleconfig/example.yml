@@ -1,0 +1,15 @@
+server:
+  port: 8080
+logging:
+  level: debug
+broker_username: brokeruser
+broker_password: supersecretpassword
+db:
+  binding_db:
+    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+dashboard_redirect_uri: "https://dashboard-redirect-uri-settings.example.com"
+catalog_schema_path: "/var/vcap/jobs/api/packages/api/config/catalog.schema.json"
+catalog_path: "/var/vcap/jobs/api/packages/api/config/catalog.json"
