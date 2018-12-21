@@ -5,8 +5,6 @@ import (
 	"time"
 )
 
-type GetPolicies func() map[string]*AppPolicy
-
 type AppPolicy struct {
 	AppId         string
 	ScalingPolicy *ScalingPolicy
@@ -103,10 +101,7 @@ type Trigger struct {
 	Adjustment            string `json:"adjustment"`
 }
 
-func (t Trigger) BreachDuration(defaultBreachDurationSecs int) time.Duration {
-	if t.BreachDurationSeconds <= 0 {
-		return time.Duration(defaultBreachDurationSecs) * time.Second
-	}
+func (t Trigger) BreachDuration() time.Duration {
 	return time.Duration(t.BreachDurationSeconds) * time.Second
 }
 

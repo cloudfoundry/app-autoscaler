@@ -2,6 +2,7 @@ package generator_test
 
 import (
 	"autoscaler/db"
+	"autoscaler/eventgenerator/aggregator"
 	. "autoscaler/eventgenerator/generator"
 	"autoscaler/fakes"
 	"autoscaler/models"
@@ -21,45 +22,41 @@ import (
 )
 
 var _ = Describe("Evaluator", func() {
-	const (
-		fakeBreachDurationSecs = 300
-	)
 	var (
-		logger             *lagertest.TestLogger
-		httpClient         *http.Client
-		triggerChan        chan []*models.Trigger
-		database           *fakes.FakeAppMetricDB
-		scalingEngine      *ghttp.Server
-		evaluator          *Evaluator
-		testAppId          string = "testAppId"
-		testMetricType     string = "testMetricType"
-		testMetricUnit     string = "testMetricUnit"
-		urlPath            string
-		breachDurationSecs int = 30
-		getBreaker         func(string) *circuit.Breaker
-		setCoolDownExpired func(string, int64)
-		cbEventChan        <-chan circuit.BreakerEvent
-		cooldownExpired    map[string]int64
-		fakeTime           time.Time   = time.Now()
-		lock               *sync.Mutex = &sync.Mutex{}
-		scalingResult      *models.AppScalingResult
-		triggerArrayGT     []*models.Trigger = []*models.Trigger{{
-			AppId:                 testAppId,
-			MetricType:            testMetricType,
-			BreachDurationSeconds: breachDurationSecs,
-			CoolDownSeconds:       300,
-			Threshold:             500,
-			Operator:              ">",
-			Adjustment:            "+1",
+		logger                   *lagertest.TestLogger
+		httpClient               *http.Client
+		triggerChan              chan []*models.Trigger
+		database                 *fakes.FakeAppMetricDB
+		scalingEngine            *ghttp.Server
+		evaluator                *Evaluator
+		testAppId                string = "testAppId"
+		testMetricType           string = "testMetricType"
+		testMetricUnit           string = "testMetricUnit"
+		urlPath                  string
+		breachDurationSecs       int = 30
+		queryAppMetricsFromCache aggregator.QueryAppMetricFromCacheFunc
+		getBreaker               func(string) *circuit.Breaker
+		setCoolDownExpired       func(string, int64)
+		cbEventChan              <-chan circuit.BreakerEvent
+		cooldownExpired          map[string]int64
+		fakeTime                 time.Time   = time.Now()
+		lock                     *sync.Mutex = &sync.Mutex{}
+		scalingResult            *models.AppScalingResult
+		triggerArrayGT           []*models.Trigger = []*models.Trigger{{
+			AppId:           testAppId,
+			MetricType:      testMetricType,
+			CoolDownSeconds: 300,
+			Threshold:       500,
+			Operator:        ">",
+			Adjustment:      "+1",
 		}}
 		triggerArrayGE []*models.Trigger = []*models.Trigger{{
-			AppId:                 testAppId,
-			MetricType:            testMetricType,
-			BreachDurationSeconds: breachDurationSecs,
-			CoolDownSeconds:       300,
-			Threshold:             500,
-			Operator:              ">=",
-			Adjustment:            "+1",
+			AppId:           testAppId,
+			MetricType:      testMetricType,
+			CoolDownSeconds: 300,
+			Threshold:       500,
+			Operator:        ">=",
+			Adjustment:      "+1",
 		}}
 		triggerArrayLT []*models.Trigger = []*models.Trigger{{
 			AppId:                 testAppId,
@@ -116,6 +113,9 @@ var _ = Describe("Evaluator", func() {
 		getBreaker = func(appID string) *circuit.Breaker {
 			return nil
 		}
+		queryAppMetricsFromCache = func(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppMetric, bool) {
+			return nil, false
+		}
 
 		scalingResult = &models.AppScalingResult{
 			AppId:             testAppId,
@@ -138,7 +138,7 @@ var _ = Describe("Evaluator", func() {
 
 	Context("Start", func() {
 		JustBeforeEach(func() {
-			evaluator = NewEvaluator(logger, httpClient, scalingEngine.URL(), triggerChan, database, fakeBreachDurationSecs, getBreaker, setCoolDownExpired)
+			evaluator = NewEvaluator(logger, httpClient, scalingEngine.URL(), triggerChan, database, breachDurationSecs, queryAppMetricsFromCache, getBreaker, setCoolDownExpired)
 			evaluator.Start()
 		})
 
@@ -155,16 +155,36 @@ var _ = Describe("Evaluator", func() {
 
 			Context("retrieve appMatrics", func() {
 				BeforeEach(func() {
-					appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{600, 650, 620}, breachDurationSecs, true)
 					scalingEngine.RouteToHandler("POST", urlPath, ghttp.RespondWith(http.StatusOK, "successful"))
-					database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
-						return appMetrics, nil
-					}
 					Expect(triggerChan).To(BeSent(triggerArrayGT))
 				})
-
-				It("should retrieve appMetrics from database for each trigger", func() {
-					Eventually(database.RetrieveAppMetricsCallCount).Should(Equal(1))
+				Context("when cache hits", func() {
+					BeforeEach(func() {
+						appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{600, 650, 620}, breachDurationSecs, true)
+						queryAppMetricsFromCache = func(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppMetric, bool) {
+							return appMetrics, true
+						}
+						database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
+							return appMetrics, nil
+						}
+					})
+					It("should retrieve appMetrics from cache", func() {
+						Consistently(database.RetrieveAppMetricsCallCount).Should(Equal(0))
+					})
+				})
+				Context("when cache misses", func() {
+					BeforeEach(func() {
+						appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{600, 650, 620}, breachDurationSecs, true)
+						queryAppMetricsFromCache = func(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppMetric, bool) {
+							return nil, false
+						}
+						database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
+							return appMetrics, nil
+						}
+					})
+					It("should retrieve appMetrics from database", func() {
+						Eventually(database.RetrieveAppMetricsCallCount).Should(Equal(1))
+					})
 				})
 			})
 			Context("when the appMetrics are not enough", func() {
@@ -172,8 +192,8 @@ var _ = Describe("Evaluator", func() {
 					scalingEngine.RouteToHandler("POST", urlPath, ghttp.RespondWith(http.StatusOK, "successful"))
 					Expect(triggerChan).To(BeSent(triggerArrayGT))
 					appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{600, 650, 620}, breachDurationSecs, false)
-					database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
-						return appMetrics, nil
+					queryAppMetricsFromCache = func(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppMetric, bool) {
+						return appMetrics, true
 					}
 				})
 				It("should not send trigger alarm to scaling engine", func() {
@@ -192,9 +212,23 @@ var _ = Describe("Evaluator", func() {
 					Context("when the appMetrics breach the trigger", func() {
 						BeforeEach(func() {
 							appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{600, 650, 620}, breachDurationSecs, true)
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
-								return appMetrics, nil
+							queryAppMetricsFromCache = func(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppMetric, bool) {
+								return appMetrics, true
 							}
+							scalingEngine.RouteToHandler("POST", urlPath,
+								ghttp.CombineHandlers(
+									ghttp.VerifyJSONRepresenting(models.Trigger{
+										AppId:                 testAppId,
+										MetricType:            testMetricType,
+										MetricUnit:            testMetricUnit,
+										BreachDurationSeconds: breachDurationSecs,
+										CoolDownSeconds:       300,
+										Threshold:             500,
+										Operator:              ">",
+										Adjustment:            "+1",
+									}),
+									ghttp.RespondWithJSONEncoded(http.StatusOK, &scalingResult)),
+							)
 						})
 						It("should send trigger alarm to scaling engine", func() {
 							Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
@@ -205,8 +239,8 @@ var _ = Describe("Evaluator", func() {
 					Context("when the appMetrics do not breach the trigger", func() {
 						BeforeEach(func() {
 							appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{200, 150, 600}, breachDurationSecs, true)
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
-								return appMetrics, nil
+							queryAppMetricsFromCache = func(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppMetric, bool) {
+								return appMetrics, true
 							}
 						})
 						It("should not send trigger alarm to scaling engine", func() {
@@ -217,8 +251,8 @@ var _ = Describe("Evaluator", func() {
 					})
 					Context("when appMetrics is empty", func() {
 						BeforeEach(func() {
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
-								return []*models.AppMetric{}, nil
+							queryAppMetricsFromCache = func(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppMetric, bool) {
+								return []*models.AppMetric{}, true
 							}
 						})
 
@@ -234,8 +268,8 @@ var _ = Describe("Evaluator", func() {
 								Value:      "",
 								Unit:       "",
 								Timestamp:  time.Now().UnixNano()})
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
-								return appMetrics, nil
+							queryAppMetricsFromCache = func(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppMetric, bool) {
+								return appMetrics, true
 							}
 						})
 						It("should not send trigger alarm to scaling engine", func() {
@@ -252,8 +286,8 @@ var _ = Describe("Evaluator", func() {
 					Context("when the appMetrics breach the trigger", func() {
 						BeforeEach(func() {
 							appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{600, 500, 500}, breachDurationSecs, true)
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
-								return appMetrics, nil
+							queryAppMetricsFromCache = func(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppMetric, bool) {
+								return appMetrics, true
 							}
 						})
 						It("should send trigger alarm to scaling engine", func() {
@@ -265,8 +299,8 @@ var _ = Describe("Evaluator", func() {
 					Context("when the appMetrics do not breach the trigger", func() {
 						BeforeEach(func() {
 							appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{200, 150, 600}, breachDurationSecs, true)
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
-								return appMetrics, nil
+							queryAppMetricsFromCache = func(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppMetric, bool) {
+								return appMetrics, true
 							}
 						})
 						It("should not send trigger alarm to scaling engine", func() {
@@ -277,9 +311,10 @@ var _ = Describe("Evaluator", func() {
 					})
 					Context("when appMetrics is empty", func() {
 						BeforeEach(func() {
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
-								return []*models.AppMetric{}, nil
+							queryAppMetricsFromCache = func(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppMetric, bool) {
+								return []*models.AppMetric{}, true
 							}
+
 						})
 
 						It("should not send trigger alarm", func() {
@@ -294,8 +329,8 @@ var _ = Describe("Evaluator", func() {
 								Value:      "",
 								Unit:       "",
 								Timestamp:  time.Now().UnixNano()})
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
-								return appMetrics, nil
+							queryAppMetricsFromCache = func(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppMetric, bool) {
+								return appMetrics, true
 							}
 						})
 						It("should not send trigger alarm to scaling engine", func() {
@@ -311,8 +346,8 @@ var _ = Describe("Evaluator", func() {
 					Context("when the appMetrics breach the trigger", func() {
 						BeforeEach(func() {
 							appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{200, 300, 400}, breachDurationSecs, true)
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
-								return appMetrics, nil
+							queryAppMetricsFromCache = func(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppMetric, bool) {
+								return appMetrics, true
 							}
 						})
 						It("should send trigger alarm to scaling engine", func() {
@@ -324,8 +359,8 @@ var _ = Describe("Evaluator", func() {
 					Context("when the appMetrics do not breach the trigger", func() {
 						BeforeEach(func() {
 							appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{500, 550, 600}, breachDurationSecs, true)
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
-								return appMetrics, nil
+							queryAppMetricsFromCache = func(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppMetric, bool) {
+								return appMetrics, true
 							}
 						})
 						It("should not send trigger alarm to scaling engine", func() {
@@ -336,9 +371,10 @@ var _ = Describe("Evaluator", func() {
 					})
 					Context("when appMetrics is empty", func() {
 						BeforeEach(func() {
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
-								return []*models.AppMetric{}, nil
+							queryAppMetricsFromCache = func(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppMetric, bool) {
+								return []*models.AppMetric{}, true
 							}
+
 						})
 
 						It("should not send trigger alarm", func() {
@@ -353,8 +389,8 @@ var _ = Describe("Evaluator", func() {
 								Value:      "",
 								Unit:       "",
 								Timestamp:  time.Now().UnixNano()})
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
-								return appMetrics, nil
+							queryAppMetricsFromCache = func(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppMetric, bool) {
+								return appMetrics, true
 							}
 						})
 						It("should not send trigger alarm to scaling engine", func() {
@@ -370,9 +406,10 @@ var _ = Describe("Evaluator", func() {
 					Context("when the appMetrics breach the trigger", func() {
 						BeforeEach(func() {
 							appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{200, 500, 500}, breachDurationSecs, true)
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
-								return appMetrics, nil
+							queryAppMetricsFromCache = func(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppMetric, bool) {
+								return appMetrics, true
 							}
+
 						})
 						It("should send trigger alarm to scaling engine", func() {
 							Eventually(scalingEngine.ReceivedRequests).Should(HaveLen(1))
@@ -383,8 +420,8 @@ var _ = Describe("Evaluator", func() {
 					Context("when the appMetrics do not breach the trigger", func() {
 						BeforeEach(func() {
 							appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{500, 550, 600}, breachDurationSecs, true)
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
-								return appMetrics, nil
+							queryAppMetricsFromCache = func(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppMetric, bool) {
+								return appMetrics, true
 							}
 						})
 						It("should not send trigger alarm to scaling engine", func() {
@@ -395,9 +432,10 @@ var _ = Describe("Evaluator", func() {
 					})
 					Context("when appMetrics is empty", func() {
 						BeforeEach(func() {
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
-								return []*models.AppMetric{}, nil
+							queryAppMetricsFromCache = func(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppMetric, bool) {
+								return []*models.AppMetric{}, true
 							}
+
 						})
 
 						It("should not send trigger alarm", func() {
@@ -412,8 +450,8 @@ var _ = Describe("Evaluator", func() {
 								Value:      "",
 								Unit:       "",
 								Timestamp:  time.Now().UnixNano()})
-							database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
-								return appMetrics, nil
+							queryAppMetricsFromCache = func(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppMetric, bool) {
+								return appMetrics, true
 							}
 						})
 						It("should not send trigger alarm to scaling engine", func() {
@@ -438,8 +476,8 @@ var _ = Describe("Evaluator", func() {
 							),
 						)
 						appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{500, 550, 600}, breachDurationSecs, true)
-						database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
-							return appMetrics, nil
+						queryAppMetricsFromCache = func(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppMetric, bool) {
+							return appMetrics, true
 						}
 					})
 					It("should send alarm of first trigger to scaling engine", func() {
@@ -460,8 +498,8 @@ var _ = Describe("Evaluator", func() {
 							),
 						)
 						appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{300, 400, 500}, breachDurationSecs, true)
-						database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
-							return appMetrics, nil
+						queryAppMetricsFromCache = func(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppMetric, bool) {
+							return appMetrics, true
 						}
 					})
 					It("should send alarm  of second trigger to scaling engine", func() {
@@ -482,8 +520,8 @@ var _ = Describe("Evaluator", func() {
 							),
 						)
 						appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{500, 500, 500}, breachDurationSecs, true)
-						database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
-							return appMetrics, nil
+						queryAppMetricsFromCache = func(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppMetric, bool) {
+							return appMetrics, true
 						}
 					})
 					It("should send alarm of first trigger to scaling engine", func() {
@@ -498,8 +536,8 @@ var _ = Describe("Evaluator", func() {
 			Context("sending trigger ", func() {
 				BeforeEach(func() {
 					appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{600, 650, 620}, breachDurationSecs, true)
-					database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
-						return appMetrics, nil
+					queryAppMetricsFromCache = func(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppMetric, bool) {
+						return appMetrics, true
 					}
 					Expect(triggerChan).To(BeSent(triggerArrayGT))
 				})
@@ -624,9 +662,10 @@ var _ = Describe("Evaluator", func() {
 			Context("circuit break for scaling failures", func() {
 				BeforeEach(func() {
 					appMetrics := generateTestAppMetrics(testAppId, testMetricType, testMetricUnit, []int64{600, 650, 620}, breachDurationSecs, true)
-					database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
-						return appMetrics, nil
+					queryAppMetricsFromCache = func(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppMetric, bool) {
+						return appMetrics, true
 					}
+
 					bf := backoff.NewExponentialBackOff()
 					bf.InitialInterval = 500 * time.Millisecond
 					bf.MaxInterval = 1 * time.Second
@@ -737,7 +776,7 @@ var _ = Describe("Evaluator", func() {
 				})
 
 				It("should log the error", func() {
-					Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("operator is invalid")))
+					Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("operator-is-invalid")))
 				})
 			})
 
@@ -750,7 +789,7 @@ var _ = Describe("Evaluator", func() {
 			database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 				return nil, errors.New("no alarm")
 			}
-			evaluator = NewEvaluator(logger, httpClient, scalingEngine.URL(), triggerChan, database, fakeBreachDurationSecs, getBreaker, setCoolDownExpired)
+			evaluator = NewEvaluator(logger, httpClient, scalingEngine.URL(), triggerChan, database, breachDurationSecs, queryAppMetricsFromCache, getBreaker, setCoolDownExpired)
 			evaluator.Start()
 			Expect(triggerChan).To(BeSent(triggerArrayGT))
 			Eventually(database.RetrieveAppMetricsCallCount).Should(Equal(1))
@@ -770,7 +809,7 @@ var _ = Describe("Evaluator", func() {
 			database.RetrieveAppMetricsStub = func(appId string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 				return appMetrics, nil
 			}
-			evaluator = NewEvaluator(logger, httpClient, scalingEngine.URL(), triggerChan, database, fakeBreachDurationSecs, getBreaker, setCoolDownExpired)
+			evaluator = NewEvaluator(logger, httpClient, scalingEngine.URL(), triggerChan, database, breachDurationSecs, queryAppMetricsFromCache, getBreaker, setCoolDownExpired)
 			evaluator.Start()
 			Expect(triggerChan).To(BeSent(triggerArrayGT))
 		})

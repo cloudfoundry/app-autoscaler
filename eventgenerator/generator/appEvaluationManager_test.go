@@ -1,6 +1,7 @@
 package generator_test
 
 import (
+	"autoscaler/eventgenerator/aggregator"
 	"autoscaler/eventgenerator/config"
 	. "autoscaler/eventgenerator/generator"
 	"autoscaler/models"
@@ -18,7 +19,7 @@ import (
 var _ = Describe("AppEvaluationManager", func() {
 
 	var (
-		getPolicies          models.GetPolicies
+		getPolicies          aggregator.GetPoliciesFunc
 		logger               lager.Logger
 		fclock               *fakeclock.FakeClock
 		manager              *AppEvaluationManager
