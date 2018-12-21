@@ -177,7 +177,7 @@ func initConfig() {
 	egPort = 7000 + GinkgoParallelNode()
 	conf = config.Config{
 		Logging: helpers.LoggingConfig{
-			Level: "info",
+			Level: "debug",
 		},
 		Server: config.ServerConfig{
 			Port: egPort,
@@ -196,6 +196,7 @@ func initConfig() {
 			MetricPollerCount:         1,
 			AppMonitorChannelSize:     1,
 			AppMetricChannelSize:      1,
+			MetricCacheSizePerApp:     500,
 		},
 		Evaluator: config.EvaluatorConfig{
 			EvaluationManagerInterval: 1 * time.Second,

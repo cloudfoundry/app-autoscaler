@@ -398,11 +398,8 @@ client.ssl.key-store-type=PKCS12
 client.ssl.trust-store=%s/autoscaler.truststore
 client.ssl.trust-store-password=123456
 client.ssl.protocol=TLSv1.2
-<<<<<<< HEAD
 server.ssl.enabled-protocols[3]=TLSv1,TLSv1.1,TLSv1.2
 server.ssl.ciphers[23]=TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_CBC_SHA256,TLS_RSA_WITH_AES_256_CBC_SHA,TLS_RSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_3DES_EDE_CBC_SHA,TLS_ECDHE_RSA_WITH_RC4_128_SHA,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,SSL_RSA_WITH_RC4_128_SHA
-=======
->>>>>>> develop
 client.httpClientTimeout=%d
 #Quartz
 org.quartz.scheduler.instanceName=app-autoscaler-%d
@@ -487,6 +484,7 @@ func (components *Components) PrepareEventGeneratorConfig(dbUri string, port int
 			MetricPollerCount:         1,
 			AppMonitorChannelSize:     1,
 			AppMetricChannelSize:      1,
+			MetricCacheSizePerApp:     50,
 		},
 		Evaluator: egConfig.EvaluatorConfig{
 			EvaluationManagerInterval: evaluationManagerInterval,

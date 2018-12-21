@@ -97,3 +97,12 @@
 [submodule "src/github.com/prometheus/procfs"]
 	path = src/github.com/prometheus/procfs
 	url = https://github.com/prometheus/procfs
+[submodule " src/github.com/xeipuuv/gojsonschema"]
+	path = src/github.com/xeipuuv/gojsonschema
+	url = https://github.com/xeipuuv/gojsonschema
+[submodule " src/github.com/xeipuuv/gojsonreference"]
+	path = src/github.com/xeipuuv/gojsonreference
+	url = https://github.com/xeipuuv/gojsonreference
+[submodule " src/github.com/xeipuuv/gojsonpointer"]
+	path = src/github.com/xeipuuv/gojsonpointer
+	url = https://github.com/xeipuuv/gojsonpointer

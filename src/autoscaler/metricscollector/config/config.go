@@ -21,7 +21,7 @@ const (
 	DefaultCollectInterval       time.Duration = 30 * time.Second
 	DefaultSaveInterval          time.Duration = 5 * time.Second
 	DefaultHttpClientTimeout     time.Duration = 5 * time.Second
-	DefaultMetricCacheSizePerApp               = 1000
+	DefaultMetricCacheSizePerApp               = 300
 
 	CollectMethodPolling   = "polling"
 	CollectMethodStreaming = "streaming"

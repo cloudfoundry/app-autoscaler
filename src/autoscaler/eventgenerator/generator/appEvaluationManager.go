@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"autoscaler/eventgenerator/aggregator"
 	"autoscaler/eventgenerator/config"
 	"autoscaler/models"
 	"sync"
@@ -20,7 +21,7 @@ type AppEvaluationManager struct {
 	emClock          clock.Clock
 	doneChan         chan bool
 	triggerChan      chan []*models.Trigger
-	getPolicies      models.GetPolicies
+	getPolicies      aggregator.GetPoliciesFunc
 	breakerConfig    config.CircuitBreakerConfig
 	breakers         map[string]*circuit.Breaker
 	cooldownExpired  map[string]int64
@@ -29,7 +30,7 @@ type AppEvaluationManager struct {
 }
 
 func NewAppEvaluationManager(logger lager.Logger, evaluateInterval time.Duration, emClock clock.Clock,
-	triggerChan chan []*models.Trigger, getPolicies models.GetPolicies,
+	triggerChan chan []*models.Trigger, getPolicies aggregator.GetPoliciesFunc,
 	breakerConfig config.CircuitBreakerConfig) (*AppEvaluationManager, error) {
 	return &AppEvaluationManager{
 		evaluateInterval: evaluateInterval,

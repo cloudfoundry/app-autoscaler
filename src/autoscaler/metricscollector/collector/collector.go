@@ -144,7 +144,7 @@ func (c *Collector) GetCollectorAppIds() []string {
 	return appIds
 }
 
-func (c *Collector) QueryMetrics(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppInstanceMetric, bool) {
+func (c *Collector) QueryMetricsFromCache(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppInstanceMetric, bool) {
 	c.lock.RLock()
 	appCollector, exist := c.appCollectors[appID]
 	c.lock.RUnlock()
