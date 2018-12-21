@@ -152,6 +152,10 @@ func (c *Collector) GetCollectorAppIds() []string {
 }
 
 func (c *Collector) QueryMetrics(appID string, instanceIndex int, name string, start, end int64, order db.OrderType) ([]*models.AppInstanceMetric, error) {
+	if end == -1 {
+		end = time.Now().UnixNano()
+	}
+
 	c.lock.RLock()
 	appCollector, exist := c.appCollectors[appID]
 	c.lock.RUnlock()
