@@ -2,6 +2,7 @@ package generator
 
 import (
 	"autoscaler/db"
+	"autoscaler/eventgenerator/aggregator"
 	"autoscaler/models"
 	"autoscaler/routes"
 	"bytes"
@@ -26,12 +27,13 @@ type Evaluator struct {
 	doneChan                  chan bool
 	database                  db.AppMetricDB
 	defaultBreachDurationSecs int
+	queryAppMetricFromCache   aggregator.QueryAppMetricFromCacheFunc
 	getBreaker                func(string) *circuit.Breaker
 	setCoolDownExpired        func(string, int64)
 }
 
 func NewEvaluator(logger lager.Logger, httpClient *http.Client, scalingEngineUrl string, triggerChan chan []*models.Trigger,
-	database db.AppMetricDB, defaultBreachDurationSecs int, getBreaker func(string) *circuit.Breaker, setCoolDownExpired func(string, int64)) *Evaluator {
+	database db.AppMetricDB, defaultBreachDurationSecs int, queryAppMetricFromCache aggregator.QueryAppMetricFromCacheFunc, getBreaker func(string) *circuit.Breaker, setCoolDownExpired func(string, int64)) *Evaluator {
 	return &Evaluator{
 		logger:                    logger.Session("Evaluator"),
 		httpClient:                httpClient,
@@ -40,6 +42,7 @@ func NewEvaluator(logger lager.Logger, httpClient *http.Client, scalingEngineUrl
 		doneChan:                  make(chan bool),
 		database:                  database,
 		defaultBreachDurationSecs: defaultBreachDurationSecs,
+		queryAppMetricFromCache:   queryAppMetricFromCache,
 		getBreaker:                getBreaker,
 		setCoolDownExpired:        setCoolDownExpired,
 	}
@@ -69,11 +72,13 @@ func (e *Evaluator) Stop() {
 
 func (e *Evaluator) doEvaluate(triggerArray []*models.Trigger) {
 	for _, trigger := range triggerArray {
+		if trigger.BreachDurationSeconds <= 0 {
+			trigger.BreachDurationSeconds = e.defaultBreachDurationSecs
+		}
 		threshold := trigger.Threshold
 		operator := trigger.Operator
-
 		if !e.isValidOperator(operator) {
-			e.logger.Error("operator is invalid", nil, lager.Data{"trigger": trigger})
+			e.logger.Error("operator-is-invalid", nil, lager.Data{"trigger": trigger})
 			continue
 		}
 
@@ -82,7 +87,7 @@ func (e *Evaluator) doEvaluate(triggerArray []*models.Trigger) {
 			continue
 		}
 		if len(appMetricList) == 0 {
-			e.logger.Debug("no available appmetric", lager.Data{"trigger": trigger})
+			e.logger.Debug("no-available-appmetric", lager.Data{"trigger": trigger})
 			continue
 		}
 
@@ -149,14 +154,21 @@ func (e *Evaluator) doEvaluate(triggerArray []*models.Trigger) {
 
 func (e *Evaluator) retrieveAppMetrics(trigger *models.Trigger) ([]*models.AppMetric, error) {
 	queryEndTime := time.Now()
-	queryStartTime := queryEndTime.Add(0 - 2*trigger.BreachDuration(e.defaultBreachDurationSecs))
-	breachStartTime := queryEndTime.Add(0 - trigger.BreachDuration(e.defaultBreachDurationSecs))
-	appMetrics, err := e.database.RetrieveAppMetrics(trigger.AppId, trigger.MetricType, queryStartTime.UnixNano(), queryEndTime.UnixNano(), db.ASC)
-	if err != nil {
-		e.logger.Error("retrieve appMetrics", err, lager.Data{"trigger": trigger})
-		return nil, err
+	queryStartTime := queryEndTime.Add(0 - 2*trigger.BreachDuration())
+	breachStartTime := queryEndTime.Add(0 - trigger.BreachDuration())
+
+	appMetrics, hit := e.queryAppMetricFromCache(trigger.AppId, queryStartTime.UnixNano(), queryEndTime.UnixNano()+1, db.ASC, map[string]string{models.MetricLabelName: trigger.MetricType})
+	if !hit {
+		e.logger.Debug("retrieveAppMetrics-from-database", lager.Data{"trigger": trigger})
+		var err error
+		appMetrics, err = e.database.RetrieveAppMetrics(trigger.AppId, trigger.MetricType, queryStartTime.UnixNano(), queryEndTime.UnixNano(), db.ASC)
+		if err != nil {
+			e.logger.Error("retrieve-appMetrics-from-database", err, lager.Data{"trigger": trigger})
+			return nil, err
+		}
+
 	}
-	e.logger.Debug("appMetrics", lager.Data{"appMetrics": appMetrics})
+	e.logger.Debug("retrieve-appMetrics", lager.Data{"appMetrics": appMetrics})
 	result := []*models.AppMetric{}
 	if len(appMetrics) > 0 {
 		if appMetrics[0].Timestamp < breachStartTime.UnixNano() {
