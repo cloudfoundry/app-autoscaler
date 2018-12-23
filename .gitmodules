@@ -133,3 +133,6 @@
 [submodule "src/google.golang.org/genproto"]
 	path = src/google.golang.org/genproto
 	url = https://github.com/google/go-genproto.git
+[submodule "src/golang.org/x/sys"]
+	path = src/golang.org/x/sys
+	url = https://github.com/golang/sys.git
