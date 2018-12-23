@@ -2,6 +2,7 @@ package server
 
 import (
 	"autoscaler/db"
+	"autoscaler/eventgenerator/aggregator"
 	"autoscaler/models"
 	"encoding/json"
 	"fmt"
@@ -14,14 +15,14 @@ import (
 )
 
 type EventGenHandler struct {
-	logger   lager.Logger
-	database db.AppMetricDB
+	logger         lager.Logger
+	queryAppMetric aggregator.QueryAppMetricsFunc
 }
 
-func NewEventGenHandler(logger lager.Logger, database db.AppMetricDB) *EventGenHandler {
+func NewEventGenHandler(logger lager.Logger, queryAppMetric aggregator.QueryAppMetricsFunc) *EventGenHandler {
 	return &EventGenHandler{
-		logger:   logger,
-		database: database,
+		logger:         logger,
+		queryAppMetric: queryAppMetric,
 	}
 }
 
@@ -97,12 +98,12 @@ func (h *EventGenHandler) GetAggregatedMetricHistories(w http.ResponseWriter, r 
 
 	var mtrcs []*models.AppMetric
 
-	mtrcs, err = h.database.RetrieveAppMetrics(appID, metricType, start, end, order)
+	mtrcs, err = h.queryAppMetric(appID, metricType, start, end, order)
 	if err != nil {
 		h.logger.Error("get-aggregated-metric-histories-retrieve-metrics", err, lager.Data{"appid": appID, "metrictype": metricType, "start": start, "end": end, "order": order})
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 			Code:    "Interal-Server-Error",
-			Message: "Error getting aggregated metric histories from database"})
+			Message: "Error getting aggregated metric histories"})
 		return
 	}
 
@@ -113,7 +114,7 @@ func (h *EventGenHandler) GetAggregatedMetricHistories(w http.ResponseWriter, r 
 
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 			Code:    "Interal-Server-Error",
-			Message: "Error getting metric histories from database"})
+			Message: "Error marshaling aggregated metric histories"})
 		return
 	}
 	w.Write(body)
