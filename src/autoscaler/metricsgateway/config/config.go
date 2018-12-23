@@ -15,6 +15,7 @@ import (
 )
 
 const (
+	DefaultShardID                           = "CF_AUTOSCALER"
 	DefaultLoggingLevel                      = "info"
 	DefaultAppRefreshInterval  time.Duration = 60 * time.Second
 	DefaultWSReconnectInterval time.Duration = 30 * time.Second
@@ -30,6 +31,7 @@ type DispatcherConfig struct {
 type NozzleConfig struct {
 	TLS     models.TLSCerts `yaml:"tls"`
 	RLPAddr string          `yaml:"rlp_addr`
+	ShardID string          `yaml:"shard_id"`
 }
 
 type EmitterConfig struct {
@@ -59,6 +61,9 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		},
 		Emitter: EmitterConfig{
 			ReconnectInterval: DefaultWSReconnectInterval,
+		},
+		Nozzle: NozzleConfig{
+			ShardID: DefaultShardID,
 		},
 	}
 
