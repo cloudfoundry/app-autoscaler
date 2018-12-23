@@ -16,12 +16,13 @@ import (
 
 var _ = Describe("AppManager", func() {
 	var (
-		database   *fakes.FakePolicyDB
-		clock      *fakeclock.FakeClock
-		appManager *AppManager
-		logger     lager.Logger
-		testAppId  = "testAppId"
-		policyStr  = `
+		policyDB    *fakes.FakePolicyDB
+		appMetricDB *fakes.FakeAppMetricDB
+		clock       *fakeclock.FakeClock
+		appManager  *AppManager
+		logger      lager.Logger
+		testAppId   = "testAppId"
+		policyStr   = `
 		{
 		   "instance_min_count":1,
 		   "instance_max_count":5,
@@ -42,7 +43,8 @@ var _ = Describe("AppManager", func() {
 	)
 
 	BeforeEach(func() {
-		database = &fakes.FakePolicyDB{}
+		policyDB = &fakes.FakePolicyDB{}
+		appMetricDB = &fakes.FakeAppMetricDB{}
 		clock = fakeclock.NewFakeClock(time.Now())
 		logger = lager.NewLogger("AppManager-test")
 		nodeNum = 1
@@ -51,7 +53,7 @@ var _ = Describe("AppManager", func() {
 	})
 	Context("Start", func() {
 		JustBeforeEach(func() {
-			appManager = NewAppManager(logger, clock, testPolicyPollerInterval, nodeNum, nodeIndex, cacheSizePerApp, database)
+			appManager = NewAppManager(logger, clock, testPolicyPollerInterval, nodeNum, nodeIndex, cacheSizePerApp, policyDB, appMetricDB)
 			appManager.Start()
 
 		})
@@ -62,17 +64,17 @@ var _ = Describe("AppManager", func() {
 
 		Context("when the AppManager is started", func() {
 			BeforeEach(func() {
-				database.RetrievePoliciesStub = func() ([]*models.PolicyJson, error) {
+				policyDB.RetrievePoliciesStub = func() ([]*models.PolicyJson, error) {
 					return []*models.PolicyJson{{AppId: testAppId, PolicyStr: policyStr}}, nil
 				}
 
 			})
 			It("should retrieve and get policies successfully for every interval", func() {
-				Eventually(database.RetrievePoliciesCallCount).Should(Equal(1))
+				Eventually(policyDB.RetrievePoliciesCallCount).Should(Equal(1))
 				clock.Increment(1 * testPolicyPollerInterval)
-				Eventually(database.RetrievePoliciesCallCount).Should(Equal(2))
+				Eventually(policyDB.RetrievePoliciesCallCount).Should(Equal(2))
 				clock.Increment(1 * testPolicyPollerInterval)
-				Eventually(database.RetrievePoliciesCallCount).Should(Equal(3))
+				Eventually(policyDB.RetrievePoliciesCallCount).Should(Equal(3))
 				Eventually(appManager.GetPolicies).Should(Equal(map[string]*models.AppPolicy{
 					testAppId: &models.AppPolicy{
 						AppId: testAppId,
@@ -94,7 +96,7 @@ var _ = Describe("AppManager", func() {
 				BeforeEach(func() {
 					nodeNum = 3
 					var i int
-					database.RetrievePoliciesStub = func() ([]*models.PolicyJson, error) {
+					policyDB.RetrievePoliciesStub = func() ([]*models.PolicyJson, error) {
 						i++
 						switch i {
 						case 1:
@@ -205,7 +207,7 @@ var _ = Describe("AppManager", func() {
 
 			Context("when retrieving policies from database fails", func() {
 				BeforeEach(func() {
-					database.RetrievePoliciesStub = func() ([]*models.PolicyJson, error) {
+					policyDB.RetrievePoliciesStub = func() ([]*models.PolicyJson, error) {
 						return nil, errors.New("error when retrieve policies from database")
 					}
 				})
@@ -220,7 +222,7 @@ var _ = Describe("AppManager", func() {
 
 	Context("Save and query metrics", func() {
 		JustBeforeEach(func() {
-			appManager = NewAppManager(logger, clock, testPolicyPollerInterval, nodeNum, nodeIndex, cacheSizePerApp, database)
+			appManager = NewAppManager(logger, clock, testPolicyPollerInterval, nodeNum, nodeIndex, cacheSizePerApp, policyDB, appMetricDB)
 			appManager.Start()
 
 		})
@@ -231,15 +233,15 @@ var _ = Describe("AppManager", func() {
 
 		Context("running with 1 node", func() {
 			BeforeEach(func() {
-				database.RetrievePoliciesStub = func() ([]*models.PolicyJson, error) {
+				policyDB.RetrievePoliciesStub = func() ([]*models.PolicyJson, error) {
 					return []*models.PolicyJson{{AppId: testAppId, PolicyStr: policyStr}}, nil
 				}
-
+				cacheSizePerApp = 3
 			})
-			It("should be able save and query metrics", func() {
-				Eventually(database.RetrievePoliciesCallCount).Should(Equal(1))
+			It("should be able to save and query metrics", func() {
+				Eventually(policyDB.RetrievePoliciesCallCount).Should(Equal(1))
 				clock.Increment(1 * testPolicyPollerInterval)
-				Eventually(database.RetrievePoliciesCallCount).Should(Equal(2))
+				Eventually(policyDB.RetrievePoliciesCallCount).Should(Equal(2))
 
 				appMetric1 := &models.AppMetric{
 					AppId:      testAppId,
@@ -265,6 +267,14 @@ var _ = Describe("AppManager", func() {
 					Timestamp:  300,
 				}
 
+				appMetric4 := &models.AppMetric{
+					AppId:      testAppId,
+					MetricType: "test-metric-type",
+					Value:      "100",
+					Unit:       "test-unit",
+					Timestamp:  400,
+				}
+
 				anotheAppMetric1 := &models.AppMetric{
 					AppId:      "another-app-id",
 					MetricType: "test-metric-type",
@@ -284,16 +294,21 @@ var _ = Describe("AppManager", func() {
 				Expect(appManager.SaveMetricToCache(appMetric1)).To(BeTrue())
 				Expect(appManager.SaveMetricToCache(appMetric2)).To(BeTrue())
 				Expect(appManager.SaveMetricToCache(appMetric3)).To(BeTrue())
+				Expect(appManager.SaveMetricToCache(appMetric4)).To(BeTrue())
 				Expect(appManager.SaveMetricToCache(anotheAppMetric1)).To(BeFalse())
 				Expect(appManager.SaveMetricToCache(anotheAppMetric2)).To(BeFalse())
 
-				data, hit := appManager.QueryMetricsFromCache(testAppId, 200, 500, db.ASC, map[string]string{})
-				Expect(hit).To(BeTrue())
-				Expect(data).To(Equal([]*models.AppMetric{appMetric2, appMetric3}))
+				By("cache hit")
+				data, err := appManager.QueryAppMetrics(testAppId, "test-metric-type", 300, 500, db.ASC)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(data).To(Equal([]*models.AppMetric{appMetric3, appMetric4}))
 
-				data, hit = appManager.QueryMetricsFromCache("another-app-id", 200, 500, db.ASC, map[string]string{})
-				Expect(hit).To(BeFalse())
-				Expect(data).To(BeNil())
+				By("cache miss")
+				appMetricDB.RetrieveAppMetricsReturns([]*models.AppMetric{appMetric1, appMetric2}, nil)
+				data, err = appManager.QueryAppMetrics(testAppId, "test-metric-type", 100, 200, db.ASC)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(appMetricDB.RetrieveAppMetricsCallCount()).To(Equal(1))
+				Expect(data).To(Equal([]*models.AppMetric{appMetric1, appMetric2}))
 
 			})
 		})
@@ -303,7 +318,7 @@ var _ = Describe("AppManager", func() {
 				nodeNum = 3
 				nodeIndex = 0
 				var i int
-				database.RetrievePoliciesStub = func() ([]*models.PolicyJson, error) {
+				policyDB.RetrievePoliciesStub = func() ([]*models.PolicyJson, error) {
 					i++
 					switch i {
 					case 1:
@@ -374,16 +389,16 @@ var _ = Describe("AppManager", func() {
 
 	Context("Stop", func() {
 		BeforeEach(func() {
-			appManager = NewAppManager(logger, clock, testPolicyPollerInterval, nodeNum, nodeIndex, cacheSizePerApp, database)
+			appManager = NewAppManager(logger, clock, testPolicyPollerInterval, nodeNum, nodeIndex, cacheSizePerApp, policyDB, appMetricDB)
 			appManager.Start()
-			Eventually(database.RetrievePoliciesCallCount).Should(Equal(1))
+			Eventually(policyDB.RetrievePoliciesCallCount).Should(Equal(1))
 
 			appManager.Stop()
 		})
 
 		It("stops the polling", func() {
 			clock.Increment(5 * testPolicyPollerInterval)
-			Consistently(database.RetrievePoliciesCallCount).Should(Or(Equal(1), Equal(2)))
+			Consistently(policyDB.RetrievePoliciesCallCount).Should(Or(Equal(1), Equal(2)))
 		})
 	})
 })

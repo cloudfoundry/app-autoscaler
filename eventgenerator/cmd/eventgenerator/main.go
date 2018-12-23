@@ -69,7 +69,7 @@ func main() {
 	}, true, logger.Session("eventgenerator-prometheus"))
 
 	appManager := aggregator.NewAppManager(logger, egClock, conf.Aggregator.PolicyPollerInterval,
-		len(conf.Server.NodeAddrs), conf.Server.NodeIndex, conf.Aggregator.MetricCacheSizePerApp, policyDB)
+		len(conf.Server.NodeAddrs), conf.Server.NodeIndex, conf.Aggregator.MetricCacheSizePerApp, policyDB, appMetricDB)
 
 	triggersChan := make(chan []*models.Trigger, conf.Evaluator.TriggerArrayChannelSize)
 
@@ -80,7 +80,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	evaluators, err := createEvaluators(logger, conf, triggersChan, appMetricDB, appManager.QueryMetricsFromCache, evaluationManager.GetBreaker, evaluationManager.SetCoolDownExpired)
+	evaluators, err := createEvaluators(logger, conf, triggersChan, appMetricDB, appManager.QueryAppMetrics, evaluationManager.GetBreaker, evaluationManager.SetCoolDownExpired)
 	if err != nil {
 		logger.Error("failed to create Evaluators", err)
 		os.Exit(1)
@@ -119,7 +119,7 @@ func main() {
 		return nil
 	})
 
-	httpServer, err := server.NewServer(logger.Session("http_server"), conf, appMetricDB, httpStatusCollector)
+	httpServer, err := server.NewServer(logger.Session("http_server"), conf, appManager.QueryAppMetrics, httpStatusCollector)
 	if err != nil {
 		logger.Error("failed to create http server", err)
 		os.Exit(1)
@@ -172,7 +172,7 @@ func loadConfig(path string) (*config.Config, error) {
 }
 
 func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan chan []*models.Trigger,
-	database db.AppMetricDB, queryMetricsFromCache aggregator.QueryAppMetricFromCacheFunc, getBreaker func(string) *circuit.Breaker, setCoolDownExpired func(string, int64)) ([]*generator.Evaluator, error) {
+	database db.AppMetricDB, queryMetrics aggregator.QueryAppMetricsFunc, getBreaker func(string) *circuit.Breaker, setCoolDownExpired func(string, int64)) ([]*generator.Evaluator, error) {
 	count := conf.Evaluator.EvaluatorCount
 
 	client, err := helpers.CreateHTTPClient(&conf.ScalingEngine.TLSClientCerts)
@@ -183,8 +183,8 @@ func createEvaluators(logger lager.Logger, conf *config.Config, triggersChan cha
 
 	evaluators := make([]*generator.Evaluator, count)
 	for i := 0; i < count; i++ {
-		evaluators[i] = generator.NewEvaluator(logger, client, conf.ScalingEngine.ScalingEngineURL, triggersChan, database,
-			conf.DefaultBreachDurationSecs, queryMetricsFromCache, getBreaker, setCoolDownExpired)
+		evaluators[i] = generator.NewEvaluator(logger, client, conf.ScalingEngine.ScalingEngineURL, triggersChan,
+			conf.DefaultBreachDurationSecs, queryMetrics, getBreaker, setCoolDownExpired)
 	}
 
 	return evaluators, nil
