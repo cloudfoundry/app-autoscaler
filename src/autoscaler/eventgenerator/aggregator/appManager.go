@@ -15,7 +15,7 @@ import (
 type Consumer func(map[string]*models.AppPolicy, chan *models.AppMonitor)
 type GetPoliciesFunc func() map[string]*models.AppPolicy
 type SaveAppMetricToCacheFunc func(*models.AppMetric) bool
-type QueryAppMetricFromCacheFunc func(string, int64, int64, db.OrderType, map[string]string) ([]*models.AppMetric, bool)
+type QueryAppMetricsFunc func(appID string, metricType string, start int64, end int64, orderType db.OrderType) ([]*models.AppMetric, error)
 
 type AppManager struct {
 	logger                lager.Logger
@@ -24,7 +24,8 @@ type AppManager struct {
 	nodeIndex             int
 	metricCacheSizePerApp int
 	metricCache           map[string]*collection.TSDCache
-	database              db.PolicyDB
+	policyDB              db.PolicyDB
+	appMetricDB           db.AppMetricDB
 	clock                 clock.Clock
 	doneChan              chan bool
 	policyMap             map[string]*models.AppPolicy
@@ -33,7 +34,7 @@ type AppManager struct {
 }
 
 func NewAppManager(logger lager.Logger, clock clock.Clock, interval time.Duration, nodeNum, nodeIndex int,
-	metricCacheSizePerApp int, database db.PolicyDB) *AppManager {
+	metricCacheSizePerApp int, policyDB db.PolicyDB, appMetricDB db.AppMetricDB) *AppManager {
 	return &AppManager{
 		logger:                logger.Session("AppManager"),
 		clock:                 clock,
@@ -42,7 +43,8 @@ func NewAppManager(logger lager.Logger, clock clock.Clock, interval time.Duratio
 		nodeIndex:             nodeIndex,
 		metricCacheSizePerApp: metricCacheSizePerApp,
 		metricCache:           make(map[string]*collection.TSDCache),
-		database:              database,
+		policyDB:              policyDB,
+		appMetricDB:           appMetricDB,
 		doneChan:              make(chan bool),
 		policyMap:             make(map[string]*models.AppPolicy),
 	}
@@ -89,7 +91,7 @@ func (am *AppManager) startPolicyRetrieve() {
 }
 
 func (am *AppManager) retrievePolicies() ([]*models.PolicyJson, error) {
-	policyJsons, err := am.database.RetrievePolicies()
+	policyJsons, err := am.policyDB.RetrievePolicies()
 	if err != nil {
 		am.logger.Error("retrieve policyJsons", err)
 		return nil, err
@@ -139,29 +141,31 @@ func (am *AppManager) SaveMetricToCache(metric *models.AppMetric) bool {
 	return false
 }
 
-func (am *AppManager) QueryMetricsFromCache(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppMetric, bool) {
+func (am *AppManager) QueryAppMetrics(appID string, metricType string, start int64, end int64, order db.OrderType) ([]*models.AppMetric, error) {
 	am.mLock.RLock()
 	appCache := am.metricCache[appID]
 	am.mLock.RUnlock()
 
-	if appCache == nil {
-		return nil, false
+	if end == -1 {
+		end = time.Now().UnixNano()
 	}
 
-	result, ok := appCache.Query(start, end, labels)
-	if !ok {
-		return nil, false
-	}
-
-	metrics := make([]*models.AppMetric, len(result))
-	if order == db.ASC {
-		for index, tsd := range result {
-			metrics[index] = tsd.(*models.AppMetric)
+	if appCache != nil {
+		labels := map[string]string{models.MetricLabelName: metricType}
+		result, hit := appCache.Query(start, end+1, labels)
+		if hit {
+			metrics := make([]*models.AppMetric, len(result))
+			if order == db.ASC {
+				for index, tsd := range result {
+					metrics[index] = tsd.(*models.AppMetric)
+				}
+			} else {
+				for index, tsd := range result {
+					metrics[len(result)-1-index] = tsd.(*models.AppMetric)
+				}
+			}
+			return metrics, nil
 		}
-	} else {
-		for index, tsd := range result {
-			metrics[len(result)-1-index] = tsd.(*models.AppMetric)
-		}
 	}
-	return metrics, true
+	return am.appMetricDB.RetrieveAppMetrics(appID, metricType, start, end, order)
 }

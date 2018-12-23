@@ -25,24 +25,22 @@ type Evaluator struct {
 	scalingEngineUrl          string
 	triggerChan               chan []*models.Trigger
 	doneChan                  chan bool
-	database                  db.AppMetricDB
 	defaultBreachDurationSecs int
-	queryAppMetricFromCache   aggregator.QueryAppMetricFromCacheFunc
+	queryAppMetrics           aggregator.QueryAppMetricsFunc
 	getBreaker                func(string) *circuit.Breaker
 	setCoolDownExpired        func(string, int64)
 }
 
 func NewEvaluator(logger lager.Logger, httpClient *http.Client, scalingEngineUrl string, triggerChan chan []*models.Trigger,
-	database db.AppMetricDB, defaultBreachDurationSecs int, queryAppMetricFromCache aggregator.QueryAppMetricFromCacheFunc, getBreaker func(string) *circuit.Breaker, setCoolDownExpired func(string, int64)) *Evaluator {
+	defaultBreachDurationSecs int, queryAppMetrics aggregator.QueryAppMetricsFunc, getBreaker func(string) *circuit.Breaker, setCoolDownExpired func(string, int64)) *Evaluator {
 	return &Evaluator{
 		logger:                    logger.Session("Evaluator"),
 		httpClient:                httpClient,
 		scalingEngineUrl:          scalingEngineUrl,
 		triggerChan:               triggerChan,
 		doneChan:                  make(chan bool),
-		database:                  database,
 		defaultBreachDurationSecs: defaultBreachDurationSecs,
-		queryAppMetricFromCache:   queryAppMetricFromCache,
+		queryAppMetrics:           queryAppMetrics,
 		getBreaker:                getBreaker,
 		setCoolDownExpired:        setCoolDownExpired,
 	}
@@ -157,17 +155,12 @@ func (e *Evaluator) retrieveAppMetrics(trigger *models.Trigger) ([]*models.AppMe
 	queryStartTime := queryEndTime.Add(0 - 2*trigger.BreachDuration())
 	breachStartTime := queryEndTime.Add(0 - trigger.BreachDuration())
 
-	appMetrics, hit := e.queryAppMetricFromCache(trigger.AppId, queryStartTime.UnixNano(), queryEndTime.UnixNano()+1, db.ASC, map[string]string{models.MetricLabelName: trigger.MetricType})
-	if !hit {
-		e.logger.Debug("retrieveAppMetrics-from-database", lager.Data{"trigger": trigger})
-		var err error
-		appMetrics, err = e.database.RetrieveAppMetrics(trigger.AppId, trigger.MetricType, queryStartTime.UnixNano(), queryEndTime.UnixNano(), db.ASC)
-		if err != nil {
-			e.logger.Error("retrieve-appMetrics-from-database", err, lager.Data{"trigger": trigger})
-			return nil, err
-		}
-
+	appMetrics, err := e.queryAppMetrics(trigger.AppId, trigger.MetricType, queryStartTime.UnixNano(), queryEndTime.UnixNano(), db.ASC)
+	if err != nil {
+		e.logger.Error("retrieve-appMetrics", err, lager.Data{"trigger": trigger})
+		return nil, err
 	}
+
 	e.logger.Debug("retrieve-appMetrics", lager.Data{"appMetrics": appMetrics})
 	result := []*models.AppMetric{}
 	if len(appMetrics) > 0 {
