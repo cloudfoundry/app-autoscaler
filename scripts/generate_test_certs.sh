@@ -48,3 +48,12 @@ certstrap --depot-path ${depot_path} request-cert --passphrase '' --common-name 
 certstrap --depot-path ${depot_path} sign scheduler --CA autoscaler-ca --years "20"
 openssl pkcs12 -export -in ${depot_path}/scheduler.crt -inkey ${depot_path}/scheduler.key -out ${depot_path}/scheduler.p12 -name scheduler -password pass:123456
 keytool -importcert -alias autoscaler -file ${depot_path}/autoscaler-ca.crt -keystore ${depot_path}/autoscaler.truststore -storeType pkcs12 -storepass 123456 -noprompt
+
+
+# loggregator test server certificate
+certstrap --depot-path ${depot_path} request-cert --passphrase '' --common-name metron
+certstrap --depot-path ${depot_path} sign metron --CA autoscaler-ca --years "20"
+
+# loggregator test client certificate
+certstrap --depot-path ${depot_path} request-cert --passphrase '' --common-name metron_client
+certstrap --depot-path ${depot_path} sign metron_client --CA autoscaler-ca --years "20"
