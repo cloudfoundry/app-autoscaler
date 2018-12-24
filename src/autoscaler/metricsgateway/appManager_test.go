@@ -18,8 +18,7 @@ var _ = Describe("AppManager", func() {
 		clock                     *fakeclock.FakeClock
 		appManager                *AppManager
 		logger                    lager.Logger
-		testAppIdMap              map[string]bool = map[string]bool{"testAppId-1": true, "testAppId-2": true}
-		testAppIDRetrieveInterval time.Duration   = 5 * time.Second
+		testAppIDRetrieveInterval time.Duration = 5 * time.Second
 	)
 
 	BeforeEach(func() {
@@ -40,20 +39,23 @@ var _ = Describe("AppManager", func() {
 
 		Context("when the AppManager is started", func() {
 			BeforeEach(func() {
+				i := 0
 				policyDB.GetAppIdsStub = func() (map[string]bool, error) {
-					return testAppIdMap, nil
+					if i == 0 {
+						i++
+						return map[string]bool{"testAppId-1": true, "testAppId-2": true}, nil
+					} else {
+						return map[string]bool{"testAppId-3": true, "testAppId-4": true}, nil
+					}
 				}
-
 			})
 			It("should retrieve app ids for every interval", func() {
 				Eventually(policyDB.GetAppIdsCallCount).Should(Equal(1))
-				clock.Increment(1 * testAppIDRetrieveInterval)
-				Eventually(appManager.GetAppIDs).Should(Equal(testAppIdMap))
+				Eventually(appManager.GetAppIDs).Should(Equal(map[string]bool{"testAppId-1": true, "testAppId-2": true}))
 				By("app ids in policy changes")
-				testAppIdMap = map[string]bool{"testAppId-3": true, "testAppId-4": true}
 				clock.Increment(1 * testAppIDRetrieveInterval)
-				Eventually(policyDB.GetAppIdsCallCount).Should(BeNumerically(">=", 2))
-				Eventually(appManager.GetAppIDs).Should(Equal(testAppIdMap))
+				Eventually(policyDB.GetAppIdsCallCount).Should(Equal(2))
+				Eventually(appManager.GetAppIDs).Should(Equal(map[string]bool{"testAppId-3": true, "testAppId-4": true}))
 			})
 
 			Context("when retrieving policies from policyDB fails", func() {
