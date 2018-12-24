@@ -1,10 +1,10 @@
 package metricsgateway
 
 import (
+	"autoscaler/helpers"
+
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"
-
-	"autoscaler/helpers"
 )
 
 type Dispatcher struct {
