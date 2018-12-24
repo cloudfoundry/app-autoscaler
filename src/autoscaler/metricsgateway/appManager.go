@@ -2,11 +2,12 @@ package metricsgateway
 
 import (
 	"autoscaler/db"
-	"sync"
-	"time"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
+
+	"sync"
+	"time"
 )
 
 type GetAppIDsFunc func() map[string]bool
@@ -19,7 +20,6 @@ type AppManager struct {
 	doneChan chan bool
 	appIDMap map[string]bool
 	pLock    sync.RWMutex
-	mLock    sync.RWMutex
 }
 
 func NewAppManager(logger lager.Logger, clock clock.Clock, interval time.Duration, policyDB db.PolicyDB) *AppManager {
@@ -70,9 +70,9 @@ func (am *AppManager) startAppIDsRetrieve() {
 func (am *AppManager) retrieveAppIDs() (map[string]bool, error) {
 	appIDMap, err := am.policyDB.GetAppIds()
 	if err != nil {
-		am.logger.Error("retrieve appIDs", err)
+		am.logger.Error("retrieve-app-ids", err)
 		return nil, err
 	}
-	am.logger.Debug("appID count", lager.Data{"count": len(appIDMap)})
+	am.logger.Debug("retrieve-app-ids", lager.Data{"count": len(appIDMap)})
 	return appIDMap, nil
 }

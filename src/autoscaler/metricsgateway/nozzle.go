@@ -1,12 +1,12 @@
 package metricsgateway
 
 import (
-	"context"
-	"crypto/tls"
-
 	loggregator "code.cloudfoundry.org/go-loggregator"
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"
+
+	"context"
+	"crypto/tls"
 )
 
 var selectors = []*loggregator_v2.Selector{
@@ -79,24 +79,16 @@ func (n *Nozzle) streamMetrics() {
 	}
 }
 
+// will need to enhance later to only accept containermetrics, httpstartstop and custom valuemetrics
 func (n *Nozzle) processEnvelope(envelops []*loggregator_v2.Envelope) {
-	appIDs := n.getAppIDsFunc()
-	if appIDs == nil || len(appIDs) == 0 {
-		n.logger.Info("app-id-map-is-empty")
-		return
-	}
 	for _, e := range envelops {
-		_, ok := appIDs[e.SourceId]
-		if ok {
+		_, exist := n.getAppIDsFunc()[e.SourceId]
+		if exist {
 			switch e.Message.(type) {
 			case *loggregator_v2.Envelope_Gauge, *loggregator_v2.Envelope_Timer:
-				n.logger.Info("accept-envelope", lager.Data{"index": n.index, "appID": e.SourceId, "message": e.Message})
+				n.logger.Debug("accept-envelope", lager.Data{"index": n.index, "appID": e.SourceId, "message": e.Message})
 				n.envelopChan <- e
-			default:
-				n.logger.Info("discard-envelope", lager.Data{"index": n.index, "appID": e.SourceId, "message": e.Message})
 			}
-		} else {
-			n.logger.Info("discard-envelope", lager.Data{"index": n.index, "appID": e.SourceId, "message": e.Message})
 		}
 	}
 }
