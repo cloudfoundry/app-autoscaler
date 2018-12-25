@@ -74,20 +74,24 @@ func (n *Nozzle) streamMetrics() {
 		}
 		envelops := rx()
 		n.logger.Info("envs", lager.Data{"envs": envelops})
-		n.processEnvelope(envelops)
+		n.filterEnvelopes(envelops)
 
 	}
 }
 
-// will need to enhance later to only accept containermetrics, httpstartstop and custom valuemetrics
-func (n *Nozzle) processEnvelope(envelops []*loggregator_v2.Envelope) {
+func (n *Nozzle) filterEnvelopes(envelops []*loggregator_v2.Envelope) {
 	for _, e := range envelops {
 		_, exist := n.getAppIDsFunc()[e.SourceId]
 		if exist {
-			switch e.Message.(type) {
-			case *loggregator_v2.Envelope_Gauge, *loggregator_v2.Envelope_Timer:
-				n.logger.Debug("accept-envelope", lager.Data{"index": n.index, "appID": e.SourceId, "message": e.Message})
+			switch e.GetMessage().(type) {
+			case *loggregator_v2.Envelope_Gauge:
+				n.logger.Debug("filter-envelopes-get-app-metrics", lager.Data{"index": n.index, "appID": e.SourceId, "message": e.Message})
 				n.envelopChan <- e
+			case *loggregator_v2.Envelope_Timer:
+				if e.GetTimer().GetName() == "http" {
+					n.logger.Debug("filter-envelopes-get-httpstartstop", lager.Data{"index": n.index, "appID": e.SourceId, "message": e.Message})
+					n.envelopChan <- e
+				}
 			}
 		}
 	}

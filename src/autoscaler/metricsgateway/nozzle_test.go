@@ -17,24 +17,33 @@ import (
 var _ = Describe("Nozzle", func() {
 
 	var (
-		testCertDir      = "../../../test-certs"
-		serverCrtPath    = filepath.Join(testCertDir, "metron.crt")
-		serverKeyPath    = filepath.Join(testCertDir, "metron.key")
-		clientCrtPath    = filepath.Join(testCertDir, "metron_client.crt")
-		clientKeyPath    = filepath.Join(testCertDir, "metron_client.key")
-		caPath           = filepath.Join(testCertDir, "autoscaler-ca.crt")
-		fakeLoggregator  FakeEventProducer
-		testAppId        = "test-app-id"
-		needlessEnvelope = loggregator_v2.Envelope{
-			SourceId: testAppId,
-			Message: &loggregator_v2.Envelope_Event{
-				Event: &loggregator_v2.Event{
-					Title: "event-name",
-					Body:  "event-body",
+		testCertDir                     = "../../../test-certs"
+		serverCrtPath                   = filepath.Join(testCertDir, "metron.crt")
+		serverKeyPath                   = filepath.Join(testCertDir, "metron.key")
+		clientCrtPath                   = filepath.Join(testCertDir, "metron_client.crt")
+		clientKeyPath                   = filepath.Join(testCertDir, "metron_client.key")
+		caPath                          = filepath.Join(testCertDir, "autoscaler-ca.crt")
+		fakeLoggregator                 FakeEventProducer
+		testAppId                       = "test-app-id"
+		envelopes                       []*loggregator_v2.Envelope
+		nonContainerMetricGaugeEnvelope = loggregator_v2.Envelope{
+			SourceId: "uaa",
+			Message: &loggregator_v2.Envelope_Gauge{
+				Gauge: &loggregator_v2.Gauge{
+					Metrics: map[string]*loggregator_v2.GaugeValue{
+						"cpu": &loggregator_v2.GaugeValue{
+							Unit:  "percentage",
+							Value: 33.2,
+						},
+						"memory": &loggregator_v2.GaugeValue{
+							Unit:  "bytes",
+							Value: 1000000000,
+						},
+					},
 				},
 			},
 		}
-		guageEnvelope = loggregator_v2.Envelope{
+		containerMetricEnvelope = loggregator_v2.Envelope{
 			SourceId: testAppId,
 			Message: &loggregator_v2.Envelope_Gauge{
 				Gauge: &loggregator_v2.Gauge{
@@ -45,35 +54,41 @@ var _ = Describe("Nozzle", func() {
 						},
 						"disk": &loggregator_v2.GaugeValue{
 							Unit:  "bytes",
-							Value: 20.5,
+							Value: 3000000000,
 						},
 						"memory": &loggregator_v2.GaugeValue{
 							Unit:  "bytes",
-							Value: 20.5,
+							Value: 1000000000,
 						},
 						"memory_quota": &loggregator_v2.GaugeValue{
 							Unit:  "bytes",
-							Value: 20.5,
+							Value: 2000000000,
 						},
 					},
 				},
 			},
 		}
-		timerEnvelope = loggregator_v2.Envelope{
+		httpStartStopEnvelope = loggregator_v2.Envelope{
 			SourceId: testAppId,
 			Message: &loggregator_v2.Envelope_Timer{
 				Timer: &loggregator_v2.Timer{
 					Name:  "http",
-					Start: 111,
-					Stop:  222,
+					Start: 1542325492043447110,
+					Stop:  1542325492045491009,
 				},
 			},
 		}
-		envelops = []*loggregator_v2.Envelope{
-			&needlessEnvelope,
-			&guageEnvelope,
-			&timerEnvelope,
+		nonHttpStartStopTimerEnvelope = loggregator_v2.Envelope{
+			SourceId: testAppId,
+			Message: &loggregator_v2.Envelope_Timer{
+				Timer: &loggregator_v2.Timer{
+					Name:  "other_timer",
+					Start: 1542325492043307300,
+					Stop:  1542325492045818196,
+				},
+			},
 		}
+
 		logger      *lagertest.TestLogger
 		index       = 0
 		shardID     = "autoscaler"
@@ -90,6 +105,10 @@ var _ = Describe("Nozzle", func() {
 		getAppIDs = func() map[string]bool {
 			return appIDs
 		}
+		envelopes = []*loggregator_v2.Envelope{
+			&containerMetricEnvelope,
+			&httpStartStopEnvelope,
+		}
 
 	})
 	AfterEach(func() {
@@ -104,12 +123,12 @@ var _ = Describe("Nozzle", func() {
 			tlsConf, err = NewClientMutualTLSConfig(clientCrtPath, clientKeyPath, caPath, "metron")
 			Expect(err).NotTo(HaveOccurred())
 			rlpAddr = fakeLoggregator.GetAddr()
-			fakeLoggregator.SetEnvelops(envelops)
+			fakeLoggregator.SetEnvelops(envelopes)
 			nozzle = metricsgateway.NewNozzle(logger, index, shardID, rlpAddr, tlsConf, envelopChan, getAppIDs)
 			nozzle.Start()
 		})
 		BeforeEach(func() {
-			appIDs = map[string]bool{"test-app-id": true}
+			appIDs = map[string]bool{testAppId: true}
 		})
 		AfterEach(func() {
 			nozzle.Stop()
@@ -122,43 +141,55 @@ var _ = Describe("Nozzle", func() {
 				Consistently(envelopChan).ShouldNot(Receive())
 			})
 		})
-		Context("when the app of received envelopes is not in policy database", func() {
+		Context("when the app ID of the received envelope is not in policy database", func() {
 			BeforeEach(func() {
 				appIDs = map[string]bool{"another-test-app-id": true}
 			})
-			It("should not accept any envelop", func() {
+			It("should not accept the envelope", func() {
 				Consistently(envelopChan).ShouldNot(Receive())
 			})
 		})
-		Context("when there are needless envelopes", func() {
+		Context("when the guage envelope is not a container metric", func() {
 			BeforeEach(func() {
-				envelops = []*loggregator_v2.Envelope{
-					&needlessEnvelope,
+				envelopes = []*loggregator_v2.Envelope{
+					&nonContainerMetricGaugeEnvelope,
 				}
 			})
-			It("should accept needless envelopes", func() {
+			It("should not accept the envelope", func() {
 				Consistently(envelopChan).ShouldNot(Receive())
 			})
 		})
-		Context("accept timer envelops", func() {
+		Context("there is container metric envelope", func() {
 			BeforeEach(func() {
-				envelops = []*loggregator_v2.Envelope{
-					&timerEnvelope,
+				envelopes = []*loggregator_v2.Envelope{
+					&containerMetricEnvelope,
 				}
 			})
-			It("should accept timer envelopes", func() {
-				Eventually(envelopChan).Should(Receive())
-			})
-		})
-		Context("accept guage envelops", func() {
-			BeforeEach(func() {
-				envelops = []*loggregator_v2.Envelope{
-					&guageEnvelope,
-				}
-			})
-			It("should accept guage envelopes", func() {
+			It("should accept the envelope", func() {
 				Eventually(envelopChan).Should(Receive())
 
+			})
+		})
+
+		Context("when there is httpstartstop envelope", func() {
+			BeforeEach(func() {
+				envelopes = []*loggregator_v2.Envelope{
+					&httpStartStopEnvelope,
+				}
+			})
+			It("should accept the envelope", func() {
+				Eventually(envelopChan).Should(Receive())
+			})
+		})
+
+		Context("when there is non httpstartstop timer envelope", func() {
+			BeforeEach(func() {
+				envelopes = []*loggregator_v2.Envelope{
+					&nonHttpStartStopTimerEnvelope,
+				}
+			})
+			It("should not accept the envelope", func() {
+				Eventually(envelopChan).ShouldNot(Receive())
 			})
 		})
 
@@ -166,14 +197,14 @@ var _ = Describe("Nozzle", func() {
 
 	Context("Stop", func() {
 		BeforeEach(func() {
-			appIDs = map[string]bool{"test-app-id": true}
+			appIDs = map[string]bool{testAppId: true}
 			fakeLoggregator, err := NewFakeEventProducer(serverCrtPath, serverKeyPath, caPath)
 			Expect(err).NotTo(HaveOccurred())
 			fakeLoggregator.Start()
 			tlsConf, err = NewClientMutualTLSConfig(clientCrtPath, clientKeyPath, caPath, "metron")
 			Expect(err).NotTo(HaveOccurred())
 			rlpAddr = fakeLoggregator.GetAddr()
-			fakeLoggregator.SetEnvelops(envelops)
+			fakeLoggregator.SetEnvelops(envelopes)
 			nozzle = metricsgateway.NewNozzle(logger, index, shardID, rlpAddr, tlsConf, envelopChan, getAppIDs)
 			nozzle.Start()
 			Eventually(envelopChan).Should(Receive())
