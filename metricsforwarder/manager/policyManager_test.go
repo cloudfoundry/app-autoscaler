@@ -42,8 +42,6 @@ var _ = Describe("PolicyManager", func() {
 		      }
 		   ]
 		}`
-		nodeNum   int
-		nodeIndex int
 	)
 
 	BeforeEach(func() {
@@ -55,12 +53,10 @@ var _ = Describe("PolicyManager", func() {
 		policyMap = make(map[string]*models.AppPolicy)
 		allowedMetricTypeSet = make(map[string]struct{})
 		allowedMetricTypeSet["queuelength"] = struct{}{}
-		nodeNum = 1
-		nodeIndex = 0
 	})
 	Context("Start", func() {
 		JustBeforeEach(func() {
-			policyManager = NewPolicyManager(logger, clock, testPolicyPollerInterval, nodeNum, nodeIndex, database, allowedMetricCache, 10*time.Minute)
+			policyManager = NewPolicyManager(logger, clock, testPolicyPollerInterval, database, allowedMetricCache, 10*time.Minute)
 			policyManager.Start()
 
 		})
@@ -99,119 +95,6 @@ var _ = Describe("PolicyManager", func() {
 				))
 			})
 
-			Context("when running with 3 nodes", func() {
-				BeforeEach(func() {
-					nodeNum = 3
-					var i int
-					database.RetrievePoliciesStub = func() ([]*models.PolicyJson, error) {
-						i++
-						switch i {
-						case 1:
-							return []*models.PolicyJson{
-								{AppId: "app-id-1", PolicyStr: policyStr},
-								{AppId: "app-id-2", PolicyStr: policyStr},
-								{AppId: "app-id-3", PolicyStr: policyStr},
-								{AppId: "app-id-4", PolicyStr: policyStr},
-							}, nil
-						case 2:
-							return []*models.PolicyJson{
-								{AppId: "app-id-3", PolicyStr: policyStr},
-								{AppId: "app-id-4", PolicyStr: policyStr},
-								{AppId: "app-id-5", PolicyStr: policyStr},
-								{AppId: "app-id-6", PolicyStr: policyStr},
-							}, nil
-						case 3:
-							return []*models.PolicyJson{
-								{AppId: "app-id-5", PolicyStr: policyStr},
-								{AppId: "app-id-6", PolicyStr: policyStr},
-								{AppId: "app-id-7", PolicyStr: policyStr},
-								{AppId: "app-id-8", PolicyStr: policyStr},
-							}, nil
-
-						}
-						return []*models.PolicyJson{}, nil
-					}
-
-				})
-				Context("when current index is 0", func() {
-					BeforeEach(func() {
-						nodeIndex = 0
-					})
-
-					It("retrieves app shard 0", func() {
-
-						Eventually(policyManager.GetPolicies).Should(HaveLen(2))
-						Consistently(policyManager.GetPolicies).ShouldNot(HaveKey("app-id-1"))
-						Consistently(policyManager.GetPolicies).ShouldNot(HaveKey("app-id-2"))
-						Consistently(policyManager.GetPolicies).Should(HaveKey("app-id-3"))
-						Consistently(policyManager.GetPolicies).Should(HaveKey("app-id-4"))
-
-						clock.Increment(1 * testPolicyPollerInterval)
-						Consistently(policyManager.GetPolicies).Should(HaveLen(2))
-						Consistently(policyManager.GetPolicies).Should(HaveKey("app-id-3"))
-						Consistently(policyManager.GetPolicies).Should(HaveKey("app-id-4"))
-						Consistently(policyManager.GetPolicies).ShouldNot(HaveKey("app-id-5"))
-						Consistently(policyManager.GetPolicies).ShouldNot(HaveKey("app-id-6"))
-
-						clock.Increment(1 * testPolicyPollerInterval)
-						Eventually(policyManager.GetPolicies).Should(HaveLen(1))
-						Consistently(policyManager.GetPolicies).Should(HaveKey("app-id-8"))
-						Consistently(policyManager.GetPolicies).ShouldNot(HaveKey("app-id-5"))
-						Consistently(policyManager.GetPolicies).ShouldNot(HaveKey("app-id-6"))
-						Consistently(policyManager.GetPolicies).ShouldNot(HaveKey("app-id-7"))
-
-					})
-				})
-				Context("when current index is 1", func() {
-					BeforeEach(func() {
-						nodeIndex = 1
-					})
-
-					It("retrieves app shard 1", func() {
-						Consistently(policyManager.GetPolicies).Should(BeEmpty())
-
-						clock.Increment(1 * testPolicyPollerInterval)
-						Eventually(policyManager.GetPolicies).Should(HaveLen(2))
-						Consistently(policyManager.GetPolicies).ShouldNot(HaveKey("app-id-3"))
-						Consistently(policyManager.GetPolicies).ShouldNot(HaveKey("app-id-4"))
-						Consistently(policyManager.GetPolicies).Should(HaveKey("app-id-5"))
-						Consistently(policyManager.GetPolicies).Should(HaveKey("app-id-6"))
-
-						clock.Increment(1 * testPolicyPollerInterval)
-						Consistently(policyManager.GetPolicies).Should(HaveLen(2))
-						Consistently(policyManager.GetPolicies).Should(HaveKey("app-id-5"))
-						Consistently(policyManager.GetPolicies).Should(HaveKey("app-id-6"))
-						Consistently(policyManager.GetPolicies).ShouldNot(HaveKey("app-id-7"))
-						Consistently(policyManager.GetPolicies).ShouldNot(HaveKey("app-id-8"))
-					})
-				})
-
-				Context("when current index is 2", func() {
-					BeforeEach(func() {
-						nodeIndex = 2
-					})
-
-					It("retrieves app shard 2", func() {
-						Eventually(policyManager.GetPolicies).Should(HaveLen(2))
-						Consistently(policyManager.GetPolicies).Should(HaveKey("app-id-1"))
-						Consistently(policyManager.GetPolicies).Should(HaveKey("app-id-2"))
-						Consistently(policyManager.GetPolicies).ShouldNot(HaveKey("app-id-3"))
-						Consistently(policyManager.GetPolicies).ShouldNot(HaveKey("app-id-4"))
-
-						clock.Increment(1 * testPolicyPollerInterval)
-						Eventually(policyManager.GetPolicies).Should(BeEmpty())
-
-						clock.Increment(1 * testPolicyPollerInterval)
-						Eventually(policyManager.GetPolicies).Should(HaveLen(1))
-						Consistently(policyManager.GetPolicies).ShouldNot(HaveKey("app-id-5"))
-						Consistently(policyManager.GetPolicies).ShouldNot(HaveKey("app-id-6"))
-						Consistently(policyManager.GetPolicies).Should(HaveKey("app-id-7"))
-						Consistently(policyManager.GetPolicies).ShouldNot(HaveKey("app-id-8"))
-					})
-				})
-
-			})
-
 			Context("when retrieving policies from database fails", func() {
 				BeforeEach(func() {
 					database.RetrievePoliciesStub = func() ([]*models.PolicyJson, error) {
@@ -229,7 +112,7 @@ var _ = Describe("PolicyManager", func() {
 
 	Context("Refresh AllowedMetric Cache", func() {
 		JustBeforeEach(func() {
-			policyManager = NewPolicyManager(logger, clock, testPolicyPollerInterval, nodeNum, nodeIndex, database, allowedMetricCache, 10*time.Minute)
+			policyManager = NewPolicyManager(logger, clock, testPolicyPollerInterval, database, allowedMetricCache, 10*time.Minute)
 			policyManager.Start()
 		})
 
@@ -283,7 +166,7 @@ var _ = Describe("PolicyManager", func() {
 
 	Context("Stop", func() {
 		BeforeEach(func() {
-			policyManager = NewPolicyManager(logger, clock, testPolicyPollerInterval, nodeNum, nodeIndex, database, allowedMetricCache, 10*time.Minute)
+			policyManager = NewPolicyManager(logger, clock, testPolicyPollerInterval, database, allowedMetricCache, 10*time.Minute)
 			policyManager.Start()
 			Eventually(database.RetrievePoliciesCallCount).Should(Equal(1))
 

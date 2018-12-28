@@ -69,8 +69,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	policyManager := manager.NewPolicyManager(logger, mfClock, conf.PolicyPollerInterval,
-		len(conf.Server.NodeAddrs), conf.Server.NodeIndex, policyDB, *allowedMetricCache, conf.CacheTTL)
+	policyManager := manager.NewPolicyManager(logger, mfClock, conf.PolicyPollerInterval, policyDB, *allowedMetricCache, conf.CacheTTL)
 
 	cacheUpdater := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
 		policyManager.Start()
