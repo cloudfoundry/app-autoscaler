@@ -39,8 +39,6 @@ const (
 	BrokerBindingPath            = "/sb/v2/service_instances/{instanceId}/service_bindings/{bindingId}"
 	BrokerCreateBindingRouteName = "CreateBinding"
 	BrokerDeleteBindingRouteName = "DeleteBinding"
-	CustomMetricsPath            = "/v1/{appid}/metrics"
-	PostCustomMetricsRouteName   = "PostCustomMetrics"
 	CustomMetricsPath            = "/v1/apps/{appid}/metrics"
 	PostCustomMetricsRouteName   = "PostCustomMetrics"
 )
