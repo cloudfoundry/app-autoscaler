@@ -49,8 +49,6 @@ loggregator
 				configBytes = []byte(`
 server:
   port: 8081
-  node_index: 0
-  node_addrs: [address1, address2]
 logging:
   level: debug
 metron_address: 127.0.0.1:3457
@@ -71,8 +69,6 @@ db:
 				Expect(conf.Server.Port).To(Equal(8081))
 				Expect(conf.Logging.Level).To(Equal("debug"))
 				Expect(conf.MetronAddress).To(Equal("127.0.0.1:3457"))
-				Expect(conf.Server.NodeAddrs).To(Equal([]string{"address1", "address2"}))
-				Expect(conf.Server.NodeIndex).To(Equal(0))
 				Expect(conf.Db.PolicyDb).To(Equal(
 					db.DatabaseConfig{
 						URL:                   "postgres://pqgotest:password@localhost/pqgotest",
@@ -195,8 +191,6 @@ db:
 		BeforeEach(func() {
 			conf = &Config{}
 			conf.Server.Port = 8081
-			conf.Server.NodeIndex = 0
-			conf.Server.NodeAddrs = []string{"localhost"}
 			conf.Logging.Level = "debug"
 			conf.MetronAddress = "127.0.0.1:3458"
 			conf.LoggregatorConfig.CACertFile = "../testcerts/ca.crt"
@@ -259,27 +253,5 @@ db:
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: Loggregator ClientKey is empty")))
 			})
 		})
-
-		Context("when node index is out of range", func() {
-			Context("when node index is negative", func() {
-				BeforeEach(func() {
-					conf.Server.NodeIndex = -1
-				})
-				It("should error", func() {
-					Expect(err).To(MatchError("Configuration error: server.node_index out of range"))
-				})
-			})
-		})
-
-		Context("when node index is >= number of nodes", func() {
-			BeforeEach(func() {
-				conf.Server.NodeIndex = 2
-				conf.Server.NodeAddrs = []string{"address1", "address2"}
-			})
-			It("should error", func() {
-				Expect(err).To(MatchError("Configuration error: server.node_index out of range"))
-			})
-		})
-
 	})
 })
