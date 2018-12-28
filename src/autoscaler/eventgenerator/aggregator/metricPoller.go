@@ -69,7 +69,7 @@ func (m *MetricPoller) retrieveMetric(app *models.AppMonitor) {
 	url = m.metricCollectorUrl + path.RequestURI() + "?" + parameters.Encode()
 	resp, err := m.httpClient.Get(url)
 	if err != nil {
-		m.logger.Error("Failed to retrieve metric from metrics collector. Request failed", err, lager.Data{"appId": appId, "metricType": metricType, "err": err})
+		m.logger.Error("Failed to retrieve metric from metrics collector. Request failed", err, lager.Data{"appId": appId, "metricType": metricType, "url": url})
 		return
 	}
 	defer resp.Body.Close()
