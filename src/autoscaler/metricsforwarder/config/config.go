@@ -30,9 +30,7 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Port      int      `yaml:"port"`
-	NodeAddrs []string `yaml:"node_addrs"`
-	NodeIndex int      `yaml:"node_index"`
+	Port int `yaml:"port"`
 }
 
 var defaultServerConfig = ServerConfig{
@@ -94,9 +92,6 @@ func (c *Config) Validate() error {
 	}
 	if c.LoggregatorConfig.ClientKeyFile == "" {
 		return fmt.Errorf("Configuration error: Loggregator ClientKey is empty")
-	}
-	if (c.Server.NodeIndex >= len(c.Server.NodeAddrs)) || (c.Server.NodeIndex < 0) {
-		return fmt.Errorf("Configuration error: server.node_index out of range")
 	}
 	return nil
 

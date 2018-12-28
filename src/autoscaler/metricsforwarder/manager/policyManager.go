@@ -2,7 +2,6 @@ package manager
 
 import (
 	"autoscaler/db"
-	"autoscaler/helpers"
 	"autoscaler/models"
 	"sync"
 	"time"
@@ -19,8 +18,6 @@ type PolicyManager struct {
 	logger             lager.Logger
 	interval           time.Duration
 	cacheTTL           time.Duration
-	nodeNum            int
-	nodeIndex          int
 	allowedMetricCache cache.Cache
 	database           db.PolicyDB
 	clock              clock.Clock
@@ -30,15 +27,13 @@ type PolicyManager struct {
 	mLock              sync.RWMutex
 }
 
-func NewPolicyManager(logger lager.Logger, clock clock.Clock, interval time.Duration, nodeNum, nodeIndex int,
+func NewPolicyManager(logger lager.Logger, clock clock.Clock, interval time.Duration,
 	database db.PolicyDB, allowedMetricCache cache.Cache, cacheTTL time.Duration) *PolicyManager {
 	return &PolicyManager{
 		logger:             logger.Session("PolicyManager"),
 		clock:              clock,
 		interval:           interval,
 		cacheTTL:           cacheTTL,
-		nodeNum:            nodeNum,
-		nodeIndex:          nodeIndex,
 		allowedMetricCache: allowedMetricCache,
 		database:           database,
 		doneChan:           make(chan bool),
@@ -102,10 +97,8 @@ func (pm *PolicyManager) retrievePolicies() ([]*models.PolicyJson, error) {
 func (pm *PolicyManager) computePolicies(policyJsons []*models.PolicyJson) map[string]*models.AppPolicy {
 	policyMap := make(map[string]*models.AppPolicy)
 	for _, policyJSON := range policyJsons {
-		if (pm.nodeNum == 1) || (helpers.FNVHash(policyJSON.AppId)%uint32(pm.nodeNum) == uint32(pm.nodeIndex)) {
-			appPolicy := policyJSON.GetAppPolicy()
-			policyMap[policyJSON.AppId] = appPolicy
-		}
+		appPolicy := policyJSON.GetAppPolicy()
+		policyMap[policyJSON.AppId] = appPolicy
 	}
 	return policyMap
 }
