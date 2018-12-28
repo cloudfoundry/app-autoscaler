@@ -1,9 +1,5 @@
 server:
   port: 8081
-  node_addrs:
-    - "localhost:8080"
-    - "localhost:9080"
-  node_index: 0
 logging:
   level: info
 metron_address: 127.0.0.1:3457
