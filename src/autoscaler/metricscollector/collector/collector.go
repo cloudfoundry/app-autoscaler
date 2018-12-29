@@ -34,7 +34,6 @@ type Collector struct {
 	doneChan           chan bool
 	doneSaveChan       chan bool
 	appCollectors      map[string]AppCollector
-	ticker             clock.Ticker
 	lock               *sync.RWMutex
 	dataChan           chan *models.AppInstanceMetric
 }
@@ -62,19 +61,20 @@ func NewCollector(refreshInterval time.Duration, collectInterval time.Duration, 
 }
 
 func (c *Collector) Start() {
-	c.ticker = c.cclock.NewTicker(c.refreshInterval)
 	go c.startAppRefresh()
 	go c.SaveMetricsInDB()
 	c.logger.Info("collector-started")
 }
 
 func (c *Collector) startAppRefresh() {
+	ticker := c.cclock.NewTicker(c.refreshInterval)
+	defer ticker.Stop()
 	for {
 		c.refreshApps()
 		select {
 		case <-c.doneChan:
 			return
-		case <-c.ticker.C():
+		case <-ticker.C():
 		}
 	}
 }
@@ -120,17 +120,15 @@ func (c *Collector) refreshApps() {
 }
 
 func (c *Collector) Stop() {
-	if c.ticker != nil {
-		c.ticker.Stop()
-		c.doneChan <- true
-		c.doneSaveChan <- true
+	c.doneChan <- true
+	c.doneSaveChan <- true
 
-		c.lock.RLock()
-		for _, ap := range c.appCollectors {
-			ap.Stop()
-		}
-		c.lock.RUnlock()
+	c.lock.RLock()
+	for _, ap := range c.appCollectors {
+		ap.Stop()
 	}
+	c.lock.RUnlock()
+
 	c.logger.Info("collector-stopped")
 }
 
