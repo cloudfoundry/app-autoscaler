@@ -14,12 +14,12 @@ import (
 
 type wsMessageHandler struct {
 	logger           lager.Logger
-	envelopeChannels []chan<- *loggregator_v2.Envelope
+	envelopeChannels []chan *loggregator_v2.Envelope
 	keepAlive        time.Duration
 	lock             *sync.Mutex
 }
 
-func NewWSMessageHandler(logger lager.Logger, envelopeChannels []chan<- *loggregator_v2.Envelope, keepAlive time.Duration) *wsMessageHandler {
+func NewWSMessageHandler(logger lager.Logger, envelopeChannels []chan *loggregator_v2.Envelope, keepAlive time.Duration) *wsMessageHandler {
 	return &wsMessageHandler{
 		logger:           logger,
 		envelopeChannels: envelopeChannels,
