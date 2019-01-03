@@ -154,7 +154,7 @@ var _ = Describe("MetricHandler", func() {
 					err = json.Unmarshal(resp.Body.Bytes(), errJson)
 					Expect(errJson).To(Equal(&models.ErrorResponse{
 						Code:    "Authorization-Failure-Error",
-						Message: "Basic authorization credential does not match",
+						Message: "Incorrect credentials. Basic authorization credential does not match",
 					}))
 				})
 
@@ -313,10 +313,9 @@ var _ = Describe("MetricHandler", func() {
 					err = json.Unmarshal(resp.Body.Bytes(), errJson)
 					Expect(errJson).To(Equal(&models.ErrorResponse{
 						Code:    "Bad-Request",
-						Message: "Error validating custom metrics type",
+						Message: "no policy defined",
 					}))
 				})
-
 			})
 		})
 
@@ -334,6 +333,17 @@ var _ = Describe("MetricHandler", func() {
 					      }
 					   ]
 				}`)
+				scalingPolicy = &models.ScalingPolicy{
+					InstanceMin: 1,
+					InstanceMax: 6,
+					ScalingRules: []*models.ScalingRule{{
+						MetricType:            "queuelength",
+						BreachDurationSeconds: 60,
+						Threshold:             10,
+						Operator:              ">",
+						CoolDownSeconds:       60,
+						Adjustment:            "+1"}}}
+				policyDB.GetAppPolicyReturns(scalingPolicy, nil)
 			})
 
 			It("returns status code 400", func() {
@@ -342,7 +352,7 @@ var _ = Describe("MetricHandler", func() {
 				err = json.Unmarshal(resp.Body.Bytes(), errJson)
 				Expect(errJson).To(Equal(&models.ErrorResponse{
 					Code:    "Bad-Request",
-					Message: "Error validating custom metrics type",
+					Message: "Custom Metric: memoryused matches with standard metrics name",
 				}))
 			})
 
@@ -355,13 +365,24 @@ var _ = Describe("MetricHandler", func() {
 					   "instance_index":0,
 					   "metrics":[
 					      {
-					         "name":"#$@12_&metric",
+					         "name":"wrong_metric_type",
 					         "type":"gauge",
 					         "value":200,
 					         "unit":"unit"
 					      }
 					   ]
 				}`)
+				scalingPolicy = &models.ScalingPolicy{
+					InstanceMin: 1,
+					InstanceMax: 6,
+					ScalingRules: []*models.ScalingRule{{
+						MetricType:            "queuelength",
+						BreachDurationSeconds: 60,
+						Threshold:             10,
+						Operator:              ">",
+						CoolDownSeconds:       60,
+						Adjustment:            "+1"}}}
+				policyDB.GetAppPolicyReturns(scalingPolicy, nil)
 			})
 
 			It("returns status code 400", func() {
@@ -370,7 +391,7 @@ var _ = Describe("MetricHandler", func() {
 				err = json.Unmarshal(resp.Body.Bytes(), errJson)
 				Expect(errJson).To(Equal(&models.ErrorResponse{
 					Code:    "Bad-Request",
-					Message: "Error validating custom metrics type",
+					Message: "Custom Metric: wrong_metric_type does not match with metrics defined in policy",
 				}))
 			})
 
