@@ -3,12 +3,11 @@ package sqldb
 import (
 	"autoscaler/db"
 	"autoscaler/models"
+	"database/sql"
+	"encoding/json"
 
 	"code.cloudfoundry.org/lager"
 	_ "github.com/lib/pq"
-
-	"database/sql"
-	"encoding/json"
 )
 
 type PolicySQLDB struct {
@@ -135,4 +134,17 @@ func (pdb *PolicySQLDB) DeletePolicy(appId string) error {
 
 func (pdb *PolicySQLDB) GetDBStatus() sql.DBStats {
 	return pdb.sqldb.Stats()
+}
+
+func (pdb *PolicySQLDB) GetCustomMetricsCreds(appId string) (string, string, error) {
+	var password string
+	var username string
+	query := "SELECT username,password from credentials WHERE id = $1"
+	err := pdb.sqldb.QueryRow(query, appId).Scan(&username, &password)
+
+	if err != nil {
+		pdb.logger.Error("get-custom-metrics-creds-from-credentials-table", err, lager.Data{"query": query})
+		return "", "", err
+	}
+	return username, password, nil
 }

@@ -240,6 +240,25 @@ func insertSchedulerActiveSchedule(id int, appId string, startJobIdentifier int,
 	return e
 }
 
+func insertCustomMetricsBindingCredentials(appid string, username string, password string) error {
+
+	var err error
+	var query string
+
+	query = "INSERT INTO credentials(id, username, password, updated_at) values($1, $2, $3, $4)"
+	_, err = dbHelper.Exec(query, appid, username, password, "2011-05-18 15:36:38")
+	return err
+
+}
+
+func cleanCredentialsTable() error {
+	_, err := dbHelper.Exec("DELETE FROM credentials")
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func insertLockDetails(lock *models.Lock) (sql.Result, error) {
 	query := "INSERT INTO test_lock (owner,lock_timestamp,ttl) VALUES ($1,$2,$3)"
 	result, err := dbHelper.Exec(query, lock.Owner, lock.LastModifiedTimestamp, int64(lock.Ttl/time.Second))
