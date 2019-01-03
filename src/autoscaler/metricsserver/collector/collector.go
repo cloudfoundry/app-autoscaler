@@ -6,6 +6,7 @@ import (
 	"autoscaler/helpers"
 	"autoscaler/models"
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
@@ -13,9 +14,15 @@ import (
 	"code.cloudfoundry.org/lager"
 )
 
-type GetAppIDsFunc func() map[string]bool
+type MetricCollector interface {
+	Start()
+	Stop()
+	GetAppIDs() map[string]bool
+	QueryMetrics(string, int, string, int64, int64, db.OrderType) ([]*models.AppInstanceMetric, error)
+	QueryMetricsWithLabels(string, int64, int64, db.OrderType, map[string]string) ([]*models.AppInstanceMetric, error)
+}
 
-type Collector struct {
+type metricCollector struct {
 	logger                        lager.Logger
 	refreshInterval               time.Duration
 	collectInterval               time.Duration
@@ -39,8 +46,8 @@ type Collector struct {
 
 func NewCollector(logger lager.Logger, refreshInterval time.Duration, collectInterval time.Duration, isMetricsPersistencySupported bool, saveInterval time.Duration,
 	nodeIndex, nodeNum int, metricCacheSizePerApp int, policyDb db.PolicyDB, instancemetricsDb db.InstanceMetricsDB,
-	cclock clock.Clock, metricsChan <-chan *models.AppInstanceMetric) *Collector {
-	return &Collector{
+	cclock clock.Clock, metricsChan <-chan *models.AppInstanceMetric) *metricCollector {
+	return &metricCollector{
 		refreshInterval:               refreshInterval,
 		collectInterval:               collectInterval,
 		saveInterval:                  saveInterval,
@@ -62,15 +69,15 @@ func NewCollector(logger lager.Logger, refreshInterval time.Duration, collectInt
 	}
 }
 
-func (c *Collector) Start() {
+func (c *metricCollector) Start() {
 	c.ticker = c.cclock.NewTicker(c.refreshInterval)
 	go c.startAppRefresh()
-	go c.SaveMetrics()
+	go c.saveMetrics()
 
 	c.logger.Info("collector-started")
 }
 
-func (c *Collector) startAppRefresh() {
+func (c *metricCollector) startAppRefresh() {
 	for {
 		c.refreshApps()
 		select {
@@ -81,7 +88,7 @@ func (c *Collector) startAppRefresh() {
 	}
 }
 
-func (c *Collector) refreshApps() {
+func (c *metricCollector) refreshApps() {
 	apps, err := c.policyDb.GetAppIds()
 	if err != nil {
 		c.logger.Error("refresh-apps", err)
@@ -114,7 +121,7 @@ func (c *Collector) refreshApps() {
 
 }
 
-func (c *Collector) Stop() {
+func (c *metricCollector) Stop() {
 	if c.ticker != nil {
 		c.ticker.Stop()
 		c.doneChan <- true
@@ -123,13 +130,13 @@ func (c *Collector) Stop() {
 	c.logger.Info("collector-stopped")
 }
 
-func (c *Collector) GetAppIDs() map[string]bool {
+func (c *metricCollector) GetAppIDs() map[string]bool {
 	c.lock.RLock()
 	defer c.lock.RUnlock()
 	return c.appIDs
 }
 
-func (c *Collector) QueryMetrics(appID string, instanceIndex int, name string, start, end int64, order db.OrderType) ([]*models.AppInstanceMetric, error) {
+func (c *metricCollector) QueryMetrics(appID string, instanceIndex int, name string, start, end int64, order db.OrderType) ([]*models.AppInstanceMetric, error) {
 	if end == -1 {
 		end = c.cclock.Now().UnixNano()
 	}
@@ -143,8 +150,7 @@ func (c *Collector) QueryMetrics(appID string, instanceIndex int, name string, s
 		if instanceIndex >= 0 {
 			labels[models.MetricLabelInstanceIndex] = fmt.Sprintf("%d", instanceIndex)
 		}
-
-		result, hit := appCache.Query(start, end, labels)
+		result, hit := appCache.Query(start, end+1, labels)
 		if hit || !c.isMetricsPersistencySupported {
 			metrics := make([]*models.AppInstanceMetric, len(result))
 			if order == db.ASC {
@@ -166,13 +172,46 @@ func (c *Collector) QueryMetrics(appID string, instanceIndex int, name string, s
 	return []*models.AppInstanceMetric{}, nil
 }
 
-func (c *Collector) SaveMetrics() {
+func (c *metricCollector) QueryMetricsWithLabels(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppInstanceMetric, error) {
+	if end == -1 {
+		end = c.cclock.Now().UnixNano()
+	}
+
+	c.mLock.RLock()
+	appCache, exist := c.metricCache[appID]
+	c.mLock.RUnlock()
+
+	if exist {
+		result, hit := appCache.Query(start, end+1, labels)
+		if hit || !c.isMetricsPersistencySupported {
+			metrics := make([]*models.AppInstanceMetric, len(result))
+			if order == db.ASC {
+				for index, tsd := range result {
+					metrics[index] = tsd.(*models.AppInstanceMetric)
+				}
+			} else {
+				for index, tsd := range result {
+					metrics[len(result)-1-index] = tsd.(*models.AppInstanceMetric)
+				}
+			}
+			return metrics, nil
+		}
+	}
+
+	if c.isMetricsPersistencySupported {
+		instanceIndex, _ := strconv.ParseInt(labels[models.MetricLabelInstanceIndex], 10, 32)
+		return c.instancemetricsDb.RetrieveInstanceMetrics(appID, int(instanceIndex), labels[models.MetricLabelName], start, end, order)
+	}
+	return []*models.AppInstanceMetric{}, nil
+}
+
+func (c *metricCollector) saveMetrics() {
 	ticker := c.cclock.NewTicker(c.saveInterval)
 	metrics := []*models.AppInstanceMetric{}
 	for {
 		select {
 		case m := <-c.metricsChan:
-			c.SaveMetricToCache(m)
+			c.saveMetricToCache(m)
 			if c.isMetricsPersistencySupported {
 				metrics = append(metrics, m)
 			}
@@ -191,8 +230,8 @@ func (c *Collector) SaveMetrics() {
 	}
 }
 
-func (c *Collector) SaveMetricToCache(m *models.AppInstanceMetric) bool {
-	c.mLock.Lock()
+func (c *metricCollector) saveMetricToCache(m *models.AppInstanceMetric) bool {
+	c.mLock.RLock()
 	appCache := c.metricCache[m.AppId]
 	c.mLock.RUnlock()
 
