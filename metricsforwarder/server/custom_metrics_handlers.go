@@ -45,7 +45,7 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 		mh.logger.Info("error-processing-authorizaion-header")
 		handlers.WriteJSONResponse(w, http.StatusUnauthorized, models.ErrorResponse{
 			Code:    "Authorization-Failure-Error",
-			Message: "Error verifying user credentials. Basic authorization is not used properly"})
+			Message: "Incorrect credentials. Basic authorization is not used properly"})
 		return
 	}
 
@@ -85,7 +85,7 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 			mh.logger.Error("error-validating-authorizaion-header", err)
 			handlers.WriteJSONResponse(w, http.StatusUnauthorized, models.ErrorResponse{
 				Code:    "Authorization-Failure-Error",
-				Message: "Basic authorization credential does not match"})
+				Message: "Incorrect credentials. Basic authorization credential does not match"})
 			return
 		}
 	}
@@ -112,7 +112,7 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 		mh.logger.Error("failed-validating-metrictypes", err, lager.Data{"metrics": metricsConsumer})
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 			Code:    "Bad-Request",
-			Message: "Error validating custom metrics type"})
+			Message: err.Error()})
 		return
 	}
 
@@ -165,7 +165,7 @@ func (mh *CustomMetricsHandler) validateCustomMetricTypes(appGUID string, metric
 		}
 		if err == nil && scalingPolicy == nil {
 			mh.logger.Debug("no-policy-found", lager.Data{"appId": appGUID})
-			return errors.New("no policy found")
+			return errors.New("no policy defined")
 		}
 		for _, metrictype := range scalingPolicy.ScalingRules {
 			allowedMetricTypeSet[metrictype.MetricType] = struct{}{}
@@ -179,13 +179,13 @@ func (mh *CustomMetricsHandler) validateCustomMetricTypes(appGUID string, metric
 		_, stdMetricsExists := standardMetricsTypes[metric.Name]
 		if stdMetricsExists { //it should fail
 			mh.logger.Info("custom-metric-name-matches-with-standard-metrics-name", lager.Data{"metric": metric.Name})
-			return errors.New("CustomMetric name matches with standard metrics name")
+			return errors.New("Custom Metric: " + metric.Name + " matches with standard metrics name")
 		}
 		// check if any of the custom metrics not defined during policy binding
 		_, ok := allowedMetricTypeSet[metric.Name]
 		if !ok { // If any of the custom metrics is not defined during policy binding, it should fail
 			mh.logger.Info("unmatched-custom-metric-type", lager.Data{"metric": metric.Name})
-			return errors.New("CustomMetric name does not match with metric defined in policy")
+			return errors.New("Custom Metric: " + metric.Name + " does not match with metrics defined in policy")
 		}
 	}
 	return nil
