@@ -70,9 +70,9 @@ func (pm *PolicyManager) startPolicyRetrieve() {
 		pm.policyMap = policies
 		pm.pLock.Unlock()
 
-		isRefreshed := pm.RefreshAllowedMetricCache(policies)
+		cacheRefresheErr := pm.RefreshAllowedMetricCache(policies)
 
-		if !isRefreshed {
+		if cacheRefresheErr != nil {
 			continue
 		}
 		select {
@@ -103,7 +103,7 @@ func (pm *PolicyManager) computePolicies(policyJsons []*models.PolicyJson) map[s
 	return policyMap
 }
 
-func (pm *PolicyManager) RefreshAllowedMetricCache(policies map[string]*models.AppPolicy) bool {
+func (pm *PolicyManager) RefreshAllowedMetricCache(policies map[string]*models.AppPolicy) error {
 	pm.mLock.Lock()
 	defer pm.mLock.Unlock()
 	allowedMetricTypeSet := make(map[string]struct{})
@@ -116,8 +116,9 @@ func (pm *PolicyManager) RefreshAllowedMetricCache(policies map[string]*models.A
 		}
 		err := pm.allowedMetricCache.Replace(applicationId, allowedMetricTypeSet, pm.cacheTTL)
 		if err != nil {
-			return false
+			pm.logger.Error("Error updating allowedMetricCache", err)
+			return err
 		}
 	}
-	return true
+	return nil
 }
