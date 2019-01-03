@@ -12,7 +12,12 @@ import (
 	"code.cloudfoundry.org/lager"
 )
 
-type EnvelopeProcessor struct {
+type EnvelopeProcessor interface {
+	Start()
+	Stop()
+}
+
+type envelopeProcessor struct {
 	logger          lager.Logger
 	collectInterval time.Duration
 	doneChan        chan bool
@@ -23,12 +28,12 @@ type EnvelopeProcessor struct {
 	numProcessors   int
 	envelopeChan    <-chan *loggregator_v2.Envelope
 	metricChan      chan<- *models.AppInstanceMetric
-	getAppIDs       GetAppIDsFunc
+	getAppIDs       func() map[string]bool
 }
 
 func NewEnvelopeProcessor(logger lager.Logger, collectInterval time.Duration, clock clock.Clock, processsorIndex, numProcesssors int,
-	envelopeChan chan *loggregator_v2.Envelope, metricChan chan<- *models.AppInstanceMetric, getAppIDs GetAppIDsFunc) *EnvelopeProcessor {
-	return &EnvelopeProcessor{
+	envelopeChan <-chan *loggregator_v2.Envelope, metricChan chan<- *models.AppInstanceMetric, getAppIDs func() map[string]bool) *envelopeProcessor {
+	return &envelopeProcessor{
 		logger:          logger,
 		collectInterval: collectInterval,
 		doneChan:        make(chan bool),
@@ -43,16 +48,16 @@ func NewEnvelopeProcessor(logger lager.Logger, collectInterval time.Duration, cl
 	}
 }
 
-func (ep *EnvelopeProcessor) Start() {
+func (ep *envelopeProcessor) Start() {
 	go ep.processEvents()
 	ep.logger.Info("envelop-processor-started", lager.Data{"processor-index": ep.processorIndex, "processor-num": ep.numProcessors})
 }
 
-func (ep *EnvelopeProcessor) Stop() {
+func (ep *envelopeProcessor) Stop() {
 	ep.doneChan <- true
 }
 
-func (ep *EnvelopeProcessor) processEvents() {
+func (ep *envelopeProcessor) processEvents() {
 	ticker := ep.clock.NewTicker(ep.collectInterval)
 	for {
 		select {
@@ -69,7 +74,7 @@ func (ep *EnvelopeProcessor) processEvents() {
 	}
 }
 
-func (ep *EnvelopeProcessor) processEnvelope(e *loggregator_v2.Envelope) {
+func (ep *envelopeProcessor) processEnvelope(e *loggregator_v2.Envelope) {
 	instanceIndex, _ := strconv.ParseInt(e.InstanceId, 10, 32)
 	switch e.GetMessage().(type) {
 	case *loggregator_v2.Envelope_Gauge:
@@ -89,13 +94,13 @@ func (ep *EnvelopeProcessor) processEnvelope(e *loggregator_v2.Envelope) {
 
 }
 
-func (ep *EnvelopeProcessor) processContainerMetrics(appID string, instanceIndex uint32, timestamp int64, g *loggregator_v2.Gauge) {
+func (ep *envelopeProcessor) processContainerMetrics(appID string, instanceIndex uint32, timestamp int64, g *loggregator_v2.Gauge) {
 	memory, exist := g.GetMetrics()["memory"]
 	if exist {
 		memoryUsedMetric := &models.AppInstanceMetric{
 			AppId:         appID,
 			InstanceIndex: instanceIndex,
-			CollectedAt:   time.Now().UnixNano(),
+			CollectedAt:   ep.clock.Now().UnixNano(),
 			Name:          models.MetricNameMemoryUsed,
 			Unit:          models.UnitMegaBytes,
 			Value:         fmt.Sprintf("%d", int(memory.GetValue()/(1024*1024)+0.5)),
@@ -134,7 +139,7 @@ func (ep *EnvelopeProcessor) processContainerMetrics(appID string, instanceIndex
 
 }
 
-func (ep *EnvelopeProcessor) processHttpStartStop(appID string, instanceIndex uint32, t *loggregator_v2.Timer) {
+func (ep *envelopeProcessor) processHttpStartStop(appID string, instanceIndex uint32, t *loggregator_v2.Timer) {
 	if ep.numRequests[appID] == nil {
 		ep.numRequests[appID] = map[uint32]int64{}
 	}
@@ -146,7 +151,7 @@ func (ep *EnvelopeProcessor) processHttpStartStop(appID string, instanceIndex ui
 	ep.sumReponseTimes[appID][instanceIndex] += (t.Stop - t.Start)
 }
 
-func (ep *EnvelopeProcessor) processCustomMetrics(appID string, instanceIndex uint32, timestamp int64, g *loggregator_v2.Gauge) {
+func (ep *envelopeProcessor) processCustomMetrics(appID string, instanceIndex uint32, timestamp int64, g *loggregator_v2.Gauge) {
 	for n, v := range g.GetMetrics() {
 		customMetric := &models.AppInstanceMetric{
 			AppId:         appID,
@@ -161,7 +166,7 @@ func (ep *EnvelopeProcessor) processCustomMetrics(appID string, instanceIndex ui
 	}
 }
 
-func (ep *EnvelopeProcessor) computeAndSaveMetrics() {
+func (ep *envelopeProcessor) computeAndSaveMetrics() {
 	ep.logger.Debug("compute-and-save-metrics", lager.Data{"message": "start to compute and save metrics"})
 	for appID := range ep.getAppIDs() {
 		im := ep.numRequests[appID]
