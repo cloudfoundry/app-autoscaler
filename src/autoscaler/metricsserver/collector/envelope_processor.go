@@ -12,6 +12,11 @@ import (
 	"code.cloudfoundry.org/lager"
 )
 
+type EnvelopeProcessor interface {
+	Start()
+	Stop()
+}
+
 type envelopeProcessor struct {
 	logger          lager.Logger
 	collectInterval time.Duration
@@ -23,11 +28,11 @@ type envelopeProcessor struct {
 	numProcessors   int
 	envelopeChan    <-chan *loggregator_v2.Envelope
 	metricChan      chan<- *models.AppInstanceMetric
-	getAppIDs       GetAppIDsFunc
+	getAppIDs       func() map[string]bool
 }
 
 func NewEnvelopeProcessor(logger lager.Logger, collectInterval time.Duration, clock clock.Clock, processsorIndex, numProcesssors int,
-	envelopeChan <-chan *loggregator_v2.Envelope, metricChan chan<- *models.AppInstanceMetric, getAppIDs GetAppIDsFunc) *envelopeProcessor {
+	envelopeChan <-chan *loggregator_v2.Envelope, metricChan chan<- *models.AppInstanceMetric, getAppIDs func() map[string]bool) *envelopeProcessor {
 	return &envelopeProcessor{
 		logger:          logger,
 		collectInterval: collectInterval,
@@ -95,7 +100,7 @@ func (ep *envelopeProcessor) processContainerMetrics(appID string, instanceIndex
 		memoryUsedMetric := &models.AppInstanceMetric{
 			AppId:         appID,
 			InstanceIndex: instanceIndex,
-			CollectedAt:   time.Now().UnixNano(),
+			CollectedAt:   ep.clock.Now().UnixNano(),
 			Name:          models.MetricNameMemoryUsed,
 			Unit:          models.UnitMegaBytes,
 			Value:         fmt.Sprintf("%d", int(memory.GetValue()/(1024*1024)+0.5)),
