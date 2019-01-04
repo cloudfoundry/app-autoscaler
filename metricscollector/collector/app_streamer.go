@@ -25,7 +25,6 @@ type appStreamer struct {
 	sclock          clock.Clock
 	numRequests     map[int32]int64
 	sumReponseTimes map[int32]int64
-	ticker          clock.Ticker
 	dataChan        chan *models.AppInstanceMetric
 }
 
@@ -56,12 +55,12 @@ func (as *appStreamer) Stop() {
 
 func (as *appStreamer) streamMetrics() {
 	eventChan, errorChan := as.noaaConsumer.Stream(as.appId, cf.TokenTypeBearer+" "+as.cfc.GetTokens().AccessToken)
-	as.ticker = as.sclock.NewTicker(as.collectInterval)
+	ticker := as.sclock.NewTicker(as.collectInterval)
+	defer ticker.Stop()
 	var err error
 	for {
 		select {
 		case <-as.doneChan:
-			as.ticker.Stop()
 			err := as.noaaConsumer.Close()
 			if err == nil {
 				as.logger.Info("noaa-connection-closed", lager.Data{"appid": as.appId})
@@ -77,7 +76,7 @@ func (as *appStreamer) streamMetrics() {
 		case event := <-eventChan:
 			as.processEvent(event)
 
-		case <-as.ticker.C():
+		case <-ticker.C():
 			if err != nil {
 				closeErr := as.noaaConsumer.Close()
 				if closeErr != nil {
