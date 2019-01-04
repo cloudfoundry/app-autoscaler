@@ -110,14 +110,16 @@ func (pm *PolicyManager) RefreshAllowedMetricCache(policies map[string]*models.A
 	allowedMetricMap := pm.allowedMetricCache.Items()
 	//Iterating over the cache and replace the allowed metrics for existing policy
 	for applicationId := range allowedMetricMap {
-		scalingPolicy := pm.policyMap[applicationId].ScalingPolicy
-		for _, metrictype := range scalingPolicy.ScalingRules {
-			allowedMetricTypeSet[metrictype.MetricType] = struct{}{}
-		}
-		err := pm.allowedMetricCache.Replace(applicationId, allowedMetricTypeSet, pm.cacheTTL)
-		if err != nil {
-			pm.logger.Error("Error updating allowedMetricCache", err)
-			return err
+		if policy, ok := pm.policyMap[applicationId]; ok {
+			scalingPolicy := policy.ScalingPolicy
+			for _, metrictype := range scalingPolicy.ScalingRules {
+				allowedMetricTypeSet[metrictype.MetricType] = struct{}{}
+			}
+			err := pm.allowedMetricCache.Replace(applicationId, allowedMetricTypeSet, pm.cacheTTL)
+			if err != nil {
+				pm.logger.Error("Error updating allowedMetricCache", err)
+				return err
+			}
 		}
 	}
 	return nil
