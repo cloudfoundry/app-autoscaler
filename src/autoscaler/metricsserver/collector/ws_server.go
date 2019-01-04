@@ -1,6 +1,7 @@
 package collector
 
 import (
+	"autoscaler/healthendpoint"
 	"autoscaler/models"
 	"fmt"
 	"time"
@@ -12,7 +13,7 @@ import (
 	"github.com/tedsuo/ifrit/http_server"
 )
 
-func NewWSServer(logger lager.Logger, port int, tls models.TLSCerts, envelopeChannels []chan<- *loggregator_v2.Envelope, keepAlive time.Duration) (ifrit.Runner, error) {
+func NewWSServer(logger lager.Logger, tls models.TLSCerts, port int, keepAlive time.Duration, envelopeChannels []chan *loggregator_v2.Envelope, httpStatusCollector healthendpoint.HTTPStatusCollector) (ifrit.Runner, error) {
 	wsHandler := NewWSMessageHandler(logger.Session("ws_handler"), envelopeChannels, keepAlive)
 	addr := fmt.Sprintf("0.0.0.0:%d", port)
 
@@ -23,7 +24,7 @@ func NewWSServer(logger lager.Logger, port int, tls models.TLSCerts, envelopeCha
 	} else {
 		tlsConfig, err := cfhttp.NewTLSConfig(tls.CertFile, tls.KeyFile, tls.CACertFile)
 		if err != nil {
-			logger.Error("failed-new-websocket-server-new-tls-config", err, lager.Data{"tls": tls})
+			logger.Error("failed-new-websocket-server-new-tls-config", err)
 			return nil, err
 		}
 		runner = http_server.NewTLSServer(addr, wsHandler, tlsConfig)
