@@ -11,29 +11,38 @@ import (
 
 type WebsocketHandler struct {
 	messages     chan []byte
-	messageTypes chan int
+	pingPongChan chan int
 	keepAlive    time.Duration
 	lock         *sync.Mutex
+	wsConn       *websocket.Conn
 }
 
-func NewWebsocketHandler(m chan []byte, mt chan int, keepAlive time.Duration) *WebsocketHandler {
+func NewWebsocketHandler(m chan []byte, pingPongChan chan int, keepAlive time.Duration) *WebsocketHandler {
 	return &WebsocketHandler{
 		messages:     m,
-		messageTypes: mt,
+		pingPongChan: pingPongChan,
 		keepAlive:    keepAlive,
 		lock:         &sync.Mutex{},
 	}
 }
-
+func (h *WebsocketHandler) CloseWSConnection() {
+	h.wsConn.Close()
+}
 func (h *WebsocketHandler) ServeWebsocket(rw http.ResponseWriter, r *http.Request) {
 	upgrader := websocket.Upgrader{
 		CheckOrigin: func(*http.Request) bool { return true },
 	}
+
 	ws, err := upgrader.Upgrade(rw, r, nil)
+	ws.SetPingHandler(func(message string) error {
+		h.pingPongChan <- 1
+		return nil
+	})
 	if err != nil {
 		log.Printf("websocket handler: Not a websocket handshake: %s", err)
 		return
 	}
+	h.wsConn = ws
 	defer ws.Close()
 
 	closeCode, closeMessage := h.runWebsocketUntilClosed(ws)
@@ -45,30 +54,43 @@ func (h *WebsocketHandler) runWebsocketUntilClosed(ws *websocket.Conn) (closeCod
 	clientWentAway := make(chan struct{})
 
 	go func() {
+		for {
+			h.lock.Lock()
+			_, m, err := ws.ReadMessage()
+			h.messages <- m
+			h.lock.Unlock()
+
+			if err != nil {
+				close(clientWentAway)
+				return
+			}
+		}
+	}()
+
+	go func() {
 		NewKeepAlive(h.lock, ws, h.keepAlive).Run()
 		close(keepAliveExpired)
 	}()
+
 	closeCode = websocket.CloseNormalClosure
 	closeMessage = ""
 	for {
 		select {
 		case <-clientWentAway:
-			h.messageTypes <- websocket.CloseMessage
 			return
 		case <-keepAliveExpired:
 			closeCode = websocket.ClosePolicyViolation
 			closeMessage = "Client did not respond to ping before keep-alive timeout expired."
 			return
-		default:
-			_, message, err := ws.ReadMessage()
-			if err != nil {
-				close(clientWentAway)
-			} else {
-				h.messages <- message
-
-			}
+			// case message, ok := <-h.messages:
+			// 	if !ok {
+			// 		return
+			// 	}
+			// 	err := ws.WriteMessage(websocket.BinaryMessage, message)
+			// 	if err != nil {
+			// 		return
+			// 	}
 		}
-
 	}
 }
 
