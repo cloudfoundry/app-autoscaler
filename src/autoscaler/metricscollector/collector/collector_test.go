@@ -62,7 +62,7 @@ var _ = Describe("Collector", func() {
 		It("refreshes the apps with given interval", func() {
 			Eventually(policyDb.GetAppIdsCallCount).Should(Equal(1))
 
-			fclock.Increment(TestRefreshInterval)
+			fclock.WaitForWatcherAndIncrement(TestRefreshInterval)
 			Eventually(policyDb.GetAppIdsCallCount).Should(Equal(2))
 
 			fclock.Increment(TestRefreshInterval)
@@ -80,7 +80,7 @@ var _ = Describe("Collector", func() {
 				It("does nothing", func() {
 					Consistently(coll.GetCollectorAppIds).Should(BeEmpty())
 
-					fclock.Increment(TestRefreshInterval)
+					fclock.WaitForWatcherAndIncrement(TestRefreshInterval)
 					Consistently(coll.GetCollectorAppIds).Should(BeEmpty())
 				})
 			})
@@ -94,7 +94,7 @@ var _ = Describe("Collector", func() {
 					Eventually(appCollector.StartCallCount).Should(Equal(3))
 					Eventually(coll.GetCollectorAppIds).Should(ConsistOf("app-id-1", "app-id-2", "app-id-3"))
 
-					fclock.Increment(TestRefreshInterval)
+					fclock.WaitForWatcherAndIncrement(TestRefreshInterval)
 					Consistently(appCollector.StartCallCount).Should(Equal(3))
 					Consistently(coll.GetCollectorAppIds).Should(ConsistOf("app-id-1", "app-id-2", "app-id-3"))
 				})
@@ -118,7 +118,7 @@ var _ = Describe("Collector", func() {
 					Eventually(appCollector.StartCallCount).Should(Equal(1))
 					Eventually(coll.GetCollectorAppIds).Should(ConsistOf("app-id-1"))
 
-					fclock.Increment(TestRefreshInterval)
+					fclock.WaitForWatcherAndIncrement(TestRefreshInterval)
 					Eventually(appCollector.StartCallCount).Should(Equal(2))
 					Eventually(coll.GetCollectorAppIds).Should(ConsistOf("app-id-1", "app-id-2"))
 
@@ -148,7 +148,7 @@ var _ = Describe("Collector", func() {
 					Eventually(appCollector.StartCallCount).Should(Equal(3))
 					Eventually(coll.GetCollectorAppIds).Should(ConsistOf("app-id-1", "app-id-2", "app-id-3"))
 
-					fclock.Increment(TestRefreshInterval)
+					fclock.WaitForWatcherAndIncrement(TestRefreshInterval)
 					Consistently(appCollector.StartCallCount).Should(Equal(3))
 					Eventually(appCollector.StopCallCount).Should(Equal(1))
 					Eventually(coll.GetCollectorAppIds).Should(ConsistOf("app-id-2", "app-id-3"))
@@ -178,7 +178,7 @@ var _ = Describe("Collector", func() {
 					Eventually(appCollector.StartCallCount).Should(Equal(2))
 					Eventually(coll.GetCollectorAppIds).Should(ConsistOf("app-id-1", "app-id-3"))
 
-					fclock.Increment(TestRefreshInterval)
+					fclock.WaitForWatcherAndIncrement(TestRefreshInterval)
 					Eventually(appCollector.StartCallCount).Should(Equal(3))
 					Eventually(appCollector.StopCallCount).Should(Equal(1))
 					Eventually(coll.GetCollectorAppIds).Should(ConsistOf("app-id-2", "app-id-3"))
@@ -213,7 +213,7 @@ var _ = Describe("Collector", func() {
 						Eventually(appCollector.StartCallCount).Should(Equal(2))
 						Eventually(coll.GetCollectorAppIds).Should(ConsistOf("app-id-3", "app-id-4"))
 
-						fclock.Increment(TestRefreshInterval)
+						fclock.WaitForWatcherAndIncrement(TestRefreshInterval)
 						Consistently(appCollector.StartCallCount).Should(Equal(2))
 						Consistently(appCollector.StopCallCount).Should(Equal(0))
 						Eventually(coll.GetCollectorAppIds).Should(ConsistOf("app-id-3", "app-id-4"))
@@ -229,9 +229,9 @@ var _ = Describe("Collector", func() {
 						nodeIndex = 1
 					})
 					It("polls app shard 1", func() {
-						Eventually(appCollector.StartCallCount).Should(Equal(0))
+						Consistently(appCollector.StartCallCount).Should(Equal(0))
 
-						fclock.Increment(TestRefreshInterval)
+						fclock.WaitForWatcherAndIncrement(TestRefreshInterval)
 						Eventually(appCollector.StartCallCount).Should(Equal(2))
 						Consistently(appCollector.StopCallCount).Should(Equal(0))
 						Eventually(coll.GetCollectorAppIds).Should(ConsistOf("app-id-5", "app-id-6"))
@@ -251,7 +251,7 @@ var _ = Describe("Collector", func() {
 						Eventually(appCollector.StartCallCount).Should(Equal(2))
 						Eventually(coll.GetCollectorAppIds).Should(ConsistOf("app-id-1", "app-id-2"))
 
-						fclock.Increment(TestRefreshInterval)
+						fclock.WaitForWatcherAndIncrement(TestRefreshInterval)
 						Consistently(appCollector.StartCallCount).Should(Equal(2))
 						Eventually(appCollector.StopCallCount).Should(Equal(2))
 						Eventually(coll.GetCollectorAppIds).Should(BeEmpty())
@@ -276,7 +276,7 @@ var _ = Describe("Collector", func() {
 				Eventually(buffer).Should(gbytes.Say("test collector error"))
 				Consistently(coll.GetCollectorAppIds).Should(BeEmpty())
 
-				fclock.Increment(TestRefreshInterval)
+				fclock.WaitForWatcherAndIncrement(TestRefreshInterval)
 				Eventually(policyDb.GetAppIdsCallCount).Should(Equal(2))
 				Eventually(buffer).Should(gbytes.Say("test collector error"))
 				Consistently(coll.GetCollectorAppIds).Should(BeEmpty())
@@ -294,8 +294,8 @@ var _ = Describe("Collector", func() {
 		})
 
 		It("stops the collecting", func() {
-
-			fclock.Increment(TestRefreshInterval)
+			Eventually(policyDb.GetAppIdsCallCount).Should(Equal(1))
+			fclock.WaitForWatcherAndIncrement(TestRefreshInterval)
 			Eventually(policyDb.GetAppIdsCallCount).Should(Equal(2))
 
 			coll.Stop()
