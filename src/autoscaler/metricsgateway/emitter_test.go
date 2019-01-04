@@ -1,9 +1,8 @@
 package metricsgateway_test
 
 import (
+	"autoscaler/fakes"
 	. "autoscaler/metricsgateway"
-	"autoscaler/metricsgateway/testhelpers"
-	"strings"
 	"time"
 
 	"code.cloudfoundry.org/clock/fakeclock"
@@ -13,17 +12,16 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gbytes"
-	"github.com/onsi/gomega/ghttp"
 )
 
 var _ = Describe("Emitter", func() {
 	var (
 		logger                     *lagertest.TestLogger
-		fakeMetricServer           *ghttp.Server
 		metricServerAddress        string
-		messageChan                chan []byte
-		messageTypeChan            chan int
+		envelopChan                chan *loggregator_v2.Envelope
+		wsMessageChan              chan int
 		bufferSize                 int64 = 500
+		fakeWSHelper               *fakes.FakeWSHelper
 		emitter                    *EnvelopeEmitter
 		testAppId                  = "test-app-id"
 		testHandshakeTimeout       = 5 * time.Second
@@ -59,50 +57,56 @@ var _ = Describe("Emitter", func() {
 	BeforeEach(func() {
 		logger = lagertest.NewTestLogger("emitter")
 		fclock = fakeclock.NewFakeClock(time.Now())
-		fakeMetricServer = ghttp.NewServer()
-		metricServerAddress = strings.Replace(fakeMetricServer.URL(), "http", "ws", 1)
-		messageChan = make(chan []byte, 10)
-		messageTypeChan = make(chan int, 10)
-		wsh := testhelpers.NewWebsocketHandler(messageChan, messageTypeChan, 100*time.Second)
+		envelopChan = make(chan *loggregator_v2.Envelope, 10)
+		wsMessageChan = make(chan int, 10)
+		fakeWSHelper = &fakes.FakeWSHelper{}
+		fakeWSHelper.WriteStub = func(envelope *loggregator_v2.Envelope) error {
+			envelopChan <- envelope
+			return nil
+		}
+		fakeWSHelper.PingStub = func() error {
+			wsMessageChan <- websocket.PingMessage
+			return nil
+		}
+		fakeWSHelper.CloseConnStub = func() error {
+			wsMessageChan <- websocket.CloseMessage
+			return nil
+		}
 
-		fakeMetricServer.RouteToHandler("GET", "/v1/envelopes", wsh.ServeWebsocket)
 	})
 	Context("Start", func() {
 		JustBeforeEach(func() {
-			emitter = NewEnvelopeEmitter(logger, bufferSize, metricServerAddress, nil, testHandshakeTimeout, fclock, verifyWSConnectionInterval)
+			emitter = NewEnvelopeEmitter(logger, bufferSize, metricServerAddress, nil, testHandshakeTimeout, fclock, verifyWSConnectionInterval, fakeWSHelper)
 			emitter.Start()
 			emitter.Accept(&testEnvelope)
 		})
 		It("should emit envelops to metricServer", func() {
-			Eventually(messageChan).Should(Receive())
+			Eventually(envelopChan).Should(Receive())
 		})
 
-		Context("when metricServer is not started", func() {
-			BeforeEach(func() {
-				fakeMetricServer.Close()
-			})
-			It("failed to start emitter", func() {
-				Consistently(messageChan).ShouldNot(Receive())
-				Eventually(logger.Buffer).Should(Say("failed-to-start-emimtter"))
-			})
+		It("should send ping message to metricServer periodically", func() {
+			fclock.Increment(1 * verifyWSConnectionInterval)
+			Eventually(wsMessageChan).Should(Receive(Equal(websocket.PingMessage)))
+			fclock.Increment(1 * verifyWSConnectionInterval)
+			Eventually(wsMessageChan).Should(Receive(Equal(websocket.PingMessage)))
 		})
 	})
 
 	Context("Stop", func() {
 		BeforeEach(func() {
-			emitter = NewEnvelopeEmitter(logger, bufferSize, metricServerAddress, nil, testHandshakeTimeout, fclock, verifyWSConnectionInterval)
+			emitter = NewEnvelopeEmitter(logger, bufferSize, metricServerAddress, nil, testHandshakeTimeout, fclock, verifyWSConnectionInterval, fakeWSHelper)
 			emitter.Start()
 			Eventually(logger.Buffer).Should(Say("started"))
 			emitter.Accept(&testEnvelope)
-			Eventually(messageChan).Should(Receive())
+			Eventually(envelopChan).Should(Receive())
 			emitter.Stop()
 			By("should close ws connection")
-			Eventually(messageTypeChan).Should(Receive(Equal(websocket.CloseMessage)))
+			Eventually(wsMessageChan).Should(Receive(Equal(websocket.CloseMessage)))
 
 			emitter.Accept(&testEnvelope)
 		})
 		It("should stop emitting envelope", func() {
-			Consistently(messageChan).ShouldNot(Receive())
+			Consistently(envelopChan).ShouldNot(Receive())
 		})
 	})
 })

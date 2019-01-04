@@ -2,17 +2,13 @@ package metricsgateway
 
 import (
 	"crypto/tls"
-	"net/http"
-	"sync"
 	"time"
-
-	"autoscaler/routes"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"
-	"github.com/golang/protobuf/proto"
-	"github.com/gorilla/websocket"
+
+	"autoscaler/metricsgateway/helpers"
 )
 
 type Emitter interface {
@@ -21,38 +17,32 @@ type Emitter interface {
 }
 
 type EnvelopeEmitter struct {
-	logger                     lager.Logger
-	metricsServerAddress       string
-	handshakeTimeout           time.Duration
-	envelopChan                chan *loggregator_v2.Envelope
-	bufferSize                 int64
-	doneChan                   chan bool
-	wsConn                     *websocket.Conn
-	lock                       sync.Mutex
-	dialer                     websocket.Dialer
-	verifyWSConnectionInterval time.Duration
-	eclock                     clock.Clock
-	ticker                     clock.Ticker
+	logger               lager.Logger
+	metricsServerAddress string
+	handshakeTimeout     time.Duration
+	envelopChan          chan *loggregator_v2.Envelope
+	bufferSize           int64
+	doneChan             chan bool
+	keepAliveInterval    time.Duration
+	eclock               clock.Clock
+	ticker               clock.Ticker
+	wsHelper             helpers.WSHelper
 }
 
-func NewEnvelopeEmitter(logger lager.Logger, bufferSize int64, metricsServerAddress string, tlsConfig *tls.Config, handshakeTimeout time.Duration, eclock clock.Clock, verifyWSConnectionInterval time.Duration) *EnvelopeEmitter {
+func NewEnvelopeEmitter(logger lager.Logger, bufferSize int64, metricsServerAddress string, tlsConfig *tls.Config, handshakeTimeout time.Duration, eclock clock.Clock, keepAliveInterval time.Duration, wsHelper helpers.WSHelper) *EnvelopeEmitter {
 	return &EnvelopeEmitter{
 		logger:               logger.Session("EnvelopeEmitter"),
 		metricsServerAddress: metricsServerAddress,
 		handshakeTimeout:     handshakeTimeout,
 		envelopChan:          make(chan *loggregator_v2.Envelope, bufferSize),
 		doneChan:             make(chan bool),
-		dialer: websocket.Dialer{
-			TLSClientConfig:  tlsConfig,
-			Proxy:            http.ProxyFromEnvironment,
-			HandshakeTimeout: handshakeTimeout,
-		},
-		eclock:                     eclock,
-		verifyWSConnectionInterval: verifyWSConnectionInterval,
+		eclock:               eclock,
+		keepAliveInterval:    keepAliveInterval,
+		wsHelper:             wsHelper,
 	}
 }
 func (e *EnvelopeEmitter) Start() {
-	err := e.setupWSConn()
+	err := e.wsHelper.SetupConn()
 	if err != nil {
 		e.logger.Error("failed-to-start-emimtter", err)
 		return
@@ -62,7 +52,7 @@ func (e *EnvelopeEmitter) Start() {
 }
 
 func (e *EnvelopeEmitter) startEmitEnvelope() {
-	e.ticker = e.eclock.NewTicker(e.verifyWSConnectionInterval)
+	e.ticker = e.eclock.NewTicker(e.keepAliveInterval)
 	for {
 		select {
 		case <-e.doneChan:
@@ -74,13 +64,13 @@ func (e *EnvelopeEmitter) startEmitEnvelope() {
 				e.logger.Error("failed-to-emit-envelope", err, lager.Data{"message": envelope})
 			}
 		case <-e.ticker.C():
-			e.verifyWSConnection()
+			e.wsHelper.Ping()
 		}
 	}
 }
 
 func (e *EnvelopeEmitter) Stop() {
-	e.closeWSConn()
+	e.wsHelper.CloseConn()
 	e.doneChan <- true
 
 }
@@ -91,56 +81,6 @@ func (e *EnvelopeEmitter) Accept(envelope *loggregator_v2.Envelope) {
 }
 func (e *EnvelopeEmitter) Emit(envelope *loggregator_v2.Envelope) error {
 	e.logger.Debug("emit-envelope", lager.Data{"envelope": envelope})
-	bytes, err := proto.Marshal(envelope)
-	if err != nil {
-		return err
-	}
-	err = e.wsConn.WriteMessage(websocket.BinaryMessage, bytes)
+	err := e.wsHelper.Write(envelope)
 	return err
-}
-
-func (e *EnvelopeEmitter) setupWSConn() error {
-	e.logger.Info("setup-new-ws-connection")
-	con, _, err := e.dialer.Dial(e.metricsServerAddress+routes.EnvelopePath, nil)
-	if err != nil {
-		e.logger.Error("failed-to-create-websocket-connection-to-metricserver", err, lager.Data{"metricServerUrl": (e.metricsServerAddress + routes.EnvelopePath)})
-		return err
-	}
-	e.lock.Lock()
-	defer e.lock.Unlock()
-	e.wsConn = con
-	return nil
-}
-func (e *EnvelopeEmitter) closeWSConn() {
-	e.logger.Info("close-ws-connection")
-	err := e.wsConn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""), time.Time{})
-	if err != nil {
-		e.logger.Error("failed-to-send-close-message-to-metricserver", err)
-	}
-	go func() {
-		e.lock.Lock()
-		con := e.wsConn
-		e.lock.Unlock()
-		timeChan := time.After(5 * time.Second)
-		select {
-		case <-timeChan:
-			err = con.Close()
-			if err != nil {
-				e.logger.Error("failed-to-close-ws-connection", err)
-			}
-		}
-
-	}()
-
-}
-
-func (e *EnvelopeEmitter) verifyWSConnection() {
-	err := e.wsConn.WriteControl(websocket.PingMessage, nil, time.Time{})
-	mt, message, err := e.wsConn.ReadMessage()
-	if err != nil {
-		e.logger.Error("remote-ws-connection-has-been-closed", err, lager.Data{"messageType": mt, "message": message})
-		e.closeWSConn()
-		e.setupWSConn()
-	}
-
 }
