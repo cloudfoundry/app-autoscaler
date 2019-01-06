@@ -18,7 +18,7 @@ const (
 	DefaultLoggingLevel                  = "info"
 	DefaultHttpClientTimeout             = 5 * time.Second
 	DefaultWSKeepAliveTime               = 1 * time.Minute
-	DefaultWSPort                        = 8082
+	DefaultWSPort                        = 8443
 	DefaultRefreshInterval               = 60 * time.Second
 	DefaultCollectInterval               = 30 * time.Second
 	DefaultSaveInterval                  = 5 * time.Second
@@ -27,6 +27,7 @@ const (
 	DefaultEnvelopeProcessorCount        = 5
 	DefaultEnvelopeChannelSize           = 1000
 	DefaultMetricChannelSize             = 1000
+	DefaultHTTPServerPort                = 8080
 	DefaultHealthPort                    = 8081
 )
 
@@ -49,17 +50,9 @@ type CollectorConfig struct {
 	MetricChannelSize             int             `yaml:"metric_channel_size"`
 }
 
-var defaultCollectorConfig = CollectorConfig{
-	WSPort:                        DefaultWSPort,
-	WSKeepAliveTime:               DefaultWSKeepAliveTime,
-	RefreshInterval:               DefaultRefreshInterval,
-	CollectInterval:               DefaultCollectInterval,
-	SaveInterval:                  DefaultSaveInterval,
-	MetricCacheSizePerApp:         DefaultMetricCacheSizePerApp,
-	IsMetricsPersistencySupported: DefaultIsMetricsPersistencySupported,
-	EnvelopeProcessorCount:        DefaultEnvelopeProcessorCount,
-	EnvelopeChannelSize:           DefaultEnvelopeChannelSize,
-	MetricChannelSize:             DefaultMetricChannelSize,
+type ServerConfig struct {
+	Port int             `yaml:"port"`
+	TLS  models.TLSCerts `yaml:"tls"`
 }
 
 type Config struct {
@@ -69,6 +62,7 @@ type Config struct {
 	NodeIndex         int                   `yaml:"node_index"`
 	DB                DBConfig              `yaml:"db"`
 	Collector         CollectorConfig       `yaml:"collector"`
+	Server            ServerConfig          `yaml:"server"`
 	Health            models.HealthConfig   `yaml:"health"`
 }
 
@@ -81,7 +75,21 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		Health: models.HealthConfig{
 			Port: DefaultHealthPort,
 		},
-		Collector: defaultCollectorConfig,
+		Collector: CollectorConfig{
+			WSPort:                        DefaultWSPort,
+			WSKeepAliveTime:               DefaultWSKeepAliveTime,
+			RefreshInterval:               DefaultRefreshInterval,
+			CollectInterval:               DefaultCollectInterval,
+			SaveInterval:                  DefaultSaveInterval,
+			MetricCacheSizePerApp:         DefaultMetricCacheSizePerApp,
+			IsMetricsPersistencySupported: DefaultIsMetricsPersistencySupported,
+			EnvelopeProcessorCount:        DefaultEnvelopeProcessorCount,
+			EnvelopeChannelSize:           DefaultEnvelopeChannelSize,
+			MetricChannelSize:             DefaultMetricChannelSize,
+		},
+		Server: ServerConfig{
+			Port: DefaultHTTPServerPort,
+		},
 	}
 
 	bytes, err := ioutil.ReadAll(reader)
@@ -104,7 +112,7 @@ func (c *Config) Validate() error {
 	}
 
 	if (c.NodeIndex >= len(c.NodeAddrs)) || (c.NodeIndex < 0) {
-		return fmt.Errorf("Configuration error: server.node_index out of range")
+		return fmt.Errorf("Configuration error: node_index out of range")
 	}
 
 	if c.DB.PolicyDB.URL == "" {

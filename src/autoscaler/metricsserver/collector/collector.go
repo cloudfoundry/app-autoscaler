@@ -6,7 +6,6 @@ import (
 	"autoscaler/helpers"
 	"autoscaler/models"
 	"fmt"
-	"strconv"
 	"sync"
 	"time"
 
@@ -19,7 +18,7 @@ type MetricCollector interface {
 	Stop()
 	GetAppIDs() map[string]bool
 	QueryMetrics(string, int, string, int64, int64, db.OrderType) ([]*models.AppInstanceMetric, error)
-	QueryMetricsWithLabels(string, int64, int64, db.OrderType, map[string]string) ([]*models.AppInstanceMetric, error)
+	QueryMetricsWithLabels(string, int64, int64, db.OrderType, map[string]string) ([]*models.AppInstanceMetric, bool)
 }
 
 type metricCollector struct {
@@ -172,7 +171,7 @@ func (c *metricCollector) QueryMetrics(appID string, instanceIndex int, name str
 	return []*models.AppInstanceMetric{}, nil
 }
 
-func (c *metricCollector) QueryMetricsWithLabels(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppInstanceMetric, error) {
+func (c *metricCollector) QueryMetricsWithLabels(appID string, start, end int64, order db.OrderType, labels map[string]string) ([]*models.AppInstanceMetric, bool) {
 	if end == -1 {
 		end = c.cclock.Now().UnixNano()
 	}
@@ -194,15 +193,10 @@ func (c *metricCollector) QueryMetricsWithLabels(appID string, start, end int64,
 					metrics[len(result)-1-index] = tsd.(*models.AppInstanceMetric)
 				}
 			}
-			return metrics, nil
+			return metrics, true
 		}
 	}
-
-	if c.isMetricsPersistencySupported {
-		instanceIndex, _ := strconv.ParseInt(labels[models.MetricLabelInstanceIndex], 10, 32)
-		return c.instancemetricsDb.RetrieveInstanceMetrics(appID, int(instanceIndex), labels[models.MetricLabelName], start, end, order)
-	}
-	return []*models.AppInstanceMetric{}, nil
+	return nil, false
 }
 
 func (c *metricCollector) saveMetrics() {
