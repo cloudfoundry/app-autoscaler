@@ -60,7 +60,7 @@ func main() {
 	var instanceMetricsDB db.InstanceMetricsDB
 	instanceMetricsDB, err = sqldb.NewInstanceMetricsSQLDB(conf.DB.InstanceMetricsDB, logger.Session("instancemetrics-db"))
 	if err != nil {
-		logger.Error("failed to connect instancemetrics database", err, lager.Data{"dbConfig": conf.DB.InstanceMetricsDB})
+		logger.Error("failed to connect instancemetrics database", err)
 		os.Exit(1)
 	}
 	defer instanceMetricsDB.Close()
@@ -68,12 +68,12 @@ func main() {
 	var policyDB db.PolicyDB
 	policyDB, err = sqldb.NewPolicySQLDB(conf.DB.PolicyDB, logger.Session("policy-db"))
 	if err != nil {
-		logger.Error("failed to connect policy database", err, lager.Data{"dbConfig": conf.DB.PolicyDB})
+		logger.Error("failed to connect policy database", err)
 		os.Exit(1)
 	}
 	defer policyDB.Close()
 
-	var metricsChan = make(chan *models.AppInstanceMetric)
+	metricsChan := make(chan *models.AppInstanceMetric, conf.Collector.MetricChannelSize)
 
 	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "metricsserver")
 	promRegistry := prometheus.NewRegistry()
@@ -83,46 +83,42 @@ func main() {
 		httpStatusCollector,
 	}, true, logger.Session("metricsserver-prometheus"))
 
-	ms := collector.NewCollector(logger.Session("metricsserver-collector"), conf.Collector.RefreshInterval, conf.Collector.CollectInterval, conf.Collector.IsMetricsPersistencySupported,
-		conf.Collector.SaveInterval, conf.Server.NodeIndex, len(conf.Server.NodeAddrs), conf.Collector.MetricCacheSizePerApp, policyDB, instanceMetricsDB, msClock, metricsChan)
+	coll := collector.NewCollector(logger.Session("metricsserver-collector"), conf.Collector.RefreshInterval, conf.Collector.CollectInterval, conf.Collector.IsMetricsPersistencySupported,
+		conf.Collector.SaveInterval, conf.NodeIndex, len(conf.NodeAddrs), conf.Collector.MetricCacheSizePerApp, policyDB, instanceMetricsDB, msClock, metricsChan)
 
-	var envelopeChannels = make([]chan *loggregator_v2.Envelope, conf.Collector.EnvelopeProcessorCount)
-
-	getAppIDsFunc := func() map[string]bool {
-		appIds, err := policyDB.GetAppIds()
-		if err != nil {
-			logger.Error("failed to get application ids", err)
-			os.Exit(1)
-		}
-		return appIds
+	envelopeChannels := make([]chan *loggregator_v2.Envelope, conf.Collector.EnvelopeProcessorCount)
+	for i := 0; i < conf.Collector.EnvelopeProcessorCount; i++ {
+		envelopeChannels[i] = make(chan *loggregator_v2.Envelope, conf.Collector.EnvelopeChannelSize)
 	}
 
-	envelopeProcessors, err := createEnvelopeProcessors(logger, msClock, conf, envelopeChannels, metricsChan, getAppIDsFunc)
+	envelopeProcessors, err := createEnvelopeProcessors(logger, msClock, conf, envelopeChannels, metricsChan, coll.GetAppIDs)
 	if err != nil {
 		logger.Error("failed to create Envelope Processors", err)
 		os.Exit(1)
 	}
 
 	metricsServer := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
-		logger.Info("starting collector", lager.Data{"NodeIndex": conf.Server.NodeIndex, "NodeAddrs": conf.Server.NodeAddrs})
+		logger.Info("starting collector", lager.Data{"NodeIndex": conf.NodeIndex, "NodeAddrs": conf.NodeAddrs})
 
+		coll.Start()
 		for _, envelopeProcessor := range envelopeProcessors {
 			envelopeProcessor.Start()
 		}
 
-		ms.Start()
-
 		close(ready)
 
 		<-signals
-		ms.Stop()
-
+		for _, envelopeProcessor := range envelopeProcessors {
+			envelopeProcessor.Stop()
+		}
+		coll.Stop()
 		return nil
 	})
 
-	httpServer, err := collector.NewWSServer(logger.Session("http_server"), conf, envelopeChannels, httpStatusCollector)
+	wsServer, err := collector.NewWSServer(logger.Session("ws_server"), conf.Collector.TLS, conf.Collector.WSPort,
+		conf.Collector.WSKeepAliveTime, envelopeChannels, httpStatusCollector)
 	if err != nil {
-		logger.Error("failed to create http server", err)
+		logger.Error("failed to create web socket server", err)
 		os.Exit(1)
 	}
 
@@ -133,8 +129,8 @@ func main() {
 	}
 
 	members := grouper.Members{
-		{"metrics_server", metricsServer},
-		{"http_server", httpServer},
+		{"metric_server", metricsServer},
+		{"ws_server", wsServer},
 		{"health_server", healthServer},
 	}
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
@@ -143,20 +139,19 @@ func main() {
 
 	err = <-monitor.Wait()
 	if err != nil {
-		logger.Error("exited-with-failure", err)
+		logger.Error("exit-with-failure", err)
 		os.Exit(1)
 	}
-	logger.Info("exited")
-
+	logger.Info("exit")
 }
 
 func createEnvelopeProcessors(logger lager.Logger, clock clock.Clock, conf *config.Config, envelopeChan []chan *loggregator_v2.Envelope, metricChan chan<- *models.AppInstanceMetric,
-	getAppIDs func() map[string]bool) ([]*collector.EnvelopeProcessor, error) {
+	getAppIDs func() map[string]bool) ([]collector.EnvelopeProcessor, error) {
 	count := conf.Collector.EnvelopeProcessorCount
-	envelopeProcessors := make([]*collector.EnvelopeProcessor, count)
+	envelopeProcessors := make([]collector.EnvelopeProcessor, count)
 
 	for i := 0; i < count; i++ {
-		envelopeProcessors[i] = collector.NewEnvelopeProcessor(logger, conf.Collector.CollectInterval, clock, conf.Server.NodeIndex, len(conf.Server.NodeAddrs),
+		envelopeProcessors[i] = collector.NewEnvelopeProcessor(logger, conf.Collector.CollectInterval, clock, conf.NodeIndex, len(conf.NodeAddrs),
 			envelopeChan[i], metricChan, getAppIDs)
 	}
 	return envelopeProcessors, nil
