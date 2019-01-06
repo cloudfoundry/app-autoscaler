@@ -15,33 +15,20 @@ import (
 )
 
 const (
-	DefaultLoggingLevel                                = "info"
-	DefaultRefreshInterval               time.Duration = 60 * time.Second
-	DefaultCollectInterval               time.Duration = 30 * time.Second
-	DefaultSaveInterval                  time.Duration = 5 * time.Second
-	DefaultHttpClientTimeout             time.Duration = 5 * time.Second
-	DefaultMetricCacheSizePerApp                       = 1000
-	DefaultIsMetricsPersistencySupported               = true
-	DefaultKeepAliveTime                 time.Duration = 3 * time.Minute
-	DefaultEnvelopeProcessorCount                      = 5
+	DefaultLoggingLevel                  = "info"
+	DefaultHttpClientTimeout             = 5 * time.Second
+	DefaultWSKeepAliveTime               = 1 * time.Minute
+	DefaultWSPort                        = 8082
+	DefaultRefreshInterval               = 60 * time.Second
+	DefaultCollectInterval               = 30 * time.Second
+	DefaultSaveInterval                  = 5 * time.Second
+	DefaultMetricCacheSizePerApp         = 1000
+	DefaultIsMetricsPersistencySupported = true
+	DefaultEnvelopeProcessorCount        = 5
+	DefaultEnvelopeChannelSize           = 1000
+	DefaultMetricChannelSize             = 1000
+	DefaultHealthPort                    = 8081
 )
-
-type ServerConfig struct {
-	Port      int             `yaml:"port"`
-	TLS       models.TLSCerts `yaml:"tls"`
-	NodeAddrs []string        `yaml:"node_addrs"`
-	NodeIndex int             `yaml:"node_index"`
-}
-
-var defaultServerConfig = ServerConfig{
-	Port: 8080,
-}
-var defaultHealthConfig = models.HealthConfig{
-	Port: 8081,
-}
-var defaultLoggingConfig = helpers.LoggingConfig{
-	Level: DefaultLoggingLevel,
-}
 
 type DBConfig struct {
 	PolicyDB          db.DatabaseConfig `yaml:"policy_db"`
@@ -49,42 +36,52 @@ type DBConfig struct {
 }
 
 type CollectorConfig struct {
-	RefreshInterval               time.Duration `yaml:"refresh_interval"`
-	CollectInterval               time.Duration `yaml:"collect_interval"`
-	CollectMethod                 string        `yaml:"collect_method"`
-	SaveInterval                  time.Duration `yaml:"save_interval"`
-	MetricCacheSizePerApp         int           `yaml:"metric_cache_size_per_app"`
-	IsMetricsPersistencySupported bool          `yaml:"metrics_persistency_support_flag"`
-	KeepAliveTime                 time.Duration `yaml:"keep_alive_time"`
-	EnvelopeProcessorCount        int           `yaml:"envelope_processor_count"`
+	WSPort                        int             `yaml:"port"`
+	WSKeepAliveTime               time.Duration   `yaml:"keep_alive_time"`
+	TLS                           models.TLSCerts `yaml:"tls"`
+	RefreshInterval               time.Duration   `yaml:"refresh_interval"`
+	CollectInterval               time.Duration   `yaml:"collect_interval"`
+	SaveInterval                  time.Duration   `yaml:"save_interval"`
+	MetricCacheSizePerApp         int             `yaml:"metric_cache_size_per_app"`
+	IsMetricsPersistencySupported bool            `yaml:"metrics_persistency_support_flag"`
+	EnvelopeProcessorCount        int             `yaml:"envelope_processor_count"`
+	EnvelopeChannelSize           int             `yaml:"envelope_channel_size"`
+	MetricChannelSize             int             `yaml:"metric_channel_size"`
 }
 
 var defaultCollectorConfig = CollectorConfig{
+	WSPort:                        DefaultWSPort,
+	WSKeepAliveTime:               DefaultWSKeepAliveTime,
 	RefreshInterval:               DefaultRefreshInterval,
 	CollectInterval:               DefaultCollectInterval,
 	SaveInterval:                  DefaultSaveInterval,
 	MetricCacheSizePerApp:         DefaultMetricCacheSizePerApp,
 	IsMetricsPersistencySupported: DefaultIsMetricsPersistencySupported,
-	KeepAliveTime:                 DefaultKeepAliveTime,
 	EnvelopeProcessorCount:        DefaultEnvelopeProcessorCount,
+	EnvelopeChannelSize:           DefaultEnvelopeChannelSize,
+	MetricChannelSize:             DefaultMetricChannelSize,
 }
 
 type Config struct {
 	Logging           helpers.LoggingConfig `yaml:"logging"`
-	Server            ServerConfig          `yaml:"server"`
-	Health            models.HealthConfig   `yaml:"health"`
+	HttpClientTimeout time.Duration         `yaml:"http_client_timeout"`
+	NodeAddrs         []string              `yaml:"node_addrs"`
+	NodeIndex         int                   `yaml:"node_index"`
 	DB                DBConfig              `yaml:"db"`
 	Collector         CollectorConfig       `yaml:"collector"`
-	HttpClientTimeout time.Duration         `yaml:"http_client_timeout"`
+	Health            models.HealthConfig   `yaml:"health"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
 	conf := &Config{
-		Logging:           defaultLoggingConfig,
-		Server:            defaultServerConfig,
-		Health:            defaultHealthConfig,
-		Collector:         defaultCollectorConfig,
+		Logging: helpers.LoggingConfig{
+			Level: DefaultLoggingLevel,
+		},
 		HttpClientTimeout: DefaultHttpClientTimeout,
+		Health: models.HealthConfig{
+			Port: DefaultHealthPort,
+		},
+		Collector: defaultCollectorConfig,
 	}
 
 	bytes, err := ioutil.ReadAll(reader)
@@ -102,6 +99,13 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 }
 
 func (c *Config) Validate() error {
+	if c.HttpClientTimeout <= time.Duration(0) {
+		return fmt.Errorf("Configuration error: http_client_timeout is less-equal than 0")
+	}
+
+	if (c.NodeIndex >= len(c.NodeAddrs)) || (c.NodeIndex < 0) {
+		return fmt.Errorf("Configuration error: server.node_index out of range")
+	}
 
 	if c.DB.PolicyDB.URL == "" {
 		return fmt.Errorf("Configuration error: db.policy_db.url is empty")
@@ -109,6 +113,10 @@ func (c *Config) Validate() error {
 
 	if c.DB.InstanceMetricsDB.URL == "" {
 		return fmt.Errorf("Configuration error: db.instance_metrics_db.url is empty")
+	}
+
+	if c.Collector.WSKeepAliveTime == time.Duration(0) {
+		return fmt.Errorf("Configuration error: keep_alive_time is less-equal than 0")
 	}
 
 	if c.Collector.CollectInterval == time.Duration(0) {
@@ -127,22 +135,17 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("Configuration error: invalid collector.metric_cache_size_per_app")
 	}
 
-	if (c.Server.NodeIndex >= len(c.Server.NodeAddrs)) || (c.Server.NodeIndex < 0) {
-		return fmt.Errorf("Configuration error: server.node_index out of range")
-	}
-
-	if c.HttpClientTimeout <= time.Duration(0) {
-		return fmt.Errorf("Configuration error: http_client_timeout is less-equal than 0")
-	}
-
-	if c.Collector.KeepAliveTime <= time.Duration(0) {
-		return fmt.Errorf("Configuration error: keep_alive_time is less-equal than 0")
-	}
-
 	if c.Collector.EnvelopeProcessorCount <= 0 {
 		return fmt.Errorf("Configuration error: envelope_processor_count is less-equal than 0")
 	}
 
-	return nil
+	if c.Collector.EnvelopeChannelSize <= 0 {
+		return fmt.Errorf("Configuration error: envelope_channel_size is less-equal than 0")
+	}
 
+	if c.Collector.MetricChannelSize <= 0 {
+		return fmt.Errorf("Configuration error: metric_channel_size is less-equal than 0")
+	}
+
+	return nil
 }
