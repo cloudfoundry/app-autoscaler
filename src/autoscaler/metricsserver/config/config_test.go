@@ -78,6 +78,12 @@ collector:
   envelope_processor_count: 10
   envelope_channel_size: 500
   metric_channel_size: 500
+server:
+  port: 8888
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/server.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/server.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/ca.crt
 health:
   port: 9999
 `)
@@ -118,6 +124,11 @@ health:
 				Expect(conf.Collector.EnvelopeProcessorCount).To(Equal(10))
 				Expect(conf.Collector.EnvelopeChannelSize).To(Equal(500))
 				Expect(conf.Collector.MetricChannelSize).To(Equal(500))
+
+				Expect(conf.Server.Port).To(Equal(8888))
+				Expect(conf.Server.TLS.KeyFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/server.key"))
+				Expect(conf.Server.TLS.CertFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/server.crt"))
+				Expect(conf.Server.TLS.CACertFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/ca.crt"))
 
 				Expect(conf.Health.Port).To(Equal(9999))
 
@@ -165,6 +176,9 @@ db:
 				Expect(conf.Collector.EnvelopeProcessorCount).To(Equal(DefaultEnvelopeProcessorCount))
 				Expect(conf.Collector.EnvelopeChannelSize).To(Equal(DefaultEnvelopeChannelSize))
 				Expect(conf.Collector.MetricChannelSize).To(Equal(DefaultMetricChannelSize))
+
+				Expect(conf.Server.Port).To(Equal(DefaultHTTPServerPort))
+
 				Expect(conf.Health.Port).To(Equal(DefaultHealthPort))
 
 			})
@@ -225,7 +239,7 @@ db:
 					conf.NodeIndex = -1
 				})
 				It("should error", func() {
-					Expect(err).To(MatchError("Configuration error: server.node_index out of range"))
+					Expect(err).To(MatchError("Configuration error: node_index out of range"))
 				})
 			})
 
@@ -235,7 +249,7 @@ db:
 					conf.NodeAddrs = []string{"address1", "address2"}
 				})
 				It("should error", func() {
-					Expect(err).To(MatchError("Configuration error: server.node_index out of range"))
+					Expect(err).To(MatchError("Configuration error: node_index out of range"))
 				})
 			})
 		})
