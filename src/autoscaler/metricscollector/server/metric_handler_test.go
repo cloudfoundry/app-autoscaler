@@ -23,8 +23,6 @@ var testUrlMetricHistories = "http://metrics_collector_hostname/v1/apps/an-app-i
 var _ = Describe("MetricHandler", func() {
 
 	var (
-		cfc       *fakes.FakeCFClient
-		consumer  *fakes.FakeNoaaConsumer
 		handler   *MetricHandler
 		database  *fakes.FakeInstanceMetricsDB
 		nodeIndex int
@@ -41,8 +39,6 @@ var _ = Describe("MetricHandler", func() {
 	)
 
 	BeforeEach(func() {
-		cfc = &fakes.FakeCFClient{}
-		consumer = &fakes.FakeNoaaConsumer{}
 		nodeIndex = 0
 		nodeAddrs = []string{"localhost:8080"}
 		database = &fakes.FakeInstanceMetricsDB{}
@@ -56,7 +52,7 @@ var _ = Describe("MetricHandler", func() {
 			queryFunc := func(appID string, start int64, end int64, order db.OrderType, labels map[string]string) ([]*models.AppInstanceMetric, bool) {
 				return metrics, cacheHit
 			}
-			handler = NewMetricHandler(logger, nodeIndex, nodeAddrs, cfc, consumer, queryFunc, database)
+			handler = NewMetricHandler(logger, nodeIndex, nodeAddrs, queryFunc, database)
 			handler.GetMetricHistories(resp, req, map[string]string{"appid": "an-app-id", "metrictype": "a-metric-type"})
 		})
 
