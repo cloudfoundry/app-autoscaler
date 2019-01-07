@@ -3,6 +3,7 @@ package config
 import (
 	"autoscaler/db"
 	"autoscaler/helpers"
+	"autoscaler/models"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -21,7 +22,6 @@ const (
 type Config struct {
 	Logging              helpers.LoggingConfig `yaml:"logging"`
 	Server               ServerConfig          `yaml:"server"`
-	MetronAddress        string                `yaml:"metron_address"`
 	LoggregatorConfig    LoggregatorConfig     `yaml:"loggregator"`
 	Db                   DbConfig              `yaml:"db"`
 	CacheTTL             time.Duration         `yaml:"cache_ttl"`
@@ -46,9 +46,8 @@ type LoggingConfig struct {
 }
 
 type LoggregatorConfig struct {
-	CACertFile     string `yaml:"ca_cert"`
-	ClientCertFile string `yaml:"client_cert"`
-	ClientKeyFile  string `yaml:"client_key"`
+	MetronAddress string          `yaml:"metron_address"`
+	TLS           models.TLSCerts `yaml:"tls"`
 }
 
 type DbConfig struct {
@@ -58,9 +57,11 @@ type DbConfig struct {
 func LoadConfig(reader io.Reader) (*Config, error) {
 
 	conf := &Config{
-		Server:               defaultServerConfig,
-		Logging:              defaultLoggingConfig,
-		MetronAddress:        DefaultMetronAddress,
+		Server:  defaultServerConfig,
+		Logging: defaultLoggingConfig,
+		LoggregatorConfig: LoggregatorConfig{
+			MetronAddress: DefaultMetronAddress,
+		},
 		CacheTTL:             DefaultCacheTTL,
 		CacheCleanupInterval: DefaultCacheCleanupInterval,
 		PolicyPollerInterval: DefaultPolicyPollerInterval,
@@ -84,13 +85,13 @@ func (c *Config) Validate() error {
 	if c.Db.PolicyDb.URL == "" {
 		return fmt.Errorf("Configuration error: Policy DB url is empty")
 	}
-	if c.LoggregatorConfig.CACertFile == "" {
+	if c.LoggregatorConfig.TLS.CACertFile == "" {
 		return fmt.Errorf("Configuration error: Loggregator CACert is empty")
 	}
-	if c.LoggregatorConfig.ClientCertFile == "" {
+	if c.LoggregatorConfig.TLS.CertFile == "" {
 		return fmt.Errorf("Configuration error: Loggregator ClientCert is empty")
 	}
-	if c.LoggregatorConfig.ClientKeyFile == "" {
+	if c.LoggregatorConfig.TLS.KeyFile == "" {
 		return fmt.Errorf("Configuration error: Loggregator ClientKey is empty")
 	}
 	return nil

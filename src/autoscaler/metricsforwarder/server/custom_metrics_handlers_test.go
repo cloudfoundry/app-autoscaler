@@ -1,7 +1,7 @@
 package server_test
 
 import (
-	"autoscaler/metricsforwarder/fakes"
+	"autoscaler/fakes"
 	. "autoscaler/metricsforwarder/server"
 	"autoscaler/models"
 	"bytes"
