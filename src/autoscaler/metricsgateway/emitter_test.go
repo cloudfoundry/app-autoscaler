@@ -17,14 +17,12 @@ import (
 var _ = Describe("Emitter", func() {
 	var (
 		logger                     *lagertest.TestLogger
-		metricServerAddress        string
 		envelopChan                chan *loggregator_v2.Envelope
 		wsMessageChan              chan int
 		bufferSize                 int64 = 500
 		fakeWSHelper               *fakes.FakeWSHelper
-		emitter                    *EnvelopeEmitter
+		emitter                    Emitter
 		testAppId                  = "test-app-id"
-		testHandshakeTimeout       = 5 * time.Second
 		fclock                     *fakeclock.FakeClock
 		verifyWSConnectionInterval = 5 * time.Second
 
@@ -76,7 +74,7 @@ var _ = Describe("Emitter", func() {
 	})
 	Context("Start", func() {
 		JustBeforeEach(func() {
-			emitter = NewEnvelopeEmitter(logger, bufferSize, metricServerAddress, nil, testHandshakeTimeout, fclock, verifyWSConnectionInterval, fakeWSHelper)
+			emitter = NewEnvelopeEmitter(logger, bufferSize, fclock, verifyWSConnectionInterval, fakeWSHelper)
 			emitter.Start()
 			emitter.Accept(&testEnvelope)
 		})
@@ -94,7 +92,7 @@ var _ = Describe("Emitter", func() {
 
 	Context("Stop", func() {
 		BeforeEach(func() {
-			emitter = NewEnvelopeEmitter(logger, bufferSize, metricServerAddress, nil, testHandshakeTimeout, fclock, verifyWSConnectionInterval, fakeWSHelper)
+			emitter = NewEnvelopeEmitter(logger, bufferSize, fclock, verifyWSConnectionInterval, fakeWSHelper)
 			emitter.Start()
 			Eventually(logger.Buffer).Should(Say("started"))
 			emitter.Accept(&testEnvelope)
