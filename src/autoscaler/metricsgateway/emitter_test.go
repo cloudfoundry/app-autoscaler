@@ -19,7 +19,7 @@ var _ = Describe("Emitter", func() {
 		logger                     *lagertest.TestLogger
 		envelopChan                chan *loggregator_v2.Envelope
 		wsMessageChan              chan int
-		bufferSize                 int64 = 500
+		bufferSize                 int = 500
 		fakeWSHelper               *fakes.FakeWSHelper
 		emitter                    Emitter
 		testAppId                  = "test-app-id"
