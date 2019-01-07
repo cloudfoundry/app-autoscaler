@@ -96,14 +96,14 @@ health:
 				Expect(conf.Emitter.BufferSize).To(Equal(800))
 				Expect(conf.Emitter.HandshakeTimeout).To(Equal(100 * time.Millisecond))
 				Expect(conf.Emitter.KeepAliveInterval).To(Equal(10 * time.Second))
-				Expect(conf.Emitter.TLS).To(Equal(models.TLSCerts{
+				Expect(conf.Emitter.TLS).To(Equal(&models.TLSCerts{
 					KeyFile:    "metrc_server_client.cert",
 					CertFile:   "metrc_server_client.key",
 					CACertFile: "autoscaler_ca.cert",
 				}))
 				Expect(conf.Nozzle.RLPAddr).To(Equal("wss://localhost:9999"))
 				Expect(conf.Nozzle.ShardID).To(Equal("autoscaler"))
-				Expect(conf.Nozzle.TLS).To(Equal(models.TLSCerts{
+				Expect(conf.Nozzle.TLS).To(Equal(&models.TLSCerts{
 					KeyFile:    "loggregator_client.cert",
 					CertFile:   "loggregator_client.key",
 					CACertFile: "autoscaler_ca.cert",
@@ -719,7 +719,7 @@ health:
 					BufferSize:        500,
 					KeepAliveInterval: 1 * time.Second,
 					HandshakeTimeout:  1 * time.Second,
-					TLS: models.TLSCerts{
+					TLS: &models.TLSCerts{
 						KeyFile:    "metrc_server_client.cert",
 						CertFile:   "metrc_server_client.key",
 						CACertFile: "autoscaler_ca.cert",
@@ -728,7 +728,7 @@ health:
 				Nozzle: NozzleConfig{
 					RLPAddr: "wss://localhost:9999",
 					ShardID: DefaultShardID,
-					TLS: models.TLSCerts{
+					TLS: &models.TLSCerts{
 						KeyFile:    "loggregator_client.cert",
 						CertFile:   "loggregator_client.key",
 						CACertFile: "autoscaler_ca.cert",
