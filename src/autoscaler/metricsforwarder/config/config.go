@@ -27,6 +27,7 @@ type Config struct {
 	CacheTTL             time.Duration         `yaml:"cache_ttl"`
 	CacheCleanupInterval time.Duration         `yaml:"cache_cleanup_interval"`
 	PolicyPollerInterval time.Duration         `yaml:"policy_poller_interval"`
+	Health               models.HealthConfig   `yaml:"health"`
 }
 
 type ServerConfig struct {
@@ -35,6 +36,10 @@ type ServerConfig struct {
 
 var defaultServerConfig = ServerConfig{
 	Port: 6110,
+}
+
+var defaultHealthConfig = models.HealthConfig{
+	Port: 8081,
 }
 
 var defaultLoggingConfig = helpers.LoggingConfig{
@@ -62,6 +67,7 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		LoggregatorConfig: LoggregatorConfig{
 			MetronAddress: DefaultMetronAddress,
 		},
+		Health:               defaultHealthConfig,
 		CacheTTL:             DefaultCacheTTL,
 		CacheCleanupInterval: DefaultCacheCleanupInterval,
 		PolicyPollerInterval: DefaultPolicyPollerInterval,

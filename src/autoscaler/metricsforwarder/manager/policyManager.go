@@ -73,7 +73,6 @@ func (pm *PolicyManager) startPolicyRetrieve() {
 		case <-pm.doneChan:
 			return
 		case <-tick.C():
-
 		}
 	}
 }
@@ -104,7 +103,7 @@ func (pm *PolicyManager) RefreshAllowedMetricCache(policies map[string]*models.A
 	allowedMetricMap := pm.allowedMetricCache.Items()
 	//Iterating over the cache and replace the allowed metrics for existing policy
 	for applicationId := range allowedMetricMap {
-		if policy, ok := pm.policyMap[applicationId]; ok {
+		if policy, ok := policies[applicationId]; ok {
 			scalingPolicy := policy.ScalingPolicy
 			for _, metrictype := range scalingPolicy.ScalingRules {
 				allowedMetricTypeSet[metrictype.MetricType] = struct{}{}
