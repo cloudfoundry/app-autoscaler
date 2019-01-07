@@ -32,8 +32,6 @@ func TestServer(t *testing.T) {
 var _ = BeforeSuite(func() {
 
 	port := 1111 + GinkgoParallelNode()
-	cfc := &fakes.FakeCFClient{}
-	consumer := &fakes.FakeNoaaConsumer{}
 	conf := &config.Config{
 		Server: config.ServerConfig{
 			Port:      port,
@@ -46,7 +44,7 @@ var _ = BeforeSuite(func() {
 		return nil, false
 	}
 	httpStatusCollector := &fakes.FakeHTTPStatusCollector{}
-	httpServer, err := server.NewServer(lager.NewLogger("test"), conf, cfc, consumer, queryFunc, database, httpStatusCollector)
+	httpServer, err := server.NewServer(lager.NewLogger("test"), conf, queryFunc, database, httpStatusCollector)
 	Expect(err).NotTo(HaveOccurred())
 
 	serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(port))

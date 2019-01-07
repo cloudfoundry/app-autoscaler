@@ -1,11 +1,9 @@
 package server
 
 import (
-	"autoscaler/cf"
 	"autoscaler/db"
 	"autoscaler/helpers"
 	"autoscaler/metricscollector/collector"
-	"autoscaler/metricscollector/noaa"
 	"autoscaler/models"
 
 	"code.cloudfoundry.org/cfhttp/handlers"
@@ -19,24 +17,20 @@ import (
 )
 
 type MetricHandler struct {
-	nodeIndex    int
-	nodeAdds     []string
-	cfClient     cf.CFClient
-	logger       lager.Logger
-	noaaConsumer noaa.NoaaConsumer
-	queryFunc    collector.MetricQueryFunc
-	database     db.InstanceMetricsDB
+	nodeIndex int
+	nodeAdds  []string
+	logger    lager.Logger
+	queryFunc collector.MetricQueryFunc
+	database  db.InstanceMetricsDB
 }
 
-func NewMetricHandler(logger lager.Logger, nodeIndex int, nodeAdds []string, cfc cf.CFClient, consumer noaa.NoaaConsumer, query collector.MetricQueryFunc, database db.InstanceMetricsDB) *MetricHandler {
+func NewMetricHandler(logger lager.Logger, nodeIndex int, nodeAdds []string, query collector.MetricQueryFunc, database db.InstanceMetricsDB) *MetricHandler {
 	return &MetricHandler{
-		nodeIndex:    nodeIndex,
-		nodeAdds:     nodeAdds,
-		cfClient:     cfc,
-		logger:       logger,
-		noaaConsumer: consumer,
-		queryFunc:    query,
-		database:     database,
+		nodeIndex: nodeIndex,
+		nodeAdds:  nodeAdds,
+		logger:    logger,
+		queryFunc: query,
+		database:  database,
 	}
 }
 
