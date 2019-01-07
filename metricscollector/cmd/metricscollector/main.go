@@ -126,7 +126,7 @@ func main() {
 		return nil
 	})
 
-	httpServer, err := server.NewServer(logger.Session("http_server"), conf, mc.QueryMetricsFromCache, instanceMetricsDB, httpStatusCollector)
+	httpServer, err := server.NewServer(logger.Session("http_server"), &conf.Server, mc.QueryMetricsFromCache, instanceMetricsDB, httpStatusCollector)
 	if err != nil {
 		logger.Error("failed to create http server", err)
 		os.Exit(1)
