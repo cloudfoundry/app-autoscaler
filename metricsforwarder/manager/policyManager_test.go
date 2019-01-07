@@ -123,7 +123,6 @@ var _ = Describe("PolicyManager", func() {
 				clock.Increment(1 * testPolicyPollerInterval)
 				Eventually(database.RetrievePoliciesCallCount).Should(Equal(2))
 
-				Expect(policyManager.RefreshAllowedMetricCache(policyMap)).ShouldNot(HaveOccurred())
 				res, found := allowedMetricCache.Get(testAppId)
 				maps := res.(map[string]struct{})
 
@@ -132,7 +131,6 @@ var _ = Describe("PolicyManager", func() {
 				Expect(maps).ShouldNot(HaveKey("queuelength"))
 			})
 		})
-
 	})
 
 	Context("Stop", func() {

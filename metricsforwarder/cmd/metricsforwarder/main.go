@@ -3,6 +3,7 @@ package main
 import (
 	"autoscaler/db"
 	"autoscaler/db/sqldb"
+	"autoscaler/healthendpoint"
 	helpers "autoscaler/helpers"
 	"autoscaler/metricsforwarder/config"
 	"autoscaler/metricsforwarder/server"
@@ -13,6 +14,7 @@ import (
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
 	cache "github.com/patrickmn/go-cache"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
@@ -60,10 +62,17 @@ func main() {
 	}
 	defer policyDB.Close()
 
+	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "metricsforwarder")
+	promRegistry := prometheus.NewRegistry()
+	healthendpoint.RegisterCollectors(promRegistry, []prometheus.Collector{
+		healthendpoint.NewDatabaseStatusCollector("autoscaler", "metricsforwarder", "policyDB", policyDB),
+		httpStatusCollector,
+	}, true, logger.Session("metricsforwarder-prometheus"))
+
 	credentialCache := cache.New(conf.CacheTTL, conf.CacheCleanupInterval)
 	allowedMetricCache := cache.New(conf.CacheTTL, conf.CacheCleanupInterval)
 
-	httpServer, err := server.NewServer(logger.Session("custom_metrics_server"), conf, policyDB, *credentialCache, *allowedMetricCache)
+	httpServer, err := server.NewServer(logger.Session("custom_metrics_server"), conf, policyDB, *credentialCache, *allowedMetricCache, httpStatusCollector)
 	if err != nil {
 		logger.Error("failed-to-create-custommetrics-server", err)
 		os.Exit(1)
@@ -81,9 +90,16 @@ func main() {
 		return nil
 	})
 
+	healthServer, err := healthendpoint.NewServer(logger.Session("health-server"), conf.Health.Port, promRegistry)
+	if err != nil {
+		logger.Error("failed to create health server", err)
+		os.Exit(1)
+	}
+
 	members := grouper.Members{
 		{"cacheUpdater", cacheUpdater},
 		{"custom_metrics_server", httpServer},
+		{"health_server", healthServer},
 	}
 
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
