@@ -4,7 +4,6 @@ import (
 	"autoscaler/fakes"
 	. "autoscaler/metricsforwarder/manager"
 	"autoscaler/models"
-	"errors"
 	"time"
 
 	"code.cloudfoundry.org/clock/fakeclock"
@@ -78,34 +77,6 @@ var _ = Describe("PolicyManager", func() {
 				Eventually(database.RetrievePoliciesCallCount).Should(Equal(2))
 				clock.Increment(1 * testPolicyPollerInterval)
 				Eventually(database.RetrievePoliciesCallCount).Should(Equal(3))
-				Eventually(policyManager.GetPolicies).Should(Equal(map[string]*models.AppPolicy{
-					testAppId: &models.AppPolicy{
-						AppId: testAppId,
-						ScalingPolicy: &models.ScalingPolicy{
-							InstanceMax: 5,
-							InstanceMin: 1,
-							ScalingRules: []*models.ScalingRule{{
-								MetricType:            "test-metric-name",
-								BreachDurationSeconds: 300,
-								CoolDownSeconds:       300,
-								Threshold:             30,
-								Operator:              "<",
-								Adjustment:            "-1",
-							}}}}},
-				))
-			})
-
-			Context("when retrieving policies from database fails", func() {
-				BeforeEach(func() {
-					database.RetrievePoliciesStub = func() ([]*models.PolicyJson, error) {
-						return nil, errors.New("error when retrieve policies from database")
-					}
-				})
-				It("should not call the consumer as there is no trigger", func() {
-					clock.Increment(2 * testPolicyPollerInterval)
-					policyMap := policyManager.GetPolicies()
-					Expect(len(policyMap)).To(Equal(0))
-				})
 			})
 		})
 	})

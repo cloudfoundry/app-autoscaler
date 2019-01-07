@@ -12,7 +12,6 @@ import (
 )
 
 type Consumer func(map[string]*models.AppPolicy, chan *models.AppMonitor)
-type GetPoliciesFunc func() map[string]*models.AppPolicy
 
 type PolicyManager struct {
 	logger             lager.Logger
@@ -39,11 +38,6 @@ func NewPolicyManager(logger lager.Logger, clock clock.Clock, interval time.Dura
 		doneChan:           make(chan bool),
 		policyMap:          make(map[string]*models.AppPolicy),
 	}
-}
-func (pm *PolicyManager) GetPolicies() map[string]*models.AppPolicy {
-	pm.pLock.RLock()
-	defer pm.pLock.RUnlock()
-	return pm.policyMap
 }
 func (pm *PolicyManager) Start() {
 	go pm.startPolicyRetrieve()

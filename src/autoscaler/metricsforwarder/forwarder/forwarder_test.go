@@ -40,11 +40,13 @@ var _ = Describe("MetricForwarder", func() {
 		Expect(err).ToNot(HaveOccurred())
 		err = grpcIngressTestServer.Start()
 		Expect(err).NotTo(HaveOccurred())
-
 		loggregatorConfig := config.LoggregatorConfig{
-			CACertFile:     filepath.Join(testCertDir, "loggregator-ca.crt"),
-			ClientCertFile: filepath.Join(testCertDir, "metron.crt"),
-			ClientKeyFile:  filepath.Join(testCertDir, "metron.key"),
+			MetronAddress: grpcIngressTestServer.GetAddr(),
+			TLS: models.TLSCerts{
+				KeyFile:    filepath.Join(testCertDir, "metron.key"),
+				CertFile:   filepath.Join(testCertDir, "metron.crt"),
+				CACertFile: filepath.Join(testCertDir, "loggregator-ca.crt"),
+			},
 		}
 		serverConfig := config.ServerConfig{
 			Port: 10000 + GinkgoParallelNode(),
@@ -56,7 +58,6 @@ var _ = Describe("MetricForwarder", func() {
 
 		conf := &config.Config{
 			Server:            serverConfig,
-			MetronAddress:     grpcIngressTestServer.GetAddr(),
 			Logging:           loggerConfig,
 			LoggregatorConfig: loggregatorConfig,
 		}
