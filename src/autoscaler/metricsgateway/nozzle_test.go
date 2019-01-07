@@ -18,10 +18,10 @@ var _ = Describe("Nozzle", func() {
 
 	var (
 		testCertDir                     = "../../../test-certs"
-		serverCrtPath                   = filepath.Join(testCertDir, "metron.crt")
-		serverKeyPath                   = filepath.Join(testCertDir, "metron.key")
-		clientCrtPath                   = filepath.Join(testCertDir, "metron_client.crt")
-		clientKeyPath                   = filepath.Join(testCertDir, "metron_client.key")
+		serverCrtPath                   = filepath.Join(testCertDir, "reverselogproxy.crt")
+		serverKeyPath                   = filepath.Join(testCertDir, "reverselogproxy.key")
+		clientCrtPath                   = filepath.Join(testCertDir, "reverselogproxy_client.crt")
+		clientKeyPath                   = filepath.Join(testCertDir, "reverselogproxy_client.key")
 		caPath                          = filepath.Join(testCertDir, "autoscaler-ca.crt")
 		fakeLoggregator                 FakeEventProducer
 		testAppId                       = "test-app-id"
@@ -120,7 +120,7 @@ var _ = Describe("Nozzle", func() {
 			fakeLoggregator, err := NewFakeEventProducer(serverCrtPath, serverKeyPath, caPath)
 			Expect(err).NotTo(HaveOccurred())
 			fakeLoggregator.Start()
-			tlsConf, err = NewClientMutualTLSConfig(clientCrtPath, clientKeyPath, caPath, "metron")
+			tlsConf, err = NewClientMutualTLSConfig(clientCrtPath, clientKeyPath, caPath, "reverselogproxy")
 			Expect(err).NotTo(HaveOccurred())
 			rlpAddr = fakeLoggregator.GetAddr()
 			fakeLoggregator.SetEnvelops(envelopes)
@@ -201,7 +201,7 @@ var _ = Describe("Nozzle", func() {
 			fakeLoggregator, err := NewFakeEventProducer(serverCrtPath, serverKeyPath, caPath)
 			Expect(err).NotTo(HaveOccurred())
 			fakeLoggregator.Start()
-			tlsConf, err = NewClientMutualTLSConfig(clientCrtPath, clientKeyPath, caPath, "metron")
+			tlsConf, err = NewClientMutualTLSConfig(clientCrtPath, clientKeyPath, caPath, "reverselogproxy")
 			Expect(err).NotTo(HaveOccurred())
 			rlpAddr = fakeLoggregator.GetAddr()
 			fakeLoggregator.SetEnvelops(envelopes)

@@ -14,6 +14,7 @@ type WebsocketHandler struct {
 	pingPongChan chan int
 	keepAlive    time.Duration
 	lock         *sync.Mutex
+	conLock      *sync.Mutex
 	wsConn       *websocket.Conn
 }
 
@@ -23,9 +24,12 @@ func NewWebsocketHandler(m chan []byte, pingPongChan chan int, keepAlive time.Du
 		pingPongChan: pingPongChan,
 		keepAlive:    keepAlive,
 		lock:         &sync.Mutex{},
+		conLock:      &sync.Mutex{},
 	}
 }
 func (h *WebsocketHandler) CloseWSConnection() {
+	h.conLock.Lock()
+	defer h.conLock.Unlock()
 	h.wsConn.Close()
 }
 func (h *WebsocketHandler) ServeWebsocket(rw http.ResponseWriter, r *http.Request) {
@@ -42,7 +46,9 @@ func (h *WebsocketHandler) ServeWebsocket(rw http.ResponseWriter, r *http.Reques
 		log.Printf("websocket handler: Not a websocket handshake: %s", err)
 		return
 	}
+	h.conLock.Lock()
 	h.wsConn = ws
+	h.conLock.Unlock()
 	defer ws.Close()
 
 	closeCode, closeMessage := h.runWebsocketUntilClosed(ws)
@@ -82,14 +88,6 @@ func (h *WebsocketHandler) runWebsocketUntilClosed(ws *websocket.Conn) (closeCod
 			closeCode = websocket.ClosePolicyViolation
 			closeMessage = "Client did not respond to ping before keep-alive timeout expired."
 			return
-			// case message, ok := <-h.messages:
-			// 	if !ok {
-			// 		return
-			// 	}
-			// 	err := ws.WriteMessage(websocket.BinaryMessage, message)
-			// 	if err != nil {
-			// 		return
-			// 	}
 		}
 	}
 }
