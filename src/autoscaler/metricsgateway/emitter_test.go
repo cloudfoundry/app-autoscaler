@@ -16,9 +16,10 @@ import (
 
 var _ = Describe("Emitter", func() {
 	var (
-		logger                     *lagertest.TestLogger
-		envelopChan                chan *loggregator_v2.Envelope
-		wsMessageChan              chan int
+		logger        *lagertest.TestLogger
+		envelopChan   chan *loggregator_v2.Envelope = make(chan *loggregator_v2.Envelope, 10)
+		wsMessageChan chan int                      = make(chan int, 10)
+
 		bufferSize                 int = 500
 		fakeWSHelper               *fakes.FakeWSHelper
 		emitter                    Emitter
@@ -55,8 +56,6 @@ var _ = Describe("Emitter", func() {
 	BeforeEach(func() {
 		logger = lagertest.NewTestLogger("emitter")
 		fclock = fakeclock.NewFakeClock(time.Now())
-		envelopChan = make(chan *loggregator_v2.Envelope, 10)
-		wsMessageChan = make(chan int, 10)
 		fakeWSHelper = &fakes.FakeWSHelper{}
 		fakeWSHelper.WriteStub = func(envelope *loggregator_v2.Envelope) error {
 			envelopChan <- envelope
@@ -100,10 +99,10 @@ var _ = Describe("Emitter", func() {
 			emitter.Stop()
 			By("should close ws connection")
 			Eventually(wsMessageChan).Should(Receive(Equal(websocket.CloseMessage)))
-
-			emitter.Accept(&testEnvelope)
+			Eventually(envelopChan).ShouldNot(Receive())
 		})
 		It("should stop emitting envelope", func() {
+			emitter.Accept(&testEnvelope)
 			Consistently(envelopChan).ShouldNot(Receive())
 		})
 	})
