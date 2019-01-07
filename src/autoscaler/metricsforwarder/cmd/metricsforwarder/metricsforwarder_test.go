@@ -132,4 +132,29 @@ var _ = Describe("Metricsforwarder", func() {
 		})
 
 	})
+
+	Describe("when Health server is ready to serve RESTful API", func() {
+		BeforeEach(func() {
+			runner.Start()
+
+		})
+		Context("when a request to query health comes", func() {
+			It("returns with a 200", func() {
+				rsp, err := healthHttpClient.Get(fmt.Sprintf("http://127.0.0.1:%d/health", healthport))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+				raw, _ := ioutil.ReadAll(rsp.Body)
+				healthData := string(raw)
+				Expect(healthData).To(ContainSubstring("autoscaler_metricsforwarder_concurrent_http_request"))
+				Expect(healthData).To(ContainSubstring("autoscaler_metricsforwarder_policyDB"))
+				Expect(healthData).To(ContainSubstring("go_goroutines"))
+				Expect(healthData).To(ContainSubstring("go_memstats_alloc_bytes"))
+				rsp.Body.Close()
+
+			})
+		})
+		AfterEach(func() {
+			runner.KillWithFire()
+		})
+	})
 })

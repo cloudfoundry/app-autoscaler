@@ -63,7 +63,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	policyDB = &fakes.FakePolicyDB{}
 	credentialCache = *cache.New(10*time.Minute, -1)
 	allowedMetricCache = *cache.New(10*time.Minute, -1)
-	httpServer, err := NewServer(lager.NewLogger("test"), conf, policyDB, credentialCache, allowedMetricCache)
+	httpStatusCollector := &fakes.FakeHTTPStatusCollector{}
+	httpServer, err := NewServer(lager.NewLogger("test"), conf, policyDB, credentialCache, allowedMetricCache, httpStatusCollector)
 	Expect(err).NotTo(HaveOccurred())
 	serverUrl = fmt.Sprintf("http://127.0.0.1:%d", conf.Server.Port)
 	serverProcess = ginkgomon.Invoke(httpServer)
