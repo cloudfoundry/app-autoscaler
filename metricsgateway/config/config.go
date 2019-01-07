@@ -32,17 +32,16 @@ type DispatcherConfig struct {
 }
 
 type NozzleConfig struct {
-	// LoggregatorServerName string          `yaml:"loggregator_server_name"`
-	TLS     models.TLSCerts `yaml:"tls"`
-	RLPAddr string          `yaml:"rlp_addr"`
-	ShardID string          `yaml:"shard_id"`
+	TLS     *models.TLSCerts `yaml:"tls"`
+	RLPAddr string           `yaml:"rlp_addr"`
+	ShardID string           `yaml:"shard_id"`
 }
 
 type EmitterConfig struct {
-	TLS               models.TLSCerts `yaml:"tls"`
-	BufferSize        int             `yaml:"buffer_size"`
-	KeepAliveInterval time.Duration   `yaml:"keep_alive_interval"`
-	HandshakeTimeout  time.Duration   `yaml:"handshake_timeout"`
+	TLS               *models.TLSCerts `yaml:"tls"`
+	BufferSize        int              `yaml:"buffer_size"`
+	KeepAliveInterval time.Duration    `yaml:"keep_alive_interval"`
+	HandshakeTimeout  time.Duration    `yaml:"handshake_timeout"`
 }
 
 type Config struct {

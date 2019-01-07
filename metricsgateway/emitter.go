@@ -20,7 +20,7 @@ type Emitter interface {
 type EnvelopeEmitter struct {
 	logger            lager.Logger
 	envelopChan       chan *loggregator_v2.Envelope
-	bufferSize        int64
+	bufferSize        int
 	doneChan          chan bool
 	keepAliveInterval time.Duration
 	eclock            clock.Clock
@@ -28,7 +28,7 @@ type EnvelopeEmitter struct {
 	wsHelper          helpers.WSHelper
 }
 
-func NewEnvelopeEmitter(logger lager.Logger, bufferSize int64, eclock clock.Clock, keepAliveInterval time.Duration, wsHelper helpers.WSHelper) Emitter {
+func NewEnvelopeEmitter(logger lager.Logger, bufferSize int, eclock clock.Clock, keepAliveInterval time.Duration, wsHelper helpers.WSHelper) Emitter {
 	return &EnvelopeEmitter{
 		logger:            logger.Session("EnvelopeEmitter"),
 		envelopChan:       make(chan *loggregator_v2.Envelope, bufferSize),
