@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"autoscaler/db"
+	"autoscaler/healthendpoint"
 	"autoscaler/metricsforwarder/config"
 	"autoscaler/metricsforwarder/forwarder"
 	"autoscaler/routes"
@@ -24,7 +25,7 @@ func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vh(w, r, vars)
 }
 
-func NewServer(logger lager.Logger, conf *config.Config, policyDB db.PolicyDB, credentialCache cache.Cache, allowedMetricCache cache.Cache) (ifrit.Runner, error) {
+func NewServer(logger lager.Logger, conf *config.Config, policyDB db.PolicyDB, credentialCache cache.Cache, allowedMetricCache cache.Cache, httpStatusCollector healthendpoint.HTTPStatusCollector) (ifrit.Runner, error) {
 
 	metricForwarder, err := forwarder.NewMetricForwarder(logger, conf)
 	if err != nil {
@@ -34,7 +35,10 @@ func NewServer(logger lager.Logger, conf *config.Config, policyDB db.PolicyDB, c
 
 	mh := NewCustomMetricsHandler(logger, metricForwarder, policyDB, credentialCache, allowedMetricCache, conf.CacheTTL)
 
+	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(httpStatusCollector)
+
 	r := routes.MetricsForwarderRoutes()
+	r.Use(httpStatusCollectMiddleware.Collect)
 	r.Get(routes.PostCustomMetricsRouteName).Handler(VarsFunc(mh.PublishMetrics))
 
 	addr := fmt.Sprintf("0.0.0.0:%d", conf.Server.Port)

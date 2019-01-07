@@ -14,3 +14,5 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
+health:
+  port: 8081
