@@ -14,14 +14,20 @@ type FakeEmitter struct {
 	acceptArgsForCall []struct {
 		envelope *loggregator_v2.Envelope
 	}
-	EmitStub        func(*loggregator_v2.Envelope) error
+	EmitStub        func(envelope *loggregator_v2.Envelope) error
 	emitMutex       sync.RWMutex
 	emitArgsForCall []struct {
-		arg1 *loggregator_v2.Envelope
+		envelope *loggregator_v2.Envelope
 	}
 	emitReturns struct {
 		result1 error
 	}
+	StartStub        func()
+	startMutex       sync.RWMutex
+	startArgsForCall []struct{}
+	StopStub         func()
+	stopMutex        sync.RWMutex
+	stopArgsForCall  []struct{}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -50,15 +56,15 @@ func (fake *FakeEmitter) AcceptArgsForCall(i int) *loggregator_v2.Envelope {
 	return fake.acceptArgsForCall[i].envelope
 }
 
-func (fake *FakeEmitter) Emit(arg1 *loggregator_v2.Envelope) error {
+func (fake *FakeEmitter) Emit(envelope *loggregator_v2.Envelope) error {
 	fake.emitMutex.Lock()
 	fake.emitArgsForCall = append(fake.emitArgsForCall, struct {
-		arg1 *loggregator_v2.Envelope
-	}{arg1})
-	fake.recordInvocation("Emit", []interface{}{arg1})
+		envelope *loggregator_v2.Envelope
+	}{envelope})
+	fake.recordInvocation("Emit", []interface{}{envelope})
 	fake.emitMutex.Unlock()
 	if fake.EmitStub != nil {
-		return fake.EmitStub(arg1)
+		return fake.EmitStub(envelope)
 	}
 	return fake.emitReturns.result1
 }
@@ -72,7 +78,7 @@ func (fake *FakeEmitter) EmitCallCount() int {
 func (fake *FakeEmitter) EmitArgsForCall(i int) *loggregator_v2.Envelope {
 	fake.emitMutex.RLock()
 	defer fake.emitMutex.RUnlock()
-	return fake.emitArgsForCall[i].arg1
+	return fake.emitArgsForCall[i].envelope
 }
 
 func (fake *FakeEmitter) EmitReturns(result1 error) {
@@ -82,6 +88,38 @@ func (fake *FakeEmitter) EmitReturns(result1 error) {
 	}{result1}
 }
 
+func (fake *FakeEmitter) Start() {
+	fake.startMutex.Lock()
+	fake.startArgsForCall = append(fake.startArgsForCall, struct{}{})
+	fake.recordInvocation("Start", []interface{}{})
+	fake.startMutex.Unlock()
+	if fake.StartStub != nil {
+		fake.StartStub()
+	}
+}
+
+func (fake *FakeEmitter) StartCallCount() int {
+	fake.startMutex.RLock()
+	defer fake.startMutex.RUnlock()
+	return len(fake.startArgsForCall)
+}
+
+func (fake *FakeEmitter) Stop() {
+	fake.stopMutex.Lock()
+	fake.stopArgsForCall = append(fake.stopArgsForCall, struct{}{})
+	fake.recordInvocation("Stop", []interface{}{})
+	fake.stopMutex.Unlock()
+	if fake.StopStub != nil {
+		fake.StopStub()
+	}
+}
+
+func (fake *FakeEmitter) StopCallCount() int {
+	fake.stopMutex.RLock()
+	defer fake.stopMutex.RUnlock()
+	return len(fake.stopArgsForCall)
+}
+
 func (fake *FakeEmitter) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -89,6 +127,10 @@ func (fake *FakeEmitter) Invocations() map[string][][]interface{} {
 	defer fake.acceptMutex.RUnlock()
 	fake.emitMutex.RLock()
 	defer fake.emitMutex.RUnlock()
+	fake.startMutex.RLock()
+	defer fake.startMutex.RUnlock()
+	fake.stopMutex.RLock()
+	defer fake.stopMutex.RUnlock()
 	return fake.invocations
 }
 
