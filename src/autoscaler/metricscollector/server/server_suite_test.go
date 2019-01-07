@@ -32,12 +32,10 @@ func TestServer(t *testing.T) {
 var _ = BeforeSuite(func() {
 
 	port := 1111 + GinkgoParallelNode()
-	conf := &config.Config{
-		Server: config.ServerConfig{
-			Port:      port,
-			NodeAddrs: []string{fmt.Sprintf("%s:%d", "localhost", port)},
-			NodeIndex: 0,
-		},
+	conf := &config.ServerConfig{
+		Port:      port,
+		NodeAddrs: []string{fmt.Sprintf("%s:%d", "localhost", port)},
+		NodeIndex: 0,
 	}
 	database := &fakes.FakeInstanceMetricsDB{}
 	queryFunc := func(appID string, start int64, end int64, order db.OrderType, labels map[string]string) ([]*models.AppInstanceMetric, bool) {
