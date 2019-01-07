@@ -1,7 +1,6 @@
 package metricsgateway
 
 import (
-	"crypto/tls"
 	"time"
 
 	"code.cloudfoundry.org/clock"
@@ -13,32 +12,30 @@ import (
 
 type Emitter interface {
 	Accept(envelope *loggregator_v2.Envelope)
-	Emit(*loggregator_v2.Envelope) error
+	Emit(envelope *loggregator_v2.Envelope) error
+	Start()
+	Stop()
 }
 
 type EnvelopeEmitter struct {
-	logger               lager.Logger
-	metricsServerAddress string
-	handshakeTimeout     time.Duration
-	envelopChan          chan *loggregator_v2.Envelope
-	bufferSize           int64
-	doneChan             chan bool
-	keepAliveInterval    time.Duration
-	eclock               clock.Clock
-	ticker               clock.Ticker
-	wsHelper             helpers.WSHelper
+	logger            lager.Logger
+	envelopChan       chan *loggregator_v2.Envelope
+	bufferSize        int64
+	doneChan          chan bool
+	keepAliveInterval time.Duration
+	eclock            clock.Clock
+	ticker            clock.Ticker
+	wsHelper          helpers.WSHelper
 }
 
-func NewEnvelopeEmitter(logger lager.Logger, bufferSize int64, metricsServerAddress string, tlsConfig *tls.Config, handshakeTimeout time.Duration, eclock clock.Clock, keepAliveInterval time.Duration, wsHelper helpers.WSHelper) *EnvelopeEmitter {
+func NewEnvelopeEmitter(logger lager.Logger, bufferSize int64, eclock clock.Clock, keepAliveInterval time.Duration, wsHelper helpers.WSHelper) Emitter {
 	return &EnvelopeEmitter{
-		logger:               logger.Session("EnvelopeEmitter"),
-		metricsServerAddress: metricsServerAddress,
-		handshakeTimeout:     handshakeTimeout,
-		envelopChan:          make(chan *loggregator_v2.Envelope, bufferSize),
-		doneChan:             make(chan bool),
-		eclock:               eclock,
-		keepAliveInterval:    keepAliveInterval,
-		wsHelper:             wsHelper,
+		logger:            logger.Session("EnvelopeEmitter"),
+		envelopChan:       make(chan *loggregator_v2.Envelope, bufferSize),
+		doneChan:          make(chan bool),
+		eclock:            eclock,
+		keepAliveInterval: keepAliveInterval,
+		wsHelper:          wsHelper,
 	}
 }
 func (e *EnvelopeEmitter) Start() {
