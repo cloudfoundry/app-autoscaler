@@ -21,9 +21,9 @@ const METRICS_FORWARDER_ORIGIN = "autoscaler_metrics_forwarder"
 
 func NewMetricForwarder(logger lager.Logger, conf *config.Config) (MetricForwarder, error) {
 	tlsConfig, err := loggregator.NewIngressTLSConfig(
-		conf.LoggregatorConfig.CACertFile,
-		conf.LoggregatorConfig.ClientCertFile,
-		conf.LoggregatorConfig.ClientKeyFile,
+		conf.LoggregatorConfig.TLS.CACertFile,
+		conf.LoggregatorConfig.TLS.CertFile,
+		conf.LoggregatorConfig.TLS.KeyFile,
 	)
 	if err != nil {
 		logger.Error("could-not-create-TLS-config", err, lager.Data{"config": conf})
@@ -32,7 +32,7 @@ func NewMetricForwarder(logger lager.Logger, conf *config.Config) (MetricForward
 
 	client, err := loggregator.NewIngressClient(
 		tlsConfig,
-		loggregator.WithAddr(conf.MetronAddress),
+		loggregator.WithAddr(conf.LoggregatorConfig.MetronAddress),
 		loggregator.WithTag("origin", METRICS_FORWARDER_ORIGIN),
 	)
 
