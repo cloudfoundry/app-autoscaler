@@ -63,7 +63,6 @@ func (n *Nozzle) streamMetrics() {
 		ShardId:   n.shardID,
 		Selectors: selectors,
 	})
-
 	for {
 		select {
 		case <-n.doneChan:
@@ -73,7 +72,6 @@ func (n *Nozzle) streamMetrics() {
 		default:
 		}
 		envelops := rx()
-		n.logger.Info("envs", lager.Data{"envs": envelops})
 		n.filterEnvelopes(envelops)
 
 	}

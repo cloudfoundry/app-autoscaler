@@ -1,36 +1,55 @@
 package metricsgateway
 
 import (
+	"time"
+
+	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"
+
+	"autoscaler/metricsgateway/helpers"
 )
 
 type Emitter interface {
 	Accept(envelope *loggregator_v2.Envelope)
-	Emit(*loggregator_v2.Envelope) error
+	Emit(envelope *loggregator_v2.Envelope) error
+	Start()
+	Stop()
 }
 
-type emitter struct {
-	logger               lager.Logger
-	metricsServerAddress string
-	envelopChan          chan *loggregator_v2.Envelope
-	bufferSize           int64
-	doneChan             chan bool
+type EnvelopeEmitter struct {
+	logger            lager.Logger
+	envelopChan       chan *loggregator_v2.Envelope
+	bufferSize        int
+	doneChan          chan bool
+	keepAliveInterval time.Duration
+	eclock            clock.Clock
+	ticker            clock.Ticker
+	wsHelper          helpers.WSHelper
 }
 
-func NewEmitter(logger lager.Logger, bufferSize int64, metricsServerAddress string) Emitter {
-	return &emitter{
-		logger:               logger.Session("Emitter"),
-		metricsServerAddress: metricsServerAddress,
-		envelopChan:          make(chan *loggregator_v2.Envelope, bufferSize),
+func NewEnvelopeEmitter(logger lager.Logger, bufferSize int, eclock clock.Clock, keepAliveInterval time.Duration, wsHelper helpers.WSHelper) Emitter {
+	return &EnvelopeEmitter{
+		logger:            logger.Session("EnvelopeEmitter"),
+		envelopChan:       make(chan *loggregator_v2.Envelope, bufferSize),
+		doneChan:          make(chan bool),
+		eclock:            eclock,
+		keepAliveInterval: keepAliveInterval,
+		wsHelper:          wsHelper,
 	}
 }
-func (e *emitter) Start() {
+func (e *EnvelopeEmitter) Start() {
+	err := e.wsHelper.SetupConn()
+	if err != nil {
+		e.logger.Error("failed-to-start-emimtter", err)
+		return
+	}
 	go e.startEmitEnvelope()
 	e.logger.Info("started")
 }
 
-func (e *emitter) startEmitEnvelope() {
+func (e *EnvelopeEmitter) startEmitEnvelope() {
+	e.ticker = e.eclock.NewTicker(e.keepAliveInterval)
 	for {
 		select {
 		case <-e.doneChan:
@@ -41,19 +60,24 @@ func (e *emitter) startEmitEnvelope() {
 			if err != nil {
 				e.logger.Error("failed-to-emit-envelope", err, lager.Data{"message": envelope})
 			}
+		case <-e.ticker.C():
+			e.wsHelper.Ping()
 		}
 	}
 }
 
-func (e *emitter) Stop() {
+func (e *EnvelopeEmitter) Stop() {
+	e.wsHelper.CloseConn()
 	e.doneChan <- true
 
 }
 
-func (e *emitter) Accept(envelope *loggregator_v2.Envelope) {
+func (e *EnvelopeEmitter) Accept(envelope *loggregator_v2.Envelope) {
+	e.logger.Debug("accept-envelope", lager.Data{"envelope": envelope})
 	e.envelopChan <- envelope
 }
-func (e *emitter) Emit(*loggregator_v2.Envelope) error {
-	// to be done
-	return nil
+func (e *EnvelopeEmitter) Emit(envelope *loggregator_v2.Envelope) error {
+	e.logger.Debug("emit-envelope", lager.Data{"envelope": envelope})
+	err := e.wsHelper.Write(envelope)
+	return err
 }
