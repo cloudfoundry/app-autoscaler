@@ -65,6 +65,9 @@ emitter:
   buffer_size: 800
   keep_alive_interval: 10s
   handshake_timeout: 100ms
+  max_setup_retry_count: 10
+  max_close_retry_count: 10
+  retry_delay: 1s
 nozzle:
   tls:
     key_file: "loggregator_client.cert"
@@ -149,6 +152,10 @@ health:
 				Expect(conf.Emitter.HandshakeTimeout).To(Equal(500 * time.Millisecond))
 				Expect(conf.Emitter.KeepAliveInterval).To(Equal(5 * time.Second))
 
+				Expect(conf.Emitter.MaxSetupRetryCount).To(Equal(10))
+				Expect(conf.Emitter.MaxCloseRetryCount).To(Equal(10))
+				Expect(conf.Emitter.RetryDelay).To(Equal(10 * time.Second))
+
 				Expect(conf.Nozzle.ShardID).To(Equal("CF_AUTOSCALER"))
 			})
 		})
@@ -178,6 +185,9 @@ emitter:
   buffer_size: 800
   keep_alive_interval: 10s
   handshake_timeout: 100ms
+  max_setup_retry_count: 10
+  max_close_retry_count: 10
+  retry_delay: 1s
 nozzle:
   tls:
     key_file: "loggregator_client.cert"
@@ -220,6 +230,9 @@ emitter:
   buffer_size: 800
   keep_alive_interval: 10s
   handshake_timeout: 100ms
+  max_setup_retry_count: 10
+  max_close_retry_count: 10
+  retry_delay: 1s
 nozzle:
   tls:
     key_file: "loggregator_client.cert"
@@ -261,6 +274,9 @@ emitter:
   buffer_size: 800
   keep_alive_interval: 10s
   handshake_timeout: 100ms
+  max_setup_retry_count: 10
+  max_close_retry_count: 10
+  retry_delay: 1s
 nozzle:
   tls:
     key_file: "loggregator_client.cert"
@@ -303,6 +319,9 @@ emitter:
   buffer_size: 800
   keep_alive_interval: 10s
   handshake_timeout: 100ms
+  max_setup_retry_count: 10
+  max_close_retry_count: 10
+  retry_delay: 1s
 nozzle:
   tls:
     key_file: "loggregator_client.cert"
@@ -345,6 +364,9 @@ emitter:
   buffer_size: 800
   keep_alive_interval: 10s
   handshake_timeout: 100ms
+  max_setup_retry_count: 10
+  max_close_retry_count: 10
+  retry_delay: 1s
 nozzle:
   tls:
     key_file: "loggregator_client.cert"
@@ -388,6 +410,9 @@ emitter:
   buffer_size: 800
   keep_alive_interval: 10s
   handshake_timeout: 100ms
+  max_setup_retry_count: 10
+  max_close_retry_count: 10
+  retry_delay: 1s
 nozzle:
   tls:
     key_file: "loggregator_client.cert"
@@ -431,6 +456,9 @@ emitter:
   buffer_size: 800
   keep_alive_interval: 10s
   handshake_timeout: 100ms
+  max_setup_retry_count: 10
+  max_close_retry_count: 10
+  retry_delay: 1s
 nozzle:
   tls:
     key_file: "loggregator_client.cert"
@@ -474,6 +502,9 @@ emitter:
   buffer_size: NOT-INTEGER-VALUE
   keep_alive_interval: 10s
   handshake_timeout: 100ms
+  max_setup_retry_count: 10
+  max_close_retry_count: 10
+  retry_delay: 1s
 nozzle:
   tls:
     key_file: "loggregator_client.cert"
@@ -517,6 +548,9 @@ emitter:
   buffer_size: 800
   keep_alive_interval: 10kk
   handshake_timeout: 100ms
+  max_setup_retry_count: 10
+  max_close_retry_count: 10
+  retry_delay: 1s
 nozzle:
   tls:
     key_file: "loggregator_client.cert"
@@ -560,6 +594,147 @@ emitter:
   buffer_size: 800
   keep_alive_interval: 10s
   handshake_timeout: 100kk
+  max_setup_retry_count: 10
+  max_close_retry_count: 10
+  retry_delay: 1s
+nozzle:
+  tls:
+    key_file: "loggregator_client.cert"
+    cert_file: "loggregator_client.key"
+    ca_file: "autoscaler_ca.cert"
+  rlp_addr: wss://localhost:9999
+  shard_id: autoscaler
+health:
+  port: 8081
+`)
+			})
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into time.Duration")))
+			})
+
+		})
+
+		Context("when it gives a non-integer emitter.max_setup_retry_count", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: "debug"
+envelop_chan_size: 800
+nozzle_count: 10
+metric_server_addrs:
+  - wss://localhost:8080
+  - wss://localhost:9080
+app_manager:
+  app_refresh_interval: 10s
+  policy_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+emitter:
+  tls: 
+    key_file: "metrc_server_client.cert"
+    cert_file: "metrc_server_client.key"
+    ca_file: "autoscaler_ca.cert"
+  buffer_size: 800
+  keep_alive_interval: 10s
+  handshake_timeout: 100ms
+  max_setup_retry_count: NOT-INTEGER-VALUE
+  max_close_retry_count: 10
+  retry_delay: 1s
+nozzle:
+  tls:
+    key_file: "loggregator_client.cert"
+    cert_file: "loggregator_client.key"
+    ca_file: "autoscaler_ca.cert"
+  rlp_addr: wss://localhost:9999
+  shard_id: autoscaler
+health:
+  port: 8081
+`)
+			})
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+			})
+
+		})
+
+		Context("when it gives a non-integer emitter.max_close_retry_count", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: "debug"
+envelop_chan_size: 800
+nozzle_count: 10
+metric_server_addrs:
+  - wss://localhost:8080
+  - wss://localhost:9080
+app_manager:
+  app_refresh_interval: 10s
+  policy_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+emitter:
+  tls: 
+    key_file: "metrc_server_client.cert"
+    cert_file: "metrc_server_client.key"
+    ca_file: "autoscaler_ca.cert"
+  buffer_size: 800
+  keep_alive_interval: 10s
+  handshake_timeout: 100ms
+  max_setup_retry_count: 10
+  max_close_retry_count: NOT-INTEGER-VALUE
+  retry_delay: 1s
+nozzle:
+  tls:
+    key_file: "loggregator_client.cert"
+    cert_file: "loggregator_client.key"
+    ca_file: "autoscaler_ca.cert"
+  rlp_addr: wss://localhost:9999
+  shard_id: autoscaler
+health:
+  port: 8081
+`)
+			})
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+			})
+
+		})
+
+		Context("when emitter.retry_delay is not a time.Duration", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: "debug"
+envelop_chan_size: 800
+nozzle_count: 10
+metric_server_addrs:
+  - wss://localhost:8080
+  - wss://localhost:9080
+app_manager:
+  app_refresh_interval: 10s
+  policy_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+emitter:
+  tls: 
+    key_file: "metrc_server_client.cert"
+    cert_file: "metrc_server_client.key"
+    ca_file: "autoscaler_ca.cert"
+  buffer_size: 800
+  keep_alive_interval: 10s
+  handshake_timeout: 100kk
+  max_setup_retry_count: 10
+  max_close_retry_count: 10
+  retry_delay: 1kk
 nozzle:
   tls:
     key_file: "loggregator_client.cert"
@@ -603,6 +778,9 @@ emitter:
   buffer_size: 800
   keep_alive_interval: 10s
   handshake_timeout: 100ms
+  max_setup_retry_count: 10
+  max_close_retry_count: 10
+  retry_delay: 1s
 nozzle:
   tls:
     key_file: "loggregator_client.cert"
@@ -642,9 +820,12 @@ health:
 					},
 				},
 				Emitter: EmitterConfig{
-					BufferSize:        500,
-					KeepAliveInterval: 1 * time.Second,
-					HandshakeTimeout:  1 * time.Second,
+					BufferSize:         500,
+					KeepAliveInterval:  1 * time.Second,
+					HandshakeTimeout:   1 * time.Second,
+					MaxSetupRetryCount: 10,
+					MaxCloseRetryCount: 10,
+					RetryDelay:         1 * time.Second,
 					TLS: &models.TLSCerts{
 						KeyFile:    "metrc_server_client.cert",
 						CertFile:   "metrc_server_client.key",
@@ -764,6 +945,33 @@ health:
 			})
 			It("should error", func() {
 				Expect(err).To(MatchError("Configuration error: emitter.keep_alive_interval is 0"))
+			})
+		})
+
+		Context("when emitter.max_setup_retry_count <= 0", func() {
+			BeforeEach(func() {
+				conf.Emitter.MaxSetupRetryCount = -1
+			})
+			It("should error", func() {
+				Expect(err).To(MatchError("Configuration error: emitter.max_setup_retry_count is less-equal than 0"))
+			})
+		})
+
+		Context("when emitter.max_close_retry_count <= 0", func() {
+			BeforeEach(func() {
+				conf.Emitter.MaxCloseRetryCount = -1
+			})
+			It("should error", func() {
+				Expect(err).To(MatchError("Configuration error: emitter.max_close_retry_count is less-equal than 0"))
+			})
+		})
+
+		Context("when emitter.retry_delay is 0", func() {
+			BeforeEach(func() {
+				conf.Emitter.RetryDelay = 0
+			})
+			It("should error", func() {
+				Expect(err).To(MatchError("Configuration error: emitter.retry_delay is 0"))
 			})
 		})
 

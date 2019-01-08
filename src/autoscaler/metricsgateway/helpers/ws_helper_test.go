@@ -19,16 +19,19 @@ import (
 
 var _ = Describe("WsHelper", func() {
 	var (
-		fakeMetricServer     *ghttp.Server
-		metricServerAddress  string
-		testHandshakeTimeout = 5 * time.Millisecond
-		messageChan          chan []byte
-		pingPongChan         chan int
-		wsHelper             WSHelper
-		logger               *lagertest.TestLogger
-		wsh                  *testhelpers.WebsocketHandler
-		testAppId            = "test-app-id"
-		testEnvelope         = loggregator_v2.Envelope{
+		fakeMetricServer       *ghttp.Server
+		metricServerAddress    string
+		testHandshakeTimeout   = 5 * time.Millisecond
+		testMaxSetupRetryCount = 10
+		testMaxCloseRetryCount = 10
+		testRetryDelay         = 500 * time.Millisecond
+		messageChan            chan []byte
+		pingPongChan           chan int
+		wsHelper               WSHelper
+		logger                 *lagertest.TestLogger
+		wsh                    *testhelpers.WebsocketHandler
+		testAppId              = "test-app-id"
+		testEnvelope           = loggregator_v2.Envelope{
 			SourceId: testAppId,
 			Message: &loggregator_v2.Envelope_Gauge{
 				Gauge: &loggregator_v2.Gauge{
@@ -69,7 +72,7 @@ var _ = Describe("WsHelper", func() {
 	Describe("SetupConn", func() {
 		var err error
 		JustBeforeEach(func() {
-			wsHelper = NewWSHelper(metricServerAddress+routes.EnvelopePath, nil, testHandshakeTimeout, logger)
+			wsHelper = NewWSHelper(metricServerAddress+routes.EnvelopePath, nil, testHandshakeTimeout, logger, testMaxSetupRetryCount, testMaxCloseRetryCount, testRetryDelay)
 			err = wsHelper.SetupConn()
 
 		})
@@ -98,7 +101,7 @@ var _ = Describe("WsHelper", func() {
 	Describe("CloseConn", func() {
 		var err error
 		BeforeEach(func() {
-			wsHelper = NewWSHelper(metricServerAddress+routes.EnvelopePath, nil, testHandshakeTimeout, logger)
+			wsHelper = NewWSHelper(metricServerAddress+routes.EnvelopePath, nil, testHandshakeTimeout, logger, testMaxSetupRetryCount, testMaxCloseRetryCount, testRetryDelay)
 			err = wsHelper.SetupConn()
 			Expect(err).NotTo(HaveOccurred())
 
@@ -126,7 +129,7 @@ var _ = Describe("WsHelper", func() {
 	Describe("Ping", func() {
 		var err error
 		BeforeEach(func() {
-			wsHelper = NewWSHelper(metricServerAddress+routes.EnvelopePath, nil, testHandshakeTimeout, logger)
+			wsHelper = NewWSHelper(metricServerAddress+routes.EnvelopePath, nil, testHandshakeTimeout, logger, testMaxSetupRetryCount, testMaxCloseRetryCount, testRetryDelay)
 			err = wsHelper.SetupConn()
 			Expect(err).NotTo(HaveOccurred())
 
@@ -153,7 +156,7 @@ var _ = Describe("WsHelper", func() {
 	Describe("Write", func() {
 		var err error
 		BeforeEach(func() {
-			wsHelper = NewWSHelper(metricServerAddress+routes.EnvelopePath, nil, testHandshakeTimeout, logger)
+			wsHelper = NewWSHelper(metricServerAddress+routes.EnvelopePath, nil, testHandshakeTimeout, logger, testMaxSetupRetryCount, testMaxCloseRetryCount, testRetryDelay)
 			err = wsHelper.SetupConn()
 			Expect(err).NotTo(HaveOccurred())
 

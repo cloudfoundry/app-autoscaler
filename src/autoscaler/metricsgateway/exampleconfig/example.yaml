@@ -20,6 +20,9 @@ emitter:
   buffer_size: 500
   keep_alive_interval: 5s
   handshake_timeout: 500ms
+  max_setup_retry_count: 10
+  max_close_retry_count: 10
+  retry_delay: 1s
 nozzle:
   tls:
     key_file: "loggregator_client.cert"
