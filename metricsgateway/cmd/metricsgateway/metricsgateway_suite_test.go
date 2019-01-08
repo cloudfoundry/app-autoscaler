@@ -149,9 +149,6 @@ func initConfig() {
 				ConnectionMaxLifetime: 60 * time.Second,
 			},
 		},
-		Dispatcher: config.DispatcherConfig{
-			AppRefreshInterval: 10 * time.Second,
-		},
 		Emitter: config.EmitterConfig{
 			BufferSize:        500,
 			KeepAliveInterval: 1 * time.Second,
