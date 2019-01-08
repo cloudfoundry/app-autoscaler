@@ -43,6 +43,7 @@ var _ = Describe("Nozzle", func() {
 				},
 			},
 		}
+
 		containerMetricEnvelope = loggregator_v2.Envelope{
 			SourceId: testAppId,
 			Message: &loggregator_v2.Envelope_Gauge{
@@ -68,6 +69,37 @@ var _ = Describe("Nozzle", func() {
 				},
 			},
 		}
+
+		customMetricEnvelope = loggregator_v2.Envelope{
+			SourceId: testAppId,
+			Tags:     map[string]string{"origin": "autoscaler_metrics_forwarder"},
+			Message: &loggregator_v2.Envelope_Gauge{
+				Gauge: &loggregator_v2.Gauge{
+					Metrics: map[string]*loggregator_v2.GaugeValue{
+						"queue_length": &loggregator_v2.GaugeValue{
+							Unit:  "number",
+							Value: 100,
+						},
+					},
+				},
+			},
+		}
+
+		nonCustomMetricEnvelope = loggregator_v2.Envelope{
+			SourceId: testAppId,
+			Tags:     map[string]string{"origin": "other-origin"},
+			Message: &loggregator_v2.Envelope_Gauge{
+				Gauge: &loggregator_v2.Gauge{
+					Metrics: map[string]*loggregator_v2.GaugeValue{
+						"queue_length": &loggregator_v2.GaugeValue{
+							Unit:  "number",
+							Value: 100,
+						},
+					},
+				},
+			},
+		}
+
 		httpStartStopEnvelope = loggregator_v2.Envelope{
 			SourceId: testAppId,
 			Message: &loggregator_v2.Envelope_Timer{
@@ -168,6 +200,29 @@ var _ = Describe("Nozzle", func() {
 			It("should accept the envelope", func() {
 				Eventually(envelopChan).Should(Receive())
 
+			})
+		})
+
+		Context("there is custom metric envelope", func() {
+			BeforeEach(func() {
+				envelopes = []*loggregator_v2.Envelope{
+					&customMetricEnvelope,
+				}
+			})
+			It("should accept the envelope", func() {
+				Eventually(envelopChan).Should(Receive())
+
+			})
+		})
+
+		Context("when the guage envelope is not a custom metric", func() {
+			BeforeEach(func() {
+				envelopes = []*loggregator_v2.Envelope{
+					&nonCustomMetricEnvelope,
+				}
+			})
+			It("should not accept the envelope", func() {
+				Consistently(envelopChan).ShouldNot(Receive())
 			})
 		})
 

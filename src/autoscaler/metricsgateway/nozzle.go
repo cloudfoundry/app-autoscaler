@@ -9,6 +9,8 @@ import (
 	"crypto/tls"
 )
 
+const METRICS_FORWARDER_ORIGIN = "autoscaler_metrics_forwarder"
+
 var selectors = []*loggregator_v2.Selector{
 	{
 		Message: &loggregator_v2.Selector_Gauge{
@@ -83,8 +85,13 @@ func (n *Nozzle) filterEnvelopes(envelops []*loggregator_v2.Envelope) {
 		if exist {
 			switch e.GetMessage().(type) {
 			case *loggregator_v2.Envelope_Gauge:
-				n.logger.Debug("filter-envelopes-get-app-metrics", lager.Data{"index": n.index, "appID": e.SourceId, "message": e.Message})
-				n.envelopChan <- e
+				if e.GetGauge().GetMetrics()["memory_quota"] != nil {
+					n.logger.Debug("filter-envelopes-get-container-metrics", lager.Data{"index": n.index, "appID": e.SourceId, "message": e.Message})
+					n.envelopChan <- e
+				} else if e.GetTags()["origin"] == METRICS_FORWARDER_ORIGIN {
+					n.logger.Debug("filter-envelopes-get-custom-metrics", lager.Data{"index": n.index, "appID": e.SourceId, "message": e.Message})
+					n.envelopChan <- e
+				}
 			case *loggregator_v2.Envelope_Timer:
 				if e.GetTimer().GetName() == "http" {
 					n.logger.Debug("filter-envelopes-get-httpstartstop", lager.Data{"index": n.index, "appID": e.SourceId, "message": e.Message})
