@@ -12,8 +12,6 @@ app_manager:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-dispatcher:
-  app_refresh_interval: 5s
 emitter:
   tls: 
     key_file: "metrc_server_client.cert"
