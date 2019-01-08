@@ -60,6 +60,7 @@ type CollectorConfig struct {
 	CollectMethod         string        `yaml:"collect_method"`
 	SaveInterval          time.Duration `yaml:"save_interval"`
 	MetricCacheSizePerApp int           `yaml:"metric_cache_size_per_app"`
+	PersistMetrics        bool          `yaml:"persist_metrics"`
 }
 
 var defaultCollectorConfig = CollectorConfig{
@@ -68,6 +69,7 @@ var defaultCollectorConfig = CollectorConfig{
 	CollectMethod:         CollectMethodStreaming,
 	SaveInterval:          DefaultSaveInterval,
 	MetricCacheSizePerApp: DefaultMetricCacheSizePerApp,
+	PersistMetrics:        true,
 }
 
 type Config struct {
@@ -150,5 +152,4 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("Configuration error: http_client_timeout is less-equal than 0")
 	}
 	return nil
-
 }

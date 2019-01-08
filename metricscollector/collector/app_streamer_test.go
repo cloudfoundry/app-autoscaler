@@ -22,36 +22,37 @@ import (
 var _ = Describe("AppStreamer", func() {
 
 	var (
-		cfc          *fakes.FakeCFClient
-		noaaConsumer *fakes.FakeNoaaConsumer
-		streamer     AppCollector
-		buffer       *gbytes.Buffer
-		msgChan      chan *events.Envelope
-		errChan      chan error
-		fclock       *fakeclock.FakeClock
-		dataChan     chan *models.AppInstanceMetric
-		cacheSize    int
+		cfc                           *fakes.FakeCFClient
+		noaaConsumer                  *fakes.FakeNoaaConsumer
+		streamer                      AppCollector
+		buffer                        *gbytes.Buffer
+		msgChan                       chan *events.Envelope
+		errChan                       chan error
+		fclock                        *fakeclock.FakeClock
+		dataChan                      chan *models.AppInstanceMetric
+		cacheSize                     int
+		logger                        *lagertest.TestLogger
+		isMetricsPersistencySupported bool
+		metrics                       []*models.AppInstanceMetric
 	)
 
 	BeforeEach(func() {
 		cfc = &fakes.FakeCFClient{}
 		noaaConsumer = &fakes.FakeNoaaConsumer{}
-
-		logger := lagertest.NewTestLogger("AppStreamer-test")
+		logger = lagertest.NewTestLogger("AppStreamer-test")
 		buffer = logger.Buffer()
 		fclock = fakeclock.NewFakeClock(time.Now())
 		dataChan = make(chan *models.AppInstanceMetric)
 		cacheSize = 100
-
-		streamer = NewAppStreamer(logger, "an-app-id", TestCollectInterval, cacheSize, cfc, noaaConsumer, fclock, dataChan)
-
 		msgChan = make(chan *events.Envelope)
 		errChan = make(chan error, 1)
+		isMetricsPersistencySupported = true
 	})
 
 	Describe("Start", func() {
 
 		JustBeforeEach(func() {
+			streamer = NewAppStreamer(logger, "an-app-id", TestCollectInterval, cacheSize, isMetricsPersistencySupported, cfc, noaaConsumer, fclock, dataChan)
 			streamer.Start()
 		})
 
@@ -70,13 +71,7 @@ var _ = Describe("AppStreamer", func() {
 
 		Context("when there are containermetric events", func() {
 			BeforeEach(func() {
-				go func() {
-					msgChan <- noaa.NewContainerEnvelope(111111, "an-app-id", 0, 12.8, 100000000, 1000000000, 300000000, 2000000000)
-					msgChan <- noaa.NewContainerEnvelope(222222, "an-app-id", 1, 30.6, 200000000, 1000000000, 300000000, 2000000000)
-				}()
-			})
-			It("sends container metrics to channel and cache", func() {
-				metrics := []*models.AppInstanceMetric{
+				metrics = []*models.AppInstanceMetric{
 					&models.AppInstanceMetric{
 						AppId:         "an-app-id",
 						InstanceIndex: 0,
@@ -133,118 +128,242 @@ var _ = Describe("AppStreamer", func() {
 					},
 				}
 
-				Expect(<-dataChan).To(Equal(metrics[0]))
-				Expect(<-dataChan).To(Equal(metrics[1]))
-				Expect(<-dataChan).To(Equal(metrics[2]))
-				Expect(<-dataChan).To(Equal(metrics[3]))
-				Expect(<-dataChan).To(Equal(metrics[4]))
-				Expect(<-dataChan).To(Equal(metrics[5]))
+				go func() {
+					msgChan <- noaa.NewContainerEnvelope(111111, "an-app-id", 0, 12.8, 100000000, 1000000000, 300000000, 2000000000)
+					msgChan <- noaa.NewContainerEnvelope(222222, "an-app-id", 1, 30.6, 200000000, 1000000000, 300000000, 2000000000)
+				}()
+			})
 
-				data, ok := streamer.Query(0, 333333, map[string]string{models.MetricLabelName: models.MetricNameMemoryUsed})
-				Expect(ok).To(BeTrue())
-				Expect(data).To(Equal([]collection.TSD{metrics[0], metrics[3]}))
+			Context("when metrics are not persisted to database", func() {
+				BeforeEach(func() {
+					isMetricsPersistencySupported = false
+				})
+				It("sends container metrics to cache only", func() {
+					Consistently(dataChan).ShouldNot(Receive())
 
-				data, ok = streamer.Query(0, 333333, map[string]string{models.MetricLabelName: models.MetricNameMemoryUtil})
-				Expect(ok).To(BeTrue())
-				Expect(data).To(Equal([]collection.TSD{metrics[1], metrics[4]}))
+					data, ok := streamer.Query(111111, 333333, map[string]string{models.MetricLabelName: models.MetricNameMemoryUsed})
+					Expect(ok).To(BeTrue())
+					Expect(data).To(Equal([]collection.TSD{metrics[0], metrics[3]}))
 
-				data, ok = streamer.Query(0, 333333, map[string]string{models.MetricLabelName: models.MetricNameCPUUtil})
-				Expect(ok).To(BeTrue())
-				Expect(data).To(Equal([]collection.TSD{metrics[2], metrics[5]}))
+					data, ok = streamer.Query(111111, 333333, map[string]string{models.MetricLabelName: models.MetricNameMemoryUtil})
+					Expect(ok).To(BeTrue())
+					Expect(data).To(Equal([]collection.TSD{metrics[1], metrics[4]}))
 
-				data, ok = streamer.Query(0, 333333, map[string]string{models.MetricLabelName: models.MetricNameThroughput})
-				Expect(ok).To(BeTrue())
-				Expect(data).To(BeEmpty())
+					data, ok = streamer.Query(111111, 333333, map[string]string{models.MetricLabelName: models.MetricNameCPUUtil})
+					Expect(ok).To(BeTrue())
+					Expect(data).To(Equal([]collection.TSD{metrics[2], metrics[5]}))
 
-				By("collecting and computing throughput")
-				Consistently(dataChan).ShouldNot(Receive())
+					data, ok = streamer.Query(111111, 333333, map[string]string{models.MetricLabelName: models.MetricNameThroughput})
+					Expect(ok).To(BeTrue())
+					Expect(data).To(BeEmpty())
 
-				By("sending throughput after the collect interval")
-				fclock.WaitForWatcherAndIncrement(TestCollectInterval)
-				metric := &models.AppInstanceMetric{
-					AppId:         "an-app-id",
-					InstanceIndex: 0,
-					CollectedAt:   fclock.Now().UnixNano(),
-					Name:          models.MetricNameThroughput,
-					Unit:          models.UnitRPS,
-					Value:         "0",
-					Timestamp:     fclock.Now().UnixNano(),
-				}
-				Expect(<-dataChan).To(Equal(metric))
+					By("collecting and computing throughput")
+					Consistently(dataChan).ShouldNot(Receive())
 
-				data, ok = streamer.Query(0, fclock.Now().UnixNano()+1, map[string]string{models.MetricLabelName: models.MetricNameThroughput})
-				Expect(ok).To(BeTrue())
-				Expect(data).To(Equal([]collection.TSD{metric}))
+					By("sending throughput after the collect interval")
+					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
+					metric := &models.AppInstanceMetric{
+						AppId:         "an-app-id",
+						InstanceIndex: 0,
+						CollectedAt:   fclock.Now().UnixNano(),
+						Name:          models.MetricNameThroughput,
+						Unit:          models.UnitRPS,
+						Value:         "0",
+						Timestamp:     fclock.Now().UnixNano(),
+					}
+
+					Consistently(dataChan).ShouldNot(Receive())
+
+					data, ok = streamer.Query(0, fclock.Now().UnixNano(), map[string]string{models.MetricLabelName: models.MetricNameThroughput})
+					Expect(ok).To(BeFalse())
+					Expect(data).To(Equal([]collection.TSD{metric}))
+				})
+			})
+
+			Context("when metrics are persisted to database", func() {
+				It("sends container metrics to channel and cache", func() {
+					Expect(<-dataChan).To(Equal(metrics[0]))
+					Expect(<-dataChan).To(Equal(metrics[1]))
+					Expect(<-dataChan).To(Equal(metrics[2]))
+					Expect(<-dataChan).To(Equal(metrics[3]))
+					Expect(<-dataChan).To(Equal(metrics[4]))
+					Expect(<-dataChan).To(Equal(metrics[5]))
+
+					data, ok := streamer.Query(111111, 333333, map[string]string{models.MetricLabelName: models.MetricNameMemoryUsed})
+					Expect(ok).To(BeTrue())
+					Expect(data).To(Equal([]collection.TSD{metrics[0], metrics[3]}))
+
+					data, ok = streamer.Query(111111, 333333, map[string]string{models.MetricLabelName: models.MetricNameMemoryUtil})
+					Expect(ok).To(BeTrue())
+					Expect(data).To(Equal([]collection.TSD{metrics[1], metrics[4]}))
+
+					data, ok = streamer.Query(111111, 333333, map[string]string{models.MetricLabelName: models.MetricNameCPUUtil})
+					Expect(ok).To(BeTrue())
+					Expect(data).To(Equal([]collection.TSD{metrics[2], metrics[5]}))
+
+					data, ok = streamer.Query(111111, 333333, map[string]string{models.MetricLabelName: models.MetricNameThroughput})
+					Expect(ok).To(BeTrue())
+					Expect(data).To(BeEmpty())
+
+					By("collecting and computing throughput")
+					Consistently(dataChan).ShouldNot(Receive())
+
+					By("sending throughput after the collect interval")
+					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
+					metric := &models.AppInstanceMetric{
+						AppId:         "an-app-id",
+						InstanceIndex: 0,
+						CollectedAt:   fclock.Now().UnixNano(),
+						Name:          models.MetricNameThroughput,
+						Unit:          models.UnitRPS,
+						Value:         "0",
+						Timestamp:     fclock.Now().UnixNano(),
+					}
+					Expect(<-dataChan).To(Equal(metric))
+
+					data, ok = streamer.Query(0, fclock.Now().UnixNano(), map[string]string{models.MetricLabelName: models.MetricNameThroughput})
+					Expect(ok).To(BeFalse())
+					Expect(data).To(Equal([]collection.TSD{metric}))
+				})
 
 			})
 		})
 
 		Context("when there are httpstartstop events", func() {
-			It("sends responsetime and throughput metrics to channel", func() {
-				msgChan <- noaa.NewHttpStartStopEnvelope(111111, 100000000, 200000000, 0)
-				msgChan <- noaa.NewHttpStartStopEnvelope(222222, 300000000, 600000000, 0)
+			Context("when metrics are persisted to database", func() {
+				It("sends responsetime and throughput metrics to cache and channel", func() {
+					msgChan <- noaa.NewHttpStartStopEnvelope(111111, 100000000, 200000000, 0)
+					msgChan <- noaa.NewHttpStartStopEnvelope(222222, 300000000, 600000000, 0)
 
-				fclock.WaitForWatcherAndIncrement(TestCollectInterval)
+					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
 
-				metric1 := &models.AppInstanceMetric{
-					AppId:         "an-app-id",
-					InstanceIndex: 0,
-					CollectedAt:   fclock.Now().UnixNano(),
-					Name:          models.MetricNameThroughput,
-					Unit:          models.UnitRPS,
-					Value:         "2",
-					Timestamp:     fclock.Now().UnixNano(),
-				}
-				metric2 := &models.AppInstanceMetric{
-					AppId:         "an-app-id",
-					InstanceIndex: 0,
-					CollectedAt:   fclock.Now().UnixNano(),
-					Name:          models.MetricNameResponseTime,
-					Unit:          models.UnitMilliseconds,
-					Value:         "200",
-					Timestamp:     fclock.Now().UnixNano(),
-				}
+					metric1 := &models.AppInstanceMetric{
+						AppId:         "an-app-id",
+						InstanceIndex: 0,
+						CollectedAt:   fclock.Now().UnixNano(),
+						Name:          models.MetricNameThroughput,
+						Unit:          models.UnitRPS,
+						Value:         "2",
+						Timestamp:     fclock.Now().UnixNano(),
+					}
+					metric2 := &models.AppInstanceMetric{
+						AppId:         "an-app-id",
+						InstanceIndex: 0,
+						CollectedAt:   fclock.Now().UnixNano(),
+						Name:          models.MetricNameResponseTime,
+						Unit:          models.UnitMilliseconds,
+						Value:         "200",
+						Timestamp:     fclock.Now().UnixNano(),
+					}
 
-				Expect(<-dataChan).To(Equal(metric1))
-				Expect(<-dataChan).To(Equal(metric2))
+					Expect(<-dataChan).To(Equal(metric1))
+					Expect(<-dataChan).To(Equal(metric2))
 
-				data, ok := streamer.Query(0, fclock.Now().UnixNano()+1, map[string]string{})
-				Expect(ok).To(BeTrue())
-				Expect(data).To(Equal([]collection.TSD{metric1, metric2}))
+					data, ok := streamer.Query(0, fclock.Now().UnixNano(), map[string]string{})
+					Expect(ok).To(BeFalse())
+					Expect(data).To(Equal([]collection.TSD{metric1, metric2}))
 
-				msgChan <- noaa.NewHttpStartStopEnvelope(333333, 100000000, 300000000, 1)
-				msgChan <- noaa.NewHttpStartStopEnvelope(555555, 300000000, 600000000, 1)
-				msgChan <- noaa.NewHttpStartStopEnvelope(666666, 300000000, 700000000, 1)
-				Consistently(dataChan).ShouldNot(Receive())
+					msgChan <- noaa.NewHttpStartStopEnvelope(333333, 100000000, 300000000, 1)
+					msgChan <- noaa.NewHttpStartStopEnvelope(555555, 300000000, 600000000, 1)
+					msgChan <- noaa.NewHttpStartStopEnvelope(666666, 300000000, 700000000, 1)
+					Consistently(dataChan).ShouldNot(Receive())
 
-				fclock.WaitForWatcherAndIncrement(TestCollectInterval)
+					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
 
-				metric3 := &models.AppInstanceMetric{
-					AppId:         "an-app-id",
-					InstanceIndex: 1,
-					CollectedAt:   fclock.Now().UnixNano(),
-					Name:          models.MetricNameThroughput,
-					Unit:          models.UnitRPS,
-					Value:         "3",
-					Timestamp:     fclock.Now().UnixNano(),
-				}
-				metric4 := &models.AppInstanceMetric{
-					AppId:         "an-app-id",
-					InstanceIndex: 1,
-					CollectedAt:   fclock.Now().UnixNano(),
-					Name:          models.MetricNameResponseTime,
-					Unit:          models.UnitMilliseconds,
-					Value:         "300",
-					Timestamp:     fclock.Now().UnixNano(),
-				}
+					metric3 := &models.AppInstanceMetric{
+						AppId:         "an-app-id",
+						InstanceIndex: 1,
+						CollectedAt:   fclock.Now().UnixNano(),
+						Name:          models.MetricNameThroughput,
+						Unit:          models.UnitRPS,
+						Value:         "3",
+						Timestamp:     fclock.Now().UnixNano(),
+					}
+					metric4 := &models.AppInstanceMetric{
+						AppId:         "an-app-id",
+						InstanceIndex: 1,
+						CollectedAt:   fclock.Now().UnixNano(),
+						Name:          models.MetricNameResponseTime,
+						Unit:          models.UnitMilliseconds,
+						Value:         "300",
+						Timestamp:     fclock.Now().UnixNano(),
+					}
 
-				Expect(<-dataChan).To(Equal(metric3))
-				Expect(<-dataChan).To(Equal(metric4))
+					Expect(<-dataChan).To(Equal(metric3))
+					Expect(<-dataChan).To(Equal(metric4))
 
-				data, ok = streamer.Query(0, fclock.Now().UnixNano()+1, map[string]string{})
-				Expect(ok).To(BeTrue())
-				Expect(data).To(Equal([]collection.TSD{metric1, metric2, metric3, metric4}))
+					data, ok = streamer.Query(0, fclock.Now().UnixNano(), map[string]string{})
+					Expect(ok).To(BeFalse())
+					Expect(data).To(Equal([]collection.TSD{metric1, metric2, metric3, metric4}))
+				})
+			})
 
+			Context("when metrics are not persisted to database", func() {
+				BeforeEach(func() {
+					isMetricsPersistencySupported = false
+				})
+				It("sends responsetime and throughput metrics to cache only", func() {
+					msgChan <- noaa.NewHttpStartStopEnvelope(111111, 100000000, 200000000, 0)
+					msgChan <- noaa.NewHttpStartStopEnvelope(222222, 300000000, 600000000, 0)
+
+					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
+
+					metric1 := &models.AppInstanceMetric{
+						AppId:         "an-app-id",
+						InstanceIndex: 0,
+						CollectedAt:   fclock.Now().UnixNano(),
+						Name:          models.MetricNameThroughput,
+						Unit:          models.UnitRPS,
+						Value:         "2",
+						Timestamp:     fclock.Now().UnixNano(),
+					}
+					metric2 := &models.AppInstanceMetric{
+						AppId:         "an-app-id",
+						InstanceIndex: 0,
+						CollectedAt:   fclock.Now().UnixNano(),
+						Name:          models.MetricNameResponseTime,
+						Unit:          models.UnitMilliseconds,
+						Value:         "200",
+						Timestamp:     fclock.Now().UnixNano(),
+					}
+
+					Consistently(dataChan).ShouldNot(Receive())
+
+					data, ok := streamer.Query(0, fclock.Now().UnixNano(), map[string]string{})
+					Expect(ok).To(BeFalse())
+					Expect(data).To(Equal([]collection.TSD{metric1, metric2}))
+
+					msgChan <- noaa.NewHttpStartStopEnvelope(333333, 100000000, 300000000, 1)
+					msgChan <- noaa.NewHttpStartStopEnvelope(555555, 300000000, 600000000, 1)
+					msgChan <- noaa.NewHttpStartStopEnvelope(666666, 300000000, 700000000, 1)
+					Consistently(dataChan).ShouldNot(Receive())
+
+					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
+
+					metric3 := &models.AppInstanceMetric{
+						AppId:         "an-app-id",
+						InstanceIndex: 1,
+						CollectedAt:   fclock.Now().UnixNano(),
+						Name:          models.MetricNameThroughput,
+						Unit:          models.UnitRPS,
+						Value:         "3",
+						Timestamp:     fclock.Now().UnixNano(),
+					}
+					metric4 := &models.AppInstanceMetric{
+						AppId:         "an-app-id",
+						InstanceIndex: 1,
+						CollectedAt:   fclock.Now().UnixNano(),
+						Name:          models.MetricNameResponseTime,
+						Unit:          models.UnitMilliseconds,
+						Value:         "300",
+						Timestamp:     fclock.Now().UnixNano(),
+					}
+
+					Consistently(dataChan).ShouldNot(Receive())
+					data, ok = streamer.Query(0, fclock.Now().UnixNano(), map[string]string{})
+					Expect(ok).To(BeFalse())
+					Expect(data).To(Equal([]collection.TSD{metric1, metric2, metric3, metric4}))
+				})
 			})
 
 			Context("when the app has multiple instances", func() {
@@ -254,7 +373,7 @@ var _ = Describe("AppStreamer", func() {
 					msgChan <- noaa.NewHttpStartStopEnvelope(333333, 200000000, 600000000, 2)
 					msgChan <- noaa.NewHttpStartStopEnvelope(555555, 300000000, 500000000, 2)
 				})
-				It("sends throughput and responsetime metrics of multiple instances to channel", func() {
+				It("sends throughput and responsetime metrics of multiple instances to channel and cache", func() {
 					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
 					Eventually(dataChan).Should(Receive())
 					Eventually(dataChan).Should(Receive())
@@ -264,8 +383,8 @@ var _ = Describe("AppStreamer", func() {
 					Eventually(dataChan).Should(Receive())
 					Consistently(dataChan).ShouldNot(Receive())
 
-					data, ok := streamer.Query(0, fclock.Now().UnixNano()+1, map[string]string{})
-					Expect(ok).To(BeTrue())
+					data, ok := streamer.Query(0, fclock.Now().UnixNano(), map[string]string{})
+					Expect(ok).To(BeFalse())
 					Expect(data).To(HaveLen(6))
 
 				})
@@ -279,7 +398,7 @@ var _ = Describe("AppStreamer", func() {
 					msgChan <- &events.Envelope{EventType: &eventType}
 				}()
 			})
-			It("Sends zero throughput metric to channel", func() {
+			It("Sends zero throughput metric to cache and chaneel", func() {
 
 				By("sending throughput after the collect interval")
 				fclock.WaitForWatcherAndIncrement(TestCollectInterval)
@@ -295,8 +414,8 @@ var _ = Describe("AppStreamer", func() {
 				}
 
 				Expect(<-dataChan).To(Equal(metric))
-				data, ok := streamer.Query(0, fclock.Now().UnixNano()+1, map[string]string{})
-				Expect(ok).To(BeTrue())
+				data, ok := streamer.Query(0, fclock.Now().UnixNano(), map[string]string{})
+				Expect(ok).To(BeFalse())
 				Expect(data).To(Equal([]collection.TSD{metric}))
 			})
 		})
@@ -321,6 +440,7 @@ var _ = Describe("AppStreamer", func() {
 
 	Describe("Stop", func() {
 		BeforeEach(func() {
+			streamer = NewAppStreamer(logger, "an-app-id", TestCollectInterval, cacheSize, isMetricsPersistencySupported, cfc, noaaConsumer, fclock, dataChan)
 			streamer.Start()
 		})
 		JustBeforeEach(func() {

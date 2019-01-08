@@ -22,34 +22,34 @@ import (
 var _ = Describe("Apppoller", func() {
 
 	var (
-		cfc       *fakes.FakeCFClient
-		noaa      *fakes.FakeNoaaConsumer
-		poller    AppCollector
-		fclock    *fakeclock.FakeClock
-		buffer    *gbytes.Buffer
-		timestamp int64
-		dataChan  chan *models.AppInstanceMetric
-		cacheSize int
+		cfc                           *fakes.FakeCFClient
+		noaa                          *fakes.FakeNoaaConsumer
+		poller                        AppCollector
+		fclock                        *fakeclock.FakeClock
+		buffer                        *gbytes.Buffer
+		timestamp                     int64
+		dataChan                      chan *models.AppInstanceMetric
+		cacheSize                     int
+		isMetricsPersistencySupported bool
+		logger                        *lagertest.TestLogger
 	)
 
 	BeforeEach(func() {
 		cfc = &fakes.FakeCFClient{}
 		noaa = &fakes.FakeNoaaConsumer{}
-
-		logger := lagertest.NewTestLogger("apppoller-test")
+		logger = lagertest.NewTestLogger("apppoller-test")
 		buffer = logger.Buffer()
-
 		fclock = fakeclock.NewFakeClock(time.Now())
 		dataChan = make(chan *models.AppInstanceMetric, 10)
 		cacheSize = 100
-
-		poller = NewAppPoller(logger, "test-app-id", TestCollectInterval, cacheSize, cfc, noaa, fclock, dataChan)
+		isMetricsPersistencySupported = true
 		timestamp = 111111
 	})
 
 	Describe("Start", func() {
 
 		JustBeforeEach(func() {
+			poller = NewAppPoller(logger, "test-app-id", TestCollectInterval, cacheSize, isMetricsPersistencySupported, cfc, noaa, fclock, dataChan)
 			poller.Start()
 		})
 
@@ -94,59 +94,119 @@ var _ = Describe("Apppoller", func() {
 					}
 				})
 
-				It("sends the metrics to channel and cache", func() {
-					metric1 := &models.AppInstanceMetric{
-						AppId:         "test-app-id",
-						InstanceIndex: 0,
-						CollectedAt:   fclock.Now().UnixNano(),
-						Name:          models.MetricNameMemoryUsed,
-						Unit:          models.UnitMegaBytes,
-						Value:         "95",
-						Timestamp:     111111,
-					}
+				Context("when metrics is not persisted to database", func() {
+					BeforeEach(func() {
+						isMetricsPersistencySupported = false
+					})
+					It("sends the metrics to cache only", func() {
+						metric1 := &models.AppInstanceMetric{
+							AppId:         "test-app-id",
+							InstanceIndex: 0,
+							CollectedAt:   fclock.Now().UnixNano(),
+							Name:          models.MetricNameMemoryUsed,
+							Unit:          models.UnitMegaBytes,
+							Value:         "95",
+							Timestamp:     111111,
+						}
 
-					metric2 := &models.AppInstanceMetric{
-						AppId:         "test-app-id",
-						InstanceIndex: 0,
-						CollectedAt:   fclock.Now().UnixNano(),
-						Name:          models.MetricNameMemoryUtil,
-						Unit:          models.UnitPercentage,
-						Value:         "33",
-						Timestamp:     111111,
-					}
+						metric2 := &models.AppInstanceMetric{
+							AppId:         "test-app-id",
+							InstanceIndex: 0,
+							CollectedAt:   fclock.Now().UnixNano(),
+							Name:          models.MetricNameMemoryUtil,
+							Unit:          models.UnitPercentage,
+							Value:         "33",
+							Timestamp:     111111,
+						}
 
-					metric3 := &models.AppInstanceMetric{
-						AppId:         "test-app-id",
-						InstanceIndex: 0,
-						CollectedAt:   fclock.Now().UnixNano(),
-						Name:          models.MetricNameCPUUtil,
-						Unit:          models.UnitPercentage,
-						Value:         "12",
-						Timestamp:     111111,
-					}
+						metric3 := &models.AppInstanceMetric{
+							AppId:         "test-app-id",
+							InstanceIndex: 0,
+							CollectedAt:   fclock.Now().UnixNano(),
+							Name:          models.MetricNameCPUUtil,
+							Unit:          models.UnitPercentage,
+							Value:         "12",
+							Timestamp:     111111,
+						}
 
-					Expect(<-dataChan).To(Equal(metric1))
-					Expect(<-dataChan).To(Equal(metric2))
-					Expect(<-dataChan).To(Equal(metric3))
+						Consistently(dataChan).ShouldNot(Receive())
 
-					data, ok := poller.Query(0, fclock.Now().UnixNano()+1, map[string]string{})
-					Expect(ok).To(BeTrue())
-					Expect(data).To(Equal([]collection.TSD{metric1, metric2, metric3}))
+						data, ok := poller.Query(111111, fclock.Now().UnixNano(), map[string]string{})
+						Expect(ok).To(BeTrue())
+						Expect(data).To(Equal([]collection.TSD{metric1, metric2, metric3}))
 
-					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
-					Eventually(dataChan).Should(Receive())
-					Eventually(dataChan).Should(Receive())
-					Eventually(dataChan).Should(Receive())
-					data, ok = poller.Query(0, fclock.Now().UnixNano()+1, map[string]string{})
-					Expect(ok).To(BeTrue())
-					Expect(data).To(HaveLen(6))
+						fclock.WaitForWatcherAndIncrement(TestCollectInterval)
+						Consistently(dataChan).ShouldNot(Receive())
+						data, ok = poller.Query(111111, fclock.Now().UnixNano(), map[string]string{})
+						Expect(ok).To(BeTrue())
+						Expect(data).To(HaveLen(6))
 
-					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
-					Eventually(dataChan).Should(Receive())
-					Eventually(dataChan).Should(Receive())
-					data, ok = poller.Query(0, fclock.Now().UnixNano()+1, map[string]string{})
-					Expect(ok).To(BeTrue())
-					Expect(data).To(HaveLen(9))
+						fclock.WaitForWatcherAndIncrement(TestCollectInterval)
+						Consistently(dataChan).ShouldNot(Receive())
+						data, ok = poller.Query(111111, fclock.Now().UnixNano(), map[string]string{})
+						Expect(ok).To(BeTrue())
+						Expect(data).To(HaveLen(9))
+
+					})
+
+				})
+
+				Context("when metrics are persisted to database", func() {
+					It("sends the metrics to channel and cache", func() {
+						metric1 := &models.AppInstanceMetric{
+							AppId:         "test-app-id",
+							InstanceIndex: 0,
+							CollectedAt:   fclock.Now().UnixNano(),
+							Name:          models.MetricNameMemoryUsed,
+							Unit:          models.UnitMegaBytes,
+							Value:         "95",
+							Timestamp:     111111,
+						}
+
+						metric2 := &models.AppInstanceMetric{
+							AppId:         "test-app-id",
+							InstanceIndex: 0,
+							CollectedAt:   fclock.Now().UnixNano(),
+							Name:          models.MetricNameMemoryUtil,
+							Unit:          models.UnitPercentage,
+							Value:         "33",
+							Timestamp:     111111,
+						}
+
+						metric3 := &models.AppInstanceMetric{
+							AppId:         "test-app-id",
+							InstanceIndex: 0,
+							CollectedAt:   fclock.Now().UnixNano(),
+							Name:          models.MetricNameCPUUtil,
+							Unit:          models.UnitPercentage,
+							Value:         "12",
+							Timestamp:     111111,
+						}
+
+						Expect(<-dataChan).To(Equal(metric1))
+						Expect(<-dataChan).To(Equal(metric2))
+						Expect(<-dataChan).To(Equal(metric3))
+
+						data, ok := poller.Query(111111, fclock.Now().UnixNano(), map[string]string{})
+						Expect(ok).To(BeTrue())
+						Expect(data).To(Equal([]collection.TSD{metric1, metric2, metric3}))
+
+						fclock.WaitForWatcherAndIncrement(TestCollectInterval)
+						Eventually(dataChan).Should(Receive())
+						Eventually(dataChan).Should(Receive())
+						Eventually(dataChan).Should(Receive())
+						data, ok = poller.Query(111111, fclock.Now().UnixNano(), map[string]string{})
+						Expect(ok).To(BeTrue())
+						Expect(data).To(HaveLen(6))
+
+						fclock.WaitForWatcherAndIncrement(TestCollectInterval)
+						Eventually(dataChan).Should(Receive())
+						Eventually(dataChan).Should(Receive())
+						data, ok = poller.Query(111111, fclock.Now().UnixNano(), map[string]string{})
+						Expect(ok).To(BeTrue())
+						Expect(data).To(HaveLen(9))
+
+					})
 
 				})
 			})
@@ -170,8 +230,8 @@ var _ = Describe("Apppoller", func() {
 					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
 					Consistently(dataChan).ShouldNot(Receive())
 
-					data, ok := poller.Query(0, fclock.Now().UnixNano()+1, map[string]string{})
-					Expect(ok).To(BeTrue())
+					data, ok := poller.Query(0, fclock.Now().UnixNano(), map[string]string{})
+					Expect(ok).To(BeFalse())
 					Expect(data).To(BeEmpty())
 				})
 
@@ -234,20 +294,20 @@ var _ = Describe("Apppoller", func() {
 					Expect(<-dataChan).To(Equal(metric1))
 					Expect(<-dataChan).To(Equal(metric2))
 					Expect(<-dataChan).To(Equal(metric3))
-					data, ok := poller.Query(0, fclock.Now().UnixNano()+1, map[string]string{})
+					data, ok := poller.Query(111111, fclock.Now().UnixNano(), map[string]string{})
 					Expect(ok).To(BeTrue())
 					Expect(data).To(Equal([]collection.TSD{metric1, metric2, metric3}))
 
 					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
 					Consistently(dataChan).ShouldNot(Receive())
-					data, ok = poller.Query(0, fclock.Now().UnixNano()+1, map[string]string{})
+					data, ok = poller.Query(111111, fclock.Now().UnixNano(), map[string]string{})
 					Expect(ok).To(BeTrue())
 					Expect(data).To(HaveLen(3))
 
 					fclock.WaitForWatcherAndIncrement(TestCollectInterval)
 					Eventually(dataChan).Should(Receive())
 					Eventually(dataChan).Should(Receive())
-					data, ok = poller.Query(0, fclock.Now().UnixNano()+1, map[string]string{})
+					data, ok = poller.Query(111111, fclock.Now().UnixNano(), map[string]string{})
 					Expect(ok).To(BeTrue())
 					Expect(data).To(HaveLen(6))
 
@@ -271,8 +331,8 @@ var _ = Describe("Apppoller", func() {
 				Eventually(buffer).Should(gbytes.Say("test apppoller error"))
 				Consistently(dataChan).ShouldNot(Receive())
 
-				data, ok := poller.Query(0, fclock.Now().UnixNano()+1, map[string]string{})
-				Expect(ok).To(BeTrue())
+				data, ok := poller.Query(0, fclock.Now().UnixNano(), map[string]string{})
+				Expect(ok).To(BeFalse())
 				Expect(data).To(BeEmpty())
 
 			})
@@ -298,6 +358,7 @@ var _ = Describe("Apppoller", func() {
 									MemoryBytes:      proto.Uint64(100000000),
 									MemoryBytesQuota: proto.Uint64(300000000),
 								},
+								Timestamp: &timestamp,
 							},
 						}, nil
 					}
@@ -312,7 +373,7 @@ var _ = Describe("Apppoller", func() {
 				Eventually(noaa.ContainerEnvelopesCallCount).Should(Equal(3))
 				Eventually(dataChan).Should(Receive())
 				Eventually(dataChan).Should(Receive())
-				data, ok := poller.Query(0, fclock.Now().UnixNano()+1, map[string]string{})
+				data, ok := poller.Query(111111, fclock.Now().UnixNano(), map[string]string{})
 				Expect(ok).To(BeTrue())
 				Expect(data).To(HaveLen(3))
 
@@ -323,6 +384,7 @@ var _ = Describe("Apppoller", func() {
 
 	Describe("Stop", func() {
 		BeforeEach(func() {
+			poller = NewAppPoller(logger, "test-app-id", TestCollectInterval, cacheSize, isMetricsPersistencySupported, cfc, noaa, fclock, dataChan)
 			poller.Start()
 		})
 
