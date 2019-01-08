@@ -57,8 +57,6 @@ app_manager:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-dispatcher:
-  app_refresh_interval: 10s
 emitter:
   tls: 
     key_file: "metrc_server_client.cert"
@@ -92,7 +90,6 @@ health:
 					MaxIdleConnections:    5,
 					ConnectionMaxLifetime: 60 * time.Second,
 				}))
-				Expect(conf.Dispatcher.AppRefreshInterval).To(Equal(10 * time.Second))
 				Expect(conf.Emitter.BufferSize).To(Equal(800))
 				Expect(conf.Emitter.HandshakeTimeout).To(Equal(100 * time.Millisecond))
 				Expect(conf.Emitter.KeepAliveInterval).To(Equal(10 * time.Second))
@@ -148,7 +145,6 @@ health:
 				Expect(conf.NozzleCount).To(Equal(3))
 				Expect(conf.AppManager.AppRefreshInterval).To(Equal(60 * time.Second))
 
-				Expect(conf.Dispatcher.AppRefreshInterval).To(Equal(60 * time.Second))
 				Expect(conf.Emitter.BufferSize).To(Equal(500))
 				Expect(conf.Emitter.HandshakeTimeout).To(Equal(500 * time.Millisecond))
 				Expect(conf.Emitter.KeepAliveInterval).To(Equal(5 * time.Second))
@@ -174,8 +170,6 @@ app_manager:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-dispatcher:
-  app_refresh_interval: 10s
 emitter:
   tls: 
     key_file: "metrc_server_client.cert"
@@ -218,8 +212,6 @@ app_manager:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-dispatcher:
-  app_refresh_interval: 10s
 emitter:
   tls: 
     key_file: "metrc_server_client.cert"
@@ -261,8 +253,6 @@ app_manager:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-dispatcher:
-  app_refresh_interval: 10s
 emitter:
   tls: 
     key_file: "metrc_server_client.cert"
@@ -305,8 +295,6 @@ app_manager:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-dispatcher:
-  app_refresh_interval: 10s
 emitter:
   tls: 
     key_file: "metrc_server_client.cert"
@@ -349,8 +337,6 @@ app_manager:
     max_open_connections: NOT-INTEGAER-VALUE
     max_idle_connections: 5
     connection_max_lifetime: 60s
-dispatcher:
-  app_refresh_interval: 10s
 emitter:
   tls: 
     key_file: "metrc_server_client.cert"
@@ -394,8 +380,6 @@ app_manager:
     max_open_connections: 10
     max_idle_connections: NOT-INTEGER-VALUE
     connection_max_lifetime: 60s
-dispatcher:
-  app_refresh_interval: 10s
 emitter:
   tls: 
     key_file: "metrc_server_client.cert"
@@ -439,53 +423,6 @@ app_manager:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60k
-dispatcher:
-  app_refresh_interval: 10s
-emitter:
-  tls: 
-    key_file: "metrc_server_client.cert"
-    cert_file: "metrc_server_client.key"
-    ca_file: "autoscaler_ca.cert"
-  buffer_size: 800
-  keep_alive_interval: 10s
-  handshake_timeout: 100ms
-nozzle:
-  tls:
-    key_file: "loggregator_client.cert"
-    cert_file: "loggregator_client.key"
-    ca_file: "autoscaler_ca.cert"
-  rlp_addr: wss://localhost:9999
-  shard_id: autoscaler
-health:
-  port: 8081
-`)
-			})
-			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
-			})
-
-		})
-
-		Context("when dispatcher.app_refresh_interval is not a time.Duration", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
-logging:
-  level: "debug"
-envelop_chan_size: 800
-nozzle_count: 10
-metric_server_addrs:
-  - wss://localhost:8080
-  - wss://localhost:9080
-app_manager:
-  app_refresh_interval: 10s
-  policy_db:
-    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-dispatcher:
-  app_refresh_interval: 10k
 emitter:
   tls: 
     key_file: "metrc_server_client.cert"
@@ -529,8 +466,6 @@ app_manager:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-dispatcher:
-  app_refresh_interval: 10s
 emitter:
   tls: 
     key_file: "metrc_server_client.cert"
@@ -574,8 +509,6 @@ app_manager:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-dispatcher:
-  app_refresh_interval: 10s
 emitter:
   tls: 
     key_file: "metrc_server_client.cert"
@@ -619,8 +552,6 @@ app_manager:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-dispatcher:
-  app_refresh_interval: 10s
 emitter:
   tls: 
     key_file: "metrc_server_client.cert"
@@ -664,8 +595,6 @@ app_manager:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-dispatcher:
-  app_refresh_interval: 10s
 emitter:
   tls: 
     key_file: "metrc_server_client.cert"
@@ -711,9 +640,6 @@ health:
 						MaxIdleConnections:    5,
 						ConnectionMaxLifetime: 60 * time.Second,
 					},
-				},
-				Dispatcher: DispatcherConfig{
-					AppRefreshInterval: 10 * time.Second,
 				},
 				Emitter: EmitterConfig{
 					BufferSize:        500,
@@ -811,15 +737,6 @@ health:
 			})
 			It("should error", func() {
 				Expect(err).To(MatchError("Configuration error: app_manager.app_refresh_interval is 0"))
-			})
-		})
-
-		Context("when dispatcher.app_refresh_interval is 0", func() {
-			BeforeEach(func() {
-				conf.Dispatcher.AppRefreshInterval = 0
-			})
-			It("should error", func() {
-				Expect(err).To(MatchError("Configuration error: dispatcher.app_refresh_interval is 0"))
 			})
 		})
 

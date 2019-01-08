@@ -27,9 +27,6 @@ type AppManagerConfig struct {
 	AppRefreshInterval time.Duration     `yaml:"app_refresh_interval"`
 	PolicyDB           db.DatabaseConfig `yaml:"policy_db"`
 }
-type DispatcherConfig struct {
-	AppRefreshInterval time.Duration `yaml:"app_refresh_interval"`
-}
 
 type NozzleConfig struct {
 	TLS     *models.TLSCerts `yaml:"tls"`
@@ -50,7 +47,6 @@ type Config struct {
 	NozzleCount       int                   `yaml:"nozzle_count"`
 	MetricServerAddrs []string              `yaml:"metric_server_addrs"`
 	AppManager        AppManagerConfig      `yaml:"app_manager"`
-	Dispatcher        DispatcherConfig      `yaml:"dispatcher"`
 	Emitter           EmitterConfig         `yaml:"emitter"`
 	Nozzle            NozzleConfig          `yaml:"nozzle"`
 	Health            models.HealthConfig   `yaml:"health"`
@@ -63,9 +59,6 @@ func LoadConfig(bytes []byte) (*Config, error) {
 		},
 		EnvelopChanSize: DefaultEnvelopChanSize,
 		NozzleCount:     DefaultNozzleCount,
-		Dispatcher: DispatcherConfig{
-			AppRefreshInterval: DefaultAppRefreshInterval,
-		},
 		Emitter: EmitterConfig{
 			BufferSize:        DefaultEmitterBufferSize,
 			KeepAliveInterval: DefaultKeepAliveInterval,
@@ -114,9 +107,6 @@ func (c *Config) Validate() error {
 	}
 	if c.AppManager.AppRefreshInterval == time.Duration(0) {
 		return fmt.Errorf("Configuration error: app_manager.app_refresh_interval is 0")
-	}
-	if c.Dispatcher.AppRefreshInterval == time.Duration(0) {
-		return fmt.Errorf("Configuration error: dispatcher.app_refresh_interval is 0")
 	}
 	if c.Emitter.BufferSize <= 0 {
 		return fmt.Errorf("Configuration error: emitter.buffer_size is less-equal than 0")
