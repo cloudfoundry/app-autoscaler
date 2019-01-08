@@ -23,23 +23,18 @@ type WSHelper interface {
 	Ping() error
 }
 
-const (
-	DefaultMaxSetupRetryCount = 10
-	DefaultMaxCloseRetryCount = 10
-	DefaultRetryDelay         = 500 * time.Millisecond
-)
-
 type wshelper struct {
-	lock            sync.Mutex
-	dialer          websocket.Dialer
-	maxSetupRetry   int
-	maxCloseRetry   int
-	logger          lager.Logger
-	metricServerURL string
-	wsConn          *websocket.Conn
+	lock               sync.Mutex
+	dialer             websocket.Dialer
+	maxSetupRetryCount int
+	maxCloseRetryCount int
+	retryDelay         time.Duration
+	logger             lager.Logger
+	metricServerURL    string
+	wsConn             *websocket.Conn
 }
 
-func NewWSHelper(metricServerURL string, tlsConfig *tls.Config, handshakeTimeout time.Duration, logger lager.Logger) WSHelper {
+func NewWSHelper(metricServerURL string, tlsConfig *tls.Config, handshakeTimeout time.Duration, logger lager.Logger, maxSetupRetryCount int, maxCloseRetryCount int, retryDelay time.Duration) WSHelper {
 	return &wshelper{
 		metricServerURL: metricServerURL,
 		dialer: websocket.Dialer{
@@ -47,9 +42,10 @@ func NewWSHelper(metricServerURL string, tlsConfig *tls.Config, handshakeTimeout
 			Proxy:            http.ProxyFromEnvironment,
 			HandshakeTimeout: handshakeTimeout,
 		},
-		logger:        logger.Session("WSHelper"),
-		maxSetupRetry: DefaultMaxSetupRetryCount,
-		maxCloseRetry: DefaultMaxCloseRetryCount,
+		logger:             logger.Session("WSHelper"),
+		maxSetupRetryCount: maxSetupRetryCount,
+		maxCloseRetryCount: maxCloseRetryCount,
+		retryDelay:         retryDelay,
 	}
 }
 
@@ -68,11 +64,11 @@ func (wh *wshelper) SetupConn() error {
 		con, _, err := wh.dialer.Dial(wh.metricServerURL, nil)
 		if err != nil {
 			wh.logger.Error("failed-to-create-websocket-connection-to-metricserver", err, lager.Data{"metricServerURL": wh.metricServerURL})
-			if retryCount <= wh.maxSetupRetry {
+			if retryCount <= wh.maxSetupRetryCount {
 				retryCount++
-				time.Sleep(DefaultRetryDelay)
+				time.Sleep(wh.retryDelay)
 			} else {
-				wh.logger.Error("maximum-number-of-setup-retries-reached", err, lager.Data{"maxSetupRetryCount": wh.maxSetupRetry})
+				wh.logger.Error("maximum-number-of-setup-retries-reached", err, lager.Data{"maxSetupRetryCount": wh.maxSetupRetryCount})
 				return err
 			}
 		} else {
@@ -92,12 +88,12 @@ func (wh *wshelper) CloseConn() error {
 		err := wh.wsConn.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""), time.Time{})
 		if err != nil {
 			wh.logger.Error("failed-to-send-close-message-to-metricserver", err, lager.Data{"current": retryCount})
-			if retryCount <= wh.maxCloseRetry {
+			if retryCount <= wh.maxCloseRetryCount {
 				retryCount++
 				wh.logger.Info("retry", lager.Data{"RETRY": retryCount})
-				time.Sleep(DefaultRetryDelay)
+				time.Sleep(wh.retryDelay)
 			} else {
-				wh.logger.Error("maximum-number-of-close-retries-reached", err, lager.Data{"maxCloseRetryCount": wh.maxCloseRetry})
+				wh.logger.Error("maximum-number-of-close-retries-reached", err, lager.Data{"maxCloseRetryCount": wh.maxCloseRetryCount})
 				return err
 			}
 		} else {

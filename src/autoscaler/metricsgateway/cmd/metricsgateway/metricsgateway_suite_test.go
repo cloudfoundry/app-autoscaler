@@ -150,9 +150,12 @@ func initConfig() {
 			},
 		},
 		Emitter: config.EmitterConfig{
-			BufferSize:        500,
-			KeepAliveInterval: 1 * time.Second,
-			HandshakeTimeout:  1 * time.Second,
+			BufferSize:         500,
+			KeepAliveInterval:  1 * time.Second,
+			HandshakeTimeout:   1 * time.Second,
+			MaxSetupRetryCount: 10,
+			MaxCloseRetryCount: 10,
+			RetryDelay:         1 * time.Second,
 			TLS: &models.TLSCerts{
 				KeyFile:    metricServerClientKeyPath,
 				CertFile:   metricServerClientCrtPath,

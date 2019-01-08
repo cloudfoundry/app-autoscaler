@@ -21,6 +21,9 @@ const (
 	DefaultNozzleCount                      = 3
 	DefaultEnvelopChanSize                  = 500
 	DefaultEmitterBufferSize                = 500
+	DefaultMaxSetupRetryCount               = 10
+	DefaultMaxCloseRetryCount               = 10
+	DefaultRetryDelay                       = 10 * time.Second
 )
 
 type AppManagerConfig struct {
@@ -39,6 +42,10 @@ type EmitterConfig struct {
 	BufferSize        int              `yaml:"buffer_size"`
 	KeepAliveInterval time.Duration    `yaml:"keep_alive_interval"`
 	HandshakeTimeout  time.Duration    `yaml:"handshake_timeout"`
+
+	MaxSetupRetryCount int           `yaml:"max_setup_retry_count"`
+	MaxCloseRetryCount int           `yaml:"max_close_retry_count"`
+	RetryDelay         time.Duration `yaml:"retry_delay"`
 }
 
 type Config struct {
@@ -60,9 +67,12 @@ func LoadConfig(bytes []byte) (*Config, error) {
 		EnvelopChanSize: DefaultEnvelopChanSize,
 		NozzleCount:     DefaultNozzleCount,
 		Emitter: EmitterConfig{
-			BufferSize:        DefaultEmitterBufferSize,
-			KeepAliveInterval: DefaultKeepAliveInterval,
-			HandshakeTimeout:  DefaultHandshakeTimeout,
+			BufferSize:         DefaultEmitterBufferSize,
+			KeepAliveInterval:  DefaultKeepAliveInterval,
+			HandshakeTimeout:   DefaultHandshakeTimeout,
+			MaxSetupRetryCount: DefaultMaxSetupRetryCount,
+			MaxCloseRetryCount: DefaultMaxCloseRetryCount,
+			RetryDelay:         DefaultRetryDelay,
 		},
 		Nozzle: NozzleConfig{
 			ShardID: DefaultShardID,
@@ -116,6 +126,15 @@ func (c *Config) Validate() error {
 	}
 	if c.Emitter.KeepAliveInterval == time.Duration(0) {
 		return fmt.Errorf("Configuration error: emitter.keep_alive_interval is 0")
+	}
+	if c.Emitter.MaxSetupRetryCount <= 0 {
+		return fmt.Errorf("Configuration error: emitter.max_setup_retry_count is less-equal than 0")
+	}
+	if c.Emitter.MaxCloseRetryCount <= 0 {
+		return fmt.Errorf("Configuration error: emitter.max_close_retry_count is less-equal than 0")
+	}
+	if c.Emitter.RetryDelay == time.Duration(0) {
+		return fmt.Errorf("Configuration error: emitter.retry_delay is 0")
 	}
 	if c.Emitter.TLS.CertFile == "" {
 		return fmt.Errorf("Configuration error: emitter.tls.cert_file is empty")
