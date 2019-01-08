@@ -15,32 +15,34 @@ import (
 )
 
 type appStreamer struct {
-	appId           string
-	logger          lager.Logger
-	collectInterval time.Duration
-	cache           *collection.TSDCache
-	cfc             cf.CFClient
-	noaaConsumer    noaa.NoaaConsumer
-	doneChan        chan bool
-	sclock          clock.Clock
-	numRequests     map[int32]int64
-	sumReponseTimes map[int32]int64
-	dataChan        chan *models.AppInstanceMetric
+	appId                         string
+	logger                        lager.Logger
+	collectInterval               time.Duration
+	cache                         *collection.TSDCache
+	cfc                           cf.CFClient
+	noaaConsumer                  noaa.NoaaConsumer
+	doneChan                      chan bool
+	sclock                        clock.Clock
+	numRequests                   map[int32]int64
+	sumReponseTimes               map[int32]int64
+	dataChan                      chan *models.AppInstanceMetric
+	isMetricsPersistencySupported bool
 }
 
-func NewAppStreamer(logger lager.Logger, appId string, interval time.Duration, cacheSize int, cfc cf.CFClient, noaaConsumer noaa.NoaaConsumer, sclock clock.Clock, dataChan chan *models.AppInstanceMetric) AppCollector {
+func NewAppStreamer(logger lager.Logger, appId string, interval time.Duration, cacheSize int, isMetricsPersistencySupported bool, cfc cf.CFClient, noaaConsumer noaa.NoaaConsumer, sclock clock.Clock, dataChan chan *models.AppInstanceMetric) AppCollector {
 	return &appStreamer{
-		appId:           appId,
-		logger:          logger,
-		collectInterval: interval,
-		cache:           collection.NewTSDCache(cacheSize),
-		cfc:             cfc,
-		noaaConsumer:    noaaConsumer,
-		doneChan:        make(chan bool),
-		sclock:          sclock,
-		numRequests:     make(map[int32]int64),
-		sumReponseTimes: make(map[int32]int64),
-		dataChan:        dataChan,
+		appId:                         appId,
+		logger:                        logger,
+		collectInterval:               interval,
+		cache:                         collection.NewTSDCache(cacheSize),
+		cfc:                           cfc,
+		noaaConsumer:                  noaaConsumer,
+		doneChan:                      make(chan bool),
+		sclock:                        sclock,
+		numRequests:                   make(map[int32]int64),
+		sumReponseTimes:               make(map[int32]int64),
+		dataChan:                      dataChan,
+		isMetricsPersistencySupported: isMetricsPersistencySupported,
 	}
 }
 
@@ -98,7 +100,9 @@ func (as *appStreamer) processEvent(event *events.Envelope) {
 		metrics := noaa.GetMetricsFromContainerEnvelope(as.sclock.Now().UnixNano(), as.appId, event)
 		for _, metric := range metrics {
 			as.cache.Put(metric)
-			as.dataChan <- metric
+			if as.isMetricsPersistencySupported {
+				as.dataChan <- metric
+			}
 		}
 	} else if event.GetEventType() == events.Envelope_HttpStartStop {
 		as.logger.Debug("process-event-get-httpstartstop-event", lager.Data{"event": event})
@@ -124,7 +128,9 @@ func (as *appStreamer) computeAndSaveMetrics() {
 		}
 		as.logger.Debug("compute-throughput", lager.Data{"message": "write 0 throughput due to no requests"})
 		as.cache.Put(throughput)
-		as.dataChan <- throughput
+		if as.isMetricsPersistencySupported {
+			as.dataChan <- throughput
+		}
 		return
 	}
 
@@ -139,8 +145,6 @@ func (as *appStreamer) computeAndSaveMetrics() {
 			Timestamp:     as.sclock.Now().UnixNano(),
 		}
 		as.logger.Debug("compute-throughput", lager.Data{"throughput": throughput})
-		as.cache.Put(throughput)
-		as.dataChan <- throughput
 
 		responseTime := &models.AppInstanceMetric{
 			AppId:         as.appId,
@@ -152,8 +156,12 @@ func (as *appStreamer) computeAndSaveMetrics() {
 			Timestamp:     as.sclock.Now().UnixNano(),
 		}
 		as.logger.Debug("compute-responsetime", lager.Data{"responsetime": responseTime})
+		as.cache.Put(throughput)
 		as.cache.Put(responseTime)
-		as.dataChan <- responseTime
+		if as.isMetricsPersistencySupported {
+			as.dataChan <- throughput
+			as.dataChan <- responseTime
+		}
 	}
 
 	as.numRequests = make(map[int32]int64)
@@ -161,5 +169,5 @@ func (as *appStreamer) computeAndSaveMetrics() {
 }
 
 func (as *appStreamer) Query(start, end int64, labels map[string]string) ([]collection.TSD, bool) {
-	return as.cache.Query(start, end, labels)
+	return as.cache.Query(start, end+1, labels)
 }

@@ -1,9 +1,8 @@
 package collection_test
 
 import (
-	"time"
-
 	. "autoscaler/collection"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -93,7 +92,6 @@ var _ = Describe("TSDCache", func() {
 				Expect(cache.String()).To(Equal("[{40 map[]} {50 map[]} {50 map[]}]"))
 			})
 		})
-
 	})
 
 	Describe("Query", func() {
@@ -103,7 +101,7 @@ var _ = Describe("TSDCache", func() {
 			})
 			It("return empty results", func() {
 				result, ok := cache.Query(0, time.Now().UnixNano(), labels)
-				Expect(ok).To(BeTrue())
+				Expect(ok).To(BeFalse())
 				Expect(result).To(BeEmpty())
 			})
 		})
@@ -113,29 +111,36 @@ var _ = Describe("TSDCache", func() {
 			})
 			It("returns the data in [start, end)", func() {
 				cache.Put(TestTSD{20, nil})
-				result, ok := cache.Query(10, 40, labels)
+				result, ok := cache.Query(30, 50, labels)
 				Expect(ok).To(BeTrue())
+				Expect(result).To(Equal([]TSD{}))
+				result, ok = cache.Query(10, 50, labels)
+				Expect(ok).To(BeFalse())
 				Expect(result).To(Equal([]TSD{TestTSD{20, nil}}))
 
-				cache.Put(TestTSD{10, nil})
-				result, ok = cache.Query(10, 40, labels)
+				cache.Put(TestTSD{30, nil})
+				result, ok = cache.Query(30, 50, labels)
 				Expect(ok).To(BeTrue())
-				Expect(result).To(Equal([]TSD{TestTSD{10, nil}, TestTSD{20, nil}}))
+				Expect(result).To(Equal([]TSD{TestTSD{30, nil}}))
+				result, ok = cache.Query(10, 50, labels)
+				Expect(ok).To(BeFalse())
+				Expect(result).To(Equal([]TSD{TestTSD{20, nil}, TestTSD{30, nil}}))
 
 				cache.Put(TestTSD{40, nil})
-				result, ok = cache.Query(10, 40, labels)
+				result, ok = cache.Query(30, 50, labels)
 				Expect(ok).To(BeTrue())
-				Expect(result).To(Equal([]TSD{TestTSD{10, nil}, TestTSD{20, nil}}))
-
-				cache.Put(TestTSD{30, nil})
-				result, ok = cache.Query(10, 40, labels)
-				Expect(ok).To(BeTrue())
-				Expect(result).To(Equal([]TSD{TestTSD{10, nil}, TestTSD{20, nil}, TestTSD{30, nil}}))
+				Expect(result).To(Equal([]TSD{TestTSD{30, nil}, TestTSD{40, nil}}))
+				result, ok = cache.Query(10, 50, labels)
+				Expect(ok).To(BeFalse())
+				Expect(result).To(Equal([]TSD{TestTSD{20, nil}, TestTSD{30, nil}, TestTSD{40, nil}}))
 
 				cache.Put(TestTSD{50, nil})
-				result, ok = cache.Query(10, 40, labels)
+				result, ok = cache.Query(30, 50, labels)
 				Expect(ok).To(BeTrue())
-				Expect(result).To(Equal([]TSD{TestTSD{10, nil}, TestTSD{20, nil}, TestTSD{30, nil}}))
+				Expect(result).To(Equal([]TSD{TestTSD{30, nil}, TestTSD{40, nil}}))
+				result, ok = cache.Query(10, 50, labels)
+				Expect(ok).To(BeFalse())
+				Expect(result).To(Equal([]TSD{TestTSD{20, nil}, TestTSD{30, nil}, TestTSD{40, nil}}))
 			})
 		})
 
@@ -144,59 +149,45 @@ var _ = Describe("TSDCache", func() {
 				capacity = 3
 			})
 
-			Context("when all queried data are guarenteed  in cache", func() {
-				It("returns the data in [start, end)", func() {
-					cache.Put(TestTSD{20, nil})
-					cache.Put(TestTSD{10, nil})
-					cache.Put(TestTSD{40, nil})
-					cache.Put(TestTSD{30, nil})
+			It("returns the data in [start, end)", func() {
+				cache.Put(TestTSD{20, nil})
+				cache.Put(TestTSD{10, nil})
+				cache.Put(TestTSD{40, nil})
+				cache.Put(TestTSD{30, nil})
 
-					result, ok := cache.Query(30, 50, labels)
-					Expect(ok).To(BeTrue())
-					Expect(result).To(Equal([]TSD{TestTSD{30, nil}, TestTSD{40, nil}}))
+				result, ok := cache.Query(30, 50, labels)
+				Expect(ok).To(BeTrue())
+				Expect(result).To(Equal([]TSD{TestTSD{30, nil}, TestTSD{40, nil}}))
 
-					cache.Put(TestTSD{50, nil})
-					result, ok = cache.Query(35, 50, labels)
-					Expect(ok).To(BeTrue())
-					Expect(result).To(Equal([]TSD{TestTSD{40, nil}}))
-				})
-				Context("when querying with labels", func() {
-					BeforeEach(func() {
-						capacity = 5
-					})
-					It("returns the data with all the labels", func() {
-						cache.Put(TestTSD{20, map[string]string{"tom": "cat", "pig": "pepper"}})
-						cache.Put(TestTSD{10, nil})
-						cache.Put(TestTSD{40, map[string]string{"jerry": "mouse", "tom": "cat", "peppa": "pig"}})
-						cache.Put(TestTSD{30, map[string]string{"jerry": "mouse"}})
-						cache.Put(TestTSD{50, nil})
+				cache.Put(TestTSD{50, nil})
+				result, ok = cache.Query(30, 50, labels)
+				Expect(ok).To(BeTrue())
+				Expect(result).To(Equal([]TSD{TestTSD{30, nil}, TestTSD{40, nil}}))
 
-						result, ok := cache.Query(20, 60, map[string]string{"jerry": "mouse", "tom": "cat"})
-						Expect(ok).To(BeTrue())
-						Expect(result).To(Equal(([]TSD{TestTSD{40, map[string]string{"jerry": "mouse", "tom": "cat", "peppa": "pig"}}})))
-					})
-
-				})
-
-			})
-			Context("when queried data are possibly not in cache", func() {
-				It("returns false", func() {
-					cache.Put(TestTSD{20, nil})
-					cache.Put(TestTSD{10, nil})
-					cache.Put(TestTSD{40, nil})
-					cache.Put(TestTSD{30, nil})
-
-					_, ok := cache.Query(10, 50, labels)
-					Expect(ok).To(BeFalse())
-
-					cache.Put(TestTSD{50, nil})
-					_, ok = cache.Query(30, 50, labels)
-					Expect(ok).To(BeFalse())
-				})
-
+				cache.Put(TestTSD{60, nil})
+				result, ok = cache.Query(30, 50, labels)
+				Expect(ok).To(BeFalse())
+				Expect(result).To(Equal([]TSD{TestTSD{40, nil}}))
 			})
 
 		})
 
+		Context("when querying with labels", func() {
+			BeforeEach(func() {
+				capacity = 5
+			})
+			It("returns the data with all the labels", func() {
+				cache.Put(TestTSD{20, map[string]string{"tom": "cat", "pig": "pepper"}})
+				cache.Put(TestTSD{10, nil})
+				cache.Put(TestTSD{40, map[string]string{"jerry": "mouse", "tom": "cat", "peppa": "pig"}})
+				cache.Put(TestTSD{30, map[string]string{"jerry": "mouse"}})
+				cache.Put(TestTSD{50, nil})
+
+				result, ok := cache.Query(20, 60, map[string]string{"jerry": "mouse", "tom": "cat"})
+				Expect(ok).To(BeTrue())
+				Expect(result).To(Equal(([]TSD{TestTSD{40, map[string]string{"jerry": "mouse", "tom": "cat", "peppa": "pig"}}})))
+			})
+		})
 	})
+
 })
