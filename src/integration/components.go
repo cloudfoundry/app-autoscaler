@@ -450,12 +450,12 @@ func (components *Components) PrepareMetricsCollectorConfig(dbURI string, port i
 			},
 		},
 		Collector: mcConfig.CollectorConfig{
-			CollectInterval:               collectInterval,
-			RefreshInterval:               refreshInterval,
-			CollectMethod:                 collectMethod,
-			SaveInterval:                  saveInterval,
-			MetricCacheSizePerApp:         500,
-			IsMetricsPersistencySupported: true,
+			CollectInterval:       collectInterval,
+			RefreshInterval:       refreshInterval,
+			CollectMethod:         collectMethod,
+			SaveInterval:          saveInterval,
+			MetricCacheSizePerApp: 500,
+			PersistMetrics:        true,
 		},
 		HttpClientTimeout: httpClientTimeout,
 	}

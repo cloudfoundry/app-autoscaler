@@ -55,21 +55,21 @@ type DBConfig struct {
 }
 
 type CollectorConfig struct {
-	RefreshInterval               time.Duration `yaml:"refresh_interval"`
-	CollectInterval               time.Duration `yaml:"collect_interval"`
-	CollectMethod                 string        `yaml:"collect_method"`
-	SaveInterval                  time.Duration `yaml:"save_interval"`
-	MetricCacheSizePerApp         int           `yaml:"metric_cache_size_per_app"`
-	IsMetricsPersistencySupported bool          `yaml:"is_metrics_persistency_supported"`
+	RefreshInterval       time.Duration `yaml:"refresh_interval"`
+	CollectInterval       time.Duration `yaml:"collect_interval"`
+	CollectMethod         string        `yaml:"collect_method"`
+	SaveInterval          time.Duration `yaml:"save_interval"`
+	MetricCacheSizePerApp int           `yaml:"metric_cache_size_per_app"`
+	PersistMetrics        bool          `yaml:"persist_metrics"`
 }
 
 var defaultCollectorConfig = CollectorConfig{
-	RefreshInterval:               DefaultRefreshInterval,
-	CollectInterval:               DefaultCollectInterval,
-	CollectMethod:                 CollectMethodStreaming,
-	SaveInterval:                  DefaultSaveInterval,
-	MetricCacheSizePerApp:         DefaultMetricCacheSizePerApp,
-	IsMetricsPersistencySupported: true,
+	RefreshInterval:       DefaultRefreshInterval,
+	CollectInterval:       DefaultCollectInterval,
+	CollectMethod:         CollectMethodStreaming,
+	SaveInterval:          DefaultSaveInterval,
+	MetricCacheSizePerApp: DefaultMetricCacheSizePerApp,
+	PersistMetrics:        true,
 }
 
 type Config struct {

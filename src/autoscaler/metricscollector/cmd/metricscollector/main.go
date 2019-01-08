@@ -100,17 +100,17 @@ func main() {
 	var createAppCollector func(string, chan *models.AppInstanceMetric) collector.AppCollector
 	if conf.Collector.CollectMethod == config.CollectMethodPolling {
 		createAppCollector = func(appId string, dataChan chan *models.AppInstanceMetric) collector.AppCollector {
-			return collector.NewAppPoller(logger.Session("app-poller"), appId, conf.Collector.CollectInterval, conf.Collector.MetricCacheSizePerApp, conf.Collector.IsMetricsPersistencySupported, cfClient, noaa, mcClock, dataChan)
+			return collector.NewAppPoller(logger.Session("app-poller"), appId, conf.Collector.CollectInterval, conf.Collector.MetricCacheSizePerApp, conf.Collector.PersistMetrics, cfClient, noaa, mcClock, dataChan)
 		}
 	} else {
 		createAppCollector = func(appId string, dataChan chan *models.AppInstanceMetric) collector.AppCollector {
 			noaaConsumer := consumer.New(dopplerUrl, tlsConfig, nil)
 			noaaConsumer.RefreshTokenFrom(cfClient)
-			return collector.NewAppStreamer(logger.Session("app-streamer"), appId, conf.Collector.CollectInterval, conf.Collector.MetricCacheSizePerApp, conf.Collector.IsMetricsPersistencySupported, cfClient, noaaConsumer, mcClock, dataChan)
+			return collector.NewAppStreamer(logger.Session("app-streamer"), appId, conf.Collector.CollectInterval, conf.Collector.MetricCacheSizePerApp, conf.Collector.PersistMetrics, cfClient, noaaConsumer, mcClock, dataChan)
 		}
 	}
 
-	mc := collector.NewCollector(conf.Collector.RefreshInterval, conf.Collector.CollectInterval, conf.Collector.IsMetricsPersistencySupported, conf.Collector.SaveInterval,
+	mc := collector.NewCollector(conf.Collector.RefreshInterval, conf.Collector.CollectInterval, conf.Collector.PersistMetrics, conf.Collector.SaveInterval,
 		conf.Server.NodeIndex, len(conf.Server.NodeAddrs), logger.Session("collector"),
 		policyDB, instanceMetricsDB, mcClock, createAppCollector)
 

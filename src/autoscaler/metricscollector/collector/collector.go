@@ -23,51 +23,51 @@ type AppCollector interface {
 }
 
 type Collector struct {
-	refreshInterval               time.Duration
-	collectInterval               time.Duration
-	isMetricsPersistencySupported bool
-	saveInterval                  time.Duration
-	nodeNum                       int
-	nodeIndex                     int
-	logger                        lager.Logger
-	policyDb                      db.PolicyDB
-	instancemetricsDb             db.InstanceMetricsDB
-	cclock                        clock.Clock
-	createAppCollector            func(string, chan *models.AppInstanceMetric) AppCollector
-	doneChan                      chan bool
-	doneSaveChan                  chan bool
-	appCollectors                 map[string]AppCollector
-	lock                          *sync.RWMutex
-	dataChan                      chan *models.AppInstanceMetric
+	refreshInterval    time.Duration
+	collectInterval    time.Duration
+	persistMetrics     bool
+	saveInterval       time.Duration
+	nodeNum            int
+	nodeIndex          int
+	logger             lager.Logger
+	policyDb           db.PolicyDB
+	instancemetricsDb  db.InstanceMetricsDB
+	cclock             clock.Clock
+	createAppCollector func(string, chan *models.AppInstanceMetric) AppCollector
+	doneChan           chan bool
+	doneSaveChan       chan bool
+	appCollectors      map[string]AppCollector
+	lock               *sync.RWMutex
+	dataChan           chan *models.AppInstanceMetric
 }
 
-func NewCollector(refreshInterval time.Duration, collectInterval time.Duration, isMetricsPersistencySupported bool, saveInterval time.Duration,
+func NewCollector(refreshInterval time.Duration, collectInterval time.Duration, persistMetrics bool, saveInterval time.Duration,
 	nodeIndex, nodeNum int, logger lager.Logger, policyDb db.PolicyDB, instancemetricsDb db.InstanceMetricsDB,
 	cclock clock.Clock, createAppCollector func(string, chan *models.AppInstanceMetric) AppCollector) *Collector {
 	return &Collector{
-		refreshInterval:               refreshInterval,
-		collectInterval:               collectInterval,
-		saveInterval:                  saveInterval,
-		isMetricsPersistencySupported: isMetricsPersistencySupported,
-		nodeIndex:                     nodeIndex,
-		nodeNum:                       nodeNum,
-		logger:                        logger,
-		policyDb:                      policyDb,
-		instancemetricsDb:             instancemetricsDb,
-		cclock:                        cclock,
-		createAppCollector:            createAppCollector,
-		doneChan:                      make(chan bool),
-		doneSaveChan:                  make(chan bool),
-		appCollectors:                 make(map[string]AppCollector),
-		lock:                          &sync.RWMutex{},
-		dataChan:                      make(chan *models.AppInstanceMetric),
+		refreshInterval:    refreshInterval,
+		collectInterval:    collectInterval,
+		saveInterval:       saveInterval,
+		persistMetrics:     persistMetrics,
+		nodeIndex:          nodeIndex,
+		nodeNum:            nodeNum,
+		logger:             logger,
+		policyDb:           policyDb,
+		instancemetricsDb:  instancemetricsDb,
+		cclock:             cclock,
+		createAppCollector: createAppCollector,
+		doneChan:           make(chan bool),
+		doneSaveChan:       make(chan bool),
+		appCollectors:      make(map[string]AppCollector),
+		lock:               &sync.RWMutex{},
+		dataChan:           make(chan *models.AppInstanceMetric),
 	}
 }
 
 func (c *Collector) Start() {
 	go c.startAppRefresh()
 
-	if c.isMetricsPersistencySupported {
+	if c.persistMetrics {
 		go c.SaveMetricsInDB()
 	}
 
@@ -129,7 +129,7 @@ func (c *Collector) refreshApps() {
 
 func (c *Collector) Stop() {
 	c.doneChan <- true
-	if c.isMetricsPersistencySupported {
+	if c.persistMetrics {
 		c.doneSaveChan <- true
 	}
 	c.lock.RLock()
@@ -167,7 +167,7 @@ func (c *Collector) QueryMetrics(appID string, instanceIndex int, name string, s
 		}
 
 		result, hit := appCollector.Query(start, end, labels)
-		if hit || !c.isMetricsPersistencySupported {
+		if hit || !c.persistMetrics {
 			metrics := make([]*models.AppInstanceMetric, len(result))
 			if order == db.ASC {
 				for index, tsd := range result {
@@ -182,7 +182,7 @@ func (c *Collector) QueryMetrics(appID string, instanceIndex int, name string, s
 		}
 	}
 
-	if c.isMetricsPersistencySupported {
+	if c.persistMetrics {
 		return c.instancemetricsDb.RetrieveInstanceMetrics(appID, instanceIndex, name, start, end, order)
 	}
 	return []*models.AppInstanceMetric{}, nil
