@@ -21,18 +21,18 @@ import (
 var _ = Describe("Collector", func() {
 
 	var (
-		policyDb                      *fakes.FakePolicyDB
-		instanceMetricsDb             *fakes.FakeInstanceMetricsDB
-		coll                          *Collector
-		fclock                        *fakeclock.FakeClock
-		appCollector                  *fakes.FakeAppCollector
-		buffer                        *gbytes.Buffer
-		logger                        *lagertest.TestLogger
-		nodeNum                       int
-		nodeIndex                     int
-		createAppCollector            func(string, chan *models.AppInstanceMetric) AppCollector
-		metric1, metric2, metric3     *models.AppInstanceMetric
-		isMetricsPersistencySupported bool
+		policyDb                  *fakes.FakePolicyDB
+		instanceMetricsDb         *fakes.FakeInstanceMetricsDB
+		coll                      *Collector
+		fclock                    *fakeclock.FakeClock
+		appCollector              *fakes.FakeAppCollector
+		buffer                    *gbytes.Buffer
+		logger                    *lagertest.TestLogger
+		nodeNum                   int
+		nodeIndex                 int
+		createAppCollector        func(string, chan *models.AppInstanceMetric) AppCollector
+		metric1, metric2, metric3 *models.AppInstanceMetric
+		persistMetrics            bool
 	)
 
 	BeforeEach(func() {
@@ -44,7 +44,7 @@ var _ = Describe("Collector", func() {
 		buffer = logger.Buffer()
 		fclock = fakeclock.NewFakeClock(time.Now())
 		appCollector = &fakes.FakeAppCollector{}
-		isMetricsPersistencySupported = false
+		persistMetrics = false
 		createAppCollector = func(appId string, dataChan chan *models.AppInstanceMetric) AppCollector {
 			return appCollector
 		}
@@ -53,7 +53,7 @@ var _ = Describe("Collector", func() {
 
 	Describe("Start", func() {
 		JustBeforeEach(func() {
-			coll = NewCollector(TestRefreshInterval, TestCollectInterval, isMetricsPersistencySupported, TestSaveInterval, nodeIndex, nodeNum, logger, policyDb, instanceMetricsDb, fclock, createAppCollector)
+			coll = NewCollector(TestRefreshInterval, TestCollectInterval, persistMetrics, TestSaveInterval, nodeIndex, nodeNum, logger, policyDb, instanceMetricsDb, fclock, createAppCollector)
 			coll.Start()
 		})
 
@@ -291,7 +291,7 @@ var _ = Describe("Collector", func() {
 	Describe("Stop", func() {
 		BeforeEach(func() {
 			policyDb.GetAppIdsReturns(map[string]bool{"app-id-1": true, "app-id-2": true, "app-id-3": true}, nil)
-			coll = NewCollector(TestRefreshInterval, TestCollectInterval, isMetricsPersistencySupported, TestSaveInterval, nodeIndex, nodeNum, logger, policyDb, instanceMetricsDb, fclock, createAppCollector)
+			coll = NewCollector(TestRefreshInterval, TestCollectInterval, persistMetrics, TestSaveInterval, nodeIndex, nodeNum, logger, policyDb, instanceMetricsDb, fclock, createAppCollector)
 			coll.Start()
 		})
 
@@ -310,7 +310,7 @@ var _ = Describe("Collector", func() {
 
 	Describe("QueryMetricsFromCache", func() {
 		JustBeforeEach(func() {
-			coll = NewCollector(TestRefreshInterval, TestCollectInterval, isMetricsPersistencySupported, TestSaveInterval, nodeIndex, nodeNum, logger, policyDb, instanceMetricsDb, fclock, createAppCollector)
+			coll = NewCollector(TestRefreshInterval, TestCollectInterval, persistMetrics, TestSaveInterval, nodeIndex, nodeNum, logger, policyDb, instanceMetricsDb, fclock, createAppCollector)
 			coll.Start()
 		})
 		BeforeEach(func() {
@@ -374,7 +374,7 @@ var _ = Describe("Collector", func() {
 			})
 			Context("when metrics data are persisted", func() {
 				BeforeEach(func() {
-					isMetricsPersistencySupported = true
+					persistMetrics = true
 				})
 				Context("when retrieving metrics from database succeeds", func() {
 					BeforeEach(func() {
@@ -413,7 +413,7 @@ var _ = Describe("Collector", func() {
 
 			Context("when metric data are persisted", func() {
 				BeforeEach(func() {
-					isMetricsPersistencySupported = true
+					persistMetrics = true
 					instanceMetricsDb.RetrieveInstanceMetricsReturns([]*models.AppInstanceMetric{metric3}, nil)
 				})
 				It("retrieves from database", func() {
