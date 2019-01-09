@@ -85,7 +85,7 @@ func main() {
 		httpStatusCollector,
 	}, true, logger.Session("metricsserver-prometheus"))
 
-	coll := collector.NewCollector(logger.Session("metricsserver-collector"), conf.Collector.RefreshInterval, conf.Collector.CollectInterval, conf.Collector.IsMetricsPersistencySupported,
+	coll := collector.NewCollector(logger.Session("metricsserver-collector"), conf.Collector.RefreshInterval, conf.Collector.CollectInterval, conf.Collector.PersistMetrics,
 		conf.Collector.SaveInterval, conf.NodeIndex, len(conf.NodeAddrs), conf.Collector.MetricCacheSizePerApp, policyDB, instanceMetricsDB, msClock, metricsChan)
 
 	envelopeChannels := make([]chan *loggregator_v2.Envelope, conf.Collector.EnvelopeProcessorCount)

@@ -74,7 +74,7 @@ collector:
   collect_interval: 10s
   save_interval: 5s
   metric_cache_size_per_app: 100
-  metrics_persistency_support_flag: true
+  persist_metrics: true
   envelope_processor_count: 10
   envelope_channel_size: 500
   metric_channel_size: 500
@@ -120,7 +120,7 @@ health:
 				Expect(conf.Collector.CollectInterval).To(Equal(10 * time.Second))
 				Expect(conf.Collector.SaveInterval).To(Equal(5 * time.Second))
 				Expect(conf.Collector.MetricCacheSizePerApp).To(Equal(100))
-				Expect(conf.Collector.IsMetricsPersistencySupported).To(BeTrue())
+				Expect(conf.Collector.PersistMetrics).To(BeTrue())
 				Expect(conf.Collector.EnvelopeProcessorCount).To(Equal(10))
 				Expect(conf.Collector.EnvelopeChannelSize).To(Equal(500))
 				Expect(conf.Collector.MetricChannelSize).To(Equal(500))
@@ -172,7 +172,7 @@ db:
 				Expect(conf.Collector.WSKeepAliveTime).To(Equal(DefaultWSKeepAliveTime))
 				Expect(conf.Collector.RefreshInterval).To(Equal(DefaultRefreshInterval))
 				Expect(conf.Collector.MetricCacheSizePerApp).To(Equal(DefaultMetricCacheSizePerApp))
-				Expect(conf.Collector.IsMetricsPersistencySupported).To(Equal(DefaultIsMetricsPersistencySupported))
+				Expect(conf.Collector.PersistMetrics).To(Equal(DefaultIsMetricsPersistencySupported))
 				Expect(conf.Collector.EnvelopeProcessorCount).To(Equal(DefaultEnvelopeProcessorCount))
 				Expect(conf.Collector.EnvelopeChannelSize).To(Equal(DefaultEnvelopeChannelSize))
 				Expect(conf.Collector.MetricChannelSize).To(Equal(DefaultMetricChannelSize))
