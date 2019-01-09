@@ -22,49 +22,49 @@ type MetricCollector interface {
 }
 
 type metricCollector struct {
-	logger                        lager.Logger
-	refreshInterval               time.Duration
-	collectInterval               time.Duration
-	isMetricsPersistencySupported bool
-	saveInterval                  time.Duration
-	nodeNum                       int
-	nodeIndex                     int
-	metricCacheSizePerApp         int
-	policyDb                      db.PolicyDB
-	instancemetricsDb             db.InstanceMetricsDB
-	cclock                        clock.Clock
-	doneChan                      chan bool
-	doneSaveChan                  chan bool
-	ticker                        clock.Ticker
-	lock                          *sync.RWMutex
-	metricsChan                   <-chan *models.AppInstanceMetric
-	appIDs                        map[string]bool
-	metricCache                   map[string]*collection.TSDCache
-	mLock                         *sync.RWMutex
+	logger                lager.Logger
+	refreshInterval       time.Duration
+	collectInterval       time.Duration
+	PersistMetrics        bool
+	saveInterval          time.Duration
+	nodeNum               int
+	nodeIndex             int
+	metricCacheSizePerApp int
+	policyDb              db.PolicyDB
+	instancemetricsDb     db.InstanceMetricsDB
+	cclock                clock.Clock
+	doneChan              chan bool
+	doneSaveChan          chan bool
+	ticker                clock.Ticker
+	lock                  *sync.RWMutex
+	metricsChan           <-chan *models.AppInstanceMetric
+	appIDs                map[string]bool
+	metricCache           map[string]*collection.TSDCache
+	mLock                 *sync.RWMutex
 }
 
-func NewCollector(logger lager.Logger, refreshInterval time.Duration, collectInterval time.Duration, isMetricsPersistencySupported bool, saveInterval time.Duration,
+func NewCollector(logger lager.Logger, refreshInterval time.Duration, collectInterval time.Duration, PersistMetrics bool, saveInterval time.Duration,
 	nodeIndex, nodeNum int, metricCacheSizePerApp int, policyDb db.PolicyDB, instancemetricsDb db.InstanceMetricsDB,
 	cclock clock.Clock, metricsChan <-chan *models.AppInstanceMetric) *metricCollector {
 	return &metricCollector{
-		refreshInterval:               refreshInterval,
-		collectInterval:               collectInterval,
-		saveInterval:                  saveInterval,
-		isMetricsPersistencySupported: isMetricsPersistencySupported,
-		nodeIndex:                     nodeIndex,
-		nodeNum:                       nodeNum,
-		metricCacheSizePerApp:         metricCacheSizePerApp,
-		logger:                        logger,
-		policyDb:                      policyDb,
-		instancemetricsDb:             instancemetricsDb,
-		cclock:                        cclock,
-		doneChan:                      make(chan bool),
-		doneSaveChan:                  make(chan bool),
-		lock:                          &sync.RWMutex{},
-		metricsChan:                   metricsChan,
-		appIDs:                        map[string]bool{},
-		metricCache:                   make(map[string]*collection.TSDCache),
-		mLock:                         &sync.RWMutex{},
+		refreshInterval:       refreshInterval,
+		collectInterval:       collectInterval,
+		saveInterval:          saveInterval,
+		PersistMetrics:        PersistMetrics,
+		nodeIndex:             nodeIndex,
+		nodeNum:               nodeNum,
+		metricCacheSizePerApp: metricCacheSizePerApp,
+		logger:                logger,
+		policyDb:              policyDb,
+		instancemetricsDb:     instancemetricsDb,
+		cclock:                cclock,
+		doneChan:              make(chan bool),
+		doneSaveChan:          make(chan bool),
+		lock:                  &sync.RWMutex{},
+		metricsChan:           metricsChan,
+		appIDs:                map[string]bool{},
+		metricCache:           make(map[string]*collection.TSDCache),
+		mLock:                 &sync.RWMutex{},
 	}
 }
 
@@ -150,7 +150,7 @@ func (c *metricCollector) QueryMetrics(appID string, instanceIndex int, name str
 			labels[models.MetricLabelInstanceIndex] = fmt.Sprintf("%d", instanceIndex)
 		}
 		result, hit := appCache.Query(start, end+1, labels)
-		if hit || !c.isMetricsPersistencySupported {
+		if hit || !c.PersistMetrics {
 			metrics := make([]*models.AppInstanceMetric, len(result))
 			if order == db.ASC {
 				for index, tsd := range result {
@@ -165,7 +165,7 @@ func (c *metricCollector) QueryMetrics(appID string, instanceIndex int, name str
 		}
 	}
 
-	if c.isMetricsPersistencySupported {
+	if c.PersistMetrics {
 		return c.instancemetricsDb.RetrieveInstanceMetrics(appID, instanceIndex, name, start, end, order)
 	}
 	return []*models.AppInstanceMetric{}, nil
@@ -182,7 +182,7 @@ func (c *metricCollector) QueryMetricsWithLabels(appID string, start, end int64,
 
 	if exist {
 		result, hit := appCache.Query(start, end+1, labels)
-		if hit || !c.isMetricsPersistencySupported {
+		if hit || !c.PersistMetrics {
 			metrics := make([]*models.AppInstanceMetric, len(result))
 			if order == db.ASC {
 				for index, tsd := range result {
@@ -206,11 +206,11 @@ func (c *metricCollector) saveMetrics() {
 		select {
 		case m := <-c.metricsChan:
 			c.saveMetricToCache(m)
-			if c.isMetricsPersistencySupported {
+			if c.PersistMetrics {
 				metrics = append(metrics, m)
 			}
 		case <-ticker.C():
-			if c.isMetricsPersistencySupported {
+			if c.PersistMetrics {
 				go func(instancemetricsDb db.InstanceMetricsDB, metrics []*models.AppInstanceMetric) {
 					instancemetricsDb.SaveMetricsInBulk(metrics)
 					metrics = nil
