@@ -75,16 +75,16 @@ var _ = Describe("Emitter", func() {
 		JustBeforeEach(func() {
 			emitter = NewEnvelopeEmitter(logger, bufferSize, fclock, verifyWSConnectionInterval, fakeWSHelper)
 			emitter.Start()
-			emitter.Accept(&testEnvelope)
 		})
 		It("should emit envelops to metricServer", func() {
+			emitter.Accept(&testEnvelope)
 			Eventually(envelopChan).Should(Receive())
 		})
 
 		It("should send ping message to metricServer periodically", func() {
-			fclock.Increment(1 * verifyWSConnectionInterval)
+			fclock.WaitForWatcherAndIncrement(1 * verifyWSConnectionInterval)
 			Eventually(wsMessageChan).Should(Receive(Equal(websocket.PingMessage)))
-			fclock.Increment(1 * verifyWSConnectionInterval)
+			fclock.WaitForWatcherAndIncrement(1 * verifyWSConnectionInterval)
 			Eventually(wsMessageChan).Should(Receive(Equal(websocket.PingMessage)))
 		})
 	})
