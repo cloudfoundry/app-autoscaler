@@ -37,17 +37,17 @@ type DBConfig struct {
 }
 
 type CollectorConfig struct {
-	WSPort                        int             `yaml:"port"`
-	WSKeepAliveTime               time.Duration   `yaml:"keep_alive_time"`
-	TLS                           models.TLSCerts `yaml:"tls"`
-	RefreshInterval               time.Duration   `yaml:"refresh_interval"`
-	CollectInterval               time.Duration   `yaml:"collect_interval"`
-	SaveInterval                  time.Duration   `yaml:"save_interval"`
-	MetricCacheSizePerApp         int             `yaml:"metric_cache_size_per_app"`
-	IsMetricsPersistencySupported bool            `yaml:"metrics_persistency_support_flag"`
-	EnvelopeProcessorCount        int             `yaml:"envelope_processor_count"`
-	EnvelopeChannelSize           int             `yaml:"envelope_channel_size"`
-	MetricChannelSize             int             `yaml:"metric_channel_size"`
+	WSPort                 int             `yaml:"port"`
+	WSKeepAliveTime        time.Duration   `yaml:"keep_alive_time"`
+	TLS                    models.TLSCerts `yaml:"tls"`
+	RefreshInterval        time.Duration   `yaml:"refresh_interval"`
+	CollectInterval        time.Duration   `yaml:"collect_interval"`
+	SaveInterval           time.Duration   `yaml:"save_interval"`
+	MetricCacheSizePerApp  int             `yaml:"metric_cache_size_per_app"`
+	PersistMetrics         bool            `yaml:"persist_metrics"`
+	EnvelopeProcessorCount int             `yaml:"envelope_processor_count"`
+	EnvelopeChannelSize    int             `yaml:"envelope_channel_size"`
+	MetricChannelSize      int             `yaml:"metric_channel_size"`
 }
 
 type ServerConfig struct {
@@ -76,16 +76,16 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 			Port: DefaultHealthPort,
 		},
 		Collector: CollectorConfig{
-			WSPort:                        DefaultWSPort,
-			WSKeepAliveTime:               DefaultWSKeepAliveTime,
-			RefreshInterval:               DefaultRefreshInterval,
-			CollectInterval:               DefaultCollectInterval,
-			SaveInterval:                  DefaultSaveInterval,
-			MetricCacheSizePerApp:         DefaultMetricCacheSizePerApp,
-			IsMetricsPersistencySupported: DefaultIsMetricsPersistencySupported,
-			EnvelopeProcessorCount:        DefaultEnvelopeProcessorCount,
-			EnvelopeChannelSize:           DefaultEnvelopeChannelSize,
-			MetricChannelSize:             DefaultMetricChannelSize,
+			WSPort:                 DefaultWSPort,
+			WSKeepAliveTime:        DefaultWSKeepAliveTime,
+			RefreshInterval:        DefaultRefreshInterval,
+			CollectInterval:        DefaultCollectInterval,
+			SaveInterval:           DefaultSaveInterval,
+			MetricCacheSizePerApp:  DefaultMetricCacheSizePerApp,
+			PersistMetrics:         DefaultIsMetricsPersistencySupported,
+			EnvelopeProcessorCount: DefaultEnvelopeProcessorCount,
+			EnvelopeChannelSize:    DefaultEnvelopeChannelSize,
+			MetricChannelSize:      DefaultMetricChannelSize,
 		},
 		Server: ServerConfig{
 			Port: DefaultHTTPServerPort,
