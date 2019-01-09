@@ -61,7 +61,11 @@ func (e *EnvelopeEmitter) startEmitEnvelope() {
 				e.logger.Error("failed-to-emit-envelope", err, lager.Data{"message": envelope})
 			}
 		case <-e.ticker.C():
-			e.wsHelper.Ping()
+			err := e.wsHelper.Ping()
+			if err != nil {
+				e.logger.Error("failed-to-ping-metricserver", err)
+
+			}
 		}
 	}
 }

@@ -114,7 +114,7 @@ var _ = Describe("EnvelopeProcessor", func() {
 				Expect(envelopeChan).Should(BeSent(GenerateHttpStartStopEnvelope("test-app-id", "1", 20*1000*1000, 50*1000*1000, 1111)))
 				Expect(envelopeChan).Should(BeSent(GenerateHttpStartStopEnvelope("test-app-id", "1", 20*1000*1000, 30*1000*1000, 1111)))
 				// make sure the envelopes have been processed
-				time.Sleep(100 * time.Millisecond)
+				time.Sleep(2 * time.Second)
 			})
 			It("sends throughput and responsetime metric to channel", func() {
 				Consistently(metricChan).ShouldNot(Receive())
