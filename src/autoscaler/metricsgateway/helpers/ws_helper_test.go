@@ -6,8 +6,8 @@ import (
 	"time"
 
 	. "autoscaler/metricsgateway/helpers"
-	"autoscaler/metricsgateway/testhelpers"
 	"autoscaler/routes"
+	"autoscaler/testhelpers"
 
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager/lagertest"
