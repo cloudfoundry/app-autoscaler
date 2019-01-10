@@ -27,7 +27,7 @@ import (
 	"autoscaler/db"
 	"autoscaler/helpers"
 	"autoscaler/metricsgateway/config"
-	"autoscaler/metricsgateway/testhelpers"
+	"autoscaler/testhelpers"
 )
 
 var (
