@@ -16,7 +16,7 @@
 
 | Name                 | Type         | Required|Description                                                                      |
 |:---------------------|--------------|---------|---------------------------------------------------------------------------------|
-| metric_type          | String       | true    |one of the following metric types:memoryused,memoryutil,responsetime, throughput |      
+| metric_type          | String       | true    |one of the following metric types:memoryused,memoryutil,responsetime, throughput, cpu |      
 | breach_duration_secs | int, seconds | false   |time duration to fire scaling event if it keeps breaching                        |
 | threshold            | int          | true    |the boundary when metric value exceeds is considered as a breach                 |
 | operator             | String       | true    |>, <, >=, <=                                                                     |
