@@ -42,6 +42,12 @@ Dynamic scaling would happen based on different application metric types, includ
 	
 	For example, if the memory usage of the application is "100MB of 200MB", the value of "memoryutil" is 50%.
 
+* **cpu**
+
+	The metric "cpu", a short name of "cpu utilization", is the **average** percentage of cpu usage of your application for all its instances. 
+	
+	The default unit of "cpu" is "%".
+
 * **responsetime**
 	
 	The metric "responsetime" represents the **average** latency for the processed requests occurred in a period time of your application for all its instances. 
