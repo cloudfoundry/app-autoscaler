@@ -43,6 +43,8 @@ var _ = Describe("EnvelopeProcessor", func() {
 			processor = NewEnvelopeProcessor(logger, TestCollectInterval, fclock,
 				processorIndex, numProcessors, envelopeChan, metricChan, getAppIDs)
 			processor.Start()
+			// make sure the envelopes have been processed
+			time.Sleep(2 * time.Second)
 		})
 		AfterEach(func() {
 			processor.Stop()
@@ -113,14 +115,19 @@ var _ = Describe("EnvelopeProcessor", func() {
 				Expect(envelopeChan).Should(BeSent(GenerateHttpStartStopEnvelope("test-app-id", "0", 20*1000*1000, 30*1000*1000, 1111)))
 				Expect(envelopeChan).Should(BeSent(GenerateHttpStartStopEnvelope("test-app-id", "1", 20*1000*1000, 50*1000*1000, 1111)))
 				Expect(envelopeChan).Should(BeSent(GenerateHttpStartStopEnvelope("test-app-id", "1", 20*1000*1000, 30*1000*1000, 1111)))
-				// make sure the envelopes have been processed
-				time.Sleep(2 * time.Second)
+
 			})
 			It("sends throughput and responsetime metric to channel", func() {
 				Consistently(metricChan).ShouldNot(Receive())
 
 				fclock.WaitForWatcherAndIncrement(TestCollectInterval)
-				Eventually(metricChan).Should(Receive(Equal(&models.AppInstanceMetric{
+				metrics := []*models.AppInstanceMetric{}
+
+				Eventually(func() int {
+					metrics = append(metrics, <-metricChan)
+					return len(metrics)
+				}).Should(Equal(4))
+				Expect(metrics).To(ContainElement(&models.AppInstanceMetric{
 					AppId:         "test-app-id",
 					InstanceIndex: 0,
 					CollectedAt:   fclock.Now().UnixNano(),
@@ -128,9 +135,9 @@ var _ = Describe("EnvelopeProcessor", func() {
 					Unit:          models.UnitRPS,
 					Value:         "2",
 					Timestamp:     fclock.Now().UnixNano(),
-				})))
+				}))
 
-				Eventually(metricChan).Should(Receive(Equal(&models.AppInstanceMetric{
+				Expect(metrics).To(ContainElement(&models.AppInstanceMetric{
 					AppId:         "test-app-id",
 					InstanceIndex: 0,
 					CollectedAt:   fclock.Now().UnixNano(),
@@ -138,9 +145,9 @@ var _ = Describe("EnvelopeProcessor", func() {
 					Unit:          models.UnitMilliseconds,
 					Value:         "10",
 					Timestamp:     fclock.Now().UnixNano(),
-				})))
+				}))
 
-				Eventually(metricChan).Should(Receive(Equal(&models.AppInstanceMetric{
+				Expect(metrics).To(ContainElement(&models.AppInstanceMetric{
 					AppId:         "test-app-id",
 					InstanceIndex: 1,
 					CollectedAt:   fclock.Now().UnixNano(),
@@ -148,9 +155,9 @@ var _ = Describe("EnvelopeProcessor", func() {
 					Unit:          models.UnitRPS,
 					Value:         "3",
 					Timestamp:     fclock.Now().UnixNano(),
-				})))
+				}))
 
-				Eventually(metricChan).Should(Receive(Equal(&models.AppInstanceMetric{
+				Expect(metrics).To(ContainElement(&models.AppInstanceMetric{
 					AppId:         "test-app-id",
 					InstanceIndex: 1,
 					CollectedAt:   fclock.Now().UnixNano(),
@@ -158,7 +165,7 @@ var _ = Describe("EnvelopeProcessor", func() {
 					Unit:          models.UnitMilliseconds,
 					Value:         "20",
 					Timestamp:     fclock.Now().UnixNano(),
-				})))
+				}))
 
 			})
 
