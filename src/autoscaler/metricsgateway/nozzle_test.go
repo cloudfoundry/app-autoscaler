@@ -11,7 +11,7 @@ import (
 	. "github.com/onsi/gomega/gbytes"
 
 	"autoscaler/metricsgateway"
-	. "autoscaler/metricsgateway/testhelpers"
+	. "autoscaler/testhelpers"
 )
 
 var _ = Describe("Nozzle", func() {
