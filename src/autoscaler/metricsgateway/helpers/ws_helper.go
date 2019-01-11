@@ -72,6 +72,15 @@ func (wh *wshelper) SetupConn() error {
 				return err
 			}
 		} else {
+			go func() {
+				for {
+					_, _, err := con.ReadMessage()
+					if err != nil {
+						wh.logger.Error("failed-to-read-message", err)
+						return
+					}
+				}
+			}()
 			wh.lock.Lock()
 			defer wh.lock.Unlock()
 			wh.wsConn = con
@@ -146,7 +155,7 @@ func (wh *wshelper) Ping() error {
 func (wh *wshelper) reconnect() error {
 	err := wh.CloseConn()
 	if err != nil {
-		return err
+		wh.logger.Error("failed-to-close-websocket-connection", err)
 	}
 
 	err = wh.SetupConn()
