@@ -56,7 +56,7 @@ func (f *FakeEventProducer) BatchedReceiver(
 	f.actualReq = req
 	f.mu.Unlock()
 	var i int
-	for range time.Tick(10 * time.Millisecond) {
+	for range time.Tick(500 * time.Millisecond) {
 		srv.Send(&loggregator_v2.EnvelopeBatch{
 			Batch: f.envelops,
 		})
