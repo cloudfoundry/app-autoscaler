@@ -5,6 +5,7 @@ import (
 	"autoscaler/db"
 	"autoscaler/metricscollector/testhelpers"
 	"autoscaler/models"
+	as_testhelpers "autoscaler/testhelpers"
 	"bytes"
 
 	"database/sql"
@@ -26,6 +27,7 @@ import (
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/consuladapter/consulrunner"
+	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry/sonde-go/events"
 	"github.com/gogo/protobuf/proto"
@@ -56,6 +58,8 @@ var (
 	eventGeneratorConfPath   string
 	scalingEngineConfPath    string
 	operatorConfPath         string
+	metricsGatewayConfPath   string
+	metricsServerConfPath    string
 	brokerUserName           string = "username"
 	brokerPassword           string = "password"
 	brokerAuth               string
@@ -194,6 +198,12 @@ func CompileTestedExecutables() Executables {
 	builtExecutables[Operator], err = gexec.BuildIn(rootDir, "autoscaler/operator/cmd/operator", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
+	builtExecutables[MetricsGateway], err = gexec.BuildIn(rootDir, "autoscaler/metricsgateway/cmd/metricsgateway", "-race")
+	Expect(err).NotTo(HaveOccurred())
+
+	builtExecutables[MetricsServerHTTP], err = gexec.BuildIn(rootDir, "autoscaler/metricsserver/cmd/metricsserver", "-race")
+	Expect(err).NotTo(HaveOccurred())
+
 	return builtExecutables
 }
 
@@ -205,6 +215,8 @@ func PreparePorts() Ports {
 		ServiceBrokerInternal: 14000 + GinkgoParallelNode(),
 		Scheduler:             15000 + GinkgoParallelNode(),
 		MetricsCollector:      16000 + GinkgoParallelNode(),
+		MetricsServerHTTP:     20000 + GinkgoParallelNode(),
+		MetricsServerWS:       21000 + GinkgoParallelNode(),
 		EventGenerator:        17000 + GinkgoParallelNode(),
 		ScalingEngine:         18000 + GinkgoParallelNode(),
 		ConsulCluster:         19000 + GinkgoParallelNode()*consulrunner.PortOffsetLength,
@@ -257,6 +269,18 @@ func startOperator() {
 	}))
 }
 
+func startMetricsGateway() {
+	processMap[MetricsGateway] = ginkgomon.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
+		{MetricsGateway, components.MetricsGateway(metricsGatewayConfPath)},
+	}))
+}
+
+func startMetricsServer() {
+	processMap[MetricsServerHTTP] = ginkgomon.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
+		{MetricsServerHTTP, components.MetricsServer(metricsServerConfPath)},
+	}))
+}
+
 func stopApiServer() {
 	ginkgomon.Kill(processMap[APIServer], 5*time.Second)
 }
@@ -278,6 +302,12 @@ func stopServiceBroker() {
 func stopOperator() {
 	ginkgomon.Kill(processMap[Operator], 5*time.Second)
 }
+func stopMetricsGateway() {
+	ginkgomon.Kill(processMap[MetricsGateway], 5*time.Second)
+}
+func stopMetricsServer() {
+	ginkgomon.Kill(processMap[MetricsServerHTTP], 5*time.Second)
+}
 
 func sendSigusr2Signal(component string) {
 	process := processMap[component]
@@ -295,7 +325,7 @@ func stopAll() {
 		if process == nil {
 			continue
 		}
-		ginkgomon.Interrupt(process, 5*time.Second)
+		ginkgomon.Interrupt(process, 15*time.Second)
 	}
 }
 
@@ -806,6 +836,19 @@ func closeFakeMetricsStreaming() {
 	close(emptyMessageChannel)
 }
 
+func startFakeRLPServer(appId string, memoryValue uint64, memQuota uint64) *as_testhelpers.FakeEventProducer {
+	fakeRLPServer, err := as_testhelpers.NewFakeEventProducer(filepath.Join(testCertDir, "reverselogproxy.crt"), filepath.Join(testCertDir, "reverselogproxy.key"), filepath.Join(testCertDir, "autoscaler-ca.crt"))
+	Expect(err).NotTo(HaveOccurred())
+	envelope := createContainerEnvelope(appId, 1, 4.0, float64(memoryValue), float64(2048000000), float64(memQuota), time.Now().UnixNano())
+	fakeRLPServer.SetEnvelops(envelope)
+	fakeRLPServer.Start()
+	return fakeRLPServer
+}
+func stopFakeRLPServer(fakeRLPServer *as_testhelpers.FakeEventProducer) {
+	stopped := fakeRLPServer.Stop()
+	Expect(stopped).To(Equal(true))
+}
+
 func createContainerMetric(appId string, instanceIndex int32, cpuPercentage float64, memoryBytes uint64, diskByte uint64, memQuota uint64, diskQuota uint64, timestamp int64) *events.Envelope {
 	if timestamp == 0 {
 		timestamp = time.Now().UnixNano()
@@ -825,6 +868,36 @@ func createContainerMetric(appId string, instanceIndex int32, cpuPercentage floa
 		EventType:       events.Envelope_ContainerMetric.Enum(),
 		Origin:          proto.String("fake-origin-1"),
 		Timestamp:       proto.Int64(timestamp),
+	}
+}
+func createContainerEnvelope(appId string, instanceIndex int32, cpuPercentage float64, memoryBytes float64, diskByte float64, memQuota float64, timestamp int64) []*loggregator_v2.Envelope {
+	return []*loggregator_v2.Envelope{
+		&loggregator_v2.Envelope{
+			SourceId:  appId,
+			Timestamp: timestamp,
+			Message: &loggregator_v2.Envelope_Gauge{
+				Gauge: &loggregator_v2.Gauge{
+					Metrics: map[string]*loggregator_v2.GaugeValue{
+						"cpu": &loggregator_v2.GaugeValue{
+							Unit:  "percentage",
+							Value: cpuPercentage,
+						},
+						"disk": &loggregator_v2.GaugeValue{
+							Unit:  "bytes",
+							Value: diskByte,
+						},
+						"memory": &loggregator_v2.GaugeValue{
+							Unit:  "bytes",
+							Value: memoryBytes,
+						},
+						"memory_quota": &loggregator_v2.GaugeValue{
+							Unit:  "bytes",
+							Value: memQuota,
+						},
+					},
+				},
+			},
+		},
 	}
 }
 

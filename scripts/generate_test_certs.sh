@@ -59,7 +59,7 @@ certstrap --depot-path ${depot_path} request-cert --passphrase '' --common-name 
 certstrap --depot-path ${depot_path} sign reverselogproxy_client --CA autoscaler-ca --years "20"
 
 # metricserver test client certificate
-certstrap --depot-path ${depot_path} request-cert --passphrase '' --common-name metricserver
+certstrap --depot-path ${depot_path} request-cert --passphrase '' --common-name metricserver --ip 127.0.0.1
 certstrap --depot-path ${depot_path} sign metricserver --CA autoscaler-ca --years "20"
 
 # metricserver test client certificate
