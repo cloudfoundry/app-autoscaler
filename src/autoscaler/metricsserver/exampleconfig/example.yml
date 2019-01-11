@@ -22,7 +22,7 @@ collector:
   refresh_interval: 30s
   collect_interval: 10s
   save_interval: 5s
-  metrics_persistency_support_flag: true
+  persist_metrics: true
   keep_alive_time: 120s
   envelope_processor_count: 10
 server:
