@@ -42,12 +42,15 @@ var _ = Describe("Integration_Metricsgateway_Metricserver_Eventgenerator_Scaling
 	})
 
 	AfterEach(func() {
-		stopAll()
 		stopFakeRLPServer(fakeRLPServer)
+		stopMetricsGateway()
+		stopMetricsServer()
+		stopEventGenerator()
+		stopScalingEngine()
 	})
 	Context("MemoryUtil", func() {
 		BeforeEach(func() {
-			envelopes = createContainerEnvelope(testAppId, 1, 4.0, float64(50), float64(2048000000), float64(100), time.Now().UnixNano())
+			envelopes = createContainerEnvelope(testAppId, 1, 4.0, float64(50), float64(2048000000), float64(100))
 
 		})
 		Context("Scale out", func() {
@@ -169,7 +172,7 @@ var _ = Describe("Integration_Metricsgateway_Metricserver_Eventgenerator_Scaling
 
 	Context("MemoryUsed", func() {
 		BeforeEach(func() {
-			envelopes = createContainerEnvelope(testAppId, 1, 4.0, float64(50*1024*1024), float64(2048000000), float64(100*1024*1024), time.Now().UnixNano())
+			envelopes = createContainerEnvelope(testAppId, 1, 4.0, float64(50*1024*1024), float64(2048000000), float64(100*1024*1024))
 
 		})
 		Context("Scale out", func() {
@@ -197,7 +200,7 @@ var _ = Describe("Integration_Metricsgateway_Metricserver_Eventgenerator_Scaling
 				It("should scale out", func() {
 					Eventually(func() int {
 						return getScalingHistoryCount(testAppId, initInstanceCount, initInstanceCount+1)
-					}, 2*timeout, 1*time.Second).Should(BeNumerically(">=", 1))
+					}, timeout, 1*time.Second).Should(BeNumerically(">=", 1))
 				})
 
 			})
@@ -319,7 +322,7 @@ var _ = Describe("Integration_Metricsgateway_Metricserver_Eventgenerator_Scaling
 				It("should scale out", func() {
 					Eventually(func() int {
 						return getScalingHistoryCount(testAppId, initInstanceCount, initInstanceCount+1)
-					}, 2*timeout, 1*time.Second).Should(BeNumerically(">=", 1))
+					}, timeout, 1*time.Second).Should(BeNumerically(">=", 1))
 				})
 
 			})
@@ -442,7 +445,7 @@ var _ = Describe("Integration_Metricsgateway_Metricserver_Eventgenerator_Scaling
 				It("should scale out", func() {
 					Eventually(func() int {
 						return getScalingHistoryCount(testAppId, initInstanceCount, initInstanceCount+1)
-					}, 2*timeout, 1*time.Second).Should(BeNumerically(">=", 1))
+					}, timeout, 1*time.Second).Should(BeNumerically(">=", 1))
 				})
 
 			})
@@ -536,7 +539,7 @@ var _ = Describe("Integration_Metricsgateway_Metricserver_Eventgenerator_Scaling
 
 	Context("CustomMetric", func() {
 		BeforeEach(func() {
-			envelopes = createCustomEnvelope(testAppId, "queuelength", "number", 50, time.Now().UnixNano())
+			envelopes = createCustomEnvelope(testAppId, "queuelength", "number", 50)
 
 		})
 		Context("Scale out", func() {
@@ -564,7 +567,7 @@ var _ = Describe("Integration_Metricsgateway_Metricserver_Eventgenerator_Scaling
 				It("should scale out", func() {
 					Eventually(func() int {
 						return getScalingHistoryCount(testAppId, initInstanceCount, initInstanceCount+1)
-					}, 2*timeout, 1*time.Second).Should(BeNumerically(">=", 1))
+					}, timeout, 1*time.Second).Should(BeNumerically(">=", 1))
 				})
 
 			})

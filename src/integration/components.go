@@ -747,7 +747,7 @@ func (components *Components) PrepareMetricsServerConfig(dbURI string, httpClien
 			},
 			RefreshInterval:        5 * time.Second,
 			CollectInterval:        1 * time.Second,
-			SaveInterval:           5 * time.Second,
+			SaveInterval:           2 * time.Second,
 			MetricCacheSizePerApp:  100,
 			PersistMetrics:         true,
 			EnvelopeProcessorCount: 2,
