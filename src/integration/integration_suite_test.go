@@ -851,11 +851,10 @@ func createContainerMetric(appId string, instanceIndex int32, cpuPercentage floa
 		Timestamp:       proto.Int64(timestamp),
 	}
 }
-func createContainerEnvelope(appId string, instanceIndex int32, cpuPercentage float64, memoryBytes float64, diskByte float64, memQuota float64, timestamp int64) []*loggregator_v2.Envelope {
+func createContainerEnvelope(appId string, instanceIndex int32, cpuPercentage float64, memoryBytes float64, diskByte float64, memQuota float64) []*loggregator_v2.Envelope {
 	return []*loggregator_v2.Envelope{
 		&loggregator_v2.Envelope{
-			SourceId:  appId,
-			Timestamp: timestamp,
+			SourceId: appId,
 			Message: &loggregator_v2.Envelope_Gauge{
 				Gauge: &loggregator_v2.Gauge{
 					Metrics: map[string]*loggregator_v2.GaugeValue{
@@ -896,12 +895,11 @@ func createHTTPTimerEnvelope(appId string, start int64, end int64) []*loggregato
 	}
 
 }
-func createCustomEnvelope(appId string, name string, unit string, value float64, timestamp int64) []*loggregator_v2.Envelope {
+func createCustomEnvelope(appId string, name string, unit string, value float64) []*loggregator_v2.Envelope {
 	return []*loggregator_v2.Envelope{
 		&loggregator_v2.Envelope{
-			SourceId:  appId,
-			Timestamp: timestamp,
-			Tags:      map[string]string{"origin": "autoscaler_metrics_forwarder"},
+			SourceId: appId,
+			Tags:     map[string]string{"origin": "autoscaler_metrics_forwarder"},
 			Message: &loggregator_v2.Envelope_Gauge{
 				Gauge: &loggregator_v2.Gauge{
 					Metrics: map[string]*loggregator_v2.GaugeValue{

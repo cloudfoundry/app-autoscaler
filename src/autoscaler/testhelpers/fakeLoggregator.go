@@ -62,6 +62,9 @@ func (f *FakeEventProducer) BatchedReceiver(
 	f.mu.Unlock()
 	var i int
 	for range time.Tick(f.emitInterval) {
+		for _, e := range f.envelops {
+			e.Timestamp = time.Now().UnixNano()
+		}
 		srv.Send(&loggregator_v2.EnvelopeBatch{
 			Batch: f.envelops,
 		})
