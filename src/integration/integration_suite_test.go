@@ -836,11 +836,10 @@ func closeFakeMetricsStreaming() {
 	close(emptyMessageChannel)
 }
 
-func startFakeRLPServer(appId string, memoryValue uint64, memQuota uint64) *as_testhelpers.FakeEventProducer {
-	fakeRLPServer, err := as_testhelpers.NewFakeEventProducer(filepath.Join(testCertDir, "reverselogproxy.crt"), filepath.Join(testCertDir, "reverselogproxy.key"), filepath.Join(testCertDir, "autoscaler-ca.crt"))
+func startFakeRLPServer(appId string, envelopes []*loggregator_v2.Envelope, emitInterval time.Duration) *as_testhelpers.FakeEventProducer {
+	fakeRLPServer, err := as_testhelpers.NewFakeEventProducer(filepath.Join(testCertDir, "reverselogproxy.crt"), filepath.Join(testCertDir, "reverselogproxy.key"), filepath.Join(testCertDir, "autoscaler-ca.crt"), emitInterval)
 	Expect(err).NotTo(HaveOccurred())
-	envelope := createContainerEnvelope(appId, 1, 4.0, float64(memoryValue), float64(2048000000), float64(memQuota), time.Now().UnixNano())
-	fakeRLPServer.SetEnvelops(envelope)
+	fakeRLPServer.SetEnvelops(envelopes)
 	fakeRLPServer.Start()
 	return fakeRLPServer
 }
@@ -899,6 +898,41 @@ func createContainerEnvelope(appId string, instanceIndex int32, cpuPercentage fl
 			},
 		},
 	}
+}
+func createHTTPTimerEnvelope(appId string, start int64, end int64) []*loggregator_v2.Envelope {
+	return []*loggregator_v2.Envelope{
+		&loggregator_v2.Envelope{
+			SourceId: appId,
+			Message: &loggregator_v2.Envelope_Timer{
+				Timer: &loggregator_v2.Timer{
+					Name:  "http",
+					Start: start,
+					Stop:  end,
+				},
+			},
+		},
+	}
+
+}
+func createCustomEnvelope(appId string, name string, unit string, value float64, timestamp int64) []*loggregator_v2.Envelope {
+	return []*loggregator_v2.Envelope{
+		&loggregator_v2.Envelope{
+			SourceId:  appId,
+			Timestamp: timestamp,
+			Tags:      map[string]string{"origin": "autoscaler_metrics_forwarder"},
+			Message: &loggregator_v2.Envelope_Gauge{
+				Gauge: &loggregator_v2.Gauge{
+					Metrics: map[string]*loggregator_v2.GaugeValue{
+						name: &loggregator_v2.GaugeValue{
+							Unit:  unit,
+							Value: value,
+						},
+					},
+				},
+			},
+		},
+	}
+
 }
 
 func marshalMessage(message *events.Envelope) []byte {

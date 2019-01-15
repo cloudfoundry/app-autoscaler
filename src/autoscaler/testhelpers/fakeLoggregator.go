@@ -27,13 +27,18 @@ type FakeEventProducer struct {
 	certFile           string
 	keyFile            string
 	caCertFile         string
+	emitInterval       time.Duration
 }
 
-func NewFakeEventProducer(certFile string, keyFile string, caCertFile string) (*FakeEventProducer, error) {
+func NewFakeEventProducer(certFile string, keyFile string, caCertFile string, emitInterval time.Duration) (*FakeEventProducer, error) {
+	if emitInterval == 0 {
+		emitInterval = 500 * time.Millisecond
+	}
 	f := &FakeEventProducer{
-		certFile:   certFile,
-		keyFile:    keyFile,
-		caCertFile: caCertFile,
+		certFile:     certFile,
+		keyFile:      keyFile,
+		caCertFile:   caCertFile,
+		emitInterval: emitInterval,
 	}
 
 	return f, nil
@@ -56,7 +61,7 @@ func (f *FakeEventProducer) BatchedReceiver(
 	f.actualReq = req
 	f.mu.Unlock()
 	var i int
-	for range time.Tick(500 * time.Millisecond) {
+	for range time.Tick(f.emitInterval) {
 		srv.Send(&loggregator_v2.EnvelopeBatch{
 			Batch: f.envelops,
 		})
