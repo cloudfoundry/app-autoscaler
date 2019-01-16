@@ -49,7 +49,7 @@ func (c *cfClient) GetApp(appId string) (*models.AppEntity, error) {
 			var bodydata map[string]interface{}
 			err = json.Unmarshal([]byte(respBody), &bodydata)
 			if err != nil {
-				c.logger.Error("failed-to-unmarshal-response-body-while-getting-app-summary", err, lager.Data{"appid": appId})
+				c.logger.Error("failed-to-unmarshal-response-body-while-getting-app-summary", err, lager.Data{"appid": appId, "error_response": string(respBody)})
 				return nil, err
 			}
 			errorDescription := bodydata["description"].(string)
@@ -119,7 +119,7 @@ func (c *cfClient) SetAppInstances(appID string, num int) error {
 		var bodydata map[string]interface{}
 		err = json.Unmarshal([]byte(respBody), &bodydata)
 		if err != nil {
-			c.logger.Error("failed-to-unmarshal-response-body-while-setting-app-instance", err, lager.Data{"appid": appID})
+			c.logger.Error("failed-to-unmarshal-response-body-while-setting-app-instance", err, lager.Data{"appid": appID, "error_response": string(respBody)})
 			return err
 		}
 		errorDescription := bodydata["description"].(string)
