@@ -455,6 +455,7 @@ func (components *Components) PrepareMetricsCollectorConfig(dbURI string, port i
 			CollectMethod:         collectMethod,
 			SaveInterval:          saveInterval,
 			MetricCacheSizePerApp: 500,
+			PersistMetrics:        true,
 		},
 		HttpClientTimeout: httpClientTimeout,
 	}

@@ -2,8 +2,8 @@ package server_test
 
 import (
 	"autoscaler/db"
+	"autoscaler/eventgenerator/aggregator"
 	. "autoscaler/eventgenerator/server"
-	"autoscaler/fakes"
 	"autoscaler/models"
 	"encoding/json"
 	"errors"
@@ -20,25 +20,26 @@ var testUrlAggregatedMetricHistories = "http://localhost/v1/apps/an-app-id/aggre
 
 var _ = Describe("EventgenHandler", func() {
 	var (
-		handler  *EventGenHandler
-		database *fakes.FakeAppMetricDB
+		handler         *EventGenHandler
+		queryAppMetrics aggregator.QueryAppMetricsFunc
 
-		resp    *httptest.ResponseRecorder
-		req     *http.Request
-		err     error
-		metric1 models.AppMetric
-		metric2 models.AppMetric
+		resp       *httptest.ResponseRecorder
+		req        *http.Request
+		err        error
+		metric1    models.AppMetric
+		metric2    models.AppMetric
+		appid      string
+		name       string
+		start, end int64
+		order      db.OrderType
+		logger     lager.Logger
 	)
-
-	BeforeEach(func() {
-		logger := lager.NewLogger("handler-test")
-		database = &fakes.FakeAppMetricDB{}
-		resp = httptest.NewRecorder()
-		handler = NewEventGenHandler(logger, database)
-	})
 
 	Describe("GetAggregatedMetricHistories", func() {
 		JustBeforeEach(func() {
+			logger = lager.NewLogger("handler-test")
+			resp = httptest.NewRecorder()
+			handler = NewEventGenHandler(logger, queryAppMetrics)
 			handler.GetAggregatedMetricHistories(resp, req, map[string]string{"appid": "an-app-id", "metrictype": "a-metric-type"})
 		})
 
@@ -171,14 +172,23 @@ var _ = Describe("EventgenHandler", func() {
 		})
 
 		Context("when request query string is valid", func() {
+			BeforeEach(func() {
+				queryAppMetrics = func(appID string, metricType string, startTime int64, endTime int64, orderType db.OrderType) ([]*models.AppMetric, error) {
+					appid = appID
+					name = metricType
+					start = startTime
+					end = endTime
+					order = orderType
+					return nil, nil
+				}
+			})
 			Context("when start,end and order are all in query string", func() {
 				BeforeEach(func() {
 					req, err = http.NewRequest(http.MethodGet, testUrlAggregatedMetricHistories+"?start=123&end=567&order=desc", nil)
 					Expect(err).ToNot(HaveOccurred())
 				})
 
-				It("queries metrics from database with the given start, end and order ", func() {
-					appid, name, start, end, order := database.RetrieveAppMetricsArgsForCall(0)
+				It("queries metrics with the given start, end and order ", func() {
 					Expect(appid).To(Equal("an-app-id"))
 					Expect(name).To(Equal("a-metric-type"))
 					Expect(start).To(Equal(int64(123)))
@@ -194,8 +204,7 @@ var _ = Describe("EventgenHandler", func() {
 					Expect(err).ToNot(HaveOccurred())
 				})
 
-				It("queries metrics from database with start time  0", func() {
-					_, _, start, _, _ := database.RetrieveAppMetricsArgsForCall(0)
+				It("queries metrics with start time  0", func() {
 					Expect(start).To(Equal(int64(0)))
 				})
 
@@ -207,8 +216,7 @@ var _ = Describe("EventgenHandler", func() {
 					Expect(err).ToNot(HaveOccurred())
 				})
 
-				It("queries metrics from database with end time -1 ", func() {
-					_, _, _, end, _ := database.RetrieveAppMetricsArgsForCall(0)
+				It("queries metrics with end time -1 ", func() {
 					Expect(end).To(Equal(int64(-1)))
 				})
 
@@ -220,14 +228,13 @@ var _ = Describe("EventgenHandler", func() {
 					Expect(err).ToNot(HaveOccurred())
 				})
 
-				It("queries metrics from database with end time -1 ", func() {
-					_, _, _, _, order := database.RetrieveAppMetricsArgsForCall(0)
+				It("queries metrics with ascending order ", func() {
 					Expect(order).To(Equal(db.ASC))
 				})
 
 			})
 
-			Context("when query database succeeds", func() {
+			Context("when query metrics succeeds", func() {
 				BeforeEach(func() {
 					req, err = http.NewRequest(http.MethodGet, testUrlAggregatedMetricHistories+"?start=123&end=567&order=desc", nil)
 					Expect(err).ToNot(HaveOccurred())
@@ -247,7 +254,10 @@ var _ = Describe("EventgenHandler", func() {
 						Value:      "87654321",
 						Timestamp:  111111,
 					}
-					database.RetrieveAppMetricsReturns([]*models.AppMetric{&metric2, &metric1}, nil)
+
+					queryAppMetrics = func(appID string, metricType string, startTime int64, endTime int64, orderType db.OrderType) ([]*models.AppMetric, error) {
+						return []*models.AppMetric{&metric2, &metric1}, nil
+					}
 				})
 
 				It("returns 200 with metrics in message body", func() {
@@ -261,12 +271,15 @@ var _ = Describe("EventgenHandler", func() {
 				})
 			})
 
-			Context("when query database fails", func() {
+			Context("when query fails", func() {
 				BeforeEach(func() {
 					req, err = http.NewRequest(http.MethodGet, testUrlAggregatedMetricHistories+"?start=123&end=567&order=desc", nil)
 					Expect(err).ToNot(HaveOccurred())
 
-					database.RetrieveAppMetricsReturns(nil, errors.New("database error"))
+					queryAppMetrics = func(appID string, metricType string, startTime int64, endTime int64, orderType db.OrderType) ([]*models.AppMetric, error) {
+						return nil, errors.New("an error")
+					}
+
 				})
 
 				It("returns 500", func() {
@@ -278,7 +291,7 @@ var _ = Describe("EventgenHandler", func() {
 					Expect(err).ToNot(HaveOccurred())
 					Expect(errJson).To(Equal(&models.ErrorResponse{
 						Code:    "Interal-Server-Error",
-						Message: "Error getting aggregated metric histories from database",
+						Message: "Error getting aggregated metric histories",
 					}))
 				})
 			})

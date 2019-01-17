@@ -2,7 +2,6 @@ package server_test
 
 import (
 	"autoscaler/db"
-	"autoscaler/fakes"
 	. "autoscaler/metricscollector/server"
 	"autoscaler/models"
 
@@ -23,40 +22,43 @@ var testUrlMetricHistories = "http://metrics_collector_hostname/v1/apps/an-app-i
 var _ = Describe("MetricHandler", func() {
 
 	var (
-		cfc       *fakes.FakeCFClient
-		consumer  *fakes.FakeNoaaConsumer
-		handler   *MetricHandler
-		database  *fakes.FakeInstanceMetricsDB
-		nodeIndex int
-		nodeAddrs []string
-
-		resp *httptest.ResponseRecorder
-		req  *http.Request
-		err  error
-
-		metric1  models.AppInstanceMetric
-		metric2  models.AppInstanceMetric
-		metrics  []*models.AppInstanceMetric
-		cacheHit bool
+		handler            *MetricHandler
+		nodeIndex          int
+		nodeAddrs          []string
+		resp               *httptest.ResponseRecorder
+		req                *http.Request
+		err, queryErr      error
+		metric1            models.AppInstanceMetric
+		metric2            models.AppInstanceMetric
+		metrics            []*models.AppInstanceMetric
+		appID              string
+		instanceIndex      int
+		metricName         string
+		startTime, endTime int64
+		queryOrder         db.OrderType
 	)
 
 	BeforeEach(func() {
-		cfc = &fakes.FakeCFClient{}
-		consumer = &fakes.FakeNoaaConsumer{}
 		nodeIndex = 0
 		nodeAddrs = []string{"localhost:8080"}
-		database = &fakes.FakeInstanceMetricsDB{}
 		resp = httptest.NewRecorder()
-		cacheHit = false
+		queryErr = nil
 	})
 
 	Describe("GetMetricHistory", func() {
 		JustBeforeEach(func() {
 			logger := lager.NewLogger("handler-test")
-			queryFunc := func(appID string, start int64, end int64, order db.OrderType, labels map[string]string) ([]*models.AppInstanceMetric, bool) {
-				return metrics, cacheHit
+			queryFunc := func(id string, index int, name string,
+				start, end int64, order db.OrderType) ([]*models.AppInstanceMetric, error) {
+				appID = id
+				instanceIndex = index
+				metricName = name
+				startTime = start
+				endTime = end
+				queryOrder = order
+				return metrics, queryErr
 			}
-			handler = NewMetricHandler(logger, nodeIndex, nodeAddrs, cfc, consumer, queryFunc, database)
+			handler = NewMetricHandler(logger, nodeIndex, nodeAddrs, queryFunc)
 			handler.GetMetricHistories(resp, req, map[string]string{"appid": "an-app-id", "metrictype": "a-metric-type"})
 		})
 
@@ -261,13 +263,12 @@ var _ = Describe("MetricHandler", func() {
 				})
 
 				It("queries metrics  with the given start, end and order ", func() {
-					appid, instanceIndex, name, start, end, order := database.RetrieveInstanceMetricsArgsForCall(0)
 					Expect(instanceIndex).To(Equal(0))
-					Expect(appid).To(Equal("an-app-id"))
-					Expect(name).To(Equal("a-metric-type"))
-					Expect(start).To(Equal(int64(123)))
-					Expect(end).To(Equal(int64(567)))
-					Expect(order).To(Equal(db.DESC))
+					Expect(appID).To(Equal("an-app-id"))
+					Expect(metricName).To(Equal("a-metric-type"))
+					Expect(startTime).To(Equal(int64(123)))
+					Expect(endTime).To(Equal(int64(567)))
+					Expect(queryOrder).To(Equal(db.DESC))
 				})
 
 			})
@@ -278,8 +279,7 @@ var _ = Describe("MetricHandler", func() {
 					Expect(err).ToNot(HaveOccurred())
 				})
 
-				It("queries metrics from database with instanceindex  -1", func() {
-					_, instanceIndex, _, _, _, _ := database.RetrieveInstanceMetricsArgsForCall(0)
+				It("queries metrics with instanceindex  -1", func() {
 					Expect(instanceIndex).To(Equal(-1))
 				})
 
@@ -292,8 +292,7 @@ var _ = Describe("MetricHandler", func() {
 				})
 
 				It("queries metrics  with start time  0", func() {
-					_, _, _, start, _, _ := database.RetrieveInstanceMetricsArgsForCall(0)
-					Expect(start).To(Equal(int64(0)))
+					Expect(startTime).To(Equal(int64(0)))
 				})
 
 			})
@@ -305,8 +304,7 @@ var _ = Describe("MetricHandler", func() {
 				})
 
 				It("queries metrics with end time -1 ", func() {
-					_, _, _, _, end, _ := database.RetrieveInstanceMetricsArgsForCall(0)
-					Expect(end).To(Equal(int64(-1)))
+					Expect(endTime).To(Equal(int64(-1)))
 				})
 
 			})
@@ -318,8 +316,7 @@ var _ = Describe("MetricHandler", func() {
 				})
 
 				It("queries metrics  with end time -1 ", func() {
-					_, _, _, _, _, order := database.RetrieveInstanceMetricsArgsForCall(0)
-					Expect(order).To(Equal(db.ASC))
+					Expect(queryOrder).To(Equal(db.ASC))
 				})
 
 			})
@@ -348,39 +345,18 @@ var _ = Describe("MetricHandler", func() {
 						Value:         "87654321",
 						Timestamp:     456,
 					}
-
+					metrics = []*models.AppInstanceMetric{&metric1, &metric2}
 				})
 
-				Context("when cache hits", func() {
-					BeforeEach(func() {
-						cacheHit = true
-						metrics = []*models.AppInstanceMetric{&metric1, &metric2}
-					})
+				It("returns 200 with metrics in message body", func() {
+					Expect(resp.Code).To(Equal(http.StatusOK))
+					result := &[]models.AppInstanceMetric{}
+					err = json.Unmarshal(resp.Body.Bytes(), result)
 
-					It("returns 200 with metrics from cache in message body", func() {
-						Expect(resp.Code).To(Equal(http.StatusOK))
-						result := &[]models.AppInstanceMetric{}
-						err = json.Unmarshal(resp.Body.Bytes(), result)
-
-						Expect(err).ToNot(HaveOccurred())
-						Expect(*result).To(Equal([]models.AppInstanceMetric{metric1, metric2}))
-					})
-
+					Expect(err).ToNot(HaveOccurred())
+					Expect(*result).To(Equal([]models.AppInstanceMetric{metric1, metric2}))
 				})
-				Context("when cache misses", func() {
-					BeforeEach(func() {
-						database.RetrieveInstanceMetricsReturns([]*models.AppInstanceMetric{&metric2, &metric1}, nil)
-					})
-					It("returns 200 with metrics  from database in message body", func() {
-						Expect(resp.Code).To(Equal(http.StatusOK))
 
-						result := &[]models.AppInstanceMetric{}
-						err = json.Unmarshal(resp.Body.Bytes(), result)
-
-						Expect(err).ToNot(HaveOccurred())
-						Expect(*result).To(Equal([]models.AppInstanceMetric{metric2, metric1}))
-					})
-				})
 			})
 
 			Context("when requesting app metrics in other shard", func() {
@@ -424,12 +400,11 @@ var _ = Describe("MetricHandler", func() {
 				})
 			})
 
-			Context("when query database fails", func() {
+			Context("when query fails", func() {
 				BeforeEach(func() {
 					req, err = http.NewRequest(http.MethodGet, testUrlMetricHistories+"?instanceindex=0&start=123&end=567&order=desc", nil)
 					Expect(err).ToNot(HaveOccurred())
-
-					database.RetrieveInstanceMetricsReturns(nil, errors.New("database error"))
+					queryErr = errors.New("query error")
 				})
 
 				It("returns 500", func() {
@@ -441,7 +416,7 @@ var _ = Describe("MetricHandler", func() {
 					Expect(err).ToNot(HaveOccurred())
 					Expect(errJson).To(Equal(&models.ErrorResponse{
 						Code:    "Interal-Server-Error",
-						Message: "Error getting metric histories from database",
+						Message: "Error getting instance metric histories",
 					}))
 				})
 			})

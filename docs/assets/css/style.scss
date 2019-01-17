@@ -1,0 +1,300 @@
+---
+---
+
+@import "{{ site.theme }}";
+
+body {
+  font-family: "Source Sans Pro", sans-serif;
+}
+
+.fixed-page-header {
+  width: 100%;
+  position: fixed;
+  z-index:  99;
+  color: $header-heading-color;
+  text-align: left;
+  background-color: #a7cae1;
+  border-bottom: 3px solid #2185c5;
+  padding: 1rem 0rem;
+}
+
+.fixed-project-name {
+  margin-top: 0;
+  margin-bottom: 0.1rem;
+  font-size: 1rem;
+  margin-left:10px;
+
+
+  a {
+    color: $header-heading-color;
+    text-decoration: none;
+  
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+
+}
+
+.customized-main-content {
+  margin-left:300px;
+  word-wrap: break-word;
+
+
+  :first-child {
+    margin-top: 0;
+  }
+
+  @include large {
+    padding: 2rem 6rem;
+    font-size: 1.0rem;
+  }
+
+  @include medium {
+    padding: 2rem 4rem;
+    font-size: 1.0rem;
+  }
+
+  @include small {
+    padding: 2rem 1rem;
+    font-size: 1.0rem;
+  }
+
+  img {
+    max-width: 100%;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-weight: normal;
+    color: #333;
+  }
+
+  h3 {
+    color:#2185c5;
+  }
+  
+  h4 {
+    font-weight: bold;
+    font-style: italic;
+  }
+
+  p {
+    margin-bottom: 1em;
+  }
+
+  code {
+    padding: 2px 4px;
+    font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace;
+    font-size: 0.9rem;
+    color: $code-text-color;
+    background-color: $code-bg-color;
+    border-radius: 0.3rem;
+  }
+
+  pre {
+    padding: 0.8rem;
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font: 1rem Consolas, "Liberation Mono", Menlo, Courier, monospace;
+    color: $code-text-color;
+    word-wrap: normal;
+    background-color: $code-bg-color;
+    border: solid 1px $border-color;
+    border-radius: 0.3rem;
+
+    > code {
+      padding: 0;
+      margin: 0;
+      font-size: 0.9rem;
+      color: $code-text-color;
+      word-break: normal;
+      white-space: pre;
+      background: transparent;
+      border: 0;
+    }
+  }
+
+  .highlight {
+    margin-bottom: 1rem;
+
+    pre {
+      margin-bottom: 0;
+      word-break: normal;
+    }
+  }
+
+  .highlight pre,
+  pre {
+    padding: 0.8rem;
+    overflow: auto;
+    font-size: 0.9rem;
+    line-height: 1.45;
+    border-radius: 0.3rem;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  pre code,
+  pre tt {
+    display: inline;
+    max-width: initial;
+    padding: 0;
+    margin: 0;
+    overflow: initial;
+    line-height: inherit;
+    word-wrap: normal;
+    background-color: transparent;
+    border: 0;
+
+    &:before,
+    &:after {
+      content: normal;
+    }
+  }
+
+  ul,
+  ol {
+    margin-top: 0;
+  }
+
+  blockquote {
+    padding: 0 1rem;
+    margin-left: 0;
+    color: $blockquote-text-color;
+    border-left: 0.3rem solid $border-color;
+
+    > :first-child {
+      margin-top: 0;
+    }
+
+    > :last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  table {
+    display: block;
+    width: 100%;
+    overflow: auto;
+    word-break: normal;
+    word-break: keep-all; // For Firefox to horizontally scroll wider tables.
+    -webkit-overflow-scrolling: touch;
+
+    th {
+      font-weight: bold;
+    }
+
+    th,
+    td {
+      padding: 0.5rem 1rem;
+      border: 1px solid $table-border-color;
+    }
+  }
+
+  dl {
+    padding: 0;
+
+    dt {
+      padding: 0;
+      margin-top: 1rem;
+      font-size: 1rem;
+      font-weight: bold;
+    }
+
+    dd {
+      padding: 0;
+      margin-bottom: 1rem;
+    }
+  }
+
+  hr {
+    height: 2px;
+    padding: 0;
+    margin: 1rem 0;
+    background-color: $hr-border-color;
+    border: 0;
+  }
+}
+
+
+section {
+  width:100%;
+  padding: 30px 30px 50px 30px;
+  top: 20px;
+  margin:0 auto;
+  position:relative;
+}
+
+nav {
+  width: 300px;
+  position: fixed;
+  top: 60px;
+  word-wrap: break-word;
+  margin-left:10px;
+  text-align: left;
+  background-color: #f8f8f8;
+
+  ul {
+    list-style: none;
+    list-style-image:none;
+      font-size: 0.8rem;
+      line-height: 1.5rem;
+
+    li {
+      padding: 5px 0px;
+
+      &.tag-h1 {
+        font-size: 1.0em;
+    
+        a {
+          font-weight: bold;
+          color:#333;
+        }
+
+        + .tag-h2 {
+
+        }
+      }
+
+      &.tag-h2 {
+
+        + .tag-h1 {
+          margin-top:10px;
+        }
+      }
+
+      &.tag-h3 {
+          margin-left:10px;
+      }
+    }
+
+    a {
+      color: #666;
+      &:hover { color: #999; }
+    }
+    }
+}
+
+
+@media print, screen and (max-height: 480px) {
+  nav {
+    display: none;
+  }
+  .customized-main-content{
+    margin-left: 0;
+  }
+}
+@media print, screen and (max-width: 1060px) {
+  nav {
+    display: none;
+  }
+  .customized-main-content{
+    margin-left: 0;
+  }
+}  
