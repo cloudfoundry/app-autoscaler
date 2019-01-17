@@ -1,119 +1,207 @@
-# App-AutoScaler User Guide
 
-The `App-AutoScaler` provides the capability to automatically adjust the instance number of Cloud Foundry applications through
+# App AutoScaler User Guide
+
+This document describes how to configure and use [Cloud Foundry App Auto-Scaler][git] to automatically scale your application **horizontally**  based on the scaling policy that you define.
+
+---
+## Overview
+
+The [Cloud Foundry App Auto-Scaler][git] automatically adjust the instance number of Cloud Foundry applications through
 
 * Dynamic scaling based on application performance metrics
 * Scheduled scaling based on time
 
+The Cloud Foundry [Admin or Space Developers role][userrole] is needed to manage the autoscaling policy, query metric values and scaling events. 
+
+---
+## Autoscaling policy
+
+Autoscaling policy is represented in JSON and consists of the following parts. Refer to the [policy specification][policy] for the detailed definition.
+
+### Instance limits
+
+Instance limits are used to define the default minimal and maximal instance number of your application.
+
+### Dynamic scaling rules
+
+####  Metric types
+
+The following are the built-in metrics that you can use to scale your application based on. They are averaged over all the instances of your application. 
+
+* **memoryused**
+	
+	"memoryused" represents the absolute value of the used memory of your application. The unit of "memoryused" metric is "MB".
+	
+* **memoryutil**
+	
+	"memoryutil", a short name of "memory utilization", is the used memory of the total memory allocated to the application in percentage.
+	
+	For example, if the memory usage of the application is 100MB  and memory quota is 200MB, the value of "memoryutil" is 50%.
+
+* **cpu**
+
+	"cpu", a short name of "cpu utilization", is the cpu usage of your application in percentage.
+
+* **responsetime**
+	
+	"responsetime" represents the average amount of time the application takes to respond to a request in a given time period.  The unit of "responsetime" is "ms" (milliseconds).
+
+* **throughput**
+
+	"throughput" is the total number of the processed requests  in a given time period. The  unit of "throughput" is "rps" (requests per second).
+ 
+ 
+####  Threshold and Adjustment
+
+`App AutoScaler` evaluates the aggregated metric values against the threshold defined in the dynamic scaling rules, and change the application instance count according to the adjustment setting.  
+
+For example, if you want to scale out your application by adding 2 instances when the application's througput exceeds 800 requests per second, define the the scaling rule as below:
+```
+{
+  "metric_type": "throughput",
+  "operator": ">=",
+  "threshold": 800,
+  "adjustment": "+2"
+}
+```
+
+####  Breach duration and Cooldown
+
+`App AutoScaler` will not take scaling action until your application continues breaching the rule in a time duration defined in `breach_duration_secs`.  This setting controls how fast the autoscaling action could be triggered. 
+
+`cool_down_secs` defines the time duration to wait before the next scaling kicks in.  It helps to ensure that your application does not launch or terminate instances before your application becomes stable. This setting can be configured based on your instance warm-up time or other needs.
+
+*Note:*
+
+You can define multiple scaling-out and scaling-in rules. However, `App-AutoScaler` does not detect conflicts among them.  It is your responsibility to ensure the scaling rules do not conflict with each other to avoid fluctuation or other issues. 
+
+
+###  Schedules
+
+`App AutoScaler` uses schedules to overwrite the default instance limits for specific time periods. During these time periods, all dynamic scaling rules are still effective. 
+
+The design of `Schedules` is mainly used to prepare enough instances for  peak hours. 
+
+You can define recurring schedules, or specific schedules which are executed only once in [autoscaling policy][policy].
+
+Particularly, besides overriding the default instance limit of `instance_min_count` and `instance_max_count`, you can also define an `initial_min_instance_count` in the schedule.  
+
+For example, in the following schedule rule, `App AutoScaler` will set your application instance number to be 50 when the schedule starts, and make sure your instances number is within [10,100] during the scheduled time period.  
+```
+{
+    "start_date_time": "2099-01-01T10:00",
+    "end_date_time": "2099-01-01T20:00",
+    "instance_min_count": 10,
+    "instance_max_count": 100,
+    "initial_min_instance_count": 50
+}
+```
+
 ----
-## Terminology
+## Create Autoscaling policy
 
-### Scaling type
-* Dynamic scaling
+The following gives some policy examples for you to start with. Refer to [Policy speficication][policy] for the detailed JSON format of the autoscaling policy.
 
-    Dynamic scaling adjusts the application instance number based on the rules defined on performance metrics. It is used to scale application in response to dynamically changing workload
+* [Autoscaling policy with dynamic scaling rules][policy-dynamic]
+* [Autoscaling policy with dynamic scaling rules and schedules][policy-all]
 
-* Scheduled scaling
+----
 
-    Scheduled scaling adjusts the application instance number at a predefined time slot. It is mainly used when application resource demand is predictable.  
+## Connect an application to App-AutoScaler
 
-### Metrics supported for dynamic scaling
+`App-AutoScaler` can be offered as a Cloud Foundry service or an extension of your Cloud Foundry platform. Consult your Cloud Foundry provider for how it is offered. 
 
-The following metrics are supported right now. More metrics and custom metrics will be supported in the near future. 
+###  As a Cloud Foundry extension
+When `App AutoScaler` is offered as Cloud Foudnry platform extension,  you don't need to connect your application to autoscaler, go directly to next section on how to configure your policy.
 
-* memoryused 
+###  As a Cloud Foundry service
+When `App AutoScaler` is offered as a Cloud Foundry service via [open service broker api][osb] , you need to provision and bind `App AutoScaler` service through [Cloud Foundry CLI][cfcli]  first. 
 
-    The metric "memoryused" is the absolute value of used memory of an application instance.
+* [Create an instance of the service][sprovision]
+* [Bind the service instance to your application][sbind]
+	
+	Note you can attach scaling policy together with service binding by providing the policy file name as a parameter of the service binding command. 
+	```
+	cf bind-service <app_name> <service_instance_name> -c <policy_file_name>
+	```	
+
+To disconnect `App AutoScaler` from your application, unbind the service instance. This will remove the  autoscaling policy as well. Furthermore, you can deprovision the service instance if no application is bound.
+
+* [Unbind the service instance from your application][sunbind]
+* [Delete service instance][sdeprovision]
+
+
+----
+## Command Line interface
+
+This section gives how to use the command line interface to manage autoscaling policies,  query metrics and scaling event history. Go to the [CLI user guide][cli] for the detailed CLI references. 
+
+### Getting started with AutoScaler CLI 
+
+* Install [AutoScaler CLI plugin][cli]
+* Set App AutoScaler API endpoint （optional)
     
-    The unit of "memoryused" is "MB". 
+    AutoScaler CLI plugin interacts with `App AutoScaler`  through its [public API][api].  
+	
+	By default, `App AutoScaler` API endpoint is set to `https://autoscaler.<cf-domain>` automatically.  You can change to others like the example below
+    ``` 
+	 cf asa https://example-autoscaler.<cf-domain>
+    ```
 
-* memoryutil
+### Attach policy 
 
-    The metric "memoryutil", a short name of "memory utilization", is the percentage of used memory for total memory allocated to an application instance. If the memory usage of the application is "100MB of 200MB", the value of "memoryutil" is 50%.  
-
-
-* responsetime
-
-    The metric "responsetime" is an average value of the aggregated total elapsed time of all processed requests occurred in a specific time window (aka, collection interval) for an application instance.
-
-    The unit of "responsetime" is "ms" (milliseconds).
-
-* throughput 
-
-    The metric "througput" is the total number of the processed requests occurred in a specific time window (aka, collection interval) for an application instance.
-    
-    The unit of "throughput" is "rps" (request per second).
-
-Note: 
-
-You can define multiple scaling-out and scaling-in rules. However, `App-AutoScaler` does not detect conflicts among them. When you define the scaling policy, you need to ensure the scaling rules do not conflict with each other. Otherwise, you might experience the fluctuations of the application instances.
-
-### Policy definition
-
-Scaling policy is essential to play with `App-AutoScaler` properly. 
-
-Refer to [Policy Definition][aa] for details and sample policy file. 
-
-----
-## Use `App-AutoScaler` service
-
-`App-AutoScaler` is offered as a Cloud Foundry service via [open service broker api][ab]. You can provision and bind service through [Cloud Foundry CLI][ac]. 
-
-### Provision & bind service 
-
-As a Space Developer, you can create the service instance, and then bind your application to the service instance.
+Create or update auto-scaling policy for your application with command
 ```
-cf create-service autoscaler  autoscaler-free-plan  <service_instance_name>
-cf bind-service <app_name> <service_instance_name>
+	 cf aasp <app_name> <policy_file_name>
 ```
 
-Alternatively, if you have a policy ready for use before service binding, you can attach the policy as a parameter of service binding.
+### Detach policy 
+
+Remove auto-scaling policy to disable `App Autoscaler` with command
 ```
-cf bind-service <app_name> <service_instance_name> -c <policy>
+	 cf dasp <app_name>
 ```
 
-### Use public API
+### View policy 
 
-Check [public api definition][af] for details. 
+To retrieve the current auto-scaling policy, use command below
+```
+	 cf asp <app_name>
+```
 
-### Use command line tool 
+### Query metrics
 
-Go to [app-autoscaler-cli-plugin][ad] project to manage `App-AutoScaler` service with CLI tool.
-Download available at [CF Plugin Community][ae] as well.
+Query the most recent metrics with command
+```
+	 cf asm <app_name> <metric_type>
+```
 
-With [app-autoscaler-cli-plugin][ad] installed, you can manage policy, retrive metrics and scaling history from CLI easily.
+Note the output of the `cf asm` command shows aggregated metrics instead of the raw data of instance metrics.  
 
-
-----
-## Things you need to know before auto-scale an application
-
-Before using `App-AutoScaler`, a series of performance engineering work is strongly recommended, so that you can understand the workload characteristics of your application and set the proper scaling policy.
-
-You might consider to take the following steps when creating the scaling policy: 
-
-* Benchmark the application to understand the performance
-* Identify the performance bottleneck from the benchmarking result, and decide which metric should be used to dynamically adjust the instance number.
-* Scale application manually to understand how the application behaves when scaling out/in 
-* Define the initial scaling policy and enable the service
-* Drive load and test with the policy to see how it works. Adjust detailed settings of the policy, including thresholds, steps of scaling, breach duration and cool-down period
-* Define scheduled scaling for peak hours 
-* Simulate the peak hour workload, and adjust the min/max instance number settings in the scheduled policy
-* Apply the refined policy 
-
-Also, here are some general guidelines:
-
-* Do not use `App-AutoScaler` service to handle sudden burst. If the burst is predictable, use scheduled scaling to prepare enough application instances for it.
-* Prevent excessive scale in/out by setting min/max instance number 
-* Allow enough quota of your organization for scaling out
-* Carefully set the threshold, don’t push too high. Make sure it will not exceed memory limit 
-* Scale down less aggressively
-* For CPU intensive app, be aware of that CPU is actually weighted shared with other apps on the same host vm. Use other metrics like throughput/responsetime for scaling
-* Design dynamic scaling rules carefully when using multiple metrics
+Refer to  [AutoScaler CLI user guide][cli] for the advanced options to specify the time range, the number of metric values to return and display order.
 
 
-[aa]: Policy_definition.rst
-[ab]: https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md
-[ac]: https://github.com/cloudfoundry/cli
-[ad]: https://github.com/cloudfoundry-incubator/app-autoscaler-cli-plugin
-[ae]: https://plugins.cloudfoundry.org/
-[af]: Public_API.rst
+### Query scaling events
+
+To query your application's scaling events, use command below
+```
+	 cf ash <app_name>
+```
+
+Refer to  [AutoScaler CLI user guide][cli] for advanced options to specify the time range, the number of events to return and display order.
+
+
+[git]:https://github.com/cloudfoundry-incubator/app-autoscaler
+[cli]: https://github.com/cloudfoundry-incubator/app-autoscaler-cli-plugin#install-plugin
+[policy]: policy.md
+[policy-dynamic]: dynamicpolicy.json
+[policy-all]: fullpolicy.json
+[api]: Public_API.rst
+[osb]: https://github.com/openservicebrokerapi/servicebroker/blob/master/spec.md
+[cfcli]: https://github.com/cloudfoundry/cli
+[sprovision]: https://docs.cloudfoundry.org/devguide/services/managing-services.html#create
+[sbind]: https://docs.cloudfoundry.org/devguide/services/managing-services.html#bind
+[sunbind]:https://docs.cloudfoundry.org/devguide/services/managing-services.html#unbind
+[sdeprovision]:https://docs.cloudfoundry.org/devguide/services/managing-services.html#delete
+[userrole]:https://docs.cloudfoundry.org/concepts/roles.html#spaces
+

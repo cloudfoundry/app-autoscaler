@@ -1,10 +1,10 @@
 package server
 
 import (
+	"autoscaler/eventgenerator/aggregator"
 	"fmt"
 	"net/http"
 
-	"autoscaler/db"
 	"autoscaler/eventgenerator/config"
 	"autoscaler/healthendpoint"
 	"autoscaler/routes"
@@ -23,8 +23,8 @@ func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vh(w, r, vars)
 }
 
-func NewServer(logger lager.Logger, conf *config.Config, database db.AppMetricDB, httpStatusCollector healthendpoint.HTTPStatusCollector) (ifrit.Runner, error) {
-	eh := NewEventGenHandler(logger, database)
+func NewServer(logger lager.Logger, conf *config.Config, queryAppMetric aggregator.QueryAppMetricsFunc, httpStatusCollector healthendpoint.HTTPStatusCollector) (ifrit.Runner, error) {
+	eh := NewEventGenHandler(logger, queryAppMetric)
 	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(httpStatusCollector)
 	r := routes.EventGeneratorRoutes()
 	r.Use(httpStatusCollectMiddleware.Collect)

@@ -84,6 +84,7 @@ collector:
   collect_method: polling
   save_interval: 5s
   metric_cache_size_per_app: 100
+  persist_metrics: false
 http_client_timeout: 10s
 `)
 			})
@@ -122,6 +123,7 @@ http_client_timeout: 10s
 				Expect(conf.Collector.CollectInterval).To(Equal(10 * time.Second))
 				Expect(conf.Collector.CollectMethod).To(Equal(CollectMethodPolling))
 				Expect(conf.Collector.MetricCacheSizePerApp).To(Equal(100))
+				Expect(conf.Collector.PersistMetrics).To(BeFalse())
 
 				Expect(conf.Server.TLS.KeyFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/server.key"))
 				Expect(conf.Server.TLS.CertFile).To(Equal("/var/vcap/jobs/autoscaler/config/certs/server.crt"))
@@ -172,7 +174,7 @@ db:
 				Expect(conf.Collector.CollectInterval).To(Equal(DefaultCollectInterval))
 				Expect(conf.Collector.CollectMethod).To(Equal(CollectMethodStreaming))
 				Expect(conf.Collector.MetricCacheSizePerApp).To(Equal(DefaultMetricCacheSizePerApp))
-
+				Expect(conf.Collector.PersistMetrics).To(BeTrue())
 				Expect(conf.HttpClientTimeout).To(Equal(5 * time.Second))
 			})
 		})
