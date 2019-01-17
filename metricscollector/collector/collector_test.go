@@ -21,17 +21,18 @@ import (
 var _ = Describe("Collector", func() {
 
 	var (
-		policyDb           *fakes.FakePolicyDB
-		instanceMetricsDb  *fakes.FakeInstanceMetricsDB
-		coll               *Collector
-		fclock             *fakeclock.FakeClock
-		appCollector       *fakes.FakeAppCollector
-		buffer             *gbytes.Buffer
-		logger             *lagertest.TestLogger
-		nodeNum            int
-		nodeIndex          int
-		createAppCollector func(string, chan *models.AppInstanceMetric) AppCollector
-		metric1, metric2   *models.AppInstanceMetric
+		policyDb                  *fakes.FakePolicyDB
+		instanceMetricsDb         *fakes.FakeInstanceMetricsDB
+		coll                      *Collector
+		fclock                    *fakeclock.FakeClock
+		appCollector              *fakes.FakeAppCollector
+		buffer                    *gbytes.Buffer
+		logger                    *lagertest.TestLogger
+		nodeNum                   int
+		nodeIndex                 int
+		createAppCollector        func(string, chan *models.AppInstanceMetric) AppCollector
+		metric1, metric2, metric3 *models.AppInstanceMetric
+		persistMetrics            bool
 	)
 
 	BeforeEach(func() {
@@ -43,6 +44,7 @@ var _ = Describe("Collector", func() {
 		buffer = logger.Buffer()
 		fclock = fakeclock.NewFakeClock(time.Now())
 		appCollector = &fakes.FakeAppCollector{}
+		persistMetrics = false
 		createAppCollector = func(appId string, dataChan chan *models.AppInstanceMetric) AppCollector {
 			return appCollector
 		}
@@ -51,7 +53,7 @@ var _ = Describe("Collector", func() {
 
 	Describe("Start", func() {
 		JustBeforeEach(func() {
-			coll = NewCollector(TestRefreshInterval, TestCollectInterval, TestSaveInterval, nodeIndex, nodeNum, logger, policyDb, instanceMetricsDb, fclock, createAppCollector)
+			coll = NewCollector(TestRefreshInterval, TestCollectInterval, persistMetrics, TestSaveInterval, nodeIndex, nodeNum, logger, policyDb, instanceMetricsDb, fclock, createAppCollector)
 			coll.Start()
 		})
 
@@ -62,7 +64,7 @@ var _ = Describe("Collector", func() {
 		It("refreshes the apps with given interval", func() {
 			Eventually(policyDb.GetAppIdsCallCount).Should(Equal(1))
 
-			fclock.Increment(TestRefreshInterval)
+			fclock.WaitForWatcherAndIncrement(TestRefreshInterval)
 			Eventually(policyDb.GetAppIdsCallCount).Should(Equal(2))
 
 			fclock.Increment(TestRefreshInterval)
@@ -80,7 +82,7 @@ var _ = Describe("Collector", func() {
 				It("does nothing", func() {
 					Consistently(coll.GetCollectorAppIds).Should(BeEmpty())
 
-					fclock.Increment(TestRefreshInterval)
+					fclock.WaitForWatcherAndIncrement(TestRefreshInterval)
 					Consistently(coll.GetCollectorAppIds).Should(BeEmpty())
 				})
 			})
@@ -94,7 +96,7 @@ var _ = Describe("Collector", func() {
 					Eventually(appCollector.StartCallCount).Should(Equal(3))
 					Eventually(coll.GetCollectorAppIds).Should(ConsistOf("app-id-1", "app-id-2", "app-id-3"))
 
-					fclock.Increment(TestRefreshInterval)
+					fclock.WaitForWatcherAndIncrement(TestRefreshInterval)
 					Consistently(appCollector.StartCallCount).Should(Equal(3))
 					Consistently(coll.GetCollectorAppIds).Should(ConsistOf("app-id-1", "app-id-2", "app-id-3"))
 				})
@@ -118,7 +120,7 @@ var _ = Describe("Collector", func() {
 					Eventually(appCollector.StartCallCount).Should(Equal(1))
 					Eventually(coll.GetCollectorAppIds).Should(ConsistOf("app-id-1"))
 
-					fclock.Increment(TestRefreshInterval)
+					fclock.WaitForWatcherAndIncrement(TestRefreshInterval)
 					Eventually(appCollector.StartCallCount).Should(Equal(2))
 					Eventually(coll.GetCollectorAppIds).Should(ConsistOf("app-id-1", "app-id-2"))
 
@@ -148,7 +150,7 @@ var _ = Describe("Collector", func() {
 					Eventually(appCollector.StartCallCount).Should(Equal(3))
 					Eventually(coll.GetCollectorAppIds).Should(ConsistOf("app-id-1", "app-id-2", "app-id-3"))
 
-					fclock.Increment(TestRefreshInterval)
+					fclock.WaitForWatcherAndIncrement(TestRefreshInterval)
 					Consistently(appCollector.StartCallCount).Should(Equal(3))
 					Eventually(appCollector.StopCallCount).Should(Equal(1))
 					Eventually(coll.GetCollectorAppIds).Should(ConsistOf("app-id-2", "app-id-3"))
@@ -178,7 +180,7 @@ var _ = Describe("Collector", func() {
 					Eventually(appCollector.StartCallCount).Should(Equal(2))
 					Eventually(coll.GetCollectorAppIds).Should(ConsistOf("app-id-1", "app-id-3"))
 
-					fclock.Increment(TestRefreshInterval)
+					fclock.WaitForWatcherAndIncrement(TestRefreshInterval)
 					Eventually(appCollector.StartCallCount).Should(Equal(3))
 					Eventually(appCollector.StopCallCount).Should(Equal(1))
 					Eventually(coll.GetCollectorAppIds).Should(ConsistOf("app-id-2", "app-id-3"))
@@ -213,7 +215,7 @@ var _ = Describe("Collector", func() {
 						Eventually(appCollector.StartCallCount).Should(Equal(2))
 						Eventually(coll.GetCollectorAppIds).Should(ConsistOf("app-id-3", "app-id-4"))
 
-						fclock.Increment(TestRefreshInterval)
+						fclock.WaitForWatcherAndIncrement(TestRefreshInterval)
 						Consistently(appCollector.StartCallCount).Should(Equal(2))
 						Consistently(appCollector.StopCallCount).Should(Equal(0))
 						Eventually(coll.GetCollectorAppIds).Should(ConsistOf("app-id-3", "app-id-4"))
@@ -229,9 +231,9 @@ var _ = Describe("Collector", func() {
 						nodeIndex = 1
 					})
 					It("polls app shard 1", func() {
-						Eventually(appCollector.StartCallCount).Should(Equal(0))
+						Consistently(appCollector.StartCallCount).Should(Equal(0))
 
-						fclock.Increment(TestRefreshInterval)
+						fclock.WaitForWatcherAndIncrement(TestRefreshInterval)
 						Eventually(appCollector.StartCallCount).Should(Equal(2))
 						Consistently(appCollector.StopCallCount).Should(Equal(0))
 						Eventually(coll.GetCollectorAppIds).Should(ConsistOf("app-id-5", "app-id-6"))
@@ -251,7 +253,7 @@ var _ = Describe("Collector", func() {
 						Eventually(appCollector.StartCallCount).Should(Equal(2))
 						Eventually(coll.GetCollectorAppIds).Should(ConsistOf("app-id-1", "app-id-2"))
 
-						fclock.Increment(TestRefreshInterval)
+						fclock.WaitForWatcherAndIncrement(TestRefreshInterval)
 						Consistently(appCollector.StartCallCount).Should(Equal(2))
 						Eventually(appCollector.StopCallCount).Should(Equal(2))
 						Eventually(coll.GetCollectorAppIds).Should(BeEmpty())
@@ -276,7 +278,7 @@ var _ = Describe("Collector", func() {
 				Eventually(buffer).Should(gbytes.Say("test collector error"))
 				Consistently(coll.GetCollectorAppIds).Should(BeEmpty())
 
-				fclock.Increment(TestRefreshInterval)
+				fclock.WaitForWatcherAndIncrement(TestRefreshInterval)
 				Eventually(policyDb.GetAppIdsCallCount).Should(Equal(2))
 				Eventually(buffer).Should(gbytes.Say("test collector error"))
 				Consistently(coll.GetCollectorAppIds).Should(BeEmpty())
@@ -289,13 +291,13 @@ var _ = Describe("Collector", func() {
 	Describe("Stop", func() {
 		BeforeEach(func() {
 			policyDb.GetAppIdsReturns(map[string]bool{"app-id-1": true, "app-id-2": true, "app-id-3": true}, nil)
-			coll = NewCollector(TestRefreshInterval, TestCollectInterval, TestSaveInterval, nodeIndex, nodeNum, logger, policyDb, instanceMetricsDb, fclock, createAppCollector)
+			coll = NewCollector(TestRefreshInterval, TestCollectInterval, persistMetrics, TestSaveInterval, nodeIndex, nodeNum, logger, policyDb, instanceMetricsDb, fclock, createAppCollector)
 			coll.Start()
 		})
 
 		It("stops the collecting", func() {
-
-			fclock.Increment(TestRefreshInterval)
+			Eventually(policyDb.GetAppIdsCallCount).Should(Equal(1))
+			fclock.WaitForWatcherAndIncrement(TestRefreshInterval)
 			Eventually(policyDb.GetAppIdsCallCount).Should(Equal(2))
 
 			coll.Stop()
@@ -308,7 +310,7 @@ var _ = Describe("Collector", func() {
 
 	Describe("QueryMetricsFromCache", func() {
 		JustBeforeEach(func() {
-			coll = NewCollector(TestRefreshInterval, TestCollectInterval, TestSaveInterval, nodeIndex, nodeNum, logger, policyDb, instanceMetricsDb, fclock, createAppCollector)
+			coll = NewCollector(TestRefreshInterval, TestCollectInterval, persistMetrics, TestSaveInterval, nodeIndex, nodeNum, logger, policyDb, instanceMetricsDb, fclock, createAppCollector)
 			coll.Start()
 		})
 		BeforeEach(func() {
@@ -331,6 +333,16 @@ var _ = Describe("Collector", func() {
 				Value:         "300",
 				Timestamp:     3333,
 			}
+			metric3 = &models.AppInstanceMetric{
+				AppId:         "another-app-id",
+				InstanceIndex: 1,
+				CollectedAt:   1111,
+				Name:          models.MetricNameThroughput,
+				Unit:          models.UnitRPS,
+				Value:         "3",
+				Timestamp:     1111,
+			}
+
 			appCollector.QueryReturns([]collection.TSD{metric1, metric2}, true)
 		})
 
@@ -338,28 +350,77 @@ var _ = Describe("Collector", func() {
 			It("returns the data in cache", func() {
 				Eventually(policyDb.GetAppIdsCallCount).Should(Equal(1))
 
-				data, ok := coll.QueryMetricsFromCache("an-app-id", 0, 5555, db.ASC, map[string]string{})
-				Expect(ok).To(BeTrue())
+				data, err := coll.QueryMetrics("an-app-id", -1, "test-metric-type", 0, 5555, db.ASC)
+				Expect(err).To(BeNil())
 				Expect(data).To(Equal([]*models.AppInstanceMetric{metric1, metric2}))
 
-				data, ok = coll.QueryMetricsFromCache("an-app-id", 0, 5555, db.DESC, map[string]string{})
-				Expect(ok).To(BeTrue())
+				data, err = coll.QueryMetrics("an-app-id", -1, "test-metric-type", 0, 5555, db.DESC)
+				Expect(err).To(BeNil())
 				Expect(data).To(Equal([]*models.AppInstanceMetric{metric2, metric1}))
 			})
 		})
-		Context("when cache misses", func() {
+		Context("when cache potenailly misses", func() {
 			BeforeEach(func() {
-				appCollector.QueryReturns(nil, false)
+				appCollector.QueryReturns([]collection.TSD{metric1}, false)
 			})
-			It("returns false", func() {
-				_, ok := coll.QueryMetricsFromCache("an-app-id", 0, 5555, db.ASC, map[string]string{})
-				Expect(ok).To(BeFalse())
+
+			Context("when metrics data are not persisted", func() {
+				It("returns metrics cached", func() {
+					Eventually(policyDb.GetAppIdsCallCount).Should(Equal(1))
+					data, err := coll.QueryMetrics("an-app-id", -1, "test-metric-type", 0, 5555, db.ASC)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(data).To(Equal([]*models.AppInstanceMetric{metric1}))
+				})
 			})
+			Context("when metrics data are persisted", func() {
+				BeforeEach(func() {
+					persistMetrics = true
+				})
+				Context("when retrieving metrics from database succeeds", func() {
+					BeforeEach(func() {
+						instanceMetricsDb.RetrieveInstanceMetricsReturns([]*models.AppInstanceMetric{metric1, metric2}, nil)
+					})
+					It("returns metrics from database", func() {
+						Eventually(policyDb.GetAppIdsCallCount).Should(Equal(1))
+						data, err := coll.QueryMetrics("an-app-id", -1, "test-metric-type", 0, 5555, db.ASC)
+						Expect(err).NotTo(HaveOccurred())
+						Expect(data).To(Equal([]*models.AppInstanceMetric{metric1, metric2}))
+					})
+				})
+
+				Context("when retrieving metrics from database has error", func() {
+					BeforeEach(func() {
+						instanceMetricsDb.RetrieveInstanceMetricsReturns(nil, errors.New("an error"))
+					})
+					It("returns error", func() {
+						Eventually(policyDb.GetAppIdsCallCount).Should(Equal(1))
+						_, err := coll.QueryMetrics("an-app-id", -1, "test-metric-type", 0, 5555, db.ASC)
+						Expect(err).To(MatchError("an error"))
+					})
+
+				})
+			})
+
 		})
-		Context("when app does not exist", func() {
-			It("returns false", func() {
-				_, ok := coll.QueryMetricsFromCache("non-exist-app-id", 0, 5555, db.ASC, map[string]string{})
-				Expect(ok).To(BeFalse())
+		Context("when app instance metrics are not being collected now", func() {
+			Context("when metric data are not persisted", func() {
+				It("return empty result", func() {
+					data, err := coll.QueryMetrics("another-app-id", -1, "test-metric-type", 0, 5555, db.ASC)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(data).To(BeEmpty())
+				})
+			})
+
+			Context("when metric data are persisted", func() {
+				BeforeEach(func() {
+					persistMetrics = true
+					instanceMetricsDb.RetrieveInstanceMetricsReturns([]*models.AppInstanceMetric{metric3}, nil)
+				})
+				It("retrieves from database", func() {
+					data, err := coll.QueryMetrics("non-exist-app-id", -1, "test-metric-type", 0, 5555, db.ASC)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(data).To(Equal([]*models.AppInstanceMetric{metric3}))
+				})
 			})
 		})
 
