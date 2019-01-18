@@ -61,16 +61,16 @@ func (f *FakeEventProducer) BatchedReceiver(
 	f.actualReq = req
 	f.mu.Unlock()
 	var i int
-	fpEnvs := []*loggregator_v2.Envelope{}
-	for _, e := range f.envelops {
-		fpEnvs = append(fpEnvs, &loggregator_v2.Envelope{
-			SourceId:  e.SourceId,
-			Message:   e.Message,
-			Tags:      e.Tags,
-			Timestamp: time.Now().UnixNano(),
-		})
-	}
 	for range time.Tick(f.emitInterval) {
+		fpEnvs := []*loggregator_v2.Envelope{}
+		for _, e := range f.envelops {
+			fpEnvs = append(fpEnvs, &loggregator_v2.Envelope{
+				SourceId:  e.SourceId,
+				Message:   e.Message,
+				Tags:      e.Tags,
+				Timestamp: time.Now().UnixNano(),
+			})
+		}
 		srv.Send(&loggregator_v2.EnvelopeBatch{
 			Batch: fpEnvs,
 		})
