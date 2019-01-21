@@ -5,7 +5,6 @@ import (
 	"autoscaler/models"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	. "github.com/onsi/ginkgo"
@@ -34,7 +33,7 @@ var _ = Describe("Integration_Operator_Others", func() {
 		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), cf.GrantTypePassword, defaultHttpClientTimeout, tmpDir)
 		startScalingEngine()
 
-		schedulerConfPath = components.PrepareSchedulerConfig(dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), tmpDir, strings.Split(consulRunner.Address(), ":")[1], defaultHttpClientTimeout)
+		schedulerConfPath = components.PrepareSchedulerConfig(dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), tmpDir, defaultHttpClientTimeout)
 		startScheduler()
 
 	})

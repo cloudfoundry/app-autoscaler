@@ -15,7 +15,6 @@ import (
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/clock"
-	"code.cloudfoundry.org/consuladapter"
 	"code.cloudfoundry.org/lager"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tedsuo/ifrit"
@@ -164,30 +163,6 @@ func main() {
 		prdl := sync.NewDatabaseLock(logger)
 		dbLockMaintainer := prdl.InitDBLockRunner(conf.DBLock.LockRetryInterval, conf.DBLock.LockTTL, guid, lockDB)
 		members = append(grouper.Members{{"db-lock-maintainer", dbLockMaintainer}}, members...)
-	}
-
-	if conf.Lock.ConsulClusterConfig != "" {
-		consulClient, err := consuladapter.NewClientFromUrl(conf.Lock.ConsulClusterConfig)
-		if err != nil {
-			logger.Fatal("new consul client failed", err)
-		}
-
-		serviceClient := operator.NewServiceClient(consulClient, prClock)
-
-		guid, err := helpers.GenerateGUID(logger)
-		if err != nil {
-			logger.Error("failed-to-generate-guid", err)
-			os.Exit(1)
-		}
-		if !conf.EnableDBLock {
-			lockMaintainer := serviceClient.NewOperatorLockRunner(
-				logger,
-				guid,
-				conf.Lock.LockRetryInterval,
-				conf.Lock.LockTTL,
-			)
-			members = append(grouper.Members{{"lock-maintainer", lockMaintainer}}, members...)
-		}
 	}
 
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
