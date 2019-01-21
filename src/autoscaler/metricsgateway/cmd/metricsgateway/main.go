@@ -44,12 +44,12 @@ func main() {
 	}
 	logger := helpers.InitLoggerFromConfig(&conf.Logging, "metricsgateway")
 	gatewayClock := clock.NewClock()
-	loggregatorClientTLSConfig, err := loggregator.NewEgressTLSConfig(conf.Nozzle.TLS.CACertFile, conf.Nozzle.TLS.CertFile, conf.Nozzle.TLS.KeyFile)
+	loggregatorClientTLSConfig, err := loggregator.NewEgressTLSConfig(conf.Nozzle.RLPClientTLS.CACertFile, conf.Nozzle.RLPClientTLS.CertFile, conf.Nozzle.RLPClientTLS.KeyFile)
 	if err != nil {
 		fmt.Fprintf(os.Stdout, "%s\n", err.Error())
 		os.Exit(1)
 	}
-	metricServerClientTLSConfig, err := cfhttp.NewTLSConfig(conf.Emitter.TLS.CertFile, conf.Emitter.TLS.KeyFile, conf.Emitter.TLS.CACertFile)
+	metricServerClientTLSConfig, err := cfhttp.NewTLSConfig(conf.Emitter.MetricsServerClientTLS.CertFile, conf.Emitter.MetricsServerClientTLS.KeyFile, conf.Emitter.MetricsServerClientTLS.CACertFile)
 	if err != nil {
 		fmt.Fprintf(os.Stdout, "%s\n", err.Error())
 		os.Exit(1)
