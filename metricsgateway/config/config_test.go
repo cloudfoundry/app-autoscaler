@@ -58,7 +58,7 @@ app_manager:
     max_idle_connections: 5
     connection_max_lifetime: 60s
 emitter:
-  tls: 
+  metrics_server_client_tls: 
     key_file: "metrc_server_client.cert"
     cert_file: "metrc_server_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -69,7 +69,7 @@ emitter:
   max_close_retry_count: 10
   retry_delay: 1s
 nozzle:
-  tls:
+  rlp_client_tls:
     key_file: "loggregator_client.cert"
     cert_file: "loggregator_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -96,14 +96,14 @@ health:
 				Expect(conf.Emitter.BufferSize).To(Equal(800))
 				Expect(conf.Emitter.HandshakeTimeout).To(Equal(100 * time.Millisecond))
 				Expect(conf.Emitter.KeepAliveInterval).To(Equal(10 * time.Second))
-				Expect(conf.Emitter.TLS).To(Equal(&models.TLSCerts{
+				Expect(conf.Emitter.MetricsServerClientTLS).To(Equal(&models.TLSCerts{
 					KeyFile:    "metrc_server_client.cert",
 					CertFile:   "metrc_server_client.key",
 					CACertFile: "autoscaler_ca.cert",
 				}))
 				Expect(conf.Nozzle.RLPAddr).To(Equal("wss://localhost:9999"))
 				Expect(conf.Nozzle.ShardID).To(Equal("autoscaler"))
-				Expect(conf.Nozzle.TLS).To(Equal(&models.TLSCerts{
+				Expect(conf.Nozzle.RLPClientTLS).To(Equal(&models.TLSCerts{
 					KeyFile:    "loggregator_client.cert",
 					CertFile:   "loggregator_client.key",
 					CACertFile: "autoscaler_ca.cert",
@@ -126,12 +126,12 @@ app_manager:
     max_idle_connections: 5
     connection_max_lifetime: 60s
 emitter:
-  tls:
+  metrics_server_client_tls:
     key_file: "metrc_server_client.cert"
     cert_file: "metrc_server_client.key"
     ca_file: "autoscaler_ca.cert"
 nozzle:
-  tls:
+  rlp_client_tls:
     key_file: "loggregator_client.cert"
     cert_file: "loggregator_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -178,7 +178,7 @@ app_manager:
     max_idle_connections: 5
     connection_max_lifetime: 60s
 emitter:
-  tls: 
+  metrics_server_client_tls: 
     key_file: "metrc_server_client.cert"
     cert_file: "metrc_server_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -189,7 +189,7 @@ emitter:
   max_close_retry_count: 10
   retry_delay: 1s
 nozzle:
-  tls:
+  rlp_client_tls:
     key_file: "loggregator_client.cert"
     cert_file: "loggregator_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -223,7 +223,7 @@ app_manager:
     max_idle_connections: 5
     connection_max_lifetime: 60s
 emitter:
-  tls: 
+  metrics_server_client_tls: 
     key_file: "metrc_server_client.cert"
     cert_file: "metrc_server_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -234,7 +234,7 @@ emitter:
   max_close_retry_count: 10
   retry_delay: 1s
 nozzle:
-  tls:
+  rlp_client_tls:
     key_file: "loggregator_client.cert"
     cert_file: "loggregator_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -267,7 +267,7 @@ app_manager:
     max_idle_connections: 5
     connection_max_lifetime: 60s
 emitter:
-  tls: 
+  metrics_server_client_tls: 
     key_file: "metrc_server_client.cert"
     cert_file: "metrc_server_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -278,7 +278,7 @@ emitter:
   max_close_retry_count: 10
   retry_delay: 1s
 nozzle:
-  tls:
+  rlp_client_tls:
     key_file: "loggregator_client.cert"
     cert_file: "loggregator_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -312,7 +312,7 @@ app_manager:
     max_idle_connections: 5
     connection_max_lifetime: 60s
 emitter:
-  tls: 
+  metrics_server_client_tls: 
     key_file: "metrc_server_client.cert"
     cert_file: "metrc_server_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -323,7 +323,7 @@ emitter:
   max_close_retry_count: 10
   retry_delay: 1s
 nozzle:
-  tls:
+  rlp_client_tls:
     key_file: "loggregator_client.cert"
     cert_file: "loggregator_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -357,7 +357,7 @@ app_manager:
     max_idle_connections: 5
     connection_max_lifetime: 60s
 emitter:
-  tls: 
+  metrics_server_client_tls: 
     key_file: "metrc_server_client.cert"
     cert_file: "metrc_server_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -368,7 +368,7 @@ emitter:
   max_close_retry_count: 10
   retry_delay: 1s
 nozzle:
-  tls:
+  rlp_client_tls:
     key_file: "loggregator_client.cert"
     cert_file: "loggregator_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -403,7 +403,7 @@ app_manager:
     max_idle_connections: NOT-INTEGER-VALUE
     connection_max_lifetime: 60s
 emitter:
-  tls: 
+  metrics_server_client_tls: 
     key_file: "metrc_server_client.cert"
     cert_file: "metrc_server_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -414,7 +414,7 @@ emitter:
   max_close_retry_count: 10
   retry_delay: 1s
 nozzle:
-  tls:
+  rlp_client_tls:
     key_file: "loggregator_client.cert"
     cert_file: "loggregator_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -449,7 +449,7 @@ app_manager:
     max_idle_connections: 5
     connection_max_lifetime: 60k
 emitter:
-  tls: 
+  metrics_server_client_tls: 
     key_file: "metrc_server_client.cert"
     cert_file: "metrc_server_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -460,7 +460,7 @@ emitter:
   max_close_retry_count: 10
   retry_delay: 1s
 nozzle:
-  tls:
+  rlp_client_tls:
     key_file: "loggregator_client.cert"
     cert_file: "loggregator_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -495,7 +495,7 @@ app_manager:
     max_idle_connections: 5
     connection_max_lifetime: 60s
 emitter:
-  tls: 
+  metrics_server_client_tls: 
     key_file: "metrc_server_client.cert"
     cert_file: "metrc_server_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -506,7 +506,7 @@ emitter:
   max_close_retry_count: 10
   retry_delay: 1s
 nozzle:
-  tls:
+  rlp_client_tls:
     key_file: "loggregator_client.cert"
     cert_file: "loggregator_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -541,7 +541,7 @@ app_manager:
     max_idle_connections: 5
     connection_max_lifetime: 60s
 emitter:
-  tls: 
+  metrics_server_client_tls: 
     key_file: "metrc_server_client.cert"
     cert_file: "metrc_server_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -552,7 +552,7 @@ emitter:
   max_close_retry_count: 10
   retry_delay: 1s
 nozzle:
-  tls:
+  rlp_client_tls:
     key_file: "loggregator_client.cert"
     cert_file: "loggregator_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -587,7 +587,7 @@ app_manager:
     max_idle_connections: 5
     connection_max_lifetime: 60s
 emitter:
-  tls: 
+  metrics_server_client_tls: 
     key_file: "metrc_server_client.cert"
     cert_file: "metrc_server_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -598,7 +598,7 @@ emitter:
   max_close_retry_count: 10
   retry_delay: 1s
 nozzle:
-  tls:
+  rlp_client_tls:
     key_file: "loggregator_client.cert"
     cert_file: "loggregator_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -633,7 +633,7 @@ app_manager:
     max_idle_connections: 5
     connection_max_lifetime: 60s
 emitter:
-  tls: 
+  metrics_server_client_tls: 
     key_file: "metrc_server_client.cert"
     cert_file: "metrc_server_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -644,7 +644,7 @@ emitter:
   max_close_retry_count: 10
   retry_delay: 1s
 nozzle:
-  tls:
+  rlp_client_tls:
     key_file: "loggregator_client.cert"
     cert_file: "loggregator_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -679,7 +679,7 @@ app_manager:
     max_idle_connections: 5
     connection_max_lifetime: 60s
 emitter:
-  tls: 
+  metrics_server_client_tls: 
     key_file: "metrc_server_client.cert"
     cert_file: "metrc_server_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -690,7 +690,7 @@ emitter:
   max_close_retry_count: NOT-INTEGER-VALUE
   retry_delay: 1s
 nozzle:
-  tls:
+  rlp_client_tls:
     key_file: "loggregator_client.cert"
     cert_file: "loggregator_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -725,7 +725,7 @@ app_manager:
     max_idle_connections: 5
     connection_max_lifetime: 60s
 emitter:
-  tls: 
+  metrics_server_client_tls: 
     key_file: "metrc_server_client.cert"
     cert_file: "metrc_server_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -736,7 +736,7 @@ emitter:
   max_close_retry_count: 10
   retry_delay: 1kk
 nozzle:
-  tls:
+  rlp_client_tls:
     key_file: "loggregator_client.cert"
     cert_file: "loggregator_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -771,7 +771,7 @@ app_manager:
     max_idle_connections: 5
     connection_max_lifetime: 60s
 emitter:
-  tls: 
+  metrics_server_client_tls: 
     key_file: "metrc_server_client.cert"
     cert_file: "metrc_server_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -782,7 +782,7 @@ emitter:
   max_close_retry_count: 10
   retry_delay: 1s
 nozzle:
-  tls:
+  rlp_client_tls:
     key_file: "loggregator_client.cert"
     cert_file: "loggregator_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -826,7 +826,7 @@ health:
 					MaxSetupRetryCount: 10,
 					MaxCloseRetryCount: 10,
 					RetryDelay:         1 * time.Second,
-					TLS: &models.TLSCerts{
+					MetricsServerClientTLS: &models.TLSCerts{
 						KeyFile:    "metrc_server_client.cert",
 						CertFile:   "metrc_server_client.key",
 						CACertFile: "autoscaler_ca.cert",
@@ -835,7 +835,7 @@ health:
 				Nozzle: NozzleConfig{
 					RLPAddr: "wss://localhost:9999",
 					ShardID: DefaultShardID,
-					TLS: &models.TLSCerts{
+					RLPClientTLS: &models.TLSCerts{
 						KeyFile:    "loggregator_client.cert",
 						CertFile:   "loggregator_client.key",
 						CACertFile: "autoscaler_ca.cert",
@@ -975,28 +975,28 @@ health:
 			})
 		})
 
-		Context("when emitter.tls.cert_file is empty", func() {
+		Context("when emitter.metrics_server_client_tls.cert_file is empty", func() {
 			BeforeEach(func() {
-				conf.Emitter.TLS.CertFile = ""
+				conf.Emitter.MetricsServerClientTLS.CertFile = ""
 			})
 			It("should error", func() {
-				Expect(err).To(MatchError("Configuration error: emitter.tls.cert_file is empty"))
+				Expect(err).To(MatchError("Configuration error: emitter.metrics_server_client_tls.cert_file is empty"))
 			})
 		})
-		Context("when emitter.tls.key_file is empty", func() {
+		Context("when emitter.metrics_server_client_tls.key_file is empty", func() {
 			BeforeEach(func() {
-				conf.Emitter.TLS.KeyFile = ""
+				conf.Emitter.MetricsServerClientTLS.KeyFile = ""
 			})
 			It("should error", func() {
-				Expect(err).To(MatchError("Configuration error: emitter.tls.key_file is empty"))
+				Expect(err).To(MatchError("Configuration error: emitter.metrics_server_client_tls.key_file is empty"))
 			})
 		})
-		Context("when emitter.tls.ca_file is empty", func() {
+		Context("when emitter.metrics_server_client_tls.ca_file is empty", func() {
 			BeforeEach(func() {
-				conf.Emitter.TLS.CACertFile = ""
+				conf.Emitter.MetricsServerClientTLS.CACertFile = ""
 			})
 			It("should error", func() {
-				Expect(err).To(MatchError("Configuration error: emitter.tls.ca_file is empty"))
+				Expect(err).To(MatchError("Configuration error: emitter.metrics_server_client_tls.ca_file is empty"))
 			})
 		})
 
@@ -1018,28 +1018,28 @@ health:
 			})
 		})
 
-		Context("when nozzle.tls.cert_file is empty", func() {
+		Context("when nozzle.rlp_client_tls.cert_file is empty", func() {
 			BeforeEach(func() {
-				conf.Nozzle.TLS.CertFile = ""
+				conf.Nozzle.RLPClientTLS.CertFile = ""
 			})
 			It("should error", func() {
-				Expect(err).To(MatchError("Configuration error: nozzle.tls.cert_file is empty"))
+				Expect(err).To(MatchError("Configuration error: nozzle.rlp_client_tls.cert_file is empty"))
 			})
 		})
-		Context("when nozzle.tls.key_file is empty", func() {
+		Context("when nozzle.rlp_client_tls.key_file is empty", func() {
 			BeforeEach(func() {
-				conf.Nozzle.TLS.KeyFile = ""
+				conf.Nozzle.RLPClientTLS.KeyFile = ""
 			})
 			It("should error", func() {
-				Expect(err).To(MatchError("Configuration error: nozzle.tls.key_file is empty"))
+				Expect(err).To(MatchError("Configuration error: nozzle.rlp_client_tls.key_file is empty"))
 			})
 		})
-		Context("when nozzle.tls.ca_file is empty", func() {
+		Context("when nozzle.rlp_client_tls.ca_file is empty", func() {
 			BeforeEach(func() {
-				conf.Nozzle.TLS.CACertFile = ""
+				conf.Nozzle.RLPClientTLS.CACertFile = ""
 			})
 			It("should error", func() {
-				Expect(err).To(MatchError("Configuration error: nozzle.tls.ca_file is empty"))
+				Expect(err).To(MatchError("Configuration error: nozzle.rlp_client_tls.ca_file is empty"))
 			})
 		})
 
