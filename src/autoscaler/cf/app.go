@@ -19,8 +19,8 @@ const (
 	CFAppNotFound   = "CF-AppNotFound"
 )
 
-func (c *cfClient) GetApp(appId string) (*models.AppEntity, error) {
-	url := c.conf.API + path.Join(PathApp, appId, "summary")
+func (c *cfClient) GetApp(appID string) (*models.AppEntity, error) {
+	url := c.conf.API + path.Join(PathApp, appID, "summary")
 	c.logger.Debug("get-app-instances", lager.Data{"url": url})
 
 	req, err := http.NewRequest("GET", url, nil)
@@ -43,13 +43,14 @@ func (c *cfClient) GetApp(appId string) (*models.AppEntity, error) {
 		if resp.StatusCode == 404 {
 			respBody, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
-				c.logger.Error("failed-to-read-response-body-while-getting-app-summary", err, lager.Data{"appid": appId})
+				c.logger.Error("failed-to-read-response-body-while-getting-app-summary", err, lager.Data{"appID": appID})
 				return nil, err
 			}
 			var bodydata map[string]interface{}
 			err = json.Unmarshal([]byte(respBody), &bodydata)
 			if err != nil {
-				c.logger.Error("failed-to-unmarshal-response-body-while-getting-app-summary", err, lager.Data{"appid": appId})
+				err = fmt.Errorf("%s", string(respBody))
+				c.logger.Error("failed-to-get-application-summary", err, lager.Data{"appID": appID})
 				return nil, err
 			}
 			errorDescription := bodydata["description"].(string)
@@ -62,7 +63,7 @@ func (c *cfClient) GetApp(appId string) (*models.AppEntity, error) {
 			} else {
 				err = fmt.Errorf("failed getting application summary: [%d] %s: %s", resp.StatusCode, errorCode, errorDescription)
 			}
-			c.logger.Error("get-app-summary-response", err, lager.Data{"appid": appId, "statusCode": resp.StatusCode, "description": errorDescription, "errorCode": errorCode})
+			c.logger.Error("get-app-summary-response", err, lager.Data{"appID": appID, "statusCode": resp.StatusCode, "description": errorDescription, "errorCode": errorCode})
 			return nil, err
 		}
 		// For Non 404 Error type
@@ -89,7 +90,7 @@ func (c *cfClient) SetAppInstances(appID string, num int) error {
 	}
 	body, err := json.Marshal(appEntity)
 	if err != nil {
-		c.logger.Error("set-app-instances-marshal", err, lager.Data{"appid": appID, "appEntity": appEntity})
+		c.logger.Error("set-app-instances-marshal", err, lager.Data{"appID": appID, "appEntity": appEntity})
 		return err
 	}
 
@@ -113,19 +114,20 @@ func (c *cfClient) SetAppInstances(appID string, num int) error {
 	if resp.StatusCode != http.StatusCreated {
 		respBody, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			c.logger.Error("failed-to-read-response-body-while-setting-app-instance", err, lager.Data{"appid": appID})
+			c.logger.Error("failed-to-read-response-body-while-setting-app-instance", err, lager.Data{"appID": appID})
 			return err
 		}
 		var bodydata map[string]interface{}
 		err = json.Unmarshal([]byte(respBody), &bodydata)
 		if err != nil {
-			c.logger.Error("failed-to-unmarshal-response-body-while-setting-app-instance", err, lager.Data{"appid": appID})
+			err = fmt.Errorf("%s", string(respBody))
+			c.logger.Error("faileded-to-set-application-instances", err, lager.Data{"appID": appID})
 			return err
 		}
 		errorDescription := bodydata["description"].(string)
 		errorCode := bodydata["error_code"].(string)
 		err = fmt.Errorf("failed setting application instances: [%d] %s: %s", resp.StatusCode, errorCode, errorDescription)
-		c.logger.Error("set-app-instances-response", err, lager.Data{"appid": appID, "statusCode": resp.StatusCode, "description": errorDescription, "errorCode": errorCode})
+		c.logger.Error("set-app-instances-response", err, lager.Data{"appID": appID, "statusCode": resp.StatusCode, "description": errorDescription, "errorCode": errorCode})
 		return err
 	}
 	return nil
