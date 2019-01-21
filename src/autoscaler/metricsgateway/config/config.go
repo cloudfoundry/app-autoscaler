@@ -32,16 +32,16 @@ type AppManagerConfig struct {
 }
 
 type NozzleConfig struct {
-	TLS     *models.TLSCerts `yaml:"tls"`
-	RLPAddr string           `yaml:"rlp_addr"`
-	ShardID string           `yaml:"shard_id"`
+	RLPClientTLS *models.TLSCerts `yaml:"rlp_client_tls"`
+	RLPAddr      string           `yaml:"rlp_addr"`
+	ShardID      string           `yaml:"shard_id"`
 }
 
 type EmitterConfig struct {
-	TLS               *models.TLSCerts `yaml:"tls"`
-	BufferSize        int              `yaml:"buffer_size"`
-	KeepAliveInterval time.Duration    `yaml:"keep_alive_interval"`
-	HandshakeTimeout  time.Duration    `yaml:"handshake_timeout"`
+	MetricsServerClientTLS *models.TLSCerts `yaml:"metrics_server_client_tls"`
+	BufferSize             int              `yaml:"buffer_size"`
+	KeepAliveInterval      time.Duration    `yaml:"keep_alive_interval"`
+	HandshakeTimeout       time.Duration    `yaml:"handshake_timeout"`
 
 	MaxSetupRetryCount int           `yaml:"max_setup_retry_count"`
 	MaxCloseRetryCount int           `yaml:"max_close_retry_count"`
@@ -136,14 +136,14 @@ func (c *Config) Validate() error {
 	if c.Emitter.RetryDelay == time.Duration(0) {
 		return fmt.Errorf("Configuration error: emitter.retry_delay is 0")
 	}
-	if c.Emitter.TLS.CertFile == "" {
-		return fmt.Errorf("Configuration error: emitter.tls.cert_file is empty")
+	if c.Emitter.MetricsServerClientTLS.CertFile == "" {
+		return fmt.Errorf("Configuration error: emitter.metrics_server_client_tls.cert_file is empty")
 	}
-	if c.Emitter.TLS.KeyFile == "" {
-		return fmt.Errorf("Configuration error: emitter.tls.key_file is empty")
+	if c.Emitter.MetricsServerClientTLS.KeyFile == "" {
+		return fmt.Errorf("Configuration error: emitter.metrics_server_client_tls.key_file is empty")
 	}
-	if c.Emitter.TLS.CACertFile == "" {
-		return fmt.Errorf("Configuration error: emitter.tls.ca_file is empty")
+	if c.Emitter.MetricsServerClientTLS.CACertFile == "" {
+		return fmt.Errorf("Configuration error: emitter.metrics_server_client_tls.ca_file is empty")
 	}
 	if c.Nozzle.RLPAddr == "" {
 		return fmt.Errorf("Configuration error: nozzle.rlp_addr is empty")
@@ -151,14 +151,14 @@ func (c *Config) Validate() error {
 	if c.Nozzle.ShardID == "" {
 		return fmt.Errorf("Configuration error: nozzle.shard_id is empty")
 	}
-	if c.Nozzle.TLS.CertFile == "" {
-		return fmt.Errorf("Configuration error: nozzle.tls.cert_file is empty")
+	if c.Nozzle.RLPClientTLS.CertFile == "" {
+		return fmt.Errorf("Configuration error: nozzle.rlp_client_tls.cert_file is empty")
 	}
-	if c.Nozzle.TLS.KeyFile == "" {
-		return fmt.Errorf("Configuration error: nozzle.tls.key_file is empty")
+	if c.Nozzle.RLPClientTLS.KeyFile == "" {
+		return fmt.Errorf("Configuration error: nozzle.rlp_client_tls.key_file is empty")
 	}
-	if c.Nozzle.TLS.CACertFile == "" {
-		return fmt.Errorf("Configuration error: nozzle.tls.ca_file is empty")
+	if c.Nozzle.RLPClientTLS.CACertFile == "" {
+		return fmt.Errorf("Configuration error: nozzle.rlp_client_tls.ca_file is empty")
 	}
 
 	return nil

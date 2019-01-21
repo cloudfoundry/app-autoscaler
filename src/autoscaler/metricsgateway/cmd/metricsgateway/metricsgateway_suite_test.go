@@ -156,7 +156,7 @@ func initConfig() {
 			MaxSetupRetryCount: 10,
 			MaxCloseRetryCount: 10,
 			RetryDelay:         1 * time.Second,
-			TLS: &models.TLSCerts{
+			MetricsServerClientTLS: &models.TLSCerts{
 				KeyFile:    metricServerClientKeyPath,
 				CertFile:   metricServerClientCrtPath,
 				CACertFile: caPath,
@@ -165,7 +165,7 @@ func initConfig() {
 		Nozzle: config.NozzleConfig{
 			RLPAddr: rlpAddr,
 			ShardID: "autoscaler",
-			TLS: &models.TLSCerts{
+			RLPClientTLS: &models.TLSCerts{
 				KeyFile:    loggregatorClientKeyPath,
 				CertFile:   loggregatorClientCrtPath,
 				CACertFile: caPath,
