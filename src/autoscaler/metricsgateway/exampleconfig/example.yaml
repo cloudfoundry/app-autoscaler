@@ -13,7 +13,7 @@ app_manager:
     max_idle_connections: 5
     connection_max_lifetime: 60s
 emitter:
-  tls: 
+  metrics_server_client_tls: 
     key_file: "metrc_server_client.cert"
     cert_file: "metrc_server_client.key"
     ca_file: "autoscaler_ca.cert"
@@ -24,7 +24,7 @@ emitter:
   max_close_retry_count: 10
   retry_delay: 1s
 nozzle:
-  tls:
+  rlp_client_tls:
     key_file: "loggregator_client.cert"
     cert_file: "loggregator_client.key"
     ca_file: "autoscaler_ca.cert"

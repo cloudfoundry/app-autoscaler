@@ -695,7 +695,7 @@ func (components *Components) PrepareMetricsGatewayConfig(dbURI string, metricSe
 			MaxSetupRetryCount: 3,
 			MaxCloseRetryCount: 3,
 			RetryDelay:         500 * time.Millisecond,
-			TLS: &models.TLSCerts{
+			MetricsServerClientTLS: &models.TLSCerts{
 				KeyFile:    filepath.Join(testCertDir, "metricserver_client.key"),
 				CertFile:   filepath.Join(testCertDir, "metricserver_client.crt"),
 				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
@@ -704,7 +704,7 @@ func (components *Components) PrepareMetricsGatewayConfig(dbURI string, metricSe
 		Nozzle: mgConfig.NozzleConfig{
 			RLPAddr: rlpAddr,
 			ShardID: "autoscaler",
-			TLS: &models.TLSCerts{
+			RLPClientTLS: &models.TLSCerts{
 				KeyFile:    filepath.Join(testCertDir, "reverselogproxy_client.key"),
 				CertFile:   filepath.Join(testCertDir, "reverselogproxy_client.crt"),
 				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
