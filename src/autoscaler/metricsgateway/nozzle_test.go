@@ -3,6 +3,7 @@ package metricsgateway_test
 import (
 	"crypto/tls"
 	"path/filepath"
+	"time"
 
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager/lagertest"
@@ -11,7 +12,7 @@ import (
 	. "github.com/onsi/gomega/gbytes"
 
 	"autoscaler/metricsgateway"
-	. "autoscaler/metricsgateway/testhelpers"
+	. "autoscaler/testhelpers"
 )
 
 var _ = Describe("Nozzle", func() {
@@ -149,7 +150,7 @@ var _ = Describe("Nozzle", func() {
 	})
 	Context("Start", func() {
 		JustBeforeEach(func() {
-			fakeLoggregator, err := NewFakeEventProducer(serverCrtPath, serverKeyPath, caPath)
+			fakeLoggregator, err := NewFakeEventProducer(serverCrtPath, serverKeyPath, caPath, 500*time.Millisecond)
 			Expect(err).NotTo(HaveOccurred())
 			fakeLoggregator.Start()
 			tlsConf, err = NewClientMutualTLSConfig(clientCrtPath, clientKeyPath, caPath, "reverselogproxy")
@@ -253,7 +254,7 @@ var _ = Describe("Nozzle", func() {
 	Context("Stop", func() {
 		BeforeEach(func() {
 			appIDs = map[string]bool{testAppId: true}
-			fakeLoggregator, err := NewFakeEventProducer(serverCrtPath, serverKeyPath, caPath)
+			fakeLoggregator, err := NewFakeEventProducer(serverCrtPath, serverKeyPath, caPath, 500*time.Millisecond)
 			Expect(err).NotTo(HaveOccurred())
 			fakeLoggregator.Start()
 			tlsConf, err = NewClientMutualTLSConfig(clientCrtPath, clientKeyPath, caPath, "reverselogproxy")

@@ -27,7 +27,7 @@ import (
 	"autoscaler/db"
 	"autoscaler/helpers"
 	"autoscaler/metricsgateway/config"
-	"autoscaler/metricsgateway/testhelpers"
+	"autoscaler/testhelpers"
 )
 
 var (
@@ -180,7 +180,7 @@ func initConfig() {
 }
 
 func initFakeServers() {
-	fakeLoggregator, err := testhelpers.NewFakeEventProducer(loggregatorServerCrtPath, loggregatorServerKeyPath, caPath)
+	fakeLoggregator, err := testhelpers.NewFakeEventProducer(loggregatorServerCrtPath, loggregatorServerKeyPath, caPath, 500*time.Millisecond)
 	Expect(err).NotTo(HaveOccurred())
 	fakeLoggregator.Start()
 	rlpAddr = fakeLoggregator.GetAddr()
