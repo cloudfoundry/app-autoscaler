@@ -3,6 +3,7 @@ package config_test
 import (
 	. "autoscaler/api/config"
 	"autoscaler/db"
+	"autoscaler/models"
 	"bytes"
 	"time"
 
@@ -46,7 +47,13 @@ db:
     connection_max_lifetime: 60s
 catalog_schema_path: '../schemas/catalog.schema.json'
 catalog_path: '../exampleconfig/catalog-example.json'
-policy_schema_path: '../exampleconfig/policy.schema.json''
+policy_schema_path: '../exampleconfig/policy.schema.json'
+scheduler:
+  scheduler_url: http://localhost:8083
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/sc.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/sc.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 `)
 			})
 
@@ -76,7 +83,14 @@ db:
     connection_max_lifetime: 60s
 catalog_schema_path: '../schemas/catalog.schema.json'
 catalog_path: '../exampleconfig/catalog-example.json'
-policy_schema_path: '../exampleconfig/policy.schema.json'`)
+policy_schema_path: '../exampleconfig/policy.schema.json'
+scheduler:
+  scheduler_url: http://localhost:8083
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/sc.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/sc.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+`)
 			})
 
 			It("It returns the config", func() {
@@ -103,6 +117,16 @@ policy_schema_path: '../exampleconfig/policy.schema.json'`)
 				Expect(conf.CatalogPath).To(Equal("../exampleconfig/catalog-example.json"))
 				Expect(conf.CatalogSchemaPath).To(Equal("../schemas/catalog.schema.json"))
 				Expect(conf.PolicySchemaPath).To(Equal("../exampleconfig/policy.schema.json"))
+				Expect(conf.Scheduler).To(Equal(
+					SchedulerConfig{
+						SchedulerURL: "http://localhost:8083",
+						TLSClientCerts: models.TLSCerts{
+							KeyFile:    "/var/vcap/jobs/autoscaler/config/certs/sc.key",
+							CACertFile: "/var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt",
+							CertFile:   "/var/vcap/jobs/autoscaler/config/certs/sc.crt",
+						},
+					},
+				))
 			})
 		})
 		Context("with partial config", func() {
@@ -117,7 +141,10 @@ db:
     url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
 catalog_schema_path: '../schemas/catalog.schema.json'
 catalog_path: '../exampleconfig/catalog-example.json'
-policy_schema_path: '../exampleconfig/policy.schema.json'`)
+policy_schema_path: '../exampleconfig/policy.schema.json'
+scheduler:
+  scheduler_url: http://localhost:8083
+`)
 			})
 			It("It returns the default values", func() {
 				Expect(err).NotTo(HaveOccurred())
@@ -177,7 +204,14 @@ db:
     connection_max_lifetime: 60s
 catalog_schema_path: '../schemas/catalog.schema.json'
 catalog_path: '../exampleconfig/catalog-example.json'
-policy_schema_path: '../exampleconfig/policy.schema.json'`)
+policy_schema_path: '../exampleconfig/policy.schema.json'
+scheduler:
+  scheduler_url: http://localhost:8083
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/sc.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/sc.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+`)
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
@@ -206,7 +240,14 @@ db:
     connection_max_lifetime: 60s
 catalog_schema_path: '../schemas/catalog.schema.json'
 catalog_path: '../exampleconfig/catalog-example.json'
-policy_schema_path: '../exampleconfig/policy.schema.json'`)
+policy_schema_path: '../exampleconfig/policy.schema.json'
+scheduler:
+  scheduler_url: http://localhost:8083
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/sc.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/sc.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+`)
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
@@ -235,7 +276,14 @@ db:
     connection_max_lifetime: 60s
 catalog_schema_path: '../schemas/catalog.schema.json'
 catalog_path: '../exampleconfig/catalog-example.json'
-policy_schema_path: '../exampleconfig/policy.schema.json'`)
+policy_schema_path: '../exampleconfig/policy.schema.json'
+scheduler:
+  scheduler_url: http://localhost:8083
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/sc.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/sc.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+`)
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
@@ -265,7 +313,14 @@ db:
     connection_max_lifetime: 60s
 catalog_schema_path: '../schemas/catalog.schema.json'
 catalog_path: '../exampleconfig/catalog-example.json'
-policy_schema_path: '../exampleconfig/policy.schema.json'`)
+policy_schema_path: '../exampleconfig/policy.schema.json'
+scheduler:
+  scheduler_url: http://localhost:8083
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/sc.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/sc.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+`)
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
@@ -294,7 +349,14 @@ db:
     connection_max_lifetime: 60s
 catalog_schema_path: '../schemas/catalog.schema.json'
 catalog_path: '../exampleconfig/catalog-example.json'
-policy_schema_path: '../exampleconfig/policy.schema.json'`)
+policy_schema_path: '../exampleconfig/policy.schema.json'
+scheduler:
+  scheduler_url: http://localhost:8083
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/sc.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/sc.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+`)
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
@@ -323,7 +385,14 @@ db:
     connection_max_lifetime: NOT-TIME-DURATION
 catalog_schema_path: '../schemas/catalog.schema.json'
 catalog_path: '../exampleconfig/catalog-example.json'
-policy_schema_path: '../exampleconfig/policy.schema.json'`)
+policy_schema_path: '../exampleconfig/policy.schema.json'
+scheduler:
+  scheduler_url: http://localhost:8083
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/sc.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/sc.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+`)
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
@@ -353,6 +422,8 @@ policy_schema_path: '../exampleconfig/policy.schema.json'`)
 			conf.CatalogSchemaPath = "../schemas/catalog.schema.json"
 			conf.CatalogPath = "../exampleconfig/catalog-example.json"
 			conf.PolicySchemaPath = "../exampleconfig/policy.schema.json"
+
+			conf.Scheduler.SchedulerURL = "http://localhost:8083"
 		})
 		JustBeforeEach(func() {
 			err = conf.Validate()
@@ -379,6 +450,15 @@ policy_schema_path: '../exampleconfig/policy.schema.json'`)
 			})
 			It("should err", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: PolicyDB URL is empty")))
+			})
+		})
+
+		Context("when scheduler url is not set", func() {
+			BeforeEach(func() {
+				conf.Scheduler.SchedulerURL = ""
+			})
+			It("should err", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: scheduler.scheduler_url is empty")))
 			})
 		})
 

@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 
@@ -31,6 +32,7 @@ var _ = Describe("ApiHandler", func() {
 		resp = httptest.NewRecorder()
 
 		handler = NewApiHandler(lager.NewLogger("test"), conf, bindingdb, policydb)
+
 	})
 
 	Describe("GetBrokerCatalog", func() {
@@ -256,7 +258,7 @@ var _ = Describe("ApiHandler", func() {
 
 				req, err = http.NewRequest(http.MethodPut, "", bytes.NewReader(body))
 			})
-			It("fails with 201", func() {
+			It("succeeds with 201", func() {
 				Expect(resp.Code).To(Equal(http.StatusCreated))
 			})
 		})
@@ -296,6 +298,68 @@ var _ = Describe("ApiHandler", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
 			})
 		})
+
+		Context("When called with invalid policy json", func() {
+			BeforeEach(func() {
+				bindingRequestBody := &models.BindingRequestBody{
+					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+						ServiceID: "a-service-id",
+						PlanID:    "a-plan-id",
+					},
+					AppID: testAppId,
+					Policy: `{
+						"instance_max_count":4,
+						"scaling_rules":[
+						{
+							"metric_type":"memoryused",
+							"threshold":30,
+							"operator":"<",
+							"adjustment":"-1"
+						}]
+					}`,
+				}
+				body, err := json.Marshal(bindingRequestBody)
+				Expect(err).NotTo(HaveOccurred())
+
+				req, err = http.NewRequest(http.MethodPut, "", bytes.NewReader(body))
+			})
+			It("fails with 400", func() {
+				Expect(resp.Code).To(Equal(http.StatusBadRequest))
+				bodyBytes, err := ioutil.ReadAll(resp.Body)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(bodyBytes)).To(Equal(`"[{\"context\": \"(root)\", \"description\": \"instance_min_count is required\"}]"`))
+			})
+		})
+
+		Context("When called with valid policy json", func() {
+			BeforeEach(func() {
+				bindingRequestBody := &models.BindingRequestBody{
+					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+						ServiceID: "a-service-id",
+						PlanID:    "a-plan-id",
+					},
+					AppID: testAppId,
+					Policy: `{
+						"instance_max_count":4,
+						"instance_min_count":1,
+						"scaling_rules":[
+						{
+							"metric_type":"memoryused",
+							"threshold":30,
+							"operator":"<",
+							"adjustment":"-1"
+						}]
+					}`,
+				}
+				body, err := json.Marshal(bindingRequestBody)
+				Expect(err).NotTo(HaveOccurred())
+
+				req, err = http.NewRequest(http.MethodPut, "", bytes.NewReader(body))
+			})
+			It("succeeds with 201", func() {
+				Expect(resp.Code).To(Equal(http.StatusCreated))
+			})
+		})
 	})
 
 	Describe("UnBindServiceInstance", func() {
@@ -304,8 +368,10 @@ var _ = Describe("ApiHandler", func() {
 		})
 		Context("When mandatory parameters are not provided", func() {
 			BeforeEach(func() {
-				bindingRequestBody := &models.BrokerCommonRequestBody{
-					ServiceID: "a-service-id",
+				bindingRequestBody := &models.UnbindingRequestBody{
+					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+						ServiceID: "a-service-id",
+					},
 				}
 				body, err := json.Marshal(bindingRequestBody)
 				Expect(err).NotTo(HaveOccurred())
@@ -319,9 +385,12 @@ var _ = Describe("ApiHandler", func() {
 
 		Context("When mandatory parameters are present", func() {
 			BeforeEach(func() {
-				bindingRequestBody := &models.BrokerCommonRequestBody{
-					ServiceID: "a-service-id",
-					PlanID:    "a-plan-id",
+				bindingRequestBody := &models.UnbindingRequestBody{
+					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+						ServiceID: "a-service-id",
+						PlanID:    "a-plan-id",
+					},
+					AppID: testAppId,
 				}
 				body, err := json.Marshal(bindingRequestBody)
 				Expect(err).NotTo(HaveOccurred())
@@ -335,9 +404,12 @@ var _ = Describe("ApiHandler", func() {
 
 		Context("When database DeleteServiceBinding call returns ErrDoesnotExist", func() {
 			BeforeEach(func() {
-				bindingRequestBody := &models.BrokerCommonRequestBody{
-					ServiceID: "a-service-id",
-					PlanID:    "a-plan-id",
+				bindingRequestBody := &models.UnbindingRequestBody{
+					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+						ServiceID: "a-service-id",
+						PlanID:    "a-plan-id",
+					},
+					AppID: testAppId,
 				}
 				body, err := json.Marshal(bindingRequestBody)
 				Expect(err).NotTo(HaveOccurred())
@@ -353,9 +425,12 @@ var _ = Describe("ApiHandler", func() {
 
 		Context("When database DeleteServiceBinding call returns error other than ErrDoesnotExist", func() {
 			BeforeEach(func() {
-				bindingRequestBody := &models.BrokerCommonRequestBody{
-					ServiceID: "a-service-id",
-					PlanID:    "a-plan-id",
+				bindingRequestBody := &models.UnbindingRequestBody{
+					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+						ServiceID: "a-service-id",
+						PlanID:    "a-plan-id",
+					},
+					AppID: testAppId,
 				}
 				body, err := json.Marshal(bindingRequestBody)
 				Expect(err).NotTo(HaveOccurred())
