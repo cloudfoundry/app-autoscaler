@@ -11,6 +11,7 @@ import (
 
 	"autoscaler/db"
 	"autoscaler/helpers"
+	"autoscaler/models"
 )
 
 const (
@@ -34,6 +35,11 @@ type DBConfig struct {
 	PolicyDB  db.DatabaseConfig `yaml:"policy_db"`
 }
 
+type SchedulerConfig struct {
+	SchedulerURL   string          `yaml:"scheduler_url"`
+	TLSClientCerts models.TLSCerts `yaml:"tls"`
+}
+
 type Config struct {
 	Logging              helpers.LoggingConfig `yaml:"logging"`
 	Server               ServerConfig          `yaml:"server"`
@@ -44,6 +50,7 @@ type Config struct {
 	CatalogSchemaPath    string                `yaml:"catalog_schema_path"`
 	DashboardRedirectURI string                `yaml:"dashboard_redirect_uri"`
 	PolicySchemaPath     string                `yaml:"policy_schema_path"`
+	Scheduler            SchedulerConfig       `yaml:"scheduler"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
@@ -73,6 +80,9 @@ func (c *Config) Validate() error {
 	}
 	if c.DB.PolicyDB.URL == "" {
 		return fmt.Errorf("Configuration error: PolicyDB URL is empty")
+	}
+	if c.Scheduler.SchedulerURL == "" {
+		return fmt.Errorf("Configuration error: scheduler.scheduler_url is empty")
 	}
 	if c.BrokerUsername == "" {
 		return fmt.Errorf("Configuration error: BrokerUsername is empty")
