@@ -39,6 +39,10 @@ const (
 	BrokerBindingPath            = "/sb/v2/service_instances/{instanceId}/service_bindings/{bindingId}"
 	BrokerCreateBindingRouteName = "CreateBinding"
 	BrokerDeleteBindingRouteName = "DeleteBinding"
+
+	SchedulePath            = "/v1/apps/{appId}/schedules"
+	UpdateScheduleRouteName = "UpdateSchedule"
+	DeleteScheduleRouteName = "DeleteSchedule"
 )
 
 type AutoScalerRoute struct {
@@ -46,6 +50,7 @@ type AutoScalerRoute struct {
 	eventGeneratorRoutes   *mux.Router
 	scalingEngineRoutes    *mux.Router
 	brokerRoutes           *mux.Router
+	schedulerRoutes        *mux.Router
 }
 
 var autoScalerRouteInstance = newRouters()
@@ -56,6 +61,7 @@ func newRouters() *AutoScalerRoute {
 		eventGeneratorRoutes:   mux.NewRouter(),
 		scalingEngineRoutes:    mux.NewRouter(),
 		brokerRoutes:           mux.NewRouter(),
+		schedulerRoutes:        mux.NewRouter(),
 	}
 
 	instance.metricsCollectorRoutes.Path(MetricHistoriesPath).Methods(http.MethodGet).Name(GetMetricHistoriesRouteName)
@@ -77,6 +83,9 @@ func newRouters() *AutoScalerRoute {
 	instance.brokerRoutes.Path(BrokerBindingPath).Methods(http.MethodPut).Name(BrokerCreateBindingRouteName)
 	instance.brokerRoutes.Path(BrokerBindingPath).Methods(http.MethodDelete).Name(BrokerDeleteBindingRouteName)
 
+	instance.schedulerRoutes.Path(SchedulePath).Methods(http.MethodPut).Name(UpdateScheduleRouteName)
+	instance.schedulerRoutes.Path(SchedulePath).Methods(http.MethodDelete).Name(DeleteScheduleRouteName)
+
 	return instance
 
 }
@@ -94,4 +103,8 @@ func ScalingEngineRoutes() *mux.Router {
 
 func BrokerRoutes() *mux.Router {
 	return autoScalerRouteInstance.brokerRoutes
+}
+
+func SchedulerRoutes() *mux.Router {
+	return autoScalerRouteInstance.schedulerRoutes
 }
