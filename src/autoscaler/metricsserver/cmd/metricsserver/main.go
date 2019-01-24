@@ -172,7 +172,7 @@ func createEnvelopeProcessors(logger lager.Logger, clock clock.Clock, conf *conf
 	envelopeProcessors := make([]collector.EnvelopeProcessor, count)
 
 	for i := 0; i < count; i++ {
-		envelopeProcessors[i] = collector.NewEnvelopeProcessor(logger, conf.Collector.CollectInterval, clock, conf.NodeIndex, len(conf.NodeAddrs),
+		envelopeProcessors[i] = collector.NewEnvelopeProcessor(logger, conf.Collector.CollectInterval, clock, i, count,
 			envelopeChan[i], metricChan, getAppIDs)
 	}
 	return envelopeProcessors, nil
