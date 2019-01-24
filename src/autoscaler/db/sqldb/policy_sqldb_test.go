@@ -27,6 +27,8 @@ var _ = Describe("PolicySQLDB", func() {
 		appId          string
 		policies       []*models.PolicyJson
 		testMetricName string = "TestMetricName"
+		username       string
+		password       string
 	)
 
 	BeforeEach(func() {
@@ -271,6 +273,45 @@ var _ = Describe("PolicySQLDB", func() {
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
 			})
+		})
+	})
+
+	Describe("GetCustomMetricsCreds", func() {
+		BeforeEach(func() {
+			pdb, err = NewPolicySQLDB(dbConfig, logger)
+			Expect(err).NotTo(HaveOccurred())
+
+			cleanCredentialsTable()
+		})
+
+		AfterEach(func() {
+			err = pdb.Close()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		JustBeforeEach(func() {
+			username, password, err = pdb.GetCustomMetricsCreds("an-app-id")
+		})
+
+		Context("when credentials table is empty", func() {
+			It("should not return any credentials", func() {
+				Expect(err).To(HaveOccurred())
+				Expect(password).To(BeEmpty())
+				Expect(username).To(BeEmpty())
+			})
+		})
+
+		Context("when policy table is not empty", func() {
+			BeforeEach(func() {
+				insertCustomMetricsBindingCredentials("an-app-id", "username", "password")
+			})
+
+			It("Should get the password", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(password).To(Equal("password"))
+				Expect(username).To(Equal("username"))
+			})
+
 		})
 	})
 

@@ -49,6 +49,7 @@ type PolicyDB interface {
 	RetrievePolicies() ([]*models.PolicyJson, error)
 	Close() error
 	DeletePolicy(appId string) error
+	GetCustomMetricsCreds(appId string) (string, string, error)
 }
 
 type BindingDB interface {
