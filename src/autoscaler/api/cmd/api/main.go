@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"os"
 
+	"autoscaler/api/brokerserver"
 	"autoscaler/api/config"
-	"autoscaler/api/server"
 	"autoscaler/db"
 	"autoscaler/db/sqldb"
 	"autoscaler/helpers"
@@ -56,14 +56,14 @@ func main() {
 	}
 	defer bindingDB.Close()
 
-	httpServer, err := server.NewServer(logger.Session("http_server"), conf, bindingDB)
+	httpServer, err := brokerserver.NewBrokerServer(logger.Session("broker_http_server"), conf, bindingDB)
 	if err != nil {
 		logger.Error("failed to create http server", err)
 		os.Exit(1)
 	}
 
 	members := grouper.Members{
-		{"http_server", httpServer},
+		{"broker_http_server", httpServer},
 	}
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
 
