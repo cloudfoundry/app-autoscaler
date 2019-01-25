@@ -40,7 +40,7 @@ var (
 
 func TestServer(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Broker BrokerServer Suite")
+	RunSpecs(t, "BrokerServer Suite")
 }
 
 var _ = BeforeSuite(func() {
@@ -58,6 +58,7 @@ var _ = BeforeSuite(func() {
 		Scheduler: config.SchedulerConfig{
 			SchedulerURL: schedulerServer.URL(),
 		},
+		InfoFilePath: "../exampleconfig/info-file.json",
 	}
 	fakeBindingDB := &fakes.FakeBindingDB{}
 	fakePolicyDB := &fakes.FakePolicyDB{}
