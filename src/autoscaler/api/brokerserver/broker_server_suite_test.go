@@ -1,8 +1,8 @@
-package server_test
+package brokerserver_test
 
 import (
+	"autoscaler/api/brokerserver"
 	"autoscaler/api/config"
-	"autoscaler/api/server"
 	"autoscaler/fakes"
 	"autoscaler/routes"
 	"io/ioutil"
@@ -40,14 +40,14 @@ var (
 
 func TestServer(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Server Suite")
+	RunSpecs(t, "Broker BrokerServer Suite")
 }
 
 var _ = BeforeSuite(func() {
 	schedulerServer = ghttp.NewServer()
 	port := 10000 + GinkgoParallelNode()
 	conf = &config.Config{
-		Server: config.ServerConfig{
+		BrokerServer: config.ServerConfig{
 			Port: port,
 		},
 		BrokerUsername:    username,
@@ -62,7 +62,7 @@ var _ = BeforeSuite(func() {
 	fakeBindingDB := &fakes.FakeBindingDB{}
 	fakePolicyDB := &fakes.FakePolicyDB{}
 
-	httpServer, err := server.NewServer(lager.NewLogger("test"), conf, fakeBindingDB, fakePolicyDB)
+	httpServer, err := brokerserver.NewBrokerServer(lager.NewLogger("test"), conf, fakeBindingDB, fakePolicyDB)
 	Expect(err).NotTo(HaveOccurred())
 
 	serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(port))
