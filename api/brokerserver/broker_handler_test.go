@@ -1,7 +1,7 @@
-package server_test
+package brokerserver_test
 
 import (
-	. "autoscaler/api/server"
+	. "autoscaler/api/brokerserver"
 	"autoscaler/db"
 	"autoscaler/fakes"
 	"autoscaler/models"
@@ -18,20 +18,21 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("ApiHandler", func() {
+var _ = Describe("BrokerHandler", func() {
 	var (
 		bindingdb *fakes.FakeBindingDB
 		policydb  *fakes.FakePolicyDB
-		handler   *ApiHandler
-		resp      *httptest.ResponseRecorder
-		req       *http.Request
+
+		handler *BrokerHandler
+		resp    *httptest.ResponseRecorder
+		req     *http.Request
 	)
 	BeforeEach(func() {
 		bindingdb = &fakes.FakeBindingDB{}
 		policydb = &fakes.FakePolicyDB{}
 		resp = httptest.NewRecorder()
 
-		handler = NewApiHandler(lager.NewLogger("test"), conf, bindingdb, policydb)
+		handler = NewBrokerHandler(lager.NewLogger("test"), conf, bindingdb, policydb)
 
 	})
 

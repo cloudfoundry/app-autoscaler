@@ -1,4 +1,4 @@
-package server_test
+package brokerserver_test
 
 import (
 	"io/ioutil"
@@ -8,7 +8,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Server", func() {
+var _ = Describe("BrokerServer", func() {
 	const (
 		catalogPath = "/sb/v2/catalog"
 	)
