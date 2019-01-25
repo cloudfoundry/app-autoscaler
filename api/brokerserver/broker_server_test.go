@@ -10,7 +10,7 @@ import (
 
 var _ = Describe("BrokerServer", func() {
 	const (
-		catalogPath = "/sb/v2/catalog"
+		catalogPath = "/v2/catalog"
 	)
 	var (
 		rsp *http.Response

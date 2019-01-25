@@ -7,6 +7,7 @@ import (
 
 	"autoscaler/api/brokerserver"
 	"autoscaler/api/config"
+	"autoscaler/api/publicapiserver"
 	"autoscaler/db"
 	"autoscaler/db/sqldb"
 	"autoscaler/helpers"
@@ -48,31 +49,41 @@ func main() {
 
 	logger := helpers.InitLoggerFromConfig(&conf.Logging, "api")
 
-	var bindingDB db.BindingDB
-	bindingDB, err = sqldb.NewBidingSQLDB(conf.DB.BindingDB, logger.Session("bindingdb-db"))
+	members := grouper.Members{}
+
+	var policyDb db.PolicyDB
+	policyDb, err = sqldb.NewPolicySQLDB(conf.DB.PolicyDB, logger.Session("policydb-db"))
 	if err != nil {
-		logger.Error("failed to connect bindingdb database", err, lager.Data{"dbConfig": conf.DB.BindingDB})
+		logger.Error("failed to connect to policydb database", err, lager.Data{"dbConfig": conf.DB.PolicyDB})
 		os.Exit(1)
 	}
-	defer bindingDB.Close()
+	defer policyDb.Close()
 
-	var policyDB db.PolicyDB
-	policyDB, err = sqldb.NewPolicySQLDB(conf.DB.PolicyDB, logger.Session("policydb-db"))
+	if !conf.UseBuildInMode {
+		var bindingDB db.BindingDB
+		bindingDB, err = sqldb.NewBidingSQLDB(conf.DB.BindingDB, logger.Session("bindingdb-db"))
+		if err != nil {
+			logger.Error("failed to connect bindingdb database", err, lager.Data{"dbConfig": conf.DB.BindingDB})
+			os.Exit(1)
+		}
+		defer bindingDB.Close()
+
+		brokerHttpServer, err := brokerserver.NewBrokerServer(logger.Session("broker_http_server"), conf, bindingDB, policyDb)
+		if err != nil {
+			logger.Error("failed to create broker http server", err)
+			os.Exit(1)
+		}
+		members = append(members, grouper.Member{"broker_http_server", brokerHttpServer})
+	}
+
+	publicApiHttpServer, err := publicapiserver.NewPublicApiServer(logger.Session("public_api_http_server"), conf, policyDb)
 	if err != nil {
-		logger.Error("failed to connect policydb database", err, lager.Data{"dbConfig": conf.DB.PolicyDB})
+		logger.Error("failed to create public api http server", err)
 		os.Exit(1)
 	}
-	defer policyDB.Close()
 
-	httpServer, err := brokerserver.NewBrokerServer(logger.Session("broker_http_server"), conf, bindingDB)
-	if err != nil {
-		logger.Error("failed to create http server", err)
-		os.Exit(1)
-	}
+	members = append(members, grouper.Member{"public_api_http_server", publicApiHttpServer})
 
-	members := grouper.Members{
-		{"broker_http_server", httpServer},
-	}
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
 
 	logger.Info("started")
