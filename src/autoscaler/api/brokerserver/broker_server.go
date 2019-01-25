@@ -1,4 +1,4 @@
-package server
+package brokerserver
 
 import (
 	"fmt"
@@ -37,13 +37,14 @@ func (bam *basicAuthenticationMiddleware) Middleware(next http.Handler) http.Han
 	})
 }
 
-func NewServer(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB) (ifrit.Runner, error) {
+func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB) (ifrit.Runner, error) {
+
 	basicAuthentication := &basicAuthenticationMiddleware{
 		username: conf.BrokerUsername,
 		password: conf.BrokerPassword,
 	}
 
-	ah := NewApiHandler(logger, conf, bindingdb, policydb)
+	ah := NewBrokerHandler(logger, conf, bindingdb, policydb)
 
 	r := routes.BrokerRoutes()
 
@@ -54,12 +55,12 @@ func NewServer(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB,
 	r.Get(routes.BrokerCreateBindingRouteName).Handler(VarsFunc(ah.BindServiceInstance))
 	r.Get(routes.BrokerDeleteBindingRouteName).Handler(VarsFunc(ah.UnbindServiceInstance))
 
-	addr := fmt.Sprintf("0.0.0.0:%d", conf.Server.Port)
+	addr := fmt.Sprintf("0.0.0.0:%d", conf.BrokerServer.Port)
 
 	var runner ifrit.Runner
 	runner = http_server.New(addr, r)
 
-	logger.Info("http-server-created", lager.Data{"serverConfig": conf.Server})
+	logger.Info("http-server-created", lager.Data{"serverConfig": conf.BrokerServer})
 	return runner, nil
 }
 

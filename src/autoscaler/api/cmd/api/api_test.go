@@ -69,7 +69,7 @@ var _ = Describe("Api", func() {
 
 				missingConfig.BrokerUsername = ""
 				missingConfig.BrokerPassword = ""
-				missingConfig.Server.Port = 7000 + GinkgoParallelNode()
+				missingConfig.BrokerServer.Port = 7000 + GinkgoParallelNode()
 				missingConfig.Logging.Level = "debug"
 				runner.configPath = writeConfig(&missingConfig).Name()
 				runner.Start()

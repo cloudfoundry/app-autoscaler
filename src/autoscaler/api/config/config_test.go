@@ -28,7 +28,7 @@ var _ = Describe("Config", func() {
 		Context("with invalid yaml", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
- server:
+ broker_server:
 	port: 8080,
 logging:
   level: debug
@@ -64,7 +64,7 @@ scheduler:
 		Context("with valid yaml", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
-server:
+broker_server:
   port: 8080
 logging:
   level: debug
@@ -97,7 +97,7 @@ scheduler:
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(conf.Logging.Level).To(Equal("debug"))
-				Expect(conf.Server.Port).To(Equal(8080))
+				Expect(conf.BrokerServer.Port).To(Equal(8080))
 				Expect(conf.DB.BindingDB).To(Equal(
 					db.DatabaseConfig{
 						URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
@@ -150,7 +150,7 @@ scheduler:
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(conf.Logging.Level).To(Equal("info"))
-				Expect(conf.Server.Port).To(Equal(8080))
+				Expect(conf.BrokerServer.Port).To(Equal(8080))
 				Expect(conf.DB.BindingDB).To(Equal(
 					db.DatabaseConfig{
 						URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
@@ -171,7 +171,7 @@ scheduler:
 		Context("when it gives a non integer port", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
-server:
+broker_server:
   port: port
 `)
 			})
@@ -185,7 +185,7 @@ server:
 		Context("when it gives a non integer max_open_connections of bidingdb", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
-server:
+broker_server:
   port: 8080
 logging:
   level: debug
@@ -330,7 +330,7 @@ scheduler:
 		Context("when it gives a non integer max_idle_connections of policydb", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
-server:
+broker_server:
   port: 8080
 logging:
   level: debug
@@ -366,7 +366,7 @@ scheduler:
 		Context("when it gives a non integer connection_max_lifetime of policydb", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
-server:
+broker_server:
   port: 8080
 logging:
   level: debug

@@ -66,7 +66,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	apPath = string(pathsByte)
 
 	apPort = 8000 + GinkgoParallelNode()
-	cfg.Server.Port = apPort
+	cfg.BrokerServer.Port = apPort
 	cfg.Logging.Level = "info"
 	cfg.DB.BindingDB = db.DatabaseConfig{
 		URL:                   os.Getenv("DBURL"),
