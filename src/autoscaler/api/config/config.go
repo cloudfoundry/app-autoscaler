@@ -42,7 +42,7 @@ type SchedulerConfig struct {
 
 type Config struct {
 	Logging              helpers.LoggingConfig `yaml:"logging"`
-	Server               ServerConfig          `yaml:"server"`
+	BrokerServer         ServerConfig          `yaml:"broker_server"`
 	DB                   DBConfig              `yaml:"db"`
 	BrokerUsername       string                `yaml:"broker_username"`
 	BrokerPassword       string                `yaml:"broker_password"`
@@ -55,8 +55,8 @@ type Config struct {
 
 func LoadConfig(reader io.Reader) (*Config, error) {
 	conf := &Config{
-		Logging: defaultLoggingConfig,
-		Server:  defaultServerConfig,
+		Logging:      defaultLoggingConfig,
+		BrokerServer: defaultServerConfig,
 	}
 
 	bytes, err := ioutil.ReadAll(reader)
