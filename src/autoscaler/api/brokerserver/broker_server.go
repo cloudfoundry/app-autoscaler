@@ -59,7 +59,7 @@ func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.Bind
 	var runner ifrit.Runner
 	runner = http_server.New(addr, r)
 
-	logger.Info("http-server-created", lager.Data{"serverConfig": conf.BrokerServer})
+	logger.Info("broker-http-server-created", lager.Data{"serverConfig": conf.BrokerServer})
 	return runner, nil
 }
 

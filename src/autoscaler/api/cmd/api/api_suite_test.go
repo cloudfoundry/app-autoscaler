@@ -2,12 +2,15 @@ package main_test
 
 import (
 	"autoscaler/api/config"
+	"autoscaler/cf"
 	"autoscaler/db"
+	"autoscaler/models"
 	"database/sql"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"time"
 
 	"github.com/onsi/gomega/gbytes"
@@ -26,12 +29,14 @@ const (
 )
 
 var (
-	apPath       string
-	cfg          config.Config
-	apPort       int
-	configFile   *os.File
-	httpClient   *http.Client
-	catalogBytes []byte
+	apPath        string
+	cfg           config.Config
+	brokerPort    int
+	publicApiPort int
+	configFile    *os.File
+	httpClient    *http.Client
+	catalogBytes  []byte
+	infoBytes     []byte
 )
 
 func TestApi(t *testing.T) {
@@ -58,14 +63,28 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	catalogBytes, err = ioutil.ReadFile("../../exampleconfig/catalog-example.json")
 	Expect(err).NotTo(HaveOccurred())
 
+	infoBytes, err = ioutil.ReadFile("../../exampleconfig/info-file.json")
+	Expect(err).NotTo(HaveOccurred())
+
 	return []byte(ap)
 }, func(pathsByte []byte) {
 	apPath = string(pathsByte)
 
-	apPort = 8000 + GinkgoParallelNode()
-	cfg.BrokerServer.Port = apPort
+	brokerPort = 8000 + GinkgoParallelNode()
+	publicApiPort = 9000 + GinkgoParallelNode()
+
+	testCertDir := "../../../../../test-certs"
+
+	cfg.BrokerServer.Port = brokerPort
+	cfg.PublicApiServer.Port = publicApiPort
 	cfg.Logging.Level = "info"
 	cfg.DB.BindingDB = db.DatabaseConfig{
+		URL:                   os.Getenv("DBURL"),
+		MaxOpenConnections:    10,
+		MaxIdleConnections:    5,
+		ConnectionMaxLifetime: 10 * time.Second,
+	}
+	cfg.DB.PolicyDB = db.DatabaseConfig{
 		URL:                   os.Getenv("DBURL"),
 		MaxOpenConnections:    10,
 		MaxIdleConnections:    5,
@@ -75,6 +94,40 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.BrokerPassword = password
 	cfg.CatalogPath = "../../exampleconfig/catalog-example.json"
 	cfg.CatalogSchemaPath = "../../schemas/catalog.schema.json"
+	cfg.InfoFilePath = "../../exampleconfig/info-file.json"
+
+	cfg.MetricsCollector = config.MetricsCollectorConfig{
+		MetricsCollectorUrl: "http://localhost:8083",
+		TLSClientCerts: models.TLSCerts{
+			KeyFile:    filepath.Join(testCertDir, "metricscollector.key"),
+			CertFile:   filepath.Join(testCertDir, "metricscollector.crt"),
+			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+		},
+	}
+	cfg.EventGenerator = config.EventGeneratorConfig{
+		EventGeneratorUrl: "http://localhost:8084",
+		TLSClientCerts: models.TLSCerts{
+			KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
+			CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
+			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+		},
+	}
+	cfg.ScalingEngine = config.ScalingEngineConfig{
+		ScalingEngineUrl: "http://localhost:8085",
+		TLSClientCerts: models.TLSCerts{
+			KeyFile:    filepath.Join(testCertDir, "scalingengine.key"),
+			CertFile:   filepath.Join(testCertDir, "scalingengine.crt"),
+			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+		},
+	}
+
+	cfg.UseBuildInMode = false
+
+	cfg.CF.API = "http://api.bosh-lite.com"
+	cfg.CF.GrantType = cf.GrantTypeClientCredentials
+	cfg.CF.ClientID = "client-id"
+	cfg.CF.Secret = "client-secret"
+	cfg.CF.SkipSSLValidation = true
 
 	configFile = writeConfig(&cfg)
 

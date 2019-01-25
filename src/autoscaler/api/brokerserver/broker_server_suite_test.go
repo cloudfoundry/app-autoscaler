@@ -35,7 +35,7 @@ var (
 
 func TestServer(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Broker BrokerServer Suite")
+	RunSpecs(t, "BrokerServer Suite")
 }
 
 var _ = BeforeSuite(func() {
@@ -48,6 +48,7 @@ var _ = BeforeSuite(func() {
 		BrokerPassword:    password,
 		CatalogPath:       "../exampleconfig/catalog-example.json",
 		CatalogSchemaPath: "../schemas/catalog.schema.json",
+		InfoFilePath:      "../exampleconfig/info-file.json",
 	}
 	fakeBindingDB := &fakes.FakeBindingDB{}
 
