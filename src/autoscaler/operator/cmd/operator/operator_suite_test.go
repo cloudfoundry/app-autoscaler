@@ -132,7 +132,6 @@ func initConfig() {
 
 	cfg.DBLock.LockTTL = 15 * time.Second
 	cfg.DBLock.LockRetryInterval = 5 * time.Second
-	cfg.EnableDBLock = false
 	cfg.AppSyncer.DB = db.DatabaseConfig{
 		URL:                   dbURL,
 		MaxOpenConnections:    10,

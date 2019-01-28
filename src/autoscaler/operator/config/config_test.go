@@ -128,7 +128,6 @@ db_lock:
   db:
     url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
   retry_interval: 5s
-enable_db_lock: false
 http_client_timeout: 10s
 `)
 			})
@@ -176,7 +175,6 @@ http_client_timeout: 10s
 				Expect(conf.DBLock.LockTTL).To(Equal(15 * time.Second))
 				Expect(conf.DBLock.LockRetryInterval).To(Equal(5 * time.Second))
 				Expect(conf.DBLock.DB.URL).To(Equal("postgres://postgres:password@localhost/autoscaler?sslmode=disable"))
-				Expect(conf.EnableDBLock).To(BeFalse())
 
 				Expect(conf.AppSyncer.DB).To(Equal(db.DatabaseConfig{
 					URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
@@ -1319,7 +1317,7 @@ http_client_timeout: 10k
 
 			conf.AppSyncer.SyncInterval = 60 * time.Second
 			conf.AppSyncer.DB.URL = "postgres://pqgotest:password@exampl.com/pqgotest"
-
+			conf.DBLock.DB.URL = "postgres://pqgotest:password@exampl.com/pqgotest"
 			conf.HttpClientTimeout = 10 * time.Second
 			conf.Health.Port = 8081
 
@@ -1500,10 +1498,9 @@ http_client_timeout: 10k
 			})
 		})
 
-		Context("when db lock is enabled but db url is empty", func() {
+		Context("when db lockdb url is empty", func() {
 
 			BeforeEach(func() {
-				conf.EnableDBLock = true
 				conf.DBLock.DB.URL = ""
 			})
 
