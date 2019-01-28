@@ -33,7 +33,6 @@ var _ = Describe("Operator", func() {
 
 		BeforeEach(func() {
 			runner.startCheck = ""
-			cfg.EnableDBLock = true
 			runner.configPath = writeConfig(&cfg).Name()
 		})
 

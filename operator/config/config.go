@@ -88,7 +88,6 @@ type Config struct {
 	Scheduler         SchedulerConfig               `yaml:"scheduler"`
 	AppSyncer         AppSyncerConfig               `yaml:"app_syncer"`
 	DBLock            DBLockConfig                  `yaml:"db_lock"`
-	EnableDBLock      bool                          `yaml:"enable_db_lock"`
 	HttpClientTimeout time.Duration                 `yaml:"http_client_timeout"`
 }
 
@@ -121,7 +120,6 @@ var defaultConfig = Config{
 		SyncInterval: DefaultSyncInterval,
 	},
 	DBLock:            defaultDBLockConfig,
-	EnableDBLock:      false,
 	HttpClientTimeout: DefaultHttpClientTimeout,
 }
 
@@ -193,7 +191,7 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("Configuration error: scheduler.sync_interval is less than or equal to 0")
 	}
 
-	if c.EnableDBLock && c.DBLock.DB.URL == "" {
+	if c.DBLock.DB.URL == "" {
 		return fmt.Errorf("Configuration error: db_lock.db.url is empty")
 	}
 
