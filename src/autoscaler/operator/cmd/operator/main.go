@@ -151,19 +151,16 @@ func main() {
 		logger.Error("failed-to-generate-guid", err)
 	}
 	const lockTableName = "operator_lock"
-	if conf.EnableDBLock {
-		logger.Debug("database-lock-feature-enabled")
-		var lockDB db.LockDB
-		lockDB, err = sqldb.NewLockSQLDB(conf.DBLock.DB, lockTableName, logger.Session("lock-db"))
-		if err != nil {
-			logger.Error("failed-to-connect-lock-database", err, lager.Data{"dbConfig": conf.DBLock.DB})
-			os.Exit(1)
-		}
-		defer lockDB.Close()
-		prdl := sync.NewDatabaseLock(logger)
-		dbLockMaintainer := prdl.InitDBLockRunner(conf.DBLock.LockRetryInterval, conf.DBLock.LockTTL, guid, lockDB)
-		members = append(grouper.Members{{"db-lock-maintainer", dbLockMaintainer}}, members...)
+	var lockDB db.LockDB
+	lockDB, err = sqldb.NewLockSQLDB(conf.DBLock.DB, lockTableName, logger.Session("lock-db"))
+	if err != nil {
+		logger.Error("failed-to-connect-lock-database", err, lager.Data{"dbConfig": conf.DBLock.DB})
+		os.Exit(1)
 	}
+	defer lockDB.Close()
+	prdl := sync.NewDatabaseLock(logger)
+	dbLockMaintainer := prdl.InitDBLockRunner(conf.DBLock.LockRetryInterval, conf.DBLock.LockTTL, guid, lockDB)
+	members = append(grouper.Members{{"db-lock-maintainer", dbLockMaintainer}}, members...)
 
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
 

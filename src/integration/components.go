@@ -613,7 +613,6 @@ func (components *Components) PrepareOperatorConfig(dbURI string, ccUAAURL strin
 				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 			},
 		},
-		EnableDBLock: true,
 		DBLock: opConfig.DBLockConfig{
 			LockTTL: 30 * time.Second,
 			DB: db.DatabaseConfig{
