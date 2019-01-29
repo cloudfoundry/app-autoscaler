@@ -63,6 +63,7 @@ type APIServerClient struct {
 type ServiceBrokerConfig struct {
 	Port                int  `json:"port"`
 	PublicPort          int  `json:"publicPort"`
+	HealthPort          int  `json:"healthPort"`
 	EnableCustomMetrics bool `json:"enableCustomMetrics"`
 
 	Username string `json:"username"`
@@ -104,6 +105,7 @@ type ServiceBrokerClient struct {
 type APIServerConfig struct {
 	Port                   int                    `json:"port"`
 	PublicPort             int                    `json:"publicPort"`
+	HealthPort             int                    `json:"healthPort"`
 	InfoFilePath           string                 `json:"infoFilePath"`
 	CFAPI                  string                 `json:"cfApi"`
 	CFClientId             string                 `json:"cfClientId"`
@@ -126,7 +128,7 @@ func (components *Components) ServiceBroker(confPath string, argv ...string) *gi
 	return ginkgomon.New(ginkgomon.Config{
 		Name:              ServiceBroker,
 		AnsiColorCode:     "32m",
-		StartCheck:        "Service broker app is running",
+		StartCheck:        "Service broker server is running",
 		StartCheckTimeout: 20 * time.Second,
 		Command: exec.Command(
 			"node", append([]string{components.Executables[ServiceBroker], "-c", confPath}, argv...)...,
@@ -232,6 +234,7 @@ func (components *Components) PrepareServiceBrokerConfig(publicPort int, interna
 	brokerConfig := ServiceBrokerConfig{
 		Port:                internalPort,
 		PublicPort:          publicPort,
+		HealthPort:          0,
 		Username:            username,
 		Password:            password,
 		EnableCustomMetrics: enableCustomMetrics,
@@ -277,6 +280,7 @@ func (components *Components) PrepareApiServerConfig(port int, publicPort int, s
 	apiConfig := APIServerConfig{
 		Port:              port,
 		PublicPort:        publicPort,
+		HealthPort:        0,
 		InfoFilePath:      apiServerInfoFilePath,
 		CFAPI:             cfApi,
 		CFClientId:        "admin",
