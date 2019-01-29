@@ -1,6 +1,7 @@
 {
     "port": 8088,
     "publicPort": 8080,
+    "healthPort": 8081,
     "username": "username",
     "password": "password",
     "enableCustomMetrics": true,
