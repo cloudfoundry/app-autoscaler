@@ -12,7 +12,8 @@ var relativePath = path.relative(process.cwd(), path.join(__dirname, '../../../.
 var testSetting = require(path.join(__dirname, '../test.helper.js'))(relativePath, settings);
 var API = require('../../../app.js');
 var app;
-var publicapp;
+var publicApp;
+var healthApp;
 var servers;
 var credentialCache = new NodeCache();
 var models = require('../../../lib/models')(settings.db);
@@ -23,14 +24,17 @@ describe('Custom Metrics Credential Management', function() {
   before(function(done) {
     servers = API(testSetting, credentialCache, function() {});
     app = servers.internalServer;
-    publicapp = servers.publicServer;
+    publicApp = servers.publicServer;
+    healthApp = servers.healthServer;
     done();
   });
   after(function(done) {
     app.close(function() {
-      publicapp.close(done);
+      publicApp.close(function(){
+        healthApp.close(done);
+      });
     });
-  });
+  })
 
   beforeEach(function(done) {
     credentials.truncate({

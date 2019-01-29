@@ -21,7 +21,9 @@ describe("Fatal configuration error", function() {
     var server;
     afterEach(function(done) {
       server.internalServer.close(function() {
-        server.publicServer.close(done);
+        server.publicServer.close(function(){
+          server.healthServer.close(done);
+        });
       });
     })
     it("should throw error", function(done) {
