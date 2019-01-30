@@ -136,12 +136,6 @@
 [submodule "src/golang.org/x/sys"]
 	path = src/golang.org/x/sys
 	url = https://github.com/golang/sys.git
-[submodule "src/google.golang.org/grpc"]
-	path = src/google.golang.org/grpc
-	url = https://github.com/grpc/grpc-go
-[submodule "src/google.golang.org/genproto"]
-	path = src/google.golang.org/genproto
-	url = https://github.com/google/go-genproto
 [submodule "src/golang.org/x/crypto"]
 	path = src/golang.org/x/crypto
 	url = https://github.com/golang/crypto
