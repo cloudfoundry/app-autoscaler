@@ -68,6 +68,8 @@ var _ = Describe("Api", func() {
 				runner.startCheck = ""
 				missingConfig := cfg
 
+				missingConfig.DB.PolicyDB.URL = ""
+				missingConfig.DB.BindingDB.URL = ""
 				missingConfig.BrokerUsername = ""
 				missingConfig.BrokerPassword = ""
 				missingConfig.BrokerServer.Port = 7000 + GinkgoParallelNode()
