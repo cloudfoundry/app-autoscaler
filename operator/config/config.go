@@ -45,12 +45,6 @@ type ScalingEngineDBPrunerConfig struct {
 	CutoffDuration  time.Duration     `yaml:"cutoff_duration"`
 }
 
-type LockConfig struct {
-	LockTTL             time.Duration `yaml:"lock_ttl"`
-	LockRetryInterval   time.Duration `yaml:"lock_retry_interval"`
-	ConsulClusterConfig string        `yaml:"consul_cluster_config"`
-}
-
 type DBLockConfig struct {
 	LockTTL           time.Duration     `yaml:"ttl"`
 	LockRetryInterval time.Duration     `yaml:"retry_interval"`
@@ -93,9 +87,7 @@ type Config struct {
 	ScalingEngine     ScalingEngineConfig           `yaml:"scaling_engine"`
 	Scheduler         SchedulerConfig               `yaml:"scheduler"`
 	AppSyncer         AppSyncerConfig               `yaml:"app_syncer"`
-	Lock              LockConfig                    `yaml:"lock"`
 	DBLock            DBLockConfig                  `yaml:"db_lock"`
-	EnableDBLock      bool                          `yaml:"enable_db_lock"`
 	HttpClientTimeout time.Duration                 `yaml:"http_client_timeout"`
 }
 
@@ -124,15 +116,10 @@ var defaultConfig = Config{
 	Scheduler: SchedulerConfig{
 		SyncInterval: DefaultSyncInterval,
 	},
-	Lock: LockConfig{
-		LockRetryInterval: DefaultRetryInterval,
-		LockTTL:           DefaultLockTTL,
-	},
 	AppSyncer: AppSyncerConfig{
 		SyncInterval: DefaultSyncInterval,
 	},
 	DBLock:            defaultDBLockConfig,
-	EnableDBLock:      false,
 	HttpClientTimeout: DefaultHttpClientTimeout,
 }
 
@@ -204,15 +191,7 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("Configuration error: scheduler.sync_interval is less than or equal to 0")
 	}
 
-	if c.Lock.LockRetryInterval <= 0 {
-		return fmt.Errorf("Configuration error: lock.lock_retry_interval is less than or equal to 0")
-	}
-
-	if c.Lock.LockTTL <= 0 {
-		return fmt.Errorf("Configuration error: lock.lock_ttl is less than or equal to 0")
-	}
-
-	if c.EnableDBLock && c.DBLock.DB.URL == "" {
+	if c.DBLock.DB.URL == "" {
 		return fmt.Errorf("Configuration error: db_lock.db.url is empty")
 	}
 
