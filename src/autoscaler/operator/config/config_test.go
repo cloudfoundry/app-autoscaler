@@ -55,8 +55,6 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_duration: 30h
-lock:
-  consul_cluster_config: "http://127.0.0.1:8500"
 `)
 			})
 
@@ -104,7 +102,7 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_duration: 30h
-scalingEngine:
+scaling_engine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
   tls:
@@ -125,16 +123,11 @@ app_syncer:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   sync_interval: 60s
-lock:
-  lock_ttl: 15s
-  lock_retry_interval: 10s
-  consul_cluster_config: "http://127.0.0.1:8500"
 db_lock:
   ttl: 15s
   db:
     url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
   retry_interval: 5s
-enable_db_lock: false
 http_client_timeout: 10s
 `)
 			})
@@ -179,14 +172,9 @@ http_client_timeout: 10s
 				Expect(conf.ScalingEngineDB.RefreshInterval).To(Equal(36 * time.Hour))
 				Expect(conf.ScalingEngineDB.CutoffDuration).To(Equal(30 * time.Hour))
 
-				Expect(conf.Lock.LockTTL).To(Equal(15 * time.Second))
-				Expect(conf.Lock.LockRetryInterval).To(Equal(10 * time.Second))
-				Expect(conf.Lock.ConsulClusterConfig).To(Equal("http://127.0.0.1:8500"))
-
 				Expect(conf.DBLock.LockTTL).To(Equal(15 * time.Second))
 				Expect(conf.DBLock.LockRetryInterval).To(Equal(5 * time.Second))
 				Expect(conf.DBLock.DB.URL).To(Equal("postgres://postgres:password@localhost/autoscaler?sslmode=disable"))
-				Expect(conf.EnableDBLock).To(BeFalse())
 
 				Expect(conf.AppSyncer.DB).To(Equal(db.DatabaseConfig{
 					URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
@@ -250,9 +238,6 @@ app_syncer:
 				Expect(conf.ScalingEngine.SyncInterval).To(Equal(config.DefaultSyncInterval))
 				Expect(conf.Scheduler.SyncInterval).To(Equal(config.DefaultSyncInterval))
 
-				Expect(conf.Lock.LockTTL).To(Equal(config.DefaultLockTTL))
-				Expect(conf.Lock.LockRetryInterval).To(Equal(config.DefaultRetryInterval))
-
 				Expect(conf.DBLock.LockTTL).To(Equal(config.DefaultDBLockTTL))
 				Expect(conf.DBLock.LockRetryInterval).To(Equal(config.DefaultDBLockRetryInterval))
 
@@ -299,7 +284,7 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_duration: 30h
-scalingEngine:
+scaling_engine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
   tls:
@@ -313,10 +298,6 @@ scheduler:
     key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-lock:
-  lock_ttl: 15s
-  lock_retry_interval: 10s
-  consul_cluster_config: "http://127.0.0.1:8500"
 `)
 			})
 
@@ -356,7 +337,7 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_duration: 30h
-scalingEngine:
+scaling_engine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
   tls:
@@ -370,10 +351,6 @@ scheduler:
     key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-lock:
-  lock_ttl: 15s
-  lock_retry_interval: 10s
-  consul_cluster_config: "http://127.0.0.1:8500"
 `)
 			})
 
@@ -421,7 +398,7 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_duration: 30h
-scalingEngine:
+scaling_engine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
   tls:
@@ -442,10 +419,6 @@ app_syncer:
     max_idle_connections: 5
     connection_max_lifetime: 60s
   sync_interval: 60kl
-lock:
-  lock_ttl: 15s
-  lock_retry_interval: 10s
-  consul_cluster_config: "http://127.0.0.1:8500"
 `)
 			})
 
@@ -485,7 +458,7 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_duration: 30h
-scalingEngine:
+scaling_engine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
   tls:
@@ -499,10 +472,6 @@ scheduler:
     key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-lock:
-  lock_ttl: 15s
-  lock_retry_interval: 10s
-  consul_cluster_config: "http://127.0.0.1:8500"
 `)
 			})
 
@@ -543,7 +512,7 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_duration: 30h
-scalingEngine:
+scaling_engine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
   tls:
@@ -557,10 +526,6 @@ scheduler:
     key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-lock:
-  lock_ttl: 15s
-  lock_retry_interval: 10s
-  consul_cluster_config: "http://127.0.0.1:8500"
 `)
 			})
 
@@ -601,7 +566,7 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_duration: 30h
-scalingEngine:
+scaling_engine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
   tls:
@@ -615,10 +580,6 @@ scheduler:
     key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-lock:
-  lock_ttl: 15s
-  lock_retry_interval: 10s
-  consul_cluster_config: "http://127.0.0.1:8500"
 `)
 			})
 
@@ -658,7 +619,7 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_duration: 30h
-scalingEngine:
+scaling_engine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
   tls:
@@ -672,10 +633,6 @@ scheduler:
     key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-lock:
-  lock_ttl: 15s
-  lock_retry_interval: 10s
-  consul_cluster_config: "http://127.0.0.1:8500"
 `)
 			})
 
@@ -716,7 +673,7 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_duration: 30h
-scalingEngine:
+scaling_engine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
   tls:
@@ -730,10 +687,6 @@ scheduler:
     key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-lock:
-  lock_ttl: 15s
-  lock_retry_interval: 10s
-  consul_cluster_config: "http://127.0.0.1:8500"
 `)
 			})
 
@@ -774,7 +727,7 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_duration: 30h
-scalingEngine:
+scaling_engine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
   tls:
@@ -788,10 +741,6 @@ scheduler:
     key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-lock:
-  lock_ttl: 15s
-  lock_retry_interval: 10s
-  consul_cluster_config: "http://127.0.0.1:8500"
 `)
 			})
 
@@ -832,7 +781,7 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_duration: 30h
-scalingEngine:
+scaling_engine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
   tls:
@@ -846,10 +795,6 @@ scheduler:
     key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-lock:
-  lock_ttl: 15s
-  lock_retry_interval: 10s
-  consul_cluster_config: "http://127.0.0.1:8500"
 `)
 			})
 
@@ -890,7 +835,7 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_duration: 30h
-scalingEngine:
+scaling_engine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
   tls:
@@ -904,10 +849,6 @@ scheduler:
     key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-lock:
-  lock_ttl: 15s
-  lock_retry_interval: 10s
-  consul_cluster_config: "http://127.0.0.1:8500"
 `)
 			})
 
@@ -948,7 +889,7 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_duration: 7k
-scalingEngine:
+scaling_engine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
   tls:
@@ -962,10 +903,6 @@ scheduler:
     key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-lock:
-  lock_ttl: 15s
-  lock_retry_interval: 10s
-  consul_cluster_config: "http://127.0.0.1:8500"
 `)
 			})
 
@@ -1006,7 +943,7 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36k
   cutoff_duration: 30h
-scalingEngine:
+scaling_engine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
   tls:
@@ -1020,10 +957,6 @@ scheduler:
     key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-lock:
-  lock_ttl: 15s
-  lock_retry_interval: 10s
-  consul_cluster_config: "http://127.0.0.1:8500"
 `)
 			})
 
@@ -1064,7 +997,7 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_duration: 30h
-scalingEngine:
+scaling_engine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
   tls:
@@ -1078,10 +1011,6 @@ scheduler:
     key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-lock:
-  lock_ttl: 15s
-  lock_retry_interval: 10s
-  consul_cluster_config: "http://127.0.0.1:8500"
 `)
 			})
 
@@ -1122,7 +1051,7 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_duration: 30h
-scalingEngine:
+scaling_engine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
   tls:
@@ -1136,10 +1065,6 @@ scheduler:
     key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-lock:
-  lock_ttl: 15s
-  lock_retry_interval: 10s
-  consul_cluster_config: "http://127.0.0.1:8500"
 `)
 			})
 
@@ -1180,7 +1105,7 @@ scaling_engine_db:
     connection_max_lifetime: 60k
   refresh_interval: 36h
   cutoff_duration: 30h
-scalingEngine:
+scaling_engine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
   tls:
@@ -1194,126 +1119,6 @@ scheduler:
     key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-lock:
-  lock_ttl: 15s
-  lock_retry_interval: 10s
-  consul_cluster_config: "http://127.0.0.1:8500"
-`)
-			})
-
-			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
-			})
-		})
-
-		Context("when lock_ttl of lock is not a time duration", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
-logging:
-  level: "debug"
-health:
-  port: 9999
-instance_metrics_db:
-  db:
-    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-  refresh_interval: 12h
-  cutoff_duration: 10h
-app_metrics_db:
-  db:
-    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-  refresh_interval: 24h
-  cutoff_duration: 20h
-scaling_engine_db:
-  db:
-    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-  refresh_interval: 36h
-  cutoff_duration: 30h
-scalingEngine:
-  scaling_engine_url: http://localhost:8082
-  sync_interval: 60s
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-scheduler:
-  scheduler_url: http://localhost:8083
-  sync_interval: 60s
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-lock:
-  lock_ttl: 10k
-  lock_retry_interval: 10s
-  consul_cluster_config: "http://127.0.0.1:8500"
-`)
-			})
-
-			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
-			})
-		})
-
-		Context("when lock_retry_interval of lock is not a time duration", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
-logging:
-  level: "debug"
-health:
-  port: 9999
-instance_metrics_db:
-  db:
-    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-  refresh_interval: 12h
-  cutoff_duration: 10h
-app_metrics_db:
-  db:
-    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-  refresh_interval: 24h
-  cutoff_duration: 20h
-scaling_engine_db:
-  db:
-    url: "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-  refresh_interval: 36h
-  cutoff_duration: 30h
-scalingEngine:
-  scaling_engine_url: http://localhost:8082
-  sync_interval: 60s
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-scheduler:
-  scheduler_url: http://localhost:8083
-  sync_interval: 60s
-  tls:
-    key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
-    cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
-    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-lock:
-  lock_ttl: 15s
-  lock_retry_interval: 10k
-  consul_cluster_config: "http://127.0.0.1:8500"
 `)
 			})
 
@@ -1354,9 +1159,9 @@ db:
   connection_max_lifetime: 60s
 refresh_interval: 36h
 cutoff_duration: 30h
-scalingEngine:
+scaling_engine:
   scaling_engine_url: http://localhost:8082
-  sync_interval: 60k
+  sync_interval: 60kddd
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
@@ -1368,10 +1173,6 @@ scheduler:
     key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-lock:
-  lock_ttl: 15s
-  lock_retry_interval: 10k
-  consul_cluster_config: "http://127.0.0.1:8500"
 `)
 			})
 
@@ -1412,7 +1213,7 @@ db:
   connection_max_lifetime: 60s
 refresh_interval: 36h
 cutoff_duration: 30h
-scalingEngine:
+scaling_engine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
   tls:
@@ -1426,10 +1227,6 @@ scheduler:
     key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-lock:
-  lock_ttl: 15s
-  lock_retry_interval: 10s
-  consul_cluster_config: "http://127.0.0.1:8500"
 `)
 			})
 
@@ -1470,7 +1267,7 @@ scaling_engine_db:
     connection_max_lifetime: 60s
   refresh_interval: 36h
   cutoff_duration: 30h
-scalingEngine:
+scaling_engine:
   scaling_engine_url: http://localhost:8082
   sync_interval: 60s
   tls:
@@ -1484,10 +1281,6 @@ scheduler:
     key_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/scheduler.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
-lock:
-  lock_ttl: 15s
-  lock_retry_interval: 10s
-  consul_cluster_config: "http://127.0.0.1:8500"
 http_client_timeout: 10k
 `)
 			})
@@ -1522,13 +1315,9 @@ http_client_timeout: 10k
 			conf.Scheduler.URL = "http://localhost:8083"
 			conf.Scheduler.SyncInterval = 15 * time.Minute
 
-			conf.Lock.LockTTL = 15 * time.Second
-			conf.Lock.LockRetryInterval = 10 * time.Second
-			conf.Lock.ConsulClusterConfig = "http://127.0.0.1:8500"
-
 			conf.AppSyncer.SyncInterval = 60 * time.Second
 			conf.AppSyncer.DB.URL = "postgres://pqgotest:password@exampl.com/pqgotest"
-
+			conf.DBLock.DB.URL = "postgres://pqgotest:password@exampl.com/pqgotest"
 			conf.HttpClientTimeout = 10 * time.Second
 			conf.Health.Port = 8081
 
@@ -1709,48 +1498,14 @@ http_client_timeout: 10k
 			})
 		})
 
-		Context("when Lock ttl value in seconds is set to a negative value", func() {
+		Context("when db lockdb url is empty", func() {
 
 			BeforeEach(func() {
-				conf.Lock.LockTTL = -10
-			})
-
-			It("should error", func() {
-				Expect(err).To(MatchError("Configuration error: lock.lock_ttl is less than or equal to 0"))
-			})
-		})
-
-		Context("when Lock retry interval value in seconds is set to a negative value", func() {
-
-			BeforeEach(func() {
-				conf.Lock.LockRetryInterval = -15
-			})
-
-			It("should error", func() {
-				Expect(err).To(MatchError("Configuration error: lock.lock_retry_interval is less than or equal to 0"))
-			})
-		})
-
-		Context("when db lock is enabled but db url is empty", func() {
-
-			BeforeEach(func() {
-				conf.EnableDBLock = true
 				conf.DBLock.DB.URL = ""
 			})
 
 			It("should error", func() {
 				Expect(err).To(MatchError("Configuration error: db_lock.db.url is empty"))
-			})
-		})
-
-		Context("when Consul Cluster Config is not set", func() {
-
-			BeforeEach(func() {
-				conf.Lock.ConsulClusterConfig = ""
-			})
-
-			It("should validate successfully", func() {
-				Expect(err).NotTo(HaveOccurred())
 			})
 		})
 
