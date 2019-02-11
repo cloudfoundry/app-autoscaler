@@ -11,9 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"code.cloudfoundry.org/consuladapter/consulrunner"
-	"code.cloudfoundry.org/locket"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
@@ -30,7 +27,6 @@ var (
 	prPath            string
 	cfg               config.Config
 	configFile        *os.File
-	consulRunner      *consulrunner.ClusterRunner
 	cfServer          *ghttp.Server
 	appId             string
 	healthHttpClient  *http.Client
@@ -50,7 +46,6 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	return []byte(pr)
 }, func(pathsByte []byte) {
 	prPath = string(pathsByte)
-	initConsul()
 	initConfig()
 	healthHttpClient = &http.Client{}
 	configFile = writeConfig(&cfg)
@@ -58,24 +53,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 var _ = SynchronizedAfterSuite(func() {
 	os.Remove(configFile.Name())
-	if consulRunner != nil {
-		consulRunner.Stop()
-	}
 }, func() {
 	gexec.CleanupBuildArtifacts()
 })
-
-func initConsul() {
-	consulRunner = consulrunner.NewClusterRunner(
-		consulrunner.ClusterRunnerConfig{
-			StartingPort: 9001 + GinkgoParallelNode()*consulrunner.PortOffsetLength,
-			NumNodes:     1,
-			Scheme:       "http",
-		},
-	)
-	consulRunner.Start()
-	consulRunner.WaitUntilReady()
-}
 
 func initConfig() {
 
@@ -143,10 +123,6 @@ func initConfig() {
 		SyncInterval: 10 * time.Second,
 	}
 
-	cfg.Lock.ConsulClusterConfig = consulRunner.ConsulCluster()
-	cfg.Lock.LockRetryInterval = locket.RetryInterval
-	cfg.Lock.LockTTL = locket.DefaultSessionTTL
-
 	cfg.DBLock.DB = db.DatabaseConfig{
 		URL:                   os.Getenv("DBURL"),
 		MaxOpenConnections:    10,
@@ -156,7 +132,6 @@ func initConfig() {
 
 	cfg.DBLock.LockTTL = 15 * time.Second
 	cfg.DBLock.LockRetryInterval = 5 * time.Second
-	cfg.EnableDBLock = false
 	cfg.AppSyncer.DB = db.DatabaseConfig{
 		URL:                   dbURL,
 		MaxOpenConnections:    10,
