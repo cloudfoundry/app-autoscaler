@@ -141,7 +141,7 @@ func (h *ApiHandler) BindServiceInstance(w http.ResponseWriter, r *http.Request,
 		return
 	}
 
-	if instanceId == "" || bindingId == "" || body.ServiceID == "" || body.PlanID == "" {
+	if body.AppID == "" || instanceId == "" || bindingId == "" || body.ServiceID == "" || body.PlanID == "" {
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 			Code:    "Bad Request",
 			Message: "Malformed or missing mandatory data",
@@ -152,10 +152,10 @@ func (h *ApiHandler) BindServiceInstance(w http.ResponseWriter, r *http.Request,
 	if body.Policy == "" {
 		h.logger.Info("no policy json provided", lager.Data{})
 	} else {
-		err = h.policyValidator.ValidatePolicy(body.Policy)
+		errResults, valid := h.policyValidator.ValidatePolicy(body.Policy)
 
-		if err != nil {
-			handlers.WriteJSONResponse(w, http.StatusBadRequest, err.Error())
+		if !valid {
+			handlers.WriteJSONResponse(w, http.StatusBadRequest, errResults)
 			return
 		}
 
@@ -167,21 +167,21 @@ func (h *ApiHandler) BindServiceInstance(w http.ResponseWriter, r *http.Request,
 			return
 		}
 
-		h.logger.Info("creating/updating schedules", lager.Data{"policy": body.Policy})
-		err = h.schedulerUtil.CreateOrUpdateSchedule(body.AppID, body.Policy, policyGuid.String())
-		if err != nil {
-			handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-				Code:    "Interal-Server-Error",
-				Message: "Error creating/updating schedules"})
-			return
-		}
-
 		h.logger.Info("saving policy json", lager.Data{"policy": body.Policy})
 		err = h.policydb.SaveAppPolicy(body.AppID, body.Policy, policyGuid.String())
 		if err != nil {
 			handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 				Code:    "Interal-Server-Error",
 				Message: "Error saving policy"})
+			return
+		}
+
+		h.logger.Info("creating/updating schedules", lager.Data{"policy": body.Policy})
+		err = h.schedulerUtil.CreateOrUpdateSchedule(body.AppID, body.Policy, policyGuid.String())
+		if err != nil {
+			handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+				Code:    "Interal-Server-Error",
+				Message: "Error creating/updating schedules"})
 			return
 		}
 	}
@@ -214,20 +214,11 @@ func (h *ApiHandler) UnbindServiceInstance(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if instanceId == "" || bindingId == "" || body.ServiceID == "" || body.PlanID == "" {
+	if body.AppID == "" || instanceId == "" || bindingId == "" || body.ServiceID == "" || body.PlanID == "" {
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 			Code:    "Bad Request",
 			Message: "Malformed or missing mandatory data",
 		})
-		return
-	}
-
-	h.logger.Info("deleting schedules", lager.Data{"appId": body.AppID})
-	err = h.schedulerUtil.DeleteSchedule(body.AppID)
-	if err != nil {
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: "Error deleting schedules"})
 		return
 	}
 
@@ -253,6 +244,16 @@ func (h *ApiHandler) UnbindServiceInstance(w http.ResponseWriter, r *http.Reques
 			Message: "Error creating service binding"})
 		return
 	}
+
+	h.logger.Info("deleting schedules", lager.Data{"appId": body.AppID})
+	err = h.schedulerUtil.DeleteSchedule(body.AppID)
+	if err != nil {
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Error deleting schedules"})
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("{}"))
 }

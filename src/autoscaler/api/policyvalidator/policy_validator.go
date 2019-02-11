@@ -24,6 +24,11 @@ type PolicyValidationError struct {
 	gojsonschema.ResultErrorFields
 }
 
+type PolicyValidationErrors struct {
+	Context     string `json:"context"`
+	Description string `json:"description"`
+}
+
 type DateTimeRange struct {
 	startDateTime time.Time
 	endDateTime   time.Time
@@ -61,30 +66,36 @@ func NewPolicyValidator(policySchemaPath string) *PolicyValidator {
 	return policyValidator
 }
 
-func (pv *PolicyValidator) ValidatePolicy(policyStr string) error {
+func (pv *PolicyValidator) ValidatePolicy(policyStr string) (*[]PolicyValidationErrors, bool) {
 	policyLoader := gojsonschema.NewStringLoader(policyStr)
 
 	result, err := gojsonschema.Validate(pv.policySchemaLoader, policyLoader)
 	if err != nil {
-		return fmt.Errorf(err.Error())
+		resultErrors := []PolicyValidationErrors{
+			{Context: "(root)", Description: err.Error()},
+		}
+		return &resultErrors, false
 	}
 
 	if !result.Valid() {
-		return getErrorWithJSONMessage(result.Errors())
+		return getErrorsObject(result.Errors()), false
 	}
 
 	policy := models.ScalingPolicy{}
 	err = json.Unmarshal([]byte(policyStr), &policy)
 	if err != nil {
-		return err
+		resultErrors := []PolicyValidationErrors{
+			{Context: "(root)", Description: err.Error()},
+		}
+		return &resultErrors, false
 	}
 
 	pv.validateAttributes(&policy, result)
 
 	if len(result.Errors()) > 0 {
-		return getErrorWithJSONMessage(result.Errors())
+		return getErrorsObject(result.Errors()), false
 	}
-	return nil
+	return nil, true
 }
 
 func (pv *PolicyValidator) validateAttributes(policy *models.ScalingPolicy, result *gojsonschema.Result) {
@@ -103,7 +114,9 @@ func (pv *PolicyValidator) validateAttributes(policy *models.ScalingPolicy, resu
 		result.AddError(err, errDetails)
 	}
 
-	// check InstanceMinCount, IntanceMaxCount and InitialInstanceMinCount for schedules
+	scalingRulesContext := gojsonschema.NewJsonContext("scaling_rules", rootContext)
+	pv.validateScalingRuleThreshold(policy, scalingRulesContext, result)
+
 	if policy.Schedules == nil {
 		return
 	}
@@ -113,38 +126,95 @@ func (pv *PolicyValidator) validateAttributes(policy *models.ScalingPolicy, resu
 	pv.validateSpecificDateSchedules(policy, schedulesContext, result)
 }
 
+func (pv *PolicyValidator) validateScalingRuleThreshold(policy *models.ScalingPolicy, scalingRulesContext *gojsonschema.JsonContext, result *gojsonschema.Result) {
+	for srIndex, scalingRule := range policy.ScalingRules {
+		currentContext := gojsonschema.NewJsonContext(fmt.Sprintf("%d", srIndex), scalingRulesContext)
+		errDetails := gojsonschema.ErrorDetails{
+			"scalingRuleIndex": srIndex,
+		}
+
+		switch scalingRule.MetricType {
+		case "memoryused":
+			if scalingRule.Threshold <= 0 {
+				formatString := "scaling_rules[{{.scalingRuleIndex}}].threshold for metric_type memoryused should be greater than 0"
+				err := newPolicyValidationError(currentContext, formatString, errDetails)
+				result.AddError(err, errDetails)
+			}
+		case "memoryutil":
+			if scalingRule.Threshold <= 0 || scalingRule.Threshold > 100 {
+				formatString := "scaling_rules[{{.scalingRuleIndex}}].threshold for metric_type memoryutil should be greater than 0 and less than equal to 100"
+				err := newPolicyValidationError(currentContext, formatString, errDetails)
+				result.AddError(err, errDetails)
+			}
+		case "responsetime":
+			if scalingRule.Threshold <= 0 {
+				formatString := "scaling_rules[{{.scalingRuleIndex}}].threshold for metric_type responsetime should be greater than 0"
+				err := newPolicyValidationError(currentContext, formatString, errDetails)
+				result.AddError(err, errDetails)
+			}
+		case "throughput":
+			if scalingRule.Threshold <= 0 {
+				formatString := "scaling_rules[{{.scalingRuleIndex}}].threshold for metric_type throughput should be greater than 0"
+				err := newPolicyValidationError(currentContext, formatString, errDetails)
+				result.AddError(err, errDetails)
+			}
+		case "cpu":
+			if scalingRule.Threshold <= 0 || scalingRule.Threshold > 100 {
+				formatString := "scaling_rules[{{.scalingRuleIndex}}].threshold for metric_type cpu should be greater than 0 and less than equal to 100"
+				err := newPolicyValidationError(currentContext, formatString, errDetails)
+				result.AddError(err, errDetails)
+			}
+		default:
+		}
+	}
+}
+
 func (pv *PolicyValidator) validateRecurringSchedules(policy *models.ScalingPolicy, schedulesContext *gojsonschema.JsonContext, result *gojsonschema.Result) {
 	recurringScheduleContext := gojsonschema.NewJsonContext("recurring_schedule", schedulesContext)
-	for i, recSched := range policy.Schedules.RecurringSchedules {
+	for scheduleIndex, recSched := range policy.Schedules.RecurringSchedules {
 		if recSched.ScheduledInstanceMin >= recSched.ScheduledInstanceMax {
-			instanceMinContext := gojsonschema.NewJsonContext(fmt.Sprintf("%d.instance_min_count", i), recurringScheduleContext)
+			instanceMinContext := gojsonschema.NewJsonContext(fmt.Sprintf("%d.instance_min_count", scheduleIndex), recurringScheduleContext)
 			errDetails := gojsonschema.ErrorDetails{
+				"scheduleIndex":      scheduleIndex,
 				"instance_min_count": recSched.ScheduledInstanceMin,
-				"instance_max_count": recSched.ScheduledInstanceMin,
+				"instance_max_count": recSched.ScheduledInstanceMax,
 			}
-			formatString := "instance_min_count {{.instance_min_count}} is higher or equal to instance_max_count {{.instance_max_count}}"
+			formatString := "recurring_schedule[{{.scheduleIndex}}].instance_min_count {{.instance_min_count}} is higher or equal to recurring_schedule[{{.scheduleIndex}}].instance_max_count {{.instance_max_count}}"
 			err := newPolicyValidationError(instanceMinContext, formatString, errDetails)
 			result.AddError(err, errDetails)
 		}
 
-		if recSched.ScheduledInstanceInit > recSched.ScheduledInstanceMax {
-			initialInstanceMinContext := gojsonschema.NewJsonContext(fmt.Sprintf("%d.initial_min_instance_count", i), recurringScheduleContext)
+		if (recSched.ScheduledInstanceInit != 0) && (recSched.ScheduledInstanceInit < recSched.ScheduledInstanceMin) {
+			initialInstanceMinContext := gojsonschema.NewJsonContext(fmt.Sprintf("%d.initial_min_instance_count", scheduleIndex), recurringScheduleContext)
 			errDetails := gojsonschema.ErrorDetails{
+				"scheduleIndex":              scheduleIndex,
 				"initial_min_instance_count": recSched.ScheduledInstanceInit,
-				"instance_max_count":         recSched.ScheduledInstanceMin,
+				"instance_min_count":         recSched.ScheduledInstanceMin,
 			}
-			formatString := "initial_min_instance_count {{.initial_min_instance_count}} is greater than instance_max_count {{.instance_max_count}}"
+			formatString := "recurring_schedule[{{.scheduleIndex}}].initial_min_instance_count {{.initial_min_instance_count}} is smaller than recurring_schedule[{{.scheduleIndex}}].instance_min_count {{.instance_min_count}}"
+			err := newPolicyValidationError(initialInstanceMinContext, formatString, errDetails)
+			result.AddError(err, errDetails)
+		}
+
+		if (recSched.ScheduledInstanceInit != 0) && (recSched.ScheduledInstanceInit > recSched.ScheduledInstanceMax) {
+			initialInstanceMinContext := gojsonschema.NewJsonContext(fmt.Sprintf("%d.initial_min_instance_count", scheduleIndex), recurringScheduleContext)
+			errDetails := gojsonschema.ErrorDetails{
+				"scheduleIndex":              scheduleIndex,
+				"initial_min_instance_count": recSched.ScheduledInstanceInit,
+				"instance_max_count":         recSched.ScheduledInstanceMax,
+			}
+			formatString := "recurring_schedule[{{.scheduleIndex}}].initial_min_instance_count {{.initial_min_instance_count}} is greater than recurring_schedule[{{.scheduleIndex}}].instance_max_count {{.instance_max_count}}"
 			err := newPolicyValidationError(initialInstanceMinContext, formatString, errDetails)
 			result.AddError(err, errDetails)
 		}
 
 		//start_time should be before end_time
 		if compareTimesGTEQ(recSched.StartTime, recSched.EndTime) {
-			currentRecSchedContext := gojsonschema.NewJsonContext(fmt.Sprintf("%d", i), recurringScheduleContext)
+			currentRecSchedContext := gojsonschema.NewJsonContext(fmt.Sprintf("%d", scheduleIndex), recurringScheduleContext)
 			errDetails := gojsonschema.ErrorDetails{
-				"i": i,
+				"scheduleIndex": scheduleIndex,
 			}
-			formatString := "start_time is after end_time"
+			formatString := "recurring_schedule[{{.scheduleIndex}}].start_time is same or after recurring_schedule[{{.scheduleIndex}}].end_time"
 			err := newPolicyValidationError(currentRecSchedContext, formatString, errDetails)
 			result.AddError(err, errDetails)
 		}
@@ -152,28 +222,29 @@ func (pv *PolicyValidator) validateRecurringSchedules(policy *models.ScalingPoli
 		var startDate, endDate time.Time
 		location, _ := time.LoadLocation(policy.Schedules.Timezone)
 
+		currentDate, _ := time.ParseInLocation(DateLayout, time.Now().Format(DateLayout), location)
 		if recSched.StartDate != "" {
 			startDate, _ = time.ParseInLocation(DateLayout, recSched.StartDate, location)
 
-			if startDate.Sub(time.Now()) < 0 {
-				currentRecSchedContext := gojsonschema.NewJsonContext(fmt.Sprintf("%d", i), recurringScheduleContext)
+			if startDate.Sub(currentDate) < 0 {
+				currentRecSchedContext := gojsonschema.NewJsonContext(fmt.Sprintf("%d", scheduleIndex), recurringScheduleContext)
 				errDetails := gojsonschema.ErrorDetails{
-					"i": i,
+					"scheduleIndex": scheduleIndex,
 				}
-				formatString := "start_date is before current_date"
+				formatString := "recurring_schedule[{{.scheduleIndex}}].start_date is before recurring_schedule[{{.scheduleIndex}}].current_date"
 				err := newPolicyValidationError(currentRecSchedContext, formatString, errDetails)
 				result.AddError(err, errDetails)
 			}
 		}
-		if recSched.StartDate != "" {
+		if recSched.EndDate != "" {
 			endDate, _ = time.ParseInLocation(DateLayout, recSched.EndDate, location)
 
-			if endDate.Sub(time.Now()) < 0 {
-				currentRecSchedContext := gojsonschema.NewJsonContext(fmt.Sprintf("%d", i), recurringScheduleContext)
+			if endDate.Sub(currentDate) < 0 {
+				currentRecSchedContext := gojsonschema.NewJsonContext(fmt.Sprintf("%d", scheduleIndex), recurringScheduleContext)
 				errDetails := gojsonschema.ErrorDetails{
-					"i": i,
+					"scheduleIndex": scheduleIndex,
 				}
-				formatString := "end_date is before current_date"
+				formatString := "recurring_schedule[{{.scheduleIndex}}].end_date is before recurring_schedule[{{.scheduleIndex}}].current_date"
 				err := newPolicyValidationError(currentRecSchedContext, formatString, errDetails)
 				result.AddError(err, errDetails)
 			}
@@ -183,11 +254,11 @@ func (pv *PolicyValidator) validateRecurringSchedules(policy *models.ScalingPoli
 			endDate, _ = time.ParseInLocation(DateLayout, recSched.EndDate, location)
 			if endDate.Sub(startDate) < 0 {
 
-				currentRecSchedContext := gojsonschema.NewJsonContext(fmt.Sprintf("%d", i), recurringScheduleContext)
+				currentRecSchedContext := gojsonschema.NewJsonContext(fmt.Sprintf("%d", scheduleIndex), recurringScheduleContext)
 				errDetails := gojsonschema.ErrorDetails{
-					"i": i,
+					"scheduleIndex": scheduleIndex,
 				}
-				formatString := "start_date is after end_date"
+				formatString := "recurring_schedule[{{.scheduleIndex}}].start_date is after recurring_schedule[{{.scheduleIndex}}].end_date"
 				err := newPolicyValidationError(currentRecSchedContext, formatString, errDetails)
 				result.AddError(err, errDetails)
 			}
@@ -199,24 +270,38 @@ func (pv *PolicyValidator) validateRecurringSchedules(policy *models.ScalingPoli
 
 func (pv *PolicyValidator) validateSpecificDateSchedules(policy *models.ScalingPolicy, schedulesContext *gojsonschema.JsonContext, result *gojsonschema.Result) {
 	specficDateScheduleContext := gojsonschema.NewJsonContext("specific_date", schedulesContext)
-	for i, specSched := range policy.Schedules.SpecificDateSchedules {
+	for scheduleIndex, specSched := range policy.Schedules.SpecificDateSchedules {
 		if specSched.ScheduledInstanceMin >= specSched.ScheduledInstanceMax {
-			instanceMinContext := gojsonschema.NewJsonContext(fmt.Sprintf("%d.instance_min_count", i), specficDateScheduleContext)
+			instanceMinContext := gojsonschema.NewJsonContext(fmt.Sprintf("%d.instance_min_count", scheduleIndex), specficDateScheduleContext)
 			errDetails := gojsonschema.ErrorDetails{
+				"scheduleIndex":      scheduleIndex,
 				"instance_min_count": specSched.ScheduledInstanceMin,
 				"instance_max_count": specSched.ScheduledInstanceMax,
 			}
-			formatString := "instance_min_count {{.instance_min_count}} is higher or equal to instance_max_count {{.instance_max_count}}"
+			formatString := "specific_date[{{.scheduleIndex}}].instance_min_count {{.instance_min_count}} is higher or equal to specific_date[{{.scheduleIndex}}].instance_max_count {{.instance_max_count}}"
 			err := newPolicyValidationError(instanceMinContext, formatString, errDetails)
 			result.AddError(err, errDetails)
 		}
-		if specSched.ScheduledInstanceInit > specSched.ScheduledInstanceMax {
-			initialInstanceMinContext := gojsonschema.NewJsonContext(fmt.Sprintf("%d.initial_min_instance_count", i), specficDateScheduleContext)
+		if (specSched.ScheduledInstanceInit != 0) && (specSched.ScheduledInstanceInit < specSched.ScheduledInstanceMin) {
+			initialInstanceMinContext := gojsonschema.NewJsonContext(fmt.Sprintf("%d.initial_min_instance_count", scheduleIndex), specficDateScheduleContext)
 			errDetails := gojsonschema.ErrorDetails{
+				"scheduleIndex":              scheduleIndex,
 				"initial_min_instance_count": specSched.ScheduledInstanceInit,
-				"instance_max_count":         specSched.ScheduledInstanceMin,
+				"instance_min_count":         specSched.ScheduledInstanceMin,
 			}
-			formatString := "initial_min_instance_count {{.initial_min_instance_count}} is greater than instance_max_count {{.instance_max_count}}"
+			formatString := "specific_date[{{.scheduleIndex}}].initial_min_instance_count {{.initial_min_instance_count}} is smaller than specific_date[{{.scheduleIndex}}].instance_min_count {{.instance_min_count}}"
+			err := newPolicyValidationError(initialInstanceMinContext, formatString, errDetails)
+			result.AddError(err, errDetails)
+		}
+
+		if (specSched.ScheduledInstanceInit != 0) && (specSched.ScheduledInstanceInit > specSched.ScheduledInstanceMax) {
+			initialInstanceMinContext := gojsonschema.NewJsonContext(fmt.Sprintf("%d.initial_min_instance_count", scheduleIndex), specficDateScheduleContext)
+			errDetails := gojsonschema.ErrorDetails{
+				"scheduleIndex":              scheduleIndex,
+				"initial_min_instance_count": specSched.ScheduledInstanceInit,
+				"instance_max_count":         specSched.ScheduledInstanceMax,
+			}
+			formatString := "specific_date[{{.scheduleIndex}}].initial_min_instance_count {{.initial_min_instance_count}} is greater than specific_date[{{.scheduleIndex}}].instance_max_count {{.instance_max_count}}"
 			err := newPolicyValidationError(initialInstanceMinContext, formatString, errDetails)
 			result.AddError(err, errDetails)
 		}
@@ -224,20 +309,20 @@ func (pv *PolicyValidator) validateSpecificDateSchedules(policy *models.ScalingP
 		// start_date_time should be after current_date_time and before end_date_time
 		dateTime := newDateTimeRange(specSched.StartDateTime, specSched.EndDateTime, policy.Schedules.Timezone)
 		if dateTime.startDateTime.Sub(time.Now()) <= 0 {
-			currentSpecSchedContext := gojsonschema.NewJsonContext(fmt.Sprintf("%d", i), specficDateScheduleContext)
+			currentSpecSchedContext := gojsonschema.NewJsonContext(fmt.Sprintf("%d", scheduleIndex), specficDateScheduleContext)
 			errDetails := gojsonschema.ErrorDetails{
-				"i": i,
+				"scheduleIndex": scheduleIndex,
 			}
-			formatString := "start_date_time is before current_date_time"
+			formatString := "specific_date[{{.scheduleIndex}}].start_date_time is before current date time"
 			err := newPolicyValidationError(currentSpecSchedContext, formatString, errDetails)
 			result.AddError(err, errDetails)
 		}
 		if dateTime.endDateTime.Sub(dateTime.startDateTime) <= 0 {
-			currentSpecSchedContext := gojsonschema.NewJsonContext(fmt.Sprintf("%d", i), specficDateScheduleContext)
+			currentSpecSchedContext := gojsonschema.NewJsonContext(fmt.Sprintf("%d", scheduleIndex), specficDateScheduleContext)
 			errDetails := gojsonschema.ErrorDetails{
-				"i": i,
+				"scheduleIndex": scheduleIndex,
 			}
-			formatString := "start_date_time is after end_date_time"
+			formatString := "specific_date[{{.scheduleIndex}}].start_date_time is after specific_date[{{.scheduleIndex}}].end_date_time"
 			err := newPolicyValidationError(currentSpecSchedContext, formatString, errDetails)
 			result.AddError(err, errDetails)
 		}
@@ -249,36 +334,36 @@ func (pv *PolicyValidator) validateSpecificDateSchedules(policy *models.ScalingP
 func (pv *PolicyValidator) validateOverlappingInRecurringSchedules(policy *models.ScalingPolicy, recurringScheduleContext *gojsonschema.JsonContext, result *gojsonschema.Result) {
 	length := len(policy.Schedules.RecurringSchedules)
 	recScheds := policy.Schedules.RecurringSchedules
-	for j := 0; j < length-1; j++ {
-		for i := j + 1; i < length; i++ {
-			if (recScheds[i].DaysOfWeek != nil && len(recScheds[i].DaysOfWeek) > 0) && (recScheds[j].DaysOfWeek != nil && len(recScheds[j].DaysOfWeek) > 0) {
-				if hasIntersection(recScheds[i].DaysOfWeek, recScheds[j].DaysOfWeek) {
-					if compareTimesGTEQ(recScheds[j].EndTime, recScheds[i].StartTime) && compareTimesGTEQ(recScheds[i].EndTime, recScheds[j].StartTime) &&
-						compareDatesGTEQ(recScheds[j].EndDate, recScheds[i].StartDate) && compareDatesGTEQ(recScheds[i].EndDate, recScheds[j].StartDate) {
-						context := gojsonschema.NewJsonContext(fmt.Sprintf("%d", j), recurringScheduleContext)
+	for scheduleIndexB := 0; scheduleIndexB < length-1; scheduleIndexB++ {
+		for scheduleIndexA := scheduleIndexB + 1; scheduleIndexA < length; scheduleIndexA++ {
+			if (recScheds[scheduleIndexA].DaysOfWeek != nil && len(recScheds[scheduleIndexA].DaysOfWeek) > 0) && (recScheds[scheduleIndexB].DaysOfWeek != nil && len(recScheds[scheduleIndexB].DaysOfWeek) > 0) {
+				if hasIntersection(recScheds[scheduleIndexA].DaysOfWeek, recScheds[scheduleIndexB].DaysOfWeek) {
+					if compareTimesGTEQ(recScheds[scheduleIndexB].EndTime, recScheds[scheduleIndexA].StartTime) && compareTimesGTEQ(recScheds[scheduleIndexA].EndTime, recScheds[scheduleIndexB].StartTime) &&
+						compareDatesGTEQ(recScheds[scheduleIndexB].EndDate, recScheds[scheduleIndexA].StartDate) && compareDatesGTEQ(recScheds[scheduleIndexA].EndDate, recScheds[scheduleIndexB].StartDate) {
+						context := gojsonschema.NewJsonContext(fmt.Sprintf("%d", scheduleIndexB), recurringScheduleContext)
 						errDetails := gojsonschema.ErrorDetails{
-							"i": i,
-							"j": j,
+							"scheduleIndexA": scheduleIndexA,
+							"scheduleIndexB": scheduleIndexB,
 						}
 
-						formatString := "recurring_schedule[{{.j}}] and recurring_schedule[{{.i}}] are overlapping"
+						formatString := "recurring_schedule[{{.scheduleIndexB}}] and recurring_schedule[{{.scheduleIndexA}}] are overlapping"
 						err := newPolicyValidationError(context, formatString, errDetails)
 						result.AddError(err, errDetails)
 					}
 				}
 			}
 
-			if (recScheds[i].DaysOfMonth != nil && len(recScheds[i].DaysOfMonth) > 0) && (recScheds[j].DaysOfMonth != nil && len(recScheds[j].DaysOfMonth) > 0) {
-				if hasIntersection(recScheds[i].DaysOfMonth, recScheds[j].DaysOfMonth) {
-					if compareTimesGTEQ(recScheds[j].EndTime, recScheds[i].StartTime) && compareTimesGTEQ(recScheds[i].EndTime, recScheds[j].StartTime) &&
-						compareDatesGTEQ(recScheds[j].EndDate, recScheds[i].StartDate) && compareDatesGTEQ(recScheds[i].EndDate, recScheds[j].StartDate) {
-						context := gojsonschema.NewJsonContext(fmt.Sprintf("%d", j), recurringScheduleContext)
+			if (recScheds[scheduleIndexA].DaysOfMonth != nil && len(recScheds[scheduleIndexA].DaysOfMonth) > 0) && (recScheds[scheduleIndexB].DaysOfMonth != nil && len(recScheds[scheduleIndexB].DaysOfMonth) > 0) {
+				if hasIntersection(recScheds[scheduleIndexA].DaysOfMonth, recScheds[scheduleIndexB].DaysOfMonth) {
+					if compareTimesGTEQ(recScheds[scheduleIndexB].EndTime, recScheds[scheduleIndexA].StartTime) && compareTimesGTEQ(recScheds[scheduleIndexA].EndTime, recScheds[scheduleIndexB].StartTime) &&
+						compareDatesGTEQ(recScheds[scheduleIndexB].EndDate, recScheds[scheduleIndexA].StartDate) && compareDatesGTEQ(recScheds[scheduleIndexA].EndDate, recScheds[scheduleIndexB].StartDate) {
+						context := gojsonschema.NewJsonContext(fmt.Sprintf("%d", scheduleIndexB), recurringScheduleContext)
 						errDetails := gojsonschema.ErrorDetails{
-							"i": i,
-							"j": j,
+							"scheduleIndexA": scheduleIndexA,
+							"scheduleIndexB": scheduleIndexB,
 						}
 
-						formatString := "recurring_schedule[{{.j}}] and recurring_schedule[{{.i}}] are overlapping"
+						formatString := "recurring_schedule[{{.scheduleIndexB}}] and recurring_schedule[{{.scheduleIndexA}}] are overlapping"
 						err := newPolicyValidationError(context, formatString, errDetails)
 						result.AddError(err, errDetails)
 					}
@@ -295,20 +380,20 @@ func (pv *PolicyValidator) validateOverlappingInSpecificDateSchedules(policy *mo
 		dateTimeRangeList = append(dateTimeRangeList, newDateTimeRange(specSched.StartDateTime, specSched.EndDateTime, policy.Schedules.Timezone))
 	}
 
-	for j := 0; j < length; j++ {
-		for i := j + 1; i < length; i++ {
-			if dateTimeRangeList[j].overlaps(dateTimeRangeList[i]) {
-				context := gojsonschema.NewJsonContext(fmt.Sprintf("%d", j), specficDateScheduleContext)
+	for scheduleIndexB := 0; scheduleIndexB < length; scheduleIndexB++ {
+		for scheduleIndexA := scheduleIndexB + 1; scheduleIndexA < length; scheduleIndexA++ {
+			if dateTimeRangeList[scheduleIndexB].overlaps(dateTimeRangeList[scheduleIndexA]) {
+				context := gojsonschema.NewJsonContext(fmt.Sprintf("%d", scheduleIndexB), specficDateScheduleContext)
 				errDetails := gojsonschema.ErrorDetails{
-					"i":                i,
-					"j":                j,
-					"start_date_time1": policy.Schedules.SpecificDateSchedules[j].StartDateTime,
-					"end_date_time1":   policy.Schedules.SpecificDateSchedules[j].StartDateTime,
-					"start_date_time2": policy.Schedules.SpecificDateSchedules[i].StartDateTime,
-					"end_date_time2":   policy.Schedules.SpecificDateSchedules[i].StartDateTime,
+					"scheduleIndexA":   scheduleIndexA,
+					"scheduleIndexB":   scheduleIndexB,
+					"start_date_time1": policy.Schedules.SpecificDateSchedules[scheduleIndexB].StartDateTime,
+					"end_date_time1":   policy.Schedules.SpecificDateSchedules[scheduleIndexB].StartDateTime,
+					"start_date_time2": policy.Schedules.SpecificDateSchedules[scheduleIndexA].StartDateTime,
+					"end_date_time2":   policy.Schedules.SpecificDateSchedules[scheduleIndexA].StartDateTime,
 				}
 
-				formatString := "specific_date[{{.j}}]:{start_date_time: {{.start_date_time1}}, end_date_time: {{.end_date_time1}}} and specific_date[{{.i}}]:{start_date_time: {{.start_date_time2}}, end_date_time: {{.end_date_time2}}} are overlapping"
+				formatString := "specific_date[{{.scheduleIndexB}}]:{start_date_time: {{.start_date_time1}}, end_date_time: {{.end_date_time1}}} and specific_date[{{.scheduleIndexA}}]:{start_date_time: {{.start_date_time2}}, end_date_time: {{.end_date_time2}}} are overlapping"
 				err := newPolicyValidationError(context, formatString, errDetails)
 				result.AddError(err, errDetails)
 
@@ -318,17 +403,15 @@ func (pv *PolicyValidator) validateOverlappingInSpecificDateSchedules(policy *mo
 
 }
 
-func getErrorWithJSONMessage(resErr []gojsonschema.ResultError) error {
-	errString := "["
-	for index, desc := range resErr {
-		if index == len(resErr)-1 {
-			errString += fmt.Sprintf("{\"context\": \"%s\", \"description\": \"%s\"}", desc.Context().String(), desc.Description())
-		} else {
-			errString += fmt.Sprintf("{\"context\": \"%s\", \"description\": \"%s\"},", desc.Context().String(), desc.Description())
-		}
+func getErrorsObject(resErr []gojsonschema.ResultError) *[]PolicyValidationErrors {
+	policyValidationErrorsResult := []PolicyValidationErrors{}
+	for _, err := range resErr {
+		policyValidationErrorsResult = append(policyValidationErrorsResult, PolicyValidationErrors{
+			Context:     err.Context().String(),
+			Description: err.Description(),
+		})
 	}
-	errString += "]"
-	return fmt.Errorf(errString)
+	return &policyValidationErrorsResult
 }
 
 func hasIntersection(a []int, b []int) bool {
@@ -353,15 +436,15 @@ func compareTimesGTEQ(firstTime string, secondTime string) bool {
 	return false
 }
 
-func compareDatesGTEQ(firstDate string, secondDate string) bool {
-	if firstDate == "" {
-		firstDate = "0001-01-01"
+func compareDatesGTEQ(endDate string, startDate string) bool {
+	if endDate == "" {
+		endDate = "9999-01-01"
 	}
-	if secondDate == "" {
-		secondDate = "0001-01-01"
+	if startDate == "" {
+		startDate = "0000-01-01"
 	}
-	fd, _ := time.Parse(DateLayout, firstDate)
-	sd, _ := time.Parse(DateLayout, secondDate)
+	fd, _ := time.Parse(DateLayout, endDate)
+	sd, _ := time.Parse(DateLayout, startDate)
 	if fd.Sub(sd) >= 0 {
 		return true
 	}
