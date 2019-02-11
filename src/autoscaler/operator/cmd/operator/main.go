@@ -131,11 +131,6 @@ func main() {
 	applicationSync := operator.NewApplicationSynchronizer(cfClient, policyDB, logger.Session(loggerSessionName))
 	applicationSyncRunner := operator.NewOperatorRunner(applicationSync, conf.AppSyncer.SyncInterval, prClock, logger.Session(loggerSessionName))
 
-	healthServer, err := healthendpoint.NewServer(logger.Session("health-server"), conf.Health.Port, promRegistry)
-	if err != nil {
-		logger.Error("failed to create health server", err)
-		os.Exit(1)
-	}
 	members := grouper.Members{
 		{"instancemetrics-dbpruner", instanceMetricsDBOperatorRunner},
 		{"appmetrics-dbpruner", appMetricsDBOperatorRunner},
@@ -143,7 +138,6 @@ func main() {
 		{"scalingEngine-sync", scalingEngineSyncRunner},
 		{"scheduler-sync", schedulerSyncRunner},
 		{"application-sync", applicationSyncRunner},
-		{"health_server", healthServer},
 	}
 
 	guid, err := helpers.GenerateGUID(logger)
@@ -161,6 +155,13 @@ func main() {
 	prdl := sync.NewDatabaseLock(logger)
 	dbLockMaintainer := prdl.InitDBLockRunner(conf.DBLock.LockRetryInterval, conf.DBLock.LockTTL, guid, lockDB)
 	members = append(grouper.Members{{"db-lock-maintainer", dbLockMaintainer}}, members...)
+
+	healthServer, err := healthendpoint.NewServer(logger.Session("health-server"), conf.Health.Port, promRegistry)
+	if err != nil {
+		logger.Error("failed to create health server", err)
+		os.Exit(1)
+	}
+	members = append(grouper.Members{{"health_server", healthServer}}, members...)
 
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
 
