@@ -145,6 +145,12 @@ var _ = Describe("Operator", func() {
 			It("Competing instance should not get lock in first attempt", func() {
 				Consistently(secondRunner.Session.Buffer, 5*time.Second).ShouldNot(gbytes.Say("operator.lock-acquired-in-first-attempt"))
 				Consistently(secondRunner.Session.Buffer, 5*time.Second).ShouldNot(gbytes.Say("operator.successfully-acquired-lock"))
+
+				By("checking the health endpoint of the standing-by instance")
+				rsp, err := healthHttpClient.Get(fmt.Sprintf("http://127.0.0.1:%d/health", cfg.Health.Port))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+
 			})
 		})
 
@@ -156,6 +162,7 @@ var _ = Describe("Operator", func() {
 				runner.Start()
 				secondRunner = NewOperatorRunner()
 				secondRunner.startCheck = ""
+				cfg.Health.Port = 9000 + GinkgoParallelNode()
 				secondRunner.configPath = writeConfig(&cfg).Name()
 				secondRunner.Start()
 			})
