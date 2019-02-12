@@ -14,6 +14,7 @@ var API = require('../../../app.js');
 var HttpStatus = require('http-status-codes');
 var app;
 var publicApp;
+var healthApp;
 var servers;
 var policy = require('../../../lib/models')(settings.db).policy_json;
 var logger = require('../../../lib/log/logger');
@@ -112,10 +113,13 @@ describe('Routing Policy Creation', function () {
     servers = API(testSetting, function () { });
     app = servers.internalServer;
     publicApp = servers.publicServer;
+    healthApp = servers.healthServer;
   })
-  after(function (done) {
-    app.close(function () {
-      publicApp.close(done);
+  after(function(done) {
+    app.close(function() {
+      publicApp.close(function(){
+        healthApp.close(done);
+      });
     });
   })
   beforeEach(function () {

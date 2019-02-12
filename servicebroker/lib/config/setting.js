@@ -25,6 +25,7 @@ module.exports = function(settingsObj) {
   var settings = {
     publicPort: settingsObj.publicPort,
     port : settingsObj.port,
+    healthPort: settingsObj.healthPort,
     username: settingsObj.username,
     password: settingsObj.password,
     enableCustomMetrics: settingsObj.enableCustomMetrics,
@@ -85,6 +86,18 @@ module.exports = function(settingsObj) {
       return { valid: false, message: "value of port must between 1 and 65535" };
     }
 
+    if (isMissing(settings.healthPort)) {
+      return { valid: false, message: "healthPort is required" };
+    }
+    if (!isNumber(settings.healthPort)) {
+      return { valid: false, message: "healthPort must be a number" };
+    }
+    if (settings.healthPort < 0 || settings.healthPort > 65535) {
+      return { valid: false, message: "value of healthPort must between 0 and 65535" };
+    }
+    if (settings.port == settings.publicPort || settings.port == settings.healthPort || settings.healthPort == settings.publicPort) {
+      return { valid: false, message: "internal port, public port and health port should be different" }
+    }
     if (isMissing(settings.username)) {
       return { valid: false, message: "username is required" };
     }

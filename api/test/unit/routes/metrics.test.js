@@ -15,6 +15,7 @@ var HttpStatus = require('http-status-codes');
 
 var app;
 var publicApp;
+var healthApp;
 var servers;
 var metricsCollectorUri = testSetting.metricsCollector.uri;
 var theAppId = "the-app-guid";
@@ -29,10 +30,13 @@ describe("Routing Metrics", function() {
     servers = API(testSetting, function() {});
     app = servers.internalServer;
     publicApp = servers.publicServer;
+    healthApp = servers.healthServer;
   })
   after(function(done) {
     app.close(function() {
-      publicApp.close(done);
+      publicApp.close(function(){
+        healthApp.close(done);
+      });
     });
   })
   beforeEach(function() {

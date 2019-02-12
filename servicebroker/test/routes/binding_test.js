@@ -90,7 +90,7 @@ function initNockApiServerBindError(statusCode) {
 }
 
 describe('binding RESTful API', function() {
-  var servers, publicServer, internalServer, serviceInstanceId, serviceInstanceId2, orgId, spaceId, appId, appId2, bindingId;
+  var servers, publicServer, internalServer, healthServer, serviceInstanceId, serviceInstanceId2, orgId, spaceId, appId, appId2, bindingId;
   serviceInstanceId = uuid.v4();
   orgId = uuid.v4();
   spaceId = uuid.v4();
@@ -116,11 +116,14 @@ describe('binding RESTful API', function() {
     servers = BrokerServer(settings, catalog, function(){});
     publicServer = servers.publicServer;
     internalServer = servers.internalServer;
+    healthServer = servers.healthServer;
     done();
   });
   after(function(done) {
-    publicServer.close(function(){
-      internalServer.close(done);
+    publicServer.close(function() {
+      internalServer.close(function(){
+        healthServer.close(done);
+      });
     })
   });
   beforeEach(function(done) {
