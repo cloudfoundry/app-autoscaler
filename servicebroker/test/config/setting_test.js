@@ -13,6 +13,7 @@ describe('config setting Test Suite', function() {
     defaultConfig = {
       "port": 88,
       "publicPort": 80,
+      "healthPort": 8081,
       "username": "username",
       "password": "password",
       "enableCustomMetrics": true,
@@ -52,6 +53,7 @@ describe('config setting Test Suite', function() {
   it('Should contain the default configuration', function() {
     expect(settings.port).to.equal(defaultConfig.port);
     expect(settings.publicPort).to.equal(defaultConfig.publicPort);
+    expect(settings.healthPort).to.equal(defaultConfig.healthPort);
 
     expect(settings.username).to.equal(defaultConfig.username);
     expect(settings.password).to.equal(defaultConfig.password);
@@ -149,6 +151,64 @@ describe('config setting Test Suite', function() {
           settings.publicPort = 70000;
           expect(settings.validate().valid).to.equal(false);
           expect(settings.validate().message).to.equal("value of publicPort must between 1 and 65535");
+        })
+      });
+    });
+
+    context('Validate healthPort', function() {
+      context('When healthPort is null', function() {
+        it('Should return false', function() {
+          settings.healthPort = null;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("healthPort is required");
+        })
+      });
+      context('When healthPort is undefined', function() {
+        it('Should return false', function() {
+          delete settings.healthPort;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("healthPort is required");
+        })
+      });
+      context('When healthPort is not an integer', function() {
+        it('Should return false', function() {
+          settings.healthPort = "80";
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("healthPort must be a number");
+        })
+      });
+      context('When the healthPort is out of range', function() {
+        it('Should return false', function() {
+          settings.healthPort = 70000;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("value of healthPort must between 0 and 65535");
+        })
+      });
+    });
+
+    context('Validate internal port, public port and health port', function() {
+      context('When publicPort is equal to internal port', function() {
+        it('Should return false', function() {
+          settings.publicPort = 3002;
+          settings.port = 3002;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("internal port, public port and health port should be different");
+        })
+      });
+      context('When publicPort is equal to health port', function() {
+        it('Should return false', function() {
+          settings.publicPort = 3002;
+          settings.healthPort = 3002;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("internal port, public port and health port should be different");
+        })
+      });
+      context('When internal port is equal to health port', function() {
+        it('Should return false', function() {
+          settings.port = 3002;
+          settings.healthPort = 3002;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("internal port, public port and health port should be different");
         })
       });
     });

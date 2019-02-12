@@ -13,6 +13,7 @@ var models = require('../../../lib/models')(testSetting.db, function(){});
 var API = require('../../../app.js');
 var app;
 var publicApp;
+var healthApp;
 var servers;
 var policy = models.policy_json;
 var logger = require('../../../lib/log/logger');
@@ -28,13 +29,16 @@ describe('Policy Route helper ', function() {
 		fakePolicy = JSON.parse(fs.readFileSync(__dirname+'/../fakePolicy.json', 'utf8'));
 		servers = API(testSetting, function(){});
 	    app = servers.internalServer;
-	    publicApp = servers.publicServer;
+		publicApp = servers.publicServer;
+		healthApp = servers.healthServer;
 	})
-    after(function(done){
-    	app.close(function(){
-	      publicApp.close(done);
+    after(function(done) {
+		app.close(function() {
+		  publicApp.close(function(){
+			healthApp.close(done);
+		  });
 		});
-  	})
+	  })
 	beforeEach(function() {
 		if (settings.serviceOffering) {
 			nock(settings.serviceOffering.serviceBroker.uri)

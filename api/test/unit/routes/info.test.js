@@ -11,6 +11,7 @@ var testSetting = require(path.join(__dirname, '../test.helper.js'))(relativePat
 var API = require("../../../app.js");
 var app;
 var publicApp;
+var healthApp;
 var servers;
 var info = JSON.parse(fs.readFileSync(path.join(__dirname, '../../../config/info.json'), 'utf8'));
 describe("Routing info", function() {
@@ -19,10 +20,13 @@ describe("Routing info", function() {
     servers = API(testSetting, function(){});
     app = servers.internalServer;
     publicApp = servers.publicServer;
+    healthApp = servers.healthServer;
   })
   after(function(done) {
     app.close(function() {
-      publicApp.close(done);
+      publicApp.close(function(){
+        healthApp.close(done);
+      });
     });
   })
 

@@ -1,7 +1,7 @@
 'use strict';
 var path = require('path');
-module.exports = function(settingsObj) {
-  var db = function(dbUri) {
+module.exports = function (settingsObj) {
+  var db = function (dbUri) {
     if (dbUri != null) {
       let uri = dbUri.replace(/\/$/g, "");
       let name = uri.slice(uri.lastIndexOf("/") + 1, uri.length);
@@ -14,33 +14,33 @@ module.exports = function(settingsObj) {
     }
   };
 
-  var cleanUpUri = function(uri) {
+  var cleanUpUri = function (uri) {
     if (uri) {
       uri = uri.replace(/\/$/g, "").toLowerCase();
     }
     return uri;
   };
-  var addProtocol = function(uri) {
+  var addProtocol = function (uri) {
     if (uri && (uri.indexOf("https://") < 0 && uri.indexOf("http://") < 0)) {
       uri = "https://" + uri;
     }
     return uri;
   }
 
-  var isMissing = function(value) {
-    return typeof(value) === "undefined" || value === null;
+  var isMissing = function (value) {
+    return typeof (value) === "undefined" || value === null;
   }
-  var isNumber = function(value) {
-    return typeof(value) === "number";
+  var isNumber = function (value) {
+    return typeof (value) === "number";
   }
-  var isString = function(value) {
-    return typeof(value) === "string";
+  var isString = function (value) {
+    return typeof (value) === "string";
   }
-  var isObject = function(value) {
-    return typeof(value) === "object";
+  var isObject = function (value) {
+    return typeof (value) === "object";
   }
-  var isBoolean = function(value) {
-    return typeof(value) === "boolean";
+  var isBoolean = function (value) {
+    return typeof (value) === "boolean";
   }
 
   var settings = {
@@ -59,7 +59,8 @@ module.exports = function(settingsObj) {
     publicTls: settingsObj.publicTls,
     infoFilePath: settingsObj.infoFilePath,
     serviceOffering: settingsObj.serviceOffering,
-    httpClientTimeout: settingsObj.httpClientTimeout
+    httpClientTimeout: settingsObj.httpClientTimeout,
+    healthPort: settingsObj.healthPort
   };
   if (settingsObj.db) {
     var dbObj = db(settingsObj.db.uri);
@@ -88,7 +89,7 @@ module.exports = function(settingsObj) {
     settings.serviceOffering.serviceBroker.uri = addProtocol(cleanUpUri(settings.serviceOffering.serviceBroker.uri));
   }
 
-  settings.validate = function() {
+  settings.validate = function () {
     if (isMissing(settings.port)) {
       return { valid: false, message: "port is required" }
     }
@@ -108,8 +109,19 @@ module.exports = function(settingsObj) {
     if (settings.publicPort < 1 || settings.publicPort > 65535) {
       return { valid: false, message: "value of publicPort must be between 1 and 65535" };
     }
-    if (settings.port == settings.publicPort) {
-      return { valid: false, message: "internal api port and public api port should be different" }
+
+    if (isMissing(settings.healthPort)) {
+      return { valid: false, message: "healthPort is required" }
+    }
+    if (!isNumber(settings.healthPort)) {
+      return { valid: false, message: "healthPort must be a number" };
+    }
+    if (settings.healthPort < 0 || settings.healthPort > 65535) {
+      return { valid: false, message: "value of healthPort must be between 0 and 65535" };
+    }
+
+    if (settings.port == settings.publicPort || settings.port == settings.healthPort || settings.healthPort == settings.publicPort) {
+      return { valid: false, message: "internal api port, public api port and health port should be different" }
     }
     if (isMissing(settings.infoFilePath)) {
       return { valid: false, message: "infoFilePath is required" }
@@ -412,7 +424,7 @@ module.exports = function(settingsObj) {
     }
     if (settings.httpClientTimeout <= 0) {
       return { valid: false, message: "value of httpClientTimeout must be greater than 0" };
-    } 
+    }
     return { valid: true }
   }
 

@@ -14,6 +14,7 @@ var HttpStatus = require('http-status-codes');
 
 var app;
 var publicApp;
+var healthApp;
 var servers;
 var scalingEngineUri = testSetting.scalingEngine.uri;
 var theAppId = "the-app-guid";
@@ -27,10 +28,13 @@ describe("Routing ScalingHistory", function() {
     servers = API(testSetting, function(){});
     app = servers.internalServer;
     publicApp = servers.publicServer;
+    healthApp = servers.healthServer;
   })
   after(function(done) {
-    app.close(function(){
-      publicApp.close(done);
+    app.close(function() {
+      publicApp.close(function(){
+        healthApp.close(done);
+      });
     });
   })
   beforeEach(function() {
