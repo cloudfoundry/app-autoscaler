@@ -16,7 +16,8 @@
 
 | Name                 | Type         | Required|Description                                                                      |
 |:---------------------|--------------|---------|---------------------------------------------------------------------------------|
-| metric_type          | String       | true    |one of the following metric types:memoryused,memoryutil,responsetime, throughput, cpu|| threshold            | int          | true    |the boundary when metric value exceeds is considered as a breach                 |
+| metric_type          | String       | true    |one of the following metric types:memoryused,memoryutil,responsetime, throughput, cpu|
+| threshold            | int          | true    |the boundary when metric value exceeds is considered as a breach                 |
 | operator             | String       | true    |>, <, >=, <=                                                                     |
 | adjustment           | String       | true    |the adjustment approach for instance count with each scaling.  Support regex format `^[-+][1-9]+[0-9]*[%]?$`, i.e. +5 means adding 5 instances, -50% means shrinking to the half of current size.  |
 | breach_duration_secs | int, seconds | false   |time duration to fire scaling event if it keeps breaching                        |
