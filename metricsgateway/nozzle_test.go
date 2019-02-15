@@ -73,7 +73,13 @@ var _ = Describe("Nozzle", func() {
 
 		customMetricEnvelope = loggregator_v2.Envelope{
 			SourceId: testAppId,
-			Tags:     map[string]string{"origin": "autoscaler_metrics_forwarder"},
+			DeprecatedTags: map[string]*loggregator_v2.Value{
+				"origin": &loggregator_v2.Value{
+					Data: &loggregator_v2.Value_Text{
+						Text: "autoscaler_metrics_forwarder",
+					},
+				},
+			},
 			Message: &loggregator_v2.Envelope_Gauge{
 				Gauge: &loggregator_v2.Gauge{
 					Metrics: map[string]*loggregator_v2.GaugeValue{
@@ -212,7 +218,6 @@ var _ = Describe("Nozzle", func() {
 			})
 			It("should accept the envelope", func() {
 				Eventually(envelopChan).Should(Receive())
-
 			})
 		})
 

@@ -66,7 +66,7 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 	if !found || !isValid {
 		usernameHash, passwordHash, err := mh.policyDB.GetCustomMetricsCreds(appID)
 		if err != nil {
-			mh.logger.Error("error-during-getting-binding-credentials-from-policyDB", err)
+			mh.logger.Error("error-during-getting-binding-credentials-from-policyDB", err, lager.Data{"appid": appID})
 			handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 				Code:    "Interal-Server-Error",
 				Message: "Error getting binding crededntials from policyDB"})

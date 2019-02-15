@@ -65,10 +65,11 @@ func (f *FakeEventProducer) BatchedReceiver(
 		fpEnvs := []*loggregator_v2.Envelope{}
 		for _, e := range f.envelops {
 			fpEnvs = append(fpEnvs, &loggregator_v2.Envelope{
-				SourceId:  e.SourceId,
-				Message:   e.Message,
-				Tags:      e.Tags,
-				Timestamp: time.Now().UnixNano(),
+				SourceId:       e.SourceId,
+				Message:        e.Message,
+				Tags:           e.Tags,
+				DeprecatedTags: e.DeprecatedTags,
+				Timestamp:      time.Now().UnixNano(),
 			})
 		}
 		srv.Send(&loggregator_v2.EnvelopeBatch{
