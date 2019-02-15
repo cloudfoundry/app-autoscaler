@@ -917,7 +917,13 @@ func createCustomEnvelope(appId string, name string, unit string, value float64)
 	return []*loggregator_v2.Envelope{
 		&loggregator_v2.Envelope{
 			SourceId: appId,
-			Tags:     map[string]string{"origin": "autoscaler_metrics_forwarder"},
+			DeprecatedTags: map[string]*loggregator_v2.Value{
+				"origin": &loggregator_v2.Value{
+					Data: &loggregator_v2.Value_Text{
+						Text: "autoscaler_metrics_forwarder",
+					},
+				},
+			},
 			Message: &loggregator_v2.Envelope_Gauge{
 				Gauge: &loggregator_v2.Gauge{
 					Metrics: map[string]*loggregator_v2.GaugeValue{

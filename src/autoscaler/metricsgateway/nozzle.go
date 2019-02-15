@@ -88,7 +88,7 @@ func (n *Nozzle) filterEnvelopes(envelops []*loggregator_v2.Envelope) {
 				if e.GetGauge().GetMetrics()["memory_quota"] != nil {
 					n.logger.Debug("filter-envelopes-get-container-metrics", lager.Data{"index": n.index, "appID": e.SourceId, "message": e.Message})
 					n.envelopChan <- e
-				} else if e.GetTags()["origin"] == METRICS_FORWARDER_ORIGIN {
+				} else if e.GetDeprecatedTags()["origin"].GetText() == METRICS_FORWARDER_ORIGIN {
 					n.logger.Debug("filter-envelopes-get-custom-metrics", lager.Data{"index": n.index, "appID": e.SourceId, "message": e.Message})
 					n.envelopChan <- e
 				}
