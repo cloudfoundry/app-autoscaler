@@ -26,13 +26,14 @@ import (
 )
 
 const (
-	CLIENT_ID        = "client-id"
-	CLIENT_SECRET    = "client-secret"
-	TEST_APP_ID      = "test-app-id"
-	TEST_USER_TOKEN  = "bearer testusertoken"
-	TEST_USER_ID     = "test-user-id"
-	TEST_METRIC_TYPE = "test_metric"
-	TEST_METRIC_UNIT = "test_unit"
+	CLIENT_ID               = "client-id"
+	CLIENT_SECRET           = "client-secret"
+	TEST_APP_ID             = "test-app-id"
+	TEST_USER_TOKEN         = "bearer testusertoken"
+	TEST_INVALID_USER_TOKEN = "bearer testinvalidusertoken"
+	TEST_USER_ID            = "test-user-id"
+	TEST_METRIC_TYPE        = "test_metric"
+	TEST_METRIC_UNIT        = "test_unit"
 )
 
 var (
@@ -42,9 +43,6 @@ var (
 	conf          *config.Config
 	logger        lager.Logger
 	infoBytes     []byte
-
-	ccServer    *ghttp.Server
-	tokenServer *ghttp.Server
 
 	scalingEngineServer    *ghttp.Server
 	metricsCollectorServer *ghttp.Server
@@ -57,23 +55,9 @@ var (
 	scalingEngineResponse    []models.AppScalingHistory
 	metricsCollectorResponse []models.AppInstanceMetric
 	eventGeneratorResponse   []models.AppMetric
+
+	fakeCFClient *fakes.FakeCFClient
 )
-
-type info struct {
-	TokenEndpoint string `json:"token_endpoint"`
-}
-
-type userInfo struct {
-	UserId string `json:"user_id"`
-}
-
-type userScope struct {
-	Scope []string `json:"scope"`
-}
-
-type spaceDeveoper struct {
-	Total int `json:"total_results"`
-}
 
 func TestPublicapiserver(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -84,8 +68,6 @@ var _ = BeforeSuite(func() {
 	scalingEngineServer = ghttp.NewServer()
 	metricsCollectorServer = ghttp.NewServer()
 	eventGeneratorServer = ghttp.NewServer()
-	ccServer = ghttp.NewServer()
-	tokenServer = ghttp.NewServer()
 
 	testCertDir := "../../../../test-certs"
 	apiPort := 11000 + GinkgoParallelNode()
@@ -122,7 +104,7 @@ var _ = BeforeSuite(func() {
 			},
 		},
 		CF: cf.CFConfig{
-			API:               ccServer.URL(),
+			API:               "http://api.bosh-lite.com",
 			GrantType:         cf.GrantTypeClientCredentials,
 			ClientID:          CLIENT_ID,
 			Secret:            CLIENT_SECRET,
@@ -131,8 +113,9 @@ var _ = BeforeSuite(func() {
 	}
 
 	fakePolicyDB := &fakes.FakePolicyDB{}
+	fakeCFClient = &fakes.FakeCFClient{}
 
-	httpServer, err := publicapiserver.NewPublicApiServer(lager.NewLogger("test"), conf, fakePolicyDB)
+	httpServer, err := publicapiserver.NewPublicApiServer(lager.NewLogger("test"), conf, fakePolicyDB, fakeCFClient)
 	Expect(err).NotTo(HaveOccurred())
 
 	serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(apiPort))
@@ -146,23 +129,6 @@ var _ = BeforeSuite(func() {
 	Expect(err).NotTo(HaveOccurred())
 
 	logger = helpers.InitLoggerFromConfig(&conf.Logging, "test")
-
-	ccServer.RouteToHandler(http.MethodGet, "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK, info{
-		TokenEndpoint: tokenServer.URL(),
-	}))
-
-	tokenServer.RouteToHandler(http.MethodGet, "/userinfo", ghttp.RespondWithJSONEncoded(http.StatusOK, userInfo{
-		UserId: TEST_USER_ID,
-	}))
-
-	tokenServer.RouteToHandler(http.MethodPost, "/check_token", ghttp.RespondWithJSONEncoded(http.StatusOK, userScope{
-		Scope: []string{""},
-	}))
-
-	spaceDeveloperPathMatcher, _ := regexp.Compile("/v2/users/[A-Za-z0-9\\-]+/spaces")
-	ccServer.RouteToHandler(http.MethodGet, spaceDeveloperPathMatcher, ghttp.RespondWithJSONEncoded(http.StatusOK, spaceDeveoper{
-		Total: 1,
-	}))
 
 	scalingHistoryPathMatcher, err := regexp.Compile("/v1/apps/[A-Za-z0-9\\-]+/scaling_histories")
 	Expect(err).NotTo(HaveOccurred())
@@ -184,10 +150,6 @@ var _ = AfterSuite(func() {
 	scalingEngineServer.Close()
 	metricsCollectorServer.Close()
 	eventGeneratorServer.Close()
-
-	ccServer.Close()
-	tokenServer.Close()
-
 })
 
 func GetTestHandler() http.HandlerFunc {
