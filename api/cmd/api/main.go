@@ -8,10 +8,12 @@ import (
 	"autoscaler/api/brokerserver"
 	"autoscaler/api/config"
 	"autoscaler/api/publicapiserver"
+	"autoscaler/cf"
 	"autoscaler/db"
 	"autoscaler/db/sqldb"
 	"autoscaler/helpers"
 
+	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
@@ -76,7 +78,15 @@ func main() {
 		members = append(members, grouper.Member{"broker_http_server", brokerHttpServer})
 	}
 
-	publicApiHttpServer, err := publicapiserver.NewPublicApiServer(logger.Session("public_api_http_server"), conf, policyDb)
+	paClock := clock.NewClock()
+	cfClient := cf.NewCFClient(&conf.CF, logger.Session("cf"), paClock)
+	err = cfClient.Login()
+	if err != nil {
+		logger.Error("failed to login cloud foundry", err, lager.Data{"API": conf.CF.API})
+		os.Exit(1)
+	}
+
+	publicApiHttpServer, err := publicapiserver.NewPublicApiServer(logger.Session("public_api_http_server"), conf, policyDb, cfClient)
 	if err != nil {
 		logger.Error("failed to create public api http server", err)
 		os.Exit(1)

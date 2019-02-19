@@ -119,6 +119,9 @@ func (c *Config) Validate() error {
 	if c.DB.PolicyDB.URL == "" {
 		return fmt.Errorf("Configuration error: PolicyDB URL is empty")
 	}
+	if c.Scheduler.SchedulerURL == "" {
+		return fmt.Errorf("Configuration error: scheduler.scheduler_url is empty")
+	}
 	if c.ScalingEngine.ScalingEngineUrl == "" {
 		return fmt.Errorf("Configuration error: scaling_engine.scaling_engine_url is empty")
 	}

@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"autoscaler/api/config"
+	"autoscaler/cf"
 	"autoscaler/db"
 	"autoscaler/routes"
 
@@ -21,10 +22,10 @@ func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vh(w, r, vars)
 }
 
-func NewPublicApiServer(logger lager.Logger, conf *config.Config, policydb db.PolicyDB) (ifrit.Runner, error) {
+func NewPublicApiServer(logger lager.Logger, conf *config.Config, policydb db.PolicyDB, cfclient cf.CFClient) (ifrit.Runner, error) {
 
 	pah := NewPublicApiHandler(logger, conf, policydb)
-	oam := NewOauthMiddleware(logger, conf)
+	oam := NewOauthMiddleware(logger, cfclient)
 
 	r := routes.PublicApiRoutes()
 	r.Get(routes.PublicApiInfoRouteName).Handler(VarsFunc(pah.GetApiInfo))
