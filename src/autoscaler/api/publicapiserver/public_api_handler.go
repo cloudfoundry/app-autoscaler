@@ -176,7 +176,7 @@ func (h *PublicApiHandler) GetInstanceMetricsHistories(w http.ResponseWriter, r 
 	metricType := vars["metricType"]
 	instanceIndex := r.URL.Query().Get("instance-index")
 
-	h.logger.Info("Get ScalingHistories", lager.Data{"appId": appId, "metricType": metricType, "instanceIndex": instanceIndex})
+	h.logger.Info("GetInstanceMetricsHistories", lager.Data{"appId": appId, "metricType": metricType, "instanceIndex": instanceIndex})
 
 	parameters, err := parseParameter(r, vars)
 	if err != nil {
