@@ -56,96 +56,169 @@ var _ = Describe("PublicApiServer", func() {
 	})
 
 	Describe("Protected Routes", func() {
-		Context("when calling scaling_histories endpoint without Authorization token", func() {
-			BeforeEach(func() {
-				serverUrl.Path = "/v1/apps/" + TEST_APP_ID + "/scaling_histories"
 
-				req, err := http.NewRequest(http.MethodGet, serverUrl.String(), nil)
-				Expect(err).NotTo(HaveOccurred())
-				rsp, err = httpClient.Do(req)
+		Describe("Without AuthorizatioToken", func() {
+			Context("when calling scaling_histories endpoint", func() {
+				BeforeEach(func() {
+					serverUrl.Path = "/v1/apps/" + TEST_APP_ID + "/scaling_histories"
+
+					req, err := http.NewRequest(http.MethodGet, serverUrl.String(), nil)
+					Expect(err).NotTo(HaveOccurred())
+					rsp, err = httpClient.Do(req)
+				})
+				It("should fail", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(rsp.StatusCode).To(Equal(http.StatusUnauthorized))
+				})
 			})
-			It("should fail", func() {
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.StatusCode).To(Equal(http.StatusUnauthorized))
+
+			Context("when calling instance metrics endpoint", func() {
+				BeforeEach(func() {
+					serverUrl.Path = "/v1/apps/" + TEST_APP_ID + "/metric_histories/" + TEST_METRIC_TYPE
+
+					req, err := http.NewRequest(http.MethodGet, serverUrl.String(), nil)
+					Expect(err).NotTo(HaveOccurred())
+					rsp, err = httpClient.Do(req)
+				})
+				It("should fail", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(rsp.StatusCode).To(Equal(http.StatusUnauthorized))
+				})
 			})
-		})
-		Context("when calling scaling_histories endpoint with Authorization token", func() {
-			BeforeEach(func() {
-				scalingEngineStatus = http.StatusOK
 
-				serverUrl.Path = "/v1/apps/" + TEST_APP_ID + "/scaling_histories"
+			Context("when calling aggregated metrics endpoint", func() {
+				BeforeEach(func() {
+					serverUrl.Path = "/v1/apps/" + TEST_APP_ID + "/aggregated_metric_histories/" + TEST_METRIC_TYPE
 
-				req, err := http.NewRequest(http.MethodGet, serverUrl.String(), nil)
-				Expect(err).NotTo(HaveOccurred())
-				req.Header.Add("Authorization", TEST_USER_TOKEN)
-
-				rsp, err = httpClient.Do(req)
+					req, err := http.NewRequest(http.MethodGet, serverUrl.String(), nil)
+					Expect(err).NotTo(HaveOccurred())
+					rsp, err = httpClient.Do(req)
+				})
+				It("should fail", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(rsp.StatusCode).To(Equal(http.StatusUnauthorized))
+				})
 			})
-			It("should succeed", func() {
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
-			})
-		})
 
-		Context("when calling instance metrics endpoint without Authorization token", func() {
-			BeforeEach(func() {
-				serverUrl.Path = "/v1/apps/" + TEST_APP_ID + "/metric_histories/" + TEST_METRIC_TYPE
-
-				req, err := http.NewRequest(http.MethodGet, serverUrl.String(), nil)
-				Expect(err).NotTo(HaveOccurred())
-				rsp, err = httpClient.Do(req)
-			})
-			It("should fail", func() {
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.StatusCode).To(Equal(http.StatusUnauthorized))
-			})
-		})
-		Context("when calling instance metric endpoint with Authorization token", func() {
-			BeforeEach(func() {
-				metricsCollectorStatus = http.StatusOK
-
-				serverUrl.Path = "/v1/apps/" + TEST_APP_ID + "/metric_histories/" + TEST_METRIC_TYPE
-
-				req, err := http.NewRequest(http.MethodGet, serverUrl.String(), nil)
-				Expect(err).NotTo(HaveOccurred())
-				req.Header.Add("Authorization", TEST_USER_TOKEN)
-
-				rsp, err = httpClient.Do(req)
-			})
-			It("should succeed", func() {
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
-			})
 		})
 
-		Context("when calling aggregated metrics endpoint without Authorization token", func() {
+		Describe("With Invalid Authorization Token", func() {
 			BeforeEach(func() {
-				serverUrl.Path = "/v1/apps/" + TEST_APP_ID + "/aggregated_metric_histories/" + TEST_METRIC_TYPE
-
-				req, err := http.NewRequest(http.MethodGet, serverUrl.String(), nil)
-				Expect(err).NotTo(HaveOccurred())
-				rsp, err = httpClient.Do(req)
+				fakeCFClient.IsUserSpaceDeveloperReturns(false, nil)
 			})
-			It("should fail", func() {
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.StatusCode).To(Equal(http.StatusUnauthorized))
+
+			Context("when calling scaling_histories endpoint", func() {
+				BeforeEach(func() {
+					scalingEngineStatus = http.StatusOK
+
+					serverUrl.Path = "/v1/apps/" + TEST_APP_ID + "/scaling_histories"
+
+					req, err := http.NewRequest(http.MethodGet, serverUrl.String(), nil)
+					Expect(err).NotTo(HaveOccurred())
+					req.Header.Add("Authorization", TEST_INVALID_USER_TOKEN)
+
+					rsp, err = httpClient.Do(req)
+				})
+				It("should succeed", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(rsp.StatusCode).To(Equal(http.StatusUnauthorized))
+				})
+			})
+
+			Context("when calling instance metric endpoint", func() {
+				BeforeEach(func() {
+					metricsCollectorStatus = http.StatusOK
+
+					serverUrl.Path = "/v1/apps/" + TEST_APP_ID + "/metric_histories/" + TEST_METRIC_TYPE
+
+					req, err := http.NewRequest(http.MethodGet, serverUrl.String(), nil)
+					Expect(err).NotTo(HaveOccurred())
+					req.Header.Add("Authorization", TEST_INVALID_USER_TOKEN)
+
+					rsp, err = httpClient.Do(req)
+				})
+				It("should succeed", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(rsp.StatusCode).To(Equal(http.StatusUnauthorized))
+				})
+			})
+
+			Context("when calling aggregated metric endpoint", func() {
+				BeforeEach(func() {
+					eventGeneratorStatus = http.StatusOK
+
+					serverUrl.Path = "/v1/apps/" + TEST_APP_ID + "/aggregated_metric_histories/" + TEST_METRIC_TYPE
+
+					req, err := http.NewRequest(http.MethodGet, serverUrl.String(), nil)
+					Expect(err).NotTo(HaveOccurred())
+					req.Header.Add("Authorization", TEST_INVALID_USER_TOKEN)
+
+					rsp, err = httpClient.Do(req)
+				})
+				It("should succeed", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(rsp.StatusCode).To(Equal(http.StatusUnauthorized))
+				})
 			})
 		})
-		Context("when calling aggregated metric endpoint with Authorization token", func() {
+
+		Describe("With valid authorization token", func() {
 			BeforeEach(func() {
-				eventGeneratorStatus = http.StatusOK
-
-				serverUrl.Path = "/v1/apps/" + TEST_APP_ID + "/aggregated_metric_histories/" + TEST_METRIC_TYPE
-
-				req, err := http.NewRequest(http.MethodGet, serverUrl.String(), nil)
-				Expect(err).NotTo(HaveOccurred())
-				req.Header.Add("Authorization", TEST_USER_TOKEN)
-
-				rsp, err = httpClient.Do(req)
+				fakeCFClient.IsUserSpaceDeveloperReturns(true, nil)
 			})
-			It("should succeed", func() {
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+
+			Context("when calling scaling_histories endpoint", func() {
+				BeforeEach(func() {
+					scalingEngineStatus = http.StatusOK
+
+					serverUrl.Path = "/v1/apps/" + TEST_APP_ID + "/scaling_histories"
+
+					req, err := http.NewRequest(http.MethodGet, serverUrl.String(), nil)
+					Expect(err).NotTo(HaveOccurred())
+					req.Header.Add("Authorization", TEST_USER_TOKEN)
+
+					rsp, err = httpClient.Do(req)
+				})
+				It("should succeed", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+				})
+			})
+
+			Context("when calling instance metric endpoint", func() {
+				BeforeEach(func() {
+					metricsCollectorStatus = http.StatusOK
+
+					serverUrl.Path = "/v1/apps/" + TEST_APP_ID + "/metric_histories/" + TEST_METRIC_TYPE
+
+					req, err := http.NewRequest(http.MethodGet, serverUrl.String(), nil)
+					Expect(err).NotTo(HaveOccurred())
+					req.Header.Add("Authorization", TEST_USER_TOKEN)
+
+					rsp, err = httpClient.Do(req)
+				})
+				It("should succeed", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+				})
+			})
+
+			Context("when calling aggregated metric endpoint", func() {
+				BeforeEach(func() {
+					eventGeneratorStatus = http.StatusOK
+
+					serverUrl.Path = "/v1/apps/" + TEST_APP_ID + "/aggregated_metric_histories/" + TEST_METRIC_TYPE
+
+					req, err := http.NewRequest(http.MethodGet, serverUrl.String(), nil)
+					Expect(err).NotTo(HaveOccurred())
+					req.Header.Add("Authorization", TEST_USER_TOKEN)
+
+					rsp, err = httpClient.Do(req)
+				})
+				It("should succeed", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+				})
 			})
 		})
 	})

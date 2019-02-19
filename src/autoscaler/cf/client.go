@@ -48,6 +48,8 @@ type CFClient interface {
 	GetEndpoints() Endpoints
 	GetApp(string) (*models.AppEntity, error)
 	SetAppInstances(string, int) error
+	IsUserAdmin(userToken string) (bool, error)
+	IsUserSpaceDeveloper(userToken string, appId string) (bool, error)
 }
 
 type cfClient struct {

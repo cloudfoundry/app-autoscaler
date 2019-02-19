@@ -248,7 +248,7 @@ func (h *BrokerHandler) UnbindServiceInstance(w http.ResponseWriter, r *http.Req
 		}
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 			Code:    "Interal-Server-Error",
-			Message: "Error creating service binding"})
+			Message: "Error deleting service binding"})
 		return
 	}
 

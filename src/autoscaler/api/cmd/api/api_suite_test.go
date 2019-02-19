@@ -41,6 +41,7 @@ var (
 	brokerPort      int
 	publicApiPort   int
 	infoBytes       []byte
+	ccServer        *ghttp.Server
 )
 
 func TestApi(t *testing.T) {
@@ -72,6 +73,16 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	return []byte(ap)
 }, func(pathsByte []byte) {
+
+	ccServer = ghttp.NewServer()
+	ccServer.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
+		cf.Endpoints{
+			AuthEndpoint:  ccServer.URL(),
+			TokenEndpoint: ccServer.URL(),
+		}))
+
+	ccServer.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))
+
 	apPath = string(pathsByte)
 
 	brokerPort = 8000 + GinkgoParallelNode()
@@ -131,7 +142,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	cfg.UseBuildInMode = false
 
-	cfg.CF.API = "http://api.bosh-lite.com"
+	cfg.CF.API = ccServer.URL()
 	cfg.CF.GrantType = cf.GrantTypeClientCredentials
 	cfg.CF.ClientID = "client-id"
 	cfg.CF.Secret = "client-secret"
@@ -145,6 +156,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 var _ = SynchronizedAfterSuite(func() {
 	os.Remove(configFile.Name())
+	ccServer.Close()
 }, func() {
 	gexec.CleanupBuildArtifacts()
 })
