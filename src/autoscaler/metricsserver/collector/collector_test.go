@@ -278,7 +278,7 @@ var _ = Describe("Collector", func() {
 			Context("when metrics persistency is not supported", func() {
 				It("return empty result", func() {
 					time.Sleep(time.Duration(100 * time.Millisecond))
-					result, err := mc.QueryMetrics("an-app-id", 0, models.MetricNameThroughput, 2222, 5555, db.ASC)
+					result, err := mc.QueryMetrics("an-app-id", 0, models.MetricNameThroughput, 0, 3331, db.ASC)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(result).To(BeEmpty())
 				})
@@ -289,7 +289,7 @@ var _ = Describe("Collector", func() {
 				})
 				It("retrieves metrics from database", func() {
 					time.Sleep(time.Duration(100 * time.Millisecond))
-					_, err := mc.QueryMetrics("an-app-id", 0, models.MetricNameThroughput, 2222, 5555, db.ASC)
+					_, err := mc.QueryMetrics("an-app-id", 0, models.MetricNameThroughput, 0, 3331, db.ASC)
 					Expect(err).ShouldNot(HaveOccurred())
 					Expect(instanceMetricsDb.RetrieveInstanceMetricsCallCount()).Should(Equal(1))
 				})
