@@ -142,7 +142,7 @@ func main() {
 		NodeIndex: conf.NodeIndex,
 	}
 
-	httpServer, err := mc_server.NewServer(logger.Session("http_server"), httpServerConfig, coll.QueryMetricsWithLabels, instanceMetricsDB, httpStatusCollector)
+	httpServer, err := mc_server.NewServer(logger.Session("http_server"), httpServerConfig, coll.QueryMetrics, httpStatusCollector)
 	if err != nil {
 		logger.Error("failed to create http server", err)
 		os.Exit(1)
