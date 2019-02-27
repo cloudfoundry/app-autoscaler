@@ -25,7 +25,6 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/cfhttp"
-	"code.cloudfoundry.org/consuladapter/consulrunner"
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry/sonde-go/events"
 	"github.com/gogo/protobuf/proto"
@@ -99,8 +98,6 @@ var (
 	logger                 lager.Logger
 
 	testCertDir string = "../../test-certs"
-
-	consulRunner *consulrunner.ClusterRunner
 )
 
 func TestIntegration(t *testing.T) {
@@ -143,22 +140,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	if LOGLEVEL == "" {
 		LOGLEVEL = "info"
 	}
-
-	consulRunner = consulrunner.NewClusterRunner(
-		consulrunner.ClusterRunnerConfig{
-			StartingPort: components.Ports[ConsulCluster],
-			NumNodes:     1,
-			Scheme:       "http",
-		},
-	)
-	consulRunner.Start()
-	consulRunner.WaitUntilReady()
 })
 
 var _ = SynchronizedAfterSuite(func() {
-	if consulRunner != nil {
-		consulRunner.Stop()
-	}
 	if len(tmpDir) > 0 {
 		os.RemoveAll(tmpDir)
 	}
@@ -167,7 +151,6 @@ var _ = SynchronizedAfterSuite(func() {
 })
 
 var _ = BeforeEach(func() {
-	consulRunner.Reset()
 	httpClient = cfhttp.NewClient()
 	httpClientForPublicApi = cfhttp.NewClient()
 	logger = lager.NewLogger("test")
@@ -207,7 +190,6 @@ func PreparePorts() Ports {
 		MetricsCollector:      16000 + GinkgoParallelNode(),
 		EventGenerator:        17000 + GinkgoParallelNode(),
 		ScalingEngine:         18000 + GinkgoParallelNode(),
-		ConsulCluster:         19000 + GinkgoParallelNode()*consulrunner.PortOffsetLength,
 	}
 }
 

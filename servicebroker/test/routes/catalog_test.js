@@ -22,16 +22,19 @@ var ajv = new Ajv();
 ajv.addMetaSchema(require('ajv/lib/refs/json-schema-draft-06.json'));
 
 describe('getCatalog RESTful API', function() {
-  var servers, publicServer, internalServer, validate;
+  var servers, publicServer, internalServer, healthServer, validate;
   beforeEach(function() {
     servers = BrokerServer(settings, catalog, function(){});
     publicServer = servers.publicServer;
     internalServer = servers.internalServer;
+    healthServer = servers.healthServer;
   });
 
   afterEach(function(done) {
-    publicServer.close(function(){
-      internalServer.close(done);
+    publicServer.close(function() {
+      internalServer.close(function(){
+        healthServer.close(done);
+      });
     })
   });
 
@@ -53,11 +56,12 @@ describe('getCatalog RESTful API', function() {
 });
 describe("Validate schema definition",function(){
 
-  var servers, publicServer, internalServer, validate, catalogSchema, fakePolicy;
+  var servers, publicServer, internalServer, healthServer, validate, catalogSchema, fakePolicy;
   before(function(done){
     servers = BrokerServer(settings, catalog, function(){});
     publicServer = servers.publicServer;
     internalServer = servers.internalServer;
+    healthServer = servers.healthServer;
     supertest(publicServer)
       .get("/v2/catalog")
       .set("Authorization", "Basic " + auth)
@@ -78,8 +82,10 @@ describe("Validate schema definition",function(){
   });
 
   after(function(done) {
-    publicServer.close(function(){
-      internalServer.close(done);
+    publicServer.close(function() {
+      internalServer.close(function(){
+        healthServer.close(done);
+      });
     })
   });
 

@@ -14,6 +14,8 @@ var testSetting = require(path.join(__dirname, '../test.helper.js'))(relativePat
 var API = require('../../../app.js');
 var app;
 var publicApp;
+var healthApp;
+
 var servers;
 var logger = require('../../../lib/log/logger');
 var policy = require('../../../lib/models')(testSetting.db).policy_json;
@@ -52,11 +54,14 @@ describe('Validate Policy JSON Schema structure', function () {
     servers = API(testSetting, function () { });
     app = servers.internalServer;
     publicApp = servers.publicServer;
+    healthApp = servers.healthServer;
     policyContent = fs.readFileSync(__dirname + '/../fakePolicy.json', 'utf8');
   });
-  after(function (done) {
-    app.close(function () {
-      publicApp.close(done);
+  after(function(done) {
+    app.close(function() {
+      publicApp.close(function(){
+        healthApp.close(done);
+      });
     });
   })
   beforeEach(function () {

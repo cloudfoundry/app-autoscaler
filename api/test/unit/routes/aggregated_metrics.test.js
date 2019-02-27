@@ -15,6 +15,7 @@ var HttpStatus = require('http-status-codes');
 
 var app;
 var publicApp;
+var healthApp;
 var servers;
 var eventGeneratorUri = testSetting.eventGenerator.uri;
 var theAppId = "the-app-guid";
@@ -29,10 +30,13 @@ describe("Routing Aggregated App Metrics", function() {
     servers = API(testSetting, function() {});
     app = servers.internalServer;
     publicApp = servers.publicServer;
+    healthApp = servers.healthServer;
   })
   after(function(done) {
     app.close(function() {
-      publicApp.close(done);
+      publicApp.close(function(){
+        healthApp.close(done);
+      });
     });
   })
 
