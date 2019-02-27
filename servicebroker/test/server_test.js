@@ -15,16 +15,19 @@ var catalog = JSON.parse(fs.readFileSync(path.join(__dirname, '../config/catalog
 var auth = new Buffer(settings.username + ":" + settings.password).toString('base64')
 process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 describe("Invalid path for RESTful API", function() {
-  var servers, publicServer, internalServer;
+  var servers, publicServer, internalServer, healthServer;
   before(function() {
     servers = BrokerServer(settings, catalog, function() {});
     publicServer = servers.publicServer;
     internalServer = servers.internalServer;
+    healthServer = servers.healthServer;
   });
 
   after(function(done) {
     publicServer.close(function() {
-      internalServer.close(done);
+      internalServer.close(function(){
+        healthServer.close(done);
+      });
     })
   });
 
@@ -39,17 +42,20 @@ describe("Invalid path for RESTful API", function() {
 });
 
 describe("Auth for RESTful API", function() {
-  var servers, publicServer, internalServer;
+  var servers, publicServer, internalServer, healthServer;
   before(function() {
 
     servers = BrokerServer(settings, catalog, function() {});
     publicServer = servers.publicServer;
     internalServer = servers.internalServer;
+    healthServer = servers.healthServer;
   });
 
   after(function(done) {
     publicServer.close(function() {
-      internalServer.close(done);
+      internalServer.close(function(){
+        healthServer.close(done);
+      });
     });
   });
 
@@ -97,7 +103,9 @@ describe("Fatal configuration error", function() {
     afterEach(function(done) {
       if (servers) {
         servers.publicServer.close(function() {
-          servers.internalServer.close(done);
+          servers.internalServer.close(function(){
+            servers.healthServer.close(done);
+          });
         });
       } else {
         done();

@@ -16,7 +16,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strconv"
 	"time"
 
 	. "github.com/onsi/gomega"
@@ -63,6 +62,7 @@ type APIServerClient struct {
 type ServiceBrokerConfig struct {
 	Port                int  `json:"port"`
 	PublicPort          int  `json:"publicPort"`
+	HealthPort          int  `json:"healthPort"`
 	EnableCustomMetrics bool `json:"enableCustomMetrics"`
 
 	Username string `json:"username"`
@@ -104,6 +104,7 @@ type ServiceBrokerClient struct {
 type APIServerConfig struct {
 	Port                   int                    `json:"port"`
 	PublicPort             int                    `json:"publicPort"`
+	HealthPort             int                    `json:"healthPort"`
 	InfoFilePath           string                 `json:"infoFilePath"`
 	CFAPI                  string                 `json:"cfApi"`
 	CFClientId             string                 `json:"cfClientId"`
@@ -126,7 +127,7 @@ func (components *Components) ServiceBroker(confPath string, argv ...string) *gi
 	return ginkgomon.New(ginkgomon.Config{
 		Name:              ServiceBroker,
 		AnsiColorCode:     "32m",
-		StartCheck:        "Service broker app is running",
+		StartCheck:        "Service broker server is running",
 		StartCheckTimeout: 20 * time.Second,
 		Command: exec.Command(
 			"node", append([]string{components.Executables[ServiceBroker], "-c", confPath}, argv...)...,
@@ -157,7 +158,7 @@ func (components *Components) Scheduler(confPath string, argv ...string) *ginkgo
 		StartCheck:        "Scheduler is ready to start",
 		StartCheckTimeout: 120 * time.Second,
 		Command: exec.Command(
-			"java", append([]string{"-jar", "-Dspring.config.location=" + confPath, "-Dserver.port=" + strconv.FormatInt(int64(components.Ports[Scheduler]), 10), components.Executables[Scheduler]}, argv...)...,
+			"java", append([]string{"-jar", "-Dspring.config.location=" + confPath, components.Executables[Scheduler]}, argv...)...,
 		),
 		Cleanup: func() {
 		},
@@ -232,6 +233,7 @@ func (components *Components) PrepareServiceBrokerConfig(publicPort int, interna
 	brokerConfig := ServiceBrokerConfig{
 		Port:                internalPort,
 		PublicPort:          publicPort,
+		HealthPort:          0,
 		Username:            username,
 		Password:            password,
 		EnableCustomMetrics: enableCustomMetrics,
@@ -277,6 +279,7 @@ func (components *Components) PrepareApiServerConfig(port int, publicPort int, s
 	apiConfig := APIServerConfig{
 		Port:              port,
 		PublicPort:        publicPort,
+		HealthPort:        0,
 		InfoFilePath:      apiServerInfoFilePath,
 		CFAPI:             cfApi,
 		CFClientId:        "admin",
@@ -356,7 +359,7 @@ func (components *Components) PrepareApiServerConfig(port int, publicPort int, s
 	return cfgFile.Name()
 }
 
-func (components *Components) PrepareSchedulerConfig(dbUri string, scalingEngineUri string, tmpDir string, consulPort string, httpClientTimeout time.Duration) string {
+func (components *Components) PrepareSchedulerConfig(dbUri string, scalingEngineUri string, tmpDir string, httpClientTimeout time.Duration) string {
 	dbUrl, _ := url.Parse(dbUri)
 	scheme := dbUrl.Scheme
 	host := dbUrl.Host
@@ -400,10 +403,13 @@ client.ssl.trust-store-password=123456
 client.ssl.protocol=TLSv1.2
 server.ssl.enabled-protocols[3]=TLSv1,TLSv1.1,TLSv1.2
 server.ssl.ciphers[23]=TLS_RSA_WITH_AES_256_GCM_SHA384,TLS_RSA_WITH_AES_256_CBC_SHA256,TLS_RSA_WITH_AES_256_CBC_SHA,TLS_RSA_WITH_AES_128_GCM_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA256,TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_3DES_EDE_CBC_SHA,TLS_ECDHE_RSA_WITH_RC4_128_SHA,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384,TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA,TLS_ECDHE_RSA_WITH_3DES_EDE_CBC_SHA,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256,TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA,SSL_RSA_WITH_RC4_128_SHA
+
+server.port=%d
+scheduler.healthserver.port=0
 client.httpClientTimeout=%d
 #Quartz
-org.quartz.scheduler.instanceName=app-autoscaler-%d
-org.quartz.scheduler.instanceId=app-autoscaler-%d
+org.quartz.scheduler.instanceName=app-autoscaler
+org.quartz.scheduler.instanceId=0
 
 spring.application.name=scheduler
 spring.mvc.servlet.load-on-startup=1
@@ -411,7 +417,7 @@ spring.aop.auto=false
 endpoints.enabled=false
 spring.data.jpa.repositories.enabled=false
 `
-	settingJsonStr := fmt.Sprintf(settingStrTemplate, jdbcDBUri, userName, password, jdbcDBUri, userName, password, scalingEngineUri, testCertDir, testCertDir, testCertDir, testCertDir, components.Ports[Scheduler], components.Ports[Scheduler], consulPort, int(httpClientTimeout/time.Second))
+	settingJsonStr := fmt.Sprintf(settingStrTemplate, jdbcDBUri, userName, password, jdbcDBUri, userName, password, scalingEngineUri, testCertDir, testCertDir, testCertDir, testCertDir, components.Ports[Scheduler], components.Ports[Scheduler], int(httpClientTimeout/time.Second))
 	cfgFile, err := os.Create(filepath.Join(tmpDir, "application.properties"))
 	Expect(err).NotTo(HaveOccurred())
 	ioutil.WriteFile(cfgFile.Name(), []byte(settingJsonStr), 0777)
@@ -611,12 +617,6 @@ func (components *Components) PrepareOperatorConfig(dbURI string, ccUAAURL strin
 				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 			},
 		},
-		Lock: opConfig.LockConfig{
-			LockTTL:             15 * time.Second,
-			LockRetryInterval:   5 * time.Second,
-			ConsulClusterConfig: consulRunner.ConsulCluster(),
-		},
-		EnableDBLock: true,
 		DBLock: opConfig.DBLockConfig{
 			LockTTL: 30 * time.Second,
 			DB: db.DatabaseConfig{

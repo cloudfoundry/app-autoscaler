@@ -16,17 +16,18 @@
     "helmet": "^3.9.0",
     "http-status-codes": "^1.0.6",
     "intersect": "^1.0.1",
+    "js-base64": "^2.4.9",
     "jsonschema": "^1.1.0",
     "moment": "^2.13.0",
     "moment-range": "^2.2.0",
     "moment-timezone": "^0.5.4",
     "node-cache": "4.2.0",
     "pg": "^6.0.3",
+    "prom-client": "^11.2.1",
     "request": "^2.74.0",
     "sequelize": "^3.23.6",
     "underscore": "^1.8.3",
-    "uuid": "^3.0.1",
-    "js-base64": "^2.4.9"
+    "uuid": "^3.0.1"
   },
   "devDependencies": {
     "ajv": "^6.3.0",

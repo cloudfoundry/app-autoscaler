@@ -12,6 +12,7 @@ module.exports = function(settings, catalog, callback) {
     
     var publicPort = settings.publicPort;
     var port = settings.port;
+    var healthPort = settings.healthPort;
     var publicOptions = {};
     
     if(settings.publicTls){
@@ -89,17 +90,20 @@ module.exports = function(settings, catalog, callback) {
     internalApp.use(bodyParser.json());
     require('./internalRoutes')(internalApp, settings);
 
+    var healthApp = express();
+    var health = require('./healthendpoint/health')()  
+    healthApp.use('/', health);
 
     var publicServer;
     if(settings.publicTls){
         publicServer = https.createServer(publicOptions, app).listen(publicPort, function() {
             var port = publicServer.address().port;
-            logger.info('Service broker app is running in secure mode', { 'port': port });
+            logger.info('Service broker server is running in secure mode', { 'port': port });
         });
     }else{
         publicServer = http.createServer(app).listen(publicPort, function() {
             var port = publicServer.address().port;
-            logger.info('Service broker app is running', { 'port': port });
+            logger.info('Service broker server is running', { 'port': port });
         });
     }
 
@@ -107,14 +111,19 @@ module.exports = function(settings, catalog, callback) {
     if(settings.tls){
         internalServer = https.createServer(options, internalApp).listen(port, function() {
             var port = internalServer.address().port;
-            logger.info('Service broker internal app is running in secure mode', { 'port': port });
+            logger.info('Service broker internal server is running in secure mode', { 'port': port });
         });
     }else{
         internalServer = http.createServer(internalApp).listen(port, function() {
             var port = internalServer.address().port;
-            logger.info('Service broker internal app is running', { 'port': port });
+            logger.info('Service broker internal server is running', { 'port': port });
         });
     }
+
+    var healthServer;
+    healthServer = http.createServer(healthApp).listen(healthPort || 0, function () {
+      logger.info('Service broker health server is running', { 'port': healthServer.address().port });
+    });
 
     var gracefulShutdown = function(signal) {
         logger.info("Received " + signal + " signal, shutting down gracefully...");
@@ -122,7 +131,11 @@ module.exports = function(settings, catalog, callback) {
             logger.info('Everything is cleanly shutdown for service broker server');
             internalServer.close(function() {
                 logger.info('Everything is cleanly shutdown for service broker internal server');
-                process.exit();
+                healthServer.close(function(){
+                    logger.info('Everything is cleanly shutdown for service broker health server');
+                    process.exit();
+                    
+                });
             });
         });
     }
@@ -132,5 +145,5 @@ module.exports = function(settings, catalog, callback) {
         gracefulShutdown('SIGUSR2')
     });
 
-    return  {"internalServer": internalServer, "publicServer": publicServer};;
+    return  {"internalServer": internalServer, "publicServer": publicServer, "healthServer": healthServer};;
 }

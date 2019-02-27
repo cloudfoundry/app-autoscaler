@@ -16,7 +16,7 @@ var serviceInstance = models.service_instance;
 var auth = new Buffer(settings.username + ":" + settings.password).toString('base64');
 
 describe('service instance RESTful API', function() {
-  var servers, publicServer, internalServer, serviceInstanceId, orgId, spaceId, orgIdAgain, spaceIdAgain;
+  var servers, publicServer, internalServer, healthServer, serviceInstanceId, orgId, spaceId, orgIdAgain, spaceIdAgain;
   serviceInstanceId = uuid.v4();
   orgId = uuid.v4();
   spaceId = uuid.v4();
@@ -33,11 +33,14 @@ describe('service instance RESTful API', function() {
     servers = BrokerServer(settings, catalog, function(){});
     publicServer = servers.publicServer;
     internalServer = servers.internalServer;
+    healthServer = servers.healthServer;
   });
 
   afterEach(function(done) {
-    publicServer.close(function(){
-      internalServer.close(done);
+    publicServer.close(function() {
+      internalServer.close(function(){
+        healthServer.close(done);
+      });
     })
   });
 
