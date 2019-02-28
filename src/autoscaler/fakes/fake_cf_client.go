@@ -80,6 +80,17 @@ type FakeCFClient struct {
 	setAppInstancesReturnsOnCall map[int]struct {
 		result1 error
 	}
+	GetAuthTokenStub        func() (string, error)
+	getAuthTokenMutex       sync.RWMutex
+	getAuthTokenArgsForCall []struct{}
+	getAuthTokenReturns     struct {
+		result1 string
+		result2 error
+	}
+	getAuthTokenReturnsOnCall map[int]struct {
+		result1 string
+		result2 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -387,6 +398,49 @@ func (fake *FakeCFClient) SetAppInstancesReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
+func (fake *FakeCFClient) GetAuthToken() (string, error) {
+	fake.getAuthTokenMutex.Lock()
+	ret, specificReturn := fake.getAuthTokenReturnsOnCall[len(fake.getAuthTokenArgsForCall)]
+	fake.getAuthTokenArgsForCall = append(fake.getAuthTokenArgsForCall, struct{}{})
+	fake.recordInvocation("GetAuthToken", []interface{}{})
+	fake.getAuthTokenMutex.Unlock()
+	if fake.GetAuthTokenStub != nil {
+		return fake.GetAuthTokenStub()
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fake.getAuthTokenReturns.result1, fake.getAuthTokenReturns.result2
+}
+
+func (fake *FakeCFClient) GetAuthTokenCallCount() int {
+	fake.getAuthTokenMutex.RLock()
+	defer fake.getAuthTokenMutex.RUnlock()
+	return len(fake.getAuthTokenArgsForCall)
+}
+
+func (fake *FakeCFClient) GetAuthTokenReturns(result1 string, result2 error) {
+	fake.GetAuthTokenStub = nil
+	fake.getAuthTokenReturns = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeCFClient) GetAuthTokenReturnsOnCall(i int, result1 string, result2 error) {
+	fake.GetAuthTokenStub = nil
+	if fake.getAuthTokenReturnsOnCall == nil {
+		fake.getAuthTokenReturnsOnCall = make(map[int]struct {
+			result1 string
+			result2 error
+		})
+	}
+	fake.getAuthTokenReturnsOnCall[i] = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeCFClient) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -404,6 +458,8 @@ func (fake *FakeCFClient) Invocations() map[string][][]interface{} {
 	defer fake.getAppMutex.RUnlock()
 	fake.setAppInstancesMutex.RLock()
 	defer fake.setAppInstancesMutex.RUnlock()
+	fake.getAuthTokenMutex.RLock()
+	defer fake.getAuthTokenMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

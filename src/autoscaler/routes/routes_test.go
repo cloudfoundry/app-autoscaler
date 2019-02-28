@@ -313,4 +313,24 @@ var _ = Describe("Routes", func() {
 			})
 		})
 	})
+
+	Describe("MetricServerRoutes", func() {
+		Context("EnvelopeReportRouteName", func() {
+			It("should return the correct path", func() {
+				path, err := routes.MetricServerRoutes().Get(routes.EnvelopeReportRouteName).URLPath()
+				Expect(err).NotTo(HaveOccurred())
+				Expect(path.Path).To(Equal("/v1/envelopes"))
+			})
+		})
+	})
+
+	Context("PostCustomMetricsRoute", func() {
+		Context("when provide correct route variable", func() {
+			It("should return the correct path", func() {
+				path, err := routes.MetricsForwarderRoutes().Get(routes.PostCustomMetricsRouteName).URLPath("appid", testAppId)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(path.Path).To(Equal("/v1/apps/" + testAppId + "/metrics"))
+			})
+		})
+	})
 })
