@@ -1,6 +1,4 @@
-# App-AutoScaler [![Build Status](https://travis-ci.org/cloudfoundry-incubator/app-autoscaler.svg?branch=develop)](https://travis-ci.org/cloudfoundry-incubator/app-autoscaler)
-
-This is an incubation project for Cloud Foundry. You can follow the development progress on [Pivotal Tracker][t].
+# App-AutoScaler [![Build Status](https://travis-ci.org/cloudfoundry/app-autoscaler.svg?branch=master)](https://travis-ci.org/cloudfoundry/app-autoscaler)
 
 The `App-AutoScaler` provides the capability to adjust the computation resources for Cloud Foundry applications through
 
@@ -16,9 +14,10 @@ The `App-AutoScaler` is provided as a Cloud Foundry service offering. Any applic
 * `scheduler`: manages the schedules in scaling policy and trigger events for scheduled scaling
 * `scalingengine`: takes the scaling actions based on dynamic scaling rules or schedules
 
+You can follow the development progress on [Pivotal Tracker][t].
 
 ## Development
-
+ 
 ### System requirements
 
 * Java 8 or above
@@ -38,7 +37,7 @@ The `App-AutoScaler` uses Postgres as the backend data store. To download and in
 To set up the development, firstly clone this project
 
 ```shell
-$ git clone https://github.com/cloudfoundry-incubator/app-autoscaler.git
+$ git clone https://github.com/cloudfoundry/app-autoscaler.git
 $ cd app-autoscaler
 $ git submodule update --init --recursive
 ```
@@ -144,5 +143,5 @@ This project is released under version 2.0 of the [Apache License][l].
 [l]: LICENSE
 [t]: https://www.pivotaltracker.com/projects/1566795
 [p]: https://www.postgresql.org/
-[r]: https://github.com/cloudfoundry-incubator/app-autoscaler-release
+[r]: https://github.com/cloudfoundry/app-autoscaler-release
 [u]: docs/Readme.md
