@@ -191,8 +191,8 @@ To query your application's scaling events, use command below
 Refer to  [AutoScaler CLI user guide][cli] for advanced options to specify the time range, the number of events to return and display order.
 
 
-[git]:https://github.com/cloudfoundry-incubator/app-autoscaler
-[cli]: https://github.com/cloudfoundry-incubator/app-autoscaler-cli-plugin#install-plugin
+[git]:https://github.com/cloudfoundry/app-autoscaler
+[cli]: https://github.com/cloudfoundry/app-autoscaler-cli-plugin#install-plugin
 [policy]: policy.md
 [policy-dynamic]: dynamicpolicy.json
 [policy-all]: fullpolicy.json
