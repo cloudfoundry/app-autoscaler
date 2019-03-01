@@ -360,7 +360,7 @@ Parameters
 
 Body
 ''''
-  A valid JSON input to define scaling policy. Refer to `Policy Definition <https://github.com/cloudfoundry-incubator/app-autoscaler/blob/develop/docs/Policy_defnition.rst>`_ .
+  A valid JSON input to define scaling policy. Refer to `Policy Definition <https://github.com/cloudfoundry/app-autoscaler/blob/master/docs/policy.md>`_ .
   
   Sample request body:
 
