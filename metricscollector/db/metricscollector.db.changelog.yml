@@ -2,6 +2,11 @@ databaseChangeLog:
   - changeSet:
       id: 1
       author: byang
+      preConditions:
+      - onFail: MARK_RAN
+      - not:
+        - tableExists:
+            tableName: appinstancemetrics
       changes:
         - createTable:
             tableName: appinstancemetrics
