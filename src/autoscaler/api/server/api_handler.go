@@ -188,6 +188,12 @@ func (h *ApiHandler) BindServiceInstance(w http.ResponseWriter, r *http.Request,
 
 	err = h.bindingdb.CreateServiceBinding(bindingId, instanceId, body.AppID)
 	if err != nil {
+		//revert policy saving when the create service binding failed
+		errDeletePolicy := h.policydb.DeletePolicy(body.AppID)
+		if errDeletePolicy != nil {
+			h.logger.Error("failed to delete policy after binding failure", errDeletePolicy, lager.Data{"bindingErr": err, "errDeletePolicy": errDeletePolicy})
+		}
+
 		if err == db.ErrAlreadyExists {
 			w.Write(nil)
 			return
