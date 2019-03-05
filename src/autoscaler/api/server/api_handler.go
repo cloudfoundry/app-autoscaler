@@ -214,7 +214,7 @@ func (h *ApiHandler) UnbindServiceInstance(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if body.AppID == "" || instanceId == "" || bindingId == "" || body.ServiceID == "" || body.PlanID == "" {
+	if instanceId == "" || bindingId == "" || body.ServiceID == "" || body.PlanID == "" {
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 			Code:    "Bad Request",
 			Message: "Malformed or missing mandatory data",
