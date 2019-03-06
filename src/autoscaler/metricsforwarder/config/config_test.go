@@ -67,6 +67,7 @@ db:
     connection_max_lifetime: 60s
 health:
   port: 9999
+ratelimit_per_min: 10
 `)
 			})
 
@@ -75,6 +76,7 @@ health:
 				Expect(conf.Logging.Level).To(Equal("debug"))
 				Expect(conf.Health.Port).To(Equal(9999))
 				Expect(conf.LoggregatorConfig.MetronAddress).To(Equal("127.0.0.1:3457"))
+				Expect(conf.RateLimit).To(Equal(10))
 				Expect(conf.Db.PolicyDb).To(Equal(
 					db.DatabaseConfig{
 						URL:                   "postgres://pqgotest:password@localhost/pqgotest",
@@ -110,6 +112,7 @@ health:
 				Expect(conf.Logging.Level).To(Equal("info"))
 				Expect(conf.LoggregatorConfig.MetronAddress).To(Equal(DefaultMetronAddress))
 				Expect(conf.CacheTTL).To(Equal(DefaultCacheTTL))
+				Expect(conf.RateLimit).To(Equal(20))
 				Expect(conf.CacheCleanupInterval).To(Equal(DefaultCacheCleanupInterval))
 				Expect(conf.Health.Port).To(Equal(8081))
 			})
@@ -221,6 +224,33 @@ health:
 			})
 		})
 
+		Context("when it gives a non integer  ratelimit_per_min", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+loggregator:
+  metron_address: 127.0.0.1:3457
+  tls:
+    ca_file: "../testcerts/ca.crt"
+    cert_file: "../testcerts/client.crt"
+    key_file: "../testcerts/client.key"
+db:
+  policy_db:
+    url: postgres://pqgotest:password@localhost/pqgotest
+    max_open_connections: NOT-INTEGER-VALUE
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+health:
+  port: 8081
+ratelimit_per_min: 1.5
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+			})
+		})
+
 	})
 
 	Describe("Validate", func() {
@@ -229,6 +259,7 @@ health:
 			conf.Server.Port = 8081
 			conf.Logging.Level = "debug"
 			conf.Health.Port = 8081
+			conf.RateLimit = 10
 			conf.LoggregatorConfig.MetronAddress = "127.0.0.1:3458"
 			conf.LoggregatorConfig.TLS.CACertFile = "../testcerts/ca.crt"
 			conf.LoggregatorConfig.TLS.CertFile = "../testcerts/client.crt"

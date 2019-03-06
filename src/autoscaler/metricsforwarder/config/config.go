@@ -17,6 +17,7 @@ const (
 	DefaultCacheTTL             time.Duration = 15 * time.Minute
 	DefaultCacheCleanupInterval time.Duration = 6 * time.Hour
 	DefaultPolicyPollerInterval time.Duration = 40 * time.Second
+	DefaultRateLimit                          = 20
 )
 
 type Config struct {
@@ -28,6 +29,7 @@ type Config struct {
 	CacheCleanupInterval time.Duration         `yaml:"cache_cleanup_interval"`
 	PolicyPollerInterval time.Duration         `yaml:"policy_poller_interval"`
 	Health               models.HealthConfig   `yaml:"health"`
+	RateLimit            int                   `yaml:"ratelimit_per_min"`
 }
 
 type ServerConfig struct {
@@ -71,6 +73,7 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		CacheTTL:             DefaultCacheTTL,
 		CacheCleanupInterval: DefaultCacheCleanupInterval,
 		PolicyPollerInterval: DefaultPolicyPollerInterval,
+		RateLimit:            DefaultRateLimit,
 	}
 
 	bytes, err := ioutil.ReadAll(reader)

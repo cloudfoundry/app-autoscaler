@@ -38,6 +38,7 @@ var _ = Describe("CustomMetrics Server", func() {
 					CoolDownSeconds:       60,
 					Adjustment:            "+1"}}}
 			policyDB.GetAppPolicyReturns(scalingPolicy, nil)
+			rateLimiter.ExceedsLimitReturns(false)
 			customMetrics := []*models.CustomMetric{
 				&models.CustomMetric{
 					Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 1, AppGUID: "an-app-id",
@@ -65,6 +66,7 @@ var _ = Describe("CustomMetrics Server", func() {
 
 	Context("when a request to forward custom metrics comes without Authorization header", func() {
 		BeforeEach(func() {
+			rateLimiter.ExceedsLimitReturns(false)
 			credentials = models.CustomMetricCredentials{}
 			credentials.Username = "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu"
 			credentials.Password = "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G"
@@ -87,6 +89,7 @@ var _ = Describe("CustomMetrics Server", func() {
 
 	Context("when a request to forward custom metrics comes without 'Basic'", func() {
 		BeforeEach(func() {
+			rateLimiter.ExceedsLimitReturns(false)
 			credentials = models.CustomMetricCredentials{}
 			credentials.Username = "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu"
 			credentials.Password = "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G"
@@ -110,6 +113,7 @@ var _ = Describe("CustomMetrics Server", func() {
 
 	Context("when a request to forward custom metrics comes with  wrong user credentials", func() {
 		BeforeEach(func() {
+			rateLimiter.ExceedsLimitReturns(false)
 			credentials = models.CustomMetricCredentials{}
 			credentials.Username = "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu"
 			credentials.Password = "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G"
@@ -133,6 +137,7 @@ var _ = Describe("CustomMetrics Server", func() {
 
 	Context("when a request to forward custom metrics comes with unmatched metric types", func() {
 		BeforeEach(func() {
+			rateLimiter.ExceedsLimitReturns(false)
 			credentials = models.CustomMetricCredentials{}
 			credentials.Username = "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu"
 			credentials.Password = "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G"
@@ -150,6 +155,46 @@ var _ = Describe("CustomMetrics Server", func() {
 		It("returns status code 400", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
+			resp.Body.Close()
+		})
+	})
+
+	Context("when multiple requests to forward custom metrics comes beyond ratelimit", func() {
+		BeforeEach(func() {
+			credentials = models.CustomMetricCredentials{}
+			scalingPolicy = &models.ScalingPolicy{
+				InstanceMin: 1,
+				InstanceMax: 6,
+				ScalingRules: []*models.ScalingRule{{
+					MetricType:            "queuelength",
+					BreachDurationSeconds: 60,
+					Threshold:             10,
+					Operator:              ">",
+					CoolDownSeconds:       60,
+					Adjustment:            "+1"}}}
+			policyDB.GetAppPolicyReturns(scalingPolicy, nil)
+			rateLimiter.ExceedsLimitReturns(true)
+			customMetrics := []*models.CustomMetric{
+				&models.CustomMetric{
+					Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 1, AppGUID: "an-app-id",
+				},
+			}
+			body, err = json.Marshal(models.MetricsConsumer{InstanceIndex: 0, CustomMetrics: customMetrics})
+			Expect(err).NotTo(HaveOccurred())
+			credentials.Username = "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu"
+			credentials.Password = "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G"
+			credentialCache.Set("an-app-id", credentials, 10*time.Minute)
+			client := &http.Client{}
+			req, err = http.NewRequest("POST", serverUrl+"/v1/apps/an-app-id/metrics", bytes.NewReader(body))
+			req.Header.Add("Content-Type", "application/json")
+			req.Header.Add("Authorization", "Basic dXNlcm5hbWU6cGFzc3dvcmQ=")
+			resp, err = client.Do(req)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		It("returns status code 429", func() {
+			Expect(err).NotTo(HaveOccurred())
+			Expect(resp.StatusCode).To(Equal(http.StatusTooManyRequests))
 			resp.Body.Close()
 		})
 	})

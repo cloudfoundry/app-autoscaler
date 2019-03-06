@@ -3,11 +3,13 @@ package server
 import (
 	"autoscaler/db"
 	"autoscaler/metricsforwarder/forwarder"
+	"autoscaler/metricsforwarder/ratelimiter"
 	"autoscaler/models"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 
 	"code.cloudfoundry.org/cfhttp/handlers"
@@ -23,9 +25,10 @@ type CustomMetricsHandler struct {
 	allowedMetricCache cache.Cache
 	cacheTTL           time.Duration
 	logger             lager.Logger
+	rateLimiter        ratelimiter.Limiter
 }
 
-func NewCustomMetricsHandler(logger lager.Logger, metricForwarder forwarder.MetricForwarder, policyDB db.PolicyDB, credentialCache cache.Cache, allowedMetricCache cache.Cache, cacheTTL time.Duration) *CustomMetricsHandler {
+func NewCustomMetricsHandler(logger lager.Logger, metricForwarder forwarder.MetricForwarder, policyDB db.PolicyDB, credentialCache cache.Cache, allowedMetricCache cache.Cache, cacheTTL time.Duration, rateLimiter ratelimiter.Limiter) *CustomMetricsHandler {
 	return &CustomMetricsHandler{
 		metricForwarder:    metricForwarder,
 		policyDB:           policyDB,
@@ -33,11 +36,22 @@ func NewCustomMetricsHandler(logger lager.Logger, metricForwarder forwarder.Metr
 		allowedMetricCache: allowedMetricCache,
 		cacheTTL:           cacheTTL,
 		logger:             logger,
+		rateLimiter:        rateLimiter,
 	}
 }
 
 func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Request, vars map[string]string) {
 	w.Header().Set("Content-Type", "application/json")
+	appID := vars["appid"]
+	remoteIP := strings.Split(r.RemoteAddr, ":")[0]
+
+	if mh.rateLimiter.ExceedsLimit(remoteIP) {
+		mh.logger.Info("error-rate-limiting", lager.Data{"appid": appID, "remoteIP": remoteIP})
+		handlers.WriteJSONResponse(w, http.StatusTooManyRequests, models.ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Too many requests"})
+		return
+	}
 
 	username, password, authOK := r.BasicAuth()
 
@@ -52,7 +66,6 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 	var isValid bool
 	var credentials models.CustomMetricCredentials
 
-	appID := vars["appid"]
 	res, found := mh.credentialCache.Get(appID)
 	if found {
 		// Credentials found in cache

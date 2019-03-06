@@ -16,3 +16,4 @@ db:
     connection_max_lifetime: 60s
 health:
   port: 8081
+ratelimit_per_min: 10

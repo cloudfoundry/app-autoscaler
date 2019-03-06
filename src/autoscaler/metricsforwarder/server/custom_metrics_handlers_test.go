@@ -30,6 +30,7 @@ var _ = Describe("MetricHandler", func() {
 
 		policyDB         *fakes.FakePolicyDB
 		metricsforwarder *fakes.FakeMetricForwarder
+		rateLimiter      *fakes.FakeLimiter
 
 		resp *httptest.ResponseRecorder
 		req  *http.Request
@@ -48,13 +49,14 @@ var _ = Describe("MetricHandler", func() {
 		logger := lager.NewLogger("metrichandler-test")
 		policyDB = &fakes.FakePolicyDB{}
 		metricsforwarder = &fakes.FakeMetricForwarder{}
+		rateLimiter = &fakes.FakeLimiter{}
 		credentials = models.CustomMetricCredentials{}
 		credentialCache = *cache.New(10*time.Minute, -1)
 		allowedMetricCache = *cache.New(10*time.Minute, -1)
 		allowedMetricTypeSet = make(map[string]struct{})
 		vars = make(map[string]string)
 		resp = httptest.NewRecorder()
-		handler = NewCustomMetricsHandler(logger, metricsforwarder, policyDB, credentialCache, allowedMetricCache, 10*time.Minute)
+		handler = NewCustomMetricsHandler(logger, metricsforwarder, policyDB, credentialCache, allowedMetricCache, 10*time.Minute, rateLimiter)
 		credentialCache.Flush()
 		allowedMetricCache.Flush()
 	})
