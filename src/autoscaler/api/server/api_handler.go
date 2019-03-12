@@ -2,6 +2,8 @@ package server
 
 import (
 	"autoscaler/api/config"
+	"autoscaler/api/policyvalidator"
+	"autoscaler/api/schedulerutil"
 	"autoscaler/db"
 	"autoscaler/models"
 	"encoding/json"
@@ -11,19 +13,27 @@ import (
 
 	"code.cloudfoundry.org/cfhttp/handlers"
 	"code.cloudfoundry.org/lager"
+	uuid "github.com/nu7hatch/gouuid"
 )
 
 type ApiHandler struct {
-	logger    lager.Logger
-	conf      *config.Config
-	bindingdb db.BindingDB
+	logger          lager.Logger
+	conf            *config.Config
+	bindingdb       db.BindingDB
+	policydb        db.PolicyDB
+	policyValidator *policyvalidator.PolicyValidator
+	schedulerUtil   *schedulerutil.SchedulerUtil
 }
 
-func NewApiHandler(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB) *ApiHandler {
+func NewApiHandler(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB) *ApiHandler {
+
 	return &ApiHandler{
-		logger:    logger,
-		conf:      conf,
-		bindingdb: bindingdb,
+		logger:          logger,
+		conf:            conf,
+		bindingdb:       bindingdb,
+		policydb:        policydb,
+		policyValidator: policyvalidator.NewPolicyValidator(conf.PolicySchemaPath),
+		schedulerUtil:   schedulerutil.NewSchedulerUtil(conf, logger),
 	}
 }
 
@@ -131,7 +141,7 @@ func (h *ApiHandler) BindServiceInstance(w http.ResponseWriter, r *http.Request,
 		return
 	}
 
-	if instanceId == "" || bindingId == "" || body.ServiceID == "" || body.PlanID == "" {
+	if body.AppID == "" || instanceId == "" || bindingId == "" || body.ServiceID == "" || body.PlanID == "" {
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 			Code:    "Bad Request",
 			Message: "Malformed or missing mandatory data",
@@ -139,8 +149,51 @@ func (h *ApiHandler) BindServiceInstance(w http.ResponseWriter, r *http.Request,
 		return
 	}
 
+	if body.Policy == "" {
+		h.logger.Info("no policy json provided", lager.Data{})
+	} else {
+		errResults, valid := h.policyValidator.ValidatePolicy(body.Policy)
+
+		if !valid {
+			handlers.WriteJSONResponse(w, http.StatusBadRequest, errResults)
+			return
+		}
+
+		policyGuid, err := uuid.NewV4()
+		if err != nil {
+			handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+				Code:    "Interal-Server-Error",
+				Message: "Error generating policy guid"})
+			return
+		}
+
+		h.logger.Info("saving policy json", lager.Data{"policy": body.Policy})
+		err = h.policydb.SaveAppPolicy(body.AppID, body.Policy, policyGuid.String())
+		if err != nil {
+			handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+				Code:    "Interal-Server-Error",
+				Message: "Error saving policy"})
+			return
+		}
+
+		h.logger.Info("creating/updating schedules", lager.Data{"policy": body.Policy})
+		err = h.schedulerUtil.CreateOrUpdateSchedule(body.AppID, body.Policy, policyGuid.String())
+		if err != nil {
+			handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+				Code:    "Interal-Server-Error",
+				Message: "Error creating/updating schedules"})
+			return
+		}
+	}
+
 	err = h.bindingdb.CreateServiceBinding(bindingId, instanceId, body.AppID)
 	if err != nil {
+		//revert policy saving when the create service binding failed
+		errDeletePolicy := h.policydb.DeletePolicy(body.AppID)
+		if errDeletePolicy != nil {
+			h.logger.Error("failed to delete policy after binding failure", errDeletePolicy, lager.Data{"bindingErr": err, "errDeletePolicy": errDeletePolicy})
+		}
+
 		if err == db.ErrAlreadyExists {
 			w.Write(nil)
 			return
@@ -158,7 +211,7 @@ func (h *ApiHandler) UnbindServiceInstance(w http.ResponseWriter, r *http.Reques
 	instanceId := vars["instanceId"]
 	bindingId := vars["bindingId"]
 
-	body := &models.BrokerCommonRequestBody{}
+	body := &models.UnbindingRequestBody{}
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
@@ -175,6 +228,15 @@ func (h *ApiHandler) UnbindServiceInstance(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	h.logger.Info("deleting policy json", lager.Data{"appId": body.AppID})
+	err = h.policydb.DeletePolicy(body.AppID)
+	if err != nil {
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Error deleting policy"})
+		return
+	}
+
 	err = h.bindingdb.DeleteServiceBinding(bindingId)
 	if err != nil {
 		if err == db.ErrDoesNotExist {
@@ -188,6 +250,16 @@ func (h *ApiHandler) UnbindServiceInstance(w http.ResponseWriter, r *http.Reques
 			Message: "Error creating service binding"})
 		return
 	}
+
+	h.logger.Info("deleting schedules", lager.Data{"appId": body.AppID})
+	err = h.schedulerUtil.DeleteSchedule(body.AppID)
+	if err != nil {
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Error deleting schedules"})
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("{}"))
 }

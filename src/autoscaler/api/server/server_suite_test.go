@@ -4,10 +4,13 @@ import (
 	"autoscaler/api/config"
 	"autoscaler/api/server"
 	"autoscaler/fakes"
+	"autoscaler/routes"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
+
+	"github.com/onsi/gomega/ghttp"
 
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/ginkgomon"
@@ -21,16 +24,18 @@ import (
 )
 
 const (
-	username = "brokeruser"
-	password = "supersecretpassword"
+	username  = "brokeruser"
+	password  = "supersecretpassword"
+	testAppId = "an-app-id"
 )
 
 var (
-	serverProcess ifrit.Process
-	serverUrl     *url.URL
-	httpClient    *http.Client
-	conf          *config.Config
-	catalogBytes  []byte
+	serverProcess   ifrit.Process
+	serverUrl       *url.URL
+	httpClient      *http.Client
+	conf            *config.Config
+	catalogBytes    []byte
+	schedulerServer *ghttp.Server
 )
 
 func TestServer(t *testing.T) {
@@ -39,6 +44,7 @@ func TestServer(t *testing.T) {
 }
 
 var _ = BeforeSuite(func() {
+	schedulerServer = ghttp.NewServer()
 	port := 10000 + GinkgoParallelNode()
 	conf = &config.Config{
 		Server: config.ServerConfig{
@@ -48,10 +54,15 @@ var _ = BeforeSuite(func() {
 		BrokerPassword:    password,
 		CatalogPath:       "../exampleconfig/catalog-example.json",
 		CatalogSchemaPath: "../schemas/catalog.schema.json",
+		PolicySchemaPath:  "../policyvalidator/policy_json.schema.json",
+		Scheduler: config.SchedulerConfig{
+			SchedulerURL: schedulerServer.URL(),
+		},
 	}
 	fakeBindingDB := &fakes.FakeBindingDB{}
+	fakePolicyDB := &fakes.FakePolicyDB{}
 
-	httpServer, err := server.NewServer(lager.NewLogger("test"), conf, fakeBindingDB)
+	httpServer, err := server.NewServer(lager.NewLogger("test"), conf, fakeBindingDB, fakePolicyDB)
 	Expect(err).NotTo(HaveOccurred())
 
 	serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(port))
@@ -63,6 +74,11 @@ var _ = BeforeSuite(func() {
 
 	catalogBytes, err = ioutil.ReadFile("../exampleconfig/catalog-example.json")
 	Expect(err).NotTo(HaveOccurred())
+
+	urlPath, _ := routes.SchedulerRoutes().Get(routes.UpdateScheduleRouteName).URLPath("appId", testAppId)
+	schedulerServer.RouteToHandler("PUT", urlPath.String(), ghttp.RespondWith(http.StatusOK, nil))
+	schedulerServer.RouteToHandler("DELETE", urlPath.String(), ghttp.RespondWith(http.StatusOK, nil))
+
 })
 
 var _ = AfterSuite(func() {

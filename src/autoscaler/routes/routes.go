@@ -44,6 +44,9 @@ const (
 	EnvelopeReportRouteName    = "ReportEnvelope"
 	CustomMetricsPath          = "/v1/apps/{appid}/metrics"
 	PostCustomMetricsRouteName = "PostCustomMetrics"
+	SchedulePath               = "/v1/apps/{appId}/schedules"
+	UpdateScheduleRouteName    = "UpdateSchedule"
+	DeleteScheduleRouteName    = "DeleteSchedule"
 )
 
 type AutoScalerRoute struct {
@@ -53,6 +56,7 @@ type AutoScalerRoute struct {
 	brokerRoutes           *mux.Router
 	metricServerRoutes     *mux.Router
 	metricsForwarderRoutes *mux.Router
+	schedulerRoutes        *mux.Router
 }
 
 var autoScalerRouteInstance = newRouters()
@@ -65,6 +69,7 @@ func newRouters() *AutoScalerRoute {
 		brokerRoutes:           mux.NewRouter(),
 		metricServerRoutes:     mux.NewRouter(),
 		metricsForwarderRoutes: mux.NewRouter(),
+		schedulerRoutes:        mux.NewRouter(),
 	}
 
 	instance.metricsCollectorRoutes.Path(MetricHistoriesPath).Methods(http.MethodGet).Name(GetMetricHistoriesRouteName)
@@ -89,6 +94,9 @@ func newRouters() *AutoScalerRoute {
 
 	instance.metricServerRoutes.Path(EnvelopePath).Name(EnvelopeReportRouteName)
 
+	instance.schedulerRoutes.Path(SchedulePath).Methods(http.MethodPut).Name(UpdateScheduleRouteName)
+	instance.schedulerRoutes.Path(SchedulePath).Methods(http.MethodDelete).Name(DeleteScheduleRouteName)
+
 	return instance
 
 }
@@ -111,6 +119,11 @@ func BrokerRoutes() *mux.Router {
 func MetricServerRoutes() *mux.Router {
 	return autoScalerRouteInstance.metricServerRoutes
 }
+
 func MetricsForwarderRoutes() *mux.Router {
 	return autoScalerRouteInstance.metricsForwarderRoutes
+}
+
+func SchedulerRoutes() *mux.Router {
+	return autoScalerRouteInstance.schedulerRoutes
 }

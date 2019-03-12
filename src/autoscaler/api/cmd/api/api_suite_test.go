@@ -10,6 +10,8 @@ import (
 	"os/exec"
 	"time"
 
+	"github.com/onsi/gomega/ghttp"
+
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 	yaml "gopkg.in/yaml.v2"
@@ -26,12 +28,13 @@ const (
 )
 
 var (
-	apPath       string
-	cfg          config.Config
-	apPort       int
-	configFile   *os.File
-	httpClient   *http.Client
-	catalogBytes []byte
+	apPath          string
+	cfg             config.Config
+	apPort          int
+	configFile      *os.File
+	httpClient      *http.Client
+	catalogBytes    []byte
+	schedulerServer *ghttp.Server
 )
 
 func TestApi(t *testing.T) {
@@ -71,10 +74,20 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		MaxIdleConnections:    5,
 		ConnectionMaxLifetime: 10 * time.Second,
 	}
+	cfg.DB.PolicyDB = db.DatabaseConfig{
+		URL:                   os.Getenv("DBURL"),
+		MaxOpenConnections:    10,
+		MaxIdleConnections:    5,
+		ConnectionMaxLifetime: 10 * time.Second,
+	}
 	cfg.BrokerUsername = username
 	cfg.BrokerPassword = password
 	cfg.CatalogPath = "../../exampleconfig/catalog-example.json"
 	cfg.CatalogSchemaPath = "../../schemas/catalog.schema.json"
+	cfg.PolicySchemaPath = "../../policyvalidator/policy_json.schema.json"
+
+	schedulerServer = ghttp.NewServer()
+	cfg.Scheduler.SchedulerURL = schedulerServer.URL()
 
 	configFile = writeConfig(&cfg)
 
