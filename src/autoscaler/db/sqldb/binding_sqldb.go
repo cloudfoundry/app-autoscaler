@@ -16,7 +16,7 @@ type BindingSQLDB struct {
 	sqldb    *sql.DB
 }
 
-func NewBidingSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*BindingSQLDB, error) {
+func NewBindingSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*BindingSQLDB, error) {
 	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.URL)
 	if err != nil {
 		logger.Error("open-binding-db", err, lager.Data{"dbConfig": dbConfig})
