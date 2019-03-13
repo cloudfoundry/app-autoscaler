@@ -63,7 +63,7 @@ func main() {
 
 	if !conf.UseBuildInMode {
 		var bindingDB db.BindingDB
-		bindingDB, err = sqldb.NewBidingSQLDB(conf.DB.BindingDB, logger.Session("bindingdb-db"))
+		bindingDB, err = sqldb.NewBindingSQLDB(conf.DB.BindingDB, logger.Session("bindingdb-db"))
 		if err != nil {
 			logger.Error("failed to connect bindingdb database", err, lager.Data{"dbConfig": conf.DB.BindingDB})
 			os.Exit(1)
