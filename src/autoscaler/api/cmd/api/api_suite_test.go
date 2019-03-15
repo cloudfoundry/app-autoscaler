@@ -2,12 +2,15 @@ package main_test
 
 import (
 	"autoscaler/api/config"
+	"autoscaler/cf"
 	"autoscaler/db"
+	"autoscaler/models"
 	"database/sql"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"time"
 
 	"github.com/onsi/gomega/ghttp"
@@ -35,6 +38,10 @@ var (
 	httpClient      *http.Client
 	catalogBytes    []byte
 	schedulerServer *ghttp.Server
+	brokerPort      int
+	publicApiPort   int
+	infoBytes       []byte
+	ccServer        *ghttp.Server
 )
 
 func TestApi(t *testing.T) {
@@ -61,12 +68,30 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	catalogBytes, err = ioutil.ReadFile("../../exampleconfig/catalog-example.json")
 	Expect(err).NotTo(HaveOccurred())
 
+	infoBytes, err = ioutil.ReadFile("../../exampleconfig/info-file.json")
+	Expect(err).NotTo(HaveOccurred())
+
 	return []byte(ap)
 }, func(pathsByte []byte) {
+
+	ccServer = ghttp.NewServer()
+	ccServer.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
+		cf.Endpoints{
+			AuthEndpoint:  ccServer.URL(),
+			TokenEndpoint: ccServer.URL(),
+		}))
+
+	ccServer.RouteToHandler("POST", "/oauth/token", ghttp.RespondWithJSONEncoded(http.StatusOK, cf.Tokens{}))
+
 	apPath = string(pathsByte)
 
-	apPort = 8000 + GinkgoParallelNode()
-	cfg.Server.Port = apPort
+	brokerPort = 8000 + GinkgoParallelNode()
+	publicApiPort = 9000 + GinkgoParallelNode()
+
+	testCertDir := "../../../../../test-certs"
+
+	cfg.BrokerServer.Port = brokerPort
+	cfg.PublicApiServer.Port = publicApiPort
 	cfg.Logging.Level = "info"
 	cfg.DB.BindingDB = db.DatabaseConfig{
 		URL:                   os.Getenv("DBURL"),
@@ -88,6 +113,40 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	schedulerServer = ghttp.NewServer()
 	cfg.Scheduler.SchedulerURL = schedulerServer.URL()
+	cfg.InfoFilePath = "../../exampleconfig/info-file.json"
+
+	cfg.MetricsCollector = config.MetricsCollectorConfig{
+		MetricsCollectorUrl: "http://localhost:8083",
+		TLSClientCerts: models.TLSCerts{
+			KeyFile:    filepath.Join(testCertDir, "metricscollector.key"),
+			CertFile:   filepath.Join(testCertDir, "metricscollector.crt"),
+			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+		},
+	}
+	cfg.EventGenerator = config.EventGeneratorConfig{
+		EventGeneratorUrl: "http://localhost:8084",
+		TLSClientCerts: models.TLSCerts{
+			KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
+			CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
+			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+		},
+	}
+	cfg.ScalingEngine = config.ScalingEngineConfig{
+		ScalingEngineUrl: "http://localhost:8085",
+		TLSClientCerts: models.TLSCerts{
+			KeyFile:    filepath.Join(testCertDir, "scalingengine.key"),
+			CertFile:   filepath.Join(testCertDir, "scalingengine.crt"),
+			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+		},
+	}
+
+	cfg.UseBuildInMode = false
+
+	cfg.CF.API = ccServer.URL()
+	cfg.CF.GrantType = cf.GrantTypeClientCredentials
+	cfg.CF.ClientID = "client-id"
+	cfg.CF.Secret = "client-secret"
+	cfg.CF.SkipSSLValidation = true
 
 	configFile = writeConfig(&cfg)
 
@@ -97,6 +156,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 var _ = SynchronizedAfterSuite(func() {
 	os.Remove(configFile.Name())
+	ccServer.Close()
 }, func() {
 	gexec.CleanupBuildArtifacts()
 })

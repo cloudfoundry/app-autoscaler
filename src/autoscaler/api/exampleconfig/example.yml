@@ -1,5 +1,7 @@
-server:
+broker_server:
   port: 8080
+public_api_server:
+  port: 8081
 logging:
   level: debug
 broker_username: brokeruser
@@ -14,3 +16,28 @@ dashboard_redirect_uri: "https://dashboard-redirect-uri-settings.example.com"
 catalog_schema_path: "/var/vcap/jobs/api/packages/api/config/catalog.schema.json"
 catalog_path: "/var/vcap/jobs/api/packages/api/config/catalog.json"
 policy_schema_path: "/var/vcap/jobs/api/packages/api/config/policy.schema.json"
+scaling_engine:
+  scaling_engine_url: http://localhost:8083
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+metrics_collector:
+  metrics_collector_url: http://localhost:8084
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/mc.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/mc.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+event_generator:
+  event_generator_url: http://localhost:8083
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+use_buildin_mode: false
+cf:
+  api: https://api.example.com
+  client_id: client-id
+  secret: client-secret
+  skip_ssl_validation: false
+  grant_type: client_credentials

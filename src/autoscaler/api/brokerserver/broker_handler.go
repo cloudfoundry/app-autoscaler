@@ -1,4 +1,4 @@
-package server
+package brokerserver
 
 import (
 	"autoscaler/api/config"
@@ -16,7 +16,7 @@ import (
 	uuid "github.com/nu7hatch/gouuid"
 )
 
-type ApiHandler struct {
+type BrokerHandler struct {
 	logger          lager.Logger
 	conf            *config.Config
 	bindingdb       db.BindingDB
@@ -25,9 +25,9 @@ type ApiHandler struct {
 	schedulerUtil   *schedulerutil.SchedulerUtil
 }
 
-func NewApiHandler(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB) *ApiHandler {
+func NewBrokerHandler(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB) *BrokerHandler {
 
-	return &ApiHandler{
+	return &BrokerHandler{
 		logger:          logger,
 		conf:            conf,
 		bindingdb:       bindingdb,
@@ -35,9 +35,10 @@ func NewApiHandler(logger lager.Logger, conf *config.Config, bindingdb db.Bindin
 		policyValidator: policyvalidator.NewPolicyValidator(conf.PolicySchemaPath),
 		schedulerUtil:   schedulerutil.NewSchedulerUtil(conf, logger),
 	}
+
 }
 
-func (h *ApiHandler) GetBrokerCatalog(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+func (h *BrokerHandler) GetBrokerCatalog(w http.ResponseWriter, r *http.Request, vars map[string]string) {
 	catalog, err := ioutil.ReadFile(h.conf.CatalogPath)
 	if err != nil {
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
@@ -48,7 +49,7 @@ func (h *ApiHandler) GetBrokerCatalog(w http.ResponseWriter, r *http.Request, va
 	w.Write([]byte(catalog))
 }
 
-func (h *ApiHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Request, vars map[string]string) {
 	instanceId := vars["instanceId"]
 
 	body := &models.InstanceCreationRequestBody{}
@@ -89,7 +90,7 @@ func (h *ApiHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Reques
 	}
 }
 
-func (h *ApiHandler) DeleteServiceInstance(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+func (h *BrokerHandler) DeleteServiceInstance(w http.ResponseWriter, r *http.Request, vars map[string]string) {
 	instanceId := vars["instanceId"]
 
 	body := &models.BrokerCommonRequestBody{}
@@ -128,7 +129,7 @@ func (h *ApiHandler) DeleteServiceInstance(w http.ResponseWriter, r *http.Reques
 	w.Write([]byte("{}"))
 }
 
-func (h *ApiHandler) BindServiceInstance(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Request, vars map[string]string) {
 	instanceId := vars["instanceId"]
 	bindingId := vars["bindingId"]
 
@@ -207,7 +208,7 @@ func (h *ApiHandler) BindServiceInstance(w http.ResponseWriter, r *http.Request,
 	w.Write(nil)
 }
 
-func (h *ApiHandler) UnbindServiceInstance(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+func (h *BrokerHandler) UnbindServiceInstance(w http.ResponseWriter, r *http.Request, vars map[string]string) {
 	instanceId := vars["instanceId"]
 	bindingId := vars["bindingId"]
 
@@ -247,7 +248,7 @@ func (h *ApiHandler) UnbindServiceInstance(w http.ResponseWriter, r *http.Reques
 		}
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 			Code:    "Interal-Server-Error",
-			Message: "Error creating service binding"})
+			Message: "Error deleting service binding"})
 		return
 	}
 

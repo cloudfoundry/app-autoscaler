@@ -5,12 +5,15 @@ import (
 	"fmt"
 	"os"
 
+	"autoscaler/api/brokerserver"
 	"autoscaler/api/config"
-	"autoscaler/api/server"
+	"autoscaler/api/publicapiserver"
+	"autoscaler/cf"
 	"autoscaler/db"
 	"autoscaler/db/sqldb"
 	"autoscaler/helpers"
 
+	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
@@ -48,31 +51,49 @@ func main() {
 
 	logger := helpers.InitLoggerFromConfig(&conf.Logging, "api")
 
-	var bindingDB db.BindingDB
-	bindingDB, err = sqldb.NewBidingSQLDB(conf.DB.BindingDB, logger.Session("bindingdb-db"))
+	members := grouper.Members{}
+
+	var policyDb db.PolicyDB
+	policyDb, err = sqldb.NewPolicySQLDB(conf.DB.PolicyDB, logger.Session("policydb-db"))
 	if err != nil {
-		logger.Error("failed to connect bindingdb database", err, lager.Data{"dbConfig": conf.DB.BindingDB})
+		logger.Error("failed to connect to policydb database", err, lager.Data{"dbConfig": conf.DB.PolicyDB})
 		os.Exit(1)
 	}
-	defer bindingDB.Close()
+	defer policyDb.Close()
 
-	var policyDB db.PolicyDB
-	policyDB, err = sqldb.NewPolicySQLDB(conf.DB.PolicyDB, logger.Session("policydb-db"))
+	if !conf.UseBuildInMode {
+		var bindingDB db.BindingDB
+		bindingDB, err = sqldb.NewBindingSQLDB(conf.DB.BindingDB, logger.Session("bindingdb-db"))
+		if err != nil {
+			logger.Error("failed to connect bindingdb database", err, lager.Data{"dbConfig": conf.DB.BindingDB})
+			os.Exit(1)
+		}
+		defer bindingDB.Close()
+
+		brokerHttpServer, err := brokerserver.NewBrokerServer(logger.Session("broker_http_server"), conf, bindingDB, policyDb)
+		if err != nil {
+			logger.Error("failed to create broker http server", err)
+			os.Exit(1)
+		}
+		members = append(members, grouper.Member{"broker_http_server", brokerHttpServer})
+	}
+
+	paClock := clock.NewClock()
+	cfClient := cf.NewCFClient(&conf.CF, logger.Session("cf"), paClock)
+	err = cfClient.Login()
 	if err != nil {
-		logger.Error("failed to connect policydb database", err, lager.Data{"dbConfig": conf.DB.PolicyDB})
+		logger.Error("failed to login cloud foundry", err, lager.Data{"API": conf.CF.API})
 		os.Exit(1)
 	}
-	defer policyDB.Close()
 
-	httpServer, err := server.NewServer(logger.Session("http_server"), conf, bindingDB, policyDB)
+	publicApiHttpServer, err := publicapiserver.NewPublicApiServer(logger.Session("public_api_http_server"), conf, policyDb, cfClient)
 	if err != nil {
-		logger.Error("failed to create http server", err)
+		logger.Error("failed to create public api http server", err)
 		os.Exit(1)
 	}
 
-	members := grouper.Members{
-		{"http_server", httpServer},
-	}
+	members = append(members, grouper.Member{"public_api_http_server", publicApiHttpServer})
+
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
 
 	logger.Info("started")
