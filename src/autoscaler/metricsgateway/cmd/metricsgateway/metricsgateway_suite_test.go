@@ -153,8 +153,8 @@ func initConfig() {
 			BufferSize:         500,
 			KeepAliveInterval:  1 * time.Second,
 			HandshakeTimeout:   1 * time.Second,
-			MaxSetupRetryCount: 10,
-			MaxCloseRetryCount: 10,
+			MaxSetupRetryCount: 3,
+			MaxCloseRetryCount: 3,
 			RetryDelay:         1 * time.Second,
 			MetricsServerClientTLS: &models.TLSCerts{
 				KeyFile:    metricServerClientKeyPath,

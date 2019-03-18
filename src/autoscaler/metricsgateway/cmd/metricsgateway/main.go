@@ -79,7 +79,11 @@ func main() {
 		appManager.Start()
 		dispatcher.Start()
 		for _, emitter := range emitters {
-			emitter.Start()
+			err := emitter.Start()
+			if err != nil {
+				logger.Error("failed to start emitter", err)
+				os.Exit(1)
+			}
 		}
 		for _, nozzle := range nozzles {
 			nozzle.Start()
