@@ -106,7 +106,7 @@ func (su *SchedulerUtil) DeleteSchedule(appId string) error {
 	responseData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		su.logger.Error("failed to read response body", err, lager.Data{"appId": appId})
-		return nil
+		return err
 	}
 
 	return fmt.Errorf("Error occurred in scheduler module during deletion : " + string(responseData))

@@ -47,16 +47,19 @@ var (
 	scalingEngineServer    *ghttp.Server
 	metricsCollectorServer *ghttp.Server
 	eventGeneratorServer   *ghttp.Server
+	schedulerServer        *ghttp.Server
 
 	scalingEngineStatus    int
 	metricsCollectorStatus int
 	eventGeneratorStatus   int
+	schedulerStatus        int
 
 	scalingEngineResponse    []models.AppScalingHistory
 	metricsCollectorResponse []models.AppInstanceMetric
 	eventGeneratorResponse   []models.AppMetric
 
 	fakeCFClient *fakes.FakeCFClient
+	fakePolicyDB *fakes.FakePolicyDB
 )
 
 func TestPublicapiserver(t *testing.T) {
@@ -68,6 +71,7 @@ var _ = BeforeSuite(func() {
 	scalingEngineServer = ghttp.NewServer()
 	metricsCollectorServer = ghttp.NewServer()
 	eventGeneratorServer = ghttp.NewServer()
+	schedulerServer = ghttp.NewServer()
 
 	testCertDir := "../../../../test-certs"
 	apiPort := 11000 + GinkgoParallelNode()
@@ -77,6 +81,10 @@ var _ = BeforeSuite(func() {
 		},
 		PublicApiServer: config.ServerConfig{
 			Port: apiPort,
+		},
+		PolicySchemaPath: "../policyvalidator/policy_json.schema.json",
+		Scheduler: config.SchedulerConfig{
+			SchedulerURL: schedulerServer.URL(),
 		},
 		InfoFilePath: "../exampleconfig/info-file.json",
 		MetricsCollector: config.MetricsCollectorConfig{
@@ -112,7 +120,7 @@ var _ = BeforeSuite(func() {
 		},
 	}
 
-	fakePolicyDB := &fakes.FakePolicyDB{}
+	fakePolicyDB = &fakes.FakePolicyDB{}
 	fakeCFClient = &fakes.FakeCFClient{}
 
 	httpServer, err := publicapiserver.NewPublicApiServer(lager.NewLogger("test"), conf, fakePolicyDB, fakeCFClient)
@@ -141,6 +149,11 @@ var _ = BeforeSuite(func() {
 	eventGeneratorPathMatcher, err := regexp.Compile("/v1/apps/[A-Za-z0-9\\-]+/aggregated_metric_histories/[a-zA-Z0-9_]+")
 	Expect(err).NotTo(HaveOccurred())
 	eventGeneratorServer.RouteToHandler(http.MethodGet, eventGeneratorPathMatcher, ghttp.RespondWithJSONEncodedPtr(&eventGeneratorStatus, &eventGeneratorResponse))
+
+	schedulerPathMatcher, err := regexp.Compile("/v1/apps/[A-Za-z0-9\\-]+/schedules")
+	Expect(err).NotTo(HaveOccurred())
+	schedulerServer.RouteToHandler(http.MethodPut, schedulerPathMatcher, ghttp.RespondWithJSONEncodedPtr(&schedulerStatus, nil))
+	schedulerServer.RouteToHandler(http.MethodDelete, schedulerPathMatcher, ghttp.RespondWithJSONEncodedPtr(&schedulerStatus, nil))
 
 })
 

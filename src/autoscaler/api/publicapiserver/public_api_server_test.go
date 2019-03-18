@@ -2,8 +2,8 @@ package publicapiserver_test
 
 import (
 	"autoscaler/models"
+	"bytes"
 
-	// . "autoscaler/api/publicapiserver"
 	"net/http"
 
 	. "github.com/onsi/ginkgo"
@@ -100,6 +100,48 @@ var _ = Describe("PublicApiServer", func() {
 				})
 			})
 
+			Context("when calling get policy endpoint", func() {
+				BeforeEach(func() {
+					serverUrl.Path = "/v1/apps/" + TEST_APP_ID + "/policy"
+
+					req, err := http.NewRequest(http.MethodGet, serverUrl.String(), nil)
+					Expect(err).NotTo(HaveOccurred())
+					rsp, err = httpClient.Do(req)
+				})
+				It("should fail", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(rsp.StatusCode).To(Equal(http.StatusUnauthorized))
+				})
+			})
+
+			Context("when calling attach policy endpoint", func() {
+				BeforeEach(func() {
+					serverUrl.Path = "/v1/apps/" + TEST_APP_ID + "/policy"
+
+					req, err := http.NewRequest(http.MethodPut, serverUrl.String(), nil)
+					Expect(err).NotTo(HaveOccurred())
+					rsp, err = httpClient.Do(req)
+				})
+				It("should fail", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(rsp.StatusCode).To(Equal(http.StatusUnauthorized))
+				})
+			})
+
+			Context("when calling detach policy endpoint", func() {
+				BeforeEach(func() {
+					serverUrl.Path = "/v1/apps/" + TEST_APP_ID + "/policy"
+
+					req, err := http.NewRequest(http.MethodDelete, serverUrl.String(), nil)
+					Expect(err).NotTo(HaveOccurred())
+					rsp, err = httpClient.Do(req)
+				})
+				It("should fail", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(rsp.StatusCode).To(Equal(http.StatusUnauthorized))
+				})
+			})
+
 		})
 
 		Describe("With Invalid Authorization Token", func() {
@@ -119,7 +161,7 @@ var _ = Describe("PublicApiServer", func() {
 
 					rsp, err = httpClient.Do(req)
 				})
-				It("should succeed", func() {
+				It("should fail", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(rsp.StatusCode).To(Equal(http.StatusUnauthorized))
 				})
@@ -137,7 +179,7 @@ var _ = Describe("PublicApiServer", func() {
 
 					rsp, err = httpClient.Do(req)
 				})
-				It("should succeed", func() {
+				It("should fail", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(rsp.StatusCode).To(Equal(http.StatusUnauthorized))
 				})
@@ -155,7 +197,61 @@ var _ = Describe("PublicApiServer", func() {
 
 					rsp, err = httpClient.Do(req)
 				})
-				It("should succeed", func() {
+				It("should fail", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(rsp.StatusCode).To(Equal(http.StatusUnauthorized))
+				})
+			})
+
+			Context("when calling get policy endpoint", func() {
+				BeforeEach(func() {
+					schedulerStatus = http.StatusOK
+
+					serverUrl.Path = "/v1/apps/" + TEST_APP_ID + "/policy"
+
+					req, err := http.NewRequest(http.MethodGet, serverUrl.String(), nil)
+					Expect(err).NotTo(HaveOccurred())
+					req.Header.Add("Authorization", TEST_INVALID_USER_TOKEN)
+
+					rsp, err = httpClient.Do(req)
+				})
+				It("should fail", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(rsp.StatusCode).To(Equal(http.StatusUnauthorized))
+				})
+			})
+
+			Context("when calling attach policy endpoint", func() {
+				BeforeEach(func() {
+					schedulerStatus = http.StatusOK
+
+					serverUrl.Path = "/v1/apps/" + TEST_APP_ID + "/policy"
+
+					req, err := http.NewRequest(http.MethodPut, serverUrl.String(), nil)
+					Expect(err).NotTo(HaveOccurred())
+					req.Header.Add("Authorization", TEST_INVALID_USER_TOKEN)
+
+					rsp, err = httpClient.Do(req)
+				})
+				It("should fail", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(rsp.StatusCode).To(Equal(http.StatusUnauthorized))
+				})
+			})
+
+			Context("when calling detach policy endpoint", func() {
+				BeforeEach(func() {
+					schedulerStatus = http.StatusOK
+
+					serverUrl.Path = "/v1/apps/" + TEST_APP_ID + "/policy"
+
+					req, err := http.NewRequest(http.MethodDelete, serverUrl.String(), nil)
+					Expect(err).NotTo(HaveOccurred())
+					req.Header.Add("Authorization", TEST_INVALID_USER_TOKEN)
+
+					rsp, err = httpClient.Do(req)
+				})
+				It("should fail", func() {
 					Expect(err).NotTo(HaveOccurred())
 					Expect(rsp.StatusCode).To(Equal(http.StatusUnauthorized))
 				})
@@ -211,6 +307,99 @@ var _ = Describe("PublicApiServer", func() {
 
 					req, err := http.NewRequest(http.MethodGet, serverUrl.String(), nil)
 					Expect(err).NotTo(HaveOccurred())
+					req.Header.Add("Authorization", TEST_USER_TOKEN)
+
+					rsp, err = httpClient.Do(req)
+				})
+				It("should succeed", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+				})
+			})
+
+			Context("when calling get policy endpoint", func() {
+				BeforeEach(func() {
+					schedulerStatus = http.StatusOK
+
+					serverUrl.Path = "/v1/apps/" + TEST_APP_ID + "/policy"
+
+					req, err := http.NewRequest(http.MethodGet, serverUrl.String(), nil)
+					Expect(err).NotTo(HaveOccurred())
+
+					req.Header.Add("Authorization", TEST_USER_TOKEN)
+
+					fakePolicyDB.GetAppPolicyReturns(&models.ScalingPolicy{
+						InstanceMax: 5,
+						InstanceMin: 1,
+						ScalingRules: []*models.ScalingRule{
+							&models.ScalingRule{
+								MetricType:            "memoryused",
+								BreachDurationSeconds: 300,
+								CoolDownSeconds:       300,
+								Threshold:             30,
+								Operator:              "<",
+								Adjustment:            "-1",
+							}},
+					}, nil)
+
+					rsp, err = httpClient.Do(req)
+				})
+				It("should succeed", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+				})
+			})
+
+			Context("when calling attach policy endpoint", func() {
+				BeforeEach(func() {
+					schedulerStatus = http.StatusOK
+
+					serverUrl.Path = "/v1/apps/" + TEST_APP_ID + "/policy"
+
+					req, err := http.NewRequest(http.MethodPut, serverUrl.String(), bytes.NewBufferString(`{
+						"instance_min_count": 1,
+						"instance_max_count": 5,
+						"scaling_rules": [{
+							"metric_type": "memoryused",
+							"breach_duration_secs": 300,
+							"threshold": 30,
+							"operator": ">",
+							"cool_down_secs": 300,
+							"adjustment": "-1"
+						}],
+						"schedules": {
+							"timezone": "Asia/Kolkata",
+							"recurring_schedule": [{
+								"start_time": "10:00",
+								"end_time": "18:00",
+								"days_of_week": [1, 2, 3],
+								"instance_min_count": 1,
+								"instance_max_count": 10,
+								"initial_min_instance_count": 5
+							}]
+						}
+					}`))
+					Expect(err).NotTo(HaveOccurred())
+
+					req.Header.Add("Authorization", TEST_USER_TOKEN)
+
+					rsp, err = httpClient.Do(req)
+				})
+				It("should succeed", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+				})
+			})
+
+			Context("when calling detach policy endpoint", func() {
+				BeforeEach(func() {
+					schedulerStatus = http.StatusOK
+
+					serverUrl.Path = "/v1/apps/" + TEST_APP_ID + "/policy"
+
+					req, err := http.NewRequest(http.MethodDelete, serverUrl.String(), nil)
+					Expect(err).NotTo(HaveOccurred())
+
 					req.Header.Add("Authorization", TEST_USER_TOKEN)
 
 					rsp, err = httpClient.Do(req)

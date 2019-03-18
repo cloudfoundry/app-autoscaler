@@ -4,6 +4,8 @@ import (
 	. "autoscaler/api/publicapiserver"
 	"autoscaler/fakes"
 	"autoscaler/models"
+	"bytes"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -51,6 +53,303 @@ var _ = Describe("PublicApiHandler", func() {
 				Expect(resp.Body.String()).To(Equal(`{"alive":"true"}`))
 			})
 		})
+	})
+
+	Describe("GetScalingPolicy", func() {
+		JustBeforeEach(func() {
+			handler.GetScalingPolicy(resp, req, pathVariables)
+		})
+
+		Context("When appId is not present", func() {
+			It("should fail with 400", func() {
+				Expect(resp.Code).To(Equal(http.StatusBadRequest))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"appId is required"}`))
+			})
+		})
+		Context("When database gives error", func() {
+			BeforeEach(func() {
+				pathVariables["appId"] = TEST_APP_ID
+				policydb.GetAppPolicyReturns(nil, fmt.Errorf("failed to retrive policy"))
+			})
+			It("should fail with 500", func() {
+				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error retrieving scaling policy"}`))
+			})
+		})
+
+		Context("When policy doesn't exist", func() {
+			BeforeEach(func() {
+				pathVariables["appId"] = TEST_APP_ID
+				policydb.GetAppPolicyReturns(nil, nil)
+			})
+			It("should fail with 404", func() {
+				Expect(resp.Code).To(Equal(http.StatusNotFound))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Not Found","message":"Policy Not Found"}`))
+			})
+		})
+
+		Context("When policy exist", func() {
+			BeforeEach(func() {
+				pathVariables["appId"] = TEST_APP_ID
+				policydb.GetAppPolicyReturns(&models.ScalingPolicy{
+					InstanceMax: 5,
+					InstanceMin: 1,
+					ScalingRules: []*models.ScalingRule{
+						&models.ScalingRule{
+							MetricType:            "memoryused",
+							BreachDurationSeconds: 300,
+							CoolDownSeconds:       300,
+							Threshold:             30,
+							Operator:              "<",
+							Adjustment:            "-1",
+						}},
+					Schedules: &models.ScalingSchedules{
+						Timezone: "Asia/Kolkata",
+						RecurringSchedules: []*models.RecurringSchedule{
+							&models.RecurringSchedule{
+								StartTime:             "10:00",
+								EndTime:               "18:00",
+								DaysOfWeek:            []int{1, 2, 3},
+								ScheduledInstanceMin:  1,
+								ScheduledInstanceMax:  10,
+								ScheduledInstanceInit: 5,
+							},
+						},
+					},
+				}, nil)
+			})
+			It("should succeed", func() {
+				Expect(resp.Code).To(Equal(http.StatusOK))
+				Expect(resp.Body.String()).To(Equal(`{"instance_min_count":1,"instance_max_count":5,"scaling_rules":[{"metric_type":"memoryused","breach_duration_secs":300,"threshold":30,"operator":"\u003c","cool_down_secs":300,"adjustment":"-1"}],"schedules":{"timezone":"Asia/Kolkata","recurring_schedule":[{"start_time":"10:00","end_time":"18:00","days_of_week":[1,2,3],"instance_min_count":1,"instance_max_count":10,"initial_min_instance_count":5}]}}`))
+			})
+		})
+	})
+
+	Describe("AttachScalingPolicy", func() {
+		JustBeforeEach(func() {
+			handler.AttachScalingPolicy(resp, req, pathVariables)
+		})
+
+		Context("When appId is not present", func() {
+			It("should fail with 400", func() {
+				Expect(resp.Code).To(Equal(http.StatusBadRequest))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"appId is required"}`))
+			})
+		})
+		Context("When the policy is invalid", func() {
+			BeforeEach(func() {
+				pathVariables["appId"] = TEST_APP_ID
+				req, _ = http.NewRequest(http.MethodPut, "", bytes.NewBufferString(`{
+					"instance_max_count":4,
+					"scaling_rules":[
+					{
+						"metric_type":"memoryused",
+						"threshold":30,
+						"operator":"<",
+						"adjustment":"-1"
+					}]
+				}`))
+			})
+			It("should fail with 400", func() {
+				Expect(resp.Code).To(Equal(http.StatusBadRequest))
+				Expect(resp.Body.String()).To(Equal(`[{"context":"(root)","description":"instance_min_count is required"}]`))
+			})
+		})
+
+		Context("When save policy errors", func() {
+			BeforeEach(func() {
+				pathVariables["appId"] = TEST_APP_ID
+				req, _ = http.NewRequest(http.MethodPut, "", bytes.NewBufferString(`{
+					"instance_min_count": 1,
+					"instance_max_count": 5,
+					"scaling_rules": [{
+						"metric_type": "memoryused",
+						"breach_duration_secs": 300,
+						"threshold": 30,
+						"operator": ">",
+						"cool_down_secs": 300,
+						"adjustment": "-1"
+					}],
+					"schedules": {
+						"timezone": "Asia/Kolkata",
+						"recurring_schedule": [{
+							"start_time": "10:00",
+							"end_time": "18:00",
+							"days_of_week": [1, 2, 3],
+							"instance_min_count": 1,
+							"instance_max_count": 10,
+							"initial_min_instance_count": 5
+						}]
+					}
+				}`))
+				policydb.SaveAppPolicyReturns(fmt.Errorf("Failed to save policy"))
+			})
+			It("should fail with 500", func() {
+				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error saving policy"}`))
+			})
+		})
+
+		Context("When scheduler returns non 200 and non 204 status code", func() {
+			BeforeEach(func() {
+				pathVariables["appId"] = TEST_APP_ID
+				req, _ = http.NewRequest(http.MethodPut, "", bytes.NewBufferString(`{
+					"instance_min_count": 1,
+					"instance_max_count": 5,
+					"scaling_rules": [{
+						"metric_type": "memoryused",
+						"breach_duration_secs": 300,
+						"threshold": 30,
+						"operator": ">",
+						"cool_down_secs": 300,
+						"adjustment": "-1"
+					}],
+					"schedules": {
+						"timezone": "Asia/Kolkata",
+						"recurring_schedule": [{
+							"start_time": "10:00",
+							"end_time": "18:00",
+							"days_of_week": [1, 2, 3],
+							"instance_min_count": 1,
+							"instance_max_count": 10,
+							"initial_min_instance_count": 5
+						}]
+					}
+				}`))
+				schedulerStatus = 500
+			})
+			It("should fail with 500", func() {
+				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error creating/updating schedules"}`))
+			})
+		})
+
+		Context("When scheduler returns 200 status code", func() {
+			BeforeEach(func() {
+				pathVariables["appId"] = TEST_APP_ID
+				req, _ = http.NewRequest(http.MethodPut, "", bytes.NewBufferString(`{
+					"instance_min_count": 1,
+					"instance_max_count": 5,
+					"scaling_rules": [{
+						"metric_type": "memoryused",
+						"breach_duration_secs": 300,
+						"threshold": 30,
+						"operator": ">",
+						"cool_down_secs": 300,
+						"adjustment": "-1"
+					}],
+					"schedules": {
+						"timezone": "Asia/Kolkata",
+						"recurring_schedule": [{
+							"start_time": "10:00",
+							"end_time": "18:00",
+							"days_of_week": [1, 2, 3],
+							"instance_min_count": 1,
+							"instance_max_count": 10,
+							"initial_min_instance_count": 5
+						}]
+					}
+				}`))
+				schedulerStatus = 200
+			})
+			It("should succeed", func() {
+				Expect(resp.Code).To(Equal(http.StatusOK))
+			})
+		})
+
+		Context("When scheduler returns 204 status code", func() {
+			BeforeEach(func() {
+				pathVariables["appId"] = TEST_APP_ID
+				req, _ = http.NewRequest(http.MethodPut, "", bytes.NewBufferString(`{
+					"instance_min_count": 1,
+					"instance_max_count": 5,
+					"scaling_rules": [{
+						"metric_type": "memoryused",
+						"breach_duration_secs": 300,
+						"threshold": 30,
+						"operator": ">",
+						"cool_down_secs": 300,
+						"adjustment": "-1"
+					}],
+					"schedules": {
+						"timezone": "Asia/Kolkata",
+						"recurring_schedule": [{
+							"start_time": "10:00",
+							"end_time": "18:00",
+							"days_of_week": [1, 2, 3],
+							"instance_min_count": 1,
+							"instance_max_count": 10,
+							"initial_min_instance_count": 5
+						}]
+					}
+				}`))
+				schedulerStatus = 204
+			})
+			It("should succeed", func() {
+				Expect(resp.Code).To(Equal(http.StatusOK))
+			})
+		})
+
+	})
+
+	Describe("DetachScalingPolicy", func() {
+		JustBeforeEach(func() {
+			handler.DetachScalingPolicy(resp, req, pathVariables)
+		})
+
+		Context("When appId is not present", func() {
+			It("should fail with 400", func() {
+				Expect(resp.Code).To(Equal(http.StatusBadRequest))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"appId is required"}`))
+			})
+		})
+
+		Context("When delete policy errors", func() {
+			BeforeEach(func() {
+				pathVariables["appId"] = TEST_APP_ID
+				req, _ = http.NewRequest(http.MethodDelete, "", nil)
+				policydb.DeletePolicyReturns(fmt.Errorf("Failed to save policy"))
+			})
+			It("should fail with 500", func() {
+				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error deleting policy"}`))
+			})
+		})
+
+		Context("When scheduler returns non 200 and non 204 status code", func() {
+			BeforeEach(func() {
+				pathVariables["appId"] = TEST_APP_ID
+				req, _ = http.NewRequest(http.MethodPut, "", nil)
+				schedulerStatus = 500
+			})
+			It("should fail with 500", func() {
+				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error deleting schedules"}`))
+			})
+		})
+
+		Context("When scheduler returns 200 status code", func() {
+			BeforeEach(func() {
+				pathVariables["appId"] = TEST_APP_ID
+				req, _ = http.NewRequest(http.MethodPut, "", nil)
+				schedulerStatus = 200
+			})
+			It("should succeed", func() {
+				Expect(resp.Code).To(Equal(http.StatusOK))
+			})
+		})
+
+		Context("When scheduler returns 204 status code", func() {
+			BeforeEach(func() {
+				pathVariables["appId"] = TEST_APP_ID
+				req, _ = http.NewRequest(http.MethodPut, "", nil)
+				schedulerStatus = 204
+			})
+			It("should succeed", func() {
+				Expect(resp.Code).To(Equal(http.StatusOK))
+			})
+		})
+
 	})
 
 	Describe("GetScalingHistories", func() {
