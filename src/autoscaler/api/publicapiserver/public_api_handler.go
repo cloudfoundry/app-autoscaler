@@ -2,6 +2,8 @@ package publicapiserver
 
 import (
 	"autoscaler/api/config"
+	"autoscaler/api/policyvalidator"
+	"autoscaler/api/schedulerutil"
 	"autoscaler/db"
 	"autoscaler/helpers"
 	"autoscaler/models"
@@ -12,6 +14,7 @@ import (
 
 	"code.cloudfoundry.org/cfhttp/handlers"
 	"code.cloudfoundry.org/lager"
+	uuid "github.com/nu7hatch/gouuid"
 )
 
 type PublicApiHandler struct {
@@ -21,6 +24,8 @@ type PublicApiHandler struct {
 	scalingEngineClient    *http.Client
 	metricsCollectorClient *http.Client
 	eventGeneratorClient   *http.Client
+	policyValidator        *policyvalidator.PolicyValidator
+	schedulerUtil          *schedulerutil.SchedulerUtil
 }
 
 func NewPublicApiHandler(logger lager.Logger, conf *config.Config, policydb db.PolicyDB) *PublicApiHandler {
@@ -46,7 +51,133 @@ func NewPublicApiHandler(logger lager.Logger, conf *config.Config, policydb db.P
 		scalingEngineClient:    seClient,
 		metricsCollectorClient: mcClient,
 		eventGeneratorClient:   egClient,
+		policyValidator:        policyvalidator.NewPolicyValidator(conf.PolicySchemaPath),
+		schedulerUtil:          schedulerutil.NewSchedulerUtil(conf, logger),
 	}
+}
+
+func (h *PublicApiHandler) GetScalingPolicy(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+	appId := vars["appId"]
+	if appId == "" {
+		h.logger.Error("AppId is missing", nil, nil)
+		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
+			Code:    "Bad Request",
+			Message: "appId is required",
+		})
+		return
+	}
+
+	h.logger.Info("Get Scaling Policy", lager.Data{"appId": appId})
+
+	scalingPolicy, err := h.policydb.GetAppPolicy(appId)
+	if err != nil {
+		h.logger.Error("Failed to retrive scaling policy from database", err, lager.Data{"appId": appId, "err": err})
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Error retrieving scaling policy"})
+		return
+	}
+
+	if scalingPolicy == nil {
+		h.logger.Info("policy doesn't exist", lager.Data{"appId": appId})
+		handlers.WriteJSONResponse(w, http.StatusNotFound, models.ErrorResponse{
+			Code:    "Not Found",
+			Message: "Policy Not Found"})
+		return
+	}
+	handlers.WriteJSONResponse(w, http.StatusOK, scalingPolicy)
+}
+
+func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+	appId := vars["appId"]
+	if appId == "" {
+		h.logger.Error("appId is missing", nil, nil)
+		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
+			Code:    "Bad Request",
+			Message: "appId is required",
+		})
+		return
+	}
+
+	h.logger.Info("Attach Scaling Policy", lager.Data{"appId": appId})
+
+	policyBytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		h.logger.Error("failed to read request body", err, lager.Data{"appId": appId})
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Failed to read request body"})
+		return
+	}
+
+	policyStr := string(policyBytes)
+
+	errResults, valid := h.policyValidator.ValidatePolicy(policyStr)
+	if !valid {
+		handlers.WriteJSONResponse(w, http.StatusBadRequest, errResults)
+		return
+	}
+
+	policyGuid, err := uuid.NewV4()
+	if err != nil {
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Error generating policy guid"})
+		return
+	}
+
+	h.logger.Info("saving policy json", lager.Data{"policy": policyStr})
+	err = h.policydb.SaveAppPolicy(appId, policyStr, policyGuid.String())
+	if err != nil {
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Error saving policy"})
+		return
+	}
+
+	h.logger.Info("creating/updating schedules", lager.Data{"policy": policyStr})
+	err = h.schedulerUtil.CreateOrUpdateSchedule(appId, policyStr, policyGuid.String())
+	if err != nil {
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Error creating/updating schedules"})
+		return
+	}
+
+	handlers.WriteJSONResponse(w, http.StatusOK, nil)
+}
+
+func (h *PublicApiHandler) DetachScalingPolicy(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+	appId := vars["appId"]
+	if appId == "" {
+		h.logger.Error("appId is missing", nil, nil)
+		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
+			Code:    "Bad Request",
+			Message: "appId is required",
+		})
+		return
+	}
+
+	h.logger.Info("deleting policy json", lager.Data{"appId": appId})
+	err := h.policydb.DeletePolicy(appId)
+	if err != nil {
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Error deleting policy"})
+		return
+	}
+
+	h.logger.Info("deleting schedules", lager.Data{"appId": appId})
+	err = h.schedulerUtil.DeleteSchedule(appId)
+	if err != nil {
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Error deleting schedules"})
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("{}"))
 }
 
 func (h *PublicApiHandler) GetScalingHistories(w http.ResponseWriter, r *http.Request, vars map[string]string) {
@@ -100,6 +231,7 @@ func (h *PublicApiHandler) GetScalingHistories(w http.ResponseWriter, r *http.Re
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 			Code:    "Interal-Server-Error",
 			Message: err.Error()})
+		return
 	}
 
 	handlers.WriteJSONResponse(w, resp.StatusCode, paginatedResponse)
@@ -165,6 +297,7 @@ func (h *PublicApiHandler) GetAggregatedMetricsHistories(w http.ResponseWriter, 
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 			Code:    "Interal-Server-Error",
 			Message: err.Error()})
+		return
 	}
 
 	handlers.WriteJSONResponse(w, resp.StatusCode, paginatedResponse)
@@ -235,6 +368,7 @@ func (h *PublicApiHandler) GetInstanceMetricsHistories(w http.ResponseWriter, r 
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 			Code:    "Interal-Server-Error",
 			Message: err.Error()})
+		return
 	}
 
 	handlers.WriteJSONResponse(w, resp.StatusCode, paginatedResponse)
