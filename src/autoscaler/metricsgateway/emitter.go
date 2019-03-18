@@ -13,7 +13,7 @@ import (
 type Emitter interface {
 	Accept(envelope *loggregator_v2.Envelope)
 	Emit(envelope *loggregator_v2.Envelope) error
-	Start()
+	Start() error
 	Stop()
 }
 
@@ -38,14 +38,15 @@ func NewEnvelopeEmitter(logger lager.Logger, bufferSize int, eclock clock.Clock,
 		wsHelper:          wsHelper,
 	}
 }
-func (e *EnvelopeEmitter) Start() {
+func (e *EnvelopeEmitter) Start() error {
 	err := e.wsHelper.SetupConn()
 	if err != nil {
 		e.logger.Error("failed-to-start-emimtter", err)
-		return
+		return err
 	}
 	go e.startEmitEnvelope()
 	e.logger.Info("started")
+	return nil
 }
 
 func (e *EnvelopeEmitter) startEmitEnvelope() {
