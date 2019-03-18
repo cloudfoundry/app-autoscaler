@@ -22,9 +22,12 @@ type FakeEmitter struct {
 	emitReturns struct {
 		result1 error
 	}
-	StartStub        func()
+	StartStub        func() error
 	startMutex       sync.RWMutex
 	startArgsForCall []struct{}
+	startReturns     struct {
+		result1 error
+	}
 	StopStub         func()
 	stopMutex        sync.RWMutex
 	stopArgsForCall  []struct{}
@@ -88,20 +91,28 @@ func (fake *FakeEmitter) EmitReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakeEmitter) Start() {
+func (fake *FakeEmitter) Start() error {
 	fake.startMutex.Lock()
 	fake.startArgsForCall = append(fake.startArgsForCall, struct{}{})
 	fake.recordInvocation("Start", []interface{}{})
 	fake.startMutex.Unlock()
 	if fake.StartStub != nil {
-		fake.StartStub()
+		return fake.StartStub()
 	}
+	return fake.startReturns.result1
 }
 
 func (fake *FakeEmitter) StartCallCount() int {
 	fake.startMutex.RLock()
 	defer fake.startMutex.RUnlock()
 	return len(fake.startArgsForCall)
+}
+
+func (fake *FakeEmitter) StartReturns(result1 error) {
+	fake.StartStub = nil
+	fake.startReturns = struct {
+		result1 error
+	}{result1}
 }
 
 func (fake *FakeEmitter) Stop() {

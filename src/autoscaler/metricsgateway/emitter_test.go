@@ -3,6 +3,7 @@ package metricsgateway_test
 import (
 	"autoscaler/fakes"
 	. "autoscaler/metricsgateway"
+	"errors"
 	"time"
 
 	"code.cloudfoundry.org/clock/fakeclock"
@@ -72,20 +73,35 @@ var _ = Describe("Emitter", func() {
 
 	})
 	Context("Start", func() {
+		var startError error
 		JustBeforeEach(func() {
 			emitter = NewEnvelopeEmitter(logger, bufferSize, fclock, verifyWSConnectionInterval, fakeWSHelper)
-			emitter.Start()
+			startError = emitter.Start()
 		})
 		It("should emit envelops to metricServer", func() {
+			Expect(startError).NotTo(HaveOccurred())
 			emitter.Accept(&testEnvelope)
 			Eventually(envelopChan).Should(Receive())
 		})
 
 		It("should send ping message to metricServer periodically", func() {
+			Expect(startError).NotTo(HaveOccurred())
 			fclock.WaitForWatcherAndIncrement(1 * verifyWSConnectionInterval)
 			Eventually(wsMessageChan).Should(Receive(Equal(websocket.PingMessage)))
 			fclock.WaitForWatcherAndIncrement(1 * verifyWSConnectionInterval)
 			Eventually(wsMessageChan).Should(Receive(Equal(websocket.PingMessage)))
+		})
+		Context("when it fails to connect metricsserver", func() {
+			BeforeEach(func() {
+				fakeWSHelper.SetupConnStub = func() error {
+					return errors.New("connection-error")
+				}
+			})
+			It("failed to start", func() {
+				Expect(startError).To(HaveOccurred())
+				emitter.Accept(&testEnvelope)
+				Consistently(envelopChan).ShouldNot(Receive())
+			})
 		})
 	})
 
