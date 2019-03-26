@@ -16,6 +16,41 @@ import (
 )
 
 var _ = Describe("PublicApiHandler", func() {
+	const (
+		INVALID_POLICY_STR = `{
+			"instance_max_count":4,
+			"scaling_rules":[
+			{
+				"metric_type":"memoryused",
+				"threshold":30,
+				"operator":"<",
+				"adjustment":"-1"
+			}]
+		}`
+		VALID_POLICY_STR = `{
+			"instance_min_count": 1,
+			"instance_max_count": 5,
+			"scaling_rules": [{
+				"metric_type": "memoryused",
+				"breach_duration_secs": 300,
+				"threshold": 30,
+				"operator": ">",
+				"cool_down_secs": 300,
+				"adjustment": "-1"
+			}],
+			"schedules": {
+				"timezone": "Asia/Kolkata",
+				"recurring_schedule": [{
+					"start_time": "10:00",
+					"end_time": "18:00",
+					"days_of_week": [1, 2, 3],
+					"instance_min_count": 1,
+					"instance_max_count": 10,
+					"initial_min_instance_count": 5
+				}]
+			}
+		}`
+	)
 	var (
 		policydb      *fakes.FakePolicyDB
 		handler       *PublicApiHandler
@@ -63,13 +98,13 @@ var _ = Describe("PublicApiHandler", func() {
 		Context("When appId is not present", func() {
 			It("should fail with 400", func() {
 				Expect(resp.Code).To(Equal(http.StatusBadRequest))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"appId is required"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"AppId is required"}`))
 			})
 		})
 		Context("When database gives error", func() {
 			BeforeEach(func() {
 				pathVariables["appId"] = TEST_APP_ID
-				policydb.GetAppPolicyReturns(nil, fmt.Errorf("failed to retrive policy"))
+				policydb.GetAppPolicyReturns(nil, fmt.Errorf("Failed to retrieve policy"))
 			})
 			It("should fail with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
@@ -133,22 +168,13 @@ var _ = Describe("PublicApiHandler", func() {
 		Context("When appId is not present", func() {
 			It("should fail with 400", func() {
 				Expect(resp.Code).To(Equal(http.StatusBadRequest))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"appId is required"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"AppId is required"}`))
 			})
 		})
 		Context("When the policy is invalid", func() {
 			BeforeEach(func() {
 				pathVariables["appId"] = TEST_APP_ID
-				req, _ = http.NewRequest(http.MethodPut, "", bytes.NewBufferString(`{
-					"instance_max_count":4,
-					"scaling_rules":[
-					{
-						"metric_type":"memoryused",
-						"threshold":30,
-						"operator":"<",
-						"adjustment":"-1"
-					}]
-				}`))
+				req, _ = http.NewRequest(http.MethodPut, "", bytes.NewBufferString(INVALID_POLICY_STR))
 			})
 			It("should fail with 400", func() {
 				Expect(resp.Code).To(Equal(http.StatusBadRequest))
@@ -159,29 +185,7 @@ var _ = Describe("PublicApiHandler", func() {
 		Context("When save policy errors", func() {
 			BeforeEach(func() {
 				pathVariables["appId"] = TEST_APP_ID
-				req, _ = http.NewRequest(http.MethodPut, "", bytes.NewBufferString(`{
-					"instance_min_count": 1,
-					"instance_max_count": 5,
-					"scaling_rules": [{
-						"metric_type": "memoryused",
-						"breach_duration_secs": 300,
-						"threshold": 30,
-						"operator": ">",
-						"cool_down_secs": 300,
-						"adjustment": "-1"
-					}],
-					"schedules": {
-						"timezone": "Asia/Kolkata",
-						"recurring_schedule": [{
-							"start_time": "10:00",
-							"end_time": "18:00",
-							"days_of_week": [1, 2, 3],
-							"instance_min_count": 1,
-							"instance_max_count": 10,
-							"initial_min_instance_count": 5
-						}]
-					}
-				}`))
+				req, _ = http.NewRequest(http.MethodPut, "", bytes.NewBufferString(VALID_POLICY_STR))
 				policydb.SaveAppPolicyReturns(fmt.Errorf("Failed to save policy"))
 			})
 			It("should fail with 500", func() {
@@ -193,29 +197,7 @@ var _ = Describe("PublicApiHandler", func() {
 		Context("When scheduler returns non 200 and non 204 status code", func() {
 			BeforeEach(func() {
 				pathVariables["appId"] = TEST_APP_ID
-				req, _ = http.NewRequest(http.MethodPut, "", bytes.NewBufferString(`{
-					"instance_min_count": 1,
-					"instance_max_count": 5,
-					"scaling_rules": [{
-						"metric_type": "memoryused",
-						"breach_duration_secs": 300,
-						"threshold": 30,
-						"operator": ">",
-						"cool_down_secs": 300,
-						"adjustment": "-1"
-					}],
-					"schedules": {
-						"timezone": "Asia/Kolkata",
-						"recurring_schedule": [{
-							"start_time": "10:00",
-							"end_time": "18:00",
-							"days_of_week": [1, 2, 3],
-							"instance_min_count": 1,
-							"instance_max_count": 10,
-							"initial_min_instance_count": 5
-						}]
-					}
-				}`))
+				req, _ = http.NewRequest(http.MethodPut, "", bytes.NewBufferString(VALID_POLICY_STR))
 				schedulerStatus = 500
 			})
 			It("should fail with 500", func() {
@@ -227,29 +209,7 @@ var _ = Describe("PublicApiHandler", func() {
 		Context("When scheduler returns 200 status code", func() {
 			BeforeEach(func() {
 				pathVariables["appId"] = TEST_APP_ID
-				req, _ = http.NewRequest(http.MethodPut, "", bytes.NewBufferString(`{
-					"instance_min_count": 1,
-					"instance_max_count": 5,
-					"scaling_rules": [{
-						"metric_type": "memoryused",
-						"breach_duration_secs": 300,
-						"threshold": 30,
-						"operator": ">",
-						"cool_down_secs": 300,
-						"adjustment": "-1"
-					}],
-					"schedules": {
-						"timezone": "Asia/Kolkata",
-						"recurring_schedule": [{
-							"start_time": "10:00",
-							"end_time": "18:00",
-							"days_of_week": [1, 2, 3],
-							"instance_min_count": 1,
-							"instance_max_count": 10,
-							"initial_min_instance_count": 5
-						}]
-					}
-				}`))
+				req, _ = http.NewRequest(http.MethodPut, "", bytes.NewBufferString(VALID_POLICY_STR))
 				schedulerStatus = 200
 			})
 			It("should succeed", func() {
@@ -260,29 +220,7 @@ var _ = Describe("PublicApiHandler", func() {
 		Context("When scheduler returns 204 status code", func() {
 			BeforeEach(func() {
 				pathVariables["appId"] = TEST_APP_ID
-				req, _ = http.NewRequest(http.MethodPut, "", bytes.NewBufferString(`{
-					"instance_min_count": 1,
-					"instance_max_count": 5,
-					"scaling_rules": [{
-						"metric_type": "memoryused",
-						"breach_duration_secs": 300,
-						"threshold": 30,
-						"operator": ">",
-						"cool_down_secs": 300,
-						"adjustment": "-1"
-					}],
-					"schedules": {
-						"timezone": "Asia/Kolkata",
-						"recurring_schedule": [{
-							"start_time": "10:00",
-							"end_time": "18:00",
-							"days_of_week": [1, 2, 3],
-							"instance_min_count": 1,
-							"instance_max_count": 10,
-							"initial_min_instance_count": 5
-						}]
-					}
-				}`))
+				req, _ = http.NewRequest(http.MethodPut, "", bytes.NewBufferString(VALID_POLICY_STR))
 				schedulerStatus = 204
 			})
 			It("should succeed", func() {
@@ -300,7 +238,7 @@ var _ = Describe("PublicApiHandler", func() {
 		Context("When appId is not present", func() {
 			It("should fail with 400", func() {
 				Expect(resp.Code).To(Equal(http.StatusBadRequest))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"appId is required"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"AppId is required"}`))
 			})
 		})
 
@@ -809,7 +747,7 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should fail with 400", func() {
 				Expect(resp.Code).To(Equal(http.StatusBadRequest))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"metrictype is required"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"Metrictype is required"}`))
 			})
 		})
 
@@ -1195,7 +1133,7 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should fail with 400", func() {
 				Expect(resp.Code).To(Equal(http.StatusBadRequest))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"metrictype is required"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"Metrictype is required"}`))
 			})
 		})
 
