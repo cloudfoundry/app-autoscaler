@@ -31,17 +31,17 @@ type PublicApiHandler struct {
 func NewPublicApiHandler(logger lager.Logger, conf *config.Config, policydb db.PolicyDB) *PublicApiHandler {
 	seClient, err := helpers.CreateHTTPClient(&conf.ScalingEngine.TLSClientCerts)
 	if err != nil {
-		logger.Error("failed to create http client for ScalingEngine", err, lager.Data{"scalingengine": conf.ScalingEngine.TLSClientCerts})
+		logger.Error("Failed to create http client for ScalingEngine", err, lager.Data{"scalingengine": conf.ScalingEngine.TLSClientCerts})
 		os.Exit(1)
 	}
 	mcClient, err := helpers.CreateHTTPClient(&conf.MetricsCollector.TLSClientCerts)
 	if err != nil {
-		logger.Error("failed to create http client for MetricsCollector", err, lager.Data{"metricscollector": conf.MetricsCollector.TLSClientCerts})
+		logger.Error("Failed to create http client for MetricsCollector", err, lager.Data{"metricscollector": conf.MetricsCollector.TLSClientCerts})
 		os.Exit(1)
 	}
 	egClient, err := helpers.CreateHTTPClient(&conf.EventGenerator.TLSClientCerts)
 	if err != nil {
-		logger.Error("failed to create http client for EventGenerator", err, lager.Data{"eventgenerator": conf.EventGenerator.TLSClientCerts})
+		logger.Error("Failed to create http client for EventGenerator", err, lager.Data{"eventgenerator": conf.EventGenerator.TLSClientCerts})
 		os.Exit(1)
 	}
 	return &PublicApiHandler{
@@ -62,7 +62,7 @@ func (h *PublicApiHandler) GetScalingPolicy(w http.ResponseWriter, r *http.Reque
 		h.logger.Error("AppId is missing", nil, nil)
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 			Code:    "Bad Request",
-			Message: "appId is required",
+			Message: "AppId is required",
 		})
 		return
 	}
@@ -71,7 +71,7 @@ func (h *PublicApiHandler) GetScalingPolicy(w http.ResponseWriter, r *http.Reque
 
 	scalingPolicy, err := h.policydb.GetAppPolicy(appId)
 	if err != nil {
-		h.logger.Error("Failed to retrive scaling policy from database", err, lager.Data{"appId": appId, "err": err})
+		h.logger.Error("Failed to retrieve scaling policy from database", err, lager.Data{"appId": appId, "err": err})
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 			Code:    "Interal-Server-Error",
 			Message: "Error retrieving scaling policy"})
@@ -91,10 +91,10 @@ func (h *PublicApiHandler) GetScalingPolicy(w http.ResponseWriter, r *http.Reque
 func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Request, vars map[string]string) {
 	appId := vars["appId"]
 	if appId == "" {
-		h.logger.Error("appId is missing", nil, nil)
+		h.logger.Error("AppId is missing", nil, nil)
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 			Code:    "Bad Request",
-			Message: "appId is required",
+			Message: "AppId is required",
 		})
 		return
 	}
@@ -103,7 +103,7 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 
 	policyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		h.logger.Error("failed to read request body", err, lager.Data{"appId": appId})
+		h.logger.Error("Failed to read request body", err, lager.Data{"appId": appId})
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 			Code:    "Interal-Server-Error",
 			Message: "Failed to read request body"})
@@ -150,15 +150,15 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 func (h *PublicApiHandler) DetachScalingPolicy(w http.ResponseWriter, r *http.Request, vars map[string]string) {
 	appId := vars["appId"]
 	if appId == "" {
-		h.logger.Error("appId is missing", nil, nil)
+		h.logger.Error("AppId is missing", nil, nil)
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 			Code:    "Bad Request",
-			Message: "appId is required",
+			Message: "AppId is required",
 		})
 		return
 	}
 
-	h.logger.Info("deleting policy json", lager.Data{"appId": appId})
+	h.logger.Info("Deleting policy json", lager.Data{"appId": appId})
 	err := h.policydb.DeletePolicy(appId)
 	if err != nil {
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
@@ -167,7 +167,7 @@ func (h *PublicApiHandler) DetachScalingPolicy(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	h.logger.Info("deleting schedules", lager.Data{"appId": appId})
+	h.logger.Info("Deleting schedules", lager.Data{"appId": appId})
 	err = h.schedulerUtil.DeleteSchedule(appId)
 	if err != nil {
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
@@ -256,7 +256,7 @@ func (h *PublicApiHandler) GetAggregatedMetricsHistories(w http.ResponseWriter, 
 		h.logger.Error("Bad Request", nil, lager.Data{"appId": appId})
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 			Code:    "Bad Request",
-			Message: "metrictype is required",
+			Message: "Metrictype is required",
 		})
 		return
 	}
@@ -324,7 +324,7 @@ func (h *PublicApiHandler) GetInstanceMetricsHistories(w http.ResponseWriter, r 
 		h.logger.Error("Bad Request", nil, lager.Data{"appId": appId})
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 			Code:    "Bad Request",
-			Message: "metrictype is required",
+			Message: "Metrictype is required",
 		})
 		return
 	}
