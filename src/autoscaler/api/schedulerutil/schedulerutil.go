@@ -22,7 +22,7 @@ type SchedulerUtil struct {
 func NewSchedulerUtil(conf *config.Config, logger lager.Logger) *SchedulerUtil {
 	client, err := helpers.CreateHTTPClient(&conf.Scheduler.TLSClientCerts)
 	if err != nil {
-		logger.Error("failed to create http client for Scheduler", err, lager.Data{"scheduler": conf.Scheduler.TLSClientCerts})
+		logger.Error("Failed to create http client for Scheduler", err, lager.Data{"scheduler": conf.Scheduler.TLSClientCerts})
 		os.Exit(1)
 	}
 
@@ -44,25 +44,25 @@ func (su *SchedulerUtil) CreateOrUpdateSchedule(appId string, policyJSONStr stri
 
 	req, err := http.NewRequest("PUT", url, strings.NewReader(policyJSONStr))
 	if err != nil {
-		su.logger.Error("failed to create request to scheduler", err, lager.Data{"appId": appId, "policy": policyJSONStr})
+		su.logger.Error("Failed to create request to scheduler", err, lager.Data{"appId": appId, "policy": policyJSONStr})
 		return err
 	}
 
 	resp, err := su.httpClient.Do(req)
 	if err != nil {
-		su.logger.Error("failed to do request to scheduler", err, lager.Data{"appId": appId, "policy": policyJSONStr})
+		su.logger.Error("Failed to do request to scheduler", err, lager.Data{"appId": appId, "policy": policyJSONStr})
 		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusNoContent {
-		su.logger.Info("successfully created/updated schedules", lager.Data{"appId": appId, "policy": policyJSONStr})
+		su.logger.Info("Successfully created/updated schedules", lager.Data{"appId": appId, "policy": policyJSONStr})
 		return nil
 	}
 
 	responseData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		su.logger.Error("failed to read response body", err, lager.Data{"appId": appId})
+		su.logger.Error("Failed to read response body", err, lager.Data{"appId": appId})
 		return err
 	}
 
@@ -82,31 +82,31 @@ func (su *SchedulerUtil) DeleteSchedule(appId string) error {
 
 	req, err := http.NewRequest("DELETE", url, nil)
 	if err != nil {
-		su.logger.Error("failed to create request to scheduler", err, lager.Data{"appId": appId})
+		su.logger.Error("Failed to create request to scheduler", err, lager.Data{"appId": appId})
 		return err
 	}
 
 	resp, err := su.httpClient.Do(req)
 	if err != nil {
-		su.logger.Error("failed to do request to scheduler", err, lager.Data{"appId": appId})
+		su.logger.Error("Failed to do request to scheduler", err, lager.Data{"appId": appId})
 		return err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusOK || resp.StatusCode == http.StatusNoContent {
-		su.logger.Info("successfully deleted schedules", lager.Data{"appId": appId})
+		su.logger.Info("Successfully deleted schedules", lager.Data{"appId": appId})
 		return nil
 	}
 
 	if resp.StatusCode == http.StatusNotFound {
-		su.logger.Info("schedule not found", lager.Data{"appId": appId})
+		su.logger.Info("Schedule not found", lager.Data{"appId": appId})
 		return nil
 	}
 
 	responseData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		su.logger.Error("failed to read response body", err, lager.Data{"appId": appId})
-		return nil
+		su.logger.Error("Failed to read response body", err, lager.Data{"appId": appId})
+		return err
 	}
 
 	return fmt.Errorf("Error occurred in scheduler module during deletion : " + string(responseData))

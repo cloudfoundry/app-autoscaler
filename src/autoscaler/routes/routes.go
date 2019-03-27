@@ -57,6 +57,11 @@ const (
 	PublicApiAggregatedMetricsHistoryPath      = "/{appId}/aggregated_metric_histories/{metricType}"
 	PublicApiAggregatedMetricsHistoryRouteName = "GetPublicApiAggregatedMetricsHistories"
 
+	PublicApiPolicyPath            = "/{appId}/policy"
+	PublicApiGetPolicyRouteName    = "GetPolicy"
+	PublicApiAttachPolicyRouteName = "AttachPolicy"
+	PublicApiDetachPolicyRouteName = "DetachPolicy"
+
 	PublicApiInfoPath      = "/v1/info"
 	PublicApiInfoRouteName = "GetPublicApiInfo"
 
@@ -122,6 +127,9 @@ func newRouters() *AutoScalerRoute {
 	instance.publicApiProtectedRoutes.Path(PublicApiScalingHistoryPath).Methods(http.MethodGet).Name(PublicApiScalingHistoryRouteName)
 	instance.publicApiProtectedRoutes.Path(PublicApiMetricsHistoryPath).Methods(http.MethodGet).Name(PublicApiMetricsHistoryRouteName)
 	instance.publicApiProtectedRoutes.Path(PublicApiAggregatedMetricsHistoryPath).Methods(http.MethodGet).Name(PublicApiAggregatedMetricsHistoryRouteName)
+	instance.publicApiProtectedRoutes.Path(PublicApiPolicyPath).Methods(http.MethodGet).Name(PublicApiGetPolicyRouteName)
+	instance.publicApiProtectedRoutes.Path(PublicApiPolicyPath).Methods(http.MethodPut).Name(PublicApiAttachPolicyRouteName)
+	instance.publicApiProtectedRoutes.Path(PublicApiPolicyPath).Methods(http.MethodDelete).Name(PublicApiDetachPolicyRouteName)
 
 	return instance
 
