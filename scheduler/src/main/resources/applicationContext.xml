@@ -78,7 +78,7 @@
 		<property name="dbStatusCollector" ref="dbStatusCollector"></property>
 	</bean>
 	
-    <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
+    <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager" primary="true">
         <property name="entityManagerFactory" ref="entityManagerFactory"/>
     </bean>
     <bean id="policyDbTransactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">

@@ -49,7 +49,7 @@ public class EmbeddedTomcatUtil {
 		try {
 			tomcat.start();
 			appContext = tomcat.addWebapp("/", applicationDir.getAbsolutePath());
-		} catch (LifecycleException | ServletException e) {
+		} catch (LifecycleException e) {
 			throw new RuntimeException(e);
 		}
 	}
