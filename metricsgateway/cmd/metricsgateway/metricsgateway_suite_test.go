@@ -31,7 +31,7 @@ import (
 )
 
 var (
-	conf             *config.Config
+	conf             config.Config
 	configFile       *os.File
 	mgPath           string
 	healthHttpClient *http.Client
@@ -133,7 +133,7 @@ func initDB() {
 func initConfig() {
 
 	healthport = 8000 + GinkgoParallelNode()
-	conf = &config.Config{
+	conf = config.Config{
 		Logging: helpers.LoggingConfig{
 			Level: "info",
 		},
@@ -175,7 +175,7 @@ func initConfig() {
 			Port: healthport,
 		},
 	}
-	configFile = writeConfig(conf)
+	configFile = writeConfig(&conf)
 
 }
 
