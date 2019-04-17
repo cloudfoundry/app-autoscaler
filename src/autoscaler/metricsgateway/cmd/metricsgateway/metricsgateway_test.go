@@ -68,17 +68,14 @@ var _ = Describe("Metricsgateway", func() {
 			})
 		})
 		Context("with missing configuration", func() {
-			var backupPolicyDBURL string = ""
 			BeforeEach(func() {
 				runner.startCheck = ""
-				backupPolicyDBURL = conf.AppManager.PolicyDB.URL
 				missingConfig := conf
 				missingConfig.AppManager.PolicyDB.URL = ""
-				runner.configPath = writeConfig(missingConfig).Name()
+				runner.configPath = writeConfig(&missingConfig).Name()
 			})
 
 			AfterEach(func() {
-				conf.AppManager.PolicyDB.URL = backupPolicyDBURL
 				os.Remove(runner.configPath)
 			})
 
@@ -89,17 +86,12 @@ var _ = Describe("Metricsgateway", func() {
 		})
 	})
 	Describe("when it fails to connect to metricsserver when starting", func() {
-		var backupMetricsServerAddrs []string = []string{}
 		BeforeEach(func() {
-			backupMetricsServerAddrs = conf.MetricServerAddrs
 			wrongConfig := conf
 			wrongConfig.MetricServerAddrs = []string{"wss://localhost:9999"}
-			runner.configPath = writeConfig(wrongConfig).Name()
+			runner.configPath = writeConfig(&wrongConfig).Name()
 			runner.startCheck = ""
 
-		})
-		AfterEach(func() {
-			conf.MetricServerAddrs = backupMetricsServerAddrs
 		})
 		It("fails to start", func() {
 			Eventually(runner.Session, time.Duration(2*conf.Emitter.MaxSetupRetryCount)*conf.Emitter.RetryDelay).Should(Exit(1))
