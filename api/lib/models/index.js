@@ -15,9 +15,11 @@ module.exports = function(dbSettings, callback) {
       max: dbSettings.maxConnections || DEFAULT_DB_MAX_CONNECTIONS,
       min: dbSettings.minConnections || DEFAULT_DB_MIN_CONNECTIONS,
       idle: dbSettings.idleTimeout || DEFAULT_DB_MAX_IDLETIME
+    },
+    dialectOptions : {
+      ssl : dbSettings.ssl
     }
   });
-
   sequelize.authenticate()
     .then(function() {
       logger.info('DB Connection has been established successfully');
