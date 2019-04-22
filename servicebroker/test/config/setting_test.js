@@ -2,7 +2,9 @@
 
 var path = require('path');
 var expect = require('chai').expect;
+var fs = require('fs');
 var configSetting = require(path.join(__dirname, '../../lib/config/setting.js'));
+var fakeDBCAPath = path.join(__dirname, '../../../test-certs/autoscaler-ca.crt');
 var defaultConfig;
 
 var settingTmp = {};
@@ -60,8 +62,6 @@ describe('config setting Test Suite', function() {
     expect(settings.enableCustomMetrics).to.equal(true);
 
     expect(settings.db.uri).to.equal(defaultConfig.db.uri);
-    expect(settings.db.server).to.equal('postgres://postgres@server:80');
-    expect(settings.db.name).to.equal('dbname');
     expect(settings.db.maxConnections).to.equal(defaultConfig.db.maxConnections);
     expect(settings.db.minConnections).to.equal(defaultConfig.db.minConnections);
     expect(settings.db.idleTimeout).to.equal(defaultConfig.db.idleTimeout);
@@ -404,12 +404,76 @@ describe('config setting Test Suite', function() {
     it('Should filter the last slash', function() {
       var dbSetting = configSetting({ db: { uri: defaultConfig.db.uri + '/' },apiserver: { uri: defaultConfig.apiserver.uri, tls: defaultConfig.apiserver.tls } }).db;
       expect(dbSetting.uri).to.equal(defaultConfig.db.uri);
-      expect(dbSetting.server).to.equal("postgres://postgres@server:80");
-      expect(dbSetting.name).to.equal("dbname");
     });
 
   });
+  context('dbUri ssl', function(){
+    context('When there is no ssl setting in db.uri', function() {
+      it('Should return null ssl', function() {
+        var dbSetting = configSetting({ db: { uri: defaultConfig.db.uri }, apiserver: { uri: defaultConfig.apiserver.uri, tls: defaultConfig.apiserver.tls } }).db;
+        expect(dbSetting.uri).to.equal(defaultConfig.db.uri);
+        expect(dbSetting.ssl).to.be.null;
+      });
+    });
 
+    context('When sslmode is disable', function() {
+      it('Should return null ssl', function() {
+        var dbSetting = configSetting({ db: { uri: defaultConfig.db.uri }, apiserver: { uri: defaultConfig.apiserver.uri, tls: defaultConfig.apiserver.tls } }).db;
+        expect(dbSetting.uri).to.equal(defaultConfig.db.uri);
+        expect(dbSetting.ssl).to.be.null;
+      });
+    });
+
+    context('When sslmode is prefer', function() {
+      it('Should return ssl with rejectUnauthorized=false', function() {
+        var dbSetting = configSetting({ db: { uri: defaultConfig.db.uri + '?sslmode=prefer' }, apiserver: { uri: defaultConfig.apiserver.uri, tls: defaultConfig.apiserver.tls } }).db;
+        expect(dbSetting.uri).to.equal(defaultConfig.db.uri + '?sslmode=prefer');
+        expect(dbSetting.ssl).to.deep.equal({rejectUnauthorized: false});
+      });
+    });
+    context('When sslmode is require', function() {
+      it('Should return ssl with rejectUnauthorized=false', function() {
+        var dbSetting = configSetting({ db: { uri: defaultConfig.db.uri + '?sslmode=require' }, apiserver: { uri: defaultConfig.apiserver.uri, tls: defaultConfig.apiserver.tls } }).db;
+        expect(dbSetting.uri).to.equal(defaultConfig.db.uri + '?sslmode=require');
+        expect(dbSetting.ssl).to.deep.equal({rejectUnauthorized: false});
+      });
+    });
+    context('When sslmode is verify-ca', function() {
+      context('When sslrootcert is not provided', function() {
+        it('Should return ssl with rejectUnauthorized=true', function() {
+          var dbSetting = configSetting({ db: { uri: defaultConfig.db.uri + '?sslmode=verify-ca' }, apiserver: { uri: defaultConfig.apiserver.uri, tls: defaultConfig.apiserver.tls } }).db;
+          expect(dbSetting.uri).to.equal(defaultConfig.db.uri + '?sslmode=verify-ca');
+          expect(dbSetting.ssl).to.deep.equal({ rejectUnauthorized: true });
+        });
+      });
+
+      context('When sslrootcert is provided', function() {
+        it('Should return ssl with rejectUnauthorized=true', function() {
+          var dbSetting = configSetting({ db: { uri: defaultConfig.db.uri + '?sslmode=verify-ca&sslrootcert=' + fakeDBCAPath }, apiserver: { uri: defaultConfig.apiserver.uri, tls: defaultConfig.apiserver.tls } }).db;
+          expect(dbSetting.uri).to.equal(defaultConfig.db.uri + '?sslmode=verify-ca&sslrootcert=' + fakeDBCAPath);
+          expect(dbSetting.ssl).to.deep.equal({ rejectUnauthorized: true, ca: fs.readFileSync(fakeDBCAPath) });
+        });
+      });
+    });
+
+    context('When sslmode is verify-full', function() {
+      context('When sslrootcert is not provided', function() {
+        it('Should return ssl with rejectUnauthorized=true', function() {
+          var dbSetting = configSetting({ db: { uri: defaultConfig.db.uri + '?sslmode=verify-full' }, apiserver: { uri: defaultConfig.apiserver.uri, tls: defaultConfig.apiserver.tls } }).db;
+          expect(dbSetting.uri).to.equal(defaultConfig.db.uri + '?sslmode=verify-full');
+          expect(dbSetting.ssl).to.deep.equal({ rejectUnauthorized: true });
+        });
+      });
+
+      context('When sslrootcert is provided', function() {
+        it('Should return ssl with rejectUnauthorized=true', function() {
+          var dbSetting = configSetting({ db: { uri: defaultConfig.db.uri + '?sslmode=verify-full&sslrootcert=' + fakeDBCAPath }, apiserver: { uri: defaultConfig.apiserver.uri, tls: defaultConfig.apiserver.tls } }).db;
+          expect(dbSetting.uri).to.equal(defaultConfig.db.uri + '?sslmode=verify-full&sslrootcert=' + fakeDBCAPath);
+          expect(dbSetting.ssl).to.deep.equal({ rejectUnauthorized: true, ca: fs.readFileSync(fakeDBCAPath) });
+        });
+      });
+    });
+  })
   context('apiserver.uri', function() {
     it('Should filter the last slash', function() {
       var apiSetting = configSetting({ apiserver : { uri: defaultConfig.apiserver.uri + '/' }}).apiserver;

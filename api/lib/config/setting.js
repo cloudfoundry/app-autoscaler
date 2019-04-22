@@ -1,19 +1,42 @@
 'use strict';
 var path = require('path');
-module.exports = function (settingsObj) {
-  var db = function (dbUri) {
-    if (dbUri != null) {
-      let uri = dbUri.replace(/\/$/g, "");
-      let name = uri.slice(uri.lastIndexOf("/") + 1, uri.length);
-      let server = uri.slice(0, uri.lastIndexOf("/"));
-      return {
-        uri: uri,
-        name: name,
-        server: server
+var url = require('url');
+var fs = require('fs');
+module.exports = function(settingsObj) {
+  var db = function(dbUri) {
+   if (dbUri != null) {
+     let uri = dbUri.replace(/\/$/g, "");
+     var dbUriObj = url.parse(dbUri, true);
+     var dbSSL = null;
+     if (dbUriObj.query) {
+       var sslmode = dbUriObj.query['sslmode'];
+       if (sslmode && (sslmode === 'prefer' || sslmode === 'require' || sslmode === 'verify-ca' || sslmode === 'verify-full')) {
+         if (sslmode === 'verify-ca' || sslmode === 'verify-full') {
+           if (dbUriObj.query['sslrootcert']) {
+             dbSSL = {
+               rejectUnauthorized: true,
+               ca: fs.readFileSync(dbUriObj.query['sslrootcert'])
+             };
+           } else {
+             dbSSL = {
+               rejectUnauthorized: true,
+             };
+           }
+
+         } else {
+           dbSSL = {
+             rejectUnauthorized: false,
+           };
+         }
+       }
+     }
+
+     return {
+       uri: uri,
+       ssl: dbSSL
       };
     }
   };
-
   var cleanUpUri = function (uri) {
     if (uri) {
       uri = uri.replace(/\/$/g, "").toLowerCase();
@@ -69,8 +92,7 @@ module.exports = function (settingsObj) {
       minConnections: settingsObj.db.minConnections,
       idleTimeout: settingsObj.db.idleTimeout,
       uri: dbObj.uri,
-      name: dbObj.name,
-      server: dbObj.server
+      ssl: dbObj.ssl
     }
   }
   if (!isMissing(settings.scheduler)) {
