@@ -121,24 +121,12 @@ describe("Fatal configuration error", function() {
     });
   });
 
-  context("Setting is invalid", function() {
-    it("should throw error", function() {
-      settings.port = "not-valid-port";
-      try {
-        BrokerServer(settings, catalog);
-      } catch (e) {
-        expect(e.message).to.equal("settings.json is invalid");
-      }
-    });
-  });
-
   context("TLS key file does not exist", function() {
     it("should throw error", function() {
       settings.tls.keyFile = "invalid-file-path";
       try {
         BrokerServer(settings, catalog);
       } catch (e) {
-        console.log(e)
         expect(e.message).to.equal("Invalid TLS key path: " + settings.tls.keyFile);
       }
     });

@@ -149,7 +149,7 @@ module.exports = function(models, credentialCache, cacheTTL) {
     }
     catch(err){
     // Did not find credentials in cache, lets find in database.
-    models.credentials.find({
+    models.credentials.findOne({
       where: {
         id: appId
       }

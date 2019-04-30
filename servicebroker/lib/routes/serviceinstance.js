@@ -3,6 +3,7 @@
 
 module.exports = function(app, settings, catalog, models) {
   var path = require('path');
+  var Sequelize = require('sequelize');
   var logger = require(path.join(__dirname, '../logger/logger.js'));
 
   var getDashboardUrl = function(serviceInstanceId){
@@ -38,7 +39,7 @@ module.exports = function(app, settings, catalog, models) {
       }
       res.json({ "dashboard_url": getDashboardUrl(serviceInstanceId) });
     }).catch(function(err) {
-      if (err instanceof models.sequelize.UniqueConstraintError) {
+      if (err instanceof Sequelize.UniqueConstraintError) {
         res.status(409);
       } else {
         logger.error("Fail to handle request: ", {req: req, err: err} );
@@ -52,7 +53,7 @@ module.exports = function(app, settings, catalog, models) {
   app.delete('/v2/service_instances/:instanceId', function(req, res) {
     var serviceInstanceId = req.params.instanceId;
 
-    models.service_instance.findById(serviceInstanceId)
+    models.service_instance.findByPk(serviceInstanceId)
       .then(function(instance) {
         if (instance != null) {
           models.service_instance.destroy({
