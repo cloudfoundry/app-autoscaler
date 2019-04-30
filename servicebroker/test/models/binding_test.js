@@ -1,6 +1,6 @@
 'use strict';
 var expect = require('chai').expect;
-
+var Sequelize = require('sequelize');
 var fs = require('fs');
 var path = require('path');
 var settings = require(path.join(__dirname, '../../lib/config/setting.js'))((JSON.parse(
@@ -40,7 +40,7 @@ var binding_condition2 = {
 describe('Binding Model Definition Test Suite', function() {
 
   beforeEach(function(done) {
-    return binding.truncate({ cascade: true }).then(function(result) {
+    binding.truncate({ cascade: true }).then(function(result) {
       serviceInstance.truncate({ cascade: true }).then(function(result) {
         serviceInstance.create(service_condition).then(function(result) {
           done();
@@ -79,7 +79,7 @@ describe('Binding Model Definition Test Suite', function() {
             expect(result).to.not.exist;
           }).catch(function(error) {
             expect(error).to.not.be.null;
-            expect(error instanceof binding.sequelize.UniqueConstraintError);
+            expect(error instanceof Sequelize.UniqueConstraintError);
           })
       });
     });
@@ -90,7 +90,7 @@ describe('Binding Model Definition Test Suite', function() {
   context(' findById ', function() {
     context('when there is no record ', function() {
       it('should find NULL with nonexist service instance', function() {
-        return binding.findById(bindingId)
+        return binding.findByPk(bindingId)
           .then(function(instance) {
             expect(instance).to.be.null;
           })
@@ -103,7 +103,7 @@ describe('Binding Model Definition Test Suite', function() {
       });
 
       it('should find an instance', function() {
-        return binding.findById(binding_condition.bindingId)
+        return binding.findByPk(binding_condition.bindingId)
           .then(function(instance) {
             expect(instance.bindingId).to.equal(binding_condition.bindingId);
           })
@@ -127,7 +127,7 @@ describe('Binding Model Definition Test Suite', function() {
 
     context('when an instance already exists ', function() {
       beforeEach(function(done) {
-        return binding.create(binding_condition).then(function(result) {
+        binding.create(binding_condition).then(function(result) {
           done();
         }).catch(function(error) {
           done(error);
@@ -141,7 +141,7 @@ describe('Binding Model Definition Test Suite', function() {
           }
         }).then(function(count) {
           expect(count).to.equal(1);
-          return binding.findById(bindingId)
+          return binding.findByPk(bindingId)
             .then(function(instance) {
               expect(instance).to.be.null;
             })

@@ -74,8 +74,8 @@ function mockSchedulerDelete(count, statusCode) {
   nock(schedulerURI)
     .delete(/\/v1\/apps\/.+\/schedules/)
     .times(count)
-    .query({ 'guid': /.*/ })
     .reply(statusCode);
+
 }
 
 function mockBroker200WithBinding(count) {

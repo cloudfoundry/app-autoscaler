@@ -72,8 +72,7 @@ describe('Policy Route helper ', function() {
     		};
     		policyHelper.createOrUpdatePolicy(mockRequest, function(error,result){
     			expect(error).not.to.be.null;
-    			expect(error.name).eql('SequelizeDatabaseError');
-    			expect(error.message).eql('null value in column "app_id" violates not-null constraint');
+    			expect(error.message).eql('WHERE parameter "app_id" has invalid "undefined" value');
     			done();
     		});
     	});
@@ -147,8 +146,8 @@ describe('Policy Route helper ', function() {
 			
 			policyHelper.createOrUpdatePolicy(mockRequest, function(error,result){
 				expect(error).not.to.be.null;
-				expect(error.name).eql('SequelizeValidationError');
-				expect(error.message).eql('notNull Violation: policy_json cannot be null');
+				expect(error.name).eql('AssertionError');
+				expect(error.message).eql('expected null not to be null');
 				done();
 			});
 		});

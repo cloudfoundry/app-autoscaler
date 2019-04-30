@@ -1,5 +1,6 @@
 'use strict';
 var expect = require('chai').expect;
+var Sequelize = require('sequelize');
 
 var fs = require('fs');
 var path = require('path');
@@ -63,7 +64,7 @@ describe('Service_instance Model Definition Test Suite', function() {
             expect(result).to.not.exist;
           }).catch(function(error) {
             expect(error).to.not.be.null;
-            expect(error instanceof serviceInstance.sequelize.UniqueConstraintError);
+            expect(error instanceof Sequelize.UniqueConstraintError)
           })
       });
     });
@@ -71,10 +72,10 @@ describe('Service_instance Model Definition Test Suite', function() {
   });
 
 
-  context('findById', function() {
+  context('findByPk', function() {
     context('when there is no record ', function() {
       it('should find NULL with nonexist service instance', function() {
-        return serviceInstance.findById(serviceInstanceId)
+        return serviceInstance.findByPk(serviceInstanceId)
           .then(function(instance) {
             expect(instance).to.be.null;
           })
@@ -87,7 +88,7 @@ describe('Service_instance Model Definition Test Suite', function() {
       });
 
       it('should find an instance', function() {
-        return serviceInstance.findById(condition.serviceInstanceId)
+        return serviceInstance.findByPk(condition.serviceInstanceId)
           .then(function(instance) {
             expect(instance.serviceInstanceId).to.equal(condition.serviceInstanceId);
           })
@@ -121,7 +122,7 @@ describe('Service_instance Model Definition Test Suite', function() {
           }
         }).then(function(count) {
           expect(count).to.equal(1);
-          return serviceInstance.findById(serviceInstanceId)
+          return serviceInstance.findByPk(serviceInstanceId)
             .then(function(instance) {
               expect(instance).to.be.null;
             })

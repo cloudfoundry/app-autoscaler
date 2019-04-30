@@ -5,6 +5,7 @@ module.exports = function(app, settings, catalog, models) {
   var path = require('path');
   var fs = require('fs');
   var request = require('request');
+  var Sequelize = require('sequelize');
   var logger = require(path.join(__dirname, '../logger/logger.js'));
 
   var apiServerUtil = require(path.join(__dirname, '../util/apiServerUtil.js'))(settings);
@@ -131,10 +132,10 @@ module.exports = function(app, settings, catalog, models) {
 
           }).catch(function(error) { //catch findorcreate
             logger.error("Bind failed: create error", { error: error });
-            if (error instanceof models.sequelize.UniqueConstraintError) {
+            if (error instanceof Sequelize.UniqueConstraintError) {
               rollbackTransaction(t, res, 409, {});
               return;
-            } else if (error instanceof models.sequelize.ForeignKeyConstraintError) {
+            } else if (error instanceof Sequelize.ForeignKeyConstraintError) {
               rollbackTransaction(t, res, 404, { "description": messageUtil.getMessage("SERVICEINSTANCE_NOT_EXIST", { "serviceInstanceId": serviceInstanceId }) });
               return;
             }
@@ -148,12 +149,12 @@ module.exports = function(app, settings, catalog, models) {
           var bindingRecord = result[0];
           if (bindingRecord.serviceInstanceId === serviceInstanceId) {
             logger.error("Bind failed: app already bound", { app_guid: appId, serviceInstanceId: serviceInstanceId });
-            res.status(409).json({});
+            rollbackTransaction(t, res, 409, {});
             return;
           }
 
           logger.error("Bind failed: duplicate bind", { app_guid: appId });
-          res.status(409).json({ "description": messageUtil.getMessage("DUPLICATE_BIND", { "applicationId": appId }) });
+          rollbackTransaction(t, res, 409, { "description": messageUtil.getMessage("DUPLICATE_BIND", { "applicationId": appId }) });
         }
       });
     });
@@ -175,7 +176,7 @@ module.exports = function(app, settings, catalog, models) {
       return;
     }
     models.sequelize.transaction().then(function(t) {
-      models.binding.findById(bindingId).then(function(result) {
+      models.binding.findByPk(bindingId).then(function(result) {
         if (result != null) {
           var appId = result.appId;
           models.binding.destroy({ where: { bindingId: bindingId }, transaction: t }).then(function(count) {
