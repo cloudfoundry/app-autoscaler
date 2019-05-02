@@ -2,6 +2,7 @@
 var expect = require('chai').expect;
 var fs = require('fs');
 var path = require('path');
+var Sequelize = require('sequelize');
 var settings = require(path.join(__dirname, '../../../lib/config/setting.js'))((JSON.parse(
     fs.readFileSync(path.join(__dirname, '../../../config/settings.json'), 'utf8'))));
 var credentials = require('../../../lib/models')(settings.db).credentials;
@@ -58,7 +59,7 @@ describe('Credential Model Test Suite', function() {
           expect(result).to.not.exist;
         }).catch(function(error) {
             expect(error).to.not.be.null;
-            expect(error instanceof credentials.sequelize.UniqueConstraintError);
+            expect(error instanceof Sequelize.UniqueConstraintError);
         });
       });
 
@@ -89,7 +90,7 @@ describe('Credential Model Test Suite', function() {
     });
     context('when a credentials exists ', function() {
       beforeEach(function(done) {
-        return credentials.create(credentialCondition).then(function(result) {
+        credentials.create(credentialCondition).then(function(result) {
           done();
         }).catch(function(error) {
           done(error);
@@ -102,7 +103,7 @@ describe('Credential Model Test Suite', function() {
           }
         }).then(function(count) {
           expect(count).to.equal(1);
-          return credentials.findById(userName)
+          return credentials.findByPk(userName)
           .then(function(instance) {
           expect(instance).to.be.null;
           });
