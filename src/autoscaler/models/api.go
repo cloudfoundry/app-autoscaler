@@ -16,3 +16,8 @@ type BindingRequestBody struct {
 	AppID  string `json:"app_guid"`
 	Policy string `json:"parameters"`
 }
+
+type UnbindingRequestBody struct {
+	BrokerCommonRequestBody
+	AppID string `json:"app_guid"`
+}

@@ -10,7 +10,7 @@ services:
   - postgresql
 
 addons:
-  postgresql: "9.4"
+  postgresql: "9.6"
 
 env:
   global:
@@ -61,12 +61,6 @@ script:
   - mvn test
   - popd
   # Integration test
-  - pushd api
-  - npm install
-  - popd
-  - pushd servicebroker
-  - npm install
-  - popd
   - pushd scheduler
   - mvn package -DskipTests
   - popd
