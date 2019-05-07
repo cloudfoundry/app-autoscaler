@@ -37,7 +37,7 @@ var _ = Describe("BindingSqldb", func() {
 
 	Describe("NewBindingSQLDB", func() {
 		JustBeforeEach(func() {
-			bdb, err = NewBidingSQLDB(dbConfig, logger)
+			bdb, err = NewBindingSQLDB(dbConfig, logger)
 		})
 
 		AfterEach(func() {
@@ -67,7 +67,7 @@ var _ = Describe("BindingSqldb", func() {
 
 	Describe("CreateServiceInstance", func() {
 		BeforeEach(func() {
-			bdb, err = NewBidingSQLDB(dbConfig, logger)
+			bdb, err = NewBindingSQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
 
 			cleanServiceInstanceTable()
@@ -99,7 +99,7 @@ var _ = Describe("BindingSqldb", func() {
 
 	Describe("DeleteServiceInstance", func() {
 		BeforeEach(func() {
-			bdb, err = NewBidingSQLDB(dbConfig, logger)
+			bdb, err = NewBindingSQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
 
 			cleanServiceInstanceTable()
@@ -131,7 +131,7 @@ var _ = Describe("BindingSqldb", func() {
 
 	Describe("CreateServiceBinding", func() {
 		BeforeEach(func() {
-			bdb, err = NewBidingSQLDB(dbConfig, logger)
+			bdb, err = NewBindingSQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
 
 			cleanServiceBindingTable()
@@ -182,7 +182,7 @@ var _ = Describe("BindingSqldb", func() {
 
 	Describe("DeleteServiceBinding", func() {
 		BeforeEach(func() {
-			bdb, err = NewBidingSQLDB(dbConfig, logger)
+			bdb, err = NewBindingSQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
 
 			cleanServiceBindingTable()

@@ -135,6 +135,23 @@ func insertPolicy(appId string, scalingPolicy *models.ScalingPolicy) {
 	}
 }
 
+func getAppPolicy(appId string) string {
+	query := "SELECT policy_json FROM policy_json WHERE app_id=$1 "
+	rows, err := dbHelper.Query(query, appId)
+	if err != nil {
+		Fail("failed to get policy" + err.Error())
+	}
+	defer rows.Close()
+	var policyJsonStr string
+	if rows.Next() {
+		err = rows.Scan(&policyJsonStr)
+		if err != nil {
+			Fail("failed to scan policy" + err.Error())
+		}
+	}
+	return policyJsonStr
+}
+
 func cleanAppMetricTable() {
 	_, e := dbHelper.Exec("DELETE from app_metric")
 	if e != nil {
@@ -238,6 +255,25 @@ func insertSchedulerActiveSchedule(id int, appId string, startJobIdentifier int,
 		_, e = dbHelper.Exec(query, id, appId, startJobIdentifier, instanceMin, instanceMax, instanceMinInitial)
 	}
 	return e
+}
+
+func insertCustomMetricsBindingCredentials(appid string, username string, password string) error {
+
+	var err error
+	var query string
+
+	query = "INSERT INTO credentials(id, username, password, updated_at) values($1, $2, $3, $4)"
+	_, err = dbHelper.Exec(query, appid, username, password, "2011-05-18 15:36:38")
+	return err
+
+}
+
+func cleanCredentialsTable() error {
+	_, err := dbHelper.Exec("DELETE FROM credentials")
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func insertLockDetails(lock *models.Lock) (sql.Result, error) {

@@ -29,33 +29,71 @@ const (
 	SyncActiveSchedulesPath      = "/v1/syncSchedules"
 	SyncActiveSchedulesRouteName = "SyncActiveSchedules"
 
-	BrokerCatalogPath      = "/sb/v2/catalog"
+	BrokerCatalogPath      = "/v2/catalog"
 	BrokerCatalogRouteName = "GetCatalog"
 
-	BrokerInstancePath            = "/sb/v2/service_instances/{instanceId}"
+	BrokerInstancePath            = "/v2/service_instances/{instanceId}"
 	BrokerCreateInstanceRouteName = "CreateInstance"
 	BrokerDeleteInstanceRouteName = "DeleteInstance"
 
-	BrokerBindingPath            = "/sb/v2/service_instances/{instanceId}/service_bindings/{bindingId}"
+	BrokerBindingPath            = "/v2/service_instances/{instanceId}/service_bindings/{bindingId}"
 	BrokerCreateBindingRouteName = "CreateBinding"
 	BrokerDeleteBindingRouteName = "DeleteBinding"
+
+	EnvelopePath               = "/v1/envelopes"
+	EnvelopeReportRouteName    = "ReportEnvelope"
+	CustomMetricsPath          = "/v1/apps/{appid}/metrics"
+	PostCustomMetricsRouteName = "PostCustomMetrics"
+	SchedulePath               = "/v1/apps/{appId}/schedules"
+	UpdateScheduleRouteName    = "UpdateSchedule"
+	DeleteScheduleRouteName    = "DeleteSchedule"
+
+	PublicApiScalingHistoryPath      = "/{appId}/scaling_histories"
+	PublicApiScalingHistoryRouteName = "GetPublicApiScalingHistories"
+
+	PublicApiMetricsHistoryPath      = "/{appId}/metric_histories/{metricType}"
+	PublicApiMetricsHistoryRouteName = "GetPublicApiMetricsHistories"
+
+	PublicApiAggregatedMetricsHistoryPath      = "/{appId}/aggregated_metric_histories/{metricType}"
+	PublicApiAggregatedMetricsHistoryRouteName = "GetPublicApiAggregatedMetricsHistories"
+
+	PublicApiPolicyPath            = "/{appId}/policy"
+	PublicApiGetPolicyRouteName    = "GetPolicy"
+	PublicApiAttachPolicyRouteName = "AttachPolicy"
+	PublicApiDetachPolicyRouteName = "DetachPolicy"
+
+	PublicApiInfoPath      = "/v1/info"
+	PublicApiInfoRouteName = "GetPublicApiInfo"
+
+	PublicApiHealthPath      = "/health"
+	PublicApiHealthRouteName = "GetPublicApiHealth"
 )
 
 type AutoScalerRoute struct {
-	metricsCollectorRoutes *mux.Router
-	eventGeneratorRoutes   *mux.Router
-	scalingEngineRoutes    *mux.Router
-	brokerRoutes           *mux.Router
+	schedulerRoutes          *mux.Router
+	metricsCollectorRoutes   *mux.Router
+	eventGeneratorRoutes     *mux.Router
+	scalingEngineRoutes      *mux.Router
+	brokerRoutes             *mux.Router
+	metricServerRoutes       *mux.Router
+	metricsForwarderRoutes   *mux.Router
+	publicApiRoutes          *mux.Router
+	publicApiProtectedRoutes *mux.Router
 }
 
 var autoScalerRouteInstance = newRouters()
 
 func newRouters() *AutoScalerRoute {
 	instance := &AutoScalerRoute{
-		metricsCollectorRoutes: mux.NewRouter(),
-		eventGeneratorRoutes:   mux.NewRouter(),
-		scalingEngineRoutes:    mux.NewRouter(),
-		brokerRoutes:           mux.NewRouter(),
+		schedulerRoutes:          mux.NewRouter(),
+		metricsCollectorRoutes:   mux.NewRouter(),
+		eventGeneratorRoutes:     mux.NewRouter(),
+		scalingEngineRoutes:      mux.NewRouter(),
+		brokerRoutes:             mux.NewRouter(),
+		metricServerRoutes:       mux.NewRouter(),
+		metricsForwarderRoutes:   mux.NewRouter(),
+		publicApiRoutes:          mux.NewRouter(),
+		publicApiProtectedRoutes: mux.NewRouter(),
 	}
 
 	instance.metricsCollectorRoutes.Path(MetricHistoriesPath).Methods(http.MethodGet).Name(GetMetricHistoriesRouteName)
@@ -76,6 +114,22 @@ func newRouters() *AutoScalerRoute {
 
 	instance.brokerRoutes.Path(BrokerBindingPath).Methods(http.MethodPut).Name(BrokerCreateBindingRouteName)
 	instance.brokerRoutes.Path(BrokerBindingPath).Methods(http.MethodDelete).Name(BrokerDeleteBindingRouteName)
+	instance.metricsForwarderRoutes.Path(CustomMetricsPath).Methods(http.MethodPost).Name(PostCustomMetricsRouteName)
+
+	instance.metricServerRoutes.Path(EnvelopePath).Name(EnvelopeReportRouteName)
+
+	instance.schedulerRoutes.Path(SchedulePath).Methods(http.MethodPut).Name(UpdateScheduleRouteName)
+	instance.schedulerRoutes.Path(SchedulePath).Methods(http.MethodDelete).Name(DeleteScheduleRouteName)
+	instance.publicApiRoutes.Path(PublicApiInfoPath).Methods(http.MethodGet).Name(PublicApiInfoRouteName)
+	instance.publicApiRoutes.Path(PublicApiHealthPath).Methods(http.MethodGet).Name(PublicApiHealthRouteName)
+
+	instance.publicApiProtectedRoutes = instance.publicApiRoutes.PathPrefix("/v1/apps").Subrouter()
+	instance.publicApiProtectedRoutes.Path(PublicApiScalingHistoryPath).Methods(http.MethodGet).Name(PublicApiScalingHistoryRouteName)
+	instance.publicApiProtectedRoutes.Path(PublicApiMetricsHistoryPath).Methods(http.MethodGet).Name(PublicApiMetricsHistoryRouteName)
+	instance.publicApiProtectedRoutes.Path(PublicApiAggregatedMetricsHistoryPath).Methods(http.MethodGet).Name(PublicApiAggregatedMetricsHistoryRouteName)
+	instance.publicApiProtectedRoutes.Path(PublicApiPolicyPath).Methods(http.MethodGet).Name(PublicApiGetPolicyRouteName)
+	instance.publicApiProtectedRoutes.Path(PublicApiPolicyPath).Methods(http.MethodPut).Name(PublicApiAttachPolicyRouteName)
+	instance.publicApiProtectedRoutes.Path(PublicApiPolicyPath).Methods(http.MethodDelete).Name(PublicApiDetachPolicyRouteName)
 
 	return instance
 
@@ -94,4 +148,24 @@ func ScalingEngineRoutes() *mux.Router {
 
 func BrokerRoutes() *mux.Router {
 	return autoScalerRouteInstance.brokerRoutes
+}
+
+func MetricServerRoutes() *mux.Router {
+	return autoScalerRouteInstance.metricServerRoutes
+}
+
+func MetricsForwarderRoutes() *mux.Router {
+	return autoScalerRouteInstance.metricsForwarderRoutes
+}
+
+func SchedulerRoutes() *mux.Router {
+	return autoScalerRouteInstance.schedulerRoutes
+}
+
+func PublicApiRoutes() *mux.Router {
+	return autoScalerRouteInstance.publicApiRoutes
+}
+
+func PublicApiProtectedRoutes() *mux.Router {
+	return autoScalerRouteInstance.publicApiProtectedRoutes
 }

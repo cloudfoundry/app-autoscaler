@@ -1,0 +1,18 @@
+server:
+  port: 8081
+logging:
+  level: info
+loggregator:
+  metron_address: 127.0.0.1:3457
+  tls:
+    ca_file: "../testcerts/ca.crt"
+    cert_file: "../testcerts/client.crt"
+    key_file: "../testcerts/client.key"
+db:
+  policy_db:
+    url: "postgres://postgres:password@localhost/autoscaler?sslmode=disable"
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+health:
+  port: 8081
