@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -67,9 +68,11 @@ var _ = Describe("Api", func() {
 				runner.startCheck = ""
 				missingConfig := cfg
 
+				missingConfig.DB.PolicyDB.URL = ""
+				missingConfig.DB.BindingDB.URL = ""
 				missingConfig.BrokerUsername = ""
 				missingConfig.BrokerPassword = ""
-				missingConfig.Server.Port = 7000 + GinkgoParallelNode()
+				missingConfig.BrokerServer.Port = 7000 + GinkgoParallelNode()
 				missingConfig.Logging.Level = "debug"
 				runner.configPath = writeConfig(&missingConfig).Name()
 				runner.Start()
@@ -99,13 +102,39 @@ var _ = Describe("Api", func() {
 
 	})
 
+	Describe("BuildIn Mode", func() {
+		Context("BuildIn Mode is false", func() {
+			BeforeEach(func() {
+				cfg.UseBuildInMode = false
+				runner.startCheck = ""
+				runner.Start()
+			})
+			It("should start both broker and public-api", func() {
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("api.broker_http_server.broker-http-server-created"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("api.public_api_http_server.public-api-http-server-created"))
+			})
+		})
+
+		Context("BuildIn Mode is true", func() {
+			BeforeEach(func() {
+				cfg.UseBuildInMode = true
+				runner.startCheck = ""
+				runner.Start()
+			})
+			It("should start not start broker ", func() {
+				Eventually(runner.Session.Buffer, 2*time.Second).ShouldNot(Say("api.broker_http_server.broker-http-server-created"))
+				Eventually(runner.Session.Buffer, 2*time.Second).Should(Say("api.public_api_http_server.public-api-http-server-created"))
+			})
+		})
+	})
+
 	Describe("Broker Rest API", func() {
 		Context("When a request comes to broker catalog", func() {
 			BeforeEach(func() {
 				runner.Start()
 			})
 			It("succeeds with a 200", func() {
-				req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://127.0.0.1:%d/sb/v2/catalog", apPort), nil)
+				req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://127.0.0.1:%d/v2/catalog", brokerPort), nil)
 				Expect(err).NotTo(HaveOccurred())
 
 				req.SetBasicAuth(username, password)
@@ -118,6 +147,27 @@ var _ = Describe("Api", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(bodyBytes).To(Equal(catalogBytes))
+			})
+		})
+	})
+
+	Describe("Pubic API", func() {
+		Context("When a request comes to public api info", func() {
+			BeforeEach(func() {
+				runner.Start()
+			})
+			It("succeeds with a 200", func() {
+				req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://127.0.0.1:%d/v1/info", publicApiPort), nil)
+				Expect(err).NotTo(HaveOccurred())
+
+				rsp, err = httpClient.Do(req)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+
+				bodyBytes, err := ioutil.ReadAll(rsp.Body)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(bodyBytes).To(Equal(infoBytes))
 			})
 		})
 	})

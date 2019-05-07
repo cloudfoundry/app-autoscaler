@@ -6,6 +6,8 @@ import (
 	egConfig "autoscaler/eventgenerator/config"
 	"autoscaler/helpers"
 	mcConfig "autoscaler/metricscollector/config"
+	mgConfig "autoscaler/metricsgateway/config"
+	msConfig "autoscaler/metricsserver/config"
 	"autoscaler/models"
 	opConfig "autoscaler/operator/config"
 	seConfig "autoscaler/scalingengine/config"
@@ -34,6 +36,9 @@ const (
 	ScalingEngine         = "scalingEngine"
 	Operator              = "operator"
 	ConsulCluster         = "consulCluster"
+	MetricsGateway        = "metricsGateway"
+	MetricsServerHTTP     = "metricsServerHTTP"
+	MetricsServerWS       = "metricsServerWS"
 )
 
 var serviceCatalogPath string = "../../servicebroker/config/catalog.json"
@@ -201,7 +206,7 @@ func (components *Components) ScalingEngine(confPath string, argv ...string) *gi
 
 	return ginkgomon.New(ginkgomon.Config{
 		Name:              ScalingEngine,
-		AnsiColorCode:     "37m",
+		AnsiColorCode:     "31m",
 		StartCheck:        `"scalingengine.started"`,
 		StartCheckTimeout: 20 * time.Second,
 		Command: exec.Command(
@@ -222,6 +227,38 @@ func (components *Components) Operator(confPath string, argv ...string) *ginkgom
 		StartCheckTimeout: 40 * time.Second,
 		Command: exec.Command(
 			components.Executables[Operator],
+			append([]string{
+				"-c", confPath,
+			}, argv...)...,
+		),
+	})
+}
+
+func (components *Components) MetricsGateway(confPath string, argv ...string) *ginkgomon.Runner {
+
+	return ginkgomon.New(ginkgomon.Config{
+		Name:              MetricsGateway,
+		AnsiColorCode:     "32m",
+		StartCheck:        `"metricsgateway.started"`,
+		StartCheckTimeout: 20 * time.Second,
+		Command: exec.Command(
+			components.Executables[MetricsGateway],
+			append([]string{
+				"-c", confPath,
+			}, argv...)...,
+		),
+	})
+}
+
+func (components *Components) MetricsServer(confPath string, argv ...string) *ginkgomon.Runner {
+
+	return ginkgomon.New(ginkgomon.Config{
+		Name:              MetricsServerHTTP,
+		AnsiColorCode:     "33m",
+		StartCheck:        `"metricsserver.started"`,
+		StartCheckTimeout: 20 * time.Second,
+		Command: exec.Command(
+			components.Executables[MetricsServerHTTP],
 			append([]string{
 				"-c", confPath,
 			}, argv...)...,
@@ -633,6 +670,100 @@ func (components *Components) PrepareOperatorConfig(dbURI string, ccUAAURL strin
 		HttpClientTimeout: httpClientTimeout,
 	}
 	return writeYmlConfig(tmpDir, Operator, &conf)
+}
+
+func (components *Components) PrepareMetricsGatewayConfig(dbURI string, metricServerAddresses []string, rlpAddr string, tmpDir string) string {
+	cfg := mgConfig.Config{
+		Logging: helpers.LoggingConfig{
+			Level: LOGLEVEL,
+		},
+		EnvelopChanSize:   500,
+		NozzleCount:       1,
+		MetricServerAddrs: metricServerAddresses,
+		AppManager: mgConfig.AppManagerConfig{
+			AppRefreshInterval: 10 * time.Second,
+			PolicyDB: db.DatabaseConfig{
+				URL:                   dbURI,
+				MaxOpenConnections:    10,
+				MaxIdleConnections:    5,
+				ConnectionMaxLifetime: 60 * time.Second,
+			},
+		},
+		Emitter: mgConfig.EmitterConfig{
+			BufferSize:         500,
+			KeepAliveInterval:  1 * time.Second,
+			HandshakeTimeout:   1 * time.Second,
+			MaxSetupRetryCount: 3,
+			MaxCloseRetryCount: 3,
+			RetryDelay:         500 * time.Millisecond,
+			MetricsServerClientTLS: &models.TLSCerts{
+				KeyFile:    filepath.Join(testCertDir, "metricserver_client.key"),
+				CertFile:   filepath.Join(testCertDir, "metricserver_client.crt"),
+				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			},
+		},
+		Nozzle: mgConfig.NozzleConfig{
+			RLPAddr: rlpAddr,
+			ShardID: "autoscaler",
+			RLPClientTLS: &models.TLSCerts{
+				KeyFile:    filepath.Join(testCertDir, "reverselogproxy_client.key"),
+				CertFile:   filepath.Join(testCertDir, "reverselogproxy_client.crt"),
+				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			},
+		},
+	}
+	return writeYmlConfig(tmpDir, MetricsGateway, &cfg)
+}
+
+func (components *Components) PrepareMetricsServerConfig(dbURI string, httpClientTimeout time.Duration, httpServerPort int, wsServerPort int, tmpDir string) string {
+	cfg := msConfig.Config{
+		Logging: helpers.LoggingConfig{
+			Level: LOGLEVEL,
+		},
+		HttpClientTimeout: httpClientTimeout,
+		NodeAddrs:         []string{"localhost"},
+		NodeIndex:         0,
+		DB: msConfig.DBConfig{
+			PolicyDB: db.DatabaseConfig{
+				URL:                   dbURI,
+				MaxOpenConnections:    10,
+				MaxIdleConnections:    5,
+				ConnectionMaxLifetime: 60 * time.Second,
+			},
+			InstanceMetricsDB: db.DatabaseConfig{
+				URL:                   dbURI,
+				MaxOpenConnections:    10,
+				MaxIdleConnections:    5,
+				ConnectionMaxLifetime: 60 * time.Second,
+			},
+		},
+		Collector: msConfig.CollectorConfig{
+			WSPort:          wsServerPort,
+			WSKeepAliveTime: 5 * time.Second,
+			TLS: models.TLSCerts{
+				KeyFile:    filepath.Join(testCertDir, "metricserver.key"),
+				CertFile:   filepath.Join(testCertDir, "metricserver.crt"),
+				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			},
+			RefreshInterval:        5 * time.Second,
+			CollectInterval:        1 * time.Second,
+			SaveInterval:           2 * time.Second,
+			MetricCacheSizePerApp:  100,
+			PersistMetrics:         true,
+			EnvelopeProcessorCount: 2,
+			EnvelopeChannelSize:    100,
+			MetricChannelSize:      100,
+		},
+		Server: msConfig.ServerConfig{
+			Port: httpServerPort,
+			TLS: models.TLSCerts{
+				KeyFile:    filepath.Join(testCertDir, "metricserver.key"),
+				CertFile:   filepath.Join(testCertDir, "metricserver.crt"),
+				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			},
+		},
+	}
+	return writeYmlConfig(tmpDir, MetricsServerHTTP, &cfg)
 }
 
 func writeYmlConfig(dir string, componentName string, c interface{}) string {

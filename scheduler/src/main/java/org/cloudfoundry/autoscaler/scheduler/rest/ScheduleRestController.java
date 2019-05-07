@@ -7,7 +7,6 @@ import org.apache.logging.log4j.Logger;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationSchedules;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.Schedules;
 import org.cloudfoundry.autoscaler.scheduler.service.ScheduleManager;
-import org.cloudfoundry.autoscaler.scheduler.util.error.InvalidDataException;
 import org.cloudfoundry.autoscaler.scheduler.util.error.ValidationErrorResult;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -64,25 +63,14 @@ public class ScheduleRestController {
 	@ApiOperation(value = "Create/Modify schedules for the specified application id.", consumes = "application/json")
 	@ApiResponses(value = {
 			@ApiResponse(code = 200, message = "Schedules created for the specified application id."),
-			@ApiResponse(code = 204, message = "Schedules modified for the specified application id."),
-			@ApiResponse(code = 400, message = "Validation error encountered.") })
+			@ApiResponse(code = 204, message = "Schedules modified for the specified application id.") })
 	public ResponseEntity<List<String>> createSchedules(
 			@ApiParam(name = "app_id", value = "The application id", required = true) @PathVariable("app_id") String appId,
 			@ApiParam(name = "guid", value = "The policy guid", required = true) @RequestParam("guid") String guid,
 			@RequestBody ApplicationSchedules rawApplicationPolicy) {
 		// Note: Request could be to update existing schedules or create new schedules.
 
-		// For update also the data validation is required since an update would require a delete 
-		// and then creation of new schedule. If the data is invalid, the update request will fail.
-
 		scheduleManager.setUpSchedules(appId, guid, rawApplicationPolicy);
-
-		logger.info("Validate schedules for application: " + appId);
-		scheduleManager.validateSchedules(appId, rawApplicationPolicy);
-
-		if (validationErrorResult.hasErrors()) {
-			throw new InvalidDataException();
-		}
 
 		Schedules existingSchedules = scheduleManager.getAllSchedules(appId).getSchedules();
 		boolean isUpdateScheduleRequest = existingSchedules.hasSchedules();

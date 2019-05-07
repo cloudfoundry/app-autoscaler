@@ -1,6 +1,7 @@
 package config
 
 import (
+	"autoscaler/cf"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -11,6 +12,7 @@ import (
 
 	"autoscaler/db"
 	"autoscaler/helpers"
+	"autoscaler/models"
 )
 
 const (
@@ -21,8 +23,12 @@ type ServerConfig struct {
 	Port int `yaml:"port"`
 }
 
-var defaultServerConfig = ServerConfig{
+var defaultBrokerServerConfig = ServerConfig{
 	Port: 8080,
+}
+
+var defaultPublicApiServerConfig = ServerConfig{
+	Port: 8081,
 }
 
 var defaultLoggingConfig = helpers.LoggingConfig{
@@ -31,23 +37,58 @@ var defaultLoggingConfig = helpers.LoggingConfig{
 
 type DBConfig struct {
 	BindingDB db.DatabaseConfig `yaml:"binding_db"`
+	PolicyDB  db.DatabaseConfig `yaml:"policy_db"`
+}
+
+type SchedulerConfig struct {
+	SchedulerURL   string          `yaml:"scheduler_url"`
+	TLSClientCerts models.TLSCerts `yaml:"tls"`
+}
+type ScalingEngineConfig struct {
+	ScalingEngineUrl string          `yaml:"scaling_engine_url"`
+	TLSClientCerts   models.TLSCerts `yaml:"tls"`
+}
+
+type MetricsCollectorConfig struct {
+	MetricsCollectorUrl string          `yaml:"metrics_collector_url"`
+	TLSClientCerts      models.TLSCerts `yaml:"tls"`
+}
+
+type EventGeneratorConfig struct {
+	EventGeneratorUrl string          `yaml:"event_generator_url"`
+	TLSClientCerts    models.TLSCerts `yaml:"tls"`
 }
 
 type Config struct {
-	Logging              helpers.LoggingConfig `yaml:"logging"`
-	Server               ServerConfig          `yaml:"server"`
-	DB                   DBConfig              `yaml:"db"`
-	BrokerUsername       string                `yaml:"broker_username"`
-	BrokerPassword       string                `yaml:"broker_password"`
-	CatalogPath          string                `yaml:"catalog_path"`
-	CatalogSchemaPath    string                `yaml:"catalog_schema_path"`
-	DashboardRedirectURI string                `yaml:"dashboard_redirect_uri"`
+	Logging              helpers.LoggingConfig  `yaml:"logging"`
+	BrokerServer         ServerConfig           `yaml:"broker_server"`
+	PublicApiServer      ServerConfig           `yaml:"public_api_server"`
+	DB                   DBConfig               `yaml:"db"`
+	BrokerUsername       string                 `yaml:"broker_username"`
+	BrokerPassword       string                 `yaml:"broker_password"`
+	CatalogPath          string                 `yaml:"catalog_path"`
+	CatalogSchemaPath    string                 `yaml:"catalog_schema_path"`
+	DashboardRedirectURI string                 `yaml:"dashboard_redirect_uri"`
+	PolicySchemaPath     string                 `yaml:"policy_schema_path"`
+	Scheduler            SchedulerConfig        `yaml:"scheduler"`
+	ScalingEngine        ScalingEngineConfig    `yaml:"scaling_engine"`
+	MetricsCollector     MetricsCollectorConfig `yaml:"metrics_collector"`
+	EventGenerator       EventGeneratorConfig   `yaml:"event_generator"`
+	CF                   cf.CFConfig            `yaml:"cf"`
+	UseBuildInMode       bool                   `yaml:"use_buildin_mode"`
+	InfoFilePath         string                 `yaml:"info_file_path"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
 	conf := &Config{
-		Logging: defaultLoggingConfig,
-		Server:  defaultServerConfig,
+		Logging:         defaultLoggingConfig,
+		BrokerServer:    defaultBrokerServerConfig,
+		PublicApiServer: defaultPublicApiServerConfig,
+		UseBuildInMode:  false,
+		CF: cf.CFConfig{
+			SkipSSLValidation: false,
+			GrantType:         cf.GrantTypeClientCredentials,
+		},
 	}
 
 	bytes, err := ioutil.ReadAll(reader)
@@ -66,40 +107,76 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 }
 
 func (c *Config) Validate() error {
-	if c.DB.BindingDB.URL == "" {
-		return fmt.Errorf("Configuration error: BindingDB URL is empty")
-	}
-	if c.BrokerUsername == "" {
-		return fmt.Errorf("Configuration error: BrokerUsername is empty")
-	}
-	if c.BrokerPassword == "" {
-		return fmt.Errorf("Configuration error: BrokerPassword is empty")
-	}
-	if c.CatalogSchemaPath == "" {
-		return fmt.Errorf("Configuration error: CatalogSchemaPath is empty")
-	}
-	if c.CatalogPath == "" {
-		return fmt.Errorf("Configuration error: CatalogPath is empty")
+	if c.CF.GrantType != cf.GrantTypeClientCredentials {
+		return fmt.Errorf("Configuration error: cf.grant_type must be client_credentials")
 	}
 
-	catalogSchemaLoader := gojsonschema.NewReferenceLoader("file://" + c.CatalogSchemaPath)
-	catalogLoader := gojsonschema.NewReferenceLoader("file://" + c.CatalogPath)
-
-	result, err := gojsonschema.Validate(catalogSchemaLoader, catalogLoader)
+	err := c.CF.Validate()
 	if err != nil {
 		return err
 	}
-	if !result.Valid() {
-		errString := "{"
-		for index, desc := range result.Errors() {
-			if index == len(result.Errors())-1 {
-				errString += fmt.Sprintf("\"%s\"", desc.Description())
-			} else {
-				errString += fmt.Sprintf("\"%s\",", desc.Description())
-			}
+
+	if c.DB.PolicyDB.URL == "" {
+		return fmt.Errorf("Configuration error: PolicyDB URL is empty")
+	}
+	if c.Scheduler.SchedulerURL == "" {
+		return fmt.Errorf("Configuration error: scheduler.scheduler_url is empty")
+	}
+	if c.ScalingEngine.ScalingEngineUrl == "" {
+		return fmt.Errorf("Configuration error: scaling_engine.scaling_engine_url is empty")
+	}
+	if c.MetricsCollector.MetricsCollectorUrl == "" {
+		return fmt.Errorf("Configuration error: metrics_collector.metrics_collector_url is empty")
+	}
+	if c.EventGenerator.EventGeneratorUrl == "" {
+		return fmt.Errorf("Configuration error: event_generator.event_generator_url is empty")
+	}
+	if c.PolicySchemaPath == "" {
+		return fmt.Errorf("Configuration error: PolicySchemaPath is empty")
+	}
+
+	if c.CF.GrantType != cf.GrantTypeClientCredentials {
+		return fmt.Errorf("Configuration error: unsupported grant_type")
+	}
+	if c.InfoFilePath == "" {
+		return fmt.Errorf("Configuration error: InfoFilePath is empty")
+	}
+	if !c.UseBuildInMode {
+		if c.DB.BindingDB.URL == "" {
+			return fmt.Errorf("Configuration error: BindingDB URL is empty")
 		}
-		errString += "}"
-		return fmt.Errorf(errString)
+		if c.BrokerUsername == "" {
+			return fmt.Errorf("Configuration error: BrokerUsername is empty")
+		}
+		if c.BrokerPassword == "" {
+			return fmt.Errorf("Configuration error: BrokerPassword is empty")
+		}
+		if c.CatalogSchemaPath == "" {
+			return fmt.Errorf("Configuration error: CatalogSchemaPath is empty")
+		}
+		if c.CatalogPath == "" {
+			return fmt.Errorf("Configuration error: CatalogPath is empty")
+		}
+
+		catalogSchemaLoader := gojsonschema.NewReferenceLoader("file://" + c.CatalogSchemaPath)
+		catalogLoader := gojsonschema.NewReferenceLoader("file://" + c.CatalogPath)
+
+		result, err := gojsonschema.Validate(catalogSchemaLoader, catalogLoader)
+		if err != nil {
+			return err
+		}
+		if !result.Valid() {
+			errString := "{"
+			for index, desc := range result.Errors() {
+				if index == len(result.Errors())-1 {
+					errString += fmt.Sprintf("\"%s\"", desc.Description())
+				} else {
+					errString += fmt.Sprintf("\"%s\",", desc.Description())
+				}
+			}
+			errString += "}"
+			return fmt.Errorf(errString)
+		}
 	}
 
 	return nil

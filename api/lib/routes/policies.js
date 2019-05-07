@@ -59,7 +59,7 @@ module.exports = function(settings, models){
 
   router.get('/:app_id/policy',function(req,res) {
     logger.info('Request for policy details received',{ 'app id': req.params.app_id });
-    models.policy_json.findById(req.params.app_id).then (function(policyExists) {
+    models.policy_json.findByPk(req.params.app_id).then (function(policyExists) {
       if(policyExists) {
         logger.info('Policy details retrieved ', { 'app id': req.params.app_id });
         res.status(HttpStatus.OK).json(policyExists.policy_json);

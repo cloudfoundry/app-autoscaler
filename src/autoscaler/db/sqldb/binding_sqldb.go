@@ -16,7 +16,7 @@ type BindingSQLDB struct {
 	sqldb    *sql.DB
 }
 
-func NewBidingSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*BindingSQLDB, error) {
+func NewBindingSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*BindingSQLDB, error) {
 	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.URL)
 	if err != nil {
 		logger.Error("open-binding-db", err, lager.Data{"dbConfig": dbConfig})
@@ -79,7 +79,7 @@ func (bdb *BindingSQLDB) DeleteServiceInstance(serviceInstanceId string) error {
 	query := "SELECT FROM service_instance WHERE service_instance_id = $1"
 	rows, err := bdb.sqldb.Query(query, serviceInstanceId)
 	if err != nil {
-		bdb.logger.Error("create-service-instance", err, lager.Data{"query": query, "serviceinstanceid": serviceInstanceId})
+		bdb.logger.Error("delete-service-instance", err, lager.Data{"query": query, "serviceinstanceid": serviceInstanceId})
 		return err
 	}
 
@@ -101,7 +101,7 @@ func (bdb *BindingSQLDB) CreateServiceBinding(bindingId string, serviceInstanceI
 	query := "SELECT FROM binding WHERE binding_id = $1"
 	rows, err := bdb.sqldb.Query(query, bindingId)
 	if err != nil {
-		bdb.logger.Error("create-service-instance", err, lager.Data{"query": query, "bindingId": bindingId})
+		bdb.logger.Error("create-service-binding", err, lager.Data{"query": query, "bindingId": bindingId})
 		return err
 	}
 
@@ -125,7 +125,7 @@ func (bdb *BindingSQLDB) DeleteServiceBinding(bindingId string) error {
 	query := "SELECT FROM binding WHERE binding_id = $1"
 	rows, err := bdb.sqldb.Query(query, bindingId)
 	if err != nil {
-		bdb.logger.Error("create-service-instance", err, lager.Data{"query": query, "bindingId": bindingId})
+		bdb.logger.Error("delete-service-binding", err, lager.Data{"query": query, "bindingId": bindingId})
 		return err
 	}
 
