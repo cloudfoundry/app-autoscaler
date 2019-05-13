@@ -67,10 +67,9 @@ var _ = SynchronizedBeforeSuite(
 		ccUAA.RouteToHandler("PUT", "/v2/apps/"+appId, ghttp.RespondWith(http.StatusCreated, ""))
 
 		conf.CF = cf.CFConfig{
-			API:       ccUAA.URL(),
-			GrantType: cf.GrantTypePassword,
-			Username:  "admin",
-			Password:  "admin",
+			API:      ccUAA.URL(),
+			ClientID: "autoscaler_client_id",
+			Secret:   "autoscaler_client_secret",
 		}
 
 		port = 7000 + GinkgoParallelNode()

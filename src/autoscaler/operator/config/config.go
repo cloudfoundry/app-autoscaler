@@ -92,7 +92,6 @@ type Config struct {
 
 var defaultConfig = Config{
 	CF: cf.CFConfig{
-		GrantType:         cf.GrantTypePassword,
 		SkipSSLValidation: false,
 	},
 	Health:  defaultHealthConfig,

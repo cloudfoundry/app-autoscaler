@@ -22,16 +22,14 @@ import (
 const (
 	PathCFInfo                                   = "/v2/info"
 	PathCFAuth                                   = "/oauth/token"
-	GrantTypePassword                            = "password"
 	GrantTypeClientCredentials                   = "client_credentials"
 	GrantTypeRefreshToken                        = "refresh_token"
 	TimeToRefreshBeforeTokenExpire time.Duration = 10 * time.Minute
 )
 
 type Tokens struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-	ExpiresIn    int64  `json:"expires_in"`
+	AccessToken string `json:"access_token"`
+	ExpiresIn   int64  `json:"expires_in"`
 }
 
 type Endpoints struct {
@@ -44,7 +42,6 @@ type CFClient interface {
 	Login() error
 	RefreshAuthToken() (string, error)
 	GetTokens() Tokens
-	GetTokensWithRefresh() Tokens
 	GetEndpoints() Endpoints
 	GetApp(string) (*models.AppEntity, error)
 	SetAppInstances(string, int) error
@@ -72,21 +69,12 @@ func NewCFClient(conf *CFConfig, logger lager.Logger, clk clock.Clock) CFClient 
 	c.clk = clk
 	c.infoURL = conf.API + PathCFInfo
 
-	if conf.GrantType == GrantTypePassword {
-		c.loginForm = url.Values{
-			"grant_type": {GrantTypePassword},
-			"username":   {conf.Username},
-			"password":   {conf.Password},
-		}
-		c.authHeader = "Basic Y2Y6"
-	} else {
-		c.loginForm = url.Values{
-			"grant_type":    {GrantTypeClientCredentials},
-			"client_id":     {conf.ClientID},
-			"client_secret": {conf.Secret},
-		}
-		c.authHeader = "Basic " + base64.StdEncoding.EncodeToString([]byte(conf.ClientID+":"+conf.Secret))
+	c.loginForm = url.Values{
+		"grant_type":    {GrantTypeClientCredentials},
+		"client_id":     {conf.ClientID},
+		"client_secret": {conf.Secret},
 	}
+	c.authHeader = "Basic " + base64.StdEncoding.EncodeToString([]byte(conf.ClientID+":"+conf.Secret))
 
 	c.httpClient = cfhttp.NewClient()
 	c.httpClient.Transport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: conf.SkipSSLValidation}
@@ -170,47 +158,30 @@ func (c *cfClient) Login() error {
 	return c.requestTokenGrant(&c.loginForm)
 }
 
-func (c *cfClient) refresh() error {
-	c.logger.Info("refresh", lager.Data{"authURL": c.authURL})
-
-	if c.tokens.RefreshToken == "" {
-		err := fmt.Errorf("empty refresh_token")
-		c.logger.Error("refresh", err)
-		return err
-	}
-
-	refreshForm := url.Values{
-		"grant_type":    {GrantTypeRefreshToken},
-		"refresh_token": {c.tokens.RefreshToken},
-		"scope":         {""},
-	}
-
-	return c.requestTokenGrant(&refreshForm)
-}
-
 func (c *cfClient) RefreshAuthToken() (string, error) {
 	c.logger.Info("refresh-auth-token", lager.Data{"authURL": c.authURL})
 
-	err := c.refresh()
-	if err != nil {
-		c.logger.Info("refresh-auth-token-login-again")
-		if err = c.Login(); err != nil {
+	var err error
+	if c.authURL == "" {
+		err = c.retrieveEndpoints()
+		if err != nil {
 			return "", err
 		}
+	}
+	err = c.requestTokenGrant(&c.loginForm)
+	if err != nil {
+		return "", err
 	}
 	return TokenTypeBearer + " " + c.tokens.AccessToken, nil
 }
 
 func (c *cfClient) GetTokens() Tokens {
-	return c.tokens
-}
-
-func (c *cfClient) GetTokensWithRefresh() Tokens {
 	c.lock.Lock()
+	defer c.lock.Unlock()
+
 	if c.isTokenToBeExpired() {
 		c.RefreshAuthToken()
 	}
-	c.lock.Unlock()
 	return c.tokens
 }
 
