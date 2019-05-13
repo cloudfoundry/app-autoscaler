@@ -68,9 +68,8 @@ var _ = Describe("Oauth", func() {
 		fakeTokenServer = ghttp.NewServer()
 
 		fakeLoginServer.RouteToHandler("POST", PathCFAuth, ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
-			AccessToken:  "test-access-token",
-			RefreshToken: "test-refresh-token",
-			ExpiresIn:    12000,
+			AccessToken: "test-access-token",
+			ExpiresIn:   12000,
 		}))
 
 		fakeCCServer.RouteToHandler(http.MethodGet, "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{

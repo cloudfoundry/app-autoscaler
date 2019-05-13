@@ -125,10 +125,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	ccNOAAUAA.RouteToHandler("GET", "/apps/an-app-id/stream", wsHandler.ServeWebsocket)
 
 	cfg.CF = cf.CFConfig{
-		API:       ccNOAAUAA.URL(),
-		GrantType: cf.GrantTypePassword,
-		Username:  "admin",
-		Password:  "admin",
+		API:      ccNOAAUAA.URL(),
+		ClientID: "autoscaler_client_id",
+		Secret:   "autoscaler_client_secret",
 	}
 
 	testCertDir := "../../../../../test-certs"
