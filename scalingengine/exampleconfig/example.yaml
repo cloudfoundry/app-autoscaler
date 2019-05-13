@@ -1,8 +1,7 @@
 cf:
   api: "https://api.bosh-lite.com"
-  grant_type: "password"
-  username: "admin"
-  password: "admin"
+  client_id: "autoscaler_client_id"
+  secret: "autoscaler_client_secret"
 server:
   port: 8080
 health:

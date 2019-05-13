@@ -143,7 +143,6 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.UseBuildInMode = false
 
 	cfg.CF.API = ccServer.URL()
-	cfg.CF.GrantType = cf.GrantTypeClientCredentials
 	cfg.CF.ClientID = "client-id"
 	cfg.CF.Secret = "client-secret"
 	cfg.CF.SkipSSLValidation = true

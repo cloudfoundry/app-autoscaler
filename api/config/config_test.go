@@ -2,7 +2,6 @@ package config_test
 
 import (
 	. "autoscaler/api/config"
-	"autoscaler/cf"
 	"autoscaler/db"
 	"autoscaler/models"
 	"bytes"
@@ -82,7 +81,6 @@ cf:
   client_id: client-id
   secret: client-secret
   skip_ssl_validation: false
-  grant_type: client_credentials
 `)
 			})
 
@@ -145,8 +143,7 @@ cf:
   api: https://api.example.com
   client_id: client-id
   secret: client-secret
-  skip_ssl_validation: false
-  grant_type: client_credentials`)
+  skip_ssl_validation: false`)
 			})
 
 			It("It returns the config", func() {
@@ -235,7 +232,6 @@ cf:
 						ConnectionMaxLifetime: 0 * time.Second,
 					}))
 				Expect(conf.UseBuildInMode).To(BeFalse())
-				Expect(conf.CF.GrantType).To(Equal(cf.GrantTypeClientCredentials))
 			})
 		})
 
@@ -302,7 +298,7 @@ cf:
   client_id: client-id
   secret: client-secret
   skip_ssl_validation: false
-  grant_type: client_credentials`)
+`)
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
@@ -414,7 +410,7 @@ cf:
   client_id: client-id
   secret: client-secret
   skip_ssl_validation: false
-  grant_type: client_credentials`)
+`)
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
@@ -592,7 +588,7 @@ cf:
   client_id: client-id
   secret: client-secret
   skip_ssl_validation: false
-  grant_type: client_credentials`)
+`)
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
@@ -655,7 +651,7 @@ cf:
   client_id: client-id
   secret: client-secret
   skip_ssl_validation: false
-  grant_type: client_credentials`)
+  `)
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
@@ -718,7 +714,7 @@ cf:
   client_id: client-id
   secret: client-secret
   skip_ssl_validation: false
-  grant_type: client_credentials`)
+`)
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
@@ -758,7 +754,6 @@ cf:
 			conf.CF.API = "http://api.bosh-lite.com"
 			conf.CF.ClientID = "client-id"
 			conf.CF.Secret = "secret"
-			conf.CF.GrantType = cf.GrantTypeClientCredentials
 
 			conf.InfoFilePath = "../exampleconfig/info-file.json"
 			conf.UseBuildInMode = false
@@ -906,15 +901,6 @@ cf:
 			})
 			It("should err", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: InfoFilePath is empty")))
-			})
-		})
-
-		Context("when cf.grant_type is not client_credentials", func() {
-			BeforeEach(func() {
-				conf.CF.GrantType = cf.GrantTypePassword
-			})
-			It("should err", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: cf.grant_type must be client_credentials")))
 			})
 		})
 

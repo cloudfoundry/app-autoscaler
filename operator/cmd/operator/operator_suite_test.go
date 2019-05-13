@@ -73,10 +73,9 @@ func initConfig() {
 		models.AppEntity{Instances: 2, State: &appState}))
 
 	cfg.CF = cf.CFConfig{
-		API:       cfServer.URL(),
-		GrantType: cf.GrantTypePassword,
-		Username:  "admin",
-		Password:  "admin",
+		API:      cfServer.URL(),
+		ClientID: "client-id",
+		Secret:   "secret",
 	}
 	healthport = 8000 + GinkgoParallelNode()
 	cfg.Health.Port = healthport
