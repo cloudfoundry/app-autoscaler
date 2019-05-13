@@ -38,9 +38,8 @@ var _ = Describe("App", func() {
 			DopplerEndpoint: "test-doppler-endpoint",
 		}))
 		fakeLoginServer.RouteToHandler("POST", PathCFAuth, ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
-			AccessToken:  "test-access-token",
-			RefreshToken: "test-refresh-token",
-			ExpiresIn:    12000,
+			AccessToken: "test-access-token",
+			ExpiresIn:   12000,
 		}))
 		conf = &CFConfig{}
 		conf.API = fakeCC.URL()

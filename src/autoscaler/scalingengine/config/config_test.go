@@ -1,7 +1,6 @@
 package config_test
 
 import (
-	"autoscaler/cf"
 	"autoscaler/db"
 	. "autoscaler/scalingengine/config"
 
@@ -32,8 +31,8 @@ var _ = Describe("Config", func() {
 				configBytes = []byte(`
  cf:
   api: https://api.exmaple.com
-  grant-type: password
-  user: admin
+  client_id: autoscaler_client_id
+  secret: autoscaler_client_secret
 server:
   port: 8989
 health:
@@ -53,11 +52,8 @@ lockSize: 32
 				configBytes = []byte(`
 cf:
   api: https://api.example.com
-  grant_type: PassWord
-  username: admin
-  password: admin
-  client_id: client-id
-  secret: client-secret
+  client_id: autoscaler_client_id
+  secret: autoscaler_client_secret
   skip_ssl_validation: false
 server:
   port: 8989
@@ -96,11 +92,8 @@ http_client_timeout: 10s
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(conf.CF.API).To(Equal("https://api.example.com"))
-				Expect(conf.CF.GrantType).To(Equal("password"))
-				Expect(conf.CF.Username).To(Equal("admin"))
-				Expect(conf.CF.Password).To(Equal("admin"))
-				Expect(conf.CF.ClientID).To(Equal("client-id"))
-				Expect(conf.CF.Secret).To(Equal("client-secret"))
+				Expect(conf.CF.ClientID).To(Equal("autoscaler_client_id"))
+				Expect(conf.CF.Secret).To(Equal("autoscaler_client_secret"))
 				Expect(conf.CF.SkipSSLValidation).To(Equal(false))
 
 				Expect(conf.Server.Port).To(Equal(8989))
@@ -161,7 +154,6 @@ lockSize: 32
 			It("returns default values", func() {
 				Expect(err).NotTo(HaveOccurred())
 
-				Expect(conf.CF.GrantType).To(Equal(cf.GrantTypePassword))
 				Expect(conf.CF.SkipSSLValidation).To(Equal(false))
 				Expect(conf.Server.Port).To(Equal(8080))
 				Expect(conf.Health.Port).To(Equal(8081))
@@ -225,11 +217,8 @@ health:
 				configBytes = []byte(`
 cf:
   api: https://api.example.com
-  grant_type: PassWord
-  username: admin
-  password: admin
-  client_id: client-id
-  secret: client-secret
+  client_id: autoscaler_client_id
+  secret: autoscaler_client_secret
   skip_ssl_validation: false
 server:
   port: 8989
@@ -273,11 +262,8 @@ lockSize: 32
 				configBytes = []byte(`
 cf:
   api: https://api.example.com
-  grant_type: PassWord
-  username: admin
-  password: admin
-  client_id: client-id
-  secret: client-secret
+  client_id: autoscaler_client_id
+  secret: autoscaler_client_secret
   skip_ssl_validation: false
 server:
   port: 8989
@@ -321,11 +307,8 @@ lockSize: 32
 				configBytes = []byte(`
 cf:
   api: https://api.example.com
-  grant_type: PassWord
-  username: admin
-  password: admin
-  client_id: client-id
-  secret: client-secret
+  client_id: autoscaler_client_id
+  secret: autoscaler_client_secret
   skip_ssl_validation: false
 server:
   port: 8989
@@ -369,11 +352,8 @@ lockSize: 32
 				configBytes = []byte(`
 cf:
   api: https://api.example.com
-  grant_type: PassWord
-  username: admin
-  password: admin
-  client_id: client-id
-  secret: client-secret
+  client_id: autoscaler_client_id
+  secret: autoscaler_client_secret
   skip_ssl_validation: false
 server:
   port: 8989
@@ -417,11 +397,8 @@ lockSize: 32
 				configBytes = []byte(`
 cf:
   api: https://api.example.com
-  grant_type: PassWord
-  username: admin
-  password: admin
-  client_id: client-id
-  secret: client-secret
+  client_id: autoscaler_client_id
+  secret: autoscaler_client_secret
   skip_ssl_validation: false
 server:
   port: 8989
@@ -465,11 +442,8 @@ lockSize: 32
 				configBytes = []byte(`
 cf:
   api: https://api.example.com
-  grant_type: PassWord
-  username: admin
-  password: admin
-  client_id: client-id
-  secret: client-secret
+  client_id: autoscaler_client_id
+  secret: autoscaler_client_secret
   skip_ssl_validation: false
 server:
   port: 8989
@@ -512,11 +486,8 @@ lockSize: 32
 				configBytes = []byte(`
 cf:
   api: https://api.example.com
-  grant_type: PassWord
-  username: admin
-  password: admin
-  client_id: client-id
-  secret: client-secret
+  client_id: autoscaler_client_id
+  secret: autoscaler_client_secret
   skip_ssl_validation: false
 server:
   port: 8989
@@ -560,11 +531,8 @@ lockSize: 32
 				configBytes = []byte(`
 cf:
   api: https://api.example.com
-  grant_type: PassWord
-  username: admin
-  password: admin
-  client_id: client-id
-  secret: client-secret
+  client_id: autoscaler_client_id
+  secret: autoscaler_client_secret
   skip_ssl_validation: false
 server:
   port: 8989
@@ -608,11 +576,8 @@ lockSize: 32
 				configBytes = []byte(`
 cf:
   api: https://api.example.com
-  grant_type: PassWord
-  username: admin
-  password: admin
-  client_id: client-id
-  secret: client-secret
+  client_id: autoscaler_client_id
+  secret: autoscaler_client_secret
   skip_ssl_validation: false
 server:
   port: 8989
@@ -656,11 +621,8 @@ lockSize: 32
 				configBytes = []byte(`
 cf:
   api: https://api.example.com
-  grant_type: PassWord
-  username: admin
-  password: admin
-  client_id: client-id
-  secret: client-secret
+  client_id: autoscaler_client_id
+  secret: autoscaler_client_secret
   skip_ssl_validation: false
 server:
   port: 8989
@@ -704,11 +666,8 @@ lockSize: 32
 				configBytes = []byte(`
 cf:
   api: https://api.example.com
-  grant_type: PassWord
-  username: admin
-  password: admin
-  client_id: client-id
-  secret: client-secret
+  client_id: autoscaler_client_id
+  secret: autoscaler_client_secret
   skip_ssl_validation: false
 server:
   port: 8989
@@ -752,11 +711,8 @@ lockSize: NOT-INTEGER-VALUE
 				configBytes = []byte(`
 cf:
   api: https://api.example.com
-  grant_type: PassWord
-  username: admin
-  password: admin
-  client_id: client-id
-  secret: client-secret
+  client_id: autoscaler_client_id
+  secret: autoscaler_client_secret
   skip_ssl_validation: false
 server:
   port: 8989
@@ -802,9 +758,8 @@ http_client_timeout: 10k
 		BeforeEach(func() {
 			conf = &Config{}
 			conf.CF.API = "http://api.example.com"
-			conf.CF.GrantType = cf.GrantTypePassword
 			conf.CF.SkipSSLValidation = false
-			conf.CF.Username = "admin"
+			conf.CF.ClientID = "autoscaler_client_id"
 			conf.DB.PolicyDB.URL = "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
 			conf.DB.ScalingEngineDB.URL = "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
 			conf.DB.SchedulerDB.URL = "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
