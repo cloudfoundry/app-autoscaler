@@ -8,7 +8,6 @@ import (
 	. "github.com/onsi/gomega"
 	"gopkg.in/yaml.v2"
 
-	"autoscaler/cf"
 	"autoscaler/db"
 	. "autoscaler/metricscollector/config"
 )
@@ -32,8 +31,9 @@ var _ = Describe("Config", func() {
 				configBytes = []byte(`
  cf:
   api: https://api.exmaple.com
-  grant-type: password
-  user: admin
+  client_id: client-id
+  secret: client-secret
+  skip_ssl_validation: false
 server:
   port: 8989
 `)
@@ -49,9 +49,6 @@ server:
 				configBytes = []byte(`
 cf:
   api: https://api.example.com
-  grant_type: PassWord
-  username: admin
-  password: admin
   client_id: client-id
   secret: client-secret
   skip_ssl_validation: false
@@ -93,9 +90,6 @@ http_client_timeout: 10s
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(conf.CF.API).To(Equal("https://api.example.com"))
-				Expect(conf.CF.GrantType).To(Equal("password"))
-				Expect(conf.CF.Username).To(Equal("admin"))
-				Expect(conf.CF.Password).To(Equal("admin"))
 				Expect(conf.CF.ClientID).To(Equal("client-id"))
 				Expect(conf.CF.Secret).To(Equal("client-secret"))
 				Expect(conf.CF.SkipSSLValidation).To(Equal(false))
@@ -150,8 +144,6 @@ db:
 
 			It("returns default values", func() {
 				Expect(err).NotTo(HaveOccurred())
-
-				Expect(conf.CF.GrantType).To(Equal(cf.GrantTypePassword))
 				Expect(conf.CF.SkipSSLValidation).To(Equal(false))
 				Expect(conf.Server.Port).To(Equal(8080))
 				Expect(conf.Health.Port).To(Equal(8081))
@@ -212,9 +204,6 @@ health:
 				configBytes = []byte(`
 cf:
   api: https://api.example.com
-  grant_type: PassWord
-  username: admin
-  password: admin
   client_id: client-id
   secret: client-secret
   skip_ssl_validation: false
@@ -258,9 +247,6 @@ collector:
 				configBytes = []byte(`
 cf:
   api: https://api.example.com
-  grant_type: PassWord
-  username: admin
-  password: admin
   client_id: client-id
   secret: client-secret
   skip_ssl_validation: false
@@ -304,9 +290,6 @@ collector:
 				configBytes = []byte(`
 cf:
   api: https://api.example.com
-  grant_type: PassWord
-  username: admin
-  password: admin
   client_id: client-id
   secret: client-secret
   skip_ssl_validation: false
@@ -350,9 +333,6 @@ collector:
 				configBytes = []byte(`
 cf:
   api: https://api.example.com
-  grant_type: PassWord
-  username: admin
-  password: admin
   client_id: client-id
   secret: client-secret
   skip_ssl_validation: false
@@ -396,9 +376,6 @@ collector:
 				configBytes = []byte(`
 cf:
   api: https://api.example.com
-  grant_type: PassWord
-  username: admin
-  password: admin
   client_id: client-id
   secret: client-secret
   skip_ssl_validation: false
@@ -442,9 +419,6 @@ collector:
 				configBytes = []byte(`
 cf:
   api: https://api.example.com
-  grant_type: PassWord
-  username: admin
-  password: admin
   client_id: client-id
   secret: client-secret
   skip_ssl_validation: false
@@ -488,9 +462,6 @@ collector:
 				configBytes = []byte(`
 cf:
   api: https://api.example.com
-  grant_type: PassWord
-  username: admin
-  password: admin
   client_id: client-id
   secret: client-secret
   skip_ssl_validation: false
@@ -534,9 +505,6 @@ collector:
 				configBytes = []byte(`
 cf:
   api: https://api.example.com
-  grant_type: PassWord
-  username: admin
-  password: admin
   client_id: client-id
   secret: client-secret
   skip_ssl_validation: false
@@ -580,9 +548,6 @@ collector:
 				configBytes = []byte(`
 cf:
   api: https://api.example.com
-  grant_type: PassWord
-  username: admin
-  password: admin
   client_id: client-id
   secret: client-secret
   skip_ssl_validation: false
@@ -626,9 +591,6 @@ collector:
 				configBytes = []byte(`
 cf:
   api: https://api.example.com
-  grant_type: PassWord
-  username: admin
-  password: admin
   client_id: client-id
   secret: client-secret
   skip_ssl_validation: false
@@ -672,9 +634,6 @@ collector:
 				configBytes = []byte(`
 cf:
   api: https://api.example.com
-  grant_type: PassWord
-  username: admin
-  password: admin
   client_id: client-id
   secret: client-secret
   skip_ssl_validation: false
@@ -720,8 +679,7 @@ http_client_timeout: 10k
 		BeforeEach(func() {
 			conf = &Config{}
 			conf.CF.API = "http://api.example.com"
-			conf.CF.GrantType = cf.GrantTypePassword
-			conf.CF.Username = "admin"
+			conf.CF.ClientID = "autoscaler_client_id"
 			conf.CF.SkipSSLValidation = false
 			conf.DB.PolicyDB = db.DatabaseConfig{
 				URL:                   "postgres://pqgotest:password@localhost/pqgotest",

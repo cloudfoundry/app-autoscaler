@@ -113,7 +113,6 @@ var _ = BeforeSuite(func() {
 		},
 		CF: cf.CFConfig{
 			API:               "http://api.bosh-lite.com",
-			GrantType:         cf.GrantTypeClientCredentials,
 			ClientID:          CLIENT_ID,
 			Secret:            CLIENT_SECRET,
 			SkipSSLValidation: true,

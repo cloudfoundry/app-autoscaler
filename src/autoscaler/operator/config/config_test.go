@@ -68,9 +68,6 @@ scaling_engine_db:
 				configBytes = []byte(`
 cf:
   api: https://api.example.com
-  grant_type: PassWord
-  username: admin
-  password: admin
   client_id: client-id
   secret: client-secret
   skip_ssl_validation: false
@@ -136,9 +133,6 @@ http_client_timeout: 10s
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(conf.CF.API).To(Equal("https://api.example.com"))
-				Expect(conf.CF.GrantType).To(Equal("PassWord"))
-				Expect(conf.CF.Username).To(Equal("admin"))
-				Expect(conf.CF.Password).To(Equal("admin"))
 				Expect(conf.CF.ClientID).To(Equal("client-id"))
 				Expect(conf.CF.Secret).To(Equal("client-secret"))
 				Expect(conf.CF.SkipSSLValidation).To(Equal(false))
@@ -364,9 +358,6 @@ scheduler:
 				configBytes = []byte(`
 cf:
   api: https://api.example.com
-  grant_type: PassWord
-  username: admin
-  password: admin
   client_id: client-id
   secret: client-secret
   skip_ssl_validation: false
