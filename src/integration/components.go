@@ -462,14 +462,13 @@ spring.data.jpa.repositories.enabled=false
 	return cfgFile.Name()
 }
 
-func (components *Components) PrepareMetricsCollectorConfig(dbURI string, port int, ccNOAAUAAURL string, cfGrantTypePassword string, collectInterval time.Duration,
+func (components *Components) PrepareMetricsCollectorConfig(dbURI string, port int, ccNOAAUAAURL string, collectInterval time.Duration,
 	refreshInterval time.Duration, saveInterval time.Duration, collectMethod string, httpClientTimeout time.Duration, tmpDir string) string {
 	cfg := mcConfig.Config{
 		CF: cf.CFConfig{
-			API:       ccNOAAUAAURL,
-			GrantType: cfGrantTypePassword,
-			Username:  "admin",
-			Password:  "admin",
+			API:      ccNOAAUAAURL,
+			ClientID: "admin",
+			Secret:   "admin",
 		},
 		Server: mcConfig.ServerConfig{
 			Port: port,
@@ -566,13 +565,12 @@ func (components *Components) PrepareEventGeneratorConfig(dbUri string, port int
 	return writeYmlConfig(tmpDir, EventGenerator, &conf)
 }
 
-func (components *Components) PrepareScalingEngineConfig(dbURI string, port int, ccUAAURL string, cfGrantTypePassword string, httpClientTimeout time.Duration, tmpDir string) string {
+func (components *Components) PrepareScalingEngineConfig(dbURI string, port int, ccUAAURL string, httpClientTimeout time.Duration, tmpDir string) string {
 	conf := seConfig.Config{
 		CF: cf.CFConfig{
-			API:       ccUAAURL,
-			GrantType: cfGrantTypePassword,
-			Username:  "admin",
-			Password:  "admin",
+			API:      ccUAAURL,
+			ClientID: "admin",
+			Secret:   "admin",
 		},
 		Server: seConfig.ServerConfig{
 			Port: port,
@@ -604,16 +602,15 @@ func (components *Components) PrepareScalingEngineConfig(dbURI string, port int,
 	return writeYmlConfig(tmpDir, ScalingEngine, &conf)
 }
 
-func (components *Components) PrepareOperatorConfig(dbURI string, ccUAAURL string, cfGrantTypePassword string, scalingEngineURL string, schedulerURL string, syncInterval time.Duration, cutoffDuration time.Duration, httpClientTimeout time.Duration, tmpDir string) string {
+func (components *Components) PrepareOperatorConfig(dbURI string, ccUAAURL string, scalingEngineURL string, schedulerURL string, syncInterval time.Duration, cutoffDuration time.Duration, httpClientTimeout time.Duration, tmpDir string) string {
 	conf := &opConfig.Config{
 		Logging: helpers.LoggingConfig{
 			Level: LOGLEVEL,
 		},
 		CF: cf.CFConfig{
-			API:       ccUAAURL,
-			GrantType: cfGrantTypePassword,
-			Username:  "admin",
-			Password:  "admin",
+			API:      ccUAAURL,
+			ClientID: "admin",
+			Secret:   "admin",
 		},
 		InstanceMetricsDB: opConfig.InstanceMetricsDbPrunerConfig{
 			RefreshInterval: 2 * time.Minute,
