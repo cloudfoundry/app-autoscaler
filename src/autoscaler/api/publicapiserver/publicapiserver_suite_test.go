@@ -134,8 +134,6 @@ var _ = BeforeSuite(func() {
 	infoBytes, err = ioutil.ReadFile("../exampleconfig/info-file.json")
 	Expect(err).NotTo(HaveOccurred())
 
-	// logger = helpers.InitLoggerFromConfig(&conf.Logging, "test")
-
 	scalingHistoryPathMatcher, err := regexp.Compile("/v1/apps/[A-Za-z0-9\\-]+/scaling_histories")
 	Expect(err).NotTo(HaveOccurred())
 	scalingEngineServer.RouteToHandler(http.MethodGet, scalingHistoryPathMatcher, ghttp.RespondWithJSONEncodedPtr(&scalingEngineStatus, &scalingEngineResponse))
