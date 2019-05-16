@@ -8,6 +8,7 @@ import (
 	"autoscaler/db"
 	"autoscaler/routes"
 
+	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/mux"
 	"github.com/tedsuo/ifrit"
@@ -58,7 +59,16 @@ func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.Bind
 	addr := fmt.Sprintf("0.0.0.0:%d", conf.BrokerServer.Port)
 
 	var runner ifrit.Runner
-	runner = http_server.New(addr, r)
+	if (conf.BrokerServer.TLS.KeyFile == "") || (conf.BrokerServer.TLS.CertFile == "") {
+		runner = http_server.New(addr, r)
+	} else {
+		tlsConfig, err := cfhttp.NewTLSConfig(conf.BrokerServer.TLS.CertFile, conf.BrokerServer.TLS.KeyFile, conf.BrokerServer.TLS.CACertFile)
+		if err != nil {
+			logger.Error("failed-new-server-new-tls-config", err, lager.Data{"tls": conf.BrokerServer.TLS})
+			return nil, err
+		}
+		runner = http_server.NewTLSServer(addr, r, tlsConfig)
+	}
 
 	logger.Info("broker-http-server-created", lager.Data{"serverConfig": conf.BrokerServer})
 	return runner, nil
