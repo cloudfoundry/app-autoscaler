@@ -93,8 +93,6 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	testCertDir := "../../../../../test-certs"
 
-	// cfg.BrokerServer.Port = brokerPort
-	// cfg.PublicApiServer.Port = publicApiPort
 	cfg.BrokerServer = config.ServerConfig{
 		Port: brokerPort,
 		TLS: models.TLSCerts{
