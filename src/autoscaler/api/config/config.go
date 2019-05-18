@@ -20,7 +20,8 @@ const (
 )
 
 type ServerConfig struct {
-	Port int `yaml:"port"`
+	Port int             `yaml:"port"`
+	TLS  models.TLSCerts `yaml:"tls"`
 }
 
 var defaultBrokerServerConfig = ServerConfig{

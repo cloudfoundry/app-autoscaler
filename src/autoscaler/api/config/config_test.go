@@ -2,6 +2,7 @@ package config_test
 
 import (
 	. "autoscaler/api/config"
+	"autoscaler/cf"
 	"autoscaler/db"
 	"autoscaler/models"
 	"bytes"
@@ -29,7 +30,7 @@ var _ = Describe("Config", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
  broker_server:
-  port: 8080,
+	port: 8080,
 public_api_server:
   port: 8081
 logging:
@@ -51,25 +52,25 @@ catalog_schema_path: '../schemas/catalog.schema.json'
 catalog_path: '../exampleconfig/catalog-example.json'
 policy_schema_path: '../exampleconfig/policy.schema.json'
 scheduler:
-  scheduler_url: http://localhost:8083
+  scheduler_url: https://localhost:8083
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/sc.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/sc.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 scaling_engine:
-  scaling_engine_url: http://localhost:8083
+  scaling_engine_url: https://localhost:8083
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 metrics_collector:
-  metrics_collector_url: http://localhost:8084
+  metrics_collector_url: https://localhost:8084
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/mc.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/mc.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 event_generator:
-  event_generator_url: http://localhost:8083
+  event_generator_url: https://localhost:8083
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
@@ -93,8 +94,16 @@ cf:
 				configBytes = []byte(`
 broker_server:
   port: 8080
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/broker.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/broker.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 public_api_server:
   port: 8081
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/api.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/api.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 logging:
   level: debug
 broker_username: brokeruser
@@ -114,25 +123,25 @@ catalog_schema_path: '../schemas/catalog.schema.json'
 catalog_path: '../exampleconfig/catalog-example.json'
 policy_schema_path: '../exampleconfig/policy.schema.json'
 scheduler:
-  scheduler_url: http://localhost:8083
+  scheduler_url: https://localhost:8083
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/sc.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/sc.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 scaling_engine:
-  scaling_engine_url: http://localhost:8083
+  scaling_engine_url: https://localhost:8083
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 metrics_collector:
-  metrics_collector_url: http://localhost:8084
+  metrics_collector_url: https://localhost:8084
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/mc.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/mc.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 event_generator:
-  event_generator_url: http://localhost:8083
+  event_generator_url: https://localhost:8083
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
@@ -151,6 +160,21 @@ cf:
 
 				Expect(conf.Logging.Level).To(Equal("debug"))
 				Expect(conf.BrokerServer.Port).To(Equal(8080))
+				Expect(conf.BrokerServer.TLS).To(Equal(
+					models.TLSCerts{
+						KeyFile:    "/var/vcap/jobs/autoscaler/config/certs/broker.key",
+						CACertFile: "/var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt",
+						CertFile:   "/var/vcap/jobs/autoscaler/config/certs/broker.crt",
+					},
+				))
+				Expect(conf.PublicApiServer.Port).To(Equal(8081))
+				Expect(conf.PublicApiServer.TLS).To(Equal(
+					models.TLSCerts{
+						KeyFile:    "/var/vcap/jobs/autoscaler/config/certs/api.key",
+						CACertFile: "/var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt",
+						CertFile:   "/var/vcap/jobs/autoscaler/config/certs/api.crt",
+					},
+				))
 				Expect(conf.DB.BindingDB).To(Equal(
 					db.DatabaseConfig{
 						URL:                   "postgres://postgres:postgres@localhost/autoscaler?sslmode=disable",
@@ -172,7 +196,7 @@ cf:
 				Expect(conf.PolicySchemaPath).To(Equal("../exampleconfig/policy.schema.json"))
 				Expect(conf.Scheduler).To(Equal(
 					SchedulerConfig{
-						SchedulerURL: "http://localhost:8083",
+						SchedulerURL: "https://localhost:8083",
 						TLSClientCerts: models.TLSCerts{
 							KeyFile:    "/var/vcap/jobs/autoscaler/config/certs/sc.key",
 							CACertFile: "/var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt",
@@ -180,8 +204,19 @@ cf:
 						},
 					},
 				))
+				Expect(conf.UseBuildInMode).To(BeFalse())
+				Expect(conf.InfoFilePath).To(Equal("/var/vcap/jobs/autoscaer/config/info-file.json"))
+				Expect(conf.CF).To(Equal(
+					cf.CFConfig{
+						API:               "https://api.example.com",
+						ClientID:          "client-id",
+						Secret:            "client-secret",
+						SkipSSLValidation: false,
+					},
+				))
 			})
 		})
+
 		Context("with partial config", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
@@ -196,13 +231,13 @@ catalog_schema_path: '../schemas/catalog.schema.json'
 catalog_path: '../exampleconfig/catalog-example.json'
 policy_schema_path: '../exampleconfig/policy.schema.json'
 scheduler:
-  scheduler_url: http://localhost:8083
+  scheduler_url: https://localhost:8083
 scaling_engine:
-  scaling_engine_url: http://localhost:8083
+  scaling_engine_url: https://localhost:8083
 metrics_collector:
-  metrics_collector_url: http://localhost:8084
+  metrics_collector_url: https://localhost:8084
 event_generator:
-  event_generator_url: http://localhost:8083
+  event_generator_url: https://localhost:8083
 info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
 cf:
   api: https://api.example.com
@@ -274,19 +309,19 @@ db:
 catalog_schema_path: '../schemas/catalog.schema.json'
 catalog_path: '../exampleconfig/catalog-example.json'
 scaling_engine:
-  scaling_engine_url: http://localhost:8083
+  scaling_engine_url: https://localhost:8083
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 metrics_collector:
-  metrics_collector_url: http://localhost:8084
+  metrics_collector_url: https://localhost:8084
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/mc.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/mc.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 event_generator:
-  event_generator_url: http://localhost:8083
+  event_generator_url: https://localhost:8083
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
@@ -330,19 +365,19 @@ db:
 catalog_schema_path: '../schemas/catalog.schema.json'
 catalog_path: '../exampleconfig/catalog-example.json'
 scaling_engine:
-  scaling_engine_url: http://localhost:8083
+  scaling_engine_url: https://localhost:8083
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 metrics_collector:
-  metrics_collector_url: http://localhost:8084
+  metrics_collector_url: https://localhost:8084
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/mc.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/mc.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 event_generator:
-  event_generator_url: http://localhost:8083
+  event_generator_url: https://localhost:8083
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
@@ -386,19 +421,19 @@ db:
 catalog_schema_path: '../schemas/catalog.schema.json'
 catalog_path: '../exampleconfig/catalog-example.json'
 scaling_engine:
-  scaling_engine_url: http://localhost:8083
+  scaling_engine_url: https://localhost:8083
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 metrics_collector:
-  metrics_collector_url: http://localhost:8084
+  metrics_collector_url: https://localhost:8084
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/mc.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/mc.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 event_generator:
-  event_generator_url: http://localhost:8083
+  event_generator_url: https://localhost:8083
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
@@ -449,7 +484,7 @@ catalog_schema_path: '../schemas/catalog.schema.json'
 catalog_path: '../exampleconfig/catalog-example.json'
 policy_schema_path: '../exampleconfig/policy.schema.json'
 scheduler:
-  scheduler_url: http://localhost:8083
+  scheduler_url: https://localhost:8083
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/sc.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/sc.crt
@@ -485,7 +520,7 @@ catalog_schema_path: '../schemas/catalog.schema.json'
 catalog_path: '../exampleconfig/catalog-example.json'
 policy_schema_path: '../exampleconfig/policy.schema.json'
 scheduler:
-  scheduler_url: http://localhost:8083
+  scheduler_url: https://localhost:8083
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/sc.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/sc.crt
@@ -521,7 +556,7 @@ catalog_schema_path: '../schemas/catalog.schema.json'
 catalog_path: '../exampleconfig/catalog-example.json'
 policy_schema_path: '../exampleconfig/policy.schema.json'
 scheduler:
-  scheduler_url: http://localhost:8083
+  scheduler_url: https://localhost:8083
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/sc.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/sc.crt
@@ -558,25 +593,25 @@ catalog_schema_path: '../schemas/catalog.schema.json'
 catalog_path: '../exampleconfig/catalog-example.json'
 policy_schema_path: '../exampleconfig/policy.schema.json'
 scheduler:
-  scheduler_url: http://localhost:8083
+  scheduler_url: https://localhost:8083
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/sc.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/sc.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 scaling_engine:
-  scaling_engine_url: http://localhost:8083
+  scaling_engine_url: https://localhost:8083
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 metrics_collector:
-  metrics_collector_url: http://localhost:8084
+  metrics_collector_url: https://localhost:8084
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/mc.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/mc.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 event_generator:
-  event_generator_url: http://localhost:8083
+  event_generator_url: https://localhost:8083
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
@@ -621,25 +656,25 @@ catalog_schema_path: '../schemas/catalog.schema.json'
 catalog_path: '../exampleconfig/catalog-example.json'
 policy_schema_path: '../exampleconfig/policy.schema.json'
 scheduler:
-  scheduler_url: http://localhost:8083
+  scheduler_url: https://localhost:8083
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/sc.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/sc.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 scaling_engine:
-  scaling_engine_url: http://localhost:8083
+  scaling_engine_url: https://localhost:8083
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 metrics_collector:
-  metrics_collector_url: http://localhost:8084
+  metrics_collector_url: https://localhost:8084
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/mc.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/mc.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 event_generator:
-  event_generator_url: http://localhost:8083
+  event_generator_url: https://localhost:8083
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
@@ -684,25 +719,25 @@ catalog_schema_path: '../schemas/catalog.schema.json'
 catalog_path: '../exampleconfig/catalog-example.json'
 policy_schema_path: '../exampleconfig/policy.schema.json'
 scheduler:
-  scheduler_url: http://localhost:8083
+  scheduler_url: https://localhost:8083
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/sc.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/sc.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 scaling_engine:
-  scaling_engine_url: http://localhost:8083
+  scaling_engine_url: https://localhost:8083
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 metrics_collector:
-  metrics_collector_url: http://localhost:8084
+  metrics_collector_url: https://localhost:8084
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/mc.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/mc.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
 event_generator:
-  event_generator_url: http://localhost:8083
+  event_generator_url: https://localhost:8083
   tls:
     key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
@@ -745,13 +780,13 @@ cf:
 			conf.CatalogPath = "../exampleconfig/catalog-example.json"
 			conf.PolicySchemaPath = "../exampleconfig/policy.schema.json"
 
-			conf.Scheduler.SchedulerURL = "http://localhost:8083"
+			conf.Scheduler.SchedulerURL = "https://localhost:8083"
 
-			conf.MetricsCollector.MetricsCollectorUrl = "http://localhost:8083"
-			conf.ScalingEngine.ScalingEngineUrl = "http://localhost:8084"
-			conf.EventGenerator.EventGeneratorUrl = "http://localhost:8085"
+			conf.MetricsCollector.MetricsCollectorUrl = "https://localhost:8083"
+			conf.ScalingEngine.ScalingEngineUrl = "https://localhost:8084"
+			conf.EventGenerator.EventGeneratorUrl = "https://localhost:8085"
 
-			conf.CF.API = "http://api.bosh-lite.com"
+			conf.CF.API = "https://api.bosh-lite.com"
 			conf.CF.ClientID = "client-id"
 			conf.CF.Secret = "secret"
 
