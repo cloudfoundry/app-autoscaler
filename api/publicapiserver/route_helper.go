@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+
+	"autoscaler/models"
 )
 
 const (
@@ -52,7 +54,6 @@ func parseParameter(r *http.Request, vars map[string]string) (*url.Values, error
 	if orderDirection != DESC && orderDirection != ASC {
 		return nil, fmt.Errorf("order-direction must be DESC or ASC")
 	}
-
 	if page == "" {
 		page = "1"
 	}
@@ -74,11 +75,10 @@ func parseParameter(r *http.Request, vars map[string]string) (*url.Values, error
 	if resultsPerPageCount <= 0 {
 		return nil, fmt.Errorf("results-per-page must be greater than 0")
 	}
-
 	parameters := &url.Values{}
 	parameters.Add("start-time", startTime)
 	parameters.Add("end-time", endTime)
-	parameters.Add("order-direction", orderDirection)
+	parameters.Add("order", orderDirection)
 	parameters.Add("page", page)
 	parameters.Add("results-per-page", resultsPerPage)
 
@@ -92,7 +92,6 @@ func paginateResource(resourceList []byte, parameters *url.Values, r *http.Reque
 	if err != nil {
 		return nil, fmt.Errorf("Failed to unmarshal resources")
 	}
-
 	totalResults := len(resourceListItems)
 	perPage, _ := strconv.Atoi(parameters.Get("results-per-page"))
 	pageNo, _ := strconv.Atoi(parameters.Get("page"))
@@ -114,25 +113,18 @@ func paginateResource(resourceList []byte, parameters *url.Values, r *http.Reque
 	}
 
 	resources := resourceListItems[startIndex:endIndex]
-
+	queries := r.URL.Query()
 	prevUrl := ""
 	if (pageNo > 1) && (pageNo <= totalPages+1) {
-		prevUrl = getPageUrl(r, parameters, pageNo-1)
+		prevUrl = getPageUrl(r, &queries, pageNo-1)
 	}
 
 	nextUrl := ""
 	if pageNo < totalPages {
-		nextUrl = getPageUrl(r, parameters, pageNo+1)
+		nextUrl = getPageUrl(r, &queries, pageNo+1)
 	}
 
-	result := struct {
-		TotalResults int           `json:"total_results"`
-		TotalPages   int           `json:"total_pages"`
-		Page         int           `json:"page"`
-		PrevUrl      string        `json:"prev_url"`
-		NextUrl      string        `json:"next_url"`
-		Resources    []interface{} `json:"resources"`
-	}{}
+	result := models.PublicApiResultBase{}
 
 	result.TotalResults = totalResults
 	result.TotalPages = totalPages
@@ -144,11 +136,11 @@ func paginateResource(resourceList []byte, parameters *url.Values, r *http.Reque
 	return result, nil
 }
 
-func getPageUrl(r *http.Request, parameters *url.Values, targetPageNo int) string {
+func getPageUrl(r *http.Request, queries *url.Values, targetPageNo int) string {
 	pageUrl, _ := url.Parse(r.URL.String())
 
 	pageParams := url.Values{}
-	for key, value := range *parameters {
+	for key, value := range *queries {
 		if key == "page" {
 			pageParams.Add(key, strconv.Itoa(targetPageNo))
 		} else {
