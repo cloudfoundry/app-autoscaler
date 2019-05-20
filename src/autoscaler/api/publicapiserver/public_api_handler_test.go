@@ -5,6 +5,7 @@ import (
 	"autoscaler/fakes"
 	"autoscaler/models"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -594,7 +595,22 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get full page", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				Expect(resp.Body.String()).To(Equal(`{"total_results":5,"total_pages":3,"page":1,"prev_url":"","next_url":"/v1/apps/test-app-id/scaling_histories/?end-time=300\u0026order-direction=DESC\u0026page=2\u0026results-per-page=2\u0026start-time=100","resources":[{"app_id":"test-app-id","error":"","message":"","new_instances":4,"old_instances":2,"reason":"a reason","scaling_type":0,"status":0,"timestamp":300},{"app_id":"test-app-id","error":"","message":"","new_instances":4,"old_instances":2,"reason":"a reason","scaling_type":1,"status":1,"timestamp":250}]}`))
+				var result models.AppScalingHistoryResult
+				err := json.Unmarshal([]byte(resp.Body.String()), &result)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(Equal(
+					models.AppScalingHistoryResult{
+						PublicApiResultBase: models.PublicApiResultBase{
+							TotalResults: 5,
+							TotalPages:   3,
+							Page:         1,
+							PrevUrl:      "",
+							NextUrl:      "/v1/apps/test-app-id/scaling_histories/?end-time=300\u0026order-direction=desc\u0026page=2\u0026results-per-page=2\u0026start-time=100",
+						},
+						Resources: scalingEngineResponse[0:2],
+					},
+				))
+
 			})
 		})
 		Context("when getting 2nd page", func() {
@@ -613,7 +629,21 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get full page", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				Expect(resp.Body.String()).To(Equal(`{"total_results":5,"total_pages":3,"page":2,"prev_url":"/v1/apps/test-app-id/scaling_histories/?end-time=300\u0026order-direction=DESC\u0026page=1\u0026results-per-page=2\u0026start-time=100","next_url":"/v1/apps/test-app-id/scaling_histories/?end-time=300\u0026order-direction=DESC\u0026page=3\u0026results-per-page=2\u0026start-time=100","resources":[{"app_id":"test-app-id","error":"","message":"","new_instances":4,"old_instances":2,"reason":"a reason","scaling_type":0,"status":0,"timestamp":200},{"app_id":"test-app-id","error":"","message":"","new_instances":4,"old_instances":2,"reason":"a reason","scaling_type":1,"status":1,"timestamp":150}]}`))
+				var result models.AppScalingHistoryResult
+				err := json.Unmarshal([]byte(resp.Body.String()), &result)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(Equal(
+					models.AppScalingHistoryResult{
+						PublicApiResultBase: models.PublicApiResultBase{
+							TotalResults: 5,
+							TotalPages:   3,
+							Page:         2,
+							PrevUrl:      "/v1/apps/test-app-id/scaling_histories/?end-time=300\u0026order-direction=desc\u0026page=1\u0026results-per-page=2\u0026start-time=100",
+							NextUrl:      "/v1/apps/test-app-id/scaling_histories/?end-time=300\u0026order-direction=desc\u0026page=3\u0026results-per-page=2\u0026start-time=100",
+						},
+						Resources: scalingEngineResponse[2:4],
+					},
+				))
 			})
 		})
 
@@ -633,7 +663,21 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get only one record", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				Expect(resp.Body.String()).To(Equal(`{"total_results":5,"total_pages":3,"page":3,"prev_url":"/v1/apps/test-app-id/scaling_histories/?end-time=300\u0026order-direction=DESC\u0026page=2\u0026results-per-page=2\u0026start-time=100","next_url":"","resources":[{"app_id":"test-app-id","error":"","message":"","new_instances":4,"old_instances":2,"reason":"a reason","scaling_type":0,"status":0,"timestamp":100}]}`))
+				var result models.AppScalingHistoryResult
+				err := json.Unmarshal([]byte(resp.Body.String()), &result)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(Equal(
+					models.AppScalingHistoryResult{
+						PublicApiResultBase: models.PublicApiResultBase{
+							TotalResults: 5,
+							TotalPages:   3,
+							Page:         3,
+							PrevUrl:      "/v1/apps/test-app-id/scaling_histories/?end-time=300\u0026order-direction=desc\u0026page=2\u0026results-per-page=2\u0026start-time=100",
+							NextUrl:      "",
+						},
+						Resources: scalingEngineResponse[4:5],
+					},
+				))
 			})
 		})
 
@@ -653,7 +697,21 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get no records", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				Expect(resp.Body.String()).To(Equal(`{"total_results":5,"total_pages":3,"page":4,"prev_url":"/v1/apps/test-app-id/scaling_histories/?end-time=300\u0026order-direction=DESC\u0026page=3\u0026results-per-page=2\u0026start-time=100","next_url":"","resources":[]}`))
+				var result models.AppScalingHistoryResult
+				err := json.Unmarshal([]byte(resp.Body.String()), &result)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(Equal(
+					models.AppScalingHistoryResult{
+						PublicApiResultBase: models.PublicApiResultBase{
+							TotalResults: 5,
+							TotalPages:   3,
+							Page:         4,
+							PrevUrl:      "/v1/apps/test-app-id/scaling_histories/?end-time=300\u0026order-direction=desc\u0026page=3\u0026results-per-page=2\u0026start-time=100",
+							NextUrl:      "",
+						},
+						Resources: []models.AppScalingHistory{},
+					},
+				))
 			})
 		})
 
@@ -987,7 +1045,21 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get full page", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				Expect(resp.Body.String()).To(Equal(`{"total_results":5,"total_pages":3,"page":1,"prev_url":"","next_url":"/v1/apps/test-app-id/metric_histories/test_metric?end-time=300\u0026order-direction=DESC\u0026page=2\u0026results-per-page=2\u0026start-time=100","resources":[{"app_id":"test-app-id","collected_at":0,"instance_index":0,"name":"test_metric","timestamp":100,"unit":"test_unit","value":"200"},{"app_id":"test-app-id","collected_at":1,"instance_index":1,"name":"test_metric","timestamp":110,"unit":"test_unit","value":"250"}]}`))
+				var result models.InstanceMetricResult
+				err := json.Unmarshal([]byte(resp.Body.String()), &result)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(Equal(
+					models.InstanceMetricResult{
+						PublicApiResultBase: models.PublicApiResultBase{
+							TotalResults: 5,
+							TotalPages:   3,
+							Page:         1,
+							PrevUrl:      "",
+							NextUrl:      "/v1/apps/test-app-id/metric_histories/test_metric?end-time=300\u0026order-direction=desc\u0026page=2\u0026results-per-page=2\u0026start-time=100",
+						},
+						Resources: metricsCollectorResponse[0:2],
+					},
+				))
 			})
 		})
 		Context("when getting 2nd page", func() {
@@ -1007,7 +1079,22 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get full page", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				Expect(resp.Body.String()).To(Equal(`{"total_results":5,"total_pages":3,"page":2,"prev_url":"/v1/apps/test-app-id/metric_histories/test_metric?end-time=300\u0026order-direction=DESC\u0026page=1\u0026results-per-page=2\u0026start-time=100","next_url":"/v1/apps/test-app-id/metric_histories/test_metric?end-time=300\u0026order-direction=DESC\u0026page=3\u0026results-per-page=2\u0026start-time=100","resources":[{"app_id":"test-app-id","collected_at":0,"instance_index":0,"name":"test_metric","timestamp":150,"unit":"test_unit","value":"250"},{"app_id":"test-app-id","collected_at":1,"instance_index":1,"name":"test_metric","timestamp":170,"unit":"test_unit","value":"200"}]}`))
+				var result models.InstanceMetricResult
+				err := json.Unmarshal([]byte(resp.Body.String()), &result)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(Equal(
+					models.InstanceMetricResult{
+						PublicApiResultBase: models.PublicApiResultBase{
+							TotalResults: 5,
+							TotalPages:   3,
+							Page:         2,
+							PrevUrl:      "/v1/apps/test-app-id/metric_histories/test_metric?end-time=300\u0026order-direction=desc\u0026page=1\u0026results-per-page=2\u0026start-time=100",
+							NextUrl:      "/v1/apps/test-app-id/metric_histories/test_metric?end-time=300\u0026order-direction=desc\u0026page=3\u0026results-per-page=2\u0026start-time=100",
+						},
+						Resources: metricsCollectorResponse[2:4],
+					},
+				))
+
 			})
 		})
 
@@ -1028,7 +1115,22 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get only one record", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				Expect(resp.Body.String()).To(Equal(`{"total_results":5,"total_pages":3,"page":3,"prev_url":"/v1/apps/test-app-id/metric_histories/test_metric?end-time=300\u0026order-direction=DESC\u0026page=2\u0026results-per-page=2\u0026start-time=100","next_url":"","resources":[{"app_id":"test-app-id","collected_at":0,"instance_index":0,"name":"test_metric","timestamp":120,"unit":"test_unit","value":"200"}]}`))
+				var result models.InstanceMetricResult
+				err := json.Unmarshal([]byte(resp.Body.String()), &result)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(Equal(
+					models.InstanceMetricResult{
+						PublicApiResultBase: models.PublicApiResultBase{
+							TotalResults: 5,
+							TotalPages:   3,
+							Page:         3,
+							PrevUrl:      "/v1/apps/test-app-id/metric_histories/test_metric?end-time=300\u0026order-direction=desc\u0026page=2\u0026results-per-page=2\u0026start-time=100",
+							NextUrl:      "",
+						},
+						Resources: metricsCollectorResponse[4:5],
+					},
+				))
+
 			})
 		})
 
@@ -1049,7 +1151,21 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get no records", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				Expect(resp.Body.String()).To(Equal(`{"total_results":5,"total_pages":3,"page":4,"prev_url":"/v1/apps/test-app-id/metric_histories/test_metric?end-time=300\u0026order-direction=DESC\u0026page=3\u0026results-per-page=2\u0026start-time=100","next_url":"","resources":[]}`))
+				var result models.InstanceMetricResult
+				err := json.Unmarshal([]byte(resp.Body.String()), &result)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(Equal(
+					models.InstanceMetricResult{
+						PublicApiResultBase: models.PublicApiResultBase{
+							TotalResults: 5,
+							TotalPages:   3,
+							Page:         4,
+							PrevUrl:      "/v1/apps/test-app-id/metric_histories/test_metric?end-time=300\u0026order-direction=desc\u0026page=3\u0026results-per-page=2\u0026start-time=100",
+							NextUrl:      "",
+						},
+						Resources: []models.AppInstanceMetric{},
+					},
+				))
 			})
 		})
 
@@ -1373,7 +1489,22 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get full page", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				Expect(resp.Body.String()).To(Equal(`{"total_results":5,"total_pages":3,"page":1,"prev_url":"","next_url":"/v1/apps/test-app-id/aggregated_metric_histories/test_metric?end-time=300\u0026order-direction=DESC\u0026page=2\u0026results-per-page=2\u0026start-time=100","resources":[{"app_id":"test-app-id","name":"test_metric","timestamp":100,"unit":"test_unit","value":"200"},{"app_id":"test-app-id","name":"test_metric","timestamp":110,"unit":"test_unit","value":"250"}]}`))
+				var result models.AppMetricResult
+				err := json.Unmarshal([]byte(resp.Body.String()), &result)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(Equal(
+					models.AppMetricResult{
+						PublicApiResultBase: models.PublicApiResultBase{
+							TotalResults: 5,
+							TotalPages:   3,
+							Page:         1,
+							PrevUrl:      "",
+							NextUrl:      "/v1/apps/test-app-id/aggregated_metric_histories/test_metric?end-time=300\u0026order-direction=desc\u0026page=2\u0026results-per-page=2\u0026start-time=100",
+						},
+						Resources: eventGeneratorResponse[0:2],
+					},
+				))
+
 			})
 		})
 		Context("when getting 2nd page", func() {
@@ -1393,7 +1524,21 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get full page", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				Expect(resp.Body.String()).To(Equal(`{"total_results":5,"total_pages":3,"page":2,"prev_url":"/v1/apps/test-app-id/aggregated_metric_histories/test_metric?end-time=300\u0026order-direction=DESC\u0026page=1\u0026results-per-page=2\u0026start-time=100","next_url":"/v1/apps/test-app-id/aggregated_metric_histories/test_metric?end-time=300\u0026order-direction=DESC\u0026page=3\u0026results-per-page=2\u0026start-time=100","resources":[{"app_id":"test-app-id","name":"test_metric","timestamp":150,"unit":"test_unit","value":"250"},{"app_id":"test-app-id","name":"test_metric","timestamp":170,"unit":"test_unit","value":"200"}]}`))
+				var result models.AppMetricResult
+				err := json.Unmarshal([]byte(resp.Body.String()), &result)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(Equal(
+					models.AppMetricResult{
+						PublicApiResultBase: models.PublicApiResultBase{
+							TotalResults: 5,
+							TotalPages:   3,
+							Page:         2,
+							PrevUrl:      "/v1/apps/test-app-id/aggregated_metric_histories/test_metric?end-time=300\u0026order-direction=desc\u0026page=1\u0026results-per-page=2\u0026start-time=100",
+							NextUrl:      "/v1/apps/test-app-id/aggregated_metric_histories/test_metric?end-time=300\u0026order-direction=desc\u0026page=3\u0026results-per-page=2\u0026start-time=100",
+						},
+						Resources: eventGeneratorResponse[2:4],
+					},
+				))
 			})
 		})
 
@@ -1414,7 +1559,21 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get only one record", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				Expect(resp.Body.String()).To(Equal(`{"total_results":5,"total_pages":3,"page":3,"prev_url":"/v1/apps/test-app-id/aggregated_metric_histories/test_metric?end-time=300\u0026order-direction=DESC\u0026page=2\u0026results-per-page=2\u0026start-time=100","next_url":"","resources":[{"app_id":"test-app-id","name":"test_metric","timestamp":200,"unit":"test_unit","value":"200"}]}`))
+				var result models.AppMetricResult
+				err := json.Unmarshal([]byte(resp.Body.String()), &result)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(Equal(
+					models.AppMetricResult{
+						PublicApiResultBase: models.PublicApiResultBase{
+							TotalResults: 5,
+							TotalPages:   3,
+							Page:         3,
+							PrevUrl:      "/v1/apps/test-app-id/aggregated_metric_histories/test_metric?end-time=300\u0026order-direction=desc\u0026page=2\u0026results-per-page=2\u0026start-time=100",
+							NextUrl:      "",
+						},
+						Resources: eventGeneratorResponse[4:5],
+					},
+				))
 			})
 		})
 
@@ -1435,7 +1594,21 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get no records", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				Expect(resp.Body.String()).To(Equal(`{"total_results":5,"total_pages":3,"page":4,"prev_url":"/v1/apps/test-app-id/aggregated_metric_histories/test_metric?end-time=300\u0026order-direction=DESC\u0026page=3\u0026results-per-page=2\u0026start-time=100","next_url":"","resources":[]}`))
+				var result models.AppMetricResult
+				err := json.Unmarshal([]byte(resp.Body.String()), &result)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(Equal(
+					models.AppMetricResult{
+						PublicApiResultBase: models.PublicApiResultBase{
+							TotalResults: 5,
+							TotalPages:   3,
+							Page:         4,
+							PrevUrl:      "/v1/apps/test-app-id/aggregated_metric_histories/test_metric?end-time=300\u0026order-direction=desc\u0026page=3\u0026results-per-page=2\u0026start-time=100",
+							NextUrl:      "",
+						},
+						Resources: []models.AppMetric{},
+					},
+				))
 			})
 		})
 
