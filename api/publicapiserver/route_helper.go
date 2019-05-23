@@ -113,15 +113,14 @@ func paginateResource(resourceList []byte, parameters *url.Values, r *http.Reque
 	}
 
 	resources := resourceListItems[startIndex:endIndex]
-	queries := r.URL.Query()
 	prevUrl := ""
 	if (pageNo > 1) && (pageNo <= totalPages+1) {
-		prevUrl = getPageUrl(r, &queries, pageNo-1)
+		prevUrl = getPageUrl(r, pageNo-1)
 	}
 
 	nextUrl := ""
 	if pageNo < totalPages {
-		nextUrl = getPageUrl(r, &queries, pageNo+1)
+		nextUrl = getPageUrl(r, pageNo+1)
 	}
 
 	result := models.PublicApiResultBase{}
@@ -136,11 +135,11 @@ func paginateResource(resourceList []byte, parameters *url.Values, r *http.Reque
 	return result, nil
 }
 
-func getPageUrl(r *http.Request, queries *url.Values, targetPageNo int) string {
+func getPageUrl(r *http.Request, targetPageNo int) string {
 	pageUrl, _ := url.Parse(r.URL.String())
-
+	queries := r.URL.Query()
 	pageParams := url.Values{}
-	for key, value := range *queries {
+	for key, value := range queries {
 		if key == "page" {
 			pageParams.Add(key, strconv.Itoa(targetPageNo))
 		} else {

@@ -20,9 +20,6 @@ var (
 )
 
 func (c *cfClient) IsUserSpaceDeveloper(userToken string, appId string) (bool, error) {
-	if !c.isValidUserToken(userToken) {
-		return false, nil
-	}
 	userId, err := c.getUserId(userToken)
 	if err != nil {
 		return false, err
@@ -61,9 +58,6 @@ func (c *cfClient) IsUserSpaceDeveloper(userToken string, appId string) (bool, e
 }
 
 func (c *cfClient) IsUserAdmin(userToken string) (bool, error) {
-	if !c.isValidUserToken(userToken) {
-		return false, nil
-	}
 	scopes, err := c.getUserScope(userToken)
 	if err != nil {
 		return false, err
@@ -171,13 +165,4 @@ func (c *cfClient) getSpaceDeveloperPermissionEndpoint(userId string, appId stri
 
 func (c *cfClient) getUserInfoEndpoint() string {
 	return c.endpoints.TokenEndpoint + "/userinfo"
-}
-
-func (c *cfClient) isValidUserToken(userToken string) bool {
-	tokenSplitted := strings.Split(userToken, " ")
-	if len(tokenSplitted) != 2 {
-		c.logger.Error("Token should contain two parts separated by space", ErrInvalidTokenFormat)
-		return false
-	}
-	return true
 }
