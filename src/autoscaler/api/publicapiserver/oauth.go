@@ -44,7 +44,24 @@ func (oam *OAuthMiddleware) Middleware(next http.Handler) http.Handler {
 			})
 			return
 		}
+		isUserSpaceDeveloper, err := oam.cfClient.IsUserSpaceDeveloper(userToken, appId)
+		if err != nil {
+			if err == cf.ErrUnauthrorized {
+				http.Error(w, "{}", http.StatusUnauthorized)
+				return
+			} else {
+				oam.logger.Error("failed to check space developer permissions", err, nil)
+				handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+					Code:    "Interal-Server-Error",
+					Message: "Failed to check space developer permission"})
+				return
+			}
 
+		}
+		if isUserSpaceDeveloper {
+			next.ServeHTTP(w, r)
+			return
+		}
 		isUserAdmin, err := oam.cfClient.IsUserAdmin(userToken)
 		if err != nil {
 			oam.logger.Error("failed to check if user is admin", err, nil)
@@ -54,25 +71,6 @@ func (oam *OAuthMiddleware) Middleware(next http.Handler) http.Handler {
 			return
 		}
 		if isUserAdmin {
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		isUserSpaceDeveloper, err := oam.cfClient.IsUserSpaceDeveloper(userToken, appId)
-		if err != nil {
-			if err == cf.ErrUnauthrorized {
-				http.Error(w, "{}", http.StatusUnauthorized)
-				return
-			} else {
-				oam.logger.Error("failed to check spacedeveloper permissions", err, nil)
-				handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-					Code:    "Interal-Server-Error",
-					Message: "Failed to check space developer permission"})
-				return
-			}
-
-		}
-		if isUserSpaceDeveloper {
 			next.ServeHTTP(w, r)
 			return
 		}
