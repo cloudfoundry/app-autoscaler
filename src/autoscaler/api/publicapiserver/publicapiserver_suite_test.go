@@ -30,6 +30,7 @@ const (
 	CLIENT_SECRET           = "client-secret"
 	TEST_APP_ID             = "test-app-id"
 	TEST_USER_TOKEN         = "bearer testusertoken"
+	INVALID_USER_TOKEN      = "invalid_user_token"
 	TEST_INVALID_USER_TOKEN = "bearer testinvalidusertoken"
 	TEST_USER_ID            = "test-user-id"
 	TEST_METRIC_TYPE        = "test_metric"
