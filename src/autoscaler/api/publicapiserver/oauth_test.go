@@ -48,6 +48,15 @@ var _ = Describe("Oauth", func() {
 			Expect(resp.Code).To(Equal(http.StatusUnauthorized))
 		})
 	})
+	Context("Invalid user token format", func() {
+		BeforeEach(func() {
+			req = httptest.NewRequest(http.MethodGet, "/v1/apps/"+TEST_APP_ID, nil)
+			req.Header.Add("Authorization", INVALID_USER_TOKEN)
+		})
+		It("should fail with 401", func() {
+			Expect(resp.Code).To(Equal(http.StatusUnauthorized))
+		})
+	})
 
 	Context("AppId is not present", func() {
 		BeforeEach(func() {

@@ -25,10 +25,9 @@ type spaceDeveoper struct {
 }
 
 const (
-	TEST_USER_TOKEN         = "bearer test-user-token"
-	TEST_INVALID_USER_TOKEN = "invalid-test-user-token"
-	TEST_APP_ID             = "test-app-id"
-	TEST_USER_ID            = "test-user-id"
+	TEST_USER_TOKEN = "bearer test-user-token"
+	TEST_APP_ID     = "test-app-id"
+	TEST_USER_ID    = "test-user-id"
 )
 
 var (
@@ -239,16 +238,6 @@ var _ = Describe("Oauth", func() {
 			It("should error", func() {
 				Expect(isUserAdminFlag).To(BeFalse())
 				Expect(err).To(HaveOccurred())
-			})
-		})
-
-		Context("user token is in invalid format", func() {
-			BeforeEach(func() {
-				userToken = TEST_INVALID_USER_TOKEN
-			})
-			It("should error", func() {
-				Expect(isUserAdminFlag).To(BeFalse())
-				Eventually(logger.LogMessages).Should(ContainElement(ContainSubstring("Token should contain two parts separated by space")))
 			})
 		})
 

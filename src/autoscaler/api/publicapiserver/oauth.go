@@ -4,6 +4,7 @@ import (
 	"autoscaler/cf"
 	"autoscaler/models"
 	"net/http"
+	"strings"
 
 	"code.cloudfoundry.org/cfhttp/handlers"
 	"code.cloudfoundry.org/lager"
@@ -34,7 +35,10 @@ func (oam *OAuthMiddleware) Middleware(next http.Handler) http.Handler {
 			http.Error(w, "{}", http.StatusUnauthorized)
 			return
 		}
-
+		if !oam.isValidUserToken(userToken) {
+			http.Error(w, "{}", http.StatusUnauthorized)
+			return
+		}
 		appId := vars["appId"]
 		if appId == "" {
 			oam.logger.Error("appId is not present", nil, lager.Data{"url": r.URL.String()})
@@ -78,4 +82,13 @@ func (oam *OAuthMiddleware) Middleware(next http.Handler) http.Handler {
 		http.Error(w, "{}", http.StatusUnauthorized)
 		return
 	})
+}
+
+func (oam *OAuthMiddleware) isValidUserToken(userToken string) bool {
+	tokenSplitted := strings.Split(userToken, " ")
+	if len(tokenSplitted) != 2 {
+		oam.logger.Error("Token should contain two parts separated by space", cf.ErrInvalidTokenFormat)
+		return false
+	}
+	return true
 }
