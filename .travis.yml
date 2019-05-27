@@ -1,16 +1,7 @@
-language: java
+
 
 dist: trusty
 sudo: required
-
-jdk:
-  - openjdk8
-
-services:
-  - postgresql
-
-addons:
-  postgresql: "9.6"
 
 env:
   global:
@@ -18,19 +9,21 @@ env:
     - NODE_VERSION=6.2
     - GO_VERSION=1.11
     - LOGLEVEL=info
-
+language: java
+jdk:
+- openjdk8
+services:
+  - postgresql
+addons:
+  postgresql: "9.6"
 before_install:
   - source .envrc
-
 install:
   - mvn package
   - npm install npm@latest -g
   - nvm install $NODE_VERSION
   - eval "$(gimme $GO_VERSION)"
   - go install github.com/onsi/ginkgo/ginkgo
-  - curl -L -o consul-0.7.5.zip https://releases.hashicorp.com/consul/0.7.5/consul_0.7.5_linux_amd64.zip
-  - unzip consul-0.7.5.zip -d $GOPATH/bin
-  - rm consul-0.7.5.zip
 
 before_script:
   - nvm use $NODE_VERSION
@@ -44,24 +37,36 @@ before_script:
   - java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/scalingengine/db/scalingengine.db.changelog.yml update
   - java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/operator/db/operator.db.changelog.yml update
 
-script:
-  # Unit test
-  - pushd api
-  - npm install
-  - npm test
-  - popd
-  - pushd servicebroker
-  - npm install
-  - npm test
-  - popd
-  - pushd src/autoscaler
-  - ginkgo -r -race -randomizeAllSpecs
-  - popd
-  - pushd scheduler
-  - mvn test
-  - popd
-  # Integration test
-  - pushd scheduler
-  - mvn package -DskipTests
-  - popd
-  - ginkgo -r -race -randomizeAllSpecs src/integration 
+matrix:
+  include:
+  - name: unit test
+    script:
+      # Unit test
+      - pushd api
+      - npm install
+      - npm test
+      - popd
+      - pushd servicebroker
+      - npm install
+      - npm test
+      - popd
+      - pushd src/autoscaler
+      - ginkgo -r -race -randomizeAllSpecs
+      - popd
+      - pushd scheduler
+      - mvn test
+      - popd
+
+  - name: integration test
+    script:
+      # Integration test
+      - pushd api
+      - npm install
+      - popd
+      - pushd servicebroker
+      - npm install
+      - popd
+      - pushd scheduler
+      - mvn package -DskipTests
+      - popd
+      - ginkgo -r -race -randomizeAllSpecs src/integration 
