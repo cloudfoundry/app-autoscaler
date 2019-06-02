@@ -40,8 +40,8 @@ var (
 	isUserSpaceDeveloperFlag bool
 	isUserAdminFlag          bool
 
-	fakeCCServer    *ghttp.Server
-	fakeLoginServer *ghttp.Server
+	fakeCCServer *ghttp.Server
+	// fakeLoginServer *ghttp.Server
 	fakeTokenServer *ghttp.Server
 
 	ccInfoStatus   int
@@ -64,22 +64,20 @@ var _ = Describe("Oauth", func() {
 		userToken = TEST_USER_TOKEN
 
 		fakeCCServer = ghttp.NewServer()
-		fakeLoginServer = ghttp.NewServer()
 		fakeTokenServer = ghttp.NewServer()
 
-		fakeLoginServer.RouteToHandler("POST", PathCFAuth, ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
-			AccessToken: "test-access-token",
-			ExpiresIn:   12000,
-		}))
-
 		fakeCCServer.RouteToHandler(http.MethodGet, "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
-			AuthEndpoint:    fakeLoginServer.URL(),
+			AuthEndpoint:    "test-auth-endpoint",
 			TokenEndpoint:   fakeTokenServer.URL(),
 			DopplerEndpoint: "test-doppler-endpoint",
 		}))
 
 		fakeTokenServer.RouteToHandler(http.MethodGet, "/userinfo", ghttp.RespondWithJSONEncodedPtr(&userInfoStatus, &userInfoResponse))
 		fakeTokenServer.RouteToHandler(http.MethodPost, "/check_token", ghttp.RespondWithJSONEncodedPtr(&userScopeStatus, &userScopeResponse))
+		fakeTokenServer.RouteToHandler("POST", PathCFAuth, ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
+			AccessToken: "test-access-token",
+			ExpiresIn:   12000,
+		}))
 
 		spaceDeveloperPathMatcher, _ = regexp.Compile("/v2/users/[A-Za-z0-9\\-]+/spaces")
 		fakeCCServer.RouteToHandler(http.MethodGet, spaceDeveloperPathMatcher, ghttp.RespondWithJSONEncodedPtr(&spaceDeveloperStatus, &spaceDeveloperResponse))
@@ -93,9 +91,6 @@ var _ = Describe("Oauth", func() {
 	AfterEach(func() {
 		if fakeCCServer != nil {
 			fakeCCServer.Close()
-		}
-		if fakeLoginServer != nil {
-			fakeLoginServer.Close()
 		}
 		if fakeTokenServer != nil {
 			fakeTokenServer.Close()
