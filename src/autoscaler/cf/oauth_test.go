@@ -40,8 +40,7 @@ var (
 	isUserSpaceDeveloperFlag bool
 	isUserAdminFlag          bool
 
-	fakeCCServer *ghttp.Server
-	// fakeLoginServer *ghttp.Server
+	fakeCCServer    *ghttp.Server
 	fakeTokenServer *ghttp.Server
 
 	ccInfoStatus   int
