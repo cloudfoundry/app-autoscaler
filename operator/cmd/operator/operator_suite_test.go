@@ -62,7 +62,7 @@ func initConfig() {
 	cfServer = ghttp.NewServer()
 	cfServer.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
 		cf.Endpoints{
-			AuthEndpoint:    cfServer.URL(),
+			TokenEndpoint:   cfServer.URL(),
 			DopplerEndpoint: strings.Replace(cfServer.URL(), "http", "ws", 1),
 		}))
 
