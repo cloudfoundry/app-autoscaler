@@ -54,7 +54,7 @@ var _ = SynchronizedBeforeSuite(
 		ccUAA = ghttp.NewServer()
 		ccUAA.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
 			cf.Endpoints{
-				AuthEndpoint:    ccUAA.URL(),
+				TokenEndpoint:   ccUAA.URL(),
 				DopplerEndpoint: strings.Replace(ccUAA.URL(), "http", "ws", 1),
 			}))
 

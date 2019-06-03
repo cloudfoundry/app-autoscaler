@@ -17,19 +17,19 @@ import (
 
 var _ = Describe("Client", func() {
 	var (
-		fakeCC          *ghttp.Server
-		fakeLoginServer *ghttp.Server
-		cfc             CFClient
-		conf            *CFConfig
-		authToken       string
-		tokens          Tokens
-		fclock          *fakeclock.FakeClock
-		err             error
+		fakeCC    *ghttp.Server
+		fakeUAA   *ghttp.Server
+		cfc       CFClient
+		conf      *CFConfig
+		authToken string
+		tokens    Tokens
+		fclock    *fakeclock.FakeClock
+		err       error
 	)
 
 	BeforeEach(func() {
 		fakeCC = ghttp.NewServer()
-		fakeLoginServer = ghttp.NewServer()
+		fakeUAA = ghttp.NewServer()
 		conf = &CFConfig{}
 		conf.API = fakeCC.URL()
 		fclock = fakeclock.NewFakeClock(time.Now())
@@ -40,8 +40,8 @@ var _ = Describe("Client", func() {
 		if fakeCC != nil {
 			fakeCC.Close()
 		}
-		if fakeLoginServer != nil {
-			fakeLoginServer.Close()
+		if fakeUAA != nil {
+			fakeUAA.Close()
 		}
 	})
 
@@ -58,7 +58,7 @@ var _ = Describe("Client", func() {
 					ghttp.CombineHandlers(
 						ghttp.VerifyRequest("GET", PathCFInfo),
 						ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
-							AuthEndpoint:    "test-oauth-endpoint",
+							AuthEndpoint:    "test-auth-endpoint",
 							TokenEndpoint:   "test-token-endpoint",
 							DopplerEndpoint: "test-doppler-endpoint",
 						}),
@@ -67,7 +67,7 @@ var _ = Describe("Client", func() {
 			})
 
 			It("has endpoints", func() {
-				Expect(cfc.GetEndpoints().AuthEndpoint).To(Equal("test-oauth-endpoint"))
+				Expect(cfc.GetEndpoints().AuthEndpoint).To(Equal("test-auth-endpoint"))
 				Expect(cfc.GetEndpoints().TokenEndpoint).To(Equal("test-token-endpoint"))
 				Expect(cfc.GetEndpoints().DopplerEndpoint).To(Equal("test-doppler-endpoint"))
 			})
@@ -103,21 +103,21 @@ var _ = Describe("Client", func() {
 			})
 		})
 
-		Context("when the auth url is valid", func() {
+		Context("when the token url is valid", func() {
 			BeforeEach(func() {
 				fakeCC.AppendHandlers(
 					ghttp.CombineHandlers(
 						ghttp.VerifyRequest("GET", PathCFInfo),
 						ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
-							AuthEndpoint:    fakeLoginServer.URL(),
-							TokenEndpoint:   "test-token-endpoint",
+							AuthEndpoint:    "test-auth-endpoint",
+							TokenEndpoint:   fakeUAA.URL(),
 							DopplerEndpoint: "test-doppler-endpoint",
 						}),
 					),
 				)
 			})
 
-			Context("when auth server returns 200 status code", func() {
+			Context("when token server returns 200 status code", func() {
 
 				BeforeEach(func() {
 					conf.ClientID = "test-client-id"
@@ -129,7 +129,7 @@ var _ = Describe("Client", func() {
 						"client_secret": {conf.Secret},
 					}
 
-					fakeLoginServer.AppendHandlers(
+					fakeUAA.AppendHandlers(
 						ghttp.CombineHandlers(
 							ghttp.VerifyRequest("POST", PathCFAuth),
 							ghttp.VerifyBasicAuth(conf.ClientID, conf.Secret),
@@ -150,10 +150,10 @@ var _ = Describe("Client", func() {
 
 			})
 
-			Context("when auth server is not running", func() {
+			Context("when token server is not running", func() {
 				BeforeEach(func() {
-					fakeLoginServer.Close()
-					fakeLoginServer = nil
+					fakeUAA.Close()
+					fakeUAA = nil
 				})
 
 				It("should error", func() {
@@ -163,9 +163,9 @@ var _ = Describe("Client", func() {
 				})
 			})
 
-			Context("when auth returns a non-200 status code", func() {
+			Context("when token returns a non-200 status code", func() {
 				BeforeEach(func() {
-					fakeLoginServer.AppendHandlers(
+					fakeUAA.AppendHandlers(
 						ghttp.CombineHandlers(
 							ghttp.VerifyRequest("POST", PathCFAuth),
 							ghttp.RespondWith(401, ""),
@@ -174,7 +174,7 @@ var _ = Describe("Client", func() {
 				})
 
 				It("should error", func() {
-					Expect(err).To(MatchError(MatchRegexp("request token grant failed: .*")))
+					Expect(err).To(MatchError(MatchRegexp("request client credential grant failed: .*")))
 				})
 			})
 
@@ -196,17 +196,17 @@ var _ = Describe("Client", func() {
 					ghttp.CombineHandlers(
 						ghttp.VerifyRequest("GET", PathCFInfo),
 						ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
-							AuthEndpoint:    fakeLoginServer.URL(),
-							TokenEndpoint:   "test-token-endpoint",
+							AuthEndpoint:    "test-auth-endpoint",
+							TokenEndpoint:   fakeUAA.URL(),
 							DopplerEndpoint: "test-doppler-endpoint",
 						}),
 					),
 				)
 			})
 
-			Context("when auth server returns a 200 status code ", func() {
+			Context("when token server returns a 200 status code ", func() {
 				BeforeEach(func() {
-					fakeLoginServer.AppendHandlers(
+					fakeUAA.AppendHandlers(
 						ghttp.CombineHandlers(
 							ghttp.VerifyRequest("POST", PathCFAuth),
 							ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
@@ -226,9 +226,9 @@ var _ = Describe("Client", func() {
 
 			})
 
-			Context("when auth server returns a non-200 status code", func() {
+			Context("when token server returns a non-200 status code", func() {
 				BeforeEach(func() {
-					fakeLoginServer.AppendHandlers(
+					fakeUAA.AppendHandlers(
 						ghttp.CombineHandlers(
 							ghttp.VerifyRequest("POST", PathCFAuth),
 							ghttp.RespondWith(401, ""),
@@ -237,7 +237,7 @@ var _ = Describe("Client", func() {
 				})
 
 				It("should error", func() {
-					Expect(err).To(MatchError(MatchRegexp("request token grant failed: .*")))
+					Expect(err).To(MatchError(MatchRegexp("request client credential grant failed: .*")))
 				})
 			})
 
@@ -249,13 +249,13 @@ var _ = Describe("Client", func() {
 					ghttp.CombineHandlers(
 						ghttp.VerifyRequest("GET", PathCFInfo),
 						ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
-							AuthEndpoint:    fakeLoginServer.URL(),
-							TokenEndpoint:   "test-token-endpoint",
+							AuthEndpoint:    "test-auth-endpoint",
+							TokenEndpoint:   fakeUAA.URL(),
 							DopplerEndpoint: "test-doppler-endpoint",
 						}),
 					),
 				)
-				fakeLoginServer.AppendHandlers(
+				fakeUAA.AppendHandlers(
 					ghttp.CombineHandlers(
 						ghttp.VerifyRequest("POST", PathCFAuth),
 						ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
@@ -269,7 +269,7 @@ var _ = Describe("Client", func() {
 
 			Context("when auth fails", func() {
 				BeforeEach(func() {
-					fakeLoginServer.AppendHandlers(
+					fakeUAA.AppendHandlers(
 						ghttp.CombineHandlers(
 							ghttp.VerifyRequest("POST", PathCFAuth),
 							ghttp.VerifyForm(url.Values{
@@ -283,13 +283,13 @@ var _ = Describe("Client", func() {
 				})
 
 				It("should error", func() {
-					Expect(err).To(MatchError(MatchRegexp("request token grant failed: .*")))
+					Expect(err).To(MatchError(MatchRegexp("request client credential grant failed: .*")))
 				})
 			})
 
 			Context("when auth succeeds", func() {
 				BeforeEach(func() {
-					fakeLoginServer.AppendHandlers(
+					fakeUAA.AppendHandlers(
 						ghttp.CombineHandlers(
 							ghttp.VerifyRequest("POST", PathCFAuth),
 							ghttp.VerifyForm(url.Values{
@@ -328,13 +328,13 @@ var _ = Describe("Client", func() {
 				ghttp.CombineHandlers(
 					ghttp.VerifyRequest("GET", PathCFInfo),
 					ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
-						AuthEndpoint:    fakeLoginServer.URL(),
-						TokenEndpoint:   "test-token-endpoint",
+						AuthEndpoint:    "test-auth-endpoint",
+						TokenEndpoint:   fakeUAA.URL(),
 						DopplerEndpoint: "test-doppler-endpoint",
 					}),
 				),
 			)
-			fakeLoginServer.AppendHandlers(
+			fakeUAA.AppendHandlers(
 				ghttp.CombineHandlers(
 					ghttp.VerifyRequest("POST", PathCFAuth),
 					ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
@@ -360,7 +360,7 @@ var _ = Describe("Client", func() {
 		Context("when the token is going to be expired", func() {
 			Context("when refresh succeeds", func() {
 				BeforeEach(func() {
-					fakeLoginServer.AppendHandlers(
+					fakeUAA.AppendHandlers(
 						ghttp.CombineHandlers(
 							ghttp.VerifyRequest("POST", PathCFAuth),
 							ghttp.VerifyForm(url.Values{
@@ -387,7 +387,7 @@ var _ = Describe("Client", func() {
 			Context("when refresh fails", func() {
 				BeforeEach(func() {
 					fakeCC.RouteToHandler("GET", "/v2/info", ghttp.RespondWith(200, ""))
-					fakeLoginServer.RouteToHandler("POST", "/oauth/token", ghttp.RespondWith(401, ""))
+					fakeUAA.RouteToHandler("POST", "/oauth/token", ghttp.RespondWith(401, ""))
 					fclock.Increment(12001*time.Second - TimeToRefreshBeforeTokenExpire)
 				})
 
