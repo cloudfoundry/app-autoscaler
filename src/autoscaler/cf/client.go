@@ -54,7 +54,7 @@ type cfClient struct {
 	tokens     Tokens
 	endpoints  Endpoints
 	infoURL    string
-	authURL    string
+	tokenURL   string
 	loginForm  url.Values
 	authHeader string
 	httpClient *http.Client
@@ -109,16 +109,16 @@ func (c *cfClient) retrieveEndpoints() error {
 		return err
 	}
 
-	c.authURL = c.endpoints.AuthEndpoint + PathCFAuth
+	c.tokenURL = c.endpoints.TokenEndpoint + PathCFAuth
 	return nil
 }
 
-func (c *cfClient) requestTokenGrant(formData *url.Values) error {
-	c.logger.Info("request-token-grant", lager.Data{"authURL": c.authURL, "form": *formData})
+func (c *cfClient) requestClientCredentialGrant(formData *url.Values) error {
+	c.logger.Info("request-client-credential-grant", lager.Data{"tokenURL": c.tokenURL, "form": *formData})
 
-	req, err := http.NewRequest("POST", c.authURL, strings.NewReader(formData.Encode()))
+	req, err := http.NewRequest("POST", c.tokenURL, strings.NewReader(formData.Encode()))
 	if err != nil {
-		c.logger.Error("request-token-grant-new-request", err)
+		c.logger.Error("request-client-credential-grant-new-request", err)
 		return err
 	}
 	req.Header.Set("Authorization", c.authHeader)
@@ -127,20 +127,20 @@ func (c *cfClient) requestTokenGrant(formData *url.Values) error {
 	var resp *http.Response
 	resp, err = c.httpClient.Do(req)
 	if err != nil {
-		c.logger.Error("request-token-grant-do", err)
+		c.logger.Error("request-client-credential-grant-do-request", err)
 		return err
 	}
 
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		err = fmt.Errorf("request token grant failed: %s [%d] %s", c.authURL, resp.StatusCode, resp.Status)
-		c.logger.Error("request-token-grant-response", err)
+		err = fmt.Errorf("request client credential grant failed: %s [%d] %s", c.tokenURL, resp.StatusCode, resp.Status)
+		c.logger.Error("request-client-credential-grant-response", err)
 		return err
 	}
 
 	err = json.NewDecoder(resp.Body).Decode(&c.tokens)
 	if err != nil {
-		c.logger.Error("request-token-grant-decode", err)
+		c.logger.Error("request-client-credential-grant-decode", err)
 		return err
 	}
 	c.grantTime = time.Now()
@@ -155,20 +155,20 @@ func (c *cfClient) Login() error {
 		return err
 	}
 
-	return c.requestTokenGrant(&c.loginForm)
+	return c.requestClientCredentialGrant(&c.loginForm)
 }
 
 func (c *cfClient) RefreshAuthToken() (string, error) {
-	c.logger.Info("refresh-auth-token", lager.Data{"authURL": c.authURL})
+	c.logger.Info("refresh-auth-token", lager.Data{"tokenURL": c.tokenURL})
 
 	var err error
-	if c.authURL == "" {
+	if c.tokenURL == "" {
 		err = c.retrieveEndpoints()
 		if err != nil {
 			return "", err
 		}
 	}
-	err = c.requestTokenGrant(&c.loginForm)
+	err = c.requestClientCredentialGrant(&c.loginForm)
 	if err != nil {
 		return "", err
 	}
