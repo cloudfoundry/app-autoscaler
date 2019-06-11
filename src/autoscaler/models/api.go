@@ -22,7 +22,7 @@ type UnbindingRequestBody struct {
 	AppID string `json:"app_guid"`
 }
 
-type PublicApiResultBase struct {
+type PublicApiResponseBase struct {
 	TotalResults int           `json:"total_results"`
 	TotalPages   int           `json:"total_pages"`
 	Page         int           `json:"page"`
@@ -30,15 +30,15 @@ type PublicApiResultBase struct {
 	NextUrl      string        `json:"next_url"`
 	Resources    []interface{} `json:"resources"`
 }
-type InstanceMetricResult struct {
-	PublicApiResultBase
+type InstanceMetricResponse struct {
+	PublicApiResponseBase
 	Resources []AppInstanceMetric `json:"resources"`
 }
-type AppMetricResult struct {
-	PublicApiResultBase
+type AppMetricResponse struct {
+	PublicApiResponseBase
 	Resources []AppMetric `json:"resources"`
 }
-type AppScalingHistoryResult struct {
-	PublicApiResultBase
+type AppScalingHistoryResponse struct {
+	PublicApiResponseBase
 	Resources []AppScalingHistory `json:"resources"`
 }

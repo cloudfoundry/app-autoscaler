@@ -26,15 +26,16 @@ import (
 )
 
 const (
-	CLIENT_ID               = "client-id"
-	CLIENT_SECRET           = "client-secret"
-	TEST_APP_ID             = "test-app-id"
-	TEST_USER_TOKEN         = "bearer testusertoken"
-	INVALID_USER_TOKEN      = "invalid_user_token"
-	TEST_INVALID_USER_TOKEN = "bearer testinvalidusertoken"
-	TEST_USER_ID            = "test-user-id"
-	TEST_METRIC_TYPE        = "test_metric"
-	TEST_METRIC_UNIT        = "test_unit"
+	CLIENT_ID                         = "client-id"
+	CLIENT_SECRET                     = "client-secret"
+	TEST_APP_ID                       = "test-app-id"
+	TEST_USER_TOKEN                   = "bearer testusertoken"
+	INVALID_USER_TOKEN                = "bearer invalid_user_token invalid_user_token"
+	INVALID_USER_TOKEN_WITHOUT_BEARER = "not-bearer testusertoken"
+	TEST_INVALID_USER_TOKEN           = "bearer testinvalidusertoken"
+	TEST_USER_ID                      = "test-user-id"
+	TEST_METRIC_TYPE                  = "test_metric"
+	TEST_METRIC_UNIT                  = "test_unit"
 )
 
 var (
