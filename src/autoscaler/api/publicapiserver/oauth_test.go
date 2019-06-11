@@ -12,6 +12,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega/gbytes"
 )
 
 var _ = Describe("Oauth", func() {
@@ -21,12 +22,13 @@ var _ = Describe("Oauth", func() {
 		oam          *OAuthMiddleware
 		router       *mux.Router
 		fakeCFClient *fakes.FakeCFClient
+		logger       *lagertest.TestLogger
 	)
 	BeforeEach(func() {
 
 		fakeCFClient = &fakes.FakeCFClient{}
-
-		oam = NewOauthMiddleware(lagertest.NewTestLogger("oauth"), fakeCFClient)
+		logger = lagertest.NewTestLogger("oauth")
+		oam = NewOauthMiddleware(logger, fakeCFClient)
 
 		router = mux.NewRouter()
 		router.HandleFunc("/", GetTestHandler())
@@ -49,12 +51,26 @@ var _ = Describe("Oauth", func() {
 		})
 	})
 	Context("Invalid user token format", func() {
-		BeforeEach(func() {
-			req = httptest.NewRequest(http.MethodGet, "/v1/apps/"+TEST_APP_ID, nil)
-			req.Header.Add("Authorization", INVALID_USER_TOKEN)
+		Context("when user token is not a bearer token", func() {
+			BeforeEach(func() {
+				req = httptest.NewRequest(http.MethodGet, "/v1/apps/"+TEST_APP_ID, nil)
+				req.Header.Add("Authorization", INVALID_USER_TOKEN_WITHOUT_BEARER)
+			})
+			It("should fail with 401", func() {
+				Expect(resp.Code).To(Equal(http.StatusUnauthorized))
+				Eventually(logger.Buffer).Should(Say("Token should start with bearer"))
+			})
 		})
-		It("should fail with 401", func() {
-			Expect(resp.Code).To(Equal(http.StatusUnauthorized))
+
+		Context("when user token contains more than two parts separated by space", func() {
+			BeforeEach(func() {
+				req = httptest.NewRequest(http.MethodGet, "/v1/apps/"+TEST_APP_ID, nil)
+				req.Header.Add("Authorization", INVALID_USER_TOKEN)
+			})
+			It("should fail with 401", func() {
+				Expect(resp.Code).To(Equal(http.StatusUnauthorized))
+				Eventually(logger.Buffer).Should(Say("Token should contain two parts separated by space"))
+			})
 		})
 	})
 

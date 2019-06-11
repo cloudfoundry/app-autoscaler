@@ -595,12 +595,12 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get full page", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				var result models.AppScalingHistoryResult
+				var result models.AppScalingHistoryResponse
 				err := json.Unmarshal([]byte(resp.Body.String()), &result)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(result).To(Equal(
-					models.AppScalingHistoryResult{
-						PublicApiResultBase: models.PublicApiResultBase{
+					models.AppScalingHistoryResponse{
+						PublicApiResponseBase: models.PublicApiResponseBase{
 							TotalResults: 5,
 							TotalPages:   3,
 							Page:         1,
@@ -629,12 +629,12 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get full page", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				var result models.AppScalingHistoryResult
+				var result models.AppScalingHistoryResponse
 				err := json.Unmarshal([]byte(resp.Body.String()), &result)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(result).To(Equal(
-					models.AppScalingHistoryResult{
-						PublicApiResultBase: models.PublicApiResultBase{
+					models.AppScalingHistoryResponse{
+						PublicApiResponseBase: models.PublicApiResponseBase{
 							TotalResults: 5,
 							TotalPages:   3,
 							Page:         2,
@@ -663,12 +663,12 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get only one record", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				var result models.AppScalingHistoryResult
+				var result models.AppScalingHistoryResponse
 				err := json.Unmarshal([]byte(resp.Body.String()), &result)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(result).To(Equal(
-					models.AppScalingHistoryResult{
-						PublicApiResultBase: models.PublicApiResultBase{
+					models.AppScalingHistoryResponse{
+						PublicApiResponseBase: models.PublicApiResponseBase{
 							TotalResults: 5,
 							TotalPages:   3,
 							Page:         3,
@@ -697,12 +697,12 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get no records", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				var result models.AppScalingHistoryResult
+				var result models.AppScalingHistoryResponse
 				err := json.Unmarshal([]byte(resp.Body.String()), &result)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(result).To(Equal(
-					models.AppScalingHistoryResult{
-						PublicApiResultBase: models.PublicApiResultBase{
+					models.AppScalingHistoryResponse{
+						PublicApiResponseBase: models.PublicApiResponseBase{
 							TotalResults: 5,
 							TotalPages:   3,
 							Page:         4,
@@ -1045,12 +1045,12 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get full page", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				var result models.InstanceMetricResult
+				var result models.InstanceMetricResponse
 				err := json.Unmarshal([]byte(resp.Body.String()), &result)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(result).To(Equal(
-					models.InstanceMetricResult{
-						PublicApiResultBase: models.PublicApiResultBase{
+					models.InstanceMetricResponse{
+						PublicApiResponseBase: models.PublicApiResponseBase{
 							TotalResults: 5,
 							TotalPages:   3,
 							Page:         1,
@@ -1079,12 +1079,12 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get full page", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				var result models.InstanceMetricResult
+				var result models.InstanceMetricResponse
 				err := json.Unmarshal([]byte(resp.Body.String()), &result)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(result).To(Equal(
-					models.InstanceMetricResult{
-						PublicApiResultBase: models.PublicApiResultBase{
+					models.InstanceMetricResponse{
+						PublicApiResponseBase: models.PublicApiResponseBase{
 							TotalResults: 5,
 							TotalPages:   3,
 							Page:         2,
@@ -1115,12 +1115,12 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get only one record", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				var result models.InstanceMetricResult
+				var result models.InstanceMetricResponse
 				err := json.Unmarshal([]byte(resp.Body.String()), &result)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(result).To(Equal(
-					models.InstanceMetricResult{
-						PublicApiResultBase: models.PublicApiResultBase{
+					models.InstanceMetricResponse{
+						PublicApiResponseBase: models.PublicApiResponseBase{
 							TotalResults: 5,
 							TotalPages:   3,
 							Page:         3,
@@ -1151,12 +1151,12 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get no records", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				var result models.InstanceMetricResult
+				var result models.InstanceMetricResponse
 				err := json.Unmarshal([]byte(resp.Body.String()), &result)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(result).To(Equal(
-					models.InstanceMetricResult{
-						PublicApiResultBase: models.PublicApiResultBase{
+					models.InstanceMetricResponse{
+						PublicApiResponseBase: models.PublicApiResponseBase{
 							TotalResults: 5,
 							TotalPages:   3,
 							Page:         4,
@@ -1489,12 +1489,12 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get full page", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				var result models.AppMetricResult
+				var result models.AppMetricResponse
 				err := json.Unmarshal([]byte(resp.Body.String()), &result)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(result).To(Equal(
-					models.AppMetricResult{
-						PublicApiResultBase: models.PublicApiResultBase{
+					models.AppMetricResponse{
+						PublicApiResponseBase: models.PublicApiResponseBase{
 							TotalResults: 5,
 							TotalPages:   3,
 							Page:         1,
@@ -1524,12 +1524,12 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get full page", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				var result models.AppMetricResult
+				var result models.AppMetricResponse
 				err := json.Unmarshal([]byte(resp.Body.String()), &result)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(result).To(Equal(
-					models.AppMetricResult{
-						PublicApiResultBase: models.PublicApiResultBase{
+					models.AppMetricResponse{
+						PublicApiResponseBase: models.PublicApiResponseBase{
 							TotalResults: 5,
 							TotalPages:   3,
 							Page:         2,
@@ -1559,12 +1559,12 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get only one record", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				var result models.AppMetricResult
+				var result models.AppMetricResponse
 				err := json.Unmarshal([]byte(resp.Body.String()), &result)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(result).To(Equal(
-					models.AppMetricResult{
-						PublicApiResultBase: models.PublicApiResultBase{
+					models.AppMetricResponse{
+						PublicApiResponseBase: models.PublicApiResponseBase{
 							TotalResults: 5,
 							TotalPages:   3,
 							Page:         3,
@@ -1594,12 +1594,12 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get no records", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				var result models.AppMetricResult
+				var result models.AppMetricResponse
 				err := json.Unmarshal([]byte(resp.Body.String()), &result)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(result).To(Equal(
-					models.AppMetricResult{
-						PublicApiResultBase: models.PublicApiResultBase{
+					models.AppMetricResponse{
+						PublicApiResponseBase: models.PublicApiResponseBase{
 							TotalResults: 5,
 							TotalPages:   3,
 							Page:         4,

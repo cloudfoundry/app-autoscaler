@@ -123,7 +123,7 @@ func paginateResource(resourceList []byte, parameters *url.Values, r *http.Reque
 		nextUrl = getPageUrl(r, pageNo+1)
 	}
 
-	result := models.PublicApiResultBase{}
+	result := models.PublicApiResponseBase{}
 
 	result.TotalResults = totalResults
 	result.TotalPages = totalPages

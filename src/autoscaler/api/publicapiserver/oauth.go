@@ -32,11 +32,15 @@ func (oam *OAuthMiddleware) Middleware(next http.Handler) http.Handler {
 		userToken := r.Header.Get("Authorization")
 		if userToken == "" {
 			oam.logger.Error("userToken is not present", nil, lager.Data{"url": r.URL.String()})
-			http.Error(w, "{}", http.StatusUnauthorized)
+			handlers.WriteJSONResponse(w, http.StatusUnauthorized, models.ErrorResponse{
+				Code:    "Unauthorized",
+				Message: "Authorization is required"})
 			return
 		}
 		if !oam.isValidUserToken(userToken) {
-			http.Error(w, "{}", http.StatusUnauthorized)
+			handlers.WriteJSONResponse(w, http.StatusUnauthorized, models.ErrorResponse{
+				Code:    "Unauthorized",
+				Message: "Authorization is invalid formated"})
 			return
 		}
 		appId := vars["appId"]
@@ -51,7 +55,9 @@ func (oam *OAuthMiddleware) Middleware(next http.Handler) http.Handler {
 		isUserSpaceDeveloper, err := oam.cfClient.IsUserSpaceDeveloper(userToken, appId)
 		if err != nil {
 			if err == cf.ErrUnauthrorized {
-				http.Error(w, "{}", http.StatusUnauthorized)
+				handlers.WriteJSONResponse(w, http.StatusUnauthorized, models.ErrorResponse{
+					Code:    "Unauthorized",
+					Message: "You are not authorized to perform the requested action"})
 				return
 			} else {
 				oam.logger.Error("failed to check space developer permissions", err, nil)
@@ -79,16 +85,24 @@ func (oam *OAuthMiddleware) Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		http.Error(w, "{}", http.StatusUnauthorized)
+		handlers.WriteJSONResponse(w, http.StatusUnauthorized, models.ErrorResponse{
+			Code:    "Unauthorized",
+			Message: "You are not authorized to perform the requested action"})
 		return
 	})
 }
 
 func (oam *OAuthMiddleware) isValidUserToken(userToken string) bool {
-	tokenSplitted := strings.Split(userToken, " ")
+	lowerCaseToken := strings.ToLower(userToken)
+	if !strings.HasPrefix(lowerCaseToken, "bearer ") {
+		oam.logger.Error("Token should start with bearer", cf.ErrInvalidTokenFormat)
+		return false
+	}
+	tokenSplitted := strings.Split(lowerCaseToken, " ")
 	if len(tokenSplitted) != 2 {
 		oam.logger.Error("Token should contain two parts separated by space", cf.ErrInvalidTokenFormat)
 		return false
 	}
+
 	return true
 }
