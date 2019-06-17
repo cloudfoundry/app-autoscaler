@@ -171,6 +171,7 @@ func initConfig() {
 				CACertFile: caPath,
 			},
 		},
+		HealthCollectorResetInterval: 1 * time.Minute,
 		Health: models.HealthConfig{
 			Port: healthport,
 		},

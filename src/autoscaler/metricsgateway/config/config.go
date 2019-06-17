@@ -13,17 +13,18 @@ import (
 )
 
 const (
-	DefaultShardID                          = "CF_AUTOSCALER"
-	DefaultLoggingLevel                     = "info"
-	DefaultAppRefreshInterval time.Duration = 60 * time.Second
-	DefaultHandshakeTimeout   time.Duration = 500 * time.Millisecond
-	DefaultKeepAliveInterval  time.Duration = 5 * time.Second
-	DefaultNozzleCount                      = 3
-	DefaultEnvelopChanSize                  = 500
-	DefaultEmitterBufferSize                = 500
-	DefaultMaxSetupRetryCount               = 10
-	DefaultMaxCloseRetryCount               = 10
-	DefaultRetryDelay                       = 10 * time.Second
+	DefaultShardID                                    = "CF_AUTOSCALER"
+	DefaultLoggingLevel                               = "info"
+	DefaultAppRefreshInterval           time.Duration = 60 * time.Second
+	DefaultHandshakeTimeout             time.Duration = 500 * time.Millisecond
+	DefaultKeepAliveInterval            time.Duration = 5 * time.Second
+	DefaultNozzleCount                                = 3
+	DefaultEnvelopChanSize                            = 500
+	DefaultEmitterBufferSize                          = 500
+	DefaultMaxSetupRetryCount                         = 10
+	DefaultMaxCloseRetryCount                         = 10
+	DefaultRetryDelay                                 = 10 * time.Second
+	DefaultHealthCollectorResetInterval               = 5 * time.Minute
 )
 
 type AppManagerConfig struct {
@@ -49,14 +50,15 @@ type EmitterConfig struct {
 }
 
 type Config struct {
-	Logging           helpers.LoggingConfig `yaml:"logging"`
-	EnvelopChanSize   int                   `yaml:"envelop_chan_size"`
-	NozzleCount       int                   `yaml:"nozzle_count"`
-	MetricServerAddrs []string              `yaml:"metric_server_addrs"`
-	AppManager        AppManagerConfig      `yaml:"app_manager"`
-	Emitter           EmitterConfig         `yaml:"emitter"`
-	Nozzle            NozzleConfig          `yaml:"nozzle"`
-	Health            models.HealthConfig   `yaml:"health"`
+	Logging                      helpers.LoggingConfig `yaml:"logging"`
+	EnvelopChanSize              int                   `yaml:"envelop_chan_size"`
+	NozzleCount                  int                   `yaml:"nozzle_count"`
+	MetricServerAddrs            []string              `yaml:"metric_server_addrs"`
+	AppManager                   AppManagerConfig      `yaml:"app_manager"`
+	Emitter                      EmitterConfig         `yaml:"emitter"`
+	Nozzle                       NozzleConfig          `yaml:"nozzle"`
+	HealthCollectorResetInterval time.Duration         `yaml:"health_collector_reset_interval"`
+	Health                       models.HealthConfig   `yaml:"health"`
 }
 
 func LoadConfig(bytes []byte) (*Config, error) {
@@ -77,6 +79,7 @@ func LoadConfig(bytes []byte) (*Config, error) {
 		Nozzle: NozzleConfig{
 			ShardID: DefaultShardID,
 		},
+		HealthCollectorResetInterval: DefaultHealthCollectorResetInterval,
 		AppManager: AppManagerConfig{
 			AppRefreshInterval: DefaultAppRefreshInterval,
 		},
@@ -159,6 +162,9 @@ func (c *Config) Validate() error {
 	}
 	if c.Nozzle.RLPClientTLS.CACertFile == "" {
 		return fmt.Errorf("Configuration error: nozzle.rlp_client_tls.ca_file is empty")
+	}
+	if c.HealthCollectorResetInterval == time.Duration(0) {
+		return fmt.Errorf("Configuration error: health_collector_reset_interval is 0")
 	}
 
 	return nil

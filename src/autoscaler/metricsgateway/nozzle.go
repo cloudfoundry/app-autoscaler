@@ -1,6 +1,8 @@
 package metricsgateway
 
 import (
+	"autoscaler/healthendpoint"
+
 	loggregator "code.cloudfoundry.org/go-loggregator"
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"
@@ -25,37 +27,41 @@ var selectors = []*loggregator_v2.Selector{
 }
 
 type Nozzle struct {
-	logger        lager.Logger
-	rlpAddr       string
-	tls           *tls.Config
-	envelopChan   chan *loggregator_v2.Envelope
-	doneChan      chan bool
-	index         int
-	shardID       string
-	appIDs        map[string]string
-	getAppIDsFunc GetAppIDsFunc
+	logger          lager.Logger
+	rlpAddr         string
+	tls             *tls.Config
+	envelopChan     chan *loggregator_v2.Envelope
+	doneChan        chan bool
+	index           int
+	shardID         string
+	appIDs          map[string]string
+	getAppIDsFunc   GetAppIDsFunc
+	cyclicCollector *healthendpoint.CyclicCollector
 }
 
-func NewNozzle(logger lager.Logger, index int, shardID string, rlpAddr string, tls *tls.Config, envelopChan chan *loggregator_v2.Envelope, getAppIDsFunc GetAppIDsFunc) *Nozzle {
+func NewNozzle(logger lager.Logger, index int, shardID string, rlpAddr string, tls *tls.Config, envelopChan chan *loggregator_v2.Envelope, getAppIDsFunc GetAppIDsFunc, cyclicCollector *healthendpoint.CyclicCollector) *Nozzle {
 	return &Nozzle{
-		logger:        logger.Session("Nozzle"),
-		index:         index,
-		shardID:       shardID,
-		rlpAddr:       rlpAddr,
-		tls:           tls,
-		envelopChan:   envelopChan,
-		getAppIDsFunc: getAppIDsFunc,
-		doneChan:      make(chan bool),
+		logger:          logger.Session("Nozzle"),
+		index:           index,
+		shardID:         shardID,
+		rlpAddr:         rlpAddr,
+		tls:             tls,
+		envelopChan:     envelopChan,
+		getAppIDsFunc:   getAppIDsFunc,
+		doneChan:        make(chan bool),
+		cyclicCollector: cyclicCollector,
 	}
 }
 
 func (n *Nozzle) Start() {
 	go n.streamMetrics()
+	n.cyclicCollector.Start()
 	n.logger.Info("nozzle-started", lager.Data{"index": n.index})
 }
 
 func (n *Nozzle) Stop() {
 	n.doneChan <- true
+	n.cyclicCollector.Stop()
 }
 
 func (n *Nozzle) streamMetrics() {
@@ -74,6 +80,8 @@ func (n *Nozzle) streamMetrics() {
 		default:
 		}
 		envelops := rx()
+		n.logger.Debug("receive envelopes", lager.Data{"num": len(envelops)})
+		n.cyclicCollector.Inc(int64(len(envelops)))
 		n.filterEnvelopes(envelops)
 
 	}

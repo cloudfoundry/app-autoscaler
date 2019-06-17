@@ -113,6 +113,7 @@ var _ = Describe("Metricsgateway", func() {
 				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 				raw, _ := ioutil.ReadAll(rsp.Body)
 				healthData := string(raw)
+				Expect(healthData).To(ContainSubstring("autoscaler_metricsgateway_envelope_number_from_rlp"))
 				Expect(healthData).To(ContainSubstring("autoscaler_metricsgateway_concurrent_http_request"))
 				Expect(healthData).To(ContainSubstring("autoscaler_metricsgateway_policyDB"))
 				Expect(healthData).To(ContainSubstring("go_goroutines"))

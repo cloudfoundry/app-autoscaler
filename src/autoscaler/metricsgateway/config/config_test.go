@@ -75,6 +75,7 @@ nozzle:
     ca_file: "autoscaler_ca.cert"
   rlp_addr: wss://localhost:9999
   shard_id: autoscaler
+health_collector_reset_interval: 1m
 health:
   port: 8081
 `)
@@ -108,6 +109,7 @@ health:
 					CertFile:   "loggregator_client.key",
 					CACertFile: "autoscaler_ca.cert",
 				}))
+				Expect(conf.HealthCollectorResetInterval).To(Equal(1 * time.Minute))
 				Expect(conf.Health.Port).To(Equal(8081))
 
 			})
@@ -157,6 +159,7 @@ health:
 				Expect(conf.Emitter.RetryDelay).To(Equal(10 * time.Second))
 
 				Expect(conf.Nozzle.ShardID).To(Equal("CF_AUTOSCALER"))
+				Expect(conf.HealthCollectorResetInterval).To(Equal(5 * time.Minute))
 			})
 		})
 
@@ -753,6 +756,53 @@ health:
 
 		})
 
+		Context("when health_collector_reset_interval is not a time.Duration", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+logging:
+  level: "debug"
+envelop_chan_size: 800
+nozzle_count: 10
+metric_server_addrs:
+  - wss://localhost:8080
+  - wss://localhost:9080
+app_manager:
+  app_refresh_interval: 10s
+  policy_db:
+    url: postgres://postgres:password@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+emitter:
+  metrics_server_client_tls: 
+    key_file: "metrc_server_client.cert"
+    cert_file: "metrc_server_client.key"
+    ca_file: "autoscaler_ca.cert"
+  buffer_size: 800
+  keep_alive_interval: 10s
+  handshake_timeout: 100kk
+  max_setup_retry_count: 10
+  max_close_retry_count: 10
+  retry_delay: 1s
+nozzle:
+  rlp_client_tls:
+    key_file: "loggregator_client.cert"
+    cert_file: "loggregator_client.key"
+    ca_file: "autoscaler_ca.cert"
+  rlp_addr: wss://localhost:9999
+  shard_id: autoscaler
+health_collector_reset_interval: 1kk
+health:
+  port: 8081
+`)
+			})
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into time.Duration")))
+			})
+
+		})
+
 		Context("when it gives a non-integer health.port", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
@@ -1040,6 +1090,15 @@ health:
 			})
 			It("should error", func() {
 				Expect(err).To(MatchError("Configuration error: nozzle.rlp_client_tls.ca_file is empty"))
+			})
+		})
+
+		Context("when health_collector_reset_interval is 0", func() {
+			BeforeEach(func() {
+				conf.HealthCollectorResetInterval = 0
+			})
+			It("should error", func() {
+				Expect(err).To(MatchError("Configuration error: health_collector_reset_interval is 0"))
 			})
 		})
 

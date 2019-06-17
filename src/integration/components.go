@@ -708,6 +708,7 @@ func (components *Components) PrepareMetricsGatewayConfig(dbURI string, metricSe
 				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 			},
 		},
+		HealthCollectorResetInterval: 1 * time.Minute,
 	}
 	return writeYmlConfig(tmpDir, MetricsGateway, &cfg)
 }

@@ -5,12 +5,15 @@ import (
 	"path/filepath"
 	"time"
 
+	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gbytes"
+	"github.com/prometheus/client_golang/prometheus"
 
+	"autoscaler/healthendpoint"
 	"autoscaler/metricsgateway"
 	. "autoscaler/testhelpers"
 )
@@ -26,6 +29,8 @@ var _ = Describe("Nozzle", func() {
 		caPath                          = filepath.Join(testCertDir, "autoscaler-ca.crt")
 		fakeLoggregator                 FakeEventProducer
 		testAppId                       = "test-app-id"
+		gwClock                         clock.Clock
+		cyclicCollector                 *healthendpoint.CyclicCollector
 		envelopes                       []*loggregator_v2.Envelope
 		nonContainerMetricGaugeEnvelope = loggregator_v2.Envelope{
 			SourceId: "uaa",
@@ -148,6 +153,13 @@ var _ = Describe("Nozzle", func() {
 			&containerMetricEnvelope,
 			&httpStartStopEnvelope,
 		}
+		gwClock = clock.NewClock()
+		cyclicCollector = healthendpoint.NewCyclicCollector(gwClock, 60*time.Second, logger, prometheus.GaugeOpts{
+			Namespace: "autoscaler",
+			Subsystem: "metricsgateway",
+			Name:      "envelope_number_from_rlp",
+			Help:      "Number of envelopes from rlp",
+		})
 
 	})
 	AfterEach(func() {
@@ -163,7 +175,7 @@ var _ = Describe("Nozzle", func() {
 			Expect(err).NotTo(HaveOccurred())
 			rlpAddr = fakeLoggregator.GetAddr()
 			fakeLoggregator.SetEnvelops(envelopes)
-			nozzle = metricsgateway.NewNozzle(logger, index, shardID, rlpAddr, tlsConf, envelopChan, getAppIDs)
+			nozzle = metricsgateway.NewNozzle(logger, index, shardID, rlpAddr, tlsConf, envelopChan, getAppIDs, cyclicCollector)
 			nozzle.Start()
 		})
 		BeforeEach(func() {
@@ -266,7 +278,7 @@ var _ = Describe("Nozzle", func() {
 			Expect(err).NotTo(HaveOccurred())
 			rlpAddr = fakeLoggregator.GetAddr()
 			fakeLoggregator.SetEnvelops(envelopes)
-			nozzle = metricsgateway.NewNozzle(logger, index, shardID, rlpAddr, tlsConf, envelopChan, getAppIDs)
+			nozzle = metricsgateway.NewNozzle(logger, index, shardID, rlpAddr, tlsConf, envelopChan, getAppIDs, cyclicCollector)
 			nozzle.Start()
 			Eventually(envelopChan).Should(Receive())
 			nozzle.Stop()
