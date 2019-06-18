@@ -70,16 +70,15 @@ func (am *AppManager) startPolicyRetrieve() {
 
 	for {
 		policyJsons, err := am.retrievePolicies()
-		if err != nil {
-			continue
+		if err == nil {
+			policies := am.computePolicies(policyJsons)
+
+			am.pLock.Lock()
+			am.policyMap = policies
+			am.pLock.Unlock()
+
+			am.refreshMetricCache(policies)
 		}
-		policies := am.computePolicies(policyJsons)
-
-		am.pLock.Lock()
-		am.policyMap = policies
-		am.pLock.Unlock()
-
-		am.refreshMetricCache(policies)
 
 		select {
 		case <-am.doneChan:
