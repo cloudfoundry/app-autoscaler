@@ -1,12 +1,15 @@
 package metricsgateway
 
 import (
+	"context"
+	"crypto/tls"
+	"time"
+
 	loggregator "code.cloudfoundry.org/go-loggregator"
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"
-
-	"context"
-	"crypto/tls"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/keepalive"
 )
 
 const METRICS_FORWARDER_ORIGIN = "autoscaler_metrics_forwarder"
@@ -76,7 +79,13 @@ func (n *Nozzle) streamMetrics() {
 	streamConnector := loggregator.NewEnvelopeStreamConnector(n.rlpAddr, n.tls,
 		loggregator.WithEnvelopeStreamLogger(&EnvelopeStreamerLogger{
 			logger: n.logger.Session("envelope_streamer"),
-		}))
+		}),
+		loggregator.WithEnvelopeStreamConnectorDialOptions(grpc.WithKeepaliveParams(keepalive.ClientParameters{
+			Time:                10 * time.Second,
+			Timeout:             30 * time.Second,
+			PermitWithoutStream: true,
+		})),
+	)
 	rx := streamConnector.Stream(n.context, &loggregator_v2.EgressBatchRequest{
 		ShardId:   n.shardID,
 		Selectors: selectors,
