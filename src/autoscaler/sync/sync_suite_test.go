@@ -44,6 +44,10 @@ var _ = BeforeSuite(func() {
 
 var _ = AfterSuite(func() {
 	if dbHelper != nil {
+		e := dropLockTable()
+		if e != nil {
+			Fail("can not drop test lock table: " + e.Error())
+		}
 		dbHelper.Close()
 	}
 
