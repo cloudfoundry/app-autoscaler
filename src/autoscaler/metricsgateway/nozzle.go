@@ -8,8 +8,11 @@ import (
 	loggregator "code.cloudfoundry.org/go-loggregator"
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"
+	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
+
+	"autoscaler/healthendpoint"
 )
 
 const METRICS_FORWARDER_ORIGIN = "autoscaler_metrics_forwarder"
@@ -26,6 +29,12 @@ var selectors = []*loggregator_v2.Selector{
 		},
 	},
 }
+var envelopeCounter = prometheus.CounterOpts{
+	Namespace: "autoscaler",
+	Subsystem: "metricsgateway",
+	Name:      "envelope_number_from_rlp",
+	Help:      "the total envelopes number got from rlp",
+}
 
 type EnvelopeStreamerLogger struct {
 	logger lager.Logger
@@ -39,36 +48,38 @@ func (l *EnvelopeStreamerLogger) Panicf(message string, data ...interface{}) {
 }
 
 type Nozzle struct {
-	logger        lager.Logger
-	rlpAddr       string
-	tls           *tls.Config
-	envelopChan   chan *loggregator_v2.Envelope
-	index         int
-	shardID       string
-	appIDs        map[string]string
-	getAppIDsFunc GetAppIDsFunc
-	context       context.Context
-	cancelFunc    context.CancelFunc
+	logger                   lager.Logger
+	rlpAddr                  string
+	tls                      *tls.Config
+	envelopChan              chan *loggregator_v2.Envelope
+	index                    int
+	shardID                  string
+	appIDs                   map[string]string
+	getAppIDsFunc            GetAppIDsFunc
+	context                  context.Context
+	cancelFunc               context.CancelFunc
+	envelopeCounterCollector healthendpoint.CounterCollector
 }
 
-func NewNozzle(logger lager.Logger, index int, shardID string, rlpAddr string, tls *tls.Config, envelopChan chan *loggregator_v2.Envelope, getAppIDsFunc GetAppIDsFunc) *Nozzle {
+func NewNozzle(logger lager.Logger, index int, shardID string, rlpAddr string, tls *tls.Config, envelopChan chan *loggregator_v2.Envelope, getAppIDsFunc GetAppIDsFunc, envelopeCounterCollector healthendpoint.CounterCollector) *Nozzle {
 	ctx, cancelFunc := context.WithCancel(context.Background())
 	return &Nozzle{
-		logger:        logger.Session("Nozzle"),
-		index:         index,
-		shardID:       shardID,
-		rlpAddr:       rlpAddr,
-		tls:           tls,
-		envelopChan:   envelopChan,
-		getAppIDsFunc: getAppIDsFunc,
-		context:       ctx,
-		cancelFunc:    cancelFunc,
+		logger:                   logger.Session("Nozzle"),
+		index:                    index,
+		shardID:                  shardID,
+		rlpAddr:                  rlpAddr,
+		tls:                      tls,
+		envelopChan:              envelopChan,
+		getAppIDsFunc:            getAppIDsFunc,
+		context:                  ctx,
+		cancelFunc:               cancelFunc,
+		envelopeCounterCollector: envelopeCounterCollector,
 	}
 }
 
 func (n *Nozzle) Start() {
 	go n.streamMetrics()
-	n.logger.Info("nozzle-started", lager.Data{"index": n.index})
+	n.logger.Info("started", lager.Data{"index": n.index})
 }
 
 func (n *Nozzle) Stop() {
@@ -98,7 +109,10 @@ func (n *Nozzle) streamMetrics() {
 		default:
 		}
 		envelops := rx()
-		n.filterEnvelopes(envelops)
+		if envelops != nil {
+			n.envelopeCounterCollector.Add(envelopeCounter, int64(len(envelops)))
+			n.filterEnvelopes(envelops)
+		}
 
 	}
 }
