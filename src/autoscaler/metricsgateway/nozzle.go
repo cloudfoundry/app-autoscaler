@@ -1,12 +1,15 @@
 package metricsgateway
 
 import (
+	"context"
+	"crypto/tls"
+	"time"
+
 	loggregator "code.cloudfoundry.org/go-loggregator"
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"
-
-	"context"
-	"crypto/tls"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/keepalive"
 )
 
 const METRICS_FORWARDER_ORIGIN = "autoscaler_metrics_forwarder"
@@ -24,19 +27,32 @@ var selectors = []*loggregator_v2.Selector{
 	},
 }
 
+type EnvelopeStreamerLogger struct {
+	logger lager.Logger
+}
+
+func (l *EnvelopeStreamerLogger) Printf(message string, data ...interface{}) {
+	l.logger.Debug(message, lager.Data{"data": data})
+}
+func (l *EnvelopeStreamerLogger) Panicf(message string, data ...interface{}) {
+	l.logger.Fatal(message, nil, lager.Data{"data": data})
+}
+
 type Nozzle struct {
 	logger        lager.Logger
 	rlpAddr       string
 	tls           *tls.Config
 	envelopChan   chan *loggregator_v2.Envelope
-	doneChan      chan bool
 	index         int
 	shardID       string
 	appIDs        map[string]string
 	getAppIDsFunc GetAppIDsFunc
+	context       context.Context
+	cancelFunc    context.CancelFunc
 }
 
 func NewNozzle(logger lager.Logger, index int, shardID string, rlpAddr string, tls *tls.Config, envelopChan chan *loggregator_v2.Envelope, getAppIDsFunc GetAppIDsFunc) *Nozzle {
+	ctx, cancelFunc := context.WithCancel(context.Background())
 	return &Nozzle{
 		logger:        logger.Session("Nozzle"),
 		index:         index,
@@ -45,7 +61,8 @@ func NewNozzle(logger lager.Logger, index int, shardID string, rlpAddr string, t
 		tls:           tls,
 		envelopChan:   envelopChan,
 		getAppIDsFunc: getAppIDsFunc,
-		doneChan:      make(chan bool),
+		context:       ctx,
+		cancelFunc:    cancelFunc,
 	}
 }
 
@@ -55,20 +72,27 @@ func (n *Nozzle) Start() {
 }
 
 func (n *Nozzle) Stop() {
-	n.doneChan <- true
+	n.cancelFunc()
 }
 
 func (n *Nozzle) streamMetrics() {
-	streamConnector := loggregator.NewEnvelopeStreamConnector(n.rlpAddr, n.tls)
-	ctx := context.Background()
-	rx := streamConnector.Stream(ctx, &loggregator_v2.EgressBatchRequest{
+	streamConnector := loggregator.NewEnvelopeStreamConnector(n.rlpAddr, n.tls,
+		loggregator.WithEnvelopeStreamLogger(&EnvelopeStreamerLogger{
+			logger: n.logger.Session("envelope_streamer"),
+		}),
+		loggregator.WithEnvelopeStreamConnectorDialOptions(grpc.WithKeepaliveParams(keepalive.ClientParameters{
+			Time:                10 * time.Second,
+			Timeout:             30 * time.Second,
+			PermitWithoutStream: true,
+		})),
+	)
+	rx := streamConnector.Stream(n.context, &loggregator_v2.EgressBatchRequest{
 		ShardId:   n.shardID,
 		Selectors: selectors,
 	})
 	for {
 		select {
-		case <-n.doneChan:
-			ctx.Done()
+		case <-n.context.Done():
 			n.logger.Info("nozzle-stopped", lager.Data{"index": n.index})
 			return
 		default:
