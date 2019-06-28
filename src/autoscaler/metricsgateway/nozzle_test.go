@@ -128,15 +128,16 @@ var _ = Describe("Nozzle", func() {
 			},
 		}
 
-		logger      *lagertest.TestLogger
-		index       = 0
-		shardID     = "autoscaler"
-		envelopChan chan *loggregator_v2.Envelope
-		getAppIDs   metricsgateway.GetAppIDsFunc
-		nozzle      *metricsgateway.Nozzle
-		rlpAddr     string
-		tlsConf     *tls.Config
-		appIDs      map[string]bool
+		logger        *lagertest.TestLogger
+		index         = 0
+		shardID       = "autoscaler"
+		envelopChan   chan *loggregator_v2.Envelope
+		getAppIDs     metricsgateway.GetAppIDsFunc
+		nozzle        *metricsgateway.Nozzle
+		rlpAddr       string
+		tlsConf       *tls.Config
+		appIDs        map[string]bool
+		LogServerName string
 	)
 	BeforeEach(func() {
 		envelopChan = make(chan *loggregator_v2.Envelope, 1000)
@@ -148,6 +149,7 @@ var _ = Describe("Nozzle", func() {
 			&containerMetricEnvelope,
 			&httpStartStopEnvelope,
 		}
+		LogServerName = "reverselogproxy"
 
 	})
 	AfterEach(func() {
@@ -159,7 +161,7 @@ var _ = Describe("Nozzle", func() {
 			fakeLoggregator, err := NewFakeEventProducer(serverCrtPath, serverKeyPath, caPath, 500*time.Millisecond)
 			Expect(err).NotTo(HaveOccurred())
 			fakeLoggregator.Start()
-			tlsConf, err = NewClientMutualTLSConfig(clientCrtPath, clientKeyPath, caPath, "reverselogproxy")
+			tlsConf, err = NewClientMutualTLSConfig(clientCrtPath, clientKeyPath, caPath, LogServerName)
 			Expect(err).NotTo(HaveOccurred())
 			rlpAddr = fakeLoggregator.GetAddr()
 			fakeLoggregator.SetEnvelops(envelopes)
@@ -171,6 +173,14 @@ var _ = Describe("Nozzle", func() {
 		})
 		AfterEach(func() {
 			nozzle.Stop()
+		})
+		Context("when there is err when connect to loggregator", func() {
+			BeforeEach(func() {
+				LogServerName = "wrong-server-name"
+			})
+			It("should output the err", func() {
+				Eventually(logger.Buffer).Should(Say("certificate is valid for reverselogproxy, not wrong-server-name"))
+			})
 		})
 		Context("when there is no app", func() {
 			BeforeEach(func() {
