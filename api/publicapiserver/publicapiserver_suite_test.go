@@ -1,28 +1,29 @@
 package publicapiserver_test
 
 import (
+	"encoding/json"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"path/filepath"
+	"regexp"
+	"strconv"
+	"testing"
+
+	"code.cloudfoundry.org/lager/lagertest"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/ghttp"
+	"github.com/tedsuo/ifrit"
+	"github.com/tedsuo/ifrit/ginkgomon"
+
 	"autoscaler/api/config"
 	"autoscaler/api/publicapiserver"
 	"autoscaler/cf"
 	"autoscaler/fakes"
 	"autoscaler/helpers"
 	"autoscaler/models"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-	"path/filepath"
-	"regexp"
-	"strconv"
-
-	"code.cloudfoundry.org/lager/lagertest"
-	"github.com/onsi/gomega/ghttp"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/tedsuo/ifrit"
-	"github.com/tedsuo/ifrit/ginkgomon"
-
-	"testing"
 )
 
 const (
@@ -167,4 +168,12 @@ func GetTestHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Success"))
 	}
+}
+
+func CheckResponse(resp *httptest.ResponseRecorder, statusCode int, errResponse models.ErrorResponse) {
+	Expect(resp.Code).To(Equal(statusCode))
+	var errResp models.ErrorResponse
+	err := json.NewDecoder(resp.Body).Decode(&errResp)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(errResp).To(Equal(errResponse))
 }
