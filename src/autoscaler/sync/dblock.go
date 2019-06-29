@@ -5,7 +5,6 @@ import (
 	"autoscaler/models"
 
 	"os"
-	"sync/atomic"
 	"time"
 
 	"code.cloudfoundry.org/lager"
@@ -14,20 +13,19 @@ import (
 )
 
 const (
-	OwnLock = iota
-	LostLock
+	LockStatusHeld = iota
+	LockStatusLost
 )
 
 type DatabaseLock struct {
-	logger lager.Logger
-	// isHoldLock represents the lock status of the last acquiring.
-	isHoldLock int32
+	logger     lager.Logger
+	lockStatus int32
 }
 
 func NewDatabaseLock(logger lager.Logger) *DatabaseLock {
 	return &DatabaseLock{
 		logger:     logger,
-		isHoldLock: LostLock,
+		lockStatus: LockStatusLost,
 	}
 }
 
@@ -46,7 +44,7 @@ func (dblock *DatabaseLock) InitDBLockRunner(retryInterval time.Duration, ttl ti
 		}
 		if isLockAcquired {
 			readyToAcquireLock = false
-			atomic.StoreInt32(&dblock.isHoldLock, OwnLock)
+			dblock.lockStatus = LockStatusHeld
 			dblock.logger.Info("lock-acquired-in-first-attempt", lager.Data{"owner": owner, "isLockAcquired": isLockAcquired})
 			callbackOnAcquiredLock()
 			close(ready)
@@ -60,7 +58,7 @@ func (dblock *DatabaseLock) InitDBLockRunner(retryInterval time.Duration, ttl ti
 				if releaseErr != nil {
 					dblock.logger.Error("failed-to-release-lock ", releaseErr)
 				} else {
-					atomic.StoreInt32(&dblock.isHoldLock, LostLock)
+					dblock.lockStatus = LockStatusLost
 					dblock.logger.Debug("successfully-released-lock", lager.Data{"owner": owner})
 				}
 				readyToAcquireLock = true
@@ -76,23 +74,23 @@ func (dblock *DatabaseLock) InitDBLockRunner(retryInterval time.Duration, ttl ti
 					if releaseErr != nil {
 						dblock.logger.Error("failed-to-release-lock ", releaseErr)
 					} else {
-						atomic.StoreInt32(&dblock.isHoldLock, LostLock)
+						dblock.lockStatus = LockStatusLost
 						dblock.logger.Info("successfully-released-lock", lager.Data{"owner": owner})
 					}
 					callbackOnLostLock()
 				}
 				if !isLockAcquired {
-					previousLockStatus := atomic.LoadInt32(&dblock.isHoldLock)
-					if previousLockStatus == OwnLock {
+					previousLockStatus := dblock.lockStatus
+					if previousLockStatus == LockStatusHeld {
 						dblock.logger.Info("lock-has-been-acquired-by-competitor")
-						atomic.StoreInt32(&dblock.isHoldLock, LostLock)
+						dblock.lockStatus = LockStatusLost
 						callbackOnLostLock()
 					}
 				}
 				if isLockAcquired && readyToAcquireLock {
 					readyToAcquireLock = false
 					dblock.logger.Info("successfully-acquired-lock", lager.Data{"owner": owner})
-					atomic.StoreInt32(&dblock.isHoldLock, OwnLock)
+					dblock.lockStatus = LockStatusHeld
 					callbackOnAcquiredLock()
 					close(ready)
 				}
