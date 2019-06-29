@@ -34,13 +34,13 @@ func (oam *OAuthMiddleware) Middleware(next http.Handler) http.Handler {
 			oam.logger.Error("userToken is not present", nil, lager.Data{"url": r.URL.String()})
 			handlers.WriteJSONResponse(w, http.StatusUnauthorized, models.ErrorResponse{
 				Code:    "Unauthorized",
-				Message: "Authorization is required"})
+				Message: "User token is not present in Authorization header"})
 			return
 		}
 		if !oam.isValidUserToken(userToken) {
 			handlers.WriteJSONResponse(w, http.StatusUnauthorized, models.ErrorResponse{
 				Code:    "Unauthorized",
-				Message: "Authorization is invalid formated"})
+				Message: "Invalid bearer token"})
 			return
 		}
 		appId := vars["appId"]
