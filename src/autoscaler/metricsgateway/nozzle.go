@@ -63,6 +63,7 @@ type Nozzle struct {
 
 func NewNozzle(logger lager.Logger, index int, shardID string, rlpAddr string, tls *tls.Config, envelopChan chan *loggregator_v2.Envelope, getAppIDsFunc GetAppIDsFunc, envelopeCounterCollector healthendpoint.CounterCollector) *Nozzle {
 	ctx, cancelFunc := context.WithCancel(context.Background())
+	envelopeCounterCollector.AddCounters(envelopeCounter)
 	return &Nozzle{
 		logger:                   logger.Session("Nozzle"),
 		index:                    index,
@@ -78,6 +79,7 @@ func NewNozzle(logger lager.Logger, index int, shardID string, rlpAddr string, t
 }
 
 func (n *Nozzle) Start() {
+	n.envelopeCounterCollector.AddCounters(envelopeCounter)
 	go n.streamMetrics()
 	n.logger.Info("started", lager.Data{"index": n.index})
 }
