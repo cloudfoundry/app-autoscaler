@@ -62,16 +62,18 @@ func main() {
 		os.Exit(1)
 	}
 	defer policyDB.Close()
+	envelopeCounterCollector := healthendpoint.NewCounterCollector()
+
 	envelopChan := make(chan *loggregator_v2.Envelope, conf.EnvelopChanSize)
 	emitters := createEmitters(logger, conf.Emitter.BufferSize, gatewayClock, conf.Emitter.KeepAliveInterval, conf.MetricServerAddrs, metricServerClientTLSConfig, conf.Emitter.HandshakeTimeout, conf.Emitter.MaxSetupRetryCount, conf.Emitter.MaxCloseRetryCount, conf.Emitter.RetryDelay)
 	appManager := metricsgateway.NewAppManager(logger, gatewayClock, conf.AppManager.AppRefreshInterval, policyDB)
 	dispatcher := metricsgateway.NewDispatcher(logger, envelopChan, emitters)
-	nozzles := createNozzles(logger, conf.NozzleCount, conf.Nozzle.ShardID, conf.Nozzle.RLPAddr, loggregatorClientTLSConfig, envelopChan, appManager.GetAppIDs)
-	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "metricsgateway")
+	nozzles := createNozzles(logger, conf.NozzleCount, conf.Nozzle.ShardID, conf.Nozzle.RLPAddr, loggregatorClientTLSConfig, envelopChan, appManager.GetAppIDs, envelopeCounterCollector)
 	promRegistry := prometheus.NewRegistry()
 	healthendpoint.RegisterCollectors(promRegistry, []prometheus.Collector{
 		healthendpoint.NewDatabaseStatusCollector("autoscaler", "metricsgateway", "policyDB", policyDB),
-		httpStatusCollector,
+		healthendpoint.NewHTTPStatusCollector("autoscaler", "metricsgateway"),
+		envelopeCounterCollector,
 	}, true, logger.Session("metricsgateway-prometheus"))
 
 	gatewayServer := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
@@ -147,11 +149,11 @@ func loadConfig(path string) (*config.Config, error) {
 	return conf, nil
 }
 
-func createNozzles(logger lager.Logger, nozzleCount int, shardID string, rlpAddr string, loggregatorClientTLSConfig *tls.Config, envelopChan chan *loggregator_v2.Envelope, getAppIDsFunc metricsgateway.GetAppIDsFunc) []*metricsgateway.Nozzle {
+func createNozzles(logger lager.Logger, nozzleCount int, shardID string, rlpAddr string, loggregatorClientTLSConfig *tls.Config, envelopChan chan *loggregator_v2.Envelope, getAppIDsFunc metricsgateway.GetAppIDsFunc, envelopeCounterCollector healthendpoint.CounterCollector) []*metricsgateway.Nozzle {
 
 	nozzles := make([]*metricsgateway.Nozzle, nozzleCount)
 	for i := 0; i < nozzleCount; i++ {
-		nozzles[i] = metricsgateway.NewNozzle(logger, i, shardID, rlpAddr, loggregatorClientTLSConfig, envelopChan, getAppIDsFunc)
+		nozzles[i] = metricsgateway.NewNozzle(logger, i, shardID, rlpAddr, loggregatorClientTLSConfig, envelopChan, getAppIDsFunc, envelopeCounterCollector)
 	}
 	return nozzles
 }
