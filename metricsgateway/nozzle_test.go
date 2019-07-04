@@ -11,6 +11,7 @@ import (
 	. "github.com/onsi/gomega"
 	. "github.com/onsi/gomega/gbytes"
 
+	"autoscaler/healthendpoint"
 	"autoscaler/metricsgateway"
 	. "autoscaler/testhelpers"
 )
@@ -128,16 +129,17 @@ var _ = Describe("Nozzle", func() {
 			},
 		}
 
-		logger        *lagertest.TestLogger
-		index         = 0
-		shardID       = "autoscaler"
-		envelopChan   chan *loggregator_v2.Envelope
-		getAppIDs     metricsgateway.GetAppIDsFunc
-		nozzle        *metricsgateway.Nozzle
-		rlpAddr       string
-		tlsConf       *tls.Config
-		appIDs        map[string]bool
-		LogServerName string
+		logger                   *lagertest.TestLogger
+		index                    = 0
+		shardID                  = "autoscaler"
+		envelopChan              chan *loggregator_v2.Envelope
+		getAppIDs                metricsgateway.GetAppIDsFunc
+		nozzle                   *metricsgateway.Nozzle
+		rlpAddr                  string
+		tlsConf                  *tls.Config
+		appIDs                   map[string]bool
+		LogServerName            string
+		envelopeCounterCollector = healthendpoint.NewCounterCollector()
 	)
 	BeforeEach(func() {
 		envelopChan = make(chan *loggregator_v2.Envelope, 1000)
@@ -165,7 +167,7 @@ var _ = Describe("Nozzle", func() {
 			Expect(err).NotTo(HaveOccurred())
 			rlpAddr = fakeLoggregator.GetAddr()
 			fakeLoggregator.SetEnvelops(envelopes)
-			nozzle = metricsgateway.NewNozzle(logger, index, shardID, rlpAddr, tlsConf, envelopChan, getAppIDs)
+			nozzle = metricsgateway.NewNozzle(logger, index, shardID, rlpAddr, tlsConf, envelopChan, getAppIDs, envelopeCounterCollector)
 			nozzle.Start()
 		})
 		BeforeEach(func() {
@@ -276,7 +278,7 @@ var _ = Describe("Nozzle", func() {
 			Expect(err).NotTo(HaveOccurred())
 			rlpAddr = fakeLoggregator.GetAddr()
 			fakeLoggregator.SetEnvelops(envelopes)
-			nozzle = metricsgateway.NewNozzle(logger, index, shardID, rlpAddr, tlsConf, envelopChan, getAppIDs)
+			nozzle = metricsgateway.NewNozzle(logger, index, shardID, rlpAddr, tlsConf, envelopChan, getAppIDs, envelopeCounterCollector)
 			nozzle.Start()
 			Eventually(envelopChan).Should(Receive())
 			nozzle.Stop()
