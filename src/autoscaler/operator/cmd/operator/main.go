@@ -153,7 +153,9 @@ func main() {
 	}
 	defer lockDB.Close()
 	prdl := sync.NewDatabaseLock(logger)
-	dbLockMaintainer := prdl.InitDBLockRunner(conf.DBLock.LockRetryInterval, conf.DBLock.LockTTL, guid, lockDB)
+	dbLockMaintainer := prdl.InitDBLockRunner(conf.DBLock.LockRetryInterval, conf.DBLock.LockTTL, guid, lockDB, func() {}, func() {
+		os.Exit(1)
+	})
 	members = append(grouper.Members{{"db-lock-maintainer", dbLockMaintainer}}, members...)
 
 	healthServer, err := healthendpoint.NewServer(logger.Session("health-server"), conf.Health.Port, promRegistry)
