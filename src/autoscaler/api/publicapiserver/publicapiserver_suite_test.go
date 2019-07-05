@@ -14,9 +14,9 @@ import (
 	"regexp"
 	"strconv"
 
+	"code.cloudfoundry.org/lager/lagertest"
 	"github.com/onsi/gomega/ghttp"
 
-	"code.cloudfoundry.org/lager"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tedsuo/ifrit"
@@ -41,7 +41,6 @@ var (
 	serverUrl     *url.URL
 	httpClient    *http.Client
 	conf          *config.Config
-	logger        lager.Logger
 	infoBytes     []byte
 
 	scalingEngineServer    *ghttp.Server
@@ -113,7 +112,6 @@ var _ = BeforeSuite(func() {
 		},
 		CF: cf.CFConfig{
 			API:               "http://api.bosh-lite.com",
-			GrantType:         cf.GrantTypeClientCredentials,
 			ClientID:          CLIENT_ID,
 			Secret:            CLIENT_SECRET,
 			SkipSSLValidation: true,
@@ -123,7 +121,7 @@ var _ = BeforeSuite(func() {
 	fakePolicyDB = &fakes.FakePolicyDB{}
 	fakeCFClient = &fakes.FakeCFClient{}
 
-	httpServer, err := publicapiserver.NewPublicApiServer(lager.NewLogger("test"), conf, fakePolicyDB, fakeCFClient)
+	httpServer, err := publicapiserver.NewPublicApiServer(lagertest.NewTestLogger("publicapiserver"), conf, fakePolicyDB, fakeCFClient)
 	Expect(err).NotTo(HaveOccurred())
 
 	serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(apiPort))
@@ -135,8 +133,6 @@ var _ = BeforeSuite(func() {
 
 	infoBytes, err = ioutil.ReadFile("../exampleconfig/info-file.json")
 	Expect(err).NotTo(HaveOccurred())
-
-	logger = helpers.InitLoggerFromConfig(&conf.Logging, "test")
 
 	scalingHistoryPathMatcher, err := regexp.Compile("/v1/apps/[A-Za-z0-9\\-]+/scaling_histories")
 	Expect(err).NotTo(HaveOccurred())

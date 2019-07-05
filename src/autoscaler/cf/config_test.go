@@ -18,8 +18,6 @@ var _ = Describe("Config", func() {
 		BeforeEach(func() {
 			conf = &CFConfig{}
 			conf.API = "http://api.example.com"
-			conf.GrantType = GrantTypePassword
-			conf.Username = "admin"
 			conf.ClientID = "admin"
 			conf.SkipSSLValidation = false
 		})
@@ -37,6 +35,7 @@ var _ = Describe("Config", func() {
 				Expect(err).To(MatchError("Configuration error: cf api is empty"))
 			})
 		})
+
 		Context("when SkipSSLValidation is not set", func() {
 			It("should set SkipSSLValidation to default false value", func() {
 				Expect(err).NotTo(HaveOccurred())
@@ -96,65 +95,13 @@ var _ = Describe("Config", func() {
 			})
 		})
 
-		Context("when grant type is not supported", func() {
+		Context("the client id is empty", func() {
 			BeforeEach(func() {
-				conf.GrantType = "not-supported"
+				conf.ClientID = ""
 			})
 
-			It("should error", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: unsupported grant_type*")))
-			})
-		})
-
-		Context("when grant type password", func() {
-			BeforeEach(func() {
-				conf.GrantType = GrantTypePassword
-			})
-
-			Context("when user name is set", func() {
-				BeforeEach(func() {
-					conf.ClientID = ""
-					conf.Username = "admin"
-				})
-				It("is valid", func() {
-					Expect(err).NotTo(HaveOccurred())
-				})
-			})
-
-			Context("when the user name is empty", func() {
-				BeforeEach(func() {
-					conf.Username = ""
-				})
-
-				It("should error", func() {
-					Expect(err).To(MatchError("Configuration error: username is empty"))
-				})
-			})
-		})
-
-		Context("when grant type client_credential", func() {
-			BeforeEach(func() {
-				conf.GrantType = GrantTypeClientCredentials
-			})
-
-			Context("when client id is set", func() {
-				BeforeEach(func() {
-					conf.ClientID = "admin"
-					conf.Username = ""
-				})
-				It("is valid", func() {
-					Expect(err).NotTo(HaveOccurred())
-				})
-			})
-
-			Context("the client id is empty", func() {
-				BeforeEach(func() {
-					conf.ClientID = ""
-				})
-
-				It("returns error", func() {
-					Expect(err).To(MatchError("Configuration error: client_id is empty"))
-				})
+			It("returns error", func() {
+				Expect(err).To(MatchError("Configuration error: client_id is empty"))
 			})
 		})
 

@@ -117,6 +117,7 @@ var _ = Describe("Metricsgateway", func() {
 				Expect(healthData).To(ContainSubstring("autoscaler_metricsgateway_policyDB"))
 				Expect(healthData).To(ContainSubstring("go_goroutines"))
 				Expect(healthData).To(ContainSubstring("go_memstats_alloc_bytes"))
+				Expect(healthData).To(ContainSubstring("autoscaler_metricsgateway_envelope_number_from_rlp"))
 				rsp.Body.Close()
 
 			})
