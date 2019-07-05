@@ -62,7 +62,7 @@ func initConfig() {
 	cfServer = ghttp.NewServer()
 	cfServer.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
 		cf.Endpoints{
-			TokenEndpoint:   cfServer.URL(),
+			AuthEndpoint:    cfServer.URL(),
 			DopplerEndpoint: strings.Replace(cfServer.URL(), "http", "ws", 1),
 		}))
 
@@ -73,9 +73,10 @@ func initConfig() {
 		models.AppEntity{Instances: 2, State: &appState}))
 
 	cfg.CF = cf.CFConfig{
-		API:      cfServer.URL(),
-		ClientID: "client-id",
-		Secret:   "secret",
+		API:       cfServer.URL(),
+		GrantType: cf.GrantTypePassword,
+		Username:  "admin",
+		Password:  "admin",
 	}
 	healthport = 8000 + GinkgoParallelNode()
 	cfg.Health.Port = healthport

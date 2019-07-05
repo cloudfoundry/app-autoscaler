@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"autoscaler/cf"
 	"autoscaler/models"
 	"fmt"
 	"net/http"
@@ -29,7 +30,7 @@ var _ = Describe("Integration_Operator_Others", func() {
 		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], components.Ports[APIPublicServer], false, 200, fakeCCNOAAUAA.URL(), dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[EventGenerator]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ServiceBrokerInternal]), true, defaultHttpClientTimeout, tmpDir)
 		startApiServer()
 
-		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), defaultHttpClientTimeout, tmpDir)
+		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), cf.GrantTypePassword, defaultHttpClientTimeout, tmpDir)
 		startScalingEngine()
 
 		schedulerConfPath = components.PrepareSchedulerConfig(dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), tmpDir, defaultHttpClientTimeout)
@@ -38,7 +39,7 @@ var _ = Describe("Integration_Operator_Others", func() {
 	})
 
 	JustBeforeEach(func() {
-		operatorConfPath = components.PrepareOperatorConfig(dbUrl, fakeCCNOAAUAA.URL(), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), 10*time.Second, 1*24*time.Hour, defaultHttpClientTimeout, tmpDir)
+		operatorConfPath = components.PrepareOperatorConfig(dbUrl, fakeCCNOAAUAA.URL(), cf.GrantTypePassword, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), 10*time.Second, 1*24*time.Hour, defaultHttpClientTimeout, tmpDir)
 		startOperator()
 	})
 

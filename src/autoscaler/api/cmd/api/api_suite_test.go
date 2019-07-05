@@ -13,8 +13,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"code.cloudfoundry.org/cfhttp"
-
 	"github.com/onsi/gomega/ghttp"
 
 	"github.com/onsi/gomega/gbytes"
@@ -33,18 +31,17 @@ const (
 )
 
 var (
-	apPath           string
-	cfg              config.Config
-	apPort           int
-	configFile       *os.File
-	apiHttpClient    *http.Client
-	brokerHttpClient *http.Client
-	catalogBytes     []byte
-	schedulerServer  *ghttp.Server
-	brokerPort       int
-	publicApiPort    int
-	infoBytes        []byte
-	ccServer         *ghttp.Server
+	apPath          string
+	cfg             config.Config
+	apPort          int
+	configFile      *os.File
+	httpClient      *http.Client
+	catalogBytes    []byte
+	schedulerServer *ghttp.Server
+	brokerPort      int
+	publicApiPort   int
+	infoBytes       []byte
+	ccServer        *ghttp.Server
 )
 
 func TestApi(t *testing.T) {
@@ -93,22 +90,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	testCertDir := "../../../../../test-certs"
 
-	cfg.BrokerServer = config.ServerConfig{
-		Port: brokerPort,
-		TLS: models.TLSCerts{
-			KeyFile:    filepath.Join(testCertDir, "servicebroker.key"),
-			CertFile:   filepath.Join(testCertDir, "servicebroker.crt"),
-			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-		},
-	}
-	cfg.PublicApiServer = config.ServerConfig{
-		Port: publicApiPort,
-		TLS: models.TLSCerts{
-			KeyFile:    filepath.Join(testCertDir, "api.key"),
-			CertFile:   filepath.Join(testCertDir, "api.crt"),
-			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-		},
-	}
+	cfg.BrokerServer.Port = brokerPort
+	cfg.PublicApiServer.Port = publicApiPort
 	cfg.Logging.Level = "info"
 	cfg.DB.BindingDB = db.DatabaseConfig{
 		URL:                   os.Getenv("DBURL"),
@@ -160,30 +143,14 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.UseBuildInMode = false
 
 	cfg.CF.API = ccServer.URL()
+	cfg.CF.GrantType = cf.GrantTypeClientCredentials
 	cfg.CF.ClientID = "client-id"
 	cfg.CF.Secret = "client-secret"
 	cfg.CF.SkipSSLValidation = true
 
 	configFile = writeConfig(&cfg)
-	apiClientTLSConfig, err := cfhttp.NewTLSConfig(
-		filepath.Join(testCertDir, "api.crt"),
-		filepath.Join(testCertDir, "api.key"),
-		filepath.Join(testCertDir, "autoscaler-ca.crt"))
-	Expect(err).NotTo(HaveOccurred())
-	apiHttpClient = &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: apiClientTLSConfig,
-		},
-	}
-	brokerClientTLSConfig, err := cfhttp.NewTLSConfig(
-		filepath.Join(testCertDir, "servicebroker.crt"),
-		filepath.Join(testCertDir, "servicebroker.key"),
-		filepath.Join(testCertDir, "autoscaler-ca.crt"))
-	brokerHttpClient = &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: brokerClientTLSConfig,
-		},
-	}
+
+	httpClient = &http.Client{}
 
 })
 
@@ -227,8 +194,8 @@ func (ap *ApiRunner) Start() {
 		"-c",
 		ap.configPath,
 	),
-		gexec.NewPrefixedWriter("\x1b[32m[o]\x1b[32m[api]\x1b[0m ", GinkgoWriter),
-		gexec.NewPrefixedWriter("\x1b[91m[e]\x1b[32m[api]\x1b[0m ", GinkgoWriter),
+		gexec.NewPrefixedWriter("\x1b[32m[o]\x1b[32m[mc]\x1b[0m ", GinkgoWriter),
+		gexec.NewPrefixedWriter("\x1b[91m[e]\x1b[32m[mc]\x1b[0m ", GinkgoWriter),
 	)
 	Expect(err).NotTo(HaveOccurred())
 

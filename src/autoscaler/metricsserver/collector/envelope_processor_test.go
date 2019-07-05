@@ -182,7 +182,7 @@ var _ = Describe("EnvelopeProcessor", func() {
 						processorIndex = 0
 					})
 
-					It("sends send 0 throughput and responsetime metric", func() {
+					It("sends send 0 throughput metric", func() {
 						Consistently(metricChan).ShouldNot(Receive())
 						fclock.WaitForWatcherAndIncrement(TestCollectInterval)
 						Eventually(metricChan).Should(Receive(Equal(&models.AppInstanceMetric{
@@ -194,16 +194,6 @@ var _ = Describe("EnvelopeProcessor", func() {
 							Value:         "0",
 							Timestamp:     fclock.Now().UnixNano(),
 						})))
-						Eventually(metricChan).Should(Receive(Equal(&models.AppInstanceMetric{
-							AppId:         "another-test-app-id",
-							InstanceIndex: 0,
-							CollectedAt:   fclock.Now().UnixNano(),
-							Name:          models.MetricNameResponseTime,
-							Unit:          models.UnitMilliseconds,
-							Value:         "0",
-							Timestamp:     fclock.Now().UnixNano(),
-						})))
-
 					})
 				})
 

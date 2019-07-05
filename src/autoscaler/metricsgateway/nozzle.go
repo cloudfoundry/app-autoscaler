@@ -1,18 +1,12 @@
 package metricsgateway
 
 import (
-	"context"
-	"crypto/tls"
-	"time"
-
 	loggregator "code.cloudfoundry.org/go-loggregator"
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"
-	"github.com/prometheus/client_golang/prometheus"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/keepalive"
 
-	"autoscaler/healthendpoint"
+	"context"
+	"crypto/tls"
 )
 
 const METRICS_FORWARDER_ORIGIN = "autoscaler_metrics_forwarder"
@@ -29,92 +23,58 @@ var selectors = []*loggregator_v2.Selector{
 		},
 	},
 }
-var envelopeCounter = prometheus.CounterOpts{
-	Namespace: "autoscaler",
-	Subsystem: "metricsgateway",
-	Name:      "envelope_number_from_rlp",
-	Help:      "the total envelopes number got from rlp",
-}
-
-type EnvelopeStreamerLogger struct {
-	logger lager.Logger
-}
-
-func (l *EnvelopeStreamerLogger) Printf(message string, data ...interface{}) {
-	l.logger.Debug(message, lager.Data{"data": data})
-}
-func (l *EnvelopeStreamerLogger) Panicf(message string, data ...interface{}) {
-	l.logger.Fatal(message, nil, lager.Data{"data": data})
-}
 
 type Nozzle struct {
-	logger                   lager.Logger
-	rlpAddr                  string
-	tls                      *tls.Config
-	envelopChan              chan *loggregator_v2.Envelope
-	index                    int
-	shardID                  string
-	appIDs                   map[string]string
-	getAppIDsFunc            GetAppIDsFunc
-	context                  context.Context
-	cancelFunc               context.CancelFunc
-	envelopeCounterCollector healthendpoint.CounterCollector
+	logger        lager.Logger
+	rlpAddr       string
+	tls           *tls.Config
+	envelopChan   chan *loggregator_v2.Envelope
+	doneChan      chan bool
+	index         int
+	shardID       string
+	appIDs        map[string]string
+	getAppIDsFunc GetAppIDsFunc
 }
 
-func NewNozzle(logger lager.Logger, index int, shardID string, rlpAddr string, tls *tls.Config, envelopChan chan *loggregator_v2.Envelope, getAppIDsFunc GetAppIDsFunc, envelopeCounterCollector healthendpoint.CounterCollector) *Nozzle {
-	ctx, cancelFunc := context.WithCancel(context.Background())
-	envelopeCounterCollector.AddCounters(envelopeCounter)
+func NewNozzle(logger lager.Logger, index int, shardID string, rlpAddr string, tls *tls.Config, envelopChan chan *loggregator_v2.Envelope, getAppIDsFunc GetAppIDsFunc) *Nozzle {
 	return &Nozzle{
-		logger:                   logger.Session("Nozzle"),
-		index:                    index,
-		shardID:                  shardID,
-		rlpAddr:                  rlpAddr,
-		tls:                      tls,
-		envelopChan:              envelopChan,
-		getAppIDsFunc:            getAppIDsFunc,
-		context:                  ctx,
-		cancelFunc:               cancelFunc,
-		envelopeCounterCollector: envelopeCounterCollector,
+		logger:        logger.Session("Nozzle"),
+		index:         index,
+		shardID:       shardID,
+		rlpAddr:       rlpAddr,
+		tls:           tls,
+		envelopChan:   envelopChan,
+		getAppIDsFunc: getAppIDsFunc,
+		doneChan:      make(chan bool),
 	}
 }
 
 func (n *Nozzle) Start() {
-	n.envelopeCounterCollector.AddCounters(envelopeCounter)
 	go n.streamMetrics()
-	n.logger.Info("started", lager.Data{"index": n.index})
+	n.logger.Info("nozzle-started", lager.Data{"index": n.index})
 }
 
 func (n *Nozzle) Stop() {
-	n.cancelFunc()
+	n.doneChan <- true
 }
 
 func (n *Nozzle) streamMetrics() {
-	streamConnector := loggregator.NewEnvelopeStreamConnector(n.rlpAddr, n.tls,
-		loggregator.WithEnvelopeStreamLogger(&EnvelopeStreamerLogger{
-			logger: n.logger.Session("envelope_streamer"),
-		}),
-		loggregator.WithEnvelopeStreamConnectorDialOptions(grpc.WithKeepaliveParams(keepalive.ClientParameters{
-			Time:                10 * time.Second,
-			Timeout:             30 * time.Second,
-			PermitWithoutStream: true,
-		})),
-	)
-	rx := streamConnector.Stream(n.context, &loggregator_v2.EgressBatchRequest{
+	streamConnector := loggregator.NewEnvelopeStreamConnector(n.rlpAddr, n.tls)
+	ctx := context.Background()
+	rx := streamConnector.Stream(ctx, &loggregator_v2.EgressBatchRequest{
 		ShardId:   n.shardID,
 		Selectors: selectors,
 	})
 	for {
 		select {
-		case <-n.context.Done():
+		case <-n.doneChan:
+			ctx.Done()
 			n.logger.Info("nozzle-stopped", lager.Data{"index": n.index})
 			return
 		default:
 		}
 		envelops := rx()
-		if envelops != nil {
-			n.envelopeCounterCollector.Add(envelopeCounter, int64(len(envelops)))
-			n.filterEnvelopes(envelops)
-		}
+		n.filterEnvelopes(envelops)
 
 	}
 }

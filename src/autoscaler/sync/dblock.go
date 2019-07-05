@@ -3,7 +3,6 @@ package sync
 import (
 	"autoscaler/db"
 	"autoscaler/models"
-
 	"os"
 	"time"
 
@@ -12,30 +11,23 @@ import (
 	"github.com/tedsuo/ifrit"
 )
 
-const (
-	LockStatusHeld = iota
-	LockStatusLost
-)
-
 type DatabaseLock struct {
-	logger     lager.Logger
-	lockStatus int32
+	logger lager.Logger
 }
 
 func NewDatabaseLock(logger lager.Logger) *DatabaseLock {
 	return &DatabaseLock{
-		logger:     logger,
-		lockStatus: LockStatusLost,
+		logger: logger,
 	}
 }
 
-func (dblock *DatabaseLock) InitDBLockRunner(retryInterval time.Duration, ttl time.Duration, owner string, lockDB db.LockDB, callbackOnAcquiredLock func(), callbackOnLostLock func()) ifrit.Runner {
+func (dblock *DatabaseLock) InitDBLockRunner(retryInterval time.Duration, ttl time.Duration, owner string, lockDB db.LockDB) ifrit.Runner {
 	dbLockMaintainer := ifrit.RunFunc(func(signals <-chan os.Signal, ready chan<- struct{}) error {
 		lockTicker := time.NewTicker(retryInterval)
 		readyToAcquireLock := true
 		if owner == "" {
 			dblock.logger.Info("failed-to-get-owner-details")
-			callbackOnLostLock()
+			os.Exit(1)
 		}
 		lock := &models.Lock{Owner: owner, Ttl: ttl}
 		isLockAcquired, lockErr := lockDB.Lock(lock)
@@ -44,9 +36,7 @@ func (dblock *DatabaseLock) InitDBLockRunner(retryInterval time.Duration, ttl ti
 		}
 		if isLockAcquired {
 			readyToAcquireLock = false
-			dblock.lockStatus = LockStatusHeld
 			dblock.logger.Info("lock-acquired-in-first-attempt", lager.Data{"owner": owner, "isLockAcquired": isLockAcquired})
-			callbackOnAcquiredLock()
 			close(ready)
 		}
 		for {
@@ -58,7 +48,6 @@ func (dblock *DatabaseLock) InitDBLockRunner(retryInterval time.Duration, ttl ti
 				if releaseErr != nil {
 					dblock.logger.Error("failed-to-release-lock ", releaseErr)
 				} else {
-					dblock.lockStatus = LockStatusLost
 					dblock.logger.Debug("successfully-released-lock", lager.Data{"owner": owner})
 				}
 				readyToAcquireLock = true
@@ -74,24 +63,13 @@ func (dblock *DatabaseLock) InitDBLockRunner(retryInterval time.Duration, ttl ti
 					if releaseErr != nil {
 						dblock.logger.Error("failed-to-release-lock ", releaseErr)
 					} else {
-						dblock.lockStatus = LockStatusLost
 						dblock.logger.Info("successfully-released-lock", lager.Data{"owner": owner})
 					}
-					callbackOnLostLock()
-				}
-				if !isLockAcquired {
-					previousLockStatus := dblock.lockStatus
-					if previousLockStatus == LockStatusHeld {
-						dblock.logger.Info("lock-has-been-acquired-by-competitor")
-						dblock.lockStatus = LockStatusLost
-						callbackOnLostLock()
-					}
+					os.Exit(1)
 				}
 				if isLockAcquired && readyToAcquireLock {
 					readyToAcquireLock = false
 					dblock.logger.Info("successfully-acquired-lock", lager.Data{"owner": owner})
-					dblock.lockStatus = LockStatusHeld
-					callbackOnAcquiredLock()
 					close(ready)
 				}
 			}

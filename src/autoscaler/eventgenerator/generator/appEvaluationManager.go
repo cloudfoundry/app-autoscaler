@@ -26,7 +26,7 @@ type AppEvaluationManager struct {
 	breakers         map[string]*circuit.Breaker
 	cooldownExpired  map[string]int64
 	breakerLock      *sync.RWMutex
-	cooldownLock     *sync.RWMutex
+	cooldownLock     *sync.Mutex
 }
 
 func NewAppEvaluationManager(logger lager.Logger, evaluateInterval time.Duration, emClock clock.Clock,
@@ -42,7 +42,7 @@ func NewAppEvaluationManager(logger lager.Logger, evaluateInterval time.Duration
 		breakerConfig:    breakerConfig,
 		cooldownExpired:  map[string]int64{},
 		breakerLock:      &sync.RWMutex{},
-		cooldownLock:     &sync.RWMutex{},
+		cooldownLock:     &sync.Mutex{},
 	}, nil
 }
 
@@ -50,21 +50,25 @@ func (a *AppEvaluationManager) getTriggers(policyMap map[string]*models.AppPolic
 	if policyMap == nil {
 		return nil
 	}
-	triggersByApp := make(map[string][]*models.Trigger)
-	for appID, policy := range policyMap {
-		now := a.emClock.Now().UnixNano()
-		a.cooldownLock.RLock()
-		cooldownExpiredAt, found := a.cooldownExpired[appID]
-		a.cooldownLock.RUnlock()
-		if found {
-			if cooldownExpiredAt > now {
-				continue
-			}
-		}
-		triggers := []*models.Trigger{}
+	triggersByType := make(map[string][]*models.Trigger)
+	now := a.emClock.Now().UnixNano()
+	for appId, policy := range policyMap {
 		for _, rule := range policy.ScalingPolicy.ScalingRules {
+			a.cooldownLock.Lock()
+			cooldownExpiredAt, found := a.cooldownExpired[appId]
+			a.cooldownLock.Unlock()
+			if found {
+				if cooldownExpiredAt > now {
+					continue
+				}
+			}
+			triggerKey := appId + "#" + rule.MetricType
+			triggers, exist := triggersByType[triggerKey]
+			if !exist {
+				triggers = []*models.Trigger{}
+			}
 			triggers = append(triggers, &models.Trigger{
-				AppId:                 appID,
+				AppId:                 appId,
 				MetricType:            rule.MetricType,
 				BreachDurationSeconds: rule.BreachDurationSeconds,
 				CoolDownSeconds:       rule.CoolDownSeconds,
@@ -72,10 +76,10 @@ func (a *AppEvaluationManager) getTriggers(policyMap map[string]*models.AppPolic
 				Operator:              rule.Operator,
 				Adjustment:            rule.Adjustment,
 			})
+			triggersByType[triggerKey] = triggers
 		}
-		triggersByApp[appID] = triggers
 	}
-	return triggersByApp
+	return triggersByType
 }
 
 func (a *AppEvaluationManager) Start() {

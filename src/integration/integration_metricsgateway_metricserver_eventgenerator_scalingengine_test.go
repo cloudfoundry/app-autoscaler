@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"autoscaler/cf"
 	"autoscaler/models"
 	as_testhelpers "autoscaler/testhelpers"
 	"encoding/json"
@@ -31,7 +32,7 @@ var _ = Describe("Integration_Metricsgateway_Metricserver_Eventgenerator_Scaling
 		metricsServerConfPath = components.PrepareMetricsServerConfig(dbUrl, defaultHttpClientTimeout, components.Ports[MetricsServerHTTP], components.Ports[MetricsServerWS], tmpDir)
 		metricsGatewayConfPath = components.PrepareMetricsGatewayConfig(dbUrl, []string{fmt.Sprintf("wss://127.0.0.1:%d", components.Ports[MetricsServerWS])}, fakeRLPServer.GetAddr(), tmpDir)
 		eventGeneratorConfPath = components.PrepareEventGeneratorConfig(dbUrl, components.Ports[EventGenerator], fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsServerHTTP]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), aggregatorExecuteInterval, policyPollerInterval, saveInterval, evaluationManagerInterval, defaultHttpClientTimeout, tmpDir)
-		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), defaultHttpClientTimeout, tmpDir)
+		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), cf.GrantTypePassword, defaultHttpClientTimeout, tmpDir)
 
 		startMetricsServer()
 		startMetricsGateway()

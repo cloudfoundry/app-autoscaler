@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	"code.cloudfoundry.org/lager/lagertest"
 	"github.com/gorilla/mux"
 
 	. "github.com/onsi/ginkgo"
@@ -26,7 +25,7 @@ var _ = Describe("Oauth", func() {
 
 		fakeCFClient = &fakes.FakeCFClient{}
 
-		oam = NewOauthMiddleware(lagertest.NewTestLogger("oauth"), fakeCFClient)
+		oam = NewOauthMiddleware(logger, fakeCFClient)
 
 		router = mux.NewRouter()
 		router.HandleFunc("/", GetTestHandler())

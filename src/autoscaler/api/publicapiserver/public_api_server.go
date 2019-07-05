@@ -9,7 +9,6 @@ import (
 	"autoscaler/db"
 	"autoscaler/routes"
 
-	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/mux"
 	"github.com/tedsuo/ifrit"
@@ -44,18 +43,7 @@ func NewPublicApiServer(logger lager.Logger, conf *config.Config, policydb db.Po
 	addr := fmt.Sprintf("0.0.0.0:%d", conf.PublicApiServer.Port)
 
 	var runner ifrit.Runner
-	if (conf.PublicApiServer.TLS.KeyFile == "") || (conf.PublicApiServer.TLS.CertFile == "") {
-		logger.Info("creating-public-api-http-server")
-		runner = http_server.New(addr, r)
-	} else {
-		logger.Info("creating-public-api-https-server")
-		tlsConfig, err := cfhttp.NewTLSConfig(conf.PublicApiServer.TLS.CertFile, conf.PublicApiServer.TLS.KeyFile, conf.PublicApiServer.TLS.CACertFile)
-		if err != nil {
-			logger.Error("failed-new-server-new-tls-config", err, lager.Data{"tls": conf.PublicApiServer.TLS})
-			return nil, err
-		}
-		runner = http_server.NewTLSServer(addr, r, tlsConfig)
-	}
+	runner = http_server.New(addr, r)
 
 	logger.Info("public-api-http-server-created", lager.Data{"serverConfig": conf.PublicApiServer})
 	return runner, nil

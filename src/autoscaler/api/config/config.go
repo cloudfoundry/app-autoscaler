@@ -20,8 +20,7 @@ const (
 )
 
 type ServerConfig struct {
-	Port int             `yaml:"port"`
-	TLS  models.TLSCerts `yaml:"tls"`
+	Port int `yaml:"port"`
 }
 
 var defaultBrokerServerConfig = ServerConfig{
@@ -88,6 +87,7 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		UseBuildInMode:  false,
 		CF: cf.CFConfig{
 			SkipSSLValidation: false,
+			GrantType:         cf.GrantTypeClientCredentials,
 		},
 	}
 
@@ -107,6 +107,9 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 }
 
 func (c *Config) Validate() error {
+	if c.CF.GrantType != cf.GrantTypeClientCredentials {
+		return fmt.Errorf("Configuration error: cf.grant_type must be client_credentials")
+	}
 
 	err := c.CF.Validate()
 	if err != nil {
@@ -132,6 +135,9 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("Configuration error: PolicySchemaPath is empty")
 	}
 
+	if c.CF.GrantType != cf.GrantTypeClientCredentials {
+		return fmt.Errorf("Configuration error: unsupported grant_type")
+	}
 	if c.InfoFilePath == "" {
 		return fmt.Errorf("Configuration error: InfoFilePath is empty")
 	}

@@ -181,19 +181,7 @@ func (ep *envelopeProcessor) computeAndSaveMetrics() {
 					Value:         "0",
 					Timestamp:     ep.clock.Now().UnixNano(),
 				}
-
-				responseTimeMetric := &models.AppInstanceMetric{
-					AppId:         appID,
-					InstanceIndex: 0,
-					CollectedAt:   ep.clock.Now().UnixNano(),
-					Name:          models.MetricNameResponseTime,
-					Unit:          models.UnitMilliseconds,
-					Value:         "0",
-					Timestamp:     ep.clock.Now().UnixNano(),
-				}
-
 				ep.metricChan <- throughputMetric
-				ep.metricChan <- responseTimeMetric
 			}
 			continue
 		}

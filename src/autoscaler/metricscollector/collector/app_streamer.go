@@ -126,22 +126,10 @@ func (as *appStreamer) computeAndSaveMetrics() {
 			Value:         "0",
 			Timestamp:     as.sclock.Now().UnixNano(),
 		}
-		responseTime := &models.AppInstanceMetric{
-			AppId:         as.appId,
-			InstanceIndex: 0,
-			CollectedAt:   as.sclock.Now().UnixNano(),
-			Name:          models.MetricNameResponseTime,
-			Unit:          models.UnitMilliseconds,
-			Value:         "0",
-			Timestamp:     as.sclock.Now().UnixNano(),
-		}
-
-		as.logger.Debug("compute-throughput", lager.Data{"message": "write 0 throughput and response time  due to no requests"})
+		as.logger.Debug("compute-throughput", lager.Data{"message": "write 0 throughput due to no requests"})
 		as.cache.Put(throughput)
-		as.cache.Put(responseTime)
 		if as.isMetricsPersistencySupported {
 			as.dataChan <- throughput
-			as.dataChan <- responseTime
 		}
 		return
 	}

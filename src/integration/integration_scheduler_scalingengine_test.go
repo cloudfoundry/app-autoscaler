@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"autoscaler/cf"
 	"fmt"
 	"net/http"
 	"time"
@@ -24,7 +25,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 		testGuid = getRandomId()
 		startFakeCCNOAAUAA(initInstanceCount)
 
-		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), defaultHttpClientTimeout, tmpDir)
+		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), cf.GrantTypePassword, defaultHttpClientTimeout, tmpDir)
 		startScalingEngine()
 
 		schedulerConfPath = components.PrepareSchedulerConfig(dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), tmpDir, defaultHttpClientTimeout)

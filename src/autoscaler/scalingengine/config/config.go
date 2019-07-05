@@ -26,6 +26,7 @@ const (
 )
 
 var defaultCFConfig = cf.CFConfig{
+	GrantType:         cf.GrantTypePassword,
 	SkipSSLValidation: false,
 }
 
@@ -90,6 +91,7 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		return nil, err
 	}
 
+	conf.CF.GrantType = strings.ToLower(conf.CF.GrantType)
 	conf.Logging.Level = strings.ToLower(conf.Logging.Level)
 
 	return conf, nil
