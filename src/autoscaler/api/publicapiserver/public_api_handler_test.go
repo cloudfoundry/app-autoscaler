@@ -10,7 +10,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -63,7 +63,7 @@ var _ = Describe("PublicApiHandler", func() {
 		resp = httptest.NewRecorder()
 
 		pathVariables = map[string]string{}
-		handler = NewPublicApiHandler(lager.NewLogger("test"), conf, policydb)
+		handler = NewPublicApiHandler(lagertest.NewTestLogger("public_api_handler"), conf, policydb)
 	})
 
 	Describe("GetInfo", func() {
