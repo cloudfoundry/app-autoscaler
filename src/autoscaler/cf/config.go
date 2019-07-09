@@ -8,9 +8,6 @@ import (
 
 type CFConfig struct {
 	API               string `yaml:"api"`
-	GrantType         string `yaml:"grant_type"`
-	Username          string `yaml:"username"`
-	Password          string `yaml:"password"`
 	ClientID          string `yaml:"client_id"`
 	Secret            string `yaml:"secret"`
 	SkipSSLValidation bool   `yaml:"skip_ssl_validation"`
@@ -40,20 +37,9 @@ func (conf *CFConfig) Validate() error {
 	}
 	conf.API = apiURL.String()
 
-	if conf.GrantType != GrantTypePassword && conf.GrantType != GrantTypeClientCredentials {
-		return fmt.Errorf("Configuration error: unsupported grant_type [%s]", conf.GrantType)
+	if conf.ClientID == "" {
+		return fmt.Errorf("Configuration error: client_id is empty")
 	}
 
-	if conf.GrantType == GrantTypePassword {
-		if conf.Username == "" {
-			return fmt.Errorf("Configuration error: username is empty")
-		}
-	}
-
-	if conf.GrantType == GrantTypeClientCredentials {
-		if conf.ClientID == "" {
-			return fmt.Errorf("Configuration error: client_id is empty")
-		}
-	}
 	return nil
 }
