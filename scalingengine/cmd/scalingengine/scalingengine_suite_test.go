@@ -54,7 +54,7 @@ var _ = SynchronizedBeforeSuite(
 		ccUAA = ghttp.NewServer()
 		ccUAA.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
 			cf.Endpoints{
-				AuthEndpoint:    ccUAA.URL(),
+				TokenEndpoint:   ccUAA.URL(),
 				DopplerEndpoint: strings.Replace(ccUAA.URL(), "http", "ws", 1),
 			}))
 
@@ -67,10 +67,9 @@ var _ = SynchronizedBeforeSuite(
 		ccUAA.RouteToHandler("PUT", "/v2/apps/"+appId, ghttp.RespondWith(http.StatusCreated, ""))
 
 		conf.CF = cf.CFConfig{
-			API:       ccUAA.URL(),
-			GrantType: cf.GrantTypePassword,
-			Username:  "admin",
-			Password:  "admin",
+			API:      ccUAA.URL(),
+			ClientID: "autoscaler_client_id",
+			Secret:   "autoscaler_client_secret",
 		}
 
 		port = 7000 + GinkgoParallelNode()
