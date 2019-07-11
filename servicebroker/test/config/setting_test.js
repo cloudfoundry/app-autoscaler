@@ -47,7 +47,7 @@ describe('config setting Test Suite', function() {
       "serviceCatalogPath" : "catalogPath",
       "schemaValidationPath" : "schemaPath",
       "dashboardRedirectUri": "https://dashboard-redirect-uri-settings.example.com",
-      "customMetricsUrl": "http://metrics.example.com/v1/metrics"
+      "customMetricsUrl": "https://metrics.example.com/v1/metrics"
     };
     settings = configSetting(defaultConfig);
   });
