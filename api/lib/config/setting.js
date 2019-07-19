@@ -44,7 +44,8 @@ module.exports = function(settingsObj) {
     return uri;
   };
   var addProtocol = function (uri) {
-    if (uri && (uri.indexOf("https://") < 0 && uri.indexOf("http://") < 0)) {
+    var pattern = new RegExp("^http[s]{0,1}://");
+    if (uri && (!pattern.test(uri))) {
       uri = "https://" + uri;
     }
     return uri;
