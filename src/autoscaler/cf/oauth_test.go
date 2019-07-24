@@ -6,7 +6,7 @@ import (
 	"regexp"
 
 	"code.cloudfoundry.org/clock"
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
@@ -25,10 +25,9 @@ type spaceDeveoper struct {
 }
 
 const (
-	TEST_USER_TOKEN         = "bearer test-user-token"
-	TEST_INVALID_USER_TOKEN = "invalid-test-user-token"
-	TEST_APP_ID             = "test-app-id"
-	TEST_USER_ID            = "test-user-id"
+	TEST_USER_TOKEN = "bearer test-user-token"
+	TEST_APP_ID     = "test-app-id"
+	TEST_USER_ID    = "test-user-id"
 )
 
 var (
@@ -36,6 +35,7 @@ var (
 	cfc       CFClient
 	err       error
 	userToken string
+	logger    *lagertest.TestLogger
 
 	isUserSpaceDeveloperFlag bool
 	isUserAdminFlag          bool
@@ -83,7 +83,8 @@ var _ = Describe("Oauth", func() {
 
 		conf = &CFConfig{}
 		conf.API = fakeCCServer.URL()
-		cfc = NewCFClient(conf, lager.NewLogger("cf"), clock.NewClock())
+		logger = lagertest.NewTestLogger("oauth-test")
+		cfc = NewCFClient(conf, logger, clock.NewClock())
 		cfc.Login()
 	})
 
@@ -235,17 +236,8 @@ var _ = Describe("Oauth", func() {
 				fakeTokenServer = nil
 			})
 			It("should error", func() {
+				Expect(isUserAdminFlag).To(BeFalse())
 				Expect(err).To(HaveOccurred())
-			})
-		})
-
-		Context("user token is in invalid format", func() {
-			BeforeEach(func() {
-				userToken = TEST_INVALID_USER_TOKEN
-			})
-			It("should error", func() {
-				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError("Invalid token format"))
 			})
 		})
 
@@ -254,6 +246,7 @@ var _ = Describe("Oauth", func() {
 				userScopeStatus = http.StatusBadRequest
 			})
 			It("should return false", func() {
+				Expect(isUserAdminFlag).To(BeFalse())
 				Expect(err).To(HaveOccurred())
 				Expect(err).To(MatchError("Failed to get user scope, statusCode : 400"))
 			})
@@ -264,6 +257,7 @@ var _ = Describe("Oauth", func() {
 				fakeTokenServer.RouteToHandler(http.MethodPost, "/check_token", ghttp.RespondWith(http.StatusOK, "non-json-response"))
 			})
 			It("should error", func() {
+				Expect(isUserAdminFlag).To(BeFalse())
 				Expect(err).To(HaveOccurred())
 			})
 		})

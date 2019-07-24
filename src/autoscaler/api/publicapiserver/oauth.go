@@ -3,8 +3,8 @@ package publicapiserver
 import (
 	"autoscaler/cf"
 	"autoscaler/models"
-	"fmt"
 	"net/http"
+	"strings"
 
 	"code.cloudfoundry.org/cfhttp/handlers"
 	"code.cloudfoundry.org/lager"
@@ -17,9 +17,6 @@ type OAuthMiddleware struct {
 	cfClient        cf.CFClient
 	cfTokenEndpoint string
 }
-
-var ErrUnauthrorized = fmt.Errorf(http.StatusText(http.StatusUnauthorized))
-var ErrInvalidTokenFormat = fmt.Errorf("Invalid token format")
 
 func NewOauthMiddleware(logger lager.Logger, cfClient cf.CFClient) *OAuthMiddleware {
 	return &OAuthMiddleware{
@@ -35,10 +32,17 @@ func (oam *OAuthMiddleware) Middleware(next http.Handler) http.Handler {
 		userToken := r.Header.Get("Authorization")
 		if userToken == "" {
 			oam.logger.Error("userToken is not present", nil, lager.Data{"url": r.URL.String()})
-			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			handlers.WriteJSONResponse(w, http.StatusUnauthorized, models.ErrorResponse{
+				Code:    "Unauthorized",
+				Message: "User token is not present in Authorization header"})
 			return
 		}
-
+		if !oam.isValidUserToken(userToken) {
+			handlers.WriteJSONResponse(w, http.StatusUnauthorized, models.ErrorResponse{
+				Code:    "Unauthorized",
+				Message: "Invalid bearer token"})
+			return
+		}
 		appId := vars["appId"]
 		if appId == "" {
 			oam.logger.Error("appId is not present", nil, lager.Data{"url": r.URL.String()})
@@ -48,7 +52,26 @@ func (oam *OAuthMiddleware) Middleware(next http.Handler) http.Handler {
 			})
 			return
 		}
+		isUserSpaceDeveloper, err := oam.cfClient.IsUserSpaceDeveloper(userToken, appId)
+		if err != nil {
+			if err == cf.ErrUnauthrorized {
+				handlers.WriteJSONResponse(w, http.StatusUnauthorized, models.ErrorResponse{
+					Code:    "Unauthorized",
+					Message: "You are not authorized to perform the requested action"})
+				return
+			} else {
+				oam.logger.Error("failed to check space developer permissions", err, nil)
+				handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+					Code:    "Interal-Server-Error",
+					Message: "Failed to check space developer permission"})
+				return
+			}
 
+		}
+		if isUserSpaceDeveloper {
+			next.ServeHTTP(w, r)
+			return
+		}
 		isUserAdmin, err := oam.cfClient.IsUserAdmin(userToken)
 		if err != nil {
 			oam.logger.Error("failed to check if user is admin", err, nil)
@@ -62,20 +85,24 @@ func (oam *OAuthMiddleware) Middleware(next http.Handler) http.Handler {
 			return
 		}
 
-		isUserSpaceDeveloper, err := oam.cfClient.IsUserSpaceDeveloper(userToken, appId)
-		if err != nil {
-			oam.logger.Error("failed to check spacedeveloper permissions", err, nil)
-			handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-				Code:    "Interal-Server-Error",
-				Message: "Failed to check space developer permission"})
-			return
-		}
-		if isUserSpaceDeveloper {
-			next.ServeHTTP(w, r)
-			return
-		}
-
-		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		handlers.WriteJSONResponse(w, http.StatusUnauthorized, models.ErrorResponse{
+			Code:    "Unauthorized",
+			Message: "You are not authorized to perform the requested action"})
 		return
 	})
+}
+
+func (oam *OAuthMiddleware) isValidUserToken(userToken string) bool {
+	lowerCaseToken := strings.ToLower(userToken)
+	if !strings.HasPrefix(lowerCaseToken, "bearer ") {
+		oam.logger.Error("Token should start with bearer", cf.ErrInvalidTokenFormat)
+		return false
+	}
+	tokenSplitted := strings.Split(lowerCaseToken, " ")
+	if len(tokenSplitted) != 2 {
+		oam.logger.Error("Token should contain two parts separated by space", cf.ErrInvalidTokenFormat)
+		return false
+	}
+
+	return true
 }

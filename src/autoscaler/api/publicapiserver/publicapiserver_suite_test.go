@@ -1,39 +1,42 @@
 package publicapiserver_test
 
 import (
+	"encoding/json"
+	"io/ioutil"
+	"net/http"
+	"net/http/httptest"
+	"net/url"
+	"path/filepath"
+	"regexp"
+	"strconv"
+	"testing"
+
+	"code.cloudfoundry.org/lager/lagertest"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+	"github.com/onsi/gomega/ghttp"
+	"github.com/tedsuo/ifrit"
+	"github.com/tedsuo/ifrit/ginkgomon"
+
 	"autoscaler/api/config"
 	"autoscaler/api/publicapiserver"
 	"autoscaler/cf"
 	"autoscaler/fakes"
 	"autoscaler/helpers"
 	"autoscaler/models"
-	"io/ioutil"
-	"net/http"
-	"net/url"
-	"path/filepath"
-	"regexp"
-	"strconv"
-
-	"code.cloudfoundry.org/lager/lagertest"
-	"github.com/onsi/gomega/ghttp"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-	"github.com/tedsuo/ifrit"
-	"github.com/tedsuo/ifrit/ginkgomon"
-
-	"testing"
 )
 
 const (
-	CLIENT_ID               = "client-id"
-	CLIENT_SECRET           = "client-secret"
-	TEST_APP_ID             = "test-app-id"
-	TEST_USER_TOKEN         = "bearer testusertoken"
-	TEST_INVALID_USER_TOKEN = "bearer testinvalidusertoken"
-	TEST_USER_ID            = "test-user-id"
-	TEST_METRIC_TYPE        = "test_metric"
-	TEST_METRIC_UNIT        = "test_unit"
+	CLIENT_ID                         = "client-id"
+	CLIENT_SECRET                     = "client-secret"
+	TEST_APP_ID                       = "test-app-id"
+	TEST_USER_TOKEN                   = "bearer testusertoken"
+	INVALID_USER_TOKEN                = "bearer invalid_user_token invalid_user_token"
+	INVALID_USER_TOKEN_WITHOUT_BEARER = "not-bearer testusertoken"
+	TEST_INVALID_USER_TOKEN           = "bearer testinvalidusertoken"
+	TEST_USER_ID                      = "test-user-id"
+	TEST_METRIC_TYPE                  = "test_metric"
+	TEST_METRIC_UNIT                  = "test_unit"
 )
 
 var (
@@ -165,4 +168,12 @@ func GetTestHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("Success"))
 	}
+}
+
+func CheckResponse(resp *httptest.ResponseRecorder, statusCode int, errResponse models.ErrorResponse) {
+	Expect(resp.Code).To(Equal(statusCode))
+	var errResp models.ErrorResponse
+	err := json.NewDecoder(resp.Body).Decode(&errResp)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(errResp).To(Equal(errResponse))
 }
