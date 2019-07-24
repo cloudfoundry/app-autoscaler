@@ -1,17 +1,19 @@
 package publicapiserver_test
 
 import (
-	. "autoscaler/api/publicapiserver"
-	"autoscaler/fakes"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 
 	"code.cloudfoundry.org/lager/lagertest"
 	"github.com/gorilla/mux"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	. "github.com/onsi/gomega/gbytes"
+
+	. "autoscaler/api/publicapiserver"
+	"autoscaler/fakes"
+	"autoscaler/models"
 )
 
 var _ = Describe("Oauth", func() {
@@ -21,12 +23,13 @@ var _ = Describe("Oauth", func() {
 		oam          *OAuthMiddleware
 		router       *mux.Router
 		fakeCFClient *fakes.FakeCFClient
+		logger       *lagertest.TestLogger
 	)
 	BeforeEach(func() {
 
 		fakeCFClient = &fakes.FakeCFClient{}
-
-		oam = NewOauthMiddleware(lagertest.NewTestLogger("oauth"), fakeCFClient)
+		logger = lagertest.NewTestLogger("oauth")
+		oam = NewOauthMiddleware(logger, fakeCFClient)
 
 		router = mux.NewRouter()
 		router.HandleFunc("/", GetTestHandler())
@@ -40,12 +43,45 @@ var _ = Describe("Oauth", func() {
 		router.ServeHTTP(resp, req)
 	})
 
-	Context("Authorization Header is not provided", func() {
+	Context("User token is not present in Authorization header", func() {
 		BeforeEach(func() {
 			req = httptest.NewRequest(http.MethodGet, "/v1/apps/"+TEST_APP_ID, nil)
 		})
 		It("should fail with 401", func() {
-			Expect(resp.Code).To(Equal(http.StatusUnauthorized))
+			CheckResponse(resp, http.StatusUnauthorized, models.ErrorResponse{
+				Code:    "Unauthorized",
+				Message: "User token is not present in Authorization header",
+			})
+
+		})
+	})
+	Context("Invalid user token format", func() {
+		Context("when user token is not a bearer token", func() {
+			BeforeEach(func() {
+				req = httptest.NewRequest(http.MethodGet, "/v1/apps/"+TEST_APP_ID, nil)
+				req.Header.Add("Authorization", INVALID_USER_TOKEN_WITHOUT_BEARER)
+			})
+			It("should fail with 401", func() {
+				Eventually(logger.Buffer).Should(Say("Token should start with bearer"))
+				CheckResponse(resp, http.StatusUnauthorized, models.ErrorResponse{
+					Code:    "Unauthorized",
+					Message: "Invalid bearer token",
+				})
+			})
+		})
+
+		Context("when user token contains more than two parts separated by space", func() {
+			BeforeEach(func() {
+				req = httptest.NewRequest(http.MethodGet, "/v1/apps/"+TEST_APP_ID, nil)
+				req.Header.Add("Authorization", INVALID_USER_TOKEN)
+			})
+			It("should fail with 401", func() {
+				Eventually(logger.Buffer).Should(Say("Token should contain two parts separated by space"))
+				CheckResponse(resp, http.StatusUnauthorized, models.ErrorResponse{
+					Code:    "Unauthorized",
+					Message: "Invalid bearer token",
+				})
+			})
 		})
 	})
 
@@ -55,7 +91,10 @@ var _ = Describe("Oauth", func() {
 			req.Header.Set("Authorization", TEST_USER_TOKEN)
 		})
 		It("should fail with 400", func() {
-			Expect(resp.Code).To(Equal(http.StatusBadRequest))
+			CheckResponse(resp, http.StatusBadRequest, models.ErrorResponse{
+				Code:    "Bad Request",
+				Message: "Malformed or missing appId",
+			})
 		})
 	})
 
@@ -67,7 +106,10 @@ var _ = Describe("Oauth", func() {
 			req.Header.Add("Authorization", TEST_USER_TOKEN)
 		})
 		It("should fail with 500", func() {
-			Expect(resp.Code).To(Equal(http.StatusInternalServerError))
+			CheckResponse(resp, http.StatusInternalServerError, models.ErrorResponse{
+				Code:    "Interal-Server-Error",
+				Message: "Failed to check if user is admin",
+			})
 		})
 	})
 
@@ -92,7 +134,10 @@ var _ = Describe("Oauth", func() {
 			req.Header.Add("Authorization", TEST_USER_TOKEN)
 		})
 		It("should fail with 500", func() {
-			Expect(resp.Code).To(Equal(http.StatusInternalServerError))
+			CheckResponse(resp, http.StatusInternalServerError, models.ErrorResponse{
+				Code:    "Interal-Server-Error",
+				Message: "Failed to check space developer permission",
+			})
 		})
 	})
 
@@ -118,7 +163,10 @@ var _ = Describe("Oauth", func() {
 			req.Header.Add("Authorization", TEST_USER_TOKEN)
 		})
 		It("should fail with 401", func() {
-			Expect(resp.Code).To(Equal(http.StatusUnauthorized))
+			CheckResponse(resp, http.StatusUnauthorized, models.ErrorResponse{
+				Code:    "Unauthorized",
+				Message: "You are not authorized to perform the requested action",
+			})
 		})
 	})
 

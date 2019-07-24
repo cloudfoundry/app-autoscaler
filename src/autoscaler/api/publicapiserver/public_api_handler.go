@@ -225,7 +225,6 @@ func (h *PublicApiHandler) GetScalingHistories(w http.ResponseWriter, r *http.Re
 			Message: string(responseData)})
 		return
 	}
-
 	paginatedResponse, err := paginateResource(responseData, parameters, r)
 	if err != nil {
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
@@ -291,7 +290,6 @@ func (h *PublicApiHandler) GetAggregatedMetricsHistories(w http.ResponseWriter, 
 			Message: string(responseData)})
 		return
 	}
-
 	paginatedResponse, err := paginateResource(responseData, parameters, r)
 	if err != nil {
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
@@ -329,7 +327,7 @@ func (h *PublicApiHandler) GetInstanceMetricsHistories(w http.ResponseWriter, r 
 		return
 	}
 	if instanceIndex != "" {
-		parameters.Add("instance-index", instanceIndex)
+		parameters.Add("instanceindex", instanceIndex)
 	}
 
 	path, _ := routes.MetricsCollectorRoutes().Get(routes.GetMetricHistoriesRouteName).URLPath("appid", appId, "metrictype", metricType)
@@ -362,7 +360,6 @@ func (h *PublicApiHandler) GetInstanceMetricsHistories(w http.ResponseWriter, r 
 			Message: string(responseData)})
 		return
 	}
-
 	paginatedResponse, err := paginateResource(responseData, parameters, r)
 	if err != nil {
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
