@@ -318,7 +318,7 @@ var _ = Describe("PublicApiServer", func() {
 			})
 
 			Context("when calling get policy endpoint", func() {
-				BeforeEach(func() {
+				JustBeforeEach(func() {
 					schedulerStatus = http.StatusOK
 
 					serverUrl.Path = "/v1/apps/" + TEST_APP_ID + "/policy"
@@ -344,14 +344,33 @@ var _ = Describe("PublicApiServer", func() {
 
 					rsp, err = httpClient.Do(req)
 				})
-				It("should succeed", func() {
-					Expect(err).NotTo(HaveOccurred())
-					Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+				Context("when binding is present", func() {
+					BeforeEach(func() {
+						fakeBindingDB.CheckServiceBindingStub = func(appId string) bool {
+							return true
+						}
+					})
+					It("should succeed", func() {
+						Expect(err).NotTo(HaveOccurred())
+						Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+					})
 				})
+				Context("when binding is not present", func() {
+					BeforeEach(func() {
+						fakeBindingDB.CheckServiceBindingStub = func(appId string) bool {
+							return false
+						}
+					})
+					It("should fail", func() {
+						Expect(err).NotTo(HaveOccurred())
+						Expect(rsp.StatusCode).To(Equal(http.StatusForbidden))
+					})
+				})
+
 			})
 
 			Context("when calling attach policy endpoint", func() {
-				BeforeEach(func() {
+				JustBeforeEach(func() {
 					schedulerStatus = http.StatusOK
 
 					serverUrl.Path = "/v1/apps/" + TEST_APP_ID + "/policy"
@@ -385,14 +404,32 @@ var _ = Describe("PublicApiServer", func() {
 
 					rsp, err = httpClient.Do(req)
 				})
-				It("should succeed", func() {
-					Expect(err).NotTo(HaveOccurred())
-					Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+				Context("when binding is present", func() {
+					BeforeEach(func() {
+						fakeBindingDB.CheckServiceBindingStub = func(appId string) bool {
+							return true
+						}
+					})
+					It("should succeed", func() {
+						Expect(err).NotTo(HaveOccurred())
+						Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+					})
+				})
+				Context("when binding is not present", func() {
+					BeforeEach(func() {
+						fakeBindingDB.CheckServiceBindingStub = func(appId string) bool {
+							return false
+						}
+					})
+					It("should fail", func() {
+						Expect(err).NotTo(HaveOccurred())
+						Expect(rsp.StatusCode).To(Equal(http.StatusForbidden))
+					})
 				})
 			})
 
 			Context("when calling detach policy endpoint", func() {
-				BeforeEach(func() {
+				JustBeforeEach(func() {
 					schedulerStatus = http.StatusOK
 
 					serverUrl.Path = "/v1/apps/" + TEST_APP_ID + "/policy"
@@ -404,9 +441,27 @@ var _ = Describe("PublicApiServer", func() {
 
 					rsp, err = httpClient.Do(req)
 				})
-				It("should succeed", func() {
-					Expect(err).NotTo(HaveOccurred())
-					Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+				Context("when binding is present", func() {
+					BeforeEach(func() {
+						fakeBindingDB.CheckServiceBindingStub = func(appId string) bool {
+							return true
+						}
+					})
+					It("should succeed", func() {
+						Expect(err).NotTo(HaveOccurred())
+						Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+					})
+				})
+				Context("when binding is not present", func() {
+					BeforeEach(func() {
+						fakeBindingDB.CheckServiceBindingStub = func(appId string) bool {
+							return false
+						}
+					})
+					It("should fail", func() {
+						Expect(err).NotTo(HaveOccurred())
+						Expect(rsp.StatusCode).To(Equal(http.StatusForbidden))
+					})
 				})
 			})
 		})

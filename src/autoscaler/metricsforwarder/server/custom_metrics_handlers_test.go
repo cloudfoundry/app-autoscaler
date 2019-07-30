@@ -5,6 +5,7 @@ import (
 	. "autoscaler/metricsforwarder/server"
 	"autoscaler/models"
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"time"
 
@@ -117,7 +118,11 @@ var _ = Describe("MetricHandler", func() {
 							CoolDownSeconds:       60,
 							Adjustment:            "+1"}}}
 					policyDB.GetAppPolicyReturns(scalingPolicy, nil)
-					policyDB.GetCustomMetricsCredsReturns("$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu", "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G", nil)
+
+					policyDB.GetCustomMetricsCredsReturns(&models.CustomMetricCredentials{
+						Username: "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu",
+						Password: "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G",
+					}, nil)
 					customMetrics := []*models.CustomMetric{
 						&models.CustomMetric{
 							Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 1, AppGUID: "an-app-id",
@@ -145,6 +150,7 @@ var _ = Describe("MetricHandler", func() {
 					}
 					body, err = json.Marshal(models.MetricsConsumer{InstanceIndex: 0, CustomMetrics: customMetrics})
 					Expect(err).NotTo(HaveOccurred())
+					policyDB.GetCustomMetricsCredsReturns(nil, sql.ErrNoRows)
 				})
 
 				It("should search in both cache & database and returns status code 401", func() {
@@ -176,7 +182,11 @@ var _ = Describe("MetricHandler", func() {
 							CoolDownSeconds:       60,
 							Adjustment:            "+1"}}}
 					policyDB.GetAppPolicyReturns(scalingPolicy, nil)
-					policyDB.GetCustomMetricsCredsReturns("$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu", "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G", nil)
+
+					policyDB.GetCustomMetricsCredsReturns(&models.CustomMetricCredentials{
+						Username: "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu",
+						Password: "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G",
+					}, nil)
 					customMetrics := []*models.CustomMetric{
 						&models.CustomMetric{
 							Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 1, AppGUID: "an-app-id",
@@ -196,7 +206,10 @@ var _ = Describe("MetricHandler", func() {
 		Context("when a request to publish custom metrics comes with malformed request body", func() {
 
 			BeforeEach(func() {
-				policyDB.GetCustomMetricsCredsReturns("$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu", "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G", nil)
+				policyDB.GetCustomMetricsCredsReturns(&models.CustomMetricCredentials{
+					Username: "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu",
+					Password: "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G",
+				}, nil)
 				body = []byte(`{
 					   "instance_index":0,
 					   "test" : 
@@ -321,7 +334,10 @@ var _ = Describe("MetricHandler", func() {
 
 		Context("when a request to publish custom metrics comes with standard metric type", func() {
 			BeforeEach(func() {
-				policyDB.GetCustomMetricsCredsReturns("$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu", "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G", nil)
+				policyDB.GetCustomMetricsCredsReturns(&models.CustomMetricCredentials{
+					Username: "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu",
+					Password: "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G",
+				}, nil)
 				body = []byte(`{
 					   "instance_index":0,
 					   "metrics":[
@@ -360,7 +376,10 @@ var _ = Describe("MetricHandler", func() {
 
 		Context("when a request to publish custom metrics comes with non allowed metric types", func() {
 			BeforeEach(func() {
-				policyDB.GetCustomMetricsCredsReturns("$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu", "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G", nil)
+				policyDB.GetCustomMetricsCredsReturns(&models.CustomMetricCredentials{
+					Username: "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu",
+					Password: "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G",
+				}, nil)
 				body = []byte(`{
 					   "instance_index":0,
 					   "metrics":[

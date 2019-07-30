@@ -1,17 +1,17 @@
 package server_test
 
 import (
-	"autoscaler/models"
-	"time"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"net/http"
+	"time"
+
+	"autoscaler/models"
 
 	_ "github.com/lib/pq"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("CustomMetrics Server", func() {
@@ -116,6 +116,7 @@ var _ = Describe("CustomMetrics Server", func() {
 			credentialCache.Set("an-app-id", credentials, 10*time.Minute)
 			body, err = json.Marshal(models.CustomMetric{Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 123, AppGUID: "an-app-id"})
 			Expect(err).NotTo(HaveOccurred())
+			policyDB.GetCustomMetricsCredsReturns(nil, sql.ErrNoRows)
 			client := &http.Client{}
 			req, err = http.NewRequest("POST", serverUrl+"/v1/apps/an-app-id/metrics", bytes.NewReader(body))
 			req.Header.Add("Content-Type", "application/json")

@@ -267,7 +267,31 @@ func insertCustomMetricsBindingCredentials(appid string, username string, passwo
 	return err
 
 }
-
+func getCustomMetricsCredential(appId string) (string, string, error) {
+	query := "SELECT username,password FROM credentials WHERE id=$1 "
+	rows, err := dbHelper.Query(query, appId)
+	if err != nil {
+		Fail("failed to get credential" + err.Error())
+	}
+	defer rows.Close()
+	var username, password string
+	if rows.Next() {
+		err = rows.Scan(&username, &password)
+		if err != nil {
+			Fail("failed to scan credential" + err.Error())
+		}
+	}
+	return username, password, nil
+}
+func hasCustomMetricsCredential(appId string) bool {
+	query := "SELECT * FROM credentials WHERE id=$1"
+	rows, e := dbHelper.Query(query, appId)
+	if e != nil {
+		Fail("can not query table credentials: " + e.Error())
+	}
+	defer rows.Close()
+	return rows.Next()
+}
 func cleanCredentialsTable() error {
 	_, err := dbHelper.Exec("DELETE FROM credentials")
 	if err != nil {

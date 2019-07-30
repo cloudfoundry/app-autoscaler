@@ -146,6 +146,9 @@ event_generator:
     key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+metrics_forwarder:
+  metrics_forwarder_url: https://localhost:8088
+
 use_buildin_mode: false
 info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
 cf:
@@ -204,6 +207,11 @@ cf:
 						},
 					},
 				))
+				Expect(conf.MetricsForwarder).To(Equal(
+					MetricsForwarderConfig{
+						MetricsForwarderUrl: "https://localhost:8088",
+					},
+				))
 				Expect(conf.UseBuildInMode).To(BeFalse())
 				Expect(conf.InfoFilePath).To(Equal("/var/vcap/jobs/autoscaer/config/info-file.json"))
 				Expect(conf.CF).To(Equal(
@@ -238,6 +246,8 @@ metrics_collector:
   metrics_collector_url: https://localhost:8084
 event_generator:
   event_generator_url: https://localhost:8083
+metrics_forwarder:
+  metrics_forwarder_url: https://localhost:8088
 info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
 cf:
   api: https://api.example.com
@@ -326,6 +336,8 @@ event_generator:
     key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+metrics_forwarder:
+  metrics_forwarder_url: https://localhost:8088
 use_buildin_mode: false
 info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
 cf:
@@ -382,6 +394,8 @@ event_generator:
     key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+metrics_forwarder:
+  metrics_forwarder_url: https://localhost:8088
 use_buildin_mode: false
 info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
 cf:
@@ -438,6 +452,8 @@ event_generator:
     key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+metrics_forwarder:
+  metrics_forwarder_url: https://localhost:8088
 use_buildin_mode: false
 info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
 cf:
@@ -616,6 +632,8 @@ event_generator:
     key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+metrics_forwarder:
+  metrics_forwarder_url: https://localhost:8088
 use_buildin_mode: false
 info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
 cf:
@@ -679,6 +697,8 @@ event_generator:
     key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+metrics_forwarder:
+  metrics_forwarder_url: https://localhost:8088
 use_buildin_mode: false
 info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
 cf:
@@ -742,6 +762,8 @@ event_generator:
     key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+metrics_forwarder:
+  metrics_forwarder_url: https://localhost:8088
 use_buildin_mode: false
 info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
 cf:
@@ -785,6 +807,7 @@ cf:
 			conf.MetricsCollector.MetricsCollectorUrl = "https://localhost:8083"
 			conf.ScalingEngine.ScalingEngineUrl = "https://localhost:8084"
 			conf.EventGenerator.EventGeneratorUrl = "https://localhost:8085"
+			conf.MetricsForwarder.MetricsForwarderUrl = "https://localhost:8088"
 
 			conf.CF.API = "https://api.bosh-lite.com"
 			conf.CF.ClientID = "client-id"
@@ -873,6 +896,15 @@ cf:
 			})
 			It("should err", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: scaling_engine.scaling_engine_url is empty")))
+			})
+		})
+
+		Context("when metricsforwarder url is not set", func() {
+			BeforeEach(func() {
+				conf.MetricsForwarder.MetricsForwarderUrl = ""
+			})
+			It("should err", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: metrics_forwarder.metrics_forwarder_url is empty")))
 			})
 		})
 

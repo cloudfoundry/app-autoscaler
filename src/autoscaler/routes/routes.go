@@ -57,10 +57,15 @@ const (
 	PublicApiAggregatedMetricsHistoryPath      = "/{appId}/aggregated_metric_histories/{metricType}"
 	PublicApiAggregatedMetricsHistoryRouteName = "GetPublicApiAggregatedMetricsHistories"
 
-	PublicApiPolicyPath            = "/{appId}/policy"
+	PublicApiPolicyPath            = "/v1/apps/{appId:.+}/policy"
 	PublicApiGetPolicyRouteName    = "GetPolicy"
 	PublicApiAttachPolicyRouteName = "AttachPolicy"
 	PublicApiDetachPolicyRouteName = "DetachPolicy"
+
+	PublicApiCustomMetricsCredentialPath            = "/v1/apps/{appId:.+}/custom_metrics_credential"
+	PublicApiGetCustomMetricsCredentialRouteName    = "GetCustomMetricsCredential"
+	PublicApiCreateCustomMetricsCredentialRouteName = "CreateCustomMetricsCredential"
+	PublicApiDeleteCustomMetricsCredentialRouteName = "DeleteCustomMetricsCredential"
 
 	PublicApiInfoPath      = "/v1/info"
 	PublicApiInfoRouteName = "GetPublicApiInfo"
@@ -70,30 +75,34 @@ const (
 )
 
 type AutoScalerRoute struct {
-	schedulerRoutes          *mux.Router
-	metricsCollectorRoutes   *mux.Router
-	eventGeneratorRoutes     *mux.Router
-	scalingEngineRoutes      *mux.Router
-	brokerRoutes             *mux.Router
-	metricServerRoutes       *mux.Router
-	metricsForwarderRoutes   *mux.Router
-	publicApiRoutes          *mux.Router
-	publicApiProtectedRoutes *mux.Router
+	schedulerRoutes                         *mux.Router
+	metricsCollectorRoutes                  *mux.Router
+	eventGeneratorRoutes                    *mux.Router
+	scalingEngineRoutes                     *mux.Router
+	brokerRoutes                            *mux.Router
+	metricServerRoutes                      *mux.Router
+	metricsForwarderRoutes                  *mux.Router
+	publicApiRoutes                         *mux.Router
+	publicApiProtectedRoutes                *mux.Router
+	publicApiPolicyRouters                  *mux.Router
+	publicApiCustomMetricsCredentialRouters *mux.Router
 }
 
 var autoScalerRouteInstance = newRouters()
 
 func newRouters() *AutoScalerRoute {
 	instance := &AutoScalerRoute{
-		schedulerRoutes:          mux.NewRouter(),
-		metricsCollectorRoutes:   mux.NewRouter(),
-		eventGeneratorRoutes:     mux.NewRouter(),
-		scalingEngineRoutes:      mux.NewRouter(),
-		brokerRoutes:             mux.NewRouter(),
-		metricServerRoutes:       mux.NewRouter(),
-		metricsForwarderRoutes:   mux.NewRouter(),
-		publicApiRoutes:          mux.NewRouter(),
-		publicApiProtectedRoutes: mux.NewRouter(),
+		schedulerRoutes:                         mux.NewRouter(),
+		metricsCollectorRoutes:                  mux.NewRouter(),
+		eventGeneratorRoutes:                    mux.NewRouter(),
+		scalingEngineRoutes:                     mux.NewRouter(),
+		brokerRoutes:                            mux.NewRouter(),
+		metricServerRoutes:                      mux.NewRouter(),
+		metricsForwarderRoutes:                  mux.NewRouter(),
+		publicApiRoutes:                         mux.NewRouter(),
+		publicApiProtectedRoutes:                mux.NewRouter(),
+		publicApiPolicyRouters:                  mux.NewRouter(),
+		publicApiCustomMetricsCredentialRouters: mux.NewRouter(),
 	}
 
 	instance.metricsCollectorRoutes.Path(MetricHistoriesPath).Methods(http.MethodGet).Name(GetMetricHistoriesRouteName)
@@ -127,9 +136,16 @@ func newRouters() *AutoScalerRoute {
 	instance.publicApiProtectedRoutes.Path(PublicApiScalingHistoryPath).Methods(http.MethodGet).Name(PublicApiScalingHistoryRouteName)
 	instance.publicApiProtectedRoutes.Path(PublicApiMetricsHistoryPath).Methods(http.MethodGet).Name(PublicApiMetricsHistoryRouteName)
 	instance.publicApiProtectedRoutes.Path(PublicApiAggregatedMetricsHistoryPath).Methods(http.MethodGet).Name(PublicApiAggregatedMetricsHistoryRouteName)
-	instance.publicApiProtectedRoutes.Path(PublicApiPolicyPath).Methods(http.MethodGet).Name(PublicApiGetPolicyRouteName)
-	instance.publicApiProtectedRoutes.Path(PublicApiPolicyPath).Methods(http.MethodPut).Name(PublicApiAttachPolicyRouteName)
-	instance.publicApiProtectedRoutes.Path(PublicApiPolicyPath).Methods(http.MethodDelete).Name(PublicApiDetachPolicyRouteName)
+
+	instance.publicApiPolicyRouters = instance.publicApiRoutes.Path(PublicApiPolicyPath).Subrouter()
+	instance.publicApiPolicyRouters.Path("").Methods(http.MethodGet).Name(PublicApiGetPolicyRouteName)
+	instance.publicApiPolicyRouters.Path("").Methods(http.MethodPut).Name(PublicApiAttachPolicyRouteName)
+	instance.publicApiPolicyRouters.Path("").Methods(http.MethodDelete).Name(PublicApiDetachPolicyRouteName)
+
+	instance.publicApiCustomMetricsCredentialRouters = instance.publicApiRoutes.Path(PublicApiCustomMetricsCredentialPath).Subrouter()
+	instance.publicApiCustomMetricsCredentialRouters.Path("").Methods(http.MethodGet).Name(PublicApiGetCustomMetricsCredentialRouteName)
+	instance.publicApiCustomMetricsCredentialRouters.Path("").Methods(http.MethodPut).Name(PublicApiCreateCustomMetricsCredentialRouteName)
+	instance.publicApiCustomMetricsCredentialRouters.Path("").Methods(http.MethodDelete).Name(PublicApiDeleteCustomMetricsCredentialRouteName)
 
 	return instance
 
@@ -168,4 +184,10 @@ func PublicApiRoutes() *mux.Router {
 
 func PublicApiProtectedRoutes() *mux.Router {
 	return autoScalerRouteInstance.publicApiProtectedRoutes
+}
+func PublicApiPolicyRoutes() *mux.Router {
+	return autoScalerRouteInstance.publicApiPolicyRouters
+}
+func PublicApiCustomMetricsCredentialRoutes() *mux.Router {
+	return autoScalerRouteInstance.publicApiCustomMetricsCredentialRouters
 }

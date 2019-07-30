@@ -15,6 +15,28 @@ type MetricsConsumer struct {
 }
 
 type CustomMetricCredentials struct {
-	Username string
-	Password string
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+//custom metrics response
+//  {
+//     credentials: {
+//         custom_metrics:{
+//           username: username,
+//           password: password,
+//           url: settings.customMetricsUrl
+//         }
+//     }
+// }
+
+type CustomMetrics struct {
+	*CustomMetricCredentials
+	URL string `json:"url"`
+}
+type Credentials struct {
+	CustomMetrics CustomMetrics `json:"custom_metrics"`
+}
+type CredentialResponse struct {
+	Credentials Credentials `json:"credentials"`
 }

@@ -59,6 +59,9 @@ type EventGeneratorConfig struct {
 	EventGeneratorUrl string          `yaml:"event_generator_url"`
 	TLSClientCerts    models.TLSCerts `yaml:"tls"`
 }
+type MetricsForwarderConfig struct {
+	MetricsForwarderUrl string `yaml:"metrics_forwarder_url"`
+}
 
 type Config struct {
 	Logging              helpers.LoggingConfig  `yaml:"logging"`
@@ -78,6 +81,7 @@ type Config struct {
 	CF                   cf.CFConfig            `yaml:"cf"`
 	UseBuildInMode       bool                   `yaml:"use_buildin_mode"`
 	InfoFilePath         string                 `yaml:"info_file_path"`
+	MetricsForwarder     MetricsForwarderConfig `yaml:"metrics_forwarder"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
@@ -127,6 +131,9 @@ func (c *Config) Validate() error {
 	}
 	if c.EventGenerator.EventGeneratorUrl == "" {
 		return fmt.Errorf("Configuration error: event_generator.event_generator_url is empty")
+	}
+	if c.MetricsForwarder.MetricsForwarderUrl == "" {
+		return fmt.Errorf("Configuration error: metrics_forwarder.metrics_forwarder_url is empty")
 	}
 	if c.PolicySchemaPath == "" {
 		return fmt.Errorf("Configuration error: PolicySchemaPath is empty")

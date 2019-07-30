@@ -23,10 +23,11 @@ func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vh(w, r, vars)
 }
 
-func NewPublicApiServer(logger lager.Logger, conf *config.Config, policydb db.PolicyDB, cfclient cf.CFClient) (ifrit.Runner, error) {
+func NewPublicApiServer(logger lager.Logger, conf *config.Config, policydb db.PolicyDB, bindingDB db.BindingDB, cfclient cf.CFClient) (ifrit.Runner, error) {
 
 	pah := NewPublicApiHandler(logger, conf, policydb)
 	oam := NewOauthMiddleware(logger, cfclient)
+	cbm := NewCheckBindingMiddleware(logger, bindingDB)
 
 	r := routes.PublicApiRoutes()
 	r.Get(routes.PublicApiInfoRouteName).Handler(VarsFunc(pah.GetApiInfo))
@@ -37,9 +38,24 @@ func NewPublicApiServer(logger lager.Logger, conf *config.Config, policydb db.Po
 	rp.Get(routes.PublicApiScalingHistoryRouteName).Handler(VarsFunc(pah.GetScalingHistories))
 	rp.Get(routes.PublicApiMetricsHistoryRouteName).Handler(VarsFunc(pah.GetInstanceMetricsHistories))
 	rp.Get(routes.PublicApiAggregatedMetricsHistoryRouteName).Handler(VarsFunc(pah.GetAggregatedMetricsHistories))
-	rp.Get(routes.PublicApiGetPolicyRouteName).Handler(VarsFunc(pah.GetScalingPolicy))
-	rp.Get(routes.PublicApiAttachPolicyRouteName).Handler(VarsFunc(pah.AttachScalingPolicy))
-	rp.Get(routes.PublicApiDetachPolicyRouteName).Handler(VarsFunc(pah.DetachScalingPolicy))
+
+	rpolicy := routes.PublicApiPolicyRoutes()
+	rpolicy.Use(oam.Middleware)
+	if !conf.UseBuildInMode {
+		rpolicy.Use(cbm.CheckServiceBinding)
+	}
+	rpolicy.Get(routes.PublicApiGetPolicyRouteName).Handler(VarsFunc(pah.GetScalingPolicy))
+	rpolicy.Get(routes.PublicApiAttachPolicyRouteName).Handler(VarsFunc(pah.AttachScalingPolicy))
+	rpolicy.Get(routes.PublicApiDetachPolicyRouteName).Handler(VarsFunc(pah.DetachScalingPolicy))
+
+	rcredential := routes.PublicApiCustomMetricsCredentialRoutes()
+	rcredential.Use(oam.Middleware)
+	if !conf.UseBuildInMode {
+		rcredential.Use(cbm.CheckServiceBinding)
+	}
+	rcredential.Get(routes.PublicApiGetCustomMetricsCredentialRouteName).Handler(VarsFunc(pah.GetCustomMetricsCredential))
+	rcredential.Get(routes.PublicApiCreateCustomMetricsCredentialRouteName).Handler(VarsFunc(pah.CreateCustomMetricsCredential))
+	rcredential.Get(routes.PublicApiDeleteCustomMetricsCredentialRouteName).Handler(VarsFunc(pah.DeleteCustomMetricsCredential))
 
 	addr := fmt.Sprintf("0.0.0.0:%d", conf.PublicApiServer.Port)
 
