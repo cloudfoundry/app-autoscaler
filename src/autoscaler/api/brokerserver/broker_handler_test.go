@@ -6,6 +6,7 @@ import (
 	"autoscaler/fakes"
 	"autoscaler/models"
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -304,8 +305,8 @@ var _ = Describe("BrokerHandler", func() {
 
 				bindingdb.CreateServiceBindingReturns(db.ErrAlreadyExists)
 			})
-			It("succeeds with 200", func() {
-				Expect(resp.Code).To(Equal(http.StatusOK))
+			It("fails with 409", func() {
+				Expect(resp.Code).To(Equal(http.StatusConflict))
 			})
 		})
 
@@ -324,6 +325,26 @@ var _ = Describe("BrokerHandler", func() {
 				req, err = http.NewRequest(http.MethodPut, "", bytes.NewReader(body))
 
 				bindingdb.CreateServiceBindingReturns(fmt.Errorf("some sql error"))
+			})
+			It("fails with 500", func() {
+				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
+			})
+		})
+		Context("When failed to create custom metrics credential", func() {
+			BeforeEach(func() {
+				bindingRequestBody := &models.BindingRequestBody{
+					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+						ServiceID: "a-service-id",
+						PlanID:    "a-plan-id",
+					},
+					AppID: "an-app-id",
+				}
+				body, err := json.Marshal(bindingRequestBody)
+				Expect(err).NotTo(HaveOccurred())
+
+				req, err = http.NewRequest(http.MethodPut, "", bytes.NewReader(body))
+				policydb.GetCustomMetricsCredsReturns(nil, sql.ErrNoRows)
+				policydb.SaveCustomMetricsCredReturns(fmt.Errorf("some sql error"))
 			})
 			It("fails with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
@@ -384,7 +405,6 @@ var _ = Describe("BrokerHandler", func() {
 				}
 				body, err := json.Marshal(bindingRequestBody)
 				Expect(err).NotTo(HaveOccurred())
-
 				req, err = http.NewRequest(http.MethodPut, "", bytes.NewReader(body))
 			})
 			It("succeeds with 201", func() {

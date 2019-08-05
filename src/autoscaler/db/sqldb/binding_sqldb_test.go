@@ -230,4 +230,30 @@ var _ = Describe("BindingSqldb", func() {
 		})
 	})
 
+	Describe("DeleteServiceBindingByAppId", func() {
+		BeforeEach(func() {
+			bdb, err = NewBindingSQLDB(dbConfig, logger)
+			Expect(err).NotTo(HaveOccurred())
+
+			cleanServiceBindingTable()
+			cleanServiceInstanceTable()
+
+			err = bdb.CreateServiceInstance(testInstanceId, testOrgGuid, testSpaceGuid)
+			Expect(err).NotTo(HaveOccurred())
+			err = bdb.CreateServiceBinding(testAppId, testInstanceId, testAppId)
+			Expect(err).NotTo(HaveOccurred())
+			err = bdb.DeleteServiceBindingByAppId(testAppId)
+		})
+		AfterEach(func() {
+			cleanServiceBindingTable()
+			cleanServiceInstanceTable()
+			err = bdb.Close()
+			Expect(err).NotTo(HaveOccurred())
+		})
+		It("should succeed", func() {
+			Expect(err).NotTo(HaveOccurred())
+			Expect(hasServiceBinding(testAppId, testInstanceId)).NotTo(BeTrue())
+		})
+	})
+
 })

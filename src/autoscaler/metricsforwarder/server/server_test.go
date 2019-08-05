@@ -1,17 +1,17 @@
 package server_test
 
 import (
-	"autoscaler/models"
-	"time"
-
-	. "github.com/onsi/ginkgo"
-	. "github.com/onsi/gomega"
-
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"net/http"
+	"time"
+
+	"autoscaler/models"
 
 	_ "github.com/lib/pq"
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("CustomMetrics Server", func() {
@@ -20,13 +20,13 @@ var _ = Describe("CustomMetrics Server", func() {
 		req           *http.Request
 		body          []byte
 		err           error
-		credentials   models.CustomMetricCredentials
+		credentials   *models.CustomMetricCredentials
 		scalingPolicy *models.ScalingPolicy
 	)
 
 	Context("when a request to forward custom metrics comes", func() {
 		BeforeEach(func() {
-			credentials = models.CustomMetricCredentials{}
+			credentials = &models.CustomMetricCredentials{}
 			scalingPolicy = &models.ScalingPolicy{
 				InstanceMin: 1,
 				InstanceMax: 6,
@@ -65,7 +65,7 @@ var _ = Describe("CustomMetrics Server", func() {
 
 	Context("when a request to forward custom metrics comes without Authorization header", func() {
 		BeforeEach(func() {
-			credentials = models.CustomMetricCredentials{}
+			credentials = &models.CustomMetricCredentials{}
 			credentials.Username = "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu"
 			credentials.Password = "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G"
 			credentialCache.Set("an-app-id", credentials, 10*time.Minute)
@@ -87,7 +87,7 @@ var _ = Describe("CustomMetrics Server", func() {
 
 	Context("when a request to forward custom metrics comes without 'Basic'", func() {
 		BeforeEach(func() {
-			credentials = models.CustomMetricCredentials{}
+			credentials = &models.CustomMetricCredentials{}
 			credentials.Username = "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu"
 			credentials.Password = "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G"
 			credentialCache.Set("an-app-id", credentials, 10*time.Minute)
@@ -110,12 +110,13 @@ var _ = Describe("CustomMetrics Server", func() {
 
 	Context("when a request to forward custom metrics comes with  wrong user credentials", func() {
 		BeforeEach(func() {
-			credentials = models.CustomMetricCredentials{}
+			credentials = &models.CustomMetricCredentials{}
 			credentials.Username = "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu"
 			credentials.Password = "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G"
 			credentialCache.Set("an-app-id", credentials, 10*time.Minute)
 			body, err = json.Marshal(models.CustomMetric{Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 123, AppGUID: "an-app-id"})
 			Expect(err).NotTo(HaveOccurred())
+			policyDB.GetCustomMetricsCredsReturns(nil, sql.ErrNoRows)
 			client := &http.Client{}
 			req, err = http.NewRequest("POST", serverUrl+"/v1/apps/an-app-id/metrics", bytes.NewReader(body))
 			req.Header.Add("Content-Type", "application/json")
@@ -133,7 +134,7 @@ var _ = Describe("CustomMetrics Server", func() {
 
 	Context("when a request to forward custom metrics comes with unmatched metric types", func() {
 		BeforeEach(func() {
-			credentials = models.CustomMetricCredentials{}
+			credentials = &models.CustomMetricCredentials{}
 			credentials.Username = "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu"
 			credentials.Password = "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G"
 			credentialCache.Set("an-app-id", credentials, 10*time.Minute)

@@ -61,15 +61,15 @@ func main() {
 	}
 	defer policyDb.Close()
 
-	if !conf.UseBuildInMode {
-		var bindingDB db.BindingDB
-		bindingDB, err = sqldb.NewBindingSQLDB(conf.DB.BindingDB, logger.Session("bindingdb-db"))
-		if err != nil {
-			logger.Error("failed to connect bindingdb database", err, lager.Data{"dbConfig": conf.DB.BindingDB})
-			os.Exit(1)
-		}
-		defer bindingDB.Close()
+	var bindingDB db.BindingDB
+	bindingDB, err = sqldb.NewBindingSQLDB(conf.DB.BindingDB, logger.Session("bindingdb-db"))
+	if err != nil {
+		logger.Error("failed to connect bindingdb database", err, lager.Data{"dbConfig": conf.DB.BindingDB})
+		os.Exit(1)
+	}
+	defer bindingDB.Close()
 
+	if !conf.UseBuildInMode {
 		brokerHttpServer, err := brokerserver.NewBrokerServer(logger.Session("broker_http_server"), conf, bindingDB, policyDb)
 		if err != nil {
 			logger.Error("failed to create broker http server", err)
@@ -86,7 +86,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	publicApiHttpServer, err := publicapiserver.NewPublicApiServer(logger.Session("public_api_http_server"), conf, policyDb, cfClient)
+	publicApiHttpServer, err := publicapiserver.NewPublicApiServer(logger.Session("public_api_http_server"), conf, policyDb, bindingDB, cfClient)
 	if err != nil {
 		logger.Error("failed to create public api http server", err)
 		os.Exit(1)

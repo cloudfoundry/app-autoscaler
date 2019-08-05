@@ -144,7 +144,7 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide correct route variable", func() {
 				It("should return the correct path", func() {
-					path, err := routes.PublicApiProtectedRoutes().Get(routes.PublicApiGetPolicyRouteName).URLPath("appId", testAppId)
+					path, err := routes.PublicApiPolicyRoutes().Get(routes.PublicApiGetPolicyRouteName).URLPath("appId", testAppId)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(path.Path).To(Equal("/v1/apps/" + testAppId + "/policy"))
 				})
@@ -152,7 +152,7 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide wrong route variable", func() {
 				It("should return error", func() {
-					_, err := routes.PublicApiProtectedRoutes().Get(routes.PublicApiGetPolicyRouteName).URLPath("wrongVariable", testAppId)
+					_, err := routes.PublicApiPolicyRoutes().Get(routes.PublicApiGetPolicyRouteName).URLPath("wrongVariable", testAppId)
 					Expect(err).To(HaveOccurred())
 
 				})
@@ -160,7 +160,7 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide not enough route variable", func() {
 				It("should return error", func() {
-					_, err := routes.PublicApiProtectedRoutes().Get(routes.PublicApiGetPolicyRouteName).URLPath()
+					_, err := routes.PublicApiPolicyRoutes().Get(routes.PublicApiGetPolicyRouteName).URLPath()
 					Expect(err).To(HaveOccurred())
 				})
 			})
@@ -170,7 +170,7 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide correct route variable", func() {
 				It("should return the correct path", func() {
-					path, err := routes.PublicApiProtectedRoutes().Get(routes.PublicApiAttachPolicyRouteName).URLPath("appId", testAppId)
+					path, err := routes.PublicApiPolicyRoutes().Get(routes.PublicApiAttachPolicyRouteName).URLPath("appId", testAppId)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(path.Path).To(Equal("/v1/apps/" + testAppId + "/policy"))
 				})
@@ -178,7 +178,7 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide wrong route variable", func() {
 				It("should return error", func() {
-					_, err := routes.PublicApiProtectedRoutes().Get(routes.PublicApiAttachPolicyRouteName).URLPath("wrongVariable", testAppId)
+					_, err := routes.PublicApiPolicyRoutes().Get(routes.PublicApiAttachPolicyRouteName).URLPath("wrongVariable", testAppId)
 					Expect(err).To(HaveOccurred())
 
 				})
@@ -186,7 +186,7 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide not enough route variable", func() {
 				It("should return error", func() {
-					_, err := routes.PublicApiProtectedRoutes().Get(routes.PublicApiAttachPolicyRouteName).URLPath()
+					_, err := routes.PublicApiPolicyRoutes().Get(routes.PublicApiAttachPolicyRouteName).URLPath()
 					Expect(err).To(HaveOccurred())
 				})
 			})
@@ -196,7 +196,7 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide correct route variable", func() {
 				It("should return the correct path", func() {
-					path, err := routes.PublicApiProtectedRoutes().Get(routes.PublicApiDetachPolicyRouteName).URLPath("appId", testAppId)
+					path, err := routes.PublicApiPolicyRoutes().Get(routes.PublicApiDetachPolicyRouteName).URLPath("appId", testAppId)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(path.Path).To(Equal("/v1/apps/" + testAppId + "/policy"))
 				})
@@ -204,7 +204,7 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide wrong route variable", func() {
 				It("should return error", func() {
-					_, err := routes.PublicApiProtectedRoutes().Get(routes.PublicApiDetachPolicyRouteName).URLPath("wrongVariable", testAppId)
+					_, err := routes.PublicApiPolicyRoutes().Get(routes.PublicApiDetachPolicyRouteName).URLPath("wrongVariable", testAppId)
 					Expect(err).To(HaveOccurred())
 
 				})
@@ -212,7 +212,7 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide not enough route variable", func() {
 				It("should return error", func() {
-					_, err := routes.PublicApiProtectedRoutes().Get(routes.PublicApiDetachPolicyRouteName).URLPath()
+					_, err := routes.PublicApiPolicyRoutes().Get(routes.PublicApiDetachPolicyRouteName).URLPath()
 					Expect(err).To(HaveOccurred())
 				})
 			})

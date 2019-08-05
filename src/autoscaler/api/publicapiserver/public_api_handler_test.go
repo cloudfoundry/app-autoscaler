@@ -5,6 +5,7 @@ import (
 	"autoscaler/fakes"
 	"autoscaler/models"
 	"bytes"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -90,7 +91,6 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 		})
 	})
-
 	Describe("GetScalingPolicy", func() {
 		JustBeforeEach(func() {
 			handler.GetScalingPolicy(resp, req, pathVariables)
@@ -1609,6 +1609,78 @@ var _ = Describe("PublicApiHandler", func() {
 						Resources: []models.AppMetric{},
 					},
 				))
+			})
+		})
+
+	})
+	Describe("CreateCustomMetricsCredential", func() {
+		JustBeforeEach(func() {
+			handler.CreateCustomMetricsCredential(resp, req, pathVariables)
+		})
+		BeforeEach(func() {
+			pathVariables["appId"] = TEST_APP_ID
+			req, _ = http.NewRequest(http.MethodPut, "", nil)
+		})
+		Context("When appId is not present", func() {
+			BeforeEach(func() {
+				delete(pathVariables, "appId")
+			})
+			It("should fail with 400", func() {
+				Expect(resp.Code).To(Equal(http.StatusBadRequest))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"AppId is required"}`))
+			})
+		})
+		Context("When failed to save custom metric credential to policydb", func() {
+			BeforeEach(func() {
+				policydb.SaveCustomMetricsCredReturns(fmt.Errorf("sql db error"))
+				policydb.GetCustomMetricsCredsReturns(nil, sql.ErrNoRows)
+			})
+			It("should fails with 500", func() {
+				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error creating custom metric credential"}`))
+			})
+		})
+		Context("When successfully save data to policydb", func() {
+			BeforeEach(func() {
+				policydb.SaveCustomMetricsCredReturns(nil)
+			})
+			It("should succeed with 200", func() {
+				Expect(resp.Code).To(Equal(http.StatusOK))
+			})
+		})
+	})
+	Describe("DeleteCustomMetricsCredential", func() {
+		JustBeforeEach(func() {
+			handler.DeleteCustomMetricsCredential(resp, req, pathVariables)
+		})
+		BeforeEach(func() {
+			pathVariables["appId"] = TEST_APP_ID
+			req, _ = http.NewRequest(http.MethodPut, "", nil)
+		})
+		Context("When appId is not present", func() {
+			BeforeEach(func() {
+				delete(pathVariables, "appId")
+			})
+			It("should fail with 400", func() {
+				Expect(resp.Code).To(Equal(http.StatusBadRequest))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"AppId is required"}`))
+			})
+		})
+		Context("When failed to delete custom metric credential from policydb", func() {
+			BeforeEach(func() {
+				policydb.DeleteCustomMetricsCredReturns(fmt.Errorf("sql db error"))
+			})
+			It("should fails with 500", func() {
+				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error deleting custom metric credential"}`))
+			})
+		})
+		Context("When successfully delete data from policydb", func() {
+			BeforeEach(func() {
+				policydb.DeleteCustomMetricsCredReturns(nil)
+			})
+			It("should succeed with 200", func() {
+				Expect(resp.Code).To(Equal(http.StatusOK))
 			})
 		})
 

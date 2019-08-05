@@ -4,6 +4,7 @@ import (
 	"autoscaler/db"
 	"autoscaler/metricsforwarder/forwarder"
 	"autoscaler/models"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -50,13 +51,13 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 	}
 
 	var isValid bool
-	var credentials models.CustomMetricCredentials
+	// var credentials *models.CustomMetricCredentials
 
 	appID := vars["appid"]
 	res, found := mh.credentialCache.Get(appID)
 	if found {
 		// Credentials found in cache
-		credentials = res.(models.CustomMetricCredentials)
+		credentials := res.(*models.CustomMetricCredentials)
 		isValid = mh.validateCredentials(username, credentials.Username, password, credentials.Password)
 	}
 
@@ -64,17 +65,20 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 	// stale cache entry with invalid credential found in cache
 	// search in the database and update the cache
 	if !found || !isValid {
-		usernameHash, passwordHash, err := mh.policyDB.GetCustomMetricsCreds(appID)
+		credentials, err := mh.policyDB.GetCustomMetricsCreds(appID)
 		if err != nil {
-			mh.logger.Error("error-during-getting-binding-credentials-from-policyDB", err, lager.Data{"appid": appID})
+			if err == sql.ErrNoRows {
+				mh.logger.Error("no-credential-found-in-db", err, lager.Data{"appID": appID})
+				handlers.WriteJSONResponse(w, http.StatusUnauthorized, models.ErrorResponse{
+					Code:    "Authorization-Failure-Error",
+					Message: "Incorrect credentials. Basic authorization credential does not match"})
+				return
+			}
+			mh.logger.Error("error-during-getting-credentials-from-policyDB", err, lager.Data{"appid": appID})
 			handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 				Code:    "Interal-Server-Error",
 				Message: "Error getting binding crededntials from policyDB"})
 			return
-		}
-		credentials = models.CustomMetricCredentials{
-			Username: usernameHash,
-			Password: passwordHash,
 		}
 		// update the cache
 		mh.credentialCache.Set(appID, credentials, mh.cacheTTL)
