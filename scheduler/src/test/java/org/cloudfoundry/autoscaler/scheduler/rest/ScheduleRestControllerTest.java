@@ -50,6 +50,8 @@ import org.springframework.web.context.WebApplicationContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import junit.framework.Assert;
+
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @DirtiesContext(classMode = ClassMode.BEFORE_CLASS)
@@ -174,9 +176,10 @@ public class ScheduleRestControllerTest {
 		resultActions = mockMvc.perform(get(TestDataSetupHelper.getSchedulerPath(appId)).accept(MediaType.APPLICATION_JSON));
 
 		ApplicationSchedules applicationSchedules = getApplicationSchedulesFromResultActions(resultActions);
-		assertSchedulesFoundEquals(applicationSchedules, appId, resultActions, 2, 4);
+		assertSchedulesFoundEquals(applicationSchedules, appId, resultActions, 4, 3);
 
-		Mockito.verify(scheduler, Mockito.times(6)).scheduleJob(Mockito.anyObject(), Mockito.anyObject());
+		Mockito.verify(scheduler, Mockito.times(7)).scheduleJob(Mockito.anyObject(), Mockito.anyObject());
+
 	}
 
 	@Test
