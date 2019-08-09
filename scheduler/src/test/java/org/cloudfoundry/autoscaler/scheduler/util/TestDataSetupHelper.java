@@ -3,9 +3,12 @@ package org.cloudfoundry.autoscaler.scheduler.util;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -42,7 +45,7 @@ public class TestDataSetupHelper {
 	private static Logger logger = LogManager.getLogger(clazz);
 
 	private static List<String> genAppIds = new ArrayList<>();
-	private static String timeZone = "GMT";
+	public static String timeZone = "GMT";
 
 	private static String currentStartDateTime = getCurrentDateOrTime(5, DateHelper.DATE_TIME_FORMAT, getTimeZone());
 	private static String currentEndDateTime = getCurrentDateOrTime(6, DateHelper.DATE_TIME_FORMAT, getTimeZone());
@@ -79,7 +82,7 @@ public class TestDataSetupHelper {
 				.build();
 
 	}
-
+	
 	public static List<SpecificDateScheduleEntity> generateSpecificDateScheduleEntities(String appId, String guid,
 			boolean generateScheduleId, int noOfSpecificDateSchedulesToSetUp) {
 		SpecificDateScheduleEntitiesBuilder builder = new SpecificDateScheduleEntitiesBuilder(
@@ -174,16 +177,9 @@ public class TestDataSetupHelper {
 		sdf.setTimeZone(timeZone);
 		return sdf.format(dateTime);
 	}
-
-	static LocalTime getTime(String[] timeArr, int pos, int offsetMin) {
-		DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(DateHelper.TIME_FORMAT);
-		String timeStr;
-		if (timeArr != null && timeArr.length > pos) {
-			timeStr = timeArr[pos];
-		} else {
-			timeStr = getCurrentDateOrTime(offsetMin, DateHelper.TIME_FORMAT, getTimeZone());
-		}
-		return LocalTime.parse(timeStr, dateTimeFormatter);
+	
+	public static LocalTime getZoneTimeWithOffset(int offsetMin){
+		return LocalDateTime.now(ZoneId.of(TestDataSetupHelper.timeZone)).plusMinutes(offsetMin).toLocalTime().truncatedTo(ChronoUnit.MINUTES);
 	}
 
 	private static String getCurrentDateOrTime(int offsetMin, String format, String timeZone) {
@@ -195,8 +191,8 @@ public class TestDataSetupHelper {
 		return sdfDate.format(calNow.getTime());
 	}
 
-	public static LocalDate getZoneDateNow(String timeZoneId) {
-		TimeZone timeZone = TimeZone.getTimeZone(timeZoneId);
+	public static LocalDate getZoneDateNow() {
+		TimeZone timeZone = TimeZone.getTimeZone(TestDataSetupHelper.timeZone);
 		return ZonedDateTime.now(timeZone.toZoneId()).toLocalDate();
 	}
 
@@ -218,22 +214,28 @@ public class TestDataSetupHelper {
 	}
 	public static int[] generateDayOfWeek() {
 		int arraySize = (int) (new Date().getTime() % 7) + 1;
+		int today = LocalDateTime.now(ZoneId.of(timeZone)).getDayOfWeek().getValue();
 		int[] array = makeRandomArray(new Random(Calendar.getInstance().getTimeInMillis()), arraySize,
-				DateHelper.DAY_OF_WEEK_MINIMUM, DateHelper.DAY_OF_WEEK_MAXIMUM);
+				DateHelper.DAY_OF_WEEK_MINIMUM, DateHelper.DAY_OF_WEEK_MAXIMUM, today);
 		logger.debug("Generate day of week array:" + Arrays.toString(array));
 		return array;
 	}
 
 	public static int[] generateDayOfMonth() {
 		int arraySize = (int) (new Date().getTime() % 31) + 1;
+		int today = LocalDateTime.now(ZoneId.of(timeZone)).getDayOfMonth();
 		int[] array = makeRandomArray(new Random(Calendar.getInstance().getTimeInMillis()), arraySize,
-				DateHelper.DAY_OF_MONTH_MINIMUM, DateHelper.DAY_OF_MONTH_MAXIMUM);
+				DateHelper.DAY_OF_MONTH_MINIMUM, DateHelper.DAY_OF_MONTH_MAXIMUM, today);
 		logger.debug("Generate day of month array:" + Arrays.toString(array));
 		return array;
 	}
 
-	private static int[] makeRandomArray(Random rand, int size, int randMin, int randMax) {
+	private static int[] makeRandomArray(Random rand, int size, int randMin, int randMax, int fixValue) {
 		int[] array = rand.ints(randMin, randMax + 1).distinct().limit(size).toArray();
+		Arrays.sort(array);
+		if (Arrays.binarySearch(array, fixValue) < 0) {
+			array[0] = fixValue;
+		}
 		Arrays.sort(array);
 		return array;
 	}
