@@ -152,8 +152,6 @@ func (bdb *BindingSQLDB) DeleteServiceBindingByAppId(appId string) error {
 		return err
 	}
 	return nil
-
-	return db.ErrDoesNotExist
 }
 func (bdb *BindingSQLDB) CheckServiceBinding(appId string) bool {
 	var count int

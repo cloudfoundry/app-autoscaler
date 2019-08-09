@@ -147,7 +147,7 @@ func (pdb *PolicySQLDB) GetDBStatus() sql.DBStats {
 	return pdb.sqldb.Stats()
 }
 
-func (pdb *PolicySQLDB) GetCustomMetricsCreds(appId string) (*models.CustomMetricCredentials, error) {
+func (pdb *PolicySQLDB) GetCredential(appId string) (*models.Credential, error) {
 	var password string
 	var username string
 	query := "SELECT username,password from credentials WHERE id = $1"
@@ -156,12 +156,12 @@ func (pdb *PolicySQLDB) GetCustomMetricsCreds(appId string) (*models.CustomMetri
 		pdb.logger.Error("get-custom-metrics-creds-from-credentials-table", err, lager.Data{"query": query})
 		return nil, err
 	}
-	return &models.CustomMetricCredentials{
+	return &models.Credential{
 		Username: username,
 		Password: password,
 	}, nil
 }
-func (pdb *PolicySQLDB) SaveCustomMetricsCred(appId string, cred models.CustomMetricCredentials) error {
+func (pdb *PolicySQLDB) SaveCredential(appId string, cred models.Credential) error {
 	query := "INSERT INTO credentials (id, username, password, updated_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP) " +
 		"ON CONFLICT(id) DO UPDATE SET username=EXCLUDED.username, password=EXCLUDED.password, updated_at=CURRENT_TIMESTAMP"
 	_, err := pdb.sqldb.Exec(query, appId, cred.Username, cred.Password)
@@ -170,7 +170,7 @@ func (pdb *PolicySQLDB) SaveCustomMetricsCred(appId string, cred models.CustomMe
 	}
 	return err
 }
-func (pdb *PolicySQLDB) DeleteCustomMetricsCred(appId string) error {
+func (pdb *PolicySQLDB) DeleteCredential(appId string) error {
 	query := "DELETE FROM credentials WHERE id = $1"
 	_, err := pdb.sqldb.Exec(query, appId)
 	if err != nil {

@@ -14,7 +14,7 @@ type MetricsConsumer struct {
 	CustomMetrics []*CustomMetric `json:"metrics"`
 }
 
-type CustomMetricCredentials struct {
+type Credential struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 }
@@ -31,7 +31,7 @@ type CustomMetricCredentials struct {
 // }
 
 type CustomMetrics struct {
-	*CustomMetricCredentials
+	*Credential
 	URL string `json:"url"`
 }
 type Credentials struct {

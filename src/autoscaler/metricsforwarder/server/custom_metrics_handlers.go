@@ -51,13 +51,12 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 	}
 
 	var isValid bool
-	// var credentials *models.CustomMetricCredentials
 
 	appID := vars["appid"]
 	res, found := mh.credentialCache.Get(appID)
 	if found {
 		// Credentials found in cache
-		credentials := res.(*models.CustomMetricCredentials)
+		credentials := res.(*models.Credential)
 		isValid = mh.validateCredentials(username, credentials.Username, password, credentials.Password)
 	}
 
@@ -65,7 +64,7 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 	// stale cache entry with invalid credential found in cache
 	// search in the database and update the cache
 	if !found || !isValid {
-		credentials, err := mh.policyDB.GetCustomMetricsCreds(appID)
+		credentials, err := mh.policyDB.GetCredential(appID)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				mh.logger.Error("no-credential-found-in-db", err, lager.Data{"appID": appID})

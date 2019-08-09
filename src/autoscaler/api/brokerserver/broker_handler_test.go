@@ -330,7 +330,7 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
 			})
 		})
-		Context("When failed to create custom metrics credential", func() {
+		Context("When failed to create credential", func() {
 			BeforeEach(func() {
 				bindingRequestBody := &models.BindingRequestBody{
 					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
@@ -343,8 +343,8 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				req, err = http.NewRequest(http.MethodPut, "", bytes.NewReader(body))
-				policydb.GetCustomMetricsCredsReturns(nil, sql.ErrNoRows)
-				policydb.SaveCustomMetricsCredReturns(fmt.Errorf("some sql error"))
+				policydb.GetCredentialReturns(nil, sql.ErrNoRows)
+				policydb.SaveCredentialReturns(fmt.Errorf("some sql error"))
 			})
 			It("fails with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))

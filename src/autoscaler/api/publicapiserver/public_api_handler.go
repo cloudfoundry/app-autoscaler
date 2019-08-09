@@ -1,6 +1,7 @@
 package publicapiserver
 
 import (
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -144,10 +145,6 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 	err = h.schedulerUtil.CreateOrUpdateSchedule(appId, policyStr, policyGuid.String())
 	if err != nil {
 		h.logger.Error("Failed to create/update schedule", err, nil)
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: "Error creating/updating schedules"})
-		return
 	}
 	handlers.WriteJSONResponse(w, http.StatusOK, nil)
 }
@@ -392,7 +389,7 @@ func (h *PublicApiHandler) GetHealth(w http.ResponseWriter, r *http.Request, var
 	w.Write([]byte(`{"alive":"true"}`))
 }
 
-func (h *PublicApiHandler) CreateCustomMetricsCredential(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+func (h *PublicApiHandler) CreateCredential(w http.ResponseWriter, r *http.Request, vars map[string]string) {
 	appId := vars["appId"]
 	if appId == "" {
 		h.logger.Error("AppId is missing", nil, nil)
@@ -402,29 +399,57 @@ func (h *PublicApiHandler) CreateCustomMetricsCredential(w http.ResponseWriter, 
 		})
 		return
 	}
-
-	h.logger.Info("Create custom metric credential", lager.Data{"appId": appId})
-	cred, err := custom_metrics_cred_helper.CreateCustomMetricsCredential(appId, h.policydb, custom_metrics_cred_helper.MaxRetry)
+	var userProvidedCredential *models.Credential
+	bodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		h.logger.Error("Failed to create custom metric credential", err, lager.Data{"appId": appId})
+		h.logger.Error("Failed to read user provided credential request body", err, lager.Data{"appId": appId})
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 			Code:    "Interal-Server-Error",
-			Message: "Error creating custom metric credential"})
+			Message: "Error creating credential"})
+		return
+	}
+	if len(bodyBytes) > 0 {
+		userProvidedCredential = &models.Credential{}
+		err = json.Unmarshal(bodyBytes, userProvidedCredential)
+		if err != nil {
+			h.logger.Error("Failed to unmarshal user provided credential", err, lager.Data{"appId": appId, "body": bodyBytes})
+			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
+				Code:    "Bad Request",
+				Message: "Invalid credential format"})
+			return
+		}
+		if !(userProvidedCredential.Username != "" && userProvidedCredential.Password != "") {
+			h.logger.Info("Username or password is missing", lager.Data{"appId": appId, "userProvidedCredential": userProvidedCredential})
+			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
+				Code:    "Bad Request",
+				Message: "Username and password are both required",
+			})
+			return
+		}
+	}
+
+	h.logger.Info("Create credential", lager.Data{"appId": appId})
+	cred, err := custom_metrics_cred_helper.CreateCredential(appId, userProvidedCredential, h.policydb, custom_metrics_cred_helper.MaxRetry)
+	if err != nil {
+		h.logger.Error("Failed to create credential", err, lager.Data{"appId": appId})
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Error creating credential"})
 		return
 	}
 	handlers.WriteJSONResponse(w, http.StatusOK, struct {
 		AppId string `json:"app_id"`
-		*models.CustomMetricCredentials
+		*models.Credential
 		Url string `json:"url"`
 	}{
-		AppId:                   appId,
-		CustomMetricCredentials: cred,
-		Url:                     h.conf.MetricsForwarder.MetricsForwarderUrl,
+		AppId:      appId,
+		Credential: cred,
+		Url:        h.conf.MetricsForwarder.MetricsForwarderUrl,
 	})
 
 }
 
-func (h *PublicApiHandler) DeleteCustomMetricsCredential(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+func (h *PublicApiHandler) DeleteCredential(w http.ResponseWriter, r *http.Request, vars map[string]string) {
 	appId := vars["appId"]
 	if appId == "" {
 		h.logger.Error("AppId is missing", nil, nil)
@@ -435,22 +460,15 @@ func (h *PublicApiHandler) DeleteCustomMetricsCredential(w http.ResponseWriter, 
 		return
 	}
 
-	h.logger.Info("Delete custom metric credential", lager.Data{"appId": appId})
-	err := custom_metrics_cred_helper.DeleteCustomMetricsCredential(appId, h.policydb, custom_metrics_cred_helper.MaxRetry)
+	h.logger.Info("Delete credential", lager.Data{"appId": appId})
+	err := custom_metrics_cred_helper.DeleteCredential(appId, h.policydb, custom_metrics_cred_helper.MaxRetry)
 	if err != nil {
-		h.logger.Error("Failed to delete custom metric credential", err, lager.Data{"appId": appId})
+		h.logger.Error("Failed to delete credential", err, lager.Data{"appId": appId})
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 			Code:    "Interal-Server-Error",
-			Message: "Error deleting custom metric credential"})
+			Message: "Error deleting credential"})
 		return
 	}
 	handlers.WriteJSONResponse(w, http.StatusOK, nil)
-
-}
-
-func (h *PublicApiHandler) Reject(w http.ResponseWriter, r *http.Request, vars map[string]string) {
-	handlers.WriteJSONResponse(w, http.StatusForbidden, models.ErrorResponse{
-		Code:    "Forbidden",
-		Message: "Can not take custom metric credential operation in service-offering mode"})
 
 }

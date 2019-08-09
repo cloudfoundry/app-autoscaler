@@ -39,7 +39,7 @@ var _ = Describe("MetricHandler", func() {
 
 		vars map[string]string
 
-		credentials *models.CustomMetricCredentials
+		credentials *models.Credential
 		found       bool
 
 		scalingPolicy *models.ScalingPolicy
@@ -49,7 +49,7 @@ var _ = Describe("MetricHandler", func() {
 		logger := lager.NewLogger("metrichandler-test")
 		policyDB = &fakes.FakePolicyDB{}
 		metricsforwarder = &fakes.FakeMetricForwarder{}
-		credentials = &models.CustomMetricCredentials{}
+		credentials = &models.Credential{}
 		credentialCache = *cache.New(10*time.Minute, -1)
 		allowedMetricCache = *cache.New(10*time.Minute, -1)
 		allowedMetricTypeSet = make(map[string]struct{})
@@ -99,7 +99,7 @@ var _ = Describe("MetricHandler", func() {
 				})
 
 				It("should get the credentials from cache without searching from database and returns status code 200", func() {
-					Expect(policyDB.GetCustomMetricsCredsCallCount()).To(Equal(0))
+					Expect(policyDB.GetCredentialCallCount()).To(Equal(0))
 					Expect(resp.Code).To(Equal(http.StatusOK))
 				})
 
@@ -119,7 +119,7 @@ var _ = Describe("MetricHandler", func() {
 							Adjustment:            "+1"}}}
 					policyDB.GetAppPolicyReturns(scalingPolicy, nil)
 
-					policyDB.GetCustomMetricsCredsReturns(&models.CustomMetricCredentials{
+					policyDB.GetCredentialReturns(&models.Credential{
 						Username: "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu",
 						Password: "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G",
 					}, nil)
@@ -133,7 +133,7 @@ var _ = Describe("MetricHandler", func() {
 				})
 
 				It("should get the credentials from database and add it to the cache and returns status code 200", func() {
-					Expect(policyDB.GetCustomMetricsCredsCallCount()).To(Equal(1))
+					Expect(policyDB.GetCredentialCallCount()).To(Equal(1))
 					Expect(resp.Code).To(Equal(http.StatusOK))
 					_, found = credentialCache.Get("an-app-id")
 					Expect(found).To(Equal(true))
@@ -150,11 +150,11 @@ var _ = Describe("MetricHandler", func() {
 					}
 					body, err = json.Marshal(models.MetricsConsumer{InstanceIndex: 0, CustomMetrics: customMetrics})
 					Expect(err).NotTo(HaveOccurred())
-					policyDB.GetCustomMetricsCredsReturns(nil, sql.ErrNoRows)
+					policyDB.GetCredentialReturns(nil, sql.ErrNoRows)
 				})
 
 				It("should search in both cache & database and returns status code 401", func() {
-					Expect(policyDB.GetCustomMetricsCredsCallCount()).To(Equal(1))
+					Expect(policyDB.GetCredentialCallCount()).To(Equal(1))
 					Expect(resp.Code).To(Equal(http.StatusUnauthorized))
 					errJson := &models.ErrorResponse{}
 					err = json.Unmarshal(resp.Body.Bytes(), errJson)
@@ -183,7 +183,7 @@ var _ = Describe("MetricHandler", func() {
 							Adjustment:            "+1"}}}
 					policyDB.GetAppPolicyReturns(scalingPolicy, nil)
 
-					policyDB.GetCustomMetricsCredsReturns(&models.CustomMetricCredentials{
+					policyDB.GetCredentialReturns(&models.Credential{
 						Username: "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu",
 						Password: "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G",
 					}, nil)
@@ -197,7 +197,7 @@ var _ = Describe("MetricHandler", func() {
 				})
 
 				It("should search in the database and returns status code 200", func() {
-					Expect(policyDB.GetCustomMetricsCredsCallCount()).To(Equal(1))
+					Expect(policyDB.GetCredentialCallCount()).To(Equal(1))
 					Expect(resp.Code).To(Equal(http.StatusOK))
 				})
 			})
@@ -206,7 +206,7 @@ var _ = Describe("MetricHandler", func() {
 		Context("when a request to publish custom metrics comes with malformed request body", func() {
 
 			BeforeEach(func() {
-				policyDB.GetCustomMetricsCredsReturns(&models.CustomMetricCredentials{
+				policyDB.GetCredentialReturns(&models.Credential{
 					Username: "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu",
 					Password: "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G",
 				}, nil)
@@ -334,7 +334,7 @@ var _ = Describe("MetricHandler", func() {
 
 		Context("when a request to publish custom metrics comes with standard metric type", func() {
 			BeforeEach(func() {
-				policyDB.GetCustomMetricsCredsReturns(&models.CustomMetricCredentials{
+				policyDB.GetCredentialReturns(&models.Credential{
 					Username: "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu",
 					Password: "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G",
 				}, nil)
@@ -376,7 +376,7 @@ var _ = Describe("MetricHandler", func() {
 
 		Context("when a request to publish custom metrics comes with non allowed metric types", func() {
 			BeforeEach(func() {
-				policyDB.GetCustomMetricsCredsReturns(&models.CustomMetricCredentials{
+				policyDB.GetCredentialReturns(&models.Credential{
 					Username: "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu",
 					Password: "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G",
 				}, nil)

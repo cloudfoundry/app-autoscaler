@@ -62,30 +62,30 @@ type FakePolicyDB struct {
 	deletePolicyReturns struct {
 		result1 error
 	}
-	SaveCustomMetricsCredStub        func(appId string, cred models.CustomMetricCredentials) error
-	saveCustomMetricsCredMutex       sync.RWMutex
-	saveCustomMetricsCredArgsForCall []struct {
+	SaveCredentialStub        func(appId string, cred models.Credential) error
+	saveCredentialMutex       sync.RWMutex
+	saveCredentialArgsForCall []struct {
 		appId string
-		cred  models.CustomMetricCredentials
+		cred  models.Credential
 	}
-	saveCustomMetricsCredReturns struct {
+	saveCredentialReturns struct {
 		result1 error
 	}
-	DeleteCustomMetricsCredStub        func(appId string) error
-	deleteCustomMetricsCredMutex       sync.RWMutex
-	deleteCustomMetricsCredArgsForCall []struct {
+	DeleteCredentialStub        func(appId string) error
+	deleteCredentialMutex       sync.RWMutex
+	deleteCredentialArgsForCall []struct {
 		appId string
 	}
-	deleteCustomMetricsCredReturns struct {
+	deleteCredentialReturns struct {
 		result1 error
 	}
-	GetCustomMetricsCredsStub        func(appId string) (*models.CustomMetricCredentials, error)
-	getCustomMetricsCredsMutex       sync.RWMutex
-	getCustomMetricsCredsArgsForCall []struct {
+	GetCredentialStub        func(appId string) (*models.Credential, error)
+	getCredentialMutex       sync.RWMutex
+	getCredentialArgsForCall []struct {
 		appId string
 	}
-	getCustomMetricsCredsReturns struct {
-		result1 *models.CustomMetricCredentials
+	getCredentialReturns struct {
+		result1 *models.Credential
 		result2 error
 	}
 	invocations      map[string][][]interface{}
@@ -289,100 +289,100 @@ func (fake *FakePolicyDB) DeletePolicyReturns(result1 error) {
 	}{result1}
 }
 
-func (fake *FakePolicyDB) SaveCustomMetricsCred(appId string, cred models.CustomMetricCredentials) error {
-	fake.saveCustomMetricsCredMutex.Lock()
-	fake.saveCustomMetricsCredArgsForCall = append(fake.saveCustomMetricsCredArgsForCall, struct {
+func (fake *FakePolicyDB) SaveCredential(appId string, cred models.Credential) error {
+	fake.saveCredentialMutex.Lock()
+	fake.saveCredentialArgsForCall = append(fake.saveCredentialArgsForCall, struct {
 		appId string
-		cred  models.CustomMetricCredentials
+		cred  models.Credential
 	}{appId, cred})
-	fake.recordInvocation("SaveCustomMetricsCred", []interface{}{appId, cred})
-	fake.saveCustomMetricsCredMutex.Unlock()
-	if fake.SaveCustomMetricsCredStub != nil {
-		return fake.SaveCustomMetricsCredStub(appId, cred)
+	fake.recordInvocation("SaveCredential", []interface{}{appId, cred})
+	fake.saveCredentialMutex.Unlock()
+	if fake.SaveCredentialStub != nil {
+		return fake.SaveCredentialStub(appId, cred)
 	}
-	return fake.saveCustomMetricsCredReturns.result1
+	return fake.saveCredentialReturns.result1
 }
 
-func (fake *FakePolicyDB) SaveCustomMetricsCredCallCount() int {
-	fake.saveCustomMetricsCredMutex.RLock()
-	defer fake.saveCustomMetricsCredMutex.RUnlock()
-	return len(fake.saveCustomMetricsCredArgsForCall)
+func (fake *FakePolicyDB) SaveCredentialCallCount() int {
+	fake.saveCredentialMutex.RLock()
+	defer fake.saveCredentialMutex.RUnlock()
+	return len(fake.saveCredentialArgsForCall)
 }
 
-func (fake *FakePolicyDB) SaveCustomMetricsCredArgsForCall(i int) (string, models.CustomMetricCredentials) {
-	fake.saveCustomMetricsCredMutex.RLock()
-	defer fake.saveCustomMetricsCredMutex.RUnlock()
-	return fake.saveCustomMetricsCredArgsForCall[i].appId, fake.saveCustomMetricsCredArgsForCall[i].cred
+func (fake *FakePolicyDB) SaveCredentialArgsForCall(i int) (string, models.Credential) {
+	fake.saveCredentialMutex.RLock()
+	defer fake.saveCredentialMutex.RUnlock()
+	return fake.saveCredentialArgsForCall[i].appId, fake.saveCredentialArgsForCall[i].cred
 }
 
-func (fake *FakePolicyDB) SaveCustomMetricsCredReturns(result1 error) {
-	fake.SaveCustomMetricsCredStub = nil
-	fake.saveCustomMetricsCredReturns = struct {
+func (fake *FakePolicyDB) SaveCredentialReturns(result1 error) {
+	fake.SaveCredentialStub = nil
+	fake.saveCredentialReturns = struct {
 		result1 error
 	}{result1}
 }
 
-func (fake *FakePolicyDB) DeleteCustomMetricsCred(appId string) error {
-	fake.deleteCustomMetricsCredMutex.Lock()
-	fake.deleteCustomMetricsCredArgsForCall = append(fake.deleteCustomMetricsCredArgsForCall, struct {
+func (fake *FakePolicyDB) DeleteCredential(appId string) error {
+	fake.deleteCredentialMutex.Lock()
+	fake.deleteCredentialArgsForCall = append(fake.deleteCredentialArgsForCall, struct {
 		appId string
 	}{appId})
-	fake.recordInvocation("DeleteCustomMetricsCred", []interface{}{appId})
-	fake.deleteCustomMetricsCredMutex.Unlock()
-	if fake.DeleteCustomMetricsCredStub != nil {
-		return fake.DeleteCustomMetricsCredStub(appId)
+	fake.recordInvocation("DeleteCredential", []interface{}{appId})
+	fake.deleteCredentialMutex.Unlock()
+	if fake.DeleteCredentialStub != nil {
+		return fake.DeleteCredentialStub(appId)
 	}
-	return fake.deleteCustomMetricsCredReturns.result1
+	return fake.deleteCredentialReturns.result1
 }
 
-func (fake *FakePolicyDB) DeleteCustomMetricsCredCallCount() int {
-	fake.deleteCustomMetricsCredMutex.RLock()
-	defer fake.deleteCustomMetricsCredMutex.RUnlock()
-	return len(fake.deleteCustomMetricsCredArgsForCall)
+func (fake *FakePolicyDB) DeleteCredentialCallCount() int {
+	fake.deleteCredentialMutex.RLock()
+	defer fake.deleteCredentialMutex.RUnlock()
+	return len(fake.deleteCredentialArgsForCall)
 }
 
-func (fake *FakePolicyDB) DeleteCustomMetricsCredArgsForCall(i int) string {
-	fake.deleteCustomMetricsCredMutex.RLock()
-	defer fake.deleteCustomMetricsCredMutex.RUnlock()
-	return fake.deleteCustomMetricsCredArgsForCall[i].appId
+func (fake *FakePolicyDB) DeleteCredentialArgsForCall(i int) string {
+	fake.deleteCredentialMutex.RLock()
+	defer fake.deleteCredentialMutex.RUnlock()
+	return fake.deleteCredentialArgsForCall[i].appId
 }
 
-func (fake *FakePolicyDB) DeleteCustomMetricsCredReturns(result1 error) {
-	fake.DeleteCustomMetricsCredStub = nil
-	fake.deleteCustomMetricsCredReturns = struct {
+func (fake *FakePolicyDB) DeleteCredentialReturns(result1 error) {
+	fake.DeleteCredentialStub = nil
+	fake.deleteCredentialReturns = struct {
 		result1 error
 	}{result1}
 }
 
-func (fake *FakePolicyDB) GetCustomMetricsCreds(appId string) (*models.CustomMetricCredentials, error) {
-	fake.getCustomMetricsCredsMutex.Lock()
-	fake.getCustomMetricsCredsArgsForCall = append(fake.getCustomMetricsCredsArgsForCall, struct {
+func (fake *FakePolicyDB) GetCredential(appId string) (*models.Credential, error) {
+	fake.getCredentialMutex.Lock()
+	fake.getCredentialArgsForCall = append(fake.getCredentialArgsForCall, struct {
 		appId string
 	}{appId})
-	fake.recordInvocation("GetCustomMetricsCreds", []interface{}{appId})
-	fake.getCustomMetricsCredsMutex.Unlock()
-	if fake.GetCustomMetricsCredsStub != nil {
-		return fake.GetCustomMetricsCredsStub(appId)
+	fake.recordInvocation("GetCredential", []interface{}{appId})
+	fake.getCredentialMutex.Unlock()
+	if fake.GetCredentialStub != nil {
+		return fake.GetCredentialStub(appId)
 	}
-	return fake.getCustomMetricsCredsReturns.result1, fake.getCustomMetricsCredsReturns.result2
+	return fake.getCredentialReturns.result1, fake.getCredentialReturns.result2
 }
 
-func (fake *FakePolicyDB) GetCustomMetricsCredsCallCount() int {
-	fake.getCustomMetricsCredsMutex.RLock()
-	defer fake.getCustomMetricsCredsMutex.RUnlock()
-	return len(fake.getCustomMetricsCredsArgsForCall)
+func (fake *FakePolicyDB) GetCredentialCallCount() int {
+	fake.getCredentialMutex.RLock()
+	defer fake.getCredentialMutex.RUnlock()
+	return len(fake.getCredentialArgsForCall)
 }
 
-func (fake *FakePolicyDB) GetCustomMetricsCredsArgsForCall(i int) string {
-	fake.getCustomMetricsCredsMutex.RLock()
-	defer fake.getCustomMetricsCredsMutex.RUnlock()
-	return fake.getCustomMetricsCredsArgsForCall[i].appId
+func (fake *FakePolicyDB) GetCredentialArgsForCall(i int) string {
+	fake.getCredentialMutex.RLock()
+	defer fake.getCredentialMutex.RUnlock()
+	return fake.getCredentialArgsForCall[i].appId
 }
 
-func (fake *FakePolicyDB) GetCustomMetricsCredsReturns(result1 *models.CustomMetricCredentials, result2 error) {
-	fake.GetCustomMetricsCredsStub = nil
-	fake.getCustomMetricsCredsReturns = struct {
-		result1 *models.CustomMetricCredentials
+func (fake *FakePolicyDB) GetCredentialReturns(result1 *models.Credential, result2 error) {
+	fake.GetCredentialStub = nil
+	fake.getCredentialReturns = struct {
+		result1 *models.Credential
 		result2 error
 	}{result1, result2}
 }
@@ -404,12 +404,12 @@ func (fake *FakePolicyDB) Invocations() map[string][][]interface{} {
 	defer fake.closeMutex.RUnlock()
 	fake.deletePolicyMutex.RLock()
 	defer fake.deletePolicyMutex.RUnlock()
-	fake.saveCustomMetricsCredMutex.RLock()
-	defer fake.saveCustomMetricsCredMutex.RUnlock()
-	fake.deleteCustomMetricsCredMutex.RLock()
-	defer fake.deleteCustomMetricsCredMutex.RUnlock()
-	fake.getCustomMetricsCredsMutex.RLock()
-	defer fake.getCustomMetricsCredsMutex.RUnlock()
+	fake.saveCredentialMutex.RLock()
+	defer fake.saveCredentialMutex.RUnlock()
+	fake.deleteCredentialMutex.RLock()
+	defer fake.deleteCredentialMutex.RUnlock()
+	fake.getCredentialMutex.RLock()
+	defer fake.getCredentialMutex.RUnlock()
 	return fake.invocations
 }
 

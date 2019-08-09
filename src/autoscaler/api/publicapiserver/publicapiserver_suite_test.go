@@ -18,6 +18,7 @@ import (
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/ginkgomon"
 
+	"autoscaler/api"
 	"autoscaler/api/config"
 	"autoscaler/api/publicapiserver"
 	"autoscaler/cf"
@@ -42,9 +43,10 @@ const (
 var (
 	serverProcess ifrit.Process
 	serverUrl     *url.URL
-	httpClient    *http.Client
 	conf          *config.Config
-	infoBytes     []byte
+
+	infoBytes  []byte
+	httpClient *http.Client
 
 	scalingEngineServer    *ghttp.Server
 	metricsCollectorServer *ghttp.Server
@@ -60,9 +62,13 @@ var (
 	metricsCollectorResponse []models.AppInstanceMetric
 	eventGeneratorResponse   []models.AppMetric
 
-	fakeCFClient  *fakes.FakeCFClient
-	fakePolicyDB  *fakes.FakePolicyDB
-	fakeBindingDB *fakes.FakeBindingDB
+	fakeCFClient     *fakes.FakeCFClient
+	fakePolicyDB     *fakes.FakePolicyDB
+	checkBindingFunc api.CheckBindingFunc
+	hasBinding       bool = true
+
+	testCertDir = "../../../../test-certs"
+	apiPort     = 12000 + GinkgoParallelNode()
 )
 
 func TestPublicapiserver(t *testing.T) {
@@ -76,14 +82,74 @@ var _ = BeforeSuite(func() {
 	eventGeneratorServer = ghttp.NewServer()
 	schedulerServer = ghttp.NewServer()
 
-	testCertDir := "../../../../test-certs"
-	apiPort := 11000 + GinkgoParallelNode()
-	conf = &config.Config{
+	conf = CreateConfig(true, apiPort)
+
+	fakePolicyDB = &fakes.FakePolicyDB{}
+	checkBindingFunc = func(appId string) bool {
+		return hasBinding
+	}
+	fakeCFClient = &fakes.FakeCFClient{}
+
+	httpServer, err := publicapiserver.NewPublicApiServer(lagertest.NewTestLogger("public_apiserver"), conf, fakePolicyDB, checkBindingFunc, fakeCFClient)
+	Expect(err).NotTo(HaveOccurred())
+
+	serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(apiPort))
+	Expect(err).NotTo(HaveOccurred())
+
+	serverProcess = ginkgomon.Invoke(httpServer)
+
+	httpClient = &http.Client{}
+
+	infoBytes, err = ioutil.ReadFile("../exampleconfig/info-file.json")
+	Expect(err).NotTo(HaveOccurred())
+
+	scalingHistoryPathMatcher, err := regexp.Compile("/v1/apps/[A-Za-z0-9\\-]+/scaling_histories")
+	Expect(err).NotTo(HaveOccurred())
+	scalingEngineServer.RouteToHandler(http.MethodGet, scalingHistoryPathMatcher, ghttp.RespondWithJSONEncodedPtr(&scalingEngineStatus, &scalingEngineResponse))
+
+	metricsCollectorPathMatcher, err := regexp.Compile("/v1/apps/[A-Za-z0-9\\-]+/metric_histories/[a-zA-Z0-9_]+")
+	Expect(err).NotTo(HaveOccurred())
+	metricsCollectorServer.RouteToHandler(http.MethodGet, metricsCollectorPathMatcher, ghttp.RespondWithJSONEncodedPtr(&metricsCollectorStatus, &metricsCollectorResponse))
+
+	eventGeneratorPathMatcher, err := regexp.Compile("/v1/apps/[A-Za-z0-9\\-]+/aggregated_metric_histories/[a-zA-Z0-9_]+")
+	Expect(err).NotTo(HaveOccurred())
+	eventGeneratorServer.RouteToHandler(http.MethodGet, eventGeneratorPathMatcher, ghttp.RespondWithJSONEncodedPtr(&eventGeneratorStatus, &eventGeneratorResponse))
+
+	schedulerPathMatcher, err := regexp.Compile("/v1/apps/[A-Za-z0-9\\-]+/schedules")
+	Expect(err).NotTo(HaveOccurred())
+	schedulerServer.RouteToHandler(http.MethodPut, schedulerPathMatcher, ghttp.RespondWithJSONEncodedPtr(&schedulerStatus, nil))
+	schedulerServer.RouteToHandler(http.MethodDelete, schedulerPathMatcher, ghttp.RespondWithJSONEncodedPtr(&schedulerStatus, nil))
+
+})
+
+var _ = AfterSuite(func() {
+	ginkgomon.Interrupt(serverProcess)
+	scalingEngineServer.Close()
+	metricsCollectorServer.Close()
+	eventGeneratorServer.Close()
+})
+
+func GetTestHandler() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("Success"))
+	}
+}
+
+func CheckResponse(resp *httptest.ResponseRecorder, statusCode int, errResponse models.ErrorResponse) {
+	Expect(resp.Code).To(Equal(statusCode))
+	var errResp models.ErrorResponse
+	err := json.NewDecoder(resp.Body).Decode(&errResp)
+	Expect(err).NotTo(HaveOccurred())
+	Expect(errResp).To(Equal(errResponse))
+}
+
+func CreateConfig(useBuildInMode bool, apiServerPort int) *config.Config {
+	return &config.Config{
 		Logging: helpers.LoggingConfig{
 			Level: "debug",
 		},
 		PublicApiServer: config.ServerConfig{
-			Port: apiPort,
+			Port: apiServerPort,
 		},
 		PolicySchemaPath: "../policyvalidator/policy_json.schema.json",
 		Scheduler: config.SchedulerConfig{
@@ -123,65 +189,6 @@ var _ = BeforeSuite(func() {
 			Secret:            CLIENT_SECRET,
 			SkipSSLValidation: true,
 		},
+		UseBuildInMode: useBuildInMode,
 	}
-
-	fakePolicyDB = &fakes.FakePolicyDB{}
-	fakeBindingDB = &fakes.FakeBindingDB{}
-	fakeBindingDB.CheckServiceBindingStub = func(appId string) bool {
-		return true
-	}
-	fakeCFClient = &fakes.FakeCFClient{}
-
-	httpServer, err := publicapiserver.NewPublicApiServer(lagertest.NewTestLogger("publicapiserver"), conf, fakePolicyDB, fakeBindingDB, fakeCFClient)
-	Expect(err).NotTo(HaveOccurred())
-
-	serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(apiPort))
-	Expect(err).NotTo(HaveOccurred())
-
-	serverProcess = ginkgomon.Invoke(httpServer)
-
-	httpClient = &http.Client{}
-
-	infoBytes, err = ioutil.ReadFile("../exampleconfig/info-file.json")
-	Expect(err).NotTo(HaveOccurred())
-
-	scalingHistoryPathMatcher, err := regexp.Compile("/v1/apps/[A-Za-z0-9\\-]+/scaling_histories")
-	Expect(err).NotTo(HaveOccurred())
-	scalingEngineServer.RouteToHandler(http.MethodGet, scalingHistoryPathMatcher, ghttp.RespondWithJSONEncodedPtr(&scalingEngineStatus, &scalingEngineResponse))
-
-	metricsCollectorPathMatcher, err := regexp.Compile("/v1/apps/[A-Za-z0-9\\-]+/metric_histories/[a-zA-Z0-9_]+")
-	Expect(err).NotTo(HaveOccurred())
-	metricsCollectorServer.RouteToHandler(http.MethodGet, metricsCollectorPathMatcher, ghttp.RespondWithJSONEncodedPtr(&metricsCollectorStatus, &metricsCollectorResponse))
-
-	eventGeneratorPathMatcher, err := regexp.Compile("/v1/apps/[A-Za-z0-9\\-]+/aggregated_metric_histories/[a-zA-Z0-9_]+")
-	Expect(err).NotTo(HaveOccurred())
-	eventGeneratorServer.RouteToHandler(http.MethodGet, eventGeneratorPathMatcher, ghttp.RespondWithJSONEncodedPtr(&eventGeneratorStatus, &eventGeneratorResponse))
-
-	schedulerPathMatcher, err := regexp.Compile("/v1/apps/[A-Za-z0-9\\-]+/schedules")
-	Expect(err).NotTo(HaveOccurred())
-	schedulerServer.RouteToHandler(http.MethodPut, schedulerPathMatcher, ghttp.RespondWithJSONEncodedPtr(&schedulerStatus, nil))
-	schedulerServer.RouteToHandler(http.MethodDelete, schedulerPathMatcher, ghttp.RespondWithJSONEncodedPtr(&schedulerStatus, nil))
-
-})
-
-var _ = AfterSuite(func() {
-	ginkgomon.Interrupt(serverProcess)
-
-	scalingEngineServer.Close()
-	metricsCollectorServer.Close()
-	eventGeneratorServer.Close()
-})
-
-func GetTestHandler() http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Success"))
-	}
-}
-
-func CheckResponse(resp *httptest.ResponseRecorder, statusCode int, errResponse models.ErrorResponse) {
-	Expect(resp.Code).To(Equal(statusCode))
-	var errResp models.ErrorResponse
-	err := json.NewDecoder(resp.Body).Decode(&errResp)
-	Expect(err).NotTo(HaveOccurred())
-	Expect(errResp).To(Equal(errResponse))
 }

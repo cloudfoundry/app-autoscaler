@@ -12,29 +12,39 @@ const (
 	MaxRetry = 5
 )
 
-func _createCustomMetricsCredential(appId string, policyDB db.PolicyDB) (*models.CustomMetricCredentials, error) {
-	credUsername, err := uuid.NewV4()
-	if err != nil {
-		return nil, err
-	}
-	userNameHash, err := bcrypt.GenerateFromPassword([]byte(credUsername.String()), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, err
-	}
-	credPassword, err := uuid.NewV4()
-	if err != nil {
-		return nil, err
-	}
-	passwordHash, err := bcrypt.GenerateFromPassword([]byte(credPassword.String()), bcrypt.DefaultCost)
-	if err != nil {
-		return nil, err
-	}
-	cred := models.CustomMetricCredentials{
-		Username: credUsername.String(),
-		Password: credPassword.String(),
+func _createCredential(appId string, userProvidedCredential *models.Credential, policyDB db.PolicyDB) (*models.Credential, error) {
+	var credUsername, credPassword string
+	if userProvidedCredential == nil {
+		credUsernameUUID, err := uuid.NewV4()
+		if err != nil {
+			return nil, err
+		}
+		credPasswordUUID, err := uuid.NewV4()
+		if err != nil {
+			return nil, err
+		}
+		credUsername = credUsernameUUID.String()
+		credPassword = credPasswordUUID.String()
+	} else {
+		credUsername = userProvidedCredential.Username
+		credPassword = userProvidedCredential.Password
 	}
 
-	err = policyDB.SaveCustomMetricsCred(appId, models.CustomMetricCredentials{
+	userNameHash, err := bcrypt.GenerateFromPassword([]byte(credUsername), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+
+	passwordHash, err := bcrypt.GenerateFromPassword([]byte(credPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+	cred := models.Credential{
+		Username: credUsername,
+		Password: credPassword,
+	}
+
+	err = policyDB.SaveCredential(appId, models.Credential{
 		Username: string(userNameHash),
 		Password: string(passwordHash),
 	})
@@ -43,36 +53,32 @@ func _createCustomMetricsCredential(appId string, policyDB db.PolicyDB) (*models
 	}
 	return &cred, nil
 }
-func CreateCustomMetricsCredential(appId string, policyDB db.PolicyDB, maxRetry int) (*models.CustomMetricCredentials, error) {
+func CreateCredential(appId string, userProvidedCredential *models.Credential, policyDB db.PolicyDB, maxRetry int) (*models.Credential, error) {
 
 	var err error
 	var count int
-	var cred *models.CustomMetricCredentials
+	var cred *models.Credential
 	for {
 		if count == maxRetry {
 			return nil, err
 		}
-		cred, err = _createCustomMetricsCredential(appId, policyDB)
+		cred, err = _createCredential(appId, userProvidedCredential, policyDB)
 		if err == nil {
 			return cred, nil
 		}
 		count++
 	}
-	if err != nil {
-		return nil, err
-	}
-	return cred, err
 
 }
 
-func _deleteCustomMetricsCredential(appId string, policyDB db.PolicyDB) error {
-	err := policyDB.DeleteCustomMetricsCred(appId)
+func _deleteCredential(appId string, policyDB db.PolicyDB) error {
+	err := policyDB.DeleteCredential(appId)
 	if err != nil {
 		return err
 	}
 	return nil
 }
-func DeleteCustomMetricsCredential(appId string, policyDB db.PolicyDB, maxRetry int) error {
+func DeleteCredential(appId string, policyDB db.PolicyDB, maxRetry int) error {
 
 	var err error
 	var count int
@@ -80,7 +86,7 @@ func DeleteCustomMetricsCredential(appId string, policyDB db.PolicyDB, maxRetry 
 		if count == maxRetry {
 			return err
 		}
-		err = _deleteCustomMetricsCredential(appId, policyDB)
+		err = _deleteCredential(appId, policyDB)
 		if err == nil {
 			return nil
 		}

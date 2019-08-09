@@ -59,9 +59,9 @@ func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Req
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
 		h.logger.Error("failed to create service instance when trying to read request body", err)
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: "Failed to read request body"})
+		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
+			Code:    "Bad Request",
+			Message: "Invalid request body format"})
 		return
 	}
 
@@ -104,9 +104,9 @@ func (h *BrokerHandler) DeleteServiceInstance(w http.ResponseWriter, r *http.Req
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
 		h.logger.Error("failed to delete service instance when trying to read request body", err)
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: "Failed to read request body"})
+		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
+			Code:    "Bad Request",
+			Message: "Invalid request body format"})
 		return
 	}
 
@@ -144,14 +144,14 @@ func (h *BrokerHandler) DeleteServiceInstance(w http.ResponseWriter, r *http.Req
 func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Request, vars map[string]string) {
 	instanceId := vars["instanceId"]
 	bindingId := vars["bindingId"]
-
+	var policyGuid *uuid.UUID
 	body := &models.BindingRequestBody{}
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
 		h.logger.Error("failed to create binding when trying to read request body", err)
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: "Failed to read request body"})
+		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
+			Code:    "Bad Request",
+			Message: "Invalid request body format"})
 		return
 	}
 
@@ -163,7 +163,22 @@ func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Reque
 		})
 		return
 	}
-
+	if body.Policy != "" {
+		errResults, valid := h.policyValidator.ValidatePolicy(body.Policy)
+		if !valid {
+			h.logger.Error("failed to validate policy", err, lager.Data{"appId": body.AppID, "policy": body.Policy})
+			handlers.WriteJSONResponse(w, http.StatusBadRequest, errResults)
+			return
+		}
+		policyGuid, err = uuid.NewV4()
+		if err != nil {
+			h.logger.Error("failed to create policy guid", err, lager.Data{"appId": body.AppID})
+			handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+				Code:    "Interal-Server-Error",
+				Message: "Error generating policy guid"})
+			return
+		}
+	}
 	err = h.bindingdb.CreateServiceBinding(bindingId, instanceId, body.AppID)
 	if err != nil {
 		if err == db.ErrAlreadyExists {
@@ -179,7 +194,7 @@ func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Reque
 			Message: "Error creating service binding"})
 		return
 	}
-	cred, err := custom_metrics_cred_helper.CreateCustomMetricsCredential(body.AppID, h.policydb, custom_metrics_cred_helper.MaxRetry)
+	cred, err := custom_metrics_cred_helper.CreateCredential(body.AppID, nil, h.policydb, custom_metrics_cred_helper.MaxRetry)
 	if err != nil {
 		//revert binding creating
 		h.logger.Error("failed to create custom metrics credential", err, lager.Data{"appId": body.AppID})
@@ -195,45 +210,12 @@ func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Reque
 	if body.Policy == "" {
 		h.logger.Info("no policy json provided", lager.Data{})
 	} else {
-		errResults, valid := h.policyValidator.ValidatePolicy(body.Policy)
-		if !valid {
-			h.logger.Error("failed to validate policy", err, lager.Data{"appId": body.AppID, "policy": body.Policy})
-			//revert creating binding and custom metrics credential
-			err = custom_metrics_cred_helper.DeleteCustomMetricsCredential(body.AppID, h.policydb, custom_metrics_cred_helper.MaxRetry)
-			if err != nil {
-				h.logger.Error("failed to revert custom metrics credential due to failed to validate policy", err, lager.Data{"appId": body.AppID})
-			}
-			err = h.bindingdb.DeleteServiceBindingByAppId(body.AppID)
-			if err != nil {
-				h.logger.Error("failed to revert binding due to failed to validate policy", err, lager.Data{"appId": body.AppID})
-			}
-			handlers.WriteJSONResponse(w, http.StatusBadRequest, errResults)
-			return
-		}
-		policyGuid, err := uuid.NewV4()
-		if err != nil {
-			h.logger.Error("failed to create policy guid", err, lager.Data{"appId": body.AppID})
-			//revert creating binding and custom metrics credential
-			err = custom_metrics_cred_helper.DeleteCustomMetricsCredential(body.AppID, h.policydb, custom_metrics_cred_helper.MaxRetry)
-			if err != nil {
-				h.logger.Error("failed to revert custom metrics credential due to failed to create policy guid", err, lager.Data{"appId": body.AppID})
-			}
-			err = h.bindingdb.DeleteServiceBindingByAppId(body.AppID)
-			if err != nil {
-				h.logger.Error("failed to revert binding due to failed to create policy guid", err, lager.Data{"appId": body.AppID})
-			}
-			handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-				Code:    "Interal-Server-Error",
-				Message: "Error generating policy guid"})
-			return
-		}
-
 		h.logger.Info("saving policy json", lager.Data{"policy": body.Policy})
 		err = h.policydb.SaveAppPolicy(body.AppID, body.Policy, policyGuid.String())
 		if err != nil {
 			h.logger.Error("failed to save policy", err, lager.Data{"appId": body.AppID, "policy": body.Policy})
 			//failed to save policy, so revert creating binding and custom metrics credential
-			err = custom_metrics_cred_helper.DeleteCustomMetricsCredential(body.AppID, h.policydb, custom_metrics_cred_helper.MaxRetry)
+			err = custom_metrics_cred_helper.DeleteCredential(body.AppID, h.policydb, custom_metrics_cred_helper.MaxRetry)
 			if err != nil {
 				h.logger.Error("failed to revert custom metrics credential due to failed to save policy", err, lager.Data{"appId": body.AppID})
 			}
@@ -258,8 +240,8 @@ func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Reque
 	handlers.WriteJSONResponse(w, http.StatusCreated, models.CredentialResponse{
 		Credentials: models.Credentials{
 			CustomMetrics: models.CustomMetrics{
-				CustomMetricCredentials: cred,
-				URL:                     h.conf.MetricsForwarder.MetricsForwarderUrl,
+				Credential: cred,
+				URL:        h.conf.MetricsForwarder.MetricsForwarderUrl,
 			},
 		},
 	})
@@ -273,9 +255,9 @@ func (h *BrokerHandler) UnbindServiceInstance(w http.ResponseWriter, r *http.Req
 	err := json.NewDecoder(r.Body).Decode(&body)
 	if err != nil {
 		h.logger.Error("failed to read request body:delete binding", err)
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: "Failed to read request body"})
+		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
+			Code:    "Bad Request",
+			Message: "Invalid request body format"})
 		return
 	}
 
@@ -316,7 +298,7 @@ func (h *BrokerHandler) UnbindServiceInstance(w http.ResponseWriter, r *http.Req
 			Message: "Error deleting service binding"})
 		return
 	}
-	err = custom_metrics_cred_helper.DeleteCustomMetricsCredential(body.AppID, h.policydb, custom_metrics_cred_helper.MaxRetry)
+	err = custom_metrics_cred_helper.DeleteCredential(body.AppID, h.policydb, custom_metrics_cred_helper.MaxRetry)
 	if err != nil {
 		h.logger.Error("failed to delete custom metrics credential for unbinding", err, lager.Data{"appId": body.AppID})
 	}

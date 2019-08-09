@@ -48,7 +48,7 @@ var _ = Describe("Routes", func() {
 	Describe("PublicApiRoutes", func() {
 		Context("PublicApiInfoRouteName", func() {
 			It("should return the correct path", func() {
-				path, err := routes.PublicApiRoutes().Get(routes.PublicApiInfoRouteName).URLPath()
+				path, err := routes.ApiOpenRoutes().Get(routes.PublicApiInfoRouteName).URLPath()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(path.Path).To(Equal("/v1/info"))
 			})
@@ -56,19 +56,19 @@ var _ = Describe("Routes", func() {
 
 		Context("PublicApiHealthRouteName", func() {
 			It("should return the correct path", func() {
-				path, err := routes.PublicApiRoutes().Get(routes.PublicApiHealthRouteName).URLPath()
+				path, err := routes.ApiOpenRoutes().Get(routes.PublicApiHealthRouteName).URLPath()
 				Expect(err).NotTo(HaveOccurred())
 				Expect(path.Path).To(Equal("/health"))
 			})
 		})
 	})
 
-	Describe("PublicApiProtectedRoutes", func() {
+	Describe("ApiRoutes", func() {
 		Context("PublicApiScalingHistoryRouteName", func() {
 
 			Context("when provide correct route variable", func() {
 				It("should return the correct path", func() {
-					path, err := routes.PublicApiProtectedRoutes().Get(routes.PublicApiScalingHistoryRouteName).URLPath("appId", testAppId)
+					path, err := routes.ApiRoutes().Get(routes.PublicApiScalingHistoryRouteName).URLPath("appId", testAppId)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(path.Path).To(Equal("/v1/apps/" + testAppId + "/scaling_histories"))
 				})
@@ -76,7 +76,7 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide wrong route variable", func() {
 				It("should return error", func() {
-					_, err := routes.PublicApiProtectedRoutes().Get(routes.PublicApiScalingHistoryRouteName).URLPath("wrongVariable", testAppId)
+					_, err := routes.ApiRoutes().Get(routes.PublicApiScalingHistoryRouteName).URLPath("wrongVariable", testAppId)
 					Expect(err).To(HaveOccurred())
 
 				})
@@ -84,7 +84,7 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide not enough route variable", func() {
 				It("should return error", func() {
-					_, err := routes.PublicApiProtectedRoutes().Get(routes.PublicApiScalingHistoryRouteName).URLPath()
+					_, err := routes.ApiRoutes().Get(routes.PublicApiScalingHistoryRouteName).URLPath()
 					Expect(err).To(HaveOccurred())
 				})
 			})
@@ -93,7 +93,7 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide correct route variable", func() {
 				It("should return the correct path", func() {
-					path, err := routes.PublicApiProtectedRoutes().Get(routes.PublicApiMetricsHistoryRouteName).URLPath("appId", testAppId, "metricType", testMetricType)
+					path, err := routes.ApiRoutes().Get(routes.PublicApiMetricsHistoryRouteName).URLPath("appId", testAppId, "metricType", testMetricType)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(path.Path).To(Equal("/v1/apps/" + testAppId + "/metric_histories/" + testMetricType))
 				})
@@ -101,7 +101,7 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide wrong route variable", func() {
 				It("should return error", func() {
-					_, err := routes.PublicApiProtectedRoutes().Get(routes.PublicApiMetricsHistoryRouteName).URLPath("wrongVariable", testAppId)
+					_, err := routes.ApiRoutes().Get(routes.PublicApiMetricsHistoryRouteName).URLPath("wrongVariable", testAppId)
 					Expect(err).To(HaveOccurred())
 
 				})
@@ -109,7 +109,7 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide not enough route variable", func() {
 				It("should return error", func() {
-					_, err := routes.PublicApiProtectedRoutes().Get(routes.PublicApiMetricsHistoryRouteName).URLPath()
+					_, err := routes.ApiRoutes().Get(routes.PublicApiMetricsHistoryRouteName).URLPath()
 					Expect(err).To(HaveOccurred())
 				})
 			})
@@ -118,7 +118,7 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide correct route variable", func() {
 				It("should return the correct path", func() {
-					path, err := routes.PublicApiProtectedRoutes().Get(routes.PublicApiAggregatedMetricsHistoryRouteName).URLPath("appId", testAppId, "metricType", testMetricType)
+					path, err := routes.ApiRoutes().Get(routes.PublicApiAggregatedMetricsHistoryRouteName).URLPath("appId", testAppId, "metricType", testMetricType)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(path.Path).To(Equal("/v1/apps/" + testAppId + "/aggregated_metric_histories/" + testMetricType))
 				})
@@ -126,7 +126,7 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide wrong route variable", func() {
 				It("should return error", func() {
-					_, err := routes.PublicApiProtectedRoutes().Get(routes.PublicApiAggregatedMetricsHistoryRouteName).URLPath("wrongVariable", testAppId)
+					_, err := routes.ApiRoutes().Get(routes.PublicApiAggregatedMetricsHistoryRouteName).URLPath("wrongVariable", testAppId)
 					Expect(err).To(HaveOccurred())
 
 				})
@@ -134,7 +134,7 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide not enough route variable", func() {
 				It("should return error", func() {
-					_, err := routes.PublicApiProtectedRoutes().Get(routes.PublicApiAggregatedMetricsHistoryRouteName).URLPath()
+					_, err := routes.ApiRoutes().Get(routes.PublicApiAggregatedMetricsHistoryRouteName).URLPath()
 					Expect(err).To(HaveOccurred())
 				})
 			})
@@ -144,7 +144,7 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide correct route variable", func() {
 				It("should return the correct path", func() {
-					path, err := routes.PublicApiPolicyRoutes().Get(routes.PublicApiGetPolicyRouteName).URLPath("appId", testAppId)
+					path, err := routes.ApiPolicyRoutes().Get(routes.PublicApiGetPolicyRouteName).URLPath("appId", testAppId)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(path.Path).To(Equal("/v1/apps/" + testAppId + "/policy"))
 				})
@@ -152,7 +152,7 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide wrong route variable", func() {
 				It("should return error", func() {
-					_, err := routes.PublicApiPolicyRoutes().Get(routes.PublicApiGetPolicyRouteName).URLPath("wrongVariable", testAppId)
+					_, err := routes.ApiPolicyRoutes().Get(routes.PublicApiGetPolicyRouteName).URLPath("wrongVariable", testAppId)
 					Expect(err).To(HaveOccurred())
 
 				})
@@ -160,7 +160,7 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide not enough route variable", func() {
 				It("should return error", func() {
-					_, err := routes.PublicApiPolicyRoutes().Get(routes.PublicApiGetPolicyRouteName).URLPath()
+					_, err := routes.ApiPolicyRoutes().Get(routes.PublicApiGetPolicyRouteName).URLPath()
 					Expect(err).To(HaveOccurred())
 				})
 			})
@@ -170,7 +170,7 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide correct route variable", func() {
 				It("should return the correct path", func() {
-					path, err := routes.PublicApiPolicyRoutes().Get(routes.PublicApiAttachPolicyRouteName).URLPath("appId", testAppId)
+					path, err := routes.ApiPolicyRoutes().Get(routes.PublicApiAttachPolicyRouteName).URLPath("appId", testAppId)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(path.Path).To(Equal("/v1/apps/" + testAppId + "/policy"))
 				})
@@ -178,7 +178,7 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide wrong route variable", func() {
 				It("should return error", func() {
-					_, err := routes.PublicApiPolicyRoutes().Get(routes.PublicApiAttachPolicyRouteName).URLPath("wrongVariable", testAppId)
+					_, err := routes.ApiPolicyRoutes().Get(routes.PublicApiAttachPolicyRouteName).URLPath("wrongVariable", testAppId)
 					Expect(err).To(HaveOccurred())
 
 				})
@@ -186,7 +186,7 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide not enough route variable", func() {
 				It("should return error", func() {
-					_, err := routes.PublicApiPolicyRoutes().Get(routes.PublicApiAttachPolicyRouteName).URLPath()
+					_, err := routes.ApiPolicyRoutes().Get(routes.PublicApiAttachPolicyRouteName).URLPath()
 					Expect(err).To(HaveOccurred())
 				})
 			})
@@ -196,7 +196,7 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide correct route variable", func() {
 				It("should return the correct path", func() {
-					path, err := routes.PublicApiPolicyRoutes().Get(routes.PublicApiDetachPolicyRouteName).URLPath("appId", testAppId)
+					path, err := routes.ApiPolicyRoutes().Get(routes.PublicApiDetachPolicyRouteName).URLPath("appId", testAppId)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(path.Path).To(Equal("/v1/apps/" + testAppId + "/policy"))
 				})
@@ -204,7 +204,7 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide wrong route variable", func() {
 				It("should return error", func() {
-					_, err := routes.PublicApiPolicyRoutes().Get(routes.PublicApiDetachPolicyRouteName).URLPath("wrongVariable", testAppId)
+					_, err := routes.ApiPolicyRoutes().Get(routes.PublicApiDetachPolicyRouteName).URLPath("wrongVariable", testAppId)
 					Expect(err).To(HaveOccurred())
 
 				})
@@ -212,7 +212,7 @@ var _ = Describe("Routes", func() {
 
 			Context("when provide not enough route variable", func() {
 				It("should return error", func() {
-					_, err := routes.PublicApiPolicyRoutes().Get(routes.PublicApiDetachPolicyRouteName).URLPath()
+					_, err := routes.ApiPolicyRoutes().Get(routes.PublicApiDetachPolicyRouteName).URLPath()
 					Expect(err).To(HaveOccurred())
 				})
 			})

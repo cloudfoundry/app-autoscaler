@@ -14,25 +14,42 @@ import (
 
 var _ = Describe("CustomMetricCredHelper", func() {
 	var (
-		policyDB   *fakes.FakePolicyDB
-		appId      = "testAppId"
-		credResult *models.CustomMetricCredentials
+		policyDB               *fakes.FakePolicyDB
+		appId                  = "testAppId"
+		testUserName           = "the-user-name"
+		testPassword           = "the-password"
+		userProvidedCredential *models.Credential
+		credResult             *models.Credential
 	)
 	BeforeEach(func() {
 		policyDB = &fakes.FakePolicyDB{}
 	})
-	Context("CreateCustomMetricsCredential", func() {
+	Context("CreateCredential", func() {
 		var err error
 		JustBeforeEach(func() {
-			credResult, err = CreateCustomMetricsCredential(appId, policyDB, MaxRetry)
+			credResult, err = CreateCredential(appId, userProvidedCredential, policyDB, MaxRetry)
+		})
+		Context("when userProvideCredential is not nil", func() {
+			BeforeEach(func() {
+				userProvidedCredential = &models.Credential{
+					Username: testUserName,
+					Password: testPassword,
+				}
+				policyDB.SaveCredentialReturns(nil)
+			})
+			It("saves the credential user provided", func() {
+
+				Expect(credResult.Username).To(Equal(testUserName))
+				Expect(credResult.Password).To(Equal(testPassword))
+			})
 		})
 		Context("when there is no error when calling policydb", func() {
 			BeforeEach(func() {
-				policyDB.SaveCustomMetricsCredReturns(nil)
+				policyDB.SaveCredentialReturns(nil)
 			})
 			Context("when credential does not exist", func() {
 				It("should try saving only once and succeed", func() {
-					Expect(policyDB.SaveCustomMetricsCredCallCount()).To(Equal(1))
+					Expect(policyDB.SaveCredentialCallCount()).To(Equal(1))
 					Expect(credResult).NotTo(BeNil())
 					Expect(err).NotTo(HaveOccurred())
 				})
@@ -41,37 +58,37 @@ var _ = Describe("CustomMetricCredHelper", func() {
 		})
 		Context("when there is continous error when calling policydb", func() {
 			BeforeEach(func() {
-				policyDB.GetCustomMetricsCredsReturns(nil, sql.ErrNoRows)
-				policyDB.SaveCustomMetricsCredReturns(errors.New("dberror"))
+				policyDB.GetCredentialReturns(nil, sql.ErrNoRows)
+				policyDB.SaveCredentialReturns(errors.New("dberror"))
 
 			})
 			It("should try MaxRetry times and return error", func() {
-				Expect(policyDB.SaveCustomMetricsCredCallCount()).To(Equal(MaxRetry))
+				Expect(policyDB.SaveCredentialCallCount()).To(Equal(MaxRetry))
 				Expect(credResult).To(BeNil())
 				Expect(err).To(HaveOccurred())
 			})
 		})
 	})
-	Context("DeleteCustomMetricsCredential", func() {
+	Context("DeleteCredential", func() {
 		var err error
 		JustBeforeEach(func() {
-			err = DeleteCustomMetricsCredential(appId, policyDB, MaxRetry)
+			err = DeleteCredential(appId, policyDB, MaxRetry)
 		})
 		Context("when there is no error when calling policydb", func() {
 			BeforeEach(func() {
-				policyDB.DeleteCustomMetricsCredReturns(nil)
+				policyDB.DeleteCredentialReturns(nil)
 			})
 			It("should try only once and succeed", func() {
-				Expect(policyDB.DeleteCustomMetricsCredCallCount()).To(Equal(1))
+				Expect(policyDB.DeleteCredentialCallCount()).To(Equal(1))
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
 		Context("when there is continous error when calling policydb", func() {
 			BeforeEach(func() {
-				policyDB.DeleteCustomMetricsCredReturns(errors.New("dberror"))
+				policyDB.DeleteCredentialReturns(errors.New("dberror"))
 			})
 			It("should try MaxRetry times and return error", func() {
-				Expect(policyDB.DeleteCustomMetricsCredCallCount()).To(Equal(MaxRetry))
+				Expect(policyDB.DeleteCredentialCallCount()).To(Equal(MaxRetry))
 				Expect(err).To(HaveOccurred())
 			})
 		})

@@ -257,7 +257,7 @@ func insertSchedulerActiveSchedule(id int, appId string, startJobIdentifier int,
 	return e
 }
 
-func insertCustomMetricsBindingCredentials(appid string, username string, password string) error {
+func insertCredential(appid string, username string, password string) error {
 
 	var err error
 	var query string
@@ -267,7 +267,7 @@ func insertCustomMetricsBindingCredentials(appid string, username string, passwo
 	return err
 
 }
-func getCustomMetricsCredential(appId string) (string, string, error) {
+func getCredential(appId string) (string, string, error) {
 	query := "SELECT username,password FROM credentials WHERE id=$1 "
 	rows, err := dbHelper.Query(query, appId)
 	if err != nil {
@@ -283,7 +283,7 @@ func getCustomMetricsCredential(appId string) (string, string, error) {
 	}
 	return username, password, nil
 }
-func hasCustomMetricsCredential(appId string) bool {
+func hasCredential(appId string) bool {
 	query := "SELECT * FROM credentials WHERE id=$1"
 	rows, e := dbHelper.Query(query, appId)
 	if e != nil {
@@ -292,7 +292,7 @@ func hasCustomMetricsCredential(appId string) bool {
 	defer rows.Close()
 	return rows.Next()
 }
-func cleanCredentialsTable() error {
+func cleanCredentialTable() error {
 	_, err := dbHelper.Exec("DELETE FROM credentials")
 	if err != nil {
 		return err

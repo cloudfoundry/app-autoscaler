@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
@@ -201,9 +202,8 @@ var _ = Describe("PublicApiHandler", func() {
 				req, _ = http.NewRequest(http.MethodPut, "", bytes.NewBufferString(VALID_POLICY_STR))
 				schedulerStatus = 500
 			})
-			It("should fail with 500", func() {
-				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error creating/updating schedules"}`))
+			It("should succeed", func() {
+				Expect(resp.Code).To(Equal(http.StatusOK))
 			})
 		})
 
@@ -1613,13 +1613,19 @@ var _ = Describe("PublicApiHandler", func() {
 		})
 
 	})
-	Describe("CreateCustomMetricsCredential", func() {
-		JustBeforeEach(func() {
-			handler.CreateCustomMetricsCredential(resp, req, pathVariables)
-		})
+	Describe("CreateCredential", func() {
+		var requestBody string
 		BeforeEach(func() {
 			pathVariables["appId"] = TEST_APP_ID
-			req, _ = http.NewRequest(http.MethodPut, "", nil)
+		})
+		JustBeforeEach(func() {
+			req, _ = http.NewRequest(http.MethodPut, "/v1/apps/"+TEST_APP_ID+"/credential", strings.NewReader(requestBody))
+			req.Header.Set("Content-type", "application/json")
+			handler.CreateCredential(resp, req, pathVariables)
+
+		})
+		AfterEach(func() {
+			requestBody = ""
 		})
 		Context("When appId is not present", func() {
 			BeforeEach(func() {
@@ -1630,28 +1636,57 @@ var _ = Describe("PublicApiHandler", func() {
 				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"AppId is required"}`))
 			})
 		})
-		Context("When failed to save custom metric credential to policydb", func() {
+		Context("When user provide credential", func() {
+			Context("When request body is invalid json", func() {
+				BeforeEach(func() {
+					requestBody = "not-json"
+				})
+				It("should fail with 400", func() {
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
+					Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"Invalid credential format"}`))
+				})
+			})
+			Context("When credential.username is not provided", func() {
+				BeforeEach(func() {
+					requestBody = `{"password":"password"}`
+				})
+				It("should fail with 400", func() {
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
+					Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"Username and password are both required"}`))
+				})
+			})
+			Context("When credential.password is not provided", func() {
+				BeforeEach(func() {
+					requestBody = `{"username":"username"}`
+				})
+				It("should fail with 400", func() {
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
+					Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"Username and password are both required"}`))
+				})
+			})
+		})
+		Context("When failed to save credential to policydb", func() {
 			BeforeEach(func() {
-				policydb.SaveCustomMetricsCredReturns(fmt.Errorf("sql db error"))
-				policydb.GetCustomMetricsCredsReturns(nil, sql.ErrNoRows)
+				policydb.SaveCredentialReturns(fmt.Errorf("sql db error"))
+				policydb.GetCredentialReturns(nil, sql.ErrNoRows)
 			})
 			It("should fails with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error creating custom metric credential"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error creating credential"}`))
 			})
 		})
 		Context("When successfully save data to policydb", func() {
 			BeforeEach(func() {
-				policydb.SaveCustomMetricsCredReturns(nil)
+				policydb.SaveCredentialReturns(nil)
 			})
 			It("should succeed with 200", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
 			})
 		})
 	})
-	Describe("DeleteCustomMetricsCredential", func() {
+	Describe("DeleteCredential", func() {
 		JustBeforeEach(func() {
-			handler.DeleteCustomMetricsCredential(resp, req, pathVariables)
+			handler.DeleteCredential(resp, req, pathVariables)
 		})
 		BeforeEach(func() {
 			pathVariables["appId"] = TEST_APP_ID
@@ -1666,18 +1701,18 @@ var _ = Describe("PublicApiHandler", func() {
 				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"AppId is required"}`))
 			})
 		})
-		Context("When failed to delete custom metric credential from policydb", func() {
+		Context("When failed to delete credential from policydb", func() {
 			BeforeEach(func() {
-				policydb.DeleteCustomMetricsCredReturns(fmt.Errorf("sql db error"))
+				policydb.DeleteCredentialReturns(fmt.Errorf("sql db error"))
 			})
 			It("should fails with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error deleting custom metric credential"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error deleting credential"}`))
 			})
 		})
 		Context("When successfully delete data from policydb", func() {
 			BeforeEach(func() {
-				policydb.DeleteCustomMetricsCredReturns(nil)
+				policydb.DeleteCredentialReturns(nil)
 			})
 			It("should succeed with 200", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
