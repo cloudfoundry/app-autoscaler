@@ -250,7 +250,7 @@ public class ScheduleManagerTest {
 		
 		RecurringScheduleEntity recurringSchedule = schedules.getRecurringSchedule().get(0);
 		recurringSchedule.setStartTime(TestDataSetupHelper.getZoneTimeWithOffset(-5));
-		recurringSchedule.setEndTime(TestDataSetupHelper.getZoneTimeWithOffset(-5));
+		recurringSchedule.setEndTime(TestDataSetupHelper.getZoneTimeWithOffset(5));
 	
 		RecurringScheduleEntity recurringScheduleEntity = new RecurringScheduleEntitiesBuilder(1, 0).setAppId(appId)
 				.setScheduleId().build().get(0);
@@ -279,7 +279,7 @@ public class ScheduleManagerTest {
 
 		RecurringScheduleEntity recurringSchedule = schedules.getRecurringSchedule().get(0);
 		recurringSchedule.setStartTime(TestDataSetupHelper.getZoneTimeWithOffset(-5));
-		recurringSchedule.setEndTime(TestDataSetupHelper.getZoneTimeWithOffset(-5));
+		recurringSchedule.setEndTime(TestDataSetupHelper.getZoneTimeWithOffset(5));
 		
 		RecurringScheduleEntity recurringScheduleEntity = new RecurringScheduleEntitiesBuilder(1, 0).setAppId(appId)
 				.setScheduleId().build().get(0);
@@ -308,7 +308,7 @@ public class ScheduleManagerTest {
 		
 		RecurringScheduleEntity recurringSchedule = schedules.getRecurringSchedule().get(0);
 		recurringSchedule.setStartTime(TestDataSetupHelper.getZoneTimeWithOffset(-5));
-		recurringSchedule.setEndTime(TestDataSetupHelper.getZoneTimeWithOffset(-5));
+		recurringSchedule.setEndTime(TestDataSetupHelper.getZoneTimeWithOffset(5));
 		recurringSchedule.setStartDate(TestDataSetupHelper.getZoneDateNow().plusDays(2));
 		
 		RecurringScheduleEntity recurringScheduleEntity = new RecurringScheduleEntitiesBuilder(1, 0).setAppId(appId)
