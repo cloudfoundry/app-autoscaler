@@ -67,5 +67,7 @@
         "certFile": "../test-certs/api_public.crt",
         "caCertFile": "../test-certs/autoscaler-ca.crt"
     },
+    "minBreachDurationSecs": 30,
+    "minCoolDownSecs": 30,
     "httpClientTimeout": 5000
 }
