@@ -263,7 +263,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 			Context("internal api", func() {
 				Context("Policies with schedules", func() {
 					It("creates a policy and associated schedules", func() {
-						policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
+						policyStr = setPolicyRecurringDate(readPolicyFromFile("fakePolicyWithSchedule.json"))
 
 						doAttachPolicy(appId, policyStr, http.StatusCreated, components.Ports[APIServer], httpClient)
 						checkApiServerContent(appId, policyStr, http.StatusOK, components.Ports[APIServer], httpClient)
@@ -294,7 +294,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 			Context("public api", func() {
 				Context("Policies with schedules", func() {
 					It("creates a policy and associated schedules", func() {
-						policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
+						policyStr = setPolicyRecurringDate(readPolicyFromFile("fakePolicyWithSchedule.json"))
 
 						doAttachPolicy(appId, policyStr, http.StatusCreated, components.Ports[APIPublicServer], httpClientForPublicApi)
 						checkApiServerContent(appId, policyStr, http.StatusOK, components.Ports[APIPublicServer], httpClientForPublicApi)
@@ -335,14 +335,14 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 				Context("Update policies with schedules", func() {
 					BeforeEach(func() {
 						//attach a policy first with 4 recurring and 2 specific_date schedules
-						policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
+						policyStr = setPolicyRecurringDate(readPolicyFromFile("fakePolicyWithSchedule.json"))
 
 						doAttachPolicy(appId, policyStr, http.StatusCreated, components.Ports[APIServer], httpClient)
 					})
 
 					It("updates the policy and schedules", func() {
 						//attach another policy with 3 recurring and 1 specific_date schedules
-						policyStr = readPolicyFromFile("fakePolicyWithScheduleAnother.json")
+						policyStr = setPolicyRecurringDate(readPolicyFromFile("fakePolicyWithScheduleAnother.json"))
 
 						doAttachPolicy(appId, policyStr, http.StatusOK, components.Ports[APIServer], httpClient)
 						checkApiServerContent(appId, policyStr, http.StatusOK, components.Ports[APIServer], httpClient)
@@ -355,14 +355,14 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 				Context("Update policies with schedules", func() {
 					BeforeEach(func() {
 						//attach a policy first with 4 recurring and 2 specific_date schedules
-						policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
+						policyStr = setPolicyRecurringDate(readPolicyFromFile("fakePolicyWithSchedule.json"))
 
 						doAttachPolicy(appId, policyStr, http.StatusCreated, components.Ports[APIPublicServer], httpClientForPublicApi)
 					})
 
 					It("updates the policy and schedules", func() {
 						//attach another policy with 3 recurring and 1 specific_date schedules
-						policyStr = readPolicyFromFile("fakePolicyWithScheduleAnother.json")
+						policyStr = setPolicyRecurringDate(readPolicyFromFile("fakePolicyWithScheduleAnother.json"))
 
 						doAttachPolicy(appId, policyStr, http.StatusOK, components.Ports[APIPublicServer], httpClientForPublicApi)
 						checkApiServerContent(appId, policyStr, http.StatusOK, components.Ports[APIPublicServer], httpClientForPublicApi)
@@ -445,7 +445,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 			Context("internal api", func() {
 				Context("Policies with schedules", func() {
 					It("creates a policy and associated schedules", func() {
-						policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
+						policyStr = setPolicyRecurringDate(readPolicyFromFile("fakePolicyWithSchedule.json"))
 
 						doAttachPolicy(appId, policyStr, http.StatusCreated, components.Ports[APIServer], httpClient)
 						checkApiServerContent(appId, policyStr, http.StatusOK, components.Ports[APIServer], httpClient)
@@ -477,7 +477,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 			Context("public api", func() {
 				Context("Policies with schedules", func() {
 					It("creates a policy and associated schedules", func() {
-						policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
+						policyStr = setPolicyRecurringDate(readPolicyFromFile("fakePolicyWithSchedule.json"))
 
 						doAttachPolicy(appId, policyStr, http.StatusCreated, components.Ports[APIPublicServer], httpClientForPublicApi)
 						checkApiServerContent(appId, policyStr, http.StatusOK, components.Ports[APIPublicServer], httpClientForPublicApi)
@@ -513,13 +513,13 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 				Context("Update policies with schedules", func() {
 					BeforeEach(func() {
 						//attach a policy first with 4 recurring and 2 specific_date schedules
-						policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
+						policyStr = setPolicyRecurringDate(readPolicyFromFile("fakePolicyWithSchedule.json"))
 						doAttachPolicy(appId, policyStr, http.StatusCreated, components.Ports[APIServer], httpClient)
 					})
 
 					It("updates the policy and schedules", func() {
 						//attach another policy with 3 recurring and 1 specific_date schedules
-						policyStr = readPolicyFromFile("fakePolicyWithScheduleAnother.json")
+						policyStr = setPolicyRecurringDate(readPolicyFromFile("fakePolicyWithScheduleAnother.json"))
 
 						doAttachPolicy(appId, policyStr, http.StatusOK, components.Ports[APIServer], httpClient)
 						checkApiServerContent(appId, policyStr, http.StatusOK, components.Ports[APIServer], httpClient)
@@ -532,13 +532,13 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 				Context("Update policies with schedules", func() {
 					BeforeEach(func() {
 						//attach a policy first with 4 recurring and 2 specific_date schedules
-						policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
+						policyStr = setPolicyRecurringDate(readPolicyFromFile("fakePolicyWithSchedule.json"))
 						doAttachPolicy(appId, policyStr, http.StatusCreated, components.Ports[APIPublicServer], httpClientForPublicApi)
 					})
 
 					It("updates the policy and schedules", func() {
 						//attach another policy with 3 recurring and 1 specific_date schedules
-						policyStr = readPolicyFromFile("fakePolicyWithScheduleAnother.json")
+						policyStr = setPolicyRecurringDate(readPolicyFromFile("fakePolicyWithScheduleAnother.json"))
 
 						doAttachPolicy(appId, policyStr, http.StatusOK, components.Ports[APIPublicServer], httpClientForPublicApi)
 						checkApiServerContent(appId, policyStr, http.StatusOK, components.Ports[APIPublicServer], httpClientForPublicApi)
