@@ -117,7 +117,7 @@ var _ = Describe("Integration_Operator_Others", func() {
 		Describe("Synchronize policy DB and scheduler", func() {
 
 			BeforeEach(func() {
-				policyStr = string(readPolicyFromFile("fakePolicyWithSchedule.json"))
+				policyStr = string(setPolicyRecurringDate(readPolicyFromFile("fakePolicyWithSchedule.json")))
 			})
 
 			AfterEach(func() {
