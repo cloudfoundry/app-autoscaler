@@ -255,7 +255,7 @@ public class ScheduleManager {
 				 firstValidTime = expression.getNextValidTimeAfter(Date.from(LocalDate.now(timezone).atStartOfDay(timezone).toInstant().minusSeconds(60)));
 			}
 			
-			if (!firstValidTime.toInstant().atZone(timezone).toLocalDateTime().isAfter(LocalDateTime.now(timezone))){
+			if (firstValidTime.toInstant().atZone(timezone).toLocalDateTime().isBefore(LocalDateTime.now(timezone))){
 				if (recurringScheduleEntity.getStartDate() == null || 
 					!(recurringScheduleEntity.getStartDate().atStartOfDay(timezone).isAfter(ZonedDateTime.now(timezone)))){
 					compenstatorySchedule = new SpecificDateScheduleEntity();
