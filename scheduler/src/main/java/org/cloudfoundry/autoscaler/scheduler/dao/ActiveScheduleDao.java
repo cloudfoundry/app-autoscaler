@@ -1,8 +1,8 @@
 package org.cloudfoundry.autoscaler.scheduler.dao;
 
-import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
-
 import java.util.List;
+
+import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
 
 public interface ActiveScheduleDao {
 

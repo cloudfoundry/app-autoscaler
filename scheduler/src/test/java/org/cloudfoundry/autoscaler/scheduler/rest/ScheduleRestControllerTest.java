@@ -14,7 +14,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.io.IOException;
 import java.text.DateFormat;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.cloudfoundry.autoscaler.scheduler.dao.ActiveScheduleDao;
@@ -49,8 +48,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import junit.framework.Assert;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
