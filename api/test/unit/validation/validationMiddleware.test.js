@@ -23,7 +23,6 @@ var validationMiddleware = require('../../../lib/validation/validationMiddleware
 var nock = require('nock');
 var schedulerURI = testSetting.scheduler.uri;
 
-var schemaValidator = require('../../../lib/validation/schemaValidator');
 var rewire = require('rewire');
 var schemaValidatorPrivate = rewire('../../../lib/validation/schemaValidator');
 
@@ -215,8 +214,8 @@ describe('Validate Policy JSON Schema structure', function () {
 
   context('scaling rule schema', function () {
 
-    var requiredProperties = schemaValidatorPrivate.__get__('getScalingRuleSchema')().required;
-    var allProperties = Object.keys(schemaValidatorPrivate.__get__('getScalingRuleSchema')().properties);
+    var requiredProperties = schemaValidatorPrivate.__get__('getScalingRuleSchema')(settings).required;
+    var allProperties = Object.keys(schemaValidatorPrivate.__get__('getScalingRuleSchema')(settings).properties);
     var validMetricTypes = ['memoryutil','memoryused','responsetime','throughput','custom_metric'];
     var validMetricThresholdSettings = [
       { metric_type: "memoryutil", thresholds: [30, 100] },
@@ -225,8 +224,8 @@ describe('Validate Policy JSON Schema structure', function () {
       { metric_type: "throughput", thresholds: [30, 100, 1000] },
     ];
     var validDurationSettings = [
-      { duration_type: "breach_duration_secs", values: [60, 1800, 3600] },
-      { duration_type: "cool_down_secs", values: [60, 1800, 3600] }
+      { duration_type: "breach_duration_secs", values: [30, 1800, 3600] },
+      { duration_type: "cool_down_secs", values: [30, 1800, 3600] }
     ];
     var validOperator = schemaValidatorPrivate.__get__('getValidOperators')();
     var validAdjustmentPattern = ['-1', '+1', '-19', '+19', '-10000', '+99999','-10%','+10%'];
@@ -238,8 +237,8 @@ describe('Validate Policy JSON Schema structure', function () {
       { metric_type: "throughput", thresholds: [-1, 0] },
     ];
     var invalidDurationSettings = [
-      { duration_type: "breach_duration_secs", values: [30, 59, 3601] },
-      { duration_type: "cool_down_secs", values: [30, 59, 3601] }
+      { duration_type: "breach_duration_secs", values: [1, 29, 3601] },
+      { duration_type: "cool_down_secs", values: [1, 29, 3601] }
     ];
     var invalidAdjustmentPattern = ['0', '1', '+09', '|10', '-8%%'];
 
@@ -445,9 +444,9 @@ describe('Validate Policy JSON Schema structure', function () {
                   expect(result.statusCode).to.equal(400);
                   expect(result.body.error).to.not.be.null;
                   expect(result.body.error[0].property).to.equal('instance.scaling_rules[0].' + durationType);
-                  expect(result.body.error[0].message === 'must have a minimum value of 60' ||
+                  expect(result.body.error[0].message === 'must have a minimum value of 30' ||
                     result.body.error[0].message === 'must have a maximum value of 3600').to.equal(true);
-                  expect(result.body.error[0].stack === 'instance.scaling_rules[0].' + durationType + ' must have a minimum value of 60' ||
+                  expect(result.body.error[0].stack === 'instance.scaling_rules[0].' + durationType + ' must have a minimum value of 30' ||
                     result.body.error[0].stack === 'instance.scaling_rules[0].' + durationType + ' must have a maximum value of 3600').to.equal(true);
                   done();
                 });

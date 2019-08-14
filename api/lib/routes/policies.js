@@ -5,13 +5,13 @@ module.exports = function(settings, models){
   var router = express.Router();
   var logger = require('../log/logger');
   var HttpStatus = require('http-status-codes');
-  var validationMiddleWare = require('../validation/validationMiddleware');
+  var validationMiddleWare = require('../validation/validationMiddleware')(settings);
   var policyHelper = require('./policyHelper')(models);
   var schedulerUtil = require('../utils/schedulerUtils')(settings.scheduler, settings.httpClientTimeout);
   var async = require('async');
   var uuidV4 = require('uuid/v4');
 
-  router.put('/:app_id/policy',validationMiddleWare,function(req, res) {
+  router.put('/:app_id/policy',validationMiddleWare.Validate,function(req, res) {
     logger.info('Policy creation request received',{ 'app id': req.params.app_id });
     req.query.policy_guid = uuidV4();
     logger.info('Policy guid ' + req.query.policy_guid);

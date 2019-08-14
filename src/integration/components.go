@@ -123,9 +123,11 @@ type APIServerConfig struct {
 	EventGeneratorClient   EventGeneratorClient   `json:"eventGenerator"`
 	ServiceOffering        ServiceOffering        `json:"serviceOffering"`
 
-	TLS               models.TLSCerts `json:"tls"`
-	PublicTLS         models.TLSCerts `json:"publicTls"`
-	HttpClientTimeout int             `json:"httpClientTimeout"`
+	TLS                   models.TLSCerts `json:"tls"`
+	PublicTLS             models.TLSCerts `json:"publicTls"`
+	HttpClientTimeout     int             `json:"httpClientTimeout"`
+	MinBreachDurationSecs int             `json:"minBreachDurationSecs"`
+	MinCoolDownSecs       int             `json:"minCoolDownSecs"`
 }
 
 func (components *Components) ServiceBroker(confPath string, argv ...string) *ginkgomon.Runner {
@@ -311,7 +313,7 @@ func (components *Components) PrepareServiceBrokerConfig(publicPort int, interna
 	return cfgFile.Name()
 }
 
-func (components *Components) PrepareApiServerConfig(port int, publicPort int, skipSSLValidation bool, cacheTTL int, cfApi string, dbUri string, schedulerUri string, scalingEngineUri string, metricsCollectorUri string, eventGeneratorUri string, serviceBrokerUri string, serviceOfferingEnabled bool, httpClientTimeout time.Duration, tmpDir string) string {
+func (components *Components) PrepareApiServerConfig(port int, publicPort int, skipSSLValidation bool, cacheTTL int, cfApi string, dbUri string, schedulerUri string, scalingEngineUri string, metricsCollectorUri string, eventGeneratorUri string, serviceBrokerUri string, serviceOfferingEnabled bool, httpClientTimeout time.Duration, minBreachDurationSecs int, minCoolDownSecs int, tmpDir string) string {
 
 	apiConfig := APIServerConfig{
 		Port:              port,
@@ -385,7 +387,9 @@ func (components *Components) PrepareApiServerConfig(port int, publicPort int, s
 			CertFile:   filepath.Join(testCertDir, "api_public.crt"),
 			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 		},
-		HttpClientTimeout: int(httpClientTimeout / time.Millisecond),
+		HttpClientTimeout:     int(httpClientTimeout / time.Millisecond),
+		MinBreachDurationSecs: minBreachDurationSecs,
+		MinCoolDownSecs:       minCoolDownSecs,
 	}
 
 	cfgFile, err := ioutil.TempFile(tmpDir, APIServer)
