@@ -7,8 +7,10 @@ import (
 	"io/ioutil"
 	"strings"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/xeipuuv/gojsonschema"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 
 	"autoscaler/db"
 	"autoscaler/helpers"
@@ -66,7 +68,9 @@ type Config struct {
 	PublicApiServer      ServerConfig           `yaml:"public_api_server"`
 	DB                   DBConfig               `yaml:"db"`
 	BrokerUsername       string                 `yaml:"broker_username"`
+	BrokerUsernameHash   string                 `yaml:"broker_username_hash"`
 	BrokerPassword       string                 `yaml:"broker_password"`
+	BrokerPasswordHash   string                 `yaml:"broker_password_hash"`
 	CatalogPath          string                 `yaml:"catalog_path"`
 	CatalogSchemaPath    string                 `yaml:"catalog_schema_path"`
 	DashboardRedirectURI string                 `yaml:"dashboard_redirect_uri"`
@@ -139,11 +143,27 @@ func (c *Config) Validate() error {
 		if c.DB.BindingDB.URL == "" {
 			return fmt.Errorf("Configuration error: BindingDB URL is empty")
 		}
-		if c.BrokerUsername == "" {
-			return fmt.Errorf("Configuration error: BrokerUsername is empty")
+		if c.BrokerUsername == "" && c.BrokerUsernameHash == "" {
+			return fmt.Errorf("Configuration error: both broker_username and broker_username_hash are empty, please provide one of them")
 		}
-		if c.BrokerPassword == "" {
-			return fmt.Errorf("Configuration error: BrokerPassword is empty")
+		if c.BrokerUsername != "" && c.BrokerUsernameHash != "" {
+			return fmt.Errorf("Configuration error: both broker_username and broker_username_hash are set, please provide only one of them")
+		}
+		if c.BrokerUsernameHash != "" {
+			if _, err := bcrypt.Cost([]byte(c.BrokerUsernameHash)); err != nil {
+				return fmt.Errorf("Configuration error: broker_username_hash is not a valid bcrypt hash")
+			}
+		}
+		if c.BrokerPassword == "" && c.BrokerPasswordHash == "" {
+			return fmt.Errorf("Configuration error: both broker_password and broker_password_hash are empty, please provide one of them")
+		}
+		if c.BrokerPassword != "" && c.BrokerPasswordHash != "" {
+			return fmt.Errorf("Configuration error: both broker_password and broker_password_hash are set, please provide only one of them")
+		}
+		if c.BrokerPasswordHash != "" {
+			if _, err := bcrypt.Cost([]byte(c.BrokerPasswordHash)); err != nil {
+				return fmt.Errorf("Configuration error: broker_password_hash is not a valid bcrypt hash")
+			}
 		}
 		if c.CatalogSchemaPath == "" {
 			return fmt.Errorf("Configuration error: CatalogSchemaPath is empty")
