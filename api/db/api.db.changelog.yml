@@ -11,6 +11,11 @@ databaseChangeLog:
    - changeSet:
       id: 1
       author: pradyutsarma
+      preConditions:
+      - onFail: MARK_RAN
+      - not:
+        - tableExists:
+            tableName: policy_json
       changes:
         - createTable:
             tableName: policy_json
@@ -44,6 +49,11 @@ databaseChangeLog:
    - changeSet:
       id: 3
       author: paltanmoy
+      preConditions:
+      - onFail: MARK_RAN
+      - not:
+        - tableExists:
+            tableName: credentials
       changes:
         - createTable:
             tableName: credentials
