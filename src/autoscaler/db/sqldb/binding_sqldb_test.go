@@ -23,6 +23,7 @@ var _ = Describe("BindingSqldb", func() {
 		testBindingId  string = "test-binding-id"
 		testAppId      string = "test-app-id"
 		testOrgGuid    string = "test-org-guid"
+		testOrgGuid2   string = "test-org-guid-2"
 		testSpaceGuid  string = "test-space-guid"
 	)
 
@@ -96,6 +97,17 @@ var _ = Describe("BindingSqldb", func() {
 				Expect(err).To(Equal(db.ErrAlreadyExists))
 			})
 		})
+		Context("When a conflicting instance exists", func() {
+			BeforeEach(func() {
+				err = bdb.CreateServiceInstance(testInstanceId, testOrgGuid2, testSpaceGuid)
+				Expect(err).NotTo(HaveOccurred())
+			})
+			It("should error", func() {
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(Equal(db.ErrConflict))
+			})
+		})
+
 	})
 
 	Describe("DeleteServiceInstance", func() {

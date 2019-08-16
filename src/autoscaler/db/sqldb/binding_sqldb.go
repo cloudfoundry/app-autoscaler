@@ -51,7 +51,7 @@ func (bdb *BindingSQLDB) Close() error {
 }
 
 func (bdb *BindingSQLDB) CreateServiceInstance(serviceInstanceId string, orgId string, spaceId string) error {
-	query := "SELECT FROM service_instance WHERE service_instance_id = $1"
+	query := "SELECT org_id, space_id FROM service_instance WHERE service_instance_id = $1"
 	rows, err := bdb.sqldb.Query(query, serviceInstanceId)
 	if err != nil {
 		bdb.logger.Error("create-service-instance", err, lager.Data{"query": query, "serviceinstanceid": serviceInstanceId, "orgid": orgId, "spaceid": spaceId})
@@ -59,8 +59,20 @@ func (bdb *BindingSQLDB) CreateServiceInstance(serviceInstanceId string, orgId s
 	}
 
 	if rows.Next() {
+		var (
+			existingOrgId   string
+			existingSpaceId string
+		)
+		if err := rows.Scan(&existingOrgId, &existingSpaceId); err != nil {
+			bdb.logger.Error("create-service-instance", err, lager.Data{"query": query, "serviceinstanceid": serviceInstanceId, "orgid": orgId, "spaceid": spaceId})
+		}
 		rows.Close()
-		return db.ErrAlreadyExists
+		if existingOrgId == orgId && existingSpaceId == spaceId {
+			return db.ErrAlreadyExists
+		} else {
+			return db.ErrConflict
+		}
+
 	}
 	rows.Close()
 

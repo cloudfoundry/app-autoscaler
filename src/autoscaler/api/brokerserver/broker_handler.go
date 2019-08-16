@@ -80,24 +80,27 @@ func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	err = h.bindingdb.CreateServiceInstance(instanceId, body.OrgGUID, body.SpaceGUID)
-	if err != nil {
-		if err == db.ErrAlreadyExists {
-			h.logger.Error("failed to create service instance: service instance already exists", err, lager.Data{"instanaceId": instanceId, "orgGuid": body.OrgGUID, "spaceGuid": body.SpaceGUID})
-			writeErrorResponse(w, http.StatusConflict, "Service instance already exists")
-			return
+	successResponse := func() {
+		if h.conf.DashboardRedirectURI == "" {
+			w.Write([]byte("{}"))
+		} else {
+			w.Write([]byte(fmt.Sprintf("{\"dashboard_url\":\"%s\"}", GetDashboardURL(h.conf, instanceId))))
 		}
-		h.logger.Error("failed to create service instance", err, lager.Data{"instanaceId": instanceId, "orgGuid": body.OrgGUID, "spaceGuid": body.SpaceGUID})
-		writeErrorResponse(w, http.StatusInternalServerError, "Error creating service instance")
-		return
 	}
 
-	if h.conf.DashboardRedirectURI == "" {
+	switch err := h.bindingdb.CreateServiceInstance(instanceId, body.OrgGUID, body.SpaceGUID); err {
+	case nil:
 		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte("{}"))
-	} else {
-		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte(fmt.Sprintf("{\"dashboard_url\":\"%s\"}", GetDashboardURL(h.conf, instanceId))))
+		successResponse()
+	case db.ErrAlreadyExists:
+		h.logger.Error("failed to create service instance: service instance already exists", err, lager.Data{"instanceId": instanceId, "orgGuid": body.OrgGUID, "spaceGuid": body.SpaceGUID})
+		successResponse()
+	case db.ErrConflict:
+		h.logger.Error("failed to create service instance: conflicting service instance exists", err, lager.Data{"instanceId": instanceId, "orgGuid": body.OrgGUID, "spaceGuid": body.SpaceGUID})
+		writeErrorResponse(w, http.StatusConflict, fmt.Sprintf("Service instance with instance_id \"%s\" already exists with different parameters", instanceId))
+	default:
+		h.logger.Error("failed to create service instance", err, lager.Data{"instanceId": instanceId, "orgGuid": body.OrgGUID, "spaceGuid": body.SpaceGUID})
+		writeErrorResponse(w, http.StatusInternalServerError, "Error creating service instance")
 	}
 }
 
