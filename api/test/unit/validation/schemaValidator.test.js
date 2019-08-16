@@ -1,10 +1,13 @@
 'use strict';
 
 var expect = require("chai").expect;
-var logger = require('../../../lib/log/logger');
-var schemaValidator = require('../../../lib/validation/schemaValidator');
+var path = require('path');
+var fs = require('fs');
+var settings = require(path.join(__dirname, '../../../lib/config/setting.js'))((JSON.parse(
+  fs.readFileSync(path.join(__dirname, '../../../config/settings.json'), 'utf8'))));
 var rewire = require('rewire');
 var schemaValidatorPrivate = rewire('../../../lib/validation/schemaValidator');
+
 var fs = require('fs');
 var Ajv = require('ajv');
 var validator = new Ajv({allErrors: true});
@@ -61,15 +64,15 @@ describe('Validating Policy JSON schema construction',function(){
   });
   
   it('should validate the getScalingRuleSchema successfully',function(){
-    var schema = schemaValidatorPrivate.__get__('getScalingRuleSchema')();
+    var schema = schemaValidatorPrivate.__get__('getScalingRuleSchema')(settings);
     var validOperator = schemaValidatorPrivate.__get__('getValidOperators')();
     var adjustmentPattern = schemaValidatorPrivate.__get__('getAdjustmentPattern')();
     expect(schema.id).to.equal('/scaling_rules');
     expect(schema.properties.metric_type).to.deep.equal({ 'type':'string','pattern': '^[a-zA-Z0-9_]+$' });
-    expect(schema.properties.breach_duration_secs).to.deep.equal({ 'type':'integer','minimum': 60,'maximum': 3600 });
+    expect(schema.properties.breach_duration_secs).to.deep.equal({ 'type':'integer','minimum': 30,'maximum': 3600 });
     expect(schema.properties.threshold).to.deep.equal({ 'type':'integer'});
     expect(schema.properties.operator).to.deep.equal({ 'type':'string','enum':validOperator });
-    expect(schema.properties.cool_down_secs).to.deep.equal({ 'type':'integer','minimum': 60,'maximum': 3600 });
+    expect(schema.properties.cool_down_secs).to.deep.equal({ 'type':'integer','minimum': 30,'maximum': 3600 });
     expect(schema.properties.adjustment).to.deep.equal({ 'type':'string','pattern':adjustmentPattern });
     expect(schema.required).to.deep.equal(['metric_type','threshold','operator','adjustment']);
   });
@@ -119,7 +122,7 @@ describe('Validating policy JSON schema against sample policy',function(){
     specific_date_schema = schemaValidatorPrivate.__get__('getSpecificDateSchema')();
     recurring_schedule_schema = schemaValidatorPrivate.__get__('getRecurringSchema')();
     schedules_schema = schemaValidatorPrivate.__get__('getScheduleSchema')();
-    scaling_rules_schema = schemaValidatorPrivate.__get__('getScalingRuleSchema')();
+    scaling_rules_schema = schemaValidatorPrivate.__get__('getScalingRuleSchema')(settings);
 
     // Custom formats recreated through regular expression for testing purpose
     validator.addFormat('timeZoneFormat', /^[a-zA-Z0-9/]*$/i);
