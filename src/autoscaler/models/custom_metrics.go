@@ -9,7 +9,6 @@ type CustomMetric struct {
 }
 
 type MetricsConsumer struct {
-	AppGUID       string          `json:"app_guid"`
 	InstanceIndex uint32          `json:"instance_index"`
 	CustomMetrics []*CustomMetric `json:"metrics"`
 }
@@ -30,12 +29,12 @@ type Credential struct {
 //     }
 // }
 
-type CustomMetrics struct {
+type CustomMetricsCredentials struct {
 	*Credential
 	URL string `json:"url"`
 }
 type Credentials struct {
-	CustomMetrics CustomMetrics `json:"custom_metrics"`
+	CustomMetrics CustomMetricsCredentials `json:"custom_metrics"`
 }
 type CredentialResponse struct {
 	Credentials Credentials `json:"credentials"`

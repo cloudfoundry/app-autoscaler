@@ -66,6 +66,15 @@ type FakeBindingDB struct {
 	checkServiceBindingReturns struct {
 		result1 bool
 	}
+	GetAppIdByBindingIdStub        func(bindingId string) (string, error)
+	getAppIdByBindingIdMutex       sync.RWMutex
+	getAppIdByBindingIdArgsForCall []struct {
+		bindingId string
+	}
+	getAppIdByBindingIdReturns struct {
+		result1 string
+		result2 error
+	}
 	CloseStub        func() error
 	closeMutex       sync.RWMutex
 	closeArgsForCall []struct{}
@@ -296,6 +305,39 @@ func (fake *FakeBindingDB) CheckServiceBindingReturns(result1 bool) {
 	}{result1}
 }
 
+func (fake *FakeBindingDB) GetAppIdByBindingId(bindingId string) (string, error) {
+	fake.getAppIdByBindingIdMutex.Lock()
+	fake.getAppIdByBindingIdArgsForCall = append(fake.getAppIdByBindingIdArgsForCall, struct {
+		bindingId string
+	}{bindingId})
+	fake.recordInvocation("GetAppIdByBindingId", []interface{}{bindingId})
+	fake.getAppIdByBindingIdMutex.Unlock()
+	if fake.GetAppIdByBindingIdStub != nil {
+		return fake.GetAppIdByBindingIdStub(bindingId)
+	}
+	return fake.getAppIdByBindingIdReturns.result1, fake.getAppIdByBindingIdReturns.result2
+}
+
+func (fake *FakeBindingDB) GetAppIdByBindingIdCallCount() int {
+	fake.getAppIdByBindingIdMutex.RLock()
+	defer fake.getAppIdByBindingIdMutex.RUnlock()
+	return len(fake.getAppIdByBindingIdArgsForCall)
+}
+
+func (fake *FakeBindingDB) GetAppIdByBindingIdArgsForCall(i int) string {
+	fake.getAppIdByBindingIdMutex.RLock()
+	defer fake.getAppIdByBindingIdMutex.RUnlock()
+	return fake.getAppIdByBindingIdArgsForCall[i].bindingId
+}
+
+func (fake *FakeBindingDB) GetAppIdByBindingIdReturns(result1 string, result2 error) {
+	fake.GetAppIdByBindingIdStub = nil
+	fake.getAppIdByBindingIdReturns = struct {
+		result1 string
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeBindingDB) Close() error {
 	fake.closeMutex.Lock()
 	fake.closeArgsForCall = append(fake.closeArgsForCall, struct{}{})
@@ -337,6 +379,8 @@ func (fake *FakeBindingDB) Invocations() map[string][][]interface{} {
 	defer fake.deleteServiceBindingByAppIdMutex.RUnlock()
 	fake.checkServiceBindingMutex.RLock()
 	defer fake.checkServiceBindingMutex.RUnlock()
+	fake.getAppIdByBindingIdMutex.RLock()
+	defer fake.getAppIdByBindingIdMutex.RUnlock()
 	fake.closeMutex.RLock()
 	defer fake.closeMutex.RUnlock()
 	return fake.invocations

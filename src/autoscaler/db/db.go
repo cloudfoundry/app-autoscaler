@@ -63,6 +63,7 @@ type BindingDB interface {
 	DeleteServiceBinding(bindingId string) error
 	DeleteServiceBindingByAppId(appId string) error
 	CheckServiceBinding(appId string) bool
+	GetAppIdByBindingId(bindingId string) (string, error)
 	Close() error
 }
 

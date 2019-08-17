@@ -1,6 +1,7 @@
 package brokerserver
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -56,17 +57,25 @@ func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Req
 	instanceId := vars["instanceId"]
 
 	body := &models.InstanceCreationRequestBody{}
-	err := json.NewDecoder(r.Body).Decode(&body)
+	bodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		h.logger.Error("failed to create service instance when trying to read request body", err)
+		h.logger.Error("failed to read service provision request body", err, lager.Data{"instanceId": instanceId})
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Failed to read request body"})
+		return
+	}
+	err = json.Unmarshal(bodyBytes, body)
+	if err != nil {
+		h.logger.Error("failed to unmarshal service provision body", err, lager.Data{"instanceId": instanceId, "body": string(bodyBytes)})
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 			Code:    "Bad Request",
 			Message: "Invalid request body format"})
 		return
 	}
 
-	if instanceId == "" || body.OrgGUID == "" || body.SpaceGUID == "" || body.ServiceID == "" || body.PlanID == "" {
-		h.logger.Error("failed to create service instance when trying to get mandatory data", nil, lager.Data{"instanceId": instanceId, "orgGuid": body.OrgGUID, "spaceGuid": body.SpaceGUID, "serviceId": body.ServiceID, "planId": body.PlanID})
+	if instanceId == "" || body.OrgGUID == "" || body.SpaceGUID == "" {
+		h.logger.Error("failed to create service instance when trying to get mandatory data", nil, lager.Data{"instanceId": instanceId, "orgGuid": body.OrgGUID, "spaceGuid": body.SpaceGUID})
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 			Code:    "Bad Request",
 			Message: "Malformed or missing mandatory data",
@@ -78,7 +87,10 @@ func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Req
 	if err != nil {
 		if err == db.ErrAlreadyExists {
 			h.logger.Error("failed to create service instance: service instance already exists", err, lager.Data{"instanaceId": instanceId, "orgGuid": body.OrgGUID, "spaceGuid": body.SpaceGUID})
-			w.Write(nil)
+			handlers.WriteJSONResponse(w, http.StatusConflict, models.ErrorResponse{
+				Code:    "Conflict",
+				Message: "Service instance already exists",
+			})
 			return
 		}
 		h.logger.Error("failed to create service instance", err, lager.Data{"instanaceId": instanceId, "orgGuid": body.OrgGUID, "spaceGuid": body.SpaceGUID})
@@ -90,7 +102,7 @@ func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Req
 
 	if h.conf.DashboardRedirectURI == "" {
 		w.WriteHeader(http.StatusCreated)
-		w.Write(nil)
+		w.Write([]byte("{}"))
 	} else {
 		w.WriteHeader(http.StatusCreated)
 		w.Write([]byte(fmt.Sprintf("{\"dashboard_url\":\"%s\"}", GetDashboardURL(h.conf, instanceId))))
@@ -99,20 +111,9 @@ func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Req
 
 func (h *BrokerHandler) DeleteServiceInstance(w http.ResponseWriter, r *http.Request, vars map[string]string) {
 	instanceId := vars["instanceId"]
-
-	body := &models.BrokerCommonRequestBody{}
-	err := json.NewDecoder(r.Body).Decode(&body)
-	if err != nil {
-		h.logger.Error("failed to delete service instance when trying to read request body", err)
-		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Code:    "Bad Request",
-			Message: "Invalid request body format"})
-		return
-	}
-
-	if instanceId == "" || body.ServiceID == "" || body.PlanID == "" {
+	if instanceId == "" {
 		h.logger.Error("failed to delete service instance when trying to get mandatory data", nil,
-			lager.Data{"instanceId": instanceId, "serviceId": body.ServiceID, "planId": body.PlanID})
+			lager.Data{"instanceId": instanceId})
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 			Code:    "Bad Request",
 			Message: "Malformed or missing mandatory data",
@@ -120,7 +121,7 @@ func (h *BrokerHandler) DeleteServiceInstance(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	err = h.bindingdb.DeleteServiceInstance(instanceId)
+	err := h.bindingdb.DeleteServiceInstance(instanceId)
 	if err != nil {
 		if err == db.ErrDoesNotExist {
 			h.logger.Error("failed to delete service instance: service instance does not exist", err,
@@ -146,17 +147,25 @@ func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Reque
 	bindingId := vars["bindingId"]
 	var policyGuid *uuid.UUID
 	body := &models.BindingRequestBody{}
-	err := json.NewDecoder(r.Body).Decode(&body)
+	bodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		h.logger.Error("failed to create binding when trying to read request body", err)
+		h.logger.Error("failed to read bind request body", err, lager.Data{"instanceId": instanceId, "bindingId": bindingId})
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Failed to read request body"})
+		return
+	}
+	err = json.Unmarshal(bodyBytes, body)
+	if err != nil {
+		h.logger.Error("failed to unmarshal bind body", err, lager.Data{"instanceId": instanceId, "bindingId": bindingId, "body": string(bodyBytes)})
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 			Code:    "Bad Request",
 			Message: "Invalid request body format"})
 		return
 	}
 
-	if body.AppID == "" || instanceId == "" || bindingId == "" || body.ServiceID == "" || body.PlanID == "" {
-		h.logger.Error("failed to create binding when trying to get mandatory data", nil, lager.Data{"appId": body.AppID, "instanceId": instanceId, "bindingId": bindingId, "serviceId": body.ServiceID, "planId": body.PlanID})
+	if body.AppID == "" || instanceId == "" || bindingId == "" {
+		h.logger.Error("failed to create binding when trying to get mandatory data", nil, lager.Data{"appId": body.AppID, "instanceId": instanceId, "bindingId": bindingId})
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 			Code:    "Bad Request",
 			Message: "Malformed or missing mandatory data",
@@ -239,7 +248,7 @@ func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Reque
 	}
 	handlers.WriteJSONResponse(w, http.StatusCreated, models.CredentialResponse{
 		Credentials: models.Credentials{
-			CustomMetrics: models.CustomMetrics{
+			CustomMetrics: models.CustomMetricsCredentials{
 				Credential: cred,
 				URL:        h.conf.MetricsForwarder.MetricsForwarderUrl,
 			},
@@ -251,42 +260,47 @@ func (h *BrokerHandler) UnbindServiceInstance(w http.ResponseWriter, r *http.Req
 	instanceId := vars["instanceId"]
 	bindingId := vars["bindingId"]
 
-	body := &models.UnbindingRequestBody{}
-	err := json.NewDecoder(r.Body).Decode(&body)
-	if err != nil {
-		h.logger.Error("failed to read request body:delete binding", err)
-		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Code:    "Bad Request",
-			Message: "Invalid request body format"})
-		return
-	}
-
-	if instanceId == "" || bindingId == "" || body.ServiceID == "" || body.PlanID == "" {
-		h.logger.Error("failed to delete binding when trying to get mandatory data", nil, lager.Data{"appId": body.AppID, "instanceId": instanceId, "bindingId": bindingId, "serviceId": body.ServiceID, "planId": body.PlanID})
+	if instanceId == "" || bindingId == "" {
+		h.logger.Error("failed to delete binding when trying to get mandatory data", nil, lager.Data{"instanceId": instanceId, "bindingId": bindingId})
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 			Code:    "Bad Request",
 			Message: "Malformed or missing mandatory data",
 		})
 		return
 	}
-
-	h.logger.Info("deleting policy json", lager.Data{"appId": body.AppID})
-	err = h.policydb.DeletePolicy(body.AppID)
+	appId, err := h.bindingdb.GetAppIdByBindingId(bindingId)
+	if err == sql.ErrNoRows {
+		h.logger.Info("binding does not exist", nil, lager.Data{"instanceId": instanceId, "bindingId": bindingId})
+		handlers.WriteJSONResponse(w, http.StatusGone, models.ErrorResponse{
+			Code:    "Gone",
+			Message: "Binding does not exist",
+		})
+		return
+	}
 	if err != nil {
-		h.logger.Error("failed to delete policy for unbinding", err, lager.Data{"appId": body.AppID})
+		h.logger.Error("failed to get appId by bindingId", err, lager.Data{"instanceId": instanceId, "bindingId": bindingId})
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Error deleting service binding"})
+		return
+	}
+	h.logger.Info("deleting policy json", lager.Data{"appId": appId})
+	err = h.policydb.DeletePolicy(appId)
+	if err != nil {
+		h.logger.Error("failed to delete policy for unbinding", err, lager.Data{"appId": appId})
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 			Code:    "Interal-Server-Error",
 			Message: "Error deleting policy"})
 		return
 	}
-	h.logger.Info("deleting schedules", lager.Data{"appId": body.AppID})
-	err = h.schedulerUtil.DeleteSchedule(body.AppID)
+	h.logger.Info("deleting schedules", lager.Data{"appId": appId})
+	err = h.schedulerUtil.DeleteSchedule(appId)
 	if err != nil {
-		h.logger.Info("failed to delete schedules for unbinding", lager.Data{"appId": body.AppID})
+		h.logger.Info("failed to delete schedules for unbinding", lager.Data{"appId": appId})
 	}
 	err = h.bindingdb.DeleteServiceBinding(bindingId)
 	if err != nil {
-		h.logger.Error("failed to delete binding", err, lager.Data{"bindingId": bindingId, "appId": body.AppID})
+		h.logger.Error("failed to delete binding", err, lager.Data{"bindingId": bindingId, "appId": appId})
 		if err == db.ErrDoesNotExist {
 			handlers.WriteJSONResponse(w, http.StatusGone, models.ErrorResponse{
 				Code:    "Gone",
@@ -298,9 +312,9 @@ func (h *BrokerHandler) UnbindServiceInstance(w http.ResponseWriter, r *http.Req
 			Message: "Error deleting service binding"})
 		return
 	}
-	err = custom_metrics_cred_helper.DeleteCredential(body.AppID, h.policydb, custom_metrics_cred_helper.MaxRetry)
+	err = custom_metrics_cred_helper.DeleteCredential(appId, h.policydb, custom_metrics_cred_helper.MaxRetry)
 	if err != nil {
-		h.logger.Error("failed to delete custom metrics credential for unbinding", err, lager.Data{"appId": body.AppID})
+		h.logger.Error("failed to delete custom metrics credential for unbinding", err, lager.Data{"appId": appId})
 	}
 
 	w.WriteHeader(http.StatusOK)

@@ -162,3 +162,13 @@ func (bdb *BindingSQLDB) CheckServiceBinding(appId string) bool {
 func (bdb *BindingSQLDB) GetDBStatus() sql.DBStats {
 	return bdb.sqldb.Stats()
 }
+func (bdb *BindingSQLDB) GetAppIdByBindingId(bindingId string) (string, error) {
+	var appId string
+	query := "SELECT app_id from binding WHERE binding_id = $1"
+	err := bdb.sqldb.QueryRow(query, appId).Scan(&appId)
+	if err != nil {
+		bdb.logger.Error("get-appid-from-binding-table", err, lager.Data{"query": query})
+		return "", err
+	}
+	return appId, nil
+}
