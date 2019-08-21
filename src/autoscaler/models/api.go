@@ -18,12 +18,7 @@ type InstanceCreationRequestBody struct {
 type BindingRequestBody struct {
 	BrokerCommonRequestBody
 	AppID  string          `json:"app_guid"`
-	Policy json.RawMessage `json:"parameters"`
-}
-
-type UnbindingRequestBody struct {
-	BrokerCommonRequestBody
-	AppID string `json:"app_guid"`
+	Policy json.RawMessage `json:"parameters,omitempty"`
 }
 
 type PublicApiResponseBase struct {
