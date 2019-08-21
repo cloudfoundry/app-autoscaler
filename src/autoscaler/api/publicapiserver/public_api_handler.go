@@ -1,10 +1,12 @@
 package publicapiserver
 
 import (
+	"bytes"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strconv"
 
 	"autoscaler/api/config"
 	"autoscaler/api/custom_metrics_cred_helper"
@@ -88,7 +90,22 @@ func (h *PublicApiHandler) GetScalingPolicy(w http.ResponseWriter, r *http.Reque
 			Message: "Policy Not Found"})
 		return
 	}
-	handlers.WriteJSONResponse(w, http.StatusOK, scalingPolicy)
+
+	bf := bytes.NewBuffer([]byte{})
+	jsonEncoder := json.NewEncoder(bf)
+	jsonEncoder.SetEscapeHTML(false)
+	err = jsonEncoder.Encode(scalingPolicy)
+	if err != nil {
+		h.logger.Error("Failed to json encode scaling policy", err, lager.Data{"appId": appId, "policy": scalingPolicy})
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Error encode scaling policy"})
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Length", strconv.Itoa(len(bf.Bytes())))
+	w.WriteHeader(http.StatusOK)
+	w.Write(bf.Bytes())
 }
 
 func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Request, vars map[string]string) {
@@ -146,7 +163,8 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 	if err != nil {
 		h.logger.Error("Failed to create/update schedule", err, nil)
 	}
-	handlers.WriteJSONResponse(w, http.StatusOK, nil)
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(policyBytes))
 }
 
 func (h *PublicApiHandler) DetachScalingPolicy(w http.ResponseWriter, r *http.Request, vars map[string]string) {

@@ -18,6 +18,7 @@
     "instance_min_count": {
       "$id": "#/properties/instance_min_count",
       "type": "integer",
+      "minimum": 1,
       "title": "Minimum number of application instance always runs"
     },
     "instance_max_count": {

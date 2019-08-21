@@ -1,5 +1,9 @@
 package models
 
+import (
+	"encoding/json"
+)
+
 type BrokerCommonRequestBody struct {
 	ServiceID string `json:"service_id"`
 	PlanID    string `json:"plan_id"`
@@ -13,8 +17,8 @@ type InstanceCreationRequestBody struct {
 
 type BindingRequestBody struct {
 	BrokerCommonRequestBody
-	AppID  string `json:"app_guid"`
-	Policy string `json:"parameters"`
+	AppID  string          `json:"app_guid"`
+	Policy json.RawMessage `json:"parameters"`
 }
 
 type UnbindingRequestBody struct {

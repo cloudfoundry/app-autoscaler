@@ -155,7 +155,7 @@ func (bdb *BindingSQLDB) DeleteServiceBindingByAppId(appId string) error {
 }
 func (bdb *BindingSQLDB) CheckServiceBinding(appId string) bool {
 	var count int
-	query := "SELECT COUNT(*) FROM credentials WHERE id=$1"
+	query := "SELECT COUNT(*) FROM binding WHERE app_id=$1"
 	bdb.sqldb.QueryRow(query, appId).Scan(&count)
 	return count > 0
 }
@@ -164,10 +164,10 @@ func (bdb *BindingSQLDB) GetDBStatus() sql.DBStats {
 }
 func (bdb *BindingSQLDB) GetAppIdByBindingId(bindingId string) (string, error) {
 	var appId string
-	query := "SELECT app_id from binding WHERE binding_id = $1"
-	err := bdb.sqldb.QueryRow(query, appId).Scan(&appId)
+	query := "SELECT app_id FROM binding WHERE binding_id=$1"
+	err := bdb.sqldb.QueryRow(query, bindingId).Scan(&appId)
 	if err != nil {
-		bdb.logger.Error("get-appid-from-binding-table", err, lager.Data{"query": query})
+		bdb.logger.Error("get-appid-from-binding-table", err, lager.Data{"query": query, "bindingId": bindingId})
 		return "", err
 	}
 	return appId, nil

@@ -172,10 +172,11 @@ func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Reque
 		})
 		return
 	}
-	if body.Policy != "" {
-		errResults, valid := h.policyValidator.ValidatePolicy(body.Policy)
+	policyStr := string(body.Policy)
+	if policyStr != "" {
+		errResults, valid := h.policyValidator.ValidatePolicy(policyStr)
 		if !valid {
-			h.logger.Error("failed to validate policy", err, lager.Data{"appId": body.AppID, "policy": body.Policy})
+			h.logger.Error("failed to validate policy", err, lager.Data{"appId": body.AppID, "policy": policyStr})
 			handlers.WriteJSONResponse(w, http.StatusBadRequest, errResults)
 			return
 		}
@@ -216,13 +217,13 @@ func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Reque
 			Message: "Error creating service binding"})
 		return
 	}
-	if body.Policy == "" {
+	if policyStr == "" {
 		h.logger.Info("no policy json provided", lager.Data{})
 	} else {
-		h.logger.Info("saving policy json", lager.Data{"policy": body.Policy})
-		err = h.policydb.SaveAppPolicy(body.AppID, body.Policy, policyGuid.String())
+		h.logger.Info("saving policy json", lager.Data{"policy": policyStr})
+		err = h.policydb.SaveAppPolicy(body.AppID, policyStr, policyGuid.String())
 		if err != nil {
-			h.logger.Error("failed to save policy", err, lager.Data{"appId": body.AppID, "policy": body.Policy})
+			h.logger.Error("failed to save policy", err, lager.Data{"appId": body.AppID, "policy": policyStr})
 			//failed to save policy, so revert creating binding and custom metrics credential
 			err = custom_metrics_cred_helper.DeleteCredential(body.AppID, h.policydb, custom_metrics_cred_helper.MaxRetry)
 			if err != nil {
@@ -238,12 +239,12 @@ func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Reque
 			return
 		}
 
-		h.logger.Info("creating/updating schedules", lager.Data{"policy": body.Policy})
-		err = h.schedulerUtil.CreateOrUpdateSchedule(body.AppID, body.Policy, policyGuid.String())
+		h.logger.Info("creating/updating schedules", lager.Data{"policy": policyStr})
+		err = h.schedulerUtil.CreateOrUpdateSchedule(body.AppID, policyStr, policyGuid.String())
 		//while there is synchronization between policy and schedule, so creating schedule error does not break
 		//the whole creating binding process
 		if err != nil {
-			h.logger.Error("failed to create/update schedules", err, lager.Data{"policy": body.Policy})
+			h.logger.Error("failed to create/update schedules", err, lager.Data{"policy": policyStr})
 		}
 	}
 	handlers.WriteJSONResponse(w, http.StatusCreated, models.CredentialResponse{
