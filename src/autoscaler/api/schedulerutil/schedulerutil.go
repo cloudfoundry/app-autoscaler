@@ -47,7 +47,7 @@ func (su *SchedulerUtil) CreateOrUpdateSchedule(appId string, policyJSONStr stri
 		su.logger.Error("Failed to create request to scheduler", err, lager.Data{"appId": appId, "policy": policyJSONStr})
 		return err
 	}
-
+	req.Header.Set("Content-Type", "application/json")
 	resp, err := su.httpClient.Do(req)
 	if err != nil {
 		su.logger.Error("Failed to do request to scheduler", err, lager.Data{"appId": appId, "policy": policyJSONStr})

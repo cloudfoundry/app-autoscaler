@@ -50,7 +50,9 @@ type PolicyDB interface {
 	RetrievePolicies() ([]*models.PolicyJson, error)
 	Close() error
 	DeletePolicy(appId string) error
-	GetCustomMetricsCreds(appId string) (string, string, error)
+	SaveCredential(appId string, cred models.Credential) error
+	DeleteCredential(appId string) error
+	GetCredential(appId string) (*models.Credential, error)
 }
 
 type BindingDB interface {
@@ -59,6 +61,9 @@ type BindingDB interface {
 	DeleteServiceInstance(serviceInstanceId string) error
 	CreateServiceBinding(bindingId string, serviceInstanceId string, appId string) error
 	DeleteServiceBinding(bindingId string) error
+	DeleteServiceBindingByAppId(appId string) error
+	CheckServiceBinding(appId string) bool
+	GetAppIdByBindingId(bindingId string) (string, error)
 	Close() error
 }
 

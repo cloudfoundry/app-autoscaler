@@ -63,6 +63,30 @@ var _ = Describe("PolicyValidator", func() {
 				}))
 			})
 		})
+		Context("when instance_min_count is < 1", func() {
+			BeforeEach(func() {
+				policyString = `{
+					"instance_min_count":0,
+					"instance_max_count":4,
+					"scaling_rules":[
+					{
+						"metric_type":"memoryused",
+						"threshold":30,
+						"operator":"<",
+						"adjustment":"-1"
+					}]
+				}`
+			})
+			It("should fail", func() {
+				Expect(valid).To(BeFalse())
+				Expect(errResult).To(Equal(&[]PolicyValidationErrors{
+					{
+						Context:     "(root).instance_min_count",
+						Description: "Must be greater than or equal to 1",
+					},
+				}))
+			})
+		})
 
 		Context("when instance_max_count is missing", func() {
 			BeforeEach(func() {

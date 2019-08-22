@@ -65,7 +65,7 @@ type RecurringSchedule struct {
 	EndDate               string `json:"end_date,omitempty"`
 	ScheduledInstanceMin  int    `json:"instance_min_count"`
 	ScheduledInstanceMax  int    `json:"instance_max_count"`
-	ScheduledInstanceInit int    `json:"initial_min_instance_count"`
+	ScheduledInstanceInit int    `json:"initial_min_instance_count,omitempty"`
 }
 
 type SpecificDateSchedule struct {
@@ -73,7 +73,7 @@ type SpecificDateSchedule struct {
 	EndDateTime           string `json:"end_date_time"`
 	ScheduledInstanceMin  int    `json:"instance_min_count"`
 	ScheduledInstanceMax  int    `json:"instance_max_count"`
-	ScheduledInstanceInit int    `json:"initial_min_instance_count"`
+	ScheduledInstanceInit int    `json:"initial_min_instance_count,omitempty"`
 }
 
 func (r *ScalingRule) BreachDuration(defaultBreachDurationSecs int) time.Duration {

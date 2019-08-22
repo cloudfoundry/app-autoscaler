@@ -4,6 +4,7 @@ import (
 	"autoscaler/db"
 	. "autoscaler/db/sqldb"
 	"autoscaler/models"
+	"database/sql"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/lib/pq"
@@ -17,19 +18,22 @@ import (
 
 var _ = Describe("PolicySQLDB", func() {
 	var (
-		pdb            *PolicySQLDB
-		dbConfig       db.DatabaseConfig
-		logger         lager.Logger
-		err            error
-		appIds         map[string]bool
-		scalingPolicy  *models.ScalingPolicy
-		policyJson     []byte
-		policyJsonStr  string
-		appId          string
-		policies       []*models.PolicyJson
-		testMetricName string = "TestMetricName"
-		username       string
-		password       string
+		pdb             *PolicySQLDB
+		dbConfig        db.DatabaseConfig
+		logger          lager.Logger
+		err             error
+		appIds          map[string]bool
+		scalingPolicy   *models.ScalingPolicy
+		policyJson      []byte
+		policyJsonStr   string
+		appId           string
+		policies        []*models.PolicyJson
+		testMetricName  string = "TestMetricName"
+		username        string
+		password        string
+		anotherUsername string
+		antherPassword  string
+		credential      *models.Credential
 	)
 
 	BeforeEach(func() {
@@ -346,12 +350,12 @@ var _ = Describe("PolicySQLDB", func() {
 		})
 	})
 
-	Describe("GetCustomMetricsCreds", func() {
+	Describe("GetCredential", func() {
 		BeforeEach(func() {
 			pdb, err = NewPolicySQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
 
-			cleanCredentialsTable()
+			cleanCredentialTable()
 		})
 
 		AfterEach(func() {
@@ -360,28 +364,122 @@ var _ = Describe("PolicySQLDB", func() {
 		})
 
 		JustBeforeEach(func() {
-			username, password, err = pdb.GetCustomMetricsCreds("an-app-id")
+			credential, err = pdb.GetCredential("an-app-id")
 		})
 
-		Context("when credentials table is empty", func() {
+		Context("when there is no credential for target application", func() {
 			It("should not return any credentials", func() {
-				Expect(err).To(HaveOccurred())
-				Expect(password).To(BeEmpty())
-				Expect(username).To(BeEmpty())
+				Expect(err).To(Equal(sql.ErrNoRows))
+				Expect(credential).To(BeNil())
+			})
+		})
+
+		Context("when there is credential for target application", func() {
+			BeforeEach(func() {
+				insertCredential("an-app-id", "username", "password")
+			})
+
+			It("Should get the credentials", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(credential.Password).To(Equal("password"))
+				Expect(credential.Username).To(Equal("username"))
+			})
+
+		})
+	})
+	Describe("SaveCredential", func() {
+		BeforeEach(func() {
+			pdb, err = NewPolicySQLDB(dbConfig, logger)
+			Expect(err).NotTo(HaveOccurred())
+			cleanCredentialTable()
+			appId = "the-test-app-id"
+			username = "the-user-name"
+			password = "the-password"
+			anotherUsername = "the-user-name"
+			antherPassword = "the-password"
+		})
+
+		AfterEach(func() {
+			err = pdb.Close()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		JustBeforeEach(func() {
+			err = pdb.SaveCredential(appId, models.Credential{
+				Username: username,
+				Password: password,
+			})
+			Expect(err).NotTo(HaveOccurred())
+		})
+		Context("when no credential is present", func() {
+			It("saves the credential", func() {
+				usernameResult, passwordResult, err := getCredential(appId)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(usernameResult).To(Equal(username))
+				Expect(passwordResult).To(Equal(password))
+			})
+		})
+		Context("when the credential is already present", func() {
+			BeforeEach(func() {
+				err = insertCredential(appId, anotherUsername, antherPassword)
+				Expect(err).NotTo(HaveOccurred())
+				usernameResult, passwordResult, err := getCredential(appId)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(usernameResult).To(Equal(anotherUsername))
+				Expect(passwordResult).To(Equal(antherPassword))
+
+			})
+			It("updates the credential", func() {
+				usernameResult, passwordResult, err := getCredential(appId)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(usernameResult).To(Equal(username))
+				Expect(passwordResult).To(Equal(password))
+			})
+		})
+	})
+	Describe("DeleteCred", func() {
+		BeforeEach(func() {
+			pdb, err = NewPolicySQLDB(dbConfig, logger)
+			Expect(err).NotTo(HaveOccurred())
+			cleanCredentialTable()
+			appId = "the-test-app-id"
+			username = "the-user-name"
+			password = "the-password"
+		})
+
+		AfterEach(func() {
+			err = pdb.Close()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		JustBeforeEach(func() {
+			err = pdb.DeleteCredential(appId)
+		})
+		Context("when there is no credential in the table", func() {
+			It("should not error", func() {
+				Expect(err).NotTo(HaveOccurred())
 			})
 		})
 
 		Context("when policy table is not empty", func() {
 			BeforeEach(func() {
-				insertCustomMetricsBindingCredentials("an-app-id", "username", "password")
-			})
-
-			It("Should get the password", func() {
+				err = insertCredential(appId, username, password)
 				Expect(err).NotTo(HaveOccurred())
-				Expect(password).To(Equal("password"))
-				Expect(username).To(Equal("username"))
 			})
 
+			It("should delete the credential", func() {
+				Expect(err).NotTo(HaveOccurred())
+				hasCredential := hasCredential(appId)
+				Expect(hasCredential).To(BeFalse())
+			})
+		})
+		Context("when there is database error", func() {
+			BeforeEach(func() {
+				pdb.Close()
+			})
+			It("should error", func() {
+				Expect(err).To(HaveOccurred())
+			})
 		})
 	})
 
