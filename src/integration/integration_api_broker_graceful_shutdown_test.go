@@ -55,7 +55,7 @@ var _ = Describe("Integration_Api_Broker_Graceful_Shutdown", func() {
 					fakeScheduler.AppendHandlers(ghttp.RespondWith(http.StatusOK, "successful"))
 
 					policyStr := readPolicyFromFile("fakePolicyWithSchedule.json")
-					resp, err := attachPolicy(getRandomId(), policyStr, INTERNAL)
+					resp, err := attachPolicy(getRandomId(), policyStr, components.Ports[APIServer], httpClient)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(resp.StatusCode).To(Equal(http.StatusCreated))
 					resp.Body.Close()
@@ -63,7 +63,7 @@ var _ = Describe("Integration_Api_Broker_Graceful_Shutdown", func() {
 					sendSigusr2Signal(APIServer)
 					Eventually(buffer, 5*time.Second).Should(gbytes.Say(`Received SIGUSR2 signal`))
 
-					resp, err = attachPolicy(getRandomId(), policyStr, INTERNAL)
+					resp, err = attachPolicy(getRandomId(), policyStr, components.Ports[APIServer], httpClient)
 					Expect(err).To(HaveOccurred())
 
 					Eventually(processMap[APIServer].Wait()).Should(Receive())
@@ -84,7 +84,7 @@ var _ = Describe("Integration_Api_Broker_Graceful_Shutdown", func() {
 					go func() {
 						defer GinkgoRecover()
 						policyStr := readPolicyFromFile("fakePolicyWithSchedule.json")
-						resp, err := attachPolicy(getRandomId(), policyStr, INTERNAL)
+						resp, err := attachPolicy(getRandomId(), policyStr, components.Ports[APIServer], httpClient)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(resp.StatusCode).To(Equal(http.StatusCreated))
 						resp.Body.Close()
@@ -119,7 +119,7 @@ var _ = Describe("Integration_Api_Broker_Graceful_Shutdown", func() {
 					go func() {
 						defer GinkgoRecover()
 						policyStr := readPolicyFromFile("fakePolicyWithSchedule.json")
-						_, err := attachPolicy(getRandomId(), policyStr, INTERNAL)
+						_, err := attachPolicy(getRandomId(), policyStr, components.Ports[APIServer], httpClient)
 						Expect(err).To(HaveOccurred())
 						close(done)
 					}()
@@ -158,7 +158,7 @@ var _ = Describe("Integration_Api_Broker_Graceful_Shutdown", func() {
 				bindingId = getRandomId()
 				appId = getRandomId()
 				//add a service instance
-				resp, err := provisionServiceInstance(serviceInstanceId, orgId, spaceId)
+				resp, err := provisionServiceInstance(serviceInstanceId, orgId, spaceId, components.Ports[ServiceBroker], httpClient)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusCreated))
 				resp.Body.Close()
@@ -174,7 +174,7 @@ var _ = Describe("Integration_Api_Broker_Graceful_Shutdown", func() {
 				It("stops receiving new connections", func() {
 					fakeApiServer.AppendHandlers(ghttp.RespondWith(http.StatusCreated, "created"))
 
-					resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson)
+					resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson, components.Ports[ServiceBroker], httpClient)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(resp.StatusCode).To(Equal(http.StatusCreated))
 					resp.Body.Close()
@@ -182,10 +182,10 @@ var _ = Describe("Integration_Api_Broker_Graceful_Shutdown", func() {
 					sendSigusr2Signal(ServiceBroker)
 					Eventually(buffer, 5*time.Second).Should(gbytes.Say(`Received SIGUSR2 signal`))
 
-					_, err = bindService(getRandomId(), appId, serviceInstanceId, schedulePolicyJson)
+					_, err = bindService(getRandomId(), appId, serviceInstanceId, schedulePolicyJson, components.Ports[ServiceBroker], httpClient)
 					Expect(err).To(HaveOccurred())
 
-					Eventually(processMap[ServiceBroker].Wait()).Should(Receive())
+					Eventually(processMap[ServiceBroker].Wait(), 10*time.Second).Should(Receive())
 					Expect(runner.ExitCode()).Should(BeZero())
 				})
 
@@ -202,7 +202,7 @@ var _ = Describe("Integration_Api_Broker_Graceful_Shutdown", func() {
 					done := make(chan struct{})
 					go func() {
 						defer GinkgoRecover()
-						resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson)
+						resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson, components.Ports[ServiceBroker], httpClient)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(resp.StatusCode).To(Equal(http.StatusCreated))
 						resp.Body.Close()
@@ -217,7 +217,7 @@ var _ = Describe("Integration_Api_Broker_Graceful_Shutdown", func() {
 					close(ch)
 					Eventually(done).Should(BeClosed())
 
-					Eventually(processMap[ServiceBroker].Wait()).Should(Receive())
+					Eventually(processMap[ServiceBroker].Wait(), 10*time.Second).Should(Receive())
 					Expect(runner.ExitCode()).Should(BeZero())
 				})
 			})
@@ -236,7 +236,7 @@ var _ = Describe("Integration_Api_Broker_Graceful_Shutdown", func() {
 					done := make(chan struct{})
 					go func() {
 						defer GinkgoRecover()
-						_, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson)
+						_, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson, components.Ports[ServiceBroker], httpClient)
 						Expect(err).To(HaveOccurred())
 						close(done)
 					}()
