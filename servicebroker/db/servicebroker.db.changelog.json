@@ -3,6 +3,19 @@
     "changeSet": {
       "id": 1,
       "author": "ying",
+      "preConditions": [
+        {
+          "onFail": "MARK_RAN",
+          "not":[
+            {
+              "tableExists": 
+              {
+                 "tableName":"service_instance"
+              }
+            }
+          ]
+        },
+      ],
       "changes": [{
         "createTable": {
           "tableName": "service_instance",
@@ -39,6 +52,19 @@
     "changeSet": {
       "id": 2,
       "author": "qy",
+      "preConditions": [
+        {
+          "onFail": "MARK_RAN",
+          "not":[
+            {
+              "tableExists": 
+              {
+                 "tableName":"binding"
+              }
+            }
+          ]
+        },
+      ],
       "changes": [{
         "createTable": {
           "tableName": "binding",
@@ -83,6 +109,19 @@
     "changeSet": {
       "id": 3,
       "author": "qy",
+      "preConditions": [
+        {
+          "onFail": "MARK_RAN",
+          "not":[
+            {
+              "foreignKeyConstraintExists": 
+              {
+                 "foreignKeyName":"fk_binding_service_instance_id"
+              }
+            }
+          ]
+        },
+      ],
       "changes": [{
         "addForeignKeyConstraint": {
           "baseColumnNames": "service_instance_id",

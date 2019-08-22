@@ -34,6 +34,8 @@ event_generator:
     key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+metrics_forwarder:
+  metrics_forwarder_url: http://localhost:8088
 use_buildin_mode: false
 cf:
   api: https://api.example.com

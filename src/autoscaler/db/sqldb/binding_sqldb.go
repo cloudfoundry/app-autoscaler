@@ -98,10 +98,10 @@ func (bdb *BindingSQLDB) DeleteServiceInstance(serviceInstanceId string) error {
 }
 
 func (bdb *BindingSQLDB) CreateServiceBinding(bindingId string, serviceInstanceId string, appId string) error {
-	query := "SELECT FROM binding WHERE binding_id = $1"
-	rows, err := bdb.sqldb.Query(query, bindingId)
+	query := "SELECT FROM binding WHERE app_id = $1"
+	rows, err := bdb.sqldb.Query(query, appId)
 	if err != nil {
-		bdb.logger.Error("create-service-binding", err, lager.Data{"query": query, "bindingId": bindingId})
+		bdb.logger.Error("create-service-binding", err, lager.Data{"query": query, "appId": appId, "serviceId": serviceInstanceId, "bindingId": bindingId})
 		return err
 	}
 
@@ -143,7 +143,32 @@ func (bdb *BindingSQLDB) DeleteServiceBinding(bindingId string) error {
 
 	return db.ErrDoesNotExist
 }
+func (bdb *BindingSQLDB) DeleteServiceBindingByAppId(appId string) error {
+	query := "DELETE FROM binding WHERE app_id = $1"
+	_, err := bdb.sqldb.Exec(query, appId)
 
+	if err != nil {
+		bdb.logger.Error("delete-service-binding-by-appid", err, lager.Data{"query": query, "appId": appId})
+		return err
+	}
+	return nil
+}
+func (bdb *BindingSQLDB) CheckServiceBinding(appId string) bool {
+	var count int
+	query := "SELECT COUNT(*) FROM binding WHERE app_id=$1"
+	bdb.sqldb.QueryRow(query, appId).Scan(&count)
+	return count > 0
+}
 func (bdb *BindingSQLDB) GetDBStatus() sql.DBStats {
 	return bdb.sqldb.Stats()
+}
+func (bdb *BindingSQLDB) GetAppIdByBindingId(bindingId string) (string, error) {
+	var appId string
+	query := "SELECT app_id FROM binding WHERE binding_id=$1"
+	err := bdb.sqldb.QueryRow(query, bindingId).Scan(&appId)
+	if err != nil {
+		bdb.logger.Error("get-appid-from-binding-table", err, lager.Data{"query": query, "bindingId": bindingId})
+		return "", err
+	}
+	return appId, nil
 }
