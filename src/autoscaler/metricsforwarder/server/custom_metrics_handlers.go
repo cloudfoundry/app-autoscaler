@@ -10,6 +10,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -46,8 +47,27 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 	appID := vars["appid"]
 	remoteIP := strings.Split(r.RemoteAddr, ":")[0]
 
-	if mh.rateLimiter.ExceedsLimit(remoteIP) {
-		mh.logger.Info("error-rate-limiting", lager.Data{"appid": appID, "remoteIP": remoteIP})
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		mh.logger.Error("error-reading-request-body", err, lager.Data{"body": r.Body})
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Error reading custom metrics request body"})
+		return
+	}
+	var metricsConsumer *models.MetricsConsumer
+	err = json.Unmarshal(body, &metricsConsumer)
+	if err != nil {
+		mh.logger.Error("error-unmarshaling-metrics", err, lager.Data{"body": r.Body})
+		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
+			Code:    "Bad-Request",
+			Message: "Error unmarshaling custom metrics request body"})
+		return
+	}
+	instanceID := metricsConsumer.InstanceIndex
+
+	if mh.rateLimiter.ExceedsLimit(appID + "-" + strconv.FormatUint(uint64(instanceID), 10)) {
+		mh.logger.Info("error-rate-limiting", lager.Data{"appID": appID, "instanceID": instanceID, "remoteIP": remoteIP})
 		handlers.WriteJSONResponse(w, http.StatusTooManyRequests, models.ErrorResponse{
 			Code:    "Interal-Server-Error",
 			Message: "Too many requests"})
@@ -106,23 +126,6 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 		}
 	}
 
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		mh.logger.Error("error-reading-request-body", err, lager.Data{"body": r.Body})
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: "Error reading custom metrics request body"})
-		return
-	}
-	var metricsConsumer *models.MetricsConsumer
-	err = json.Unmarshal(body, &metricsConsumer)
-	if err != nil {
-		mh.logger.Error("error-unmarshaling-metrics", err, lager.Data{"body": r.Body})
-		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Code:    "Bad-Request",
-			Message: "Error unmarshaling custom metrics request body"})
-		return
-	}
 	err = mh.validateCustomMetricTypes(appID, metricsConsumer)
 	if err != nil {
 		mh.logger.Error("failed-validating-metrictypes", err, lager.Data{"metrics": metricsConsumer})
