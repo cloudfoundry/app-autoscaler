@@ -2,10 +2,10 @@ package ratelimiter
 
 import (
 	"errors"
-	"fmt"
 	"sync"
 	"time"
 
+	"code.cloudfoundry.org/lager"
 	"github.com/juju/ratelimit"
 )
 
@@ -17,24 +17,28 @@ type Store interface {
 }
 
 type InMemoryStore struct {
-	limit   int
-	storage map[string]*entry
+	limitPerMinute int
+	expireDuration time.Duration
+	storage        map[string]*entry
+	logger         lager.Logger
 	sync.RWMutex
 }
 
 type entry struct {
 	bucket    *ratelimit.Bucket
-	updatedAt time.Time
+	expiredAt time.Time
 }
 
 func (e *entry) Expired() bool {
-	return time.Now().After(e.updatedAt.Add(expireInMin))
+	return time.Now().After(e.expiredAt)
 }
 
-func NewStore(limit int) Store {
+func NewStore(limitPerMinute int, expireDuration time.Duration, logger lager.Logger) Store {
 	store := &InMemoryStore{
-		limit:   limit,
-		storage: make(map[string]*entry),
+		limitPerMinute: limitPerMinute,
+		expireDuration: expireDuration,
+		logger:         logger,
+		storage:        make(map[string]*entry),
 	}
 	store.expiryCycle()
 
@@ -51,15 +55,14 @@ func newEntry(limit int) *entry {
 func (s *InMemoryStore) Increment(key string) (int, error) {
 	v, ok := s.get(key)
 	if !ok {
-		v = newEntry(s.limit)
+		v = newEntry(s.limitPerMinute)
 	}
+	v.expiredAt = time.Now().Add(s.expireDuration)
 	if avail := v.bucket.Available(); avail == 0 {
-		v.updatedAt = time.Now()
 		s.set(key, v)
 		return int(avail), errors.New("empty bucket")
 	}
 	v.bucket.Take(1)
-	v.updatedAt = time.Now()
 	s.set(key, v)
 	return int(v.bucket.Available()), nil
 }
@@ -84,7 +87,7 @@ func (s *InMemoryStore) expiryCycle() {
 			s.Lock()
 			for k, v := range s.storage {
 				if v.Expired() {
-					fmt.Printf("removing expired key [%s]\n", k)
+					s.logger.Info("removing-expired-key", lager.Data{"key": k})
 					delete(s.storage, k)
 				}
 			}

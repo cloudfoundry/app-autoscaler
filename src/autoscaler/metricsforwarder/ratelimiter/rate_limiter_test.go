@@ -1,8 +1,10 @@
 package ratelimiter_test
 
 import (
+	. "time"
 	. "autoscaler/metricsforwarder/ratelimiter"
 
+	. "code.cloudfoundry.org/lager"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -10,20 +12,22 @@ import (
 var _ = Describe("RateLimiter", func() {
 
 	var (
-		limit   int
-		limiter *RateLimiter
+		limitPerMinute int
+		expireDuration Duration
+		limiter        *RateLimiter
 	)
 
 	Describe("ExceedsLimit", func() {
 
 		BeforeEach(func() {
-			limit = 5
-			limiter = NewRateLimiter(limit)
+			limitPerMinute = 5
+			expireDuration = 10 * Minute
+			limiter = NewRateLimiter(limitPerMinute, expireDuration, NewLogger("metricsforwarder-ratelimiter"))
 		})
 
 		It("reports if rate exceeded", func() {
 			ip := "192.168.1.1"
-			for i := 0; i < limit; i++ {
+			for i := 0; i < limitPerMinute; i++ {
 				Expect(limiter.ExceedsLimit(ip)).To(BeFalse())
 			}
 			Expect(limiter.ExceedsLimit(ip)).To(BeTrue())
@@ -32,16 +36,17 @@ var _ = Describe("RateLimiter", func() {
 
 	Describe("Stats", func() {
 		BeforeEach(func() {
-			limit = 10
-			limiter = NewRateLimiter(limit)
+			limitPerMinute = 10
+			expireDuration = 10 * Minute
+			limiter = NewRateLimiter(limitPerMinute, expireDuration, NewLogger("metricsforwarder-ratelimiter"))
 		})
 
 		It("reports stats ", func() {
-			for i := 5; i < limit; i++ {
+			for i := 5; i < limitPerMinute; i++ {
 				ip := "192.168.1.100"
 				Expect(limiter.ExceedsLimit(ip)).To(BeFalse())
 			}
-			for i := 7; i < limit; i++ {
+			for i := 7; i < limitPerMinute; i++ {
 				ip := "192.168.1.101"
 				Expect(limiter.ExceedsLimit(ip)).To(BeFalse())
 			}

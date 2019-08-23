@@ -109,7 +109,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.LoggregatorConfig.TLS.KeyFile = filepath.Join(testCertDir, "metron.key")
 	cfg.LoggregatorConfig.MetronAddress = grpcIngressTestServer.GetAddr()
 
-	cfg.RateLimit = 1
+	cfg.RateLimit.LimitPerMinute = 1
+	cfg.RateLimit.ExpireDuration = 10 * time.Minute
 	cfg.Logging.Level = "debug"
 
 	cfg.Server.Port = 10000 + GinkgoParallelNode()

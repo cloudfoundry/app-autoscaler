@@ -67,9 +67,9 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 	instanceID := metricsConsumer.InstanceIndex
 
 	if mh.rateLimiter.ExceedsLimit(appID + "-" + strconv.FormatUint(uint64(instanceID), 10)) {
-		mh.logger.Info("error-rate-limiting", lager.Data{"appID": appID, "instanceID": instanceID, "remoteIP": remoteIP})
+		mh.logger.Info("error-exceed-rate-limit", lager.Data{"appID": appID, "instanceID": instanceID, "remoteIP": remoteIP})
 		handlers.WriteJSONResponse(w, http.StatusTooManyRequests, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
+			Code:    "Request-Limit-Exceeded",
 			Message: "Too many requests"})
 		return
 	}
