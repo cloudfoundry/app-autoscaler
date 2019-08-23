@@ -25,6 +25,7 @@ var (
 	serverProcess ifrit.Process
 	serverUrl     string
 	policyDB      *fakes.FakePolicyDB
+	rateLimiter   *fakes.FakeLimiter
 
 	credentialCache    cache.Cache
 	allowedMetricCache cache.Cache
@@ -61,10 +62,11 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		LoggregatorConfig: loggregatorConfig,
 	}
 	policyDB = &fakes.FakePolicyDB{}
+	rateLimiter = &fakes.FakeLimiter{}
 	credentialCache = *cache.New(10*time.Minute, -1)
 	allowedMetricCache = *cache.New(10*time.Minute, -1)
 	httpStatusCollector := &fakes.FakeHTTPStatusCollector{}
-	httpServer, err := NewServer(lager.NewLogger("test"), conf, policyDB, credentialCache, allowedMetricCache, httpStatusCollector)
+	httpServer, err := NewServer(lager.NewLogger("test"), conf, policyDB, credentialCache, allowedMetricCache, httpStatusCollector, rateLimiter)
 	Expect(err).NotTo(HaveOccurred())
 	serverUrl = fmt.Sprintf("http://127.0.0.1:%d", conf.Server.Port)
 	serverProcess = ginkgomon.Invoke(httpServer)

@@ -6,6 +6,7 @@ import (
 	"autoscaler/healthendpoint"
 	helpers "autoscaler/helpers"
 	"autoscaler/metricsforwarder/config"
+	"autoscaler/metricsforwarder/ratelimiter"
 	"autoscaler/metricsforwarder/server"
 	"flag"
 	"fmt"
@@ -72,7 +73,9 @@ func main() {
 	credentialCache := cache.New(conf.CacheTTL, conf.CacheCleanupInterval)
 	allowedMetricCache := cache.New(conf.CacheTTL, conf.CacheCleanupInterval)
 
-	httpServer, err := server.NewServer(logger.Session("custom_metrics_server"), conf, policyDB, *credentialCache, *allowedMetricCache, httpStatusCollector)
+	rateLimiter := ratelimiter.NewRateLimiter(conf.RateLimit)
+
+	httpServer, err := server.NewServer(logger.Session("custom_metrics_server"), conf, policyDB, *credentialCache, *allowedMetricCache, httpStatusCollector, rateLimiter)
 	if err != nil {
 		logger.Error("failed-to-create-custommetrics-server", err)
 		os.Exit(1)
