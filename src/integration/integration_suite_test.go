@@ -87,6 +87,7 @@ var (
 	apiSchedulerHttpRequestTimeout           time.Duration = 10 * time.Second
 	apiScalingEngineHttpRequestTimeout       time.Duration = 10 * time.Second
 	apiMetricsCollectorHttpRequestTimeout    time.Duration = 10 * time.Second
+	apiMetricsServerHttpRequestTimeout       time.Duration = 10 * time.Second
 	apiEventGeneratorHttpRequestTimeout      time.Duration = 10 * time.Second
 	schedulerScalingEngineHttpRequestTimeout time.Duration = 10 * time.Second
 
