@@ -129,10 +129,36 @@ var _ = Describe("BrokerHandler", func() {
 				body, err = json.Marshal(instanceCreationReqBody)
 				Expect(err).NotTo(HaveOccurred())
 				bindingdb.CreateServiceInstanceReturns(db.ErrAlreadyExists)
+				conf.DashboardRedirectURI = ""
 			})
-			It("succeeds with 409", func() {
+			It("succeeds with 200", func() {
+				Expect(resp.Code).To(Equal(http.StatusOK))
+				Expect(resp.Body.String()).To(Equal(`{}`))
+			})
+		})
+
+		Context("When dashboard redirect uri is present in config and database CreateServiceInstance call returns ErrAlreadyExists", func() {
+			BeforeEach(func() {
+				body, err = json.Marshal(instanceCreationReqBody)
+				Expect(err).NotTo(HaveOccurred())
+				bindingdb.CreateServiceInstanceReturns(db.ErrAlreadyExists)
+				conf.DashboardRedirectURI = "https://service-dashboard-url.com"
+			})
+			It("succeeds with 200 and returns dashboard_url", func() {
+				Expect(resp.Code).To(Equal(http.StatusOK))
+				Expect(resp.Body.Bytes()).To(Equal([]byte("{\"dashboard_url\":\"https://service-dashboard-url.com/manage/an-instance-id\"}")))
+			})
+		})
+
+		Context("When database CreateServiceInstance call returns ErrConflict", func() {
+			BeforeEach(func() {
+				body, err = json.Marshal(instanceCreationReqBody)
+				Expect(err).NotTo(HaveOccurred())
+				bindingdb.CreateServiceInstanceReturns(db.ErrConflict)
+			})
+			It("fails with 409", func() {
 				Expect(resp.Code).To(Equal(http.StatusConflict))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Conflict","message":"Service instance already exists"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Conflict","message":"Service instance with instance_id \"an-instance-id\" already exists with different parameters"}`))
 			})
 		})
 
@@ -144,7 +170,7 @@ var _ = Describe("BrokerHandler", func() {
 			})
 			It("fails with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error creating service instance"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error creating service instance"}`))
 			})
 		})
 
@@ -207,7 +233,7 @@ var _ = Describe("BrokerHandler", func() {
 			})
 			It("fails with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error deleting service instance"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error deleting service instance"}`))
 			})
 		})
 		Context("When all mandatory parameters are present", func() {
@@ -334,7 +360,7 @@ var _ = Describe("BrokerHandler", func() {
 			})
 			It("fails with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error creating service binding"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error creating service binding"}`))
 			})
 		})
 		Context("When failed to create credential", func() {
@@ -346,7 +372,7 @@ var _ = Describe("BrokerHandler", func() {
 			})
 			It("fails with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error creating service binding"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error creating service binding"}`))
 			})
 		})
 
@@ -426,7 +452,7 @@ var _ = Describe("BrokerHandler", func() {
 			})
 			It("succeed with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error deleting service binding"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error deleting service binding"}`))
 			})
 		})
 		Context("When database DeleteServiceBinding call returns ErrDoesnotExist", func() {
@@ -449,7 +475,7 @@ var _ = Describe("BrokerHandler", func() {
 			})
 			It("fails with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error deleting service binding"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error deleting service binding"}`))
 			})
 		})
 	})

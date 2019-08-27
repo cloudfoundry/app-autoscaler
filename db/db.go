@@ -23,6 +23,7 @@ const (
 
 var ErrAlreadyExists = fmt.Errorf("already exists")
 var ErrDoesNotExist = fmt.Errorf("doesn't exist")
+var ErrConflict = fmt.Errorf("conflicting entry exists")
 
 type DatabaseConfig struct {
 	URL                   string        `yaml:"url"`
