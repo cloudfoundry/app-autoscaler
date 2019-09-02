@@ -43,7 +43,7 @@ var _ = Describe("Integration_Operator_Others", func() {
 	})
 
 	AfterEach(func() {
-		detachPolicy(testAppId, INTERNAL)
+		detachPolicy(testAppId, components.Ports[APIServer], httpClient)
 		stopScheduler()
 		stopScalingEngine()
 		stopOperator()
@@ -63,7 +63,7 @@ var _ = Describe("Integration_Operator_Others", func() {
 
 					JustBeforeEach(func() {
 						policyStr = setPolicySpecificDateTime(readPolicyFromFile("fakePolicyWithSpecificDateSchedule.json"), 70*time.Second, 2*time.Hour)
-						doAttachPolicy(testAppId, []byte(policyStr), http.StatusCreated, INTERNAL)
+						doAttachPolicy(testAppId, []byte(policyStr), http.StatusCreated, components.Ports[APIServer], httpClient)
 					})
 
 					It("should sync the active schedule to scaling engine after restart", func() {
@@ -86,7 +86,7 @@ var _ = Describe("Integration_Operator_Others", func() {
 				Context("Delete an active schedule", func() {
 					BeforeEach(func() {
 						policyStr = setPolicySpecificDateTime(readPolicyFromFile("fakePolicyWithSpecificDateSchedule.json"), 70*time.Second, 140*time.Second)
-						doAttachPolicy(testAppId, []byte(policyStr), http.StatusCreated, INTERNAL)
+						doAttachPolicy(testAppId, []byte(policyStr), http.StatusCreated, components.Ports[APIServer], httpClient)
 
 						time.Sleep(70 * time.Second)
 						Consistently(func() bool {
@@ -163,7 +163,7 @@ var _ = Describe("Integration_Operator_Others", func() {
 
 			Context("when update a policy to another schedule sets only in policy DB without any update in scheduler ", func() {
 				BeforeEach(func() {
-					doAttachPolicy(testAppId, []byte(policyStr), http.StatusCreated, INTERNAL)
+					doAttachPolicy(testAppId, []byte(policyStr), http.StatusCreated, components.Ports[APIServer], httpClient)
 					Expect(checkSchedule(testAppId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})).To(BeTrue())
 
 					newPolicyStr := string(readPolicyFromFile("fakePolicyWithScheduleAnother.json"))

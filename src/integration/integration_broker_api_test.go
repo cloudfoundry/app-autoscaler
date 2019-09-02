@@ -44,7 +44,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 		bindingId = getRandomId()
 		appId = getRandomId()
 		//add a service instance
-		resp, err := provisionServiceInstance(serviceInstanceId, orgId, spaceId)
+		resp, err := provisionServiceInstance(serviceInstanceId, orgId, spaceId, components.Ports[ServiceBroker], httpClient)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(resp.StatusCode).To(Equal(http.StatusCreated))
 		resp.Body.Close()
@@ -57,7 +57,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 
 	AfterEach(func() {
 		//clean the service instance added in before each
-		resp, err := deprovisionServiceInstance(serviceInstanceId)
+		resp, err := deprovisionServiceInstance(serviceInstanceId, components.Ports[ServiceBroker], httpClient)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(resp.StatusCode).To(Equal(http.StatusOK))
 		resp.Body.Close()
@@ -74,14 +74,14 @@ var _ = Describe("Integration_Broker_Api", func() {
 
 			AfterEach(func() {
 				//clear the binding
-				resp, err := unbindService(bindingId, appId, serviceInstanceId)
+				resp, err := unbindService(bindingId, appId, serviceInstanceId, components.Ports[ServiceBroker], httpClient)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 				resp.Body.Close()
 			})
 
 			It("creates a binding", func() {
-				resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson)
+				resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson, components.Ports[ServiceBroker], httpClient)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusCreated))
 				resp.Body.Close()
@@ -95,7 +95,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 				By("checking the credential table content")
 				Expect(getCredentialsCount(appId)).To(Equal(0))
 
-				checkResponseContent(getPolicy, appId, http.StatusOK, expected, INTERNAL)
+				checkResponseContent(getPolicy, appId, http.StatusOK, expected, components.Ports[APIServer], httpClient)
 			})
 		})
 
@@ -107,7 +107,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 
 			AfterEach(func() {
 				//clear the binding
-				resp, err := unbindService(bindingId, appId, serviceInstanceId)
+				resp, err := unbindService(bindingId, appId, serviceInstanceId, components.Ports[ServiceBroker], httpClient)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 				resp.Body.Close()
@@ -115,7 +115,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 
 			It("creates a binding", func() {
 				schedulerRequestCount := len(fakeScheduler.ReceivedRequests())
-				resp, err := bindService(bindingId, appId, serviceInstanceId, minimalScalingRulePolicyJson)
+				resp, err := bindService(bindingId, appId, serviceInstanceId, minimalScalingRulePolicyJson, components.Ports[ServiceBroker], httpClient)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusCreated))
 				resp.Body.Close()
@@ -130,7 +130,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 				By("checking the credential table content")
 				Expect(getCredentialsCount(appId)).To(Equal(0))
 
-				checkResponseContent(getPolicy, appId, http.StatusOK, expected, INTERNAL)
+				checkResponseContent(getPolicy, appId, http.StatusOK, expected, components.Ports[APIServer], httpClient)
 			})
 		})
 
@@ -141,7 +141,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 
 			It("does not create a binding", func() {
 				schedulerCount := len(fakeScheduler.ReceivedRequests())
-				resp, err := bindService(bindingId, appId, serviceInstanceId, invalidSchemaPolicyJson)
+				resp, err := bindService(bindingId, appId, serviceInstanceId, invalidSchemaPolicyJson, components.Ports[ServiceBroker], httpClient)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
 				respBody, err := ioutil.ReadAll(resp.Body)
@@ -150,7 +150,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 				Consistently(fakeScheduler.ReceivedRequests).Should(HaveLen(schedulerCount))
 
 				By("checking the API Server")
-				resp, err = getPolicy(appId, INTERNAL)
+				resp, err = getPolicy(appId, components.Ports[APIServer], httpClient)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
 				resp.Body.Close()
@@ -164,7 +164,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 
 			It("does not create a binding", func() {
 				schedulerCount := len(fakeScheduler.ReceivedRequests())
-				resp, err := bindService(bindingId, appId, serviceInstanceId, invalidDataPolicyJson)
+				resp, err := bindService(bindingId, appId, serviceInstanceId, invalidDataPolicyJson, components.Ports[ServiceBroker], httpClient)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
 				respBody, err := ioutil.ReadAll(resp.Body)
@@ -173,7 +173,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 				Consistently(fakeScheduler.ReceivedRequests).Should(HaveLen(schedulerCount))
 
 				By("checking the API Server")
-				resp, err = getPolicy(appId, INTERNAL)
+				resp, err = getPolicy(appId, components.Ports[APIServer], httpClient)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
 				resp.Body.Close()
@@ -183,14 +183,14 @@ var _ = Describe("Integration_Broker_Api", func() {
 		Context("ApiServer is down", func() {
 			BeforeEach(func() {
 				stopApiServer()
-				_, err := getPolicy(appId, INTERNAL)
+				_, err := getPolicy(appId, components.Ports[APIServer], httpClient)
 				Expect(err).To(HaveOccurred())
 				fakeScheduler.RouteToHandler("PUT", regPath, ghttp.RespondWith(http.StatusInternalServerError, "error"))
 			})
 
 			It("should return 500", func() {
 				schedulerCount := len(fakeScheduler.ReceivedRequests())
-				resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson)
+				resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson, components.Ports[ServiceBroker], httpClient)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusInternalServerError))
 				resp.Body.Close()
@@ -205,14 +205,14 @@ var _ = Describe("Integration_Broker_Api", func() {
 
 			It("should return 500", func() {
 				schedulerCount := len(fakeScheduler.ReceivedRequests())
-				resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson)
+				resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson, components.Ports[ServiceBroker], httpClient)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusInternalServerError))
 				resp.Body.Close()
 				Consistently(fakeScheduler.ReceivedRequests).Should(HaveLen(schedulerCount + 1))
 
 				By("checking the API Server")
-				resp, err = getPolicy(appId, INTERNAL)
+				resp, err = getPolicy(appId, components.Ports[APIServer], httpClient)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
 				resp.Body.Close()
@@ -227,7 +227,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 
 			AfterEach(func() {
 				//clear the binding
-				resp, err := unbindService(bindingId, appId, serviceInstanceId)
+				resp, err := unbindService(bindingId, appId, serviceInstanceId, components.Ports[ServiceBroker], httpClient)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 				resp.Body.Close()
@@ -241,7 +241,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 			})
 
 			It("creates a binding", func() {
-				resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson)
+				resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson, components.Ports[ServiceBroker], httpClient)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusCreated))
 				resp.Body.Close()
@@ -256,7 +256,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 				By("checking the credential table content")
 				Expect(getCredentialsCount(appId)).To(Equal(1))
 
-				checkResponseContent(getPolicy, appId, http.StatusOK, expected, INTERNAL)
+				checkResponseContent(getPolicy, appId, http.StatusOK, expected, components.Ports[APIServer], httpClient)
 			})
 		})
 	})
@@ -266,7 +266,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 			brokerAuth = base64.StdEncoding.EncodeToString([]byte("username:password"))
 			//do a bind first
 			fakeScheduler.RouteToHandler("PUT", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
-			resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson)
+			resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson, components.Ports[ServiceBroker], httpClient)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(resp.StatusCode).To(Equal(http.StatusCreated))
 			resp.Body.Close()
@@ -277,13 +277,13 @@ var _ = Describe("Integration_Broker_Api", func() {
 		})
 
 		It("should return 200", func() {
-			resp, err := unbindService(bindingId, appId, serviceInstanceId)
+			resp, err := unbindService(bindingId, appId, serviceInstanceId, components.Ports[ServiceBroker], httpClient)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(resp.StatusCode).To(Equal(http.StatusOK))
 			resp.Body.Close()
 
 			By("checking the API Server")
-			resp, err = getPolicy(appId, INTERNAL)
+			resp, err = getPolicy(appId, components.Ports[APIServer], httpClient)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
 			resp.Body.Close()
@@ -293,14 +293,14 @@ var _ = Describe("Integration_Broker_Api", func() {
 			BeforeEach(func() {
 				fakeScheduler.RouteToHandler("DELETE", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
 				//detach the appId's policy first
-				resp, err := detachPolicy(appId, INTERNAL)
+				resp, err := detachPolicy(appId, components.Ports[APIServer], httpClient)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 				resp.Body.Close()
 			})
 
 			It("should return 200", func() {
-				resp, err := unbindService(bindingId, appId, serviceInstanceId)
+				resp, err := unbindService(bindingId, appId, serviceInstanceId, components.Ports[ServiceBroker], httpClient)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusOK))
 				resp.Body.Close()
@@ -310,13 +310,13 @@ var _ = Describe("Integration_Broker_Api", func() {
 		Context("APIServer is down", func() {
 			BeforeEach(func() {
 				stopApiServer()
-				_, err := detachPolicy(appId, INTERNAL)
+				_, err := detachPolicy(appId, components.Ports[APIServer], httpClient)
 				Expect(err).To(HaveOccurred())
 				fakeScheduler.RouteToHandler("DELETE", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
 			})
 
 			It("should return 500", func() {
-				resp, err := unbindService(bindingId, appId, serviceInstanceId)
+				resp, err := unbindService(bindingId, appId, serviceInstanceId, components.Ports[ServiceBroker], httpClient)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusInternalServerError))
 				resp.Body.Close()
@@ -329,13 +329,13 @@ var _ = Describe("Integration_Broker_Api", func() {
 			})
 
 			It("should return 500 and not delete the binding info", func() {
-				resp, err := unbindService(bindingId, appId, serviceInstanceId)
+				resp, err := unbindService(bindingId, appId, serviceInstanceId, components.Ports[ServiceBroker], httpClient)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusInternalServerError))
 				resp.Body.Close()
 
 				By("checking the API Server")
-				resp, err = getPolicy(appId, INTERNAL)
+				resp, err = getPolicy(appId, components.Ports[APIServer], httpClient)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
 				resp.Body.Close()
@@ -353,7 +353,7 @@ var _ = Describe("Integration_Broker_Api", func() {
 			brokerAuth = base64.StdEncoding.EncodeToString([]byte("username:password"))
 			//do a bind first
 			fakeScheduler.RouteToHandler("PUT", regPath, ghttp.RespondWith(http.StatusOK, "successful"))
-			resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson)
+			resp, err := bindService(bindingId, appId, serviceInstanceId, schedulePolicyJson, components.Ports[ServiceBroker], httpClient)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(resp.StatusCode).To(Equal(http.StatusCreated))
 			resp.Body.Close()
@@ -367,13 +367,13 @@ var _ = Describe("Integration_Broker_Api", func() {
 		})
 
 		It("should return 200", func() {
-			resp, err := unbindService(bindingId, appId, serviceInstanceId)
+			resp, err := unbindService(bindingId, appId, serviceInstanceId, components.Ports[ServiceBroker], httpClient)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(resp.StatusCode).To(Equal(http.StatusOK))
 			resp.Body.Close()
 
 			By("checking the API Server")
-			resp, err = getPolicy(appId, INTERNAL)
+			resp, err = getPolicy(appId, components.Ports[APIServer], httpClient)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(resp.StatusCode).To(Equal(http.StatusNotFound))
 			resp.Body.Close()
