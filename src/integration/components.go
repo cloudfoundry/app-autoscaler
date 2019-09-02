@@ -3,14 +3,17 @@ package integration
 import (
 	"autoscaler/cf"
 	"autoscaler/db"
-	egConfig "autoscaler/eventgenerator/config"
 	"autoscaler/helpers"
+	"autoscaler/models"
+
+	apiConfig "autoscaler/api/config"
+	egConfig "autoscaler/eventgenerator/config"
 	mcConfig "autoscaler/metricscollector/config"
 	mgConfig "autoscaler/metricsgateway/config"
 	msConfig "autoscaler/metricsserver/config"
-	"autoscaler/models"
 	opConfig "autoscaler/operator/config"
 	seConfig "autoscaler/scalingengine/config"
+
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -28,7 +31,9 @@ import (
 const (
 	APIServer             = "apiServer"
 	APIPublicServer       = "APIPublicServer"
+	GolangAPIServer       = "golangApiServer"
 	ServiceBroker         = "serviceBroker"
+	GolangServiceBroker   = "golangServiceBroker"
 	ServiceBrokerInternal = "serviceBrokerInternal"
 	Scheduler             = "scheduler"
 	MetricsCollector      = "metricsCollector"
@@ -44,6 +49,11 @@ const (
 var serviceCatalogPath string = "../../servicebroker/config/catalog.json"
 var schemaValidationPath string = "../../servicebroker/config/catalog.schema.json"
 var apiServerInfoFilePath string = "../../api/config/info.json"
+
+var golangAPIInfoFilePath string = "../autoscaler/api/exampleconfig/catalog-example.json"
+var golangSchemaValidationPath string = "../autoscaler/api/schemas/catalog.schema.json"
+var golangApiServerPolicySchemaPath string = "../autoscaler/api/policyvalidator/policy_json.schema.json"
+var golangServiceCatalogPath string = "../../servicebroker/config/catalog.json"
 
 type Executables map[string]string
 type Ports map[string]int
@@ -157,7 +167,21 @@ func (components *Components) ApiServer(confPath string, argv ...string) *ginkgo
 		},
 	})
 }
+func (components *Components) GolangAPIServer(confPath string, argv ...string) *ginkgomon.Runner {
 
+	return ginkgomon.New(ginkgomon.Config{
+		Name:              GolangAPIServer,
+		AnsiColorCode:     "33m",
+		StartCheck:        `"api.started"`,
+		StartCheckTimeout: 20 * time.Second,
+		Command: exec.Command(
+			components.Executables[GolangAPIServer],
+			append([]string{
+				"-c", confPath,
+			}, argv...)...,
+		),
+	})
+}
 func (components *Components) Scheduler(confPath string, argv ...string) *ginkgomon.Runner {
 	return ginkgomon.New(ginkgomon.Config{
 		Name:              Scheduler,
@@ -398,6 +422,89 @@ func (components *Components) PrepareApiServerConfig(port int, publicPort int, s
 	Expect(err).NotTo(HaveOccurred())
 	cfgFile.Close()
 	return cfgFile.Name()
+}
+
+func (components *Components) PrepareGolangApiServerConfig(dbURI string, publicApiPort int, brokerPort int, cfApi string, skipSSLValidation bool, cacheTTL int, schedulerUri string, scalingEngineUri string, metricsCollectorUri string, eventGeneratorUri string, metricsForwarderUri string, useBuildInMode bool, httpClientTimeout time.Duration, tmpDir string) string {
+
+	cfg := apiConfig.Config{
+		Logging: helpers.LoggingConfig{
+			Level: LOGLEVEL,
+		},
+		PublicApiServer: apiConfig.ServerConfig{
+			Port: publicApiPort,
+			TLS: models.TLSCerts{
+				KeyFile:    filepath.Join(testCertDir, "api.key"),
+				CertFile:   filepath.Join(testCertDir, "api.crt"),
+				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			},
+		},
+		BrokerServer: apiConfig.ServerConfig{
+			Port: brokerPort,
+			TLS: models.TLSCerts{
+				KeyFile:    filepath.Join(testCertDir, "servicebroker.key"),
+				CertFile:   filepath.Join(testCertDir, "servicebroker.crt"),
+				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			},
+		},
+		DB: apiConfig.DBConfig{
+			PolicyDB: db.DatabaseConfig{
+				URL: dbURI,
+			},
+			BindingDB: db.DatabaseConfig{
+				URL: dbURI,
+			},
+		},
+		BrokerUsername:       brokerUserName,
+		BrokerPassword:       brokerPassword,
+		CatalogPath:          golangServiceCatalogPath,
+		CatalogSchemaPath:    golangSchemaValidationPath,
+		DashboardRedirectURI: "",
+		PolicySchemaPath:     golangApiServerPolicySchemaPath,
+		Scheduler: apiConfig.SchedulerConfig{
+			SchedulerURL: schedulerUri,
+			TLSClientCerts: models.TLSCerts{
+				KeyFile:    filepath.Join(testCertDir, "scheduler.key"),
+				CertFile:   filepath.Join(testCertDir, "scheduler.crt"),
+				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			},
+		},
+		ScalingEngine: apiConfig.ScalingEngineConfig{
+			ScalingEngineUrl: scalingEngineUri,
+			TLSClientCerts: models.TLSCerts{
+				KeyFile:    filepath.Join(testCertDir, "scalingengine.key"),
+				CertFile:   filepath.Join(testCertDir, "scalingengine.crt"),
+				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			},
+		},
+		MetricsCollector: apiConfig.MetricsCollectorConfig{
+			MetricsCollectorUrl: metricsCollectorUri,
+			TLSClientCerts: models.TLSCerts{
+				KeyFile:    filepath.Join(testCertDir, "metricscollector.key"),
+				CertFile:   filepath.Join(testCertDir, "metricscollector.crt"),
+				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			},
+		},
+		EventGenerator: apiConfig.EventGeneratorConfig{
+			EventGeneratorUrl: eventGeneratorUri,
+			TLSClientCerts: models.TLSCerts{
+				KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
+				CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
+				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			},
+		},
+		CF: cf.CFConfig{
+			API:      cfApi,
+			ClientID: "admin",
+			Secret:   "admin",
+		},
+		UseBuildInMode: useBuildInMode,
+		InfoFilePath:   golangAPIInfoFilePath,
+		MetricsForwarder: apiConfig.MetricsForwarderConfig{
+			MetricsForwarderUrl: metricsForwarderUri,
+		},
+	}
+
+	return writeYmlConfig(tmpDir, GolangAPIServer, &cfg)
 }
 
 func (components *Components) PrepareSchedulerConfig(dbUri string, scalingEngineUri string, tmpDir string, httpClientTimeout time.Duration) string {

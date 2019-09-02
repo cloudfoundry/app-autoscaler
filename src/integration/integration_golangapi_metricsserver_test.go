@@ -2,7 +2,6 @@ package integration
 
 import (
 	"autoscaler/cf"
-	"autoscaler/metricscollector/config"
 	"autoscaler/models"
 	"fmt"
 	"net/http"
@@ -12,36 +11,37 @@ import (
 	"github.com/onsi/gomega/ghttp"
 )
 
-var _ = Describe("Integration_Api_MetricsCollector", func() {
+var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 	var (
 		appId             string
 		pathVariables     []string
 		parameters        map[string]string
 		metric            *models.AppInstanceMetric
 		metricType        string = "memoryused"
-		collectMethod     string = config.CollectMethodPolling
 		initInstanceCount int    = 2
 	)
 
 	BeforeEach(func() {
 		startFakeCCNOAAUAA(initInstanceCount)
 		fakeMetricsPolling(appId, 400*1024*1024, 600*1024*1024)
-		initializeHttpClient("api.crt", "api.key", "autoscaler-ca.crt", apiMetricsCollectorHttpRequestTimeout)
-		initializeHttpClientForPublicApi("api_public.crt", "api_public.key", "autoscaler-ca.crt", apiMetricsCollectorHttpRequestTimeout)
-		metricsCollectorConfPath = components.PrepareMetricsCollectorConfig(dbUrl, components.Ports[MetricsCollector], fakeCCNOAAUAA.URL(), collectInterval,
-			refreshInterval, saveInterval, collectMethod, defaultHttpClientTimeout, tmpDir)
-		startMetricsCollector()
+		initializeHttpClient("api.crt", "api.key", "autoscaler-ca.crt", apiMetricsServerHttpRequestTimeout)
+		initializeHttpClientForPublicApi("api_public.crt", "api_public.key", "autoscaler-ca.crt", apiMetricsServerHttpRequestTimeout)
+		metricsServerConfPath = components.PrepareMetricsServerConfig(dbUrl, defaultHttpClientTimeout, components.Ports[MetricsServerHTTP], components.Ports[MetricsServerWS], tmpDir)
+		startMetricsServer()
 
-		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], components.Ports[APIPublicServer], false, 200, fakeCCNOAAUAA.URL(), dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[EventGenerator]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ServiceBrokerInternal]), true, defaultHttpClientTimeout, 30, 30, tmpDir)
-		startApiServer()
+		golangApiServerConfPath = components.PrepareGolangApiServerConfig(dbUrl, components.Ports[GolangAPIServer], components.Ports[GolangServiceBroker],
+			fakeCCNOAAUAA.URL(), false, 200, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]),
+			fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsServerHTTP]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[EventGenerator]), "https://127.0.0.1:8888",
+			true, defaultHttpClientTimeout, tmpDir)
+		startGolangApiServer()
 		appId = getRandomId()
 		pathVariables = []string{appId, metricType}
 
 	})
 
 	AfterEach(func() {
-		stopApiServer()
-		stopMetricsCollector()
+		stopGolangApiServer()
+		stopMetricsServer()
 	})
 	Describe("Get metrics", func() {
 
@@ -53,7 +53,10 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 			})
 			It("should error with status code 500", func() {
 				By("check public api")
-				checkPublicAPIResponseContentWithParameters(getAppInstanceMetrics, components.Ports[APIPublicServer], pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{})
+				checkPublicAPIResponseContentWithParameters(getAppInstanceMetrics, components.Ports[GolangAPIServer], pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{
+					"code":    "Interal-Server-Error",
+					"message": "Failed to check space developer permission",
+				})
 			})
 		})
 
@@ -71,7 +74,10 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 			})
 			It("should error with status code 500", func() {
 				By("check public api")
-				checkPublicAPIResponseContentWithParameters(getAppInstanceMetrics, components.Ports[APIPublicServer], pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{})
+				checkPublicAPIResponseContentWithParameters(getAppInstanceMetrics, components.Ports[GolangAPIServer], pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{
+					"code":    "Interal-Server-Error",
+					"message": "Failed to check space developer permission",
+				})
 			})
 		})
 		Context("UAA api returns 401", func() {
@@ -95,7 +101,11 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 			})
 			It("should error with status code 401", func() {
 				By("check public api")
-				checkPublicAPIResponseContentWithParameters(getAppInstanceMetrics, components.Ports[APIPublicServer], pathVariables, parameters, http.StatusUnauthorized, map[string]interface{}{})
+				checkPublicAPIResponseContentWithParameters(getAppInstanceMetrics, components.Ports[GolangAPIServer],
+					pathVariables, parameters, http.StatusUnauthorized, map[string]interface{}{
+						"code":    "Unauthorized",
+						"message": "You are not authorized to perform the requested action",
+					})
 			})
 		})
 
@@ -111,21 +121,31 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 			})
 			It("should error with status code 401", func() {
 				By("check public api")
-				checkPublicAPIResponseContentWithParameters(getAppInstanceMetrics, components.Ports[APIPublicServer], pathVariables, parameters, http.StatusUnauthorized, map[string]interface{}{})
+				checkPublicAPIResponseContentWithParameters(getAppInstanceMetrics, components.Ports[GolangAPIServer],
+					pathVariables, parameters, http.StatusUnauthorized, map[string]interface{}{
+						"code":    "Unauthorized",
+						"message": "You are not authorized to perform the requested action",
+					})
 			})
 		})
 
-		Context("MetricsCollector is down", func() {
+		Context("MetricsServer is down", func() {
 			JustBeforeEach(func() {
-				stopMetricsCollector()
+				stopMetricsServer()
 				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order-direction": "asc", "page": "1", "results-per-page": "5"}
 			})
 
 			It("should error with status code 500", func() {
 				By("check internal api")
-				checkPublicAPIResponseContentWithParameters(getAppInstanceMetrics, components.Ports[APIPublicServer], pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{"error": fmt.Sprintf("connect ECONNREFUSED 127.0.0.1:%d", components.Ports[MetricsCollector])})
+				checkPublicAPIResponseContentWithParameters(getAppInstanceMetrics, components.Ports[GolangAPIServer], pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{
+					"code":    "Interal-Server-Error",
+					"message": "Error retrieving metrics history from metricscollector",
+				})
 				By("check public api")
-				checkPublicAPIResponseContentWithParameters(getAppInstanceMetrics, components.Ports[APIPublicServer], pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{"error": fmt.Sprintf("connect ECONNREFUSED 127.0.0.1:%d", components.Ports[MetricsCollector])})
+				checkPublicAPIResponseContentWithParameters(getAppInstanceMetrics, components.Ports[GolangAPIServer], pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{
+					"code":    "Interal-Server-Error",
+					"message": "Error retrieving metrics history from metricscollector",
+				})
 
 			})
 
@@ -207,7 +227,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 					}
 
 					By("check public api")
-					checkAppInstanceMetricResult(components.Ports[APIPublicServer], pathVariables, parameters, result)
+					checkAppInstanceMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 
 					By("get the 2nd page")
 					parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order-direction": "asc", "page": "2", "results-per-page": "2"}
@@ -239,7 +259,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 						},
 					}
 					By("check public api")
-					checkAppInstanceMetricResult(components.Ports[APIPublicServer], pathVariables, parameters, result)
+					checkAppInstanceMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 
 					By("get the 3rd page")
 					parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order-direction": "asc", "page": "3", "results-per-page": "2"}
@@ -261,7 +281,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 						},
 					}
 					By("check public api")
-					checkAppInstanceMetricResult(components.Ports[APIPublicServer], pathVariables, parameters, result)
+					checkAppInstanceMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 
 					By("the 4th page should be empty")
 					parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order-direction": "asc", "page": "4", "results-per-page": "2"}
@@ -273,7 +293,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 						Resources:    []models.AppInstanceMetric{},
 					}
 					By("check public api")
-					checkAppInstanceMetricResult(components.Ports[APIPublicServer], pathVariables, parameters, result)
+					checkAppInstanceMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 
 					By("the 5th page should be empty")
 					parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order-direction": "asc", "page": "5", "results-per-page": "2"}
@@ -284,7 +304,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 						Resources:    []models.AppInstanceMetric{},
 					}
 					By("check public api")
-					checkAppInstanceMetricResult(components.Ports[APIPublicServer], pathVariables, parameters, result)
+					checkAppInstanceMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 				})
 			})
 			Context("instance-index is provided", func() {
@@ -318,7 +338,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 					}
 
 					By("check public api")
-					checkAppInstanceMetricResult(components.Ports[APIPublicServer], pathVariables, parameters, result)
+					checkAppInstanceMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 
 					By("get the 2nd page")
 					parameters = map[string]string{"instance-index": "1", "start-time": "111111", "end-time": "999999", "order-direction": "asc", "page": "2", "results-per-page": "2"}
@@ -330,7 +350,7 @@ var _ = Describe("Integration_Api_MetricsCollector", func() {
 						Resources:    []models.AppInstanceMetric{},
 					}
 					By("check public api")
-					checkAppInstanceMetricResult(components.Ports[APIPublicServer], pathVariables, parameters, result)
+					checkAppInstanceMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 				})
 			})
 
