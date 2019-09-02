@@ -37,7 +37,7 @@ func (c *cfClient) IsUserSpaceDeveloper(userToken string, appId string) (bool, e
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		c.logger.Error("failed to get user space dev permission, request failed", err, lager.Data{"spaceDeveloperPermissionEndpoint": spaceDeveloperPermissionEndpoint})
+		c.logger.Error("Failed to get user space dev permission, request failed", err, lager.Data{"spaceDeveloperPermissionEndpoint": spaceDeveloperPermissionEndpoint})
 		return false, err
 	}
 	defer resp.Body.Close()
@@ -81,14 +81,14 @@ func (c *cfClient) getUserScope(userToken string) ([]string, error) {
 
 	req, err := http.NewRequest("POST", userScopeEndpoint, nil)
 	if err != nil {
-		c.logger.Error("failed to create getuserscope request", err, lager.Data{"userScopeEndpoint": userScopeEndpoint})
+		c.logger.Error("Failed to create getuserscope request", err, lager.Data{"userScopeEndpoint": userScopeEndpoint})
 		return nil, err
 	}
 	req.SetBasicAuth(c.conf.ClientID, c.conf.Secret)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		c.logger.Error("failed to getuserscope, request failed", err, lager.Data{"userScopeEndpoint": userScopeEndpoint})
+		c.logger.Error("Failed to getuserscope, request failed", err, lager.Data{"userScopeEndpoint": userScopeEndpoint})
 		return nil, err
 	}
 
@@ -114,7 +114,7 @@ func (c *cfClient) getUserId(userToken string) (string, error) {
 
 	req, err := http.NewRequest("GET", userInfoEndpoint, nil)
 	if err != nil {
-		c.logger.Error("failed to get user info, create request failed", err, lager.Data{"userInfoEndpoint": userInfoEndpoint})
+		c.logger.Error("Failed to get user info, create request failed", err, lager.Data{"userInfoEndpoint": userInfoEndpoint})
 		return "", err
 	}
 	req.Header.Set("Authorization", userToken)
@@ -122,7 +122,7 @@ func (c *cfClient) getUserId(userToken string) (string, error) {
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		c.logger.Error("failed to get user info, request failed", err, lager.Data{"userInfoEndpoint": userInfoEndpoint})
+		c.logger.Error("Failed to get user info, request failed", err, lager.Data{"userInfoEndpoint": userInfoEndpoint})
 		return "", err
 	}
 	defer resp.Body.Close()
@@ -147,10 +147,6 @@ func (c *cfClient) getUserId(userToken string) (string, error) {
 }
 
 func (c *cfClient) getUserScopeEndpoint(userToken string) (string, error) {
-	tokenSplitted := strings.Split(userToken, " ")
-	if len(tokenSplitted) != 2 {
-		return "", ErrInvalidTokenFormat
-	}
 
 	parameters := url.Values{}
 	parameters.Add("token", strings.Split(userToken, " ")[1])

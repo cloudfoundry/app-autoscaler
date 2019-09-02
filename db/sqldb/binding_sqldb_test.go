@@ -3,6 +3,7 @@ package sqldb_test
 import (
 	"autoscaler/db"
 	. "autoscaler/db/sqldb"
+	"database/sql"
 	"os"
 	"time"
 
@@ -22,6 +23,7 @@ var _ = Describe("BindingSqldb", func() {
 		testBindingId  string = "test-binding-id"
 		testAppId      string = "test-app-id"
 		testOrgGuid    string = "test-org-guid"
+		testOrgGuid2   string = "test-org-guid-2"
 		testSpaceGuid  string = "test-space-guid"
 	)
 
@@ -95,6 +97,17 @@ var _ = Describe("BindingSqldb", func() {
 				Expect(err).To(Equal(db.ErrAlreadyExists))
 			})
 		})
+		Context("When a conflicting instance exists", func() {
+			BeforeEach(func() {
+				err = bdb.CreateServiceInstance(testInstanceId, testOrgGuid2, testSpaceGuid)
+				Expect(err).NotTo(HaveOccurred())
+			})
+			It("should error", func() {
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(Equal(db.ErrConflict))
+			})
+		})
+
 	})
 
 	Describe("DeleteServiceInstance", func() {
@@ -228,6 +241,110 @@ var _ = Describe("BindingSqldb", func() {
 			})
 
 		})
+	})
+
+	Describe("DeleteServiceBindingByAppId", func() {
+		BeforeEach(func() {
+			bdb, err = NewBindingSQLDB(dbConfig, logger)
+			Expect(err).NotTo(HaveOccurred())
+
+			cleanServiceBindingTable()
+			cleanServiceInstanceTable()
+
+			err = bdb.CreateServiceInstance(testInstanceId, testOrgGuid, testSpaceGuid)
+			Expect(err).NotTo(HaveOccurred())
+			err = bdb.CreateServiceBinding(testBindingId, testInstanceId, testAppId)
+			Expect(err).NotTo(HaveOccurred())
+			err = bdb.DeleteServiceBindingByAppId(testAppId)
+		})
+		AfterEach(func() {
+			cleanServiceBindingTable()
+			cleanServiceInstanceTable()
+			err = bdb.Close()
+			Expect(err).NotTo(HaveOccurred())
+		})
+		It("should succeed", func() {
+			Expect(err).NotTo(HaveOccurred())
+			Expect(hasServiceBinding(testAppId, testInstanceId)).NotTo(BeTrue())
+		})
+	})
+
+	Describe("CheckServiceBinding", func() {
+		var bindingExists bool
+		BeforeEach(func() {
+			bdb, err = NewBindingSQLDB(dbConfig, logger)
+			Expect(err).NotTo(HaveOccurred())
+
+			cleanServiceBindingTable()
+			cleanServiceInstanceTable()
+		})
+		JustBeforeEach(func() {
+			bindingExists = bdb.CheckServiceBinding(testAppId)
+		})
+		AfterEach(func() {
+			cleanServiceBindingTable()
+			cleanServiceInstanceTable()
+			err = bdb.Close()
+			Expect(err).NotTo(HaveOccurred())
+		})
+		Context("when binding for bindingId exists", func() {
+			BeforeEach(func() {
+				err = bdb.CreateServiceInstance(testInstanceId, testOrgGuid, testSpaceGuid)
+				Expect(err).NotTo(HaveOccurred())
+				err = bdb.CreateServiceBinding(testBindingId, testInstanceId, testAppId)
+				Expect(err).NotTo(HaveOccurred())
+			})
+			It("should return true", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(bindingExists).To(BeTrue())
+			})
+		})
+		Context("when binding for bindingId does not exist", func() {
+			It("should return error", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(bindingExists).To(BeFalse())
+			})
+		})
+
+	})
+
+	Describe("GetAppIdByBindingId", func() {
+		var appIdResult string
+		BeforeEach(func() {
+			bdb, err = NewBindingSQLDB(dbConfig, logger)
+			Expect(err).NotTo(HaveOccurred())
+
+			cleanServiceBindingTable()
+			cleanServiceInstanceTable()
+		})
+		JustBeforeEach(func() {
+
+			appIdResult, err = bdb.GetAppIdByBindingId(testBindingId)
+		})
+		AfterEach(func() {
+			cleanServiceBindingTable()
+			cleanServiceInstanceTable()
+			err = bdb.Close()
+			Expect(err).NotTo(HaveOccurred())
+		})
+		Context("when binding for bindingId exists", func() {
+			BeforeEach(func() {
+				err = bdb.CreateServiceInstance(testInstanceId, testOrgGuid, testSpaceGuid)
+				Expect(err).NotTo(HaveOccurred())
+				err = bdb.CreateServiceBinding(testBindingId, testInstanceId, testAppId)
+				Expect(err).NotTo(HaveOccurred())
+			})
+			It("should succeed", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(appIdResult).To(Equal(testAppId))
+			})
+		})
+		Context("when binding for bindingId does not exist", func() {
+			It("should return error", func() {
+				Expect(err).To(Equal(sql.ErrNoRows))
+			})
+		})
+
 	})
 
 })

@@ -156,6 +156,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 		},
 	}
+	cfg.MetricsForwarder = config.MetricsForwarderConfig{
+		MetricsForwarderUrl: "http://localhost:8088",
+	}
 
 	cfg.UseBuildInMode = false
 

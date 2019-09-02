@@ -146,6 +146,9 @@ event_generator:
     key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+metrics_forwarder:
+  metrics_forwarder_url: https://localhost:8088
+
 use_buildin_mode: false
 info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
 cf:
@@ -204,6 +207,11 @@ cf:
 						},
 					},
 				))
+				Expect(conf.MetricsForwarder).To(Equal(
+					MetricsForwarderConfig{
+						MetricsForwarderUrl: "https://localhost:8088",
+					},
+				))
 				Expect(conf.UseBuildInMode).To(BeFalse())
 				Expect(conf.InfoFilePath).To(Equal("/var/vcap/jobs/autoscaer/config/info-file.json"))
 				Expect(conf.CF).To(Equal(
@@ -238,6 +246,8 @@ metrics_collector:
   metrics_collector_url: https://localhost:8084
 event_generator:
   event_generator_url: https://localhost:8083
+metrics_forwarder:
+  metrics_forwarder_url: https://localhost:8088
 info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
 cf:
   api: https://api.example.com
@@ -326,6 +336,8 @@ event_generator:
     key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+metrics_forwarder:
+  metrics_forwarder_url: https://localhost:8088
 use_buildin_mode: false
 info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
 cf:
@@ -382,6 +394,8 @@ event_generator:
     key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+metrics_forwarder:
+  metrics_forwarder_url: https://localhost:8088
 use_buildin_mode: false
 info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
 cf:
@@ -438,6 +452,8 @@ event_generator:
     key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+metrics_forwarder:
+  metrics_forwarder_url: https://localhost:8088
 use_buildin_mode: false
 info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
 cf:
@@ -616,6 +632,8 @@ event_generator:
     key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+metrics_forwarder:
+  metrics_forwarder_url: https://localhost:8088
 use_buildin_mode: false
 info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
 cf:
@@ -679,6 +697,8 @@ event_generator:
     key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+metrics_forwarder:
+  metrics_forwarder_url: https://localhost:8088
 use_buildin_mode: false
 info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
 cf:
@@ -742,6 +762,8 @@ event_generator:
     key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
     cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
     ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+metrics_forwarder:
+  metrics_forwarder_url: https://localhost:8088
 use_buildin_mode: false
 info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
 cf:
@@ -774,8 +796,8 @@ cf:
 				MaxIdleConnections:    5,
 				ConnectionMaxLifetime: 60 * time.Second,
 			}
-			conf.BrokerUsername = "brokeruser"
-			conf.BrokerPassword = "supersecretpassword"
+			conf.BrokerUsernameHash = "$2a$12$BAda.mygPxKmj0StMHZGX.OaezZN73VcRfS8dpaNeBqJ8GS/O16fO"
+			conf.BrokerPasswordHash = "$2a$12$Ksf5cf8sCbpS4WUgMKBMreuxpDhKEBjqwg2Bve.oh03P6iayFux/a"
 			conf.CatalogSchemaPath = "../schemas/catalog.schema.json"
 			conf.CatalogPath = "../exampleconfig/catalog-example.json"
 			conf.PolicySchemaPath = "../exampleconfig/policy.schema.json"
@@ -785,6 +807,7 @@ cf:
 			conf.MetricsCollector.MetricsCollectorUrl = "https://localhost:8083"
 			conf.ScalingEngine.ScalingEngineUrl = "https://localhost:8084"
 			conf.EventGenerator.EventGeneratorUrl = "https://localhost:8085"
+			conf.MetricsForwarder.MetricsForwarderUrl = "https://localhost:8088"
 
 			conf.CF.API = "https://api.bosh-lite.com"
 			conf.CF.ClientID = "client-id"
@@ -831,21 +854,79 @@ cf:
 			})
 		})
 
-		Context("when broker username is not set", func() {
+		Context("when neither the broker username nor its hash is set", func() {
 			BeforeEach(func() {
 				conf.BrokerUsername = ""
+				conf.BrokerUsernameHash = ""
 			})
 			It("should err", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: BrokerUsername is empty")))
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: both broker_username and broker_username_hash are empty, please provide one of them")))
 			})
 		})
 
-		Context("when broker password is not set", func() {
+		Context("when both the broker username and its hash are set", func() {
 			BeforeEach(func() {
-				conf.BrokerPassword = ""
+				conf.BrokerUsername = "brokeruser"
 			})
 			It("should err", func() {
-				Expect(err).To(MatchError(MatchRegexp("Configuration error: BrokerPassword is empty")))
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: both broker_username and broker_username_hash are set, please provide only one of them")))
+			})
+		})
+
+		Context("when just the broker username is set", func() {
+			BeforeEach(func() {
+				conf.BrokerUsername = "brokeruser"
+				conf.BrokerUsernameHash = ""
+			})
+			It("should not error", func() {
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when the broker username hash is set to an invalid value", func() {
+			BeforeEach(func() {
+				conf.BrokerUsernameHash = "not a bcrypt hash"
+			})
+			It("should err", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: broker_username_hash is not a valid bcrypt hash")))
+			})
+		})
+
+		Context("when neither the broker password nor its hash is set", func() {
+			BeforeEach(func() {
+				conf.BrokerPassword = ""
+				conf.BrokerPasswordHash = ""
+			})
+			It("should err", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: both broker_password and broker_password_hash are empty, please provide one of them")))
+			})
+		})
+
+		Context("when both the broker password and its hash are set", func() {
+			BeforeEach(func() {
+				conf.BrokerPassword = "brokeruser"
+			})
+			It("should err", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: both broker_password and broker_password_hash are set, please provide only one of them")))
+			})
+		})
+
+		Context("when just the broker password is set", func() {
+			BeforeEach(func() {
+				conf.BrokerPassword = "brokeruser"
+				conf.BrokerPasswordHash = ""
+			})
+			It("should not error", func() {
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when the broker password hash is set to an invalid value", func() {
+			BeforeEach(func() {
+				conf.BrokerPasswordHash = "not a bcrypt hash"
+			})
+			It("should err", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: broker_password_hash is not a valid bcrypt hash")))
 			})
 		})
 
@@ -873,6 +954,15 @@ cf:
 			})
 			It("should err", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: scaling_engine.scaling_engine_url is empty")))
+			})
+		})
+
+		Context("when metricsforwarder url is not set", func() {
+			BeforeEach(func() {
+				conf.MetricsForwarder.MetricsForwarderUrl = ""
+			})
+			It("should err", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: metrics_forwarder.metrics_forwarder_url is empty")))
 			})
 		})
 

@@ -1,16 +1,21 @@
 package publicapiserver
 
 import (
+	"bytes"
+	"encoding/json"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"strconv"
+
 	"autoscaler/api/config"
+	"autoscaler/api/custom_metrics_cred_helper"
 	"autoscaler/api/policyvalidator"
 	"autoscaler/api/schedulerutil"
 	"autoscaler/db"
 	"autoscaler/helpers"
 	"autoscaler/models"
 	"autoscaler/routes"
-	"io/ioutil"
-	"net/http"
-	"os"
 
 	"code.cloudfoundry.org/cfhttp/handlers"
 	"code.cloudfoundry.org/lager"
@@ -85,7 +90,22 @@ func (h *PublicApiHandler) GetScalingPolicy(w http.ResponseWriter, r *http.Reque
 			Message: "Policy Not Found"})
 		return
 	}
-	handlers.WriteJSONResponse(w, http.StatusOK, scalingPolicy)
+
+	bf := bytes.NewBuffer([]byte{})
+	jsonEncoder := json.NewEncoder(bf)
+	jsonEncoder.SetEscapeHTML(false)
+	err = jsonEncoder.Encode(scalingPolicy)
+	if err != nil {
+		h.logger.Error("Failed to json encode scaling policy", err, lager.Data{"appId": appId, "policy": scalingPolicy})
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Error encode scaling policy"})
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Length", strconv.Itoa(len(bf.Bytes())))
+	w.WriteHeader(http.StatusOK)
+	w.Write(bf.Bytes())
 }
 
 func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Request, vars map[string]string) {
@@ -114,12 +134,14 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 
 	errResults, valid := h.policyValidator.ValidatePolicy(policyStr)
 	if !valid {
+		h.logger.Error("Failed to validate policy", nil, lager.Data{"errResults": errResults})
 		handlers.WriteJSONResponse(w, http.StatusBadRequest, errResults)
 		return
 	}
 
 	policyGuid, err := uuid.NewV4()
 	if err != nil {
+		h.logger.Error("Failed to generate policy guid", err, nil)
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 			Code:    "Interal-Server-Error",
 			Message: "Error generating policy guid"})
@@ -129,6 +151,7 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 	h.logger.Info("saving policy json", lager.Data{"policy": policyStr})
 	err = h.policydb.SaveAppPolicy(appId, policyStr, policyGuid.String())
 	if err != nil {
+		h.logger.Error("Failed to save policy", err, nil)
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 			Code:    "Interal-Server-Error",
 			Message: "Error saving policy"})
@@ -138,13 +161,10 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 	h.logger.Info("creating/updating schedules", lager.Data{"policy": policyStr})
 	err = h.schedulerUtil.CreateOrUpdateSchedule(appId, policyStr, policyGuid.String())
 	if err != nil {
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: "Error creating/updating schedules"})
-		return
+		h.logger.Error("Failed to create/update schedule", err, nil)
 	}
-
-	handlers.WriteJSONResponse(w, http.StatusOK, nil)
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(policyBytes))
 }
 
 func (h *PublicApiHandler) DetachScalingPolicy(w http.ResponseWriter, r *http.Request, vars map[string]string) {
@@ -161,21 +181,21 @@ func (h *PublicApiHandler) DetachScalingPolicy(w http.ResponseWriter, r *http.Re
 	h.logger.Info("Deleting policy json", lager.Data{"appId": appId})
 	err := h.policydb.DeletePolicy(appId)
 	if err != nil {
+		h.logger.Error("Failed to delete policy from database", err, nil)
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 			Code:    "Interal-Server-Error",
 			Message: "Error deleting policy"})
 		return
 	}
-
 	h.logger.Info("Deleting schedules", lager.Data{"appId": appId})
 	err = h.schedulerUtil.DeleteSchedule(appId)
 	if err != nil {
+		h.logger.Error("Failed to delete schedule", err, nil)
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 			Code:    "Interal-Server-Error",
 			Message: "Error deleting schedules"})
 		return
 	}
-
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("{}"))
 }
@@ -225,7 +245,6 @@ func (h *PublicApiHandler) GetScalingHistories(w http.ResponseWriter, r *http.Re
 			Message: string(responseData)})
 		return
 	}
-
 	paginatedResponse, err := paginateResource(responseData, parameters, r)
 	if err != nil {
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
@@ -291,7 +310,6 @@ func (h *PublicApiHandler) GetAggregatedMetricsHistories(w http.ResponseWriter, 
 			Message: string(responseData)})
 		return
 	}
-
 	paginatedResponse, err := paginateResource(responseData, parameters, r)
 	if err != nil {
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
@@ -329,7 +347,7 @@ func (h *PublicApiHandler) GetInstanceMetricsHistories(w http.ResponseWriter, r 
 		return
 	}
 	if instanceIndex != "" {
-		parameters.Add("instance-index", instanceIndex)
+		parameters.Add("instanceindex", instanceIndex)
 	}
 
 	path, _ := routes.MetricsCollectorRoutes().Get(routes.GetMetricHistoriesRouteName).URLPath("appid", appId, "metrictype", metricType)
@@ -362,7 +380,6 @@ func (h *PublicApiHandler) GetInstanceMetricsHistories(w http.ResponseWriter, r 
 			Message: string(responseData)})
 		return
 	}
-
 	paginatedResponse, err := paginateResource(responseData, parameters, r)
 	if err != nil {
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
@@ -388,4 +405,88 @@ func (h *PublicApiHandler) GetApiInfo(w http.ResponseWriter, r *http.Request, va
 
 func (h *PublicApiHandler) GetHealth(w http.ResponseWriter, r *http.Request, vars map[string]string) {
 	w.Write([]byte(`{"alive":"true"}`))
+}
+
+func (h *PublicApiHandler) CreateCredential(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+	appId := vars["appId"]
+	if appId == "" {
+		h.logger.Error("AppId is missing", nil, nil)
+		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
+			Code:    "Bad Request",
+			Message: "AppId is required",
+		})
+		return
+	}
+	var userProvidedCredential *models.Credential
+	bodyBytes, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		h.logger.Error("Failed to read user provided credential request body", err, lager.Data{"appId": appId})
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Error creating credential"})
+		return
+	}
+	if len(bodyBytes) > 0 {
+		userProvidedCredential = &models.Credential{}
+		err = json.Unmarshal(bodyBytes, userProvidedCredential)
+		if err != nil {
+			h.logger.Error("Failed to unmarshal user provided credential", err, lager.Data{"appId": appId, "body": bodyBytes})
+			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
+				Code:    "Bad Request",
+				Message: "Invalid credential format"})
+			return
+		}
+		if !(userProvidedCredential.Username != "" && userProvidedCredential.Password != "") {
+			h.logger.Info("Username or password is missing", lager.Data{"appId": appId, "userProvidedCredential": userProvidedCredential})
+			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
+				Code:    "Bad Request",
+				Message: "Username and password are both required",
+			})
+			return
+		}
+	}
+
+	h.logger.Info("Create credential", lager.Data{"appId": appId})
+	cred, err := custom_metrics_cred_helper.CreateCredential(appId, userProvidedCredential, h.policydb, custom_metrics_cred_helper.MaxRetry)
+	if err != nil {
+		h.logger.Error("Failed to create credential", err, lager.Data{"appId": appId})
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Error creating credential"})
+		return
+	}
+	handlers.WriteJSONResponse(w, http.StatusOK, struct {
+		AppId string `json:"app_id"`
+		*models.Credential
+		Url string `json:"url"`
+	}{
+		AppId:      appId,
+		Credential: cred,
+		Url:        h.conf.MetricsForwarder.MetricsForwarderUrl,
+	})
+
+}
+
+func (h *PublicApiHandler) DeleteCredential(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+	appId := vars["appId"]
+	if appId == "" {
+		h.logger.Error("AppId is missing", nil, nil)
+		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
+			Code:    "Bad Request",
+			Message: "AppId is required",
+		})
+		return
+	}
+
+	h.logger.Info("Delete credential", lager.Data{"appId": appId})
+	err := custom_metrics_cred_helper.DeleteCredential(appId, h.policydb, custom_metrics_cred_helper.MaxRetry)
+	if err != nil {
+		h.logger.Error("Failed to delete credential", err, lager.Data{"appId": appId})
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Error deleting credential"})
+		return
+	}
+	handlers.WriteJSONResponse(w, http.StatusOK, nil)
+
 }

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"autoscaler/api/config"
 	"autoscaler/db"
 	"autoscaler/routes"
@@ -23,14 +25,15 @@ func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type basicAuthenticationMiddleware struct {
-	username string
-	password string
+	usernameHash []byte
+	passwordHash []byte
 }
 
 func (bam *basicAuthenticationMiddleware) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		username, password, authOK := r.BasicAuth()
-		if authOK == false || username != bam.username || password != bam.password {
+
+		if authOK == false || bcrypt.CompareHashAndPassword(bam.usernameHash, []byte(username)) != nil || bcrypt.CompareHashAndPassword(bam.passwordHash, []byte(password)) != nil {
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}
@@ -40,9 +43,33 @@ func (bam *basicAuthenticationMiddleware) Middleware(next http.Handler) http.Han
 
 func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB) (ifrit.Runner, error) {
 
+	var usernameHash []byte
+	if conf.BrokerUsernameHash != "" {
+		usernameHash = []byte(conf.BrokerUsernameHash)
+	} else {
+		var err error
+		usernameHash, err = bcrypt.GenerateFromPassword([]byte(conf.BrokerUsername), bcrypt.MinCost) // use MinCost as the config already provided it as cleartext
+		if err != nil {
+			logger.Error("failed-new-server-hashing-broker-username", err)
+			return nil, err
+		}
+	}
+
+	var passwordHash []byte
+	if conf.BrokerPasswordHash != "" {
+		passwordHash = []byte(conf.BrokerPasswordHash)
+	} else {
+		var err error
+		passwordHash, err = bcrypt.GenerateFromPassword([]byte(conf.BrokerPassword), bcrypt.MinCost) // use MinCost as the config already provided it as cleartext
+		if err != nil {
+			logger.Error("failed-new-server-hashing-broker-password", err)
+			return nil, err
+		}
+	}
+
 	basicAuthentication := &basicAuthenticationMiddleware{
-		username: conf.BrokerUsername,
-		password: conf.BrokerPassword,
+		usernameHash: usernameHash,
+		passwordHash: passwordHash,
 	}
 
 	ah := NewBrokerHandler(logger, conf, bindingdb, policydb)
