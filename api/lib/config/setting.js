@@ -44,7 +44,8 @@ module.exports = function(settingsObj) {
     return uri;
   };
   var addProtocol = function (uri) {
-    if (uri && (uri.indexOf("https://") < 0 && uri.indexOf("http://") < 0)) {
+    var pattern = new RegExp("^http[s]{0,1}://");
+    if (uri && (!pattern.test(uri))) {
       uri = "https://" + uri;
     }
     return uri;
@@ -83,7 +84,10 @@ module.exports = function(settingsObj) {
     infoFilePath: settingsObj.infoFilePath,
     serviceOffering: settingsObj.serviceOffering,
     httpClientTimeout: settingsObj.httpClientTimeout,
+    minBreachDurationSecs: settingsObj.minBreachDurationSecs,
+    minCoolDownSecs: settingsObj.minCoolDownSecs,
     healthPort: settingsObj.healthPort
+    
   };
   if (settingsObj.db) {
     var dbObj = db(settingsObj.db.uri);
@@ -447,6 +451,25 @@ module.exports = function(settingsObj) {
     if (settings.httpClientTimeout <= 0) {
       return { valid: false, message: "value of httpClientTimeout must be greater than 0" };
     }
+    if (isMissing(settings.minBreachDurationSecs)) {
+      return { valid: false, message: "minBreachDurationSecs is required" };
+    }
+    if (!isNumber(settings.minBreachDurationSecs)) {
+      return { valid: false, message: "minBreachDurationSecs must be a number" };
+    }
+    if (settings.minBreachDurationSecs <= 0) {
+      return { valid: false, message: "value of minBreachDurationSecs must be greater than 0" };
+    }
+    if (isMissing(settings.minCoolDownSecs)) {
+      return { valid: false, message: "minCoolDownSecs is required" };
+    }
+    if (!isNumber(settings.minCoolDownSecs)) {
+      return { valid: false, message: "minCoolDownSecs must be a number" };
+    }
+    if (settings.minCoolDownSecs <= 0) {
+      return { valid: false, message: "value of minCoolDownSecs must be greater than 0" };
+    }
+
     return { valid: true }
   }
 

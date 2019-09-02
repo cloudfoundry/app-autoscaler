@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc/keepalive"
 
 	"autoscaler/healthendpoint"
+	"autoscaler/helpers"
 )
 
 const METRICS_FORWARDER_ORIGIN = "autoscaler_metrics_forwarder"
@@ -34,17 +35,6 @@ var envelopeCounter = prometheus.CounterOpts{
 	Subsystem: "metricsgateway",
 	Name:      "envelope_number_from_rlp",
 	Help:      "the total envelopes number got from rlp",
-}
-
-type EnvelopeStreamerLogger struct {
-	logger lager.Logger
-}
-
-func (l *EnvelopeStreamerLogger) Printf(message string, data ...interface{}) {
-	l.logger.Debug(message, lager.Data{"data": data})
-}
-func (l *EnvelopeStreamerLogger) Panicf(message string, data ...interface{}) {
-	l.logger.Fatal(message, nil, lager.Data{"data": data})
 }
 
 type Nozzle struct {
@@ -90,9 +80,7 @@ func (n *Nozzle) Stop() {
 
 func (n *Nozzle) streamMetrics() {
 	streamConnector := loggregator.NewEnvelopeStreamConnector(n.rlpAddr, n.tls,
-		loggregator.WithEnvelopeStreamLogger(&EnvelopeStreamerLogger{
-			logger: n.logger.Session("envelope_streamer"),
-		}),
+		loggregator.WithEnvelopeStreamLogger(helpers.NewLoggregatorGRPCLogger(n.logger.Session("envelope_streamer"))),
 		loggregator.WithEnvelopeStreamConnectorDialOptions(grpc.WithKeepaliveParams(keepalive.ClientParameters{
 			Time:                10 * time.Second,
 			Timeout:             30 * time.Second,

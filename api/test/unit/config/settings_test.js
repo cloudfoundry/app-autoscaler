@@ -79,6 +79,8 @@ describe('config setting Test Suite', function() {
         "certFile": "certFilePath",
         "caCertFile": "caCertFilePath"
       },
+      "minBreachDurationSecs": 1,
+      "minCoolDownSecs": 1,
       "httpClientTimeout": 5000
     }
     //setting.js will modifty defaultConfigTemplate, here clone defaultConfigTemplate to defaultConfig first
@@ -905,7 +907,69 @@ describe('config setting Test Suite', function() {
           expect(settings.validate().message).to.equal("value of httpClientTimeout must be greater than 0");
         })
       });
-  });
+    });
+
+    context('Validate minBreachDurationSecs', function() {
+      context('When minBreachDurationSecs is null', function() {
+        it('Should return false', function() {
+          settings.minBreachDurationSecs = null;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("minBreachDurationSecs is required");
+        })
+      });
+      context('When minBreachDurationSecs is undefined', function() {
+        it('Should return false', function() {
+          delete settings.minBreachDurationSecs;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("minBreachDurationSecs is required");
+        })
+      });
+      context('When minBreachDurationSecs is not an integer', function() {
+        it('Should return false', function() {
+          settings.minBreachDurationSecs = "1000";
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("minBreachDurationSecs must be a number");
+        })
+      });
+      context('When the minBreachDurationSecs is out of range', function() {
+        it('Should return false', function() {
+          settings.minBreachDurationSecs = -1;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("value of minBreachDurationSecs must be greater than 0");
+        })
+      });
+    });
+
+    context('Validate minCoolDownSecs', function() {
+      context('When minCoolDownSecs is null', function() {
+        it('Should return false', function() {
+          settings.minCoolDownSecs = null;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("minCoolDownSecs is required");
+        })
+      });
+      context('When minCoolDownSecs is undefined', function() {
+        it('Should return false', function() {
+          delete settings.minCoolDownSecs;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("minCoolDownSecs is required");
+        })
+      });
+      context('When minCoolDownSecs is not an integer', function() {
+        it('Should return false', function() {
+          settings.minCoolDownSecs = "1000";
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("minCoolDownSecs must be a number");
+        })
+      });
+      context('When the minCoolDownSecs is out of range', function() {
+        it('Should return false', function() {
+          settings.minCoolDownSecs = -1;
+          expect(settings.validate().valid).to.equal(false);
+          expect(settings.validate().message).to.equal("value of minCoolDownSecs must be greater than 0");
+        })
+      });
+    });
 
   });
 
