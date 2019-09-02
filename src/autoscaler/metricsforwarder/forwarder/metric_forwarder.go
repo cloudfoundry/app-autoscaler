@@ -1,6 +1,7 @@
 package forwarder
 
 import (
+	"autoscaler/helpers"
 	"autoscaler/metricsforwarder/config"
 	"autoscaler/models"
 
@@ -34,6 +35,7 @@ func NewMetricForwarder(logger lager.Logger, conf *config.Config) (MetricForward
 		tlsConfig,
 		loggregator.WithAddr(conf.LoggregatorConfig.MetronAddress),
 		loggregator.WithTag("origin", METRICS_FORWARDER_ORIGIN),
+		loggregator.WithLogger(helpers.NewLoggregatorGRPCLogger(logger.Session("metric_forwarder"))),
 	)
 
 	if err != nil {

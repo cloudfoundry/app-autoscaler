@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"autoscaler/api"
 	"autoscaler/api/brokerserver"
 	"autoscaler/api/config"
 	"autoscaler/api/publicapiserver"
@@ -60,7 +61,7 @@ func main() {
 		os.Exit(1)
 	}
 	defer policyDb.Close()
-
+	var checkBindingFunc api.CheckBindingFunc
 	if !conf.UseBuildInMode {
 		var bindingDB db.BindingDB
 		bindingDB, err = sqldb.NewBindingSQLDB(conf.DB.BindingDB, logger.Session("bindingdb-db"))
@@ -69,13 +70,19 @@ func main() {
 			os.Exit(1)
 		}
 		defer bindingDB.Close()
-
+		checkBindingFunc = func(appId string) bool {
+			return bindingDB.CheckServiceBinding(appId)
+		}
 		brokerHttpServer, err := brokerserver.NewBrokerServer(logger.Session("broker_http_server"), conf, bindingDB, policyDb)
 		if err != nil {
 			logger.Error("failed to create broker http server", err)
 			os.Exit(1)
 		}
 		members = append(members, grouper.Member{"broker_http_server", brokerHttpServer})
+	} else {
+		checkBindingFunc = func(appId string) bool {
+			return true
+		}
 	}
 
 	paClock := clock.NewClock()
@@ -86,7 +93,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	publicApiHttpServer, err := publicapiserver.NewPublicApiServer(logger.Session("public_api_http_server"), conf, policyDb, cfClient)
+	publicApiHttpServer, err := publicapiserver.NewPublicApiServer(logger.Session("public_api_http_server"), conf, policyDb, checkBindingFunc, cfClient)
 	if err != nil {
 		logger.Error("failed to create public api http server", err)
 		os.Exit(1)

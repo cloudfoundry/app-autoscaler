@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"autoscaler/api"
 	"autoscaler/api/config"
 	"autoscaler/cf"
 	"autoscaler/db"
@@ -23,24 +24,36 @@ func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vh(w, r, vars)
 }
 
-func NewPublicApiServer(logger lager.Logger, conf *config.Config, policydb db.PolicyDB, cfclient cf.CFClient) (ifrit.Runner, error) {
-
+func NewPublicApiServer(logger lager.Logger, conf *config.Config, policydb db.PolicyDB, checkBindingFunc api.CheckBindingFunc, cfclient cf.CFClient) (ifrit.Runner, error) {
 	pah := NewPublicApiHandler(logger, conf, policydb)
-	oam := NewOauthMiddleware(logger, cfclient)
+	mw := NewMiddleware(logger, cfclient, checkBindingFunc)
 
-	r := routes.PublicApiRoutes()
+	r := routes.ApiOpenRoutes()
 	r.Get(routes.PublicApiInfoRouteName).Handler(VarsFunc(pah.GetApiInfo))
 	r.Get(routes.PublicApiHealthRouteName).Handler(VarsFunc(pah.GetHealth))
 
-	rp := routes.PublicApiProtectedRoutes()
-	rp.Use(oam.Middleware)
+	rp := routes.ApiRoutes()
+	rp.Use(mw.Oauth)
 	rp.Get(routes.PublicApiScalingHistoryRouteName).Handler(VarsFunc(pah.GetScalingHistories))
 	rp.Get(routes.PublicApiMetricsHistoryRouteName).Handler(VarsFunc(pah.GetInstanceMetricsHistories))
 	rp.Get(routes.PublicApiAggregatedMetricsHistoryRouteName).Handler(VarsFunc(pah.GetAggregatedMetricsHistories))
-	rp.Get(routes.PublicApiGetPolicyRouteName).Handler(VarsFunc(pah.GetScalingPolicy))
-	rp.Get(routes.PublicApiAttachPolicyRouteName).Handler(VarsFunc(pah.AttachScalingPolicy))
-	rp.Get(routes.PublicApiDetachPolicyRouteName).Handler(VarsFunc(pah.DetachScalingPolicy))
 
+	rpolicy := routes.ApiPolicyRoutes()
+	rpolicy.Use(mw.Oauth)
+	if !conf.UseBuildInMode {
+		rpolicy.Use(mw.CheckServiceBinding)
+	}
+	rpolicy.Get(routes.PublicApiGetPolicyRouteName).Handler(VarsFunc(pah.GetScalingPolicy))
+	rpolicy.Get(routes.PublicApiAttachPolicyRouteName).Handler(VarsFunc(pah.AttachScalingPolicy))
+	rpolicy.Get(routes.PublicApiDetachPolicyRouteName).Handler(VarsFunc(pah.DetachScalingPolicy))
+
+	rcredential := routes.ApiCredentialRoutes()
+	if !conf.UseBuildInMode {
+		rcredential.Use(mw.RejectCredentialOperationInServiceOffering)
+	}
+	rcredential.Use(mw.Oauth)
+	rcredential.Get(routes.PublicApiCreateCredentialRouteName).Handler(VarsFunc(pah.CreateCredential))
+	rcredential.Get(routes.PublicApiDeleteCredentialRouteName).Handler(VarsFunc(pah.DeleteCredential))
 	addr := fmt.Sprintf("0.0.0.0:%d", conf.PublicApiServer.Port)
 
 	var runner ifrit.Runner

@@ -58,7 +58,6 @@ var getDaysInMonthInISOFormat = function() {
   return monthEnum;
 };
 
-
 var getPolicySchema = function() {
   var schema = {
     'type': 'object',
@@ -80,7 +79,7 @@ var getPolicySchema = function() {
 };
 
 
-var getScalingRuleSchema = function() {
+var getScalingRuleSchema = function(settings) {
   var validOperators = getValidOperators();
   var adjustmentPattern = getAdjustmentPattern();
   var schema = {
@@ -88,10 +87,10 @@ var getScalingRuleSchema = function() {
     'id':'/scaling_rules',
     'properties' : {
       'metric_type':{ 'type':'string', 'pattern':'^[a-zA-Z0-9_]+$' },
-      'breach_duration_secs':{ 'type':'integer','minimum': 60,'maximum': 3600 },
+      'breach_duration_secs':{ 'type':'integer','minimum': settings.minBreachDurationSecs,'maximum': 3600 },
       'threshold':{ 'type':'integer'},
       'operator':{ 'type':'string','enum': validOperators },
-      'cool_down_secs':{ 'type':'integer','minimum': 60,'maximum': 3600 },
+      'cool_down_secs':{ 'type':'integer','minimum': settings.minCoolDownSecs,'maximum': 3600 },
       'adjustment':{ 'type':'string','pattern': adjustmentPattern }
     },
     'required' : ['metric_type','threshold','operator','adjustment']
@@ -168,19 +167,17 @@ var getSpecificDateSchema = function() {
   return schema;
 }
 
-var initSchema = function() {
+var initSchema = function(settings) {
   validator.addSchema(getSpecificDateSchema(), '/specific_date');
   validator.addSchema(getRecurringSchema(),'/recurring_schedule');
   validator.addSchema(getScheduleSchema(),'/schedules');
-  validator.addSchema(getScalingRuleSchema(),'/scaling_rules');
+  validator.addSchema(getScalingRuleSchema(settings),'/scaling_rules');
   return getPolicySchema();
 }
 
-var policySchema = initSchema();
-
-exports.validatePolicy = function validatePolicy(inputJson,callback) {
+exports.validatePolicy = function validatePolicy(inputJson, settings ,callback) {
   if(callback) {
-    var errors = validator.validate(inputJson, policySchema).errors;
+    var errors = validator.validate(inputJson, initSchema(settings)).errors;
     callback(errors);
   }
   else{
@@ -188,3 +185,5 @@ exports.validatePolicy = function validatePolicy(inputJson,callback) {
     return;
   }
 }
+
+ 

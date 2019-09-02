@@ -5,10 +5,13 @@ import (
 	"autoscaler/fakes"
 	"autoscaler/models"
 	"bytes"
+	"database/sql"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
@@ -89,7 +92,6 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 		})
 	})
-
 	Describe("GetScalingPolicy", func() {
 		JustBeforeEach(func() {
 			handler.GetScalingPolicy(resp, req, pathVariables)
@@ -155,7 +157,8 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should succeed", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				Expect(resp.Body.String()).To(Equal(`{"instance_min_count":1,"instance_max_count":5,"scaling_rules":[{"metric_type":"memoryused","breach_duration_secs":300,"threshold":30,"operator":"\u003c","cool_down_secs":300,"adjustment":"-1"}],"schedules":{"timezone":"Asia/Kolkata","recurring_schedule":[{"start_time":"10:00","end_time":"18:00","days_of_week":[1,2,3],"instance_min_count":1,"instance_max_count":10,"initial_min_instance_count":5}]}}`))
+
+				Expect(strings.TrimSpace(resp.Body.String())).To(Equal(`{"instance_min_count":1,"instance_max_count":5,"scaling_rules":[{"metric_type":"memoryused","breach_duration_secs":300,"threshold":30,"operator":"<","cool_down_secs":300,"adjustment":"-1"}],"schedules":{"timezone":"Asia/Kolkata","recurring_schedule":[{"start_time":"10:00","end_time":"18:00","days_of_week":[1,2,3],"instance_min_count":1,"instance_max_count":10,"initial_min_instance_count":5}]}}`))
 			})
 		})
 	})
@@ -200,9 +203,8 @@ var _ = Describe("PublicApiHandler", func() {
 				req, _ = http.NewRequest(http.MethodPut, "", bytes.NewBufferString(VALID_POLICY_STR))
 				schedulerStatus = 500
 			})
-			It("should fail with 500", func() {
-				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error creating/updating schedules"}`))
+			It("should succeed", func() {
+				Expect(resp.Code).To(Equal(http.StatusOK))
 			})
 		})
 
@@ -594,7 +596,22 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get full page", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				Expect(resp.Body.String()).To(Equal(`{"total_results":5,"total_pages":3,"page":1,"prev_url":"","next_url":"/v1/apps/test-app-id/scaling_histories/?end-time=300\u0026order-direction=DESC\u0026page=2\u0026results-per-page=2\u0026start-time=100","resources":[{"app_id":"test-app-id","error":"","message":"","new_instances":4,"old_instances":2,"reason":"a reason","scaling_type":0,"status":0,"timestamp":300},{"app_id":"test-app-id","error":"","message":"","new_instances":4,"old_instances":2,"reason":"a reason","scaling_type":1,"status":1,"timestamp":250}]}`))
+				var result models.AppScalingHistoryResponse
+				err := json.Unmarshal([]byte(resp.Body.String()), &result)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(Equal(
+					models.AppScalingHistoryResponse{
+						PublicApiResponseBase: models.PublicApiResponseBase{
+							TotalResults: 5,
+							TotalPages:   3,
+							Page:         1,
+							PrevUrl:      "",
+							NextUrl:      "/v1/apps/test-app-id/scaling_histories/?end-time=300\u0026order-direction=desc\u0026page=2\u0026results-per-page=2\u0026start-time=100",
+						},
+						Resources: scalingEngineResponse[0:2],
+					},
+				))
+
 			})
 		})
 		Context("when getting 2nd page", func() {
@@ -613,7 +630,21 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get full page", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				Expect(resp.Body.String()).To(Equal(`{"total_results":5,"total_pages":3,"page":2,"prev_url":"/v1/apps/test-app-id/scaling_histories/?end-time=300\u0026order-direction=DESC\u0026page=1\u0026results-per-page=2\u0026start-time=100","next_url":"/v1/apps/test-app-id/scaling_histories/?end-time=300\u0026order-direction=DESC\u0026page=3\u0026results-per-page=2\u0026start-time=100","resources":[{"app_id":"test-app-id","error":"","message":"","new_instances":4,"old_instances":2,"reason":"a reason","scaling_type":0,"status":0,"timestamp":200},{"app_id":"test-app-id","error":"","message":"","new_instances":4,"old_instances":2,"reason":"a reason","scaling_type":1,"status":1,"timestamp":150}]}`))
+				var result models.AppScalingHistoryResponse
+				err := json.Unmarshal([]byte(resp.Body.String()), &result)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(Equal(
+					models.AppScalingHistoryResponse{
+						PublicApiResponseBase: models.PublicApiResponseBase{
+							TotalResults: 5,
+							TotalPages:   3,
+							Page:         2,
+							PrevUrl:      "/v1/apps/test-app-id/scaling_histories/?end-time=300\u0026order-direction=desc\u0026page=1\u0026results-per-page=2\u0026start-time=100",
+							NextUrl:      "/v1/apps/test-app-id/scaling_histories/?end-time=300\u0026order-direction=desc\u0026page=3\u0026results-per-page=2\u0026start-time=100",
+						},
+						Resources: scalingEngineResponse[2:4],
+					},
+				))
 			})
 		})
 
@@ -633,7 +664,21 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get only one record", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				Expect(resp.Body.String()).To(Equal(`{"total_results":5,"total_pages":3,"page":3,"prev_url":"/v1/apps/test-app-id/scaling_histories/?end-time=300\u0026order-direction=DESC\u0026page=2\u0026results-per-page=2\u0026start-time=100","next_url":"","resources":[{"app_id":"test-app-id","error":"","message":"","new_instances":4,"old_instances":2,"reason":"a reason","scaling_type":0,"status":0,"timestamp":100}]}`))
+				var result models.AppScalingHistoryResponse
+				err := json.Unmarshal([]byte(resp.Body.String()), &result)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(Equal(
+					models.AppScalingHistoryResponse{
+						PublicApiResponseBase: models.PublicApiResponseBase{
+							TotalResults: 5,
+							TotalPages:   3,
+							Page:         3,
+							PrevUrl:      "/v1/apps/test-app-id/scaling_histories/?end-time=300\u0026order-direction=desc\u0026page=2\u0026results-per-page=2\u0026start-time=100",
+							NextUrl:      "",
+						},
+						Resources: scalingEngineResponse[4:5],
+					},
+				))
 			})
 		})
 
@@ -653,7 +698,21 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get no records", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				Expect(resp.Body.String()).To(Equal(`{"total_results":5,"total_pages":3,"page":4,"prev_url":"/v1/apps/test-app-id/scaling_histories/?end-time=300\u0026order-direction=DESC\u0026page=3\u0026results-per-page=2\u0026start-time=100","next_url":"","resources":[]}`))
+				var result models.AppScalingHistoryResponse
+				err := json.Unmarshal([]byte(resp.Body.String()), &result)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(Equal(
+					models.AppScalingHistoryResponse{
+						PublicApiResponseBase: models.PublicApiResponseBase{
+							TotalResults: 5,
+							TotalPages:   3,
+							Page:         4,
+							PrevUrl:      "/v1/apps/test-app-id/scaling_histories/?end-time=300\u0026order-direction=desc\u0026page=3\u0026results-per-page=2\u0026start-time=100",
+							NextUrl:      "",
+						},
+						Resources: []models.AppScalingHistory{},
+					},
+				))
 			})
 		})
 
@@ -987,7 +1046,21 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get full page", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				Expect(resp.Body.String()).To(Equal(`{"total_results":5,"total_pages":3,"page":1,"prev_url":"","next_url":"/v1/apps/test-app-id/metric_histories/test_metric?end-time=300\u0026order-direction=DESC\u0026page=2\u0026results-per-page=2\u0026start-time=100","resources":[{"app_id":"test-app-id","collected_at":0,"instance_index":0,"name":"test_metric","timestamp":100,"unit":"test_unit","value":"200"},{"app_id":"test-app-id","collected_at":1,"instance_index":1,"name":"test_metric","timestamp":110,"unit":"test_unit","value":"250"}]}`))
+				var result models.InstanceMetricResponse
+				err := json.Unmarshal([]byte(resp.Body.String()), &result)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(Equal(
+					models.InstanceMetricResponse{
+						PublicApiResponseBase: models.PublicApiResponseBase{
+							TotalResults: 5,
+							TotalPages:   3,
+							Page:         1,
+							PrevUrl:      "",
+							NextUrl:      "/v1/apps/test-app-id/metric_histories/test_metric?end-time=300\u0026order-direction=desc\u0026page=2\u0026results-per-page=2\u0026start-time=100",
+						},
+						Resources: metricsCollectorResponse[0:2],
+					},
+				))
 			})
 		})
 		Context("when getting 2nd page", func() {
@@ -1007,7 +1080,22 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get full page", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				Expect(resp.Body.String()).To(Equal(`{"total_results":5,"total_pages":3,"page":2,"prev_url":"/v1/apps/test-app-id/metric_histories/test_metric?end-time=300\u0026order-direction=DESC\u0026page=1\u0026results-per-page=2\u0026start-time=100","next_url":"/v1/apps/test-app-id/metric_histories/test_metric?end-time=300\u0026order-direction=DESC\u0026page=3\u0026results-per-page=2\u0026start-time=100","resources":[{"app_id":"test-app-id","collected_at":0,"instance_index":0,"name":"test_metric","timestamp":150,"unit":"test_unit","value":"250"},{"app_id":"test-app-id","collected_at":1,"instance_index":1,"name":"test_metric","timestamp":170,"unit":"test_unit","value":"200"}]}`))
+				var result models.InstanceMetricResponse
+				err := json.Unmarshal([]byte(resp.Body.String()), &result)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(Equal(
+					models.InstanceMetricResponse{
+						PublicApiResponseBase: models.PublicApiResponseBase{
+							TotalResults: 5,
+							TotalPages:   3,
+							Page:         2,
+							PrevUrl:      "/v1/apps/test-app-id/metric_histories/test_metric?end-time=300\u0026order-direction=desc\u0026page=1\u0026results-per-page=2\u0026start-time=100",
+							NextUrl:      "/v1/apps/test-app-id/metric_histories/test_metric?end-time=300\u0026order-direction=desc\u0026page=3\u0026results-per-page=2\u0026start-time=100",
+						},
+						Resources: metricsCollectorResponse[2:4],
+					},
+				))
+
 			})
 		})
 
@@ -1028,7 +1116,22 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get only one record", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				Expect(resp.Body.String()).To(Equal(`{"total_results":5,"total_pages":3,"page":3,"prev_url":"/v1/apps/test-app-id/metric_histories/test_metric?end-time=300\u0026order-direction=DESC\u0026page=2\u0026results-per-page=2\u0026start-time=100","next_url":"","resources":[{"app_id":"test-app-id","collected_at":0,"instance_index":0,"name":"test_metric","timestamp":120,"unit":"test_unit","value":"200"}]}`))
+				var result models.InstanceMetricResponse
+				err := json.Unmarshal([]byte(resp.Body.String()), &result)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(Equal(
+					models.InstanceMetricResponse{
+						PublicApiResponseBase: models.PublicApiResponseBase{
+							TotalResults: 5,
+							TotalPages:   3,
+							Page:         3,
+							PrevUrl:      "/v1/apps/test-app-id/metric_histories/test_metric?end-time=300\u0026order-direction=desc\u0026page=2\u0026results-per-page=2\u0026start-time=100",
+							NextUrl:      "",
+						},
+						Resources: metricsCollectorResponse[4:5],
+					},
+				))
+
 			})
 		})
 
@@ -1049,7 +1152,21 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get no records", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				Expect(resp.Body.String()).To(Equal(`{"total_results":5,"total_pages":3,"page":4,"prev_url":"/v1/apps/test-app-id/metric_histories/test_metric?end-time=300\u0026order-direction=DESC\u0026page=3\u0026results-per-page=2\u0026start-time=100","next_url":"","resources":[]}`))
+				var result models.InstanceMetricResponse
+				err := json.Unmarshal([]byte(resp.Body.String()), &result)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(Equal(
+					models.InstanceMetricResponse{
+						PublicApiResponseBase: models.PublicApiResponseBase{
+							TotalResults: 5,
+							TotalPages:   3,
+							Page:         4,
+							PrevUrl:      "/v1/apps/test-app-id/metric_histories/test_metric?end-time=300\u0026order-direction=desc\u0026page=3\u0026results-per-page=2\u0026start-time=100",
+							NextUrl:      "",
+						},
+						Resources: []models.AppInstanceMetric{},
+					},
+				))
 			})
 		})
 
@@ -1373,7 +1490,22 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get full page", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				Expect(resp.Body.String()).To(Equal(`{"total_results":5,"total_pages":3,"page":1,"prev_url":"","next_url":"/v1/apps/test-app-id/aggregated_metric_histories/test_metric?end-time=300\u0026order-direction=DESC\u0026page=2\u0026results-per-page=2\u0026start-time=100","resources":[{"app_id":"test-app-id","name":"test_metric","timestamp":100,"unit":"test_unit","value":"200"},{"app_id":"test-app-id","name":"test_metric","timestamp":110,"unit":"test_unit","value":"250"}]}`))
+				var result models.AppMetricResponse
+				err := json.Unmarshal([]byte(resp.Body.String()), &result)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(Equal(
+					models.AppMetricResponse{
+						PublicApiResponseBase: models.PublicApiResponseBase{
+							TotalResults: 5,
+							TotalPages:   3,
+							Page:         1,
+							PrevUrl:      "",
+							NextUrl:      "/v1/apps/test-app-id/aggregated_metric_histories/test_metric?end-time=300\u0026order-direction=desc\u0026page=2\u0026results-per-page=2\u0026start-time=100",
+						},
+						Resources: eventGeneratorResponse[0:2],
+					},
+				))
+
 			})
 		})
 		Context("when getting 2nd page", func() {
@@ -1393,7 +1525,21 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get full page", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				Expect(resp.Body.String()).To(Equal(`{"total_results":5,"total_pages":3,"page":2,"prev_url":"/v1/apps/test-app-id/aggregated_metric_histories/test_metric?end-time=300\u0026order-direction=DESC\u0026page=1\u0026results-per-page=2\u0026start-time=100","next_url":"/v1/apps/test-app-id/aggregated_metric_histories/test_metric?end-time=300\u0026order-direction=DESC\u0026page=3\u0026results-per-page=2\u0026start-time=100","resources":[{"app_id":"test-app-id","name":"test_metric","timestamp":150,"unit":"test_unit","value":"250"},{"app_id":"test-app-id","name":"test_metric","timestamp":170,"unit":"test_unit","value":"200"}]}`))
+				var result models.AppMetricResponse
+				err := json.Unmarshal([]byte(resp.Body.String()), &result)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(Equal(
+					models.AppMetricResponse{
+						PublicApiResponseBase: models.PublicApiResponseBase{
+							TotalResults: 5,
+							TotalPages:   3,
+							Page:         2,
+							PrevUrl:      "/v1/apps/test-app-id/aggregated_metric_histories/test_metric?end-time=300\u0026order-direction=desc\u0026page=1\u0026results-per-page=2\u0026start-time=100",
+							NextUrl:      "/v1/apps/test-app-id/aggregated_metric_histories/test_metric?end-time=300\u0026order-direction=desc\u0026page=3\u0026results-per-page=2\u0026start-time=100",
+						},
+						Resources: eventGeneratorResponse[2:4],
+					},
+				))
 			})
 		})
 
@@ -1414,7 +1560,21 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get only one record", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				Expect(resp.Body.String()).To(Equal(`{"total_results":5,"total_pages":3,"page":3,"prev_url":"/v1/apps/test-app-id/aggregated_metric_histories/test_metric?end-time=300\u0026order-direction=DESC\u0026page=2\u0026results-per-page=2\u0026start-time=100","next_url":"","resources":[{"app_id":"test-app-id","name":"test_metric","timestamp":200,"unit":"test_unit","value":"200"}]}`))
+				var result models.AppMetricResponse
+				err := json.Unmarshal([]byte(resp.Body.String()), &result)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(Equal(
+					models.AppMetricResponse{
+						PublicApiResponseBase: models.PublicApiResponseBase{
+							TotalResults: 5,
+							TotalPages:   3,
+							Page:         3,
+							PrevUrl:      "/v1/apps/test-app-id/aggregated_metric_histories/test_metric?end-time=300\u0026order-direction=desc\u0026page=2\u0026results-per-page=2\u0026start-time=100",
+							NextUrl:      "",
+						},
+						Resources: eventGeneratorResponse[4:5],
+					},
+				))
 			})
 		})
 
@@ -1435,7 +1595,128 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should get no records", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
-				Expect(resp.Body.String()).To(Equal(`{"total_results":5,"total_pages":3,"page":4,"prev_url":"/v1/apps/test-app-id/aggregated_metric_histories/test_metric?end-time=300\u0026order-direction=DESC\u0026page=3\u0026results-per-page=2\u0026start-time=100","next_url":"","resources":[]}`))
+				var result models.AppMetricResponse
+				err := json.Unmarshal([]byte(resp.Body.String()), &result)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(result).To(Equal(
+					models.AppMetricResponse{
+						PublicApiResponseBase: models.PublicApiResponseBase{
+							TotalResults: 5,
+							TotalPages:   3,
+							Page:         4,
+							PrevUrl:      "/v1/apps/test-app-id/aggregated_metric_histories/test_metric?end-time=300\u0026order-direction=desc\u0026page=3\u0026results-per-page=2\u0026start-time=100",
+							NextUrl:      "",
+						},
+						Resources: []models.AppMetric{},
+					},
+				))
+			})
+		})
+
+	})
+	Describe("CreateCredential", func() {
+		var requestBody string
+		BeforeEach(func() {
+			pathVariables["appId"] = TEST_APP_ID
+		})
+		JustBeforeEach(func() {
+			req, _ = http.NewRequest(http.MethodPut, "/v1/apps/"+TEST_APP_ID+"/credential", strings.NewReader(requestBody))
+			req.Header.Set("Content-type", "application/json")
+			handler.CreateCredential(resp, req, pathVariables)
+
+		})
+		AfterEach(func() {
+			requestBody = ""
+		})
+		Context("When appId is not present", func() {
+			BeforeEach(func() {
+				delete(pathVariables, "appId")
+			})
+			It("should fail with 400", func() {
+				Expect(resp.Code).To(Equal(http.StatusBadRequest))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"AppId is required"}`))
+			})
+		})
+		Context("When user provide credential", func() {
+			Context("When request body is invalid json", func() {
+				BeforeEach(func() {
+					requestBody = "not-json"
+				})
+				It("should fail with 400", func() {
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
+					Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"Invalid credential format"}`))
+				})
+			})
+			Context("When credential.username is not provided", func() {
+				BeforeEach(func() {
+					requestBody = `{"password":"password"}`
+				})
+				It("should fail with 400", func() {
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
+					Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"Username and password are both required"}`))
+				})
+			})
+			Context("When credential.password is not provided", func() {
+				BeforeEach(func() {
+					requestBody = `{"username":"username"}`
+				})
+				It("should fail with 400", func() {
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
+					Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"Username and password are both required"}`))
+				})
+			})
+		})
+		Context("When failed to save credential to policydb", func() {
+			BeforeEach(func() {
+				policydb.SaveCredentialReturns(fmt.Errorf("sql db error"))
+				policydb.GetCredentialReturns(nil, sql.ErrNoRows)
+			})
+			It("should fails with 500", func() {
+				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error creating credential"}`))
+			})
+		})
+		Context("When successfully save data to policydb", func() {
+			BeforeEach(func() {
+				policydb.SaveCredentialReturns(nil)
+			})
+			It("should succeed with 200", func() {
+				Expect(resp.Code).To(Equal(http.StatusOK))
+			})
+		})
+	})
+	Describe("DeleteCredential", func() {
+		JustBeforeEach(func() {
+			handler.DeleteCredential(resp, req, pathVariables)
+		})
+		BeforeEach(func() {
+			pathVariables["appId"] = TEST_APP_ID
+			req, _ = http.NewRequest(http.MethodPut, "", nil)
+		})
+		Context("When appId is not present", func() {
+			BeforeEach(func() {
+				delete(pathVariables, "appId")
+			})
+			It("should fail with 400", func() {
+				Expect(resp.Code).To(Equal(http.StatusBadRequest))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"AppId is required"}`))
+			})
+		})
+		Context("When failed to delete credential from policydb", func() {
+			BeforeEach(func() {
+				policydb.DeleteCredentialReturns(fmt.Errorf("sql db error"))
+			})
+			It("should fails with 500", func() {
+				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error deleting credential"}`))
+			})
+		})
+		Context("When successfully delete data from policydb", func() {
+			BeforeEach(func() {
+				policydb.DeleteCredentialReturns(nil)
+			})
+			It("should succeed with 200", func() {
+				Expect(resp.Code).To(Equal(http.StatusOK))
 			})
 		})
 
