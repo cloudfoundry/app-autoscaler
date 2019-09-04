@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
-	"golang.org/x/crypto/bcrypt"
-
 	"autoscaler/api/config"
 	"autoscaler/db"
+	"autoscaler/healthendpoint"
 	"autoscaler/routes"
 
 	"code.cloudfoundry.org/cfhttp"
@@ -15,6 +14,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/http_server"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type VarsFunc func(w http.ResponseWriter, r *http.Request, vars map[string]string)
@@ -41,7 +41,7 @@ func (bam *basicAuthenticationMiddleware) Middleware(next http.Handler) http.Han
 	})
 }
 
-func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB) (ifrit.Runner, error) {
+func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB, httpStatusCollector healthendpoint.HTTPStatusCollector) (ifrit.Runner, error) {
 
 	var usernameHash []byte
 	if conf.BrokerUsernameHash != "" {
@@ -71,12 +71,13 @@ func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.Bind
 		usernameHash: usernameHash,
 		passwordHash: passwordHash,
 	}
-
+	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(httpStatusCollector)
 	ah := NewBrokerHandler(logger, conf, bindingdb, policydb)
 
 	r := routes.BrokerRoutes()
 
 	r.Use(basicAuthentication.Middleware)
+	r.Use(httpStatusCollectMiddleware.Collect)
 	r.Get(routes.BrokerCatalogRouteName).Handler(VarsFunc(ah.GetBrokerCatalog))
 	r.Get(routes.BrokerCreateInstanceRouteName).Handler(VarsFunc(ah.CreateServiceInstance))
 	r.Get(routes.BrokerDeleteInstanceRouteName).Handler(VarsFunc(ah.DeleteServiceInstance))

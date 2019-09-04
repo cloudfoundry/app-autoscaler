@@ -280,10 +280,48 @@ cf:
 			})
 		})
 
-		Context("when it gives a non integer port", func() {
+		Context("when it gives a non integer broker_server port", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
 broker_server:
+  port: port
+public_api_server:
+  port: 8081
+health:
+  port: 8888
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+			})
+		})
+		Context("when it gives a non integer public_api_server port", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+broker_server:
+  port: 8080
+public_api_server:
+  port: port
+health:
+  port: 8888
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+			})
+		})
+		Context("when it gives a non integer health server port", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+broker_server:
+  port: 8080
+public_api_server:
+  port: 8081
+health:
   port: port
 `)
 			})

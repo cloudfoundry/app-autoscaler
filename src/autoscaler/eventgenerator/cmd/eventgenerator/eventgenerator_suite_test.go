@@ -36,7 +36,9 @@ var (
 	configFile         *os.File
 	conf               config.Config
 	egPort             int
+	healthport         int
 	httpClient         *http.Client
+	healthHttpClient   *http.Client
 	metricCollector    *ghttp.Server
 	scalingEngine      *ghttp.Server
 	breachDurationSecs int                         = 10
@@ -141,6 +143,7 @@ func initDB() {
 
 	err = egDB.Close()
 	Expect(err).NotTo(HaveOccurred())
+	healthHttpClient = &http.Client{}
 }
 
 func initHttpEndPoints() {
@@ -175,6 +178,7 @@ func initConfig() {
 	testCertDir := "../../../../../test-certs"
 
 	egPort = 7000 + GinkgoParallelNode()
+	healthport = 8000 + GinkgoParallelNode()
 	conf = config.Config{
 		Logging: helpers.LoggingConfig{
 			Level: "debug",
@@ -241,6 +245,9 @@ func initConfig() {
 		DefaultBreachDurationSecs: 600,
 		DefaultStatWindowSecs:     300,
 		HttpClientTimeout:         10 * time.Second,
+		Health: models.HealthConfig{
+			Port: healthport,
+		},
 	}
 	configFile = writeConfig(&conf)
 
