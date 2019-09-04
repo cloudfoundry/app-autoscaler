@@ -153,6 +153,26 @@ var _ = Describe("Metricsforwarder", func() {
 
 			})
 		})
+		Context("when a request to query profile comes", func() {
+			It("returns with a 200", func() {
+				rsp, err := healthHttpClient.Get(fmt.Sprintf("http://127.0.0.1:%d/debug/pprof", healthport))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+				raw, _ := ioutil.ReadAll(rsp.Body)
+				profileIndexBody := string(raw)
+				Expect(profileIndexBody).To(ContainSubstring("allocs"))
+				Expect(profileIndexBody).To(ContainSubstring("block"))
+				Expect(profileIndexBody).To(ContainSubstring("cmdline"))
+				Expect(profileIndexBody).To(ContainSubstring("goroutine"))
+				Expect(profileIndexBody).To(ContainSubstring("heap"))
+				Expect(profileIndexBody).To(ContainSubstring("mutex"))
+				Expect(profileIndexBody).To(ContainSubstring("profile"))
+				Expect(profileIndexBody).To(ContainSubstring("threadcreate"))
+				Expect(profileIndexBody).To(ContainSubstring("trace"))
+				rsp.Body.Close()
+
+			})
+		})
 		AfterEach(func() {
 			runner.KillWithFire()
 		})
