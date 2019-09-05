@@ -241,6 +241,23 @@ var _ = Describe("Collector", func() {
 				})
 			})
 		})
+		Context("when there is no metrics", func() {
+			BeforeEach(func() {
+				policyDb.GetAppIdsReturns(map[string]bool{"an-app-id": true}, nil)
+
+			})
+			Context("when metric persistency is supported", func() {
+				BeforeEach(func() {
+					isMetricPersistencySuppported = true
+				})
+				It("does not save metrics to db", func() {
+					Consistently(instanceMetricsDb.SaveMetricCallCount).Should(BeZero())
+
+					fclock.WaitForWatcherAndIncrement(TestSaveInterval)
+					Consistently(instanceMetricsDb.SaveMetricsInBulkCallCount).Should(BeZero())
+				})
+			})
+		})
 	})
 
 	Describe("QueryMetrics", func() {
