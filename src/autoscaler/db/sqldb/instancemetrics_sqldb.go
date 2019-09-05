@@ -7,6 +7,7 @@ import (
 	"code.cloudfoundry.org/lager"
 	. "github.com/lib/pq"
 
+	"context"
 	"database/sql"
 	"time"
 )
@@ -62,7 +63,9 @@ func (idb *InstanceMetricsSQLDB) SaveMetric(metric *models.AppInstanceMetric) er
 }
 
 func (idb *InstanceMetricsSQLDB) SaveMetricsInBulk(metrics []*models.AppInstanceMetric) error {
-	txn, err := idb.sqldb.Begin()
+	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelFunc()
+	txn, err := idb.sqldb.BeginTx(ctx, nil)
 	if err != nil {
 		idb.logger.Error("failed-to-start-transaction", err)
 		return err
@@ -71,30 +74,36 @@ func (idb *InstanceMetricsSQLDB) SaveMetricsInBulk(metrics []*models.AppInstance
 	stmt, err := txn.Prepare(CopyIn("appinstancemetrics", "appid", "instanceindex", "collectedat", "name", "unit", "value", "timestamp"))
 	if err != nil {
 		idb.logger.Error("failed-to-prepare-statement", err)
+		txn.Rollback()
 		return err
 	}
 	for _, metric := range metrics {
 		_, err := stmt.Exec(metric.AppId, metric.InstanceIndex, metric.CollectedAt, metric.Name, metric.Unit, metric.Value, metric.Timestamp)
 		if err != nil {
 			idb.logger.Error("failed-to-execute", err)
+			txn.Rollback()
+			return err
 		}
 	}
 
 	_, err = stmt.Exec()
 	if err != nil {
 		idb.logger.Error("failed-to-execute-statement", err)
+		txn.Rollback()
 		return err
 	}
 
 	err = stmt.Close()
 	if err != nil {
 		idb.logger.Error("failed-to-close-statement", err)
+		txn.Rollback()
 		return err
 	}
 
 	err = txn.Commit()
 	if err != nil {
 		idb.logger.Error("failed-to-commit-transaction", err)
+		txn.Rollback()
 		return err
 	}
 
