@@ -88,30 +88,46 @@ var _ = Describe("Aggregator", func() {
 				getPolicies, saveAppMetricToCache, fakeStatWindowSecs, appMetricChan, appMetricDatabase)
 			Expect(err).NotTo(HaveOccurred())
 			aggregator.Start()
-			Expect(appMetricChan).Should(BeSent(&models.AppMetric{
-				AppId:      testAppId,
-				MetricType: testMetricType,
-				Value:      "250",
-				Unit:       testMetricUnit,
-				Timestamp:  time.Now().UnixNano(),
-			}))
 			Eventually(clock.WatcherCount).Should(Equal(2))
 		})
 
 		AfterEach(func() {
 			aggregator.Stop()
 		})
-
-		It("should send appMonitors and save appMetrics", func() {
-			clock.Increment(1 * fakeWaitDuration)
-			Eventually(appMonitorsChan).Should(Receive())
-			Eventually(func() int {
-				cacheLock.RLock()
-				defer cacheLock.RUnlock()
-				return saveToCacheCallCount
-			}).Should(Equal(1))
-			Eventually(appMetricDatabase.SaveAppMetricsInBulkCallCount).Should(Equal(1))
+		Context("when there are incoming metrics", func() {
+			BeforeEach(func() {
+				Expect(appMetricChan).Should(BeSent(&models.AppMetric{
+					AppId:      testAppId,
+					MetricType: testMetricType,
+					Value:      "250",
+					Unit:       testMetricUnit,
+					Timestamp:  time.Now().UnixNano(),
+				}))
+			})
+			It("should send appMonitors and save appMetrics", func() {
+				clock.Increment(1 * fakeWaitDuration)
+				Eventually(appMonitorsChan).Should(Receive())
+				Eventually(func() int {
+					cacheLock.RLock()
+					defer cacheLock.RUnlock()
+					return saveToCacheCallCount
+				}).Should(Equal(1))
+				Eventually(appMetricDatabase.SaveAppMetricsInBulkCallCount).Should(Equal(1))
+			})
 		})
+		Context("when there is no metrics", func() {
+			It("does not save metrics to db", func() {
+				clock.Increment(1 * fakeWaitDuration)
+				Eventually(appMonitorsChan).Should(Receive())
+				Eventually(func() int {
+					cacheLock.RLock()
+					defer cacheLock.RUnlock()
+					return saveToCacheCallCount
+				}).Should(BeZero())
+				Eventually(appMetricDatabase.SaveAppMetricsInBulkCallCount).Should(BeZero())
+			})
+		})
+
 	})
 
 	Context("Stop", func() {

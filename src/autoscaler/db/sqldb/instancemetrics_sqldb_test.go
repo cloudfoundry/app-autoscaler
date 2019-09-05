@@ -12,6 +12,7 @@ import (
 	"github.com/onsi/gomega/gstruct"
 
 	"os"
+	"sync"
 	"time"
 )
 
@@ -45,6 +46,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 			ConnectionMaxLifetime: 10 * time.Second,
 		}
 		instanceIndex = -1
+		testMetricName = "TestMetricType"
 	})
 
 	Describe("NewInstanceMetricsSQLDB", func() {
@@ -185,6 +187,54 @@ var _ = Describe("InstancemetricsSqldb", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(hasInstanceMetric(testAppId, 0, testMetricName, 110000)).To(BeTrue())
 				Expect(hasInstanceMetric(testAppId, 1, testMetricName, 220000)).To(BeTrue())
+			})
+		})
+
+		Context("When there are errors in transaction", func() {
+			var lock *sync.Mutex = &sync.Mutex{}
+			var count int = 0
+			BeforeEach(func() {
+				testMetricName = "This-is-a-too-long-meitrc-name-too-loooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong"
+				metric1 := models.AppInstanceMetric{
+					AppId:         testAppId,
+					InstanceIndex: 0,
+					CollectedAt:   111111,
+					Name:          testMetricName,
+					Unit:          testMetricUnit,
+					Value:         "123",
+					Timestamp:     110000,
+				}
+				metric2 := models.AppInstanceMetric{
+					AppId:         testAppId,
+					InstanceIndex: 1,
+					CollectedAt:   222222,
+					Name:          testMetricName,
+					Unit:          testMetricUnit,
+					Value:         "234",
+					Timestamp:     220000,
+				}
+
+				for i := 0; i < 100; i++ {
+					go func(count *int) {
+						err := idb.SaveMetricsInBulk([]*models.AppInstanceMetric{&metric1, &metric2})
+						Expect(err).To(HaveOccurred())
+						lock.Lock()
+						*count = *count + 1
+						lock.Unlock()
+					}(&count)
+
+				}
+			})
+
+			It("all connections should be released after transactions' rolling back", func() {
+				Eventually(func() int {
+					lock.Lock()
+					defer lock.Unlock()
+					return count
+				}, 120*time.Second, 1*time.Second).Should(Equal(100))
+				Eventually(func() int {
+					return idb.GetDBStatus().OpenConnections
+				}, 120*time.Second, 10*time.Millisecond).Should(BeZero())
 			})
 		})
 	})
