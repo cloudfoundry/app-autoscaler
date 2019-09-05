@@ -6,7 +6,7 @@ Data Aggregator is one of the components of CF `app-autoscaler`.
 
 ### System requirements:
 
-* Go 1.6 or above
+* Go 1.11 or above
 
 ### Build and test
 
