@@ -66,7 +66,6 @@ func NewCollector(refreshInterval time.Duration, collectInterval time.Duration, 
 
 func (c *Collector) Start() {
 	go c.startAppRefresh()
-
 	if c.persistMetrics {
 		go c.SaveMetricsInDB()
 	}
@@ -196,12 +195,15 @@ func (c *Collector) SaveMetricsInDB() {
 		case metric := <-c.dataChan:
 			metrics = append(metrics, metric)
 		case <-ticker.C():
-			go func(instancemetricsDb db.InstanceMetricsDB, metrics []*models.AppInstanceMetric) {
-				instancemetricsDb.SaveMetricsInBulk(metrics)
+			if c.persistMetrics && len(metrics) > 0 {
+				go func(instancemetricsDb db.InstanceMetricsDB, metrics []*models.AppInstanceMetric) {
+					instancemetricsDb.SaveMetricsInBulk(metrics)
+					metrics = nil
+					return
+				}(c.instancemetricsDb, metrics)
 				metrics = nil
-				return
-			}(c.instancemetricsDb, metrics)
-			metrics = nil
+			}
+
 		case <-c.doneSaveChan:
 			return
 		}
