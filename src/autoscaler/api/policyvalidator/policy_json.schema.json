@@ -45,7 +45,8 @@
             "$id": "#/properties/scaling_rules/items/properties/metric_type",
             "type": "string",
             "title": "The Metric_type Schema",
-            "pattern": "^[a-zA-Z0-9_]+$"
+            "pattern": "^[a-zA-Z0-9_]+$",
+            "maxLength": 100
           },
           "breach_duration_secs": {
             "$id": "#/properties/scaling_rules/items/properties/breach_duration_secs",
