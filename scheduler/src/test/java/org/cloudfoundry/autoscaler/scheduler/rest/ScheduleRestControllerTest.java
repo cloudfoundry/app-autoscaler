@@ -14,7 +14,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.io.IOException;
 import java.text.DateFormat;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.cloudfoundry.autoscaler.scheduler.dao.ActiveScheduleDao;
@@ -174,9 +173,10 @@ public class ScheduleRestControllerTest {
 		resultActions = mockMvc.perform(get(TestDataSetupHelper.getSchedulerPath(appId)).accept(MediaType.APPLICATION_JSON));
 
 		ApplicationSchedules applicationSchedules = getApplicationSchedulesFromResultActions(resultActions);
-		assertSchedulesFoundEquals(applicationSchedules, appId, resultActions, 2, 4);
+		assertSchedulesFoundEquals(applicationSchedules, appId, resultActions, 4, 3);
 
-		Mockito.verify(scheduler, Mockito.times(6)).scheduleJob(Mockito.anyObject(), Mockito.anyObject());
+		Mockito.verify(scheduler, Mockito.times(7)).scheduleJob(Mockito.anyObject(), Mockito.anyObject());
+
 	}
 
 	@Test

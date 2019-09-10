@@ -117,7 +117,7 @@ var _ = Describe("Integration_Operator_Others", func() {
 		Describe("Synchronize policy DB and scheduler", func() {
 
 			BeforeEach(func() {
-				policyStr = string(readPolicyFromFile("fakePolicyWithSchedule.json"))
+				policyStr = string(setPolicyRecurringDate(readPolicyFromFile("fakePolicyWithSchedule.json")))
 			})
 
 			AfterEach(func() {
@@ -166,7 +166,7 @@ var _ = Describe("Integration_Operator_Others", func() {
 					doAttachPolicy(testAppId, []byte(policyStr), http.StatusCreated, components.Ports[APIServer], httpClient)
 					Expect(checkSchedule(testAppId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})).To(BeTrue())
 
-					newPolicyStr := string(readPolicyFromFile("fakePolicyWithScheduleAnother.json"))
+					newPolicyStr := string(setPolicyRecurringDate(readPolicyFromFile("fakePolicyWithScheduleAnother.json")))
 					deletePolicy(testAppId)
 					insertPolicy(testAppId, newPolicyStr, testGuid)
 
