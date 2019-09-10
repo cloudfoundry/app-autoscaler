@@ -86,7 +86,7 @@
             "type": "string",
             "title": "The Adjustment Schema",
             "description": "Magnitude of scaling in each step, +1 means scale up 1 Instance -2 means scale down 2 instances",
-            "pattern": "^[-+][1-9]+[0-9]*$"
+            "pattern": "^[-+][1-9]+[0-9]*%?$"
           }
         }
       }
