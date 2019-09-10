@@ -39,10 +39,12 @@ var (
 	configFile       *os.File
 	apiHttpClient    *http.Client
 	brokerHttpClient *http.Client
+	healthHttpClient *http.Client
 	catalogBytes     []byte
 	schedulerServer  *ghttp.Server
 	brokerPort       int
 	publicApiPort    int
+	healthport       int
 	infoBytes        []byte
 	ccServer         *ghttp.Server
 )
@@ -90,7 +92,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	brokerPort = 8000 + GinkgoParallelNode()
 	publicApiPort = 9000 + GinkgoParallelNode()
-
+	healthport = 7000 + GinkgoParallelNode()
 	testCertDir := "../../../../../test-certs"
 
 	cfg.BrokerServer = config.ServerConfig{
@@ -166,6 +168,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.CF.ClientID = "client-id"
 	cfg.CF.Secret = "client-secret"
 	cfg.CF.SkipSSLValidation = true
+	cfg.Health = models.HealthConfig{
+		Port: healthport,
+	}
 
 	configFile = writeConfig(&cfg)
 	apiClientTLSConfig, err := cfhttp.NewTLSConfig(
@@ -187,6 +192,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 			TLSClientConfig: brokerClientTLSConfig,
 		},
 	}
+	healthHttpClient = &http.Client{}
 
 })
 
