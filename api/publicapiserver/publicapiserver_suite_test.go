@@ -89,8 +89,8 @@ var _ = BeforeSuite(func() {
 		return hasBinding
 	}
 	fakeCFClient = &fakes.FakeCFClient{}
-
-	httpServer, err := publicapiserver.NewPublicApiServer(lagertest.NewTestLogger("public_apiserver"), conf, fakePolicyDB, checkBindingFunc, fakeCFClient)
+	httpStatusCollector := &fakes.FakeHTTPStatusCollector{}
+	httpServer, err := publicapiserver.NewPublicApiServer(lagertest.NewTestLogger("public_apiserver"), conf, fakePolicyDB, checkBindingFunc, fakeCFClient, httpStatusCollector)
 	Expect(err).NotTo(HaveOccurred())
 
 	serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(apiPort))
