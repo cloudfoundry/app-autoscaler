@@ -487,6 +487,36 @@ func activeScheduleExists(appId string) bool {
 	return resp.StatusCode == http.StatusOK
 }
 
+func setPolicyRecurringDate(policyByte []byte) []byte {
+
+	var policy models.ScalingPolicy
+	err := json.Unmarshal(policyByte, &policy)
+	Expect(err).NotTo(HaveOccurred())
+
+	if policy.Schedules != nil {
+		location, err := time.LoadLocation(policy.Schedules.Timezone)
+		Expect(err).NotTo(HaveOccurred())
+		now := time.Now().In(location)
+		starttime := now.Add(time.Minute * 10)
+		endtime := now.Add(time.Minute * 20)
+		for _, entry := range policy.Schedules.RecurringSchedules {
+			if endtime.Day() != starttime.Day() {
+				entry.StartTime = "00:01"
+				entry.EndTime = "23:59"
+				entry.StartDate = endtime.Format("2006-01-02")
+			} else {
+				entry.StartTime = starttime.Format("15:04")
+				entry.EndTime = endtime.Format("15:04")
+			}
+		}
+	}
+
+	content, err := json.Marshal(policy)
+	Expect(err).NotTo(HaveOccurred())
+	return content
+
+}
+
 func setPolicySpecificDateTime(policyByte []byte, start time.Duration, end time.Duration) string {
 	timeZone := "GMT"
 	location, _ := time.LoadLocation(timeZone)
