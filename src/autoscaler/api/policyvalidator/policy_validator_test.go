@@ -666,7 +666,7 @@ var _ = Describe("PolicyValidator", func() {
 					Expect(errResult).To(Equal(&[]PolicyValidationErrors{
 						{
 							Context:     "(root).scaling_rules.0.adjustment",
-							Description: "Does not match pattern '^[-+][1-9]+[0-9]*$'",
+							Description: "Does not match pattern '^[-+][1-9]+[0-9]*%?$'",
 						},
 					}))
 				})
@@ -2343,7 +2343,7 @@ var _ = Describe("PolicyValidator", func() {
 					"threshold":90,
 					"operator":">=",
 					"cool_down_secs":300,
-					"adjustment":"+1"
+					"adjustment":"+10%"
 				 }
 				],
 				"schedules":{
