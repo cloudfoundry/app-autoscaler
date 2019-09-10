@@ -12,10 +12,12 @@ import (
 	"autoscaler/cf"
 	"autoscaler/db"
 	"autoscaler/db/sqldb"
+	"autoscaler/healthendpoint"
 	"autoscaler/helpers"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/grouper"
 	"github.com/tedsuo/ifrit/sigmon"
@@ -61,6 +63,12 @@ func main() {
 		os.Exit(1)
 	}
 	defer policyDb.Close()
+
+	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "golangapiserver")
+	prometheusCollectors := []prometheus.Collector{
+		healthendpoint.NewDatabaseStatusCollector("autoscaler", "golangapiserver", "policyDB", policyDb),
+		httpStatusCollector,
+	}
 	var checkBindingFunc api.CheckBindingFunc
 	if !conf.UseBuildInMode {
 		var bindingDB db.BindingDB
@@ -70,10 +78,12 @@ func main() {
 			os.Exit(1)
 		}
 		defer bindingDB.Close()
+		prometheusCollectors = append(prometheusCollectors,
+			healthendpoint.NewDatabaseStatusCollector("autoscaler", "golangapiserver", "bindingDB", bindingDB))
 		checkBindingFunc = func(appId string) bool {
 			return bindingDB.CheckServiceBinding(appId)
 		}
-		brokerHttpServer, err := brokerserver.NewBrokerServer(logger.Session("broker_http_server"), conf, bindingDB, policyDb)
+		brokerHttpServer, err := brokerserver.NewBrokerServer(logger.Session("broker_http_server"), conf, bindingDB, policyDb, httpStatusCollector)
 		if err != nil {
 			logger.Error("failed to create broker http server", err)
 			os.Exit(1)
@@ -85,6 +95,9 @@ func main() {
 		}
 	}
 
+	promRegistry := prometheus.NewRegistry()
+	healthendpoint.RegisterCollectors(promRegistry, prometheusCollectors, true, logger.Session("golangapiserver-prometheus"))
+
 	paClock := clock.NewClock()
 	cfClient := cf.NewCFClient(&conf.CF, logger.Session("cf"), paClock)
 	err = cfClient.Login()
@@ -93,13 +106,19 @@ func main() {
 		os.Exit(1)
 	}
 
-	publicApiHttpServer, err := publicapiserver.NewPublicApiServer(logger.Session("public_api_http_server"), conf, policyDb, checkBindingFunc, cfClient)
+	publicApiHttpServer, err := publicapiserver.NewPublicApiServer(logger.Session("public_api_http_server"), conf, policyDb, checkBindingFunc, cfClient, httpStatusCollector)
 	if err != nil {
 		logger.Error("failed to create public api http server", err)
 		os.Exit(1)
 	}
+	healthServer, err := healthendpoint.NewServer(logger.Session("health-server"), conf.Health.Port, promRegistry)
+	if err != nil {
+		logger.Error("failed to create health server", err)
+		os.Exit(1)
+	}
 
-	members = append(members, grouper.Member{"public_api_http_server", publicApiHttpServer})
+	members = append(members, grouper.Member{"public_api_http_server", publicApiHttpServer},
+		grouper.Member{"health_server", healthServer})
 
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
 
