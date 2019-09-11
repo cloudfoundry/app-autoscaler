@@ -671,6 +671,35 @@ var _ = Describe("PolicyValidator", func() {
 					}))
 				})
 			})
+
+			Context("when adjustment is percentage type", func() {
+				BeforeEach(func() {
+					policyString = `{
+					"instance_max_count":4,
+					"instance_min_count":1,
+					"scaling_rules":[
+					{
+						"metric_type":"memoryutil",
+						"breach_duration_secs":600,
+						"threshold":90,
+						"operator":">=",
+						"cool_down_secs":300,
+						"adjustment": "+100%"
+					},{
+						"metric_type":"memoryutil",
+						"breach_duration_secs":600,
+						"threshold":90,
+						"operator":"<=",
+						"cool_down_secs":300,
+						"adjustment": "-200%"
+					}]
+				}`
+				})
+				It("should succeed", func() {
+					Expect(valid).To(BeTrue())
+				})
+			})
+
 			Context("when breach_duration_secs is missing", func() {
 				BeforeEach(func() {
 					policyString = `{
@@ -2343,7 +2372,7 @@ var _ = Describe("PolicyValidator", func() {
 					"threshold":90,
 					"operator":">=",
 					"cool_down_secs":300,
-					"adjustment":"+10%"
+					"adjustment":"+1"
 				 }
 				],
 				"schedules":{

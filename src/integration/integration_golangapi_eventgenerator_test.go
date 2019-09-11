@@ -259,7 +259,99 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 				By("check public api")
 				checkAggregatedMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 			})
+			It("should get the metrics in specified time scope", func() {
+				By("get the results from 555555")
+				parameters = map[string]string{"start-time": "555555", "order-direction": "asc", "page": "1", "results-per-page": "10"}
+				result := AppAggregatedMetricResult{
+					TotalResults: 3,
+					TotalPages:   1,
+					Page:         1,
+					Resources: []models.AppMetric{
+						models.AppMetric{
+							AppId:      appId,
+							MetricType: models.MetricNameMemoryUsed,
+							Unit:       models.UnitMegaBytes,
+							Value:      "123456",
+							Timestamp:  555555,
+						},
+						models.AppMetric{
+							AppId:      appId,
+							MetricType: models.MetricNameMemoryUsed,
+							Unit:       models.UnitMegaBytes,
+							Value:      "123456",
+							Timestamp:  555555,
+						},
+						models.AppMetric{
+							AppId:      appId,
+							MetricType: models.MetricNameMemoryUsed,
+							Unit:       models.UnitMegaBytes,
+							Value:      "123456",
+							Timestamp:  666666,
+						},
+					},
+				}
+				By("check public api")
+				checkAggregatedMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 
+				By("get the results to 444444")
+				parameters = map[string]string{"end-time": "444444", "order-direction": "asc", "page": "1", "results-per-page": "10"}
+				result = AppAggregatedMetricResult{
+					TotalResults: 2,
+					TotalPages:   1,
+					Page:         1,
+					Resources: []models.AppMetric{
+						models.AppMetric{
+							AppId:      appId,
+							MetricType: models.MetricNameMemoryUsed,
+							Unit:       models.UnitMegaBytes,
+							Value:      "123456",
+							Timestamp:  333333,
+						},
+						models.AppMetric{
+							AppId:      appId,
+							MetricType: models.MetricNameMemoryUsed,
+							Unit:       models.UnitMegaBytes,
+							Value:      "123456",
+							Timestamp:  444444,
+						},
+					},
+				}
+				By("check public api")
+				checkAggregatedMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
+
+				By("get the results from 444444 to 555555")
+				parameters = map[string]string{"start-time": "444444", "end-time": "555555", "order-direction": "asc", "page": "1", "results-per-page": "10"}
+				result = AppAggregatedMetricResult{
+					TotalResults: 3,
+					TotalPages:   1,
+					Page:         1,
+					Resources: []models.AppMetric{
+						models.AppMetric{
+							AppId:      appId,
+							MetricType: models.MetricNameMemoryUsed,
+							Unit:       models.UnitMegaBytes,
+							Value:      "123456",
+							Timestamp:  444444,
+						},
+						models.AppMetric{
+							AppId:      appId,
+							MetricType: models.MetricNameMemoryUsed,
+							Unit:       models.UnitMegaBytes,
+							Value:      "123456",
+							Timestamp:  555555,
+						},
+						models.AppMetric{
+							AppId:      appId,
+							MetricType: models.MetricNameMemoryUsed,
+							Unit:       models.UnitMegaBytes,
+							Value:      "123456",
+							Timestamp:  555555,
+						},
+					},
+				}
+				By("check public api")
+				checkAggregatedMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
+			})
 		})
 	})
 })

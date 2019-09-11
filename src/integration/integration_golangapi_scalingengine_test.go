@@ -287,6 +287,120 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 				By("check public api")
 				checkScalingHistoryResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 			})
+			It("should get the scaling histories in specified time scope", func() {
+				By("get the results from 555555")
+				parameters = map[string]string{"start-time": "555555", "order-direction": "desc", "page": "1", "results-per-page": "10"}
+				result := ScalingHistoryResult{
+					TotalResults: 2,
+					TotalPages:   1,
+					Page:         1,
+					Resources: []models.AppScalingHistory{
+						models.AppScalingHistory{
+							AppId:        appId,
+							Timestamp:    666666,
+							ScalingType:  models.ScalingTypeDynamic,
+							Status:       models.ScalingStatusSucceeded,
+							OldInstances: 2,
+							NewInstances: 4,
+							Reason:       "a reason",
+							Message:      "a message",
+							Error:        "",
+						},
+						models.AppScalingHistory{
+							AppId:        appId,
+							Timestamp:    555555,
+							ScalingType:  models.ScalingTypeDynamic,
+							Status:       models.ScalingStatusSucceeded,
+							OldInstances: 2,
+							NewInstances: 4,
+							Reason:       "a reason",
+							Message:      "a message",
+							Error:        "",
+						},
+					},
+				}
+				By("check public api")
+				checkScalingHistoryResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
+
+				By("get the results to 333333")
+				parameters = map[string]string{"end-time": "333333", "order-direction": "desc", "page": "1", "results-per-page": "10"}
+				result = ScalingHistoryResult{
+					TotalResults: 2,
+					TotalPages:   1,
+					Page:         1,
+					Resources: []models.AppScalingHistory{
+						models.AppScalingHistory{
+							AppId:        appId,
+							Timestamp:    333333,
+							ScalingType:  models.ScalingTypeDynamic,
+							Status:       models.ScalingStatusSucceeded,
+							OldInstances: 2,
+							NewInstances: 4,
+							Reason:       "a reason",
+							Message:      "a message",
+							Error:        "",
+						},
+						models.AppScalingHistory{
+							AppId:        appId,
+							Timestamp:    222222,
+							ScalingType:  models.ScalingTypeDynamic,
+							Status:       models.ScalingStatusSucceeded,
+							OldInstances: 2,
+							NewInstances: 4,
+							Reason:       "a reason",
+							Message:      "a message",
+							Error:        "",
+						},
+					},
+				}
+				By("check public api")
+				checkScalingHistoryResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
+
+				By("get the results from 333333 to 555555")
+				parameters = map[string]string{"start-time": "333333", "end-time": "555555", "order-direction": "asc", "page": "1", "results-per-page": "10"}
+				result = ScalingHistoryResult{
+					TotalResults: 3,
+					TotalPages:   1,
+					Page:         1,
+					Resources: []models.AppScalingHistory{
+						models.AppScalingHistory{
+							AppId:        appId,
+							Timestamp:    333333,
+							ScalingType:  models.ScalingTypeDynamic,
+							Status:       models.ScalingStatusSucceeded,
+							OldInstances: 2,
+							NewInstances: 4,
+							Reason:       "a reason",
+							Message:      "a message",
+							Error:        "",
+						},
+						models.AppScalingHistory{
+							AppId:        appId,
+							Timestamp:    444444,
+							ScalingType:  models.ScalingTypeDynamic,
+							Status:       models.ScalingStatusSucceeded,
+							OldInstances: 2,
+							NewInstances: 4,
+							Reason:       "a reason",
+							Message:      "a message",
+							Error:        "",
+						},
+						models.AppScalingHistory{
+							AppId:        appId,
+							Timestamp:    555555,
+							ScalingType:  models.ScalingTypeDynamic,
+							Status:       models.ScalingStatusSucceeded,
+							OldInstances: 2,
+							NewInstances: 4,
+							Reason:       "a reason",
+							Message:      "a message",
+							Error:        "",
+						},
+					},
+				}
+				By("check public api")
+				checkScalingHistoryResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
+			})
 
 		})
 	})

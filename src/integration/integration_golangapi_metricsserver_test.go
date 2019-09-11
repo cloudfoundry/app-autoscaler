@@ -306,6 +306,115 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 					By("check public api")
 					checkAppInstanceMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 				})
+				It("should get the metrics of all instances in specified time scope", func() {
+					By("get the results from 555555")
+					parameters = map[string]string{"start-time": "555555", "order-direction": "asc", "page": "1", "results-per-page": "10"}
+					result := AppInstanceMetricResult{
+						TotalResults: 3,
+						TotalPages:   1,
+						Page:         1,
+						Resources: []models.AppInstanceMetric{
+							models.AppInstanceMetric{
+								AppId:         appId,
+								InstanceIndex: 0,
+								CollectedAt:   111111,
+								Name:          models.MetricNameMemoryUsed,
+								Unit:          models.UnitMegaBytes,
+								Value:         "123456",
+								Timestamp:     555555,
+							},
+							models.AppInstanceMetric{
+								AppId:         appId,
+								InstanceIndex: 1,
+								CollectedAt:   111111,
+								Name:          models.MetricNameMemoryUsed,
+								Unit:          models.UnitMegaBytes,
+								Value:         "123456",
+								Timestamp:     555555,
+							},
+							models.AppInstanceMetric{
+								AppId:         appId,
+								InstanceIndex: 0,
+								CollectedAt:   111111,
+								Name:          models.MetricNameMemoryUsed,
+								Unit:          models.UnitMegaBytes,
+								Value:         "123456",
+								Timestamp:     666666,
+							},
+						},
+					}
+					By("check public api")
+					checkAppInstanceMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
+
+					By("get the results to 444444")
+					parameters = map[string]string{"end-time": "444444", "order-direction": "asc", "page": "1", "results-per-page": "10"}
+					result = AppInstanceMetricResult{
+						TotalResults: 2,
+						TotalPages:   1,
+						Page:         1,
+						Resources: []models.AppInstanceMetric{
+							models.AppInstanceMetric{
+								AppId:         appId,
+								InstanceIndex: 0,
+								CollectedAt:   111111,
+								Name:          models.MetricNameMemoryUsed,
+								Unit:          models.UnitMegaBytes,
+								Value:         "123456",
+								Timestamp:     333333,
+							},
+							models.AppInstanceMetric{
+								AppId:         appId,
+								InstanceIndex: 1,
+								CollectedAt:   111111,
+								Name:          models.MetricNameMemoryUsed,
+								Unit:          models.UnitMegaBytes,
+								Value:         "123456",
+								Timestamp:     444444,
+							},
+						},
+					}
+					By("check public api")
+					checkAppInstanceMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
+
+					By("get the results from 444444 to 555555")
+					parameters = map[string]string{"start-time": "444444", "end-time": "555555", "order-direction": "asc", "page": "1", "results-per-page": "10"}
+					result = AppInstanceMetricResult{
+						TotalResults: 3,
+						TotalPages:   1,
+						Page:         1,
+						Resources: []models.AppInstanceMetric{
+							models.AppInstanceMetric{
+								AppId:         appId,
+								InstanceIndex: 1,
+								CollectedAt:   111111,
+								Name:          models.MetricNameMemoryUsed,
+								Unit:          models.UnitMegaBytes,
+								Value:         "123456",
+								Timestamp:     444444,
+							},
+							models.AppInstanceMetric{
+								AppId:         appId,
+								InstanceIndex: 0,
+								CollectedAt:   111111,
+								Name:          models.MetricNameMemoryUsed,
+								Unit:          models.UnitMegaBytes,
+								Value:         "123456",
+								Timestamp:     555555,
+							},
+							models.AppInstanceMetric{
+								AppId:         appId,
+								InstanceIndex: 1,
+								CollectedAt:   111111,
+								Name:          models.MetricNameMemoryUsed,
+								Unit:          models.UnitMegaBytes,
+								Value:         "123456",
+								Timestamp:     555555,
+							},
+						},
+					}
+					By("check public api")
+					checkAppInstanceMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
+				})
 			})
 			Context("instance-index is provided", func() {
 				It("should get the metrics of the instance", func() {
@@ -348,6 +457,79 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 						Page:         2,
 						PrevUrl:      getInstanceMetricsUrlWithInstanceIndex(appId, metricType, parameters, 1),
 						Resources:    []models.AppInstanceMetric{},
+					}
+					By("check public api")
+					checkAppInstanceMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
+				})
+				It("should get the metrics of the instance in specified time scope", func() {
+					By("get the results from 555555")
+					parameters = map[string]string{"instance-index": "1", "start-time": "555555", "order-direction": "asc", "page": "1", "results-per-page": "10"}
+					result := AppInstanceMetricResult{
+						TotalResults: 1,
+						TotalPages:   1,
+						Page:         1,
+						Resources: []models.AppInstanceMetric{
+							models.AppInstanceMetric{
+								AppId:         appId,
+								InstanceIndex: 1,
+								CollectedAt:   111111,
+								Name:          models.MetricNameMemoryUsed,
+								Unit:          models.UnitMegaBytes,
+								Value:         "123456",
+								Timestamp:     555555,
+							},
+						},
+					}
+					By("check public api")
+					checkAppInstanceMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
+
+					By("get the results to 444444")
+					parameters = map[string]string{"instance-index": "1", "end-time": "444444", "order-direction": "asc", "page": "1", "results-per-page": "10"}
+					result = AppInstanceMetricResult{
+						TotalResults: 1,
+						TotalPages:   1,
+						Page:         1,
+						Resources: []models.AppInstanceMetric{
+							models.AppInstanceMetric{
+								AppId:         appId,
+								InstanceIndex: 1,
+								CollectedAt:   111111,
+								Name:          models.MetricNameMemoryUsed,
+								Unit:          models.UnitMegaBytes,
+								Value:         "123456",
+								Timestamp:     444444,
+							},
+						},
+					}
+					By("check public api")
+					checkAppInstanceMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
+
+					By("get the results from 444444 to 555555")
+					parameters = map[string]string{"instance-index": "1", "start-time": "444444", "end-time": "555555", "order-direction": "asc", "page": "1", "results-per-page": "10"}
+					result = AppInstanceMetricResult{
+						TotalResults: 2,
+						TotalPages:   1,
+						Page:         1,
+						Resources: []models.AppInstanceMetric{
+							models.AppInstanceMetric{
+								AppId:         appId,
+								InstanceIndex: 1,
+								CollectedAt:   111111,
+								Name:          models.MetricNameMemoryUsed,
+								Unit:          models.UnitMegaBytes,
+								Value:         "123456",
+								Timestamp:     444444,
+							},
+							models.AppInstanceMetric{
+								AppId:         appId,
+								InstanceIndex: 1,
+								CollectedAt:   111111,
+								Name:          models.MetricNameMemoryUsed,
+								Unit:          models.UnitMegaBytes,
+								Value:         "123456",
+								Timestamp:     555555,
+							},
+						},
 					}
 					By("check public api")
 					checkAppInstanceMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
