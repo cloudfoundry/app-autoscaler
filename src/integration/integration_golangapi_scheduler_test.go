@@ -67,7 +67,6 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 			})
 			Context("Create policy", func() {
 				It("should error with status code 500", func() {
-					By("check public api")
 					policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
 					doAttachPolicy(appId, policyStr, http.StatusInternalServerError, components.Ports[GolangAPIServer], httpClientForPublicApi)
 					checkApiServerStatus(appId, http.StatusInternalServerError, components.Ports[GolangAPIServer], httpClientForPublicApi)
@@ -99,7 +98,6 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 			})
 			Context("Create policy", func() {
 				It("should error with status code 500", func() {
-					By("check public api")
 					policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
 					doAttachPolicy(appId, policyStr, http.StatusInternalServerError, components.Ports[GolangAPIServer], httpClientForPublicApi)
 					checkApiServerStatus(appId, http.StatusInternalServerError, components.Ports[GolangAPIServer], httpClientForPublicApi)
@@ -138,7 +136,6 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 			})
 			Context("Create policy", func() {
 				It("should error with status code 401", func() {
-					By("check public api")
 					policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
 					doAttachPolicy(appId, policyStr, http.StatusUnauthorized, components.Ports[GolangAPIServer], httpClientForPublicApi)
 					checkApiServerStatus(appId, http.StatusUnauthorized, components.Ports[GolangAPIServer], httpClientForPublicApi)
@@ -169,7 +166,6 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 			})
 			Context("Create policy", func() {
 				It("should error with status code 401", func() {
-					By("check public api")
 					policyStr = readPolicyFromFile("fakePolicyWithSchedule.json")
 					doAttachPolicy(appId, policyStr, http.StatusUnauthorized, components.Ports[GolangAPIServer], httpClientForPublicApi)
 					checkApiServerStatus(appId, http.StatusUnauthorized, components.Ports[GolangAPIServer], httpClientForPublicApi)

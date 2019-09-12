@@ -50,7 +50,6 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 				fakeCCNOAAUAA.AllowUnhandledRequests = true
 			})
 			It("should error with status code 500", func() {
-				By("check public api")
 				checkPublicAPIResponseContentWithParameters(getAppAggregatedMetrics, components.Ports[GolangAPIServer], pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{
 					"code":    "Interal-Server-Error",
 					"message": "Failed to check space developer permission",
@@ -69,7 +68,6 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 					}))
 			})
 			It("should error with status code 500", func() {
-				By("check public api")
 				checkPublicAPIResponseContentWithParameters(getAppAggregatedMetrics, components.Ports[GolangAPIServer], pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{
 					"code":    "Interal-Server-Error",
 					"message": "Failed to check space developer permission",
@@ -94,7 +92,6 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 				fakeCCNOAAUAA.RouteToHandler("GET", "/userinfo", ghttp.RespondWithJSONEncoded(http.StatusUnauthorized, struct{}{}))
 			})
 			It("should error with status code 401", func() {
-				By("check public api")
 				checkPublicAPIResponseContentWithParameters(getAppAggregatedMetrics, components.Ports[GolangAPIServer], pathVariables,
 					parameters, http.StatusUnauthorized, map[string]interface{}{
 						"code":    "Unauthorized",
@@ -112,7 +109,6 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 					}))
 			})
 			It("should error with status code 401", func() {
-				By("check public api")
 				checkPublicAPIResponseContentWithParameters(getAppAggregatedMetrics, components.Ports[GolangAPIServer],
 					pathVariables, parameters, http.StatusUnauthorized, map[string]interface{}{
 						"code":    "Unauthorized",
@@ -127,7 +123,6 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 			})
 
 			It("should error with status code 500", func() {
-				By("check public api")
 				checkPublicAPIResponseContentWithParameters(getAppAggregatedMetrics, components.Ports[GolangAPIServer], pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{
 					"code":    "Interal-Server-Error",
 					"message": "Error retrieving metrics history from eventgenerator",
@@ -196,7 +191,6 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 						},
 					},
 				}
-				By("check public api")
 				checkAggregatedMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 
 				By("get the 2nd page")
@@ -224,7 +218,6 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 						},
 					},
 				}
-				By("check public api")
 				checkAggregatedMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 
 				By("get the 3rd page")
@@ -244,7 +237,6 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 						},
 					},
 				}
-				By("check public api")
 				checkAggregatedMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 
 				By("the 4th page should be empty")
@@ -256,7 +248,6 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 					PrevUrl:      getAppAggregatedMetricUrl(appId, metricType, parameters, 3),
 					Resources:    []models.AppMetric{},
 				}
-				By("check public api")
 				checkAggregatedMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 			})
 			It("should get the metrics in specified time scope", func() {
@@ -290,7 +281,6 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 						},
 					},
 				}
-				By("check public api")
 				checkAggregatedMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 
 				By("get the results to 444444")
@@ -316,7 +306,6 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 						},
 					},
 				}
-				By("check public api")
 				checkAggregatedMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 
 				By("get the results from 444444 to 555555")
@@ -349,7 +338,6 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 						},
 					},
 				}
-				By("check public api")
 				checkAggregatedMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 			})
 		})

@@ -52,7 +52,6 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order-direction": "asc", "page": "1", "results-per-page": "5"}
 			})
 			It("should error with status code 500", func() {
-				By("check public api")
 				checkPublicAPIResponseContentWithParameters(getAppInstanceMetrics, components.Ports[GolangAPIServer], pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{
 					"code":    "Interal-Server-Error",
 					"message": "Failed to check space developer permission",
@@ -73,7 +72,6 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order-direction": "asc", "page": "1", "results-per-page": "5"}
 			})
 			It("should error with status code 500", func() {
-				By("check public api")
 				checkPublicAPIResponseContentWithParameters(getAppInstanceMetrics, components.Ports[GolangAPIServer], pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{
 					"code":    "Interal-Server-Error",
 					"message": "Failed to check space developer permission",
@@ -100,7 +98,6 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order-direction": "asc", "page": "1", "results-per-page": "5"}
 			})
 			It("should error with status code 401", func() {
-				By("check public api")
 				checkPublicAPIResponseContentWithParameters(getAppInstanceMetrics, components.Ports[GolangAPIServer],
 					pathVariables, parameters, http.StatusUnauthorized, map[string]interface{}{
 						"code":    "Unauthorized",
@@ -120,7 +117,6 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order-direction": "asc", "page": "1", "results-per-page": "5"}
 			})
 			It("should error with status code 401", func() {
-				By("check public api")
 				checkPublicAPIResponseContentWithParameters(getAppInstanceMetrics, components.Ports[GolangAPIServer],
 					pathVariables, parameters, http.StatusUnauthorized, map[string]interface{}{
 						"code":    "Unauthorized",
@@ -136,12 +132,6 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 			})
 
 			It("should error with status code 500", func() {
-				By("check internal api")
-				checkPublicAPIResponseContentWithParameters(getAppInstanceMetrics, components.Ports[GolangAPIServer], pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{
-					"code":    "Interal-Server-Error",
-					"message": "Error retrieving metrics history from metricscollector",
-				})
-				By("check public api")
 				checkPublicAPIResponseContentWithParameters(getAppInstanceMetrics, components.Ports[GolangAPIServer], pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{
 					"code":    "Interal-Server-Error",
 					"message": "Error retrieving metrics history from metricscollector",
@@ -225,8 +215,6 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 							},
 						},
 					}
-
-					By("check public api")
 					checkAppInstanceMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 
 					By("get the 2nd page")
@@ -258,7 +246,6 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 							},
 						},
 					}
-					By("check public api")
 					checkAppInstanceMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 
 					By("get the 3rd page")
@@ -280,7 +267,6 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 							},
 						},
 					}
-					By("check public api")
 					checkAppInstanceMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 
 					By("the 4th page should be empty")
@@ -292,7 +278,6 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 						PrevUrl:      getInstanceMetricsUrl(appId, metricType, parameters, 3),
 						Resources:    []models.AppInstanceMetric{},
 					}
-					By("check public api")
 					checkAppInstanceMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 
 					By("the 5th page should be empty")
@@ -303,7 +288,6 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 						Page:         5,
 						Resources:    []models.AppInstanceMetric{},
 					}
-					By("check public api")
 					checkAppInstanceMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 				})
 				It("should get the metrics of all instances in specified time scope", func() {
@@ -343,7 +327,6 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 							},
 						},
 					}
-					By("check public api")
 					checkAppInstanceMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 
 					By("get the results to 444444")
@@ -373,7 +356,6 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 							},
 						},
 					}
-					By("check public api")
 					checkAppInstanceMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 
 					By("get the results from 444444 to 555555")
@@ -412,7 +394,6 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 							},
 						},
 					}
-					By("check public api")
 					checkAppInstanceMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 				})
 			})
@@ -445,8 +426,6 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 							},
 						},
 					}
-
-					By("check public api")
 					checkAppInstanceMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 
 					By("get the 2nd page")
@@ -458,7 +437,6 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 						PrevUrl:      getInstanceMetricsUrlWithInstanceIndex(appId, metricType, parameters, 1),
 						Resources:    []models.AppInstanceMetric{},
 					}
-					By("check public api")
 					checkAppInstanceMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 				})
 				It("should get the metrics of the instance in specified time scope", func() {
@@ -480,7 +458,6 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 							},
 						},
 					}
-					By("check public api")
 					checkAppInstanceMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 
 					By("get the results to 444444")
@@ -501,7 +478,6 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 							},
 						},
 					}
-					By("check public api")
 					checkAppInstanceMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 
 					By("get the results from 444444 to 555555")
@@ -531,7 +507,6 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 							},
 						},
 					}
-					By("check public api")
 					checkAppInstanceMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 				})
 			})
