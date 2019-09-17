@@ -76,8 +76,8 @@ func parseParameter(r *http.Request, vars map[string]string) (*url.Values, error
 		return nil, fmt.Errorf("results-per-page must be greater than 0")
 	}
 	parameters := &url.Values{}
-	parameters.Add("start-time", startTime)
-	parameters.Add("end-time", endTime)
+	parameters.Add("start", startTime)
+	parameters.Add("end", endTime)
 	parameters.Add("order", orderDirection)
 	parameters.Add("page", page)
 	parameters.Add("results-per-page", resultsPerPage)
