@@ -6,6 +6,7 @@ sudo: required
 env:
   global:
     - DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
+    - SBSS_DBURL=postgresql://sbss_test1:test1234@localhost/autoscaler?sslmode=disable
     - NODE_VERSION=6.2
     - GO_VERSION=1.11
     - LOGLEVEL=info
@@ -27,7 +28,11 @@ install:
 
 before_script:
   - nvm use $NODE_VERSION
-  - psql -c 'CREATE DATABASE autoscaler' -U postgres
+  - psql -v ON_ERROR_STOP=true -c 'CREATE DATABASE autoscaler' -U postgres
+  - psql -v ON_ERROR_STOP=true -c 'CREATE EXTENSION pgcrypto' autoscaler -U postgres
+  - pushd scripts
+  - psql -v ON_ERROR_STOP=true -f install_sbss.sql autoscaler -U postgres
+  - popd
   - java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=api/db/api.db.changelog.yml update
   - java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=servicebroker/db/servicebroker.db.changelog.json update
   - java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=scheduler/db/scheduler.changelog-master.yaml update
