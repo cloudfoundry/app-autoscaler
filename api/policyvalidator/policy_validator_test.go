@@ -235,7 +235,7 @@ var _ = Describe("PolicyValidator", func() {
 				})
 			})
 
-			Context("when metric_type is too lang", func() {
+			Context("when metric_type is too long", func() {
 				BeforeEach(func() {
 					policyString = `{
 					"instance_max_count":4,

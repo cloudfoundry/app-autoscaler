@@ -3,6 +3,7 @@ package sqldb
 import (
 	"autoscaler/db"
 	"autoscaler/models"
+	"context"
 
 	"code.cloudfoundry.org/lager"
 	. "github.com/lib/pq"
@@ -62,39 +63,44 @@ func (adb *AppMetricSQLDB) SaveAppMetric(appMetric *models.AppMetric) error {
 	return err
 }
 func (adb *AppMetricSQLDB) SaveAppMetricsInBulk(appMetrics []*models.AppMetric) error {
-	txn, err := adb.sqldb.Begin()
+	ctx, cancelFunc := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancelFunc()
+	txn, err := adb.sqldb.BeginTx(ctx, nil)
 	if err != nil {
 		adb.logger.Error("failed-to-start-transaction", err)
 		return err
 	}
-
 	stmt, err := txn.Prepare(CopyIn("app_metric", "app_id", "metric_type", "unit", "timestamp", "value"))
 	if err != nil {
 		adb.logger.Error("failed-to-prepare-statement", err)
+		txn.Rollback()
 		return err
 	}
 	for _, appMetric := range appMetrics {
 		_, err := stmt.Exec(appMetric.AppId, appMetric.MetricType, appMetric.Unit, appMetric.Timestamp, appMetric.Value)
 		if err != nil {
 			adb.logger.Error("failed-to-execute", err)
+			txn.Rollback()
+			return err
 		}
 	}
-
 	_, err = stmt.Exec()
 	if err != nil {
 		adb.logger.Error("failed-to-execute-statement", err)
+		txn.Rollback()
 		return err
 	}
-
 	err = stmt.Close()
 	if err != nil {
 		adb.logger.Error("failed-to-close-statement", err)
+		txn.Rollback()
 		return err
 	}
 
 	err = txn.Commit()
 	if err != nil {
 		adb.logger.Error("failed-to-commit-transaction", err)
+		txn.Rollback()
 		return err
 	}
 
