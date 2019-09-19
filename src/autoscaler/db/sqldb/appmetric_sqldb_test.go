@@ -1,6 +1,10 @@
 package sqldb_test
 
 import (
+	"os"
+	"sync"
+	"time"
+
 	"autoscaler/db"
 	. "autoscaler/db/sqldb"
 	"autoscaler/models"
@@ -9,9 +13,6 @@ import (
 	"github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-
-	"os"
-	"time"
 )
 
 var _ = Describe("AppMetricSQLDB", func() {
@@ -24,7 +25,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 		start, end        int64
 		before            int64
 		appId, metricName string
-		testMetricName    string = "Test-Metric-Name"
+		testMetricName    string
 		testMetricUnit    string = "Test-Metric-Unit"
 		testAppId         string = "Test-App-ID"
 		orderType         db.OrderType
@@ -38,6 +39,8 @@ var _ = Describe("AppMetricSQLDB", func() {
 			MaxIdleConnections:    5,
 			ConnectionMaxLifetime: 10 * time.Second,
 		}
+		testMetricName = "Test-Metric-Name"
+
 	})
 
 	Context("NewAppMetricSQLDB", func() {
@@ -137,6 +140,50 @@ var _ = Describe("AppMetricSQLDB", func() {
 			It("has the array of app_metric in database", func() {
 				Expect(hasAppMetric(testAppId, testMetricName, 11111111, "300")).To(BeTrue())
 				Expect(hasAppMetric(testAppId, testMetricName, 22222222, "400")).To(BeTrue())
+			})
+		})
+		Context("When there are errors in transaction", func() {
+			var lock *sync.Mutex = &sync.Mutex{}
+			var count int = 0
+			BeforeEach(func() {
+				testMetricName = "Test-Metric-Name-this-is-a-too-long-metric-name-too-looooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong"
+				appMetrics := []*models.AppMetric{
+					&models.AppMetric{
+						AppId:      testAppId,
+						MetricType: testMetricName,
+						Unit:       testMetricUnit,
+						Timestamp:  11111111,
+						Value:      "300",
+					},
+					&models.AppMetric{
+						AppId:      testAppId,
+						MetricType: testMetricName,
+						Unit:       testMetricUnit,
+						Timestamp:  22222222,
+						Value:      "400",
+					},
+				}
+				for i := 0; i < 100; i++ {
+					go func(count *int) {
+						err := adb.SaveAppMetricsInBulk(appMetrics)
+						Expect(err).To(HaveOccurred())
+						lock.Lock()
+						*count = *count + 1
+						lock.Unlock()
+					}(&count)
+
+				}
+
+			})
+			It("all connections should be released after transactions' rolling back", func() {
+				Eventually(func() int {
+					lock.Lock()
+					defer lock.Unlock()
+					return count
+				}, 120*time.Second, 1*time.Second).Should(Equal(100))
+				Eventually(func() int {
+					return adb.GetDBStatus().OpenConnections
+				}, 120*time.Second, 10*time.Millisecond).Should(BeZero())
 			})
 		})
 	})
