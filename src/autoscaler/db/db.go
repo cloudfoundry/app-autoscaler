@@ -102,3 +102,11 @@ type LockDB interface {
 	Release(owner string) error
 	Close() error
 }
+
+type SbssDB interface {
+	Close() error
+	CreateCredentials(credOptions models.CredentialsOptions) (*models.Credential, error)
+	DeleteCredentials(credOptions models.CredentialsOptions) error
+	DeleteAllInstanceCredentials(instanceId string) error
+	ValidateCredentials(creds models.Credential) (*models.CredentialsOptions, error)
+}

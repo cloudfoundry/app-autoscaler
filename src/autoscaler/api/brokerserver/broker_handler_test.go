@@ -24,6 +24,7 @@ var _ = Describe("BrokerHandler", func() {
 	var (
 		bindingdb *fakes.FakeBindingDB
 		policydb  *fakes.FakePolicyDB
+		sbssdb    *fakes.FakeSbssDB
 
 		handler *BrokerHandler
 		resp    *httptest.ResponseRecorder
@@ -32,10 +33,12 @@ var _ = Describe("BrokerHandler", func() {
 	BeforeEach(func() {
 		bindingdb = &fakes.FakeBindingDB{}
 		policydb = &fakes.FakePolicyDB{}
+		sbssdb = &fakes.FakeSbssDB{}
 		resp = httptest.NewRecorder()
+	})
 
-		handler = NewBrokerHandler(lagertest.NewTestLogger("test"), conf, bindingdb, policydb)
-
+	JustBeforeEach(func() {
+		handler = NewBrokerHandler(lagertest.NewTestLogger("test"), conf, bindingdb, policydb, sbssdb)
 	})
 
 	Describe("GetBrokerCatalog", func() {
@@ -363,8 +366,9 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error creating service binding"}`))
 			})
 		})
-		Context("When failed to create credential", func() {
+		Context("When failed to create credential due to policy DB", func() {
 			BeforeEach(func() {
+				sbssdb = nil
 				body, err = json.Marshal(bindingRequestBody)
 				Expect(err).NotTo(HaveOccurred())
 				policydb.GetCredentialReturns(nil, sql.ErrNoRows)
@@ -375,7 +379,17 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error creating service binding"}`))
 			})
 		})
-
+		Context("When failed to create credential due to SBSS DB", func() {
+			BeforeEach(func() {
+				body, err = json.Marshal(bindingRequestBody)
+				Expect(err).NotTo(HaveOccurred())
+				sbssdb.CreateCredentialsReturns(nil, errors.New("some sql error"))
+			})
+			It("fails with 500", func() {
+				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error creating service binding"}`))
+			})
+		})
 		Context("When called with invalid policy json", func() {
 			BeforeEach(func() {
 				bindingRequestBody.Policy = json.RawMessage(`{

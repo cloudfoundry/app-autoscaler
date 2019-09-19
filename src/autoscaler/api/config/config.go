@@ -41,6 +41,7 @@ var defaultLoggingConfig = helpers.LoggingConfig{
 type DBConfig struct {
 	BindingDB db.DatabaseConfig `yaml:"binding_db"`
 	PolicyDB  db.DatabaseConfig `yaml:"policy_db"`
+	SbssDB    db.DatabaseConfig `yaml:"sbss_db"`
 }
 
 type SchedulerConfig struct {

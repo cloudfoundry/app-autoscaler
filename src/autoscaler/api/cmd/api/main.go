@@ -83,7 +83,17 @@ func main() {
 		checkBindingFunc = func(appId string) bool {
 			return bindingDB.CheckServiceBinding(appId)
 		}
-		brokerHttpServer, err := brokerserver.NewBrokerServer(logger.Session("broker_http_server"), conf, bindingDB, policyDb, httpStatusCollector)
+		var sbssDB db.SbssDB
+		if conf.DB.SbssDB.URL != "" {
+			sbssDB, err = sqldb.NewSbssSQLDb(conf.DB.SbssDB, logger.Session("sbss-db"))
+			if err != nil {
+				logger.Error("failed to connect SBSS database", err, lager.Data{"dbConfig": conf.DB.SbssDB})
+				os.Exit(1)
+			}
+			logger.Info("Connected to SBSS database")
+			defer sbssDB.Close()
+		}
+		brokerHttpServer, err := brokerserver.NewBrokerServer(logger.Session("broker_http_server"), conf, bindingDB, policyDb, sbssDB, httpStatusCollector)
 		if err != nil {
 			logger.Error("failed to create broker http server", err)
 			os.Exit(1)

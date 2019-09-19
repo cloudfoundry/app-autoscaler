@@ -1,11 +1,13 @@
 package brokerserver
 
 import (
+	"autoscaler/api/sbss_cred_helper"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"reflect"
 
 	"autoscaler/api/config"
 	"autoscaler/api/custom_metrics_cred_helper"
@@ -24,17 +26,19 @@ type BrokerHandler struct {
 	conf            *config.Config
 	bindingdb       db.BindingDB
 	policydb        db.PolicyDB
+	sbssDB          db.SbssDB
 	policyValidator *policyvalidator.PolicyValidator
 	schedulerUtil   *schedulerutil.SchedulerUtil
 }
 
-func NewBrokerHandler(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB) *BrokerHandler {
+func NewBrokerHandler(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB, sbssDB db.SbssDB) *BrokerHandler {
 
 	return &BrokerHandler{
 		logger:          logger,
 		conf:            conf,
 		bindingdb:       bindingdb,
 		policydb:        policydb,
+		sbssDB:          sbssDB,
 		policyValidator: policyvalidator.NewPolicyValidator(conf.PolicySchemaPath),
 		schedulerUtil:   schedulerutil.NewSchedulerUtil(conf, logger),
 	}
@@ -179,7 +183,12 @@ func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Reque
 		writeErrorResponse(w, http.StatusInternalServerError, "Error creating service binding")
 		return
 	}
-	cred, err := custom_metrics_cred_helper.CreateCredential(body.AppID, nil, h.policydb, custom_metrics_cred_helper.MaxRetry)
+	var cred *models.Credential
+	if h.sbssDB == nil || reflect.ValueOf(h.sbssDB).IsNil() {
+		cred, err = custom_metrics_cred_helper.CreateCredential(body.AppID, nil, h.policydb, custom_metrics_cred_helper.MaxRetry)
+	} else {
+		cred, err = sbss_cred_helper.CreateCredential(body.AppID, h.sbssDB, custom_metrics_cred_helper.MaxRetry, h.logger)
+	}
 	if err != nil {
 		//revert binding creating
 		h.logger.Error("failed to create custom metrics credential", err, lager.Data{"appId": body.AppID})
@@ -270,7 +279,11 @@ func (h *BrokerHandler) UnbindServiceInstance(w http.ResponseWriter, r *http.Req
 		writeErrorResponse(w, http.StatusInternalServerError, "Error deleting service binding")
 		return
 	}
-	err = custom_metrics_cred_helper.DeleteCredential(appId, h.policydb, custom_metrics_cred_helper.MaxRetry)
+	if h.sbssDB == nil || reflect.ValueOf(h.sbssDB).IsNil() {
+		err = custom_metrics_cred_helper.DeleteCredential(appId, h.policydb, custom_metrics_cred_helper.MaxRetry)
+	} else {
+		err = sbss_cred_helper.DeleteCredential(appId, h.sbssDB, sbss_cred_helper.MaxRetry, h.logger)
+	}
 	if err != nil {
 		h.logger.Error("failed to delete custom metrics credential for unbinding", err, lager.Data{"appId": appId})
 	}
