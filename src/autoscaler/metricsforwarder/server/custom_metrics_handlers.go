@@ -9,6 +9,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"net/http"
+	"reflect"
 	"time"
 
 	"code.cloudfoundry.org/cfhttp/handlers"
@@ -20,16 +21,18 @@ import (
 type CustomMetricsHandler struct {
 	metricForwarder    forwarder.MetricForwarder
 	policyDB           db.PolicyDB
+	sbssDB             db.SbssDB
 	credentialCache    cache.Cache
 	allowedMetricCache cache.Cache
 	cacheTTL           time.Duration
 	logger             lager.Logger
 }
 
-func NewCustomMetricsHandler(logger lager.Logger, metricForwarder forwarder.MetricForwarder, policyDB db.PolicyDB, credentialCache cache.Cache, allowedMetricCache cache.Cache, cacheTTL time.Duration) *CustomMetricsHandler {
+func NewCustomMetricsHandler(logger lager.Logger, metricForwarder forwarder.MetricForwarder, policyDB db.PolicyDB, sbssDB db.SbssDB, credentialCache cache.Cache, allowedMetricCache cache.Cache, cacheTTL time.Duration) *CustomMetricsHandler {
 	return &CustomMetricsHandler{
 		metricForwarder:    metricForwarder,
 		policyDB:           policyDB,
+		sbssDB:             sbssDB,
 		credentialCache:    credentialCache,
 		allowedMetricCache: allowedMetricCache,
 		cacheTTL:           cacheTTL,
@@ -51,46 +54,61 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 	}
 
 	var isValid bool
+	var err error
 
 	appID := vars["appid"]
-	res, found := mh.credentialCache.Get(appID)
-	if found {
-		// Credentials found in cache
-		credentials := res.(*models.Credential)
-		isValid = mh.validateCredentials(username, credentials.Username, password, credentials.Password)
-	}
 
-	// Credentials not found in cache or
-	// stale cache entry with invalid credential found in cache
-	// search in the database and update the cache
-	if !found || !isValid {
-		credentials, err := mh.policyDB.GetCredential(appID)
-		if err != nil {
-			if err == sql.ErrNoRows {
-				mh.logger.Error("no-credential-found-in-db", err, lager.Data{"appID": appID})
-				handlers.WriteJSONResponse(w, http.StatusUnauthorized, models.ErrorResponse{
-					Code:    "Authorization-Failure-Error",
-					Message: "Incorrect credentials. Basic authorization credential does not match"})
+	if mh.sbssDB == nil || reflect.ValueOf(mh.sbssDB).IsNil() {
+		res, found := mh.credentialCache.Get(appID)
+		if found {
+			// Credentials found in cache
+			credentials := res.(*models.Credential)
+			isValid = mh.validateCredentials(username, credentials.Username, password, credentials.Password)
+		}
+
+		// Credentials not found in cache or
+		// stale cache entry with invalid credential found in cache
+		// search in the database and update the cache
+		if !found || !isValid {
+			credentials, err := mh.policyDB.GetCredential(appID)
+			if err != nil {
+				if err == sql.ErrNoRows {
+					mh.logger.Error("no-credential-found-in-db", err, lager.Data{"appID": appID})
+					handlers.WriteJSONResponse(w, http.StatusUnauthorized, models.ErrorResponse{
+						Code:    "Authorization-Failure-Error",
+						Message: "Incorrect credentials. Basic authorization credential does not match"})
+					return
+				}
+				mh.logger.Error("error-during-getting-credentials-from-policyDB", err, lager.Data{"appid": appID})
+				handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+					Code:    "Internal-Server-Error",
+					Message: "Error getting binding credentials from policyDB"})
 				return
 			}
-			mh.logger.Error("error-during-getting-credentials-from-policyDB", err, lager.Data{"appid": appID})
-			handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-				Code:    "Interal-Server-Error",
-				Message: "Error getting binding crededntials from policyDB"})
-			return
-		}
-		// update the cache
-		mh.credentialCache.Set(appID, credentials, mh.cacheTTL)
+			// update the cache
+			mh.credentialCache.Set(appID, credentials, mh.cacheTTL)
 
-		isValid = mh.validateCredentials(username, credentials.Username, password, credentials.Password)
-		// If Credentials in DB is not valid
-		if !isValid {
-			mh.logger.Error("error-validating-authorizaion-header", err)
-			handlers.WriteJSONResponse(w, http.StatusUnauthorized, models.ErrorResponse{
-				Code:    "Authorization-Failure-Error",
-				Message: "Incorrect credentials. Basic authorization credential does not match"})
-			return
+			isValid = mh.validateCredentials(username, credentials.Username, password, credentials.Password)
 		}
+	} else {
+		credOps, err := mh.sbssDB.ValidateCredentials(models.Credential{
+			Username: username,
+			Password: password,
+		})
+		if err != nil {
+			mh.logger.Error("failed-to-verify-sbss-credentials", err, lager.Data{"username": username, "appid": appID})
+		}
+
+		isValid = err == nil && credOps != nil && credOps.BindingId == appID
+	}
+
+	// If Credentials in DB is not valid
+	if !isValid {
+		mh.logger.Error("error-validating-authorization-header", err)
+		handlers.WriteJSONResponse(w, http.StatusForbidden, models.ErrorResponse{
+			Code:    "Authorization-Failure-Error",
+			Message: "Incorrect credentials. Basic authorization credentials do not match"})
+		return
 	}
 
 	body, err := ioutil.ReadAll(r.Body)

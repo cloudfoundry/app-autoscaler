@@ -7,9 +7,11 @@ import (
 	"bytes"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"time"
 
-	"code.cloudfoundry.org/lager"
+	"code.cloudfoundry.org/lager/lagertest"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -30,6 +32,7 @@ var _ = Describe("MetricHandler", func() {
 		allowedMetricTypeSet map[string]struct{}
 
 		policyDB         *fakes.FakePolicyDB
+		sbssDB           *fakes.FakeSbssDB
 		metricsforwarder *fakes.FakeMetricForwarder
 
 		resp *httptest.ResponseRecorder
@@ -46,7 +49,6 @@ var _ = Describe("MetricHandler", func() {
 	)
 
 	BeforeEach(func() {
-		logger := lager.NewLogger("metrichandler-test")
 		policyDB = &fakes.FakePolicyDB{}
 		metricsforwarder = &fakes.FakeMetricForwarder{}
 		credentials = &models.Credential{}
@@ -55,12 +57,19 @@ var _ = Describe("MetricHandler", func() {
 		allowedMetricTypeSet = make(map[string]struct{})
 		vars = make(map[string]string)
 		resp = httptest.NewRecorder()
-		handler = NewCustomMetricsHandler(logger, metricsforwarder, policyDB, credentialCache, allowedMetricCache, 10*time.Minute)
 		credentialCache.Flush()
 		allowedMetricCache.Flush()
 	})
 
-	Describe("PublishMetrics", func() {
+	JustBeforeEach(func() {
+		logger := lagertest.NewTestLogger("custom-metrics-handler-test")
+		handler = NewCustomMetricsHandler(logger, metricsforwarder, policyDB, sbssDB, credentialCache, allowedMetricCache, 10*time.Minute)
+	})
+
+	Describe("PublishMetrics without SBSS", func() {
+		BeforeEach(func() {
+			sbssDB = nil
+		})
 		JustBeforeEach(func() {
 			req, err = http.NewRequest(http.MethodPost, serverUrl+"/v1/apps/an-app-id/metrics", bytes.NewReader(body))
 			req.Header.Add("Content-Type", "application/json")
@@ -202,42 +211,79 @@ var _ = Describe("MetricHandler", func() {
 				})
 			})
 		})
+	})
 
-		Context("when a request to publish custom metrics comes with malformed request body", func() {
-
-			BeforeEach(func() {
-				policyDB.GetCredentialReturns(&models.Credential{
-					Username: "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu",
-					Password: "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G",
-				}, nil)
-				body = []byte(`{
-					   "instance_index":0,
-					   "test" : 
-					   "metrics":[
-					      {
-					         "name":"custom_metric1",
-					         "type":"gauge",
-					         "value":200,
-					         "unit":"unit"
-					      }
-					   ]
-				}`)
-			})
-
-			It("returns status code 400", func() {
-				Expect(resp.Code).To(Equal(http.StatusBadRequest))
-				errJson := &models.ErrorResponse{}
-				err = json.Unmarshal(resp.Body.Bytes(), errJson)
-				Expect(errJson).To(Equal(&models.ErrorResponse{
-					Code:    "Bad-Request",
-					Message: "Error unmarshaling custom metrics request body",
-				}))
-			})
-
+	Describe("PublishMetrics with SBSS", func() {
+		BeforeEach(func() {
+			sbssDB = &fakes.FakeSbssDB{}
 		})
 
-		Context("when a valid request to publish custom metrics comes", func() {
-			Context("when allowedMetrics exists in the cache", func() {
+		Context("when a request with invalid credentials to publish custom metrics comes", func() {
+			BeforeEach(func() {
+				sbssDB.ValidateCredentialsStub = func(credential models.Credential) (options *models.CredentialsOptions, e error) {
+					Expect(credential.Username).To(Equal("username"))
+					Expect(credential.Password).To(Equal("password"))
+					return nil, errors.New("invalid credentials")
+				}
+				scalingPolicy = &models.ScalingPolicy{
+					InstanceMin: 1,
+					InstanceMax: 6,
+					ScalingRules: []*models.ScalingRule{{
+						MetricType:            "queuelength",
+						BreachDurationSeconds: 60,
+						Threshold:             10,
+						Operator:              ">",
+						CoolDownSeconds:       60,
+						Adjustment:            "+1"}}}
+				policyDB.GetAppPolicyReturns(scalingPolicy, nil)
+				allowedMetricTypeSet["queuelength"] = struct{}{}
+				allowedMetricCache.Set("an-app-id", allowedMetricTypeSet, 10*time.Minute)
+				customMetrics := []*models.CustomMetric{
+					&models.CustomMetric{
+						Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 1, AppGUID: "an-app-id",
+					},
+				}
+				body, err = json.Marshal(models.MetricsConsumer{InstanceIndex: 0, CustomMetrics: customMetrics})
+				Expect(err).NotTo(HaveOccurred())
+			})
+			JustBeforeEach(func() {
+				req, err = http.NewRequest(http.MethodPost, serverUrl+"/v1/apps/an-app-id/metrics", bytes.NewReader(body))
+				req.Header.Add("Content-Type", "application/json")
+				req.Header.Add("Authorization", "Basic dXNlcm5hbWU6cGFzc3dvcmQ=")
+				Expect(err).ToNot(HaveOccurred())
+				vars["appid"] = "an-app-id"
+				handler.PublishMetrics(resp, req, vars)
+
+			})
+			It("should validate the credentials using SBSS and return status code 403", func() {
+				Expect(policyDB.GetCredentialCallCount()).To(Equal(0))
+				Expect(sbssDB.ValidateCredentialsCallCount()).To(Equal(1))
+				Expect(resp.Code).To(Equal(http.StatusForbidden))
+			})
+		})
+
+		Context("when a request with valid credentials to publish custom metrics comes", func() {
+			BeforeEach(func() {
+				sbssDB.ValidateCredentialsStub = func(credential models.Credential) (options *models.CredentialsOptions, e error) {
+					Expect(credential.Username).To(Equal("username"))
+					Expect(credential.Password).To(Equal("password"))
+					return &models.CredentialsOptions{
+						InstanceId: "an-app-id",
+						BindingId:  "an-app-id",
+					}, nil
+				}
+			})
+
+			JustBeforeEach(func() {
+				req, err = http.NewRequest(http.MethodPost, serverUrl+"/v1/apps/an-app-id/metrics", bytes.NewReader(body))
+				req.Header.Add("Content-Type", "application/json")
+				req.Header.Add("Authorization", "Basic dXNlcm5hbWU6cGFzc3dvcmQ=")
+				Expect(err).ToNot(HaveOccurred())
+				vars["appid"] = "an-app-id"
+				handler.PublishMetrics(resp, req, vars)
+
+			})
+			Context("when credentials exists in SBSS", func() {
 				BeforeEach(func() {
 					scalingPolicy = &models.ScalingPolicy{
 						InstanceMin: 1,
@@ -250,9 +296,6 @@ var _ = Describe("MetricHandler", func() {
 							CoolDownSeconds:       60,
 							Adjustment:            "+1"}}}
 					policyDB.GetAppPolicyReturns(scalingPolicy, nil)
-					credentials.Username = "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu"
-					credentials.Password = "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G"
-					credentialCache.Set("an-app-id", credentials, 10*time.Minute)
 					allowedMetricTypeSet["queuelength"] = struct{}{}
 					allowedMetricCache.Set("an-app-id", allowedMetricTypeSet, 10*time.Minute)
 					customMetrics := []*models.CustomMetric{
@@ -264,15 +307,143 @@ var _ = Describe("MetricHandler", func() {
 					Expect(err).NotTo(HaveOccurred())
 				})
 
-				It("should get the allowedMetrics from cache without searching from database and returns status code 200", func() {
-					Expect(policyDB.GetAppPolicyCallCount()).To(Equal(0))
+				It("should validate the credentials using SBSS and return status code 200", func() {
+					Expect(policyDB.GetCredentialCallCount()).To(Equal(0))
+					Expect(sbssDB.ValidateCredentialsCallCount()).To(Equal(1))
 					Expect(resp.Code).To(Equal(http.StatusOK))
 				})
 
 			})
 
-			Context("when allowedMetrics does not exists in the cache but exist in the database", func() {
+			Context("when a request to publish custom metrics comes with malformed request body", func() {
+
 				BeforeEach(func() {
+					body = []byte(`{
+					   "instance_index":0,
+					   "test" : 
+					   "metrics":[
+					      {
+					         "name":"custom_metric1",
+					         "type":"gauge",
+					         "value":200,
+					         "unit":"unit"
+					      }
+					   ]
+				}`)
+				})
+
+				It("returns status code 400", func() {
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
+					errJson := &models.ErrorResponse{}
+					err = json.Unmarshal(resp.Body.Bytes(), errJson)
+					Expect(errJson).To(Equal(&models.ErrorResponse{
+						Code:    "Bad-Request",
+						Message: "Error unmarshaling custom metrics request body",
+					}))
+				})
+
+			})
+
+			Context("when a valid request to publish custom metrics comes", func() {
+				Context("when allowedMetrics exists in the cache", func() {
+					BeforeEach(func() {
+						scalingPolicy = &models.ScalingPolicy{
+							InstanceMin: 1,
+							InstanceMax: 6,
+							ScalingRules: []*models.ScalingRule{{
+								MetricType:            "queuelength",
+								BreachDurationSeconds: 60,
+								Threshold:             10,
+								Operator:              ">",
+								CoolDownSeconds:       60,
+								Adjustment:            "+1"}}}
+						policyDB.GetAppPolicyReturns(scalingPolicy, nil)
+						allowedMetricTypeSet["queuelength"] = struct{}{}
+						allowedMetricCache.Set("an-app-id", allowedMetricTypeSet, 10*time.Minute)
+						customMetrics := []*models.CustomMetric{
+							&models.CustomMetric{
+								Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 1, AppGUID: "an-app-id",
+							},
+						}
+						body, err = json.Marshal(models.MetricsConsumer{InstanceIndex: 0, CustomMetrics: customMetrics})
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					It("should get the allowedMetrics from cache without searching from database and returns status code 200", func() {
+						Expect(policyDB.GetAppPolicyCallCount()).To(Equal(0))
+						Expect(resp.Code).To(Equal(http.StatusOK))
+					})
+
+				})
+
+				Context("when allowedMetrics does not exists in the cache but exist in the database", func() {
+					BeforeEach(func() {
+						scalingPolicy = &models.ScalingPolicy{
+							InstanceMin: 1,
+							InstanceMax: 6,
+							ScalingRules: []*models.ScalingRule{{
+								MetricType:            "queuelength",
+								BreachDurationSeconds: 60,
+								Threshold:             10,
+								Operator:              ">",
+								CoolDownSeconds:       60,
+								Adjustment:            "+1"}}}
+						policyDB.GetAppPolicyReturns(scalingPolicy, nil)
+						customMetrics := []*models.CustomMetric{
+							&models.CustomMetric{
+								Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 1, AppGUID: "an-app-id",
+							},
+						}
+						body, err = json.Marshal(models.MetricsConsumer{InstanceIndex: 0, CustomMetrics: customMetrics})
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					It("should get the allowedMetrics from database and add it to the cache and returns status code 200", func() {
+						Expect(policyDB.GetAppPolicyCallCount()).To(Equal(1))
+						Expect(resp.Code).To(Equal(http.StatusOK))
+						_, found = allowedMetricCache.Get("an-app-id")
+						Expect(found).To(Equal(true))
+					})
+
+				})
+
+				Context("when allowedMetrics neither exists in the cache nor exist in the database", func() {
+					BeforeEach(func() {
+						customMetrics := []*models.CustomMetric{
+							&models.CustomMetric{
+								Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 1, AppGUID: "an-app-id",
+							},
+						}
+						body, err = json.Marshal(models.MetricsConsumer{InstanceIndex: 0, CustomMetrics: customMetrics})
+						Expect(err).NotTo(HaveOccurred())
+					})
+
+					It("should search in both cache & database and returns status code 400", func() {
+						Expect(policyDB.GetAppPolicyCallCount()).To(Equal(1))
+						Expect(resp.Code).To(Equal(http.StatusBadRequest))
+						errJson := &models.ErrorResponse{}
+						err = json.Unmarshal(resp.Body.Bytes(), errJson)
+						Expect(errJson).To(Equal(&models.ErrorResponse{
+							Code:    "Bad-Request",
+							Message: "no policy defined",
+						}))
+					})
+				})
+			})
+
+			Context("when a request to publish custom metrics comes with standard metric type", func() {
+				BeforeEach(func() {
+					body = []byte(`{
+					   "instance_index":0,
+					   "metrics":[
+					      {
+					         "name":"memoryused",
+					         "type":"gauge",
+					         "value":200,
+					         "unit":"unit"
+					      }
+					   ]
+				}`)
 					scalingPolicy = &models.ScalingPolicy{
 						InstanceMin: 1,
 						InstanceMax: 6,
@@ -284,103 +455,23 @@ var _ = Describe("MetricHandler", func() {
 							CoolDownSeconds:       60,
 							Adjustment:            "+1"}}}
 					policyDB.GetAppPolicyReturns(scalingPolicy, nil)
-					credentials.Username = "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu"
-					credentials.Password = "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G"
-					credentialCache.Set("an-app-id", credentials, 10*time.Minute)
-					customMetrics := []*models.CustomMetric{
-						&models.CustomMetric{
-							Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 1, AppGUID: "an-app-id",
-						},
-					}
-					body, err = json.Marshal(models.MetricsConsumer{InstanceIndex: 0, CustomMetrics: customMetrics})
-					Expect(err).NotTo(HaveOccurred())
 				})
 
-				It("should get the allowedMetrics from database and add it to the cache and returns status code 200", func() {
-					Expect(policyDB.GetAppPolicyCallCount()).To(Equal(1))
-					Expect(resp.Code).To(Equal(http.StatusOK))
-					_, found = allowedMetricCache.Get("an-app-id")
-					Expect(found).To(Equal(true))
-				})
-
-			})
-
-			Context("when allowedMetrics neither exists in the cache nor exist in the database", func() {
-				BeforeEach(func() {
-					customMetrics := []*models.CustomMetric{
-						&models.CustomMetric{
-							Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 1, AppGUID: "an-app-id",
-						},
-					}
-					credentials.Username = "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu"
-					credentials.Password = "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G"
-					credentialCache.Set("an-app-id", credentials, 10*time.Minute)
-					body, err = json.Marshal(models.MetricsConsumer{InstanceIndex: 0, CustomMetrics: customMetrics})
-					Expect(err).NotTo(HaveOccurred())
-				})
-
-				It("should search in both cache & database and returns status code 400", func() {
-					Expect(policyDB.GetAppPolicyCallCount()).To(Equal(1))
+				It("returns status code 400", func() {
 					Expect(resp.Code).To(Equal(http.StatusBadRequest))
 					errJson := &models.ErrorResponse{}
 					err = json.Unmarshal(resp.Body.Bytes(), errJson)
 					Expect(errJson).To(Equal(&models.ErrorResponse{
 						Code:    "Bad-Request",
-						Message: "no policy defined",
+						Message: "Custom Metric: memoryused matches with standard metrics name",
 					}))
 				})
-			})
-		})
 
-		Context("when a request to publish custom metrics comes with standard metric type", func() {
-			BeforeEach(func() {
-				policyDB.GetCredentialReturns(&models.Credential{
-					Username: "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu",
-					Password: "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G",
-				}, nil)
-				body = []byte(`{
-					   "instance_index":0,
-					   "metrics":[
-					      {
-					         "name":"memoryused",
-					         "type":"gauge",
-					         "value":200,
-					         "unit":"unit"
-					      }
-					   ]
-				}`)
-				scalingPolicy = &models.ScalingPolicy{
-					InstanceMin: 1,
-					InstanceMax: 6,
-					ScalingRules: []*models.ScalingRule{{
-						MetricType:            "queuelength",
-						BreachDurationSeconds: 60,
-						Threshold:             10,
-						Operator:              ">",
-						CoolDownSeconds:       60,
-						Adjustment:            "+1"}}}
-				policyDB.GetAppPolicyReturns(scalingPolicy, nil)
 			})
 
-			It("returns status code 400", func() {
-				Expect(resp.Code).To(Equal(http.StatusBadRequest))
-				errJson := &models.ErrorResponse{}
-				err = json.Unmarshal(resp.Body.Bytes(), errJson)
-				Expect(errJson).To(Equal(&models.ErrorResponse{
-					Code:    "Bad-Request",
-					Message: "Custom Metric: memoryused matches with standard metrics name",
-				}))
-			})
-
-		})
-
-		Context("when a request to publish custom metrics comes with non allowed metric types", func() {
-			BeforeEach(func() {
-				policyDB.GetCredentialReturns(&models.Credential{
-					Username: "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu",
-					Password: "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G",
-				}, nil)
-				body = []byte(`{
+			Context("when a request to publish custom metrics comes with non allowed metric types", func() {
+				BeforeEach(func() {
+					body = []byte(`{
 					   "instance_index":0,
 					   "metrics":[
 					      {
@@ -391,30 +482,30 @@ var _ = Describe("MetricHandler", func() {
 					      }
 					   ]
 				}`)
-				scalingPolicy = &models.ScalingPolicy{
-					InstanceMin: 1,
-					InstanceMax: 6,
-					ScalingRules: []*models.ScalingRule{{
-						MetricType:            "queuelength",
-						BreachDurationSeconds: 60,
-						Threshold:             10,
-						Operator:              ">",
-						CoolDownSeconds:       60,
-						Adjustment:            "+1"}}}
-				policyDB.GetAppPolicyReturns(scalingPolicy, nil)
-			})
+					scalingPolicy = &models.ScalingPolicy{
+						InstanceMin: 1,
+						InstanceMax: 6,
+						ScalingRules: []*models.ScalingRule{{
+							MetricType:            "queuelength",
+							BreachDurationSeconds: 60,
+							Threshold:             10,
+							Operator:              ">",
+							CoolDownSeconds:       60,
+							Adjustment:            "+1"}}}
+					policyDB.GetAppPolicyReturns(scalingPolicy, nil)
+				})
 
-			It("returns status code 400", func() {
-				Expect(resp.Code).To(Equal(http.StatusBadRequest))
-				errJson := &models.ErrorResponse{}
-				err = json.Unmarshal(resp.Body.Bytes(), errJson)
-				Expect(errJson).To(Equal(&models.ErrorResponse{
-					Code:    "Bad-Request",
-					Message: "Custom Metric: wrong_metric_type does not match with metrics defined in policy",
-				}))
-			})
+				It("returns status code 400", func() {
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
+					errJson := &models.ErrorResponse{}
+					err = json.Unmarshal(resp.Body.Bytes(), errJson)
+					Expect(errJson).To(Equal(&models.ErrorResponse{
+						Code:    "Bad-Request",
+						Message: "Custom Metric: wrong_metric_type does not match with metrics defined in policy",
+					}))
+				})
 
+			})
 		})
 	})
-
 })

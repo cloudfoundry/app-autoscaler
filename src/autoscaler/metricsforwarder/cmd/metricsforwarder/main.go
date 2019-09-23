@@ -62,6 +62,17 @@ func main() {
 	}
 	defer policyDB.Close()
 
+	var sbssDB db.SbssDB
+	if conf.Db.SbssDB.URL != "" {
+		sbssDB, err = sqldb.NewSbssSQLDb(conf.Db.SbssDB, logger.Session("sbss-db"))
+		if err != nil {
+			logger.Error("failed to connect SBSS database", err, lager.Data{"dbConfig": conf.Db.SbssDB})
+			os.Exit(1)
+		}
+		logger.Info("Connected to SBSS database")
+		defer sbssDB.Close()
+	}
+
 	httpStatusCollector := healthendpoint.NewHTTPStatusCollector("autoscaler", "metricsforwarder")
 	promRegistry := prometheus.NewRegistry()
 	healthendpoint.RegisterCollectors(promRegistry, []prometheus.Collector{
@@ -72,7 +83,7 @@ func main() {
 	credentialCache := cache.New(conf.CacheTTL, conf.CacheCleanupInterval)
 	allowedMetricCache := cache.New(conf.CacheTTL, conf.CacheCleanupInterval)
 
-	httpServer, err := server.NewServer(logger.Session("custom_metrics_server"), conf, policyDB, *credentialCache, *allowedMetricCache, httpStatusCollector)
+	httpServer, err := server.NewServer(logger.Session("custom_metrics_server"), conf, policyDB, sbssDB, *credentialCache, *allowedMetricCache, httpStatusCollector)
 	if err != nil {
 		logger.Error("failed-to-create-custommetrics-server", err)
 		os.Exit(1)

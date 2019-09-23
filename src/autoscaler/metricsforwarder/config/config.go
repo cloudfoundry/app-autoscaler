@@ -57,6 +57,7 @@ type LoggregatorConfig struct {
 
 type DbConfig struct {
 	PolicyDb db.DatabaseConfig `yaml:"policy_db"`
+	SbssDB   db.DatabaseConfig `yaml:"sbss_db"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
