@@ -9,7 +9,7 @@ import (
 	"autoscaler/healthendpoint"
 	"autoscaler/metricsforwarder/config"
 	"autoscaler/metricsforwarder/forwarder"
-	"autoscaler/metricsforwarder/ratelimiter"
+	"autoscaler/ratelimiter"
 	"autoscaler/routes"
 
 	"code.cloudfoundry.org/lager"

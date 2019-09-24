@@ -56,6 +56,7 @@ var _ = Describe("PublicApiHandler", func() {
 	)
 	var (
 		policydb      *fakes.FakePolicyDB
+		rateLimiter   *fakes.FakeLimiter
 		handler       *PublicApiHandler
 		resp          *httptest.ResponseRecorder
 		req           *http.Request
@@ -66,7 +67,8 @@ var _ = Describe("PublicApiHandler", func() {
 		resp = httptest.NewRecorder()
 
 		pathVariables = map[string]string{}
-		handler = NewPublicApiHandler(lagertest.NewTestLogger("public_api_handler"), conf, policydb)
+		rateLimiter = &fakes.FakeLimiter{}
+		handler = NewPublicApiHandler(lagertest.NewTestLogger("public_api_handler"), conf, policydb, rateLimiter)
 	})
 
 	Describe("GetInfo", func() {
@@ -92,6 +94,7 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 		})
 	})
+
 	Describe("GetScalingPolicy", func() {
 		JustBeforeEach(func() {
 			handler.GetScalingPolicy(resp, req, pathVariables)
@@ -103,6 +106,19 @@ var _ = Describe("PublicApiHandler", func() {
 				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"AppId is required"}`))
 			})
 		})
+
+		Context("when requests are beyond ratelimit", func() {
+			BeforeEach(func() {
+				pathVariables["appId"] = TEST_APP_ID
+				rateLimiter.ExceedsLimitReturns(true)
+			})
+	
+			It("returns status code 429", func() {
+				Expect(resp.Code).To(Equal(http.StatusTooManyRequests))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Request-Limit-Exceeded","message":"Too many requests"}`))
+			})
+		})
+
 		Context("When database gives error", func() {
 			BeforeEach(func() {
 				pathVariables["appId"] = TEST_APP_ID
@@ -174,6 +190,19 @@ var _ = Describe("PublicApiHandler", func() {
 				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"AppId is required"}`))
 			})
 		})
+
+		Context("when requests are beyond ratelimit", func() {
+			BeforeEach(func() {
+				pathVariables["appId"] = TEST_APP_ID
+				rateLimiter.ExceedsLimitReturns(true)
+			})
+	
+			It("returns status code 429", func() {
+				Expect(resp.Code).To(Equal(http.StatusTooManyRequests))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Request-Limit-Exceeded","message":"Too many requests"}`))
+			})
+		})
+
 		Context("When the policy is invalid", func() {
 			BeforeEach(func() {
 				pathVariables["appId"] = TEST_APP_ID
@@ -241,6 +270,18 @@ var _ = Describe("PublicApiHandler", func() {
 			It("should fail with 400", func() {
 				Expect(resp.Code).To(Equal(http.StatusBadRequest))
 				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"AppId is required"}`))
+			})
+		})
+
+		Context("when requests are beyond ratelimit", func() {
+			BeforeEach(func() {
+				pathVariables["appId"] = TEST_APP_ID
+				rateLimiter.ExceedsLimitReturns(true)
+			})
+	
+			It("returns status code 429", func() {
+				Expect(resp.Code).To(Equal(http.StatusTooManyRequests))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Request-Limit-Exceeded","message":"Too many requests"}`))
 			})
 		})
 
@@ -369,6 +410,18 @@ var _ = Describe("PublicApiHandler", func() {
 			It("should fail with 400", func() {
 				Expect(resp.Code).To(Equal(http.StatusBadRequest))
 				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"appId is required"}`))
+			})
+		})
+
+		Context("when requests are beyond ratelimit", func() {
+			BeforeEach(func() {
+				pathVariables["appId"] = TEST_APP_ID
+				rateLimiter.ExceedsLimitReturns(true)
+			})
+	
+			It("returns status code 429", func() {
+				Expect(resp.Code).To(Equal(http.StatusTooManyRequests))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Request-Limit-Exceeded","message":"Too many requests"}`))
 			})
 		})
 
@@ -787,6 +840,18 @@ var _ = Describe("PublicApiHandler", func() {
 			It("should fail with 400", func() {
 				Expect(resp.Code).To(Equal(http.StatusBadRequest))
 				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"appId is required"}`))
+			})
+		})
+
+		Context("when requests are beyond ratelimit", func() {
+			BeforeEach(func() {
+				pathVariables["appId"] = TEST_APP_ID
+				rateLimiter.ExceedsLimitReturns(true)
+			})
+	
+			It("returns status code 429", func() {
+				Expect(resp.Code).To(Equal(http.StatusTooManyRequests))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Request-Limit-Exceeded","message":"Too many requests"}`))
 			})
 		})
 
@@ -1234,6 +1299,18 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 		})
 
+		Context("when requests are beyond ratelimit", func() {
+			BeforeEach(func() {
+				pathVariables["appId"] = TEST_APP_ID
+				rateLimiter.ExceedsLimitReturns(true)
+			})
+	
+			It("returns status code 429", func() {
+				Expect(resp.Code).To(Equal(http.StatusTooManyRequests))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Request-Limit-Exceeded","message":"Too many requests"}`))
+			})
+		})
+
 		Context("When metricType is not present", func() {
 			BeforeEach(func() {
 				eventGeneratorStatus = http.StatusOK
@@ -1614,6 +1691,7 @@ var _ = Describe("PublicApiHandler", func() {
 		})
 
 	})
+
 	Describe("CreateCredential", func() {
 		var requestBody string
 		BeforeEach(func() {
@@ -1635,6 +1713,16 @@ var _ = Describe("PublicApiHandler", func() {
 			It("should fail with 400", func() {
 				Expect(resp.Code).To(Equal(http.StatusBadRequest))
 				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"AppId is required"}`))
+			})
+		})
+		Context("when requests are beyond ratelimit", func() {
+			BeforeEach(func() {
+				pathVariables["appId"] = TEST_APP_ID
+				rateLimiter.ExceedsLimitReturns(true)
+			})
+			It("returns status code 429", func() {
+				Expect(resp.Code).To(Equal(http.StatusTooManyRequests))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Request-Limit-Exceeded","message":"Too many requests"}`))
 			})
 		})
 		Context("When user provide credential", func() {
@@ -1685,6 +1773,7 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 		})
 	})
+
 	Describe("DeleteCredential", func() {
 		JustBeforeEach(func() {
 			handler.DeleteCredential(resp, req, pathVariables)
@@ -1700,6 +1789,16 @@ var _ = Describe("PublicApiHandler", func() {
 			It("should fail with 400", func() {
 				Expect(resp.Code).To(Equal(http.StatusBadRequest))
 				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"AppId is required"}`))
+			})
+		})
+		Context("when requests are beyond ratelimit", func() {
+			BeforeEach(func() {
+				pathVariables["appId"] = TEST_APP_ID
+				rateLimiter.ExceedsLimitReturns(true)
+			})
+			It("returns status code 429", func() {
+				Expect(resp.Code).To(Equal(http.StatusTooManyRequests))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Request-Limit-Exceeded","message":"Too many requests"}`))
 			})
 		})
 		Context("When failed to delete credential from policydb", func() {

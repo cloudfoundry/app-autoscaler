@@ -9,6 +9,7 @@ import (
 	"autoscaler/cf"
 	"autoscaler/db"
 	"autoscaler/healthendpoint"
+	"autoscaler/ratelimiter"
 	"autoscaler/routes"
 
 	"code.cloudfoundry.org/cfhttp"
@@ -25,8 +26,8 @@ func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vh(w, r, vars)
 }
 
-func NewPublicApiServer(logger lager.Logger, conf *config.Config, policydb db.PolicyDB, checkBindingFunc api.CheckBindingFunc, cfclient cf.CFClient, httpStatusCollector healthendpoint.HTTPStatusCollector) (ifrit.Runner, error) {
-	pah := NewPublicApiHandler(logger, conf, policydb)
+func NewPublicApiServer(logger lager.Logger, conf *config.Config, policydb db.PolicyDB, checkBindingFunc api.CheckBindingFunc, cfclient cf.CFClient, httpStatusCollector healthendpoint.HTTPStatusCollector, rateLimiter ratelimiter.Limiter) (ifrit.Runner, error) {
+	pah := NewPublicApiHandler(logger, conf, policydb, rateLimiter)
 	mw := NewMiddleware(logger, cfclient, checkBindingFunc)
 	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(httpStatusCollector)
 	r := routes.ApiOpenRoutes()

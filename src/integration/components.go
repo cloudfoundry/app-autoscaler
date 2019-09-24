@@ -502,6 +502,10 @@ func (components *Components) PrepareGolangApiServerConfig(dbURI string, publicA
 		MetricsForwarder: apiConfig.MetricsForwarderConfig{
 			MetricsForwarderUrl: metricsForwarderUri,
 		},
+		RateLimit: models.RateLimitConfig {
+			LimitPerMinute: 10,
+			ExpireDuration: 10 * time.Minute,
+		},
 	}
 
 	return writeYmlConfig(tmpDir, GolangAPIServer, &cfg)

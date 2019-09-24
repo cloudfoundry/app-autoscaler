@@ -14,6 +14,7 @@ import (
 	"autoscaler/db/sqldb"
 	"autoscaler/healthendpoint"
 	"autoscaler/helpers"
+	"autoscaler/ratelimiter"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
@@ -106,7 +107,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	publicApiHttpServer, err := publicapiserver.NewPublicApiServer(logger.Session("public_api_http_server"), conf, policyDb, checkBindingFunc, cfClient, httpStatusCollector)
+	rateLimiter := ratelimiter.NewRateLimiter(conf.RateLimit.LimitPerMinute, conf.RateLimit.ExpireDuration, logger.Session("golangapiserver-ratelimiter"))
+
+	publicApiHttpServer, err := publicapiserver.NewPublicApiServer(logger.Session("public_api_http_server"), conf, policyDb, checkBindingFunc, cfClient, httpStatusCollector, rateLimiter)
 	if err != nil {
 		logger.Error("failed to create public api http server", err)
 		os.Exit(1)

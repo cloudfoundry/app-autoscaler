@@ -3,15 +3,13 @@ package server
 import (
 	"autoscaler/db"
 	"autoscaler/metricsforwarder/forwarder"
-	"autoscaler/metricsforwarder/ratelimiter"
 	"autoscaler/models"
+	"autoscaler/ratelimiter"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
 	"net/http"
-	"strconv"
-	"strings"
 	"time"
 
 	"code.cloudfoundry.org/cfhttp/handlers"
@@ -45,29 +43,9 @@ func NewCustomMetricsHandler(logger lager.Logger, metricForwarder forwarder.Metr
 func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Request, vars map[string]string) {
 	w.Header().Set("Content-Type", "application/json")
 	appID := vars["appid"]
-	remoteIP := strings.Split(r.RemoteAddr, ":")[0]
 
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		mh.logger.Error("error-reading-request-body", err, lager.Data{"body": r.Body})
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: "Error reading custom metrics request body"})
-		return
-	}
-	var metricsConsumer *models.MetricsConsumer
-	err = json.Unmarshal(body, &metricsConsumer)
-	if err != nil {
-		mh.logger.Error("error-unmarshaling-metrics", err, lager.Data{"body": r.Body})
-		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Code:    "Bad-Request",
-			Message: "Error unmarshaling custom metrics request body"})
-		return
-	}
-	instanceID := metricsConsumer.InstanceIndex
-
-	if mh.rateLimiter.ExceedsLimit(appID + "-" + strconv.FormatUint(uint64(instanceID), 10)) {
-		mh.logger.Info("error-exceed-rate-limit", lager.Data{"appID": appID, "instanceID": instanceID, "remoteIP": remoteIP})
+	if mh.rateLimiter.ExceedsLimit(appID) {
+		mh.logger.Info("error-exceed-rate-limit", lager.Data{"appID": appID})
 		handlers.WriteJSONResponse(w, http.StatusTooManyRequests, models.ErrorResponse{
 			Code:    "Request-Limit-Exceeded",
 			Message: "Too many requests"})
@@ -126,6 +104,23 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 		}
 	}
 
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		mh.logger.Error("error-reading-request-body", err, lager.Data{"body": r.Body})
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Error reading custom metrics request body"})
+		return
+	}
+	var metricsConsumer *models.MetricsConsumer
+	err = json.Unmarshal(body, &metricsConsumer)
+	if err != nil {
+		mh.logger.Error("error-unmarshaling-metrics", err, lager.Data{"body": r.Body})
+		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
+			Code:    "Bad-Request",
+			Message: "Error unmarshaling custom metrics request body"})
+		return
+	}
 	err = mh.validateCustomMetricTypes(appID, metricsConsumer)
 	if err != nil {
 		mh.logger.Error("failed-validating-metrictypes", err, lager.Data{"metrics": metricsConsumer})

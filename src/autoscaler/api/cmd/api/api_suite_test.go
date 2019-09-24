@@ -172,6 +172,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		Port: healthport,
 	}
 
+	cfg.RateLimit.LimitPerMinute = 1
+	cfg.RateLimit.ExpireDuration = 10 * time.Minute
+
 	configFile = writeConfig(&cfg)
 	apiClientTLSConfig, err := cfhttp.NewTLSConfig(
 		filepath.Join(testCertDir, "api.crt"),

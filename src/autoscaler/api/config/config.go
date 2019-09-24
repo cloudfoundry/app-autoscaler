@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"strings"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -18,7 +19,9 @@ import (
 )
 
 const (
-	DefaultLoggingLevel = "info"
+	DefaultLoggingLevel                 = "info"
+	DefaultExpireDuration time.Duration = 10 * time.Minute
+	DefaultLimitPerMinute               = 10
 )
 
 type ServerConfig struct {
@@ -87,6 +90,7 @@ type Config struct {
 	InfoFilePath         string                 `yaml:"info_file_path"`
 	MetricsForwarder     MetricsForwarderConfig `yaml:"metrics_forwarder"`
 	Health               models.HealthConfig    `yaml:"health"`
+	RateLimit            models.RateLimitConfig `yaml:"rate_limit"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
@@ -97,6 +101,10 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		UseBuildInMode:  false,
 		CF: cf.CFConfig{
 			SkipSSLValidation: false,
+		},
+		RateLimit:       models.RateLimitConfig{
+			LimitPerMinute: DefaultLimitPerMinute,
+			ExpireDuration: DefaultExpireDuration,
 		},
 	}
 
@@ -200,6 +208,8 @@ func (c *Config) Validate() error {
 			return fmt.Errorf(errString)
 		}
 	}
-
+	if c.RateLimit.LimitPerMinute <= 0 {
+		return fmt.Errorf("Configuration error: RateLimit LimitPerMinute must greater than 0")
+	}
 	return nil
 }

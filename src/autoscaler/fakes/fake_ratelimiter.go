@@ -2,7 +2,7 @@
 package fakes
 
 import (
-	"autoscaler/metricsforwarder/ratelimiter"
+	"autoscaler/ratelimiter"
 	"sync"
 )
 

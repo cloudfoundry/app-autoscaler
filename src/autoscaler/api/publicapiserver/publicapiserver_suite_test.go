@@ -64,6 +64,7 @@ var (
 
 	fakeCFClient     *fakes.FakeCFClient
 	fakePolicyDB     *fakes.FakePolicyDB
+	rateLimiter      *fakes.FakeLimiter
 	checkBindingFunc api.CheckBindingFunc
 	hasBinding       bool = true
 
@@ -90,7 +91,8 @@ var _ = BeforeSuite(func() {
 	}
 	fakeCFClient = &fakes.FakeCFClient{}
 	httpStatusCollector := &fakes.FakeHTTPStatusCollector{}
-	httpServer, err := publicapiserver.NewPublicApiServer(lagertest.NewTestLogger("public_apiserver"), conf, fakePolicyDB, checkBindingFunc, fakeCFClient, httpStatusCollector)
+	rateLimiter = &fakes.FakeLimiter{}
+	httpServer, err := publicapiserver.NewPublicApiServer(lagertest.NewTestLogger("public_apiserver"), conf, fakePolicyDB, checkBindingFunc, fakeCFClient, httpStatusCollector, rateLimiter)
 	Expect(err).NotTo(HaveOccurred())
 
 	serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(apiPort))

@@ -17,20 +17,20 @@ const (
 	DefaultCacheTTL             time.Duration = 15 * time.Minute
 	DefaultCacheCleanupInterval time.Duration = 6 * time.Hour
 	DefaultPolicyPollerInterval time.Duration = 40 * time.Second
-	DefaultExpireDuration                     = 10 * time.Minute
+	DefaultExpireDuration       time.Duration = 10 * time.Minute
 	DefaultLimitPerMinute                     = 10
 )
 
 type Config struct {
-	Logging              helpers.LoggingConfig `yaml:"logging"`
-	Server               ServerConfig          `yaml:"server"`
-	LoggregatorConfig    LoggregatorConfig     `yaml:"loggregator"`
-	Db                   DbConfig              `yaml:"db"`
-	CacheTTL             time.Duration         `yaml:"cache_ttl"`
-	CacheCleanupInterval time.Duration         `yaml:"cache_cleanup_interval"`
-	PolicyPollerInterval time.Duration         `yaml:"policy_poller_interval"`
-	Health               models.HealthConfig   `yaml:"health"`
-	RateLimit            RateLimitConfig       `yaml:"rate_limit"`
+	Logging              helpers.LoggingConfig  `yaml:"logging"`
+	Server               ServerConfig           `yaml:"server"`
+	LoggregatorConfig    LoggregatorConfig      `yaml:"loggregator"`
+	Db                   DbConfig               `yaml:"db"`
+	CacheTTL             time.Duration          `yaml:"cache_ttl"`
+	CacheCleanupInterval time.Duration          `yaml:"cache_cleanup_interval"`
+	PolicyPollerInterval time.Duration          `yaml:"policy_poller_interval"`
+	Health               models.HealthConfig    `yaml:"health"`
+	RateLimit            models.RateLimitConfig `yaml:"rate_limit"`
 }
 
 type ServerConfig struct {
@@ -62,11 +62,6 @@ type DbConfig struct {
 	PolicyDb db.DatabaseConfig `yaml:"policy_db"`
 }
 
-type RateLimitConfig struct {
-	LimitPerMinute int           `yaml:"limit_per_minute"`
-	ExpireDuration time.Duration `yaml:"expire_duration"`
-}
-
 func LoadConfig(reader io.Reader) (*Config, error) {
 
 	conf := &Config{
@@ -79,7 +74,7 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		CacheTTL:             DefaultCacheTTL,
 		CacheCleanupInterval: DefaultCacheCleanupInterval,
 		PolicyPollerInterval: DefaultPolicyPollerInterval,
-		RateLimit:            RateLimitConfig{
+		RateLimit:            models.RateLimitConfig{
 			LimitPerMinute: DefaultLimitPerMinute,
 			ExpireDuration: DefaultExpireDuration,
 		},
@@ -112,8 +107,8 @@ func (c *Config) Validate() error {
 	if c.LoggregatorConfig.TLS.KeyFile == "" {
 		return fmt.Errorf("Configuration error: Loggregator ClientKey is empty")
 	}
-	if c.RateLimit.ExpireDuration <= 0 {
-		return fmt.Errorf("Configuration error: rate_limit.expire_duration is less than or equal to 0")
+	if c.RateLimit.LimitPerMinute <= 0 {
+		return fmt.Errorf("Configuration error: RateLimit LimitPerMinute must greater than 0")
 	}
 	return nil
 
