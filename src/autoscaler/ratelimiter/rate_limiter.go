@@ -6,6 +6,12 @@ import (
 	"code.cloudfoundry.org/lager"
 )
 
+const (
+	defaultBucketCapacity      = 20
+	defaultExpireDuration      = 10 * time.Minute
+	defaultExpireCheckInterval = 30 * time.Second
+)
+
 type Stats []Stat
 type Stat struct {
 	Key       string `json:"key"`
@@ -22,9 +28,13 @@ type RateLimiter struct {
 	logger   lager.Logger
 }
 
-func NewRateLimiter(limitPerMinute int, expireDuration time.Duration, logger lager.Logger) *RateLimiter {
+func DefaultRateLimiter(fillInterval time.Duration, logger lager.Logger) *RateLimiter {
+	return NewRateLimiter(defaultBucketCapacity, fillInterval, defaultExpireDuration, defaultExpireCheckInterval, logger)
+}
+
+func NewRateLimiter(bucketCapacity int, fillInterval time.Duration, expireDuration time.Duration, expireCheckInterval time.Duration, logger lager.Logger) *RateLimiter {
 	return &RateLimiter{
-		store: NewStore(limitPerMinute, expireDuration, logger),
+		store: NewStore(bucketCapacity, fillInterval, expireDuration, expireCheckInterval, logger),
 	}
 }
 

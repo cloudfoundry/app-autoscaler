@@ -221,7 +221,7 @@ health:
 			})
 		})
 
-		Context("when limit_per_minute of rate_limit is not a integer", func() {
+		Context("when fill_interval of rate_limit is not a time duration", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
 loggregator:
@@ -239,37 +239,7 @@ db:
 health:
   port: 8081
 rate_limit:
-  limit_per_minute: -2k
-  expire_duration: 10m
-`)
-			})
-
-			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
-				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
-			})
-		})
-
-		Context("when expire_duration of rate_limit is not a time duration", func() {
-			BeforeEach(func() {
-				configBytes = []byte(`
-loggregator:
-  metron_address: 127.0.0.1:3457
-  tls:
-    ca_file: "../testcerts/ca.crt"
-    cert_file: "../testcerts/client.crt"
-    key_file: "../testcerts/client.key"
-db:
-  policy_db:
-    url: postgres://pqgotest:password@localhost/pqgotest
-    max_open_connections: 10
-    max_idle_connections: 5
-    connection_max_lifetime: 60s
-health:
-  port: 8081
-rate_limit:
-  limit_per_minute: 10
-  expire_duration: 10k
+  fill_interval: 10k
 `)
 			})
 
@@ -297,8 +267,7 @@ rate_limit:
 				MaxIdleConnections:    5,
 				ConnectionMaxLifetime: 60 * time.Second,
 			}
-			conf.RateLimit.LimitPerMinute = 10
-			conf.RateLimit.ExpireDuration = 10 * time.Minute
+			conf.RateLimit.FillInterval = 5 * time.Second
 		})
 
 		JustBeforeEach(func() {

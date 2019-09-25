@@ -171,9 +171,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.Health = models.HealthConfig{
 		Port: healthport,
 	}
-
-	cfg.RateLimit.LimitPerMinute = 1
-	cfg.RateLimit.ExpireDuration = 10 * time.Minute
+	cfg.RateLimit.FillInterval = 5 * time.Second
 
 	configFile = writeConfig(&cfg)
 	apiClientTLSConfig, err := cfhttp.NewTLSConfig(

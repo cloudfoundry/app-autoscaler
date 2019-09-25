@@ -19,9 +19,8 @@ import (
 )
 
 const (
-	DefaultLoggingLevel                 = "info"
-	DefaultExpireDuration time.Duration = 10 * time.Minute
-	DefaultLimitPerMinute               = 10
+	DefaultLoggingLevel               = "info"
+	DefaultFillInterval time.Duration = 5 * time.Second
 )
 
 type ServerConfig struct {
@@ -103,8 +102,7 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 			SkipSSLValidation: false,
 		},
 		RateLimit:       models.RateLimitConfig{
-			LimitPerMinute: DefaultLimitPerMinute,
-			ExpireDuration: DefaultExpireDuration,
+			FillInterval: DefaultFillInterval,
 		},
 	}
 
@@ -207,9 +205,6 @@ func (c *Config) Validate() error {
 			errString += "}"
 			return fmt.Errorf(errString)
 		}
-	}
-	if c.RateLimit.LimitPerMinute <= 0 {
-		return fmt.Errorf("Configuration error: RateLimit LimitPerMinute must greater than 0")
 	}
 	return nil
 }

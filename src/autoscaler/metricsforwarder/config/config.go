@@ -17,8 +17,7 @@ const (
 	DefaultCacheTTL             time.Duration = 15 * time.Minute
 	DefaultCacheCleanupInterval time.Duration = 6 * time.Hour
 	DefaultPolicyPollerInterval time.Duration = 40 * time.Second
-	DefaultExpireDuration       time.Duration = 10 * time.Minute
-	DefaultLimitPerMinute                     = 10
+	DefaultFillInterval         time.Duration = 5 * time.Second
 )
 
 type Config struct {
@@ -75,8 +74,7 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		CacheCleanupInterval: DefaultCacheCleanupInterval,
 		PolicyPollerInterval: DefaultPolicyPollerInterval,
 		RateLimit:            models.RateLimitConfig{
-			LimitPerMinute: DefaultLimitPerMinute,
-			ExpireDuration: DefaultExpireDuration,
+			FillInterval: DefaultFillInterval,
 		},
 	}
 
@@ -106,9 +104,6 @@ func (c *Config) Validate() error {
 	}
 	if c.LoggregatorConfig.TLS.KeyFile == "" {
 		return fmt.Errorf("Configuration error: Loggregator ClientKey is empty")
-	}
-	if c.RateLimit.LimitPerMinute <= 0 {
-		return fmt.Errorf("Configuration error: RateLimit LimitPerMinute must greater than 0")
 	}
 	return nil
 

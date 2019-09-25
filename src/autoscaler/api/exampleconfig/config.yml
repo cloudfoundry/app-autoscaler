@@ -56,5 +56,4 @@ cf:
   grant_type: client_credentials
 info_file_path: /var/vcap/jobs/golangapiserver/config/info.json
 rate_limit:
-  limit_per_minute: 10
-  expire_duration: 10m
+  fill_interval: 5s

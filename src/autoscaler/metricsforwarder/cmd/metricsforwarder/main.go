@@ -73,7 +73,7 @@ func main() {
 	credentialCache := cache.New(conf.CacheTTL, conf.CacheCleanupInterval)
 	allowedMetricCache := cache.New(conf.CacheTTL, conf.CacheCleanupInterval)
 
-	rateLimiter := ratelimiter.NewRateLimiter(conf.RateLimit.LimitPerMinute, conf.RateLimit.ExpireDuration, logger.Session("metricsforwarder-ratelimiter"))
+	rateLimiter := ratelimiter.DefaultRateLimiter(conf.RateLimit.FillInterval, logger.Session("metricsforwarder-ratelimiter"))
 
 	httpServer, err := server.NewServer(logger.Session("custom_metrics_server"), conf, policyDB, *credentialCache, *allowedMetricCache, httpStatusCollector, rateLimiter)
 	if err != nil {

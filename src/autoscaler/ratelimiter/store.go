@@ -9,18 +9,18 @@ import (
 	"github.com/juju/ratelimit"
 )
 
-const expireInMin = 10 * time.Minute
-
 type Store interface {
 	Increment(string) (int, error)
 	Stats() map[string]int
 }
 
 type InMemoryStore struct {
-	limitPerMinute int
-	expireDuration time.Duration
-	storage        map[string]*entry
-	logger         lager.Logger
+	bucketCapacity      int
+	fillInterval        time.Duration
+	expireDuration      time.Duration
+	expireCheckInterval time.Duration
+	storage             map[string]*entry
+	logger              lager.Logger
 	sync.RWMutex
 }
 
@@ -33,29 +33,30 @@ func (e *entry) Expired() bool {
 	return time.Now().After(e.expiredAt)
 }
 
-func NewStore(limitPerMinute int, expireDuration time.Duration, logger lager.Logger) Store {
+func NewStore(bucketCapacity int, fillInterval time.Duration, expireDuration time.Duration, expireCheckInterval time.Duration, logger lager.Logger) Store {
 	store := &InMemoryStore{
-		limitPerMinute: limitPerMinute,
-		expireDuration: expireDuration,
-		logger:         logger,
-		storage:        make(map[string]*entry),
+		bucketCapacity:      bucketCapacity,
+		fillInterval:        fillInterval,
+		expireDuration:      expireDuration,
+		expireCheckInterval: expireCheckInterval,
+		storage:             make(map[string]*entry),
+		logger:              logger,
 	}
 	store.expiryCycle()
 
 	return store
 }
 
-func newEntry(limit int) *entry {
-	fillRatePerMin := (1000 * 60) / limit
+func newEntry(fillInterval time.Duration, bucketCapacity int) *entry {
 	return &entry{
-		bucket: ratelimit.NewBucket(time.Duration(fillRatePerMin)*time.Millisecond, int64(limit)),
+		bucket: ratelimit.NewBucket(fillInterval, int64(bucketCapacity)),
 	}
 }
 
 func (s *InMemoryStore) Increment(key string) (int, error) {
 	v, ok := s.get(key)
 	if !ok {
-		v = newEntry(s.limitPerMinute)
+		v = newEntry(s.fillInterval, s.bucketCapacity)
 	}
 	v.expiredAt = time.Now().Add(s.expireDuration)
 	if avail := v.bucket.Available(); avail == 0 {
@@ -81,7 +82,7 @@ func (s *InMemoryStore) set(key string, value *entry) {
 }
 
 func (s *InMemoryStore) expiryCycle() {
-	ticker := time.NewTicker(time.Second * 30)
+	ticker := time.NewTicker(s.expireCheckInterval)
 	go func() {
 		for _ = range ticker.C {
 			s.Lock()

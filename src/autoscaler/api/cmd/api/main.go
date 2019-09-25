@@ -107,7 +107,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	rateLimiter := ratelimiter.NewRateLimiter(conf.RateLimit.LimitPerMinute, conf.RateLimit.ExpireDuration, logger.Session("golangapiserver-ratelimiter"))
+	rateLimiter := ratelimiter.DefaultRateLimiter(conf.RateLimit.FillInterval, logger.Session("golangapiserver-ratelimiter"))
 
 	publicApiHttpServer, err := publicapiserver.NewPublicApiServer(logger.Session("public_api_http_server"), conf, policyDb, checkBindingFunc, cfClient, httpStatusCollector, rateLimiter)
 	if err != nil {

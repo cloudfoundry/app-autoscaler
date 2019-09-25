@@ -17,5 +17,4 @@ db:
 health:
   port: 8081
 rate_limit:
-  limit_per_minute: 10
-  expire_duration: 10m
+  fill_interval: 5s
