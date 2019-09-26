@@ -28,13 +28,13 @@ type RateLimiter struct {
 	logger   lager.Logger
 }
 
-func DefaultRateLimiter(fillInterval time.Duration, logger lager.Logger) *RateLimiter {
-	return NewRateLimiter(defaultBucketCapacity, fillInterval, defaultExpireDuration, defaultExpireCheckInterval, logger)
+func DefaultRateLimiter(maxAmount int, validDuration time.Duration, logger lager.Logger) *RateLimiter {
+	return NewRateLimiter(defaultBucketCapacity, maxAmount, validDuration, defaultExpireDuration, defaultExpireCheckInterval, logger)
 }
 
-func NewRateLimiter(bucketCapacity int, fillInterval time.Duration, expireDuration time.Duration, expireCheckInterval time.Duration, logger lager.Logger) *RateLimiter {
+func NewRateLimiter(bucketCapacity int, maxAmount int, validDuration time.Duration, expireDuration time.Duration, expireCheckInterval time.Duration, logger lager.Logger) *RateLimiter {
 	return &RateLimiter{
-		store: NewStore(bucketCapacity, fillInterval, expireDuration, expireCheckInterval, logger),
+		store: NewStore(bucketCapacity, maxAmount, validDuration, expireDuration, expireCheckInterval, logger),
 	}
 }
 

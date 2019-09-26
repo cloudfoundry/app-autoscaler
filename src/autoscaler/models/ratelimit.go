@@ -3,5 +3,6 @@ package models
 import "time"
 
 type RateLimitConfig struct {
-	FillInterval time.Duration `yaml:"fill_interval"`
+	MaxAmount     int           `yaml:"max_amount"`
+	ValidDuration time.Duration `yaml:"valid_duration"`
 }

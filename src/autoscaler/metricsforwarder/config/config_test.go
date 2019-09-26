@@ -221,7 +221,7 @@ health:
 			})
 		})
 
-		Context("when fill_interval of rate_limit is not a time duration", func() {
+		Context("when max_amount of rate_limit is not an interger", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
 loggregator:
@@ -239,7 +239,37 @@ db:
 health:
   port: 8081
 rate_limit:
-  fill_interval: 10k
+  max_amount: NOT-INTEGER
+  valid_duration: 1s
+`)
+			})
+
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into int")))
+			})
+		})
+
+		Context("when valid_duration of rate_limit is not a time duration", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+loggregator:
+  metron_address: 127.0.0.1:3457
+  tls:
+    ca_file: "../testcerts/ca.crt"
+    cert_file: "../testcerts/client.crt"
+    key_file: "../testcerts/client.key"
+db:
+  policy_db:
+    url: postgres://pqgotest:password@localhost/pqgotest
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+health:
+  port: 8081
+rate_limit:
+  max_amount: 2
+  valid_duration: NOT-TIME-DURATION
 `)
 			})
 
@@ -248,7 +278,6 @@ rate_limit:
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal .* into time.Duration")))
 			})
 		})
-
 	})
 
 	Describe("Validate", func() {
@@ -267,7 +296,8 @@ rate_limit:
 				MaxIdleConnections:    5,
 				ConnectionMaxLifetime: 60 * time.Second,
 			}
-			conf.RateLimit.FillInterval = 5 * time.Second
+			conf.RateLimit.MaxAmount     = 10
+			conf.RateLimit.ValidDuration = 1 * time.Second
 		})
 
 		JustBeforeEach(func() {
@@ -317,6 +347,15 @@ rate_limit:
 
 			It("should error", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: Loggregator ClientKey is empty")))
+			})
+		})
+
+		Context("when rate_limit.max_amount is <= zero", func() {
+			BeforeEach(func() {
+				conf.RateLimit.MaxAmount = 0
+			})
+			It("should err", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: RateLimit.MaxAmount is equal or less than zero")))
 			})
 		})
 	})

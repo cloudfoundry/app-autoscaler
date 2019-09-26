@@ -19,8 +19,9 @@ import (
 )
 
 const (
-	DefaultLoggingLevel               = "info"
-	DefaultFillInterval time.Duration = 5 * time.Second
+	DefaultLoggingLevel                = "info"
+	DefaultMaxAmount                   = 10
+	DefaultValidDuration time.Duration = 1 * time.Second
 )
 
 type ServerConfig struct {
@@ -102,7 +103,8 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 			SkipSSLValidation: false,
 		},
 		RateLimit:       models.RateLimitConfig{
-			FillInterval: DefaultFillInterval,
+			MaxAmount:     DefaultMaxAmount,
+			ValidDuration: DefaultValidDuration,
 		},
 	}
 
@@ -148,6 +150,9 @@ func (c *Config) Validate() error {
 	}
 	if c.PolicySchemaPath == "" {
 		return fmt.Errorf("Configuration error: PolicySchemaPath is empty")
+	}
+	if c.RateLimit.MaxAmount <= 0 {
+		return fmt.Errorf("Configuration error: RateLimit.MaxAmount is equal or less than zero")
 	}
 
 	if c.InfoFilePath == "" {

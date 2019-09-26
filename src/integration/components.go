@@ -503,7 +503,8 @@ func (components *Components) PrepareGolangApiServerConfig(dbURI string, publicA
 			MetricsForwarderUrl: metricsForwarderUri,
 		},
 		RateLimit: models.RateLimitConfig {
-			FillInterval: 5 * time.Second,
+			MaxAmount:     10,
+			ValidDuration: 1 * time.Second,
 		},
 	}
 

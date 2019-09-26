@@ -13,7 +13,8 @@ import (
 var _ = Describe("Store", func() {
 	const (
 		bucketCapacity      = 20
-		fillInterval        = 1 * Second
+		maxAmount           = 2
+		validDuration       = 1 * Second
 		expireDuration      = 5 * Second
 		expireCheckInterval = 1 * Second
 	)
@@ -24,7 +25,7 @@ var _ = Describe("Store", func() {
 
 	Describe("Increment", func() {
 		BeforeEach(func() {
-			store = NewStore(bucketCapacity, fillInterval, expireDuration, expireCheckInterval, NewLogger("ratelimiter"))
+			store = NewStore(bucketCapacity, maxAmount, validDuration, expireDuration, expireCheckInterval, NewLogger("ratelimiter"))
 		})
 
 		It("shows available", func() {
@@ -41,7 +42,7 @@ var _ = Describe("Store", func() {
 
 	Describe("Stats", func() {
 		BeforeEach(func() {
-			store = NewStore(bucketCapacity, fillInterval, expireDuration, expireCheckInterval, NewLogger("ratelimiter"))
+			store = NewStore(bucketCapacity, maxAmount, validDuration, expireDuration, expireCheckInterval, NewLogger("ratelimiter"))
 		})
 
 		It("get stats ", func() {
@@ -53,17 +54,23 @@ var _ = Describe("Store", func() {
 			for i := 7; i < bucketCapacity; i++ {
 				store.Increment(key2)
 			}
+			stats1 := store.Stats()
+			Expect(len(stats1)).To(Equal(2))
+			Expect(stats1[key1]).To(Equal(5))
+			Expect(stats1[key2]).To(Equal(7))
 
-			stats := store.Stats()
-			Expect(len(stats)).To(Equal(2))
-			Expect(stats[key1]).To(Equal(5))
-			Expect(stats[key2]).To(Equal(7))
+			// should increase maxAmount * 2 tokens in each bucket
+			Sleep(validDuration * 2)
+			stats2 := store.Stats()
+			Expect(len(stats2)).To(Equal(2))
+			Expect(stats2[key1]).To(Equal(5 + maxAmount * 2))
+			Expect(stats2[key2]).To(Equal(7 + maxAmount * 2))
 		})
 	})
 
 	Describe("expiryCycle", func() {
 		BeforeEach(func() {
-			store = NewStore(bucketCapacity, fillInterval, expireDuration, expireCheckInterval, NewLogger("ratelimiter"))
+			store = NewStore(bucketCapacity, maxAmount, validDuration, expireDuration, expireCheckInterval, NewLogger("ratelimiter"))
 		})
 
 		It("clean the bucket after expire ", func() {

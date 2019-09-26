@@ -13,7 +13,8 @@ var _ = Describe("RateLimiter", func() {
 
 	const (
 		bucketCapacity      = 20
-		fillInterval        = 1 * Second
+		maxAmount           = 2
+		validDuration       = 1 * Second
 		expireDuration      = 5 * Second
 		expireCheckInterval = 1 * Second
 	)
@@ -25,7 +26,7 @@ var _ = Describe("RateLimiter", func() {
 	Describe("ExceedsLimit", func() {
 
 		BeforeEach(func() {
-			limiter = NewRateLimiter(bucketCapacity, fillInterval, expireDuration, expireCheckInterval, NewLogger("ratelimiter"))
+			limiter = NewRateLimiter(bucketCapacity, maxAmount, validDuration, expireDuration, expireCheckInterval, NewLogger("ratelimiter"))
 		})
 
 		It("reports if rate exceeded", func() {
@@ -39,7 +40,7 @@ var _ = Describe("RateLimiter", func() {
 
 	Describe("GetStats", func() {
 		BeforeEach(func() {
-			limiter = NewRateLimiter(bucketCapacity, fillInterval, expireDuration, expireCheckInterval, NewLogger("ratelimiter"))
+			limiter = NewRateLimiter(bucketCapacity, maxAmount, validDuration, expireDuration, expireCheckInterval, NewLogger("ratelimiter"))
 		})
 
 		It("reports stats ", func() {
@@ -59,7 +60,7 @@ var _ = Describe("RateLimiter", func() {
 
 	Describe("Expire", func() {
 		BeforeEach(func() {
-			limiter = NewRateLimiter(bucketCapacity, fillInterval, expireDuration, expireCheckInterval, NewLogger("ratelimiter"))
+			limiter = NewRateLimiter(bucketCapacity, maxAmount, validDuration, expireDuration, expireCheckInterval, NewLogger("ratelimiter"))
 		})
 
 		It("clean the bucket after expire ", func() {

@@ -16,7 +16,8 @@ type Store interface {
 
 type InMemoryStore struct {
 	bucketCapacity      int
-	fillInterval        time.Duration
+	maxAmount           int
+	validDuration       time.Duration
 	expireDuration      time.Duration
 	expireCheckInterval time.Duration
 	storage             map[string]*entry
@@ -33,10 +34,11 @@ func (e *entry) Expired() bool {
 	return time.Now().After(e.expiredAt)
 }
 
-func NewStore(bucketCapacity int, fillInterval time.Duration, expireDuration time.Duration, expireCheckInterval time.Duration, logger lager.Logger) Store {
+func NewStore(bucketCapacity int, maxAmount int, validDuration time.Duration, expireDuration time.Duration, expireCheckInterval time.Duration, logger lager.Logger) Store {
 	store := &InMemoryStore{
 		bucketCapacity:      bucketCapacity,
-		fillInterval:        fillInterval,
+		maxAmount:           maxAmount,
+		validDuration:       validDuration,
 		expireDuration:      expireDuration,
 		expireCheckInterval: expireCheckInterval,
 		storage:             make(map[string]*entry),
@@ -47,16 +49,16 @@ func NewStore(bucketCapacity int, fillInterval time.Duration, expireDuration tim
 	return store
 }
 
-func newEntry(fillInterval time.Duration, bucketCapacity int) *entry {
+func newEntry(validDuration time.Duration, bucketCapacity int, maxAmount int) *entry {
 	return &entry{
-		bucket: ratelimit.NewBucket(fillInterval, int64(bucketCapacity)),
+		bucket: ratelimit.NewBucketWithQuantum(validDuration, int64(bucketCapacity), int64(maxAmount)),
 	}
 }
 
 func (s *InMemoryStore) Increment(key string) (int, error) {
 	v, ok := s.get(key)
 	if !ok {
-		v = newEntry(s.fillInterval, s.bucketCapacity)
+		v = newEntry(s.validDuration, s.bucketCapacity, s.maxAmount)
 	}
 	v.expiredAt = time.Now().Add(s.expireDuration)
 	if avail := v.bucket.Available(); avail == 0 {
