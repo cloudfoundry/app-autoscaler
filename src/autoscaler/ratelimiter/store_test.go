@@ -17,6 +17,9 @@ var _ = Describe("Store", func() {
 		validDuration       = 1 * Second
 		expireDuration      = 5 * Second
 		expireCheckInterval = 1 * Second
+
+		moreMaxAmount       = 10
+		longerValidDuration = 2 * Second
 	)
 
 	var (
@@ -24,19 +27,58 @@ var _ = Describe("Store", func() {
 	)
 
 	Describe("Increment", func() {
-		BeforeEach(func() {
-			store = NewStore(bucketCapacity, maxAmount, validDuration, expireDuration, expireCheckInterval, NewLogger("ratelimiter"))
+		Describe("with test default config", func() {
+			BeforeEach(func() {
+				store = NewStore(bucketCapacity, maxAmount, validDuration, expireDuration, expireCheckInterval, NewLogger("ratelimiter"))
+			})
+
+			It("shows available", func() {
+				for i := 1; i < bucketCapacity+1; i++ {
+					avail, err := store.Increment("foo")
+					Expect(err).ToNot(HaveOccurred())
+					Expect(avail).To(Equal(bucketCapacity - i))
+				}
+				avail, err := store.Increment("foo")
+				Expect(err).To(HaveOccurred())
+				Expect(avail).To(Equal(0))
+
+				Sleep(validDuration)
+				for i := 1; i < maxAmount+1; i++ {
+					avail, err := store.Increment("foo")
+					Expect(err).ToNot(HaveOccurred())
+					Expect(avail).To(Equal(maxAmount - i))
+				}
+				avail, err = store.Increment("foo")
+				Expect(err).To(HaveOccurred())
+				Expect(avail).To(Equal(0))
+			})
 		})
 
-		It("shows available", func() {
-			for i := 1; i < bucketCapacity+1; i++ {
+		Describe("with moreMaxAmount and longerValidDuration", func() {
+			BeforeEach(func() {
+				store = NewStore(bucketCapacity, moreMaxAmount, longerValidDuration, expireDuration, expireCheckInterval, NewLogger("ratelimiter"))
+			})
+
+			It("shows available", func() {
+				for i := 1; i < bucketCapacity+1; i++ {
+					avail, err := store.Increment("foo")
+					Expect(err).ToNot(HaveOccurred())
+					Expect(avail).To(Equal(bucketCapacity - i))
+				}
 				avail, err := store.Increment("foo")
-				Expect(err).ToNot(HaveOccurred())
-				Expect(avail).To(Equal(bucketCapacity - i))
-			}
-			avail, err := store.Increment("foo")
-			Expect(err).To(HaveOccurred())
-			Expect(avail).To(Equal(0))
+				Expect(err).To(HaveOccurred())
+				Expect(avail).To(Equal(0))
+
+				Sleep(longerValidDuration)
+				for i := 1; i < moreMaxAmount+1; i++ {
+					avail, err := store.Increment("foo")
+					Expect(err).ToNot(HaveOccurred())
+					Expect(avail).To(Equal(moreMaxAmount - i))
+				}
+				avail, err = store.Increment("foo")
+				Expect(err).To(HaveOccurred())
+				Expect(avail).To(Equal(0))
+			})
 		})
 	})
 

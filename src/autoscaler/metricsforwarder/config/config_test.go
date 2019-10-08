@@ -358,5 +358,14 @@ rate_limit:
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: RateLimit.MaxAmount is equal or less than zero")))
 			})
 		})
+
+		Context("when rate_limit.valid_duration is <= 0 ns", func() {
+			BeforeEach(func() {
+				conf.RateLimit.ValidDuration = 0 * time.Nanosecond
+			})
+			It("should err", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: RateLimit.ValidDuration is equal or less than zero nanosecond")))
+			})
+		})
 	})
 })

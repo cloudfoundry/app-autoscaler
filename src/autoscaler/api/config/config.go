@@ -154,6 +154,9 @@ func (c *Config) Validate() error {
 	if c.RateLimit.MaxAmount <= 0 {
 		return fmt.Errorf("Configuration error: RateLimit.MaxAmount is equal or less than zero")
 	}
+	if c.RateLimit.ValidDuration <= 0 * time.Nanosecond {
+		return fmt.Errorf("Configuration error: RateLimit.ValidDuration is equal or less than zero nanosecond")
+	}
 
 	if c.InfoFilePath == "" {
 		return fmt.Errorf("Configuration error: InfoFilePath is empty")

@@ -26,12 +26,21 @@ type InMemoryStore struct {
 }
 
 type entry struct {
-	bucket    *ratelimit.Bucket
-	expiredAt time.Time
+	bucket       *ratelimit.Bucket
+	expiredAt    time.Time
+	sync.RWMutex
 }
 
 func (e *entry) Expired() bool {
+	e.RLock()
+	defer e.RUnlock()
 	return time.Now().After(e.expiredAt)
+}
+
+func (e *entry) SetExpire(expiredAt time.Time) {
+	e.Lock()
+	defer e.Unlock()
+	e.expiredAt = expiredAt
 }
 
 func NewStore(bucketCapacity int, maxAmount int, validDuration time.Duration, expireDuration time.Duration, expireCheckInterval time.Duration, logger lager.Logger) Store {
@@ -60,7 +69,7 @@ func (s *InMemoryStore) Increment(key string) (int, error) {
 	if !ok {
 		v = newEntry(s.validDuration, s.bucketCapacity, s.maxAmount)
 	}
-	v.expiredAt = time.Now().Add(s.expireDuration)
+	v.SetExpire(time.Now().Add(s.expireDuration))
 	if avail := v.bucket.Available(); avail == 0 {
 		s.set(key, v)
 		return int(avail), errors.New("empty bucket")
