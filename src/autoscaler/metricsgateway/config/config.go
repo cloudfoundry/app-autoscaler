@@ -38,10 +38,11 @@ type NozzleConfig struct {
 }
 
 type EmitterConfig struct {
-	MetricsServerClientTLS *models.TLSCerts `yaml:"metrics_server_client_tls"`
-	BufferSize             int              `yaml:"buffer_size"`
-	KeepAliveInterval      time.Duration    `yaml:"keep_alive_interval"`
-	HandshakeTimeout       time.Duration    `yaml:"handshake_timeout"`
+	MetricsServerClientTLS     *models.TLSCerts `yaml:"metrics_server_client_tls"`
+	MetricsServerTLSServerName string           `yaml:"metrics_server_tls_server_name"`
+	BufferSize                 int              `yaml:"buffer_size"`
+	KeepAliveInterval          time.Duration    `yaml:"keep_alive_interval"`
+	HandshakeTimeout           time.Duration    `yaml:"handshake_timeout"`
 
 	MaxSetupRetryCount int           `yaml:"max_setup_retry_count"`
 	MaxCloseRetryCount int           `yaml:"max_close_retry_count"`

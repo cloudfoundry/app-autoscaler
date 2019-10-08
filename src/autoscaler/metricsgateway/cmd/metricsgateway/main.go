@@ -1,13 +1,14 @@
 package main
 
 import (
-	"code.cloudfoundry.org/cfhttp"
 	"crypto/tls"
 	"flag"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"time"
+
+	"code.cloudfoundry.org/cfhttp"
 
 	"autoscaler/db"
 	"autoscaler/db/sqldb"
@@ -50,6 +51,9 @@ func main() {
 		os.Exit(1)
 	}
 	metricServerClientTLSConfig, err := cfhttp.NewTLSConfig(conf.Emitter.MetricsServerClientTLS.CertFile, conf.Emitter.MetricsServerClientTLS.KeyFile, conf.Emitter.MetricsServerClientTLS.CACertFile)
+	if conf.Emitter.MetricsServerTLSServerName != "" {
+		metricServerClientTLSConfig.ServerName = conf.Emitter.MetricsServerTLSServerName
+	}
 	if err != nil {
 		fmt.Fprintf(os.Stdout, "%s\n", err.Error())
 		os.Exit(1)
