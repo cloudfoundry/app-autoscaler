@@ -34,6 +34,7 @@ const (
 
 	BrokerInstancePath            = "/v2/service_instances/{instanceId}"
 	BrokerCreateInstanceRouteName = "CreateInstance"
+	BrokerUpdateInstanceRouteName = "UpdateInstance"
 	BrokerDeleteInstanceRouteName = "DeleteInstance"
 
 	BrokerBindingPath            = "/v2/service_instances/{instanceId}/service_bindings/{bindingId}"
@@ -118,6 +119,7 @@ func newRouters() *AutoScalerRoute {
 	instance.brokerRoutes.Path(BrokerCatalogPath).Methods(http.MethodGet).Name(BrokerCatalogRouteName)
 
 	instance.brokerRoutes.Path(BrokerInstancePath).Methods(http.MethodPut).Name(BrokerCreateInstanceRouteName)
+	instance.brokerRoutes.Path(BrokerInstancePath).Methods(http.MethodPatch).Name(BrokerUpdateInstanceRouteName)
 	instance.brokerRoutes.Path(BrokerInstancePath).Methods(http.MethodDelete).Name(BrokerDeleteInstanceRouteName)
 
 	instance.brokerRoutes.Path(BrokerBindingPath).Methods(http.MethodPut).Name(BrokerCreateBindingRouteName)

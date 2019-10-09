@@ -32,7 +32,7 @@ func NewPolicySQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*PolicySQL
 
 	err = sqldb.Ping()
 	if err != nil {
-		sqldb.Close()
+		_ = sqldb.Close()
 		logger.Error("ping-policy-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
 	}
@@ -79,6 +79,31 @@ func (pdb *PolicySQLDB) GetAppIds() (map[string]bool, error) {
 			return nil, err
 		}
 		appIds[id] = true
+	}
+	return appIds, nil
+}
+
+func (pdb *PolicySQLDB) GetAppIdsWithPolicy(policyGuid string) ([]string, error) {
+	var query = pdb.sqldb.Rebind("SELECT app_id FROM policy_json WHERE guid = ?")
+	var appIds []string
+
+	rows, err := pdb.sqldb.Query(query, policyGuid)
+	if err != nil {
+		pdb.logger.Error("get-appids-from-policy-table", err, lager.Data{"query": query})
+		return nil, err
+	}
+	defer func() {
+		_ = rows.Close()
+		_ = rows.Err()
+	}()
+
+	var id string
+	for rows.Next() {
+		if err = rows.Scan(&id); err != nil {
+			pdb.logger.Error("get-appids-scan", err)
+			return nil, err
+		}
+		appIds = append(appIds, id)
 	}
 	return appIds, nil
 }
@@ -153,11 +178,74 @@ func (pdb *PolicySQLDB) SaveAppPolicy(appId string, policyJSON string, policyGui
 	return err
 }
 
+func (pdb *PolicySQLDB) ReplaceAppPolicies(oldPolicyGuid string, newPolicy string, newPolicyGuid string) error {
+	query := pdb.sqldb.Rebind("UPDATE policy_json SET guid = ?, policy_json = ? WHERE guid = ?")
+
+	_, err := pdb.sqldb.Exec(query, newPolicyGuid, newPolicy, oldPolicyGuid)
+	if err != nil {
+		pdb.logger.Error("replace-app-policy", err, lager.Data{"query": query, "oldPolicyGuid": oldPolicyGuid, "newPolicyGuid": newPolicyGuid, "newPolicy": newPolicy})
+	}
+	return err
+}
+
+func (pdb *PolicySQLDB) SetDefaultAppPolicy(appIds []string, newPolicy string, newPolicyGuid string) ([]string, error) {
+	if len(appIds) == 0 {
+		return nil, nil
+	}
+
+	var modifiedApps []string
+
+	tx, err := pdb.sqldb.Begin()
+	if err != nil {
+		pdb.logger.Error("update-app-policies-begin-transaction", err, lager.Data{"newPolicyGuid": newPolicyGuid, "newPolicy": newPolicy})
+		return nil, err
+	}
+
+	for _, appId := range appIds {
+		query := pdb.sqldb.Rebind("INSERT INTO policy_json (app_id, policy_json, guid) VALUES (?, ?, ?) ON CONFLICT DO NOTHING")
+		res, err := tx.Exec(query, appId, newPolicy, newPolicyGuid)
+		if err != nil {
+			pdb.logger.Error("set-default-app-policy", err, lager.Data{"query": query, "appId": appId, "newPolicyGuid": newPolicyGuid, "newPolicy": newPolicy})
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				pdb.logger.Error("rollback-set-default-app-policy", err, lager.Data{"query": query, "appId": appId, "newPolicyGuid": newPolicyGuid, "newPolicy": newPolicy})
+			}
+			return nil, err
+		}
+		count, err := res.RowsAffected()
+		if err != nil {
+			pdb.logger.Error("set-default-app-policy-determine-rows-affected", err, lager.Data{"query": query, "appId": appId, "newPolicyGuid": newPolicyGuid, "newPolicy": newPolicy})
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				pdb.logger.Error("rollback-set-default-app-policy", err, lager.Data{"query": query, "appId": appId, "newPolicyGuid": newPolicyGuid, "newPolicy": newPolicy})
+			}
+			return nil, err
+		}
+		if count == 1 {
+			modifiedApps = append(modifiedApps, appId)
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		pdb.logger.Error("update-app-policies-commit", err, lager.Data{"newPolicyGuid": newPolicyGuid, "newPolicy": newPolicy})
+		return nil, err
+	}
+	return modifiedApps, err
+}
+
 func (pdb *PolicySQLDB) DeletePolicy(appId string) error {
 	query := pdb.sqldb.Rebind("DELETE FROM policy_json WHERE app_id =?")
 	_, err := pdb.sqldb.Exec(query, appId)
 	if err != nil {
 		pdb.logger.Error("failed-to-delete-application-details", err, lager.Data{"query": query, "appId": appId})
+	}
+	return err
+}
+
+func (pdb *PolicySQLDB) DeletePoliciesByPolicyGuid(policyGuid string) error {
+	query := pdb.sqldb.Rebind("DELETE FROM policy_json WHERE guid = ?")
+	_, err := pdb.sqldb.Exec(query, policyGuid)
+	if err != nil {
+		pdb.logger.Error("failed-to-delete-policies-by-policy-guid", err, lager.Data{"query": query, "policyGuid": policyGuid})
 	}
 	return err
 }
