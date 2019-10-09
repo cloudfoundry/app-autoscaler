@@ -110,6 +110,16 @@ func hasServiceInstance(serviceInstanceId string) bool {
 	return rows.Next()
 }
 
+func hasServiceInstanceWithNullDefaultPolicy(serviceInstanceId string) bool {
+	query := "SELECT * FROM service_instance WHERE service_instance_id = $1 AND default_policy IS NULL AND default_policy_guid IS NULL"
+	rows, e := dbHelper.Query(query, serviceInstanceId)
+	if e != nil {
+		Fail("can not query table service_instance: " + e.Error())
+	}
+	defer rows.Close()
+	return rows.Next()
+}
+
 func hasServiceBinding(bindingId string, serviceInstanceId string) bool {
 	query := dbHelper.Rebind("SELECT * FROM binding WHERE binding_id = ? AND service_instance_id = ? ")
 	rows, e := dbHelper.Query(query, bindingId, serviceInstanceId)
@@ -135,6 +145,20 @@ func insertPolicy(appId string, scalingPolicy *models.ScalingPolicy) {
 
 	query := dbHelper.Rebind("INSERT INTO policy_json(app_id, policy_json, guid) VALUES(?, ?, ?)")
 	_, e = dbHelper.Exec(query, appId, string(policyJson), "1234")
+
+	if e != nil {
+		Fail("can not insert data to table policy_json: " + e.Error())
+	}
+}
+
+func insertPolicyWithGuid(appId string, scalingPolicy *models.ScalingPolicy, guid string) {
+	policyJson, e := json.Marshal(scalingPolicy)
+	if e != nil {
+		Fail("failed to marshall scaling policy" + e.Error())
+	}
+
+	query := "INSERT INTO policy_json(app_id, policy_json, guid) VALUES($1, $2, $3)"
+	_, e = dbHelper.Exec(query, appId, string(policyJson), guid)
 
 	if e != nil {
 		Fail("can not insert data to table policy_json: " + e.Error())

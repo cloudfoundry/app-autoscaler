@@ -80,6 +80,7 @@ func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.Bind
 	r.Use(httpStatusCollectMiddleware.Collect)
 	r.Get(routes.BrokerCatalogRouteName).Handler(VarsFunc(ah.GetBrokerCatalog))
 	r.Get(routes.BrokerCreateInstanceRouteName).Handler(VarsFunc(ah.CreateServiceInstance))
+	r.Get(routes.BrokerUpdateInstanceRouteName).Handler(VarsFunc(ah.UpdateServiceInstance))
 	r.Get(routes.BrokerDeleteInstanceRouteName).Handler(VarsFunc(ah.DeleteServiceInstance))
 	r.Get(routes.BrokerCreateBindingRouteName).Handler(VarsFunc(ah.BindServiceInstance))
 	r.Get(routes.BrokerDeleteBindingRouteName).Handler(VarsFunc(ah.UnbindServiceInstance))
