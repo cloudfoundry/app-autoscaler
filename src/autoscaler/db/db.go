@@ -46,8 +46,12 @@ type InstanceMetricsDB interface {
 type PolicyDB interface {
 	DatabaseStatus
 	GetAppIds() (map[string]bool, error)
+	GetAppIdsWithPolicy(policyGuid string) ([]string, error)
 	GetAppPolicy(appId string) (*models.ScalingPolicy, error)
 	SaveAppPolicy(appId string, policy string, policyGuid string) error
+	ReplaceAppPolicies(oldPolicyGuid string, newPolicy string, newPolicyGuid string) error
+	SetDefaultAppPolicy(appIds []string, newPolicy string, newPolicyGuid string) ([]string, error)
+	DeletePoliciesByPolicyGuid(policyGuid string) error
 	RetrievePolicies() ([]*models.PolicyJson, error)
 	Close() error
 	DeletePolicy(appId string) error
@@ -58,13 +62,16 @@ type PolicyDB interface {
 
 type BindingDB interface {
 	DatabaseStatus
-	CreateServiceInstance(serviceInstanceId string, orgId string, spaceId string) error
+	CreateServiceInstance(serviceInstance models.ServiceInstance) error
+	GetServiceInstance(serviceInstanceId string) (*models.ServiceInstance, error)
+	UpdateServiceInstance(serviceInstance models.ServiceInstance) error
 	DeleteServiceInstance(serviceInstanceId string) error
 	CreateServiceBinding(bindingId string, serviceInstanceId string, appId string) error
 	DeleteServiceBinding(bindingId string) error
 	DeleteServiceBindingByAppId(appId string) error
 	CheckServiceBinding(appId string) bool
 	GetAppIdByBindingId(bindingId string) (string, error)
+	GetAppIdsByInstanceId(instanceId string) ([]string, error)
 	Close() error
 }
 
