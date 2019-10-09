@@ -158,7 +158,7 @@ var _ = Describe("integration_legacy_Api_Broker_Graceful_Shutdown", func() {
 				bindingId = getRandomId()
 				appId = getRandomId()
 				//add a service instance
-				resp, err := provisionServiceInstance(serviceInstanceId, orgId, spaceId, components.Ports[ServiceBroker], httpClient)
+				resp, err := provisionServiceInstance(serviceInstanceId, orgId, spaceId, nil, components.Ports[ServiceBroker], httpClient)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(resp.StatusCode).To(Equal(http.StatusCreated))
 				resp.Body.Close()

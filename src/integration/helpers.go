@@ -164,8 +164,8 @@ func checkScalingHistoryResult(apiServerPort int, pathVariables []string, parame
 
 func doAttachPolicy(appId string, policyStr []byte, statusCode int, apiServerPort int, httpClient *http.Client) {
 	resp, err := attachPolicy(appId, policyStr, apiServerPort, httpClient)
-	Expect(err).NotTo(HaveOccurred())
-	Expect(resp.StatusCode).To(Equal(statusCode))
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	ExpectWithOffset(1, resp.StatusCode).To(Equal(statusCode))
 	resp.Body.Close()
 
 }

@@ -167,19 +167,19 @@ var _ = Describe("Integration_Operator_Others", func() {
 			Context("when update a policy to another schedule sets only in policy DB without any update in scheduler ", func() {
 				BeforeEach(func() {
 					doAttachPolicy(testAppId, []byte(policyStr), http.StatusOK, components.Ports[GolangAPIServer], httpClient)
-					Expect(checkSchedule(testAppId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})).To(BeTrue())
+					assertScheduleContents(testAppId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})
 
 					newPolicyStr := string(setPolicyRecurringDate(readPolicyFromFile("fakePolicyWithScheduleAnother.json")))
 					deletePolicy(testAppId)
 					insertPolicy(testAppId, newPolicyStr, testGuid)
 
 					By("the schedules should not be updated before operator triggers the sync")
-					Expect(checkSchedule(testAppId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})).To(BeTrue())
+					assertScheduleContents(testAppId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})
 				})
 
 				It("operator should sync the updated schedule to scheduler ", func() {
 					Eventually(func() bool {
-						return checkSchedule(testAppId, http.StatusOK, map[string]int{"recurring_schedule": 3, "specific_date": 1})
+						return checkScheduleContents(testAppId, http.StatusOK, map[string]int{"recurring_schedule": 3, "specific_date": 1})
 					}, 2*time.Minute, 5*time.Second).Should(BeTrue())
 
 				})

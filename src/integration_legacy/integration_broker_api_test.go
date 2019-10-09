@@ -44,7 +44,7 @@ var _ = Describe("Integration_legacy_Broker_Api", func() {
 		bindingId = getRandomId()
 		appId = getRandomId()
 		//add a service instance
-		resp, err := provisionServiceInstance(serviceInstanceId, orgId, spaceId, components.Ports[ServiceBroker], httpClient)
+		resp, err := provisionServiceInstance(serviceInstanceId, orgId, spaceId, nil, components.Ports[ServiceBroker], httpClient)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(resp.StatusCode).To(Equal(http.StatusCreated))
 		resp.Body.Close()

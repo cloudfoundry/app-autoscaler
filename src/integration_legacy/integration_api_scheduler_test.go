@@ -196,7 +196,7 @@ var _ = Describe("Integration_legacy_Api_Scheduler", func() {
 				stopScheduler()
 			})
 			BeforeEach(func() {
-				provisionAndBind(serviceInstanceId, orgId, spaceId, bindingId, appId, nil, components.Ports[ServiceBroker], httpClientForPublicApi)
+				provisionAndBind(serviceInstanceId, orgId, spaceId, nil, bindingId, appId, nil, components.Ports[ServiceBroker], httpClientForPublicApi)
 			})
 			AfterEach(func() {
 				unbindAndDeprovision(bindingId, appId, serviceInstanceId, components.Ports[ServiceBroker], httpClientForPublicApi)
@@ -255,7 +255,7 @@ var _ = Describe("Integration_legacy_Api_Scheduler", func() {
 
 		Describe("Create policy", func() {
 			BeforeEach(func() {
-				provisionAndBind(serviceInstanceId, orgId, spaceId, bindingId, appId, nil, components.Ports[ServiceBroker], httpClientForPublicApi)
+				provisionAndBind(serviceInstanceId, orgId, spaceId, nil, bindingId, appId, nil, components.Ports[ServiceBroker], httpClientForPublicApi)
 			})
 			AfterEach(func() {
 				unbindAndDeprovision(bindingId, appId, serviceInstanceId, components.Ports[ServiceBroker], httpClientForPublicApi)
@@ -326,7 +326,7 @@ var _ = Describe("Integration_legacy_Api_Scheduler", func() {
 
 		Describe("Update policy", func() {
 			BeforeEach(func() {
-				provisionAndBind(serviceInstanceId, orgId, spaceId, bindingId, appId, nil, components.Ports[ServiceBroker], httpClientForPublicApi)
+				provisionAndBind(serviceInstanceId, orgId, spaceId, nil, bindingId, appId, nil, components.Ports[ServiceBroker], httpClientForPublicApi)
 			})
 			AfterEach(func() {
 				unbindAndDeprovision(bindingId, appId, serviceInstanceId, components.Ports[ServiceBroker], httpClientForPublicApi)
@@ -375,7 +375,7 @@ var _ = Describe("Integration_legacy_Api_Scheduler", func() {
 
 		Describe("Delete Policies", func() {
 			BeforeEach(func() {
-				provisionAndBind(serviceInstanceId, orgId, spaceId, bindingId, appId, nil, components.Ports[ServiceBroker], httpClientForPublicApi)
+				provisionAndBind(serviceInstanceId, orgId, spaceId, nil, bindingId, appId, nil, components.Ports[ServiceBroker], httpClientForPublicApi)
 			})
 			AfterEach(func() {
 				unbindAndDeprovision(bindingId, appId, serviceInstanceId, components.Ports[ServiceBroker], httpClientForPublicApi)
