@@ -52,6 +52,7 @@ var (
 	tmpDir                   string
 	serviceBrokerConfPath    string
 	apiServerConfPath        string
+	golangApiServerConfPath  string
 	schedulerConfPath        string
 	metricsCollectorConfPath string
 	eventGeneratorConfPath   string
@@ -86,6 +87,7 @@ var (
 	apiSchedulerHttpRequestTimeout           time.Duration = 10 * time.Second
 	apiScalingEngineHttpRequestTimeout       time.Duration = 10 * time.Second
 	apiMetricsCollectorHttpRequestTimeout    time.Duration = 10 * time.Second
+	apiMetricsServerHttpRequestTimeout       time.Duration = 10 * time.Second
 	apiEventGeneratorHttpRequestTimeout      time.Duration = 10 * time.Second
 	schedulerScalingEngineHttpRequestTimeout time.Duration = 10 * time.Second
 
@@ -187,14 +189,19 @@ func CompileTestedExecutables() Executables {
 	builtExecutables[MetricsServerHTTP], err = gexec.BuildIn(rootDir, "autoscaler/metricsserver/cmd/metricsserver", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
+	builtExecutables[GolangAPIServer], err = gexec.BuildIn(rootDir, "autoscaler/api/cmd/api", "-race")
+	Expect(err).NotTo(HaveOccurred())
+
 	return builtExecutables
 }
 
 func PreparePorts() Ports {
 	return Ports{
 		APIServer:             10000 + GinkgoParallelNode(),
+		GolangAPIServer:       22000 + GinkgoParallelNode(),
 		APIPublicServer:       12000 + GinkgoParallelNode(),
 		ServiceBroker:         13000 + GinkgoParallelNode(),
+		GolangServiceBroker:   23000 + GinkgoParallelNode(),
 		ServiceBrokerInternal: 14000 + GinkgoParallelNode(),
 		Scheduler:             15000 + GinkgoParallelNode(),
 		MetricsCollector:      16000 + GinkgoParallelNode(),
@@ -211,6 +218,12 @@ func startApiServer() *ginkgomon.Runner {
 		{APIServer, runner},
 	}))
 	return runner
+}
+
+func startGolangApiServer() {
+	processMap[GolangAPIServer] = ginkgomon.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
+		{GolangAPIServer, components.GolangAPIServer(golangApiServerConfPath)},
+	}))
 }
 
 func startServiceBroker() *ginkgomon.Runner {
@@ -265,6 +278,9 @@ func startMetricsServer() {
 
 func stopApiServer() {
 	ginkgomon.Kill(processMap[APIServer], 5*time.Second)
+}
+func stopGolangApiServer() {
+	ginkgomon.Kill(processMap[GolangAPIServer], 5*time.Second)
 }
 func stopScheduler() {
 	ginkgomon.Kill(processMap[Scheduler], 5*time.Second)
@@ -336,130 +352,101 @@ func initializeHttpClientForPublicApi(certFileName string, keyFileName string, c
 	httpClientForPublicApi.Timeout = httpRequestTimeout
 }
 
-func provisionServiceInstance(serviceInstanceId string, orgId string, spaceId string) (*http.Response, error) {
-	req, err := http.NewRequest("PUT", fmt.Sprintf("https://127.0.0.1:%d/v2/service_instances/%s", components.Ports[ServiceBroker], serviceInstanceId), strings.NewReader(fmt.Sprintf(`{"organization_guid":"%s","space_guid":"%s"}`, orgId, spaceId)))
+func provisionServiceInstance(serviceInstanceId string, orgId string, spaceId string, brokerPort int, httpClient *http.Client) (*http.Response, error) {
+	req, err := http.NewRequest("PUT", fmt.Sprintf("https://127.0.0.1:%d/v2/service_instances/%s", brokerPort, serviceInstanceId), strings.NewReader(fmt.Sprintf(`{"organization_guid":"%s","space_guid":"%s","service_id":"app-autoscaler","plan_id":"free"}`, orgId, spaceId)))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Basic "+brokerAuth)
 	return httpClient.Do(req)
 }
 
-func deprovisionServiceInstance(serviceInstanceId string) (*http.Response, error) {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("https://127.0.0.1:%d/v2/service_instances/%s", components.Ports[ServiceBroker], serviceInstanceId), strings.NewReader(""))
+func deprovisionServiceInstance(serviceInstanceId string, brokerPort int, httpClient *http.Client) (*http.Response, error) {
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("https://127.0.0.1:%d/v2/service_instances/%s", brokerPort, serviceInstanceId), strings.NewReader(`{"service_id":"app-autoscaler","plan_id":"free"}`))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Basic "+brokerAuth)
 	return httpClient.Do(req)
 }
 
-func bindService(bindingId string, appId string, serviceInstanceId string, policy []byte) (*http.Response, error) {
+func bindService(bindingId string, appId string, serviceInstanceId string, policy []byte, brokerPort int, httpClient *http.Client) (*http.Response, error) {
 	var bindBody map[string]interface{}
 	if policy != nil {
 		rawParameters := json.RawMessage(policy)
 		bindBody = map[string]interface{}{
 			"app_guid":   appId,
+			"service_id": "app-autoscaler",
+			"plan_id":    "free",
 			"parameters": &rawParameters,
 		}
 	} else {
 		bindBody = map[string]interface{}{
-			"app_guid": appId,
+			"app_guid":   appId,
+			"service_id": "app-autoscaler",
+			"plan_id":    "free",
 		}
 	}
 
 	body, err := json.Marshal(bindBody)
-	req, err := http.NewRequest("PUT", fmt.Sprintf("https://127.0.0.1:%d/v2/service_instances/%s/service_bindings/%s", components.Ports[ServiceBroker], serviceInstanceId, bindingId), bytes.NewReader(body))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("https://127.0.0.1:%d/v2/service_instances/%s/service_bindings/%s", brokerPort, serviceInstanceId, bindingId), bytes.NewReader(body))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Basic "+brokerAuth)
 	return httpClient.Do(req)
 }
 
-func unbindService(bindingId string, appId string, serviceInstanceId string) (*http.Response, error) {
-	req, err := http.NewRequest("DELETE", fmt.Sprintf("https://127.0.0.1:%d/v2/service_instances/%s/service_bindings/%s", components.Ports[ServiceBroker], serviceInstanceId, bindingId), strings.NewReader(fmt.Sprintf(`{"app_guid":"%s"}`, appId)))
+func unbindService(bindingId string, appId string, serviceInstanceId string, brokerPort int, httpClient *http.Client) (*http.Response, error) {
+	req, err := http.NewRequest("DELETE", fmt.Sprintf("https://127.0.0.1:%d/v2/service_instances/%s/service_bindings/%s", brokerPort, serviceInstanceId, bindingId), strings.NewReader(fmt.Sprintf(`{"app_guid":"%s","service_id":"app-autoscaler","plan_id":"free"}`, appId)))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Basic "+brokerAuth)
 	return httpClient.Do(req)
 }
 
-func provisionAndBind(serviceInstanceId string, orgId string, spaceId string, bindingId string, appId string, policy []byte) {
-	resp, err := provisionServiceInstance(serviceInstanceId, orgId, spaceId)
+func provisionAndBind(serviceInstanceId string, orgId string, spaceId string, bindingId string, appId string, policy []byte, brokerPort int, httpClient *http.Client) {
+	resp, err := provisionServiceInstance(serviceInstanceId, orgId, spaceId, brokerPort, httpClient)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.StatusCode).To(Equal(http.StatusCreated))
 	resp.Body.Close()
 
-	resp, err = bindService(bindingId, appId, serviceInstanceId, policy)
+	resp, err = bindService(bindingId, appId, serviceInstanceId, policy, brokerPort, httpClient)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.StatusCode).To(Equal(http.StatusCreated))
 	resp.Body.Close()
 }
-func unbindAndDeprovision(bindingId string, appId string, serviceInstanceId string) {
-	resp, err := unbindService(bindingId, appId, serviceInstanceId)
+func unbindAndDeprovision(bindingId string, appId string, serviceInstanceId string, brokerPort int, httpClient *http.Client) {
+	resp, err := unbindService(bindingId, appId, serviceInstanceId, brokerPort, httpClient)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.StatusCode).To(Equal(http.StatusOK))
 	resp.Body.Close()
 
-	resp, err = deprovisionServiceInstance(serviceInstanceId)
+	resp, err = deprovisionServiceInstance(serviceInstanceId, brokerPort, httpClient)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.StatusCode).To(Equal(http.StatusOK))
 	resp.Body.Close()
 
 }
-func getPolicy(appId string, apiType APIType) (*http.Response, error) {
-	var apiServerPort int
-	var httpClientTmp *http.Client
-	if apiType == INTERNAL {
-		apiServerPort = components.Ports[APIServer]
-		httpClientTmp = httpClient
-	} else {
-		apiServerPort = components.Ports[APIPublicServer]
-		httpClientTmp = httpClientForPublicApi
-	}
+func getPolicy(appId string, apiServerPort int, httpClient *http.Client) (*http.Response, error) {
+
 	req, err := http.NewRequest("GET", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/policy", apiServerPort, appId), nil)
-	if apiType == PUBLIC {
-		req.Header.Set("Authorization", "bearer fake-token")
-	}
+	req.Header.Set("Authorization", "bearer fake-token")
 	Expect(err).NotTo(HaveOccurred())
-	return httpClientTmp.Do(req)
+	return httpClient.Do(req)
 }
 
-func detachPolicy(appId string, apiType APIType) (*http.Response, error) {
-	var apiServerPort int
-	var httpClientTmp *http.Client
-	if apiType == INTERNAL {
-		apiServerPort = components.Ports[APIServer]
-		httpClientTmp = httpClient
-	} else {
-		apiServerPort = components.Ports[APIPublicServer]
-		httpClientTmp = httpClientForPublicApi
-	}
+func detachPolicy(appId string, apiServerPort int, httpClient *http.Client) (*http.Response, error) {
 	req, err := http.NewRequest("DELETE", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/policy", apiServerPort, appId), strings.NewReader(""))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
-	if apiType == PUBLIC {
-		req.Header.Set("Authorization", "bearer fake-token")
-	}
-	return httpClientTmp.Do(req)
+	req.Header.Set("Authorization", "bearer fake-token")
+	return httpClient.Do(req)
 }
 
-func attachPolicy(appId string, policy []byte, apiType APIType) (*http.Response, error) {
-	var apiServerPort int
-	var httpClientTmp *http.Client
-	if apiType == INTERNAL {
-		apiServerPort = components.Ports[APIServer]
-		httpClientTmp = httpClient
-	} else {
-		apiServerPort = components.Ports[APIPublicServer]
-		httpClientTmp = httpClientForPublicApi
-	}
-
+func attachPolicy(appId string, policy []byte, apiServerPort int, httpClient *http.Client) (*http.Response, error) {
 	req, err := http.NewRequest("PUT", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/policy", apiServerPort, appId), bytes.NewReader(policy))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
-	if apiType == PUBLIC {
-		req.Header.Set("Authorization", "bearer fake-token")
-	}
-	return httpClientTmp.Do(req)
+	req.Header.Set("Authorization", "bearer fake-token")
+	return httpClient.Do(req)
 }
 
 func getSchedules(appId string) (*http.Response, error) {
@@ -500,6 +487,36 @@ func activeScheduleExists(appId string) bool {
 	return resp.StatusCode == http.StatusOK
 }
 
+func setPolicyRecurringDate(policyByte []byte) []byte {
+
+	var policy models.ScalingPolicy
+	err := json.Unmarshal(policyByte, &policy)
+	Expect(err).NotTo(HaveOccurred())
+
+	if policy.Schedules != nil {
+		location, err := time.LoadLocation(policy.Schedules.Timezone)
+		Expect(err).NotTo(HaveOccurred())
+		now := time.Now().In(location)
+		starttime := now.Add(time.Minute * 10)
+		endtime := now.Add(time.Minute * 20)
+		for _, entry := range policy.Schedules.RecurringSchedules {
+			if endtime.Day() != starttime.Day() {
+				entry.StartTime = "00:01"
+				entry.EndTime = "23:59"
+				entry.StartDate = endtime.Format("2006-01-02")
+			} else {
+				entry.StartTime = starttime.Format("15:04")
+				entry.EndTime = endtime.Format("15:04")
+			}
+		}
+	}
+
+	content, err := json.Marshal(policy)
+	Expect(err).NotTo(HaveOccurred())
+	return content
+
+}
+
 func setPolicySpecificDateTime(policyByte []byte, start time.Duration, end time.Duration) string {
 	timeZone := "GMT"
 	location, _ := time.LoadLocation(timeZone)
@@ -510,10 +527,8 @@ func setPolicySpecificDateTime(policyByte []byte, start time.Duration, end time.
 
 	return fmt.Sprintf(string(policyByte), timeZone, startTime, endTime)
 }
-func getScalingHistories(pathVariables []string, parameters map[string]string) (*http.Response, error) {
-	var apiServerPort int
+func getScalingHistories(apiServerPort int, pathVariables []string, parameters map[string]string) (*http.Response, error) {
 	var httpClientTmp *http.Client
-	apiServerPort = components.Ports[APIPublicServer]
 	httpClientTmp = httpClientForPublicApi
 
 	url := "https://127.0.0.1:%d/v1/apps/%s/scaling_histories"
@@ -529,10 +544,8 @@ func getScalingHistories(pathVariables []string, parameters map[string]string) (
 	req.Header.Set("Authorization", "bearer fake-token")
 	return httpClientTmp.Do(req)
 }
-func getAppInstanceMetrics(pathVariables []string, parameters map[string]string) (*http.Response, error) {
-	var apiServerPort int
+func getAppInstanceMetrics(apiServerPort int, pathVariables []string, parameters map[string]string) (*http.Response, error) {
 	var httpClientTmp *http.Client
-	apiServerPort = components.Ports[APIPublicServer]
 	httpClientTmp = httpClientForPublicApi
 	url := "https://127.0.0.1:%d/v1/apps/%s/metric_histories/%s"
 	if parameters != nil && len(parameters) > 0 {
@@ -548,10 +561,8 @@ func getAppInstanceMetrics(pathVariables []string, parameters map[string]string)
 	return httpClientTmp.Do(req)
 }
 
-func getAppAggregatedMetrics(pathVariables []string, parameters map[string]string) (*http.Response, error) {
-	var apiServerPort int
+func getAppAggregatedMetrics(apiServerPort int, pathVariables []string, parameters map[string]string) (*http.Response, error) {
 	var httpClientTmp *http.Client
-	apiServerPort = components.Ports[APIPublicServer]
 	httpClientTmp = httpClientForPublicApi
 	url := "https://127.0.0.1:%d/v1/apps/%s/aggregated_metric_histories/%s"
 	if parameters != nil && len(parameters) > 0 {
@@ -680,16 +691,16 @@ func getCredentialsCount(appId string) int {
 	return count
 }
 
-type GetResponse func(id string, apiType APIType) (*http.Response, error)
-type GetResponseWithParameters func(pathVariables []string, parameters map[string]string) (*http.Response, error)
+type GetResponse func(id string, port int, httpClient *http.Client) (*http.Response, error)
+type GetResponseWithParameters func(apiServerPort int, pathVariables []string, parameters map[string]string) (*http.Response, error)
 
-func checkResponseContent(getResponse GetResponse, id string, expectHttpStatus int, expectResponseMap map[string]interface{}, apiType APIType) {
-	resp, err := getResponse(id, apiType)
+func checkResponseContent(getResponse GetResponse, id string, expectHttpStatus int, expectResponseMap map[string]interface{}, port int, httpClient *http.Client) {
+	resp, err := getResponse(id, port, httpClient)
 	checkResponse(resp, err, expectHttpStatus, expectResponseMap)
 
 }
-func checkPublicAPIResponseContentWithParameters(getResponseWithParameters GetResponseWithParameters, pathVariables []string, parameters map[string]string, expectHttpStatus int, expectResponseMap map[string]interface{}) {
-	resp, err := getResponseWithParameters(pathVariables, parameters)
+func checkPublicAPIResponseContentWithParameters(getResponseWithParameters GetResponseWithParameters, apiServerPort int, pathVariables []string, parameters map[string]string, expectHttpStatus int, expectResponseMap map[string]interface{}) {
+	resp, err := getResponseWithParameters(apiServerPort, pathVariables, parameters)
 	checkResponse(resp, err, expectHttpStatus, expectResponseMap)
 }
 func checkResponse(resp *http.Response, err error, expectHttpStatus int, expectResponseMap map[string]interface{}) {

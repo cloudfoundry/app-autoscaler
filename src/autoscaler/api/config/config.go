@@ -86,6 +86,7 @@ type Config struct {
 	UseBuildInMode       bool                   `yaml:"use_buildin_mode"`
 	InfoFilePath         string                 `yaml:"info_file_path"`
 	MetricsForwarder     MetricsForwarderConfig `yaml:"metrics_forwarder"`
+	Health               models.HealthConfig    `yaml:"health"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {

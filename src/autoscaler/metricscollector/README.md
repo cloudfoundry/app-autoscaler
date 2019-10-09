@@ -6,7 +6,7 @@ Metrics Collector is one of the components of CF `app-autoscaler`. It is used to
 
 ### System requirements:
 
-* Go 1.6 or above
+* Go 1.11 or above
 * Cloud Foundry release 235 or later
 
 ### Build and test

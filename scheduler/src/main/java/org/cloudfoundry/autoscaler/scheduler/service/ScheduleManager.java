@@ -1,12 +1,20 @@
 package org.cloudfoundry.autoscaler.scheduler.service;
 
 import java.io.IOException;
+import java.text.ParseException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,11 +31,13 @@ import org.cloudfoundry.autoscaler.scheduler.rest.model.ApplicationSchedules;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.Schedules;
 import org.cloudfoundry.autoscaler.scheduler.rest.model.SynchronizeResult;
 import org.cloudfoundry.autoscaler.scheduler.util.ScalingEngineUtil;
+import org.cloudfoundry.autoscaler.scheduler.util.ScheduleJobHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.ScheduleTypeEnum;
 import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationException;
 import org.cloudfoundry.autoscaler.scheduler.util.error.MessageBundleResourceHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.error.SchedulerInternalException;
 import org.cloudfoundry.autoscaler.scheduler.util.error.ValidationErrorResult;
+import org.quartz.CronExpression;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -156,8 +166,31 @@ public class ScheduleManager {
 	 */
 	@Transactional
 	public void createSchedules(Schedules schedules) {
-
+		
+		List<RecurringScheduleEntity> recurringSchedules = schedules.getRecurringSchedule();
 		List<SpecificDateScheduleEntity> specificDateSchedules = schedules.getSpecificDate();
+		
+		if (recurringSchedules != null) {
+			for (RecurringScheduleEntity recurringScheduleEntity : recurringSchedules) {
+				// Persist the schedule in database
+				RecurringScheduleEntity savedScheduleEntity = saveNewRecurringSchedule(recurringScheduleEntity);
+
+				// Ask ScalingJobManager to create scaling job
+				if (savedScheduleEntity != null) {
+					SpecificDateScheduleEntity compensatorySchedule = createCompensatorySchedule(recurringScheduleEntity);
+					if (compensatorySchedule != null){
+						//create a compensatory schedule to bring the first fire back
+						if (specificDateSchedules == null) {
+							specificDateSchedules  = new ArrayList<SpecificDateScheduleEntity>();
+						}
+						specificDateSchedules.add(compensatorySchedule);
+						logger.debug("add an addition specific date event to compensate the misfire for TODAY: " + compensatorySchedule.toString());
+					}
+					scheduleJobManager.createCronJob(savedScheduleEntity);
+				}
+			}
+		}
+		
 		if (specificDateSchedules != null) {
 			for (SpecificDateScheduleEntity specificDateScheduleEntity : specificDateSchedules) {
 				// Persist the schedule in database
@@ -171,18 +204,7 @@ public class ScheduleManager {
 			}
 		}
 
-		List<RecurringScheduleEntity> recurringSchedules = schedules.getRecurringSchedule();
-		if (recurringSchedules != null) {
-			for (RecurringScheduleEntity recurringScheduleEntity : recurringSchedules) {
-				// Persist the schedule in database
-				RecurringScheduleEntity savedScheduleEntity = saveNewRecurringSchedule(recurringScheduleEntity);
 
-				// Ask ScalingJobManager to create scaling job
-				if (savedScheduleEntity != null) {
-					scheduleJobManager.createCronJob(savedScheduleEntity);
-				}
-			}
-		}
 	}
 
 	/**
@@ -218,6 +240,40 @@ public class ScheduleManager {
 		return savedScheduleEntity;
 	}
 
+	
+	private SpecificDateScheduleEntity createCompensatorySchedule(RecurringScheduleEntity recurringScheduleEntity){
+		
+		SpecificDateScheduleEntity compenstatorySchedule = null;
+		try {
+			ZoneId timezone = ZoneId.of(recurringScheduleEntity.getTimeZone());
+			CronExpression expression = new CronExpression(ScheduleJobHelper.convertRecurringScheduleToCronExpression(
+					recurringScheduleEntity.getStartTime(), recurringScheduleEntity));
+			expression.setTimeZone(TimeZone.getTimeZone(timezone));
+
+			Date firstValidTime = expression.getNextValidTimeAfter(Date.from(LocalDate.now(timezone).atStartOfDay(timezone).toInstant()));
+			if (recurringScheduleEntity.getStartTime() == LocalTime.of(0, 0)) {
+				 firstValidTime = expression.getNextValidTimeAfter(Date.from(LocalDate.now(timezone).atStartOfDay(timezone).toInstant().minusSeconds(60)));
+			}
+			
+			if (firstValidTime.toInstant().atZone(timezone).toLocalDateTime().isBefore(LocalDateTime.now(timezone))){
+				if (recurringScheduleEntity.getStartDate() == null || 
+					!(recurringScheduleEntity.getStartDate().atStartOfDay(timezone).isAfter(ZonedDateTime.now(timezone)))){
+					compenstatorySchedule = new SpecificDateScheduleEntity();
+					compenstatorySchedule.copy(recurringScheduleEntity);
+					LocalDateTime startDateTime = LocalDateTime.now(timezone).plusMinutes(1);
+					LocalDateTime endDateTime = LocalDateTime.of(LocalDate.now(timezone),recurringScheduleEntity.getEndTime());
+					compenstatorySchedule.setStartDateTime(startDateTime);
+					compenstatorySchedule.setEndDateTime(endDateTime);
+				}
+			}
+			
+		} catch (ParseException e) {
+			logger.error("Invalid parse or clone");
+		} 
+		
+		return compenstatorySchedule;
+		
+	}
 	/**
 	 * Calls private helper methods to delete the schedules from the database and
 	 * calls ScalingJobManager to delete scaling action jobs.
