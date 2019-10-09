@@ -15,10 +15,14 @@ import (
 var _ = Describe("Integration_GolangApi_Scheduler", func() {
 	var (
 		appId             string
+		app2Id            string
+		app3Id            string
 		policyStr         []byte
 		initInstanceCount int = 2
 		serviceInstanceId string
 		bindingId         string
+		binding2Id        string
+		binding3Id        string
 		orgId             string
 		spaceId           string
 	)
@@ -35,7 +39,11 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 		orgId = getRandomId()
 		spaceId = getRandomId()
 		bindingId = getRandomId()
+		binding2Id = getRandomId()
+		binding3Id = getRandomId()
 		appId = getRandomId()
+		app2Id = getRandomId()
+		app3Id = getRandomId()
 		brokerAuth = base64.StdEncoding.EncodeToString([]byte("username:password"))
 	})
 
@@ -191,7 +199,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 				stopScheduler()
 			})
 			BeforeEach(func() {
-				provisionAndBind(serviceInstanceId, orgId, spaceId, bindingId, appId, nil, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+				provisionAndBind(serviceInstanceId, orgId, spaceId, nil, bindingId, appId, nil, components.Ports[GolangServiceBroker], httpClientForPublicApi)
 			})
 
 			Context("Create policy", func() {
@@ -225,7 +233,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 
 		Describe("Create policy", func() {
 			BeforeEach(func() {
-				provisionAndBind(serviceInstanceId, orgId, spaceId, bindingId, appId, nil, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+				provisionAndBind(serviceInstanceId, orgId, spaceId, nil, bindingId, appId, nil, components.Ports[GolangServiceBroker], httpClientForPublicApi)
 			})
 			AfterEach(func() {
 				unbindAndDeprovision(bindingId, appId, serviceInstanceId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
@@ -237,7 +245,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 
 						doAttachPolicy(appId, policyStr, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
 						checkApiServerContent(appId, policyStr, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
-						Expect(checkSchedule(appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})).To(BeTrue())
+						assertScheduleContents(appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})
 					})
 
 					It("fails with an invalid policy", func() {
@@ -263,9 +271,160 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 
 		})
 
+		Describe("creating and binding a service instance without a default policy", func() {
+			BeforeEach(func() {
+				provisionAndBind(serviceInstanceId, orgId, spaceId, nil, bindingId, appId, nil, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+			})
+			AfterEach(func() {
+				unbindAndDeprovision(bindingId, appId, serviceInstanceId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+			})
+			Context("and then setting a default policy", func() {
+				var (
+					newDefaultPolicy []byte
+					err              error
+					resp             *http.Response
+				)
+
+				BeforeEach(func() {
+					newDefaultPolicy = setPolicyRecurringDate(readPolicyFromFile("fakePolicyWithSchedule.json"))
+					resp, err = updateServiceInstance(serviceInstanceId, newDefaultPolicy, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(resp.StatusCode).To(Equal(http.StatusOK))
+
+				})
+
+				It("creates a policy and associated schedules", func() {
+					checkApiServerContent(appId, newDefaultPolicy, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
+					assertScheduleContents(appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})
+				})
+			})
+		})
+
+		Describe("creating a service instance with a default policy", func() {
+			var (
+				defaultPolicy []byte
+				err           error
+				resp          *http.Response
+			)
+			JustBeforeEach(func() {
+				resp, err = provisionServiceInstance(serviceInstanceId, orgId, spaceId, defaultPolicy, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			Context("with an invalid default policy", func() {
+				BeforeEach(func() {
+					defaultPolicy = readPolicyFromFile("fakeInvalidPolicy.json")
+				})
+
+				It("fails", func() {
+					Expect(resp.StatusCode).To(Equal(http.StatusBadRequest))
+				})
+			})
+
+			Context("when binding to it", func() {
+				var secondPolicy []byte
+				BeforeEach(func() {
+					defaultPolicy = setPolicyRecurringDate(readPolicyFromFile("fakePolicyWithSchedule.json"))
+					secondPolicy = setPolicyRecurringDate(readPolicyFromFile("fakeMinimalScalingRulePolicy.json"))
+				})
+
+				JustBeforeEach(func() {
+					resp, err = bindService(bindingId, appId, serviceInstanceId, nil, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+					resp, err = bindService(binding2Id, app2Id, serviceInstanceId, nil, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+
+					// app with explicit policy
+					resp, err = bindService(binding3Id, app3Id, serviceInstanceId, secondPolicy, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(resp.StatusCode).To(Equal(http.StatusCreated))
+				})
+
+				AfterEach(func() {
+					resp, err = unbindService(binding2Id, app2Id, serviceInstanceId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(resp.StatusCode).To(Equal(http.StatusOK))
+					resp, err = unbindService(binding3Id, app3Id, serviceInstanceId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(resp.StatusCode).To(Equal(http.StatusOK))
+					unbindAndDeprovision(bindingId, appId, serviceInstanceId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+				})
+
+				It("creates a policy and associated schedules", func() {
+					checkApiServerContent(appId, defaultPolicy, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
+					assertScheduleContents(appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})
+
+					checkApiServerContent(app2Id, defaultPolicy, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
+					assertScheduleContents(app2Id, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})
+
+					checkApiServerContent(app3Id, secondPolicy, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
+					assertScheduleContents(app3Id, http.StatusOK, map[string]int{"recurring_schedule": 2, "specific_date": 1})
+				})
+
+				Context("and then updating some apps' policies explicitly", func() {
+					JustBeforeEach(func() {
+						doAttachPolicy(app2Id, secondPolicy, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
+						doDetachPolicy(app3Id, http.StatusOK, "", components.Ports[GolangAPIServer], httpClientForPublicApi)
+					})
+
+					It("changes the apps' policies and schedules", func() {
+						checkApiServerContent(appId, defaultPolicy, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
+						assertScheduleContents(appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})
+
+						checkApiServerContent(app2Id, secondPolicy, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
+						assertScheduleContents(app2Id, http.StatusOK, map[string]int{"recurring_schedule": 2, "specific_date": 1})
+
+						checkApiServerStatus(app3Id, http.StatusNotFound, components.Ports[GolangAPIServer], httpClientForPublicApi)
+						checkSchedulerStatus(app3Id, http.StatusNotFound)
+					})
+
+					var newDefaultPolicy []byte
+					Context("and then changing the default policy", func() {
+						JustBeforeEach(func() {
+							resp, err = updateServiceInstance(serviceInstanceId, newDefaultPolicy, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+							Expect(err).NotTo(HaveOccurred())
+							Expect(resp.StatusCode).To(Equal(http.StatusOK))
+						})
+						Context("to a new one", func() {
+							BeforeEach(func() {
+								newDefaultPolicy = setPolicyRecurringDate(readPolicyFromFile("fakePolicyWithScheduleAnother.json"))
+							})
+							It("is reflected in the apps' policies and schedules", func() {
+								By("ensuring that the app with the default policy gets the new default app policy")
+								checkApiServerContent(appId, newDefaultPolicy, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
+								assertScheduleContents(appId, http.StatusOK, map[string]int{"recurring_schedule": 3, "specific_date": 1})
+
+								By("ensuring that the app with the specifically set policy is not modified")
+								checkApiServerContent(app2Id, secondPolicy, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
+								assertScheduleContents(app2Id, http.StatusOK, map[string]int{"recurring_schedule": 2, "specific_date": 1})
+
+								By("ensuring that the app without a policy gets the new default app policy")
+								checkApiServerContent(app3Id, newDefaultPolicy, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
+								assertScheduleContents(app3Id, http.StatusOK, map[string]int{"recurring_schedule": 3, "specific_date": 1})
+							})
+						})
+						Context("by removing it", func() {
+							BeforeEach(func() {
+								newDefaultPolicy = []byte("{\t\n}\r\n")
+							})
+							It("is reflected in the apps' policies and schedules", func() {
+								checkApiServerStatus(appId, http.StatusNotFound, components.Ports[GolangAPIServer], httpClientForPublicApi)
+								checkSchedulerStatus(appId, http.StatusNotFound)
+								checkApiServerContent(app2Id, secondPolicy, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
+								assertScheduleContents(app2Id, http.StatusOK, map[string]int{"recurring_schedule": 2, "specific_date": 1})
+							})
+						})
+					})
+
+				})
+			})
+		})
+
 		Describe("Update policy", func() {
 			BeforeEach(func() {
-				provisionAndBind(serviceInstanceId, orgId, spaceId, bindingId, appId, nil, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+				provisionAndBind(serviceInstanceId, orgId, spaceId, nil, bindingId, appId, nil, components.Ports[GolangServiceBroker], httpClientForPublicApi)
 			})
 			AfterEach(func() {
 				unbindAndDeprovision(bindingId, appId, serviceInstanceId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
@@ -285,7 +444,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 
 						doAttachPolicy(appId, policyStr, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
 						checkApiServerContent(appId, policyStr, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
-						Expect(checkSchedule(appId, http.StatusOK, map[string]int{"recurring_schedule": 3, "specific_date": 1})).To(BeTrue())
+						assertScheduleContents(appId, http.StatusOK, map[string]int{"recurring_schedule": 3, "specific_date": 1})
 					})
 				})
 			})
@@ -294,7 +453,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 
 		Describe("Delete Policies", func() {
 			BeforeEach(func() {
-				provisionAndBind(serviceInstanceId, orgId, spaceId, bindingId, appId, nil, components.Ports[GolangServiceBroker], httpClientForPublicApi)
+				provisionAndBind(serviceInstanceId, orgId, spaceId, nil, bindingId, appId, nil, components.Ports[GolangServiceBroker], httpClientForPublicApi)
 			})
 			AfterEach(func() {
 				unbindAndDeprovision(bindingId, appId, serviceInstanceId, components.Ports[GolangServiceBroker], httpClientForPublicApi)
@@ -349,7 +508,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 
 						doAttachPolicy(appId, policyStr, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
 						checkApiServerContent(appId, policyStr, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
-						Expect(checkSchedule(appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})).To(BeTrue())
+						assertScheduleContents(appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})
 					})
 
 					It("fails with an invalid policy", func() {
@@ -391,7 +550,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 
 						doAttachPolicy(appId, policyStr, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
 						checkApiServerContent(appId, policyStr, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
-						Expect(checkSchedule(appId, http.StatusOK, map[string]int{"recurring_schedule": 3, "specific_date": 1})).To(BeTrue())
+						assertScheduleContents(appId, http.StatusOK, map[string]int{"recurring_schedule": 3, "specific_date": 1})
 					})
 				})
 			})

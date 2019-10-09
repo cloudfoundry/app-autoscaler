@@ -117,6 +117,56 @@ var _ = Describe("PolicySQLDB", func() {
 		})
 	})
 
+	Describe("GetAppIdsWithPolicy", func() {
+		var appIds []string
+		BeforeEach(func() {
+			pdb, err = NewPolicySQLDB(dbConfig, logger)
+			Expect(err).NotTo(HaveOccurred())
+
+			cleanPolicyTable()
+		})
+
+		AfterEach(func() {
+			err = pdb.Close()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		JustBeforeEach(func() {
+			appIds, err = pdb.GetAppIdsWithPolicy("1")
+		})
+
+		Context("when policy table is empty", func() {
+			It("returns no app ids", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(appIds).To(BeEmpty())
+			})
+		})
+
+		Context("when policy table is not empty", func() {
+			BeforeEach(func() {
+				scalingPolicy = &models.ScalingPolicy{InstanceMax: 1, InstanceMin: 6}
+				insertPolicyWithGuid("first-app-id", scalingPolicy, "1")
+				insertPolicyWithGuid("second-app-id", scalingPolicy, "2")
+				insertPolicyWithGuid("third-app-id", scalingPolicy, "1")
+			})
+
+			It("returns all app ids with the specified policy guid", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(appIds).To(ContainElement("first-app-id"))
+				Expect(appIds).To(ContainElement("third-app-id"))
+			})
+		})
+
+		Context("when there is database error", func() {
+			BeforeEach(func() {
+				pdb.Close()
+			})
+			It("should error", func() {
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
+
 	Describe("GetAppPolicy", func() {
 		BeforeEach(func() {
 			pdb, err = NewPolicySQLDB(dbConfig, logger)
@@ -337,6 +387,159 @@ var _ = Describe("PolicySQLDB", func() {
 				policy, err := pdb.GetAppPolicy("an-app-id")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(policy).To(BeNil())
+			})
+		})
+
+		Context("when there is database error", func() {
+			BeforeEach(func() {
+				pdb.Close()
+			})
+			It("should error", func() {
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("DeletePoliciesByPolicyGuid", func() {
+		BeforeEach(func() {
+			pdb, err = NewPolicySQLDB(dbConfig, logger)
+			Expect(err).NotTo(HaveOccurred())
+
+			cleanPolicyTable()
+		})
+
+		AfterEach(func() {
+			err = pdb.Close()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		JustBeforeEach(func() {
+			err = pdb.DeletePoliciesByPolicyGuid("a-policy-guid")
+		})
+
+		Context("when there is no policy in the table", func() {
+			It("should not error", func() {
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when policy table is not empty", func() {
+			BeforeEach(func() {
+				scalingPolicy = &models.ScalingPolicy{InstanceMax: 1, InstanceMin: 6}
+				insertPolicyWithGuid("first-app-id", scalingPolicy, "a-policy-guid")
+				insertPolicyWithGuid("second-app-id", scalingPolicy, "another-policy-guid")
+			})
+
+			It("should delete the policy with the specified policy guid", func() {
+				Expect(err).NotTo(HaveOccurred())
+				policy, err := pdb.GetAppPolicy("first-app-id")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(policy).To(BeNil())
+				policy, err = pdb.GetAppPolicy("second-app-id")
+				Expect(err).NotTo(HaveOccurred())
+				Expect(policy).NotTo(BeNil())
+			})
+		})
+
+		Context("when there is database error", func() {
+			BeforeEach(func() {
+				pdb.Close()
+			})
+			It("should error", func() {
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("ReplaceAppPolicies", func() {
+		BeforeEach(func() {
+			pdb, err = NewPolicySQLDB(dbConfig, logger)
+			Expect(err).NotTo(HaveOccurred())
+
+			cleanPolicyTable()
+		})
+
+		AfterEach(func() {
+			err = pdb.Close()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		newPolicy := `{"new": "policy"}`
+		JustBeforeEach(func() {
+			err = pdb.ReplaceAppPolicies("1", newPolicy, "8")
+		})
+
+		Context("when policy table is empty", func() {
+			It("should not error", func() {
+				Expect(err).NotTo(HaveOccurred())
+			})
+		})
+
+		Context("when policy table is not empty", func() {
+			BeforeEach(func() {
+				scalingPolicy = &models.ScalingPolicy{InstanceMax: 1, InstanceMin: 6}
+				insertPolicyWithGuid("first-app-id", scalingPolicy, "1")
+				insertPolicyWithGuid("second-app-id", scalingPolicy, "2")
+				insertPolicyWithGuid("third-app-id", scalingPolicy, "1")
+			})
+
+			It("replaces the app policies", func() {
+				Expect(getAppPolicy("first-app-id")).To(MatchJSON(newPolicy))
+				Expect(getAppPolicy("second-app-id")).NotTo(MatchJSON(newPolicy))
+				Expect(getAppPolicy("third-app-id")).To(MatchJSON(newPolicy))
+			})
+		})
+
+		Context("when there is database error", func() {
+			BeforeEach(func() {
+				pdb.Close()
+			})
+			It("should error", func() {
+				Expect(err).To(HaveOccurred())
+			})
+		})
+	})
+
+	Describe("SetDefaultAppPolicy", func() {
+		BeforeEach(func() {
+			pdb, err = NewPolicySQLDB(dbConfig, logger)
+			Expect(err).NotTo(HaveOccurred())
+
+			cleanPolicyTable()
+		})
+
+		AfterEach(func() {
+			err = pdb.Close()
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		newPolicy := `{"new": "policy"}`
+		var modifiedApps []string
+		JustBeforeEach(func() {
+			modifiedApps, err = pdb.SetDefaultAppPolicy([]string{"first-bound-app-id", "second-bound-app-id"}, newPolicy, "8")
+		})
+
+		Context("when policy table is empty", func() {
+			It("inserts the policies for the apps", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(modifiedApps).To(ConsistOf("first-bound-app-id", "second-bound-app-id"))
+				Expect(getAppPolicy("first-bound-app-id")).To(MatchJSON(newPolicy))
+				Expect(getAppPolicy("second-bound-app-id")).To(MatchJSON(newPolicy))
+			})
+		})
+
+		Context("when policy table is not empty", func() {
+			BeforeEach(func() {
+				scalingPolicy = &models.ScalingPolicy{InstanceMax: 1, InstanceMin: 6}
+				insertPolicyWithGuid("first-bound-app-id", scalingPolicy, "1")
+				insertPolicyWithGuid("unrelated-app-id", scalingPolicy, "2")
+			})
+
+			It("sets the default app policy on apps without a scaling policy", func() {
+				Expect(modifiedApps).To(ConsistOf("second-bound-app-id"))
+				Expect(getAppPolicy("first-bound-app-id")).NotTo(MatchJSON(newPolicy))
+				Expect(getAppPolicy("second-bound-app-id")).To(MatchJSON(newPolicy))
+				Expect(getAppPolicy("unrelated-app-id")).NotTo(MatchJSON(newPolicy))
 			})
 		})
 
