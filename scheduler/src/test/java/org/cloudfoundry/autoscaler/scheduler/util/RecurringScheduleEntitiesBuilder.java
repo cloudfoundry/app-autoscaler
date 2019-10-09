@@ -14,7 +14,7 @@ public class RecurringScheduleEntitiesBuilder {
 	public RecurringScheduleEntitiesBuilder(int noOfDOMSchedules, int noOfDOWSchedules) {
 		recurringScheduleEntities = generateEntities(noOfDOMSchedules, noOfDOWSchedules);
 	}
-
+	
 	public RecurringScheduleEntitiesBuilder setTimeZone(String timeZone) {
 		if (recurringScheduleEntities != null) {
 			for (RecurringScheduleEntity recurringScheduleEntity : recurringScheduleEntities) {
@@ -118,7 +118,6 @@ public class RecurringScheduleEntitiesBuilder {
 		if ((noOfDOMSchedules + noOfDOWSchedules) == 0) {
 			return null;
 		}
-
 		entities.addAll(generateDOM_DOWEntities(noOfDOMSchedules, false));
 		entities.addAll(generateDOM_DOWEntities(noOfDOWSchedules, true));
 
@@ -129,10 +128,12 @@ public class RecurringScheduleEntitiesBuilder {
 		List<RecurringScheduleEntity> recurringScheduleEntities = new ArrayList<>();
 		for (int i = 0; i < noOfSchedules; i++) {
 			RecurringScheduleEntity recurringScheduleEntity = new RecurringScheduleEntity();
+
 			recurringScheduleEntity
-					.setStartTime(TestDataSetupHelper.getTime(TestDataSetupHelper.getStarTime(), scheduleIndex, 0));
+			.setStartTime(TestDataSetupHelper.getZoneTimeWithOffset(10*i+10));
+
 			recurringScheduleEntity
-					.setEndTime(TestDataSetupHelper.getTime(TestDataSetupHelper.getEndTime(), scheduleIndex, 5));
+			.setEndTime(TestDataSetupHelper.getZoneTimeWithOffset(10*i+15));
 
 			recurringScheduleEntity.setInstanceMinCount(i + 5);
 			recurringScheduleEntity.setInstanceMaxCount(i + 6);

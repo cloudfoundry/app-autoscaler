@@ -235,6 +235,33 @@ var _ = Describe("PolicyValidator", func() {
 				})
 			})
 
+			Context("when metric_type is too long", func() {
+				BeforeEach(func() {
+					policyString = `{
+					"instance_max_count":4,
+					"instance_min_count":1,
+					"scaling_rules":[
+					{
+						"metric_type": "custom_metric_custom_metric_custom_metric_custom_metric_custom_metric_custom_metric_custom_metric_custom_metric",
+						"breach_duration_secs":600,
+						"threshold":90,
+						"operator":">=",
+						"cool_down_secs":300,
+						"adjustment":"+1"
+					}]
+				}`
+				})
+				It("should fail", func() {
+					Expect(valid).To(BeFalse())
+					Expect(errResult).To(Equal(&[]PolicyValidationErrors{
+						{
+							Context:     "(root).scaling_rules.0.metric_type",
+							Description: "String length must be less than or equal to 100",
+						},
+					}))
+				})
+			})
+
 			Context("when threshold is missing", func() {
 				BeforeEach(func() {
 					policyString = `{
@@ -639,11 +666,68 @@ var _ = Describe("PolicyValidator", func() {
 					Expect(errResult).To(Equal(&[]PolicyValidationErrors{
 						{
 							Context:     "(root).scaling_rules.0.adjustment",
-							Description: "Does not match pattern '^[-+][1-9]+[0-9]*$'",
+							Description: "Does not match pattern '^[-+][1-9]+[0-9]*%?$'",
 						},
 					}))
 				})
 			})
+
+			Context("when adjustment is number type", func() {
+				BeforeEach(func() {
+					policyString = `{
+					"instance_max_count":4,
+					"instance_min_count":1,
+					"scaling_rules":[
+					{
+						"metric_type":"memoryutil",
+						"breach_duration_secs":600,
+						"threshold":90,
+						"operator":">=",
+						"cool_down_secs":300,
+						"adjustment": "+1"
+					},{
+						"metric_type":"memoryutil",
+						"breach_duration_secs":600,
+						"threshold":90,
+						"operator":"<=",
+						"cool_down_secs":300,
+						"adjustment": "-2"
+					}]
+				}`
+				})
+				It("should succeed", func() {
+					Expect(valid).To(BeTrue())
+				})
+			})
+
+			Context("when adjustment is percentage type", func() {
+				BeforeEach(func() {
+					policyString = `{
+					"instance_max_count":4,
+					"instance_min_count":1,
+					"scaling_rules":[
+					{
+						"metric_type":"memoryutil",
+						"breach_duration_secs":600,
+						"threshold":90,
+						"operator":">=",
+						"cool_down_secs":300,
+						"adjustment": "+100%"
+					},{
+						"metric_type":"memoryutil",
+						"breach_duration_secs":600,
+						"threshold":90,
+						"operator":"<=",
+						"cool_down_secs":300,
+						"adjustment": "-200%"
+					}]
+				}`
+				})
+				It("should succeed", func() {
+					Expect(valid).To(BeTrue())
+				})
+			})
+
 			Context("when breach_duration_secs is missing", func() {
 				BeforeEach(func() {
 					policyString = `{

@@ -171,7 +171,7 @@ module.exports = function(settings) {
     };
     request(options, function(error, response, body) {
       if (error) {
-        logger.error("Failed to check user token via UAA", { "userToken": userToken, "http-options": options, "error": error });
+        logger.error("Failed to check user token via UAA", { "error": error });
         error.statusCode = HttpStatus.INTERNAL_SERVER_ERROR;
         callback(error, null);
       } else {
@@ -181,7 +181,7 @@ module.exports = function(settings) {
           var errorObj = {
             "statusCode": response.statusCode
           };
-          logger.error("Failed to check user token via UAA", { "userToken": userToken, "http-options": options, "error": errorObj, "body": body });
+          logger.error("Failed to check user token via UAA", { "error": errorObj, "body": body });
           callback(errorObj, null);
         }
       }

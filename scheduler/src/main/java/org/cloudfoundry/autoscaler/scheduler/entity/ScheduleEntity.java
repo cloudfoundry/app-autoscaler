@@ -70,6 +70,17 @@ public class ScheduleEntity {
 	@JsonProperty(value = "guid")
 	private String guid;
 
+	public void copy(ScheduleEntity orig) {
+		this.appId = orig.appId;
+		this.timeZone = orig.timeZone;
+		this.defaultInstanceMaxCount = orig.defaultInstanceMaxCount;
+		this.defaultInstanceMinCount = orig.defaultInstanceMinCount;
+		this.instanceMaxCount = orig.instanceMaxCount;
+		this.instanceMinCount = orig.instanceMinCount;
+		this.initialMinInstanceCount = orig.initialMinInstanceCount;
+		this.guid = orig.guid;
+	}
+	
 	public Long getId() {
 		return id;
 	}

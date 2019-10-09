@@ -11,16 +11,7 @@ import (
 	"github.com/onsi/gomega/ghttp"
 )
 
-type ScalingHistoryResult struct {
-	TotalResults int                        `json:"total_results"`
-	TotalPages   int                        `json:"total_pages"`
-	Page         int                        `json:"page"`
-	PrevUrl      string                     `json:"prev_url"`
-	NextUrl      string                     `json:"next_url"`
-	Resources    []models.AppScalingHistory `json:"resources"`
-}
-
-var _ = Describe("Integration_Api_ScalingEngine", func() {
+var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 	var (
 		initInstanceCount int = 2
 		appId             string
@@ -36,15 +27,18 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), defaultHttpClientTimeout, tmpDir)
 		startScalingEngine()
 
-		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], components.Ports[APIPublicServer], false, 200, fakeCCNOAAUAA.URL(), dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[EventGenerator]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ServiceBrokerInternal]), true, defaultHttpClientTimeout, 30, 30, tmpDir)
-		startApiServer()
+		golangApiServerConfPath = components.PrepareGolangApiServerConfig(dbUrl, components.Ports[GolangAPIServer], components.Ports[GolangServiceBroker],
+			fakeCCNOAAUAA.URL(), false, 200, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]),
+			fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[EventGenerator]), "https://127.0.0.1:8888",
+			true, defaultHttpClientTimeout, tmpDir)
+		startGolangApiServer()
 		appId = getRandomId()
 		pathVariables = []string{appId}
 
 	})
 
 	AfterEach(func() {
-		stopApiServer()
+		stopGolangApiServer()
 		stopScalingEngine()
 	})
 	Describe("Get scaling histories", func() {
@@ -56,8 +50,10 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order-direction": "desc", "page": "1", "results-per-page": "5"}
 			})
 			It("should error with status code 500", func() {
-				By("check public api")
-				checkPublicAPIResponseContentWithParameters(getScalingHistories, components.Ports[APIPublicServer], pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{})
+				checkPublicAPIResponseContentWithParameters(getScalingHistories, components.Ports[GolangAPIServer], pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{
+					"code":    "Interal-Server-Error",
+					"message": "Failed to check space developer permission",
+				})
 			})
 		})
 
@@ -74,8 +70,10 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order-direction": "desc", "page": "1", "results-per-page": "5"}
 			})
 			It("should error with status code 500", func() {
-				By("check public api")
-				checkPublicAPIResponseContentWithParameters(getScalingHistories, components.Ports[APIPublicServer], pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{})
+				checkPublicAPIResponseContentWithParameters(getScalingHistories, components.Ports[GolangAPIServer], pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{
+					"code":    "Interal-Server-Error",
+					"message": "Failed to check space developer permission",
+				})
 			})
 		})
 
@@ -99,8 +97,11 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order-direction": "desc", "page": "1", "results-per-page": "5"}
 			})
 			It("should error with status code 401", func() {
-				By("check public api")
-				checkPublicAPIResponseContentWithParameters(getScalingHistories, components.Ports[APIPublicServer], pathVariables, parameters, http.StatusUnauthorized, map[string]interface{}{})
+				checkPublicAPIResponseContentWithParameters(getScalingHistories, components.Ports[GolangAPIServer],
+					pathVariables, parameters, http.StatusUnauthorized, map[string]interface{}{
+						"code":    "Unauthorized",
+						"message": "You are not authorized to perform the requested action",
+					})
 			})
 		})
 
@@ -115,8 +116,11 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 				parameters = map[string]string{"start-time": "1111", "end-time": "9999", "order-direction": "desc", "page": "1", "results-per-page": "5"}
 			})
 			It("should error with status code 401", func() {
-				By("check public api")
-				checkPublicAPIResponseContentWithParameters(getScalingHistories, components.Ports[APIPublicServer], pathVariables, parameters, http.StatusUnauthorized, map[string]interface{}{})
+				checkPublicAPIResponseContentWithParameters(getScalingHistories, components.Ports[GolangAPIServer],
+					pathVariables, parameters, http.StatusUnauthorized, map[string]interface{}{
+						"code":    "Unauthorized",
+						"message": "You are not authorized to perform the requested action",
+					})
 			})
 		})
 
@@ -127,8 +131,10 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 			})
 
 			It("should error with status code 500", func() {
-				By("check public api")
-				checkPublicAPIResponseContentWithParameters(getScalingHistories, components.Ports[APIPublicServer], pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{"error": fmt.Sprintf("connect ECONNREFUSED 127.0.0.1:%d", components.Ports[ScalingEngine])})
+				checkPublicAPIResponseContentWithParameters(getScalingHistories, components.Ports[GolangAPIServer], pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{
+					"message": "Error retrieving scaling history from scaling engine",
+					"code":    "Interal-Server-Error",
+				})
 
 			})
 
@@ -201,8 +207,7 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 						},
 					},
 				}
-				By("check public api")
-				checkScalingHistoryResult(components.Ports[APIPublicServer], pathVariables, parameters, result)
+				checkScalingHistoryResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 
 				By("get the 2nd page")
 				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order-direction": "desc", "page": "2", "results-per-page": "2"}
@@ -237,8 +242,7 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 						},
 					},
 				}
-				By("check public api")
-				checkScalingHistoryResult(components.Ports[APIPublicServer], pathVariables, parameters, result)
+				checkScalingHistoryResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 
 				By("get the 3rd page")
 				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order-direction": "desc", "page": "3", "results-per-page": "2"}
@@ -261,8 +265,7 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 						},
 					},
 				}
-				By("check public api")
-				checkScalingHistoryResult(components.Ports[APIPublicServer], pathVariables, parameters, result)
+				checkScalingHistoryResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 
 				By("the 4th page should be empty")
 				parameters = map[string]string{"start-time": "111111", "end-time": "999999", "order-direction": "desc", "page": "4", "results-per-page": "2"}
@@ -273,8 +276,118 @@ var _ = Describe("Integration_Api_ScalingEngine", func() {
 					PrevUrl:      getScalingHistoriesUrl(appId, parameters, 3),
 					Resources:    []models.AppScalingHistory{},
 				}
-				By("check public api")
-				checkScalingHistoryResult(components.Ports[APIPublicServer], pathVariables, parameters, result)
+				checkScalingHistoryResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
+			})
+			It("should get the scaling histories in specified time scope", func() {
+				By("get the results from 555555")
+				parameters = map[string]string{"start-time": "555555", "order-direction": "desc", "page": "1", "results-per-page": "10"}
+				result := ScalingHistoryResult{
+					TotalResults: 2,
+					TotalPages:   1,
+					Page:         1,
+					Resources: []models.AppScalingHistory{
+						models.AppScalingHistory{
+							AppId:        appId,
+							Timestamp:    666666,
+							ScalingType:  models.ScalingTypeDynamic,
+							Status:       models.ScalingStatusSucceeded,
+							OldInstances: 2,
+							NewInstances: 4,
+							Reason:       "a reason",
+							Message:      "a message",
+							Error:        "",
+						},
+						models.AppScalingHistory{
+							AppId:        appId,
+							Timestamp:    555555,
+							ScalingType:  models.ScalingTypeDynamic,
+							Status:       models.ScalingStatusSucceeded,
+							OldInstances: 2,
+							NewInstances: 4,
+							Reason:       "a reason",
+							Message:      "a message",
+							Error:        "",
+						},
+					},
+				}
+				checkScalingHistoryResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
+
+				By("get the results to 333333")
+				parameters = map[string]string{"end-time": "333333", "order-direction": "desc", "page": "1", "results-per-page": "10"}
+				result = ScalingHistoryResult{
+					TotalResults: 2,
+					TotalPages:   1,
+					Page:         1,
+					Resources: []models.AppScalingHistory{
+						models.AppScalingHistory{
+							AppId:        appId,
+							Timestamp:    333333,
+							ScalingType:  models.ScalingTypeDynamic,
+							Status:       models.ScalingStatusSucceeded,
+							OldInstances: 2,
+							NewInstances: 4,
+							Reason:       "a reason",
+							Message:      "a message",
+							Error:        "",
+						},
+						models.AppScalingHistory{
+							AppId:        appId,
+							Timestamp:    222222,
+							ScalingType:  models.ScalingTypeDynamic,
+							Status:       models.ScalingStatusSucceeded,
+							OldInstances: 2,
+							NewInstances: 4,
+							Reason:       "a reason",
+							Message:      "a message",
+							Error:        "",
+						},
+					},
+				}
+				checkScalingHistoryResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
+
+				By("get the results from 333333 to 555555")
+				parameters = map[string]string{"start-time": "333333", "end-time": "555555", "order-direction": "asc", "page": "1", "results-per-page": "10"}
+				result = ScalingHistoryResult{
+					TotalResults: 3,
+					TotalPages:   1,
+					Page:         1,
+					Resources: []models.AppScalingHistory{
+						models.AppScalingHistory{
+							AppId:        appId,
+							Timestamp:    333333,
+							ScalingType:  models.ScalingTypeDynamic,
+							Status:       models.ScalingStatusSucceeded,
+							OldInstances: 2,
+							NewInstances: 4,
+							Reason:       "a reason",
+							Message:      "a message",
+							Error:        "",
+						},
+						models.AppScalingHistory{
+							AppId:        appId,
+							Timestamp:    444444,
+							ScalingType:  models.ScalingTypeDynamic,
+							Status:       models.ScalingStatusSucceeded,
+							OldInstances: 2,
+							NewInstances: 4,
+							Reason:       "a reason",
+							Message:      "a message",
+							Error:        "",
+						},
+						models.AppScalingHistory{
+							AppId:        appId,
+							Timestamp:    555555,
+							ScalingType:  models.ScalingTypeDynamic,
+							Status:       models.ScalingStatusSucceeded,
+							OldInstances: 2,
+							NewInstances: 4,
+							Reason:       "a reason",
+							Message:      "a message",
+							Error:        "",
+						},
+					},
+				}
+				checkScalingHistoryResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 			})
 
 		})
