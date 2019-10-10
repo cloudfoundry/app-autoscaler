@@ -15,7 +15,6 @@ import (
 	"autoscaler/db"
 	"autoscaler/helpers"
 	"autoscaler/models"
-	"autoscaler/ratelimiter"
 	"autoscaler/routes"
 
 	"code.cloudfoundry.org/cfhttp/handlers"
@@ -32,10 +31,9 @@ type PublicApiHandler struct {
 	eventGeneratorClient   *http.Client
 	policyValidator        *policyvalidator.PolicyValidator
 	schedulerUtil          *schedulerutil.SchedulerUtil
-	rateLimiter            ratelimiter.Limiter
 }
 
-func NewPublicApiHandler(logger lager.Logger, conf *config.Config, policydb db.PolicyDB, rateLimiter ratelimiter.Limiter) *PublicApiHandler {
+func NewPublicApiHandler(logger lager.Logger, conf *config.Config, policydb db.PolicyDB) *PublicApiHandler {
 	seClient, err := helpers.CreateHTTPClient(&conf.ScalingEngine.TLSClientCerts)
 	if err != nil {
 		logger.Error("Failed to create http client for ScalingEngine", err, lager.Data{"scalingengine": conf.ScalingEngine.TLSClientCerts})
@@ -60,7 +58,6 @@ func NewPublicApiHandler(logger lager.Logger, conf *config.Config, policydb db.P
 		eventGeneratorClient:   egClient,
 		policyValidator:        policyvalidator.NewPolicyValidator(conf.PolicySchemaPath),
 		schedulerUtil:          schedulerutil.NewSchedulerUtil(conf, logger),
-		rateLimiter:            rateLimiter,
 	}
 }
 
@@ -76,14 +73,6 @@ func (h *PublicApiHandler) GetScalingPolicy(w http.ResponseWriter, r *http.Reque
 	}
 
 	h.logger.Info("Get Scaling Policy", lager.Data{"appId": appId})
-
-	if h.rateLimiter.ExceedsLimit(appId) {
-		h.logger.Info("error-exceed-rate-limit", lager.Data{"appId": appId})
-		handlers.WriteJSONResponse(w, http.StatusTooManyRequests, models.ErrorResponse{
-			Code:    "Request-Limit-Exceeded",
-			Message: "Too many requests"})
-		return
-	}
 
 	scalingPolicy, err := h.policydb.GetAppPolicy(appId)
 	if err != nil {
@@ -131,14 +120,6 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 	}
 
 	h.logger.Info("Attach Scaling Policy", lager.Data{"appId": appId})
-
-	if h.rateLimiter.ExceedsLimit(appId) {
-		h.logger.Info("error-exceed-rate-limit", lager.Data{"appId": appId})
-		handlers.WriteJSONResponse(w, http.StatusTooManyRequests, models.ErrorResponse{
-			Code:    "Request-Limit-Exceeded",
-			Message: "Too many requests"})
-		return
-	}
 
 	policyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -198,15 +179,6 @@ func (h *PublicApiHandler) DetachScalingPolicy(w http.ResponseWriter, r *http.Re
 	}
 
 	h.logger.Info("Deleting policy json", lager.Data{"appId": appId})
-
-	if h.rateLimiter.ExceedsLimit(appId) {
-		h.logger.Info("error-exceed-rate-limit", lager.Data{"appId": appId})
-		handlers.WriteJSONResponse(w, http.StatusTooManyRequests, models.ErrorResponse{
-			Code:    "Request-Limit-Exceeded",
-			Message: "Too many requests"})
-		return
-	}
-
 	err := h.policydb.DeletePolicy(appId)
 	if err != nil {
 		h.logger.Error("Failed to delete policy from database", err, nil)
@@ -232,14 +204,6 @@ func (h *PublicApiHandler) GetScalingHistories(w http.ResponseWriter, r *http.Re
 	appId := vars["appId"]
 
 	h.logger.Info("Get ScalingHistories", lager.Data{"appId": appId})
-
-	if h.rateLimiter.ExceedsLimit(appId) {
-		h.logger.Info("error-exceed-rate-limit", lager.Data{"appId": appId})
-		handlers.WriteJSONResponse(w, http.StatusTooManyRequests, models.ErrorResponse{
-			Code:    "Request-Limit-Exceeded",
-			Message: "Too many requests"})
-		return
-	}
 
 	parameters, err := parseParameter(r, vars)
 	if err != nil {
@@ -297,14 +261,6 @@ func (h *PublicApiHandler) GetAggregatedMetricsHistories(w http.ResponseWriter, 
 	metricType := vars["metricType"]
 
 	h.logger.Info("Get AggregatedMetricHistories", lager.Data{"appId": appId, "metricType": metricType})
-
-	if h.rateLimiter.ExceedsLimit(appId) {
-		h.logger.Info("error-exceed-rate-limit", lager.Data{"appId": appId})
-		handlers.WriteJSONResponse(w, http.StatusTooManyRequests, models.ErrorResponse{
-			Code:    "Request-Limit-Exceeded",
-			Message: "Too many requests"})
-		return
-	}
 
 	parameters, err := parseParameter(r, vars)
 	if err != nil {
@@ -372,14 +328,6 @@ func (h *PublicApiHandler) GetInstanceMetricsHistories(w http.ResponseWriter, r 
 	instanceIndex := r.URL.Query().Get("instance-index")
 
 	h.logger.Info("GetInstanceMetricsHistories", lager.Data{"appId": appId, "metricType": metricType, "instanceIndex": instanceIndex})
-
-	if h.rateLimiter.ExceedsLimit(appId) {
-		h.logger.Info("error-exceed-rate-limit", lager.Data{"appId": appId})
-		handlers.WriteJSONResponse(w, http.StatusTooManyRequests, models.ErrorResponse{
-			Code:    "Request-Limit-Exceeded",
-			Message: "Too many requests"})
-		return
-	}
 
 	parameters, err := parseParameter(r, vars)
 	if err != nil {
@@ -469,17 +417,6 @@ func (h *PublicApiHandler) CreateCredential(w http.ResponseWriter, r *http.Reque
 		})
 		return
 	}
-
-	h.logger.Info("Create credential", lager.Data{"appId": appId})
-
-	if h.rateLimiter.ExceedsLimit(appId) {
-		h.logger.Info("error-exceed-rate-limit", lager.Data{"appId": appId})
-		handlers.WriteJSONResponse(w, http.StatusTooManyRequests, models.ErrorResponse{
-			Code:    "Request-Limit-Exceeded",
-			Message: "Too many requests"})
-		return
-	}
-
 	var userProvidedCredential *models.Credential
 	bodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -509,6 +446,7 @@ func (h *PublicApiHandler) CreateCredential(w http.ResponseWriter, r *http.Reque
 		}
 	}
 
+	h.logger.Info("Create credential", lager.Data{"appId": appId})
 	cred, err := custom_metrics_cred_helper.CreateCredential(appId, userProvidedCredential, h.policydb, custom_metrics_cred_helper.MaxRetry)
 	if err != nil {
 		h.logger.Error("Failed to create credential", err, lager.Data{"appId": appId})
@@ -541,15 +479,6 @@ func (h *PublicApiHandler) DeleteCredential(w http.ResponseWriter, r *http.Reque
 	}
 
 	h.logger.Info("Delete credential", lager.Data{"appId": appId})
-
-	if h.rateLimiter.ExceedsLimit(appId) {
-		h.logger.Info("error-exceed-rate-limit", lager.Data{"appId": appId})
-		handlers.WriteJSONResponse(w, http.StatusTooManyRequests, models.ErrorResponse{
-			Code:    "Request-Limit-Exceeded",
-			Message: "Too many requests"})
-		return
-	}
-
 	err := custom_metrics_cred_helper.DeleteCredential(appId, h.policydb, custom_metrics_cred_helper.MaxRetry)
 	if err != nil {
 		h.logger.Error("Failed to delete credential", err, lager.Data{"appId": appId})
