@@ -40,8 +40,8 @@ func NewServer(logger lager.Logger, conf *config.Config, policyDB db.PolicyDB, c
 	rateLimiterMiddleware := ratelimiter.NewRateLimiterMiddleware("appid", conf.RateLimit.MaxAmount, conf.RateLimit.ValidDuration, logger.Session("metricforwarder-ratelimiter-middleware"))
 
 	r := routes.MetricsForwarderRoutes()
-	r.Use(httpStatusCollectMiddleware.Collect)
 	r.Use(rateLimiterMiddleware.CheckRateLimit)
+	r.Use(httpStatusCollectMiddleware.Collect)
 	r.Get(routes.PostCustomMetricsRouteName).Handler(VarsFunc(mh.PublishMetrics))
 
 	addr := fmt.Sprintf("0.0.0.0:%d", conf.Server.Port)
