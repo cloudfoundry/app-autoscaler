@@ -56,22 +56,17 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		Level: "debug",
 	}
 
-	rateLimitConfig := models.RateLimitConfig {
-		MaxAmount:     10,
-		ValidDuration: 1 * time.Second,
-	}
-
 	conf := &config.Config{
 		Server:            serverConfig,
 		Logging:           loggerConfig,
 		LoggregatorConfig: loggregatorConfig,
-		RateLimit:         rateLimitConfig,
 	}
 	policyDB = &fakes.FakePolicyDB{}
 	credentialCache = *cache.New(10*time.Minute, -1)
 	allowedMetricCache = *cache.New(10*time.Minute, -1)
 	httpStatusCollector := &fakes.FakeHTTPStatusCollector{}
-	httpServer, err := NewServer(lager.NewLogger("test"), conf, policyDB, credentialCache, allowedMetricCache, httpStatusCollector)
+	rateLimiter = &fakes.FakeLimiter{}
+	httpServer, err := NewServer(lager.NewLogger("test"), conf, policyDB, credentialCache, allowedMetricCache, httpStatusCollector, rateLimiter)
 	Expect(err).NotTo(HaveOccurred())
 	serverUrl = fmt.Sprintf("http://127.0.0.1:%d", conf.Server.Port)
 	serverProcess = ginkgomon.Invoke(httpServer)

@@ -26,10 +26,10 @@ func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vh(w, r, vars)
 }
 
-func NewPublicApiServer(logger lager.Logger, conf *config.Config, policydb db.PolicyDB, checkBindingFunc api.CheckBindingFunc, cfclient cf.CFClient, httpStatusCollector healthendpoint.HTTPStatusCollector) (ifrit.Runner, error) {
+func NewPublicApiServer(logger lager.Logger, conf *config.Config, policydb db.PolicyDB, checkBindingFunc api.CheckBindingFunc, cfclient cf.CFClient, httpStatusCollector healthendpoint.HTTPStatusCollector, rateLimiter ratelimiter.Limiter) (ifrit.Runner, error) {
 	pah := NewPublicApiHandler(logger, conf, policydb)
 	mw := NewMiddleware(logger, cfclient, checkBindingFunc)
-	rateLimiterMiddleware := ratelimiter.NewRateLimiterMiddleware("appId", conf.RateLimit.MaxAmount, conf.RateLimit.ValidDuration, logger.Session("golangapiserver-ratelimiter-middleware"))
+	rateLimiterMiddleware := ratelimiter.NewRateLimiterMiddleware("appId", rateLimiter, logger.Session("api-ratelimiter-middleware"))
 	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(httpStatusCollector)
 	r := routes.ApiOpenRoutes()
 	r.Use(httpStatusCollectMiddleware.Collect)

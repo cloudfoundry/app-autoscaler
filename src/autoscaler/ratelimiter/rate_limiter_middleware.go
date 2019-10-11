@@ -2,7 +2,6 @@ package ratelimiter
 
 import (
 	"net/http"
-	"time"
 
 	"autoscaler/models"
 
@@ -17,15 +16,7 @@ type RateLimiterMiddleware struct {
 	RateLimiter Limiter
 }
 
-func NewRateLimiterMiddleware(key string, maxAmount int, validDuration time.Duration, logger lager.Logger) *RateLimiterMiddleware {
-	return &RateLimiterMiddleware{
-		Key:         key,
-		logger:      logger,
-		RateLimiter: DefaultRateLimiter(maxAmount, validDuration, logger),
-	}
-}
-
-func NewRateLimiterMiddlewareWithLimiter(key string, rateLimiter Limiter, logger lager.Logger) *RateLimiterMiddleware {
+func NewRateLimiterMiddleware(key string, rateLimiter Limiter, logger lager.Logger) *RateLimiterMiddleware {
 	return &RateLimiterMiddleware{
 		Key:         key,
 		logger:      logger,
