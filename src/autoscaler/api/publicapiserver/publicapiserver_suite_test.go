@@ -10,6 +10,7 @@ import (
 	"regexp"
 	"strconv"
 	"testing"
+	"time"
 
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
@@ -64,7 +65,6 @@ var (
 
 	fakeCFClient     *fakes.FakeCFClient
 	fakePolicyDB     *fakes.FakePolicyDB
-	rateLimiter      *fakes.FakeLimiter
 	checkBindingFunc api.CheckBindingFunc
 	hasBinding       bool = true
 
@@ -91,8 +91,7 @@ var _ = BeforeSuite(func() {
 	}
 	fakeCFClient = &fakes.FakeCFClient{}
 	httpStatusCollector := &fakes.FakeHTTPStatusCollector{}
-	rateLimiter = &fakes.FakeLimiter{}
-	httpServer, err := publicapiserver.NewPublicApiServer(lagertest.NewTestLogger("public_apiserver"), conf, fakePolicyDB, checkBindingFunc, fakeCFClient, httpStatusCollector, rateLimiter)
+	httpServer, err := publicapiserver.NewPublicApiServer(lagertest.NewTestLogger("public_apiserver"), conf, fakePolicyDB, checkBindingFunc, fakeCFClient, httpStatusCollector)
 	Expect(err).NotTo(HaveOccurred())
 
 	serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(apiPort))
@@ -192,5 +191,9 @@ func CreateConfig(useBuildInMode bool, apiServerPort int) *config.Config {
 			SkipSSLValidation: true,
 		},
 		UseBuildInMode: useBuildInMode,
+		RateLimit: models.RateLimitConfig {
+			MaxAmount:     10,
+			ValidDuration: 1 * time.Second,
+		},
 	}
 }

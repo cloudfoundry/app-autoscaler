@@ -26,7 +26,7 @@ func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vh(w, r, vars)
 }
 
-func NewServer(logger lager.Logger, conf *config.Config, policyDB db.PolicyDB, credentialCache cache.Cache, allowedMetricCache cache.Cache, httpStatusCollector healthendpoint.HTTPStatusCollector, rateLimiter ratelimiter.Limiter) (ifrit.Runner, error) {
+func NewServer(logger lager.Logger, conf *config.Config, policyDB db.PolicyDB, credentialCache cache.Cache, allowedMetricCache cache.Cache, httpStatusCollector healthendpoint.HTTPStatusCollector) (ifrit.Runner, error) {
 
 	metricForwarder, err := forwarder.NewMetricForwarder(logger, conf)
 	if err != nil {
@@ -34,12 +34,14 @@ func NewServer(logger lager.Logger, conf *config.Config, policyDB db.PolicyDB, c
 		os.Exit(1)
 	}
 
-	mh := NewCustomMetricsHandler(logger, metricForwarder, policyDB, credentialCache, allowedMetricCache, conf.CacheTTL, rateLimiter)
+	mh := NewCustomMetricsHandler(logger, metricForwarder, policyDB, credentialCache, allowedMetricCache, conf.CacheTTL)
 
 	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(httpStatusCollector)
+	rateLimiterMiddleware := ratelimiter.NewRateLimiterMiddleware("appid", conf.RateLimit.MaxAmount, conf.RateLimit.ValidDuration, logger.Session("metricforwarder-ratelimiter-middleware"))
 
 	r := routes.MetricsForwarderRoutes()
 	r.Use(httpStatusCollectMiddleware.Collect)
+	r.Use(rateLimiterMiddleware.CheckRateLimit)
 	r.Get(routes.PostCustomMetricsRouteName).Handler(VarsFunc(mh.PublishMetrics))
 
 	addr := fmt.Sprintf("0.0.0.0:%d", conf.Server.Port)

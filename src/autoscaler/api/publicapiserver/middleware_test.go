@@ -27,7 +27,6 @@ var _ = Describe("Middleware", func() {
 		fakeCFClient     *fakes.FakeCFClient
 		logger           *lagertest.TestLogger
 		checkBindingFunc api.CheckBindingFunc
-		rateLimiter      *fakes.FakeLimiter
 	)
 	Describe("Oauth", func() {
 
@@ -37,7 +36,7 @@ var _ = Describe("Middleware", func() {
 			logger = lagertest.NewTestLogger("oauth")
 			mw = NewMiddleware(logger, fakeCFClient, func(appId string) bool {
 				return true
-			}, rateLimiter)
+			})
 
 			router = mux.NewRouter()
 			router.HandleFunc("/", GetTestHandler())
@@ -182,7 +181,7 @@ var _ = Describe("Middleware", func() {
 	Describe("CheckBinding", func() {
 
 		JustBeforeEach(func() {
-			mw = NewMiddleware(lagertest.NewTestLogger("middleware"), fakeCFClient, checkBindingFunc, rateLimiter)
+			mw = NewMiddleware(lagertest.NewTestLogger("middleware"), fakeCFClient, checkBindingFunc)
 
 			router = mux.NewRouter()
 			router.HandleFunc("/", GetTestHandler())
@@ -225,7 +224,7 @@ var _ = Describe("Middleware", func() {
 			logger = lagertest.NewTestLogger("oauth")
 			mw = NewMiddleware(logger, fakeCFClient, func(appId string) bool {
 				return true
-			}, rateLimiter)
+			})
 
 			router = mux.NewRouter()
 			router.HandleFunc("/", GetTestHandler())
@@ -240,138 +239,4 @@ var _ = Describe("Middleware", func() {
 		})
 	})
 
-	Describe("CheckRateLimit", func() {
-		BeforeEach(func() {
-			rateLimiter = &fakes.FakeLimiter{}
-			mw = NewMiddleware(lagertest.NewTestLogger("middleware"), fakeCFClient, func(appId string) bool {
-				return true
-			}, rateLimiter)
-
-			router = mux.NewRouter()
-			router.HandleFunc("/", GetTestHandler())
-			router.HandleFunc(routes.PublicApiPolicyPath, GetTestHandler())
-			router.HandleFunc(routes.PublicApiCredentialPath, GetTestHandler())
-			router.HandleFunc("/v1/apps" + routes.PublicApiMetricsHistoryPath, GetTestHandler())
-			router.HandleFunc("/v1/apps" + routes.PublicApiAggregatedMetricsHistoryPath, GetTestHandler())
-			router.HandleFunc("/v1/apps" + routes.PublicApiScalingHistoryPath, GetTestHandler())
-			router.Use(mw.CheckRateLimit)
-
-			resp = httptest.NewRecorder()
-		})
-
-		JustBeforeEach(func() {
-			router.ServeHTTP(resp, req)
-		})
-
-		Context("policy api", func() {
-			Context("exceed rate limiting", func() {
-				BeforeEach(func() {
-					rateLimiter.ExceedsLimitReturns(true)
-					req = httptest.NewRequest(http.MethodGet, "/v1/apps/"+TEST_APP_ID+"/policy", nil)
-				})
-				It("should succeed with 429", func() {
-					Expect(resp.Code).To(Equal(http.StatusTooManyRequests))
-					Expect(resp.Body.String()).To(Equal(`{"code":"Request-Limit-Exceeded","message":"Too many requests"}`))
-				})
-			})
-			Context("below rate limiting", func() {
-				BeforeEach(func() {
-					rateLimiter.ExceedsLimitReturns(false)
-					req = httptest.NewRequest(http.MethodGet, "/v1/apps/"+TEST_APP_ID+"/policy", nil)
-				})
-				It("should succeed with 200", func() {
-					Expect(resp.Code).To(Equal(http.StatusOK))
-				})
-			})
-		})
-
-		Context("instance metrics api", func() {
-			Context("exceed rate limiting", func() {
-				BeforeEach(func() {
-					rateLimiter.ExceedsLimitReturns(true)
-					req = httptest.NewRequest(http.MethodGet, "/v1/apps/"+TEST_APP_ID+"/metric_histories/cpu", nil)
-				})
-				It("should succeed with 429", func() {
-					Expect(resp.Code).To(Equal(http.StatusTooManyRequests))
-					Expect(resp.Body.String()).To(Equal(`{"code":"Request-Limit-Exceeded","message":"Too many requests"}`))
-				})
-			})
-			Context("below rate limiting", func() {
-				BeforeEach(func() {
-					rateLimiter.ExceedsLimitReturns(false)
-					req = httptest.NewRequest(http.MethodGet, "/v1/apps/"+TEST_APP_ID+"/metric_histories/cpu", nil)
-				})
-				It("should succeed with 200", func() {
-					Expect(resp.Code).To(Equal(http.StatusOK))
-				})
-			})
-		})
-
-		Context("aggregated metrics api", func() {
-			Context("exceed rate limiting", func() {
-				BeforeEach(func() {
-					rateLimiter.ExceedsLimitReturns(true)
-					req = httptest.NewRequest(http.MethodGet, "/v1/apps/"+TEST_APP_ID+"/aggregated_metric_histories/cpu", nil)
-				})
-				It("should succeed with 429", func() {
-					Expect(resp.Code).To(Equal(http.StatusTooManyRequests))
-					Expect(resp.Body.String()).To(Equal(`{"code":"Request-Limit-Exceeded","message":"Too many requests"}`))
-				})
-			})
-			Context("below rate limiting", func() {
-				BeforeEach(func() {
-					rateLimiter.ExceedsLimitReturns(false)
-					req = httptest.NewRequest(http.MethodGet, "/v1/apps/"+TEST_APP_ID+"/aggregated_metric_histories/cpu", nil)
-				})
-				It("should succeed with 200", func() {
-					Expect(resp.Code).To(Equal(http.StatusOK))
-				})
-			})
-		})
-
-		Context("scaling histories api", func() {
-			Context("exceed rate limiting", func() {
-				BeforeEach(func() {
-					rateLimiter.ExceedsLimitReturns(true)
-					req = httptest.NewRequest(http.MethodGet, "/v1/apps/"+TEST_APP_ID+"/scaling_histories", nil)
-				})
-				It("should succeed with 429", func() {
-					Expect(resp.Code).To(Equal(http.StatusTooManyRequests))
-					Expect(resp.Body.String()).To(Equal(`{"code":"Request-Limit-Exceeded","message":"Too many requests"}`))
-				})
-			})
-			Context("below rate limiting", func() {
-				BeforeEach(func() {
-					rateLimiter.ExceedsLimitReturns(false)
-					req = httptest.NewRequest(http.MethodGet, "/v1/apps/"+TEST_APP_ID+"/scaling_histories", nil)
-				})
-				It("should succeed with 200", func() {
-					Expect(resp.Code).To(Equal(http.StatusOK))
-				})
-			})
-		})
-
-		Context("credential api", func() {
-			Context("exceed rate limiting", func() {
-				BeforeEach(func() {
-					rateLimiter.ExceedsLimitReturns(true)
-					req = httptest.NewRequest(http.MethodGet, "/v1/apps/"+TEST_APP_ID+"/credential", nil)
-				})
-				It("should succeed with 429", func() {
-					Expect(resp.Code).To(Equal(http.StatusTooManyRequests))
-					Expect(resp.Body.String()).To(Equal(`{"code":"Request-Limit-Exceeded","message":"Too many requests"}`))
-				})
-			})
-			Context("below rate limiting", func() {
-				BeforeEach(func() {
-					rateLimiter.ExceedsLimitReturns(false)
-					req = httptest.NewRequest(http.MethodGet, "/v1/apps/"+TEST_APP_ID+"/credential", nil)
-				})
-				It("should succeed with 200", func() {
-					Expect(resp.Code).To(Equal(http.StatusOK))
-				})
-			})
-		})
-
-	})
 })

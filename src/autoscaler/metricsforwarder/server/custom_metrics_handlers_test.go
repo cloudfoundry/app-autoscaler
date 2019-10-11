@@ -31,7 +31,6 @@ var _ = Describe("MetricHandler", func() {
 
 		policyDB         *fakes.FakePolicyDB
 		metricsforwarder *fakes.FakeMetricForwarder
-		rateLimiter      *fakes.FakeLimiter
 
 		resp *httptest.ResponseRecorder
 		req  *http.Request
@@ -50,14 +49,13 @@ var _ = Describe("MetricHandler", func() {
 		logger := lager.NewLogger("metrichandler-test")
 		policyDB = &fakes.FakePolicyDB{}
 		metricsforwarder = &fakes.FakeMetricForwarder{}
-		rateLimiter = &fakes.FakeLimiter{}
 		credentials = &models.Credential{}
 		credentialCache = *cache.New(10*time.Minute, -1)
 		allowedMetricCache = *cache.New(10*time.Minute, -1)
 		allowedMetricTypeSet = make(map[string]struct{})
 		vars = make(map[string]string)
 		resp = httptest.NewRecorder()
-		handler = NewCustomMetricsHandler(logger, metricsforwarder, policyDB, credentialCache, allowedMetricCache, 10*time.Minute, rateLimiter)
+		handler = NewCustomMetricsHandler(logger, metricsforwarder, policyDB, credentialCache, allowedMetricCache, 10*time.Minute)
 		credentialCache.Flush()
 		allowedMetricCache.Flush()
 	})
@@ -416,46 +414,6 @@ var _ = Describe("MetricHandler", func() {
 				}))
 			})
 
-		})
-
-		Context("when a request to publish custom metrics comes beyond ratelimit", func() {
-			BeforeEach(func() {
-				scalingPolicy = &models.ScalingPolicy{
-					InstanceMin: 1,
-					InstanceMax: 6,
-					ScalingRules: []*models.ScalingRule{{
-						MetricType:            "queuelength",
-						BreachDurationSeconds: 60,
-						Threshold:             10,
-						Operator:              ">",
-						CoolDownSeconds:       60,
-						Adjustment:            "+1"}}}
-				policyDB.GetAppPolicyReturns(scalingPolicy, nil)
-				credentials.Username = "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu"
-				credentials.Password = "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G"
-				credentialCache.Set("an-app-id", credentials, 10*time.Minute)
-				allowedMetricTypeSet["queuelength"] = struct{}{}
-				allowedMetricCache.Set("an-app-id", allowedMetricTypeSet, 10*time.Minute)
-				customMetrics := []*models.CustomMetric{
-					&models.CustomMetric{
-						Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 1, AppGUID: "an-app-id",
-					},
-				}
-				body, err = json.Marshal(models.MetricsConsumer{InstanceIndex: 0, CustomMetrics: customMetrics})
-				rateLimiter.ExceedsLimitReturns(true)
-				Expect(err).NotTo(HaveOccurred())
-			})
-
-			It("returns status code 429", func() {
-				Expect(policyDB.GetCredentialCallCount()).To(Equal(0))
-				Expect(resp.Code).To(Equal(http.StatusTooManyRequests))
-				errJson := &models.ErrorResponse{}
-				err = json.Unmarshal(resp.Body.Bytes(), errJson)
-				Expect(errJson).To(Equal(&models.ErrorResponse{
-					Code:    "Request-Limit-Exceeded",
-					Message: "Too many requests",
-				}))
-			})
 		})
 	})
 

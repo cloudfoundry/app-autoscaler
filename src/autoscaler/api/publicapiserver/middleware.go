@@ -7,7 +7,6 @@ import (
 	"autoscaler/api"
 	"autoscaler/cf"
 	"autoscaler/models"
-	"autoscaler/ratelimiter"
 
 	"code.cloudfoundry.org/cfhttp/handlers"
 	"code.cloudfoundry.org/lager"
@@ -20,15 +19,13 @@ type Middleware struct {
 	cfClient         cf.CFClient
 	cfTokenEndpoint  string
 	checkBindingFunc api.CheckBindingFunc
-	RateLimiter      ratelimiter.Limiter
 }
 
-func NewMiddleware(logger lager.Logger, cfClient cf.CFClient, checkBindingFunc api.CheckBindingFunc, rateLimiter ratelimiter.Limiter) *Middleware {
+func NewMiddleware(logger lager.Logger, cfClient cf.CFClient, checkBindingFunc api.CheckBindingFunc) *Middleware {
 	return &Middleware{
 		logger:           logger,
 		cfClient:         cfClient,
 		checkBindingFunc: checkBindingFunc,
-		RateLimiter:      rateLimiter,
 	}
 }
 
@@ -132,30 +129,6 @@ func (mw *Middleware) RejectCredentialOperationInServiceOffering(next http.Handl
 		})
 		return
 
-	})
-}
-
-func (mw *Middleware) CheckRateLimit(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		appId := vars["appId"]
-		if appId == "" {
-			mw.logger.Error("appId is not present", nil, lager.Data{"url": r.URL.String()})
-			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
-				Code:    "Bad Request",
-				Message: "Malformed or missing appId",
-			})
-			return
-		}
-		if mw.RateLimiter.ExceedsLimit(appId) {
-			mw.logger.Info("error-exceed-rate-limit", lager.Data{"appId": appId})
-			handlers.WriteJSONResponse(w, http.StatusTooManyRequests, models.ErrorResponse{
-				Code:    "Request-Limit-Exceeded",
-				Message: "Too many requests"})
-			return
-		}
-		next.ServeHTTP(w, r)
-		return
 	})
 }
 

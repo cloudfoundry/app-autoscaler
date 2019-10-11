@@ -4,7 +4,6 @@ import (
 	"autoscaler/db"
 	"autoscaler/metricsforwarder/forwarder"
 	"autoscaler/models"
-	"autoscaler/ratelimiter"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -25,10 +24,9 @@ type CustomMetricsHandler struct {
 	allowedMetricCache cache.Cache
 	cacheTTL           time.Duration
 	logger             lager.Logger
-	rateLimiter        ratelimiter.Limiter
 }
 
-func NewCustomMetricsHandler(logger lager.Logger, metricForwarder forwarder.MetricForwarder, policyDB db.PolicyDB, credentialCache cache.Cache, allowedMetricCache cache.Cache, cacheTTL time.Duration, rateLimiter ratelimiter.Limiter) *CustomMetricsHandler {
+func NewCustomMetricsHandler(logger lager.Logger, metricForwarder forwarder.MetricForwarder, policyDB db.PolicyDB, credentialCache cache.Cache, allowedMetricCache cache.Cache, cacheTTL time.Duration) *CustomMetricsHandler {
 	return &CustomMetricsHandler{
 		metricForwarder:    metricForwarder,
 		policyDB:           policyDB,
@@ -36,21 +34,11 @@ func NewCustomMetricsHandler(logger lager.Logger, metricForwarder forwarder.Metr
 		allowedMetricCache: allowedMetricCache,
 		cacheTTL:           cacheTTL,
 		logger:             logger,
-		rateLimiter:        rateLimiter,
 	}
 }
 
 func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Request, vars map[string]string) {
 	w.Header().Set("Content-Type", "application/json")
-	appID := vars["appid"]
-
-	if mh.rateLimiter.ExceedsLimit(appID) {
-		mh.logger.Info("error-exceed-rate-limit", lager.Data{"appID": appID})
-		handlers.WriteJSONResponse(w, http.StatusTooManyRequests, models.ErrorResponse{
-			Code:    "Request-Limit-Exceeded",
-			Message: "Too many requests"})
-		return
-	}
 
 	username, password, authOK := r.BasicAuth()
 
@@ -64,6 +52,7 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 
 	var isValid bool
 
+	appID := vars["appid"]
 	res, found := mh.credentialCache.Get(appID)
 	if found {
 		// Credentials found in cache
