@@ -816,6 +816,142 @@ cf:
 				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into time.Duration")))
 			})
 		})
+		Context("when max_amount of rate_limit is not an integer", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+broker_server:
+  port: 8080
+public_api_server:
+  port: 8081
+logging:
+  level: debug
+broker_username: brokeruser
+broker_password: supersecretpassword
+db:
+  binding_db:
+    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  policy_db:
+    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+catalog_schema_path: '../schemas/catalog.schema.json'
+catalog_path: '../exampleconfig/catalog-example.json'
+policy_schema_path: '../exampleconfig/policy.schema.json'
+scheduler:
+  scheduler_url: https://localhost:8083
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/sc.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/sc.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+scaling_engine:
+  scaling_engine_url: https://localhost:8083
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+metrics_collector:
+  metrics_collector_url: https://localhost:8084
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/mc.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/mc.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+event_generator:
+  event_generator_url: https://localhost:8083
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+metrics_forwarder:
+  metrics_forwarder_url: https://localhost:8088
+use_buildin_mode: false
+info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
+cf:
+  api: https://api.example.com
+  client_id: client-id
+  secret: client-secret
+  skip_ssl_validation: false
+rate_limit:
+  max_amount: NOT-INTEGER
+  valid_duration: 1s
+`)
+			})
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into int")))
+			})
+		})
+		Context("when valid_duration of rate_limit is not a time duration", func() {
+			BeforeEach(func() {
+				configBytes = []byte(`
+broker_server:
+  port: 8080
+public_api_server:
+  port: 8081
+logging:
+  level: debug
+broker_username: brokeruser
+broker_password: supersecretpassword
+db:
+  binding_db:
+    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  policy_db:
+    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+catalog_schema_path: '../schemas/catalog.schema.json'
+catalog_path: '../exampleconfig/catalog-example.json'
+policy_schema_path: '../exampleconfig/policy.schema.json'
+scheduler:
+  scheduler_url: https://localhost:8083
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/sc.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/sc.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+scaling_engine:
+  scaling_engine_url: https://localhost:8083
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/se.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/se.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+metrics_collector:
+  metrics_collector_url: https://localhost:8084
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/mc.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/mc.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+event_generator:
+  event_generator_url: https://localhost:8083
+  tls:
+    key_file: /var/vcap/jobs/autoscaler/config/certs/eg.key
+    cert_file: /var/vcap/jobs/autoscaler/config/certs/eg.crt
+    ca_file: /var/vcap/jobs/autoscaler/config/certs/autoscaler-ca.crt
+metrics_forwarder:
+  metrics_forwarder_url: https://localhost:8088
+use_buildin_mode: false
+info_file_path: /var/vcap/jobs/autoscaer/config/info-file.json
+cf:
+  api: https://api.example.com
+  client_id: client-id
+  secret: client-secret
+  skip_ssl_validation: false
+rate_limit:
+  max_amount: 2
+  valid_duration: NOT-TIME-DURATION
+`)
+			})
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&yaml.TypeError{}))
+				Expect(err).To(MatchError(MatchRegexp("cannot unmarshal.*into time.Duration")))
+			})
+		})
 
 	})
 
@@ -854,6 +990,8 @@ cf:
 			conf.InfoFilePath = "../exampleconfig/info-file.json"
 			conf.UseBuildInMode = false
 
+			conf.RateLimit.MaxAmount = 10
+			conf.RateLimit.ValidDuration = 1 * time.Second
 		})
 		JustBeforeEach(func() {
 			err = conf.Validate()
@@ -1073,6 +1211,24 @@ cf:
 			})
 			It("should err", func() {
 				Expect(err).To(MatchError(MatchRegexp("Configuration error: client_id is empty")))
+			})
+		})
+
+		Context("when rate_limit.max_amount is <= zero", func() {
+			BeforeEach(func() {
+				conf.RateLimit.MaxAmount = 0
+			})
+			It("should err", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: RateLimit.MaxAmount is equal or less than zero")))
+			})
+		})
+
+		Context("when rate_limit.valid_duration is <= 0 ns", func() {
+			BeforeEach(func() {
+				conf.RateLimit.ValidDuration = 0 * time.Nanosecond
+			})
+			It("should err", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: RateLimit.ValidDuration is equal or less than zero nanosecond")))
 			})
 		})
 
