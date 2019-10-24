@@ -17,13 +17,15 @@ import (
 type Middleware struct {
 	logger           lager.Logger
 	cfClient         cf.CFClient
+	clientId         string
 	checkBindingFunc api.CheckBindingFunc
 }
 
-func NewMiddleware(logger lager.Logger, cfClient cf.CFClient, checkBindingFunc api.CheckBindingFunc) *Middleware {
+func NewMiddleware(logger lager.Logger, cfClient cf.CFClient, checkBindingFunc api.CheckBindingFunc, clientId string) *Middleware {
 	return &Middleware{
 		logger:           logger,
 		cfClient:         cfClient,
+		clientId:         clientId,
 		checkBindingFunc: checkBindingFunc,
 	}
 }
@@ -138,4 +140,44 @@ func (mw *Middleware) isValidUserToken(userToken string) bool {
 	}
 
 	return true
+}
+
+func writeErrorResponse(w http.ResponseWriter, statusCode int, message string) {
+	handlers.WriteJSONResponse(w, statusCode, models.ErrorResponse{
+		Code:    http.StatusText(statusCode),
+		Message: message})
+}
+
+func (mw *Middleware) HasClientToken(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if mw.clientId == "" {
+			next.ServeHTTP(w, r)
+			return
+		}
+		clientToken := r.Header.Get("X-Autoscaler-Token")
+		if clientToken == "" {
+			mw.logger.Error("client token is not present", nil, lager.Data{"url": r.URL.String()})
+			writeErrorResponse(w, http.StatusUnauthorized, "client token is not present in X-Autoscaler-Token header. Are you using the correct API endpoint?")
+			return
+		}
+		isTokenAuthorized, err := mw.cfClient.IsTokenAuthorized(clientToken, mw.clientId)
+		if err != nil {
+			if err == cf.ErrUnauthrorized {
+				writeErrorResponse(w, http.StatusUnauthorized, "client is not authorized to perform the requested action")
+				return
+			} else {
+				mw.logger.Error("failed to check if token is authorized", err)
+				writeErrorResponse(w, http.StatusInternalServerError, "failed to check if token is authorized")
+				return
+			}
+
+		}
+		if isTokenAuthorized {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		writeErrorResponse(w, http.StatusUnauthorized, "client is not authorized to perform the requested action")
+		return
+	})
 }

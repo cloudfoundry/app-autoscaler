@@ -29,7 +29,7 @@ func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func NewPublicApiServer(logger lager.Logger, conf *config.Config, policydb db.PolicyDB, checkBindingFunc api.CheckBindingFunc, cfclient cf.CFClient, httpStatusCollector healthendpoint.HTTPStatusCollector, rateLimiter ratelimiter.Limiter, bindingdb db.BindingDB) (ifrit.Runner, error) {
 	pah := NewPublicApiHandler(logger, conf, policydb, bindingdb)
-	mw := NewMiddleware(logger, cfclient, checkBindingFunc)
+	mw := NewMiddleware(logger, cfclient, checkBindingFunc, conf.APIClientId)
 	rateLimiterMiddleware := ratelimiter.NewRateLimiterMiddleware("appId", rateLimiter, logger.Session("api-ratelimiter-middleware"))
 	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(httpStatusCollector)
 	r := routes.ApiOpenRoutes()
@@ -39,6 +39,7 @@ func NewPublicApiServer(logger lager.Logger, conf *config.Config, policydb db.Po
 
 	rp := routes.ApiRoutes()
 	rp.Use(rateLimiterMiddleware.CheckRateLimit)
+	rp.Use(mw.HasClientToken)
 	rp.Use(mw.Oauth)
 	rp.Use(httpStatusCollectMiddleware.Collect)
 	rp.Get(routes.PublicApiScalingHistoryRouteName).Handler(VarsFunc(pah.GetScalingHistories))
@@ -47,6 +48,7 @@ func NewPublicApiServer(logger lager.Logger, conf *config.Config, policydb db.Po
 
 	rpolicy := routes.ApiPolicyRoutes()
 	rpolicy.Use(rateLimiterMiddleware.CheckRateLimit)
+	rpolicy.Use(mw.HasClientToken)
 	rpolicy.Use(mw.Oauth)
 	if !conf.UseBuildInMode {
 		rpolicy.Use(mw.CheckServiceBinding)
@@ -61,8 +63,9 @@ func NewPublicApiServer(logger lager.Logger, conf *config.Config, policydb db.Po
 	if !conf.UseBuildInMode {
 		rcredential.Use(mw.RejectCredentialOperationInServiceOffering)
 	}
-	rcredential.Use(mw.Oauth)
 	rcredential.Use(httpStatusCollectMiddleware.Collect)
+	rcredential.Use(mw.HasClientToken)
+	rcredential.Use(mw.Oauth)
 	rcredential.Get(routes.PublicApiCreateCredentialRouteName).Handler(VarsFunc(pah.CreateCredential))
 	rcredential.Get(routes.PublicApiDeleteCredentialRouteName).Handler(VarsFunc(pah.DeleteCredential))
 
