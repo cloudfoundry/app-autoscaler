@@ -67,12 +67,6 @@ func NewPublicApiHandler(logger lager.Logger, conf *config.Config, policydb db.P
 	}
 }
 
-func writeErrorResponse(w http.ResponseWriter, statusCode int, message string) {
-	handlers.WriteJSONResponse(w, statusCode, models.ErrorResponse{
-		Code:    http.StatusText(statusCode),
-		Message: message})
-}
-
 func (h *PublicApiHandler) GetScalingPolicy(w http.ResponseWriter, _ *http.Request, vars map[string]string) {
 	appId := vars["appId"]
 	if appId == "" {

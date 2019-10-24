@@ -35,6 +35,7 @@ const (
 	INVALID_USER_TOKEN                = "bearer invalid_user_token invalid_user_token"
 	INVALID_USER_TOKEN_WITHOUT_BEARER = "not-bearer testusertoken"
 	TEST_INVALID_USER_TOKEN           = "bearer testinvalidusertoken"
+	TEST_CLIENT_TOKEN                 = "client-token"
 	TEST_USER_ID                      = "test-user-id"
 	TEST_METRIC_TYPE                  = "test_metric"
 	TEST_METRIC_UNIT                  = "test_unit"
@@ -223,5 +224,6 @@ func CreateConfig(useBuildInMode bool, apiServerPort int) *config.Config {
 			SkipSSLValidation: true,
 		},
 		UseBuildInMode: useBuildInMode,
+		APIClientId:    "api-client-id",
 	}
 }
