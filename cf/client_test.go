@@ -399,4 +399,108 @@ var _ = Describe("Client", func() {
 		})
 
 	})
+
+	Describe("IsTokenAuthorized", func() {
+		BeforeEach(func() {
+			cfc = NewCFClient(conf, lager.NewLogger("cf"), fclock)
+			fakeCC.AppendHandlers(
+				ghttp.CombineHandlers(
+					ghttp.VerifyRequest("GET", PathCFInfo),
+					ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
+						AuthEndpoint:    "test-auth-endpoint",
+						TokenEndpoint:   fakeUAA.URL(),
+						DopplerEndpoint: "test-doppler-endpoint",
+					}),
+				),
+			)
+			fakeUAA.AppendHandlers(
+				ghttp.CombineHandlers(
+					ghttp.VerifyRequest("POST", PathCFAuth),
+					ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
+						AccessToken: "test-access-token",
+						ExpiresIn:   12000,
+					}),
+				),
+			)
+			cfc.Login()
+		})
+
+		const (
+			invalidToken  = "INVALID_TOKEN"
+			validClientID = "VALID_CLIENT_ID"
+			wrongClientID = "WRONG_CLIENT_ID"
+		)
+		var (
+			token        string
+			isTokenValid bool
+		)
+		Context("when the token is invalid", func() {
+
+			BeforeEach(func() {
+				fakeUAA.AppendHandlers(
+					ghttp.CombineHandlers(
+						ghttp.VerifyRequest("POST", PathIntrospectToken),
+						ghttp.RespondWithJSONEncoded(http.StatusOK, IntrospectionResponse{Active: false}),
+					),
+				)
+			})
+			JustBeforeEach(func() {
+				isTokenValid, err = cfc.IsTokenAuthorized(token, validClientID)
+			})
+			BeforeEach(func() {
+				token = invalidToken
+			})
+			It("returns false", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(isTokenValid).To(BeFalse())
+			})
+		})
+
+		Context("when the token is valid, but for the wrong client id", func() {
+
+			BeforeEach(func() {
+				fakeUAA.AppendHandlers(
+					ghttp.CombineHandlers(
+						ghttp.VerifyRequest("POST", PathIntrospectToken),
+						ghttp.RespondWithJSONEncoded(http.StatusOK, IntrospectionResponse{Active: true, ClientId: wrongClientID, Email: validClientID}),
+					),
+				)
+			})
+
+			JustBeforeEach(func() {
+				isTokenValid, err = cfc.IsTokenAuthorized(token, validClientID)
+			})
+			BeforeEach(func() {
+				token = invalidToken
+			})
+			It("returns false", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(isTokenValid).To(BeFalse())
+			})
+		})
+
+		Context("when the token is valid, and for the right client id", func() {
+
+			BeforeEach(func() {
+				fakeUAA.AppendHandlers(
+					ghttp.CombineHandlers(
+						ghttp.VerifyRequest("POST", PathIntrospectToken),
+						ghttp.RespondWithJSONEncoded(http.StatusOK, IntrospectionResponse{Active: true, ClientId: validClientID, Email: "john@doe"}),
+					),
+				)
+			})
+
+			JustBeforeEach(func() {
+				isTokenValid, err = cfc.IsTokenAuthorized(token, validClientID)
+			})
+			BeforeEach(func() {
+				token = invalidToken
+			})
+			It("returns false", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(isTokenValid).To(BeTrue())
+			})
+		})
+
+	})
 })
