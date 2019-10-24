@@ -211,6 +211,173 @@ var _ = Describe("PublicApiServer", func() {
 
 		})
 
+		Describe("Without Client Token", func() {
+			BeforeEach(func() {
+				fakeCFClient.IsUserSpaceDeveloperReturns(true, nil)
+			})
+
+			Context("when calling scaling_histories endpoint", func() {
+				BeforeEach(func() {
+					scalingEngineStatus = http.StatusOK
+				})
+				It("should fail with 401", func() {
+					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/scaling_histories",
+						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
+				})
+			})
+
+			Context("when calling instance metric endpoint", func() {
+				BeforeEach(func() {
+					metricsCollectorStatus = http.StatusOK
+				})
+				It("should fail with 401", func() {
+					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/metric_histories/"+TEST_METRIC_TYPE,
+						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
+				})
+			})
+
+			Context("when calling aggregated metric endpoint", func() {
+				BeforeEach(func() {
+					eventGeneratorStatus = http.StatusOK
+				})
+				It("should fail with 401", func() {
+					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/aggregated_metric_histories/"+TEST_METRIC_TYPE,
+						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
+				})
+			})
+
+			Context("when calling get policy endpoint", func() {
+				BeforeEach(func() {
+					schedulerStatus = http.StatusOK
+				})
+				It("should fail with 401", func() {
+					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
+						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
+				})
+
+			})
+
+			Context("when calling attach policy endpoint", func() {
+				BeforeEach(func() {
+					schedulerStatus = http.StatusOK
+				})
+				It("should fail with 401", func() {
+					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
+						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodPut, "", http.StatusUnauthorized)
+				})
+
+			})
+
+			Context("when calling detach policy endpoint", func() {
+				BeforeEach(func() {
+					schedulerStatus = http.StatusOK
+				})
+				It("should fail with 401", func() {
+					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
+						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodDelete, "", http.StatusUnauthorized)
+				})
+
+			})
+			Context("when calling create credential endpoint", func() {
+				It("should fail with 401", func() {
+					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/credential",
+						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodPut, "", http.StatusUnauthorized)
+				})
+
+			})
+			Context("when calling delete credential endpoint", func() {
+				It("should fail with 401", func() {
+					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/credential",
+						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodDelete, "", http.StatusUnauthorized)
+				})
+
+			})
+		})
+
+		Describe("With Invalid Client Token", func() {
+			BeforeEach(func() {
+				fakeCFClient.IsTokenAuthorizedReturns(false, nil)
+				fakeCFClient.IsUserSpaceDeveloperReturns(true, nil)
+			})
+
+			Context("when calling scaling_histories endpoint", func() {
+				BeforeEach(func() {
+					scalingEngineStatus = http.StatusOK
+				})
+				It("should fail with 401", func() {
+					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/scaling_histories",
+						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
+				})
+			})
+
+			Context("when calling instance metric endpoint", func() {
+				BeforeEach(func() {
+					metricsCollectorStatus = http.StatusOK
+				})
+				It("should fail with 401", func() {
+					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/metric_histories/"+TEST_METRIC_TYPE,
+						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
+				})
+			})
+
+			Context("when calling aggregated metric endpoint", func() {
+				BeforeEach(func() {
+					eventGeneratorStatus = http.StatusOK
+				})
+				It("should fail with 401", func() {
+					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/aggregated_metric_histories/"+TEST_METRIC_TYPE,
+						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
+				})
+			})
+
+			Context("when calling get policy endpoint", func() {
+				BeforeEach(func() {
+					schedulerStatus = http.StatusOK
+				})
+				It("should fail with 401", func() {
+					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
+						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodGet, "", http.StatusUnauthorized)
+				})
+
+			})
+
+			Context("when calling attach policy endpoint", func() {
+				BeforeEach(func() {
+					schedulerStatus = http.StatusOK
+				})
+				It("should fail with 401", func() {
+					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
+						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodPut, "", http.StatusUnauthorized)
+				})
+
+			})
+
+			Context("when calling detach policy endpoint", func() {
+				BeforeEach(func() {
+					schedulerStatus = http.StatusOK
+				})
+				It("should fail with 401", func() {
+					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
+						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodDelete, "", http.StatusUnauthorized)
+				})
+
+			})
+			Context("when calling create credential endpoint", func() {
+				It("should fail with 401", func() {
+					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/credential",
+						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodPut, "", http.StatusUnauthorized)
+				})
+
+			})
+			Context("when calling delete credential endpoint", func() {
+				It("should fail with 401", func() {
+					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/credential",
+						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodDelete, "", http.StatusUnauthorized)
+				})
+
+			})
+		})
+
 		Describe("With Invalid Authorization Token", func() {
 			BeforeEach(func() {
 				fakeCFClient.IsUserSpaceDeveloperReturns(false, nil)
@@ -296,6 +463,7 @@ var _ = Describe("PublicApiServer", func() {
 
 		Describe("With valid authorization token", func() {
 			BeforeEach(func() {
+				fakeCFClient.IsTokenAuthorizedReturns(true, nil)
 				fakeCFClient.IsUserSpaceDeveloperReturns(true, nil)
 			})
 
@@ -305,7 +473,7 @@ var _ = Describe("PublicApiServer", func() {
 				})
 				It("should succeed", func() {
 					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/scaling_histories",
-						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodGet, "", http.StatusOK)
+						map[string]string{"Authorization": TEST_USER_TOKEN, "X-Autoscaler-Token": TEST_CLIENT_TOKEN}, http.MethodGet, "", http.StatusOK)
 				})
 			})
 
@@ -315,7 +483,7 @@ var _ = Describe("PublicApiServer", func() {
 				})
 				It("should succeed", func() {
 					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/metric_histories/"+TEST_METRIC_TYPE,
-						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodGet, "", http.StatusOK)
+						map[string]string{"Authorization": TEST_USER_TOKEN, "X-Autoscaler-Token": TEST_CLIENT_TOKEN}, http.MethodGet, "", http.StatusOK)
 				})
 			})
 
@@ -325,7 +493,7 @@ var _ = Describe("PublicApiServer", func() {
 				})
 				It("should succeed", func() {
 					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/aggregated_metric_histories/"+TEST_METRIC_TYPE,
-						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodGet, "", http.StatusOK)
+						map[string]string{"Authorization": TEST_USER_TOKEN, "X-Autoscaler-Token": TEST_CLIENT_TOKEN}, http.MethodGet, "", http.StatusOK)
 				})
 			})
 
@@ -349,7 +517,7 @@ var _ = Describe("PublicApiServer", func() {
 				})
 				It("should succeed", func() {
 					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
-						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodGet, "", http.StatusOK)
+						map[string]string{"Authorization": TEST_USER_TOKEN, "X-Autoscaler-Token": TEST_CLIENT_TOKEN}, http.MethodGet, "", http.StatusOK)
 				})
 
 			})
@@ -361,7 +529,7 @@ var _ = Describe("PublicApiServer", func() {
 				})
 				It("should succeed", func() {
 					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
-						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodPut, policy, http.StatusOK)
+						map[string]string{"Authorization": TEST_USER_TOKEN, "X-Autoscaler-Token": TEST_CLIENT_TOKEN}, http.MethodGet, "", http.StatusOK)
 				})
 
 			})
@@ -372,21 +540,21 @@ var _ = Describe("PublicApiServer", func() {
 				})
 				It("should succeed", func() {
 					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
-						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodDelete, policy, http.StatusOK)
+						map[string]string{"Authorization": TEST_USER_TOKEN, "X-Autoscaler-Token": TEST_CLIENT_TOKEN}, http.MethodPut, policy, http.StatusOK)
 				})
 			})
 
 			Context("when calling create credential endpoint", func() {
 				It("should succeed", func() {
 					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/credential",
-						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodPut, "", http.StatusOK)
+						map[string]string{"Authorization": TEST_USER_TOKEN, "X-Autoscaler-Token": TEST_CLIENT_TOKEN}, http.MethodPut, "", http.StatusOK)
 				})
 
 			})
 			Context("when calling delete credential endpoint", func() {
 				It("should succeed", func() {
 					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/credential",
-						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodDelete, "", http.StatusOK)
+						map[string]string{"Authorization": TEST_USER_TOKEN, "X-Autoscaler-Token": TEST_CLIENT_TOKEN}, http.MethodDelete, "", http.StatusOK)
 				})
 
 			})
