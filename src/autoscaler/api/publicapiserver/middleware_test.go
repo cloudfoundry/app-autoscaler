@@ -36,7 +36,7 @@ var _ = Describe("Middleware", func() {
 			logger = lagertest.NewTestLogger("oauth")
 			mw = NewMiddleware(logger, fakeCFClient, func(appId string) bool {
 				return true
-			})
+			}, "")
 
 			router = mux.NewRouter()
 			router.HandleFunc("/", GetTestHandler())
@@ -181,7 +181,7 @@ var _ = Describe("Middleware", func() {
 	Describe("CheckBinding", func() {
 
 		JustBeforeEach(func() {
-			mw = NewMiddleware(lagertest.NewTestLogger("middleware"), fakeCFClient, checkBindingFunc)
+			mw = NewMiddleware(lagertest.NewTestLogger("middleware"), fakeCFClient, checkBindingFunc, "")
 
 			router = mux.NewRouter()
 			router.HandleFunc("/", GetTestHandler())
@@ -224,7 +224,7 @@ var _ = Describe("Middleware", func() {
 			logger = lagertest.NewTestLogger("oauth")
 			mw = NewMiddleware(logger, fakeCFClient, func(appId string) bool {
 				return true
-			})
+			}, "")
 
 			router = mux.NewRouter()
 			router.HandleFunc("/", GetTestHandler())

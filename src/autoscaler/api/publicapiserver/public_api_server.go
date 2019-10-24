@@ -27,7 +27,7 @@ func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func NewPublicApiServer(logger lager.Logger, conf *config.Config, policydb db.PolicyDB, checkBindingFunc api.CheckBindingFunc, cfclient cf.CFClient, httpStatusCollector healthendpoint.HTTPStatusCollector) (ifrit.Runner, error) {
 	pah := NewPublicApiHandler(logger, conf, policydb)
-	mw := NewMiddleware(logger, cfclient, checkBindingFunc)
+	mw := NewMiddleware(logger, cfclient, checkBindingFunc, conf.APIClientId)
 	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(httpStatusCollector)
 	r := routes.ApiOpenRoutes()
 	r.Use(httpStatusCollectMiddleware.Collect)
@@ -35,6 +35,7 @@ func NewPublicApiServer(logger lager.Logger, conf *config.Config, policydb db.Po
 	r.Get(routes.PublicApiHealthRouteName).Handler(VarsFunc(pah.GetHealth))
 
 	rp := routes.ApiRoutes()
+	rp.Use(mw.HasClientToken)
 	rp.Use(mw.Oauth)
 	rp.Use(httpStatusCollectMiddleware.Collect)
 	rp.Get(routes.PublicApiScalingHistoryRouteName).Handler(VarsFunc(pah.GetScalingHistories))
@@ -42,6 +43,7 @@ func NewPublicApiServer(logger lager.Logger, conf *config.Config, policydb db.Po
 	rp.Get(routes.PublicApiAggregatedMetricsHistoryRouteName).Handler(VarsFunc(pah.GetAggregatedMetricsHistories))
 
 	rpolicy := routes.ApiPolicyRoutes()
+	rpolicy.Use(mw.HasClientToken)
 	rpolicy.Use(mw.Oauth)
 	if !conf.UseBuildInMode {
 		rpolicy.Use(mw.CheckServiceBinding)
@@ -56,6 +58,7 @@ func NewPublicApiServer(logger lager.Logger, conf *config.Config, policydb db.Po
 		rcredential.Use(mw.RejectCredentialOperationInServiceOffering)
 	}
 	rcredential.Use(httpStatusCollectMiddleware.Collect)
+	rcredential.Use(mw.HasClientToken)
 	rcredential.Use(mw.Oauth)
 	rcredential.Get(routes.PublicApiCreateCredentialRouteName).Handler(VarsFunc(pah.CreateCredential))
 	rcredential.Get(routes.PublicApiDeleteCredentialRouteName).Handler(VarsFunc(pah.DeleteCredential))

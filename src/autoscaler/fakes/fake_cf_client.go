@@ -2,9 +2,9 @@
 package fakes
 
 import (
-	cf "autoscaler/cf"
-	models "autoscaler/models"
-	sync "sync"
+	"autoscaler/cf"
+	"autoscaler/models"
+	"sync"
 )
 
 type FakeCFClient struct {
@@ -41,15 +41,19 @@ type FakeCFClient struct {
 	getTokensReturnsOnCall map[int]struct {
 		result1 cf.Tokens
 	}
-	GetTokensWithRefreshStub        func() cf.Tokens
-	getTokensWithRefreshMutex       sync.RWMutex
-	getTokensWithRefreshArgsForCall []struct {
+	IsTokenAuthorizedStub        func(string, string) (bool, error)
+	isTokenAuthorizedMutex       sync.RWMutex
+	isTokenAuthorizedArgsForCall []struct {
+		arg1 string
+		arg2 string
 	}
-	getTokensWithRefreshReturns struct {
-		result1 cf.Tokens
+	isTokenAuthorizedReturns struct {
+		result1 bool
+		result2 error
 	}
-	getTokensWithRefreshReturnsOnCall map[int]struct {
-		result1 cf.Tokens
+	isTokenAuthorizedReturnsOnCall map[int]struct {
+		result1 bool
+		result2 error
 	}
 	IsUserAdminStub        func(string) (bool, error)
 	isUserAdminMutex       sync.RWMutex
@@ -111,17 +115,6 @@ type FakeCFClient struct {
 	}
 	setAppInstancesReturnsOnCall map[int]struct {
 		result1 error
-	}
-	GetAuthTokenStub        func() (string, error)
-	getAuthTokenMutex       sync.RWMutex
-	getAuthTokenArgsForCall []struct{}
-	getAuthTokenReturns     struct {
-		result1 string
-		result2 error
-	}
-	getAuthTokenReturnsOnCall map[int]struct {
-		result1 string
-		result2 error
 	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
@@ -294,56 +287,68 @@ func (fake *FakeCFClient) GetTokensReturnsOnCall(i int, result1 cf.Tokens) {
 	}{result1}
 }
 
-func (fake *FakeCFClient) GetTokensWithRefresh() cf.Tokens {
-	fake.getTokensWithRefreshMutex.Lock()
-	ret, specificReturn := fake.getTokensWithRefreshReturnsOnCall[len(fake.getTokensWithRefreshArgsForCall)]
-	fake.getTokensWithRefreshArgsForCall = append(fake.getTokensWithRefreshArgsForCall, struct {
-	}{})
-	fake.recordInvocation("GetTokensWithRefresh", []interface{}{})
-	fake.getTokensWithRefreshMutex.Unlock()
-	if fake.GetTokensWithRefreshStub != nil {
-		return fake.GetTokensWithRefreshStub()
+func (fake *FakeCFClient) IsTokenAuthorized(arg1 string, arg2 string) (bool, error) {
+	fake.isTokenAuthorizedMutex.Lock()
+	ret, specificReturn := fake.isTokenAuthorizedReturnsOnCall[len(fake.isTokenAuthorizedArgsForCall)]
+	fake.isTokenAuthorizedArgsForCall = append(fake.isTokenAuthorizedArgsForCall, struct {
+		arg1 string
+		arg2 string
+	}{arg1, arg2})
+	fake.recordInvocation("IsTokenAuthorized", []interface{}{arg1, arg2})
+	fake.isTokenAuthorizedMutex.Unlock()
+	if fake.IsTokenAuthorizedStub != nil {
+		return fake.IsTokenAuthorizedStub(arg1, arg2)
 	}
 	if specificReturn {
-		return ret.result1
+		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.getTokensWithRefreshReturns
-	return fakeReturns.result1
+	fakeReturns := fake.isTokenAuthorizedReturns
+	return fakeReturns.result1, fakeReturns.result2
 }
 
-func (fake *FakeCFClient) GetTokensWithRefreshCallCount() int {
-	fake.getTokensWithRefreshMutex.RLock()
-	defer fake.getTokensWithRefreshMutex.RUnlock()
-	return len(fake.getTokensWithRefreshArgsForCall)
+func (fake *FakeCFClient) IsTokenAuthorizedCallCount() int {
+	fake.isTokenAuthorizedMutex.RLock()
+	defer fake.isTokenAuthorizedMutex.RUnlock()
+	return len(fake.isTokenAuthorizedArgsForCall)
 }
 
-func (fake *FakeCFClient) GetTokensWithRefreshCalls(stub func() cf.Tokens) {
-	fake.getTokensWithRefreshMutex.Lock()
-	defer fake.getTokensWithRefreshMutex.Unlock()
-	fake.GetTokensWithRefreshStub = stub
+func (fake *FakeCFClient) IsTokenAuthorizedCalls(stub func(string, string) (bool, error)) {
+	fake.isTokenAuthorizedMutex.Lock()
+	defer fake.isTokenAuthorizedMutex.Unlock()
+	fake.IsTokenAuthorizedStub = stub
 }
 
-func (fake *FakeCFClient) GetTokensWithRefreshReturns(result1 cf.Tokens) {
-	fake.getTokensWithRefreshMutex.Lock()
-	defer fake.getTokensWithRefreshMutex.Unlock()
-	fake.GetTokensWithRefreshStub = nil
-	fake.getTokensWithRefreshReturns = struct {
-		result1 cf.Tokens
-	}{result1}
+func (fake *FakeCFClient) IsTokenAuthorizedArgsForCall(i int) (string, string) {
+	fake.isTokenAuthorizedMutex.RLock()
+	defer fake.isTokenAuthorizedMutex.RUnlock()
+	argsForCall := fake.isTokenAuthorizedArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
 }
 
-func (fake *FakeCFClient) GetTokensWithRefreshReturnsOnCall(i int, result1 cf.Tokens) {
-	fake.getTokensWithRefreshMutex.Lock()
-	defer fake.getTokensWithRefreshMutex.Unlock()
-	fake.GetTokensWithRefreshStub = nil
-	if fake.getTokensWithRefreshReturnsOnCall == nil {
-		fake.getTokensWithRefreshReturnsOnCall = make(map[int]struct {
-			result1 cf.Tokens
+func (fake *FakeCFClient) IsTokenAuthorizedReturns(result1 bool, result2 error) {
+	fake.isTokenAuthorizedMutex.Lock()
+	defer fake.isTokenAuthorizedMutex.Unlock()
+	fake.IsTokenAuthorizedStub = nil
+	fake.isTokenAuthorizedReturns = struct {
+		result1 bool
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeCFClient) IsTokenAuthorizedReturnsOnCall(i int, result1 bool, result2 error) {
+	fake.isTokenAuthorizedMutex.Lock()
+	defer fake.isTokenAuthorizedMutex.Unlock()
+	fake.IsTokenAuthorizedStub = nil
+	if fake.isTokenAuthorizedReturnsOnCall == nil {
+		fake.isTokenAuthorizedReturnsOnCall = make(map[int]struct {
+			result1 bool
+			result2 error
 		})
 	}
-	fake.getTokensWithRefreshReturnsOnCall[i] = struct {
-		result1 cf.Tokens
-	}{result1}
+	fake.isTokenAuthorizedReturnsOnCall[i] = struct {
+		result1 bool
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeCFClient) IsUserAdmin(arg1 string) (bool, error) {
@@ -641,49 +646,6 @@ func (fake *FakeCFClient) SetAppInstancesReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakeCFClient) GetAuthToken() (string, error) {
-	fake.getAuthTokenMutex.Lock()
-	ret, specificReturn := fake.getAuthTokenReturnsOnCall[len(fake.getAuthTokenArgsForCall)]
-	fake.getAuthTokenArgsForCall = append(fake.getAuthTokenArgsForCall, struct{}{})
-	fake.recordInvocation("GetAuthToken", []interface{}{})
-	fake.getAuthTokenMutex.Unlock()
-	if fake.GetAuthTokenStub != nil {
-		return fake.GetAuthTokenStub()
-	}
-	if specificReturn {
-		return ret.result1, ret.result2
-	}
-	return fake.getAuthTokenReturns.result1, fake.getAuthTokenReturns.result2
-}
-
-func (fake *FakeCFClient) GetAuthTokenCallCount() int {
-	fake.getAuthTokenMutex.RLock()
-	defer fake.getAuthTokenMutex.RUnlock()
-	return len(fake.getAuthTokenArgsForCall)
-}
-
-func (fake *FakeCFClient) GetAuthTokenReturns(result1 string, result2 error) {
-	fake.GetAuthTokenStub = nil
-	fake.getAuthTokenReturns = struct {
-		result1 string
-		result2 error
-	}{result1, result2}
-}
-
-func (fake *FakeCFClient) GetAuthTokenReturnsOnCall(i int, result1 string, result2 error) {
-	fake.GetAuthTokenStub = nil
-	if fake.getAuthTokenReturnsOnCall == nil {
-		fake.getAuthTokenReturnsOnCall = make(map[int]struct {
-			result1 string
-			result2 error
-		})
-	}
-	fake.getAuthTokenReturnsOnCall[i] = struct {
-		result1 string
-		result2 error
-	}{result1, result2}
-}
-
 func (fake *FakeCFClient) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
@@ -693,8 +655,8 @@ func (fake *FakeCFClient) Invocations() map[string][][]interface{} {
 	defer fake.getEndpointsMutex.RUnlock()
 	fake.getTokensMutex.RLock()
 	defer fake.getTokensMutex.RUnlock()
-	fake.getTokensWithRefreshMutex.RLock()
-	defer fake.getTokensWithRefreshMutex.RUnlock()
+	fake.isTokenAuthorizedMutex.RLock()
+	defer fake.isTokenAuthorizedMutex.RUnlock()
 	fake.isUserAdminMutex.RLock()
 	defer fake.isUserAdminMutex.RUnlock()
 	fake.isUserSpaceDeveloperMutex.RLock()
@@ -705,8 +667,6 @@ func (fake *FakeCFClient) Invocations() map[string][][]interface{} {
 	defer fake.refreshAuthTokenMutex.RUnlock()
 	fake.setAppInstancesMutex.RLock()
 	defer fake.setAppInstancesMutex.RUnlock()
-	fake.getAuthTokenMutex.RLock()
-	defer fake.getAuthTokenMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

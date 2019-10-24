@@ -75,6 +75,7 @@ type Config struct {
 	BrokerUsernameHash   string                 `yaml:"broker_username_hash"`
 	BrokerPassword       string                 `yaml:"broker_password"`
 	BrokerPasswordHash   string                 `yaml:"broker_password_hash"`
+	APIClientId          string                 `yaml:"api_client_id"`
 	CatalogPath          string                 `yaml:"catalog_path"`
 	CatalogSchemaPath    string                 `yaml:"catalog_schema_path"`
 	DashboardRedirectURI string                 `yaml:"dashboard_redirect_uri"`
@@ -144,7 +145,6 @@ func (c *Config) Validate() error {
 	if c.PolicySchemaPath == "" {
 		return fmt.Errorf("Configuration error: PolicySchemaPath is empty")
 	}
-
 	if c.InfoFilePath == "" {
 		return fmt.Errorf("Configuration error: InfoFilePath is empty")
 	}
