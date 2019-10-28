@@ -182,15 +182,15 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 
 	serviceInstance, err := h.bindingdb.GetServiceInstance(instanceId)
 	if err != nil {
-		h.logger.Error("failed to retrieve service instance", err, lager.Data{"instanceId": instanceId})
-		writeErrorResponse(w, http.StatusInternalServerError, "Failed to retrieve service instance")
-		return
-	}
-
-	if serviceInstance == nil {
-		h.logger.Error("failed to find service instance to update", err, lager.Data{"instanceId": instanceId})
-		writeErrorResponse(w, http.StatusNotFound, "Failed to find service instance to update")
-		return
+		if err == db.ErrDoesNotExist {
+			h.logger.Error("failed to find service instance to update", err, lager.Data{"instanceId": instanceId})
+			writeErrorResponse(w, http.StatusNotFound, "Failed to find service instance to update")
+			return
+		} else {
+			h.logger.Error("failed to retrieve service instance", err, lager.Data{"instanceId": instanceId})
+			writeErrorResponse(w, http.StatusInternalServerError, "Failed to retrieve service instance")
+			return
+		}
 	}
 
 	updatedServiceInstance := models.ServiceInstance{
