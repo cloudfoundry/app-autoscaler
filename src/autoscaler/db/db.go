@@ -47,12 +47,11 @@ type InstanceMetricsDB interface {
 type PolicyDB interface {
 	DatabaseStatus
 	GetAppIds() (map[string]bool, error)
-	GetAppIdsWithPolicy(policyGuid string) ([]string, error)
 	GetAppPolicy(appId string) (*models.ScalingPolicy, error)
 	SaveAppPolicy(appId string, policy string, policyGuid string) error
-	ReplaceAppPolicies(oldPolicyGuid string, newPolicy string, newPolicyGuid string) error
+	ReplaceAppPolicies(oldPolicyGuid string, newPolicy string, newPolicyGuid string) ([]string, error)
 	SetDefaultAppPolicy(appIds []string, newPolicy string, newPolicyGuid string) ([]string, error)
-	DeletePoliciesByPolicyGuid(policyGuid string) error
+	DeletePoliciesByPolicyGuid(policyGuid string) ([]string, error)
 	RetrievePolicies() ([]*models.PolicyJson, error)
 	Close() error
 	DeletePolicy(appId string) error

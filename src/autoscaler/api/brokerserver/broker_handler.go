@@ -211,14 +211,9 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 	if serviceInstance.DefaultPolicyGuid != "" {
 		// default policy already exists
 
-		// retrieve apps to be update for later sync with scheduler
-		updatedAppIds, err := h.policydb.GetAppIdsWithPolicy(serviceInstance.DefaultPolicyGuid)
-		if err != nil {
-			h.logger.Error("failed to retrieve updated apps", err, lager.Data{"instanceId": instanceId, "updatedDefaultPolicyGuid": updatedDefaultPolicyGuid})
-		}
 		if updatedDefaultPolicyGuid != "" {
 			// new default policy set: replace previous default policies
-			err = h.policydb.ReplaceAppPolicies(serviceInstance.DefaultPolicyGuid, updatedDefaultPolicy, updatedDefaultPolicyGuid)
+			updatedAppIds, err := h.policydb.ReplaceAppPolicies(serviceInstance.DefaultPolicyGuid, updatedDefaultPolicy, updatedDefaultPolicyGuid)
 			if err != nil {
 				h.logger.Error("failed to replace default policies", err, lager.Data{"instanceId": instanceId})
 				writeErrorResponse(w, http.StatusInternalServerError, "Error updating service instance")
@@ -250,7 +245,7 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 
 		} else {
 			// default policy removed
-			err = h.policydb.DeletePoliciesByPolicyGuid(serviceInstance.DefaultPolicyGuid)
+			updatedAppIds, err := h.policydb.DeletePoliciesByPolicyGuid(serviceInstance.DefaultPolicyGuid)
 			if err != nil {
 				h.logger.Error("failed to delete default policies", err, lager.Data{"instanceId": instanceId})
 				writeErrorResponse(w, http.StatusInternalServerError, "Error updating service instance")
@@ -365,6 +360,7 @@ func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Reque
 		if serviceInstance, err := h.bindingdb.GetServiceInstance(instanceId); err != nil {
 			h.logger.Error("failed to get default policy", err, lager.Data{"appId": body.AppID, "instanceId": instanceId, "bindingId": bindingId})
 			handlers.WriteJSONResponse(w, http.StatusInternalServerError, "Error reading the default policy")
+			return
 		} else {
 			policyStr = serviceInstance.DefaultPolicy
 			policyGuidStr = serviceInstance.DefaultPolicyGuid

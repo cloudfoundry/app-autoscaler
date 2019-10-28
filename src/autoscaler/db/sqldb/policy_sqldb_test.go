@@ -125,56 +125,6 @@ var _ = Describe("PolicySQLDB", func() {
 		})
 	})
 
-	Describe("GetAppIdsWithPolicy", func() {
-		var appIds []string
-		BeforeEach(func() {
-			pdb, err = NewPolicySQLDB(dbConfig, logger)
-			Expect(err).NotTo(HaveOccurred())
-
-			cleanPolicyTable()
-		})
-
-		AfterEach(func() {
-			err = pdb.Close()
-			Expect(err).NotTo(HaveOccurred())
-		})
-
-		JustBeforeEach(func() {
-			appIds, err = pdb.GetAppIdsWithPolicy("1")
-		})
-
-		Context("when policy table is empty", func() {
-			It("returns no app ids", func() {
-				Expect(err).NotTo(HaveOccurred())
-				Expect(appIds).To(BeEmpty())
-			})
-		})
-
-		Context("when policy table is not empty", func() {
-			BeforeEach(func() {
-				scalingPolicy = &models.ScalingPolicy{InstanceMax: 1, InstanceMin: 6}
-				insertPolicyWithGuid("first-app-id", scalingPolicy, "1")
-				insertPolicyWithGuid("second-app-id", scalingPolicy, "2")
-				insertPolicyWithGuid("third-app-id", scalingPolicy, "1")
-			})
-
-			It("returns all app ids with the specified policy guid", func() {
-				Expect(err).NotTo(HaveOccurred())
-				Expect(appIds).To(ContainElement("first-app-id"))
-				Expect(appIds).To(ContainElement("third-app-id"))
-			})
-		})
-
-		Context("when there is database error", func() {
-			BeforeEach(func() {
-				pdb.Close()
-			})
-			It("should error", func() {
-				Expect(err).To(HaveOccurred())
-			})
-		})
-	})
-
 	Describe("GetAppPolicy", func() {
 		BeforeEach(func() {
 			pdb, err = NewPolicySQLDB(dbConfig, logger)
@@ -413,6 +363,8 @@ var _ = Describe("PolicySQLDB", func() {
 	})
 
 	Describe("DeletePoliciesByPolicyGuid", func() {
+		var updatedApps []string
+
 		BeforeEach(func() {
 			pdb, err = NewPolicySQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
@@ -426,12 +378,13 @@ var _ = Describe("PolicySQLDB", func() {
 		})
 
 		JustBeforeEach(func() {
-			err = pdb.DeletePoliciesByPolicyGuid("a-policy-guid")
+			updatedApps, err = pdb.DeletePoliciesByPolicyGuid("a-policy-guid")
 		})
 
 		Context("when there is no policy in the table", func() {
 			It("should not error", func() {
 				Expect(err).NotTo(HaveOccurred())
+				Expect(updatedApps).To(BeEmpty())
 			})
 		})
 
@@ -444,6 +397,8 @@ var _ = Describe("PolicySQLDB", func() {
 
 			It("should delete the policy with the specified policy guid", func() {
 				Expect(err).NotTo(HaveOccurred())
+				Expect(updatedApps).To(ConsistOf("first-app-id"))
+
 				policy, err := pdb.GetAppPolicy("first-app-id")
 				Expect(err).NotTo(HaveOccurred())
 				Expect(policy).To(BeNil())
@@ -464,6 +419,8 @@ var _ = Describe("PolicySQLDB", func() {
 	})
 
 	Describe("ReplaceAppPolicies", func() {
+		var updatedApps []string
+
 		BeforeEach(func() {
 			pdb, err = NewPolicySQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
@@ -478,12 +435,13 @@ var _ = Describe("PolicySQLDB", func() {
 
 		newPolicy := `{"new": "policy"}`
 		JustBeforeEach(func() {
-			err = pdb.ReplaceAppPolicies("1", newPolicy, "8")
+			updatedApps, err = pdb.ReplaceAppPolicies("1", newPolicy, "8")
 		})
 
 		Context("when policy table is empty", func() {
 			It("should not error", func() {
 				Expect(err).NotTo(HaveOccurred())
+				Expect(updatedApps).To(BeEmpty())
 			})
 		})
 
@@ -496,6 +454,8 @@ var _ = Describe("PolicySQLDB", func() {
 			})
 
 			It("replaces the app policies", func() {
+				Expect(updatedApps).To(ConsistOf("first-app-id", "third-app-id"))
+
 				Expect(getAppPolicy("first-app-id")).To(MatchJSON(newPolicy))
 				Expect(getAppPolicy("second-app-id")).NotTo(MatchJSON(newPolicy))
 				Expect(getAppPolicy("third-app-id")).To(MatchJSON(newPolicy))
