@@ -41,6 +41,8 @@ var (
 	conf              *config.Config
 	catalogBytes      []byte
 	schedulerServer   *ghttp.Server
+	tokenServer       *ghttp.Server
+	quotaServer       *ghttp.Server
 	testDefaultPolicy = `
 						{
 							"instance_min_count":1,
@@ -63,6 +65,8 @@ func TestServer(t *testing.T) {
 
 var _ = BeforeSuite(func() {
 	schedulerServer = ghttp.NewServer()
+	tokenServer = ghttp.NewServer()
+	quotaServer = ghttp.NewServer()
 	port := 10000 + GinkgoParallelNode()
 	conf = &config.Config{
 		BrokerServer: config.ServerConfig{
@@ -70,9 +74,15 @@ var _ = BeforeSuite(func() {
 		},
 		BrokerUsernameHash: usernameHash,
 		BrokerPasswordHash: passwordHash,
-		CatalogPath:        "../exampleconfig/catalog-example.json",
-		CatalogSchemaPath:  "../schemas/catalog.schema.json",
-		PolicySchemaPath:   "../policyvalidator/policy_json.schema.json",
+		QuotaManagement: &config.QuotaManagementConfig{
+			API:      quotaServer.URL(),
+			ClientID: "client-id",
+			Secret:   "client-secret",
+			TokenURL: tokenServer.URL(),
+		},
+		CatalogPath:       "../exampleconfig/catalog-example.json",
+		CatalogSchemaPath: "../schemas/catalog.schema.json",
+		PolicySchemaPath:  "../policyvalidator/policy_json.schema.json",
 		Scheduler: config.SchedulerConfig{
 			SchedulerURL: schedulerServer.URL(),
 		},
@@ -98,7 +108,6 @@ var _ = BeforeSuite(func() {
 	urlPath, _ := routes.SchedulerRoutes().Get(routes.UpdateScheduleRouteName).URLPath("appId", testAppId)
 	schedulerServer.RouteToHandler("PUT", urlPath.String(), ghttp.RespondWith(http.StatusOK, nil))
 	schedulerServer.RouteToHandler("DELETE", urlPath.String(), ghttp.RespondWith(http.StatusOK, nil))
-
 })
 
 var _ = AfterSuite(func() {

@@ -66,16 +66,25 @@ type MetricsForwarderConfig struct {
 	MetricsForwarderUrl string `yaml:"metrics_forwarder_url"`
 }
 
+type QuotaManagementConfig struct {
+	API               string `yaml:"api"`
+	ClientID          string `yaml:"client_id"`
+	Secret            string `yaml:"secret"`
+	TokenURL          string `yaml:"oauth_url"`
+	SkipSSLValidation bool   `yaml:"skip_ssl_validation"`
+}
+
 type Config struct {
-	Logging              helpers.LoggingConfig  `yaml:"logging"`
-	BrokerServer         ServerConfig           `yaml:"broker_server"`
-	PublicApiServer      ServerConfig           `yaml:"public_api_server"`
-	DB                   DBConfig               `yaml:"db"`
-	BrokerUsername       string                 `yaml:"broker_username"`
-	BrokerUsernameHash   string                 `yaml:"broker_username_hash"`
-	BrokerPassword       string                 `yaml:"broker_password"`
-	BrokerPasswordHash   string                 `yaml:"broker_password_hash"`
-	APIClientId          string                 `yaml:"api_client_id"`
+	Logging              helpers.LoggingConfig `yaml:"logging"`
+	BrokerServer         ServerConfig          `yaml:"broker_server"`
+	PublicApiServer      ServerConfig          `yaml:"public_api_server"`
+	DB                   DBConfig              `yaml:"db"`
+	BrokerUsername       string                `yaml:"broker_username"`
+	BrokerUsernameHash   string                `yaml:"broker_username_hash"`
+	BrokerPassword       string                `yaml:"broker_password"`
+	BrokerPasswordHash   string                `yaml:"broker_password_hash"`
+	APIClientId          string                `yaml:"api_client_id"`
+	QuotaManagement      *QuotaManagementConfig
 	CatalogPath          string                 `yaml:"catalog_path"`
 	CatalogSchemaPath    string                 `yaml:"catalog_schema_path"`
 	DashboardRedirectURI string                 `yaml:"dashboard_redirect_uri"`

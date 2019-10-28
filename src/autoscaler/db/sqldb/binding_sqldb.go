@@ -253,3 +253,14 @@ func (bdb *BindingSQLDB) GetAppIdsByInstanceId(instanceId string) ([]string, err
 
 	return appIds, nil
 }
+
+func (bdb *BindingSQLDB) CountServiceInstancesInOrg(orgId string) (int, error) {
+	var count int
+	query := "SELECT COUNT(*) FROM service_instance WHERE org_id=$1"
+	err := bdb.sqldb.QueryRow(query, orgId).Scan(&count)
+	if err != nil {
+		bdb.logger.Error("count-service-instances-in-org", err, lager.Data{"query": query, "orgId": orgId})
+		return 0, err
+	}
+	return count, nil
+}

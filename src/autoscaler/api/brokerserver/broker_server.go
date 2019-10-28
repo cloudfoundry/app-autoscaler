@@ -1,8 +1,12 @@
 package brokerserver
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+
+	"github.com/pivotal-cf/brokerapi/domain"
 
 	"autoscaler/api/config"
 	"autoscaler/db"
@@ -67,12 +71,26 @@ func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.Bind
 		}
 	}
 
+	catalogBytes, err := ioutil.ReadFile(conf.CatalogPath)
+	if err != nil {
+		logger.Error("failed to read catalog file", err)
+		return nil, err
+	}
+	catalog := &struct {
+		Services []domain.Service `json:"services"`
+	}{}
+	err = json.Unmarshal(catalogBytes, catalog)
+	if err != nil {
+		logger.Error("failed to parse catalog", err)
+		return nil, err
+	}
+
 	basicAuthentication := &basicAuthenticationMiddleware{
 		usernameHash: usernameHash,
 		passwordHash: passwordHash,
 	}
 	httpStatusCollectMiddleware := healthendpoint.NewHTTPStatusCollectMiddleware(httpStatusCollector)
-	ah := NewBrokerHandler(logger, conf, bindingdb, policydb, sbssdb)
+	ah := NewBrokerHandler(logger, conf, bindingdb, policydb, sbssdb, catalog.Services)
 
 	r := routes.BrokerRoutes()
 

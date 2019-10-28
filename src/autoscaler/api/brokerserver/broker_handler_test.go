@@ -14,6 +14,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 
+	"github.com/onsi/gomega/ghttp"
+	"golang.org/x/oauth2"
+
+	"github.com/pivotal-cf/brokerapi/domain"
+
 	"code.cloudfoundry.org/lager/lagertest"
 
 	. "github.com/onsi/ginkgo"
@@ -38,7 +43,14 @@ var _ = Describe("BrokerHandler", func() {
 	})
 
 	JustBeforeEach(func() {
-		handler = NewBrokerHandler(lagertest.NewTestLogger("test"), conf, bindingdb, policydb, sbssdb)
+		handler = NewBrokerHandler(lagertest.NewTestLogger("test"), conf, bindingdb, policydb, sbssdb, []domain.Service{{
+			ID:   "a-service-id",
+			Name: "autoscaler",
+			Plans: []domain.ServicePlan{{
+				ID:   "a-plan-id",
+				Name: "standard",
+			}},
+		}})
 	})
 
 	Describe("GetBrokerCatalog", func() {
@@ -127,79 +139,87 @@ var _ = Describe("BrokerHandler", func() {
 			})
 
 		})
-		Context("When database CreateServiceInstance call returns ErrAlreadyExists", func() {
-			BeforeEach(func() {
-				body, err = json.Marshal(instanceCreationReqBody)
-				Expect(err).NotTo(HaveOccurred())
-				bindingdb.CreateServiceInstanceReturns(db.ErrAlreadyExists)
-				conf.DashboardRedirectURI = ""
-			})
-			It("succeeds with 200", func() {
-				Expect(resp.Code).To(Equal(http.StatusOK))
-				Expect(resp.Body.String()).To(Equal(`{}`))
-			})
-		})
 
-		Context("When dashboard redirect uri is present in config and database CreateServiceInstance call returns ErrAlreadyExists", func() {
+		Context("When all parameters are present", func() {
 			BeforeEach(func() {
-				body, err = json.Marshal(instanceCreationReqBody)
-				Expect(err).NotTo(HaveOccurred())
-				bindingdb.CreateServiceInstanceReturns(db.ErrAlreadyExists)
-				conf.DashboardRedirectURI = "https://service-dashboard-url.com"
+				installQuotaAPIHandlers()
 			})
-			It("succeeds with 200 and returns dashboard_url", func() {
-				Expect(resp.Code).To(Equal(http.StatusOK))
-				Expect(resp.Body.Bytes()).To(Equal([]byte("{\"dashboard_url\":\"https://service-dashboard-url.com/manage/an-instance-id\"}")))
+			AfterEach(func() {
+				Expect(quotaServer.ReceivedRequests()).To(HaveLen(1))
 			})
-		})
+			Context("When database CreateServiceInstance call returns ErrAlreadyExists", func() {
+				BeforeEach(func() {
+					body, err = json.Marshal(instanceCreationReqBody)
+					Expect(err).NotTo(HaveOccurred())
+					bindingdb.CreateServiceInstanceReturns(db.ErrAlreadyExists)
+					conf.DashboardRedirectURI = ""
+				})
+				It("succeeds with 200", func() {
+					Expect(resp.Code).To(Equal(http.StatusOK))
+					Expect(resp.Body.String()).To(Equal(`{}`))
+				})
+			})
 
-		Context("When database CreateServiceInstance call returns ErrConflict", func() {
-			BeforeEach(func() {
-				body, err = json.Marshal(instanceCreationReqBody)
-				Expect(err).NotTo(HaveOccurred())
-				bindingdb.CreateServiceInstanceReturns(db.ErrConflict)
+			Context("When dashboard redirect uri is present in config and database CreateServiceInstance call returns ErrAlreadyExists", func() {
+				BeforeEach(func() {
+					body, err = json.Marshal(instanceCreationReqBody)
+					Expect(err).NotTo(HaveOccurred())
+					bindingdb.CreateServiceInstanceReturns(db.ErrAlreadyExists)
+					conf.DashboardRedirectURI = "https://service-dashboard-url.com"
+				})
+				It("succeeds with 200 and returns dashboard_url", func() {
+					Expect(resp.Code).To(Equal(http.StatusOK))
+					Expect(resp.Body.Bytes()).To(Equal([]byte("{\"dashboard_url\":\"https://service-dashboard-url.com/manage/an-instance-id\"}")))
+				})
 			})
-			It("fails with 409", func() {
-				Expect(resp.Code).To(Equal(http.StatusConflict))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Conflict","message":"Service instance with instance_id \"an-instance-id\" already exists with different parameters"}`))
-			})
-		})
 
-		Context("When database CreateServiceInstance call returns error other than ErrAlreadyExists", func() {
-			BeforeEach(func() {
-				body, err = json.Marshal(instanceCreationReqBody)
-				Expect(err).NotTo(HaveOccurred())
-				bindingdb.CreateServiceInstanceReturns(fmt.Errorf("some sql error"))
+			Context("When database CreateServiceInstance call returns ErrConflict", func() {
+				BeforeEach(func() {
+					body, err = json.Marshal(instanceCreationReqBody)
+					Expect(err).NotTo(HaveOccurred())
+					bindingdb.CreateServiceInstanceReturns(db.ErrConflict)
+				})
+				It("fails with 409", func() {
+					Expect(resp.Code).To(Equal(http.StatusConflict))
+					Expect(resp.Body.String()).To(Equal(`{"code":"Conflict","message":"Service instance with instance_id \"an-instance-id\" already exists with different parameters"}`))
+				})
 			})
-			It("fails with 500", func() {
-				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error creating service instance"}`))
-			})
-		})
 
-		Context("When dashboard redirect uri is present in config", func() {
-			BeforeEach(func() {
-				body, err = json.Marshal(instanceCreationReqBody)
-				Expect(err).NotTo(HaveOccurred())
-				conf.DashboardRedirectURI = "https://service-dashboard-url.com"
+			Context("When database CreateServiceInstance call returns error other than ErrAlreadyExists", func() {
+				BeforeEach(func() {
+					body, err = json.Marshal(instanceCreationReqBody)
+					Expect(err).NotTo(HaveOccurred())
+					bindingdb.CreateServiceInstanceReturns(fmt.Errorf("some sql error"))
+				})
+				It("fails with 500", func() {
+					Expect(resp.Code).To(Equal(http.StatusInternalServerError))
+					Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error creating service instance"}`))
+				})
 			})
-			It("succeeds with 201 and returns dashboard_url", func() {
-				Expect(resp.Code).To(Equal(http.StatusCreated))
-				Expect(resp.Body.Bytes()).To(Equal([]byte("{\"dashboard_url\":\"https://service-dashboard-url.com/manage/an-instance-id\"}")))
+
+			Context("When dashboard redirect uri is present in config", func() {
+				BeforeEach(func() {
+					body, err = json.Marshal(instanceCreationReqBody)
+					Expect(err).NotTo(HaveOccurred())
+					conf.DashboardRedirectURI = "https://service-dashboard-url.com"
+				})
+				It("succeeds with 201 and returns dashboard_url", func() {
+					Expect(resp.Code).To(Equal(http.StatusCreated))
+					Expect(resp.Body.Bytes()).To(Equal([]byte("{\"dashboard_url\":\"https://service-dashboard-url.com/manage/an-instance-id\"}")))
+				})
 			})
-		})
-		Context("When all mandatory parameters are present", func() {
-			BeforeEach(func() {
-				body, err = json.Marshal(instanceCreationReqBody)
-				Expect(err).NotTo(HaveOccurred())
+			Context("When all mandatory parameters are present", func() {
+				BeforeEach(func() {
+					body, err = json.Marshal(instanceCreationReqBody)
+					Expect(err).NotTo(HaveOccurred())
+				})
+				It("succeeds with 201", func() {
+					Expect(resp.Code).To(Equal(http.StatusCreated))
+				})
 			})
-			It("succeeds with 201", func() {
-				Expect(resp.Code).To(Equal(http.StatusCreated))
-			})
-		})
-		Context("When an invalid default policy is present", func() {
-			BeforeEach(func() {
-				invalidDefaultPolicy := `
+			Context("When an invalid default policy is present", func() {
+				BeforeEach(func() {
+					invalidDefaultPolicy := `
 						{
 							"instance_min_count":1,
 							"scaling_rules":[
@@ -210,55 +230,89 @@ var _ = Describe("BrokerHandler", func() {
 								"adjustment":"-1"
 							}]
 						}`
-				m := json.RawMessage(invalidDefaultPolicy)
-				instanceCreationReqBody = &models.InstanceCreationRequestBody{
-					OrgGUID:   "an-org-guid",
-					SpaceGUID: "an-space-guid",
-					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
-						ServiceID: "a-service-id",
-						PlanID:    "a-plan-id",
-					},
-					Parameters: models.InstanceParameters{
-						DefaultPolicy: &m,
-					},
-				}
-				body, err = json.Marshal(instanceCreationReqBody)
-				Expect(err).NotTo(HaveOccurred())
+					m := json.RawMessage(invalidDefaultPolicy)
+					instanceCreationReqBody = &models.InstanceCreationRequestBody{
+						OrgGUID:   "an-org-guid",
+						SpaceGUID: "an-space-guid",
+						BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+							ServiceID: "a-service-id",
+							PlanID:    "a-plan-id",
+						},
+						Parameters: models.InstanceParameters{
+							DefaultPolicy: &m,
+						},
+					}
+					body, err = json.Marshal(instanceCreationReqBody)
+					Expect(err).NotTo(HaveOccurred())
+				})
+				It("fails with 400", func() {
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
+					bodyBytes, err := ioutil.ReadAll(resp.Body)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(string(bodyBytes)).To(Equal(`[{"context":"(root)","description":"instance_max_count is required"}]`))
+				})
 			})
-			It("fails with 400", func() {
-				Expect(resp.Code).To(Equal(http.StatusBadRequest))
-				bodyBytes, err := ioutil.ReadAll(resp.Body)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(string(bodyBytes)).To(Equal(`[{"context":"(root)","description":"instance_max_count is required"}]`))
+			Context("When a default policy is present", func() {
+				BeforeEach(func() {
+					d := json.RawMessage(testDefaultPolicy)
+					instanceCreationReqBody = &models.InstanceCreationRequestBody{
+						OrgGUID:   "an-org-guid",
+						SpaceGUID: "an-space-guid",
+						BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+							ServiceID: "a-service-id",
+							PlanID:    "a-plan-id",
+						},
+						Parameters: models.InstanceParameters{
+							DefaultPolicy: &d,
+						},
+					}
+					body, err = json.Marshal(instanceCreationReqBody)
+					Expect(err).NotTo(HaveOccurred())
+				})
+				It("succeeds with 201 and saves the default policy", func() {
+					Expect(resp.Code).To(Equal(http.StatusCreated))
+					Expect(bindingdb.CreateServiceInstanceCallCount()).To(Equal(1))
+					serviceInstance := bindingdb.CreateServiceInstanceArgsForCall(0)
+					Expect(serviceInstance.ServiceInstanceId).To(Equal(testInstanceId))
+					Expect(serviceInstance.DefaultPolicy).To(MatchJSON(testDefaultPolicy))
+					Expect(serviceInstance.DefaultPolicyGuid).To(HaveLen(36))
+				})
 			})
+
 		})
-		Context("When a default policy is present", func() {
-			BeforeEach(func() {
-				d := json.RawMessage(testDefaultPolicy)
-				instanceCreationReqBody = &models.InstanceCreationRequestBody{
-					OrgGUID:   "an-org-guid",
-					SpaceGUID: "an-space-guid",
-					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
-						ServiceID: "a-service-id",
-						PlanID:    "a-plan-id",
-					},
-					Parameters: models.InstanceParameters{
-						DefaultPolicy: &d,
-					},
-				}
-				body, err = json.Marshal(instanceCreationReqBody)
-				Expect(err).NotTo(HaveOccurred())
-			})
-			It("succeeds with 201 and saves the default policy", func() {
-				Expect(resp.Code).To(Equal(http.StatusCreated))
-				Expect(bindingdb.CreateServiceInstanceCallCount()).To(Equal(1))
-				serviceInstance := bindingdb.CreateServiceInstanceArgsForCall(0)
-				Expect(serviceInstance.ServiceInstanceId).To(Equal(testInstanceId))
-				Expect(serviceInstance.DefaultPolicy).To(MatchJSON(testDefaultPolicy))
-				Expect(serviceInstance.DefaultPolicyGuid).To(HaveLen(36))
-			})
+	})
+
+	Describe("Quota checks", func() {
+		var err error
+		var instanceCreationReqBody *models.InstanceCreationRequestBody
+		var body []byte
+		//var quota int
+		JustBeforeEach(func() {
+			req, err = http.NewRequest(http.MethodPut, "", bytes.NewReader(body))
+			handler.CreateServiceInstance(resp, req, map[string]string{"instanceId": testInstanceId})
+		})
+		BeforeEach(func() {
+			instanceCreationReqBody = &models.InstanceCreationRequestBody{
+				OrgGUID:   "an-org-guid",
+				SpaceGUID: "an-space-guid",
+				BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+					ServiceID: "a-service-id",
+					PlanID:    "a-plan-id",
+				},
+			}
+			installQuotaAPIHandlers()
 		})
 
+		Context("When all mandatory parameters are present", func() {
+			BeforeEach(func() {
+				body, err = json.Marshal(instanceCreationReqBody)
+				Expect(err).NotTo(HaveOccurred())
+				//quota = 0
+			})
+			It("succeeds with 201", func() {
+				Expect(resp.Code).To(Equal(http.StatusCreated))
+			})
+		})
 	})
 
 	Describe("UpdateServiceInstance", func() {
@@ -815,3 +869,25 @@ var _ = Describe("BrokerHandler", func() {
 		})
 	})
 })
+
+func installQuotaAPIHandlers() {
+	/// only provide them for tests using them, or reset them if not used?
+	tokenServer.Reset()
+	tokenServer.AppendHandlers(ghttp.CombineHandlers(
+		ghttp.VerifyBasicAuth("client-id", "client-secret"),
+		ghttp.VerifyRequest("POST", "/"),
+		ghttp.RespondWithJSONEncoded(http.StatusOK, oauth2.Token{
+			AccessToken:  "secret-token",
+			TokenType:    "bearer",
+			RefreshToken: "refresh-token",
+		}),
+	))
+	quotaServer.Reset()
+	quotaServer.AppendHandlers(ghttp.CombineHandlers(
+		ghttp.VerifyHeaderKV("Authorization", "Bearer secret-token"),
+		ghttp.VerifyRequest("GET", "/api/v2.0/orgs/an-org-guid/services/autoscaler/plan/standard"),
+		ghttp.RespondWithJSONEncoded(http.StatusOK, struct {
+			Quota int `json:"quota"`
+		}{Quota: -1}),
+	))
+}

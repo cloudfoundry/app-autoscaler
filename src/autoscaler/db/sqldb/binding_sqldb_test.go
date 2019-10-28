@@ -406,4 +406,45 @@ var _ = Describe("BindingSqldb", func() {
 
 	})
 
+	Describe("CountServiceInstancesInOrg", func() {
+		var serviceInstanceCount int
+		BeforeEach(func() {
+			bdb, err = NewBindingSQLDB(dbConfig, logger)
+			Expect(err).NotTo(HaveOccurred())
+
+			cleanServiceBindingTable()
+			cleanServiceInstanceTable()
+		})
+		JustBeforeEach(func() {
+			serviceInstanceCount, err = bdb.CountServiceInstancesInOrg(testOrgGuid)
+		})
+		AfterEach(func() {
+			cleanServiceBindingTable()
+			cleanServiceInstanceTable()
+			err = bdb.Close()
+			Expect(err).NotTo(HaveOccurred())
+		})
+		Context("when no service instance exist", func() {
+			It("returns 0", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(serviceInstanceCount).To(Equal(0))
+			})
+		})
+		Context("when service instances exist", func() {
+			BeforeEach(func() {
+				err = bdb.CreateServiceInstance(models.ServiceInstance{testInstanceId, testOrgGuid, testSpaceGuid, policyJsonStr, policyGuid})
+				Expect(err).NotTo(HaveOccurred())
+				err = bdb.CreateServiceInstance(models.ServiceInstance{testInstanceId + "2", testOrgGuid, testSpaceGuid, policyJsonStr, policyGuid})
+				Expect(err).NotTo(HaveOccurred())
+				err = bdb.CreateServiceInstance(models.ServiceInstance{testInstanceId + "3", testOrgGuid2, testSpaceGuid, policyJsonStr, policyGuid})
+				Expect(err).NotTo(HaveOccurred())
+
+			})
+			It("returns the correct count", func() {
+				Expect(err).ToNot(HaveOccurred())
+				Expect(serviceInstanceCount).To(Equal(2))
+			})
+		})
+
+	})
 })

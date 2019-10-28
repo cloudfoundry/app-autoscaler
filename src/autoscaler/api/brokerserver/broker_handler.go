@@ -1,6 +1,7 @@
 package brokerserver
 
 import (
+	"autoscaler/api/quota"
 	"autoscaler/api/sbss_cred_helper"
 	"database/sql"
 	"encoding/json"
@@ -9,6 +10,8 @@ import (
 	"net/http"
 	"reflect"
 	"regexp"
+
+	"github.com/pivotal-cf/brokerapi/domain"
 
 	"autoscaler/api/config"
 	"autoscaler/api/custom_metrics_cred_helper"
@@ -23,27 +26,31 @@ import (
 )
 
 type BrokerHandler struct {
-	logger          lager.Logger
-	conf            *config.Config
-	bindingdb       db.BindingDB
-	policydb        db.PolicyDB
-	sbssDB          db.SbssDB
-	policyValidator *policyvalidator.PolicyValidator
-	schedulerUtil   *schedulerutil.SchedulerUtil
+	logger                lager.Logger
+	conf                  *config.Config
+	bindingdb             db.BindingDB
+	policydb              db.PolicyDB
+	sbssDB                db.SbssDB
+	policyValidator       *policyvalidator.PolicyValidator
+	schedulerUtil         *schedulerutil.SchedulerUtil
+	quotaManagementClient *quota.QuotaManagementClient
+	catalog               []domain.Service
 }
 
 var emptyJSONObject = regexp.MustCompile(`^\s*{\s*}\s*$`)
 
-func NewBrokerHandler(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB, sbssDB db.SbssDB) *BrokerHandler {
+func NewBrokerHandler(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB, sbssDB db.SbssDB, catalog []domain.Service) *BrokerHandler {
 
 	return &BrokerHandler{
-		logger:          logger,
-		conf:            conf,
-		bindingdb:       bindingdb,
-		policydb:        policydb,
-		sbssDB:          sbssDB,
-		policyValidator: policyvalidator.NewPolicyValidator(conf.PolicySchemaPath),
-		schedulerUtil:   schedulerutil.NewSchedulerUtil(conf, logger),
+		logger:                logger,
+		conf:                  conf,
+		bindingdb:             bindingdb,
+		policydb:              policydb,
+		sbssDB:                sbssDB,
+		catalog:               catalog,
+		policyValidator:       policyvalidator.NewPolicyValidator(conf.PolicySchemaPath),
+		schedulerUtil:         schedulerutil.NewSchedulerUtil(conf, logger),
+		quotaManagementClient: quota.NewQuotaManagementClient(conf, logger),
 	}
 
 }
@@ -61,6 +68,7 @@ func (h *BrokerHandler) GetBrokerCatalog(w http.ResponseWriter, r *http.Request,
 		writeErrorResponse(w, http.StatusInternalServerError, "Failed to load catalog")
 		return
 	}
+
 	w.Write([]byte(catalog))
 }
 
@@ -84,6 +92,10 @@ func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Req
 	if instanceId == "" || body.OrgGUID == "" || body.SpaceGUID == "" || body.ServiceID == "" || body.PlanID == "" {
 		h.logger.Error("failed to create service instance when trying to get mandatory data", nil, lager.Data{"instanceId": instanceId, "orgGuid": body.OrgGUID, "spaceGuid": body.SpaceGUID, "serviceId": body.ServiceID, "planId": body.PlanID})
 		writeErrorResponse(w, http.StatusBadRequest, "Malformed or missing mandatory data")
+		return
+	}
+
+	if h.quotaExceeded(body, instanceId, w) {
 		return
 	}
 
@@ -130,6 +142,51 @@ func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Req
 		h.logger.Error("failed to create service instance", err, lager.Data{"instanceId": instanceId, "orgGuid": body.OrgGUID, "spaceGuid": body.SpaceGUID})
 		writeErrorResponse(w, http.StatusInternalServerError, "Error creating service instance")
 	}
+}
+
+func (h *BrokerHandler) quotaExceeded(creationRequestBody *models.InstanceCreationRequestBody, instanceId string, w http.ResponseWriter) bool {
+	serviceName := ""
+	planName := ""
+	for _, service := range h.catalog {
+		if service.ID == creationRequestBody.ServiceID {
+			for _, plan := range service.Plans {
+				if plan.ID == creationRequestBody.PlanID {
+					serviceName = service.Name
+					planName = plan.Name
+				}
+			}
+		}
+	}
+	if serviceName == "" || planName == "" {
+		h.logger.Error("failed to find selected service and plan in catalog", nil, lager.Data{"instanceId": instanceId, "orgGuid": creationRequestBody.OrgGUID, "spaceGuid": creationRequestBody.SpaceGUID, "serviceId": creationRequestBody.ServiceID, "planId": creationRequestBody.PlanID, "serviceName": serviceName, "planName": planName})
+		writeErrorResponse(w, http.StatusBadRequest, "Unknown service or plan")
+		return true
+	}
+	quota, err := h.quotaManagementClient.GetQuota(creationRequestBody.OrgGUID, serviceName, planName)
+	if err != nil {
+		h.logger.Error("failed to call quota management API", err, lager.Data{"instanceId": instanceId, "orgGuid": creationRequestBody.OrgGUID, "spaceGuid": creationRequestBody.SpaceGUID, "serviceId": creationRequestBody.ServiceID, "planId": creationRequestBody.PlanID, "serviceName": serviceName, "planName": planName})
+		writeErrorResponse(w, http.StatusInternalServerError, "Failed to determine available quota. Try again later.")
+		return true
+	}
+	if quota == 0 {
+		h.logger.Error("failed to create service instance due to missing quota", nil, lager.Data{"instanceId": instanceId, "orgGuid": creationRequestBody.OrgGUID, "spaceGuid": creationRequestBody.SpaceGUID, "serviceId": creationRequestBody.ServiceID, "planId": creationRequestBody.PlanID, "serviceName": serviceName, "planName": planName, "quota": quota})
+		writeErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("No quota for this service (%s) or service plan (%s) has been assigned to your org. Please contact your global account administrator for help on how to assign Application Autoscaler quota to your subaccount.", serviceName, planName))
+		return true
+	}
+	if quota > 0 {
+		instances, err := h.bindingdb.CountServiceInstancesInOrg(creationRequestBody.OrgGUID)
+		if err != nil {
+			h.logger.Error("failed to count currently existing service instances", err, lager.Data{"instanceId": instanceId, "orgGuid": creationRequestBody.OrgGUID, "spaceGuid": creationRequestBody.SpaceGUID, "serviceId": creationRequestBody.ServiceID, "planId": creationRequestBody.PlanID, "serviceName": serviceName, "planName": planName})
+			writeErrorResponse(w, http.StatusInternalServerError, "Failed to determine used quota. Try again later.")
+			return true
+		}
+		if instances+1 > quota {
+			h.logger.Error("failed to create service instance due to insufficient quota", nil, lager.Data{"instanceId": instanceId, "orgGuid": creationRequestBody.OrgGUID, "spaceGuid": creationRequestBody.SpaceGUID, "serviceId": creationRequestBody.ServiceID, "planId": creationRequestBody.PlanID, "serviceName": serviceName, "planName": planName, "quota": quota, "instances": instances})
+			writeErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("The quota (%d) for this service (%s) and service plan (%s) service plan has been exceeded. Please contact your global account administrator for help on how to assign more Application Autoscaler quota to your subaccount.", quota, serviceName, planName))
+			return true
+		}
+	}
+	return false
 }
 
 func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Request, vars map[string]string) {

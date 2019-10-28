@@ -148,3 +148,12 @@
 [submodule "sbss"]
 	path = sbss
 	url = git@github.wdf.sap.corp:CPSecurity/sbss.git
+[submodule "src/github.com/pivotal-cf/brokerapi"]
+	path = src/github.com/pivotal-cf/brokerapi
+	url = https://github.com/pivotal-cf/brokerapi/
+[submodule "src/golang.org/x/oauth2"]
+	path = src/golang.org/x/oauth2
+	url = https://github.com/golang/oauth2
+[submodule "src/github.com/pkg/errors"]
+	path = src/github.com/pkg/errors
+	url = https://github.com/pkg/errors
