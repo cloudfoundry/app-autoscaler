@@ -180,23 +180,32 @@ var _ = Describe("BindingSqldb", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 		JustBeforeEach(func() {
-			err = bdb.CreateServiceInstance(models.ServiceInstance{testInstanceId, testOrgGuid, testSpaceGuid, policyJsonStr, policyGuid})
-			Expect(err).NotTo(HaveOccurred())
 			retrievedServiceInstance, err = bdb.GetServiceInstance(testInstanceId)
 		})
-		Context("When the service instance doesn't have a default policy", func() {
-			BeforeEach(func() {
-				policyJsonStr = ""
-			})
-			It("should return an empty default policy", func() {
-				Expect(err).NotTo(HaveOccurred())
-				Expect(retrievedServiceInstance.DefaultPolicy).To(BeEmpty())
+		Context("when the service instance does not exist", func() {
+			It("should return an error", func() {
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(Equal(db.ErrDoesNotExist))
+				Expect(retrievedServiceInstance).To(BeNil())
 			})
 		})
-		Context("When the service instance has a default policy", func() {
-			It("should return the default policy", func() {
+
+		Context("when the service instance exists", func() {
+			BeforeEach(func() {
+				err = bdb.CreateServiceInstance(models.ServiceInstance{testInstanceId, testOrgGuid, testSpaceGuid, policyJsonStr, policyGuid})
 				Expect(err).NotTo(HaveOccurred())
-				Expect(retrievedServiceInstance.DefaultPolicy).To(Equal(policyJsonStr))
+			})
+			It("should return what was created", func() {
+				Expect(retrievedServiceInstance).To(Equal(&models.ServiceInstance{testInstanceId, testOrgGuid, testSpaceGuid, policyJsonStr, policyGuid}))
+			})
+			Context("When the service instance doesn't have a default policy", func() {
+				BeforeEach(func() {
+					policyJsonStr = ""
+				})
+				It("should return an empty default policy", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(retrievedServiceInstance.DefaultPolicy).To(BeEmpty())
+				})
 			})
 		})
 	})

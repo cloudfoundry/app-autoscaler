@@ -306,19 +306,6 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(resp.Body.String()).To(Equal(`{"code":"Unprocessable Entity","message":"Failed to update service instance: Only default_policy updates allowed"}`))
 			})
 		})
-		Context("When all mandatory parameters are present", func() {
-			BeforeEach(func() {
-				emptyPolicyParameter := json.RawMessage("\n{\t}\n")
-				parameters := models.InstanceParameters{DefaultPolicy: &emptyPolicyParameter}
-				instanceUpdateRequestBody.Parameters = &parameters
-				body, err = json.Marshal(instanceUpdateRequestBody)
-				Expect(err).NotTo(HaveOccurred())
-				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{}, nil)
-			})
-			It("succeeds with 200", func() {
-				Expect(resp.Code).To(Equal(http.StatusOK))
-			})
-		})
 		Context("When an invalid default policy is present", func() {
 			BeforeEach(func() {
 				invalidDefaultPolicy := `
@@ -351,6 +338,40 @@ var _ = Describe("BrokerHandler", func() {
 				bodyBytes, err := ioutil.ReadAll(resp.Body)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(string(bodyBytes)).To(Equal(`[{"context":"(root)","description":"instance_max_count is required"}]`))
+			})
+		})
+		Context("When the service instance to be updated does not exist", func() {
+			BeforeEach(func() {
+				emptyPolicyParameter := json.RawMessage("\n{\t}\n")
+				parameters := models.InstanceParameters{DefaultPolicy: &emptyPolicyParameter}
+				instanceUpdateRequestBody.Parameters = &parameters
+				body, err = json.Marshal(instanceUpdateRequestBody)
+				Expect(err).NotTo(HaveOccurred())
+				bindingdb.GetServiceInstanceReturns(nil, db.ErrDoesNotExist)
+			})
+			It("retrieves the service instance", func() {
+				Expect(bindingdb.GetServiceInstanceCallCount()).To(Equal(1))
+				Expect(bindingdb.GetServiceInstanceArgsForCall(0)).To(Equal(testInstanceId))
+			})
+			It("fails with 404", func() {
+				Expect(resp.Code).To(Equal(http.StatusNotFound))
+			})
+		})
+		Context("When all mandatory parameters are present", func() {
+			BeforeEach(func() {
+				emptyPolicyParameter := json.RawMessage("\n{\t}\n")
+				parameters := models.InstanceParameters{DefaultPolicy: &emptyPolicyParameter}
+				instanceUpdateRequestBody.Parameters = &parameters
+				body, err = json.Marshal(instanceUpdateRequestBody)
+				Expect(err).NotTo(HaveOccurred())
+				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{}, nil)
+			})
+			It("succeeds with 200", func() {
+				Expect(resp.Code).To(Equal(http.StatusOK))
+			})
+			It("retrieves the service instance", func() {
+				Expect(bindingdb.GetServiceInstanceCallCount()).To(Equal(1))
+				Expect(bindingdb.GetServiceInstanceArgsForCall(0)).To(Equal(testInstanceId))
 			})
 		})
 		Context("When a default policy is present and there was previously not a default policy", func() {

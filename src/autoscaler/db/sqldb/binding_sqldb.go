@@ -60,7 +60,7 @@ func nullableString(s string) interface{} {
 
 func (bdb *BindingSQLDB) CreateServiceInstance(serviceInstance models.ServiceInstance) error {
 	existingInstance, err := bdb.GetServiceInstance(serviceInstance.ServiceInstanceId)
-	if err != nil {
+	if err != nil && err != db.ErrDoesNotExist {
 		bdb.logger.Error("create-service-instance-get-existing", err, lager.Data{"serviceinstance": serviceInstance})
 		return err
 	}
@@ -114,7 +114,7 @@ func (bdb *BindingSQLDB) GetServiceInstance(serviceInstanceId string) (*models.S
 			DefaultPolicyGuid: existingDefaultPolicyGuid.String,
 		}, nil
 	}
-	return nil, nil
+	return nil, db.ErrDoesNotExist
 }
 
 func (bdb *BindingSQLDB) UpdateServiceInstance(serviceInstance models.ServiceInstance) error {
