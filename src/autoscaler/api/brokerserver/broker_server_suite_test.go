@@ -4,7 +4,6 @@ import (
 	"autoscaler/api/brokerserver"
 	"autoscaler/api/config"
 	"autoscaler/fakes"
-	"autoscaler/routes"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -93,11 +92,6 @@ var _ = BeforeSuite(func() {
 
 	catalogBytes, err = ioutil.ReadFile("../exampleconfig/catalog-example.json")
 	Expect(err).NotTo(HaveOccurred())
-
-	urlPath, _ := routes.SchedulerRoutes().Get(routes.UpdateScheduleRouteName).URLPath("appId", testAppId)
-	schedulerServer.RouteToHandler("PUT", urlPath.String(), ghttp.RespondWith(http.StatusOK, nil))
-	schedulerServer.RouteToHandler("DELETE", urlPath.String(), ghttp.RespondWith(http.StatusOK, nil))
-
 })
 
 var _ = AfterSuite(func() {
