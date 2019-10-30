@@ -1,17 +1,18 @@
-
-
+os: linux
 dist: xenial
-sudo: required
 
 env:
   global:
     - DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
     - NODE_VERSION=6.2
-    - GO_VERSION=1.11
+    - GO_VERSION=1.13.3
     - LOGLEVEL=info
 language: java
+cache:
+  directories:
+    - $HOME/.m2
 jdk:
-- openjdk8
+  - openjdk8
 services:
   - postgresql
 addons:
@@ -47,37 +48,50 @@ before_script:
   - java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=api/db/api.db.changelog.yml --username=root update
   - java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=scheduler/db/scheduler.changelog-master.yaml --username=root update
   - java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=scheduler/db/quartz.changelog-master.yaml --username=root update
-matrix:
+jobs:
   include:
-  - name: unit test
-    script:
-      # Unit test
-      - pushd api
-      - npm install
-      - npm test
-      - popd
-      - pushd servicebroker
-      - npm install
-      - npm test
-      - popd
-      - pushd src/autoscaler
-      - ginkgo -r -race -randomizeAllSpecs
-      - popd
-      - pushd scheduler
-      - mvn test
-      - mvn test -Dspring.profiles.active=mysql
-      - popd
+    - name: unit test
+      script:
+        # Unit test
+        - pushd src/autoscaler
+        - ginkgo -r -race -randomizeAllSpecs
+        - popd
+        - pushd scheduler
+        - mvn test
+        - mvn test -Dspring.profiles.active=mysql
 
-  - name: integration test
-    script:
-      # Integration test
-      - pushd api
-      - npm install
-      - popd
-      - pushd servicebroker
-      - npm install
-      - popd
-      - pushd scheduler
-      - mvn package -DskipTests
-      - popd
-      - ginkgo -r -race -randomizeAllSpecs src/integration 
+    - name: integration test
+      script:
+        # Integration test
+        - pushd scheduler
+        - mvn package -DskipTests
+        - popd
+        - ginkgo -r -race -randomizeAllSpecs src/integration
+
+    # Tests for legacy components (node apiserver, broker and metricscollector)
+    - name: legacy unit test
+      script:
+        - pushd api
+        - npm install
+        - npm test
+        - popd
+        - pushd servicebroker
+        - npm install
+        - npm test
+        - popd
+
+    - name: legacy integration test
+      script:
+        - pushd api
+        - npm install
+        - npm test
+        - popd
+        - pushd servicebroker
+        - npm install
+        - npm test
+        - popd
+        - pushd scheduler
+        - mvn package -DskipTests
+        - popd
+        - ginkgo -r -race -randomizeAllSpecs src/integration_legacy
+

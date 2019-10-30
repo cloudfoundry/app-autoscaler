@@ -1,4 +1,4 @@
-package integration
+package integration_legacy
 
 import (
 	"autoscaler/cf"
@@ -20,7 +20,7 @@ type ScalingHistoryResult struct {
 	Resources    []models.AppScalingHistory `json:"resources"`
 }
 
-var _ = Describe("Integration_Api_ScalingEngine", func() {
+var _ = Describe("Integration_legacy_Api_ScalingEngine", func() {
 	var (
 		initInstanceCount int = 2
 		appId             string
