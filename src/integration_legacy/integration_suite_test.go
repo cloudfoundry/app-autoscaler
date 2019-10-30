@@ -352,12 +352,27 @@ func initializeHttpClientForPublicApi(certFileName string, keyFileName string, c
 	httpClientForPublicApi.Timeout = httpRequestTimeout
 }
 
-func provisionServiceInstance(serviceInstanceId string, orgId string, spaceId string, brokerPort int, httpClient *http.Client) (*http.Response, error) {
-	bindBody := map[string]interface{}{
-		"organization_guid": orgId,
-		"space_guid":        spaceId,
-		"service_id":        "app-autoscaler",
-		"plan_id":           "free",
+func provisionServiceInstance(serviceInstanceId string, orgId string, spaceId string, defaultPolicy []byte, brokerPort int, httpClient *http.Client) (*http.Response, error) {
+	var bindBody map[string]interface{}
+	if defaultPolicy != nil {
+		defaultPolicy := json.RawMessage(defaultPolicy)
+		parameters := map[string]interface{}{
+			"default_policy": &defaultPolicy,
+		}
+		bindBody = map[string]interface{}{
+			"organization_guid": orgId,
+			"space_guid":        spaceId,
+			"service_id":        "app-autoscaler",
+			"plan_id":           "free",
+			"parameters":        parameters,
+		}
+	} else {
+		bindBody = map[string]interface{}{
+			"organization_guid": orgId,
+			"space_guid":        spaceId,
+			"service_id":        "app-autoscaler",
+			"plan_id":           "free",
+		}
 	}
 
 	body, err := json.Marshal(bindBody)
@@ -433,8 +448,8 @@ func unbindService(bindingId string, appId string, serviceInstanceId string, bro
 	return httpClient.Do(req)
 }
 
-func provisionAndBind(serviceInstanceId string, orgId string, spaceId string, bindingId string, appId string, policy []byte, brokerPort int, httpClient *http.Client) {
-	resp, err := provisionServiceInstance(serviceInstanceId, orgId, spaceId, brokerPort, httpClient)
+func provisionAndBind(serviceInstanceId string, orgId string, spaceId string, defaultPolicy []byte, bindingId string, appId string, policy []byte, brokerPort int, httpClient *http.Client) {
+	resp, err := provisionServiceInstance(serviceInstanceId, orgId, spaceId, defaultPolicy, brokerPort, httpClient)
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.StatusCode).To(Equal(http.StatusCreated))
 	resp.Body.Close()
