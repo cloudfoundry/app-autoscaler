@@ -1,4 +1,4 @@
-package integration
+package integration_legacy
 
 import (
 	"encoding/base64"
@@ -13,7 +13,7 @@ import (
 	"github.com/onsi/gomega/ghttp"
 )
 
-var _ = Describe("Integration_Broker_Api", func() {
+var _ = Describe("Integration_legacy_Broker_Api", func() {
 
 	var (
 		regPath = regexp.MustCompile(`^/v1/apps/.*/schedules`)

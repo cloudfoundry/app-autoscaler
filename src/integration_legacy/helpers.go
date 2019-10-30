@@ -1,4 +1,4 @@
-package integration
+package integration_legacy
 
 import (
 	"encoding/json"
@@ -20,24 +20,6 @@ type AppInstanceMetricResult struct {
 	PrevUrl      string                     `json:"prev_url"`
 	NextUrl      string                     `json:"next_url"`
 	Resources    []models.AppInstanceMetric `json:"resources"`
-}
-
-type AppAggregatedMetricResult struct {
-	TotalResults int                `json:"total_results"`
-	TotalPages   int                `json:"total_pages"`
-	Page         int                `json:"page"`
-	PrevUrl      string             `json:"prev_url"`
-	NextUrl      string             `json:"next_url"`
-	Resources    []models.AppMetric `json:"resources"`
-}
-
-type ScalingHistoryResult struct {
-	TotalResults int                        `json:"total_results"`
-	TotalPages   int                        `json:"total_pages"`
-	Page         int                        `json:"page"`
-	PrevUrl      string                     `json:"prev_url"`
-	NextUrl      string                     `json:"next_url"`
-	Resources    []models.AppScalingHistory `json:"resources"`
 }
 
 func getAppAggregatedMetricUrl(appId string, metricType string, parameteters map[string]string, pageNo int) string {
