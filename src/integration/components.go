@@ -14,7 +14,6 @@ import (
 	opConfig "autoscaler/operator/config"
 	seConfig "autoscaler/scalingengine/config"
 
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/url"
@@ -25,25 +24,21 @@ import (
 
 	. "github.com/onsi/gomega"
 	"github.com/tedsuo/ifrit/ginkgomon"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
 const (
-	APIServer             = "apiServer"
-	APIPublicServer       = "APIPublicServer"
-	GolangAPIServer       = "golangApiServer"
-	ServiceBroker         = "serviceBroker"
-	GolangServiceBroker   = "golangServiceBroker"
-	ServiceBrokerInternal = "serviceBrokerInternal"
-	Scheduler             = "scheduler"
-	MetricsCollector      = "metricsCollector"
-	EventGenerator        = "eventGenerator"
-	ScalingEngine         = "scalingEngine"
-	Operator              = "operator"
-	ConsulCluster         = "consulCluster"
-	MetricsGateway        = "metricsGateway"
-	MetricsServerHTTP     = "metricsServerHTTP"
-	MetricsServerWS       = "metricsServerWS"
+	GolangAPIServer     = "golangApiServer"
+	ServiceBroker       = "serviceBroker"
+	GolangServiceBroker = "golangServiceBroker"
+	Scheduler           = "scheduler"
+	MetricsCollector    = "metricsCollector"
+	EventGenerator      = "eventGenerator"
+	ScalingEngine       = "scalingEngine"
+	Operator            = "operator"
+	MetricsGateway      = "metricsGateway"
+	MetricsServerHTTP   = "metricsServerHTTP"
+	MetricsServerWS     = "metricsServerWS"
 )
 
 var serviceCatalogPath string = "../../servicebroker/config/catalog.json"
@@ -69,29 +64,6 @@ type DBConfig struct {
 	MaxConnections int    `json:"maxConnections"`
 	IdleTimeout    int    `json:"idleTimeout"`
 }
-type APIServerClient struct {
-	Uri string          `json:"uri"`
-	TLS models.TLSCerts `json:"tls"`
-}
-
-type ServiceBrokerConfig struct {
-	Port                int  `json:"port"`
-	PublicPort          int  `json:"publicPort"`
-	HealthPort          int  `json:"healthPort"`
-	EnableCustomMetrics bool `json:"enableCustomMetrics"`
-
-	Username string `json:"username"`
-	Password string `json:"password"`
-
-	DB DBConfig `json:"db"`
-
-	APIServerClient      APIServerClient `json:"apiserver"`
-	HttpRequestTimeout   int             `json:"httpRequestTimeout"`
-	TLS                  models.TLSCerts `json:"tls"`
-	PublicTLS            models.TLSCerts `json:"publicTls"`
-	ServiceCatalogPath   string          `json:"serviceCatalogPath"`
-	SchemaValidationPath string          `json:"schemaValidationPath"`
-}
 type SchedulerClient struct {
 	Uri string          `json:"uri"`
 	TLS models.TLSCerts `json:"tls"`
@@ -116,57 +88,7 @@ type ServiceBrokerClient struct {
 	Uri string          `json:"uri"`
 	TLS models.TLSCerts `json:"tls"`
 }
-type APIServerConfig struct {
-	Port                   int                    `json:"port"`
-	PublicPort             int                    `json:"publicPort"`
-	HealthPort             int                    `json:"healthPort"`
-	InfoFilePath           string                 `json:"infoFilePath"`
-	CFAPI                  string                 `json:"cfApi"`
-	CFClientId             string                 `json:"cfClientId"`
-	CFClientSecret         string                 `json:"cfClientSecret"`
-	SkipSSLValidation      bool                   `json:"skipSSLValidation"`
-	CacheTTL               int                    `json:"cacheTTL"`
-	DB                     DBConfig               `json:"db"`
-	SchedulerClient        SchedulerClient        `json:"scheduler"`
-	ScalingEngineClient    ScalingEngineClient    `json:"scalingEngine"`
-	MetricsCollectorClient MetricsCollectorClient `json:"metricsCollector"`
-	EventGeneratorClient   EventGeneratorClient   `json:"eventGenerator"`
-	ServiceOffering        ServiceOffering        `json:"serviceOffering"`
 
-	TLS                   models.TLSCerts `json:"tls"`
-	PublicTLS             models.TLSCerts `json:"publicTls"`
-	HttpClientTimeout     int             `json:"httpClientTimeout"`
-	MinBreachDurationSecs int             `json:"minBreachDurationSecs"`
-	MinCoolDownSecs       int             `json:"minCoolDownSecs"`
-}
-
-func (components *Components) ServiceBroker(confPath string, argv ...string) *ginkgomon.Runner {
-	return ginkgomon.New(ginkgomon.Config{
-		Name:              ServiceBroker,
-		AnsiColorCode:     "32m",
-		StartCheck:        "Service broker server is running",
-		StartCheckTimeout: 20 * time.Second,
-		Command: exec.Command(
-			"node", append([]string{components.Executables[ServiceBroker], "-c", confPath}, argv...)...,
-		),
-		Cleanup: func() {
-		},
-	})
-}
-
-func (components *Components) ApiServer(confPath string, argv ...string) *ginkgomon.Runner {
-	return ginkgomon.New(ginkgomon.Config{
-		Name:              APIServer,
-		AnsiColorCode:     "33m",
-		StartCheck:        "Autoscaler API server started",
-		StartCheckTimeout: 20 * time.Second,
-		Command: exec.Command(
-			"node", append([]string{components.Executables[APIServer], "-c", confPath}, argv...)...,
-		),
-		Cleanup: func() {
-		},
-	})
-}
 func (components *Components) GolangAPIServer(confPath string, argv ...string) *ginkgomon.Runner {
 
 	return ginkgomon.New(ginkgomon.Config{
@@ -196,15 +118,15 @@ func (components *Components) Scheduler(confPath string, argv ...string) *ginkgo
 	})
 }
 
-func (components *Components) MetricsCollector(confPath string, argv ...string) *ginkgomon.Runner {
+func (components *Components) MetricsServer(confPath string, argv ...string) *ginkgomon.Runner {
 
 	return ginkgomon.New(ginkgomon.Config{
-		Name:              MetricsCollector,
-		AnsiColorCode:     "35m",
-		StartCheck:        `"metricscollector.started"`,
+		Name:              MetricsServerHTTP,
+		AnsiColorCode:     "33m",
+		StartCheck:        `"metricsserver.started"`,
 		StartCheckTimeout: 20 * time.Second,
 		Command: exec.Command(
-			components.Executables[MetricsCollector],
+			components.Executables[MetricsServerHTTP],
 			append([]string{
 				"-c", confPath,
 			}, argv...)...,
@@ -274,154 +196,6 @@ func (components *Components) MetricsGateway(confPath string, argv ...string) *g
 			}, argv...)...,
 		),
 	})
-}
-
-func (components *Components) MetricsServer(confPath string, argv ...string) *ginkgomon.Runner {
-
-	return ginkgomon.New(ginkgomon.Config{
-		Name:              MetricsServerHTTP,
-		AnsiColorCode:     "33m",
-		StartCheck:        `"metricsserver.started"`,
-		StartCheckTimeout: 20 * time.Second,
-		Command: exec.Command(
-			components.Executables[MetricsServerHTTP],
-			append([]string{
-				"-c", confPath,
-			}, argv...)...,
-		),
-	})
-}
-
-func (components *Components) PrepareServiceBrokerConfig(publicPort int, internalPort int, username string, password string, enableCustomMetrics bool, dbUri string, apiServerUri string, brokerApiHttpRequestTimeout time.Duration, tmpDir string) string {
-	brokerConfig := ServiceBrokerConfig{
-		Port:                internalPort,
-		PublicPort:          publicPort,
-		HealthPort:          0,
-		Username:            username,
-		Password:            password,
-		EnableCustomMetrics: enableCustomMetrics,
-		DB: DBConfig{
-			URI:            dbUri,
-			MinConnections: 1,
-			MaxConnections: 10,
-			IdleTimeout:    1000,
-		},
-		APIServerClient: APIServerClient{
-			Uri: apiServerUri,
-			TLS: models.TLSCerts{
-				KeyFile:    filepath.Join(testCertDir, "api.key"),
-				CertFile:   filepath.Join(testCertDir, "api.crt"),
-				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-			},
-		},
-		HttpRequestTimeout: int(brokerApiHttpRequestTimeout / time.Millisecond),
-		PublicTLS: models.TLSCerts{
-			KeyFile:    filepath.Join(testCertDir, "servicebroker.key"),
-			CertFile:   filepath.Join(testCertDir, "servicebroker.crt"),
-			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-		},
-		TLS: models.TLSCerts{
-			KeyFile:    filepath.Join(testCertDir, "servicebroker_internal.key"),
-			CertFile:   filepath.Join(testCertDir, "servicebroker_internal.crt"),
-			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-		},
-		ServiceCatalogPath:   serviceCatalogPath,
-		SchemaValidationPath: schemaValidationPath,
-	}
-
-	cfgFile, err := ioutil.TempFile(tmpDir, ServiceBroker)
-	w := json.NewEncoder(cfgFile)
-	err = w.Encode(brokerConfig)
-	Expect(err).NotTo(HaveOccurred())
-	cfgFile.Close()
-	return cfgFile.Name()
-}
-
-func (components *Components) PrepareApiServerConfig(port int, publicPort int, skipSSLValidation bool, cacheTTL int, cfApi string, dbUri string, schedulerUri string, scalingEngineUri string, metricsCollectorUri string, eventGeneratorUri string, serviceBrokerUri string, serviceOfferingEnabled bool, httpClientTimeout time.Duration, minBreachDurationSecs int, minCoolDownSecs int, tmpDir string) string {
-
-	apiConfig := APIServerConfig{
-		Port:              port,
-		PublicPort:        publicPort,
-		HealthPort:        0,
-		InfoFilePath:      apiServerInfoFilePath,
-		CFAPI:             cfApi,
-		CFClientId:        "admin",
-		CFClientSecret:    "admin-secret",
-		SkipSSLValidation: skipSSLValidation,
-		CacheTTL:          cacheTTL,
-		DB: DBConfig{
-			URI:            dbUri,
-			MinConnections: 1,
-			MaxConnections: 10,
-			IdleTimeout:    1000,
-		},
-
-		SchedulerClient: SchedulerClient{
-			Uri: schedulerUri,
-			TLS: models.TLSCerts{
-				KeyFile:    filepath.Join(testCertDir, "scheduler.key"),
-				CertFile:   filepath.Join(testCertDir, "scheduler.crt"),
-				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-			},
-		},
-		ScalingEngineClient: ScalingEngineClient{
-			Uri: scalingEngineUri,
-			TLS: models.TLSCerts{
-				KeyFile:    filepath.Join(testCertDir, "scalingengine.key"),
-				CertFile:   filepath.Join(testCertDir, "scalingengine.crt"),
-				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-			},
-		},
-		MetricsCollectorClient: MetricsCollectorClient{
-			Uri: metricsCollectorUri,
-			TLS: models.TLSCerts{
-				KeyFile:    filepath.Join(testCertDir, "metricscollector.key"),
-				CertFile:   filepath.Join(testCertDir, "metricscollector.crt"),
-				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-			},
-		},
-		EventGeneratorClient: EventGeneratorClient{
-			Uri: eventGeneratorUri,
-			TLS: models.TLSCerts{
-				KeyFile:    filepath.Join(testCertDir, "eventgenerator.key"),
-				CertFile:   filepath.Join(testCertDir, "eventgenerator.crt"),
-				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-			},
-		},
-		ServiceOffering: ServiceOffering{
-			Enabled: serviceOfferingEnabled,
-			ServiceBrokerClient: ServiceBrokerClient{
-				Uri: serviceBrokerUri,
-				TLS: models.TLSCerts{
-					KeyFile:    filepath.Join(testCertDir, "servicebroker_internal.key"),
-					CertFile:   filepath.Join(testCertDir, "servicebroker_internal.crt"),
-					CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-				},
-			},
-		},
-
-		TLS: models.TLSCerts{
-			KeyFile:    filepath.Join(testCertDir, "api.key"),
-			CertFile:   filepath.Join(testCertDir, "api.crt"),
-			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-		},
-
-		PublicTLS: models.TLSCerts{
-			KeyFile:    filepath.Join(testCertDir, "api_public.key"),
-			CertFile:   filepath.Join(testCertDir, "api_public.crt"),
-			CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
-		},
-		HttpClientTimeout:     int(httpClientTimeout / time.Millisecond),
-		MinBreachDurationSecs: minBreachDurationSecs,
-		MinCoolDownSecs:       minCoolDownSecs,
-	}
-
-	cfgFile, err := ioutil.TempFile(tmpDir, APIServer)
-	w := json.NewEncoder(cfgFile)
-	err = w.Encode(apiConfig)
-	Expect(err).NotTo(HaveOccurred())
-	cfgFile.Close()
-	return cfgFile.Name()
 }
 
 func (components *Components) PrepareGolangApiServerConfig(dbURI string, publicApiPort int, brokerPort int, cfApi string, skipSSLValidation bool, cacheTTL int, schedulerUri string, scalingEngineUri string, metricsCollectorUri string, eventGeneratorUri string, metricsForwarderUri string, useBuildInMode bool, httpClientTimeout time.Duration, tmpDir string) string {
@@ -502,7 +276,7 @@ func (components *Components) PrepareGolangApiServerConfig(dbURI string, publicA
 		MetricsForwarder: apiConfig.MetricsForwarderConfig{
 			MetricsForwarderUrl: metricsForwarderUri,
 		},
-		RateLimit: models.RateLimitConfig {
+		RateLimit: models.RateLimitConfig{
 			MaxAmount:     10,
 			ValidDuration: 1 * time.Second,
 		},
