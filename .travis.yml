@@ -22,7 +22,7 @@ before_install:
 install:
   - mvn package
   - npm install npm@latest -g
-  - nvm install $NODE_VERSION
+  - nvm install $NODE_VERSION --silent
   - eval "$(gimme $GO_VERSION)"
   - go install github.com/onsi/ginkgo/ginkgo
 

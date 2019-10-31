@@ -1,4 +1,4 @@
-package integration
+package integration_legacy
 
 import (
 	"autoscaler/models"
@@ -10,7 +10,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Integration_Operator_Others", func() {
+var _ = Describe("Integration_legacy_Operator_Others", func() {
 	var (
 		testAppId         string
 		testGuid          string
@@ -26,11 +26,8 @@ var _ = Describe("Integration_Operator_Others", func() {
 		testGuid = getRandomId()
 		startFakeCCNOAAUAA(initInstanceCount)
 
-		golangApiServerConfPath = components.PrepareGolangApiServerConfig(dbUrl, components.Ports[GolangAPIServer], components.Ports[GolangServiceBroker],
-			fakeCCNOAAUAA.URL(), false, 200, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]),
-			fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsServerHTTP]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[EventGenerator]), "https://127.0.0.1:8888",
-			true, defaultHttpClientTimeout, tmpDir)
-		startGolangApiServer()
+		apiServerConfPath = components.PrepareApiServerConfig(components.Ports[APIServer], components.Ports[APIPublicServer], false, 200, fakeCCNOAAUAA.URL(), dbUrl, fmt.Sprintf("https://127.0.0.1:%d", components.Ports[Scheduler]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ScalingEngine]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[MetricsCollector]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[EventGenerator]), fmt.Sprintf("https://127.0.0.1:%d", components.Ports[ServiceBrokerInternal]), true, defaultHttpClientTimeout, 30, 30, tmpDir)
+		startApiServer()
 
 		scalingEngineConfPath = components.PrepareScalingEngineConfig(dbUrl, components.Ports[ScalingEngine], fakeCCNOAAUAA.URL(), defaultHttpClientTimeout, tmpDir)
 		startScalingEngine()
@@ -46,11 +43,11 @@ var _ = Describe("Integration_Operator_Others", func() {
 	})
 
 	AfterEach(func() {
-		detachPolicy(testAppId, components.Ports[GolangAPIServer], httpClient)
+		detachPolicy(testAppId, components.Ports[APIServer], httpClient)
 		stopScheduler()
 		stopScalingEngine()
 		stopOperator()
-		stopGolangApiServer()
+		stopApiServer()
 	})
 
 	Describe("Synchronizer", func() {
@@ -66,7 +63,7 @@ var _ = Describe("Integration_Operator_Others", func() {
 
 					JustBeforeEach(func() {
 						policyStr = setPolicySpecificDateTime(readPolicyFromFile("fakePolicyWithSpecificDateSchedule.json"), 70*time.Second, 2*time.Hour)
-						doAttachPolicy(testAppId, []byte(policyStr), http.StatusOK, components.Ports[GolangAPIServer], httpClient)
+						doAttachPolicy(testAppId, []byte(policyStr), http.StatusCreated, components.Ports[APIServer], httpClient)
 					})
 
 					It("should sync the active schedule to scaling engine after restart", func() {
@@ -89,7 +86,7 @@ var _ = Describe("Integration_Operator_Others", func() {
 				Context("Delete an active schedule", func() {
 					BeforeEach(func() {
 						policyStr = setPolicySpecificDateTime(readPolicyFromFile("fakePolicyWithSpecificDateSchedule.json"), 70*time.Second, 140*time.Second)
-						doAttachPolicy(testAppId, []byte(policyStr), http.StatusOK, components.Ports[GolangAPIServer], httpClient)
+						doAttachPolicy(testAppId, []byte(policyStr), http.StatusCreated, components.Ports[APIServer], httpClient)
 
 						time.Sleep(70 * time.Second)
 						Consistently(func() bool {
@@ -166,7 +163,7 @@ var _ = Describe("Integration_Operator_Others", func() {
 
 			Context("when update a policy to another schedule sets only in policy DB without any update in scheduler ", func() {
 				BeforeEach(func() {
-					doAttachPolicy(testAppId, []byte(policyStr), http.StatusOK, components.Ports[GolangAPIServer], httpClient)
+					doAttachPolicy(testAppId, []byte(policyStr), http.StatusCreated, components.Ports[APIServer], httpClient)
 					assertScheduleContents(testAppId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})
 
 					newPolicyStr := string(setPolicyRecurringDate(readPolicyFromFile("fakePolicyWithScheduleAnother.json")))
