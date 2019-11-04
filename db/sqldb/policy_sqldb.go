@@ -156,6 +156,7 @@ func (pdb *PolicySQLDB) ReplaceAppPolicies(oldPolicyGuid string, newPolicy strin
 		pdb.logger.Error("replace-app-policy", err, lager.Data{"query": query, "oldPolicyGuid": oldPolicyGuid, "newPolicyGuid": newPolicyGuid, "newPolicy": newPolicy})
 		return nil, err
 	}
+	defer rows.Close()
 
 	var id string
 	for rows.Next() {
@@ -230,6 +231,8 @@ func (pdb *PolicySQLDB) DeletePoliciesByPolicyGuid(policyGuid string) ([]string,
 		pdb.logger.Error("failed-to-delete-policies-by-policy-guid", err, lager.Data{"query": query, "policyGuid": policyGuid})
 		return nil, err
 	}
+	defer rows.Close()
+
 	var id string
 	for rows.Next() {
 		if err = rows.Scan(&id); err != nil {
