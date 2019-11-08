@@ -49,8 +49,7 @@ type PolicyDB interface {
 	GetAppIds() (map[string]bool, error)
 	GetAppPolicy(appId string) (*models.ScalingPolicy, error)
 	SaveAppPolicy(appId string, policy string, policyGuid string) error
-	ReplaceAppPolicies(oldPolicyGuid string, newPolicy string, newPolicyGuid string) ([]string, error)
-	SetDefaultAppPolicy(appIds []string, newPolicy string, newPolicyGuid string) ([]string, error)
+	SetOrUpdateDefaultAppPolicy(appIds []string, oldPolicyGuid string, newPolicy string, newPolicyGuid string) ([]string, error)
 	DeletePoliciesByPolicyGuid(policyGuid string) ([]string, error)
 	RetrievePolicies() ([]*models.PolicyJson, error)
 	Close() error
