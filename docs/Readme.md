@@ -145,7 +145,7 @@ This section gives how to use the command line interface to manage autoscaling p
 ### Getting started with AutoScaler CLI 
 
 * Install [AutoScaler CLI plugin][cli]
-* Set App AutoScaler API endpoint （optional)
+* Set App AutoScaler API endpoint （Optional)
     
     AutoScaler CLI plugin interacts with `App AutoScaler`  through its [public API][api].  
 	
