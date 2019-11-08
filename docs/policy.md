@@ -16,7 +16,7 @@
 
 | Name                 | Type         | Required|Description                                                                      |
 |:---------------------|--------------|---------|---------------------------------------------------------------------------------|
-| metric_type          | String       | true    |one of the following metric types:memoryused,memoryutil,responsetime, throughput, cpu|
+| metric_type          | String       | true    |one of system-default metric types `memoryused`,`memoryutil`,`responsetime`, `throughput`, `cpu` or user-defined custom metric type|
 | threshold            | int          | true    |the boundary when metric value exceeds is considered as a breach                 |
 | operator             | String       | true    |>, <, >=, <=                                                                     |
 | adjustment           | String       | true    |the adjustment approach for instance count with each scaling.  Support regex format `^[-+][1-9]+[0-9]*[%]?$`, i.e. +5 means adding 5 instances, -50% means shrinking to the half of current size.  |
@@ -68,9 +68,13 @@
 ## Sample Policy
 
 * [Autoscaling policy with dynamic scaling rules][policy-dynamic]
+* [Autoscaling policy with dynamic scaling rules defined by custom metrics ][policy-dynamic-custom]
 * [Autoscaling policy with dynamic scaling rules and schedules][policy-all]
 
 
 [a]:https://docs.oracle.com/javase/8/docs/api/java/util/TimeZone.html
-[policy-dynamic]: /app-autoscaler/dynamicpolicy.json
-[policy-all]: /app-autoscaler/fullpolicy.json
+[policy-dynamic]: /docs/dynamicpolicy.json
+[policy-dynamic-custom]: /docs/customemetricpolicy.json
+[policy-all]: /docs/fullpolicy.json
+
+
