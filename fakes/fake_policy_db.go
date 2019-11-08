@@ -102,21 +102,6 @@ type FakePolicyDB struct {
 	getDBStatusReturnsOnCall map[int]struct {
 		result1 sql.DBStats
 	}
-	ReplaceAppPoliciesStub        func(string, string, string) ([]string, error)
-	replaceAppPoliciesMutex       sync.RWMutex
-	replaceAppPoliciesArgsForCall []struct {
-		arg1 string
-		arg2 string
-		arg3 string
-	}
-	replaceAppPoliciesReturns struct {
-		result1 []string
-		result2 error
-	}
-	replaceAppPoliciesReturnsOnCall map[int]struct {
-		result1 []string
-		result2 error
-	}
 	RetrievePoliciesStub        func() ([]*models.PolicyJson, error)
 	retrievePoliciesMutex       sync.RWMutex
 	retrievePoliciesArgsForCall []struct {
@@ -154,18 +139,19 @@ type FakePolicyDB struct {
 	saveCredentialReturnsOnCall map[int]struct {
 		result1 error
 	}
-	SetDefaultAppPolicyStub        func([]string, string, string) ([]string, error)
-	setDefaultAppPolicyMutex       sync.RWMutex
-	setDefaultAppPolicyArgsForCall []struct {
+	SetOrUpdateDefaultAppPolicyStub        func([]string, string, string, string) ([]string, error)
+	setOrUpdateDefaultAppPolicyMutex       sync.RWMutex
+	setOrUpdateDefaultAppPolicyArgsForCall []struct {
 		arg1 []string
 		arg2 string
 		arg3 string
+		arg4 string
 	}
-	setDefaultAppPolicyReturns struct {
+	setOrUpdateDefaultAppPolicyReturns struct {
 		result1 []string
 		result2 error
 	}
-	setDefaultAppPolicyReturnsOnCall map[int]struct {
+	setOrUpdateDefaultAppPolicyReturnsOnCall map[int]struct {
 		result1 []string
 		result2 error
 	}
@@ -641,71 +627,6 @@ func (fake *FakePolicyDB) GetDBStatusReturnsOnCall(i int, result1 sql.DBStats) {
 	}{result1}
 }
 
-func (fake *FakePolicyDB) ReplaceAppPolicies(arg1 string, arg2 string, arg3 string) ([]string, error) {
-	fake.replaceAppPoliciesMutex.Lock()
-	ret, specificReturn := fake.replaceAppPoliciesReturnsOnCall[len(fake.replaceAppPoliciesArgsForCall)]
-	fake.replaceAppPoliciesArgsForCall = append(fake.replaceAppPoliciesArgsForCall, struct {
-		arg1 string
-		arg2 string
-		arg3 string
-	}{arg1, arg2, arg3})
-	fake.recordInvocation("ReplaceAppPolicies", []interface{}{arg1, arg2, arg3})
-	fake.replaceAppPoliciesMutex.Unlock()
-	if fake.ReplaceAppPoliciesStub != nil {
-		return fake.ReplaceAppPoliciesStub(arg1, arg2, arg3)
-	}
-	if specificReturn {
-		return ret.result1, ret.result2
-	}
-	fakeReturns := fake.replaceAppPoliciesReturns
-	return fakeReturns.result1, fakeReturns.result2
-}
-
-func (fake *FakePolicyDB) ReplaceAppPoliciesCallCount() int {
-	fake.replaceAppPoliciesMutex.RLock()
-	defer fake.replaceAppPoliciesMutex.RUnlock()
-	return len(fake.replaceAppPoliciesArgsForCall)
-}
-
-func (fake *FakePolicyDB) ReplaceAppPoliciesCalls(stub func(string, string, string) ([]string, error)) {
-	fake.replaceAppPoliciesMutex.Lock()
-	defer fake.replaceAppPoliciesMutex.Unlock()
-	fake.ReplaceAppPoliciesStub = stub
-}
-
-func (fake *FakePolicyDB) ReplaceAppPoliciesArgsForCall(i int) (string, string, string) {
-	fake.replaceAppPoliciesMutex.RLock()
-	defer fake.replaceAppPoliciesMutex.RUnlock()
-	argsForCall := fake.replaceAppPoliciesArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
-}
-
-func (fake *FakePolicyDB) ReplaceAppPoliciesReturns(result1 []string, result2 error) {
-	fake.replaceAppPoliciesMutex.Lock()
-	defer fake.replaceAppPoliciesMutex.Unlock()
-	fake.ReplaceAppPoliciesStub = nil
-	fake.replaceAppPoliciesReturns = struct {
-		result1 []string
-		result2 error
-	}{result1, result2}
-}
-
-func (fake *FakePolicyDB) ReplaceAppPoliciesReturnsOnCall(i int, result1 []string, result2 error) {
-	fake.replaceAppPoliciesMutex.Lock()
-	defer fake.replaceAppPoliciesMutex.Unlock()
-	fake.ReplaceAppPoliciesStub = nil
-	if fake.replaceAppPoliciesReturnsOnCall == nil {
-		fake.replaceAppPoliciesReturnsOnCall = make(map[int]struct {
-			result1 []string
-			result2 error
-		})
-	}
-	fake.replaceAppPoliciesReturnsOnCall[i] = struct {
-		result1 []string
-		result2 error
-	}{result1, result2}
-}
-
 func (fake *FakePolicyDB) RetrievePolicies() ([]*models.PolicyJson, error) {
 	fake.retrievePoliciesMutex.Lock()
 	ret, specificReturn := fake.retrievePoliciesReturnsOnCall[len(fake.retrievePoliciesArgsForCall)]
@@ -884,71 +805,72 @@ func (fake *FakePolicyDB) SaveCredentialReturnsOnCall(i int, result1 error) {
 	}{result1}
 }
 
-func (fake *FakePolicyDB) SetDefaultAppPolicy(arg1 []string, arg2 string, arg3 string) ([]string, error) {
+func (fake *FakePolicyDB) SetOrUpdateDefaultAppPolicy(arg1 []string, arg2 string, arg3 string, arg4 string) ([]string, error) {
 	var arg1Copy []string
 	if arg1 != nil {
 		arg1Copy = make([]string, len(arg1))
 		copy(arg1Copy, arg1)
 	}
-	fake.setDefaultAppPolicyMutex.Lock()
-	ret, specificReturn := fake.setDefaultAppPolicyReturnsOnCall[len(fake.setDefaultAppPolicyArgsForCall)]
-	fake.setDefaultAppPolicyArgsForCall = append(fake.setDefaultAppPolicyArgsForCall, struct {
+	fake.setOrUpdateDefaultAppPolicyMutex.Lock()
+	ret, specificReturn := fake.setOrUpdateDefaultAppPolicyReturnsOnCall[len(fake.setOrUpdateDefaultAppPolicyArgsForCall)]
+	fake.setOrUpdateDefaultAppPolicyArgsForCall = append(fake.setOrUpdateDefaultAppPolicyArgsForCall, struct {
 		arg1 []string
 		arg2 string
 		arg3 string
-	}{arg1Copy, arg2, arg3})
-	fake.recordInvocation("SetDefaultAppPolicy", []interface{}{arg1Copy, arg2, arg3})
-	fake.setDefaultAppPolicyMutex.Unlock()
-	if fake.SetDefaultAppPolicyStub != nil {
-		return fake.SetDefaultAppPolicyStub(arg1, arg2, arg3)
+		arg4 string
+	}{arg1Copy, arg2, arg3, arg4})
+	fake.recordInvocation("SetOrUpdateDefaultAppPolicy", []interface{}{arg1Copy, arg2, arg3, arg4})
+	fake.setOrUpdateDefaultAppPolicyMutex.Unlock()
+	if fake.SetOrUpdateDefaultAppPolicyStub != nil {
+		return fake.SetOrUpdateDefaultAppPolicyStub(arg1, arg2, arg3, arg4)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
-	fakeReturns := fake.setDefaultAppPolicyReturns
+	fakeReturns := fake.setOrUpdateDefaultAppPolicyReturns
 	return fakeReturns.result1, fakeReturns.result2
 }
 
-func (fake *FakePolicyDB) SetDefaultAppPolicyCallCount() int {
-	fake.setDefaultAppPolicyMutex.RLock()
-	defer fake.setDefaultAppPolicyMutex.RUnlock()
-	return len(fake.setDefaultAppPolicyArgsForCall)
+func (fake *FakePolicyDB) SetOrUpdateDefaultAppPolicyCallCount() int {
+	fake.setOrUpdateDefaultAppPolicyMutex.RLock()
+	defer fake.setOrUpdateDefaultAppPolicyMutex.RUnlock()
+	return len(fake.setOrUpdateDefaultAppPolicyArgsForCall)
 }
 
-func (fake *FakePolicyDB) SetDefaultAppPolicyCalls(stub func([]string, string, string) ([]string, error)) {
-	fake.setDefaultAppPolicyMutex.Lock()
-	defer fake.setDefaultAppPolicyMutex.Unlock()
-	fake.SetDefaultAppPolicyStub = stub
+func (fake *FakePolicyDB) SetOrUpdateDefaultAppPolicyCalls(stub func([]string, string, string, string) ([]string, error)) {
+	fake.setOrUpdateDefaultAppPolicyMutex.Lock()
+	defer fake.setOrUpdateDefaultAppPolicyMutex.Unlock()
+	fake.SetOrUpdateDefaultAppPolicyStub = stub
 }
 
-func (fake *FakePolicyDB) SetDefaultAppPolicyArgsForCall(i int) ([]string, string, string) {
-	fake.setDefaultAppPolicyMutex.RLock()
-	defer fake.setDefaultAppPolicyMutex.RUnlock()
-	argsForCall := fake.setDefaultAppPolicyArgsForCall[i]
-	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3
+func (fake *FakePolicyDB) SetOrUpdateDefaultAppPolicyArgsForCall(i int) ([]string, string, string, string) {
+	fake.setOrUpdateDefaultAppPolicyMutex.RLock()
+	defer fake.setOrUpdateDefaultAppPolicyMutex.RUnlock()
+	argsForCall := fake.setOrUpdateDefaultAppPolicyArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2, argsForCall.arg3, argsForCall.arg4
 }
 
-func (fake *FakePolicyDB) SetDefaultAppPolicyReturns(result1 []string, result2 error) {
-	fake.setDefaultAppPolicyMutex.Lock()
-	defer fake.setDefaultAppPolicyMutex.Unlock()
-	fake.SetDefaultAppPolicyStub = nil
-	fake.setDefaultAppPolicyReturns = struct {
+func (fake *FakePolicyDB) SetOrUpdateDefaultAppPolicyReturns(result1 []string, result2 error) {
+	fake.setOrUpdateDefaultAppPolicyMutex.Lock()
+	defer fake.setOrUpdateDefaultAppPolicyMutex.Unlock()
+	fake.SetOrUpdateDefaultAppPolicyStub = nil
+	fake.setOrUpdateDefaultAppPolicyReturns = struct {
 		result1 []string
 		result2 error
 	}{result1, result2}
 }
 
-func (fake *FakePolicyDB) SetDefaultAppPolicyReturnsOnCall(i int, result1 []string, result2 error) {
-	fake.setDefaultAppPolicyMutex.Lock()
-	defer fake.setDefaultAppPolicyMutex.Unlock()
-	fake.SetDefaultAppPolicyStub = nil
-	if fake.setDefaultAppPolicyReturnsOnCall == nil {
-		fake.setDefaultAppPolicyReturnsOnCall = make(map[int]struct {
+func (fake *FakePolicyDB) SetOrUpdateDefaultAppPolicyReturnsOnCall(i int, result1 []string, result2 error) {
+	fake.setOrUpdateDefaultAppPolicyMutex.Lock()
+	defer fake.setOrUpdateDefaultAppPolicyMutex.Unlock()
+	fake.SetOrUpdateDefaultAppPolicyStub = nil
+	if fake.setOrUpdateDefaultAppPolicyReturnsOnCall == nil {
+		fake.setOrUpdateDefaultAppPolicyReturnsOnCall = make(map[int]struct {
 			result1 []string
 			result2 error
 		})
 	}
-	fake.setDefaultAppPolicyReturnsOnCall[i] = struct {
+	fake.setOrUpdateDefaultAppPolicyReturnsOnCall[i] = struct {
 		result1 []string
 		result2 error
 	}{result1, result2}
@@ -973,16 +895,14 @@ func (fake *FakePolicyDB) Invocations() map[string][][]interface{} {
 	defer fake.getCredentialMutex.RUnlock()
 	fake.getDBStatusMutex.RLock()
 	defer fake.getDBStatusMutex.RUnlock()
-	fake.replaceAppPoliciesMutex.RLock()
-	defer fake.replaceAppPoliciesMutex.RUnlock()
 	fake.retrievePoliciesMutex.RLock()
 	defer fake.retrievePoliciesMutex.RUnlock()
 	fake.saveAppPolicyMutex.RLock()
 	defer fake.saveAppPolicyMutex.RUnlock()
 	fake.saveCredentialMutex.RLock()
 	defer fake.saveCredentialMutex.RUnlock()
-	fake.setDefaultAppPolicyMutex.RLock()
-	defer fake.setDefaultAppPolicyMutex.RUnlock()
+	fake.setOrUpdateDefaultAppPolicyMutex.RLock()
+	defer fake.setOrUpdateDefaultAppPolicyMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

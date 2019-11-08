@@ -395,7 +395,7 @@ var _ = Describe("BrokerHandler", func() {
 					ServiceInstanceId: testInstanceId,
 				}, nil)
 				bindingdb.GetAppIdsByInstanceIdReturns([]string{"app-id-1", "app-id-2"}, nil)
-				policydb.SetDefaultAppPolicyReturns([]string{"app-id-2"}, nil)
+				policydb.SetOrUpdateDefaultAppPolicyReturns([]string{"app-id-2"}, nil)
 				verifyScheduleIsUpdatedInScheduler("app-id-2", testDefaultPolicy)
 			})
 			It("succeeds with 200, saves the default policy, and sets the default policy on the already bound apps", func() {
@@ -413,8 +413,9 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(bindingdb.GetAppIdsByInstanceIdCallCount()).To(Equal(1))
 				lookedUpInstance := bindingdb.GetAppIdsByInstanceIdArgsForCall(0)
 				Expect(lookedUpInstance).To(Equal(testInstanceId))
-				Expect(policydb.SetDefaultAppPolicyCallCount()).To(Equal(1))
-				appsUpdated, policySet, policySetGuid := policydb.SetDefaultAppPolicyArgsForCall(0)
+				Expect(policydb.SetOrUpdateDefaultAppPolicyCallCount()).To(Equal(1))
+				appsUpdated, oldPolicyGuid, policySet, policySetGuid := policydb.SetOrUpdateDefaultAppPolicyArgsForCall(0)
+				Expect(oldPolicyGuid).To(BeEmpty())
 				Expect(policySetGuid).To(Equal(serviceInstance.DefaultPolicyGuid))
 				Expect(policySet).To(Equal(serviceInstance.DefaultPolicy))
 				Expect(appsUpdated).To(Equal([]string{"app-id-1", "app-id-2"}))
@@ -439,10 +440,9 @@ var _ = Describe("BrokerHandler", func() {
 					DefaultPolicy:     "a-default-policy",
 					DefaultPolicyGuid: "a-default-policy-guid",
 				}, nil)
-				policydb.ReplaceAppPoliciesReturns([]string{"app-id-2"}, nil)
+				bindingdb.GetAppIdsByInstanceIdReturns([]string{"app-id-1", "app-id-2"}, nil)
+				policydb.SetOrUpdateDefaultAppPolicyReturns([]string{"app-id-2"}, nil)
 				verifyScheduleIsUpdatedInScheduler("app-id-2", testDefaultPolicy)
-				policydb.SetDefaultAppPolicyReturns([]string{"app-id-3"}, nil)
-				verifyScheduleIsUpdatedInScheduler("app-id-3", testDefaultPolicy)
 			})
 			It("succeeds with 200, saves the default policy, and updates the default policy", func() {
 				By("returning 200")
@@ -456,8 +456,9 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(serviceInstance.DefaultPolicyGuid).To(HaveLen(36))
 
 				By("setting the default policy on the already bound apps")
-				Expect(policydb.ReplaceAppPoliciesCallCount()).To(Equal(1))
-				oldPolicyGuid, newPolicy, newPolicyGuid := policydb.ReplaceAppPoliciesArgsForCall(0)
+				Expect(policydb.SetOrUpdateDefaultAppPolicyCallCount()).To(Equal(1))
+				appToUpdate, oldPolicyGuid, newPolicy, newPolicyGuid := policydb.SetOrUpdateDefaultAppPolicyArgsForCall(0)
+				Expect(appToUpdate).To(Equal([]string{"app-id-1", "app-id-2"}))
 				Expect(oldPolicyGuid).To(Equal("a-default-policy-guid"))
 				Expect(newPolicyGuid).To(Equal(serviceInstance.DefaultPolicyGuid))
 				Expect(newPolicy).To(Equal(serviceInstance.DefaultPolicy))
