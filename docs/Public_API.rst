@@ -143,13 +143,13 @@ Parameters
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
 | guid               | The GUID of the application                                                   |                                                                     | true                  |                                  |
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
-| metric-type        | The metric type                                                               | String, memoryused,memoryutil,responsetime, throughput              | true                  | metric-type=memoryused           |
+| metric_type        | The metric type                                                               | String, memoryused,memoryutil,responsetime, throughput or custom metric's name             | true                  | metric_type=memoryused           |
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
 | start-time         | The start time                                                                | int, the number of nanoseconds elapsed since January 1, 1970 UTC.   | false, default 0      | start-time=1494989539138350432   |
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
 | end-time           | The end time                                                                  | int, the number of nanoseconds elapsed since January 1, 1970 UTC.   | false, default "now"  | end-time=1494989549117047288     |
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
-| order-direction    | The order type. The scaling history will be order by timestamp asc or desc.   | string,”asc” or "desc"                                              | false. default desc   | order-direction=asc              |
+| order-direction    | The order type. The metric history will be ordered by timestamp asc or desc.   | string,”asc” or "desc"                                              | false. default desc   | order-direction=asc              |
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
 | page               | The page number to query                                                      | int                                                                 | false, default 1      | page=1                           |
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
@@ -253,13 +253,13 @@ Parameters
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
 | guid               | The GUID of the application                                                   |                                                                     | true                  |                                  |
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
-| metric-type        | The metric type                                                               | String, memoryused,memoryutil,responsetime, throughput              | true                  | metric-type=memoryused           |
+| metric_type        | The metric type                                                               | String, memoryused,memoryutil,responsetime, throughput or custom metric's name              | true                  | metric_type=memoryused           |
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
 | start-time         | The start time                                                                | int, the number of nanoseconds elapsed since January 1, 1970 UTC.   | false, default 0      | start-time=1494989539138350432   |
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
 | end-time           | The end time                                                                  | int, the number of nanoseconds elapsed since January 1, 1970 UTC.   | false, default "now"  | end-time=1494989549117047288     |
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
-| order-direction    | The order type. The scaling history will be order by timestamp asc or desc.   | string,”asc” or "desc"                                              | false. default desc   | order-direction=asc              |
+| order-direction    | The order type. The metric history will be ordered by timestamp asc or desc.   | string,”asc” or "desc"                                              | false. default desc   | order-direction=asc              |
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
 | page               | The page number to query                                                      | int                                                                 | false, default 1      | page=1                           |
 +--------------------+-------------------------------------------------------------------------------+---------------------------------------------------------------------+-----------------------+----------------------------------+
@@ -999,13 +999,15 @@ Given the metric submission is proceeded inside an application,  an `App Autosca
 
 If `App Autoscaler` is offered as a service,  the credential and autoscaler metric server's URL are injected into VCAP_SERVICES by service binding directly.
 
-If `App Autoscaler` Autoscaling is offered as a Cloud Foundry extension, the credential need to be generated explictly.
+If `App Autoscaler` is offered as a Cloud Foundry extension, the credential need to be generated explictly.
 
 **Create credential**
 ~~~~~~~~~~~~~~~~~~~~~
 
 **PUT /v1/apps/:guid/credential**
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Otptional. A credential with random username/password will be generated by this API by default. Also it is supported to define credential with a specific pair of username and password with below JSON payload.
 
 **Request**
 ^^^^^^^^^^^
@@ -1018,11 +1020,10 @@ Route
 Body
 ''''
 
-Otptional. A credential with random username/password will be generated by this API by default. Also it is supported to define credential with a specific pair of username and password with below JSON payload.
-
   {
 
     "username": "username",
+
     "password": "password"
   }
 
@@ -1051,8 +1052,11 @@ Body
 
   {
 	"app_id": "<APP_ID>",
+
 	"username": "MY_USERNAME",
+
 	"password": "MY_PASSWORD",
+
 	"url": "<AUTOSCALER METRIC SERVER URL>"
   }
 
@@ -1113,9 +1117,11 @@ A JSON payload is required to emit your own metrics with the metric value and th
 
   {
     "instance_index": <INSTANCE INDEX>,
+
     "metrics": [
       {
         "name": "<CUSTOM METRIC NAME>",
+
         "value": <CUSTOM METRIC VALUE>
       }
     ]

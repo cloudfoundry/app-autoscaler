@@ -118,7 +118,7 @@ The following gives some policy examples for you to start with. Refer to [Policy
 `App-AutoScaler` can be offered as a Cloud Foundry service or an extension of your Cloud Foundry platform. Consult your Cloud Foundry provider for how it is offered. 
 
 ###  As a Cloud Foundry extension
-When `App AutoScaler` is offered as Cloud Foudnry platform extension,  you don't need to connect your application to autoscaler, go directly to next section to attach autoscaling policy to your application with CLI. 
+When `App AutoScaler` is offered as Cloud Foundry platform extension,  you don't need to connect your application to autoscaler, go directly to next section to attach autoscaling policy to your application with CLI. 
 
 ###  As a Cloud Foundry service
 When `App AutoScaler` is offered as a Cloud Foundry service via [open service broker api][osb] , you need to provision and bind `App AutoScaler` service through [Cloud Foundry CLI][cfcli]  first. 
@@ -156,21 +156,21 @@ This section gives how to use the command line interface to manage autoscaling p
 
 ### Attach policy 
 
-Create or update auto-scaling policy for your application with command. 
+Create or update autoscaling policy for your application with command. 
 ```
 	 cf aasp <app_name> <policy_file_name>
 ```
 
 ### Detach policy 
 
-Remove auto-scaling policy to disable `App Autoscaler` with command
+Remove autoscaling policy to disable `App Autoscaler` with command
 ```
 	 cf dasp <app_name>
 ```
 
 ### View policy 
 
-To retrieve the current auto-scaling policy, use command below
+To retrieve the current autoscaling policy, use command below
 ```
 	 cf asp <app_name>
 ```
@@ -196,7 +196,7 @@ To query your application's scaling events, use command below
 
 Refer to  [AutoScaler CLI user guide][cli] for advanced options to specify the time range, the number of events to return and display order.
 
-### Create autoscaling credential to submit custom metric
+### Create autoscaling credential before submitting custom metric
 
 Create custom metric credential for an application. The credential will be displayed in JSON format.
 ```
@@ -211,7 +211,7 @@ cf delete-autoscaling-credential <app_name>
 ```
 
 ----
-## Bring your own metric for Auto-scaling
+## Auto-scale your application with custom metrics
 
 With custom metric support,  you can scale your application with your own metrics with below steps.
 
@@ -226,7 +226,7 @@ Given the metric submission is proceeded inside an application,  an `App Autosca
 
 If `App Autoscaler` is offered as a service,  the credential and autoscaler metric server's URL are injected into VCAP_SERVICES by service binding directly.
 
-If `App Autoscaler` Autoscaling is offered as a Cloud Foundry extension, the credential need to be generated explictly with command  `cf create-autoscaling-credential` as below example: 
+If `App Autoscaler` is offered as a Cloud Foundry extension, the credential need to be generated explictly with command  `cf create-autoscaling-credential` as below example: 
 
 ```
 >>>cf create-autoscaling-credential <app_name> --output <credential_json_file_path> 
