@@ -193,58 +193,31 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 		}
 	}
 
-	updatedServiceInstance := models.ServiceInstance{
-		ServiceInstanceId: serviceInstance.ServiceInstanceId,
-		OrgId:             serviceInstance.OrgId,
-		SpaceId:           serviceInstance.SpaceId,
-		DefaultPolicy:     updatedDefaultPolicy,
-		DefaultPolicyGuid: updatedDefaultPolicyGuid,
-	}
+	if updatedDefaultPolicyGuid != "" {
+		allBoundApps, err := h.bindingdb.GetAppIdsByInstanceId(serviceInstance.ServiceInstanceId)
+		if err != nil {
+			h.logger.Error("failed to retrieve bound apps", err, lager.Data{"instanceId": instanceId})
+			writeErrorResponse(w, http.StatusInternalServerError, "Error updating service instance")
+			return
+		}
+		updatedAppIds, err := h.policydb.SetOrUpdateDefaultAppPolicy(allBoundApps, serviceInstance.DefaultPolicyGuid, updatedDefaultPolicy, updatedDefaultPolicyGuid)
+		if err != nil {
+			h.logger.Error("failed to set default policies", err, lager.Data{"instanceId": instanceId})
+			writeErrorResponse(w, http.StatusInternalServerError, "Error updating service instance")
+			return
+		}
 
-	err = h.bindingdb.UpdateServiceInstance(updatedServiceInstance)
-	if err != nil {
-		h.logger.Error("failed to update service instance", err, lager.Data{"instanceId": instanceId})
-		writeErrorResponse(w, http.StatusInternalServerError, "Error updating service instance")
-		return
-	}
-
-	if serviceInstance.DefaultPolicyGuid != "" {
-		// default policy already exists
-
-		if updatedDefaultPolicyGuid != "" {
-			// new default policy set: replace previous default policies
-			updatedAppIds, err := h.policydb.ReplaceAppPolicies(serviceInstance.DefaultPolicyGuid, updatedDefaultPolicy, updatedDefaultPolicyGuid)
-			if err != nil {
-				h.logger.Error("failed to replace default policies", err, lager.Data{"instanceId": instanceId})
-				writeErrorResponse(w, http.StatusInternalServerError, "Error updating service instance")
-				return
+		// there is synchronization between policy and schedule, so errors creating schedules should not break
+		// the whole update process
+		for _, appId := range updatedAppIds {
+			if err = h.schedulerUtil.CreateOrUpdateSchedule(appId, updatedDefaultPolicy, updatedDefaultPolicyGuid); err != nil {
+				h.logger.Error("failed to create/update schedules", err, lager.Data{"appId": appId, "policyGuid": updatedDefaultPolicyGuid, "policy": updatedDefaultPolicy})
 			}
+		}
 
-			// also set the new default policy on bound apps without a policy
-			allBoundApps, err := h.bindingdb.GetAppIdsByInstanceId(serviceInstance.ServiceInstanceId)
-			if err != nil {
-				h.logger.Error("failed to retrieve bound apps", err, lager.Data{"instanceId": instanceId})
-				writeErrorResponse(w, http.StatusInternalServerError, "Error updating service instance")
-				return
-			}
-			newAppsWithDefaultPolicy, err := h.policydb.SetDefaultAppPolicy(allBoundApps, updatedDefaultPolicy, updatedDefaultPolicyGuid)
-			if err != nil {
-				h.logger.Error("failed to set default policies", err, lager.Data{"instanceId": instanceId})
-				writeErrorResponse(w, http.StatusInternalServerError, "Error updating service instance")
-				return
-			}
-			updatedAppIds = append(updatedAppIds, newAppsWithDefaultPolicy...)
-
-			// there is synchronization between policy and schedule, so errors creating schedules should not break
-			// the whole update process
-			for _, appId := range updatedAppIds {
-				if err = h.schedulerUtil.CreateOrUpdateSchedule(appId, updatedDefaultPolicy, updatedDefaultPolicyGuid); err != nil {
-					h.logger.Error("failed to create/update schedules", err, lager.Data{"appId": appId, "policyGuid": updatedDefaultPolicyGuid, "policy": updatedDefaultPolicy})
-				}
-			}
-
-		} else {
-			// default policy removed
+	} else {
+		if serviceInstance.DefaultPolicyGuid != "" {
+			// default policy was present and will now be removed
 			updatedAppIds, err := h.policydb.DeletePoliciesByPolicyGuid(serviceInstance.DefaultPolicyGuid)
 			if err != nil {
 				h.logger.Error("failed to delete default policies", err, lager.Data{"instanceId": instanceId})
@@ -259,30 +232,21 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 				}
 			}
 		}
-	} else {
-		// previously there was no default policy
-		if updatedDefaultPolicyGuid != "" {
-			// set new default policy
-			appIds, err := h.bindingdb.GetAppIdsByInstanceId(serviceInstance.ServiceInstanceId)
-			if err != nil {
-				h.logger.Error("failed to retrieve bound apps", err, lager.Data{"instanceId": instanceId})
-				writeErrorResponse(w, http.StatusInternalServerError, "Error updating service instance")
-				return
-			}
-			updatedAppIds, err := h.policydb.SetDefaultAppPolicy(appIds, updatedDefaultPolicy, updatedDefaultPolicyGuid)
-			if err != nil {
-				h.logger.Error("failed to set default policies", err, lager.Data{"instanceId": instanceId})
-				writeErrorResponse(w, http.StatusInternalServerError, "Error updating service instance")
-				return
-			}
-			// there is synchronization between policy and schedule, so errors creating schedules should not break
-			// the whole update process
-			for _, appId := range updatedAppIds {
-				if err = h.schedulerUtil.CreateOrUpdateSchedule(appId, updatedDefaultPolicy, updatedDefaultPolicyGuid); err != nil {
-					h.logger.Error("failed to create/update schedules", err, lager.Data{"appId": appId, "policyGuid": updatedDefaultPolicyGuid, "policy": updatedDefaultPolicy})
-				}
-			}
-		}
+	}
+
+	updatedServiceInstance := models.ServiceInstance{
+		ServiceInstanceId: serviceInstance.ServiceInstanceId,
+		OrgId:             serviceInstance.OrgId,
+		SpaceId:           serviceInstance.SpaceId,
+		DefaultPolicy:     updatedDefaultPolicy,
+		DefaultPolicyGuid: updatedDefaultPolicyGuid,
+	}
+
+	err = h.bindingdb.UpdateServiceInstance(updatedServiceInstance)
+	if err != nil {
+		h.logger.Error("failed to update service instance", err, lager.Data{"instanceId": instanceId})
+		writeErrorResponse(w, http.StatusInternalServerError, "Error updating service instance")
+		return
 	}
 
 	w.Write([]byte("{}"))
