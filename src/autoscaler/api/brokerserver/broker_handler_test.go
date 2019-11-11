@@ -218,9 +218,7 @@ var _ = Describe("BrokerHandler", func() {
 						ServiceID: "a-service-id",
 						PlanID:    "a-plan-id",
 					},
-					Parameters: models.InstanceParameters{
-						DefaultPolicy: &m,
-					},
+					DefaultPolicy: &m,
 				}
 				body, err = json.Marshal(instanceCreationReqBody)
 				Expect(err).NotTo(HaveOccurred())
@@ -242,9 +240,7 @@ var _ = Describe("BrokerHandler", func() {
 						ServiceID: "a-service-id",
 						PlanID:    "a-plan-id",
 					},
-					Parameters: models.InstanceParameters{
-						DefaultPolicy: &d,
-					},
+					DefaultPolicy: &d,
 				}
 				body, err = json.Marshal(instanceCreationReqBody)
 				Expect(err).NotTo(HaveOccurred())
@@ -328,9 +324,7 @@ var _ = Describe("BrokerHandler", func() {
 						ServiceID: "a-service-id",
 						PlanID:    "a-plan-id",
 					},
-					Parameters: &models.InstanceParameters{
-						DefaultPolicy: &m,
-					},
+					DefaultPolicy: &m,
 				}
 				body, err = json.Marshal(instanceUpdateRequestBody)
 				Expect(err).NotTo(HaveOccurred())
@@ -346,8 +340,7 @@ var _ = Describe("BrokerHandler", func() {
 		Context("When the service instance to be updated does not exist", func() {
 			BeforeEach(func() {
 				emptyPolicyParameter := json.RawMessage("\n{\t}\n")
-				parameters := models.InstanceParameters{DefaultPolicy: &emptyPolicyParameter}
-				instanceUpdateRequestBody.Parameters = &parameters
+				instanceUpdateRequestBody.DefaultPolicy = &emptyPolicyParameter
 				body, err = json.Marshal(instanceUpdateRequestBody)
 				Expect(err).NotTo(HaveOccurred())
 				bindingdb.GetServiceInstanceReturns(nil, db.ErrDoesNotExist)
@@ -363,8 +356,7 @@ var _ = Describe("BrokerHandler", func() {
 		Context("When all mandatory parameters are present", func() {
 			BeforeEach(func() {
 				emptyPolicyParameter := json.RawMessage("\n{\t}\n")
-				parameters := models.InstanceParameters{DefaultPolicy: &emptyPolicyParameter}
-				instanceUpdateRequestBody.Parameters = &parameters
+				instanceUpdateRequestBody.DefaultPolicy = &emptyPolicyParameter
 				body, err = json.Marshal(instanceUpdateRequestBody)
 				Expect(err).NotTo(HaveOccurred())
 				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{}, nil)
@@ -385,9 +377,7 @@ var _ = Describe("BrokerHandler", func() {
 						ServiceID: "a-service-id",
 						PlanID:    "a-plan-id",
 					},
-					Parameters: &models.InstanceParameters{
-						DefaultPolicy: &d,
-					},
+					DefaultPolicy: &d,
 				}
 				body, err = json.Marshal(instanceUpdateRequestBody)
 				Expect(err).NotTo(HaveOccurred())
@@ -429,9 +419,7 @@ var _ = Describe("BrokerHandler", func() {
 						ServiceID: "a-service-id",
 						PlanID:    "a-plan-id",
 					},
-					Parameters: &models.InstanceParameters{
-						DefaultPolicy: &d,
-					},
+					DefaultPolicy: &d,
 				}
 				body, err = json.Marshal(instanceUpdateRequestBody)
 				Expect(err).NotTo(HaveOccurred())
@@ -472,9 +460,7 @@ var _ = Describe("BrokerHandler", func() {
 						ServiceID: "a-service-id",
 						PlanID:    "a-plan-id",
 					},
-					Parameters: &models.InstanceParameters{
-						DefaultPolicy: &emptyJsonObject,
-					},
+					DefaultPolicy: &emptyJsonObject,
 				}
 				body, err = json.Marshal(instanceUpdateRequestBody)
 				Expect(err).NotTo(HaveOccurred())

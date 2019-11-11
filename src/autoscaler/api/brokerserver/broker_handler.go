@@ -84,8 +84,8 @@ func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Req
 	}
 
 	policyStr := ""
-	if body.Parameters.DefaultPolicy != nil {
-		policyStr = string(*body.Parameters.DefaultPolicy)
+	if body.DefaultPolicy != nil {
+		policyStr = string(*body.DefaultPolicy)
 	}
 	policyGuidStr := ""
 	if policyStr != "" {
@@ -151,12 +151,12 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if body.Parameters == nil || body.Parameters.DefaultPolicy == nil {
+	if body.DefaultPolicy == nil {
 		h.logger.Error("failed to update instance, only default policy updates allowed", nil, lager.Data{"instanceId": instanceId, "serviceId": body.ServiceID, "planId": body.PlanID})
 		writeErrorResponse(w, http.StatusUnprocessableEntity, "Failed to update service instance: Only default_policy updates allowed")
 		return
 	}
-	updatedDefaultPolicy := string(*body.Parameters.DefaultPolicy)
+	updatedDefaultPolicy := string(*body.DefaultPolicy)
 
 	if emptyJSONObject.MatchString(updatedDefaultPolicy) {
 		// accept an empty json object "{}" as a default policy update to specify the removal of the default policy
