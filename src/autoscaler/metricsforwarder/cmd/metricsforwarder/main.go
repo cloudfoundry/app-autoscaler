@@ -7,6 +7,7 @@ import (
 	helpers "autoscaler/helpers"
 	"autoscaler/metricsforwarder/config"
 	"autoscaler/metricsforwarder/server"
+	"autoscaler/ratelimiter"
 	"flag"
 	"fmt"
 	"os"
@@ -83,7 +84,8 @@ func main() {
 	credentialCache := cache.New(conf.CacheTTL, conf.CacheCleanupInterval)
 	allowedMetricCache := cache.New(conf.CacheTTL, conf.CacheCleanupInterval)
 
-	httpServer, err := server.NewServer(logger.Session("custom_metrics_server"), conf, policyDB, sbssDB, *credentialCache, *allowedMetricCache, httpStatusCollector)
+	rateLimiter := ratelimiter.DefaultRateLimiter(conf.RateLimit.MaxAmount, conf.RateLimit.ValidDuration, logger.Session("metricforwarder-ratelimiter"))
+	httpServer, err := server.NewServer(logger.Session("custom_metrics_server"), conf, policyDB, sbssDB, *credentialCache, *allowedMetricCache, httpStatusCollector, rateLimiter)
 	if err != nil {
 		logger.Error("failed-to-create-custommetrics-server", err)
 		os.Exit(1)

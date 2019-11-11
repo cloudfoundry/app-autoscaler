@@ -1,4 +1,4 @@
-package integration
+package integration_legacy
 
 import (
 	"autoscaler/cf"
@@ -12,7 +12,7 @@ import (
 	"github.com/onsi/gomega/ghttp"
 )
 
-var _ = Describe("Integration_Api_MetricsCollector", func() {
+var _ = Describe("Integration_legacy_Api_MetricsCollector", func() {
 	var (
 		appId             string
 		pathVariables     []string

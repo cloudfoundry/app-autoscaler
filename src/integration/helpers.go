@@ -22,6 +22,24 @@ type AppInstanceMetricResult struct {
 	Resources    []models.AppInstanceMetric `json:"resources"`
 }
 
+type AppAggregatedMetricResult struct {
+	TotalResults int                `json:"total_results"`
+	TotalPages   int                `json:"total_pages"`
+	Page         int                `json:"page"`
+	PrevUrl      string             `json:"prev_url"`
+	NextUrl      string             `json:"next_url"`
+	Resources    []models.AppMetric `json:"resources"`
+}
+
+type ScalingHistoryResult struct {
+	TotalResults int                        `json:"total_results"`
+	TotalPages   int                        `json:"total_pages"`
+	Page         int                        `json:"page"`
+	PrevUrl      string                     `json:"prev_url"`
+	NextUrl      string                     `json:"next_url"`
+	Resources    []models.AppScalingHistory `json:"resources"`
+}
+
 func getAppAggregatedMetricUrl(appId string, metricType string, parameteters map[string]string, pageNo int) string {
 	return fmt.Sprintf("/v1/apps/%s/aggregated_metric_histories/%s?any=any&start-time=%s&end-time=%s&order-direction=%s&page=%d&results-per-page=%s", appId, metricType, parameteters["start-time"], parameteters["end-time"], parameteters["order-direction"], pageNo, parameteters["results-per-page"])
 }

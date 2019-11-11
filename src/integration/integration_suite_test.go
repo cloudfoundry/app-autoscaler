@@ -48,42 +48,37 @@ const (
 )
 
 var (
-	components               Components
-	tmpDir                   string
-	serviceBrokerConfPath    string
-	apiServerConfPath        string
-	golangApiServerConfPath  string
-	schedulerConfPath        string
-	metricsCollectorConfPath string
-	eventGeneratorConfPath   string
-	scalingEngineConfPath    string
-	operatorConfPath         string
-	metricsGatewayConfPath   string
-	metricsServerConfPath    string
-	brokerUserName           string = "username"
-	brokerPassword           string = "password"
-	brokerAuth               string
-	dbUrl                    string
-	LOGLEVEL                 string
-	noaaPollingRegPath       = regexp.MustCompile(`^/apps/.*/containermetrics$`)
-	noaaStreamingRegPath     = regexp.MustCompile(`^/apps/.*/stream$`)
-	appSummaryRegPath        = regexp.MustCompile(`^/v2/apps/.*/summary$`)
-	appInstanceRegPath       = regexp.MustCompile(`^/v2/apps/.*$`)
-	checkUserSpaceRegPath    = regexp.MustCompile(`^/v2/users/.+/spaces.*$`)
-	dbHelper                 *sql.DB
-	fakeScheduler            *ghttp.Server
-	fakeCCNOAAUAA            *ghttp.Server
-	messagesToSend           chan []byte
-	streamingDoneChan        chan bool
-	emptyMessageChannel      chan []byte
-	testUserId               string   = "testUserId"
-	testUserScope            []string = []string{"cloud_controller.read", "cloud_controller.write", "password.write", "openid", "network.admin", "network.write", "uaa.user"}
+	components              Components
+	tmpDir                  string
+	golangApiServerConfPath string
+	schedulerConfPath       string
+	eventGeneratorConfPath  string
+	scalingEngineConfPath   string
+	operatorConfPath        string
+	metricsGatewayConfPath  string
+	metricsServerConfPath   string
+	brokerUserName          = "username"
+	brokerPassword          = "password"
+	brokerAuth              string
+	dbUrl                   string
+	LOGLEVEL                string
+	noaaPollingRegPath      = regexp.MustCompile(`^/apps/.*/containermetrics$`)
+	noaaStreamingRegPath    = regexp.MustCompile(`^/apps/.*/stream$`)
+	appSummaryRegPath       = regexp.MustCompile(`^/v2/apps/.*/summary$`)
+	appInstanceRegPath      = regexp.MustCompile(`^/v2/apps/.*$`)
+	checkUserSpaceRegPath   = regexp.MustCompile(`^/v2/users/.+/spaces.*$`)
+	dbHelper                *sql.DB
+	fakeCCNOAAUAA           *ghttp.Server
+	messagesToSend          chan []byte
+	streamingDoneChan       chan bool
+	emptyMessageChannel     chan []byte
+	testUserId              string   = "testUserId"
+	testUserScope           []string = []string{"cloud_controller.read", "cloud_controller.write", "password.write", "openid", "network.admin", "network.write", "uaa.user"}
 
 	processMap map[string]ifrit.Process = map[string]ifrit.Process{}
 
 	defaultHttpClientTimeout time.Duration = 10 * time.Second
 
-	brokerApiHttpRequestTimeout              time.Duration = 10 * time.Second
 	apiSchedulerHttpRequestTimeout           time.Duration = 10 * time.Second
 	apiScalingEngineHttpRequestTimeout       time.Duration = 10 * time.Second
 	apiMetricsCollectorHttpRequestTimeout    time.Duration = 10 * time.Second
@@ -91,8 +86,6 @@ var (
 	apiEventGeneratorHttpRequestTimeout      time.Duration = 10 * time.Second
 	schedulerScalingEngineHttpRequestTimeout time.Duration = 10 * time.Second
 
-	collectInterval           time.Duration = 1 * time.Second
-	refreshInterval           time.Duration = 1 * time.Second
 	saveInterval              time.Duration = 1 * time.Second
 	aggregatorExecuteInterval time.Duration = 1 * time.Second
 	policyPollerInterval      time.Duration = 1 * time.Second
@@ -167,14 +160,9 @@ func CompileTestedExecutables() Executables {
 	builtExecutables := Executables{}
 	rootDir := os.Getenv("GOPATH")
 	var err error
-	builtExecutables[APIServer] = path.Join(rootDir, "api/index.js")
-	builtExecutables[ServiceBroker] = path.Join(rootDir, "servicebroker/lib/index.js")
 	builtExecutables[Scheduler] = path.Join(rootDir, "scheduler/target/scheduler-1.0-SNAPSHOT.war")
 
 	builtExecutables[EventGenerator], err = gexec.BuildIn(rootDir, "autoscaler/eventgenerator/cmd/eventgenerator", "-race")
-	Expect(err).NotTo(HaveOccurred())
-
-	builtExecutables[MetricsCollector], err = gexec.BuildIn(rootDir, "autoscaler/metricscollector/cmd/metricscollector", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
 	builtExecutables[ScalingEngine], err = gexec.BuildIn(rootDir, "autoscaler/scalingengine/cmd/scalingengine", "-race")
@@ -197,27 +185,15 @@ func CompileTestedExecutables() Executables {
 
 func PreparePorts() Ports {
 	return Ports{
-		APIServer:             10000 + GinkgoParallelNode(),
-		GolangAPIServer:       22000 + GinkgoParallelNode(),
-		APIPublicServer:       12000 + GinkgoParallelNode(),
-		ServiceBroker:         13000 + GinkgoParallelNode(),
-		GolangServiceBroker:   23000 + GinkgoParallelNode(),
-		ServiceBrokerInternal: 14000 + GinkgoParallelNode(),
-		Scheduler:             15000 + GinkgoParallelNode(),
-		MetricsCollector:      16000 + GinkgoParallelNode(),
-		MetricsServerHTTP:     20000 + GinkgoParallelNode(),
-		MetricsServerWS:       21000 + GinkgoParallelNode(),
-		EventGenerator:        17000 + GinkgoParallelNode(),
-		ScalingEngine:         18000 + GinkgoParallelNode(),
+		GolangAPIServer:     22000 + GinkgoParallelNode(),
+		GolangServiceBroker: 23000 + GinkgoParallelNode(),
+		Scheduler:           15000 + GinkgoParallelNode(),
+		MetricsCollector:    16000 + GinkgoParallelNode(),
+		MetricsServerHTTP:   20000 + GinkgoParallelNode(),
+		MetricsServerWS:     21000 + GinkgoParallelNode(),
+		EventGenerator:      17000 + GinkgoParallelNode(),
+		ScalingEngine:       18000 + GinkgoParallelNode(),
 	}
-}
-
-func startApiServer() *ginkgomon.Runner {
-	runner := components.ApiServer(apiServerConfPath)
-	processMap[APIServer] = ginkgomon.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
-		{APIServer, runner},
-	}))
-	return runner
 }
 
 func startGolangApiServer() {
@@ -226,23 +202,9 @@ func startGolangApiServer() {
 	}))
 }
 
-func startServiceBroker() *ginkgomon.Runner {
-	runner := components.ServiceBroker(serviceBrokerConfPath)
-	processMap[ServiceBroker] = ginkgomon.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
-		{ServiceBroker, runner},
-	}))
-	return runner
-}
-
 func startScheduler() {
 	processMap[Scheduler] = ginkgomon.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
 		{Scheduler, components.Scheduler(schedulerConfPath)},
-	}))
-}
-
-func startMetricsCollector() {
-	processMap[MetricsCollector] = ginkgomon.Invoke(grouper.NewOrdered(os.Interrupt, grouper.Members{
-		{MetricsCollector, components.MetricsCollector(metricsCollectorConfPath)},
 	}))
 }
 
@@ -276,8 +238,6 @@ func startMetricsServer() {
 	}))
 }
 
-func stopApiServer() {
-	ginkgomon.Kill(processMap[APIServer], 5*time.Second)
 }
 func stopGolangApiServer() {
 	ginkgomon.Kill(processMap[GolangAPIServer], 5*time.Second)
@@ -288,14 +248,8 @@ func stopScheduler() {
 func stopScalingEngine() {
 	ginkgomon.Kill(processMap[ScalingEngine], 5*time.Second)
 }
-func stopMetricsCollector() {
-	ginkgomon.Kill(processMap[MetricsCollector], 5*time.Second)
-}
 func stopEventGenerator() {
 	ginkgomon.Kill(processMap[EventGenerator], 5*time.Second)
-}
-func stopServiceBroker() {
-	ginkgomon.Kill(processMap[ServiceBroker], 5*time.Second)
 }
 func stopOperator() {
 	ginkgomon.Kill(processMap[Operator], 5*time.Second)

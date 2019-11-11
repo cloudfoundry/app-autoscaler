@@ -39,7 +39,21 @@ var _ = Describe("BindingSqldb", func() {
 						"adjustment":"+1"
 					}]
 				}`
-		policyGuid = "test-policy-guid"
+		policyGuid     = "test-policy-guid"
+		policyJsonStr2 = `{
+					"instance_max_count":4,
+					"instance_min_count":1,
+					"scaling_rules":[
+					{
+						"metric_type":"memoryutil",
+						"breach_duration_secs":600,
+						"threshold":10,
+						"operator":">=",
+						"cool_down_secs":300,
+						"adjustment":"+1"
+					}]
+				}`
+		policyGuid2 = "test-policy-guid-2"
 	)
 
 	BeforeEach(func() {
@@ -135,6 +149,66 @@ var _ = Describe("BindingSqldb", func() {
 
 	})
 
+	Describe("UpdateServiceInstance", func() {
+		BeforeEach(func() {
+			bdb, err = NewBindingSQLDB(dbConfig, logger)
+			Expect(err).NotTo(HaveOccurred())
+
+			cleanServiceInstanceTable()
+		})
+		AfterEach(func() {
+			err = bdb.Close()
+			Expect(err).NotTo(HaveOccurred())
+		})
+		JustBeforeEach(func() {
+			err = bdb.UpdateServiceInstance(models.ServiceInstance{testInstanceId, testOrgGuid, testSpaceGuid, policyJsonStr2, policyGuid2})
+		})
+		Context("when the instance to be updated does not exist", func() {
+			It("should error", func() {
+				Expect(hasServiceInstance(testInstanceId)).To(BeFalse())
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(Equal(db.ErrDoesNotExist))
+			})
+		})
+		Context("when the instances to be update exists", func() {
+			BeforeEach(func() {
+				err = bdb.CreateServiceInstance(models.ServiceInstance{testInstanceId, testOrgGuid, testSpaceGuid, policyJsonStr, policyGuid})
+				Expect(err).NotTo(HaveOccurred())
+			})
+			Context("and the default policy is updated", func() {
+				It("should save the update to the database", func() {
+					Expect(err).NotTo(HaveOccurred())
+					serviceInstance, err := bdb.GetServiceInstance(testInstanceId)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(serviceInstance).To(Equal(&models.ServiceInstance{testInstanceId, testOrgGuid, testSpaceGuid, policyJsonStr2, policyGuid2}))
+				})
+			})
+			Context("and it is being updated with an empty default policy", func() {
+				BeforeEach(func() {
+					policyJsonStr2 = ""
+					policyGuid2 = ""
+				})
+				It("should save a NULL value to the database", func() {
+					Expect(err).NotTo(HaveOccurred())
+					Expect(hasServiceInstanceWithNullDefaultPolicy(testInstanceId)).To(BeTrue())
+				})
+			})
+			Context("when another instance exists", func() {
+				BeforeEach(func() {
+					err = bdb.CreateServiceInstance(models.ServiceInstance{testInstanceId + "2", testOrgGuid2, testSpaceGuid, policyJsonStr, policyGuid + "-other"})
+					Expect(err).NotTo(HaveOccurred())
+				})
+				It("should not change the other service instance", func() {
+					Expect(err).NotTo(HaveOccurred())
+					serviceInstance, err := bdb.GetServiceInstance(testInstanceId + "2")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(serviceInstance).To(Equal(&models.ServiceInstance{testInstanceId + "2", testOrgGuid2, testSpaceGuid, policyJsonStr, policyGuid + "-other"}))
+				})
+			})
+		})
+
+	})
+
 	Describe("DeleteServiceInstance", func() {
 		BeforeEach(func() {
 			bdb, err = NewBindingSQLDB(dbConfig, logger)
@@ -180,25 +254,37 @@ var _ = Describe("BindingSqldb", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 		JustBeforeEach(func() {
-			err = bdb.CreateServiceInstance(models.ServiceInstance{testInstanceId, testOrgGuid, testSpaceGuid, policyJsonStr, policyGuid})
-			Expect(err).NotTo(HaveOccurred())
 			retrievedServiceInstance, err = bdb.GetServiceInstance(testInstanceId)
 		})
-		Context("When the service instance doesn't have a default policy", func() {
+		Context("when the service instance does not exist", func() {
+			It("should return an error", func() {
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(Equal(db.ErrDoesNotExist))
+				Expect(retrievedServiceInstance).To(BeNil())
+			})
+		})
+
+		Context("when the service instance exists", func() {
 			BeforeEach(func() {
-				policyJsonStr = ""
+				err = bdb.CreateServiceInstance(models.ServiceInstance{testInstanceId, testOrgGuid, testSpaceGuid, policyJsonStr, policyGuid})
+				Expect(err).NotTo(HaveOccurred())
+			})
+			It("should return what was created", func() {
+				Expect(retrievedServiceInstance).To(Equal(&models.ServiceInstance{testInstanceId, testOrgGuid, testSpaceGuid, policyJsonStr, policyGuid}))
+			})
+		})
+		Context("when the service instance doesn't have a default policy", func() {
+			BeforeEach(func() {
+				err = bdb.CreateServiceInstance(models.ServiceInstance{testInstanceId, testOrgGuid, testSpaceGuid, "", ""})
+				Expect(err).NotTo(HaveOccurred())
 			})
 			It("should return an empty default policy", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(retrievedServiceInstance.DefaultPolicy).To(BeEmpty())
+				Expect(retrievedServiceInstance.DefaultPolicyGuid).To(BeEmpty())
 			})
 		})
-		Context("When the service instance has a default policy", func() {
-			It("should return the default policy", func() {
-				Expect(err).NotTo(HaveOccurred())
-				Expect(retrievedServiceInstance.DefaultPolicy).To(Equal(policyJsonStr))
-			})
-		})
+
 	})
 
 	Describe("CreateServiceBinding", func() {
@@ -405,8 +491,9 @@ var _ = Describe("BindingSqldb", func() {
 		})
 
 	})
+	Describe("GetAppIdByInstanceId", func() {
+		var results []string
 
-	Describe("CountServiceInstancesInOrg", func() {
 		var serviceInstanceCount int
 		BeforeEach(func() {
 			bdb, err = NewBindingSQLDB(dbConfig, logger)
@@ -416,6 +503,8 @@ var _ = Describe("BindingSqldb", func() {
 			cleanServiceInstanceTable()
 		})
 		JustBeforeEach(func() {
+
+			results, err = bdb.GetAppIdsByInstanceId(testInstanceId)
 			serviceInstanceCount, err = bdb.CountServiceInstancesInOrg(testOrgGuid)
 		})
 		AfterEach(func() {
@@ -434,17 +523,69 @@ var _ = Describe("BindingSqldb", func() {
 			BeforeEach(func() {
 				err = bdb.CreateServiceInstance(models.ServiceInstance{testInstanceId, testOrgGuid, testSpaceGuid, policyJsonStr, policyGuid})
 				Expect(err).NotTo(HaveOccurred())
-				err = bdb.CreateServiceInstance(models.ServiceInstance{testInstanceId + "2", testOrgGuid, testSpaceGuid, policyJsonStr, policyGuid})
+				err = bdb.CreateServiceBinding(testBindingId, testInstanceId, testAppId)
 				Expect(err).NotTo(HaveOccurred())
-				err = bdb.CreateServiceInstance(models.ServiceInstance{testInstanceId + "3", testOrgGuid2, testSpaceGuid, policyJsonStr, policyGuid})
+				err = bdb.CreateServiceBinding(testBindingId+"2", testInstanceId, testAppId+"2")
 				Expect(err).NotTo(HaveOccurred())
 
+				// other unrelated service instance with bindings
+				err = bdb.CreateServiceInstance(models.ServiceInstance{testInstanceId + "3", testOrgGuid, testSpaceGuid, policyJsonStr, policyGuid})
+				Expect(err).NotTo(HaveOccurred())
+				err = bdb.CreateServiceBinding(testBindingId+"3", testInstanceId+"3", testAppId+"3")
+				Expect(err).NotTo(HaveOccurred())
 			})
-			It("returns the correct count", func() {
-				Expect(err).ToNot(HaveOccurred())
-				Expect(serviceInstanceCount).To(Equal(2))
+			It("should succeed", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(results).To(ConsistOf(testAppId, testAppId+"2"))
+			})
+		})
+		Context("when binding for bindingId does not exist", func() {
+			It("should not return an error, but an empty result", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(results).To(BeEmpty())
 			})
 		})
 
+		Describe("CountServiceInstancesInOrg", func() {
+			var serviceInstanceCount int
+			BeforeEach(func() {
+				bdb, err = NewBindingSQLDB(dbConfig, logger)
+				Expect(err).NotTo(HaveOccurred())
+
+				cleanServiceBindingTable()
+				cleanServiceInstanceTable()
+			})
+			JustBeforeEach(func() {
+				serviceInstanceCount, err = bdb.CountServiceInstancesInOrg(testOrgGuid)
+			})
+			AfterEach(func() {
+				cleanServiceBindingTable()
+				cleanServiceInstanceTable()
+				err = bdb.Close()
+				Expect(err).NotTo(HaveOccurred())
+			})
+			Context("when no service instance exist", func() {
+				It("returns 0", func() {
+					Expect(err).ToNot(HaveOccurred())
+					Expect(serviceInstanceCount).To(Equal(0))
+				})
+			})
+			Context("when service instances exist", func() {
+				BeforeEach(func() {
+					err = bdb.CreateServiceInstance(models.ServiceInstance{testInstanceId, testOrgGuid, testSpaceGuid, policyJsonStr, policyGuid})
+					Expect(err).NotTo(HaveOccurred())
+					err = bdb.CreateServiceInstance(models.ServiceInstance{testInstanceId + "2", testOrgGuid, testSpaceGuid, policyJsonStr, policyGuid})
+					Expect(err).NotTo(HaveOccurred())
+					err = bdb.CreateServiceInstance(models.ServiceInstance{testInstanceId + "3", testOrgGuid2, testSpaceGuid, policyJsonStr, policyGuid})
+					Expect(err).NotTo(HaveOccurred())
+
+				})
+				It("returns the correct count", func() {
+					Expect(err).ToNot(HaveOccurred())
+					Expect(serviceInstanceCount).To(Equal(2))
+				})
+			})
+
+		})
 	})
 })

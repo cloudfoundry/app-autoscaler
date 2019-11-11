@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"strings"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -18,7 +19,9 @@ import (
 )
 
 const (
-	DefaultLoggingLevel = "info"
+	DefaultLoggingLevel                = "info"
+	DefaultMaxAmount                   = 10
+	DefaultValidDuration time.Duration = 1 * time.Second
 )
 
 type ServerConfig struct {
@@ -98,6 +101,7 @@ type Config struct {
 	InfoFilePath         string                 `yaml:"info_file_path"`
 	MetricsForwarder     MetricsForwarderConfig `yaml:"metrics_forwarder"`
 	Health               models.HealthConfig    `yaml:"health"`
+	RateLimit            models.RateLimitConfig `yaml:"rate_limit"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
@@ -108,6 +112,10 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		UseBuildInMode:  false,
 		CF: cf.CFConfig{
 			SkipSSLValidation: false,
+		},
+		RateLimit:       models.RateLimitConfig{
+			MaxAmount:     DefaultMaxAmount,
+			ValidDuration: DefaultValidDuration,
 		},
 	}
 
@@ -154,6 +162,13 @@ func (c *Config) Validate() error {
 	if c.PolicySchemaPath == "" {
 		return fmt.Errorf("Configuration error: PolicySchemaPath is empty")
 	}
+	if c.RateLimit.MaxAmount <= 0 {
+		return fmt.Errorf("Configuration error: RateLimit.MaxAmount is equal or less than zero")
+	}
+	if c.RateLimit.ValidDuration <= 0 * time.Nanosecond {
+		return fmt.Errorf("Configuration error: RateLimit.ValidDuration is equal or less than zero nanosecond")
+	}
+
 	if c.InfoFilePath == "" {
 		return fmt.Errorf("Configuration error: InfoFilePath is empty")
 	}
@@ -210,6 +225,5 @@ func (c *Config) Validate() error {
 			return fmt.Errorf(errString)
 		}
 	}
-
 	return nil
 }
