@@ -238,7 +238,9 @@ var _ = Describe("BrokerHandler", func() {
 							ServiceID: "a-service-id",
 							PlanID:    "a-plan-id",
 						},
-						DefaultPolicy: &m,
+						Parameters: models.InstanceParameters{
+							DefaultPolicy: &m,
+						},
 					}
 					body, err = json.Marshal(instanceCreationReqBody)
 					Expect(err).NotTo(HaveOccurred())
@@ -260,7 +262,9 @@ var _ = Describe("BrokerHandler", func() {
 							ServiceID: "a-service-id",
 							PlanID:    "a-plan-id",
 						},
-						DefaultPolicy: &d,
+						Parameters: models.InstanceParameters{
+							DefaultPolicy: &d,
+						},
 					}
 					body, err = json.Marshal(instanceCreationReqBody)
 					Expect(err).NotTo(HaveOccurred())
@@ -301,12 +305,29 @@ var _ = Describe("BrokerHandler", func() {
 
 		Context("When all mandatory parameters are present", func() {
 			BeforeEach(func() {
+				d := json.RawMessage(testDefaultPolicy)
+				instanceCreationReqBody = &models.InstanceCreationRequestBody{
+					OrgGUID:   "an-org-guid",
+					SpaceGUID: "an-space-guid",
+					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+						ServiceID: "a-service-id",
+						PlanID:    "a-plan-id",
+					},
+					Parameters: models.InstanceParameters{
+						DefaultPolicy: &d,
+					},
+				}
 				body, err = json.Marshal(instanceCreationReqBody)
 				Expect(err).NotTo(HaveOccurred())
 				//quota = 0
 			})
 			It("succeeds with 201", func() {
 				Expect(resp.Code).To(Equal(http.StatusCreated))
+				Expect(bindingdb.CreateServiceInstanceCallCount()).To(Equal(1))
+				serviceInstance := bindingdb.CreateServiceInstanceArgsForCall(0)
+				Expect(serviceInstance.ServiceInstanceId).To(Equal(testInstanceId))
+				Expect(serviceInstance.DefaultPolicy).To(MatchJSON(testDefaultPolicy))
+				Expect(serviceInstance.DefaultPolicyGuid).To(HaveLen(36))
 			})
 		})
 	})
@@ -378,7 +399,9 @@ var _ = Describe("BrokerHandler", func() {
 						ServiceID: "a-service-id",
 						PlanID:    "a-plan-id",
 					},
-					DefaultPolicy: &m,
+					Parameters: &models.InstanceParameters{
+						DefaultPolicy: &m,
+					},
 				}
 				body, err = json.Marshal(instanceUpdateRequestBody)
 				Expect(err).NotTo(HaveOccurred())
@@ -394,7 +417,8 @@ var _ = Describe("BrokerHandler", func() {
 		Context("When the service instance to be updated does not exist", func() {
 			BeforeEach(func() {
 				emptyPolicyParameter := json.RawMessage("\n{\t}\n")
-				instanceUpdateRequestBody.DefaultPolicy = &emptyPolicyParameter
+				parameters := models.InstanceParameters{DefaultPolicy: &emptyPolicyParameter}
+				instanceUpdateRequestBody.Parameters = &parameters
 				body, err = json.Marshal(instanceUpdateRequestBody)
 				Expect(err).NotTo(HaveOccurred())
 				bindingdb.GetServiceInstanceReturns(nil, db.ErrDoesNotExist)
@@ -410,7 +434,8 @@ var _ = Describe("BrokerHandler", func() {
 		Context("When all mandatory parameters are present", func() {
 			BeforeEach(func() {
 				emptyPolicyParameter := json.RawMessage("\n{\t}\n")
-				instanceUpdateRequestBody.DefaultPolicy = &emptyPolicyParameter
+				parameters := models.InstanceParameters{DefaultPolicy: &emptyPolicyParameter}
+				instanceUpdateRequestBody.Parameters = &parameters
 				body, err = json.Marshal(instanceUpdateRequestBody)
 				Expect(err).NotTo(HaveOccurred())
 				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{}, nil)
@@ -431,7 +456,9 @@ var _ = Describe("BrokerHandler", func() {
 						ServiceID: "a-service-id",
 						PlanID:    "a-plan-id",
 					},
-					DefaultPolicy: &d,
+					Parameters: &models.InstanceParameters{
+						DefaultPolicy: &d,
+					},
 				}
 				body, err = json.Marshal(instanceUpdateRequestBody)
 				Expect(err).NotTo(HaveOccurred())
@@ -473,7 +500,9 @@ var _ = Describe("BrokerHandler", func() {
 						ServiceID: "a-service-id",
 						PlanID:    "a-plan-id",
 					},
-					DefaultPolicy: &d,
+					Parameters: &models.InstanceParameters{
+						DefaultPolicy: &d,
+					},
 				}
 				body, err = json.Marshal(instanceUpdateRequestBody)
 				Expect(err).NotTo(HaveOccurred())
@@ -514,7 +543,9 @@ var _ = Describe("BrokerHandler", func() {
 						ServiceID: "a-service-id",
 						PlanID:    "a-plan-id",
 					},
-					DefaultPolicy: &emptyJsonObject,
+					Parameters: &models.InstanceParameters{
+						DefaultPolicy: &emptyJsonObject,
+					},
 				}
 				body, err = json.Marshal(instanceUpdateRequestBody)
 				Expect(err).NotTo(HaveOccurred())

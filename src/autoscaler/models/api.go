@@ -21,14 +21,14 @@ type InstanceParameters struct {
 
 type InstanceCreationRequestBody struct {
 	BrokerCommonRequestBody
-	OrgGUID       string           `json:"organization_guid"`
-	SpaceGUID     string           `json:"space_guid"`
-	DefaultPolicy *json.RawMessage `json:"parameters,omitempty"`
+	OrgGUID    string             `json:"organization_guid"`
+	SpaceGUID  string             `json:"space_guid"`
+	Parameters InstanceParameters `json:"parameters,omitempty"`
 }
 
 type InstanceUpdateRequestBody struct {
 	BrokerCommonRequestBody
-	DefaultPolicy *json.RawMessage `json:"parameters,omitempty"`
+	Parameters *InstanceParameters `json:"parameters,omitempty"`
 }
 
 type ServiceInstance struct {

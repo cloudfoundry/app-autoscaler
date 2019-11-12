@@ -100,8 +100,8 @@ func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Req
 	}
 
 	policyStr := ""
-	if body.DefaultPolicy != nil {
-		policyStr = string(*body.DefaultPolicy)
+	if body.Parameters.DefaultPolicy != nil {
+		policyStr = string(*body.Parameters.DefaultPolicy)
 	}
 	policyGuidStr := ""
 	if policyStr != "" {
@@ -212,12 +212,12 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if body.DefaultPolicy == nil {
+	if body.Parameters == nil || body.Parameters.DefaultPolicy == nil {
 		h.logger.Error("failed to update instance, only default policy updates allowed", nil, lager.Data{"instanceId": instanceId, "serviceId": body.ServiceID, "planId": body.PlanID})
 		writeErrorResponse(w, http.StatusUnprocessableEntity, "Failed to update service instance: Only default_policy updates allowed")
 		return
 	}
-	updatedDefaultPolicy := string(*body.DefaultPolicy)
+	updatedDefaultPolicy := string(*body.Parameters.DefaultPolicy)
 
 	h.logger.Info("update-service-instance", lager.Data{"instanceId": instanceId, "serviceId": body.ServiceID, "planId": body.PlanID, "updatedDefaultPolicy": updatedDefaultPolicy})
 
