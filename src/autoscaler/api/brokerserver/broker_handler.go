@@ -219,8 +219,12 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 	}
 	updatedDefaultPolicy := string(*body.DefaultPolicy)
 
+	h.logger.Info("update-service-instance", lager.Data{"instanceId": instanceId, "serviceId": body.ServiceID, "planId": body.PlanID, "updatedDefaultPolicy": updatedDefaultPolicy})
+
 	if emptyJSONObject.MatchString(updatedDefaultPolicy) {
 		// accept an empty json object "{}" as a default policy update to specify the removal of the default policy
+		h.logger.Info("update-service-instance-matched-empty", lager.Data{"instanceId": instanceId, "serviceId": body.ServiceID, "planId": body.PlanID, "updatedDefaultPolicy": updatedDefaultPolicy})
+
 		updatedDefaultPolicy = ""
 	}
 
@@ -261,6 +265,8 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 			writeErrorResponse(w, http.StatusInternalServerError, "Error updating service instance")
 			return
 		}
+		h.logger.Info("update-service-instance-set-or-update", lager.Data{"instanceId": instanceId, "serviceId": body.ServiceID, "planId": body.PlanID, "updatedDefaultPolicy": updatedDefaultPolicy, "updatedDefaultPolicyGuid": updatedDefaultPolicyGuid, "allBoundApps": allBoundApps, "serviceInstance": serviceInstance})
+
 		updatedAppIds, err := h.policydb.SetOrUpdateDefaultAppPolicy(allBoundApps, serviceInstance.DefaultPolicyGuid, updatedDefaultPolicy, updatedDefaultPolicyGuid)
 		if err != nil {
 			h.logger.Error("failed to set default policies", err, lager.Data{"instanceId": instanceId})
@@ -268,6 +274,7 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 			return
 		}
 
+		h.logger.Info("update-service-instance-set-or-updated", lager.Data{"instanceId": instanceId, "serviceId": body.ServiceID, "planId": body.PlanID, "updatedDefaultPolicy": updatedDefaultPolicy, "updatedDefaultPolicyGuid": updatedDefaultPolicyGuid, "allBoundApps": allBoundApps, "updatedAppIds": updatedAppIds, "serviceInstance": serviceInstance})
 		// there is synchronization between policy and schedule, so errors creating schedules should not break
 		// the whole update process
 		for _, appId := range updatedAppIds {
@@ -275,7 +282,6 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 				h.logger.Error("failed to create/update schedules", err, lager.Data{"appId": appId, "policyGuid": updatedDefaultPolicyGuid, "policy": updatedDefaultPolicy})
 			}
 		}
-
 	} else {
 		if serviceInstance.DefaultPolicyGuid != "" {
 			// default policy was present and will now be removed
@@ -285,6 +291,7 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 				writeErrorResponse(w, http.StatusInternalServerError, "Error updating service instance")
 				return
 			}
+			h.logger.Info("update-service-instance-delete", lager.Data{"instanceId": instanceId, "serviceId": body.ServiceID, "planId": body.PlanID, "updatedDefaultPolicy": updatedDefaultPolicy, "updatedDefaultPolicyGuid": updatedDefaultPolicyGuid, "updatedAppIds": updatedAppIds, "serviceInstance": serviceInstance})
 			// there is synchronization between policy and schedule, so errors creating schedules should not break
 			// the whole update process
 			for _, appId := range updatedAppIds {
@@ -292,6 +299,8 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 					h.logger.Error("failed to delete schedules", err, lager.Data{"appId": appId})
 				}
 			}
+		} else {
+			h.logger.Info("update-service-instance-nothing-to-be-done", lager.Data{"instanceId": instanceId, "serviceId": body.ServiceID, "planId": body.PlanID, "updatedDefaultPolicy": updatedDefaultPolicy, "updatedDefaultPolicyGuid": updatedDefaultPolicyGuid, "serviceInstance": serviceInstance})
 		}
 	}
 
@@ -309,6 +318,8 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 		writeErrorResponse(w, http.StatusInternalServerError, "Error updating service instance")
 		return
 	}
+
+	h.logger.Info("updated-service-instance", lager.Data{"instanceId": instanceId, "serviceId": body.ServiceID, "planId": body.PlanID, "serviceInstance": serviceInstance, "updatedServiceInstance": updatedServiceInstance})
 
 	w.Write([]byte("{}"))
 }
