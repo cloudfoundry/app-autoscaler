@@ -238,7 +238,6 @@ func startMetricsServer() {
 	}))
 }
 
-}
 func stopGolangApiServer() {
 	ginkgomon.Kill(processMap[GolangAPIServer], 5*time.Second)
 }
