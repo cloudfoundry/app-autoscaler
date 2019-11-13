@@ -59,6 +59,7 @@ func newTransport(shouldSkipTLSValidation bool) *http.Transport {
 // GetQuota Ask the quota manager for instance quota
 func (qmc *Client) GetQuota(orgGUID, serviceName, planName string) (int, error) {
 	if qmc.conf.QuotaManagement == nil {
+		qmc.logger.Info("quota-management-not-configured-allowing-all")
 		return -1, nil // quota management disabled
 	}
 
