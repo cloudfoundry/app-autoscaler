@@ -1,6 +1,7 @@
 package brokerserver
 
 import (
+	"autoscaler/api/plancheck"
 	"autoscaler/api/quota"
 	"autoscaler/api/sbss_cred_helper"
 	"database/sql"
@@ -35,6 +36,7 @@ type BrokerHandler struct {
 	schedulerUtil         *schedulerutil.SchedulerUtil
 	quotaManagementClient *quota.QuotaManagementClient
 	catalog               []domain.Service
+	planChecker           *plancheck.PlanChecker
 }
 
 var emptyJSONObject = regexp.MustCompile(`^\s*{\s*}\s*$`)
@@ -51,6 +53,7 @@ func NewBrokerHandler(logger lager.Logger, conf *config.Config, bindingdb db.Bin
 		policyValidator:       policyvalidator.NewPolicyValidator(conf.PolicySchemaPath),
 		schedulerUtil:         schedulerutil.NewSchedulerUtil(conf, logger),
 		quotaManagementClient: quota.NewQuotaManagementClient(conf, logger),
+		planChecker:           plancheck.NewPlanChecker(conf.PlanCheck, logger),
 	}
 
 }
@@ -111,6 +114,11 @@ func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Req
 			handlers.WriteJSONResponse(w, http.StatusBadRequest, errResults)
 			return
 		}
+
+		if h.planDefinitionExceeded(policyStr, body.PlanID, instanceId, w) {
+			return
+		}
+
 		policyGuid, err := uuid.NewV4()
 		if err != nil {
 			h.logger.Error("failed to create policy guid", err, lager.Data{"instanceId": instanceId})
@@ -142,6 +150,28 @@ func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Req
 		h.logger.Error("failed to create service instance", err, lager.Data{"instanceId": instanceId, "orgGuid": body.OrgGUID, "spaceGuid": body.SpaceGUID})
 		writeErrorResponse(w, http.StatusInternalServerError, "Error creating service instance")
 	}
+}
+
+func (h *BrokerHandler) planDefinitionExceeded(policyStr string, planID string, instanceId string, w http.ResponseWriter) bool {
+	policy := models.ScalingPolicy{}
+	err := json.Unmarshal([]byte(policyStr), &policy)
+	if err != nil {
+		h.logger.Error("failed to unmarshal policy", err, lager.Data{"instanceId": instanceId, "policyStr": policyStr})
+		writeErrorResponse(w, http.StatusInternalServerError, "Error reading policy")
+		return true
+	}
+	ok, checkResult, err := h.planChecker.CheckPlan(policy, planID)
+	if err != nil {
+		h.logger.Error("failed to check policy for plan adherence", err, lager.Data{"instanceId": instanceId, "policyStr": policyStr})
+		writeErrorResponse(w, http.StatusInternalServerError, "Error generating validating policy")
+		return true
+	}
+	if !ok {
+		h.logger.Error("policy did not adhere to plan", fmt.Errorf(checkResult), lager.Data{"instanceId": instanceId, "policyStr": policyStr})
+		writeErrorResponse(w, http.StatusBadRequest, checkResult)
+		return true
+	}
+	return false
 }
 
 func (h *BrokerHandler) quotaExceeded(creationRequestBody *models.InstanceCreationRequestBody, instanceId string, w http.ResponseWriter) bool {
@@ -236,6 +266,7 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 			handlers.WriteJSONResponse(w, http.StatusBadRequest, errResults)
 			return
 		}
+
 		policyGuid, err := uuid.NewV4()
 		if err != nil {
 			h.logger.Error("failed to create policy guid", err, lager.Data{"instanceId": instanceId})
@@ -382,6 +413,11 @@ func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Reque
 			handlers.WriteJSONResponse(w, http.StatusBadRequest, errResults)
 			return
 		}
+
+		if h.planDefinitionExceeded(policyStr, body.PlanID, instanceId, w) {
+			return
+		}
+
 		policyGuid, err := uuid.NewV4()
 		if err != nil {
 			h.logger.Error("failed to create policy guid", err, lager.Data{"appId": body.AppID})

@@ -80,6 +80,15 @@ var _ = BeforeSuite(func() {
 			Secret:   "client-secret",
 			TokenURL: tokenServer.URL(),
 		},
+		PlanCheck: &config.PlanCheckConfig{
+			PlanDefinitions: map[string]config.PlanDefinition{
+				"a-plan-id": {
+					PlanCheckEnabled:  true,
+					SchedulesCount:    1,
+					ScalingRulesCount: 1,
+				},
+			},
+		},
 		CatalogPath:       "../exampleconfig/catalog-example.json",
 		CatalogSchemaPath: "../schemas/catalog.schema.json",
 		PolicySchemaPath:  "../policyvalidator/policy_json.schema.json",

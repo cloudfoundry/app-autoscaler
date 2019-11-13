@@ -145,6 +145,7 @@ var _ = Describe("BrokerHandler", func() {
 				installQuotaAPIHandlers()
 			})
 			AfterEach(func() {
+				Expect(tokenServer.ReceivedRequests()).To(HaveLen(1))
 				Expect(quotaServer.ReceivedRequests()).To(HaveLen(1))
 			})
 			Context("When database CreateServiceInstance call returns ErrAlreadyExists", func() {
@@ -250,6 +251,47 @@ var _ = Describe("BrokerHandler", func() {
 					bodyBytes, err := ioutil.ReadAll(resp.Body)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(string(bodyBytes)).To(Equal(`[{"context":"(root)","description":"instance_max_count is required"}]`))
+				})
+			})
+			Context("When a default policy with too many rules is present", func() {
+				BeforeEach(func() {
+					invalidDefaultPolicy := `
+						{	"instance_max_count":4,
+							"instance_min_count":1,
+							"scaling_rules":[
+							{
+								"metric_type":"memoryused",
+								"threshold":30,
+								"operator":"<",
+								"adjustment":"-1"
+							},
+							{
+								"metric_type":"memoryused",
+								"threshold":30,
+								"operator":"<",
+								"adjustment":"-1"
+							}]
+						}`
+					m := json.RawMessage(invalidDefaultPolicy)
+					instanceCreationReqBody = &models.InstanceCreationRequestBody{
+						OrgGUID:   "an-org-guid",
+						SpaceGUID: "an-space-guid",
+						BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+							ServiceID: "a-service-id",
+							PlanID:    "a-plan-id",
+						},
+						Parameters: models.InstanceParameters{
+							DefaultPolicy: &m,
+						},
+					}
+					body, err = json.Marshal(instanceCreationReqBody)
+					Expect(err).NotTo(HaveOccurred())
+				})
+				It("fails with 400", func() {
+					Expect(resp.Code).To(Equal(http.StatusBadRequest))
+					bodyBytes, err := ioutil.ReadAll(resp.Body)
+					Expect(err).NotTo(HaveOccurred())
+					Expect(string(bodyBytes)).To(Equal(`{"code":"Bad Request","message":"Too many scaling rules: Found 2 scaling rules, but a maximum of 1 scaling rules are allowed for this service plan. "}`))
 				})
 			})
 			Context("When a default policy is present", func() {
@@ -712,7 +754,42 @@ var _ = Describe("BrokerHandler", func() {
 			})
 
 		})
+		Context("When a policy with too many rules is provided", func() {
+			BeforeEach(func() {
+				bindingPolicy = `{
+					"instance_max_count":4,
+					"instance_min_count":1,
+					"scaling_rules":[
+					{
+						"metric_type":"memoryused",
+						"threshold":30,
+						"operator":"<",
+						"adjustment":"-1"
+					},
+					{
+						"metric_type":"memoryused",
+						"threshold":30,
+						"operator":"<",
+						"adjustment":"-1"
+					}]
+				}`
+				bindingRequestBody = &models.BindingRequestBody{
+					AppID: "an-app-id",
+					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+						ServiceID: "a-service-id",
+						PlanID:    "a-plan-id",
+					},
+					Policy: json.RawMessage(bindingPolicy),
+				}
 
+				body, err = json.Marshal(bindingRequestBody)
+				Expect(err).NotTo(HaveOccurred())
+			})
+			It("fails with 400", func() {
+				Expect(resp.Code).To(Equal(http.StatusBadRequest))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"Too many scaling rules: Found 2 scaling rules, but a maximum of 1 scaling rules are allowed for this service plan. "}`))
+			})
+		})
 		Context("When mandatory parameters are present", func() {
 			BeforeEach(func() {
 				body, err = json.Marshal(bindingRequestBody)

@@ -77,17 +77,28 @@ type QuotaManagementConfig struct {
 	SkipSSLValidation bool   `yaml:"skip_ssl_validation"`
 }
 
+type PlanDefinition struct {
+	PlanCheckEnabled  bool `yaml:"planCheckEnabled"`
+	SchedulesCount    int  `yaml:"schedules_count"`
+	ScalingRulesCount int  `yaml:"scaling_rules_count"`
+}
+
+type PlanCheckConfig struct {
+	PlanDefinitions map[string]PlanDefinition `yaml:"plan_definitions"`
+}
+
 type Config struct {
-	Logging              helpers.LoggingConfig `yaml:"logging"`
-	BrokerServer         ServerConfig          `yaml:"broker_server"`
-	PublicApiServer      ServerConfig          `yaml:"public_api_server"`
-	DB                   DBConfig              `yaml:"db"`
-	BrokerUsername       string                `yaml:"broker_username"`
-	BrokerUsernameHash   string                `yaml:"broker_username_hash"`
-	BrokerPassword       string                `yaml:"broker_password"`
-	BrokerPasswordHash   string                `yaml:"broker_password_hash"`
-	APIClientId          string                `yaml:"api_client_id"`
-	QuotaManagement      *QuotaManagementConfig
+	Logging              helpers.LoggingConfig  `yaml:"logging"`
+	BrokerServer         ServerConfig           `yaml:"broker_server"`
+	PublicApiServer      ServerConfig           `yaml:"public_api_server"`
+	DB                   DBConfig               `yaml:"db"`
+	BrokerUsername       string                 `yaml:"broker_username"`
+	BrokerUsernameHash   string                 `yaml:"broker_username_hash"`
+	BrokerPassword       string                 `yaml:"broker_password"`
+	BrokerPasswordHash   string                 `yaml:"broker_password_hash"`
+	APIClientId          string                 `yaml:"api_client_id"`
+	QuotaManagement      *QuotaManagementConfig `yaml:"quota_management"`
+	PlanCheck            *PlanCheckConfig       `yaml:"plan_check"`
 	CatalogPath          string                 `yaml:"catalog_path"`
 	CatalogSchemaPath    string                 `yaml:"catalog_schema_path"`
 	DashboardRedirectURI string                 `yaml:"dashboard_redirect_uri"`
@@ -113,7 +124,7 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		CF: cf.CFConfig{
 			SkipSSLValidation: false,
 		},
-		RateLimit:       models.RateLimitConfig{
+		RateLimit: models.RateLimitConfig{
 			MaxAmount:     DefaultMaxAmount,
 			ValidDuration: DefaultValidDuration,
 		},
@@ -165,7 +176,7 @@ func (c *Config) Validate() error {
 	if c.RateLimit.MaxAmount <= 0 {
 		return fmt.Errorf("Configuration error: RateLimit.MaxAmount is equal or less than zero")
 	}
-	if c.RateLimit.ValidDuration <= 0 * time.Nanosecond {
+	if c.RateLimit.ValidDuration <= 0*time.Nanosecond {
 		return fmt.Errorf("Configuration error: RateLimit.ValidDuration is equal or less than zero nanosecond")
 	}
 
