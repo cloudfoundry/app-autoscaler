@@ -619,6 +619,8 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(policydb.DeletePoliciesByPolicyGuidCallCount()).To(Equal(1))
 				removedPolicy := policydb.DeletePoliciesByPolicyGuidArgsForCall(0)
 				Expect(removedPolicy).To(Equal("a-default-policy-guid"))
+				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
+
 			})
 		})
 	})
@@ -967,6 +969,7 @@ var _ = Describe("BrokerHandler", func() {
 			})
 			It("succeed with 200", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
+				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 		Context("When there is no app with the bindingId", func() {
@@ -1007,6 +1010,7 @@ var _ = Describe("BrokerHandler", func() {
 			It("fails with 410", func() {
 				Expect(resp.Code).To(Equal(http.StatusGone))
 				Expect(resp.Body.String()).To(Equal(`{"code":"Gone","message":"Service Binding Doesn't Exist"}`))
+				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 
@@ -1020,6 +1024,7 @@ var _ = Describe("BrokerHandler", func() {
 			It("fails with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
 				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error deleting service binding"}`))
+				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 	})
@@ -1038,6 +1043,7 @@ func verifyScheduleIsUpdatedInScheduler(appId string, policy string) {
 func verifyScheduleIsDeletedInScheduler(appId string) {
 	deleteSchedulePath, err := routes.SchedulerRoutes().Get(routes.DeleteScheduleRouteName).URLPath("appId", appId)
 	Expect(err).NotTo(HaveOccurred())
+	schedulerServer.Reset()
 	schedulerServer.AppendHandlers(ghttp.CombineHandlers(
 		ghttp.VerifyRequest("DELETE", deleteSchedulePath.String()),
 	))
