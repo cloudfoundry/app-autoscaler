@@ -89,20 +89,6 @@ type ServiceBrokerClient struct {
 	TLS models.TLSCerts `json:"tls"`
 }
 
-
-func (components *Components) ApiServer(confPath string, argv ...string) *ginkgomon.Runner {
-	return ginkgomon.New(ginkgomon.Config{
-		Name:              APIServer,
-		AnsiColorCode:     "33m",
-		StartCheck:        "Autoscaler API server started",
-		StartCheckTimeout: 20 * time.Second,
-		Command: exec.Command(
-			"node", append([]string{components.Executables[APIServer], "-c", confPath}, argv...)...,
-		),
-		Cleanup: func() {
-		},
-	})
-}
 func (components *Components) GolangAPIServer(confPath string, argv ...string) *ginkgomon.Runner {
 
 	return ginkgomon.New(ginkgomon.Config{
