@@ -419,6 +419,9 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(policySetGuid).To(Equal(serviceInstance.DefaultPolicyGuid))
 				Expect(policySet).To(Equal(serviceInstance.DefaultPolicy))
 				Expect(appsUpdated).To(Equal([]string{"app-id-1", "app-id-2"}))
+
+				By("updating the scheduler")
+				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 		Context("When a default policy is present and there was previously a default policy", func() {
@@ -462,6 +465,9 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(oldPolicyGuid).To(Equal("a-default-policy-guid"))
 				Expect(newPolicyGuid).To(Equal(serviceInstance.DefaultPolicyGuid))
 				Expect(newPolicy).To(Equal(serviceInstance.DefaultPolicy))
+
+				By("updating the scheduler")
+				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 		Context("When the default is set to be removed and there was previously a default policy", func() {
@@ -501,6 +507,8 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(policydb.DeletePoliciesByPolicyGuidCallCount()).To(Equal(1))
 				removedPolicy := policydb.DeletePoliciesByPolicyGuidArgsForCall(0)
 				Expect(removedPolicy).To(Equal("a-default-policy-guid"))
+				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
+
 			})
 		})
 	})
@@ -651,6 +659,9 @@ var _ = Describe("BrokerHandler", func() {
 			})
 			It("succeeds with 201", func() {
 				Expect(resp.Code).To(Equal(http.StatusCreated))
+
+				By("updating the scheduler")
+				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 
@@ -692,6 +703,9 @@ var _ = Describe("BrokerHandler", func() {
 					Expect(appID).To(Equal(testAppId))
 					Expect(policy).NotTo(MatchJSON(string(testDefaultPolicy)))
 					Expect(policy).To(MatchJSON(testBindingPolicy))
+
+					By("updating the scheduler")
+					Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
 				})
 			})
 
@@ -714,6 +728,9 @@ var _ = Describe("BrokerHandler", func() {
 					appID, policy, _ := policydb.SaveAppPolicyArgsForCall(0)
 					Expect(appID).To(Equal(testAppId))
 					Expect(policy).To(MatchJSON(string(testDefaultPolicy)))
+
+					By("updating the scheduler")
+					Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
 				})
 			})
 		})
@@ -794,6 +811,7 @@ var _ = Describe("BrokerHandler", func() {
 			})
 			It("succeed with 200", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
+				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 		Context("When there is no app with the bindingId", func() {
@@ -834,6 +852,7 @@ var _ = Describe("BrokerHandler", func() {
 			It("fails with 410", func() {
 				Expect(resp.Code).To(Equal(http.StatusGone))
 				Expect(resp.Body.String()).To(Equal(`{"code":"Gone","message":"Service Binding Doesn't Exist"}`))
+				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 
@@ -847,6 +866,7 @@ var _ = Describe("BrokerHandler", func() {
 			It("fails with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
 				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error deleting service binding"}`))
+				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 	})
@@ -855,6 +875,7 @@ var _ = Describe("BrokerHandler", func() {
 func verifyScheduleIsUpdatedInScheduler(appId string, policy string) {
 	updateSchedulePath, err := routes.SchedulerRoutes().Get(routes.UpdateScheduleRouteName).URLPath("appId", appId)
 	Expect(err).NotTo(HaveOccurred())
+	schedulerServer.Reset()
 	schedulerServer.AppendHandlers(ghttp.CombineHandlers(
 		ghttp.VerifyRequest("PUT", updateSchedulePath.String()),
 		ghttp.VerifyJSON(policy),
@@ -864,6 +885,7 @@ func verifyScheduleIsUpdatedInScheduler(appId string, policy string) {
 func verifyScheduleIsDeletedInScheduler(appId string) {
 	deleteSchedulePath, err := routes.SchedulerRoutes().Get(routes.DeleteScheduleRouteName).URLPath("appId", appId)
 	Expect(err).NotTo(HaveOccurred())
+	schedulerServer.Reset()
 	schedulerServer.AppendHandlers(ghttp.CombineHandlers(
 		ghttp.VerifyRequest("DELETE", deleteSchedulePath.String()),
 	))
