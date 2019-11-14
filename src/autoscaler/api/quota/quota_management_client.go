@@ -16,11 +16,11 @@ import (
 
 type QuotaManagementClient struct {
 	client *http.Client
-	conf   *config.Config
+	conf   *config.QuotaManagementConfig
 	logger lager.Logger
 }
 
-func NewQuotaManagementClient(config *config.Config, logger lager.Logger) *QuotaManagementClient {
+func NewQuotaManagementClient(config *config.QuotaManagementConfig, logger lager.Logger) *QuotaManagementClient {
 	return &QuotaManagementClient{
 		conf:   config,
 		logger: logger.Session("quota-management-client"),
@@ -29,7 +29,7 @@ func NewQuotaManagementClient(config *config.Config, logger lager.Logger) *Quota
 
 // Ask the quota manager for instance quota
 func (qmc *QuotaManagementClient) GetQuota(orgGUID, serviceName, planName string) (int, error) {
-	if qmc.conf.QuotaManagement == nil {
+	if qmc.conf == nil {
 		qmc.logger.Info("quota-management-not-configured-allowing-all")
 		return -1, nil // quota management disabled
 	}
@@ -44,22 +44,28 @@ func (qmc *QuotaManagementClient) GetQuota(orgGUID, serviceName, planName string
 				fmt.Errorf("http.DefaultTransport: %T\n", http.DefaultTransport)
 		}
 		tr.TLSClientConfig = &tls.Config{
-			InsecureSkipVerify: qmc.conf.QuotaManagement.SkipSSLValidation,
+			InsecureSkipVerify: qmc.conf.SkipSSLValidation,
 		}
 		hc := &http.Client{
 			Transport: tr,
 		}
-		ctx := context.WithValue(context.TODO(), oauth2.HTTPClient, hc)
-		conf := &clientcredentials.Config{
-			ClientID:     qmc.conf.QuotaManagement.ClientID,
-			ClientSecret: qmc.conf.QuotaManagement.Secret,
-			TokenURL:     qmc.conf.QuotaManagement.TokenURL,
+
+		if qmc.conf.ClientID != "" && qmc.conf.Secret != "" && qmc.conf.TokenURL != "" {
+			ctx := context.WithValue(context.TODO(), oauth2.HTTPClient, hc)
+			conf := &clientcredentials.Config{
+				ClientID:     qmc.conf.ClientID,
+				ClientSecret: qmc.conf.Secret,
+				TokenURL:     qmc.conf.TokenURL,
+			}
+			qmc.client = conf.Client(ctx)
+		} else {
+			// plain http client for tests
+			qmc.client = hc
 		}
-		qmc.client = conf.Client(ctx)
 	}
 
 	quotaUrl := fmt.Sprintf("%s/api/v2.0/orgs/%s/services/%s/plan/%s",
-		qmc.conf.QuotaManagement.API, orgGUID, serviceName, planName)
+		qmc.conf.API, orgGUID, serviceName, planName)
 	req, err := http.NewRequest(http.MethodGet, quotaUrl, nil)
 	if err != nil {
 		return 0, err

@@ -52,7 +52,7 @@ func NewBrokerHandler(logger lager.Logger, conf *config.Config, bindingdb db.Bin
 		catalog:               catalog,
 		policyValidator:       policyvalidator.NewPolicyValidator(conf.PolicySchemaPath),
 		schedulerUtil:         schedulerutil.NewSchedulerUtil(conf, logger),
-		quotaManagementClient: quota.NewQuotaManagementClient(conf, logger),
+		quotaManagementClient: quota.NewQuotaManagementClient(conf.QuotaManagement, logger),
 		planChecker:           plancheck.NewPlanChecker(conf.PlanCheck, logger),
 	}
 

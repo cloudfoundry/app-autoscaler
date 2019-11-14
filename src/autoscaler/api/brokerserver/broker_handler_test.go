@@ -145,7 +145,6 @@ var _ = Describe("BrokerHandler", func() {
 				installQuotaAPIHandlers()
 			})
 			AfterEach(func() {
-				Expect(tokenServer.ReceivedRequests()).To(HaveLen(1))
 				Expect(quotaServer.ReceivedRequests()).To(HaveLen(1))
 			})
 			Context("When database CreateServiceInstance call returns ErrAlreadyExists", func() {
@@ -1028,26 +1027,8 @@ func verifyScheduleIsDeletedInScheduler(appId string) {
 	))
 }
 func installQuotaAPIHandlers() {
-	/// only provide them for tests using them, or reset them if not used?
-	tokenServer.Reset()
-	tokenServer.AppendHandlers(ghttp.CombineHandlers(
-		ghttp.VerifyBasicAuth("client-id", "client-secret"),
-		ghttp.VerifyRequest("POST", "/"),
-		ghttp.RespondWithJSONEncoded(http.StatusOK, struct {
-			AccessToken  string `json:"access_token"`
-			TokenType    string `json:"token_type,omitempty"`
-			RefreshToken string `json:"refresh_token,omitempty"`
-			ExpiresIn    int    `json:"expires_in,omitempty"`
-		}{
-			AccessToken:  "secret-token",
-			TokenType:    "bearer",
-			RefreshToken: "refresh-token",
-			ExpiresIn:    120,
-		}),
-	))
 	quotaServer.Reset()
 	quotaServer.AppendHandlers(ghttp.CombineHandlers(
-		ghttp.VerifyHeaderKV("Authorization", "Bearer secret-token"),
 		ghttp.VerifyRequest("GET", "/api/v2.0/orgs/an-org-guid/services/autoscaler/plan/standard"),
 		ghttp.RespondWithJSONEncoded(http.StatusOK, struct {
 			Quota int `json:"quota"`

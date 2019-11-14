@@ -41,7 +41,6 @@ var (
 	conf              *config.Config
 	catalogBytes      []byte
 	schedulerServer   *ghttp.Server
-	tokenServer       *ghttp.Server
 	quotaServer       *ghttp.Server
 	testDefaultPolicy = `
 						{
@@ -65,7 +64,6 @@ func TestServer(t *testing.T) {
 
 var _ = BeforeSuite(func() {
 	schedulerServer = ghttp.NewServer()
-	tokenServer = ghttp.NewServer()
 	quotaServer = ghttp.NewServer()
 	port := 10000 + GinkgoParallelNode()
 	conf = &config.Config{
@@ -75,10 +73,7 @@ var _ = BeforeSuite(func() {
 		BrokerUsernameHash: usernameHash,
 		BrokerPasswordHash: passwordHash,
 		QuotaManagement: &config.QuotaManagementConfig{
-			API:      quotaServer.URL(),
-			ClientID: "client-id",
-			Secret:   "client-secret",
-			TokenURL: tokenServer.URL(),
+			API: quotaServer.URL(),
 		},
 		PlanCheck: &config.PlanCheckConfig{
 			PlanDefinitions: map[string]config.PlanDefinition{
