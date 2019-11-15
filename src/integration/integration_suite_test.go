@@ -315,16 +315,16 @@ func provisionServiceInstance(serviceInstanceId string, orgId string, spaceId st
 		bindBody = map[string]interface{}{
 			"organization_guid": orgId,
 			"space_guid":        spaceId,
-			"service_id":        "app-autoscaler",
-			"plan_id":           "free",
+			"service_id":        "autoscaler-guid",
+			"plan_id":           "autoscaler-free-plan-id",
 			"parameters":        parameters,
 		}
 	} else {
 		bindBody = map[string]interface{}{
 			"organization_guid": orgId,
 			"space_guid":        spaceId,
-			"service_id":        "app-autoscaler",
-			"plan_id":           "free",
+			"service_id":        "autoscaler-guid",
+			"plan_id":           "autoscaler-free-plan-id",
 		}
 	}
 
@@ -345,7 +345,7 @@ func updateServiceInstance(serviceInstanceId string, defaultPolicy []byte, broke
 			"default_policy": &defaultPolicy,
 		}
 		updateBody = map[string]interface{}{
-			"service_id": "app-autoscaler",
+			"service_id": "autoscaler-guid",
 			"parameters": parameters,
 		}
 	}
@@ -373,15 +373,15 @@ func bindService(bindingId string, appId string, serviceInstanceId string, polic
 		rawParameters := json.RawMessage(policy)
 		bindBody = map[string]interface{}{
 			"app_guid":   appId,
-			"service_id": "app-autoscaler",
-			"plan_id":    "free",
+			"service_id": "autoscaler-guid",
+			"plan_id":    "autoscaler-free-plan-id",
 			"parameters": &rawParameters,
 		}
 	} else {
 		bindBody = map[string]interface{}{
 			"app_guid":   appId,
-			"service_id": "app-autoscaler",
-			"plan_id":    "free",
+			"service_id": "autoscaler-guid",
+			"plan_id":    "autoscaler-free-plan-id",
 		}
 	}
 
