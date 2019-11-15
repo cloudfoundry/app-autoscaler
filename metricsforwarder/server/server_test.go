@@ -26,7 +26,6 @@ var _ = Describe("CustomMetrics Server", func() {
 
 	Context("when a request to forward custom metrics comes", func() {
 		BeforeEach(func() {
-			rateLimiter.ExceedsLimitReturns(false)
 			credentials = &models.Credential{}
 			scalingPolicy = &models.ScalingPolicy{
 				InstanceMin: 1,
@@ -66,7 +65,6 @@ var _ = Describe("CustomMetrics Server", func() {
 
 	Context("when a request to forward custom metrics comes without Authorization header", func() {
 		BeforeEach(func() {
-			rateLimiter.ExceedsLimitReturns(false)
 			credentials = &models.Credential{}
 			credentials.Username = "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu"
 			credentials.Password = "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G"
@@ -89,7 +87,6 @@ var _ = Describe("CustomMetrics Server", func() {
 
 	Context("when a request to forward custom metrics comes without 'Basic'", func() {
 		BeforeEach(func() {
-			rateLimiter.ExceedsLimitReturns(false)
 			credentials = &models.Credential{}
 			credentials.Username = "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu"
 			credentials.Password = "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G"
@@ -113,7 +110,6 @@ var _ = Describe("CustomMetrics Server", func() {
 
 	Context("when a request to forward custom metrics comes with  wrong user credentials", func() {
 		BeforeEach(func() {
-			rateLimiter.ExceedsLimitReturns(false)
 			credentials = &models.Credential{}
 			credentials.Username = "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu"
 			credentials.Password = "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G"
@@ -138,7 +134,6 @@ var _ = Describe("CustomMetrics Server", func() {
 
 	Context("when a request to forward custom metrics comes with unmatched metric types", func() {
 		BeforeEach(func() {
-			rateLimiter.ExceedsLimitReturns(false)
 			credentials = &models.Credential{}
 			credentials.Username = "$2a$10$YnQNQYcvl/Q2BKtThOKFZ.KB0nTIZwhKr5q1pWTTwC/PUAHsbcpFu"
 			credentials.Password = "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G"
@@ -191,6 +186,9 @@ var _ = Describe("CustomMetrics Server", func() {
 			req.Header.Add("Authorization", "Basic dXNlcm5hbWU6cGFzc3dvcmQ=")
 			resp, err = client.Do(req)
 			Expect(err).NotTo(HaveOccurred())
+		})
+		AfterEach(func() {
+			rateLimiter.ExceedsLimitReturns(false)
 		})
 
 		It("returns status code 429", func() {
