@@ -47,6 +47,9 @@ var _ = Describe("PlanCheck", func() {
 			ok, validationResult, err = qmc.CheckPlan(testPolicy, testPlanId)
 		})
 		Context("when not configured", func() {
+			BeforeEach(func() {
+				quotaConfig = nil
+			})
 			It("returns -1", func() {
 				Expect(err).ToNot(HaveOccurred())
 				Expect(ok).To(BeTrue())
@@ -75,6 +78,9 @@ var _ = Describe("PlanCheck", func() {
 				}
 			})
 			Context("when checking a policy with an unknown plan", func() {
+				BeforeEach(func() {
+					testPlanId = "unknown-plan-id"
+				})
 				It("errors on unknown plan", func() {
 					Expect(err).To(HaveOccurred())
 				})
