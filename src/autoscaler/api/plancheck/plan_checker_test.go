@@ -95,6 +95,9 @@ var _ = Describe("Plan check operations", func() {
 				}
 			})
 			Context("when checking a policy with an unknown plan", func() {
+				BeforeEach(func() {
+					testPlanId = "unknown-plan-id"
+				})
 				It("errors on unknown plan", func() {
 					Expect(err).To(HaveOccurred())
 				})
