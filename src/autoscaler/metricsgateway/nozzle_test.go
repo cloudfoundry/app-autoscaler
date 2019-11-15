@@ -110,6 +110,9 @@ var _ = Describe("Nozzle", func() {
 
 		httpStartStopEnvelope = loggregator_v2.Envelope{
 			SourceId: testAppId,
+			DeprecatedTags: map[string]*loggregator_v2.Value{
+				"peer_type": {Data: &loggregator_v2.Value_Text{Text: "Client"}},
+			},
 			Message: &loggregator_v2.Envelope_Timer{
 				Timer: &loggregator_v2.Timer{
 					Name:  "http",
