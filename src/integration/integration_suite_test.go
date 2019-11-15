@@ -917,6 +917,9 @@ func createHTTPTimerEnvelope(appId string, start int64, end int64) []*loggregato
 					Stop:  end,
 				},
 			},
+			DeprecatedTags: map[string]*loggregator_v2.Value{
+				"peer_type": {Data: &loggregator_v2.Value_Text{Text: "Client"}},
+			},
 		},
 	}
 
