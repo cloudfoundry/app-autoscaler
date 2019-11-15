@@ -84,6 +84,9 @@ var _ = Describe("PublicApiServer", func() {
 			BeforeEach(func() {
 				fakeRateLimiter.ExceedsLimitReturns(true)
 			})
+			AfterEach(func() {
+				fakeRateLimiter.ExceedsLimitReturns(false)
+			})
 
 			Context("when calling scaling_histories endpoint", func() {
 				It("should fail with 429", func() {
@@ -147,10 +150,6 @@ var _ = Describe("PublicApiServer", func() {
 		})
 
 		Describe("Without AuthorizatioToken", func() {
-			BeforeEach(func() {
-				fakeRateLimiter.ExceedsLimitReturns(false)
-			})
-
 			Context("when calling scaling_histories endpoint", func() {
 				It("should fail with 401", func() {
 					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/scaling_histories",
@@ -382,7 +381,6 @@ var _ = Describe("PublicApiServer", func() {
 		Describe("With Invalid Authorization Token", func() {
 			BeforeEach(func() {
 				fakeCFClient.IsUserSpaceDeveloperReturns(false, nil)
-				fakeRateLimiter.ExceedsLimitReturns(false)
 			})
 
 			Context("when calling scaling_histories endpoint", func() {
@@ -467,7 +465,6 @@ var _ = Describe("PublicApiServer", func() {
 			BeforeEach(func() {
 				fakeCFClient.IsTokenAuthorizedReturns(true, nil)
 				fakeCFClient.IsUserSpaceDeveloperReturns(true, nil)
-				fakeRateLimiter.ExceedsLimitReturns(false)
 			})
 
 			Context("when calling scaling_histories endpoint", func() {
