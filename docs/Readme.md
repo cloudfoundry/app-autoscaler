@@ -257,7 +257,7 @@ With the user-provided-service aproach, you can consume the credential from VCAP
 You need to emit  your own metric for scaling to the "URL" specified in credential JSON file with below API endpoint.
 
 ```
-PUT /v1/apps/:guid/metrics
+POST /v1/apps/:guid/metrics
 ```
 
 A JSON payload is required with above API to submit metric name, value and the correspondng instance index.
