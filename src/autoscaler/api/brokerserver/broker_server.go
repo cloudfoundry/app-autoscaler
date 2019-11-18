@@ -102,6 +102,7 @@ func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.Bind
 	r.Get(routes.BrokerDeleteInstanceRouteName).Handler(VarsFunc(ah.DeleteServiceInstance))
 	r.Get(routes.BrokerCreateBindingRouteName).Handler(VarsFunc(ah.BindServiceInstance))
 	r.Get(routes.BrokerDeleteBindingRouteName).Handler(VarsFunc(ah.UnbindServiceInstance))
+	r.Get(routes.BrokerHealthRouteName).Handler(VarsFunc(ah.GetHealth))
 
 	addr := fmt.Sprintf("0.0.0.0:%d", conf.BrokerServer.Port)
 

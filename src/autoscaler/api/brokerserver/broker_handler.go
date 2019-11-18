@@ -75,6 +75,10 @@ func (h *BrokerHandler) GetBrokerCatalog(w http.ResponseWriter, r *http.Request,
 	w.Write([]byte(catalog))
 }
 
+func (h *BrokerHandler) GetHealth(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+	w.Write([]byte(`{"alive":"true"}`))
+}
+
 func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Request, vars map[string]string) {
 	instanceId := vars["instanceId"]
 
