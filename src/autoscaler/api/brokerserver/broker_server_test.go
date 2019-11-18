@@ -94,4 +94,21 @@ var _ = Describe("BrokerServer", func() {
 		})
 	})
 
+	Context("when requesting the health endpoint", func() {
+		BeforeEach(func() {
+			serverUrl.Path = "/health"
+		})
+		JustBeforeEach(func() {
+			req, err := http.NewRequest(http.MethodGet, serverUrl.String(), nil)
+			Expect(err).NotTo(HaveOccurred())
+
+			rsp, err = httpClient.Do(req)
+		})
+
+		It("should get 200", func() {
+			Expect(err).ToNot(HaveOccurred())
+			Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+		})
+	})
+
 })
