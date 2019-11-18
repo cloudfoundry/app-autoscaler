@@ -121,6 +121,19 @@ var _ = Describe("Nozzle", func() {
 				},
 			},
 		}
+		serverHttpStartStopEnvelope = loggregator_v2.Envelope{
+			SourceId: testAppId,
+			DeprecatedTags: map[string]*loggregator_v2.Value{
+				"peer_type": {Data: &loggregator_v2.Value_Text{Text: "Server"}},
+			},
+			Message: &loggregator_v2.Envelope_Timer{
+				Timer: &loggregator_v2.Timer{
+					Name:  "http",
+					Start: 1542325492043447110,
+					Stop:  1542325492045491009,
+				},
+			},
+		}
 		nonHttpStartStopTimerEnvelope = loggregator_v2.Envelope{
 			SourceId: testAppId,
 			Message: &loggregator_v2.Envelope_Timer{
@@ -255,6 +268,17 @@ var _ = Describe("Nozzle", func() {
 			})
 			It("should accept the envelope", func() {
 				Eventually(envelopChan).Should(Receive())
+			})
+		})
+
+		Context("when there is a server httpstartstop timer envelope", func() {
+			BeforeEach(func() {
+				envelopes = []*loggregator_v2.Envelope{
+					&serverHttpStartStopEnvelope,
+				}
+			})
+			It("should not accept the envelope", func() {
+				Eventually(envelopChan).ShouldNot(Receive())
 			})
 		})
 

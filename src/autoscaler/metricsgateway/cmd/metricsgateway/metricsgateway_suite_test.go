@@ -20,7 +20,7 @@ import (
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
 	"google.golang.org/grpc/grpclog"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 
 	"testing"
 
@@ -56,10 +56,13 @@ var (
 	fakeMetricServer    *ghttp.Server
 	metricServerAddress string
 
-	testAppId                            = "test-app-id"
-	envelopes []*loggregator_v2.Envelope = []*loggregator_v2.Envelope{
-		&loggregator_v2.Envelope{
+	testAppId = "test-app-id"
+	envelopes = []*loggregator_v2.Envelope{
+		{
 			SourceId: testAppId,
+			DeprecatedTags: map[string]*loggregator_v2.Value{
+				"peer_type": {Data: &loggregator_v2.Value_Text{Text: "Client"}},
+			},
 			Message: &loggregator_v2.Envelope_Timer{
 				Timer: &loggregator_v2.Timer{
 					Name:  "http",
