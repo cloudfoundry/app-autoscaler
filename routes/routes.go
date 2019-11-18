@@ -32,6 +32,9 @@ const (
 	BrokerCatalogPath      = "/v2/catalog"
 	BrokerCatalogRouteName = "GetCatalog"
 
+	BrokerHealthPath      = "/health"
+	BrokerHealthRouteName = "GetBrokerHealth"
+
 	BrokerInstancePath            = "/v2/service_instances/{instanceId}"
 	BrokerCreateInstanceRouteName = "CreateInstance"
 	BrokerUpdateInstanceRouteName = "UpdateInstance"
@@ -117,6 +120,7 @@ func newRouters() *AutoScalerRoute {
 	instance.scalingEngineRoutes.Path(SyncActiveSchedulesPath).Methods(http.MethodPut).Name(SyncActiveSchedulesRouteName)
 
 	instance.brokerRoutes.Path(BrokerCatalogPath).Methods(http.MethodGet).Name(BrokerCatalogRouteName)
+	instance.brokerRoutes.Path(BrokerHealthPath).Methods(http.MethodGet).Name(BrokerHealthRouteName)
 
 	instance.brokerRoutes.Path(BrokerInstancePath).Methods(http.MethodPut).Name(BrokerCreateInstanceRouteName)
 	instance.brokerRoutes.Path(BrokerInstancePath).Methods(http.MethodPatch).Name(BrokerUpdateInstanceRouteName)
