@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
 	"code.cloudfoundry.org/lager"
@@ -57,6 +58,7 @@ func (qmc *QuotaManagementClient) GetQuota(orgGUID, serviceName, planName string
 				ClientSecret: qmc.conf.Secret,
 				TokenURL:     qmc.conf.TokenURL,
 			}
+			qmc.logger.Info("creating-oauth-client", lager.Data{"client_id": conf.ClientID, "token_url": conf.TokenURL})
 			qmc.client = conf.Client(ctx)
 		} else {
 			// plain http client for tests
@@ -68,23 +70,28 @@ func (qmc *QuotaManagementClient) GetQuota(orgGUID, serviceName, planName string
 		qmc.conf.API, orgGUID, serviceName, planName)
 	req, err := http.NewRequest(http.MethodGet, quotaUrl, nil)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("quota-management-client: creating GET request to %s failed: %w", quotaUrl, err)
 	}
-	req.Header.Set("Content-Type", "application/json")
 	res, err := qmc.client.Do(req)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("quota-management-client: request %#v failed with %w", req, err)
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		return 0, fmt.Errorf("GET %s returned %#v", quotaUrl, res.Status)
+		return 0, fmt.Errorf("quota-management-client: GET %s returned %#v", quotaUrl, res.Status)
 	}
-	var quotaResponse struct {
-		Quota int `json:"quota"`
-	}
-	err = json.NewDecoder(res.Body).Decode(&quotaResponse)
+
+	response, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("quota-management-client: failed to read response: %w", err)
+	}
+
+	quotaResponse := &struct {
+		Quota int `json:"quota"`
+	}{}
+	err = json.Unmarshal(response, quotaResponse)
+	if err != nil {
+		return 0, fmt.Errorf("quota-management-client: error while parsing '%s': %w", response, err)
 	}
 	return quotaResponse.Quota, nil
 }
