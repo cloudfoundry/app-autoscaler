@@ -34,6 +34,7 @@ func NewClient(config *config.Config, logger lager.Logger, cfClient cf.CFClient)
 		}
 		ctx := context.WithValue(context.Background(), oauth2.HTTPClient, hc)
 		conf := &clientcredentials.Config{ClientID: config.QuotaManagement.ClientID, ClientSecret: config.QuotaManagement.Secret, TokenURL: config.QuotaManagement.TokenURL}
+		qmc.logger.Info("creating-oauth-client", lager.Data{"client_id": conf.ClientID, "token_url": conf.TokenURL})
 		qmc.client = conf.Client(ctx)
 	}
 	return qmc
