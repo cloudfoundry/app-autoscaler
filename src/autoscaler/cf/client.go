@@ -56,6 +56,7 @@ type CFClient interface {
 	IsUserAdmin(userToken string) (bool, error)
 	IsUserSpaceDeveloper(userToken string, appId string) (bool, error)
 	IsTokenAuthorized(token, clientId string) (bool, error)
+	GetServiceInstancesInOrg(orgGUID, servicePlanGuid string) (int, error)
 }
 
 type cfClient struct {
@@ -72,6 +73,7 @@ type cfClient struct {
 	httpClient         *http.Client
 	lock               *sync.Mutex
 	grantTime          time.Time
+	servicePlanGuids   map[string]string
 }
 
 func NewCFClient(conf *CFConfig, logger lager.Logger, clk clock.Clock) CFClient {
@@ -95,6 +97,8 @@ func NewCFClient(conf *CFConfig, logger lager.Logger, clk clock.Clock) CFClient 
 	}).DialContext
 
 	c.lock = &sync.Mutex{}
+
+	c.servicePlanGuids = make(map[string]string)
 
 	return c
 }

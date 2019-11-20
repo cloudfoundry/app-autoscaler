@@ -96,7 +96,7 @@ var _ = BeforeSuite(func() {
 	fakePolicyDB := &fakes.FakePolicyDB{}
 	fakeSbssDB := &fakes.FakeSbssDB{}
 	httpStatusCollector := &fakes.FakeHTTPStatusCollector{}
-	httpServer, err := brokerserver.NewBrokerServer(lager.NewLogger("test"), conf, fakeBindingDB, fakePolicyDB, fakeSbssDB, httpStatusCollector)
+	httpServer, err := brokerserver.NewBrokerServer(lager.NewLogger("test"), conf, fakeBindingDB, fakePolicyDB, fakeSbssDB, httpStatusCollector, nil)
 	Expect(err).NotTo(HaveOccurred())
 
 	serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(port))

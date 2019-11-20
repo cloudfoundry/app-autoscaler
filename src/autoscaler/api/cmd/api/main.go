@@ -70,6 +70,15 @@ func main() {
 		healthendpoint.NewDatabaseStatusCollector("autoscaler", "golangapiserver", "policyDB", policyDb),
 		httpStatusCollector,
 	}
+
+	paClock := clock.NewClock()
+	cfClient := cf.NewCFClient(&conf.CF, logger.Session("cf"), paClock)
+	err = cfClient.Login()
+	if err != nil {
+		logger.Error("failed to login cloud foundry", err, lager.Data{"API": conf.CF.API})
+		os.Exit(1)
+	}
+
 	var checkBindingFunc api.CheckBindingFunc
 	if !conf.UseBuildInMode {
 		var bindingDB db.BindingDB
@@ -94,7 +103,7 @@ func main() {
 			logger.Info("Connected to SBSS database")
 			defer sbssDB.Close()
 		}
-		brokerHttpServer, err := brokerserver.NewBrokerServer(logger.Session("broker_http_server"), conf, bindingDB, policyDb, sbssDB, httpStatusCollector)
+		brokerHttpServer, err := brokerserver.NewBrokerServer(logger.Session("broker_http_server"), conf, bindingDB, policyDb, sbssDB, httpStatusCollector, cfClient)
 		if err != nil {
 			logger.Error("failed to create broker http server", err)
 			os.Exit(1)
@@ -108,14 +117,6 @@ func main() {
 
 	promRegistry := prometheus.NewRegistry()
 	healthendpoint.RegisterCollectors(promRegistry, prometheusCollectors, true, logger.Session("golangapiserver-prometheus"))
-
-	paClock := clock.NewClock()
-	cfClient := cf.NewCFClient(&conf.CF, logger.Session("cf"), paClock)
-	err = cfClient.Login()
-	if err != nil {
-		logger.Error("failed to login cloud foundry", err, lager.Data{"API": conf.CF.API})
-		os.Exit(1)
-	}
 
 	rateLimiter := ratelimiter.DefaultRateLimiter(conf.RateLimit.MaxAmount, conf.RateLimit.ValidDuration, logger.Session("api-ratelimiter"))
 	publicApiHttpServer, err := publicapiserver.NewPublicApiServer(logger.Session("public_api_http_server"), conf, policyDb, checkBindingFunc, cfClient, httpStatusCollector, rateLimiter)

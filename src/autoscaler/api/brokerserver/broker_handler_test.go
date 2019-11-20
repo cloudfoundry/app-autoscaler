@@ -50,7 +50,7 @@ var _ = Describe("BrokerHandler", func() {
 				ID:   "a-plan-id",
 				Name: "standard",
 			}},
-		}})
+		}}, nil)
 	})
 
 	Describe("GetBrokerCatalog", func() {

@@ -4,6 +4,7 @@ import (
 	"autoscaler/api/plancheck"
 	"autoscaler/api/quota"
 	"autoscaler/api/sbss_cred_helper"
+	"autoscaler/cf"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -41,7 +42,7 @@ type BrokerHandler struct {
 
 var emptyJSONObject = regexp.MustCompile(`^\s*{\s*}\s*$`)
 
-func NewBrokerHandler(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB, sbssDB db.SbssDB, catalog []domain.Service) *BrokerHandler {
+func NewBrokerHandler(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB, sbssDB db.SbssDB, catalog []domain.Service, cfClient cf.CFClient) *BrokerHandler {
 
 	return &BrokerHandler{
 		logger:                logger,
@@ -52,7 +53,7 @@ func NewBrokerHandler(logger lager.Logger, conf *config.Config, bindingdb db.Bin
 		catalog:               catalog,
 		policyValidator:       policyvalidator.NewPolicyValidator(conf.PolicySchemaPath),
 		schedulerUtil:         schedulerutil.NewSchedulerUtil(conf, logger),
-		quotaManagementClient: quota.NewQuotaManagementClient(conf.QuotaManagement, logger),
+		quotaManagementClient: quota.NewQuotaManagementClient(conf.QuotaManagement, logger, cfClient),
 		planChecker:           plancheck.NewPlanChecker(conf.PlanCheck, logger),
 	}
 
@@ -82,6 +83,10 @@ func (h *BrokerHandler) GetHealth(w http.ResponseWriter, r *http.Request, vars m
 func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Request, vars map[string]string) {
 	instanceId := vars["instanceId"]
 
+	logger := h.logger.Session("create-service-instance", lager.Data{"instanceId": instanceId})
+	logger.Info("start")
+	defer logger.Info("end")
+
 	body := &models.InstanceCreationRequestBody{}
 	bodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -105,6 +110,7 @@ func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Req
 	if h.quotaExceeded(body, instanceId, w) {
 		return
 	}
+	logger.Debug("quota-check-passed")
 
 	policyStr := ""
 	if body.Parameters.DefaultPolicy != nil {
@@ -179,12 +185,22 @@ func (h *BrokerHandler) planDefinitionExceeded(policyStr string, planID string, 
 }
 
 func (h *BrokerHandler) quotaExceeded(creationRequestBody *models.InstanceCreationRequestBody, instanceId string, w http.ResponseWriter) bool {
+	logger := h.logger.Session("quota-check", lager.Data{"instanceId": instanceId})
+	logger.Debug("start")
+	defer logger.Debug("end")
+
+	planId := creationRequestBody.PlanID
+	serviceId := creationRequestBody.ServiceID
+	orgGuid := creationRequestBody.OrgGUID
+	spaceGuid := creationRequestBody.SpaceGUID
+
 	serviceName := ""
 	planName := ""
+
 	for _, service := range h.catalog {
-		if service.ID == creationRequestBody.ServiceID {
+		if service.ID == serviceId {
 			for _, plan := range service.Plans {
-				if plan.ID == creationRequestBody.PlanID {
+				if plan.ID == planId {
 					serviceName = service.Name
 					planName = plan.Name
 				}
@@ -192,31 +208,35 @@ func (h *BrokerHandler) quotaExceeded(creationRequestBody *models.InstanceCreati
 		}
 	}
 	if serviceName == "" || planName == "" {
-		h.logger.Error("failed to find selected service and plan in catalog", nil, lager.Data{"instanceId": instanceId, "orgGuid": creationRequestBody.OrgGUID, "spaceGuid": creationRequestBody.SpaceGUID, "serviceId": creationRequestBody.ServiceID, "planId": creationRequestBody.PlanID, "serviceName": serviceName, "planName": planName})
+		h.logger.Error("failed to find selected service and plan in catalog", nil, lager.Data{"instanceId": instanceId, "orgGuid": orgGuid, "spaceGuid": spaceGuid, "serviceId": serviceId, "planId": planId, "serviceName": serviceName, "planName": planName})
 		writeErrorResponse(w, http.StatusBadRequest, "Unknown service or plan")
 		return true
 	}
-	quota, err := h.quotaManagementClient.GetQuota(creationRequestBody.OrgGUID, serviceName, planName)
+	quota, err := h.quotaManagementClient.GetQuota(orgGuid, serviceName, planName)
+	logger.Debug("quota-management-client-returned", lager.Data{"quota": quota, "instanceId": instanceId, "orgGuid": orgGuid, "spaceGuid": spaceGuid, "serviceId": serviceId, "planId": planId, "serviceName": serviceName, "planName": planName})
+
 	if err != nil {
-		h.logger.Error("failed to call quota management API", err, lager.Data{"instanceId": instanceId, "orgGuid": creationRequestBody.OrgGUID, "spaceGuid": creationRequestBody.SpaceGUID, "serviceId": creationRequestBody.ServiceID, "planId": creationRequestBody.PlanID, "serviceName": serviceName, "planName": planName})
+		h.logger.Error("failed to call quota management API", err, lager.Data{"instanceId": instanceId, "orgGuid": orgGuid, "spaceGuid": spaceGuid, "serviceId": serviceId, "planId": planId, "serviceName": serviceName, "planName": planName})
 		writeErrorResponse(w, http.StatusInternalServerError, "Failed to determine available Application Autoscaler quota for your subaccount. Please try again later.")
 		return true
 	}
 	if quota == 0 {
-		h.logger.Error("failed to create service instance due to missing quota", nil, lager.Data{"instanceId": instanceId, "orgGuid": creationRequestBody.OrgGUID, "spaceGuid": creationRequestBody.SpaceGUID, "serviceId": creationRequestBody.ServiceID, "planId": creationRequestBody.PlanID, "serviceName": serviceName, "planName": planName, "quota": quota})
+		h.logger.Error("failed to create service instance due to missing quota", nil, lager.Data{"instanceId": instanceId, "orgGuid": orgGuid, "spaceGuid": spaceGuid, "serviceId": serviceId, "planId": planId, "serviceName": serviceName, "planName": planName, "quota": quota})
 		writeErrorResponse(w, http.StatusBadRequest, fmt.Sprintf(`No quota for this service "%s" and service plan "%s" has been assigned to your subaccount. Please contact your global account administrator for help on how to assign Application Autoscaler quota to your subaccount.`, serviceName, planName))
 		return true
 	}
 	if quota > 0 {
-		instances, err := h.bindingdb.CountServiceInstancesInOrg(creationRequestBody.OrgGUID)
+		instances, err := h.quotaManagementClient.GetServiceInstancesInOrg(orgGuid, planId)
+		logger.Debug("quota-management-client-get-service-instances-returned", lager.Data{"instancesCount": instances, "quota": quota, "instanceId": instanceId, "orgGuid": orgGuid, "spaceGuid": spaceGuid, "serviceId": serviceId, "planId": planId, "serviceName": serviceName, "planName": planName})
+
 		if err != nil {
-			h.logger.Error("failed to count currently existing service instances", err, lager.Data{"instanceId": instanceId, "orgGuid": creationRequestBody.OrgGUID, "spaceGuid": creationRequestBody.SpaceGUID, "serviceId": creationRequestBody.ServiceID, "planId": creationRequestBody.PlanID, "serviceName": serviceName, "planName": planName})
-			writeErrorResponse(w, http.StatusInternalServerError, "Failed to determine used quota. Try again later.")
+			h.logger.Error("failed to count currently existing service instances", err, lager.Data{"instanceId": instanceId, "orgGuid": orgGuid, "spaceGuid": spaceGuid, "serviceId": serviceId, "planId": planId, "serviceName": serviceName, "planName": planName})
+			writeErrorResponse(w, http.StatusInternalServerError, "Failed to determine used quota. Please try again later.")
 			return true
 		}
 		if instances+1 > quota {
-			h.logger.Error("failed to create service instance due to insufficient quota", nil, lager.Data{"instanceId": instanceId, "orgGuid": creationRequestBody.OrgGUID, "spaceGuid": creationRequestBody.SpaceGUID, "serviceId": creationRequestBody.ServiceID, "planId": creationRequestBody.PlanID, "serviceName": serviceName, "planName": planName, "quota": quota, "instances": instances})
-			writeErrorResponse(w, http.StatusBadRequest, fmt.Sprintf(`The quota of %d service instances of service "%s" with plan "%s" within this subaccount has been exceeded. Please contact your global account administrator for help on how to assign more Application Autoscaler quota to your subaccount.`, quota, serviceName, planName))
+			h.logger.Error("failed to create service instance due to insufficient quota", nil, lager.Data{"instanceId": instanceId, "orgGuid": orgGuid, "spaceGuid": spaceGuid, "serviceId": serviceId, "planId": planId, "serviceName": serviceName, "planName": planName, "quota": quota, "instances": instances})
+			writeErrorResponse(w, http.StatusBadRequest, fmt.Sprintf(`The quota of %d service instances of service '%s' with plan '%s' within this subaccount has been exceeded (%d instances already exist). Please contact your global account administrator for help on how to assign more Application Autoscaler quota to your subaccount.`, quota, serviceName, planName, instances))
 			return true
 		}
 	}
