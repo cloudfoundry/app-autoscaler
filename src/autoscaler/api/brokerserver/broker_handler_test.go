@@ -29,8 +29,9 @@ import (
 
 var _ = Describe("BrokerHandler", func() {
 	var (
-		bindingdb *fakes.FakeBindingDB
-		policydb  *fakes.FakePolicyDB
+		bindingdb    *fakes.FakeBindingDB
+		policydb     *fakes.FakePolicyDB
+		fakecfClient *fakes.FakeCFClient
 
 		handler *BrokerHandler
 		resp    *httptest.ResponseRecorder
@@ -40,6 +41,7 @@ var _ = Describe("BrokerHandler", func() {
 		bindingdb = &fakes.FakeBindingDB{}
 		policydb = &fakes.FakePolicyDB{}
 		resp = httptest.NewRecorder()
+		fakecfClient = &fakes.FakeCFClient{}
 		installQuotaAPIHandlers()
 	})
 
@@ -51,7 +53,7 @@ var _ = Describe("BrokerHandler", func() {
 				ID:   "a-plan-id",
 				Name: "standard",
 			}},
-		}}, nil)
+		}}, fakecfClient)
 	})
 
 	Describe("GetBrokerCatalog", func() {
@@ -491,6 +493,7 @@ var _ = Describe("BrokerHandler", func() {
 				bindingdb.GetAppIdsByInstanceIdReturns([]string{"app-id-1", "app-id-2"}, nil)
 				policydb.SetOrUpdateDefaultAppPolicyReturns([]string{"app-id-2"}, nil)
 				verifyScheduleIsUpdatedInScheduler("app-id-2", testDefaultPolicy)
+				fakecfClient.GetServicePlanReturns("a-plan-id", nil)
 			})
 			It("succeeds with 200, saves the default policy, and sets the default policy on the already bound apps", func() {
 				By("returning 200")
@@ -540,6 +543,7 @@ var _ = Describe("BrokerHandler", func() {
 				bindingdb.GetAppIdsByInstanceIdReturns([]string{"app-id-1", "app-id-2"}, nil)
 				policydb.SetOrUpdateDefaultAppPolicyReturns([]string{"app-id-2"}, nil)
 				verifyScheduleIsUpdatedInScheduler("app-id-2", testDefaultPolicy)
+				fakecfClient.GetServicePlanReturns("a-plan-id", nil)
 			})
 			It("succeeds with 200, saves the default policy, and updates the default policy", func() {
 				By("returning 200")

@@ -36,6 +36,7 @@ type BrokerHandler struct {
 	quotaManagementClient *quota.Client
 	catalog               []domain.Service
 	planChecker           *plancheck.PlanChecker
+	cfClient              cf.CFClient
 }
 
 var emptyJSONObject = regexp.MustCompile(`^\s*{\s*}\s*$`)
@@ -56,6 +57,7 @@ func NewBrokerHandler(logger lager.Logger, conf *config.Config, bindingdb db.Bin
 		schedulerUtil:         schedulerutil.NewSchedulerUtil(conf, logger),
 		quotaManagementClient: quota.NewClient(conf, logger, cfClient),
 		planChecker:           plancheck.NewPlanChecker(conf.PlanCheck, logger),
+		cfClient:              cfClient,
 	}
 }
 
@@ -288,6 +290,16 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 		if !valid {
 			h.logger.Error("failed to validate policy", err, lager.Data{"instanceId": instanceId, "policy": updatedDefaultPolicy})
 			handlers.WriteJSONResponse(w, http.StatusBadRequest, errResults)
+			return
+		}
+
+		servicePlan, err := h.cfClient.GetServicePlan(instanceId)
+		if err != nil {
+			h.logger.Error("failed-to-retrieve-service-plan-of-service-instance", err, lager.Data{"instanceId": instanceId})
+			writeErrorResponse(w, http.StatusInternalServerError, "Error validating policy")
+			return
+		}
+		if h.planDefinitionExceeded(updatedDefaultPolicy, servicePlan, instanceId, w) {
 			return
 		}
 
