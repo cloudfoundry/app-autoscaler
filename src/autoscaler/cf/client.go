@@ -79,7 +79,7 @@ type cfClient struct {
 	serviceInstanceGuidToBrokerPlanGuid map[string]string
 }
 
-func NewCFClient(conf *CFConfig, logger lager.Logger, clk clock.Clock) *cfClient {
+func NewCFClient(conf *CFConfig, logger lager.Logger, clk clock.Clock) CFClient {
 	c := &cfClient{}
 	c.logger = logger
 	c.conf = conf

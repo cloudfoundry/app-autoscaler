@@ -55,7 +55,7 @@ func NewBrokerHandler(logger lager.Logger, conf *config.Config, bindingdb db.Bin
 		catalog:               catalog,
 		policyValidator:       policyvalidator.NewPolicyValidator(conf.PolicySchemaPath),
 		schedulerUtil:         schedulerutil.NewSchedulerUtil(conf, logger),
-		quotaManagementClient: quota.NewClient(conf, logger),
+		quotaManagementClient: quota.NewClient(conf, logger, cfClient),
 		planChecker:           plancheck.NewPlanChecker(conf.PlanCheck, logger),
 		cfClient:              cfClient,
 	}
@@ -210,12 +210,12 @@ func (h *BrokerHandler) quotaExceeded(creationRequestBody *models.InstanceCreati
 	}
 	quota, err := h.quotaManagementClient.GetQuota(creationRequestBody.OrgGUID, serviceName, planName)
 	if err != nil {
-		h.logger.Error("failed to call quota management API", err, lager.Data{"instanceId": instanceId, "orgGuid": creationRequestBody.OrgGUID, "spaceGuid": creationRequestBody.SpaceGUID, "serviceId": creationRequestBody.ServiceID, "planId": creationRequestBody.PlanID, "serviceName": serviceName, "planName": planName})
+		h.logger.Error("failed to call quota management API", err, lager.Data{"instanceId": instanceId, "orgGuid": orgGuid, "spaceGuid": spaceGuid, "serviceId": serviceId, "planId": planId, "serviceName": serviceName, "planName": planName})
 		writeErrorResponse(w, http.StatusInternalServerError, "Failed to determine available quota. Try again later.")
 		return true
 	}
 	if quota == 0 {
-		h.logger.Error("failed to create service instance due to missing quota", nil, lager.Data{"instanceId": instanceId, "orgGuid": creationRequestBody.OrgGUID, "spaceGuid": creationRequestBody.SpaceGUID, "serviceId": creationRequestBody.ServiceID, "planId": creationRequestBody.PlanID, "serviceName": serviceName, "planName": planName, "quota": quota})
+		h.logger.Error("failed to create service instance due to missing quota", nil, lager.Data{"instanceId": instanceId, "orgGuid": orgGuid, "spaceGuid": spaceGuid, "serviceId": serviceId, "planId": planId, "serviceName": serviceName, "planName": planName, "quota": quota})
 		writeErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("No quota for this service (%s) or service plan (%s) has been assigned to your org. Please contact your global account administrator for help on how to assign Application Autoscaler quota to your subaccount.", serviceName, planName))
 		return true
 	}

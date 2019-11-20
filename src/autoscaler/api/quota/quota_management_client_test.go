@@ -26,7 +26,7 @@ var _ = Describe("Quota", func() {
 	Context("GetQuota", func() {
 		Context("when not configured", func() {
 			BeforeEach(func() {
-				qmc = quota.NewClient(quotaConfig, lagertest.NewTestLogger("Quota"))
+				qmc = quota.NewClient(quotaConfig, lagertest.NewTestLogger("Quota"), nil)
 			})
 			It("returns -1", func() {
 				quotaSize, err = qmc.GetQuota("test-org", "test-service", "test-plan")
@@ -39,7 +39,7 @@ var _ = Describe("Quota", func() {
 				quotaServer = ghttp.NewServer()
 				quotaConfig.QuotaManagement = &config.QuotaManagementConfig{}
 				quotaConfig.QuotaManagement.API = quotaServer.URL()
-				qmc = quota.NewClient(quotaConfig, lagertest.NewTestLogger("Quota"))
+				qmc = quota.NewClient(quotaConfig, lagertest.NewTestLogger("Quota"), nil)
 				qmc.SetClient(&http.Client{})
 
 				quotaServer.AppendHandlers(

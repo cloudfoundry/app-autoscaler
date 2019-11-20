@@ -133,7 +133,7 @@ var _ = BeforeSuite(func() {
 	fakeBindingDB := &fakes.FakeBindingDB{}
 	fakePolicyDB := &fakes.FakePolicyDB{}
 	httpStatusCollector := &fakes.FakeHTTPStatusCollector{}
-	httpServer, err := brokerserver.NewBrokerServer(lager.NewLogger("test"), conf, fakeBindingDB, fakePolicyDB, httpStatusCollector)
+	httpServer, err := brokerserver.NewBrokerServer(lager.NewLogger("test"), conf, fakeBindingDB, fakePolicyDB, httpStatusCollector, nil)
 	Expect(err).NotTo(HaveOccurred())
 
 	serverUrl, err = url.Parse("http://localhost:" + strconv.Itoa(port))
