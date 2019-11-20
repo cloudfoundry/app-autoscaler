@@ -71,9 +71,6 @@ func main() {
 		httpStatusCollector,
 	}
 
-	promRegistry := prometheus.NewRegistry()
-	healthendpoint.RegisterCollectors(promRegistry, prometheusCollectors, true, logger.Session("golangapiserver-prometheus"))
-
 	paClock := clock.NewClock()
 	cfClient := cf.NewCFClient(&conf.CF, logger.Session("cf"), paClock)
 	err = cfClient.Login()
@@ -107,6 +104,9 @@ func main() {
 			return true
 		}
 	}
+
+	promRegistry := prometheus.NewRegistry()
+	healthendpoint.RegisterCollectors(promRegistry, prometheusCollectors, true, logger.Session("golangapiserver-prometheus"))
 
 	rateLimiter := ratelimiter.DefaultRateLimiter(conf.RateLimit.MaxAmount, conf.RateLimit.ValidDuration, logger.Session("api-ratelimiter"))
 	publicApiHttpServer, err := publicapiserver.NewPublicApiServer(logger.Session("public_api_http_server"), conf, policyDb, checkBindingFunc, cfClient, httpStatusCollector, rateLimiter, bindingDB)
