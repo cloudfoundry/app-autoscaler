@@ -1109,7 +1109,7 @@ Status
 Route
 '''''
 
-    PUT /v1/apps/:guid/metrics
+    POST /v1/apps/:guid/metrics
 
 Body
 ''''
