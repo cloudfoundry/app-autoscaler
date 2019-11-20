@@ -57,23 +57,26 @@ type CFClient interface {
 	IsUserSpaceDeveloper(userToken string, appId string) (bool, error)
 	IsTokenAuthorized(token, clientId string) (bool, error)
 	GetServiceInstancesInOrg(orgGUID, servicePlanGuid string) (int, error)
+	GetServicePlan(serviceInstanceGuid string) (string, error)
 }
 
 type cfClient struct {
-	logger             lager.Logger
-	conf               *CFConfig
-	clk                clock.Clock
-	tokens             Tokens
-	endpoints          Endpoints
-	infoURL            string
-	tokenURL           string
-	introspectTokenURL string
-	loginForm          url.Values
-	authHeader         string
-	httpClient         *http.Client
-	lock               *sync.Mutex
-	grantTime          time.Time
-	servicePlanGuids   map[string]string
+	logger                              lager.Logger
+	conf                                *CFConfig
+	clk                                 clock.Clock
+	tokens                              Tokens
+	endpoints                           Endpoints
+	infoURL                             string
+	tokenURL                            string
+	introspectTokenURL                  string
+	loginForm                           url.Values
+	authHeader                          string
+	httpClient                          *http.Client
+	lock                                *sync.Mutex
+	grantTime                           time.Time
+	brokerPlanGuidToCCServicePlanGuid   map[string]string
+	ccServicePlanToBrokerPlanGuid       map[string]string
+	serviceInstanceGuidToBrokerPlanGuid map[string]string
 }
 
 func NewCFClient(conf *CFConfig, logger lager.Logger, clk clock.Clock) CFClient {
@@ -98,7 +101,9 @@ func NewCFClient(conf *CFConfig, logger lager.Logger, clk clock.Clock) CFClient 
 
 	c.lock = &sync.Mutex{}
 
-	c.servicePlanGuids = make(map[string]string)
+	c.brokerPlanGuidToCCServicePlanGuid = make(map[string]string)
+	c.ccServicePlanToBrokerPlanGuid = make(map[string]string)
+	c.serviceInstanceGuidToBrokerPlanGuid = make(map[string]string)
 
 	return c
 }

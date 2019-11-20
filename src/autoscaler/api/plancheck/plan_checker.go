@@ -27,7 +27,7 @@ func (pc PlanChecker) CheckPlan(policy models.ScalingPolicy, planID string) (boo
 	}
 	definition, ok := pc.conf.PlanDefinitions[planID]
 	if !ok {
-		return false, "", fmt.Errorf(`unknown plan id "%s".`, planID)
+		return false, "", fmt.Errorf(`unknown plan id "%s"`, planID)
 	}
 	if !definition.PlanCheckEnabled {
 		return true, "", nil
