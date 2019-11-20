@@ -45,6 +45,7 @@ type FakeCFClient struct {
 		result1 int
 		result2 error
 	}
+<<<<<<< HEAD
 	GetServicePlanStub        func(string) (string, error)
 	getServicePlanMutex       sync.RWMutex
 	getServicePlanArgsForCall []struct {
@@ -59,6 +60,9 @@ type FakeCFClient struct {
 		result2 error
 	}
 	GetTokensStub        func() (cf.Tokens, error)
+=======
+	GetTokensStub        func() cf.Tokens
+>>>>>>> a350ba04 (quotas: fix service instance counting)
 	getTokensMutex       sync.RWMutex
 	getTokensArgsForCall []struct {
 	}
@@ -273,16 +277,27 @@ func (fake *FakeCFClient) GetServiceInstancesInOrg(arg1 string, arg2 string) (in
 		arg1 string
 		arg2 string
 	}{arg1, arg2})
+<<<<<<< HEAD
 	stub := fake.GetServiceInstancesInOrgStub
 	fakeReturns := fake.getServiceInstancesInOrgReturns
 	fake.recordInvocation("GetServiceInstancesInOrg", []interface{}{arg1, arg2})
 	fake.getServiceInstancesInOrgMutex.Unlock()
 	if stub != nil {
 		return stub(arg1, arg2)
+=======
+	fake.recordInvocation("GetServiceInstancesInOrg", []interface{}{arg1, arg2})
+	fake.getServiceInstancesInOrgMutex.Unlock()
+	if fake.GetServiceInstancesInOrgStub != nil {
+		return fake.GetServiceInstancesInOrgStub(arg1, arg2)
+>>>>>>> a350ba04 (quotas: fix service instance counting)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
 	}
+<<<<<<< HEAD
+=======
+	fakeReturns := fake.getServiceInstancesInOrgReturns
+>>>>>>> a350ba04 (quotas: fix service instance counting)
 	return fakeReturns.result1, fakeReturns.result2
 }
 
@@ -331,6 +346,7 @@ func (fake *FakeCFClient) GetServiceInstancesInOrgReturnsOnCall(i int, result1 i
 	}{result1, result2}
 }
 
+<<<<<<< HEAD
 func (fake *FakeCFClient) GetServicePlan(arg1 string) (string, error) {
 	fake.getServicePlanMutex.Lock()
 	ret, specificReturn := fake.getServicePlanReturnsOnCall[len(fake.getServicePlanArgsForCall)]
@@ -396,6 +412,9 @@ func (fake *FakeCFClient) GetServicePlanReturnsOnCall(i int, result1 string, res
 }
 
 func (fake *FakeCFClient) GetTokens() (cf.Tokens, error) {
+=======
+func (fake *FakeCFClient) GetTokens() cf.Tokens {
+>>>>>>> a350ba04 (quotas: fix service instance counting)
 	fake.getTokensMutex.Lock()
 	ret, specificReturn := fake.getTokensReturnsOnCall[len(fake.getTokensArgsForCall)]
 	fake.getTokensArgsForCall = append(fake.getTokensArgsForCall, struct {
@@ -825,8 +844,11 @@ func (fake *FakeCFClient) Invocations() map[string][][]interface{} {
 	defer fake.getEndpointsMutex.RUnlock()
 	fake.getServiceInstancesInOrgMutex.RLock()
 	defer fake.getServiceInstancesInOrgMutex.RUnlock()
+<<<<<<< HEAD
 	fake.getServicePlanMutex.RLock()
 	defer fake.getServicePlanMutex.RUnlock()
+=======
+>>>>>>> a350ba04 (quotas: fix service instance counting)
 	fake.getTokensMutex.RLock()
 	defer fake.getTokensMutex.RUnlock()
 	fake.isTokenAuthorizedMutex.RLock()
