@@ -70,6 +70,18 @@ func main() {
 		healthendpoint.NewDatabaseStatusCollector("autoscaler", "golangapiserver", "policyDB", policyDb),
 		httpStatusCollector,
 	}
+
+	promRegistry := prometheus.NewRegistry()
+	healthendpoint.RegisterCollectors(promRegistry, prometheusCollectors, true, logger.Session("golangapiserver-prometheus"))
+
+	paClock := clock.NewClock()
+	cfClient := cf.NewCFClient(&conf.CF, logger.Session("cf"), paClock)
+	err = cfClient.Login()
+	if err != nil {
+		logger.Error("failed to login cloud foundry", err, lager.Data{"API": conf.CF.API})
+		os.Exit(1)
+	}
+
 	var checkBindingFunc api.CheckBindingFunc
 	var bindingDB db.BindingDB
 	if !conf.UseBuildInMode {
@@ -84,7 +96,7 @@ func main() {
 		checkBindingFunc = func(appId string) bool {
 			return bindingDB.CheckServiceBinding(appId)
 		}
-		brokerHttpServer, err := brokerserver.NewBrokerServer(logger.Session("broker_http_server"), conf, bindingDB, policyDb, httpStatusCollector)
+		brokerHttpServer, err := brokerserver.NewBrokerServer(logger.Session("broker_http_server"), conf, bindingDB, policyDb, httpStatusCollector, cfClient)
 		if err != nil {
 			logger.Error("failed to create broker http server", err)
 			os.Exit(1)
@@ -94,17 +106,6 @@ func main() {
 		checkBindingFunc = func(appId string) bool {
 			return true
 		}
-	}
-
-	promRegistry := prometheus.NewRegistry()
-	healthendpoint.RegisterCollectors(promRegistry, prometheusCollectors, true, logger.Session("golangapiserver-prometheus"))
-
-	paClock := clock.NewClock()
-	cfClient := cf.NewCFClient(&conf.CF, logger.Session("cf"), paClock)
-	err = cfClient.Login()
-	if err != nil {
-		logger.Error("failed to login cloud foundry", err, lager.Data{"API": conf.CF.API})
-		os.Exit(1)
 	}
 
 	rateLimiter := ratelimiter.DefaultRateLimiter(conf.RateLimit.MaxAmount, conf.RateLimit.ValidDuration, logger.Session("api-ratelimiter"))
