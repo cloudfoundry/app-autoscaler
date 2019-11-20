@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
@@ -20,16 +21,23 @@ import (
 )
 
 const (
-	PathCFInfo                     = "/v2/info"
-	PathCFAuth                     = "/oauth/token"
-	GrantTypeClientCredentials     = "client_credentials"
-	GrantTypeRefreshToken          = "refresh_token"
-	TimeToRefreshBeforeTokenExpire = 10 * time.Minute
+	PathCFInfo                                   = "/v2/info"
+	PathCFAuth                                   = "/oauth/token"
+	PathIntrospectToken                          = "/introspect"
+	GrantTypeClientCredentials                   = "client_credentials"
+	GrantTypeRefreshToken                        = "refresh_token"
+	TimeToRefreshBeforeTokenExpire time.Duration = 10 * time.Minute
 )
 
 type Tokens struct {
 	AccessToken string `json:"access_token"`
 	ExpiresIn   int64  `json:"expires_in"`
+}
+
+type IntrospectionResponse struct {
+	Active   bool   `json:"active"`
+	Email    string `json:"email"`
+	ClientId string `json:"client_id"`
 }
 
 type Endpoints struct {
@@ -47,24 +55,31 @@ type CFClient interface {
 	SetAppInstances(string, int) error
 	IsUserAdmin(userToken string) (bool, error)
 	IsUserSpaceDeveloper(userToken string, appId string) (bool, error)
+	IsTokenAuthorized(token, clientId string) (bool, error)
+	GetServiceInstancesInOrg(orgGUID, servicePlanGuid string) (int, error)
+	GetServicePlan(serviceInstanceGuid string) (string, error)
 }
 
 type cfClient struct {
-	logger     lager.Logger
-	conf       *CFConfig
-	clk        clock.Clock
-	tokens     Tokens
-	endpoints  Endpoints
-	infoURL    string
-	tokenURL   string
-	loginForm  url.Values
-	authHeader string
-	httpClient *http.Client
-	lock       *sync.Mutex
-	grantTime  time.Time
+	logger                              lager.Logger
+	conf                                *CFConfig
+	clk                                 clock.Clock
+	tokens                              Tokens
+	endpoints                           Endpoints
+	infoURL                             string
+	tokenURL                            string
+	introspectTokenURL                  string
+	loginForm                           url.Values
+	authHeader                          string
+	httpClient                          *http.Client
+	lock                                *sync.Mutex
+	grantTime                           time.Time
+	brokerPlanGuidToCCServicePlanGuid   map[string]string
+	ccServicePlanToBrokerPlanGuid       map[string]string
+	serviceInstanceGuidToBrokerPlanGuid map[string]string
 }
 
-func NewCFClient(conf *CFConfig, logger lager.Logger, clk clock.Clock) CFClient {
+func NewCFClient(conf *CFConfig, logger lager.Logger, clk clock.Clock) *cfClient {
 	c := &cfClient{}
 	c.logger = logger
 	c.conf = conf
@@ -86,6 +101,10 @@ func NewCFClient(conf *CFConfig, logger lager.Logger, clk clock.Clock) CFClient 
 	}).DialContext
 
 	c.lock = &sync.Mutex{}
+
+	c.brokerPlanGuidToCCServicePlanGuid = make(map[string]string)
+	c.ccServicePlanToBrokerPlanGuid = make(map[string]string)
+	c.serviceInstanceGuidToBrokerPlanGuid = make(map[string]string)
 
 	return c
 }
@@ -113,6 +132,7 @@ func (c *cfClient) retrieveEndpoints() error {
 	}
 
 	c.tokenURL = c.endpoints.TokenEndpoint + PathCFAuth
+	c.introspectTokenURL = c.endpoints.TokenEndpoint + PathIntrospectToken
 	return nil
 }
 
@@ -197,4 +217,40 @@ func (c *cfClient) isTokenToBeExpired() bool {
 
 func (c *cfClient) GetEndpoints() Endpoints {
 	return c.endpoints
+}
+
+func (c *cfClient) IsTokenAuthorized(token, clientId string) (bool, error) {
+	formData := url.Values{"token": {token}}
+	request, err := http.NewRequest("POST", c.introspectTokenURL, strings.NewReader(formData.Encode()))
+	if err != nil {
+		return false, err
+	}
+	request.SetBasicAuth(c.conf.ClientID, c.conf.Secret)
+	request.Header.Set("Content-Type", "application/x-www-form-urlencoded;charset=utf-8")
+
+	resp, err := c.httpClient.Do(request)
+	if err != nil {
+		return false, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return false, fmt.Errorf("received status code %v while calling /introspect endpoint", resp.Status)
+	}
+	defer resp.Body.Close()
+
+	responseBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return false, err
+	}
+
+	introspectionResponse := &IntrospectionResponse{}
+	err = json.Unmarshal(responseBody, introspectionResponse)
+	if err != nil {
+		return false, err
+	}
+
+	if introspectionResponse.Active == true && introspectionResponse.ClientId == clientId {
+		return true, nil
+	}
+
+	return false, nil
 }

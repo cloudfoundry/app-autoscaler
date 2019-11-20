@@ -29,6 +29,7 @@ import (
 
 var _ = Describe("BrokerHandler", func() {
 	var (
+		fakecfClient *fakes.FakeCFClient
 		bindingdb *fakes.FakeBindingDB
 		policydb  *fakes.FakePolicyDB
 
@@ -41,6 +42,7 @@ var _ = Describe("BrokerHandler", func() {
 		policydb = &fakes.FakePolicyDB{}
 		resp = httptest.NewRecorder()
 		installQuotaAPIHandlers()
+		fakecfClient = &fakes.FakeCFClient{}
 	})
 
 	JustBeforeEach(func() {
@@ -51,7 +53,7 @@ var _ = Describe("BrokerHandler", func() {
 				ID:   "a-plan-id",
 				Name: "standard",
 			}},
-		}})
+		}}, fakecfClient)
 	})
 
 	Describe("GetBrokerCatalog", func() {
@@ -142,7 +144,9 @@ var _ = Describe("BrokerHandler", func() {
 		})
 
 		Context("When all parameters are present", func() {
-
+			BeforeEach(func() {
+				installQuotaAPIHandlers()
+			})
 			AfterEach(func() {
 				Expect(tokenServer.ReceivedRequests()).To(HaveLen(1))
 				Expect(quotaServer.ReceivedRequests()).To(HaveLen(1))
@@ -341,16 +345,34 @@ var _ = Describe("BrokerHandler", func() {
 					PlanID:    "a-plan-id",
 				},
 			}
+			installQuotaAPIHandlers()
 		})
 
 		Context("When all mandatory parameters are present", func() {
 			BeforeEach(func() {
+				d := json.RawMessage(testDefaultPolicy)
+				instanceCreationReqBody = &models.InstanceCreationRequestBody{
+					OrgGUID:   "an-org-guid",
+					SpaceGUID: "an-space-guid",
+					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+						ServiceID: "a-service-id",
+						PlanID:    "a-plan-id",
+					},
+					Parameters: models.InstanceParameters{
+						DefaultPolicy: &d,
+					},
+				}
 				body, err = json.Marshal(instanceCreationReqBody)
 				Expect(err).NotTo(HaveOccurred())
 				//quota = 0
 			})
 			It("succeeds with 201", func() {
 				Expect(resp.Code).To(Equal(http.StatusCreated), DebugTestInfo())
+				Expect(bindingdb.CreateServiceInstanceCallCount()).To(Equal(1))
+				serviceInstance := bindingdb.CreateServiceInstanceArgsForCall(0)
+				Expect(serviceInstance.ServiceInstanceId).To(Equal(testInstanceId))
+				Expect(serviceInstance.DefaultPolicy).To(MatchJSON(testDefaultPolicy))
+				Expect(serviceInstance.DefaultPolicyGuid).To(HaveLen(36))
 			})
 		})
 	})
@@ -367,6 +389,7 @@ var _ = Describe("BrokerHandler", func() {
 			instanceUpdateRequestBody = &models.InstanceUpdateRequestBody{
 				BrokerCommonRequestBody: models.BrokerCommonRequestBody{
 					ServiceID: "a-service-id",
+					PlanID:    "a-plan-id",
 				},
 			}
 		})
@@ -495,6 +518,7 @@ var _ = Describe("BrokerHandler", func() {
 				bindingdb.GetAppIdsByInstanceIdReturns([]string{"app-id-1", "app-id-2"}, nil)
 				policydb.SetOrUpdateDefaultAppPolicyReturns([]string{"app-id-2"}, nil)
 				verifyScheduleIsUpdatedInScheduler("app-id-2", testDefaultPolicy)
+				fakecfClient.GetServicePlanReturns("a-plan-id", nil)
 			})
 			It("succeeds with 200, saves the default policy, and sets the default policy on the already bound apps", func() {
 				By("returning 200")
@@ -544,6 +568,7 @@ var _ = Describe("BrokerHandler", func() {
 				bindingdb.GetAppIdsByInstanceIdReturns([]string{"app-id-1", "app-id-2"}, nil)
 				policydb.SetOrUpdateDefaultAppPolicyReturns([]string{"app-id-2"}, nil)
 				verifyScheduleIsUpdatedInScheduler("app-id-2", testDefaultPolicy)
+				fakecfClient.GetServicePlanReturns("a-plan-id", nil)
 			})
 			It("succeeds with 200, saves the default policy, and updates the default policy", func() {
 				By("returning 200")
@@ -574,6 +599,7 @@ var _ = Describe("BrokerHandler", func() {
 				instanceUpdateRequestBody = &models.InstanceUpdateRequestBody{
 					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
 						ServiceID: "a-service-id",
+						PlanID:    "a-plan-id",
 					},
 					Parameters: &models.InstanceParameters{
 						DefaultPolicy: &emptyJsonObject,
