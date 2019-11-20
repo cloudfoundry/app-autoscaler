@@ -2,6 +2,7 @@ package quota
 
 import (
 	"autoscaler/api/config"
+	"autoscaler/cf"
 	"context"
 	"crypto/tls"
 	"encoding/json"
@@ -17,13 +18,14 @@ import (
 )
 
 type Client struct {
-	client *http.Client
-	conf   *config.Config
-	logger lager.Logger
+	client   *http.Client
+	cfClient cf.CFClient
+	conf     *config.Config
+	logger   lager.Logger
 }
 
-func NewClient(config *config.Config, logger lager.Logger) *Client {
-	qmc := &Client{conf: config, logger: logger.Session("quota-management-client")}
+func NewClient(config *config.Config, logger lager.Logger, cfClient cf.CFClient) *Client {
+	qmc := &Client{conf: config, cfClient: cfClient, logger: logger.Session("quota-management-client")}
 
 	if config.QuotaManagement != nil {
 		qmc.logger.Info("creating-client")
@@ -94,6 +96,10 @@ func (qmc *Client) GetQuota(orgGUID, serviceName, planName string) (int, error) 
 		return 0, fmt.Errorf("quota-management-client: error while parsing '%s': %w", response, err)
 	}
 	return quotaResponse.Quota, nil
+}
+
+func (qmc *Client) GetServiceInstancesInOrg(orgGUID, servicePlanGuid string) (int, error) {
+	return qmc.cfClient.GetServiceInstancesInOrg(orgGUID, servicePlanGuid)
 }
 
 func (qmc *Client) SetClient(client *http.Client) {

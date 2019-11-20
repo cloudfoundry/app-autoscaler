@@ -31,6 +31,20 @@ type FakeCFClient struct {
 	getEndpointsReturnsOnCall map[int]struct {
 		result1 cf.Endpoints
 	}
+	GetServiceInstancesInOrgStub        func(string, string) (int, error)
+	getServiceInstancesInOrgMutex       sync.RWMutex
+	getServiceInstancesInOrgArgsForCall []struct {
+		arg1 string
+		arg2 string
+	}
+	getServiceInstancesInOrgReturns struct {
+		result1 int
+		result2 error
+	}
+	getServiceInstancesInOrgReturnsOnCall map[int]struct {
+		result1 int
+		result2 error
+	}
 	GetTokensStub        func() (cf.Tokens, error)
 	getTokensMutex       sync.RWMutex
 	getTokensArgsForCall []struct {
@@ -41,6 +55,20 @@ type FakeCFClient struct {
 	}
 	getTokensReturnsOnCall map[int]struct {
 		result1 cf.Tokens
+		result2 error
+	}
+	IsTokenAuthorizedStub        func(string, string) (bool, error)
+	isTokenAuthorizedMutex       sync.RWMutex
+	isTokenAuthorizedArgsForCall []struct {
+		arg1 string
+		arg2 string
+	}
+	isTokenAuthorizedReturns struct {
+		result1 bool
+		result2 error
+	}
+	isTokenAuthorizedReturnsOnCall map[int]struct {
+		result1 bool
 		result2 error
 	}
 	IsUserAdminStub        func(string) (bool, error)
@@ -225,6 +253,71 @@ func (fake *FakeCFClient) GetEndpointsReturnsOnCall(i int, result1 cf.Endpoints)
 	}{result1}
 }
 
+func (fake *FakeCFClient) GetServiceInstancesInOrg(arg1 string, arg2 string) (int, error) {
+	fake.getServiceInstancesInOrgMutex.Lock()
+	ret, specificReturn := fake.getServiceInstancesInOrgReturnsOnCall[len(fake.getServiceInstancesInOrgArgsForCall)]
+	fake.getServiceInstancesInOrgArgsForCall = append(fake.getServiceInstancesInOrgArgsForCall, struct {
+		arg1 string
+		arg2 string
+	}{arg1, arg2})
+	stub := fake.GetServiceInstancesInOrgStub
+	fakeReturns := fake.getServiceInstancesInOrgReturns
+	fake.recordInvocation("GetServiceInstancesInOrg", []interface{}{arg1, arg2})
+	fake.getServiceInstancesInOrgMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeCFClient) GetServiceInstancesInOrgCallCount() int {
+	fake.getServiceInstancesInOrgMutex.RLock()
+	defer fake.getServiceInstancesInOrgMutex.RUnlock()
+	return len(fake.getServiceInstancesInOrgArgsForCall)
+}
+
+func (fake *FakeCFClient) GetServiceInstancesInOrgCalls(stub func(string, string) (int, error)) {
+	fake.getServiceInstancesInOrgMutex.Lock()
+	defer fake.getServiceInstancesInOrgMutex.Unlock()
+	fake.GetServiceInstancesInOrgStub = stub
+}
+
+func (fake *FakeCFClient) GetServiceInstancesInOrgArgsForCall(i int) (string, string) {
+	fake.getServiceInstancesInOrgMutex.RLock()
+	defer fake.getServiceInstancesInOrgMutex.RUnlock()
+	argsForCall := fake.getServiceInstancesInOrgArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeCFClient) GetServiceInstancesInOrgReturns(result1 int, result2 error) {
+	fake.getServiceInstancesInOrgMutex.Lock()
+	defer fake.getServiceInstancesInOrgMutex.Unlock()
+	fake.GetServiceInstancesInOrgStub = nil
+	fake.getServiceInstancesInOrgReturns = struct {
+		result1 int
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeCFClient) GetServiceInstancesInOrgReturnsOnCall(i int, result1 int, result2 error) {
+	fake.getServiceInstancesInOrgMutex.Lock()
+	defer fake.getServiceInstancesInOrgMutex.Unlock()
+	fake.GetServiceInstancesInOrgStub = nil
+	if fake.getServiceInstancesInOrgReturnsOnCall == nil {
+		fake.getServiceInstancesInOrgReturnsOnCall = make(map[int]struct {
+			result1 int
+			result2 error
+		})
+	}
+	fake.getServiceInstancesInOrgReturnsOnCall[i] = struct {
+		result1 int
+		result2 error
+	}{result1, result2}
+}
+
 func (fake *FakeCFClient) GetTokens() (cf.Tokens, error) {
 	fake.getTokensMutex.Lock()
 	ret, specificReturn := fake.getTokensReturnsOnCall[len(fake.getTokensArgsForCall)]
@@ -277,6 +370,71 @@ func (fake *FakeCFClient) GetTokensReturnsOnCall(i int, result1 cf.Tokens, resul
 	}
 	fake.getTokensReturnsOnCall[i] = struct {
 		result1 cf.Tokens
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeCFClient) IsTokenAuthorized(arg1 string, arg2 string) (bool, error) {
+	fake.isTokenAuthorizedMutex.Lock()
+	ret, specificReturn := fake.isTokenAuthorizedReturnsOnCall[len(fake.isTokenAuthorizedArgsForCall)]
+	fake.isTokenAuthorizedArgsForCall = append(fake.isTokenAuthorizedArgsForCall, struct {
+		arg1 string
+		arg2 string
+	}{arg1, arg2})
+	stub := fake.IsTokenAuthorizedStub
+	fakeReturns := fake.isTokenAuthorizedReturns
+	fake.recordInvocation("IsTokenAuthorized", []interface{}{arg1, arg2})
+	fake.isTokenAuthorizedMutex.Unlock()
+	if stub != nil {
+		return stub(arg1, arg2)
+	}
+	if specificReturn {
+		return ret.result1, ret.result2
+	}
+	return fakeReturns.result1, fakeReturns.result2
+}
+
+func (fake *FakeCFClient) IsTokenAuthorizedCallCount() int {
+	fake.isTokenAuthorizedMutex.RLock()
+	defer fake.isTokenAuthorizedMutex.RUnlock()
+	return len(fake.isTokenAuthorizedArgsForCall)
+}
+
+func (fake *FakeCFClient) IsTokenAuthorizedCalls(stub func(string, string) (bool, error)) {
+	fake.isTokenAuthorizedMutex.Lock()
+	defer fake.isTokenAuthorizedMutex.Unlock()
+	fake.IsTokenAuthorizedStub = stub
+}
+
+func (fake *FakeCFClient) IsTokenAuthorizedArgsForCall(i int) (string, string) {
+	fake.isTokenAuthorizedMutex.RLock()
+	defer fake.isTokenAuthorizedMutex.RUnlock()
+	argsForCall := fake.isTokenAuthorizedArgsForCall[i]
+	return argsForCall.arg1, argsForCall.arg2
+}
+
+func (fake *FakeCFClient) IsTokenAuthorizedReturns(result1 bool, result2 error) {
+	fake.isTokenAuthorizedMutex.Lock()
+	defer fake.isTokenAuthorizedMutex.Unlock()
+	fake.IsTokenAuthorizedStub = nil
+	fake.isTokenAuthorizedReturns = struct {
+		result1 bool
+		result2 error
+	}{result1, result2}
+}
+
+func (fake *FakeCFClient) IsTokenAuthorizedReturnsOnCall(i int, result1 bool, result2 error) {
+	fake.isTokenAuthorizedMutex.Lock()
+	defer fake.isTokenAuthorizedMutex.Unlock()
+	fake.IsTokenAuthorizedStub = nil
+	if fake.isTokenAuthorizedReturnsOnCall == nil {
+		fake.isTokenAuthorizedReturnsOnCall = make(map[int]struct {
+			result1 bool
+			result2 error
+		})
+	}
+	fake.isTokenAuthorizedReturnsOnCall[i] = struct {
+		result1 bool
 		result2 error
 	}{result1, result2}
 }
@@ -588,8 +746,12 @@ func (fake *FakeCFClient) Invocations() map[string][][]interface{} {
 	defer fake.getAppMutex.RUnlock()
 	fake.getEndpointsMutex.RLock()
 	defer fake.getEndpointsMutex.RUnlock()
+	fake.getServiceInstancesInOrgMutex.RLock()
+	defer fake.getServiceInstancesInOrgMutex.RUnlock()
 	fake.getTokensMutex.RLock()
 	defer fake.getTokensMutex.RUnlock()
+	fake.isTokenAuthorizedMutex.RLock()
+	defer fake.isTokenAuthorizedMutex.RUnlock()
 	fake.isUserAdminMutex.RLock()
 	defer fake.isUserAdminMutex.RUnlock()
 	fake.isUserSpaceDeveloperMutex.RLock()

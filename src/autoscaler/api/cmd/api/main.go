@@ -84,7 +84,8 @@ func main() {
 		checkBindingFunc = func(appId string) bool {
 			return bindingDB.CheckServiceBinding(appId)
 		}
-		brokerHttpServer, err := brokerserver.NewBrokerServer(logger.Session("broker_http_server"), conf, bindingDB, policyDb, httpStatusCollector)
+		// FIXME this should not be nil
+		brokerHttpServer, err := brokerserver.NewBrokerServer(logger.Session("broker_http_server"), conf, bindingDB, policyDb, httpStatusCollector, nil)
 		if err != nil {
 			logger.Error("failed to create broker http server", err)
 			os.Exit(1)

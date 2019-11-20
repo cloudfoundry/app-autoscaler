@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net"
 	"net/http"
 	"net/url"
@@ -32,6 +33,12 @@ type Tokens struct {
 	ExpiresIn   int64  `json:"expires_in"`
 }
 
+type IntrospectionResponse struct {
+	Active   bool   `json:"active"`
+	Email    string `json:"email"`
+	ClientId string `json:"client_id"`
+}
+
 type Endpoints struct {
 	AuthEndpoint    string `json:"authorization_endpoint"`
 	TokenEndpoint   string `json:"token_endpoint"`
@@ -47,21 +54,25 @@ type CFClient interface {
 	SetAppInstances(string, int) error
 	IsUserAdmin(userToken string) (bool, error)
 	IsUserSpaceDeveloper(userToken string, appId string) (bool, error)
+	IsTokenAuthorized(token, clientId string) (bool, error)
+	GetServiceInstancesInOrg(orgGUID, servicePlanGuid string) (int, error)
 }
 
 type cfClient struct {
-	logger     lager.Logger
-	conf       *CFConfig
-	clk        clock.Clock
-	tokens     Tokens
-	endpoints  Endpoints
-	infoURL    string
-	tokenURL   string
-	loginForm  url.Values
-	authHeader string
-	httpClient *http.Client
-	lock       *sync.Mutex
-	grantTime  time.Time
+	logger             lager.Logger
+	conf               *CFConfig
+	clk                clock.Clock
+	tokens             Tokens
+	endpoints          Endpoints
+	infoURL            string
+	tokenURL           string
+	introspectTokenURL string
+	loginForm          url.Values
+	authHeader         string
+	httpClient         *http.Client
+	lock               *sync.Mutex
+	grantTime          time.Time
+	servicePlanGuids   map[string]string
 }
 
 func NewCFClient(conf *CFConfig, logger lager.Logger, clk clock.Clock) CFClient {
@@ -86,6 +97,8 @@ func NewCFClient(conf *CFConfig, logger lager.Logger, clk clock.Clock) CFClient 
 	}).DialContext
 
 	c.lock = &sync.Mutex{}
+
+	c.servicePlanGuids = make(map[string]string)
 
 	return c
 }
@@ -197,4 +210,40 @@ func (c *cfClient) isTokenToBeExpired() bool {
 
 func (c *cfClient) GetEndpoints() Endpoints {
 	return c.endpoints
+}
+
+func (c *cfClient) IsTokenAuthorized(token, clientId string) (bool, error) {
+	formData := url.Values{"token": {token}}
+	request, err := http.NewRequest("POST", c.introspectTokenURL, strings.NewReader(formData.Encode()))
+	if err != nil {
+		return false, err
+	}
+	request.SetBasicAuth(c.conf.ClientID, c.conf.Secret)
+	request.Header.Set("Content-Type", "application/x-www-form-urlencoded;charset=utf-8")
+
+	resp, err := c.httpClient.Do(request)
+	if err != nil {
+		return false, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return false, fmt.Errorf("received status code %v while calling /introspect endpoint", resp.Status)
+	}
+	defer resp.Body.Close()
+
+	responseBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return false, err
+	}
+
+	introspectionResponse := &IntrospectionResponse{}
+	err = json.Unmarshal(responseBody, introspectionResponse)
+	if err != nil {
+		return false, err
+	}
+
+	if introspectionResponse.Active && introspectionResponse.ClientId == clientId {
+		return true, nil
+	}
+
+	return false, nil
 }
