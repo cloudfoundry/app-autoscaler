@@ -74,8 +74,10 @@ type cfClient struct {
 	httpClient                          *http.Client
 	lock                                *sync.Mutex
 	grantTime                           time.Time
+	planMapsLock                        *sync.Mutex
 	brokerPlanGuidToCCServicePlanGuid   map[string]string
 	ccServicePlanToBrokerPlanGuid       map[string]string
+	instanceMapLock                     *sync.Mutex
 	serviceInstanceGuidToBrokerPlanGuid map[string]string
 }
 
@@ -101,6 +103,9 @@ func NewCFClient(conf *CFConfig, logger lager.Logger, clk clock.Clock) CFClient 
 	}).DialContext
 
 	c.lock = &sync.Mutex{}
+
+	c.planMapsLock = &sync.Mutex{}
+	c.instanceMapLock = &sync.Mutex{}
 
 	c.brokerPlanGuidToCCServicePlanGuid = make(map[string]string)
 	c.ccServicePlanToBrokerPlanGuid = make(map[string]string)
