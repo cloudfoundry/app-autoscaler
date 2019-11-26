@@ -1,6 +1,6 @@
 
 
-dist: trusty
+dist: xenial
 sudo: required
 
 env:
@@ -37,6 +37,13 @@ before_script:
   - java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/eventgenerator/db/dataaggregator.db.changelog.yml update
   - java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/scalingengine/db/scalingengine.db.changelog.yml update
   - java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/operator/db/operator.db.changelog.yml update
+  - wget https://repo.mysql.com//mysql-apt-config_0.8.14-1_all.deb
+  - sudo dpkg -i mysql-apt-config_0.8.14-1_all.deb
+  - sudo apt-get update -q
+  - sudo apt-get install -q -y --allow-unauthenticated -o Dpkg::Options::=--force-confnew mysql-server
+  - sudo systemctl restart mysql
+  - sudo mysql_upgrade
+  - mysql --version
   - mysql -u root -e "CREATE DATABASE autoscaler;"
   - java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=api/db/api.db.changelog.yml --username=root update
   - java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=servicebroker/db/servicebroker.db.changelog.json --username=root update
