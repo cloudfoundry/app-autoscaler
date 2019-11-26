@@ -71,7 +71,7 @@ matrix:
       - popd
       - pushd scheduler
       - mvn test
-      #- mvn test -Dspring.profiles.active=mysql
+      - mvn test -Dspring.profiles.active=mysql
       - popd
 
   - name: integration test
