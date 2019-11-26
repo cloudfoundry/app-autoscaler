@@ -38,7 +38,7 @@ databaseChangeLog:
                     nullable: false                    
               - column:
                   name: value
-                  type: varchar
+                  type: varchar(100)
                   constraints:
                     nullable: false
               - column:
