@@ -208,14 +208,18 @@ public class TestDataDbUtil {
 			return this.databaseType;
 		}
 		String driverName = this.dataSource.getConnection().getMetaData().getDriverName().toLowerCase();
-		if (driverName.indexOf("postgresql") > -1) {
-			this.databaseType = DatabaseType.POSTGRESQL;
-			return this.databaseType;
-		} else if (driverName.indexOf("mysql") > -1) {
-			this.databaseType = DatabaseType.MYSQL;
-			return this.databaseType;
+		if (driverName !=null && !driverName.isEmpty()) {
+			if (driverName.indexOf("postgresql") > -1) {
+				this.databaseType = DatabaseType.POSTGRESQL;
+				return this.databaseType;
+			} else if (driverName.indexOf("mysql") > -1) {
+				this.databaseType = DatabaseType.MYSQL;
+				return this.databaseType;
+			} else {
+				throw new Exception("can not support the database driver:" + driverName);
+			}
 		} else {
-			throw new Exception("can not support the database driver:" + driverName);
+			throw new Exception("can not get database driver from datasource");
 		}
 
 	}

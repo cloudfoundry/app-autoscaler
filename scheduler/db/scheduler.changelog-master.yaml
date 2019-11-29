@@ -10,7 +10,7 @@ databaseChangeLog:
             columns:
               - column:
                   name: schedule_id
-                  type: bigserial
+                  type: bigint
                   constraints:
                     primaryKey: true
               - column:
@@ -76,7 +76,7 @@ databaseChangeLog:
             columns:
               - column:
                   name: schedule_id
-                  type: bigserial
+                  type: bigint
                   constraints:
                     primaryKey: true
               - column:
@@ -236,6 +236,26 @@ databaseChangeLog:
    - changeSet:
       id: 7
       author: aqan213
+      dbms: postgresql
+      changes:
+        - addDefaultValue:
+            columnDataType: bigint
+            columnName: schedule_id
+            defaultValueSequenceNext: schedule_id_sequence
+            tableName: app_scaling_specific_date_schedule
+   - changeSet:
+      id: 8
+      author: aqan213
+      dbms: postgresql
+      changes:
+        - addDefaultValue:
+            columnDataType: bigint
+            columnName: schedule_id
+            defaultValueSequenceNext: schedule_id_sequence
+            tableName: app_scaling_recurring_schedule
+   - changeSet:
+      id: 9
+      author: aqan213
       dbms: mysql
       changes:
         - createTable:
@@ -306,7 +326,7 @@ databaseChangeLog:
              indexName: idx_app_id
              tableName: app_scaling_specific_date_schedule
    - changeSet:
-      id: 8
+      id: 10
       author: aqan213
       dbms: mysql
       changes:
