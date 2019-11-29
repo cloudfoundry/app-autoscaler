@@ -1123,11 +1123,21 @@ A JSON payload is required to emit your own metrics with the metric value and th
 
         "name": "<CUSTOM METRIC NAME>",
 
-        "value": <CUSTOM METRIC VALUE>
+        "value": <CUSTOM METRIC VALUE>,
+
+        "unit": "<CUSTOM METRIC UNIT>"
 
       }]
 
   }
+
+<INSTANCE INDEX> is the index of current application instance which would be fetched from environment variable `CF_INSTANCE_INDEX`
+
+<CUSTOM METRIC NAME> is the name of the emit metric which must be equal to the metric name that you define in the policy file. 
+
+<CUSTOM METRIC VALUE> is value that you would like to submit.
+
+<CUSTOM METRIC UNIT> is unit for the metrics, optional.
 
 Headers
 '''''''
