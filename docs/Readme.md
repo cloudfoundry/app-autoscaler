@@ -52,7 +52,7 @@ The following are the built-in metrics that you can use to scale your applicatio
 
 * **custom metric** 
 
-	Custom emtric is supported since [app-autoscaler v3.0.0 release][app-autoscaler-v3.0.0]. You can define your own metric name and emit your own metric to `App Autoscaler` to trigger further dynamic scaling. Only alphabet letters, numbers and "_" are allowed for a valid metric name, and the maximum length of the metric name is 100 characters. 
+	Custom emtric is supported since [app-autoscaler v3.0.0 release][app-autoscaler-v3.0.0]. You can define your own metric name and emit your own metric to `App Autoscaler` to trigger further dynamic scaling. Only alphabet letters, numbers and "_" are allowed for a valid metric name, and the maximum length of the metric name is limited up to 100 characters. 
 	
  
 ####  Threshold and Adjustment
