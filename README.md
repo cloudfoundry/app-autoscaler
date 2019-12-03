@@ -83,16 +83,6 @@ rm $TMPDIR/consul-0.7.5.zip
 ### Unit tests
 
 ```shell
-pushd api
-npm install
-npm test
-popd
-
-pushd servicebroker
-npm install
-npm test
-popd
-
 go install github.com/onsi/ginkgo/ginkgo
 export DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
 pushd src/autoscaler
@@ -107,14 +97,6 @@ popd
 ### Integration tests
 
 ```shell
-pushd api
-npm install
-popd
-
-pushd servicebroker
-npm install
-popd
-
 pushd scheduler
 mvn package -DskipTests
 popd
