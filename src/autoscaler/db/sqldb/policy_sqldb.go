@@ -8,16 +8,17 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	_ "github.com/lib/pq"
+	"github.com/jmoiron/sqlx"
 )
 
 type PolicySQLDB struct {
 	dbConfig db.DatabaseConfig
 	logger   lager.Logger
-	sqldb    *sql.DB
+	sqldb    *sqlx.DB
 }
 
 func NewPolicySQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*PolicySQLDB, error) {
-	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.URL)
+	sqldb, err := sqlx.Open(db.PostgresDriverName, dbConfig.URL)
 	if err != nil {
 		logger.Error("open-policy-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
@@ -103,7 +104,7 @@ func (pdb *PolicySQLDB) RetrievePolicies() ([]*models.PolicyJson, error) {
 
 func (pdb *PolicySQLDB) GetAppPolicy(appId string) (*models.ScalingPolicy, error) {
 	var policyJson []byte
-	query := "SELECT policy_json FROM policy_json WHERE app_id = $1"
+	query := pdb.sqldb.Rebind("SELECT policy_json FROM policy_json WHERE app_id =?")
 	err := pdb.sqldb.QueryRow(query, appId).Scan(&policyJson)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -124,9 +125,8 @@ func (pdb *PolicySQLDB) GetAppPolicy(appId string) (*models.ScalingPolicy, error
 }
 
 func (pdb *PolicySQLDB) SaveAppPolicy(appId string, policyJSON string, policyGuid string) error {
-	query := "INSERT INTO policy_json (app_id, policy_json, guid) VALUES ($1,$2, $3) " +
-		"ON CONFLICT(app_id) DO UPDATE SET policy_json=EXCLUDED.policy_json, guid=EXCLUDED.guid"
-
+	query := pdb.sqldb.Rebind("INSERT INTO policy_json (app_id, policy_json, guid) VALUES (?,?,?) " +
+		"ON CONFLICT(app_id) DO UPDATE SET policy_json=EXCLUDED.policy_json, guid=EXCLUDED.guid")
 	_, err := pdb.sqldb.Exec(query, appId, policyJSON, policyGuid)
 	if err != nil {
 		pdb.logger.Error("save-app-policy", err, lager.Data{"query": query, "app_id": appId, "policyJSON": policyJSON, "policyGuid": policyGuid})
@@ -135,7 +135,7 @@ func (pdb *PolicySQLDB) SaveAppPolicy(appId string, policyJSON string, policyGui
 }
 
 func (pdb *PolicySQLDB) DeletePolicy(appId string) error {
-	query := "DELETE FROM policy_json WHERE app_id = $1"
+	query := pdb.sqldb.Rebind("DELETE FROM policy_json WHERE app_id =?")
 	_, err := pdb.sqldb.Exec(query, appId)
 	if err != nil {
 		pdb.logger.Error("failed-to-delete-application-details", err, lager.Data{"query": query, "appId": appId})
@@ -150,7 +150,7 @@ func (pdb *PolicySQLDB) GetDBStatus() sql.DBStats {
 func (pdb *PolicySQLDB) GetCredential(appId string) (*models.Credential, error) {
 	var password string
 	var username string
-	query := "SELECT username,password from credentials WHERE id = $1"
+	query := pdb.sqldb.Rebind("SELECT username,password from credentials WHERE id =?")
 	err := pdb.sqldb.QueryRow(query, appId).Scan(&username, &password)
 	if err != nil {
 		pdb.logger.Error("get-custom-metrics-creds-from-credentials-table", err, lager.Data{"query": query})
@@ -162,8 +162,8 @@ func (pdb *PolicySQLDB) GetCredential(appId string) (*models.Credential, error) 
 	}, nil
 }
 func (pdb *PolicySQLDB) SaveCredential(appId string, cred models.Credential) error {
-	query := "INSERT INTO credentials (id, username, password, updated_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP) " +
-		"ON CONFLICT(id) DO UPDATE SET username=EXCLUDED.username, password=EXCLUDED.password, updated_at=CURRENT_TIMESTAMP"
+	query := pdb.sqldb.Rebind("INSERT INTO credentials (id, username, password, updated_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP) " +
+		"ON CONFLICT(id) DO UPDATE SET username=EXCLUDED.username, password=EXCLUDED.password, updated_at=CURRENT_TIMESTAMP")
 	_, err := pdb.sqldb.Exec(query, appId, cred.Username, cred.Password)
 	if err != nil {
 		pdb.logger.Error("save-custom-metric-credential", err, lager.Data{"query": query, "app_id": appId})
@@ -171,7 +171,7 @@ func (pdb *PolicySQLDB) SaveCredential(appId string, cred models.Credential) err
 	return err
 }
 func (pdb *PolicySQLDB) DeleteCredential(appId string) error {
-	query := "DELETE FROM credentials WHERE id = $1"
+	query := pdb.sqldb.Rebind("DELETE FROM credentials WHERE id =?")
 	_, err := pdb.sqldb.Exec(query, appId)
 	if err != nil {
 		pdb.logger.Error("failed-to-delete-custom-metric-credential", err, lager.Data{"query": query, "appId": appId})

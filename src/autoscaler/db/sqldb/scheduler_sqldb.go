@@ -6,19 +6,20 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	_ "github.com/lib/pq"
+	"github.com/jmoiron/sqlx"
 
 	"database/sql"
 	"strconv"
 )
 
 type SchedulerSQLDB struct {
-	sqldb    *sql.DB
+	sqldb    *sqlx.DB
 	logger   lager.Logger
 	dbConfig db.DatabaseConfig
 }
 
 func NewSchedulerSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*SchedulerSQLDB, error) {
-	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.URL)
+	sqldb, err := sqlx.Open(db.PostgresDriverName, dbConfig.URL)
 	if err != nil {
 		logger.Error("failed-open-scheduler-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
