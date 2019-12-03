@@ -3,7 +3,6 @@ package org.cloudfoundry.autoscaler.scheduler.dao;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -28,7 +27,7 @@ public class PolicyJsonDaoImplTest{
 	private TestDataDbUtil testDataDbUtil;
 	
 	@Before
-	public void before() throws IOException{
+	public void before() throws Exception {
 		String appId = "the_app_id";
 		String guid = UUID.randomUUID().toString();
 		testDataDbUtil.cleanupData();
