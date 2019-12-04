@@ -1,7 +1,6 @@
 package main_test
 
 import (
-	"database/sql"
 	"net/http"
 	"path/filepath"
 
@@ -19,6 +18,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
+	"github.com/jmoiron/sqlx"
 	"gopkg.in/yaml.v2"
 
 	"autoscaler/db"
@@ -51,7 +51,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	mf, err := gexec.Build("autoscaler/metricsforwarder/cmd/metricsforwarder", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
-	policyDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
+	policyDB, err := sqlx.Open(db.PostgresDriverName, os.Getenv("DBURL"))
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = policyDB.Exec("DELETE from policy_json")
@@ -75,7 +75,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 				}
 			]
 		}`
-	query := "INSERT INTO policy_json(app_id, policy_json, guid) values($1, $2, $3)"
+	query := policyDB.Rebind("INSERT INTO policy_json(app_id, policy_json, guid) values(?, ?, ?)")
 	_, err = policyDB.Exec(query, "an-app-id", policy, "1234")
 
 	username = "username"
@@ -83,7 +83,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	encryptedUsername, _ := bcrypt.GenerateFromPassword([]byte(username), 8)
 	encryptedPassword, _ := bcrypt.GenerateFromPassword([]byte(password), 8)
 
-	query = "INSERT INTO credentials(id, username, password, updated_at) values($1, $2, $3, $4)"
+	query = policyDB.Rebind("INSERT INTO credentials(id, username, password, updated_at) values(?, ?, ?, ?)")
 	_, err = policyDB.Exec(query, "an-app-id", encryptedUsername, encryptedPassword, "2011-06-18 15:36:38")
 	Expect(err).NotTo(HaveOccurred())
 
