@@ -1,4 +1,4 @@
-package integration
+package integration_legacy
 
 import (
 	"encoding/base64"
@@ -17,7 +17,7 @@ import (
 	"github.com/tedsuo/ifrit/ginkgomon"
 )
 
-var _ = Describe("Integration_Api_Broker_Graceful_Shutdown", func() {
+var _ = Describe("integration_legacy_Api_Broker_Graceful_Shutdown", func() {
 
 	var (
 		runner        *ginkgomon.Runner

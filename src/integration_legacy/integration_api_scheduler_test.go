@@ -1,4 +1,4 @@
-package integration
+package integration_legacy
 
 import (
 	"autoscaler/cf"
@@ -12,7 +12,7 @@ import (
 	"github.com/onsi/gomega/ghttp"
 )
 
-var _ = Describe("Integration_Api_Scheduler", func() {
+var _ = Describe("Integration_legacy_Api_Scheduler", func() {
 	var (
 		appId             string
 		policyStr         []byte
@@ -267,7 +267,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 
 						doAttachPolicy(appId, policyStr, http.StatusCreated, components.Ports[APIServer], httpClient)
 						checkApiServerContent(appId, policyStr, http.StatusOK, components.Ports[APIServer], httpClient)
-						Expect(checkSchedule(appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})).To(BeTrue())
+						assertScheduleContents(appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})
 					})
 
 					It("fails with an invalid policy", func() {
@@ -298,7 +298,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 
 						doAttachPolicy(appId, policyStr, http.StatusCreated, components.Ports[APIPublicServer], httpClientForPublicApi)
 						checkApiServerContent(appId, policyStr, http.StatusOK, components.Ports[APIPublicServer], httpClientForPublicApi)
-						Expect(checkSchedule(appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})).To(BeTrue())
+						assertScheduleContents(appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})
 					})
 
 					It("fails with an invalid policy", func() {
@@ -346,7 +346,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 
 						doAttachPolicy(appId, policyStr, http.StatusOK, components.Ports[APIServer], httpClient)
 						checkApiServerContent(appId, policyStr, http.StatusOK, components.Ports[APIServer], httpClient)
-						Expect(checkSchedule(appId, http.StatusOK, map[string]int{"recurring_schedule": 3, "specific_date": 1})).To(BeTrue())
+						assertScheduleContents(appId, http.StatusOK, map[string]int{"recurring_schedule": 3, "specific_date": 1})
 					})
 				})
 			})
@@ -366,7 +366,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 
 						doAttachPolicy(appId, policyStr, http.StatusOK, components.Ports[APIPublicServer], httpClientForPublicApi)
 						checkApiServerContent(appId, policyStr, http.StatusOK, components.Ports[APIPublicServer], httpClientForPublicApi)
-						Expect(checkSchedule(appId, http.StatusOK, map[string]int{"recurring_schedule": 3, "specific_date": 1})).To(BeTrue())
+						assertScheduleContents(appId, http.StatusOK, map[string]int{"recurring_schedule": 3, "specific_date": 1})
 					})
 				})
 			})
@@ -449,7 +449,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 
 						doAttachPolicy(appId, policyStr, http.StatusCreated, components.Ports[APIServer], httpClient)
 						checkApiServerContent(appId, policyStr, http.StatusOK, components.Ports[APIServer], httpClient)
-						Expect(checkSchedule(appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})).To(BeTrue())
+						assertScheduleContents(appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})
 					})
 
 					It("fails with an invalid policy", func() {
@@ -481,7 +481,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 
 						doAttachPolicy(appId, policyStr, http.StatusCreated, components.Ports[APIPublicServer], httpClientForPublicApi)
 						checkApiServerContent(appId, policyStr, http.StatusOK, components.Ports[APIPublicServer], httpClientForPublicApi)
-						Expect(checkSchedule(appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})).To(BeTrue())
+						assertScheduleContents(appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})
 					})
 
 					It("fails with an invalid policy", func() {
@@ -523,7 +523,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 
 						doAttachPolicy(appId, policyStr, http.StatusOK, components.Ports[APIServer], httpClient)
 						checkApiServerContent(appId, policyStr, http.StatusOK, components.Ports[APIServer], httpClient)
-						Expect(checkSchedule(appId, http.StatusOK, map[string]int{"recurring_schedule": 3, "specific_date": 1})).To(BeTrue())
+						assertScheduleContents(appId, http.StatusOK, map[string]int{"recurring_schedule": 3, "specific_date": 1})
 					})
 				})
 			})
@@ -542,7 +542,7 @@ var _ = Describe("Integration_Api_Scheduler", func() {
 
 						doAttachPolicy(appId, policyStr, http.StatusOK, components.Ports[APIPublicServer], httpClientForPublicApi)
 						checkApiServerContent(appId, policyStr, http.StatusOK, components.Ports[APIPublicServer], httpClientForPublicApi)
-						Expect(checkSchedule(appId, http.StatusOK, map[string]int{"recurring_schedule": 3, "specific_date": 1})).To(BeTrue())
+						assertScheduleContents(appId, http.StatusOK, map[string]int{"recurring_schedule": 3, "specific_date": 1})
 					})
 				})
 			})

@@ -1,4 +1,4 @@
-package integration
+package integration_legacy
 
 import (
 	"autoscaler/cf"
@@ -20,7 +20,7 @@ type AppAggregatedMetricResult struct {
 	Resources    []models.AppMetric `json:"resources"`
 }
 
-var _ = Describe("Integration_Api_EventGenerator", func() {
+var _ = Describe("Integration_legacy_Api_EventGenerator", func() {
 	var (
 		appId             string
 		pathVariables     []string
