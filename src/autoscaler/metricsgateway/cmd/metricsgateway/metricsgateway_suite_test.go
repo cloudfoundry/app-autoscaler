@@ -2,7 +2,6 @@ package main_test
 
 import (
 	"autoscaler/models"
-	"database/sql"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -19,6 +18,7 @@ import (
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
+	"github.com/jmoiron/sqlx"
 	"google.golang.org/grpc/grpclog"
 	"gopkg.in/yaml.v2"
 
@@ -101,7 +101,7 @@ var _ = SynchronizedAfterSuite(func() {
 })
 
 func initDB() {
-	mgDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
+	mgDB, err := sqlx.Open(db.PostgresDriverName, os.Getenv("DBURL"))
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = mgDB.Exec("DELETE from policy_json")
@@ -122,7 +122,7 @@ func initDB() {
 		      }
 		   ]
 		}`)
-	query := "INSERT INTO policy_json(app_id, policy_json, guid) values($1, $2, $3)"
+	query := mgDB.Rebind("INSERT INTO policy_json(app_id, policy_json, guid) values(?, ?, ?)")
 	_, err = mgDB.Exec(query, testAppId, policy, "1234")
 	Expect(err).NotTo(HaveOccurred())
 

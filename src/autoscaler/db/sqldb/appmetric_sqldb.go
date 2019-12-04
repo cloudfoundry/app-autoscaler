@@ -7,6 +7,7 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	. "github.com/lib/pq"
+	"github.com/jmoiron/sqlx"
 
 	"database/sql"
 	"time"
@@ -15,13 +16,13 @@ import (
 type AppMetricSQLDB struct {
 	dbConfig db.DatabaseConfig
 	logger   lager.Logger
-	sqldb    *sql.DB
+	sqldb    *sqlx.DB
 }
 
 func NewAppMetricSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*AppMetricSQLDB, error) {
 	var err error
 
-	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.URL)
+	sqldb, err := sqlx.Open(db.PostgresDriverName, dbConfig.URL)
 	if err != nil {
 		logger.Error("open-AppMetric-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
@@ -53,7 +54,7 @@ func (adb *AppMetricSQLDB) Close() error {
 	return nil
 }
 func (adb *AppMetricSQLDB) SaveAppMetric(appMetric *models.AppMetric) error {
-	query := "INSERT INTO app_metric(app_id, metric_type, unit, timestamp, value) values($1, $2, $3, $4, $5)"
+	query := adb.sqldb.Rebind("INSERT INTO app_metric(app_id, metric_type, unit, timestamp, value) values(?, ?, ?, ?, ?)")
 	_, err := adb.sqldb.Exec(query, appMetric.AppId, appMetric.MetricType, appMetric.Unit, appMetric.Timestamp, appMetric.Value)
 
 	if err != nil {
@@ -118,7 +119,7 @@ func (adb *AppMetricSQLDB) RetrieveAppMetrics(appIdP string, metricTypeP string,
 		endP = time.Now().UnixNano()
 	}
 
-	query := "SELECT app_id,metric_type,value,unit,timestamp FROM app_metric WHERE app_id=$1 AND metric_type=$2 AND timestamp>=$3 AND timestamp<=$4 ORDER BY timestamp " + orderStr
+	query := adb.sqldb.Rebind("SELECT app_id,metric_type,value,unit,timestamp FROM app_metric WHERE app_id=? AND metric_type=? AND timestamp>=? AND timestamp<=? ORDER BY timestamp " + orderStr)
 	appMetricList := []*models.AppMetric{}
 	rows, err := adb.sqldb.Query(query, appIdP, metricTypeP, startP, endP)
 	if err != nil {
@@ -150,7 +151,7 @@ func (adb *AppMetricSQLDB) RetrieveAppMetrics(appIdP string, metricTypeP string,
 }
 
 func (adb *AppMetricSQLDB) PruneAppMetrics(before int64) error {
-	query := "DELETE FROM app_metric WHERE timestamp <= $1"
+	query := adb.sqldb.Rebind("DELETE FROM app_metric WHERE timestamp <= ?")
 	_, err := adb.sqldb.Exec(query, before)
 	if err != nil {
 		adb.logger.Error("prune-metrics-from-app_metric-table", err, lager.Data{"query": query, "before": before})
