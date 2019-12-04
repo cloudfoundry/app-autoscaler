@@ -69,29 +69,29 @@ jobs:
         - ginkgo -r -race -randomizeAllSpecs src/integration
 
     # Tests for legacy components (node apiserver, broker and metricscollector)
-    - name: legacy unit test
-      script:
-        - pushd api
-        - npm install
-        - npm test
-        - popd
-        - pushd servicebroker
-        - npm install
-        - npm test
-        - popd
+    # - name: legacy unit test
+    #   script:
+    #     - pushd api
+    #     - npm install
+    #     - npm test
+    #     - popd
+    #     - pushd servicebroker
+    #     - npm install
+    #     - npm test
+    #     - popd
 
-    - name: legacy integration test
-      script:
-        - pushd api
-        - npm install
-        - npm test
-        - popd
-        - pushd servicebroker
-        - npm install
-        - npm test
-        - popd
-        - pushd scheduler
-        - mvn package -DskipTests
-        - popd
-        - ginkgo -r -race -randomizeAllSpecs src/integration_legacy
+    # - name: legacy integration test
+    #   script:
+    #     - pushd api
+    #     - npm install
+    #     - npm test
+    #     - popd
+    #     - pushd servicebroker
+    #     - npm install
+    #     - npm test
+    #     - popd
+    #     - pushd scheduler
+    #     - mvn package -DskipTests
+    #     - popd
+    #     - ginkgo -r -race -randomizeAllSpecs src/integration_legacy
 
