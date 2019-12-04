@@ -1,17 +1,18 @@
-
-
-dist: trusty
-sudo: required
+os: linux
+dist: xenial
 
 env:
   global:
     - DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
     - NODE_VERSION=6.2
-    - GO_VERSION=1.11
+    - GO_VERSION=1.13.3
     - LOGLEVEL=info
 language: java
+cache:
+  directories:
+    - $HOME/.m2
 jdk:
-- openjdk8
+  - openjdk8
 services:
   - postgresql
 addons:
@@ -21,7 +22,7 @@ before_install:
 install:
   - mvn package
   - npm install npm@latest -g
-  - nvm install $NODE_VERSION
+  - nvm install $NODE_VERSION --silent
   - eval "$(gimme $GO_VERSION)"
   - go install github.com/onsi/ginkgo/ginkgo
 
@@ -36,37 +37,61 @@ before_script:
   - java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/eventgenerator/db/dataaggregator.db.changelog.yml update
   - java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/scalingengine/db/scalingengine.db.changelog.yml update
   - java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/operator/db/operator.db.changelog.yml update
-
-matrix:
+  - wget https://repo.mysql.com//mysql-apt-config_0.8.14-1_all.deb
+  - sudo dpkg -i mysql-apt-config_0.8.14-1_all.deb
+  - sudo apt-get update -q
+  - sudo apt-get install -q -y --allow-unauthenticated -o Dpkg::Options::=--force-confnew mysql-server
+  - sudo systemctl restart mysql
+  - sudo mysql_upgrade
+  - mysql --version
+  - mysql -u root -e "CREATE DATABASE autoscaler;"
+  - java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=api/db/api.db.changelog.yml --username=root update
+  - java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=scheduler/db/scheduler.changelog-master.yaml --username=root update
+  - java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=scheduler/db/quartz.changelog-master.yaml --username=root update
+jobs:
   include:
-  - name: unit test
-    script:
-      # Unit test
-      - pushd api
-      - npm install
-      - npm test
-      - popd
-      - pushd servicebroker
-      - npm install
-      - npm test
-      - popd
-      - pushd src/autoscaler
-      - ginkgo -r -race -randomizeAllSpecs
-      - popd
-      - pushd scheduler
-      - mvn test
-      - popd
+    - name: unit test
+      script:
+        # Unit test
+        - pushd src/autoscaler
+        - ginkgo -r -race -randomizeAllSpecs
+        - popd
+        - pushd scheduler
+        - mvn test
+        - mvn test -Dspring.profiles.active=mysql
 
-  - name: integration test
-    script:
-      # Integration test
-      - pushd api
-      - npm install
-      - popd
-      - pushd servicebroker
-      - npm install
-      - popd
-      - pushd scheduler
-      - mvn package -DskipTests
-      - popd
-      - ginkgo -r -race -randomizeAllSpecs src/integration 
+    - name: integration test
+      script:
+        # Integration test
+        - pushd scheduler
+        - mvn package -DskipTests
+        - popd
+        - ginkgo -r -race -randomizeAllSpecs src/integration
+
+    # Tests for legacy components (node apiserver, broker and metricscollector)
+    # - name: legacy unit test
+    #   script:
+    #     - pushd api
+    #     - npm install
+    #     - npm test
+    #     - popd
+    #     - pushd servicebroker
+    #     - npm install
+    #     - npm test
+    #     - popd
+
+    # - name: legacy integration test
+    #   script:
+    #     - pushd api
+    #     - npm install
+    #     - npm test
+    #     - popd
+    #     - pushd servicebroker
+    #     - npm install
+    #     - npm test
+    #     - popd
+    #     - pushd scheduler
+    #     - mvn package -DskipTests
+    #     - popd
+    #     - ginkgo -r -race -randomizeAllSpecs src/integration_legacy
+

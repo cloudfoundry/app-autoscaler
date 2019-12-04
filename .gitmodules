@@ -145,3 +145,6 @@
 [submodule "src/github.com/patrickmn/go-cache"]
 	path = src/github.com/patrickmn/go-cache
 	url = https://github.com/patrickmn/go-cache
+[submodule "src/github.com/juju/ratelimit"]
+	path = src/github.com/juju/ratelimit
+	url = https://github.com/juju/ratelimit

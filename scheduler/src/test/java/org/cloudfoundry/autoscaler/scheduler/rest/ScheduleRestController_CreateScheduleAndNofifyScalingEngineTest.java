@@ -139,7 +139,7 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest {
 		// Assert START Job successful message
 		startJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(2));
 
-		Long currentSequenceSchedulerId = testDataDbUtil.getCurrentSequenceSchedulerId();
+		Long currentSequenceSchedulerId = testDataDbUtil.getCurrentSpecificDateSchedulerId();
 		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 		String expectedMessage = messageBundleResourceHelper
 				.lookupMessage("scalingengine.notification.activeschedule.start", appId, currentSequenceSchedulerId);
@@ -167,7 +167,7 @@ public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest {
 		// Assert START Job successful message
 		startJobListener.waitForJobToFinish(TimeUnit.MINUTES.toMillis(2));
 
-		Long currentSequenceSchedulerId = testDataDbUtil.getCurrentSequenceSchedulerId();
+		Long currentSequenceSchedulerId = testDataDbUtil.getCurrentSpecificDateSchedulerId();
 		Mockito.verify(mockAppender, Mockito.atLeastOnce()).append(logCaptor.capture());
 		String expectedMessage = messageBundleResourceHelper
 				.lookupMessage("scalingengine.notification.activeschedule.start", appId, currentSequenceSchedulerId);

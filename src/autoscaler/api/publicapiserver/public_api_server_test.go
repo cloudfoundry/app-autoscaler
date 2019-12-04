@@ -80,6 +80,75 @@ var _ = Describe("PublicApiServer", func() {
 
 	Describe("Protected Routes", func() {
 
+		Describe("Exceed rate limit", func() {
+			BeforeEach(func() {
+				fakeRateLimiter.ExceedsLimitReturns(true)
+			})
+			AfterEach(func() {
+				fakeRateLimiter.ExceedsLimitReturns(false)
+			})
+
+			Context("when calling scaling_histories endpoint", func() {
+				It("should fail with 429", func() {
+					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/scaling_histories",
+						nil, http.MethodGet, "", http.StatusTooManyRequests)
+				})
+			})
+
+			Context("when calling instance metrics endpoint", func() {
+				It("should fail with 429", func() {
+					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/metric_histories/"+TEST_METRIC_TYPE,
+						nil, http.MethodGet, "", http.StatusTooManyRequests)
+				})
+			})
+
+			Context("when calling aggregated metrics endpoint", func() {
+				It("should fail with 429", func() {
+					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/aggregated_metric_histories/"+TEST_METRIC_TYPE,
+						nil, http.MethodGet, "", http.StatusTooManyRequests)
+				})
+			})
+
+			Context("when calling get policy endpoint", func() {
+				It("should fail with 429", func() {
+					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
+						nil, http.MethodGet, "", http.StatusTooManyRequests)
+				})
+			})
+
+			Context("when calling attach policy endpoint", func() {
+				It("should fail with 429", func() {
+					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
+						nil, http.MethodPut, "", http.StatusTooManyRequests)
+				})
+			})
+
+			Context("when calling detach policy endpoint", func() {
+				It("should fail with 429", func() {
+					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
+						nil, http.MethodDelete, "", http.StatusTooManyRequests)
+				})
+
+			})
+
+			Context("when calling create credential endpoint", func() {
+				It("should fail with 429", func() {
+					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/credential",
+						nil, http.MethodPut, "", http.StatusTooManyRequests)
+				})
+
+			})
+
+			Context("when calling delete credential endpoint", func() {
+				It("should fail with 429", func() {
+					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/credential",
+						nil, http.MethodDelete, "", http.StatusTooManyRequests)
+				})
+
+			})
+
+		})
+
 		Describe("Without AuthorizatioToken", func() {
 			Context("when calling scaling_histories endpoint", func() {
 				It("should fail with 401", func() {
