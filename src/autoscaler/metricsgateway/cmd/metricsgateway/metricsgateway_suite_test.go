@@ -18,6 +18,7 @@ import (
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
+	"github.com/jmoiron/sqlx"
 	"google.golang.org/grpc/grpclog"
 	"github.com/jmoiron/sqlx"
 	"gopkg.in/yaml.v2"
