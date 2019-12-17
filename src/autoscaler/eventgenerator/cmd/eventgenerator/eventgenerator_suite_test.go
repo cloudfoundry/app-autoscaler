@@ -8,7 +8,6 @@ import (
 	"autoscaler/eventgenerator/config"
 	"autoscaler/helpers"
 	"autoscaler/models"
-	"database/sql"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -23,6 +22,7 @@ import (
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
+	"github.com/jmoiron/sqlx"
 	"gopkg.in/yaml.v2"
 )
 
@@ -113,7 +113,7 @@ var _ = SynchronizedAfterSuite(func() {
 })
 
 func initDB() {
-	egDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
+	egDB, err := sqlx.Open(db.PostgresDriverName, os.Getenv("DBURL"))
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = egDB.Exec("DELETE FROM app_metric")
@@ -137,7 +137,7 @@ func initDB() {
 		      }
 		   ]
 		}`, breachDurationSecs)
-	query := "INSERT INTO policy_json(app_id, policy_json, guid) values($1, $2, $3)"
+	query := egDB.Rebind("INSERT INTO policy_json(app_id, policy_json, guid) values(?, ?, ?)")
 	_, err = egDB.Exec(query, testAppId, policy, "1234")
 	Expect(err).NotTo(HaveOccurred())
 

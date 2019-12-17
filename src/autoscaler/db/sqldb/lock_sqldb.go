@@ -7,6 +7,7 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	_ "github.com/lib/pq"
+	"github.com/jmoiron/sqlx"
 
 	"autoscaler/db"
 	"autoscaler/models"
@@ -16,11 +17,11 @@ type LockSQLDB struct {
 	dbConfig db.DatabaseConfig
 	logger   lager.Logger
 	table    string
-	sqldb    *sql.DB
+	sqldb    *sqlx.DB
 }
 
 func NewLockSQLDB(dbConfig db.DatabaseConfig, table string, logger lager.Logger) (*LockSQLDB, error) {
-	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.URL)
+	sqldb, err := sqlx.Open(db.PostgresDriverName, dbConfig.URL)
 	if err != nil {
 		logger.Error("open-lock-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
@@ -84,7 +85,7 @@ func (ldb *LockSQLDB) fetch(tx *sql.Tx) (*models.Lock, error) {
 
 func (ldb *LockSQLDB) remove(owner string, tx *sql.Tx) error {
 	ldb.logger.Debug("removing-lock", lager.Data{"Owner": owner})
-	query := "DELETE FROM " + ldb.table + " WHERE owner = $1"
+	query := ldb.sqldb.Rebind("DELETE FROM " + ldb.table + " WHERE owner = ?")
 	if _, err := tx.Exec(query, owner); err != nil {
 		ldb.logger.Error("failed-to-delete-lock-details-during-release-lock", err)
 		return err
@@ -99,7 +100,7 @@ func (ldb *LockSQLDB) insert(lockDetails *models.Lock, tx *sql.Tx) error {
 		ldb.logger.Error("error-getting-timestamp-while-inserting-lock-details", err)
 		return err
 	}
-	query := "INSERT INTO " + ldb.table + " (owner,lock_timestamp,ttl) VALUES ($1,$2,$3)"
+	query := ldb.sqldb.Rebind("INSERT INTO " + ldb.table + " (owner,lock_timestamp,ttl) VALUES (?,?,?)")
 	if _, err = tx.Exec(query, lockDetails.Owner, currentTimestamp, int64(lockDetails.Ttl/time.Second)); err != nil {
 		ldb.logger.Error("failed-to-insert-lock-details", err)
 		return err
@@ -114,7 +115,7 @@ func (ldb *LockSQLDB) renew(owner string, tx *sql.Tx) error {
 		ldb.logger.Error("error-getting-timestamp-while-renewing-lock", err)
 		return err
 	}
-	updatequery := "UPDATE " + ldb.table + " SET lock_timestamp=$1 where owner=$2"
+	updatequery := ldb.sqldb.Rebind("UPDATE " + ldb.table + " SET lock_timestamp=? where owner=?")
 	if _, err = tx.Exec(updatequery, currentTimestamp, owner); err != nil {
 		ldb.logger.Error("failed-to-update-lock-details-during-lock-renewal", err)
 		return err
@@ -125,7 +126,7 @@ func (ldb *LockSQLDB) renew(owner string, tx *sql.Tx) error {
 func (ldb *LockSQLDB) Release(owner string) error {
 	ldb.logger.Debug("releasing-lock", lager.Data{"Owner": owner})
 	err := ldb.transact(ldb.sqldb, func(tx *sql.Tx) error {
-		query := "DELETE FROM " + ldb.table + " WHERE owner = $1"
+		query := ldb.sqldb.Rebind("DELETE FROM " + ldb.table + " WHERE owner = ?")
 		if _, err := tx.Exec(query, owner); err != nil {
 			ldb.logger.Error("failed-to-delete-lock-details-during-release-lock", err)
 			return err
@@ -210,7 +211,7 @@ func (ldb *LockSQLDB) getDatabaseTimestamp(tx *sql.Tx) (time.Time, error) {
 	return currentTimestamp, nil
 }
 
-func (ldb *LockSQLDB) transact(db *sql.DB, f func(tx *sql.Tx) error) error {
+func (ldb *LockSQLDB) transact(db *sqlx.DB, f func(tx *sql.Tx) error) error {
 	var err error
 	for attempts := 0; attempts < 3; attempts++ {
 		err = func() error {
