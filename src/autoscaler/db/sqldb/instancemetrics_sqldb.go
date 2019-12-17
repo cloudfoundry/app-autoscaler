@@ -6,6 +6,7 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	. "github.com/lib/pq"
+	"github.com/jmoiron/sqlx"
 
 	"context"
 	"database/sql"
@@ -15,11 +16,11 @@ import (
 type InstanceMetricsSQLDB struct {
 	logger   lager.Logger
 	dbConfig db.DatabaseConfig
-	sqldb    *sql.DB
+	sqldb    *sqlx.DB
 }
 
 func NewInstanceMetricsSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*InstanceMetricsSQLDB, error) {
-	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.URL)
+	sqldb, err := sqlx.Open(db.PostgresDriverName, dbConfig.URL)
 	if err != nil {
 		logger.Error("failed-open-instancemetrics-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
@@ -53,7 +54,7 @@ func (idb *InstanceMetricsSQLDB) Close() error {
 }
 
 func (idb *InstanceMetricsSQLDB) SaveMetric(metric *models.AppInstanceMetric) error {
-	query := "INSERT INTO appinstancemetrics(appid, instanceindex, collectedat, name, unit, value, timestamp) values($1, $2, $3, $4, $5, $6, $7)"
+	query := idb.sqldb.Rebind("INSERT INTO appinstancemetrics(appid, instanceindex, collectedat, name, unit, value, timestamp) values(?, ?, ?, ?, ?, ?, ?)")
 	_, err := idb.sqldb.Exec(query, metric.AppId, metric.InstanceIndex, metric.CollectedAt, metric.Name, metric.Unit, metric.Value, metric.Timestamp)
 
 	if err != nil {
@@ -117,20 +118,20 @@ func (idb *InstanceMetricsSQLDB) RetrieveInstanceMetrics(appid string, instanceI
 	} else {
 		orderStr = db.DESCSTR
 	}
-	query := "SELECT instanceindex, collectedat, unit, value, timestamp FROM appinstancemetrics WHERE " +
-		" appid = $1 " +
-		" AND name = $2 " +
-		" AND timestamp >= $3" +
-		" AND timestamp <= $4" +
-		" ORDER BY timestamp " + orderStr + ", instanceindex"
+	query := idb.sqldb.Rebind("SELECT instanceindex, collectedat, unit, value, timestamp FROM appinstancemetrics WHERE " +
+		" appid = ? " +
+		" AND name = ? " +
+		" AND timestamp >= ?" +
+		" AND timestamp <= ?" +
+		" ORDER BY timestamp " + orderStr + ", instanceindex")
 
-	queryByInstanceIndex := "SELECT instanceindex, collectedat, unit, value, timestamp FROM appinstancemetrics WHERE " +
-		" appid = $1 " +
-		" AND instanceindex = $2" +
-		" AND name = $3 " +
-		" AND timestamp >= $4" +
-		" AND timestamp <= $5" +
-		" ORDER BY timestamp " + orderStr
+	queryByInstanceIndex := idb.sqldb.Rebind("SELECT instanceindex, collectedat, unit, value, timestamp FROM appinstancemetrics WHERE " +
+		" appid = ? " +
+		" AND instanceindex = ?" +
+		" AND name = ? " +
+		" AND timestamp >= ?" +
+		" AND timestamp <= ?" +
+		" ORDER BY timestamp " + orderStr)
 
 	if end < 0 {
 		end = time.Now().UnixNano()
@@ -185,7 +186,7 @@ func (idb *InstanceMetricsSQLDB) RetrieveInstanceMetrics(appid string, instanceI
 	return mtrcs, nil
 }
 func (idb *InstanceMetricsSQLDB) PruneInstanceMetrics(before int64) error {
-	query := "DELETE FROM appinstancemetrics WHERE timestamp <= $1"
+	query := idb.sqldb.Rebind("DELETE FROM appinstancemetrics WHERE timestamp <= ?")
 	_, err := idb.sqldb.Exec(query, before)
 	if err != nil {
 		idb.logger.Error("failed-prune-instancemetric-from-appinstancemetrics-table", err, lager.Data{"query": query, "before": before})

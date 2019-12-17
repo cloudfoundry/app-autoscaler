@@ -15,9 +15,10 @@ import (
 	_ "github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/jmoiron/sqlx"
 )
 
-var dbHelper *sql.DB
+var dbHelper *sqlx.DB
 
 func TestSqldb(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -32,7 +33,7 @@ var _ = BeforeSuite(func() {
 		Fail("environment variable $DBURL is not set")
 	}
 
-	dbHelper, e = sql.Open(db.PostgresDriverName, dbUrl)
+	dbHelper, e = sqlx.Open(db.PostgresDriverName, dbUrl)
 	if e != nil {
 		Fail("can not connect database: " + e.Error())
 	}
@@ -62,7 +63,7 @@ func cleanInstanceMetricsTable() {
 }
 
 func hasInstanceMetric(appId string, index int, name string, timestamp int64) bool {
-	query := "SELECT * FROM appinstancemetrics WHERE appid = $1 AND instanceindex = $2 AND name = $3 AND timestamp = $4"
+	query := dbHelper.Rebind("SELECT * FROM appinstancemetrics WHERE appid = ? AND instanceindex = ? AND name = ? AND timestamp = ?")
 	rows, e := dbHelper.Query(query, appId, index, name, timestamp)
 	if e != nil {
 		Fail("can not query table appinstancemetrics: " + e.Error())
@@ -95,7 +96,7 @@ func cleanServiceInstanceTable() {
 }
 
 func hasServiceInstance(serviceInstanceId string) bool {
-	query := "SELECT * FROM service_instance WHERE service_instance_id = $1 "
+	query := dbHelper.Rebind("SELECT * FROM service_instance WHERE service_instance_id = ?")
 	rows, e := dbHelper.Query(query, serviceInstanceId)
 	if e != nil {
 		Fail("can not query table service_instance: " + e.Error())
@@ -105,7 +106,7 @@ func hasServiceInstance(serviceInstanceId string) bool {
 }
 
 func hasServiceBinding(bindingId string, serviceInstanceId string) bool {
-	query := "SELECT * FROM binding WHERE binding_id = $1 AND service_instance_id = $2 "
+	query := dbHelper.Rebind("SELECT * FROM binding WHERE binding_id = ? AND service_instance_id = ? ")
 	rows, e := dbHelper.Query(query, bindingId, serviceInstanceId)
 	if e != nil {
 		Fail("can not query table binding: " + e.Error())
@@ -127,7 +128,7 @@ func insertPolicy(appId string, scalingPolicy *models.ScalingPolicy) {
 		Fail("failed to marshall scaling policy" + e.Error())
 	}
 
-	query := "INSERT INTO policy_json(app_id, policy_json, guid) VALUES($1, $2, $3)"
+	query := dbHelper.Rebind("INSERT INTO policy_json(app_id, policy_json, guid) VALUES(?, ?, ?)")
 	_, e = dbHelper.Exec(query, appId, string(policyJson), "1234")
 
 	if e != nil {
@@ -136,7 +137,7 @@ func insertPolicy(appId string, scalingPolicy *models.ScalingPolicy) {
 }
 
 func getAppPolicy(appId string) string {
-	query := "SELECT policy_json FROM policy_json WHERE app_id=$1 "
+	query := dbHelper.Rebind("SELECT policy_json FROM policy_json WHERE app_id=? ")
 	rows, err := dbHelper.Query(query, appId)
 	if err != nil {
 		Fail("failed to get policy" + err.Error())
@@ -160,7 +161,7 @@ func cleanAppMetricTable() {
 }
 
 func hasAppMetric(appId, metricType string, timestamp int64, value string) bool {
-	query := "SELECT * FROM app_metric WHERE app_id = $1 AND metric_type = $2 AND timestamp = $3 AND value = $4"
+	query := dbHelper.Rebind("SELECT * FROM app_metric WHERE app_id = ? AND metric_type = ? AND timestamp = ? AND value = ?")
 	rows, e := dbHelper.Query(query, appId, metricType, timestamp, value)
 	if e != nil {
 		Fail("can not query table app_metric: " + e.Error())
@@ -186,7 +187,7 @@ func cleanScalingHistoryTable() {
 }
 
 func hasScalingHistory(appId string, timestamp int64) bool {
-	query := "SELECT * FROM scalinghistory WHERE appid = $1 AND timestamp = $2"
+	query := dbHelper.Rebind("SELECT * FROM scalinghistory WHERE appid = ? AND timestamp = ?")
 	rows, e := dbHelper.Query(query, appId, timestamp)
 	if e != nil {
 		Fail("can not query table scalinghistory: " + e.Error())
@@ -212,7 +213,7 @@ func cleanScalingCooldownTable() {
 }
 
 func hasScalingCooldownRecord(appId string, expireAt int64) bool {
-	query := "SELECT * FROM scalingcooldown WHERE appid = $1 AND expireat = $2"
+	query := dbHelper.Rebind("SELECT * FROM scalingcooldown WHERE appid = ? AND expireat = ?")
 	rows, e := dbHelper.Query(query, appId, expireAt)
 	if e != nil {
 		Fail("can not query table scalingcooldown: " + e.Error())
@@ -231,8 +232,8 @@ func cleanActiveScheduleTable() error {
 }
 
 func insertActiveSchedule(appId, scheduleId string, instanceMin, instanceMax, instanceMinInitial int) error {
-	query := "INSERT INTO activeschedule(appid, scheduleid, instancemincount, instancemaxcount, initialmininstancecount) " +
-		" VALUES ($1, $2, $3, $4, $5)"
+	query := dbHelper.Rebind("INSERT INTO activeschedule(appid, scheduleid, instancemincount, instancemaxcount, initialmininstancecount) " +
+		" VALUES (?, ?, ?, ?, ?)")
 	_, e := dbHelper.Exec(query, appId, scheduleId, instanceMin, instanceMax, instanceMinInitial)
 	return e
 }
@@ -246,12 +247,12 @@ func insertSchedulerActiveSchedule(id int, appId string, startJobIdentifier int,
 	var e error
 	var query string
 	if instanceMinInitial <= 0 {
-		query = "INSERT INTO app_scaling_active_schedule(id, app_id, start_job_identifier, instance_min_count, instance_max_count) " +
-			" VALUES ($1, $2, $3, $4, $5)"
+		query = dbHelper.Rebind("INSERT INTO app_scaling_active_schedule(id, app_id, start_job_identifier, instance_min_count, instance_max_count) " +
+			" VALUES (?, ?, ?, ?, ?)")
 		_, e = dbHelper.Exec(query, id, appId, startJobIdentifier, instanceMin, instanceMax)
 	} else {
-		query = "INSERT INTO app_scaling_active_schedule(id, app_id, start_job_identifier, instance_min_count, instance_max_count, initial_min_instance_count) " +
-			" VALUES ($1, $2, $3, $4, $5, $6)"
+		query = dbHelper.Rebind("INSERT INTO app_scaling_active_schedule(id, app_id, start_job_identifier, instance_min_count, instance_max_count, initial_min_instance_count) " +
+			" VALUES (?, ?, ?, ?, ?, ?)")
 		_, e = dbHelper.Exec(query, id, appId, startJobIdentifier, instanceMin, instanceMax, instanceMinInitial)
 	}
 	return e
@@ -262,13 +263,13 @@ func insertCredential(appid string, username string, password string) error {
 	var err error
 	var query string
 
-	query = "INSERT INTO credentials(id, username, password, updated_at) values($1, $2, $3, $4)"
+	query = dbHelper.Rebind("INSERT INTO credentials(id, username, password, updated_at) values(?, ?, ?, ?)")
 	_, err = dbHelper.Exec(query, appid, username, password, "2011-05-18 15:36:38")
 	return err
 
 }
 func getCredential(appId string) (string, string, error) {
-	query := "SELECT username,password FROM credentials WHERE id=$1 "
+	query := dbHelper.Rebind("SELECT username,password FROM credentials WHERE id=? ")
 	rows, err := dbHelper.Query(query, appId)
 	if err != nil {
 		Fail("failed to get credential" + err.Error())
@@ -284,7 +285,7 @@ func getCredential(appId string) (string, string, error) {
 	return username, password, nil
 }
 func hasCredential(appId string) bool {
-	query := "SELECT * FROM credentials WHERE id=$1"
+	query := dbHelper.Rebind("SELECT * FROM credentials WHERE id=?")
 	rows, e := dbHelper.Query(query, appId)
 	if e != nil {
 		Fail("can not query table credentials: " + e.Error())
@@ -301,7 +302,7 @@ func cleanCredentialTable() error {
 }
 
 func insertLockDetails(lock *models.Lock) (sql.Result, error) {
-	query := "INSERT INTO test_lock (owner,lock_timestamp,ttl) VALUES ($1,$2,$3)"
+	query := dbHelper.Rebind("INSERT INTO test_lock (owner,lock_timestamp,ttl) VALUES (?,?,?)")
 	result, err := dbHelper.Exec(query, lock.Owner, lock.LastModifiedTimestamp, int64(lock.Ttl/time.Second))
 	return result, err
 }
@@ -342,7 +343,7 @@ func validateLockInDB(ownerid string, expectedLock *models.Lock) error {
 		ttl       time.Duration
 		owner     string
 	)
-	query := "SELECT owner,lock_timestamp,ttl FROM test_lock WHERE owner=$1"
+	query := dbHelper.Rebind("SELECT owner,lock_timestamp,ttl FROM test_lock WHERE owner=?")
 	row := dbHelper.QueryRow(query, ownerid)
 	err := row.Scan(&owner, &timestamp, &ttl)
 	if err != nil {
@@ -366,7 +367,7 @@ func validateLockNotInDB(owner string) error {
 		timestamp time.Time
 		ttl       time.Duration
 	)
-	query := "SELECT owner,lock_timestamp,ttl FROM test_lock WHERE owner=$1"
+	query := dbHelper.Rebind("SELECT owner,lock_timestamp,ttl FROM test_lock WHERE owner=?")
 	row := dbHelper.QueryRow(query, owner)
 	err := row.Scan(&owner, &timestamp, &ttl)
 	if err != nil {
