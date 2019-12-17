@@ -1,7 +1,6 @@
 package main_test
 
 import (
-	"database/sql"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -16,6 +15,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
+	"github.com/jmoiron/sqlx"
 	"gopkg.in/yaml.v2"
 
 	"autoscaler/db"
@@ -44,7 +44,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	ms, err := gexec.Build("autoscaler/metricsserver/cmd/metricsserver", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
-	msDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
+	msDB, err := sqlx.Open(db.PostgresDriverName, os.Getenv("DBURL"))
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = msDB.Exec("DELETE FROM appinstancemetrics")
@@ -58,7 +58,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
  			"instance_min_count": 1,
   			"instance_max_count": 5
 		}`
-	query := "INSERT INTO policy_json(app_id, policy_json, guid) values($1, $2, $3)"
+	query := msDB.Rebind("INSERT INTO policy_json(app_id, policy_json, guid) values(?, ?, ?)")
 	_, err = msDB.Exec(query, "an-app-id", policy, "1234")
 	Expect(err).NotTo(HaveOccurred())
 

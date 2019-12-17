@@ -6,6 +6,7 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	_ "github.com/lib/pq"
+	"github.com/jmoiron/sqlx"
 
 	"database/sql"
 	"time"
@@ -14,11 +15,11 @@ import (
 type ScalingEngineSQLDB struct {
 	dbConfig db.DatabaseConfig
 	logger   lager.Logger
-	sqldb    *sql.DB
+	sqldb    *sqlx.DB
 }
 
 func NewScalingEngineSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*ScalingEngineSQLDB, error) {
-	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.URL)
+	sqldb, err := sqlx.Open(db.PostgresDriverName, dbConfig.URL)
 	if err != nil {
 		logger.Error("open-scaling-engine-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
@@ -51,9 +52,9 @@ func (sdb *ScalingEngineSQLDB) Close() error {
 }
 
 func (sdb *ScalingEngineSQLDB) SaveScalingHistory(history *models.AppScalingHistory) error {
-	query := "INSERT INTO scalinghistory" +
-		"(appid, timestamp, scalingtype, status, oldinstances, newinstances, reason, message, error) " +
-		" VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)"
+	query := sdb.sqldb.Rebind("INSERT INTO scalinghistory" +
+	        "(appid, timestamp, scalingtype, status, oldinstances, newinstances, reason, message, error) " +
+	        " VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)")
 	_, err := sdb.sqldb.Exec(query, history.AppId, history.Timestamp, history.ScalingType, history.Status,
 		history.OldInstances, history.NewInstances, history.Reason, history.Message, history.Error)
 
@@ -71,11 +72,11 @@ func (sdb *ScalingEngineSQLDB) RetrieveScalingHistories(appId string, start int6
 		orderStr = db.ASCSTR
 	}
 
-	query := "SELECT timestamp, scalingtype, status, oldinstances, newinstances, reason, message, error FROM scalinghistory WHERE" +
-		" appid = $1 " +
-		" AND timestamp >= $2" +
-		" AND timestamp <= $3" +
-		" ORDER BY timestamp " + orderStr
+	query := sdb.sqldb.Rebind("SELECT timestamp, scalingtype, status, oldinstances, newinstances, reason, message, error FROM scalinghistory WHERE" +
+	        " appid = ? " +
+	        " AND timestamp >= ?" +
+	        " AND timestamp <= ?" +
+	        " ORDER BY timestamp " + orderStr)
 
 	if end < 0 {
 		end = time.Now().UnixNano()
@@ -121,7 +122,7 @@ func (sdb *ScalingEngineSQLDB) RetrieveScalingHistories(appId string, start int6
 }
 
 func (sdb *ScalingEngineSQLDB) PruneScalingHistories(before int64) error {
-	query := "DELETE FROM scalinghistory WHERE timestamp <= $1"
+	query := sdb.sqldb.Rebind("DELETE FROM scalinghistory WHERE timestamp <= ?")
 	_, err := sdb.sqldb.Exec(query, before)
 	if err != nil {
 		sdb.logger.Error("failed-prune-scaling-histories-from-scalinghistory-table", err, lager.Data{"query": query, "before": before})
@@ -130,7 +131,7 @@ func (sdb *ScalingEngineSQLDB) PruneScalingHistories(before int64) error {
 }
 
 func (sdb *ScalingEngineSQLDB) CanScaleApp(appId string) (bool, int64, error) {
-	query := "SELECT expireat FROM scalingcooldown WHERE appid = $1"
+	query := sdb.sqldb.Rebind("SELECT expireat FROM scalingcooldown WHERE appid = ?")
 	rows, err := sdb.sqldb.Query(query, appId)
 	if err != nil {
 		sdb.logger.Error("can-scale-app-query-record", err, lager.Data{"query": query, "appid": appId})
@@ -154,13 +155,13 @@ func (sdb *ScalingEngineSQLDB) CanScaleApp(appId string) (bool, int64, error) {
 }
 
 func (sdb *ScalingEngineSQLDB) UpdateScalingCooldownExpireTime(appId string, expireAt int64) error {
-	_, err := sdb.sqldb.Exec("DELETE FROM scalingcooldown WHERE appid = $1", appId)
+	_, err := sdb.sqldb.Exec(sdb.sqldb.Rebind("DELETE FROM scalingcooldown WHERE appid = ?"), appId)
 	if err != nil {
 		sdb.logger.Error("update-scaling-cooldown-time-delete", err, lager.Data{"appid": appId})
 		return err
 	}
 
-	_, err = sdb.sqldb.Exec("INSERT INTO scalingcooldown(appid, expireat) values($1, $2)", appId, expireAt)
+	_, err = sdb.sqldb.Exec(sdb.sqldb.Rebind("INSERT INTO scalingcooldown(appid, expireat) values(?, ?)"), appId, expireAt)
 	if err != nil {
 		sdb.logger.Error("update-scaling-cooldown-time-insert", err, lager.Data{"appid": appId, "expireAt": expireAt})
 		return err
@@ -169,8 +170,8 @@ func (sdb *ScalingEngineSQLDB) UpdateScalingCooldownExpireTime(appId string, exp
 }
 
 func (sdb *ScalingEngineSQLDB) GetActiveSchedule(appId string) (*models.ActiveSchedule, error) {
-	query := "SELECT scheduleid, instancemincount, instancemaxcount, initialmininstancecount" +
-		" FROM activeschedule WHERE appid = $1"
+	query := sdb.sqldb.Rebind("SELECT scheduleid, instancemincount, instancemaxcount, initialmininstancecount" +
+		" FROM activeschedule WHERE appid = ?")
 
 	var scheduleId string
 	var instanceMin, instanceMax, instanceMinInitial int
@@ -214,7 +215,7 @@ func (sdb *ScalingEngineSQLDB) GetActiveSchedules() (map[string]string, error) {
 }
 
 func (sdb *ScalingEngineSQLDB) RemoveActiveSchedule(appId string) error {
-	query := "DELETE FROM activeschedule WHERE appid = $1"
+	query := sdb.sqldb.Rebind("DELETE FROM activeschedule WHERE appid = ?")
 	_, err := sdb.sqldb.Exec(query, appId)
 	if err != nil {
 		sdb.logger.Error("failed-remove-active-scheudle", err, lager.Data{"appid": appId})
@@ -229,8 +230,8 @@ func (sdb *ScalingEngineSQLDB) SetActiveSchedule(appId string, schedule *models.
 		return err
 	}
 
-	query := "INSERT INTO activeschedule(appid, scheduleid, instancemincount, instancemaxcount, initialmininstancecount) " +
-		" VALUES ($1, $2, $3, $4, $5)"
+	query := sdb.sqldb.Rebind("INSERT INTO activeschedule(appid, scheduleid, instancemincount, instancemaxcount, initialmininstancecount) " +
+	        " VALUES (?, ?, ?, ?, ?)")
 	_, err = sdb.sqldb.Exec(query, appId, schedule.ScheduleId, schedule.InstanceMin, schedule.InstanceMax, schedule.InstanceMinInitial)
 
 	if err != nil {
