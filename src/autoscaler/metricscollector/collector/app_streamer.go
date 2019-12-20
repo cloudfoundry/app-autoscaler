@@ -107,7 +107,7 @@ func (as *appStreamer) processEvent(event *events.Envelope) {
 	} else if event.GetEventType() == events.Envelope_HttpStartStop {
 		as.logger.Debug("process-event-get-httpstartstop-event", lager.Data{"event": event})
 		ss := event.GetHttpStartStop()
-		if ss != nil {
+		if ss != nil && ss.GetPeerType() == events.PeerType_Client {
 			as.numRequests[ss.GetInstanceIndex()]++
 			as.sumReponseTimes[ss.GetInstanceIndex()] += (ss.GetStopTimestamp() - ss.GetStartTimestamp())
 		}
