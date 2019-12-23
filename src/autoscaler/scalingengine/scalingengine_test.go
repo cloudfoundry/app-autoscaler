@@ -967,8 +967,8 @@ var _ = Describe("ScalingEngine", func() {
 			BeforeEach(func() {
 				scalingEngineDB.GetActiveScheduleReturns(nil, nil)
 			})
-			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&ActiveScheduleNotFoundError{}))
+			It("should not have any error", func() {
+				Expect(err).NotTo(HaveOccurred())
 				Expect(scalingEngineDB.RemoveActiveScheduleCallCount()).To(BeZero())
 			})
 		})
@@ -977,8 +977,8 @@ var _ = Describe("ScalingEngine", func() {
 			BeforeEach(func() {
 				scalingEngineDB.GetActiveScheduleReturns(&models.ActiveSchedule{ScheduleId: "a-different-schedule-id"}, nil)
 			})
-			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&ActiveScheduleNotFoundError{}))
+			It("should not have any error", func() {
+				Expect(err).NotTo(HaveOccurred())
 				Expect(scalingEngineDB.RemoveActiveScheduleCallCount()).To(BeZero())
 			})
 		})

@@ -33,6 +33,8 @@ type scalingEngine struct {
 
 type ActiveScheduleNotFoundError struct {
 }
+type AppNotFoundError struct {
+}
 
 func (ase *ActiveScheduleNotFoundError) Error() string {
 	return fmt.Sprintf("active schedule not found")
@@ -306,9 +308,8 @@ func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) er
 	}
 
 	if (currentSchedule == nil) || (currentSchedule.ScheduleId != scheduleId) {
-		err = &ActiveScheduleNotFoundError{}
-		logger.Error("failed-to-remove-active-schedule", err)
-		return err
+		logger.Info("active-schedule-not-found", lager.Data{"appId": appId, "scheduleId": scheduleId})
+		return nil
 	}
 
 	err = s.scalingEngineDB.RemoveActiveSchedule(appId)
@@ -330,6 +331,11 @@ func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) er
 
 	appEntity, err := s.cfClient.GetApp(appId)
 	if err != nil {
+		if _, ok := err.(*models.AppNotFoundErr); ok {
+			logger.Info("app-not-found", lager.Data{"appId": appId})
+			history.Status = models.ScalingStatusIgnored
+			return nil
+		}
 		logger.Error("failed-to-get-app-info", err)
 		history.Status = models.ScalingStatusFailed
 		history.Error = "failed to get app info: " + err.Error()
