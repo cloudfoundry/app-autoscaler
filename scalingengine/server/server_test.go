@@ -190,9 +190,9 @@ var _ = Describe("Server", func() {
 				method = http.MethodDelete
 			})
 			Context("when requesting correctly", func() {
-				It("should return 204", func() {
+				It("should return 200", func() {
 					Expect(err).ToNot(HaveOccurred())
-					Expect(rsp.StatusCode).To(Equal(http.StatusNoContent))
+					Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 					rsp.Body.Close()
 				})
 			})

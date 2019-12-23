@@ -190,7 +190,7 @@ var _ = Describe("Main", func() {
 
 			rsp, err = httpClient.Do(req)
 			Expect(err).NotTo(HaveOccurred())
-			Expect(rsp.StatusCode).To(Equal(http.StatusNoContent))
+			Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 			rsp.Body.Close()
 		})
 	})

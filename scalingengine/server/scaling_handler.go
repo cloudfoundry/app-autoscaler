@@ -220,22 +220,13 @@ func (h *ScalingHandler) RemoveActiveSchedule(w http.ResponseWriter, r *http.Req
 
 	if err != nil {
 		logger.Error("failed-to-remove-active-schedule", err)
-		switch err.(type) {
-		case *scalingengine.ActiveScheduleNotFoundError:
-			handlers.WriteJSONResponse(w, http.StatusNotFound, models.ErrorResponse{
-				Code:    "Not-Found",
-				Message: "Active schedule not found",
-			})
-		default:
-			handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-				Code:    "Interal-Server-Error",
-				Message: "Error removing active schedule"})
-
-		}
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+			Code:    "Interal-Server-Error",
+			Message: "Error removing active schedule"})
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	w.WriteHeader(http.StatusOK)
 }
 
 func (h *ScalingHandler) GetActiveSchedule(w http.ResponseWriter, r *http.Request, vars map[string]string) {
