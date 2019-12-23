@@ -479,15 +479,11 @@ public class ScheduleManager {
 		try {
 			restOperations.delete(scalingEnginePathActiveSchedule);
 		} catch (HttpStatusCodeException hce) {
-			if (hce.getStatusCode() == HttpStatus.NOT_FOUND) {
-				message = messageBundleResourceHelper
-						.lookupMessage("scalingengine.notification.activeschedule.notFound", appId, scheduleId);
-				logger.info(message, hce);
-			} else {
-				String errorMessage = messageBundleResourceHelper.lookupMessage("scalingengine.notification.error",
-						hce.getResponseBodyAsString(), appId, scheduleId, "delete");
-				throw new SchedulerInternalException(errorMessage, hce);
-			}
+			
+			String errorMessage = messageBundleResourceHelper.lookupMessage("scalingengine.notification.error",
+					hce.getResponseBodyAsString(), appId, scheduleId, "delete");
+			throw new SchedulerInternalException(errorMessage, hce);
+			
 		} catch (ResourceAccessException rae) {
 			String errorMessage = messageBundleResourceHelper.lookupMessage("scalingengine.notification.error",
 					rae.getMessage(), appId, scheduleId, "delete");

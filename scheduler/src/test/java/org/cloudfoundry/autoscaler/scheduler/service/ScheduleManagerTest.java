@@ -535,7 +535,7 @@ public class ScheduleManagerTest {
 		String scalingEnginePathActiveSchedule = scalingEngineUrl + "/v1/apps/" + appId + "/active_schedules/"
 				+ scheduleId;
 		mockServer.expect(ExpectedCount.times(1), requestTo(scalingEnginePathActiveSchedule))
-				.andExpect(method(HttpMethod.DELETE)).andRespond(withStatus(HttpStatus.NOT_FOUND));
+				.andExpect(method(HttpMethod.DELETE)).andRespond(withStatus(HttpStatus.OK));
 
 		scheduleManager.deleteSchedules(appId);
 
@@ -554,11 +554,6 @@ public class ScheduleManagerTest {
 		Mockito.verify(activeScheduleDao, Mockito.times(1)).deleteActiveSchedulesByAppId(appId);
 
 		mockServer.verify();
-
-		String expectedMessage = messageBundleResourceHelper
-				.lookupMessage("scalingengine.notification.activeschedule.notFound", appId, scheduleId);
-		assertThat(logCaptor.getValue().getMessage().getFormattedMessage(), Is.is(expectedMessage));
-		assertThat("Log level should be INFO", logCaptor.getValue().getLevel(), Is.is(Level.INFO));
 	}
 
 	@Test
