@@ -6,6 +6,7 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	_ "github.com/lib/pq"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 
 	"autoscaler/db"
@@ -18,7 +19,12 @@ type BindingSQLDB struct {
 }
 
 func NewBindingSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*BindingSQLDB, error) {
-	sqldb, err := sqlx.Open(db.PostgresDriverName, dbConfig.URL)
+	database, err := db.Connection(dbConfig.URL)
+	if err != nil {
+		return nil, err
+	}
+
+	sqldb, err := sqlx.Open(database.DriverName, database.DSN)
 	if err != nil {
 		logger.Error("open-binding-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
@@ -89,7 +95,7 @@ func (bdb *BindingSQLDB) CreateServiceInstance(serviceInstanceId string, orgId s
 }
 
 func (bdb *BindingSQLDB) DeleteServiceInstance(serviceInstanceId string) error {
-	query := bdb.sqldb.Rebind("SELECT FROM service_instance WHERE service_instance_id =?")
+	query := bdb.sqldb.Rebind("SELECT * FROM service_instance WHERE service_instance_id =?")
 	rows, err := bdb.sqldb.Query(query, serviceInstanceId)
 	if err != nil {
 		bdb.logger.Error("delete-service-instance", err, lager.Data{"query": query, "serviceinstanceid": serviceInstanceId})
@@ -111,7 +117,7 @@ func (bdb *BindingSQLDB) DeleteServiceInstance(serviceInstanceId string) error {
 }
 
 func (bdb *BindingSQLDB) CreateServiceBinding(bindingId string, serviceInstanceId string, appId string) error {
-	query := bdb.sqldb.Rebind("SELECT FROM binding WHERE app_id =?")
+	query := bdb.sqldb.Rebind("SELECT * FROM binding WHERE app_id =?")
 	rows, err := bdb.sqldb.Query(query, appId)
 	if err != nil {
 		bdb.logger.Error("create-service-binding", err, lager.Data{"query": query, "appId": appId, "serviceId": serviceInstanceId, "bindingId": bindingId})
@@ -135,7 +141,7 @@ func (bdb *BindingSQLDB) CreateServiceBinding(bindingId string, serviceInstanceI
 	return err
 }
 func (bdb *BindingSQLDB) DeleteServiceBinding(bindingId string) error {
-	query := bdb.sqldb.Rebind("SELECT FROM binding WHERE binding_id =?")
+	query := bdb.sqldb.Rebind("SELECT * FROM binding WHERE binding_id =?")
 	rows, err := bdb.sqldb.Query(query, bindingId)
 	if err != nil {
 		bdb.logger.Error("delete-service-binding", err, lager.Data{"query": query, "bindingId": bindingId})

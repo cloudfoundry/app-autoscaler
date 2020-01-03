@@ -58,7 +58,10 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	ap, err := gexec.Build("autoscaler/api/cmd/api", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
-	apDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
+	database, err := db.Connection(os.Getenv("DBURL"))
+	Expect(err).NotTo(HaveOccurred())
+
+	apDB, err := sql.Open(database.DriverName, database.DSN)
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = apDB.Exec("DELETE FROM binding")

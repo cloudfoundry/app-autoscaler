@@ -76,4 +76,12 @@ databaseChangeLog:
       author: byang
       changes:
         - dropTable:
-            tableName: eg_lock 
+            tableName: eg_lock
+  - changeSet:
+        id: 5
+        author: aqan213
+        changes:
+        - modifyDataType:
+            tableName: app_metric
+            columnName: value
+            newDataType: varchar(255)

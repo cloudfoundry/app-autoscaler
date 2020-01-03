@@ -7,6 +7,7 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	"github.com/lib/pq"
+	"github.com/go-sql-driver/mysql"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -51,6 +52,16 @@ var _ = Describe("SchedulerSqldb", func() {
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&pq.Error{}))
+			})
+
+		})
+
+		Context("when mysql db url is not correct", func() {
+			BeforeEach(func() {
+				dbConfig.URL = "not-exist-user:not-exist-password@tcp(localhost)/autoscaler?tls=false"
+			})
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&mysql.MySQLError{}))
 			})
 
 		})

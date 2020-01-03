@@ -88,3 +88,11 @@ databaseChangeLog:
       changes:
         - dropTable:
             tableName: mc_lock
+  - changeSet:
+      id: 4
+      author: aqan213
+      changes:
+        - modifyDataType:
+            tableName: appinstancemetrics
+            columnName: value
+            newDataType: varchar(255)

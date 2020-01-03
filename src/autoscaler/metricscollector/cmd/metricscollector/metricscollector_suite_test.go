@@ -21,6 +21,7 @@ import (
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"gopkg.in/yaml.v2"
 
@@ -53,7 +54,10 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	mc, err := gexec.Build("autoscaler/metricscollector/cmd/metricscollector", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
-	mcDB, err := sqlx.Open(db.PostgresDriverName, os.Getenv("DBURL"))
+    database, err := db.Connection(os.Getenv("DBURL"))
+	Expect(err).NotTo(HaveOccurred())
+
+	mcDB, err := sqlx.Open(database.DriverName, database.DSN)
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = mcDB.Exec("DELETE FROM appinstancemetrics")

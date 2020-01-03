@@ -104,7 +104,10 @@ var _ = SynchronizedAfterSuite(func() {
 })
 
 func initDB() {
-	mgDB, err := sqlx.Open(db.PostgresDriverName, os.Getenv("DBURL"))
+	database, err := db.Connection(os.Getenv("DBURL"))
+	Expect(err).NotTo(HaveOccurred())
+
+	mgDB, err := sqlx.Open(database.DriverName, database.DSN)
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = mgDB.Exec("DELETE from policy_json")

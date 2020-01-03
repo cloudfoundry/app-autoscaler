@@ -6,6 +6,7 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	_ "github.com/lib/pq"
+	_ "github.com/go-sql-driver/mysql"
 
 	"database/sql"
 	"strconv"
@@ -18,7 +19,11 @@ type SchedulerSQLDB struct {
 }
 
 func NewSchedulerSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*SchedulerSQLDB, error) {
-	sqldb, err := sql.Open(db.PostgresDriverName, dbConfig.URL)
+	database, err := db.Connection(dbConfig.URL)
+	if err != nil {
+		return nil, err
+	}
+	sqldb, err := sql.Open(database.DriverName, database.DSN)
 	if err != nil {
 		logger.Error("failed-open-scheduler-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err

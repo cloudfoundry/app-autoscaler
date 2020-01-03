@@ -8,6 +8,7 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	"github.com/lib/pq"
+	"github.com/go-sql-driver/mysql"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -58,12 +59,22 @@ var _ = Describe("PolicySQLDB", func() {
 			}
 		})
 
-		Context("when db url is not correct", func() {
+		Context("when postgres db url is not correct", func() {
 			BeforeEach(func() {
 				dbConfig.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 			})
 			It("should error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&pq.Error{}))
+			})
+
+		})
+
+		Context("when mysql db url is not correct", func() {
+			BeforeEach(func() {
+				dbConfig.URL = "not-exist-user:not-exist-password@tcp(localhost)/autoscaler?tls=false"
+			})
+			It("should error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&mysql.MySQLError{}))
 			})
 
 		})
@@ -207,6 +218,10 @@ var _ = Describe("PolicySQLDB", func() {
 			insertPolicy("second-app-id", scalingPolicy)
 			insertPolicy("third-app-id", scalingPolicy)
 			policies, err = pdb.RetrievePolicies()
+			for i, policy := range policies {
+				policy.PolicyStr = formatPolicyString(policy.PolicyStr)
+				policies[i] = policy
+			}
 		})
 
 		Context("when retriving all the policies", func() {
@@ -265,7 +280,7 @@ var _ = Describe("PolicySQLDB", func() {
 			})
 			It("saves the policy", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(getAppPolicy("an-app-id")).To(Equal(policyJsonStr))
+				Expect(formatPolicyString(getAppPolicy("an-app-id"))).To(Equal(formatPolicyString(policyJsonStr)))
 			})
 		})
 
@@ -298,7 +313,7 @@ var _ = Describe("PolicySQLDB", func() {
 			})
 			It("updates the policy", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(getAppPolicy("an-app-id")).To(Equal(policyJsonStr))
+				Expect(formatPolicyString(getAppPolicy("an-app-id"))).To(Equal(formatPolicyString(policyJsonStr)))
 			})
 		})
 	})

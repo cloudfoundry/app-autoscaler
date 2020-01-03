@@ -4,6 +4,7 @@ import (
 	"autoscaler/db"
 	"autoscaler/models"
 	"context"
+	"strings"
 
 	"code.cloudfoundry.org/lager"
 	. "github.com/lib/pq"
@@ -21,8 +22,12 @@ type AppMetricSQLDB struct {
 
 func NewAppMetricSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*AppMetricSQLDB, error) {
 	var err error
+	database, err := db.Connection(dbConfig.URL)
+	if err != nil {
+		return nil, err
+	}
 
-	sqldb, err := sqlx.Open(db.PostgresDriverName, dbConfig.URL)
+	sqldb, err := sqlx.Open(database.DriverName, database.DSN)
 	if err != nil {
 		logger.Error("open-AppMetric-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
@@ -71,31 +76,64 @@ func (adb *AppMetricSQLDB) SaveAppMetricsInBulk(appMetrics []*models.AppMetric) 
 		adb.logger.Error("failed-to-start-transaction", err)
 		return err
 	}
-	stmt, err := txn.Prepare(CopyIn("app_metric", "app_id", "metric_type", "unit", "timestamp", "value"))
-	if err != nil {
-		adb.logger.Error("failed-to-prepare-statement", err)
-		txn.Rollback()
-		return err
-	}
-	for _, appMetric := range appMetrics {
-		_, err := stmt.Exec(appMetric.AppId, appMetric.MetricType, appMetric.Unit, appMetric.Timestamp, appMetric.Value)
+
+	switch adb.sqldb.DriverName() {
+	case "postgres":
+		stmt, err := txn.Prepare(CopyIn("app_metric", "app_id", "metric_type", "unit", "timestamp", "value"))
 		if err != nil {
-			adb.logger.Error("failed-to-execute", err)
+			adb.logger.Error("failed-to-prepare-statement", err)
 			txn.Rollback()
 			return err
 		}
-	}
-	_, err = stmt.Exec()
-	if err != nil {
-		adb.logger.Error("failed-to-execute-statement", err)
-		txn.Rollback()
-		return err
-	}
-	err = stmt.Close()
-	if err != nil {
-		adb.logger.Error("failed-to-close-statement", err)
-		txn.Rollback()
-		return err
+		for _, appMetric := range appMetrics {
+			_, err := stmt.Exec(appMetric.AppId, appMetric.MetricType, appMetric.Unit, appMetric.Timestamp, appMetric.Value)
+			if err != nil {
+				adb.logger.Error("failed-to-execute", err)
+				txn.Rollback()
+				return err
+			}
+		}
+		_, err = stmt.Exec()
+		if err != nil {
+			adb.logger.Error("failed-to-execute-statement", err)
+			txn.Rollback()
+			return err
+		}
+		err = stmt.Close()
+		if err != nil {
+			adb.logger.Error("failed-to-close-statement", err)
+			txn.Rollback()
+			return err
+		}
+
+	case "mysql":
+		sqlStr :="INSERT INTO app_metric(app_id,metric_type,unit,timestamp,value)VALUES"
+		vals := []interface{}{}
+		for _, appMetric := range appMetrics {
+			sqlStr += "(?, ?, ?, ?, ?),"
+			vals = append(vals, appMetric.AppId, appMetric.MetricType, appMetric.Unit, appMetric.Timestamp, appMetric.Value)
+		}
+		sqlStr = strings.TrimSuffix(sqlStr, ",")
+
+		stmt, err := txn.Prepare(sqlStr)
+		if err != nil {
+			adb.logger.Error("failed-to-prepare-statement", err)
+			txn.Rollback()
+			return err
+		}
+
+		_, err = stmt.Exec(vals...)
+		if err != nil {
+			adb.logger.Error("failed-to-execute-statement", err)
+			txn.Rollback()
+			return err
+		}
+		err = stmt.Close()
+		if err != nil {
+			adb.logger.Error("failed-to-close-statement", err)
+			txn.Rollback()
+			return err
+		}
 	}
 
 	err = txn.Commit()
