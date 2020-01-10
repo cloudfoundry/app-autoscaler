@@ -148,9 +148,6 @@
 [submodule "src/github.com/juju/ratelimit"]
 	path = src/github.com/juju/ratelimit
 	url = https://github.com/juju/ratelimit
-[submodule "src/github.com/cespare/xxhash"]
-	path = src/github.com/cespare/xxhash
-	url = https://github.com/cespare/xxhash.git
 [submodule "src/github.com/jmoiron/sqlx"]
 	path = src/github.com/jmoiron/sqlx
 	url = https://github.com/jmoiron/sqlx
