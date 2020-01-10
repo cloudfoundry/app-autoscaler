@@ -35,7 +35,7 @@ var _ = BeforeSuite(func() {
 	}
 	database, err := db.Connection(dbUrl)
 	if err != nil {
-		Fail("failed to parse database connection: "+ e.Error())
+		Fail("failed to parse database connection: "+ err.Error())
 	}
 
 	dbHelper, e =  sqlx.Open(database.DriverName, database.DSN)
