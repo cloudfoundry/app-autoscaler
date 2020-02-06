@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 
 	"autoscaler/cf"
 	"autoscaler/db"
@@ -149,5 +149,10 @@ func (c *Config) Validate() error {
 	if c.HttpClientTimeout <= time.Duration(0) {
 		return fmt.Errorf("Configuration error: http_client_timeout is less-equal than 0")
 	}
+
+	if err := c.Health.Validate("metricscollector"); err != nil {
+		return err
+	}
+
 	return nil
 }

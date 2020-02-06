@@ -16,7 +16,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 
 	"autoscaler/db"
 	"autoscaler/metricsserver/config"
@@ -107,6 +107,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.Collector.EnvelopeProcessorCount = 5
 	cfg.Collector.EnvelopeChannelSize = 1000
 	cfg.Collector.MetricChannelSize = 1000
+
+	cfg.Health.HealthCheckUsername = "metricsserverhealthcheckuser"
+	cfg.Health.HealthCheckPassword = "metricsserverhealthcheckpassword"
 
 	configFile = writeConfig(&cfg)
 
