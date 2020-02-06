@@ -21,6 +21,8 @@ jobs:
           pushd src/autoscaler
             make buildtools
             make generate
+            git diff
+            git status
           popd
 
       - name: Check if there are changes
