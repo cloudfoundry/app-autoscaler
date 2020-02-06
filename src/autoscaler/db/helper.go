@@ -49,13 +49,13 @@ func Connection(dbUrl string) (*Database, error) {
 			dsn = urlStrs[0]+queryString
 			database.DSN = dsn
 
-			err :=registerConfig(tlsValue,sslrootcert,dsn)
+			err :=registerConfig(tlsValue,sslrootcert,urlStrs[0])
 			if err !=nil {
 				return nil, err
 			}
 
 		}else {
-			database.DSN = dbUrl
+			database.DSN = dbUrl+queryString
 		}				
 	case PostgresDriverName:
 		database.DSN = dbUrl

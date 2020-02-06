@@ -84,7 +84,10 @@ func (ldb *LockSQLDB) fetch(tx *sql.Tx) (*models.Lock, error) {
 		return &models.Lock{}, err
 	}
 
-	query := "SELECT owner,lock_timestamp,ttl FROM " + ldb.table + " LIMIT 1 FOR UPDATE NOWAIT"
+	query := "SELECT owner,lock_timestamp,ttl FROM " + ldb.table + " LIMIT 1 FOR UPDATE"
+	if ldb.sqldb.DriverName() == "postgres" {
+		query = query +" NOWAIT "
+	}
 	row := tx.QueryRow(query)
 	err := row.Scan(&owner, &timestamp, &ttl)
 	if err != nil {

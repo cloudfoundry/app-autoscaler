@@ -9,9 +9,6 @@ import (
 	"code.cloudfoundry.org/lager"
 
 	"time"
-
-	"github.com/lib/pq"
-	"github.com/go-sql-driver/mysql"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -50,25 +47,6 @@ var _ = Describe("LockSqldb", func() {
 			}
 		})
 
-		Context("when postgres lock db url is not correct", func() {
-			BeforeEach(func() {
-				dbConfig.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
-			})
-			It("should throw an error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&pq.Error{}))
-			})
-
-		})
-
-		Context("when mysql lock db url is not correct", func() {
-			BeforeEach(func() {
-				dbConfig.URL = "not-exist-user:not-exist-password@tcp(localhost)/autoscaler?tls=false"
-			})
-			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&mysql.MySQLError{}))
-			})
-
-		})
 
 		Context("when lock db url is correct", func() {
 			It("should not error", func() {

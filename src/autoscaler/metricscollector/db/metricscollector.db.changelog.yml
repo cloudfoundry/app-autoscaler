@@ -7,6 +7,7 @@ databaseChangeLog:
       - not:
         - tableExists:
             tableName: appinstancemetrics
+      dbms: postgresql
       changes:
         - createTable:
             tableName: appinstancemetrics
@@ -91,8 +92,61 @@ databaseChangeLog:
   - changeSet:
       id: 4
       author: aqan213
-      changes:
-        - modifyDataType:
+      preConditions:
+      - onFail: MARK_RAN
+      - not:
+        - tableExists:
             tableName: appinstancemetrics
-            columnName: value
-            newDataType: varchar(255)
+      dbms: mysql
+      changes:
+        - createTable:
+            tableName: appinstancemetrics
+            columns:
+              - column:
+                  name: appid
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: instanceindex
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: collectedat
+                  type: bigint
+                  constraints:
+                    nullable: false                 
+              - column:
+                  name: name
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: unit
+                  type: varchar(20)
+                  constraints:
+                    nullable: false                    
+              - column:
+                  name: value
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: timestamp
+                  type: bigint
+                  constraints:
+                    nullable: false    
+        - createIndex:
+             columns:
+             - column:
+                 name: appid
+                 type: varchar(255)
+             - column:
+                 name: name
+                 type: varchar(100)
+             - column:
+                 name: timestamp
+                 type: bigint                
+             indexName: idx_instance_metrics
+             tableName: appinstancemetrics
