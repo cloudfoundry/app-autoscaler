@@ -74,7 +74,7 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		CacheTTL:             DefaultCacheTTL,
 		CacheCleanupInterval: DefaultCacheCleanupInterval,
 		PolicyPollerInterval: DefaultPolicyPollerInterval,
-		RateLimit:            models.RateLimitConfig{
+		RateLimit: models.RateLimitConfig{
 			MaxAmount:     DefaultMaxAmount,
 			ValidDuration: DefaultValidDuration,
 		},
@@ -110,9 +110,13 @@ func (c *Config) Validate() error {
 	if c.RateLimit.MaxAmount <= 0 {
 		return fmt.Errorf("Configuration error: RateLimit.MaxAmount is equal or less than zero")
 	}
-	if c.RateLimit.ValidDuration <= 0 * time.Nanosecond {
+	if c.RateLimit.ValidDuration <= 0*time.Nanosecond {
 		return fmt.Errorf("Configuration error: RateLimit.ValidDuration is equal or less than zero nanosecond")
 	}
-	return nil
 
+	if err := c.Health.Validate("metricsforwarder"); err != nil {
+		return err
+	}
+
+	return nil
 }

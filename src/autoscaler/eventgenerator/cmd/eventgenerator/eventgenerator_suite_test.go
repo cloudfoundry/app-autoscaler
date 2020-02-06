@@ -23,7 +23,7 @@ import (
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
 	"github.com/jmoiron/sqlx"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
 var (
@@ -246,7 +246,9 @@ func initConfig() {
 		DefaultStatWindowSecs:     300,
 		HttpClientTimeout:         10 * time.Second,
 		Health: models.HealthConfig{
-			Port: healthport,
+			Port:                healthport,
+			HealthCheckUsername: "healthcheckuser",
+			HealthCheckPassword: "healthcheckpassword",
 		},
 	}
 	configFile = writeConfig(&conf)

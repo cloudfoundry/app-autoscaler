@@ -145,6 +145,11 @@ func (c *Config) Validate() error {
 	if c.Emitter.MetricsServerClientTLS.CACertFile == "" {
 		return fmt.Errorf("Configuration error: emitter.metrics_server_client_tls.ca_file is empty")
 	}
+
+	if err := c.Health.Validate("metricsgateway"); err != nil {
+		return err
+	}
+
 	if c.Nozzle.RLPAddr == "" {
 		return fmt.Errorf("Configuration error: nozzle.rlp_addr is empty")
 	}

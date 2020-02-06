@@ -105,10 +105,18 @@ var _ = Describe("Metricsgateway", func() {
 			Eventually(runner.Session, 5).Should(Exit(0))
 		})
 	})
-	Describe("when Health server is ready to serve RESTful API", func() {
+
+	Describe("when Health server is ready to serve RESTful API without basic Auth", func() {
+		BeforeEach(func() {
+			basicAuthConfig := conf
+			basicAuthConfig.Health.HealthCheckUsername = ""
+			basicAuthConfig.Health.HealthCheckPassword = ""
+			runner.configPath = writeConfig(&basicAuthConfig).Name()
+		})
+
 		Context("when a request to query health comes", func() {
 			It("returns with a 200", func() {
-				rsp, err := healthHttpClient.Get(fmt.Sprintf("http://127.0.0.1:%d", healthport))
+				rsp, err := healthHttpClient.Get(fmt.Sprintf("http://127.0.0.1:%d/health", healthport))
 				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 				raw, _ := ioutil.ReadAll(rsp.Body)
@@ -122,10 +130,68 @@ var _ = Describe("Metricsgateway", func() {
 
 			})
 		})
+
 		Context("when a request to query profile comes", func() {
 			It("returns with a 200", func() {
 				rsp, err := healthHttpClient.Get(fmt.Sprintf("http://127.0.0.1:%d/debug/pprof", healthport))
 				Expect(err).NotTo(HaveOccurred())
+				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+				raw, _ := ioutil.ReadAll(rsp.Body)
+				profileIndexBody := string(raw)
+				Expect(profileIndexBody).To(ContainSubstring("allocs"))
+				Expect(profileIndexBody).To(ContainSubstring("block"))
+				Expect(profileIndexBody).To(ContainSubstring("cmdline"))
+				Expect(profileIndexBody).To(ContainSubstring("goroutine"))
+				Expect(profileIndexBody).To(ContainSubstring("heap"))
+				Expect(profileIndexBody).To(ContainSubstring("mutex"))
+				Expect(profileIndexBody).To(ContainSubstring("profile"))
+				Expect(profileIndexBody).To(ContainSubstring("threadcreate"))
+				Expect(profileIndexBody).To(ContainSubstring("trace"))
+				rsp.Body.Close()
+
+			})
+		})
+
+	})
+
+	Describe("when Health server is ready to serve RESTful API with basic Auth", func() {
+		Context("when username and password are incorrect for basic authentication during health check", func() {
+			It("should return 401", func() {
+
+				req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://127.0.0.1:%d/health", healthport), nil)
+				Expect(err).NotTo(HaveOccurred())
+
+				req.SetBasicAuth("wrongusername", "wrongpassword")
+
+				rsp, err := healthHttpClient.Do(req)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(rsp.StatusCode).To(Equal(http.StatusUnauthorized))
+			})
+		})
+
+		Context("when username and password are correct for basic authentication during health check", func() {
+			It("should return 200", func() {
+
+				req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://127.0.0.1:%d/health", healthport), nil)
+				Expect(err).NotTo(HaveOccurred())
+
+				req.SetBasicAuth(conf.Health.HealthCheckUsername, conf.Health.HealthCheckPassword)
+
+				rsp, err := healthHttpClient.Do(req)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+			})
+		})
+
+		Context("when a request to query profile comes", func() {
+			It("returns with a 200", func() {
+
+				req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://127.0.0.1:%d/debug/pprof", healthport), nil)
+				Expect(err).NotTo(HaveOccurred())
+
+				req.SetBasicAuth(conf.Health.HealthCheckUsername, conf.Health.HealthCheckPassword)
+
+				rsp, err := healthHttpClient.Do(req)
 				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 				raw, _ := ioutil.ReadAll(rsp.Body)
 				profileIndexBody := string(raw)
