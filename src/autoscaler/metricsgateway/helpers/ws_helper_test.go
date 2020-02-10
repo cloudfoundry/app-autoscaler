@@ -105,6 +105,10 @@ var _ = Describe("WsHelper", func() {
 			err = wsHelper.SetupConn()
 			Expect(err).NotTo(HaveOccurred())
 
+			err = wsHelper.Ping()
+			Expect(err).ShouldNot(HaveOccurred())
+			Eventually(pingPongChan, 5*time.Second, 1*time.Second).Should(Receive(Equal(1)))
+
 		})
 		It("close the websocket connection", func() {
 			wsHelper.CloseConn()
