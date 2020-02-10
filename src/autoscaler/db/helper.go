@@ -15,7 +15,19 @@ type Database struct {
 	DSN         string
 }
 
-func Connection(dbUrl string) (*Database, error) {
+/**
+ This function is used to generate db connection info, for example, 
+ For mysql: 
+ input dbUrl: 'username:password@tcp(localhost:3306)/autoscaler?tls=custom&sslrootcert=db_ca.crt'
+   return:
+   &Database{DriverName: "mysql", DSN:"username:password@tcp(localhost:3306)/autoscaler?parseTime=true&tls=custom"}
+ 
+For postgres:
+   input dbUrl: postgres://postgres:password@localhost:5432/autoscaler?sslmode=disable
+   return:
+   &Database{DriverName: "postgres", DSN:"postgres://postgres:password@localhost:5432/autoscaler?sslmode=disable"
+ **/
+ func Connection(dbUrl string) (*Database, error) {
 	var dsn string
 	var tlsValue string
 	var sslrootcert string

@@ -44,13 +44,13 @@ var _ = Describe("Helper", func() {
 
 		Context("when postgres dburl is provided", func() {
 			BeforeEach(func() {
-				dbUrl="postgres://postgres:passw0rd@localhost:5432/autoscaler?sslmode=disable"
+				dbUrl="postgres://postgres:password@localhost:5432/autoscaler?sslmode=disable"
 			})
 			It("returns postgres database object", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(database).To(Equal(&Database{
 					DriverName: "postgres",
-					DSN: "postgres://postgres:passw0rd@localhost:5432/autoscaler?sslmode=disable",
+					DSN: "postgres://postgres:password@localhost:5432/autoscaler?sslmode=disable",
 				}))
 			})
 		})
