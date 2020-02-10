@@ -268,12 +268,6 @@ var _ = Describe("InstancemetricsSqldb", func() {
 			err = idb.SaveMetric(metric)
 			Expect(err).NotTo(HaveOccurred())
 
-			metric.InstanceIndex = 0
-			metric.CollectedAt = 222222
-			metric.Value = "654321"
-			metric.Timestamp = 111100
-			err = idb.SaveMetric(metric)
-			Expect(err).NotTo(HaveOccurred())
 
 			start = 0
 			end = -1
@@ -332,7 +326,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 				orderType = db.ASC
 				instanceIndex = -1
 			})
-			It("removes duplicates and returns all the instance metrics of the app ordered by timestamp asc, instanceindex asc", func() {
+			It("returns all the instance metrics of the app ordered by timestamp asc, instanceindex asc", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(mtrcs).To(HaveLen(4))
 				Expect(*mtrcs[0]).To(gstruct.MatchAllFields(gstruct.Fields{
@@ -382,7 +376,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 				orderType = db.DESC
 				instanceIndex = -1
 			})
-			It("removes duplicates and returns all the instance metrics of the app ordered by timestamp desc, instanceindex asc", func() {
+			It("returns all the instance metrics of the app ordered by timestamp desc, instanceindex asc", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(mtrcs).To(HaveLen(4))
 
@@ -463,7 +457,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 			BeforeEach(func() {
 				instanceIndex = 1
 			})
-			It("removes duplicates and returns all the instance metrics of the app ordered by timestamp desc", func() {
+			It("returns all the instance metrics of the app ordered by timestamp desc", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(mtrcs).To(HaveLen(2))
 				Expect(*mtrcs[1]).To(gstruct.MatchAllFields(gstruct.Fields{
@@ -640,7 +634,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 			metric.InstanceIndex = 0
 			metric.CollectedAt = 222222
 			metric.Value = "654321"
-			metric.Timestamp = 111100
+			metric.Timestamp = 111110
 			err = idb.SaveMetric(metric)
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -701,3 +695,4 @@ var _ = Describe("InstancemetricsSqldb", func() {
 	})
 
 })
+

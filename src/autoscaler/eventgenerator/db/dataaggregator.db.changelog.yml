@@ -94,6 +94,11 @@ databaseChangeLog:
                   type: varchar(255)
                   constraints:
                     nullable: true
+        - addPrimaryKey:
+            columnNames: "app_id,metric_type,timestamp"
+            constraintName: "PK_appmetrics"
+            schemaName: autoscaler
+            tableName: app_metric
   - changeSet:
       id: 5
       author: tanmoypal

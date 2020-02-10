@@ -67,21 +67,14 @@ func (ldb *LockSQLDB) fetch(tx *sql.Tx) (*models.Lock, error) {
 		owner     string
 		timestamp time.Time
 		ttl       time.Duration
-		tquery    string
 	)
 
-	switch ldb.sqldb.DriverName() {
-	case "postgres":
-		tquery = "LOCK TABLE " + ldb.table + " IN ACCESS EXCLUSIVE MODE"
-	case "mysql":
-		tquery = "LOCK TABLE " + ldb.table + " write"
-	default:
-		return &models.Lock{}, nil
-	}
-
-	if _, err := tx.Exec(tquery); err != nil {
-		ldb.logger.Error("failed-to-set-table-level-lock", err)
-		return &models.Lock{}, err
+	if ldb.sqldb.DriverName() == "postgres" {
+		tquery := "LOCK TABLE " + ldb.table + " IN ACCESS EXCLUSIVE MODE"
+		if _, err := tx.Exec(tquery); err != nil {
+			ldb.logger.Error("failed-to-set-table-level-lock", err)
+			return &models.Lock{}, err
+		}
 	}
 
 	query := "SELECT owner,lock_timestamp,ttl FROM " + ldb.table + " LIMIT 1 FOR UPDATE"
@@ -275,3 +268,4 @@ func (ldb *LockSQLDB) transact(db *sqlx.DB, f func(tx *sql.Tx) error) error {
 
 	return err
 }
+

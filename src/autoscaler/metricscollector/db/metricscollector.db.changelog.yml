@@ -136,7 +136,12 @@ databaseChangeLog:
                   name: timestamp
                   type: bigint
                   constraints:
-                    nullable: false    
+                    nullable: false 
+        - addPrimaryKey:
+            columnNames: "appid,instanceindex,name,timestamp"
+            constraintName: "PK_appinstancemetrics"
+            schemaName: autoscaler
+            tableName: appinstancemetrics   
         - createIndex:
              columns:
              - column:

@@ -182,6 +182,11 @@ databaseChangeLog:
                   type: varchar(255)
                   constraints:
                     nullable: true
+        - addPrimaryKey:
+            columnNames: "appid,timestamp"
+            constraintName: "PK_scalinghistory"
+            schemaName: autoscaler
+            tableName: scalinghistory
         - createTable:
             tableName: scalingcooldown
             columns:
@@ -195,6 +200,11 @@ databaseChangeLog:
                   type: bigint
                   constraints:
                     nullable: false
+        - addPrimaryKey:
+            columnNames: "appid,expireat"
+            constraintName: "PK_scalingcooldown"
+            schemaName: autoscaler
+            tableName: scalingcooldown
   - changeSet:
       id: 6
       author: aqan213
@@ -235,3 +245,4 @@ databaseChangeLog:
                   type: integer
                   constraints:
                     nullable: false
+
