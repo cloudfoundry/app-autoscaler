@@ -10,12 +10,7 @@ import (
 func RegisterCollectors(registrar prometheus.Registerer, collectors []prometheus.Collector, includeDefault bool, logger lager.Logger) {
 
 	if includeDefault {
-		err := registrar.Register(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{
-			PidFn: func() (int, error) {
-				return os.Getpid(), nil
-			},
-			Namespace: "",
-		}))
+		err := registrar.Register(prometheus.NewProcessCollector(os.Getpid(), ""))
 		if err != nil {
 			logger.Error("Failed to register process collector", err)
 		}
