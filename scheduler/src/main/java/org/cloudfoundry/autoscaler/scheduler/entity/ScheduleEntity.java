@@ -19,8 +19,7 @@ public class ScheduleEntity {
 
 	@ApiModelProperty(hidden = true)
 	@Id
-	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "schedule_id_generator")
-	@SequenceGenerator(name = "schedule_id_generator", sequenceName = "schedule_id_sequence", allocationSize = 1)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Column(name = "schedule_id")
 	private Long id;
 

@@ -11,3 +11,14 @@ databaseChangeLog:
          relativeToChangelogFile: true
          splitStatements: true
          stripComments: true
+   - changeSet:
+      id: 2
+      author: aqan
+      changes:
+      - sqlFile:
+         dbms: mysql
+         encoding: utf8
+         path: quartz_tables_mysql.sql
+         relativeToChangelogFile: true
+         splitStatements: true
+         stripComments: true

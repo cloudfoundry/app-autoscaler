@@ -8,6 +8,10 @@ databaseChangeLog:
       name: policy_json.type
       value: text
       dbms: h2
+   - property:
+      name: policy_json.type
+      value: json
+      dbms: mysql
    - changeSet:
       id: 1
       author: pradyutsarma
