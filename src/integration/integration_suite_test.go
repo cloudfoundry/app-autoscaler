@@ -67,6 +67,8 @@ var (
 	appSummaryRegPath       = regexp.MustCompile(`^/v2/apps/.*/summary$`)
 	appInstanceRegPath      = regexp.MustCompile(`^/v2/apps/.*$`)
 	checkUserSpaceRegPath   = regexp.MustCompile(`^/v2/users/.+/spaces.*$`)
+	serviceInstanceRegPath  = regexp.MustCompile(`^/v2/service_instances/.*$`)
+	servicePlanRegPath      = regexp.MustCompile(`^/v2/service_plans/.*$`)
 	dbHelper                *sql.DB
 	fakeCCNOAAUAA           *ghttp.Server
 	messagesToSend          chan []byte
@@ -781,6 +783,26 @@ func startFakeCCNOAAUAA(instanceCount int) {
 			TotalResults int `json:"total_results"`
 		}{
 			1,
+		}))
+
+	type ServiceInstanceEntity struct {
+		ServicePlanGuid string `json:"service_plan_guid"`
+	}
+	fakeCCNOAAUAA.RouteToHandler("GET", serviceInstanceRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
+		struct {
+			ServiceInstanceEntity `json:"entity"`
+		}{
+			ServiceInstanceEntity{"cc-free-plan-id"},
+		}))
+
+	type ServicePlanEntity struct {
+		UniqueId string `json:"unique_id"`
+	}
+	fakeCCNOAAUAA.RouteToHandler("GET", servicePlanRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
+		struct {
+			ServicePlanEntity `json:"entity"`
+		}{
+			ServicePlanEntity{"autoscaler-free-plan-id"},
 		}))
 }
 func fakeMetricsPolling(appId string, memoryValue uint64, memQuota uint64) {
