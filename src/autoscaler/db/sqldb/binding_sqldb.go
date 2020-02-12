@@ -93,35 +93,49 @@ func (bdb *BindingSQLDB) CreateServiceInstance(serviceInstance models.ServiceIns
 }
 
 func (bdb *BindingSQLDB) GetServiceInstance(serviceInstanceId string) (*models.ServiceInstance, error) {
-	query := bdb.sqldb.Rebind("SELECT org_id, space_id, default_policy, default_policy_guid FROM service_instance WHERE service_instance_id = ?")
+	query := bdb.sqldb.Rebind("SELECT * FROM service_instance WHERE service_instance_id = ?")
 
-	rows, err := bdb.sqldb.Query(query, serviceInstanceId)
+	type serviceInstance struct {
+		ServiceInstanceId string         `db:"service_instance_id"`
+		OrgId             string         `db:"org_id"`
+		SpaceId           string         `db:"space_id"`
+		DefaultPolicy     sql.NullString `db:"default_policy"`
+		DefaultPolicyGuid sql.NullString `db:"default_policy_guid"`
+	}
+
+	result := serviceInstance{}
+	err := bdb.sqldb.Get(&result, query, serviceInstanceId)
 	if err != nil {
-		bdb.logger.Error("get-service-instance", err, lager.Data{"query": query, "serviceinstanceid": serviceInstanceId})
+		bdb.logger.Error("get-service-instance", err, lager.Data{"query": query, "serviceInstanceId": serviceInstanceId})
+		if err == sql.ErrNoRows {
+			return nil, db.ErrDoesNotExist
+		}
 		return nil, err
 	}
-	defer rows.Close()
 
-	if rows.Next() {
-		var (
-			existingOrgId             string
-			existingSpaceId           string
-			existingDefaultPolicy     sql.NullString
-			existingDefaultPolicyGuid sql.NullString
-		)
-		if err := rows.Scan(&existingOrgId, &existingSpaceId, &existingDefaultPolicy, &existingDefaultPolicyGuid); err != nil {
-			bdb.logger.Error("get-default-policy", err, lager.Data{"query": query, "serviceinstanceid": serviceInstanceId})
-			return nil, err
+	return &models.ServiceInstance{
+		ServiceInstanceId: result.ServiceInstanceId,
+		OrgId:             result.OrgId,
+		SpaceId:           result.SpaceId,
+		DefaultPolicy:     result.DefaultPolicy.String,
+		DefaultPolicyGuid: result.DefaultPolicyGuid.String,
+	}, nil
+}
+
+func (bdb *BindingSQLDB) GetServiceInstanceByAppId(appId string) (*models.ServiceInstance, error) {
+	query := bdb.sqldb.Rebind("SELECT service_instance_id FROM binding WHERE app_id = ?")
+
+	serviceInstanceId := ""
+	err := bdb.sqldb.Get(&serviceInstanceId, query, appId)
+	if err != nil {
+		bdb.logger.Error("get-service-binding-for-app-id", err, lager.Data{"query": query, "appId": appId})
+		if err == sql.ErrNoRows {
+			return nil, db.ErrDoesNotExist
 		}
-		return &models.ServiceInstance{
-			ServiceInstanceId: serviceInstanceId,
-			OrgId:             existingOrgId,
-			SpaceId:           existingSpaceId,
-			DefaultPolicy:     existingDefaultPolicy.String,
-			DefaultPolicyGuid: existingDefaultPolicyGuid.String,
-		}, nil
+		return nil, err
 	}
-	return nil, db.ErrDoesNotExist
+
+	return bdb.GetServiceInstance(serviceInstanceId)
 }
 
 func (bdb *BindingSQLDB) UpdateServiceInstance(serviceInstance models.ServiceInstance) error {

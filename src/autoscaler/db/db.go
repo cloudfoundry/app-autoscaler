@@ -63,6 +63,7 @@ type BindingDB interface {
 	DatabaseStatus
 	CreateServiceInstance(serviceInstance models.ServiceInstance) error
 	GetServiceInstance(serviceInstanceId string) (*models.ServiceInstance, error)
+	GetServiceInstanceByAppId(appId string) (*models.ServiceInstance, error)
 	UpdateServiceInstance(serviceInstance models.ServiceInstance) error
 	DeleteServiceInstance(serviceInstanceId string) error
 	CreateServiceBinding(bindingId string, serviceInstanceId string, appId string) error
