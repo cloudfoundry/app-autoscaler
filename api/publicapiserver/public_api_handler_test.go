@@ -110,7 +110,7 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should fail with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error retrieving scaling policy"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error retrieving scaling policy"}`))
 			})
 		})
 
@@ -193,7 +193,7 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should fail with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error saving policy"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error saving policy"}`))
 			})
 		})
 
@@ -252,7 +252,7 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should fail with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error deleting policy"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error deleting policy"}`))
 			})
 		})
 
@@ -264,7 +264,7 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should fail with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error deleting schedules"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error deleting schedules"}`))
 			})
 		})
 
@@ -1673,7 +1673,7 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should fails with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error creating credential"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error creating credential"}`))
 			})
 		})
 		Context("When successfully save data to policydb", func() {
@@ -1708,7 +1708,7 @@ var _ = Describe("PublicApiHandler", func() {
 			})
 			It("should fails with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError))
-				Expect(resp.Body.String()).To(Equal(`{"code":"Interal-Server-Error","message":"Error deleting credential"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error deleting credential"}`))
 			})
 		})
 		Context("When successfully delete data from policydb", func() {
