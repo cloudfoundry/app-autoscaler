@@ -255,6 +255,7 @@ var _ = Describe("BindingSqldb", func() {
 			bdb, err = NewBindingSQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
 
+			cleanServiceBindingTable()
 			cleanServiceInstanceTable()
 		})
 		AfterEach(func() {
@@ -293,6 +294,42 @@ var _ = Describe("BindingSqldb", func() {
 			})
 		})
 
+	})
+
+	Describe("GetServiceInstanceByAppId", func() {
+		var retrievedServiceInstance *models.ServiceInstance
+		BeforeEach(func() {
+			bdb, err = NewBindingSQLDB(dbConfig, logger)
+			Expect(err).NotTo(HaveOccurred())
+
+			cleanServiceBindingTable()
+			cleanServiceInstanceTable()
+		})
+		AfterEach(func() {
+			err = bdb.Close()
+			Expect(err).NotTo(HaveOccurred())
+		})
+		JustBeforeEach(func() {
+			retrievedServiceInstance, err = bdb.GetServiceInstanceByAppId(testAppId)
+		})
+		Context("when the app is not bound to a service instance", func() {
+			It("should return an error", func() {
+				Expect(err).To(HaveOccurred())
+				Expect(err).To(Equal(db.ErrDoesNotExist))
+				Expect(retrievedServiceInstance).To(BeNil())
+			})
+		})
+
+		Context("when the app is bound to a service instance", func() {
+			BeforeEach(func() {
+				err = bdb.CreateServiceInstance(models.ServiceInstance{testInstanceId, testOrgGuid, testSpaceGuid, policyJsonStr, policyGuid})
+				Expect(err).NotTo(HaveOccurred())
+				err = bdb.CreateServiceBinding(testBindingId, testInstanceId, testAppId)
+			})
+			It("should return what was created", func() {
+				Expect(retrievedServiceInstance).To(Equal(&models.ServiceInstance{testInstanceId, testOrgGuid, testSpaceGuid, policyJsonStr, policyGuid}))
+			})
+		})
 	})
 
 	Describe("CreateServiceBinding", func() {

@@ -92,7 +92,7 @@ var _ = BeforeSuite(func() {
 	fakeCFClient = &fakes.FakeCFClient{}
 	httpStatusCollector := &fakes.FakeHTTPStatusCollector{}
 	fakeRateLimiter = &fakes.FakeLimiter{}
-	httpServer, err := publicapiserver.NewPublicApiServer(lagertest.NewTestLogger("public_apiserver"), conf, fakePolicyDB, checkBindingFunc, fakeCFClient, httpStatusCollector, fakeRateLimiter)
+	httpServer, err := publicapiserver.NewPublicApiServer(lagertest.NewTestLogger("public_apiserver"), conf, fakePolicyDB, checkBindingFunc, fakeCFClient, httpStatusCollector, fakeRateLimiter, nil)
 	Expect(err).NotTo(HaveOccurred())
 
 	serverUrl, err = url.Parse("http://127.0.0.1:" + strconv.Itoa(apiPort))

@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"reflect"
 	"strconv"
 
 	"autoscaler/api/config"
@@ -26,6 +27,7 @@ type PublicApiHandler struct {
 	logger                 lager.Logger
 	conf                   *config.Config
 	policydb               db.PolicyDB
+	bindingdb              db.BindingDB
 	scalingEngineClient    *http.Client
 	metricsCollectorClient *http.Client
 	eventGeneratorClient   *http.Client
@@ -33,7 +35,7 @@ type PublicApiHandler struct {
 	schedulerUtil          *schedulerutil.SchedulerUtil
 }
 
-func NewPublicApiHandler(logger lager.Logger, conf *config.Config, policydb db.PolicyDB) *PublicApiHandler {
+func NewPublicApiHandler(logger lager.Logger, conf *config.Config, policydb db.PolicyDB, bindingdb db.BindingDB) *PublicApiHandler {
 	seClient, err := helpers.CreateHTTPClient(&conf.ScalingEngine.TLSClientCerts)
 	if err != nil {
 		logger.Error("Failed to create http client for ScalingEngine", err, lager.Data{"scalingengine": conf.ScalingEngine.TLSClientCerts})
@@ -53,6 +55,7 @@ func NewPublicApiHandler(logger lager.Logger, conf *config.Config, policydb db.P
 		logger:                 logger,
 		conf:                   conf,
 		policydb:               policydb,
+		bindingdb:              bindingdb,
 		scalingEngineClient:    seClient,
 		metricsCollectorClient: mcClient,
 		eventGeneratorClient:   egClient,
@@ -177,6 +180,39 @@ func (h *PublicApiHandler) DetachScalingPolicy(w http.ResponseWriter, r *http.Re
 		writeErrorResponse(w, http.StatusInternalServerError, "Error deleting schedules")
 		return
 	}
+
+	if h.bindingdb != nil && !reflect.ValueOf(h.bindingdb).IsNil() {
+		// brokered offering: check if there's a default policy that could apply
+		serviceinstance, err := h.bindingdb.GetServiceInstanceByAppId(appId)
+		if err != nil {
+			h.logger.Error("Failed to find service instance for app", err, lager.Data{"appId": appId})
+			writeErrorResponse(w, http.StatusInternalServerError, "Error retrieving service instance")
+			return
+		}
+		if serviceinstance.DefaultPolicy != "" {
+			policyStr := serviceinstance.DefaultPolicy
+			policyGuidStr := serviceinstance.DefaultPolicyGuid
+			h.logger.Info("saving default policy json for app", lager.Data{"policy": policyStr})
+			err = h.policydb.SaveAppPolicy(appId, policyStr, policyGuidStr)
+			if err != nil {
+				h.logger.Error("failed to save policy", err, lager.Data{"appId": appId, "policy": policyStr})
+				writeErrorResponse(w, http.StatusInternalServerError, "Error attaching the default policy")
+				return
+			}
+
+			h.logger.Info("creating/updating schedules", lager.Data{"policy": policyStr})
+			err = h.schedulerUtil.CreateOrUpdateSchedule(appId, policyStr, policyGuidStr)
+			//while there is synchronization between policy and schedule, so creating schedule error does not break
+			//the whole creating binding process
+			if err != nil {
+				h.logger.Error("failed to create/update schedules", err, lager.Data{"policy": policyStr})
+			}
+
+		}
+	}
+	// find via the app id the binding -> service instance
+	// default policy? then apply that
+
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("{}"))
 }
