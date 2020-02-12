@@ -61,14 +61,17 @@ func NewPublicApiHandler(logger lager.Logger, conf *config.Config, policydb db.P
 	}
 }
 
+func writeErrorResponse(w http.ResponseWriter, statusCode int, message string) {
+	handlers.WriteJSONResponse(w, statusCode, models.ErrorResponse{
+		Code:    http.StatusText(statusCode),
+		Message: message})
+}
+
 func (h *PublicApiHandler) GetScalingPolicy(w http.ResponseWriter, r *http.Request, vars map[string]string) {
 	appId := vars["appId"]
 	if appId == "" {
 		h.logger.Error("AppId is missing", nil, nil)
-		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Code:    "Bad Request",
-			Message: "AppId is required",
-		})
+		writeErrorResponse(w, http.StatusBadRequest, "AppId is required")
 		return
 	}
 
@@ -77,17 +80,13 @@ func (h *PublicApiHandler) GetScalingPolicy(w http.ResponseWriter, r *http.Reque
 	scalingPolicy, err := h.policydb.GetAppPolicy(appId)
 	if err != nil {
 		h.logger.Error("Failed to retrieve scaling policy from database", err, lager.Data{"appId": appId, "err": err})
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: "Error retrieving scaling policy"})
+		writeErrorResponse(w, http.StatusInternalServerError, "Error retrieving scaling policy")
 		return
 	}
 
 	if scalingPolicy == nil {
 		h.logger.Info("policy doesn't exist", lager.Data{"appId": appId})
-		handlers.WriteJSONResponse(w, http.StatusNotFound, models.ErrorResponse{
-			Code:    "Not Found",
-			Message: "Policy Not Found"})
+		writeErrorResponse(w, http.StatusNotFound, "Policy Not Found")
 		return
 	}
 
@@ -97,9 +96,7 @@ func (h *PublicApiHandler) GetScalingPolicy(w http.ResponseWriter, r *http.Reque
 	err = jsonEncoder.Encode(scalingPolicy)
 	if err != nil {
 		h.logger.Error("Failed to json encode scaling policy", err, lager.Data{"appId": appId, "policy": scalingPolicy})
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: "Error encode scaling policy"})
+		writeErrorResponse(w, http.StatusInternalServerError, "Error encode scaling policy")
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
@@ -112,10 +109,7 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 	appId := vars["appId"]
 	if appId == "" {
 		h.logger.Error("AppId is missing", nil, nil)
-		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Code:    "Bad Request",
-			Message: "AppId is required",
-		})
+		writeErrorResponse(w, http.StatusBadRequest, "AppId is required")
 		return
 	}
 
@@ -124,9 +118,7 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 	policyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		h.logger.Error("Failed to read request body", err, lager.Data{"appId": appId})
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: "Failed to read request body"})
+		writeErrorResponse(w, http.StatusInternalServerError, "Failed to read request body")
 		return
 	}
 
@@ -142,9 +134,7 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 	policyGuid, err := uuid.NewV4()
 	if err != nil {
 		h.logger.Error("Failed to generate policy guid", err, nil)
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: "Error generating policy guid"})
+		writeErrorResponse(w, http.StatusInternalServerError, "Error generating policy guid")
 		return
 	}
 
@@ -152,9 +142,7 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 	err = h.policydb.SaveAppPolicy(appId, policyStr, policyGuid.String())
 	if err != nil {
 		h.logger.Error("Failed to save policy", err, nil)
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: "Error saving policy"})
+		writeErrorResponse(w, http.StatusInternalServerError, "Error saving policy")
 		return
 	}
 
@@ -171,10 +159,7 @@ func (h *PublicApiHandler) DetachScalingPolicy(w http.ResponseWriter, r *http.Re
 	appId := vars["appId"]
 	if appId == "" {
 		h.logger.Error("AppId is missing", nil, nil)
-		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Code:    "Bad Request",
-			Message: "AppId is required",
-		})
+		writeErrorResponse(w, http.StatusBadRequest, "AppId is required")
 		return
 	}
 
@@ -182,18 +167,14 @@ func (h *PublicApiHandler) DetachScalingPolicy(w http.ResponseWriter, r *http.Re
 	err := h.policydb.DeletePolicy(appId)
 	if err != nil {
 		h.logger.Error("Failed to delete policy from database", err, nil)
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: "Error deleting policy"})
+		writeErrorResponse(w, http.StatusInternalServerError, "Error deleting policy")
 		return
 	}
 	h.logger.Info("Deleting schedules", lager.Data{"appId": appId})
 	err = h.schedulerUtil.DeleteSchedule(appId)
 	if err != nil {
 		h.logger.Error("Failed to delete schedule", err, nil)
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: "Error deleting schedules"})
+		writeErrorResponse(w, http.StatusInternalServerError, "Error deleting schedules")
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -208,10 +189,7 @@ func (h *PublicApiHandler) GetScalingHistories(w http.ResponseWriter, r *http.Re
 	parameters, err := parseParameter(r, vars)
 	if err != nil {
 		h.logger.Error("Bad Request", err, lager.Data{"appId": appId})
-		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Code:    "Bad Request",
-			Message: err.Error(),
-		})
+		writeErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -222,34 +200,26 @@ func (h *PublicApiHandler) GetScalingHistories(w http.ResponseWriter, r *http.Re
 	resp, err := h.scalingEngineClient.Get(url)
 	if err != nil {
 		h.logger.Error("Failed to retrieve scaling history from scaling engine", err, lager.Data{"url": url})
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: "Error retrieving scaling history from scaling engine"})
+		writeErrorResponse(w, http.StatusInternalServerError, "Error retrieving scaling history from scaling engine")
 		return
 	}
 	defer resp.Body.Close()
 
 	responseData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		h.logger.Error("Error occured during parsing scaling histories result", err, lager.Data{"url": url})
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: "Error parsing scaling history from scaling engine"})
+		h.logger.Error("Error occurred during parsing scaling histories result", err, lager.Data{"url": url})
+		writeErrorResponse(w, http.StatusInternalServerError, "Error parsing scaling history from scaling engine")
 		return
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		h.logger.Error("Error occured during getting scaling histories", nil, lager.Data{"statusCode": resp.StatusCode, "body": string(responseData)})
-		handlers.WriteJSONResponse(w, resp.StatusCode, models.ErrorResponse{
-			Code:    http.StatusText(resp.StatusCode),
-			Message: string(responseData)})
+		h.logger.Error("Error occurred during getting scaling histories", nil, lager.Data{"statusCode": resp.StatusCode, "body": string(responseData)})
+		writeErrorResponse(w, resp.StatusCode, string(responseData))
 		return
 	}
 	paginatedResponse, err := paginateResource(responseData, parameters, r)
 	if err != nil {
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: err.Error()})
+		handlers.WriteJSONResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -265,18 +235,12 @@ func (h *PublicApiHandler) GetAggregatedMetricsHistories(w http.ResponseWriter, 
 	parameters, err := parseParameter(r, vars)
 	if err != nil {
 		h.logger.Error("Bad Request", err, lager.Data{"appId": appId})
-		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Code:    "Bad Request",
-			Message: err.Error(),
-		})
+		writeErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	if metricType == "" {
 		h.logger.Error("Bad Request", nil, lager.Data{"appId": appId})
-		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Code:    "Bad Request",
-			Message: "Metrictype is required",
-		})
+		writeErrorResponse(w, http.StatusBadRequest, "Metrictype is required")
 		return
 	}
 
@@ -287,34 +251,26 @@ func (h *PublicApiHandler) GetAggregatedMetricsHistories(w http.ResponseWriter, 
 	resp, err := h.eventGeneratorClient.Get(url)
 	if err != nil {
 		h.logger.Error("Failed to retrieve metrics history from eventgenerator", err, lager.Data{"url": url})
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: "Error retrieving metrics history from eventgenerator"})
+		writeErrorResponse(w, http.StatusInternalServerError, "Error retrieving metrics history from eventgenerator")
 		return
 	}
 	defer resp.Body.Close()
 
 	responseData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		h.logger.Error("Error occured during parsing metrics histories result", err, lager.Data{"url": url})
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: "Error parsing metric history from eventgenerator"})
+		h.logger.Error("Error occurred during parsing metrics histories result", err, lager.Data{"url": url})
+		writeErrorResponse(w, http.StatusInternalServerError, "Error parsing metric history from eventgenerator")
 		return
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		h.logger.Error("Error occured during getting metric histories", nil, lager.Data{"statusCode": resp.StatusCode, "body": string(responseData)})
-		handlers.WriteJSONResponse(w, resp.StatusCode, models.ErrorResponse{
-			Code:    http.StatusText(resp.StatusCode),
-			Message: string(responseData)})
+		h.logger.Error("Error occurred during getting metric histories", nil, lager.Data{"statusCode": resp.StatusCode, "body": string(responseData)})
+		writeErrorResponse(w, resp.StatusCode, string(responseData))
 		return
 	}
 	paginatedResponse, err := paginateResource(responseData, parameters, r)
 	if err != nil {
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: err.Error()})
+		writeErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -332,18 +288,12 @@ func (h *PublicApiHandler) GetInstanceMetricsHistories(w http.ResponseWriter, r 
 	parameters, err := parseParameter(r, vars)
 	if err != nil {
 		h.logger.Error("Bad Request", err, lager.Data{"appId": appId})
-		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Code:    "Bad Request",
-			Message: err.Error(),
-		})
+		writeErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 	if metricType == "" {
 		h.logger.Error("Bad Request", nil, lager.Data{"appId": appId})
-		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Code:    "Bad Request",
-			Message: "Metrictype is required",
-		})
+		writeErrorResponse(w, http.StatusBadRequest, "Metrictype is required")
 		return
 	}
 	if instanceIndex != "" {
@@ -357,34 +307,26 @@ func (h *PublicApiHandler) GetInstanceMetricsHistories(w http.ResponseWriter, r 
 	resp, err := h.metricsCollectorClient.Get(url)
 	if err != nil {
 		h.logger.Error("Failed to retrieve metrics history from metricscollector", err, lager.Data{"url": url})
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: "Error retrieving metrics history from metricscollector"})
+		writeErrorResponse(w, http.StatusInternalServerError, "Error retrieving metrics history from metricscollector")
 		return
 	}
 	defer resp.Body.Close()
 
 	responseData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		h.logger.Error("Error occured during parsing metrics histories result", err, lager.Data{"url": url})
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: "Error parsing metric history from metricscollector"})
+		h.logger.Error("Error occurred during parsing metrics histories result", err, lager.Data{"url": url})
+		writeErrorResponse(w, http.StatusInternalServerError, "Error parsing metric history from metricscollector")
 		return
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		h.logger.Error("Error occured during getting metric histories", nil, lager.Data{"statusCode": resp.StatusCode, "body": string(responseData)})
-		handlers.WriteJSONResponse(w, resp.StatusCode, models.ErrorResponse{
-			Code:    http.StatusText(resp.StatusCode),
-			Message: string(responseData)})
+		h.logger.Error("Error occurred during getting metric histories", nil, lager.Data{"statusCode": resp.StatusCode, "body": string(responseData)})
+		writeErrorResponse(w, resp.StatusCode, string(responseData))
 		return
 	}
 	paginatedResponse, err := paginateResource(responseData, parameters, r)
 	if err != nil {
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: err.Error()})
+		writeErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -395,9 +337,7 @@ func (h *PublicApiHandler) GetApiInfo(w http.ResponseWriter, r *http.Request, va
 	info, err := ioutil.ReadFile(h.conf.InfoFilePath)
 	if err != nil {
 		h.logger.Error("Failed to info file", err, lager.Data{"info-file-path": h.conf.InfoFilePath})
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: "Failed to load info"})
+		writeErrorResponse(w, http.StatusInternalServerError, "Failed to load info")
 		return
 	}
 	w.Write([]byte(info))
@@ -411,19 +351,14 @@ func (h *PublicApiHandler) CreateCredential(w http.ResponseWriter, r *http.Reque
 	appId := vars["appId"]
 	if appId == "" {
 		h.logger.Error("AppId is missing", nil, nil)
-		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Code:    "Bad Request",
-			Message: "AppId is required",
-		})
+		writeErrorResponse(w, http.StatusBadRequest, "AppId is required")
 		return
 	}
 	var userProvidedCredential *models.Credential
 	bodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		h.logger.Error("Failed to read user provided credential request body", err, lager.Data{"appId": appId})
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: "Error creating credential"})
+		writeErrorResponse(w, http.StatusInternalServerError, "Error creating credential")
 		return
 	}
 	if len(bodyBytes) > 0 {
@@ -431,17 +366,12 @@ func (h *PublicApiHandler) CreateCredential(w http.ResponseWriter, r *http.Reque
 		err = json.Unmarshal(bodyBytes, userProvidedCredential)
 		if err != nil {
 			h.logger.Error("Failed to unmarshal user provided credential", err, lager.Data{"appId": appId, "body": bodyBytes})
-			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
-				Code:    "Bad Request",
-				Message: "Invalid credential format"})
+			writeErrorResponse(w, http.StatusBadRequest, "Invalid credential format")
 			return
 		}
 		if !(userProvidedCredential.Username != "" && userProvidedCredential.Password != "") {
 			h.logger.Info("Username or password is missing", lager.Data{"appId": appId, "userProvidedCredential": userProvidedCredential})
-			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
-				Code:    "Bad Request",
-				Message: "Username and password are both required",
-			})
+			writeErrorResponse(w, http.StatusBadRequest, "Username and password are both required")
 			return
 		}
 	}
@@ -450,9 +380,7 @@ func (h *PublicApiHandler) CreateCredential(w http.ResponseWriter, r *http.Reque
 	cred, err := custom_metrics_cred_helper.CreateCredential(appId, userProvidedCredential, h.policydb, custom_metrics_cred_helper.MaxRetry)
 	if err != nil {
 		h.logger.Error("Failed to create credential", err, lager.Data{"appId": appId})
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: "Error creating credential"})
+		writeErrorResponse(w, http.StatusInternalServerError, "Error creating credential")
 		return
 	}
 	handlers.WriteJSONResponse(w, http.StatusOK, struct {
@@ -470,10 +398,7 @@ func (h *PublicApiHandler) DeleteCredential(w http.ResponseWriter, r *http.Reque
 	appId := vars["appId"]
 	if appId == "" {
 		h.logger.Error("AppId is missing", nil, nil)
-		handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
-			Code:    "Bad Request",
-			Message: "AppId is required",
-		})
+		writeErrorResponse(w, http.StatusBadRequest, "AppId is required")
 		return
 	}
 
@@ -481,9 +406,7 @@ func (h *PublicApiHandler) DeleteCredential(w http.ResponseWriter, r *http.Reque
 	err := custom_metrics_cred_helper.DeleteCredential(appId, h.policydb, custom_metrics_cred_helper.MaxRetry)
 	if err != nil {
 		h.logger.Error("Failed to delete credential", err, lager.Data{"appId": appId})
-		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-			Code:    "Interal-Server-Error",
-			Message: "Error deleting credential"})
+		writeErrorResponse(w, http.StatusInternalServerError, "Error deleting credential")
 		return
 	}
 	handlers.WriteJSONResponse(w, http.StatusOK, nil)
