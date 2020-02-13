@@ -372,7 +372,7 @@ var _ = Describe("PublicApiServer", func() {
 				})
 				It("should succeed", func() {
 					verifyResponse(httpClient, serverUrl, "/v1/apps/"+TEST_APP_ID+"/policy",
-						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodPut, policy, http.StatusOK)
+						map[string]string{"Authorization": TEST_USER_TOKEN}, http.MethodDelete, policy, http.StatusOK)
 				})
 			})
 
@@ -424,9 +424,9 @@ func verifyResponse(httpClient *http.Client, serverUrl *url.URL, path string, he
 			req.Header.Set(headerName, headerValue)
 		}
 	}
-	Expect(err).NotTo(HaveOccurred())
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	rsp, err := httpClient.Do(req)
-	Expect(err).NotTo(HaveOccurred())
-	Expect(rsp.StatusCode).To(Equal(expectResponseStatusCode))
+	ExpectWithOffset(1, err).NotTo(HaveOccurred())
+	ExpectWithOffset(1, rsp.StatusCode).To(Equal(expectResponseStatusCode))
 
 }
