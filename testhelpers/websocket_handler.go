@@ -30,7 +30,10 @@ func NewWebsocketHandler(m chan []byte, pingPongChan chan int, keepAlive time.Du
 func (h *WebsocketHandler) CloseWSConnection() {
 	h.conLock.Lock()
 	defer h.conLock.Unlock()
-	h.wsConn.Close()
+	if h.wsConn != nil {
+		h.wsConn.Close()
+
+	}
 }
 func (h *WebsocketHandler) ServeWebsocket(rw http.ResponseWriter, r *http.Request) {
 	upgrader := websocket.Upgrader{
