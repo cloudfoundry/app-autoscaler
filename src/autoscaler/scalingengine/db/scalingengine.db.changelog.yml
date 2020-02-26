@@ -108,7 +108,6 @@ databaseChangeLog:
   - changeSet:
         id: 4
         author: cdlliuy
-        dbms: postgresql
         changes:
           - createTable:
               tableName: scalingengine_lock
