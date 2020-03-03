@@ -57,12 +57,30 @@ databaseChangeLog:
                       nullable: false
   - changeSet:
       id: 3
+      author: tanmoypal
+      dbms: postgres
+      changes:
+        - createIndex:
+             columns:
+              - column:
+                  name: app_id
+                  type: varchar(255)
+              - column:
+                  name: metric_type
+                  type: varchar(100)
+              - column:
+                  name: timestamp
+                  type: bigint
+             indexName: index_app_metrics
+             tableName: app_metric
+  - changeSet:
+      id: 4
       author: byang
       changes:
         - dropTable:
             tableName: eg_lock
   - changeSet:
-      id: 4
+      id: 5
       author: aqan213
       dbms: mysql
       changes:
@@ -100,8 +118,9 @@ databaseChangeLog:
             schemaName: autoscaler
             tableName: app_metric
   - changeSet:
-      id: 5
-      author: tanmoypal
+      id: 6
+      author: aqan213
+      dbms: mysql
       changes:
         - createIndex:
              columns:

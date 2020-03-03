@@ -14,12 +14,12 @@ var _ = Describe("Helper", func() {
 		database   *Database
 	)
 	
-	Describe("Connection", func() {
+	Describe("GetConnection", func() {
 		
 		JustBeforeEach(func() {
-			database, err = Connection(dbUrl)
+			database, err = GetConnection(dbUrl)
 		})
-		Context("when mysql tls is preferred", func() {
+		Context("when mysql query parameters are provided", func() {
 			BeforeEach(func() {
 				dbUrl="root@tcp(localhost:3306)/autoscaler?tls=preferred"
 			})
@@ -32,13 +32,40 @@ var _ = Describe("Helper", func() {
 			})
 		})
 
-		Context("when mysql dbburl is invalid", func() {
+		Context("when mysql query parameters are not provided", func() {
 			BeforeEach(func() {
-				dbUrl="root@tcp(localhost:3306)/autoscaler?tls=custom"
+				dbUrl="root@tcp(localhost:3306)/autoscaler"
+			})
+			It("returns mysql database object", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(database).To(Equal(&Database{
+					DriverName: "mysql",
+					DSN: "root@tcp(localhost:3306)/autoscaler?parseTime=true",
+				}))
+			})
+
+		})
+
+		 Context("when need to verify mysql server, cert is provided ", func() {
+		 	BeforeEach(func() {
+		 		dbUrl="root@tcp(localhost:3306)/autoscaler?tls=verify-ca&sslrootcert=/tmp/ca.pem"
+		 	})
+		 	It("returns mysql database connection", func() {
+				Expect(err).NotTo(HaveOccurred())
+				Expect(database).To(Equal(&Database{
+                    DriverName: "mysql",
+                    DSN: "root@tcp(localhost:3306)/autoscaler?parseTime=true&tls=verify-ca",
+                }))
+		 	})
+		 })
+
+		Context("when need to verify mysql server, cert is not provided ", func() {
+			BeforeEach(func() {
+				dbUrl="root@tcp(localhost:3306)/autoscaler?tls=verify-ca"
 			})
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("sql ca file is not provided when tls is a custom key"))
+				Expect(err.Error()).To(ContainSubstring("sql ca file is not provided"))
 			})
 		})
 

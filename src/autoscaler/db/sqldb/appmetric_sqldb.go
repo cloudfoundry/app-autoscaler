@@ -22,7 +22,7 @@ type AppMetricSQLDB struct {
 
 func NewAppMetricSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*AppMetricSQLDB, error) {
 	var err error
-	database, err := db.Connection(dbConfig.URL)
+	database, err := db.GetConnection(dbConfig.URL)
 	if err != nil {
 		return nil, err
 	}

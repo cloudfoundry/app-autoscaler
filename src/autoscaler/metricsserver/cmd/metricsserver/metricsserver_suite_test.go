@@ -45,7 +45,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	ms, err := gexec.Build("autoscaler/metricsserver/cmd/metricsserver", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
-	database, err := db.Connection(os.Getenv("DBURL"))
+	database, err := db.GetConnection(os.Getenv("DBURL"))
 	Expect(err).NotTo(HaveOccurred())
 
 	msDB, err := sqlx.Open(database.DriverName, database.DSN)

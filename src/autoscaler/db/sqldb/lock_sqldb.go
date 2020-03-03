@@ -22,7 +22,7 @@ type LockSQLDB struct {
 }
 
 func NewLockSQLDB(dbConfig db.DatabaseConfig, table string, logger lager.Logger) (*LockSQLDB, error) {
-	database, err := db.Connection(dbConfig.URL)
+	database, err := db.GetConnection(dbConfig.URL)
 	if err != nil {
 		return nil, err
 	}

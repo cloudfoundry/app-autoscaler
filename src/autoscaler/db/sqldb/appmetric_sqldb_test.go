@@ -8,7 +8,8 @@ import (
 	"autoscaler/db"
 	. "autoscaler/db/sqldb"
 	"autoscaler/models"
-
+    "github.com/lib/pq"
+	"github.com/go-sql-driver/mysql"
 	"code.cloudfoundry.org/lager"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -53,8 +54,24 @@ var _ = Describe("AppMetricSQLDB", func() {
 				Expect(err).NotTo(HaveOccurred())
 			}
 		})
-
-
+        Context("when db url is not correct", func() {
+			BeforeEach(func() {
+				dbConfig.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
+			})
+			It("should throw an error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&pq.Error{}))
+			})
+		})
+		
+		Context("when mysql db url is not correct", func() {
+            BeforeEach(func() {
+                dbConfig.URL = "not-exist-user:not-exist-password@tcp(localhost)/autoscaler?tls=false"
+            })
+            It("should throw an error", func() {
+                Expect(err).To(BeAssignableToTypeOf(&mysql.MySQLError{}))
+                })
+		})
+		
 		Context("when db url is correct", func() {
 			It("should not error", func() {
 				Expect(err).NotTo(HaveOccurred())

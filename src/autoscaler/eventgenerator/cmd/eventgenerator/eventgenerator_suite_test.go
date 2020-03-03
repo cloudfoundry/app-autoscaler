@@ -115,7 +115,7 @@ var _ = SynchronizedAfterSuite(func() {
 })
 
 func initDB() {
-	database, err := db.Connection(os.Getenv("DBURL"))
+	database, err := db.GetConnection(os.Getenv("DBURL"))
 	Expect(err).NotTo(HaveOccurred())
 
 	egDB, err := sqlx.Open(database.DriverName, database.DSN)

@@ -33,7 +33,7 @@ var _ = BeforeSuite(func() {
 	if dbUrl == "" {
 		Fail("environment variable $DBURL is not set")
 	}
-	database, err := db.Connection(dbUrl)
+	database, err := db.GetConnection(dbUrl)
 	if err != nil {
 		Fail("failed to parse database connection: "+ err.Error())
 	}

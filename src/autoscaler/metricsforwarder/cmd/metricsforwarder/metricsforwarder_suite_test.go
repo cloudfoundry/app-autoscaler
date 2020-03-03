@@ -52,7 +52,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	mf, err := gexec.Build("autoscaler/metricsforwarder/cmd/metricsforwarder", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
-	database, err := db.Connection(os.Getenv("DBURL"))
+	database, err := db.GetConnection(os.Getenv("DBURL"))
 	Expect(err).NotTo(HaveOccurred())
 
 	policyDB, err := sqlx.Open(database.DriverName, database.DSN)

@@ -19,7 +19,7 @@ type BindingSQLDB struct {
 }
 
 func NewBindingSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*BindingSQLDB, error) {
-	database, err := db.Connection(dbConfig.URL)
+	database, err := db.GetConnection(dbConfig.URL)
 	if err != nil {
 		return nil, err
 	}

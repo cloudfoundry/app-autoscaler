@@ -200,7 +200,7 @@ func (pr *OperatorRunner) KillWithFire() {
 }
 
 func (pr *OperatorRunner) ClearLockDatabase() {
-	database, err := db.Connection(os.Getenv("DBURL"))
+	database, err := db.GetConnection(os.Getenv("DBURL"))
 	Expect(err).NotTo(HaveOccurred())
 
 	lockDB, err := sql.Open(database.DriverName, database.DSN)

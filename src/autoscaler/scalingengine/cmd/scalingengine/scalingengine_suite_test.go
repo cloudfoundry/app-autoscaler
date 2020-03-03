@@ -108,7 +108,7 @@ var _ = SynchronizedBeforeSuite(
 
 		configFile = writeConfig(&conf)
 
-		database, err := db.Connection(os.Getenv("DBURL"))
+		database, err := db.GetConnection(os.Getenv("DBURL"))
 		Expect(err).NotTo(HaveOccurred())
 
 		testDB, err := sqlx.Open(database.DriverName, database.DSN)

@@ -119,10 +119,10 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		Fail("environment variable $DBURL is not set")
 	}
 
-	database, err := db.Connection(dbUrl)
-    Expect(err).NotTo(HaveOccurred())
-
-    dbHelper, err = sqlx.Open(database.DriverName, database.DSN)
+	database, err := db.GetConnection(dbUrl)
+	Expect(err).NotTo(HaveOccurred())
+	
+	dbHelper, err = sqlx.Open(database.DriverName, database.DSN)
 	Expect(err).NotTo(HaveOccurred())
 
 	clearDatabase()
@@ -137,10 +137,10 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	Expect(err).NotTo(HaveOccurred())
 
 	dbUrl = os.Getenv("DBURL")
-	database, err := db.Connection(dbUrl)
-    Expect(err).NotTo(HaveOccurred())
-
-    dbHelper, err = sqlx.Open(database.DriverName, database.DSN)
+	database, err := db.GetConnection(dbUrl)
+	Expect(err).NotTo(HaveOccurred())
+	
+	dbHelper, err = sqlx.Open(database.DriverName, database.DSN)
 	Expect(err).NotTo(HaveOccurred())
 
 	LOGLEVEL = os.Getenv("LOGLEVEL")

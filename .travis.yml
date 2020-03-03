@@ -59,11 +59,13 @@ jobs:
       script:
         # Unit test
         - pushd src/autoscaler
+        - sudo cp /var/lib/mysql/ca.pem /tmp/ca.pem
         - export DBURL="postgres://postgres@localhost/autoscaler?sslmode=disable"
         - ginkgo -r -race -randomizeAllSpecs
         - export DBURL="root@tcp(localhost)/autoscaler?tls=false"
         - ginkgo -r -race -randomizeAllSpecs
         - popd
+        - sudo rm /tmp/ca.pem
         - pushd scheduler
         - mvn test
         - mvn test -Dspring.profiles.active=mysql

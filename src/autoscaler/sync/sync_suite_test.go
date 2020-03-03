@@ -31,7 +31,7 @@ var _ = BeforeSuite(func() {
 		Fail("environment variable $DBURL is not set")
 	}
 
-	database, e := db.Connection(dbUrl)
+	database, e := db.GetConnection(dbUrl)
 	if e != nil {
 		Fail("failed to get database URL and drivername: " + e.Error())
 	}
