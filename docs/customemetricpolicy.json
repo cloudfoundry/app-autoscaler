@@ -1,0 +1,13 @@
+{
+  "instance_min_count": 1,
+  "instance_max_count": 5,
+  "scaling_rules": [
+    {
+      "metric_type": "custom",
+      "threshold": 100,
+      "operator": ">",
+      "adjustment": "+1"
+    }
+  ]
+}
+
