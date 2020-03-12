@@ -353,12 +353,14 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 				})
 
 				It("creates a policy and associated schedules", func() {
+					By("setting the default policy on apps without an explicit one")
 					checkApiServerContent(appId, defaultPolicy, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
 					assertScheduleContents(appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})
 
 					checkApiServerContent(app2Id, defaultPolicy, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
 					assertScheduleContents(app2Id, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})
 
+					By("setting the provided explicit policy")
 					checkApiServerContent(app3Id, secondPolicy, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
 					assertScheduleContents(app3Id, http.StatusOK, map[string]int{"recurring_schedule": 2, "specific_date": 1})
 				})
@@ -370,14 +372,17 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 					})
 
 					It("changes the apps' policies and schedules", func() {
+						By("leaving the unchanged app alone")
 						checkApiServerContent(appId, defaultPolicy, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
 						assertScheduleContents(appId, http.StatusOK, map[string]int{"recurring_schedule": 4, "specific_date": 2})
 
+						By("setting the new explicit policy")
 						checkApiServerContent(app2Id, secondPolicy, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
 						assertScheduleContents(app2Id, http.StatusOK, map[string]int{"recurring_schedule": 2, "specific_date": 1})
 
-						checkApiServerStatus(app3Id, http.StatusNotFound, components.Ports[GolangAPIServer], httpClientForPublicApi)
-						checkSchedulerStatus(app3Id, http.StatusNotFound)
+						By("reverting to the default policy as there is no longer an explicit one")
+						checkApiServerContent(app3Id, defaultPolicy, http.StatusOK, components.Ports[GolangAPIServer], httpClientForPublicApi)
+						checkSchedulerStatus(app3Id, http.StatusOK)
 					})
 
 					var newDefaultPolicy []byte
