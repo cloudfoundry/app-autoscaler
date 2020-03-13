@@ -12,6 +12,7 @@ var _ = Describe("Helper", func() {
 		dbUrl      string
 		err        error
 		database   *Database
+		certPath   string
 	)
 	
 	Describe("GetConnection", func() {
@@ -46,18 +47,19 @@ var _ = Describe("Helper", func() {
 
 		})
 
-		 Context("when need to verify mysql server, cert is provided ", func() {
-		 	BeforeEach(func() {
-		 		dbUrl="root@tcp(localhost:3306)/autoscaler?tls=verify-ca&sslrootcert=/tmp/ca.pem"
-		 	})
-		 	It("returns mysql database connection", func() {
+		Context("when need to verify mysql server, cert is provided ", func() {
+			BeforeEach(func() {
+				certPath="../../../test-certs/api.crt"
+				dbUrl="root@tcp(localhost:3306)/autoscaler?tls=verify-ca&sslrootcert="+certPath
+			})
+			It("returns mysql database connection", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(database).To(Equal(&Database{
-                    DriverName: "mysql",
-                    DSN: "root@tcp(localhost:3306)/autoscaler?parseTime=true&tls=verify-ca",
-                }))
-		 	})
-		 })
+					DriverName: "mysql",
+					DSN: "root@tcp(localhost:3306)/autoscaler?parseTime=true&tls=verify-ca",
+				}))
+			})
+		})
 
 		Context("when need to verify mysql server, cert is not provided ", func() {
 			BeforeEach(func() {

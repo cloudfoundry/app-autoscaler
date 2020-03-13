@@ -109,6 +109,9 @@ func (adb *AppMetricSQLDB) SaveAppMetricsInBulk(appMetrics []*models.AppMetric) 
 	case "mysql":
 		sqlStr :="INSERT INTO app_metric(app_id,metric_type,unit,timestamp,value)VALUES"
 		vals := []interface{}{}
+		if appMetrics == nil || len(appMetrics)==0 {
+			return nil
+		}
 		for _, appMetric := range appMetrics {
 			sqlStr += "(?, ?, ?, ?, ?),"
 			vals = append(vals, appMetric.AppId, appMetric.MetricType, appMetric.Unit, appMetric.Timestamp, appMetric.Value)

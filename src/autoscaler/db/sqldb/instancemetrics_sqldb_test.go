@@ -4,8 +4,8 @@ import (
 	"autoscaler/db"
 	. "autoscaler/db/sqldb"
 	"autoscaler/models"
-    "github.com/lib/pq"
-    "github.com/go-sql-driver/mysql"
+	"github.com/lib/pq"
+	"github.com/go-sql-driver/mysql"
 	"code.cloudfoundry.org/lager"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -60,21 +60,23 @@ var _ = Describe("InstancemetricsSqldb", func() {
 				Expect(err).NotTo(HaveOccurred())
 			}
 		})
-        Context("when db url is not correct", func() {
-            BeforeEach(func() {
-                dbConfig.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
-            })
-            It("should throw an error", func() {
-                Expect(err).To(BeAssignableToTypeOf(&pq.Error{}))
-            })
-        })
-        Context("when mysql db url is not correct", func() {
-            BeforeEach(func() {
-                dbConfig.URL = "not-exist-user:not-exist-password@tcp(localhost)/autoscaler?tls=false"
-            })
-            It("should throw an error", func() {
-                Expect(err).To(BeAssignableToTypeOf(&mysql.MySQLError{}))
-            })
+
+		Context("when db url is not correct", func() {
+			BeforeEach(func() {
+				dbConfig.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
+			})
+			It("should throw an error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&pq.Error{}))
+			})
+		})
+
+		Context("when mysql db url is not correct", func() {
+			BeforeEach(func() {
+				dbConfig.URL = "not-exist-user:not-exist-password@tcp(localhost)/autoscaler?tls=false"
+			})
+			It("should throw an error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&mysql.MySQLError{}))
+			})
 		})
 		
 		Context("when url is correct", func() {
@@ -164,6 +166,15 @@ var _ = Describe("InstancemetricsSqldb", func() {
 		AfterEach(func() {
 			err = idb.Close()
 			Expect(err).NotTo(HaveOccurred())
+		})
+		Context("When inserting an empty array of metrics", func() {
+			BeforeEach(func() {
+				metrics := []*models.AppInstanceMetric{}
+				err = idb.SaveMetricsInBulk(metrics)
+			})
+			It("Should return nil", func(){
+				Expect(err).To(BeNil())
+			})
 		})
 
 		Context("When inserting an array of metrics", func() {

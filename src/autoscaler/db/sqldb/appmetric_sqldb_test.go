@@ -8,7 +8,7 @@ import (
 	"autoscaler/db"
 	. "autoscaler/db/sqldb"
 	"autoscaler/models"
-    "github.com/lib/pq"
+	"github.com/lib/pq"
 	"github.com/go-sql-driver/mysql"
 	"code.cloudfoundry.org/lager"
 	. "github.com/onsi/ginkgo"
@@ -54,7 +54,8 @@ var _ = Describe("AppMetricSQLDB", func() {
 				Expect(err).NotTo(HaveOccurred())
 			}
 		})
-        Context("when db url is not correct", func() {
+
+		Context("when db url is not correct", func() {
 			BeforeEach(func() {
 				dbConfig.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 			})
@@ -64,12 +65,12 @@ var _ = Describe("AppMetricSQLDB", func() {
 		})
 		
 		Context("when mysql db url is not correct", func() {
-            BeforeEach(func() {
-                dbConfig.URL = "not-exist-user:not-exist-password@tcp(localhost)/autoscaler?tls=false"
-            })
-            It("should throw an error", func() {
-                Expect(err).To(BeAssignableToTypeOf(&mysql.MySQLError{}))
-                })
+			BeforeEach(func() {
+				dbConfig.URL = "not-exist-user:not-exist-password@tcp(localhost)/autoscaler?tls=false"
+			})
+			It("should throw an error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&mysql.MySQLError{}))
+			})
 		})
 		
 		Context("when db url is correct", func() {
@@ -122,6 +123,16 @@ var _ = Describe("AppMetricSQLDB", func() {
 			err = adb.Close()
 			Expect(err).NotTo(HaveOccurred())
 		})
+		Context("When inserting an empty array of app_metric", func() {
+			BeforeEach(func() {
+				appMetrics := []*models.AppMetric{}
+				err = adb.SaveAppMetricsInBulk(appMetrics)
+			})
+			It("Should return nil", func(){
+				Expect(err).To(BeNil())
+			})
+		})
+
 		Context("When inserting an array of app_metric", func() {
 			BeforeEach(func() {
 				appMetrics := []*models.AppMetric{

@@ -110,6 +110,9 @@ func (idb *InstanceMetricsSQLDB) SaveMetricsInBulk(metrics []*models.AppInstance
 	case "mysql":
 		sqlStr :="INSERT INTO appinstancemetrics(appid, instanceindex, collectedat, name, unit, value, timestamp)VALUES"
 		vals := []interface{}{}
+		if metrics == nil || len(metrics) == 0 {
+			return nil
+		}
 		for _, metric := range metrics {
 			sqlStr += "(?, ?, ?, ?, ?, ?, ?),"
 			vals = append(vals, metric.AppId, metric.InstanceIndex, metric.CollectedAt, metric.Name, metric.Unit, metric.Value, metric.Timestamp)
