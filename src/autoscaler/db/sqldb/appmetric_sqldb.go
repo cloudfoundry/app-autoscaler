@@ -110,6 +110,7 @@ func (adb *AppMetricSQLDB) SaveAppMetricsInBulk(appMetrics []*models.AppMetric) 
 		sqlStr :="INSERT INTO app_metric(app_id,metric_type,unit,timestamp,value)VALUES"
 		vals := []interface{}{}
 		if appMetrics == nil || len(appMetrics)==0 {
+			txn.Rollback()
 			return nil
 		}
 		for _, appMetric := range appMetrics {
