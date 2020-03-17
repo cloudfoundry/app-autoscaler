@@ -18,6 +18,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"gopkg.in/yaml.v2"
 
@@ -51,7 +52,10 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	mf, err := gexec.Build("autoscaler/metricsforwarder/cmd/metricsforwarder", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
-	policyDB, err := sqlx.Open(db.PostgresDriverName, os.Getenv("DBURL"))
+	database, err := db.GetConnection(os.Getenv("DBURL"))
+	Expect(err).NotTo(HaveOccurred())
+
+	policyDB, err := sqlx.Open(database.DriverName, database.DSN)
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = policyDB.Exec("DELETE from policy_json")

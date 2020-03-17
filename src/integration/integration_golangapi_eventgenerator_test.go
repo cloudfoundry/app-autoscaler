@@ -145,7 +145,7 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 				metric.Timestamp = 555555
 				insertAppMetric(metric)
 
-				metric.Timestamp = 555555
+				metric.Timestamp = 555556
 				insertAppMetric(metric)
 
 				metric.Timestamp = 333333
@@ -160,7 +160,7 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 				metric.Timestamp = 444444
 				insertAppMetric(metric)
 				//add some  other appId
-				metric.AppId = "some-other-app-id"
+				metric.AppId = getRandomId()
 				metric.MetricType = models.MetricNameMemoryUsed
 				metric.Unit = models.UnitMegaBytes
 				metric.Timestamp = 444444
@@ -214,7 +214,7 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 							MetricType: models.MetricNameMemoryUsed,
 							Unit:       models.UnitMegaBytes,
 							Value:      "123456",
-							Timestamp:  555555,
+							Timestamp:  555556,
 						},
 					},
 				}
@@ -270,7 +270,7 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 							MetricType: models.MetricNameMemoryUsed,
 							Unit:       models.UnitMegaBytes,
 							Value:      "123456",
-							Timestamp:  555555,
+							Timestamp:  555556,
 						},
 						models.AppMetric{
 							AppId:      appId,
@@ -308,8 +308,8 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 				}
 				checkAggregatedMetricResult(components.Ports[GolangAPIServer], pathVariables, parameters, result)
 
-				By("get the results from 444444 to 555555")
-				parameters = map[string]string{"start-time": "444444", "end-time": "555555", "order-direction": "asc", "page": "1", "results-per-page": "10"}
+				By("get the results from 444444 to 555556")
+				parameters = map[string]string{"start-time": "444444", "end-time": "555556", "order-direction": "asc", "page": "1", "results-per-page": "10"}
 				result = AppAggregatedMetricResult{
 					TotalResults: 3,
 					TotalPages:   1,
@@ -334,7 +334,7 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 							MetricType: models.MetricNameMemoryUsed,
 							Unit:       models.UnitMegaBytes,
 							Value:      "123456",
-							Timestamp:  555555,
+							Timestamp:  555556,
 						},
 					},
 				}
@@ -343,3 +343,4 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 		})
 	})
 })
+

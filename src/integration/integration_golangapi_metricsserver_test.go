@@ -178,7 +178,7 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 				metric.InstanceIndex = 1
 				insertAppInstanceMetric(metric)
 				//add some  other appId
-				metric.AppId = "some-other-app-id"
+				metric.AppId = getRandomId()
 				metric.Name = models.MetricNameMemoryUsed
 				metric.Unit = models.UnitMegaBytes
 				metric.Timestamp = 444444

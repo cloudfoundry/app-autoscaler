@@ -6,9 +6,9 @@ import (
 	"database/sql"
 	"os"
 	"time"
-
-	"code.cloudfoundry.org/lager"
 	"github.com/lib/pq"
+	"github.com/go-sql-driver/mysql"
+	"code.cloudfoundry.org/lager"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -53,12 +53,20 @@ var _ = Describe("BindingSqldb", func() {
 			BeforeEach(func() {
 				dbConfig.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 			})
-			It("should error", func() {
+			It("should throw an error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&pq.Error{}))
 			})
-
 		})
 
+		Context("when mysql db url is not correct", func() {
+			BeforeEach(func() {
+				dbConfig.URL = "not-exist-user:not-exist-password@tcp(localhost)/autoscaler?tls=false"
+			})
+			It("should throw an error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&mysql.MySQLError{}))
+			})
+		})
+		
 		Context("when db url is correct", func() {
 			It("should not error", func() {
 				Expect(err).NotTo(HaveOccurred())
@@ -160,7 +168,7 @@ var _ = Describe("BindingSqldb", func() {
 		Context("When service instance doesn't exist", func() {
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
-				Expect(err).To(BeAssignableToTypeOf(&pq.Error{}))
+				Expect(err.Error()).To(ContainSubstring("foreign key constraint"))
 				Expect(hasServiceBinding(testBindingId, testInstanceId)).NotTo(BeTrue())
 			})
 		})

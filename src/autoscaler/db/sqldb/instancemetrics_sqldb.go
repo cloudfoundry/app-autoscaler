@@ -11,6 +11,7 @@ import (
 	"context"
 	"database/sql"
 	"time"
+	"strings"
 )
 
 type InstanceMetricsSQLDB struct {
@@ -20,7 +21,12 @@ type InstanceMetricsSQLDB struct {
 }
 
 func NewInstanceMetricsSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*InstanceMetricsSQLDB, error) {
-	sqldb, err := sqlx.Open(db.PostgresDriverName, dbConfig.URL)
+	database, err := db.GetConnection(dbConfig.URL)
+	if err != nil {
+		return nil, err
+	}
+
+	sqldb, err := sqlx.Open(database.DriverName, database.DSN)
 	if err != nil {
 		logger.Error("failed-open-instancemetrics-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
@@ -71,34 +77,68 @@ func (idb *InstanceMetricsSQLDB) SaveMetricsInBulk(metrics []*models.AppInstance
 		idb.logger.Error("failed-to-start-transaction", err)
 		return err
 	}
-
-	stmt, err := txn.Prepare(CopyIn("appinstancemetrics", "appid", "instanceindex", "collectedat", "name", "unit", "value", "timestamp"))
-	if err != nil {
-		idb.logger.Error("failed-to-prepare-statement", err)
-		txn.Rollback()
-		return err
-	}
-	for _, metric := range metrics {
-		_, err := stmt.Exec(metric.AppId, metric.InstanceIndex, metric.CollectedAt, metric.Name, metric.Unit, metric.Value, metric.Timestamp)
+	switch idb.sqldb.DriverName() {
+	case "postgres":
+		stmt, err := txn.Prepare(CopyIn("appinstancemetrics", "appid", "instanceindex", "collectedat", "name", "unit", "value", "timestamp"))
 		if err != nil {
-			idb.logger.Error("failed-to-execute", err)
+			idb.logger.Error("failed-to-prepare-statement", err)
 			txn.Rollback()
 			return err
 		}
-	}
+		for _, metric := range metrics {
+			_, err := stmt.Exec(metric.AppId, metric.InstanceIndex, metric.CollectedAt, metric.Name, metric.Unit, metric.Value, metric.Timestamp)
+			if err != nil {
+				idb.logger.Error("failed-to-execute", err)
+				txn.Rollback()
+				return err
+			}
+		}
 
-	_, err = stmt.Exec()
-	if err != nil {
-		idb.logger.Error("failed-to-execute-statement", err)
-		txn.Rollback()
-		return err
-	}
+		_, err = stmt.Exec()
+		if err != nil {
+			idb.logger.Error("failed-to-execute-statement", err)
+			txn.Rollback()
+			return err
+		}
 
-	err = stmt.Close()
-	if err != nil {
-		idb.logger.Error("failed-to-close-statement", err)
-		txn.Rollback()
-		return err
+		err = stmt.Close()
+		if err != nil {
+			idb.logger.Error("failed-to-close-statement", err)
+			txn.Rollback()
+			return err
+		}
+	case "mysql":
+		sqlStr :="INSERT INTO appinstancemetrics(appid, instanceindex, collectedat, name, unit, value, timestamp)VALUES"
+		vals := []interface{}{}
+		if metrics == nil || len(metrics) == 0 {
+			txn.Rollback()
+			return nil
+		}
+		for _, metric := range metrics {
+			sqlStr += "(?, ?, ?, ?, ?, ?, ?),"
+			vals = append(vals, metric.AppId, metric.InstanceIndex, metric.CollectedAt, metric.Name, metric.Unit, metric.Value, metric.Timestamp)
+		}
+		sqlStr = strings.TrimSuffix(sqlStr, ",")
+
+		stmt, err := txn.Prepare(sqlStr)
+		if err != nil {
+			idb.logger.Error("failed-to-prepare-statement", err)
+			txn.Rollback()
+			return err
+		}
+
+		_, err = stmt.Exec(vals...)
+		if err != nil {
+			idb.logger.Error("failed-to-execute-statement", err)
+			txn.Rollback()
+			return err
+		}
+		err = stmt.Close()
+		if err != nil {
+			idb.logger.Error("failed-to-close-statement", err)
+			txn.Rollback()
+			return err
+		}
 	}
 
 	err = txn.Commit()

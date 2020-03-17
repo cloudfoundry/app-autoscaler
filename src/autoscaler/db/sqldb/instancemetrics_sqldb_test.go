@@ -4,9 +4,9 @@ import (
 	"autoscaler/db"
 	. "autoscaler/db/sqldb"
 	"autoscaler/models"
-
-	"code.cloudfoundry.org/lager"
 	"github.com/lib/pq"
+	"github.com/go-sql-driver/mysql"
+	"code.cloudfoundry.org/lager"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gstruct"
@@ -65,12 +65,20 @@ var _ = Describe("InstancemetricsSqldb", func() {
 			BeforeEach(func() {
 				dbConfig.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 			})
-			It("should error", func() {
+			It("should throw an error", func() {
 				Expect(err).To(BeAssignableToTypeOf(&pq.Error{}))
 			})
-
 		})
 
+		Context("when mysql db url is not correct", func() {
+			BeforeEach(func() {
+				dbConfig.URL = "not-exist-user:not-exist-password@tcp(localhost)/autoscaler?tls=false"
+			})
+			It("should throw an error", func() {
+				Expect(err).To(BeAssignableToTypeOf(&mysql.MySQLError{}))
+			})
+		})
+		
 		Context("when url is correct", func() {
 			It("should not error", func() {
 				Expect(err).NotTo(HaveOccurred())
@@ -158,6 +166,15 @@ var _ = Describe("InstancemetricsSqldb", func() {
 		AfterEach(func() {
 			err = idb.Close()
 			Expect(err).NotTo(HaveOccurred())
+		})
+		Context("When inserting an empty array of metrics", func() {
+			BeforeEach(func() {
+				metrics := []*models.AppInstanceMetric{}
+				err = idb.SaveMetricsInBulk(metrics)
+			})
+			It("Should return nil", func(){
+				Expect(err).To(BeNil())
+			})
 		})
 
 		Context("When inserting an array of metrics", func() {
@@ -279,12 +296,6 @@ var _ = Describe("InstancemetricsSqldb", func() {
 			err = idb.SaveMetric(metric)
 			Expect(err).NotTo(HaveOccurred())
 
-			metric.InstanceIndex = 0
-			metric.CollectedAt = 222222
-			metric.Value = "654321"
-			metric.Timestamp = 111100
-			err = idb.SaveMetric(metric)
-			Expect(err).NotTo(HaveOccurred())
 
 			start = 0
 			end = -1
@@ -343,7 +354,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 				orderType = db.ASC
 				instanceIndex = -1
 			})
-			It("removes duplicates and returns all the instance metrics of the app ordered by timestamp asc, instanceindex asc", func() {
+			It("returns all the instance metrics of the app ordered by timestamp asc, instanceindex asc", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(mtrcs).To(HaveLen(4))
 				Expect(*mtrcs[0]).To(gstruct.MatchAllFields(gstruct.Fields{
@@ -393,7 +404,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 				orderType = db.DESC
 				instanceIndex = -1
 			})
-			It("removes duplicates and returns all the instance metrics of the app ordered by timestamp desc, instanceindex asc", func() {
+			It("returns all the instance metrics of the app ordered by timestamp desc, instanceindex asc", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(mtrcs).To(HaveLen(4))
 
@@ -474,7 +485,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 			BeforeEach(func() {
 				instanceIndex = 1
 			})
-			It("removes duplicates and returns all the instance metrics of the app ordered by timestamp desc", func() {
+			It("returns all the instance metrics of the app ordered by timestamp desc", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(mtrcs).To(HaveLen(2))
 				Expect(*mtrcs[1]).To(gstruct.MatchAllFields(gstruct.Fields{
@@ -651,7 +662,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 			metric.InstanceIndex = 0
 			metric.CollectedAt = 222222
 			metric.Value = "654321"
-			metric.Timestamp = 111100
+			metric.Timestamp = 111110
 			err = idb.SaveMetric(metric)
 			Expect(err).NotTo(HaveOccurred())
 		})
@@ -712,3 +723,4 @@ var _ = Describe("InstancemetricsSqldb", func() {
 	})
 
 })
+

@@ -21,10 +21,12 @@ import (
 	"os/exec"
 	"path/filepath"
 	"time"
+	"strings"
 
 	. "github.com/onsi/gomega"
 	"github.com/tedsuo/ifrit/ginkgomon"
 	yaml "gopkg.in/yaml.v2"
+	"github.com/go-sql-driver/mysql"
 )
 
 const (
@@ -286,25 +288,43 @@ func (components *Components) PrepareGolangApiServerConfig(dbURI string, publicA
 }
 
 func (components *Components) PrepareSchedulerConfig(dbUri string, scalingEngineUri string, tmpDir string, httpClientTimeout time.Duration) string {
-	dbUrl, _ := url.Parse(dbUri)
-	scheme := dbUrl.Scheme
-	host := dbUrl.Host
-	path := dbUrl.Path
-	userInfo := dbUrl.User
-	userName := userInfo.Username()
-	password, _ := userInfo.Password()
-	if scheme == "postgres" {
-		scheme = "postgresql"
+	var (
+		driverClassName string
+		userName      string
+		password      string
+		jdbcDBUri     string
+	)
+	if strings.Contains(dbUri, "postgres") {
+		dbUrl, _ := url.Parse(dbUri)
+		scheme := dbUrl.Scheme
+		host := dbUrl.Host
+		path := dbUrl.Path
+		userInfo := dbUrl.User
+		userName = userInfo.Username()
+		password, _ = userInfo.Password()
+		if scheme == "postgres" {
+			scheme = "postgresql"
+		} 
+		jdbcDBUri = fmt.Sprintf("jdbc:%s://%s%s", scheme, host, path)
+		driverClassName = "org.postgresql.Driver"
+	}else {
+		cfg, _ := mysql.ParseDSN(dbUri)
+		scheme := "mysql"
+		host := cfg.Addr
+		path := cfg.DBName
+		userName = cfg.User
+		password = cfg.Passwd
+		jdbcDBUri = fmt.Sprintf("jdbc:%s://%s/%s", scheme, host, path)
+		driverClassName = "com.mysql.cj.jdbc.Driver"
 	}
-	jdbcDBUri := fmt.Sprintf("jdbc:%s://%s%s", scheme, host, path)
-	settingStrTemplate := `
+		settingStrTemplate := `
 #datasource for application and quartz
-spring.datasource.driverClassName=org.postgresql.Driver
+spring.datasource.driverClassName=%s
 spring.datasource.url=%s
 spring.datasource.username=%s
 spring.datasource.password=%s
 #policy db
-spring.policyDbDataSource.driverClassName=org.postgresql.Driver
+spring.policyDbDataSource.driverClassName=%s
 spring.policyDbDataSource.url=%s
 spring.policyDbDataSource.username=%s
 spring.policyDbDataSource.password=%s
@@ -343,7 +363,7 @@ spring.aop.auto=false
 endpoints.enabled=false
 spring.data.jpa.repositories.enabled=false
 `
-	settingJsonStr := fmt.Sprintf(settingStrTemplate, jdbcDBUri, userName, password, jdbcDBUri, userName, password, scalingEngineUri, testCertDir, testCertDir, testCertDir, testCertDir, components.Ports[Scheduler], components.Ports[Scheduler], int(httpClientTimeout/time.Second))
+	settingJsonStr := fmt.Sprintf(settingStrTemplate, driverClassName, jdbcDBUri, userName, password, driverClassName, jdbcDBUri, userName, password, scalingEngineUri, testCertDir, testCertDir, testCertDir, testCertDir, components.Ports[Scheduler], components.Ports[Scheduler], int(httpClientTimeout/time.Second))
 	cfgFile, err := os.Create(filepath.Join(tmpDir, "application.properties"))
 	Expect(err).NotTo(HaveOccurred())
 	ioutil.WriteFile(cfgFile.Name(), []byte(settingJsonStr), 0777)

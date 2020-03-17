@@ -9,6 +9,7 @@ import (
 )
 
 const PostgresDriverName = "postgres"
+const MysqlDriverName = "mysql"
 
 type OrderType uint8
 

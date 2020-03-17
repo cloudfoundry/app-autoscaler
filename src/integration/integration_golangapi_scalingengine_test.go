@@ -169,7 +169,7 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 				insertScalingHistory(history)
 
 				//add some other app id
-				history.AppId = "some-other-app-id"
+				history.AppId = getRandomId()
 				history.Timestamp = 444444
 				insertScalingHistory(history)
 
