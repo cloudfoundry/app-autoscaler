@@ -9,6 +9,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	_ "github.com/go-sql-driver/mysql"
 
 	"testing"
 )
@@ -30,7 +31,12 @@ var _ = BeforeSuite(func() {
 		Fail("environment variable $DBURL is not set")
 	}
 
-	dbHelper, e = sql.Open(db.PostgresDriverName, dbUrl)
+	database, e := db.GetConnection(dbUrl)
+	if e != nil {
+		Fail("failed to get database URL and drivername: " + e.Error())
+	}
+
+	dbHelper, e = sql.Open(database.DriverName, database.DSN)
 	if e != nil {
 		Fail("can not connect database: " + e.Error())
 	}

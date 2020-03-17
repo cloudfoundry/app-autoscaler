@@ -13,6 +13,7 @@ import (
 	"autoscaler/models"
 
 	_ "github.com/lib/pq"
+	_ "github.com/go-sql-driver/mysql"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/jmoiron/sqlx"
@@ -32,8 +33,12 @@ var _ = BeforeSuite(func() {
 	if dbUrl == "" {
 		Fail("environment variable $DBURL is not set")
 	}
+	database, err := db.GetConnection(dbUrl)
+	if err != nil {
+		Fail("failed to parse database connection: "+ err.Error())
+	}
 
-	dbHelper, e = sqlx.Open(db.PostgresDriverName, dbUrl)
+	dbHelper, e =  sqlx.Open(database.DriverName, database.DSN)
 	if e != nil {
 		Fail("can not connect database: " + e.Error())
 	}
@@ -377,4 +382,19 @@ func validateLockNotInDB(owner string) error {
 		return err
 	}
 	return fmt.Errorf("lock exists with owner (%s)", owner)
+}
+
+func formatPolicyString(policyStr string) string {
+	scalingPolicy := &models.ScalingPolicy{}
+	err := json.Unmarshal([]byte(policyStr),&scalingPolicy)
+	if err != nil {
+		fmt.Errorf("failed to unmarshal policyJson string %s", policyStr)
+		return ""
+	}
+	policyJsonStr, err := json.Marshal(scalingPolicy)
+	if err != nil {
+		fmt.Errorf("failed to marshal ScalingPolicy %v", scalingPolicy)
+		return ""
+	}
+	return string(policyJsonStr)
 }
