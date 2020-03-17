@@ -7,6 +7,7 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	_ "github.com/lib/pq"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 
 	"autoscaler/db"
@@ -21,7 +22,12 @@ type LockSQLDB struct {
 }
 
 func NewLockSQLDB(dbConfig db.DatabaseConfig, table string, logger lager.Logger) (*LockSQLDB, error) {
-	sqldb, err := sqlx.Open(db.PostgresDriverName, dbConfig.URL)
+	database, err := db.GetConnection(dbConfig.URL)
+	if err != nil {
+		return nil, err
+	}
+
+	sqldb, err := sqlx.Open(database.DriverName, database.DSN)
 	if err != nil {
 		logger.Error("open-lock-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
@@ -62,13 +68,19 @@ func (ldb *LockSQLDB) fetch(tx *sql.Tx) (*models.Lock, error) {
 		timestamp time.Time
 		ttl       time.Duration
 	)
-	tquery := "LOCK TABLE " + ldb.table + " IN ACCESS EXCLUSIVE MODE"
-	if _, err := tx.Exec(tquery); err != nil {
-		ldb.logger.Error("failed-to-set-table-level-lock", err)
-		return &models.Lock{}, err
+
+	if ldb.sqldb.DriverName() == "postgres" {
+		tquery := "LOCK TABLE " + ldb.table + " IN ACCESS EXCLUSIVE MODE"
+		if _, err := tx.Exec(tquery); err != nil {
+			ldb.logger.Error("failed-to-set-table-level-lock", err)
+			return &models.Lock{}, err
+		}
 	}
 
-	query := "SELECT owner,lock_timestamp,ttl FROM " + ldb.table + " LIMIT 1 FOR UPDATE NOWAIT"
+	query := "SELECT owner,lock_timestamp,ttl FROM " + ldb.table + " LIMIT 1 FOR UPDATE"
+	if ldb.sqldb.DriverName() == "postgres" {
+		query = query +" NOWAIT "
+	}
 	row := tx.QueryRow(query)
 	err := row.Scan(&owner, &timestamp, &ttl)
 	if err != nil {
@@ -203,7 +215,17 @@ func (ldb *LockSQLDB) Lock(lock *models.Lock) (bool, error) {
 
 func (ldb *LockSQLDB) getDatabaseTimestamp(tx *sql.Tx) (time.Time, error) {
 	var currentTimestamp time.Time
-	err := tx.QueryRow("SELECT NOW() AT TIME ZONE 'utc'").Scan(&currentTimestamp)
+	var query string
+	switch ldb.sqldb.DriverName() {
+	case "postgres":
+		query = "SELECT NOW() AT TIME ZONE 'utc'"
+	case "mysql":
+		query = "SELECT UTC_TIMESTAMP()"
+	default:
+		return time.Time{}, nil
+	}
+
+	err := tx.QueryRow(query).Scan(&currentTimestamp)
 	if err != nil {
 		ldb.logger.Error("failed-fetching-timestamp", err)
 		return time.Time{}, err
@@ -246,3 +268,4 @@ func (ldb *LockSQLDB) transact(db *sqlx.DB, f func(tx *sql.Tx) error) error {
 
 	return err
 }
+

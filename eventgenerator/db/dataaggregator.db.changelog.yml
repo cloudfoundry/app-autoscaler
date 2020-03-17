@@ -2,6 +2,7 @@ databaseChangeLog:
   - changeSet:
       id: 1
       author: qiyang
+      dbms: postgresql
       changes:
         - createTable:
             tableName: app_metric
@@ -57,6 +58,7 @@ databaseChangeLog:
   - changeSet:
       id: 3
       author: tanmoypal
+      dbms: postgres
       changes:
         - createIndex:
              columns:
@@ -76,4 +78,60 @@ databaseChangeLog:
       author: byang
       changes:
         - dropTable:
-            tableName: eg_lock 
+            tableName: eg_lock
+  - changeSet:
+      id: 5
+      author: aqan213
+      dbms: mysql
+      changes:
+        - createTable:
+            tableName: app_metric
+            columns:
+              - column:
+                  name: app_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: metric_type
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: unit
+                  type: varchar(20)
+                  constraints:
+                    nullable: false                    
+              - column:
+                  name: timestamp
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: value
+                  type: varchar(255)
+                  constraints:
+                    nullable: true
+        - addPrimaryKey:
+            columnNames: "app_id,metric_type,timestamp"
+            constraintName: "PK_appmetrics"
+            schemaName: autoscaler
+            tableName: app_metric
+  - changeSet:
+      id: 6
+      author: aqan213
+      dbms: mysql
+      changes:
+        - createIndex:
+             columns:
+              - column:
+                  name: app_id
+                  type: varchar(255)
+              - column:
+                  name: metric_type
+                  type: varchar(100)
+              - column:
+                  name: timestamp
+                  type: bigint
+             indexName: index_app_metrics
+             tableName: app_metric

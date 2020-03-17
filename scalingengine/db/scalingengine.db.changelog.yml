@@ -2,6 +2,7 @@ databaseChangeLog:
   - changeSet:
       id: 1
       author: byang
+      dbms: postgresql
       changes:
         - createTable:
             tableName: scalinghistory
@@ -67,6 +68,7 @@ databaseChangeLog:
   - changeSet:
       id: 3
       author: byang
+      dbms: postgresql
       changes:
         - createTable:
             tableName: activeschedule
@@ -125,4 +127,121 @@ databaseChangeLog:
                     type: bigint
                     defaultValue: 0
                     constraints:
-                      nullable: false                    
+                      nullable: false
+  - changeSet:
+      id: 5
+      author: aqan213
+      dbms: mysql
+      changes:
+        - createTable:
+            tableName: scalinghistory
+            columns:
+              - column:
+                  name: appid
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: timestamp
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: scalingtype
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: status
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: oldinstances
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: newinstances
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: reason
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: message
+                  type: varchar(255)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: error
+                  type: varchar(255)
+                  constraints:
+                    nullable: true
+        - addPrimaryKey:
+            columnNames: "appid,timestamp"
+            constraintName: "PK_scalinghistory"
+            schemaName: autoscaler
+            tableName: scalinghistory
+        - createTable:
+            tableName: scalingcooldown
+            columns:
+              - column:
+                  name: appid
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expireat
+                  type: bigint
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            columnNames: "appid,expireat"
+            constraintName: "PK_scalingcooldown"
+            schemaName: autoscaler
+            tableName: scalingcooldown
+  - changeSet:
+      id: 6
+      author: aqan213
+      dbms: mysql
+      changes:
+        - createTable:
+            tableName: activeschedule
+            columns:
+              - column:
+                  name: scheduleid
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: appid
+                  type: varchar(250)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: createdat
+                  type: timestamp
+                  constraints:
+                    nullable: false
+                  defaultValueComputed: now()  
+              - column:
+                  name: instancemincount
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: instancemaxcount
+                  type: integer
+                  constraints:
+                    nullable: false
+              - column:
+                  name: initialmininstancecount
+                  type: integer
+                  constraints:
+                    nullable: false
+
