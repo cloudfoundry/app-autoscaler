@@ -22,7 +22,7 @@ import (
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 
 	"autoscaler/cf"
 	"autoscaler/db"
@@ -162,6 +162,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.Collector.SaveInterval = 5 * time.Second
 	cfg.Collector.MetricCacheSizePerApp = 100
 	cfg.HttpClientTimeout = 10 * time.Second
+
+	cfg.Health.HealthCheckUsername = "metricscollectorhealthcheckuser"
+	cfg.Health.HealthCheckPassword = "metricscollectorhealthcheckpassword"
 
 	configFile = writeConfig(&cfg)
 

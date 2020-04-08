@@ -11,7 +11,7 @@ import (
 	"autoscaler/helpers"
 	"autoscaler/models"
 
-	"github.com/rubyist/circuitbreaker"
+	circuit "github.com/rubyist/circuitbreaker"
 
 	"flag"
 	"fmt"
@@ -124,7 +124,7 @@ func main() {
 		logger.Error("failed to create http server", err)
 		os.Exit(1)
 	}
-	healthServer, err := healthendpoint.NewServer(logger.Session("health-server"), conf.Health.Port, promRegistry)
+	healthServer, err := healthendpoint.NewServerWithBasicAuth(logger.Session("health-server"), conf.Health.Port, promRegistry, conf.Health.HealthCheckUsername, conf.Health.HealthCheckPassword, conf.Health.HealthCheckUsernameHash, conf.Health.HealthCheckPasswordHash)
 	if err != nil {
 		logger.Error("failed to create health server", err)
 		os.Exit(1)
