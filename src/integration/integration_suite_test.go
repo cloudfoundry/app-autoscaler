@@ -8,7 +8,7 @@ import (
 	as_testhelpers "autoscaler/testhelpers"
 	"bytes"
 
-	"database/sql"
+	//"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -31,6 +31,8 @@ import (
 	"github.com/cloudfoundry/sonde-go/events"
 	"github.com/gogo/protobuf/proto"
 	_ "github.com/lib/pq"
+	_ "github.com/go-sql-driver/mysql"
+    "github.com/jmoiron/sqlx"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
@@ -67,7 +69,7 @@ var (
 	appSummaryRegPath       = regexp.MustCompile(`^/v2/apps/.*/summary$`)
 	appInstanceRegPath      = regexp.MustCompile(`^/v2/apps/.*$`)
 	checkUserSpaceRegPath   = regexp.MustCompile(`^/v2/users/.+/spaces.*$`)
-	dbHelper                *sql.DB
+	dbHelper                *sqlx.DB
 	fakeCCNOAAUAA           *ghttp.Server
 	messagesToSend          chan []byte
 	streamingDoneChan       chan bool
@@ -117,7 +119,10 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		Fail("environment variable $DBURL is not set")
 	}
 
-	dbHelper, err = sql.Open(db.PostgresDriverName, dbUrl)
+	database, err := db.GetConnection(dbUrl)
+	Expect(err).NotTo(HaveOccurred())
+	
+	dbHelper, err = sqlx.Open(database.DriverName, database.DSN)
 	Expect(err).NotTo(HaveOccurred())
 
 	clearDatabase()
@@ -132,7 +137,10 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	Expect(err).NotTo(HaveOccurred())
 
 	dbUrl = os.Getenv("DBURL")
-	dbHelper, err = sql.Open(db.PostgresDriverName, dbUrl)
+	database, err := db.GetConnection(dbUrl)
+	Expect(err).NotTo(HaveOccurred())
+	
+	dbHelper, err = sqlx.Open(database.DriverName, database.DSN)
 	Expect(err).NotTo(HaveOccurred())
 
 	LOGLEVEL = os.Getenv("LOGLEVEL")
@@ -570,22 +578,22 @@ func clearDatabase() {
 }
 
 func insertPolicy(appId string, policyStr string, guid string) {
-	query := "INSERT INTO policy_json(app_id, policy_json, guid) VALUES($1, $2, $3)"
+	query := dbHelper.Rebind("INSERT INTO policy_json(app_id, policy_json, guid) VALUES(?, ?, ?)")
 	_, err := dbHelper.Exec(query, appId, policyStr, guid)
 	Expect(err).NotTo(HaveOccurred())
 
 }
 
 func deletePolicy(appId string) {
-	query := "DELETE FROM policy_json WHERE app_id=$1"
+	query := dbHelper.Rebind("DELETE FROM policy_json WHERE app_id=?")
 	_, err := dbHelper.Exec(query, appId)
 	Expect(err).NotTo(HaveOccurred())
 }
 
 func insertScalingHistory(history *models.AppScalingHistory) {
-	query := "INSERT INTO scalinghistory" +
+	query := dbHelper.Rebind("INSERT INTO scalinghistory" +
 		"(appid, timestamp, scalingtype, status, oldinstances, newinstances, reason, message, error) " +
-		" VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9)"
+		" VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)")
 	_, err := dbHelper.Exec(query, history.AppId, history.Timestamp, history.ScalingType, history.Status,
 		history.OldInstances, history.NewInstances, history.Reason, history.Message, history.Error)
 
@@ -593,36 +601,36 @@ func insertScalingHistory(history *models.AppScalingHistory) {
 }
 func getScalingHistoryCount(appId string, oldInstanceCount int, newInstanceCount int) int {
 	var count int
-	query := "SELECT COUNT(*) FROM scalinghistory WHERE appid=$1 AND oldinstances=$2 AND newinstances=$3"
+	query := dbHelper.Rebind("SELECT COUNT(*) FROM scalinghistory WHERE appid=? AND oldinstances=? AND newinstances=?")
 	err := dbHelper.QueryRow(query, appId, oldInstanceCount, newInstanceCount).Scan(&count)
 	Expect(err).NotTo(HaveOccurred())
 	return count
 }
 func getScalingHistoryTotalCount(appId string) int {
 	var count int
-	query := "SELECT COUNT(*) FROM scalinghistory WHERE appid=$1"
+	query := dbHelper.Rebind("SELECT COUNT(*) FROM scalinghistory WHERE appid=?")
 	err := dbHelper.QueryRow(query, appId).Scan(&count)
 	Expect(err).NotTo(HaveOccurred())
 	return count
 }
 func insertAppInstanceMetric(appInstanceMetric *models.AppInstanceMetric) {
-	query := "INSERT INTO appinstancemetrics" +
+	query := dbHelper.Rebind("INSERT INTO appinstancemetrics" +
 		"(appid, instanceindex, collectedat, name, unit, value, timestamp) " +
-		"VALUES($1, $2, $3, $4, $5, $6, $7)"
+		"VALUES(?, ?, ?, ?, ?, ?, ?)")
 	_, err := dbHelper.Exec(query, appInstanceMetric.AppId, appInstanceMetric.InstanceIndex, appInstanceMetric.CollectedAt, appInstanceMetric.Name, appInstanceMetric.Unit, appInstanceMetric.Value, appInstanceMetric.Timestamp)
 	Expect(err).NotTo(HaveOccurred())
 }
 func insertAppMetric(appMetrics *models.AppMetric) {
-	query := "INSERT INTO app_metric" +
+	query := dbHelper.Rebind("INSERT INTO app_metric" +
 		"(app_id, metric_type, unit, value, timestamp) " +
-		"VALUES($1, $2, $3, $4, $5)"
+		"VALUES(?, ?, ?, ?, ?)")
 	_, err := dbHelper.Exec(query, appMetrics.AppId, appMetrics.MetricType, appMetrics.Unit, appMetrics.Value, appMetrics.Timestamp)
 	Expect(err).NotTo(HaveOccurred())
 }
 
 func getAppInstanceMetricTotalCount(appId string) int {
 	var count int
-	query := "SELECT COUNT(*) FROM appinstancemetrics WHERE appid=$1"
+	query := dbHelper.Rebind("SELECT COUNT(*) FROM appinstancemetrics WHERE appid=?")
 	err := dbHelper.QueryRow(query, appId).Scan(&count)
 	Expect(err).NotTo(HaveOccurred())
 	return count
@@ -630,7 +638,7 @@ func getAppInstanceMetricTotalCount(appId string) int {
 
 func getAppMetricTotalCount(appId string) int {
 	var count int
-	query := "SELECT COUNT(*) FROM app_metric WHERE app_id=$1"
+	query := dbHelper.Rebind("SELECT COUNT(*) FROM app_metric WHERE app_id=?")
 	err := dbHelper.QueryRow(query, appId).Scan(&count)
 	Expect(err).NotTo(HaveOccurred())
 	return count
@@ -638,7 +646,7 @@ func getAppMetricTotalCount(appId string) int {
 
 func getCredentialsCount(appId string) int {
 	var count int
-	query := "SELECT COUNT(*) FROM credentials WHERE id=$1"
+	query := dbHelper.Rebind("SELECT COUNT(*) FROM credentials WHERE id=?")
 	err := dbHelper.QueryRow(query, appId).Scan(&count)
 	Expect(err).NotTo(HaveOccurred())
 	return count
@@ -854,6 +862,9 @@ func createHTTPTimerEnvelope(appId string, start int64, end int64) []*loggregato
 					Start: start,
 					Stop:  end,
 				},
+			},
+			DeprecatedTags: map[string]*loggregator_v2.Value{
+				"peer_type": {Data: &loggregator_v2.Value_Text{Text: "Client"}},
 			},
 		},
 	}

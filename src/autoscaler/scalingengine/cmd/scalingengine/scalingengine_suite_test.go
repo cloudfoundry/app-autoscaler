@@ -12,9 +12,10 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
 	"gopkg.in/yaml.v2"
 
-	"database/sql"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -107,19 +108,22 @@ var _ = SynchronizedBeforeSuite(
 
 		configFile = writeConfig(&conf)
 
-		testDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
+		database, err := db.GetConnection(os.Getenv("DBURL"))
 		Expect(err).NotTo(HaveOccurred())
 
-		_, err = testDB.Exec("DELETE FROM scalinghistory WHERE appid = $1", appId)
+		testDB, err := sqlx.Open(database.DriverName, database.DSN)
 		Expect(err).NotTo(HaveOccurred())
 
-		_, err = testDB.Exec("DELETE from policy_json WHERE app_id = $1", appId)
+		_, err = testDB.Exec(testDB.Rebind("DELETE FROM scalinghistory WHERE appid = ?"), appId)
 		Expect(err).NotTo(HaveOccurred())
 
-		_, err = testDB.Exec("DELETE from activeschedule WHERE appid = $1", appId)
+		_, err = testDB.Exec(testDB.Rebind("DELETE from policy_json WHERE app_id = ?"), appId)
 		Expect(err).NotTo(HaveOccurred())
 
-		_, err = testDB.Exec("DELETE from app_scaling_active_schedule WHERE app_id = $1", appId)
+		_, err = testDB.Exec(testDB.Rebind("DELETE from activeschedule WHERE appid = ?"), appId)
+		Expect(err).NotTo(HaveOccurred())
+
+		_, err = testDB.Exec(testDB.Rebind("DELETE from app_scaling_active_schedule WHERE app_id = ?"), appId)
 		Expect(err).NotTo(HaveOccurred())
 
 		policy := `
@@ -127,7 +131,7 @@ var _ = SynchronizedBeforeSuite(
  			"instance_min_count": 1,
   			"instance_max_count": 5
 		}`
-		_, err = testDB.Exec("INSERT INTO policy_json(app_id, policy_json, guid) values($1, $2, $3)", appId, policy, "1234")
+		_, err = testDB.Exec(testDB.Rebind("INSERT INTO policy_json(app_id, policy_json, guid) values(?, ?, ?)"), appId, policy, "1234")
 		Expect(err).NotTo(HaveOccurred())
 
 		err = testDB.Close()

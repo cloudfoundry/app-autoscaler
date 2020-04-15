@@ -121,7 +121,12 @@ func (n *Nozzle) filterEnvelopes(envelops []*loggregator_v2.Envelope) {
 					n.envelopChan <- e
 				}
 			case *loggregator_v2.Envelope_Timer:
-				if e.GetTimer().GetName() == "http" {
+				peerType := e.GetTags()["peer_type"]
+				if peerTypeFromDeprecatedTags := e.GetDeprecatedTags()["peer_type"]; peerType == "" && peerTypeFromDeprecatedTags != nil {
+					peerType = peerTypeFromDeprecatedTags.GetText()
+				}
+
+				if e.GetTimer().GetName() == "http" && (peerType == "" || peerType == "Client") {
 					n.logger.Debug("filter-envelopes-get-httpstartstop", lager.Data{"index": n.index, "appID": e.SourceId, "message": e.Message})
 					n.envelopChan <- e
 				}

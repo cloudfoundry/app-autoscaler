@@ -2,7 +2,6 @@ package main_test
 
 import (
 	"autoscaler/models"
-	"database/sql"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -20,6 +19,7 @@ import (
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
 	"google.golang.org/grpc/grpclog"
+	"github.com/jmoiron/sqlx"
 	"gopkg.in/yaml.v2"
 
 	"testing"
@@ -56,10 +56,13 @@ var (
 	fakeMetricServer    *ghttp.Server
 	metricServerAddress string
 
-	testAppId                            = "test-app-id"
-	envelopes []*loggregator_v2.Envelope = []*loggregator_v2.Envelope{
-		&loggregator_v2.Envelope{
+	testAppId = "test-app-id"
+	envelopes = []*loggregator_v2.Envelope{
+		{
 			SourceId: testAppId,
+			DeprecatedTags: map[string]*loggregator_v2.Value{
+				"peer_type": {Data: &loggregator_v2.Value_Text{Text: "Client"}},
+			},
 			Message: &loggregator_v2.Envelope_Timer{
 				Timer: &loggregator_v2.Timer{
 					Name:  "http",
@@ -101,7 +104,10 @@ var _ = SynchronizedAfterSuite(func() {
 })
 
 func initDB() {
-	mgDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
+	database, err := db.GetConnection(os.Getenv("DBURL"))
+	Expect(err).NotTo(HaveOccurred())
+
+	mgDB, err := sqlx.Open(database.DriverName, database.DSN)
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = mgDB.Exec("DELETE from policy_json")
@@ -122,7 +128,7 @@ func initDB() {
 		      }
 		   ]
 		}`)
-	query := "INSERT INTO policy_json(app_id, policy_json, guid) values($1, $2, $3)"
+	query := mgDB.Rebind("INSERT INTO policy_json(app_id, policy_json, guid) values(?, ?, ?)")
 	_, err = mgDB.Exec(query, testAppId, policy, "1234")
 	Expect(err).NotTo(HaveOccurred())
 

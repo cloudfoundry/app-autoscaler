@@ -4,7 +4,6 @@ import (
 	"autoscaler/db"
 	"autoscaler/fakes"
 	"autoscaler/models"
-	"autoscaler/scalingengine"
 	. "autoscaler/scalingengine/server"
 
 	"code.cloudfoundry.org/lager/lagertest"
@@ -514,26 +513,8 @@ var _ = Describe("ScalingHandler", func() {
 		})
 
 		Context("when removing active schedule succeeds", func() {
-			It("returns 204", func() {
-				Expect(resp.Code).To(Equal(http.StatusNoContent))
-			})
-		})
-
-		Context("when active schedule is not found", func() {
-			BeforeEach(func() {
-				scalingEngine.RemoveActiveScheduleReturns(&scalingengine.ActiveScheduleNotFoundError{})
-			})
-
-			It("returns 404", func() {
-				Expect(resp.Code).To(Equal(http.StatusNotFound))
-
-				errJson := &models.ErrorResponse{}
-				err = json.Unmarshal(resp.Body.Bytes(), errJson)
-				Expect(err).ToNot(HaveOccurred())
-				Expect(errJson).To(Equal(&models.ErrorResponse{
-					Code:    "Not-Found",
-					Message: "Active schedule not found",
-				}))
+			It("returns 200", func() {
+				Expect(resp.Code).To(Equal(http.StatusOK))
 			})
 		})
 

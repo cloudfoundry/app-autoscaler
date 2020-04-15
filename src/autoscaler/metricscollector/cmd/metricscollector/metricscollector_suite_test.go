@@ -1,7 +1,6 @@
 package main_test
 
 import (
-	"database/sql"
 	"io/ioutil"
 	"log"
 	"mime/multipart"
@@ -22,6 +21,8 @@ import (
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
 	"gopkg.in/yaml.v2"
 
 	"autoscaler/cf"
@@ -53,7 +54,10 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	mc, err := gexec.Build("autoscaler/metricscollector/cmd/metricscollector", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
-	mcDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
+        database, err := db.GetConnection(os.Getenv("DBURL"))
+	Expect(err).NotTo(HaveOccurred())
+
+	mcDB, err := sqlx.Open(database.DriverName, database.DSN)
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = mcDB.Exec("DELETE FROM appinstancemetrics")
@@ -67,7 +71,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
  			"instance_min_count": 1,
   			"instance_max_count": 5
 		}`
-	query := "INSERT INTO policy_json(app_id, policy_json, guid) values($1, $2, $3)"
+	query := mcDB.Rebind("INSERT INTO policy_json(app_id, policy_json, guid) values(?, ?, ?)")
 	_, err = mcDB.Exec(query, "an-app-id", policy, "1234")
 	Expect(err).NotTo(HaveOccurred())
 

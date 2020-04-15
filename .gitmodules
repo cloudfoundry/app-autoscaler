@@ -148,3 +148,9 @@
 [submodule "src/github.com/juju/ratelimit"]
 	path = src/github.com/juju/ratelimit
 	url = https://github.com/juju/ratelimit
+[submodule "src/github.com/jmoiron/sqlx"]
+	path = src/github.com/jmoiron/sqlx
+	url = https://github.com/jmoiron/sqlx
+[submodule "src/github.com/go-sql-driver/mysql"]
+	path = src/github.com/go-sql-driver/mysql
+	url = https://github.com/go-sql-driver/mysql

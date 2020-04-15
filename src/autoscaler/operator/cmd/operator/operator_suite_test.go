@@ -15,6 +15,7 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
+	_ "github.com/go-sql-driver/mysql"
 	"gopkg.in/yaml.v2"
 
 	"autoscaler/cf"
@@ -199,7 +200,10 @@ func (pr *OperatorRunner) KillWithFire() {
 }
 
 func (pr *OperatorRunner) ClearLockDatabase() {
-	lockDB, err := sql.Open(db.PostgresDriverName, os.Getenv("DBURL"))
+	database, err := db.GetConnection(os.Getenv("DBURL"))
+	Expect(err).NotTo(HaveOccurred())
+
+	lockDB, err := sql.Open(database.DriverName, database.DSN)
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = lockDB.Exec("DELETE FROM operator_lock")
