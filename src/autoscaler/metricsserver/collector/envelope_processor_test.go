@@ -81,7 +81,7 @@ var _ = Describe("EnvelopeProcessor", func() {
 					CollectedAt:   fclock.Now().UnixNano(),
 					Name:          models.MetricNameCPUUtil,
 					Unit:          models.UnitPercentage,
-					Value:         "10",
+					Value:         "11",
 					Timestamp:     1111,
 				})))
 			})
@@ -90,11 +90,22 @@ var _ = Describe("EnvelopeProcessor", func() {
 		Context("processing custom metrics", func() {
 			BeforeEach(func() {
 				Expect(envelopeChan).Should(BeSent(GenerateCustomMetrics("test-app-id", "1", "custom_name", "custom_unit", 11.88, 1111)))
+				Expect(envelopeChan).Should(BeSent(GenerateCustomMetrics("test-app-id", "0", "custom_name", "custom_unit", 11.08, 1111)))
 			})
 			It("sends standard app instance metrics to channel", func() {
 				Eventually(metricChan).Should(Receive(Equal(&models.AppInstanceMetric{
 					AppId:         "test-app-id",
 					InstanceIndex: 1,
+					CollectedAt:   fclock.Now().UnixNano(),
+					Name:          "custom_name",
+					Unit:          "custom_unit",
+					Value:         "12",
+					Timestamp:     1111,
+				})))
+
+				Eventually(metricChan).Should(Receive(Equal(&models.AppInstanceMetric{
+					AppId:         "test-app-id",
+					InstanceIndex: 0,
 					CollectedAt:   fclock.Now().UnixNano(),
 					Name:          "custom_name",
 					Unit:          "custom_unit",
@@ -315,3 +326,4 @@ func GenerateHttpStartStopEnvelope(sourceID, instance string, start, stop, times
 	}
 	return e
 }
+
