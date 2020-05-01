@@ -4,11 +4,11 @@
        xmlns:context="http://www.springframework.org/schema/context"
        xmlns:tx="http://www.springframework.org/schema/tx"
        xsi:schemaLocation="
-	http://www.springframework.org/schema/beans 
+	http://www.springframework.org/schema/beans
 	http://www.springframework.org/schema/beans/spring-beans.xsd
-	http://www.springframework.org/schema/context 
+	http://www.springframework.org/schema/context
     http://www.springframework.org/schema/context/spring-context.xsd
-	http://www.springframework.org/schema/tx 
+	http://www.springframework.org/schema/tx
 	http://www.springframework.org/schema/tx/spring-tx.xsd">
 
     <!-- This will automatically locate any and all property files you have
@@ -40,44 +40,44 @@
         </property>
     </bean>
 
-    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" primary="true"
+    <bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource" primary="true"
           destroy-method="close">
         <property name="driverClassName" value="${spring.datasource.driverClassName}"/>
         <property name="url" value="${spring.datasource.url}"/>
         <property name="username" value="${spring.datasource.username}"/>
         <property name="password" value="${spring.datasource.password}"/>
-        
-        <property name="maxActive" value="${spring.datasource.maxActive:8}"/>
-        <property name="maxIdle" value="${spring.datasource.maxIdle:8}"/>
-        <property name="minIdle" value="${spring.datasource.minIdle:0}"/>
-        <property name="initialSize" value="${spring.datasource.initialSize:0}"/>
-        
+
+        <property name="maxTotal" value="${spring.datasource.dbcp2.max-total:8}"/>
+        <property name="maxIdle" value="${spring.datasource.dbcp2.max-idle:8}"/>
+        <property name="minIdle" value="${spring.datasource.dbcp2.min-idle:0}"/>
+        <property name="initialSize" value="${spring.datasource.dbcp2.initial-size:0}"/>
+
     </bean>
-    
-    <bean id="policyDbDataSource" class="org.apache.commons.dbcp.BasicDataSource"
+
+    <bean id="policyDbDataSource" class="org.apache.commons.dbcp2.BasicDataSource"
           destroy-method="close">
         <property name="driverClassName" value="${spring.policyDbDataSource.driverClassName}"/>
         <property name="url" value="${spring.policyDbDataSource.url}"/>
         <property name="username" value="${spring.policyDbDataSource.username}"/>
         <property name="password" value="${spring.policyDbDataSource.password}"/>
-        
-        <property name="maxActive" value="${spring.policyDbDataSource.maxActive:8}"/>
-        <property name="maxIdle" value="${spring.policyDbDataSource.maxIdle:8}"/>
-        <property name="minIdle" value="${spring.policyDbDataSource.minIdle:0}"/>
-        <property name="initialSize" value="${spring.policyDbDataSource.initialSize:0}"/>
+
+        <property name="maxTotal" value="${spring.policyDbDataSource.max-total:8}"/>
+        <property name="maxIdle" value="${spring.policyDbDataSource.max-idle:8}"/>
+        <property name="minIdle" value="${spring.policyDbDataSource.min-idle:0}"/>
+        <property name="initialSize" value="${spring.policyDbDataSource.initial-size:0}"/>
     </bean>
-    
-	<bean id="dbStatusCollector" class="org.cloudfoundry.autoscaler.scheduler.health.DBStatusCollector">
-		<property name="dataSource" ref="dataSource"></property>
-		<property name="policyDBDataSource" ref="policyDbDataSource"></property>
-	</bean>
-	<bean class="io.prometheus.client.exporter.HTTPServer">
-		<constructor-arg value="${scheduler.healthserver.port:8081}"/>
-	</bean>
-	<bean id="healthExporter" class="org.cloudfoundry.autoscaler.scheduler.health.HealthExporter" init-method="init">
-		<property name="dbStatusCollector" ref="dbStatusCollector"></property>
-	</bean>
-	
+
+    <bean id="dbStatusCollector" class="org.cloudfoundry.autoscaler.scheduler.health.DBStatusCollector">
+        <property name="dataSource" ref="dataSource"></property>
+        <property name="policyDBDataSource" ref="policyDbDataSource"></property>
+    </bean>
+    <bean class="io.prometheus.client.exporter.HTTPServer">
+        <constructor-arg value="${scheduler.healthserver.port:8081}"/>
+    </bean>
+    <bean id="healthExporter" class="org.cloudfoundry.autoscaler.scheduler.health.HealthExporter" init-method="init">
+        <property name="dbStatusCollector" ref="dbStatusCollector"></property>
+    </bean>
+
     <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager" primary="true">
         <property name="entityManagerFactory" ref="entityManagerFactory"/>
     </bean>
@@ -85,10 +85,10 @@
         <property name="dataSource" ref="policyDbDataSource"/>
         <qualifier value="policyDbTransactionManager"/>
     </bean>
-    
+
     <tx:annotation-driven/>
-    
-    
+
+
 
     <bean id="quartzScheduler"
           class="org.springframework.scheduling.quartz.SchedulerFactoryBean"
