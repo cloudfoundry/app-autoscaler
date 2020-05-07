@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"time"
+	"math"
 
 	"code.cloudfoundry.org/lager"
 )
@@ -122,7 +123,7 @@ func (m *MetricPoller) aggregate(appId string, metricType string, metrics []*mod
 		}
 	}
 
-	avgValue := int64(float64(sum)/float64(count) + 0.5)
+	avgValue := int64(math.Ceil(float64(sum)/float64(count)))
 	return &models.AppMetric{
 		AppId:      appId,
 		MetricType: metricType,
@@ -131,3 +132,4 @@ func (m *MetricPoller) aggregate(appId string, metricType string, metrics []*mod
 		Timestamp:  timestamp,
 	}
 }
+

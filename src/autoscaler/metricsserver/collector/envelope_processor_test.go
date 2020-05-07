@@ -53,6 +53,8 @@ var _ = Describe("EnvelopeProcessor", func() {
 		Context("processing container metrics", func() {
 			BeforeEach(func() {
 				Expect(envelopeChan).Should(BeSent(GenerateContainerMetrics("test-app-id", "0", 10.2, 10*1024*1024, 20*1024*1024, 1111)))
+				Expect(envelopeChan).Should(BeSent(GenerateContainerMetrics("test-app-id", "1", 10.6, 10.2*1024*1024, 20*1024*1024, 1111)))
+			
 			})
 			It("sends standard app instance metrics to channel", func() {
 				Eventually(metricChan).Should(Receive(Equal(&models.AppInstanceMetric{
@@ -81,20 +83,62 @@ var _ = Describe("EnvelopeProcessor", func() {
 					CollectedAt:   fclock.Now().UnixNano(),
 					Name:          models.MetricNameCPUUtil,
 					Unit:          models.UnitPercentage,
-					Value:         "10",
+					Value:         "11",
 					Timestamp:     1111,
 				})))
+
+				Eventually(metricChan).Should(Receive(Equal(&models.AppInstanceMetric{
+					AppId:         "test-app-id",
+					InstanceIndex: 1,
+					CollectedAt:   fclock.Now().UnixNano(),
+					Name:          models.MetricNameMemoryUsed,
+					Unit:          models.UnitMegaBytes,
+					Value:         "11",
+					Timestamp:     1111,
+				})))
+
+				Eventually(metricChan).Should(Receive(Equal(&models.AppInstanceMetric{
+					AppId:         "test-app-id",
+					InstanceIndex: 1,
+					CollectedAt:   fclock.Now().UnixNano(),
+					Name:          models.MetricNameMemoryUtil,
+					Unit:          models.UnitPercentage,
+					Value:         "51",
+					Timestamp:     1111,
+				})))
+
+				Eventually(metricChan).Should(Receive(Equal(&models.AppInstanceMetric{
+					AppId:         "test-app-id",
+					InstanceIndex: 1,
+					CollectedAt:   fclock.Now().UnixNano(),
+					Name:          models.MetricNameCPUUtil,
+					Unit:          models.UnitPercentage,
+					Value:         "11",
+					Timestamp:     1111,
+				})))
+
 			})
 		})
 
 		Context("processing custom metrics", func() {
 			BeforeEach(func() {
 				Expect(envelopeChan).Should(BeSent(GenerateCustomMetrics("test-app-id", "1", "custom_name", "custom_unit", 11.88, 1111)))
+				Expect(envelopeChan).Should(BeSent(GenerateCustomMetrics("test-app-id", "0", "custom_name", "custom_unit", 11.08, 1111)))
 			})
 			It("sends standard app instance metrics to channel", func() {
 				Eventually(metricChan).Should(Receive(Equal(&models.AppInstanceMetric{
 					AppId:         "test-app-id",
 					InstanceIndex: 1,
+					CollectedAt:   fclock.Now().UnixNano(),
+					Name:          "custom_name",
+					Unit:          "custom_unit",
+					Value:         "12",
+					Timestamp:     1111,
+				})))
+
+				Eventually(metricChan).Should(Receive(Equal(&models.AppInstanceMetric{
+					AppId:         "test-app-id",
+					InstanceIndex: 0,
 					CollectedAt:   fclock.Now().UnixNano(),
 					Name:          "custom_name",
 					Unit:          "custom_unit",
@@ -110,7 +154,7 @@ var _ = Describe("EnvelopeProcessor", func() {
 				getAppIDs = func() map[string]bool {
 					return map[string]bool{"test-app-id": true}
 				}
-				Expect(envelopeChan).Should(BeSent(GenerateHttpStartStopEnvelope("test-app-id", "0", 10*1000*1000, 20*1000*1000, 1111)))
+				Expect(envelopeChan).Should(BeSent(GenerateHttpStartStopEnvelope("test-app-id", "0", 10*1000*1000, 25*1000*1000, 1111)))
 				Expect(envelopeChan).Should(BeSent(GenerateHttpStartStopEnvelope("test-app-id", "1", 10*1000*1000, 30*1000*1000, 1111)))
 				Expect(envelopeChan).Should(BeSent(GenerateHttpStartStopEnvelope("test-app-id", "0", 20*1000*1000, 30*1000*1000, 1111)))
 				Expect(envelopeChan).Should(BeSent(GenerateHttpStartStopEnvelope("test-app-id", "1", 20*1000*1000, 50*1000*1000, 1111)))
@@ -143,7 +187,7 @@ var _ = Describe("EnvelopeProcessor", func() {
 					CollectedAt:   fclock.Now().UnixNano(),
 					Name:          models.MetricNameResponseTime,
 					Unit:          models.UnitMilliseconds,
-					Value:         "10",
+					Value:         "13",
 					Timestamp:     fclock.Now().UnixNano(),
 				}))
 
@@ -315,3 +359,4 @@ func GenerateHttpStartStopEnvelope(sourceID, instance string, start, stop, times
 	}
 	return e
 }
+

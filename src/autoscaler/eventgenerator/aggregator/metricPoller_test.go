@@ -62,7 +62,7 @@ var _ = Describe("MetricPoller", func() {
 			CollectedAt:   222222,
 			Name:          testMetricType,
 			Unit:          testMetricUnit,
-			Value:         "400",
+			Value:         "401",
 			Timestamp:     220000,
 		},
 	}
@@ -147,7 +147,7 @@ var _ = Describe("MetricPoller", func() {
 				Expect(appMetric).To(Equal(&models.AppMetric{
 					AppId:      testAppId,
 					MetricType: testMetricType,
-					Value:      "250",
+					Value:      "251",
 					Unit:       testMetricUnit,
 					Timestamp:  timestamp}))
 			})
@@ -224,3 +224,4 @@ var _ = Describe("MetricPoller", func() {
 		})
 	})
 })
+
