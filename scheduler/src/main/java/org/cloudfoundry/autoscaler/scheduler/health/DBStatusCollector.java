@@ -5,7 +5,7 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
-import org.apache.commons.dbcp.BasicDataSource;
+import org.apache.commons.dbcp2.BasicDataSource;
 
 import io.prometheus.client.Collector;
 import io.prometheus.client.GaugeMetricFamily;
@@ -39,7 +39,7 @@ public class DBStatusCollector extends Collector {
 				basicDataSource.getInitialSize()));
 		mfs.add(new GaugeMetricFamily(namespace + "_" + subSystem + "_data_source" + "_max_active",
 				"The maximum number of active connections that can be allocated from this pool at the same time, or negative for no limit",
-				basicDataSource.getMaxActive()));
+				basicDataSource.getMaxTotal()));
 		mfs.add(new GaugeMetricFamily(namespace + "_" + subSystem + "_data_source" + "_max_idle",
 				"The maximum number of connections that can remain idle in the pool, without extra ones being released, or negative for no limit.",
 				basicDataSource.getMaxIdle()));
@@ -64,7 +64,7 @@ public class DBStatusCollector extends Collector {
 				policyBasicDataSource.getInitialSize()));
 		mfs.add(new GaugeMetricFamily(namespace + "_" + subSystem + "_policy_db_data_source" + "_max_active",
 				"The maximum number of active connections that can be allocated from this pool at the same time, or negative for no limit",
-				policyBasicDataSource.getMaxActive()));
+				policyBasicDataSource.getMaxTotal()));
 		mfs.add(new GaugeMetricFamily(namespace + "_" + subSystem + "_policy_db_data_source" + "_max_idle",
 				"The maximum number of connections that can remain idle in the pool, without extra ones being released, or negative for no limit.",
 				policyBasicDataSource.getMaxIdle()));
