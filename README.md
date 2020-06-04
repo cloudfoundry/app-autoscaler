@@ -32,7 +32,7 @@ You can follow the development progress on [Pivotal Tracker][t].
 
 ### Database requirement
 
-The `App-AutoScaler` uses Postgres as the backend data store. To download and install, refer to [PostgreSQL][p] web site.
+The `App-AutoScaler` supports Postgres and MySQL. It uses Postgres as the default backend data store. To download and install, refer to [PostgreSQL][p] and [MySQL][m] web site.
 
 
 ### Setup
@@ -48,6 +48,7 @@ $ git submodule update --init --recursive
 
 #### Initialize the Database
 
+* **Postgres**
 ```shell
 createuser postgres -s
 psql postgres://postgres@127.0.0.1:5432 -c 'DROP DATABASE IF EXISTS autoscaler'
@@ -64,6 +65,21 @@ java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:pos
 java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/operator/db/operator.db.changelog.yml update
 ```
 
+* **MySQL**
+```shell 
+mysql -u root -e "DROP DATABASE IF EXISTS autoscaler;"
+mysql -u root -e "CREATE DATABASE autoscaler;"
+
+mvn package
+java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=api/db/api.db.changelog.yml --username=root update
+java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=servicebroker/db/servicebroker.db.changelog.json --username=root update
+java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=scheduler/db/scheduler.changelog-master.yaml --username=root update
+java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=scheduler/db/quartz.changelog-master.yaml --username=root update
+java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=src/autoscaler/metricscollector/db/metricscollector.db.changelog.yml --username=root update
+java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=src/autoscaler/eventgenerator/db/dataaggregator.db.changelog.yml --username=root update
+java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=src/autoscaler/scalingengine/db/scalingengine.db.changelog.yml --username=root update
+java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=src/autoscaler/operator/db/operator.db.changelog.yml --username=root update
+```
 #### Generate TLS Certificates
 
 ```shell
@@ -82,6 +98,7 @@ rm $TMPDIR/consul-0.7.5.zip
 
 ### Unit tests
 
+* **Postgres**:
 ```shell
 go install github.com/onsi/ginkgo/ginkgo
 export DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
@@ -94,8 +111,24 @@ mvn test
 popd
 ```
 
+* **MySQL**:
+```shell
+go install github.com/onsi/ginkgo/ginkgo
+export DBURL="root@tcp(localhost)/autoscaler?tls=false"
+pushd src/autoscaler
+ginkgo -r -race -randomizeAllSpecs
+popd
+
+pushd scheduler
+mvn test -Dspring.profiles.active=mysql
+popd
+```
+
+
+
 ### Integration tests
 
+**Postgres**
 ```shell
 pushd scheduler
 mvn package -DskipTests
@@ -105,6 +138,8 @@ go install github.com/onsi/ginkgo/ginkgo
 export DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
 ginkgo -r -race -randomizeAllSpecs src/integration
 ```
+**MySQL**: 
+Just replace the $DBURL to `root@tcp(localhost)/autoscaler?tls=false`.
 
 ## Deploy and offer Auto-Scaler as a service
 
@@ -130,3 +165,4 @@ This project is released under version 2.0 of the [Apache License][l].
 [p]: https://www.postgresql.org/
 [r]: https://github.com/cloudfoundry/app-autoscaler-release
 [u]: docs/Readme.md
+[m]: https://www.mysql.com/

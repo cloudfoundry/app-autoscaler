@@ -22,8 +22,9 @@ import (
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -113,7 +114,10 @@ var _ = SynchronizedAfterSuite(func() {
 })
 
 func initDB() {
-	egDB, err := sqlx.Open(db.PostgresDriverName, os.Getenv("DBURL"))
+	database, err := db.GetConnection(os.Getenv("DBURL"))
+	Expect(err).NotTo(HaveOccurred())
+
+	egDB, err := sqlx.Open(database.DriverName, database.DSN)
 	Expect(err).NotTo(HaveOccurred())
 
 	_, err = egDB.Exec("DELETE FROM app_metric")

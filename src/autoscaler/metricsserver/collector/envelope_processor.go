@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"time"
+	"math"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
@@ -103,7 +104,7 @@ func (ep *envelopeProcessor) processContainerMetrics(appID string, instanceIndex
 			CollectedAt:   ep.clock.Now().UnixNano(),
 			Name:          models.MetricNameMemoryUsed,
 			Unit:          models.UnitMegaBytes,
-			Value:         fmt.Sprintf("%d", int(memory.GetValue()/(1024*1024)+0.5)),
+			Value:         fmt.Sprintf("%d", int(math.Ceil(memory.GetValue()/(1024*1024)))),
 			Timestamp:     timestamp,
 		}
 		ep.metricChan <- memoryUsedMetric
@@ -116,7 +117,7 @@ func (ep *envelopeProcessor) processContainerMetrics(appID string, instanceIndex
 				CollectedAt:   ep.clock.Now().UnixNano(),
 				Name:          models.MetricNameMemoryUtil,
 				Unit:          models.UnitPercentage,
-				Value:         fmt.Sprintf("%d", int(memory.GetValue()/memoryQuota.GetValue()*100+0.5)),
+				Value:         fmt.Sprintf("%d", int(math.Ceil(memory.GetValue()/memoryQuota.GetValue()*100))),
 				Timestamp:     timestamp,
 			}
 			ep.metricChan <- memoryUtilMetric
@@ -131,7 +132,7 @@ func (ep *envelopeProcessor) processContainerMetrics(appID string, instanceIndex
 			CollectedAt:   ep.clock.Now().UnixNano(),
 			Name:          models.MetricNameCPUUtil,
 			Unit:          models.UnitPercentage,
-			Value:         fmt.Sprintf("%d", int64(cpu.GetValue()+0.5)),
+			Value:         fmt.Sprintf("%d", int64(math.Ceil(cpu.GetValue()))),
 			Timestamp:     timestamp,
 		}
 		ep.metricChan <- cpuMetric
@@ -159,7 +160,7 @@ func (ep *envelopeProcessor) processCustomMetrics(appID string, instanceIndex ui
 			CollectedAt:   ep.clock.Now().UnixNano(),
 			Name:          n,
 			Unit:          v.Unit,
-			Value:         fmt.Sprintf("%d", int64(v.Value+0.5)),
+			Value:         fmt.Sprintf("%d", int64(math.Ceil(v.Value))),
 			Timestamp:     timestamp,
 		}
 		ep.metricChan <- customMetric
@@ -204,7 +205,7 @@ func (ep *envelopeProcessor) computeAndSaveMetrics() {
 				CollectedAt:   ep.clock.Now().UnixNano(),
 				Name:          models.MetricNameThroughput,
 				Unit:          models.UnitRPS,
-				Value:         fmt.Sprintf("%d", int(float64(numReq)/ep.collectInterval.Seconds()+0.5)),
+				Value:         fmt.Sprintf("%d", int(math.Ceil(float64(numReq)/ep.collectInterval.Seconds()))),
 				Timestamp:     ep.clock.Now().UnixNano(),
 			}
 			ep.metricChan <- throughputMetric
@@ -215,7 +216,7 @@ func (ep *envelopeProcessor) computeAndSaveMetrics() {
 				CollectedAt:   ep.clock.Now().UnixNano(),
 				Name:          models.MetricNameResponseTime,
 				Unit:          models.UnitMilliseconds,
-				Value:         fmt.Sprintf("%d", ep.sumReponseTimes[appID][instanceIdx]/(numReq*1000*1000)),
+				Value:         fmt.Sprintf("%d", int64(math.Ceil(float64(ep.sumReponseTimes[appID][instanceIdx])/float64((numReq*1000*1000))))),
 				Timestamp:     ep.clock.Now().UnixNano(),
 			}
 			ep.metricChan <- responseTimeMetric
@@ -225,3 +226,4 @@ func (ep *envelopeProcessor) computeAndSaveMetrics() {
 	ep.sumReponseTimes = map[string]map[uint32]int64{}
 
 }
+
