@@ -114,7 +114,7 @@ func (c *Config) Validate() error {
 		return fmt.Errorf("Configuration error: RateLimit.ValidDuration is equal or less than zero nanosecond")
 	}
 
-	if err := c.Health.Validate("metricsforwarder"); err != nil {
+	if err := c.Health.Validate(); err != nil {
 		return err
 	}
 
