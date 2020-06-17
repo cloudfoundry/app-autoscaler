@@ -173,6 +173,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.CF.SkipSSLValidation = true
 	cfg.Health = models.HealthConfig{
 		Port: healthport,
+		HealthCheckUsername: "healthcheckuser",
+		HealthCheckPassword: "healthcheckpassword",
 	}
 	cfg.RateLimit.MaxAmount = 10
 	cfg.RateLimit.ValidDuration = 1 * time.Second
