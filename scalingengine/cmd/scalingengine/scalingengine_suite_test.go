@@ -14,7 +14,7 @@ import (
 	"github.com/onsi/gomega/ghttp"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 
 	"fmt"
 	"io/ioutil"
@@ -105,6 +105,9 @@ var _ = SynchronizedBeforeSuite(
 		conf.DefaultCoolDownSecs = 300
 		conf.LockSize = 32
 		conf.HttpClientTimeout = 10 * time.Second
+
+		conf.Health.HealthCheckUsername = "scalingenginehealthcheckuser"
+		conf.Health.HealthCheckPassword = "scalingenginehealthcheckpassword"
 
 		configFile = writeConfig(&conf)
 

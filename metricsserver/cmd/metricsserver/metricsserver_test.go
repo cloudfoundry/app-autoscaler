@@ -113,6 +113,11 @@ var _ = Describe("MetricsServer", func() {
 
 	Describe("when Health server is ready to serve RESTful API", func() {
 		BeforeEach(func() {
+
+			basicAuthConfig := cfg
+			basicAuthConfig.Health.HealthCheckUsername = ""
+			basicAuthConfig.Health.HealthCheckPassword = ""
+			runner.configPath = writeConfig(&basicAuthConfig).Name()
 			runner.Start()
 
 		})
@@ -150,6 +155,40 @@ var _ = Describe("MetricsServer", func() {
 				Expect(profileIndexBody).To(ContainSubstring("trace"))
 				rsp.Body.Close()
 
+			})
+		})
+	})
+
+	Describe("when Health server is ready to serve RESTful API with basic Auth", func() {
+		BeforeEach(func() {
+			runner.Start()
+		})
+
+		Context("when username and password are incorrect for basic authentication during health check", func() {
+			It("should return 401", func() {
+
+				req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://127.0.0.1:%d/health", healthport), nil)
+				Expect(err).NotTo(HaveOccurred())
+
+				req.SetBasicAuth("wrongusername", "wrongpassword")
+
+				rsp, err := healthHttpClient.Do(req)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(rsp.StatusCode).To(Equal(http.StatusUnauthorized))
+			})
+		})
+
+		Context("when username and password are correct for basic authentication during health check", func() {
+			It("should return 200", func() {
+
+				req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://127.0.0.1:%d/health", healthport), nil)
+				Expect(err).NotTo(HaveOccurred())
+
+				req.SetBasicAuth(cfg.Health.HealthCheckUsername, cfg.Health.HealthCheckPassword)
+
+				rsp, err := healthHttpClient.Do(req)
+				Expect(err).ToNot(HaveOccurred())
+				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 			})
 		})
 	})

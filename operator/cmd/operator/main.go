@@ -158,7 +158,7 @@ func main() {
 	})
 	members = append(grouper.Members{{"db-lock-maintainer", dbLockMaintainer}}, members...)
 
-	healthServer, err := healthendpoint.NewServer(logger.Session("health-server"), conf.Health.Port, promRegistry)
+	healthServer, err := healthendpoint.NewServerWithBasicAuth(logger.Session("health-server"), conf.Health.Port, promRegistry, conf.Health.HealthCheckUsername, conf.Health.HealthCheckPassword, conf.Health.HealthCheckUsernameHash, conf.Health.HealthCheckPasswordHash)
 	if err != nil {
 		logger.Error("failed to create health server", err)
 		os.Exit(1)
