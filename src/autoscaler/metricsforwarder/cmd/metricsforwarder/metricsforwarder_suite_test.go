@@ -20,7 +20,7 @@ import (
 	"github.com/onsi/gomega/gexec"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 
 	"autoscaler/db"
 	"autoscaler/metricsforwarder/config"
@@ -117,6 +117,9 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.RateLimit.ValidDuration = 1 * time.Second
 	cfg.Logging.Level = "debug"
 
+	cfg.Health.HealthCheckUsername = "metricsforwarderhealthcheckuser"
+	cfg.Health.HealthCheckPassword = "metricsforwarderhealthcheckpassword"
+
 	cfg.Server.Port = 10000 + GinkgoParallelNode()
 	healthport = 8000 + GinkgoParallelNode()
 	cfg.Health.Port = healthport
@@ -128,6 +131,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		MaxIdleConnections:    5,
 		ConnectionMaxLifetime: 10 * time.Second,
 	}
+
 	configFile = writeConfig(&cfg)
 
 	httpClient = &http.Client{}

@@ -178,7 +178,9 @@ func initConfig() {
 			},
 		},
 		Health: models.HealthConfig{
-			Port: healthport,
+			Port:                healthport,
+			HealthCheckUsername: "metricsgatewayhealthcheckuser",
+			HealthCheckPassword: "metricsgatewayhealthcheckpassword",
 		},
 	}
 	configFile = writeConfig(&conf)
