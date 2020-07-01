@@ -7,9 +7,10 @@ import (
 	"database/sql"
 	"os"
 	"time"
-	"github.com/lib/pq"
-	"github.com/go-sql-driver/mysql"
+
 	"code.cloudfoundry.org/lager"
+	"github.com/go-sql-driver/mysql"
+	"github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 )
@@ -95,7 +96,7 @@ var _ = Describe("BindingSqldb", func() {
 				Expect(err).To(BeAssignableToTypeOf(&mysql.MySQLError{}))
 			})
 		})
-		
+
 		Context("when db url is correct", func() {
 			It("should not error", func() {
 				Expect(err).NotTo(HaveOccurred())
@@ -109,6 +110,7 @@ var _ = Describe("BindingSqldb", func() {
 			bdb, err = NewBindingSQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
 
+			cleanServiceBindingTable()
 			cleanServiceInstanceTable()
 		})
 		AfterEach(func() {
@@ -158,10 +160,18 @@ var _ = Describe("BindingSqldb", func() {
 	})
 
 	Describe("UpdateServiceInstance", func() {
+		var (
+			updatedPolicyJsonStr string
+			updatedPolicyGuid    string
+		)
+
 		BeforeEach(func() {
 			bdb, err = NewBindingSQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
+			updatedPolicyJsonStr = policyJsonStr2
+			updatedPolicyGuid = policyGuid2
 
+			cleanServiceBindingTable()
 			cleanServiceInstanceTable()
 		})
 		AfterEach(func() {
@@ -169,7 +179,7 @@ var _ = Describe("BindingSqldb", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 		JustBeforeEach(func() {
-			err = bdb.UpdateServiceInstance(models.ServiceInstance{testInstanceId, testOrgGuid, testSpaceGuid, policyJsonStr2, policyGuid2})
+			err = bdb.UpdateServiceInstance(models.ServiceInstance{testInstanceId, testOrgGuid, testSpaceGuid, updatedPolicyJsonStr, updatedPolicyGuid})
 		})
 		Context("when the instance to be updated does not exist", func() {
 			It("should error", func() {
@@ -188,13 +198,17 @@ var _ = Describe("BindingSqldb", func() {
 					Expect(err).NotTo(HaveOccurred())
 					serviceInstance, err := bdb.GetServiceInstance(testInstanceId)
 					Expect(err).NotTo(HaveOccurred())
-					Expect(serviceInstance).To(Equal(&models.ServiceInstance{testInstanceId, testOrgGuid, testSpaceGuid, policyJsonStr2, policyGuid2}))
+					Expect(serviceInstance.ServiceInstanceId).To(Equal(testInstanceId))
+					Expect(serviceInstance.OrgId).To(Equal(testOrgGuid))
+					Expect(serviceInstance.SpaceId).To(Equal(testSpaceGuid))
+					Expect(serviceInstance.DefaultPolicy).To(MatchJSON(policyJsonStr2))
+					Expect(serviceInstance.DefaultPolicyGuid).To(Equal(policyGuid2))
 				})
 			})
 			Context("and it is being updated with an empty default policy", func() {
 				BeforeEach(func() {
-					policyJsonStr2 = ""
-					policyGuid2 = ""
+					updatedPolicyJsonStr = ""
+					updatedPolicyGuid = ""
 				})
 				It("should save a NULL value to the database", func() {
 					Expect(err).NotTo(HaveOccurred())
@@ -327,7 +341,11 @@ var _ = Describe("BindingSqldb", func() {
 				err = bdb.CreateServiceBinding(testBindingId, testInstanceId, testAppId)
 			})
 			It("should return what was created", func() {
-				Expect(retrievedServiceInstance).To(Equal(&models.ServiceInstance{testInstanceId, testOrgGuid, testSpaceGuid, policyJsonStr, policyGuid}))
+				Expect(retrievedServiceInstance.ServiceInstanceId).To(Equal(testInstanceId))
+				Expect(retrievedServiceInstance.OrgId).To(Equal(testOrgGuid))
+				Expect(retrievedServiceInstance.SpaceId).To(Equal(testSpaceGuid))
+				Expect(retrievedServiceInstance.DefaultPolicy).To(MatchJSON(policyJsonStr))
+				Expect(retrievedServiceInstance.DefaultPolicyGuid).To(Equal(policyGuid2))
 			})
 		})
 	})

@@ -12,11 +12,11 @@ import (
 	"autoscaler/db"
 	"autoscaler/models"
 
-	_ "github.com/lib/pq"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/jmoiron/sqlx"
 )
 
 var dbHelper *sqlx.DB
@@ -35,10 +35,10 @@ var _ = BeforeSuite(func() {
 	}
 	database, err := db.GetConnection(dbUrl)
 	if err != nil {
-		Fail("failed to parse database connection: "+ err.Error())
+		Fail("failed to parse database connection: " + err.Error())
 	}
 
-	dbHelper, e =  sqlx.Open(database.DriverName, database.DSN)
+	dbHelper, e = sqlx.Open(database.DriverName, database.DSN)
 	if e != nil {
 		Fail("can not connect database: " + e.Error())
 	}
@@ -111,7 +111,7 @@ func hasServiceInstance(serviceInstanceId string) bool {
 }
 
 func hasServiceInstanceWithNullDefaultPolicy(serviceInstanceId string) bool {
-	query := "SELECT * FROM service_instance WHERE service_instance_id = $1 AND default_policy IS NULL AND default_policy_guid IS NULL"
+	query := dbHelper.Rebind("SELECT * FROM service_instance WHERE service_instance_id = ? AND default_policy IS NULL AND default_policy_guid IS NULL")
 	rows, e := dbHelper.Query(query, serviceInstanceId)
 	if e != nil {
 		Fail("can not query table service_instance: " + e.Error())
@@ -157,7 +157,7 @@ func insertPolicyWithGuid(appId string, scalingPolicy *models.ScalingPolicy, gui
 		Fail("failed to marshall scaling policy" + e.Error())
 	}
 
-	query := "INSERT INTO policy_json(app_id, policy_json, guid) VALUES($1, $2, $3)"
+	query := dbHelper.Rebind("INSERT INTO policy_json(app_id, policy_json, guid) VALUES(?, ?, ?)")
 	_, e = dbHelper.Exec(query, appId, string(policyJson), guid)
 
 	if e != nil {
@@ -410,7 +410,7 @@ func validateLockNotInDB(owner string) error {
 
 func formatPolicyString(policyStr string) string {
 	scalingPolicy := &models.ScalingPolicy{}
-	err := json.Unmarshal([]byte(policyStr),&scalingPolicy)
+	err := json.Unmarshal([]byte(policyStr), &scalingPolicy)
 	if err != nil {
 		fmt.Errorf("failed to unmarshal policyJson string %s", policyStr)
 		return ""
