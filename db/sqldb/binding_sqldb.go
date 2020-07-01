@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/lager"
-	_ "github.com/lib/pq"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 
 	"autoscaler/db"
 )
@@ -139,9 +139,9 @@ func (bdb *BindingSQLDB) GetServiceInstanceByAppId(appId string) (*models.Servic
 }
 
 func (bdb *BindingSQLDB) UpdateServiceInstance(serviceInstance models.ServiceInstance) error {
-	query := bdb.sqldb.Rebind("UPDATE service_instance SET default_policy = $2, default_policy_guid = $3 WHERE service_instance_id = ?")
+	query := bdb.sqldb.Rebind("UPDATE service_instance SET default_policy = ?, default_policy_guid = ? WHERE service_instance_id = ?")
 
-	result, err := bdb.sqldb.Exec(query, serviceInstance.ServiceInstanceId, nullableString(serviceInstance.DefaultPolicy), nullableString(serviceInstance.DefaultPolicyGuid))
+	result, err := bdb.sqldb.Exec(query, nullableString(serviceInstance.DefaultPolicy), nullableString(serviceInstance.DefaultPolicyGuid), serviceInstance.ServiceInstanceId)
 	if err != nil {
 		bdb.logger.Error("update-service-instance", err, lager.Data{"query": query, "serviceinstanceid": serviceInstance.ServiceInstanceId})
 		return err
