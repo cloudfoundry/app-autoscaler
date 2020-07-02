@@ -422,3 +422,11 @@ func formatPolicyString(policyStr string) string {
 	}
 	return string(policyJsonStr)
 }
+
+func expectServiceInstancesToEqual(actual *models.ServiceInstance, expected *models.ServiceInstance) {
+	ExpectWithOffset(1, actual.ServiceInstanceId).To(Equal(expected.ServiceInstanceId))
+	ExpectWithOffset(1, actual.OrgId).To(Equal(expected.OrgId))
+	ExpectWithOffset(1, actual.SpaceId).To(Equal(expected.SpaceId))
+	ExpectWithOffset(1, actual.DefaultPolicy).To(MatchJSON(expected.DefaultPolicy))
+	ExpectWithOffset(1, actual.DefaultPolicyGuid).To(Equal(expected.DefaultPolicyGuid))
+}

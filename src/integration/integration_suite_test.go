@@ -29,10 +29,10 @@ import (
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry/sonde-go/events"
-	"github.com/gogo/protobuf/proto"
-	_ "github.com/lib/pq"
 	_ "github.com/go-sql-driver/mysql"
-    "github.com/jmoiron/sqlx"
+	"github.com/gogo/protobuf/proto"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
@@ -121,7 +121,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	database, err := db.GetConnection(dbUrl)
 	Expect(err).NotTo(HaveOccurred())
-	
+
 	dbHelper, err = sqlx.Open(database.DriverName, database.DSN)
 	Expect(err).NotTo(HaveOccurred())
 
@@ -139,7 +139,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	dbUrl = os.Getenv("DBURL")
 	database, err := db.GetConnection(dbUrl)
 	Expect(err).NotTo(HaveOccurred())
-	
+
 	dbHelper, err = sqlx.Open(database.DriverName, database.DSN)
 	Expect(err).NotTo(HaveOccurred())
 
@@ -741,7 +741,13 @@ func assertScheduleContents(appId string, expectHttpStatus int, expectResponseMa
 	var schedules map[string]interface{} = actual["schedules"].(map[string]interface{})
 	var recurring []interface{} = schedules["recurring_schedule"].([]interface{})
 	var specificDate []interface{} = schedules["specific_date"].([]interface{})
+	if len(specificDate) != expectResponseMap["specific_date"] {
+		_, _ = fmt.Fprintf(GinkgoWriter, "Expected %d specific date schedules, but found %d: %#v\n", expectResponseMap["specific_date"], len(specificDate), specificDate)
+	}
 	ExpectWithOffset(1, len(specificDate)).To(Equal(expectResponseMap["specific_date"]))
+	if len(recurring) != expectResponseMap["recurring_schedule"] {
+		_, _ = fmt.Fprintf(GinkgoWriter, "Expected %d recurring schedules, but found %d: %#v\n", expectResponseMap["recurring_schedule"], len(recurring), recurring)
+	}
 	ExpectWithOffset(1, len(recurring)).To(Equal(expectResponseMap["recurring_schedule"]))
 }
 
