@@ -56,6 +56,18 @@ func (mw *Middleware) Oauth(next http.Handler) http.Handler {
 			})
 			return
 		}
+		isUserAdmin, err := mw.cfClient.IsUserAdmin(userToken)
+		if err != nil {
+			mw.logger.Error("failed to check if user is admin", err, nil)
+			handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
+				Code:    "Interal-Server-Error",
+				Message: "Failed to check if user is admin"})
+			return
+		}
+		if isUserAdmin {
+			next.ServeHTTP(w, r)
+			return
+		}
 		isUserSpaceDeveloper, err := mw.cfClient.IsUserSpaceDeveloper(userToken, appId)
 		if err != nil {
 			if err == cf.ErrUnauthrorized {
@@ -70,21 +82,8 @@ func (mw *Middleware) Oauth(next http.Handler) http.Handler {
 					Message: "Failed to check space developer permission"})
 				return
 			}
-
 		}
 		if isUserSpaceDeveloper {
-			next.ServeHTTP(w, r)
-			return
-		}
-		isUserAdmin, err := mw.cfClient.IsUserAdmin(userToken)
-		if err != nil {
-			mw.logger.Error("failed to check if user is admin", err, nil)
-			handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
-				Code:    "Interal-Server-Error",
-				Message: "Failed to check if user is admin"})
-			return
-		}
-		if isUserAdmin {
 			next.ServeHTTP(w, r)
 			return
 		}
