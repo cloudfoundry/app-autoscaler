@@ -30,6 +30,7 @@ type DatabaseConfig struct {
 	MaxOpenConnections    int           `yaml:"max_open_connections"`
 	MaxIdleConnections    int           `yaml:"max_idle_connections"`
 	ConnectionMaxLifetime time.Duration `yaml:"connection_max_lifetime"`
+	ConnectionMaxIdleTime time.Duration `yaml:"connection_max_idletime"`
 }
 type DatabaseStatus interface {
 	GetDBStatus() sql.DBStats

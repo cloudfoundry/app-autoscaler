@@ -31,6 +31,7 @@ var _ = Describe("SbssSQLDb", func() {
 			MaxOpenConnections:    10,
 			MaxIdleConnections:    5,
 			ConnectionMaxLifetime: 10 * time.Second,
+			ConnectionMaxIdleTime: 10 * time.Second,
 		}
 		credentialsOptions = models.CredentialsOptions{
 			InstanceId: "app-id-1",

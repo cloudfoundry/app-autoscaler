@@ -6,7 +6,7 @@ env:
     - DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
     - SBSS_DBURL=postgresql://sbss_test1:test1234@localhost/autoscaler?sslmode=disable
     - NODE_VERSION=6.2
-    - GO_VERSION=1.13.3
+    - GO_VERSION=1.15.1
     - LOGLEVEL=info
 language: java
 cache:

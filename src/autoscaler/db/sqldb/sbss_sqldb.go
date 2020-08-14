@@ -33,6 +33,7 @@ func NewSbssSQLDb(dbConfig db.DatabaseConfig, logger lager.Logger) (*SbssSQLDb, 
 	sqldb.SetConnMaxLifetime(dbConfig.ConnectionMaxLifetime)
 	sqldb.SetMaxIdleConns(dbConfig.MaxIdleConnections)
 	sqldb.SetMaxOpenConns(dbConfig.MaxOpenConnections)
+	sqldb.SetConnMaxIdleTime(dbConfig.ConnectionMaxIdleTime)
 
 	return &SbssSQLDb{
 		dbConfig: dbConfig,
