@@ -70,25 +70,6 @@ var _ = Describe("RateLimiter", func() {
 
 	})
 
-	Describe("GetStats", func() {
-		BeforeEach(func() {
-			limiter = NewRateLimiter(bucketCapacity, maxAmount, validDuration, expireDuration, expireCheckInterval, NewLogger("ratelimiter"))
-		})
-
-		It("reports stats ", func() {
-			for i := 5; i < bucketCapacity; i++ {
-				key := "192.168.1.100"
-				Expect(limiter.ExceedsLimit(key)).To(BeFalse())
-			}
-			for i := 7; i < bucketCapacity; i++ {
-				key := "192.168.1.101"
-				Expect(limiter.ExceedsLimit(key)).To(BeFalse())
-			}
-
-			stats := limiter.GetStats()
-			Expect(len(stats)).To(Equal(2))
-		})
-	})
 
 	Describe("Expire", func() {
 		BeforeEach(func() {
@@ -101,11 +82,10 @@ var _ = Describe("RateLimiter", func() {
 				Expect(limiter.ExceedsLimit(key)).To(BeFalse())
 			}
 			Expect(limiter.ExceedsLimit(key)).To(BeTrue())
-			Expect(len(limiter.GetStats())).To(Equal(1))
 
 			Sleep(expireDuration + expireCheckInterval)
-			Expect(len(limiter.GetStats())).To(Equal(0))
 			Expect(limiter.ExceedsLimit(key)).To(BeFalse())
 		})
 	})
 })
+
