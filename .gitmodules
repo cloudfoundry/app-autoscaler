@@ -154,3 +154,6 @@
 [submodule "src/github.com/go-sql-driver/mysql"]
 	path = src/github.com/go-sql-driver/mysql
 	url = https://github.com/go-sql-driver/mysql
+[submodule "src/golang.org/x/time"]
+	path = src/golang.org/x/time
+	url = https://github.com/golang/time
