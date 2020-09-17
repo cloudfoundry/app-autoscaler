@@ -107,6 +107,12 @@ var _ = BeforeSuite(func() {
 			PlanDefinitions: map[string]config.PlanDefinition{
 				"a-plan-id": {
 					PlanCheckEnabled:  true,
+					PlanUpdateable: true,
+					SchedulesCount:    1,
+					ScalingRulesCount: 1,
+				},
+				"a-plan-id-not-updatable": {
+					PlanCheckEnabled:  true,
 					SchedulesCount:    1,
 					ScalingRulesCount: 1,
 				},
