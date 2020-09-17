@@ -369,7 +369,6 @@ var _ = Describe("BrokerHandler", func() {
 			instanceUpdateRequestBody = &models.InstanceUpdateRequestBody{
 				BrokerCommonRequestBody: models.BrokerCommonRequestBody{
 					ServiceID: "a-service-id",
-					PlanID:    "a-plan-id",
 				},
 			}
 		})
@@ -395,34 +394,38 @@ var _ = Describe("BrokerHandler", func() {
 				})
 			})
 		})
-		Context("When no default policy update is performed", func() {
+		Context("When no default policy & service plan update is performed", func() {
 			BeforeEach(func() {
+				instanceUpdateRequestBody = &models.InstanceUpdateRequestBody{
+					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+						ServiceID: "a-service-id",
+					},
+				}
 				body, err = json.Marshal(instanceUpdateRequestBody)
 				Expect(err).NotTo(HaveOccurred())
 			})
 			It("fails with 422", func() {
-				Expect(resp.Code).To(Equal(http.StatusUnprocessableEntity), DebugTestInfo())
-				Expect(resp.Body.String()).To(Equal(`{"code":"Unprocessable Entity","message":"Failed to update service instance: Only default_policy updates allowed"}`))
+				Expect(resp.Code).To(Equal(http.StatusUnprocessableEntity))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Unprocessable Entity","message":"Failed to update service instance: Only default policy and service plan updates are allowed"}`))
 			})
 		})
 		Context("When an invalid default policy is present", func() {
 			BeforeEach(func() {
 				invalidDefaultPolicy := `
-						{
-							"instance_min_count":1,
-							"scaling_rules":[
 							{
-								"metric_type":"memoryused",
-								"threshold":30,
-								"operator":"<",
-								"adjustment":"-1"
-							}]
-						}`
+								"instance_min_count":1,
+								"scaling_rules":[
+								{
+									"metric_type":"memoryused",
+									"threshold":30,
+									"operator":"<",
+									"adjustment":"-1"
+								}]
+							}`
 				m := json.RawMessage(invalidDefaultPolicy)
 				instanceUpdateRequestBody = &models.InstanceUpdateRequestBody{
 					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
 						ServiceID: "a-service-id",
-						PlanID:    "a-plan-id",
 					},
 					Parameters: &models.InstanceParameters{
 						DefaultPolicy: &m,
@@ -463,6 +466,7 @@ var _ = Describe("BrokerHandler", func() {
 				instanceUpdateRequestBody.Parameters = &parameters
 				body, err = json.Marshal(instanceUpdateRequestBody)
 				Expect(err).NotTo(HaveOccurred())
+				fakecfClient.GetServicePlanReturns("a-plan-id", nil)
 				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{}, nil)
 			})
 			It("succeeds with 200", func() {
@@ -574,7 +578,6 @@ var _ = Describe("BrokerHandler", func() {
 				instanceUpdateRequestBody = &models.InstanceUpdateRequestBody{
 					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
 						ServiceID: "a-service-id",
-						PlanID:    "a-plan-id",
 					},
 					Parameters: &models.InstanceParameters{
 						DefaultPolicy: &emptyJsonObject,
@@ -588,7 +591,15 @@ var _ = Describe("BrokerHandler", func() {
 					DefaultPolicyGuid: "a-default-policy-guid",
 				}, nil)
 				policydb.DeletePoliciesByPolicyGuidReturns([]string{"app-id-2"}, nil)
+				bindingdb.GetAppIdsByInstanceIdReturns([]string{"app-id-2", "app-id-1"}, nil)
+				bindingdb.GetAppIdsByInstanceIdReturns([]string{"app-id-1", "app-id-2"}, nil)
+
+				var encodedTestDefaultPolicy models.ScalingPolicy
+				err = json.Unmarshal([]byte(testDefaultPolicy), &encodedTestDefaultPolicy)
+				Expect(err).To(BeNil())
+				policydb.GetAppPolicyReturns(&encodedTestDefaultPolicy, nil)
 				verifyScheduleIsDeletedInScheduler("app-id-2")
+				fakecfClient.GetServicePlanReturns("a-plan-id", nil)
 			})
 			It("succeeds with 200 and removes the default policy", func() {
 				By("returning 200")
@@ -606,7 +617,136 @@ var _ = Describe("BrokerHandler", func() {
 				removedPolicy := policydb.DeletePoliciesByPolicyGuidArgsForCall(0)
 				Expect(removedPolicy).To(Equal("a-default-policy-guid"))
 				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
+			})
+		})
 
+		Context("When a default policy with too many rules is present", func() {
+			BeforeEach(func() {
+				invalidDefaultPolicy := `
+						{	"instance_max_count":4,
+							"instance_min_count":1,
+							"scaling_rules":[
+							{
+								"metric_type":"memoryused",
+								"threshold":30,
+								"operator":"<",
+								"adjustment":"-1"
+							},
+							{
+								"metric_type":"memoryused",
+								"threshold":30,
+								"operator":"<",
+								"adjustment":"-1"
+							}]
+						}`
+				m := json.RawMessage(invalidDefaultPolicy)
+				instanceUpdateRequestBody = &models.InstanceUpdateRequestBody{
+					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+						ServiceID: "a-service-id",
+						PlanID:    "a-plan-id",
+					},
+					Parameters: &models.InstanceParameters{
+						DefaultPolicy: &m,
+					},
+				}
+				body, err = json.Marshal(instanceUpdateRequestBody)
+				Expect(err).NotTo(HaveOccurred())
+				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{
+					ServiceInstanceId: testInstanceId,
+				}, nil)
+				bindingdb.GetAppIdsByInstanceIdReturns([]string{"app-id-2", "app-id-1"}, nil)
+				fakecfClient.GetServicePlanReturns("a-plan-id", nil)
+			})
+			It("fails with 400", func() {
+				Expect(resp.Code).To(Equal(http.StatusBadRequest))
+				bodyBytes, err := ioutil.ReadAll(resp.Body)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(string(bodyBytes)).To(Equal(`{"code":"Bad Request","message":"Too many scaling rules: Found 2 scaling rules, but a maximum of 1 scaling rules are allowed for this service plan. "}`))
+			})
+		})
+
+		Context("When the service plan is updatable", func() {
+			BeforeEach(func() {
+				instanceUpdateRequestBody = &models.InstanceUpdateRequestBody{
+					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+						ServiceID: "a-service-id",
+						PlanID:    "a-plan-id-not-updatable",
+					},
+				}
+				body, err = json.Marshal(instanceUpdateRequestBody)
+				Expect(err).NotTo(HaveOccurred())
+				fakecfClient.GetServicePlanReturns("a-plan-id", nil)
+				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{
+					ServiceInstanceId: testInstanceId,
+				}, nil)
+			})
+			It("succeeds with 200", func() {
+				Expect(resp.Code).To(Equal(http.StatusOK))
+			})
+		})
+		Context("When the service plan is not updatable", func() {
+			BeforeEach(func() {
+				instanceUpdateRequestBody = &models.InstanceUpdateRequestBody{
+					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+						ServiceID: "a-service-id",
+						PlanID:    "a-plan-id",
+					},
+				}
+				body, err = json.Marshal(instanceUpdateRequestBody)
+				Expect(err).NotTo(HaveOccurred())
+				fakecfClient.GetServicePlanReturns("a-plan-id-not-updatable", nil)
+				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{
+					ServiceInstanceId: testInstanceId,
+				}, nil)
+			})
+			It("fails with 400", func() {
+				Expect(resp.Code).To(Equal(http.StatusBadRequest))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Bad Request","message":"The plan is not updatable"}`))
+			})
+		})
+		Context("Update service plan and policy both are updated together", func() {
+			BeforeEach(func() {
+				d := json.RawMessage(testDefaultPolicy)
+				instanceUpdateRequestBody = &models.InstanceUpdateRequestBody{
+					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+						ServiceID: "a-service-id",
+						PlanID:    "a-plan-id-not-updatable",
+					},
+					Parameters: &models.InstanceParameters{
+						DefaultPolicy: &d,
+					},
+				}
+				body, err = json.Marshal(instanceUpdateRequestBody)
+				Expect(err).NotTo(HaveOccurred())
+				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{
+					ServiceInstanceId: testInstanceId,
+					DefaultPolicy:     "a-default-policy",
+					DefaultPolicyGuid: "a-default-policy-guid",
+				}, nil)
+				policydb.SetOrUpdateDefaultAppPolicyReturns([]string{"app-id-2"}, nil)
+				verifyScheduleIsUpdatedInScheduler("app-id-2", testDefaultPolicy)
+				fakecfClient.GetServicePlanReturns("a-plan-id", nil)
+				bindingdb.GetAppIdsByInstanceIdReturns([]string{"app-id-1", "app-id-2"}, nil)
+			})
+			It("fails with 400", func() {
+				Expect(resp.Code).To(Equal(http.StatusOK))
+				By("saving the default policy")
+				Expect(bindingdb.UpdateServiceInstanceCallCount()).To(Equal(1))
+				serviceInstance := bindingdb.UpdateServiceInstanceArgsForCall(0)
+				Expect(serviceInstance.ServiceInstanceId).To(Equal(testInstanceId))
+				Expect(serviceInstance.DefaultPolicy).To(MatchJSON(testDefaultPolicy))
+				Expect(serviceInstance.DefaultPolicyGuid).To(HaveLen(36))
+
+				By("setting the default policy on the already bound apps")
+				Expect(policydb.SetOrUpdateDefaultAppPolicyCallCount()).To(Equal(1))
+				appToUpdate, oldPolicyGuid, newPolicy, newPolicyGuid := policydb.SetOrUpdateDefaultAppPolicyArgsForCall(0)
+				Expect(appToUpdate).To(Equal([]string{"app-id-1", "app-id-2"}))
+				Expect(oldPolicyGuid).To(Equal("a-default-policy-guid"))
+				Expect(newPolicyGuid).To(Equal(serviceInstance.DefaultPolicyGuid))
+				Expect(newPolicy).To(Equal(serviceInstance.DefaultPolicy))
+
+				By("updating the scheduler")
+				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
 	})
