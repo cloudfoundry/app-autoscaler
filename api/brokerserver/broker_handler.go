@@ -255,24 +255,73 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if body.Parameters == nil || body.Parameters.DefaultPolicy == nil {
-		h.logger.Error("failed to update instance, only default policy updates allowed", nil, lager.Data{"instanceId": instanceId, "serviceId": body.ServiceID, "planId": body.PlanID})
-		writeErrorResponse(w, http.StatusUnprocessableEntity, "Failed to update service instance: Only default_policy updates allowed")
+	if (body.Parameters == nil || body.Parameters.DefaultPolicy == nil) && body.PlanID == "" {
+		h.logger.Error("failed to update instance, only default policy and service plan updates are allowed", nil, lager.Data{"instanceId": instanceId, "serviceId": body.ServiceID, "planId": body.PlanID})
+		writeErrorResponse(w, http.StatusUnprocessableEntity, "Failed to update service instance: Only default policy and service plan updates are allowed")
 		return
 	}
-	updatedDefaultPolicy := string(*body.Parameters.DefaultPolicy)
 
-	if emptyJSONObject.MatchString(updatedDefaultPolicy) {
-		// accept an empty json object "{}" as a default policy update to specify the removal of the default policy
-		updatedDefaultPolicy = ""
+	// validate service instance here
+	serviceInstance, err := h.bindingdb.GetServiceInstance(instanceId)
+	if err != nil {
+		if err == db.ErrDoesNotExist {
+			h.logger.Error("failed to find service instance to update", err, lager.Data{"instanceId": instanceId})
+			writeErrorResponse(w, http.StatusNotFound, "Failed to find service instance to update")
+			return
+		} else {
+			h.logger.Error("failed to retrieve service instance", err, lager.Data{"instanceId": instanceId})
+			writeErrorResponse(w, http.StatusInternalServerError, "Failed to retrieve service instance")
+			return
+		}
 	}
 
-	updatedDefaultPolicyGuid := ""
+	existingServicePlan, err := h.cfClient.GetServicePlan(instanceId)
+	newServicePlan := body.PlanID
+	if newServicePlan != "" {
+		if err != nil {
+			h.logger.Error("failed-to-retrieve-service-plan-of-service-instance", err, lager.Data{"instanceId": instanceId})
+			writeErrorResponse(w, http.StatusInternalServerError, "Error validating policy")
+			return
+		}
+		if !(existingServicePlan == newServicePlan) {
+			isPlanUpdatable, err := h.planChecker.IsPlanUpdatable(existingServicePlan)
+			if err != nil {
+				h.logger.Error("Plan not found", err)
+				writeErrorResponse(w, http.StatusBadRequest, "Unable to retrieve the service plan")
+				return
+			}
+			if !isPlanUpdatable {
+				h.logger.Error("The Plan is not updatable", nil)
+				writeErrorResponse(w, http.StatusBadRequest, "The plan is not updatable")
+				return
+			}
+		}
+	}
+	var updatedDefaultPolicy string
+	if body.Parameters != nil && body.Parameters.DefaultPolicy != nil {
+		updatedDefaultPolicy = string(*body.Parameters.DefaultPolicy)
+		if emptyJSONObject.MatchString(updatedDefaultPolicy) {
+			// accept an empty json object "{}" as a default policy update to specify the removal of the default policy
+			h.logger.Info("update-service-instance-matched-empty", lager.Data{"instanceId": instanceId, "serviceId": body.ServiceID, "planId": body.PlanID, "updatedDefaultPolicy": updatedDefaultPolicy})
+
+			updatedDefaultPolicy = ""
+		}
+	}
+
+	h.logger.Info("update-service-instance", lager.Data{"instanceId": instanceId, "serviceId": body.ServiceID, "planId": body.PlanID, "updatedDefaultPolicy": updatedDefaultPolicy})
+
+	var updatedDefaultPolicyGuid string
 	if updatedDefaultPolicy != "" {
 		errResults, valid := h.policyValidator.ValidatePolicy(updatedDefaultPolicy)
 		if !valid {
 			h.logger.Error("failed to validate policy", err, lager.Data{"instanceId": instanceId, "policy": updatedDefaultPolicy})
 			handlers.WriteJSONResponse(w, http.StatusBadRequest, errResults)
+			return
+		}
+
+		if err != nil {
+			h.logger.Error("failed-to-retrieve-service-plan-of-service-instance", err, lager.Data{"instanceId": instanceId})
+			writeErrorResponse(w, http.StatusInternalServerError, "Error validating policy")
 			return
 		}
 
@@ -285,26 +334,57 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 		updatedDefaultPolicyGuid = policyGuid.String()
 	}
 
-	serviceInstance, err := h.bindingdb.GetServiceInstance(instanceId)
+	var servicePlan string
+	if newServicePlan != "" {
+		servicePlan = newServicePlan
+	} else {
+		servicePlan = existingServicePlan
+	}
+
+	allBoundApps, err := h.bindingdb.GetAppIdsByInstanceId(serviceInstance.ServiceInstanceId)
 	if err != nil {
-		if errors.Is(err, db.ErrDoesNotExist) {
-			h.logger.Error("failed to find service instance to update", err, lager.Data{"instanceId": instanceId})
-			writeErrorResponse(w, http.StatusNotFound, "Failed to find service instance to update")
-			return
-		} else {
-			h.logger.Error("failed to retrieve service instance", err, lager.Data{"instanceId": instanceId})
-			writeErrorResponse(w, http.StatusInternalServerError, "Failed to retrieve service instance")
+		h.logger.Error("failed to retrieve bound apps", err, lager.Data{"instanceId": instanceId})
+		writeErrorResponse(w, http.StatusInternalServerError, "Error updating service instance")
+		return
+	}
+
+	if updatedDefaultPolicy != "" && body.Parameters.DefaultPolicy != nil {
+		if h.planDefinitionExceeded(updatedDefaultPolicy, servicePlan, instanceId, w) {
 			return
 		}
+	} else if serviceInstance.DefaultPolicy != "" && newServicePlan != "" {
+		var existingPolicy *models.ScalingPolicy
+		var existingPolicyByteArray []byte
+		for _, appId := range allBoundApps {
+			existingPolicy, err = h.policydb.GetAppPolicy(appId)
+			if err != nil {
+				h.logger.Error("failed to retrieve policy from db", err, lager.Data{"appId": appId})
+				writeErrorResponse(w, http.StatusInternalServerError, "Error updating service instance")
+				return
+			}
+			existingPolicyByteArray, err = json.Marshal(existingPolicy)
+			if err != nil {
+				h.logger.Error("failed to retrieve policy from db", err, lager.Data{"appId": appId})
+				writeErrorResponse(w, http.StatusInternalServerError, "Error updating service instance")
+				return
+			}
+			existingPolicyStr := string(existingPolicyByteArray)
+			if h.planDefinitionExceeded(existingPolicyStr, servicePlan, instanceId, w) {
+				return
+			}
+		}
+
+	}
+
+	updatedServiceInstance := models.ServiceInstance{
+		ServiceInstanceId: serviceInstance.ServiceInstanceId,
+		OrgId:             serviceInstance.OrgId,
+		SpaceId:           serviceInstance.SpaceId,
 	}
 
 	if updatedDefaultPolicyGuid != "" {
-		allBoundApps, err := h.bindingdb.GetAppIdsByInstanceId(serviceInstance.ServiceInstanceId)
-		if err != nil {
-			h.logger.Error("failed to retrieve bound apps", err, lager.Data{"instanceId": instanceId})
-			writeErrorResponse(w, http.StatusInternalServerError, "Error updating service instance")
-			return
-		}
+		h.logger.Info("update-service-instance-set-or-update", lager.Data{"instanceId": instanceId, "serviceId": body.ServiceID, "planId": body.PlanID, "updatedDefaultPolicy": updatedDefaultPolicy, "updatedDefaultPolicyGuid": updatedDefaultPolicyGuid, "allBoundApps": allBoundApps, "serviceInstance": serviceInstance})
+
 		updatedAppIds, err := h.policydb.SetOrUpdateDefaultAppPolicy(allBoundApps, serviceInstance.DefaultPolicyGuid, updatedDefaultPolicy, updatedDefaultPolicyGuid)
 		if err != nil {
 			h.logger.Error("failed to set default policies", err, lager.Data{"instanceId": instanceId})
@@ -319,6 +399,8 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 				h.logger.Error("failed to create/update schedules", err, lager.Data{"appId": appId, "policyGuid": updatedDefaultPolicyGuid, "policy": updatedDefaultPolicy})
 			}
 		}
+		updatedServiceInstance.DefaultPolicy = updatedDefaultPolicy
+		updatedServiceInstance.DefaultPolicyGuid = updatedDefaultPolicyGuid
 	} else {
 		if serviceInstance.DefaultPolicyGuid != "" {
 			// default policy was present and will now be removed
@@ -336,14 +418,6 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 				}
 			}
 		}
-	}
-
-	updatedServiceInstance := models.ServiceInstance{
-		ServiceInstanceId: serviceInstance.ServiceInstanceId,
-		OrgId:             serviceInstance.OrgId,
-		SpaceId:           serviceInstance.SpaceId,
-		DefaultPolicy:     updatedDefaultPolicy,
-		DefaultPolicyGuid: updatedDefaultPolicyGuid,
 	}
 
 	err = h.bindingdb.UpdateServiceInstance(updatedServiceInstance)
