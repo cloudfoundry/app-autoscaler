@@ -41,6 +41,8 @@ func NewScalingEngineSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*Sc
 	sqldb.SetConnMaxLifetime(dbConfig.ConnectionMaxLifetime)
 	sqldb.SetMaxIdleConns(dbConfig.MaxIdleConnections)
 	sqldb.SetMaxOpenConns(dbConfig.MaxOpenConnections)
+	sqldb.SetConnMaxIdleTime(dbConfig.ConnectionMaxIdleTime)
+
 	return &ScalingEngineSQLDB{
 		dbConfig: dbConfig,
 		logger:   logger,
