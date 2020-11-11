@@ -28,7 +28,7 @@ You can follow the development progress on [Pivotal Tracker][t].
 * Node 6.2 or above
 * NPM 3.9.5 or above
 * [Cloud Foundry cf command line][f]
-* Go 1.11 or above
+* Go 1.15 or above
 
 ### Database requirement
 
