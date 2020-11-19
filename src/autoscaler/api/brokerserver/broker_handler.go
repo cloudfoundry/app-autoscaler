@@ -315,6 +315,7 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 		}
 	}
 	var updatedDefaultPolicy string
+	var updatedDefaultPolicyGuid string
 	if body.Parameters != nil && body.Parameters.DefaultPolicy != nil {
 		updatedDefaultPolicy = string(*body.Parameters.DefaultPolicy)
 		if emptyJSONObject.MatchString(updatedDefaultPolicy) {
@@ -323,12 +324,14 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 
 			updatedDefaultPolicy = ""
 		}
+	} else if body.Parameters == nil && serviceInstance.DefaultPolicy != "" && serviceInstance.DefaultPolicyGuid != "" {
+		updatedDefaultPolicy = serviceInstance.DefaultPolicy
+		updatedDefaultPolicyGuid = serviceInstance.DefaultPolicyGuid
 	}
 
 	h.logger.Info("update-service-instance", lager.Data{"instanceId": instanceId, "serviceId": body.ServiceID, "planId": body.PlanID, "updatedDefaultPolicy": updatedDefaultPolicy})
 
-	var updatedDefaultPolicyGuid string
-	if updatedDefaultPolicy != "" {
+	if updatedDefaultPolicy != "" && updatedDefaultPolicyGuid == "" {
 		errResults, valid := h.policyValidator.ValidatePolicy(updatedDefaultPolicy)
 		if !valid {
 			h.logger.Error("failed to validate policy", err, lager.Data{"instanceId": instanceId, "policy": updatedDefaultPolicy})
@@ -365,16 +368,18 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if updatedDefaultPolicy != "" && body.Parameters.DefaultPolicy != nil {
-		if h.planDefinitionExceeded(updatedDefaultPolicy, servicePlan, instanceId, w) {
-			if errors.Is(err, db.ErrDoesNotExist) {
-				h.logger.Error("failed to find service instance to update", err, lager.Data{"instanceId": instanceId})
-				writeErrorResponse(w, http.StatusNotFound, "Failed to find service instance to update")
-				return
-			} else {
-				h.logger.Error("failed to retrieve service instance", err, lager.Data{"instanceId": instanceId})
-				writeErrorResponse(w, http.StatusInternalServerError, "Failed to retrieve service instance")
-				return
+	if updatedDefaultPolicy != "" && body.Parameters != nil {
+		if body.Parameters.DefaultPolicy != nil {
+			if h.planDefinitionExceeded(updatedDefaultPolicy, servicePlan, instanceId, w) {
+				if errors.Is(err, db.ErrDoesNotExist) {
+					h.logger.Error("failed to find service instance to update", err, lager.Data{"instanceId": instanceId})
+					writeErrorResponse(w, http.StatusNotFound, "Failed to find service instance to update")
+					return
+				} else {
+					h.logger.Error("failed to retrieve service instance", err, lager.Data{"instanceId": instanceId})
+					writeErrorResponse(w, http.StatusInternalServerError, "Failed to retrieve service instance")
+					return
+				}
 			}
 		} else if serviceInstance.DefaultPolicy != "" && newServicePlan != "" {
 			var existingPolicy *models.ScalingPolicy
@@ -394,6 +399,7 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 				}
 				existingPolicyStr := string(existingPolicyByteArray)
 				if h.planDefinitionExceeded(existingPolicyStr, servicePlan, instanceId, w) {
+					writeErrorResponse(w, http.StatusInternalServerError, "Error updating service instance")
 					return
 				}
 			}

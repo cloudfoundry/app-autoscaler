@@ -684,6 +684,34 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
 			})
 		})
+
+		Context("The service plan is updated and a default policy was present previously", func() {
+			BeforeEach(func() {
+				instanceUpdateRequestBody = &models.InstanceUpdateRequestBody{
+					BrokerCommonRequestBody: models.BrokerCommonRequestBody{
+						ServiceID: "a-service-id",
+						PlanID:    "a-plan-id-2",
+					},
+				}
+				body, err = json.Marshal(instanceUpdateRequestBody)
+				Expect(err).NotTo(HaveOccurred())
+				fakecfClient.GetServicePlanReturns("a-plan-id", nil)
+				bindingdb.GetServiceInstanceReturns(&models.ServiceInstance{
+					ServiceInstanceId: testInstanceId,
+					DefaultPolicy:     testDefaultPolicy,
+					DefaultPolicyGuid: "default-policy-guid",
+				}, nil)
+			})
+
+			It("Succeeds and leaves the old default policy in place", func() {
+				Expect(resp.Code).To(Equal(http.StatusOK))
+				serviceInstance := bindingdb.UpdateServiceInstanceArgsForCall(0)
+				Expect(serviceInstance.ServiceInstanceId).To(Equal(testInstanceId))
+				Expect(serviceInstance.DefaultPolicy).To(MatchJSON(testDefaultPolicy))
+				Expect(serviceInstance.DefaultPolicyGuid).To(Equal("default-policy-guid"))
+			})
+		})
+
 		Context("When the service plan is not updatable", func() {
 			BeforeEach(func() {
 				instanceUpdateRequestBody = &models.InstanceUpdateRequestBody{
