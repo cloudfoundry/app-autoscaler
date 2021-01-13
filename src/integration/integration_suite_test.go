@@ -8,7 +8,6 @@ import (
 	as_testhelpers "autoscaler/testhelpers"
 	"bytes"
 
-	//"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -68,14 +67,17 @@ var (
 	noaaStreamingRegPath    = regexp.MustCompile(`^/apps/.*/stream$`)
 	appSummaryRegPath       = regexp.MustCompile(`^/v2/apps/.*/summary$`)
 	appInstanceRegPath      = regexp.MustCompile(`^/v2/apps/.*$`)
-	checkUserSpaceRegPath   = regexp.MustCompile(`^/v2/users/.+/spaces.*$`)
-	dbHelper                *sqlx.DB
-	fakeCCNOAAUAA           *ghttp.Server
-	messagesToSend          chan []byte
-	streamingDoneChan       chan bool
-	emptyMessageChannel     chan []byte
-	testUserId              string   = "testUserId"
-	testUserScope           []string = []string{"cloud_controller.read", "cloud_controller.write", "password.write", "openid", "network.admin", "network.write", "uaa.user"}
+	v3appInstanceRegPath    = regexp.MustCompile(`^/v3/apps/.*$`)
+	rolesRegPath           = regexp.MustCompile(`^/v3/roles$`)
+	serviceInstanceRegPath = regexp.MustCompile(`^/v2/service_instances/.*$`)
+	servicePlanRegPath     = regexp.MustCompile(`^/v2/service_plans/.*$`)
+	dbHelper               *sqlx.DB
+	fakeCCNOAAUAA          *ghttp.Server
+	messagesToSend         chan []byte
+	streamingDoneChan      chan bool
+	emptyMessageChannel    chan []byte
+	testUserId             string   = "testUserId"
+	testUserScope          []string = []string{"cloud_controller.read", "cloud_controller.write", "password.write", "openid", "network.admin", "network.write", "uaa.user"}
 
 	processMap map[string]ifrit.Process = map[string]ifrit.Process{}
 
@@ -722,11 +724,53 @@ func startFakeCCNOAAUAA(instanceCount int) {
 		}{
 			testUserId,
 		}))
-	fakeCCNOAAUAA.RouteToHandler("GET", checkUserSpaceRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
+	fakeCCNOAAUAA.RouteToHandler("GET", v3appInstanceRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
 		struct {
 			TotalResults int `json:"total_results"`
 		}{
 			1,
+		}))
+
+	app := struct {
+		Relationships struct {
+			Space struct {
+				Data struct {
+					GUID string `json:"guid"`
+				} `json:"data"`
+			} `json:"space"`
+		} `json:"relationships"`
+	}{}
+	app.Relationships.Space.Data.GUID = "test_space_guid"
+	fakeCCNOAAUAA.RouteToHandler("GET", v3appInstanceRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
+		app))
+
+	roles := struct {
+		Pagination struct {
+			Total int `json:"total_results"`
+		} `json:"pagination"`
+	}{}
+	roles.Pagination.Total = 1
+	fakeCCNOAAUAA.RouteToHandler("GET", rolesRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
+		roles))
+
+	type ServiceInstanceEntity struct {
+		ServicePlanGuid string `json:"service_plan_guid"`
+	}
+	fakeCCNOAAUAA.RouteToHandler("GET", serviceInstanceRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
+		struct {
+			ServiceInstanceEntity `json:"entity"`
+		}{
+			ServiceInstanceEntity{"cc-free-plan-id"},
+		}))
+
+	type ServicePlanEntity struct {
+		UniqueId string `json:"unique_id"`
+	}
+	fakeCCNOAAUAA.RouteToHandler("GET", servicePlanRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
+		struct {
+			ServicePlanEntity `json:"entity"`
+		}{
+			ServicePlanEntity{"autoscaler-free-plan-id"},
 		}))
 }
 func fakeMetricsPolling(appId string, memoryValue uint64, memQuota uint64) {
