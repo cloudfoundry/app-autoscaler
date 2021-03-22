@@ -15,20 +15,22 @@ import (
 )
 
 const (
-	DefaultLoggingLevel                  = "info"
-	DefaultHttpClientTimeout             = 5 * time.Second
-	DefaultWSKeepAliveTime               = 1 * time.Minute
-	DefaultWSPort                        = 8443
-	DefaultRefreshInterval               = 60 * time.Second
-	DefaultCollectInterval               = 30 * time.Second
-	DefaultSaveInterval                  = 5 * time.Second
-	DefaultMetricCacheSizePerApp         = 1000
-	DefaultIsMetricsPersistencySupported = true
-	DefaultEnvelopeProcessorCount        = 5
-	DefaultEnvelopeChannelSize           = 1000
-	DefaultMetricChannelSize             = 1000
-	DefaultHTTPServerPort                = 8080
-	DefaultHealthPort                    = 8081
+	DefaultLoggingLevel                                = "info"
+	DefaultHttpClientTimeout                           = 5 * time.Second
+	DefaultWSKeepAliveTime                             = 1 * time.Minute
+	DefaultWSPort                                      = 8443
+	DefaultRefreshInterval                             = 60 * time.Second
+	DefaultCollectInterval                             = 30 * time.Second
+	DefaultSaveInterval                                = 5 * time.Second
+	DefaultMetricCacheSizePerApp                       = 1000
+	DefaultIsMetricsPersistencySupported               = true
+	DefaultEnvelopeProcessorCount                      = 5
+	DefaultEnvelopeChannelSize                         = 1000
+	DefaultMetricChannelSize                           = 1000
+	DefaultHTTPServerPort                              = 8080
+	DefaultHealthPort                                  = 8081
+	DefaultMaxAmount                                   = 10
+	DefaultValidDuration                 time.Duration = 1 * time.Second
 )
 
 type DBConfig struct {
@@ -56,14 +58,15 @@ type ServerConfig struct {
 }
 
 type Config struct {
-	Logging           helpers.LoggingConfig `yaml:"logging"`
-	HttpClientTimeout time.Duration         `yaml:"http_client_timeout"`
-	NodeAddrs         []string              `yaml:"node_addrs"`
-	NodeIndex         int                   `yaml:"node_index"`
-	DB                DBConfig              `yaml:"db"`
-	Collector         CollectorConfig       `yaml:"collector"`
-	Server            ServerConfig          `yaml:"server"`
-	Health            models.HealthConfig   `yaml:"health"`
+	Logging           helpers.LoggingConfig  `yaml:"logging"`
+	HttpClientTimeout time.Duration          `yaml:"http_client_timeout"`
+	NodeAddrs         []string               `yaml:"node_addrs"`
+	NodeIndex         int                    `yaml:"node_index"`
+	DB                DBConfig               `yaml:"db"`
+	Collector         CollectorConfig        `yaml:"collector"`
+	Server            ServerConfig           `yaml:"server"`
+	Health            models.HealthConfig    `yaml:"health"`
+	RateLimit         models.RateLimitConfig `yaml:"rate_limit"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
@@ -89,6 +92,10 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		},
 		Server: ServerConfig{
 			Port: DefaultHTTPServerPort,
+		},
+		RateLimit: models.RateLimitConfig{
+			MaxAmount:     DefaultMaxAmount,
+			ValidDuration: DefaultValidDuration,
 		},
 	}
 
@@ -157,6 +164,13 @@ func (c *Config) Validate() error {
 
 	if err := c.Health.Validate("metricsserver"); err != nil {
 		return err
+	}
+
+	if c.RateLimit.MaxAmount <= 0 {
+		return fmt.Errorf("Configuration error: RateLimit.MaxAmount is equal or less than zero")
+	}
+	if c.RateLimit.ValidDuration <= 0*time.Nanosecond {
+		return fmt.Errorf("Configuration error: RateLimit.ValidDuration is equal or less than zero nanosecond")
 	}
 
 	return nil

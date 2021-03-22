@@ -212,6 +212,8 @@ db:
 			conf.Collector.EnvelopeChannelSize = 300
 			conf.Collector.MetricChannelSize = 300
 			conf.Health.Port = 8081
+			conf.RateLimit.MaxAmount = 10
+			conf.RateLimit.ValidDuration = 1 * time.Second
 		})
 
 		JustBeforeEach(func() {

@@ -142,6 +142,9 @@ func initConfig() {
 
 	cfg.Health.HealthCheckUsername = "operatorhealthcheckuser"
 	cfg.Health.HealthCheckPassword = "operatorhealthcheckuser"
+	cfg.RateLimit.MaxAmount = 2
+	cfg.RateLimit.ValidDuration = 2 * time.Second
+
 }
 
 func writeConfig(c *config.Config) *os.File {

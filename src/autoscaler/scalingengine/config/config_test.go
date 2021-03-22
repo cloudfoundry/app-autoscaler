@@ -6,7 +6,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 
 	"bytes"
 	"time"
@@ -766,6 +766,8 @@ http_client_timeout: 10k
 			conf.DefaultCoolDownSecs = 300
 			conf.LockSize = 32
 			conf.HttpClientTimeout = 10 * time.Second
+			conf.RateLimit.MaxAmount = 10
+			conf.RateLimit.ValidDuration = 1 * time.Second
 		})
 
 		JustBeforeEach(func() {

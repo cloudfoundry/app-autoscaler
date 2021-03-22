@@ -110,6 +110,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	cfg.Health.HealthCheckUsername = "metricsserverhealthcheckuser"
 	cfg.Health.HealthCheckPassword = "metricsserverhealthcheckpassword"
+	cfg.RateLimit.MaxAmount = 2
+	cfg.RateLimit.ValidDuration = 2 * time.Second
 
 	configFile = writeConfig(&cfg)
 

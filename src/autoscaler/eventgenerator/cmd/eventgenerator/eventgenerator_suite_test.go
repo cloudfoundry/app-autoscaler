@@ -261,6 +261,10 @@ func initConfig() {
 			HealthCheckUsername: "healthcheckuser",
 			HealthCheckPassword: "healthcheckpassword",
 		},
+		RateLimit: models.RateLimitConfig{
+			MaxAmount:     2,
+			ValidDuration: 2 * time.Second,
+		},
 	}
 	configFile = writeConfig(&conf)
 

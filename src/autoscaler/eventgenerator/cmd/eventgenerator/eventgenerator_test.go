@@ -230,4 +230,29 @@ var _ = Describe("Eventgenerator", func() {
 		})
 	})
 
+	Describe("Exceed rate limit", func() {
+		BeforeEach(func() {
+			runner.Start()
+		})
+
+		Context("when calling healthcheck endpoint", func() {
+
+			It("should fail with 429", func() {
+
+				for i := 0; i < 22; i++ {
+					req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://127.0.0.1:%d/health", healthport), nil)
+					Expect(err).ToNot(HaveOccurred())
+					req.SetBasicAuth(conf.Health.HealthCheckUsername, conf.Health.HealthCheckPassword)
+					rsp, err := healthHttpClient.Do(req)
+					Expect(err).ToNot(HaveOccurred())
+
+					if i >= 20 {
+						Expect(rsp.StatusCode).To(Equal(http.StatusTooManyRequests))
+					} else {
+						Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+					}
+				}
+			})
+		})
+	})
 })

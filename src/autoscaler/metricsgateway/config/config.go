@@ -49,14 +49,15 @@ type EmitterConfig struct {
 }
 
 type Config struct {
-	Logging           helpers.LoggingConfig `yaml:"logging"`
-	EnvelopChanSize   int                   `yaml:"envelop_chan_size"`
-	NozzleCount       int                   `yaml:"nozzle_count"`
-	MetricServerAddrs []string              `yaml:"metric_server_addrs"`
-	AppManager        AppManagerConfig      `yaml:"app_manager"`
-	Emitter           EmitterConfig         `yaml:"emitter"`
-	Nozzle            NozzleConfig          `yaml:"nozzle"`
-	Health            models.HealthConfig   `yaml:"health"`
+	Logging           helpers.LoggingConfig  `yaml:"logging"`
+	EnvelopChanSize   int                    `yaml:"envelop_chan_size"`
+	NozzleCount       int                    `yaml:"nozzle_count"`
+	MetricServerAddrs []string               `yaml:"metric_server_addrs"`
+	AppManager        AppManagerConfig       `yaml:"app_manager"`
+	Emitter           EmitterConfig          `yaml:"emitter"`
+	Nozzle            NozzleConfig           `yaml:"nozzle"`
+	Health            models.HealthConfig    `yaml:"health"`
+	RateLimit         models.RateLimitConfig `yaml:"rate_limit"`
 }
 
 func LoadConfig(bytes []byte) (*Config, error) {

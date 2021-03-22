@@ -17,6 +17,8 @@ import (
 
 const (
 	DefaultHttpClientTimeout = 5 * time.Second
+	DefaultMaxAmount         = 10
+	DefaultValidDuration     = 1 * time.Second
 )
 
 var defaultCFConfig = cf.CFConfig{
@@ -51,14 +53,15 @@ type SynchronizerConfig struct {
 }
 
 type Config struct {
-	CF                  cf.CFConfig           `yaml:"cf"`
-	Logging             helpers.LoggingConfig `yaml:"logging"`
-	Server              ServerConfig          `yaml:"server"`
-	Health              models.HealthConfig   `yaml:"health"`
-	DB                  DBConfig              `yaml:"db"`
-	DefaultCoolDownSecs int                   `yaml:"defaultCoolDownSecs"`
-	LockSize            int                   `yaml:"lockSize"`
-	HttpClientTimeout   time.Duration         `yaml:"http_client_timeout"`
+	CF                  cf.CFConfig            `yaml:"cf"`
+	Logging             helpers.LoggingConfig  `yaml:"logging"`
+	Server              ServerConfig           `yaml:"server"`
+	Health              models.HealthConfig    `yaml:"health"`
+	DB                  DBConfig               `yaml:"db"`
+	DefaultCoolDownSecs int                    `yaml:"defaultCoolDownSecs"`
+	LockSize            int                    `yaml:"lockSize"`
+	HttpClientTimeout   time.Duration          `yaml:"http_client_timeout"`
+	RateLimit           models.RateLimitConfig `yaml:"rate_limit"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
@@ -68,6 +71,10 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		Server:            defaultServerConfig,
 		Health:            defaultHealthConfig,
 		HttpClientTimeout: DefaultHttpClientTimeout,
+		RateLimit: models.RateLimitConfig{
+			MaxAmount:     DefaultMaxAmount,
+			ValidDuration: DefaultValidDuration,
+		},
 	}
 
 	bytes, err := ioutil.ReadAll(reader)
@@ -113,6 +120,12 @@ func (c *Config) Validate() error {
 
 	if c.HttpClientTimeout <= time.Duration(0) {
 		return fmt.Errorf("Configuration error: http_client_timeout is less-equal than 0")
+	}
+	if c.RateLimit.MaxAmount <= 0 {
+		return fmt.Errorf("Configuration error: RateLimit.MaxAmount is equal or less than zero")
+	}
+	if c.RateLimit.ValidDuration <= 0*time.Nanosecond {
+		return fmt.Errorf("Configuration error: RateLimit.ValidDuration is equal or less than zero nanosecond")
 	}
 
 	if err := c.Health.Validate("scalingengine"); err != nil {

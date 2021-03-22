@@ -111,6 +111,8 @@ var _ = SynchronizedBeforeSuite(
 
 		conf.Health.HealthCheckUsername = "scalingenginehealthcheckuser"
 		conf.Health.HealthCheckPassword = "scalingenginehealthcheckpassword"
+		conf.RateLimit.MaxAmount = 2
+		conf.RateLimit.ValidDuration = 2 * time.Second
 
 		configFile = writeConfig(&conf)
 

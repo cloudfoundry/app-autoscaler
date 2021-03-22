@@ -178,6 +178,10 @@ func initConfig() {
 			HealthCheckUsername: "metricsgatewayhealthcheckuser",
 			HealthCheckPassword: "metricsgatewayhealthcheckpassword",
 		},
+		RateLimit: models.RateLimitConfig{
+			MaxAmount:     2,
+			ValidDuration: 2 * time.Second,
+		},
 	}
 	configFile = writeConfig(&conf)
 }

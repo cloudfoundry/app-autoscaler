@@ -8,6 +8,7 @@ import (
 	"autoscaler/helpers"
 	"autoscaler/operator"
 	"autoscaler/operator/config"
+	"autoscaler/ratelimiter"
 	"autoscaler/sync"
 	"flag"
 	"fmt"
@@ -158,7 +159,8 @@ func main() {
 	})
 	members = append(grouper.Members{{"db-lock-maintainer", dbLockMaintainer}}, members...)
 
-	healthServer, err := healthendpoint.NewServerWithBasicAuth(logger.Session("health-server"), conf.Health.Port, promRegistry, conf.Health.HealthCheckUsername, conf.Health.HealthCheckPassword, conf.Health.HealthCheckUsernameHash, conf.Health.HealthCheckPasswordHash)
+	rateLimiter := ratelimiter.DefaultRateLimiter(conf.RateLimit.MaxAmount, conf.RateLimit.ValidDuration, logger.Session("operator-ratelimiter"))
+	healthServer, err := healthendpoint.NewServerWithBasicAuth(logger.Session("health-server"), conf.Health.Port, promRegistry, conf.Health.HealthCheckUsername, conf.Health.HealthCheckPassword, conf.Health.HealthCheckUsernameHash, conf.Health.HealthCheckPasswordHash, rateLimiter)
 	if err != nil {
 		logger.Error("failed to create health server", err)
 		os.Exit(1)

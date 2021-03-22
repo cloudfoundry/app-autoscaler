@@ -1,6 +1,7 @@
 package healthendpoint
 
 import (
+	"autoscaler/ratelimiter"
 	"fmt"
 	"net/http"
 	"os"
@@ -33,8 +34,11 @@ func (bam *basicAuthenticationMiddleware) Middleware(next http.Handler) http.Han
 	})
 }
 
-func NewServer(logger lager.Logger, port int, gatherer prometheus.Gatherer) (ifrit.Runner, error) {
+func NewServer(logger lager.Logger, port int, gatherer prometheus.Gatherer, rateLimiter ratelimiter.Limiter) (ifrit.Runner, error) {
+	rateLimiterMiddleware := ratelimiter.NewRateLimiterMiddlewareIPBased(rateLimiter, logger.Session("healthcheck-middleware"))
+
 	router := mux.NewRouter()
+	router.Use(rateLimiterMiddleware.CheckRateLimit)
 	r := promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{})
 	router.PathPrefix("").Handler(r)
 
@@ -51,11 +55,11 @@ func NewServer(logger lager.Logger, port int, gatherer prometheus.Gatherer) (ifr
 
 // open the healthcheck port with basic authentication.
 // Make sure that username and password is not empty
-func NewServerWithBasicAuth(logger lager.Logger, port int, gatherer prometheus.Gatherer, username string, password string, usernameHash string, passwordHash string) (ifrit.Runner, error) {
+func NewServerWithBasicAuth(logger lager.Logger, port int, gatherer prometheus.Gatherer, username string, password string, usernameHash string, passwordHash string, rateLimiter ratelimiter.Limiter) (ifrit.Runner, error) {
 	logger.Info("new-health-server", lager.Data{"####username": username, "####password": password})
 	if username == "" && password == "" {
 		//when username and password are not set then dont use basic authentication
-		healthServer, err := NewServer(logger, port, gatherer)
+		healthServer, err := NewServer(logger, port, gatherer, rateLimiter)
 		return healthServer, err
 	} else {
 		var usernameHashByte []byte
@@ -89,10 +93,12 @@ func NewServerWithBasicAuth(logger lager.Logger, port int, gatherer prometheus.G
 
 		r := promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{})
 
+		rateLimiterMiddlewareIPBased := ratelimiter.NewRateLimiterMiddlewareIPBased(rateLimiter, logger.Session("healthcheck-middleware"))
+
 		// basic authentication middleware
 		middleWareHandlerRouter := mux.NewRouter()
+		middleWareHandlerRouter.Use(rateLimiterMiddlewareIPBased.CheckRateLimit)
 		middleWareHandlerRouter.Use(basicAuthentication.Middleware)
-
 		// add router path and router handler
 		middleWareHandlerRouter.Handle("/health", r)
 

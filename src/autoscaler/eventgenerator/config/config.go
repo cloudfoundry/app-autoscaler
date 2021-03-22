@@ -30,6 +30,8 @@ const (
 	DefaultBreakerConsecutiveFailureCount int64  = 3
 	DefaultHttpClientTimeout                     = 5 * time.Second
 	DefaultMetricCacheSizePerApp                 = 100
+	DefaultMaxAmount                             = 10
+	DefaultValidDuration                         = 1 * time.Second
 )
 
 type ServerConfig struct {
@@ -75,18 +77,19 @@ type CircuitBreakerConfig struct {
 	ConsecutiveFailureCount int64         `yaml:"consecutive_failure_count"`
 }
 type Config struct {
-	Logging                   helpers.LoggingConfig `yaml:"logging"`
-	Server                    ServerConfig          `yaml:"server"`
-	Health                    models.HealthConfig   `yaml:"health"`
-	DB                        DBConfig              `yaml:"db"`
-	Aggregator                AggregatorConfig      `yaml:"aggregator"`
-	Evaluator                 EvaluatorConfig       `yaml:"evaluator"`
-	ScalingEngine             ScalingEngineConfig   `yaml:"scalingEngine"`
-	MetricCollector           MetricCollectorConfig `yaml:"metricCollector"`
-	DefaultStatWindowSecs     int                   `yaml:"defaultStatWindowSecs"`
-	DefaultBreachDurationSecs int                   `yaml:"defaultBreachDurationSecs"`
-	CircuitBreaker            CircuitBreakerConfig  `yaml:"circuitBreaker"`
-	HttpClientTimeout         time.Duration         `yaml:"http_client_timeout"`
+	Logging                   helpers.LoggingConfig  `yaml:"logging"`
+	Server                    ServerConfig           `yaml:"server"`
+	Health                    models.HealthConfig    `yaml:"health"`
+	DB                        DBConfig               `yaml:"db"`
+	Aggregator                AggregatorConfig       `yaml:"aggregator"`
+	Evaluator                 EvaluatorConfig        `yaml:"evaluator"`
+	ScalingEngine             ScalingEngineConfig    `yaml:"scalingEngine"`
+	MetricCollector           MetricCollectorConfig  `yaml:"metricCollector"`
+	DefaultStatWindowSecs     int                    `yaml:"defaultStatWindowSecs"`
+	DefaultBreachDurationSecs int                    `yaml:"defaultBreachDurationSecs"`
+	CircuitBreaker            CircuitBreakerConfig   `yaml:"circuitBreaker"`
+	HttpClientTimeout         time.Duration          `yaml:"http_client_timeout"`
+	RateLimit                 models.RateLimitConfig `yaml:"rate_limit"`
 }
 
 func LoadConfig(bytes []byte) (*Config, error) {
@@ -115,6 +118,10 @@ func LoadConfig(bytes []byte) (*Config, error) {
 			TriggerArrayChannelSize:   DefaultTriggerArrayChannelSize,
 		},
 		HttpClientTimeout: DefaultHttpClientTimeout,
+		RateLimit: models.RateLimitConfig{
+			MaxAmount:     DefaultMaxAmount,
+			ValidDuration: DefaultValidDuration,
+		},
 	}
 	err := yaml.UnmarshalStrict(bytes, &conf)
 	if err != nil {
@@ -196,6 +203,13 @@ func (c *Config) Validate() error {
 
 	if err := c.Health.Validate("eventgenerator"); err != nil {
 		return err
+	}
+
+	if c.RateLimit.MaxAmount <= 0 {
+		return fmt.Errorf("Configuration error: RateLimit.MaxAmount is equal or less than zero")
+	}
+	if c.RateLimit.ValidDuration <= 0*time.Nanosecond {
+		return fmt.Errorf("Configuration error: RateLimit.ValidDuration is equal or less than zero nanosecond")
 	}
 
 	return nil

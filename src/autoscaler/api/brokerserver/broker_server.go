@@ -2,6 +2,7 @@ package brokerserver
 
 import (
 	"autoscaler/cf"
+	"autoscaler/ratelimiter"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -67,7 +68,7 @@ func (bam *basicAuthenticationMiddleware) Middleware(next http.Handler) http.Han
 	})
 }
 
-func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB, httpStatusCollector healthendpoint.HTTPStatusCollector, cfClient cf.CFClient) (ifrit.Runner, error) {
+func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB, httpStatusCollector healthendpoint.HTTPStatusCollector, cfClient cf.CFClient, rateLimiter *ratelimiter.RateLimiter) (ifrit.Runner, error) {
 	var middleWareBrokerCredentials []MiddleWareBrokerCredentials
 
 	for _, brokerCredential := range conf.BrokerCredentials {
@@ -119,7 +120,9 @@ func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.Bind
 	ah := NewBrokerHandler(logger, conf, bindingdb, policydb, catalog.Services, cfClient)
 
 	r := routes.BrokerRoutes()
+	rateLimiterMiddleware := ratelimiter.NewRateLimiterMiddlewareIPBased(rateLimiter, logger.Session("api-broker-server-ratelimiter-middleware"))
 
+	r.Use(rateLimiterMiddleware.CheckRateLimit)
 	r.Use(basicAuthentication.Middleware)
 	r.Use(httpStatusCollectMiddleware.Collect)
 	r.Get(routes.BrokerCatalogRouteName).Handler(VarsFunc(ah.GetBrokerCatalog))

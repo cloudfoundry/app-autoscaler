@@ -86,6 +86,7 @@ type Config struct {
 	AppSyncer         AppSyncerConfig               `yaml:"app_syncer"`
 	DBLock            DBLockConfig                  `yaml:"db_lock"`
 	HttpClientTimeout time.Duration                 `yaml:"http_client_timeout"`
+	RateLimit         models.RateLimitConfig        `yaml:"rate_limit"`
 }
 
 var defaultConfig = Config{

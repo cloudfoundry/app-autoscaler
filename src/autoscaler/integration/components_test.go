@@ -395,6 +395,52 @@ spring.main.allow-bean-definition-overriding=true
 	return cfgFile.Name()
 }
 
+func (components *Components) PrepareMetricsCollectorConfig(dbURI string, port int, ccNOAAUAAURL string, collectInterval time.Duration,
+	refreshInterval time.Duration, saveInterval time.Duration, collectMethod string, httpClientTimeout time.Duration, tmpDir string) string {
+	cfg := mcConfig.Config{
+		CF: cf.CFConfig{
+			API:      ccNOAAUAAURL,
+			ClientID: "admin",
+			Secret:   "admin",
+		},
+		Server: mcConfig.ServerConfig{
+			Port: port,
+			TLS: models.TLSCerts{
+				KeyFile:    filepath.Join(testCertDir, "metricscollector.key"),
+				CertFile:   filepath.Join(testCertDir, "metricscollector.crt"),
+				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			},
+			NodeAddrs: []string{"localhost"},
+			NodeIndex: 0,
+		},
+		Logging: helpers.LoggingConfig{
+			Level: LOGLEVEL,
+		},
+		DB: mcConfig.DBConfig{
+			InstanceMetricsDB: db.DatabaseConfig{
+				URL: dbURI,
+			},
+			PolicyDB: db.DatabaseConfig{
+				URL: dbURI,
+			},
+		},
+		Collector: mcConfig.CollectorConfig{
+			CollectInterval:       collectInterval,
+			RefreshInterval:       refreshInterval,
+			CollectMethod:         collectMethod,
+			SaveInterval:          saveInterval,
+			MetricCacheSizePerApp: 500,
+			PersistMetrics:        true,
+		},
+		HttpClientTimeout: httpClientTimeout,
+		RateLimit: models.RateLimitConfig{
+			MaxAmount:     10,
+			ValidDuration: 1 * time.Second,
+		},
+	}
+	return writeYmlConfig(tmpDir, MetricsCollector, &cfg)
+}
+
 func (components *Components) PrepareEventGeneratorConfig(dbUri string, port int, metricsCollectorURL string, scalingEngineURL string, aggregatorExecuteInterval time.Duration,
 	policyPollerInterval time.Duration, saveInterval time.Duration, evaluationManagerInterval time.Duration, httpClientTimeout time.Duration, tmpDir string) string {
 	conf := &egConfig.Config{
@@ -452,6 +498,10 @@ func (components *Components) PrepareEventGeneratorConfig(dbUri string, port int
 		DefaultBreachDurationSecs: 600,
 		DefaultStatWindowSecs:     60,
 		HttpClientTimeout:         httpClientTimeout,
+		RateLimit: models.RateLimitConfig{
+			MaxAmount:     10,
+			ValidDuration: 1 * time.Second,
+		},
 	}
 	return writeYmlConfig(tmpDir, EventGenerator, &conf)
 }
@@ -488,6 +538,10 @@ func (components *Components) PrepareScalingEngineConfig(dbURI string, port int,
 		DefaultCoolDownSecs: 300,
 		LockSize:            32,
 		HttpClientTimeout:   httpClientTimeout,
+		RateLimit: models.RateLimitConfig{
+			MaxAmount:     10,
+			ValidDuration: 1 * time.Second,
+		},
 	}
 
 	return writeYmlConfig(tmpDir, ScalingEngine, &conf)
@@ -556,6 +610,10 @@ func (components *Components) PrepareOperatorConfig(dbURI string, ccUAAURL strin
 			},
 		},
 		HttpClientTimeout: httpClientTimeout,
+		RateLimit: models.RateLimitConfig{
+			MaxAmount:     10,
+			ValidDuration: 1 * time.Second,
+		},
 	}
 	return writeYmlConfig(tmpDir, Operator, &conf)
 }
@@ -598,6 +656,10 @@ func (components *Components) PrepareMetricsGatewayConfig(dbURI string, metricSe
 				CertFile:   filepath.Join(testCertDir, "reverselogproxy_client.crt"),
 				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 			},
+		},
+		RateLimit: models.RateLimitConfig{
+			MaxAmount:     10,
+			ValidDuration: 1 * time.Second,
 		},
 	}
 	return writeYmlConfig(tmpDir, MetricsGateway, &cfg)
@@ -649,6 +711,10 @@ func (components *Components) PrepareMetricsServerConfig(dbURI string, httpClien
 				CertFile:   filepath.Join(testCertDir, "metricserver.crt"),
 				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 			},
+		},
+		RateLimit: models.RateLimitConfig{
+			MaxAmount:     10,
+			ValidDuration: 1 * time.Second,
 		},
 	}
 	return writeYmlConfig(tmpDir, MetricsServerHTTP, &cfg)

@@ -9,7 +9,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"gopkg.in/yaml.v2"
+	yaml "gopkg.in/yaml.v2"
 )
 
 var _ = Describe("Config", func() {
@@ -103,6 +103,10 @@ circuitBreaker:
 					},
 					Health: models.HealthConfig{
 						Port: 9999,
+					},
+					RateLimit: models.RateLimitConfig{
+						MaxAmount:     10,
+						ValidDuration: 1 * time.Second,
 					},
 					DB: DBConfig{
 						PolicyDB: db.DatabaseConfig{
@@ -228,6 +232,10 @@ defaultBreachDurationSecs: 600
 					},
 					Health: models.HealthConfig{
 						Port: 8081,
+					},
+					RateLimit: models.RateLimitConfig{
+						MaxAmount:     10,
+						ValidDuration: 1 * time.Second,
 					},
 					DB: DBConfig{
 						PolicyDB: db.DatabaseConfig{

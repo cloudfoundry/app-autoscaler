@@ -4,11 +4,14 @@ import (
 	"autoscaler/api/brokerserver"
 	"autoscaler/api/config"
 	"autoscaler/fakes"
+	"autoscaler/models"
+	"autoscaler/ratelimiter"
 	"autoscaler/routes"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/onsi/gomega/ghttp"
 
@@ -129,11 +132,16 @@ var _ = BeforeSuite(func() {
 			MetricsForwarderUrl:     "someURL",
 			MetricsForwarderMtlsUrl: "Mtls-someURL",
 		},
+		RateLimit: models.RateLimitConfig{
+			MaxAmount:     2,
+			ValidDuration: 2 * time.Second,
+		},
 	}
 	fakeBindingDB := &fakes.FakeBindingDB{}
 	fakePolicyDB := &fakes.FakePolicyDB{}
 	httpStatusCollector := &fakes.FakeHTTPStatusCollector{}
 	httpServer, err := brokerserver.NewBrokerServer(lager.NewLogger("test"), conf, fakeBindingDB, fakePolicyDB, httpStatusCollector, nil)
+	rateLimiterBroker := ratelimiter.DefaultRateLimiter(conf.RateLimit.MaxAmount, conf.RateLimit.ValidDuration, lager.NewLogger("test-ratelimiter-broker"))
 	Expect(err).NotTo(HaveOccurred())
 
 	serverUrl, err = url.Parse("http://localhost:" + strconv.Itoa(port))
