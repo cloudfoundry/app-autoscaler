@@ -3,6 +3,7 @@ package publicapiserver
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -241,7 +242,7 @@ func (h *PublicApiHandler) GetScalingHistories(w http.ResponseWriter, r *http.Re
 	if resp.StatusCode != http.StatusOK {
 		h.logger.Error("Error occured during getting scaling histories", nil, lager.Data{"statusCode": resp.StatusCode, "body": string(responseData)})
 		handlers.WriteJSONResponse(w, resp.StatusCode, models.ErrorResponse{
-			Code:    string(resp.StatusCode),
+			Code:    fmt.Sprint(resp.StatusCode),
 			Message: string(responseData)})
 		return
 	}
@@ -306,7 +307,7 @@ func (h *PublicApiHandler) GetAggregatedMetricsHistories(w http.ResponseWriter, 
 	if resp.StatusCode != http.StatusOK {
 		h.logger.Error("Error occured during getting metric histories", nil, lager.Data{"statusCode": resp.StatusCode, "body": string(responseData)})
 		handlers.WriteJSONResponse(w, resp.StatusCode, models.ErrorResponse{
-			Code:    string(resp.StatusCode),
+			Code:    fmt.Sprint(resp.StatusCode),
 			Message: string(responseData)})
 		return
 	}
@@ -376,7 +377,7 @@ func (h *PublicApiHandler) GetInstanceMetricsHistories(w http.ResponseWriter, r 
 	if resp.StatusCode != http.StatusOK {
 		h.logger.Error("Error occured during getting metric histories", nil, lager.Data{"statusCode": resp.StatusCode, "body": string(responseData)})
 		handlers.WriteJSONResponse(w, resp.StatusCode, models.ErrorResponse{
-			Code:    string(resp.StatusCode),
+			Code:    fmt.Sprint(resp.StatusCode),
 			Message: string(responseData)})
 		return
 	}

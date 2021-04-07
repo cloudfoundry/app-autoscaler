@@ -105,8 +105,8 @@ var _ = Describe("Store", func() {
 			Sleep(validDuration * 2)
 			stats2 := store.Stats()
 			Expect(len(stats2)).To(Equal(2))
-			Expect(stats2[key1]).To(Equal(5 + maxAmount * 2))
-			Expect(stats2[key2]).To(Equal(7 + maxAmount * 2))
+			Expect(stats2[key1]).To(Equal(5 + maxAmount*2))
+			Expect(stats2[key2]).To(Equal(7 + maxAmount*2))
 		})
 	})
 

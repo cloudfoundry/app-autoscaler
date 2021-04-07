@@ -26,7 +26,7 @@ var _ = Describe("PolicyValidator", func() {
 	JustBeforeEach(func() {
 		errResult, valid = policyValidator.ValidatePolicy(policyString)
 	})
-	Context("Policy Schema &  Validation", func() {
+	Context("Policy Schema & Validation", func() {
 		Context("when invalid json", func() {
 			BeforeEach(func() {
 				policyString = `{

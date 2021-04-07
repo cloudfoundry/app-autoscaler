@@ -4,9 +4,9 @@ import (
 	"autoscaler/db"
 	. "autoscaler/db/sqldb"
 	"autoscaler/models"
-	"github.com/lib/pq"
-	"github.com/go-sql-driver/mysql"
 	"code.cloudfoundry.org/lager"
+	"github.com/go-sql-driver/mysql"
+	"github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -73,7 +73,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 				Expect(err).To(BeAssignableToTypeOf(&mysql.MySQLError{}))
 			})
 		})
-		
+
 		Context("when url is correct", func() {
 			It("should not error", func() {
 				Expect(err).NotTo(HaveOccurred())

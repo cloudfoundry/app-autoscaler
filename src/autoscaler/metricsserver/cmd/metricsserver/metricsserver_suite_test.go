@@ -11,12 +11,12 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/cfhttp"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/jmoiron/sqlx"
 	"gopkg.in/yaml.v2"
 
 	"autoscaler/db"

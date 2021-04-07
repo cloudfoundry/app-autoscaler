@@ -3,14 +3,14 @@ package sqldb_test
 import (
 	"autoscaler/db"
 	. "autoscaler/db/sqldb"
-	"database/sql"
-	"os"
-	"time"
-	"github.com/lib/pq"
-	"github.com/go-sql-driver/mysql"
 	"code.cloudfoundry.org/lager"
+	"database/sql"
+	"github.com/go-sql-driver/mysql"
+	"github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"os"
+	"time"
 )
 
 var _ = Describe("BindingSqldb", func() {
@@ -66,7 +66,7 @@ var _ = Describe("BindingSqldb", func() {
 				Expect(err).To(BeAssignableToTypeOf(&mysql.MySQLError{}))
 			})
 		})
-		
+
 		Context("when db url is correct", func() {
 			It("should not error", func() {
 				Expect(err).NotTo(HaveOccurred())

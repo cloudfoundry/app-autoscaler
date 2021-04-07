@@ -296,7 +296,7 @@ rate_limit:
 				MaxIdleConnections:    5,
 				ConnectionMaxLifetime: 60 * time.Second,
 			}
-			conf.RateLimit.MaxAmount     = 10
+			conf.RateLimit.MaxAmount = 10
 			conf.RateLimit.ValidDuration = 1 * time.Second
 		})
 
