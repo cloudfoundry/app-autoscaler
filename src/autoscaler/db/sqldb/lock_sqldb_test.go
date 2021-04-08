@@ -7,11 +7,11 @@ import (
 	"os"
 
 	"code.cloudfoundry.org/lager"
-	"github.com/lib/pq"
 	"github.com/go-sql-driver/mysql"
-	"time"
+	"github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"time"
 )
 
 var _ = Describe("LockSqldb", func() {
@@ -65,7 +65,7 @@ var _ = Describe("LockSqldb", func() {
 				Expect(err).To(BeAssignableToTypeOf(&mysql.MySQLError{}))
 			})
 		})
-		
+
 		Context("when lock db url is correct", func() {
 			It("should not error", func() {
 				Expect(err).NotTo(HaveOccurred())

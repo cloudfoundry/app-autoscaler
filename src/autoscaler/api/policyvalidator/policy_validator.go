@@ -15,7 +15,17 @@ const (
 	TimeLayout     = "15:04"
 )
 
+type ScalingRulesConfig struct {
+	CPU CPUConfig
+}
+
+type CPUConfig struct {
+	LowerThreshold int
+	UpperThreshold int
+}
+
 type PolicyValidator struct {
+	scalingRules       ScalingRulesConfig
 	policySchemaPath   string
 	policySchemaLoader gojsonschema.JSONLoader
 }
@@ -58,9 +68,15 @@ func newPolicyValidationError(context *gojsonschema.JsonContext, formatString st
 	return &err
 }
 
-func NewPolicyValidator(policySchemaPath string) *PolicyValidator {
+func NewPolicyValidator(policySchemaPath string, lowerThreshold int, upperThreshold int) *PolicyValidator {
 	policyValidator := &PolicyValidator{
 		policySchemaPath: policySchemaPath,
+		scalingRules: ScalingRulesConfig{
+			CPU: CPUConfig{
+				LowerThreshold: lowerThreshold,
+				UpperThreshold: upperThreshold,
+			},
+		},
 	}
 	policyValidator.policySchemaLoader = gojsonschema.NewReferenceLoader("file://" + policyValidator.policySchemaPath)
 	return policyValidator
@@ -159,8 +175,8 @@ func (pv *PolicyValidator) validateScalingRuleThreshold(policy *models.ScalingPo
 				result.AddError(err, errDetails)
 			}
 		case "cpu":
-			if scalingRule.Threshold <= 0 || scalingRule.Threshold > 100 {
-				formatString := "scaling_rules[{{.scalingRuleIndex}}].threshold for metric_type cpu should be greater than 0 and less than equal to 100"
+			if scalingRule.Threshold < int64(pv.scalingRules.CPU.LowerThreshold) || scalingRule.Threshold >= int64(pv.scalingRules.CPU.UpperThreshold) {
+				formatString := fmt.Sprintf("scaling_rules[{{.scalingRuleIndex}}].threshold for metric_type cpu should be greater than %d and less than or equal to %d", pv.scalingRules.CPU.LowerThreshold, pv.scalingRules.CPU.UpperThreshold)
 				err := newPolicyValidationError(currentContext, formatString, errDetails)
 				result.AddError(err, errDetails)
 			}

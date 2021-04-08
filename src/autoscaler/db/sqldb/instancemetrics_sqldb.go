@@ -5,13 +5,13 @@ import (
 	"autoscaler/models"
 
 	"code.cloudfoundry.org/lager"
-	. "github.com/lib/pq"
 	"github.com/jmoiron/sqlx"
+	. "github.com/lib/pq"
 
 	"context"
 	"database/sql"
-	"time"
 	"strings"
+	"time"
 )
 
 type InstanceMetricsSQLDB struct {
@@ -108,7 +108,7 @@ func (idb *InstanceMetricsSQLDB) SaveMetricsInBulk(metrics []*models.AppInstance
 			return err
 		}
 	case "mysql":
-		sqlStr :="INSERT INTO appinstancemetrics(appid, instanceindex, collectedat, name, unit, value, timestamp)VALUES"
+		sqlStr := "INSERT INTO appinstancemetrics(appid, instanceindex, collectedat, name, unit, value, timestamp)VALUES"
 		vals := []interface{}{}
 		if metrics == nil || len(metrics) == 0 {
 			txn.Rollback()

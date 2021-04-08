@@ -19,9 +19,11 @@ import (
 )
 
 const (
-	DefaultLoggingLevel                = "info"
-	DefaultMaxAmount                   = 10
-	DefaultValidDuration time.Duration = 1 * time.Second
+	DefaultLoggingLevel                    = "info"
+	DefaultMaxAmount                       = 10
+	DefaultValidDuration     time.Duration = 1 * time.Second
+	DefaultCPULowerThreshold               = 0
+	DefaultCPUUpperThreshold               = 100
 )
 
 type ServerConfig struct {
@@ -68,6 +70,15 @@ type MetricsForwarderConfig struct {
 	MetricsForwarderUrl string `yaml:"metrics_forwarder_url"`
 }
 
+type ScalingRulesConfig struct {
+	CPU CPUConfig `yaml:"cpu"`
+}
+
+type CPUConfig struct {
+	LowerThreshold int `yaml:"lower_threshold"`
+	UpperThreshold int `yaml:"upper_threshold"`
+}
+
 type Config struct {
 	Logging              helpers.LoggingConfig  `yaml:"logging"`
 	BrokerServer         ServerConfig           `yaml:"broker_server"`
@@ -91,6 +102,7 @@ type Config struct {
 	MetricsForwarder     MetricsForwarderConfig `yaml:"metrics_forwarder"`
 	Health               models.HealthConfig    `yaml:"health"`
 	RateLimit            models.RateLimitConfig `yaml:"rate_limit"`
+	ScalingRules         ScalingRulesConfig     `yaml:"scaling_rules"`
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
@@ -102,9 +114,15 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 		CF: cf.CFConfig{
 			SkipSSLValidation: false,
 		},
-		RateLimit:       models.RateLimitConfig{
+		RateLimit: models.RateLimitConfig{
 			MaxAmount:     DefaultMaxAmount,
 			ValidDuration: DefaultValidDuration,
+		},
+		ScalingRules: ScalingRulesConfig{
+			CPU: CPUConfig{
+				LowerThreshold: DefaultCPULowerThreshold,
+				UpperThreshold: DefaultCPUUpperThreshold,
+			},
 		},
 	}
 
@@ -154,13 +172,22 @@ func (c *Config) Validate() error {
 	if c.RateLimit.MaxAmount <= 0 {
 		return fmt.Errorf("Configuration error: RateLimit.MaxAmount is equal or less than zero")
 	}
-	if c.RateLimit.ValidDuration <= 0 * time.Nanosecond {
+	if c.RateLimit.ValidDuration <= 0*time.Nanosecond {
 		return fmt.Errorf("Configuration error: RateLimit.ValidDuration is equal or less than zero nanosecond")
 	}
 
 	if c.InfoFilePath == "" {
 		return fmt.Errorf("Configuration error: InfoFilePath is empty")
 	}
+
+	if c.ScalingRules.CPU.LowerThreshold < 0 {
+		return fmt.Errorf("Configuration error: ScalingRules.CPU.LowerThreshold is less than zero")
+	}
+
+	if c.ScalingRules.CPU.UpperThreshold < 0 {
+		return fmt.Errorf("Configuration error: ScalingRules.CPU.UpperThreshold is less than zero")
+	}
+
 	if !c.UseBuildInMode {
 		if c.DB.BindingDB.URL == "" {
 			return fmt.Errorf("Configuration error: BindingDB URL is empty")

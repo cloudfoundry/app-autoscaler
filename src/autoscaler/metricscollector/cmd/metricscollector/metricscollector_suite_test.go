@@ -15,14 +15,14 @@ import (
 
 	"code.cloudfoundry.org/cfhttp"
 	"github.com/cloudfoundry/sonde-go/events"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/gogo/protobuf/proto"
+	"github.com/jmoiron/sqlx"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/jmoiron/sqlx"
 	"gopkg.in/yaml.v2"
 
 	"autoscaler/cf"
@@ -54,7 +54,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	mc, err := gexec.Build("autoscaler/metricscollector/cmd/metricscollector", "-race")
 	Expect(err).NotTo(HaveOccurred())
 
-        database, err := db.GetConnection(os.Getenv("DBURL"))
+	database, err := db.GetConnection(os.Getenv("DBURL"))
 	Expect(err).NotTo(HaveOccurred())
 
 	mcDB, err := sqlx.Open(database.DriverName, database.DSN)

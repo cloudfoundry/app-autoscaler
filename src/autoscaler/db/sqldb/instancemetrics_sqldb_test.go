@@ -4,9 +4,9 @@ import (
 	"autoscaler/db"
 	. "autoscaler/db/sqldb"
 	"autoscaler/models"
-	"github.com/lib/pq"
-	"github.com/go-sql-driver/mysql"
 	"code.cloudfoundry.org/lager"
+	"github.com/go-sql-driver/mysql"
+	"github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gstruct"
@@ -78,7 +78,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 				Expect(err).To(BeAssignableToTypeOf(&mysql.MySQLError{}))
 			})
 		})
-		
+
 		Context("when url is correct", func() {
 			It("should not error", func() {
 				Expect(err).NotTo(HaveOccurred())
@@ -172,7 +172,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 				metrics := []*models.AppInstanceMetric{}
 				err = idb.SaveMetricsInBulk(metrics)
 			})
-			It("Should return nil", func(){
+			It("Should return nil", func() {
 				Expect(err).To(BeNil())
 			})
 		})
@@ -295,7 +295,6 @@ var _ = Describe("InstancemetricsSqldb", func() {
 			metric.Timestamp = 110000
 			err = idb.SaveMetric(metric)
 			Expect(err).NotTo(HaveOccurred())
-
 
 			start = 0
 			end = -1
@@ -723,4 +722,3 @@ var _ = Describe("InstancemetricsSqldb", func() {
 	})
 
 })
-

@@ -26,8 +26,8 @@ type InMemoryStore struct {
 }
 
 type entry struct {
-	bucket       *ratelimit.Bucket
-	expiredAt    time.Time
+	bucket    *ratelimit.Bucket
+	expiredAt time.Time
 	sync.RWMutex
 }
 
