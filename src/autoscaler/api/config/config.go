@@ -20,7 +20,7 @@ import (
 
 const (
 	DefaultLoggingLevel  = "info"
-	DefaultMaxAmount     = 10
+	DefaultMaxAmount     = 100
 	DefaultValidDuration = 1 * time.Second
 )
 

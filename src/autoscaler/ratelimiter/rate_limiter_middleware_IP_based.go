@@ -28,7 +28,6 @@ func (mw *RateLimiterMiddlewareIPBased) CheckRateLimit(next http.Handler) http.H
 		if forwardedFor := r.Header.Get("X-Forwarded-For"); forwardedFor != "" {
 			remoteIP = strings.Split(forwardedFor, ", ")[0]
 		}
-		mw.logger.Info("error-exceed-rate-limit", lager.Data{"RemoteIP": remoteIP, "X-Vcap-Request-Id": r.Header.Get("X-Vcap-Request-Id"), "URL": r.URL.String()})
 		if mw.RateLimiter.ExceedsLimit(remoteIP) {
 			mw.logger.Info("error-exceed-rate-limit", lager.Data{"RemoteIP": remoteIP, "X-Vcap-Request-Id": r.Header.Get("X-Vcap-Request-Id"), "URL": r.URL.String()})
 			handlers.WriteJSONResponse(w, http.StatusTooManyRequests, models.ErrorResponse{
