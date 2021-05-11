@@ -32,6 +32,7 @@ const (
 	testInstanceId = "an-instance-id"
 	testOrgId      = "an-org-id"
 	testSpaceId    = "a-space-id"
+	testBindingId  = "a-binding-id"
 )
 
 var (
