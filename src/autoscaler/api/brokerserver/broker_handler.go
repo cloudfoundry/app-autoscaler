@@ -77,6 +77,10 @@ func (h *BrokerHandler) GetHealth(w http.ResponseWriter, r *http.Request, vars m
 func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Request, vars map[string]string) {
 	instanceId := vars["instanceId"]
 
+	logger := h.logger.Session("create-service-instance", lager.Data{"instanceId": instanceId})
+	logger.Info("start")
+	defer logger.Info("end")
+
 	body := &models.InstanceCreationRequestBody{}
 	bodyBytes, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -100,6 +104,7 @@ func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Req
 	if h.quotaExceeded(body, instanceId, w) {
 		return
 	}
+	logger.Debug("quota-check-passed")
 
 	policyStr := ""
 	if body.Parameters.DefaultPolicy != nil {
@@ -113,6 +118,7 @@ func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Req
 			handlers.WriteJSONResponse(w, http.StatusBadRequest, errResults)
 			return
 		}
+
 		policyGuid, err := uuid.NewV4()
 		if err != nil {
 			h.logger.Error("failed to create policy guid", err, lager.Data{"instanceId": instanceId})
@@ -135,7 +141,7 @@ func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Req
 			}
 		}
 	}
-	err = h.bindingdb.CreateServiceInstance(models.ServiceInstance{instanceId, body.OrgGUID, body.SpaceGUID, policyStr, policyGuidStr})
+	err = h.bindingdb.CreateServiceInstance(models.ServiceInstance{ServiceInstanceId: instanceId, OrgId: body.OrgGUID, SpaceId: body.SpaceGUID, DefaultPolicy: policyStr, DefaultPolicyGuid: policyGuidStr})
 	switch {
 	case err == nil:
 		w.WriteHeader(http.StatusCreated)
@@ -152,13 +158,24 @@ func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Req
 	}
 }
 
+
 func (h *BrokerHandler) quotaExceeded(creationRequestBody *models.InstanceCreationRequestBody, instanceId string, w http.ResponseWriter) bool {
+	logger := h.logger.Session("quota-check", lager.Data{"instanceId": instanceId})
+	logger.Debug("start")
+	defer logger.Debug("end")
+
+	planId := creationRequestBody.PlanID
+	serviceId := creationRequestBody.ServiceID
+	orgGuid := creationRequestBody.OrgGUID
+	spaceGuid := creationRequestBody.SpaceGUID
+
 	serviceName := ""
 	planName := ""
+
 	for _, service := range h.catalog {
-		if service.ID == creationRequestBody.ServiceID {
+		if service.ID == serviceId {
 			for _, plan := range service.Plans {
-				if plan.ID == creationRequestBody.PlanID {
+				if plan.ID == planId {
 					serviceName = service.Name
 					planName = plan.Name
 				}
@@ -166,31 +183,33 @@ func (h *BrokerHandler) quotaExceeded(creationRequestBody *models.InstanceCreati
 		}
 	}
 	if serviceName == "" || planName == "" {
-		h.logger.Error("failed to find selected service and plan in catalog", nil, lager.Data{"instanceId": instanceId, "orgGuid": creationRequestBody.OrgGUID, "spaceGuid": creationRequestBody.SpaceGUID, "serviceId": creationRequestBody.ServiceID, "planId": creationRequestBody.PlanID, "serviceName": serviceName, "planName": planName})
+		h.logger.Error("failed to find selected service and plan in catalog", nil, lager.Data{"instanceId": instanceId, "orgGuid": orgGuid, "spaceGuid": spaceGuid, "serviceId": serviceId, "planId": planId, "serviceName": serviceName, "planName": planName})
 		writeErrorResponse(w, http.StatusBadRequest, "Unknown service or plan")
 		return true
 	}
-	quota, err := h.quotaManagementClient.GetQuota(creationRequestBody.OrgGUID, serviceName, planName)
+	quotaId, err := h.quotaManagementClient.GetQuota(orgGuid, serviceName, planName)
+	logger.Debug("quota-management-client-returned", lager.Data{"quota": quotaId, "instanceId": instanceId, "orgGuid": orgGuid, "spaceGuid": spaceGuid, "serviceId": serviceId, "planId": planId, "serviceName": serviceName, "planName": planName})
+
 	if err != nil {
-		h.logger.Error("failed to call quota management API", err, lager.Data{"instanceId": instanceId, "orgGuid": creationRequestBody.OrgGUID, "spaceGuid": creationRequestBody.SpaceGUID, "serviceId": creationRequestBody.ServiceID, "planId": creationRequestBody.PlanID, "serviceName": serviceName, "planName": planName})
-		writeErrorResponse(w, http.StatusInternalServerError, "Failed to determine available quota. Try again later.")
+		h.logger.Error("failed to call quota management API", err, lager.Data{"instanceId": instanceId, "orgGuid": orgGuid, "spaceGuid": spaceGuid, "serviceId": serviceId, "planId": planId, "serviceName": serviceName, "planName": planName})
+		writeErrorResponse(w, http.StatusInternalServerError, "Failed to determine available Application Autoscaler quota. Please try again later.")
 		return true
 	}
-	if quota == 0 {
-		h.logger.Error("failed to create service instance due to missing quota", nil, lager.Data{"instanceId": instanceId, "orgGuid": creationRequestBody.OrgGUID, "spaceGuid": creationRequestBody.SpaceGUID, "serviceId": creationRequestBody.ServiceID, "planId": creationRequestBody.PlanID, "serviceName": serviceName, "planName": planName, "quota": quota})
-		writeErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("No quota for this service (%s) or service plan (%s) has been assigned to your org. Please contact your global account administrator for help on how to assign Application Autoscaler quota to your subaccount.", serviceName, planName))
+	if quotaId == 0 {
+		h.logger.Error("failed to create service instance due to missing quota", nil, lager.Data{"instanceId": instanceId, "orgGuid": orgGuid, "spaceGuid": spaceGuid, "serviceId": serviceId, "planId": planId, "serviceName": serviceName, "planName": planName, "quota": quotaId})
+		writeErrorResponse(w, http.StatusBadRequest, fmt.Sprintf(`No quota for this service "%s" and service plan "%s" has been assigned to your org. Please contact your global account administrator for help on how to assign Application Autoscaler quota to your org.`, serviceName, planName))
 		return true
 	}
-	if quota > 0 {
+	if quotaId > 0 {
 		instances, err := h.bindingdb.CountServiceInstancesInOrg(creationRequestBody.OrgGUID)
 		if err != nil {
 			h.logger.Error("failed to count currently existing service instances", err, lager.Data{"instanceId": instanceId, "orgGuid": creationRequestBody.OrgGUID, "spaceGuid": creationRequestBody.SpaceGUID, "serviceId": creationRequestBody.ServiceID, "planId": creationRequestBody.PlanID, "serviceName": serviceName, "planName": planName})
 			writeErrorResponse(w, http.StatusInternalServerError, "Failed to determine used quota. Try again later.")
 			return true
 		}
-		if instances+1 > quota {
-			h.logger.Error("failed to create service instance due to insufficient quota", nil, lager.Data{"instanceId": instanceId, "orgGuid": creationRequestBody.OrgGUID, "spaceGuid": creationRequestBody.SpaceGUID, "serviceId": creationRequestBody.ServiceID, "planId": creationRequestBody.PlanID, "serviceName": serviceName, "planName": planName, "quota": quota, "instances": instances})
-			writeErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("The quota (%d) for this service (%s) and service plan (%s) service plan has been exceeded. Please contact your global account administrator for help on how to assign more Application Autoscaler quota to your subaccount.", quota, serviceName, planName))
+		if instances+1 > quotaId {
+			h.logger.Error("failed to create service instance due to insufficient quota", nil, lager.Data{"instanceId": instanceId, "orgGuid": orgGuid, "spaceGuid": spaceGuid, "serviceId": serviceId, "planId": planId, "serviceName": serviceName, "planName": planName, "quota": quotaId, "instances": instances})
+			writeErrorResponse(w, http.StatusBadRequest, fmt.Sprintf(`The quota of %d service instances of service '%s' with plan '%s' within this subaccount has been exceeded (%d instances already exist). Please contact your global account administrator for help on how to assign more Application Autoscaler quota to your org.`, quotaId, serviceName, planName, instances))
 			return true
 		}
 	}
@@ -220,10 +239,24 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if body.Parameters == nil || body.Parameters.DefaultPolicy == nil {
-		h.logger.Error("failed to update instance, only default policy updates allowed", nil, lager.Data{"instanceId": instanceId, "serviceId": body.ServiceID, "planId": body.PlanID})
-		writeErrorResponse(w, http.StatusUnprocessableEntity, "Failed to update service instance: Only default_policy updates allowed")
+	if (body.Parameters == nil || body.Parameters.DefaultPolicy == nil) && body.PlanID == "" {
+		h.logger.Error("failed to update instance, only default policy and service plan updates are allowed", nil, lager.Data{"instanceId": instanceId, "serviceId": body.ServiceID, "planId": body.PlanID})
+		writeErrorResponse(w, http.StatusUnprocessableEntity, "Failed to update service instance: Only default policy and service plan updates are allowed")
 		return
+	}
+
+	// validate service instance here
+	serviceInstance, err := h.bindingdb.GetServiceInstance(instanceId)
+	if err != nil {
+		if err == db.ErrDoesNotExist {
+			h.logger.Error("failed to find service instance to update", err, lager.Data{"instanceId": instanceId})
+			writeErrorResponse(w, http.StatusNotFound, "Failed to find service instance to update")
+			return
+		} else {
+			h.logger.Error("failed to retrieve service instance", err, lager.Data{"instanceId": instanceId})
+			writeErrorResponse(w, http.StatusInternalServerError, "Failed to retrieve service instance")
+			return
+		}
 	}
 	updatedDefaultPolicy := string(*body.Parameters.DefaultPolicy)
 
@@ -240,6 +273,13 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 			handlers.WriteJSONResponse(w, http.StatusBadRequest, errResults)
 			return
 		}
+
+		if err != nil {
+			h.logger.Error("failed-to-retrieve-service-plan-of-service-instance", err, lager.Data{"instanceId": instanceId})
+			writeErrorResponse(w, http.StatusInternalServerError, "Error validating policy")
+			return
+		}
+
 		policyGuid, err := uuid.NewV4()
 		if err != nil {
 			h.logger.Error("failed to create policy guid", err, lager.Data{"instanceId": instanceId})
@@ -249,7 +289,7 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 		updatedDefaultPolicyGuid = policyGuid.String()
 	}
 
-	serviceInstance, err := h.bindingdb.GetServiceInstance(instanceId)
+	serviceInstance, err = h.bindingdb.GetServiceInstance(instanceId)
 	if err != nil {
 		if errors.Is(err, db.ErrDoesNotExist) {
 			h.logger.Error("failed to find service instance to update", err, lager.Data{"instanceId": instanceId})
@@ -264,11 +304,8 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 
 	if updatedDefaultPolicyGuid != "" {
 		allBoundApps, err := h.bindingdb.GetAppIdsByInstanceId(serviceInstance.ServiceInstanceId)
-		if err != nil {
-			h.logger.Error("failed to retrieve bound apps", err, lager.Data{"instanceId": instanceId})
-			writeErrorResponse(w, http.StatusInternalServerError, "Error updating service instance")
-			return
-		}
+		h.logger.Info("update-service-instance-set-or-update", lager.Data{"instanceId": instanceId, "serviceId": body.ServiceID, "planId": body.PlanID, "updatedDefaultPolicy": updatedDefaultPolicy, "updatedDefaultPolicyGuid": updatedDefaultPolicyGuid, "allBoundApps": allBoundApps, "serviceInstance": serviceInstance})
+
 		updatedAppIds, err := h.policydb.SetOrUpdateDefaultAppPolicy(allBoundApps, serviceInstance.DefaultPolicyGuid, updatedDefaultPolicy, updatedDefaultPolicyGuid)
 		if err != nil {
 			h.logger.Error("failed to set default policies", err, lager.Data{"instanceId": instanceId})
@@ -276,6 +313,7 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 			return
 		}
 
+		h.logger.Info("update-service-instance-set-or-updated", lager.Data{"instanceId": instanceId, "serviceId": body.ServiceID, "planId": body.PlanID, "updatedDefaultPolicy": updatedDefaultPolicy, "updatedDefaultPolicyGuid": updatedDefaultPolicyGuid, "allBoundApps": allBoundApps, "updatedAppIds": updatedAppIds, "serviceInstance": serviceInstance})
 		// there is synchronization between policy and schedule, so errors creating schedules should not break
 		// the whole update process
 		for _, appId := range updatedAppIds {
@@ -292,6 +330,7 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 				writeErrorResponse(w, http.StatusInternalServerError, "Error updating service instance")
 				return
 			}
+			h.logger.Info("update-service-instance-delete", lager.Data{"instanceId": instanceId, "serviceId": body.ServiceID, "planId": body.PlanID, "updatedDefaultPolicy": updatedDefaultPolicy, "updatedDefaultPolicyGuid": updatedDefaultPolicyGuid, "updatedAppIds": updatedAppIds, "serviceInstance": serviceInstance})
 			// there is synchronization between policy and schedule, so errors creating schedules should not break
 			// the whole update process
 			for _, appId := range updatedAppIds {
@@ -299,6 +338,8 @@ func (h *BrokerHandler) UpdateServiceInstance(w http.ResponseWriter, r *http.Req
 					h.logger.Error("failed to delete schedules", err, lager.Data{"appId": appId})
 				}
 			}
+		} else {
+			h.logger.Info("update-service-instance-nothing-to-be-done", lager.Data{"instanceId": instanceId, "serviceId": body.ServiceID, "planId": body.PlanID, "updatedDefaultPolicy": updatedDefaultPolicy, "updatedDefaultPolicyGuid": updatedDefaultPolicyGuid, "serviceInstance": serviceInstance})
 		}
 	}
 
@@ -332,7 +373,32 @@ func (h *BrokerHandler) DeleteServiceInstance(w http.ResponseWriter, _ *http.Req
 		return
 	}
 
-	err := h.bindingdb.DeleteServiceInstance(instanceId)
+	// fetch and delete service bindings
+	bindingIds, err := h.bindingdb.GetBindingIdsByInstanceId(instanceId)
+	if err != nil {
+		h.logger.Error("failed to delete service bindings before service instance deletion", err, lager.Data{"instanaceId": instanceId})
+		writeErrorResponse(w, http.StatusInternalServerError, "Error deleting service instance")
+		return
+	}
+
+	for _, bindingId := range bindingIds {
+		err = deleteBinding(h, bindingId, instanceId)
+		if err != nil && err.Error() == "Error deleting service binding" {
+			writeErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		} else if err != nil && err.Error() == "Failed to delete policy for unbinding" {
+			writeErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		} else if err != nil && err.Error() == "Error deleting service binding" {
+			writeErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		} else if err != nil && err.Error() == "Failed to delete schedules for unbinding" {
+			writeErrorResponse(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
+
+	err = h.bindingdb.DeleteServiceInstance(instanceId)
 	if err != nil {
 		if errors.Is(err, db.ErrDoesNotExist) {
 			h.logger.Error("failed to delete service instance: service instance does not exist", err,
@@ -384,6 +450,7 @@ func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Reque
 			handlers.WriteJSONResponse(w, http.StatusBadRequest, errResults)
 			return
 		}
+
 		policyGuid, err := uuid.NewV4()
 		if err != nil {
 			h.logger.Error("failed to create policy guid", err, lager.Data{"appId": body.AppID})
@@ -402,6 +469,38 @@ func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Reque
 		} else {
 			policyStr = serviceInstance.DefaultPolicy
 			policyGuidStr = serviceInstance.DefaultPolicyGuid
+		}
+
+	}
+
+	// fetch and all service bindings for the service instance
+	bindingIds, err := h.bindingdb.GetBindingIdsByInstanceId(instanceId)
+	if err != nil {
+		h.logger.Error("failed to delete service bindings before service instance deletion", err, lager.Data{"instanaceId": instanceId})
+		writeErrorResponse(w, http.StatusInternalServerError, "Error deleting service instance")
+		return
+	}
+
+	for _, bindingId := range bindingIds {
+		// get the service binding for the app
+		fetchedAppID, err := h.bindingdb.GetAppIdByBindingId(bindingId)
+
+		//select the binding-id for the app
+		if fetchedAppID == body.AppID {
+			err = deleteBinding(h, bindingId, instanceId)
+			if err != nil && err.Error() == "Error deleting service binding" {
+				writeErrorResponse(w, http.StatusInternalServerError, err.Error())
+				return
+			} else if err != nil && err.Error() == "Failed to delete policy for unbinding" {
+				writeErrorResponse(w, http.StatusInternalServerError, err.Error())
+				return
+			} else if err != nil && err.Error() == "Error deleting service binding" {
+				writeErrorResponse(w, http.StatusInternalServerError, err.Error())
+				return
+			} else if err != nil && err.Error() == "Failed to delete schedules for unbinding" {
+				writeErrorResponse(w, http.StatusInternalServerError, err.Error())
+				return
+			}
 		}
 	}
 
@@ -474,47 +573,71 @@ func (h *BrokerHandler) UnbindServiceInstance(w http.ResponseWriter, _ *http.Req
 		writeErrorResponse(w, http.StatusBadRequest, "Invalid request body format")
 		return
 	}
-	appId, err := h.bindingdb.GetAppIdByBindingId(bindingId)
-	if errors.Is(err, sql.ErrNoRows) {
-		h.logger.Info("binding does not exist", nil, lager.Data{"instanceId": instanceId, "bindingId": bindingId})
-		writeErrorResponse(w, http.StatusGone, "Binding does not exist")
+
+	err := deleteBinding(h, bindingId, instanceId)
+	if err != nil && err.Error() == "Binding does not exist" {
+		writeErrorResponse(w, http.StatusGone, err.Error())
 		return
-	}
-	if err != nil {
-		h.logger.Error("failed to get appId by bindingId", err, lager.Data{"instanceId": instanceId, "bindingId": bindingId})
-		writeErrorResponse(w, http.StatusInternalServerError, "Error deleting service binding")
+	} else if err != nil && err.Error() == "Error deleting service binding" {
+		writeErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
-	}
-	h.logger.Info("deleting policy json", lager.Data{"appId": appId})
-	err = h.policydb.DeletePolicy(appId)
-	if err != nil {
-		h.logger.Error("failed to delete policy for unbinding", err, lager.Data{"appId": appId})
-		writeErrorResponse(w, http.StatusInternalServerError, "Error deleting policy")
+	} else if err != nil && err.Error() == "Failed to delete policy for unbinding" {
+		writeErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
-	}
-	h.logger.Info("deleting schedules", lager.Data{"appId": appId})
-	err = h.schedulerUtil.DeleteSchedule(appId)
-	if err != nil {
-		h.logger.Info("failed to delete schedules for unbinding", lager.Data{"appId": appId})
-	}
-	err = h.bindingdb.DeleteServiceBinding(bindingId)
-	if err != nil {
-		h.logger.Error("failed to delete binding", err, lager.Data{"bindingId": bindingId, "appId": appId})
-		if errors.Is(err, db.ErrDoesNotExist) {
-			writeErrorResponse(w, http.StatusGone, "Service Binding Doesn't Exist")
-			return
-		}
-		writeErrorResponse(w, http.StatusInternalServerError, "Error deleting service binding")
+	} else if err != nil && err.Error() == "Error deleting service binding" {
+		writeErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
-	}
-	err = custom_metrics_cred_helper.DeleteCredential(appId, h.policydb, custom_metrics_cred_helper.MaxRetry)
-	if err != nil {
-		h.logger.Error("failed to delete custom metrics credential for unbinding", err, lager.Data{"appId": appId})
+	} else if err != nil && err.Error() == "Failed to delete schedules for unbinding" {
+		writeErrorResponse(w, http.StatusInternalServerError, err.Error())
+		return
+	} else if err != nil && err.Error() == "Service Binding Doesn't Exist" {
+		writeErrorResponse(w, http.StatusGone, err.Error())
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
 	_, err = w.Write([]byte("{}"))
 	if err != nil {
-		h.logger.Error("unable to write body", err)
+		return
 	}
+}
+
+func deleteBinding(h *BrokerHandler, bindingId string, instanceId string) error {
+	appId, err := h.bindingdb.GetAppIdByBindingId(bindingId)
+	if errors.Is(err, sql.ErrNoRows) {
+		h.logger.Info("binding does not exist", nil, lager.Data{"instanceId": instanceId, "bindingId": bindingId})
+			return errors.New("Binding does not exist")
+	}
+	if err != nil {
+		h.logger.Error("failed to get appId by bindingId", err, lager.Data{"instanceId": instanceId, "bindingId": bindingId})
+		return errors.New("Error deleting service binding")
+
+	}
+	h.logger.Info("deleting policy json", lager.Data{"appId": appId})
+	err = h.policydb.DeletePolicy(appId)
+	if err != nil {
+		h.logger.Error("failed to delete policy for unbinding", err, lager.Data{"appId": appId})
+		return errors.New("Failed to delete policy for unbinding")
+	}
+	h.logger.Info("deleting schedules", lager.Data{"appId": appId})
+	err = h.schedulerUtil.DeleteSchedule(appId)
+	if err != nil {
+		h.logger.Info("failed to delete schedules for unbinding", lager.Data{"appId": appId})
+		return errors.New("Failed to delete schedules for unbinding")
+	}
+	err = h.bindingdb.DeleteServiceBinding(bindingId)
+	if err != nil {
+		h.logger.Error("failed to delete binding", err, lager.Data{"bindingId": bindingId, "appId": appId})
+		if errors.Is(err, db.ErrDoesNotExist) {
+			return errors.New("Service Binding Doesn't Exist")
+		}
+		return errors.New("Error deleting service binding")
+
+	}
+	err = custom_metrics_cred_helper.DeleteCredential(appId, h.policydb, custom_metrics_cred_helper.MaxRetry)
+	if err != nil {
+		h.logger.Error("failed to delete custom metrics credential for unbinding", err, lager.Data{"appId": appId})
+		return nil
+	}
+	return nil
 }

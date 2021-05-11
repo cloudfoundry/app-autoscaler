@@ -569,6 +569,7 @@ var _ = Describe("BrokerHandler", func() {
 		JustBeforeEach(func() {
 			handler.DeleteServiceInstance(resp, req, map[string]string{"instanceId": testInstanceId})
 		})
+
 		Context("When database DeleteServiceInstance call returns ErrDoesnotExist", func() {
 			BeforeEach(func() {
 				instanceDeletionRequestBody := &models.BrokerCommonRequestBody{
@@ -606,6 +607,7 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error deleting service instance"}`))
 			})
 		})
+
 		Context("When all mandatory parameters are present", func() {
 			BeforeEach(func() {
 				instanceDeletionRequestBody := &models.BrokerCommonRequestBody{
@@ -620,6 +622,33 @@ var _ = Describe("BrokerHandler", func() {
 			})
 			It("succeeds with 200", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK), DebugTestInfo())
+			})
+		})
+
+		Context("When service bindings are present", func() {
+			BeforeEach(func() {
+				var bindingIds []string
+				bindingIds = append(bindingIds, testBindingId)
+
+				bindingdb.GetBindingIdsByInstanceIdReturns(bindingIds, nil)
+				bindingdb.GetAppIdByBindingIdReturnsOnCall(0, testAppId, nil)
+				instanceDeletionRequestBody := &models.BrokerCommonRequestBody{
+					ServiceID: "a-service-id",
+					PlanID:    "a-plan-id",
+				}
+				body, err := json.Marshal(instanceDeletionRequestBody)
+				Expect(err).NotTo(HaveOccurred())
+				req, err = http.NewRequest(http.MethodPut, "", bytes.NewReader(body))
+				verifyScheduleIsDeletedInScheduler(testAppId)
+			})
+			It("if it has been deleted", func() {
+				Expect(resp.Code).To(Equal(http.StatusOK))
+				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
+				Expect(bindingdb.DeleteServiceBindingCallCount()).To(Equal(1))
+				Expect(bindingdb.DeleteServiceBindingArgsForCall(0)).To(Equal(testBindingId))
+				Expect(bindingdb.DeleteServiceInstanceCallCount()).To(Equal(1))
+				Expect(policydb.DeletePolicyCallCount(), 1)
+				Expect(policydb.DeletePolicyArgsForCall(0), testAppId)
 			})
 		})
 
@@ -848,6 +877,28 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(string(bodyBytes)).To(Equal(`[{"context":"(root)","description":"instance_min_count is required"}]`))
 			})
 		})
+
+		Context("When service bindings are present", func() {
+			bindingIds := []string{testBindingId}
+			BeforeEach(func() {
+				body, err = json.Marshal(bindingRequestBody)
+				Expect(err).NotTo(HaveOccurred())
+
+				bindingdb.GetBindingIdsByInstanceIdReturns(bindingIds, nil)
+				bindingdb.GetAppIdByBindingIdReturns(testAppId, nil)
+				verifyScheduleIsDeletedUpdatedInScheduler(testAppId, bindingPolicy)
+			})
+			It("delete existing bindings before creating the new one", func() {
+				Expect(resp.Code).To(Equal(http.StatusCreated))
+
+				requestsRecievedByTheScheduler := schedulerServer.ReceivedRequests()
+				Expect(requestsRecievedByTheScheduler).To(HaveLen(2))
+				Expect(requestsRecievedByTheScheduler[0].Method).To(Equal(http.MethodDelete))
+				Expect(requestsRecievedByTheScheduler[0].URL).To(MatchRegexp(testAppId))
+				Expect(requestsRecievedByTheScheduler[1].Method).To(Equal(http.MethodPut))
+				Expect(requestsRecievedByTheScheduler[1].URL).To(MatchRegexp(testAppId))
+			})
+		})
 	})
 
 	Describe("UnBindServiceInstance", func() {
@@ -981,4 +1032,18 @@ func installQuotaAPIHandlers() {
 			Quota int `json:"quota"`
 		}{Quota: -1}),
 	))
+}
+
+func verifyScheduleIsDeletedUpdatedInScheduler(appId string, policy string) {
+	deleteSchedulePath, err := routes.SchedulerRoutes().Get(routes.DeleteScheduleRouteName).URLPath("appId", appId)
+	Expect(err).NotTo(HaveOccurred())
+	updateSchedulePath, err := routes.SchedulerRoutes().Get(routes.UpdateScheduleRouteName).URLPath("appId", appId)
+	Expect(err).NotTo(HaveOccurred())
+	schedulerServer.Reset()
+	schedulerServer.AppendHandlers(
+		ghttp.VerifyRequest("DELETE", deleteSchedulePath.String()),
+		ghttp.CombineHandlers(
+			ghttp.VerifyRequest("PUT", updateSchedulePath.String()),
+			ghttp.VerifyJSON(policy),
+		))
 }
