@@ -30,8 +30,15 @@ jobs:
       - name: Go Build
         run: |
           source .envrc
-          cd src/autoscaler
-          make build
+          pushd scripts
+            ./generate_test_certs.sh
+          popd
+          pushd scheduler/scripts
+            ./generate_unit_test_certs.sh
+          popd
+          pushd src/autoscaler
+            make build
+          popd
 
       - name: Setup Java
         uses: actions/setup-java@v2
