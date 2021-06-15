@@ -91,6 +91,7 @@ jobs:
 
       - name: Integration Tests
         run: |
+          source .envrc
           pushd scheduler
             mvn --no-transfer-progress package -DskipTests
           popd
