@@ -3,14 +3,14 @@ package sqldb_test
 import (
 	"autoscaler/db"
 	. "autoscaler/db/sqldb"
-	"database/sql"
-	"os"
-	"time"
-	"github.com/lib/pq"
-	"github.com/go-sql-driver/mysql"
 	"code.cloudfoundry.org/lager"
+	"database/sql"
+	"github.com/go-sql-driver/mysql"
+	"github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"os"
+	"time"
 )
 
 var _ = Describe("BindingSqldb", func() {
@@ -52,6 +52,9 @@ var _ = Describe("BindingSqldb", func() {
 
 		Context("when db url is not correct", func() {
 			BeforeEach(func() {
+				if os.Getenv("DBURL") != "postgres://postgres@localhost/autoscaler?sslmode=disable" {
+					Skip("Not configured for postgres")
+				}
 				dbConfig.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
 			})
 			It("should throw an error", func() {
@@ -61,6 +64,9 @@ var _ = Describe("BindingSqldb", func() {
 
 		Context("when mysql db url is not correct", func() {
 			BeforeEach(func() {
+				if os.Getenv("DBURL") != "root@tcp(localhost)/autoscaler?tls=false" {
+					Skip("Not configured for mysql")
+				}
 				dbConfig.URL = "not-exist-user:not-exist-password@tcp(localhost)/autoscaler?tls=false"
 			})
 			It("should throw an error", func() {
