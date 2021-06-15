@@ -1,0 +1,100 @@
+---
+name: postgres
+
+on:
+  pull_request:
+
+jobs:
+  postgres:
+    strategy:
+      matrix:
+        go: [1.15.1]
+        java: [8]
+        postgres: [9.6]
+    env:
+      DB_DATABASE: autoscaler
+      DB_USER: root
+    runs-on: ubuntu-latest
+    name: Build, golang=${{ matrix.go }}, jdk=${{ matrix.java }}, postgres=${{ matrix.postgres }}
+    services:
+      postgres:
+        image: postgres:${{ matrix.postgres }}
+        env:
+          POSTGRES_USER: root
+          POSTGRES_PASSWORD: 
+          POSTGRES_DB: autoscaler
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          # Maps tcp port 5432 on service container to the host
+          - 5432:5432
+  
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go }}
+      
+      - name: Go Build
+        run: |
+          source .envrc
+          pushd scripts
+            ./generate_test_certs.sh
+          popd
+          pushd scheduler/scripts
+            ./generate_unit_test_certs.sh
+          popd
+          pushd src/autoscaler
+            make build
+          popd
+
+      - name: Setup Java
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: ${{ matrix.java }}
+      
+      - name: Maven Build
+        run: mvn --no-transfer-progress package
+
+      - name: Setup Postgres
+        run: |
+          psql -c 'CREATE DATABASE autoscaler' -U postgres
+          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=api/db/api.db.changelog.yml update
+          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=servicebroker/db/servicebroker.db.changelog.json update
+          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=scheduler/db/scheduler.changelog-master.yaml update
+          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=scheduler/db/quartz.changelog-master.yaml update
+          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/metricscollector/db/metricscollector.db.changelog.yml update
+          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/eventgenerator/db/dataaggregator.db.changelog.yml update
+          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/scalingengine/db/scalingengine.db.changelog.yml update
+          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/operator/db/operator.db.changelog.yml update
+
+      - name: Unit Test
+        run: |
+          source .envrc
+          go install github.com/onsi/ginkgo/ginkgo
+          pushd src/autoscaler
+            export DBURL="postgres://postgres@localhost/autoscaler?sslmode=disable"
+            make test
+          popd
+
+          pushd scheduler
+            mvn --no-transfer-progress test
+          popd  
+
+      - name: Integration Tests
+        run: |
+          pushd scheduler
+            mvn --no-transfer-progress package -DskipTests
+          popd
+
+          export DBURL="postgres://postgres@localhost/autoscaler?sslmode=disable"
+          ginkgo -r -race -randomizeAllSpecs src/integration
