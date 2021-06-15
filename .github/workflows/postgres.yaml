@@ -81,7 +81,7 @@ jobs:
           source .envrc
           go install github.com/onsi/ginkgo/ginkgo
           pushd src/autoscaler
-          export DBURL="postgres://postgres:postgres@postgres/autoscaler?sslmode=disable"
+          export DBURL="postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
             make test
           popd
 
@@ -95,5 +95,5 @@ jobs:
             mvn --no-transfer-progress package -DskipTests
           popd
 
-          export DBURL="postgres://postgres:postgres@postgres/autoscaler?sslmode=disable"
+          export DBURL="postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
           ginkgo -r -race -randomizeAllSpecs src/integration
