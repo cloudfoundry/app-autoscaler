@@ -10,6 +10,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gstruct"
+	"strings"
 
 	"os"
 	"sync"
@@ -64,7 +65,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 
 		Context("when db url is not correct", func() {
 			BeforeEach(func() {
-				if os.Getenv("DBURL") != "postgres://postgres@localhost/autoscaler?sslmode=disable" {
+				if !strings.Contains(os.Getenv("DBURL"),"postgres") {
 					Skip("Not configured for postgres")
 				}
 				dbConfig.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
@@ -76,7 +77,7 @@ var _ = Describe("InstancemetricsSqldb", func() {
 
 		Context("when mysql db url is not correct", func() {
 			BeforeEach(func() {
-				if os.Getenv("DBURL") != "root@tcp(localhost)/autoscaler?tls=false" {
+				if strings.Contains(os.Getenv("DBURL"),"postgres") {
 					Skip("Not configured for mysql")
 				}
 				dbConfig.URL = "not-exist-user:not-exist-password@tcp(localhost)/autoscaler?tls=false"
