@@ -13,7 +13,7 @@ jobs:
         postgres: [9.6]
     env:
       DB_DATABASE: autoscaler
-      DB_USER: root
+      POSTGRES_PASSWORD: postgres
     runs-on: ubuntu-latest
     name: Build golang=${{ matrix.go }}, jdk=${{ matrix.java }}, postgres=${{ matrix.postgres }}
     services:
@@ -29,7 +29,6 @@ jobs:
           --health-timeout 5s
           --health-retries 5
         ports:
-          # Maps tcp port 5432 on service container to the host
           - 5432:5432
   
     steps:
@@ -67,21 +66,21 @@ jobs:
 
       - name: Setup Postgres
         run: |
-          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=api/db/api.db.changelog.yml update
-          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=servicebroker/db/servicebroker.db.changelog.json update
-          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=scheduler/db/scheduler.changelog-master.yaml update
-          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=scheduler/db/quartz.changelog-master.yaml update
-          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/metricscollector/db/metricscollector.db.changelog.yml update
-          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/eventgenerator/db/dataaggregator.db.changelog.yml update
-          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/scalingengine/db/scalingengine.db.changelog.yml update
-          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/operator/db/operator.db.changelog.yml update
+          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://postgres/autoscaler --driver=org.postgresql.Driver --changeLogFile=api/db/api.db.changelog.yml --password=${{ env.POSTGRES_PASSWORD }} update
+          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://postgres/autoscaler --driver=org.postgresql.Driver --changeLogFile=servicebroker/db/servicebroker.db.changelog.json --password=${{ env.POSTGRES_PASSWORD }} update
+          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://postgres/autoscaler --driver=org.postgresql.Driver --changeLogFile=scheduler/db/scheduler.changelog-master.yaml --password=${{ env.POSTGRES_PASSWORD }} update
+          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://postgres/autoscaler --driver=org.postgresql.Driver --changeLogFile=scheduler/db/quartz.changelog-master.yaml --password=${{ env.POSTGRES_PASSWORD }} update
+          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://postgres/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/metricscollector/db/metricscollector.db.changelog.yml --password=${{ env.POSTGRES_PASSWORD }} update
+          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://postgres/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/eventgenerator/db/dataaggregator.db.changelog.yml --password=${{ env.POSTGRES_PASSWORD }} update
+          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://postgres/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/scalingengine/db/scalingengine.db.changelog.yml --password=${{ env.POSTGRES_PASSWORD }} update
+          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://postgres/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/operator/db/operator.db.changelog.yml --password=${{ env.POSTGRES_PASSWORD }} update
 
       - name: Unit Test
         run: |
           source .envrc
           go install github.com/onsi/ginkgo/ginkgo
           pushd src/autoscaler
-            export DBURL="postgres://postgres@localhost/autoscaler?sslmode=disable"
+          export DBURL="postgres://postgres:postgres@postgres/autoscaler?sslmode=disable"
             make test
           popd
 
@@ -95,5 +94,5 @@ jobs:
             mvn --no-transfer-progress package -DskipTests
           popd
 
-          export DBURL="postgres://postgres@localhost/autoscaler?sslmode=disable"
+          export DBURL="postgres://postgres:postgres@postgres/autoscaler?sslmode=disable"
           ginkgo -r -race -randomizeAllSpecs src/integration
