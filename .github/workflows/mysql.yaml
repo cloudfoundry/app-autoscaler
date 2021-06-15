@@ -15,7 +15,7 @@ jobs:
       DB_USER: root
       DB_PASSWORD: root
     runs-on: ubuntu-latest
-    name: Build, golang=${{ matrix.go }}, jdk=${{ matrix.java }}, mysql=latest
+    name: Build golang=${{ matrix.go }}, jdk=${{ matrix.java }}, mysql=latest
     steps:
       - name: Check out source code
         uses: actions/checkout@v2

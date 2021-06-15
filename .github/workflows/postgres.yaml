@@ -15,12 +15,12 @@ jobs:
       DB_DATABASE: autoscaler
       DB_USER: root
     runs-on: ubuntu-latest
-    name: Build, golang=${{ matrix.go }}, jdk=${{ matrix.java }}, postgres=${{ matrix.postgres }}
+    name: Build golang=${{ matrix.go }}, jdk=${{ matrix.java }}, postgres=${{ matrix.postgres }}
     services:
       postgres:
         image: postgres:${{ matrix.postgres }}
         env:
-          POSTGRES_USER: root
+          POSTGRES_USER: postgres
           POSTGRES_PASSWORD: 
           POSTGRES_DB: autoscaler
         options: >-
