@@ -1,8 +1,8 @@
 package ratelimiter_test
 
 import (
-	. "time"
 	. "autoscaler/ratelimiter"
+	. "time"
 
 	. "code.cloudfoundry.org/lager"
 	. "github.com/onsi/ginkgo"
@@ -70,7 +70,6 @@ var _ = Describe("RateLimiter", func() {
 
 	})
 
-
 	Describe("Expire", func() {
 		BeforeEach(func() {
 			limiter = NewRateLimiter(bucketCapacity, maxAmount, validDuration, expireDuration, expireCheckInterval, NewLogger("ratelimiter"))
@@ -88,4 +87,3 @@ var _ = Describe("RateLimiter", func() {
 		})
 	})
 })
-

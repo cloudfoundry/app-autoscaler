@@ -10,7 +10,7 @@ import (
 )
 
 type Store interface {
-	Increment(string) ( error)
+	Increment(string) error
 }
 
 type InMemoryStore struct {
@@ -25,8 +25,8 @@ type InMemoryStore struct {
 }
 
 type entry struct {
-	limiter      *rate.Limiter
-	expiredAt    time.Time
+	limiter   *rate.Limiter
+	expiredAt time.Time
 	sync.RWMutex
 }
 
@@ -58,13 +58,13 @@ func NewStore(bucketCapacity int, maxAmount int, validDuration time.Duration, ex
 }
 
 func newEntry(validDuration time.Duration, bucketCapacity int, maxAmount int) *entry {
-	limit := 1e9 * float64(maxAmount)/float64(validDuration)
+	limit := 1e9 * float64(maxAmount) / float64(validDuration)
 	return &entry{
-		limiter: rate.NewLimiter(rate.Limit(limit), bucketCapacity ),
+		limiter: rate.NewLimiter(rate.Limit(limit), bucketCapacity),
 	}
 }
 
-func (s *InMemoryStore) Increment(key string) (error) {
+func (s *InMemoryStore) Increment(key string) error {
 	v, ok := s.get(key)
 	if !ok {
 		v = newEntry(s.validDuration, s.bucketCapacity, s.maxAmount)
@@ -75,7 +75,7 @@ func (s *InMemoryStore) Increment(key string) (error) {
 		return errors.New("empty bucket")
 	}
 	s.set(key, v)
-	return  nil
+	return nil
 }
 
 func (s *InMemoryStore) get(key string) (*entry, bool) {
@@ -94,7 +94,7 @@ func (s *InMemoryStore) set(key string, value *entry) {
 func (s *InMemoryStore) expiryCycle() {
 	ticker := time.NewTicker(s.expireCheckInterval)
 	go func() {
-		for _ = range ticker.C {
+		for range ticker.C {
 			s.Lock()
 			for k, v := range s.storage {
 				if v.Expired() {

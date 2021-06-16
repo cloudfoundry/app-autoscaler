@@ -10,7 +10,7 @@ import (
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
 	"github.com/cenk/backoff"
-	"github.com/rubyist/circuitbreaker"
+	circuit "github.com/rubyist/circuitbreaker"
 )
 
 type ConsumeAppMonitorMap func(map[string][]*models.Trigger, chan []*models.Trigger)

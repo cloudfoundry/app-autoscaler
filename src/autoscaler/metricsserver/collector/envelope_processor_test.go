@@ -54,7 +54,7 @@ var _ = Describe("EnvelopeProcessor", func() {
 			BeforeEach(func() {
 				Expect(envelopeChan).Should(BeSent(GenerateContainerMetrics("test-app-id", "0", 10.2, 10*1024*1024, 20*1024*1024, 1111)))
 				Expect(envelopeChan).Should(BeSent(GenerateContainerMetrics("test-app-id", "1", 10.6, 10.2*1024*1024, 20*1024*1024, 1111)))
-			
+
 			})
 			It("sends standard app instance metrics to channel", func() {
 				Eventually(metricChan).Should(Receive(Equal(&models.AppInstanceMetric{
@@ -359,4 +359,3 @@ func GenerateHttpStartStopEnvelope(sourceID, instance string, start, stop, times
 	}
 	return e
 }
-

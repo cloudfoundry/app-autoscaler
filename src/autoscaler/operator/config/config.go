@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"code.cloudfoundry.org/locket"
 	yaml "gopkg.in/yaml.v2"
 )
 
@@ -20,7 +19,7 @@ const (
 	DefaultRefreshInterval     time.Duration = 24 * time.Hour
 	DefaultCutoffDuration      time.Duration = 30 * 24 * time.Hour
 	DefaultSyncInterval        time.Duration = 24 * time.Hour
-	DefaultRetryInterval       time.Duration = locket.RetryInterval
+	DefaultRetryInterval       time.Duration = 5 * time.Second // from locket.RetryInterval
 	DefaultDBLockRetryInterval time.Duration = 5 * time.Second
 	DefaultDBLockTTL           time.Duration = 15 * time.Second
 	DefaultHttpClientTimeout   time.Duration = 5 * time.Second
