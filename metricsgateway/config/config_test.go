@@ -28,7 +28,7 @@ var _ = Describe("Config", func() {
 		Context("with invalid yaml", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
- logging:
+  logging:
   level: "debug"
 envelop_chan_size: 500
 nozzle_count: 3

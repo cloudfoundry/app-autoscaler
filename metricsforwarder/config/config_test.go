@@ -31,7 +31,7 @@ var _ = Describe("Config", func() {
 				configBytes = []byte(`
   server:
     port: 8081
-logging:
+  logging:
   level: info
 
 loggregator
