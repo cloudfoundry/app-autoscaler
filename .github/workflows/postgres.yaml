@@ -14,7 +14,7 @@ jobs:
       matrix:
         go: [1.15.1]
         java: [8]
-        postgres: [9.6]
+        postgres: [9.6, 12]
     env:
       DB_DATABASE: autoscaler
       POSTGRES_PASSWORD: postgres
