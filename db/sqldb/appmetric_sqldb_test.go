@@ -145,14 +145,14 @@ var _ = Describe("AppMetricSQLDB", func() {
 		Context("When inserting an array of app_metric", func() {
 			BeforeEach(func() {
 				appMetrics := []*models.AppMetric{
-					&models.AppMetric{
+					{
 						AppId:      testAppId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
 						Timestamp:  11111111,
 						Value:      "300",
 					},
-					&models.AppMetric{
+					{
 						AppId:      testAppId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
@@ -175,14 +175,14 @@ var _ = Describe("AppMetricSQLDB", func() {
 			BeforeEach(func() {
 				testMetricName = "Test-Metric-Name-this-is-a-too-long-metric-name-too-looooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong"
 				appMetrics := []*models.AppMetric{
-					&models.AppMetric{
+					{
 						AppId:      testAppId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
 						Timestamp:  11111111,
 						Value:      "300",
 					},
-					&models.AppMetric{
+					{
 						AppId:      testAppId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
@@ -320,21 +320,21 @@ var _ = Describe("AppMetricSQLDB", func() {
 			It("returns all the appMetrics ordered by timestamp", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(appMetrics).To(Equal([]*models.AppMetric{
-					&models.AppMetric{
+					{
 						AppId:      testAppId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
 						Timestamp:  11111111,
 						Value:      "100",
 					},
-					&models.AppMetric{
+					{
 						AppId:      testAppId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
 						Timestamp:  33333333,
 						Value:      "200",
 					},
-					&models.AppMetric{
+					{
 						AppId:      testAppId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
@@ -352,14 +352,14 @@ var _ = Describe("AppMetricSQLDB", func() {
 			It("returns correct appMetrics ordered by timestamp", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(appMetrics).To(Equal([]*models.AppMetric{
-					&models.AppMetric{
+					{
 						AppId:      testAppId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
 						Timestamp:  33333333,
 						Value:      "200",
 					},
-					&models.AppMetric{
+					{
 						AppId:      testAppId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
@@ -376,21 +376,21 @@ var _ = Describe("AppMetricSQLDB", func() {
 			It("returns all the appMetrics ordered by timestamp with descending order", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(appMetrics).To(Equal([]*models.AppMetric{
-					&models.AppMetric{
+					{
 						AppId:      testAppId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
 						Timestamp:  55555555,
 						Value:      "300",
 					},
-					&models.AppMetric{
+					{
 						AppId:      testAppId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
 						Timestamp:  33333333,
 						Value:      "200",
 					},
-					&models.AppMetric{
+					{
 						AppId:      testAppId,
 						MetricType: testMetricName,
 						Unit:       testMetricUnit,
