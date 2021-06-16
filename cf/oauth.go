@@ -25,11 +25,16 @@ func (c *cfClient) IsUserSpaceDeveloper(userToken string, appId string) (bool, e
 		return false, err
 	}
 
-	spaceDeveloperPermissionEndpoint := c.getSpaceDeveloperPermissionEndpoint(userId, appId)
-
-	req, err := http.NewRequest("GET", spaceDeveloperPermissionEndpoint, nil)
+	spaceId, err := c.getSpaceId(userToken, appId)
 	if err != nil {
-		c.logger.Error("Failed to create check space dev permission request", err, lager.Data{"spaceDeveloperPermissionEndpoint": spaceDeveloperPermissionEndpoint})
+		return false, err
+	}
+
+	rolesEndpoint := c.getSpaceDeveloperRolesEndpoint(userId, spaceId)
+
+	req, err := http.NewRequest("GET", rolesEndpoint, nil)
+	if err != nil {
+		c.logger.Error("Failed to create get roles request", err, lager.Data{"rolesEndpoint": rolesEndpoint})
 		return false, err
 	}
 	req.Header.Set("Authorization", userToken)
@@ -37,24 +42,34 @@ func (c *cfClient) IsUserSpaceDeveloper(userToken string, appId string) (bool, e
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		c.logger.Error("Failed to get user space dev permission, request failed", err, lager.Data{"spaceDeveloperPermissionEndpoint": spaceDeveloperPermissionEndpoint})
+		c.logger.Error("Failed to get roles, request failed", err, lager.Data{"rolesEndpoint": rolesEndpoint})
 		return false, err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		c.logger.Error("Failed to get user space dev permission", nil, lager.Data{"spaceDeveloperPermissionEndpoint": spaceDeveloperPermissionEndpoint, "statusCode": resp.StatusCode})
-		return false, fmt.Errorf("Failed to get space developer permission, statusCode : %v", resp.StatusCode)
+	if resp.StatusCode == http.StatusUnauthorized {
+		c.logger.Error("Failed to get roles, token invalid", nil, lager.Data{"rolesEndpoint": rolesEndpoint, "statusCode": resp.StatusCode})
+		return false, ErrUnauthrorized
+	} else if resp.StatusCode != http.StatusOK {
+		c.logger.Error("Failed to get roles", nil, lager.Data{"rolesEndpoint": rolesEndpoint, "statusCode": resp.StatusCode})
+		return false, fmt.Errorf("Failed to get roles, statusCode : %v", resp.StatusCode)
 	}
 
-	spaces := struct {
-		Total int `json:"total_results"`
+	roles := struct {
+		Pagination struct {
+			Total int `json:"total_results"`
+		} `json:"pagination"`
 	}{}
-	err = json.NewDecoder(resp.Body).Decode(&spaces)
+	err = json.NewDecoder(resp.Body).Decode(&roles)
 	if err != nil {
-		c.logger.Error("Failed to parse user space dev permission response body", err, lager.Data{"spaceDeveloperPermissionEndpoint": spaceDeveloperPermissionEndpoint})
+		c.logger.Error("Failed to parse roles response body", err, lager.Data{"rolesEndpoint": rolesEndpoint})
 		return false, err
 	}
-	return spaces.Total > 0, nil
+
+	isSpaceDeveloperOnAppSapce := roles.Pagination.Total > 0
+	if !isSpaceDeveloperOnAppSapce {
+		c.logger.Error("User without SpaceDeveloper role in the apps space tried to access API", nil, lager.Data{"rolesEndpoint": rolesEndpoint})
+	}
+	return isSpaceDeveloperOnAppSapce, nil
 }
 
 func (c *cfClient) IsUserAdmin(userToken string) (bool, error) {
@@ -146,6 +161,57 @@ func (c *cfClient) getUserId(userToken string) (string, error) {
 	return userInfo.UserId, nil
 }
 
+func (c *cfClient) getSpaceId(userToken string, appId string) (string, error) {
+	appsEndpoint := c.getAppsEndpoint(appId)
+
+	req, err := http.NewRequest("GET", appsEndpoint, nil)
+	if err != nil {
+		c.logger.Error("Failed to create apps request", err, lager.Data{"appsEndpoint": appsEndpoint})
+		return "", err
+	}
+	req.Header.Set("Authorization", userToken)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		c.logger.Error("Failed to get app, request failed", err, lager.Data{"appsEndpoint": appsEndpoint})
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusNotFound {
+		c.logger.Error("Failed to get app info, token invalid", nil, lager.Data{"appsEndpoint": appsEndpoint, "statusCode": resp.StatusCode})
+		return "", ErrUnauthrorized
+	} else if resp.StatusCode != http.StatusOK {
+		c.logger.Error("Failed to get app info", nil, lager.Data{"appsEndpoint": appsEndpoint, "statusCode": resp.StatusCode})
+		return "", fmt.Errorf("Failed to get app, statusCode : %v", resp.StatusCode)
+	}
+
+	app := struct {
+		Relationships struct {
+			Space struct {
+				Data struct {
+					GUID string `json:"guid"`
+				} `json:"data"`
+			} `json:"space"`
+		} `json:"relationships"`
+	}{}
+	err = json.NewDecoder(resp.Body).Decode(&app)
+	if err != nil {
+		c.logger.Error("Failed to parse app response body", err, lager.Data{"appsEndpoint": appsEndpoint})
+		return "", err
+	}
+
+	spaceId := app.Relationships.Space.Data.GUID
+
+	if spaceId == "" {
+		c.logger.Error("Failed to retrieve space guid", nil, lager.Data{"appsEndpoint": appsEndpoint, "appObject": app})
+		return "", fmt.Errorf("Failed to retrieve space guid")
+	}
+
+	return spaceId, nil
+}
+
 func (c *cfClient) getUserScopeEndpoint(userToken string) (string, error) {
 
 	parameters := url.Values{}
@@ -155,14 +221,19 @@ func (c *cfClient) getUserScopeEndpoint(userToken string) (string, error) {
 	return userScopeEndpoint, nil
 }
 
-func (c *cfClient) getSpaceDeveloperPermissionEndpoint(userId string, appId string) string {
-	parameters := url.Values{}
-	parameters.Add("app_guid", appId)
-	parameters.Add("developer_guid", userId)
-	spaceDeveloperPermissionEndpoint := c.conf.API + "/v2/users/" + userId + "/spaces?" + parameters.Encode()
-	return spaceDeveloperPermissionEndpoint
-}
-
 func (c *cfClient) getUserInfoEndpoint() string {
 	return c.endpoints.TokenEndpoint + "/userinfo"
+}
+
+func (c *cfClient) getAppsEndpoint(appId string) string {
+	return c.conf.API + "/v3/apps/" + appId
+}
+
+func (c *cfClient) getSpaceDeveloperRolesEndpoint(userId string, spaceId string) string {
+	parameters := url.Values{}
+	parameters.Add("types", "space_developer")
+	parameters.Add("space_guids", spaceId)
+	parameters.Add("user_guids", userId)
+	spaceDeveloperRolesEndpoint := c.conf.API + "/v3/roles?" + parameters.Encode()
+	return spaceDeveloperRolesEndpoint
 }
