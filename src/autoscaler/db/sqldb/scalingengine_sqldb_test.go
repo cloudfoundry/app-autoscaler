@@ -4,12 +4,13 @@ import (
 	"autoscaler/db"
 	. "autoscaler/db/sqldb"
 	"autoscaler/models"
+	"strings"
+
 	"code.cloudfoundry.org/lager"
 	"github.com/go-sql-driver/mysql"
 	"github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"strings"
 
 	"os"
 	"time"
@@ -60,7 +61,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 
 		Context("when db url is not correct", func() {
 			BeforeEach(func() {
-				if !strings.Contains(os.Getenv("DBURL"),"postgres") {
+				if !strings.Contains(os.Getenv("DBURL"), "postgres") {
 					Skip("Not configured for postgres")
 				}
 				dbConfig.URL = "postgres://not-exist-user:not-exist-password@localhost/autoscaler?sslmode=disable"
@@ -72,7 +73,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 
 		Context("when mysql db url is not correct", func() {
 			BeforeEach(func() {
-				if strings.Contains(os.Getenv("DBURL"),"postgres") {
+				if strings.Contains(os.Getenv("DBURL"), "postgres") {
 					Skip("Not configured for mysql")
 				}
 				dbConfig.URL = "not-exist-user:not-exist-password@tcp(localhost)/autoscaler?tls=false"
@@ -81,7 +82,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 				Expect(err).To(BeAssignableToTypeOf(&mysql.MySQLError{}))
 			})
 		})
-		
+
 		Context("when url is correct", func() {
 			It("should not error", func() {
 				Expect(err).NotTo(HaveOccurred())
