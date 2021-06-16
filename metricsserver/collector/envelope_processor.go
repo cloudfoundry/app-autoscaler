@@ -4,9 +4,9 @@ import (
 	"autoscaler/helpers"
 	"autoscaler/models"
 	"fmt"
+	"math"
 	"strconv"
 	"time"
-	"math"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
@@ -226,4 +226,3 @@ func (ep *envelopeProcessor) computeAndSaveMetrics() {
 	ep.sumReponseTimes = map[string]map[uint32]int64{}
 
 }
-

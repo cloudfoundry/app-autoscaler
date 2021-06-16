@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"net/url"
 
-	"code.cloudfoundry.org/lager"
 	"net/http"
 	"sync"
 	"time"
+
+	"code.cloudfoundry.org/lager"
 
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	"github.com/golang/protobuf/proto"
