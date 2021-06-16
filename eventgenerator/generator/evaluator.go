@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/lager"
-	"github.com/rubyist/circuitbreaker"
+	circuit "github.com/rubyist/circuitbreaker"
 )
 
 var validOperators = []string{">", ">=", "<", "<="}
