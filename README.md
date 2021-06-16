@@ -1,4 +1,4 @@
-# App-AutoScaler [![Build Status](https://travis-ci.org/cloudfoundry/app-autoscaler.svg?branch=master)](https://travis-ci.org/cloudfoundry/app-autoscaler)
+# App-AutoScaler [![Build Status](https://github.com/cloudfoundry/app-autoscaler/actions/workflows/postgres.yaml/badge.svg)](https://github.com/cloudfoundry/app-autoscaler/actions/workflows/postgres.yaml)
 
 The `App-AutoScaler` provides the capability to adjust the computation resources for Cloud Foundry applications through
 
