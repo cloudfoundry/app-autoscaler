@@ -305,15 +305,15 @@ func GenerateContainerMetrics(sourceID, instance string, cpu, memory, memoryQuot
 		Message: &loggregator_v2.Envelope_Gauge{
 			Gauge: &loggregator_v2.Gauge{
 				Metrics: map[string]*loggregator_v2.GaugeValue{
-					"cpu": &loggregator_v2.GaugeValue{
+					"cpu": {
 						Unit:  "percentage",
 						Value: cpu,
 					},
-					"memory": &loggregator_v2.GaugeValue{
+					"memory": {
 						Unit:  "bytes",
 						Value: memory,
 					},
-					"memory_quota": &loggregator_v2.GaugeValue{
+					"memory_quota": {
 						Unit:  "bytes",
 						Value: memoryQuota,
 					},
@@ -332,7 +332,7 @@ func GenerateCustomMetrics(sourceID, instance, name, unit string, value float64,
 		Message: &loggregator_v2.Envelope_Gauge{
 			Gauge: &loggregator_v2.Gauge{
 				Metrics: map[string]*loggregator_v2.GaugeValue{
-					name: &loggregator_v2.GaugeValue{
+					name: {
 						Unit:  unit,
 						Value: value,
 					},

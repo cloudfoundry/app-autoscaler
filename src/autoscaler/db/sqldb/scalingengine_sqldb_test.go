@@ -292,7 +292,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 			It("returns all the histories of the app ordered by timestamp asc", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(histories).To(Equal([]*models.AppScalingHistory{
-					&models.AppScalingHistory{
+					{
 						AppId:        "an-app-id",
 						Timestamp:    222222,
 						ScalingType:  models.ScalingTypeDynamic,
@@ -303,7 +303,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 						Message:      "a message",
 						Error:        "an error",
 					},
-					&models.AppScalingHistory{
+					{
 						AppId:        "an-app-id",
 						Timestamp:    333333,
 						ScalingType:  models.ScalingTypeSchedule,
@@ -313,7 +313,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 						Reason:       "a reason",
 						Message:      "a message",
 					},
-					&models.AppScalingHistory{
+					{
 						AppId:        "an-app-id",
 						Timestamp:    555555,
 						ScalingType:  models.ScalingTypeSchedule,
@@ -324,7 +324,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 						Message:      "a message",
 						Error:        "an error",
 					},
-					&models.AppScalingHistory{
+					{
 						AppId:        "an-app-id",
 						Timestamp:    666666,
 						ScalingType:  models.ScalingTypeDynamic,
@@ -344,7 +344,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 			It("returns all the histories of the app ordered by timestamp desc", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(histories).To(Equal([]*models.AppScalingHistory{
-					&models.AppScalingHistory{
+					{
 						AppId:        "an-app-id",
 						Timestamp:    666666,
 						ScalingType:  models.ScalingTypeDynamic,
@@ -354,7 +354,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 						Reason:       "a reason",
 						Message:      "a message",
 					},
-					&models.AppScalingHistory{
+					{
 						AppId:        "an-app-id",
 						Timestamp:    555555,
 						ScalingType:  models.ScalingTypeSchedule,
@@ -365,7 +365,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 						Message:      "a message",
 						Error:        "an error",
 					},
-					&models.AppScalingHistory{
+					{
 						AppId:        "an-app-id",
 						Timestamp:    333333,
 						ScalingType:  models.ScalingTypeSchedule,
@@ -375,7 +375,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 						Reason:       "a reason",
 						Message:      "a message",
 					},
-					&models.AppScalingHistory{
+					{
 						AppId:        "an-app-id",
 						Timestamp:    222222,
 						ScalingType:  models.ScalingTypeDynamic,
@@ -401,7 +401,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 			It("return correct histories", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(histories).To(Equal([]*models.AppScalingHistory{
-					&models.AppScalingHistory{
+					{
 						AppId:        "an-app-id",
 						Timestamp:    555555,
 						ScalingType:  models.ScalingTypeSchedule,
@@ -411,7 +411,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 						Reason:       "a reason",
 						Message:      "a message",
 						Error:        "an error",
-					}, &models.AppScalingHistory{
+					}, {
 						AppId:        "an-app-id",
 						Timestamp:    333333,
 						ScalingType:  models.ScalingTypeSchedule,
@@ -434,7 +434,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 			It("skips ingored scaling history", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(histories).To(Equal([]*models.AppScalingHistory{
-					&models.AppScalingHistory{
+					{
 						AppId:        "an-app-id",
 						Timestamp:    666666,
 						ScalingType:  models.ScalingTypeDynamic,
@@ -444,7 +444,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 						Reason:       "a reason",
 						Message:      "a message",
 					},
-					&models.AppScalingHistory{
+					{
 						AppId:        "an-app-id",
 						Timestamp:    555555,
 						ScalingType:  models.ScalingTypeSchedule,
@@ -455,7 +455,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 						Message:      "a message",
 						Error:        "an error",
 					},
-					&models.AppScalingHistory{
+					{
 						AppId:        "an-app-id",
 						Timestamp:    222222,
 						ScalingType:  models.ScalingTypeDynamic,
