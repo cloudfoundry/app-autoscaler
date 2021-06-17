@@ -102,7 +102,7 @@ var _ = Describe("Metricsforwarder", func() {
 					runner.Start()
 
 					customMetrics := []*models.CustomMetric{
-						{
+						&models.CustomMetric{
 							Name: "custom", Value: 12, Unit: "unit", InstanceIndex: 1, AppGUID: "an-app-id",
 						},
 					}

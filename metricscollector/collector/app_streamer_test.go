@@ -72,7 +72,7 @@ var _ = Describe("AppStreamer", func() {
 		Context("when there are containermetric events", func() {
 			BeforeEach(func() {
 				metrics = []*models.AppInstanceMetric{
-					{
+					&models.AppInstanceMetric{
 						AppId:         "an-app-id",
 						InstanceIndex: 0,
 						CollectedAt:   fclock.Now().UnixNano(),
@@ -81,7 +81,7 @@ var _ = Describe("AppStreamer", func() {
 						Value:         "95",
 						Timestamp:     111111,
 					},
-					{
+					&models.AppInstanceMetric{
 						AppId:         "an-app-id",
 						InstanceIndex: 0,
 						CollectedAt:   fclock.Now().UnixNano(),
@@ -90,7 +90,7 @@ var _ = Describe("AppStreamer", func() {
 						Value:         "33",
 						Timestamp:     111111,
 					},
-					{
+					&models.AppInstanceMetric{
 						AppId:         "an-app-id",
 						InstanceIndex: 0,
 						CollectedAt:   fclock.Now().UnixNano(),
@@ -99,7 +99,7 @@ var _ = Describe("AppStreamer", func() {
 						Value:         "13",
 						Timestamp:     111111,
 					},
-					{
+					&models.AppInstanceMetric{
 						AppId:         "an-app-id",
 						InstanceIndex: 1,
 						CollectedAt:   fclock.Now().UnixNano(),
@@ -108,7 +108,7 @@ var _ = Describe("AppStreamer", func() {
 						Value:         "191",
 						Timestamp:     222222,
 					},
-					{
+					&models.AppInstanceMetric{
 						AppId:         "an-app-id",
 						InstanceIndex: 1,
 						CollectedAt:   fclock.Now().UnixNano(),
@@ -117,7 +117,7 @@ var _ = Describe("AppStreamer", func() {
 						Value:         "67",
 						Timestamp:     222222,
 					},
-					{
+					&models.AppInstanceMetric{
 						AppId:         "an-app-id",
 						InstanceIndex: 1,
 						CollectedAt:   fclock.Now().UnixNano(),

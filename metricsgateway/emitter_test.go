@@ -33,19 +33,19 @@ var _ = Describe("Emitter", func() {
 			Message: &loggregator_v2.Envelope_Gauge{
 				Gauge: &loggregator_v2.Gauge{
 					Metrics: map[string]*loggregator_v2.GaugeValue{
-						"cpu": {
+						"cpu": &loggregator_v2.GaugeValue{
 							Unit:  "percentage",
 							Value: 20.5,
 						},
-						"disk": {
+						"disk": &loggregator_v2.GaugeValue{
 							Unit:  "bytes",
 							Value: 3000000000,
 						},
-						"memory": {
+						"memory": &loggregator_v2.GaugeValue{
 							Unit:  "bytes",
 							Value: 1000000000,
 						},
-						"memory_quota": {
+						"memory_quota": &loggregator_v2.GaugeValue{
 							Unit:  "bytes",
 							Value: 2000000000,
 						},

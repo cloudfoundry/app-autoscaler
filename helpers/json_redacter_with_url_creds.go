@@ -60,7 +60,7 @@ func (r JSONRedacterWithURLCred) redactValue(data *interface{}) interface{} {
 }
 
 func (r JSONRedacterWithURLCred) redactArray(data *[]interface{}) {
-	for i := range *data {
+	for i, _ := range *data {
 		r.redactValue(&((*data)[i]))
 	}
 }

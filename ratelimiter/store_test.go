@@ -23,7 +23,7 @@ var _ = Describe("Store", func() {
 	)
 
 	var (
-		store            Store
+		store Store
 		exceedErrMessage = "empty bucket"
 	)
 
@@ -90,7 +90,7 @@ var _ = Describe("Store", func() {
 				Expect(err).ToNot(HaveOccurred())
 			}
 			err := store.Increment("foo")
-			Expect(err).To(HaveOccurred())
+                        Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring(exceedErrMessage))
 
 			Sleep(expireDuration + expireCheckInterval)
@@ -100,3 +100,4 @@ var _ = Describe("Store", func() {
 	})
 
 })
+
