@@ -12,11 +12,11 @@ import (
 	"autoscaler/db"
 	"autoscaler/models"
 
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	_ "github.com/go-sql-driver/mysql"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/jmoiron/sqlx"
 )
 
 var dbHelper *sqlx.DB
@@ -35,10 +35,10 @@ var _ = BeforeSuite(func() {
 	}
 	database, err := db.GetConnection(dbUrl)
 	if err != nil {
-		Fail("failed to parse database connection: " + err.Error())
+		Fail("failed to parse database connection: "+ err.Error())
 	}
 
-	dbHelper, e = sqlx.Open(database.DriverName, database.DSN)
+	dbHelper, e =  sqlx.Open(database.DriverName, database.DSN)
 	if e != nil {
 		Fail("can not connect database: " + e.Error())
 	}
@@ -386,7 +386,7 @@ func validateLockNotInDB(owner string) error {
 
 func formatPolicyString(policyStr string) string {
 	scalingPolicy := &models.ScalingPolicy{}
-	err := json.Unmarshal([]byte(policyStr), &scalingPolicy)
+	err := json.Unmarshal([]byte(policyStr),&scalingPolicy)
 	if err != nil {
 		fmt.Errorf("failed to unmarshal policyJson string %s", policyStr)
 		return ""

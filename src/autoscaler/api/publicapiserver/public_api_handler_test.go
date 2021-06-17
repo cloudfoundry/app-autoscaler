@@ -132,7 +132,7 @@ var _ = Describe("PublicApiHandler", func() {
 					InstanceMax: 5,
 					InstanceMin: 1,
 					ScalingRules: []*models.ScalingRule{
-						{
+						&models.ScalingRule{
 							MetricType:            "memoryused",
 							BreachDurationSeconds: 300,
 							CoolDownSeconds:       300,
@@ -143,7 +143,7 @@ var _ = Describe("PublicApiHandler", func() {
 					Schedules: &models.ScalingSchedules{
 						Timezone: "Asia/Kolkata",
 						RecurringSchedules: []*models.RecurringSchedule{
-							{
+							&models.RecurringSchedule{
 								StartTime:             "10:00",
 								EndTime:               "18:00",
 								DaysOfWeek:            []int{1, 2, 3},
