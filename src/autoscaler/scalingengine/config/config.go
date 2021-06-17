@@ -16,11 +16,6 @@ import (
 )
 
 const (
-	DefaultActiveScheduleSyncInterval time.Duration = 10 * time.Minute
-	DefaultLockTTL                    time.Duration = 15 * time.Second // from locket.DefaultSessionTTL
-	DefaultRetryInterval              time.Duration = 5 * time.Second  // from locket.RetryInterval
-	DefaultDBLockRetryInterval        time.Duration = 5 * time.Second
-	DefaultDBLockTTL                  time.Duration = 15 * time.Second
 	DefaultHttpClientTimeout          time.Duration = 5 * time.Second
 )
 
