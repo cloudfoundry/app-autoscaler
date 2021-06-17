@@ -172,7 +172,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	cfg.CF.Secret = "client-secret"
 	cfg.CF.SkipSSLValidation = true
 	cfg.Health = models.HealthConfig{
-		Port:                healthport,
+		Port: healthport,
 		HealthCheckUsername: "healthcheckuser",
 		HealthCheckPassword: "healthcheckpassword",
 	}

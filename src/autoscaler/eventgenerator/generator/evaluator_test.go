@@ -17,7 +17,7 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
-	circuit "github.com/rubyist/circuitbreaker"
+	"github.com/rubyist/circuitbreaker"
 )
 
 var _ = Describe("Evaluator", func() {

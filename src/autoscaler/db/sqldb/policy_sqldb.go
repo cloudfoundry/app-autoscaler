@@ -7,9 +7,9 @@ import (
 	"encoding/json"
 
 	"code.cloudfoundry.org/lager"
+	_ "github.com/lib/pq"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
 )
 
 type PolicySQLDB struct {
@@ -134,7 +134,7 @@ func (pdb *PolicySQLDB) GetAppPolicy(appId string) (*models.ScalingPolicy, error
 func (pdb *PolicySQLDB) SaveAppPolicy(appId string, policyJSON string, policyGuid string) error {
 	var query string
 	queryPrefix := "INSERT INTO policy_json (app_id, policy_json, guid) VALUES (?,?,?) "
-	switch pdb.sqldb.DriverName() {
+	switch pdb.sqldb.DriverName(){
 	case "postgres":
 		query = pdb.sqldb.Rebind(queryPrefix + "ON CONFLICT(app_id) DO UPDATE SET policy_json=EXCLUDED.policy_json, guid=EXCLUDED.guid")
 	case "mysql":
