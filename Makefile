@@ -15,7 +15,12 @@ build: build-scalingengine build-metricscollector build-metricsforwarder build-e
 check: fmt lint build test
 
 test:
-	ginkgo -r -race -randomizeAllSpecs -keepGoing
+	ginkgo -r -race -randomizeAllSpecs -keepGoing --skipPackage=integration
+
+.PHONY: integration
+integration:
+	ginkgo -r -race -randomizeAllSpecs -keepGoing integration
+
 
 generate:
 	COUNTERFEITER_NO_GENERATE_WARNING=true $(GO_NOMOD) generate ./...
