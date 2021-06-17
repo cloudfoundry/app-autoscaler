@@ -33,11 +33,11 @@ var _ = Describe("Nozzle", func() {
 			Message: &loggregator_v2.Envelope_Gauge{
 				Gauge: &loggregator_v2.Gauge{
 					Metrics: map[string]*loggregator_v2.GaugeValue{
-						"cpu": {
+						"cpu": &loggregator_v2.GaugeValue{
 							Unit:  "percentage",
 							Value: 33.2,
 						},
-						"memory": {
+						"memory": &loggregator_v2.GaugeValue{
 							Unit:  "bytes",
 							Value: 1000000000,
 						},
@@ -51,19 +51,19 @@ var _ = Describe("Nozzle", func() {
 			Message: &loggregator_v2.Envelope_Gauge{
 				Gauge: &loggregator_v2.Gauge{
 					Metrics: map[string]*loggregator_v2.GaugeValue{
-						"cpu": {
+						"cpu": &loggregator_v2.GaugeValue{
 							Unit:  "percentage",
 							Value: 20.5,
 						},
-						"disk": {
+						"disk": &loggregator_v2.GaugeValue{
 							Unit:  "bytes",
 							Value: 3000000000,
 						},
-						"memory": {
+						"memory": &loggregator_v2.GaugeValue{
 							Unit:  "bytes",
 							Value: 1000000000,
 						},
-						"memory_quota": {
+						"memory_quota": &loggregator_v2.GaugeValue{
 							Unit:  "bytes",
 							Value: 2000000000,
 						},
@@ -75,7 +75,7 @@ var _ = Describe("Nozzle", func() {
 		customMetricEnvelope = loggregator_v2.Envelope{
 			SourceId: testAppId,
 			DeprecatedTags: map[string]*loggregator_v2.Value{
-				"origin": {
+				"origin": &loggregator_v2.Value{
 					Data: &loggregator_v2.Value_Text{
 						Text: "autoscaler_metrics_forwarder",
 					},
@@ -84,7 +84,7 @@ var _ = Describe("Nozzle", func() {
 			Message: &loggregator_v2.Envelope_Gauge{
 				Gauge: &loggregator_v2.Gauge{
 					Metrics: map[string]*loggregator_v2.GaugeValue{
-						"queue_length": {
+						"queue_length": &loggregator_v2.GaugeValue{
 							Unit:  "number",
 							Value: 100,
 						},
@@ -99,7 +99,7 @@ var _ = Describe("Nozzle", func() {
 			Message: &loggregator_v2.Envelope_Gauge{
 				Gauge: &loggregator_v2.Gauge{
 					Metrics: map[string]*loggregator_v2.GaugeValue{
-						"queue_length": {
+						"queue_length": &loggregator_v2.GaugeValue{
 							Unit:  "number",
 							Value: 100,
 						},

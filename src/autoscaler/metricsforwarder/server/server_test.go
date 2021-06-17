@@ -39,7 +39,7 @@ var _ = Describe("CustomMetrics Server", func() {
 					Adjustment:            "+1"}}}
 			policyDB.GetAppPolicyReturns(scalingPolicy, nil)
 			customMetrics := []*models.CustomMetric{
-				{
+				&models.CustomMetric{
 					Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 1, AppGUID: "an-app-id",
 				},
 			}
@@ -171,7 +171,7 @@ var _ = Describe("CustomMetrics Server", func() {
 					Adjustment:            "+1"}}}
 			policyDB.GetAppPolicyReturns(scalingPolicy, nil)
 			customMetrics := []*models.CustomMetric{
-				{
+				&models.CustomMetric{
 					Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 1, AppGUID: "an-app-id",
 				},
 			}

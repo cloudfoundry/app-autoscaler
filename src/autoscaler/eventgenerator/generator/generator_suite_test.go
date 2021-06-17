@@ -2,11 +2,10 @@ package generator_test
 
 import (
 	"autoscaler/models"
-	"strconv"
-	"time"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"strconv"
+	"time"
 
 	"testing"
 )

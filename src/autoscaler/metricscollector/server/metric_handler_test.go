@@ -379,11 +379,11 @@ var _ = Describe("MetricHandler", func() {
 						Expect(redirecURL.Host).To(Equal("localhost:8080"))
 						Expect(redirecURL.Path).To(Equal("/v1/apps/an-app-id/metric_histories/a-metric-type"))
 						Expect(redirecURL.Query()).To(BeEquivalentTo(map[string][]string{
-							"instanceindex": {"0"},
-							"start":         {"123"},
-							"end":           {"567"},
-							"order":         {"desc"},
-							"referer":       {"localhost:9090"},
+							"instanceindex": []string{"0"},
+							"start":         []string{"123"},
+							"end":           []string{"567"},
+							"order":         []string{"desc"},
+							"referer":       []string{"localhost:9090"},
 						}))
 					})
 				})

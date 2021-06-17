@@ -90,7 +90,7 @@ var _ = Describe("MetricHandler", func() {
 					allowedMetricTypeSet["queuelength"] = struct{}{}
 					allowedMetricCache.Set("an-app-id", allowedMetricTypeSet, 10*time.Minute)
 					customMetrics := []*models.CustomMetric{
-						{
+						&models.CustomMetric{
 							Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 1, AppGUID: "an-app-id",
 						},
 					}
@@ -124,7 +124,7 @@ var _ = Describe("MetricHandler", func() {
 						Password: "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G",
 					}, nil)
 					customMetrics := []*models.CustomMetric{
-						{
+						&models.CustomMetric{
 							Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 1, AppGUID: "an-app-id",
 						},
 					}
@@ -144,7 +144,7 @@ var _ = Describe("MetricHandler", func() {
 			Context("when credentials neither exists in the cache nor exist in the database", func() {
 				BeforeEach(func() {
 					customMetrics := []*models.CustomMetric{
-						{
+						&models.CustomMetric{
 							Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 1, AppGUID: "an-app-id",
 						},
 					}
@@ -188,7 +188,7 @@ var _ = Describe("MetricHandler", func() {
 						Password: "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G",
 					}, nil)
 					customMetrics := []*models.CustomMetric{
-						{
+						&models.CustomMetric{
 							Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 1, AppGUID: "an-app-id",
 						},
 					}
@@ -256,7 +256,7 @@ var _ = Describe("MetricHandler", func() {
 					allowedMetricTypeSet["queuelength"] = struct{}{}
 					allowedMetricCache.Set("an-app-id", allowedMetricTypeSet, 10*time.Minute)
 					customMetrics := []*models.CustomMetric{
-						{
+						&models.CustomMetric{
 							Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 1, AppGUID: "an-app-id",
 						},
 					}
@@ -288,7 +288,7 @@ var _ = Describe("MetricHandler", func() {
 					credentials.Password = "$2a$10$6nZ73cm7IV26wxRnmm5E1.nbk9G.0a4MrbzBFPChkm5fPftsUwj9G"
 					credentialCache.Set("an-app-id", credentials, 10*time.Minute)
 					customMetrics := []*models.CustomMetric{
-						{
+						&models.CustomMetric{
 							Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 1, AppGUID: "an-app-id",
 						},
 					}
@@ -308,7 +308,7 @@ var _ = Describe("MetricHandler", func() {
 			Context("when allowedMetrics neither exists in the cache nor exist in the database", func() {
 				BeforeEach(func() {
 					customMetrics := []*models.CustomMetric{
-						{
+						&models.CustomMetric{
 							Name: "queuelength", Value: 12, Unit: "unit", InstanceIndex: 1, AppGUID: "an-app-id",
 						},
 					}
