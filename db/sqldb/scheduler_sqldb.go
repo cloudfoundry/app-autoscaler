@@ -5,8 +5,8 @@ import (
 	"autoscaler/models"
 
 	"code.cloudfoundry.org/lager"
-	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
+	_ "github.com/go-sql-driver/mysql"
 
 	"database/sql"
 	"strconv"

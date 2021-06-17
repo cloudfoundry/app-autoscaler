@@ -76,7 +76,7 @@ var _ = Describe("AppManager", func() {
 				clock.Increment(1 * testPolicyPollerInterval)
 				Eventually(policyDB.RetrievePoliciesCallCount).Should(Equal(3))
 				Eventually(appManager.GetPolicies).Should(Equal(map[string]*models.AppPolicy{
-					testAppId: {
+					testAppId: &models.AppPolicy{
 						AppId: testAppId,
 						ScalingPolicy: &models.ScalingPolicy{
 							InstanceMax: 5,

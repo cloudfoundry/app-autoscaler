@@ -5,9 +5,9 @@ import (
 	"autoscaler/models"
 
 	"code.cloudfoundry.org/lager"
+	_ "github.com/lib/pq"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
 
 	"database/sql"
 	"time"
@@ -61,8 +61,8 @@ func (sdb *ScalingEngineSQLDB) Close() error {
 
 func (sdb *ScalingEngineSQLDB) SaveScalingHistory(history *models.AppScalingHistory) error {
 	query := sdb.sqldb.Rebind("INSERT INTO scalinghistory" +
-		"(appid, timestamp, scalingtype, status, oldinstances, newinstances, reason, message, error) " +
-		" VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)")
+	        "(appid, timestamp, scalingtype, status, oldinstances, newinstances, reason, message, error) " +
+	        " VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)")
 	_, err := sdb.sqldb.Exec(query, history.AppId, history.Timestamp, history.ScalingType, history.Status,
 		history.OldInstances, history.NewInstances, history.Reason, history.Message, history.Error)
 
@@ -81,10 +81,10 @@ func (sdb *ScalingEngineSQLDB) RetrieveScalingHistories(appId string, start int6
 	}
 
 	query := sdb.sqldb.Rebind("SELECT timestamp, scalingtype, status, oldinstances, newinstances, reason, message, error FROM scalinghistory WHERE" +
-		" appid = ? " +
-		" AND timestamp >= ?" +
-		" AND timestamp <= ?" +
-		" ORDER BY timestamp " + orderStr)
+	        " appid = ? " +
+	        " AND timestamp >= ?" +
+	        " AND timestamp <= ?" +
+	        " ORDER BY timestamp " + orderStr)
 
 	if end < 0 {
 		end = time.Now().UnixNano()
@@ -239,7 +239,7 @@ func (sdb *ScalingEngineSQLDB) SetActiveSchedule(appId string, schedule *models.
 	}
 
 	query := sdb.sqldb.Rebind("INSERT INTO activeschedule(appid, scheduleid, instancemincount, instancemaxcount, initialmininstancecount) " +
-		" VALUES (?, ?, ?, ?, ?)")
+	        " VALUES (?, ?, ?, ?, ?)")
 	_, err = sdb.sqldb.Exec(query, appId, schedule.ScheduleId, schedule.InstanceMin, schedule.InstanceMax, schedule.InstanceMinInitial)
 
 	if err != nil {

@@ -336,7 +336,7 @@ var _ = Describe("PublicApiServer", func() {
 						InstanceMax: 5,
 						InstanceMin: 1,
 						ScalingRules: []*models.ScalingRule{
-							{
+							&models.ScalingRule{
 								MetricType:            "memoryused",
 								BreachDurationSeconds: 300,
 								CoolDownSeconds:       300,
