@@ -28,13 +28,12 @@ import (
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry/sonde-go/events"
-	"github.com/gogo/protobuf/proto"
-	_ "github.com/lib/pq"
 	_ "github.com/go-sql-driver/mysql"
-    "github.com/jmoiron/sqlx"
+	"github.com/gogo/protobuf/proto"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/ginkgomon"
@@ -100,7 +99,7 @@ var (
 	httpClientForPublicApi *http.Client
 	logger                 lager.Logger
 
-	testCertDir string = "../../test-certs"
+	testCertDir string = "../../../test-certs"
 )
 
 func TestIntegration(t *testing.T) {
@@ -168,27 +167,30 @@ var _ = BeforeEach(func() {
 
 func CompileTestedExecutables() Executables {
 	builtExecutables := Executables{}
-	rootDir := os.Getenv("GOPATH")
 	var err error
-	builtExecutables[Scheduler] = path.Join(rootDir, "scheduler/target/scheduler-1.0-SNAPSHOT.war")
-
-	builtExecutables[EventGenerator], err = gexec.BuildIn(rootDir, "autoscaler/eventgenerator/cmd/eventgenerator", "-race")
+	workingDir, err := os.Getwd()
 	Expect(err).NotTo(HaveOccurred())
+	rootDir := path.Join(workingDir, "..", "..", "..")
 
-	builtExecutables[ScalingEngine], err = gexec.BuildIn(rootDir, "autoscaler/scalingengine/cmd/scalingengine", "-race")
-	Expect(err).NotTo(HaveOccurred())
+	builtExecutables[Scheduler] = path.Join(rootDir, "scheduler", "target", "scheduler-1.0-SNAPSHOT.war")
 
-	builtExecutables[Operator], err = gexec.BuildIn(rootDir, "autoscaler/operator/cmd/operator", "-race")
-	Expect(err).NotTo(HaveOccurred())
+	// builtExecutables[EventGenerator], err = gexec.BuildIn(rootDir, "autoscaler/eventgenerator/cmd/eventgenerator", "-race")
+	builtExecutables[EventGenerator] = path.Join(rootDir, "src", "autoscaler" , "build", "eventgenerator")
 
-	builtExecutables[MetricsGateway], err = gexec.BuildIn(rootDir, "autoscaler/metricsgateway/cmd/metricsgateway", "-race")
-	Expect(err).NotTo(HaveOccurred())
+	// builtExecutables[ScalingEngine], err = gexec.BuildIn(rootDir, "autoscaler/scalingengine/cmd/scalingengine", "-race")
+	builtExecutables[ScalingEngine] = path.Join(rootDir, "src", "autoscaler" , "build", "scalingengine")
 
-	builtExecutables[MetricsServerHTTP], err = gexec.BuildIn(rootDir, "autoscaler/metricsserver/cmd/metricsserver", "-race")
-	Expect(err).NotTo(HaveOccurred())
+	// builtExecutables[Operator], err = gexec.BuildIn(rootDir, "autoscaler/operator/cmd/operator", "-race")
+	builtExecutables[Operator] = path.Join(rootDir, "src", "autoscaler" , "build", "operator")
 
-	builtExecutables[GolangAPIServer], err = gexec.BuildIn(rootDir, "autoscaler/api/cmd/api", "-race")
-	Expect(err).NotTo(HaveOccurred())
+	// builtExecutables[MetricsGateway], err = gexec.BuildIn(rootDir, "autoscaler/metricsgateway/cmd/metricsgateway", "-race")
+	builtExecutables[MetricsGateway] = path.Join(rootDir, "src", "autoscaler" , "build", "metricsgateway")
+
+	// builtExecutables[MetricsServerHTTP], err = gexec.BuildIn(rootDir, "autoscaler/metricsserver/cmd/metricsserver", "-race")
+	builtExecutables[MetricsServerHTTP] = path.Join(rootDir, "src", "autoscaler" , "build", "metricsserver")
+
+	// builtExecutables[GolangAPIServer], err = gexec.BuildIn(rootDir, "autoscaler/api/cmd/api", "-race")
+	builtExecutables[GolangAPIServer] = path.Join(rootDir, "src", "autoscaler" , "build", "api")
 
 	return builtExecutables
 }

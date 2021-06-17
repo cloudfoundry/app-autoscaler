@@ -89,5 +89,7 @@ jobs:
             mvn --no-transfer-progress package -DskipTests
           popd
 
-          export DBURL="root@tcp(localhost)/autoscaler?tls=false"
-          ginkgo -r -race -randomizeAllSpecs src/integration
+          pushd src/autoscaler
+            export DBURL="root@tcp(localhost)/autoscaler?tls=false"
+            make integration
+          popd
