@@ -15,7 +15,7 @@ build: build-scalingengine build-metricscollector build-metricsforwarder build-e
 check: fmt lint build test
 
 test:
-	ginkgo -r -race -randomizeAllSpecs
+	ginkgo -r -race -randomizeAllSpecs -keepGoing
 
 generate:
 	COUNTERFEITER_NO_GENERATE_WARNING=true $(GO_NOMOD) generate ./...
