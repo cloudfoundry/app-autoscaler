@@ -8,7 +8,6 @@ import (
 )
 
 func RegisterCollectors(registrar prometheus.Registerer, collectors []prometheus.Collector, includeDefault bool, logger lager.Logger) {
-
 	if includeDefault {
 		err := registrar.Register(prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{
 			PidFn: func() (int, error) {

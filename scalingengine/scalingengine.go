@@ -204,7 +204,6 @@ func (s *scalingEngine) ComputeNewInstances(currentInstances int, adjustment str
 				newInstances = currentInstances - 1
 			}
 		}
-
 	} else {
 		step, err := strconv.ParseInt(adjustment, 10, 32)
 		if err != nil {

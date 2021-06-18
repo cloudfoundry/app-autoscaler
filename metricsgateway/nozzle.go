@@ -5,8 +5,8 @@ import (
 	"crypto/tls"
 	"time"
 
-	loggregator "code.cloudfoundry.org/go-loggregator"
-	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+	loggregator "code.cloudfoundry.org/go-loggregator/v8"
+	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"
 	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/grpc"
@@ -103,7 +103,6 @@ func (n *Nozzle) streamMetrics() {
 			n.envelopeCounterCollector.Add(envelopeCounter, int64(len(envelops)))
 			n.filterEnvelopes(envelops)
 		}
-
 	}
 }
 

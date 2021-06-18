@@ -146,8 +146,8 @@ func newRouters() *AutoScalerRoute {
 	instance.apiCredentialRoutes.Path("").Methods(http.MethodDelete).Name(PublicApiDeleteCredentialRouteName)
 
 	return instance
-
 }
+
 func MetricsCollectorRoutes() *mux.Router {
 	return autoScalerRouteInstance.metricsCollectorRoutes
 }
