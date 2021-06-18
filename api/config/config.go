@@ -124,7 +124,6 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 }
 
 func (c *Config) Validate() error {
-
 	err := c.CF.Validate()
 	if err != nil {
 		return err

@@ -253,7 +253,6 @@ func (ldb *LockSQLDB) transact(db *sqlx.DB, f func(tx *sql.Tx) error) error {
 			err = tx.Commit()
 			if err != nil {
 				ldb.logger.Error("failed-committing-transaction", err)
-
 			}
 			return err
 		}()

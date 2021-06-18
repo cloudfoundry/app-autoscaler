@@ -87,10 +87,9 @@ func (wh *wshelper) SetupConn() error {
 			wh.wsConn = con
 			return nil
 		}
-
 	}
-
 }
+
 func (wh *wshelper) CloseConn() error {
 	retryCount := 1
 	for {
@@ -119,13 +118,12 @@ func (wh *wshelper) CloseConn() error {
 						wh.logger.Info("successfully-close-ws-connection")
 					}
 				})
-
 			}()
 			return nil
 		}
 	}
-
 }
+
 func (wh *wshelper) Write(envelope *loggregator_v2.Envelope) error {
 	bytes, err := proto.Marshal(envelope)
 	if err != nil {
