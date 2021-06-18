@@ -173,23 +173,11 @@ func CompileTestedExecutables() Executables {
 	rootDir := path.Join(workingDir, "..", "..", "..")
 
 	builtExecutables[Scheduler] = path.Join(rootDir, "scheduler", "target", "scheduler-1.0-SNAPSHOT.war")
-
-	// builtExecutables[EventGenerator], err = gexec.BuildIn(rootDir, "autoscaler/eventgenerator/cmd/eventgenerator", "-race")
 	builtExecutables[EventGenerator] = path.Join(rootDir, "src", "autoscaler" , "build", "eventgenerator")
-
-	// builtExecutables[ScalingEngine], err = gexec.BuildIn(rootDir, "autoscaler/scalingengine/cmd/scalingengine", "-race")
 	builtExecutables[ScalingEngine] = path.Join(rootDir, "src", "autoscaler" , "build", "scalingengine")
-
-	// builtExecutables[Operator], err = gexec.BuildIn(rootDir, "autoscaler/operator/cmd/operator", "-race")
 	builtExecutables[Operator] = path.Join(rootDir, "src", "autoscaler" , "build", "operator")
-
-	// builtExecutables[MetricsGateway], err = gexec.BuildIn(rootDir, "autoscaler/metricsgateway/cmd/metricsgateway", "-race")
 	builtExecutables[MetricsGateway] = path.Join(rootDir, "src", "autoscaler" , "build", "metricsgateway")
-
-	// builtExecutables[MetricsServerHTTP], err = gexec.BuildIn(rootDir, "autoscaler/metricsserver/cmd/metricsserver", "-race")
 	builtExecutables[MetricsServerHTTP] = path.Join(rootDir, "src", "autoscaler" , "build", "metricsserver")
-
-	// builtExecutables[GolangAPIServer], err = gexec.BuildIn(rootDir, "autoscaler/api/cmd/api", "-race")
 	builtExecutables[GolangAPIServer] = path.Join(rootDir, "src", "autoscaler" , "build", "api")
 
 	return builtExecutables
