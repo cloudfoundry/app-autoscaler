@@ -12,14 +12,14 @@ import (
 	"strings"
 	"time"
 
-	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
+	"github.com/jmoiron/sqlx"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
 	"google.golang.org/grpc/grpclog"
-	"github.com/jmoiron/sqlx"
 	"gopkg.in/yaml.v2"
 
 	"testing"
@@ -137,7 +137,6 @@ func initDB() {
 }
 
 func initConfig() {
-
 	healthport = 8000 + GinkgoParallelNode()
 	conf = config.Config{
 		Logging: helpers.LoggingConfig{
@@ -184,7 +183,6 @@ func initConfig() {
 		},
 	}
 	configFile = writeConfig(&conf)
-
 }
 
 func initFakeServers() {
@@ -202,6 +200,7 @@ func initFakeServers() {
 	wsh := testhelpers.NewWebsocketHandler(messageChan, pingPongChan, 5*time.Second)
 	fakeMetricServer.RouteToHandler("GET", "/v1/envelopes", wsh.ServeWebsocket)
 }
+
 func writeConfig(c *config.Config) *os.File {
 	cfg, err := ioutil.TempFile("", "mg")
 	Expect(err).NotTo(HaveOccurred())
@@ -210,7 +209,6 @@ func writeConfig(c *config.Config) *os.File {
 	ioutil.WriteFile(cfg.Name(), configBytes, 0777)
 	Expect(err1).NotTo(HaveOccurred())
 	return cfg
-
 }
 
 type MetricsGatewayRunner struct {

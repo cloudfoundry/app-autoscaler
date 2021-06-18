@@ -4,12 +4,12 @@ import (
 	"autoscaler/helpers"
 	"autoscaler/models"
 	"fmt"
+	"math"
 	"strconv"
 	"time"
-	"math"
 
 	"code.cloudfoundry.org/clock"
-	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"
 )
 
@@ -92,7 +92,6 @@ func (ep *envelopeProcessor) processEnvelope(e *loggregator_v2.Envelope) {
 		t := e.GetTimer()
 		ep.processHttpStartStop(e.SourceId, uint32(instanceIndex), t)
 	}
-
 }
 
 func (ep *envelopeProcessor) processContainerMetrics(appID string, instanceIndex uint32, timestamp int64, g *loggregator_v2.Gauge) {
@@ -137,7 +136,6 @@ func (ep *envelopeProcessor) processContainerMetrics(appID string, instanceIndex
 		}
 		ep.metricChan <- cpuMetric
 	}
-
 }
 
 func (ep *envelopeProcessor) processHttpStartStop(appID string, instanceIndex uint32, t *loggregator_v2.Timer) {
@@ -224,6 +222,4 @@ func (ep *envelopeProcessor) computeAndSaveMetrics() {
 	}
 	ep.numRequests = map[string]map[uint32]int64{}
 	ep.sumReponseTimes = map[string]map[uint32]int64{}
-
 }
-

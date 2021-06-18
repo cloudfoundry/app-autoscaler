@@ -32,7 +32,6 @@ func (h *WebsocketHandler) CloseWSConnection() {
 	defer h.conLock.Unlock()
 	if h.wsConn != nil {
 		h.wsConn.Close()
-
 	}
 }
 func (h *WebsocketHandler) ServeWebsocket(rw http.ResponseWriter, r *http.Request) {

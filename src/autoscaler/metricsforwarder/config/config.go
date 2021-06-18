@@ -63,7 +63,6 @@ type DbConfig struct {
 }
 
 func LoadConfig(reader io.Reader) (*Config, error) {
-
 	conf := &Config{
 		Server:  defaultServerConfig,
 		Logging: defaultLoggingConfig,
@@ -94,7 +93,6 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 }
 
 func (c *Config) Validate() error {
-
 	if c.Db.PolicyDb.URL == "" {
 		return fmt.Errorf("Configuration error: Policy DB url is empty")
 	}

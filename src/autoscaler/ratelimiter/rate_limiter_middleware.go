@@ -29,7 +29,7 @@ func (mw *RateLimiterMiddleware) CheckRateLimit(next http.Handler) http.Handler 
 		vars := mux.Vars(r)
 		key := vars[mw.Key]
 		if key == "" {
-			mw.logger.Error("Key " + mw.Key + " is not present in the request", nil, lager.Data{"url": r.URL.String()})
+			mw.logger.Error("Key "+mw.Key+" is not present in the request", nil, lager.Data{"url": r.URL.String()})
 			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 				Code:    "Bad Request",
 				Message: "Missing rate limit key",

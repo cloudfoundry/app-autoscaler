@@ -3,6 +3,7 @@ GO := GO111MODULE=on GO15VENDOREXPERIMENT=1 go
 GO_NOMOD := GO111MODULE=off go
 GO_VERSION := $(shell $(GO) version | sed -e 's/^[^0-9.]*\([0-9.]*\).*/\1/')
 GO_DEPENDENCIES := $(shell find . -type f -name '*.go')
+PACKAGE_DIRS := $(shell $(GO) list ./... | grep -v /vendor/ | grep -v e2e)
 
 CGO_ENABLED = 0
 BUILDTAGS :=
@@ -40,3 +41,6 @@ buildtools:
 	$(GO) mod download
 	$(GO) get github.com/square/certstrap
 	$(GO) get github.com/onsi/ginkgo/ginkgo
+
+lint:
+	golangci-lint run

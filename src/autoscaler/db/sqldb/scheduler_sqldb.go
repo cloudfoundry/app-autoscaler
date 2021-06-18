@@ -5,8 +5,8 @@ import (
 	"autoscaler/models"
 
 	"code.cloudfoundry.org/lager"
-	_ "github.com/lib/pq"
 	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/lib/pq"
 
 	"database/sql"
 	"strconv"
@@ -90,7 +90,6 @@ func (sdb *SchedulerSQLDB) GetActiveSchedules() (map[string]*models.ActiveSchedu
 		schedules[appId] = &schedule
 	}
 	return schedules, nil
-
 }
 
 func (sdb *SchedulerSQLDB) GetDBStatus() sql.DBStats {

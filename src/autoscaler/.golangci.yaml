@@ -1,0 +1,113 @@
+---
+linters-settings:
+  depguard:
+    list-type: blacklist
+    packages:
+      - github.com/alecthomas/assert
+      - github.com/magiconair/properties/assert
+    packages-with-error-message:
+      - github.com/alecthomas/assert: "use github.com/stretchr/testify/assert"
+      - github.com/magiconair/properties/assert: "use github.com/stretchr/testify/assert"
+  dupl:
+    threshold: 100
+  exhaustive:
+    default-signifies-exhaustive: false
+  funlen:
+    lines: 200
+    statements: 150
+  goconst:
+    min-len: 3
+    min-occurrences: 3
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - experimental
+      - opinionated
+      - performance
+      - style
+    disabled-checks:
+      - dupImport # https://github.com/go-critic/go-critic/issues/845
+      - ifElseChain
+      - octalLiteral
+      - whyNoLint
+      - wrapperFunc
+  gocyclo:
+    min-complexity: 30
+  goimports:
+  gomnd:
+    settings:
+      mnd:
+        # don't include the "operation" and "assign"
+        checks: argument,case,condition,return
+  govet:
+    check-shadowing: true
+  lll:
+    line-length: 140
+  maligned:
+    suggest-new: true
+  misspell:
+  nolintlint:
+    allow-leading-space: true # don't require machine-readable nolint directives (i.e. with no leading space)
+    allow-unused: false # report any unused nolint directives
+    require-explanation: false # don't require an explanation for nolint directives
+    require-specific: false # don't require nolint directives to be specific about which linter is being skipped
+linters:
+  # please, do not use `enable-all`: it's deprecated and will be removed soon.
+  # inverted configuration with `enable-all` and `disable` is not scalable during updates of golangci-lint
+  disable-all: true
+  enable:
+    - asciicheck
+      #    - deadcode
+    - depguard
+    - dogsled
+      #    - dupl
+      #    - errcheck
+    - funlen
+      #    - gocognit
+      #    - goconst
+      #    - gocyclo
+    - gofmt
+    - goimports
+    - goprintffuncname
+      #    - gosec
+      #    - gosimple
+    - gomoddirectives
+    - gomodguard  
+      #    - ineffassign
+      #    - misspell
+    - nakedret
+    - nolintlint
+      #    - rowserrcheck
+      #    - structcheck
+      #    - stylecheck
+      #    - testpackage
+      #    - typecheck
+      #    - unconvert
+      #    - unparam
+      #    - unused
+      #    - varcheck
+    - whitespace
+      #    - godox
+      #    - staticcheck
+      #    - prealloc
+issues:
+  # Excluding configuration per-path, per-linter, per-text and per-source
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gomnd
+        - typecheck  
+    # https://github.com/go-critic/go-critic/issues/926
+    - linters:
+        - gocritic
+      text: "unnecessaryDefer:"
+  # Disable this restriction
+  max-same-issues: 0 
+run:
+  skip-dirs:
+    - test/testdata_etc
+    - internal/cache
+    - internal/renameio
+    - internal/robustio
+# golangci.com configuration
+# https://github.com/golangci/golangci/wiki/Configuration

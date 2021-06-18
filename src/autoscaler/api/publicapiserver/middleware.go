@@ -70,7 +70,6 @@ func (mw *Middleware) Oauth(next http.Handler) http.Handler {
 					Message: "Failed to check space developer permission"})
 				return
 			}
-
 		}
 		if isUserSpaceDeveloper {
 			next.ServeHTTP(w, r)
@@ -117,7 +116,6 @@ func (mw *Middleware) CheckServiceBinding(next http.Handler) http.Handler {
 		mw.logger.Error("binding is not present", nil, lager.Data{"appId": appId})
 		http.Error(w, "{ \"error\": \"The application is not bound to Auto-Scaling service\" }", http.StatusForbidden)
 		return
-
 	})
 }
 
@@ -128,7 +126,6 @@ func (mw *Middleware) RejectCredentialOperationInServiceOffering(next http.Handl
 			Message: "This command is only valid for build-in auto-scaling capacity. Please operate service credential with \"cf bind/unbind-service\" command.",
 		})
 		return
-
 	})
 }
 

@@ -27,7 +27,6 @@ func (vh VarsFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func NewServer(logger lager.Logger, conf *config.Config, policyDB db.PolicyDB, credentialCache cache.Cache, allowedMetricCache cache.Cache, httpStatusCollector healthendpoint.HTTPStatusCollector, rateLimiter ratelimiter.Limiter) (ifrit.Runner, error) {
-
 	metricForwarder, err := forwarder.NewMetricForwarder(logger, conf)
 	if err != nil {
 		logger.Error("failed-to-create-metricforwarder-server", err)

@@ -29,7 +29,6 @@ type BrokerHandler struct {
 }
 
 func NewBrokerHandler(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB) *BrokerHandler {
-
 	return &BrokerHandler{
 		logger:          logger,
 		conf:            conf,
@@ -38,7 +37,6 @@ func NewBrokerHandler(logger lager.Logger, conf *config.Config, bindingdb db.Bin
 		policyValidator: policyvalidator.NewPolicyValidator(conf.PolicySchemaPath),
 		schedulerUtil:   schedulerutil.NewSchedulerUtil(conf, logger),
 	}
-
 }
 
 func writeErrorResponse(w http.ResponseWriter, statusCode int, message string) {

@@ -40,7 +40,6 @@ func NewAppPoller(logger lager.Logger, appId string, collectInterval time.Durati
 		dataChan:                      dataChan,
 		isMetricsPersistencySupported: isMetricsPersistencySupported,
 	}
-
 }
 
 func (ap *appPoller) Start() {

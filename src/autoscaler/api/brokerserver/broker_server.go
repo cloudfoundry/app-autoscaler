@@ -42,7 +42,6 @@ func (bam *basicAuthenticationMiddleware) Middleware(next http.Handler) http.Han
 }
 
 func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.BindingDB, policydb db.PolicyDB, httpStatusCollector healthendpoint.HTTPStatusCollector) (ifrit.Runner, error) {
-
 	var usernameHash []byte
 	if conf.BrokerUsernameHash != "" {
 		usernameHash = []byte(conf.BrokerUsernameHash)

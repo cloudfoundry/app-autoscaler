@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	DefaultHttpClientTimeout          time.Duration = 5 * time.Second
+	DefaultHttpClientTimeout time.Duration = 5 * time.Second
 )
 
 var defaultCFConfig = cf.CFConfig{
@@ -120,5 +120,4 @@ func (c *Config) Validate() error {
 	}
 
 	return nil
-
 }
