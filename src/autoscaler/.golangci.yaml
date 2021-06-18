@@ -71,6 +71,8 @@ linters:
     - goprintffuncname
       #    - gosec
       #    - gosimple
+    - gomoddirectives
+    - gomodguard  
       #    - ineffassign
       #    - misspell
     - nakedret
