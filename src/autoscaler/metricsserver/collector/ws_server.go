@@ -20,7 +20,6 @@ func NewWSServer(logger lager.Logger, tls models.TLSCerts, port int, keepAlive t
 	var runner ifrit.Runner
 	if (tls.KeyFile == "") || (tls.CertFile == "") {
 		runner = http_server.New(addr, wsHandler)
-
 	} else {
 		tlsConfig, err := cfhttp.NewTLSConfig(tls.CertFile, tls.KeyFile, tls.CACertFile)
 		if err != nil {

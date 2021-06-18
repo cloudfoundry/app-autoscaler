@@ -366,6 +366,7 @@ func provisionAndBind(serviceInstanceId string, orgId string, spaceId string, bi
 	Expect(resp.StatusCode).To(Equal(http.StatusCreated))
 	resp.Body.Close()
 }
+
 func unbindAndDeprovision(bindingId string, appId string, serviceInstanceId string, brokerPort int, httpClient *http.Client) {
 	resp, err := unbindService(bindingId, appId, serviceInstanceId, brokerPort, httpClient)
 	Expect(err).NotTo(HaveOccurred())
@@ -376,10 +377,9 @@ func unbindAndDeprovision(bindingId string, appId string, serviceInstanceId stri
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.StatusCode).To(Equal(http.StatusOK))
 	resp.Body.Close()
-
 }
-func getPolicy(appId string, apiServerPort int, httpClient *http.Client) (*http.Response, error) {
 
+func getPolicy(appId string, apiServerPort int, httpClient *http.Client) (*http.Response, error) {
 	req, err := http.NewRequest("GET", fmt.Sprintf("https://127.0.0.1:%d/v1/apps/%s/policy", apiServerPort, appId), nil)
 	req.Header.Set("Authorization", "bearer fake-token")
 	Expect(err).NotTo(HaveOccurred())
@@ -441,7 +441,6 @@ func activeScheduleExists(appId string) bool {
 }
 
 func setPolicyRecurringDate(policyByte []byte) []byte {
-
 	var policy models.ScalingPolicy
 	err := json.Unmarshal(policyByte, &policy)
 	Expect(err).NotTo(HaveOccurred())
@@ -467,7 +466,6 @@ func setPolicyRecurringDate(policyByte []byte) []byte {
 	content, err := json.Marshal(policy)
 	Expect(err).NotTo(HaveOccurred())
 	return content
-
 }
 
 func setPolicySpecificDateTime(policyByte []byte, start time.Duration, end time.Duration) string {
@@ -480,6 +478,7 @@ func setPolicySpecificDateTime(policyByte []byte, start time.Duration, end time.
 
 	return fmt.Sprintf(string(policyByte), timeZone, startTime, endTime)
 }
+
 func getScalingHistories(apiServerPort int, pathVariables []string, parameters map[string]string) (*http.Response, error) {
 	var httpClientTmp *http.Client
 	httpClientTmp = httpClientForPublicApi
@@ -497,6 +496,7 @@ func getScalingHistories(apiServerPort int, pathVariables []string, parameters m
 	req.Header.Set("Authorization", "bearer fake-token")
 	return httpClientTmp.Do(req)
 }
+
 func getAppInstanceMetrics(apiServerPort int, pathVariables []string, parameters map[string]string) (*http.Response, error) {
 	var httpClientTmp *http.Client
 	httpClientTmp = httpClientForPublicApi
@@ -573,7 +573,6 @@ func insertPolicy(appId string, policyStr string, guid string) {
 	query := dbHelper.Rebind("INSERT INTO policy_json(app_id, policy_json, guid) VALUES(?, ?, ?)")
 	_, err := dbHelper.Exec(query, appId, policyStr, guid)
 	Expect(err).NotTo(HaveOccurred())
-
 }
 
 func deletePolicy(appId string) {
@@ -591,6 +590,7 @@ func insertScalingHistory(history *models.AppScalingHistory) {
 
 	Expect(err).NotTo(HaveOccurred())
 }
+
 func getScalingHistoryCount(appId string, oldInstanceCount int, newInstanceCount int) int {
 	var count int
 	query := dbHelper.Rebind("SELECT COUNT(*) FROM scalinghistory WHERE appid=? AND oldinstances=? AND newinstances=?")
@@ -598,6 +598,7 @@ func getScalingHistoryCount(appId string, oldInstanceCount int, newInstanceCount
 	Expect(err).NotTo(HaveOccurred())
 	return count
 }
+
 func getScalingHistoryTotalCount(appId string) int {
 	var count int
 	query := dbHelper.Rebind("SELECT COUNT(*) FROM scalinghistory WHERE appid=?")
@@ -605,6 +606,7 @@ func getScalingHistoryTotalCount(appId string) int {
 	Expect(err).NotTo(HaveOccurred())
 	return count
 }
+
 func insertAppInstanceMetric(appInstanceMetric *models.AppInstanceMetric) {
 	query := dbHelper.Rebind("INSERT INTO appinstancemetrics" +
 		"(appid, instanceindex, collectedat, name, unit, value, timestamp) " +
@@ -612,6 +614,7 @@ func insertAppInstanceMetric(appInstanceMetric *models.AppInstanceMetric) {
 	_, err := dbHelper.Exec(query, appInstanceMetric.AppId, appInstanceMetric.InstanceIndex, appInstanceMetric.CollectedAt, appInstanceMetric.Name, appInstanceMetric.Unit, appInstanceMetric.Value, appInstanceMetric.Timestamp)
 	Expect(err).NotTo(HaveOccurred())
 }
+
 func insertAppMetric(appMetrics *models.AppMetric) {
 	query := dbHelper.Rebind("INSERT INTO app_metric" +
 		"(app_id, metric_type, unit, value, timestamp) " +
@@ -650,12 +653,13 @@ type GetResponseWithParameters func(apiServerPort int, pathVariables []string, p
 func checkResponseContent(getResponse GetResponse, id string, expectHttpStatus int, expectResponseMap map[string]interface{}, port int, httpClient *http.Client) {
 	resp, err := getResponse(id, port, httpClient)
 	checkResponse(resp, err, expectHttpStatus, expectResponseMap)
-
 }
+
 func checkPublicAPIResponseContentWithParameters(getResponseWithParameters GetResponseWithParameters, apiServerPort int, pathVariables []string, parameters map[string]string, expectHttpStatus int, expectResponseMap map[string]interface{}) {
 	resp, err := getResponseWithParameters(apiServerPort, pathVariables, parameters)
 	checkResponse(resp, err, expectHttpStatus, expectResponseMap)
 }
+
 func checkResponse(resp *http.Response, err error, expectHttpStatus int, expectResponseMap map[string]interface{}) {
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.StatusCode).To(Equal(expectHttpStatus))
@@ -763,6 +767,7 @@ func startFakeCCNOAAUAA(instanceCount int) {
 			ServicePlanEntity{"autoscaler-free-plan-id"},
 		}))
 }
+
 func fakeMetricsPolling(appId string, memoryValue uint64, memQuota uint64) {
 	fakeCCNOAAUAA.RouteToHandler("GET", noaaPollingRegPath,
 		func(rw http.ResponseWriter, r *http.Request) {
@@ -782,7 +787,6 @@ func fakeMetricsPolling(appId string, memoryValue uint64, memQuota uint64) {
 			}
 		},
 	)
-
 }
 
 func fakeMetricsStreaming(appId string, memoryValue uint64, memQuota uint64) {
@@ -815,7 +819,6 @@ func fakeMetricsStreaming(appId string, memoryValue uint64, memQuota uint64) {
 	emptyMessageChannel = make(chan []byte, 256)
 	emptyWsHandler := testhelpers.NewWebsocketHandler(emptyMessageChannel, 200*time.Millisecond)
 	fakeCCNOAAUAA.RouteToHandler("GET", noaaStreamingRegPath, emptyWsHandler.ServeWebsocket)
-
 }
 
 func closeFakeMetricsStreaming() {
@@ -831,6 +834,7 @@ func startFakeRLPServer(appId string, envelopes []*loggregator_v2.Envelope, emit
 	fakeRLPServer.Start()
 	return fakeRLPServer
 }
+
 func stopFakeRLPServer(fakeRLPServer *as_testhelpers.FakeEventProducer) {
 	stopped := fakeRLPServer.Stop()
 	Expect(stopped).To(Equal(true))
@@ -857,6 +861,7 @@ func createContainerMetric(appId string, instanceIndex int32, cpuPercentage floa
 		Timestamp:       proto.Int64(timestamp),
 	}
 }
+
 func createContainerEnvelope(appId string, instanceIndex int32, cpuPercentage float64, memoryBytes float64, diskByte float64, memQuota float64) []*loggregator_v2.Envelope {
 	return []*loggregator_v2.Envelope{
 		{
@@ -886,6 +891,7 @@ func createContainerEnvelope(appId string, instanceIndex int32, cpuPercentage fl
 		},
 	}
 }
+
 func createHTTPTimerEnvelope(appId string, start int64, end int64) []*loggregator_v2.Envelope {
 	return []*loggregator_v2.Envelope{
 		{
@@ -902,8 +908,8 @@ func createHTTPTimerEnvelope(appId string, start int64, end int64) []*loggregato
 			},
 		},
 	}
-
 }
+
 func createCustomEnvelope(appId string, name string, unit string, value float64) []*loggregator_v2.Envelope {
 	return []*loggregator_v2.Envelope{
 		{
@@ -927,7 +933,6 @@ func createCustomEnvelope(appId string, name string, unit string, value float64)
 			},
 		},
 	}
-
 }
 
 func marshalMessage(message *events.Envelope) []byte {

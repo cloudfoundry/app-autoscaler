@@ -176,5 +176,4 @@ func main() {
 	}
 
 	logger.Info("exited")
-
 }

@@ -94,7 +94,6 @@ func (m *MetricPoller) retrieveMetric(app *models.AppMonitor) {
 	}
 	m.logger.Debug("Save-aggregated-appmetric", lager.Data{"appMetric": avgMetric})
 	m.appMetricChan <- avgMetric
-
 }
 
 func (m *MetricPoller) aggregate(appId string, metricType string, metrics []*models.AppInstanceMetric) *models.AppMetric {

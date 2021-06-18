@@ -92,7 +92,6 @@ type ServiceBrokerClient struct {
 }
 
 func (components *Components) GolangAPIServer(confPath string, argv ...string) *ginkgomon.Runner {
-
 	return ginkgomon.New(ginkgomon.Config{
 		Name:              GolangAPIServer,
 		AnsiColorCode:     "33m",
@@ -121,7 +120,6 @@ func (components *Components) Scheduler(confPath string, argv ...string) *ginkgo
 }
 
 func (components *Components) MetricsServer(confPath string, argv ...string) *ginkgomon.Runner {
-
 	return ginkgomon.New(ginkgomon.Config{
 		Name:              MetricsServerHTTP,
 		AnsiColorCode:     "33m",
@@ -137,7 +135,6 @@ func (components *Components) MetricsServer(confPath string, argv ...string) *gi
 }
 
 func (components *Components) EventGenerator(confPath string, argv ...string) *ginkgomon.Runner {
-
 	return ginkgomon.New(ginkgomon.Config{
 		Name:              EventGenerator,
 		AnsiColorCode:     "36m",
@@ -153,7 +150,6 @@ func (components *Components) EventGenerator(confPath string, argv ...string) *g
 }
 
 func (components *Components) ScalingEngine(confPath string, argv ...string) *ginkgomon.Runner {
-
 	return ginkgomon.New(ginkgomon.Config{
 		Name:              ScalingEngine,
 		AnsiColorCode:     "31m",
@@ -169,7 +165,6 @@ func (components *Components) ScalingEngine(confPath string, argv ...string) *gi
 }
 
 func (components *Components) Operator(confPath string, argv ...string) *ginkgomon.Runner {
-
 	return ginkgomon.New(ginkgomon.Config{
 		Name:              Operator,
 		AnsiColorCode:     "38m",
@@ -185,7 +180,6 @@ func (components *Components) Operator(confPath string, argv ...string) *ginkgom
 }
 
 func (components *Components) MetricsGateway(confPath string, argv ...string) *ginkgomon.Runner {
-
 	return ginkgomon.New(ginkgomon.Config{
 		Name:              MetricsGateway,
 		AnsiColorCode:     "32m",
@@ -201,7 +195,6 @@ func (components *Components) MetricsGateway(confPath string, argv ...string) *g
 }
 
 func (components *Components) PrepareGolangApiServerConfig(dbURI string, publicApiPort int, brokerPort int, cfApi string, skipSSLValidation bool, cacheTTL int, schedulerUri string, scalingEngineUri string, metricsCollectorUri string, eventGeneratorUri string, metricsForwarderUri string, useBuildInMode bool, httpClientTimeout time.Duration, tmpDir string) string {
-
 	cfg := apiConfig.Config{
 		Logging: helpers.LoggingConfig{
 			Level: LOGLEVEL,
@@ -679,5 +672,4 @@ func writeYmlConfig(dir string, componentName string, c interface{}) string {
 	configBytes, err := yaml.Marshal(c)
 	ioutil.WriteFile(cfgFile.Name(), configBytes, 0777)
 	return cfgFile.Name()
-
 }

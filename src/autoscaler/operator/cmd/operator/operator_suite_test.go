@@ -60,7 +60,6 @@ var _ = SynchronizedAfterSuite(func() {
 })
 
 func initConfig() {
-
 	cfServer = ghttp.NewServer()
 	cfServer.RouteToHandler("GET", "/v2/info", ghttp.RespondWithJSONEncoded(http.StatusOK,
 		cf.Endpoints{
@@ -144,7 +143,6 @@ func initConfig() {
 
 	cfg.Health.HealthCheckUsername = "operatorhealthcheckuser"
 	cfg.Health.HealthCheckPassword = "operatorhealthcheckuser"
-
 }
 
 func writeConfig(c *config.Config) *os.File {
