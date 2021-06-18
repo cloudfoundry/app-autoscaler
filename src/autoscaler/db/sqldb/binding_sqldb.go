@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/lager"
-	_ "github.com/lib/pq"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 
 	"autoscaler/db"
 )
@@ -80,7 +80,6 @@ func (bdb *BindingSQLDB) CreateServiceInstance(serviceInstanceId string, orgId s
 		} else {
 			return db.ErrConflict
 		}
-
 	}
 	rows.Close()
 

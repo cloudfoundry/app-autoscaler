@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/cfhttp"
-	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/http_server"
@@ -20,7 +20,6 @@ func NewWSServer(logger lager.Logger, tls models.TLSCerts, port int, keepAlive t
 	var runner ifrit.Runner
 	if (tls.KeyFile == "") || (tls.CertFile == "") {
 		runner = http_server.New(addr, wsHandler)
-
 	} else {
 		tlsConfig, err := cfhttp.NewTLSConfig(tls.CertFile, tls.KeyFile, tls.CACertFile)
 		if err != nil {

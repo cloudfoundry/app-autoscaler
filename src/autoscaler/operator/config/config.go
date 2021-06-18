@@ -138,7 +138,6 @@ func LoadConfig(reader io.Reader) (*Config, error) {
 }
 
 func (c *Config) Validate() error {
-
 	if c.InstanceMetricsDB.DB.URL == "" {
 		return fmt.Errorf("Configuration error: instance_metrics_db.db.url is empty")
 	}
@@ -207,5 +206,4 @@ func (c *Config) Validate() error {
 	}
 
 	return nil
-
 }

@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/lager"
-	_ "github.com/lib/pq"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 
 	"autoscaler/db"
 	"autoscaler/models"
@@ -80,7 +80,7 @@ func (ldb *LockSQLDB) fetch(tx *sql.Tx) (*models.Lock, error) {
 
 	query := "SELECT owner,lock_timestamp,ttl FROM " + ldb.table + " LIMIT 1 FOR UPDATE"
 	if ldb.sqldb.DriverName() == "postgres" {
-		query = query +" NOWAIT "
+		query = query + " NOWAIT "
 	}
 	row := tx.QueryRow(query)
 	err := row.Scan(&owner, &timestamp, &ttl)
@@ -253,7 +253,6 @@ func (ldb *LockSQLDB) transact(db *sqlx.DB, f func(tx *sql.Tx) error) error {
 			err = tx.Commit()
 			if err != nil {
 				ldb.logger.Error("failed-committing-transaction", err)
-
 			}
 			return err
 		}()
@@ -269,4 +268,3 @@ func (ldb *LockSQLDB) transact(db *sqlx.DB, f func(tx *sql.Tx) error) error {
 
 	return err
 }
-

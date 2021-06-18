@@ -125,7 +125,7 @@ var _ = Describe("Policy", func() {
 					InstanceMax: 5,
 					InstanceMin: 1,
 					ScalingRules: []*ScalingRule{
-						&ScalingRule{
+						{
 							MetricType:            "memoryused",
 							BreachDurationSeconds: 300,
 							CoolDownSeconds:       300,

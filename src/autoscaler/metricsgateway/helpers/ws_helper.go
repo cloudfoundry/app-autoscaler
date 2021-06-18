@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"net/url"
 
-	"code.cloudfoundry.org/lager"
 	"net/http"
 	"sync"
 	"time"
 
-	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+	"code.cloudfoundry.org/lager"
+
+	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/websocket"
 )
@@ -86,10 +87,9 @@ func (wh *wshelper) SetupConn() error {
 			wh.wsConn = con
 			return nil
 		}
-
 	}
-
 }
+
 func (wh *wshelper) CloseConn() error {
 	retryCount := 1
 	for {
@@ -118,13 +118,12 @@ func (wh *wshelper) CloseConn() error {
 						wh.logger.Info("successfully-close-ws-connection")
 					}
 				})
-
 			}()
 			return nil
 		}
 	}
-
 }
+
 func (wh *wshelper) Write(envelope *loggregator_v2.Envelope) error {
 	bytes, err := proto.Marshal(envelope)
 	if err != nil {

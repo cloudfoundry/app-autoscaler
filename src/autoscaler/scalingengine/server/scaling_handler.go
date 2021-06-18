@@ -30,7 +30,6 @@ func NewScalingHandler(logger lager.Logger, scalingEngineDB db.ScalingEngineDB, 
 }
 
 func (h *ScalingHandler) Scale(w http.ResponseWriter, r *http.Request, vars map[string]string) {
-
 	appId := vars["appid"]
 	logger := h.logger.Session("scale", lager.Data{"appId": appId})
 
@@ -60,7 +59,6 @@ func (h *ScalingHandler) Scale(w http.ResponseWriter, r *http.Request, vars map[
 }
 
 func (h *ScalingHandler) GetScalingHistories(w http.ResponseWriter, r *http.Request, vars map[string]string) {
-
 	appId := vars["appid"]
 	logger := h.logger.Session("get-scaling-histories", lager.Data{"appId": appId})
 
@@ -178,7 +176,6 @@ func (h *ScalingHandler) GetScalingHistories(w http.ResponseWriter, r *http.Requ
 }
 
 func (h *ScalingHandler) StartActiveSchedule(w http.ResponseWriter, r *http.Request, vars map[string]string) {
-
 	appId := vars["appid"]
 	scheduleId := vars["scheduleid"]
 
@@ -209,7 +206,6 @@ func (h *ScalingHandler) StartActiveSchedule(w http.ResponseWriter, r *http.Requ
 }
 
 func (h *ScalingHandler) RemoveActiveSchedule(w http.ResponseWriter, r *http.Request, vars map[string]string) {
-
 	appId := vars["appid"]
 	scheduleId := vars["scheduleid"]
 
@@ -230,7 +226,6 @@ func (h *ScalingHandler) RemoveActiveSchedule(w http.ResponseWriter, r *http.Req
 }
 
 func (h *ScalingHandler) GetActiveSchedule(w http.ResponseWriter, r *http.Request, vars map[string]string) {
-
 	appId := vars["appid"]
 
 	logger := h.logger.Session("get-active-schedule", lager.Data{"appid": appId})

@@ -20,8 +20,8 @@ import (
 	"autoscaler/routes"
 
 	"code.cloudfoundry.org/clock"
-	loggregator "code.cloudfoundry.org/go-loggregator"
-	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+	loggregator "code.cloudfoundry.org/go-loggregator/v8"
+	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tedsuo/ifrit"
@@ -153,7 +153,6 @@ func loadConfig(path string) (*config.Config, error) {
 }
 
 func createNozzles(logger lager.Logger, nozzleCount int, shardID string, rlpAddr string, loggregatorClientTLSConfig *tls.Config, envelopChan chan *loggregator_v2.Envelope, getAppIDsFunc metricsgateway.GetAppIDsFunc, envelopeCounterCollector healthendpoint.CounterCollector) []*metricsgateway.Nozzle {
-
 	nozzles := make([]*metricsgateway.Nozzle, nozzleCount)
 	for i := 0; i < nozzleCount; i++ {
 		nozzles[i] = metricsgateway.NewNozzle(logger, i, shardID, rlpAddr, loggregatorClientTLSConfig, envelopChan, getAppIDsFunc, envelopeCounterCollector)
