@@ -29,4 +29,6 @@ jobs:
     
       - name: Process changes
         if: steps.changes.outputs.changed == 1
-        run: echo "::error::Fakes are out of date, run make generate to update"
+        run: |
+          echo "::error::Fakes are out of date, run make generate to update"
+          exit 1
