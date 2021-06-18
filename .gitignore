@@ -8,3 +8,5 @@
 /.settings/
 *.coverprofile
 **/.idea
+src/autoscaler/build
+workflow

@@ -1100,7 +1100,7 @@ Status
 **Submit custom metric to Autoscaler metric server**
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-**PUT /v1/apps/:guid/metrics**
+**POST /v1/apps/:guid/metrics**
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 **Request**

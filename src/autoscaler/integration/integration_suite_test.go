@@ -8,7 +8,6 @@ import (
 	as_testhelpers "autoscaler/testhelpers"
 	"bytes"
 
-	//"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -29,13 +28,12 @@ import (
 	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry/sonde-go/events"
-	"github.com/gogo/protobuf/proto"
-	_ "github.com/lib/pq"
 	_ "github.com/go-sql-driver/mysql"
-    "github.com/jmoiron/sqlx"
+	"github.com/gogo/protobuf/proto"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/ginkgomon"
@@ -68,14 +66,17 @@ var (
 	noaaStreamingRegPath    = regexp.MustCompile(`^/apps/.*/stream$`)
 	appSummaryRegPath       = regexp.MustCompile(`^/v2/apps/.*/summary$`)
 	appInstanceRegPath      = regexp.MustCompile(`^/v2/apps/.*$`)
-	checkUserSpaceRegPath   = regexp.MustCompile(`^/v2/users/.+/spaces.*$`)
-	dbHelper                *sqlx.DB
-	fakeCCNOAAUAA           *ghttp.Server
-	messagesToSend          chan []byte
-	streamingDoneChan       chan bool
-	emptyMessageChannel     chan []byte
-	testUserId              string   = "testUserId"
-	testUserScope           []string = []string{"cloud_controller.read", "cloud_controller.write", "password.write", "openid", "network.admin", "network.write", "uaa.user"}
+	v3appInstanceRegPath    = regexp.MustCompile(`^/v3/apps/.*$`)
+	rolesRegPath           = regexp.MustCompile(`^/v3/roles$`)
+	serviceInstanceRegPath = regexp.MustCompile(`^/v2/service_instances/.*$`)
+	servicePlanRegPath     = regexp.MustCompile(`^/v2/service_plans/.*$`)
+	dbHelper               *sqlx.DB
+	fakeCCNOAAUAA          *ghttp.Server
+	messagesToSend         chan []byte
+	streamingDoneChan      chan bool
+	emptyMessageChannel    chan []byte
+	testUserId             string   = "testUserId"
+	testUserScope          []string = []string{"cloud_controller.read", "cloud_controller.write", "password.write", "openid", "network.admin", "network.write", "uaa.user"}
 
 	processMap map[string]ifrit.Process = map[string]ifrit.Process{}
 
@@ -98,7 +99,7 @@ var (
 	httpClientForPublicApi *http.Client
 	logger                 lager.Logger
 
-	testCertDir string = "../../test-certs"
+	testCertDir string = "../../../test-certs"
 )
 
 func TestIntegration(t *testing.T) {
@@ -166,27 +167,18 @@ var _ = BeforeEach(func() {
 
 func CompileTestedExecutables() Executables {
 	builtExecutables := Executables{}
-	rootDir := os.Getenv("GOPATH")
 	var err error
-	builtExecutables[Scheduler] = path.Join(rootDir, "scheduler/target/scheduler-1.0-SNAPSHOT.war")
-
-	builtExecutables[EventGenerator], err = gexec.BuildIn(rootDir, "autoscaler/eventgenerator/cmd/eventgenerator", "-race")
+	workingDir, err := os.Getwd()
 	Expect(err).NotTo(HaveOccurred())
+	rootDir := path.Join(workingDir, "..", "..", "..")
 
-	builtExecutables[ScalingEngine], err = gexec.BuildIn(rootDir, "autoscaler/scalingengine/cmd/scalingengine", "-race")
-	Expect(err).NotTo(HaveOccurred())
-
-	builtExecutables[Operator], err = gexec.BuildIn(rootDir, "autoscaler/operator/cmd/operator", "-race")
-	Expect(err).NotTo(HaveOccurred())
-
-	builtExecutables[MetricsGateway], err = gexec.BuildIn(rootDir, "autoscaler/metricsgateway/cmd/metricsgateway", "-race")
-	Expect(err).NotTo(HaveOccurred())
-
-	builtExecutables[MetricsServerHTTP], err = gexec.BuildIn(rootDir, "autoscaler/metricsserver/cmd/metricsserver", "-race")
-	Expect(err).NotTo(HaveOccurred())
-
-	builtExecutables[GolangAPIServer], err = gexec.BuildIn(rootDir, "autoscaler/api/cmd/api", "-race")
-	Expect(err).NotTo(HaveOccurred())
+	builtExecutables[Scheduler] = path.Join(rootDir, "scheduler", "target", "scheduler-1.0-SNAPSHOT.war")
+	builtExecutables[EventGenerator] = path.Join(rootDir, "src", "autoscaler" , "build", "eventgenerator")
+	builtExecutables[ScalingEngine] = path.Join(rootDir, "src", "autoscaler" , "build", "scalingengine")
+	builtExecutables[Operator] = path.Join(rootDir, "src", "autoscaler" , "build", "operator")
+	builtExecutables[MetricsGateway] = path.Join(rootDir, "src", "autoscaler" , "build", "metricsgateway")
+	builtExecutables[MetricsServerHTTP] = path.Join(rootDir, "src", "autoscaler" , "build", "metricsserver")
+	builtExecutables[GolangAPIServer] = path.Join(rootDir, "src", "autoscaler" , "build", "api")
 
 	return builtExecutables
 }
@@ -722,11 +714,53 @@ func startFakeCCNOAAUAA(instanceCount int) {
 		}{
 			testUserId,
 		}))
-	fakeCCNOAAUAA.RouteToHandler("GET", checkUserSpaceRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
+	fakeCCNOAAUAA.RouteToHandler("GET", v3appInstanceRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
 		struct {
 			TotalResults int `json:"total_results"`
 		}{
 			1,
+		}))
+
+	app := struct {
+		Relationships struct {
+			Space struct {
+				Data struct {
+					GUID string `json:"guid"`
+				} `json:"data"`
+			} `json:"space"`
+		} `json:"relationships"`
+	}{}
+	app.Relationships.Space.Data.GUID = "test_space_guid"
+	fakeCCNOAAUAA.RouteToHandler("GET", v3appInstanceRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
+		app))
+
+	roles := struct {
+		Pagination struct {
+			Total int `json:"total_results"`
+		} `json:"pagination"`
+	}{}
+	roles.Pagination.Total = 1
+	fakeCCNOAAUAA.RouteToHandler("GET", rolesRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
+		roles))
+
+	type ServiceInstanceEntity struct {
+		ServicePlanGuid string `json:"service_plan_guid"`
+	}
+	fakeCCNOAAUAA.RouteToHandler("GET", serviceInstanceRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
+		struct {
+			ServiceInstanceEntity `json:"entity"`
+		}{
+			ServiceInstanceEntity{"cc-free-plan-id"},
+		}))
+
+	type ServicePlanEntity struct {
+		UniqueId string `json:"unique_id"`
+	}
+	fakeCCNOAAUAA.RouteToHandler("GET", servicePlanRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
+		struct {
+			ServicePlanEntity `json:"entity"`
+		}{
+			ServicePlanEntity{"autoscaler-free-plan-id"},
 		}))
 }
 func fakeMetricsPolling(appId string, memoryValue uint64, memQuota uint64) {

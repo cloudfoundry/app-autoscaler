@@ -42,6 +42,7 @@ func NewInstanceMetricsSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*
 	sqldb.SetConnMaxLifetime(dbConfig.ConnectionMaxLifetime)
 	sqldb.SetMaxIdleConns(dbConfig.MaxIdleConnections)
 	sqldb.SetMaxOpenConns(dbConfig.MaxOpenConnections)
+	sqldb.SetConnMaxIdleTime(dbConfig.ConnectionMaxIdleTime)
 
 	return &InstanceMetricsSQLDB{
 		sqldb:    sqldb,

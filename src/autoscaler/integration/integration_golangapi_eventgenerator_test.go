@@ -101,12 +101,12 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 
 		Context("Check permission not passed", func() {
 			BeforeEach(func() {
-				fakeCCNOAAUAA.RouteToHandler("GET", checkUserSpaceRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
+				fakeCCNOAAUAA.RouteToHandler("GET", rolesRegPath, ghttp.RespondWithJSONEncoded(http.StatusOK,
 					struct {
-						TotalResults int `json:"total_results"`
-					}{
-						0,
-					}))
+						Pagination struct {
+							Total int `json:"total_results"`
+						} `json:"pagination"`
+					}{}))
 			})
 			It("should error with status code 401", func() {
 				checkPublicAPIResponseContentWithParameters(getAppAggregatedMetrics, components.Ports[GolangAPIServer],

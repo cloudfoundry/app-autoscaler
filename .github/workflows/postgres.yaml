@@ -1,0 +1,106 @@
+---
+name: postgres
+
+on:
+  pull_request:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  postgres:
+    strategy:
+      matrix:
+        go: [1.15.1]
+        java: [8]
+        postgres: [9.6, 12]
+    env:
+      DB_DATABASE: autoscaler
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+    runs-on: ubuntu-latest
+    name: Build golang=${{ matrix.go }}, jdk=${{ matrix.java }}, postgres=${{ matrix.postgres }}
+    services:
+      postgres:
+        image: postgres:${{ matrix.postgres }}
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: autoscaler
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+  
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go }}
+      
+      - name: Go Build
+        run: |
+          source .envrc
+          pushd src/autoscaler
+            make buildtools
+          popd
+          pushd scripts
+            ./generate_test_certs.sh
+          popd
+          pushd scheduler/scripts
+            ./generate_unit_test_certs.sh
+          popd
+          pushd src/autoscaler
+            make build
+          popd
+
+      - name: Setup Java
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: ${{ matrix.java }}
+      
+      - name: Maven Build
+        run: mvn --no-transfer-progress package
+
+      - name: Setup Postgres
+        run: |
+          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=api/db/api.db.changelog.yml --username=${{ env.POSTGRES_USER }} --password=${{ env.POSTGRES_PASSWORD }} update
+          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=servicebroker/db/servicebroker.db.changelog.json --username=${{ env.POSTGRES_USER }} --password=${{ env.POSTGRES_PASSWORD }} update
+          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=scheduler/db/scheduler.changelog-master.yaml --username=${{ env.POSTGRES_USER }} --password=${{ env.POSTGRES_PASSWORD }} update
+          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=scheduler/db/quartz.changelog-master.yaml --username=${{ env.POSTGRES_USER }} --password=${{ env.POSTGRES_PASSWORD }} update
+          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/metricscollector/db/metricscollector.db.changelog.yml --username=${{ env.POSTGRES_USER }} --password=${{ env.POSTGRES_PASSWORD }} update
+          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/eventgenerator/db/dataaggregator.db.changelog.yml --username=${{ env.POSTGRES_USER }} --password=${{ env.POSTGRES_PASSWORD }} update
+          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/scalingengine/db/scalingengine.db.changelog.yml --username=${{ env.POSTGRES_USER }} --password=${{ env.POSTGRES_PASSWORD }} update
+          java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/operator/db/operator.db.changelog.yml --username=${{ env.POSTGRES_USER }} --password=${{ env.POSTGRES_PASSWORD }} update
+
+      - name: Unit Test
+        run: |
+          source .envrc
+          pushd src/autoscaler
+          export DBURL="postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+            make test
+          popd
+
+          pushd scheduler
+            mvn --no-transfer-progress test
+          popd  
+
+      - name: Integration Tests
+        run: |
+          source .envrc
+          pushd scheduler
+            mvn --no-transfer-progress package -DskipTests
+          popd
+
+          pushd src/autoscaler
+            export DBURL="postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
+            make integration
+          popd

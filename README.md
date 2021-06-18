@@ -1,4 +1,4 @@
-# App-AutoScaler [![Build Status](https://travis-ci.org/cloudfoundry/app-autoscaler.svg?branch=master)](https://travis-ci.org/cloudfoundry/app-autoscaler)
+# App-AutoScaler [![Build Status](https://github.com/cloudfoundry/app-autoscaler/actions/workflows/postgres.yaml/badge.svg)](https://github.com/cloudfoundry/app-autoscaler/actions/workflows/postgres.yaml) [![Build Status](https://github.com/cloudfoundry/app-autoscaler/actions/workflows/mysql.yaml/badge.svg)](https://github.com/cloudfoundry/app-autoscaler/actions/workflows/mysql.yaml)
 
 The `App-AutoScaler` provides the capability to adjust the computation resources for Cloud Foundry applications through
 
@@ -25,10 +25,8 @@ You can follow the development progress on [Pivotal Tracker][t].
 
 * Java 8 or above
 * [Apache Maven][b] 3
-* Node 6.2 or above
-* NPM 3.9.5 or above
 * [Cloud Foundry cf command line][f]
-* Go 1.11 or above
+* Go 1.15 or above
 
 ### Database requirement
 
@@ -42,7 +40,6 @@ To set up the development, firstly clone this project
 ```shell
 $ git clone https://github.com/cloudfoundry/app-autoscaler.git
 $ cd app-autoscaler
-$ git submodule update --init --recursive
 ```
 
 
@@ -100,27 +97,27 @@ rm $TMPDIR/consul-0.7.5.zip
 
 * **Postgres**:
 ```shell
-go install github.com/onsi/ginkgo/ginkgo
 export DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
 pushd src/autoscaler
-ginkgo -r -race -randomizeAllSpecs
+  make buildtools
+  make test
 popd
 
 pushd scheduler
-mvn test
+  mvn test
 popd
 ```
 
 * **MySQL**:
 ```shell
-go install github.com/onsi/ginkgo/ginkgo
 export DBURL="root@tcp(localhost)/autoscaler?tls=false"
 pushd src/autoscaler
-ginkgo -r -race -randomizeAllSpecs
+  make buildtools
+  make test
 popd
 
 pushd scheduler
-mvn test -Dspring.profiles.active=mysql
+  mvn test -Dspring.profiles.active=mysql
 popd
 ```
 
@@ -131,13 +128,17 @@ popd
 **Postgres**
 ```shell
 pushd scheduler
-mvn package -DskipTests
+  mvn package -DskipTests
 popd
 
-go install github.com/onsi/ginkgo/ginkgo
-export DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
-ginkgo -r -race -randomizeAllSpecs src/integration
+
+pushd src/autoscaler
+  export DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
+  make buildtools
+  make integration
+popd
 ```
+
 **MySQL**: 
 Just replace the $DBURL to `root@tcp(localhost)/autoscaler?tls=false`.
 
