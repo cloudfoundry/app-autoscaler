@@ -65,8 +65,8 @@ func compareAppAggregatedMetricResult(o1, o2 AppAggregatedMetricResult) {
 	queries1 = nextUrl1.Query()
 	queries2 = nextUrl2.Query()
 	Expect(queries1).To(Equal(queries2))
-
 }
+
 func checkAggregatedMetricResult(apiServerPort int, pathVariables []string, parameters map[string]string, result AppAggregatedMetricResult) {
 	var actual AppAggregatedMetricResult
 	resp, err := getAppAggregatedMetrics(apiServerPort, pathVariables, parameters)
@@ -76,7 +76,6 @@ func checkAggregatedMetricResult(apiServerPort int, pathVariables []string, para
 	err = json.NewDecoder(resp.Body).Decode(&actual)
 	Expect(err).NotTo(HaveOccurred())
 	compareAppAggregatedMetricResult(actual, result)
-
 }
 
 func getInstanceMetricsUrl(appId string, metricType string, parameteters map[string]string, pageNo int) string {
@@ -108,8 +107,8 @@ func compareAppInstanceMetricResult(o1, o2 AppInstanceMetricResult) {
 	queries1 = nextUrl1.Query()
 	queries2 = nextUrl2.Query()
 	Expect(queries1).To(Equal(queries2))
-
 }
+
 func checkAppInstanceMetricResult(apiServerPort int, pathVariables []string, parameters map[string]string, result AppInstanceMetricResult) {
 	var actual AppInstanceMetricResult
 	resp, err := getAppInstanceMetrics(apiServerPort, pathVariables, parameters)
@@ -120,7 +119,6 @@ func checkAppInstanceMetricResult(apiServerPort int, pathVariables []string, par
 	err = json.NewDecoder(resp.Body).Decode(&actual)
 	Expect(err).NotTo(HaveOccurred())
 	compareAppInstanceMetricResult(actual, result)
-
 }
 
 func getScalingHistoriesUrl(appId string, parameteters map[string]string, pageNo int) string {
@@ -148,8 +146,8 @@ func compareScalingHistoryResult(o1, o2 ScalingHistoryResult) {
 	queries1 = nextUrl1.Query()
 	queries2 = nextUrl2.Query()
 	Expect(queries1).To(Equal(queries2))
-
 }
+
 func checkScalingHistoryResult(apiServerPort int, pathVariables []string, parameters map[string]string, result ScalingHistoryResult) {
 	var actual ScalingHistoryResult
 	resp, err := getScalingHistories(apiServerPort, pathVariables, parameters)
@@ -159,7 +157,6 @@ func checkScalingHistoryResult(apiServerPort int, pathVariables []string, parame
 	err = json.NewDecoder(resp.Body).Decode(&actual)
 	Expect(err).NotTo(HaveOccurred())
 	compareScalingHistoryResult(actual, result)
-
 }
 
 func doAttachPolicy(appId string, policyStr []byte, statusCode int, apiServerPort int, httpClient *http.Client) {
@@ -167,8 +164,8 @@ func doAttachPolicy(appId string, policyStr []byte, statusCode int, apiServerPor
 	Expect(err).NotTo(HaveOccurred())
 	Expect(resp.StatusCode).To(Equal(statusCode))
 	resp.Body.Close()
-
 }
+
 func doDetachPolicy(appId string, statusCode int, msg string, apiServerPort int, httpClient *http.Client) {
 	resp, err := detachPolicy(appId, apiServerPort, httpClient)
 	Expect(err).NotTo(HaveOccurred())
@@ -180,6 +177,7 @@ func doDetachPolicy(appId string, statusCode int, msg string, apiServerPort int,
 	}
 	resp.Body.Close()
 }
+
 func checkApiServerStatus(appId string, statusCode int, apiServerPort int, httpClient *http.Client) {
 	By("checking the API Server")
 	resp, err := getPolicy(appId, apiServerPort, httpClient)
@@ -187,6 +185,7 @@ func checkApiServerStatus(appId string, statusCode int, apiServerPort int, httpC
 	Expect(resp.StatusCode).To(Equal(statusCode))
 	resp.Body.Close()
 }
+
 func checkApiServerContent(appId string, policyStr []byte, statusCode int, port int, httpClient *http.Client) {
 	By("checking the API Server")
 	var expected map[string]interface{}
@@ -194,6 +193,7 @@ func checkApiServerContent(appId string, policyStr []byte, statusCode int, port 
 	Expect(err).NotTo(HaveOccurred())
 	checkResponseContent(getPolicy, appId, statusCode, expected, port, httpClient)
 }
+
 func checkSchedulerStatus(appId string, statusCode int) {
 	By("checking the Scheduler")
 	resp, err := getSchedules(appId)

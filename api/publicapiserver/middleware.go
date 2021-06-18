@@ -126,7 +126,6 @@ func (mw *Middleware) RejectCredentialOperationInServiceOffering(next http.Handl
 			Message: "This command is only valid for build-in auto-scaling capacity. Please operate service credential with \"cf bind/unbind-service\" command.",
 		})
 		return
-
 	})
 }
 

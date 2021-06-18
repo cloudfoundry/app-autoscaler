@@ -103,7 +103,6 @@ func (n *Nozzle) streamMetrics() {
 			n.envelopeCounterCollector.Add(envelopeCounter, int64(len(envelops)))
 			n.filterEnvelopes(envelops)
 		}
-
 	}
 }
 

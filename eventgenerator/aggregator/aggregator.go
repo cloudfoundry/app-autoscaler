@@ -111,7 +111,6 @@ func (a *Aggregator) startSavingAppMetric() {
 				}(a.appMetricDB, appMetricArray)
 				appMetricArray = []*models.AppMetric{}
 			}
-
 		}
 	}
 }

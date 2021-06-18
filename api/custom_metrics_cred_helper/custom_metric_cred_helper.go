@@ -91,5 +91,4 @@ func DeleteCredential(appId string, policyDB db.PolicyDB, maxRetry int) error {
 		}
 		count++
 	}
-
 }

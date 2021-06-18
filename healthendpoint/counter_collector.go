@@ -57,7 +57,6 @@ func (c *counterCollector) Add(counterOps prometheus.CounterOpts, count int64) {
 	if counter, exists := c.counterMap[getCounterFullName(counterOps)]; exists {
 		counter.Add(float64(count))
 	}
-
 }
 
 func getCounterFullName(counterOps prometheus.CounterOpts) string {

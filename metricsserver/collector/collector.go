@@ -117,7 +117,6 @@ func (c *metricCollector) refreshApps() {
 		}
 	}
 	c.mLock.Unlock()
-
 }
 
 func (c *metricCollector) Stop() {

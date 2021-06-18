@@ -43,4 +43,4 @@ buildtools:
 	$(GO) get github.com/onsi/ginkgo/ginkgo
 
 lint:
-	golangci-lint run --max-same-issues 0
+	golangci-lint run
