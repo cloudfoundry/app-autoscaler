@@ -17,7 +17,7 @@ import (
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/clock"
-	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/tedsuo/ifrit"

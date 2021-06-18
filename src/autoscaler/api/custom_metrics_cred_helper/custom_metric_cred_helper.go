@@ -53,8 +53,8 @@ func _createCredential(appId string, userProvidedCredential *models.Credential, 
 	}
 	return &cred, nil
 }
-func CreateCredential(appId string, userProvidedCredential *models.Credential, policyDB db.PolicyDB, maxRetry int) (*models.Credential, error) {
 
+func CreateCredential(appId string, userProvidedCredential *models.Credential, policyDB db.PolicyDB, maxRetry int) (*models.Credential, error) {
 	var err error
 	var count int
 	var cred *models.Credential
@@ -68,7 +68,6 @@ func CreateCredential(appId string, userProvidedCredential *models.Credential, p
 		}
 		count++
 	}
-
 }
 
 func _deleteCredential(appId string, policyDB db.PolicyDB) error {
@@ -78,8 +77,8 @@ func _deleteCredential(appId string, policyDB db.PolicyDB) error {
 	}
 	return nil
 }
-func DeleteCredential(appId string, policyDB db.PolicyDB, maxRetry int) error {
 
+func DeleteCredential(appId string, policyDB db.PolicyDB, maxRetry int) error {
 	var err error
 	var count int
 	for {

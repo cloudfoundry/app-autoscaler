@@ -195,7 +195,7 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 						Page:         1,
 						NextUrl:      getInstanceMetricsUrl(appId, metricType, parameters, 2),
 						Resources: []models.AppInstanceMetric{
-							models.AppInstanceMetric{
+							{
 								AppId:         appId,
 								InstanceIndex: 0,
 								CollectedAt:   111111,
@@ -204,7 +204,7 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 								Value:         "123456",
 								Timestamp:     333333,
 							},
-							models.AppInstanceMetric{
+							{
 								AppId:         appId,
 								InstanceIndex: 1,
 								CollectedAt:   111111,
@@ -226,7 +226,7 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 						PrevUrl:      getInstanceMetricsUrl(appId, metricType, parameters, 1),
 						NextUrl:      getInstanceMetricsUrl(appId, metricType, parameters, 3),
 						Resources: []models.AppInstanceMetric{
-							models.AppInstanceMetric{
+							{
 								AppId:         appId,
 								InstanceIndex: 0,
 								CollectedAt:   111111,
@@ -235,7 +235,7 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 								Value:         "123456",
 								Timestamp:     555555,
 							},
-							models.AppInstanceMetric{
+							{
 								AppId:         appId,
 								InstanceIndex: 1,
 								CollectedAt:   111111,
@@ -256,7 +256,7 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 						Page:         3,
 						PrevUrl:      getInstanceMetricsUrl(appId, metricType, parameters, 2),
 						Resources: []models.AppInstanceMetric{
-							models.AppInstanceMetric{
+							{
 								AppId:         appId,
 								InstanceIndex: 0,
 								CollectedAt:   111111,
@@ -298,7 +298,7 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 						TotalPages:   1,
 						Page:         1,
 						Resources: []models.AppInstanceMetric{
-							models.AppInstanceMetric{
+							{
 								AppId:         appId,
 								InstanceIndex: 0,
 								CollectedAt:   111111,
@@ -307,7 +307,7 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 								Value:         "123456",
 								Timestamp:     555555,
 							},
-							models.AppInstanceMetric{
+							{
 								AppId:         appId,
 								InstanceIndex: 1,
 								CollectedAt:   111111,
@@ -316,7 +316,7 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 								Value:         "123456",
 								Timestamp:     555555,
 							},
-							models.AppInstanceMetric{
+							{
 								AppId:         appId,
 								InstanceIndex: 0,
 								CollectedAt:   111111,
@@ -336,7 +336,7 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 						TotalPages:   1,
 						Page:         1,
 						Resources: []models.AppInstanceMetric{
-							models.AppInstanceMetric{
+							{
 								AppId:         appId,
 								InstanceIndex: 0,
 								CollectedAt:   111111,
@@ -345,7 +345,7 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 								Value:         "123456",
 								Timestamp:     333333,
 							},
-							models.AppInstanceMetric{
+							{
 								AppId:         appId,
 								InstanceIndex: 1,
 								CollectedAt:   111111,
@@ -365,7 +365,7 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 						TotalPages:   1,
 						Page:         1,
 						Resources: []models.AppInstanceMetric{
-							models.AppInstanceMetric{
+							{
 								AppId:         appId,
 								InstanceIndex: 1,
 								CollectedAt:   111111,
@@ -374,7 +374,7 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 								Value:         "123456",
 								Timestamp:     444444,
 							},
-							models.AppInstanceMetric{
+							{
 								AppId:         appId,
 								InstanceIndex: 0,
 								CollectedAt:   111111,
@@ -383,7 +383,7 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 								Value:         "123456",
 								Timestamp:     555555,
 							},
-							models.AppInstanceMetric{
+							{
 								AppId:         appId,
 								InstanceIndex: 1,
 								CollectedAt:   111111,
@@ -406,7 +406,7 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 						TotalPages:   1,
 						Page:         1,
 						Resources: []models.AppInstanceMetric{
-							models.AppInstanceMetric{
+							{
 								AppId:         appId,
 								InstanceIndex: 1,
 								CollectedAt:   111111,
@@ -415,7 +415,7 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 								Value:         "123456",
 								Timestamp:     444444,
 							},
-							models.AppInstanceMetric{
+							{
 								AppId:         appId,
 								InstanceIndex: 1,
 								CollectedAt:   111111,
@@ -447,7 +447,7 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 						TotalPages:   1,
 						Page:         1,
 						Resources: []models.AppInstanceMetric{
-							models.AppInstanceMetric{
+							{
 								AppId:         appId,
 								InstanceIndex: 1,
 								CollectedAt:   111111,
@@ -467,7 +467,7 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 						TotalPages:   1,
 						Page:         1,
 						Resources: []models.AppInstanceMetric{
-							models.AppInstanceMetric{
+							{
 								AppId:         appId,
 								InstanceIndex: 1,
 								CollectedAt:   111111,
@@ -487,7 +487,7 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 						TotalPages:   1,
 						Page:         1,
 						Resources: []models.AppInstanceMetric{
-							models.AppInstanceMetric{
+							{
 								AppId:         appId,
 								InstanceIndex: 1,
 								CollectedAt:   111111,
@@ -496,7 +496,7 @@ var _ = Describe("Integration_GolangApi_MetricsServer", func() {
 								Value:         "123456",
 								Timestamp:     444444,
 							},
-							models.AppInstanceMetric{
+							{
 								AppId:         appId,
 								InstanceIndex: 1,
 								CollectedAt:   111111,

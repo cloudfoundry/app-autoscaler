@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/cfhttp"
-	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/http_server"

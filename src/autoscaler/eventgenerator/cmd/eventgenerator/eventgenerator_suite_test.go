@@ -19,11 +19,11 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/cfhttp"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/jmoiron/sqlx"
 	"gopkg.in/yaml.v2"
 )
 

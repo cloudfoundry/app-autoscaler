@@ -2,8 +2,9 @@ package healthendpoint_test
 
 import (
 	. "autoscaler/healthendpoint"
-	"github.com/prometheus/client_golang/prometheus/testutil"
 	"strings"
+
+	"github.com/prometheus/client_golang/prometheus/testutil"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
