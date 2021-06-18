@@ -21,7 +21,7 @@ var _ = Describe("RateLimiterMiddleware", func() {
 		rateLimiter *fakes.FakeLimiter
 		rlmw        *ratelimiter.RateLimiterMiddleware
 	)
-	
+
 	Describe("CheckRateLimit", func() {
 		BeforeEach(func() {
 			rateLimiter = &fakes.FakeLimiter{}

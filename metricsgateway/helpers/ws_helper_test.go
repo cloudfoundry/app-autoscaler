@@ -9,7 +9,7 @@ import (
 	"autoscaler/routes"
 	"autoscaler/testhelpers"
 
-	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager/lagertest"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -36,19 +36,19 @@ var _ = Describe("WsHelper", func() {
 			Message: &loggregator_v2.Envelope_Gauge{
 				Gauge: &loggregator_v2.Gauge{
 					Metrics: map[string]*loggregator_v2.GaugeValue{
-						"cpu": &loggregator_v2.GaugeValue{
+						"cpu": {
 							Unit:  "percentage",
 							Value: 20.5,
 						},
-						"disk": &loggregator_v2.GaugeValue{
+						"disk": {
 							Unit:  "bytes",
 							Value: 3000000000,
 						},
-						"memory": &loggregator_v2.GaugeValue{
+						"memory": {
 							Unit:  "bytes",
 							Value: 1000000000,
 						},
-						"memory_quota": &loggregator_v2.GaugeValue{
+						"memory_quota": {
 							Unit:  "bytes",
 							Value: 2000000000,
 						},

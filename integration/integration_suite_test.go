@@ -25,7 +25,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/cfhttp"
-	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"
 	"github.com/cloudfoundry/sonde-go/events"
 	_ "github.com/go-sql-driver/mysql"
@@ -67,16 +67,16 @@ var (
 	appSummaryRegPath       = regexp.MustCompile(`^/v2/apps/.*/summary$`)
 	appInstanceRegPath      = regexp.MustCompile(`^/v2/apps/.*$`)
 	v3appInstanceRegPath    = regexp.MustCompile(`^/v3/apps/.*$`)
-	rolesRegPath           = regexp.MustCompile(`^/v3/roles$`)
-	serviceInstanceRegPath = regexp.MustCompile(`^/v2/service_instances/.*$`)
-	servicePlanRegPath     = regexp.MustCompile(`^/v2/service_plans/.*$`)
-	dbHelper               *sqlx.DB
-	fakeCCNOAAUAA          *ghttp.Server
-	messagesToSend         chan []byte
-	streamingDoneChan      chan bool
-	emptyMessageChannel    chan []byte
-	testUserId             string   = "testUserId"
-	testUserScope          []string = []string{"cloud_controller.read", "cloud_controller.write", "password.write", "openid", "network.admin", "network.write", "uaa.user"}
+	rolesRegPath            = regexp.MustCompile(`^/v3/roles$`)
+	serviceInstanceRegPath  = regexp.MustCompile(`^/v2/service_instances/.*$`)
+	servicePlanRegPath      = regexp.MustCompile(`^/v2/service_plans/.*$`)
+	dbHelper                *sqlx.DB
+	fakeCCNOAAUAA           *ghttp.Server
+	messagesToSend          chan []byte
+	streamingDoneChan       chan bool
+	emptyMessageChannel     chan []byte
+	testUserId              string   = "testUserId"
+	testUserScope           []string = []string{"cloud_controller.read", "cloud_controller.write", "password.write", "openid", "network.admin", "network.write", "uaa.user"}
 
 	processMap map[string]ifrit.Process = map[string]ifrit.Process{}
 
@@ -122,7 +122,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	database, err := db.GetConnection(dbUrl)
 	Expect(err).NotTo(HaveOccurred())
-	
+
 	dbHelper, err = sqlx.Open(database.DriverName, database.DSN)
 	Expect(err).NotTo(HaveOccurred())
 
@@ -140,7 +140,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 	dbUrl = os.Getenv("DBURL")
 	database, err := db.GetConnection(dbUrl)
 	Expect(err).NotTo(HaveOccurred())
-	
+
 	dbHelper, err = sqlx.Open(database.DriverName, database.DSN)
 	Expect(err).NotTo(HaveOccurred())
 
@@ -173,12 +173,12 @@ func CompileTestedExecutables() Executables {
 	rootDir := path.Join(workingDir, "..", "..", "..")
 
 	builtExecutables[Scheduler] = path.Join(rootDir, "scheduler", "target", "scheduler-1.0-SNAPSHOT.war")
-	builtExecutables[EventGenerator] = path.Join(rootDir, "src", "autoscaler" , "build", "eventgenerator")
-	builtExecutables[ScalingEngine] = path.Join(rootDir, "src", "autoscaler" , "build", "scalingengine")
-	builtExecutables[Operator] = path.Join(rootDir, "src", "autoscaler" , "build", "operator")
-	builtExecutables[MetricsGateway] = path.Join(rootDir, "src", "autoscaler" , "build", "metricsgateway")
-	builtExecutables[MetricsServerHTTP] = path.Join(rootDir, "src", "autoscaler" , "build", "metricsserver")
-	builtExecutables[GolangAPIServer] = path.Join(rootDir, "src", "autoscaler" , "build", "api")
+	builtExecutables[EventGenerator] = path.Join(rootDir, "src", "autoscaler", "build", "eventgenerator")
+	builtExecutables[ScalingEngine] = path.Join(rootDir, "src", "autoscaler", "build", "scalingengine")
+	builtExecutables[Operator] = path.Join(rootDir, "src", "autoscaler", "build", "operator")
+	builtExecutables[MetricsGateway] = path.Join(rootDir, "src", "autoscaler", "build", "metricsgateway")
+	builtExecutables[MetricsServerHTTP] = path.Join(rootDir, "src", "autoscaler", "build", "metricsserver")
+	builtExecutables[GolangAPIServer] = path.Join(rootDir, "src", "autoscaler", "build", "api")
 
 	return builtExecutables
 }
@@ -859,24 +859,24 @@ func createContainerMetric(appId string, instanceIndex int32, cpuPercentage floa
 }
 func createContainerEnvelope(appId string, instanceIndex int32, cpuPercentage float64, memoryBytes float64, diskByte float64, memQuota float64) []*loggregator_v2.Envelope {
 	return []*loggregator_v2.Envelope{
-		&loggregator_v2.Envelope{
+		{
 			SourceId: appId,
 			Message: &loggregator_v2.Envelope_Gauge{
 				Gauge: &loggregator_v2.Gauge{
 					Metrics: map[string]*loggregator_v2.GaugeValue{
-						"cpu": &loggregator_v2.GaugeValue{
+						"cpu": {
 							Unit:  "percentage",
 							Value: cpuPercentage,
 						},
-						"disk": &loggregator_v2.GaugeValue{
+						"disk": {
 							Unit:  "bytes",
 							Value: diskByte,
 						},
-						"memory": &loggregator_v2.GaugeValue{
+						"memory": {
 							Unit:  "bytes",
 							Value: memoryBytes,
 						},
-						"memory_quota": &loggregator_v2.GaugeValue{
+						"memory_quota": {
 							Unit:  "bytes",
 							Value: memQuota,
 						},
@@ -888,7 +888,7 @@ func createContainerEnvelope(appId string, instanceIndex int32, cpuPercentage fl
 }
 func createHTTPTimerEnvelope(appId string, start int64, end int64) []*loggregator_v2.Envelope {
 	return []*loggregator_v2.Envelope{
-		&loggregator_v2.Envelope{
+		{
 			SourceId: appId,
 			Message: &loggregator_v2.Envelope_Timer{
 				Timer: &loggregator_v2.Timer{
@@ -906,10 +906,10 @@ func createHTTPTimerEnvelope(appId string, start int64, end int64) []*loggregato
 }
 func createCustomEnvelope(appId string, name string, unit string, value float64) []*loggregator_v2.Envelope {
 	return []*loggregator_v2.Envelope{
-		&loggregator_v2.Envelope{
+		{
 			SourceId: appId,
 			DeprecatedTags: map[string]*loggregator_v2.Value{
-				"origin": &loggregator_v2.Value{
+				"origin": {
 					Data: &loggregator_v2.Value_Text{
 						Text: "autoscaler_metrics_forwarder",
 					},
@@ -918,7 +918,7 @@ func createCustomEnvelope(appId string, name string, unit string, value float64)
 			Message: &loggregator_v2.Envelope_Gauge{
 				Gauge: &loggregator_v2.Gauge{
 					Metrics: map[string]*loggregator_v2.GaugeValue{
-						name: &loggregator_v2.GaugeValue{
+						name: {
 							Unit:  unit,
 							Value: value,
 						},
