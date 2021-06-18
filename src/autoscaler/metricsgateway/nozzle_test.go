@@ -197,7 +197,6 @@ var _ = Describe("Nozzle", func() {
 				LogServerName = "wrong-server-name"
 			})
 			It("should output the err", func() {
-				// Eventually(logger.Buffer).Should(Say("certificate is valid for reverselogproxy, not wrong-server-name"))
 				Eventually(logger.Buffer).Should(Say("Error connecting to Logs Provider"))
 			})
 		})
