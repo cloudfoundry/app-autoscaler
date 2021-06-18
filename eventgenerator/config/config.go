@@ -116,7 +116,7 @@ func LoadConfig(bytes []byte) (*Config, error) {
 		},
 		HttpClientTimeout: DefaultHttpClientTimeout,
 	}
-	err := yaml.Unmarshal(bytes, &conf)
+	err := yaml.UnmarshalStrict(bytes, &conf)
 	if err != nil {
 		return nil, err
 	}

@@ -82,7 +82,7 @@ func LoadConfig(bytes []byte) (*Config, error) {
 		},
 	}
 
-	err := yaml.Unmarshal(bytes, conf)
+	err := yaml.UnmarshalStrict(bytes, conf)
 	if err != nil {
 		return nil, err
 	}
