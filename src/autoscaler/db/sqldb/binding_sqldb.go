@@ -80,7 +80,6 @@ func (bdb *BindingSQLDB) CreateServiceInstance(serviceInstanceId string, orgId s
 		} else {
 			return db.ErrConflict
 		}
-
 	}
 	rows.Close()
 

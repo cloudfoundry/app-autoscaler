@@ -34,7 +34,6 @@ func (bam *basicAuthenticationMiddleware) Middleware(next http.Handler) http.Han
 }
 
 func NewServer(logger lager.Logger, port int, gatherer prometheus.Gatherer) (ifrit.Runner, error) {
-
 	router := mux.NewRouter()
 	r := promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{})
 	router.PathPrefix("/debug/pprof").Handler(http.DefaultServeMux)

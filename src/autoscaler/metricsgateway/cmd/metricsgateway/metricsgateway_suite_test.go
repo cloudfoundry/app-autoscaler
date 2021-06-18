@@ -137,7 +137,6 @@ func initDB() {
 }
 
 func initConfig() {
-
 	healthport = 8000 + GinkgoParallelNode()
 	conf = config.Config{
 		Logging: helpers.LoggingConfig{
@@ -184,7 +183,6 @@ func initConfig() {
 		},
 	}
 	configFile = writeConfig(&conf)
-
 }
 
 func initFakeServers() {
@@ -202,6 +200,7 @@ func initFakeServers() {
 	wsh := testhelpers.NewWebsocketHandler(messageChan, pingPongChan, 5*time.Second)
 	fakeMetricServer.RouteToHandler("GET", "/v1/envelopes", wsh.ServeWebsocket)
 }
+
 func writeConfig(c *config.Config) *os.File {
 	cfg, err := ioutil.TempFile("", "mg")
 	Expect(err).NotTo(HaveOccurred())
@@ -210,7 +209,6 @@ func writeConfig(c *config.Config) *os.File {
 	ioutil.WriteFile(cfg.Name(), configBytes, 0777)
 	Expect(err1).NotTo(HaveOccurred())
 	return cfg
-
 }
 
 type MetricsGatewayRunner struct {

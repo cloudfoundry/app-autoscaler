@@ -33,8 +33,8 @@ func (c *counterCollector) AddCounters(counterOps ...prometheus.CounterOpts) {
 		}
 		c.counterMap[counterFullName] = prometheus.NewCounter(ops)
 	}
-
 }
+
 func (c *counterCollector) Describe(ch chan<- *prometheus.Desc) {
 	c.RLock()
 	defer c.RUnlock()
@@ -59,6 +59,7 @@ func (c *counterCollector) Add(counterOps prometheus.CounterOpts, count int64) {
 	}
 
 }
+
 func getCounterFullName(counterOps prometheus.CounterOpts) string {
 	return counterOps.Namespace + "_" + counterOps.Subsystem + "_" + counterOps.Name
 }

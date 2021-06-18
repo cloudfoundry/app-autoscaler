@@ -90,7 +90,6 @@ func (sdb *SchedulerSQLDB) GetActiveSchedules() (map[string]*models.ActiveSchedu
 		schedules[appId] = &schedule
 	}
 	return schedules, nil
-
 }
 
 func (sdb *SchedulerSQLDB) GetDBStatus() sql.DBStats {

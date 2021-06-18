@@ -10,7 +10,6 @@ import (
 )
 
 func CreateHTTPClient(tlsCerts *models.TLSCerts) (*http.Client, error) {
-
 	if tlsCerts.CertFile == "" || tlsCerts.KeyFile == "" {
 		tlsCerts = nil
 	}
