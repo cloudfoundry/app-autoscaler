@@ -24,7 +24,7 @@ integration:
 
 
 generate:
-	COUNTERFEITER_NO_GENERATE_WARNING=true $(GO_NOMOD) generate ./...
+	COUNTERFEITER_NO_GENERATE_WARNING=true $(GO) generate ./...
 
 get-fmt-deps: ## Install goimports
 	$(GO_NOMOD) get golang.org/x/tools/cmd/goimports
@@ -41,6 +41,7 @@ buildtools:
 	$(GO) mod download
 	$(GO) get github.com/square/certstrap
 	$(GO) get github.com/onsi/ginkgo/ginkgo
+	$(GO) get github.com/maxbrunsfeld/counterfeiter/v6
 
 lint:
 	golangci-lint run
