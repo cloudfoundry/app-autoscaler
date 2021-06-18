@@ -23,8 +23,6 @@ jobs:
     steps:
       - name: Check out source code
         uses: actions/checkout@v2
-        with:
-          submodules: true
 
       - name: Set up Go
         uses: actions/setup-go@v2
@@ -34,6 +32,9 @@ jobs:
       - name: Go Build
         run: |
           source .envrc
+          pushd src/autoscaler
+            make buildtools
+          popd
           pushd scripts
             ./generate_test_certs.sh
           popd
@@ -72,7 +73,6 @@ jobs:
       - name: Unit Test
         run: |
           source .envrc
-          go install github.com/onsi/ginkgo/ginkgo
           pushd src/autoscaler
             export DBURL="root@tcp(localhost)/autoscaler?tls=false"
             make test
@@ -89,5 +89,7 @@ jobs:
             mvn --no-transfer-progress package -DskipTests
           popd
 
-          export DBURL="root@tcp(localhost)/autoscaler?tls=false"
-          ginkgo -r -race -randomizeAllSpecs src/integration
+          pushd src/autoscaler
+            export DBURL="root@tcp(localhost)/autoscaler?tls=false"
+            make integration
+          popd

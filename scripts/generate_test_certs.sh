@@ -2,9 +2,6 @@
 
 set -ex
 
-# Install certstrap
-go get -v github.com/square/certstrap
-
 # Place keys and certificates here
 depot_path="../test-certs"
 rm -rf ${depot_path}

@@ -29,7 +29,7 @@ var _ = Describe("Config", func() {
 		Context("with invalid yaml", func() {
 			BeforeEach(func() {
 				configBytes = []byte(`
- cf:
+  cf:
   api: https://api.exmaple.com
   client_id: autoscaler_client_id
   secret: autoscaler_client_secret

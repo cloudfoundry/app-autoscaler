@@ -8,14 +8,19 @@ CGO_ENABLED = 0
 BUILDTAGS :=
 
 build-%:
-	CGO_ENABLED=$(CGO_ENABLED) $(GO_NOMOD) build $(BUILDTAGS) $(BUILDFLAGS) -o build/$* $*/cmd/$*/main.go
+	CGO_ENABLED=$(CGO_ENABLED) $(GO) build $(BUILDTAGS) $(BUILDFLAGS) -o build/$* $*/cmd/$*/main.go
 
 build: build-scalingengine build-metricscollector build-metricsforwarder build-eventgenerator build-api build-metricsgateway build-metricsserver build-operator
 
 check: fmt lint build test
 
 test:
-	ginkgo -r -race -randomizeAllSpecs
+	ginkgo -r -race -randomizeAllSpecs -keepGoing --skipPackage=integration
+
+.PHONY: integration
+integration:
+	ginkgo -r -race -randomizeAllSpecs -keepGoing integration
+
 
 generate:
 	COUNTERFEITER_NO_GENERATE_WARNING=true $(GO_NOMOD) generate ./...
@@ -30,3 +35,8 @@ importfmt: get-fmt-deps
 fmt: importfmt
 	@FORMATTED=`$(GO) fmt $(PACKAGE_DIRS)`
 	@([[ ! -z "$(FORMATTED)" ]] && printf "Fixed unformatted files:\n$(FORMATTED)") || true
+
+buildtools:
+	$(GO) mod download
+	$(GO) get github.com/square/certstrap
+	$(GO) get github.com/onsi/ginkgo/ginkgo
