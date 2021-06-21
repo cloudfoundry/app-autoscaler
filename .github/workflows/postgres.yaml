@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         go: [1.15.1]
-        java: [11]
+        java: [8,11]
         postgres: [9.6, 12]
     env:
       DB_DATABASE: autoscaler
