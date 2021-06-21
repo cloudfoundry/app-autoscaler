@@ -7,8 +7,8 @@ import (
 	"strings"
 
 	"code.cloudfoundry.org/lager"
-	. "github.com/lib/pq"
 	"github.com/jmoiron/sqlx"
+	. "github.com/lib/pq"
 
 	"database/sql"
 	"time"
@@ -108,9 +108,9 @@ func (adb *AppMetricSQLDB) SaveAppMetricsInBulk(appMetrics []*models.AppMetric) 
 		}
 
 	case "mysql":
-		sqlStr :="INSERT INTO app_metric(app_id,metric_type,unit,timestamp,value)VALUES"
+		sqlStr := "INSERT INTO app_metric(app_id,metric_type,unit,timestamp,value)VALUES"
 		vals := []interface{}{}
-		if appMetrics == nil || len(appMetrics)==0 {
+		if appMetrics == nil || len(appMetrics) == 0 {
 			txn.Rollback()
 			return nil
 		}

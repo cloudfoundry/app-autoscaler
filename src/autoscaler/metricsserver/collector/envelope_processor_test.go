@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/clock/fakeclock"
-	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager/lagertest"
 
 	. "github.com/onsi/ginkgo"
@@ -54,7 +54,7 @@ var _ = Describe("EnvelopeProcessor", func() {
 			BeforeEach(func() {
 				Expect(envelopeChan).Should(BeSent(GenerateContainerMetrics("test-app-id", "0", 10.2, 10*1024*1024, 20*1024*1024, 1111)))
 				Expect(envelopeChan).Should(BeSent(GenerateContainerMetrics("test-app-id", "1", 10.6, 10.2*1024*1024, 20*1024*1024, 1111)))
-			
+
 			})
 			It("sends standard app instance metrics to channel", func() {
 				Eventually(metricChan).Should(Receive(Equal(&models.AppInstanceMetric{
@@ -305,15 +305,15 @@ func GenerateContainerMetrics(sourceID, instance string, cpu, memory, memoryQuot
 		Message: &loggregator_v2.Envelope_Gauge{
 			Gauge: &loggregator_v2.Gauge{
 				Metrics: map[string]*loggregator_v2.GaugeValue{
-					"cpu": &loggregator_v2.GaugeValue{
+					"cpu": {
 						Unit:  "percentage",
 						Value: cpu,
 					},
-					"memory": &loggregator_v2.GaugeValue{
+					"memory": {
 						Unit:  "bytes",
 						Value: memory,
 					},
-					"memory_quota": &loggregator_v2.GaugeValue{
+					"memory_quota": {
 						Unit:  "bytes",
 						Value: memoryQuota,
 					},
@@ -332,7 +332,7 @@ func GenerateCustomMetrics(sourceID, instance, name, unit string, value float64,
 		Message: &loggregator_v2.Envelope_Gauge{
 			Gauge: &loggregator_v2.Gauge{
 				Metrics: map[string]*loggregator_v2.GaugeValue{
-					name: &loggregator_v2.GaugeValue{
+					name: {
 						Unit:  unit,
 						Value: value,
 					},
@@ -359,4 +359,3 @@ func GenerateHttpStartStopEnvelope(sourceID, instance string, start, stop, times
 	}
 	return e
 }
-

@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/clock"
-	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"
 
 	"autoscaler/metricsgateway/helpers"
@@ -38,6 +38,7 @@ func NewEnvelopeEmitter(logger lager.Logger, bufferSize int, eclock clock.Clock,
 		wsHelper:          wsHelper,
 	}
 }
+
 func (e *EnvelopeEmitter) Start() error {
 	err := e.wsHelper.SetupConn()
 	if err != nil {
@@ -65,7 +66,6 @@ func (e *EnvelopeEmitter) startEmitEnvelope() {
 			err := e.wsHelper.Ping()
 			if err != nil {
 				e.logger.Error("failed-to-ping-metricserver", err)
-
 			}
 		}
 	}
@@ -74,7 +74,6 @@ func (e *EnvelopeEmitter) startEmitEnvelope() {
 func (e *EnvelopeEmitter) Stop() {
 	e.wsHelper.CloseConn()
 	e.doneChan <- true
-
 }
 
 func (e *EnvelopeEmitter) Accept(envelope *loggregator_v2.Envelope) {

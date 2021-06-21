@@ -24,7 +24,6 @@ import (
 )
 
 func main() {
-
 	var path string
 	flag.StringVar(&path, "c", "", "config file")
 	flag.Parse()

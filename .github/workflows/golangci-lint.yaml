@@ -1,0 +1,28 @@
+name: golangci-lint
+on:
+  pull_request:
+jobs:
+  golangci:
+    name: lint
+    env:
+      GO_VERSION: 1.15.1
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      
+      - name: Go Build
+        run: |
+          source .envrc
+
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v2
+        with:
+          working-directory: src/autoscaler
+          args: --config .golangci.yaml

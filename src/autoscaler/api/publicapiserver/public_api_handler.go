@@ -464,7 +464,6 @@ func (h *PublicApiHandler) CreateCredential(w http.ResponseWriter, r *http.Reque
 		Credential: cred,
 		Url:        h.conf.MetricsForwarder.MetricsForwarderUrl,
 	})
-
 }
 
 func (h *PublicApiHandler) DeleteCredential(w http.ResponseWriter, r *http.Request, vars map[string]string) {
@@ -488,5 +487,4 @@ func (h *PublicApiHandler) DeleteCredential(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	handlers.WriteJSONResponse(w, http.StatusOK, nil)
-
 }

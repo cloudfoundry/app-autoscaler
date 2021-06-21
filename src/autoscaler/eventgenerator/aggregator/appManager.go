@@ -85,7 +85,6 @@ func (am *AppManager) startPolicyRetrieve() {
 		case <-am.doneChan:
 			return
 		case <-tick.C():
-
 		}
 	}
 }

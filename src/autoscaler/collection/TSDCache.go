@@ -132,5 +132,4 @@ func (c *TSDCache) Query(start, end int64, labels map[string]string) ([]TSD, boo
 		return result, c.data[0].GetTimestamp() <= start
 	}
 	return result, c.data[c.cursor].GetTimestamp() <= start
-
 }

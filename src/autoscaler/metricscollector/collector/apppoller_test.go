@@ -80,7 +80,7 @@ var _ = Describe("Apppoller", func() {
 						Expect(appid).To(Equal("test-app-id"))
 						Expect(token).To(Equal("Bearer test-access-token"))
 						return []*events.Envelope{
-							&events.Envelope{
+							{
 								ContainerMetric: &events.ContainerMetric{
 									ApplicationId:    proto.String("test-app-id"),
 									InstanceIndex:    proto.Int32(0),
@@ -247,7 +247,7 @@ var _ = Describe("Apppoller", func() {
 							return []*events.Envelope{}, nil
 						} else {
 							return []*events.Envelope{
-								&events.Envelope{
+								{
 									ContainerMetric: &events.ContainerMetric{
 										ApplicationId:    proto.String("test-app-id"),
 										InstanceIndex:    proto.Int32(0),
@@ -350,7 +350,7 @@ var _ = Describe("Apppoller", func() {
 						return nil, errors.New("apppoller test error")
 					} else {
 						return []*events.Envelope{
-							&events.Envelope{
+							{
 								ContainerMetric: &events.ContainerMetric{
 									ApplicationId:    proto.String("test-app-id"),
 									InstanceIndex:    proto.Int32(0),

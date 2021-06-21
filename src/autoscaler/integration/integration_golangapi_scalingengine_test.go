@@ -183,7 +183,7 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 					Page:         1,
 					NextUrl:      getScalingHistoriesUrl(appId, parameters, 2),
 					Resources: []models.AppScalingHistory{
-						models.AppScalingHistory{
+						{
 							AppId:        appId,
 							Timestamp:    666666,
 							ScalingType:  models.ScalingTypeDynamic,
@@ -194,7 +194,7 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 							Message:      "a message",
 							Error:        "",
 						},
-						models.AppScalingHistory{
+						{
 							AppId:        appId,
 							Timestamp:    555555,
 							ScalingType:  models.ScalingTypeDynamic,
@@ -218,7 +218,7 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 					PrevUrl:      getScalingHistoriesUrl(appId, parameters, 1),
 					NextUrl:      getScalingHistoriesUrl(appId, parameters, 3),
 					Resources: []models.AppScalingHistory{
-						models.AppScalingHistory{
+						{
 							AppId:        appId,
 							Timestamp:    444444,
 							ScalingType:  models.ScalingTypeDynamic,
@@ -229,7 +229,7 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 							Message:      "a message",
 							Error:        "",
 						},
-						models.AppScalingHistory{
+						{
 							AppId:        appId,
 							Timestamp:    333333,
 							ScalingType:  models.ScalingTypeDynamic,
@@ -252,7 +252,7 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 					Page:         3,
 					PrevUrl:      getScalingHistoriesUrl(appId, parameters, 2),
 					Resources: []models.AppScalingHistory{
-						models.AppScalingHistory{
+						{
 							AppId:        appId,
 							Timestamp:    222222,
 							ScalingType:  models.ScalingTypeDynamic,
@@ -286,7 +286,7 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 					TotalPages:   1,
 					Page:         1,
 					Resources: []models.AppScalingHistory{
-						models.AppScalingHistory{
+						{
 							AppId:        appId,
 							Timestamp:    666666,
 							ScalingType:  models.ScalingTypeDynamic,
@@ -297,7 +297,7 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 							Message:      "a message",
 							Error:        "",
 						},
-						models.AppScalingHistory{
+						{
 							AppId:        appId,
 							Timestamp:    555555,
 							ScalingType:  models.ScalingTypeDynamic,
@@ -319,7 +319,7 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 					TotalPages:   1,
 					Page:         1,
 					Resources: []models.AppScalingHistory{
-						models.AppScalingHistory{
+						{
 							AppId:        appId,
 							Timestamp:    333333,
 							ScalingType:  models.ScalingTypeDynamic,
@@ -330,7 +330,7 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 							Message:      "a message",
 							Error:        "",
 						},
-						models.AppScalingHistory{
+						{
 							AppId:        appId,
 							Timestamp:    222222,
 							ScalingType:  models.ScalingTypeDynamic,
@@ -352,7 +352,7 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 					TotalPages:   1,
 					Page:         1,
 					Resources: []models.AppScalingHistory{
-						models.AppScalingHistory{
+						{
 							AppId:        appId,
 							Timestamp:    333333,
 							ScalingType:  models.ScalingTypeDynamic,
@@ -363,7 +363,7 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 							Message:      "a message",
 							Error:        "",
 						},
-						models.AppScalingHistory{
+						{
 							AppId:        appId,
 							Timestamp:    444444,
 							ScalingType:  models.ScalingTypeDynamic,
@@ -374,7 +374,7 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 							Message:      "a message",
 							Error:        "",
 						},
-						models.AppScalingHistory{
+						{
 							AppId:        appId,
 							Timestamp:    555555,
 							ScalingType:  models.ScalingTypeDynamic,

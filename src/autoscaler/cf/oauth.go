@@ -213,7 +213,6 @@ func (c *cfClient) getSpaceId(userToken string, appId string) (string, error) {
 }
 
 func (c *cfClient) getUserScopeEndpoint(userToken string) (string, error) {
-
 	parameters := url.Values{}
 	parameters.Add("token", strings.Split(userToken, " ")[1])
 
