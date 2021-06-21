@@ -12,10 +12,12 @@ import java.util.TimeZone;
 import org.cloudfoundry.autoscaler.scheduler.util.DateHelper;
 import org.cloudfoundry.autoscaler.scheduler.util.TimeZoneTestRule;
 import org.junit.Rule;
+
 import org.junit.Test;
 import org.junit.rules.TestRule;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+
 
 /**
  * This test class tests the DateHelper class's getZonedDateTime methods. The rule changes the system

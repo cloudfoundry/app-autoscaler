@@ -42,10 +42,10 @@
 
     <bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource" primary="true"
           destroy-method="close">
-        <property name="driverClassName" value="${spring.datasource.driverClassName}"/>
-        <property name="url" value="${spring.datasource.url}"/>
-        <property name="username" value="${spring.datasource.username}"/>
-        <property name="password" value="${spring.datasource.password}"/>
+        <property name="driverClassName" value="org.postgresql.Driver"/>
+        <property name="url" value="jdbc:postgresql://127.0.0.1/autoscaler"/>
+        <property name="username" value="postgres"/>
+        <property name="password" value="postgres"/>
 
         <property name="maxTotal" value="${spring.datasource.dbcp2.max-total:8}"/>
         <property name="maxIdle" value="${spring.datasource.dbcp2.max-idle:8}"/>
