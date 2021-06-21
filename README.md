@@ -30,7 +30,7 @@ You can follow the development progress on [Pivotal Tracker][t].
 
 ### Database requirement
 
-The `App-AutoScaler` supports Postgres and MySQL. It uses Postgres as the default backend data store. To download and install, refer to [PostgreSQL][p] and [MySQL][m] web site.
+The `App-AutoScaler` supports Postgres and MySQL. It uses Postgres as the default backend data store. To download and install, refer to [PostgreSQL][p] and [MySQL][m] web site. 
 
 
 ### Setup
