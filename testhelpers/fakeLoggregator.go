@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"code.cloudfoundry.org/go-loggregator/rpc/loggregator_v2"
+	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
@@ -48,7 +48,6 @@ func (f *FakeEventProducer) Receiver(
 	*loggregator_v2.EgressRequest,
 	loggregator_v2.Egress_ReceiverServer,
 ) error {
-
 	return grpc.Errorf(codes.Unimplemented, "use BatchedReceiver instead")
 }
 
@@ -145,11 +144,9 @@ func (f *FakeEventProducer) SetEnvelops(envelops []*loggregator_v2.Envelope) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.envelops = envelops
-
 }
 
 func NewServerMutualTLSConfig(certFile, keyFile, caCertFile string) (*tls.Config, error) {
-
 	tlsCert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load keypair: %s", err)

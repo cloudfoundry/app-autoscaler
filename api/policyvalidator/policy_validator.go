@@ -99,7 +99,6 @@ func (pv *PolicyValidator) ValidatePolicy(policyStr string) (*[]PolicyValidation
 }
 
 func (pv *PolicyValidator) validateAttributes(policy *models.ScalingPolicy, result *gojsonschema.Result) {
-
 	rootContext := gojsonschema.NewJsonContext("(root)", nil)
 
 	//check InstanceMinCount and InstanceMaxCount
@@ -249,11 +248,11 @@ func (pv *PolicyValidator) validateRecurringSchedules(policy *models.ScalingPoli
 				result.AddError(err, errDetails)
 			}
 		}
+
 		if recSched.StartDate != "" && recSched.EndDate != "" {
 			startDate, _ = time.ParseInLocation(DateLayout, recSched.StartDate, location)
 			endDate, _ = time.ParseInLocation(DateLayout, recSched.EndDate, location)
 			if endDate.Sub(startDate) < 0 {
-
 				currentRecSchedContext := gojsonschema.NewJsonContext(fmt.Sprintf("%d", scheduleIndex), recurringScheduleContext)
 				errDetails := gojsonschema.ErrorDetails{
 					"scheduleIndex": scheduleIndex,
@@ -396,11 +395,9 @@ func (pv *PolicyValidator) validateOverlappingInSpecificDateSchedules(policy *mo
 				formatString := "specific_date[{{.scheduleIndexB}}]:{start_date_time: {{.start_date_time1}}, end_date_time: {{.end_date_time1}}} and specific_date[{{.scheduleIndexA}}]:{start_date_time: {{.start_date_time2}}, end_date_time: {{.end_date_time2}}} are overlapping"
 				err := newPolicyValidationError(context, formatString, errDetails)
 				result.AddError(err, errDetails)
-
 			}
 		}
 	}
-
 }
 
 func getErrorsObject(resErr []gojsonschema.ResultError) *[]PolicyValidationErrors {

@@ -336,7 +336,7 @@ var _ = Describe("PublicApiServer", func() {
 						InstanceMax: 5,
 						InstanceMin: 1,
 						ScalingRules: []*models.ScalingRule{
-							&models.ScalingRule{
+							{
 								MetricType:            "memoryused",
 								BreachDurationSeconds: 300,
 								CoolDownSeconds:       300,
@@ -428,5 +428,4 @@ func verifyResponse(httpClient *http.Client, serverUrl *url.URL, path string, he
 	rsp, err := httpClient.Do(req)
 	ExpectWithOffset(1, err).NotTo(HaveOccurred())
 	ExpectWithOffset(1, rsp.StatusCode).To(Equal(expectResponseStatusCode))
-
 }

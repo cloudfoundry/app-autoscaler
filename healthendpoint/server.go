@@ -34,7 +34,6 @@ func (bam *basicAuthenticationMiddleware) Middleware(next http.Handler) http.Han
 }
 
 func NewServer(logger lager.Logger, port int, gatherer prometheus.Gatherer) (ifrit.Runner, error) {
-
 	router := mux.NewRouter()
 	r := promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{})
 	router.PathPrefix("/debug/pprof").Handler(http.DefaultServeMux)
@@ -52,12 +51,10 @@ func NewServerWithBasicAuth(logger lager.Logger, port int, gatherer prometheus.G
 		//when username and password are not set then dont use basic authentication
 		healthServer, err := NewServer(logger, port, gatherer)
 		return healthServer, err
-
 	} else {
 		var usernameHashByte []byte
 		var err error
 		if usernameHash == "" {
-
 			// when username and password are set for health check
 			usernameHashByte, err = bcrypt.GenerateFromPassword([]byte(username), bcrypt.MinCost) // use MinCost as the config already provided it as cleartext
 			if err != nil {

@@ -175,14 +175,14 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 					Page:         1,
 					NextUrl:      getAppAggregatedMetricUrl(appId, metricType, parameters, 2),
 					Resources: []models.AppMetric{
-						models.AppMetric{
+						{
 							AppId:      appId,
 							MetricType: models.MetricNameMemoryUsed,
 							Unit:       models.UnitMegaBytes,
 							Value:      "123456",
 							Timestamp:  333333,
 						},
-						models.AppMetric{
+						{
 							AppId:      appId,
 							MetricType: models.MetricNameMemoryUsed,
 							Unit:       models.UnitMegaBytes,
@@ -202,14 +202,14 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 					PrevUrl:      getAppAggregatedMetricUrl(appId, metricType, parameters, 1),
 					NextUrl:      getAppAggregatedMetricUrl(appId, metricType, parameters, 3),
 					Resources: []models.AppMetric{
-						models.AppMetric{
+						{
 							AppId:      appId,
 							MetricType: models.MetricNameMemoryUsed,
 							Unit:       models.UnitMegaBytes,
 							Value:      "123456",
 							Timestamp:  555555,
 						},
-						models.AppMetric{
+						{
 							AppId:      appId,
 							MetricType: models.MetricNameMemoryUsed,
 							Unit:       models.UnitMegaBytes,
@@ -228,7 +228,7 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 					Page:         3,
 					PrevUrl:      getAppAggregatedMetricUrl(appId, metricType, parameters, 2),
 					Resources: []models.AppMetric{
-						models.AppMetric{
+						{
 							AppId:      appId,
 							MetricType: models.MetricNameMemoryUsed,
 							Unit:       models.UnitMegaBytes,
@@ -258,21 +258,21 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 					TotalPages:   1,
 					Page:         1,
 					Resources: []models.AppMetric{
-						models.AppMetric{
+						{
 							AppId:      appId,
 							MetricType: models.MetricNameMemoryUsed,
 							Unit:       models.UnitMegaBytes,
 							Value:      "123456",
 							Timestamp:  555555,
 						},
-						models.AppMetric{
+						{
 							AppId:      appId,
 							MetricType: models.MetricNameMemoryUsed,
 							Unit:       models.UnitMegaBytes,
 							Value:      "123456",
 							Timestamp:  555556,
 						},
-						models.AppMetric{
+						{
 							AppId:      appId,
 							MetricType: models.MetricNameMemoryUsed,
 							Unit:       models.UnitMegaBytes,
@@ -290,14 +290,14 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 					TotalPages:   1,
 					Page:         1,
 					Resources: []models.AppMetric{
-						models.AppMetric{
+						{
 							AppId:      appId,
 							MetricType: models.MetricNameMemoryUsed,
 							Unit:       models.UnitMegaBytes,
 							Value:      "123456",
 							Timestamp:  333333,
 						},
-						models.AppMetric{
+						{
 							AppId:      appId,
 							MetricType: models.MetricNameMemoryUsed,
 							Unit:       models.UnitMegaBytes,
@@ -315,21 +315,21 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 					TotalPages:   1,
 					Page:         1,
 					Resources: []models.AppMetric{
-						models.AppMetric{
+						{
 							AppId:      appId,
 							MetricType: models.MetricNameMemoryUsed,
 							Unit:       models.UnitMegaBytes,
 							Value:      "123456",
 							Timestamp:  444444,
 						},
-						models.AppMetric{
+						{
 							AppId:      appId,
 							MetricType: models.MetricNameMemoryUsed,
 							Unit:       models.UnitMegaBytes,
 							Value:      "123456",
 							Timestamp:  555555,
 						},
-						models.AppMetric{
+						{
 							AppId:      appId,
 							MetricType: models.MetricNameMemoryUsed,
 							Unit:       models.UnitMegaBytes,
@@ -343,4 +343,3 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 		})
 	})
 })
-

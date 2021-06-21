@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/lager"
-	"github.com/rubyist/circuitbreaker"
+	circuit "github.com/rubyist/circuitbreaker"
 )
 
 var validOperators = []string{">", ">=", "<", "<="}
@@ -147,7 +147,6 @@ func (e *Evaluator) doEvaluate(triggerArray []*models.Trigger) {
 			return
 		}
 	}
-
 }
 
 func (e *Evaluator) retrieveAppMetrics(trigger *models.Trigger) ([]*models.AppMetric, error) {
@@ -216,8 +215,8 @@ func (e *Evaluator) sendTriggerAlarm(trigger *models.Trigger) error {
 	err = fmt.Errorf("Got %d when sending trigger alarm", resp.StatusCode)
 	e.logger.Error("failed-send-trigger-alarm", err, lager.Data{"trigger": trigger, "responseBody": string(respBody)})
 	return err
-
 }
+
 func (e *Evaluator) isValidOperator(operator string) bool {
 	for _, o := range validOperators {
 		if o == operator {

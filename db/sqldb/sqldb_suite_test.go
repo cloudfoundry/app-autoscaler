@@ -12,11 +12,11 @@ import (
 	"autoscaler/db"
 	"autoscaler/models"
 
-	_ "github.com/lib/pq"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/jmoiron/sqlx"
 )
 
 var dbHelper *sqlx.DB
@@ -35,10 +35,10 @@ var _ = BeforeSuite(func() {
 	}
 	database, err := db.GetConnection(dbUrl)
 	if err != nil {
-		Fail("failed to parse database connection: "+ err.Error())
+		Fail("failed to parse database connection: " + err.Error())
 	}
 
-	dbHelper, e =  sqlx.Open(database.DriverName, database.DSN)
+	dbHelper, e = sqlx.Open(database.DriverName, database.DSN)
 	if e != nil {
 		Fail("can not connect database: " + e.Error())
 	}
@@ -264,15 +264,14 @@ func insertSchedulerActiveSchedule(id int, appId string, startJobIdentifier int,
 }
 
 func insertCredential(appid string, username string, password string) error {
-
 	var err error
 	var query string
 
 	query = dbHelper.Rebind("INSERT INTO credentials(id, username, password, updated_at) values(?, ?, ?, ?)")
 	_, err = dbHelper.Exec(query, appid, username, password, "2011-05-18 15:36:38")
 	return err
-
 }
+
 func getCredential(appId string) (string, string, error) {
 	query := dbHelper.Rebind("SELECT username,password FROM credentials WHERE id=? ")
 	rows, err := dbHelper.Query(query, appId)
@@ -386,7 +385,7 @@ func validateLockNotInDB(owner string) error {
 
 func formatPolicyString(policyStr string) string {
 	scalingPolicy := &models.ScalingPolicy{}
-	err := json.Unmarshal([]byte(policyStr),&scalingPolicy)
+	err := json.Unmarshal([]byte(policyStr), &scalingPolicy)
 	if err != nil {
 		fmt.Errorf("failed to unmarshal policyJson string %s", policyStr)
 		return ""

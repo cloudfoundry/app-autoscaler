@@ -19,11 +19,11 @@ import (
 	"time"
 
 	"code.cloudfoundry.org/cfhttp"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
 	"github.com/onsi/gomega/gbytes"
 	"github.com/onsi/gomega/gexec"
 	"github.com/onsi/gomega/ghttp"
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/jmoiron/sqlx"
 	"gopkg.in/yaml.v2"
 )
 
@@ -267,7 +267,6 @@ func initConfig() {
 			TLSClientConfig: tlsConfig,
 		},
 	}
-
 }
 
 func writeConfig(c *config.Config) *os.File {
@@ -278,7 +277,6 @@ func writeConfig(c *config.Config) *os.File {
 	ioutil.WriteFile(cfg.Name(), configBytes, 0777)
 	Expect(err1).NotTo(HaveOccurred())
 	return cfg
-
 }
 
 type EventGeneratorRunner struct {

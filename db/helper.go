@@ -1,39 +1,39 @@
 package db
 
 import (
-	"fmt"
-	"strings"
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"io/ioutil"
 	"net/url"
-	"github.com/go-sql-driver/mysql"
+	"strings"
 
+	"github.com/go-sql-driver/mysql"
 )
 
 type Database struct {
-	DriverName  string
-	DSN         string
+	DriverName string
+	DSN        string
 }
 
 type MySQLConfig struct {
-	config   *mysql.Config
-	cert     string
+	config *mysql.Config
+	cert   string
 }
 
 /**
- This function is used to generate db connection info, for example, 
- For mysql: 
+ This function is used to generate db connection info, for example,
+ For mysql:
  input dbUrl: 'username:password@tcp(localhost:3306)/autoscaler?tls=custom&sslrootcert=db_ca.crt'
    return:
    &Database{DriverName: "mysql", DSN:"username:password@tcp(localhost:3306)/autoscaler?parseTime=true&tls=custom"}
- 
+
 For postgres:
    input dbUrl: postgres://postgres:password@localhost:5432/autoscaler?sslmode=disable
    return:
    &Database{DriverName: "postgres", DSN:"postgres://postgres:password@localhost:5432/autoscaler?sslmode=disable"
  **/
- func GetConnection(dbUrl string) (*Database, error) {
+func GetConnection(dbUrl string) (*Database, error) {
 	database := &Database{}
 
 	database.DriverName = detectDirver(dbUrl)
@@ -44,12 +44,12 @@ For postgres:
 		if err != nil {
 			return nil, err
 		}
-		
+
 		err = registerConfig(cfg)
 		if err != nil {
 			return nil, err
 		}
-		database.DSN = cfg.config.FormatDSN()				
+		database.DSN = cfg.config.FormatDSN()
 	case PostgresDriverName:
 		database.DSN = dbUrl
 	}
@@ -57,7 +57,7 @@ For postgres:
 }
 
 func registerConfig(cfg *MySQLConfig) error {
-	tlsValue := cfg.config.TLSConfig 
+	tlsValue := cfg.config.TLSConfig
 	if _, isBool := readBool(tlsValue); isBool || tlsValue == "" || strings.ToLower(tlsValue) == "skip-verify" || strings.ToLower(tlsValue) == "preferred" {
 		// Do nothing here
 		return nil
@@ -73,15 +73,14 @@ func registerConfig(cfg *MySQLConfig) error {
 
 		tlsConfig := tls.Config{}
 		tlsConfig.RootCAs = caCertPool
-		if tlsValue == "verify_identity" {	
-			tlsConfig.ServerName = strings.Split(cfg.config.Addr,":")[0]
+		if tlsValue == "verify_identity" {
+			tlsConfig.ServerName = strings.Split(cfg.config.Addr, ":")[0]
 		}
-	
+
 		err = mysql.RegisterTLSConfig(tlsValue, &tlsConfig)
 		if err != nil {
 			return err
 		}
-
 	} else {
 		return fmt.Errorf("sql ca file is not provided")
 	}
@@ -98,8 +97,8 @@ func readBool(input string) (value bool, valid bool) {
 	return
 }
 
-func detectDirver(dbUrl string)(driver string) {
-	if strings.Contains(dbUrl, "postgres"){
+func detectDirver(dbUrl string) (driver string) {
+	if strings.Contains(dbUrl, "postgres") {
 		return PostgresDriverName
 	} else {
 		return MysqlDriverName
@@ -107,27 +106,27 @@ func detectDirver(dbUrl string)(driver string) {
 }
 
 // parseMySQLURL can parse the query parameters and remove invalid 'sslrootcert', it return mysql.Config and the cert file.
-func parseMySQLURL(dbUrl string)( *MySQLConfig, error) {
+func parseMySQLURL(dbUrl string) (*MySQLConfig, error) {
 	var caCert string
 	var tlsValue string
-	if strings.Contains(dbUrl,"?"){ 
-		u, err := url.ParseQuery(strings.Split(dbUrl,"?")[1])
+	if strings.Contains(dbUrl, "?") {
+		u, err := url.ParseQuery(strings.Split(dbUrl, "?")[1])
 		if err != nil {
-		  return nil, err
+			return nil, err
 		}
 		urlParam := url.Values{}
 		for k, v := range u {
-		  if k == "sslrootcert" {
-			caCert = v[0]
-			continue
-		  }
-		  if k == "tls" {
-			tlsValue = v[0]
-			continue
-		  }
-		  urlParam.Add(k, v[0])
+			if k == "sslrootcert" {
+				caCert = v[0]
+				continue
+			}
+			if k == "tls" {
+				tlsValue = v[0]
+				continue
+			}
+			urlParam.Add(k, v[0])
 		}
-		dbUrl = fmt.Sprintf("%s?%s",strings.Split(dbUrl,"?")[0], urlParam.Encode())
+		dbUrl = fmt.Sprintf("%s?%s", strings.Split(dbUrl, "?")[0], urlParam.Encode())
 	}
 
 	config, err := mysql.ParseDSN(dbUrl)
@@ -135,14 +134,13 @@ func parseMySQLURL(dbUrl string)( *MySQLConfig, error) {
 		return nil, err
 	}
 	config.ParseTime = true
-	
+
 	if tlsValue != "" {
 		config.TLSConfig = tlsValue
 	}
 
 	return &MySQLConfig{
-		config:   config,
-		cert:     caCert,
+		config: config,
+		cert:   caCert,
 	}, nil
 }
-
