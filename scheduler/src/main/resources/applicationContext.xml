@@ -56,10 +56,10 @@
     
     <bean id="policyDbDataSource" class="org.apache.commons.dbcp2.BasicDataSource"
           destroy-method="close">
-        <property name="driverClassName" value="${spring.policyDbDataSource.driverClassName}"/>
-        <property name="url" value="${spring.policyDbDataSource.url}"/>
-        <property name="username" value="${spring.policyDbDataSource.username}"/>
-        <property name="password" value="${spring.policyDbDataSource.password}"/>
+        <property name="driverClassName" value="org.postgresql.Driver"/>
+        <property name="url" value="jdbc:postgresql://127.0.0.1/autoscaler"/>
+        <property name="username" value="postgres"/>
+        <property name="password" value="postgres"/>
 
         <property name="maxTotal" value="${spring.policyDbDataSource.max-total:8}"/>
         <property name="maxIdle" value="${spring.policyDbDataSource.max-idle:8}"/>
