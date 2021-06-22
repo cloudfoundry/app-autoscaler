@@ -317,10 +317,10 @@ spring.datasource.url=%s
 spring.datasource.username=%s
 spring.datasource.password=%s
 #policy db
-spring.policyDbDataSource.driverClassName=%s
-spring.policyDbDataSource.url=%s
-spring.policyDbDataSource.username=%s
-spring.policyDbDataSource.password=%s
+spring.policy-db-datasource.driverClassName=%s
+spring.policy-db-datasource.url=%s
+spring.policy-db-datasource.username=%s
+spring.policy-db-datasource.password=%s
 #quartz job
 scalingenginejob.reschedule.interval.millisecond=10000
 scalingenginejob.reschedule.maxcount=3
@@ -355,6 +355,7 @@ spring.mvc.servlet.load-on-startup=1
 spring.aop.auto=false
 endpoints.enabled=false
 spring.data.jpa.repositories.enabled=false
+spring.main.allow-bean-definition-overriding=true
 `
 	settingJsonStr := fmt.Sprintf(settingStrTemplate, driverClassName, jdbcDBUri, userName, password, driverClassName, jdbcDBUri, userName, password, scalingEngineUri, testCertDir, testCertDir, testCertDir, testCertDir, components.Ports[Scheduler], components.Ports[Scheduler], int(httpClientTimeout/time.Second))
 	cfgFile, err := os.Create(filepath.Join(tmpDir, "application.properties"))
