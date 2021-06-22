@@ -4,11 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.actuate.autoconfigure.audit.AuditAutoConfiguration;
-import org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration;
-import org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointAutoConfiguration;
-import org.springframework.boot.actuate.autoconfigure.health.HealthIndicatorAutoConfiguration;
 import org.springframework.boot.actuate.autoconfigure.info.InfoContributorAutoConfiguration;
-import org.springframework.boot.actuate.autoconfigure.jdbc.DataSourceHealthIndicatorAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.aop.AopAutoConfiguration;
 import org.springframework.boot.autoconfigure.context.ConfigurationPropertiesAutoConfiguration;
@@ -44,8 +40,7 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 		DataSourceTransactionManagerAutoConfiguration.class, JacksonAutoConfiguration.class,
 		JdbcTemplateAutoConfiguration.class, JtaAutoConfiguration.class,
 		HibernateJpaAutoConfiguration.class, JpaRepositoriesAutoConfiguration.class,
-		ValidationAutoConfiguration.class, DataSourceHealthIndicatorAutoConfiguration.class,
-		})
+		ValidationAutoConfiguration.class})
 @ImportResource("classpath:applicationContext.xml")
 public class SchedulerApplication {
 	private Logger logger = LogManager.getLogger(this.getClass());
