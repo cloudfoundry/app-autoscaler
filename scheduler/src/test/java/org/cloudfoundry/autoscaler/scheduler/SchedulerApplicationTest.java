@@ -45,7 +45,7 @@ public class SchedulerApplicationTest {
 		expectedEx.expectCause(isA(DataSourceConfigurationException.class));
 		expectedEx.expectMessage("Error creating bean with name 'policyDbDataSource': Failed to connect to datasource:policyDbDataSource");
 		SchedulerApplication.main(new String[] { 
-				"--spring.policyDbDataSource.url=jdbc:postgresql://127.0.0.1/wrong-policy-db" });
+				"--spring.policy-db-datasource.url=jdbc:postgresql://127.0.0.1/wrong-policy-db" });
 
 
 	}
