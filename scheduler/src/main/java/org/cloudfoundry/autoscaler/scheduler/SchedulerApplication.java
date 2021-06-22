@@ -8,6 +8,7 @@ import org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfi
 import org.springframework.boot.actuate.autoconfigure.endpoint.web.WebEndpointAutoConfiguration;
 import org.springframework.boot.actuate.autoconfigure.health.HealthIndicatorAutoConfiguration;
 import org.springframework.boot.actuate.autoconfigure.info.InfoContributorAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.jdbc.DataSourceHealthIndicatorAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.aop.AopAutoConfiguration;
 import org.springframework.boot.autoconfigure.context.ConfigurationPropertiesAutoConfiguration;
@@ -37,12 +38,13 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @EnableSwagger2
 @SpringBootApplication(exclude = { AopAutoConfiguration.class,
 		AuditAutoConfiguration.class, DataSourceAutoConfiguration.class,
-		InfoContributorAutoConfiguration.class, WebClientAutoConfiguration.class, ValidationAutoConfiguration.class,
+		InfoContributorAutoConfiguration.class, WebClientAutoConfiguration.class,
 		ProjectInfoAutoConfiguration.class, ConfigurationPropertiesAutoConfiguration.class,
 		GsonAutoConfiguration.class, PropertyPlaceholderAutoConfiguration.class,
 		DataSourceTransactionManagerAutoConfiguration.class, JacksonAutoConfiguration.class,
 		JdbcTemplateAutoConfiguration.class, JtaAutoConfiguration.class,
 		HibernateJpaAutoConfiguration.class, JpaRepositoriesAutoConfiguration.class,
+		ValidationAutoConfiguration.class, DataSourceHealthIndicatorAutoConfiguration.class,
 		})
 @ImportResource("classpath:applicationContext.xml")
 public class SchedulerApplication {
