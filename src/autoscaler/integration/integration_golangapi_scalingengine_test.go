@@ -52,7 +52,7 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 			It("should error with status code 500", func() {
 				checkPublicAPIResponseContentWithParameters(getScalingHistories, components.Ports[GolangAPIServer], pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{
 					"code":    "Interal-Server-Error",
-					"message": "Failed to check space developer permission",
+					"message": "Failed to check if user is admin",
 				})
 			})
 		})
@@ -72,7 +72,7 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 			It("should error with status code 500", func() {
 				checkPublicAPIResponseContentWithParameters(getScalingHistories, components.Ports[GolangAPIServer], pathVariables, parameters, http.StatusInternalServerError, map[string]interface{}{
 					"code":    "Interal-Server-Error",
-					"message": "Failed to check space developer permission",
+					"message": "Failed to check if user is admin",
 				})
 			})
 		})
