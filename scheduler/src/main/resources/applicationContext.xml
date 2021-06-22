@@ -15,7 +15,7 @@
         within your classpath, provided they fall under the resources directory.
         The located property files are parsed and their values can then be used within
         application context files in the form of ${propertyKey}. -->
-    <context:property-placeholder location="classpath*:application.properties"/>
+    <context:property-placeholder location="classpath*:application.properties" />
     <!-- Turn on AspectJ @Configurable support. As a result, any time you instantiate
         an object, Spring will attempt to perform dependency injection on that object. -->
     <context:spring-configured/>
@@ -51,20 +51,19 @@
         <property name="maxIdle" value="${spring.datasource.dbcp2.max-idle:8}"/>
         <property name="minIdle" value="${spring.datasource.dbcp2.min-idle:0}"/>
         <property name="initialSize" value="${spring.datasource.dbcp2.initial-size:0}"/>
-        
     </bean>
     
     <bean id="policyDbDataSource" class="org.apache.commons.dbcp2.BasicDataSource"
           destroy-method="close">
-        <property name="driverClassName" value="${spring.policyDbDataSource.driverClassName}"/>
-        <property name="url" value="${spring.policyDbDataSource.url}"/>
-        <property name="username" value="${spring.policyDbDataSource.username}"/>
-        <property name="password" value="${spring.policyDbDataSource.password}"/>
+        <property name="driverClassName" value="${spring.policy-db-datasource.driverClassName}"/>
+        <property name="url" value="${spring.policy-db-datasource.url}"/>
+        <property name="username" value="${spring.policy-db-datasource.username}"/>
+        <property name="password" value="${spring.policy-db-datasource.password}"/>
 
-        <property name="maxTotal" value="${spring.policyDbDataSource.max-total:8}"/>
-        <property name="maxIdle" value="${spring.policyDbDataSource.max-idle:8}"/>
-        <property name="minIdle" value="${spring.policyDbDataSource.min-idle:0}"/>
-        <property name="initialSize" value="${spring.policyDbDataSource.initial-size:0}"/>
+        <property name="maxTotal" value="${spring.policy-db-datasource.max-total:8}"/>
+        <property name="maxIdle" value="${spring.policy-db-datasource.max-idle:8}"/>
+        <property name="minIdle" value="${spring.policy-db-datasource.min-idle:0}"/>
+        <property name="initialSize" value="${spring.policy-db-datasource.initial-size:0}"/>
     </bean>
     
 	<bean id="dbStatusCollector" class="org.cloudfoundry.autoscaler.scheduler.health.DBStatusCollector">
@@ -81,14 +80,13 @@
     <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager" primary="true">
         <property name="entityManagerFactory" ref="entityManagerFactory"/>
     </bean>
+
     <bean id="policyDbTransactionManager" class="org.springframework.orm.jpa.JpaTransactionManager">
         <property name="dataSource" ref="policyDbDataSource"/>
         <qualifier value="policyDbTransactionManager"/>
     </bean>
     
     <tx:annotation-driven/>
-    
-    
 
     <bean id="quartzScheduler"
           class="org.springframework.scheduling.quartz.SchedulerFactoryBean"
