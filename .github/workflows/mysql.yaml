@@ -13,7 +13,7 @@ jobs:
     strategy:
       matrix:
         go: [1.15.1]
-        java: [8]  
+        java: [8,11]  
     env:
       DB_DATABASE: autoscaler
       DB_USER: root
