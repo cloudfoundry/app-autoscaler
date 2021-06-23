@@ -98,7 +98,7 @@ public abstract class AppScalingScheduleJob extends QuartzJobBean {
 			logger.info(message, hsce);
 		} else {
 			String message = messageBundleResourceHelper.lookupMessage("scalingengine.notification.failed",
-					errorResponseCode, hsce.getResponseBodyAsString(), appId, scheduleId, scalingAction);
+					errorResponseCode.value(), hsce.getResponseBodyAsString(), appId, scheduleId, scalingAction);
 			logger.error(message, hsce);
 		}
 	}

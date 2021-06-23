@@ -1,0 +1,34 @@
+name: generate
+on:
+  pull_request:
+jobs:
+  generate:
+    name: ensure fakes are up to date
+    env:
+      GO_VERSION: 1.15.1
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      
+      - name: Go Build
+        run: |
+          source .envrc
+          pushd src/autoscaler
+            make buildtools
+            make generate
+          popd
+
+      - name: Check if there are changes
+        id: changes
+        uses: UnicornGlobal/has-changes-action@v1.0.11
+    
+      - name: Process changes
+        if: steps.changes.outputs.changed == 1
+        run: |
+          echo "::error::Fakes are out of date, run make generate to update"
+          exit 1
