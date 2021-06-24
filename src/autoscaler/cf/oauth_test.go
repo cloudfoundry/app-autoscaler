@@ -20,10 +20,6 @@ type userScope struct {
 	Scope []string `json:"scope"`
 }
 
-type spaceDeveloper struct {
-	Total int `json:"total_results"`
-}
-
 type roles struct {
 	Pagination struct {
 		Total int `json:"total_results"`
@@ -59,9 +55,6 @@ var (
 
 	fakeCCServer    *ghttp.Server
 	fakeTokenServer *ghttp.Server
-
-	ccInfoStatus   int
-	ccInfoResponse Tokens
 
 	userInfoStatus   int
 	userInfoResponse userInfo

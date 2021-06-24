@@ -20,7 +20,6 @@ type Emitter interface {
 type EnvelopeEmitter struct {
 	logger            lager.Logger
 	envelopChan       chan *loggregator_v2.Envelope
-	bufferSize        int
 	doneChan          chan bool
 	keepAliveInterval time.Duration
 	eclock            clock.Clock
