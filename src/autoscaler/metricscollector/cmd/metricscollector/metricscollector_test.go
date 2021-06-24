@@ -11,22 +11,25 @@ import (
 
 	. "github.com/onsi/gomega/gbytes"
 	. "github.com/onsi/gomega/gexec"
+
+	"autoscaler/cf"
+	"autoscaler/metricscollector/config"
 )
 
-var _ = Describe("MetricsServer", func() {
+var _ = Describe("MetricsCollector", func() {
 	var (
-		runner *MetricsServerRunner
+		runner *MetricsCollectorRunner
 	)
 
 	BeforeEach(func() {
-		runner = NewMetricsServerRunner()
+		runner = NewMetricsCollectorRunner()
 	})
 
 	AfterEach(func() {
 		runner.KillWithFire()
 	})
 
-	Describe("MetricsServer configuration check", func() {
+	Describe("Metricscollector configuration check", func() {
 
 		Context("with a missing config file", func() {
 			BeforeEach(func() {
@@ -44,7 +47,7 @@ var _ = Describe("MetricsServer", func() {
 		Context("with an invalid config file", func() {
 			BeforeEach(func() {
 				runner.startCheck = ""
-				badfile, err := ioutil.TempFile("", "bad-ms-config")
+				badfile, err := ioutil.TempFile("", "bad-mc-config")
 				Expect(err).NotTo(HaveOccurred())
 				runner.configPath = badfile.Name()
 				ioutil.WriteFile(runner.configPath, []byte("bogus"), os.ModePerm)
@@ -65,9 +68,12 @@ var _ = Describe("MetricsServer", func() {
 			BeforeEach(func() {
 				runner.startCheck = ""
 				missingConfig := cfg
+				missingConfig.CF = cf.CFConfig{
+					API: ccNOAAUAA.URL(),
+				}
+
 				missingConfig.Server.Port = 7000 + GinkgoParallelNode()
 				missingConfig.Logging.Level = "debug"
-				missingConfig.Collector.EnvelopeChannelSize = 0
 				runner.configPath = writeConfig(&missingConfig).Name()
 				runner.Start()
 			})
@@ -95,22 +101,42 @@ var _ = Describe("MetricsServer", func() {
 
 	})
 
-	Describe("MetricsServer REST API", func() {
+	Describe("MetricsCollector REST API", func() {
 		Context("when a request for metrics history comes", func() {
-			BeforeEach(func() {
-				runner.Start()
-			})
+			Context("when using polling for metrics collection", func() {
+				BeforeEach(func() {
+					runner.Start()
+				})
 
-			It("returns with a 200", func() {
-				rsp, err := httpClient.Get(fmt.Sprintf("http://127.0.0.1:%d/v1/apps/an-app-id/metric_histories/a-metric-type", msPort))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
-				rsp.Body.Close()
+				It("returns with a 200", func() {
+					rsp, err := httpClient.Get(fmt.Sprintf("https://127.0.0.1:%d/v1/apps/an-app-id/metric_histories/a-metric-type", mcPort))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+					rsp.Body.Close()
+				})
+			})
+			Context("when using streaming for metrics collection", func() {
+				BeforeEach(func() {
+					streamingCfg := cfg
+					streamingCfg.Collector.CollectMethod = config.CollectMethodStreaming
+					runner.configPath = writeConfig(&streamingCfg).Name()
+					runner.Start()
+				})
+
+				AfterEach(func() {
+					os.Remove(runner.configPath)
+				})
+
+				It("returns with a 200", func() {
+					rsp, err := httpClient.Get(fmt.Sprintf("https://127.0.0.1:%d/v1/apps/an-app-id/metric_histories/a-metric-type", mcPort))
+					Expect(err).NotTo(HaveOccurred())
+					Expect(rsp.StatusCode).To(Equal(http.StatusOK))
+					rsp.Body.Close()
+				})
 			})
 		})
 
 	})
-
 	Describe("when Health server is ready to serve RESTful API", func() {
 		BeforeEach(func() {
 
@@ -118,6 +144,7 @@ var _ = Describe("MetricsServer", func() {
 			basicAuthConfig.Health.HealthCheckUsername = ""
 			basicAuthConfig.Health.HealthCheckPassword = ""
 			runner.configPath = writeConfig(&basicAuthConfig).Name()
+
 			runner.Start()
 
 		})
@@ -128,15 +155,16 @@ var _ = Describe("MetricsServer", func() {
 				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 				raw, _ := ioutil.ReadAll(rsp.Body)
 				healthData := string(raw)
-				Expect(healthData).To(ContainSubstring("autoscaler_metricsserver_concurrent_http_request"))
-				Expect(healthData).To(ContainSubstring("autoscaler_metricsserver_policyDB"))
-				Expect(healthData).To(ContainSubstring("autoscaler_metricsserver_instanceMetricsDB"))
+				Expect(healthData).To(ContainSubstring("autoscaler_metricscollector_concurrent_http_request"))
+				Expect(healthData).To(ContainSubstring("autoscaler_metricscollector_policyDB"))
+				Expect(healthData).To(ContainSubstring("autoscaler_metricscollector_instanceMetricsDB"))
 				Expect(healthData).To(ContainSubstring("go_goroutines"))
 				Expect(healthData).To(ContainSubstring("go_memstats_alloc_bytes"))
 				rsp.Body.Close()
 
 			})
 		})
+
 		Context("when a request to query profile comes", func() {
 			It("returns with a 200", func() {
 				rsp, err := healthHttpClient.Get(fmt.Sprintf("http://127.0.0.1:%d/debug/pprof", healthport))
@@ -157,6 +185,7 @@ var _ = Describe("MetricsServer", func() {
 
 			})
 		})
+
 	})
 
 	Describe("when Health server is ready to serve RESTful API with basic Auth", func() {
@@ -193,5 +222,4 @@ var _ = Describe("MetricsServer", func() {
 		})
 	})
 
-	//TODO : Add test cases for testing WebServer endpoints
 })

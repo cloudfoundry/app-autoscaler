@@ -1106,6 +1106,15 @@ rate_limit:
 			})
 		})
 
+		Context("when metricscollector url is not set", func() {
+			BeforeEach(func() {
+				conf.MetricsCollector.MetricsCollectorUrl = ""
+			})
+			It("should err", func() {
+				Expect(err).To(MatchError(MatchRegexp("Configuration error: metrics_collector.metrics_collector_url is empty")))
+			})
+		})
+
 		Context("when eventgenerator url is not set", func() {
 			BeforeEach(func() {
 				conf.EventGenerator.EventGeneratorUrl = ""
