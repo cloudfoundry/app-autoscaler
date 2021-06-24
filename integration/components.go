@@ -46,7 +46,7 @@ const (
 var golangAPIInfoFilePath string = "../api/exampleconfig/catalog-example.json"
 var golangSchemaValidationPath string = "../api/schemas/catalog.schema.json"
 var golangApiServerPolicySchemaPath string = "../api/policyvalidator/policy_json.schema.json"
-var golangServiceCatalogPath string = "../../../servicebroker/config/catalog.json"
+var golangServiceCatalogPath string = "../servicebroker/config/catalog.json"
 
 type Executables map[string]string
 type Ports map[string]int
