@@ -138,6 +138,9 @@ func (c *Config) Validate() error {
 	if c.ScalingEngine.ScalingEngineUrl == "" {
 		return fmt.Errorf("Configuration error: scaling_engine.scaling_engine_url is empty")
 	}
+	if c.MetricsCollector.MetricsCollectorUrl == "" {
+		return fmt.Errorf("Configuration error: metrics_collector.metrics_collector_url is empty")
+	}
 	if c.EventGenerator.EventGeneratorUrl == "" {
 		return fmt.Errorf("Configuration error: event_generator.event_generator_url is empty")
 	}

@@ -1,0 +1,30 @@
+cf:
+  api: https://api.bosh-lite.com
+  client_id: autoscaler_client_id
+  secret: autoscaler_client_secret
+server:
+  port: 8080
+  node_addrs:
+    - localhost:8080
+    - localhost:9080
+  node_index: 0
+health:
+  port: 8081
+logging:
+  level: debug
+db:
+  policy_db:
+    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+  instance_metrics_db:
+    url: postgres://postgres:postgres@localhost/autoscaler?sslmode=disable
+    max_open_connections: 10
+    max_idle_connections: 5
+    connection_max_lifetime: 60s
+collector:
+  refresh_interval: 30s
+  collect_interval: 10s
+  collect_method: polling
+  save_interval: 5s

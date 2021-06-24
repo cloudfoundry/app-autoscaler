@@ -8,6 +8,7 @@ import (
 
 	apiConfig "autoscaler/api/config"
 	egConfig "autoscaler/eventgenerator/config"
+	mcConfig "autoscaler/metricscollector/config"
 	mgConfig "autoscaler/metricsgateway/config"
 	msConfig "autoscaler/metricsserver/config"
 	opConfig "autoscaler/operator/config"
@@ -45,7 +46,7 @@ const (
 var golangAPIInfoFilePath string = "../api/exampleconfig/catalog-example.json"
 var golangSchemaValidationPath string = "../api/schemas/catalog.schema.json"
 var golangApiServerPolicySchemaPath string = "../api/policyvalidator/policy_json.schema.json"
-var golangServiceCatalogPath string = "../servicebroker/config/catalog.json"
+var golangServiceCatalogPath string = "../../../servicebroker/config/catalog.json"
 
 type Executables map[string]string
 type Ports map[string]int
@@ -66,6 +67,10 @@ type SchedulerClient struct {
 	TLS models.TLSCerts `json:"tls"`
 }
 type ScalingEngineClient struct {
+	Uri string          `json:"uri"`
+	TLS models.TLSCerts `json:"tls"`
+}
+type MetricsCollectorClient struct {
 	Uri string          `json:"uri"`
 	TLS models.TLSCerts `json:"tls"`
 }
@@ -236,6 +241,14 @@ func (components *Components) PrepareGolangApiServerConfig(dbURI string, publicA
 				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
 			},
 		},
+		MetricsCollector: apiConfig.MetricsCollectorConfig{
+			MetricsCollectorUrl: metricsCollectorUri,
+			TLSClientCerts: models.TLSCerts{
+				KeyFile:    filepath.Join(testCertDir, "metricscollector.key"),
+				CertFile:   filepath.Join(testCertDir, "metricscollector.crt"),
+				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			},
+		},
 		EventGenerator: apiConfig.EventGeneratorConfig{
 			EventGeneratorUrl: eventGeneratorUri,
 			TLSClientCerts: models.TLSCerts{
@@ -346,6 +359,48 @@ spring.main.allow-bean-definition-overriding=true
 	ioutil.WriteFile(cfgFile.Name(), []byte(settingJsonStr), 0777)
 	cfgFile.Close()
 	return cfgFile.Name()
+}
+
+func (components *Components) PrepareMetricsCollectorConfig(dbURI string, port int, ccNOAAUAAURL string, collectInterval time.Duration,
+	refreshInterval time.Duration, saveInterval time.Duration, collectMethod string, httpClientTimeout time.Duration, tmpDir string) string {
+	cfg := mcConfig.Config{
+		CF: cf.CFConfig{
+			API:      ccNOAAUAAURL,
+			ClientID: "admin",
+			Secret:   "admin",
+		},
+		Server: mcConfig.ServerConfig{
+			Port: port,
+			TLS: models.TLSCerts{
+				KeyFile:    filepath.Join(testCertDir, "metricscollector.key"),
+				CertFile:   filepath.Join(testCertDir, "metricscollector.crt"),
+				CACertFile: filepath.Join(testCertDir, "autoscaler-ca.crt"),
+			},
+			NodeAddrs: []string{"localhost"},
+			NodeIndex: 0,
+		},
+		Logging: helpers.LoggingConfig{
+			Level: LOGLEVEL,
+		},
+		DB: mcConfig.DBConfig{
+			InstanceMetricsDB: db.DatabaseConfig{
+				URL: dbURI,
+			},
+			PolicyDB: db.DatabaseConfig{
+				URL: dbURI,
+			},
+		},
+		Collector: mcConfig.CollectorConfig{
+			CollectInterval:       collectInterval,
+			RefreshInterval:       refreshInterval,
+			CollectMethod:         collectMethod,
+			SaveInterval:          saveInterval,
+			MetricCacheSizePerApp: 500,
+			PersistMetrics:        true,
+		},
+		HttpClientTimeout: httpClientTimeout,
+	}
+	return writeYmlConfig(tmpDir, MetricsCollector, &cfg)
 }
 
 func (components *Components) PrepareEventGeneratorConfig(dbUri string, port int, metricsCollectorURL string, scalingEngineURL string, aggregatorExecuteInterval time.Duration,
