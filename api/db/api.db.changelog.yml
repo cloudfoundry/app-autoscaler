@@ -1,0 +1,93 @@
+--- 
+databaseChangeLog:
+   - property:
+      name: policy_json.type
+      value: json
+      dbms: postgresql
+   - property:
+      name: policy_json.type
+      value: text
+      dbms: h2
+   - property:
+      name: policy_json.type
+      value: json
+      dbms: mysql
+   - changeSet:
+      id: 1
+      author: pradyutsarma
+      preConditions:
+      - onFail: MARK_RAN
+      - not:
+        - tableExists:
+            tableName: policy_json
+      changes:
+        - createTable:
+            tableName: policy_json
+            columns:
+              - column:
+                  name: app_id
+                  type: varchar(50)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: policy_json
+                  type: ${policy_json.type}
+              - column:
+                  name: guid
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+            tableName: policy_json
+   - changeSet:
+      id: 2
+      author: fujitsu
+      changes:
+      - update:
+          columns:
+          - column:
+              name: guid
+              type: varchar(50)
+              value: "1"
+          tableName: policy_json
+   - changeSet:
+      id: 3
+      author: paltanmoy
+      preConditions:
+      - onFail: MARK_RAN
+      - not:
+        - tableExists:
+            tableName: credentials
+      changes:
+        - createTable:
+            tableName: credentials
+            columns:
+              - column:
+                  name: id
+                  type: varchar(50)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: username
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: password
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: updated_at
+                  type: timestamp
+                  constraints:
+                    nullable: false
+        - createIndex:
+            columns:
+              - column:
+                  name: id
+                  type: varchar(255)
+            indexName: idx_credentials
+            tableName: credentials
+
