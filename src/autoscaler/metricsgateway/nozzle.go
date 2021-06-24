@@ -44,7 +44,6 @@ type Nozzle struct {
 	envelopChan              chan *loggregator_v2.Envelope
 	index                    int
 	shardID                  string
-	appIDs                   map[string]string
 	getAppIDsFunc            GetAppIDsFunc
 	context                  context.Context
 	cancelFunc               context.CancelFunc
