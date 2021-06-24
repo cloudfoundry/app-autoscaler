@@ -6,7 +6,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sync"
 	"testing"
 	"time"
 
@@ -29,9 +28,6 @@ var (
 	msPort           int
 	healthport       int
 	configFile       *os.File
-	messagesToSend   chan []byte
-	isTokenExpired   bool
-	eLock            *sync.Mutex
 	httpClient       *http.Client
 	healthHttpClient *http.Client
 )

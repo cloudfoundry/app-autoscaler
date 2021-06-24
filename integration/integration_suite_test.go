@@ -3,7 +3,6 @@ package integration
 import (
 	"autoscaler/cf"
 	"autoscaler/db"
-	"autoscaler/metricscollector/testhelpers"
 	"autoscaler/models"
 	as_testhelpers "autoscaler/testhelpers"
 	"bytes"
@@ -20,7 +19,6 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"syscall"
 	"testing"
 	"time"
 
@@ -63,7 +61,6 @@ var (
 	dbUrl                   string
 	LOGLEVEL                string
 	noaaPollingRegPath      = regexp.MustCompile(`^/apps/.*/containermetrics$`)
-	noaaStreamingRegPath    = regexp.MustCompile(`^/apps/.*/stream$`)
 	appSummaryRegPath       = regexp.MustCompile(`^/v2/apps/.*/summary$`)
 	appInstanceRegPath      = regexp.MustCompile(`^/v2/apps/.*$`)
 	v3appInstanceRegPath    = regexp.MustCompile(`^/v3/apps/.*$`)
@@ -72,9 +69,6 @@ var (
 	servicePlanRegPath      = regexp.MustCompile(`^/v2/service_plans/.*$`)
 	dbHelper                *sqlx.DB
 	fakeCCNOAAUAA           *ghttp.Server
-	messagesToSend          chan []byte
-	streamingDoneChan       chan bool
-	emptyMessageChannel     chan []byte
 	testUserId              string   = "testUserId"
 	testUserScope           []string = []string{"cloud_controller.read", "cloud_controller.write", "password.write", "openid", "network.admin", "network.write", "uaa.user"}
 
@@ -258,26 +252,6 @@ func stopMetricsGateway() {
 }
 func stopMetricsServer() {
 	ginkgomon.Kill(processMap[MetricsServerHTTP], 5*time.Second)
-}
-
-func sendSigusr2Signal(component string) {
-	process := processMap[component]
-	if process != nil {
-		process.Signal(syscall.SIGUSR2)
-	}
-}
-
-func sendKillSignal(component string) {
-	ginkgomon.Kill(processMap[component], 5*time.Second)
-}
-
-func stopAll() {
-	for _, process := range processMap {
-		if process == nil {
-			continue
-		}
-		ginkgomon.Interrupt(process, 15*time.Second)
-	}
 }
 
 func getRandomId() string {
@@ -639,14 +613,6 @@ func getAppMetricTotalCount(appId string) int {
 	return count
 }
 
-func getCredentialsCount(appId string) int {
-	var count int
-	query := dbHelper.Rebind("SELECT COUNT(*) FROM credentials WHERE id=?")
-	err := dbHelper.QueryRow(query, appId).Scan(&count)
-	Expect(err).NotTo(HaveOccurred())
-	return count
-}
-
 type GetResponse func(id string, port int, httpClient *http.Client) (*http.Response, error)
 type GetResponseWithParameters func(apiServerPort int, pathVariables []string, parameters map[string]string) (*http.Response, error)
 
@@ -787,44 +753,6 @@ func fakeMetricsPolling(appId string, memoryValue uint64, memQuota uint64) {
 			}
 		},
 	)
-}
-
-func fakeMetricsStreaming(appId string, memoryValue uint64, memQuota uint64) {
-	messagesToSend = make(chan []byte, 256)
-	wsHandler := testhelpers.NewWebsocketHandler(messagesToSend, 100*time.Millisecond)
-	fakeCCNOAAUAA.RouteToHandler("GET", "/apps/"+appId+"/stream", wsHandler.ServeWebsocket)
-
-	streamingDoneChan = make(chan bool)
-	ticker := time.NewTicker(500 * time.Millisecond)
-	go func() {
-		select {
-		case <-streamingDoneChan:
-			ticker.Stop()
-			return
-		case <-ticker.C:
-			timestamp := time.Now().UnixNano()
-			message1 := marshalMessage(createContainerMetric(appId, 0, 3.0, memoryValue, 2048000000, memQuota, 4096000000, timestamp-int64(time.Duration(breachDurationSecs)*time.Second)))
-			messagesToSend <- message1
-			message2 := marshalMessage(createContainerMetric(appId, 1, 4.0, memoryValue, 2048000000, memQuota, 4096000000, timestamp))
-			messagesToSend <- message2
-			message3 := marshalMessage(createContainerMetric(appId, 2, 5.0, memoryValue, 2048000000, memQuota, 4096000000, timestamp))
-			messagesToSend <- message3
-			message4 := marshalMessage(createContainerMetric(appId, 2, 5.0, memoryValue, 2048000000, memQuota, 4096000000, timestamp))
-			messagesToSend <- message4
-			message5 := marshalMessage(createContainerMetric(appId, 2, 5.0, memoryValue, 2048000000, memQuota, 4096000000, timestamp+int64(time.Duration(breachDurationSecs)*time.Second)))
-			messagesToSend <- message5
-		}
-	}()
-
-	emptyMessageChannel = make(chan []byte, 256)
-	emptyWsHandler := testhelpers.NewWebsocketHandler(emptyMessageChannel, 200*time.Millisecond)
-	fakeCCNOAAUAA.RouteToHandler("GET", noaaStreamingRegPath, emptyWsHandler.ServeWebsocket)
-}
-
-func closeFakeMetricsStreaming() {
-	close(streamingDoneChan)
-	close(messagesToSend)
-	close(emptyMessageChannel)
 }
 
 func startFakeRLPServer(appId string, envelopes []*loggregator_v2.Envelope, emitInterval time.Duration) *as_testhelpers.FakeEventProducer {

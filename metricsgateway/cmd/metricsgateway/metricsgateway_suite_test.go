@@ -43,8 +43,6 @@ var (
 	loggregatorClientCrtPath = filepath.Join(testCertDir, "reverselogproxy_client.crt")
 	loggregatorClientKeyPath = filepath.Join(testCertDir, "reverselogproxy_client.key")
 
-	metricServerCrtPath       = filepath.Join(testCertDir, "metricserver.crt")
-	metricServerKeyPath       = filepath.Join(testCertDir, "metricserver.key")
 	metricServerClientCrtPath = filepath.Join(testCertDir, "metricserver_client.crt")
 	metricServerClientKeyPath = filepath.Join(testCertDir, "metricserver_client.key")
 

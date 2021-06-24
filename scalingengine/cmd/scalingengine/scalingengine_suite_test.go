@@ -181,7 +181,6 @@ func writeConfig(c *config.Config) *os.File {
 type ScalingEngineRunner struct {
 	configPath string
 	startCheck string
-	port       int
 	Session    *gexec.Session
 }
 

@@ -17,9 +17,7 @@ type Limiter interface {
 }
 
 type RateLimiter struct {
-	duration time.Duration
-	store    Store
-	logger   lager.Logger
+	store Store
 }
 
 func DefaultRateLimiter(maxAmount int, validDuration time.Duration, logger lager.Logger) *RateLimiter {
