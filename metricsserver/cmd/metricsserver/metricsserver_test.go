@@ -95,22 +95,6 @@ var _ = Describe("MetricsServer", func() {
 
 	})
 
-	Describe("MetricsServer REST API", func() {
-		Context("when a request for metrics history comes", func() {
-			BeforeEach(func() {
-				runner.Start()
-			})
-
-			It("returns with a 200", func() {
-				rsp, err := httpClient.Get(fmt.Sprintf("http://127.0.0.1:%d/v1/apps/an-app-id/metric_histories/a-metric-type", msPort))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
-				rsp.Body.Close()
-			})
-		})
-
-	})
-
 	Describe("when Health server is ready to serve RESTful API", func() {
 		BeforeEach(func() {
 
