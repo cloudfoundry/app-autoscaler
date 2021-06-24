@@ -9,8 +9,6 @@ import (
 	"autoscaler/db/sqldb"
 	"autoscaler/healthendpoint"
 	"autoscaler/helpers"
-	mc_config "autoscaler/metricscollector/config"
-	mc_server "autoscaler/metricscollector/server"
 	"autoscaler/metricsserver/collector"
 	"autoscaler/metricsserver/config"
 	"autoscaler/models"
@@ -135,23 +133,24 @@ func main() {
 		serverNodeAddrs[i] = fmt.Sprintf("%s:%d", n, conf.Server.Port)
 	}
 
-	httpServerConfig := &mc_config.ServerConfig{
-		Port:      conf.Server.Port,
-		TLS:       conf.Server.TLS,
-		NodeAddrs: serverNodeAddrs,
-		NodeIndex: conf.NodeIndex,
-	}
+	// httpServerConfig := &config.ServerConfig{
+	// 	Port: conf.Server.Port,
+	// 	TLS:  conf.Server.TLS,
+	// 	//NodeAddrs: serverNodeAddrs,
+	// 	//NodeIndex: conf.NodeIndex,
+	// }
 
-	httpServer, err := mc_server.NewServer(logger.Session("http_server"), httpServerConfig, coll.QueryMetrics, httpStatusCollector)
-	if err != nil {
-		logger.Error("failed to create http server", err)
-		os.Exit(1)
-	}
+	// // func collector.NewWSServer(logger lager.Logger, tls models.TLSCerts, port int, keepAlive time.Duration, envelopeChannels []chan *loggregator_v2.Envelope, httpStatusCollector healthendpoint.HTTPStatusCollector) (ifrit.Runner, error)
+	// httpServer, err := collector.NewWSServer(logger.Session("http_server"), httpServerConfig, coll.QueryMetrics, httpStatusCollector)
+	// if err != nil {
+	// 	logger.Error("failed to create http server", err)
+	// 	os.Exit(1)
+	// }
 
 	members := grouper.Members{
 		{"metric_server", metricsServer},
 		{"ws_server", wsServer},
-		{"http_server", httpServer},
+		//{"http_server", httpServer},
 		{"health_server", healthServer},
 	}
 	monitor := ifrit.Invoke(sigmon.New(grouper.NewOrdered(os.Interrupt, members)))
