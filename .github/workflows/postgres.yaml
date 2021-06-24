@@ -104,3 +104,14 @@ jobs:
             export DBURL="postgres://postgres:postgres@localhost/autoscaler?sslmode=disable"
             make integration
           popd
+
+      - name: Go SonarCloud Scan
+        uses: silvestre/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          projectBaseDir: src/autoscaler
+          args: >
+            -Dsonar.organization=cloudfoundry
+            -Dsonar.projectKey=app-autoscaler
