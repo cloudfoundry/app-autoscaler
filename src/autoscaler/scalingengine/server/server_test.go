@@ -25,7 +25,6 @@ var (
 	server              ifrit.Process
 	serverUrl           string
 	scalingEngineDB     *fakes.FakeScalingEngineDB
-	scheduleDB          *fakes.FakeSchedulerDB
 	sychronizer         *fakes.FakeActiveScheduleSychronizer
 	httpStatusCollector *fakes.FakeHTTPStatusCollector
 )

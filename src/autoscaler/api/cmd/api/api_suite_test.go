@@ -35,7 +35,6 @@ const (
 var (
 	apPath           string
 	cfg              config.Config
-	apPort           int
 	configFile       *os.File
 	apiHttpClient    *http.Client
 	brokerHttpClient *http.Client
@@ -194,6 +193,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		filepath.Join(testCertDir, "servicebroker.crt"),
 		filepath.Join(testCertDir, "servicebroker.key"),
 		filepath.Join(testCertDir, "autoscaler-ca.crt"))
+	Expect(err).NotTo(HaveOccurred())
 	brokerHttpClient = &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: brokerClientTLSConfig,
