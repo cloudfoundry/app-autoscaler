@@ -18,6 +18,7 @@
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<java.version>1.8</java.version>
+		<io.prometheus.simpleclient.version>0.11.0</io.prometheus.simpleclient.version>
 	</properties>
 
 	<dependencies>
@@ -107,19 +108,19 @@
 		<dependency>
 			<groupId>io.prometheus</groupId>
 			<artifactId>simpleclient</artifactId>
-			<version>0.5.0</version>
+			<version>${io.prometheus.simpleclient.version}</version>
 		</dependency>
 		<!-- Hotspot JVM metrics-->
 		<dependency>
 			<groupId>io.prometheus</groupId>
 			<artifactId>simpleclient_hotspot</artifactId>
-			<version>0.5.0</version>
+			<version>${io.prometheus.simpleclient.version}</version>
 		</dependency>
 		<!-- Exposition HTTPServer-->
 		<dependency>
 			<groupId>io.prometheus</groupId>
 			<artifactId>simpleclient_httpserver</artifactId>
-			<version>0.5.0</version>
+			<version>${io.prometheus.simpleclient.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
