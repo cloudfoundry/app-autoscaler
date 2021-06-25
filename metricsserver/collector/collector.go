@@ -13,6 +13,9 @@ import (
 	"code.cloudfoundry.org/lager"
 )
 
+type MetricQueryFunc func(appID string, instanceIndex int, name string,
+	start, end int64, order db.OrderType) ([]*models.AppInstanceMetric, error)
+
 type MetricCollector interface {
 	Start()
 	Stop()

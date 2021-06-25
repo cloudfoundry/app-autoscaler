@@ -11,7 +11,7 @@ BUILDTAGS :=
 build-%:
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) build $(BUILDTAGS) $(BUILDFLAGS) -o build/$* $*/cmd/$*/main.go
 
-build: build-scalingengine build-metricscollector build-metricsforwarder build-eventgenerator build-api build-metricsgateway build-metricsserver build-operator
+build: build-scalingengine build-metricsforwarder build-eventgenerator build-api build-metricsgateway build-metricsserver build-operator
 
 check: fmt lint build test
 

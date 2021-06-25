@@ -1,9 +1,8 @@
-package server
+package collector
 
 import (
 	"autoscaler/db"
 	"autoscaler/helpers"
-	"autoscaler/metricscollector/collector"
 	"autoscaler/models"
 
 	"code.cloudfoundry.org/cfhttp/handlers"
@@ -20,10 +19,10 @@ type MetricHandler struct {
 	nodeIndex int
 	nodeAdds  []string
 	logger    lager.Logger
-	queryFunc collector.MetricQueryFunc
+	queryFunc MetricQueryFunc
 }
 
-func NewMetricHandler(logger lager.Logger, nodeIndex int, nodeAdds []string, query collector.MetricQueryFunc) *MetricHandler {
+func NewMetricHandler(logger lager.Logger, nodeIndex int, nodeAdds []string, query MetricQueryFunc) *MetricHandler {
 	return &MetricHandler{
 		nodeIndex: nodeIndex,
 		nodeAdds:  nodeAdds,
