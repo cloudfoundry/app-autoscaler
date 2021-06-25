@@ -42,7 +42,7 @@ buildtools:
 	$(GO) get github.com/square/certstrap
 	$(GO) get github.com/onsi/ginkgo/ginkgo
 	$(GO) get github.com/maxbrunsfeld/counterfeiter/v6
-	$(GO) get github.com/golangci/golangci-lint
+	$(GO) get github.com/golangci/golangci-lint/cmd/golangci-lint
 
 lint:
 	golangci-lint run
