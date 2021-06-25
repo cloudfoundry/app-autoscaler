@@ -20,18 +20,22 @@
 		<dependency>
 			<groupId>org.liquibase</groupId>
 			<artifactId>liquibase-core</artifactId>
-			<version>3.6.3</version>
+			<version>4.4.0</version>
 		</dependency>
-
+		<dependency>
+    			<groupId>org.yaml</groupId>
+    			<artifactId>snakeyaml</artifactId>
+    			<version>1.29</version>
+		</dependency>
 		<dependency>
 			<groupId>org.postgresql</groupId>
 			<artifactId>postgresql</artifactId>
 			<version>42.2.22</version>
 		</dependency>
 		<dependency>
-		    <groupId>mysql</groupId>
-		    <artifactId>mysql-connector-java</artifactId>
-		    <version>8.0.18</version>
+			<groupId>mysql</groupId>
+			<artifactId>mysql-connector-java</artifactId>
+			<version>8.0.18</version>
 		</dependency>
 	</dependencies>
 
