@@ -1,4 +1,4 @@
-package server_test
+package collector_test
 
 import (
 	. "github.com/onsi/ginkgo"

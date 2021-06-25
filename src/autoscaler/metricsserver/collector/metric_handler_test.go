@@ -1,8 +1,8 @@
-package server_test
+package collector_test
 
 import (
 	"autoscaler/db"
-	. "autoscaler/metricscollector/server"
+	. "autoscaler/metricsserver/collector"
 	"autoscaler/models"
 
 	"code.cloudfoundry.org/lager"
