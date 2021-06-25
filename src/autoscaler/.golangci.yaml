@@ -57,7 +57,7 @@ linters:
   disable-all: true
   enable:
     - asciicheck
-      #    - deadcode
+    - deadcode
     - depguard
     - dogsled
       #    - dupl
@@ -84,7 +84,7 @@ linters:
       #    - typecheck
       #    - unconvert
       #    - unparam
-      #    - unused
+    - unused
       #    - varcheck
     - whitespace
       #    - godox

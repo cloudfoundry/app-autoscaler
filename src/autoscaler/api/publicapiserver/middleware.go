@@ -15,9 +15,7 @@ import (
 
 type Middleware struct {
 	logger           lager.Logger
-	cf               cf.CFConfig
 	cfClient         cf.CFClient
-	cfTokenEndpoint  string
 	checkBindingFunc api.CheckBindingFunc
 }
 

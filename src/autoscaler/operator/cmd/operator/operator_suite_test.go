@@ -30,7 +30,6 @@ var (
 	cfg               config.Config
 	configFile        *os.File
 	cfServer          *ghttp.Server
-	appId             string
 	healthHttpClient  *http.Client
 	healthport        int
 	appSummaryRegPath = regexp.MustCompile(`^/v2/apps/.*/summary$`)
