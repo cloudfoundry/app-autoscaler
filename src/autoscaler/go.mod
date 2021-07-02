@@ -1,6 +1,6 @@
 module autoscaler
 
-go 1.16
+go 1.15
 
 require (
 	code.cloudfoundry.org/cfhttp v2.0.0+incompatible
@@ -12,10 +12,7 @@ require (
 	github.com/cenk/backoff v2.2.1+incompatible // indirect
 	github.com/cenkalti/backoff/v4 v4.1.1
 	github.com/cloudfoundry-incubator/uaago v0.0.0-20190307164349-8136b7bbe76e
-	github.com/cloudfoundry/noaa v2.1.0+incompatible
 	github.com/cloudfoundry/sonde-go v0.0.0-20200416163440-a42463ba266b
-	github.com/elazarl/goproxy v0.0.0-20210110162100-a92cc753f88e // indirect
-	github.com/elazarl/goproxy/ext v0.0.0-20210110162100-a92cc753f88e // indirect
 	github.com/facebookgo/clock v0.0.0-20150410010913-600d898af40a // indirect
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gogo/protobuf v1.3.2
@@ -26,7 +23,7 @@ require (
 	github.com/jmoiron/sqlx v1.3.4
 	github.com/lib/pq v1.10.2
 	github.com/mailru/easyjson v0.7.7 // indirect
-	github.com/maxbrunsfeld/counterfeiter/v6 v6.4.1 // indirect
+	github.com/maxbrunsfeld/counterfeiter/v6 v6.4.1
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.13.0
