@@ -9,4 +9,5 @@
 *.coverprofile
 **/.idea
 src/autoscaler/build
+src/autoscaler/vendor
 workflow
