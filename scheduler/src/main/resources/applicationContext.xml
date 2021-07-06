@@ -19,64 +19,10 @@
     <!-- Turn on AspectJ @Configurable support. As a result, any time you instantiate
         an object, Spring will attempt to perform dependency injection on that object. -->
     <context:spring-configured/>
-    <!-- This declaration will cause Spring to locate every @Component, @Repository
-        and @Service in your application. -->
-    <context:component-scan base-package="org.cloudfoundry.autoscaler.scheduler"/>
 
-    <bean id="entityManagerFactory"
-          class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean">
-        <property name="dataSource" ref="dataSource"/>
-        <property name="packagesToScan" value="org.cloudfoundry.autoscaler.scheduler"/>
-        <property name="jpaVendorAdapter">
-            <bean class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter"/>
-        </property>
-        <property name="jpaProperties">
-            <props>
-                <prop key="hibernate.archive.autodetection">class,hbm</prop>
-                <prop key="hibernate.hbm2ddl.auto">none</prop>
-                <prop key="hibernate.show_sql">false</prop>
-                <prop key="hibernate.dialect">org.hibernate.dialect.PostgreSQL94Dialect</prop>
-            </props>
-        </property>
-    </bean>
-
-    <bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource" primary="true"
-          destroy-method="close">
-        <property name="driverClassName" value="${spring.datasource.driverClassName}"/>
-        <property name="url" value="${spring.datasource.url}"/>
-        <property name="username" value="${spring.datasource.username}"/>
-        <property name="password" value="${spring.datasource.password}"/>
-
-        <property name="maxTotal" value="${spring.datasource.dbcp2.max-total:8}"/>
-        <property name="maxIdle" value="${spring.datasource.dbcp2.max-idle:8}"/>
-        <property name="minIdle" value="${spring.datasource.dbcp2.min-idle:0}"/>
-        <property name="initialSize" value="${spring.datasource.dbcp2.initial-size:0}"/>
-    </bean>
-    
-    <bean id="policyDbDataSource" class="org.apache.commons.dbcp2.BasicDataSource"
-          destroy-method="close">
-        <property name="driverClassName" value="${spring.policy-db-datasource.driverClassName}"/>
-        <property name="url" value="${spring.policy-db-datasource.url}"/>
-        <property name="username" value="${spring.policy-db-datasource.username}"/>
-        <property name="password" value="${spring.policy-db-datasource.password}"/>
-
-        <property name="maxTotal" value="${spring.policy-db-datasource.max-total:8}"/>
-        <property name="maxIdle" value="${spring.policy-db-datasource.max-idle:8}"/>
-        <property name="minIdle" value="${spring.policy-db-datasource.min-idle:0}"/>
-        <property name="initialSize" value="${spring.policy-db-datasource.initial-size:0}"/>
-    </bean>
-    
-	<bean id="dbStatusCollector" class="org.cloudfoundry.autoscaler.scheduler.health.DBStatusCollector">
-		<property name="dataSource" ref="dataSource"></property>
-		<property name="policyDBDataSource" ref="policyDbDataSource"></property>
-	</bean>
 	<bean class="io.prometheus.client.exporter.HTTPServer">
 		<constructor-arg value="${scheduler.healthserver.port:8081}"/>
 	</bean>
-	<bean id="healthExporter" class="org.cloudfoundry.autoscaler.scheduler.health.HealthExporter" init-method="init">
-		<property name="dbStatusCollector" ref="dbStatusCollector"></property>
-	</bean>
-	
     <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager" primary="true">
         <property name="entityManagerFactory" ref="entityManagerFactory"/>
     </bean>
