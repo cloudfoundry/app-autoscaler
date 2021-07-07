@@ -1,9 +1,7 @@
 package org.cloudfoundry.autoscaler.scheduler.conf;
 
-import org.apache.commons.dbcp2.BasicDataSource;
 import org.cloudfoundry.autoscaler.scheduler.health.DBStatusCollector;
 import org.cloudfoundry.autoscaler.scheduler.health.HealthExporter;
-import org.graalvm.compiler.lir.BailoutAndRestartBackendException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -13,7 +11,6 @@ import javax.sql.DataSource;
 
 @Configuration
 public class HealthConfig {
-
 
     @Bean
     public DBStatusCollector dbStatusCollector(@Qualifier("primary") DataSource primaryDS, @Qualifier("policy") DataSource policyDS) {
@@ -30,8 +27,4 @@ public class HealthConfig {
         healthExporter.init();
         return healthExporter;
     }
-
-
-
-
 }
