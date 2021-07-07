@@ -20,9 +20,9 @@
         an object, Spring will attempt to perform dependency injection on that object. -->
     <context:spring-configured/>
 
-	<bean class="io.prometheus.client.exporter.HTTPServer">
+<!--	<bean class="io.prometheus.client.exporter.HTTPServer">
 		<constructor-arg value="${scheduler.healthserver.port:8081}"/>
-	</bean>
+	</bean>-->
     <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager" primary="true">
         <property name="entityManagerFactory" ref="entityManagerFactory"/>
     </bean>
