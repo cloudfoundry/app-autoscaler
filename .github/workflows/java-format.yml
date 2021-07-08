@@ -23,6 +23,6 @@ jobs:
             mvn --no-transfer-progress checkstyle:checkstyle
           popd
 
-      - run: Publish Results
+      - name: Publish Results
         run: ./format-checkstyle.groovy
           
