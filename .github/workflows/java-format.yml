@@ -15,7 +15,12 @@ jobs:
         with:
           distribution: 'adopt'
           java-version: 11
-      
+  
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16
+
       - name: Checkstyle
         run: |
           pushd scheduler
@@ -25,6 +30,5 @@ jobs:
 
       - name: Publish Results
         run: |
-         sudo apt-get install -y groovy
-         groovy format-checkstyle.groovy
+         go run format_checkstyle.go
           
