@@ -45,9 +45,16 @@ func main() {
         panic(err)
     }
 
+    count := 0
     for _, f := range result.Files {
       for _, e := range f.Errors {
+	count++
         fmt.Printf("::%s file=%s,line=%s,col=%s::%s\n", e.Severity, f.Name, e.Line, e.Column, e.Message)
       }
+    }
+
+    fmt.Printf("Total %d Issues\n", count)
+    if count > 0 {
+      os.Exit(1)
     }
 }
