@@ -21,10 +21,8 @@ jobs:
           pushd scheduler
             mvn --no-transfer-progress jxr:jxr
             mvn --no-transfer-progress checkstyle:checkstyle
-            ls -alh target/checkstyle*
           popd
 
-      - uses: jwgmeligmeyling/checkstyle-github-action@master
-        with:
-          path: 'scheduler/target/checkstyle-result.xml'
+      - run: Publish Results
+        run: ./format-checkstyle.groovy
           
