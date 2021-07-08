@@ -26,5 +26,5 @@ jobs:
       - name: Publish Results
         run: |
          sudo apt-get install -y groovy
-         ./format-checkstyle.groovy
+         groovy format-checkstyle.groovy
           
