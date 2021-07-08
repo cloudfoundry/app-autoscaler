@@ -71,10 +71,20 @@ public class DataSourceConfig {
     }
 
     @Bean
+    @Primary
+    @Qualifier("primary")
     public JpaTransactionManager transactionManager(@Qualifier("primary") LocalContainerEntityManagerFactoryBean localContainerEntityManagerFactoryBean) {
         JpaTransactionManager transactionManager = new JpaTransactionManager();
         transactionManager.setEntityManagerFactory(localContainerEntityManagerFactoryBean.getObject());
         return transactionManager;
+    }
+
+    @Bean
+    @Qualifier("policy")
+    public JpaTransactionManager policyDbTransactionManager(@Qualifier("policy") DataSource policyDataSource) {
+        JpaTransactionManager policyTransactionManager = new JpaTransactionManager();
+        policyTransactionManager.setDataSource(policyDataSource);
+        return policyTransactionManager;
     }
 
 
@@ -85,4 +95,6 @@ public class DataSourceConfig {
         properties.setProperty("hibernate.dialect", "org.hibernate.dialect.PostgreSQL94Dialect");
         return properties;
     }
+
+
 }

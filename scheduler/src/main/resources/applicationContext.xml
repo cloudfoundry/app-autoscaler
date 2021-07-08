@@ -22,7 +22,7 @@
 
 <!--	<bean class="io.prometheus.client.exporter.HTTPServer">
 		<constructor-arg value="${scheduler.healthserver.port:8081}"/>
-	</bean>-->
+	</bean>
     <bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager" primary="true">
         <property name="entityManagerFactory" ref="entityManagerFactory"/>
     </bean>
@@ -32,9 +32,9 @@
         <qualifier value="policyDbTransactionManager"/>
     </bean>
     
-    <tx:annotation-driven/>
+    <tx:annotation-driven/> -->
 
-    <bean id="quartzScheduler"
+    <!--<bean id="quartzScheduler"
           class="org.springframework.scheduling.quartz.SchedulerFactoryBean"
           lazy-init="false">
         <property name="autoStartup" value="true"/>
@@ -53,8 +53,8 @@
         </property>
         <property name="quartzProperties">
             <props>
-                <!-- The the number of milliseconds the scheduler will ‘tolerate’ a trigger to pass its next-fire-time by,
-                before being considered “misfired”. The default value (if not specified in  configuration) is 60000 (60 seconds). -->
+                &lt;!&ndash; The the number of milliseconds the scheduler will ‘tolerate’ a trigger to pass its next-fire-time by,
+                before being considered “misfired”. The default value (if not specified in  configuration) is 60000 (60 seconds). &ndash;&gt;
                 <prop key="org.quartz.jobStore.misfireThreshold">120000</prop>
                 <prop key="org.quartz.jobStore.driverDelegateClass">org.quartz.impl.jdbcjobstore.PostgreSQLDelegate
                 </prop>
@@ -63,6 +63,6 @@
                 <prop key="org.quartz.threadPool.threadCount">10</prop>
             </props>
         </property>
-    </bean>
+    </bean>-->
     <bean id="datasourceBeanPostProcessor" class="org.cloudfoundry.autoscaler.scheduler.beanPostProcessor.DatasourceBeanPostProcessor"/>
 </beans>
