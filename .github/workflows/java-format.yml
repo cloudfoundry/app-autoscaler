@@ -18,9 +18,11 @@ jobs:
       
       - name: Checkstyle
         run: |
-          mvn --no-transfer-progress jxr:jxr
-          mvn --no-transfer-progress checkstyle:checkstyle
-          ls -alh target/checkstyle*
+          pushd scheduler
+            mvn --no-transfer-progress jxr:jxr
+            mvn --no-transfer-progress checkstyle:checkstyle
+            ls -alh target/checkstyle*
+          popd
 
           #      - uses: axel-op/googlejavaformat-action@v3
           #        with:
