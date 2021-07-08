@@ -9,8 +9,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Run check style
-        uses: nikitasavinov/checkstyle-action@master
+
+      - name: Setup Java
+        uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: 11
+      
+      - name: Checkstyle
+        run: |
+          mvn --no-transfer-progress jxr:jxr
+          mvn --no-transfer-progress checkstyle:checkstyle
+          ls -alh target/checkstyle*
 
           #      - uses: axel-op/googlejavaformat-action@v3
           #        with:
