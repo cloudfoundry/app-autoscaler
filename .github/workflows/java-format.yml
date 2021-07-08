@@ -24,7 +24,7 @@ jobs:
             ls -alh target/checkstyle*
           popd
 
-          #      - uses: axel-op/googlejavaformat-action@v3
-          #        with:
-          #          skipCommit: true
-          #          args: "--skip-sorting-imports --set-exit-if-changed"
+      - uses: jwgmeligmeyling/checkstyle-github-action@master
+        with:
+          path: 'scheduler/target/checkstyle-result.xml'
+          
