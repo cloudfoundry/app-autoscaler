@@ -24,5 +24,7 @@ jobs:
           popd
 
       - name: Publish Results
-        run: ./format-checkstyle.groovy
+        run: |
+         sudo apt-get install -y groovy
+         ./format-checkstyle.groovy
           
