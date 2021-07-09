@@ -1,11 +1,18 @@
 package org.cloudfoundry.autoscaler.scheduler.conf;
 
 import org.cloudfoundry.autoscaler.scheduler.quartz.QuartzJobFactory;
+import org.quartz.spi.TriggerFiredBundle;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.config.AutowireCapableBeanFactory;
 import org.springframework.boot.autoconfigure.quartz.QuartzProperties;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.quartz.SchedulerFactoryBean;
+import org.springframework.scheduling.quartz.SpringBeanJobFactory;
 import org.springframework.transaction.PlatformTransactionManager;
 
 import javax.sql.DataSource;
@@ -13,6 +20,10 @@ import java.util.Properties;
 
 @Configuration
 public class QuartzConfig {
+
+
+   /* @Value("${spring.org.quartz.scheduler.instanceId}")
+    private String schedulerInstanceId;*/
 
     private final DataSource primaryDataSource;
     private final PlatformTransactionManager primaryTransactionManager;
@@ -27,26 +38,29 @@ public class QuartzConfig {
     }
 
     @Bean
-    public SchedulerFactoryBean quartzScheduler() {
+    public SchedulerFactoryBean quartzScheduler(@Qualifier("primary") DataSource primaryDataSource) throws Exception {
 
         SchedulerFactoryBean schedulerFactoryBean = new SchedulerFactoryBean();
-        schedulerFactoryBean.setQuartzProperties(getQuartzProperties());
-        schedulerFactoryBean.setApplicationContext(applicationContext);
         schedulerFactoryBean.setWaitForJobsToCompleteOnShutdown(true);
         schedulerFactoryBean.setOverwriteExistingJobs(true);
         schedulerFactoryBean.setDataSource(primaryDataSource);
         schedulerFactoryBean.setTransactionManager(primaryTransactionManager);
         schedulerFactoryBean.setJobFactory(quartzJobFactory());
 
-        return new SchedulerFactoryBean();
+        schedulerFactoryBean.setQuartzProperties(getQuartzProperties());
+        //schedulerFactoryBean.setSchedulerName(schedulerName);
+        schedulerFactoryBean.afterPropertiesSet();
+        return schedulerFactoryBean;
     }
 
     @Bean
     public QuartzJobFactory quartzJobFactory() {
-        return new QuartzJobFactory();
+        QuartzJobFactory jobFactory = new QuartzJobFactory();
+        jobFactory.setApplicationContext(applicationContext);
+        return jobFactory;
     }
 
-    private Properties getQuartzProperties() {
+    public Properties getQuartzProperties() {
         Properties properties = new Properties();
         properties.putAll(quartzProperties.getProperties());
         return properties;
