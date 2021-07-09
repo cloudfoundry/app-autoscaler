@@ -344,7 +344,14 @@ client.httpClientTimeout=%d
 #Quartz
 org.quartz.scheduler.instanceName=app-autoscaler
 org.quartz.scheduler.instanceId=0
-
+spring.quartz.properties.org.quartz.scheduler.instanceName=app-autoscaler
+spring.quartz.properties.org.quartz.scheduler.instanceId=scheduler-12345
+#The the number of milliseconds the scheduler will ‘tolerate’ a trigger to pass its next-fire-time by,
+# before being considered “misfired”. The default value (if not specified in  configuration) is 60000 (60 seconds)
+spring.quartz.properties.org.quartz.jobStore.misfireThreshold=120000
+spring.quartz.properties.org.quartz.jobStore.driverDelegateClass=org.quartz.impl.jdbcjobstore.PostgreSQLDelegate
+spring.quartz.properties.org.quartz.jobStore.isClustered=true
+spring.quartz.properties.org.quartz.threadPool.threadCount=10
 spring.application.name=scheduler
 spring.mvc.servlet.load-on-startup=1
 spring.aop.auto=false
