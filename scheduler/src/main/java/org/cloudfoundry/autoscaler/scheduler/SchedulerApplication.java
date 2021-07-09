@@ -44,7 +44,6 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 		JdbcTemplateAutoConfiguration.class, JtaAutoConfiguration.class,
 		HibernateJpaAutoConfiguration.class, JpaRepositoriesAutoConfiguration.class,
 		ValidationAutoConfiguration.class})
-@ImportResource("classpath:applicationContext.xml")
 public class SchedulerApplication {
 	private Logger logger = LogManager.getLogger(this.getClass());
 
