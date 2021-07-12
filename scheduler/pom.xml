@@ -138,6 +138,11 @@
 			<artifactId>spring-boot-devtools</artifactId>
 			<optional>true</optional>
 		</dependency>
+		<dependency>
+			<groupId>com.google.googlejavaformat</groupId>
+			<artifactId>google-java-format</artifactId>
+			<version>1.10.0</version>
+		</dependency>
     </dependencies>
 
     <build>
@@ -168,6 +173,22 @@
 					<reuseForks>false</reuseForks>
           		</configuration>
         	</plugin>
+
+			<plugin>
+				<groupId>com.coveo</groupId>
+				<artifactId>fmt-maven-plugin</artifactId>
+				<version>2.9.1</version>
+				<executions>
+					<execution>
+						<id>check-formatting</id>
+						<phase>compile</phase>
+						<goals>
+							<goal>check</goal>
+						</goals>
+					</execution>
+
+				</executions>
+			</plugin>
 	  	</plugins>
 	</build>
 
