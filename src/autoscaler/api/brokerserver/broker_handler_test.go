@@ -1008,7 +1008,7 @@ var _ = Describe("BrokerHandler", func() {
 			})
 			It("succeed with 410", func() {
 				Expect(resp.Code).To(Equal(http.StatusGone), DebugTestInfo())
-				Expect(resp.Body.String()).To(Equal(`{"code":"Gone","message":"Binding does not exist"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Gone","message":"Failed to unbind service: Service binding does not exist"}`))
 			})
 		})
 		Context("When failed to get appId by bindingId", func() {
@@ -1022,7 +1022,7 @@ var _ = Describe("BrokerHandler", func() {
 			})
 			It("succeed with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError), DebugTestInfo())
-				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error deleting service binding"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Failed to unbind service: Error deleting service binding"}`))
 			})
 		})
 		Context("When database DeleteServiceBinding call returns ErrDoesnotExist", func() {
@@ -1034,7 +1034,7 @@ var _ = Describe("BrokerHandler", func() {
 			})
 			It("fails with 410", func() {
 				Expect(resp.Code).To(Equal(http.StatusGone), DebugTestInfo())
-				Expect(resp.Body.String()).To(Equal(`{"code":"Gone","message":"Service Binding Doesn't Exist"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Gone","message":"Failed to unbind service: Service binding does not exist"}`))
 				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})
@@ -1048,7 +1048,7 @@ var _ = Describe("BrokerHandler", func() {
 			})
 			It("fails with 500", func() {
 				Expect(resp.Code).To(Equal(http.StatusInternalServerError), DebugTestInfo())
-				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Error deleting service binding"}`))
+				Expect(resp.Body.String()).To(Equal(`{"code":"Internal Server Error","message":"Failed to unbind service: Error deleting service binding"}`))
 				Expect(schedulerServer.ReceivedRequests()).To(HaveLen(1))
 			})
 		})

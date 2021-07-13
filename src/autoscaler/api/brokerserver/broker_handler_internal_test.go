@@ -117,7 +117,7 @@ var _ = Describe("BrokerHandler", func() {
 			})
 
 			It("sql.ErrNoRows error occurs", func() {
-				Expect(err.Error()).To(Equal("Binding does not exist"))
+				Expect(err.Error()).To(Equal("Service binding does not exist"))
 				Expect(policydb.DeletePolicyCallCount()).To(Equal(0))
 				Expect(bindingdb.DeleteServiceBindingCallCount()).To(Equal(0))
 
