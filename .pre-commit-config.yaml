@@ -7,7 +7,7 @@ repos:
     hooks:
         - id: java-formatter
           name: java-formatter
-          entry: style-guide/inspect-java-format.sh
+          entry: style-guide/inspect-java-format-0.1.sh
           language: script
           files: '\.java$'
           stages: [commit]
