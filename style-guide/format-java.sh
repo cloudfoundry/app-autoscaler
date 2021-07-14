@@ -34,7 +34,7 @@ if  [[ -n "$files_to_be_changed" ]]; then
     echo "Incorrect formatting found:"
     echo "$files_to_be_changed"
     echo "Please correct the formatting of the files(s) using one of the following options:"
-    echo "  mvn fmt:format"
     echo "  Reformat Code - IntelliJ or Format Document - Eclipse"
+    echo "  mvn fmt:format"
     exit 2
 fi
