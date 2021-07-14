@@ -32,9 +32,15 @@ if  [[ -n "$files_to_be_changed" ]]; then
     echo "Formatter Results:"
     echo "Analyzing java file(s) using google-java-format-1.10.0-all-deps.jar..."
     echo "Incorrect formatting found:"
+
+
+    files_to_be_changed=$(echo $files_to_be_changed|tr -d '\n')
     echo "$files_to_be_changed"
     echo "Please correct the formatting of the files(s) using one of the following options:"
     echo "  Reformat Code - IntelliJ or Format Document - Eclipse"
-    echo "  mvn fmt:format"
+    echo "  java -jar "$DOWNLOAD_PATH"/google-java-format-1.10.0-all-deps.jar -replace ${files_to_be_changed[*]}"
+
+
     exit 2
 fi
+  java -jar /Users/I545443/sap/asalan316/app-autoscaler/.cache/google-java-format-1.10.0-all-deps.jar -replace  scheduler/src/main/java/org/cloudfoundry/autoscaler/scheduler/SchedulerApplication.java  scheduler/src/main/java/org/cloudfoundry/autoscaler/scheduler/rest/ControllerExceptionHandler.java
