@@ -2,7 +2,6 @@ package main_test
 
 import (
 	"autoscaler/models"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
