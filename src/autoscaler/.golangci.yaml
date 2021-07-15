@@ -74,7 +74,7 @@ linters:
     - gomoddirectives
     - gomodguard  
       #    - ineffassign
-      #    - misspell
+    - misspell
     - nakedret
     - nolintlint
       #    - rowserrcheck

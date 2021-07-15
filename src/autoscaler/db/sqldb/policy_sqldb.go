@@ -85,7 +85,7 @@ func (pdb *PolicySQLDB) RetrievePolicies() ([]*models.PolicyJson, error) {
 	policyList := []*models.PolicyJson{}
 	rows, err := pdb.sqldb.Query(query)
 	if err != nil {
-		pdb.logger.Error("retrive-policy-list-from-policy_json-table", err,
+		pdb.logger.Error("retrieve-policy-list-from-policy_json-table", err,
 			lager.Data{"query": query})
 		return policyList, err
 	}

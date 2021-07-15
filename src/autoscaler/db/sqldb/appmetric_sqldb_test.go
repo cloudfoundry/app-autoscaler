@@ -316,7 +316,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 			})
 		})
 
-		Context("when retriving all the appMetrics)", func() {
+		Context("when retrieving all the appMetrics)", func() {
 			It("returns all the appMetrics ordered by timestamp", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(appMetrics).To(Equal([]*models.AppMetric{
@@ -344,7 +344,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 			})
 		})
 
-		Context("when retriving part of the appMetrics", func() {
+		Context("when retrieving part of the appMetrics", func() {
 			BeforeEach(func() {
 				start = 22222222
 				end = 66666666
@@ -369,7 +369,7 @@ var _ = Describe("AppMetricSQLDB", func() {
 			})
 		})
 
-		Context("when retriving the appMetrics with descending order)", func() {
+		Context("when retrieving the appMetrics with descending order)", func() {
 			BeforeEach(func() {
 				orderType = db.DESC
 			})
