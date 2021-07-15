@@ -419,7 +419,7 @@ func verifyResponse(httpClient *http.Client, serverUrl *url.URL, path string, he
 		body = strings.NewReader(httpRequestBody)
 	}
 	req, err := http.NewRequest(httpRequestMethod, serverUrl.String(), body)
-	if headers != nil && len(headers) > 0 {
+	if len(headers) > 0 {
 		for headerName, headerValue := range headers {
 			req.Header.Set(headerName, headerValue)
 		}
