@@ -17,7 +17,7 @@ repos:
     hooks:
         - id: go-imports
         - id: go-fmt
-        #- id: go-static-check # install https://staticcheck.io/docs/
+        - id: golangci-lint #TODO
 
 
 
