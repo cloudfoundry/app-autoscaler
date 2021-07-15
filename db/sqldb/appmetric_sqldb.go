@@ -169,7 +169,10 @@ func (adb *AppMetricSQLDB) RetrieveAppMetrics(appIdP string, metricTypeP string,
 		adb.logger.Error("retrieve-app-metric-list-from-app_metric-table", err, lager.Data{"query": query})
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+		_ = rows.Err()
+	}()
 	var appId string
 	var metricType string
 	var unit string
