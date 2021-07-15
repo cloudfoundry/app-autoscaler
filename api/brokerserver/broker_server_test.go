@@ -89,6 +89,7 @@ var _ = Describe("BrokerServer", func() {
 			req.SetBasicAuth(username, password)
 
 			rsp, err = httpClient.Do(req)
+			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("should get 404", func() {
