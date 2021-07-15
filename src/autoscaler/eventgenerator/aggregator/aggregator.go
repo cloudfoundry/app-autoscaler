@@ -107,7 +107,6 @@ func (a *Aggregator) startSavingAppMetric() {
 			if len(appMetricArray) > 0 {
 				go func(appMetricDB db.AppMetricDB, metrics []*models.AppMetric) {
 					appMetricDB.SaveAppMetricsInBulk(metrics)
-					return
 				}(a.appMetricDB, appMetricArray)
 				appMetricArray = []*models.AppMetric{}
 			}

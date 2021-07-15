@@ -111,7 +111,7 @@ func initDB() {
 	_, err = mgDB.Exec("DELETE from policy_json")
 	Expect(err).NotTo(HaveOccurred())
 
-	policy := fmt.Sprintf(`
+	policy := `
 		{
 		   "instance_min_count":1,
 		   "instance_max_count":5,
@@ -125,7 +125,7 @@ func initDB() {
 		         "adjustment":"+1"
 		      }
 		   ]
-		}`)
+		}`
 	query := mgDB.Rebind("INSERT INTO policy_json(app_id, policy_json, guid) values(?, ?, ?)")
 	_, err = mgDB.Exec(query, testAppId, policy, "1234")
 	Expect(err).NotTo(HaveOccurred())

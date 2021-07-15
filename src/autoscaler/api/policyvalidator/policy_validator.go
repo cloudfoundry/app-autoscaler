@@ -427,10 +427,7 @@ func hasIntersection(a []int, b []int) bool {
 func compareTimesGTEQ(firstTime string, secondTime string) bool {
 	ft, _ := time.Parse(TimeLayout, firstTime)
 	st, _ := time.Parse(TimeLayout, secondTime)
-	if ft.Sub(st) >= 0 {
-		return true
-	}
-	return false
+	return ft.Sub(st) >= 0
 }
 
 func compareDatesGTEQ(endDate string, startDate string) bool {
@@ -442,8 +439,5 @@ func compareDatesGTEQ(endDate string, startDate string) bool {
 	}
 	fd, _ := time.Parse(DateLayout, endDate)
 	sd, _ := time.Parse(DateLayout, startDate)
-	if fd.Sub(sd) >= 0 {
-		return true
-	}
-	return false
+	return fd.Sub(sd) >= 0
 }

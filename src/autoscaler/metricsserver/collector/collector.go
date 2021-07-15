@@ -216,7 +216,6 @@ func (c *metricCollector) saveMetrics() {
 				go func(instancemetricsDb db.InstanceMetricsDB, metrics []*models.AppInstanceMetric) {
 					instancemetricsDb.SaveMetricsInBulk(metrics)
 					metrics = nil
-					return
 				}(c.instancemetricsDb, metrics)
 				metrics = nil
 			}
