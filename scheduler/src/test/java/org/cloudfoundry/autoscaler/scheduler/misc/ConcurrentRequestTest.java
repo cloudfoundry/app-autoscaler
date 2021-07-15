@@ -11,7 +11,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-
 import org.cloudfoundry.autoscaler.scheduler.util.EmbeddedTomcatUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.ScalingEngineUtil;
 import org.junit.AfterClass;
@@ -28,62 +27,62 @@ import org.springframework.web.client.RestOperations;
 @SpringBootTest
 public class ConcurrentRequestTest {
 
-	@Value("${autoscaler.scalingengine.url}")
-	private String scalingEngineUrl;
+  @Value("${autoscaler.scalingengine.url}")
+  private String scalingEngineUrl;
 
-	@Autowired
-	private RestOperations restOperations;
+  @Autowired private RestOperations restOperations;
 
-	private static EmbeddedTomcatUtil embeddedTomcatUtil;
+  private static EmbeddedTomcatUtil embeddedTomcatUtil;
 
-	@BeforeClass
-	public static void beforeClass() throws IOException {
-		embeddedTomcatUtil = new EmbeddedTomcatUtil();
-		embeddedTomcatUtil.start();
-	}
+  @BeforeClass
+  public static void beforeClass() throws IOException {
+    embeddedTomcatUtil = new EmbeddedTomcatUtil();
+    embeddedTomcatUtil.start();
+  }
 
-	@AfterClass
-	public static void afterClass() throws IOException, InterruptedException {
-		embeddedTomcatUtil.stop();
-	}
+  @AfterClass
+  public static void afterClass() throws IOException, InterruptedException {
+    embeddedTomcatUtil.stop();
+  }
 
-	@Test
-	public void testMultipleRequests() throws Exception {
+  @Test
+  public void testMultipleRequests() throws Exception {
 
-		String appId = "appId";
-		long scheduleId = 0L;
+    String appId = "appId";
+    long scheduleId = 0L;
 
-		embeddedTomcatUtil.setup(appId, scheduleId, 200, null);
+    embeddedTomcatUtil.setup(appId, scheduleId, 200, null);
 
-		String scalingEnginePathActiveSchedule = ScalingEngineUtil.getScalingEngineActiveSchedulePath(scalingEngineUrl,
-				appId, scheduleId);
+    String scalingEnginePathActiveSchedule =
+        ScalingEngineUtil.getScalingEngineActiveSchedulePath(scalingEngineUrl, appId, scheduleId);
 
-		concurrentRequests(10, scalingEnginePathActiveSchedule);
-	}
+    concurrentRequests(10, scalingEnginePathActiveSchedule);
+  }
 
-	private void concurrentRequests(int threadCount, String scalingEnginePathActiveSchedule) throws Exception {
+  private void concurrentRequests(int threadCount, String scalingEnginePathActiveSchedule)
+      throws Exception {
 
-		Callable<Throwable> task = () -> {
-			try {
-				restOperations.delete(scalingEnginePathActiveSchedule);
-				return null;
-			} catch (Throwable th) {
-				return th;
-			}
-		};
+    Callable<Throwable> task =
+        () -> {
+          try {
+            restOperations.delete(scalingEnginePathActiveSchedule);
+            return null;
+          } catch (Throwable th) {
+            return th;
+          }
+        };
 
-		List<Callable<Throwable>> tasks = Collections.nCopies(threadCount, task);
-		ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
-		List<Future<Throwable>> futures = executorService.invokeAll(tasks);
-		List<Throwable> resultList = new ArrayList<>(futures.size());
+    List<Callable<Throwable>> tasks = Collections.nCopies(threadCount, task);
+    ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
+    List<Future<Throwable>> futures = executorService.invokeAll(tasks);
+    List<Throwable> resultList = new ArrayList<>(futures.size());
 
-		for (Future<Throwable> future : futures) {
-			resultList.add(future.get());
-		}
+    for (Future<Throwable> future : futures) {
+      resultList.add(future.get());
+    }
 
-		assertThat(futures.size(), is(threadCount));
-		List<Throwable> expectedList = Collections.nCopies(threadCount, null);
-		assertThat(resultList, is(expectedList));
-
-	}
+    assertThat(futures.size(), is(threadCount));
+    List<Throwable> expectedList = Collections.nCopies(threadCount, null);
+    assertThat(resultList, is(expectedList));
+  }
 }

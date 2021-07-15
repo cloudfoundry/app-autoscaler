@@ -3,7 +3,6 @@ package org.cloudfoundry.autoscaler.scheduler.quartz;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.TimeZone;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cloudfoundry.autoscaler.scheduler.util.DateHelper;
@@ -15,39 +14,47 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class AppScalingSpecificDateScheduleStartJob extends AppScalingScheduleStartJob {
-	private Logger logger = LogManager.getLogger(this.getClass());
+  private Logger logger = LogManager.getLogger(this.getClass());
 
-	@Override
-	boolean shouldExecuteStartJob(JobExecutionContext jobExecutionContext, ZonedDateTime startJobStartTime,
-			ZonedDateTime endJobStartTime) throws JobExecutionException {
-		
-		if (super.shouldExecuteStartJob(jobExecutionContext, startJobStartTime, endJobStartTime)) {
+  @Override
+  boolean shouldExecuteStartJob(
+      JobExecutionContext jobExecutionContext,
+      ZonedDateTime startJobStartTime,
+      ZonedDateTime endJobStartTime)
+      throws JobExecutionException {
 
-			boolean isStartTimeBeforeEnd = startJobStartTime.isBefore(endJobStartTime);
-			if (!isStartTimeBeforeEnd) {
-				JobDataMap jobDataMap = jobExecutionContext.getJobDetail().getJobDataMap();
-				String message = messageBundleResourceHelper.lookupMessage(
-						"scheduler.job.start.specificdate.schedule.skipped",
-						DateHelper.convertLocalDateTimeToString(
-								(LocalDateTime) jobDataMap.get(ScheduleJobHelper.END_JOB_START_TIME)),
-						jobExecutionContext.getJobDetail().getKey(), jobDataMap.getString(ScheduleJobHelper.APP_ID),
-						jobDataMap.getLong(ScheduleJobHelper.SCHEDULE_ID));
-				logger.warn(message);
-			}
+    if (super.shouldExecuteStartJob(jobExecutionContext, startJobStartTime, endJobStartTime)) {
 
-			return isStartTimeBeforeEnd;
-		} 
-		return false;
-		
-	}
+      boolean isStartTimeBeforeEnd = startJobStartTime.isBefore(endJobStartTime);
+      if (!isStartTimeBeforeEnd) {
+        JobDataMap jobDataMap = jobExecutionContext.getJobDetail().getJobDataMap();
+        String message =
+            messageBundleResourceHelper.lookupMessage(
+                "scheduler.job.start.specificdate.schedule.skipped",
+                DateHelper.convertLocalDateTimeToString(
+                    (LocalDateTime) jobDataMap.get(ScheduleJobHelper.END_JOB_START_TIME)),
+                jobExecutionContext.getJobDetail().getKey(),
+                jobDataMap.getString(ScheduleJobHelper.APP_ID),
+                jobDataMap.getLong(ScheduleJobHelper.SCHEDULE_ID));
+        logger.warn(message);
+      }
 
-	@Override
-	ZonedDateTime calculateEndJobStartTime(JobExecutionContext jobExecutionContext) {
-		String timeZone = jobExecutionContext.getJobDetail().getJobDataMap().getString(ScheduleJobHelper.TIMEZONE);
-		LocalDateTime endDateTime = (LocalDateTime) jobExecutionContext.getJobDetail().getJobDataMap()
-				.get(ScheduleJobHelper.END_JOB_START_TIME);
+      return isStartTimeBeforeEnd;
+    }
+    return false;
+  }
 
-		return DateHelper.getZonedDateTime(endDateTime, TimeZone.getTimeZone(timeZone));
-	}
+  @Override
+  ZonedDateTime calculateEndJobStartTime(JobExecutionContext jobExecutionContext) {
+    String timeZone =
+        jobExecutionContext.getJobDetail().getJobDataMap().getString(ScheduleJobHelper.TIMEZONE);
+    LocalDateTime endDateTime =
+        (LocalDateTime)
+            jobExecutionContext
+                .getJobDetail()
+                .getJobDataMap()
+                .get(ScheduleJobHelper.END_JOB_START_TIME);
 
+    return DateHelper.getZonedDateTime(endDateTime, TimeZone.getTimeZone(timeZone));
+  }
 }
