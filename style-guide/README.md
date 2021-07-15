@@ -2,6 +2,9 @@
 utoscaler uses Pre-commit for keeping our code base clean. Upon a git commit, it checks .go and .java files for formatting.
 We recommend to use our guidelines. These style only applies to .go and java files.
 
+- Java Formatter : Google Styles are used
+- Go Formatter:  Standard Go fomatter (go fmt) is used
+
 ### Install Pre-Commit
 
 Install https://pre-commit.com/ on your developer machine/laptop
@@ -27,13 +30,52 @@ conda install -c conda-forge pre-commit
 git add <files>
 git commit -m <message>
 
+
+```bash
+$ git commit -m "add basic auth" 
+[WARNING] Unstaged files detected.
+[INFO] Stashing unstaged files to /Users/I545443/.cache/pre-commit/patch1626333779-50304.
+java-formatter...........................................................Failed
+- hook id: java-formatter
+- exit code: 2
+
+/Users/I545443/sap/asalan316/app-autoscaler/.cache
+/Users/I545443/sap/asalan316/app-autoscaler/.cache
+download path : /Users/I545443/sap/asalan316/app-autoscaler/.cache/google-java-format-1.10.0-all-deps.jar
+Formatter Results:
+Analyzing java file(s) using google-java-format-1.10.0-all-deps.jar...
+Incorrect formatting found:
+scheduler/src/main/java/org/cloudfoundry/autoscaler/scheduler/rest/ControllerExceptionHandler.java
+Please correct the formatting of the files(s) using one of the following options:
+  - Reformat Code - IntelliJ or Format Document - Eclipse (google code style required)
+  - java -jar /Users/I545443/sap/asalan316/app-autoscaler/.cache/google-java-format-1.10.0-all-deps.jar -replace scheduler/src/main/java/org/cloudfoundry/autoscaler/scheduler/rest/ControllerExceptionHandler.java
+
+go imports...............................................................Failed
+- hook id: go-imports
+- exit code: 1
+- files were modified by this hook
+
+src/autoscaler/eventgenerator/aggregator/aggregator.go
+
+go fmt...................................................................Passed
+[WARNING] Stashed changes conflicted with hook auto-fixes... Rolling back fixes...
+[INFO] Restored changes from /Users/I545443/.cache/pre-commit/patch1626333779-50304.
+
+```
 - Output
 ```
-[INFO] Stashing unstaged files to /Users/I545443/.cache/pre-commit/patch1626333399-49087.
+$ git commit -m "add basic auth"                                                                            
+[WARNING] Unstaged files detected.
+[INFO] Stashing unstaged files to /Users/I545443/.cache/pre-commit/patch1626333979-52031.
 java-formatter.......................................(no files to check)Skipped
 go imports...........................................(no files to check)Skipped
 go fmt...............................................(no files to check)Skipped
-[INFO] Restored changes from /Users/I545443/.cache/pre-commit/patch1626333399-49087.
+[INFO] Restored changes from /Users/I545443/.cache/pre-commit/patch1626333979-52031.
+[code-style-guide 3c1c7d1] add basic auth
+ 3 files changed, 40 insertions(+), 1 deletion(-)
+ create mode 100644 style-guide/README.md
+ rename style-guide/{inspect-java-format.sh => inspect-java-format-0.1.sh} (100%)
+
 
 ```
 
