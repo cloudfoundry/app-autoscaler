@@ -216,7 +216,7 @@ var _ = Describe("Nozzle", func() {
 				Consistently(envelopChan).ShouldNot(Receive())
 			})
 		})
-		Context("when the guage envelope is not a container metric", func() {
+		Context("when the gauge envelope is not a container metric", func() {
 			BeforeEach(func() {
 				envelopes = []*loggregator_v2.Envelope{
 					&nonContainerMetricGaugeEnvelope,
@@ -249,7 +249,7 @@ var _ = Describe("Nozzle", func() {
 			})
 		})
 
-		Context("when the guage envelope is not a custom metric", func() {
+		Context("when the gauge envelope is not a custom metric", func() {
 			BeforeEach(func() {
 				envelopes = []*loggregator_v2.Envelope{
 					&nonCustomMetricEnvelope,

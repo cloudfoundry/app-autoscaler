@@ -230,7 +230,7 @@ var _ = Describe("PolicySQLDB", func() {
 			}
 		})
 
-		Context("when retriving all the policies", func() {
+		Context("when retrieving all the policies", func() {
 			It("returns all the policies", func() {
 				Expect(err).NotTo(HaveOccurred())
 

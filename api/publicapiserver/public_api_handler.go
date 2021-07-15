@@ -231,7 +231,7 @@ func (h *PublicApiHandler) GetScalingHistories(w http.ResponseWriter, r *http.Re
 
 	responseData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		h.logger.Error("Error occured during parsing scaling histories result", err, lager.Data{"url": url})
+		h.logger.Error("Error occurred during parsing scaling histories result", err, lager.Data{"url": url})
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 			Code:    "Interal-Server-Error",
 			Message: "Error parsing scaling history from scaling engine"})
@@ -239,7 +239,7 @@ func (h *PublicApiHandler) GetScalingHistories(w http.ResponseWriter, r *http.Re
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		h.logger.Error("Error occured during getting scaling histories", nil, lager.Data{"statusCode": resp.StatusCode, "body": string(responseData)})
+		h.logger.Error("Error occurred during getting scaling histories", nil, lager.Data{"statusCode": resp.StatusCode, "body": string(responseData)})
 		handlers.WriteJSONResponse(w, resp.StatusCode, models.ErrorResponse{
 			Code:    http.StatusText(resp.StatusCode),
 			Message: string(responseData)})
@@ -296,7 +296,7 @@ func (h *PublicApiHandler) GetAggregatedMetricsHistories(w http.ResponseWriter, 
 
 	responseData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		h.logger.Error("Error occured during parsing metrics histories result", err, lager.Data{"url": url})
+		h.logger.Error("Error occurred during parsing metrics histories result", err, lager.Data{"url": url})
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 			Code:    "Interal-Server-Error",
 			Message: "Error parsing metric history from eventgenerator"})
@@ -304,7 +304,7 @@ func (h *PublicApiHandler) GetAggregatedMetricsHistories(w http.ResponseWriter, 
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		h.logger.Error("Error occured during getting metric histories", nil, lager.Data{"statusCode": resp.StatusCode, "body": string(responseData)})
+		h.logger.Error("Error occurred during getting metric histories", nil, lager.Data{"statusCode": resp.StatusCode, "body": string(responseData)})
 		handlers.WriteJSONResponse(w, resp.StatusCode, models.ErrorResponse{
 			Code:    http.StatusText(resp.StatusCode),
 			Message: string(responseData)})
@@ -366,7 +366,7 @@ func (h *PublicApiHandler) GetInstanceMetricsHistories(w http.ResponseWriter, r 
 
 	responseData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		h.logger.Error("Error occured during parsing metrics histories result", err, lager.Data{"url": url})
+		h.logger.Error("Error occurred during parsing metrics histories result", err, lager.Data{"url": url})
 		handlers.WriteJSONResponse(w, http.StatusInternalServerError, models.ErrorResponse{
 			Code:    "Interal-Server-Error",
 			Message: "Error parsing metric history from metricscollector"})
@@ -374,7 +374,7 @@ func (h *PublicApiHandler) GetInstanceMetricsHistories(w http.ResponseWriter, r 
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		h.logger.Error("Error occured during getting metric histories", nil, lager.Data{"statusCode": resp.StatusCode, "body": string(responseData)})
+		h.logger.Error("Error occurred during getting metric histories", nil, lager.Data{"statusCode": resp.StatusCode, "body": string(responseData)})
 		handlers.WriteJSONResponse(w, resp.StatusCode, models.ErrorResponse{
 			Code:    http.StatusText(resp.StatusCode),
 			Message: string(responseData)})
