@@ -307,7 +307,7 @@ func (pv *PolicyValidator) validateSpecificDateSchedules(policy *models.ScalingP
 
 		// start_date_time should be after current_date_time and before end_date_time
 		dateTime := newDateTimeRange(specSched.StartDateTime, specSched.EndDateTime, policy.Schedules.Timezone)
-		if dateTime.startDateTime.Sub(time.Now()) <= 0 {
+		if time.Until(dateTime.startDateTime) <= 0 {
 			currentSpecSchedContext := gojsonschema.NewJsonContext(fmt.Sprintf("%d", scheduleIndex), specficDateScheduleContext)
 			errDetails := gojsonschema.ErrorDetails{
 				"scheduleIndex": scheduleIndex,
