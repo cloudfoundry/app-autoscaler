@@ -67,7 +67,10 @@ func (pdb *PolicySQLDB) GetAppIds() (map[string]bool, error) {
 		pdb.logger.Error("get-appids-from-policy-table", err, lager.Data{"query": query})
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+		_ = rows.Err()
+	}()
 
 	var id string
 	for rows.Next() {
@@ -85,12 +88,15 @@ func (pdb *PolicySQLDB) RetrievePolicies() ([]*models.PolicyJson, error) {
 	policyList := []*models.PolicyJson{}
 	rows, err := pdb.sqldb.Query(query)
 	if err != nil {
-		pdb.logger.Error("retrive-policy-list-from-policy_json-table", err,
+		pdb.logger.Error("retrieve-policy-list-from-policy_json-table", err,
 			lager.Data{"query": query})
 		return policyList, err
 	}
 
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+		_ = rows.Err()
+	}()
 
 	var appId string
 	var policyStr string
