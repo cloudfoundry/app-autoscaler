@@ -1,11 +1,10 @@
-// +build linux,amd64,go1.16.5,!cgo
-
 package main
 
 import (
 	"autoscaler/helpers"
 	"flag"
 	"fmt"
+	"os"
 
 	"autoscaler/cf"
 	"autoscaler/db"
@@ -15,7 +14,6 @@ import (
 	"autoscaler/scalingengine/config"
 	"autoscaler/scalingengine/schedule"
 	"autoscaler/scalingengine/server"
-	"os"
 
 	"code.cloudfoundry.org/cfhttp"
 	"code.cloudfoundry.org/clock"
@@ -30,7 +28,6 @@ func main() {
 	var path string
 	flag.StringVar(&path, "c", "", "config file")
 	flag.Parse()
-
 	if path == "" {
 		fmt.Fprintln(os.Stderr, "missing config file")
 		os.Exit(1)
