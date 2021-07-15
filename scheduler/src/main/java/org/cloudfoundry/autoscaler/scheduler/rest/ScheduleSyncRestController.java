@@ -16,17 +16,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping(value = "/v1/syncSchedules")
 public class ScheduleSyncRestController {
 
-	@Autowired
-	private ScheduleManager scheduleManager;
-	private Logger logger = LogManager.getLogger(this.getClass());
-	
-	@RequestMapping(method = RequestMethod.PUT)
-	@ResponseStatus(HttpStatus.OK)
-	public ResponseEntity<SynchronizeResult> synchronizeSchedules() {
-		logger.info("synchronize schedules");
-		SynchronizeResult result = scheduleManager.synchronizeSchedules();
-		return new ResponseEntity<>(result, null, HttpStatus.OK);
+  @Autowired private ScheduleManager scheduleManager;
+  private Logger logger = LogManager.getLogger(this.getClass());
 
-	}
-
+  @RequestMapping(method = RequestMethod.PUT)
+  @ResponseStatus(HttpStatus.OK)
+  public ResponseEntity<SynchronizeResult> synchronizeSchedules() {
+    logger.info("synchronize schedules");
+    SynchronizeResult result = scheduleManager.synchronizeSchedules();
+    return new ResponseEntity<>(result, null, HttpStatus.OK);
+  }
 }

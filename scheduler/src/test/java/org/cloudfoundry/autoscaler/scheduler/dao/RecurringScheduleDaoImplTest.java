@@ -8,9 +8,7 @@ import java.sql.SQLException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import javax.transaction.Transactional;
-
 import org.cloudfoundry.autoscaler.scheduler.entity.RecurringScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.util.RecurringScheduleEntitiesBuilder;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
@@ -27,152 +25,187 @@ import org.springframework.test.context.junit4.SpringRunner;
 @SpringBootTest
 @Transactional
 public class RecurringScheduleDaoImplTest {
-	@Autowired
-	private RecurringScheduleDao recurringScheduleDao;
+  @Autowired private RecurringScheduleDao recurringScheduleDao;
 
-	@Autowired
-	private TestDataDbUtil testDataDbUtil;
+  @Autowired private TestDataDbUtil testDataDbUtil;
 
-	private String appId1, appId2;
-	private String guid1, guid2;
+  private String appId1, appId2;
+  private String guid1, guid2;
 
-	@Before
-	public void before() throws SQLException {
-		// Remove All ActiveSchedules
-		testDataDbUtil.cleanupData();
+  @Before
+  public void before() throws SQLException {
+    // Remove All ActiveSchedules
+    testDataDbUtil.cleanupData();
 
-		// Add fake test records.
-		appId1 = "appId1";
-		appId2 = "appId3";
-		guid1 = TestDataSetupHelper.generateGuid();
-		guid2 = TestDataSetupHelper.generateGuid();
-		
-		List<RecurringScheduleEntity> entities = new RecurringScheduleEntitiesBuilder(1, 0).setAppId(appId1).setGuid(guid1).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).build();
-		testDataDbUtil.insertRecurringSchedule(entities);
+    // Add fake test records.
+    appId1 = "appId1";
+    appId2 = "appId3";
+    guid1 = TestDataSetupHelper.generateGuid();
+    guid2 = TestDataSetupHelper.generateGuid();
 
-		
-		
-		entities =new RecurringScheduleEntitiesBuilder(1, 0).setAppId(appId2).setGuid(guid2).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).build();;
-		testDataDbUtil.insertRecurringSchedule(entities);
-	}
+    List<RecurringScheduleEntity> entities =
+        new RecurringScheduleEntitiesBuilder(1, 0)
+            .setAppId(appId1)
+            .setGuid(guid1)
+            .setTimeZone("")
+            .setDefaultInstanceMinCount(1)
+            .setDefaultInstanceMaxCount(5)
+            .build();
+    testDataDbUtil.insertRecurringSchedule(entities);
 
-	@Test
-	public void testFindAllSchedules_with_invalidAppId() {
-		String appId = "invalid_appId";
+    entities =
+        new RecurringScheduleEntitiesBuilder(1, 0)
+            .setAppId(appId2)
+            .setGuid(guid2)
+            .setTimeZone("")
+            .setDefaultInstanceMinCount(1)
+            .setDefaultInstanceMaxCount(5)
+            .build();
+    ;
+    testDataDbUtil.insertRecurringSchedule(entities);
+  }
 
-		List<RecurringScheduleEntity> recurringScheduleEntities = recurringScheduleDao
-				.findAllRecurringSchedulesByAppId(appId);
+  @Test
+  public void testFindAllSchedules_with_invalidAppId() {
+    String appId = "invalid_appId";
 
-		assertThat("It should be empty list", recurringScheduleEntities.isEmpty(), is(true));
-	}
+    List<RecurringScheduleEntity> recurringScheduleEntities =
+        recurringScheduleDao.findAllRecurringSchedulesByAppId(appId);
 
-	@Test
-	public void testFindAllRecurringSchedulesByAppId() {
-		String appId = "appId3";
+    assertThat("It should be empty list", recurringScheduleEntities.isEmpty(), is(true));
+  }
 
-		List<RecurringScheduleEntity> foundEntityList = recurringScheduleDao.findAllRecurringSchedulesByAppId(appId);
+  @Test
+  public void testFindAllRecurringSchedulesByAppId() {
+    String appId = "appId3";
 
-		assertThat("It should have one record", foundEntityList.size(), is(1));
-		assertThat("The appId should be equal", foundEntityList.get(0).getAppId(), is(appId));
-	}
+    List<RecurringScheduleEntity> foundEntityList =
+        recurringScheduleDao.findAllRecurringSchedulesByAppId(appId);
 
-	@Test
-	public void testGetDistinctAppIdAndGuidList() {
-		//add another rows with the same appId and guid
-		List<RecurringScheduleEntity> entities = new RecurringScheduleEntitiesBuilder(1, 0).setAppId(appId1).setGuid(guid1).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).build();
-		testDataDbUtil.insertRecurringSchedule(entities);
-		entities =new RecurringScheduleEntitiesBuilder(1, 0).setAppId(appId2).setGuid(guid2).setTimeZone("").setDefaultInstanceMinCount(1).setDefaultInstanceMaxCount(5).build();;
-		testDataDbUtil.insertRecurringSchedule(entities);
-		
-		List foundEntityList = recurringScheduleDao.getDistinctAppIdAndGuidList();
+    assertThat("It should have one record", foundEntityList.size(), is(1));
+    assertThat("The appId should be equal", foundEntityList.get(0).getAppId(), is(appId));
+  }
 
-		assertThat("It should have two record", foundEntityList.size(), is(2));
-		Set<String> appIdSet = new HashSet<String>() {
-			{
-				add((String)((Object[])(foundEntityList.get(0)))[0]);
-				add((String)((Object[])(foundEntityList.get(1)))[0]);
-			}
-		};
-		assertThat("It should contains the two inserted entities",
-				appIdSet.contains(appId1) && appIdSet.contains(appId2), is(true));
+  @Test
+  public void testGetDistinctAppIdAndGuidList() {
+    // add another rows with the same appId and guid
+    List<RecurringScheduleEntity> entities =
+        new RecurringScheduleEntitiesBuilder(1, 0)
+            .setAppId(appId1)
+            .setGuid(guid1)
+            .setTimeZone("")
+            .setDefaultInstanceMinCount(1)
+            .setDefaultInstanceMaxCount(5)
+            .build();
+    testDataDbUtil.insertRecurringSchedule(entities);
+    entities =
+        new RecurringScheduleEntitiesBuilder(1, 0)
+            .setAppId(appId2)
+            .setGuid(guid2)
+            .setTimeZone("")
+            .setDefaultInstanceMinCount(1)
+            .setDefaultInstanceMaxCount(5)
+            .build();
+    ;
+    testDataDbUtil.insertRecurringSchedule(entities);
 
-	}
+    List foundEntityList = recurringScheduleDao.getDistinctAppIdAndGuidList();
 
-	@Test
-	public void testCreateRecurringSchedule() throws Exception {
-		String appId = "appId2";
-		String guid = TestDataSetupHelper.generateGuid();
-		RecurringScheduleEntity recurringScheduleEntity = TestDataSetupHelper
-				.generateRecurringScheduleEntities(appId, guid, false, 1, 0).get(0);
+    assertThat("It should have two record", foundEntityList.size(), is(2));
+    Set<String> appIdSet =
+        new HashSet<String>() {
+          {
+            add((String) ((Object[]) (foundEntityList.get(0)))[0]);
+            add((String) ((Object[]) (foundEntityList.get(1)))[0]);
+          }
+        };
+    assertThat(
+        "It should contains the two inserted entities",
+        appIdSet.contains(appId1) && appIdSet.contains(appId2),
+        is(true));
+  }
 
-		assertThat("It should no recurring schedule", testDataDbUtil.getNumberOfRecurringSchedulesByAppId(appId),
-				is(0));
+  @Test
+  public void testCreateRecurringSchedule() throws Exception {
+    String appId = "appId2";
+    String guid = TestDataSetupHelper.generateGuid();
+    RecurringScheduleEntity recurringScheduleEntity =
+        TestDataSetupHelper.generateRecurringScheduleEntities(appId, guid, false, 1, 0).get(0);
 
-		RecurringScheduleEntity savedEntity = recurringScheduleDao.create(recurringScheduleEntity);
+    assertThat(
+        "It should no recurring schedule",
+        testDataDbUtil.getNumberOfRecurringSchedulesByAppId(appId),
+        is(0));
 
-		Long currentSequenceSchedulerId = testDataDbUtil.getCurrentRecurringSchedulerId();
-		recurringScheduleEntity.setId(currentSequenceSchedulerId);
+    RecurringScheduleEntity savedEntity = recurringScheduleDao.create(recurringScheduleEntity);
 
-		assertThat("It should have one recurring schedule", testDataDbUtil.getNumberOfRecurringSchedulesByAppId(appId),
-				is(1));
-		assertThat("Both recurring schedules should be equal", savedEntity, is(recurringScheduleEntity));
-	}
+    Long currentSequenceSchedulerId = testDataDbUtil.getCurrentRecurringSchedulerId();
+    recurringScheduleEntity.setId(currentSequenceSchedulerId);
 
-	@Test
-	public void testDeleteSchedule() {
-		String appId = "appId1";
-		assertThat("It should have one recurring schedule", testDataDbUtil.getNumberOfRecurringSchedulesByAppId(appId),
-				is(1));
-		RecurringScheduleEntity recurringScheduleEntity = recurringScheduleDao.findAllRecurringSchedulesByAppId(appId)
-				.get(0);
-		recurringScheduleDao.delete(recurringScheduleEntity);
+    assertThat(
+        "It should have one recurring schedule",
+        testDataDbUtil.getNumberOfRecurringSchedulesByAppId(appId),
+        is(1));
+    assertThat(
+        "Both recurring schedules should be equal", savedEntity, is(recurringScheduleEntity));
+  }
 
-		assertThat("It should have no recurring schedule", testDataDbUtil.getNumberOfRecurringSchedulesByAppId(appId),
-				is(0));
-	}
+  @Test
+  public void testDeleteSchedule() {
+    String appId = "appId1";
+    assertThat(
+        "It should have one recurring schedule",
+        testDataDbUtil.getNumberOfRecurringSchedulesByAppId(appId),
+        is(1));
+    RecurringScheduleEntity recurringScheduleEntity =
+        recurringScheduleDao.findAllRecurringSchedulesByAppId(appId).get(0);
+    recurringScheduleDao.delete(recurringScheduleEntity);
 
-	@Test
-	public void testDeleteSchedule_with_invalidAppId() {
-		String appId = "invalid_appId";
-		RecurringScheduleEntity recurringScheduleEntity = new RecurringScheduleEntity();
-		recurringScheduleEntity.setAppId(appId);
+    assertThat(
+        "It should have no recurring schedule",
+        testDataDbUtil.getNumberOfRecurringSchedulesByAppId(appId),
+        is(0));
+  }
 
-		assertThat("There are two recurring schedules", testDataDbUtil.getNumberOfRecurringSchedules(), is(2));
+  @Test
+  public void testDeleteSchedule_with_invalidAppId() {
+    String appId = "invalid_appId";
+    RecurringScheduleEntity recurringScheduleEntity = new RecurringScheduleEntity();
+    recurringScheduleEntity.setAppId(appId);
 
-		recurringScheduleDao.delete(recurringScheduleEntity);
+    assertThat(
+        "There are two recurring schedules", testDataDbUtil.getNumberOfRecurringSchedules(), is(2));
 
-		assertThat("There are two recurring schedules", testDataDbUtil.getNumberOfRecurringSchedules(), is(2));
-	}
+    recurringScheduleDao.delete(recurringScheduleEntity);
 
-    /** This test case succeed when database is postgresql, but failed when database is mysql, so comment out it.
-	@Test
-	public void testFindSchedulesByAppId_throw_Exception() {
-		try {
-			recurringScheduleDao.findAllRecurringSchedulesByAppId(null);
-			fail("Should fail");
-		} catch (DatabaseValidationException dve) {
-			assertThat(dve.getMessage(), is("Find All recurring schedules by app id failed"));
-		}
-	}
-	 */
+    assertThat(
+        "There are two recurring schedules", testDataDbUtil.getNumberOfRecurringSchedules(), is(2));
+  }
 
-	@Test
-	public void testCreateSchedule_throw_Exception() {
-		try {
-			recurringScheduleDao.create(null);
-			fail("Should fail");
-		} catch (DatabaseValidationException dve) {
-			assertThat(dve.getMessage(), is("Create failed"));
-		}
-	}
+  /**
+   * This test case succeed when database is postgresql, but failed when database is mysql, so
+   * comment out it. @Test public void testFindSchedulesByAppId_throw_Exception() { try {
+   * recurringScheduleDao.findAllRecurringSchedulesByAppId(null); fail("Should fail"); } catch
+   * (DatabaseValidationException dve) { assertThat(dve.getMessage(), is("Find All recurring
+   * schedules by app id failed")); } }
+   */
+  @Test
+  public void testCreateSchedule_throw_Exception() {
+    try {
+      recurringScheduleDao.create(null);
+      fail("Should fail");
+    } catch (DatabaseValidationException dve) {
+      assertThat(dve.getMessage(), is("Create failed"));
+    }
+  }
 
-	@Test
-	public void testDeleteSchedule_throw_Exception() {
-		try {
-			recurringScheduleDao.delete(null);
-			fail("Should fail");
-		} catch (DatabaseValidationException dve) {
-			assertThat(dve.getMessage(), is("Delete failed"));
-		}
-	}
+  @Test
+  public void testDeleteSchedule_throw_Exception() {
+    try {
+      recurringScheduleDao.delete(null);
+      fail("Should fail");
+    } catch (DatabaseValidationException dve) {
+      assertThat(dve.getMessage(), is("Delete failed"));
+    }
+  }
 }
