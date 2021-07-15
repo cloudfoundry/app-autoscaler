@@ -60,8 +60,8 @@ linters:
     - deadcode
     - depguard
     - dogsled
-      #    - dupl
-      #    - errcheck
+      #- dupl
+      #- errcheck
     - funlen
       #    - gocognit
       #    - goconst
@@ -77,7 +77,7 @@ linters:
       #    - misspell
     - nakedret
     - nolintlint
-      #    - rowserrcheck
+    - rowserrcheck
       #    - structcheck
       #    - stylecheck
       #    - testpackage
