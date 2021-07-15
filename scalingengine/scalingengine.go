@@ -37,7 +37,7 @@ type AppNotFoundError struct {
 }
 
 func (ase *ActiveScheduleNotFoundError) Error() string {
-	return fmt.Sprintf("active schedule not found")
+	return "active schedule not found"
 }
 
 func NewScalingEngine(logger lager.Logger, cfClient cf.CFClient, policyDB db.PolicyDB, scalingEngineDB db.ScalingEngineDB, clock clock.Clock, defaultCoolDownSecs int, lockSize int) ScalingEngine {
