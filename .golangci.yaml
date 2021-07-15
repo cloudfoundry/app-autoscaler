@@ -70,7 +70,7 @@ linters:
     - goimports
     - goprintffuncname
       #    - gosec
-      #    - gosimple
+    - gosimple
     - gomoddirectives
     - gomodguard  
       #    - ineffassign
@@ -95,8 +95,9 @@ issues:
   exclude-rules:
     - path: _test\.go
       linters:
+        - dupl
         - gomnd
-        - typecheck  
+        - typecheck
     # https://github.com/go-critic/go-critic/issues/926
     - linters:
         - gocritic
