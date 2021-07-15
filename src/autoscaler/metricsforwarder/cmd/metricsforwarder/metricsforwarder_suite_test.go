@@ -81,6 +81,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		}`
 	query := policyDB.Rebind("INSERT INTO policy_json(app_id, policy_json, guid) values(?, ?, ?)")
 	_, err = policyDB.Exec(query, "an-app-id", policy, "1234")
+	Expect(err).NotTo(HaveOccurred())
 
 	username = "username"
 	password = "password"
