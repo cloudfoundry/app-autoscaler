@@ -314,6 +314,7 @@ func bindService(bindingId string, appId string, serviceInstanceId string, polic
 	}
 
 	body, err := json.Marshal(bindBody)
+	Expect(err).NotTo(HaveOccurred())
 	req, err := http.NewRequest("PUT", fmt.Sprintf("https://127.0.0.1:%d/v2/service_instances/%s/service_bindings/%s", brokerPort, serviceInstanceId, bindingId), bytes.NewReader(body))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")

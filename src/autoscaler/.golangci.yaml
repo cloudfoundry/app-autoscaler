@@ -73,7 +73,7 @@ linters:
       #    - gosimple
     - gomoddirectives
     - gomodguard  
-      #    - ineffassign
+    - ineffassign
     - misspell
     - nakedret
     - nolintlint
