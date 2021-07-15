@@ -195,7 +195,10 @@ func (idb *InstanceMetricsSQLDB) RetrieveInstanceMetrics(appid string, instanceI
 		}
 	}
 
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+		_ = rows.Err()
+	}()
 
 	mtrcs := []*models.AppInstanceMetric{}
 	var index uint32
