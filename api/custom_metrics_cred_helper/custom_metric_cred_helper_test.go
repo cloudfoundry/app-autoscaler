@@ -56,7 +56,7 @@ var _ = Describe("CustomMetricCredHelper", func() {
 			})
 
 		})
-		Context("when there is continous error when calling policydb", func() {
+		Context("when there is continuous error when calling policydb", func() {
 			BeforeEach(func() {
 				policyDB.GetCredentialReturns(nil, sql.ErrNoRows)
 				policyDB.SaveCredentialReturns(errors.New("dberror"))
@@ -83,7 +83,7 @@ var _ = Describe("CustomMetricCredHelper", func() {
 				Expect(err).NotTo(HaveOccurred())
 			})
 		})
-		Context("when there is continous error when calling policydb", func() {
+		Context("when there is continuous error when calling policydb", func() {
 			BeforeEach(func() {
 				policyDB.DeleteCredentialReturns(errors.New("dberror"))
 			})
