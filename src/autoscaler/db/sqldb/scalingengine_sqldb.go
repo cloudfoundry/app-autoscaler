@@ -98,7 +98,10 @@ func (sdb *ScalingEngineSQLDB) RetrieveScalingHistories(appId string, start int6
 		return nil, err
 	}
 
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+		_ = rows.Err()
+	}()
 
 	var timestamp int64
 	var scalingType, status, oldInstances, newInstances int
@@ -145,7 +148,10 @@ func (sdb *ScalingEngineSQLDB) CanScaleApp(appId string) (bool, int64, error) {
 		sdb.logger.Error("can-scale-app-query-record", err, lager.Data{"query": query, "appid": appId})
 		return false, 0, err
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+		_ = rows.Err()
+	}()
 
 	var expireAt int64 = 0
 	if rows.Next() {
@@ -208,7 +214,10 @@ func (sdb *ScalingEngineSQLDB) GetActiveSchedules() (map[string]string, error) {
 		sdb.logger.Error("failed-get-active-schedules", err, lager.Data{"query": query})
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+		_ = rows.Err()
+	}()
 
 	schedules := make(map[string]string)
 	var id, appId string
