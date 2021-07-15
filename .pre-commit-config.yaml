@@ -17,7 +17,7 @@ repos:
     hooks:
         - id: go-imports
         - id: go-fmt
-        - id: golangci-lint #TODO
+        #- id: golangci-lint TODO
 
 
 
