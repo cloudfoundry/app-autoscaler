@@ -286,9 +286,7 @@ func insertSchedulerActiveSchedule(id int, appId string, startJobIdentifier int,
 
 func insertCredential(appid string, username string, password string) error {
 	var err error
-	var query string
-
-	query = dbHelper.Rebind("INSERT INTO credentials(id, username, password, updated_at) values(?, ?, ?, ?)")
+	query := dbHelper.Rebind("INSERT INTO credentials(id, username, password, updated_at) values(?, ?, ?, ?)")
 	_, err = dbHelper.Exec(query, appid, username, password, "2011-05-18 15:36:38")
 	return err
 }

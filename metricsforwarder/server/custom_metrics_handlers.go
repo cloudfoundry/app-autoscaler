@@ -42,7 +42,7 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 
 	username, password, authOK := r.BasicAuth()
 
-	if authOK == false {
+	if !authOK {
 		mh.logger.Info("error-processing-authorizaion-header")
 		handlers.WriteJSONResponse(w, http.StatusUnauthorized, models.ErrorResponse{
 			Code:    "Authorization-Failure-Error",

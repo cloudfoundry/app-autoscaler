@@ -70,7 +70,7 @@ func (s *InMemoryStore) Increment(key string) error {
 		v = newEntry(s.validDuration, s.bucketCapacity, s.maxAmount)
 	}
 	v.SetExpire(time.Now().Add(s.expireDuration))
-	if v.limiter.Allow() == false {
+	if !v.limiter.Allow() {
 		s.set(key, v)
 		return errors.New("empty bucket")
 	}
