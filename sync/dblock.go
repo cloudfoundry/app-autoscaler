@@ -61,7 +61,6 @@ func (dblock *DatabaseLock) InitDBLockRunner(retryInterval time.Duration, ttl ti
 					dblock.lockStatus = LockStatusLost
 					dblock.logger.Debug("successfully-released-lock", lager.Data{"owner": owner})
 				}
-				readyToAcquireLock = true
 				return nil
 
 			case <-lockTicker.C:
