@@ -49,7 +49,8 @@ var _ = Describe("Dblock", func() {
 		err                    error
 	)
 	BeforeEach(func() {
-		cleanLockTable()
+		err = cleanLockTable()
+		Expect(err).NotTo(HaveOccurred())
 		dblogger = lagertest.NewTestLogger("lockdb")
 		ldb, err = sqldb.NewLockSQLDB(dbConfig, lockTableName, dblogger)
 		Expect(err).NotTo(HaveOccurred())

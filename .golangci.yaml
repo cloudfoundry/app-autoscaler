@@ -61,7 +61,7 @@ linters:
     - depguard
     - dogsled
       #- dupl
-      #- errcheck
+    - errcheck
     - funlen
       #    - gocognit
       #    - goconst
