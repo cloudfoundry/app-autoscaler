@@ -11,13 +11,15 @@ repos:
           language: script
           files: '\.java$'
           stages: [commit]
-# Golang checks
--   repo: https://github.com/dnephin/pre-commit-golang.git
-    rev: "v0.4.0"
+-   repo: local
     hooks:
-        - id: go-imports
-        - id: go-fmt
-        #- id: golangci-lint TODO
+        - id: golangci-lint
+          name: golangci-lint
+          entry: style-guide/golangci-lint-0.1.sh
+          language: script
+          files: '\.go$'
+          stages: [ commit ]
+
 
 
 
