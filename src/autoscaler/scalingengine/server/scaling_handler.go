@@ -138,7 +138,7 @@ func (h *ScalingHandler) GetScalingHistories(w http.ResponseWriter, r *http.Requ
 			logger.Error("failed-to-get-include-parameter", err, lager.Data{"include": includeParam})
 			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 				Code:    "Bad-Request",
-				Message: fmt.Sprintf("Incorrect include parameter in query string, the value can only be 'all'"),
+				Message: "Incorrect include parameter in query string, the value can only be 'all'",
 			})
 			return
 		}

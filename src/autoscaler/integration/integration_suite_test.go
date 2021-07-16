@@ -455,11 +455,9 @@ func setPolicySpecificDateTime(policyByte []byte, start time.Duration, end time.
 }
 
 func getScalingHistories(apiServerPort int, pathVariables []string, parameters map[string]string) (*http.Response, error) {
-	var httpClientTmp *http.Client
-	httpClientTmp = httpClientForPublicApi
-
+	httpClientTmp := httpClientForPublicApi
 	url := "https://127.0.0.1:%d/v1/apps/%s/scaling_histories"
-	if parameters != nil && len(parameters) > 0 {
+	if len(parameters) > 0 {
 		url += "?any=any"
 		for paramName, paramValue := range parameters {
 			url += "&" + paramName + "=" + paramValue
@@ -473,10 +471,9 @@ func getScalingHistories(apiServerPort int, pathVariables []string, parameters m
 }
 
 func getAppInstanceMetrics(apiServerPort int, pathVariables []string, parameters map[string]string) (*http.Response, error) {
-	var httpClientTmp *http.Client
-	httpClientTmp = httpClientForPublicApi
+	httpClientTmp := httpClientForPublicApi
 	url := "https://127.0.0.1:%d/v1/apps/%s/metric_histories/%s"
-	if parameters != nil && len(parameters) > 0 {
+	if len(parameters) > 0 {
 		url += "?any=any"
 		for paramName, paramValue := range parameters {
 			url += "&" + paramName + "=" + paramValue
@@ -490,10 +487,9 @@ func getAppInstanceMetrics(apiServerPort int, pathVariables []string, parameters
 }
 
 func getAppAggregatedMetrics(apiServerPort int, pathVariables []string, parameters map[string]string) (*http.Response, error) {
-	var httpClientTmp *http.Client
-	httpClientTmp = httpClientForPublicApi
+	httpClientTmp := httpClientForPublicApi
 	url := "https://127.0.0.1:%d/v1/apps/%s/aggregated_metric_histories/%s"
-	if parameters != nil && len(parameters) > 0 {
+	if len(parameters) > 0 {
 		url += "?any=any"
 		for paramName, paramValue := range parameters {
 			url += "&" + paramName + "=" + paramValue
