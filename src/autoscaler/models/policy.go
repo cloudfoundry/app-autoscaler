@@ -3,6 +3,8 @@ package models
 import (
 	"encoding/json"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 type AppPolicy struct {
@@ -30,7 +32,10 @@ func (p1 *PolicyJson) Equals(p2 *PolicyJson) bool {
 }
 func (p *PolicyJson) GetAppPolicy() *AppPolicy {
 	scalingPolicy := ScalingPolicy{}
-	json.Unmarshal([]byte(p.PolicyStr), &scalingPolicy)
+	err := json.Unmarshal([]byte(p.PolicyStr), &scalingPolicy)
+	if err != nil {
+		logrus.Errorf("Unable to unmarshall policy %+v", err)
+	}
 	return &AppPolicy{AppId: p.AppId, ScalingPolicy: &scalingPolicy}
 }
 

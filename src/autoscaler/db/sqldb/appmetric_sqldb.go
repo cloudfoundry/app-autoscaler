@@ -35,7 +35,7 @@ func NewAppMetricSQLDB(dbConfig db.DatabaseConfig, logger lager.Logger) (*AppMet
 
 	err = sqldb.Ping()
 	if err != nil {
-		sqldb.Close()
+		_ = sqldb.Close()
 		logger.Error("ping-AppMetric-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
 	}
@@ -83,27 +83,27 @@ func (adb *AppMetricSQLDB) SaveAppMetricsInBulk(appMetrics []*models.AppMetric) 
 		stmt, err := txn.Prepare(CopyIn("app_metric", "app_id", "metric_type", "unit", "timestamp", "value"))
 		if err != nil {
 			adb.logger.Error("failed-to-prepare-statement", err)
-			txn.Rollback()
+			_ = txn.Rollback()
 			return err
 		}
 		for _, appMetric := range appMetrics {
 			_, err := stmt.Exec(appMetric.AppId, appMetric.MetricType, appMetric.Unit, appMetric.Timestamp, appMetric.Value)
 			if err != nil {
 				adb.logger.Error("failed-to-execute", err)
-				txn.Rollback()
+				_ = txn.Rollback()
 				return err
 			}
 		}
 		_, err = stmt.Exec()
 		if err != nil {
 			adb.logger.Error("failed-to-execute-statement", err)
-			txn.Rollback()
+			_ = txn.Rollback()
 			return err
 		}
 		err = stmt.Close()
 		if err != nil {
 			adb.logger.Error("failed-to-close-statement", err)
-			txn.Rollback()
+			_ = txn.Rollback()
 			return err
 		}
 
@@ -111,7 +111,10 @@ func (adb *AppMetricSQLDB) SaveAppMetricsInBulk(appMetrics []*models.AppMetric) 
 		sqlStr := "INSERT INTO app_metric(app_id,metric_type,unit,timestamp,value)VALUES"
 		vals := []interface{}{}
 		if len(appMetrics) == 0 {
-			txn.Rollback()
+			err = txn.Rollback()
+			if err != nil {
+				return nil
+			}
 			return nil
 		}
 		for _, appMetric := range appMetrics {
@@ -123,20 +126,20 @@ func (adb *AppMetricSQLDB) SaveAppMetricsInBulk(appMetrics []*models.AppMetric) 
 		stmt, err := txn.Prepare(sqlStr)
 		if err != nil {
 			adb.logger.Error("failed-to-prepare-statement", err)
-			txn.Rollback()
+			_ = txn.Rollback()
 			return err
 		}
 
 		_, err = stmt.Exec(vals...)
 		if err != nil {
 			adb.logger.Error("failed-to-execute-statement", err)
-			txn.Rollback()
+			_ = txn.Rollback()
 			return err
 		}
 		err = stmt.Close()
 		if err != nil {
 			adb.logger.Error("failed-to-close-statement", err)
-			txn.Rollback()
+			_ = txn.Rollback()
 			return err
 		}
 	}
@@ -144,7 +147,7 @@ func (adb *AppMetricSQLDB) SaveAppMetricsInBulk(appMetrics []*models.AppMetric) 
 	err = txn.Commit()
 	if err != nil {
 		adb.logger.Error("failed-to-commit-transaction", err)
-		txn.Rollback()
+		_ = txn.Rollback()
 		return err
 	}
 

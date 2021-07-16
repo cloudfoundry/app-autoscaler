@@ -44,7 +44,7 @@ var _ = Describe("App", func() {
 		conf = &CFConfig{}
 		conf.API = fakeCC.URL()
 		cfc = NewCFClient(conf, lager.NewLogger("cf"), clock.NewClock())
-		cfc.Login()
+		err = cfc.Login()
 	})
 
 	AfterEach(func() {
