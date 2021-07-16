@@ -307,7 +307,7 @@ func (pv *PolicyValidator) validateSpecificDateSchedules(policy *models.ScalingP
 
 		// start_date_time should be after current_date_time and before end_date_time
 		dateTime := newDateTimeRange(specSched.StartDateTime, specSched.EndDateTime, policy.Schedules.Timezone)
-		if dateTime.startDateTime.Sub(time.Now()) <= 0 {
+		if time.Until(dateTime.startDateTime) <= 0 {
 			currentSpecSchedContext := gojsonschema.NewJsonContext(fmt.Sprintf("%d", scheduleIndex), specficDateScheduleContext)
 			errDetails := gojsonschema.ErrorDetails{
 				"scheduleIndex": scheduleIndex,
@@ -427,10 +427,7 @@ func hasIntersection(a []int, b []int) bool {
 func compareTimesGTEQ(firstTime string, secondTime string) bool {
 	ft, _ := time.Parse(TimeLayout, firstTime)
 	st, _ := time.Parse(TimeLayout, secondTime)
-	if ft.Sub(st) >= 0 {
-		return true
-	}
-	return false
+	return ft.Sub(st) >= 0
 }
 
 func compareDatesGTEQ(endDate string, startDate string) bool {
@@ -442,8 +439,5 @@ func compareDatesGTEQ(endDate string, startDate string) bool {
 	}
 	fd, _ := time.Parse(DateLayout, endDate)
 	sd, _ := time.Parse(DateLayout, startDate)
-	if fd.Sub(sd) >= 0 {
-		return true
-	}
-	return false
+	return fd.Sub(sd) >= 0
 }
