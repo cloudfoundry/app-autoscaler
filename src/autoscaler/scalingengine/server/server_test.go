@@ -249,6 +249,7 @@ var _ = Describe("Server", func() {
 			req, err = http.NewRequest(method, serverUrl+urlPath, bodyReader)
 			Expect(err).NotTo(HaveOccurred())
 			rsp, err = http.DefaultClient.Do(req)
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context("when requesting correctly", func() {

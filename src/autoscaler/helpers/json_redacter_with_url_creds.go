@@ -20,6 +20,9 @@ func NewJSONRedacterWithURLCred(keyPatterns []string, valuePatterns []string) (*
 		return nil, err
 	}
 	urlCredMatcher, err := regexp.Compile(postgresDbURLPattern)
+	if err != nil {
+		return nil, err
+	}
 	return &JSONRedacterWithURLCred{
 		jsonRedacter:   jsonRedacter,
 		urlCredMatcher: urlCredMatcher,

@@ -192,6 +192,7 @@ var _ = Describe("Metricsgateway", func() {
 				req.SetBasicAuth(conf.Health.HealthCheckUsername, conf.Health.HealthCheckPassword)
 
 				rsp, err := healthHttpClient.Do(req)
+				Expect(err).NotTo(HaveOccurred())
 				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
 				raw, _ := ioutil.ReadAll(rsp.Body)
 				profileIndexBody := string(raw)
