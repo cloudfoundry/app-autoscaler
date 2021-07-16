@@ -108,7 +108,8 @@ var _ = Describe("Emitter", func() {
 	Context("Stop", func() {
 		BeforeEach(func() {
 			emitter = NewEnvelopeEmitter(logger, bufferSize, fclock, verifyWSConnectionInterval, fakeWSHelper)
-			emitter.Start()
+			err := emitter.Start()
+			Expect(err).NotTo(HaveOccurred())
 			Eventually(logger.Buffer).Should(Say("started"))
 			emitter.Accept(&testEnvelope)
 			Eventually(envelopChan).Should(Receive())

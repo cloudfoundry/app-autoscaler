@@ -398,7 +398,7 @@ var _ = Describe("PolicySQLDB", func() {
 
 		Context("when there is credential for target application", func() {
 			BeforeEach(func() {
-				insertCredential("an-app-id", "username", "password")
+				err = insertCredential("an-app-id", "username", "password")
 			})
 
 			It("Should get the credentials", func() {
