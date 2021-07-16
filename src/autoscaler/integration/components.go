@@ -631,6 +631,7 @@ func writeYmlConfig(dir string, componentName string, c interface{}) string {
 	Expect(err).NotTo(HaveOccurred())
 	defer cfgFile.Close()
 	configBytes, err := yaml.Marshal(c)
+	Expect(err).NotTo(HaveOccurred())
 	ioutil.WriteFile(cfgFile.Name(), configBytes, 0777)
 	return cfgFile.Name()
 }

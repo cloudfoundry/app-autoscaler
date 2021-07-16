@@ -210,6 +210,7 @@ var _ = Describe("BrokerHandler", func() {
 				body, err := json.Marshal(instanceDeletionRequestBody)
 				Expect(err).NotTo(HaveOccurred())
 				req, err = http.NewRequest(http.MethodPut, "", bytes.NewReader(body))
+				Expect(err).NotTo(HaveOccurred())
 
 				bindingdb.DeleteServiceInstanceReturns(db.ErrDoesNotExist)
 			})
@@ -228,6 +229,7 @@ var _ = Describe("BrokerHandler", func() {
 				body, err := json.Marshal(instanceDeletionRequestBody)
 				Expect(err).NotTo(HaveOccurred())
 				req, err = http.NewRequest(http.MethodPut, "", bytes.NewReader(body))
+				Expect(err).NotTo(HaveOccurred())
 
 				bindingdb.DeleteServiceInstanceReturns(fmt.Errorf("error"))
 			})
@@ -246,6 +248,7 @@ var _ = Describe("BrokerHandler", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				req, err = http.NewRequest(http.MethodPut, "", bytes.NewReader(body))
+				Expect(err).NotTo(HaveOccurred())
 			})
 			It("fails with 200", func() {
 				Expect(resp.Code).To(Equal(http.StatusOK))
