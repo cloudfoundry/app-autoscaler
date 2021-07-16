@@ -111,7 +111,7 @@ func (idb *InstanceMetricsSQLDB) SaveMetricsInBulk(metrics []*models.AppInstance
 	case "mysql":
 		sqlStr := "INSERT INTO appinstancemetrics(appid, instanceindex, collectedat, name, unit, value, timestamp)VALUES"
 		vals := []interface{}{}
-		if metrics == nil || len(metrics) == 0 {
+		if len(metrics) == 0 {
 			txn.Rollback()
 			return nil
 		}
