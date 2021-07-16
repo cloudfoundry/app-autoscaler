@@ -45,7 +45,7 @@ var _ = Describe("RedactingWriterSinkWithUrlCred", func() {
 
 		It("logs the serialization error", func() {
 			message := map[string]interface{}{}
-			err = json.Unmarshal(writer.Copy(), &message)
+			err := json.Unmarshal(writer.Copy(), &message)
 			Expect(err).NotTo(HaveOccurred())
 			Expect(message["message"]).To(Equal("hello world"))
 			Expect(message["log_level"]).To(Equal(float64(1)))
