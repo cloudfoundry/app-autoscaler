@@ -45,7 +45,8 @@ var _ = Describe("RedactingWriterSinkWithUrlCred", func() {
 
 		It("logs the serialization error", func() {
 			message := map[string]interface{}{}
-			json.Unmarshal(writer.Copy(), &message)
+			err = json.Unmarshal(writer.Copy(), &message)
+			Expect(err).NotTo(HaveOccurred())
 			Expect(message["message"]).To(Equal("hello world"))
 			Expect(message["log_level"]).To(Equal(float64(1)))
 			Expect(message["data"].(map[string]interface{})["lager serialisation error"]).To(Equal("json: unsupported type: func()"))
