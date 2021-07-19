@@ -31,6 +31,7 @@ require (
 	github.com/peterbourgon/g2s v0.0.0-20170223122336-d4e7ad98afea // indirect
 	github.com/prometheus/client_golang v1.11.0
 	github.com/rubyist/circuitbreaker v2.2.1+incompatible
+	github.com/sirupsen/logrus v1.8.1
 	github.com/square/certstrap v1.2.0
 	github.com/tedsuo/ifrit v0.0.0-20191009134036-9a97d0632f00
 	github.com/xeipuuv/gojsonschema v1.2.0
