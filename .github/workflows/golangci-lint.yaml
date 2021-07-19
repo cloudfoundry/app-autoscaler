@@ -5,7 +5,7 @@ jobs:
   golangci:
     name: lint
     env:
-      GO_VERSION: 1.15.1
+      GO_VERSION: 1.15
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
