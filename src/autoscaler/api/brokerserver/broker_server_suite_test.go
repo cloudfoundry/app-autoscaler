@@ -27,6 +27,7 @@ const (
 	username     = "brokeruser"
 	usernameHash = "$2a$12$S44P8nP0b.wq7kW21anaR.uU1dBMCGHUZxw7pdcy42z6oJK0TFTM." // ruby -r bcrypt -e 'puts BCrypt::Password.create("brokeruser")'
 	password     = "supersecretpassword"
+	// #nosec G101 - only for unit tests
 	passwordHash = "$2a$12$8/xRXDhCyl0I..z76PG5Q.pWNLoVs0aYncx6UU1hToRAuevVjKm6O" // ruby -r bcrypt -e 'puts BCrypt::Password.create("supersecretpassword")'
 	testAppId    = "an-app-id"
 )

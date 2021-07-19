@@ -79,6 +79,7 @@ func NewCFClient(conf *CFConfig, logger lager.Logger, clk clock.Clock) CFClient 
 	c.authHeader = "Basic " + base64.StdEncoding.EncodeToString([]byte(conf.ClientID+":"+conf.Secret))
 
 	c.httpClient = cfhttp.NewClient()
+	// #nosec G402 - this is intentionally configurable
 	c.httpClient.Transport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: conf.SkipSSLValidation}
 	c.httpClient.Transport.(*http.Transport).DialContext = (&net.Dialer{
 		Timeout: 30 * time.Second,
