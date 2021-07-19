@@ -46,7 +46,7 @@ var _ = Describe("Integration_Operator_Others", func() {
 	})
 
 	AfterEach(func() {
-		err = detachPolicy(testAppId, components.Ports[GolangAPIServer], httpClient)
+		_, err := detachPolicy(testAppId, components.Ports[GolangAPIServer], httpClient)
 		Expect(err).NotTo(HaveOccurred())
 		stopScheduler()
 		stopScalingEngine()
