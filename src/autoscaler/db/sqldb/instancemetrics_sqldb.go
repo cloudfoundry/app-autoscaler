@@ -6,7 +6,7 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	"github.com/jmoiron/sqlx"
-	. "github.com/lib/pq"
+	"github.com/lib/pq"
 
 	"context"
 	"database/sql"
@@ -80,7 +80,7 @@ func (idb *InstanceMetricsSQLDB) SaveMetricsInBulk(metrics []*models.AppInstance
 	}
 	switch idb.sqldb.DriverName() {
 	case "postgres":
-		stmt, err := txn.Prepare(CopyIn("appinstancemetrics", "appid", "instanceindex", "collectedat", "name", "unit", "value", "timestamp"))
+		stmt, err := txn.Prepare(pq.CopyIn("appinstancemetrics", "appid", "instanceindex", "collectedat", "name", "unit", "value", "timestamp"))
 		if err != nil {
 			idb.logger.Error("failed-to-prepare-statement", err)
 			_ = txn.Rollback()
