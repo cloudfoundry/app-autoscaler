@@ -44,7 +44,8 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 		Context("Valid specific date schedule", func() {
 
 			AfterEach(func() {
-				deleteSchedule(testAppId)
+				_, err := deleteSchedule(testAppId)
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			It("creates active schedule in scaling engine", func() {
