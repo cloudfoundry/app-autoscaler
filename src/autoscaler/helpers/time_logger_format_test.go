@@ -87,7 +87,8 @@ var _ = Describe("TimeLoggerFormat", func() {
 		})
 		It("logs the serialization error", func() {
 			message := map[string]interface{}{}
-			json.Unmarshal(tlf.ToJSON(), &message)
+			err := json.Unmarshal(tlf.ToJSON(), &message)
+			Expect(err).ToNot(HaveOccurred())
 			Expect(message["message"]).To(Equal("message"))
 			Expect(message["timestamp"]).To(Equal(timestamp2String(logTime.UnixNano())))
 			Expect(message["log_time"]).To(Equal(time.Time.Format(logTime, time.RFC3339)))
