@@ -49,7 +49,8 @@ var _ = Describe("Dblock", func() {
 		err                    error
 	)
 	BeforeEach(func() {
-		cleanLockTable()
+		err = cleanLockTable()
+		Expect(err).NotTo(HaveOccurred())
 		dblogger = lagertest.NewTestLogger("lockdb")
 		ldb, err = sqldb.NewLockSQLDB(dbConfig, lockTableName, dblogger)
 		Expect(err).NotTo(HaveOccurred())
@@ -70,8 +71,8 @@ var _ = Describe("Dblock", func() {
 	JustBeforeEach(func() {
 		lockRunner1 = lock1.InitDBLockRunner(retryInterval, lockTTL, lockOwner1, ldb, callbackOnAcquireLock1, callbackOnLostLock1)
 		lockRunner2 = lock2.InitDBLockRunner(retryInterval, lockTTL, lockOwner2, ldb, callbackOnAcquireLock2, callbackOnLostLock2)
-		go lockRunner1.Run(signalsChan1, readyChan1)
-		go lockRunner2.Run(signalsChan2, readyChan2)
+		go func() { _ = lockRunner1.Run(signalsChan1, readyChan1) }()
+		go func() { _ = lockRunner2.Run(signalsChan2, readyChan2) }()
 		select {
 
 		case <-logger1.Buffer().Detect("lock-acquired-in-first-attempt"):

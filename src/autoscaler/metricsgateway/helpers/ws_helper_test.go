@@ -108,10 +108,9 @@ var _ = Describe("WsHelper", func() {
 			err = wsHelper.Ping()
 			Expect(err).ShouldNot(HaveOccurred())
 			Eventually(pingPongChan, 5*time.Second, 1*time.Second).Should(Receive(Equal(1)))
-
 		})
 		It("close the websocket connection", func() {
-			wsHelper.CloseConn()
+			err = wsHelper.CloseConn()
 			Expect(err).NotTo(HaveOccurred())
 			Eventually(logger.Buffer, 10*time.Second, 1*time.Second).Should(Say("successfully-close-ws-connection"))
 		})
@@ -167,7 +166,8 @@ var _ = Describe("WsHelper", func() {
 		})
 		It("write envelops to server", func() {
 			Consistently(messageChan).ShouldNot(Receive())
-			wsHelper.Write(&testEnvelope)
+			err = wsHelper.Write(&testEnvelope)
+			Expect(err).NotTo(HaveOccurred())
 			Eventually(messageChan).Should(Receive())
 		})
 		Context("when server is down", func() {

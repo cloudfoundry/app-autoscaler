@@ -107,7 +107,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		filepath.Join(testCertDir, "loggregator-ca.crt"),
 	)
 
-	grpcIngressTestServer.Start()
+	err = grpcIngressTestServer.Start()
+	Expect(err).NotTo(HaveOccurred())
 
 	cfg.LoggregatorConfig.TLS.CACertFile = filepath.Join(testCertDir, "loggregator-ca.crt")
 	cfg.LoggregatorConfig.TLS.CertFile = filepath.Join(testCertDir, "metron.crt")

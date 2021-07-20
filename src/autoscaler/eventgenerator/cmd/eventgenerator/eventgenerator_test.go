@@ -59,7 +59,8 @@ var _ = Describe("Eventgenerator", func() {
 			badfile, err := ioutil.TempFile("", "bad-mc-config")
 			Expect(err).NotTo(HaveOccurred())
 			runner.configPath = badfile.Name()
-			ioutil.WriteFile(runner.configPath, []byte("bogus"), os.ModePerm)
+			err = ioutil.WriteFile(runner.configPath, []byte("bogus"), os.ModePerm)
+			Expect(err).NotTo(HaveOccurred())
 			runner.Start()
 		})
 
