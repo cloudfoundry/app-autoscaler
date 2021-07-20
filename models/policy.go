@@ -2,6 +2,7 @@ package models
 
 import (
 	"encoding/json"
+	"fmt"
 	"time"
 )
 
@@ -28,10 +29,13 @@ func (p *PolicyJson) Equals(p2 *PolicyJson) bool {
 		return false
 	}
 }
-func (p *PolicyJson) GetAppPolicy() *AppPolicy {
+func (p *PolicyJson) GetAppPolicy() (*AppPolicy, error) {
 	scalingPolicy := ScalingPolicy{}
-	json.Unmarshal([]byte(p.PolicyStr), &scalingPolicy)
-	return &AppPolicy{AppId: p.AppId, ScalingPolicy: &scalingPolicy}
+	err := json.Unmarshal([]byte(p.PolicyStr), &scalingPolicy)
+	if err != nil {
+		return nil, fmt.Errorf("policy unmarshalling failed %w", err)
+	}
+	return &AppPolicy{AppId: p.AppId, ScalingPolicy: &scalingPolicy}, nil
 }
 
 type ScalingPolicy struct {

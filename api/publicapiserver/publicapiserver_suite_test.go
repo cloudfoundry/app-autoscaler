@@ -133,7 +133,8 @@ var _ = AfterSuite(func() {
 
 func GetTestHandler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Success"))
+		_, err := w.Write([]byte("Success"))
+		Expect(err).NotTo(HaveOccurred())
 	}
 }
 
