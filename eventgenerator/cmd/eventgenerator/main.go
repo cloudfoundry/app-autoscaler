@@ -89,6 +89,10 @@ func main() {
 	appMonitorsChan := make(chan *models.AppMonitor, conf.Aggregator.AppMonitorChannelSize)
 	appMetricChan := make(chan *models.AppMetric, conf.Aggregator.AppMetricChannelSize)
 	metricPollers, err := createMetricPollers(logger, conf, appMonitorsChan, appMetricChan)
+	if err != nil {
+		logger.Error("failed to create MetricPoller", err)
+		os.Exit(1)
+	}
 	aggregator, err := aggregator.NewAggregator(logger, egClock, conf.Aggregator.AggregatorExecuteInterval, conf.Aggregator.SaveInterval,
 		appMonitorsChan, appManager.GetPolicies, appManager.SaveMetricToCache, conf.DefaultStatWindowSecs, appMetricChan, appMetricDB)
 	if err != nil {
