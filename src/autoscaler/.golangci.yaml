@@ -92,7 +92,7 @@ linters:
       #    - structcheck
     - stylecheck
     - testpackage
-      #    - typecheck
+    - typecheck
       #    - unconvert
       #    - unparam
     - unused
