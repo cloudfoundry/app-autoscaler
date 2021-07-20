@@ -331,10 +331,7 @@ func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) er
 		Reason:       "schedule ends",
 	}
 	defer func() {
-		err = s.scalingEngineDB.SaveScalingHistory(history)
-		if err != nil {
-			logger.Error("save-scaling-history", err, lager.Data{"appId": appId})
-		}
+		_ = s.scalingEngineDB.SaveScalingHistory(history)
 	}()
 
 	appEntity, err := s.cfClient.GetApp(appId)
