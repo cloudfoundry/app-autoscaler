@@ -18,6 +18,9 @@ check: fmt lint build test
 test:
 	ginkgo -r -race -requireSuite -randomizeAllSpecs -keepGoing --skipPackage=integration
 
+testsuite:
+	ginkgo -r -race -randomizeAllSpecs $(TEST)
+
 .PHONY: integration
 integration:
 	ginkgo -r -race -requireSuite -randomizeAllSpecs -keepGoing integration
