@@ -89,7 +89,7 @@ linters:
     - nakedret
     - nolintlint
     - rowserrcheck
-      #    - structcheck
+    - structcheck
     - stylecheck
     - testpackage
     - typecheck
