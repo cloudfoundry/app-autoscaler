@@ -28,7 +28,12 @@ func (c *cfClient) GetApp(appID string) (*models.AppEntity, error) {
 		c.logger.Error("get-app-instances-new-request", err)
 		return nil, err
 	}
-	req.Header.Set("Authorization", TokenTypeBearer+" "+c.GetTokens().AccessToken)
+	tokens, err := c.GetTokens()
+	if err != nil {
+		c.logger.Error("get-app-instances-get-tokens", err)
+		return nil, err
+	}
+	req.Header.Set("Authorization", TokenTypeBearer+" "+tokens.AccessToken)
 
 	var resp *http.Response
 	resp, err = c.httpClient.Do(req)
@@ -100,7 +105,12 @@ func (c *cfClient) SetAppInstances(appID string, num int) error {
 		c.logger.Error("set-app-instances-new-request", err)
 		return err
 	}
-	req.Header.Set("Authorization", TokenTypeBearer+" "+c.GetTokens().AccessToken)
+	tokens, err := c.GetTokens()
+	if err != nil {
+		c.logger.Error("set-app-instances-get-tokens", err)
+		return err
+	}
+	req.Header.Set("Authorization", TokenTypeBearer+" "+tokens.AccessToken)
 	req.Header.Set("Content-Type", "application/json")
 
 	var resp *http.Response

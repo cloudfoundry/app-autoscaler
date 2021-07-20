@@ -107,7 +107,8 @@ var _ = Describe("Main", func() {
 				badfile, err := ioutil.TempFile("", "bad-engine-config")
 				Expect(err).NotTo(HaveOccurred())
 				runner.configPath = badfile.Name()
-				ioutil.WriteFile(runner.configPath, []byte("bogus"), os.ModePerm)
+				err = ioutil.WriteFile(runner.configPath, []byte("bogus"), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
 			})
 
 			AfterEach(func() {

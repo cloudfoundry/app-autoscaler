@@ -31,15 +31,17 @@ type FakeCFClient struct {
 	getEndpointsReturnsOnCall map[int]struct {
 		result1 cf.Endpoints
 	}
-	GetTokensStub        func() cf.Tokens
+	GetTokensStub        func() (cf.Tokens, error)
 	getTokensMutex       sync.RWMutex
 	getTokensArgsForCall []struct {
 	}
 	getTokensReturns struct {
 		result1 cf.Tokens
+		result2 error
 	}
 	getTokensReturnsOnCall map[int]struct {
 		result1 cf.Tokens
+		result2 error
 	}
 	IsUserAdminStub        func(string) (bool, error)
 	isUserAdminMutex       sync.RWMutex
@@ -223,7 +225,7 @@ func (fake *FakeCFClient) GetEndpointsReturnsOnCall(i int, result1 cf.Endpoints)
 	}{result1}
 }
 
-func (fake *FakeCFClient) GetTokens() cf.Tokens {
+func (fake *FakeCFClient) GetTokens() (cf.Tokens, error) {
 	fake.getTokensMutex.Lock()
 	ret, specificReturn := fake.getTokensReturnsOnCall[len(fake.getTokensArgsForCall)]
 	fake.getTokensArgsForCall = append(fake.getTokensArgsForCall, struct {
@@ -236,9 +238,9 @@ func (fake *FakeCFClient) GetTokens() cf.Tokens {
 		return stub()
 	}
 	if specificReturn {
-		return ret.result1
+		return ret.result1, ret.result2
 	}
-	return fakeReturns.result1
+	return fakeReturns.result1, fakeReturns.result2
 }
 
 func (fake *FakeCFClient) GetTokensCallCount() int {
@@ -247,33 +249,36 @@ func (fake *FakeCFClient) GetTokensCallCount() int {
 	return len(fake.getTokensArgsForCall)
 }
 
-func (fake *FakeCFClient) GetTokensCalls(stub func() cf.Tokens) {
+func (fake *FakeCFClient) GetTokensCalls(stub func() (cf.Tokens, error)) {
 	fake.getTokensMutex.Lock()
 	defer fake.getTokensMutex.Unlock()
 	fake.GetTokensStub = stub
 }
 
-func (fake *FakeCFClient) GetTokensReturns(result1 cf.Tokens) {
+func (fake *FakeCFClient) GetTokensReturns(result1 cf.Tokens, result2 error) {
 	fake.getTokensMutex.Lock()
 	defer fake.getTokensMutex.Unlock()
 	fake.GetTokensStub = nil
 	fake.getTokensReturns = struct {
 		result1 cf.Tokens
-	}{result1}
+		result2 error
+	}{result1, result2}
 }
 
-func (fake *FakeCFClient) GetTokensReturnsOnCall(i int, result1 cf.Tokens) {
+func (fake *FakeCFClient) GetTokensReturnsOnCall(i int, result1 cf.Tokens, result2 error) {
 	fake.getTokensMutex.Lock()
 	defer fake.getTokensMutex.Unlock()
 	fake.GetTokensStub = nil
 	if fake.getTokensReturnsOnCall == nil {
 		fake.getTokensReturnsOnCall = make(map[int]struct {
 			result1 cf.Tokens
+			result2 error
 		})
 	}
 	fake.getTokensReturnsOnCall[i] = struct {
 		result1 cf.Tokens
-	}{result1}
+		result2 error
+	}{result1, result2}
 }
 
 func (fake *FakeCFClient) IsUserAdmin(arg1 string) (bool, error) {
