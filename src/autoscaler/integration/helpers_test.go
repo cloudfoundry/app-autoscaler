@@ -70,8 +70,8 @@ func compareAppAggregatedMetricResult(o1, o2 AppAggregatedMetricResult) {
 func checkAggregatedMetricResult(apiServerPort int, pathVariables []string, parameters map[string]string, result AppAggregatedMetricResult) {
 	var actual AppAggregatedMetricResult
 	resp, err := getAppAggregatedMetrics(apiServerPort, pathVariables, parameters)
-	defer resp.Body.Close()
 	Expect(err).NotTo(HaveOccurred())
+	defer resp.Body.Close()
 	Expect(resp.StatusCode).To(Equal(http.StatusOK))
 	err = json.NewDecoder(resp.Body).Decode(&actual)
 	Expect(err).NotTo(HaveOccurred())
@@ -151,8 +151,8 @@ func compareScalingHistoryResult(o1, o2 ScalingHistoryResult) {
 func checkScalingHistoryResult(apiServerPort int, pathVariables []string, parameters map[string]string, result ScalingHistoryResult) {
 	var actual ScalingHistoryResult
 	resp, err := getScalingHistories(apiServerPort, pathVariables, parameters)
-	defer resp.Body.Close()
 	Expect(err).NotTo(HaveOccurred())
+	defer resp.Body.Close()
 	Expect(resp.StatusCode).To(Equal(http.StatusOK))
 	err = json.NewDecoder(resp.Body).Decode(&actual)
 	Expect(err).NotTo(HaveOccurred())
