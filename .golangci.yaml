@@ -74,7 +74,7 @@ linters:
     - depguard
     - dogsled
       #- dupl
-      #- errcheck
+    - errcheck
     - funlen
       #    - gocognit
       #    - goconst
@@ -92,14 +92,14 @@ linters:
     - nolintlint
     - rowserrcheck
     - staticcheck
-      #    - structcheck
+    - structcheck
     - stylecheck
     - testpackage
-      #    - typecheck
+    - typecheck
       #    - unconvert
       #    - unparam
     - unused
-      #    - varcheck
+    - varcheck
     - whitespace
       #    - godox
       #    - staticcheck
