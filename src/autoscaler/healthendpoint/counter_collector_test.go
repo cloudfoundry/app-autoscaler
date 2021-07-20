@@ -13,15 +13,15 @@ import (
 
 var _ = Describe("CounterCollector", func() {
 	var (
-		namespace1 string = "test_name_space1"
-		subSystem1 string = "test_sub_system1"
-		name1      string = "test_name1"
-		help1      string = "test_help1"
+		namespace1 = "test_name_space1"
+		subSystem1 = "test_sub_system1"
+		name1      = "test_name1"
+		help1      = "test_help1"
 
-		namespace2 string = "test_name_space2"
-		subSystem2 string = "test_sub_system2"
-		name2      string = "test_name2"
-		help2      string = "test_help2"
+		namespace2 = "test_name_space2"
+		subSystem2 = "test_sub_system2"
+		name2      = "test_name2"
+		help2      = "test_help2"
 
 		counterOpt1 = prometheus.CounterOpts{
 			Namespace: namespace1,
