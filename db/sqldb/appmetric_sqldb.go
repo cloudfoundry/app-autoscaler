@@ -8,7 +8,7 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	"github.com/jmoiron/sqlx"
-	. "github.com/lib/pq"
+	"github.com/lib/pq"
 
 	"database/sql"
 	"time"
@@ -80,7 +80,7 @@ func (adb *AppMetricSQLDB) SaveAppMetricsInBulk(appMetrics []*models.AppMetric) 
 
 	switch adb.sqldb.DriverName() {
 	case "postgres":
-		stmt, err := txn.Prepare(CopyIn("app_metric", "app_id", "metric_type", "unit", "timestamp", "value"))
+		stmt, err := txn.Prepare(pq.CopyIn("app_metric", "app_id", "metric_type", "unit", "timestamp", "value"))
 		if err != nil {
 			adb.logger.Error("failed-to-prepare-statement", err)
 			txn.Rollback()
