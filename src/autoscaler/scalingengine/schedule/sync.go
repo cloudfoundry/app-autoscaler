@@ -54,7 +54,10 @@ func (ss *activeScheduleSychronizer) Sync() {
 			wg.Add(1)
 			go func(aid string, as *models.ActiveSchedule) {
 				defer wg.Done()
-				ss.engine.SetActiveSchedule(aid, as)
+				err = ss.engine.SetActiveSchedule(aid, as)
+				if err != nil {
+					ss.logger.Error("synchronize-active-schedules-find-missing-active-schedule-start-failed", err, lager.Data{"appId": appId, "schedule": schedule})
+				}
 			}(appId, schedule)
 		}
 	}
@@ -65,7 +68,10 @@ func (ss *activeScheduleSychronizer) Sync() {
 			wg.Add(1)
 			go func(aid, sid string) {
 				defer wg.Done()
-				ss.engine.RemoveActiveSchedule(aid, sid)
+				err = ss.engine.RemoveActiveSchedule(aid, sid)
+				if err != nil {
+					ss.logger.Error("synchronize-active-schedules-find-missing-active-schedule-end-failed", err, lager.Data{"appId": appId, "scheduleId": scheduleId})
+				}
 			}(appId, scheduleId)
 		}
 	}

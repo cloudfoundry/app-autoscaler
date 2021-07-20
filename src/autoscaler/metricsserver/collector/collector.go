@@ -214,7 +214,7 @@ func (c *metricCollector) saveMetrics() {
 		case <-ticker.C():
 			if c.PersistMetrics && len(metrics) > 0 {
 				go func(instancemetricsDb db.InstanceMetricsDB, metrics []*models.AppInstanceMetric) {
-					instancemetricsDb.SaveMetricsInBulk(metrics)
+					_ = instancemetricsDb.SaveMetricsInBulk(metrics)
 				}(c.instancemetricsDb, metrics)
 				metrics = nil
 			}

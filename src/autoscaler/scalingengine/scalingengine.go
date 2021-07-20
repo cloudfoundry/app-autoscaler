@@ -68,7 +68,9 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 		Reason:       getDynamicScalingReason(trigger),
 	}
 
-	defer s.scalingEngineDB.SaveScalingHistory(history)
+	defer func() {
+		_ = s.scalingEngineDB.SaveScalingHistory(history)
+	}()
 
 	result := &models.AppScalingResult{
 		AppId:             appId,
@@ -251,7 +253,9 @@ func (s *scalingEngine) SetActiveSchedule(appId string, schedule *models.ActiveS
 		NewInstances: -1,
 		Reason:       getScheduledScalingReason(schedule),
 	}
-	defer s.scalingEngineDB.SaveScalingHistory(history)
+	defer func() {
+		_ = s.scalingEngineDB.SaveScalingHistory(history)
+	}()
 
 	appEntity, err := s.cfClient.GetApp(appId)
 	if err != nil {
@@ -326,7 +330,9 @@ func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) er
 		NewInstances: -1,
 		Reason:       "schedule ends",
 	}
-	defer s.scalingEngineDB.SaveScalingHistory(history)
+	defer func() {
+		_ = s.scalingEngineDB.SaveScalingHistory(history)
+	}()
 
 	appEntity, err := s.cfClient.GetApp(appId)
 	if err != nil {

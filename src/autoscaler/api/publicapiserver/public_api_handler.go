@@ -105,7 +105,10 @@ func (h *PublicApiHandler) GetScalingPolicy(w http.ResponseWriter, r *http.Reque
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Content-Length", strconv.Itoa(len(bf.Bytes())))
 	w.WriteHeader(http.StatusOK)
-	w.Write(bf.Bytes())
+	_, err = w.Write(bf.Bytes())
+	if err != nil {
+		h.logger.Error("failed-to-write-body", err)
+	}
 }
 
 func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Request, vars map[string]string) {
@@ -164,7 +167,10 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 		h.logger.Error("Failed to create/update schedule", err, nil)
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(policyBytes))
+	_, err = w.Write([]byte(policyBytes))
+	if err != nil {
+		h.logger.Error("failed-to-write-body", err)
+	}
 }
 
 func (h *PublicApiHandler) DetachScalingPolicy(w http.ResponseWriter, r *http.Request, vars map[string]string) {
@@ -197,7 +203,10 @@ func (h *PublicApiHandler) DetachScalingPolicy(w http.ResponseWriter, r *http.Re
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("{}"))
+	_, err = w.Write([]byte("{}"))
+	if err != nil {
+		h.logger.Error("failed-to-write-body", err)
+	}
 }
 
 func (h *PublicApiHandler) GetScalingHistories(w http.ResponseWriter, r *http.Request, vars map[string]string) {
@@ -400,11 +409,18 @@ func (h *PublicApiHandler) GetApiInfo(w http.ResponseWriter, r *http.Request, va
 			Message: "Failed to load info"})
 		return
 	}
-	w.Write([]byte(info))
+
+	_, err = w.Write([]byte(info))
+	if err != nil {
+		h.logger.Error("failed-to-write-body", err)
+	}
 }
 
 func (h *PublicApiHandler) GetHealth(w http.ResponseWriter, r *http.Request, vars map[string]string) {
-	w.Write([]byte(`{"alive":"true"}`))
+	_, err := w.Write([]byte(`{"alive":"true"}`))
+	if err != nil {
+		h.logger.Error("failed-to-write-body", err)
+	}
 }
 
 func (h *PublicApiHandler) CreateCredential(w http.ResponseWriter, r *http.Request, vars map[string]string) {

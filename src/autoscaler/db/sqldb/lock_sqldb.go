@@ -243,7 +243,9 @@ func (ldb *LockSQLDB) transact(db *sqlx.DB, f func(tx *sql.Tx) error) error {
 				ldb.logger.Error("failed-starting-transaction", err)
 				return err
 			}
-			defer tx.Rollback()
+			defer func() {
+				_ = tx.Rollback()
+			}()
 
 			err = f(tx)
 			if err != nil {

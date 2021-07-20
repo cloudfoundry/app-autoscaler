@@ -369,7 +369,8 @@ spring.main.allow-bean-definition-overriding=true
 	settingJsonStr := fmt.Sprintf(settingStrTemplate, driverClassName, jdbcDBUri, userName, password, driverClassName, jdbcDBUri, userName, password, scalingEngineUri, testCertDir, testCertDir, testCertDir, testCertDir, components.Ports[Scheduler], components.Ports[Scheduler], int(httpClientTimeout/time.Second))
 	cfgFile, err := os.Create(filepath.Join(tmpDir, "application.properties"))
 	Expect(err).NotTo(HaveOccurred())
-	ioutil.WriteFile(cfgFile.Name(), []byte(settingJsonStr), 0600)
+	err = ioutil.WriteFile(cfgFile.Name(), []byte(settingJsonStr), 0600)
+	Expect(err).NotTo(HaveOccurred())
 	cfgFile.Close()
 	return cfgFile.Name()
 }
@@ -639,6 +640,7 @@ func writeYmlConfig(dir string, componentName string, c interface{}) string {
 	defer cfgFile.Close()
 	configBytes, err := yaml.Marshal(c)
 	Expect(err).NotTo(HaveOccurred())
-	ioutil.WriteFile(cfgFile.Name(), configBytes, 0600)
+	err = ioutil.WriteFile(cfgFile.Name(), configBytes, 0600)
+	Expect(err).NotTo(HaveOccurred())
 	return cfgFile.Name()
 }

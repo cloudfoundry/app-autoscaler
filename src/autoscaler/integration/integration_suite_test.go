@@ -746,7 +746,7 @@ func fakeMetricsPolling(appId string, memoryValue uint64, memQuota uint64) {
 			messages := [][]byte{message1, message2, message3}
 			for _, msg := range messages {
 				partWriter, _ := mp.CreatePart(nil)
-				partWriter.Write(msg)
+				_, _ = partWriter.Write(msg)
 			}
 		},
 	)
