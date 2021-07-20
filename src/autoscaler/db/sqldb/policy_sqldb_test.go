@@ -225,7 +225,8 @@ var _ = Describe("PolicySQLDB", func() {
 			insertPolicy("third-app-id", scalingPolicy)
 			policies, err = pdb.RetrievePolicies()
 			for i, policy := range policies {
-				policy.PolicyStr = formatPolicyString(policy.PolicyStr)
+				policy.PolicyStr, err = formatPolicyString(policy.PolicyStr)
+				Expect(err).NotTo(HaveOccurred())
 				policies[i] = policy
 			}
 		})
@@ -286,7 +287,9 @@ var _ = Describe("PolicySQLDB", func() {
 			})
 			It("saves the policy", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(formatPolicyString(getAppPolicy("an-app-id"))).To(Equal(formatPolicyString(policyJsonStr)))
+				policyString, err := formatPolicyString(policyJsonStr)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(formatPolicyString(getAppPolicy("an-app-id"))).To(Equal(policyString))
 			})
 		})
 
@@ -319,7 +322,9 @@ var _ = Describe("PolicySQLDB", func() {
 			})
 			It("updates the policy", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(formatPolicyString(getAppPolicy("an-app-id"))).To(Equal(formatPolicyString(policyJsonStr)))
+				policyString, err := formatPolicyString(policyJsonStr)
+				Expect(err).NotTo(HaveOccurred())
+				Expect(formatPolicyString(getAppPolicy("an-app-id"))).To(Equal(policyString))
 			})
 		})
 	})
