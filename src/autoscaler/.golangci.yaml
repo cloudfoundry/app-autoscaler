@@ -96,7 +96,7 @@ linters:
       #    - unconvert
       #    - unparam
     - unused
-      #    - varcheck
+    - varcheck
     - whitespace
       #    - godox
       #    - staticcheck
