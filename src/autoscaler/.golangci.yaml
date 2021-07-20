@@ -91,7 +91,7 @@ linters:
     - rowserrcheck
       #    - structcheck
     - stylecheck
-      #    - testpackage
+    - testpackage
       #    - typecheck
       #    - unconvert
       #    - unparam
