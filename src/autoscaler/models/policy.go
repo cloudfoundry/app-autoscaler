@@ -15,11 +15,11 @@ type PolicyJson struct {
 	PolicyStr string
 }
 
-func (p1 *PolicyJson) Equals(p2 *PolicyJson) bool {
-	if p1 == p2 {
+func (p *PolicyJson) Equals(p2 *PolicyJson) bool {
+	if p == p2 {
 		return true
-	} else if p1 != nil && p2 != nil {
-		if p1.AppId == p2.AppId && p1.PolicyStr == p2.PolicyStr {
+	} else if p != nil && p2 != nil {
+		if p.AppId == p2.AppId && p.PolicyStr == p2.PolicyStr {
 			return true
 		} else {
 			return false

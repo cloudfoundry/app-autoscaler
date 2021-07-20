@@ -12,7 +12,7 @@ jobs:
   mysql:
     strategy:
       matrix:
-        go: [1.15.1]
+        go: [1.15]
         java: [8,11]  
     env:
       DB_DATABASE: autoscaler
