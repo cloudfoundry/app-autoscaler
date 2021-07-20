@@ -12,7 +12,7 @@ import (
 	"code.cloudfoundry.org/lager"
 
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
-	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/proto" //nolint:staticcheck
 	"github.com/gorilla/websocket"
 )
 

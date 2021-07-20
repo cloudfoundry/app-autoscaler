@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/status"
 )
 
 type FakeEventProducer struct {
@@ -48,7 +49,7 @@ func (f *FakeEventProducer) Receiver(
 	*loggregator_v2.EgressRequest,
 	loggregator_v2.Egress_ReceiverServer,
 ) error {
-	return grpc.Errorf(codes.Unimplemented, "use BatchedReceiver instead")
+	return status.Errorf(codes.Unimplemented, "use BatchedReceiver instead")
 }
 
 func (f *FakeEventProducer) BatchedReceiver(
@@ -60,7 +61,7 @@ func (f *FakeEventProducer) BatchedReceiver(
 	f.actualReq = req
 	f.mu.Unlock()
 	var i int
-	for range time.Tick(f.emitInterval) {
+	for range time.NewTicker(f.emitInterval).C {
 		fpEnvs := []*loggregator_v2.Envelope{}
 		for _, e := range f.envelops {
 			fpEnvs = append(fpEnvs, &loggregator_v2.Envelope{

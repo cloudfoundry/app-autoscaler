@@ -408,17 +408,15 @@ func validateLockNotInDB(owner string) error {
 	return fmt.Errorf("lock exists with owner (%s)", owner)
 }
 
-func formatPolicyString(policyStr string) string {
+func formatPolicyString(policyStr string) (string, error) {
 	scalingPolicy := &models.ScalingPolicy{}
 	err := json.Unmarshal([]byte(policyStr), &scalingPolicy)
 	if err != nil {
-		fmt.Errorf("failed to unmarshal policyJson string %s", policyStr)
-		return ""
+		return "", fmt.Errorf("failed to unmarshal policyJson string %s", policyStr)
 	}
 	policyJsonStr, err := json.Marshal(scalingPolicy)
 	if err != nil {
-		fmt.Errorf("failed to marshal ScalingPolicy %v", scalingPolicy)
-		return ""
+		return "", fmt.Errorf("failed to marshal ScalingPolicy %v", scalingPolicy)
 	}
-	return string(policyJsonStr)
+	return string(policyJsonStr), nil
 }
