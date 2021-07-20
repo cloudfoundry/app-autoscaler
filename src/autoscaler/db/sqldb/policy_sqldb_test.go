@@ -376,7 +376,8 @@ var _ = Describe("PolicySQLDB", func() {
 			pdb, err = NewPolicySQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
 
-			cleanCredentialTable()
+			err = cleanCredentialTable()
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		AfterEach(func() {
@@ -397,7 +398,7 @@ var _ = Describe("PolicySQLDB", func() {
 
 		Context("when there is credential for target application", func() {
 			BeforeEach(func() {
-				insertCredential("an-app-id", "username", "password")
+				err = insertCredential("an-app-id", "username", "password")
 			})
 
 			It("Should get the credentials", func() {
@@ -412,7 +413,8 @@ var _ = Describe("PolicySQLDB", func() {
 		BeforeEach(func() {
 			pdb, err = NewPolicySQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
-			cleanCredentialTable()
+			err = cleanCredentialTable()
+			Expect(err).NotTo(HaveOccurred())
 			appId = "the-test-app-id"
 			username = "the-user-name"
 			password = "the-password"
@@ -462,7 +464,8 @@ var _ = Describe("PolicySQLDB", func() {
 		BeforeEach(func() {
 			pdb, err = NewPolicySQLDB(dbConfig, logger)
 			Expect(err).NotTo(HaveOccurred())
-			cleanCredentialTable()
+			err = cleanCredentialTable()
+			Expect(err).NotTo(HaveOccurred())
 			appId = "the-test-app-id"
 			username = "the-user-name"
 			password = "the-password"

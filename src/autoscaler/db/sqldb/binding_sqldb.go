@@ -185,7 +185,10 @@ func (bdb *BindingSQLDB) DeleteServiceBindingByAppId(appId string) error {
 func (bdb *BindingSQLDB) CheckServiceBinding(appId string) bool {
 	var count int
 	query := bdb.sqldb.Rebind("SELECT COUNT(*) FROM binding WHERE app_id=?")
-	bdb.sqldb.QueryRow(query, appId).Scan(&count)
+	err := bdb.sqldb.QueryRow(query, appId).Scan(&count)
+	if err != nil {
+		bdb.logger.Error("check-service-binding-by-appid", err, lager.Data{"query": query, "appId": appId})
+	}
 	return count > 0
 }
 func (bdb *BindingSQLDB) GetDBStatus() sql.DBStats {

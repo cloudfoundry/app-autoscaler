@@ -63,6 +63,7 @@ var _ = Describe("Policy", func() {
 ]
 }`
 	var p1, p2, policyJson *PolicyJson
+	var err error
 	Context("PolicyJson.Equals", func() {
 		Context("when p1 and p2 are all nil", func() {
 			BeforeEach(func() {
@@ -116,9 +117,10 @@ var _ = Describe("Policy", func() {
 
 		BeforeEach(func() {
 			policyJson = &PolicyJson{AppId: testAppId, PolicyStr: policyStr}
-			policy = policyJson.GetAppPolicy()
+			policy, err = policyJson.GetAppPolicy()
 		})
 		It("should return a policy", func() {
+			Expect(err).NotTo(HaveOccurred())
 			Expect(policy).To(Equal(&AppPolicy{
 				AppId: testAppId,
 				ScalingPolicy: &ScalingPolicy{
@@ -139,11 +141,12 @@ var _ = Describe("Policy", func() {
 
 	Context("ScalingRules", func() {
 		JustBeforeEach(func() {
-			policy = policyJson.GetAppPolicy()
+			policy, err = policyJson.GetAppPolicy()
 		})
 
 		Context("When scaling rule has breach_duration_secs and cool_down_secs", func() {
 			BeforeEach(func() {
+				Expect(err).NotTo(HaveOccurred())
 				policyJson = &PolicyJson{AppId: testAppId, PolicyStr: policyStr}
 			})
 			It("should return actual breach_duration_secs and cool_down_secs", func() {
