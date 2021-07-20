@@ -90,7 +90,11 @@ func (pm *PolicyManager) retrievePolicies() ([]*models.PolicyJson, error) {
 func (pm *PolicyManager) computePolicies(policyJsons []*models.PolicyJson) map[string]*models.AppPolicy {
 	policyMap := make(map[string]*models.AppPolicy)
 	for _, policyJSON := range policyJsons {
-		appPolicy := policyJSON.GetAppPolicy()
+		appPolicy, err := policyJSON.GetAppPolicy()
+		if err != nil {
+			pm.logger.Error("get-app-policy", err)
+			continue
+		}
 		policyMap[policyJSON.AppId] = appPolicy
 	}
 	return policyMap

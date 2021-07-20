@@ -202,9 +202,10 @@ func writeConfig(c *config.Config) *os.File {
 	cfg, err := ioutil.TempFile("", "mg")
 	Expect(err).NotTo(HaveOccurred())
 	defer cfg.Close()
-	configBytes, err1 := yaml.Marshal(c)
-	ioutil.WriteFile(cfg.Name(), configBytes, 0777)
-	Expect(err1).NotTo(HaveOccurred())
+	configBytes, err := yaml.Marshal(c)
+	Expect(err).NotTo(HaveOccurred())
+	err = ioutil.WriteFile(cfg.Name(), configBytes, 0777)
+	Expect(err).NotTo(HaveOccurred())
 	return cfg
 }
 
