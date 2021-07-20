@@ -172,7 +172,10 @@ func (h *ScalingHandler) GetScalingHistories(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	w.Write(body)
+	_, err = w.Write(body)
+	if err != nil {
+		logger.Error("failed-to-write-body", err)
+	}
 }
 
 func (h *ScalingHandler) StartActiveSchedule(w http.ResponseWriter, r *http.Request, vars map[string]string) {
@@ -259,5 +262,8 @@ func (h *ScalingHandler) GetActiveSchedule(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	w.Write(body)
+	_, err = w.Write(body)
+	if err != nil {
+		logger.Error("failed-to-write-body", err)
+	}
 }

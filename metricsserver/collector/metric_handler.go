@@ -157,5 +157,8 @@ func (h *MetricHandler) GetMetricHistories(w http.ResponseWriter, r *http.Reques
 			Message: "Error marshal metric histories"})
 		return
 	}
-	w.Write(body)
+	_, err = w.Write(body)
+	if err != nil {
+		h.logger.Error("unable-to-write-body", err, lager.Data{"appId": appId, "metrictype": metricType, "metrics": mtrcs})
+	}
 }
