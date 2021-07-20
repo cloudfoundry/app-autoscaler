@@ -71,9 +71,12 @@ func (f *FakeEventProducer) BatchedReceiver(
 				Timestamp:      time.Now().UnixNano(),
 			})
 		}
-		srv.Send(&loggregator_v2.EnvelopeBatch{
+		err := srv.Send(&loggregator_v2.EnvelopeBatch{
 			Batch: fpEnvs,
 		})
+		if err != nil {
+			return err
+		}
 		i++
 	}
 	return nil

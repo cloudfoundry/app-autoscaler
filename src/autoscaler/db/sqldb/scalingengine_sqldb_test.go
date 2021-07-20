@@ -544,9 +544,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 			It("should error", func() {
 				Expect(err).To(MatchError(MatchRegexp("sql: .*")))
 			})
-
 		})
-
 	})
 
 	Describe("UpdateScalingCooldownExpireTime", func() {
@@ -763,7 +761,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 
 		Context("when there is active schedule in table", func() {
 			BeforeEach(func() {
-				insertActiveSchedule("an-app-id", "existing-schedule-id", 3, 6, 0)
+				err = insertActiveSchedule("an-app-id", "existing-schedule-id", 3, 6, 0)
 			})
 
 			It("should remove the active schedule from table", func() {
@@ -782,7 +780,6 @@ var _ = Describe("ScalingEngineSqldb", func() {
 				Expect(err).To(HaveOccurred())
 			})
 		})
-
 	})
 
 	Describe("SetActiveSchedule", func() {
@@ -819,7 +816,7 @@ var _ = Describe("ScalingEngineSqldb", func() {
 
 		Context("when there is existing active schedule in table", func() {
 			BeforeEach(func() {
-				insertActiveSchedule("an-app-id", "existing-schedule-id", 3, 6, 0)
+				err = insertActiveSchedule("an-app-id", "existing-schedule-id", 3, 6, 0)
 			})
 
 			It("should remove the existing one and insert the new active schedule", func() {
@@ -832,13 +829,11 @@ var _ = Describe("ScalingEngineSqldb", func() {
 
 		Context("when there is database error", func() {
 			BeforeEach(func() {
-				sdb.Close()
+				err = sdb.Close()
 			})
 			It("should error", func() {
 				Expect(err).To(HaveOccurred())
 			})
 		})
-
 	})
-
 })

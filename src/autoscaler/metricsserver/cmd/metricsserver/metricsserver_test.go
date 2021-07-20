@@ -47,7 +47,8 @@ var _ = Describe("MetricsServer", func() {
 				badfile, err := ioutil.TempFile("", "bad-ms-config")
 				Expect(err).NotTo(HaveOccurred())
 				runner.configPath = badfile.Name()
-				ioutil.WriteFile(runner.configPath, []byte("bogus"), os.ModePerm)
+				err = ioutil.WriteFile(runner.configPath, []byte("bogus"), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
 				runner.Start()
 			})
 

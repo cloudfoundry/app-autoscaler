@@ -52,7 +52,10 @@ func (h *BrokerHandler) GetBrokerCatalog(w http.ResponseWriter, r *http.Request,
 		writeErrorResponse(w, http.StatusInternalServerError, "Failed to load catalog")
 		return
 	}
-	w.Write([]byte(catalog))
+	_, err = w.Write([]byte(catalog))
+	if err != nil {
+		h.logger.Error("unable to write body", err)
+	}
 }
 
 func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Request, vars map[string]string) {
@@ -80,9 +83,15 @@ func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Req
 
 	successResponse := func() {
 		if h.conf.DashboardRedirectURI == "" {
-			w.Write([]byte("{}"))
+			_, err = w.Write([]byte("{}"))
+			if err != nil {
+				h.logger.Error("unable to write body", err)
+			}
 		} else {
-			w.Write([]byte(fmt.Sprintf("{\"dashboard_url\":\"%s\"}", GetDashboardURL(h.conf, instanceId))))
+			_, err = w.Write([]byte(fmt.Sprintf("{\"dashboard_url\":\"%s\"}", GetDashboardURL(h.conf, instanceId))))
+			if err != nil {
+				h.logger.Error("unable to write body", err)
+			}
 		}
 	}
 
@@ -125,7 +134,10 @@ func (h *BrokerHandler) DeleteServiceInstance(w http.ResponseWriter, r *http.Req
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("{}"))
+	_, err = w.Write([]byte("{}"))
+	if err != nil {
+		h.logger.Error("unable to write body", err)
+	}
 }
 
 func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Request, vars map[string]string) {
@@ -274,5 +286,8 @@ func (h *BrokerHandler) UnbindServiceInstance(w http.ResponseWriter, r *http.Req
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("{}"))
+	_, err = w.Write([]byte("{}"))
+	if err != nil {
+		h.logger.Error("unable to write body", err)
+	}
 }

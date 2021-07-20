@@ -71,7 +71,10 @@ func (e *EnvelopeEmitter) startEmitEnvelope() {
 }
 
 func (e *EnvelopeEmitter) Stop() {
-	e.wsHelper.CloseConn()
+	err := e.wsHelper.CloseConn()
+	if err != nil {
+		e.logger.Error("failed-to-stop", err)
+	}
 	e.doneChan <- true
 }
 
