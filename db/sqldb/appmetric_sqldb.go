@@ -113,7 +113,7 @@ func (adb *AppMetricSQLDB) SaveAppMetricsInBulk(appMetrics []*models.AppMetric) 
 		if len(appMetrics) == 0 {
 			err = txn.Rollback()
 			if err != nil {
-				return nil
+				return err
 			}
 			return nil
 		}
