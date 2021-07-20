@@ -41,7 +41,7 @@ type Endpoints struct {
 type CFClient interface {
 	Login() error
 	RefreshAuthToken() (string, error)
-	GetTokens() Tokens
+	GetTokens() (Tokens, error)
 	GetEndpoints() Endpoints
 	GetApp(string) (*models.AppEntity, error)
 	SetAppInstances(string, int) error
@@ -177,14 +177,17 @@ func (c *cfClient) RefreshAuthToken() (string, error) {
 	return TokenTypeBearer + " " + c.tokens.AccessToken, nil
 }
 
-func (c *cfClient) GetTokens() Tokens {
+func (c *cfClient) GetTokens() (Tokens, error) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
 	if c.isTokenToBeExpired() {
-		c.RefreshAuthToken()
+		_, err := c.RefreshAuthToken()
+		if err != nil {
+			return c.tokens, err
+		}
 	}
-	return c.tokens
+	return c.tokens, nil
 }
 
 func (c *cfClient) isTokenToBeExpired() bool {

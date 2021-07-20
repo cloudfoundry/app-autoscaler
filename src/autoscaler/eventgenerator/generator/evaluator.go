@@ -138,11 +138,17 @@ func (e *Evaluator) doEvaluate(triggerArray []*models.Trigger) {
 				if appBreaker.Tripped() {
 					e.logger.Info("circuit-tripped", lager.Data{"appId": trigger.AppId, "consecutiveFailures": appBreaker.ConsecFailures()})
 				}
-				appBreaker.Call(func() error {
+				err = appBreaker.Call(func() error {
 					return e.sendTriggerAlarm(trigger)
 				}, 0)
+				if err != nil {
+					e.logger.Error("circuit-alarm-failed", err, lager.Data{"appId": trigger.AppId})
+				}
 			} else {
-				e.sendTriggerAlarm(trigger)
+				err = e.sendTriggerAlarm(trigger)
+				if err != nil {
+					e.logger.Error("circuit-alarm-failed", err, lager.Data{"appId": trigger.AppId})
+				}
 			}
 			return
 		}
