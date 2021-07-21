@@ -62,6 +62,7 @@ var _ = AfterSuite(func() {
 func getLockOwner() string {
 	var owner string
 	query := fmt.Sprintf("SELECT owner FROM %s", lockTableName)
+	// #nosec G201
 	row := dbHelper.QueryRow(query)
 	err := row.Scan(&owner)
 	if err == sql.ErrNoRows {
