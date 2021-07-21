@@ -131,28 +131,6 @@ var _ = Describe("Metricsgateway", func() {
 
 			})
 		})
-
-		Context("when a request to query profile comes", func() {
-			It("returns with a 200", func() {
-				rsp, err := healthHttpClient.Get(fmt.Sprintf("http://127.0.0.1:%d/debug/pprof", healthport))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
-				raw, _ := ioutil.ReadAll(rsp.Body)
-				profileIndexBody := string(raw)
-				Expect(profileIndexBody).To(ContainSubstring("allocs"))
-				Expect(profileIndexBody).To(ContainSubstring("block"))
-				Expect(profileIndexBody).To(ContainSubstring("cmdline"))
-				Expect(profileIndexBody).To(ContainSubstring("goroutine"))
-				Expect(profileIndexBody).To(ContainSubstring("heap"))
-				Expect(profileIndexBody).To(ContainSubstring("mutex"))
-				Expect(profileIndexBody).To(ContainSubstring("profile"))
-				Expect(profileIndexBody).To(ContainSubstring("threadcreate"))
-				Expect(profileIndexBody).To(ContainSubstring("trace"))
-				rsp.Body.Close()
-
-			})
-		})
-
 	})
 
 	Describe("when Health server is ready to serve RESTful API with basic Auth", func() {
@@ -181,33 +159,6 @@ var _ = Describe("Metricsgateway", func() {
 				rsp, err := healthHttpClient.Do(req)
 				Expect(err).ToNot(HaveOccurred())
 				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
-			})
-		})
-
-		Context("when a request to query profile comes", func() {
-			It("returns with a 200", func() {
-
-				req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("http://127.0.0.1:%d/debug/pprof", healthport), nil)
-				Expect(err).NotTo(HaveOccurred())
-
-				req.SetBasicAuth(conf.Health.HealthCheckUsername, conf.Health.HealthCheckPassword)
-
-				rsp, err := healthHttpClient.Do(req)
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
-				raw, _ := ioutil.ReadAll(rsp.Body)
-				profileIndexBody := string(raw)
-				Expect(profileIndexBody).To(ContainSubstring("allocs"))
-				Expect(profileIndexBody).To(ContainSubstring("block"))
-				Expect(profileIndexBody).To(ContainSubstring("cmdline"))
-				Expect(profileIndexBody).To(ContainSubstring("goroutine"))
-				Expect(profileIndexBody).To(ContainSubstring("heap"))
-				Expect(profileIndexBody).To(ContainSubstring("mutex"))
-				Expect(profileIndexBody).To(ContainSubstring("profile"))
-				Expect(profileIndexBody).To(ContainSubstring("threadcreate"))
-				Expect(profileIndexBody).To(ContainSubstring("trace"))
-				rsp.Body.Close()
-
 			})
 		})
 	})
