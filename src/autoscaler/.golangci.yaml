@@ -75,6 +75,7 @@ linters:
     - dogsled
       #- dupl
     - errcheck
+    - errorlint
     - funlen
       #    - gocognit
       #    - goconst

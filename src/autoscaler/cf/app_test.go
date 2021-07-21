@@ -3,10 +3,11 @@ package cf_test
 import (
 	. "autoscaler/cf"
 	"autoscaler/models"
-	"io"
+	"errors"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
@@ -147,9 +148,7 @@ var _ = Describe("App", func() {
 
 			It("should error", func() {
 				Expect(appEntity).To(BeNil())
-				Expect(err).To(BeAssignableToTypeOf(&url.Error{}))
-				urlErr := err.(*url.Error)
-				Expect(urlErr.Err).To(BeAssignableToTypeOf(&net.OpError{}))
+				IsUrlNetOpError(err)
 			})
 
 		})
@@ -227,9 +226,7 @@ var _ = Describe("App", func() {
 			})
 
 			It("should error", func() {
-				Expect(err).To(BeAssignableToTypeOf(&url.Error{}))
-				urlErr := err.(*url.Error)
-				Expect(urlErr.Err).To(Or(Equal(io.EOF), BeAssignableToTypeOf(&net.OpError{})))
+				IsUrlNetOpError(err)
 			})
 
 		})
@@ -237,3 +234,11 @@ var _ = Describe("App", func() {
 	})
 
 })
+
+func IsUrlNetOpError(err error) {
+	var urlErr *url.Error
+	Expect(errors.As(err, &urlErr)).To(BeTrue())
+
+	var netOpErr *net.OpError
+	Expect(errors.As(err, &netOpErr)).To(BeTrue())
+}

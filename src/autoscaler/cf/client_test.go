@@ -1,7 +1,6 @@
 package cf_test
 
 import (
-	"net"
 	"net/http"
 	"net/url"
 	"time"
@@ -81,9 +80,7 @@ var _ = Describe("Client", func() {
 				})
 
 				It("should error", func() {
-					Expect(err).To(BeAssignableToTypeOf(&url.Error{}))
-					urlErr := err.(*url.Error)
-					Expect(urlErr.Err).To(BeAssignableToTypeOf(&net.OpError{}))
+					IsUrlNetOpError(err)
 				})
 			})
 
@@ -159,9 +156,7 @@ var _ = Describe("Client", func() {
 				})
 
 				It("should error", func() {
-					Expect(err).To(BeAssignableToTypeOf(&url.Error{}))
-					urlErr := err.(*url.Error)
-					Expect(urlErr.Err).To(BeAssignableToTypeOf(&net.OpError{}))
+					IsUrlNetOpError(err)
 				})
 			})
 
