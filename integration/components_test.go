@@ -92,6 +92,7 @@ func (components *Components) GolangAPIServer(confPath string, argv ...string) *
 		AnsiColorCode:     "33m",
 		StartCheck:        `"api.started"`,
 		StartCheckTimeout: 20 * time.Second,
+		// #nosec G204
 		Command: exec.Command(
 			components.Executables[GolangAPIServer],
 			append([]string{
@@ -106,6 +107,7 @@ func (components *Components) Scheduler(confPath string, argv ...string) *ginkgo
 		AnsiColorCode:     "34m",
 		StartCheck:        "Scheduler is ready to start",
 		StartCheckTimeout: 120 * time.Second,
+		// #nosec G204
 		Command: exec.Command(
 			"java", append([]string{"-jar", "-Dspring.config.location=" + confPath, components.Executables[Scheduler]}, argv...)...,
 		),
@@ -120,6 +122,7 @@ func (components *Components) MetricsServer(confPath string, argv ...string) *gi
 		AnsiColorCode:     "33m",
 		StartCheck:        `"metricsserver.started"`,
 		StartCheckTimeout: 20 * time.Second,
+		// #nosec G204
 		Command: exec.Command(
 			components.Executables[MetricsServerHTTP],
 			append([]string{
@@ -135,6 +138,7 @@ func (components *Components) EventGenerator(confPath string, argv ...string) *g
 		AnsiColorCode:     "36m",
 		StartCheck:        `"eventgenerator.started"`,
 		StartCheckTimeout: 20 * time.Second,
+		// #nosec G204
 		Command: exec.Command(
 			components.Executables[EventGenerator],
 			append([]string{
@@ -150,6 +154,7 @@ func (components *Components) ScalingEngine(confPath string, argv ...string) *gi
 		AnsiColorCode:     "31m",
 		StartCheck:        `"scalingengine.started"`,
 		StartCheckTimeout: 20 * time.Second,
+		// #nosec G204
 		Command: exec.Command(
 			components.Executables[ScalingEngine],
 			append([]string{
@@ -165,6 +170,7 @@ func (components *Components) Operator(confPath string, argv ...string) *ginkgom
 		AnsiColorCode:     "38m",
 		StartCheck:        `"operator.started"`,
 		StartCheckTimeout: 40 * time.Second,
+		// #nosec G204
 		Command: exec.Command(
 			components.Executables[Operator],
 			append([]string{
@@ -180,6 +186,7 @@ func (components *Components) MetricsGateway(confPath string, argv ...string) *g
 		AnsiColorCode:     "32m",
 		StartCheck:        `"metricsgateway.started"`,
 		StartCheckTimeout: 20 * time.Second,
+		// #nosec G204
 		Command: exec.Command(
 			components.Executables[MetricsGateway],
 			append([]string{
@@ -368,7 +375,7 @@ spring.main.allow-bean-definition-overriding=true
 		int(httpClientTimeout/time.Second))
 	cfgFile, err := os.Create(filepath.Join(tmpDir, "application.properties"))
 	Expect(err).NotTo(HaveOccurred())
-	err = ioutil.WriteFile(cfgFile.Name(), []byte(settingJsonStr), 0777)
+	err = ioutil.WriteFile(cfgFile.Name(), []byte(settingJsonStr), 0600)
 	Expect(err).NotTo(HaveOccurred())
 	cfgFile.Close()
 	return cfgFile.Name()
@@ -639,7 +646,7 @@ func writeYmlConfig(dir string, componentName string, c interface{}) string {
 	defer cfgFile.Close()
 	configBytes, err := yaml.Marshal(c)
 	Expect(err).NotTo(HaveOccurred())
-	err = ioutil.WriteFile(cfgFile.Name(), configBytes, 0777)
+	err = ioutil.WriteFile(cfgFile.Name(), configBytes, 0600)
 	Expect(err).NotTo(HaveOccurred())
 	return cfgFile.Name()
 }

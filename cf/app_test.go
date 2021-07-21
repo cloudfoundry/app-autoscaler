@@ -216,6 +216,7 @@ var _ = Describe("App", func() {
 				fakeCC = nil
 
 				Eventually(func() error {
+					// #nosec G107
 					resp, err := http.Get(ccURL)
 					if err != nil {
 						return err
