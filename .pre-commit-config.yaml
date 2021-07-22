@@ -18,6 +18,7 @@ repos:
           entry: style-guide/golangci-lint-0.1.sh
           language: script
           files: '\.go$'
+          pass_filenames: false
           stages: [ commit ]
 
 
