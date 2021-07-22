@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-const TestSyncInterval time.Duration = 10 * time.Second
+const TestSyncInterval = 10 * time.Second
 
 var _ = Describe("Sync", func() {
 
