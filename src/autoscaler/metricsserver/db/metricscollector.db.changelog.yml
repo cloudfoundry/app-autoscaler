@@ -3,10 +3,10 @@ databaseChangeLog:
       id: 1
       author: byang
       preConditions:
-      - onFail: MARK_RAN
-      - not:
-        - tableExists:
-            tableName: appinstancemetrics
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: appinstancemetrics
       dbms: postgresql
       changes:
         - createTable:
@@ -26,7 +26,7 @@ databaseChangeLog:
                   name: collectedat
                   type: bigint
                   constraints:
-                    nullable: false                 
+                    nullable: false
               - column:
                   name: name
                   type: varchar(100)
@@ -36,7 +36,7 @@ databaseChangeLog:
                   name: unit
                   type: varchar(20)
                   constraints:
-                    nullable: false                    
+                    nullable: false
               - column:
                   name: value
                   type: varchar
@@ -46,20 +46,20 @@ databaseChangeLog:
                   name: timestamp
                   type: bigint
                   constraints:
-                    nullable: false    
+                    nullable: false
         - createIndex:
-             columns:
-             - column:
-                 name: appid
-                 type: varchar(255)
-             - column:
-                 name: name
-                 type: varchar(100)
-             - column:
-                 name: timestamp
-                 type: bigint                
-             indexName: idx_instance_metrics
-             tableName: appinstancemetrics
+            columns:
+              - column:
+                  name: appid
+                  type: varchar(255)
+              - column:
+                  name: name
+                  type: varchar(100)
+              - column:
+                  name: timestamp
+                  type: bigint
+            indexName: idx_instance_metrics
+            tableName: appinstancemetrics
   - changeSet:
       id: 2
       author: paltanmoy
@@ -93,10 +93,10 @@ databaseChangeLog:
       id: 4
       author: aqan213
       preConditions:
-      - onFail: MARK_RAN
-      - not:
-        - tableExists:
-            tableName: appinstancemetrics
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: appinstancemetrics
       dbms: mysql
       changes:
         - createTable:
@@ -116,7 +116,7 @@ databaseChangeLog:
                   name: collectedat
                   type: bigint
                   constraints:
-                    nullable: false                 
+                    nullable: false
               - column:
                   name: name
                   type: varchar(100)
@@ -126,7 +126,7 @@ databaseChangeLog:
                   name: unit
                   type: varchar(20)
                   constraints:
-                    nullable: false                    
+                    nullable: false
               - column:
                   name: value
                   type: varchar(255)
@@ -136,22 +136,22 @@ databaseChangeLog:
                   name: timestamp
                   type: bigint
                   constraints:
-                    nullable: false 
+                    nullable: false
         - addPrimaryKey:
             columnNames: "appid,instanceindex,name,timestamp"
             constraintName: "PK_appinstancemetrics"
             schemaName: autoscaler
-            tableName: appinstancemetrics   
+            tableName: appinstancemetrics
         - createIndex:
-             columns:
-             - column:
-                 name: appid
-                 type: varchar(255)
-             - column:
-                 name: name
-                 type: varchar(100)
-             - column:
-                 name: timestamp
-                 type: bigint                
-             indexName: idx_instance_metrics
-             tableName: appinstancemetrics
+            columns:
+              - column:
+                  name: appid
+                  type: varchar(255)
+              - column:
+                  name: name
+                  type: varchar(100)
+              - column:
+                  name: timestamp
+                  type: bigint
+            indexName: idx_instance_metrics
+            tableName: appinstancemetrics

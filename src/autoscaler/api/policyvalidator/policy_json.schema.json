@@ -7,11 +7,16 @@
     "instance_min_count",
     "instance_max_count"
   ],
-  "anyOf": [{
-      "required": ["scaling_rules"]
+  "anyOf": [
+    {
+      "required": [
+        "scaling_rules"
+      ]
     },
     {
-      "required": ["schedules"]
+      "required": [
+        "schedules"
+      ]
     }
   ],
   "properties": {
@@ -98,11 +103,16 @@
       "required": [
         "timezone"
       ],
-      "anyOf": [{
-          "required": ["recurring_schedule"]
+      "anyOf": [
+        {
+          "required": [
+            "recurring_schedule"
+          ]
         },
         {
-          "required": ["specific_date"]
+          "required": [
+            "specific_date"
+          ]
         }
       ],
       "properties": {
@@ -710,11 +720,16 @@
               "instance_min_count",
               "instance_max_count"
             ],
-            "oneOf": [{
-                "required": ["days_of_week"]
+            "oneOf": [
+              {
+                "required": [
+                  "days_of_week"
+                ]
               },
               {
-                "required": ["days_of_month"]
+                "required": [
+                  "days_of_month"
+                ]
               }
             ],
             "properties": {
@@ -806,7 +821,8 @@
                 "title": "The Initial_min_instance_count Schema"
               },
               "start_date": {
-                "oneOf": [{
+                "oneOf": [
+                  {
                     "pattern": "^2[0-9]{3}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])$",
                     "type": "string"
                   },
@@ -820,7 +836,8 @@
                 "description": "Start date of the recurrence in YYYY-MM-DD format"
               },
               "end_date": {
-                "oneOf": [{
+                "oneOf": [
+                  {
                     "pattern": "^2[0-9]{3}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])$",
                     "type": "string"
                   },

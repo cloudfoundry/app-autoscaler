@@ -147,7 +147,7 @@ func (ep *envelopeProcessor) processHttpStartStop(appID string, instanceIndex ui
 	}
 
 	ep.numRequests[appID][instanceIndex]++
-	ep.sumReponseTimes[appID][instanceIndex] += (t.Stop - t.Start)
+	ep.sumReponseTimes[appID][instanceIndex] += t.Stop - t.Start
 }
 
 func (ep *envelopeProcessor) processCustomMetrics(appID string, instanceIndex uint32, timestamp int64, g *loggregator_v2.Gauge) {
@@ -214,7 +214,7 @@ func (ep *envelopeProcessor) computeAndSaveMetrics() {
 				CollectedAt:   ep.clock.Now().UnixNano(),
 				Name:          models.MetricNameResponseTime,
 				Unit:          models.UnitMilliseconds,
-				Value:         fmt.Sprintf("%d", int64(math.Ceil(float64(ep.sumReponseTimes[appID][instanceIdx])/float64((numReq*1000*1000))))),
+				Value:         fmt.Sprintf("%d", int64(math.Ceil(float64(ep.sumReponseTimes[appID][instanceIdx])/float64(numReq*1000*1000)))),
 				Timestamp:     ep.clock.Now().UnixNano(),
 			}
 			ep.metricChan <- responseTimeMetric

@@ -13,7 +13,7 @@ import (
 
 var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 	var (
-		initInstanceCount int = 2
+		initInstanceCount = 2
 		appId             string
 		pathVariables     []string
 		parameters        map[string]string

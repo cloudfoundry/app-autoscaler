@@ -28,8 +28,8 @@ var _ = Describe("AppMetricSQLDB", func() {
 		before            int64
 		appId, metricName string
 		testMetricName    string
-		testMetricUnit    string = "Test-Metric-Unit"
-		testAppId         string = "Test-App-ID"
+		testMetricUnit    = "Test-Metric-Unit"
+		testAppId         = "Test-App-ID"
 		orderType         db.OrderType
 	)
 
@@ -170,8 +170,8 @@ var _ = Describe("AppMetricSQLDB", func() {
 			})
 		})
 		Context("When there are errors in transaction", func() {
-			var lock *sync.Mutex = &sync.Mutex{}
-			var count int = 0
+			var lock = &sync.Mutex{}
+			var count = 0
 			BeforeEach(func() {
 				testMetricName = "Test-Metric-Name-this-is-a-too-long-metric-name-too-looooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong"
 				appMetrics := []*models.AppMetric{
