@@ -1,9 +1,7 @@
 package org.cloudfoundry.autoscaler.scheduler.rest;
 
 import java.util.List;
-
 import javax.servlet.http.HttpServletRequest;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cloudfoundry.autoscaler.scheduler.util.error.InvalidDataException;
@@ -20,41 +18,42 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ControllerAdvice
 public class ControllerExceptionHandler {
-	private Logger logger = LogManager.getLogger(this.getClass());
+  private Logger logger = LogManager.getLogger(this.getClass());
 
-	@Autowired
-	private ValidationErrorResult validationErrorResult;
+  @Autowired private ValidationErrorResult validationErrorResult;
 
-	@ExceptionHandler(Exception.class)
-	public ResponseEntity<List<String>> handleException(HttpServletRequest req, Exception e) {
-		logger.error("Internal Server Error", e);
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<List<String>> handleException(HttpServletRequest req, Exception e) {
+    logger.error("Internal Server Error", e);
 
-		return new ResponseEntity<>(null, null, HttpStatus.INTERNAL_SERVER_ERROR);
-	}
+    return new ResponseEntity<>(null, null, HttpStatus.INTERNAL_SERVER_ERROR);
+  }
 
-	@ExceptionHandler(MethodArgumentNotValidException.class)
-	public ResponseEntity<List<String>> handleMethodArgumentNotValidException(HttpServletRequest req, Exception e) {
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<List<String>> handleMethodArgumentNotValidException(
+      HttpServletRequest req, Exception e) {
 
-		return new ResponseEntity<>(null, null, HttpStatus.BAD_REQUEST);
-	}
+    return new ResponseEntity<>(null, null, HttpStatus.BAD_REQUEST);
+  }
 
-	@ExceptionHandler(InvalidDataException.class)
-	public ResponseEntity<List<String>> handleValidationException(HttpServletRequest req, Exception e) {
+  @ExceptionHandler(InvalidDataException.class)
+  public ResponseEntity<List<String>> handleValidationException(
+      HttpServletRequest req, Exception e) {
 
-		List<String> errors = validationErrorResult.getAllErrorMessages();
-		return new ResponseEntity<>(errors, null, HttpStatus.BAD_REQUEST);
-	}
+    List<String> errors = validationErrorResult.getAllErrorMessages();
+    return new ResponseEntity<>(errors, null, HttpStatus.BAD_REQUEST);
+  }
 
-	@ExceptionHandler(SchedulerInternalException.class)
-	public ResponseEntity<List<String>> handleDatabaseValidationException(HttpServletRequest req, Exception e) {
-		logger.error("Internal Server Error", e);
+  @ExceptionHandler(SchedulerInternalException.class)
+  public ResponseEntity<List<String>> handleDatabaseValidationException(
+      HttpServletRequest req, Exception e) {
+    logger.error("Internal Server Error", e);
 
-		List<String> errors = validationErrorResult.getAllErrorMessages();
-		return new ResponseEntity<>(errors, null, HttpStatus.INTERNAL_SERVER_ERROR);
-	}
+    List<String> errors = validationErrorResult.getAllErrorMessages();
+    return new ResponseEntity<>(errors, null, HttpStatus.INTERNAL_SERVER_ERROR);
+  }
 
-	@ExceptionHandler(MissingServletRequestParameterException.class)
-	@ResponseStatus(HttpStatus.BAD_REQUEST)
-	private void handleMissingParameter(MissingServletRequestParameterException e) {
-	}
+  @ExceptionHandler(MissingServletRequestParameterException.class)
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  private void handleMissingParameter(MissingServletRequestParameterException e) {}
 }

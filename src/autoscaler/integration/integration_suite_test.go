@@ -1,4 +1,4 @@
-package integration
+package integration_test
 
 import (
 	"autoscaler/cf"
@@ -314,6 +314,7 @@ func bindService(bindingId string, appId string, serviceInstanceId string, polic
 	}
 
 	body, err := json.Marshal(bindBody)
+	Expect(err).NotTo(HaveOccurred())
 	req, err := http.NewRequest("PUT", fmt.Sprintf("https://127.0.0.1:%d/v2/service_instances/%s/service_bindings/%s", brokerPort, serviceInstanceId, bindingId), bytes.NewReader(body))
 	Expect(err).NotTo(HaveOccurred())
 	req.Header.Set("Content-Type", "application/json")
@@ -454,11 +455,9 @@ func setPolicySpecificDateTime(policyByte []byte, start time.Duration, end time.
 }
 
 func getScalingHistories(apiServerPort int, pathVariables []string, parameters map[string]string) (*http.Response, error) {
-	var httpClientTmp *http.Client
-	httpClientTmp = httpClientForPublicApi
-
+	httpClientTmp := httpClientForPublicApi
 	url := "https://127.0.0.1:%d/v1/apps/%s/scaling_histories"
-	if parameters != nil && len(parameters) > 0 {
+	if len(parameters) > 0 {
 		url += "?any=any"
 		for paramName, paramValue := range parameters {
 			url += "&" + paramName + "=" + paramValue
@@ -472,10 +471,9 @@ func getScalingHistories(apiServerPort int, pathVariables []string, parameters m
 }
 
 func getAppInstanceMetrics(apiServerPort int, pathVariables []string, parameters map[string]string) (*http.Response, error) {
-	var httpClientTmp *http.Client
-	httpClientTmp = httpClientForPublicApi
+	httpClientTmp := httpClientForPublicApi
 	url := "https://127.0.0.1:%d/v1/apps/%s/metric_histories/%s"
-	if parameters != nil && len(parameters) > 0 {
+	if len(parameters) > 0 {
 		url += "?any=any"
 		for paramName, paramValue := range parameters {
 			url += "&" + paramName + "=" + paramValue
@@ -489,10 +487,9 @@ func getAppInstanceMetrics(apiServerPort int, pathVariables []string, parameters
 }
 
 func getAppAggregatedMetrics(apiServerPort int, pathVariables []string, parameters map[string]string) (*http.Response, error) {
-	var httpClientTmp *http.Client
-	httpClientTmp = httpClientForPublicApi
+	httpClientTmp := httpClientForPublicApi
 	url := "https://127.0.0.1:%d/v1/apps/%s/aggregated_metric_histories/%s"
-	if parameters != nil && len(parameters) > 0 {
+	if len(parameters) > 0 {
 		url += "?any=any"
 		for paramName, paramValue := range parameters {
 			url += "&" + paramName + "=" + paramValue
@@ -749,7 +746,7 @@ func fakeMetricsPolling(appId string, memoryValue uint64, memQuota uint64) {
 			messages := [][]byte{message1, message2, message3}
 			for _, msg := range messages {
 				partWriter, _ := mp.CreatePart(nil)
-				partWriter.Write(msg)
+				_, _ = partWriter.Write(msg)
 			}
 		},
 	)

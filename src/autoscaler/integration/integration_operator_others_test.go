@@ -1,4 +1,4 @@
-package integration
+package integration_test
 
 import (
 	"autoscaler/models"
@@ -46,7 +46,8 @@ var _ = Describe("Integration_Operator_Others", func() {
 	})
 
 	AfterEach(func() {
-		detachPolicy(testAppId, components.Ports[GolangAPIServer], httpClient)
+		_, err := detachPolicy(testAppId, components.Ports[GolangAPIServer], httpClient)
+		Expect(err).NotTo(HaveOccurred())
 		stopScheduler()
 		stopScalingEngine()
 		stopOperator()

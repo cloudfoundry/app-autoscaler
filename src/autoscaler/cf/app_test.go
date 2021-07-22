@@ -34,7 +34,7 @@ var _ = Describe("App", func() {
 		fakeLoginServer = ghttp.NewServer()
 		fakeCC.RouteToHandler("GET", PathCFInfo, ghttp.RespondWithJSONEncoded(http.StatusOK, Endpoints{
 			AuthEndpoint:    fakeLoginServer.URL(),
-			TokenEndpoint:   "test-token-endpoint",
+			TokenEndpoint:   fakeLoginServer.URL(),
 			DopplerEndpoint: "test-doppler-endpoint",
 		}))
 		fakeLoginServer.RouteToHandler("POST", PathCFAuth, ghttp.RespondWithJSONEncoded(http.StatusOK, Tokens{
@@ -44,7 +44,8 @@ var _ = Describe("App", func() {
 		conf = &CFConfig{}
 		conf.API = fakeCC.URL()
 		cfc = NewCFClient(conf, lager.NewLogger("cf"), clock.NewClock())
-		cfc.Login()
+		err = cfc.Login()
+		Expect(err).NotTo(HaveOccurred())
 	})
 
 	AfterEach(func() {
@@ -215,6 +216,7 @@ var _ = Describe("App", func() {
 				fakeCC = nil
 
 				Eventually(func() error {
+					// #nosec G107
 					resp, err := http.Get(ccURL)
 					if err != nil {
 						return err

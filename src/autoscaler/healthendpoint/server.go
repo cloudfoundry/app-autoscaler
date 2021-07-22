@@ -3,7 +3,6 @@ package healthendpoint
 import (
 	"fmt"
 	"net/http"
-	_ "net/http/pprof"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/mux"
@@ -25,7 +24,7 @@ func (bam *basicAuthenticationMiddleware) Middleware(next http.Handler) http.Han
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		username, password, authOK := r.BasicAuth()
 
-		if authOK == false || bcrypt.CompareHashAndPassword(bam.usernameHash, []byte(username)) != nil || bcrypt.CompareHashAndPassword(bam.passwordHash, []byte(password)) != nil {
+		if !authOK || bcrypt.CompareHashAndPassword(bam.usernameHash, []byte(username)) != nil || bcrypt.CompareHashAndPassword(bam.passwordHash, []byte(password)) != nil {
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return
 		}
@@ -36,7 +35,6 @@ func (bam *basicAuthenticationMiddleware) Middleware(next http.Handler) http.Han
 func NewServer(logger lager.Logger, port int, gatherer prometheus.Gatherer) (ifrit.Runner, error) {
 	router := mux.NewRouter()
 	r := promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{})
-	router.PathPrefix("/debug/pprof").Handler(http.DefaultServeMux)
 	router.PathPrefix("").Handler(r)
 	addr := fmt.Sprintf("0.0.0.0:%d", port)
 	logger.Info("new-health-server", lager.Data{"addr": addr})
@@ -90,7 +88,6 @@ func NewServerWithBasicAuth(logger lager.Logger, port int, gatherer prometheus.G
 		// add router path and router handler
 		middleWareHandlerRouter.Handle("/health", r)
 
-		middleWareHandlerRouter.PathPrefix("/debug/pprof").Handler(http.DefaultServeMux)
 		middleWareHandlerRouter.PathPrefix("").Handler(r)
 
 		addr := fmt.Sprintf("0.0.0.0:%d", port)

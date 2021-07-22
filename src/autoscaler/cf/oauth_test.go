@@ -91,7 +91,7 @@ var _ = Describe("Oauth", func() {
 			ExpiresIn:   12000,
 		}))
 
-		appsPathMatcher, _ = regexp.Compile("/v3/apps/[A-Za-z0-9\\-]+")
+		appsPathMatcher, _ = regexp.Compile(`/v3/apps/[A-Za-z0-9\-]+`)
 		fakeCCServer.RouteToHandler(http.MethodGet, appsPathMatcher, ghttp.CombineHandlers(
 			ghttp.VerifyRequest("GET", "/v3/apps/"+TEST_APP_ID),
 			ghttp.RespondWithJSONEncodedPtr(&appStatus, &appResponse)))
@@ -104,7 +104,7 @@ var _ = Describe("Oauth", func() {
 		conf.API = fakeCCServer.URL()
 		logger = lagertest.NewTestLogger("oauth-test")
 		cfc = NewCFClient(conf, logger, clock.NewClock())
-		cfc.Login()
+		err = cfc.Login()
 	})
 
 	AfterEach(func() {

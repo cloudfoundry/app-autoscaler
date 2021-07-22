@@ -138,7 +138,7 @@ func (h *ScalingHandler) GetScalingHistories(w http.ResponseWriter, r *http.Requ
 			logger.Error("failed-to-get-include-parameter", err, lager.Data{"include": includeParam})
 			handlers.WriteJSONResponse(w, http.StatusBadRequest, models.ErrorResponse{
 				Code:    "Bad-Request",
-				Message: fmt.Sprintf("Incorrect include parameter in query string, the value can only be 'all'"),
+				Message: "Incorrect include parameter in query string, the value can only be 'all'",
 			})
 			return
 		}
@@ -172,7 +172,10 @@ func (h *ScalingHandler) GetScalingHistories(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	w.Write(body)
+	_, err = w.Write(body)
+	if err != nil {
+		logger.Error("failed-to-write-body", err)
+	}
 }
 
 func (h *ScalingHandler) StartActiveSchedule(w http.ResponseWriter, r *http.Request, vars map[string]string) {
@@ -259,5 +262,8 @@ func (h *ScalingHandler) GetActiveSchedule(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	w.Write(body)
+	_, err = w.Write(body)
+	if err != nil {
+		logger.Error("failed-to-write-body", err)
+	}
 }

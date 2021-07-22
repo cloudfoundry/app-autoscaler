@@ -35,7 +35,7 @@ func (sink *redactingWriterWithURLCredSink) Log(log lager.LogFormat) {
 	sink.writeL.Lock()
 	v := timeLogFormat.ToJSON()
 	rv := sink.jsonRedacterWithURLCred.Redact(v)
-	sink.writer.Write(rv)
-	sink.writer.Write([]byte("\n"))
+	_, _ = sink.writer.Write(rv)
+	_, _ = sink.writer.Write([]byte("\n"))
 	sink.writeL.Unlock()
 }

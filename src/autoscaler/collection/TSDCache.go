@@ -24,7 +24,7 @@ func NewTSDCache(capacity int) *TSDCache {
 	}
 	return &TSDCache{
 		lock:     &sync.RWMutex{},
-		data:     make([]TSD, capacity, capacity),
+		data:     make([]TSD, capacity),
 		capacity: capacity,
 		cursor:   0,
 	}

@@ -5,9 +5,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 import java.sql.SQLException;
-
 import javax.sql.DataSource;
-
 import org.cloudfoundry.autoscaler.scheduler.entity.ActiveScheduleEntity;
 import org.cloudfoundry.autoscaler.scheduler.util.TestDataDbUtil;
 import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationException;
@@ -24,64 +22,62 @@ import org.springframework.test.context.junit4.SpringRunner;
 @SpringBootTest
 public class ActiveScheduleDaoImpl_FailureTest {
 
-	@Autowired
-	private ActiveScheduleDao activeScheduleDao;
+  @Autowired private ActiveScheduleDao activeScheduleDao;
 
-	@SpyBean
-	private DataSource dataSource;
+  @SpyBean private DataSource dataSource;
 
-	@Autowired
-	TestDataDbUtil testDataDbUtil;
+  @Autowired TestDataDbUtil testDataDbUtil;
 
+  @Before
+  public void before() throws SQLException, InterruptedException {
+    Mockito.reset(dataSource);
+    Mockito.when(dataSource.getConnection()).thenThrow(new SQLException("test exception"));
+  }
 
-	@Before
-	public void before() throws SQLException, InterruptedException {
-		Mockito.reset(dataSource);
-		Mockito.when(dataSource.getConnection()).thenThrow(new SQLException("test exception"));
-	}
+  @Test
+  public void testFindActiveSchedule_throw_DatabaseValidationException() throws SQLException {
+    try {
+      activeScheduleDao.find(1L);
+      fail("Should fail");
+    } catch (DatabaseValidationException dve) {
+      assertThat(dve.getMessage(), is("Find failed"));
+    }
+  }
 
-	@Test
-	public void testFindActiveSchedule_throw_DatabaseValidationException() throws SQLException {
-		try {
-			activeScheduleDao.find(1L);
-			fail("Should fail");
-		} catch (DatabaseValidationException dve) {
-			assertThat(dve.getMessage(), is("Find failed"));
-		}
-	}
+  @Test
+  public void testCreateActiveSchedule_throw_DatabaseValidationException() {
+    try {
+      activeScheduleDao.create(new ActiveScheduleEntity());
 
-	@Test
-	public void testCreateActiveSchedule_throw_DatabaseValidationException() {
-		try {
-			activeScheduleDao.create(new ActiveScheduleEntity());
+      fail("Should fail");
+    } catch (DatabaseValidationException dve) {
+      assertThat(dve.getMessage(), is("Create failed"));
+    }
+  }
 
-			fail("Should fail");
-		} catch (DatabaseValidationException dve) {
-			assertThat(dve.getMessage(), is("Create failed"));
-		}
-	}
+  @Test
+  public void testDeleteActiveSchedule_throw_DatabaseValidationException()
+      throws SQLException, InterruptedException {
 
-	@Test
-	public void testDeleteActiveSchedule_throw_DatabaseValidationException() throws SQLException, InterruptedException {
+    try {
+      activeScheduleDao.delete(null, null);
 
-		try {
-			activeScheduleDao.delete(null, null);
+      fail("Should fail");
+    } catch (DatabaseValidationException dve) {
+      assertThat(dve.getMessage(), is("Delete failed"));
+    }
+  }
 
-			fail("Should fail");
-		} catch (DatabaseValidationException dve) {
-			assertThat(dve.getMessage(), is("Delete failed"));
-		}
-	}
-
-	@Test
-	public void testFindActiveScheduleByAppId_throw_DatabaseValidationException() throws SQLException {
-		String appId = "appId_1";
-		try {
-			activeScheduleDao.findByAppId(appId);
-			fail("Should fail");
-		} catch (DatabaseValidationException dve) {
-			assertThat(dve.getMessage(), is("Select active schedules by Application Id:" + appId + " failed"));
-		}
-	}
-
+  @Test
+  public void testFindActiveScheduleByAppId_throw_DatabaseValidationException()
+      throws SQLException {
+    String appId = "appId_1";
+    try {
+      activeScheduleDao.findByAppId(appId);
+      fail("Should fail");
+    } catch (DatabaseValidationException dve) {
+      assertThat(
+          dve.getMessage(), is("Select active schedules by Application Id:" + appId + " failed"));
+    }
+  }
 }

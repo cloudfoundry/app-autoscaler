@@ -47,7 +47,8 @@ var _ = Describe("Metricsforwarder", func() {
 				badfile, err := ioutil.TempFile("", "bad-mf-config")
 				Expect(err).NotTo(HaveOccurred())
 				runner.configPath = badfile.Name()
-				ioutil.WriteFile(runner.configPath, []byte("bogus"), os.ModePerm)
+				err = ioutil.WriteFile(runner.configPath, []byte("bogus"), os.ModePerm)
+				Expect(err).NotTo(HaveOccurred())
 				runner.Start()
 			})
 
@@ -155,26 +156,6 @@ var _ = Describe("Metricsforwarder", func() {
 				Expect(healthData).To(ContainSubstring("autoscaler_metricsforwarder_policyDB"))
 				Expect(healthData).To(ContainSubstring("go_goroutines"))
 				Expect(healthData).To(ContainSubstring("go_memstats_alloc_bytes"))
-				rsp.Body.Close()
-
-			})
-		})
-		Context("when a request to query profile comes", func() {
-			It("returns with a 200", func() {
-				rsp, err := healthHttpClient.Get(fmt.Sprintf("http://127.0.0.1:%d/debug/pprof", healthport))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(rsp.StatusCode).To(Equal(http.StatusOK))
-				raw, _ := ioutil.ReadAll(rsp.Body)
-				profileIndexBody := string(raw)
-				Expect(profileIndexBody).To(ContainSubstring("allocs"))
-				Expect(profileIndexBody).To(ContainSubstring("block"))
-				Expect(profileIndexBody).To(ContainSubstring("cmdline"))
-				Expect(profileIndexBody).To(ContainSubstring("goroutine"))
-				Expect(profileIndexBody).To(ContainSubstring("heap"))
-				Expect(profileIndexBody).To(ContainSubstring("mutex"))
-				Expect(profileIndexBody).To(ContainSubstring("profile"))
-				Expect(profileIndexBody).To(ContainSubstring("threadcreate"))
-				Expect(profileIndexBody).To(ContainSubstring("trace"))
 				rsp.Body.Close()
 
 			})

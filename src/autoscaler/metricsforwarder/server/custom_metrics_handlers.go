@@ -42,7 +42,7 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 
 	username, password, authOK := r.BasicAuth()
 
-	if authOK == false {
+	if !authOK {
 		mh.logger.Info("error-processing-authorizaion-header")
 		handlers.WriteJSONResponse(w, http.StatusUnauthorized, models.ErrorResponse{
 			Code:    "Authorization-Failure-Error",
@@ -139,7 +139,7 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 func (mh *CustomMetricsHandler) validateCredentials(username string, usernameHash string, password string, passwordHash string) bool {
 	usernameAuthErr := bcrypt.CompareHashAndPassword([]byte(usernameHash), []byte(username))
 	passwordAuthErr := bcrypt.CompareHashAndPassword([]byte(passwordHash), []byte(password))
-	if usernameAuthErr == nil && passwordAuthErr == nil { // password matching successfull
+	if usernameAuthErr == nil && passwordAuthErr == nil { // password matching successful
 		return true
 	}
 	mh.logger.Debug("failed-to-authorize-credentials")

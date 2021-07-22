@@ -91,7 +91,8 @@ var _ = Describe("LockSqldb", func() {
 		AfterEach(func() {
 			err = ldb.Close()
 			Expect(err).NotTo(HaveOccurred())
-			cleanLockTable()
+			err = cleanLockTable()
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context("when the lock does not exist", func() {
@@ -195,7 +196,8 @@ var _ = Describe("LockSqldb", func() {
 		AfterEach(func() {
 			err = ldb.Close()
 			Expect(err).NotTo(HaveOccurred())
-			cleanLockTable()
+			err = cleanLockTable()
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Context("when the lock exist", func() {

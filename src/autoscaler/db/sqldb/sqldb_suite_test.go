@@ -73,7 +73,10 @@ func hasInstanceMetric(appId string, index int, name string, timestamp int64) bo
 	if e != nil {
 		Fail("can not query table appinstancemetrics: " + e.Error())
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+		_ = rows.Err()
+	}()
 	return rows.Next()
 }
 
@@ -106,7 +109,10 @@ func hasServiceInstance(serviceInstanceId string) bool {
 	if e != nil {
 		Fail("can not query table service_instance: " + e.Error())
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+		_ = rows.Err()
+	}()
 	return rows.Next()
 }
 
@@ -116,7 +122,10 @@ func hasServiceBinding(bindingId string, serviceInstanceId string) bool {
 	if e != nil {
 		Fail("can not query table binding: " + e.Error())
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+		_ = rows.Err()
+	}()
 	return rows.Next()
 }
 
@@ -147,7 +156,10 @@ func getAppPolicy(appId string) string {
 	if err != nil {
 		Fail("failed to get policy" + err.Error())
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+		_ = rows.Err()
+	}()
 	var policyJsonStr string
 	if rows.Next() {
 		err = rows.Scan(&policyJsonStr)
@@ -171,7 +183,10 @@ func hasAppMetric(appId, metricType string, timestamp int64, value string) bool 
 	if e != nil {
 		Fail("can not query table app_metric: " + e.Error())
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+		_ = rows.Err()
+	}()
 	return rows.Next()
 }
 
@@ -197,7 +212,10 @@ func hasScalingHistory(appId string, timestamp int64) bool {
 	if e != nil {
 		Fail("can not query table scalinghistory: " + e.Error())
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+		_ = rows.Err()
+	}()
 	return rows.Next()
 }
 
@@ -223,7 +241,10 @@ func hasScalingCooldownRecord(appId string, expireAt int64) bool {
 	if e != nil {
 		Fail("can not query table scalingcooldown: " + e.Error())
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+		_ = rows.Err()
+	}()
 	return rows.Next()
 }
 func GetInt64Pointer(value int64) *int64 {
@@ -265,9 +286,7 @@ func insertSchedulerActiveSchedule(id int, appId string, startJobIdentifier int,
 
 func insertCredential(appid string, username string, password string) error {
 	var err error
-	var query string
-
-	query = dbHelper.Rebind("INSERT INTO credentials(id, username, password, updated_at) values(?, ?, ?, ?)")
+	query := dbHelper.Rebind("INSERT INTO credentials(id, username, password, updated_at) values(?, ?, ?, ?)")
 	_, err = dbHelper.Exec(query, appid, username, password, "2011-05-18 15:36:38")
 	return err
 }
@@ -278,7 +297,10 @@ func getCredential(appId string) (string, string, error) {
 	if err != nil {
 		Fail("failed to get credential" + err.Error())
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+		_ = rows.Err()
+	}()
 	var username, password string
 	if rows.Next() {
 		err = rows.Scan(&username, &password)
@@ -294,7 +316,10 @@ func hasCredential(appId string) bool {
 	if e != nil {
 		Fail("can not query table credentials: " + e.Error())
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+		_ = rows.Err()
+	}()
 	return rows.Next()
 }
 func cleanCredentialTable() error {
@@ -383,17 +408,15 @@ func validateLockNotInDB(owner string) error {
 	return fmt.Errorf("lock exists with owner (%s)", owner)
 }
 
-func formatPolicyString(policyStr string) string {
+func formatPolicyString(policyStr string) (string, error) {
 	scalingPolicy := &models.ScalingPolicy{}
 	err := json.Unmarshal([]byte(policyStr), &scalingPolicy)
 	if err != nil {
-		fmt.Errorf("failed to unmarshal policyJson string %s", policyStr)
-		return ""
+		return "", fmt.Errorf("failed to unmarshal policyJson string %s", policyStr)
 	}
 	policyJsonStr, err := json.Marshal(scalingPolicy)
 	if err != nil {
-		fmt.Errorf("failed to marshal ScalingPolicy %v", scalingPolicy)
-		return ""
+		return "", fmt.Errorf("failed to marshal ScalingPolicy %v", scalingPolicy)
 	}
-	return string(policyJsonStr)
+	return string(policyJsonStr), nil
 }

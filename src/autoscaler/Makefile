@@ -16,11 +16,14 @@ build: build-scalingengine build-metricsforwarder build-eventgenerator build-api
 check: fmt lint build test
 
 test:
-	ginkgo -r -race -randomizeAllSpecs -keepGoing --skipPackage=integration
+	ginkgo -r -race -requireSuite -randomizeAllSpecs -keepGoing --skipPackage=integration
+
+testsuite:
+	ginkgo -r -race -randomizeAllSpecs $(TEST)
 
 .PHONY: integration
 integration:
-	ginkgo -r -race -randomizeAllSpecs -keepGoing integration
+	ginkgo -r -race -requireSuite -randomizeAllSpecs -keepGoing integration
 
 
 generate:
@@ -46,3 +49,6 @@ buildtools:
 
 lint:
 	golangci-lint run
+
+lint-fix:
+	golangci-lint run --fix

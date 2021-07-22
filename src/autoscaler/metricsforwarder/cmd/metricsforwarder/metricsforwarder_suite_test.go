@@ -81,6 +81,7 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		}`
 	query := policyDB.Rebind("INSERT INTO policy_json(app_id, policy_json, guid) values(?, ?, ?)")
 	_, err = policyDB.Exec(query, "an-app-id", policy, "1234")
+	Expect(err).NotTo(HaveOccurred())
 
 	username = "username"
 	password = "password"
@@ -106,7 +107,8 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 		filepath.Join(testCertDir, "loggregator-ca.crt"),
 	)
 
-	grpcIngressTestServer.Start()
+	err = grpcIngressTestServer.Start()
+	Expect(err).NotTo(HaveOccurred())
 
 	cfg.LoggregatorConfig.TLS.CACertFile = filepath.Join(testCertDir, "loggregator-ca.crt")
 	cfg.LoggregatorConfig.TLS.CertFile = filepath.Join(testCertDir, "metron.crt")

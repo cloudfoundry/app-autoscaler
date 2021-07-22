@@ -8,7 +8,7 @@ import (
 
 	"code.cloudfoundry.org/go-loggregator/v8/rpc/loggregator_v2"
 	"code.cloudfoundry.org/lager"
-	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/proto" //nolint:staticcheck
 	"github.com/gorilla/websocket"
 )
 
@@ -41,7 +41,11 @@ func (h *wsMessageHandler) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 	defer ws.Close()
 
 	closeCode, closeMessage := h.runWebsocketUntilClosed(ws)
-	ws.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(closeCode, closeMessage), time.Time{})
+	err = ws.WriteControl(websocket.CloseMessage, websocket.FormatCloseMessage(closeCode, closeMessage), time.Time{})
+	if err != nil {
+		h.logger.Error("serve-websocket-close", err)
+		return
+	}
 }
 
 func (h *wsMessageHandler) runWebsocketUntilClosed(ws *websocket.Conn) (closeCode int, closeMessage string) {

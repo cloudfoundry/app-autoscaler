@@ -169,7 +169,7 @@ func (ep *envelopeProcessor) computeAndSaveMetrics() {
 	ep.logger.Debug("compute-and-save-metrics", lager.Data{"message": "start to compute and save metrics"})
 	for appID := range ep.getAppIDs() {
 		im := ep.numRequests[appID]
-		if im == nil || len(im) == 0 {
+		if len(im) == 0 {
 			if helpers.FNVHash(appID)%uint32(ep.numProcessors) == uint32(ep.processorIndex) {
 				throughputMetric := &models.AppInstanceMetric{
 					AppId:         appID,

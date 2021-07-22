@@ -51,6 +51,19 @@ linters-settings:
     allow-unused: false # report any unused nolint directives
     require-explanation: false # don't require an explanation for nolint directives
     require-specific: false # don't require nolint directives to be specific about which linter is being skipped
+  staticcheck:
+    checks: ["all"]
+  stylecheck:
+    go: "1.15"
+    # https://staticcheck.io/docs/options#checks
+    checks: ["all", "-ST1003", "-ST1005", "-ST1023"]
+    dot-import-whitelist:
+      - github.com/onsi/gomega
+      - github.com/onsi/ginkgo  
+    # https://staticcheck.io/docs/options#initialisms
+    #initialisms: ["ACL", "API", "ASCII", "CPU", "CSS", "DNS", "EOF", "GUID", "HTML", "HTTP", "HTTPS", "ID", "IP", "JSON", "QPS", "RAM", "RPC", "SLA", "SMTP", "SQL", "SSH", "TCP", "TLS", "TTL", "UDP", "UI", "GID", "UID", "UUID", "URI", "URL", "UTF8", "VM", "XML", "XMPP", "XSRF", "XSS"]
+    # https://staticcheck.io/docs/options#http_status_code_whitelist
+    #http-status-code-whitelist: ["200", "400", "404", "500"]
 linters:
   # please, do not use `enable-all`: it's deprecated and will be removed soon.
   # inverted configuration with `enable-all` and `disable` is not scalable during updates of golangci-lint
@@ -60,8 +73,8 @@ linters:
     - deadcode
     - depguard
     - dogsled
-      #    - dupl
-      #    - errcheck
+      #- dupl
+    - errcheck
     - funlen
       #    - gocognit
       #    - goconst
@@ -69,23 +82,24 @@ linters:
     - gofmt
     - goimports
     - goprintffuncname
-      #    - gosec
-      #    - gosimple
+    - gosec
+    - gosimple
     - gomoddirectives
     - gomodguard  
-      #    - ineffassign
-      #    - misspell
+    - ineffassign
+    - misspell
     - nakedret
     - nolintlint
-      #    - rowserrcheck
-      #    - structcheck
-      #    - stylecheck
-      #    - testpackage
-      #    - typecheck
+    - rowserrcheck
+    - staticcheck
+    - structcheck
+    - stylecheck
+    - testpackage
+    - typecheck
       #    - unconvert
       #    - unparam
     - unused
-      #    - varcheck
+    - varcheck
     - whitespace
       #    - godox
       #    - staticcheck
@@ -95,8 +109,9 @@ issues:
   exclude-rules:
     - path: _test\.go
       linters:
+        - dupl
         - gomnd
-        - typecheck  
+        - typecheck
     # https://github.com/go-critic/go-critic/issues/926
     - linters:
         - gocritic

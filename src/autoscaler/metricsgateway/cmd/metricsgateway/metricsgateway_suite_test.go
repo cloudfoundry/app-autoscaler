@@ -2,7 +2,6 @@ package main_test
 
 import (
 	"autoscaler/models"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -75,7 +74,7 @@ var (
 )
 
 func TestMetricsgateway(t *testing.T) {
-	grpclog.SetLogger(log.New(GinkgoWriter, "", 0))
+	grpclog.SetLoggerV2(grpclog.NewLoggerV2(GinkgoWriter, ioutil.Discard, ioutil.Discard))
 	log.SetOutput(GinkgoWriter)
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Metricsgateway Suite")
@@ -111,7 +110,7 @@ func initDB() {
 	_, err = mgDB.Exec("DELETE from policy_json")
 	Expect(err).NotTo(HaveOccurred())
 
-	policy := fmt.Sprintf(`
+	policy := `
 		{
 		   "instance_min_count":1,
 		   "instance_max_count":5,
@@ -125,7 +124,7 @@ func initDB() {
 		         "adjustment":"+1"
 		      }
 		   ]
-		}`)
+		}`
 	query := mgDB.Rebind("INSERT INTO policy_json(app_id, policy_json, guid) values(?, ?, ?)")
 	_, err = mgDB.Exec(query, testAppId, policy, "1234")
 	Expect(err).NotTo(HaveOccurred())
@@ -203,9 +202,10 @@ func writeConfig(c *config.Config) *os.File {
 	cfg, err := ioutil.TempFile("", "mg")
 	Expect(err).NotTo(HaveOccurred())
 	defer cfg.Close()
-	configBytes, err1 := yaml.Marshal(c)
-	ioutil.WriteFile(cfg.Name(), configBytes, 0777)
-	Expect(err1).NotTo(HaveOccurred())
+	configBytes, err := yaml.Marshal(c)
+	Expect(err).NotTo(HaveOccurred())
+	err = ioutil.WriteFile(cfg.Name(), configBytes, 0600)
+	Expect(err).NotTo(HaveOccurred())
 	return cfg
 }
 

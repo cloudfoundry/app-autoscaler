@@ -45,8 +45,7 @@ func NewServer(logger lager.Logger, conf *config.Config, policyDB db.PolicyDB, c
 
 	addr := fmt.Sprintf("0.0.0.0:%d", conf.Server.Port)
 
-	var runner ifrit.Runner
-	runner = http_server.New(addr, r)
+	runner := http_server.New(addr, r)
 
 	logger.Info("metrics-forwarder-http-server-created", lager.Data{"config": conf})
 	return runner, nil

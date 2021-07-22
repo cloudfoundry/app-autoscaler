@@ -20,6 +20,9 @@ func NewJSONRedacterWithURLCred(keyPatterns []string, valuePatterns []string) (*
 		return nil, err
 	}
 	urlCredMatcher, err := regexp.Compile(postgresDbURLPattern)
+	if err != nil {
+		return nil, err
+	}
 	return &JSONRedacterWithURLCred{
 		jsonRedacter:   jsonRedacter,
 		urlCredMatcher: urlCredMatcher,
@@ -67,7 +70,8 @@ func (r JSONRedacterWithURLCred) redactArray(data *[]interface{}) {
 
 func (r JSONRedacterWithURLCred) redactObject(data *map[string]interface{}) {
 	for k, v := range *data {
-		(*data)[k] = r.redactValue(&v)
+		val := v
+		(*data)[k] = r.redactValue(&val)
 	}
 }
 
