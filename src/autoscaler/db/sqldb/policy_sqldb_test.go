@@ -30,7 +30,7 @@ var _ = Describe("PolicySQLDB", func() {
 		policyJsonStr   string
 		appId           string
 		policies        []*models.PolicyJson
-		testMetricName  string = "TestMetricName"
+		testMetricName  = "TestMetricName"
 		username        string
 		password        string
 		anotherUsername string

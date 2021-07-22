@@ -25,7 +25,7 @@ import (
 	"github.com/go-sql-driver/mysql"
 	. "github.com/onsi/gomega"
 	"github.com/tedsuo/ifrit/ginkgomon"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
 const (
@@ -42,10 +42,10 @@ const (
 	MetricsServerWS     = "metricsServerWS"
 )
 
-var golangAPIInfoFilePath string = "../api/exampleconfig/catalog-example.json"
-var golangSchemaValidationPath string = "../api/schemas/catalog.schema.json"
-var golangApiServerPolicySchemaPath string = "../api/policyvalidator/policy_json.schema.json"
-var golangServiceCatalogPath string = "../servicebroker/config/catalog.json"
+var golangAPIInfoFilePath = "../api/exampleconfig/catalog-example.json"
+var golangSchemaValidationPath = "../api/schemas/catalog.schema.json"
+var golangApiServerPolicySchemaPath = "../api/policyvalidator/policy_json.schema.json"
+var golangServiceCatalogPath = "../servicebroker/config/catalog.json"
 
 type Executables map[string]string
 type Ports map[string]int

@@ -17,9 +17,9 @@ var _ = Describe("Dispatcher", func() {
 		resultChans []chan *loggregator_v2.Envelope
 		emitters    []Emitter
 		dispatcher  *Dispatcher
-		testAppId1  string = "the-test-appid1"
-		testAppId2  string = "the-test-appid2"
-		testAppId3  string = "the-test-appid3"
+		testAppId1  = "the-test-appid1"
+		testAppId2  = "the-test-appid2"
+		testAppId3  = "the-test-appid3"
 	)
 	BeforeEach(func() {
 		envelopChan = make(chan *loggregator_v2.Envelope, 10)

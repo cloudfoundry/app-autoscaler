@@ -25,11 +25,11 @@ var _ = Describe("Aggregator", func() {
 		clock                *fakeclock.FakeClock
 		logger               lager.Logger
 		appMonitorsChan      chan *models.AppMonitor
-		testAppId            string        = "testAppId"
-		testMetricType       string        = "test-metric-name"
-		testMetricUnit       string        = "a-metric-unit"
-		fakeWaitDuration     time.Duration = 0 * time.Millisecond
-		policyMap                          = map[string]*models.AppPolicy{
+		testAppId            = "testAppId"
+		testMetricType       = "test-metric-name"
+		testMetricUnit       = "a-metric-unit"
+		fakeWaitDuration     = 0 * time.Millisecond
+		policyMap            = map[string]*models.AppPolicy{
 			testAppId: {
 				AppId: testAppId,
 				ScalingPolicy: &models.ScalingPolicy{
