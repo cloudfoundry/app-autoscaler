@@ -21,7 +21,7 @@ curl https://pre-commit.com/install-local.py | python -
 ```bash
 brew install pre-commit
 ```
-- using conda
+- using conda 
 ```bash
 conda install -c conda-forge pre-commit
 ```
