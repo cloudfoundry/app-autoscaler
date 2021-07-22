@@ -27,20 +27,20 @@ var _ = Describe("Evaluator", func() {
 		triggerChan        chan []*models.Trigger
 		scalingEngine      *ghttp.Server
 		evaluator          *Evaluator
-		testAppId          string = "testAppId"
-		testMetricType     string = "testMetricType"
-		testMetricUnit     string = "testMetricUnit"
+		testAppId          = "testAppId"
+		testMetricType     = "testMetricType"
+		testMetricUnit     = "testMetricUnit"
 		urlPath            string
-		breachDurationSecs int = 30
+		breachDurationSecs = 30
 		queryAppMetrics    aggregator.QueryAppMetricsFunc
 		getBreaker         func(string) *circuit.Breaker
 		setCoolDownExpired func(string, int64)
 		cbEventChan        <-chan circuit.BreakerEvent
 		cooldownExpired    map[string]int64
-		fakeTime           time.Time   = time.Now()
-		lock               *sync.Mutex = &sync.Mutex{}
+		fakeTime           = time.Now()
+		lock               = &sync.Mutex{}
 		scalingResult      *models.AppScalingResult
-		triggerArrayGT     []*models.Trigger = []*models.Trigger{{
+		triggerArrayGT     = []*models.Trigger{{
 			AppId:           testAppId,
 			MetricType:      testMetricType,
 			CoolDownSeconds: 300,
@@ -48,7 +48,7 @@ var _ = Describe("Evaluator", func() {
 			Operator:        ">",
 			Adjustment:      "+1",
 		}}
-		triggerArrayGE []*models.Trigger = []*models.Trigger{{
+		triggerArrayGE = []*models.Trigger{{
 			AppId:           testAppId,
 			MetricType:      testMetricType,
 			CoolDownSeconds: 300,
@@ -56,7 +56,7 @@ var _ = Describe("Evaluator", func() {
 			Operator:        ">=",
 			Adjustment:      "+1",
 		}}
-		triggerArrayLT []*models.Trigger = []*models.Trigger{{
+		triggerArrayLT = []*models.Trigger{{
 			AppId:                 testAppId,
 			MetricType:            testMetricType,
 			BreachDurationSeconds: breachDurationSecs,
@@ -65,7 +65,7 @@ var _ = Describe("Evaluator", func() {
 			Operator:              "<",
 			Adjustment:            "-1",
 		}}
-		triggerArrayLE []*models.Trigger = []*models.Trigger{{
+		triggerArrayLE = []*models.Trigger{{
 			AppId:                 testAppId,
 			MetricType:            testMetricType,
 			BreachDurationSeconds: breachDurationSecs,
@@ -96,7 +96,7 @@ var _ = Describe("Evaluator", func() {
 			Operator:              "<=",
 			Adjustment:            "-1",
 		}
-		triggerArrayMultipleTriggers []*models.Trigger = []*models.Trigger{&firstTrigger, &secondTrigger}
+		triggerArrayMultipleTriggers = []*models.Trigger{&firstTrigger, &secondTrigger}
 	)
 	BeforeEach(func() {
 		logger = lagertest.NewTestLogger("Evaluator-test")

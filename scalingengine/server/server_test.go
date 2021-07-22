@@ -8,7 +8,6 @@ import (
 	. "autoscaler/scalingengine/server"
 
 	"code.cloudfoundry.org/lager"
-	"github.com/gorilla/mux"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/tedsuo/ifrit"
@@ -63,7 +62,7 @@ var _ = Describe("Server", func() {
 		err        error
 		method     string
 		bodyReader io.Reader
-		route      *mux.Router = routes.ScalingEngineRoutes()
+		route      = routes.ScalingEngineRoutes()
 	)
 
 	BeforeEach(func() {

@@ -16,7 +16,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 
-	cache "github.com/patrickmn/go-cache"
+	"github.com/patrickmn/go-cache"
 )
 
 var _ = Describe("MetricHandler", func() {
