@@ -11,7 +11,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/xeipuuv/gojsonschema"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 
 	"autoscaler/db"
 	"autoscaler/helpers"
@@ -19,9 +19,9 @@ import (
 )
 
 const (
-	DefaultLoggingLevel                = "info"
-	DefaultMaxAmount                   = 10
-	DefaultValidDuration time.Duration = 1 * time.Second
+	DefaultLoggingLevel  = "info"
+	DefaultMaxAmount     = 10
+	DefaultValidDuration = 1 * time.Second
 )
 
 type ServerConfig struct {

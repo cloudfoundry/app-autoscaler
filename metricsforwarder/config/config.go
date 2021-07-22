@@ -9,16 +9,16 @@ import (
 	"io/ioutil"
 	"time"
 
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
 const (
-	DefaultMetronAddress                      = "127.0.0.1:3458"
-	DefaultCacheTTL             time.Duration = 15 * time.Minute
-	DefaultCacheCleanupInterval time.Duration = 6 * time.Hour
-	DefaultPolicyPollerInterval time.Duration = 40 * time.Second
-	DefaultMaxAmount                          = 10
-	DefaultValidDuration        time.Duration = 1 * time.Second
+	DefaultMetronAddress        = "127.0.0.1:3458"
+	DefaultCacheTTL             = 15 * time.Minute
+	DefaultCacheCleanupInterval = 6 * time.Hour
+	DefaultPolicyPollerInterval = 40 * time.Second
+	DefaultMaxAmount            = 10
+	DefaultValidDuration        = 1 * time.Second
 )
 
 type Config struct {

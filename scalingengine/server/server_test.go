@@ -63,7 +63,7 @@ var _ = Describe("Server", func() {
 		err        error
 		method     string
 		bodyReader io.Reader
-		route      *mux.Router = routes.ScalingEngineRoutes()
+		route      = routes.ScalingEngineRoutes()
 	)
 
 	BeforeEach(func() {

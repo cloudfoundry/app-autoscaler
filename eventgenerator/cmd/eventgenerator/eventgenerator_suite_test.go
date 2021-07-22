@@ -29,9 +29,9 @@ import (
 
 var (
 	egPath     string
-	testAppId  string = "an-app-id"
-	metricType string = "a-metric-type"
-	metricUnit string = "a-metric-unit"
+	testAppId  = "an-app-id"
+	metricType = "a-metric-type"
+	metricUnit = "a-metric-unit"
 
 	regPath            = regexp.MustCompile(`^/v1/apps/.*/scale$`)
 	configFile         *os.File
@@ -42,8 +42,8 @@ var (
 	healthHttpClient   *http.Client
 	metricCollector    *ghttp.Server
 	scalingEngine      *ghttp.Server
-	breachDurationSecs int                         = 10
-	metrics            []*models.AppInstanceMetric = []*models.AppInstanceMetric{
+	breachDurationSecs = 10
+	metrics            = []*models.AppInstanceMetric{
 		{
 			AppId:         testAppId,
 			InstanceIndex: 0,
@@ -83,7 +83,7 @@ var (
 		},
 	}
 
-	scalingResult *models.AppScalingResult = &models.AppScalingResult{
+	scalingResult = &models.AppScalingResult{
 		AppId:             testAppId,
 		Adjustment:        1,
 		Status:            models.ScalingStatusSucceeded,

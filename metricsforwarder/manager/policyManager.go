@@ -8,7 +8,7 @@ import (
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
-	cache "github.com/patrickmn/go-cache"
+	"github.com/patrickmn/go-cache"
 )
 
 type Consumer func(map[string]*models.AppPolicy, chan *models.AppMonitor)

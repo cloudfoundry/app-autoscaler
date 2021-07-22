@@ -17,7 +17,7 @@ var _ = Describe("TimeLoggerFormat", func() {
 
 	var log lager.LogFormat
 	var logTime time.Time
-	var template string = `{"timestamp":"%s","source":"log-source","message":"message","log_level":1,"data":{"log-data":"log-data"},"log_time":"%s"}`
+	var template = `{"timestamp":"%s","source":"log-source","message":"message","log_level":1,"data":{"log-data":"log-data"},"log_time":"%s"}`
 	var tlf TimeLogFormat
 
 	JustBeforeEach(func() {
