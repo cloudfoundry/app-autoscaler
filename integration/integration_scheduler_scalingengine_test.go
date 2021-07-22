@@ -13,7 +13,7 @@ var _ = Describe("Integration_Scheduler_ScalingEngine", func() {
 	var (
 		testAppId         string
 		testGuid          string
-		initInstanceCount int = 2
+		initInstanceCount = 2
 		policyStr         string
 	)
 

@@ -17,8 +17,8 @@ var _ = Describe("Integration_GolangApi_EventGenerator", func() {
 		pathVariables     []string
 		parameters        map[string]string
 		metric            *models.AppMetric
-		metricType        string = "memoryused"
-		initInstanceCount int    = 2
+		metricType        = "memoryused"
+		initInstanceCount = 2
 	)
 
 	BeforeEach(func() {

@@ -21,12 +21,12 @@ var _ = Describe("BindingSqldb", func() {
 		dbConfig       db.DatabaseConfig
 		logger         lager.Logger
 		err            error
-		testInstanceId string = "test-instance-id"
-		testBindingId  string = "test-binding-id"
-		testAppId      string = "test-app-id"
-		testOrgGuid    string = "test-org-guid"
-		testOrgGuid2   string = "test-org-guid-2"
-		testSpaceGuid  string = "test-space-guid"
+		testInstanceId = "test-instance-id"
+		testBindingId  = "test-binding-id"
+		testAppId      = "test-app-id"
+		testOrgGuid    = "test-org-guid"
+		testOrgGuid2   = "test-org-guid-2"
+		testSpaceGuid  = "test-space-guid"
 	)
 
 	BeforeEach(func() {
