@@ -16,7 +16,7 @@ var _ = Describe("Integration_GolangApi_Scheduler", func() {
 	var (
 		appId             string
 		policyStr         []byte
-		initInstanceCount int = 2
+		initInstanceCount = 2
 		serviceInstanceId string
 		bindingId         string
 		orgId             string

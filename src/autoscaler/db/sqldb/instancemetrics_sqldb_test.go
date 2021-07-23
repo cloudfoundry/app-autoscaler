@@ -34,9 +34,9 @@ var _ = Describe("InstancemetricsSqldb", func() {
 		appId          string
 		instanceIndex  int
 		metricName     string
-		testAppId      string = "Test-App-ID"
-		testMetricName string = "TestMetricType"
-		testMetricUnit string = "TestMetricUnit"
+		testAppId      = "Test-App-ID"
+		testMetricName = "TestMetricType"
+		testMetricUnit = "TestMetricUnit"
 	)
 
 	BeforeEach(func() {
@@ -217,8 +217,8 @@ var _ = Describe("InstancemetricsSqldb", func() {
 		})
 
 		Context("When there are errors in transaction", func() {
-			var lock *sync.Mutex = &sync.Mutex{}
-			var count int = 0
+			var lock = &sync.Mutex{}
+			var count = 0
 			BeforeEach(func() {
 				testMetricName = "This-is-a-too-long-meitrc-name-too-loooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooong"
 				metric1 := models.AppInstanceMetric{

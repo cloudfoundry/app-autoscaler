@@ -21,7 +21,7 @@ databaseChangeLog:
                   name: unit
                   type: varchar(20)
                   constraints:
-                    nullable: false                    
+                    nullable: false
               - column:
                   name: timestamp
                   type: bigint
@@ -33,35 +33,35 @@ databaseChangeLog:
                   constraints:
                     nullable: true
   - changeSet:
-        id: 2
-        author: paltanmoy
-        changes:
-          - createTable:
-              tableName: eg_lock
-              columns:
-                - column:
-                    name: owner
-                    type: varchar(255)
-                    constraints:
-                      primaryKey: true
-                - column:
-                    name: lock_timestamp
-                    type: timestamp
-                    constraints:
-                      nullable: false
-                - column:
-                    name: ttl
-                    type: bigint
-                    defaultValue: 0
-                    constraints:
-                      nullable: false
+      id: 2
+      author: paltanmoy
+      changes:
+        - createTable:
+            tableName: eg_lock
+            columns:
+              - column:
+                  name: owner
+                  type: varchar(255)
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: lock_timestamp
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: ttl
+                  type: bigint
+                  defaultValue: 0
+                  constraints:
+                    nullable: false
   - changeSet:
       id: 3
       author: tanmoypal
       dbms: postgres
       changes:
         - createIndex:
-             columns:
+            columns:
               - column:
                   name: app_id
                   type: varchar(255)
@@ -71,8 +71,8 @@ databaseChangeLog:
               - column:
                   name: timestamp
                   type: bigint
-             indexName: index_app_metrics
-             tableName: app_metric
+            indexName: index_app_metrics
+            tableName: app_metric
   - changeSet:
       id: 4
       author: byang
@@ -101,7 +101,7 @@ databaseChangeLog:
                   name: unit
                   type: varchar(20)
                   constraints:
-                    nullable: false                    
+                    nullable: false
               - column:
                   name: timestamp
                   type: bigint
@@ -123,7 +123,7 @@ databaseChangeLog:
       dbms: mysql
       changes:
         - createIndex:
-             columns:
+            columns:
               - column:
                   name: app_id
                   type: varchar(255)
@@ -133,5 +133,5 @@ databaseChangeLog:
               - column:
                   name: timestamp
                   type: bigint
-             indexName: index_app_metrics
-             tableName: app_metric
+            indexName: index_app_metrics
+            tableName: app_metric

@@ -89,7 +89,7 @@ databaseChangeLog:
                   type: timestamp
                   constraints:
                     nullable: false
-                  defaultValueComputed: now()  
+                  defaultValueComputed: now()
               - column:
                   name: instancemincount
                   type: integer
@@ -106,28 +106,28 @@ databaseChangeLog:
                   constraints:
                     nullable: false
   - changeSet:
-        id: 4
-        author: cdlliuy
-        changes:
-          - createTable:
-              tableName: scalingengine_lock
-              columns:
-                - column:
-                    name: owner
-                    type: varchar(255)
-                    constraints:
-                      primaryKey: true
-                - column:
-                    name: lock_timestamp
-                    type: timestamp
-                    constraints:
-                      nullable: false
-                - column:
-                    name: ttl
-                    type: bigint
-                    defaultValue: 0
-                    constraints:
-                      nullable: false
+      id: 4
+      author: cdlliuy
+      changes:
+        - createTable:
+            tableName: scalingengine_lock
+            columns:
+              - column:
+                  name: owner
+                  type: varchar(255)
+                  constraints:
+                    primaryKey: true
+              - column:
+                  name: lock_timestamp
+                  type: timestamp
+                  constraints:
+                    nullable: false
+              - column:
+                  name: ttl
+                  type: bigint
+                  defaultValue: 0
+                  constraints:
+                    nullable: false
   - changeSet:
       id: 5
       author: aqan213
@@ -228,7 +228,7 @@ databaseChangeLog:
                   type: timestamp
                   constraints:
                     nullable: false
-                  defaultValueComputed: now()  
+                  defaultValueComputed: now()
               - column:
                   name: instancemincount
                   type: integer

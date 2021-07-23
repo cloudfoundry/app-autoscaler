@@ -66,7 +66,7 @@ var (
 	fakePolicyDB     *fakes.FakePolicyDB
 	fakeRateLimiter  *fakes.FakeLimiter
 	checkBindingFunc api.CheckBindingFunc
-	hasBinding       bool = true
+	hasBinding       = true
 
 	testCertDir = "../../../../test-certs"
 	apiPort     = 12000 + GinkgoParallelNode()
