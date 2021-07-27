@@ -187,7 +187,7 @@ var _ = Describe("ScalingEngine", func() {
 				Expect(scalingResult.AppId).To(Equal("an-app-id"))
 				Expect(scalingResult.Status).To(Equal(models.ScalingStatusIgnored))
 				Expect(scalingResult.Adjustment).To(Equal(0))
-				Expect(scalingResult.CooldownExpiredAt).To(Equal(clock.Now().Add(30 * time.Second).UnixNano()))
+				Expect(scalingResult.CooldownExpiredAt).To(Equal(int64(0)))
 
 			})
 		})
@@ -240,7 +240,7 @@ var _ = Describe("ScalingEngine", func() {
 
 			})
 
-			It("updates the app instance with  max instances and stores the succeeded scaling history", func() {
+			It("updates the app instance with  max instances and stores the ignored scaling history", func() {
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(cfc.SetAppInstancesCallCount()).To(BeZero())
@@ -260,7 +260,7 @@ var _ = Describe("ScalingEngine", func() {
 				Expect(scalingResult.AppId).To(Equal("an-app-id"))
 				Expect(scalingResult.Status).To(Equal(models.ScalingStatusIgnored))
 				Expect(scalingResult.Adjustment).To(Equal(0))
-				Expect(scalingResult.CooldownExpiredAt).To(Equal(clock.Now().Add(30 * time.Second).UnixNano()))
+				Expect(scalingResult.CooldownExpiredAt).To(Equal(int64(0)))
 
 			})
 		})
