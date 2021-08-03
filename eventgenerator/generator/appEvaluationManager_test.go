@@ -142,7 +142,7 @@ var _ = Describe("AppEvaluationManager", func() {
 				})
 
 				JustBeforeEach(func() {
-					manager.SetCoolDownExpired(testAppId2, fakeTime.Add(time.Duration(30*testEvaluateInterval)).UnixNano())
+					manager.SetCoolDownExpired(testAppId2, fakeTime.Add(30*testEvaluateInterval).UnixNano())
 				})
 
 				It("should add triggers to evaluate after cooldown expired", func() {

@@ -79,6 +79,7 @@ linters:
       #    - gocognit
       #    - goconst
     #    - gocyclo
+    # - goerr113
     - gofmt
     - goimports
     - goprintffuncname
@@ -96,7 +97,7 @@ linters:
     - stylecheck
     - testpackage
     - typecheck
-      #    - unconvert
+    - unconvert
     #    - unparam
     - unused
     - varcheck
