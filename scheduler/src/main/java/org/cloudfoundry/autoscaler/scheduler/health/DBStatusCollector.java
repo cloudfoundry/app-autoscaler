@@ -30,7 +30,7 @@ public class DBStatusCollector extends Collector {
     List<MetricFamilySamples> mfs = new ArrayList<MetricFamilySamples>();
     BasicDataSource basicDataSource = (BasicDataSource) this.dataSource;
     BasicDataSource policyBasicDataSource = (BasicDataSource) this.policyDBDataSource;
-    //		primary datasource metrics
+    // primary datasource metrics
     mfs.add(
         new GaugeMetricFamily(
             namespace + "_" + subSystem + "_data_source" + "_initial_size",
@@ -66,7 +66,7 @@ public class DBStatusCollector extends Collector {
             "The current number of idle connections that are waiting to be allocated from this data"
                 + " source",
             basicDataSource.getNumIdle()));
-    //		policy datasource metrics
+    // policy datasource metrics
     mfs.add(
         new GaugeMetricFamily(
             namespace + "_" + subSystem + "_policy_db_data_source" + "_active_connections_number",
