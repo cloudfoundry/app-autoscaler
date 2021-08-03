@@ -69,16 +69,16 @@ public class TestDataSetupHelper {
   public static ApplicationSchedules generateApplicationPolicy(
       int noOfSpecificDateSchedules, int noOfRecurringSchedules) {
 
-    int noOfDOMRecurringSchedules = noOfRecurringSchedules / 2;
-    int noOfDOWRecurringSchedules = noOfRecurringSchedules - noOfDOMRecurringSchedules;
+    int noOfDomRecurringSchedules = noOfRecurringSchedules / 2;
+    int noOfDowRecurringSchedules = noOfRecurringSchedules - noOfDomRecurringSchedules;
 
     return new ApplicationPolicyBuilder(
             1,
             5,
             timeZone,
             noOfSpecificDateSchedules,
-            noOfDOMRecurringSchedules,
-            noOfDOWRecurringSchedules)
+            noOfDomRecurringSchedules,
+            noOfDowRecurringSchedules)
         .build();
   }
 
@@ -87,8 +87,8 @@ public class TestDataSetupHelper {
       String guid,
       boolean generateScheduleId,
       int noOfSpecificSchedules,
-      int noOfDOMRecurringSchedules,
-      int noOfDOWRecurringSchedules) {
+      int noOfDomRecurringSchedules,
+      int noOfDowRecurringSchedules) {
 
     List<SpecificDateScheduleEntity> specificDateSchedules =
         generateSpecificDateScheduleEntities(
@@ -96,7 +96,7 @@ public class TestDataSetupHelper {
 
     List<RecurringScheduleEntity> recurringSchedules =
         generateRecurringScheduleEntities(
-            appId, guid, generateScheduleId, noOfDOMRecurringSchedules, noOfDOWRecurringSchedules);
+            appId, guid, generateScheduleId, noOfDomRecurringSchedules, noOfDowRecurringSchedules);
 
     return new ScheduleBuilder()
         .setSpecificDate(specificDateSchedules)
@@ -124,11 +124,11 @@ public class TestDataSetupHelper {
       String appId,
       String guid,
       boolean generateScheduleId,
-      int noOfDOMRecurringSchedules,
-      int noOfDOWRecurringSchedules) {
+      int noOfDomRecurringSchedules,
+      int noOfDowRecurringSchedules) {
 
     RecurringScheduleEntitiesBuilder builder =
-        new RecurringScheduleEntitiesBuilder(noOfDOMRecurringSchedules, noOfDOWRecurringSchedules);
+        new RecurringScheduleEntitiesBuilder(noOfDomRecurringSchedules, noOfDowRecurringSchedules);
     if (generateScheduleId) {
       builder.setScheduleId();
     }

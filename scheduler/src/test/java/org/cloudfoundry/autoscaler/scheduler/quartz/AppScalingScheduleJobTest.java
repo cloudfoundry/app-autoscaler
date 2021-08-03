@@ -1010,7 +1010,7 @@ public class AppScalingScheduleJobTest {
   }
 
   @Test
-  public void testNotifyScalingEngine_when_invalidURL() throws Exception {
+  public void testNotifyScalingEngine_when_invalidUrl() throws Exception {
     setLogLevel(Level.ERROR);
 
     // Build the job and trigger

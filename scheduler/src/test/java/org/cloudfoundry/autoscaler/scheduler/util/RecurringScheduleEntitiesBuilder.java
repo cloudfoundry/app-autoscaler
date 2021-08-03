@@ -10,8 +10,8 @@ public class RecurringScheduleEntitiesBuilder {
   private int scheduleIndex = 0;
   private List<RecurringScheduleEntity> recurringScheduleEntities;
 
-  public RecurringScheduleEntitiesBuilder(int noOfDOMSchedules, int noOfDOWSchedules) {
-    recurringScheduleEntities = generateEntities(noOfDOMSchedules, noOfDOWSchedules);
+  public RecurringScheduleEntitiesBuilder(int noOfDomSchedules, int noOfDowSchedules) {
+    recurringScheduleEntities = generateEntities(noOfDomSchedules, noOfDowSchedules);
   }
 
   public RecurringScheduleEntitiesBuilder setTimeZone(String timeZone) {
@@ -113,18 +113,18 @@ public class RecurringScheduleEntitiesBuilder {
   }
 
   private List<RecurringScheduleEntity> generateEntities(
-      int noOfDOMSchedules, int noOfDOWSchedules) {
+      int noOfDomSchedules, int noOfDowSchedules) {
     List<RecurringScheduleEntity> entities = new ArrayList<>();
-    if ((noOfDOMSchedules + noOfDOWSchedules) == 0) {
+    if ((noOfDomSchedules + noOfDowSchedules) == 0) {
       return null;
     }
-    entities.addAll(generateDOM_DOWEntities(noOfDOMSchedules, false));
-    entities.addAll(generateDOM_DOWEntities(noOfDOWSchedules, true));
+    entities.addAll(generateDomDowEntities(noOfDomSchedules, false));
+    entities.addAll(generateDomDowEntities(noOfDowSchedules, true));
 
     return entities;
   }
 
-  private List<RecurringScheduleEntity> generateDOM_DOWEntities(int noOfSchedules, boolean isDow) {
+  private List<RecurringScheduleEntity> generateDomDowEntities(int noOfSchedules, boolean isDow) {
     List<RecurringScheduleEntity> recurringScheduleEntities = new ArrayList<>();
     for (int i = 0; i < noOfSchedules; i++) {
       RecurringScheduleEntity recurringScheduleEntity = new RecurringScheduleEntity();

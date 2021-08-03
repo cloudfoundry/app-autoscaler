@@ -30,7 +30,7 @@ public class SchedulerApplicationTest {
   }
 
   @Test
-  public void testApplicationExitsWhenSchedulerDBUnreachable() {
+  public void testApplicationExitsWhenSchedulerDbUnreachable() {
     expectedEx.expect(BeanCreationException.class);
     expectedEx.expectCause(isA(DataSourceConfigurationException.class));
     expectedEx.expectMessage(
@@ -43,7 +43,7 @@ public class SchedulerApplicationTest {
   }
 
   @Test
-  public void testApplicationExitsWhenPolicyDBUnreachable() {
+  public void testApplicationExitsWhenPolicyDbUnreachable() {
     expectedEx.expect(BeanCreationException.class);
     expectedEx.expectCause(isA(DataSourceConfigurationException.class));
     expectedEx.expectMessage(

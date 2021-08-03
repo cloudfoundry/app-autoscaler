@@ -7,7 +7,7 @@ import java.util.List;
 import javax.sql.DataSource;
 import org.apache.commons.dbcp2.BasicDataSource;
 
-public class DBStatusCollector extends Collector {
+public class DbStatusCollector extends Collector {
 
   private String namespace = "autoscaler";
   private String subSystem = "scheduler";
@@ -18,18 +18,18 @@ public class DBStatusCollector extends Collector {
     this.dataSource = dataSource;
   }
 
-  public void setPolicyDBDataSource(DataSource policyDBDataSource) {
-    this.policyDBDataSource = policyDBDataSource;
+  public void setPolicyDbDataSource(DataSource policyDbDataSource) {
+    this.policyDbDataSource = policyDbDataSource;
   }
 
-  private DataSource policyDBDataSource;
+  private DataSource policyDbDataSource;
 
   @Override
   public List<MetricFamilySamples> collect() {
     // TODO Auto-generated method stub
     List<MetricFamilySamples> mfs = new ArrayList<MetricFamilySamples>();
     BasicDataSource basicDataSource = (BasicDataSource) this.dataSource;
-    BasicDataSource policyBasicDataSource = (BasicDataSource) this.policyDBDataSource;
+    BasicDataSource policyBasicDataSource = (BasicDataSource) this.policyDbDataSource;
     // primary datasource metrics
     mfs.add(
         new GaugeMetricFamily(

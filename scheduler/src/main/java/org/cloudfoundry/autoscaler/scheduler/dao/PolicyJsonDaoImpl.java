@@ -11,7 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Repository("policyJsonDao")
 public class PolicyJsonDaoImpl extends JdbcDaoSupport implements PolicyJsonDao {
 
-  final String SQL_GET_All_POLICYJSON = "SELECT * FROM policy_json";
+  private static final String SQL_GET_All_POLICY_JSON = "SELECT * FROM policy_json";
 
   @Resource(name = "policyDbDataSource")
   private void setupPolicyDataSource(DataSource policyDbDataSource) {
@@ -21,6 +21,6 @@ public class PolicyJsonDaoImpl extends JdbcDaoSupport implements PolicyJsonDao {
   @Override
   @Transactional(readOnly = true)
   public List<PolicyJsonEntity> getAllPolicies() {
-    return getJdbcTemplate().query(SQL_GET_All_POLICYJSON, new PolicyJsonEntity());
+    return getJdbcTemplate().query(SQL_GET_All_POLICY_JSON, new PolicyJsonEntity());
   }
 }

@@ -1,7 +1,7 @@
 package org.cloudfoundry.autoscaler.scheduler.conf;
 
 import javax.sql.DataSource;
-import org.cloudfoundry.autoscaler.scheduler.health.DBStatusCollector;
+import org.cloudfoundry.autoscaler.scheduler.health.DbStatusCollector;
 import org.cloudfoundry.autoscaler.scheduler.health.HealthExporter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -12,16 +12,16 @@ import org.springframework.context.annotation.Configuration;
 public class HealthConfig {
 
   @Bean
-  public DBStatusCollector dbStatusCollector(
-      @Qualifier("primary") DataSource primaryDS, @Qualifier("policy") DataSource policyDS) {
-    DBStatusCollector dbStatusCollector = new DBStatusCollector();
-    dbStatusCollector.setDataSource(primaryDS);
-    dbStatusCollector.setPolicyDBDataSource(policyDS);
+  public DbStatusCollector dbStatusCollector(
+      @Qualifier("primary") DataSource primaryDs, @Qualifier("policy") DataSource policyDs) {
+    DbStatusCollector dbStatusCollector = new DbStatusCollector();
+    dbStatusCollector.setDataSource(primaryDs);
+    dbStatusCollector.setPolicyDbDataSource(policyDs);
     return dbStatusCollector;
   }
 
   @Bean
-  public HealthExporter healthExporter(@Autowired DBStatusCollector dbStatusCollector) {
+  public HealthExporter healthExporter(@Autowired DbStatusCollector dbStatusCollector) {
     HealthExporter healthExporter = new HealthExporter();
     healthExporter.setDbStatusCollector(dbStatusCollector);
     healthExporter.init();
