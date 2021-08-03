@@ -135,8 +135,11 @@ public class RecurringScheduleEntitiesBuilder {
 
       recurringScheduleEntity.setInstanceMinCount(i + 5);
       recurringScheduleEntity.setInstanceMaxCount(i + 6);
-      if (isDow) recurringScheduleEntity.setDaysOfWeek(TestDataSetupHelper.generateDayOfWeek());
-      else recurringScheduleEntity.setDaysOfMonth(TestDataSetupHelper.generateDayOfMonth());
+      if (isDow) {
+        recurringScheduleEntity.setDaysOfWeek(TestDataSetupHelper.generateDayOfWeek());
+      } else {
+        recurringScheduleEntity.setDaysOfMonth(TestDataSetupHelper.generateDayOfMonth());
+      }
       recurringScheduleEntities.add(recurringScheduleEntity);
 
       scheduleIndex++;

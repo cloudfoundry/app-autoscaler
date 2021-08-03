@@ -174,11 +174,11 @@ public class DataValidationHelper {
     isOverlapping =
         isOverlapping(
             current.getStartDate(), current.getEndDate(), next.getStartDate(), next.getEndDate());
-    if (!isOverlapping)
+    if (!isOverlapping) {
       isOverlapping =
           isOverlapping(
               next.getStartDate(), next.getEndDate(), current.getStartDate(), current.getEndDate());
-
+    }
     return isOverlapping;
   }
 

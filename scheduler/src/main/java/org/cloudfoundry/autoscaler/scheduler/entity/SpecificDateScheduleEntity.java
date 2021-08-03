@@ -76,13 +76,20 @@ public class SpecificDateScheduleEntity extends ScheduleEntity {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    if (!super.equals(o)) return false;
-
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    if (!super.equals(o)) {
+      return false;
+    }
     SpecificDateScheduleEntity that = (SpecificDateScheduleEntity) o;
 
-    if (!startDateTime.equals(that.startDateTime)) return false;
+    if (!startDateTime.equals(that.startDateTime)) {
+      return false;
+    }
     return endDateTime.equals(that.endDateTime);
   }
 
