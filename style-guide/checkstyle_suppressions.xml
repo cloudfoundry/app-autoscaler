@@ -8,7 +8,4 @@
     <suppress checks="MissingJavadocMethod" />
     <suppress checks="MissingJavadocType" />
     <suppress checks="SummaryJavadoc" />
-
-
-
 </suppressions>
