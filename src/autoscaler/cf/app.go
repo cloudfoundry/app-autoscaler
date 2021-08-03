@@ -52,7 +52,7 @@ func (c *cfClient) GetApp(appID string) (*models.AppEntity, error) {
 				return nil, err
 			}
 			var bodydata map[string]interface{}
-			err = json.Unmarshal([]byte(respBody), &bodydata)
+			err = json.Unmarshal(respBody, &bodydata)
 			if err != nil {
 				err = fmt.Errorf("%s", string(respBody))
 				c.logger.Error("failed-to-get-application-summary", err, lager.Data{"appID": appID})
@@ -128,7 +128,7 @@ func (c *cfClient) SetAppInstances(appID string, num int) error {
 			return err
 		}
 		var bodydata map[string]interface{}
-		err = json.Unmarshal([]byte(respBody), &bodydata)
+		err = json.Unmarshal(respBody, &bodydata)
 		if err != nil {
 			err = fmt.Errorf("%s", string(respBody))
 			c.logger.Error("faileded-to-set-application-instances", err, lager.Data{"appID": appID})
