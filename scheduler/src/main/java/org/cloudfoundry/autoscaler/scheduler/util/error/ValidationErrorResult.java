@@ -65,7 +65,6 @@ public class ValidationErrorResult {
 
       errorMessages.add(errorMessage);
     }
-
     return errorMessages;
   }
 
