@@ -68,7 +68,9 @@ public class ScheduleRestControllerTest {
 
   private String appId = TestDataSetupHelper.generateAppIds(1)[0];
   private String guid = TestDataSetupHelper.generateGuid();
-  private String guid1, guid2, guid3;
+  private String guid1;
+  private String guid2;
+  private String guid3;
 
   @Before
   public void before() throws Exception {
