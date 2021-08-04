@@ -396,13 +396,13 @@ public class AppScalingScheduleJobTest {
     String appId = activeScheduleEntity.getAppId();
     Long scheduleId = activeScheduleEntity.getId();
 
-    List<ActiveScheduleEntity> ExistingActiveSchedule = new ArrayList<ActiveScheduleEntity>();
+    List<ActiveScheduleEntity> existingActiveSchedule = new ArrayList<>();
     ActiveScheduleEntity existingActiveScheduleEntity =
         ScheduleJobHelper.setupActiveSchedule(jobDataMap);
-    ExistingActiveSchedule.add(existingActiveScheduleEntity);
+    existingActiveSchedule.add(existingActiveScheduleEntity);
 
     Mockito.when(activeScheduleDao.findByAppId(Mockito.anyString()))
-        .thenReturn(ExistingActiveSchedule);
+        .thenReturn(existingActiveSchedule);
     Mockito.when(activeScheduleDao.deleteActiveSchedulesByAppId(Mockito.anyString())).thenReturn(1);
 
     embeddedTomcatUtil.setup(appId, scheduleId, 200, null);
