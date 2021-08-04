@@ -36,7 +36,7 @@ public class ValidationErrorResult {
 
   private void internalAddError(ValidationError error) {
     if (errorList == null) {
-      errorList = new ArrayList<ValidationError>();
+      errorList = new ArrayList<>();
     }
     errorList.add(error);
   }
@@ -49,10 +49,10 @@ public class ValidationErrorResult {
   public List<String> getAllErrorMessages() {
 
     if (errorList == null || errorList.size() == 0) {
-      return new ArrayList<String>();
+      return new ArrayList<>();
     }
 
-    List<String> errorMessages = new ArrayList<String>(errorList.size());
+    List<String> errorMessages = new ArrayList<>(errorList.size());
 
     for (ValidationError error : errorList) {
 
