@@ -351,13 +351,13 @@ public class AppScalingScheduleJobTest {
     TestJobListener testJobListener = new TestJobListener(1);
     memScheduler.getListenerManager().addJobListener(testJobListener);
 
-    List<ActiveScheduleEntity> ExistingActiveSchedule = new ArrayList<ActiveScheduleEntity>();
+    List<ActiveScheduleEntity> existingActiveSchedule = new ArrayList<>();
     ActiveScheduleEntity existingActiveScheduleEntity =
         ScheduleJobHelper.setupActiveSchedule(jobDataMap);
-    ExistingActiveSchedule.add(existingActiveScheduleEntity);
+    existingActiveSchedule.add(existingActiveScheduleEntity);
 
     Mockito.when(activeScheduleDao.findByAppId(Mockito.anyString()))
-        .thenReturn(ExistingActiveSchedule);
+        .thenReturn(existingActiveSchedule);
     Mockito.when(activeScheduleDao.deleteActiveSchedulesByAppId(Mockito.anyString())).thenReturn(1);
 
     memScheduler.scheduleJob(jobInformation.getJobDetail(), jobInformation.getTrigger());
