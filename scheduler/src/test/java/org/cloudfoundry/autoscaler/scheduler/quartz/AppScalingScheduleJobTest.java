@@ -67,28 +67,19 @@ import org.springframework.web.client.RestOperations;
 @SpringBootTest
 public class AppScalingScheduleJobTest {
 
+  private static EmbeddedTomcatUtil embeddedTomcatUtil;
   @Mock private Appender mockAppender;
-
   @Captor private ArgumentCaptor<LogEvent> logCaptor;
-
   @Autowired private MessageBundleResourceHelper messageBundleResourceHelper;
-
   private Scheduler memScheduler;
-
   @MockBean private Scheduler scheduler;
-
   @MockBean private ActiveScheduleDao activeScheduleDao;
-
   @SpyBean private RestOperations restOperations;
-
   @Autowired private TestDataDbUtil testDataDbUtil;
-
   @Autowired private ApplicationContext applicationContext;
 
   @Value("${autoscaler.scalingengine.url}")
   private String scalingEngineUrl;
-
-  private static EmbeddedTomcatUtil embeddedTomcatUtil;
 
   @BeforeClass
   public static void beforeClass() throws IOException {

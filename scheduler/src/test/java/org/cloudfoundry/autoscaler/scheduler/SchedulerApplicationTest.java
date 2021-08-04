@@ -18,9 +18,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class SchedulerApplicationTest {
-  @Autowired private BasicDataSource dataSource;
-
   @Rule public ExpectedException expectedEx = ExpectedException.none();
+  @Autowired private BasicDataSource dataSource;
 
   @Test
   public void testTomcatConnectionPoolNameCorrect() {
@@ -37,7 +36,9 @@ public class SchedulerApplicationTest {
         "Error creating bean with name 'dataSource': Failed to connect to datasource:dataSource");
     SchedulerApplication.main(
         new String[] {
-          "--spring.autoconfigure.exclude=org.springframework.boot.actuate.autoconfigure.jdbc.DataSourceHealthIndicatorAutoConfiguration",
+          "--spring.autoconfigure.exclude="
+              + "org.springframework.boot.actuate.autoconfigure.jdbc."
+              + "DataSourceHealthIndicatorAutoConfiguration",
           "--spring.datasource.url=jdbc:postgresql://127.0.0.1/wrong-scheduler-db"
         });
   }
@@ -51,7 +52,9 @@ public class SchedulerApplicationTest {
             + " datasource:policyDbDataSource");
     SchedulerApplication.main(
         new String[] {
-          "--spring.autoconfigure.exclude=org.springframework.boot.actuate.autoconfigure.jdbc.DataSourceHealthIndicatorAutoConfiguration",
+          "--spring.autoconfigure.exclude="
+              + "org.springframework.boot.actuate.autoconfigure.jdbc."
+              + "DataSourceHealthIndicatorAutoConfiguration",
           "--spring.policy-db-datasource.url=jdbc:postgresql://127.0.0.1/wrong-policy-db"
         });
   }
