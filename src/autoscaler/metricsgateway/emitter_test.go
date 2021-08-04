@@ -18,10 +18,10 @@ import (
 var _ = Describe("Emitter", func() {
 	var (
 		logger        *lagertest.TestLogger
-		envelopChan   chan *loggregator_v2.Envelope = make(chan *loggregator_v2.Envelope, 10)
-		wsMessageChan chan int                      = make(chan int, 10)
+		envelopChan   = make(chan *loggregator_v2.Envelope, 10)
+		wsMessageChan = make(chan int, 10)
 
-		bufferSize                 int = 500
+		bufferSize                 = 500
 		fakeWSHelper               *fakes.FakeWSHelper
 		emitter                    Emitter
 		testAppId                  = "test-app-id"

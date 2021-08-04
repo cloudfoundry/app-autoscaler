@@ -1,6 +1,6 @@
 logging:
   level: "debug"
-server: 
+server:
   node_addrs:
     - "localhost:8080"
     - "localhost:9080"
@@ -18,7 +18,7 @@ db:
     max_open_connections: 10
     max_idle_connections: 5
     connection_max_lifetime: 60s
-aggregator: 
+aggregator:
   aggregator_execute_interval: 30s
   policy_poller_interval: 30s
   save_interval: 5s

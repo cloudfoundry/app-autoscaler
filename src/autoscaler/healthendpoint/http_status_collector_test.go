@@ -12,8 +12,8 @@ import (
 var _ = Describe("HTTPStatusCollector", func() {
 	var (
 		httpStatusCollector HTTPStatusCollector
-		namespace           string = "test_name_space"
-		subSystem           string = "test_sub_system"
+		namespace           = "test_name_space"
+		subSystem           = "test_sub_system"
 		descChan            chan *prometheus.Desc
 		metricChan          chan prometheus.Metric
 		//describe
@@ -50,7 +50,7 @@ var _ = Describe("HTTPStatusCollector", func() {
 	Context("Collect", func() {
 		Context("IncConcurrentHTTPRequest", func() {
 			BeforeEach(func() {
-				var count int = 100
+				var count = 100
 				for i := 0; i < count; i++ {
 					httpStatusCollector.IncConcurrentHTTPRequest()
 				}
@@ -64,7 +64,7 @@ var _ = Describe("HTTPStatusCollector", func() {
 
 		Context("DecConcurrentHTTPRequest", func() {
 			BeforeEach(func() {
-				var count int = 100
+				var count = 100
 				for i := 0; i < count; i++ {
 					httpStatusCollector.DecConcurrentHTTPRequest()
 				}

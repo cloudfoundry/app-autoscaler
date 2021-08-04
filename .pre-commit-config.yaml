@@ -17,7 +17,8 @@ repos:
           name: golangci-lint
           entry: style-guide/golangci-lint-0.1.sh
           language: script
-          files: '\.go$'
+          files: '^src/autoscaler'
+          pass_filenames: false #https://github.com/pre-commit/pre-commit/issues/836
           stages: [ commit ]
 
 

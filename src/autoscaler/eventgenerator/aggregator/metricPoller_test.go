@@ -17,17 +17,17 @@ import (
 )
 
 var _ = Describe("MetricPoller", func() {
-	var testAppId string = "testAppId"
-	var timestamp int64 = time.Now().UnixNano()
-	var testMetricType string = "a-metric-type"
-	var testMetricUnit string = "a-metric-unit"
+	var testAppId = "testAppId"
+	var timestamp = time.Now().UnixNano()
+	var testMetricType = "a-metric-type"
+	var testMetricUnit = "a-metric-unit"
 	var logger *lagertest.TestLogger
 	var appMonitorsChan chan *models.AppMonitor
 	var appMetricChan chan *models.AppMetric
 	var metricPoller *MetricPoller
 	var httpClient *http.Client
 	var metricServer *ghttp.Server
-	var metrics []*models.AppInstanceMetric = []*models.AppInstanceMetric{
+	var metrics = []*models.AppInstanceMetric{
 		{
 			AppId:         testAppId,
 			InstanceIndex: 0,

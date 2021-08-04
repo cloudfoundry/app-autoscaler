@@ -14,7 +14,7 @@ var _ = Describe("Integration_Operator_Others", func() {
 	var (
 		testAppId         string
 		testGuid          string
-		initInstanceCount int = 2
+		initInstanceCount = 2
 		policyStr         string
 	)
 

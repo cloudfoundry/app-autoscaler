@@ -26,9 +26,9 @@ var (
 )
 
 const (
-	TestCollectInterval time.Duration = 1 * time.Second
-	TestRefreshInterval time.Duration = 2 * time.Second
-	TestSaveInterval    time.Duration = 2 * time.Second
+	TestCollectInterval = 1 * time.Second
+	TestRefreshInterval = 2 * time.Second
+	TestSaveInterval    = 2 * time.Second
 )
 
 func TestCollector(t *testing.T) {

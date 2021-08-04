@@ -33,7 +33,7 @@ var _ = Describe("ScalingHandler", func() {
 		trigger                      *models.Trigger
 		history1, history2, history3 *models.AppScalingHistory
 		activeSchedule               *models.ActiveSchedule
-		testMetricName               string = "Test-Metric-Name"
+		testMetricName               = "Test-Metric-Name"
 	)
 
 	BeforeEach(func() {

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 
 	"autoscaler/cf"
 	"autoscaler/db"
@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	DefaultHttpClientTimeout time.Duration = 5 * time.Second
+	DefaultHttpClientTimeout = 5 * time.Second
 )
 
 var defaultCFConfig = cf.CFConfig{

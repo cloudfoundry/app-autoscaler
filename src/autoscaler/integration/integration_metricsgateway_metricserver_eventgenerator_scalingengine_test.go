@@ -15,11 +15,11 @@ import (
 var _ = Describe("Integration_Metricsgateway_Metricserver_Eventgenerator_Scalingengine", func() {
 	var (
 		testAppId           string
-		timeout             time.Duration = 2 * time.Duration(breachDurationSecs) * time.Second
-		initInstanceCount   int           = 2
+		timeout             = 2 * time.Duration(breachDurationSecs) * time.Second
+		initInstanceCount   = 2
 		fakeRLPServer       *as_testhelpers.FakeEventProducer
 		envelopes           []*loggregator_v2.Envelope
-		fakeRLPEmitInterval time.Duration = 500 * time.Millisecond
+		fakeRLPEmitInterval = 500 * time.Millisecond
 	)
 	BeforeEach(func() {
 		testAppId = getRandomId()

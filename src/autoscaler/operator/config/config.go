@@ -11,17 +11,17 @@ import (
 	"strings"
 	"time"
 
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
 const (
-	DefaultLoggingLevel        string        = "info"
-	DefaultRefreshInterval     time.Duration = 24 * time.Hour
-	DefaultCutoffDuration      time.Duration = 30 * 24 * time.Hour
-	DefaultSyncInterval        time.Duration = 24 * time.Hour
-	DefaultDBLockRetryInterval time.Duration = 5 * time.Second
-	DefaultDBLockTTL           time.Duration = 15 * time.Second
-	DefaultHttpClientTimeout   time.Duration = 5 * time.Second
+	DefaultLoggingLevel        string = "info"
+	DefaultRefreshInterval            = 24 * time.Hour
+	DefaultCutoffDuration             = 30 * 24 * time.Hour
+	DefaultSyncInterval               = 24 * time.Hour
+	DefaultDBLockRetryInterval        = 5 * time.Second
+	DefaultDBLockTTL                  = 15 * time.Second
+	DefaultHttpClientTimeout          = 5 * time.Second
 )
 
 type InstanceMetricsDbPrunerConfig struct {
