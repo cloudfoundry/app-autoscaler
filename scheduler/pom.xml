@@ -84,7 +84,7 @@
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
-            <version>42.2.23</version>
+            <version>42.2.23.jre7</version>
         </dependency>
         <dependency>
             <groupId>mysql</groupId>
