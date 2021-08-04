@@ -10,5 +10,6 @@
     <suppress checks="SummaryJavadoc" />
     <suppress checks="NonEmptyAtclauseDescription"/>
     <suppress checks="PackageName"/>
-
+    <suppress checks="LineLength"/>
+    <suppress checks="VariableDeclarationUsageDistance"/>
 </suppressions>
