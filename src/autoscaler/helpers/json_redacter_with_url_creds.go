@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"encoding/json"
+	"errors"
 	"regexp"
 
 	"code.cloudfoundry.org/lager"
@@ -77,8 +78,9 @@ func (r JSONRedacterWithURLCred) redactObject(data *map[string]interface{}) {
 
 func handleError(err error) []byte {
 	var content []byte
-	if _, ok := err.(*json.UnsupportedTypeError); ok {
-		data := map[string]interface{}{"lager serialisation error": err.Error()}
+	var errType *json.UnsupportedTypeError
+	if errors.As(err, &errType) {
+		data := map[string]interface{}{"lager serialisation error": errType.Error()}
 		content, err = json.Marshal(data)
 	}
 	if err != nil {
