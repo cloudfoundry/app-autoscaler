@@ -66,7 +66,7 @@ java \
 #####################################################################
 echo "============================================================"
 echo "Google Formatting using $DOWNLOAD_PATH"/"$GOOGLE_JAR_NAME..."
-files_to_be_formatted=$( java -jar "$DOWNLOAD_PATH"/"$GOOGLE_JAR_NAME" -n $changed_java_files)
+files_to_be_formatted=$( java -jar "$DOWNLOAD_PATH"/"$GOOGLE_JAR_NAME" -n --skip-javadoc-formatting $changed_java_files)
 # if there are any stage changes
 if  [[ -n "$files_to_be_formatted" ]]; then
     echo "Formatter Results:"
@@ -75,7 +75,7 @@ if  [[ -n "$files_to_be_formatted" ]]; then
     files_to_be_formatted=$(echo "$files_to_be_formatted" |tr '\n' ' ')
     echo "$files_to_be_formatted"
     echo "Please correct the formatting of the files(s) using one of the following options:"
-    echo "   java -jar "$DOWNLOAD_PATH"/"$GOOGLE_JAR_NAME" -replace $files_to_be_formatted"
+    echo "   java -jar "$DOWNLOAD_PATH"/"$GOOGLE_JAR_NAME" -replace --skip-javadoc-formatting $files_to_be_formatted"
     echo "   Reformat Code - IntelliJ or Format Document - Eclipse (google code style required)"
     exit 2
 fi
