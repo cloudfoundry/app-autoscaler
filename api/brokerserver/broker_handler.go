@@ -3,6 +3,7 @@ package brokerserver
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -94,15 +95,15 @@ func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Req
 			}
 		}
 	}
-
-	switch err := h.bindingdb.CreateServiceInstance(instanceId, body.OrgGUID, body.SpaceGUID); err {
-	case nil:
+	err = h.bindingdb.CreateServiceInstance(instanceId, body.OrgGUID, body.SpaceGUID)
+	switch {
+	case err == nil:
 		w.WriteHeader(http.StatusCreated)
 		successResponse()
-	case db.ErrAlreadyExists:
+	case errors.Is(err, db.ErrAlreadyExists):
 		h.logger.Error("failed to create service instance: service instance already exists", err, lager.Data{"instanceId": instanceId, "orgGuid": body.OrgGUID, "spaceGuid": body.SpaceGUID})
 		successResponse()
-	case db.ErrConflict:
+	case errors.Is(err, db.ErrConflict):
 		h.logger.Error("failed to create service instance: conflicting service instance exists", err, lager.Data{"instanceId": instanceId, "orgGuid": body.OrgGUID, "spaceGuid": body.SpaceGUID})
 		writeErrorResponse(w, http.StatusConflict, fmt.Sprintf("Service instance with instance_id \"%s\" already exists with different parameters", instanceId))
 	default:
@@ -122,7 +123,7 @@ func (h *BrokerHandler) DeleteServiceInstance(w http.ResponseWriter, _ *http.Req
 
 	err := h.bindingdb.DeleteServiceInstance(instanceId)
 	if err != nil {
-		if err == db.ErrDoesNotExist {
+		if errors.Is(err, db.ErrDoesNotExist) {
 			h.logger.Error("failed to delete service instance: service instance does not exist", err,
 				lager.Data{"instanaceId": instanceId})
 			writeErrorResponse(w, http.StatusGone, "Service Instance Doesn't Exist")
@@ -180,7 +181,7 @@ func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Reque
 	}
 	err = h.bindingdb.CreateServiceBinding(bindingId, instanceId, body.AppID)
 	if err != nil {
-		if err == db.ErrAlreadyExists {
+		if errors.Is(err, db.ErrAlreadyExists) {
 			h.logger.Error("failed to create binding: binding already exists", err, lager.Data{"appId": body.AppID})
 			writeErrorResponse(w, http.StatusConflict, "An autoscaler service instance is already bound to the application. Multiple bindings are not supported.")
 			return
@@ -248,7 +249,7 @@ func (h *BrokerHandler) UnbindServiceInstance(w http.ResponseWriter, _ *http.Req
 		return
 	}
 	appId, err := h.bindingdb.GetAppIdByBindingId(bindingId)
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		h.logger.Info("binding does not exist", nil, lager.Data{"instanceId": instanceId, "bindingId": bindingId})
 		writeErrorResponse(w, http.StatusGone, "Binding does not exist")
 		return
@@ -273,7 +274,7 @@ func (h *BrokerHandler) UnbindServiceInstance(w http.ResponseWriter, _ *http.Req
 	err = h.bindingdb.DeleteServiceBinding(bindingId)
 	if err != nil {
 		h.logger.Error("failed to delete binding", err, lager.Data{"bindingId": bindingId, "appId": appId})
-		if err == db.ErrDoesNotExist {
+		if errors.Is(err, db.ErrDoesNotExist) {
 			writeErrorResponse(w, http.StatusGone, "Service Binding Doesn't Exist")
 			return
 		}
