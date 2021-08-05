@@ -3,6 +3,7 @@ package sqldb
 import (
 	"database/sql"
 	"database/sql/driver"
+	"errors"
 	"time"
 
 	"code.cloudfoundry.org/lager"
@@ -260,7 +261,7 @@ func (ldb *LockSQLDB) transact(db *sqlx.DB, f func(tx *sql.Tx) error) error {
 		}()
 
 		// golang sql package does not always retry query on ErrBadConn
-		if attempts >= 2 || (err != driver.ErrBadConn) {
+		if attempts >= 2 || !errors.Is(err, driver.ErrBadConn) {
 			break
 		} else {
 			ldb.logger.Debug("wait-before-retry-for-transaction", lager.Data{"attempts": attempts})
