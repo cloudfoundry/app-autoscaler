@@ -66,7 +66,7 @@ func (mh *CustomMetricsHandler) PublishMetrics(w http.ResponseWriter, r *http.Re
 	if !found || !isValid {
 		credentials, err := mh.policyDB.GetCredential(appID)
 		if err != nil {
-			if err == sql.ErrNoRows {
+			if errors.Is(err, sql.ErrNoRows) {
 				mh.logger.Error("no-credential-found-in-db", err, lager.Data{"appID": appID})
 				handlers.WriteJSONResponse(w, http.StatusUnauthorized, models.ErrorResponse{
 					Code:    "Authorization-Failure-Error",
