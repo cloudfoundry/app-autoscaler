@@ -66,8 +66,8 @@ public class ScheduleSyncRestControllerTest {
     String guid = TestDataSetupHelper.generateGuid();
     String anotherGuid = TestDataSetupHelper.generateGuid();
     int noOfSpecificDateSchedules = 3;
-    int noOfDOMRecurringSchedules = 3;
-    int noOfDOWRecurringSchedules = 3;
+    int noOfDomRecurringSchedules = 3;
+    int noOfDowRecurringSchedules = 3;
 
     Schedules schedules =
         TestDataSetupHelper.generateSchedulesWithEntitiesOnly(
@@ -75,8 +75,8 @@ public class ScheduleSyncRestControllerTest {
             guid,
             false,
             noOfSpecificDateSchedules,
-            noOfDOMRecurringSchedules,
-            noOfDOWRecurringSchedules);
+            noOfDomRecurringSchedules,
+            noOfDowRecurringSchedules);
 
     testDataDbUtil.insertRecurringSchedule(schedules.getRecurringSchedule());
     testDataDbUtil.insertSpecificDateSchedule(schedules.getSpecificDate());
@@ -100,8 +100,8 @@ public class ScheduleSyncRestControllerTest {
     String appId = TestDataSetupHelper.generateAppIds(1)[0];
     String guid = TestDataSetupHelper.generateGuid();
     int noOfSpecificDateSchedules = 3;
-    int noOfDOMRecurringSchedules = 3;
-    int noOfDOWRecurringSchedules = 3;
+    int noOfDomRecurringSchedules = 3;
+    int noOfDowRecurringSchedules = 3;
 
     Schedules schedules =
         TestDataSetupHelper.generateSchedulesWithEntitiesOnly(
@@ -109,8 +109,8 @@ public class ScheduleSyncRestControllerTest {
             guid,
             false,
             noOfSpecificDateSchedules,
-            noOfDOMRecurringSchedules,
-            noOfDOWRecurringSchedules);
+            noOfDomRecurringSchedules,
+            noOfDowRecurringSchedules);
 
     testDataDbUtil.insertRecurringSchedule(schedules.getRecurringSchedule());
     testDataDbUtil.insertSpecificDateSchedule(schedules.getSpecificDate());
@@ -132,8 +132,8 @@ public class ScheduleSyncRestControllerTest {
     String appId = TestDataSetupHelper.generateAppIds(1)[0];
     String guid = TestDataSetupHelper.generateGuid();
     int noOfSpecificDateSchedules = 3;
-    int noOfDOMRecurringSchedules = 3;
-    int noOfDOWRecurringSchedules = 3;
+    int noOfDomRecurringSchedules = 3;
+    int noOfDowRecurringSchedules = 3;
 
     Schedules schedules =
         TestDataSetupHelper.generateSchedulesWithEntitiesOnly(
@@ -141,8 +141,8 @@ public class ScheduleSyncRestControllerTest {
             guid,
             false,
             noOfSpecificDateSchedules,
-            noOfDOMRecurringSchedules,
-            noOfDOWRecurringSchedules);
+            noOfDomRecurringSchedules,
+            noOfDowRecurringSchedules);
 
     testDataDbUtil.insertRecurringSchedule(schedules.getRecurringSchedule());
     testDataDbUtil.insertSpecificDateSchedule(schedules.getSpecificDate());

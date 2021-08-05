@@ -81,9 +81,9 @@ public class RecurringScheduleTime implements Comparable<RecurringScheduleTime> 
     LocalTime thisDateTime = this.getStartTime();
     LocalTime compareToDateTime = scheduleTime.getStartTime();
 
-    if (thisDateTime == null || compareToDateTime == null)
-      throw new NullPointerException("One of the date time value is null");
-
-    return thisDateTime.compareTo(compareToDateTime);
+    if (thisDateTime != null && compareToDateTime != null) {
+      return thisDateTime.compareTo(compareToDateTime);
+    }
+    throw new NullPointerException("One of the date time value is null");
   }
 }
