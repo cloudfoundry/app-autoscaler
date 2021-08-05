@@ -280,7 +280,7 @@ var _ = Describe("Collector", func() {
 
 		Context("when cache hits", func() {
 			It("returns the metrics in cache", func() {
-				time.Sleep(time.Duration(100 * time.Millisecond))
+				time.Sleep(100 * time.Millisecond)
 				result, err := mc.QueryMetrics("an-app-id", 0, models.MetricNameThroughput, 2222, 5555, db.ASC)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(result).To(Equal([]*models.AppInstanceMetric{metric1, metric2}))
@@ -294,7 +294,7 @@ var _ = Describe("Collector", func() {
 			})
 			Context("when metrics persistency is not supported", func() {
 				It("return empty result", func() {
-					time.Sleep(time.Duration(100 * time.Millisecond))
+					time.Sleep(100 * time.Millisecond)
 					result, err := mc.QueryMetrics("an-app-id", 0, models.MetricNameThroughput, 0, 3331, db.ASC)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(result).To(BeEmpty())
@@ -305,7 +305,7 @@ var _ = Describe("Collector", func() {
 					isMetricPersistencySuppported = true
 				})
 				It("retrieves metrics from database", func() {
-					time.Sleep(time.Duration(100 * time.Millisecond))
+					time.Sleep(100 * time.Millisecond)
 					_, err := mc.QueryMetrics("an-app-id", 0, models.MetricNameThroughput, 0, 3331, db.ASC)
 					Expect(err).ShouldNot(HaveOccurred())
 					Expect(instanceMetricsDb.RetrieveInstanceMetricsCallCount()).Should(Equal(1))
@@ -316,7 +316,7 @@ var _ = Describe("Collector", func() {
 						instanceMetricsDb.RetrieveInstanceMetricsReturns(nil, errors.New("an error"))
 					})
 					It("returns the error", func() {
-						time.Sleep(time.Duration(100 * time.Millisecond))
+						time.Sleep(100 * time.Millisecond)
 						result, err := mc.QueryMetrics("an-app-id", 0, models.MetricNameThroughput, 2222, 5555, db.ASC)
 						Expect(instanceMetricsDb.RetrieveInstanceMetricsCallCount()).Should(Equal(1))
 						Expect(err).Should(HaveOccurred())
