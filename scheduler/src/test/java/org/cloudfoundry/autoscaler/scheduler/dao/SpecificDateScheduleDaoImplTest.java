@@ -29,8 +29,10 @@ public class SpecificDateScheduleDaoImplTest {
 
   @Autowired private TestDataDbUtil testDataDbUtil;
 
-  private String appId1, appId2;
-  private String guid1, guid2;
+  private String appId1;
+  private String appId2;
+  private String guid1;
+  private String guid2;
 
   @Before
   public void before() {

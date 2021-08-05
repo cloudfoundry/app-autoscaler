@@ -15,15 +15,15 @@ public class ScheduleBuilder {
   ScheduleBuilder(
       String timeZone,
       int noOfSpecificDateSchedules,
-      int noOfDOMRecurringSchedules,
-      int noOfDOWRecurringSchedules) {
+      int noOfDomRecurringSchedules,
+      int noOfDowRecurringSchedules) {
     this();
 
     schedules.setTimeZone(timeZone);
     schedules.setSpecificDate(
         new SpecificDateScheduleEntitiesBuilder(noOfSpecificDateSchedules).build());
     schedules.setRecurringSchedule(
-        new RecurringScheduleEntitiesBuilder(noOfDOMRecurringSchedules, noOfDOWRecurringSchedules)
+        new RecurringScheduleEntitiesBuilder(noOfDomRecurringSchedules, noOfDowRecurringSchedules)
             .build());
   }
 

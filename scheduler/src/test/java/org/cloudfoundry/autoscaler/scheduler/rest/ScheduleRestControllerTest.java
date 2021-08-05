@@ -68,7 +68,9 @@ public class ScheduleRestControllerTest {
 
   private String appId = TestDataSetupHelper.generateAppIds(1)[0];
   private String guid = TestDataSetupHelper.generateGuid();
-  private String guid1, guid2, guid3;
+  private String guid1;
+  private String guid2;
+  private String guid3;
 
   @Before
   public void before() throws Exception {
@@ -536,12 +538,12 @@ public class ScheduleRestControllerTest {
   private void assertRecurringDateScheduleFoundEquals(
       int expectedRecurringSchedulesTobeFound,
       String expectedAppId,
-      List<RecurringScheduleEntity> recurring_schedule) {
-    if (recurring_schedule == null) {
+      List<RecurringScheduleEntity> recurringSchedule) {
+    if (recurringSchedule == null) {
       assertEquals(expectedRecurringSchedulesTobeFound, 0);
     } else {
-      assertEquals(expectedRecurringSchedulesTobeFound, recurring_schedule.size());
-      for (ScheduleEntity entity : recurring_schedule) {
+      assertEquals(expectedRecurringSchedulesTobeFound, recurringSchedule.size());
+      for (ScheduleEntity entity : recurringSchedule) {
         assertEquals(expectedAppId, entity.getAppId());
       }
     }

@@ -1,6 +1,5 @@
 package org.cloudfoundry.autoscaler.scheduler.dao;
 
-/** @param <T> */
 public interface GenericDao<T> {
 
   public T create(T entity);
