@@ -36,7 +36,7 @@ public class ValidationErrorResult {
 
   private void internalAddError(ValidationError error) {
     if (errorList == null) {
-      errorList = new ArrayList<ValidationError>();
+      errorList = new ArrayList<>();
     }
     errorList.add(error);
   }
@@ -44,15 +44,15 @@ public class ValidationErrorResult {
   /**
    * A list of error messages corresponding to the errors contained in this instance
    *
-   * @return a List<String> containing the error messages.
+   * @return a List of type String containing the error messages.
    */
   public List<String> getAllErrorMessages() {
 
     if (errorList == null || errorList.size() == 0) {
-      return new ArrayList<String>();
+      return new ArrayList<>();
     }
 
-    List<String> errorMessages = new ArrayList<String>(errorList.size());
+    List<String> errorMessages = new ArrayList<>(errorList.size());
 
     for (ValidationError error : errorList) {
 
@@ -65,11 +65,13 @@ public class ValidationErrorResult {
 
       errorMessages.add(errorMessage);
     }
-
     return errorMessages;
   }
 
-  /** @return - true if this instance contains any errors */
+  /**
+   *
+   * @return - true if this instance contains any errors
+   */
   public boolean hasErrors() {
     return errorList != null && errorList.size() > 0;
   }

@@ -48,13 +48,23 @@ public class SynchronizeResult {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
 
     SynchronizeResult that = (SynchronizeResult) o;
-    if (!createCount.equals(that.createCount)) return false;
-    if (!updateCount.equals(that.updateCount)) return false;
-    if (!deleteCount.equals(that.deleteCount)) return false;
+    if (!createCount.equals(that.createCount)) {
+      return false;
+    }
+    if (!updateCount.equals(that.updateCount)) {
+      return false;
+    }
+    if (!deleteCount.equals(that.deleteCount)) {
+      return false;
+    }
     return true;
   }
 }

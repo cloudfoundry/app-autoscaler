@@ -174,11 +174,11 @@ public class DataValidationHelper {
     isOverlapping =
         isOverlapping(
             current.getStartDate(), current.getEndDate(), next.getStartDate(), next.getEndDate());
-    if (!isOverlapping)
+    if (!isOverlapping) {
       isOverlapping =
           isOverlapping(
               next.getStartDate(), next.getEndDate(), current.getStartDate(), current.getEndDate());
-
+    }
     return isOverlapping;
   }
 
@@ -187,14 +187,11 @@ public class DataValidationHelper {
       LocalDate firstEndDate,
       LocalDate secondStartDate,
       LocalDate secondEndDate) {
-    boolean isOverlapping = false;
-
-    if ((firstStartDate == null && firstEndDate == null)
-        || (secondStartDate == null && secondEndDate == null)
-        || (firstStartDate == null && secondStartDate == null)
-        || (firstEndDate == null && secondEndDate == null)) {
-      isOverlapping = true;
-    }
+    boolean isOverlapping =
+        (firstStartDate == null && firstEndDate == null)
+            || (secondStartDate == null && secondEndDate == null)
+            || (firstStartDate == null && secondStartDate == null)
+            || (firstEndDate == null && secondEndDate == null);
 
     if (firstStartDate != null && secondStartDate == null && secondEndDate != null) {
       if (firstStartDate.compareTo(secondEndDate) <= 0) {
@@ -294,9 +291,9 @@ public class DataValidationHelper {
             "start_date_time"
           };
           overlapDateTimeValidationErrorMsgList.add(overlapDateTimeValidationErrorMsg);
-        }
-        // current startDateTime was earlier than next startDateTime, so following check
-        else if (current.getEndDateTime().compareTo(next.getStartDateTime()) >= 0) {
+        } else if (current.getEndDateTime().compareTo(next.getStartDateTime())
+            >= 0) { // current startDateTime was earlier than next startDateTime, so following check
+
           // endDateTime of current is later than or equal to startDateTime of next. Set up a
           // message for validation error
           String[] overlapDateTimeValidationErrorMsg = {

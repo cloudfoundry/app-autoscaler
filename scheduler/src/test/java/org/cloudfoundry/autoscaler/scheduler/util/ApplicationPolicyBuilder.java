@@ -18,8 +18,8 @@ public class ApplicationPolicyBuilder {
       int instanceMaxCount,
       String timezone,
       int noOfSpecificDateSchedules,
-      int noOfDOMRecurringSchedules,
-      int noOfDOWRecurringSchedules) {
+      int noOfDomRecurringSchedules,
+      int noOfDowRecurringSchedules) {
     applicationPolicy = new ApplicationSchedules();
     applicationPolicy.setInstanceMinCount(instanceMinCount);
     applicationPolicy.setInstanceMaxCount(instanceMaxCount);
@@ -27,8 +27,8 @@ public class ApplicationPolicyBuilder {
         new ScheduleBuilder(
                 timezone,
                 noOfSpecificDateSchedules,
-                noOfDOMRecurringSchedules,
-                noOfDOWRecurringSchedules)
+                noOfDomRecurringSchedules,
+                noOfDowRecurringSchedules)
             .build());
   }
 

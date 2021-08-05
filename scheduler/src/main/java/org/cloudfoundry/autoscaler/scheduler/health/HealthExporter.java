@@ -4,9 +4,9 @@ import io.prometheus.client.hotspot.DefaultExports;
 
 public class HealthExporter {
 
-  private DBStatusCollector dbStatusCollector;
+  private DbStatusCollector dbStatusCollector;
 
-  public void setDbStatusCollector(DBStatusCollector dbStatusCollector) {
+  public void setDbStatusCollector(DbStatusCollector dbStatusCollector) {
     this.dbStatusCollector = dbStatusCollector;
   }
 

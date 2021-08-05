@@ -84,7 +84,7 @@ public class ScheduleJobManagerTest {
   }
 
   @Test
-  public void testCreateSimpleJobs_with_GMT_timeZone() throws Exception {
+  public void testCreateSimpleJobs_with_Gmt_timeZone() throws Exception {
     String appId = TestDataSetupHelper.generateAppIds(1)[0];
     TimeZone timeZone = TimeZone.getTimeZone("GMT");
 
@@ -127,7 +127,7 @@ public class ScheduleJobManagerTest {
   }
 
   @Test
-  public void testCreateCronJob_with_dayOfWeek_GMT() throws Exception {
+  public void testCreateCronJob_with_dayOfWeek_Gmt() throws Exception {
     String timeZone = "GMT";
 
     String startTime = "22:10:00";

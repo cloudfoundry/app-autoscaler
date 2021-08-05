@@ -145,17 +145,32 @@ public class RecurringScheduleEntity extends ScheduleEntity {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-    if (!super.equals(o)) return false;
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    if (!super.equals(o)) {
+      return false;
+    }
 
     RecurringScheduleEntity that = (RecurringScheduleEntity) o;
-    if (!startTime.equals(that.startTime)) return false;
-    if (!endTime.equals(that.endTime)) return false;
-    if (startDate != null ? !startDate.equals(that.startDate) : that.startDate != null)
+    if (!startTime.equals(that.startTime)) {
       return false;
-    if (endDate != null ? !endDate.equals(that.endDate) : that.endDate != null) return false;
-    if (!Arrays.equals(daysOfWeek, that.daysOfWeek)) return false;
+    }
+    if (!endTime.equals(that.endTime)) {
+      return false;
+    }
+    if (startDate != null ? !startDate.equals(that.startDate) : that.startDate != null) {
+      return false;
+    }
+    if (endDate != null ? !endDate.equals(that.endDate) : that.endDate != null) {
+      return false;
+    }
+    if (!Arrays.equals(daysOfWeek, that.daysOfWeek)) {
+      return false;
+    }
     return Arrays.equals(daysOfMonth, that.daysOfMonth);
   }
 

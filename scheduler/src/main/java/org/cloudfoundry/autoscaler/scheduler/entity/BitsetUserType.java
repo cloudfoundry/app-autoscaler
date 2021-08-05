@@ -55,8 +55,8 @@ public class BitsetUserType implements UserType {
 
       int bitset = 0;
 
-      for (int aCastObject : castObject) {
-        bitset |= 1 << (aCastObject - 1);
+      for (int intCastObject : castObject) {
+        bitset |= 1 << (intCastObject - 1);
       }
 
       statement.setInt(index, bitset);
