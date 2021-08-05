@@ -46,14 +46,14 @@ func writeErrorResponse(w http.ResponseWriter, statusCode int, message string) {
 		Message: message})
 }
 
-func (h *BrokerHandler) GetBrokerCatalog(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+func (h *BrokerHandler) GetBrokerCatalog(w http.ResponseWriter, _ *http.Request, _ map[string]string) {
 	catalog, err := ioutil.ReadFile(h.conf.CatalogPath)
 	if err != nil {
 		h.logger.Error("failed to read catalog file", err)
 		writeErrorResponse(w, http.StatusInternalServerError, "Failed to load catalog")
 		return
 	}
-	_, err = w.Write([]byte(catalog))
+	_, err = w.Write(catalog)
 	if err != nil {
 		h.logger.Error("unable to write body", err)
 	}
@@ -112,7 +112,7 @@ func (h *BrokerHandler) CreateServiceInstance(w http.ResponseWriter, r *http.Req
 	}
 }
 
-func (h *BrokerHandler) DeleteServiceInstance(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+func (h *BrokerHandler) DeleteServiceInstance(w http.ResponseWriter, _ *http.Request, vars map[string]string) {
 	instanceId := vars["instanceId"]
 	if instanceId == "" {
 		h.logger.Error("failed to delete service instance when trying to get mandatory data", nil,
@@ -239,7 +239,7 @@ func (h *BrokerHandler) BindServiceInstance(w http.ResponseWriter, r *http.Reque
 	})
 }
 
-func (h *BrokerHandler) UnbindServiceInstance(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+func (h *BrokerHandler) UnbindServiceInstance(w http.ResponseWriter, _ *http.Request, vars map[string]string) {
 	instanceId := vars["instanceId"]
 	bindingId := vars["bindingId"]
 
