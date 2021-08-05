@@ -55,7 +55,7 @@ var _ = AfterSuite(func() {
 		Fail("can not drop test lock table: " + e.Error())
 	}
 	if dbHelper != nil {
-		dbHelper.Close()
+		_ = dbHelper.Close()
 	}
 
 })
@@ -247,10 +247,6 @@ func hasScalingCooldownRecord(appId string, expireAt int64) bool {
 	}()
 	return rows.Next()
 }
-func GetInt64Pointer(value int64) *int64 {
-	tmp := value
-	return &tmp
-}
 
 func cleanActiveScheduleTable() error {
 	_, e := dbHelper.Exec("DELETE from activeschedule")
@@ -382,8 +378,8 @@ func validateLockInDB(ownerid string, expectedLock *models.Lock) error {
 	if expectedLock.Owner != owner {
 		errMsg += fmt.Sprintf("mismatch owner (%s, %s),", expectedLock.Owner, owner)
 	}
-	if expectedLock.Ttl != time.Second*time.Duration(ttl) {
-		errMsg += fmt.Sprintf("mismatch ttl (%d, %d),", expectedLock.Ttl, time.Second*time.Duration(ttl))
+	if expectedLock.Ttl != time.Second*ttl {
+		errMsg += fmt.Sprintf("mismatch ttl (%d, %d),", expectedLock.Ttl, time.Second*ttl)
 	}
 	if errMsg != "" {
 		return errors.New(errMsg)
