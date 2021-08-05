@@ -64,7 +64,7 @@ import org.springframework.web.context.WebApplicationContext;
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
 @Commit
-public class ScheduleRestController_CreateScheduleAndNofifyScalingEngineTest {
+public class ScheduleRestControllerCreateScheduleAndNofifyScalingEngineTest {
 
   @Mock private Appender mockAppender;
 

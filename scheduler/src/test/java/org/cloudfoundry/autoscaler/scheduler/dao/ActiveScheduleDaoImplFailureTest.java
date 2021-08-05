@@ -20,7 +20,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class ActiveScheduleDaoImpl_FailureTest {
+public class ActiveScheduleDaoImplFailureTest {
 
   @Autowired private ActiveScheduleDao activeScheduleDao;
 

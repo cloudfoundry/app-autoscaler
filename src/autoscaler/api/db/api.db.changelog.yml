@@ -1,25 +1,25 @@
---- 
+---
 databaseChangeLog:
-   - property:
+  - property:
       name: policy_json.type
       value: json
       dbms: postgresql
-   - property:
+  - property:
       name: policy_json.type
       value: text
       dbms: h2
-   - property:
+  - property:
       name: policy_json.type
       value: json
       dbms: mysql
-   - changeSet:
+  - changeSet:
       id: 1
       author: pradyutsarma
       preConditions:
-      - onFail: MARK_RAN
-      - not:
-        - tableExists:
-            tableName: policy_json
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: policy_json
       changes:
         - createTable:
             tableName: policy_json
@@ -39,25 +39,25 @@ databaseChangeLog:
                   constraints:
                     nullable: false
             tableName: policy_json
-   - changeSet:
+  - changeSet:
       id: 2
       author: fujitsu
       changes:
-      - update:
-          columns:
-          - column:
-              name: guid
-              type: varchar(50)
-              value: "1"
-          tableName: policy_json
-   - changeSet:
+        - update:
+            columns:
+              - column:
+                  name: guid
+                  type: varchar(50)
+                  value: "1"
+            tableName: policy_json
+  - changeSet:
       id: 3
       author: paltanmoy
       preConditions:
-      - onFail: MARK_RAN
-      - not:
-        - tableExists:
-            tableName: credentials
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: credentials
       changes:
         - createTable:
             tableName: credentials

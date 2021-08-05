@@ -69,31 +69,31 @@ var (
 	servicePlanRegPath      = regexp.MustCompile(`^/v2/service_plans/.*$`)
 	dbHelper                *sqlx.DB
 	fakeCCNOAAUAA           *ghttp.Server
-	testUserId              string   = "testUserId"
-	testUserScope           []string = []string{"cloud_controller.read", "cloud_controller.write", "password.write", "openid", "network.admin", "network.write", "uaa.user"}
+	testUserId              = "testUserId"
+	testUserScope           = []string{"cloud_controller.read", "cloud_controller.write", "password.write", "openid", "network.admin", "network.write", "uaa.user"}
 
-	processMap map[string]ifrit.Process = map[string]ifrit.Process{}
+	processMap = map[string]ifrit.Process{}
 
-	defaultHttpClientTimeout time.Duration = 10 * time.Second
+	defaultHttpClientTimeout = 10 * time.Second
 
-	apiSchedulerHttpRequestTimeout           time.Duration = 10 * time.Second
-	apiScalingEngineHttpRequestTimeout       time.Duration = 10 * time.Second
-	apiMetricsCollectorHttpRequestTimeout    time.Duration = 10 * time.Second
-	apiMetricsServerHttpRequestTimeout       time.Duration = 10 * time.Second
-	apiEventGeneratorHttpRequestTimeout      time.Duration = 10 * time.Second
-	schedulerScalingEngineHttpRequestTimeout time.Duration = 10 * time.Second
+	apiSchedulerHttpRequestTimeout           = 10 * time.Second
+	apiScalingEngineHttpRequestTimeout       = 10 * time.Second
+	apiMetricsCollectorHttpRequestTimeout    = 10 * time.Second
+	apiMetricsServerHttpRequestTimeout       = 10 * time.Second
+	apiEventGeneratorHttpRequestTimeout      = 10 * time.Second
+	schedulerScalingEngineHttpRequestTimeout = 10 * time.Second
 
-	saveInterval              time.Duration = 1 * time.Second
-	aggregatorExecuteInterval time.Duration = 1 * time.Second
-	policyPollerInterval      time.Duration = 1 * time.Second
-	evaluationManagerInterval time.Duration = 1 * time.Second
-	breachDurationSecs        int           = 5
+	saveInterval              = 1 * time.Second
+	aggregatorExecuteInterval = 1 * time.Second
+	policyPollerInterval      = 1 * time.Second
+	evaluationManagerInterval = 1 * time.Second
+	breachDurationSecs        = 5
 
 	httpClient             *http.Client
 	httpClientForPublicApi *http.Client
 	logger                 lager.Logger
 
-	testCertDir string = "../../../test-certs"
+	testCertDir = "../../../test-certs"
 )
 
 func TestIntegration(t *testing.T) {
@@ -650,9 +650,9 @@ func checkSchedule(appId string, expectHttpStatus int, expectResponseMap map[str
 	var actual map[string]interface{}
 	err = json.NewDecoder(resp.Body).Decode(&actual)
 	Expect(err).NotTo(HaveOccurred())
-	var schedules map[string]interface{} = actual["schedules"].(map[string]interface{})
-	var recurring []interface{} = schedules["recurring_schedule"].([]interface{})
-	var specificDate []interface{} = schedules["specific_date"].([]interface{})
+	var schedules = actual["schedules"].(map[string]interface{})
+	var recurring = schedules["recurring_schedule"].([]interface{})
+	var specificDate = schedules["specific_date"].([]interface{})
 	return len(specificDate) == expectResponseMap["specific_date"] && len(recurring) == expectResponseMap["recurring_schedule"]
 }
 

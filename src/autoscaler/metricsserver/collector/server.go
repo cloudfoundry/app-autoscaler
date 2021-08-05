@@ -30,7 +30,7 @@ func NewServer(logger lager.Logger, serverConfig *config.ServerConfig, config *c
 	r.Use(httpStatusCollectMiddleware.Collect)
 	r.Get(routes.GetMetricHistoriesRouteName).Handler(VarsFunc(mh.GetMetricHistories))
 
-	addr := fmt.Sprintf("0.0.0.0:%d", serverConfig.Port)
+	addr := fmt.Sprintf("localhost:%d", serverConfig.Port)
 
 	var runner ifrit.Runner
 	if (serverConfig.TLS.KeyFile == "") || (serverConfig.TLS.CertFile == "") {

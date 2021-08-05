@@ -28,7 +28,7 @@ public class EmbeddedTomcatUtil {
     tomcat.setBaseDir(baseDir.getAbsolutePath());
 
     Connector httpsConnector = new Connector();
-    setupSSLConfig(httpsConnector);
+    setupSslConfig(httpsConnector);
 
     Service service = tomcat.getService();
     service.addConnector(httpsConnector);
@@ -75,7 +75,7 @@ public class EmbeddedTomcatUtil {
     appContext.addServletMappingDecoded(url, appId);
   }
 
-  private void setupSSLConfig(Connector httpsConnector) {
+  private void setupSslConfig(Connector httpsConnector) {
     httpsConnector.setPort(8091);
     httpsConnector.setSecure(true);
     httpsConnector.setScheme("https");

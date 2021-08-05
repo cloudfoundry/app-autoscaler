@@ -185,7 +185,7 @@ var _ = Describe("TSDCache", func() {
 
 				result, ok := cache.Query(20, 60, map[string]string{"jerry": "mouse", "tom": "cat"})
 				Expect(ok).To(BeTrue())
-				Expect(result).To(Equal(([]TSD{TestTSD{40, map[string]string{"jerry": "mouse", "tom": "cat", "peppa": "pig"}}})))
+				Expect(result).To(Equal([]TSD{TestTSD{40, map[string]string{"jerry": "mouse", "tom": "cat", "peppa": "pig"}}}))
 			})
 		})
 	})

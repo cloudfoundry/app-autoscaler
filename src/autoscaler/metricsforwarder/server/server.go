@@ -14,7 +14,7 @@ import (
 
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/mux"
-	cache "github.com/patrickmn/go-cache"
+	"github.com/patrickmn/go-cache"
 	"github.com/tedsuo/ifrit"
 	"github.com/tedsuo/ifrit/http_server"
 )
@@ -43,7 +43,7 @@ func NewServer(logger lager.Logger, conf *config.Config, policyDB db.PolicyDB, c
 	r.Use(httpStatusCollectMiddleware.Collect)
 	r.Get(routes.PostCustomMetricsRouteName).Handler(VarsFunc(mh.PublishMetrics))
 
-	addr := fmt.Sprintf("0.0.0.0:%d", conf.Server.Port)
+	addr := fmt.Sprintf("localhost:%d", conf.Server.Port)
 
 	runner := http_server.New(addr, r)
 

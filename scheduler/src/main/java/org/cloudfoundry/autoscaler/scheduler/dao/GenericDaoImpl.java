@@ -4,7 +4,6 @@ import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import org.cloudfoundry.autoscaler.scheduler.util.error.DatabaseValidationException;
 
-/** @param <T> */
 class GenericDaoImpl<T> implements GenericDao<T> {
 
   @PersistenceContext EntityManager entityManager;

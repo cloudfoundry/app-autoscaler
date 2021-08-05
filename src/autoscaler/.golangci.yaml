@@ -52,14 +52,14 @@ linters-settings:
     require-explanation: false # don't require an explanation for nolint directives
     require-specific: false # don't require nolint directives to be specific about which linter is being skipped
   staticcheck:
-    checks: ["all"]
+    checks: [ "all" ]
   stylecheck:
     go: "1.15"
     # https://staticcheck.io/docs/options#checks
-    checks: ["all", "-ST1003", "-ST1005", "-ST1023"]
+    checks: [ "all", "-ST1003", "-ST1005" ]
     dot-import-whitelist:
       - github.com/onsi/gomega
-      - github.com/onsi/ginkgo  
+      - github.com/onsi/ginkgo
     # https://staticcheck.io/docs/options#initialisms
     #initialisms: ["ACL", "API", "ASCII", "CPU", "CSS", "DNS", "EOF", "GUID", "HTML", "HTTP", "HTTPS", "ID", "IP", "JSON", "QPS", "RAM", "RPC", "SLA", "SMTP", "SQL", "SSH", "TCP", "TLS", "TTL", "UDP", "UI", "GID", "UID", "UUID", "URI", "URL", "UTF8", "VM", "XML", "XMPP", "XSRF", "XSS"]
     # https://staticcheck.io/docs/options#http_status_code_whitelist
@@ -73,19 +73,21 @@ linters:
     - deadcode
     - depguard
     - dogsled
-      #- dupl
+    #- dupl
     - errcheck
+    - errorlint
     - funlen
       #    - gocognit
       #    - goconst
-      #    - gocyclo
+    #    - gocyclo
+    # - goerr113
     - gofmt
     - goimports
     - goprintffuncname
     - gosec
     - gosimple
     - gomoddirectives
-    - gomodguard  
+    - gomodguard
     - ineffassign
     - misspell
     - nakedret
@@ -96,14 +98,14 @@ linters:
     - stylecheck
     - testpackage
     - typecheck
-      #    - unconvert
-      #    - unparam
+    - unconvert
+    #    - unparam
     - unused
     - varcheck
     - whitespace
       #    - godox
       #    - staticcheck
-      #    - prealloc
+    #    - prealloc
 issues:
   # Excluding configuration per-path, per-linter, per-text and per-source
   exclude-rules:
@@ -117,8 +119,9 @@ issues:
         - gocritic
       text: "unnecessaryDefer:"
   # Disable this restriction
-  max-same-issues: 0 
+  max-same-issues: 0
 run:
+  allow-parallel-runners: true
   skip-dirs:
     - test/testdata_etc
     - internal/cache

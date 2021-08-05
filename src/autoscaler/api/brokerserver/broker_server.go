@@ -83,7 +83,7 @@ func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.Bind
 	r.Get(routes.BrokerCreateBindingRouteName).Handler(VarsFunc(ah.BindServiceInstance))
 	r.Get(routes.BrokerDeleteBindingRouteName).Handler(VarsFunc(ah.UnbindServiceInstance))
 
-	addr := fmt.Sprintf("0.0.0.0:%d", conf.BrokerServer.Port)
+	addr := fmt.Sprintf("localhost:%d", conf.BrokerServer.Port)
 
 	var runner ifrit.Runner
 	if (conf.BrokerServer.TLS.KeyFile == "") || (conf.BrokerServer.TLS.CertFile == "") {

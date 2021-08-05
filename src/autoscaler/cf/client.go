@@ -20,11 +20,11 @@ import (
 )
 
 const (
-	PathCFInfo                                   = "/v2/info"
-	PathCFAuth                                   = "/oauth/token"
-	GrantTypeClientCredentials                   = "client_credentials"
-	GrantTypeRefreshToken                        = "refresh_token"
-	TimeToRefreshBeforeTokenExpire time.Duration = 10 * time.Minute
+	PathCFInfo                     = "/v2/info"
+	PathCFAuth                     = "/oauth/token"
+	GrantTypeClientCredentials     = "client_credentials"
+	GrantTypeRefreshToken          = "refresh_token"
+	TimeToRefreshBeforeTokenExpire = 10 * time.Minute
 )
 
 type Tokens struct {

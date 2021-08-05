@@ -39,16 +39,19 @@ func NewPublicApiHandler(logger lager.Logger, conf *config.Config, policydb db.P
 		logger.Error("Failed to create http client for ScalingEngine", err, lager.Data{"scalingengine": conf.ScalingEngine.TLSClientCerts})
 		os.Exit(1)
 	}
+
 	mcClient, err := helpers.CreateHTTPClient(&conf.MetricsCollector.TLSClientCerts)
 	if err != nil {
 		logger.Error("Failed to create http client for MetricsCollector", err, lager.Data{"metricscollector": conf.MetricsCollector.TLSClientCerts})
 		os.Exit(1)
 	}
+
 	egClient, err := helpers.CreateHTTPClient(&conf.EventGenerator.TLSClientCerts)
 	if err != nil {
 		logger.Error("Failed to create http client for EventGenerator", err, lager.Data{"eventgenerator": conf.EventGenerator.TLSClientCerts})
 		os.Exit(1)
 	}
+
 	return &PublicApiHandler{
 		logger:                 logger,
 		conf:                   conf,
@@ -61,7 +64,7 @@ func NewPublicApiHandler(logger lager.Logger, conf *config.Config, policydb db.P
 	}
 }
 
-func (h *PublicApiHandler) GetScalingPolicy(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+func (h *PublicApiHandler) GetScalingPolicy(w http.ResponseWriter, _ *http.Request, vars map[string]string) {
 	appId := vars["appId"]
 	if appId == "" {
 		h.logger.Error("AppId is missing", nil, nil)
@@ -167,13 +170,13 @@ func (h *PublicApiHandler) AttachScalingPolicy(w http.ResponseWriter, r *http.Re
 		h.logger.Error("Failed to create/update schedule", err, nil)
 	}
 	w.WriteHeader(http.StatusOK)
-	_, err = w.Write([]byte(policyBytes))
+	_, err = w.Write(policyBytes)
 	if err != nil {
 		h.logger.Error("failed-to-write-body", err)
 	}
 }
 
-func (h *PublicApiHandler) DetachScalingPolicy(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+func (h *PublicApiHandler) DetachScalingPolicy(w http.ResponseWriter, _ *http.Request, vars map[string]string) {
 	appId := vars["appId"]
 	if appId == "" {
 		h.logger.Error("AppId is missing", nil, nil)
@@ -400,7 +403,7 @@ func (h *PublicApiHandler) GetInstanceMetricsHistories(w http.ResponseWriter, r 
 	handlers.WriteJSONResponse(w, resp.StatusCode, paginatedResponse)
 }
 
-func (h *PublicApiHandler) GetApiInfo(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+func (h *PublicApiHandler) GetApiInfo(w http.ResponseWriter, _ *http.Request, _ map[string]string) {
 	info, err := ioutil.ReadFile(h.conf.InfoFilePath)
 	if err != nil {
 		h.logger.Error("Failed to info file", err, lager.Data{"info-file-path": h.conf.InfoFilePath})
@@ -410,13 +413,13 @@ func (h *PublicApiHandler) GetApiInfo(w http.ResponseWriter, r *http.Request, va
 		return
 	}
 
-	_, err = w.Write([]byte(info))
+	_, err = w.Write(info)
 	if err != nil {
 		h.logger.Error("failed-to-write-body", err)
 	}
 }
 
-func (h *PublicApiHandler) GetHealth(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+func (h *PublicApiHandler) GetHealth(w http.ResponseWriter, _ *http.Request, _ map[string]string) {
 	_, err := w.Write([]byte(`{"alive":"true"}`))
 	if err != nil {
 		h.logger.Error("failed-to-write-body", err)
@@ -482,7 +485,7 @@ func (h *PublicApiHandler) CreateCredential(w http.ResponseWriter, r *http.Reque
 	})
 }
 
-func (h *PublicApiHandler) DeleteCredential(w http.ResponseWriter, r *http.Request, vars map[string]string) {
+func (h *PublicApiHandler) DeleteCredential(w http.ResponseWriter, _ *http.Request, vars map[string]string) {
 	appId := vars["appId"]
 	if appId == "" {
 		h.logger.Error("AppId is missing", nil, nil)

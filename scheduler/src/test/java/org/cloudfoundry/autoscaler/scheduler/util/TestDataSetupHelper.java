@@ -48,14 +48,14 @@ public class TestDataSetupHelper {
   private static String currentEndDateTime =
       getCurrentDateOrTime(6, DateHelper.DATE_TIME_FORMAT, getTimeZone());
 
-  private static String startDateTime[] = {
+  private static String[] startDateTime = {
     currentStartDateTime,
     "2100-07-22T13:00",
     "2100-07-25T09:00",
     "2100-07-28T00:00",
     "2100-8-10T00:00"
   };
-  private static String endDateTime[] = {
+  private static String[] endDateTime = {
     currentEndDateTime,
     "2100-07-23T09:00",
     "2100-07-27T09:00",
@@ -63,22 +63,22 @@ public class TestDataSetupHelper {
     "2100-8-11T00:00"
   };
 
-  private static String startTime[] = {"00:00", "02:00", "10:00", "11:00", "23:00"};
-  private static String endTime[] = {"01:00", "08:00", "10:01", "12:00", "23:59"};
+  private static String[] startTime = {"00:00", "02:00", "10:00", "11:00", "23:00"};
+  private static String[] endTime = {"01:00", "08:00", "10:01", "12:00", "23:59"};
 
   public static ApplicationSchedules generateApplicationPolicy(
       int noOfSpecificDateSchedules, int noOfRecurringSchedules) {
 
-    int noOfDOMRecurringSchedules = noOfRecurringSchedules / 2;
-    int noOfDOWRecurringSchedules = noOfRecurringSchedules - noOfDOMRecurringSchedules;
+    int noOfDomRecurringSchedules = noOfRecurringSchedules / 2;
+    int noOfDowRecurringSchedules = noOfRecurringSchedules - noOfDomRecurringSchedules;
 
     return new ApplicationPolicyBuilder(
             1,
             5,
             timeZone,
             noOfSpecificDateSchedules,
-            noOfDOMRecurringSchedules,
-            noOfDOWRecurringSchedules)
+            noOfDomRecurringSchedules,
+            noOfDowRecurringSchedules)
         .build();
   }
 
@@ -87,8 +87,8 @@ public class TestDataSetupHelper {
       String guid,
       boolean generateScheduleId,
       int noOfSpecificSchedules,
-      int noOfDOMRecurringSchedules,
-      int noOfDOWRecurringSchedules) {
+      int noOfDomRecurringSchedules,
+      int noOfDowRecurringSchedules) {
 
     List<SpecificDateScheduleEntity> specificDateSchedules =
         generateSpecificDateScheduleEntities(
@@ -96,7 +96,7 @@ public class TestDataSetupHelper {
 
     List<RecurringScheduleEntity> recurringSchedules =
         generateRecurringScheduleEntities(
-            appId, guid, generateScheduleId, noOfDOMRecurringSchedules, noOfDOWRecurringSchedules);
+            appId, guid, generateScheduleId, noOfDomRecurringSchedules, noOfDowRecurringSchedules);
 
     return new ScheduleBuilder()
         .setSpecificDate(specificDateSchedules)
@@ -124,11 +124,11 @@ public class TestDataSetupHelper {
       String appId,
       String guid,
       boolean generateScheduleId,
-      int noOfDOMRecurringSchedules,
-      int noOfDOWRecurringSchedules) {
+      int noOfDomRecurringSchedules,
+      int noOfDowRecurringSchedules) {
 
     RecurringScheduleEntitiesBuilder builder =
-        new RecurringScheduleEntitiesBuilder(noOfDOMRecurringSchedules, noOfDOWRecurringSchedules);
+        new RecurringScheduleEntitiesBuilder(noOfDomRecurringSchedules, noOfDowRecurringSchedules);
     if (generateScheduleId) {
       builder.setScheduleId();
     }
