@@ -36,7 +36,7 @@ func NewLockSQLDB(dbConfig db.DatabaseConfig, table string, logger lager.Logger)
 
 	err = sqldb.Ping()
 	if err != nil {
-		sqldb.Close()
+		_ = sqldb.Close()
 		logger.Error("ping-lock-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
 	}
@@ -172,7 +172,7 @@ func (ldb *LockSQLDB) Lock(lock *models.Lock) (bool, error) {
 				isLockAcquired = false
 				return err
 			}
-			if lastUpdatedTimestamp.Add(time.Second * time.Duration(fetchedLock.Ttl)).Before(currentTimestamp) {
+			if lastUpdatedTimestamp.Add(time.Second * fetchedLock.Ttl).Before(currentTimestamp) {
 				ldb.logger.Info("lock-expired", lager.Data{"Owner": fetchedLock.Owner})
 				err = ldb.remove(fetchedLock.Owner, tx)
 				if err != nil {
