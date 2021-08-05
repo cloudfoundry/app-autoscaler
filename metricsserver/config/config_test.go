@@ -203,10 +203,10 @@ db:
 				MaxIdleConnections:    5,
 				ConnectionMaxLifetime: 60 * time.Second,
 			}
-			conf.Collector.WSKeepAliveTime = time.Duration(180 * time.Second)
-			conf.Collector.RefreshInterval = time.Duration(60 * time.Second)
-			conf.Collector.CollectInterval = time.Duration(30 * time.Second)
-			conf.Collector.SaveInterval = time.Duration(5 * time.Second)
+			conf.Collector.WSKeepAliveTime = 180 * time.Second
+			conf.Collector.RefreshInterval = 60 * time.Second
+			conf.Collector.CollectInterval = 30 * time.Second
+			conf.Collector.SaveInterval = 5 * time.Second
 			conf.Collector.MetricCacheSizePerApp = 100
 			conf.Collector.EnvelopeProcessorCount = 5
 			conf.Collector.EnvelopeChannelSize = 300
