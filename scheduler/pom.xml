@@ -168,6 +168,26 @@
                     <reuseForks>false</reuseForks>
                 </configuration>
             </plugin>
+            <!--CHECKSTYLE -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>3.1.2</version>
+                <configuration>
+                    <propertyExpansion>checkstyle.config.path=${basedir}/../style-guide</propertyExpansion>
+                    <configLocation>${basedir}/../style-guide/google_checks.xml</configLocation>
+                    <encoding>UTF-8</encoding>
+                    <failOnViolation>true</failOnViolation>
+                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.puppycrawl.tools</groupId>
+                        <artifactId>checkstyle</artifactId>
+                        <version>8.44</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
         </plugins>
     </build>
 
