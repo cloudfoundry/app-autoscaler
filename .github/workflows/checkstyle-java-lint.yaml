@@ -26,5 +26,5 @@ jobs:
           popd
 
       - name: Publish Results on Pull Request
-          run: |
-            go run format_checkstyle.go
+        run: |
+          go run format_checkstyle.go
