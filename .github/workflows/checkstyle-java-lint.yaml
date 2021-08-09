@@ -28,4 +28,7 @@ jobs:
             mvn --no-transfer-progress checkstyle:checkstyle
           popd
 
+      - name: Publish Results on Pull Request
+          run: |
+            go run format_checkstyle.go
           
