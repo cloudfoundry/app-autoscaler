@@ -25,6 +25,11 @@ jobs:
             mvn --no-transfer-progress checkstyle:checkstyle
           popd
 
+      - name: Check Code Formatting
+        uses: axel-op/googlejavaformat-action@v3
+        with:
+          args: "--skip-javadoc-formatting -n"
+
       - name: Publish Results on Pull Request
         run: |
           go run format_checkstyle.go
