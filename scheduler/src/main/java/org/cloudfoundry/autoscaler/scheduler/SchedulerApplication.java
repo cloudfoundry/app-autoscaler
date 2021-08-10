@@ -50,6 +50,8 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
       ValidationAutoConfiguration.class
     })
 public class SchedulerApplication {
+
+
   private Logger logger = LogManager.getLogger(this.getClass());
 
   @EventListener
