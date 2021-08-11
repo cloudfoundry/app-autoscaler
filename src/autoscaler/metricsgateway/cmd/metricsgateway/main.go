@@ -131,23 +131,23 @@ func main() {
 func loadConfig(path string) (*config.Config, error) {
 	configFile, err := os.Open(path)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open config file %q: %s", path, err.Error())
+		return nil, fmt.Errorf("failed to open config file %q: %w", path, err)
 	}
 
 	configFileBytes, err := ioutil.ReadAll(configFile)
 	configFile.Close()
 	if err != nil {
-		return nil, fmt.Errorf("failed to read data from config file %q: %s", path, err.Error())
+		return nil, fmt.Errorf("failed to read data from config file %q: %w", path, err)
 	}
 
 	conf, err := config.LoadConfig(configFileBytes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse config file %q: %s", path, err.Error())
+		return nil, fmt.Errorf("failed to parse config file %q: %w", path, err)
 	}
 
 	err = conf.Validate()
 	if err != nil {
-		return nil, fmt.Errorf("failed to validate configuration: %s", err.Error())
+		return nil, fmt.Errorf("failed to validate configuration: %w", err)
 	}
 	return conf, nil
 }

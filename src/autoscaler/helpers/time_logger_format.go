@@ -2,6 +2,7 @@ package helpers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -29,10 +30,10 @@ func NewTimeLogFormat(log lager.LogFormat) TimeLogFormat {
 
 func (tlf TimeLogFormat) ToJSON() []byte {
 	content, err := json.Marshal(tlf)
+	var unSupportedErr *json.UnsupportedTypeError
+	var marshalErr *json.MarshalerError
 	if err != nil {
-		_, ok1 := err.(*json.UnsupportedTypeError)
-		_, ok2 := err.(*json.MarshalerError)
-		if ok1 || ok2 {
+		if errors.As(err, &unSupportedErr) || errors.As(err, &marshalErr) {
 			tlf.Data = map[string]interface{}{"lager serialisation error": err.Error(), "data_dump": fmt.Sprintf("%#v", tlf.Data)}
 			content, err = json.Marshal(tlf)
 		}

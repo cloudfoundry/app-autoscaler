@@ -36,16 +36,17 @@ public class SpecificDateScheduleDateTime implements Comparable<SpecificDateSche
 
   @Override
   public int compareTo(SpecificDateScheduleDateTime compareSpecificDateScheduleDateTime) {
-    if (compareSpecificDateScheduleDateTime == null)
+    if (compareSpecificDateScheduleDateTime == null) {
       throw new NullPointerException(
           "The SpecificDateScheduleDateTime object to be compared is null");
+    }
 
     LocalDateTime thisDateTime = this.getStartDateTime();
     LocalDateTime compareToDateTime = compareSpecificDateScheduleDateTime.getStartDateTime();
 
-    if (thisDateTime == null || compareToDateTime == null)
+    if (thisDateTime == null || compareToDateTime == null) {
       throw new NullPointerException("One of the date time value is null");
-
+    }
     return thisDateTime.compareTo(compareToDateTime);
   }
 }
