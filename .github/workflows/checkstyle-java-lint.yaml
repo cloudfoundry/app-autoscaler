@@ -28,7 +28,9 @@ jobs:
       - name: Check Code Formatting
         uses: axel-op/googlejavaformat-action@v3
         with:
-          args: "--skip-javadoc-formatting -n"
+          args: "--skip-javadoc-formatting -n --set-exit-if-changed"
+          version: 1.11.0
+
 
       - name: Publish Results on Pull Request
         run: |
