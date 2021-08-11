@@ -40,7 +40,7 @@ func NewServer(logger lager.Logger, conf *config.Config, scalingEngineDB db.Scal
 
 	r.Get(routes.SyncActiveSchedulesRouteName).Handler(VarsFunc(syncHandler.Sync))
 
-	addr := fmt.Sprintf("localhost:%d", conf.Server.Port)
+	addr := fmt.Sprintf("0.0.0.0:%d", conf.Server.Port)
 	logger.Info("new-http-server", lager.Data{"serverConfig": conf.Server})
 
 	if (conf.Server.TLS.KeyFile != "") && (conf.Server.TLS.CertFile != "") {

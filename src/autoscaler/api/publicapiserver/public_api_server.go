@@ -64,7 +64,7 @@ func NewPublicApiServer(logger lager.Logger, conf *config.Config, policydb db.Po
 	rcredential.Use(httpStatusCollectMiddleware.Collect)
 	rcredential.Get(routes.PublicApiCreateCredentialRouteName).Handler(VarsFunc(pah.CreateCredential))
 	rcredential.Get(routes.PublicApiDeleteCredentialRouteName).Handler(VarsFunc(pah.DeleteCredential))
-	addr := fmt.Sprintf("localhost:%d", conf.PublicApiServer.Port)
+	addr := fmt.Sprintf("0.0.0.0:%d", conf.PublicApiServer.Port)
 
 	var runner ifrit.Runner
 	if (conf.PublicApiServer.TLS.KeyFile == "") || (conf.PublicApiServer.TLS.CertFile == "") {
