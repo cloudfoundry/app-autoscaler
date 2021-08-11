@@ -165,7 +165,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 		history.Status = models.ScalingStatusIgnored
 		result.Status = history.Status
 		result.Adjustment = 0
-		result.CooldownExpiredAt = now.Add(trigger.CoolDown(s.defaultCoolDownSecs)).UnixNano()
+		result.CooldownExpiredAt = 0
 		return result, nil
 	}
 
