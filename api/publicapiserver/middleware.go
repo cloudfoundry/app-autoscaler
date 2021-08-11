@@ -1,6 +1,7 @@
 package publicapiserver
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
@@ -68,7 +69,7 @@ func (mw *Middleware) Oauth(next http.Handler) http.Handler {
 		}
 		isUserSpaceDeveloper, err := mw.cfClient.IsUserSpaceDeveloper(userToken, appId)
 		if err != nil {
-			if err == cf.ErrUnauthrorized {
+			if errors.Is(err, cf.ErrUnauthrorized) {
 				handlers.WriteJSONResponse(w, http.StatusUnauthorized, models.ErrorResponse{
 					Code:    "Unauthorized",
 					Message: "You are not authorized to perform the requested action"})

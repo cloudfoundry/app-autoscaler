@@ -3,6 +3,7 @@ package sqldb
 import (
 	"database/sql"
 	"database/sql/driver"
+	"errors"
 	"time"
 
 	"code.cloudfoundry.org/lager"
@@ -35,7 +36,7 @@ func NewLockSQLDB(dbConfig db.DatabaseConfig, table string, logger lager.Logger)
 
 	err = sqldb.Ping()
 	if err != nil {
-		sqldb.Close()
+		_ = sqldb.Close()
 		logger.Error("ping-lock-db", err, lager.Data{"dbConfig": dbConfig})
 		return nil, err
 	}
@@ -171,7 +172,7 @@ func (ldb *LockSQLDB) Lock(lock *models.Lock) (bool, error) {
 				isLockAcquired = false
 				return err
 			}
-			if lastUpdatedTimestamp.Add(time.Second * time.Duration(fetchedLock.Ttl)).Before(currentTimestamp) {
+			if lastUpdatedTimestamp.Add(time.Second * fetchedLock.Ttl).Before(currentTimestamp) {
 				ldb.logger.Info("lock-expired", lager.Data{"Owner": fetchedLock.Owner})
 				err = ldb.remove(fetchedLock.Owner, tx)
 				if err != nil {
@@ -260,7 +261,7 @@ func (ldb *LockSQLDB) transact(db *sqlx.DB, f func(tx *sql.Tx) error) error {
 		}()
 
 		// golang sql package does not always retry query on ErrBadConn
-		if attempts >= 2 || (err != driver.ErrBadConn) {
+		if attempts >= 2 || !errors.Is(err, driver.ErrBadConn) {
 			break
 		} else {
 			ldb.logger.Debug("wait-before-retry-for-transaction", lager.Data{"attempts": attempts})

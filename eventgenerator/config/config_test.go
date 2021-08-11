@@ -216,7 +216,7 @@ defaultBreachDurationSecs: 600
 
 			It("returns default values", func() {
 				Expect(err).NotTo(HaveOccurred())
-				Expect(conf.Aggregator.PolicyPollerInterval).To(Equal(time.Duration(DefaultPolicyPollerInterval)))
+				Expect(conf.Aggregator.PolicyPollerInterval).To(Equal(DefaultPolicyPollerInterval))
 
 				Expect(err).NotTo(HaveOccurred())
 				Expect(conf).To(Equal(&Config{
