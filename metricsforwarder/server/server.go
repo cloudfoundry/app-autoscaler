@@ -43,7 +43,7 @@ func NewServer(logger lager.Logger, conf *config.Config, policyDB db.PolicyDB, c
 	r.Use(httpStatusCollectMiddleware.Collect)
 	r.Get(routes.PostCustomMetricsRouteName).Handler(VarsFunc(mh.PublishMetrics))
 
-	addr := fmt.Sprintf("localhost:%d", conf.Server.Port)
+	addr := fmt.Sprintf("0.0.0.0:%d", conf.Server.Port)
 
 	runner := http_server.New(addr, r)
 
