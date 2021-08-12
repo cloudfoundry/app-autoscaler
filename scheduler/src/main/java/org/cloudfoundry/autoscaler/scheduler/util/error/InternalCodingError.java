@@ -13,7 +13,9 @@ public class InternalCodingError extends RuntimeException {
 
   private static final long serialVersionUID = 1L;
 
-  /** @param message - the message indicating the application coding problem that has occurred */
+  /**
+   * @param message - the message indicating the application coding problem that has occurred
+   */
   public InternalCodingError(String message) {
     this(message, null);
   }

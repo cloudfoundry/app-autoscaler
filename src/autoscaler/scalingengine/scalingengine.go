@@ -165,7 +165,7 @@ func (s *scalingEngine) Scale(appId string, trigger *models.Trigger) (*models.Ap
 		history.Status = models.ScalingStatusIgnored
 		result.Status = history.Status
 		result.Adjustment = 0
-		result.CooldownExpiredAt = now.Add(trigger.CoolDown(s.defaultCoolDownSecs)).UnixNano()
+		result.CooldownExpiredAt = 0
 		return result, nil
 	}
 
@@ -335,8 +335,9 @@ func (s *scalingEngine) RemoveActiveSchedule(appId string, scheduleId string) er
 	}()
 
 	appEntity, err := s.cfClient.GetApp(appId)
+	var appNotFoundErr *models.AppNotFoundErr
 	if err != nil {
-		if _, ok := err.(*models.AppNotFoundErr); ok {
+		if errors.As(err, &appNotFoundErr) {
 			logger.Info("app-not-found", lager.Data{"appId": appId})
 			history.Status = models.ScalingStatusIgnored
 			return nil

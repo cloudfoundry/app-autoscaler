@@ -151,26 +151,47 @@ public class ScheduleEntity {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     ScheduleEntity that = (ScheduleEntity) o;
 
-    if (id != null ? !id.equals(that.id) : that.id != null) return false;
-    if (appId != null ? !appId.equals(that.appId) : that.appId != null) return false;
-    if (timeZone != null ? !timeZone.equals(that.timeZone) : that.timeZone != null) return false;
+    if (id != null ? !id.equals(that.id) : that.id != null) {
+      return false;
+    }
+    if (appId != null ? !appId.equals(that.appId) : that.appId != null) {
+      return false;
+    }
+    if (timeZone != null ? !timeZone.equals(that.timeZone) : that.timeZone != null) {
+      return false;
+    }
     if (defaultInstanceMinCount != null
         ? !defaultInstanceMinCount.equals(that.defaultInstanceMinCount)
-        : that.defaultInstanceMinCount != null) return false;
+        : that.defaultInstanceMinCount != null) {
+      return false;
+    }
     if (defaultInstanceMaxCount != null
         ? !defaultInstanceMaxCount.equals(that.defaultInstanceMaxCount)
-        : that.defaultInstanceMaxCount != null) return false;
-    if (!instanceMinCount.equals(that.instanceMinCount)) return false;
-    if (!instanceMaxCount.equals(that.instanceMaxCount)) return false;
+        : that.defaultInstanceMaxCount != null) {
+      return false;
+    }
+    if (!instanceMinCount.equals(that.instanceMinCount)) {
+      return false;
+    }
+    if (!instanceMaxCount.equals(that.instanceMaxCount)) {
+      return false;
+    }
     if (initialMinInstanceCount != null
         ? !initialMinInstanceCount.equals(that.initialMinInstanceCount)
-        : that.initialMinInstanceCount != null) return false;
-    if (!guid.equals(that.guid)) return false;
+        : that.initialMinInstanceCount != null) {
+      return false;
+    }
+    if (!guid.equals(that.guid)) {
+      return false;
+    }
     return true;
   }
 

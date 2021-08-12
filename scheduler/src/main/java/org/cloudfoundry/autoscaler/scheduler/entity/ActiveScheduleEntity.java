@@ -95,18 +95,31 @@ public class ActiveScheduleEntity implements RowMapper<ActiveScheduleEntity> {
 
   @Override
   public boolean equals(Object o) {
-    if (this == o) return true;
-    if (o == null || getClass() != o.getClass()) return false;
-
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
     ActiveScheduleEntity that = (ActiveScheduleEntity) o;
 
-    if (!id.equals(that.id)) return false;
-    if (!appId.equals(that.appId)) return false;
+    if (!id.equals(that.id)) {
+      return false;
+    }
+    if (!appId.equals(that.appId)) {
+      return false;
+    }
     if (startJobIdentifier != null
         ? !startJobIdentifier.equals(that.startJobIdentifier)
-        : that.startJobIdentifier != null) return false;
-    if (!instanceMinCount.equals(that.instanceMinCount)) return false;
-    if (!instanceMaxCount.equals(that.instanceMaxCount)) return false;
+        : that.startJobIdentifier != null) {
+      return false;
+    }
+    if (!instanceMinCount.equals(that.instanceMinCount)) {
+      return false;
+    }
+    if (!instanceMaxCount.equals(that.instanceMaxCount)) {
+      return false;
+    }
     return initialMinInstanceCount != null
         ? initialMinInstanceCount.equals(that.initialMinInstanceCount)
         : that.initialMinInstanceCount == null;

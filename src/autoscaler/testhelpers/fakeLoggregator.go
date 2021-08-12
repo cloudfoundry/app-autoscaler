@@ -153,12 +153,12 @@ func (f *FakeEventProducer) SetEnvelops(envelops []*loggregator_v2.Envelope) {
 func NewServerMutualTLSConfig(certFile, keyFile, caCertFile string) (*tls.Config, error) {
 	tlsCert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load keypair: %s", err)
+		return nil, fmt.Errorf("failed to load keypair: %w", err)
 	}
 
 	certBytes, err := ioutil.ReadFile(caCertFile)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read ca cert file: %s", err)
+		return nil, fmt.Errorf("failed to read ca cert file: %w", err)
 	}
 
 	caCertPool := x509.NewCertPool()
@@ -185,12 +185,12 @@ func NewClientMutualTLSConfig(
 ) (*tls.Config, error) {
 	tlsCert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
-		return nil, fmt.Errorf("failed to load keypair: %s", err)
+		return nil, fmt.Errorf("failed to load keypair: %w", err)
 	}
 
 	certBytes, err := ioutil.ReadFile(caCertFile)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read ca cert file: %s", err)
+		return nil, fmt.Errorf("failed to read ca cert file: %w", err)
 	}
 
 	caCertPool := x509.NewCertPool()
@@ -210,7 +210,7 @@ func NewClientMutualTLSConfig(
 		},
 	}
 	if _, err := certificate.Verify(verifyOptions); err != nil {
-		return nil, fmt.Errorf("failed to verify certificate: %s", err)
+		return nil, fmt.Errorf("failed to verify certificate: %w", err)
 	}
 
 	tlsConfig := &tls.Config{
