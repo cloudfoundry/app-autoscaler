@@ -64,6 +64,8 @@ public class SchedulerApplication {
     SpringApplication.run(SchedulerApplication.class, args);
   }
 
+
+
   @Bean
   public Docket api() {
     return new Docket(DocumentationType.SWAGGER_2)
