@@ -1,6 +1,8 @@
+---
 name: Check Java Code
 on:
   pull_request:
+  workflow_dispatch:
 jobs:
   formatting:
     runs-on: ubuntu-latest
@@ -19,10 +21,22 @@ jobs:
           go-version: 1.16
 
       - name: Check Code Formatting
-        uses: axel-op/googlejavaformat-action@v3
-        with:
-          args: "--skip-javadoc-formatting -n --set-exit-if-changed"
-          version: 1.11.0
+        run: |
+          pushd scheduler
+            curl -LJO "https://github.com/google/google-java-format/releases/download/v$GOOGLE_JAR_VERSION/$GOOGLE_JAR_NAME"
+            java \
+              --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED \
+              --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED \
+              --add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED \
+              --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED \
+              --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED \
+              -jar $GOOGLE_JAR_NAME \
+              -n --skip-javadoc-formatting \
+              **/*.java
+          popd
+        env:
+          GOOGLE_JAR_VERSION: 1.11.0
+          GOOGLE_JAR_NAME: google-java-format-1.11.0-all-deps.jar
 
       - name: Checkstyle
         run: |
