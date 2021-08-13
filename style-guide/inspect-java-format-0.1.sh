@@ -6,7 +6,6 @@
 set -e -o pipefail
 
 REPO_PATH=$(git rev-parse --show-toplevel)
-JAVA_SOURCES_PATH="$REPO_PATH"/scheduler/src/
 DOWNLOAD_PATH="$REPO_PATH"/.cache
 CHECKSTYLE_JAR_NAME="checkstyle-8.44-all.jar"
 GOOGLE_JAR_NAME="google-java-format-1.11.0-all-deps.jar"
@@ -14,14 +13,6 @@ GOOGLE_JAR_VERSION="1.11.0"
 
 CHECKSTYLE_CONFIG_FILE_NAME="google_checks.xml"
 CHECKSTYLE_CONFIG_PATH="$REPO_PATH"/style-guide
-
-echo "Current Configs..."
-echo "REPO_PATH: $REPO_PATH"
-echo "DOWNLOAD_PATH: $DOWNLOAD_PATH"
-echo "JAVA_SOURCES_PATH: $JAVA_SOURCES_PATH"
-echo "CHECKSTYLE_JAR_NAME: $CHECKSTYLE_JAR_NAME"
-echo "CHECKSTYLE_CONFIG_FILE_NAME: CHECKSTYLE_CONFIG_FILE_NAME"
-echo "CHECKSTYLE_CONFIG_PATH: $CHECKSTYLE_CONFIG_PATH"
 
 function download_google_formatter {
     cd "$DOWNLOAD_PATH"
@@ -67,15 +58,6 @@ java \
 #####################################################################
 echo "============================================================"
 echo "Google Formatting using $DOWNLOAD_PATH"/"$GOOGLE_JAR_NAME..."
-echo java java \
-  --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED \
-  --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED \
-  --add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED \
-  --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED \
-  --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED \
-  -jar "$DOWNLOAD_PATH"/"$GOOGLE_JAR_NAME" \
-  -n --skip-javadoc-formatting \
-  "src\scheduler"
 files_to_be_formatted=$( java \
                     --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED \
                     --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED \
@@ -92,7 +74,6 @@ if  [[ -n "$files_to_be_formatted" ]]; then
     echo "$files_to_be_formatted"
     echo "Please correct the formatting of the files(s) using one of the following options:"
     echo "   java -jar "$DOWNLOAD_PATH"/"$GOOGLE_JAR_NAME" -replace --skip-javadoc-formatting $files_to_be_formatted"
-    echo "   Reformat Code - IntelliJ or Format Document - Eclipse (google code style required)"
     exit 2
 fi
 
