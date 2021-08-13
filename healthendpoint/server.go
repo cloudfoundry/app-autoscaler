@@ -3,6 +3,7 @@ package healthendpoint
 import (
 	"fmt"
 	"net/http"
+	"os"
 
 	"code.cloudfoundry.org/lager"
 	"github.com/gorilla/mux"
@@ -36,7 +37,14 @@ func NewServer(logger lager.Logger, port int, gatherer prometheus.Gatherer) (ifr
 	router := mux.NewRouter()
 	r := promhttp.HandlerFor(gatherer, promhttp.HandlerOpts{})
 	router.PathPrefix("").Handler(r)
-	addr := fmt.Sprintf("0.0.0.0:%d", port)
+
+	var addr string
+	if os.Getenv("APP_AUTOSCALER_TEST_RUN") == "true" {
+		addr = fmt.Sprintf("localhost:%d", port)
+	} else {
+		addr = fmt.Sprintf("0.0.0.0:%d", port)
+	}
+
 	logger.Info("new-health-server", lager.Data{"addr": addr})
 	return http_server.New(addr, router), nil
 }
@@ -90,7 +98,13 @@ func NewServerWithBasicAuth(logger lager.Logger, port int, gatherer prometheus.G
 
 		middleWareHandlerRouter.PathPrefix("").Handler(r)
 
-		addr := fmt.Sprintf("0.0.0.0:%d", port)
+		var addr string
+		if os.Getenv("APP_AUTOSCALER_TEST_RUN") == "true" {
+			addr = fmt.Sprintf("localhost:%d", port)
+		} else {
+			addr = fmt.Sprintf("0.0.0.0:%d", port)
+		}
+
 		logger.Info("new-health-server-basic-auth", lager.Data{"addr": addr})
 
 		return http_server.New(addr, middleWareHandlerRouter), nil

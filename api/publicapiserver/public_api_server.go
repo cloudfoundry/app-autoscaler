@@ -3,6 +3,7 @@ package publicapiserver
 import (
 	"fmt"
 	"net/http"
+	"os"
 
 	"autoscaler/api"
 	"autoscaler/api/config"
@@ -64,7 +65,13 @@ func NewPublicApiServer(logger lager.Logger, conf *config.Config, policydb db.Po
 	rcredential.Use(httpStatusCollectMiddleware.Collect)
 	rcredential.Get(routes.PublicApiCreateCredentialRouteName).Handler(VarsFunc(pah.CreateCredential))
 	rcredential.Get(routes.PublicApiDeleteCredentialRouteName).Handler(VarsFunc(pah.DeleteCredential))
-	addr := fmt.Sprintf("0.0.0.0:%d", conf.PublicApiServer.Port)
+
+	var addr string
+	if os.Getenv("APP_AUTOSCALER_TEST_RUN") == "true" {
+		addr = fmt.Sprintf("localhost:%d", conf.PublicApiServer.Port)
+	} else {
+		addr = fmt.Sprintf("0.0.0.0:%d", conf.PublicApiServer.Port)
+	}
 
 	var runner ifrit.Runner
 	if (conf.PublicApiServer.TLS.KeyFile == "") || (conf.PublicApiServer.TLS.CertFile == "") {
