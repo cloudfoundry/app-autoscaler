@@ -276,10 +276,6 @@ public class DataValidationHelper {
 
       Collections.sort(scheduleStartEndTimeList);
 
-
-
-
-
       for (int index = 0; index < scheduleStartEndTimeList.size() - 1; index++) {
         SpecificDateScheduleDateTime current = scheduleStartEndTimeList.get(index);
         SpecificDateScheduleDateTime next = scheduleStartEndTimeList.get(index + 1);

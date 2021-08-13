@@ -4,6 +4,7 @@
  # This pre-commit hook displays Java formatting issues
 ###################################################################################################
 set -e -o pipefail
+set +x
 
 REPO_PATH=$(git rev-parse --show-toplevel)
 DOWNLOAD_PATH="$REPO_PATH"/.cache
@@ -44,14 +45,22 @@ changed_java_files=$(echo "$changed_java_files" |tr '\n' ' ')
 #####################################################################
 #   Checkstyle                                                      #
 #####################################################################
-java \
+echo "Running Checkstyle using $DOWNLOAD_PATH"/"CHECKSTYLE_JAR_NAME..."
+
+CHECKSTYLE_OUTPUT=$(java \
   --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED \
   --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED \
   --add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED \
   --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED \
   --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED \
-  -jar "$DOWNLOAD_PATH"/"$CHECKSTYLE_JAR_NAME" -p "${CHECKSTYLE_CONFIG_PATH}"/checkstyle.properties -c "${CHECKSTYLE_CONFIG_PATH}"/"${CHECKSTYLE_CONFIG_FILE_NAME}" $changed_java_files
+  -jar "$DOWNLOAD_PATH"/"$CHECKSTYLE_JAR_NAME" -p "${CHECKSTYLE_CONFIG_PATH}"/checkstyle.properties -c "${CHECKSTYLE_CONFIG_PATH}"/"${CHECKSTYLE_CONFIG_FILE_NAME}" -o=style-guide/result.txt $changed_java_files  )
+FILES_NEEDS_CORRECTION=$(echo "$CHECKSTYLE_OUTPUT" | sed  '0d;1d;$d' style-guide/result.txt)
+rm style-guide/result.txt
 
+if  [[ -n "$FILES_NEEDS_CORRECTION" ]]; then
+  echo "$FILES_NEEDS_CORRECTION"
+  exit 1
+fi
 
 #####################################################################
 #   Google Formatter                                                #
@@ -67,13 +76,10 @@ files_to_be_formatted=$( java \
                     -jar "$DOWNLOAD_PATH"/"$GOOGLE_JAR_NAME"  -n --skip-javadoc-formatting $changed_java_files)
 # if there are any stage changes
 if  [[ -n "$files_to_be_formatted" ]]; then
-    echo "Formatter Results:"
-    echo "Analyzing java file(s) using "$GOOGLE_JAR_NAME"..."
     echo "Incorrect formatting found:"
     files_to_be_formatted=$(echo "$files_to_be_formatted" |tr '\n' ' ')
-    echo "$files_to_be_formatted"
     echo "Please correct the formatting of the files(s) using one of the following options:"
-    echo "   java -jar "$DOWNLOAD_PATH"/"$GOOGLE_JAR_NAME" -replace --skip-javadoc-formatting $files_to_be_formatted"
+    echo "   java --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED  -jar "$DOWNLOAD_PATH"/"$GOOGLE_JAR_NAME" -replace --skip-javadoc-formatting $files_to_be_formatted"
     exit 2
 fi
 

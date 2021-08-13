@@ -51,9 +51,7 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
     })
 public class SchedulerApplication {
 
-
-
-  private Logger loGGer = LogManager.getLogger(this.getClass());
+  private Logger logger = LogManager.getLogger(this.getClass());
 
   @EventListener
   public void onApplicationReady(ApplicationReadyEvent event) {
@@ -63,8 +61,6 @@ public class SchedulerApplication {
   public static void main(String[] args) {
     SpringApplication.run(SchedulerApplication.class, args);
   }
-
-
 
   @Bean
   public Docket api() {
