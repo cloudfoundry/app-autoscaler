@@ -52,7 +52,8 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 public class SchedulerApplication {
 
 
-  private Logger logger = LogManager.getLogger(this.getClass());
+
+  private Logger loGGer = LogManager.getLogger(this.getClass());
 
   @EventListener
   public void onApplicationReady(ApplicationReadyEvent event) {
