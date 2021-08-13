@@ -16,14 +16,14 @@ build: build-scalingengine build-metricsforwarder build-eventgenerator build-api
 check: fmt lint build test
 
 test:
-	ginkgo -r -race -requireSuite -randomizeAllSpecs -keepGoing --skipPackage=integration
+	APP_AUTOSCALER_TEST_RUN=true ginkgo -r -race -requireSuite -randomizeAllSpecs -keepGoing --skipPackage=integration
 
 testsuite:
-	ginkgo -r -race -randomizeAllSpecs $(TEST)
+	APP_AUTOSCALER_TEST_RUN=true ginkgo -r -race -randomizeAllSpecs $(TEST)
 
 .PHONY: integration
 integration:
-	ginkgo -r -race -requireSuite -randomizeAllSpecs -keepGoing integration
+	APP_AUTOSCALER_TEST_RUN=true ginkgo -r -race -requireSuite -randomizeAllSpecs -keepGoing integration
 
 
 generate:

@@ -3,6 +3,7 @@ package collector
 import (
 	"fmt"
 	"net/http"
+	"os"
 
 	"autoscaler/healthendpoint"
 	"autoscaler/metricsserver/config"
@@ -30,7 +31,12 @@ func NewServer(logger lager.Logger, serverConfig *config.ServerConfig, config *c
 	r.Use(httpStatusCollectMiddleware.Collect)
 	r.Get(routes.GetMetricHistoriesRouteName).Handler(VarsFunc(mh.GetMetricHistories))
 
-	addr := fmt.Sprintf("0.0.0.0:%d", serverConfig.Port)
+	var addr string
+	if os.Getenv("APP_AUTOSCALER_TEST_RUN") == "true" {
+		addr = fmt.Sprintf("localhost:%d", serverConfig.Port)
+	} else {
+		addr = fmt.Sprintf("0.0.0.0:%d", serverConfig.Port)
+	}
 
 	var runner ifrit.Runner
 	if (serverConfig.TLS.KeyFile == "") || (serverConfig.TLS.CertFile == "") {

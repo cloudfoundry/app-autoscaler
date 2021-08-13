@@ -3,6 +3,7 @@ package brokerserver
 import (
 	"fmt"
 	"net/http"
+	"os"
 
 	"autoscaler/api/config"
 	"autoscaler/db"
@@ -83,7 +84,12 @@ func NewBrokerServer(logger lager.Logger, conf *config.Config, bindingdb db.Bind
 	r.Get(routes.BrokerCreateBindingRouteName).Handler(VarsFunc(ah.BindServiceInstance))
 	r.Get(routes.BrokerDeleteBindingRouteName).Handler(VarsFunc(ah.UnbindServiceInstance))
 
-	addr := fmt.Sprintf("0.0.0.0:%d", conf.BrokerServer.Port)
+	var addr string
+	if os.Getenv("APP_AUTOSCALER_TEST_RUN") == "true" {
+		addr = fmt.Sprintf("localhost:%d", conf.BrokerServer.Port)
+	} else {
+		addr = fmt.Sprintf("0.0.0.0:%d", conf.BrokerServer.Port)
+	}
 
 	var runner ifrit.Runner
 	if (conf.BrokerServer.TLS.KeyFile == "") || (conf.BrokerServer.TLS.CertFile == "") {
