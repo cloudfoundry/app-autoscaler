@@ -4,6 +4,7 @@ import (
 	"autoscaler/eventgenerator/aggregator"
 	"fmt"
 	"net/http"
+	"os"
 
 	"autoscaler/eventgenerator/config"
 	"autoscaler/healthendpoint"
@@ -30,7 +31,12 @@ func NewServer(logger lager.Logger, conf *config.Config, queryAppMetric aggregat
 	r.Use(httpStatusCollectMiddleware.Collect)
 	r.Get(routes.GetAggregatedMetricHistoriesRouteName).Handler(VarsFunc(eh.GetAggregatedMetricHistories))
 
-	addr := fmt.Sprintf("0.0.0.0:%d", conf.Server.Port)
+	var addr string
+	if os.Getenv("APP_AUTOSCALER_TEST_RUN") == "true" {
+		addr = fmt.Sprintf("localhost:%d", conf.Server.Port)
+	} else {
+		addr = fmt.Sprintf("0.0.0.0:%d", conf.Server.Port)
+	}
 
 	var runner ifrit.Runner
 	if (conf.Server.TLS.KeyFile == "") || (conf.Server.TLS.CertFile == "") {
