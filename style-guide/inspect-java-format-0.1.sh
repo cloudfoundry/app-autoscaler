@@ -67,7 +67,22 @@ java \
 #####################################################################
 echo "============================================================"
 echo "Google Formatting using $DOWNLOAD_PATH"/"$GOOGLE_JAR_NAME..."
-files_to_be_formatted=$( java -jar "$DOWNLOAD_PATH"/"$GOOGLE_JAR_NAME" -n --skip-javadoc-formatting $changed_java_files)
+echo java java \
+  --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED \
+  --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED \
+  --add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED \
+  --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED \
+  --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED \
+  -jar "$DOWNLOAD_PATH"/"$GOOGLE_JAR_NAME" \
+  -n --skip-javadoc-formatting \
+  "src\scheduler"
+files_to_be_formatted=$( java \
+                    --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED \
+                    --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED \
+                    --add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED \
+                    --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED \
+                    --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED \
+                    -jar "$DOWNLOAD_PATH"/"$GOOGLE_JAR_NAME"  -n --skip-javadoc-formatting $changed_java_files)
 # if there are any stage changes
 if  [[ -n "$files_to_be_formatted" ]]; then
     echo "Formatter Results:"
