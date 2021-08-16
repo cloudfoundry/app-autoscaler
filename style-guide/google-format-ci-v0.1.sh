@@ -15,7 +15,7 @@ files_to_be_formatted=$(java \
 
 if  [ -n "$files_to_be_formatted" ]; then
   echo "Formatter Results..."
-  echo "Files required reformatting:"
+  echo "Files require reformatting:"
   echo "${files_to_be_formatted}"
   exit 1
 fi
