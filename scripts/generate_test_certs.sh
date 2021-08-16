@@ -6,7 +6,11 @@ set -ex
 depot_path="../test-certs"
 rm -rf ${depot_path}
 mkdir -p ${depot_path}
+OS=$(uname || "Win")
 
+if [ ${OS} = "Darwin" ]; then
+  which certstrap >/dev/null || brew install certstrap
+fi
 
 # CA to distribute to autoscaler certs
 certstrap --depot-path ${depot_path} init --passphrase '' --common-name autoscalerCA --years "20"
