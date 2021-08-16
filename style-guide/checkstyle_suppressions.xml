@@ -7,10 +7,4 @@
 <suppressions>
     <suppress checks="MissingJavadocMethod" />
     <suppress checks="MissingJavadocType" />
-    <suppress checks="SummaryJavadoc" />
-    <suppress checks="NonEmptyAtclauseDescription"/>
-    <suppress checks="PackageName"/>
-    <suppress checks="LineLength"/>
-    <suppress checks="VariableDeclarationUsageDistance"/>
-    <suppress checks="EmptyLineSeparator"/>
 </suppressions>
