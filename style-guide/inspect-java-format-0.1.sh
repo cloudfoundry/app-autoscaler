@@ -4,22 +4,16 @@
  # This pre-commit hook displays Java formatting issues
 ###################################################################################################
 set -e -o pipefail
+set +x
 
 REPO_PATH=$(git rev-parse --show-toplevel)
-CHECKSTYLE_CONFIG="google_checks.xml"
-CHECKSTYLE_CONFIG_PATH="$REPO_PATH"/style-guide/"$CHECKSTYLE_CONFIG"
 DOWNLOAD_PATH="$REPO_PATH"/.cache
 CHECKSTYLE_JAR_NAME="checkstyle-8.44-all.jar"
 GOOGLE_JAR_NAME="google-java-format-1.11.0-all-deps.jar"
 GOOGLE_JAR_VERSION="1.11.0"
-JAVA_SOURCES_PATH="$REPO_PATH"/scheduler/src/
-echo "Current Configs..."
-echo "REPO_PATH: $REPO_PATH"
-echo "DOWNLOAD_PATH: $DOWNLOAD_PATH"
-echo "JAVA_SOURCES_PATH: $JAVA_SOURCES_PATH"
-echo "CHECKSTYLE_JAR_NAME: $CHECKSTYLE_JAR_NAME"
-echo "CHECKSTYLE_CONFIG: $CHECKSTYLE_CONFIG"
-echo "CHECKSTYLE_CONFIG_PATH: $CHECKSTYLE_CONFIG_PATH"
+
+CHECKSTYLE_CONFIG_FILE_NAME="google_checks.xml"
+CHECKSTYLE_CONFIG_PATH="$REPO_PATH"/style-guide
 
 function download_google_formatter {
     cd "$DOWNLOAD_PATH"
@@ -51,32 +45,41 @@ changed_java_files=$(echo "$changed_java_files" |tr '\n' ' ')
 #####################################################################
 #   Checkstyle                                                      #
 #####################################################################
-#echo "executing java -jar "$DOWNLOAD_PATH"/"$CHECKSTYLE_JAR_NAME" -c "$CHECKSTYLE_CONFIG_PATH" $changed_java_files"
-java \
+echo "Running Checkstyle using $DOWNLOAD_PATH"/"CHECKSTYLE_JAR_NAME..."
+
+CHECKSTYLE_OUTPUT=$(java \
   --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED \
   --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED \
   --add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED \
   --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED \
   --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED \
-  -jar "$DOWNLOAD_PATH"/"$CHECKSTYLE_JAR_NAME" -c "$CHECKSTYLE_CONFIG_PATH" $changed_java_files
+  -jar "$DOWNLOAD_PATH"/"$CHECKSTYLE_JAR_NAME" -p "${CHECKSTYLE_CONFIG_PATH}"/checkstyle.properties -c "${CHECKSTYLE_CONFIG_PATH}"/"${CHECKSTYLE_CONFIG_FILE_NAME}" -o=style-guide/result.txt $changed_java_files  )
+FILES_NEEDS_CORRECTION=$(echo "$CHECKSTYLE_OUTPUT" | sed  '0d;1d;$d' style-guide/result.txt)
+rm style-guide/result.txt
 
+if  [[ -n "$FILES_NEEDS_CORRECTION" ]]; then
+  echo "$FILES_NEEDS_CORRECTION"
+  exit 1
+fi
 
 #####################################################################
 #   Google Formatter                                                #
 #####################################################################
 echo "============================================================"
 echo "Google Formatting using $DOWNLOAD_PATH"/"$GOOGLE_JAR_NAME..."
-files_to_be_formatted=$( java -jar "$DOWNLOAD_PATH"/"$GOOGLE_JAR_NAME" -n --skip-javadoc-formatting $changed_java_files)
+files_to_be_formatted=$( java \
+                    --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED \
+                    --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED \
+                    --add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED \
+                    --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED \
+                    --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED \
+                    -jar "$DOWNLOAD_PATH"/"$GOOGLE_JAR_NAME"  -n --skip-javadoc-formatting $changed_java_files)
 # if there are any stage changes
 if  [[ -n "$files_to_be_formatted" ]]; then
-    echo "Formatter Results:"
-    echo "Analyzing java file(s) using "$GOOGLE_JAR_NAME"..."
     echo "Incorrect formatting found:"
     files_to_be_formatted=$(echo "$files_to_be_formatted" |tr '\n' ' ')
-    echo "$files_to_be_formatted"
     echo "Please correct the formatting of the files(s) using one of the following options:"
-    echo "   java -jar "$DOWNLOAD_PATH"/"$GOOGLE_JAR_NAME" -replace --skip-javadoc-formatting $files_to_be_formatted"
-    echo "   Reformat Code - IntelliJ or Format Document - Eclipse (google code style required)"
+    echo "   java --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED  -jar "$DOWNLOAD_PATH"/"$GOOGLE_JAR_NAME" -replace --skip-javadoc-formatting $files_to_be_formatted"
     exit 2
 fi
 
