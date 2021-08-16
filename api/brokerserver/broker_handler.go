@@ -21,7 +21,7 @@ import (
 )
 
 type BrokerHandler struct {
-	logger          lager.Logger
+	  logger          lager.Logger
 	conf            *config.Config
 	bindingdb       db.BindingDB
 	policydb        db.PolicyDB
