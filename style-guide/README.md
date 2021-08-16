@@ -1,5 +1,5 @@
 ## Code Quality
-Autoscaler uses [Pre-commit](https://pre-commit.com/) for keeping our code base clean. It is a package manager fo rgit hooks.
+Autoscaler uses [Pre-commit](https://pre-commit.com/) for keeping our code base clean. It is a package manager fo git hooks.
 Upon a git commit, it checks .go and .java files for potential code problems.
 
 Two static code analyzers are used as git-hooks which are defined in the .pre-commit-config file.
