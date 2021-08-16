@@ -13,5 +13,4 @@
     <suppress checks="LineLength"/>
     <suppress checks="VariableDeclarationUsageDistance"/>
     <suppress checks="EmptyLineSeparator"/>
-
 </suppressions>

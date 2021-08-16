@@ -29,7 +29,7 @@
   </module>
   <!-- https://checkstyle.org/config_filters.html#SuppressionFilter -->
   <module name="SuppressionFilter">
-    <property name="file" value="style-guide/checkstyle_suppressions.xml"/>
+    <property name="file" value="${checkstyle.config.path}/checkstyle_suppressions.xml"/>
     <property name="optional" value="false"/>
   </module>
 
