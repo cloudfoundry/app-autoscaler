@@ -16,8 +16,6 @@ import java.util.TimeZone;
 /** Helper class for validating the data */
 public class DataValidationHelper {
 
-  private boolean lintCheck;
-
   /**
    * Checks if the specified object is null.
    *
