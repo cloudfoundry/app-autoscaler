@@ -16,7 +16,7 @@ import java.util.TimeZone;
 /** Helper class for validating the data */
 public class DataValidationHelper {
 
-  private boolean LINTT_CHECK;
+  private boolean lintCheck;
 
   /**
    * Checks if the specified object is null.
@@ -281,8 +281,6 @@ public class DataValidationHelper {
       for (int index = 0; index < scheduleStartEndTimeList.size() - 1; index++) {
         SpecificDateScheduleDateTime current = scheduleStartEndTimeList.get(index);
         SpecificDateScheduleDateTime next = scheduleStartEndTimeList.get(index + 1);
-
-
 
         // Check for date time overlaps and create a validation error message string array
         if (current.getStartDateTime().compareTo(next.getStartDateTime()) == 0) {
