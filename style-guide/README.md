@@ -1,13 +1,17 @@
 ## Code Quality
-utoscaler uses Pre-commit for keeping our code base clean. Upon a git commit, it checks .go and .java files for formatting.
-We recommend to use our guidelines. These style only applies to .go and java files.
+Autoscaler uses [Pre-commit](https://pre-commit.com/) for keeping our code base clean. It is a package manager fo git hooks.
+Upon a git commit, it checks .go and .java files for potential code problems.
 
-- Java Formatter : Google Styles are used (https://github.com/google/google-java-format)
-- Go Formatter:  Standard Go formatter (go fmt) is used
+Two static code analyzers are used as git-hooks which are defined in the .pre-commit-config file.
+
+- Java Formatter : Checkstyle and Google formatter are used along-with [Google Styles](https://github.com/google/google-java-format)
+- Golangci:  [Golangci-lint](https://github.com/golangci/golangci-lint) is used
+
+We recommend to install pre-commit on develop machines. This will help to catch issue before code review.
 
 ### Install Pre-Commit
 
-Install https://pre-commit.com/ on your developer machine/laptop
+Install [Pre-commit](https://pre-commit.com/) on developer laptop
 - using pip
 ```bash
 pip install pre-commit
@@ -27,65 +31,105 @@ conda install -c conda-forge pre-commit
 ```
 
 ## Usage
+```
 git add <files>
 git commit -m <message>
+```
+
+## Real World Example
+
+### Commit changes from Local
 
 ```bash
-$ git commit -m "add basic auth" 
+$ git commit  -m "aas82 fix GHA linter:  Golang and Java - local"
 [WARNING] Unstaged files detected.
-[INFO] Stashing unstaged files to /Users/I545443/.cache/pre-commit/patch1626333779-50304.
+[INFO] Stashing unstaged files to /Users/I545443/.cache/pre-commit/patch1629118042-59848.
+java-formatter...........................................................Failed
+- hook id: java-formatter
+- exit code: 1
+
+Running Checkstyle using /Users/I545443/sap/asalan316/app-autoscaler/.cache/CHECKSTYLE_JAR_NAME...
+[WARN] /Users/I545443/sap/asalan316/app-autoscaler/scheduler/src/main/java/org/cloudfoundry/autoscaler/scheduler/util/DataValidationHelper.java:19:19: Abbreviation in name 'LINTTT_CHECK' must contain no more than '1' consecutive capital letters. [AbbreviationAsWordInName]
+[WARN] /Users/I545443/sap/asalan316/app-autoscaler/scheduler/src/main/java/org/cloudfoundry/autoscaler/scheduler/util/DataValidationHelper.java:19:19: Member name 'LINTTT_CHECK' must match pattern '^[a-z][a-z0-9][a-zA-Z0-9]*$'. [MemberName]
+
+golangci-lint............................................................Failed
+- hook id: golangci-lint
+- exit code: 2
+
+~/sap/asalan316/app-autoscaler/src/autoscaler ~/sap/asalan316/app-autoscaler
+/Users/I545443/sap/asalan316/app-autoscaler/src/autoscaler
+golangci-lint run
+api/brokerserver/broker_handler.go:24: File is not `gofmt`-ed with `-s` (gofmt)
+              logger          lager.Logger
+make: *** [lint] Error 1
+
+[INFO] Restored changes from /Users/I545443/.cache/pre-commit/patch1629118042-59848.
+
+```
+In the above output, Some issues has been reported:
+
+**Go File:** incorrect formatting in api/brokerserver/broker_handler.go:24 (reported by Golangci-lint)
+
+**Java:** Incorrect variable name reported by Java-formatter
+
+To fix them: 
+
+For Go: 
+```
+gofmt -s -w api/brokerserver/broker_handler.go
+
+```
+For Java, just correct the variable name
+
+Upon committing again, Golangci-lint passed but java-formatter has reported some formatting problems:
+```bash
+$ git commit  -m "aas82 fix GHA linter:  Golang and Java - local"                                                                              
+[WARNING] Unstaged files detected.
+[INFO] Stashing unstaged files to /Users/I545443/.cache/pre-commit/patch1629118377-61629.
 java-formatter...........................................................Failed
 - hook id: java-formatter
 - exit code: 2
 
-/Users/I545443/sap/asalan316/app-autoscaler/.cache
-/Users/I545443/sap/asalan316/app-autoscaler/.cache
-download path : /Users/I545443/sap/asalan316/app-autoscaler/.cache/google-java-format-1.10.0-all-deps.jar
-Formatter Results:
-Analyzing java file(s) using google-java-format-1.10.0-all-deps.jar...
+Running Checkstyle using /Users/I545443/sap/asalan316/app-autoscaler/.cache/CHECKSTYLE_JAR_NAME...
+============================================================
+Google Formatting using /Users/I545443/sap/asalan316/app-autoscaler/.cache/google-java-format-1.11.0-all-deps.jar...
 Incorrect formatting found:
-scheduler/src/main/java/org/cloudfoundry/autoscaler/scheduler/rest/ControllerExceptionHandler.java
 Please correct the formatting of the files(s) using one of the following options:
-  - Reformat Code - IntelliJ or Format Document - Eclipse (google code style required)
-  - java -jar /Users/I545443/sap/asalan316/app-autoscaler/.cache/google-java-format-1.10.0-all-deps.jar -replace scheduler/src/main/java/org/cloudfoundry/autoscaler/scheduler/rest/ControllerExceptionHandler.java
+   java --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED  -jar /Users/I545443/sap/asalan316/app-autoscaler/.cache/google-java-format-1.11.0-all-deps.jar -replace --skip-javadoc-formatting scheduler/src/main/java/org/cloudfoundry/autoscaler/scheduler/util/DataValidationHelper.java
 
-go imports...............................................................Failed
-- hook id: go-imports
-- exit code: 1
-- files were modified by this hook
-
-src/autoscaler/eventgenerator/aggregator/aggregator.go
-
-go fmt...................................................................Passed
-[WARNING] Stashed changes conflicted with hook auto-fixes... Rolling back fixes...
-[INFO] Restored changes from /Users/I545443/.cache/pre-commit/patch1626333779-50304.
+golangci-lint............................................................Passed
+[INFO] Restored changes from /Users/I545443/.cache/pre-commit/patch1629118377-61629.
 
 ```
-- Example Output of correctly formatted code
+
+To fix them, just execute the command as suggested by the java-formatter. It will auto-format the java sources.
+```bash
+java --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED \
+   --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED \
+  --add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED \
+  --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED \
+  --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED  
+  -jar /Users/I545443/sap/asalan316/app-autoscaler/.cache/google-java-format-1.11.0-all-deps.jar \
+  -replace --skip-javadoc-formatting scheduler/src/main/java/org/cloudfoundry/autoscaler/scheduler/util/DataValidationHelper.java
+
 ```
-$ git commit -m "add basic auth"                                                                            
+
+##Successful Commit
+
+```bash
+$ git commit  -m "aas82 fix GHA linter:  Golang and Java - local"                                      
 [WARNING] Unstaged files detected.
-[INFO] Stashing unstaged files to /Users/I545443/.cache/pre-commit/patch1626333979-52031.
-java-formatter.......................................(no files to check)Skipped
-go imports...........................................(no files to check)Skipped
-go fmt...............................................(no files to check)Skipped
-[INFO] Restored changes from /Users/I545443/.cache/pre-commit/patch1626333979-52031.
-[code-style-guide 3c1c7d1] add basic auth
- 3 files changed, 40 insertions(+), 1 deletion(-)
- create mode 100644 style-guide/README.md
- rename style-guide/{inspect-java-format.sh => inspect-java-format-0.1.sh} (100%)
+[INFO] Stashing unstaged files to /Users/I545443/.cache/pre-commit/patch1629118875-64154.
+java-formatter...........................................................Passed
+golangci-lint............................................................Passed
+[INFO] Restored changes from /Users/I545443/.cache/pre-commit/patch1629118875-64154.
+[aas82-verify-linters cff357fa] aas82 fix GHA linter:  Golang and Java - local
+ 3 files changed, 8 insertions(+), 4 deletions(-)
 
 ```
 
-## Importing Java Style Guide in IDE 
-Having styles configures in IDE help developers to focus on business logic (instead of formatting issue). For this purpose, enabling formatting increases productivity.
-Since, App-Autoscaler's scheduler component is written in java, it makes sense to enable java formatter only for scheduler project.
+### Skip Pre-Commit Git Hook Locally
+`git commit --no-verify -m "<COMMI_MESSAGE"`
 
-- Open scheduler as project in the IDE. Doing so, will only apply Google style in scheduler projec)
-- Download the style from this link https://raw.githubusercontent.com/google/styleguide/gh-pages/intellij-java-google-style.xml
-- Intellij,
-  - Under Preferences -> Editor -> Code Style -> Java. There is Scheme settings (settings icon on right side) -> import schemes-> intellij idea code style xml and select current scheme. Current Scheme will only import code style for scheduler project.
-  - the reformat code can be use to auto format files using already configured code style. 
-- Eclipse,
-    - open Eclipse -> Preferences(or Settings). In the search, type “formatter”, and select the Java -> Code Style -> Formatter menu item -> Import
 
+**Note:** The same static code analyzers are used via GitHub Actions. 

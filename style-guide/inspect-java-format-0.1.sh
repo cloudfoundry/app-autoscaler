@@ -45,7 +45,7 @@ changed_java_files=$(echo "$changed_java_files" |tr '\n' ' ')
 #####################################################################
 #   Checkstyle                                                      #
 #####################################################################
-echo "Running Checkstyle using $DOWNLOAD_PATH"/"CHECKSTYLE_JAR_NAME..."
+echo "Running Checkstyle using $DOWNLOAD_PATH"/"$CHECKSTYLE_JAR_NAME..."
 
 CHECKSTYLE_OUTPUT=$(java \
   --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED \

@@ -62,7 +62,7 @@ java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:pos
 ```
 
 * **MySQL**
-```shell 
+```shell
 mysql -u root -e "DROP DATABASE IF EXISTS autoscaler;"
 mysql -u root -e "CREATE DATABASE autoscaler;"
 
@@ -138,8 +138,11 @@ pushd src/autoscaler
 popd
 ```
 
-**MySQL**: 
+**MySQL**:
 Just replace the $DBURL to `root@tcp(localhost)/autoscaler?tls=false`.
+
+### Coding Standards
+Autoscaler uses Golangci and Checkstyle for its code base. Refer to [style-guide](style-guide/README.md)
 
 ## Deploy and offer Auto-Scaler as a service
 
@@ -147,7 +150,7 @@ Go to [app-autoscaler-release][r] project for how to BOSH deploy `App-AutoScaler
 
 ## Use Auto-Scaler service
 
-Refer to [user guide][u] for the details of how to use the Auto-Scaler service, including policy definition, supported metrics, public API specification and commond line tool.
+Refer to [user guide][u] for the details of how to use the Auto-Scaler service, including policy definition, supported metrics, public API specification and command line tool.
 
 ## License
 
