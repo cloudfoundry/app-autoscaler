@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -egit
+set -e
 script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
 # Place keys and certificates here
