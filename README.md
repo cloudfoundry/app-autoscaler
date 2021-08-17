@@ -45,12 +45,20 @@ $ cd app-autoscaler
 #### Initialize the Database
 
 * **Postgres**
+
+If you wish to use a docker image for psql then start it using:
 ```shell
+docker run -p 5432:5432  --name postgres -e POSTGRES_PASSWORD=postgres -e POSTGRES_USER=postgres -e POSTGRES_DB=autoscaler -d postgres:9.6
+```
+and stop it using: ```docker rm -f postgres```
+
+```shell
+#Note if your using docker you do not need to do these 3 lines.
 createuser postgres -s
 psql postgres://postgres@127.0.0.1:5432 -c 'DROP DATABASE IF EXISTS autoscaler'
 psql postgres://postgres@127.0.0.1:5432 -c 'CREATE DATABASE autoscaler'
 
-mvn package
+mvn package -Dmaven.test.skip=true
 java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/api/db/api.db.changelog.yml --username="postgres" --password="postgres" update
 java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=src/autoscaler/servicebroker/db/servicebroker.db.changelog.json --username="postgres" --password="postgres" update
 java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:postgresql://127.0.0.1/autoscaler --driver=org.postgresql.Driver --changeLogFile=scheduler/db/scheduler.changelog-master.yaml --username="postgres" --password="postgres" update
@@ -77,7 +85,9 @@ java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mys
 java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:mysql://127.0.0.1/autoscaler --driver=com.mysql.cj.jdbc.Driver --changeLogFile=src/autoscaler/operator/db/operator.db.changelog.yml --username=root update
 ```
 #### Generate TLS Certificates
+create the certificates
 
+**Note**: on macos it will install `certstrap` automatically but on other OS's it needs to be pre-installed
 ```shell
 ./scripts/generate_test_certs.sh
 ```
@@ -102,9 +112,7 @@ pushd src/autoscaler
   make test
 popd
 
-pushd scheduler
-  mvn test
-popd
+mvn -pl scheduler test
 ```
 
 * **MySQL**:
@@ -115,9 +123,7 @@ pushd src/autoscaler
   make test
 popd
 
-pushd scheduler
-  mvn test -Dspring.profiles.active=mysql
-popd
+mvn test -pl scheduler -Dspring.profiles.active=mysql
 ```
 
 
@@ -126,10 +132,7 @@ popd
 
 **Postgres**
 ```shell
-pushd scheduler
-  mvn package -DskipTests
-popd
-
+mvn package -DskipTests
 
 pushd src/autoscaler
   export DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
