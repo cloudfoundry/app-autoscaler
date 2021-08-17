@@ -118,10 +118,8 @@ mvn -pl scheduler test
 * **MySQL**:
 ```shell
 export DBURL="root@tcp(localhost)/autoscaler?tls=false"
-pushd src/autoscaler
-  make buildtools
-  make test
-popd
+make -C src/autoscaler buildtools
+make -C src/autoscaler test
 
 mvn test -pl scheduler -Dspring.profiles.active=mysql
 ```
@@ -133,12 +131,9 @@ mvn test -pl scheduler -Dspring.profiles.active=mysql
 **Postgres**
 ```shell
 mvn package -DskipTests
-
-pushd src/autoscaler
-  export DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
-  make buildtools
-  make integration
-popd
+export DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
+make -C src/autoscaler buildtools
+make -C src/autoscaler integration
 ```
 
 **MySQL**:
