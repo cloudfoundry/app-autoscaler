@@ -1,1 +1,8 @@
-{ "properties": [ ] }
+{
+  "properties": [
+    {
+      "name": "scheduler.metrics.port",
+      "type": "java.lang.Integer",
+      "description": "Prometheus server port."
+    }
+  ] }

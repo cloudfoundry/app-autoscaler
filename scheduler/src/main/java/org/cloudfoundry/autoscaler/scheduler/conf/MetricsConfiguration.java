@@ -1,2 +1,10 @@
-package org.cloudfoundry.autoscaler.scheduler.conf;public class MetricsConfiguration {
+package org.cloudfoundry.autoscaler.scheduler.conf;
+
+import lombok.Data;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+
+@ConfigurationProperties(prefix = "scheduler.metrics")
+@Data
+public class MetricsConfiguration {
+	private int port;
 }
