@@ -185,7 +185,8 @@
                 <configuration>
                     <disableXmlReport>true</disableXmlReport>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
-                    <runOrder>random</runOrder>
+<!--                    <runOrder>random</runOrder>-->
+                    <!-- https://stackoverflow.com/questions/44180815/can-spring-boot-test-classes-reuse-application-context-for-faster-test-run -->
                     <reuseForks>false</reuseForks>
                 </configuration>
             </plugin>
