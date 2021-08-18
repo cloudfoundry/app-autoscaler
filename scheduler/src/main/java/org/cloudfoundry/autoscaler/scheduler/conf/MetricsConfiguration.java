@@ -6,5 +6,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "scheduler.metrics")
 @Data
 public class MetricsConfiguration {
-	private int port;
+
+  private int port;
 }

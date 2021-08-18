@@ -9,6 +9,10 @@ Two static code analyzers are used as git-hooks which are defined in the .pre-co
 
 We recommend to install pre-commit on develop machines. This will help to catch issue before code review.
 
+### IntelliJ java code style import
+To get intellij to play nice with the google code style checker we need to import the code style for intellij
+To do this follow the IDE setup on the [google format home page](https://github.com/google/google-java-format#intellij-android-studio-and-other-jetbrains-ides) 
+
 ### Install Pre-Commit
 
 Install [Pre-commit](https://pre-commit.com/) on developer laptop
