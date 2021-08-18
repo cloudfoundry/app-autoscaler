@@ -10,7 +10,7 @@ jobs:
     strategy:
       matrix:
         go: [1.15]
-        java: [8,11]  
+        java: [8,11]
     env:
       DB_DATABASE: autoscaler
       DB_USER: root
@@ -29,18 +29,10 @@ jobs:
       - name: Go Build
         run: |
           source .envrc
-          pushd src/autoscaler
-            make buildtools
-          popd
-          pushd scripts
-            ./generate_test_certs.sh
-          popd
-          pushd scheduler/scripts
-            ./generate_unit_test_certs.sh
-          popd
-          pushd src/autoscaler
-            make build
-          popd
+          make -C src/autoscaler buildtools
+          ./scripts/generate_test_certs.sh
+          ./scheduler/scripts/generate_unit_test_certs.sh
+          make -C src/autoscaler build
 
       - name: Setup Java
         uses: actions/setup-java@v2
@@ -49,7 +41,8 @@ jobs:
           java-version: ${{ matrix.java }}
       
       - name: Maven Build
-        run: mvn --no-transfer-progress package
+        #Note only db is built here.
+        run: mvn --no-transfer-progress -pl db package
 
       - name: Setup MySQL
         run: |
@@ -70,23 +63,13 @@ jobs:
       - name: Unit Test
         run: |
           source .envrc
-          pushd src/autoscaler
-            export DBURL="root@tcp(localhost)/autoscaler?tls=false"
-            make test
-          popd
-
-          pushd scheduler
-            mvn --no-transfer-progress test -Dspring.profiles.active=mysql
-          popd
+          export DBURL="root@tcp(localhost)/autoscaler?tls=false"
+          make -C src/autoscaler test
+          mvn --no-transfer-progress test -Dspring.profiles.active=mysql
 
       - name: Integration Tests
         run: |
           source .envrc
-          pushd scheduler
-            mvn --no-transfer-progress package -DskipTests
-          popd
-
-          pushd src/autoscaler
-            export DBURL="root@tcp(localhost)/autoscaler?tls=false"
-            make integration
-          popd
+          mvn --no-transfer-progress package -DskipTests
+          export DBURL="root@tcp(localhost)/autoscaler?tls=false"
+          make -C src/autoscaler integration

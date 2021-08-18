@@ -13,6 +13,7 @@
 
 	<modules>
 		<module>db</module>
+		<module>scheduler</module>
 	</modules>
 
 	<build>
