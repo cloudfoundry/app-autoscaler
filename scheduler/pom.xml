@@ -80,6 +80,7 @@
             <artifactId>tomcat-embed-jasper</artifactId>
             <scope>provided</scope>
         </dependency>
+
         <!-- Note: Explicitly specified as the respective jar is not showing in
             the maven dependencies -->
         <dependency>
@@ -110,11 +111,6 @@
             <artifactId>simpleclient</artifactId>
             <version>${io.prometheus.simpleclient.version}</version>
         </dependency>
-        <dependency>
-            <groupId>io.prometheus</groupId>
-            <artifactId>simpleclient_spring_boot</artifactId>
-            <version>${io.prometheus.simpleclient.version}</version>
-        </dependency>
         <!-- Hotspot JVM metrics-->
         <dependency>
             <groupId>io.prometheus</groupId>
@@ -124,14 +120,22 @@
         <!-- Exposition HTTPServer-->
         <dependency>
             <groupId>io.prometheus</groupId>
-            <artifactId>simpleclient_httpserver</artifactId>
+            <artifactId>simpleclient_vertx</artifactId>
             <version>${io.prometheus.simpleclient.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-web</artifactId>
+            <version>3.9.8</version>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>org.junit.vintage</groupId>
             <artifactId>junit-vintage-engine</artifactId>

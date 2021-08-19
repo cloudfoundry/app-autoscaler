@@ -24,11 +24,14 @@ public class SchedulerHealthEndpointTest {
   @Autowired private MetricsConfiguration metricsConfig;
 
   @Test
-  public void greetingShouldReturnDefaultMessage() {
+  public void givenCorrectCredentialsStandardMetricsShouldBeAvailable() {
     ResponseEntity<String> response =
-        this.restTemplate.getForEntity(
-            "http://localhost:" + metricsConfig.getPort() + "/metrics", String.class);
-    assertThat(response.getStatusCode().value()).isEqualTo(200);
+        this.restTemplate
+            .withBasicAuth("prometheus", "someHash")
+            .getForEntity(metricsUrl(), String.class);
+    assertThat(response.getStatusCode().value())
+        .describedAs("Http status code should be OK")
+        .isEqualTo(200);
     String result = response.toString();
     assertThat(result)
         .contains("jvm_info")
@@ -45,5 +48,29 @@ public class SchedulerHealthEndpointTest {
         .contains("jvm_memory_pool_bytes")
         .contains("autoscaler_scheduler_data_source")
         .contains("autoscaler_scheduler_policy_db_data_source");
+  }
+
+  @Test
+  public void givenIncorrectCredentials401ResultShouldBeGiven() {
+    ResponseEntity<String> response =
+        this.restTemplate.withBasicAuth("bad", "auth").getForEntity(metricsUrl(), String.class);
+    assertThat(response.getStatusCode().value()).isEqualTo(401);
+  }
+
+  private String metricsUrl() {
+    return "http://localhost:" + metricsConfig.getPort() + "/metrics";
+  }
+
+  @Test
+  public void givenNoCredentials401ResultShouldBeGiven() {
+    ResponseEntity<String> response = this.restTemplate.getForEntity(metricsUrl(), String.class);
+    assertThat(response.getStatusCode().value()).isEqualTo(401);
+  }
+
+  @Test
+  public void givenCorrectPasswordAndWrongUsernameFailsWith401() {
+    ResponseEntity<String> response =
+        this.restTemplate.withBasicAuth("bad", "someHash").getForEntity(metricsUrl(), String.class);
+    assertThat(response.getStatusCode().value()).isEqualTo(401);
   }
 }

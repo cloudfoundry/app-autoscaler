@@ -1,7 +1,4 @@
 scheduler:
   metrics:
-    port: 8081
-    auth:
-      realm: "someRealm"
-      users:
-        prometheus: "someHash"
+    username: prometheus
+    password: "someHash"

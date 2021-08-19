@@ -1,38 +1,40 @@
 package org.cloudfoundry.autoscaler.scheduler.conf;
 
-import com.sun.net.httpserver.HttpContext;
-import com.sun.net.httpserver.HttpServer;
-import io.prometheus.client.CollectorRegistry;
-import io.prometheus.client.exporter.HTTPServer;
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.stream.Stream;
-import org.cloudfoundry.autoscaler.scheduler.conf.MetricsConfiguration.AuthConfig;
+import io.prometheus.client.vertx.MetricsHandler;
+import io.vertx.core.AsyncResult;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.Vertx;
+import io.vertx.core.json.JsonObject;
+import io.vertx.ext.auth.AuthProvider;
+import io.vertx.ext.auth.User;
+import io.vertx.ext.web.Router;
+import io.vertx.ext.web.handler.BasicAuthHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class MetricsConfig {
 
-  @Bean
-  HttpServer metricsServer(MetricsConfiguration config) throws IOException {
-    HttpServer server = HttpServer.create(new InetSocketAddress(config.getPort()), 3);
-    AuthConfig auth = config.getAuth();
-    Stream<HttpContext> contexts =
-        Stream.of(
-            server.createContext("/"),
-            server.createContext("/metrics"),
-            server.createContext("/-/healthy"));
-    if (config.isBasicAuthEnabled()) {
-      MetricsBasicAuthentication authenticator =
-          new MetricsBasicAuthentication(auth.getRealm(), auth.getUsers());
-      contexts.forEach(ctx -> ctx.setAuthenticator(authenticator));
-    }
-    return server;
+  @Bean(destroyMethod = "close")
+  Vertx metricsServer(MetricsConfiguration config) {
+    final Vertx vertx = Vertx.vertx();
+    final Router router = Router.router(vertx);
+    router.route("/*").handler(BasicAuthHandler.create(getAuthProvider(config)));
+    router.route("/metrics").handler(new MetricsHandler());
+    vertx.createHttpServer().requestHandler(router).listen(config.getPort());
+    return vertx;
   }
 
-  @Bean(destroyMethod = "stop")
-  HTTPServer metricsServer(HttpServer server) throws IOException {
-    return new HTTPServer(server, CollectorRegistry.defaultRegistry, false);
+  private AuthProvider getAuthProvider(MetricsConfiguration config) {
+    return (JsonObject authInfo, Handler<AsyncResult<User>> resultHandler) -> {
+      String password = authInfo.getString("password");
+      String username = authInfo.getString("username");
+      if (config.getUsername().equals(username) && config.getPassword().equals(password)) {
+        resultHandler.handle(Future.succeededFuture(null));
+      } else {
+        resultHandler.handle(Future.failedFuture("Not authorised"));
+      }
+    };
   }
 }
