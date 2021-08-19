@@ -244,4 +244,14 @@ databaseChangeLog:
                   type: integer
                   constraints:
                     nullable: false
+  - changeSet:
+      id: 7
+      author: aadeshmisra
+      dbms: postgresql
+      changes:
+        - addPrimaryKey:
+            columnNames: "appid,timestamp"
+            constraintName: "pk_history"
+            chemaName: autoscaler
+            tableName: scalinghistory
 
