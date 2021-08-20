@@ -107,12 +107,10 @@ rm $TMPDIR/consul-0.7.5.zip
 * **Postgres**:
 ```shell
 export DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
-pushd src/autoscaler
-  make buildtools
-  make test
-popd
+make -C src/autoscaler buildtools
+make -C src/autoscaler test
 
-mvn -pl scheduler test
+mvn test -pl scheduler
 ```
 
 * **MySQL**:
