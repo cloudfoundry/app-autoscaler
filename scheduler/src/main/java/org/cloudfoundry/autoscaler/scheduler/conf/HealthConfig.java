@@ -20,11 +20,10 @@ public class HealthConfig {
     return dbStatusCollector;
   }
 
-  @Bean
+  @Bean(initMethod = "init")
   public HealthExporter healthExporter(@Autowired DbStatusCollector dbStatusCollector) {
     HealthExporter healthExporter = new HealthExporter();
     healthExporter.setDbStatusCollector(dbStatusCollector);
-    healthExporter.init();
     return healthExporter;
   }
 }

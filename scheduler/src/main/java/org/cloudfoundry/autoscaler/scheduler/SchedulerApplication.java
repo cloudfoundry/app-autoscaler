@@ -2,6 +2,7 @@ package org.cloudfoundry.autoscaler.scheduler;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cloudfoundry.autoscaler.scheduler.conf.MetricsConfig;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.actuate.autoconfigure.audit.AuditAutoConfiguration;
 import org.springframework.boot.actuate.autoconfigure.info.InfoContributorAutoConfiguration;
@@ -21,6 +22,7 @@ import org.springframework.boot.autoconfigure.transaction.jta.JtaAutoConfigurati
 import org.springframework.boot.autoconfigure.validation.ValidationAutoConfiguration;
 import org.springframework.boot.autoconfigure.web.reactive.function.client.WebClientAutoConfiguration;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.event.EventListener;
 import springfox.documentation.builders.PathSelectors;
@@ -30,6 +32,7 @@ import springfox.documentation.spring.web.plugins.Docket;
 import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 @EnableSwagger2
+@ConfigurationPropertiesScan(basePackageClasses = MetricsConfig.class)
 @SpringBootApplication(
     exclude = {
       AopAutoConfiguration.class,

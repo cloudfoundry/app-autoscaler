@@ -34,6 +34,11 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
         <dependency>
@@ -105,6 +110,11 @@
             <artifactId>simpleclient</artifactId>
             <version>${io.prometheus.simpleclient.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.prometheus</groupId>
+            <artifactId>simpleclient_spring_boot</artifactId>
+            <version>${io.prometheus.simpleclient.version}</version>
+        </dependency>
         <!-- Hotspot JVM metrics-->
         <dependency>
             <groupId>io.prometheus</groupId>
@@ -138,6 +148,17 @@
             <artifactId>spring-boot-devtools</artifactId>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.20</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -165,6 +186,7 @@
                     <disableXmlReport>true</disableXmlReport>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <runOrder>random</runOrder>
+                    <!-- https://stackoverflow.com/questions/44180815/can-spring-boot-test-classes-reuse-application-context-for-faster-test-run -->
                     <reuseForks>false</reuseForks>
                 </configuration>
             </plugin>

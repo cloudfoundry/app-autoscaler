@@ -4,13 +4,12 @@
  # This pre-commit hook displays Java formatting issues
 ###################################################################################################
 set -e -o pipefail
-set +x
 
 REPO_PATH=$(git rev-parse --show-toplevel)
 DOWNLOAD_PATH="$REPO_PATH"/.cache
 CHECKSTYLE_JAR_NAME="checkstyle-8.44-all.jar"
-GOOGLE_JAR_NAME="google-java-format-1.11.0-all-deps.jar"
 GOOGLE_JAR_VERSION="1.11.0"
+GOOGLE_JAR_NAME="google-java-format-${GOOGLE_JAR_VERSION}-all-deps.jar"
 
 CHECKSTYLE_CONFIG_FILE_NAME="google_checks.xml"
 CHECKSTYLE_CONFIG_PATH="$REPO_PATH"/style-guide
@@ -18,7 +17,7 @@ CHECKSTYLE_CONFIG_PATH="$REPO_PATH"/style-guide
 function download_google_formatter {
     cd "$DOWNLOAD_PATH"
     if [ ! -f "$DOWNLOAD_PATH"/"$GOOGLE_JAR_NAME" ] ; then
-        curl -LJO "https://github.com/google/google-java-format/releases/download/v$GOOGLE_JAR_VERSION/$GOOGLE_JAR_NAME"
+        curl -LJO "https://github.com/google/google-java-format/releases/download/v$GOOGLE_JAR_VERSION/$GOOGLE_JAR_NAME" -o "$GOOGLE_JAR_NAME"
         chmod 755 "$GOOGLE_JAR_NAME"
     fi
 }
