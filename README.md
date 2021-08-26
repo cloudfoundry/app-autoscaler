@@ -37,8 +37,7 @@ The `App-AutoScaler` supports Postgres and MySQL. It uses Postgres as the defaul
 To set up the development, firstly clone this project
 
 ```shell
-$ git clone https://github.com/cloudfoundry/app-autoscaler.git
-$ cd app-autoscaler
+git clone https://github.com/cloudfoundry/app-autoscaler.git
 ```
 
 
@@ -83,6 +82,7 @@ create the certificates
 **Note**: on macos it will install `certstrap` automatically but on other OS's it needs to be pre-installed
 ```shell
 ./scripts/generate_test_certs.sh
+./scheduler/scripts/generate_unit_test_certs.sh
 ```
 
 
@@ -99,34 +99,22 @@ rm $TMPDIR/consul-0.7.5.zip
 
 * **Postgres**:
 ```shell
-export DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
-pushd src/autoscaler
-  make buildtools
-  make test
-popd
-
+make -C src/autoscaler test DBURL="postgres://postgres@localhost/autoscaler?sslmode=disable"
 mvn -pl scheduler test
 ```
 
 * **MySQL**:
 ```shell
-export DBURL="root@tcp(localhost)/autoscaler?tls=false"
-make -C src/autoscaler buildtools
-make -C src/autoscaler test
-
+make -C src/autoscaler test DBURL="root@tcp(localhost)/autoscaler?tls=false"
 mvn test -pl scheduler -Dspring.profiles.active=mysql
 ```
-
-
 
 ### Integration tests
 
 **Postgres**
 ```shell
 mvn package -DskipTests
-export DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
-make -C src/autoscaler buildtools
-make -C src/autoscaler integration
+make -C src/autoscaler integration DBURL="postgres://postgres@localhost/autoscaler?sslmode=disable"
 ```
 
 **MySQL**:

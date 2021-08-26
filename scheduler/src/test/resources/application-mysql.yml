@@ -1,0 +1,4 @@
+scheduler:
+  metrics:
+    username: prometheus
+    password: "someHash"
