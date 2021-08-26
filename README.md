@@ -70,6 +70,13 @@ java -cp 'db/target/lib/*' liquibase.integration.commandline.Main --url jdbc:pos
 ```
 
 * **MySQL**
+
+If you wish to use a docker image for mysql then start it using:
+```shell
+docker run -p 3306:3306  --name mysql -e MYSQL_ALLOW_EMPTY_PASSWORD=true -e MYSQL_DATABASE=autoscaler -d mysql:8
+```
+and stop it using: ```docker rm -f mysql```
+
 ```shell
 mysql -u root -e "DROP DATABASE IF EXISTS autoscaler;"
 mysql -u root -e "CREATE DATABASE autoscaler;"
