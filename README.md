@@ -57,7 +57,7 @@ createuser postgres -s
 psql postgres://postgres@127.0.0.1:5432 -c 'DROP DATABASE IF EXISTS autoscaler'
 psql postgres://postgres@127.0.0.1:5432 -c 'CREATE DATABASE autoscaler'
 
-mvn package -Dmaven.test.skip=trues
+mvn package -Dmaven.test.skip=true
 scripts/initialise_db.sh postgres
 ```
 

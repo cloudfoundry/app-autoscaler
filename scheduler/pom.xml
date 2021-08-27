@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.5.3</version>
+        <version>2.5.4</version>
         <relativePath/>
     </parent>
 
@@ -31,6 +31,11 @@
                     <artifactId>spring-boot-starter-logging</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -80,7 +85,6 @@
             <artifactId>tomcat-embed-jasper</artifactId>
             <scope>provided</scope>
         </dependency>
-
         <!-- Note: Explicitly specified as the respective jar is not showing in
             the maven dependencies -->
         <dependency>
@@ -129,13 +133,11 @@
             <artifactId>vertx-web</artifactId>
             <version>3.9.8</version>
         </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
-
         <dependency>
             <groupId>org.junit.vintage</groupId>
             <artifactId>junit-vintage-engine</artifactId>
@@ -189,7 +191,7 @@
                 <configuration>
                     <disableXmlReport>true</disableXmlReport>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
-<!--                    <runOrder>random</runOrder>-->
+                    <runOrder>random</runOrder>
                     <!-- https://stackoverflow.com/questions/44180815/can-spring-boot-test-classes-reuse-application-context-for-faster-test-run -->
                     <reuseForks>false</reuseForks>
                 </configuration>

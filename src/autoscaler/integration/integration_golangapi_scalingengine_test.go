@@ -17,7 +17,6 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 		appId             string
 		pathVariables     []string
 		parameters        map[string]string
-		history           *models.AppScalingHistory
 	)
 
 	BeforeEach(func() {
@@ -142,37 +141,24 @@ var _ = Describe("Integration_GolangApi_ScalingEngine", func() {
 
 		Context("Get scaling histories", func() {
 			BeforeEach(func() {
-				history = &models.AppScalingHistory{
-					AppId:        appId,
-					OldInstances: 2,
-					NewInstances: 4,
-					Reason:       "a reason",
-					Message:      "a message",
-					ScalingType:  models.ScalingTypeDynamic,
-					Status:       models.ScalingStatusSucceeded,
-					Error:        "",
-				}
+				history1 := createScalingHistory(appId, 666666)
+				insertScalingHistory(&history1)
 
-				history.Timestamp = 666666
-				insertScalingHistory(history)
+				history2 := createScalingHistory(appId, 222222)
+				insertScalingHistory(&history2)
 
-				history.Timestamp = 222222
-				insertScalingHistory(history)
+				history3 := createScalingHistory(appId, 555555)
+				insertScalingHistory(&history3)
 
-				history.Timestamp = 555555
-				insertScalingHistory(history)
+				history4 := createScalingHistory(appId, 333333)
+				insertScalingHistory(&history4)
 
-				history.Timestamp = 333333
-				insertScalingHistory(history)
-
-				history.Timestamp = 444444
-				insertScalingHistory(history)
+				history5 := createScalingHistory(appId, 444444)
+				insertScalingHistory(&history5)
 
 				//add some other app id
-				history.AppId = getRandomId()
-				history.Timestamp = 444444
-				insertScalingHistory(history)
-
+				history6 := createScalingHistory(getRandomId(), 444444)
+				insertScalingHistory(&history6)
 			})
 			It("should get the scaling histories ", func() {
 				By("get the 1st page")
