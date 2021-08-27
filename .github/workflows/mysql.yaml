@@ -65,7 +65,7 @@ jobs:
           source .envrc
           export DBURL="root@tcp(localhost)/autoscaler?tls=false"
           make -C src/autoscaler test
-          mvn --no-transfer-progress test -Dspring.profiles.active=mysql
+          mvn --no-transfer-progress test -Dspring.profiles.include=mysql
 
       - name: Integration Tests
         run: |

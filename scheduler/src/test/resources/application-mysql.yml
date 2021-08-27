@@ -1,5 +1,0 @@
-scheduler:
-  healthserver:
-    basicAuthEnabled: true
-    username: prometheus
-    password: "someHash"

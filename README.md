@@ -19,7 +19,7 @@ The `App-AutoScaler` has the following components:
 You can follow the development progress on [Pivotal Tracker][t].
 
 ## Development
- 
+
 ### System requirements
 
 * Java 8 or above
@@ -73,7 +73,7 @@ and stop it using: ```docker rm -f mysql```
 mysql -u root -e "DROP DATABASE IF EXISTS autoscaler;"
 mysql -u root -e "CREATE DATABASE autoscaler;"
 
-mvn package
+mvn package -Dmaven.test.skip=true
 scripts/initialise_db.sh mysql
 ```
 #### Generate TLS Certificates
