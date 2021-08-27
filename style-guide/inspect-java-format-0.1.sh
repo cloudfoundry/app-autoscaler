@@ -71,7 +71,6 @@ fi
 #####################################################################
 echo "============================================================"
 echo "Google Formatting using $DOWNLOAD_PATH"/"$GOOGLE_JAR_NAME..."
-echo "changed file list: $changed_java_files"
 files_to_be_formatted=$( java \
                     --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED \
                     --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED \
