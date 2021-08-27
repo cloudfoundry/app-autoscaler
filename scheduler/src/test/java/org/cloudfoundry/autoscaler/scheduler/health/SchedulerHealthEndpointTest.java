@@ -12,11 +12,13 @@ import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.DirtiesContext.ClassMode;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 @DirtiesContext(classMode = ClassMode.BEFORE_CLASS)
+@ActiveProfiles("HealthAuth")
 public class SchedulerHealthEndpointTest {
 
   @Autowired private TestRestTemplate restTemplate;
@@ -25,6 +27,7 @@ public class SchedulerHealthEndpointTest {
 
   @Test
   public void givenCorrectCredentialsStandardMetricsShouldBeAvailable() {
+
     ResponseEntity<String> response =
         this.restTemplate
             .withBasicAuth("prometheus", "someHash")

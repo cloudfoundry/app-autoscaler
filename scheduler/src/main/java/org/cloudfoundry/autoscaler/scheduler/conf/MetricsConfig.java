@@ -20,7 +20,9 @@ public class MetricsConfig {
   Vertx metricsServer(MetricsConfiguration config) {
     final Vertx vertx = Vertx.vertx();
     final Router router = Router.router(vertx);
-    router.route("/*").handler(BasicAuthHandler.create(getAuthProvider(config)));
+    if (config.isBasicAuthEnabled()) {
+      router.route("/*").handler(BasicAuthHandler.create(getAuthProvider(config)));
+    }
     router.route("/metrics").handler(new MetricsHandler());
     vertx.createHttpServer().requestHandler(router).listen(config.getPort());
     return vertx;
