@@ -3,7 +3,7 @@
 ###################################################################################################
  # This pre-commit hook displays Java formatting issues
 ###################################################################################################
-set -ex -o pipefail
+set -e -o pipefail
 
 REPO_PATH=$(git rev-parse --show-toplevel)
 DOWNLOAD_PATH="$REPO_PATH"/.cache
