@@ -1,4 +1,4 @@
 scheduler:
-  metrics:
+  healthserver:
     username: prometheus
     password: "someHash"
