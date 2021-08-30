@@ -26,6 +26,16 @@ certstrap --depot-path ${depot_path} init --passphrase '' --common-name loggrega
 mv -f ${depot_path}/loggregatorCA.crt ${depot_path}/loggregator-ca.crt
 mv -f ${depot_path}/loggregatorCA.key ${depot_path}/loggregator-ca.key
 
+# CA for local testing mTLS certs
+certstrap --depot-path ${depot_path} init --passphrase '' --common-name validMTLSLocalCA --years "20"
+mv -f ${depot_path}/validMTLSLocalCA.crt ${depot_path}/valid-mtls-local-ca.crt
+mv -f ${depot_path}/validMTLSLocalCA.key ${depot_path}/valid-mtls-local-ca.key
+
+# CA for local testing mTLS certs (another CA for validating verification)
+certstrap --depot-path ${depot_path} init --passphrase '' --common-name invalidMTLSLocalCA --years "20"
+mv -f ${depot_path}/invalidMTLSLocalCA.crt ${depot_path}/invalid-mtls-local-ca.crt
+mv -f ${depot_path}/invalidMTLSLocalCA.key ${depot_path}/invalid-mtls-local-ca.key
+
 # metricscollector certificate
 certstrap --depot-path ${depot_path} request-cert --passphrase '' --domain metricscollector --ip 127.0.0.1
 certstrap --depot-path ${depot_path} sign metricscollector --CA autoscaler-ca --years "20"
@@ -79,3 +89,32 @@ certstrap --depot-path ${depot_path} sign metricserver_client --CA autoscaler-ca
 # metricsforwarder certificate for loggregator_agent
 certstrap --depot-path ${depot_path} request-cert --passphrase '' --domain metron
 certstrap --depot-path ${depot_path} sign metron --CA loggregator-ca --years "20"
+
+# mTLS client certificate for local testing
+## certstrap with multiple OU not working at the moment. Pull request is created in the upstream. Therefore, using openssl at the moment
+## https://github.com/square/certstrap/pull/120
+#certstrap --depot-path ${depot_path} request-cert --passphrase '' --domain local_client --ou "app-id:an-app-id,organization:ORG-GUID,space:SPACE-GUID"
+
+OPENSSL_VERSION=$(openssl version)
+if [[ "$OPENSSL_VERSION" == LibreSSL* ]]; then
+	echo "OpenSSL needs to be used rather than LibreSSL"
+	exit 1
+fi
+# valid certificate
+echo ${depot_path}
+openssl  req -new -newkey rsa:2048  -nodes -subj "/CN=sap.com/O=SAP SE/OU=organization:AB1234ORG/OU=app:an-app-id/OU=space:AB1234SPACE" -out ${depot_path}/validmtls_client.csr
+openssl x509 -req -in "${depot_path}"/validmtls_client.csr -CA "${depot_path}"/valid-mtls-local-ca.crt -CAkey "${depot_path}"/valid-mtls-local-ca.key -CAcreateserial -out "${depot_path}"/validmtls_client.crt -days 365 -sha256
+
+## invalid certificate ( with invalid CA)
+openssl  req -new -newkey rsa:2048  -nodes -subj "/CN=sap.com/O=SAP SE/OU=organization:AB1234ORG/OU=app:an-app-id/OU=space:AB1234SPACE" -out "${depot_path}"/invalidmtls_client.csr
+openssl x509 -req -in "${depot_path}"/invalidmtls_client.csr -CA "${depot_path}"/invalid-mtls-local-ca.crt -CAkey "${depot_path}"/invalid-mtls-local-ca.key -CAcreateserial -out "${depot_path}"/invalidmtls_client.crt -days 365 -sha256
+
+## unsigned certificate
+openssl  req -x509 -new -newkey rsa:2048  -nodes -subj "/CN=sap.com/O=SAP SE/OU=organization:AB1234ORG/OU=app:an-app-id/OU=space:AB1234SPACE" -out "${depot_path}"/nosignmtls_client.crt
+#
+## expired certificate
+openssl  req -new -newkey rsa:2048  -nodes -subj "/CN=sap.com/O=SAP SE/OU=organization:AB1234ORG/OU=app:an-app-id/OU=space:AB1234SPACE" -out "${depot_path}"/expiredmtls_client.csr
+openssl x509 -req -in "${depot_path}"/expiredmtls_client.csr -CA "${depot_path}"/valid-mtls-local-ca.crt -CAkey "${depot_path}"/valid-mtls-local-ca.key -CAcreateserial -out "${depot_path}"/expiredmtls_client.crt -days 0 -sha256
+
+# remove the generated key
+rm privkey.pem
