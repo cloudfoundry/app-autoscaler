@@ -142,7 +142,7 @@ var _ = Describe("App", func() {
 
 		Context("when cloud controller is not reachable", func() {
 			BeforeEach(func() {
-				fakeCC.Close()
+				//fakeCC.Close()
 				fakeCC = nil
 			})
 
