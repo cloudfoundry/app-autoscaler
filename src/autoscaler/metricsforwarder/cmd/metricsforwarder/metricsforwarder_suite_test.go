@@ -101,11 +101,12 @@ var _ = SynchronizedBeforeSuite(func() []byte {
 
 	testCertDir := "../../../../../test-certs"
 
-	grpcIngressTestServer, _ = testhelpers.NewTestIngressServer(
+	grpcIngressTestServer, err = testhelpers.NewTestIngressServer(
 		filepath.Join(testCertDir, "metron.crt"),
 		filepath.Join(testCertDir, "metron.key"),
 		filepath.Join(testCertDir, "loggregator-ca.crt"),
 	)
+	Expect(err).NotTo(HaveOccurred())
 
 	err = grpcIngressTestServer.Start()
 	Expect(err).NotTo(HaveOccurred())
