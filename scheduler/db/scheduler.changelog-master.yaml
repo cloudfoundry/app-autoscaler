@@ -4,6 +4,7 @@ databaseChangeLog:
       id: 1
       author: Fujitsu
       dbms: postgresql
+      logicalFilePath: /var/vcap/packages/scheduler/db/scheduler.changelog-master.yaml
       changes:
         - createTable:
             tableName: app_scaling_specific_date_schedule
@@ -70,6 +71,7 @@ databaseChangeLog:
       id: 2
       author: Fujitsu
       dbms: postgresql
+      logicalFilePath: /var/vcap/packages/scheduler/db/scheduler.changelog-master.yaml
       changes:
         - createTable:
             tableName: app_scaling_recurring_schedule
@@ -147,6 +149,7 @@ databaseChangeLog:
       id: 3
       author: Fujitsu
       dbms: postgresql
+      logicalFilePath: /var/vcap/packages/scheduler/db/scheduler.changelog-master.yaml
       changes:
       - createSequence:
           cycle: true
@@ -154,6 +157,7 @@ databaseChangeLog:
    - changeSet:
       id: 4
       author: Fujitsu
+      logicalFilePath: /var/vcap/packages/scheduler/db/scheduler.changelog-master.yaml
       changes:
         - createTable:
             tableName: app_scaling_active_schedule
@@ -205,6 +209,7 @@ databaseChangeLog:
       id: 5
       author: qibobo
       dbms: postgresql
+      logicalFilePath: /var/vcap/packages/scheduler/db/scheduler.changelog-master.yaml
       changes:
         - addColumn:
             tableName: app_scaling_recurring_schedule
@@ -222,6 +227,7 @@ databaseChangeLog:
       id: 6
       author: fujitsu
       dbms: postgresql
+      logicalFilePath: /var/vcap/packages/scheduler/db/scheduler.changelog-master.yaml
       changes:
         - addNotNullConstraint:
             columnDataType: varchar(50)
@@ -237,6 +243,7 @@ databaseChangeLog:
       id: 7
       author: aqan213
       dbms: postgresql
+      logicalFilePath: /var/vcap/packages/scheduler/db/scheduler.changelog-master.yaml
       changes:
         - addDefaultValue:
             columnDataType: bigint
@@ -247,6 +254,7 @@ databaseChangeLog:
       id: 8
       author: aqan213
       dbms: postgresql
+      logicalFilePath: /var/vcap/packages/scheduler/db/scheduler.changelog-master.yaml
       changes:
         - addDefaultValue:
             columnDataType: bigint
@@ -257,6 +265,7 @@ databaseChangeLog:
       id: 9
       author: aqan213
       dbms: mysql
+      logicalFilePath: /var/vcap/packages/scheduler/db/scheduler.changelog-master.yaml
       changes:
         - createTable:
             tableName: app_scaling_specific_date_schedule
@@ -329,6 +338,7 @@ databaseChangeLog:
       id: 10
       author: aqan213
       dbms: mysql
+      logicalFilePath: /var/vcap/packages/scheduler/db/scheduler.changelog-master.yaml
       changes:
         - createTable:
             tableName: app_scaling_recurring_schedule
