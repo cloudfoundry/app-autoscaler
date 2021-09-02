@@ -4,6 +4,7 @@ databaseChangeLog:
       name: policy_json.type
       value: json
       dbms: postgresql
+      logicalFilePath: /var/vcap/packages/golangapiserver/api.db.changelog.yml
   - property:
       name: policy_json.type
       value: text
@@ -15,6 +16,7 @@ databaseChangeLog:
   - changeSet:
       id: 1
       author: pradyutsarma
+      logicalFilePath: /var/vcap/packages/golangapiserver/api.db.changelog.yml
       preConditions:
         - onFail: MARK_RAN
         - not:
@@ -42,6 +44,7 @@ databaseChangeLog:
   - changeSet:
       id: 2
       author: fujitsu
+      logicalFilePath: /var/vcap/packages/golangapiserver/api.db.changelog.yml
       changes:
         - update:
             columns:
@@ -53,6 +56,7 @@ databaseChangeLog:
   - changeSet:
       id: 3
       author: paltanmoy
+      logicalFilePath: /var/vcap/packages/golangapiserver/api.db.changelog.yml
       preConditions:
         - onFail: MARK_RAN
         - not:
