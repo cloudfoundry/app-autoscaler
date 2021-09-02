@@ -3,6 +3,7 @@ databaseChangeLog:
    - changeSet:
       id: 1
       author: Fujitsu
+      logicalFilePath: /var/vcap/packages/scheduler/db/quartz.changelog-master.yaml
       changes:
       - sqlFile:
          dbms: postgresql
@@ -14,6 +15,7 @@ databaseChangeLog:
    - changeSet:
       id: 2
       author: aqan
+      logicalFilePath: /var/vcap/packages/scheduler/db/quartz.changelog-master.yaml
       changes:
       - sqlFile:
          dbms: mysql
