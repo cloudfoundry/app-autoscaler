@@ -76,6 +76,9 @@ var _ = SynchronizedBeforeSuite(
 		port = 7000 + GinkgoParallelNode()
 		healthport = 8000 + GinkgoParallelNode()
 		testCertDir := "../../../../../test-certs"
+
+		verifyCertExistence(testCertDir)
+
 		conf.Server.Port = port
 		conf.Server.TLS.KeyFile = filepath.Join(testCertDir, "scalingengine.key")
 		conf.Server.TLS.CertFile = filepath.Join(testCertDir, "scalingengine.crt")
@@ -153,6 +156,15 @@ var _ = SynchronizedBeforeSuite(
 		healthHttpClient = &http.Client{}
 
 	})
+
+func verifyCertExistence(testCertDir string) {
+	_, err := ioutil.ReadFile(filepath.Join(testCertDir, "scalingengine.key"))
+	Expect(err).NotTo(HaveOccurred())
+	_, err = ioutil.ReadFile(filepath.Join(testCertDir, "scalingengine.crt"))
+	Expect(err).NotTo(HaveOccurred())
+	_, err = ioutil.ReadFile(filepath.Join(testCertDir, "autoscaler-ca.crt"))
+	Expect(err).NotTo(HaveOccurred())
+}
 
 var _ = SynchronizedAfterSuite(
 	func() {
