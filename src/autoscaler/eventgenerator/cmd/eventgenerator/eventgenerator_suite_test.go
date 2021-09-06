@@ -153,6 +153,13 @@ func initDB() {
 func initHttpEndPoints() {
 	testCertDir := "../../../../../test-certs"
 
+	_, err := ioutil.ReadFile(filepath.Join(testCertDir, "eventgenerator.key"))
+	Expect(err).NotTo(HaveOccurred())
+	_, err = ioutil.ReadFile(filepath.Join(testCertDir, "eventgenerator.crt"))
+	Expect(err).NotTo(HaveOccurred())
+	_, err = ioutil.ReadFile(filepath.Join(testCertDir, "autoscaler-ca.crt"))
+	Expect(err).NotTo(HaveOccurred())
+
 	mcTLSConfig, err := cfhttp.NewTLSConfig(
 		filepath.Join(testCertDir, "metricscollector.crt"),
 		filepath.Join(testCertDir, "metricscollector.key"),

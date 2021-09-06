@@ -6,8 +6,8 @@ import (
 	"autoscaler/metricsforwarder/config"
 	. "autoscaler/metricsforwarder/server"
 	"autoscaler/models"
-
 	"fmt"
+	"io/ioutil"
 	"path/filepath"
 	"time"
 
@@ -37,6 +37,16 @@ func TestServer(t *testing.T) {
 }
 
 var _ = SynchronizedBeforeSuite(func() []byte {
+
+	_, err := ioutil.ReadFile("../../../../test-certs/metron.key")
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = ioutil.ReadFile("../../../../test-certs/metron.crt")
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = ioutil.ReadFile("../../../../test-certs/loggregator-ca.crt")
+	Expect(err).NotTo(HaveOccurred())
+
 	return nil
 }, func(_ []byte) {
 

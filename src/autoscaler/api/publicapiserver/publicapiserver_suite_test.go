@@ -85,6 +85,36 @@ var _ = BeforeSuite(func() {
 
 	conf = CreateConfig(true, apiPort)
 
+	// verify MetricCollector certs
+	_, err := ioutil.ReadFile(conf.MetricsCollector.TLSClientCerts.KeyFile)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = ioutil.ReadFile(conf.MetricsCollector.TLSClientCerts.CertFile)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = ioutil.ReadFile(conf.MetricsCollector.TLSClientCerts.CACertFile)
+	Expect(err).NotTo(HaveOccurred())
+
+	// verify EventGenerator certs
+	_, err = ioutil.ReadFile(conf.EventGenerator.TLSClientCerts.KeyFile)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = ioutil.ReadFile(conf.EventGenerator.TLSClientCerts.CertFile)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = ioutil.ReadFile(conf.EventGenerator.TLSClientCerts.CACertFile)
+	Expect(err).NotTo(HaveOccurred())
+
+	// verify ScalingEngine certs
+	_, err = ioutil.ReadFile(conf.ScalingEngine.TLSClientCerts.KeyFile)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = ioutil.ReadFile(conf.ScalingEngine.TLSClientCerts.CertFile)
+	Expect(err).NotTo(HaveOccurred())
+
+	_, err = ioutil.ReadFile(conf.ScalingEngine.TLSClientCerts.CACertFile)
+	Expect(err).NotTo(HaveOccurred())
+
 	fakePolicyDB = &fakes.FakePolicyDB{}
 	checkBindingFunc = func(appId string) bool {
 		return hasBinding
