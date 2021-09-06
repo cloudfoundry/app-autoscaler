@@ -5,6 +5,7 @@ import (
 	"autoscaler/models"
 	"errors"
 	"fmt"
+	"io"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
@@ -243,5 +244,6 @@ func IsUrlNetOpError(err error) {
 	Expect(errors.As(err, &urlErr)).To(BeTrue(), fmt.Sprintf("Expected a (*url.Error) error in the chan got, %T: %+v", err, err))
 
 	var netOpErr *net.OpError
-	Expect(errors.As(err, &netOpErr)).To(BeTrue(), fmt.Sprintf("Expected a (*net.OpError) error in the chan got, %T: %+v", err, err))
+	Expect(errors.As(err, &netOpErr) || errors.Is(err, io.EOF)).
+		To(BeTrue(), fmt.Sprintf("Expected a (*net.OpError) or io.EOF error in the chan got, %T: %+v", err, err))
 }
