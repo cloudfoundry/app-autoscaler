@@ -1,15 +1,9 @@
 package org.cloudfoundry.autoscaler.scheduler.conf;
 
-import io.prometheus.client.vertx.MetricsHandler;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.Future;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
-import io.vertx.core.json.JsonObject;
-import io.vertx.ext.auth.AuthProvider;
-import io.vertx.ext.auth.User;
-import io.vertx.ext.web.Router;
-import io.vertx.ext.web.handler.BasicAuthHandler;
+import com.sun.net.httpserver.BasicAuthenticator;
+import io.prometheus.client.exporter.HTTPServer;
+import io.prometheus.client.exporter.HTTPServer.Builder;
+import java.io.IOException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -17,26 +11,17 @@ import org.springframework.context.annotation.Configuration;
 public class MetricsConfig {
 
   @Bean(destroyMethod = "close")
-  Vertx metricsServer(MetricsConfiguration config) {
-    final Vertx vertx = Vertx.vertx();
-    final Router router = Router.router(vertx);
+  HTTPServer metricsServer(MetricsConfiguration config) throws IOException {
+    Builder builder = new Builder().withPort(config.getPort());
     if (config.isBasicAuthEnabled()) {
-      router.route("/*").handler(BasicAuthHandler.create(getAuthProvider(config)));
+      builder.withAuthenticator(
+          new BasicAuthenticator("/") {
+            @Override
+            public boolean checkCredentials(String username, String password) {
+              return config.getUsername().equals(username) && config.getPassword().equals(password);
+            }
+          });
     }
-    router.route("/metrics").handler(new MetricsHandler());
-    vertx.createHttpServer().requestHandler(router).listen(config.getPort());
-    return vertx;
-  }
-
-  private AuthProvider getAuthProvider(MetricsConfiguration config) {
-    return (JsonObject authInfo, Handler<AsyncResult<User>> resultHandler) -> {
-      String password = authInfo.getString("password");
-      String username = authInfo.getString("username");
-      if (config.getUsername().equals(username) && config.getPassword().equals(password)) {
-        resultHandler.handle(Future.succeededFuture(null));
-      } else {
-        resultHandler.handle(Future.failedFuture("Not authorised"));
-      }
-    };
+    return builder.build();
   }
 }
