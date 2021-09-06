@@ -149,9 +149,7 @@ var _ = Describe("WsHelper", func() {
 
 			})
 			It("fails to ping and reconnect", func() {
-				Eventually(func() error {
-					return wsHelper.Ping()
-				}).Should(HaveOccurred())
+				Eventually(func() error { return wsHelper.Ping() }, "2s").Should(HaveOccurred())
 				Eventually(logger.Buffer, 10*time.Second, 1*time.Second).Should(Say("maximum-number-of-close-retries-reached"))
 			})
 		})

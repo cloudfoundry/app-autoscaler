@@ -142,7 +142,6 @@ func (wh *wshelper) Read() error {
 	return nil
 }
 func (wh *wshelper) Ping() error {
-	wh.logger.Debug("send-ping")
 	err := wh.wsConn.WriteControl(websocket.PingMessage, nil, time.Now().Add(1*time.Second))
 	if err != nil {
 		wh.logger.Error("failed-to-send-ping", err)
