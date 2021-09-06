@@ -117,6 +117,8 @@ make -C src/autoscaler test
 mvn test -pl scheduler -Dspring.profiles.active=mysql
 ```
 
+
+
 ### Integration tests
 
 **Postgres**

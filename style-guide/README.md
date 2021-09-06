@@ -19,23 +19,19 @@ Install [Pre-commit](https://pre-commit.com/) on developer laptop
 - using pip
 ```bash
 pip install pre-commit
-pre-commit install
 ```
 - using curl
 ```bash
 curl https://pre-commit.com/install-local.py | python -
-pre-commit install
 ```
 
 - using homebrew
 ```bash
 brew install pre-commit
-pre-commit install
 ```
 - using conda 
 ```bash
 conda install -c conda-forge pre-commit
-pre-commit install
 ```
 
 ## Usage
