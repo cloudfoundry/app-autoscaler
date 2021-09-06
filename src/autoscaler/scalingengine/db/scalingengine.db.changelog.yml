@@ -3,6 +3,7 @@ databaseChangeLog:
       id: 1
       author: byang
       dbms: postgresql
+      logicalFilePath: /var/vcap/packages/scalingengine/scalingengine.db.changelog.yml
       changes:
         - createTable:
             tableName: scalinghistory
@@ -69,6 +70,7 @@ databaseChangeLog:
       id: 3
       author: byang
       dbms: postgresql
+      logicalFilePath: /var/vcap/packages/scalingengine/scalingengine.db.changelog.yml
       changes:
         - createTable:
             tableName: activeschedule
@@ -108,6 +110,7 @@ databaseChangeLog:
   - changeSet:
       id: 4
       author: cdlliuy
+      logicalFilePath: /var/vcap/packages/scalingengine/scalingengine.db.changelog.yml
       changes:
         - createTable:
             tableName: scalingengine_lock
@@ -132,6 +135,7 @@ databaseChangeLog:
       id: 5
       author: aqan213
       dbms: mysql
+      logicalFilePath: /var/vcap/packages/scalingengine/scalingengine.db.changelog.yml
       changes:
         - createTable:
             tableName: scalinghistory
@@ -208,6 +212,7 @@ databaseChangeLog:
       id: 6
       author: aqan213
       dbms: mysql
+      logicalFilePath: /var/vcap/packages/scalingengine/scalingengine.db.changelog.yml
       changes:
         - createTable:
             tableName: activeschedule
@@ -248,6 +253,7 @@ databaseChangeLog:
       id: 7
       author: aadeshmisra
       dbms: postgresql
+      logicalFilePath: /var/vcap/packages/scalingengine/scalingengine.db.changelog.yml
       changes:
         - addPrimaryKey:
             columnNames: "appid,timestamp"

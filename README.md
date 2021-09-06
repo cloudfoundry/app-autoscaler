@@ -19,7 +19,7 @@ The `App-AutoScaler` has the following components:
 You can follow the development progress on [Pivotal Tracker][t].
 
 ## Development
-
+ 
 ### System requirements
 
 * Java 8 or above
@@ -37,8 +37,11 @@ The `App-AutoScaler` supports Postgres and MySQL. It uses Postgres as the defaul
 To set up the development, firstly clone this project
 
 ```shell
-git clone https://github.com/cloudfoundry/app-autoscaler.git
+$ git clone https://github.com/cloudfoundry/app-autoscaler.git
+$ cd app-autoscaler
 ```
+
+Generate [scheduler test certs](https://github.com/cloudfoundry/app-autoscaler/blob/main/scheduler/README.md#generate-certificates)
 
 
 #### Initialize the Database
@@ -73,7 +76,7 @@ and stop it using: ```docker rm -f mysql```
 mysql -u root -e "DROP DATABASE IF EXISTS autoscaler;"
 mysql -u root -e "CREATE DATABASE autoscaler;"
 
-mvn package -Dmaven.test.skip=true
+mvn package
 scripts/initialise_db.sh mysql
 ```
 #### Generate TLS Certificates
@@ -82,7 +85,6 @@ create the certificates
 **Note**: on macos it will install `certstrap` automatically but on other OS's it needs to be pre-installed
 ```shell
 ./scripts/generate_test_certs.sh
-./scheduler/scripts/generate_unit_test_certs.sh
 ```
 
 
@@ -99,13 +101,19 @@ rm $TMPDIR/consul-0.7.5.zip
 
 * **Postgres**:
 ```shell
-make -C src/autoscaler test DBURL="postgres://postgres@localhost/autoscaler?sslmode=disable"
-mvn -pl scheduler test
+export DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
+make -C src/autoscaler buildtools
+make -C src/autoscaler test
+
+mvn test -pl scheduler
 ```
 
 * **MySQL**:
 ```shell
-make -C src/autoscaler test DBURL="root@tcp(localhost)/autoscaler?tls=false"
+export DBURL="root@tcp(localhost)/autoscaler?tls=false"
+make -C src/autoscaler buildtools
+make -C src/autoscaler test
+
 mvn test -pl scheduler -Dspring.profiles.active=mysql
 ```
 
@@ -114,7 +122,9 @@ mvn test -pl scheduler -Dspring.profiles.active=mysql
 **Postgres**
 ```shell
 mvn package -DskipTests
-make -C src/autoscaler integration DBURL="postgres://postgres@localhost/autoscaler?sslmode=disable"
+export DBURL=postgres://postgres@localhost/autoscaler?sslmode=disable
+make -C src/autoscaler buildtools
+make -C src/autoscaler integration
 ```
 
 **MySQL**:

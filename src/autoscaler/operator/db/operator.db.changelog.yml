@@ -2,6 +2,7 @@ databaseChangeLog:
   - changeSet:
       id: 1
       author: cdlliuy
+      logicalFilePath: /var/vcap/packages/operator/operator.db.changelog.yml
       preConditions:
         - onFail: MARK_RAN
         - tableExists:
@@ -12,6 +13,7 @@ databaseChangeLog:
   - changeSet:
       id: 2
       author: cdlliuy
+      logicalFilePath: /var/vcap/packages/operator/operator.db.changelog.yml
       changes:
         - createTable:
             tableName: operator_lock
