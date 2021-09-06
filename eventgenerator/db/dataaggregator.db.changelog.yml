@@ -3,6 +3,7 @@ databaseChangeLog:
       id: 1
       author: qiyang
       dbms: postgresql
+      logicalFilePath: /var/vcap/packages/eventgenerator/dataaggregator.db.changelog.yml
       changes:
         - createTable:
             tableName: app_metric
@@ -35,6 +36,7 @@ databaseChangeLog:
   - changeSet:
       id: 2
       author: paltanmoy
+      logicalFilePath: /var/vcap/packages/eventgenerator/dataaggregator.db.changelog.yml
       changes:
         - createTable:
             tableName: eg_lock
@@ -59,6 +61,7 @@ databaseChangeLog:
       id: 3
       author: tanmoypal
       dbms: postgres
+      logicalFilePath: /var/vcap/packages/eventgenerator/dataaggregator.db.changelog.yml
       changes:
         - createIndex:
             columns:
@@ -76,6 +79,7 @@ databaseChangeLog:
   - changeSet:
       id: 4
       author: byang
+      logicalFilePath: /var/vcap/packages/eventgenerator/dataaggregator.db.changelog.yml
       changes:
         - dropTable:
             tableName: eg_lock
@@ -83,6 +87,7 @@ databaseChangeLog:
       id: 5
       author: aqan213
       dbms: mysql
+      logicalFilePath: /var/vcap/packages/eventgenerator/dataaggregator.db.changelog.yml
       changes:
         - createTable:
             tableName: app_metric
@@ -121,6 +126,7 @@ databaseChangeLog:
       id: 6
       author: aqan213
       dbms: mysql
+      logicalFilePath: /var/vcap/packages/eventgenerator/dataaggregator.db.changelog.yml
       changes:
         - createIndex:
             columns:
