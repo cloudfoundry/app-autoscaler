@@ -4,6 +4,7 @@ import (
 	. "autoscaler/cf"
 	"autoscaler/models"
 	"errors"
+	"fmt"
 
 	"code.cloudfoundry.org/clock"
 	"code.cloudfoundry.org/lager"
@@ -217,10 +218,12 @@ var _ = Describe("App", func() {
 				Eventually(func() error {
 					// #nosec G107
 					resp, err := http.Get(ccURL)
+
 					if err != nil {
 						return err
 					}
-					resp.Body.Close()
+					_ = resp.Body.Close()
+
 					return nil
 				}).Should(HaveOccurred())
 			})
@@ -237,8 +240,8 @@ var _ = Describe("App", func() {
 
 func IsUrlNetOpError(err error) {
 	var urlErr *url.Error
-	Expect(errors.As(err, &urlErr)).To(BeTrue())
+	Expect(errors.As(err, &urlErr)).To(BeTrue(), fmt.Sprintf("Expected a (*url.Error) error in the chan got, %T: %+v", err, err))
 
 	var netOpErr *net.OpError
-	Expect(errors.As(err, &netOpErr)).To(BeTrue())
+	Expect(errors.As(err, &netOpErr)).To(BeTrue(), fmt.Sprintf("Expected a (*net.OpError) error in the chan got, %T: %+v", err, err))
 }
