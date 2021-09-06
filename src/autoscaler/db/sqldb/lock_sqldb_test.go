@@ -98,7 +98,7 @@ var _ = Describe("LockSqldb", func() {
 		Context("when the lock does not exist", func() {
 			Context("because the row does not exist", func() {
 				BeforeEach(func() {
-					lock = &models.Lock{Owner: "123456", Ttl: testTTL}
+					lock = createLock("123456", testTTL)
 				})
 
 				It("insert the lock for the owner", func() {
@@ -113,14 +113,14 @@ var _ = Describe("LockSqldb", func() {
 		Context("when the lock exist", func() {
 			Context("and the owner is same", func() {
 				BeforeEach(func() {
-					lock = &models.Lock{Owner: "213123313", Ttl: testTTL}
+					lock = createLock("213123313", testTTL)
 					result, err := insertLockDetails(lock)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(result.RowsAffected()).To(BeEquivalentTo(1))
 					Expect(validateLockInDB("213123313", lock)).To(Succeed())
 				})
 				It("should successfully renew the lock", func() {
-					lock = &models.Lock{Owner: "213123313", Ttl: testTTL}
+					lock = createLock("213123313", testTTL)
 					isLockAcquired, err = ldb.Lock(lock)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(isLockAcquired).To(BeTrue())
@@ -130,14 +130,14 @@ var _ = Describe("LockSqldb", func() {
 			Context("and the owner is different", func() {
 				Context("and lock recently renewed by owner", func() {
 					BeforeEach(func() {
-						lock = &models.Lock{Owner: "65432199", Ttl: testTTL}
+						lock = createLock("65432199", testTTL)
 						isLockAcquired, err = ldb.Lock(lock)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(isLockAcquired).To(BeTrue())
 						Expect(validateLockInDB("65432199", lock)).To(Succeed())
 					})
 					It("competing instance should fail to get the lock", func() {
-						lock = &models.Lock{Owner: "1234567", Ttl: testTTL}
+						lock = createLock("1234567", testTTL)
 						isLockAcquired, err = ldb.Lock(lock)
 						Expect(isLockAcquired).To(BeFalse())
 						Expect(validateLockInDB("1234567", lock)).NotTo(Succeed())
@@ -146,7 +146,7 @@ var _ = Describe("LockSqldb", func() {
 
 				Context("and lock expired", func() {
 					BeforeEach(func() {
-						lock = &models.Lock{Owner: "24165435", Ttl: testTTL}
+						lock = createLock("24165435", testTTL)
 						isLockAcquired, err = ldb.Lock(lock)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(isLockAcquired).To(BeTrue())
@@ -154,7 +154,7 @@ var _ = Describe("LockSqldb", func() {
 					})
 					It("competing instance should successfully acquire the lock", func() {
 						time.Sleep(testTTL + 5*time.Second) //waiting for the ttl to expire
-						lock = &models.Lock{Owner: "123456", Ttl: testTTL}
+						lock = createLock("123456", testTTL)
 						isLockAcquired, err = ldb.Lock(lock)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(isLockAcquired).To(BeTrue())
@@ -178,7 +178,7 @@ var _ = Describe("LockSqldb", func() {
 			})
 
 			It("should fail to acquire lock", func() {
-				lock = &models.Lock{Owner: "123456", Ttl: testTTL}
+				lock = createLock("123456", testTTL)
 				isLockAcquired, err = ldb.Lock(lock)
 				Expect(err).To(HaveOccurred())
 				Expect(isLockAcquired).To(BeFalse())
@@ -190,7 +190,7 @@ var _ = Describe("LockSqldb", func() {
 		BeforeEach(func() {
 			ldb, err = NewLockSQLDB(dbConfig, "test_lock", logger)
 			Expect(err).NotTo(HaveOccurred())
-			lock = &models.Lock{Owner: "654321", Ttl: testTTL}
+			lock = createLock("654321", testTTL)
 		})
 
 		AfterEach(func() {
@@ -232,3 +232,7 @@ var _ = Describe("LockSqldb", func() {
 		})
 	})
 })
+
+func createLock(owner string, testTTL time.Duration) *models.Lock {
+	return &models.Lock{Owner: owner, LastModifiedTimestamp: time.Now(), Ttl: testTTL}
+}
